@@ -49,6 +49,9 @@ func (s *Service) SaveUserCustom(req *restful.Request, resp *restful.Response) {
 			blog.Errorf("save user custom, add failed, err: %v, %v", err, result.ErrMsg)
 			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CC_Err_Comm_USER_CUSTOM_SAVE_FAIL)})
 			return
+		} else {
+			resp.WriteEntity(result)
+			return
 		}
 	}
 	id := result.Data["id"].(string)
@@ -59,7 +62,7 @@ func (s *Service) SaveUserCustom(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	resp.WriteEntity(metadata.NewSuccessResp(uResult))
+	resp.WriteEntity(uResult)
 }
 
 func (s *Service) GetUserCustom(req *restful.Request, resp *restful.Response) {
@@ -72,7 +75,7 @@ func (s *Service) GetUserCustom(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CC_Err_Comm_USER_CUSTOM_SAVE_FAIL)})
 		return
 	}
-	resp.WriteEntity(metadata.NewSuccessResp(result))
+	resp.WriteEntity(result)
 }
 
 func (s *Service) GetDefaultCustom(req *restful.Request, resp *restful.Response) {

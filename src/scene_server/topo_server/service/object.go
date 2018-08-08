@@ -13,7 +13,6 @@
 package service
 
 import (
-	"fmt"
 	"strconv"
 
 	"configcenter/src/common"
@@ -25,14 +24,13 @@ import (
 
 // CreateObjectBatch batch to create some objects
 func (s *topoService) CreateObjectBatch(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("CreateObjectBatch")
-	return nil, nil
+	return s.core.ObjectOperation().CreateObjectBatch(params, data)
 }
 
 // SearchObjectBatch batch to search some objects
 func (s *topoService) SearchObjectBatch(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("SearchObjectBatch")
-	return nil, nil
+
+	return s.core.ObjectOperation().FindObjectBatch(params, data)
 }
 
 // CreateObject create a new object
@@ -48,7 +46,7 @@ func (s *topoService) CreateObject(params types.ContextParams, pathParams, query
 
 // SearchObject search some objects by condition
 func (s *topoService) SearchObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	fmt.Println("SearchObject")
+
 	cond := condition.CreateCondition()
 
 	if err := cond.Parse(data); nil != err {

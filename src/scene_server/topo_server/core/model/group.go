@@ -45,6 +45,9 @@ type Group interface {
 	SetIndex(groupIndex int64)
 	GetIndex() int64
 
+	SetObjectID(objID string)
+	GetObjectID() string
+
 	SetSupplierAccount(supplierAccount string)
 	GetSupplierAccount() string
 
@@ -60,6 +63,7 @@ type Group interface {
 var _ Group = (*group)(nil)
 
 type group struct {
+	FieldValid
 	grp       metadata.Group
 	isNew     bool
 	params    types.ContextParams
@@ -74,21 +78,43 @@ func (g *group) Origin() metadata.Group {
 	return g.grp
 }
 
+func (g *group) SetObjectID(objID string) {
+	g.grp.ObjectID = objID
+}
+func (g *group) GetObjectID() string {
+	return g.grp.ObjectID
+}
+
+func (g *group) IsValid(isUpdate bool, data frtypes.MapStr) error {
+
+	if !isUpdate || data.Exists(metadata.GroupFieldGroupID) {
+		if _, err := g.FieldValid.Valid(g.params, data, metadata.GroupFieldGroupID); nil != err {
+			return err
+		}
+	}
+
+	if !isUpdate || data.Exists(metadata.GroupFieldGroupName) {
+		if _, err := g.FieldValid.Valid(g.params, data, metadata.GroupFieldGroupName); nil != err {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (g *group) Create() error {
 
-	cond := condition.CreateCondition()
-	cond.Field(metadata.GroupFieldGroupID).Eq(g.grp.GroupID)
-	cond.Field(metadata.GroupFieldGroupIndex).Eq(g.grp.GroupIndex)
-	cond.Field(metadata.GroupFieldGroupName).Eq(g.grp.GroupName)
-
-	grpItems, err := g.search(cond)
-	if nil != err {
-		blog.Errorf("[model-grp] failed to search the groups by the condition(%#v), error info is %s", cond, err.Error())
+	if err := g.IsValid(false, g.grp.ToMapStr()); nil != err {
 		return err
 	}
 
-	if 0 != len(grpItems) {
-		blog.Errorf("[model-grp] the group(%#v) is repeated", g.grp)
+	g.grp.OwnerID = g.params.SupplierAccount
+	exists, err := g.IsExists()
+	if nil != err {
+		return err
+	}
+
+	if exists {
 		return g.params.Err.Error(common.CCErrCommDuplicateItem)
 	}
 
@@ -110,6 +136,19 @@ func (g *group) Create() error {
 }
 
 func (g *group) Update(data frtypes.MapStr) error {
+
+	if err := g.IsValid(true, data); nil != err {
+		return err
+	}
+
+	exists, err := g.IsExists()
+	if nil != err {
+		return err
+	}
+
+	if exists {
+		return g.params.Err.Error(common.CCErrCommDuplicateItem)
+	}
 
 	cond := condition.CreateCondition()
 	cond.Field(metadata.GroupFieldGroupID).Eq(g.grp.GroupID)
@@ -142,39 +181,35 @@ func (g *group) Update(data frtypes.MapStr) error {
 	return nil
 }
 
-func (g *group) Delete() error {
-
-	rsp, err := g.clientSet.ObjectController().Meta().DeletePropertyGroup(context.Background(), g.grp.GroupID, g.params.Header)
-	if nil != err {
-		blog.Error("[model-grp]failed to request object controller, error info is %s", err.Error())
-		return err
-	}
-
-	if common.CCSuccess != rsp.Code {
-		blog.Errorf("[model-grp]failed to delte the group(%s), error info is %s", g.grp.GroupID, rsp.ErrMsg)
-		return g.params.Err.Error(common.CCErrTopoObjectGroupDeleteFailed)
-	}
-
-	return nil
-}
-
 func (g *group) IsExists() (bool, error) {
 
+	// check id
 	cond := condition.CreateCondition()
 	cond.Field(metadata.GroupFieldGroupID).Eq(g.grp.GroupID)
-
-	rsp, err := g.clientSet.ObjectController().Meta().SelectGroup(context.Background(), g.params.Header, cond.ToMapStr())
+	cond.Field(metadata.ModelFieldObjectID).Eq(g.grp.ObjectID)
+	cond.Field(metadata.GroupFieldID).NotIn([]int64{g.grp.ID})
+	grps, err := g.search(cond)
 	if nil != err {
-		blog.Errorf("failed to request object controller ,error info is %s", err.Error())
 		return false, err
 	}
-
-	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to query group, error info is  %s", rsp.ErrMsg)
-		return false, g.params.Err.Error(common.CCErrTopoObjectGroupSelectFailed)
+	if 0 != len(grps) {
+		return true, nil
 	}
 
-	return 0 != len(rsp.Data), nil
+	// check name
+	cond = condition.CreateCondition()
+	cond.Field(metadata.GroupFieldID).NotIn([]int64{g.grp.ID})
+	cond.Field(metadata.ModelFieldObjectID).Eq(g.grp.ObjectID)
+	cond.Field(metadata.GroupFieldGroupName).Eq(g.grp.GroupName)
+	grps, err = g.search(cond)
+	if nil != err {
+		return false, err
+	}
+	if 0 != len(grps) {
+		return true, nil
+	}
+
+	return false, nil
 }
 
 func (g *group) Parse(data frtypes.MapStr) (*metadata.Group, error) {
@@ -235,15 +270,25 @@ func (g *group) search(cond condition.Condition) ([]metadata.Group, error) {
 
 	return rsp.Data, nil
 }
-func (g *group) Save() error {
+func (g *group) Save(data frtypes.MapStr) error {
+
+	if nil != data {
+		if _, err := g.grp.Parse(data); nil != err {
+			return err
+		}
+	}
 
 	if exists, err := g.IsExists(); nil != err {
 		return err
 	} else if !exists {
 		return g.Create()
 	}
-	data := metadata.SetValueToMapStrByTags(g.grp)
-	return g.Update(data)
+
+	if nil != data {
+		return g.Update(data)
+	}
+
+	return g.Update(g.grp.ToMapStr())
 }
 
 func (g *group) CreateAttribute() Attribute {

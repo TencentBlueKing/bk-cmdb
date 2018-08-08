@@ -110,6 +110,56 @@ func (s *Service) getSets(req *restful.Request, resp *restful.Response) {
 	converter.RespSuccessV2(resDataV2, resp)
 }
 
+func (s *Service) getsetproperty(req *restful.Request, resp *restful.Response) {
+	resDataV2 := common.KvMap{
+		/*"option" : [
+		    {
+		        "id" : "2",
+		        "name" : "体验",
+		        "type" : "text",
+		        "is_default" : false
+		    },
+		    {
+		        "id" : "3",
+		        "name" : "正式",
+		        "type" : "text",
+		        "is_default" : true
+		    },
+		    {
+		        "id" : "1",
+		        "name" : "测试",
+		        "type" : "text",
+		        "is_default" : false
+		    }
+		]*/
+		"SetEnviType": []common.KvMap{
+			common.KvMap{"Property": "1", "value": "1"},
+			common.KvMap{"Property": "2", "value": "2"},
+			common.KvMap{"Property": "3", "value": "3"},
+		},
+		/*"option" : [
+		    {
+		        "id" : "2",
+		        "name" : "关闭",
+		        "type" : "text",
+		        "is_default" : false
+		    },
+		    {
+		        "id" : "1",
+		        "name" : "开放",
+		        "type" : "text",
+		        "is_default" : true
+		    }
+		]*/
+		"SetServiceStatus": []common.KvMap{
+			common.KvMap{"Property": "0", "value": "2"},
+			common.KvMap{"Property": "1", "value": "1"},
+		},
+	}
+
+	converter.RespSuccessV2(resDataV2, resp)
+}
+
 func (s *Service) getModulesByProperty(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
@@ -207,8 +257,6 @@ func (s *Service) addSet(req *restful.Request, resp *restful.Response) {
 
 	reqParam[common.BKSetNameField] = formData["SetName"][0]
 
-	reqParam[common.BKOwnerIDField] = user
-
 	appID := formData["ApplicationID"][0]
 	reqParam[common.BKInstParentStr], err = strconv.Atoi(appID)
 	if nil != err {
@@ -268,23 +316,35 @@ func (s *Service) addSet(req *restful.Request, resp *restful.Response) {
 			reqParam[k] = v
 		}
 	}
+	topoLevel, err := s.Logics.CheckAppTopoIsThreeLevel(user, pheader)
+	if err != nil {
+		blog.Error("AddSet CheckAppTopoIsThreeLevel error:%v", err)
+		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, err.Error()).Error(), resp)
+		return
+	}
+	if false == topoLevel {
+		blog.Error("AddSet CheckAppTopoIsThreeLevel  mainline topology level not three")
+		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, "business topology level is more than three, please use the v3 api instead").Error(), resp)
+		return
+	}
 	delete(reqParam, "ChnName")
+
 	reqParam, err = s.Logics.AutoInputV3Field(reqParam, common.BKInnerObjIDSet, user, pheader)
 	blog.Infof("addSet reqParam:%v", reqParam)
 
 	result, err := s.CoreAPI.TopoServer().Instance().CreateSet(context.Background(), appID, pheader, reqParam)
 	if nil != err {
 		blog.Errorf("addSet error:%v", err)
-		converter.RespFailV2(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), resp)
+		converter.RespFailV2(common.CCErrTopoSetCreateFailed, defErr.Error(common.CCErrTopoSetCreateFailed).Error(), resp)
 		return
 	}
 	if !result.Result {
 		msg = fmt.Sprintf("%s", result.ErrMsg)
 		blog.Errorf("addSet error:%s", msg)
-		converter.RespFailV2(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), resp)
+		converter.RespFailV2(common.CCErrTopoSetCreateFailed, defErr.Error(common.CCErrTopoSetCreateFailed).Error(), resp)
 		return
 	}
-	rspDataV3Map, _ := result.Data.(map[string]interface{})
+	rspDataV3Map := result.Data
 	blog.Infof("rsp_v3:%v", result.Data)
 	converter.RespSuccessV2(rspDataV3Map, resp)
 }
@@ -546,7 +606,7 @@ func (s *Service) delSetHost(req *restful.Request, resp *restful.Response) {
 
 	formData := req.Request.Form
 
-	blog.Debug("delSetHost data: %s", formData)
+	blog.V(3).Infof("delSetHost data: %s", formData)
 
 	res, msg := utils.ValidateFormData(formData, []string{"ApplicationID", "SetID"})
 	if !res {

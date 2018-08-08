@@ -71,6 +71,9 @@ func (cli *condition) Parse(data types.MapStr) error {
 	var fieldFunc func(tmpField *field, val interface{})
 	fieldFunc = func(tmpField *field, val interface{}) {
 
+		if nil == val {
+			return
+		}
 		valType := reflect.TypeOf(val)
 
 		switch valType.Kind() {

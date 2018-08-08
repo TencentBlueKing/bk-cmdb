@@ -31,7 +31,6 @@
             </div>
         </slot>
         <div class="table-container">
-            <v-breadcrumb class="breadcrumbs"></v-breadcrumb>
             <div class="btn-wrapper clearfix" :class="{'disabled': !table.chooseId.length}">
                 <bk-dropdown-menu ref="dropdown" class="mr10" :trigger="'click'">
                     <bk-button class="dropdown-btn" type="default" slot="dropdown-trigger" style="width:100px" :disabled="!table.chooseId.length">
@@ -47,33 +46,38 @@
                     </ul>
                 </bk-dropdown-menu>
                 <slot name="btnGroup">
-                    <div class="btn-group clearfix">
-                        <button class="bk-button bk-default"
-                            :disabled="!table.chooseId.length" 
-                            @click="multipleUpdate">
-                            <i class="icon-cc-edit"></i>
-                            <span>{{$t("BusinessTopology['修改']")}}</span>
-                        </button>
-                        <button class="bk-button"
-                            :disabled="!table.chooseId.length"
-                            @click="transferHost">
-                            <i class="icon-cc-shift"></i>
-                            <span>{{$t("BusinessTopology['转移']")}}</span>
-                        </button>
-                        <form ref="exportForm" :action="exportUrl" method="POST" style="display: inline-block;">
-                            <input type="hidden" name="bk_host_id" :value="table.chooseId">
-                            <input type="hidden" name="bk_biz_id" value="-1">
-                            <button class="bk-button"
-                                :disabled="!table.chooseId.length"
-                                @click.prevent="exportChoose">
-                                <i class="icon-cc-derivation"></i>
-                                <span>{{$t("HostResourcePool['导出选中']")}}</span>
+                    <div class="bk-group btn-group bk-button-group clearfix">
+                        <div class="btn-tooltip-wrapper" v-tooltip="$t('BusinessTopology[\'修改\']')">
+                            <button class="bk-button bk-default"
+                                :disabled="!table.chooseId.length" 
+                                @click="multipleUpdate">
+                                <i class="icon-cc-edit"></i>
                             </button>
-                        </form>
-                        <button class="bk-button" v-if="isShowCrossImport" @click="handleCrossImport">{{$t("Common['跨业务导入']")}}</button>
-                        <button class="bk-button button-setting" @click="setTableField" v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')">
+                        </div>
+                        <div class="btn-tooltip-wrapper" v-tooltip="$t('BusinessTopology[\'转移\']')">
+                            <bk-button type="default"
+                                :disabled="!table.chooseId.length"
+                                @click="transferHost">
+                                <i class="icon-cc-shift"></i>
+                            </bk-button>
+                        </div>
+                        <div class="btn-tooltip-wrapper" v-tooltip="$t('HostResourcePool[\'导出选中\']')">
+                            <form ref="exportForm" :action="exportUrl" method="POST" style="display: inline-block;">
+                                <input type="hidden" name="bk_host_id" :value="table.chooseId">
+                                <input type="hidden" name="bk_biz_id" value="-1">
+                                <bk-button type="default"
+                                    class="center"
+                                    btnType="submit"
+                                    :disabled="!table.chooseId.length"
+                                    @click.prevent="exportChoose">
+                                    <i class="icon-cc-derivation"></i>
+                                </bk-button>
+                            </form>
+                        </div>
+                        <bk-button type="default" v-if="isShowCrossImport" @click="handleCrossImport">{{$t("Common['跨业务导入']")}}</bk-button>
+                        <bk-button type="default" class="button-setting last" @click="setTableField" v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')">
                             <i class="icon-cc-setting"></i>
-                        </button>
+                        </bk-button>
                         <bk-button type="primary" :loading="$loading('hostSearch')" v-show="isShowRefresh" @click="setTableCurrentPage(1, true)" class="fr mr0">
                             {{$t("HostResourcePool['刷新查询']")}}
                         </bk-button>
@@ -88,7 +92,7 @@
                 :pagination.sync="table.pagination"
                 :loading="table.isLoading || outerLoading"
                 :checked="table.chooseId"
-                :wrapperMinusHeight="150"
+                :wrapperMinusHeight="wrapperMinusHeight"
                 :visible="tableVisible"
                 @handlePageChange="setTableCurrentPage"
                 @handleSizeChange="setTablePageSize"
@@ -182,7 +186,7 @@
                 </v-field>
             </div>
         </v-sideslider>
-        <v-host-transfer-pop
+        <v-host-transfer-pop v-if="isShowTransfer"
             :isShow.sync="transfer.isShow"
             :chooseId="table.chooseId"
             :hosts="selectedList"
@@ -201,7 +205,6 @@
     import vHostTransferPop from '@/components/hostTransferPop/hostTransferPop'
     import vHistory from '@/components/history/history'
     import vField from '@/components/field/field'
-    import vBreadcrumb from '@/components/common/breadcrumb/breadcrumb'
     import vStatus from './children/status.vue'
     import vHost from './children/host'
     import vRouter from './children/router'
@@ -232,6 +235,10 @@
                 type: Boolean,
                 default: true
             },
+            isShowTransfer: {
+                type: Boolean,
+                default: true
+            },
             isShowRefresh: {
                 type: Boolean,
                 default: false
@@ -247,6 +254,10 @@
             tableVisible: {
                 type: Boolean,
                 default: true
+            },
+            wrapperMinusHeight: {
+                type: Number,
+                default: 150
             }
         },
         data () {
@@ -267,7 +278,7 @@
                         count: 0
                     },
                     chooseId: [],
-                    isLoading: true
+                    isLoading: false
                 },
                 filter: {
                     queryColumns: [],
@@ -425,7 +436,7 @@
                         text.push(value)
                     }
                 })
-                return text.join(',')
+                return text.join('\n')
             },
             setSelectedList (newId, oldId) {
                 let diffIdList = newId.concat(oldId).filter(id => !newId.includes(id) || !oldId.includes(id))
@@ -966,6 +977,10 @@
                 })
             })
         },
+        beforeRouteLeave (to, from, next) {
+            this.$store.commit('resetHostSearch')
+            next()
+        },
         components: {
             vTable,
             vFilter,
@@ -977,8 +992,7 @@
             vRouter,
             vHostTransferPop,
             vHistory,
-            vField,
-            vBreadcrumb
+            vField
         }
     }
 </script>
@@ -988,31 +1002,22 @@
     height: 100%;
 }
 .table-container{
-    padding: 0 20px;
+    padding: 20px 20px 0;
     height: 100%;
     overflow: hidden;
-    .breadcrumbs{
-        padding: 8px 0;
-    }
     .dropdown-btn{
         width: 100px;
         cursor: pointer;
     }
     .btn-group{
         display: inline-block;
-        width: calc(100% - 110px);
+        width: calc(100% - 111px);
         vertical-align: middle;
         font-size: 0;
         .bk-button{
             font-size: 14px;
-            margin-right: 10px;
             &:disabled{
                 cursor: not-allowed !important;
-            }
-            &.button-setting{
-                width: 36px;
-                padding: 0;
-                min-width: auto;
             }
             &.button-search{
                 width: 178px;

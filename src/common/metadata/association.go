@@ -31,16 +31,16 @@ const (
 
 // Association define object association struct
 type Association struct {
-	ID               int64  `field:"id" json:"id"`
-	ObjectID         string `field:"bk_obj_id" json:"bk_obj_id"`
-	OwnerID          string `field:"bk_supplier_account" json:"bk_supplier_account"`
-	AsstForward      string `field:"bk_asst_forward" json:"bk_asst_forward"`
-	AsstObjID        string `field:"bk_asst_obj_id" json:"bk_asst_obj_id"`
-	AsstName         string `field:"bk_asst_name" json:"bk_asst_name"`
-	ObjectAttID      string `field:"bk_object_att_id" json:"bk_object_att_id"`
-	ClassificationID string `field:"bk_classification_id"`
-	ObjectIcon       string `field:"bk_obj_icon"`
-	ObjectName       string `field:"bk_obj_name"`
+	ID               int64  `field:"id" json:"id" bson:"id"`
+	ObjectID         string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
+	OwnerID          string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	AsstForward      string `field:"bk_asst_forward" json:"bk_asst_forward" bson:"bk_asst_forward"`
+	AsstObjID        string `field:"bk_asst_obj_id" json:"bk_asst_obj_id" bson:"bk_asst_obj_id"`
+	AsstName         string `field:"bk_asst_name" json:"bk_asst_name" bson:"bk_asst_name"`
+	ObjectAttID      string `field:"bk_object_att_id" json:"bk_object_att_id" bson:"bk_object_att_id"`
+	ClassificationID string `field:"bk_classification_id" bson:"-"`
+	ObjectIcon       string `field:"bk_obj_icon" bson:"-"`
+	ObjectName       string `field:"bk_obj_name" bson:"-"`
 }
 
 // Parse load the data from mapstr attribute into attribute instance
@@ -66,6 +66,15 @@ type InstAsst struct {
 	ObjectID     string `field:"bk_obj_id" json:"bk_obj_id"`
 	AsstInstID   int64  `field:"bk_asst_inst_id" json:"bk_asst_inst_id"`
 	AsstObjectID string `field:"bk_asst_obj_id" json:"bk_asst_obj_id"`
+}
+type InstNameAsst struct {
+	ID         string                 `json:"id"`
+	ObjID      string                 `json:"bk_obj_id"`
+	ObjIcon    string                 `json:"bk_obj_icon"`
+	InstID     int64                  `json:"bk_inst_id"`
+	ObjectName string                 `json:"bk_obj_name"`
+	InstName   string                 `json:"bk_inst_name"`
+	InstInfo   map[string]interface{} `json:"inst_info,omitempty"`
 }
 
 // Parse load the data from mapstr attribute into attribute instance

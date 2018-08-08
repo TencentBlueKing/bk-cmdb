@@ -15,6 +15,7 @@ package metadata
 import (
 	"time"
 
+	"configcenter/src/common"
 	types "configcenter/src/common/mapstr"
 )
 
@@ -37,36 +38,125 @@ const (
 
 // Object object metadata definition
 type Object struct {
-	ID          int64      `field:"id" json:"id"`
-	ObjCls      string     `field:"bk_classification_id" json:"bk_classification_id"`
-	ObjIcon     string     `field:"bk_obj_icon" json:"bk_obj_icon"`
-	ObjectID    string     `field:"bk_obj_id" json:"bk_obj_id"`
-	ObjectName  string     `field:"bk_obj_name" json:"bk_obj_name"`
-	IsPre       bool       `field:"ispre" json:"ispre"`
-	IsPaused    bool       `field:"bk_ispaused" json:"bk_ispaused"`
-	Position    string     `field:"position" json:"position"`
-	OwnerID     string     `field:"bk_supplier_account" json:"bk_supplier_account"`
-	Description string     `field:"description" json:"description"`
-	Creator     string     `field:"creator" json:"creator"`
-	Modifier    string     `field:"modifier" json:"modifier"`
-	CreateTime  *time.Time `field:"create_time" json:"create_time"`
-	LastTime    *time.Time `field:"last_time" json:"last_time"`
+	ID          int64      `field:"id" json:"id" bson:"id"`
+	ObjCls      string     `field:"bk_classification_id" json:"bk_classification_id" bson:"bk_classification_id"`
+	ObjIcon     string     `field:"bk_obj_icon" json:"bk_obj_icon" bson:"bk_obj_icon"`
+	ObjectID    string     `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
+	ObjectName  string     `field:"bk_obj_name" json:"bk_obj_name" bson:"bk_obj_name"`
+	IsPre       bool       `field:"ispre" json:"ispre" bson:"ispre"`
+	IsPaused    bool       `field:"bk_ispaused" json:"bk_ispaused" bson:"bk_ispaused"`
+	Position    string     `field:"position" json:"position" bson:"position"`
+	OwnerID     string     `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	Description string     `field:"description" json:"description" bson:"description"`
+	Creator     string     `field:"creator" json:"creator" bson:"creator"`
+	Modifier    string     `field:"modifier" json:"modifier" bson:"modifier"`
+	CreateTime  *time.Time `field:"create_time" json:"create_time" bson:"create_time"`
+	LastTime    *time.Time `field:"last_time" json:"last_time" bson:"last_time"`
+}
+
+// GetDefaultInstPropertyName get default inst
+func (o *Object) GetDefaultInstPropertyName() string {
+	return o.ObjectID
+}
+
+// GetInstIDFieldName get instid filed
+func (o *Object) GetInstIDFieldName() string {
+
+	switch o.ObjectID {
+	case common.BKInnerObjIDApp:
+		return common.BKAppIDField
+	case common.BKInnerObjIDSet:
+		return common.BKSetIDField
+	case common.BKInnerObjIDModule:
+		return common.BKModuleIDField
+	case common.BKINnerObjIDObject:
+		return common.BKInstIDField
+	case common.BKInnerObjIDHost:
+		return common.BKHostIDField
+	case common.BKInnerObjIDProc:
+		return common.BKProcIDField
+	case common.BKInnerObjIDPlat:
+		return common.BKCloudIDField
+	default:
+		return common.BKInstIDField
+	}
+
+}
+
+// GetInstNameFieldName get the inst name
+func (o *Object) GetInstNameFieldName() string {
+	switch o.ObjectID {
+	case common.BKInnerObjIDApp:
+		return common.BKAppNameField
+	case common.BKInnerObjIDSet:
+		return common.BKSetNameField
+	case common.BKInnerObjIDModule:
+		return common.BKModuleNameField
+	case common.BKInnerObjIDHost:
+		return common.BKHostInnerIPField
+	case common.BKInnerObjIDProc:
+		return common.BKProcNameField
+	case common.BKInnerObjIDPlat:
+		return common.BKCloudNameField
+	default:
+		return common.BKInstNameField
+	}
+}
+
+// GetObjectType get the object type
+func (o *Object) GetObjectType() string {
+	switch o.ObjectID {
+	case common.BKInnerObjIDApp:
+		return o.ObjectID
+	case common.BKInnerObjIDSet:
+		return o.ObjectID
+	case common.BKInnerObjIDModule:
+		return o.ObjectID
+	case common.BKInnerObjIDHost:
+		return o.ObjectID
+	case common.BKInnerObjIDProc:
+		return o.ObjectID
+	case common.BKInnerObjIDPlat:
+		return o.ObjectID
+	default:
+		return common.BKINnerObjIDObject
+	}
+}
+
+// IsCommon is common object
+func (o *Object) IsCommon() bool {
+	switch o.ObjectID {
+	case common.BKInnerObjIDApp:
+		return false
+	case common.BKInnerObjIDSet:
+		return false
+	case common.BKInnerObjIDModule:
+		return false
+	case common.BKInnerObjIDHost:
+		return false
+	case common.BKInnerObjIDProc:
+		return false
+	case common.BKInnerObjIDPlat:
+		return false
+	default:
+		return true
+	}
 }
 
 // Parse load the data from mapstr object into object instance
-func (cli *Object) Parse(data types.MapStr) (*Object, error) {
+func (o *Object) Parse(data types.MapStr) (*Object, error) {
 
-	err := SetValueToStructByTags(cli, data)
+	err := SetValueToStructByTags(o, data)
 	if nil != err {
 		return nil, err
 	}
 
-	return cli, err
+	return o, err
 }
 
 // ToMapStr to mapstr
-func (cli *Object) ToMapStr() types.MapStr {
-	return SetValueToMapStrByTags(cli)
+func (o *Object) ToMapStr() types.MapStr {
+	return SetValueToMapStrByTags(o)
 }
 
 // MainLineObject main line object definition
@@ -94,19 +184,11 @@ type ObjectDes struct {
 }
 
 type ObjectClsDes struct {
-	ID      int    `json:"id"`
-	ClsID   string `json:"bk_classification_id"`
-	ClsName string `json:"bk_classification_name"`
-	ClsType string `json:"bk_classification_type"`
-	ClsIcon string `json:"bk_classification_icon"`
-}
-
-type ObjAttDes struct {
-	Attribute         `json:",inline"`
-	AssoType          int    `json:"bk_asst_type"`
-	AsstForward       string `json:"bk_asst_forward"`
-	AssociationID     string `json:"bk_asst_obj_id"`
-	PropertyGroupName string `json:"bk_property_group_name"`
+	ID      int    `json:"id" bson:"id"`
+	ClsID   string `json:"bk_classification_id" bson:"bk_classification_id"`
+	ClsName string `json:"bk_classification_name" bson:"bk_classification_name"`
+	ClsType string `json:"bk_classification_type" bson:"bk_classification_type" `
+	ClsIcon string `json:"bk_classification_icon" bson:"bk_classification_icon"`
 }
 
 type InnerModule struct {

@@ -476,20 +476,21 @@
                         })
                         subscriptionForm[val['bk_obj_id']] = []
                     })
-                    if (classify['bk_classification_id'] === 'bk_organization') {
-                        event.children.push({
-                            id: 'set',
-                            name: this.$t("Hosts['集群']")
-                        })
-                        subscriptionForm['set'] = []
-                        event.children.push({
-                            id: 'module',
-                            name: this.$t("Hosts['模块']")
-                        })
-                        subscriptionForm['module'] = []
-                    }
                     eventPushList.push(event)
                 })
+                eventPushList.unshift({
+                    name: this.$t("BusinessTopology['业务拓扑']"),
+                    isHidden: false,
+                    children: [{
+                        id: 'set',
+                        name: this.$t("Hosts['集群']")
+                    }, {
+                        id: 'module',
+                        name: this.$t("Hosts['模块']")
+                    }]
+                })
+                subscriptionForm['set'] = []
+                subscriptionForm['module'] = []
                 subscriptionForm['resource'] = []
                 subscriptionForm['host'] = []
                 this.$set(this.tempEventData, 'subscription_form', subscriptionForm)

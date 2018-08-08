@@ -25,7 +25,7 @@
                     <textarea v-model="selectedName" disabled name="" id="" cols="30" rows="10"></textarea>
                     <bk-button :disabled="attribute.isShow" v-tooltip="$t('Common[\'新增\']')" type="primary" class="btn-icon icon-cc-plus" @click="toggleContentSelector(true)"></bk-button>
                 </div>
-                <div v-show="attribute.isShow">
+                <div v-show="attribute.isShow" ref="userapiContentSelector" style="position: relative;">
                     <bk-select class="fl userapi-content-selector"
                         ref="content"
                         @on-toggle="toggleContentSelector"
@@ -44,7 +44,7 @@
         </div>
         <div class="userapi-group list">
             <ul class="userapi-list">
-                <li :key="`${property.bkPropertyId}-${property.bkObjId}`" class="userapi-item clearfix" v-for="(property, index) in userProperties" :style="{zIndex: userProperties.length - index}">
+                <li :key="`${property.bkPropertyId}-${property.bkObjId}`" class="userapi-item clearfix" v-for="(property, index) in userProperties" @click="setZIndex($event)">
                     <label class="userapi-name fl" :title="`${property.bkObjName} - ${property.bkPropertyName}`">{{property.bkObjName}} - {{property.bkPropertyName}}</label>
                     <span v-if="property.bkPropertyType === 'time'">
                         <bk-daterangepicker class="userapi-date fl"
@@ -53,7 +53,6 @@
                             :timer="true"
                             :start-date="property.value.split(' - ')[0]"
                             :end-date="property.value.split(' - ')[1]"
-                            :init-date="property.value"
                             @change="setUserPropertyTime(...arguments, index)">
                         </bk-daterangepicker>
                     </span>
@@ -97,7 +96,7 @@
             </ul>
             <div class="userapi-new" v-click-outside="clickOutside">
                 <button class="userapi-new-btn" @click="toggleUserAPISelector(true)">{{$t("CustomQuery['新增查询条件']")}}</button>
-                <div class="userapi-pop-wrapper">
+                <div class="userapi-pop-wrapper" ref="userapiPop">
                     <div class="userapi-new-selector-pop" v-show="isPropertiesShow">
                         <p class="pop-title">{{$t("CustomQuery['新增查询条件']")}}</p>
                         <bk-select class="userapi-new-selector" 
@@ -142,7 +141,7 @@
                 {{$t("Common['删除']")}}
             </bk-button>
         </div>
-        <v-preview :isPreviewShow.sync="isPreviewShow" :apiParams="apiParams" :attribute="object"></v-preview>
+        <v-preview ref="preview" :isPreviewShow.sync="isPreviewShow" :apiParams="apiParams" :attribute="object"></v-preview>
     </div>
 </template>
 <script>
@@ -220,6 +219,11 @@
                         id: 'module',
                         name: this.$t("Hosts['模块']"),
                         properties: []
+                    },
+                    'biz': {
+                        id: 'biz',
+                        name: this.$t("Common['业务']"),
+                        properties: []
                     }
                 },
                 selectedObjId: 'host',
@@ -231,7 +235,9 @@
                 operatorMap: {
                     'time': '$in',
                     'enum': '$eq'
-                }
+                },
+                saveSuccess: false,
+                zIndex: 100
             }
         },
         computed: {
@@ -383,20 +389,26 @@
             this.initObjectProperties()
         },
         methods: {
+            setZIndex (event) {
+                event.currentTarget.style.zIndex = ++this.zIndex
+            },
             toggleContentSelector (isShow) {
+                this.$refs.userapiContentSelector.style.zIndex = ++this.zIndex
                 this.$refs.content.open = isShow
                 this.attribute.isShow = isShow
             },
             isCloseConfirmShow () {
-                if (this.name !== this.dataCopy.name || this.dataCopy.attributeSelected !== this.attribute.selected || this.userProperties.length !== this.dataCopy.userProperties.length) {
-                    return true
-                }
-                for (let i = 0; i < this.userProperties.length; i++) {
-                    let property = this.userProperties[i]
-                    let propertyCopy = this.dataCopy.userProperties[i]
-                    for (let key in property) {
-                        if (property[key] !== propertyCopy[key]) {
-                            return true
+                if (!this.saveSuccess) {
+                    if (this.name !== this.dataCopy.name || this.dataCopy.attributeSelected !== this.attribute.selected || this.userProperties.length !== this.dataCopy.userProperties.length) {
+                        return true
+                    }
+                    for (let i = 0; i < this.userProperties.length; i++) {
+                        let property = this.userProperties[i]
+                        let propertyCopy = this.dataCopy.userProperties[i]
+                        for (let key in property) {
+                            if (property[key] !== propertyCopy[key]) {
+                                return true
+                            }
                         }
                     }
                 }
@@ -424,11 +436,12 @@
                 }
             },
             initObjectProperties () {
-                this.$Axios.all([this.getObjectProperty('host'), this.getObjectProperty('set'), this.getObjectProperty('module')])
-                .then(this.$Axios.spread((hostRes, setRes, moduleRes) => {
+                this.$Axios.all([this.getObjectProperty('host'), this.getObjectProperty('set'), this.getObjectProperty('module'), this.getObjectProperty('biz')])
+                .then(this.$Axios.spread((hostRes, setRes, moduleRes, bizRes) => {
                     this.object['host']['properties'] = (hostRes.result ? hostRes.data : []).filter(property => !property['bk_isapi'])
                     this.object['set']['properties'] = (setRes.result ? setRes.data : []).filter(property => !property['bk_isapi'])
                     this.object['module']['properties'] = (moduleRes.result ? moduleRes.data : []).filter(property => !property['bk_isapi'])
+                    this.object['biz']['properties'] = (bizRes.result ? bizRes.data : []).filter(property => !property['bk_isapi'])
                     this.addDisabled()
                 }))
             },
@@ -600,6 +613,7 @@
                     this.propertySelected.module = properties.module.join(',')
                 }
                 this.isPropertiesShow = isPropertiesShow
+                this.$refs.userapiPop.style.zIndex = ++this.zIndex
             },
             clickOutside () {
                 this.toggleUserAPISelector(false)
@@ -608,6 +622,7 @@
             resetDefine () {
                 this.isPropertiesShow = false
                 this.isPreviewShow = false
+                this.saveSuccess = false
                 this.name = ''
                 this.userProperties = []
                 this.attribute.selected = this.attribute.default.map(({bk_property_id: bkPropertyId}) => bkPropertyId).join(',')
@@ -664,6 +679,7 @@
             previewUserAPI () {
                 this.$validator.validateAll().then(isValid => {
                     if (isValid) {
+                        this.$refs.preview.$el.style.zIndex = ++this.zIndex
                         this.isPreviewShow = true
                     } else {
                         this.$alertMsg(this.errors.all()[0])

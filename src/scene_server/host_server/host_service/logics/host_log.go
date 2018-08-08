@@ -452,7 +452,7 @@ func (h *HostModuleConfigLog) SaveLog(appID, user string) error {
 	if "" == h.desc {
 		h.desc = "host module change"
 	}
-	opClient := auditlog.NewClient(h.auditCtrl)
+	opClient := auditlog.NewClient(h.auditCtrl, h.req.Request.Header)
 	_, err = opClient.AuditHostsLog(logs, h.desc, h.ownerID, appID, user, auditoplog.AuditOpTypeHostModule)
 
 	return err

@@ -12,12 +12,10 @@
         <ul class="relevance-box" v-show="!isLoading">
             <template v-if="ztreeDataSourceList.length">
                 <v-tree :list="ztreeDataSourceList"
-                    :treeType="'list'"
                     :callback='nodeClick'
                     :expand="expandClick"
                     :is-open="false"
-                    :pageTurning="pageTurning"
-                    :pageSize="pageSize"
+                    :detailCallback="detailClick"
                     ref="tree"
                 ></v-tree>
             </template>
@@ -28,12 +26,22 @@
                 </div>
             </template>
         </ul>
+        <v-attribute
+            class="list-attribute"
+            ref="attribute"
+            :isShow.sync="attr.isShow"
+            :instId="attr.instId"
+            :objId="attr.objId"
+            :instName="attr.instName"
+            :objName="attr.objName"
+        ></v-attribute>
     </div>
 </template>
 
 <script>
     import vTree from '@/components/tree/tree'
-    import {mapGetters} from 'vuex'
+    import vAttribute from './attribute'
+    import { mapGetters } from 'vuex'
     export default {
         props: {
             // 当前实例ID
@@ -50,7 +58,14 @@
                 isLoading: true,
                 curNode: {},
                 treeItemId: 1,                  // 树形图具体某一项的id 用于区分点击的哪一项 前端递增
-                ztreeDataSourceList: []
+                ztreeDataSourceList: [],
+                attr: {
+                    isShow: false,
+                    instId: '',
+                    objId: '',
+                    instName: '',
+                    objName: ''
+                }
             }
         },
         computed: {
@@ -67,6 +82,13 @@
                 list: 树形图列表
             */
             nodeClick (node, parent, list) {
+            },
+            detailClick (node) {
+                this.attr.instId = node['bk_inst_id']
+                this.attr.objId = node['bk_obj_id']
+                this.attr.instName = node['bk_inst_name']
+                this.attr.objName = node['bk_obj_name']
+                this.attr.isShow = true
             },
             /*
                 节点展开与收起回调事件
@@ -89,29 +111,33 @@
                 }).then(res => {
                     if (res.result) {
                         this.$set(node, 'children', [])
+                        let tree = []
                         res.data.map(model => {
-                            model.name = model['bk_obj_name']
-                            // 加入分页相关信息 默认是第一页 每页10条
-                            model.page = 1
-                            model.pageSize = 10
-                            
-                            model.isExpand = false
-                            model.isFolder = false
-                            model.level = node.level + 1
-                            model.id = this.treeItemId++
-                            if (model.count && model.hasOwnProperty('children') && model.children && model.children.length) {
-                                model.children.map(inst => {
-                                    inst.name = inst['bk_inst_name']
-                                    inst.level = node.level + 2
-                                    inst.id = this.treeItemId++
-                                    inst.children = []
-                                })
-                            } else {
-                                model.children = []
+                            if (model['bk_obj_id'] !== 'plat') {
+                                model.name = model['bk_obj_name']
+                                // 加入分页相关信息 默认是第一页 每页10条
+                                model.page = 1
+                                model.pageSize = 10
+                                
+                                model.isExpand = false
+                                model.isFolder = false
+                                model.level = node.level + 1
+                                model.id = this.treeItemId++
+                                if (model.count && model.hasOwnProperty('children') && model.children && model.children.length) {
+                                    model.children.map(inst => {
+                                        inst.name = inst['bk_inst_name']
+                                        inst.level = node.level + 2
+                                        inst.id = this.treeItemId++
+                                        inst.children = []
+                                    })
+                                } else {
+                                    model.children = []
+                                }
+                                model.loadNode = 2
+                                tree.push(model)
                             }
-                            model.loadNode = 2
                         })
-                        this.$set(node, 'children', res.data)
+                        this.$set(node, 'children', tree)
                         node.loadNode = 2
                     }
                 })
@@ -173,27 +199,31 @@
                         }
                     }
                     let res = await this.$axios.post(`inst/search/topo/owner/${this.bkSupplierAccount}/object/${this.objId}/inst/${this.ObjectID}`, params)
+                    let tree = []
                     res.data.map(model => {
-                        model.level = 1
-                        model.page = 1
-                        model.pageSize = 10
-                        model.loadNode = 2
-                        model.id = this.treeItemId++
-                        model.name = model['bk_obj_name']
-                        if (!model.count) {
-                            model.children = []
-                        }
-                        if (model.count && model.hasOwnProperty('children') && model.children && model.children.length) {
-                            model.children.map(inst => {
-                                inst.name = inst['bk_inst_name']
-                                // 插入层级
-                                inst.level = 2
-                                // 根据添加唯一性id
-                                inst.id = this.treeItemId++
-                            })
+                        if (model['bk_obj_id'] !== 'plat') {
+                            model.level = 1
+                            model.page = 1
+                            model.pageSize = 10
+                            model.loadNode = 2
+                            model.id = this.treeItemId++
+                            model.name = model['bk_obj_name']
+                            if (!model.count) {
+                                model.children = []
+                            }
+                            if (model.count && model.hasOwnProperty('children') && model.children && model.children.length) {
+                                model.children.map(inst => {
+                                    inst.name = inst['bk_inst_name']
+                                    // 插入层级
+                                    inst.level = 2
+                                    // 根据添加唯一性id
+                                    inst.id = this.treeItemId++
+                                })
+                            }
+                            tree.push(model)
                         }
                     })
-                    this.ztreeDataSourceList = res.data
+                    this.ztreeDataSourceList = tree
                 } catch (e) {
                     this.$alertMsg(e.data['bk_error_msg'])
                 } finally {
@@ -202,16 +232,21 @@
             }
         },
         components: {
-            vTree
+            vTree,
+            vAttribute
         }
     }
 </script>
 
 <style lang="scss" scoped>
     .relevance-wrapper{
+        position: relative;
         min-height: 300px;
         .relevance-box{
             height: 100%;
+        }
+        .list-attribute{
+            z-index: 99;
         }
         .relevance-none{
             margin-top: 50px;

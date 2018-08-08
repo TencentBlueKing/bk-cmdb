@@ -57,14 +57,16 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("new proxy client failed, err: %v", err)
 	}
 
-	v3Service.Disc, err = discovery.NewDiscoveryInterface(op.ServConf.RegDiscover)
+	v3Service.Disc, err = discovery.NewDiscoveryInterface(op.ServConf.RegDiscover, "")
 	if err != nil {
 		return fmt.Errorf("new proxy discovery instance failed, err: %v", err)
 	}
 
 	ctnr := restful.NewContainer()
+	ctnr.Router(restful.CurlyRouter{})
 	ctnr.Add(v2Service.V2WebService())
 	ctnr.Add(v3Service.V3WebService())
+	ctnr.Add(v3Service.V3Healthz())
 	server := backbone.Server{
 		ListenAddr: svrInfo.IP,
 		ListenPort: svrInfo.Port,

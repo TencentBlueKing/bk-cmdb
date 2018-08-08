@@ -23,7 +23,6 @@ import (
 	"configcenter/src/common/eventclient"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	metadataTable "configcenter/src/source_controller/api/metadata"
 	"configcenter/src/storage"
 )
 
@@ -38,7 +37,7 @@ const (
 )
 
 //DelSingleHostModuleRelation delete single host module relation
-func (lgc *Logics) DelSingleHostModuleRelation(ec *eventclient.EventContext, hostID, moduleID, appID int64) (bool, error) {
+func (lgc *Logics) DelSingleHostModuleRelation(ec *eventclient.EventContext, hostID, moduleID, appID int64, ownerID string) (bool, error) {
 
 	hostFieldArr := []string{common.BKHostInnerIPField}
 	hostResult := make(map[string]interface{}, 0)
@@ -58,6 +57,7 @@ func (lgc *Logics) DelSingleHostModuleRelation(ec *eventclient.EventContext, hos
 	}
 
 	delCondition := common.KvMap{common.BKAppIDField: appID, common.BKHostIDField: hostID, common.BKModuleIDField: moduleID}
+	delCondition = util.SetModOwner(delCondition, ownerID)
 	num, numError := lgc.Instance.GetCntByCondition(ModuleHostCollection, delCondition)
 	if numError != nil {
 		blog.Errorf("delete single host relation, but get module host relation failed, err: %v", numError)
@@ -94,7 +94,7 @@ func (lgc *Logics) DelSingleHostModuleRelation(ec *eventclient.EventContext, hos
 }
 
 //AddSingleHostModuleRelation add single host module relation
-func (lgc *Logics) AddSingleHostModuleRelation(ec *eventclient.EventContext, hostID, moduleID, appID int64) (bool, error) {
+func (lgc *Logics) AddSingleHostModuleRelation(ec *eventclient.EventContext, hostID, moduleID, appID int64, ownerID string) (bool, error) {
 	hostFieldArr := []string{common.BKHostInnerIPField}
 	hostResult := make(map[string]interface{})
 	errHost := lgc.GetObjectByID(common.BKInnerObjIDHost, hostFieldArr, hostID, &hostResult, common.BKHostIDField)
@@ -136,6 +136,7 @@ func (lgc *Logics) AddSingleHostModuleRelation(ec *eventclient.EventContext, hos
 	}
 
 	moduleHostConfig[common.BKSetIDField] = setID
+	moduleHostConfig = util.SetModOwner(moduleHostConfig, ownerID)
 	_, err = lgc.Instance.Insert(common.BKTableNameModuleHostConfig, moduleHostConfig)
 	if err != nil {
 		blog.Errorf("add single host module relation, add module host relation error:", err.Error())
@@ -184,8 +185,7 @@ func (lgc *Logics) GetModuleIDsByHostID(moduleCond interface{}) ([]int64, error)
 	result := make([]interface{}, 0)
 	var ret []int64
 
-	tableName := metadataTable.ModuleHostConfig{}
-	err := lgc.Instance.GetMutilByCondition(tableName.TableName(), []string{common.BKModuleIDField}, moduleCond, &result, "", 0, common.BKNoLimit)
+	err := lgc.Instance.GetMutilByCondition(common.BKTableNameModuleHostConfig, []string{common.BKModuleIDField}, moduleCond, &result, "", 0, common.BKNoLimit)
 	if nil != err {
 		blog.Error("get moudle id by host id failed, error: %s", err.Error())
 		return ret, errors.New("can not find the module that host belongs to")
@@ -225,11 +225,10 @@ func (lgc *Logics) GetResourcePoolApp(ownerID int64) (int64, error) {
 //check if host belong to empty module
 func (lgc *Logics) CheckHostInIDle(appID, emptyModuleID int64, hostIDs []int64) ([]int64, []int64, error) {
 
-	moduleHostConfig := metadataTable.ModuleHostConfig{}
 	conds := common.KvMap{common.BKHostIDField: bson.M{common.BKDBIN: hostIDs}}
 	result := make([]interface{}, 0)
 
-	err := lgc.Instance.GetMutilByCondition(moduleHostConfig.TableName(), []string{common.BKHostIDField, common.BKModuleIDField, common.BKAppIDField}, conds, &result, "", 0, common.BKNoLimit)
+	err := lgc.Instance.GetMutilByCondition(common.BKTableNameModuleHostConfig, []string{common.BKHostIDField, common.BKModuleIDField, common.BKAppIDField}, conds, &result, "", 0, common.BKNoLimit)
 	if nil != err {
 		return nil, nil, fmt.Errorf("get relation between host and module failed, err: %v", err)
 	}

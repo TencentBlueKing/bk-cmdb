@@ -14,6 +14,7 @@ package metadata
 
 import (
 	"reflect"
+	"strings"
 
 	"configcenter/src/common/blog"
 	types "configcenter/src/common/mapstr"
@@ -64,8 +65,13 @@ func SetValueToMapStrByTags(source interface{}) types.MapStr {
 			continue
 		}
 
+		if 0 == len(tag) || strings.Contains(tag, "ignoretomap") {
+			continue
+		}
+		tags := strings.Split(tag, ",")
+
 		fieldValue := targetValue.FieldByName(structField.Name)
-		values.Set(tag, fieldValue.Interface())
+		values.Set(tags[0], fieldValue.Interface())
 	}
 
 	return values
@@ -90,7 +96,13 @@ func SetValueToStructByTags(target interface{}, values types.MapStr) error {
 			continue
 		}
 
-		tagVal, ok := values[tag]
+		if 0 == len(tag) || strings.Contains(tag, "ignoretostruct") {
+			continue
+		}
+
+		tags := strings.Split(tag, ",")
+
+		tagVal, ok := values[tags[0]]
 		if !ok {
 			continue
 		}
@@ -107,6 +119,8 @@ func SetValueToStructByTags(target interface{}, values types.MapStr) error {
 		switch structField.Type.Kind() {
 		default:
 			blog.Errorf("unsuport the type %s %v", structField.Name, structField.Type.Kind())
+		case reflect.Map:
+			fieldValue.Set(reflect.ValueOf(tagVal))
 		case reflect.Interface:
 			tmpVal := reflect.ValueOf(tagVal)
 			switch tmpVal.Kind() {

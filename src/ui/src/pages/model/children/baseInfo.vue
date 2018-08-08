@@ -12,8 +12,8 @@
     <div class="tab-content">
         <form class="bk-form" id="validate_form">
             <div class="bk-form-item">
-                <div class="from-common-item">
-                    <label class="from-common-label">{{$t('ModelManagement["图标选择"]')}}<span class=""> * </span></label>
+                <div class="form-common-item">
+                    <label class="form-common-label">{{$t('ModelManagement["图标选择"]')}}<span class=""> * </span></label>
                     <div class="form-contain">
                         <div class="select-icon-content">
                             <div class="select-icon-show" @click.stop.prevent="toggleDrop" :class="{'active':isIconDrop}">
@@ -47,9 +47,9 @@
                         </div>
                     </div>
                 </div>
-                <div class="from-common-item">
-                    <label class="from-common-label">{{$t('ModelManagement["中文名称"]')}}<span class=""> * </span></label>
-                    <div class="from-common-content interior-width-control">
+                <div class="form-common-item">
+                    <label class="form-common-label">{{$t('ModelManagement["中文名称"]')}}<span class=""> * </span></label>
+                    <div class="form-common-content interior-width-control">
                         <input type="text" name="" value=""
                             maxlength="20"
                             :disabled="isReadOnly || baseInfo.ispre"
@@ -62,9 +62,9 @@
                             v-model.trim="baseInfo['bk_obj_name']">
                     </div>
                 </div>
-                <div class="from-common-item" style="padding-right: 0">
-                    <label class="from-common-label">{{$t('ModelManagement["英文名称"]')}}<span class=""> * </span></label>
-                    <div class="from-common-content interior-width-control">
+                <div class="form-common-item">
+                    <label class="form-common-label">{{$t('ModelManagement["英文名称"]')}}<span class=""> * </span></label>
+                    <div class="form-common-content interior-width-control">
                         <input type="text" name="" value=""
                             :placeholder="$t('ModelManagement[\'下划线，数字，英文小写的组合\']')"
                             :class="{'is-danger': !baseInfoVerify['bk_obj_id']}" :disabled="type==='change'"
@@ -81,7 +81,7 @@
             </div>
         </form>
         <div class="base-info" v-if="!isReadOnly">
-            <bk-button type="primary" @click="saveBaseInfo">{{$t('Common["确定"]')}}</bk-button>
+            <bk-button type="primary" @click="saveBaseInfo" :loading="$loading('saveBaseInfo')">{{$t('Common["确定"]')}}</bk-button>
             <button class="btn vice-btn cancel-btn-sider" type="default" :title="$t('Common[\'取消\']')" @click="cancel">{{$t('Common["取消"]')}}</button>
         </div>
     </div>
@@ -292,7 +292,7 @@
                             bk_supplier_account: this.bkSupplierAccount,
                             bk_asst_obj_id: this.associationId,
                             bk_obj_icon: this.iconValue
-                        }).then(res => {
+                        }, {id: 'saveBaseInfo'}).then(res => {
                             if (res.result) {
                                 this.$emit('baseInfoSuccess', {
                                     bk_obj_name: this.baseInfo['bk_obj_name'],
@@ -304,7 +304,7 @@
                             }
                         })
                     } else {
-                        this.$axios.post('object', params).then(res => {
+                        this.$axios.post('object', params, {id: 'saveBaseInfo'}).then(res => {
                             if (res.result) {
                                 this.$emit('baseInfoSuccess', {
                                     bk_obj_name: this.baseInfo['bk_obj_name'],
@@ -322,7 +322,7 @@
                         this.cancel()
                     } else {
                         params['bk_ispre'] = this.baseInfo['bk_ispre']
-                        this.$axios.put(`object/${this.baseInfo['id']}`, params).then(res => {
+                        this.$axios.put(`object/${this.baseInfo['id']}`, params, {id: 'saveBaseInfo'}).then(res => {
                             if (res.result) {
                                 this.$alertMsg(this.$t('ModelManagement["修改成功"]'), 'success')
                                 this.$emit('confirm', {
@@ -370,13 +370,15 @@
                 display: table;
                 width: 100%;
             }
-            .from-common-item{
-                // width:240px;
-                padding-right: 46px;
-                margin-right:0;
+            .form-common-item{
+                position: relative;
+                margin-right: 46px;
                 float: left;
                 font-size: 0;
-                .from-common-label{
+                &:last-child{
+                    margin-right: 0;
+                }
+                .form-common-label{
                     display: inline-block;
                     width: 70px;
                     vertical-align: top;
@@ -389,7 +391,7 @@
                         padding-left: 3px;
                     }
                 }
-                .from-common-content{
+                .form-common-content{
                     width:158px;
                     height: 36px;
                     display: inline-block;

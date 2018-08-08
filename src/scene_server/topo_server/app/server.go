@@ -21,6 +21,7 @@ import (
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
+	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -49,7 +50,8 @@ func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 	if err := cfg.MarshalJSONInto(&t.Config); nil != err {
 		blog.Errorf("failed to update config, error info is %s", err.Error())
 	}
-
+	blog.V(3).Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
+	t.Service.SetConfig(t.Config, t.Core)
 }
 
 // Run main function
@@ -75,6 +77,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_TOPO, svrInfo.IP)
 
 	topoSvr := new(TopoServer)
+	topoSvr.Config.BusinessTopoLevelMax = common.BKTopoBusinessLevelDefault
 
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
@@ -112,7 +115,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	topoSvr.Core = engine
 
 	topoService.SetOperation(core.New(engine.CoreAPI), engine.CCErr, engine.Language)
-	topoService.SetConfig(topoSvr.Config)
+	topoService.SetConfig(topoSvr.Config, engine)
 
 	select {
 	case <-ctx.Done():

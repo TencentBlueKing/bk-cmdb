@@ -56,6 +56,8 @@ var AllModule = map[string]bool{
 // cc functionality define
 const (
 	CCFunctionalityServicediscover = "servicediscover"
+	CCFunctionalityMongo           = "mongo"
+	CCFunctionalityRedis           = "redis"
 )
 
 // ServerInfo define base server information
@@ -80,11 +82,6 @@ type WebServerInfo struct {
 
 // AuditControllerServInfo audit-controller server information
 type AuditControllerServInfo struct {
-	ServerInfo
-}
-
-// DataCollectionControllerServInfo data-collection-controller server information
-type DataCollectionControllerServInfo struct {
 	ServerInfo
 }
 

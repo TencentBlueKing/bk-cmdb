@@ -21,18 +21,22 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
 	commontypes "configcenter/src/common/types"
+	"configcenter/src/common/util"
 	"configcenter/src/framework/core/errors"
 )
 
 type EventContext struct {
 	RequestID   string
 	RequestTime commontypes.Time
+	ownerID     string
 	CacheCli    *redis.Client
 }
 
 func NewEventContextByReq(pheader http.Header, cacheCli *redis.Client) *EventContext {
 	// TODO get reqid and time from req
+	ownerID := util.GetOwnerID(pheader)
 	return &EventContext{
+		ownerID:     ownerID,
 		RequestID:   "xxx-xxxx-xxx-xxx",
 		RequestTime: commontypes.Now(),
 		CacheCli:    cacheCli,
@@ -59,6 +63,7 @@ func (c *EventContext) InsertEvent(eventType, objType, action string, curData in
 				PreData: preData,
 			},
 		},
+		OwnerID:     c.ownerID,
 		RequestID:   c.RequestID,
 		RequestTime: c.RequestTime,
 	}

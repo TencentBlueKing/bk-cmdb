@@ -13,18 +13,34 @@
 package service
 
 import (
+	"encoding/json"
+
+	"configcenter/src/common"
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
+
+func (s *topoService) ParseCreateRolePrivilegeOriginData(data []byte) (frtypes.MapStr, error) {
+	rst := []string{}
+	err := json.Unmarshal(data, &rst)
+	if nil != err {
+		return nil, err
+	}
+	result := frtypes.MapStr{}
+	result.Set("origin", rst)
+	return result, nil
+}
 
 // CreatePrivilege search user goup
 func (s *topoService) CreatePrivilege(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	datas := make([]string, 0)
-	data.ForEach(func(key string, val interface{}) {
-		datas = append(datas, key)
-	})
+	val, exists := data.Get("origin")
+	if !exists {
+		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, "not set anything")
+	}
 
+	datas, _ = val.([]string)
 	err := s.core.PermissionOperation().Role(params).CreatePermission(params.SupplierAccount, pathParams("bk_obj_id"), pathParams("bk_property_id"), datas)
 	return nil, err
 }

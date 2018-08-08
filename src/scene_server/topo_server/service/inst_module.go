@@ -15,12 +15,11 @@ package service
 import (
 	"strconv"
 
-	"configcenter/src/common/condition"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	gparams "configcenter/src/common/paraparse"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -131,18 +130,16 @@ func (s *topoService) SearchModule(params types.ContextParams, pathParams, query
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "set id")
 	}
 
-	innerCond := condition.CreateCondition()
-
-	if err = innerCond.Parse(data); nil != err {
-		blog.Errorf("[api-module]failed to parse the condition, error info is %s", err.Error())
-		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
+	paramsCond := &gparams.SearchParams{}
+	if err = data.MarshalJSONInto(paramsCond); nil != err {
+		return nil, err
 	}
 
-	innerCond.Field(common.BKAppIDField).Eq(bizID)
-	innerCond.Field(common.BKSetIDField).Eq(setID)
+	paramsCond.Condition[common.BKAppIDField] = bizID
+	paramsCond.Condition[common.BKSetIDField] = setID
 
 	queryCond := &metadata.QueryInput{}
-	queryCond.Condition = innerCond
+	queryCond.Condition = paramsCond.Condition
 
 	cnt, instItems, err := s.core.ModuleOperation().FindModule(params, obj, queryCond)
 	if nil != err {

@@ -107,6 +107,7 @@ var _ Attribute = (*attribute)(nil)
 
 // attribute the metadata structure definition of the model attribute
 type attribute struct {
+	FieldValid
 	attr      metadata.Attribute
 	isNew     bool
 	params    types.ContextParams
@@ -341,6 +342,9 @@ func (a *attribute) Parse(data frtypes.MapStr) (*metadata.Attribute, error) {
 	if a.attr.IsOnly {
 		a.attr.IsRequired = true
 	}
+	if 0 == len(a.attr.PropertyGroup) {
+		a.attr.PropertyGroup = "default"
+	}
 	return nil, err
 }
 
@@ -351,38 +355,67 @@ func (a *attribute) ToMapStr() (frtypes.MapStr, error) {
 
 }
 
+func (a *attribute) IsValid(isUpdate bool, data frtypes.MapStr) error {
+
+	if a.attr.PropertyID == common.BKChildStr || a.attr.PropertyID == common.BKInstParentStr {
+		return nil
+	}
+
+	if !isUpdate || data.Exists(metadata.AttributeFieldPropertyType) {
+		if _, err := a.FieldValid.Valid(a.params, data, metadata.AttributeFieldPropertyType); nil != err {
+			return err
+		}
+	}
+
+	if !isUpdate || data.Exists(metadata.AttributeFieldPropertyID) {
+		val, err := a.FieldValid.Valid(a.params, data, metadata.AttributeFieldPropertyID)
+		if nil != err {
+			return err
+		}
+		if err = a.FieldValid.ValidID(a.params, val); nil != err {
+			return err
+		}
+	}
+
+	if !isUpdate || data.Exists(metadata.AttributeFieldPropertyName) {
+		val, err := a.FieldValid.Valid(a.params, data, metadata.AttributeFieldPropertyName)
+		if nil != err {
+			return err
+		}
+		if err = a.FieldValid.ValidNameWithRegex(a.params, val); nil != err {
+			return err
+		}
+	}
+
+	if !isUpdate || data.Exists(metadata.AttributeFieldOption) {
+		propertyType, err := data.String(metadata.AttributeFieldPropertyType)
+		if nil != err {
+			return a.params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
+		}
+
+		if option, exists := data.Get(metadata.AttributeFieldOption); exists && (propertyType == common.FieldTypeInt || propertyType == common.FieldTypeEnum) {
+			if err := util.ValidPropertyOption(propertyType, option, a.params.Err); nil != err {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 func (a *attribute) Create() error {
 
+	if err := a.IsValid(false, a.attr.ToMapStr()); nil != err {
+		return err
+	}
+
 	// check the property id repeated
-	cond := condition.CreateCondition()
-	cond.Field(metadata.AttributeFieldPropertyID).Eq(a.attr.PropertyID)
-	cond.Field(metadata.AttributeFieldSupplierAccount).Eq(a.params.SupplierAccount)
-	cond.Field(metadata.AttributeFieldObjectID).Eq(a.attr.ObjectID)
-	attrItems, err := a.search(cond)
+	a.attr.OwnerID = a.params.SupplierAccount
+	exists, err := a.IsExists()
 	if nil != err {
-		blog.Errorf("[model-attr] failed to check the property id (%s), error info is %s", a.attr.PropertyID, err.Error())
 		return err
 	}
 
-	if 0 != len(attrItems) {
-		blog.Errorf("[model-attr] the property id(%s) is repeated", a.attr.PropertyID)
-		return a.params.Err.Error(common.CCErrCommDuplicateItem)
-	}
-
-	// check the property name repeated
-
-	cond = condition.CreateCondition()
-	cond.Field(metadata.AttributeFieldPropertyName).Eq(a.attr.PropertyName)
-	cond.Field(metadata.AttributeFieldSupplierAccount).Eq(a.params.SupplierAccount)
-	cond.Field(metadata.AttributeFieldObjectID).Eq(a.attr.ObjectID)
-	attrItems, err = a.search(cond)
-	if nil != err {
-		blog.Errorf("[model-attr] failed to check the property name (%s), error info is %s", a.attr.PropertyName, err.Error())
-		return err
-	}
-
-	if 0 != len(attrItems) {
-		blog.Errorf("[model-attr] the property name(%s) is repeated", a.attr.PropertyName)
+	if exists {
 		return a.params.Err.Error(common.CCErrCommDuplicateItem)
 	}
 
@@ -405,7 +438,25 @@ func (a *attribute) Create() error {
 
 func (a *attribute) Update(data frtypes.MapStr) error {
 
-	rsp, err := a.clientSet.ObjectController().Meta().UpdateObjectAttByID(context.Background(), a.attr.ID, a.params.Header, a.attr.ToMapStr())
+	data.Remove(metadata.AttributeFieldPropertyID)
+	data.Remove(metadata.AttributeFieldObjectID)
+	data.Remove(metadata.AttributeFieldID)
+
+	if err := a.IsValid(true, data); nil != err {
+		return err
+	}
+
+	a.attr.OwnerID = a.params.SupplierAccount
+	exists, err := a.IsExists()
+	if nil != err {
+		return err
+	}
+
+	if exists {
+		return a.params.Err.Error(common.CCErrCommDuplicateItem)
+	}
+
+	rsp, err := a.clientSet.ObjectController().Meta().UpdateObjectAttByID(context.Background(), a.attr.ID, a.params.Header, data)
 
 	if nil != err {
 		blog.Errorf("failed to request object controller, error info is %s", err.Error())
@@ -437,49 +488,55 @@ func (a *attribute) search(cond condition.Condition) ([]metadata.Attribute, erro
 }
 func (a *attribute) IsExists() (bool, error) {
 
+	// check id
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(a.params.SupplierAccount)
 	cond.Field(metadata.AttributeFieldObjectID).Eq(a.attr.ObjectID)
 	cond.Field(metadata.AttributeFieldPropertyID).Eq(a.attr.PropertyID)
+	cond.Field(metadata.AttributeFieldID).NotIn([]int64{a.attr.ID})
 
 	items, err := a.search(cond)
 	if nil != err {
 		return false, err
 	}
 
-	return 0 != len(items), nil
-}
+	if 0 != len(items) {
+		return true, err
+	}
 
-func (a *attribute) Delete() error {
-
-	cond := condition.CreateCondition()
+	// ceck nam
+	cond = condition.CreateCondition()
+	cond.Field(common.BKOwnerIDField).Eq(a.params.SupplierAccount)
 	cond.Field(metadata.AttributeFieldObjectID).Eq(a.attr.ObjectID)
-	cond.Field(metadata.AttributeFieldSupplierAccount).Eq(a.params.SupplierAccount)
-	cond.Field(metadata.AttributeFieldPropertyID).Eq(a.attr.PropertyID)
+	cond.Field(metadata.AttributeFieldPropertyName).Eq(a.attr.PropertyName)
+	cond.Field(metadata.AttributeFieldID).NotIn([]int64{a.attr.ID})
 
-	rsp, err := a.clientSet.ObjectController().Meta().DeleteObjectAttByID(context.Background(), a.attr.ID, a.params.Header, cond.ToMapStr())
-
+	items, err = a.search(cond)
 	if nil != err {
-		blog.Errorf("failed to request object, error info is %s", err.Error())
-		return err
+		return false, err
 	}
 
-	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to delete attribute,error info is is %s", rsp.ErrMsg)
-		return a.params.Err.Error(common.CCErrTopoObjectAttributeDeleteFailed)
+	if 0 != len(items) {
+		return true, err
 	}
 
-	return nil
+	return false, nil
 }
 
-func (a *attribute) Save() error {
+func (a *attribute) Save(data frtypes.MapStr) error {
+
+	if nil != data {
+		if _, err := a.attr.Parse(data); nil != err {
+			return err
+		}
+	}
 
 	if exists, err := a.IsExists(); nil != err {
 		return err
 	} else if !exists {
 		return a.Create()
 	}
-	data := metadata.SetValueToMapStrByTags(a.attr)
+
 	return a.Update(data)
 }
 
@@ -518,10 +575,32 @@ func (a *attribute) GetName() string {
 
 func (a *attribute) SetGroup(grp Group) {
 	a.attr.PropertyGroup = grp.GetID()
+	a.attr.PropertyGroupName = grp.GetName()
 }
 
 func (a *attribute) GetGroup() (Group, error) {
-	return nil, nil
+
+	cond := condition.CreateCondition()
+	cond.Field(metadata.GroupFieldGroupID).Eq(a.attr.PropertyGroup)
+	cond.Field(metadata.GroupFieldObjectID).Eq(a.attr.ObjectID)
+	cond.Field(metadata.GroupFieldSupplierAccount).Eq(a.attr.OwnerID)
+
+	rsp, err := a.clientSet.ObjectController().Meta().SelectPropertyGroupByObjectID(context.Background(), a.params.SupplierAccount, a.GetObjectID(), a.params.Header, cond.ToMapStr())
+	if nil != err {
+		blog.Errorf("[model-grp] failed to request the object controller, error info is %s", err.Error())
+		return nil, a.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("[model-grp] failed to search the group of the object(%s) by the condition (%#v), error info is %s", a.GetObjectID(), cond.ToMapStr(), rsp.ErrMsg)
+		return nil, a.params.Err.Error(rsp.Code)
+	}
+
+	if 0 == len(rsp.Data) {
+		return CreateGroup(a.params, a.clientSet, []metadata.Group{metadata.Group{GroupID: "default", GroupName: "Default", OwnerID: a.attr.OwnerID, ObjectID: a.attr.ObjectID}})[0], nil
+	}
+
+	return CreateGroup(a.params, a.clientSet, rsp.Data)[0], nil // should be one group
 }
 
 func (a *attribute) SetGroupIndex(attGroupIndex int64) {

@@ -108,7 +108,26 @@ func (r *Request) Body(body interface{}) *Request {
 		return r
 	}
 
-	if reflect.ValueOf(body).IsNil() {
+	valueOf := reflect.ValueOf(body)
+	switch valueOf.Kind() {
+	case reflect.Interface:
+		fallthrough
+	case reflect.Map:
+		fallthrough
+	case reflect.Ptr:
+		fallthrough
+	case reflect.Slice:
+		if valueOf.IsNil() {
+			r.body = bytes.NewReader([]byte(""))
+			return r
+		}
+		break
+
+	case reflect.Struct:
+		break
+
+	default:
+		r.err = errors.New("body should be one of interface, map, pointer or slice value")
 		r.body = bytes.NewReader([]byte(""))
 		return r
 	}
@@ -188,6 +207,9 @@ func (r *Request) Do() *Result {
 			}
 
 			req.Header = r.headers
+			if len(req.Header) == 0 {
+				req.Header = make(http.Header)
+			}
 			req.Header.Set("Content-Type", "application/json")
 			req.Header.Set("Accept", "application/json")
 
@@ -263,10 +285,12 @@ func (r *Result) Into(obj interface{}) error {
 	if http.StatusOK != r.StatusCode {
 		return fmt.Errorf("error info %s", string(r.Body))
 	}
-
-	err := json.Unmarshal(r.Body, obj)
-	if nil != err {
-		return err
+	if 0 != len(r.Body) {
+		err := json.Unmarshal(r.Body, obj)
+		if nil != err {
+			blog.Errorf("http reply not json, reply:%s, error:%s", string(r.Body), err.Error())
+			return err
+		}
 	}
 	return nil
 }

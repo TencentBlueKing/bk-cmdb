@@ -18,6 +18,8 @@ import (
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/eventserver"
 	"configcenter/src/apimachinery/flowctrl"
+	"configcenter/src/apimachinery/gseprocserver"
+	"configcenter/src/apimachinery/healthz"
 	"configcenter/src/apimachinery/hostcontroller"
 	"configcenter/src/apimachinery/hostserver"
 	"configcenter/src/apimachinery/objcontroller"
@@ -25,7 +27,6 @@ import (
 	"configcenter/src/apimachinery/procserver"
 	"configcenter/src/apimachinery/toposerver"
 	"configcenter/src/apimachinery/util"
-    "configcenter/src/apimachinery/gseprocserver"
 )
 
 type ClientSetInterface interface {
@@ -39,8 +40,9 @@ type ClientSetInterface interface {
 	AuditController() auditcontroller.AuditCtrlInterface
 	ProcController() proccontroller.ProcCtrlClientInterface
 	HostController() hostcontroller.HostCtrlClientInterface
-	
+
 	GseProcServer() gseprocserver.GseProcClientInterface
+	Healthz() healthz.HealthzInterface
 }
 
 func NewApiMachinery(c *util.APIMachineryConfig) (ClientSetInterface, error) {
@@ -156,10 +158,18 @@ func (cs *ClientSet) HostController() hostcontroller.HostCtrlClientInterface {
 }
 
 func (cs *ClientSet) GseProcServer() gseprocserver.GseProcClientInterface {
-    c := &util.Capability{
-        Client: cs.client,
-        Discover: cs.discover.GseProcServ(),
-        Throttle: cs.throttle,
-    }
-    return gseprocserver.NewGseProcClientInterface(c, "v1")
+	c := &util.Capability{
+		Client:   cs.client,
+		Discover: cs.discover.GseProcServ(),
+		Throttle: cs.throttle,
+	}
+	return gseprocserver.NewGseProcClientInterface(c, "v1")
+}
+
+func (cs *ClientSet) Healthz() healthz.HealthzInterface {
+	c := &util.Capability{
+		Client:   cs.client,
+		Throttle: cs.throttle,
+	}
+	return healthz.NewHealthzClient(c, cs.discover)
 }

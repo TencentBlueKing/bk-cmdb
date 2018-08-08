@@ -16,7 +16,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 )
 
 // validCreateUnique  valid create unique
@@ -26,7 +25,6 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
 		return nil
 	}
 
-	objID := valid.objID
 	searchCond := make(map[string]interface{})
 	// only search data not in diable status
 	searchCond[common.BKDataStatusField] = map[string]interface{}{common.BKDBNE: common.DataStatusDisabled}
@@ -38,8 +36,7 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
 		}
 	}
 
-	if innerObject[valid.objID] {
-		objID = common.BKINnerObjIDObject
+	if common.GetObjByType(valid.objID) == common.BKINnerObjIDObject {
 		searchCond[common.BKObjIDField] = valid.objID
 	}
 
@@ -47,7 +44,7 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
 		return nil
 	}
 
-	result, err := valid.CoreAPI.ObjectController().Instance().SearchObjects(valid.ctx, objID, valid.pheader, &metadata.QueryInput{Condition: searchCond})
+	result, err := valid.CoreAPI.ObjectController().Instance().SearchObjects(valid.ctx, common.GetObjByType(valid.objID), valid.pheader, &metadata.QueryInput{Condition: searchCond})
 	if nil != err {
 		return err
 	}
@@ -56,7 +53,7 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
 	}
 
 	if 0 < result.Data.Count {
-		blog.Error("duplicate data ")
+		blog.Errorf("[validUpdateUnique] duplicate data condition: %#v, isonly: %#v, objID %s", searchCond, valid.isOnly, valid.objID)
 		return valid.errif.Error(common.CCErrCommDuplicateItem)
 	}
 
@@ -88,14 +85,13 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 		}
 	}
 
-	objIDName := util.GetObjIDByType(objID)
+	objIDName := common.GetInstIDField(objID)
 	searchCond[objIDName] = map[string]interface{}{common.BKDBNE: instID}
 	// only search data not in diable status
 	searchCond[common.BKDataStatusField] = map[string]interface{}{common.BKDBNE: common.DataStatusDisabled}
-
-	if !innerObject[valid.objID] {
-		searchCond[common.BKObjIDField] = valid.objID
+	if common.GetInstTableName(objID) == common.BKTableNameBaseInst {
 		objID = common.BKINnerObjIDObject
+		searchCond[common.BKObjIDField] = valid.objID
 	}
 
 	result, err := valid.CoreAPI.ObjectController().Instance().SearchObjects(valid.ctx, objID, valid.pheader, &metadata.QueryInput{Condition: searchCond})
@@ -106,8 +102,8 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 		return valid.errif.Error(result.Code)
 	}
 
-	if 0 >= result.Data.Count {
-		blog.Error("duplicate data ")
+	if 0 < result.Data.Count {
+		blog.Errorf("[validUpdateUnique] duplicate data condition: %#v, origin: %#v, isonly: %#v, objID: %s, instID %v count %d", searchCond, mapData, valid.isOnly, valid.objID, instID, result.Data.Count)
 		return valid.errif.Error(common.CCErrCommDuplicateItem)
 	}
 	return nil
@@ -118,16 +114,14 @@ func (valid *ValidMap) getInstDataByID(instID int64) (map[string]interface{}, er
 	objID := valid.objID
 	searchCond := make(map[string]interface{})
 
-	if innerObject[valid.objID] {
+	searchCond[common.GetInstIDField(objID)] = instID
+	if common.GetInstTableName(objID) == common.BKTableNameBaseInst {
 		objID = common.BKINnerObjIDObject
-		searchCond[common.BKObjIDField] = objID
-		searchCond[common.BKInstIDField] = instID
-	} else {
-		objIDName := util.GetObjIDByType(objID)
-		searchCond[objIDName] = instID
+		searchCond[common.BKObjIDField] = valid.objID
 	}
 
-	result, err := valid.CoreAPI.ObjectController().Instance().SearchObjects(valid.ctx, objID, valid.pheader, &metadata.QueryInput{Condition: searchCond})
+	blog.V(4).Infof("[getInstDataByID] condition: %#v, objID %s ", searchCond, objID)
+	result, err := valid.CoreAPI.ObjectController().Instance().SearchObjects(valid.ctx, objID, valid.pheader, &metadata.QueryInput{Condition: searchCond, Limit: common.BKNoLimit})
 	if nil != err {
 		return nil, err
 	}
@@ -141,5 +135,6 @@ func (valid *ValidMap) getInstDataByID(instID int64) (map[string]interface{}, er
 	if len(result.Data.Info[0]) > 0 {
 		return result.Data.Info[0], nil
 	}
+
 	return nil, valid.errif.Error(common.CCErrCommNotFound)
 }

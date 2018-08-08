@@ -1,3 +1,15 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package identifier
 
 import (
@@ -12,11 +24,11 @@ import (
 )
 
 type HostIdentifier struct {
-	HostID          int                `json:"bk_host_id" bson:"bk_host_id"`
+	HostID          int64              `json:"bk_host_id" bson:"bk_host_id"`
 	HostName        string             `json:"bk_host_name" bson:"bk_host_name"`
-	SupplierID      int                `json:"bk_supplier_id"`
+	SupplierID      int64              `json:"bk_supplier_id"`
 	SupplierAccount string             `json:"bk_supplier_account"`
-	CloudID         int                `json:"bk_cloud_id" bson:"bk_cloud_id"`
+	CloudID         int64              `json:"bk_cloud_id" bson:"bk_cloud_id"`
 	CloudName       string             `json:"bk_cloud_name" bson:"bk_cloud_name"`
 	InnerIP         string             `json:"bk_host_innerip" bson:"bk_host_innerip"`
 	OuterIP         string             `json:"bk_host_outerip" bson:"bk_host_outerip"`
@@ -29,11 +41,11 @@ type HostIdentifier struct {
 }
 
 type Module struct {
-	BizID      int    `json:"bk_biz_id"`
+	BizID      int64  `json:"bk_biz_id"`
 	BizName    string `json:"bk_biz_name"`
-	SetID      int    `json:"bk_set_id"`
+	SetID      int64  `json:"bk_set_id"`
 	SetName    string `json:"bk_set_name"`
-	ModuleID   int    `json:"bk_module_id"`
+	ModuleID   int64  `json:"bk_module_id"`
 	ModuleName string `json:"bk_module_name"`
 	SetStatus  string `json:"bk_service_status"`
 	SetEnv     string `json:"bk_set_env"`

@@ -59,8 +59,10 @@ func New(c *Config, disc ServiceDiscoverInterface) (*Engine, error) {
 	}
 
 	return &Engine{
-		CoreAPI: c.CoreAPI,
-		SvcDisc: disc,
+		CoreAPI:  c.CoreAPI,
+		SvcDisc:  disc,
+		Language: language.NewFromCtx(language.EmptyLanguageSetting),
+		CCErr:    errors.NewFromCtx(errors.EmptyErrorsSetting),
 	}, nil
 }
 
@@ -94,4 +96,8 @@ func (e *Engine) onErrorUpdate(previous, current map[string]errors.ErrorCode) {
 	}
 	e.CCErr.Load(current)
 	blog.V(3).Infof("load new error config success.")
+}
+
+func (e *Engine) Ping() error {
+	return e.SvcDisc.Ping()
 }

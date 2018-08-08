@@ -33,9 +33,8 @@ const (
 type Operation interface {
 	IsExists() (bool, error)
 	Create() error
-	Delete() error
 	Update(data frtypes.MapStr) error
-	Save() error
+	Save(data frtypes.MapStr) error
 }
 
 // Topo the object topo interface

@@ -29,6 +29,7 @@
 
 <script>
     import { mapGetters, mapActions } from 'vuex'
+    import Cookies from 'js-cookie'
     export default {
         props: {
             disabled: {
@@ -65,15 +66,7 @@
             }
         },
         computed: {
-            ...mapGetters(['bkPrivBizList', 'bkBizId']),
-            curSelected: {
-                get () {
-                    return this.bkBizId
-                },
-                set (val) {
-                    this.$store.commit('setBkBizId', val)
-                }
-            }
+            ...mapGetters(['bkPrivBizList', 'bkBizId'])
         },
         data () {
             return {
@@ -81,24 +74,28 @@
                     label: '',
                     value: ''
                 },
-                selectedIndex: 0
+                selectedIndex: 0,
+                curSelected: -1
             }
         },
         watch: {
-            bkPrivBizList () {
-                this.setSelectedData()
-                this.setHeader()
-                this.$nextTick(() => {
-                    this.$emit('update:selected', this.curSelected)
-                    this.$emit('on-selected', this.selectedData, this.selectedIndex)
-                })
+            bkPrivBizList (bkPrivBizList) {
+                if (bkPrivBizList.length) {
+                    this.setSelectedData()
+                } else {
+                    this.$alertMsg(this.$t('Common["您没有业务权限"]'))
+                }
             },
             curSelected (val) {
+                this.$store.commit('setBkBizId', val)
                 this.setHeader()
                 this.$nextTick(() => {
                     this.$emit('update:selected', val)
                     this.$emit('on-selected', this.selectedData, this.selectedIndex)
                 })
+            },
+            bkBizId () {
+                this.setSelectedData()
             }
         },
         methods: {
@@ -109,19 +106,14 @@
                     this.selectedIndex = index
                 } else {
                     /* 用于默认选择时向父组件派发on-selected事件 */
-                    let label = ''
-                    for (var i = 0; i < this.bkPrivBizList.length; i++) {
-                        if (this.bkPrivBizList[i]['bk_biz_id'] === this.curSelected) {
-                            label = this.bkPrivBizList[i]['bk_biz_name']
-                            index = i
-                            break
-                        }
-                    }
+                    const biz = this.bkPrivBizList.find(biz => biz['bk_biz_id'] === this.bkBizId) || this.bkPrivBizList[0] || {}
+                    const index = this.bkPrivBizList.indexOf(biz)
                     this.selectedData = {
-                        label: label,
-                        value: this.curSelected
+                        label: biz['bk_biz_name'],
+                        value: biz['bk_biz_id']
                     }
-                    this.selectedIndex = index
+                    this.selectedIndex = this.bkPrivBizList.indexOf(biz)
+                    this.curSelected = biz['bk_biz_id']
                 }
             },
             setHeader () {

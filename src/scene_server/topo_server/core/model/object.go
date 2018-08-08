@@ -45,7 +45,7 @@ type Object interface {
 	GetMainlineParentObject() (Object, error)
 	GetMainlineChildObject() (Object, error)
 
-	GetParentObjectByFieldID(fieldID string) ([]Object, error)
+	GetChildObjectByFieldID(fieldID string) ([]Object, error)
 	GetParentObject() ([]Object, error)
 	GetChildObject() ([]Object, error)
 
@@ -102,6 +102,7 @@ type Object interface {
 var _ Object = (*object)(nil)
 
 type object struct {
+	FieldValid
 	obj       meta.Object
 	isNew     bool
 	params    types.ContextParams
@@ -117,94 +118,22 @@ func (o *object) MarshalJSON() ([]byte, error) {
 }
 
 func (o *object) GetDefaultInstPropertyName() string {
-	switch o.obj.ObjectID {
-	case common.BKInnerObjIDApp:
-		return "业务名"
-	case common.BKInnerObjIDModule:
-		return "模块名"
-	case common.BKInnerObjIDSet:
-		return "集群名"
-	default:
-		return "实例名"
-	}
+	return o.obj.GetDefaultInstPropertyName()
 }
 func (o *object) GetInstIDFieldName() string {
-
-	switch o.obj.ObjectID {
-	case common.BKInnerObjIDApp:
-		return common.BKAppIDField
-	case common.BKInnerObjIDSet:
-		return common.BKSetIDField
-	case common.BKInnerObjIDModule:
-		return common.BKModuleIDField
-	case common.BKINnerObjIDObject:
-		return common.BKInstIDField
-	case common.BKInnerObjIDHost:
-		return common.BKHostIDField
-	case common.BKInnerObjIDProc:
-		return common.BKProcIDField
-	case common.BKInnerObjIDPlat:
-		return common.BKCloudIDField
-	default:
-		return common.BKInstIDField
-	}
-
+	return o.obj.GetInstIDFieldName()
 }
 
 func (o *object) GetInstNameFieldName() string {
-	switch o.obj.ObjectID {
-	case common.BKInnerObjIDApp:
-		return common.BKAppNameField
-	case common.BKInnerObjIDSet:
-		return common.BKSetNameField
-	case common.BKInnerObjIDModule:
-		return common.BKModuleNameField
-	case common.BKInnerObjIDHost:
-		return common.BKHostInnerIPField
-	case common.BKInnerObjIDProc:
-		return common.BKProcNameField
-	case common.BKInnerObjIDPlat:
-		return common.BKCloudNameField
-	default:
-		return common.BKInstNameField
-	}
+	return o.obj.GetInstNameFieldName()
 }
 
 func (o *object) GetObjectType() string {
-	switch o.obj.ObjectID {
-	case common.BKInnerObjIDApp:
-		return o.obj.ObjectID
-	case common.BKInnerObjIDSet:
-		return o.obj.ObjectID
-	case common.BKInnerObjIDModule:
-		return o.obj.ObjectID
-	case common.BKInnerObjIDHost:
-		return o.obj.ObjectID
-	case common.BKInnerObjIDProc:
-		return o.obj.ObjectID
-	case common.BKInnerObjIDPlat:
-		return o.obj.ObjectID
-	default:
-		return common.BKINnerObjIDObject
-	}
+	return o.obj.GetObjectType()
+
 }
 func (o *object) IsCommon() bool {
-	switch o.obj.ObjectID {
-	case common.BKInnerObjIDApp:
-		return false
-	case common.BKInnerObjIDSet:
-		return false
-	case common.BKInnerObjIDModule:
-		return false
-	case common.BKInnerObjIDHost:
-		return false
-	case common.BKInnerObjIDProc:
-		return false
-	case common.BKInnerObjIDPlat:
-		return false
-	default:
-		return true
-	}
+	return o.obj.IsCommon()
 }
 
 func (o *object) search(cond condition.Condition) ([]meta.Object, error) {
@@ -241,7 +170,7 @@ func (o *object) GetMainlineParentObject() (Object, error) {
 
 		cond := condition.CreateCondition()
 		cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
-		cond.Field(metadata.ModelFieldObjectID).Eq(asst.ObjectID)
+		cond.Field(metadata.ModelFieldObjectID).Eq(asst.AsstObjID)
 
 		rspRst, err := o.search(cond)
 		if nil != err {
@@ -291,7 +220,7 @@ func (o *object) GetMainlineChildObject() (Object, error) {
 	return nil, io.EOF
 }
 
-func (o *object) searchObjects(cond condition.Condition) ([]Object, error) {
+func (o *object) searchObjects(isNeedChild bool, cond condition.Condition) ([]Object, error) {
 	rsp, err := o.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), o.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
@@ -302,7 +231,11 @@ func (o *object) searchObjects(cond condition.Condition) ([]Object, error) {
 	for _, asst := range rsp.Data {
 		cond := condition.CreateCondition()
 		cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
-		cond.Field(metadata.ModelFieldObjectID).Eq(asst.ObjectID)
+		if isNeedChild {
+			cond.Field(metadata.ModelFieldObjectID).Eq(asst.AsstObjID)
+		} else {
+			cond.Field(metadata.ModelFieldObjectID).Eq(asst.ObjectID)
+		}
 		rspRst, err := o.search(cond)
 		if nil != err {
 			blog.Errorf("[model-obj] failed to search the object(%s)'s parent, error info is %s", asst.ObjectID, err.Error())
@@ -315,29 +248,29 @@ func (o *object) searchObjects(cond condition.Condition) ([]Object, error) {
 
 	return objItems, nil
 }
-func (o *object) GetParentObjectByFieldID(fieldID string) ([]Object, error) {
+func (o *object) GetChildObjectByFieldID(fieldID string) ([]Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
 	cond.Field(meta.AssociationFieldObjectID).Eq(o.obj.ObjectID)
 	cond.Field(meta.AssociationFieldObjectAttributeID).Eq(fieldID)
 
-	return o.searchObjects(cond)
+	return o.searchObjects(true, cond)
 }
 func (o *object) GetParentObject() ([]Object, error) {
 
 	cond := condition.CreateCondition()
 	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
-	cond.Field(meta.AssociationFieldObjectID).Eq(o.obj.ObjectID)
+	cond.Field(meta.AssociationFieldAssociationObjectID).Eq(o.obj.ObjectID)
 
-	return o.searchObjects(cond)
+	return o.searchObjects(false, cond)
 }
 
 func (o *object) GetChildObject() ([]Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
-	cond.Field(meta.AssociationFieldAssociationObjectID).Eq(o.obj.ObjectID)
+	cond.Field(meta.AssociationFieldObjectID).Eq(o.obj.ObjectID)
 
-	return o.searchObjects(cond)
+	return o.searchObjects(true, cond)
 }
 
 func (o *object) SetMainlineParentObject(objID string) error {
@@ -469,23 +402,92 @@ func (o *object) SetMainlineChildObject(objID string) error {
 
 func (o *object) IsExists() (bool, error) {
 
+	// check id
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
-	if 0 != len(o.obj.ObjectID) {
-		cond.Field(common.BKObjIDField).Eq(o.obj.ObjectID)
-	} else {
-		cond.Field(metadata.ModelFieldID).Eq(o.obj.ID)
-	}
+	cond.Field(common.BKObjIDField).Eq(o.obj.ObjectID)
+	cond.Field(metadata.ModelFieldID).NotIn([]int64{o.obj.ID})
 
 	items, err := o.search(cond)
 	if nil != err {
 		return false, err
 	}
 
-	return 0 != len(items), nil
-}
+	if 0 != len(items) {
+		return true, nil
+	}
 
+	// check name
+	cond = condition.CreateCondition()
+	cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
+	cond.Field(common.BKObjIDField).Eq(o.obj.ObjectName)
+	cond.Field(metadata.ModelFieldID).NotIn([]int64{o.obj.ID})
+
+	items, err = o.search(cond)
+	if nil != err {
+		return false, err
+	}
+
+	if 0 != len(items) {
+		return true, nil
+	}
+
+	return false, nil
+}
+func (o *object) IsValid(isUpdate bool, data frtypes.MapStr) error {
+
+	if !isUpdate || data.Exists(metadata.ModelFieldObjectID) {
+		val, err := o.FieldValid.Valid(o.params, data, metadata.ModelFieldObjectID)
+		if nil != err {
+			blog.Errorf("[model-obj] failed to valid the object id(%s)", metadata.ModelFieldObjectID)
+			return o.params.Err.New(common.CCErrCommParamsIsInvalid, metadata.ModelFieldObjectID+" "+err.Error())
+		}
+
+		if err = o.FieldValid.ValidID(o.params, val); nil != err {
+			blog.Errorf("[model-obj] failed to valid the object id(%s)", metadata.ModelFieldObjectID)
+			return o.params.Err.New(common.CCErrCommParamsIsInvalid, metadata.ModelFieldObjectID+" "+err.Error())
+		}
+	}
+
+	if !isUpdate || data.Exists(metadata.ModelFieldObjectName) {
+		val, err := o.FieldValid.Valid(o.params, data, metadata.ModelFieldObjectName)
+		if nil != err {
+			blog.Errorf("[model-obj] failed to valid the object name(%s)", metadata.ModelFieldObjectName)
+			return o.params.Err.New(common.CCErrCommParamsIsInvalid, metadata.ModelFieldObjectName+" "+err.Error())
+		}
+		if err = o.FieldValid.ValidName(o.params, val); nil != err {
+			blog.Errorf("[model-obj] failed to valid the object name(%s)", metadata.ModelFieldObjectName)
+			return o.params.Err.New(common.CCErrCommParamsIsInvalid, metadata.ModelFieldObjectName+" "+err.Error())
+		}
+	}
+
+	if !isUpdate || data.Exists(metadata.ModelFieldObjCls) {
+		if _, err := o.FieldValid.Valid(o.params, data, metadata.ModelFieldObjCls); nil != err {
+			return err
+		}
+	}
+
+	if !isUpdate && !o.IsCommon() {
+		return o.params.Err.New(common.CCErrCommParamsIsInvalid, fmt.Sprintf("'%s' the built-in object id, please use a new one", o.GetID()))
+	}
+
+	return nil
+}
 func (o *object) Create() error {
+
+	if err := o.IsValid(false, o.obj.ToMapStr()); nil != err {
+		return err
+	}
+
+	o.obj.OwnerID = o.params.SupplierAccount
+	exists, err := o.IsExists()
+	if nil != err {
+		return err
+	}
+
+	if exists {
+		return o.params.Err.Error(common.CCErrCommDuplicateItem)
+	}
 
 	rsp, err := o.clientSet.ObjectController().Meta().CreateObject(context.Background(), o.params.Header, &o.obj)
 
@@ -504,45 +506,27 @@ func (o *object) Create() error {
 	return nil
 }
 
-func (o *object) Delete() error {
-	rsp, err := o.clientSet.ObjectController().Meta().DeleteObject(context.Background(), o.obj.ID, o.params.Header, nil)
-
-	if nil != err {
-		blog.Errorf("[operation-obj] failed to request the object controller, error info is %s", err.Error())
-		return o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if common.CCSuccess != rsp.Code {
-		blog.Errorf("[opration-obj] failed to delete the object by the id(%d)", o.obj.ID)
-		return o.params.Err.Error(rsp.Code)
-	}
-	return nil
-}
-
 func (o *object) Update(data frtypes.MapStr) error {
 
-	// check the name repeated
+	data.Remove(metadata.ModelFieldObjectID)
+	data.Remove(metadata.ModelFieldID)
+	data.Remove(metadata.ModelFieldObjCls)
 
-	cond := condition.CreateCondition()
-	cond.Field(metadata.ModelFieldOwnerID).Eq(o.params.SupplierAccount)
-	cond.Field(metadata.ModelFieldObjectName).Eq(o.obj.ObjectName)
-	cond.Field(metadata.ModelFieldID).NotIn([]int64{o.obj.ID})
-
-	tmpItems, err := o.search(cond)
-	if nil != err {
-		blog.Errorf("[operation-obj] failed to check the repeated, error info is %s", err.Error())
+	if err := o.IsValid(true, data); nil != err {
 		return err
 	}
 
-	if 0 != len(tmpItems) {
-		//str, _ := cond.ToMapStr().ToJSON()
-		//fmt.Println("objects:", tmpItems, string(str))
+	exists, err := o.IsExists()
+	if nil != err {
+		return err
+	}
+
+	if exists {
 		return o.params.Err.Error(common.CCErrCommDuplicateItem)
 	}
 
 	// update action
-
-	cond = condition.CreateCondition()
+	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
 	if 0 != len(o.obj.ObjectID) {
 		cond.Field(common.BKObjIDField).Eq(o.obj.ObjectID)
@@ -596,13 +580,21 @@ func (o *object) ToMapStr() (frtypes.MapStr, error) {
 	return rst, nil
 }
 
-func (o *object) Save() error {
+func (o *object) Save(data frtypes.MapStr) error {
+
+	if nil != data {
+		if _, err := o.obj.Parse(data); nil != err {
+			return err
+		}
+	}
 
 	if exists, err := o.IsExists(); nil != err {
 		return err
 	} else if exists {
-		data := meta.SetValueToMapStrByTags(o.obj)
-		return o.Update(data)
+		if nil != data {
+			return o.Update(data)
+		}
+		return o.Update(o.obj.ToMapStr())
 	}
 
 	return o.Create()
@@ -656,7 +648,16 @@ func (o *object) GetAttributes() ([]Attribute, error) {
 			clientSet: o.clientSet,
 		}
 
+		// reset the group name
+		grp, err := attr.GetGroup()
+		if nil != err {
+			blog.Errorf("[model-obj] failed to get the attribute group info , error info is %s", err.Error())
+			return nil, err
+		}
+		attr.SetGroup(grp)
+
 		rstItems = append(rstItems, attr)
+
 	}
 
 	return rstItems, nil

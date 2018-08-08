@@ -32,6 +32,10 @@ type Core interface {
 	ObjectOperation() operation.ObjectOperationInterface
 	PermissionOperation() operation.PermissionOperationInterface
 	CompatibleV2Operation() operation.CompatibleV2OperationInterface
+	GraphicsOperation() operation.GraphicsOperationInterface
+	IdentifierOperation() operation.IdentifierOperationInterface
+	AuditOperation() operation.AuditOperationInterface
+	HealthOperation() operation.HealthOperationInterface
 }
 
 type core struct {
@@ -46,11 +50,19 @@ type core struct {
 	object         operation.ObjectOperationInterface
 	permission     operation.PermissionOperationInterface
 	compatibleV2   operation.CompatibleV2OperationInterface
+	graphics       operation.GraphicsOperationInterface
+	audit          operation.AuditOperationInterface
+	identifier     operation.IdentifierOperationInterface
+	health         operation.HealthOperationInterface
 }
 
 // New create a core manager
 func New(client apimachinery.ClientSetInterface) Core {
 
+	// health
+	healthOpeartion := operation.NewHealthOperation(client)
+
+	// create insts
 	attributeOperation := operation.NewAttributeOperation(client)
 	classificationOperation := operation.NewClassificationOperation(client)
 	groupOperation := operation.NewGroupOperation(client)
@@ -62,13 +74,17 @@ func New(client apimachinery.ClientSetInterface) Core {
 	associationOperation := operation.NewAssociationOperation(client)
 	permissionOperation := operation.NewPermissionOperation(client)
 	compatibleV2Operation := operation.NewCompatibleV2Operation(client)
+	graphics := operation.NewGraphics(client)
+	identifier := operation.NewIdentifier(client)
+	audit := operation.NewAuditOperation(client)
 
 	targetModel := model.New(client)
 	targetInst := inst.New(client)
 
-	objectOperation.SetProxy(targetModel, targetInst, classificationOperation, associationOperation, instOperation)
+	// set the operation
+	objectOperation.SetProxy(targetModel, targetInst, classificationOperation, associationOperation, instOperation, attributeOperation, groupOperation)
 	groupOperation.SetProxy(targetModel, targetInst, objectOperation)
-	attributeOperation.SetProxy(targetModel, targetInst, objectOperation, associationOperation)
+	attributeOperation.SetProxy(targetModel, targetInst, objectOperation, associationOperation, groupOperation)
 	classificationOperation.SetProxy(targetModel, targetInst, associationOperation, objectOperation)
 	associationOperation.SetProxy(classificationOperation, objectOperation, attributeOperation, instOperation, targetModel, targetInst)
 
@@ -76,6 +92,8 @@ func New(client apimachinery.ClientSetInterface) Core {
 	moduleOperation.SetProxy(instOperation)
 	setOperation.SetProxy(objectOperation, instOperation, moduleOperation)
 	businessOperation.SetProxy(setOperation, moduleOperation, instOperation, objectOperation)
+
+	graphics.SetProxy(objectOperation, associationOperation)
 
 	return &core{
 		set:            setOperation,
@@ -89,6 +107,10 @@ func New(client apimachinery.ClientSetInterface) Core {
 		object:         objectOperation,
 		permission:     permissionOperation,
 		compatibleV2:   compatibleV2Operation,
+		graphics:       graphics,
+		audit:          audit,
+		identifier:     identifier,
+		health:         healthOpeartion,
 	}
 }
 
@@ -127,4 +149,16 @@ func (c *core) PermissionOperation() operation.PermissionOperationInterface {
 }
 func (c *core) CompatibleV2Operation() operation.CompatibleV2OperationInterface {
 	return c.compatibleV2
+}
+func (c *core) GraphicsOperation() operation.GraphicsOperationInterface {
+	return c.graphics
+}
+func (c *core) AuditOperation() operation.AuditOperationInterface {
+	return c.audit
+}
+func (c *core) IdentifierOperation() operation.IdentifierOperationInterface {
+	return c.identifier
+}
+func (c *core) HealthOperation() operation.HealthOperationInterface {
+	return c.health
 }

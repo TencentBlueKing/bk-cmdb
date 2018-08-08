@@ -15,13 +15,13 @@ package operation
 import (
 	"context"
 
-	"configcenter/src/common/blog"
-
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	metatype "configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -29,15 +29,17 @@ import (
 
 // AssociationOperationInterface association operation methods
 type AssociationOperationInterface interface {
-	CreateMainlineAssociation(params types.ContextParams, data *metadata.Association) (model.Association, error)
+	CreateMainlineAssociation(params types.ContextParams, data *metadata.Association) (model.Object, error)
 	DeleteMainlineAssociaton(params types.ContextParams, objID string) error
 	SearchMainlineAssociationTopo(params types.ContextParams, targetObj model.Object) ([]*metadata.MainlineObjectTopo, error)
-	SearchMainlineAssociationInstTopo(params types.ContextParams, bizID int64) ([]*metadata.TopoInstRst, error)
-	CreateCommonAssociation(params types.ContextParams, data *metadata.Association) (model.Association, error)
+	SearchMainlineAssociationInstTopo(params types.ContextParams, obj model.Object, instID int64) ([]*metadata.TopoInstRst, error)
+	CreateCommonAssociation(params types.ContextParams, data *metadata.Association) error
 	DeleteAssociation(params types.ContextParams, cond condition.Condition) error
 	UpdateAssociation(params types.ContextParams, data frtypes.MapStr, cond condition.Condition) error
 	SearchObjectAssociation(params types.ContextParams, objID string) ([]metadata.Association, error)
-	SearchInstAssociation(params types.ContextParams, objID, asstObjID string, query *metadata.QueryInput) ([]metadata.InstAsst, error)
+	SearchInstAssociation(params types.ContextParams, query *metadata.QueryInput) ([]metadata.InstAsst, error)
+	CheckBeAssociation(params types.ContextParams, obj model.Object, cond condition.Condition) error
+	CreateCommonInstAssociation(params types.ContextParams, data *metadata.InstAsst) error
 	DeleteInstAssociation(params types.ContextParams, cond condition.Condition) error
 
 	SetProxy(cls ClassificationOperationInterface, obj ObjectOperationInterface, attr AttributeOperationInterface, inst InstOperationInterface, targetModel model.Factory, targetInst inst.Factory)
@@ -73,7 +75,9 @@ func (a *association) SearchObjectAssociation(params types.ContextParams, objID 
 
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-	cond.Field(common.BKObjIDField).Eq(objID)
+	if 0 != len(objID) {
+		cond.Field(common.BKObjIDField).Eq(objID)
+	}
 	rsp, err := a.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to request object controller, error info is %s", err.Error())
@@ -88,7 +92,7 @@ func (a *association) SearchObjectAssociation(params types.ContextParams, objID 
 	return rsp.Data, nil
 }
 
-func (a *association) SearchInstAssociation(params types.ContextParams, objID, asstObjID string, query *metadata.QueryInput) ([]metadata.InstAsst, error) {
+func (a *association) SearchInstAssociation(params types.ContextParams, query *metadata.QueryInput) ([]metadata.InstAsst, error) {
 
 	rsp, err := a.clientSet.ObjectController().Instance().SearchObjects(context.Background(), common.BKTableNameInstAsst, params.Header, query)
 	if nil != err {
@@ -97,7 +101,7 @@ func (a *association) SearchInstAssociation(params types.ContextParams, objID, a
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[operation-asst] failed to search the object(%s) association info , error info is %s", objID, rsp.ErrMsg)
+		blog.Errorf("[operation-asst] failed to search the association info, query: %#v, error info is %s", query, rsp.ErrMsg)
 		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -109,11 +113,11 @@ func (a *association) SearchInstAssociation(params types.ContextParams, objID, a
 		}
 		instAsst = append(instAsst, asst)
 	}
-
+	blog.V(4).Infof("[SearchInstAssociation] search association, condition: %#v, results: %#v, unmarshal to: %#v", query, rsp.Data.Info, instAsst)
 	return instAsst, nil
 }
 
-func (a *association) CreateCommonAssociation(params types.ContextParams, data *metadata.Association) (model.Association, error) {
+func (a *association) CreateCommonAssociation(params types.ContextParams, data *metadata.Association) error {
 
 	//  check the association
 	cond := condition.CreateCondition()
@@ -124,12 +128,12 @@ func (a *association) CreateCommonAssociation(params types.ContextParams, data *
 	rsp, err := a.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to request object controller, error info is %s", err.Error())
-		return nil, params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+		return params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
 	}
 
 	if !rsp.Result {
 		blog.Errorf("[operation-asst] failed to create the association (%#v) , error info is %s", cond.ToMapStr(), rsp.ErrMsg)
-		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
+		return params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	// create a new
@@ -137,15 +141,15 @@ func (a *association) CreateCommonAssociation(params types.ContextParams, data *
 	rspAsst, err := a.clientSet.ObjectController().Meta().CreateObjectAssociation(context.Background(), params.Header, data)
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to request object controller, error info is %s", err.Error())
-		return nil, params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+		return params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
 	}
 
 	if !rspAsst.Result {
 		blog.Errorf("[operation-asst] failed to create the association (%#v) , error info is %s", data, rspAsst.ErrMsg)
-		return nil, params.Err.New(rspAsst.Code, rspAsst.ErrMsg)
+		return params.Err.New(rspAsst.Code, rspAsst.ErrMsg)
 	}
 
-	return nil, nil
+	return nil
 }
 
 func (a *association) DeleteInstAssociation(params types.ContextParams, cond condition.Condition) error {
@@ -164,6 +168,22 @@ func (a *association) DeleteInstAssociation(params types.ContextParams, cond con
 	return nil
 }
 
+func (a *association) CreateCommonInstAssociation(params types.ContextParams, data *metadata.InstAsst) error {
+	// create a new
+
+	rspAsst, err := a.clientSet.ObjectController().Instance().CreateObject(context.Background(), common.BKTableNameInstAsst, params.Header, data)
+	if nil != err {
+		blog.Errorf("[operation-asst] failed to request object controller, error info is %s", err.Error())
+		return params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+
+	if !rspAsst.Result {
+		blog.Errorf("[operation-asst] failed to create the association (%#v) , error info is %s", data, rspAsst.ErrMsg)
+		return params.Err.New(rspAsst.Code, rspAsst.ErrMsg)
+	}
+
+	return nil
+}
 func (a *association) DeleteAssociation(params types.ContextParams, cond condition.Condition) error {
 
 	// delete the object association
@@ -181,5 +201,22 @@ func (a *association) DeleteAssociation(params types.ContextParams, cond conditi
 	return nil
 }
 func (a *association) UpdateAssociation(params types.ContextParams, data frtypes.MapStr, cond condition.Condition) error {
+	return nil
+}
+
+// CheckBeAssociation and return error if the obj has been bind
+func (a *association) CheckBeAssociation(params types.ContextParams, obj model.Object, cond condition.Condition) error {
+	exists, err := a.SearchInstAssociation(params, &metatype.QueryInput{Condition: cond.ToMapStr()})
+	if nil != err {
+		return err
+	}
+
+	if len(exists) > 0 {
+		beAsstObject := []string{}
+		for _, asst := range exists {
+			beAsstObject = append(beAsstObject, asst.ObjectID)
+		}
+		return params.Err.Errorf(common.CCErrTopoInstHasBeenAssociation, beAsstObject)
+	}
 	return nil
 }

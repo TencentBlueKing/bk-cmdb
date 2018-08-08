@@ -16,9 +16,12 @@ import (
 	"github.com/emicklei/go-restful"
 	redis "gopkg.in/redis.v5"
 
+	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
+	"configcenter/src/common/types"
 	"configcenter/src/source_controller/hostcontroller/logics"
 	"configcenter/src/storage"
 )
@@ -66,6 +69,59 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.PUT("/usercustom/{bk_user}/{id}").To(s.UpdateUserCustomByID))
 	ws.Route(ws.POST("/usercustom/user/search/{bk_user}").To(s.GetUserCustomByUser))
 	ws.Route(ws.POST("/usercustom/default/search/{bk_user}").To(s.GetDefaultUserCustom))
+	ws.Route(ws.GET("/healthz").To(s.Healthz))
 
 	return ws
+}
+
+func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
+	meta := metric.HealthMeta{IsHealthy: true}
+
+	// zk health status
+	zkItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityServicediscover}
+	if err := s.Core.Ping(); err != nil {
+		zkItem.IsHealthy = false
+		zkItem.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, zkItem)
+
+	// mongodb status
+	mongoItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityMongo}
+	if err := s.Instance.Ping(); err != nil {
+		mongoItem.IsHealthy = false
+		mongoItem.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, mongoItem)
+
+	// redis status
+	redisItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityRedis}
+	if err := s.Cache.Ping().Err(); err != nil {
+		redisItem.IsHealthy = false
+		redisItem.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, redisItem)
+
+	for _, item := range meta.Items {
+		if item.IsHealthy == false {
+			meta.IsHealthy = false
+			meta.Message = "host controller is unhealthy"
+			break
+		}
+	}
+
+	info := metric.HealthInfo{
+		Module:     types.CC_MODULE_HOST,
+		HealthMeta: meta,
+		AtTime:     types.Now(),
+	}
+
+	answer := metric.HealthResponse{
+		Code:    common.CCSuccess,
+		Data:    info,
+		OK:      meta.IsHealthy,
+		Result:  meta.IsHealthy,
+		Message: meta.Message,
+	}
+	resp.Header().Set("Content-Type", "application/json")
+	resp.WriteEntity(answer)
 }

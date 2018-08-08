@@ -30,13 +30,14 @@ import (
 	commontypes "configcenter/src/common/types"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/types"
-	"configcenter/src/source_controller/common/instdata"
 )
 
 // Subscribe  Subscribe events
 func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
+	var err error
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	ownerID := util.GetOwnerID(pheader)
 
 	sub := &metadata.Subscription{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&sub); err != nil {
@@ -53,15 +54,21 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 		sub.ConfirmPattern = "200"
 	}
 	sub.LastTime = &now
+	sub.OwnerID = ownerID
 	sub.SubscriptionForm = strings.Replace(sub.SubscriptionForm, " ", "", 0)
+	sub.SubscriptionID, err = s.db.GetIncID(common.BKTableNameSubscription)
+	if nil != err {
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeInsertFailed)})
+		return
+	}
 
-	count, err := instdata.GetSubscriptionCntByCondition(map[string]interface{}{"subscription_name": sub.SubscriptionName})
+	count, err := s.db.GetCntByCondition(common.BKTableNameSubscription, map[string]interface{}{common.BKSubscriptionNameField: sub.SubscriptionName, common.BKOwnerIDField: ownerID})
 	if err != nil || count > 0 {
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDuplicateItem)})
 		return
 	}
 	// save to the storage
-	if _, err := instdata.CreateSubscription(sub); err != nil {
+	if _, err := s.db.Insert(common.BKTableNameSubscription, sub); err != nil {
 		blog.Errorf("create subscription failed, error:%s", err.Error())
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeInsertFailed)})
 		return
@@ -70,7 +77,7 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 	// save to subscribeform in cache
 	events := strings.Split(sub.SubscriptionForm, ",")
 	for _, event := range events {
-		if err := s.cache.SAdd(types.EventCacheSubscribeformKey+event, sub.SubscriptionID).Err(); err != nil {
+		if err := s.cache.SAdd(types.EventSubscriberCacheKey(ownerID, event), sub.SubscriptionID).Err(); err != nil {
 			blog.Errorf("create subscription failed, error:%s", err.Error())
 			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeInsertFailed)})
 			return
@@ -95,6 +102,7 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 func (s *Service) UnSubscribe(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	ownerID := util.GetOwnerID(pheader)
 
 	id, err := strconv.ParseInt(req.PathParameter("subscribeID"), 10, 64)
 	if nil != err {
@@ -104,14 +112,14 @@ func (s *Service) UnSubscribe(req *restful.Request, resp *restful.Response) {
 
 	// query old Subscription
 	sub := metadata.Subscription{}
-	condiction := util.NewMapBuilder(common.BKSubscriptionIDField, id).Build()
-	if err := instdata.GetOneSubscriptionByCondition(condiction, &sub); err != nil {
+	condiction := util.NewMapBuilder(common.BKSubscriptionIDField, id, common.BKOwnerIDField, ownerID).Build()
+	if err := s.db.GetOneByCondition(common.BKTableNameSubscription, nil, condiction, &sub); err != nil {
 		blog.Errorf("fail to get subscription by id %v, error information is %v", id, err)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeDeleteFailed)})
 		return
 	}
 	// execute delete command
-	if delerr := instdata.DelSubscriptionByCondition(condiction); nil != delerr {
+	if delerr := s.db.DelByCondition(common.BKTableNameSubscription, condiction); nil != delerr {
 		blog.Errorf("fail to delete subscription by id %v, error information is %v", id, delerr)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeDeleteFailed)})
 	}
@@ -120,7 +128,7 @@ func (s *Service) UnSubscribe(req *restful.Request, resp *restful.Response) {
 	eventTypes := strings.Split(sub.SubscriptionForm, ",")
 	for _, eventType := range eventTypes {
 		eventType = strings.TrimSpace(eventType)
-		if err := s.cache.SRem(types.EventCacheSubscribeformKey+eventType, subID).Err(); err != nil {
+		if err := s.cache.SRem(types.EventSubscriberCacheKey(ownerID, eventType), subID).Err(); err != nil {
 			blog.Errorf("delete subscription failed, error:%s", err.Error())
 			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeDeleteFailed)})
 		}
@@ -139,6 +147,7 @@ func (s *Service) UnSubscribe(req *restful.Request, resp *restful.Response) {
 func (s *Service) Rebook(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	ownerID := util.GetOwnerID(pheader)
 
 	id, err := strconv.ParseInt(req.PathParameter("subscribeID"), 10, 64)
 	if nil != err {
@@ -155,14 +164,14 @@ func (s *Service) Rebook(req *restful.Request, resp *restful.Response) {
 	}
 	// query old Subscription
 	oldsub := metadata.Subscription{}
-	condiction := util.NewMapBuilder(common.BKSubscriptionIDField, id).Build()
-	if err := instdata.GetOneSubscriptionByCondition(condiction, &oldsub); err != nil {
+	condiction := util.NewMapBuilder(common.BKSubscriptionIDField, id, common.BKOwnerIDField, ownerID).Build()
+	if err := s.db.GetOneByCondition(common.BKTableNameSubscription, nil, condiction, &oldsub); err != nil {
 		blog.Errorf("fail to get subscription by id %v, error information is %v", id, err)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeUpdateFailed)})
 		return
 	}
 	if oldsub.SubscriptionName != sub.SubscriptionName {
-		count, err := instdata.GetSubscriptionCntByCondition(map[string]interface{}{"subscription_name": sub.SubscriptionName})
+		count, err := s.db.GetCntByCondition(common.BKTableNameSubscription, map[string]interface{}{common.BKSubscriptionNameField: sub.SubscriptionName, common.BKOwnerIDField: ownerID})
 		if err != nil {
 			blog.Errorf("get subscription count error: %v", err)
 			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeUpdateFailed)})
@@ -181,9 +190,10 @@ func (s *Service) Rebook(req *restful.Request, resp *restful.Response) {
 	}
 	now := commontypes.Now()
 	sub.LastTime = &now
+	sub.OwnerID = ownerID
 	sub.SubscriptionForm = strings.Replace(sub.SubscriptionForm, " ", "", 0)
 	sub.Operator = util.GetUser(req.Request.Header)
-	if updateerr := instdata.UpdateSubscriptionByCondition(sub, util.NewMapBuilder(common.BKSubscriptionIDField, id).Build()); nil != updateerr {
+	if updateerr := s.db.UpdateByCondition(common.BKTableNameSubscription, sub, util.NewMapBuilder(common.BKSubscriptionIDField, id, common.BKOwnerIDField, ownerID).Build()); nil != updateerr {
 		blog.Errorf("fail update subscription by condition, error information is %s", updateerr.Error())
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeUpdateFailed)})
 		return
@@ -196,14 +206,14 @@ func (s *Service) Rebook(req *restful.Request, resp *restful.Response) {
 
 	for _, eventType := range subs {
 		eventType = strings.TrimSpace(eventType)
-		if err := s.cache.SRem(types.EventCacheSubscribeformKey+eventType, id).Err(); err != nil {
+		if err := s.cache.SRem(types.EventSubscriberCacheKey(ownerID, eventType), id).Err(); err != nil {
 			blog.Errorf("delete subscription failed, error:%s", err.Error())
 			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeUpdateFailed)})
 			return
 		}
 	}
 	for _, event := range plugs {
-		if err := s.cache.SAdd(types.EventCacheSubscribeformKey+event, sub.SubscriptionID).Err(); err != nil {
+		if err := s.cache.SAdd(types.EventSubscriberCacheKey(ownerID, event), sub.SubscriptionID).Err(); err != nil {
 			blog.Errorf("create subscription failed, error:%s", err.Error())
 			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeUpdateFailed)})
 			return
@@ -219,6 +229,7 @@ func (s *Service) Rebook(req *restful.Request, resp *restful.Response) {
 func (s *Service) Query(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	ownerID := util.GetOwnerID(pheader)
 
 	blog.Info("select subscription")
 
@@ -231,6 +242,7 @@ func (s *Service) Query(req *restful.Request, resp *restful.Response) {
 
 	fields := dat.Fields
 	condition := dat.Condition
+	condition = util.SetModOwner(condition, ownerID)
 
 	skip := dat.Page.Start
 	limit := dat.Page.Limit
@@ -239,7 +251,7 @@ func (s *Service) Query(req *restful.Request, resp *restful.Response) {
 	}
 	sort := dat.Page.Sort
 
-	count, err := instdata.GetSubscriptionCntByCondition(condition)
+	count, err := s.db.GetCntByCondition(common.BKTableNameSubscription, condition)
 	if err != nil {
 		blog.Errorf("get host count error, input:%+v error:%v", dat, err)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeSelectFailed)})
@@ -248,7 +260,7 @@ func (s *Service) Query(req *restful.Request, resp *restful.Response) {
 
 	results := []metadata.Subscription{}
 	blog.Debug("selector:%+v", condition)
-	if selerr := instdata.GetSubscriptionByCondition(fields, condition, &results, sort, skip, limit); nil != selerr {
+	if selerr := s.db.GetMutilByCondition(common.BKTableNameSubscription, fields, condition, &results, sort, skip, limit); nil != selerr {
 		blog.Errorf("select data failed, error information is %s, input:%v", selerr, dat)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeSelectFailed)})
 		return

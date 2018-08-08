@@ -114,6 +114,7 @@ func BuildExcelTemplate(url, objID, filename string, header http.Header, defLang
 		blog.Errorf("get %s fields error:", objID, err.Error())
 		return err
 	}
+	blog.V(5).Infof("BuildExcelTemplate fields count:%d", fields)
 	productExcelHealer(fields, filterFields, sheet, defLang)
 	ProductExcelCommentSheet(file, defLang)
 

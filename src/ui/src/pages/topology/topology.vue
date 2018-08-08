@@ -27,6 +27,7 @@
                         :outerLoading="tree.loading"
                         :isShowCrossImport="authority['is_host_cross_biz'] && attributeBkObjId === 'module'"
                         :tableVisible="view.tab.active === 'host'"
+                        :wrapperMinusHeight="210"
                         @handleCrossImport="handleCrossImport">
                         <div slot="filter"></div>
                     </v-hosts>
@@ -46,7 +47,8 @@
                         @delete="deleteNode"
                         @cancel="cancelCreate"></v-attribute>
                 </bk-tabpanel>
-                <bk-tabpanel name="process" :title="$t('ProcessManagement[\'进程信息\']')" :show="attributeBkObjId === 'module'">
+                <bk-tabpanel name="process" :title="$t('ProcessManagement[\'进程信息\']')" 
+                    :show="attributeBkObjId === 'module' && ![1,2].includes(tree.activeNode.default)">
                     <v-process
                         :isShow="view.tab.active === 'process'"
                         :bizId="tree.bkBizId"
@@ -86,7 +88,7 @@
                     activeNodeOptions: {},
                     activeParentNode: {},
                     initNode: {},
-                    loading: true
+                    loading: false
                 },
                 view: {
                     tab: {
@@ -573,6 +575,9 @@
         }
         .bk-tab2-content{
             height: calc(100% - 80px);
+            section.active{
+                height: 100%;
+            }
         }
     }
     .topo-wrapper .hosts-wrapper{
