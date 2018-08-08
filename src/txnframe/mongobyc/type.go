@@ -16,10 +16,20 @@ import (
 	"configcenter/src/common/mapstr"
 )
 
+// Opener open method
+type Opener interface {
+	Open() error
+}
+
+// Closer close method
+type Closer interface {
+	Close() error
+}
+
 // OpenCloser open and close methods
 type OpenCloser interface {
-	Open() error
-	Close() error
+	Opener
+	Closer
 }
 
 // Index the collection index definition
