@@ -41,6 +41,16 @@ type MongoConfig struct {
 	Mechanism    string
 }
 
+// BuildMongoURI return mongo uri according to  https://docs.mongodb.com/manual/reference/connection-string/
+// format example: mongodb://[username:password@]host1[:port1][,host2[:port2],...[,hostN[:portN]]][/[database][?options]]
+func (c MongoConfig) BuildMongoURI() string {
+	uri := fmt.Sprintf("mongodb://%s:%s@%s:%s/%s", c.User, c.Password, c.Address, c.Port, c.Database)
+	if c.Mechanism != "" {
+		uri += "?authMechanism=" + c.Mechanism
+	}
+	return uri
+}
+
 func NewMongoConfig(src map[string]string) *MongoConfig {
 	config := MongoConfig{}
 	config.Address = src["mongodb.host"]

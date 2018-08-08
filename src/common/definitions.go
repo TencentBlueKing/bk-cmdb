@@ -453,6 +453,11 @@ const (
 	BKInstKeyField = "bk_inst_key"
 )
 
+const (
+	BKRequestField = "bk_request_id"
+	BKTxnIDField   = "bk_txn_id"
+)
+
 // DefaultResSetName the inner module set
 const DefaultResSetName string = "空闲机池"
 

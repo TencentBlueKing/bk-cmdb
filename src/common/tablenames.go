@@ -66,6 +66,8 @@ const (
 	BKTableNameIdentifier       = "cc_idgenerator"
 	BKTableNameObjAsst          = "cc_ObjAsst"
 	BKTableNameTopoGraphics     = "cc_TopoGraphics"
+	BKTableNameTransaction      = "cc_Transaction"
+	BKTableNameIDgenerator      = "cc_idgenerator"
 )
 
 // AllTables alltables
@@ -99,6 +101,8 @@ var AllTables = []string{
 	BKTableNameIdentifier,
 	BKTableNameObjAsst,
 	BKTableNameTopoGraphics,
+	BKTableNameTransaction,
+	BKTableNameIDgenerator,
 }
 
 // GetInstTableName returns inst data table name

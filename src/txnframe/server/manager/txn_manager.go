@@ -13,47 +13,127 @@
 package manager
 
 import (
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/txnframe/mongobyc"
 	"configcenter/src/txnframe/types"
+	"context"
+	"errors"
+	"github.com/rs/xid"
+	"time"
 )
 
 type TxnManager struct {
 	cache map[string]*Session
 	db    mongobyc.Client
+	ctx   context.Context
 }
 
 type Session struct {
-	*types.Tansaction
-	mongo mongobyc.Session
+	Txninst *types.Tansaction
+	mongobyc.Session
 }
 
-func (s *Session) Txn() mongobyc.Transaction {
-	return s.mongo
-}
-
-func New() *TxnManager {
-	return new(TxnManager)
-}
-
-func (tm *TxnManager) Start() error {
-	return nil
-}
-
-func (tm *TxnManager) Store(txn *types.Tansaction, db mongobyc.Session) {
-	tm.cache[txn.TxnID] = &Session{
-		Tansaction: txn,
-		mongo:      db,
+func New(ctx context.Context, db mongobyc.Client) *TxnManager {
+	return &TxnManager{
+		db:    db,
+		cache: map[string]*Session{},
+		ctx:   ctx,
 	}
+}
+
+func (tm *TxnManager) Run() error {
+	select {}
+	return nil
 }
 
 func (tm *TxnManager) GetSession(txnID string) *Session {
 	return tm.cache[txnID]
 }
 
-func (tm *TxnManager) CreateTransaction() *Session {
+func (tm *TxnManager) CreateTransaction(requestID string, processor string) (*Session, error) {
 	session := tm.db.Session().Create()
-	session.Open()
-	session.CreateTransaction()
+	err := session.Open()
+	if nil != err {
+		return nil, err
+	}
+	err = session.StartTransaction()
+	if nil != err {
+		return nil, err
+	}
 
-	return tm.cache[txnID]
+	now := time.Now()
+	txn := types.Tansaction{
+		RequestID:  requestID,
+		Processor:  processor,
+		TxnID:      xid.New().String(),
+		Status:     types.TxStatusOnProgress,
+		CreateTime: &now,
+		LastTime:   &now,
+	}
+
+	err = tm.db.Collection(common.BKTableNameTransaction).InsertOne(tm.ctx, txn, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	inst := &Session{
+		Txninst: &txn,
+		Session: session,
+	}
+	tm.cache[txn.TxnID] = inst
+
+	return inst, nil
+}
+
+func (tm *TxnManager) Commit(txnID string) error {
+	session := tm.GetSession(txnID)
+	if session == nil {
+		return errors.New("session not found")
+	}
+	err := session.CommitTransaction()
+	if nil != err {
+		session.Txninst.Status = types.TxStatusException
+	} else {
+		session.Txninst.Status = types.TxStatusCommited
+	}
+	session.Close()
+
+	filter := types.NewFilterBuilder().Eq(common.BKTxnIDField, txnID).Build()
+	update := types.Document{
+		"status":             session.Txninst.Status,
+		common.LastTimeField: time.Now(),
+	}
+
+	_, err = tm.db.Collection(common.BKTableNameTransaction).UpdateOne(tm.ctx, filter, update, nil)
+	if nil != err {
+		blog.Errorf("save transaction [%s] status to %#v faile: %s", txnID, session.Txninst.Status, err.Error())
+	}
+	return nil
+}
+
+func (tm *TxnManager) Abort(txnID string) error {
+	session := tm.GetSession(txnID)
+	if session == nil {
+		return errors.New("session not found")
+	}
+	err := session.AbortTransaction()
+	if nil != err {
+		session.Txninst.Status = types.TxStatusException
+	} else {
+		session.Txninst.Status = types.TxStatusAborted
+	}
+	session.Close()
+
+	filter := types.NewFilterBuilder().Eq(common.BKTxnIDField, txnID).Build()
+	update := types.Document{
+		"status":             session.Txninst.Status,
+		common.LastTimeField: time.Now(),
+	}
+
+	_, err = tm.db.Collection(common.BKTableNameTransaction).UpdateOne(tm.ctx, filter, update, nil)
+	if nil != err {
+		blog.Errorf("save transaction [%s] status to %#v faile: %s", txnID, session.Txninst.Status, err.Error())
+	}
+	return nil
 }

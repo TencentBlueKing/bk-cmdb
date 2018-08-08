@@ -28,12 +28,20 @@ type TXRPC struct {
 	*backbone.Engine
 	ctx    context.Context
 	rpcsrv *rpc.Server
-	man    manager.TxnManager
+	man    *manager.TxnManager
 	db     mongobyc.Client
 }
 
 func (t *TXRPC) SetEngine(engine *backbone.Engine) {
 	t.Engine = engine
+}
+
+func (t *TXRPC) SetDB(db mongobyc.Client) {
+	t.db = db
+}
+
+func (t *TXRPC) SetMan(man *manager.TxnManager) {
+	t.man = man
 }
 
 func NewTXRPC(rpcsrv *rpc.Server) *TXRPC {
@@ -70,24 +78,43 @@ func (t *TXRPC) DBOperation(input *rpc.Message) (interface{}, error) {
 		return reply, nil
 	}
 
-	var transaction mongobyc.Transaction
+	var transaction mongobyc.Session
 	if header.TxnID != "" {
-		session := t.man.Get(header.TxnID)
+		session := t.man.GetSession(header.TxnID)
 		if nil == session {
 			reply.Message = "session not found"
 			return reply, nil
 		}
-		transaction = session.Txn()
+		transaction = session.Session
 	}
 
 	switch header.OPCode {
 	case types.OPStartTransaction:
-		transaction = t.db.Session().Create().CreateTransaction()
+		session, err := t.man.CreateTransaction(header.RequestID, buildProcessor(t.ServerInfo.IP, t.ServerInfo.Port, t.ServerInfo.Pid))
+		if nil != err {
+			reply.Message = err.Error()
+			return reply, nil
+		}
+		reply.OK = true
+		reply.TxnID = session.Txninst.TxnID
+		reply.Processor = session.Txninst.Processor
 		return reply, nil
 	case types.OPCommit:
-		return reply, transaction.Commit()
+		err := t.man.Commit(header.TxnID)
+		if nil != err {
+			reply.Message = err.Error()
+			return reply, nil
+		}
+		reply.OK = true
+		return reply, nil
 	case types.OPAbort:
-		return reply, transaction.Commit()
+		err := t.man.Abort(header.TxnID)
+		if nil != err {
+			reply.Message = err.Error()
+			return reply, nil
+		}
+		reply.OK = true
+		return reply, nil
 	case types.OPInsert, types.OPUpdate, types.OPDelete, types.OPFind, types.OPFindAndModify, types.OPCount:
 		var collectionFunc = t.db.Collection
 		if header.TxnID != "" {
@@ -115,4 +142,8 @@ func (*TXRPC) Healthz(input interface{}, output string) error {
 func (*TXRPC) Metrics(input interface{}, output string) error {
 	blog.V(3).Infof("Metrics %#v", input)
 	return nil
+}
+
+func buildProcessor(ip string, port uint, pid int) string {
+	return fmt.Sprintf("%s:%d-%d", ip, port, pid)
 }

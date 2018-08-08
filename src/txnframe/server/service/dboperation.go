@@ -58,6 +58,7 @@ func (e *collectionExecutor) execute() {
 		e.count()
 	}
 	if e.execerr != nil {
+		e.reply.OK = false
 		e.reply.Message = e.execerr.Error()
 	} else {
 		e.reply.OK = true

@@ -19,7 +19,9 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/types"
+	"configcenter/src/txnframe/mongobyc"
 	"configcenter/src/txnframe/rpc"
+	"configcenter/src/txnframe/server/manager"
 	"github.com/emicklei/go-restful"
 	"log"
 	"net/http"
@@ -29,11 +31,22 @@ import (
 type Service struct {
 	*backbone.Engine
 	txnService *TXRPC
+	man        *manager.TxnManager
+	db         mongobyc.Client
 }
 
 func (s *Service) SetEngine(engine *backbone.Engine) {
 	s.Engine = engine
 	s.txnService.SetEngine(engine)
+}
+
+func (s *Service) SetDB(db mongobyc.Client) {
+	s.db = db
+}
+
+func (s *Service) SetMan(man *manager.TxnManager) {
+	s.man = man
+	s.txnService.SetMan(man)
 }
 
 func (s *Service) WebService() *restful.WebService {

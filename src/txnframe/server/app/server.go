@@ -13,11 +13,14 @@
 package app
 
 import (
+	"configcenter/src/txnframe/mongobyc"
+	"configcenter/src/txnframe/server/manager"
 	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/emicklei/go-restful"
 
@@ -67,7 +70,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		Server:       server,
 	}
 
-	process := new(EventServer)
+	process := new(TXServer)
 	engine, err := backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
 		types.CC_MODULE_TXC,
 		op.ServConf.ExConfig,
@@ -81,32 +84,30 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	process.Core = engine
 	process.Service = service
 	errCh := make(chan error)
-	// for {
-	// 	if process.Config == nil {
-	// 		time.Sleep(time.Second * 2)
-	// 		blog.V(3).Info("config not found, retry 2s later")
-	// 		continue
-	// 	}
-	// 	db, err := mgoclient.NewFromConfig(process.Config.MongoDB)
-	// 	if err != nil {
-	// 		return fmt.Errorf("connect mongo server failed %s", err.Error())
-	// 	}
-	// 	err = db.Open()
-	// 	if err != nil {
-	// 		return fmt.Errorf("connect mongo server failed %s", err.Error())
-	// 	}
-	// 	process.Service.SetDB(db)
+	for {
+		if process.Config == nil {
+			time.Sleep(time.Second * 2)
+			blog.V(3).Info("config not found, retry 2s later")
+			continue
+		}
 
-	// 	cache, err := redisclient.NewFromConfig(process.Config.Redis)
-	// 	if err != nil {
-	// 		return fmt.Errorf("connect redis server failed %s", err.Error())
-	// 	}
-	// 	process.Service.SetCache(cache)
-	// 	go func() {
-	// 		errCh <- distribution.Start(cache, db)
-	// 	}()
-	// 	break
-	// }
+		db := mongobyc.NewClient(process.Config.MongoDB.BuildMongoURI(), "")
+		err := db.Open()
+		if err != nil {
+			return fmt.Errorf("connect mongo server failed %s", err.Error())
+		}
+		err = db.Open()
+		if err != nil {
+			return fmt.Errorf("connect mongo server failed %s", err.Error())
+		}
+		process.Service.SetDB(db)
+		man := manager.New(ctx, db)
+		go func() {
+			errCh <- man.Run()
+		}()
+		process.Service.SetMan(man)
+		break
+	}
 	select {
 	case <-ctx.Done():
 	case err = <-errCh:
@@ -117,7 +118,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	return nil
 }
 
-type EventServer struct {
+type TXServer struct {
 	Core    *backbone.Engine
 	Config  *options.Config
 	Service *svc.Service
@@ -125,7 +126,7 @@ type EventServer struct {
 
 var configLock sync.Mutex
 
-func (h *EventServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
+func (h *TXServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 	configLock.Lock()
 	defer configLock.Unlock()
 	if len(current.ConfigMap) > 0 {
