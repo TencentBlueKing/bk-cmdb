@@ -716,3 +716,12 @@ func (c *collection) ReplaceOne(ctx context.Context, filter interface{}, replace
 	err = result.MarshalJSONInto(replaceRst)
 	return replaceRst, err
 }
+
+func (c *collection) Close() error {
+	if nil != c.innerCollection {
+		C.mongoc_collection_destroy(c.innerCollection)
+		c.innerCollection = nil
+	}
+
+	return nil
+}
