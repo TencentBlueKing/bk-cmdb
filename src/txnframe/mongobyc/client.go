@@ -46,12 +46,10 @@ type CommonClient interface {
 }
 
 // NewClient create a mongoc client instance
-func NewClient(uri, dbName string) CommonClient {
+func NewClient(uri string) CommonClient {
 	return &client{
-		uri: uri,
-		innerDB: &database{
-			dbName: dbName,
-		},
+		uri:            uri,
+		innerDB:        &database{},
 		collectionMaps: map[collectionName]CollectionInterface{},
 	}
 }
@@ -76,7 +74,7 @@ func (c *client) Open() error {
 	if nil == uri {
 		return TransformError(err)
 	}
-
+	c.innerDB.dbName = C.GoString(C.mongoc_uri_get_database(uri))
 	c.innerClient = C.mongoc_client_new_from_uri(uri)
 	if nil == c.innerClient {
 		return fmt.Errorf("can not create a client instance")
@@ -86,7 +84,6 @@ func (c *client) Open() error {
 
 	// set app name
 	cName := C.CString(c.innerDB.dbName)
-	C.mongoc_client_set_appname(c.innerClient, cName)
 
 	// get database by name
 	c.innerDB.db = C.mongoc_client_get_database(c.innerClient, cName)

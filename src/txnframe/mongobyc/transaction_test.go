@@ -23,7 +23,7 @@ func TestTransaction(t *testing.T) {
 	InitMongoc()
 	defer CleanupMongoc()
 
-	mongo := NewClient("mongodb://test.mongoc:27017", "db_name_uri")
+	mongo := NewClient("mongodb://test.mongoc:27017/cmdb?replicaSet=repseturi")
 	if err := mongo.Open(); nil != err {
 		fmt.Println("failed  open:", err)
 		return

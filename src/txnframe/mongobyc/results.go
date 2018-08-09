@@ -12,6 +12,10 @@
 
 package mongobyc
 
+import (
+	"configcenter/src/common/mapstr"
+)
+
 // DeleteResult is a result of an DeleteOne operat
 type DeleteResult struct {
 	// The number of documents that were deleted.
@@ -30,13 +34,14 @@ type ReplaceOneResult struct {
 	UpdateResult `json:",inline"`
 }
 
-// CursorIndex firstbatch in index result
-type CursorIndex struct {
-	Namespace string  `json:"ns"`
-	Indexes   []Index `json:"firstBatch"`
+// IndexResult get collection index result
+type IndexResult struct {
+	Namespace string        `json:"ns"`
+	Name      string        `json:"name"`
+	Key       mapstr.MapStr `json:"key"`
 }
 
 // GetIndexResult get the indexex result
 type GetIndexResult struct {
-	Cursor CursorIndex `json:"cursor"`
+	Indexes []IndexResult
 }

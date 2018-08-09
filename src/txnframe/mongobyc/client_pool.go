@@ -27,10 +27,9 @@ type ClientPool interface {
 }
 
 // NewClientPool create a mongoc client pool instance
-func NewClientPool(uri, dbName string) ClientPool {
+func NewClientPool(uri string) ClientPool {
 	pool := new(clientPool)
 	pool.uri = uri
-	pool.dbName = dbName
 	return pool
 }
 
@@ -48,7 +47,7 @@ func (c *clientPool) Open() error {
 	if nil == uri {
 		return TransformError(err)
 	}
-
+	c.dbName = C.GoString(C.mongoc_uri_get_database(uri))
 	c.pool = C.mongoc_client_pool_new(uri)
 	if nil == c.pool {
 		return fmt.Errorf("can not create a client pool instance")

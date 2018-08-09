@@ -40,8 +40,12 @@ func TransformFindOpts(opts *findopt.Opts) *findopt.Opts {
 		opts.Sort = "_id"
 	}
 
+	if nil == opts.Fields {
+		opts.Fields = mapstr.New()
+	}
+
 	if !opts.Fields.Exists("_id") {
-		opts.Fields.Set("_id", 0)
+		opts.Fields.Set("_id", 1)
 	}
 	return opts
 }
@@ -62,6 +66,11 @@ func TransformError(err C.bson_error_t) error {
 func TransformDocument(doc interface{}) (*C.bson_t, error) {
 
 	switch docType := doc.(type) {
+	case nil:
+		bdata := &bson{
+			data: `{}`,
+		}
+		return bdata.ToDocument()
 	case string:
 		bdata := &bson{
 			data: docType,

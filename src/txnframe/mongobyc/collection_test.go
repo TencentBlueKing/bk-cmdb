@@ -30,7 +30,7 @@ func TestInsertOne(t *testing.T) {
 	InitMongoc()
 	defer CleanupMongoc()
 
-	mongo := NewClient("mongodb://test.mongoc:27017", "db_name_uri")
+	mongo := NewClient("mongodb://test.mongoc:27017/cmdb?replicaSet=repseturi")
 	if err := mongo.Open(); nil != err {
 		fmt.Println("failed  open:", err)
 		return
@@ -50,7 +50,7 @@ func TestInsertMany(t *testing.T) {
 	InitMongoc()
 	defer CleanupMongoc()
 
-	mongo := NewClient("mongodb://test.mongoc:27017", "db_name_uri")
+	mongo := NewClient("mongodb://test.mongoc:27017/cmdb?replicaSet=repseturi")
 	if err := mongo.Open(); nil != err {
 		fmt.Println("failed  open:", err)
 		return
@@ -69,7 +69,7 @@ func TestUpdateOne(t *testing.T) {
 	InitMongoc()
 	defer CleanupMongoc()
 
-	mongo := NewClient("mongodb://test.mongoc:27017", "db_name_uri")
+	mongo := NewClient("mongodb://test.mongoc:27017/cmdb?replicaSet=repseturi")
 	if err := mongo.Open(); nil != err {
 		fmt.Println("failed  open:", err)
 		return
@@ -96,7 +96,7 @@ func TestReplaceOne(t *testing.T) {
 	InitMongoc()
 	defer CleanupMongoc()
 
-	mongo := NewClient("mongodb://test.mongoc:27017", "db_name_uri")
+	mongo := NewClient("mongodb://test.mongoc:27017/cmdb?replicaSet=repseturi")
 	if err := mongo.Open(); nil != err {
 		fmt.Println("failed  open:", err)
 		return
@@ -117,7 +117,7 @@ func TestUpdateMany(t *testing.T) {
 	InitMongoc()
 	defer CleanupMongoc()
 
-	mongo := NewClient("mongodb://test.mongoc:27017", "db_name_uri")
+	mongo := NewClient("mongodb://test.mongoc:27017/cmdb?replicaSet=repseturi")
 	if err := mongo.Open(); nil != err {
 		fmt.Println("failed  open:", err)
 		return
@@ -144,7 +144,7 @@ func TestDeleteOne(t *testing.T) {
 	InitMongoc()
 	defer CleanupMongoc()
 
-	mongo := NewClient("mongodb://test.mongoc:27017", "db_name_uri")
+	mongo := NewClient("mongodb://test.mongoc:27017/cmdb?replicaSet=repseturi")
 	if err := mongo.Open(); nil != err {
 		fmt.Println("failed  open:", err)
 		return
@@ -171,7 +171,7 @@ func TestDeleteMany(t *testing.T) {
 	InitMongoc()
 	defer CleanupMongoc()
 
-	mongo := NewClient("mongodb://test.mongoc:27017", "db_name_uri")
+	mongo := NewClient("mongodb://test.mongoc:27017/cmdb?replicaSet=repseturi")
 	if err := mongo.Open(); nil != err {
 		fmt.Println("failed  open:", err)
 		return
@@ -192,7 +192,7 @@ func TestDeleteCollection(t *testing.T) {
 	InitMongoc()
 	defer CleanupMongoc()
 
-	mongo := NewClient("mongodb://test.mongoc:27017", "db_name_uri")
+	mongo := NewClient("mongodb://test.mongoc:27017/cmdb?replicaSet=repseturi")
 	if err := mongo.Open(); nil != err {
 		fmt.Println("failed  open:", err)
 		return
@@ -209,7 +209,7 @@ func TestCount(t *testing.T) {
 	InitMongoc()
 	defer CleanupMongoc()
 
-	mongo := NewClient("mongodb://test.mongoc:27017", "db_name_uri")
+	mongo := NewClient("mongodb://test.mongoc:27017/cmdb?replicaSet=repseturi")
 	if err := mongo.Open(); nil != err {
 		fmt.Println("failed  open:", err)
 		return
@@ -231,18 +231,18 @@ func TestCount(t *testing.T) {
 
 }
 
-func TestIndex(t *testing.T) {
+func TestCreateIndex(t *testing.T) {
 	InitMongoc()
 	defer CleanupMongoc()
 
-	mongo := NewClient("mongodb://test.mongoc:27017", "db_name_uri")
+	mongo := NewClient("mongodb://test.mongoc:27017/cmdb?replicaSet=repseturi")
 	if err := mongo.Open(); nil != err {
 		fmt.Println("failed  open:", err)
 		return
 	}
 	defer mongo.Close()
 
-	err := mongo.Collection("uri_test").InsertOne(context.Background(), `{"key":"uri"}`, nil)
+	err := mongo.Collection("uri_test").InsertOne(context.Background(), `{"key":"urid"}`, nil)
 	if nil != err {
 		fmt.Println("failed to insert:", err)
 		return
@@ -252,8 +252,7 @@ func TestIndex(t *testing.T) {
 		Keys: mapstr.MapStr{
 			"key": 1,
 		},
-		Unique: true,
-		Name:   "key",
+		Name: "key",
 	})
 
 	if nil != err {
@@ -263,11 +262,31 @@ func TestIndex(t *testing.T) {
 
 }
 
+func TestDeleteIndex(t *testing.T) {
+	InitMongoc()
+	defer CleanupMongoc()
+
+	mongo := NewClient("mongodb://test.mongoc:27017/cmdb?replicaSet=repseturi")
+	if err := mongo.Open(); nil != err {
+		fmt.Println("failed  open:", err)
+		return
+	}
+	defer mongo.Close()
+
+	err := mongo.Collection("uri_test").DropIndex("key")
+
+	if nil != err {
+		fmt.Println("failed to delete index:", err)
+		return
+	}
+
+}
+
 func TestGetIndex(t *testing.T) {
 	InitMongoc()
 	defer CleanupMongoc()
 
-	mongo := NewClient("mongodb://test.mongoc:27017", "db_name_uri")
+	mongo := NewClient("mongodb://test.mongoc:27017/cmdb?replicaSet=repseturi")
 	if err := mongo.Open(); nil != err {
 		fmt.Println("failed  open:", err)
 		return
@@ -287,26 +306,32 @@ func TestFindCollection(t *testing.T) {
 	InitMongoc()
 	defer CleanupMongoc()
 
-	mongo := NewClient("mongodb://test.mongoc:27017", "db_name_uri")
+	mongo := NewClient("mongodb://test.mongoc:27017/cmdb?replicaSet=repseturi")
 	if err := mongo.Open(); nil != err {
 		fmt.Println("failed  open:", err)
 		return
 	}
 	defer mongo.Close()
 
-	err := mongo.Collection("uri_test").InsertMany(context.Background(), []interface{}{`{"key":"uri"}`, `{"key_index":"uri2"}`}, nil)
+	err := mongo.Collection("uri_test").InsertMany(context.Background(), []interface{}{`{"keyd":"urid3"}`, `{"key_modify":"uri2"}`}, nil)
 	if nil != err {
 		fmt.Println("failed to find insert:", err)
 		return
 	}
 
 	results := []map[string]interface{}{}
-
-	err = mongo.Collection("uri_test").Find(context.Background(), `{"key":"uri"}`, &findopt.Many{
+	err = mongo.Collection("uri_test").Find(context.Background(), map[string]interface{}{
+		"keyd": map[string]interface{}{
+			"$regex":   "urid3",
+			"$options": "",
+		},
+	}, &findopt.Many{
 		Opts: findopt.Opts{
+			Limit: 0,
+			Skip:  0,
+			Sort:  "",
 			Fields: mapstr.MapStr{
-				"key":        1,
-				"key_modify": 1,
+				"_id": 0,
 			},
 		},
 	}, &results)
@@ -322,7 +347,7 @@ func TestFindAndModifyCollection(t *testing.T) {
 	InitMongoc()
 	defer CleanupMongoc()
 
-	mongo := NewClient("mongodb://test.mongoc:27017", "db_name_uri")
+	mongo := NewClient("mongodb://test.mongoc:27017/cmdb?replicaSet=repseturi")
 	if err := mongo.Open(); nil != err {
 		fmt.Println("failed  open:", err)
 		return

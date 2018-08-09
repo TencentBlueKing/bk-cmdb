@@ -64,3 +64,5 @@ bool get_collection_indexes(mongoc_database_t *db, const char* collectionName, b
    bson_destroy(getIndexes);
    return ok;
 }
+
+
