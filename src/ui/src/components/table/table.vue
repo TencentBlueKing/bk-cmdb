@@ -170,8 +170,10 @@
             visible: {
                 type: Boolean,
                 default: true
+            },
+            selectedList: {
+                type: Array
             }
-
         },
         data () {
             const layout = new TableLayout({
