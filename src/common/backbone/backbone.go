@@ -13,6 +13,7 @@
 package backbone
 
 import (
+	"configcenter/src/common/types"
 	"context"
 	"fmt"
 	"sync"
@@ -59,19 +60,21 @@ func New(c *Config, disc ServiceDiscoverInterface) (*Engine, error) {
 	}
 
 	return &Engine{
-		CoreAPI:  c.CoreAPI,
-		SvcDisc:  disc,
-		Language: language.NewFromCtx(language.EmptyLanguageSetting),
-		CCErr:    errors.NewFromCtx(errors.EmptyErrorsSetting),
+		ServerInfo: c.RegisterInfo,
+		CoreAPI:    c.CoreAPI,
+		SvcDisc:    disc,
+		Language:   language.NewFromCtx(language.EmptyLanguageSetting),
+		CCErr:      errors.NewFromCtx(errors.EmptyErrorsSetting),
 	}, nil
 }
 
 type Engine struct {
 	sync.Mutex
-	CoreAPI  apimachinery.ClientSetInterface
-	SvcDisc  ServiceDiscoverInterface
-	Language language.CCLanguageIf
-	CCErr    errors.CCErrorIf
+	ServerInfo types.ServerInfo
+	CoreAPI    apimachinery.ClientSetInterface
+	SvcDisc    ServiceDiscoverInterface
+	Language   language.CCLanguageIf
+	CCErr      errors.CCErrorIf
 }
 
 func (e *Engine) onLanguageUpdate(previous, current map[string]language.LanguageMap) {
