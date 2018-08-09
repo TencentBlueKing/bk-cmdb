@@ -13,6 +13,25 @@
         <div class="bottom-contain clearfix">
             <div class="btn-group fl">
                 <template v-if="objId!=='biz'">
+                    <bk-dropdown-menu ref="dropdown" class="mr10" :trigger="'click'">
+                        <bk-button class="dropdown-btn" type="default" slot="dropdown-trigger">
+                            <template v-if="table.chooseId.length">
+                                <i class="checkbox-btn" :class="{'checked': table.chooseId.length!==table.pagination.count, 'checked-all': table.chooseId.length===table.pagination.count}" @click.stop="tableChecked('cancel')"></i>
+                            </template>
+                            <template v-else>
+                                <i class="checkbox-btn" @click.stop="tableChecked('current')"></i>
+                            </template>
+                            <i :class="['bk-icon icon-angle-down',{'icon-flip': isDropdownShow}]"></i>
+                        </bk-button>
+                        <ul class="bk-dropdown-list" slot="dropdown-content">
+                            <li>
+                                <a href="javascript:;" @click="tableChecked('current')">{{$t("Common['全选本页']")}}</a>
+                            </li>
+                            <li>
+                                <a href="javascript:;" @click="tableChecked('all')">{{$t("Common['跨页全选']")}}</a>
+                            </li>
+                        </ul>
+                    </bk-dropdown-menu>
                     <div class="bk-group bk-button-group mr10">
                         <bk-button v-tooltip="$t('ModelManagement[\'导入\']')" type="default" class="bk-button vice-btn" @click="importSlider.isShow = true" :disabled="unauthorized.update">
                             <i class="icon-cc-import"></i>
@@ -87,7 +106,6 @@
                 :pagination.sync="table.pagination"
                 :defaultSort="table.defaultSort"
                 :checked.sync="table.chooseId"
-                :selectedList.sync="table.selectedList"
                 :wrapperMinusHeight="150"
                 :loading="$loading('instSearch')"
                 @handleRowClick="editObject"
@@ -188,6 +206,7 @@
         mixins: [Authority],
         data () {
             return {
+                isDropdownShow: false,
                 isSelectShow: false,
                 // 查询条件
                 filter: {
@@ -200,7 +219,6 @@
                 // 表格数据
                 table: {
                     loading: false,
-                    selectedList: [],
                     header: [],
                     list: [],
                     chooseId: [],
@@ -252,6 +270,7 @@
                 'bkSupplierAccount',
                 'usercustom'
             ]),
+            
             ...mapGetters('navigation', ['activeClassifications']),
             // 当前路由对应的模型ID
             objId () {
@@ -375,6 +394,17 @@
             }
         },
         methods: {
+            tableChecked (type) {
+                if (type === 'all') {
+                    this.getAllObjectId(true)
+                } else if (type === 'cancel') {
+                    this.table.chooseId = []
+                } else {
+                    let chooseId = []
+                    this.table.list.map(({bk_inst_id: bkInstId}) => chooseId.push(bkInstId))
+                    this.table.chooseId = chooseId
+                }
+            },
             async resetFields () {
                 await this.getTableHeader()
                 this.$refs.configField.getUserAttr()
@@ -654,14 +684,8 @@
                 }
             },
             confirmBatchDel () {
-                let title = ''
-                if (this.table.chooseId.length > 1) {
-                    title = this.$tc("Inst['确定删除选中的实例']", this.table.chooseId.length, {number: this.table.chooseId.length})
-                } else {
-                    title = this.$tc("Common['确认要删除']", 'name', {name: this.table.selectedList[0]['bk_inst_name']})
-                }
                 this.$bkInfo({
-                    title,
+                    title: this.$tc("Inst['确定删除选中的实例']", this.table.chooseId.length, {number: this.table.chooseId.length}),
                     confirmFn: () => {
                         this.batchDeleteInst()
                     }
@@ -836,6 +860,9 @@
     }
     .btn-group {
         font-size: 0;
+        .dropdown-btn {
+            width: 75px;
+        }
     }
     .bk-button{
         &.import,

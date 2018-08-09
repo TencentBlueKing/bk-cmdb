@@ -1,6 +1,25 @@
 <template>
     <div class="process-wrapper">
         <div class="process-filter clearfix">
+            <bk-dropdown-menu ref="dropdown" class="fl mr10" :trigger="'click'">
+                <bk-button class="dropdown-btn" type="default" slot="dropdown-trigger">
+                    <template v-if="table.chooseId.length">
+                        <i class="checkbox-btn" :class="{'checked': table.chooseId.length!==table.pagination.count, 'checked-all': table.chooseId.length===table.pagination.count}" @click.stop="tableChecked('cancel')"></i>
+                    </template>
+                    <template v-else>
+                        <i class="checkbox-btn" @click.stop="tableChecked('current')"></i>
+                    </template>
+                    <i class="bk-icon icon-angle-down"></i>
+                </bk-button>
+                <ul class="bk-dropdown-list" slot="dropdown-content">
+                    <li>
+                        <a href="javascript:;" @click="tableChecked('current')">{{$t("Common['全选本页']")}}</a>
+                    </li>
+                    <li>
+                        <a href="javascript:;" @click="tableChecked('all')">{{$t("Common['跨页全选']")}}</a>
+                    </li>
+                </ul>
+            </bk-dropdown-menu>
             <v-application-selector class="filter-selector fl"
                 :filterable="true" 
                 :selected.sync="filter.bkBizId">
@@ -215,6 +234,17 @@
             }
         },
         methods: {
+            tableChecked (type) {
+                if (type === 'all') {
+                    this.getAllProcessID(true)
+                } else if (type === 'cancel') {
+                    this.table.chooseId = []
+                } else {
+                    let chooseId = []
+                    this.table.list.map(({bk_process_id: bkProcessId}) => chooseId.push(bkProcessId))
+                    this.table.chooseId = chooseId
+                }
+            },
             multipleUpdate () {
                 this.slider.title.text = this.$t("ProcessManagement['批量编辑']")
                 this.slider.tab.attribute.isMultipleUpdate = true
@@ -426,6 +456,9 @@
         padding: 20px;
     }
     .process-filter{
+        .dropdown-btn {
+            width: 75px;
+        }
         .filter-selector{
             width: 170px;
             margin-right: 10px;
