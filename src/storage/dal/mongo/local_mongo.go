@@ -55,6 +55,7 @@ func (c *Client) Close() error {
 
 // Ping replica client
 func (c *Client) Ping() error {
+	c.dbc.Database()
 	return c.dbc.Ping()
 }
 
@@ -238,4 +239,58 @@ func (c *ClientTxn) Abort() error {
 // TxnInfo 当前事务信息，用于事务发起者往下传递
 func (c *ClientTxn) TxnInfo() *types.Tansaction {
 	return &types.Tansaction{}
+}
+
+// HasCollection 判断是否存在集合
+func (c *Client) HasCollection(collName string) (bool, error) {
+	return c.dbc.Database().HasCollection(collName)
+}
+
+// DropCollection 移除集合
+func (c *Client) DropCollection(collName string) error {
+	return c.dbc.Database().DropCollection(collName)
+}
+
+// CreateCollection 创建集合
+func (c *Client) CreateCollection(collName string) error {
+	return c.dbc.Database().CreateEmptyCollection(collName)
+}
+
+// CreateIndex 创建索引
+func (c *Collection) CreateIndex(ctx context.Context, index dal.Index) error {
+	i := mongobyc.Index{
+		Keys:       mapstr.MapStr(index.Keys),
+		Name:       index.Name,
+		Unique:     index.Unique,
+		Backgroupd: index.Backgroupd,
+	}
+
+	return c.table(c.collection).CreateIndex(i)
+}
+
+// DropIndex 移除索引
+func (c *Collection) DropIndex(ctx context.Context, indexName string) error {
+	return c.table(c.collection).DropIndex(indexName)
+}
+
+// AddColumn 添加字段
+func (c *Collection) AddColumn(ctx context.Context, column string, value interface{}) error {
+	selector := types.Document{column: types.Document{"$exists": false}}
+	datac := types.Document{"$set": types.Document{column: value}}
+	_, err := c.table(c.collection).UpdateMany(ctx, selector, datac, nil)
+	return err
+}
+
+// RenameColumn 重命名字段
+func (c *Collection) RenameColumn(ctx context.Context, oldName, newColumn string) error {
+	datac := types.Document{"$rename": types.Document{oldName: newColumn}}
+	_, err := c.table(c.collection).UpdateMany(ctx, nil, datac, nil)
+	return err
+}
+
+// DropColumn 移除字段
+func (c *Collection) DropColumn(ctx context.Context, field string) error {
+	datac := types.Document{"$unset": types.Document{field: "1"}}
+	_, err := c.table(c.collection).UpdateMany(ctx, nil, datac, nil)
+	return err
 }
