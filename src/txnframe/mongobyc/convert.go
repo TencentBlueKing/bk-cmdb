@@ -73,7 +73,7 @@ func TransformDocument(doc interface{}) (*C.bson_t, error) {
 	default:
 		data := []byte(`{}`)
 		var err error
-		if !reflect.ValueOf(docType).IsNil() {
+		if !ISNil(docType) {
 			data, err = json.Marshal(docType)
 			if nil != err {
 				return nil, err
@@ -86,6 +86,14 @@ func TransformDocument(doc interface{}) (*C.bson_t, error) {
 		return bdata.ToDocument()
 	}
 
+}
+
+func ISNil(value interface{}) bool {
+	rflValue := reflect.ValueOf(value)
+	if rflValue.IsValid() {
+		return reflect.ValueOf(value).IsNil()
+	}
+	return true
 }
 
 // TransformBsonIntoGoString transform bson into go string
