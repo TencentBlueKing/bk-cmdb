@@ -15,7 +15,7 @@
                             <input type="checkbox"
                                 :id="getCheckboxId(head, rowIndex)"
                                 :checked="checked.indexOf(item[head[table.valueKey]]) !== -1"
-                                @change="handleRowCheck(item[head[table.valueKey]], rowIndex)">
+                                @change="handleRowCheck(item, item[head[table.valueKey]], rowIndex)">
                         </label>
                     </td>
                     <td is="data-content" :class="['data-content', {'checkbox-content': head.type === 'checkbox'}]" v-else
@@ -47,7 +47,9 @@
             layout: Object
         },
         data () {
-            return {}
+            return {
+                selectedList: []
+            }
         },
         computed: {
             table () {
@@ -71,18 +73,21 @@
                 }
                 return width
             },
-            handleRowCheck (value, rowIndex) {
+            handleRowCheck (item, value, rowIndex) {
                 let checked = [...this.checked]
                 const index = checked.indexOf(value)
                 if (this.table.multipleCheck) {
                     if (index === -1) {
                         checked.push(value)
+                        this.selectedList.push(item)
                     } else {
                         checked.splice(index, 1)
+                        this.selectedList.splice(index, 1)
                     }
                 } else {
                     checked = index === -1 ? [value] : []
                 }
+                this.table.$emit('update:selectedList', this.selectedList)
                 this.table.$emit('update:checked', checked)
                 this.table.$emit('handleRowCheck', value, rowIndex)
             },
