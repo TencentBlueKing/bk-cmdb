@@ -340,16 +340,23 @@ func (c *collection) Find(ctx context.Context, filter interface{}, opts *findopt
 		limit := C.CString("limit")
 		sort := C.CString("sort")
 		skip := C.CString("skip")
-		fields := C.CString("projection")
 
 		C.bson_append_int64(operationOpts, limit, -1, C.int64_t(opts.Limit))
 		C.bson_append_int64(operationOpts, skip, -1, C.int64_t(opts.Skip))
-		var bsonSort, bsonFields *C.bson_t
-		bsonFields, err := TransformDocument(opts.Fields)
-		if nil != err {
-			return err
-		}
+		var bsonSort *C.bson_t
 
+		if 0 != len(opts.Fields) {
+			fields := C.CString("projection")
+			defer C.free(unsafe.Pointer(fields))
+			var bsonFields *C.bson_t
+			bsonFields, err := TransformDocument(opts.Fields)
+			if nil != err {
+				return err
+			}
+			C.bson_append_document(operationOpts, fields, -1, bsonFields)
+			C.bson_destroy(bsonFields)
+
+		}
 		if opts.Descending {
 			bsonSort, err = TransformDocument(fmt.Sprintf(`{"%s":%d}`, opts.Sort, -1))
 		} else {
@@ -360,12 +367,11 @@ func (c *collection) Find(ctx context.Context, filter interface{}, opts *findopt
 		}
 
 		C.bson_append_document(operationOpts, sort, -1, bsonSort)
-		C.bson_append_document(operationOpts, fields, -1, bsonFields)
 
 		C.free(unsafe.Pointer(limit))
 		C.free(unsafe.Pointer(sort))
 		C.free(unsafe.Pointer(skip))
-		C.free(unsafe.Pointer(fields))
+
 		C.bson_destroy(bsonSort)
 
 	}
@@ -388,7 +394,7 @@ func (c *collection) Find(ctx context.Context, filter interface{}, opts *findopt
 		datas = append(datas, docResult)
 		C.bson_destroy(doc)
 	}
-
+	//fmt.Println("datas:", datas)
 	TransformMapStrIntoResult(datas, output)
 
 	return nil
@@ -424,14 +430,21 @@ func (c *collection) FindOne(ctx context.Context, filter interface{}, opts *find
 		limit := C.CString("limit")
 		sort := C.CString("sort")
 		skip := C.CString("skip")
-		fields := C.CString("projection")
 
 		C.bson_append_int64(operationOpts, limit, -1, C.int64_t(opts.Limit))
 		C.bson_append_int64(operationOpts, skip, -1, C.int64_t(opts.Skip))
-		var bsonSort, bsonFields *C.bson_t
-		bsonFields, err := TransformDocument(opts.Fields)
-		if nil != err {
-			return err
+		var bsonSort *C.bson_t
+
+		if 0 != len(opts.Fields) {
+			fields := C.CString("projection")
+			defer C.free(unsafe.Pointer(fields))
+			var bsonFields *C.bson_t
+			bsonFields, err := TransformDocument(opts.Fields)
+			if nil != err {
+				return err
+			}
+			C.bson_append_document(operationOpts, fields, -1, bsonFields)
+			C.bson_destroy(bsonFields)
 		}
 
 		if opts.Descending {
@@ -444,12 +457,11 @@ func (c *collection) FindOne(ctx context.Context, filter interface{}, opts *find
 		}
 
 		C.bson_append_document(operationOpts, sort, -1, bsonSort)
-		C.bson_append_document(operationOpts, fields, -1, bsonFields)
 
 		C.free(unsafe.Pointer(limit))
 		C.free(unsafe.Pointer(sort))
 		C.free(unsafe.Pointer(skip))
-		C.free(unsafe.Pointer(fields))
+
 		C.bson_destroy(bsonSort)
 
 	}
