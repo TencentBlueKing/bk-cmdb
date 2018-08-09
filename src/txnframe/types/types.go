@@ -148,3 +148,5 @@ func ParsePage(origin interface{}) *Page {
 	}
 	return &result
 }
+
+type GetServerFunc func() ([]string, error)

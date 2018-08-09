@@ -15,7 +15,6 @@ package rpc_test
 import (
 	"configcenter/src/common"
 	. "configcenter/src/txnframe/client/rpc"
-	"configcenter/src/txnframe/rpc"
 	"context"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -23,10 +22,8 @@ import (
 
 func TestRPCClient(t *testing.T) {
 
-	rpccli, err := rpc.DialHTTPPath("tcp", "127.0.0.1:50010", "/txn/v3/rpc")
+	cli, err := Connect("127.0.0.1:50010")
 	require.NoError(t, err)
-
-	cli := New(rpccli)
 
 	apps := []map[string]interface{}{}
 	err = cli.Collection(common.BKTableNameBaseApp).Find(context.Background(), nil).All(&apps)

@@ -28,16 +28,37 @@ type Client struct {
 	Processor string // 处理进程号，结构为"IP:PORT-PID"用于识别事务session被存于那个TM多活实例
 	TxnID     string // 事务ID,uuid
 	rpc       *rpc.Client
+	getServer types.GetServerFunc
 }
 
 var _ client.DALClient = new(Client)
 var _ client.TxDALClient = new(TxClient)
 
-// New returns new RPCClient
-func New(rpc *rpc.Client) *Client {
-	return &Client{
-		rpc: rpc,
+func ConnectWithDiscover(getServer types.GetServerFunc) (*Client, error) {
+	servers, err := getServer()
+	if err != nil {
+		return nil, err
 	}
+
+	rpccli, err := rpc.DialHTTPPath("tcp", servers[0], "/txn/v3/rpc")
+	if err != nil {
+		return nil, err
+	}
+	return &Client{
+		rpc:       rpccli,
+		getServer: getServer,
+	}, nil
+}
+
+// Connect returns new RPCClient
+func Connect(uri string) (*Client, error) {
+	rpccli, err := rpc.DialHTTPPath("tcp", uri, "/txn/v3/rpc")
+	if err != nil {
+		return nil, err
+	}
+	return &Client{
+		rpc: rpccli,
+	}, nil
 }
 
 func (c *Client) clone() *Client {
