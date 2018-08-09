@@ -71,10 +71,15 @@ func TransformDocument(doc interface{}) (*C.bson_t, error) {
 		return bdata.ToDocument()
 
 	default:
-		data, err := json.Marshal(docType)
-		if nil != err {
-			return nil, err
+		data := []byte(`{}`)
+		var err error
+		if !reflect.ValueOf(docType).IsNil() {
+			data, err = json.Marshal(docType)
+			if nil != err {
+				return nil, err
+			}
 		}
+
 		bdata := &bson{
 			data: string(data),
 		}
