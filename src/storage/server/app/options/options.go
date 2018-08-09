@@ -42,6 +42,6 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 }
 
 type Config struct {
-	MongoDB mongo.MongoConfig
-	Redis   redis.RedisConfig
+	MongoDB mongo.Config
+	Redis   redis.Config
 }

@@ -12,11 +12,10 @@
 
 package redis
 
-type RedisConfig struct {
+// Config define redis config
+type Config struct {
 	Address    string
-	User       string
 	Password   string
 	Database   string
-	Port       string
 	MasterName string
 }
