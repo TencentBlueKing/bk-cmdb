@@ -74,7 +74,7 @@ func (d Documents) Decode(result interface{}) error {
 		}
 		err = bson.Unmarshal(out, result)
 		if nil != err {
-			blog.Errorf("Decode Document error: %s, source is %#v", err.Error(), d)
+			blog.Errorf("Decode Document error: %s, source is %#v", err.Error(), out)
 		}
 		return err
 	default:
