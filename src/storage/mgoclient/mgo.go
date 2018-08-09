@@ -31,6 +31,7 @@ import (
 )
 
 type MongoConfig struct {
+	Connect      string
 	Address      string
 	User         string
 	Password     string
@@ -44,6 +45,10 @@ type MongoConfig struct {
 // BuildMongoURI return mongo uri according to  https://docs.mongodb.com/manual/reference/connection-string/
 // format example: mongodb://[username:password@]host1[:port1][,host2[:port2],...[,hostN[:portN]]][/[database][?options]]
 func (c MongoConfig) BuildMongoURI() string {
+	if c.Connect != "" {
+		return c.Connect
+	}
+
 	uri := fmt.Sprintf("mongodb://%s:%s@%s:%s/%s", c.User, c.Password, c.Address, c.Port, c.Database)
 	if c.Mechanism != "" {
 		uri += "?authMechanism=" + c.Mechanism

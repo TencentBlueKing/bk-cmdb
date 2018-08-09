@@ -32,6 +32,31 @@ const (
 	OPAbort            = 668
 )
 
+func (c OPCode) String() string {
+	switch c {
+	case OPInsert:
+		return "OPInsert"
+	case OPUpdate:
+		return "OPUpdate"
+	case OPDelete:
+		return "OPDelete"
+	case OPFind:
+		return "OPFind"
+	case OPFindAndModify:
+		return "OPFindAndModify"
+	case OPCount:
+		return "OPCount"
+	case OPStartTransaction:
+		return "OPStartTransaction"
+	case OPCommit:
+		return "OPCommit"
+	case OPAbort:
+		return "OPAbort"
+	default:
+		return "UNKNOW"
+	}
+}
+
 type OPINSERT struct {
 	MsgHeader            // 标准报文头
 	Collection string    // "dbname.collectionname"

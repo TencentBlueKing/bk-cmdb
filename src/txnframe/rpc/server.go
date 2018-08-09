@@ -47,9 +47,10 @@ func (s *Server) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	}
 	io.WriteString(conn, "HTTP/1.0 "+connected+"\n\n")
 
+	blog.Errorf("connect from rpc client %s", req.RemoteAddr)
 	session := NewServerSession(s, conn)
 	if err = session.Run(); err != nil {
-		blog.Errorf("Run ServerSession error:  %s: %s ", req.RemoteAddr, err.Error())
+		blog.Errorf("dissconnect from rpc client %s: %s ", req.RemoteAddr, err.Error())
 		return
 	}
 }
@@ -111,7 +112,7 @@ func (s *ServerSession) readFromWire(ret chan<- error) {
 	switch msg.typz {
 	case TypeRequest:
 		call := msg.cmd.String()
-		blog.Infof("calling [%s] len= %d", call, len(call))
+		blog.V(3).Infof("[rpc server] calling [%s]", call)
 		if handlerFunc, ok := s.srv.handlers[call]; ok {
 			go s.handle(handlerFunc, msg)
 		} else if handlerFunc, ok := s.srv.streamHandlers[call]; ok {
@@ -121,7 +122,7 @@ func (s *ServerSession) readFromWire(ret chan<- error) {
 			for cmd := range s.srv.handlers {
 				cmds = append(cmds, cmd)
 			}
-			blog.Infof("command [%s] not found, existing command are: %#v", call, s.srv.handlers)
+			blog.V(3).Infof("[rpc server] command [%s] not found, existing command are: %#v", call, s.srv.handlers)
 			s.pushResponse(0, msg, ErrCommandNotFount)
 		}
 
@@ -174,7 +175,7 @@ func (s *ServerSession) readloop() error {
 			}
 			continue
 		case <-s.done:
-			blog.Infof("RPC server stopped")
+			blog.Infof("[rpc server] RPC server stopped")
 			return nil
 		}
 	}

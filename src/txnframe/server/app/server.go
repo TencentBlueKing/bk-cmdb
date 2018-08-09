@@ -84,6 +84,9 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	process.Core = engine
 	process.Service = service
 	errCh := make(chan error)
+
+	mongobyc.InitMongoc()
+	defer mongobyc.CleanupMongoc()
 	for {
 		if process.Config == nil {
 			time.Sleep(time.Second * 2)
@@ -91,7 +94,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			continue
 		}
 
-		db := mongobyc.NewClient(process.Config.MongoDB.BuildMongoURI(), "")
+		db := mongobyc.NewClient(process.Config.MongoDB.BuildMongoURI(), process.Config.MongoDB.Database)
 		err := db.Open()
 		if err != nil {
 			return fmt.Errorf("connect mongo server failed %s", err.Error())
@@ -100,6 +103,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		if err != nil {
 			return fmt.Errorf("connect mongo server failed %s", err.Error())
 		}
+		blog.V(3).Infof("connected to %s", process.Config.MongoDB.BuildMongoURI())
 		process.Service.SetDB(db)
 		man := manager.New(ctx, db)
 		go func() {
@@ -135,6 +139,7 @@ func (h *TXServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		}
 		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ") //ignore err, cause ConfigMap is map[string]string
 		blog.Infof("config updated: \n%s", out)
+		h.Config.MongoDB.Connect = current.ConfigMap["mongodb.connect"]
 		h.Config.MongoDB.Address = current.ConfigMap["mongodb.host"]
 		h.Config.MongoDB.User = current.ConfigMap["mongodb.usr"]
 		h.Config.MongoDB.Password = current.ConfigMap["mongodb.pwd"]

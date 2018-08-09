@@ -15,7 +15,6 @@ package service
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/types"
@@ -42,6 +41,7 @@ func (s *Service) SetEngine(engine *backbone.Engine) {
 
 func (s *Service) SetDB(db mongobyc.Client) {
 	s.db = db
+	s.txnService.SetDB(db)
 }
 
 func (s *Service) SetMan(man *manager.TxnManager) {
@@ -62,7 +62,6 @@ func (s *Service) WebService() *restful.WebService {
 	s.txnService = txnService
 
 	ws.Route(ws.Method(http.MethodConnect).Path("rpc").To(func(req *restful.Request, resp *restful.Response) {
-		blog.Infof("requeting rpc")
 		rpcsrv.ServeHTTP(resp.ResponseWriter, req.Request)
 	}))
 

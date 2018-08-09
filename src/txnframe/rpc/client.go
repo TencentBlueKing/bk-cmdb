@@ -54,7 +54,7 @@ func NewClient(conn net.Conn) *Client {
 		responses: make(chan *Message, 1024),
 		messages:  map[uint32]*Message{},
 	}
-	blog.Infof("connected to %s", c.TargetID())
+	blog.V(3).Infof("connected to %s", c.TargetID())
 	go c.loop()
 	go c.write()
 	go c.read()
@@ -223,9 +223,11 @@ func (c *Client) handleRequest(req *Message) {
 	req.seq = c.nextSeq()
 	c.messages[req.seq] = req
 	c.send <- req
+	blog.Infof("[rpc client]sent message data: %s", req.Data)
 }
 
 func (c *Client) handleResponse(resp *Message) {
+	blog.Infof("[rpc client]receive message data: %s", resp.Data)
 	if resp.transportErr != nil {
 		c.err = resp.transportErr
 		// Terminate all in flight
@@ -234,7 +236,6 @@ func (c *Client) handleResponse(resp *Message) {
 		}
 		return
 	}
-
 	if req, ok := c.messages[resp.seq]; ok {
 		if c.err != nil {
 			c.replyError(req)
