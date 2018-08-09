@@ -10,11 +10,11 @@
  * limitations under the License.
  */
 
-package rdb_test
+package mongo_test
 
 import (
 	"configcenter/src/common"
-	. "configcenter/src/storage/dal/rdb"
+	"configcenter/src/storage/dal/mongo"
 	"context"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -22,7 +22,7 @@ import (
 
 func TestRPCClient(t *testing.T) {
 
-	cli, err := Connect("127.0.0.1:50010")
+	cli, err := mongo.NewRPC("127.0.0.1:50010")
 	require.NoError(t, err)
 
 	apps := []map[string]interface{}{}

@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package rdb
+package mongo
 
 import (
 	"configcenter/src/storage/dal"
@@ -22,8 +22,8 @@ import (
 	"strconv"
 )
 
-// RDB implement client.DALRDB interface
-type RDB struct {
+// RPC implement client.DALRDB interface
+type RPC struct {
 	RequestID string // 请求ID,可选项
 	Processor string // 处理进程号，结构为"IP:PORT-PID"用于识别事务session被存于那个TM多活实例
 	TxnID     string // 事务ID,uuid
@@ -31,10 +31,11 @@ type RDB struct {
 	getServer types.GetServerFunc
 }
 
-var _ dal.RDB = new(RDB)
-var _ dal.RDBTxn = new(RDBTxn)
+var _ dal.RDB = new(RPC)
+var _ dal.RDBTxn = new(RPCTxn)
 
-func ConnectRDBWithDiscover(getServer types.GetServerFunc) (*RDB, error) {
+// NewRPCWithDiscover returns new RDB
+func NewRPCWithDiscover(getServer types.GetServerFunc) (*RPC, error) {
 	servers, err := getServer()
 	if err != nil {
 		return nil, err
@@ -44,25 +45,25 @@ func ConnectRDBWithDiscover(getServer types.GetServerFunc) (*RDB, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &RDB{
+	return &RPC{
 		rpc:       rpccli,
 		getServer: getServer,
 	}, nil
 }
 
-// ConnectRDB returns new RDB
-func ConnectRDB(uri string) (*RDB, error) {
+// NewRPC returns new RDB
+func NewRPC(uri string) (*RPC, error) {
 	rpccli, err := rpc.DialHTTPPath("tcp", uri, "/txn/v3/rpc")
 	if err != nil {
 		return nil, err
 	}
-	return &RDB{
+	return &RPC{
 		rpc: rpccli,
 	}, nil
 }
 
-func (c *RDB) clone() *RDB {
-	nc := RDB{
+func (c *RPC) clone() *RPC {
+	nc := RPC{
 		RequestID: c.RequestID,
 		Processor: c.Processor,
 		TxnID:     c.TxnID,
@@ -72,7 +73,7 @@ func (c *RDB) clone() *RDB {
 }
 
 // Collection collection operation
-func (c *RDB) Collection(collection string) dal.Collection {
+func (c *RPC) Collection(collection string) dal.Collection {
 	col := Collection{}
 	col.RequestID = c.RequestID
 	col.Processor = c.Processor
@@ -141,7 +142,7 @@ func (f *Find) Limit(limit uint64) dal.Find {
 // All 查询多个
 func (f *Find) All(result interface{}) error {
 	reply := types.OPREPLY{}
-	err := f.rpc.Call(types.CommandDBOperation, f.msg, &reply)
+	err := f.rpc.Call(types.CommandRDBOperation, f.msg, &reply)
 	if err != nil {
 		return err
 	}
@@ -154,7 +155,7 @@ func (f *Find) All(result interface{}) error {
 // One 查询一个
 func (f *Find) One(result interface{}) error {
 	reply := types.OPREPLY{}
-	err := f.rpc.Call(types.CommandDBOperation, f.msg, &reply)
+	err := f.rpc.Call(types.CommandRDBOperation, f.msg, &reply)
 	if err != nil {
 		return err
 	}
@@ -181,7 +182,7 @@ func (c *Collection) Insert(ctx context.Context, docs interface{}) error {
 	}
 
 	reply := types.OPREPLY{}
-	err := c.rpc.Call(types.CommandDBOperation, &msg, &reply)
+	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
 	if err != nil {
 		return err
 	}
@@ -208,7 +209,7 @@ func (c *Collection) Update(ctx context.Context, filter types.Filter, doc interf
 	}
 
 	reply := types.OPREPLY{}
-	err := c.rpc.Call(types.CommandDBOperation, &msg, &reply)
+	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
 	if err != nil {
 		return err
 	}
@@ -230,7 +231,7 @@ func (c *Collection) Delete(ctx context.Context, filter types.Filter) error {
 	}
 
 	reply := types.OPREPLY{}
-	err := c.rpc.Call(types.CommandDBOperation, &msg, &reply)
+	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
 	if err != nil {
 		return err
 	}
@@ -252,7 +253,7 @@ func (c *Collection) Count(ctx context.Context, filter types.Filter) (uint64, er
 	}
 
 	reply := types.OPREPLY{}
-	err := c.rpc.Call(types.CommandDBOperation, &msg, &reply)
+	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
 	if err != nil {
 		return 0, err
 	}
@@ -263,7 +264,7 @@ func (c *Collection) Count(ctx context.Context, filter types.Filter) (uint64, er
 }
 
 // NextSequence 获取新序列号(非事务)
-func (c *RDB) NextSequence(ctx context.Context, sequenceName string) (uint64, error) {
+func (c *RPC) NextSequence(ctx context.Context, sequenceName string) (uint64, error) {
 	msg := types.OPFINDANDMODIFY{}
 	msg.OPCode = types.OPFindAndModify
 	msg.RequestID = c.RequestID
@@ -283,7 +284,7 @@ func (c *RDB) NextSequence(ctx context.Context, sequenceName string) (uint64, er
 	msg.ReturnNew = true
 
 	reply := types.OPREPLY{}
-	err := c.rpc.Call(types.CommandDBOperation, &msg, &reply)
+	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
 	if err != nil {
 		return 0, err
 	}
@@ -299,13 +300,13 @@ func (c *RDB) NextSequence(ctx context.Context, sequenceName string) (uint64, er
 }
 
 // StartTransaction 开启新事务
-func (c *RDB) StartTransaction(ctx context.Context, opt dal.JoinOption) (dal.RDBTxn, error) {
+func (c *RPC) StartTransaction(ctx context.Context, opt dal.JoinOption) (dal.RDBTxn, error) {
 	msg := types.OPSTARTTTRANSATION{}
 	msg.OPCode = types.OPStartTransaction
 	msg.RequestID = c.RequestID
 
 	reply := types.OPREPLY{}
-	err := c.rpc.Call(types.CommandDBOperation, &msg, &reply)
+	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
 	if err != nil {
 		return nil, err
 	}
@@ -313,8 +314,8 @@ func (c *RDB) StartTransaction(ctx context.Context, opt dal.JoinOption) (dal.RDB
 		return nil, errors.New(reply.Message)
 	}
 
-	nc := new(RDBTxn)
-	nc.RDB = c.clone()
+	nc := new(RPCTxn)
+	nc.RPC = c.clone()
 	nc.TxnID = reply.TxnID
 	nc.Processor = reply.Processor
 	nc.RequestID = opt.RequestID
@@ -322,9 +323,9 @@ func (c *RDB) StartTransaction(ctx context.Context, opt dal.JoinOption) (dal.RDB
 }
 
 // JoinTransaction 加入事务, controller 加入某个事务
-func (c *RDB) JoinTransaction(opt dal.JoinOption) dal.RDBTxn {
-	nc := new(RDBTxn)
-	nc.RDB = c.clone()
+func (c *RPC) JoinTransaction(opt dal.JoinOption) dal.RDBTxn {
+	nc := new(RPCTxn)
+	nc.RPC = c.clone()
 	nc.TxnID = opt.TxnID
 	nc.RequestID = opt.RequestID
 	nc.Processor = opt.Processor
@@ -332,18 +333,18 @@ func (c *RDB) JoinTransaction(opt dal.JoinOption) dal.RDBTxn {
 }
 
 // Ping 健康检查
-func (c *RDB) Ping() error {
+func (c *RPC) Ping() error {
 	return nil
 }
 
-// RDBTxn implement dal.RDBTxn
-type RDBTxn struct {
-	*RDB
+// RPCTxn implement dal.RPCTxn
+type RPCTxn struct {
+	*RPC
 }
 
-func (c *RDBTxn) clone() *RDBTxn {
-	nc := RDBTxn{}
-	nc.RDB = c.RDB.clone()
+func (c *RPCTxn) clone() *RPCTxn {
+	nc := RPCTxn{}
+	nc.RPC = c.RPC.clone()
 	nc.RequestID = c.RequestID
 	nc.Processor = c.Processor
 	nc.TxnID = c.TxnID
@@ -352,14 +353,14 @@ func (c *RDBTxn) clone() *RDBTxn {
 }
 
 // Commit 提交事务
-func (c *RDBTxn) Commit() error {
+func (c *RPCTxn) Commit() error {
 	msg := types.OPCOMMIT{}
 	msg.OPCode = types.OPCommit
 	msg.RequestID = c.RequestID
 	msg.TxnID = c.TxnID
 
 	reply := types.OPREPLY{}
-	err := c.rpc.Call(types.CommandDBOperation, &msg, &reply)
+	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
 	if err != nil {
 		return err
 	}
@@ -371,14 +372,14 @@ func (c *RDBTxn) Commit() error {
 }
 
 // Abort 取消事务
-func (c *RDBTxn) Abort() error {
+func (c *RPCTxn) Abort() error {
 	msg := types.OPABORT{}
 	msg.OPCode = types.OPAbort
 	msg.RequestID = c.RequestID
 	msg.TxnID = c.TxnID
 
 	reply := types.OPREPLY{}
-	err := c.rpc.Call(types.CommandDBOperation, &msg, &reply)
+	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
 	if err != nil {
 		return err
 	}
@@ -389,6 +390,6 @@ func (c *RDBTxn) Abort() error {
 }
 
 // TxnInfo 当前事务信息，用于事务发起者往下传递
-func (c *RDBTxn) TxnInfo() *types.Tansaction {
+func (c *RPCTxn) TxnInfo() *types.Tansaction {
 	return nil
 }
