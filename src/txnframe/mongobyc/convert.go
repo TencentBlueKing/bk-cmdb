@@ -40,13 +40,6 @@ func TransformFindOpts(opts *findopt.Opts) *findopt.Opts {
 		opts.Sort = "_id"
 	}
 
-	if nil == opts.Fields {
-		opts.Fields = mapstr.New()
-	}
-
-	if !opts.Fields.Exists("_id") {
-		opts.Fields.Set("_id", 1)
-	}
 	return opts
 }
 
