@@ -34,8 +34,10 @@ var _ client.DALClient = new(Client)
 var _ client.TxDALClient = new(TxClient)
 
 // New returns new RPCClient
-func (c *Client) New() *Client {
-	return c.clone()
+func New(rpc *rpc.Client) *Client {
+	return &Client{
+		rpc: rpc,
+	}
 }
 
 func (c *Client) clone() *Client {
@@ -54,6 +56,7 @@ func (c *Client) Collection(collection string) client.Collection {
 	col.RequestID = c.RequestID
 	col.Processor = c.Processor
 	col.TxnID = c.TxnID
+	col.collection = collection
 	col.rpc = c.rpc
 
 	return &col

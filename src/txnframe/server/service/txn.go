@@ -21,7 +21,6 @@ import (
 	"configcenter/src/txnframe/types"
 	"context"
 	"fmt"
-	"github.com/rs/xid"
 )
 
 type TXRPC struct {
@@ -48,26 +47,11 @@ func NewTXRPC(rpcsrv *rpc.Server) *TXRPC {
 	txrpc := new(TXRPC)
 	txrpc.rpcsrv = rpcsrv
 
-	rpcsrv.Handle("StartTransaction", txrpc.StartTransaction)
 	rpcsrv.Handle("DBOperation", txrpc.DBOperation)
 	return txrpc
 }
 
-func (t *TXRPC) StartTransaction(input *rpc.Message) (interface{}, error) {
-	blog.V(3).Infof("StartTransaction %#v", input)
-	fmt.Printf("StartTransaction %#v", input)
-	txn := &types.Tansaction{
-		TxnID: xid.New().String(),
-	}
-
-	blog.V(3).Infof("t: %#v", t)
-	blog.V(3).Infof("t.CCErr: %#v", t.CCErr)
-	return txn, nil
-	// return txn, t.CCErr.CreateDefaultCCErrorIf("zh").Error(common.CCErrCommJSONUnmarshalFailed)
-}
-
 func (t *TXRPC) DBOperation(input *rpc.Message) (interface{}, error) {
-	blog.V(3).Infof("DBOperation %#v", input)
 
 	reply := new(types.OPREPLY)
 
@@ -77,6 +61,8 @@ func (t *TXRPC) DBOperation(input *rpc.Message) (interface{}, error) {
 		reply.Message = err.Error()
 		return reply, nil
 	}
+
+	blog.V(3).Infof("DBOperation %+v", header)
 
 	var transaction mongobyc.Session
 	if header.TxnID != "" {

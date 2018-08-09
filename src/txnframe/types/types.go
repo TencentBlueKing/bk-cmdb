@@ -13,6 +13,7 @@
 package types
 
 import (
+	"configcenter/src/common/blog"
 	"fmt"
 	"github.com/mongodb/mongo-go-driver/bson"
 	"reflect"
@@ -51,6 +52,9 @@ func (d Document) Decode(result interface{}) error {
 }
 
 func (d Document) Encode(result interface{}) error {
+	if nil == result {
+		return nil
+	}
 	out, err := bson.Marshal(result)
 	if nil != err {
 		return err
@@ -68,7 +72,11 @@ func (d Documents) Decode(result interface{}) error {
 		if nil != err {
 			return err
 		}
-		return bson.Unmarshal(out, result)
+		err = bson.Unmarshal(out, result)
+		if nil != err {
+			blog.Errorf("Decode Document error: %s, source is %#v", err.Error(), d)
+		}
+		return err
 	default:
 		if len(d) <= 0 {
 			return nil
@@ -82,6 +90,9 @@ func (d Documents) Decode(result interface{}) error {
 }
 
 func (d Documents) Encode(result interface{}) error {
+	if nil == result {
+		return nil
+	}
 	resultv := reflect.ValueOf(result)
 	switch resultv.Elem().Kind() {
 	case reflect.Slice:

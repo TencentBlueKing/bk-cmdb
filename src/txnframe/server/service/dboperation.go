@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 	"configcenter/src/txnframe/mongobyc"
 	"configcenter/src/txnframe/mongobyc/findopt"
@@ -80,11 +81,21 @@ func (e collectionExecutor) delete() {
 	e.decode.Decode(&msg)
 	_, e.execerr = e.collection(msg.Collection).DeleteMany(e.ctx, msg.Selector, nil)
 }
+
 func (e collectionExecutor) find() {
-	msg := types.OPDELETE{}
+	msg := types.OPFIND{}
 	e.decode.Decode(&msg)
-	e.execerr = e.collection(msg.Collection).Find(e.ctx, msg.Selector, nil, &e.reply.Docs)
+
+	opt := findopt.Many{}
+	opt.Skip = int64(msg.Start)
+	opt.Limit = int64(msg.Limit)
+	opt.Sort = msg.Sort
+
+	blog.Infof("[collectionExecutor] execute %+v", msg)
+	e.execerr = e.collection(msg.Collection).Find(e.ctx, msg.Selector, &opt, &e.reply.Docs)
+	blog.Infof("[collectionExecutor] find result: %+v", e.reply.Docs)
 }
+
 func (e collectionExecutor) findAndModify() {
 	msg := types.OPFINDANDMODIFY{}
 	e.decode.Decode(&msg)
