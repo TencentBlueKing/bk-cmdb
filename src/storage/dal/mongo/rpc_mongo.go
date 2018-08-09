@@ -393,3 +393,43 @@ func (c *RPCTxn) TxnInfo() *types.Tansaction {
 		Processor: c.Processor,
 	}
 }
+
+// HasCollection 判断是否存在集合
+func (c *RPC) HasCollection(collName string) (bool, error) {
+	return false, dal.ErrNotImplemented
+}
+
+// DropCollection 移除集合
+func (c *RPC) DropCollection(collName string) error {
+	return dal.ErrNotImplemented
+}
+
+// CreateCollection 创建集合
+func (c *RPC) CreateCollection(collName string) error {
+	return dal.ErrNotImplemented
+}
+
+// CreateIndex 创建索引
+func (c *RPCCollection) CreateIndex(ctx context.Context, index dal.Index) error {
+	return dal.ErrNotImplemented
+}
+
+// DropIndex 移除索引
+func (c *RPCCollection) DropIndex(ctx context.Context, indexName string) error {
+	return dal.ErrNotImplemented
+}
+
+// AddColumn 添加字段
+func (c *RPCCollection) AddColumn(ctx context.Context, column string, value interface{}) error {
+	return dal.ErrNotImplemented
+}
+
+// RenameColumn 重命名字段
+func (c *RPCCollection) RenameColumn(ctx context.Context, oldName, newColumn string) error {
+	return dal.ErrNotImplemented
+}
+
+// DropColumn 移除字段
+func (c *RPCCollection) DropColumn(ctx context.Context, field string) error {
+	return dal.ErrNotImplemented
+}
