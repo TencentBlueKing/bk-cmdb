@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -94,7 +95,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			continue
 		}
 
-		db := mongobyc.NewClient(process.Config.MongoDB.BuildMongoURI())
+		db := mongobyc.NewClient(process.Config.MongoDB.BuildURI())
 		err := db.Open()
 		if err != nil {
 			return fmt.Errorf("connect mongo server failed %s", err.Error())
@@ -103,7 +104,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		if err != nil {
 			return fmt.Errorf("connect mongo server failed %s", err.Error())
 		}
-		blog.V(3).Infof("connected to %s", process.Config.MongoDB.BuildMongoURI())
+		blog.V(3).Infof("connected to %s", process.Config.MongoDB.BuildURI())
 		process.Service.SetDB(db)
 		man := manager.New(ctx, db)
 		go func() {
@@ -144,14 +145,12 @@ func (h *TXServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		h.Config.MongoDB.User = current.ConfigMap["mongodb.usr"]
 		h.Config.MongoDB.Password = current.ConfigMap["mongodb.pwd"]
 		h.Config.MongoDB.Database = current.ConfigMap["mongodb.database"]
-		h.Config.MongoDB.Port = current.ConfigMap["mongodb.port"]
 		h.Config.MongoDB.MaxOpenConns = current.ConfigMap["mongodb.maxOpenConns"]
 		h.Config.MongoDB.MaxIdleConns = current.ConfigMap["mongodb.maxIDleConns"]
 
 		h.Config.Redis.Address = current.ConfigMap["redis.host"]
 		h.Config.Redis.Password = current.ConfigMap["redis.pwd"]
 		h.Config.Redis.Database = current.ConfigMap["redis.database"]
-		h.Config.Redis.Port = current.ConfigMap["redis.port"]
 	}
 }
 
