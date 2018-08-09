@@ -319,13 +319,13 @@ func TestFindCollection(t *testing.T) {
 		return
 	}
 
-	results := map[string]interface{}{}
-	err = mongo.Collection("uri_test").FindOne(context.Background(), map[string]interface{}{
+	results := []map[string]interface{}{}
+	err = mongo.Collection("uri_testd").Find(context.Background(), map[string]interface{}{
 		"keyd": map[string]interface{}{
 			"$regex":   "urid3",
 			"$options": "",
 		},
-	}, &findopt.One{
+	}, &findopt.Many{
 		Opts: findopt.Opts{
 			Limit: 0,
 			Skip:  0,
