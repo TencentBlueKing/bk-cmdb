@@ -47,9 +47,7 @@
             layout: Object
         },
         data () {
-            return {
-                selectedList: []
-            }
+            return {}
         },
         computed: {
             table () {
@@ -79,15 +77,12 @@
                 if (this.table.multipleCheck) {
                     if (index === -1) {
                         checked.push(value)
-                        this.selectedList.push(item)
                     } else {
                         checked.splice(index, 1)
-                        this.selectedList.splice(index, 1)
                     }
                 } else {
                     checked = index === -1 ? [value] : []
                 }
-                this.table.$emit('update:selectedList', this.selectedList)
                 this.table.$emit('update:checked', checked)
                 this.table.$emit('handleRowCheck', value, rowIndex)
             },
