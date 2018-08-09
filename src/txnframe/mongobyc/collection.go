@@ -388,7 +388,7 @@ func (c *collection) Find(ctx context.Context, filter interface{}, opts *findopt
 		datas = append(datas, docResult)
 		C.bson_destroy(doc)
 	}
-
+	fmt.Println("datas:", datas)
 	TransformMapStrIntoResult(datas, output)
 
 	return nil

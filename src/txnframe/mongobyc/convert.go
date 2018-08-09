@@ -116,7 +116,7 @@ func TransformMapStrIntoResult(datas []mapstr.MapStr, result interface{}) {
 			}
 			slicev = reflect.Append(slicev, elemp.Elem())
 			slicev = slicev.Slice(0, slicev.Cap())
-
+			idx++
 			continue
 		}
 
