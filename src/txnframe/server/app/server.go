@@ -94,7 +94,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			continue
 		}
 
-		db := mongobyc.NewClient(process.Config.MongoDB.BuildMongoURI(), process.Config.MongoDB.Database)
+		db := mongobyc.NewClient(process.Config.MongoDB.BuildMongoURI())
 		err := db.Open()
 		if err != nil {
 			return fmt.Errorf("connect mongo server failed %s", err.Error())
