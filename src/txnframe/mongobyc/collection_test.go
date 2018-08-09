@@ -312,15 +312,15 @@ func TestFindCollection(t *testing.T) {
 		return
 	}
 	defer mongo.Close()
-
-	err := mongo.Collection("uri_test").InsertMany(context.Background(), []interface{}{`{"keyd":"urid3"}`, `{"key_modify":"uri2"}`}, nil)
-	if nil != err {
-		fmt.Println("failed to find insert:", err)
-		return
-	}
-
+	/*
+		err := mongo.Collection("uri_testd").InsertMany(context.Background(), []interface{}{`{"keyd":"urid3"}`, `{"key_modify":"uri2"}`}, nil)
+		if nil != err {
+			fmt.Println("failed to find insert:", err)
+			return
+		}
+	*/
 	results := []map[string]interface{}{}
-	err = mongo.Collection("uri_test").Find(context.Background(), map[string]interface{}{
+	err := mongo.Collection("uri_test").Find(context.Background(), map[string]interface{}{
 		"keyd": map[string]interface{}{
 			"$regex":   "urid3",
 			"$options": "",
