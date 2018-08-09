@@ -59,30 +59,30 @@ func (e *collectionExecutor) execute() {
 		e.count()
 	}
 	if e.execerr != nil {
-		e.reply.OK = false
+		e.reply.Success = false
 		e.reply.Message = e.execerr.Error()
 	} else {
-		e.reply.OK = true
+		e.reply.Success = true
 	}
 }
 
-func (e collectionExecutor) insert() {
+func (e *collectionExecutor) insert() {
 	msg := types.OPINSERT{}
 	e.msg.Decode(&msg)
 	e.execerr = e.collection(msg.Collection).InsertMany(e.ctx, util.ConverToInterfaceSlice(msg.DOCS), nil)
 }
-func (e collectionExecutor) update() {
+func (e *collectionExecutor) update() {
 	msg := types.OPUPDATE{}
 	e.msg.Decode(&msg)
 	_, e.execerr = e.collection(msg.Collection).UpdateMany(e.ctx, msg.Selector, msg.DOC, nil)
 }
-func (e collectionExecutor) delete() {
+func (e *collectionExecutor) delete() {
 	msg := types.OPDELETE{}
 	e.msg.Decode(&msg)
 	_, e.execerr = e.collection(msg.Collection).DeleteMany(e.ctx, msg.Selector, nil)
 }
 
-func (e collectionExecutor) find() {
+func (e *collectionExecutor) find() {
 	msg := types.OPFIND{}
 	e.msg.Decode(&msg)
 
@@ -96,7 +96,7 @@ func (e collectionExecutor) find() {
 	blog.Infof("[collectionExecutor] find result: %+v, err: [%v]", e.reply.Docs, e.execerr)
 }
 
-func (e collectionExecutor) findAndModify() {
+func (e *collectionExecutor) findAndModify() {
 	msg := types.OPFINDANDMODIFY{}
 	e.msg.Decode(&msg)
 	opt := findopt.FindAndModify{}
@@ -105,7 +105,7 @@ func (e collectionExecutor) findAndModify() {
 	opt.New = msg.ReturnNew
 	e.execerr = e.collection(msg.Collection).FindAndModify(e.ctx, msg.Selector, msg.DOC, nil, &e.reply.Docs)
 }
-func (e collectionExecutor) count() {
+func (e *collectionExecutor) count() {
 	msg := types.OPDELETE{}
 	e.msg.Decode(&msg)
 	e.reply.Count, e.execerr = e.collection(msg.Collection).Count(e.ctx, msg.Selector)

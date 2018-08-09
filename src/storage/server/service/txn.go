@@ -81,7 +81,7 @@ func (t *TXRPC) RDBOperation(input *rpc.Message) (interface{}, error) {
 			reply.Message = err.Error()
 			return reply, nil
 		}
-		reply.OK = true
+		reply.Success = true
 		reply.TxnID = session.Txninst.TxnID
 		reply.Processor = session.Txninst.Processor
 		return reply, nil
@@ -91,7 +91,7 @@ func (t *TXRPC) RDBOperation(input *rpc.Message) (interface{}, error) {
 			reply.Message = err.Error()
 			return reply, nil
 		}
-		reply.OK = true
+		reply.Success = true
 		return reply, nil
 	case types.OPAbort:
 		err := t.man.Abort(header.TxnID)
@@ -99,7 +99,7 @@ func (t *TXRPC) RDBOperation(input *rpc.Message) (interface{}, error) {
 			reply.Message = err.Error()
 			return reply, nil
 		}
-		reply.OK = true
+		reply.Success = true
 		return reply, nil
 	case types.OPInsert, types.OPUpdate, types.OPDelete, types.OPFind, types.OPFindAndModify, types.OPCount:
 		var collectionFunc = t.db.Collection
