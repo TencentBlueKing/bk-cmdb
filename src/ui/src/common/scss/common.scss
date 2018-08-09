@@ -983,3 +983,18 @@ body .bk-message.primary .bk-message-icon {
         color: #0978e2;
     }
 }
+
+.checkbox-btn {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    background-image: url(./common/images/bk_check.png);
+    background-position: 0 -95px;
+    vertical-align: middle;
+    &.checked {
+        background-position: 0 -122px;
+    }
+    &.checked-all {
+        background-position: -33px -95px;
+    }
+}
