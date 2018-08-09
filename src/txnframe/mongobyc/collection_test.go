@@ -313,19 +313,19 @@ func TestFindCollection(t *testing.T) {
 	}
 	defer mongo.Close()
 
-	err := mongo.Collection("uri_test").InsertMany(context.Background(), []interface{}{`{"keyd":"urid3"}`, `{"key_modify":"uri2"}`}, nil)
+	err := mongo.Collection("uri_testd").InsertMany(context.Background(), []interface{}{`{"keyd":"urid3"}`, `{"key_modify":"uri2"}`}, nil)
 	if nil != err {
 		fmt.Println("failed to find insert:", err)
 		return
 	}
 
-	results := []map[string]interface{}{}
-	err = mongo.Collection("uri_test").Find(context.Background(), map[string]interface{}{
+	results := map[string]interface{}{}
+	err = mongo.Collection("uri_test").FindOne(context.Background(), map[string]interface{}{
 		"keyd": map[string]interface{}{
 			"$regex":   "urid3",
 			"$options": "",
 		},
-	}, &findopt.Many{
+	}, &findopt.One{
 		Opts: findopt.Opts{
 			Limit: 0,
 			Skip:  0,
