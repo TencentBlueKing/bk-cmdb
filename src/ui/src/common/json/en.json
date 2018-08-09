@@ -98,7 +98,9 @@
         "关键业务不能够修改": "Key Business cannot be modified",
         "还原默认": "Restore Default",
         "是否要还原回系统默认显示属性？": "Do you want to restore the default display properties back to the system?",
-        "隐藏": "Hide"
+        "隐藏": "Hide",
+        "全选本页": "Select this page",
+        "跨页全选": "Select all"
     },
     "Index": {
         "首页": "Index",

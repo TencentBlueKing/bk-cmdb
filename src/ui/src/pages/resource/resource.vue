@@ -322,7 +322,7 @@
         height: 100%;
         .button-contain{
             display: inline-block;
-            width: calc(100% - 110px);
+            width: calc(100% - 195px);
             vertical-align: middle;
         }
     }
