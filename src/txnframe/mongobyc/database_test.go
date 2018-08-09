@@ -21,7 +21,7 @@ func TestCreateEmptyCollection(t *testing.T) {
 	InitMongoc()
 	defer CleanupMongoc()
 
-	mongo := NewClient("mongodb://test.mongoc:27017", "db_name_uri")
+	mongo := NewClient("mongodb://test.mongoc:27017/cmdb?replicaSet=repseturi")
 	if err := mongo.Open(); nil != err {
 		fmt.Println("failed  open:", err)
 		return
@@ -30,7 +30,7 @@ func TestCreateEmptyCollection(t *testing.T) {
 
 	err := mongo.Database().CreateEmptyCollection("uri_empty")
 	if nil != err {
-		fmt.Println("failed to insert:", err)
+		fmt.Println("failed to create empty collection:", err)
 		return
 	}
 
@@ -40,7 +40,7 @@ func TestHasCollection(t *testing.T) {
 	InitMongoc()
 	defer CleanupMongoc()
 
-	mongo := NewClient("mongodb://test.mongoc:27017", "db_name_uri")
+	mongo := NewClient("mongodb://test.mongoc:27017/cmdb?replicaSet=repseturi")
 	if err := mongo.Open(); nil != err {
 		fmt.Println("failed  open:", err)
 		return
@@ -62,7 +62,7 @@ func TestGetCollectionNames(t *testing.T) {
 	InitMongoc()
 	defer CleanupMongoc()
 
-	mongo := NewClient("mongodb://test.mongoc:27017", "db_name_uri")
+	mongo := NewClient("mongodb://test.mongoc:27017/cmdb?replicaSet=repseturi")
 	if err := mongo.Open(); nil != err {
 		fmt.Println("failed  open:", err)
 		return
