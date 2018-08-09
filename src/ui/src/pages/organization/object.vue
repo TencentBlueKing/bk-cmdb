@@ -87,6 +87,7 @@
                 :pagination.sync="table.pagination"
                 :defaultSort="table.defaultSort"
                 :checked.sync="table.chooseId"
+                :selectedList.sync="table.selectedList"
                 :wrapperMinusHeight="150"
                 :loading="$loading('instSearch')"
                 @handleRowClick="editObject"
@@ -199,6 +200,7 @@
                 // 表格数据
                 table: {
                     loading: false,
+                    selectedList: [],
                     header: [],
                     list: [],
                     chooseId: [],
@@ -652,8 +654,14 @@
                 }
             },
             confirmBatchDel () {
+                let title = ''
+                if (this.table.chooseId.length > 1) {
+                    title = this.$tc("Inst['确定删除选中的实例']", this.table.chooseId.length, {number: this.table.chooseId.length})
+                } else {
+                    title = this.$tc("Common['确认要删除']", 'name', {name: this.table.selectedList[0]['bk_inst_name']})
+                }
                 this.$bkInfo({
-                    title: this.$t("Common['确定删除选中的实例']"),
+                    title,
                     confirmFn: () => {
                         this.batchDeleteInst()
                     }
