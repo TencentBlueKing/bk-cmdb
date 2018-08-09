@@ -34,6 +34,7 @@ type CollectionInterface interface {
 	Name() string
 	Drop(ctx context.Context) error
 	CreateIndex(index Index) error
+	DropIndex(indexName string) error
 	GetIndexes() (*GetIndexResult, error)
 	Count(ctx context.Context, filter interface{}) (int64, error)
 
@@ -141,8 +142,24 @@ func (c *collection) CreateIndex(index Index) error {
 	collName := C.CString(c.name)
 	defer C.free(unsafe.Pointer(indexName))
 	defer C.free(unsafe.Pointer(collName))
+
+	var reply C.bson_t
 	var bsonErr C.bson_error_t
-	if !C.create_collection_index(c.mongocCli.innerDB.db, collName, data, nil, &bsonErr) {
+	defer C.bson_destroy(&reply)
+	if !C.create_collection_index(c.mongocCli.innerDB.db, collName, data, &reply, &bsonErr) {
+		return TransformError(bsonErr)
+	}
+
+	//fmt.Println("reply:", TransformBsonIntoGoString(&reply))
+
+	return nil
+}
+
+func (c *collection) DropIndex(indexName string) error {
+	cstrIndexName := C.CString(indexName)
+	defer C.free(unsafe.Pointer(cstrIndexName))
+	var bsonErr C.bson_error_t
+	if !C.mongoc_collection_drop_index(c.innerCollection, cstrIndexName, &bsonErr) {
 		return TransformError(bsonErr)
 	}
 	return nil
@@ -150,23 +167,29 @@ func (c *collection) CreateIndex(index Index) error {
 
 func (c *collection) GetIndexes() (*GetIndexResult, error) {
 
-	collName := C.CString(c.name)
-	defer C.free(unsafe.Pointer(collName))
-	var reply C.bson_t
-	var bsonErr C.bson_error_t
-	if !C.get_collection_indexes(c.mongocCli.innerDB.db, collName, &reply, &bsonErr) {
-		return nil, TransformError(bsonErr)
-	}
-	C.bson_destroy(&reply)
-
-	result, err := mapstr.NewFromInterface(TransformBsonIntoGoString(&reply))
-	if nil != err {
-		return nil, err
-	}
-
 	indexRst := &GetIndexResult{}
-	err = result.MarshalJSONInto(indexRst)
-	return indexRst, err
+	cursor := C.mongoc_collection_find_indexes_with_opts(c.innerCollection, nil)
+	for {
+		var doc *C.bson_t
+		if !C.mongoc_cursor_next(cursor, &doc) {
+			break
+		}
+
+		docResult, err := mapstr.NewFromInterface(TransformBsonIntoGoString(doc))
+		if nil != err {
+			C.bson_destroy(doc)
+			return nil, err
+		}
+		C.bson_destroy(doc)
+		rst := IndexResult{}
+		if err := docResult.MarshalJSONInto(&rst); nil != err {
+			return nil, err
+		}
+
+		indexRst.Indexes = append(indexRst.Indexes, rst)
+	}
+
+	return indexRst, nil
 
 }
 

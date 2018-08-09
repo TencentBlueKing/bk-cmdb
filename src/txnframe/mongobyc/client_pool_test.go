@@ -23,7 +23,7 @@ func TestPoolInsertOne(t *testing.T) {
 	InitMongoc()
 	defer CleanupMongoc()
 
-	mongo := NewClientPool("mongodb://test.mongoc:27017", "db_name_uri")
+	mongo := NewClientPool("mongodb://test.mongoc:27017/cmdb?replicaSet=repseturi")
 	if err := mongo.Open(); nil != err {
 		fmt.Println("failed  open:", err)
 		return
@@ -46,7 +46,7 @@ func TestPoolTransaction(t *testing.T) {
 	InitMongoc()
 	defer CleanupMongoc()
 
-	mongo := NewClientPool("mongodb://test.mongoc:27017", "db_name_uri")
+	mongo := NewClientPool("mongodb://test.mongoc:27017/cmdb?replicaSet=repseturi")
 	if err := mongo.Open(); nil != err {
 		fmt.Println("failed  open:", err)
 		return
