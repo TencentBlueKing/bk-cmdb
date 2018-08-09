@@ -116,7 +116,7 @@ type OPABORT struct {
 type ReplyHeader struct {
 	MsgHeader
 	Processor string
-	OK        bool
+	Success   bool
 	Code      int
 	Message   string
 }

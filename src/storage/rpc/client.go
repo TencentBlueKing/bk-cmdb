@@ -89,6 +89,13 @@ func DialHTTPPath(network, address, path string) (*Client, error) {
 	}
 }
 
+//Close replica client
+func (c *Client) Close() error {
+	c.wire.Close()
+	c.end <- struct{}{}
+	return nil
+}
+
 //TargetID operation target ID
 func (c *Client) TargetID() string {
 	return c.peerAddr
@@ -177,12 +184,6 @@ func (c *Client) operation(op uint32, cmd command, data interface{}) (Decoder, e
 			}
 		}
 	}
-}
-
-//Close replica client
-func (c *Client) Close() {
-	c.wire.Close()
-	c.end <- struct{}{}
 }
 
 func (c *Client) loop() {

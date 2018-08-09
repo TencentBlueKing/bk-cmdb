@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strconv"
 	"sync"
 	"time"
 
@@ -33,7 +32,6 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/storage/server/app/options"
-	// "configcenter/src/storage/server/distribution"
 	svc "configcenter/src/storage/server/service"
 )
 
