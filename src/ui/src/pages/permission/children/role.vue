@@ -90,10 +90,10 @@
                 table: {
                     header: [{
                         id: 'group_name',
-                        name: this.$t('Permission["角色名称"]')
+                        name: this.$t('Permission["角色名"]')
                     }, {
                         id: 'user_list',
-                        name: this.$t('Permission["成员"]')
+                        name: this.$t('Permission["角色成员"]')
                     }, {
                         id: 'operation',
                         name: this.$t('Permission["操作"]'),
@@ -118,10 +118,10 @@
             'language' () {
                 this.table.header = [{
                     id: 'group_name',
-                    name: this.$t('Permission["角色名称"]')
+                    name: this.$t('Permission["角色名"]')
                 }, {
                     id: 'user_list',
-                    name: this.$t('Permission["成员"]')
+                    name: this.$t('Permission["角色成员"]')
                 }, {
                     id: 'operation',
                     name: this.$t('Permission["操作"]'),
