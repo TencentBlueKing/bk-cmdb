@@ -11,33 +11,3 @@
  */
 
 package mongo
-
-import (
-	"fmt"
-)
-
-// Config config
-type Config struct {
-	Connect      string
-	Address      string
-	User         string
-	Password     string
-	Database     string
-	Mechanism    string
-	MaxOpenConns string
-	MaxIdleConns string
-}
-
-// BuildURI return mongo uri according to  https://docs.mongodb.com/manual/reference/connection-string/
-// format example: mongodb://[username:password@]host1[:port1][,host2[:port2],...[,hostN[:portN]]][/[database][?options]]
-func (c Config) BuildURI() string {
-	if c.Connect != "" {
-		return c.Connect
-	}
-
-	uri := fmt.Sprintf("mongodb://%s:%s@%s/%s", c.User, c.Password, c.Address, c.Database)
-	if c.Mechanism != "" {
-		uri += "?authMechanism=" + c.Mechanism
-	}
-	return uri
-}
