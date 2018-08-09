@@ -26,7 +26,7 @@ type CollectionFunc func(collName string) mongobyc.CollectionInterface
 
 // ExecuteCollection execute collection operation to db
 func ExecuteCollection(ctx context.Context, collFunc CollectionFunc, opcode types.OPCode, decoder rpc.Decoder) (*types.OPREPLY, error) {
-	executor := &collectionExecutor{ctx: ctx, collection: collFunc, opcode: opcode, decode: decoder}
+	executor := &collectionExecutor{ctx: ctx, collection: collFunc, opcode: opcode, msg: decoder}
 	executor.execute()
 	return &executor.reply, executor.execerr
 }
@@ -35,7 +35,7 @@ type collectionExecutor struct {
 	ctx context.Context
 
 	opcode types.OPCode
-	decode rpc.Decoder
+	msg    rpc.Decoder
 
 	collection CollectionFunc
 
@@ -68,23 +68,23 @@ func (e *collectionExecutor) execute() {
 
 func (e collectionExecutor) insert() {
 	msg := types.OPINSERT{}
-	e.decode.Decode(&msg)
+	e.msg.Decode(&msg)
 	e.execerr = e.collection(msg.Collection).InsertMany(e.ctx, util.ConverToInterfaceSlice(msg.DOCS), nil)
 }
 func (e collectionExecutor) update() {
 	msg := types.OPUPDATE{}
-	e.decode.Decode(&msg)
+	e.msg.Decode(&msg)
 	_, e.execerr = e.collection(msg.Collection).UpdateMany(e.ctx, msg.Selector, msg.DOC, nil)
 }
 func (e collectionExecutor) delete() {
 	msg := types.OPDELETE{}
-	e.decode.Decode(&msg)
+	e.msg.Decode(&msg)
 	_, e.execerr = e.collection(msg.Collection).DeleteMany(e.ctx, msg.Selector, nil)
 }
 
 func (e collectionExecutor) find() {
 	msg := types.OPFIND{}
-	e.decode.Decode(&msg)
+	e.msg.Decode(&msg)
 
 	opt := findopt.Many{}
 	opt.Skip = int64(msg.Start)
@@ -93,12 +93,12 @@ func (e collectionExecutor) find() {
 
 	blog.Infof("[collectionExecutor] execute %+v", msg)
 	e.execerr = e.collection(msg.Collection).Find(e.ctx, msg.Selector, &opt, &e.reply.Docs)
-	blog.Infof("[collectionExecutor] find result: %+v", e.reply.Docs)
+	blog.Infof("[collectionExecutor] find result: %+v, err: [%v]", e.reply.Docs, e.execerr)
 }
 
 func (e collectionExecutor) findAndModify() {
 	msg := types.OPFINDANDMODIFY{}
-	e.decode.Decode(&msg)
+	e.msg.Decode(&msg)
 	opt := findopt.FindAndModify{}
 	opt.Upsert = msg.Upsert
 	opt.Remove = msg.Remove
@@ -107,6 +107,6 @@ func (e collectionExecutor) findAndModify() {
 }
 func (e collectionExecutor) count() {
 	msg := types.OPDELETE{}
-	e.decode.Decode(&msg)
+	e.msg.Decode(&msg)
 	e.reply.Count, e.execerr = e.collection(msg.Collection).Count(e.ctx, msg.Selector)
 }
