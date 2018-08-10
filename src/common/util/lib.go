@@ -14,6 +14,7 @@ package util
 
 import (
 	"net/http"
+	"reflect"
 
 	restful "github.com/emicklei/go-restful"
 
@@ -95,4 +96,13 @@ func GetActionOnwerIDByHTTPHeader(header http.Header) string {
 func GetHTTPCCRequestID(header http.Header) string {
 	rid := header.Get(common.BKHTTPCCRequestID)
 	return rid
+}
+
+// ISNil returns whether value is nil value, including map[string]interface{}{nil}, *Struct{nil}
+func ISNil(value interface{}) bool {
+	rflValue := reflect.ValueOf(value)
+	if rflValue.IsValid() {
+		return reflect.ValueOf(value).IsNil()
+	}
+	return true
 }
