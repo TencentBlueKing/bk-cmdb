@@ -88,11 +88,14 @@ func TransformDocument(doc interface{}) (*C.bson_t, error) {
 
 }
 
+// ISNil check nil value
 func ISNil(value interface{}) bool {
 	rflValue := reflect.ValueOf(value)
-	if rflValue.IsValid() {
-		return reflect.ValueOf(value).IsNil()
+	switch rflValue.Kind() {
+	case reflect.Interface, reflect.Map, reflect.Ptr, reflect.Slice:
+		return rflValue.IsNil()
 	}
+
 	return true
 }
 

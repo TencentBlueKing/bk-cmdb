@@ -37,8 +37,9 @@ func (s *session) Open() error {
 		return TransformError(err)
 	}
 	s.transaction = &transaction{
-		txnOpts:       s.txnOpts,
-		clientSession: s,
+		txnOpts:        s.txnOpts,
+		clientSession:  s,
+		collectionMaps: map[collectionName]CollectionInterface{},
 	}
 	return nil
 }
@@ -58,5 +59,7 @@ func (s *session) Close() error {
 		C.mongoc_session_opts_destroy(s.sessionOpts)
 		s.sessionOpts = nil
 	}
+
+	s.transaction.Close()
 	return nil
 }
