@@ -69,6 +69,10 @@ func (ps *ProcServer) WebService() http.Handler {
 	ws.Route(ws.GET("/template/proc/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}").To(ps.GetProcBindTemplate))
 	ws.Route(ws.PUT("/template/proc/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}/{template_id}").To(ps.BindProc2Template))
 	ws.Route(ws.DELETE("/template/proc/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}/{template_id}").To(ps.DeleteProc2Template))
+	ws.Route(ws.POST("/template/preview/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.PreviewCfg))
+	ws.Route(ws.POST("/template/create/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.CreateCfg))
+	ws.Route(ws.POST("/template/push/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.PushCfg))
+	ws.Route(ws.POST("/template/getremote/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.GetRemoteCfg))
 
 	//v2
 	ws.Route(ws.POST("/openapi/GetProcessPortByApplicationID/{" + common.BKAppIDField + "}").To(ps.GetProcessPortByApplicationID))

@@ -125,3 +125,8 @@ type GseProcConfigmap struct {
 	Path string `json:"path,omitempty"`
 	Md5  string `json:"md5,omitempty"`
 }
+
+type FilePriviewMap struct {
+	Content string `json:"content"`
+	Inst    string `json:"inst"`
+}

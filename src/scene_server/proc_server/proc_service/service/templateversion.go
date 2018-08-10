@@ -72,7 +72,7 @@ func (ps *ProcServer) SearchTemplateVersion(req *restful.Request, resp *restful.
 	input.Sort = ""
 
 	ret, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDTempVersion, req.Request.Header, &input)
-	if err != nil || (err == nil && !ret.Result) {
+	if err != nil || !ret.Result {
 		blog.Errorf("query config template failed by processcontroll. err: %v, errcode: %d, errmsg: %s", err, ret.Code, ret.ErrMsg)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
