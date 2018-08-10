@@ -161,3 +161,33 @@ func (p *procctrl) GetProcInstanceModel(ctx context.Context, h http.Header, dat 
 
 	return
 }
+
+func (p *procctrl) RegisterProcInstanceDetail(ctx context.Context, h http.Header, dat *metadata.GseProcRequest) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/instance/register/detail"
+
+	err = p.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+func (p *procctrl) ModifyProcInstanceDetail(ctx context.Context, h http.Header, dat *metadata.ModifyProcInstanceStatus) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/instance/register/detail"
+
+	err = p.client.Put().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}

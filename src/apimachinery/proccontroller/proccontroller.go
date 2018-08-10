@@ -33,6 +33,8 @@ type ProcCtrlClientInterface interface {
 	CreateProcInstanceModel(ctx context.Context, h http.Header, dat []*metadata.ProcInstanceModel) (resp *metadata.Response, err error)
 	GetProcInstanceModel(ctx context.Context, h http.Header, dat *metadata.QueryInput) (resp *metadata.ProcInstModelResult, err error)
 	DeleteProcInstanceModel(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
+	RegisterProcInstanceDetail(ctx context.Context, h http.Header, dat *metadata.GseProcRequest) (resp *metadata.Response, err error)
+	ModifyProcInstanceDetail(ctx context.Context, h http.Header, dat *metadata.ModifyProcInstanceStatus) (resp *metadata.Response, err error)
 }
 
 func NewProcCtrlClientInterface(c *util.Capability, version string) ProcCtrlClientInterface {
