@@ -98,11 +98,11 @@ func GetHTTPCCRequestID(header http.Header) string {
 	return rid
 }
 
-// ISNil returns whether value is nil value, including map[string]interface{}{nil}, *Struct{nil}
-func ISNil(value interface{}) bool {
+// IsNil returns whether value is nil value, including map[string]interface{}{nil}, *Struct{nil}
+func IsNil(value interface{}) bool {
 	rflValue := reflect.ValueOf(value)
 	if rflValue.IsValid() {
-		return reflect.ValueOf(value).IsNil()
+		return rflValue.IsNil()
 	}
 	return true
 }

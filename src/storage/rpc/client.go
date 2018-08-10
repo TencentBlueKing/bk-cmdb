@@ -1,15 +1,15 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package rpc
 
 import (
@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	opRetries     = 4
+	opRetries     = 0
 	opReadTimeout = 15 * time.Second // client read
 	opPingTimeout = 20 * time.Second
 )
@@ -118,13 +118,6 @@ func (c *Client) Call(cmd string, input interface{}, result interface{}) error {
 	return msg.Decode(result)
 }
 
-//SetError replica client transport error
-func (c *Client) SetError(err error) {
-	c.responses <- &Message{
-		transportErr: err,
-	}
-}
-
 //Ping replica client
 func (c *Client) Ping() error {
 	_, err := c.operation(TypePing, command{}, nil)
@@ -178,7 +171,10 @@ func (c *Client) operation(op uint32, cmd command, data interface{}) (Decoder, e
 				if msg.typz == TypePing {
 					err = ErrPingTimeout
 				}
-				c.SetError(err)
+				// not transportErr when timeout?
+				// c.responses <- &Message{
+				// 	transportErr: err,
+				// }
 				// TODO print journal
 				return nil, err
 			}
@@ -207,7 +203,7 @@ func (c *Client) nextSeq() uint32 {
 }
 
 func (c *Client) replyError(req *Message) {
-	delete(c.messages, req.seq)
+	delete(c.messages, req.seq) // no need lock cause the loop is serial
 	req.typz = TypeError
 	req.Data = []byte(c.err.Error())
 	req.complete <- struct{}{}
@@ -235,6 +231,7 @@ func (c *Client) handleResponse(resp *Message) {
 		for _, msg := range c.messages {
 			c.replyError(msg)
 		}
+		// TODO reconnect when transportErr?
 		return
 	}
 	if req, ok := c.messages[resp.seq]; ok {
@@ -243,7 +240,7 @@ func (c *Client) handleResponse(resp *Message) {
 			return
 		}
 
-		delete(c.messages, resp.seq)
+		delete(c.messages, resp.seq) // no need lock cause the loop is serial
 		req.typz = resp.typz
 		req.Data = resp.Data
 		req.complete <- struct{}{}
