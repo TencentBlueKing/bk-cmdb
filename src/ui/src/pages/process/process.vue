@@ -2,7 +2,7 @@
     <div class="process-wrapper">
         <div class="process-filter clearfix">
             <bk-dropdown-menu ref="dropdown" class="fl mr10" :trigger="'click'">
-                <bk-button class="dropdown-btn" type="default" slot="dropdown-trigger">
+                <bk-button class="dropdown-btn checkbox" type="default" slot="dropdown-trigger">
                     <template v-if="table.chooseId.length">
                         <i class="checkbox-btn" :class="{'checked': table.chooseId.length!==table.pagination.count, 'checked-all': table.chooseId.length===table.pagination.count}" @click.stop="tableChecked('cancel')"></i>
                     </template>
@@ -45,6 +45,7 @@
             :loading="table.isLoading"
             :wrapperMinusHeight="150"
             :checked="table.chooseId"
+            :isCheckboxShow="false"
             @handlePageChange="setCurrentPage"
             @handleSizeChange="setCurrentSize"
             @handleSortChange="setCurrentSort"
