@@ -28,7 +28,6 @@ import (
 	"configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/validator"
-	
 )
 
 func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response) {
@@ -405,7 +404,7 @@ func (ps *ProcServer) SearchProcess(req *restful.Request, resp *restful.Response
 		}
 
 		// parse procid array
-		procIdArr := make([]int, 0)
+		procIdArr := make([]int64, 0)
 		for _, item := range ret.Data {
 			procIdArr = append(procIdArr, item.ProcessID)
 		}
