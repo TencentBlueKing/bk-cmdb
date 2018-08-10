@@ -10,42 +10,32 @@
  * limitations under the License.
  */
 
-package main
+package logics
 
 import (
 	"context"
 	"fmt"
-	"os"
-	"runtime"
-
-	"github.com/spf13/pflag"
+	"net/http"
 
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/types"
-	"configcenter/src/common/util"
-	"configcenter/src/scene_server/proc_server/app"
-	"configcenter/src/scene_server/proc_server/app/options"
+	"configcenter/src/common/metadata"
 )
 
-func main() {
-	common.SetIdentification(types.CC_MODULE_PROC)
-	runtime.GOMAXPROCS(runtime.NumCPU())
-
-	blog.InitLogs()
-	defer blog.CloseLogs()
-
-	op := options.NewServerOption()
-	op.AddFlags(pflag.CommandLine)
-
-	util.InitFlags()
-
-	if err := common.SavePid(); err != nil {
-		blog.Errorf("fail to save pid. err: %s", err.Error())
+func (lgc *Logics) GetProcessbyProcID(procID string, forward http.Header) (map[string]interface{}, error) {
+	condition := map[string]interface{}{
+		common.BKProcIDField: procID,
 	}
 
-	if err := app.Run(context.Background(), op); err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
-		os.Exit(1)
+	reqParam := new(metadata.QueryInput)
+	reqParam.Condition = condition
+	ret, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDProc, forward, reqParam)
+	if err != nil || (err == nil && !ret.Result) {
+		return nil, fmt.Errorf("get process by procID(%s) failed. err: %v, errcode: %d, errmsg: %s", procID, err, ret.Code, ret.ErrMsg)
 	}
+
+	if len(ret.Data.Info) < 1 {
+		return nil, fmt.Errorf("there is no process with procID(%s)", procID)
+	}
+
+	return ret.Data.Info[0], nil
 }

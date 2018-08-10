@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 func GetStrByInterface(a interface{}) string {
@@ -76,7 +77,7 @@ func GetInt64ByInterface(a interface{}) (int64, error) {
 		tmpID := a.(float32)
 		id = int64(tmpID)
 	case string:
-		id, err = strconv.ParseInt(a.(string), 10, 64)
+		id, err = strconv.ParseInt(strings.Trim(a.(string), " "), 10, 64)
 	default:
 		err = errors.New("not numeric")
 

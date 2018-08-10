@@ -23,6 +23,8 @@ const (
 	// BKTableNameProcInstanceModel the table name of the process instance
 	BKTableNameProcInstanceModel = "cc_ProcInstanceModel"
 
+	BKTableNameProcInstaceDetail = "cc_ProcInstanceDetail"
+
 	// BKTableNamePrivilege the table name of the privilege module
 	BKTableNamePrivilege = "cc_Privilege"
 

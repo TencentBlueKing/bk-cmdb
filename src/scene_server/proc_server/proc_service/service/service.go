@@ -23,10 +23,12 @@ import (
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
+	"configcenter/src/scene_server/proc_server/proc_service/logics"
 )
 
 type ProcServer struct {
 	*backbone.Engine
+	*logics.Logics
 }
 
 func (ps *ProcServer) WebService() http.Handler {
