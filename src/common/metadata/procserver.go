@@ -57,6 +57,7 @@ type GseProcRespone struct {
 }
 
 type GseHost struct {
+	HostID       int64
 	Ip           string `json:"ip,omitempty"`
 	BkCloudId    int64  `json:"bk_cloud_id,omitempty"`
 	BkSupplierId int64  `json:"bk_supplier_ed,omitempty"`
@@ -69,10 +70,32 @@ type GseProcMeta struct {
 }
 
 type GseProcRequest struct {
-	Meta   GseProcMeta `json:"meta,omitempty"`
-	Hosts  []GseHost   `json:"hosts,omitempty"`
-	OpType int         `json:"op_type,omitempty"`
-	Spec   GseProcSpec `json:"spec,omitempty"`
+	AppID    int64       `json:"bk_biz_id"  bson:"bk_biz_id"`
+	ModuleID int64       `json:"bk_module_id" bson:"bk_module_id"`
+	ProcID   int64       `json:"bk_process_id" bson:"bk_process_id"`
+	Meta     GseProcMeta `json:"meta,omitempty" bson:"meta"`
+	Hosts    []GseHost   `json:"hosts,omitempty" bson:"hosts"`
+	OpType   int         `json:"op_type,omitempty" bson:"-"`
+	Spec     GseProcSpec `json:"spec,omitempty" bson:"spec"`
+}
+
+type ProcInstanceDetail struct {
+	GseProcRequest `json:",inline"`
+	HostID         int64                    `json:"bk_hsot_id", bson:"bk_host_id"`
+	Status         ProcInstanceDetailStatus `json:"status" bson:"status"` //1 register gse sucess, 2 register error need retry 3 unregister error need retry
+}
+
+type ProcInstanceDetailStatus int64
+
+const (
+	ProcInstanceDetailStatusRegisterSucc     = 1
+	ProcInstanceDetailStatusRegisterFailed   = 2
+	ProcInstanceDetailStatusUnRegisterFailed = 10
+)
+
+type ModifyProcInstanceStatus struct {
+	Conds map[string]interface{} `json:"condition"`
+	Data  map[string]interface{} `json:"data"`
 }
 
 type GseProcSpec struct {
