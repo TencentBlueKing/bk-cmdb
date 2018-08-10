@@ -1,20 +1,18 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except
+ * Licensed under the MIT License (the "License"); you may not use this file except 
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
+ * either express or implied. See the License for the specific language governing permissions and 
  * limitations under the License.
  */
-
+ 
 package app
 
 import (
-	"configcenter/src/storage/mongobyc"
-	"configcenter/src/storage/server/manager"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -22,6 +20,8 @@ import (
 	"sync"
 	"time"
 
+	"configcenter/src/storage/mongobyc"
+	"configcenter/src/storage/server/manager"
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/apimachinery"
@@ -32,7 +32,6 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/storage/server/app/options"
-	// "configcenter/src/storage/server/distribution"
 	svc "configcenter/src/storage/server/service"
 )
 
@@ -94,7 +93,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			continue
 		}
 
-		db := mongobyc.NewClient(process.Config.MongoDB.BuildMongoURI())
+		db := mongobyc.NewClient(process.Config.MongoDB.BuildURI())
 		err := db.Open()
 		if err != nil {
 			return fmt.Errorf("connect mongo server failed %s", err.Error())
@@ -103,7 +102,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		if err != nil {
 			return fmt.Errorf("connect mongo server failed %s", err.Error())
 		}
-		blog.V(3).Infof("connected to %s", process.Config.MongoDB.BuildMongoURI())
+		blog.V(3).Infof("connected to %s", process.Config.MongoDB.BuildURI())
 		process.Service.SetDB(db)
 		man := manager.New(ctx, db)
 		go func() {
@@ -144,14 +143,12 @@ func (h *TXServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		h.Config.MongoDB.User = current.ConfigMap["mongodb.usr"]
 		h.Config.MongoDB.Password = current.ConfigMap["mongodb.pwd"]
 		h.Config.MongoDB.Database = current.ConfigMap["mongodb.database"]
-		h.Config.MongoDB.Port = current.ConfigMap["mongodb.port"]
 		h.Config.MongoDB.MaxOpenConns = current.ConfigMap["mongodb.maxOpenConns"]
 		h.Config.MongoDB.MaxIdleConns = current.ConfigMap["mongodb.maxIDleConns"]
 
 		h.Config.Redis.Address = current.ConfigMap["redis.host"]
 		h.Config.Redis.Password = current.ConfigMap["redis.pwd"]
 		h.Config.Redis.Database = current.ConfigMap["redis.database"]
-		h.Config.Redis.Port = current.ConfigMap["redis.port"]
 	}
 }
 
