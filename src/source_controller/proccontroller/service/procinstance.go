@@ -35,7 +35,7 @@ func (ps *ProctrlServer) CreateProcInstanceModel(req *restful.Request, resp *res
 		return
 	}
 
-	blog.Infof("will create process instance model: %+v", reqParam)
+	blog.V(3).Infof("will create process instance model: %+v", reqParam)
 	if err := ps.DbInstance.InsertMuti(common.BKTableNameProcInstanceModel, reqParam); err != nil {
 		blog.Errorf("create process instance model failed. err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcCreateInstanceModel)})
@@ -61,7 +61,7 @@ func (ps *ProctrlServer) GetProcInstanceModel(req *restful.Request, resp *restfu
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcGetInstanceModel)})
 		return
 	}
-	blog.Infof("will get process instance model. condition: %v", reqParam)
+	blog.V(3).Infof("will get process instance model. condition: %v", reqParam)
 	data := make([]meta.ProcInstanceModel, 0)
 	err = ps.DbInstance.GetMutilByCondition(common.BKTableNameProcInstanceModel, strings.Split(reqParam.Fields, ","), reqParam.Condition, &data, reqParam.Sort, reqParam.Start, reqParam.Limit)
 	if err != nil {
@@ -88,12 +88,73 @@ func (ps *ProctrlServer) DeleteProcInstanceModel(req *restful.Request, resp *res
 		return
 	}
 
-	blog.Infof("will delete process instance model. condition: %+v", reqParam)
+	blog.V(3).Infof("will delete process instance model. condition: %+v", reqParam)
 	if err := ps.DbInstance.DelByCondition(common.BKTableNameProcInstanceModel, reqParam); err != nil {
 		blog.Errorf("delete process instance model failed. err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcDeleteInstanceModel)})
 		return
 	}
 
+	resp.WriteEntity(meta.NewSuccessResp(nil))
+}
+
+func (ps *ProctrlServer) RegisterProcInstaceDetail(req *restful.Request, resp *restful.Response) {
+	language := util.GetLanguage(req.Request.Header)
+	defErr := ps.Core.CCErr.CreateDefaultCCErrorIf(language)
+
+	input := new(meta.GseProcRequest)
+	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
+		blog.Errorf("register  process instance detail failed, decode request body err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+	for _, gseHost := range input.Hosts {
+		conds := common.KvMap{common.BKAppIDField: input.AppID, common.BKProcIDField: input.ProcID, common.BKModuleIDField: input.ModuleID, common.BKHostIDField: gseHost.HostID}
+		cnt, err := ps.DbInstance.GetCntByCondition(common.BKTableNameProcInstaceDetail, conds)
+		if nil != err {
+			blog.Errorf("register  process instance detail get info error: %s", err.Error())
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
+			return
+		}
+		detail := new(meta.ProcInstanceDetail)
+		detail.AppID = input.AppID
+		detail.Meta = input.Meta
+		detail.ProcID = input.ProcID
+		detail.ModuleID = input.ModuleID
+		detail.HostID = gseHost.HostID
+		detail.Spec = input.Spec
+		detail.Hosts = append(detail.Hosts, gseHost)
+		detail.Status = meta.ProcInstanceDetailStatusRegisterSucc //1 register gse sucess, 2 register error need retry 3 unregister error need retry
+		if 0 == cnt {
+			_, err = ps.DbInstance.Insert(common.BKTableNameProcInstaceDetail, detail)
+		} else {
+			err = ps.DbInstance.UpdateByCondition(common.BKTableNameProcInstaceDetail, detail, conds)
+		}
+		if nil != err {
+			blog.Errorf("register  process instance detail save info error: %s", err.Error())
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBUpdateFailed)})
+			return
+		}
+	}
+	resp.WriteEntity(meta.NewSuccessResp(nil))
+}
+
+func (ps *ProctrlServer) ModifyRegisterProcInstanceDetail(req *restful.Request, resp *restful.Response) {
+	language := util.GetLanguage(req.Request.Header)
+	defErr := ps.Core.CCErr.CreateDefaultCCErrorIf(language)
+
+	input := new(meta.ModifyProcInstanceStatus)
+	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
+		blog.Errorf("modify register  process instance detail failed, decode request body err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	err := ps.DbInstance.UpdateByCondition(common.BKTableNameProcInstaceDetail, input.Data, input.Conds)
+	if nil != err {
+		blog.Errorf("update register  process instance detail  info error: %s, input:%s", err.Error(), input)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBUpdateFailed)})
+		return
+	}
 	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
