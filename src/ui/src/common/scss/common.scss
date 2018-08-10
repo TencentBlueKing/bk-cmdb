@@ -47,7 +47,13 @@ a {
 .cp {
     cursor: pointer!important;
 }
-
+.dropdown-btn.checkbox {
+    padding: 0 16px;
+    text-align: left;
+    .checkbox-btn {
+        margin-right: 5px;
+    }
+}
 .bk-dropdown-menu .bk-dropdown-list>li a:hover {
     background: #f5f5f5;
 }
