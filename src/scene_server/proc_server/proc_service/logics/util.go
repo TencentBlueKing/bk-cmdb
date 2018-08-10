@@ -19,9 +19,17 @@ import (
 	"strings"
 
 	"configcenter/src/common"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	//"configcenter/src/common/blog"
 )
+
+func getInlineProcInstKey(hostID, procID int64) string {
+	return fmt.Sprintf("%d-%d", hostID, procID)
+}
+
+func getGseProcNameSpace(appID, moduleID int64) string {
+	return fmt.Sprintf("%d.%d", appID, moduleID)
+}
 
 func ParseProcInstMatchCondition(str string, isString bool) (data interface{}, notParse bool, err error) {
 	notParse = false
@@ -112,6 +120,28 @@ func ParseProcInstMatchCondition(str string, isString bool) (data interface{}, n
 		}
 	}
 	return nil, true, nil
+}
+
+func GetProcInstModel(appID, setID, moduleID, hostID, procID, funcID, procNum int64, maxInstID uint64) []*metadata.ProcInstanceModel {
+	if 0 >= procNum {
+		procNum = 1
+	}
+	instProc := make([]*metadata.ProcInstanceModel, 0)
+	for numIdx := int64(1); numIdx < procNum+1; numIdx++ {
+		procIdx := (maxInstID-1)*uint64(procNum) + uint64(numIdx)
+		item := new(metadata.ProcInstanceModel)
+		item.ApplicationID = appID
+		item.SetID = setID
+		item.ModuleID = moduleID
+		item.FuncID = funcID
+		item.HostID = hostID
+		item.HostInstanID = maxInstID
+		item.ProcInstanceID = procIdx
+		item.ProcID = procID
+		item.HostProcID = uint64(numIdx)
+		instProc = append(instProc, item)
+	}
+	return instProc
 }
 
 func NewRegexRole(reg string, isString bool) (*RegexRole, error) {
