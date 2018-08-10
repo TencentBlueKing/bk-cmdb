@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 func (lgc *Logics) MatchProcessInstance(ctx context.Context, procOp *metadata.ProcessOperate, forward http.Header) (map[string]*metadata.ProcInstanceModel, error) {
@@ -52,6 +53,173 @@ func (lgc *Logics) MatchProcessInstance(ctx context.Context, procOp *metadata.Pr
 	conds[common.BKModuleIDField] = common.KvMap{common.BKDBIN: moduleIDs}
 	return lgc.matchID(ctx, forward, procOp.FuncID, procOp.InstanceID, conds)
 
+}
+
+func (lgc *Logics) RegisterProcInstanceToGse(moduleID int64, gseHost []metadata.GseHost, procInfo map[string]interface{}, forward http.Header) error {
+	if 0 == len(procInfo) {
+		return fmt.Errorf("process info is nil")
+	}
+
+	// process
+	procName, ok := procInfo[common.BKProcessNameField].(string)
+	if ok {
+		return fmt.Errorf("process name not found")
+	}
+	// process
+	procID, err := util.GetInt64ByInterface(procInfo[common.BKProcIDField])
+	if nil != err {
+		return fmt.Errorf("process id  not found")
+	}
+
+	// process
+	appID, err := util.GetInt64ByInterface(procInfo[common.BKAppIDField])
+	if nil != err {
+		return fmt.Errorf("application id  not found")
+	}
+	// under value allow nil , can ignore error
+	pidFilePath, _ := procInfo[common.BKProcPidFile].(string)
+	workPath, _ := procInfo[common.BKProcWorkPath].(string)
+	startCmd, _ := procInfo[common.BKProcStartCmd].(string)
+	stopCmd, _ := procInfo[common.BKProcStopCmd].(string)
+	reloadCmd, _ := procInfo[common.BKProcReloadCmd].(string)
+	restartCmd, _ := procInfo[common.BKProcRestartCmd].(string)
+
+	namespace := getGseProcNameSpace(appID, moduleID)
+	gseproc := new(metadata.GseProcRequest)
+	gseproc.AppID = appID
+	gseproc.ProcID = procID
+	gseproc.Hosts = gseHost
+	gseproc.ModuleID = moduleID
+	gseproc.Meta.Namespace = namespace
+	gseproc.Meta.Name = procName
+	gseproc.Spec.Identity.PidPath = pidFilePath
+	gseproc.Spec.Identity.SetupPath = workPath
+	gseproc.Spec.Control.StartCmd = startCmd
+	gseproc.Spec.Control.StopCmd = stopCmd
+	gseproc.Spec.Control.ReloadCmd = reloadCmd
+	gseproc.Spec.Control.RestartCmd = restartCmd
+
+	procInstDetail, err := lgc.CoreAPI.ProcController().RegisterProcInstanceDetail(context.Background(), forward, gseproc)
+	if err != nil || (err == nil && !procInstDetail.Result) {
+		return fmt.Errorf("register process(%s) detail failed. err: %v, errcode: %d, errmsg: %s", procName, err, procInstDetail.Code, procInstDetail.ErrMsg)
+	}
+
+	ret, err := lgc.CoreAPI.GseProcServer().RegisterProcInfo(context.Background(), forward, namespace, gseproc)
+	if err != nil || (err == nil && !ret.Result) {
+		return fmt.Errorf("register process(%s) into gse failed. err: %v, errcode: %d, errmsg: %s", procName, err, ret.Code, ret.ErrMsg)
+	}
+
+	return nil
+}
+
+func (lgc *Logics) OperateProcInstanceByGse(procOp *metadata.ProcessOperate, instModels map[string]*metadata.ProcInstanceModel, forward http.Header) (map[string]string, error) {
+	var err error
+	model_TaskId := make(map[string]string)
+	for key, model := range instModels {
+		gseprocReq := new(metadata.GseProcRequest)
+		// hostInfo
+		gseprocReq.Hosts, err = lgc.GetHostForGse(model.ApplicationID, model.HostID, forward)
+		if err != nil {
+			blog.Warnf("getHostForGse failed. err: %v", err)
+			continue
+		}
+
+		// get processinfo
+		procInfo, err := lgc.GetProcessbyProcID(string(model.ProcID), forward)
+		if err != nil {
+			blog.Warnf("getProcessByProcID failed. err: %v", err)
+			continue
+		}
+
+		// register process into gse
+		if err := lgc.RegisterProcInstanceToGse(model.ModuleID, gseprocReq.Hosts, procInfo, forward); err != nil {
+			blog.Warnf("register process into gse failed. err: %v", err)
+			continue
+		}
+
+		procName, ok := procInfo[common.BKProcessNameField].(string)
+		if !ok {
+			blog.Warnf("convert process name to string failed")
+			continue
+		}
+
+		gseprocReq.Meta.Name = procName
+		gseprocReq.Meta.Namespace = getGseProcNameSpace(model.ApplicationID, model.ModuleID)
+		gseprocReq.OpType = procOp.OpType
+
+		gseRsp, err := lgc.CoreAPI.GseProcServer().OperateProcess(context.Background(), forward, gseprocReq.Meta.Namespace, gseprocReq)
+		if err != nil || (err == nil || !gseRsp.Result) {
+			blog.Warnf("fail to operate process by gse process server. err: %v, errcode: %d, errmsg: %s", err, gseRsp.Code, gseRsp.ErrMsg)
+			continue
+		}
+
+		taskId, ok := gseRsp.Data[common.BKGseTaskIdField].(string)
+		if !ok {
+			blog.Warnf("convert gse process operate taskid to string failed. value: %v", gseRsp.Data)
+			continue
+		}
+
+		model_TaskId[key] = taskId
+	}
+
+	return model_TaskId, nil
+}
+
+func (lgc *Logics) GetHostForGse(appId, hostId int64, forward http.Header) ([]metadata.GseHost, error) {
+	gseHosts := make([]metadata.GseHost, 0)
+	// get bk_supplier_id from applicationbase
+	condition := make(map[string]interface{})
+	condition[common.BKAppIDField] = appId
+	reqParam := new(metadata.QueryInput)
+	reqParam.Condition = condition
+	appRet, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDApp, forward, reqParam)
+	if err != nil || (err == nil && !appRet.Result) {
+		return nil, fmt.Errorf("get application failed. condition: %+v, err: %v, errcode: %d, errmsg: %s", reqParam, err, appRet.Code, appRet.ErrMsg)
+	}
+
+	supplierID := int64(0)
+	if len(appRet.Data.Info) >= 1 {
+		tmp, ok := appRet.Data.Info[0].Get(common.BKSupplierIDField)
+		if !ok {
+			return nil, fmt.Errorf("there is no supplierID in appID(%s)", appId)
+		}
+
+		supplierID, err = util.GetInt64ByInterface(tmp)
+		if !ok {
+			return nil, fmt.Errorf("convert supplierID to int failed.")
+		}
+	}
+
+	// get host info
+	hostRet, err := lgc.CoreAPI.HostController().Host().GetHostByID(context.Background(), string(hostId), forward)
+	if err != nil || (err == nil && !hostRet.Result) {
+		return nil, fmt.Errorf("get host by hostid(%s) failed. err: %v, errcode: %d, errmsg: %s", hostId, err, hostRet.Code, hostRet.ErrMsg)
+	}
+
+	hostIp, ok := hostRet.Data[common.BKHostInnerIPField].(string)
+	if !ok {
+		return nil, fmt.Errorf("convert host ip to string failed.")
+	}
+
+	cloudId, err := util.GetInt64ByInterface(hostRet.Data[common.BKCloudIDField])
+	if nil != err {
+		return nil, fmt.Errorf("convert cloudid to int failed")
+	}
+
+	hostID, err := util.GetInt64ByInterface(hostRet.Data[common.BKHostIDField])
+	if nil != err {
+		return nil, fmt.Errorf("convert hostID to int failed")
+	}
+
+	var gseHost metadata.GseHost
+	gseHost.HostID = hostID
+	gseHost.Ip = hostIp
+	gseHost.BkCloudId = cloudId
+	gseHost.BkSupplierId = supplierID
+
+	gseHosts = append(gseHosts, gseHost)
+
+	return gseHosts, nil
 }
 
 func (lgc *Logics) matchName(ctx context.Context, forward http.Header, match, objID, instIDKey, instNameKey string, conds map[string]interface{}) (instIDs []int64, data map[int64]mapstr.MapStr, err error) {
