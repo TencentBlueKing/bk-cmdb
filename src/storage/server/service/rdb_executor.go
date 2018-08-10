@@ -1,25 +1,26 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except
+ * Licensed under the MIT License (the "License"); you may not use this file except 
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
+ * either express or implied. See the License for the specific language governing permissions and 
  * limitations under the License.
  */
-
+ 
 package service
 
 import (
+	"context"
+
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/mongobyc"
 	"configcenter/src/storage/mongobyc/findopt"
 	"configcenter/src/storage/rpc"
 	"configcenter/src/storage/types"
-	"context"
 )
 
 type CollectionFunc func(collName string) mongobyc.CollectionInterface
@@ -59,30 +60,30 @@ func (e *collectionExecutor) execute() {
 		e.count()
 	}
 	if e.execerr != nil {
-		e.reply.OK = false
+		e.reply.Success = false
 		e.reply.Message = e.execerr.Error()
 	} else {
-		e.reply.OK = true
+		e.reply.Success = true
 	}
 }
 
-func (e collectionExecutor) insert() {
+func (e *collectionExecutor) insert() {
 	msg := types.OPINSERT{}
 	e.msg.Decode(&msg)
 	e.execerr = e.collection(msg.Collection).InsertMany(e.ctx, util.ConverToInterfaceSlice(msg.DOCS), nil)
 }
-func (e collectionExecutor) update() {
+func (e *collectionExecutor) update() {
 	msg := types.OPUPDATE{}
 	e.msg.Decode(&msg)
 	_, e.execerr = e.collection(msg.Collection).UpdateMany(e.ctx, msg.Selector, msg.DOC, nil)
 }
-func (e collectionExecutor) delete() {
+func (e *collectionExecutor) delete() {
 	msg := types.OPDELETE{}
 	e.msg.Decode(&msg)
 	_, e.execerr = e.collection(msg.Collection).DeleteMany(e.ctx, msg.Selector, nil)
 }
 
-func (e collectionExecutor) find() {
+func (e *collectionExecutor) find() {
 	msg := types.OPFIND{}
 	e.msg.Decode(&msg)
 
@@ -96,7 +97,7 @@ func (e collectionExecutor) find() {
 	blog.Infof("[collectionExecutor] find result: %+v, err: [%v]", e.reply.Docs, e.execerr)
 }
 
-func (e collectionExecutor) findAndModify() {
+func (e *collectionExecutor) findAndModify() {
 	msg := types.OPFINDANDMODIFY{}
 	e.msg.Decode(&msg)
 	opt := findopt.FindAndModify{}
@@ -105,7 +106,7 @@ func (e collectionExecutor) findAndModify() {
 	opt.New = msg.ReturnNew
 	e.execerr = e.collection(msg.Collection).FindAndModify(e.ctx, msg.Selector, msg.DOC, nil, &e.reply.Docs)
 }
-func (e collectionExecutor) count() {
+func (e *collectionExecutor) count() {
 	msg := types.OPDELETE{}
 	e.msg.Decode(&msg)
 	e.reply.Count, e.execerr = e.collection(msg.Collection).Count(e.ctx, msg.Selector)
