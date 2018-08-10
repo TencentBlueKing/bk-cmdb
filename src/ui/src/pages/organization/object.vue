@@ -14,7 +14,7 @@
             <div class="btn-group fl">
                 <template v-if="objId!=='biz'">
                     <bk-dropdown-menu ref="dropdown" class="mr10" :trigger="'click'">
-                        <bk-button class="dropdown-btn" type="default" slot="dropdown-trigger">
+                        <bk-button class="dropdown-btn checkbox" type="default" slot="dropdown-trigger">
                             <template v-if="table.chooseId.length">
                                 <i class="checkbox-btn" :class="{'checked': table.chooseId.length!==table.pagination.count, 'checked-all': table.chooseId.length===table.pagination.count}" @click.stop="tableChecked('cancel')"></i>
                             </template>
@@ -108,6 +108,7 @@
                 :checked.sync="table.chooseId"
                 :wrapperMinusHeight="150"
                 :loading="$loading('instSearch')"
+                :isCheckboxShow="false"
                 @handleRowClick="editObject"
                 @handleSortChange="setTableSort"
                 @handlePageChange="setTablePage"

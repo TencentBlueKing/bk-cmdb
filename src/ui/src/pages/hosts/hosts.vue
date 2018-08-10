@@ -31,26 +31,26 @@
             </div>
         </slot>
         <div class="table-container">
+            <bk-dropdown-menu ref="dropdown" class="fl mr10" :trigger="'click'">
+                <bk-button class="dropdown-btn checkbox" type="default" slot="dropdown-trigger">
+                    <template v-if="table.chooseId.length">
+                        <i class="checkbox-btn" :class="{'checked': table.chooseId.length!==table.pagination.count, 'checked-all': table.chooseId.length===table.pagination.count}" @click.stop="tableChecked('cancel')"></i>
+                    </template>
+                    <template v-else>
+                        <i class="checkbox-btn" @click.stop="tableChecked('current')"></i>
+                    </template>
+                    <i class="bk-icon icon-angle-down"></i>
+                </bk-button>
+                <ul class="bk-dropdown-list" slot="dropdown-content">
+                    <li>
+                        <a href="javascript:;" @click="tableChecked('current')">{{$t("Common['全选本页']")}}</a>
+                    </li>
+                    <li>
+                        <a href="javascript:;" @click="tableChecked('all')">{{$t("Common['跨页全选']")}}</a>
+                    </li>
+                </ul>
+            </bk-dropdown-menu>
             <div class="btn-wrapper clearfix" :class="{'disabled': !table.chooseId.length}">
-                <bk-dropdown-menu class="fl mr10" :trigger="'click'">
-                    <bk-button class="dropdown-btn checkbox" type="default" slot="dropdown-trigger">
-                        <template v-if="table.chooseId.length">
-                            <i class="checkbox-btn" :class="{'checked': table.chooseId.length!==table.pagination.count, 'checked-all': table.chooseId.length===table.pagination.count}" @click.stop="tableChecked('cancel')"></i>
-                        </template>
-                        <template v-else>
-                            <i class="checkbox-btn" @click.stop="tableChecked('current')"></i>
-                        </template>
-                        <i class="bk-icon icon-angle-down"></i>
-                    </bk-button>
-                    <ul class="bk-dropdown-list" slot="dropdown-content">
-                        <li>
-                            <a href="javascript:;" @click="tableChecked('current')">{{$t("Common['全选本页']")}}</a>
-                        </li>
-                        <li>
-                            <a href="javascript:;" @click="tableChecked('all')">{{$t("Common['跨页全选']")}}</a>
-                        </li>
-                    </ul>
-                </bk-dropdown-menu>
                 <bk-dropdown-menu ref="dropdown" class="mr10" :trigger="'click'">
                     <bk-button class="dropdown-btn" type="default" slot="dropdown-trigger" style="width:100px" :disabled="!table.chooseId.length">
                         <span>{{$t('Common["复制"]')}}</span>
@@ -113,6 +113,7 @@
                 :checked="table.chooseId"
                 :wrapperMinusHeight="wrapperMinusHeight"
                 :visible="tableVisible"
+                :isCheckboxShow="false"
                 @handlePageChange="setTableCurrentPage"
                 @handleSizeChange="setTablePageSize"
                 @handleSortChange="setTableSort"

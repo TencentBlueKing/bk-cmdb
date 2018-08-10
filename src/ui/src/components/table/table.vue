@@ -173,6 +173,10 @@
             },
             selectedList: {
                 type: Array
+            },
+            isCheckboxShow: {
+                type: Boolean,
+                default: true
             }
         },
         data () {
