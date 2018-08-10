@@ -353,9 +353,9 @@ func (c *collection) Find(ctx context.Context, filter interface{}, opts *findopt
 			if nil != err {
 				return err
 			}
+
 			C.bson_append_document(operationOpts, fields, -1, bsonFields)
 			C.bson_destroy(bsonFields)
-
 		}
 		if opts.Descending {
 			bsonSort, err = TransformDocument(fmt.Sprintf(`{"%s":%d}`, opts.Sort, -1))
@@ -367,11 +367,9 @@ func (c *collection) Find(ctx context.Context, filter interface{}, opts *findopt
 		}
 
 		C.bson_append_document(operationOpts, sort, -1, bsonSort)
-
 		C.free(unsafe.Pointer(limit))
 		C.free(unsafe.Pointer(sort))
 		C.free(unsafe.Pointer(skip))
-
 		C.bson_destroy(bsonSort)
 
 	}

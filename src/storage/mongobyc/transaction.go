@@ -30,8 +30,9 @@ func newSessionTransaction(clientSession *session) Transaction {
 }
 
 type transaction struct {
-	txnOpts       *C.mongoc_transaction_opt_t
-	clientSession *session
+	txnOpts        *C.mongoc_transaction_opt_t
+	clientSession  *session
+	collectionMaps map[collectionName]CollectionInterface
 }
 
 func (t *transaction) StartTransaction() error {
@@ -63,5 +64,23 @@ func (t *transaction) CommitTransaction() error {
 }
 
 func (t *transaction) Collection(collName string) CollectionInterface {
-	return newCollectionWithSession(t.clientSession.mongocli, collName, t.clientSession.innerSession)
+	target, ok := t.collectionMaps[collectionName(collName)]
+	if !ok {
+		target = newCollectionWithSession(t.clientSession.mongocli, collName, t.clientSession.innerSession)
+		t.collectionMaps[collectionName(collName)] = target
+	}
+	return target
+}
+
+func (t *transaction) Close() error {
+	for _, coll := range t.collectionMaps {
+		switch target := coll.(type) {
+		case *collection:
+			if err := target.Close(); nil != err {
+				return err
+			}
+		}
+	}
+	t.collectionMaps = map[collectionName]CollectionInterface{}
+	return nil
 }
