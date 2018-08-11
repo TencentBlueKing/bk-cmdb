@@ -84,8 +84,8 @@ func (c *RPC) clone() *RPC {
 	return &nc
 }
 
-// Collection collection operation
-func (c *RPC) Collection(collection string) dal.Collection {
+// Table collection operation
+func (c *RPC) Table(collection string) dal.Table {
 	col := RPCCollection{}
 	col.collection = collection
 	col.rpc = c.rpc
@@ -426,18 +426,18 @@ func (c *RPCTxn) TxnInfo() *types.Tansaction {
 	}
 }
 
-// HasCollection 判断是否存在集合
-func (c *RPC) HasCollection(collName string) (bool, error) {
+// HasTable 判断是否存在集合
+func (c *RPC) HasTable(tablename string) (bool, error) {
 	return false, dal.ErrNotImplemented
 }
 
-// DropCollection 移除集合
-func (c *RPC) DropCollection(collName string) error {
+// DropTable 移除集合
+func (c *RPC) DropTable(tablename string) error {
 	return dal.ErrNotImplemented
 }
 
-// CreateCollection 创建集合
-func (c *RPC) CreateCollection(collName string) error {
+// CreateTable 创建集合
+func (c *RPC) CreateTable(tablename string) error {
 	return dal.ErrNotImplemented
 }
 

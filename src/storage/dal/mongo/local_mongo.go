@@ -66,8 +66,8 @@ func (c *Client) clone() *Client {
 	return &nc
 }
 
-// Collection collection operation
-func (c *Client) Collection(collection string) dal.Collection {
+// Table collection operation
+func (c *Client) Table(collection string) dal.Table {
 	col := Collection{}
 	col.collection = collection
 
@@ -235,18 +235,18 @@ func (c *ClientTxn) TxnInfo() *types.Tansaction {
 	return &types.Tansaction{}
 }
 
-// HasCollection 判断是否存在集合
-func (c *Client) HasCollection(collName string) (bool, error) {
+// HasTable 判断是否存在集合
+func (c *Client) HasTable(collName string) (bool, error) {
 	return c.dbc.Database().HasCollection(collName)
 }
 
-// DropCollection 移除集合
-func (c *Client) DropCollection(collName string) error {
+// DropTable 移除集合
+func (c *Client) DropTable(collName string) error {
 	return c.dbc.Database().DropCollection(collName)
 }
 
-// CreateCollection 创建集合
-func (c *Client) CreateCollection(collName string) error {
+// CreateTable 创建集合
+func (c *Client) CreateTable(collName string) error {
 	return c.dbc.Database().CreateEmptyCollection(collName)
 }
 

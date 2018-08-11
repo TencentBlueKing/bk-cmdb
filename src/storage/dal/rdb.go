@@ -27,8 +27,8 @@ var (
 
 // RDB db operation interface
 type RDB interface {
-	// Collection collection 操作
-	Collection(collection string) Collection
+	// Table collection 操作
+	Table(collection string) Table
 	// StartTransaction 开启新事务
 	StartTransaction(ctx context.Context) (RDBTxn, error)
 	// NextSequence 获取新序列号(非事务)
@@ -36,16 +36,16 @@ type RDB interface {
 	// Ping 健康检查
 	Ping() error // 健康检查
 
-	// HasCollection 判断是否存在集合
-	HasCollection(collName string) (bool, error)
-	// DropCollection 移除集合
-	DropCollection(collName string) error
-	// CreateCollection 创建集合
-	CreateCollection(collName string) error
+	// HasTable 判断是否存在集合
+	HasTable(tablename string) (bool, error)
+	// DropTable 移除集合
+	DropTable(tablename string) error
+	// CreateTable 创建集合
+	CreateTable(tablename string) error
 }
 
-// Collection collection operation interface
-type Collection interface {
+// Table collection operation interface
+type Table interface {
 	// Find 查询多个并反序列化到 Result
 	Find(ctx context.Context, filter Filter) Find
 	// Insert 插入数据, docs 可以为 单个数据 或者 多个数据
