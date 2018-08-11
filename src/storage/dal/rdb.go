@@ -87,11 +87,17 @@ type JoinOption struct {
 
 // Find find operation interface
 type Find interface {
+	// Fields 设置查询字段
 	Fields(fields ...string) Find
+	// Sort 设置查询排序
 	Sort(sort string) Find
+	// Start 设置限制查询上标
 	Start(start uint64) Find
+	// Limit 设置查询数量
 	Limit(limit uint64) Find
+	// All 查询多个
 	All(ctx context.Context, result interface{}) error
+	// One 查询单个
 	One(ctx context.Context, result interface{}) error
 	// Count 统计数量(非事务)
 	Count(ctx context.Context) (uint64, error)
