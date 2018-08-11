@@ -80,10 +80,9 @@ type Message struct {
 	transportErr error
 
 	magicVersion uint16
-	id           uint32 // Seq and ID can apparently be collapsed into one (ID)
 	seq          uint32
 	typz         uint32
-	cmd          command
+	cmd          command // maybe should use uint32
 
 	Codec Codec
 	Size  uint32

@@ -671,7 +671,8 @@ const (
 	BKHTTPCookieLanugageKey = "blueking_language"
 	BKSessionLanugageKey    = "language"
 
-	BKHTTPCCRequestID = "rid"
+	BKHTTPCCRequestID     = "cc_request_id"
+	BKHTTPCCTransactionID = "cc_txn_id"
 )
 
 const (
