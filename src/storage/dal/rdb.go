@@ -47,15 +47,14 @@ type RDB interface {
 // Table collection operation interface
 type Table interface {
 	// Find 查询多个并反序列化到 Result
-	Find(ctx context.Context, filter Filter) Find
+	Find(filter Filter) Find
 	// Insert 插入数据, docs 可以为 单个数据 或者 多个数据
 	Insert(ctx context.Context, docs interface{}) error
 	// Update 更新数据
 	Update(ctx context.Context, filter Filter, doc interface{}) error
 	// Delete 删除数据
 	Delete(ctx context.Context, filter Filter) error
-	// Count 统计数量(非事务)
-	Count(ctx context.Context, filter Filter) (uint64, error)
+
 	// CreateIndex 创建索引
 	CreateIndex(ctx context.Context, index Index) error
 	// DropIndex 移除索引
@@ -92,8 +91,10 @@ type Find interface {
 	Sort(sort string) Find
 	Start(start uint64) Find
 	Limit(limit uint64) Find
-	All(result interface{}) error
-	One(result interface{}) error
+	All(ctx context.Context, result interface{}) error
+	One(ctx context.Context, result interface{}) error
+	// Count 统计数量(非事务)
+	Count(ctx context.Context) (uint64, error)
 }
 
 type Index struct {
