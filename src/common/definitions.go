@@ -537,10 +537,10 @@ const (
 	FieldTypeBool string = "bool"
 
 	// FieldTypeSingleLenChar the single char length limit
-	FieldTypeSingleLenChar int = 48
+	FieldTypeSingleLenChar int = 256
 
 	// FieldTypeLongLenChar the long char length limit
-	FieldTypeLongLenChar int = 512
+	FieldTypeLongLenChar int = 2000
 )
 
 const (
