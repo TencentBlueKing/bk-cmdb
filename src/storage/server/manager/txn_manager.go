@@ -53,18 +53,22 @@ func New(ctx context.Context, txnTimeout int, db mongobyc.Client) *TxnManager {
 
 		ctx: ctx,
 	}
-	go tm.reconcileCache()
-	go tm.reconcilePersistence()
 	return tm
 }
 
-func (tm *TxnManager) reconcileCache() error {
+func (tm *TxnManager) Run() error {
+	go tm.reconcileCache()
+	tm.reconcilePersistence()
+	return nil
+}
+
+func (tm *TxnManager) reconcileCache() {
 	ticker := time.NewTicker(tm.txnLifeLimit)
 	for {
 		select {
 		case <-tm.ctx.Done():
 			ticker.Stop()
-			return nil
+			return
 		case <-ticker.C:
 			tm.mutex.Lock()
 			for _, session := range tm.cache {
@@ -78,13 +82,13 @@ func (tm *TxnManager) reconcileCache() error {
 	}
 }
 
-func (tm *TxnManager) reconcilePersistence() error {
+func (tm *TxnManager) reconcilePersistence() {
 	ticker := time.NewTicker(tm.txnLifeLimit * 2)
 	for {
 		select {
 		case <-tm.ctx.Done():
 			ticker.Stop()
-			return nil
+			return
 		case <-ticker.C:
 			txns := []types.Tansaction{}
 			err := tm.db.Collection(common.BKTableNameTransaction).Find(tm.ctx, nil, nil, &txns)
