@@ -93,6 +93,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			continue
 		}
 
+		// connect db
 		db := mongobyc.NewClient(process.Config.MongoDB.BuildURI())
 		err := db.Open()
 		if err != nil {
@@ -104,7 +105,9 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		}
 		blog.V(3).Infof("connected to %s", process.Config.MongoDB.BuildURI())
 		process.Service.SetDB(db)
-		man := manager.New(ctx, 60, db)
+
+		// set man
+		man := manager.New(ctx, process.Config.Transaction, db)
 		go func() {
 			errCh <- man.Run()
 		}()
@@ -149,6 +152,9 @@ func (h *TXServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		h.Config.Redis.Address = current.ConfigMap["redis.host"]
 		h.Config.Redis.Password = current.ConfigMap["redis.pwd"]
 		h.Config.Redis.Database = current.ConfigMap["redis.database"]
+
+		h.Config.Transaction.Enable = current.ConfigMap["transaction.enable"]
+		h.Config.Transaction.TransactionLifetimeSecond = current.ConfigMap["transaction.transactionLifetimeSecond"]
 	}
 }
 
