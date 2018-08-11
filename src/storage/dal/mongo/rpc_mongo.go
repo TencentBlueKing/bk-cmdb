@@ -87,9 +87,6 @@ func (c *RPC) clone() *RPC {
 // Collection collection operation
 func (c *RPC) Collection(collection string) dal.Collection {
 	col := RPCCollection{}
-	col.RequestID = c.RequestID
-	col.Processor = c.Processor
-	col.TxnID = c.TxnID
 	col.collection = collection
 	col.rpc = c.rpc
 
@@ -98,21 +95,24 @@ func (c *RPC) Collection(collection string) dal.Collection {
 
 // RPCCollection implement client.Collection interface
 type RPCCollection struct {
-	RequestID  string // 请求ID,可选项
-	Processor  string // 处理进程号，结构为"IP:PORT-PID"用于识别事务session被存于那个TM多活实例
-	TxnID      string // 事务ID,uuid
 	collection string // 集合名
 	rpc        *rpc.Client
 }
 
 // Find 查询多个并反序列化到 Result
 func (c *RPCCollection) Find(ctx context.Context, filter dal.Filter) dal.Find {
+	// build msg
 	msg := types.OPFIND{}
 	msg.OPCode = types.OPFind
-	msg.RequestID = c.RequestID
-	msg.TxnID = c.TxnID
 	msg.Collection = c.collection
 	msg.Selector.Encode(filter)
+
+	// set txn
+	opt, ok := ctx.Value(common.BKHTTPCCTransactionID).(dal.JoinOption)
+	if ok {
+		msg.RequestID = opt.RequestID
+		msg.TxnID = opt.TxnID
+	}
 
 	return &RPCFind{RPCCollection: c, msg: &msg}
 }
@@ -183,16 +183,22 @@ func (f *RPCFind) One(result interface{}) error {
 
 // Insert 插入数据, docs 可以为 单个数据 或者 多个数据
 func (c *RPCCollection) Insert(ctx context.Context, docs interface{}) error {
+	// build msg
 	msg := types.OPINSERT{}
 	msg.OPCode = types.OPInsert
-	msg.RequestID = c.RequestID
-	msg.TxnID = c.TxnID
 	msg.Collection = c.collection
-
 	if err := msg.DOCS.Encode(docs); err != nil {
 		return err
 	}
 
+	// set txn
+	opt, ok := ctx.Value(common.BKHTTPCCTransactionID).(dal.JoinOption)
+	if ok {
+		msg.RequestID = opt.RequestID
+		msg.TxnID = opt.TxnID
+	}
+
+	// call
 	reply := types.OPREPLY{}
 	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
 	if err != nil {
@@ -206,10 +212,9 @@ func (c *RPCCollection) Insert(ctx context.Context, docs interface{}) error {
 
 // Update 更新数据
 func (c *RPCCollection) Update(ctx context.Context, filter dal.Filter, doc interface{}) error {
+	// build msg
 	msg := types.OPUPDATE{}
 	msg.OPCode = types.OPUpdate
-	msg.RequestID = c.RequestID
-	msg.TxnID = c.TxnID
 	msg.Collection = c.collection
 	if err := msg.DOC.Encode(types.Document{
 		"$set": doc,
@@ -220,6 +225,14 @@ func (c *RPCCollection) Update(ctx context.Context, filter dal.Filter, doc inter
 		return err
 	}
 
+	// set txn
+	opt, ok := ctx.Value(common.BKHTTPCCTransactionID).(dal.JoinOption)
+	if ok {
+		msg.RequestID = opt.RequestID
+		msg.TxnID = opt.TxnID
+	}
+
+	// call
 	reply := types.OPREPLY{}
 	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
 	if err != nil {
@@ -233,15 +246,22 @@ func (c *RPCCollection) Update(ctx context.Context, filter dal.Filter, doc inter
 
 // Delete 删除数据
 func (c *RPCCollection) Delete(ctx context.Context, filter dal.Filter) error {
+	// build msg
 	msg := types.OPDELETE{}
 	msg.OPCode = types.OPDelete
-	msg.RequestID = c.RequestID
-	msg.TxnID = c.TxnID
 	msg.Collection = c.collection
 	if err := msg.Selector.Encode(filter); err != nil {
 		return err
 	}
 
+	// set txn
+	opt, ok := ctx.Value(common.BKHTTPCCTransactionID).(dal.JoinOption)
+	if ok {
+		msg.RequestID = opt.RequestID
+		msg.TxnID = opt.TxnID
+	}
+
+	// call
 	reply := types.OPREPLY{}
 	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
 	if err != nil {
@@ -255,15 +275,22 @@ func (c *RPCCollection) Delete(ctx context.Context, filter dal.Filter) error {
 
 // Count 统计数量(非事务)
 func (c *RPCCollection) Count(ctx context.Context, filter dal.Filter) (uint64, error) {
+	// build msg
 	msg := types.OPCOUNT{}
 	msg.OPCode = types.OPCount
-	msg.RequestID = c.RequestID
-	// msg.TxnID = c.TxnID // because Count was not supported for transaction in mongo
 	msg.Collection = c.collection
 	if err := msg.Selector.Encode(filter); err != nil {
 		return 0, err
 	}
 
+	// set txn
+	opt, ok := ctx.Value(common.BKHTTPCCTransactionID).(dal.JoinOption)
+	if ok {
+		msg.RequestID = opt.RequestID
+		// msg.TxnID = opt.TxnID // because Count was not supported for transaction in mongo
+	}
+
+	// call
 	reply := types.OPREPLY{}
 	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
 	if err != nil {
@@ -277,9 +304,9 @@ func (c *RPCCollection) Count(ctx context.Context, filter dal.Filter) (uint64, e
 
 // NextSequence 获取新序列号(非事务)
 func (c *RPC) NextSequence(ctx context.Context, sequenceName string) (uint64, error) {
+	// build msg
 	msg := types.OPFINDANDMODIFY{}
 	msg.OPCode = types.OPFindAndModify
-	msg.RequestID = c.RequestID
 	msg.Collection = common.BKTableNameIDgenerator
 	if err := msg.DOC.Encode(types.Document{
 		"$inc": types.Document{"SequenceID": 1},
@@ -291,10 +318,17 @@ func (c *RPC) NextSequence(ctx context.Context, sequenceName string) (uint64, er
 	}); err != nil {
 		return 0, err
 	}
-
 	msg.Upsert = true
 	msg.ReturnNew = true
 
+	// set txn
+	opt, ok := ctx.Value(common.BKHTTPCCTransactionID).(dal.JoinOption)
+	if ok {
+		msg.RequestID = opt.RequestID
+		// msg.TxnID = opt.TxnID // because NextSequence was not supported for transaction in mongo
+	}
+
+	// call
 	reply := types.OPREPLY{}
 	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
 	if err != nil {
@@ -312,11 +346,18 @@ func (c *RPC) NextSequence(ctx context.Context, sequenceName string) (uint64, er
 }
 
 // StartTransaction 开启新事务
-func (c *RPC) StartTransaction(ctx context.Context, opt dal.JoinOption) (dal.RDBTxn, error) {
+func (c *RPC) StartTransaction(ctx context.Context) (dal.RDBTxn, error) {
+	// build msg
 	msg := types.OPSTARTTTRANSATION{}
 	msg.OPCode = types.OPStartTransaction
-	msg.RequestID = c.RequestID
 
+	// set txn
+	opt, ok := ctx.Value(common.BKHTTPCCTransactionID).(dal.JoinOption)
+	if ok {
+		msg.RequestID = opt.RequestID
+	}
+
+	// call
 	reply := types.OPREPLY{}
 	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
 	if err != nil {
@@ -332,16 +373,6 @@ func (c *RPC) StartTransaction(ctx context.Context, opt dal.JoinOption) (dal.RDB
 	nc.Processor = reply.Processor
 	nc.RequestID = opt.RequestID
 	return nc, nil
-}
-
-// JoinTransaction 加入事务, controller 加入某个事务
-func (c *RPC) JoinTransaction(opt dal.JoinOption) dal.RDBTxn {
-	nc := new(RPCTxn)
-	nc.RPC = c.clone()
-	nc.TxnID = opt.TxnID
-	nc.RequestID = opt.RequestID
-	nc.Processor = opt.Processor
-	return nc
 }
 
 // RPCTxn implement dal.RPCTxn

@@ -19,7 +19,6 @@ import (
 	"sync"
 
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
@@ -200,7 +199,7 @@ func (c *Client) NextSequence(ctx context.Context, sequenceName string) (uint64,
 }
 
 // StartTransaction 开启新事务
-func (c *Client) StartTransaction(ctx context.Context, opt dal.JoinOption) (dal.RDBTxn, error) {
+func (c *Client) StartTransaction(ctx context.Context) (dal.RDBTxn, error) {
 	session := c.dbc.Session().Create()
 	if err := session.Open(); err != nil {
 		return nil, err
@@ -208,12 +207,6 @@ func (c *Client) StartTransaction(ctx context.Context, opt dal.JoinOption) (dal.
 	txn := &ClientTxn{Client: c.clone()}
 	txn.session = session
 	return txn, session.StartTransaction()
-}
-
-// JoinTransaction 加入事务, controller 加入某个事务
-func (c *Client) JoinTransaction(opt dal.JoinOption) dal.RDBTxn {
-	blog.Fatalf("not support JoinTransaction")
-	return nil
 }
 
 // ClientTxn implement dal.ClientTxn

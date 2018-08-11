@@ -30,9 +30,7 @@ type RDB interface {
 	// Collection collection 操作
 	Collection(collection string) Collection
 	// StartTransaction 开启新事务
-	StartTransaction(ctx context.Context, opt JoinOption) (RDBTxn, error)
-	// JoinTransaction 加入事务, controller 加入某个事务
-	JoinTransaction(JoinOption) RDBTxn
+	StartTransaction(ctx context.Context) (RDBTxn, error)
 	// NextSequence 获取新序列号(非事务)
 	NextSequence(ctx context.Context, sequenceName string) (uint64, error)
 	// Ping 健康检查
