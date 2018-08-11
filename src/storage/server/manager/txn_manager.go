@@ -13,6 +13,7 @@
 package manager
 
 import (
+	"configcenter/src/storage/server/app/options"
 	"context"
 	"errors"
 	"sync"
@@ -28,6 +29,8 @@ import (
 )
 
 type TxnManager struct {
+	enable       bool
+	processor    string
 	txnLifeLimit time.Duration // second
 	cache        map[string]*Session
 	db           mongobyc.Client
@@ -43,9 +46,10 @@ type Session struct {
 	mongobyc.Session
 }
 
-func New(ctx context.Context, txnTimeout int, db mongobyc.Client) *TxnManager {
+func New(ctx context.Context, opt options.TransactionConfig, db mongobyc.Client) *TxnManager {
 	tm := &TxnManager{
-		txnLifeLimit: time.Second * time.Duration(float64(txnTimeout)*1.5),
+		enable:       opt.ShouldEnable(),
+		txnLifeLimit: time.Second * time.Duration(float64(opt.GetTransactionLifetimeSecond())*1.5),
 		cache:        map[string]*Session{},
 		db:           db,
 
@@ -57,8 +61,11 @@ func New(ctx context.Context, txnTimeout int, db mongobyc.Client) *TxnManager {
 }
 
 func (tm *TxnManager) Run() error {
-	go tm.reconcileCache()
-	tm.reconcilePersistence()
+	if tm.enable {
+		go tm.reconcileCache()
+		go tm.reconcilePersistence()
+	}
+	<-tm.ctx.Done()
 	return nil
 }
 
@@ -137,6 +144,19 @@ func (tm *TxnManager) removeSession(txnID string) {
 }
 
 func (tm *TxnManager) CreateTransaction(requestID string, processor string) (*Session, error) {
+	txn := types.Tansaction{
+		RequestID:  requestID,
+		Processor:  tm.processor,
+		Status:     types.TxStatusOnProgress,
+		CreateTime: time.Now(),
+		LastTime:   time.Now(),
+	}
+
+	if tm.enable {
+		return &Session{
+			Txninst: &txn,
+		}, nil
+	}
 	session := tm.db.Session().Create()
 	err := session.Open()
 	defer func() {
@@ -152,21 +172,15 @@ func (tm *TxnManager) CreateTransaction(requestID string, processor string) (*Se
 		return nil, err
 	}
 
-	txn := types.Tansaction{
-		RequestID:  requestID,
-		Processor:  processor,
-		TxnID:      xid.New().String(),
-		Status:     types.TxStatusOnProgress,
-		CreateTime: time.Now(),
-		LastTime:   time.Now(),
-	}
-
 	err = tm.db.Collection(common.BKTableNameTransaction).InsertOne(tm.ctx, txn, nil)
 	if err != nil {
 		// we should return this error,
 		// cause the transaction life cycle will not under txn manager's controll
 		return nil, err
 	}
+
+	// TODO generate txnID
+	txn.TxnID = xid.New().String()
 
 	inst := &Session{
 		Txninst: &txn,
