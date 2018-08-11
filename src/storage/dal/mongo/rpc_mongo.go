@@ -100,19 +100,12 @@ type RPCCollection struct {
 }
 
 // Find 查询多个并反序列化到 Result
-func (c *RPCCollection) Find(ctx context.Context, filter dal.Filter) dal.Find {
+func (c *RPCCollection) Find(filter dal.Filter) dal.Find {
 	// build msg
 	msg := types.OPFIND{}
 	msg.OPCode = types.OPFind
 	msg.Collection = c.collection
 	msg.Selector.Encode(filter)
-
-	// set txn
-	opt, ok := ctx.Value(common.BKHTTPCCTransactionID).(dal.JoinOption)
-	if ok {
-		msg.RequestID = opt.RequestID
-		msg.TxnID = opt.TxnID
-	}
 
 	return &RPCFind{RPCCollection: c, msg: &msg}
 }
@@ -152,7 +145,15 @@ func (f *RPCFind) Limit(limit uint64) dal.Find {
 }
 
 // All 查询多个
-func (f *RPCFind) All(result interface{}) error {
+func (f *RPCFind) All(ctx context.Context, result interface{}) error {
+	// set txn
+	opt, ok := ctx.Value(common.BKHTTPCCTransactionID).(dal.JoinOption)
+	if ok {
+		f.msg.RequestID = opt.RequestID
+		f.msg.TxnID = opt.TxnID
+	}
+
+	// call
 	reply := types.OPREPLY{}
 	err := f.rpc.Call(types.CommandRDBOperation, f.msg, &reply)
 	if err != nil {
@@ -165,7 +166,15 @@ func (f *RPCFind) All(result interface{}) error {
 }
 
 // One 查询一个
-func (f *RPCFind) One(result interface{}) error {
+func (f *RPCFind) One(ctx context.Context, result interface{}) error {
+	// set txn
+	opt, ok := ctx.Value(common.BKHTTPCCTransactionID).(dal.JoinOption)
+	if ok {
+		f.msg.RequestID = opt.RequestID
+		f.msg.TxnID = opt.TxnID
+	}
+
+	// call
 	reply := types.OPREPLY{}
 	err := f.rpc.Call(types.CommandRDBOperation, f.msg, &reply)
 	if err != nil {
@@ -179,6 +188,29 @@ func (f *RPCFind) One(result interface{}) error {
 		return dal.ErrDocumentNotFound
 	}
 	return reply.Docs[0].Decode(result)
+}
+
+// Count 统计数量(非事务)
+func (f *RPCFind) Count(ctx context.Context) (uint64, error) {
+	// build msg
+	f.msg.OPCode = types.OPCount
+
+	// set txn
+	opt, ok := ctx.Value(common.BKHTTPCCTransactionID).(dal.JoinOption)
+	if ok {
+		f.msg.RequestID = opt.RequestID
+	}
+
+	// call
+	reply := types.OPREPLY{}
+	err := f.rpc.Call(types.CommandRDBOperation, f.msg, &reply)
+	if err != nil {
+		return 0, err
+	}
+	if !reply.Success {
+		return 0, errors.New(reply.Message)
+	}
+	return reply.Count, nil
 }
 
 // Insert 插入数据, docs 可以为 单个数据 或者 多个数据
@@ -271,35 +303,6 @@ func (c *RPCCollection) Delete(ctx context.Context, filter dal.Filter) error {
 		return errors.New(reply.Message)
 	}
 	return nil
-}
-
-// Count 统计数量(非事务)
-func (c *RPCCollection) Count(ctx context.Context, filter dal.Filter) (uint64, error) {
-	// build msg
-	msg := types.OPCOUNT{}
-	msg.OPCode = types.OPCount
-	msg.Collection = c.collection
-	if err := msg.Selector.Encode(filter); err != nil {
-		return 0, err
-	}
-
-	// set txn
-	opt, ok := ctx.Value(common.BKHTTPCCTransactionID).(dal.JoinOption)
-	if ok {
-		msg.RequestID = opt.RequestID
-		// msg.TxnID = opt.TxnID // because Count was not supported for transaction in mongo
-	}
-
-	// call
-	reply := types.OPREPLY{}
-	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
-	if err != nil {
-		return 0, err
-	}
-	if !reply.Success {
-		return 0, errors.New(reply.Message)
-	}
-	return reply.Count, nil
 }
 
 // NextSequence 获取新序列号(非事务)
