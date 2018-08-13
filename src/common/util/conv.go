@@ -172,14 +172,17 @@ func GetStrValsFromArrMapInterfaceByKey(arrI []interface{}, key string) []string
 
 func ConverToInterfaceSlice(value interface{}) []interface{} {
 	rflval := reflect.ValueOf(value)
-	if rflval.Elem().Kind() != reflect.Slice {
+	for rflval.CanAddr() {
+		rflval = rflval.Elem()
+	}
+	if rflval.Kind() != reflect.Slice {
 		return []interface{}{value}
 	}
 
 	result := []interface{}{}
 	for i := 0; i < rflval.Len(); i++ {
 		if rflval.Index(i).CanInterface() {
-			result = append(result, rflval.Index(i))
+			result = append(result, rflval.Index(i).Interface())
 		}
 	}
 
