@@ -152,7 +152,7 @@ func (tm *TxnManager) CreateTransaction(requestID string, processor string) (*Se
 		LastTime:   time.Now(),
 	}
 
-	if tm.enable {
+	if !tm.enable {
 		return &Session{
 			Txninst: &txn,
 		}, nil

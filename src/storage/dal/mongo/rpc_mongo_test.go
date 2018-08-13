@@ -78,3 +78,66 @@ func TestRPCClient(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, len(findall) <= 0)
 }
+
+func TestTransaction(t *testing.T) {
+	cli, err := mongo.NewRPC("127.0.0.1:50010")
+	require.NoError(t, err)
+
+	ctx := context.Background()
+	tablename := "testtable"
+
+	txcli, err := cli.StartTransaction(ctx)
+	require.NoError(t, err, "StartTransaction")
+
+	// inset one
+	err = txcli.Table(tablename).Insert(ctx, map[string]interface{}{
+		"name": "name1",
+	})
+	require.NoError(t, err, "insert one")
+
+	// insert multi
+	err = txcli.Table(tablename).Insert(ctx, []map[string]interface{}{
+		{
+			"name": "name2",
+		},
+		{
+			"name": "name3",
+		},
+	})
+	require.NoError(t, err, "insert multi")
+
+	// find all
+	findall := []map[string]interface{}{}
+	err = txcli.Table(tablename).Find(nil).All(ctx, &findall)
+	require.NoError(t, err, "find all")
+	require.True(t, len(findall) > 0)
+
+	// update
+	err = txcli.Table(tablename).Update(ctx, map[string]interface{}{"name": "name1"}, map[string]interface{}{"name": "name4"})
+	require.NoError(t, err, "update")
+
+	// find one
+	findone := map[string]interface{}{}
+	err = txcli.Table(tablename).Find(map[string]interface{}{"name": "name4"}).One(ctx, &findone)
+	require.NoError(t, err)
+	require.True(t, findone["name"] == "name4")
+
+	// delete filter
+	err = txcli.Table(tablename).Delete(ctx, map[string]interface{}{"name": "name4"})
+	require.NoError(t, err)
+	findone = map[string]interface{}{}
+	err = txcli.Table(tablename).Find(map[string]interface{}{"name": "name4"}).One(ctx, &findone)
+	require.EqualError(t, err, dal.ErrDocumentNotFound.Error())
+	require.True(t, findone["name"] == nil)
+
+	// delete all
+	err = txcli.Table(tablename).Delete(ctx, nil)
+	require.NoError(t, err)
+	findall = []map[string]interface{}{}
+	err = txcli.Table(tablename).Find(nil).All(ctx, &findall)
+	require.NoError(t, err)
+	require.True(t, len(findall) <= 0)
+
+	err = txcli.Commit()
+	require.NoError(t, err)
+}
