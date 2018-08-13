@@ -30,7 +30,13 @@ type RDB interface {
 	// Table collection 操作
 	Table(collection string) Table
 	// StartTransaction 开启新事务
-	StartTransaction(ctx context.Context) (RDBTxn, error)
+	StartTransaction(ctx context.Context) error
+	// Commit 提交事务
+	Commit() error
+	// Abort 取消事务
+	Abort() error
+	// TxnInfo 当前事务信息，用于事务发起者往下传递
+	TxnInfo() *types.Tansaction
 	// NextSequence 获取新序列号(非事务)
 	NextSequence(ctx context.Context, sequenceName string) (uint64, error)
 	// Ping 健康检查
@@ -65,17 +71,6 @@ type Table interface {
 	RenameColumn(ctx context.Context, oldName, newColumn string) error
 	// DropColumn 移除字段
 	DropColumn(ctx context.Context, field string) error
-}
-
-// RDBTxn transaction operation interface
-type RDBTxn interface {
-	RDB
-	// Commit 提交事务
-	Commit() error
-	// Abort 取消事务
-	Abort() error
-	// TxnInfo 当前事务信息，用于事务发起者往下传递
-	TxnInfo() *types.Tansaction
 }
 
 // JoinOption defind join transaction options
