@@ -18,7 +18,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/mongodb/mongo-go-driver/bson"
+	"encoding/json"
 
 	"configcenter/src/common/blog"
 )
@@ -46,22 +46,22 @@ const (
 type Document map[string]interface{}
 
 func (d Document) Decode(result interface{}) error {
-	out, err := bson.Marshal(d)
+	out, err := json.Marshal(d)
 	if nil != err {
 		return err
 	}
-	return bson.Unmarshal(out, result)
+	return json.Unmarshal(out, result)
 }
 
-func (d Document) Encode(result interface{}) error {
+func (d *Document) Encode(result interface{}) error {
 	if nil == result {
 		return nil
 	}
-	out, err := bson.Marshal(result)
+	out, err := json.Marshal(result)
 	if nil != err {
 		return err
 	}
-	return bson.Unmarshal(out, d)
+	return json.Unmarshal(out, d)
 }
 
 type Documents []Document
@@ -70,11 +70,11 @@ func (d Documents) Decode(result interface{}) error {
 	resultv := reflect.ValueOf(result)
 	switch resultv.Elem().Kind() {
 	case reflect.Slice:
-		out, err := bson.Marshal(d)
+		out, err := json.Marshal(d)
 		if nil != err {
 			return err
 		}
-		err = bson.Unmarshal(out, result)
+		err = json.Unmarshal(out, result)
 		if nil != err {
 			blog.Errorf("Decode Document error: %s, source is %#v", err.Error(), out)
 		}
@@ -83,33 +83,38 @@ func (d Documents) Decode(result interface{}) error {
 		if len(d) <= 0 {
 			return nil
 		}
-		out, err := bson.Marshal(d[0])
+		out, err := json.Marshal(d[0])
 		if nil != err {
 			return err
 		}
-		return bson.Unmarshal(out, result)
+		return json.Unmarshal(out, result)
 	}
 }
 
-func (d Documents) Encode(result interface{}) error {
+func (d *Documents) Encode(result interface{}) error {
 	if nil == result {
 		return nil
 	}
 	resultv := reflect.ValueOf(result)
-	switch resultv.Elem().Kind() {
+	for resultv.CanAddr() {
+		resultv = resultv.Elem()
+	}
+	switch resultv.Kind() {
 	case reflect.Slice:
-		out, err := bson.Marshal(result)
+		out, err := json.Marshal(result)
 		if nil != err {
 			return err
 		}
-		return bson.Unmarshal(out, d)
+		*d = []Document{}
+		blog.Infof("Encode slice %s", out)
+		return json.Unmarshal(out, d)
 	default:
-		out, err := bson.Marshal(result)
+		out, err := json.Marshal(result)
 		if nil != err {
 			return err
 		}
-		d = make(Documents, 1)
-		return bson.Unmarshal(out, d[0])
+		*d = []Document{Document{}}
+		return json.Unmarshal(out, &(*d)[0])
 	}
 }
 
@@ -129,11 +134,11 @@ func ParsePage(origin interface{}) *Page {
 	}
 	page, ok := origin.(map[string]interface{})
 	if !ok {
-		out, err := bson.Marshal(origin)
+		out, err := json.Marshal(origin)
 		if err != nil {
 			return &Page{}
 		}
-		err = bson.Unmarshal(out, &page)
+		err = json.Unmarshal(out, &page)
 		if err != nil {
 			return &Page{}
 		}

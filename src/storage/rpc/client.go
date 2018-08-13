@@ -220,11 +220,11 @@ func (c *Client) handleRequest(req *Message) {
 	req.seq = c.nextSeq()
 	c.messages[req.seq] = req
 	c.send <- req
-	blog.V(4).Infof("[rpc client]sent message data: %s", req.Data)
+	blog.V(0).Infof("[rpc client]sent message data: %s", req.Data)
 }
 
 func (c *Client) handleResponse(resp *Message) {
-	blog.V(4).Infof("[rpc client]receive message data: %s", resp.Data)
+	blog.V(0).Infof("[rpc client]receive message data: %s", resp.Data)
 	if resp.transportErr != nil {
 		c.err = resp.transportErr
 		// Terminate all in flight

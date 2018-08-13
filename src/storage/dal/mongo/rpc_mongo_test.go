@@ -13,21 +13,68 @@
 package mongo_test
 
 import (
+	"configcenter/src/storage/dal"
 	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	"configcenter/src/common"
 	"configcenter/src/storage/dal/mongo"
 )
 
 func TestRPCClient(t *testing.T) {
-
 	cli, err := mongo.NewRPC("127.0.0.1:50010")
 	require.NoError(t, err)
 
-	apps := []map[string]interface{}{}
-	err = cli.Table(common.BKTableNameBaseApp).Find(context.Background(), nil).All(&apps)
+	ctx := context.Background()
+	tablename := "testtable"
+
+	// inset one
+	err = cli.Table(tablename).Insert(ctx, map[string]interface{}{
+		"name": "name1",
+	})
+	require.NoError(t, err, "insert one")
+
+	// insert multi
+	err = cli.Table(tablename).Insert(ctx, []map[string]interface{}{
+		{
+			"name": "name2",
+		},
+		{
+			"name": "name3",
+		},
+	})
+	require.NoError(t, err, "insert multi")
+
+	// find all
+	findall := []map[string]interface{}{}
+	err = cli.Table(tablename).Find(nil).All(ctx, &findall)
+	require.NoError(t, err, "find all")
+	require.True(t, len(findall) > 0)
+
+	// update
+	err = cli.Table(tablename).Update(ctx, map[string]interface{}{"name": "name1"}, map[string]interface{}{"name": "name4"})
+	require.NoError(t, err, "update")
+
+	// find one
+	findone := map[string]interface{}{}
+	err = cli.Table(tablename).Find(map[string]interface{}{"name": "name4"}).One(ctx, &findone)
 	require.NoError(t, err)
+	require.True(t, findone["name"] == "name4")
+
+	// delete filter
+	err = cli.Table(tablename).Delete(ctx, map[string]interface{}{"name": "name4"})
+	require.NoError(t, err)
+	findone = map[string]interface{}{}
+	err = cli.Table(tablename).Find(map[string]interface{}{"name": "name4"}).One(ctx, &findone)
+	require.EqualError(t, err, dal.ErrDocumentNotFound.Error())
+	require.True(t, findone["name"] == nil)
+
+	// delete all
+	err = cli.Table(tablename).Delete(ctx, nil)
+	require.NoError(t, err)
+	findall = []map[string]interface{}{}
+	err = cli.Table(tablename).Find(nil).All(ctx, &findall)
+	require.NoError(t, err)
+	require.True(t, len(findall) <= 0)
 }

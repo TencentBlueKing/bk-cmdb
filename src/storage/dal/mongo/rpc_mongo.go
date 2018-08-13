@@ -184,7 +184,7 @@ func (f *RPCFind) One(ctx context.Context, result interface{}) error {
 		return errors.New(reply.Message)
 	}
 
-	if len(reply.Docs[0]) <= 0 {
+	if len(reply.Docs) <= 0 {
 		return dal.ErrDocumentNotFound
 	}
 	return reply.Docs[0].Decode(result)
@@ -374,7 +374,7 @@ func (c *RPC) StartTransaction(ctx context.Context) (dal.RDBTxn, error) {
 	nc.RPC = c.clone()
 	nc.TxnID = reply.TxnID
 	nc.Processor = reply.Processor
-	nc.RequestID = opt.RequestID
+	nc.RequestID = reply.RequestID
 	return nc, nil
 }
 
