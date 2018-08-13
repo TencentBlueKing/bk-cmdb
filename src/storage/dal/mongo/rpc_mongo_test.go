@@ -82,24 +82,26 @@ func TestRPCClient(t *testing.T) {
 }
 
 func TestTransaction(t *testing.T) {
-	cli, err := mongo.NewRPC("127.0.0.1:50010")
+	txncli, err := mongo.NewRPC("127.0.0.1:50010")
+	require.NoError(t, err)
+	normalcli, err := mongo.NewRPC("127.0.0.1:50010")
 	require.NoError(t, err)
 
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, common.BKHTTPCCTransactionID, dal.JoinOption{RequestID: "xxx"})
 	tablename := "testtable"
 
-	err = cli.StartTransaction(ctx)
+	err = txncli.StartTransaction(ctx)
 	require.NoError(t, err, "StartTransaction")
 
 	// inset one
-	err = cli.Table(tablename).Insert(ctx, map[string]interface{}{
+	err = txncli.Table(tablename).Insert(ctx, map[string]interface{}{
 		"name": "name1",
 	})
 	require.NoError(t, err, "insert one")
 
 	// insert multi
-	err = cli.Table(tablename).Insert(ctx, []map[string]interface{}{
+	err = txncli.Table(tablename).Insert(ctx, []map[string]interface{}{
 		{
 			"name": "name2",
 		},
@@ -111,36 +113,42 @@ func TestTransaction(t *testing.T) {
 
 	// find all
 	findall := []map[string]interface{}{}
-	err = cli.Table(tablename).Find(nil).All(ctx, &findall)
+	err = txncli.Table(tablename).Find(nil).All(ctx, &findall)
 	require.NoError(t, err, "find all")
 	require.True(t, len(findall) > 0)
 
+	// find all
+	findall = []map[string]interface{}{}
+	err = normalcli.Table(tablename).Find(nil).All(ctx, &findall)
+	require.NoError(t, err, "find all")
+	require.True(t, len(findall) <= 0)
+
 	// update
-	err = cli.Table(tablename).Update(ctx, map[string]interface{}{"name": "name1"}, map[string]interface{}{"name": "name4"})
+	err = txncli.Table(tablename).Update(ctx, map[string]interface{}{"name": "name1"}, map[string]interface{}{"name": "name4"})
 	require.NoError(t, err, "update")
 
 	// find one
 	findone := map[string]interface{}{}
-	err = cli.Table(tablename).Find(map[string]interface{}{"name": "name4"}).One(ctx, &findone)
+	err = txncli.Table(tablename).Find(map[string]interface{}{"name": "name4"}).One(ctx, &findone)
 	require.NoError(t, err)
 	require.True(t, findone["name"] == "name4")
 
 	// delete filter
-	err = cli.Table(tablename).Delete(ctx, map[string]interface{}{"name": "name4"})
+	err = txncli.Table(tablename).Delete(ctx, map[string]interface{}{"name": "name4"})
 	require.NoError(t, err)
 	findone = map[string]interface{}{}
-	err = cli.Table(tablename).Find(map[string]interface{}{"name": "name4"}).One(ctx, &findone)
+	err = txncli.Table(tablename).Find(map[string]interface{}{"name": "name4"}).One(ctx, &findone)
 	require.EqualError(t, err, dal.ErrDocumentNotFound.Error())
 	require.True(t, findone["name"] == nil)
 
 	// delete all
-	err = cli.Table(tablename).Delete(ctx, nil)
+	err = txncli.Table(tablename).Delete(ctx, nil)
 	require.NoError(t, err)
 	findall = []map[string]interface{}{}
-	err = cli.Table(tablename).Find(nil).All(ctx, &findall)
+	err = txncli.Table(tablename).Find(nil).All(ctx, &findall)
 	require.NoError(t, err)
 	require.True(t, len(findall) <= 0)
 
-	err = cli.Commit()
+	err = txncli.Commit()
 	require.NoError(t, err)
 }
