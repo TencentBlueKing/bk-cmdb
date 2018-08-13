@@ -98,15 +98,49 @@ func (lgc *Logics) RegisterProcInstanceToGse(moduleID int64, gseHost []metadata.
 	gseproc.Spec.Control.StopCmd = stopCmd
 	gseproc.Spec.Control.ReloadCmd = reloadCmd
 	gseproc.Spec.Control.RestartCmd = restartCmd
+	return lgc.registerProcInstanceToGse(gseproc, forward)
 
-	procInstDetail, err := lgc.CoreAPI.ProcController().RegisterProcInstanceDetail(context.Background(), forward, gseproc)
-	if err != nil || (err == nil && !procInstDetail.Result) {
-		return fmt.Errorf("register process(%s) detail failed. err: %v, errcode: %d, errmsg: %s", procName, err, procInstDetail.Code, procInstDetail.ErrMsg)
-	}
+}
 
+func (lgc *Logics) registerProcInstanceToGse(gseproc *metadata.GseProcRequest, forward http.Header) error {
+	namespace := getGseProcNameSpace(gseproc.AppID, gseproc.ModuleID)
+	gseproc.Meta.Namespace = namespace
 	ret, err := lgc.CoreAPI.GseProcServer().RegisterProcInfo(context.Background(), forward, namespace, gseproc)
 	if err != nil || (err == nil && !ret.Result) {
-		return fmt.Errorf("register process(%s) into gse failed. err: %v, errcode: %d, errmsg: %s", procName, err, ret.Code, ret.ErrMsg)
+		return fmt.Errorf("register process(%s) into gse failed. err: %v, errcode: %d, errmsg: %s", gseproc.Meta.Name, err, ret.Code, ret.ErrMsg)
+	}
+
+	gseproc.OpType = common.GSEProcOPRegister
+	procInstDetail, err := lgc.CoreAPI.ProcController().RegisterProcInstanceDetail(context.Background(), forward, gseproc)
+	if err != nil || (err == nil && !procInstDetail.Result) {
+		return fmt.Errorf("register process(%s) detail failed. err: %v, errcode: %d, errmsg: %s", gseproc.Meta.Name, err, procInstDetail.Code, procInstDetail.ErrMsg)
+	}
+
+	return nil
+}
+
+func (lgc *Logics) unregisterProcInstanceToGse(gseproc *metadata.GseProcRequest, forward http.Header) error {
+	namespace := getGseProcNameSpace(gseproc.AppID, gseproc.ModuleID)
+	gseproc.Meta.Namespace = namespace
+	gseproc.OpType = common.GSEProcOPUnregister
+
+	ret, err := lgc.CoreAPI.GseProcServer().UnRegisterProcInfo(context.Background(), forward, namespace, gseproc)
+	if err != nil || (err == nil && !ret.Result) {
+		return fmt.Errorf("register process(%s) into gse failed. err: %v, errcode: %d, errmsg: %s", gseproc.Meta.Name, err, ret.Code, ret.ErrMsg)
+	}
+
+	unregisterProcDetail := make([]interface{}, 0)
+	for _, host := range gseproc.Hosts {
+		unregisterProcDetail = append(unregisterProcDetail, common.KvMap{
+			common.BKAppIDField:    gseproc.AppID,
+			common.BKModuleIDField: gseproc.ModuleID,
+			common.BKHostIDField:   host.HostID,
+			common.BKProcIDField:   gseproc.ProcID})
+	}
+
+	procInstDetail, err := lgc.CoreAPI.ProcController().DeleteProcInstanceDetail(context.Background(), forward, common.KvMap{common.BKDBOR: unregisterProcDetail})
+	if err != nil || (err == nil && !procInstDetail.Result) {
+		return fmt.Errorf("register process(%s) detail failed. err: %v, errcode: %d, errmsg: %s", gseproc.Meta.Name, err, procInstDetail.Code, procInstDetail.ErrMsg)
 	}
 
 	return nil

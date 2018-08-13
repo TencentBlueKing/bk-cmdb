@@ -170,44 +170,6 @@ func (lgc *Logics) HandleProcInstNumByModuleID(ctx context.Context, header http.
 	instProc := make([]*metadata.ProcInstanceModel, 0)
 	procInfos, err := lgc.getProcInfoByID(ctx, procIDs, header)
 	isExistHostInst := make(map[string]metadata.ProcInstanceModel)
-	gseRegister := make([]metadata.GseProcRequest, 0)
-	for procID, info := range procInfos {
-		gseHost :=make([]metadata.GseHost, 0)
-		for hostID, host := range hostInfos {
-			procInstInfo, ok := procInst[getInlineProcInstKey(hostID, procID)]
-			hostInstID := uint64(0)
-			if !ok {
-				maxInstID++
-				hostInstID = maxInstID
-			} else {
-				hostInstID = procInstInfo.HostInstanID
-				isExistHostInst[getInlineProcInstKey(hostID, procID)] = procInstInfo
-			}
-			gseHost = append(gseHost, *host)
-			instProc = append(instProc, GetProcInstModel(appID, setID, moduleID, hostID, procID, info.FunID, info.FunID, hostInstID)...)
-		}
-		if 0 < len(gseHost) {
-			gseProcReq := new(metadata.GseProcRequest)
-			gseProcReq.AppID = appID
-			gseProcReq.Hosts = gseHost 
-			gseProcReq.Meta = info.Meta
-			gseProcReq.ModuleID = moduleID
-			gseProcReq.OpType = 1 
-			gseProcReq.ProcID = procID 
-			gseProcReq.Spec = info.Spec
-		}
-	}
-
-	err = lgc.setProcInstDetallStatusUnregister(ctx, header, appID, moduleID, unregisterProcDetail)
-	if nil != err {
-		return err
-	}
-	err = lgc.handleProcInstNumDataHandle(ctx, header, appID, moduleID, procIDs, instProc)
-	if nil != err {
-		return err
-	}
-
-	gseRegister, gseUnRegister []*metadata.GseProcRequest
 	for procID, info := range procInfos {
 		for hostID, _ := range hostInfos {
 			procInstInfo, ok := procInst[getInlineProcInstKey(hostID, procID)]
@@ -220,11 +182,89 @@ func (lgc *Logics) HandleProcInstNumByModuleID(ctx context.Context, header http.
 				isExistHostInst[getInlineProcInstKey(hostID, procID)] = procInstInfo
 			}
 			instProc = append(instProc, GetProcInstModel(appID, setID, moduleID, hostID, procID, info.FunID, info.FunID, hostInstID)...)
+		}
 
+	}
+	unregisterProcDetail := make([]metadata.ProcInstanceModel, 0)
+	for key, info := range procInst {
+		_, ok := isExistHostInst[key]
+		if !ok {
+			unregisterProcDetail = append(unregisterProcDetail, info)
 		}
 	}
 
+	err = lgc.setProcInstDetallStatusUnregister(ctx, header, appID, moduleID, unregisterProcDetail)
+	if nil != err {
+		return err
+	}
+	err = lgc.handleProcInstNumDataHandle(ctx, header, appID, moduleID, procIDs, instProc)
+	if nil != err {
+		return err
+	}
+	for _, info := range procInfos {
+		gseHost := make([]metadata.GseHost, 0)
+		for _, host := range hostInfos {
+			gseHost = append(gseHost, *host)
+		}
+		if 0 == len(gseHost) {
+			err := lgc.RegisterProcInstanceToGse(moduleID, gseHost, info.ProcInfo, header)
+			if nil != err {
+				blog.Errorf("RegisterProcInstanceToGse error%s", err.Error())
+				return err
+			}
+		}
+	}
+
+	err = lgc.unregisterProcInstDetall(ctx, header, appID, moduleID, unregisterProcDetail)
+	if nil != err {
+		return err
+	}
+
 	return nil
+}
+
+func (lgc *Logics) unregisterProcInstDetall(ctx context.Context, header http.Header, appID, moduleID int64, unregister []metadata.ProcInstanceModel) error {
+	if 0 != len(unregister) {
+		dat := new(metadata.QueryInput)
+		dat.Condition = map[string]interface{}{common.BKDBOR: unregister}
+		dat.Limit = 200
+		dat.Start = 0
+		for {
+			ret, err := lgc.CoreAPI.ProcController().GetProcInstanceDetail(ctx, header, dat)
+			if nil != err {
+				blog.Errorf("unregisterProcInstDetall  proc instance error:%s", err.Error())
+				return fmt.Errorf("unregister  proc instance error:%s", err.Error())
+			}
+			if !ret.Result {
+				blog.Errorf("unregisterProcInstDetall  proc instance return err msg %s", ret.ErrMsg)
+				return fmt.Errorf("unregister proc instance return err msg %s", ret.ErrMsg)
+			}
+			if 0 == ret.Data.Count {
+				return nil
+			}
+			for _, item := range ret.Data.Info {
+				gseProc := new(metadata.GseProcRequest)
+				gseProc.OpType = common.GSEProcOPUnregister
+				gseProc.AppID = item.AppID
+				gseProc.ProcID = item.ProcID
+				gseProc.Hosts = item.Hosts
+				gseProc.Meta = item.Meta
+				gseProc.ModuleID = item.ModuleID
+				gseProc.Spec = item.Spec
+				err := lgc.unregisterProcInstanceToGse(gseProc, header)
+				if nil != err {
+					blog.Errorf("unregisterProcInstanceToGse  proc instance error:%s", err.Error())
+					return fmt.Errorf("unregister  proc instance error:%s", err.Error())
+				}
+				if !ret.Result {
+					blog.Errorf("unregisterProcInstanceToGse  proc instance return err msg %s", ret.ErrMsg)
+					return fmt.Errorf("unregister proc instance return err msg %s", ret.ErrMsg)
+				}
+			}
+		}
+	}
+	return nil
+
 }
 
 // setProcInstDetallStatusUnregister modify process instance status to unregister in cmdb table
@@ -235,7 +275,7 @@ func (lgc *Logics) setProcInstDetallStatusUnregister(ctx context.Context, header
 		for _, item := range unregister {
 			unregisterProcDetail = append(unregisterProcDetail, common.KvMap{common.BKAppIDField: item.ApplicationID, common.BKModuleIDField: item.ModuleID, common.BKHostIDField: item.HostID, common.BKProcIDField: item.ProcID})
 		}
-		dat := new(metadata.ModifyProcInstanceStatus)
+		dat := new(metadata.ModifyProcInstanceDetail)
 		dat.Conds = map[string]interface{}{common.BKDBOR: unregisterProcDetail}
 		dat.Data = map[string]interface{}{"status": metadata.ProcInstanceDetailStatusUnRegisterFailed}
 		ret, err := lgc.CoreAPI.ProcController().ModifyProcInstanceDetail(ctx, header, dat)
@@ -562,6 +602,7 @@ func (lgc *Logics) eventProcInstByHostInfo(ctx context.Context, eventData *metad
 			}
 		}
 	}
+	sendEventFrefreshModuleNotice()
 	return nil
 }
 
