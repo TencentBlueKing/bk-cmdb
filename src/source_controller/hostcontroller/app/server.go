@@ -142,7 +142,7 @@ func (h *HostController) onHostConfigUpdate(previous, current cc.ProcessConfig) 
 	prefix := storage.DI_MONGO
 	mongo := mgoclient.MongoConfig{
 		Address:      current.ConfigMap[prefix+".host"],
-		User:         current.ConfigMap[prefix+".user"],
+		User:         current.ConfigMap[prefix+".usr"],
 		Password:     current.ConfigMap[prefix+".pwd"],
 		Database:     current.ConfigMap[prefix+".database"],
 		Port:         current.ConfigMap[prefix+".port"],
@@ -154,7 +154,7 @@ func (h *HostController) onHostConfigUpdate(previous, current cc.ProcessConfig) 
 	prefix = storage.DI_REDIS
 	redis := redisclient.RedisConfig{
 		Address:  current.ConfigMap[prefix+".host"],
-		User:     current.ConfigMap[prefix+".user"],
+		User:     current.ConfigMap[prefix+".usr"],
 		Password: current.ConfigMap[prefix+".pwd"],
 		Database: current.ConfigMap[prefix+".database"],
 		Port:     current.ConfigMap[prefix+".port"],
