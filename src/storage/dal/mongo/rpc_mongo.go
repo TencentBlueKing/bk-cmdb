@@ -85,7 +85,11 @@ func (c *RPC) clone() *RPC {
 
 // Table collection operation
 func (c *RPC) Table(collection string) dal.Table {
-	col := RPCCollection{}
+	col := RPCCollection{
+		RequestID: c.RequestID,
+		Processor: c.Processor,
+		TxnID:     c.TxnID,
+	}
 	col.collection = collection
 	col.rpc = c.rpc
 
