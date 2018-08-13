@@ -13,6 +13,7 @@
 package mongo_test
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/storage/dal"
 	"context"
 	"testing"
@@ -27,6 +28,7 @@ func TestRPCClient(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx := context.Background()
+	ctx = context.WithValue(ctx, common.BKHTTPCCTransactionID, dal.JoinOption{RequestID: "xxx"})
 	tablename := "testtable"
 
 	// inset one
@@ -84,6 +86,7 @@ func TestTransaction(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx := context.Background()
+	ctx = context.WithValue(ctx, common.BKHTTPCCTransactionID, dal.JoinOption{RequestID: "xxx"})
 	tablename := "testtable"
 
 	err = cli.StartTransaction(ctx)
