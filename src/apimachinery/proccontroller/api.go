@@ -177,11 +177,41 @@ func (p *procctrl) RegisterProcInstanceDetail(ctx context.Context, h http.Header
 	return
 }
 
-func (p *procctrl) ModifyProcInstanceDetail(ctx context.Context, h http.Header, dat *metadata.ModifyProcInstanceStatus) (resp *metadata.Response, err error) {
+func (p *procctrl) ModifyProcInstanceDetail(ctx context.Context, h http.Header, dat *metadata.ModifyProcInstanceDetail) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/instance/register/detail"
 
 	err = p.client.Put().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+func (p *procctrl) GetProcInstanceDetail(ctx context.Context, h http.Header, dat *metadata.QueryInput) (resp *metadata.ProcInstanceDetailResult, err error) {
+	resp = new(metadata.ProcInstanceDetailResult)
+	subPath := "/instance/register/detail/search"
+
+	err = p.client.Put().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+func (p *procctrl) DeleteProcInstanceDetail(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/instance/register/detail"
+
+	err = p.client.Delete().
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
