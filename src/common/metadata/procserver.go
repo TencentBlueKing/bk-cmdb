@@ -85,6 +85,15 @@ type ProcInstanceDetail struct {
 	Status         ProcInstanceDetailStatus `json:"status" bson:"status"` //1 register gse sucess, 2 register error need retry 3 unregister error need retry
 }
 
+type ProcInstanceDetailResult struct {
+	BaseResp `json:",inline"`
+
+	Data struct {
+		Count int                  `json:"count"`
+		Info  []ProcInstanceDetail `json:"info"`
+	} `json:"data"`
+}
+
 type ProcInstanceDetailStatus int64
 
 const (
@@ -93,7 +102,7 @@ const (
 	ProcInstanceDetailStatusUnRegisterFailed = 10
 )
 
-type ModifyProcInstanceStatus struct {
+type ModifyProcInstanceDetail struct {
 	Conds map[string]interface{} `json:"condition"`
 	Data  map[string]interface{} `json:"data"`
 }
@@ -154,9 +163,10 @@ type GseProcConfigmap struct {
 
 // InlineProcInfo process info convert gse proc info
 type InlineProcInfo struct {
-	Meta    GseProcMeta
-	Spec    GseProcSpec
-	ProcNum int64
-	AppID   int64 // use gse proc namespace
-	FunID   int64
+	//Meta    GseProcMeta
+	//Spec    GseProcSpec
+	ProcInfo map[string]interface{}
+	ProcNum  int64
+	AppID    int64 // use gse proc namespace
+	FunID    int64
 }

@@ -726,3 +726,15 @@ const (
 const (
 	BKProcInstanceOpUser = "proc instance user"
 )
+
+const (
+	GSEProcOPStop           = 1
+	GSEProcOPQueryStatus    = 2
+	GSEProcOPRegister       = 3
+	GSEProcOPUnregister     = 4
+	GSEProcOPRegisterStart  = 5
+	GSEProcOPUnregisterStop = 6
+	GSEProcOPRestart        = 7
+	GSEProcOPReload         = 8
+	GSEProcOPKill           = 9
+)
