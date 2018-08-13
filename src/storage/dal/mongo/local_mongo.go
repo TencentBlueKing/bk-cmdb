@@ -34,7 +34,6 @@ type Client struct {
 }
 
 var _ dal.RDB = new(Client)
-var _ dal.RDBTxn = new(ClientTxn)
 
 var initMongoc sync.Once
 
@@ -59,7 +58,7 @@ func (c *Client) Ping() error {
 	return c.dbc.Ping()
 }
 
-func (c *Client) clone() *Client {
+func (c *Client) New() dal.RDB {
 	nc := Client{
 		dbc: c.dbc,
 	}
@@ -198,23 +197,22 @@ func (c *Client) NextSequence(ctx context.Context, sequenceName string) (uint64,
 }
 
 // StartTransaction 开启新事务
-func (c *Client) StartTransaction(ctx context.Context) (dal.RDBTxn, error) {
+func (c *Client) StartTransaction(ctx context.Context) error {
 	session := c.dbc.Session().Create()
 	if err := session.Open(); err != nil {
-		return nil, err
+		session.Close()
+		return err
 	}
-	txn := &ClientTxn{Client: c.clone()}
-	txn.session = session
-	return txn, session.StartTransaction()
-}
-
-// ClientTxn implement dal.ClientTxn
-type ClientTxn struct {
-	*Client
+	c.session = session
+	err := session.StartTransaction()
+	if err != nil {
+		session.Close()
+	}
+	return err
 }
 
 // Commit 提交事务
-func (c *ClientTxn) Commit() error {
+func (c *Client) Commit() error {
 	err := c.session.CommitTransaction()
 	c.session.Close()
 	c.session = nil
@@ -222,7 +220,7 @@ func (c *ClientTxn) Commit() error {
 }
 
 // Abort 取消事务
-func (c *ClientTxn) Abort() error {
+func (c *Client) Abort() error {
 	err := c.session.AbortTransaction()
 	c.session.Close()
 	c.session = nil
@@ -230,7 +228,7 @@ func (c *ClientTxn) Abort() error {
 }
 
 // TxnInfo 当前事务信息，用于事务发起者往下传递
-func (c *ClientTxn) TxnInfo() *types.Tansaction {
+func (c *Client) TxnInfo() *types.Tansaction {
 	return &types.Tansaction{}
 }
 
