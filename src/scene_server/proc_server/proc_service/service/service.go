@@ -58,8 +58,8 @@ func (ps *ProcServer) WebService() http.Handler {
 	ws.Route(ws.POST("/openapi/GetProcessPortByApplicationID/{" + common.BKAppIDField + "}").To(ps.GetProcessPortByApplicationID))
 	ws.Route(ws.POST("/openapi/GetProcessPortByIP").To(ps.GetProcessPortByIP))
 
-	ws.Route(ws.POST("/operate/{namespace}/process").To(ps.OperateProcessInstance))
-	ws.Route(ws.POST("/operate/{namespace}/process/taskresult").To(ps.QueryProcessOperateResult))
+	ws.Route(ws.POST("/operate/process").To(ps.OperateProcessInstance))
+	ws.Route(ws.POST("/operate/process/taskresult").To(ps.QueryProcessOperateResult))
 
 	ws.Route(ws.POST("/conftemp").To(ps.CreateConfigTemp))
 	ws.Route(ws.PUT("/conftemp").To(ps.UpdateConfigTemp))
