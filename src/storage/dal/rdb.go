@@ -27,37 +27,34 @@ var (
 
 // RDB db operation interface
 type RDB interface {
-	// Collection collection 操作
-	Collection(collection string) Collection
+	// Table collection 操作
+	Table(collection string) Table
 	// StartTransaction 开启新事务
-	StartTransaction(ctx context.Context, opt JoinOption) (RDBTxn, error)
-	// JoinTransaction 加入事务, controller 加入某个事务
-	JoinTransaction(JoinOption) RDBTxn
+	StartTransaction(ctx context.Context) (RDBTxn, error)
 	// NextSequence 获取新序列号(非事务)
 	NextSequence(ctx context.Context, sequenceName string) (uint64, error)
 	// Ping 健康检查
 	Ping() error // 健康检查
 
-	// HasCollection 判断是否存在集合
-	HasCollection(collName string) (bool, error)
-	// DropCollection 移除集合
-	DropCollection(collName string) error
-	// CreateCollection 创建集合
-	CreateCollection(collName string) error
+	// HasTable 判断是否存在集合
+	HasTable(tablename string) (bool, error)
+	// DropTable 移除集合
+	DropTable(tablename string) error
+	// CreateTable 创建集合
+	CreateTable(tablename string) error
 }
 
-// Collection collection operation interface
-type Collection interface {
+// Table collection operation interface
+type Table interface {
 	// Find 查询多个并反序列化到 Result
-	Find(ctx context.Context, filter Filter) Find
+	Find(filter Filter) Find
 	// Insert 插入数据, docs 可以为 单个数据 或者 多个数据
 	Insert(ctx context.Context, docs interface{}) error
 	// Update 更新数据
 	Update(ctx context.Context, filter Filter, doc interface{}) error
 	// Delete 删除数据
 	Delete(ctx context.Context, filter Filter) error
-	// Count 统计数量(非事务)
-	Count(ctx context.Context, filter Filter) (uint64, error)
+
 	// CreateIndex 创建索引
 	CreateIndex(ctx context.Context, index Index) error
 	// DropIndex 移除索引
@@ -90,12 +87,20 @@ type JoinOption struct {
 
 // Find find operation interface
 type Find interface {
+	// Fields 设置查询字段
 	Fields(fields ...string) Find
+	// Sort 设置查询排序
 	Sort(sort string) Find
+	// Start 设置限制查询上标
 	Start(start uint64) Find
+	// Limit 设置查询数量
 	Limit(limit uint64) Find
-	All(result interface{}) error
-	One(result interface{}) error
+	// All 查询多个
+	All(ctx context.Context, result interface{}) error
+	// One 查询单个
+	One(ctx context.Context, result interface{}) error
+	// Count 统计数量(非事务)
+	Count(ctx context.Context) (uint64, error)
 }
 
 type Index struct {
