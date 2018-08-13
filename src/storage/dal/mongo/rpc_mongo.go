@@ -34,7 +34,6 @@ type RPC struct {
 }
 
 var _ dal.RDB = new(RPC)
-var _ dal.RDBTxn = new(RPCTxn)
 
 // NewRPCWithDiscover returns new RDB
 func NewRPCWithDiscover(getServer types.GetServerFunc) (*RPC, error) {
@@ -74,19 +73,20 @@ func (c *RPC) Ping() error {
 	return c.rpc.Ping()
 }
 
-func (c *RPC) clone() *RPC {
+func (c *RPC) New() dal.RDB {
 	nc := RPC{
-		RequestID: c.RequestID,
-		Processor: c.Processor,
-		TxnID:     c.TxnID,
-		rpc:       c.rpc,
+		rpc: c.rpc,
 	}
 	return &nc
 }
 
 // Table collection operation
 func (c *RPC) Table(collection string) dal.Table {
-	col := RPCCollection{}
+	col := RPCCollection{
+		RequestID: c.RequestID,
+		Processor: c.Processor,
+		TxnID:     c.TxnID,
+	}
 	col.collection = collection
 	col.rpc = c.rpc
 
@@ -95,6 +95,9 @@ func (c *RPC) Table(collection string) dal.Table {
 
 // RPCCollection implement client.Collection interface
 type RPCCollection struct {
+	RequestID  string // 请求ID,可选项
+	Processor  string // 处理进程号，结构为"IP:PORT-PID"用于识别事务session被存于那个TM多活实例
+	TxnID      string // 事务ID,uuid
 	collection string // 集合名
 	rpc        *rpc.Client
 }
@@ -107,7 +110,11 @@ func (c *RPCCollection) Find(filter dal.Filter) dal.Find {
 	msg.Collection = c.collection
 	msg.Selector.Encode(filter)
 
-	return &RPCFind{RPCCollection: c, msg: &msg}
+	find := RPCFind{RPCCollection: c, msg: &msg}
+	find.RequestID = c.RequestID
+	find.Processor = c.Processor
+	find.TxnID = c.TxnID
+	return &find
 }
 
 // RPCFind define a find operation
@@ -152,6 +159,9 @@ func (f *RPCFind) All(ctx context.Context, result interface{}) error {
 		f.msg.RequestID = opt.RequestID
 		f.msg.TxnID = opt.TxnID
 	}
+	if f.TxnID != "" {
+		f.msg.TxnID = f.TxnID
+	}
 
 	// call
 	reply := types.OPREPLY{}
@@ -173,6 +183,9 @@ func (f *RPCFind) One(ctx context.Context, result interface{}) error {
 		f.msg.RequestID = opt.RequestID
 		f.msg.TxnID = opt.TxnID
 	}
+	if f.TxnID != "" {
+		f.msg.TxnID = f.TxnID
+	}
 
 	// call
 	reply := types.OPREPLY{}
@@ -184,7 +197,7 @@ func (f *RPCFind) One(ctx context.Context, result interface{}) error {
 		return errors.New(reply.Message)
 	}
 
-	if len(reply.Docs[0]) <= 0 {
+	if len(reply.Docs) <= 0 {
 		return dal.ErrDocumentNotFound
 	}
 	return reply.Docs[0].Decode(result)
@@ -229,6 +242,9 @@ func (c *RPCCollection) Insert(ctx context.Context, docs interface{}) error {
 		msg.RequestID = opt.RequestID
 		msg.TxnID = opt.TxnID
 	}
+	if c.TxnID != "" {
+		msg.TxnID = c.TxnID
+	}
 
 	// call
 	reply := types.OPREPLY{}
@@ -263,6 +279,9 @@ func (c *RPCCollection) Update(ctx context.Context, filter dal.Filter, doc inter
 		msg.RequestID = opt.RequestID
 		msg.TxnID = opt.TxnID
 	}
+	if c.TxnID != "" {
+		msg.TxnID = c.TxnID
+	}
 
 	// call
 	reply := types.OPREPLY{}
@@ -285,12 +304,18 @@ func (c *RPCCollection) Delete(ctx context.Context, filter dal.Filter) error {
 	if err := msg.Selector.Encode(filter); err != nil {
 		return err
 	}
+	if c.TxnID != "" {
+		msg.TxnID = c.TxnID
+	}
 
 	// set txn
 	opt, ok := ctx.Value(common.BKHTTPCCTransactionID).(dal.JoinOption)
 	if ok {
 		msg.RequestID = opt.RequestID
 		msg.TxnID = opt.TxnID
+	}
+	if c.TxnID != "" {
+		msg.TxnID = c.TxnID
 	}
 
 	// call
@@ -349,7 +374,7 @@ func (c *RPC) NextSequence(ctx context.Context, sequenceName string) (uint64, er
 }
 
 // StartTransaction 开启新事务
-func (c *RPC) StartTransaction(ctx context.Context) (dal.RDBTxn, error) {
+func (c *RPC) StartTransaction(ctx context.Context) error {
 	// build msg
 	msg := types.OPSTARTTTRANSATION{}
 	msg.OPCode = types.OPStartTransaction
@@ -364,27 +389,20 @@ func (c *RPC) StartTransaction(ctx context.Context) (dal.RDBTxn, error) {
 	reply := types.OPREPLY{}
 	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if !reply.Success {
-		return nil, errors.New(reply.Message)
+		return errors.New(reply.Message)
 	}
 
-	nc := new(RPCTxn)
-	nc.RPC = c.clone()
-	nc.TxnID = reply.TxnID
-	nc.Processor = reply.Processor
-	nc.RequestID = opt.RequestID
-	return nc, nil
-}
-
-// RPCTxn implement dal.RPCTxn
-type RPCTxn struct {
-	*RPC
+	c.TxnID = reply.TxnID
+	c.Processor = reply.Processor
+	c.RequestID = reply.RequestID
+	return nil
 }
 
 // Commit 提交事务
-func (c *RPCTxn) Commit() error {
+func (c *RPC) Commit() error {
 	msg := types.OPCOMMIT{}
 	msg.OPCode = types.OPCommit
 	msg.RequestID = c.RequestID
@@ -392,6 +410,7 @@ func (c *RPCTxn) Commit() error {
 
 	reply := types.OPREPLY{}
 	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
+	c.TxnID = "" // clear TxnID
 	if err != nil {
 		return err
 	}
@@ -399,11 +418,10 @@ func (c *RPCTxn) Commit() error {
 		return errors.New(reply.Message)
 	}
 	return nil
-
 }
 
 // Abort 取消事务
-func (c *RPCTxn) Abort() error {
+func (c *RPC) Abort() error {
 	msg := types.OPABORT{}
 	msg.OPCode = types.OPAbort
 	msg.RequestID = c.RequestID
@@ -411,6 +429,7 @@ func (c *RPCTxn) Abort() error {
 
 	reply := types.OPREPLY{}
 	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
+	c.TxnID = "" // clear TxnID
 	if err != nil {
 		return err
 	}
@@ -421,7 +440,7 @@ func (c *RPCTxn) Abort() error {
 }
 
 // TxnInfo 当前事务信息，用于事务发起者往下传递
-func (c *RPCTxn) TxnInfo() *types.Tansaction {
+func (c *RPC) TxnInfo() *types.Tansaction {
 	return &types.Tansaction{
 		RequestID: c.RequestID,
 		TxnID:     c.TxnID,
