@@ -73,12 +73,9 @@ func (c *RPC) Ping() error {
 	return c.rpc.Ping()
 }
 
-func (c *RPC) clone() *RPC {
+func (c *RPC) New() dal.RDB {
 	nc := RPC{
-		RequestID: c.RequestID,
-		Processor: c.Processor,
-		TxnID:     c.TxnID,
-		rpc:       c.rpc,
+		rpc: c.rpc,
 	}
 	return &nc
 }

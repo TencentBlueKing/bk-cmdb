@@ -58,7 +58,7 @@ func (c *Client) Ping() error {
 	return c.dbc.Ping()
 }
 
-func (c *Client) clone() *Client {
+func (c *Client) New() dal.RDB {
 	nc := Client{
 		dbc: c.dbc,
 	}
