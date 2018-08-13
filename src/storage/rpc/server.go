@@ -47,7 +47,7 @@ func (s *Server) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	}
 	io.WriteString(conn, "HTTP/1.0 "+connected+"\n\n")
 
-	blog.Errorf("connect from rpc client %s", req.RemoteAddr)
+	blog.V(3).Infof("connect from rpc client %s", req.RemoteAddr)
 	session := NewServerSession(s, conn)
 	if err = session.Run(); err != nil {
 		blog.Errorf("dissconnect from rpc client %s: %s ", req.RemoteAddr, err.Error())

@@ -19,7 +19,6 @@ import (
 	"sync"
 
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
@@ -67,8 +66,8 @@ func (c *Client) clone() *Client {
 	return &nc
 }
 
-// Collection collection operation
-func (c *Client) Collection(collection string) dal.Collection {
+// Table collection operation
+func (c *Client) Table(collection string) dal.Table {
 	col := Collection{}
 	col.collection = collection
 
@@ -90,14 +89,13 @@ type Collection struct {
 }
 
 // Find 查询多个并反序列化到 Result
-func (c *Collection) Find(ctx context.Context, filter dal.Filter) dal.Find {
-	return &Find{Collection: c, filter: filter, ctx: ctx}
+func (c *Collection) Find(filter dal.Filter) dal.Find {
+	return &Find{Collection: c, filter: filter}
 }
 
 // Find define a find operation
 type Find struct {
 	*Collection
-	ctx        context.Context
 	projection types.Document
 	filter     dal.Filter
 	start      uint64
@@ -134,21 +132,26 @@ func (f *Find) Limit(limit uint64) dal.Find {
 }
 
 // All 查询多个
-func (f *Find) All(result interface{}) error {
+func (f *Find) All(ctx context.Context, result interface{}) error {
 	opt := findopt.Many{}
 	opt.Skip = int64(f.start)
 	opt.Limit = int64(f.limit)
 	opt.Fields = mapstr.MapStr(f.projection)
-	return f.table(f.collection).Find(f.ctx, f.filter, &opt, result)
+	return f.table(f.collection).Find(ctx, f.filter, &opt, result)
 }
 
 // One 查询一个
-func (f *Find) One(result interface{}) error {
+func (f *Find) One(ctx context.Context, result interface{}) error {
 	opt := findopt.One{}
 	opt.Skip = int64(f.start)
 	opt.Limit = int64(f.limit)
 	opt.Fields = mapstr.MapStr(f.projection)
-	return f.table(f.collection).FindOne(f.ctx, f.filter, &opt, result)
+	return f.table(f.collection).FindOne(ctx, f.filter, &opt, result)
+}
+
+// Count 统计数量(非事务)
+func (f *Find) Count(ctx context.Context) (uint64, error) {
+	return f.table(f.collection).Count(ctx, f.filter)
 }
 
 // Insert 插入数据, docs 可以为 单个数据 或者 多个数据
@@ -166,11 +169,6 @@ func (c *Collection) Update(ctx context.Context, filter dal.Filter, doc interfac
 func (c *Collection) Delete(ctx context.Context, filter dal.Filter) error {
 	c.table(c.collection).DeleteMany(ctx, filter, nil)
 	return nil
-}
-
-// Count 统计数量(非事务)
-func (c *Collection) Count(ctx context.Context, filter dal.Filter) (uint64, error) {
-	return c.table(c.collection).Count(ctx, filter)
 }
 
 // NextSequence 获取新序列号(非事务)
@@ -200,7 +198,7 @@ func (c *Client) NextSequence(ctx context.Context, sequenceName string) (uint64,
 }
 
 // StartTransaction 开启新事务
-func (c *Client) StartTransaction(ctx context.Context, opt dal.JoinOption) (dal.RDBTxn, error) {
+func (c *Client) StartTransaction(ctx context.Context) (dal.RDBTxn, error) {
 	session := c.dbc.Session().Create()
 	if err := session.Open(); err != nil {
 		return nil, err
@@ -208,12 +206,6 @@ func (c *Client) StartTransaction(ctx context.Context, opt dal.JoinOption) (dal.
 	txn := &ClientTxn{Client: c.clone()}
 	txn.session = session
 	return txn, session.StartTransaction()
-}
-
-// JoinTransaction 加入事务, controller 加入某个事务
-func (c *Client) JoinTransaction(opt dal.JoinOption) dal.RDBTxn {
-	blog.Fatalf("not support JoinTransaction")
-	return nil
 }
 
 // ClientTxn implement dal.ClientTxn
@@ -242,18 +234,18 @@ func (c *ClientTxn) TxnInfo() *types.Tansaction {
 	return &types.Tansaction{}
 }
 
-// HasCollection 判断是否存在集合
-func (c *Client) HasCollection(collName string) (bool, error) {
+// HasTable 判断是否存在集合
+func (c *Client) HasTable(collName string) (bool, error) {
 	return c.dbc.Database().HasCollection(collName)
 }
 
-// DropCollection 移除集合
-func (c *Client) DropCollection(collName string) error {
+// DropTable 移除集合
+func (c *Client) DropTable(collName string) error {
 	return c.dbc.Database().DropCollection(collName)
 }
 
-// CreateCollection 创建集合
-func (c *Client) CreateCollection(collName string) error {
+// CreateTable 创建集合
+func (c *Client) CreateTable(collName string) error {
 	return c.dbc.Database().CreateEmptyCollection(collName)
 }
 
