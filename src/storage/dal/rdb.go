@@ -103,5 +103,5 @@ type Index struct {
 	Keys       map[string]interface{}
 	Name       string
 	Unique     bool
-	Backgroupd bool
+	Background bool
 }
