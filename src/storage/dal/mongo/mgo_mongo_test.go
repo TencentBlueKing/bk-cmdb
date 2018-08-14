@@ -13,12 +13,14 @@
 package mongo_test
 
 import (
+	"context"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+
 	"configcenter/src/common"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
-	"context"
-	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestOfficial(t *testing.T) {

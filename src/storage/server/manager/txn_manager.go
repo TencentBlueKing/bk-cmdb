@@ -18,13 +18,13 @@ import (
 	"sync"
 	"time"
 
-	"configcenter/src/storage/server/app/options"
 	"github.com/rs/xid"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/mongobyc"
+	"configcenter/src/storage/server/app/options"
 	"configcenter/src/storage/types"
 )
 
