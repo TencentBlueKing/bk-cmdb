@@ -30,6 +30,7 @@ type TXRPC struct {
 	rpcsrv *rpc.Server
 	man    *manager.TxnManager
 	db     mongobyc.Client
+	listen string //listening address, use for processor
 }
 
 func (t *TXRPC) SetEngine(engine *backbone.Engine) {
@@ -54,14 +55,17 @@ func NewTXRPC(rpcsrv *rpc.Server) *TXRPC {
 
 func (t *TXRPC) RDBOperation(input *rpc.Message) (interface{}, error) {
 
-	reply := new(types.OPREPLY)
+	reply := types.OPREPLY{}
 
 	header := types.MsgHeader{}
 	err := input.Decode(&header)
 	if nil != err {
 		reply.Message = err.Error()
-		return reply, nil
+		return &reply, nil
 	}
+	reply.RequestID = header.RequestID
+	reply.TxnID = header.TxnID
+	reply.Processor = t.listen
 
 	blog.V(3).Infof("RDBOperation %+v", header)
 
@@ -70,7 +74,7 @@ func (t *TXRPC) RDBOperation(input *rpc.Message) (interface{}, error) {
 		session := t.man.GetSession(header.TxnID)
 		if nil == session {
 			reply.Message = "session not found"
-			return reply, nil
+			return &reply, nil
 		}
 		// TODO proxy to rpc
 		transaction = session.Session
@@ -81,37 +85,37 @@ func (t *TXRPC) RDBOperation(input *rpc.Message) (interface{}, error) {
 		session, err := t.man.CreateTransaction(header.RequestID, buildProcessor(t.ServerInfo.IP, t.ServerInfo.Port, t.ServerInfo.Pid))
 		if nil != err {
 			reply.Message = err.Error()
-			return reply, nil
+			return &reply, nil
 		}
 		reply.Success = true
 		reply.TxnID = session.Txninst.TxnID
 		reply.Processor = session.Txninst.Processor
-		return reply, nil
+		return &reply, nil
 	case types.OPCommit:
 		err := t.man.Commit(header.TxnID)
 		if nil != err {
 			reply.Message = err.Error()
-			return reply, nil
+			return &reply, nil
 		}
 		reply.Success = true
-		return reply, nil
+		return &reply, nil
 	case types.OPAbort:
 		err := t.man.Abort(header.TxnID)
 		if nil != err {
 			reply.Message = err.Error()
-			return reply, nil
+			return &reply, nil
 		}
 		reply.Success = true
-		return reply, nil
+		return &reply, nil
 	case types.OPInsert, types.OPUpdate, types.OPDelete, types.OPFind, types.OPFindAndModify, types.OPCount:
 		var collectionFunc = t.db.Collection
 		if transaction != nil {
 			collectionFunc = transaction.Collection
 		}
-		return ExecuteCollection(t.ctx, collectionFunc, header.OPCode, input)
+		return ExecuteCollection(t.ctx, collectionFunc, header.OPCode, input, &reply)
 	default:
 		reply.Message = "unknow operation"
-		return reply, nil
+		return &reply, nil
 	}
 }
 

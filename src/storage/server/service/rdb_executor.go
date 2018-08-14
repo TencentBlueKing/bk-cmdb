@@ -14,6 +14,7 @@ package service
 
 import (
 	"context"
+	"errors"
 
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
@@ -23,13 +24,15 @@ import (
 	"configcenter/src/storage/types"
 )
 
+var ErrNoSupported = errors.New("not supported")
+
 type CollectionFunc func(collName string) mongobyc.CollectionInterface
 
 // ExecuteCollection execute collection operation to db
-func ExecuteCollection(ctx context.Context, collFunc CollectionFunc, opcode types.OPCode, decoder rpc.Decoder) (*types.OPREPLY, error) {
-	executor := &collectionExecutor{ctx: ctx, collection: collFunc, opcode: opcode, msg: decoder}
+func ExecuteCollection(ctx context.Context, collFunc CollectionFunc, opcode types.OPCode, decoder rpc.Decoder, reply *types.OPREPLY) (*types.OPREPLY, error) {
+	executor := &collectionExecutor{ctx: ctx, collection: collFunc, opcode: opcode, msg: decoder, reply: reply}
 	executor.execute()
-	return &executor.reply, executor.execerr
+	return executor.reply, executor.execerr
 }
 
 type collectionExecutor struct {
@@ -40,7 +43,7 @@ type collectionExecutor struct {
 
 	collection CollectionFunc
 
-	reply   types.OPREPLY
+	reply   *types.OPREPLY
 	execerr error
 }
 
@@ -58,21 +61,21 @@ func (e *collectionExecutor) execute() {
 		e.findAndModify()
 	case types.OPCount:
 		e.count()
+	default:
+		e.execerr = ErrNoSupported
 	}
-	if e.execerr == nil {
-		e.reply.Success = true
-	} else {
+	if e.execerr != nil {
 		e.reply.Success = false
 		e.reply.Message = e.execerr.Error()
+	} else {
+		e.reply.Success = true
 	}
 }
 
 func (e *collectionExecutor) insert() {
 	msg := types.OPINSERT{}
 	e.msg.Decode(&msg)
-
 	slice := util.ConverToInterfaceSlice(msg.DOCS)
-	blog.V(4).Infof("insert docs %#v, slice %#v", msg.DOCS, slice)
 	e.execerr = e.collection(msg.Collection).InsertMany(e.ctx, slice, nil)
 }
 func (e *collectionExecutor) update() {

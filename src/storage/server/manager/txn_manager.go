@@ -47,14 +47,16 @@ type Session struct {
 	mongobyc.Session
 }
 
-func New(ctx context.Context, opt options.TransactionConfig, db mongobyc.Client) *TxnManager {
+func New(ctx context.Context, opt options.TransactionConfig, db mongobyc.Client, listen string) *TxnManager {
 	tm := &TxnManager{
 		enable:       opt.ShouldEnable(),
+		processor:    listen,
 		txnLifeLimit: time.Second * time.Duration(float64(opt.GetTransactionLifetimeSecond())*1.5),
 		cache:        map[string]*Session{},
 		db:           db,
 
-		eventChan: make(chan *types.Tansaction, 2048),
+		eventChan:   make(chan *types.Tansaction, 2048),
+		subscribers: map[chan<- *types.Tansaction]bool{},
 
 		ctx: ctx,
 	}
@@ -199,9 +201,7 @@ func (tm *TxnManager) CreateTransaction(requestID string, processor string) (*Se
 		return nil, err
 	}
 
-	// TODO generate txnID
-	txn.TxnID = xid.New().String()
-
+	txn.TxnID = tm.newTxnID()
 	inst := &Session{
 		Txninst: &txn,
 		Session: session,
@@ -210,6 +210,10 @@ func (tm *TxnManager) CreateTransaction(requestID string, processor string) (*Se
 	tm.storeSession(txn.TxnID, inst)
 
 	return inst, nil
+}
+
+func (tm *TxnManager) newTxnID() string {
+	return tm.processor + "-" + xid.New().String()
 }
 
 func (tm *TxnManager) Commit(txnID string) error {
