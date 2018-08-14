@@ -13,7 +13,6 @@
 package mongo
 
 import (
-	"configcenter/src/common/blog"
 	"context"
 	"errors"
 	"fmt"
@@ -21,6 +20,7 @@ import (
 	"sync"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"

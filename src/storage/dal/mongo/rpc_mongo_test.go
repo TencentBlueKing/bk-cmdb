@@ -13,11 +13,11 @@
 package mongo_test
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/storage/dal"
 	"context"
 	"testing"
 
+	"configcenter/src/common"
+	"configcenter/src/storage/dal"
 	"github.com/stretchr/testify/require"
 
 	"configcenter/src/storage/dal/mongo"
