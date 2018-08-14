@@ -16,10 +16,10 @@ import (
 	"context"
 	"testing"
 
-	"configcenter/src/common"
-	"configcenter/src/storage/dal"
 	"github.com/stretchr/testify/require"
 
+	"configcenter/src/common"
+	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
 )
 
