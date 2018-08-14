@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package mongo
+package mongoc
 
 import (
 	"context"
