@@ -47,11 +47,13 @@ var (
 	handEventDataChan      chan chanItem = make(chan chanItem, 10000)
 	chnOpLock              *sync.Once    = new(sync.Once)
 	eventRefreshModuleData               = &eventRefreshModule{}
+	maxRefreshModuleData   int           = 10
 )
 
-func _init() {
+func init() {
+
 	eventRefreshModuleData.data = make(map[string]*refreshModuleData, 0)
-	eventRefreshModuleData.eventChn = make(chan bool, 10)
+	eventRefreshModuleData.eventChn = make(chan bool, maxRefreshModuleData)
 }
 
 func getEventRefrshModuleKey(appID, moduleID int64) string {
@@ -62,7 +64,6 @@ func addEventRefreshModuleItem(appID, moduleID int64, header http.Header) {
 	defer eventRefreshModuleData.Unlock()
 	eventRefreshModuleData.Lock()
 	eventRefreshModuleData.data[getEventRefrshModuleKey(appID, moduleID)] = &refreshModuleData{appID: appID, moduleID: moduleID, header: header}
-
 }
 
 func addEventRefreshModuleItems(appID int64, moduleIDs []int64, header http.Header) {
@@ -70,10 +71,7 @@ func addEventRefreshModuleItems(appID int64, moduleIDs []int64, header http.Head
 	eventRefreshModuleData.Lock()
 	for _, moduleID := range moduleIDs {
 		eventRefreshModuleData.data[getEventRefrshModuleKey(appID, moduleID)] = &refreshModuleData{appID: appID, moduleID: moduleID, header: header}
-
 	}
-
-	sendEventFrefreshModuleNotice()
 }
 
 func getEventRefreshModuleItem() *refreshModuleData {
@@ -87,9 +85,8 @@ func getEventRefreshModuleItem() *refreshModuleData {
 }
 
 func sendEventFrefreshModuleNotice() {
-	if 5 > len(eventRefreshModuleData.eventChn) {
-		eventRefreshModuleData.eventChn <- true
-
+	if maxRefreshModuleData > len(eventRefreshModuleData.eventChn) {
+		go func() { eventRefreshModuleData.eventChn <- true }()
 	}
 }
 
@@ -162,9 +159,8 @@ func (lgc *Logics) setProcInstDetallStatusUnregister(ctx context.Context, header
 	return nil
 }
 
-func (lgc *Logics) handleProcInstNumDataHandle(ctx context.Context, header http.Header, appID, moduleID int64, procIDs []int64, instProc []*metadata.ProcInstanceModel) error {
-	delConds := common.KvMap{common.BKAppIDField: appID, common.BKModuleIDField: moduleID, common.BKProcIDField: procIDs}
-
+func (lgc *Logics) handleProcInstNumDataHandle(ctx context.Context, header http.Header, appID, moduleID int64, instProc []*metadata.ProcInstanceModel) error {
+	delConds := common.KvMap{common.BKAppIDField: appID, common.BKModuleIDField: moduleID}
 	ret, err := lgc.CoreAPI.ProcController().DeleteProcInstanceModel(ctx, header, delConds)
 	if nil != err {
 		blog.Errorf("handleInstanceNum create proc instance error:%s", err.Error())
@@ -192,11 +188,12 @@ func (lgc *Logics) handleProcInstNumDataHandle(ctx context.Context, header http.
 func (lgc *Logics) HandleProcInstNumByModuleName(ctx context.Context, header http.Header, appID int64, moduleName string) ([]int64, error) {
 	moduleConds := new(metadata.SearchParams)
 	moduleConds.Condition = map[string]interface{}{
-		common.BKAppIDField: appID,
-		moduleName:          moduleName,
+		common.BKAppIDField:      appID,
+		common.BKModuleNameField: moduleName,
 	}
-	moduleConds.Page = map[string]interface{}{"start": 0, "limit": 1}
+	moduleConds.Page = map[string]interface{}{"start": 0, "limit": common.BKNoLimit}
 	moduleInfos, err := lgc.CoreAPI.TopoServer().Instance().InstSearch(ctx, util.GetOwnerID(header), common.BKInnerObjIDModule, header, moduleConds)
+
 	if nil != err {
 		blog.Errorf("HandleProcInstNumByModuleName get module by name %s error %s", moduleName, err.Error())
 		return nil, err
@@ -233,6 +230,7 @@ func (lgc *Logics) getProcInstInfoByModuleID(ctx context.Context, appID, moduleI
 		blog.Errorf("getProcInstInfoByModuleID  reply error error:%s", ret.ErrMsg)
 		return 0, nil, fmt.Errorf(ret.ErrMsg)
 	}
+	procInst = make(map[string]metadata.ProcInstanceModel, 0)
 	for _, item := range ret.Data.Info {
 		if maxHostInstID < item.HostInstanID {
 			maxHostInstID = item.HostInstanID
@@ -371,6 +369,9 @@ func (lgc *Logics) getHostByModuleID(ctx context.Context, header http.Header, mo
 func (lgc *Logics) getProcInfoByID(ctx context.Context, procID []int64, header http.Header) (map[int64]*metadata.InlineProcInfo, error) {
 	supplierID := util.GetOwnerID(header)
 
+	if 0 == len(procID) {
+		return nil, nil
+	}
 	gseProc := make(map[int64]*metadata.InlineProcInfo, 0)
 
 	dat := new(metadata.QueryInput)
@@ -391,7 +392,7 @@ func (lgc *Logics) getProcInfoByID(ctx context.Context, procID []int64, header h
 		return nil, nil
 	}
 	for _, proc := range ret.Data.Info {
-		procID, err := proc.Int64(common.BKProcField)
+		procID, err := proc.Int64(common.BKProcIDField)
 		if nil != err {
 			byteHost, _ := json.Marshal(proc)
 			blog.Errorf("getHostByModuleID  proc %v  procID  not interger, json:%s", proc, string(byteHost))
@@ -450,7 +451,7 @@ func (lgc *Logics) getModuleNameByID(ctx context.Context, ID int64, header http.
 		return "", 0, 0, nil
 	}
 	byteModule, _ := json.Marshal(ret.Data.Info[0])
-	name, err = ret.Data.Info[0].String(common.BKSetNameField)
+	name, err = ret.Data.Info[0].String(common.BKModuleNameField)
 	if nil != err {
 		blog.Errorf("getModuleNameByID moduleID %v supplierID %s  get module name error:%s, raw:%s", ID, supplierID, err.Error(), string(byteModule))
 		return

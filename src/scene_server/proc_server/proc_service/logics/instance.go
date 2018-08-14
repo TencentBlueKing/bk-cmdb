@@ -27,10 +27,8 @@ import (
 //var handEventDataChan chan chanItem // := make(chan chanItem, 10000)
 
 func (lgc *Logics) HandleHostProcDataChange(ctx context.Context, eventData *metadata.EventInst) {
-
 	switch eventData.ObjType {
 	case metadata.EventObjTypeProcModule:
-
 		handEventDataChan <- chanItem{ctx: ctx, eventData: eventData, opFunc: lgc.eventProcInstByProcModule, retry: 3}
 		//lgc.handleRetry(3, ctx, eventData, lgc.refreshProcInstByProcModule)
 		//lgc.refreshProcInstByProcModule(ctx, eventData)
@@ -42,7 +40,6 @@ func (lgc *Logics) HandleHostProcDataChange(ctx context.Context, eventData *meta
 		handEventDataChan <- chanItem{ctx: ctx, eventData: eventData, opFunc: lgc.eventProcInstByHostInfo, retry: 3}
 	case common.BKInnerObjIDProc:
 		handEventDataChan <- chanItem{ctx: ctx, eventData: eventData, opFunc: lgc.eventProcInstByProcess, retry: 3}
-
 	}
 	chnOpLock.Do(lgc.bgHandle)
 
@@ -109,7 +106,7 @@ func (lgc *Logics) HandleProcInstNumByModuleID(ctx context.Context, header http.
 				hostInstID = procInstInfo.HostInstanID
 				isExistHostInst[getInlineProcInstKey(hostID, procID)] = procInstInfo
 			}
-			instProc = append(instProc, GetProcInstModel(appID, setID, moduleID, hostID, procID, info.FunID, info.FunID, hostInstID)...)
+			instProc = append(instProc, GetProcInstModel(appID, setID, moduleID, hostID, procID, info.FunID, info.ProcNum, hostInstID)...)
 		}
 
 	}
@@ -125,7 +122,7 @@ func (lgc *Logics) HandleProcInstNumByModuleID(ctx context.Context, header http.
 	if nil != err {
 		return err
 	}
-	err = lgc.handleProcInstNumDataHandle(ctx, header, appID, moduleID, procIDs, instProc)
+	err = lgc.handleProcInstNumDataHandle(ctx, header, appID, moduleID, instProc)
 	if nil != err {
 		return err
 	}
@@ -232,11 +229,12 @@ func (lgc *Logics) eventProcInstByProcModule(ctx context.Context, eventData *met
 		}
 		addEventRefreshModuleItems(appID, moduleID, header)
 	}
+	sendEventFrefreshModuleNotice()
 	return nil
 }
 
 func (lgc *Logics) eventProcInstByProcess(ctx context.Context, eventData *metadata.EventInst) error {
-	if metadata.EventActionCreate != eventData.Action {
+	if metadata.EventActionUpdate != eventData.Action {
 		// create proccess not refresh process instance , because not bind module
 		return nil
 	}
