@@ -20,8 +20,6 @@ import (
 	"sync"
 	"time"
 
-	"configcenter/src/storage/mongobyc"
-	"configcenter/src/storage/server/manager"
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/apimachinery"
@@ -31,7 +29,9 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
+	"configcenter/src/storage/mongobyc"
 	"configcenter/src/storage/server/app/options"
+	"configcenter/src/storage/server/manager"
 	svc "configcenter/src/storage/server/service"
 )
 

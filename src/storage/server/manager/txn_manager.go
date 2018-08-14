@@ -13,12 +13,12 @@
 package manager
 
 import (
-	"configcenter/src/storage/server/app/options"
 	"context"
 	"errors"
 	"sync"
 	"time"
 
+	"configcenter/src/storage/server/app/options"
 	"github.com/rs/xid"
 
 	"configcenter/src/common"

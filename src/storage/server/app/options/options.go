@@ -13,12 +13,12 @@
 package options
 
 import (
-	"github.com/spf13/pflag"
 	"strconv"
 
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
+	"github.com/spf13/pflag"
 )
 
 //ServerOption define option of server in flags

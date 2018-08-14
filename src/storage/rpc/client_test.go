@@ -13,12 +13,14 @@
 package rpc
 
 import (
-	"configcenter/src/common/util"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	gorpc "net/rpc"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	"configcenter/src/common/util"
 )
 
 type Req struct {
