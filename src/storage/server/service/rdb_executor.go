@@ -59,11 +59,11 @@ func (e *collectionExecutor) execute() {
 	case types.OPCount:
 		e.count()
 	}
-	if e.execerr != nil {
+	if e.execerr == nil {
+		e.reply.Success = true
+	} else {
 		e.reply.Success = false
 		e.reply.Message = e.execerr.Error()
-	} else {
-		e.reply.Success = true
 	}
 }
 

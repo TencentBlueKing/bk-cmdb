@@ -35,7 +35,8 @@ type TxnManager struct {
 	cache        map[string]*Session
 	db           mongobyc.Client
 
-	eventChan chan *types.Tansaction
+	eventChan   chan *types.Tansaction
+	subscribers map[chan<- *types.Tansaction]bool
 
 	ctx   context.Context
 	mutex sync.Mutex
@@ -60,10 +61,29 @@ func New(ctx context.Context, opt options.TransactionConfig, db mongobyc.Client)
 	return tm
 }
 
+func (tm *TxnManager) Subscribe(ch chan<- *types.Tansaction) {
+	tm.subscribers[ch] = true
+}
+
+func (tm *TxnManager) UnSubscribe(ch chan<- *types.Tansaction) {
+	delete(tm.subscribers, ch)
+}
+
+func (tm *TxnManager) Publish() {
+	event := <-tm.eventChan
+	for subscriber := range tm.subscribers {
+		select {
+		case subscriber <- event:
+		case <-time.After(time.Second):
+		}
+	}
+}
+
 func (tm *TxnManager) Run() error {
 	if tm.enable {
 		go tm.reconcileCache()
 		go tm.reconcilePersistence()
+		go tm.Publish()
 	}
 	<-tm.ctx.Done()
 	return nil
@@ -199,10 +219,10 @@ func (tm *TxnManager) Commit(txnID string) error {
 	}
 	txnerr := session.CommitTransaction()
 	defer func() {
-		if txnerr != nil {
+		if txnerr == nil {
 			session.Close()
+			tm.removeSession(txnID)
 		}
-		tm.removeSession(txnID)
 	}()
 	if nil != txnerr {
 		session.Txninst.Status = types.TxStatusException
