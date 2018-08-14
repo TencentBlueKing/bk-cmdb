@@ -33,8 +33,9 @@ var ErrSessionMissing = errors.New("session missing")
 
 // Client implement client.DALRDB interface
 type Client struct {
-	dbc     mongobyc.CommonClient
+	txc     mongobyc.Client
 	session mongobyc.Session
+	pool    mongobyc.ClientPool
 }
 
 var _ dal.RDB = new(Client)
@@ -45,26 +46,33 @@ var initMongoc sync.Once
 func NewClient(uri string) (*Client, error) {
 	initMongoc.Do(mongobyc.InitMongoc)
 
-	client := mongobyc.NewClient(uri)
+	pool := mongobyc.NewClientPool(uri)
+	err := pool.Open()
+	if err != nil {
+		return nil, err
+	}
 	return &Client{
-		dbc: client,
+		pool: pool,
 	}, nil
 }
 
 // Close replica client
 func (c *Client) Close() error {
-	return c.dbc.Close()
+	return c.pool.Close()
 }
 
 // Ping replica client
 func (c *Client) Ping() error {
-	c.dbc.Database()
-	return c.dbc.Ping()
+	dbc := c.pool.Pop()
+	err := dbc.Ping()
+	c.pool.Push(dbc)
+	return err
 }
 
-func (c *Client) New() dal.RDB {
+// Clone return the new client
+func (c *Client) Clone() dal.RDB {
 	nc := Client{
-		dbc: c.dbc,
+		pool: c.pool,
 	}
 	return &nc
 }
@@ -73,22 +81,14 @@ func (c *Client) New() dal.RDB {
 func (c *Client) Table(collName string) dal.Table {
 	col := Collection{}
 	col.collName = collName
-
-	if c.session == nil {
-		col.table = c.dbc.Collection
-	} else {
-		col.table = c.session.Collection
-	}
+	col.Client = c
 	return &col
 }
 
 // Collection implement client.Collection interface
 type Collection struct {
-	RequestID string // 请求ID,可选项
-	Processor string // 处理进程号，结构为"IP:PORT-PID"用于识别事务session被存于那个TM多活实例
-	TxnID     string // 事务ID,uuid
-	collName  string // 集合名
-	table     func(collName string) mongobyc.CollectionInterface
+	collName string // 集合名
+	*Client
 }
 
 // Find 查询多个并反序列化到 Result
@@ -140,7 +140,11 @@ func (f *Find) All(ctx context.Context, result interface{}) error {
 	opt.Skip = int64(f.start)
 	opt.Limit = int64(f.limit)
 	opt.Fields = mapstr.MapStr(f.projection)
-	return f.table(f.collName).Find(ctx, f.filter, &opt, result)
+
+	p, table := f.getCollection(f.collName)
+	err := table.Find(ctx, f.filter, &opt, result)
+	p.push()
+	return err
 }
 
 // One 查询一个
@@ -149,29 +153,43 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 	opt.Skip = int64(f.start)
 	opt.Limit = int64(f.limit)
 	opt.Fields = mapstr.MapStr(f.projection)
-	return f.table(f.collName).FindOne(ctx, f.filter, &opt, result)
+
+	p, table := f.getCollection(f.collName)
+	err := table.FindOne(ctx, f.filter, &opt, result)
+	p.push()
+	return err
 }
 
 // Count 统计数量(非事务)
 func (f *Find) Count(ctx context.Context) (uint64, error) {
-	return f.table(f.collName).Count(ctx, f.filter)
+	dbc := f.pool.Pop()
+	count, err := dbc.Collection(f.collName).Count(ctx, f.filter)
+	f.pool.Push(dbc)
+	return count, err
 }
 
 // Insert 插入数据, docs 可以为 单个数据 或者 多个数据
 func (c *Collection) Insert(ctx context.Context, docs interface{}) error {
-	return c.table(c.collName).InsertMany(ctx, util.ConverToInterfaceSlice(docs), nil)
+	p, table := c.getCollection(c.collName)
+	err := table.InsertMany(ctx, util.ConverToInterfaceSlice(docs), nil)
+	p.push()
+	return err
 }
 
 // Update 更新数据
 func (c *Collection) Update(ctx context.Context, filter dal.Filter, doc interface{}) error {
-	_, err := c.table(c.collName).UpdateMany(ctx, filter, doc, nil)
+	p, table := c.getCollection(c.collName)
+	_, err := table.UpdateMany(ctx, filter, doc, nil)
+	p.push()
 	return err
 }
 
 // Delete 删除数据
 func (c *Collection) Delete(ctx context.Context, filter dal.Filter) error {
-	c.table(c.collName).DeleteMany(ctx, filter, nil)
-	return nil
+	p, table := c.getCollection(c.collName)
+	_, err := table.DeleteMany(ctx, filter, nil)
+	p.push()
+	return err
 }
 
 // NextSequence 获取新序列号(非事务)
@@ -188,7 +206,9 @@ func (c *Client) NextSequence(ctx context.Context, sequenceName string) (uint64,
 	opt.New = true
 
 	results := types.Documents{}
-	err := c.dbc.Collection(common.BKTableNameIDgenerator).FindAndModify(ctx, filter, data, &opt, &results)
+	dbc := c.pool.Pop()
+	err := dbc.Collection(common.BKTableNameIDgenerator).FindAndModify(ctx, filter, data, &opt, &results)
+	c.pool.Push(dbc)
 	if nil != err {
 		return 0, err
 	}
@@ -202,7 +222,9 @@ func (c *Client) NextSequence(ctx context.Context, sequenceName string) (uint64,
 
 // StartTransaction 开启新事务
 func (c *Client) StartTransaction(ctx context.Context) error {
-	session := c.dbc.Session().Create()
+	txc := c.pool.Pop()
+	c.txc = txc
+	session := txc.Session().Create()
 	if err := session.Open(); err != nil {
 		session.Close()
 		return err
@@ -221,11 +243,14 @@ func (c *Client) Commit() error {
 		return ErrSessionMissing
 	}
 	commitErr := c.session.CommitTransaction()
-	if commitErr != nil {
+	if commitErr == nil {
 		closeErr := c.session.Close()
+		c.pool.Push(c.txc)
 		if closeErr != nil {
 			blog.Warnf("[mongoc dal] session close faile: %v", closeErr)
 		}
+		c.session = nil
+		return nil
 	}
 	return commitErr
 }
@@ -237,6 +262,7 @@ func (c *Client) Abort() error {
 	}
 	abortErr := c.session.AbortTransaction()
 	closeErr := c.session.Close()
+	c.pool.Push(c.txc)
 	if closeErr != nil {
 		blog.Warnf("[mongoc dal] session close faile: %v", closeErr)
 	}
@@ -251,17 +277,26 @@ func (c *Client) TxnInfo() *types.Tansaction {
 
 // HasTable 判断是否存在集合
 func (c *Client) HasTable(collName string) (bool, error) {
-	return c.dbc.Database().HasCollection(collName)
+	dbc := c.pool.Pop()
+	exists, err := dbc.Database().HasCollection(collName)
+	c.pool.Push(dbc)
+	return exists, err
 }
 
 // DropTable 移除集合
 func (c *Client) DropTable(collName string) error {
-	return c.dbc.Database().DropCollection(collName)
+	dbc := c.pool.Pop()
+	err := dbc.Database().DropCollection(collName)
+	c.pool.Push(dbc)
+	return err
 }
 
 // CreateTable 创建集合
 func (c *Client) CreateTable(collName string) error {
-	return c.dbc.Database().CreateEmptyCollection(collName)
+	dbc := c.pool.Pop()
+	err := dbc.Database().CreateEmptyCollection(collName)
+	c.pool.Push(dbc)
+	return err
 }
 
 // CreateIndex 创建索引
@@ -273,32 +308,70 @@ func (c *Collection) CreateIndex(ctx context.Context, index dal.Index) error {
 		Backgroupd: index.Backgroupd,
 	}
 
-	return c.table(c.collName).CreateIndex(i)
+	dbc := c.pool.Pop()
+	err := dbc.Collection(c.collName).CreateIndex(i)
+	c.pool.Push(dbc)
+	return err
 }
 
 // DropIndex 移除索引
 func (c *Collection) DropIndex(ctx context.Context, indexName string) error {
-	return c.table(c.collName).DropIndex(indexName)
+	dbc := c.pool.Pop()
+	err := dbc.Collection(c.collName).DropIndex(indexName)
+	c.pool.Push(dbc)
+	return err
 }
 
 // AddColumn 添加字段
 func (c *Collection) AddColumn(ctx context.Context, column string, value interface{}) error {
 	selector := types.Document{column: types.Document{"$exists": false}}
 	datac := types.Document{"$set": types.Document{column: value}}
-	_, err := c.table(c.collName).UpdateMany(ctx, selector, datac, nil)
+
+	dbc := c.pool.Pop()
+	_, err := dbc.Collection(c.collName).UpdateMany(ctx, selector, datac, nil)
+	c.pool.Push(dbc)
 	return err
 }
 
 // RenameColumn 重命名字段
 func (c *Collection) RenameColumn(ctx context.Context, oldName, newColumn string) error {
 	datac := types.Document{"$rename": types.Document{oldName: newColumn}}
-	_, err := c.table(c.collName).UpdateMany(ctx, nil, datac, nil)
+
+	dbc := c.pool.Pop()
+	_, err := dbc.Collection(c.collName).UpdateMany(ctx, nil, datac, nil)
+	c.pool.Push(dbc)
 	return err
 }
 
 // DropColumn 移除字段
 func (c *Collection) DropColumn(ctx context.Context, field string) error {
 	datac := types.Document{"$unset": types.Document{field: "1"}}
-	_, err := c.table(c.collName).UpdateMany(ctx, nil, datac, nil)
+	dbc := c.pool.Pop()
+	_, err := dbc.Collection(c.collName).UpdateMany(ctx, nil, datac, nil)
+	c.pool.Push(dbc)
 	return err
+}
+
+type pusher struct {
+	pool mongobyc.ClientPool
+	dbc  mongobyc.Client
+}
+
+func (c *Client) getCollection(collName string) (*pusher, mongobyc.CollectionInterface) {
+	var table mongobyc.CollectionInterface
+	var p = new(pusher)
+	if c.session == nil {
+		p.dbc = c.pool.Pop()
+		p.pool = c.pool
+		table = p.dbc.Collection(collName)
+	} else {
+		table = c.session.Collection(collName)
+	}
+	return p, table
+}
+
+func (p *pusher) push() {
+	if p.dbc != nil {
+		p.pool.Push(p.dbc)
+	}
 }

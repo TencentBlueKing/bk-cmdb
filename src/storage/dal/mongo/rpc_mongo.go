@@ -73,7 +73,7 @@ func (c *RPC) Ping() error {
 	return c.rpc.Ping()
 }
 
-func (c *RPC) New() dal.RDB {
+func (c *RPC) Clone() dal.RDB {
 	nc := RPC{
 		rpc: c.rpc,
 	}
