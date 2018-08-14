@@ -12,8 +12,6 @@
 package service
 
 import (
-	"net/http"
-
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
@@ -31,12 +29,11 @@ type ProcServer struct {
 	*logics.Logics
 }
 
-func (ps *ProcServer) WebService() http.Handler {
+func (ps *ProcServer) WebService() *restful.WebService {
 	getErrFun := func() errors.CCErrorIf {
 		return ps.Engine.CCErr
 	}
 
-	container := restful.NewContainer()
 	// v3
 	ws := new(restful.WebService)
 	ws.Path("/process/{version}").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
@@ -66,10 +63,9 @@ func (ps *ProcServer) WebService() http.Handler {
 	ws.Route(ws.DELETE("/conftemp").To(ps.DeleteConfigTemp))
 	ws.Route(ws.POST("/conftemp/search").To(ps.QueryConfigTemp))
 	ws.Route(ws.GET("/healthz").To(ps.Healthz))
+	ws.Route(ws.POST("/process/refresh/hostinstnum").To(ps.RefreshProcHostInstByEvent))
 
-	container.Add(ws)
-
-	return container
+	return ws
 }
 
 func (s *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {

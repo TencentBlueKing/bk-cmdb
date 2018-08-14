@@ -17,6 +17,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/backbone"
@@ -52,11 +54,13 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	procSvr := new(service.ProcServer)
+	container := restful.NewContainer()
+	container.Add(procSvr.WebService())
 
 	bkbsvr := backbone.Server{
 		ListenAddr: svrInfo.IP,
 		ListenPort: svrInfo.Port,
-		Handler:    procSvr.WebService(),
+		Handler:    container,
 		TLS:        backbone.TLSConfig{},
 	}
 
