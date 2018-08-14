@@ -36,7 +36,16 @@ func (ps *ProctrlServer) CreateProcInstanceModel(req *restful.Request, resp *res
 	}
 
 	blog.V(3).Infof("will create process instance model: %+v", reqParam)
-	if err := ps.DbInstance.InsertMuti(common.BKTableNameProcInstanceModel, reqParam); err != nil {
+	if 0 == len(reqParam) {
+		resp.WriteEntity(meta.NewSuccessResp(nil))
+		return
+	}
+
+	addInst := make([]interface{}, 0)
+	for _, item := range reqParam {
+		addInst = append(addInst, item)
+	}
+	if err := ps.DbInstance.InsertMuti(common.BKTableNameProcInstanceModel, addInst...); err != nil {
 		blog.Errorf("create process instance model failed. err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcCreateInstanceModel)})
 		return
