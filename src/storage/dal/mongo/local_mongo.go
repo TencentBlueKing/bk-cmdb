@@ -13,7 +13,9 @@
 package mongo
 
 import (
+	"configcenter/src/common/blog"
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"sync"
@@ -26,6 +28,8 @@ import (
 	"configcenter/src/storage/mongobyc/findopt"
 	"configcenter/src/storage/types"
 )
+
+var ErrSessionMissing = errors.New("session missing")
 
 // Client implement client.DALRDB interface
 type Client struct {
@@ -66,9 +70,9 @@ func (c *Client) New() dal.RDB {
 }
 
 // Table collection operation
-func (c *Client) Table(collection string) dal.Table {
+func (c *Client) Table(collName string) dal.Table {
 	col := Collection{}
-	col.collection = collection
+	col.collName = collName
 
 	if c.session == nil {
 		col.table = c.dbc.Collection
@@ -80,11 +84,11 @@ func (c *Client) Table(collection string) dal.Table {
 
 // Collection implement client.Collection interface
 type Collection struct {
-	RequestID  string // 请求ID,可选项
-	Processor  string // 处理进程号，结构为"IP:PORT-PID"用于识别事务session被存于那个TM多活实例
-	TxnID      string // 事务ID,uuid
-	collection string // 集合名
-	table      func(collName string) mongobyc.CollectionInterface
+	RequestID string // 请求ID,可选项
+	Processor string // 处理进程号，结构为"IP:PORT-PID"用于识别事务session被存于那个TM多活实例
+	TxnID     string // 事务ID,uuid
+	collName  string // 集合名
+	table     func(collName string) mongobyc.CollectionInterface
 }
 
 // Find 查询多个并反序列化到 Result
@@ -136,7 +140,7 @@ func (f *Find) All(ctx context.Context, result interface{}) error {
 	opt.Skip = int64(f.start)
 	opt.Limit = int64(f.limit)
 	opt.Fields = mapstr.MapStr(f.projection)
-	return f.table(f.collection).Find(ctx, f.filter, &opt, result)
+	return f.table(f.collName).Find(ctx, f.filter, &opt, result)
 }
 
 // One 查询一个
@@ -145,28 +149,28 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 	opt.Skip = int64(f.start)
 	opt.Limit = int64(f.limit)
 	opt.Fields = mapstr.MapStr(f.projection)
-	return f.table(f.collection).FindOne(ctx, f.filter, &opt, result)
+	return f.table(f.collName).FindOne(ctx, f.filter, &opt, result)
 }
 
 // Count 统计数量(非事务)
 func (f *Find) Count(ctx context.Context) (uint64, error) {
-	return f.table(f.collection).Count(ctx, f.filter)
+	return f.table(f.collName).Count(ctx, f.filter)
 }
 
 // Insert 插入数据, docs 可以为 单个数据 或者 多个数据
 func (c *Collection) Insert(ctx context.Context, docs interface{}) error {
-	return c.table(c.collection).InsertMany(ctx, util.ConverToInterfaceSlice(docs), nil)
+	return c.table(c.collName).InsertMany(ctx, util.ConverToInterfaceSlice(docs), nil)
 }
 
 // Update 更新数据
 func (c *Collection) Update(ctx context.Context, filter dal.Filter, doc interface{}) error {
-	_, err := c.table(c.collection).UpdateMany(ctx, filter, doc, nil)
+	_, err := c.table(c.collName).UpdateMany(ctx, filter, doc, nil)
 	return err
 }
 
 // Delete 删除数据
 func (c *Collection) Delete(ctx context.Context, filter dal.Filter) error {
-	c.table(c.collection).DeleteMany(ctx, filter, nil)
+	c.table(c.collName).DeleteMany(ctx, filter, nil)
 	return nil
 }
 
@@ -213,18 +217,31 @@ func (c *Client) StartTransaction(ctx context.Context) error {
 
 // Commit 提交事务
 func (c *Client) Commit() error {
-	err := c.session.CommitTransaction()
-	c.session.Close()
-	c.session = nil
-	return err
+	if c.session == nil {
+		return ErrSessionMissing
+	}
+	commitErr := c.session.CommitTransaction()
+	if commitErr != nil {
+		closeErr := c.session.Close()
+		if closeErr != nil {
+			blog.Warnf("[mongoc dal] session close faile: %v", closeErr)
+		}
+	}
+	return commitErr
 }
 
 // Abort 取消事务
 func (c *Client) Abort() error {
-	err := c.session.AbortTransaction()
-	c.session.Close()
+	if c.session == nil {
+		return ErrSessionMissing
+	}
+	abortErr := c.session.AbortTransaction()
+	closeErr := c.session.Close()
+	if closeErr != nil {
+		blog.Warnf("[mongoc dal] session close faile: %v", closeErr)
+	}
 	c.session = nil
-	return err
+	return abortErr
 }
 
 // TxnInfo 当前事务信息，用于事务发起者往下传递
@@ -256,32 +273,32 @@ func (c *Collection) CreateIndex(ctx context.Context, index dal.Index) error {
 		Backgroupd: index.Backgroupd,
 	}
 
-	return c.table(c.collection).CreateIndex(i)
+	return c.table(c.collName).CreateIndex(i)
 }
 
 // DropIndex 移除索引
 func (c *Collection) DropIndex(ctx context.Context, indexName string) error {
-	return c.table(c.collection).DropIndex(indexName)
+	return c.table(c.collName).DropIndex(indexName)
 }
 
 // AddColumn 添加字段
 func (c *Collection) AddColumn(ctx context.Context, column string, value interface{}) error {
 	selector := types.Document{column: types.Document{"$exists": false}}
 	datac := types.Document{"$set": types.Document{column: value}}
-	_, err := c.table(c.collection).UpdateMany(ctx, selector, datac, nil)
+	_, err := c.table(c.collName).UpdateMany(ctx, selector, datac, nil)
 	return err
 }
 
 // RenameColumn 重命名字段
 func (c *Collection) RenameColumn(ctx context.Context, oldName, newColumn string) error {
 	datac := types.Document{"$rename": types.Document{oldName: newColumn}}
-	_, err := c.table(c.collection).UpdateMany(ctx, nil, datac, nil)
+	_, err := c.table(c.collName).UpdateMany(ctx, nil, datac, nil)
 	return err
 }
 
 // DropColumn 移除字段
 func (c *Collection) DropColumn(ctx context.Context, field string) error {
 	datac := types.Document{"$unset": types.Document{field: "1"}}
-	_, err := c.table(c.collection).UpdateMany(ctx, nil, datac, nil)
+	_, err := c.table(c.collName).UpdateMany(ctx, nil, datac, nil)
 	return err
 }
