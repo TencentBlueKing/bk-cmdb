@@ -107,7 +107,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		process.Service.SetDB(db)
 
 		// set man
-		man := manager.New(ctx, process.Config.Transaction, db)
+		man := manager.New(ctx, process.Config.Transaction, db, op.ServConf.AddrPort)
 		go func() {
 			errCh <- man.Run()
 		}()
