@@ -27,7 +27,7 @@ var (
 
 // RDB db operation interface
 type RDB interface {
-	New() RDB
+	Clone() RDB
 	// Table collection 操作
 	Table(collection string) Table
 	// StartTransaction 开启新事务
