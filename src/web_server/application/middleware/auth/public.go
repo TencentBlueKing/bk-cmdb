@@ -110,7 +110,9 @@ func (m *publicAuth) ValidResAccess(pathArr []string, c *gin.Context) bool {
 	if types.SearchPatternRegexp.MatchString(pathStr) {
 		return true
 	}
-
+	if strings.Contains(pathStr, types.BK_INST_ASSOCIATION_TOPO_SEARCH) {
+		return true
+	}
 	//valid resource config
 	if types.ResPatternRegexp.MatchString(pathStr) {
 		blog.Debug("valid resource config: %v", pathStr)
