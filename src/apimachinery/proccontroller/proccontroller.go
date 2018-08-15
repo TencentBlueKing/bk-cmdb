@@ -37,6 +37,9 @@ type ProcCtrlClientInterface interface {
 	ModifyProcInstanceDetail(ctx context.Context, h http.Header, dat *metadata.ModifyProcInstanceDetail) (resp *metadata.Response, err error)
 	GetProcInstanceDetail(ctx context.Context, h http.Header, dat *metadata.QueryInput) (resp *metadata.ProcInstanceDetailResult, err error)
 	DeleteProcInstanceDetail(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
+	AddOperateTaskInfo(ctx context.Context, h http.Header, dat []*metadata.ProcessOperateTask) (resp *metadata.Response, err error)
+	UpdateOperateTaskInfo(ctx context.Context, h http.Header, dat *metadata.UpdateParams) (resp *metadata.Response, err error)
+	SearchOperateTaskInfo(ctx context.Context, h http.Header, dat *metadata.QueryInput) (resp *metadata.ProcessOperateTaskResult, err error)
 }
 
 func NewProcCtrlClientInterface(c *util.Capability, version string) ProcCtrlClientInterface {

@@ -221,3 +221,48 @@ func (p *procctrl) DeleteProcInstanceDetail(ctx context.Context, h http.Header, 
 
 	return
 }
+
+func (p *procctrl) AddOperateTaskInfo(ctx context.Context, h http.Header, dat []*metadata.ProcessOperateTask) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/operate/task"
+
+	err = p.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+func (p *procctrl) UpdateOperateTaskInfo(ctx context.Context, h http.Header, dat *metadata.UpdateParams) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/operate/task"
+
+	err = p.client.Put().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+func (p *procctrl) SearchOperateTaskInfo(ctx context.Context, h http.Header, dat *metadata.QueryInput) (resp *metadata.ProcessOperateTaskResult, err error) {
+	resp = new(metadata.ProcessOperateTaskResult)
+	subPath := "/operate/task/search"
+
+	err = p.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
