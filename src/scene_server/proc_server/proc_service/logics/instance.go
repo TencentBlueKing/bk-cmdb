@@ -15,13 +15,13 @@ package logics
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 //var handEventDataChan chan chanItem // := make(chan chanItem, 10000)
@@ -332,17 +332,18 @@ func (lgc *Logics) eventProcInstByHostInfo(ctx context.Context, eventData *metad
 }
 
 func (lgc *Logics) GetModuleIDByHostID(ctx context.Context, header http.Header, hostID int64) ([]metadata.ModuleHost, error) {
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	dat := map[string][]int64{
 		common.BKHostIDField: []int64{hostID},
 	}
 	ret, err := lgc.CoreAPI.HostController().Module().GetModulesHostConfig(ctx, header, dat)
 	if nil != err {
 		blog.Errorf("GetModuleIDByHostID appID %d module id %d GetModulesHostConfig http do error:%s", hostID, err.Error())
-		return nil, err
+		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !ret.Result {
 		blog.Errorf("GetModuleIDByHostID appID %d module id %d GetModulesHostConfig reply error:%s", hostID, ret.ErrMsg)
-		return nil, fmt.Errorf(ret.ErrMsg)
+		return nil, defErr.New(ret.Code, ret.ErrMsg)
 	}
 
 	return ret.Data, nil
