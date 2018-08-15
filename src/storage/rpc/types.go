@@ -13,6 +13,7 @@
 package rpc
 
 import (
+	"configcenter/src/framework/core/output"
 	"encoding/json"
 	"errors"
 	"strings"
@@ -28,15 +29,36 @@ var (
 )
 
 type HandlerFunc func(*Message) (interface{}, error)
-type HandlerStreamFunc func(input <-chan *Message, output <-chan *Message) error
+type HandlerStreamFunc func(*StreamMessage) error
 
+type StreamMessage struct {
+	input  <-chan *Message
+	output <-chan *Message
+	done   <-chan struct{}
+}
+
+func (m StreamMessage) Receive() *Message {
+	return <-m.input
+}
+
+func (m StreamMessage) Push(data interface{}) {
+	msg:=Message{}
+	m.output <- 
+}
+
+// MessageType define
+type MessageType uint32
+
+// MessageType enumeration
 const (
-	TypeRequest = iota
+	TypeRequest MessageType = iota
 	TypeResponse
 	TypeError
 	TypeClose
 	TypePing
+)
 
+const (
 	readBufferSize  = 8096
 	writeBufferSize = 8096
 )
@@ -81,11 +103,10 @@ type Message struct {
 
 	magicVersion uint16
 	seq          uint32
-	typz         uint32
+	typz         MessageType
 	cmd          command // maybe should use uint32
 
 	Codec Codec
-	Size  uint32
 	Data  []byte
 }
 
@@ -101,6 +122,5 @@ func (msg *Message) Encode(value interface{}) error {
 		msg.Data, err = json.Marshal(value)
 		return err
 	}
-
 	return ErrUnsupportedCodec
 }

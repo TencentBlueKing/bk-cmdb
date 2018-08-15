@@ -143,7 +143,8 @@ func (s *ServerSession) handle(f HandlerFunc, msg *Message) {
 func (s *ServerSession) handleStream(f HandlerStreamFunc, msg *Message) {
 	// TODO handle stream
 	ch := make(chan *Message)
-	err := f(ch, ch)
+	msg := StreamMessage{}
+	err := f(&msg)
 	s.pushResponse(0, msg, err)
 }
 
@@ -153,13 +154,11 @@ func (s *ServerSession) handlePing(msg *Message) {
 
 func (s *ServerSession) pushResponse(count int, msg *Message, err error) {
 	msg.magicVersion = MagicVersion
-	msg.Size = uint32(len(msg.Data))
 
 	msg.typz = TypeResponse
 	if err != nil {
 		msg.typz = TypeError
 		msg.Data = []byte(err.Error())
-		msg.Size = uint32(len(msg.Data))
 	}
 	s.responses <- msg
 }

@@ -119,13 +119,30 @@ func (c *Client) Call(cmd string, input interface{}, result interface{}) error {
 	return msg.Decode(result)
 }
 
+//Call replica client
+func (c *Client) CallStream(cmd string, input interface{}) (*StreamMessage, error) {
+	cmdlength := len(cmd)
+	if len(cmd) > commanLimit {
+		return ErrCommandOverLength
+	}
+
+	ncmd := command{}
+	copy(ncmd[:], []byte(cmd)[:cmdlength])
+
+	msg, err := c.operation(TypeRequest, command(ncmd), input)
+	if err != nil {
+		return err
+	}
+	return msg.Decode(result)
+}
+
 //Ping replica client
 func (c *Client) Ping() error {
 	_, err := c.operation(TypePing, command{}, nil)
 	return err
 }
 
-func (c *Client) operation(op uint32, cmd command, data interface{}) (Decoder, error) {
+func (c *Client) operation(op MessageType, cmd command, data interface{}) (Decoder, error) {
 	retry := 0
 	for {
 		msg := Message{
@@ -138,10 +155,9 @@ func (c *Client) operation(op uint32, cmd command, data interface{}) (Decoder, e
 
 		if op == TypeRequest {
 			msg.Encode(data)
-			msg.Size = uint32(len(msg.Data))
 		}
 
-		timeout := func(op uint32) <-chan time.Time {
+		timeout := func(op MessageType) <-chan time.Time {
 			switch op {
 			case TypeRequest:
 				return time.After(opReadTimeout)
