@@ -12,10 +12,55 @@
 
 package redis
 
+import (
+	"strconv"
+	"strings"
+
+	redis "gopkg.in/redis.v5"
+)
+
 // Config define redis config
 type Config struct {
 	Address    string
 	Password   string
 	Database   string
+	Port       string
 	MasterName string
+}
+
+func NewFromConfig(cfg Config) (*redis.Client, error) {
+	dbNum, err := strconv.Atoi(cfg.Database)
+	if nil != err {
+		return nil, err
+	}
+	var client *redis.Client
+	if cfg.MasterName == "" {
+		if !strings.Contains(cfg.Address, ":") {
+			cfg.Address = cfg.Address + ":" + cfg.Port
+		}
+		option := &redis.Options{
+			Addr:     cfg.Address,
+			Password: cfg.Password,
+			DB:       dbNum,
+			PoolSize: 100,
+		}
+		client = redis.NewClient(option)
+	} else {
+		hosts := strings.Split(cfg.Address, ",")
+		option := &redis.FailoverOptions{
+			MasterName:    cfg.MasterName,
+			SentinelAddrs: hosts,
+			Password:      cfg.Password,
+			DB:            dbNum,
+			PoolSize:      100,
+		}
+		client = redis.NewFailoverClient(option)
+	}
+
+	err = client.Ping().Err()
+	if err != nil {
+		return nil, err
+	}
+
+	return client, err
 }
