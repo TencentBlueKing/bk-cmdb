@@ -136,6 +136,15 @@ const (
 	CCErrProxyRequestFailed      = 1199036
 	CCErrRewriteRequestUriFailed = 1199037
 
+	// CCErrCommLogicDataNil   need data %s is null
+	CCErrCommInstDataNil = 1199038
+	// CCErrCommInstFieldNotFound  %s field does not exist in %s
+	CCErrCommInstFieldNotFound = 1199039
+	// CCErrCommInstFieldConvFail  convert %s  field %s to %s error %s
+	CCErrCommInstFieldConvFail = 1199040
+	// CCErrCommUtilFail  handle %s error %s
+	CCErrCommUtilHandleFail = 1199041
+
 	// apiserver 1100XXX
 
 	// toposerver 1101XXX
