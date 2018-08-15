@@ -23,6 +23,7 @@ import (
 var (
 	ErrDocumentNotFound = errors.New("document not found")
 	ErrNotImplemented   = errors.New("not implemented")
+	ErrDuplicated       = errors.New("duplicated")
 )
 
 // RDB db operation interface
@@ -49,6 +50,9 @@ type RDB interface {
 	DropTable(tablename string) error
 	// CreateTable 创建集合
 	CreateTable(tablename string) error
+
+	IsDuplicatedError(error) bool
+	IsNotFoundError(error) bool
 }
 
 // Table collection operation interface
