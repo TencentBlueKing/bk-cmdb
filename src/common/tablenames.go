@@ -25,6 +25,8 @@ const (
 
 	BKTableNameProcInstaceDetail = "cc_ProcInstanceDetail"
 
+	BKTableNameProcOperateTask = "cc_ProcOpTask"
+
 	// BKTableNamePrivilege the table name of the privilege module
 	BKTableNamePrivilege = "cc_Privilege"
 

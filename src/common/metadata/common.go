@@ -217,3 +217,8 @@ type PropertyGroupCondition struct {
 	Condition map[string]interface{} `json:"condition"`
 	Data      map[string]interface{} `json:"data"`
 }
+
+type UpdateParams struct {
+	Condition map[string]interface{} `json:"condition"`
+	Data      map[string]interface{} `json:"data"`
+}
