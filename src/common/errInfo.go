@@ -368,9 +368,9 @@ const (
 	CCErrProcGetByApplicationIDFail  = 1108010
 	CCErrProcGetByIP                 = 1108011
 	CCErrProcOperateFaile            = 1108012
-	CCErrProcQueryTaskInfoFail       = 1108013
-	CCErrProcQueryTaskWaitOPFail     = 1108014
-	CCErrProcQueryTaskOPErrFail      = 1108015
+	CCErrProcQueryTaskInfoFail       = 1108020
+	CCErrProcQueryTaskWaitOPFail     = 1108021
+	CCErrProcQueryTaskOPErrFail      = 1108022
 
 	// auditlog 1109XXX
 	CCErrAuditSaveLogFaile      = 1109001
