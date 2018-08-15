@@ -196,7 +196,7 @@ func (p *procctrl) GetProcInstanceDetail(ctx context.Context, h http.Header, dat
 	resp = new(metadata.ProcInstanceDetailResult)
 	subPath := "/instance/register/detail/search"
 
-	err = p.client.Get().
+	err = p.client.Post().
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
