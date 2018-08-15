@@ -641,6 +641,10 @@ const (
 )
 
 const (
+	BKSTRIDPrefix = "cc"
+)
+
+const (
 	// LocalHostName the local host name definition
 	LocalHostName = "localhost"
 
