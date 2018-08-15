@@ -122,7 +122,7 @@ func (h *AuditController) onAduitConfigUpdate(previous, current cc.ProcessConfig
 	prefix := storage.DI_MONGO
 	h.Config.Mongo = &mgoclient.MongoConfig{
 		Address:      current.ConfigMap[prefix+".host"],
-		User:         current.ConfigMap[prefix+".user"],
+		User:         current.ConfigMap[prefix+".usr"],
 		Password:     current.ConfigMap[prefix+".pwd"],
 		Database:     current.ConfigMap[prefix+".database"],
 		Port:         current.ConfigMap[prefix+".port"],
