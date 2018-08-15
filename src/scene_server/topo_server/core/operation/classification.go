@@ -98,6 +98,30 @@ func (c *classification) CreateClassification(params types.ContextParams, data f
 
 func (c *classification) DeleteClassification(params types.ContextParams, id int64, data frtypes.MapStr, cond condition.Condition) error {
 
+	if 0 < id {
+		if nil == cond {
+			cond = condition.CreateCondition()
+		}
+		cond.Field(metadata.ClassificationFieldID).Eq(id)
+	}
+
+	clsItems, err := c.FindClassification(params, cond)
+	if nil != err {
+		return err
+	}
+
+	for _, cls := range clsItems {
+		objs, err := cls.GetObjects()
+		if nil != err {
+			return err
+		}
+
+		if 0 != len(objs) {
+			blog.Errorf("[operation-cls] the classification(%s) has some obejcts, forbidden to delete", cls.GetID())
+			return params.Err.Error(common.CCErrTopoObjectClassificationHasObject)
+		}
+	}
+
 	rsp, err := c.clientSet.ObjectController().Meta().DeleteClassification(context.Background(), id, params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s", err.Error())
