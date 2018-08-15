@@ -68,6 +68,13 @@ func (c *Mongo) Clone() dal.RDB {
 	return &nc
 }
 
+func (c *Mongo) IsDuplicatedError(err error) bool {
+	return err == dal.ErrDuplicated || mgo.IsDup(err)
+}
+func (c *Mongo) IsNotFoundError(err error) bool {
+	return err == dal.ErrDocumentNotFound || err == mgo.ErrNotFound
+}
+
 // Table collection operation
 func (c *Mongo) Table(collName string) dal.Table {
 	col := Collection{}

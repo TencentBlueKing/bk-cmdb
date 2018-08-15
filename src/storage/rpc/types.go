@@ -25,18 +25,69 @@ var (
 	ErrPingTimeout       = errors.New("Ping timeout")
 	ErrCommandOverLength = errors.New("Command overlength")
 	ErrCommandNotFount   = errors.New("Command not found")
+	ErrStreamStoped      = errors.New("Stream stoped")
 )
 
 type HandlerFunc func(*Message) (interface{}, error)
-type HandlerStreamFunc func(input <-chan *Message, output <-chan *Message) error
+type HandlerStreamFunc func(*Message, *StreamMessage) error
 
+type StreamMessage struct {
+	param  Message
+	input  chan *Message
+	output chan *Message
+	done   chan struct{}
+	err    error
+}
+
+func NewStreamMessage() *StreamMessage {
+	return &StreamMessage{
+		input:  make(chan *Message, 10),
+		output: make(chan *Message, 10),
+		done:   make(chan struct{}),
+	}
+}
+
+func (m StreamMessage) Recv(result interface{}) error {
+	if m.err != nil {
+		return m.err
+	}
+	msg := <-m.input
+	return msg.Decode(result)
+}
+
+func (m StreamMessage) Send(data interface{}) error {
+	msg := m.param.copy()
+	msg.typz = TypeStream
+	if err := msg.Encode(data); err != nil {
+		return err
+	}
+	m.output <- msg
+	return nil
+}
+
+// Close should only call by client
+func (m StreamMessage) Close() error {
+	msg := m.param.copy()
+	msg.typz = TypeStreamClose
+	m.output <- msg
+	return nil
+}
+
+// MessageType define
+type MessageType uint32
+
+// MessageType enumeration
 const (
-	TypeRequest = iota
+	TypeRequest MessageType = iota
 	TypeResponse
+	TypeStream
 	TypeError
 	TypeClose
 	TypePing
+	TypeStreamClose
+)
 
+const (
 	readBufferSize  = 8096
 	writeBufferSize = 8096
 )
@@ -81,12 +132,20 @@ type Message struct {
 
 	magicVersion uint16
 	seq          uint32
-	typz         uint32
+	typz         MessageType
 	cmd          command // maybe should use uint32
 
 	Codec Codec
-	Size  uint32
 	Data  []byte
+}
+
+func (msg Message) copy() *Message {
+	return &Message{
+		magicVersion: msg.magicVersion,
+		seq:          msg.seq,
+		typz:         msg.typz,
+		cmd:          msg.cmd,
+	}
 }
 
 func (msg *Message) Decode(value interface{}) error {
@@ -101,6 +160,5 @@ func (msg *Message) Encode(value interface{}) error {
 		msg.Data, err = json.Marshal(value)
 		return err
 	}
-
 	return ErrUnsupportedCodec
 }

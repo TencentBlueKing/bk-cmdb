@@ -13,8 +13,10 @@
 package rpc
 
 import (
+	"errors"
 	"io"
 	"net/http"
+	"runtime/debug"
 
 	"configcenter/src/common/blog"
 )
@@ -76,6 +78,8 @@ type ServerSession struct {
 	wire      Wire
 	responses chan *Message
 	done      chan struct{}
+
+	stream map[uint32]*StreamMessage
 }
 
 func NewServerSession(srv *Server, conn io.ReadWriteCloser) *ServerSession {
@@ -124,7 +128,7 @@ func (s *ServerSession) readFromWire(ret chan<- error) {
 				cmds = append(cmds, cmd)
 			}
 			blog.V(3).Infof("[rpc server] command [%s] not found, existing command are: %#v", call, s.srv.handlers)
-			s.pushResponse(0, msg, ErrCommandNotFount)
+			s.pushResponse(msg, ErrCommandNotFount)
 		}
 
 	case TypePing:
@@ -134,32 +138,76 @@ func (s *ServerSession) readFromWire(ret chan<- error) {
 }
 
 func (s *ServerSession) handle(f HandlerFunc, msg *Message) {
+	defer func() {
+		runtimeErr := recover()
+		if runtimeErr != nil {
+			stack := debug.Stack()
+			blog.Errorf("command [%s] runtime error:\n%s", msg.cmd, stack)
+		}
+	}()
 	result, err := f(msg)
 	if encodeErr := msg.Encode(result); encodeErr != nil {
 		blog.Errorf("EncodeData error: %s", encodeErr.Error())
 	}
-	s.pushResponse(0, msg, err)
+	s.pushResponse(msg, err)
 }
 func (s *ServerSession) handleStream(f HandlerStreamFunc, msg *Message) {
-	// TODO handle stream
-	ch := make(chan *Message)
-	err := f(ch, ch)
-	s.pushResponse(0, msg, err)
+	stream, ok := s.stream[msg.seq]
+	if !ok {
+		stream = NewStreamMessage()
+		s.stream[msg.seq] = stream
+
+		go func() {
+			for {
+				select {
+				case value := <-stream.output:
+					nmsg := msg.copy()
+					nmsg.typz = TypeStream
+					err := nmsg.Encode(value)
+					s.pushResponse(msg, err)
+				case <-s.done:
+					stream.err = ErrStreamStoped
+					return
+				case <-stream.done:
+					return
+				}
+			}
+		}()
+		defer func() {
+			runtimeErr := recover()
+			if runtimeErr != nil {
+				stack := debug.Stack()
+				blog.Errorf("stream command [%s] runtime error:\n%s", msg.cmd, stack)
+			}
+		}()
+		err := f(msg, stream)
+		close(stream.input)
+		close(stream.output)
+		close(stream.done)
+		s.pushResponse(msg, err)
+	} else {
+		if TypeStreamClose == msg.typz {
+			if len(msg.Data) > 0 {
+				stream.err = errors.New(string(msg.Data))
+			}
+			stream.done <- struct{}{}
+			return
+		}
+		stream.input <- msg
+	}
 }
 
 func (s *ServerSession) handlePing(msg *Message) {
-	s.pushResponse(0, msg, nil)
+	s.pushResponse(msg, nil)
 }
 
-func (s *ServerSession) pushResponse(count int, msg *Message, err error) {
+func (s *ServerSession) pushResponse(msg *Message, err error) {
 	msg.magicVersion = MagicVersion
-	msg.Size = uint32(len(msg.Data))
 
 	msg.typz = TypeResponse
 	if err != nil {
 		msg.typz = TypeError
 		msg.Data = []byte(err.Error())
-		msg.Size = uint32(len(msg.Data))
 	}
 	s.responses <- msg
 }
@@ -172,6 +220,7 @@ func (s *ServerSession) readloop() error {
 		select {
 		case err := <-ret:
 			if err != nil {
+				s.Stop()
 				return err
 			}
 			continue
@@ -190,6 +239,15 @@ func (s *ServerSession) writeloop() {
 				blog.Errorf("Failed to write: %v", err)
 			}
 		case <-s.done:
+			if queuelen := len(s.responses); queuelen > 0 {
+				for queuelen > 0 {
+					msg := <-s.responses
+					if err := s.wire.Write(msg); err != nil {
+						blog.Errorf("Failed to write: %v", err)
+						break
+					}
+				}
+			}
 			msg := &Message{
 				typz: TypeClose,
 			}
