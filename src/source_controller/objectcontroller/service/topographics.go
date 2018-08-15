@@ -96,7 +96,7 @@ func (cli *Service) UpdateTopoGraphics(req *restful.Request, resp *restful.Respo
 	for index := range datas {
 		datas[index].SetSupplierAccount(ownerID)
 		err = cli.Instance.Table(common.BKTableNameTopoGraphics).Insert(context.Background(), datas[index].FillBlank())
-		if cli.Instance.IsDuplicateErr(err) {
+		if cli.Instance.IsDuplicatedError(err) {
 			condition := meta.TopoGraphics{}
 			condition.SetScopeType(*datas[index].ScopeType)
 			condition.SetScopeID(*datas[index].ScopeID)
