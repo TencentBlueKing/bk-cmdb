@@ -67,6 +67,10 @@ func (ps *ProctrlServer) WebService() http.Handler {
 	ws.Route(ws.POST("/instance/register/detail/search").To(ps.GetProcInstanceDetail))
 	ws.Route(ws.DELETE("/instance/register/detail").To(ps.DeleteRegisterProcInstanceDetail))
 
+	ws.Route(ws.POST("/operate/task").To(ps.AddOperateTaskInfo))
+	ws.Route(ws.PUT("/operate/task").To(ps.UpdateOperateTaskInfo))
+	ws.Route(ws.POST("/operate/task/search").To(ps.SearchOperateTaskInfo))
+
 	ws.Route(ws.GET("/healthz").To(ps.Healthz))
 
 	container.Add(ws)

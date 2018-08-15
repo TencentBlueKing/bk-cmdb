@@ -43,6 +43,7 @@ func (ps *ProctrlServer) CreateProcInstanceModel(req *restful.Request, resp *res
 
 	addInst := make([]interface{}, 0)
 	for _, item := range reqParam {
+		item.OwnerID = util.GetOwnerID(req.Request.Header)
 		addInst = append(addInst, item)
 	}
 	if err := ps.DbInstance.InsertMuti(common.BKTableNameProcInstanceModel, addInst...); err != nil {
@@ -96,6 +97,7 @@ func (ps *ProctrlServer) DeleteProcInstanceModel(req *restful.Request, resp *res
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
+	reqParam = util.SetModOwner(reqParam, util.GetOwnerID(req.Request.Header))
 
 	blog.V(3).Infof("will delete process instance model. condition: %+v", reqParam)
 	if err := ps.DbInstance.DelByCondition(common.BKTableNameProcInstanceModel, reqParam); err != nil {
@@ -126,6 +128,7 @@ func (ps *ProctrlServer) RegisterProcInstaceDetail(req *restful.Request, resp *r
 			return
 		}
 		detail := new(meta.ProcInstanceDetail)
+		detail.OwnerID = util.GetOwnerID(req.Request.Header)
 		detail.AppID = input.AppID
 		detail.Meta = input.Meta
 		detail.ProcID = input.ProcID
@@ -158,6 +161,7 @@ func (ps *ProctrlServer) ModifyRegisterProcInstanceDetail(req *restful.Request, 
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
+	input.Conds = util.SetModOwner(input.Conds, util.GetOwnerID(req.Request.Header))
 
 	err := ps.DbInstance.UpdateByCondition(common.BKTableNameProcInstaceDetail, input.Data, input.Conds)
 	if nil != err {
@@ -178,6 +182,7 @@ func (ps *ProctrlServer) GetProcInstanceDetail(req *restful.Request, resp *restf
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
+	input.Condition = util.SetModOwner(input.Condition, util.GetOwnerID(req.Request.Header))
 	cnt, err := ps.DbInstance.GetCntByCondition(common.BKTableNameProcInstaceDetail, input.Condition)
 	if err != nil {
 		blog.Errorf("get process instance detail failed. err: %v", err)
@@ -210,7 +215,7 @@ func (ps *ProctrlServer) DeleteRegisterProcInstanceDetail(req *restful.Request, 
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-
+	input = util.SetModOwner(input, util.GetOwnerID(req.Request.Header))
 	err := ps.DbInstance.DelByCondition(common.BKTableNameProcInstaceDetail, input)
 	if nil != err {
 		blog.Errorf("update register  process instance detail  info error: %s, input:%s", err.Error(), input)
