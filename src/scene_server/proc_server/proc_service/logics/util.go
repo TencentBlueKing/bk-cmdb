@@ -42,34 +42,7 @@ func ParseProcInstMatchCondition(str string, isString bool) (data interface{}, n
 		} else {
 			pattern := strings.Split(str, "?")
 			if 2 == len(pattern) {
-				var p1, p2 int64
-				var isHeader = false
-				if 0 != len(pattern[1]) {
-					p2, err = util.GetInt64ByInterface(pattern[1])
-					if nil != err {
-						return str, false, fmt.Errorf("%s not integer", pattern[1])
-					}
-				}
-
-				if len(pattern[0]) == 0 {
-					isHeader = true
-				} else {
-					p1, err = util.GetInt64ByInterface(pattern[0])
-					if nil != err {
-						return str, false, fmt.Errorf("%s not integer", pattern[1])
-					}
-				}
-				base := int64(math.Pow10(len(pattern[1])))
-				first := base * 10
-				var num []int64
-				var i int64 = 0
-				if isHeader {
-					i = 1
-				}
-				for ; i < 10; i++ {
-					num = append(num, first*p1+i*base+p2)
-				}
-				return common.KvMap{common.BKDBIN: num}, false, nil
+				return parseProcInstMatchIntQuestionMark(str, pattern[0], pattern[1])
 			} else {
 				return str, false, nil
 			}
@@ -83,33 +56,11 @@ func ParseProcInstMatchCondition(str string, isString bool) (data interface{}, n
 		case 2:
 			if strings.HasSuffix(splitRange[1], "]") {
 				if -1 < strings.Index(str, ",") && -1 == strings.Index(str, "-") {
-					enumKey := strings.Split(strings.TrimRight(splitRange[1], "]"), ",")
-					if isString {
-						var strs []string
-						for _, s := range enumKey {
-							strs = append(strs, fmt.Sprintf("%s%s", splitRange[0], s))
-						}
-						return common.KvMap{common.BKDBIN: strs}, false, nil
-					} else {
-						p1, err := util.GetInt64ByInterface(splitRange[0])
-						if nil != err {
-							return str, false, fmt.Errorf("%s not integer", splitRange[0])
-						}
-						var nums []int64
-						for _, s := range enumKey {
-							p2, err := util.GetInt64ByInterface(s)
-							if nil != err {
-								return str, false, fmt.Errorf("%s not integer", s)
-							}
-							base := int64(math.Pow10(len(s)))
-							nums = append(nums, p1*base+p2)
-						}
-						return common.KvMap{common.BKDBIN: nums}, false, nil
-					}
+					return parseProcInstMatchIntEnum(str, splitRange[0], splitRange[1], isString)
 				} else if isString && 0 < len(splitRange[0]) {
 					return common.KvMap{common.BKDBLIKE: fmt.Sprintf("^%s", splitRange[0])}, true, nil
 				} else {
-					return nil, true, nil
+					return str, false, nil
 				}
 			} else {
 				return str, false, nil
@@ -119,7 +70,64 @@ func ParseProcInstMatchCondition(str string, isString bool) (data interface{}, n
 
 		}
 	}
-	return nil, true, nil
+	return str, true, nil
+}
+
+func parseProcInstMatchIntQuestionMark(rawMatch, part1, part2 string) (data interface{}, notParse bool, err error) {
+	var p1, p2 int64
+	var isHeader = false
+	if 0 != len(part2) {
+		p2, err = util.GetInt64ByInterface(part2)
+		if nil != err {
+			return nil, false, fmt.Errorf("%s not integer", part2)
+		}
+	}
+
+	if len(part1) == 0 {
+		isHeader = true
+	} else {
+		p1, err = util.GetInt64ByInterface(part1)
+		if nil != err {
+			return nil, false, fmt.Errorf("%s not integer", part1)
+		}
+	}
+	base := int64(math.Pow10(len(part2)))
+	first := base * 10
+	var num []int64
+	var i int64 = 0
+	if isHeader {
+		i = 1
+	}
+	for ; i < 10; i++ {
+		num = append(num, first*p1+i*base+p2)
+	}
+	return common.KvMap{common.BKDBIN: num}, false, nil
+}
+
+func parseProcInstMatchIntEnum(rawString, part1, part2 string, isString bool) (data interface{}, notParse bool, err error) {
+	enumKey := strings.Split(strings.TrimRight(part2, "]"), ",")
+	if isString {
+		var strs []string
+		for _, s := range enumKey {
+			strs = append(strs, fmt.Sprintf("%s%s", part1, s))
+		}
+		return common.KvMap{common.BKDBIN: strs}, false, nil
+	} else {
+		p1, err := util.GetInt64ByInterface(part1)
+		if nil != err {
+			return rawString, false, fmt.Errorf("%s not integer", part1)
+		}
+		var nums []int64
+		for _, s := range enumKey {
+			p2, err := util.GetInt64ByInterface(s)
+			if nil != err {
+				return rawString, false, fmt.Errorf("%s not integer", s)
+			}
+			base := int64(math.Pow10(len(s)))
+			nums = append(nums, p1*base+p2)
+		}
+		return common.KvMap{common.BKDBIN: nums}, false, nil
+	}
 }
 
 func GetProcInstModel(appID, setID, moduleID, hostID, procID, funcID, procNum int64, maxInstID uint64) []*metadata.ProcInstanceModel {
