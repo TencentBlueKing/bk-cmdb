@@ -29,13 +29,22 @@ var (
 )
 
 type HandlerFunc func(*Message) (interface{}, error)
-type HandlerStreamFunc func(*StreamMessage) error
+type HandlerStreamFunc func(*Message, *StreamMessage) error
 
 type StreamMessage struct {
+	param  Message
 	input  chan *Message
 	output chan *Message
 	done   chan struct{}
 	err    error
+}
+
+func NewStreamMessage() *StreamMessage {
+	return &StreamMessage{
+		input:  make(chan *Message, 10),
+		output: make(chan *Message, 10),
+		done:   make(chan struct{}),
+	}
 }
 
 func (m StreamMessage) Recv(result interface{}) error {
@@ -47,11 +56,20 @@ func (m StreamMessage) Recv(result interface{}) error {
 }
 
 func (m StreamMessage) Send(data interface{}) error {
-	msg := Message{}
+	msg := m.param.copy()
+	msg.typz = TypeStream
 	if err := msg.Encode(data); err != nil {
 		return err
 	}
-	m.output <- &msg
+	m.output <- msg
+	return nil
+}
+
+// Close should only call by client
+func (m StreamMessage) Close() error {
+	msg := m.param.copy()
+	msg.typz = TypeStreamClose
+	m.output <- msg
 	return nil
 }
 
@@ -62,10 +80,11 @@ type MessageType uint32
 const (
 	TypeRequest MessageType = iota
 	TypeResponse
+	TypeStream
 	TypeError
 	TypeClose
 	TypePing
-	TypeStreamDone
+	TypeStreamClose
 )
 
 const (
@@ -118,6 +137,15 @@ type Message struct {
 
 	Codec Codec
 	Data  []byte
+}
+
+func (msg Message) copy() *Message {
+	return &Message{
+		magicVersion: msg.magicVersion,
+		seq:          msg.seq,
+		typz:         msg.typz,
+		cmd:          msg.cmd,
+	}
 }
 
 func (msg *Message) Decode(value interface{}) error {

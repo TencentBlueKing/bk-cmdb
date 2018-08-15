@@ -154,19 +154,16 @@ func (s *ServerSession) handle(f HandlerFunc, msg *Message) {
 func (s *ServerSession) handleStream(f HandlerStreamFunc, msg *Message) {
 	stream, ok := s.stream[msg.seq]
 	if !ok {
-		stream = &StreamMessage{
-			input:  make(chan *Message, 10),
-			output: make(chan *Message, 10),
-			done:   make(chan struct{}),
-		}
+		stream = NewStreamMessage()
 		s.stream[msg.seq] = stream
 
 		go func() {
 			for {
 				select {
 				case value := <-stream.output:
-					nmsg := *msg
-					err := (&nmsg).Encode(value)
+					nmsg := msg.copy()
+					nmsg.typz = TypeStream
+					err := nmsg.Encode(value)
 					s.pushResponse(msg, err)
 				case <-s.done:
 					stream.err = ErrStreamStoped
@@ -183,17 +180,17 @@ func (s *ServerSession) handleStream(f HandlerStreamFunc, msg *Message) {
 				blog.Errorf("stream command [%s] runtime error:\n%s", msg.cmd, stack)
 			}
 		}()
-		err := f(stream)
+		err := f(msg, stream)
 		close(stream.input)
 		close(stream.output)
 		close(stream.done)
 		s.pushResponse(msg, err)
 	} else {
-		if TypeStreamDone == msg.typz {
-			stream.done <- struct{}{}
+		if TypeStreamClose == msg.typz {
 			if len(msg.Data) > 0 {
 				stream.err = errors.New(string(msg.Data))
 			}
+			stream.done <- struct{}{}
 			return
 		}
 		stream.input <- msg
