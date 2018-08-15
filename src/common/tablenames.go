@@ -103,6 +103,9 @@ var AllTables = []string{
 	BKTableNameIdentifier,
 	BKTableNameObjAsst,
 	BKTableNameTopoGraphics,
+	BKTableNameProcInstanceModel,
+	BKTableNameProcInstaceDetail,
+	BKTableNameProcOperateTask,
 }
 
 // GetInstTableName returns inst data table name
