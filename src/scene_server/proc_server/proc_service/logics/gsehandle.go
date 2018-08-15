@@ -108,14 +108,23 @@ func (lgc *Logics) registerProcInstanceToGse(gseproc *metadata.GseProcRequest, f
 	namespace := getGseProcNameSpace(gseproc.AppID, gseproc.ModuleID)
 	gseproc.Meta.Namespace = namespace
 	ret, err := lgc.CoreAPI.GseProcServer().RegisterProcInfo(context.Background(), forward, namespace, gseproc)
-	if err != nil || (err == nil && 0 != ret.Code) {
-		return fmt.Errorf("register process(%s) into gse failed. err: %v, errcode: %d, errmsg: %s", gseproc.Meta.Name, err, ret.Code, ret.ErrMsg)
+	if err != nil {
+		blog.Errorf("register process(%s) into gse failed. err: %v,", gseproc.Meta.Name, err)
+		return lgc.CCErr.Error(util.GetLanguage(forward), common.CCErrCommHTTPDoRequestFailed)
+	} else if err == nil && 0 != ret.Code {
+		blog.Errorf("register process(%s) into gse failed. errcode: %d, errmsg: %s", gseproc.Meta.Name, ret.Code, ret.ErrMsg)
+		return fmt.Errorf("register process(%s) into gse failed. errcode: %d, errmsg: %s", gseproc.Meta.Name, ret.Code, ret.ErrMsg)
 	}
 
 	gseproc.OpType = common.GSEProcOPRegister
 	procInstDetail, err := lgc.CoreAPI.ProcController().RegisterProcInstanceDetail(context.Background(), forward, gseproc)
-	if err != nil || (err == nil && !procInstDetail.Result) {
-		return fmt.Errorf("register process(%s) detail failed. err: %v, errcode: %d, errmsg: %s", gseproc.Meta.Name, err, procInstDetail.Code, procInstDetail.ErrMsg)
+	if err != nil {
+		blog.Errorf("register process(%s) detail failed. err: %v", gseproc.Meta.Name, err)
+		return lgc.CCErr.Error(util.GetLanguage(forward), common.CCErrCommHTTPDoRequestFailed)
+	} else if err == nil && !procInstDetail.Result {
+		blog.Errorf("register process(%s) detail failed.  errcode: %d, errmsg: %s", gseproc.Meta.Name, procInstDetail.Code, procInstDetail.ErrMsg)
+		return fmt.Errorf("register process(%s) detail failed.  errcode: %d, errmsg: %s", gseproc.Meta.Name, procInstDetail.Code, procInstDetail.ErrMsg)
+
 	}
 
 	return nil
@@ -127,8 +136,12 @@ func (lgc *Logics) unregisterProcInstanceToGse(gseproc *metadata.GseProcRequest,
 	gseproc.OpType = common.GSEProcOPUnregister
 
 	ret, err := lgc.CoreAPI.GseProcServer().UnRegisterProcInfo(context.Background(), forward, namespace, gseproc)
-	if err != nil || (err == nil && 0 != ret.Code) {
-		return fmt.Errorf("register process(%s) into gse failed. err: %v, errcode: %d, errmsg: %s", gseproc.Meta.Name, err, ret.Code, ret.ErrMsg)
+	if err != nil {
+		blog.Errorf("register process(%s) into gse failed.  errcode: %d, errmsg: %s", gseproc.Meta.Name, err)
+		return lgc.CCErr.Error(util.GetLanguage(forward), common.CCErrCommHTTPDoRequestFailed)
+	} else if err == nil && 0 != ret.Code {
+		blog.Errorf("register process(%s) into gse failed. errcode: %d, errmsg: %s", gseproc.Meta.Name, ret.Code, ret.ErrMsg)
+		return fmt.Errorf("register process(%s) into gse failed. errcode: %d, errmsg: %s", gseproc.Meta.Name, ret.Code, ret.ErrMsg)
 	}
 
 	unregisterProcDetail := make([]interface{}, 0)
@@ -141,8 +154,12 @@ func (lgc *Logics) unregisterProcInstanceToGse(gseproc *metadata.GseProcRequest,
 	}
 
 	procInstDetail, err := lgc.CoreAPI.ProcController().DeleteProcInstanceDetail(context.Background(), forward, common.KvMap{common.BKDBOR: unregisterProcDetail})
-	if err != nil || (err == nil && !procInstDetail.Result) {
-		return fmt.Errorf("register process(%s) detail failed. err: %v, errcode: %d, errmsg: %s", gseproc.Meta.Name, err, procInstDetail.Code, procInstDetail.ErrMsg)
+	if err != nil {
+		blog.Errorf("register process(%s) detail failed. err: %v", gseproc.Meta.Name, err)
+		return lgc.CCErr.Error(util.GetLanguage(forward), common.CCErrCommHTTPDoRequestFailed)
+	} else if err == nil && !procInstDetail.Result {
+		blog.Errorf("register process(%s) detail failed. errcode: %d, errmsg: %s", gseproc.Meta.Name, procInstDetail.Code, procInstDetail.ErrMsg)
+		return fmt.Errorf("register process(%s) detail failed. errcode: %d, errmsg: %s", gseproc.Meta.Name, procInstDetail.Code, procInstDetail.ErrMsg)
 	}
 
 	return nil
@@ -210,11 +227,11 @@ func (lgc *Logics) OperateProcInstanceByGse(procOp *metadata.ProcessOperate, ins
 		ret, err := lgc.CoreAPI.ProcController().AddOperateTaskInfo(context.Background(), forward, opProcInsts)
 		if nil != err {
 			blog.Errorf("OperateProcInstanceByGse AddOperateTaskInfo http do  error:%s, input:%v", err.Error(), procOp)
-			return "", err
+			return "", lgc.CCErr.Error(util.GetLanguage(forward), common.CCErrCommHTTPDoRequestFailed)
 		}
 		if !ret.Result {
 			blog.Errorf("OperateProcInstanceByGse AddOperateTaskInfo  error:%s, input:%v", ret.Result, procOp)
-			return "", err
+			return "", lgc.CCErr.Error(util.GetLanguage(forward), common.CCErrCommHTTPDoRequestFailed)
 		}
 	}
 
@@ -233,14 +250,14 @@ func (lgc *Logics) QueryProcessOperateResult(ctx context.Context, taskID string,
 		ret, err := lgc.CoreAPI.ProcController().SearchOperateTaskInfo(ctx, forward, dat)
 		if nil != err {
 			blog.Errorf("QueryProcessOperateResult http search task info taskID:%s  http do error:%s logID:%s", taskID, err.Error(), util.GetHTTPCCRequestID(forward))
-			return nil, nil, nil, err
+			return nil, nil, nil, lgc.CCErr.Error(util.GetLanguage(forward), common.CCErrCommHTTPDoRequestFailed)
 		}
 		if !ret.Result {
 			blog.Errorf("QueryProcessOperateResult http search task info taskID:%s error:%s logID:%s", taskID, ret.ErrMsg, util.GetHTTPCCRequestID(forward))
 			return nil, nil, nil, err
 		}
 		if 0 == ret.Data.Count {
-			return nil, nil, nil, err
+			return nil, nil, nil, nil
 		}
 		for _, item := range ret.Data.Info {
 			itemSucc, itemWaitExce, itemMapExecErr, err := lgc.handleGseTaskResult(ctx, &item, forward)
