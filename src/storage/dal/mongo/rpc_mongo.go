@@ -80,6 +80,13 @@ func (c *RPC) Clone() dal.RDB {
 	return &nc
 }
 
+func (c *RPC) IsDuplicatedError(error) bool {
+	return false
+}
+func (c *RPC) IsNotFoundError(error) bool {
+	return false
+}
+
 // Table collection operation
 func (c *RPC) Table(collection string) dal.Table {
 	col := RPCCollection{

@@ -30,7 +30,6 @@ func TestOfficial(t *testing.T) {
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, common.BKHTTPCCTransactionID, dal.JoinOption{RequestID: "xxx"})
 	tablename := "testtable"
-
 	// inset one
 	err = cli.Table(tablename).Insert(ctx, map[string]interface{}{
 		"name": "name1",
