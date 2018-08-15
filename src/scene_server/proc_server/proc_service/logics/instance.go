@@ -27,37 +27,38 @@ import (
 //var handEventDataChan chan chanItem // := make(chan chanItem, 10000)
 
 func (lgc *Logics) HandleHostProcDataChange(ctx context.Context, eventData *metadata.EventInst) {
+	chnOpLock.Do(lgc.bgHandle)
 	switch eventData.ObjType {
 	case metadata.EventObjTypeProcModule:
-		handEventDataChan <- chanItem{ctx: ctx, eventData: eventData, opFunc: lgc.eventProcInstByProcModule, retry: 3}
-		//lgc.handleRetry(3, ctx, eventData, lgc.refreshProcInstByProcModule)
-		//lgc.refreshProcInstByProcModule(ctx, eventData)
+		handEventDataChan <- chanItem{ctx: ctx, eventData: eventData, opFunc: lgc.eventProcInstByProcModule}
 	case metadata.EventObjTypeModuleTransfer:
-		handEventDataChan <- chanItem{ctx: ctx, eventData: eventData, opFunc: lgc.eventHostModuleChangeProcHostInstNum, retry: 3}
-		//lgc.handleRetry(3, ctx, eventData, lgc.eventHostModuleChangeProcHostInstNum)
-		//lgc.eventHostModuleChangeProcHostInstNum(ctx, eventData)
+		handEventDataChan <- chanItem{ctx: ctx, eventData: eventData, opFunc: lgc.eventHostModuleChangeProcHostInstNum}
 	case common.BKInnerObjIDHost:
-		handEventDataChan <- chanItem{ctx: ctx, eventData: eventData, opFunc: lgc.eventProcInstByHostInfo, retry: 3}
+		handEventDataChan <- chanItem{ctx: ctx, eventData: eventData, opFunc: lgc.eventProcInstByHostInfo}
 	case common.BKInnerObjIDProc:
-		handEventDataChan <- chanItem{ctx: ctx, eventData: eventData, opFunc: lgc.eventProcInstByProcess, retry: 3}
+		handEventDataChan <- chanItem{ctx: ctx, eventData: eventData, opFunc: lgc.eventProcInstByProcess}
 	}
-	chnOpLock.Do(lgc.bgHandle)
 
 }
 
 func (lgc *Logics) bgHandle() {
+	if nil == lgc.ProcHostInst {
+		reshReshInitChan(0, 0) // use default value
+	} else {
+		reshReshInitChan(lgc.ProcHostInst.MaxEventCount, lgc.ProcHostInst.MaxRefreshModuleCount)
+	}
 
 	go func() {
 		defer lgc.bgHandle()
 		for {
 			select {
 			case item := <-handEventDataChan:
-				for idx := 0; idx < item.retry; idx++ {
-					err := item.opFunc(item.ctx, item.eventData)
-					if nil == err {
-						break
-					}
+
+				err := item.opFunc(item.ctx, item.eventData)
+				if nil != err {
+					blog.Error(err.Error())
 				}
+
 			case <-eventRefreshModuleData.eventChn:
 				for {
 					item := getEventRefreshModuleItem()

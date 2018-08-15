@@ -44,14 +44,23 @@ type eventRefreshModule struct {
 }
 
 var (
-	handEventDataChan      chan chanItem = make(chan chanItem, 10000)
-	chnOpLock              *sync.Once    = new(sync.Once)
-	eventRefreshModuleData               = &eventRefreshModule{}
-	maxRefreshModuleData   int           = 10
+	handEventDataChan      chan chanItem
+	chnOpLock              *sync.Once = new(sync.Once)
+	initDataLock           *sync.Once = new(sync.Once)
+	eventRefreshModuleData            = &eventRefreshModule{}
+	maxRefreshModuleData   int        = 10
+	maxEventDataChan       int        = 10000
+	retry                  int        = 3
 )
 
-func init() {
-
+func reshReshInitChan(maxEvent, maxRefresh int) {
+	if 0 != maxEvent {
+		maxEventDataChan = maxEvent
+	}
+	if 0 != maxRefresh {
+		maxRefreshModuleData = maxRefresh
+	}
+	handEventDataChan = make(chan chanItem, maxEventDataChan)
 	eventRefreshModuleData.data = make(map[string]*refreshModuleData, 0)
 	eventRefreshModuleData.eventChn = make(chan bool, maxRefreshModuleData)
 }
