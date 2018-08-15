@@ -13,7 +13,6 @@
 package rpc
 
 import (
-	"configcenter/src/framework/core/output"
 	"encoding/json"
 	"errors"
 	"strings"
@@ -26,24 +25,34 @@ var (
 	ErrPingTimeout       = errors.New("Ping timeout")
 	ErrCommandOverLength = errors.New("Command overlength")
 	ErrCommandNotFount   = errors.New("Command not found")
+	ErrStreamStoped      = errors.New("Stream stoped")
 )
 
 type HandlerFunc func(*Message) (interface{}, error)
 type HandlerStreamFunc func(*StreamMessage) error
 
 type StreamMessage struct {
-	input  <-chan *Message
-	output <-chan *Message
-	done   <-chan struct{}
+	input  chan *Message
+	output chan *Message
+	done   chan struct{}
+	err    error
 }
 
-func (m StreamMessage) Receive() *Message {
-	return <-m.input
+func (m StreamMessage) Recv(result interface{}) error {
+	if m.err != nil {
+		return m.err
+	}
+	msg := <-m.input
+	return msg.Decode(result)
 }
 
-func (m StreamMessage) Push(data interface{}) {
-	msg:=Message{}
-	m.output <- 
+func (m StreamMessage) Send(data interface{}) error {
+	msg := Message{}
+	if err := msg.Encode(data); err != nil {
+		return err
+	}
+	m.output <- &msg
+	return nil
 }
 
 // MessageType define
@@ -56,6 +65,7 @@ const (
 	TypeError
 	TypeClose
 	TypePing
+	TypeStreamDone
 )
 
 const (

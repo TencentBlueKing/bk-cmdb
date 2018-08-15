@@ -121,19 +121,20 @@ func (c *Client) Call(cmd string, input interface{}, result interface{}) error {
 
 //Call replica client
 func (c *Client) CallStream(cmd string, input interface{}) (*StreamMessage, error) {
-	cmdlength := len(cmd)
-	if len(cmd) > commanLimit {
-		return ErrCommandOverLength
-	}
+	// cmdlength := len(cmd)
+	// if len(cmd) > commanLimit {
+	// 	return ErrCommandOverLength
+	// }
 
-	ncmd := command{}
-	copy(ncmd[:], []byte(cmd)[:cmdlength])
+	// ncmd := command{}
+	// copy(ncmd[:], []byte(cmd)[:cmdlength])
 
-	msg, err := c.operation(TypeRequest, command(ncmd), input)
-	if err != nil {
-		return err
-	}
-	return msg.Decode(result)
+	// msg, err := c.operation(TypeRequest, command(ncmd), input)
+	// if err != nil {
+	// 	return err
+	// }
+	// return msg.Decode(result)
+	return nil, nil
 }
 
 //Ping replica client
