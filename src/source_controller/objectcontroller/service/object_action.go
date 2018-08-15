@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -59,18 +60,18 @@ func (cli *Service) CreateObject(req *restful.Request, resp *restful.Response) {
 	obj.OwnerID = ownerID
 
 	// get id
-	id, err := cli.Instance.GetIncID(common.BKTableNameObjDes)
-	if err != nil && !cli.Instance.IsNotFoundErr(err) {
+	id, err := cli.Instance.NextSequence(context.Background(), common.BKTableNameObjDes) // .GetIncID(common.BKTableNameObjDes)
+	if err != nil {
 		blog.Error("failed to get id , error info is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}
-	obj.ID = id
+	obj.ID = int64(id)
 
 	// save
-	_, err = cli.Instance.Insert(common.BKTableNameObjDes, obj)
-	if nil == err && !cli.Instance.IsNotFoundErr(err) {
-		resp.WriteEntity(meta.CreateObjectResult{BaseResp: meta.SuccessBaseResp, Data: meta.RspID{ID: id}})
+	err = cli.Instance.Table(common.BKTableNameObjDes).Insert(context.Background(), obj)
+	if nil == err {
+		resp.WriteEntity(meta.CreateObjectResult{BaseResp: meta.SuccessBaseResp, Data: meta.RspID{ID: int64(id)}})
 		return
 	}
 	blog.Error("failed to insert the object, error info is %s", err.Error())
@@ -79,7 +80,7 @@ func (cli *Service) CreateObject(req *restful.Request, resp *restful.Response) {
 
 }
 
-//删除Object
+// DeleteObject 删除Object
 func (cli *Service) DeleteObject(req *restful.Request, resp *restful.Response) {
 
 	blog.Info("delete object")
@@ -118,8 +119,8 @@ func (cli *Service) DeleteObject(req *restful.Request, resp *restful.Response) {
 	}
 
 	condition = util.SetModOwner(condition, ownerID)
-	cnt, cntErr := cli.Instance.GetCntByCondition(common.BKTableNameObjDes, condition)
-	if nil != cntErr && !cli.Instance.IsNotFoundErr(cntErr) {
+	cnt, cntErr := cli.Instance.Table(common.BKTableNameObjDes).Find(condition).Count(context.Background())
+	if nil != cntErr {
 		blog.Error("failed to select object by condition(%+v), error is %d", cntErr)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, cntErr.Error())})
 		return
@@ -130,7 +131,7 @@ func (cli *Service) DeleteObject(req *restful.Request, resp *restful.Response) {
 		return
 	}
 	// execute delete command
-	if delErr := cli.Instance.DelByCondition(common.BKTableNameObjDes, condition); nil != delErr && !cli.Instance.IsNotFoundErr(delErr) {
+	if delErr := cli.Instance.Table(common.BKTableNameObjDes).Delete(context.Background(), condition); nil != delErr {
 		blog.Error("fail to delete object by id , error information is %s", delErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, delErr.Error())})
 		return
@@ -174,8 +175,8 @@ func (cli *Service) UpdateObject(req *restful.Request, resp *restful.Response) {
 	}
 	condition := map[string]interface{}{"id": appID}
 	condition = util.SetModOwner(condition, ownerID)
-	err = cli.Instance.UpdateByCondition(common.BKTableNameObjDes, data, condition)
-	if nil != err && !cli.Instance.IsNotFoundErr(err) {
+	err = cli.Instance.Table(common.BKTableNameObjDes).Update(context.Background(), condition, data)
+	if nil != err {
 		blog.Error("fail update object by condition, error information is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, jsErr.Error())})
 		return
@@ -186,7 +187,7 @@ func (cli *Service) UpdateObject(req *restful.Request, resp *restful.Response) {
 
 }
 
-//查询所有主机信息
+// SelectObjects 查询所有主机信息
 func (cli *Service) SelectObjects(req *restful.Request, resp *restful.Response) {
 
 	// get the language
@@ -227,7 +228,7 @@ func (cli *Service) SelectObjects(req *restful.Request, resp *restful.Response) 
 	}
 
 	selector = util.SetQueryOwner(selector, ownerID)
-	if selErr := cli.Instance.GetMutilByCondition(common.BKTableNameObjDes, nil, selector, &results, page.Sort, page.Start, page.Limit); nil != selErr {
+	if selErr := cli.Instance.Table(common.BKTableNameObjDes).Find(selector).Limit(uint64(page.Limit)).Start(uint64(page.Start)).Sort(page.Sort).All(context.Background(), &results); nil != selErr {
 		blog.Error("select data failed, error information is %s", selErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, selErr.Error())})
 		return

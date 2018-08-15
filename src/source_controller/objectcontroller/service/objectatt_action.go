@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -71,15 +72,15 @@ func (cli *Service) CreateObjectAtt(req *restful.Request, resp *restful.Response
 	if 0 >= obj.PropertyIndex {
 		obj.PropertyIndex = -1 // not set any value
 	}
-	id, err := cli.Instance.GetIncID("cc_ObjAttDes")
-	if err != nil && !cli.Instance.IsNotFoundErr(err) {
+	id, err := cli.Instance.NextSequence(context.Background(), common.BKTableNameObjAttDes)
+	if err != nil {
 		blog.Errorf("failed to get id, error info is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}
-	obj.ID = id
+	obj.ID = int64(id)
 	obj.OwnerID = ownerID
-	_, err = cli.Instance.Insert("cc_ObjAttDes", obj)
+	err = cli.Instance.Table(common.BKTableNameObjAttDes).Insert(context.Background(), obj)
 	if nil != err {
 		blog.Error("create objectatt failed, error:%s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
@@ -125,8 +126,8 @@ func (cli *Service) DeleteObjectAttByID(req *restful.Request, resp *restful.Resp
 		}
 	}
 	condition = util.SetModOwner(condition, ownerID)
-	cnt, cntErr := cli.Instance.GetCntByCondition("cc_ObjAttDes", condition)
-	if nil != cntErr && !cli.Instance.IsNotFoundErr(cntErr) {
+	cnt, cntErr := cli.Instance.Table(common.BKTableNameObjAttDes).Find(condition).Count(context.Background())
+	if nil != cntErr {
 		blog.Error("failed to select object by condition(%+v), error is %d", cntErr)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
@@ -138,8 +139,8 @@ func (cli *Service) DeleteObjectAttByID(req *restful.Request, resp *restful.Resp
 		resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp})
 		return
 	}
-	delErr := cli.Instance.DelByCondition("cc_ObjAttDes", condition)
-	if nil != delErr && !cli.Instance.IsNotFoundErr(delErr) {
+	delErr := cli.Instance.Table(common.BKTableNameObjAttDes).Delete(context.Background(), condition)
+	if nil != delErr {
 		blog.Error("failed to delete, error info is %s", delErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
@@ -186,7 +187,7 @@ func (cli *Service) UpdateObjectAttByID(req *restful.Request, resp *restful.Resp
 	condition := map[string]interface{}{"id": appID}
 	condition = util.SetModOwner(condition, ownerID)
 	// update object into storage
-	updateErr := cli.Instance.UpdateByCondition("cc_ObjAttDes", data, condition)
+	updateErr := cli.Instance.Table(common.BKTableNameObjAttDes).Update(context.Background(), condition, data)
 	if nil != updateErr {
 		blog.Error("fail update object by condition, error information is %s", updateErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, updateErr.Error())})
@@ -220,7 +221,7 @@ func (cli *Service) SelectObjectAttByID(req *restful.Request, resp *restful.Resp
 	condition = util.SetQueryOwner(condition, ownerID)
 	// select from storage
 	result := make([]meta.Attribute, 0)
-	if selErr := cli.Instance.GetMutilByCondition("cc_ObjAttDes", nil, condition, &result, "", 0, 0); nil != selErr {
+	if selErr := cli.Instance.Table(common.BKTableNameObjAttDes).Find(condition).All(context.Background(), &result); nil != selErr {
 		blog.Error("find object by selector failed, error:%s", selErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
@@ -271,7 +272,7 @@ func (cli *Service) SelectObjectAttWithParams(req *restful.Request, resp *restfu
 	}
 	selector = util.SetQueryOwner(selector, ownerID)
 
-	if selErr := cli.Instance.GetMutilByCondition("cc_ObjAttDes", nil, selector, &results, page.Sort, page.Start, page.Limit); nil != selErr {
+	if selErr := cli.Instance.Table(common.BKTableNameObjAttDes).Find(selector).Start(uint64(page.Start)).Limit(uint64(page.Limit)).Sort(page.Sort).All(context.Background(), &results); nil != selErr {
 		blog.Error("find object by selector failed, error information is %s", selErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, selErr.Error())})
 		return
