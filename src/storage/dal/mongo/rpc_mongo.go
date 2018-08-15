@@ -16,7 +16,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"google.golang.org/grpc"
 	"strconv"
 
 	"configcenter/src/common"
@@ -79,6 +78,13 @@ func (c *RPC) Clone() dal.RDB {
 		rpc: c.rpc,
 	}
 	return &nc
+}
+
+func (c *RPC) IsDuplicatedError(error) bool {
+	return false
+}
+func (c *RPC) IsNotFoundError(error) bool {
+	return false
 }
 
 // Table collection operation
