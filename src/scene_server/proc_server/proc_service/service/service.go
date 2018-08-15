@@ -56,7 +56,7 @@ func (ps *ProcServer) WebService() *restful.WebService {
 	ws.Route(ws.POST("/openapi/GetProcessPortByIP").To(ps.GetProcessPortByIP))
 
 	ws.Route(ws.POST("/operate/process").To(ps.OperateProcessInstance))
-	ws.Route(ws.POST("/operate/process/taskresult").To(ps.QueryProcessOperateResult))
+	ws.Route(ws.GET("/operate/process/taskresult/{taskID}").To(ps.QueryProcessOperateResult))
 
 	ws.Route(ws.POST("/conftemp").To(ps.CreateConfigTemp))
 	ws.Route(ws.PUT("/conftemp").To(ps.UpdateConfigTemp))

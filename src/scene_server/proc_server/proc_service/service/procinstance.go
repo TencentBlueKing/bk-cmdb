@@ -59,36 +59,29 @@ func (ps *ProcServer) QueryProcessOperateResult(req *restful.Request, resp *rest
 	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
 
-	namespace := req.PathParameter("namespace")
-
-	model_TaskId := make(map[string]string)
-	if err := json.NewDecoder(req.Request.Body).Decode(&model_TaskId); err != nil {
-		blog.Errorf("fail to decode QueryProcessOperateResult request body. err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
+	taskID := req.PathParameter("taskID")
+	succ, waitExec, mapExceErr, err := ps.Logics.QueryProcessOperateResult(context.Background(), taskID, req.Request.Header)
+	if nil != err {
+		data := common.KvMap{"error": mapExceErr}
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcQueryTaskInfoFail), Data: data})
 		return
 	}
-
-	result := make([]map[string]interface{}, 0)
-	for modkey, taskId := range model_TaskId {
-		ret, err := ps.CoreAPI.GseProcServer().QueryProcOperateResult(context.Background(), req.Request.Header, namespace, taskId)
-		if err != nil || (err == nil && !ret.Result) {
-			rspMap := make(map[string]interface{})
-			rspMap[taskId] = &meta.BaseResp{Code: 115, ErrMsg: "please retry query again"}
-			rspMap[modkey] = taskId
-			result = append(result, rspMap)
-		}
-
-		ret.Data[modkey] = taskId
-		result = append(result, ret.Data)
+	if 0 != len(mapExceErr) {
+		data := common.KvMap{"error": mapExceErr}
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcQueryTaskOPErrFail), Data: data})
+		return
 	}
-
-	resp.WriteEntity(meta.NewSuccessResp(result))
+	if 0 != len(waitExec) {
+		data := common.KvMap{"wait": waitExec}
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcQueryTaskWaitOPFail), Data: data})
+		return
+	}
+	resp.WriteEntity(meta.NewSuccessResp(succ))
 }
 
 func (ps *ProcServer) RefreshProcHostInstByEvent(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
-
 	input := new(meta.EventInst)
 	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
 		blog.Errorf("fail to decode RefreshProcHostInstByEvent request body. err: %v", err)
@@ -111,9 +104,4 @@ func (ps *ProcServer) deleteProcInstanceModel(appId, procId, moduleName string, 
 	}
 
 	return nil
-}
-
-func (ps *ProcServer) getProcInstanceModel(appId string, forward http.Header) (map[string]*meta.ProcInstanceModel, error) {
-	// TODO use mongodb
-	return nil, nil
 }
