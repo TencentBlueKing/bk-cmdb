@@ -13,7 +13,6 @@
 package manager
 
 import (
-	"configcenter/src/storage/server/app/options"
 	"context"
 	"errors"
 	"sync"
@@ -25,6 +24,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/mongobyc"
+	"configcenter/src/storage/server/app/options"
 	"configcenter/src/storage/types"
 )
 
@@ -35,7 +35,8 @@ type TxnManager struct {
 	cache        map[string]*Session
 	db           mongobyc.Client
 
-	eventChan chan *types.Tansaction
+	eventChan   chan *types.Tansaction
+	subscribers map[chan<- *types.Tansaction]bool
 
 	ctx   context.Context
 	mutex sync.Mutex
@@ -46,24 +47,45 @@ type Session struct {
 	mongobyc.Session
 }
 
-func New(ctx context.Context, opt options.TransactionConfig, db mongobyc.Client) *TxnManager {
+func New(ctx context.Context, opt options.TransactionConfig, db mongobyc.Client, listen string) *TxnManager {
 	tm := &TxnManager{
 		enable:       opt.ShouldEnable(),
+		processor:    listen,
 		txnLifeLimit: time.Second * time.Duration(float64(opt.GetTransactionLifetimeSecond())*1.5),
 		cache:        map[string]*Session{},
 		db:           db,
 
-		eventChan: make(chan *types.Tansaction, 2048),
+		eventChan:   make(chan *types.Tansaction, 2048),
+		subscribers: map[chan<- *types.Tansaction]bool{},
 
 		ctx: ctx,
 	}
 	return tm
 }
 
+func (tm *TxnManager) Subscribe(ch chan<- *types.Tansaction) {
+	tm.subscribers[ch] = true
+}
+
+func (tm *TxnManager) UnSubscribe(ch chan<- *types.Tansaction) {
+	delete(tm.subscribers, ch)
+}
+
+func (tm *TxnManager) Publish() {
+	event := <-tm.eventChan
+	for subscriber := range tm.subscribers {
+		select {
+		case subscriber <- event:
+		case <-time.After(time.Second):
+		}
+	}
+}
+
 func (tm *TxnManager) Run() error {
 	if tm.enable {
 		go tm.reconcileCache()
 		go tm.reconcilePersistence()
+		go tm.Publish()
 	}
 	<-tm.ctx.Done()
 	return nil
@@ -179,9 +201,7 @@ func (tm *TxnManager) CreateTransaction(requestID string, processor string) (*Se
 		return nil, err
 	}
 
-	// TODO generate txnID
-	txn.TxnID = xid.New().String()
-
+	txn.TxnID = tm.newTxnID()
 	inst := &Session{
 		Txninst: &txn,
 		Session: session,
@@ -192,6 +212,10 @@ func (tm *TxnManager) CreateTransaction(requestID string, processor string) (*Se
 	return inst, nil
 }
 
+func (tm *TxnManager) newTxnID() string {
+	return tm.processor + "-" + xid.New().String()
+}
+
 func (tm *TxnManager) Commit(txnID string) error {
 	session := tm.GetSession(txnID)
 	if session == nil {
@@ -199,10 +223,10 @@ func (tm *TxnManager) Commit(txnID string) error {
 	}
 	txnerr := session.CommitTransaction()
 	defer func() {
-		if txnerr != nil {
+		if txnerr == nil {
 			session.Close()
+			tm.removeSession(txnID)
 		}
-		tm.removeSession(txnID)
 	}()
 	if nil != txnerr {
 		session.Txninst.Status = types.TxStatusException

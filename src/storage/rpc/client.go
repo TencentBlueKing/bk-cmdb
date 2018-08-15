@@ -14,12 +14,13 @@ package rpc
 
 import (
 	"bufio"
-	"configcenter/src/common/blog"
 	"errors"
 	"io"
 	"net"
 	"net/http"
 	"time"
+
+	"configcenter/src/common/blog"
 )
 
 var (

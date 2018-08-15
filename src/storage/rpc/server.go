@@ -13,9 +13,10 @@
 package rpc
 
 import (
-	"configcenter/src/common/blog"
 	"io"
 	"net/http"
+
+	"configcenter/src/common/blog"
 )
 
 type Server struct {
