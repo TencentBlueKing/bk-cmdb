@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -54,16 +55,16 @@ func (cli *Service) CreateObjectAssociation(req *restful.Request, resp *restful.
 	}
 
 	// save to the storage
-	id, err := cli.Instance.GetIncID("cc_ObjAsst")
-	if err != nil && !cli.Instance.IsNotFoundErr(err) {
+	id, err := cli.Instance.NextSequence(context.Background(), common.BKTableNameObjAsst)
+	if err != nil {
 		blog.Error("failed to get id, error info is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}
 
-	obj.ID = id
+	obj.ID = int64(id)
 	obj.OwnerID = ownerID
-	_, err = cli.Instance.Insert("cc_ObjAsst", obj)
+	err = cli.Instance.Table(common.BKTableNameObjAsst).Insert(context.Background(), obj)
 	if nil != err {
 		blog.Error("create objectasst failed, error:%s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
@@ -111,7 +112,7 @@ func (cli *Service) DeleteObjectAssociation(req *restful.Request, resp *restful.
 	}
 
 	condition = util.SetModOwner(condition, ownerID)
-	cnt, cntErr := cli.Instance.GetCntByCondition("cc_ObjAsst", condition)
+	cnt, cntErr := cli.Instance.Table(common.BKTableNameObjAsst).Find(condition).Count(context.Background())
 	if nil != cntErr {
 		blog.Error("failed to select objectasst by condition(%+v), error is %d", cntErr)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
@@ -125,8 +126,8 @@ func (cli *Service) DeleteObjectAssociation(req *restful.Request, resp *restful.
 	}
 
 	// execute delete command
-	delErr := cli.Instance.DelByCondition("cc_ObjAsst", condition)
-	if nil != delErr && !cli.Instance.IsNotFoundErr(err) {
+	delErr := cli.Instance.Table(common.BKTableNameObjAsst).Delete(context.Background(), condition)
+	if nil != delErr {
 		blog.Error("fail to delete object by id , error information is %s", delErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
@@ -171,7 +172,7 @@ func (cli *Service) UpdateObjectAssociation(req *restful.Request, resp *restful.
 	condititon := map[string]interface{}{"id": id}
 	condititon = util.SetModOwner(condititon, ownerID)
 	// update object into storage
-	if updateErr := cli.Instance.UpdateByCondition("cc_ObjAsst", data, condititon); nil != updateErr {
+	if updateErr := cli.Instance.Table(common.BKTableNameObjAsst).Update(context.Background(), condititon, data); nil != updateErr {
 		blog.Error("fail update object by condition, error information is %s", updateErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, updateErr.Error())})
 		return
@@ -221,7 +222,7 @@ func (cli *Service) SelectObjectAssociations(req *restful.Request, resp *restful
 	selector, _ := js.Map()
 	selector = util.SetModOwner(selector, ownerID)
 	// select from storage
-	if selErr := cli.Instance.GetMutilByCondition("cc_ObjAsst", nil, selector, &results, page.Sort, page.Start, page.Limit); nil != selErr && !cli.Instance.IsNotFoundErr(selErr) {
+	if selErr := cli.Instance.Table(common.BKTableNameObjAsst).Find(selector).Limit(uint64(page.Limit)).Start(uint64(page.Start)).Sort(page.Sort).All(context.Background(), &results); nil != selErr {
 		blog.Error("select data failed, error information is %s", selErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, selErr.Error())})
 		return

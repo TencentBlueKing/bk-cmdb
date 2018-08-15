@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"io/ioutil"
 	"net/http"
 
@@ -59,8 +60,8 @@ func (cli *Service) CreateUserGroup(req *restful.Request, resp *restful.Response
 	guid := xid.New()
 	data[common.BKUserGroupIDField] = guid.String()
 	data = util.SetModOwner(data, ownerID)
-	_, err = cli.Instance.Insert(common.BKTableNameUserGroup, data)
-	if nil != err && !cli.Instance.IsNotFoundErr(err) {
+	err = cli.Instance.Table(common.BKTableNameUserGroup).Insert(context.Background(), data)
+	if nil != err {
 		blog.Error("create user group error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
@@ -104,8 +105,8 @@ func (cli *Service) UpdateUserGroup(req *restful.Request, resp *restful.Response
 	cond := make(map[string]interface{})
 	cond[common.BKUserGroupIDField] = groupID
 	cond = util.SetModOwner(cond, ownerID)
-	err = cli.Instance.UpdateByCondition(common.BKTableNameUserGroup, data, cond)
-	if nil != err && !cli.Instance.IsNotFoundErr(err) {
+	err = cli.Instance.Table(common.BKTableNameUserGroup).Update(context.Background(), cond, data)
+	if nil != err {
 		blog.Error("update user group error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
@@ -128,8 +129,8 @@ func (cli *Service) DeleteUserGroup(req *restful.Request, resp *restful.Response
 	cond := make(map[string]interface{})
 	cond[common.BKUserGroupIDField] = groupID
 	cond = util.SetModOwner(cond, ownerID)
-	err := cli.Instance.DelByCondition(common.BKTableNameUserGroup, cond)
-	if nil != err && !cli.Instance.IsNotFoundErr(err) {
+	err := cli.Instance.Table(common.BKTableNameUserGroup).Delete(context.Background(), cond)
+	if nil != err {
 		blog.Error("delete user group error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
@@ -167,8 +168,8 @@ func (cli *Service) SearchUserGroup(req *restful.Request, resp *restful.Response
 	}
 	cond = util.SetModOwner(cond, ownerID)
 	var result []interface{}
-	err = cli.Instance.GetMutilByCondition(common.BKTableNameUserGroup, []string{}, cond, &result, "", 0, 0)
-	if nil != err && !cli.Instance.IsNotFoundErr(err) {
+	err = cli.Instance.Table(common.BKTableNameUserGroup).Find(cond).All(context.Background(), &result)
+	if nil != err {
 		blog.Error("get user group error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return

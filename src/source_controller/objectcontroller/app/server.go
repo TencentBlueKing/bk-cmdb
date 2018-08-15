@@ -31,9 +31,9 @@ import (
 	"configcenter/src/common/version"
 	"configcenter/src/source_controller/objectcontroller/app/options"
 	"configcenter/src/source_controller/objectcontroller/service"
-	"configcenter/src/storage"
-	"configcenter/src/storage/mgoclient"
-	"configcenter/src/storage/redisclient"
+	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo"
+	"configcenter/src/storage/dal/redis"
 )
 
 //Run ccapi server
@@ -93,8 +93,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("Configuration item not found")
 	}
 
-	mgc := objCtr.Config.Mongo
-	objCtr.Instance, err = mgoclient.NewMgoCli(mgc.Address, mgc.Port, mgc.User, mgc.Password, mgc.Mechanism, mgc.Database)
+	objCtr.Instance, err = mongo.NewMgo(objCtr.Config.Mongo.BuildURI())
 	if err != nil {
 		return fmt.Errorf("new mongo client failed, err: %v", err)
 	}
@@ -133,14 +132,14 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 type ObjectController struct {
 	Core     *backbone.Engine
-	Instance storage.DI
+	Instance dal.RDB
 	Cache    *redis.Client
 	Config   *options.Config
 }
 
 func (h *ObjectController) onObjectConfigUpdate(previous, current cc.ProcessConfig) {
 	prefix := storage.DI_MONGO
-	mongo := mgoclient.MongoConfig{
+	mongo := mongo.Config{
 		Address:      current.ConfigMap[prefix+".host"],
 		User:         current.ConfigMap[prefix+".usr"],
 		Password:     current.ConfigMap[prefix+".pwd"],
@@ -152,7 +151,7 @@ func (h *ObjectController) onObjectConfigUpdate(previous, current cc.ProcessConf
 	}
 
 	prefix = storage.DI_REDIS
-	redis := redisclient.RedisConfig{
+	redis := redis.Config{
 		Address:  current.ConfigMap[prefix+".host"],
 		User:     current.ConfigMap[prefix+".usr"],
 		Password: current.ConfigMap[prefix+".pwd"],

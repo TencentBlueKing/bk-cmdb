@@ -14,6 +14,7 @@ package service
 
 import (
 	"encoding/json"
+	"golang/go/src/context"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -53,15 +54,15 @@ func (cli *Service) CreateClassification(req *restful.Request, resp *restful.Res
 	}
 
 	// save to the storage
-	id, err := cli.Instance.GetIncID(common.BKTableNameObjClassifiction)
+	id, err := cli.Instance.NextSequence(context.Background(), common.BKTableNameObjClassifiction)
 	if err != nil {
 		blog.Error("failed to get id, error info is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}
-	obj.ID = id
+	obj.ID = int64(id)
 	obj.OwnerID = ownerID
-	_, err = cli.Instance.Insert(common.BKTableNameObjClassifiction, obj)
+	err = cli.Instance.Table(common.BKTableNameObjClassifiction).Insert(context.Background(), obj)
 	if nil != err {
 		blog.Error("create objectcls failed, error:%s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
@@ -109,7 +110,7 @@ func (cli *Service) DeleteClassification(req *restful.Request, resp *restful.Res
 		}
 	}
 	condition = util.SetModOwner(condition, ownerID)
-	cnt, cntErr := cli.Instance.GetCntByCondition(common.BKTableNameObjClassifiction, condition)
+	cnt, cntErr := cli.Instance.Table(common.BKTableNameObjClassifiction).Find(condition).Count(context.Background())
 	if nil != cntErr {
 		blog.Error("failed to select object classification by condition(%+v), error is %d", cntErr)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
@@ -120,9 +121,9 @@ func (cli *Service) DeleteClassification(req *restful.Request, resp *restful.Res
 		return
 	}
 	// execute delete command
-	if delErr := cli.Instance.DelByCondition(common.BKTableNameObjClassifiction, condition); nil != delErr {
+	if delErr := cli.Instance.Table(common.BKTableNameObjClassifiction).Delete(context.Background(), condition); nil != delErr {
 		blog.Error("fail to delete object by id , error: %s", delErr.Error())
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, delErr.Error())})
 		return
 
 	}
@@ -162,7 +163,7 @@ func (cli *Service) UpdateClassification(req *restful.Request, resp *restful.Res
 
 	selector = util.SetModOwner(selector, ownerID)
 	// update object into storage
-	if updateErr := cli.Instance.UpdateByCondition(common.BKTableNameObjClassifiction, &data, selector); nil != updateErr {
+	if updateErr := cli.Instance.Table(common.BKTableNameObjClassifiction).Update(context.Background(), selector, data); nil != updateErr {
 		blog.Error("fail update object by condition, error:%v", updateErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, updateErr.Error())})
 		return
@@ -196,9 +197,9 @@ func (cli *Service) SelectClassifications(req *restful.Request, resp *restful.Re
 
 	selector = util.SetQueryOwner(selector, ownerID)
 	// select from storage
-	if selerr := cli.Instance.GetMutilByCondition(common.BKTableNameObjClassifiction, nil, selector, &results, page.Sort, page.Start, page.Limit); nil != selerr {
-		blog.Error("select data failed, error: %s", selerr.Error())
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, selerr.Error())})
+	if selErr := cli.Instance.Table(common.BKTableNameObjClassifiction).Find(selector).Limit(uint64(page.Limit)).Start(uint64(page.Start)).Sort(page.Sort).All(context.Background(), &results); nil != selErr {
+		blog.Error("select data failed, error: %s", selErr.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, selErr.Error())})
 		return
 	}
 	// translate language
@@ -235,9 +236,9 @@ func (cli *Service) SelectClassificationWithObject(req *restful.Request, resp *r
 	clsResults := make([]meta.ObjClassificationObject, 0)
 	selector = util.SetQueryOwner(selector, ownerID)
 	// select from storage
-	if selerr := cli.Instance.GetMutilByCondition(common.BKTableNameObjClassifiction, nil, selector, &clsResults, page.Sort, page.Start, page.Limit); nil != selerr {
-		blog.Error("select data failed, error:%s", selerr.Error())
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, selerr.Error())})
+	if selErr := cli.Instance.Table(common.BKTableNameObjClassifiction).Find(selector).Limit(uint64(page.Limit)).Start(uint64(page.Start)).Sort(page.Sort).All(context.Background(), &clsResults); nil != selErr {
+		blog.Error("select data failed, error:%s", selErr.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, selErr.Error())})
 		return
 	}
 
@@ -249,8 +250,8 @@ func (cli *Service) SelectClassificationWithObject(req *restful.Request, resp *r
 			common.BKOwnerIDField:  ownerID,
 		}
 		selector = util.SetQueryOwner(selector, ownerID)
-		if selerr := cli.Instance.GetMutilByCondition(common.BKTableNameObjDes, nil, selector, &clsResults[tmpidx].Objects, "", 0, common.BKNoLimit); nil != selerr {
-			blog.Error("select data failed, error:%s", selerr.Error())
+		if selErr := cli.Instance.Table(common.BKTableNameObjDes).Find(selector).Limit(common.BKNoLimit).All(context.Background(), &clsResults[tmpidx].Objects); nil != selErr {
+			blog.Error("select data failed, error:%s", selErr.Error())
 			continue
 		}
 

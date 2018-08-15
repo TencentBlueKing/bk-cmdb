@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"crypto/md5"
 	"encoding/hex"
 	"net/http"
@@ -44,7 +45,7 @@ func (cli *Service) GetSystemFlag(req *restful.Request, resp *restful.Response) 
 	cipherStr := h.Sum(nil)
 	cond[flag] = hex.EncodeToString(cipherStr) + ownerID
 
-	err := cli.Instance.GetOneByCondition(common.BKTableNameSystem, []string{}, cond, &result)
+	err := cli.Instance.Table(common.BKTableNameSystem).Find(cond).One(context.Background(), &result)
 	if nil != err {
 		blog.Errorf("get system config error :%v, cond:%#v", err, cond)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectSelectInstFailed, err.Error())})

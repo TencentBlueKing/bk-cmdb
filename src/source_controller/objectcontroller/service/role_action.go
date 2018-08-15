@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -43,8 +44,8 @@ func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
 	cond[common.BKPropertyIDField] = propertyID
 	var result map[string]interface{}
 	cond = util.SetModOwner(cond, ownerID)
-	cnt, err := cli.Instance.GetCntByCondition(common.BKTableNamePrivilege, cond)
-	if nil != err && !cli.Instance.IsNotFoundErr(err) {
+	cnt, err := cli.Instance.Table(common.BKTableNamePrivilege).Find(cond).Count(context.Background())
+	if nil != err {
 		blog.Error("get user group privi error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
@@ -56,8 +57,8 @@ func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	err = cli.Instance.GetOneByCondition(common.BKTableNamePrivilege, []string{}, cond, &result)
-	if nil != err && !cli.Instance.IsNotFoundErr(err) {
+	err = cli.Instance.Table(common.BKTableNamePrivilege).Find(cond).All(context.Background(), &result)
+	if nil != err {
 		blog.Error("get role pri field error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBSelectFailed, err.Error())})
 		return
@@ -71,7 +72,6 @@ func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
 		return
 
 	}
-
 	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: privilege})
 }
 
@@ -106,7 +106,7 @@ func (cli *Service) CreateRolePri(req *restful.Request, resp *restful.Response) 
 	input[common.BKPropertyIDField] = propertyID
 	input[common.BKPrivilegeField] = roleJSON
 	input = util.SetModOwner(input, ownerID)
-	_, err = cli.Instance.Insert(common.BKTableNamePrivilege, input)
+	err = cli.Instance.Table(common.BKTableNamePrivilege).Insert(context.Background(), input)
 	if nil != err {
 		blog.Error("create role privilege error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
@@ -148,7 +148,7 @@ func (cli *Service) UpdateRolePri(req *restful.Request, resp *restful.Response) 
 	cond[common.BKPropertyIDField] = propertyID
 	input[common.BKPrivilegeField] = roleJSON
 	cond = util.SetModOwner(cond, ownerID)
-	err = cli.Instance.UpdateByCondition(common.BKTableNamePrivilege, input, cond)
+	err = cli.Instance.Table(common.BKTableNamePrivilege).Update(context.Background(), cond, input)
 	if nil != err {
 		blog.Error("update role privilege error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
