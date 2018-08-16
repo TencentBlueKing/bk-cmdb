@@ -13,6 +13,7 @@
 package util
 
 import (
+	"context"
 	"net/http"
 	"reflect"
 
@@ -20,6 +21,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/storage/dal"
 )
 
 func InStrArr(arr []string, key string) bool {
@@ -96,6 +98,14 @@ func GetActionOnwerIDByHTTPHeader(header http.Header) string {
 func GetHTTPCCRequestID(header http.Header) string {
 	rid := header.Get(common.BKHTTPCCRequestID)
 	return rid
+}
+
+// GetDBContext returns a new context that contains JoinOption
+func GetDBContext(parent context.Context, header http.Header) context.Context {
+	return context.WithValue(parent, common.CCContextKeyJoinOption, dal.JoinOption{
+		RequestID: header.Get(common.BKHTTPCCRequestID),
+		TxnID:     header.Get(common.BKHTTPCCTransactionID),
+	})
 }
 
 // IsNil returns whether value is nil value, including map[string]interface{}{nil}, *Struct{nil}
