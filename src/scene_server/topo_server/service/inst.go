@@ -321,7 +321,7 @@ func (s *topoService) SearchInstByInstID(params types.ContextParams, pathParams,
 	cond := condition.CreateCondition()
 	cond.Field(obj.GetInstIDFieldName()).Eq(instID)
 	queryCond := &metadata.QueryInput{}
-	queryCond.Condition = cond
+	queryCond.Condition = cond.ToMapStr()
 
 	cnt, instItems, err := s.core.InstOperation().FindInst(params, obj, queryCond, false)
 	if nil != err {
