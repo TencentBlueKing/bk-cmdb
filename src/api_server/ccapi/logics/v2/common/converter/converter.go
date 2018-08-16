@@ -919,9 +919,14 @@ func convertOneApp(itemMap map[string]interface{}) (map[string]interface{}, erro
 	if nil != itemMap["life_cycle"] {
 		lifecycle, _ = itemMap["life_cycle"].(string)
 	}
-	language := "中文"
+	language := "zh-cn"
 	if nil != itemMap["language"] {
 		language, _ = itemMap["language"].(string)
+		if "1" == language || "" == language {
+			language = "zh-cn"
+		} else if "2" == language {
+			language = "en"
+		}
 	}
 
 	timeZone := "Asia/Shanghai"
