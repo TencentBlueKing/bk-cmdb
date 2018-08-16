@@ -130,9 +130,23 @@ func (s *ServerSession) readFromWire(ret chan<- error) {
 			blog.V(3).Infof("[rpc server] command [%s] not found, existing command are: %#v", call, s.srv.handlers)
 			s.pushResponse(msg, ErrCommandNotFount)
 		}
-
+	case TypeStream:
+		stream, ok := s.stream[msg.seq]
+		if ok {
+			stream.input <- msg
+		}
+	case TypeStreamClose:
+		stream, ok := s.stream[msg.seq]
+		if ok {
+			if len(msg.Data) > 0 {
+				stream.err = errors.New(string(msg.Data))
+			}
+			stream.done <- struct{}{}
+		}
 	case TypePing:
 		go s.handlePing(msg)
+	default:
+		blog.Warnf("[rpc server] unknow message type: %v", msg.typz)
 	}
 	ret <- nil
 }
@@ -185,15 +199,6 @@ func (s *ServerSession) handleStream(f HandlerStreamFunc, msg *Message) {
 		close(stream.output)
 		close(stream.done)
 		s.pushResponse(msg, err)
-	} else {
-		if TypeStreamClose == msg.typz {
-			if len(msg.Data) > 0 {
-				stream.err = errors.New(string(msg.Data))
-			}
-			stream.done <- struct{}{}
-			return
-		}
-		stream.input <- msg
 	}
 }
 

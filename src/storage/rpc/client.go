@@ -130,32 +130,29 @@ func (c *Client) CallStream(cmd string, input interface{}) (*StreamMessage, erro
 	ncmd := command{}
 	copy(ncmd[:], []byte(cmd)[:cmdlength])
 
+	msg, err := c.operation(TypeRequest, command(ncmd), input)
+	if err != nil {
+		return nil, err
+	}
+
 	sm := NewStreamMessage()
-	var opErr = make(chan error)
 	go func() {
-		_, err := c.operation(TypeRequest, command(ncmd), input)
-		if err != nil {
-			sm.err = err
-			sm.done <- struct{}{}
-			opErr <- err
-		}
-	}()
-	go func() {
-	sentStreamloop:
+	streamloop:
 		for {
 			select {
-			case msg := <-sm.output:
-				msg.magicVersion = MagicVersion
-				msg.seq = msg.seq
-				msg.typz = TypeStream
-				c.send <- msg
+			case streammsg := <-sm.output:
+				streammsg.magicVersion = MagicVersion
+				streammsg.seq = msg.seq
+				streammsg.Codec = msg.Codec
+				streammsg.typz = TypeStream
+				c.send <- streammsg
 				if msg.typz == TypeStreamClose {
-					break sentStreamloop
+					break streamloop
 				}
 			case <-sm.done:
-				break sentStreamloop
+				break streamloop
 			case <-c.end:
-				break sentStreamloop
+				break streamloop
 			}
 		}
 		close(sm.input)
@@ -172,15 +169,17 @@ func (c *Client) Ping() error {
 	return err
 }
 
-func (c *Client) operation(op MessageType, cmd command, data interface{}) (Decoder, error) {
+func (c *Client) operation(op MessageType, cmd command, data interface{}) (*Message, error) {
 	retry := 0
 	for {
 		msg := Message{
-			complete: make(chan struct{}, 1),
-			typz:     op,
-			Codec:    CodexJSON,
-			cmd:      cmd,
-			Data:     nil,
+			magicVersion: MagicVersion,
+			seq:          c.nextSeq(),
+			complete:     make(chan struct{}, 1),
+			typz:         op,
+			Codec:        CodexJSON,
+			cmd:          cmd,
+			Data:         nil,
 		}
 
 		if op == TypeRequest {
@@ -266,8 +265,6 @@ func (c *Client) handleRequest(req *Message) {
 		return
 	}
 
-	req.magicVersion = MagicVersion
-	req.seq = c.nextSeq()
 	c.messages[req.seq] = req
 	c.send <- req
 	blog.V(5).Infof("[rpc client]sent message data: %s", req.Data)
