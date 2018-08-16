@@ -95,6 +95,12 @@ const (
 	// BKInnerObjIDProc the inner object
 	BKInnerObjIDProc = "process"
 
+	// BKInnerObjIDConfigTemp the inner object
+	BKInnerObjIDConfigTemp = "config_template"
+
+	// BKInnerObjIDTempVerion the inner object
+	BKInnerObjIDTempVersion = "template_version"
+
 	// BKInnerObjIDPlat the inner object
 	BKInnerObjIDPlat = "plat"
 
@@ -240,14 +246,23 @@ const (
 	// BKInstNameField the inst name field
 	BKInstNameField = "bk_inst_name"
 
-	// BKProcIDField the proc id field
-	BKProcIDField = "bk_process_id"
+	// BKProcessIDField the proc id field
+	BKProcessIDField = "bk_process_id"
 
-	// BKConfTempId is the config template id field
-	BKConfTempIdField = "bk_conftemp_id"
+	// BKProcessNameField the proc name field
+	BKProcessNameField = "bk_process_name"
 
-	// BKProcNameField the proc name field
-	BKProcNameField = "bk_process_name"
+	// BKTemlateIDField the process template id field
+	BKTemlateIDField = "template_id"
+
+	// BKVesionIDField the version id field
+	BKVersionIDField = "version_id"
+
+	// BKTemplateNameField the template name field
+	BKTemplateNameField = "template_name"
+
+	// BKFileNameField the file name field
+	BKFileNameField = "file_name"
 
 	// BKPropertyIDField the propety id field
 	BKPropertyIDField = "bk_property_id"
@@ -342,10 +357,10 @@ const (
 	BKProtocol = "protocol"
 
 	// BKProcessIDField the process id field
-	BKProcessIDField = "bk_process_id"
+	//	BKProcessIDField = "bk_process_id"
 
 	// BKProcessNameField the process name field
-	BKProcessNameField = "bk_process_name"
+	//	BKProcessNameField = "bk_process_name"
 
 	// BKFuncIDField the func id field
 	BKFuncIDField = "bk_func_id"
@@ -725,6 +740,14 @@ const (
 const (
 	BKDataStatusField   = "bk_data_status"
 	BKDataRecoverSuffix = "(recover)"
+)
+
+const TemplateStatusField = "status"
+
+const (
+	TemplateStatusDraft   = "draft"
+	TemplateStatusOnline  = "online"
+	TemplateStatusHistory = "history"
 )
 
 const (

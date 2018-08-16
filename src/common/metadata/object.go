@@ -74,7 +74,7 @@ func (o *Object) GetInstIDFieldName() string {
 	case common.BKInnerObjIDHost:
 		return common.BKHostIDField
 	case common.BKInnerObjIDProc:
-		return common.BKProcIDField
+		return common.BKProcessIDField
 	case common.BKInnerObjIDPlat:
 		return common.BKCloudIDField
 	default:
@@ -95,7 +95,7 @@ func (o *Object) GetInstNameFieldName() string {
 	case common.BKInnerObjIDHost:
 		return common.BKHostInnerIPField
 	case common.BKInnerObjIDProc:
-		return common.BKProcNameField
+		return common.BKProcessNameField
 	case common.BKInnerObjIDPlat:
 		return common.BKCloudNameField
 	default:

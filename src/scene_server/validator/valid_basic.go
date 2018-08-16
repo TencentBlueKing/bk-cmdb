@@ -102,7 +102,7 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 
 		property, ok := valid.propertys[key]
 		if !ok {
-			blog.Error("params is not valid, the key is %s", key)
+			blog.Error("params is not valid, the key is %s, property array:%v", key, valid.propertys)
 			return valid.errif.Errorf(common.CCErrCommParamsIsInvalid, key)
 		}
 		fieldType := property.PropertyType

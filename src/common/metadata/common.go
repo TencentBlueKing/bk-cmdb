@@ -75,6 +75,11 @@ type Response struct {
 	Data     interface{} `json:"data"`
 }
 
+type MapArrayResponse struct {
+	BaseResp `json:",inline"`
+	Data     []map[string]interface{} `json:"data"`
+}
+
 type QueryInput struct {
 	Condition interface{} `json:"condition"`
 	Fields    string      `json:"fields,omitempty"`

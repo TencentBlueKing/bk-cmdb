@@ -54,10 +54,9 @@ func (ps *ProctrlServer) WebService() http.Handler {
 	ws.Route(ws.POST("/module").To(ps.CreateProc2Module))
 	ws.Route(ws.POST("/module/search").To(ps.GetProc2Module))
 
-	ws.Route(ws.POST("/conftemp").To(ps.CreateConfigTemp))
-	ws.Route(ws.PUT("/conftemp").To(ps.UpdateConfigTemp))
-	ws.Route(ws.DELETE("/conftemp").To(ps.DeleteConfigTemp))
-	ws.Route(ws.POST("/conftemp/search").To(ps.QueryConfigTemp))
+	ws.Route(ws.POST("/template").To(ps.CreateProc2Template))
+	ws.Route(ws.DELETE("/template").To(ps.DeleteProc2Template))
+	ws.Route(ws.POST("/template/search").To(ps.GetProc2Template))
 
 	ws.Route(ws.POST("/instance/model").To(ps.CreateProcInstanceModel))
 	ws.Route(ws.POST("/instance/model/search").To(ps.GetProcInstanceModel))

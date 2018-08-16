@@ -35,13 +35,13 @@ func (ps *ProcServer) BindModuleProcess(req *restful.Request, resp *restful.Resp
 	pathParams := req.PathParameters()
 	appIDStr := pathParams[common.BKAppIDField]
 	appID, _ := strconv.Atoi(appIDStr)
-	procIDStr := pathParams[common.BKProcIDField]
+	procIDStr := pathParams[common.BKProcessIDField]
 	procID, _ := strconv.Atoi(procIDStr)
 	moduleName := pathParams[common.BKModuleNameField]
 	params := make([]interface{}, 0)
 	cell := make(map[string]interface{})
 	cell[common.BKAppIDField] = appID
-	cell[common.BKProcIDField] = procID
+	cell[common.BKProcessIDField] = procID
 	cell[common.BKModuleNameField] = moduleName
 	cell[common.BKOwnerIDField] = util.GetOwnerID(req.Request.Header)
 	params = append(params, cell)
@@ -76,12 +76,12 @@ func (ps *ProcServer) DeleteModuleProcessBind(req *restful.Request, resp *restfu
 	pathParams := req.PathParameters()
 	appIDStr := pathParams[common.BKAppIDField]
 	appID, _ := strconv.Atoi(appIDStr)
-	procIDStr := pathParams[common.BKProcIDField]
+	procIDStr := pathParams[common.BKProcessIDField]
 	procID, _ := strconv.Atoi(procIDStr)
 	moduleName := pathParams[common.BKModuleNameField]
 	cell := make(map[string]interface{})
 	cell[common.BKAppIDField] = appID
-	cell[common.BKProcIDField] = procID
+	cell[common.BKProcessIDField] = procID
 	cell[common.BKModuleNameField] = moduleName
 
 	if err := ps.deleteProcInstanceModel(appIDStr, procIDStr, moduleName, req.Request.Header); err != nil {
@@ -111,7 +111,7 @@ func (ps *ProcServer) GetProcessBindModule(req *restful.Request, resp *restful.R
 	pathParams := req.PathParameters()
 	appIDStr := pathParams[common.BKAppIDField]
 	appID, errAppID := strconv.Atoi(appIDStr)
-	procIDStr := pathParams[common.BKProcIDField]
+	procIDStr := pathParams[common.BKProcessIDField]
 	procID, errProcID := strconv.Atoi(procIDStr)
 
 	if nil != errAppID {
@@ -121,7 +121,7 @@ func (ps *ProcServer) GetProcessBindModule(req *restful.Request, resp *restful.R
 	}
 	if nil != errProcID {
 		blog.Errorf("GetProcessBindModule process id %s not integer", procIDStr)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKProcIDField)})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKProcessIDField)})
 		return
 	}
 	// search object instance
@@ -137,7 +137,7 @@ func (ps *ProcServer) GetProcessBindModule(req *restful.Request, resp *restful.R
 		return
 	}
 
-	condition[common.BKProcIDField] = procID
+	condition[common.BKProcessIDField] = procID
 	// get process by module
 	p2mRet, err := ps.CoreAPI.ProcController().GetProc2Module(context.Background(), req.Request.Header, condition)
 	if err != nil || (err == nil && !p2mRet.Result) {

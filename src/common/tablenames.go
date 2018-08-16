@@ -17,8 +17,8 @@ const (
 	// BKTableNameProcModule the table name of the process module
 	BKTableNameProcModule = "cc_Proc2Module"
 
-	// BKTableNameProcConf the table name of the process config
-	BKTableNameProcConf = "cc_ProcConf"
+	// BKTableNameProcTempalte the table name of the process template config
+	BKTableNameProcTemplate = "cc_Proc2Template"
 
 	// BKTableNameProcInstanceModel the table name of the process instance
 	BKTableNameProcInstanceModel = "cc_ProcInstanceModel"
@@ -51,13 +51,15 @@ const (
 	// BKTableNameInstAsst the table name of the inst association
 	BKTableNameInstAsst = "cc_InstAsst"
 
-	BKTableNameBaseApp     = "cc_ApplicationBase"
-	BKTableNameBaseHost    = "cc_HostBase"
-	BKTableNameBaseModule  = "cc_ModuleBase"
-	BKTableNameBaseInst    = "cc_ObjectBase"
-	BKTableNameBasePlat    = "cc_PlatBase"
-	BKTableNameBaseSet     = "cc_SetBase"
-	BKTableNameBaseProcess = "cc_Process"
+	BKTableNameBaseApp         = "cc_ApplicationBase"
+	BKTableNameBaseHost        = "cc_HostBase"
+	BKTableNameBaseModule      = "cc_ModuleBase"
+	BKTableNameBaseInst        = "cc_ObjectBase"
+	BKTableNameBasePlat        = "cc_PlatBase"
+	BKTableNameBaseSet         = "cc_SetBase"
+	BKTableNameBaseProcess     = "cc_Process"
+	BKTableNameBaseTemplate    = "cc_ProcTemplate"
+	BKTableNameBaseTempVersion = "cc_ProcTempVersion"
 
 	BKTableNameModuleHostConfig = "cc_ModuleHostConfig"
 	BKTableNameSystem           = "cc_System"
@@ -75,7 +77,7 @@ const (
 // AllTables alltables
 var AllTables = []string{
 	BKTableNameProcModule,
-	BKTableNameProcConf,
+	BKTableNameProcTemplate,
 	BKTableNameProcInstanceModel,
 	BKTableNamePrivilege,
 	BKTableNameUserGroup,
@@ -123,6 +125,10 @@ func GetInstTableName(objID string) string {
 		return BKTableNameBaseHost
 	case BKInnerObjIDProc:
 		return BKTableNameBaseProcess
+	case BKInnerObjIDConfigTemp:
+		return BKTableNameBaseTemplate
+	case BKInnerObjIDTempVersion:
+		return BKTableNameBaseTempVersion
 	case BKInnerObjIDPlat:
 		return BKTableNameBasePlat
 	case BKTableNameInstAsst:

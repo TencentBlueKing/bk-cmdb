@@ -167,6 +167,20 @@
     "bk_apache_property_bk_detail":"detail",
     "bk_apache_property_bk_max_connect":"max connect",
     "bk_apache_property_bk_max_keepalive":"max keepalive",
-
+	
+	"bk_config_template_property_template_name":"template name",
+    "bk_config_template_property_file_name":"file name",
+	"bk_config_template_property_path":"file path",
+	"bk_config_template_property_user":"file user",
+	"bk_config_template_property_group":"file group",
+	"bk_config_template_property_format":"file format",
+	"bk_config_template_property_right":"file right",
+	
+	"bk_config_version_property_template_id":"template id",
+    "bk_config_version_property_description":"description",
+   	"bk_config_version_property_operator":"operator",
+	"bk_config_version_property_create_time":"create time",
+	"bk_config_version_property_content":"content",
+	"bk_config_version_property_status":"status",
     "": ""
 }

@@ -95,7 +95,7 @@ func (ps *ProcServer) RefreshProcHostInstByEvent(req *restful.Request, resp *res
 func (ps *ProcServer) deleteProcInstanceModel(appId, procId, moduleName string, forward http.Header) error {
 	condition := make(map[string]interface{})
 	condition[common.BKAppIDField] = appId
-	condition[common.BKProcIDField] = procId
+	condition[common.BKProcessIDField] = procId
 	condition[common.BKModuleNameField] = moduleName
 
 	ret, err := ps.CoreAPI.ProcController().DeleteProcInstanceModel(context.Background(), forward, condition)

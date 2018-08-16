@@ -13,5 +13,7 @@
     "object_bk_weblogic": "weblogic",
     "object_bk_tomcat": "tomcat",
     "object_bk_apache": "apache",
+	"object_config_template": "config template",
+    "object_template_version": "template version",
     "": ""
 }

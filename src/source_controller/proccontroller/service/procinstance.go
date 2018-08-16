@@ -120,7 +120,7 @@ func (ps *ProctrlServer) RegisterProcInstaceDetail(req *restful.Request, resp *r
 		return
 	}
 	for _, gseHost := range input.Hosts {
-		conds := common.KvMap{common.BKAppIDField: input.AppID, common.BKProcIDField: input.ProcID, common.BKModuleIDField: input.ModuleID, common.BKHostIDField: gseHost.HostID}
+		conds := common.KvMap{common.BKAppIDField: input.AppID, common.BKProcessIDField: input.ProcID, common.BKModuleIDField: input.ModuleID, common.BKHostIDField: gseHost.HostID}
 		cnt, err := ps.DbInstance.GetCntByCondition(common.BKTableNameProcInstaceDetail, conds)
 		if nil != err {
 			blog.Errorf("register  process instance detail get info error: %s", err.Error())

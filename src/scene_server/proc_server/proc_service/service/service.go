@@ -21,7 +21,7 @@ import (
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
-	"configcenter/src/scene_server/proc_server/proc_service/logics"
+	"configcenter/src/scene_server/proc_server/logics"
 )
 
 type ProcServer struct {
@@ -50,21 +50,32 @@ func (ps *ProcServer) WebService() *restful.WebService {
 	ws.Route(ws.PUT("/module/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}/{bk_module_name}").To(ps.BindModuleProcess))
 	ws.Route(ws.DELETE("/module/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}/{bk_module_name}").To(ps.DeleteModuleProcessBind))
 
-	ws.Route(ws.GET("/{" + common.BKOwnerIDField + "}/{" + common.BKAppIDField + "}/{" + common.BKProcIDField + "}").To(ps.GetProcessDetailByID))
-
-	ws.Route(ws.POST("/openapi/GetProcessPortByApplicationID/{" + common.BKAppIDField + "}").To(ps.GetProcessPortByApplicationID))
-	ws.Route(ws.POST("/openapi/GetProcessPortByIP").To(ps.GetProcessPortByIP))
+	ws.Route(ws.GET("/{" + common.BKOwnerIDField + "}/{" + common.BKAppIDField + "}/{" + common.BKProcessIDField + "}").To(ps.GetProcessDetailByID))
 
 	ws.Route(ws.POST("/operate/process").To(ps.OperateProcessInstance))
 	ws.Route(ws.GET("/operate/process/taskresult/{taskID}").To(ps.QueryProcessOperateResult))
 
-	ws.Route(ws.POST("/conftemp").To(ps.CreateConfigTemp))
-	ws.Route(ws.PUT("/conftemp").To(ps.UpdateConfigTemp))
-	ws.Route(ws.DELETE("/conftemp").To(ps.DeleteConfigTemp))
-	ws.Route(ws.POST("/conftemp/search").To(ps.QueryConfigTemp))
+	ws.Route(ws.POST("/template/{bk_supplier_account}/{bk_biz_id}").To(ps.CreateTemplate))
+	ws.Route(ws.PUT("/template/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.UpdateTemplate))
+	ws.Route(ws.DELETE("/template/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.DeleteTemplate))
+	ws.Route(ws.POST("/template/search/{bk_supplier_account}/{bk_biz_id}").To(ps.SearchTemplate))
+	ws.Route(ws.POST("/template/version/search/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.SearchTemplateVersion))
+	ws.Route(ws.POST("/template/version/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.CreateTemplateVersion))
+	ws.Route(ws.PUT("/template/vesrion/{bk_supplier_account}/{bk_biz_id}/{template_id}/{version_id}").To(ps.UpdateTemplateVersion))
+	ws.Route(ws.GET("/template/proc/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}").To(ps.GetProcBindTemplate))
+	ws.Route(ws.PUT("/template/proc/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}/{template_id}").To(ps.BindProc2Template))
+	ws.Route(ws.DELETE("/template/proc/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}/{template_id}").To(ps.DeleteProc2Template))
+	ws.Route(ws.POST("/template/preview/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.PreviewCfg))
+	ws.Route(ws.POST("/template/create/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.CreateCfg))
+	ws.Route(ws.POST("/template/push/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.PushCfg))
+	ws.Route(ws.POST("/template/getremote/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.GetRemoteCfg))
+
+	//v2
+	ws.Route(ws.POST("/openapi/GetProcessPortByApplicationID/{" + common.BKAppIDField + "}").To(ps.GetProcessPortByApplicationID))
+	ws.Route(ws.POST("/openapi/GetProcessPortByIP").To(ps.GetProcessPortByIP))
+
 	ws.Route(ws.GET("/healthz").To(ps.Healthz))
 	ws.Route(ws.POST("/process/refresh/hostinstnum").To(ps.RefreshProcHostInstByEvent))
-
 	return ws
 }
 

@@ -162,6 +162,11 @@ type GseProcConfigmap struct {
 	Md5  string `json:"md5,omitempty"`
 }
 
+type FilePriviewMap struct {
+	Content string `json:"content"`
+	Inst    string `json:"inst"`
+}
+
 // InlineProcInfo process info convert gse proc info
 type InlineProcInfo struct {
 	//Meta    GseProcMeta

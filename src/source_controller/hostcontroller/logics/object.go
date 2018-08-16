@@ -38,7 +38,7 @@ func (lgc *Logics) GetObjectByID(objType string, fields []string, id int64, resu
 	case common.BKInnerObjIDHost:
 		condition[common.BKHostIDField] = id
 	case common.BKInnerObjIDProc:
-		condition[common.BKProcIDField] = id
+		condition[common.BKProcessIDField] = id
 	case common.BKInnerObjIDPlat:
 		condition[common.BKCloudIDField] = id
 	default:
