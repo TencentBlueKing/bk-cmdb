@@ -25,6 +25,7 @@ import (
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/api_server/ccapi/logics/v2/common/defs"
+	"configcenter/src/api_server/ccapi/logics/v2/common/utils"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/language"
@@ -922,11 +923,8 @@ func convertOneApp(itemMap map[string]interface{}) (map[string]interface{}, erro
 	language := "zh-cn"
 	if nil != itemMap["language"] {
 		language, _ = itemMap["language"].(string)
-		if "1" == language || "" == language {
-			language = "zh-cn"
-		} else if "2" == language {
-			language = "en"
-		}
+		language = utils.ConvLanguageToV3(language)
+
 	}
 
 	timeZone := "Asia/Shanghai"
