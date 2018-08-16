@@ -845,7 +845,7 @@
         },
         data () {
             return {
-                reg: '^([a-zA-Z0-9_]|[\u4e00-\u9fa5]|[()+-《》,，；;“”‘’。."\' \\/]){1,15}$',
+                reg: '^([a-zA-Z0-9_]|[\u4e00-\u9fa5]|[()+-《》,，；;“”‘’。."\' \\/:]){1,15}$',
                 isSelectErrorShow: false,       // 关联模型为空时的提示状态
                 isEnumErrorShow: false,         // 枚举内容为空是的提示状态
                 isIntErrorShow: {
