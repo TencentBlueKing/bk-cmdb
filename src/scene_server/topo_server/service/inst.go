@@ -78,6 +78,10 @@ func (s *topoService) DeleteInsts(params types.ContextParams, pathParams, queryP
 // DeleteInst delete the inst
 func (s *topoService) DeleteInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
+	if "batch" == pathParams("inst_id") {
+		return s.DeleteInsts(params, pathParams, queryParams, data)
+	}
+
 	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
 	if nil != err {
 		blog.Errorf("[api-inst]failed to parse the inst id, error info is %s", err.Error())
@@ -112,7 +116,7 @@ func (s *topoService) UpdateInsts(params types.ContextParams, pathParams, queryP
 	for _, item := range updateCondition.Update {
 
 		cond := condition.CreateCondition()
-		cond.Field(obj.GetInstIDFieldName()).In(item.InstID)
+		cond.Field(obj.GetInstIDFieldName()).Eq(item.InstID)
 		err = s.core.InstOperation().UpdateInst(params, item.InstInfo, obj, cond, item.InstID)
 		if nil != err {
 			blog.Errorf("[api-inst] failed to update the object(%s) inst (%d),the data (%#v), error info is %s", obj.GetID(), item.InstID, data, err.Error())
@@ -128,6 +132,10 @@ func (s *topoService) UpdateInst(params types.ContextParams, pathParams, queryPa
 
 	// /inst/{owner_id}/{obj_id}/{inst_id}
 
+	if "batch" == pathParams("inst_id") {
+		return s.UpdateInsts(params, pathParams, queryParams, data)
+	}
+
 	objID := pathParams("obj_id")
 
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
@@ -135,6 +143,7 @@ func (s *topoService) UpdateInst(params types.ContextParams, pathParams, queryPa
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 		return nil, err
 	}
+
 	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
 	if nil != err {
 		blog.Errorf("[api-inst]failed to parse the inst id, error info is %s", err.Error())
