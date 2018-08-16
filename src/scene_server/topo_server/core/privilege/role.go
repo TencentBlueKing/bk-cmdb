@@ -50,6 +50,13 @@ func (r *rolePermission) CreatePermission(supplierAccount, objID, propertyID str
 	}
 
 	if rsp.Result {
+		switch tmpData := rsp.Data.(type) {
+		case nil:
+		case map[string]interface{}:
+			if 0 == len(tmpData) {
+				goto CreatePri
+			}
+		}
 
 		rsp, err := r.client.ObjectController().Privilege().UpdateRolePri(context.Background(), supplierAccount, objID, propertyID, r.params.Header, data)
 		if nil != err {
@@ -65,6 +72,7 @@ func (r *rolePermission) CreatePermission(supplierAccount, objID, propertyID str
 		return nil
 	}
 
+CreatePri:
 	rsp, err = r.client.ObjectController().Privilege().CreateRolePri(context.Background(), supplierAccount, objID, propertyID, r.params.Header, data)
 
 	if nil != err {
