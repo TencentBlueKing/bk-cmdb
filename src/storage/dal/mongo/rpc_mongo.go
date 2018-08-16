@@ -161,7 +161,7 @@ func (f *RPCFind) Limit(limit uint64) dal.Find {
 // All 查询多个
 func (f *RPCFind) All(ctx context.Context, result interface{}) error {
 	// set txn
-	opt, ok := ctx.Value(common.BKHTTPCCTransactionID).(dal.JoinOption)
+	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
 	if ok {
 		f.msg.RequestID = opt.RequestID
 		f.msg.TxnID = opt.TxnID
@@ -185,7 +185,7 @@ func (f *RPCFind) All(ctx context.Context, result interface{}) error {
 // One 查询一个
 func (f *RPCFind) One(ctx context.Context, result interface{}) error {
 	// set txn
-	opt, ok := ctx.Value(common.BKHTTPCCTransactionID).(dal.JoinOption)
+	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
 	if ok {
 		f.msg.RequestID = opt.RequestID
 		f.msg.TxnID = opt.TxnID
@@ -216,7 +216,7 @@ func (f *RPCFind) Count(ctx context.Context) (uint64, error) {
 	f.msg.OPCode = types.OPCount
 
 	// set txn
-	opt, ok := ctx.Value(common.BKHTTPCCTransactionID).(dal.JoinOption)
+	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
 	if ok {
 		f.msg.RequestID = opt.RequestID
 	}
@@ -244,7 +244,7 @@ func (c *RPCCollection) Insert(ctx context.Context, docs interface{}) error {
 	}
 
 	// set txn
-	opt, ok := ctx.Value(common.BKHTTPCCTransactionID).(dal.JoinOption)
+	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
 	if ok {
 		msg.RequestID = opt.RequestID
 		msg.TxnID = opt.TxnID
@@ -281,7 +281,7 @@ func (c *RPCCollection) Update(ctx context.Context, filter dal.Filter, doc inter
 	}
 
 	// set txn
-	opt, ok := ctx.Value(common.BKHTTPCCTransactionID).(dal.JoinOption)
+	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
 	if ok {
 		msg.RequestID = opt.RequestID
 		msg.TxnID = opt.TxnID
@@ -316,7 +316,7 @@ func (c *RPCCollection) Delete(ctx context.Context, filter dal.Filter) error {
 	}
 
 	// set txn
-	opt, ok := ctx.Value(common.BKHTTPCCTransactionID).(dal.JoinOption)
+	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
 	if ok {
 		msg.RequestID = opt.RequestID
 		msg.TxnID = opt.TxnID
@@ -357,7 +357,7 @@ func (c *RPC) NextSequence(ctx context.Context, sequenceName string) (uint64, er
 	msg.ReturnNew = true
 
 	// set txn
-	opt, ok := ctx.Value(common.BKHTTPCCTransactionID).(dal.JoinOption)
+	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
 	if ok {
 		msg.RequestID = opt.RequestID
 		// msg.TxnID = opt.TxnID // because NextSequence was not supported for transaction in mongo
@@ -387,7 +387,7 @@ func (c *RPC) StartTransaction(ctx context.Context) error {
 	msg.OPCode = types.OPStartTransaction
 
 	// set txn
-	opt, ok := ctx.Value(common.BKHTTPCCTransactionID).(dal.JoinOption)
+	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
 	if ok {
 		msg.RequestID = opt.RequestID
 	}

@@ -24,10 +24,20 @@ type Config struct {
 	Address    string
 	Password   string
 	Database   string
-	Port       string
 	MasterName string
 }
 
+// NewConfigFromKV returns new config
+func NewConfigFromKV(profix string, conifgmap map[string]string) *Config {
+	prefix := "redis"
+	return &Config{
+		Address:  conifgmap[prefix+".address"],
+		Password: conifgmap[prefix+".pwd"],
+		Database: conifgmap[prefix+".database"],
+	}
+}
+
+// NewFromConfig returns new redis client from config
 func NewFromConfig(cfg Config) (*redis.Client, error) {
 	dbNum, err := strconv.Atoi(cfg.Database)
 	if nil != err {
@@ -35,9 +45,6 @@ func NewFromConfig(cfg Config) (*redis.Client, error) {
 	}
 	var client *redis.Client
 	if cfg.MasterName == "" {
-		if !strings.Contains(cfg.Address, ":") {
-			cfg.Address = cfg.Address + ":" + cfg.Port
-		}
 		option := &redis.Options{
 			Addr:     cfg.Address,
 			Password: cfg.Password,
