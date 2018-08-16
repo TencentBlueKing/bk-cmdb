@@ -111,10 +111,6 @@ axios.interceptors.response.use(
                 case 403:
                     alertMsg(error.response.statusText)
                     break
-                case 500:
-                    // 异常
-                    alert('系统出现异常, 请记录下错误场景并与开发人员联系, 谢谢!')
-                    break
                 default:
                     catchErrorMsg(error.response)
             }

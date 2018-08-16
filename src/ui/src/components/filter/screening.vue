@@ -238,7 +238,7 @@
                 let ipData = []
                 this['ip']['text'].split(/\n|;|；|,|，/).map(ip => {
                     if (ip) {
-                        ipData.push(ip)
+                        ipData.push(ip.trim())
                     }
                 })
                 return ipData
@@ -363,7 +363,13 @@
                             }
                             filter.condition.push(condition)
                         }
-                        if (this.typeOfAsst.indexOf(property['bk_property_type']) !== -1) {
+                        if (property['bk_property_type'] === 'bool') {
+                            condition.condition.push({
+                                field: column.field,
+                                operator: column.operator,
+                                value: ['true', 'false'].includes(value) ? value === 'true' : value
+                            })
+                        } else if (this.typeOfAsst.indexOf(property['bk_property_type']) !== -1) {
                             filter.condition.push({
                                 'bk_obj_id': property['bk_asst_obj_id'],
                                 fields: [],
