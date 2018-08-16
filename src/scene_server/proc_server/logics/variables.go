@@ -17,6 +17,7 @@ import (
 	"net/http"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	types "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -46,6 +47,7 @@ func (v *Variables) GetAppVariables() types.MapStr {
 	result, err := v.logic.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDApp, v.header, &input)
 
 	if nil != err || !result.Result || 0 == len(result.Data.Info) {
+		blog.Errorf("get data error %v", err)
 		return data
 	}
 
@@ -82,6 +84,7 @@ func (v *Variables) GetModuleVariables(setID int64, moduleName string) (int64, t
 	result, err := v.logic.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, v.header, &input)
 
 	if nil != err || !result.Result || 0 == len(result.Data.Info) {
+		blog.Errorf("get data error %v", err)
 		return 0, data
 	}
 
@@ -101,6 +104,7 @@ func (v *Variables) GetHostVariables(HostID int64) types.MapStr {
 	result, err := v.logic.CoreAPI.HostController().Host().GetHosts(context.Background(), v.header, &input)
 
 	if nil != err || !result.Result || 0 == len(result.Data.Info) {
+		blog.Errorf("get data error %v", err)
 		return data
 	}
 

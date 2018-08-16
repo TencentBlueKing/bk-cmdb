@@ -14,10 +14,10 @@ package logics
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"configcenter/src/common"
+
 	"configcenter/src/common/metadata"
 )
 
@@ -26,9 +26,10 @@ func (lgc *Logics) GetTemplateAttributes(ownerID string, header http.Header) ([]
 		common.BKOwnerIDField: ownerID,
 		common.BKObjIDField:   common.BKInnerObjIDConfigTemp,
 	}
+
 	result, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), header, params)
 	if err != nil || (err == nil && !result.Result) {
-		return nil, fmt.Errorf("search host obj log failed, err: %v, result err: %s", err, result.ErrMsg)
+		return nil, lgc.ErrHandle.New(result.Code, result.ErrMsg)
 	}
 
 	headers := make([]metadata.Header, 0)
@@ -55,7 +56,7 @@ func (lgc *Logics) GetTemplateInstanceDetails(pheader http.Header, ownerID strin
 	}
 	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDConfigTemp, pheader, &params)
 	if err != nil || (err == nil && !result.Result) {
-		return nil, fmt.Errorf("get temp  data failed, err, %v, %v", err, result.ErrMsg)
+		return nil, lgc.ErrHandle.New(result.Code, result.ErrMsg)
 	}
 
 	return result.Data.Info[0], nil

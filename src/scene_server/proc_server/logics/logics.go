@@ -14,11 +14,13 @@ package logics
 
 import (
 	"configcenter/src/common/backbone"
+	"configcenter/src/common/errors"
 )
 
 type Logics struct {
 	*backbone.Engine
 	ProcHostInst *ProcHostInstConfig
+	ErrHandle    errors.DefaultCCErrorIf
 }
 
 //refresh process host instance number need config

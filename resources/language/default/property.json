@@ -163,6 +163,21 @@
     "bk_apache_property_bk_detail":"详细描述",
     "bk_apache_property_bk_max_connect":"最大连接请求数",
     "bk_apache_property_bk_max_keepalive":"最大keepAlive请求数",
+	
+	"bk_config_template_property_template_name":"模板名",
+    "bk_config_template_property_file_name":"文件名",
+	"bk_config_template_property_path":"文件路径",
+	"bk_config_template_property_user":"所属用户",
+	"bk_config_template_property_group":"所属用户组",
+	"bk_config_template_property_format":"输出格式",
+	"bk_config_template_property_right":"读写权限",
+	
+	"bk_config_version_property_template_id":"模板 ID",
+    "bk_config_version_property_description":"描述",
+   	"bk_config_version_property_operator":"操作人",
+	"bk_config_version_property_create_time":"创建时间",
+	"bk_config_version_property_content":"版本内容",
+	"bk_config_version_property_status":"版本状态",
 
     "": ""
 }
