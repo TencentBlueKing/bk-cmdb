@@ -14,6 +14,7 @@ package operation
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -357,6 +358,7 @@ func (c *commonInst) hasHost(params types.ContextParams, targetInst inst.Inst) (
 			}
 
 			if exists {
+				fmt.Println("target:", targetObj.GetID(), id)
 				return nil, true, nil
 			}
 		}
