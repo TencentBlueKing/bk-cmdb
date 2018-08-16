@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -40,6 +41,8 @@ func (cli *Service) DeleteInstObject(req *restful.Request, resp *restful.Respons
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	defLang := cli.Core.Language.CreateDefaultCCLanguageIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	pathParams := req.PathParameters()
 	objType := pathParams["obj_type"]
@@ -64,16 +67,16 @@ func (cli *Service) DeleteInstObject(req *restful.Request, resp *restful.Respons
 
 	// retrieve original datas
 	originDatas := make([]map[string]interface{}, 0)
-	getErr := cli.GetObjectByCondition(defLang, objType, nil, input, &originDatas, "", 0, 0)
-	if getErr != nil && !cli.Instance.IsNotFoundErr(err) {
+	getErr := cli.GetObjectByCondition(ctx, db, defLang, objType, nil, input, &originDatas, "", 0, 0)
+	if getErr != nil {
 		blog.Error("retrieve original data error:%v", getErr)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectSelectInstFailed, err.Error())})
 		return
 	}
 
-	blog.Info("delete object type:%s,input:%v ", objType, input)
-	err = cli.DelObjByCondition(objType, input)
-	if err != nil && !cli.Instance.IsNotFoundErr(err) {
+	blog.V(3).Info("delete object type:%s,input:%v ", objType, input)
+	err = cli.DelObjByCondition(ctx, db, objType, input)
+	if err != nil {
 		blog.Error("delete object type:%s,input:%v error:%v", objType, input, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDeleteInstFailed, err.Error())})
 		return
@@ -84,7 +87,7 @@ func (cli *Service) DeleteInstObject(req *restful.Request, resp *restful.Respons
 		ec := eventclient.NewEventContextByReq(req.Request.Header, cli.Cache)
 		for _, originData := range originDatas {
 			err := ec.InsertEvent(metadata.EventTypeInstData, objType, metadata.EventActionDelete, nil, originData)
-			if err != nil && !cli.Instance.IsNotFoundErr(err) {
+			if err != nil {
 				blog.Error("create event error:%v", err)
 			}
 		}
@@ -102,6 +105,8 @@ func (cli *Service) UpdateInstObject(req *restful.Request, resp *restful.Respons
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	defLang := cli.Core.Language.CreateDefaultCCLanguageIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	pathParams := req.PathParameters()
 	objType := pathParams["obj_type"]
@@ -135,16 +140,16 @@ func (cli *Service) UpdateInstObject(req *restful.Request, resp *restful.Respons
 
 	// retrieve original datas
 	originDatas := make([]map[string]interface{}, 0)
-	getErr := cli.GetObjectByCondition(defLang, objType, nil, condition, &originDatas, "", 0, 0)
-	if getErr != nil && !cli.Instance.IsNotFoundErr(err) {
+	getErr := cli.GetObjectByCondition(ctx, db, defLang, objType, nil, condition, &originDatas, "", 0, 0)
+	if getErr != nil {
 		blog.Error("retrieve original datas error:%v", getErr)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, getErr.Error())})
 		return
 	}
 
 	blog.Info("update object type:%s,data:%v,condition:%v", objType, data, condition)
-	err = cli.UpdateObjByCondition(objType, data, condition)
-	if err != nil && !cli.Instance.IsNotFoundErr(err) {
+	err = cli.UpdateObjByCondition(ctx, db, objType, data, condition)
+	if err != nil {
 		blog.Error("update object type:%s,data:%v,condition:%v,error:%v", objType, data, condition, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, getErr.Error())})
 		return
@@ -172,7 +177,7 @@ func (cli *Service) UpdateInstObject(req *restful.Request, resp *restful.Respons
 					return
 				}
 			}
-			if err := cli.GetObjectByID(realObjType, nil, id, &newData, ""); err != nil {
+			if err := cli.GetObjectByID(ctx, db, realObjType, nil, id, &newData, ""); err != nil {
 				blog.Error("create event error:%v", err)
 				resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrEventPushEventFailed)})
 			} else {
@@ -199,6 +204,8 @@ func (cli *Service) SearchInstObjects(req *restful.Request, resp *restful.Respon
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	defLang := cli.Core.Language.CreateDefaultCCLanguageIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	pathParams := req.PathParameters()
 	objType := pathParams["obj_type"]
@@ -221,14 +228,14 @@ func (cli *Service) SearchInstObjects(req *restful.Request, resp *restful.Respon
 	sort := dat.Sort
 	fieldArr := strings.Split(fields, ",")
 	result := make([]map[string]interface{}, 0)
-	count, err := cli.GetCntByCondition(objType, condition)
-	if err != nil && !cli.Instance.IsNotFoundErr(err) {
+	count, err := cli.GetCntByCondition(ctx, db, objType, condition)
+	if err != nil {
 		blog.Error("get object type:%s,input:%v error:%v", objType, string(value), err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectSelectInstFailed, err.Error())})
 		return
 	}
-	err = cli.GetObjectByCondition(defLang, objType, fieldArr, condition, &result, sort, skip, limit)
-	if err != nil && !cli.Instance.IsNotFoundErr(err) {
+	err = cli.GetObjectByCondition(ctx, db, defLang, objType, fieldArr, condition, &result, sort, skip, limit)
+	if err != nil {
 		blog.Error("get object type:%s,input:%v error:%v", string(objType), string(value), err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectSelectInstFailed, err.Error())})
 		return
@@ -248,6 +255,8 @@ func (cli *Service) CreateInstObject(req *restful.Request, resp *restful.Respons
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	pathParams := req.PathParameters()
 	objType := pathParams["obj_type"]
@@ -260,8 +269,8 @@ func (cli *Service) CreateInstObject(req *restful.Request, resp *restful.Respons
 	input = util.SetModOwner(input, ownerID)
 	blog.Info("create object type:%s,data:%v", objType, input)
 	var idName string
-	id, err := cli.CreateObjectIntoDB(objType, input, &idName)
-	if err != nil && !cli.Instance.IsNotFoundErr(err) {
+	id, err := cli.CreateObjectIntoDB(ctx, db, objType, input, &idName)
+	if err != nil {
 		blog.Errorf("create object type:%s,data:%v error:%v", objType, input, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectCreateInstFailed, err.Error())})
 		return
@@ -279,7 +288,7 @@ func (cli *Service) CreateInstObject(req *restful.Request, resp *restful.Respons
 			return
 		}
 	}
-	if err := cli.GetObjectByID(realObjType, nil, id, &origindata, ""); err != nil {
+	if err := cli.GetObjectByID(ctx, db, realObjType, nil, id, &origindata, ""); err != nil {
 		blog.Errorf("create event error, could not retrieve data: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrEventPushEventFailed)})
 		return

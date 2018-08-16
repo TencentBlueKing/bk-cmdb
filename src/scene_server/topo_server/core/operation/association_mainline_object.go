@@ -198,6 +198,7 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 	defaultInstNameAttr := currentObj.CreateAttribute()
 	defaultInstNameAttr.SetIsSystem(false)
 	defaultInstNameAttr.SetIsOnly(true)
+	defaultInstNameAttr.SetIsPre(true)
 	defaultInstNameAttr.SetIsEditable(true)
 	defaultInstNameAttr.SetType(common.FieldTypeLongChar)
 	defaultInstNameAttr.SetIsRequired(true)
