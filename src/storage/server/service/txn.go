@@ -53,7 +53,7 @@ func NewTXRPC(rpcsrv *rpc.Server) *TXRPC {
 	return txrpc
 }
 
-func (t *TXRPC) RDBOperation(input *rpc.Message) (interface{}, error) {
+func (t *TXRPC) RDBOperation(input rpc.Request) (interface{}, error) {
 
 	reply := types.OPREPLY{}
 

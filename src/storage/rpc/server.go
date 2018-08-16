@@ -13,7 +13,7 @@
 package rpc
 
 import (
-	"errors"
+	"context"
 	"io"
 	"net/http"
 	"runtime/debug"
@@ -21,13 +21,19 @@ import (
 	"configcenter/src/common/blog"
 )
 
+// Server define
 type Server struct {
+	ctx            context.Context
+	codec          Codec
 	handlers       map[string]HandlerFunc
 	streamHandlers map[string]HandlerStreamFunc
 }
 
+// NewServer returns new server
 func NewServer() *Server {
 	return &Server{
+		ctx:            context.Background(),
+		codec:          JSONCodec,
 		handlers:       map[string]HandlerFunc{},
 		streamHandlers: map[string]HandlerStreamFunc{},
 	}
@@ -58,49 +64,53 @@ func (s *Server) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// Handle regist new handler
 func (s *Server) Handle(name string, f HandlerFunc) {
-	cmd, err := NewCommand(name)
-	if err != nil {
-		blog.Fatalf("command %s invalid: %s", name, err.Error())
-	}
-	s.handlers[cmd.String()] = f
-}
-func (s *Server) HandleStream(name string, f HandlerStreamFunc) {
-	cmd, err := NewCommand(name)
-	if err != nil {
-		blog.Fatalf("command %s invalid: %s", name, err.Error())
-	}
-	s.streamHandlers[cmd.String()] = f
+	s.handlers[name] = f
 }
 
+// HandleStream regist new stream handler
+func (s *Server) HandleStream(name string, f HandlerStreamFunc) {
+	s.streamHandlers[name] = f
+}
+
+// SetCodec set server codec
+func (s *Server) SetCodec(codec Codec) {
+	s.codec = codec
+}
+
+// ServerSession define a server session
 type ServerSession struct {
 	srv       *Server
 	wire      Wire
 	responses chan *Message
-	done      chan struct{}
-
-	stream map[uint32]*StreamMessage
+	done      context.Context
+	cancel    func()
+	stream    *streamstore
 }
 
+// NewServerSession returns a new ServerSession
 func NewServerSession(srv *Server, conn io.ReadWriteCloser) *ServerSession {
+	ctx, cancel := context.WithCancel(srv.ctx)
 	return &ServerSession{
 		srv:       srv,
 		wire:      NewBinaryWire(conn),
 		responses: make(chan *Message, 1024),
-		done:      make(chan struct{}, 5),
+		done:      ctx,
+		cancel:    cancel,
+		stream:    newStreamStore(),
 	}
 }
 
+// Run run the Serssion
 func (s *ServerSession) Run() error {
 	go s.writeloop()
-	defer func() {
-		s.done <- struct{}{}
-	}()
 	return s.readloop()
 }
 
+// Stop stop the server session
 func (s *ServerSession) Stop() {
-	s.done <- struct{}{}
+	s.cancel()
 }
 
 func (s *ServerSession) readFromWire(ret chan<- error) {
@@ -113,36 +123,30 @@ func (s *ServerSession) readFromWire(ret chan<- error) {
 		ret <- err
 		return
 	}
+	msg.codec = s.srv.codec
 
 	switch msg.typz {
 	case TypeRequest:
-		call := msg.cmd.String()
-		blog.V(3).Infof("[rpc server] calling [%s]", call)
-		if handlerFunc, ok := s.srv.handlers[call]; ok {
+		blog.V(3).Infof("[rpc server] calling [%s]", msg.cmd)
+		if handlerFunc, ok := s.srv.handlers[msg.cmd]; ok {
 			go s.handle(handlerFunc, msg)
-		} else if handlerFunc, ok := s.srv.streamHandlers[call]; ok {
+		} else if handlerFunc, ok := s.srv.streamHandlers[msg.cmd]; ok {
 			go s.handleStream(handlerFunc, msg)
 		} else {
 			cmds := []string{}
 			for cmd := range s.srv.handlers {
 				cmds = append(cmds, cmd)
 			}
-			blog.V(3).Infof("[rpc server] command [%s] not found, existing command are: %#v", call, s.srv.handlers)
+			blog.V(3).Infof("[rpc server] command [%s] not found, existing command are: %#v", msg.cmd, s.srv.handlers)
 			s.pushResponse(msg, ErrCommandNotFount)
 		}
-	case TypeStream:
-		stream, ok := s.stream[msg.seq]
+	case TypeStream, TypeStreamClose:
+		s.stream.RLock()
+		stream, ok := s.stream.get(msg.seq)
 		if ok {
 			stream.input <- msg
 		}
-	case TypeStreamClose:
-		stream, ok := s.stream[msg.seq]
-		if ok {
-			if len(msg.Data) > 0 {
-				stream.err = errors.New(string(msg.Data))
-			}
-			stream.done <- struct{}{}
-		}
+		s.stream.RUnlock()
 	case TypePing:
 		go s.handlePing(msg)
 	default:
@@ -166,27 +170,11 @@ func (s *ServerSession) handle(f HandlerFunc, msg *Message) {
 	s.pushResponse(msg, err)
 }
 func (s *ServerSession) handleStream(f HandlerStreamFunc, msg *Message) {
-	stream, ok := s.stream[msg.seq]
-	if !ok {
-		stream = NewStreamMessage()
-		s.stream[msg.seq] = stream
+	stream := NewStreamMessage(msg)
+	s.stream.store(msg.seq, stream)
+	s.pushResponse(msg, nil)
 
-		go func() {
-			for {
-				select {
-				case value := <-stream.output:
-					nmsg := msg.copy()
-					nmsg.typz = TypeStream
-					err := nmsg.Encode(value)
-					s.pushResponse(msg, err)
-				case <-s.done:
-					stream.err = ErrStreamStoped
-					return
-				case <-stream.done:
-					return
-				}
-			}
-		}()
+	go func() {
 		defer func() {
 			runtimeErr := recover()
 			if runtimeErr != nil {
@@ -195,11 +183,35 @@ func (s *ServerSession) handleStream(f HandlerStreamFunc, msg *Message) {
 			}
 		}()
 		err := f(msg, stream)
+		nmsg := msg.copy()
+		nmsg.typz = TypeStreamClose
+		if err != nil {
+			nmsg.Data = []byte(err.Error())
+		}
+		stream.output <- nmsg
+	}()
+	go func() {
+	serverstreamloop:
+		for {
+			select {
+			case smsg := <-stream.output:
+				s.responses <- smsg
+				if smsg.typz == TypeStreamClose {
+					break serverstreamloop
+				}
+			case <-s.done.Done():
+				stream.err = ErrStreamStoped
+				break serverstreamloop
+			case <-stream.done:
+				stream.err = ErrStreamStoped
+				break serverstreamloop
+			}
+		}
+		s.stream.remove(msg.seq)
 		close(stream.input)
 		close(stream.output)
 		close(stream.done)
-		s.pushResponse(msg, err)
-	}
+	}()
 }
 
 func (s *ServerSession) handlePing(msg *Message) {
@@ -229,7 +241,7 @@ func (s *ServerSession) readloop() error {
 				return err
 			}
 			continue
-		case <-s.done:
+		case <-s.done.Done():
 			blog.Infof("[rpc server] RPC server stopped")
 			return nil
 		}
@@ -243,7 +255,7 @@ func (s *ServerSession) writeloop() {
 			if err := s.wire.Write(msg); err != nil {
 				blog.Errorf("Failed to write: %v", err)
 			}
-		case <-s.done:
+		case <-s.done.Done():
 			if queuelen := len(s.responses); queuelen > 0 {
 				for queuelen > 0 {
 					msg := <-s.responses

@@ -31,7 +31,7 @@ type Reply struct {
 	OK bool
 }
 
-func OK(msg *Message) (interface{}, error) {
+func OK(msg Request) (interface{}, error) {
 	return Reply{OK: true}, nil
 }
 

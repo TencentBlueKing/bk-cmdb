@@ -13,50 +13,102 @@
 package rpc
 
 import (
+	"bytes"
+	"encoding"
 	"encoding/json"
 	"errors"
-	"strings"
+	"sync"
 )
 
 // Errors define
 var (
 	//ErrRWTimeout r/w operation timeout
-	ErrRWTimeout         = errors.New("r/w timeout")
-	ErrPingTimeout       = errors.New("Ping timeout")
-	ErrCommandOverLength = errors.New("Command overlength")
-	ErrCommandNotFount   = errors.New("Command not found")
-	ErrStreamStoped      = errors.New("Stream stoped")
+	ErrRWTimeout       = errors.New("r/w timeout")
+	ErrPingTimeout     = errors.New("Ping timeout")
+	ErrCommandNotFount = errors.New("Command not found")
+	ErrStreamStoped    = errors.New("Stream stoped")
 )
 
-type HandlerFunc func(*Message) (interface{}, error)
-type HandlerStreamFunc func(*Message, *StreamMessage) error
+// HandlerFunc define a HandlerFunc
+type HandlerFunc func(Request) (interface{}, error)
 
+// HandlerStreamFunc define a HandlerStreamFunc
+type HandlerStreamFunc func(Request, ServerStream) error
+
+type streamstore struct {
+	sync.RWMutex
+	stream map[uint32]*StreamMessage
+}
+
+func newStreamStore() *streamstore {
+	return &streamstore{
+		stream: map[uint32]*StreamMessage{},
+	}
+}
+
+func (s *streamstore) store(seq uint32, stream *StreamMessage) {
+	s.Lock()
+	s.stream[seq] = stream
+	s.Unlock()
+}
+
+func (s *streamstore) get(seq uint32) (*StreamMessage, bool) {
+	stream, ok := s.stream[seq]
+	return stream, ok
+}
+func (s *streamstore) remove(seq uint32) {
+	s.Lock()
+	delete(s.stream, seq)
+	s.Unlock()
+}
+
+// StreamMessage define
 type StreamMessage struct {
-	param  Message
+	root   *Message
 	input  chan *Message
 	output chan *Message
 	done   chan struct{}
 	err    error
 }
 
-func NewStreamMessage() *StreamMessage {
+// ServerStream define interface
+type ServerStream interface {
+	Recv(result interface{}) error
+	Send(data interface{}) error
+}
+
+// NewStreamMessage returns a new StreamMessage
+func NewStreamMessage(root *Message) *StreamMessage {
 	return &StreamMessage{
+		root:   root,
 		input:  make(chan *Message, 10),
 		output: make(chan *Message, 10),
 		done:   make(chan struct{}),
 	}
 }
 
+// Recv receive message
 func (m StreamMessage) Recv(result interface{}) error {
 	if m.err != nil {
 		return m.err
 	}
 	msg := <-m.input
+	if msg.typz == TypeStreamClose {
+		m.err = ErrStreamStoped
+		if len(msg.Data) > 0 {
+			return errors.New(string(msg.Data))
+		}
+		return m.err
+	}
 	return msg.Decode(result)
 }
 
+// Send send message
 func (m StreamMessage) Send(data interface{}) error {
-	msg := m.param.copy()
+	if m.err != nil {
+		return m.err
+	}
+	msg := m.root.copy()
 	msg.typz = TypeStream
 	if err := msg.Encode(data); err != nil {
 		return err
@@ -67,7 +119,7 @@ func (m StreamMessage) Send(data interface{}) error {
 
 // Close should only call by client
 func (m StreamMessage) Close() error {
-	msg := m.param.copy()
+	msg := m.root.copy()
 	msg.typz = TypeStreamClose
 	m.output <- msg
 	return nil
@@ -92,51 +144,47 @@ const (
 	writeBufferSize = 8096
 )
 
-type Codec uint32
-
-const (
-	CodexJSON Codec = iota
-	CodexGob
-)
-
-type Decoder interface {
-	Decode(interface{}) error
+// Codec define a codec
+type Codec interface {
+	Decode(data []byte, v interface{}) error
+	Encode(v interface{}) ([]byte, error)
 }
 
-var (
-	ErrUnsupportedCodec = errors.New("unsupported codec")
-)
+type jsonCodec struct{}
+
+// JSONCodec implements Codec interface
+var JSONCodec Codec = new(jsonCodec)
+
+func (jsonCodec) Decode(data []byte, v interface{}) error {
+	return json.NewDecoder(bytes.NewReader(data)).Decode(v)
+}
+func (jsonCodec) Encode(v interface{}) ([]byte, error) {
+	buf := &bytes.Buffer{}
+	err := json.NewEncoder(buf).Encode(v)
+	return buf.Bytes(), err
+}
 
 const (
+	// MagicVersion is the cc rpc protocal version
 	MagicVersion = uint16(0x1b01) // cmdb01
 )
 
-type command [40]byte
-
-func NewCommand(cmd string) (command, error) {
-	ncmd := command{}
-	cmdlength := len(cmd)
-	if len(cmd) > commanLimit {
-		return ncmd, ErrCommandOverLength
-	}
-	copy(ncmd[:], []byte(cmd)[:cmdlength])
-	return ncmd, nil
-}
-func (c command) String() string {
-	return strings.TrimSpace(string(c[:]))
+// Request define a request interface
+type Request interface {
+	Decode(value interface{}) error
 }
 
+// Message define a rpc message
 type Message struct {
 	complete     chan struct{}
 	transportErr error
+	codec        Codec
 
 	magicVersion uint16
 	seq          uint32
 	typz         MessageType
-	cmd          command // maybe should use uint32
-
-	Codec Codec
-	Data  []byte
+	cmd          string // maybe should use uint32
+	Data         []byte
 }
 
 func (msg Message) copy() *Message {
@@ -145,20 +193,25 @@ func (msg Message) copy() *Message {
 		seq:          msg.seq,
 		typz:         msg.typz,
 		cmd:          msg.cmd,
+		codec:        msg.codec,
 	}
 }
 
+// Decode decode the message data
 func (msg *Message) Decode(value interface{}) error {
-	if msg.Codec == CodexJSON {
-		return json.Unmarshal(msg.Data, value)
+	if decoder, ok := value.(encoding.BinaryUnmarshaler); ok {
+		return decoder.UnmarshalBinary(msg.Data)
 	}
-	return ErrUnsupportedCodec
+	return msg.codec.Decode(msg.Data, value)
 }
+
+// Encode encode the value to message data
 func (msg *Message) Encode(value interface{}) error {
 	var err error
-	if msg.Codec == CodexJSON {
-		msg.Data, err = json.Marshal(value)
-		return err
+	if encoder, ok := value.(encoding.BinaryMarshaler); ok {
+		msg.Data, err = encoder.MarshalBinary()
+	} else {
+		msg.Data, err = msg.codec.Encode(value)
 	}
-	return ErrUnsupportedCodec
+	return err
 }
