@@ -13,6 +13,7 @@
 package identifier
 
 import (
+	"configcenter/src/common/condition"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -33,6 +34,7 @@ var hostIndentDiffFiels = map[string][]string{
 	common.BKInnerObjIDSet:    {common.BKSetNameField, "bk_service_status", "bk_set_env"},
 	common.BKInnerObjIDModule: {common.BKModuleNameField},
 	common.BKInnerObjIDPlat:   {common.BKCloudNameField},
+	common.BKInnerObjIDProc:   {common.BKProcessNameField, common.BKFuncIDField, common.BKFuncName, common.BKBindIP, common.BKProtocol, common.BKPort, "bk_start_param_regex"},
 	common.BKInnerObjIDHost: {common.BKHostNameField,
 		common.BKCloudIDField, common.BKHostInnerIPField, common.BKHostOuterIPField,
 		common.BKOSTypeField, common.BKOSNameField,
@@ -75,7 +77,7 @@ func (ih *IdentifierHandler) handleInst(e *metadata.EventInst) {
 				for _, field := range diffFields {
 					inst.set(field, curdata[field])
 				}
-				err = inst.saveCache(ih.cache)
+				err = inst.saveCachke(ih.cache)
 				if err != nil {
 					blog.Errorf("identifier: SaveCache error %+v", err)
 					continue
@@ -89,8 +91,12 @@ func (ih *IdentifierHandler) handleInst(e *metadata.EventInst) {
 					ih.cache.LPush(types.EventCacheEventQueueKey, &hostIdentify)
 					blog.InfoJSON("identifier: pushed event inst %s", hostIdentify)
 				} else {
-					hosIDs := ih.findHost(e.ObjType, instID)
-					blog.Infof("identifier: hostIDs: %v", hosIDs)
+					hosIDs, err := ih.findHost(e.ObjType, instID)
+					if err != nil {
+						blog.Warnf("identifier: find host faile: %v", err)
+						continue
+					}
+					blog.V(3).Infof("identifier: hostIDs: %v", hosIDs)
 					total := len(hosIDs)
 					index := 0
 					leftIndex := 0
@@ -180,23 +186,53 @@ func getInt(data map[string]interface{}, key string) int64 {
 	return i
 }
 
-func (ih *IdentifierHandler) findHost(objType string, instID int64) (hostIDs []string) {
+func (ih *IdentifierHandler) findHost(objType string, instID int64) (hostIDs []string, err error) {
 	relations := []metadata.ModuleHost{}
-	condiction := map[string]interface{}{
-		common.GetInstIDField(objType): instID,
-	}
-	if objType == common.BKInnerObjIDPlat {
+	cond := condition.CreateCondition().Field(common.GetInstIDField(objType)).Eq(instID)
 
-		ih.db.GetMutilByCondition(common.BKTableNameBaseHost, []string{common.BKHostIDField}, condiction, &relations, "", -1, -1)
+	if objType == common.BKInnerObjIDPlat {
+		if err = ih.db.GetMutilByCondition(common.BKTableNameBaseHost, []string{common.BKHostIDField}, cond.ToMapStr(), &relations, "", -1, -1); err != nil {
+			return nil, err
+		}
+	} else if objType == common.BKInnerObjIDProc {
+		proc2module := []metadata.ProcessModule{}
+		// get process to module
+		if err = ih.db.GetMutilByCondition(common.BKTableNameProcModule, nil, cond.ToMapStr(), &proc2module, "", -1, -1); err != nil {
+			return nil, err
+		}
+		if len(proc2module) > 0 {
+			modulenames := make([]string, len(proc2module))
+			for index := range proc2module {
+				modulenames[index] = proc2module[index].ModuleName
+			}
+			// get module ids
+			relations = []metadata.ModuleHost{}
+			cond := condition.CreateCondition().Field(common.BKAppIDField).Eq(proc2module[0].AppID).Field(common.BKModuleNameField).In(modulenames)
+			if err = ih.db.GetMutilByCondition(common.BKTableNameBaseModule, []string{common.BKModuleIDField}, cond.ToMapStr(), &relations, "", -1, -1); err != nil {
+				return nil, err
+			}
+
+			moduleids := make([]int64, len(relations))
+			for index := range proc2module {
+				moduleids[index] = relations[index].ModuleID
+			}
+
+			relations = []metadata.ModuleHost{}
+			cond = condition.CreateCondition().Field(common.BKModuleIDField).In(moduleids)
+			if err = ih.db.GetMutilByCondition(common.BKTableNameModuleHostConfig, []string{common.BKHostIDField}, cond.ToMapStr(), &relations, "", -1, -1); err != nil {
+				return nil, err
+			}
+		}
 	} else {
-		ih.db.GetMutilByCondition(common.BKTableNameModuleHostConfig, []string{common.BKHostIDField}, condiction, &relations, "", -1, -1)
+		if err = ih.db.GetMutilByCondition(common.BKTableNameModuleHostConfig, []string{common.BKHostIDField}, cond.ToMapStr(), &relations, "", -1, -1); err != nil {
+			return nil, err
+		}
 	}
 
 	for index := range relations {
-
 		hostIDs = append(hostIDs, types.EventCacheIdentInstPrefix+"host_"+strconv.FormatInt(relations[index].HostID, 10))
 	}
-	return hostIDs
+	return hostIDs, nil
 }
 
 type Inst struct {
@@ -293,6 +329,8 @@ func getCache(cache *redis.Client, db storage.DI, objType string, instID int64, 
 		}
 		if common.BKInnerObjIDHost == objType {
 			inst.ident = NewHostIdentifier(inst.data)
+
+			// fill modules
 			relations := []metadata.ModuleHost{}
 			condiction := map[string]interface{}{
 				common.GetInstIDField(objType): instID,
@@ -306,6 +344,7 @@ func getCache(cache *redis.Client, db storage.DI, objType string, instID int64, 
 				}
 			}
 			inst.data["associations"] = inst.ident.Module
+
 		}
 		inst.saveCache(cache)
 	} else {
