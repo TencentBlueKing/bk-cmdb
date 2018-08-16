@@ -24,7 +24,6 @@ import (
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	
 )
 
 func (ps *ProcServer) BindModuleProcess(req *restful.Request, resp *restful.Response) {
@@ -62,7 +61,7 @@ func (ps *ProcServer) BindModuleProcess(req *restful.Request, resp *restful.Resp
 	}
 
 	// save operation log
-	log := common.KvMap{common.BKOpDescField: fmt.Sprintf("build module [%s]", moduleName), common.BKOpTypeField: auditoplog.AuditOpTypeAdd}
+	log := common.KvMap{common.BKOpDescField: fmt.Sprintf("build module [%s]", moduleName), common.BKOpTypeField: auditoplog.AuditOpTypeAdd, "inst_id": procID}
 	ps.CoreAPI.AuditController().AddProcLog(context.Background(), ownerID, appIDStr, user, req.Request.Header, log)
 
 	resp.WriteEntity(meta.NewSuccessResp(nil))
@@ -99,7 +98,7 @@ func (ps *ProcServer) DeleteModuleProcessBind(req *restful.Request, resp *restfu
 	}
 
 	// save operation log
-	log := common.KvMap{common.BKOpDescField: fmt.Sprintf("unbind module [%s]", moduleName), common.BKOpTypeField: auditoplog.AuditOpTypeAdd}
+	log := common.KvMap{common.BKOpDescField: fmt.Sprintf("unbind module [%s]", moduleName), common.BKOpTypeField: auditoplog.AuditOpTypeAdd, "inst_id": procID}
 	ps.CoreAPI.AuditController().AddProcLog(context.Background(), ownerID, appIDStr, user, req.Request.Header, log)
 
 	resp.WriteEntity(meta.NewSuccessResp(nil))
