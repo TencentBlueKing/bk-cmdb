@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -28,16 +29,11 @@ import (
 // CreateClassification create object's classification
 func (cli *Service) SearchTopoGraphics(req *restful.Request, resp *restful.Response) {
 
-	blog.Info("SearchTopoGraphics")
-
-	// get the language
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetOwnerID(req.Request.Header)
-
-	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
-
-	// execute
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
@@ -57,7 +53,7 @@ func (cli *Service) SearchTopoGraphics(req *restful.Request, resp *restful.Respo
 
 	selector.SetSupplierAccount(ownerID)
 	results := []meta.TopoGraphics{}
-	if selErr := cli.Instance.GetMutilByCondition(common.BKTableNameTopoGraphics, nil, selector, &results, "", -1, -1); nil != selErr && !cli.Instance.IsNotFoundErr(selErr) {
+	if selErr := db.Table(common.BKTableNameTopoGraphics).Find(selector).All(ctx, &results); nil != selErr {
 		blog.Error("select data failed, error information is %s", selErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBSelectFailed, err.Error())})
 		return
@@ -68,18 +64,15 @@ func (cli *Service) SearchTopoGraphics(req *restful.Request, resp *restful.Respo
 
 func (cli *Service) UpdateTopoGraphics(req *restful.Request, resp *restful.Response) {
 
-	blog.Info("UpdateTopoGraphics")
-
-	// get the language
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetOwnerID(req.Request.Header)
-
-	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	// execute
 	value, err := ioutil.ReadAll(req.Request.Body)
-	if err != nil && !cli.Instance.IsNotFoundErr(err) {
+	if err != nil {
 		blog.Error("read http request body failed, error:%s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
@@ -94,8 +87,8 @@ func (cli *Service) UpdateTopoGraphics(req *restful.Request, resp *restful.Respo
 
 	for index := range datas {
 		datas[index].SetSupplierAccount(ownerID)
-		_, err = cli.Instance.Insert(common.BKTableNameTopoGraphics, datas[index].FillBlank())
-		if cli.Instance.IsDuplicateErr(err) {
+		err = db.Table(common.BKTableNameTopoGraphics).Insert(ctx, datas[index].FillBlank())
+		if cli.Instance.IsDuplicatedError(err) {
 			condition := meta.TopoGraphics{}
 			condition.SetScopeType(*datas[index].ScopeType)
 			condition.SetScopeID(*datas[index].ScopeID)
@@ -103,7 +96,7 @@ func (cli *Service) UpdateTopoGraphics(req *restful.Request, resp *restful.Respo
 			condition.SetObjID(*datas[index].ObjID)
 			condition.SetInstID(*datas[index].InstID)
 			condition.SetSupplierAccount(ownerID)
-			if err = cli.Instance.UpdateByCondition(common.BKTableNameTopoGraphics, datas[index], condition); err != nil {
+			if err = cli.Instance.Table(common.BKTableNameTopoGraphics).Update(context.Background(), condition, datas[index]); err != nil {
 				blog.Error("update data failed, error information is %s", err.Error())
 				resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBUpdateFailed, err.Error())})
 				return

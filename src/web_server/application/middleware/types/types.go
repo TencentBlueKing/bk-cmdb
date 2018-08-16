@@ -47,6 +47,7 @@ const (
 	BK_HOSTS_SNAP    = "hosts/snapshot"
 	BK_HOSTS_HIS     = "hosts/history"
 	BK_TOPO_MODEL    = "topo/model"
+	BK_INST_ASSOCIATION_TOPO_SEARCH = "inst/association/topo/search"
 )
 
 //bk topo
