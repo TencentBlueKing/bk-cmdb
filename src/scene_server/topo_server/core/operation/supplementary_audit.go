@@ -129,6 +129,8 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action audit
 		bizID, err := targetItem.GetValues().String(common.BKAppIDField)
 		if nil != err {
 			blog.V(3).Infof("[audit] failed to get the bizid from the data(%#v), error info is %s", targetItem.GetValues(), err.Error())
+		}
+		if 0 == len(bizID) {
 			bizID = "0"
 		}
 		//fmt.Println("the data pre:", preDataTmp)
