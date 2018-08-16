@@ -357,6 +357,7 @@ func (c *commonInst) hasHost(params types.ContextParams, targetInst inst.Inst) (
 			}
 
 			if exists {
+
 				return nil, true, nil
 			}
 		}
