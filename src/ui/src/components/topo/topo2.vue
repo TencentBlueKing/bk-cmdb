@@ -18,7 +18,7 @@
         </div>
         <div class="no-model-prompting tc" v-show="disableModelList.length === modelList.length">
             <img src="../../common/images/no_model_prompting.png">
-            <p>此分类下无模型</p>
+            <p>此分组下无模型</p>
             <bk-button type="primary" class="create-btn" @click="createModel">立即创建</bk-button>
         </div>
         <bk-button class="bk-button vis-button vis-enable" v-if="addModelAvailable && disableModelList.length" @click="isShowDisableList = true">

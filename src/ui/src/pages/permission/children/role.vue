@@ -34,9 +34,9 @@
             :list="table.list"
             :wrapperMinusHeight="240">
             <template slot="operation" slot-scope="{ item }" style="text-align: center;font-size: 0">
-                <i class="icon-cc-skip" @click="skipToUser(item)"></i>
-                <i class="icon-cc-edit" @click.stop="editRole(item)"></i>
-                <i class="icon-cc-del" @click.stop="confirmDeleteRole(item)"></i>
+                <span class="color-info" @click="skipToUser(item)">{{$t('Permission["跳转配置"]')}}</span>
+                <span class="color-info" @click.stop="editRole(item)">{{$t('Common["编辑"]')}}</span>
+                <span class="color-danger" @click.stop="confirmDeleteRole(item)">{{$t('Common["删除"]')}}</span>
             </template>        
         </v-role-table>
         <v-role-form 
@@ -90,10 +90,10 @@
                 table: {
                     header: [{
                         id: 'group_name',
-                        name: this.$t('Permission["角色名称"]')
+                        name: this.$t('Permission["角色名"]')
                     }, {
                         id: 'user_list',
-                        name: this.$t('Permission["成员"]')
+                        name: this.$t('Permission["角色成员"]')
                     }, {
                         id: 'operation',
                         name: this.$t('Permission["操作"]'),
@@ -118,10 +118,10 @@
             'language' () {
                 this.table.header = [{
                     id: 'group_name',
-                    name: this.$t('Permission["角色名称"]')
+                    name: this.$t('Permission["角色名"]')
                 }, {
                     id: 'user_list',
-                    name: this.$t('Permission["成员"]')
+                    name: this.$t('Permission["角色成员"]')
                 }, {
                     id: 'operation',
                     name: this.$t('Permission["操作"]'),
@@ -237,18 +237,15 @@
         }
     }
     .role-table{
-        .icon-cc-skip,
-        .icon-cc-edit,
-        .icon-cc-del{
-            font-size: 12px;
-            margin: 0 10px;
-            &.single{
-                margin-right: 44px;
+        .color-info {
+            margin-right: 10px;
+            &:hover {
+                color: #498fe0;
             }
         }
-        .icon-cc-skip{
-            &:hover{
-                color: #498fe0;
+        .color-danger {
+            &:hover {
+                color: #ef4c4c;
             }
         }
     }

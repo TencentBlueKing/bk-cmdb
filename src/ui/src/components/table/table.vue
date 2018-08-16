@@ -170,8 +170,14 @@
             visible: {
                 type: Boolean,
                 default: true
+            },
+            selectedList: {
+                type: Array
+            },
+            isCheckboxShow: {
+                type: Boolean,
+                default: true
             }
-
         },
         data () {
             const layout = new TableLayout({
