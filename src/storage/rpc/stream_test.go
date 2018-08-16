@@ -37,7 +37,7 @@ func TestStream(t *testing.T) {
 		Args string
 	}
 
-	var streamfunc = func(param *rpc.Message, stream rpc.ServerStream) error {
+	var streamfunc = func(param rpc.Request, stream rpc.ServerStream) error {
 		fmt.Fprintln(os.Stdout, "server started")
 		var p = Param{}
 		err := param.Decode(&p)
