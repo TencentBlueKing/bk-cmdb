@@ -144,6 +144,10 @@ func (s *topoService) SearchSet(params types.ContextParams, pathParams, queryPar
 	queryCond := &metadata.QueryInput{}
 	queryCond.Condition = paramsCond.Condition
 	queryCond.Fields = strings.Join(paramsCond.Fields, ",")
+	page := metadata.ParsePage(paramsCond.Page)
+	queryCond.Start = page.Start
+	queryCond.Sort = page.Sort
+	queryCond.Limit = page.Limit
 
 	cnt, instItems, err := s.core.SetOperation().FindSet(params, obj, queryCond)
 	if nil != err {
