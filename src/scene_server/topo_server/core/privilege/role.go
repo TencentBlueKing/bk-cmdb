@@ -50,29 +50,31 @@ func (r *rolePermission) CreatePermission(supplierAccount, objID, propertyID str
 	}
 
 	if rsp.Result {
+		shouldCreate := false
 		switch tmpData := rsp.Data.(type) {
 		case nil:
 		case map[string]interface{}:
 			if 0 == len(tmpData) {
-				goto CreatePri
+				shouldCreate = true
 			}
 		}
 
-		rsp, err := r.client.ObjectController().Privilege().UpdateRolePri(context.Background(), supplierAccount, objID, propertyID, r.params.Header, data)
-		if nil != err {
-			blog.Errorf("[permission] failed to request object controller, error info is %s", err.Error())
-			return r.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
-		}
+		if !shouldCreate {
+			rsp, err := r.client.ObjectController().Privilege().UpdateRolePri(context.Background(), supplierAccount, objID, propertyID, r.params.Header, data)
+			if nil != err {
+				blog.Errorf("[permission] failed to request object controller, error info is %s", err.Error())
+				return r.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+			}
 
-		if !rsp.Result {
-			blog.Errorf("[permission] failed to update the role, error info is %s", rsp.ErrMsg)
-			return r.params.Err.New(rsp.Code, rsp.ErrMsg)
-		}
+			if !rsp.Result {
+				blog.Errorf("[permission] failed to update the role, error info is %s", rsp.ErrMsg)
+				return r.params.Err.New(rsp.Code, rsp.ErrMsg)
+			}
 
-		return nil
+			return nil
+		}
 	}
 
-CreatePri:
 	rsp, err = r.client.ObjectController().Privilege().CreateRolePri(context.Background(), supplierAccount, objID, propertyID, r.params.Header, data)
 
 	if nil != err {
