@@ -37,6 +37,8 @@ func (cli *Service) CreateObject(req *restful.Request, resp *restful.Response) {
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
@@ -60,7 +62,7 @@ func (cli *Service) CreateObject(req *restful.Request, resp *restful.Response) {
 	obj.OwnerID = ownerID
 
 	// get id
-	id, err := cli.Instance.NextSequence(context.Background(), common.BKTableNameObjDes) // .GetIncID(common.BKTableNameObjDes)
+	id, err := db.NextSequence(ctx, common.BKTableNameObjDes) // .GetIncID(common.BKTableNameObjDes)
 	if err != nil {
 		blog.Error("failed to get id , error info is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
@@ -69,7 +71,7 @@ func (cli *Service) CreateObject(req *restful.Request, resp *restful.Response) {
 	obj.ID = int64(id)
 
 	// save
-	err = cli.Instance.Table(common.BKTableNameObjDes).Insert(context.Background(), obj)
+	err = db.Table(common.BKTableNameObjDes).Insert(ctx, obj)
 	if nil == err {
 		resp.WriteEntity(meta.CreateObjectResult{BaseResp: meta.SuccessBaseResp, Data: meta.RspID{ID: int64(id)}})
 		return
@@ -90,6 +92,8 @@ func (cli *Service) DeleteObject(req *restful.Request, resp *restful.Response) {
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	pathParameters := req.PathParameters()
 	appID, err := strconv.ParseInt(pathParameters["id"], 10, 64)
@@ -119,7 +123,7 @@ func (cli *Service) DeleteObject(req *restful.Request, resp *restful.Response) {
 	}
 
 	condition = util.SetModOwner(condition, ownerID)
-	cnt, cntErr := cli.Instance.Table(common.BKTableNameObjDes).Find(condition).Count(context.Background())
+	cnt, cntErr := db.Table(common.BKTableNameObjDes).Find(condition).Count(ctx)
 	if nil != cntErr {
 		blog.Error("failed to select object by condition(%+v), error is %d", cntErr)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, cntErr.Error())})
@@ -131,7 +135,7 @@ func (cli *Service) DeleteObject(req *restful.Request, resp *restful.Response) {
 		return
 	}
 	// execute delete command
-	if delErr := cli.Instance.Table(common.BKTableNameObjDes).Delete(context.Background(), condition); nil != delErr {
+	if delErr := db.Table(common.BKTableNameObjDes).Delete(ctx, condition); nil != delErr {
 		blog.Error("fail to delete object by id , error information is %s", delErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, delErr.Error())})
 		return
@@ -147,6 +151,8 @@ func (cli *Service) UpdateObject(req *restful.Request, resp *restful.Response) {
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	js, err := simplejson.NewFromReader(req.Request.Body)
 	if err != nil {
@@ -175,7 +181,7 @@ func (cli *Service) UpdateObject(req *restful.Request, resp *restful.Response) {
 	}
 	condition := map[string]interface{}{"id": appID}
 	condition = util.SetModOwner(condition, ownerID)
-	err = cli.Instance.Table(common.BKTableNameObjDes).Update(context.Background(), condition, data)
+	err = db.Table(common.BKTableNameObjDes).Update(ctx, condition, data)
 	if nil != err {
 		blog.Error("fail update object by condition, error information is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, jsErr.Error())})
@@ -196,6 +202,8 @@ func (cli *Service) SelectObjects(req *restful.Request, resp *restful.Response) 
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	defLang := cli.Core.Language.CreateDefaultCCLanguageIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	// decode json object
 	js, err := simplejson.NewFromReader(req.Request.Body)
@@ -228,7 +236,7 @@ func (cli *Service) SelectObjects(req *restful.Request, resp *restful.Response) 
 	}
 
 	selector = util.SetQueryOwner(selector, ownerID)
-	if selErr := cli.Instance.Table(common.BKTableNameObjDes).Find(selector).Limit(uint64(page.Limit)).Start(uint64(page.Start)).Sort(page.Sort).All(context.Background(), &results); nil != selErr {
+	if selErr := db.Table(common.BKTableNameObjDes).Find(selector).Limit(uint64(page.Limit)).Start(uint64(page.Start)).Sort(page.Sort).All(ctx, &results); nil != selErr {
 		blog.Error("select data failed, error information is %s", selErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, selErr.Error())})
 		return

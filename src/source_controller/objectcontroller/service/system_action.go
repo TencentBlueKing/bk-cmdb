@@ -29,10 +29,10 @@ import (
 //GetSystemFlag get the system define flag
 func (cli *Service) GetSystemFlag(req *restful.Request, resp *restful.Response) {
 
-	// get the language
 	language := util.GetActionLanguage(req)
-	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	var result interface{}
 	pathParams := req.PathParameters()
@@ -45,7 +45,7 @@ func (cli *Service) GetSystemFlag(req *restful.Request, resp *restful.Response) 
 	cipherStr := h.Sum(nil)
 	cond[flag] = hex.EncodeToString(cipherStr) + ownerID
 
-	err := cli.Instance.Table(common.BKTableNameSystem).Find(cond).One(context.Background(), &result)
+	err := db.Table(common.BKTableNameSystem).Find(cond).One(ctx, &result)
 	if nil != err {
 		blog.Errorf("get system config error :%v, cond:%#v", err, cond)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectSelectInstFailed, err.Error())})

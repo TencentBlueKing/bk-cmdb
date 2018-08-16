@@ -30,14 +30,11 @@ import (
 // CreateClassification create object's classification
 func (cli *Service) CreateClassification(req *restful.Request, resp *restful.Response) {
 
-	// get the language
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetOwnerID(req.Request.Header)
-
-	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
-
-	// execute
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
@@ -54,7 +51,7 @@ func (cli *Service) CreateClassification(req *restful.Request, resp *restful.Res
 	}
 
 	// save to the storage
-	id, err := cli.Instance.NextSequence(context.Background(), common.BKTableNameObjClassifiction)
+	id, err := db.NextSequence(ctx, common.BKTableNameObjClassifiction)
 	if err != nil {
 		blog.Error("failed to get id, error info is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
@@ -62,7 +59,7 @@ func (cli *Service) CreateClassification(req *restful.Request, resp *restful.Res
 	}
 	obj.ID = int64(id)
 	obj.OwnerID = ownerID
-	err = cli.Instance.Table(common.BKTableNameObjClassifiction).Insert(context.Background(), obj)
+	err = db.Table(common.BKTableNameObjClassifiction).Insert(ctx, obj)
 	if nil != err {
 		blog.Error("create objectcls failed, error:%s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
@@ -74,14 +71,11 @@ func (cli *Service) CreateClassification(req *restful.Request, resp *restful.Res
 // DeleteClassification delete object's classification
 func (cli *Service) DeleteClassification(req *restful.Request, resp *restful.Response) {
 
-	blog.Info("delete classification")
-	// get the language
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetOwnerID(req.Request.Header)
-	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
-
-	// execute
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	defer req.Request.Body.Close()
 	pathParameters := req.PathParameters()
@@ -110,7 +104,7 @@ func (cli *Service) DeleteClassification(req *restful.Request, resp *restful.Res
 		}
 	}
 	condition = util.SetModOwner(condition, ownerID)
-	cnt, cntErr := cli.Instance.Table(common.BKTableNameObjClassifiction).Find(condition).Count(context.Background())
+	cnt, cntErr := db.Table(common.BKTableNameObjClassifiction).Find(condition).Count(ctx)
 	if nil != cntErr {
 		blog.Error("failed to select object classification by condition(%+v), error is %d", cntErr)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
@@ -121,7 +115,7 @@ func (cli *Service) DeleteClassification(req *restful.Request, resp *restful.Res
 		return
 	}
 	// execute delete command
-	if delErr := cli.Instance.Table(common.BKTableNameObjClassifiction).Delete(context.Background(), condition); nil != delErr {
+	if delErr := db.Table(common.BKTableNameObjClassifiction).Delete(ctx, condition); nil != delErr {
 		blog.Error("fail to delete object by id , error: %s", delErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, delErr.Error())})
 		return
@@ -133,15 +127,11 @@ func (cli *Service) DeleteClassification(req *restful.Request, resp *restful.Res
 // UpdateClassification update object's classification information
 func (cli *Service) UpdateClassification(req *restful.Request, resp *restful.Response) {
 
-	blog.Info("update classification")
-
-	// get the language
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetOwnerID(req.Request.Header)
-	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
-
-	// execute
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	pathParameters := req.PathParameters()
 	id, err := strconv.ParseInt(pathParameters["id"], 10, 64)
@@ -163,7 +153,7 @@ func (cli *Service) UpdateClassification(req *restful.Request, resp *restful.Res
 
 	selector = util.SetModOwner(selector, ownerID)
 	// update object into storage
-	if updateErr := cli.Instance.Table(common.BKTableNameObjClassifiction).Update(context.Background(), selector, data); nil != updateErr {
+	if updateErr := db.Table(common.BKTableNameObjClassifiction).Update(ctx, selector, data); nil != updateErr {
 		blog.Error("fail update object by condition, error:%v", updateErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, updateErr.Error())})
 		return
@@ -174,14 +164,12 @@ func (cli *Service) UpdateClassification(req *restful.Request, resp *restful.Res
 // SelectClassifications select object's classification informations
 func (cli *Service) SelectClassifications(req *restful.Request, resp *restful.Response) {
 
-	// get the language
 	language := util.GetActionLanguage(req)
 	defLang := cli.Core.Language.CreateDefaultCCLanguageIf(language)
 	ownerID := util.GetOwnerID(req.Request.Header)
-	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
-
-	// execute
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	// decode json object
 	selector := map[string]interface{}{}
@@ -197,7 +185,7 @@ func (cli *Service) SelectClassifications(req *restful.Request, resp *restful.Re
 
 	selector = util.SetQueryOwner(selector, ownerID)
 	// select from storage
-	if selErr := cli.Instance.Table(common.BKTableNameObjClassifiction).Find(selector).Limit(uint64(page.Limit)).Start(uint64(page.Start)).Sort(page.Sort).All(context.Background(), &results); nil != selErr {
+	if selErr := db.Table(common.BKTableNameObjClassifiction).Find(selector).Limit(uint64(page.Limit)).Start(uint64(page.Start)).Sort(page.Sort).All(ctx, &results); nil != selErr {
 		blog.Error("select data failed, error: %s", selErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, selErr.Error())})
 		return
@@ -214,14 +202,12 @@ func (cli *Service) SelectClassifications(req *restful.Request, resp *restful.Re
 // SelectClassificationWithObject select objects by classification information
 func (cli *Service) SelectClassificationWithObject(req *restful.Request, resp *restful.Response) {
 
-	// get the language
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetOwnerID(req.Request.Header)
-	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	defLang := cli.Core.Language.CreateDefaultCCLanguageIf(language)
-
-	// execute
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	// decode json object
 	selector := map[string]interface{}{}
@@ -236,7 +222,7 @@ func (cli *Service) SelectClassificationWithObject(req *restful.Request, resp *r
 	clsResults := make([]meta.ObjClassificationObject, 0)
 	selector = util.SetQueryOwner(selector, ownerID)
 	// select from storage
-	if selErr := cli.Instance.Table(common.BKTableNameObjClassifiction).Find(selector).Limit(uint64(page.Limit)).Start(uint64(page.Start)).Sort(page.Sort).All(context.Background(), &clsResults); nil != selErr {
+	if selErr := db.Table(common.BKTableNameObjClassifiction).Find(selector).Limit(uint64(page.Limit)).Start(uint64(page.Start)).Sort(page.Sort).All(ctx, &clsResults); nil != selErr {
 		blog.Error("select data failed, error:%s", selErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, selErr.Error())})
 		return
@@ -250,7 +236,7 @@ func (cli *Service) SelectClassificationWithObject(req *restful.Request, resp *r
 			common.BKOwnerIDField:  ownerID,
 		}
 		selector = util.SetQueryOwner(selector, ownerID)
-		if selErr := cli.Instance.Table(common.BKTableNameObjDes).Find(selector).Limit(common.BKNoLimit).All(context.Background(), &clsResults[tmpidx].Objects); nil != selErr {
+		if selErr := db.Table(common.BKTableNameObjDes).Find(selector).Limit(common.BKNoLimit).All(ctx, &clsResults[tmpidx].Objects); nil != selErr {
 			blog.Error("select data failed, error:%s", selErr.Error())
 			continue
 		}

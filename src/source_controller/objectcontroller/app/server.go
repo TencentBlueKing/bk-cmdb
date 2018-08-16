@@ -106,7 +106,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 	objCtr.Cache = redis.NewClient(
 		&redis.Options{
-			Addr:     rdsc.Address + ":" + rdsc.Port,
+			Addr:     rdsc.Address,
 			PoolSize: 100,
 			Password: rdsc.Password,
 			DB:       dbNum,

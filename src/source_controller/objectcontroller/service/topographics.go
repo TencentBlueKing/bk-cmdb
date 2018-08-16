@@ -29,16 +29,11 @@ import (
 // CreateClassification create object's classification
 func (cli *Service) SearchTopoGraphics(req *restful.Request, resp *restful.Response) {
 
-	blog.Info("SearchTopoGraphics")
-
-	// get the language
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetOwnerID(req.Request.Header)
-
-	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
-
-	// execute
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
@@ -58,7 +53,7 @@ func (cli *Service) SearchTopoGraphics(req *restful.Request, resp *restful.Respo
 
 	selector.SetSupplierAccount(ownerID)
 	results := []meta.TopoGraphics{}
-	if selErr := cli.Instance.Table(common.BKTableNameTopoGraphics).Find(selector).All(context.Background(), &results); nil != selErr {
+	if selErr := db.Table(common.BKTableNameTopoGraphics).Find(selector).All(ctx, &results); nil != selErr {
 		blog.Error("select data failed, error information is %s", selErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBSelectFailed, err.Error())})
 		return
@@ -69,14 +64,11 @@ func (cli *Service) SearchTopoGraphics(req *restful.Request, resp *restful.Respo
 
 func (cli *Service) UpdateTopoGraphics(req *restful.Request, resp *restful.Response) {
 
-	blog.Info("UpdateTopoGraphics")
-
-	// get the language
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetOwnerID(req.Request.Header)
-
-	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	// execute
 	value, err := ioutil.ReadAll(req.Request.Body)
@@ -95,7 +87,7 @@ func (cli *Service) UpdateTopoGraphics(req *restful.Request, resp *restful.Respo
 
 	for index := range datas {
 		datas[index].SetSupplierAccount(ownerID)
-		err = cli.Instance.Table(common.BKTableNameTopoGraphics).Insert(context.Background(), datas[index].FillBlank())
+		err = db.Table(common.BKTableNameTopoGraphics).Insert(ctx, datas[index].FillBlank())
 		if cli.Instance.IsDuplicatedError(err) {
 			condition := meta.TopoGraphics{}
 			condition.SetScopeType(*datas[index].ScopeType)

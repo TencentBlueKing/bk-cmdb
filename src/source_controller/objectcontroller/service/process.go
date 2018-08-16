@@ -29,12 +29,13 @@ import (
 )
 
 func (cli *Service) GetProcessesByModuleName(req *restful.Request, resp *restful.Response) {
+
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetOwnerID(req.Request.Header)
-	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
-	blog.Debug("GetProcessesByModuleName start !")
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if nil != err {
 		blog.Error("read request body failed, error:%v", err)
@@ -52,11 +53,11 @@ func (cli *Service) GetProcessesByModuleName(req *restful.Request, resp *restful
 	moduleName := input[common.BKModuleNameField]
 	query := make(map[string]interface{})
 	query[common.BKModuleNameField] = moduleName
-	blog.Debug("query;%v", query)
+
 	fields := []string{common.BKProcIDField, common.BKAppIDField, common.BKModuleNameField}
 	var result []interface{}
 	query = util.SetModOwner(query, ownerID)
-	err = cli.Instance.Table(common.BKTableNameProcModule).Find(query).Limit(common.BKNoLimit).Sort(common.BKHostIDField).Fields(fields...).All(context.Background(), &result)
+	err = db.Table(common.BKTableNameProcModule).Find(query).Limit(common.BKNoLimit).Sort(common.BKHostIDField).Fields(fields...).All(ctx, &result)
 	if err != nil {
 		blog.Error("fail to get module proc config %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBSelectFailed, err.Error())})
@@ -82,8 +83,8 @@ func (cli *Service) GetProcessesByModuleName(req *restful.Request, resp *restful
 	}
 	procQuery = util.SetModOwner(procQuery, ownerID)
 	var resultProc []interface{}
-	err = cli.Instance.Table(common.BKTableNameBaseProcess).Find(procQuery).Sort(common.BKProcIDField).Limit(common.BKNoLimit).All(context.Background(), &resultProc)
-	blog.Infof("GetProcessesByModuleName params:%v, result:%v", procQuery, resultProc)
+	err = db.Table(common.BKTableNameBaseProcess).Find(procQuery).Sort(common.BKProcIDField).Limit(common.BKNoLimit).All(ctx, &resultProc)
+
 	if err != nil {
 		blog.Error("fail to get proc %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBSelectFailed, err.Error())})
