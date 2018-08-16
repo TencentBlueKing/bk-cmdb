@@ -13,7 +13,6 @@
 package util
 
 import (
-	"configcenter/src/storage/dal"
 	"context"
 	"net/http"
 	"reflect"
@@ -22,6 +21,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/storage/dal"
 )
 
 func InStrArr(arr []string, key string) bool {
