@@ -34,6 +34,8 @@ func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Respons
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	param := new(metadata.SearchIdentifierParam)
 	err := json.NewDecoder(req.Request.Body).Decode(param)
@@ -79,7 +81,7 @@ func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Respons
 
 	// fetch hosts
 	hosts := []*metadata.HostIdentifier{}
-	err = cli.GetHostByCondition(nil, condition, &hosts, "", 0, 0)
+	err = cli.GetHostByCondition(ctx, db, nil, condition, &hosts, "", 0, 0)
 	if err != nil {
 		blog.Errorf("SearchIdentifier error:%s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.New(common.CCErrObjectSelectIdentifierFailed, err.Error())})
@@ -90,8 +92,8 @@ func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Respons
 		condiction := map[string]interface{}{
 			common.BKHostIDField: host.HostID,
 		}
-		blog.Infof("SearchIdentifier relations condition %v ", condiction)
-		err = cli.Instance.Table(common.BKTableNameModuleHostConfig).Find(condiction).All(context.Background(), &relations)
+		blog.V(3).Infof("SearchIdentifier relations condition %v ", condiction)
+		err = db.Table(common.BKTableNameModuleHostConfig).Find(condiction).All(ctx, &relations)
 		if err != nil {
 			blog.Errorf("SearchIdentifier error:%s", err.Error())
 			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.New(common.CCErrObjectSelectIdentifierFailed, err.Error())})
@@ -116,7 +118,7 @@ func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Respons
 	// fetch cache
 	if len(setIDs) > 0 {
 		tmps := []metadata.SetInst{}
-		err = getCache(cli.Instance, common.BKTableNameBaseSet, common.BKSetIDField, setIDs, &tmps)
+		err = getCache(ctx, db, common.BKTableNameBaseSet, common.BKSetIDField, setIDs, &tmps)
 		if err != nil {
 			blog.Errorf("SearchIdentifier error:%s", err.Error())
 			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.New(common.CCErrObjectSelectIdentifierFailed, err.Error())})
@@ -128,7 +130,7 @@ func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Respons
 	}
 	if len(moduleIDs) > 0 {
 		tmps := []metadata.ModuleInst{}
-		err = getCache(cli.Instance, common.BKTableNameBaseModule, common.BKModuleIDField, moduleIDs, &tmps)
+		err = getCache(ctx, db, common.BKTableNameBaseModule, common.BKModuleIDField, moduleIDs, &tmps)
 		if err != nil {
 			blog.Errorf("SearchIdentifier error:%s", err.Error())
 			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.New(common.CCErrObjectSelectIdentifierFailed, err.Error())})
@@ -140,7 +142,7 @@ func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Respons
 	}
 	if len(bizIDs) > 0 {
 		tmps := []metadata.BizInst{}
-		err = getCache(cli.Instance, common.BKTableNameBaseApp, common.BKAppIDField, bizIDs, &tmps)
+		err = getCache(ctx, db, common.BKTableNameBaseApp, common.BKAppIDField, bizIDs, &tmps)
 		if err != nil {
 			blog.Errorf("SearchIdentifier error:%s", err.Error())
 			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.New(common.CCErrObjectSelectIdentifierFailed, err.Error())})
@@ -152,7 +154,7 @@ func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Respons
 	}
 	if len(cloudIDs) > 0 {
 		tmps := []metadata.CloudInst{}
-		err = getCache(cli.Instance, common.BKTableNameBasePlat, common.BKCloudIDField, cloudIDs, &tmps)
+		err = getCache(ctx, db, common.BKTableNameBasePlat, common.BKCloudIDField, cloudIDs, &tmps)
 		if err != nil {
 			blog.Errorf("SearchIdentifier error:%s", err.Error())
 			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.New(common.CCErrObjectSelectIdentifierFailed, err.Error())})
@@ -202,11 +204,11 @@ func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Respons
 
 }
 
-func getCache(db dal.RDB, tablename string, idfield string, ids []int64, result interface{}) error {
+func getCache(ctx context.Context, db dal.RDB, tablename string, idfield string, ids []int64, result interface{}) error {
 	condition := map[string]interface{}{
 		idfield: map[string]interface{}{
 			common.BKDBIN: ids,
 		},
 	}
-	return db.Table(tablename).Find(condition).All(context.Background(), result)
+	return db.Table(tablename).Find(condition).All(ctx, result)
 }

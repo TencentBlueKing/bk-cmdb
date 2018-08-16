@@ -28,12 +28,12 @@ import (
 
 // GetRolePri get role privilege
 func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
-	blog.V(3).Infof("get role privi")
-	// get the language
+
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetOwnerID(req.Request.Header)
-	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	defer req.Request.Body.Close()
 	pathParams := req.PathParameters()
@@ -44,7 +44,8 @@ func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
 	cond[common.BKPropertyIDField] = propertyID
 	var result map[string]interface{}
 	cond = util.SetModOwner(cond, ownerID)
-	cnt, err := cli.Instance.Table(common.BKTableNamePrivilege).Find(cond).Count(context.Background())
+
+	cnt, err := db.Table(common.BKTableNamePrivilege).Find(cond).Count(ctx)
 	if nil != err {
 		blog.Error("get user group privi error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
@@ -57,7 +58,7 @@ func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	err = cli.Instance.Table(common.BKTableNamePrivilege).Find(cond).All(context.Background(), &result)
+	err = db.Table(common.BKTableNamePrivilege).Find(cond).All(ctx, &result)
 	if nil != err {
 		blog.Error("get role pri field error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBSelectFailed, err.Error())})
@@ -77,12 +78,12 @@ func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
 
 //CreateRolePri create role privilege
 func (cli *Service) CreateRolePri(req *restful.Request, resp *restful.Response) {
-	blog.V(3).Infof("get role privi")
-	// get the language
+
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetOwnerID(req.Request.Header)
-	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	pathParams := req.PathParameters()
 	objID := pathParams["bk_obj_id"]
@@ -106,7 +107,8 @@ func (cli *Service) CreateRolePri(req *restful.Request, resp *restful.Response) 
 	input[common.BKPropertyIDField] = propertyID
 	input[common.BKPrivilegeField] = roleJSON
 	input = util.SetModOwner(input, ownerID)
-	err = cli.Instance.Table(common.BKTableNamePrivilege).Insert(context.Background(), input)
+
+	err = db.Table(common.BKTableNamePrivilege).Insert(ctx, input)
 	if nil != err {
 		blog.Error("create role privilege error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
@@ -118,12 +120,12 @@ func (cli *Service) CreateRolePri(req *restful.Request, resp *restful.Response) 
 
 //UpdateRolePri update role privilege
 func (cli *Service) UpdateRolePri(req *restful.Request, resp *restful.Response) {
-	blog.V(3).Infof("get role privi")
-	// get the language
+
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetOwnerID(req.Request.Header)
-	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	pathParams := req.PathParameters()
 	objID := pathParams["bk_obj_id"]
@@ -148,7 +150,8 @@ func (cli *Service) UpdateRolePri(req *restful.Request, resp *restful.Response) 
 	cond[common.BKPropertyIDField] = propertyID
 	input[common.BKPrivilegeField] = roleJSON
 	cond = util.SetModOwner(cond, ownerID)
-	err = cli.Instance.Table(common.BKTableNamePrivilege).Update(context.Background(), cond, input)
+
+	err = db.Table(common.BKTableNamePrivilege).Update(ctx, cond, input)
 	if nil != err {
 		blog.Error("update role privilege error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})

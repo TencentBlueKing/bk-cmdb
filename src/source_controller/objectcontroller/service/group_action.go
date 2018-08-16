@@ -35,6 +35,8 @@ func (cli *Service) CreateUserGroup(req *restful.Request, resp *restful.Response
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
@@ -60,7 +62,7 @@ func (cli *Service) CreateUserGroup(req *restful.Request, resp *restful.Response
 	guid := xid.New()
 	data[common.BKUserGroupIDField] = guid.String()
 	data = util.SetModOwner(data, ownerID)
-	err = cli.Instance.Table(common.BKTableNameUserGroup).Insert(context.Background(), data)
+	err = db.Table(common.BKTableNameUserGroup).Insert(ctx, data)
 	if nil != err {
 		blog.Error("create user group error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
@@ -78,6 +80,8 @@ func (cli *Service) UpdateUserGroup(req *restful.Request, resp *restful.Response
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	pathParams := req.PathParameters()
 	groupID := pathParams["group_id"]
@@ -105,7 +109,7 @@ func (cli *Service) UpdateUserGroup(req *restful.Request, resp *restful.Response
 	cond := make(map[string]interface{})
 	cond[common.BKUserGroupIDField] = groupID
 	cond = util.SetModOwner(cond, ownerID)
-	err = cli.Instance.Table(common.BKTableNameUserGroup).Update(context.Background(), cond, data)
+	err = db.Table(common.BKTableNameUserGroup).Update(ctx, cond, data)
 	if nil != err {
 		blog.Error("update user group error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
@@ -122,6 +126,8 @@ func (cli *Service) DeleteUserGroup(req *restful.Request, resp *restful.Response
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	defer req.Request.Body.Close()
 	pathParams := req.PathParameters()
@@ -129,7 +135,7 @@ func (cli *Service) DeleteUserGroup(req *restful.Request, resp *restful.Response
 	cond := make(map[string]interface{})
 	cond[common.BKUserGroupIDField] = groupID
 	cond = util.SetModOwner(cond, ownerID)
-	err := cli.Instance.Table(common.BKTableNameUserGroup).Delete(context.Background(), cond)
+	err := db.Table(common.BKTableNameUserGroup).Delete(ctx, cond)
 	if nil != err {
 		blog.Error("delete user group error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
@@ -146,6 +152,8 @@ func (cli *Service) SearchUserGroup(req *restful.Request, resp *restful.Response
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
@@ -168,7 +176,7 @@ func (cli *Service) SearchUserGroup(req *restful.Request, resp *restful.Response
 	}
 	cond = util.SetModOwner(cond, ownerID)
 	var result []interface{}
-	err = cli.Instance.Table(common.BKTableNameUserGroup).Find(cond).All(context.Background(), &result)
+	err = db.Table(common.BKTableNameUserGroup).Find(cond).All(ctx, &result)
 	if nil != err {
 		blog.Error("get user group error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
