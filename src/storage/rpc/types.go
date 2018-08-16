@@ -30,10 +30,10 @@ var (
 )
 
 // HandlerFunc define a HandlerFunc
-type HandlerFunc func(*Message) (interface{}, error)
+type HandlerFunc func(Request) (interface{}, error)
 
 // HandlerStreamFunc define a HandlerStreamFunc
-type HandlerStreamFunc func(*Message, ServerStream) error
+type HandlerStreamFunc func(Request, ServerStream) error
 
 type streamstore struct {
 	sync.RWMutex
@@ -168,6 +168,10 @@ const (
 	// MagicVersion is the cc rpc protocal version
 	MagicVersion = uint16(0x1b01) // cmdb01
 )
+
+type Request interface {
+	Decode(value interface{}) error
+}
 
 // Message define a rpc message
 type Message struct {

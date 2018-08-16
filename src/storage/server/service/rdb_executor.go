@@ -29,7 +29,7 @@ var ErrNoSupported = errors.New("not supported")
 type CollectionFunc func(collName string) mongobyc.CollectionInterface
 
 // ExecuteCollection execute collection operation to db
-func ExecuteCollection(ctx context.Context, collFunc CollectionFunc, opcode types.OPCode, decoder *rpc.Message, reply *types.OPREPLY) (*types.OPREPLY, error) {
+func ExecuteCollection(ctx context.Context, collFunc CollectionFunc, opcode types.OPCode, decoder rpc.Request, reply *types.OPREPLY) (*types.OPREPLY, error) {
 	executor := &collectionExecutor{ctx: ctx, collection: collFunc, opcode: opcode, msg: decoder, reply: reply}
 	executor.execute()
 	return executor.reply, executor.execerr
@@ -39,7 +39,7 @@ type collectionExecutor struct {
 	ctx context.Context
 
 	opcode types.OPCode
-	msg    *rpc.Message
+	msg    rpc.Request
 
 	collection CollectionFunc
 
