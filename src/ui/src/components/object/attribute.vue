@@ -747,6 +747,7 @@
             }
             .attribute-item-field{
                 display: inline-block;
+                height: 36px;
             }
         }
     }
