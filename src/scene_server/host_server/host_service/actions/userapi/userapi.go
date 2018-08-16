@@ -63,7 +63,7 @@ func (u *userAPIAction) Add(req *restful.Request, resp *restful.Response) {
 		userAPI.ResponseFailedEx(http.StatusBadGateway, common.CCErrCommRelyOnServerAddressFailed, defErr.Errorf(common.CCErrCommRelyOnServerAddressFailed, "hostcontroller").Error(), nil, resp)
 		return
 	}
-	client := userAPISdk.NewClient(URL)
+	client := userAPISdk.NewClient(URL, req.Request.Header)
 
 	params := make(map[string]interface{})
 	if err := json.Unmarshal([]byte(value), &params); nil != err {
@@ -123,7 +123,7 @@ func (u *userAPIAction) Update(req *restful.Request, resp *restful.Response) {
 	}
 	params["modify_user"] = util.GetActionUser(req)
 
-	client := userAPISdk.NewClient(URL)
+	client := userAPISdk.NewClient(URL, req.Request.Header)
 	code, reply, err := client.Update(params, req.PathParameter("bk_biz_id"), req.PathParameter("id"))
 	if nil != err {
 		userAPI.ResponseFailedEx(http.StatusBadGateway, common.CC_Err_Comm_http_DO, err.Error(), nil, resp)
@@ -153,7 +153,7 @@ func (u *userAPIAction) Delete(req *restful.Request, resp *restful.Response) {
 		userAPI.ResponseFailedEx(http.StatusBadGateway, common.CCErrCommRelyOnServerAddressFailed, defErr.Errorf(common.CCErrCommRelyOnServerAddressFailed, "hostcontroller").Error(), nil, resp)
 		return
 	}
-	client := userAPISdk.NewClient(URL)
+	client := userAPISdk.NewClient(URL, req.Request.Header)
 	code, reply, err := client.Delete(appID, ID)
 	if nil != err {
 		userAPI.ResponseFailedEx(http.StatusBadGateway, common.CC_Err_Comm_http_DO, err.Error(), nil, resp)
@@ -211,7 +211,7 @@ func (u *userAPIAction) Get(req *restful.Request, resp *restful.Response) {
 	condition[common.BKAppIDField], _ = util.GetInt64ByInterface(req.PathParameter("bk_biz_id"))
 	dat.Condition = condition
 
-	client := userAPISdk.NewClient(url)
+	client := userAPISdk.NewClient(url, req.Request.Header)
 	code, reply, err := client.GetUserAPI(dat)
 	if nil != err {
 		userAPI.ResponseFailedEx(http.StatusBadGateway, common.CC_Err_Comm_http_DO, err.Error(), nil, resp)
@@ -234,7 +234,7 @@ func (u *userAPIAction) Detail(req *restful.Request, resp *restful.Response) {
 	appID := req.PathParameter("bk_biz_id")
 	ID := req.PathParameter("id")
 
-	client := userAPISdk.NewClient(hostCtrl)
+	client := userAPISdk.NewClient(hostCtrl, req.Request.Header)
 	code, reply, err := client.Detail(appID, ID)
 	if nil != err {
 		userAPI.ResponseFailedEx(http.StatusBadGateway, common.CC_Err_Comm_http_DO, err.Error(), nil, resp)
@@ -266,7 +266,7 @@ func (u *userAPIAction) GetUserAPIData(req *restful.Request, resp *restful.Respo
 	appID := req.PathParameter("bk_biz_id")
 	ID := req.PathParameter("id")
 
-	client := userAPISdk.NewClient(URL)
+	client := userAPISdk.NewClient(URL, req.Request.Header)
 	code, reply, err := client.Detail(appID, ID)
 	if nil != err {
 		userAPI.ResponseFailedEx(http.StatusBadGateway, common.CC_Err_Comm_http_DO, err.Error(), nil, resp)
