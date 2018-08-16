@@ -262,11 +262,9 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 	}
 
 	succ, updateErrRow, errRow, err := s.Logics.AddHost(appID, []int64{moduleID}, util.GetOwnerID(pheader), pheader, hostList.HostInfo, hostList.InputType)
+	retData := make(map[string]interface{})
 	if err != nil {
 		blog.Errorf("add host failed, succ: %v, update: %v, err: %v, %v", succ, updateErrRow, err, errRow)
-
-		retData := make(map[string]interface{})
-		retData["success"] = succ
 		retData["error"] = errRow
 		retData["update_error"] = updateErrRow
 		resp.WriteEntity(meta.Response{
@@ -275,8 +273,8 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 		})
 		return
 	}
-
-	resp.WriteEntity(meta.NewSuccessResp(succ))
+	retData["success"] = succ
+	resp.WriteEntity(meta.NewSuccessResp(retData))
 }
 
 func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response) {
