@@ -177,7 +177,7 @@ func (cli MapStr) Float(key string) (float64, error) {
 func (cli MapStr) String(key string) (string, error) {
 	switch t := cli[key].(type) {
 	case nil:
-		return "", fmt.Errorf("the key(%s) is invalid", key)
+		return "", nil
 	default:
 		return fmt.Sprintf("%v", t), nil
 	case map[string]interface{}, []interface{}:

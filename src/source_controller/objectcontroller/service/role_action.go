@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -27,12 +28,12 @@ import (
 
 // GetRolePri get role privilege
 func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
-	blog.V(3).Infof("get role privi")
-	// get the language
+
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetOwnerID(req.Request.Header)
-	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	defer req.Request.Body.Close()
 	pathParams := req.PathParameters()
@@ -43,8 +44,9 @@ func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
 	cond[common.BKPropertyIDField] = propertyID
 	var result map[string]interface{}
 	cond = util.SetModOwner(cond, ownerID)
-	cnt, err := cli.Instance.GetCntByCondition(common.BKTableNamePrivilege, cond)
-	if nil != err && !cli.Instance.IsNotFoundErr(err) {
+
+	cnt, err := db.Table(common.BKTableNamePrivilege).Find(cond).Count(ctx)
+	if nil != err {
 		blog.Error("get user group privi error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
@@ -56,8 +58,8 @@ func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	err = cli.Instance.GetOneByCondition(common.BKTableNamePrivilege, []string{}, cond, &result)
-	if nil != err && !cli.Instance.IsNotFoundErr(err) {
+	err = db.Table(common.BKTableNamePrivilege).Find(cond).All(ctx, &result)
+	if nil != err {
 		blog.Error("get role pri field error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBSelectFailed, err.Error())})
 		return
@@ -71,18 +73,17 @@ func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
 		return
 
 	}
-
 	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: privilege})
 }
 
 //CreateRolePri create role privilege
 func (cli *Service) CreateRolePri(req *restful.Request, resp *restful.Response) {
-	blog.V(3).Infof("get role privi")
-	// get the language
+
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetOwnerID(req.Request.Header)
-	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	pathParams := req.PathParameters()
 	objID := pathParams["bk_obj_id"]
@@ -106,7 +107,8 @@ func (cli *Service) CreateRolePri(req *restful.Request, resp *restful.Response) 
 	input[common.BKPropertyIDField] = propertyID
 	input[common.BKPrivilegeField] = roleJSON
 	input = util.SetModOwner(input, ownerID)
-	_, err = cli.Instance.Insert(common.BKTableNamePrivilege, input)
+
+	err = db.Table(common.BKTableNamePrivilege).Insert(ctx, input)
 	if nil != err {
 		blog.Error("create role privilege error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
@@ -118,12 +120,12 @@ func (cli *Service) CreateRolePri(req *restful.Request, resp *restful.Response) 
 
 //UpdateRolePri update role privilege
 func (cli *Service) UpdateRolePri(req *restful.Request, resp *restful.Response) {
-	blog.V(3).Infof("get role privi")
-	// get the language
+
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetOwnerID(req.Request.Header)
-	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	pathParams := req.PathParameters()
 	objID := pathParams["bk_obj_id"]
@@ -148,7 +150,8 @@ func (cli *Service) UpdateRolePri(req *restful.Request, resp *restful.Response) 
 	cond[common.BKPropertyIDField] = propertyID
 	input[common.BKPrivilegeField] = roleJSON
 	cond = util.SetModOwner(cond, ownerID)
-	err = cli.Instance.UpdateByCondition(common.BKTableNamePrivilege, input, cond)
+
+	err = db.Table(common.BKTableNamePrivilege).Update(ctx, cond, input)
 	if nil != err {
 		blog.Error("update role privilege error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})

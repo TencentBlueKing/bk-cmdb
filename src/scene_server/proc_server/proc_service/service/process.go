@@ -28,7 +28,6 @@ import (
 	"configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/validator"
-	
 )
 
 func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response) {
@@ -76,7 +75,7 @@ func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response
 		if err != nil {
 			blog.Errorf("get process instance detail failed. err:%s", err.Error())
 		} else {
-			ps.addProcLog(ownerID, appIDStr, user, nil, curDetail, int(instID), req.Request.Header)
+			ps.addProcLog(ownerID, appIDStr, user, nil, curDetail, auditoplog.AuditOpTypeAdd, int(instID), req.Request.Header)
 		}
 	}
 
@@ -148,7 +147,7 @@ func (ps *ProcServer) UpdateProcess(req *restful.Request, resp *restful.Response
 	if err != nil {
 		blog.Errorf("get process instance detail failed. err:%s", err.Error())
 	}
-	ps.addProcLog(ownerID, appIDStr, user, preProcDetail, curDetail, procID, req.Request.Header)
+	ps.addProcLog(ownerID, appIDStr, user, preProcDetail, curDetail, auditoplog.AuditOpTypeModify, procID, req.Request.Header)
 
 	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
@@ -334,7 +333,7 @@ func (ps *ProcServer) DeleteProcess(req *restful.Request, resp *restful.Response
 	}
 
 	// save operation log
-	ps.addProcLog(ownerID, appIDStr, user, preProcDetail, nil, procID, req.Request.Header)
+	ps.addProcLog(ownerID, appIDStr, user, preProcDetail, nil, auditoplog.AuditOpTypeDel, procID, req.Request.Header)
 
 	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
@@ -378,15 +377,11 @@ func (ps *ProcServer) SearchProcess(req *restful.Request, resp *restful.Response
 	searchParams.Fields = strings.Join(srchparam.Fields, ",")
 	searchParams.Start, err = util.GetIntByInterface(page["start"])
 	if nil != err {
-		blog.Errorf("request body query condition format error start not integer, input:%v", page["start"])
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, "start")})
-		return
+		searchParams.Start = 0
 	}
 	searchParams.Limit, err = util.GetIntByInterface(page["limit"])
 	if nil != err {
-		blog.Errorf("request body query condition format error limit not integer, input:%v", page["limit"])
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, "limit")})
-		return
+		searchParams.Limit = common.BKNoLimit
 	}
 	searchParams.Sort = page["sort"].(string)
 
@@ -429,7 +424,7 @@ func (ps *ProcServer) SearchProcess(req *restful.Request, resp *restful.Response
 	resp.WriteEntity(meta.NewSuccessResp(ret.Data))
 }
 
-func (ps *ProcServer) addProcLog(ownerID, appID, user string, preProcDetails, curProcDetails []map[string]interface{}, instanceID int, header http.Header) error {
+func (ps *ProcServer) addProcLog(ownerID, appID, user string, preProcDetails, curProcDetails []map[string]interface{}, auditType auditoplog.AuditOpType, instanceID int, header http.Header) error {
 	headers := []meta.Header{}
 	curData := map[string]interface{}{}
 	preData := map[string]interface{}{}
@@ -458,8 +453,17 @@ func (ps *ProcServer) addProcLog(ownerID, appID, user string, preProcDetails, cu
 		PreData: preData,
 		Headers: headers,
 	}
+	desc := fmt.Sprintf("unknown type:%s", auditType)
+	switch auditType {
+	case auditoplog.AuditOpTypeAdd:
+		desc = "create process"
+	case auditoplog.AuditOpTypeDel:
+		desc = "delete process"
+	case auditoplog.AuditOpTypeModify:
+		desc = "update process"
+	}
 
-	log := common.KvMap{common.BKContentField: auditContent, common.BKOpDescField: "create process", common.BKOpTypeField: auditoplog.AuditOpTypeAdd, "inst_id": instanceID}
+	log := common.KvMap{common.BKContentField: auditContent, common.BKOpDescField: desc, common.BKOpTypeField: auditType, "inst_id": instanceID}
 	_, err := ps.CoreAPI.AuditController().AddProcLog(context.Background(), ownerID, appID, user, header, log)
 	return err
 }
