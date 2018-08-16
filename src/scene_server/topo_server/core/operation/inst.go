@@ -364,7 +364,7 @@ func (c *commonInst) hasHost(params types.ContextParams, targetInst inst.Inst) (
 
 	instIDS := []deletedInst{}
 	instIDS = append(instIDS, deletedInst{instID: id, obj: targetObj})
-	childInsts, err := targetInst.GetChildInst()
+	childInsts, err := targetInst.GetMainlineChildInst()
 	if nil != err {
 		return nil, false, err
 	}
