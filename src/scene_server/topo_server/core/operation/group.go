@@ -170,6 +170,8 @@ func (g *group) DeleteObjectAttributeGroup(params types.ContextParams, objID, pr
 
 func (g *group) UpdateObjectGroup(params types.ContextParams, cond *metadata.UpdateGroupCondition) error {
 
+	//fmt.Printf("\ncond:%#v\n", cond)
+
 	rsp, err := g.clientSet.ObjectController().Meta().UpdatePropertyGroup(context.Background(), params.Header, cond)
 
 	if nil != err {
