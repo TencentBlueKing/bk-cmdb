@@ -944,6 +944,10 @@ func (c *commonInst) FindOriginInst(params types.ContextParams, obj model.Object
 func (c *commonInst) FindInst(params types.ContextParams, obj model.Object, cond *metatype.QueryInput, needAsstDetail bool) (count int, results []inst.Inst, err error) {
 
 	rsp, err := c.FindOriginInst(params, obj, cond)
+	if nil != err {
+		blog.Errorf("[operation-inst] failed to find origin inst , error info is %s", err.Error())
+		return 0, nil, err
+	}
 
 	asstObjAttrs, err := c.asst.SearchObjectAssociation(params, obj.GetID())
 	if nil != err {
