@@ -68,7 +68,7 @@ func (u *userGroupPermission) SetUserGroupPermission(supplierAccount, groupID st
 		return u.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	if nil == rsp.Data.Privilege {
+	if nil == rsp.Data.Privilege || (0 == len(rsp.Data.Privilege.ModelConfig) && nil == rsp.Data.Privilege.SysConfig) {
 		rsp, err := u.client.ObjectController().Privilege().CreateUserGroupPrivi(context.Background(), supplierAccount, groupID, u.params.Header, permission)
 		if nil != err {
 			blog.Errorf("[privilege] failed to request object controller, error info is %s", err.Error())
