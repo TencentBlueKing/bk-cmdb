@@ -951,7 +951,7 @@ func convertOneApp(itemMap map[string]interface{}) (map[string]interface{}, erro
 		"Owner":       "",
 		"ProductPm":   productPm,
 		"LifeCycle":   lifecycle,
-		"Lanuage":     language,
+		"Language":    language,
 		"TimeZone":    timeZone,
 		"Tester":      tester,
 		"LastTime":    convertToV2Time(itemMap[common.LastTimeField]),
