@@ -487,7 +487,7 @@
                     condition['condition'].forEach(property => {
                         let objId = condition['bk_obj_id']
                         let field = property.field
-                        if (['biz', 'host', 'module', 'set'].indexOf(condition['bk_obj_id']) === -1) {
+                        if (['host', 'module', 'set'].indexOf(objId) === -1) {
                             objId = condition['bk_source_obj_id']
                             field = condition['bk_source_property_id']
                         }
