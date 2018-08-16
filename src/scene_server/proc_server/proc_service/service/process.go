@@ -377,15 +377,11 @@ func (ps *ProcServer) SearchProcess(req *restful.Request, resp *restful.Response
 	searchParams.Fields = strings.Join(srchparam.Fields, ",")
 	searchParams.Start, err = util.GetIntByInterface(page["start"])
 	if nil != err {
-		blog.Errorf("request body query condition format error start not integer, input:%v", page["start"])
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, "start")})
-		return
+		searchParams.Start = 0
 	}
 	searchParams.Limit, err = util.GetIntByInterface(page["limit"])
 	if nil != err {
-		blog.Errorf("request body query condition format error limit not integer, input:%v", page["limit"])
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, "limit")})
-		return
+		searchParams.Limit = common.BKNoLimit
 	}
 	searchParams.Sort = page["sort"].(string)
 
