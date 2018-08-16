@@ -1,5 +1,5 @@
 <template>
-    <bk-select :selected.sync="localSelected" :disabled="disabled" @on-selected="handleSelected">
+    <bk-select :filterable="true" :selected.sync="localSelected" :disabled="disabled" @on-selected="handleSelected">
         <bk-select-option v-for="(option, index) in localOptions"
             :key="option.id"
             :label="option.name"
