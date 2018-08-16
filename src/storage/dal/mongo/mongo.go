@@ -41,3 +41,16 @@ func (c Config) BuildURI() string {
 	}
 	return uri
 }
+
+// NewConfigFromKV returns a new config
+func NewConfigFromKV(prefix string, conifgmap map[string]string) *Config {
+	return &Config{
+		Address:      conifgmap[prefix+".address"],
+		User:         conifgmap[prefix+".usr"],
+		Password:     conifgmap[prefix+".pwd"],
+		Database:     conifgmap[prefix+".database"],
+		MaxOpenConns: conifgmap[prefix+".maxOpenConns"],
+		MaxIdleConns: conifgmap[prefix+".maxIDleConns"],
+		Mechanism:    conifgmap[prefix+".mechanism"],
+	}
+}
