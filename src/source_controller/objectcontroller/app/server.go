@@ -33,7 +33,7 @@ import (
 	"configcenter/src/source_controller/objectcontroller/service"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
-	"configcenter/src/storage/dal/redis"
+	dalredis "configcenter/src/storage/dal/redis"
 )
 
 //Run ccapi server
@@ -97,10 +97,6 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if err != nil {
 		return fmt.Errorf("new mongo client failed, err: %v", err)
 	}
-	err = objCtr.Instance.Open()
-	if err != nil {
-		return fmt.Errorf("new mongo client failed, err: %v", err)
-	}
 
 	rdsc := objCtr.Config.Redis
 	dbNum, err := strconv.Atoi(rdsc.Database)
@@ -138,30 +134,26 @@ type ObjectController struct {
 }
 
 func (h *ObjectController) onObjectConfigUpdate(previous, current cc.ProcessConfig) {
-	prefix := storage.DI_MONGO
+
 	mongo := mongo.Config{
-		Address:      current.ConfigMap[prefix+".host"],
-		User:         current.ConfigMap[prefix+".usr"],
-		Password:     current.ConfigMap[prefix+".pwd"],
-		Database:     current.ConfigMap[prefix+".database"],
-		Port:         current.ConfigMap[prefix+".port"],
-		MaxOpenConns: current.ConfigMap[prefix+".maxOpenConns"],
-		MaxIdleConns: current.ConfigMap[prefix+".maxIDleConns"],
-		Mechanism:    current.ConfigMap[prefix+".mechanism"],
+		Address:      current.ConfigMap["mongo.address"],
+		User:         current.ConfigMap["mongo.usr"],
+		Password:     current.ConfigMap["mongo.pwd"],
+		Database:     current.ConfigMap["mongo.database"],
+		MaxOpenConns: current.ConfigMap["mongo.maxOpenConns"],
+		MaxIdleConns: current.ConfigMap["mongo.maxIDleConns"],
+		Mechanism:    current.ConfigMap["mongo.mechanism"],
 	}
 
-	prefix = storage.DI_REDIS
-	redis := redis.Config{
-		Address:  current.ConfigMap[prefix+".host"],
-		User:     current.ConfigMap[prefix+".usr"],
-		Password: current.ConfigMap[prefix+".pwd"],
-		Database: current.ConfigMap[prefix+".database"],
-		Port:     current.ConfigMap[prefix+".port"],
+	rediscfg := dalredis.Config{
+		Address:  current.ConfigMap["redis.address"],
+		Password: current.ConfigMap["redis.pwd"],
+		Database: current.ConfigMap["redis.database"],
 	}
 
 	h.Config = &options.Config{
 		Mongo: mongo,
-		Redis: redis,
+		Redis: rediscfg,
 	}
 }
 
