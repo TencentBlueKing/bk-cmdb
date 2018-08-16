@@ -169,6 +169,7 @@ const (
 	MagicVersion = uint16(0x1b01) // cmdb01
 )
 
+// Request define a request interface
 type Request interface {
 	Decode(value interface{}) error
 }
