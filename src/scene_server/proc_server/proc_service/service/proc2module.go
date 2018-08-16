@@ -24,7 +24,6 @@ import (
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	
 )
 
 func (ps *ProcServer) BindModuleProcess(req *restful.Request, resp *restful.Response) {
@@ -111,10 +110,20 @@ func (ps *ProcServer) GetProcessBindModule(req *restful.Request, resp *restful.R
 
 	pathParams := req.PathParameters()
 	appIDStr := pathParams[common.BKAppIDField]
-	appID, _ := strconv.Atoi(appIDStr)
+	appID, errAppID := strconv.Atoi(appIDStr)
 	procIDStr := pathParams[common.BKProcIDField]
-	procID, _ := strconv.Atoi(procIDStr)
+	procID, errProcID := strconv.Atoi(procIDStr)
 
+	if nil != errAppID {
+		blog.Errorf("GetProcessBindModule application id %s not integer", appIDStr)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
+		return
+	}
+	if nil != errProcID {
+		blog.Errorf("GetProcessBindModule process id %s not integer", procIDStr)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKProcIDField)})
+		return
+	}
 	// search object instance
 	condition := make(map[string]interface{})
 	condition[common.BKAppIDField] = appID
@@ -144,19 +153,20 @@ func (ps *ProcServer) GetProcessBindModule(req *restful.Request, resp *restful.R
 			if !ok {
 				continue
 			}
-
-			isDefault64, ok := moduleInfo[common.BKDefaultField].(float64)
-			if !ok {
-				isDefault, ok := moduleInfo[common.BKDefaultField].(int)
-				if !ok || 0 != isDefault {
-					continue
+			if moduleInfo.Exists(common.BKDefaultField) {
+				isDefault64, err := moduleInfo.Int64(common.BKDefaultField)
+				if nil != err {
+					blog.Warnf("get module default error:%s", err.Error())
+				} else {
+					if 0 != isDefault64 {
+						continue
+					}
 				}
+				disModuleNameArr = append(disModuleNameArr, moduleName)
 			} else {
-				if 0 != isDefault64 {
-					continue
-				}
+				blog.Errorf("ApplicationID %d  module name %s not found default field", appID, moduleName)
 			}
-			disModuleNameArr = append(disModuleNameArr, moduleName)
+
 		}
 	}
 

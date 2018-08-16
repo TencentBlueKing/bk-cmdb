@@ -62,6 +62,15 @@ func (ps *ProctrlServer) WebService() http.Handler {
 	ws.Route(ws.POST("/instance/model").To(ps.CreateProcInstanceModel))
 	ws.Route(ws.POST("/instance/model/search").To(ps.GetProcInstanceModel))
 	ws.Route(ws.DELETE("/instance/model").To(ps.DeleteProcInstanceModel))
+	ws.Route(ws.POST("/instance/register/detail").To(ps.RegisterProcInstaceDetail))
+	ws.Route(ws.PUT("/instance/register/detail").To(ps.ModifyRegisterProcInstanceDetail))
+	ws.Route(ws.POST("/instance/register/detail/search").To(ps.GetProcInstanceDetail))
+	ws.Route(ws.DELETE("/instance/register/detail").To(ps.DeleteRegisterProcInstanceDetail))
+
+	ws.Route(ws.POST("/operate/task").To(ps.AddOperateTaskInfo))
+	ws.Route(ws.PUT("/operate/task").To(ps.UpdateOperateTaskInfo))
+	ws.Route(ws.POST("/operate/task/search").To(ps.SearchOperateTaskInfo))
+
 	ws.Route(ws.GET("/healthz").To(ps.Healthz))
 
 	container.Add(ws)
@@ -124,7 +133,7 @@ func (ps *ProctrlServer) OnProcessConfUpdate(previous, current cfnc.ProcessConfi
 	prefix := storage.DI_MONGO
 	ps.MongoCfg = &mgoclient.MongoConfig{
 		Address:      current.ConfigMap[prefix+".host"],
-		User:         current.ConfigMap[prefix+".user"],
+		User:         current.ConfigMap[prefix+".usr"],
 		Password:     current.ConfigMap[prefix+".pwd"],
 		Database:     current.ConfigMap[prefix+".database"],
 		Port:         current.ConfigMap[prefix+".port"],
@@ -136,7 +145,7 @@ func (ps *ProctrlServer) OnProcessConfUpdate(previous, current cfnc.ProcessConfi
 	prefix = storage.DI_REDIS
 	ps.RedisCfg = &redisclient.RedisConfig{
 		Address:  current.ConfigMap[prefix+".host"],
-		User:     current.ConfigMap[prefix+".user"],
+		User:     current.ConfigMap[prefix+".usr"],
 		Password: current.ConfigMap[prefix+".pwd"],
 		Database: current.ConfigMap[prefix+".database"],
 		Port:     current.ConfigMap[prefix+".port"],

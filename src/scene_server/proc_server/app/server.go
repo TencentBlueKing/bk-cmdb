@@ -17,6 +17,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/backbone"
@@ -24,6 +26,7 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/proc_server/app/options"
+	"configcenter/src/scene_server/proc_server/proc_service/logics"
 	"configcenter/src/scene_server/proc_server/proc_service/service"
 )
 
@@ -51,11 +54,13 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	procSvr := new(service.ProcServer)
+	container := restful.NewContainer()
+	container.Add(procSvr.WebService())
 
 	bkbsvr := backbone.Server{
 		ListenAddr: svrInfo.IP,
 		ListenPort: svrInfo.Port,
-		Handler:    procSvr.WebService(),
+		Handler:    container,
 		TLS:        backbone.TLSConfig{},
 	}
 
@@ -74,6 +79,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		bkbCfg)
 
 	procSvr.Engine = engine
+	procSvr.Logics = &logics.Logics{Engine: engine}
 
 	select {
 	case <-ctx.Done():
@@ -110,31 +116,3 @@ func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
 
 	return svrInfo, nil
 }
-
-/*
-//Run ccapi server
-func Run(op *options.ServerOption) error {
-
-	setConfig(op)
-
-	serv, err := ccapi.NewCCAPIServer(op.ServConf)
-	if err != nil {
-		blog.Error("fail to create ccapi server. err:%s", err.Error())
-		return err
-	}
-
-	//pid
-	if err := common.SavePid(); err != nil {
-		blog.Error("fail to save pid: err:%s", err.Error())
-	}
-
-	serv.Start()
-
-	return nil
-}
-
-func setConfig(op *options.ServerOption) {
-	//server cert directory
-
-}
-*/

@@ -23,6 +23,10 @@ const (
 	// BKTableNameProcInstanceModel the table name of the process instance
 	BKTableNameProcInstanceModel = "cc_ProcInstanceModel"
 
+	BKTableNameProcInstaceDetail = "cc_ProcInstanceDetail"
+
+	BKTableNameProcOperateTask = "cc_ProcOpTask"
+
 	// BKTableNamePrivilege the table name of the privilege module
 	BKTableNamePrivilege = "cc_Privilege"
 
@@ -99,6 +103,9 @@ var AllTables = []string{
 	BKTableNameIdentifier,
 	BKTableNameObjAsst,
 	BKTableNameTopoGraphics,
+	BKTableNameProcInstanceModel,
+	BKTableNameProcInstaceDetail,
+	BKTableNameProcOperateTask,
 }
 
 // GetInstTableName returns inst data table name

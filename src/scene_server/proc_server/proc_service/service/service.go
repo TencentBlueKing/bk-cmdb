@@ -12,8 +12,6 @@
 package service
 
 import (
-	"net/http"
-
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
@@ -23,18 +21,19 @@ import (
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
+	"configcenter/src/scene_server/proc_server/proc_service/logics"
 )
 
 type ProcServer struct {
 	*backbone.Engine
+	*logics.Logics
 }
 
-func (ps *ProcServer) WebService() http.Handler {
+func (ps *ProcServer) WebService() *restful.WebService {
 	getErrFun := func() errors.CCErrorIf {
 		return ps.Engine.CCErr
 	}
 
-	container := restful.NewContainer()
 	// v3
 	ws := new(restful.WebService)
 	ws.Path("/process/{version}").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
@@ -56,18 +55,17 @@ func (ps *ProcServer) WebService() http.Handler {
 	ws.Route(ws.POST("/openapi/GetProcessPortByApplicationID/{" + common.BKAppIDField + "}").To(ps.GetProcessPortByApplicationID))
 	ws.Route(ws.POST("/openapi/GetProcessPortByIP").To(ps.GetProcessPortByIP))
 
-	ws.Route(ws.POST("/operate/{namespace}/process").To(ps.OperateProcessInstance))
-	ws.Route(ws.POST("/operate/{namespace}/process/taskresult").To(ps.QueryProcessOperateResult))
+	ws.Route(ws.POST("/operate/process").To(ps.OperateProcessInstance))
+	ws.Route(ws.GET("/operate/process/taskresult/{taskID}").To(ps.QueryProcessOperateResult))
 
 	ws.Route(ws.POST("/conftemp").To(ps.CreateConfigTemp))
 	ws.Route(ws.PUT("/conftemp").To(ps.UpdateConfigTemp))
 	ws.Route(ws.DELETE("/conftemp").To(ps.DeleteConfigTemp))
 	ws.Route(ws.POST("/conftemp/search").To(ps.QueryConfigTemp))
 	ws.Route(ws.GET("/healthz").To(ps.Healthz))
+	ws.Route(ws.POST("/process/refresh/hostinstnum").To(ps.RefreshProcHostInstByEvent))
 
-	container.Add(ws)
-
-	return container
+	return ws
 }
 
 func (s *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
