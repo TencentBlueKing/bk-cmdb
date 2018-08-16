@@ -14,5 +14,8 @@
 	"1108017": "bind template to process failed",
 	"1108018": "unbind template from process failed",
 	"1108019": "search template process relation failed",
+    "1108020": "Query process execution status failed to execute",
+    "1108021": "Process operation waiting to be executed",
+    "1108022": "Process operation error",
     "": ""
 }

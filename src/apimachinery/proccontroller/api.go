@@ -93,7 +93,7 @@ func (p *procctrl) DeleteProc2Template(ctx context.Context, h http.Header, dat i
 	resp = new(metadata.Response)
 	subPath := "/template"
 
-	err = p.client.Delete().
+	err = p.client.Post().
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
@@ -103,7 +103,7 @@ func (p *procctrl) DeleteProc2Template(ctx context.Context, h http.Header, dat i
 	return
 }
 
-func (p *procctrl) CreateProcInstanceModel(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+func (p *procctrl) CreateProcInstanceModel(ctx context.Context, h http.Header, dat []*metadata.ProcInstanceModel) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/instance/model"
 
@@ -118,7 +118,7 @@ func (p *procctrl) CreateProcInstanceModel(ctx context.Context, h http.Header, d
 	return
 }
 
-func (p *procctrl) DeleteProcInstanceModel(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+func (p *procctrl) DeleteProcInstanceModel(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/instance/model"
 
@@ -133,10 +133,114 @@ func (p *procctrl) DeleteProcInstanceModel(ctx context.Context, h http.Header, d
 	return
 }
 
-func (p *procctrl) GetProcInstanceModel(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.ProcInstModelResult, err error) {
+func (p *procctrl) GetProcInstanceModel(ctx context.Context, h http.Header, dat *metadata.QueryInput) (resp *metadata.ProcInstModelResult, err error) {
 	resp = new(metadata.ProcInstModelResult)
 	subPath := "/instance/model/search"
 
+	err = p.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+func (p *procctrl) RegisterProcInstanceDetail(ctx context.Context, h http.Header, dat *metadata.GseProcRequest) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/instance/register/detail"
+
+	err = p.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+func (p *procctrl) ModifyProcInstanceDetail(ctx context.Context, h http.Header, dat *metadata.ModifyProcInstanceDetail) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/instance/register/detail"
+
+	err = p.client.Put().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+func (p *procctrl) GetProcInstanceDetail(ctx context.Context, h http.Header, dat *metadata.QueryInput) (resp *metadata.ProcInstanceDetailResult, err error) {
+	resp = new(metadata.ProcInstanceDetailResult)
+	subPath := "/instance/register/detail/search"
+
+	err = p.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+func (p *procctrl) DeleteProcInstanceDetail(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/instance/register/detail"
+
+	err = p.client.Delete().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+func (p *procctrl) AddOperateTaskInfo(ctx context.Context, h http.Header, dat []*metadata.ProcessOperateTask) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/operate/task"
+
+	err = p.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+func (p *procctrl) UpdateOperateTaskInfo(ctx context.Context, h http.Header, dat *metadata.UpdateParams) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/operate/task"
+
+	err = p.client.Put().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+func (p *procctrl) SearchOperateTaskInfo(ctx context.Context, h http.Header, dat *metadata.QueryInput) (resp *metadata.ProcessOperateTaskResult, err error) {
+	resp = new(metadata.ProcessOperateTaskResult)
+	subPath := "/operate/task/search"
 	err = p.client.Post().
 		WithContext(ctx).
 		Body(dat).

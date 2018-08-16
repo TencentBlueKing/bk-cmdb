@@ -552,10 +552,10 @@ const (
 	FieldTypeBool string = "bool"
 
 	// FieldTypeSingleLenChar the single char length limit
-	FieldTypeSingleLenChar int = 48
+	FieldTypeSingleLenChar int = 256
 
 	// FieldTypeLongLenChar the long char length limit
-	FieldTypeLongLenChar int = 512
+	FieldTypeLongLenChar int = 2000
 )
 
 const (
@@ -656,6 +656,10 @@ const (
 )
 
 const (
+	BKSTRIDPrefix = "cc"
+)
+
+const (
 	// LocalHostName the local host name definition
 	LocalHostName = "localhost"
 
@@ -744,4 +748,20 @@ const (
 	TemplateStatusDraft   = "draft"
 	TemplateStatusOnline  = "online"
 	TemplateStatusHistory = "history"
+)
+
+const (
+	BKProcInstanceOpUser = "proc instance user"
+)
+
+const (
+	GSEProcOPStop           = 1
+	GSEProcOPQueryStatus    = 2
+	GSEProcOPRegister       = 3
+	GSEProcOPUnregister     = 4
+	GSEProcOPRegisterStart  = 5
+	GSEProcOPUnregisterStop = 6
+	GSEProcOPRestart        = 7
+	GSEProcOPReload         = 8
+	GSEProcOPKill           = 9
 )

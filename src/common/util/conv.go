@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 func GetStrByInterface(a interface{}) string {
@@ -46,7 +47,7 @@ func GetIntByInterface(a interface{}) (int, error) {
 		id = int(val)
 	case string:
 		var tmpID int64
-		tmpID, err = strconv.ParseInt(a.(string), 10, 64)
+		tmpID, err = strconv.ParseInt(strings.TrimSpace(val), 10, 64)
 		id = int(tmpID)
 	default:
 		err = errors.New("not numeric")
@@ -58,25 +59,23 @@ func GetIntByInterface(a interface{}) (int, error) {
 func GetInt64ByInterface(a interface{}) (int64, error) {
 	var id int64 = 0
 	var err error
-	switch a.(type) {
+	switch val := a.(type) {
 	case int:
-		id = int64(a.(int))
+		id = int64(val)
 	case int32:
-		id = int64(a.(int32))
+		id = int64(val)
 	case int64:
-		id = int64(a.(int64))
+		id = val
 	case json.Number:
 		var tmpID int64
 		tmpID, err = a.(json.Number).Int64()
 		id = int64(tmpID)
 	case float64:
-		tmpID := a.(float64)
-		id = int64(tmpID)
+		id = int64(val)
 	case float32:
-		tmpID := a.(float32)
-		id = int64(tmpID)
+		id = int64(val)
 	case string:
-		id, err = strconv.ParseInt(a.(string), 10, 64)
+		id, err = strconv.ParseInt(strings.TrimSpace(val), 10, 64)
 	default:
 		err = errors.New("not numeric")
 

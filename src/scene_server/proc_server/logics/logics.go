@@ -18,4 +18,11 @@ import (
 
 type Logics struct {
 	*backbone.Engine
+	ProcHostInst *ProcHostInstConfig
+}
+
+//refresh process host instance number need config
+type ProcHostInstConfig struct {
+	MaxEventCount         int
+	MaxRefreshModuleCount int
 }

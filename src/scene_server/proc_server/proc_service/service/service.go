@@ -12,8 +12,6 @@
 package service
 
 import (
-	"net/http"
-
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
@@ -31,12 +29,11 @@ type ProcServer struct {
 	*logics.Logics
 }
 
-func (ps *ProcServer) WebService() http.Handler {
+func (ps *ProcServer) WebService() *restful.WebService {
 	getErrFun := func() errors.CCErrorIf {
 		return ps.Engine.CCErr
 	}
 
-	container := restful.NewContainer()
 	// v3
 	ws := new(restful.WebService)
 	ws.Path("/process/{version}").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
@@ -55,10 +52,9 @@ func (ps *ProcServer) WebService() http.Handler {
 
 	ws.Route(ws.GET("/{" + common.BKOwnerIDField + "}/{" + common.BKAppIDField + "}/{" + common.BKProcessIDField + "}").To(ps.GetProcessDetailByID))
 
-	ws.Route(ws.POST("/operate/{namespace}/process").To(ps.OperateProcessInstance))
-	ws.Route(ws.POST("/operate/{namespace}/process/taskresult").To(ps.QueryProcessOperateResult))
+	ws.Route(ws.POST("/operate/process").To(ps.OperateProcessInstance))
+	ws.Route(ws.GET("/operate/process/taskresult/{taskID}").To(ps.QueryProcessOperateResult))
 
-	//template config
 	ws.Route(ws.POST("/template/{bk_supplier_account}/{bk_biz_id}").To(ps.CreateTemplate))
 	ws.Route(ws.PUT("/template/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.UpdateTemplate))
 	ws.Route(ws.DELETE("/template/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.DeleteTemplate))
@@ -79,9 +75,8 @@ func (ps *ProcServer) WebService() http.Handler {
 	ws.Route(ws.POST("/openapi/GetProcessPortByIP").To(ps.GetProcessPortByIP))
 
 	ws.Route(ws.GET("/healthz").To(ps.Healthz))
-	container.Add(ws)
-
-	return container
+	ws.Route(ws.POST("/process/refresh/hostinstnum").To(ps.RefreshProcHostInstByEvent))
+	return ws
 }
 
 func (s *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
