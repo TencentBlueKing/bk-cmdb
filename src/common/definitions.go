@@ -675,6 +675,12 @@ const (
 	BKHTTPCCTransactionID = "cc_txn_id"
 )
 
+type CCContextKey string
+
+const (
+	CCContextKeyJoinOption = CCContextKey("cc_context_joinoption")
+)
+
 const (
 	// DefaultAppLifeCycleNormal  biz life cycle normal
 	DefaultAppLifeCycleNormal = "2"
