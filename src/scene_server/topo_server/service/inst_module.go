@@ -14,6 +14,7 @@ package service
 
 import (
 	"strconv"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -140,6 +141,11 @@ func (s *topoService) SearchModule(params types.ContextParams, pathParams, query
 
 	queryCond := &metadata.QueryInput{}
 	queryCond.Condition = paramsCond.Condition
+	queryCond.Fields = strings.Join(paramsCond.Fields, ",")
+	page := metadata.ParsePage(paramsCond.Page)
+	queryCond.Limit = page.Limit
+	queryCond.Sort = page.Sort
+	queryCond.Start = page.Start
 
 	cnt, instItems, err := s.core.ModuleOperation().FindModule(params, obj, queryCond)
 	if nil != err {
