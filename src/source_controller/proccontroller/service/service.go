@@ -13,40 +13,33 @@
 package service
 
 import (
-	"configcenter/src/common/metadata"
-	"net/http"
-
-	"github.com/emicklei/go-restful"
-	"gopkg.in/redis.v5"
-
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
-	cfnc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
-	"configcenter/src/storage"
-	"configcenter/src/storage/mgoclient"
-	"configcenter/src/storage/redisclient"
+	"configcenter/src/storage/dal"
+
+	"github.com/emicklei/go-restful"
+	"gopkg.in/redis.v5"
 )
 
 type ProctrlServer struct {
-	Core       *backbone.Engine
-	DbInstance storage.DI
-	CacheDI    *redis.Client
-	MongoCfg   *mgoclient.MongoConfig
-	RedisCfg   *redisclient.RedisConfig
+	Core     *backbone.Engine
+	Instance dal.RDB
+	Cache    *redis.Client
 }
 
-func (ps *ProctrlServer) WebService() http.Handler {
+func (ps *ProctrlServer) WebService() *restful.WebService {
 
-	container := restful.NewContainer()
+	ws := new(restful.WebService)
 	getErrFun := func() errors.CCErrorIf {
 		return ps.Core.CCErr
 	}
 	// v3
-	ws := new(restful.WebService)
+
 	ws.Path("/process/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
 	restful.DefaultRequestContentType(restful.MIME_JSON)
 	restful.DefaultResponseContentType(restful.MIME_JSON)
@@ -55,19 +48,12 @@ func (ps *ProctrlServer) WebService() http.Handler {
 	ws.Route(ws.POST("/module").To(ps.CreateProc2Module))
 	ws.Route(ws.POST("/module/search").To(ps.GetProc2Module))
 
-	ws.Route(ws.POST("/conftemp").To(ps.CreateConfigTemp))
-	ws.Route(ws.PUT("/conftemp").To(ps.UpdateConfigTemp))
-	ws.Route(ws.DELETE("/conftemp").To(ps.DeleteConfigTemp))
-	ws.Route(ws.POST("/conftemp/search").To(ps.QueryConfigTemp))
-
 	ws.Route(ws.POST("/instance/model").To(ps.CreateProcInstanceModel))
 	ws.Route(ws.POST("/instance/model/search").To(ps.GetProcInstanceModel))
 	ws.Route(ws.DELETE("/instance/model").To(ps.DeleteProcInstanceModel))
 	ws.Route(ws.GET("/healthz").To(ps.Healthz))
 
-	container.Add(ws)
-
-	return container
+	return ws
 }
 
 func (ps *ProctrlServer) Healthz(req *restful.Request, resp *restful.Response) {
@@ -83,7 +69,7 @@ func (ps *ProctrlServer) Healthz(req *restful.Request, resp *restful.Response) {
 
 	// mongodb status
 	mongoItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityMongo}
-	if err := ps.DbInstance.Ping(); err != nil {
+	if err := ps.Instance.Ping(); err != nil {
 		mongoItem.IsHealthy = false
 		mongoItem.Message = err.Error()
 	}
@@ -91,7 +77,7 @@ func (ps *ProctrlServer) Healthz(req *restful.Request, resp *restful.Response) {
 
 	// redis status
 	redisItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityRedis}
-	if err := ps.CacheDI.Ping().Err(); err != nil {
+	if err := ps.Cache.Ping().Err(); err != nil {
 		redisItem.IsHealthy = false
 		redisItem.Message = err.Error()
 	}
@@ -119,27 +105,4 @@ func (ps *ProctrlServer) Healthz(req *restful.Request, resp *restful.Response) {
 		Message: meta.Message,
 	}
 	resp.WriteJson(answer, "application/json")
-}
-
-func (ps *ProctrlServer) OnProcessConfUpdate(previous, current cfnc.ProcessConfig) {
-	prefix := storage.DI_MONGO
-	ps.MongoCfg = &mgoclient.MongoConfig{
-		Address:      current.ConfigMap[prefix+".host"],
-		User:         current.ConfigMap[prefix+".usr"],
-		Password:     current.ConfigMap[prefix+".pwd"],
-		Database:     current.ConfigMap[prefix+".database"],
-		Port:         current.ConfigMap[prefix+".port"],
-		MaxOpenConns: current.ConfigMap[prefix+".maxOpenConns"],
-		MaxIdleConns: current.ConfigMap[prefix+".maxIDleConns"],
-		Mechanism:    current.ConfigMap[prefix+".mechanism"],
-	}
-
-	prefix = storage.DI_REDIS
-	ps.RedisCfg = &redisclient.RedisConfig{
-		Address:  current.ConfigMap[prefix+".host"],
-		User:     current.ConfigMap[prefix+".usr"],
-		Password: current.ConfigMap[prefix+".pwd"],
-		Database: current.ConfigMap[prefix+".database"],
-		Port:     current.ConfigMap[prefix+".port"],
-	}
 }

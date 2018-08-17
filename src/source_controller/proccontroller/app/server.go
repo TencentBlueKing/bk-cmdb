@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	"configcenter/src/apimachinery"
@@ -33,53 +34,48 @@ import (
 
 //Run ccapi server
 func Run(ctx context.Context, op *options.ServerOption) error {
-	// clientset
-	apiMachConf := &util.APIMachineryConfig{
+	svrInfo, err := newServerInfo(op)
+	if err != nil {
+		return fmt.Errorf("wrap server info failed, err: %v", err)
+	}
+
+	c := &util.APIMachineryConfig{
 		ZkAddr:    op.ServConf.RegDiscover,
-		QPS:       op.ServConf.Qps,
-		Burst:     op.ServConf.Burst,
+		QPS:       1000,
+		Burst:     2000,
 		TLSConfig: nil,
 	}
 
-	apiMachinery, err := apimachinery.NewApiMachinery(apiMachConf)
+	machinery, err := apimachinery.NewApiMachinery(c)
 	if err != nil {
-		return fmt.Errorf("create api machinery object failed. err: %v", err)
-	}
-	// server
-	svrInfo, err := newServerInfo(op)
-	if err != nil {
-		return fmt.Errorf("creae server info object failed. err: %v", err)
+		return fmt.Errorf("new api machinery failed, err: %v", err)
 	}
 
-	proctrlSvr := new(service.ProctrlServer)
-
-	bksvr := backbone.Server{
+	server := backbone.Server{
 		ListenAddr: svrInfo.IP,
 		ListenPort: svrInfo.Port,
-		Handler:    proctrlSvr.WebService(),
+		Handler:    restful.NewContainer().Add(coreService.WebService()),
 		TLS:        backbone.TLSConfig{},
 	}
 
-	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_PROCCONTROLLER, svrInfo.IP)
-	bkConf := &backbone.Config{
+	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_OBJECTCONTROLLER, svrInfo.IP)
+	bonC := &backbone.Config{
 		RegisterPath: regPath,
 		RegisterInfo: *svrInfo,
-		CoreAPI:      apiMachinery,
-		Server:       bksvr,
+		CoreAPI:      machinery,
+		Server:       server,
 	}
 
-	proctrlSvr.Core, err = backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
-		types.CC_MODULE_PROCCONTROLLER,
+	objCtr.Core, err = backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
+		types.CC_MODULE_HOSTCONTROLLER,
 		op.ServConf.ExConfig,
-		proctrlSvr.OnProcessConfUpdate,
-		bkConf)
+		bonC)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
-
 	configReady := false
 	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
-		if nil == proctrlSvr.MongoCfg {
+		if nil == objCtr.Config {
 			time.Sleep(time.Second)
 		} else {
 			configReady = true
@@ -90,25 +86,66 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("Configuration item not found")
 	}
 
-	proctrlSvr.DbInstance, err = mgoclient.NewMgoCli(proctrlSvr.MongoCfg.Address, proctrlSvr.MongoCfg.Port, proctrlSvr.MongoCfg.User, proctrlSvr.MongoCfg.Password, proctrlSvr.MongoCfg.Mechanism, proctrlSvr.MongoCfg.Database)
-	if err != nil {
-		return fmt.Errorf("new mongo client failed, err: %v", err)
-	}
-	err = proctrlSvr.DbInstance.Open()
+	objCtr.Instance, err = mongo.NewMgo(objCtr.Config.Mongo.BuildURI())
 	if err != nil {
 		return fmt.Errorf("new mongo client failed, err: %v", err)
 	}
 
-	proctrlSvr.CacheDI, err = redisclient.NewFromConfig(*proctrlSvr.RedisCfg)
+	rdsc := objCtr.Config.Redis
+	dbNum, err := strconv.Atoi(rdsc.Database)
+	//not set use default db num 0
+	if nil != err {
+		return fmt.Errorf("redis config db[%s] not integer", rdsc.Database)
+	}
+	objCtr.Cache = redis.NewClient(
+		&redis.Options{
+			Addr:     rdsc.Address,
+			PoolSize: 100,
+			Password: rdsc.Password,
+			DB:       dbNum,
+		})
+	err = objCtr.Cache.Ping().Err()
 	if err != nil {
 		return fmt.Errorf("new redis client failed, err: %v", err)
 	}
+
+	coreService.Core = objCtr.Core
+	coreService.Instance = objCtr.Instance
+	coreService.Cache = objCtr.Cache
+
 	select {
 	case <-ctx.Done():
-		blog.Errorf("processctroller will exit!")
+	}
+	return nil
+}
+
+	Core     *backbone.Engine
+	Instance dal.RDB
+	Cache    *redis.Client
+	Config   *options.Config
+}
+
+
+	mongo := mongo.Config{
+		Address:      current.ConfigMap["mongo.address"],
+		User:         current.ConfigMap["mongo.usr"],
+		Password:     current.ConfigMap["mongo.pwd"],
+		Database:     current.ConfigMap["mongo.database"],
+		MaxOpenConns: current.ConfigMap["mongo.maxOpenConns"],
+		MaxIdleConns: current.ConfigMap["mongo.maxIDleConns"],
+		Mechanism:    current.ConfigMap["mongo.mechanism"],
 	}
 
-	return nil
+	rediscfg := dalredis.Config{
+		Address:  current.ConfigMap["redis.address"],
+		Password: current.ConfigMap["redis.pwd"],
+		Database: current.ConfigMap["redis.database"],
+	}
+
+	h.Config = &options.Config{
+		Mongo: mongo,
+		Redis: rediscfg,
+	}
 }
 
 func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
