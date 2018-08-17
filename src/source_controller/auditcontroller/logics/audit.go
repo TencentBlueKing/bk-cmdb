@@ -13,9 +13,11 @@
 package logics
 
 import (
+	"context"
 	"strings"
 	"time"
 
+	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
@@ -44,8 +46,7 @@ func (lgc *Logics) AddLogMulti(appID int64, opType auditoplog.AuditOpType, opTar
 	if len(logRows) == 0 {
 		return nil
 	}
-	logRow := metadata.OperationLog{}
-	err := lgc.Instance.InsertMuti(logRow.TableName(), logRows...)
+	err := lgc.Instance.Table(common.BKTableNameOperationLog).Insert(context.Background(), logRows)
 	return err
 }
 
@@ -72,8 +73,7 @@ func (lgc *Logics) AddLogMultiWithExtKey(appID int64, opType auditoplog.AuditOpT
 	if len(logRows) == 0 {
 		return nil
 	}
-	logRow := metadata.OperationLog{}
-	err := lgc.Instance.InsertMuti(logRow.TableName(), logRows...)
+	err := lgc.Instance.Table(common.BKTableNameOperationLog).Insert(context.Background(), logRows)
 	return err
 }
 
@@ -91,7 +91,7 @@ func (lgc *Logics) AddLogWithStr(appID, instID int64, opType auditoplog.AuditOpT
 		CreateTime:    time.Now(),
 		InstID:        instID,
 	}
-	_, err := lgc.Instance.Insert(logRow.TableName(), logRow)
+	err := lgc.Instance.Table(common.BKTableNameOperationLog).Insert(context.Background(), logRow)
 	return err
 }
 
@@ -102,21 +102,19 @@ func (lgc *Logics) Search(dat *metadata.ObjQueryInput) ([]metadata.OperationLog,
 	dat.ConvTime()
 	skip := dat.Start
 	limit := dat.Limit
-	sort := dat.Sort
 	fieldArr := strings.Split(fields, ",")
 	rows := make([]metadata.OperationLog, 0)
-	logRow := metadata.OperationLog{}
-	err := lgc.Instance.GetMutilByCondition(logRow.TableName(), fieldArr, condition, &rows, sort, skip, limit)
+	err := lgc.Instance.Table(common.BKTableNameOperationLog).Find(condition).Sort(dat.Sort).Fields(fieldArr...).Start(uint64(skip)).Limit(uint64(limit)).All(context.Background(), rows)
 	if nil != err {
-		blog.Errorf("query database error:%s, condition:%v", err.Error, condition)
+		blog.Errorf("query database error:%s, condition:%v", err.Error(), condition)
 		return nil, 0, err
 	}
-	cnt, err := lgc.Instance.GetCntByCondition(logRow.TableName(), condition)
+	cnt, err := lgc.Instance.Table(common.BKTableNameOperationLog).Find(condition).Count(context.Background())
 	if nil != err {
-		blog.Errorf("query database error:%s, condition:%v", err.Error, condition)
+		blog.Errorf("query database error:%s, condition:%v", err.Error(), condition)
 		return nil, 0, err
 	}
 
-	return rows, cnt, nil
+	return rows, int(cnt), nil
 
 }
