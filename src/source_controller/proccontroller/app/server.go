@@ -23,13 +23,17 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
-	"configcenter/src/common/blog"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/source_controller/proccontroller/app/options"
 	"configcenter/src/source_controller/proccontroller/service"
-	"configcenter/src/storage/mgoclient"
-	"configcenter/src/storage/redisclient"
+	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo"
+	dalredis "configcenter/src/storage/dal/redis"
+
+	restful "github.com/emicklei/go-restful"
+	redis "gopkg.in/redis.v5"
 )
 
 //Run ccapi server
@@ -51,6 +55,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("new api machinery failed, err: %v", err)
 	}
 
+	coreService := new(service.ProctrlServer)
 	server := backbone.Server{
 		ListenAddr: svrInfo.IP,
 		ListenPort: svrInfo.Port,
@@ -66,9 +71,11 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		Server:       server,
 	}
 
+	objCtr := new(ProcController)
 	objCtr.Core, err = backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
 		types.CC_MODULE_HOSTCONTROLLER,
 		op.ServConf.ExConfig,
+		objCtr.onProcConfigUpdate,
 		bonC)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
@@ -119,12 +126,14 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	return nil
 }
 
+type ProcController struct {
 	Core     *backbone.Engine
 	Instance dal.RDB
 	Cache    *redis.Client
 	Config   *options.Config
 }
 
+func (h *ProcController) onProcConfigUpdate(previous, current cc.ProcessConfig) {
 
 	mongo := mongo.Config{
 		Address:      current.ConfigMap["mongo.address"],
