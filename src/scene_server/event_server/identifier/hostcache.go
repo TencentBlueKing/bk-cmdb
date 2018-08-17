@@ -14,7 +14,6 @@ package identifier
 
 import (
 	"encoding/json"
-	"fmt"
 
 	redis "gopkg.in/redis.v5"
 
@@ -75,7 +74,7 @@ func (iden *HostIdentifier) fillIden(cache *redis.Client, db storage.DI) *HostId
 		blog.Errorf("identifier: getCache error %s", err.Error())
 		return iden
 	}
-	iden.CloudName = fmt.Sprint(cloud.data[common.BKCloudNameField])
+	iden.CloudName = getString(cloud.data[common.BKCloudNameField])
 
 	// fill module
 	for moduleID := range iden.Module {
@@ -84,8 +83,8 @@ func (iden *HostIdentifier) fillIden(cache *redis.Client, db storage.DI) *HostId
 			blog.Errorf("identifier: getCache error %s", err.Error())
 			continue
 		}
-		iden.Module[moduleID].BizName = fmt.Sprint(biz.data[common.BKAppNameField])
-		iden.SupplierAccount = fmt.Sprint(biz.data[common.BKOwnerIDField])
+		iden.Module[moduleID].BizName = getString(biz.data[common.BKAppNameField])
+		iden.SupplierAccount = getString(biz.data[common.BKOwnerIDField])
 		iden.SupplierID = getInt(biz.data, common.BKSupplierIDField)
 
 		set, err := getCache(cache, db, common.BKInnerObjIDSet, iden.Module[moduleID].SetID, false)
@@ -93,33 +92,33 @@ func (iden *HostIdentifier) fillIden(cache *redis.Client, db storage.DI) *HostId
 			blog.Errorf("identifier: getCache error %s", err.Error())
 			continue
 		}
-		iden.Module[moduleID].SetName = fmt.Sprint(set.data[common.BKSetNameField])
-		iden.Module[moduleID].SetEnv = fmt.Sprint(set.data[common.BKSetEnvField])
-		iden.Module[moduleID].SetStatus = fmt.Sprint(set.data[common.BKSetStatusField])
+		iden.Module[moduleID].SetName = getString(set.data[common.BKSetNameField])
+		iden.Module[moduleID].SetEnv = getString(set.data[common.BKSetEnvField])
+		iden.Module[moduleID].SetStatus = getString(set.data[common.BKSetStatusField])
 
 		module, err := getCache(cache, db, common.BKInnerObjIDModule, iden.Module[moduleID].ModuleID, false)
 		if err != nil {
 			blog.Errorf("identifier: getCache error %s", err.Error())
 			continue
 		}
-		iden.Module[moduleID].ModuleName = fmt.Sprint(module.data[common.BKModuleNameField])
+		iden.Module[moduleID].ModuleName = getString(module.data[common.BKModuleNameField])
 	}
 
 	// fill process
 	for procindex := range iden.Process {
 		process := &iden.Process[procindex]
-		proc, err := getCache(cache, db, common.BKTableNameBaseProcess, process.ProcessID, false)
+		proc, err := getCache(cache, db, common.BKInnerObjIDProc, process.ProcessID, false)
 		if err != nil {
-			blog.Errorf("identifier: getCache for %s %d error %s", common.BKTableNameBaseProcess, process.ProcessID, err.Error())
+			blog.Errorf("identifier: getCache for %s %d error %s", common.BKInnerObjIDProc, process.ProcessID, err.Error())
 			continue
 		}
-		process.ProcessName = fmt.Sprint(proc.data[common.BKProcessNameField])
-		process.FuncID = fmt.Sprint(proc.data[common.BKFuncIDField])
-		process.FuncName = fmt.Sprint(proc.data[common.BKFuncName])
-		process.BindIP = fmt.Sprint(proc.data[common.BKBindIP])
-		process.PROTOCOL = fmt.Sprint(proc.data[common.BKProtocol])
-		process.PORT = fmt.Sprint(proc.data[common.BKPort])
-		process.StartParamRegex = fmt.Sprint(proc.data["bk_start_param_regex"])
+		process.ProcessName = getString(proc.data[common.BKProcessNameField])
+		process.FuncID = getString(proc.data[common.BKFuncIDField])
+		process.FuncName = getString(proc.data[common.BKFuncName])
+		process.BindIP = getString(proc.data[common.BKBindIP])
+		process.PROTOCOL = getString(proc.data[common.BKProtocol])
+		process.PORT = getString(proc.data[common.BKPort])
+		process.StartParamRegex = getString(proc.data["bk_start_param_regex"])
 	}
 
 	return iden
