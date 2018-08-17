@@ -37,8 +37,7 @@ func (ps *ProcServer) OperateProcessInstance(req *restful.Request, resp *restful
 	}
 
 	forward := req.Request.Header
-
-	procInstModel, err := ps.Logics.MatchProcessInstance(context.Background(), procOpParam, req.Request.Header)
+	procInstModel, err := ps.Logics.MatchProcessInstance(context.Background(), procOpParam.ApplicationID, procOpParam.SetName, procOpParam.ModuleName, procOpParam.FuncID, procOpParam.HostInstanceID, req.Request.Header)
 	if err != nil {
 		blog.Errorf("match process instance failed in OperateProcessInstance. err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcOperateFaile)})
