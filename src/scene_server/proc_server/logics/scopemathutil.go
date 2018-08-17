@@ -57,6 +57,7 @@ func (s *ScopeMatch) ParseConds() (data interface{}, err error) {
 					return s.parseMatchIntEnum(splitRange[0], splitRange[1])
 				} else {
 					if s.isString {
+						s.needExtCompare = true
 						err := s.splitIntScope()
 						if nil != err {
 							return nil, err
