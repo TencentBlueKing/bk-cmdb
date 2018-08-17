@@ -33,6 +33,8 @@ type Condition interface {
 	GetLimit() int64
 	SetSort(sort string)
 	GetSort() string
+	SetFields(fields []string)
+	GetFields() []string
 	Field(fieldName string) Field
 	Parse(data types.MapStr) error
 	ToMapStr() types.MapStr
@@ -40,10 +42,11 @@ type Condition interface {
 
 // Condition the condition definition
 type condition struct {
-	start  int64
-	limit  int64
-	sort   string
-	fields []Field
+	start        int64
+	limit        int64
+	sort         string
+	fields       []Field
+	filterFields []string
 }
 
 // SetPage set the page
@@ -63,6 +66,13 @@ func (cli *condition) SetPage(page types.MapStr) error {
 	cli.sort = sort
 
 	return nil
+}
+
+func (cli *condition) SetFields(fields []string) {
+	cli.filterFields = fields
+}
+func (cli *condition) GetFields() []string {
+	return cli.filterFields
 }
 
 // Parse load the data into condition object
