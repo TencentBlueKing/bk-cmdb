@@ -439,10 +439,10 @@ func getCache(cache *redis.Client, db storage.DI, objType string, instID int64, 
 			}
 			for appid, modules := range appmodule {
 				// 2.2.1 find process id belong to module within app
-				procmouleids := []int64{}
+				moulename2ids := map[string][]int64{}
 				procmoulenames := []string{}
 				for _, module := range modules {
-					procmouleids = append(procmouleids, module.ModuleID)
+					moulename2ids[module.ModuleName] = append(moulename2ids[module.ModuleName], module.ModuleID)
 					procmoulenames = append(procmoulenames, module.ModuleName)
 				}
 				proc2modules := []metadata.ProcessModule{}
@@ -453,7 +453,9 @@ func getCache(cache *redis.Client, db storage.DI, objType string, instID int64, 
 
 				// 2.2.2 find process by process id
 				processids := []int64{}
+				proc2moulenames := map[int64][]string{}
 				for _, proc2module := range proc2modules {
+					proc2moulenames[proc2module.ProcessID] = append(proc2moulenames[proc2module.ProcessID], proc2module.ModuleName)
 					processids = append(processids, proc2module.ProcessID)
 				}
 				process := []Process{}
@@ -464,7 +466,9 @@ func getCache(cache *redis.Client, db storage.DI, objType string, instID int64, 
 
 				// 2.3 bind module id
 				for index := range process {
-					process[index].BindModules = procmouleids
+					for _, modulename := range proc2moulenames[process[index].ProcessID] {
+						process[index].BindModules = moulename2ids[modulename]
+					}
 				}
 				hostprocess = append(hostprocess, process...)
 			}
