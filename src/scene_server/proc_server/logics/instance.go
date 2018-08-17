@@ -98,14 +98,15 @@ func (lgc *Logics) HandleProcInstNumByModuleID(ctx context.Context, header http.
 	isExistHostInst := make(map[string]metadata.ProcInstanceModel)
 	for procID, info := range procInfos {
 		for hostID, _ := range hostInfos {
-			procInstInfo, ok := procInst[getInlineProcInstKey(hostID, procID)]
+			procInstInfo, ok := procInst[getInlineProcInstKey(hostID, moduleID)]
+
 			hostInstID := uint64(0)
 			if !ok {
 				maxInstID++
 				hostInstID = maxInstID
+				isExistHostInst[getInlineProcInstKey(hostID, moduleID)] = procInstInfo
 			} else {
 				hostInstID = procInstInfo.HostInstanID
-				isExistHostInst[getInlineProcInstKey(hostID, procID)] = procInstInfo
 			}
 			instProc = append(instProc, GetProcInstModel(appID, setID, moduleID, hostID, procID, info.FunID, info.ProcNum, hostInstID)...)
 		}
@@ -331,20 +332,33 @@ func (lgc *Logics) eventProcInstByHostInfo(ctx context.Context, eventData *metad
 	return nil
 }
 
-func (lgc *Logics) GetModuleIDByHostID(ctx context.Context, header http.Header, hostID int64) ([]metadata.ModuleHost, error) {
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
-	dat := map[string][]int64{
-		common.BKHostIDField: []int64{hostID},
+func (lgc *Logics) HandleProcInstNumByModuleName(ctx context.Context, header http.Header, appID int64, moduleName string) ([]int64, error) {
+	moduleConds := new(metadata.SearchParams)
+	moduleConds.Condition = map[string]interface{}{
+		common.BKAppIDField:      appID,
+		common.BKModuleNameField: moduleName,
 	}
-	ret, err := lgc.CoreAPI.HostController().Module().GetModulesHostConfig(ctx, header, dat)
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	moduleConds.Page = map[string]interface{}{"start": 0, "limit": common.BKNoLimit}
+	moduleInfos, err := lgc.CoreAPI.TopoServer().Instance().InstSearch(ctx, util.GetOwnerID(header), common.BKInnerObjIDModule, header, moduleConds)
 	if nil != err {
-		blog.Errorf("GetModuleIDByHostID appID %d module id %d GetModulesHostConfig http do error:%s", hostID, err.Error())
+		blog.Errorf("HandleProcInstNumByModuleName get module by name %s error %s", moduleName, err.Error())
 		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !ret.Result {
-		blog.Errorf("GetModuleIDByHostID appID %d module id %d GetModulesHostConfig reply error:%s", hostID, ret.ErrMsg)
-		return nil, defErr.New(ret.Code, ret.ErrMsg)
+	if !moduleInfos.Result {
+		blog.Errorf("HandleProcInstNumByModuleName get module by name %s error %s ", moduleName, moduleInfos.ErrMsg)
+		return nil, defErr.New(moduleInfos.Code, moduleInfos.ErrMsg)
+	}
+	moduleIDs := make([]int64, 0)
+	for _, module := range moduleInfos.Data.Info {
+		moduleID, err := module.Int64(common.BKModuleIDField)
+		if nil != err {
+			byteData, _ := json.Marshal(module)
+			blog.Errorf("refreshProcInstByProcModule get module by name %s not module id error  item %v ", moduleName, string(byteData))
+			return nil, err
+		}
+		moduleIDs = append(moduleIDs, moduleID)
 	}
 
-	return ret.Data, nil
+	return moduleIDs, nil
 }
