@@ -17,6 +17,8 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/src/common/errors"
+
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -128,10 +130,12 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 			// check update
 			targetInstID, err := item.GetInstID()
 			if nil != err {
+				blog.Errorf("[operation-inst] failed to get inst id, error info is %s", err.Error())
 				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
 				continue
 			}
 			if err = NewSupplementary().Validator(c).ValidatorUpdate(params, obj, item.ToMapStr(), targetInstID, nil); nil != err {
+				blog.Errorf("[operation-inst] failed to valid, error info is %s", err.Error())
 				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
 				continue
 			}
@@ -139,8 +143,15 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		} else {
 			// check create
 			if err = NewSupplementary().Validator(c).ValidatorCreate(params, obj, item.ToMapStr()); nil != err {
-				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
-				continue
+				switch tmpErr := err.(type) {
+				case errors.CCErrorCoder:
+					if tmpErr.GetCode() != common.CCErrCommDuplicateItem {
+						blog.Errorf("[operation-inst] failed to valid, input value(%#v) the instname is %s, error info is %s", item.GetValues(), obj.GetInstNameFieldName(), err.Error())
+						results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
+						continue
+					}
+				}
+
 			}
 		}
 
@@ -353,7 +364,7 @@ func (c *commonInst) hasHost(params types.ContextParams, targetInst inst.Inst) (
 
 	instIDS := []deletedInst{}
 	instIDS = append(instIDS, deletedInst{instID: id, obj: targetObj})
-	childInsts, err := targetInst.GetChildInst()
+	childInsts, err := targetInst.GetMainlineChildInst()
 	if nil != err {
 		return nil, false, err
 	}
@@ -933,6 +944,10 @@ func (c *commonInst) FindOriginInst(params types.ContextParams, obj model.Object
 func (c *commonInst) FindInst(params types.ContextParams, obj model.Object, cond *metatype.QueryInput, needAsstDetail bool) (count int, results []inst.Inst, err error) {
 
 	rsp, err := c.FindOriginInst(params, obj, cond)
+	if nil != err {
+		blog.Errorf("[operation-inst] failed to find origin inst , error info is %s", err.Error())
+		return 0, nil, err
+	}
 
 	asstObjAttrs, err := c.asst.SearchObjectAssociation(params, obj.GetID())
 	if nil != err {

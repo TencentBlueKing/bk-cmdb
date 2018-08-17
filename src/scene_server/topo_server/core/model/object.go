@@ -261,6 +261,7 @@ func (o *object) GetParentObject() ([]Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
 	cond.Field(meta.AssociationFieldAssociationObjectID).Eq(o.obj.ObjectID)
+	cond.Field(meta.AssociationFieldObjectAttributeID).NotEq(common.BKChildStr)
 
 	return o.searchObjects(false, cond)
 }
@@ -269,6 +270,7 @@ func (o *object) GetChildObject() ([]Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
 	cond.Field(meta.AssociationFieldObjectID).Eq(o.obj.ObjectID)
+	cond.Field(meta.AssociationFieldObjectAttributeID).NotEq(common.BKChildStr)
 
 	return o.searchObjects(true, cond)
 }

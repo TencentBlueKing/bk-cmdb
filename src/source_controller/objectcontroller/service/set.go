@@ -13,11 +13,14 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+
+	"configcenter/src/storage/dal"
 
 	"github.com/emicklei/go-restful"
 	"gopkg.in/mgo.v2/bson"
@@ -30,13 +33,13 @@ import (
 )
 
 func (cli *Service) DeleteSetHost(req *restful.Request, resp *restful.Response) {
-	// get the language
+
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetOwnerID(req.Request.Header)
-	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
-	blog.Debug("DeleteSetHost start !")
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if nil != err {
 		blog.Error("read request body failed, error:%v", err)
@@ -54,7 +57,7 @@ func (cli *Service) DeleteSetHost(req *restful.Request, resp *restful.Response) 
 	}
 
 	input = util.SetModOwner(input, ownerID)
-	err = cli.delModuleConfigSet(input, req)
+	err = cli.delModuleConfigSet(ctx, db, input, req)
 	if err != nil {
 		blog.Error("fail to delSetConfigHost: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommParamsInvalid, err.Error())})
@@ -65,19 +68,18 @@ func (cli *Service) DeleteSetHost(req *restful.Request, resp *restful.Response) 
 }
 
 // TODO
-func (cli *Service) getModuleConfigCount(con map[string]interface{}) (int, error) {
+func (cli *Service) getModuleConfigCount(ctx context.Context, db dal.RDB, con map[string]interface{}) (uint64, error) {
 
-	count, err := cli.Instance.GetCntByCondition("cc_ModuleHostConfig", con)
-	if err != nil && !cli.Instance.IsNotFoundErr(err) {
+	count, err := db.Table(common.BKTableNameModuleHostConfig).Find(con).Count(ctx)
+	if err != nil {
 		blog.Error("fail getModuleConfigCount error:%v", err)
 		return 0, err
 	}
 	return count, err
 }
 
-func (cli *Service) delModuleConfigSet(input map[string]interface{}, req *restful.Request) error {
+func (cli *Service) delModuleConfigSet(ctx context.Context, db dal.RDB, input map[string]interface{}, req *restful.Request) error {
 	ownerID := util.GetOwnerID(req.Request.Header)
-	tableName := "cc_ModuleHostConfig"
 
 	appID, ok := input[common.BKAppIDField]
 	if false == ok {
@@ -85,19 +87,19 @@ func (cli *Service) delModuleConfigSet(input map[string]interface{}, req *restfu
 		return errors.New("params ApplicationID is required")
 	}
 	var oldContents []interface{}
-	getErr := cli.Instance.GetMutilByCondition(tableName, nil, input, &oldContents, "", 0, common.BKNoLimit)
-	if getErr != nil && !cli.Instance.IsNotFoundErr(getErr) {
+	getErr := db.Table(common.BKTableNameModuleHostConfig).Find(input).Limit(common.BKNoLimit).All(ctx, &oldContents)
+	if getErr != nil {
 		blog.Errorf("fail to delSetConfigHost: %v", getErr)
 		return getErr
 	}
 
-	setID, moduleID, defErr := cli.GetIdleModule(appID, ownerID)
+	setID, moduleID, defErr := cli.GetIdleModule(ctx, db, appID, ownerID)
 	if nil != defErr {
 		blog.Errorf("get idle module error:%v", defErr)
 		return defErr
 	}
 
-	err := cli.Instance.DelByCondition(tableName, input)
+	err := db.Table(common.BKTableNameModuleHostConfig).Delete(ctx, input)
 	if err != nil {
 		blog.Error("fail to delSetConfigHost: %v", err)
 		return err
@@ -124,8 +126,8 @@ func (cli *Service) delModuleConfigSet(input map[string]interface{}, req *restfu
 	params := common.KvMap{common.BKAppIDField: appID, common.BKHostIDField: common.KvMap{"$in": hostIDs}}
 	params = util.SetModOwner(params, ownerID)
 	var hostRelations []interface{}
-	getErr = cli.Instance.GetMutilByCondition(tableName, nil, params, &hostRelations, "", 0, common.BKNoLimit)
-	if getErr != nil && !cli.Instance.IsNotFoundErr(err) {
+	getErr = db.Table(common.BKTableNameModuleHostConfig).Find(params).Limit(common.BKNoLimit).All(ctx, &hostRelations)
+	if getErr != nil {
 		blog.Error("fail to exist relation host error: %v", getErr)
 		return getErr
 	}
@@ -151,7 +153,7 @@ func (cli *Service) delModuleConfigSet(input map[string]interface{}, req *restfu
 
 	}
 	if 0 < len(addIdleModuleDatas) {
-		err := cli.Instance.InsertMuti(tableName, addIdleModuleDatas...)
+		err := db.Table(common.BKTableNameModuleHostConfig).Insert(ctx, addIdleModuleDatas)
 		if getErr != nil {
 			blog.Error("fail to exist relation host error: %v", err)
 			return err
@@ -169,13 +171,12 @@ func (cli *Service) delModuleConfigSet(input map[string]interface{}, req *restfu
 	return nil
 }
 
-func (cli *Service) GetIdleModule(appID interface{}, ownerID string) (interface{}, interface{}, error) {
+func (cli *Service) GetIdleModule(ctx context.Context, db dal.RDB, appID interface{}, ownerID string) (interface{}, interface{}, error) {
 	params := common.KvMap{common.BKAppIDField: appID, common.BKDefaultField: common.DefaultResModuleFlag, common.BKModuleNameField: common.DefaultResModuleName}
 	params = util.SetModOwner(params, ownerID)
 	var result bson.M
-	err := cli.Instance.GetOneByCondition("cc_ModuleBase", []string{common.BKModuleIDField, common.BKSetIDField}, params, &result)
-
-	if nil != err && !cli.Instance.IsNotFoundErr(err) {
+	err := db.Table(common.BKTableNameBaseModule).Find(params).Fields(common.BKModuleIDField, common.BKSetIDField).One(ctx, &result)
+	if nil != err {
 		return nil, nil, err
 	}
 	return result[common.BKSetIDField], result[common.BKModuleIDField], nil

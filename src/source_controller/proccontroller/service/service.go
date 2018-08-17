@@ -125,7 +125,7 @@ func (ps *ProctrlServer) OnProcessConfUpdate(previous, current cfnc.ProcessConfi
 	prefix := storage.DI_MONGO
 	ps.MongoCfg = &mgoclient.MongoConfig{
 		Address:      current.ConfigMap[prefix+".host"],
-		User:         current.ConfigMap[prefix+".user"],
+		User:         current.ConfigMap[prefix+".usr"],
 		Password:     current.ConfigMap[prefix+".pwd"],
 		Database:     current.ConfigMap[prefix+".database"],
 		Port:         current.ConfigMap[prefix+".port"],
@@ -137,7 +137,7 @@ func (ps *ProctrlServer) OnProcessConfUpdate(previous, current cfnc.ProcessConfi
 	prefix = storage.DI_REDIS
 	ps.RedisCfg = &redisclient.RedisConfig{
 		Address:  current.ConfigMap[prefix+".host"],
-		User:     current.ConfigMap[prefix+".user"],
+		User:     current.ConfigMap[prefix+".usr"],
 		Password: current.ConfigMap[prefix+".pwd"],
 		Database: current.ConfigMap[prefix+".database"],
 		Port:     current.ConfigMap[prefix+".port"],
