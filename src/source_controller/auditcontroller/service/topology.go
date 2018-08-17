@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
@@ -28,7 +29,7 @@ import (
 func (s *Service) AddAppLog(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
-
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	strAppID := req.PathParameter("biz_id")
 	user := req.PathParameter("user")
@@ -46,7 +47,7 @@ func (s *Service) AddAppLog(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-	err = s.Logics.AddLogWithStr(appID, appID, params.OpType, common.BKInnerObjIDApp, params.Content, "", params.OpDesc, ownerID, user)
+	err = s.Logics.AddLogWithStr(ctx, appID, appID, params.OpType, common.BKInnerObjIDApp, params.Content, "", params.OpDesc, ownerID, user)
 	if nil != err {
 		blog.Errorf("AddAppLog add application log error:%s", err.Error())
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
@@ -59,7 +60,7 @@ func (s *Service) AddAppLog(req *restful.Request, resp *restful.Response) {
 func (s *Service) AddSetLog(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
-
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	strAppID := req.PathParameter("biz_id")
 	user := req.PathParameter("user")
@@ -78,7 +79,7 @@ func (s *Service) AddSetLog(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	err = s.Logics.AddLogWithStr(appID, params.SetID, params.OpType, common.BKInnerObjIDSet, params.Content, "", params.OpDesc, ownerID, user)
+	err = s.Logics.AddLogWithStr(ctx, appID, params.SetID, params.OpType, common.BKInnerObjIDSet, params.Content, "", params.OpDesc, ownerID, user)
 	if nil != err {
 		blog.Errorf("AddSetLog add application log error:%s", err.Error())
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
@@ -91,7 +92,7 @@ func (s *Service) AddSetLog(req *restful.Request, resp *restful.Response) {
 func (s *Service) AddSetLogs(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
-
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	strAppID := req.PathParameter("biz_id")
 	user := req.PathParameter("user")
@@ -110,7 +111,7 @@ func (s *Service) AddSetLogs(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	err = s.Logics.AddLogMulti(appID, params.OpType, common.BKInnerObjIDSet, params.Content, params.OpDesc, ownerID, user)
+	err = s.Logics.AddLogMulti(ctx, appID, params.OpType, common.BKInnerObjIDSet, params.Content, params.OpDesc, ownerID, user)
 	if nil != err {
 		blog.Errorf("AddSetLogs add set log error:%s", err.Error())
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
@@ -123,7 +124,7 @@ func (s *Service) AddSetLogs(req *restful.Request, resp *restful.Response) {
 func (s *Service) AddModuleLog(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
-
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	strAppID := req.PathParameter("biz_id")
 	user := req.PathParameter("user")
@@ -142,7 +143,7 @@ func (s *Service) AddModuleLog(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	err = s.Logics.AddLogWithStr(appID, params.ModuleID, params.OpType, common.BKInnerObjIDModule, params.Content, "", params.OpDesc, ownerID, user)
+	err = s.Logics.AddLogWithStr(ctx, appID, params.ModuleID, params.OpType, common.BKInnerObjIDModule, params.Content, "", params.OpDesc, ownerID, user)
 	if nil != err {
 		blog.Errorf("AddModuleLog add module log error:%s", err.Error())
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
@@ -155,7 +156,7 @@ func (s *Service) AddModuleLog(req *restful.Request, resp *restful.Response) {
 func (s *Service) AddModuleLogs(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
-
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	strAppID := req.PathParameter("biz_id")
 	user := req.PathParameter("user")
@@ -174,7 +175,7 @@ func (s *Service) AddModuleLogs(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	err = s.Logics.AddLogMulti(appID, params.OpType, common.BKInnerObjIDModule, params.Content, params.OpDesc, ownerID, user)
+	err = s.Logics.AddLogMulti(ctx, appID, params.OpType, common.BKInnerObjIDModule, params.Content, params.OpDesc, ownerID, user)
 	if nil != err {
 		blog.Errorf("add module log error:%s", err.Error())
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
