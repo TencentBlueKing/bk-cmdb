@@ -25,6 +25,7 @@ import (
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/api_server/ccapi/logics/v2/common/defs"
+	"configcenter/src/api_server/ccapi/logics/v2/common/utils"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/language"
@@ -919,9 +920,11 @@ func convertOneApp(itemMap map[string]interface{}) (map[string]interface{}, erro
 	if nil != itemMap["life_cycle"] {
 		lifecycle, _ = itemMap["life_cycle"].(string)
 	}
-	language := "中文"
+	language := "zh-cn"
 	if nil != itemMap["language"] {
 		language, _ = itemMap["language"].(string)
+		language = utils.ConvLanguageToV3(language)
+
 	}
 
 	timeZone := "Asia/Shanghai"
@@ -946,7 +949,7 @@ func convertOneApp(itemMap map[string]interface{}) (map[string]interface{}, erro
 		"Owner":       "",
 		"ProductPm":   productPm,
 		"LifeCycle":   lifecycle,
-		"Lanuage":     language,
+		"Language":    language,
 		"TimeZone":    timeZone,
 		"Tester":      tester,
 		"LastTime":    convertToV2Time(itemMap[common.LastTimeField]),
