@@ -45,8 +45,8 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 	c := &util.APIMachineryConfig{
 		ZkAddr:    op.ServConf.RegDiscover,
-		QPS:       1000,
-		Burst:     2000,
+		QPS:       op.ServConf.Qps,
+		Burst:     op.ServConf.Burst,
 		TLSConfig: nil,
 	}
 
