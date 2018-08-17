@@ -19,6 +19,7 @@ type SetInst struct {
 	SetEnv    string `bson:"bk_set_env"`
 }
 type ModuleInst struct {
+	BizID      int64  `bson:"bk_biz_id"`
 	ModuleID   int64  `bson:"bk_module_id"`
 	ModuleName string `bson:"bk_module_name"`
 }
