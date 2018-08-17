@@ -14,11 +14,14 @@ package logics
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 func (lgc *Logics) GetProcessbyProcID(procID string, forward http.Header) (map[string]interface{}, error) {
@@ -38,4 +41,66 @@ func (lgc *Logics) GetProcessbyProcID(procID string, forward http.Header) (map[s
 	}
 
 	return ret.Data.Info[0], nil
+}
+
+func (lgc *Logics) getProcInfoByID(ctx context.Context, procID []int64, header http.Header) (map[int64]*metadata.InlineProcInfo, error) {
+	supplierID := util.GetOwnerID(header)
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	if 0 == len(procID) {
+		return nil, nil
+	}
+	gseProc := make(map[int64]*metadata.InlineProcInfo, 0)
+	dat := new(metadata.QueryInput)
+	dat.Condition = common.KvMap{common.BKProcessIDField: common.KvMap{common.BKDBIN: procID}}
+	dat.Limit = common.BKNoLimit
+	ret, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDProc, header, dat)
+	if nil != err {
+		blog.Errorf("getProcInfoByID procID %v supplierID %s  http do error:%s", procID, supplierID, err.Error())
+		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !ret.Result {
+		blog.Errorf("getProcInfoByID procID %v supplierID %s  http reply error:%s", procID, supplierID, ret.ErrMsg)
+		return nil, defErr.New(ret.Code, ret.ErrMsg)
+
+	}
+	if 0 == ret.Data.Count {
+		blog.Errorf("getProcInfoByID procID %v supplierID %s  not found process info", procID, supplierID)
+		return nil, nil
+	}
+	for _, proc := range ret.Data.Info {
+		procID, err := proc.Int64(common.BKProcessIDField)
+		if nil != err {
+			byteHost, _ := json.Marshal(proc)
+			blog.Errorf("getHostByModuleID  proc %v  procID  not interger, json:%s", proc, string(byteHost))
+			return nil, err
+		}
+		item := new(metadata.InlineProcInfo)
+
+		item.ProcNum = 1
+		procNumI, ok := proc.Get(common.BKProcInstNum)
+		if ok && nil != procNumI {
+			item.ProcNum, err = proc.Int64(common.BKProcInstNum)
+			if nil != err {
+				byteHost, _ := json.Marshal(proc)
+				blog.Errorf("getHostByModuleID  proc %v  procNum  not interger, json:%s", proc, string(byteHost))
+				return nil, err
+			}
+		}
+		item.AppID, err = proc.Int64(common.BKAppIDField)
+		if nil != err {
+			byteHost, _ := json.Marshal(proc)
+			blog.Errorf("getHostByModuleID  proc %v  AppID  not interger, json:%s", proc, string(byteHost))
+			return nil, err
+		}
+		item.FunID, err = proc.Int64(common.BKFuncIDField)
+		if nil != err {
+			byteHost, _ := json.Marshal(proc)
+			blog.Errorf("getHostByModuleID  proc %v  AppID  not interger, json:%s", proc, string(byteHost))
+			return nil, err
+		}
+
+		gseProc[procID] = item
+	}
+
+	return gseProc, nil
 }
