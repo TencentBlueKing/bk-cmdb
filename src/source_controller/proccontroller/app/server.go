@@ -63,7 +63,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		TLS:        backbone.TLSConfig{},
 	}
 
-	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_OBJECTCONTROLLER, svrInfo.IP)
+	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_PROCCONTROLLER, svrInfo.IP)
 	bonC := &backbone.Config{
 		RegisterPath: regPath,
 		RegisterInfo: *svrInfo,
@@ -71,18 +71,18 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		Server:       server,
 	}
 
-	objCtr := new(ProcController)
-	objCtr.Core, err = backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
-		types.CC_MODULE_HOSTCONTROLLER,
+	procCtr := new(ProcController)
+	procCtr.Core, err = backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
+		types.CC_MODULE_PROCCONTROLLER,
 		op.ServConf.ExConfig,
-		objCtr.onProcConfigUpdate,
+		procCtr.onProcConfigUpdate,
 		bonC)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
 	configReady := false
 	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
-		if nil == objCtr.Config {
+		if nil == procCtr.Config {
 			time.Sleep(time.Second)
 		} else {
 			configReady = true
@@ -93,32 +93,32 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("Configuration item not found")
 	}
 
-	objCtr.Instance, err = mongo.NewMgo(objCtr.Config.Mongo.BuildURI())
+	procCtr.Instance, err = mongo.NewMgo(procCtr.Config.Mongo.BuildURI())
 	if err != nil {
 		return fmt.Errorf("new mongo client failed, err: %v", err)
 	}
 
-	rdsc := objCtr.Config.Redis
+	rdsc := procCtr.Config.Redis
 	dbNum, err := strconv.Atoi(rdsc.Database)
 	//not set use default db num 0
 	if nil != err {
 		return fmt.Errorf("redis config db[%s] not integer", rdsc.Database)
 	}
-	objCtr.Cache = redis.NewClient(
+	procCtr.Cache = redis.NewClient(
 		&redis.Options{
 			Addr:     rdsc.Address,
 			PoolSize: 100,
 			Password: rdsc.Password,
 			DB:       dbNum,
 		})
-	err = objCtr.Cache.Ping().Err()
+	err = procCtr.Cache.Ping().Err()
 	if err != nil {
 		return fmt.Errorf("new redis client failed, err: %v", err)
 	}
 
-	coreService.Core = objCtr.Core
-	coreService.Instance = objCtr.Instance
-	coreService.Cache = objCtr.Cache
+	coreService.Core = procCtr.Core
+	coreService.Instance = procCtr.Instance
+	coreService.Cache = procCtr.Cache
 
 	select {
 	case <-ctx.Done():
