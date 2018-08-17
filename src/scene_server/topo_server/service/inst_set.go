@@ -68,6 +68,10 @@ func (s *topoService) DeleteSets(params types.ContextParams, pathParams, queryPa
 // DeleteSet delete the set
 func (s *topoService) DeleteSet(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
+	if "batch" == pathParams("set_id") {
+		return s.DeleteSets(params, pathParams, queryParams, data)
+	}
+
 	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
 	if nil != err {
 		blog.Errorf("[api-set]failed to parse the biz id, error info is %s", err.Error())
@@ -140,6 +144,10 @@ func (s *topoService) SearchSet(params types.ContextParams, pathParams, queryPar
 	queryCond := &metadata.QueryInput{}
 	queryCond.Condition = paramsCond.Condition
 	queryCond.Fields = strings.Join(paramsCond.Fields, ",")
+	page := metadata.ParsePage(paramsCond.Page)
+	queryCond.Start = page.Start
+	queryCond.Sort = page.Sort
+	queryCond.Limit = page.Limit
 
 	cnt, instItems, err := s.core.SetOperation().FindSet(params, obj, queryCond)
 	if nil != err {

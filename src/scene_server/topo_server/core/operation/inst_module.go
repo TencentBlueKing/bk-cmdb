@@ -76,6 +76,10 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 
 	data.Set(common.BKSetIDField, setID)
 	data.Set(common.BKAppIDField, bizID)
+	if !data.Exists(common.BKDefaultField) {
+		data.Set(common.BKDefaultField, 0)
+	}
+
 	//data.Set(common.CreateTimeField, util.GetCurrentTimeStr())
 
 	return m.inst.CreateInst(params, obj, data)

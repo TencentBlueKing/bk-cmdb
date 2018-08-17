@@ -103,8 +103,8 @@
                             </div>
                         </transition>
                         <img src="../../common/images/no_model_prompting.png" alt="">
-                        <p v-if="isCreateShow">{{$t('ModelManagement["此分类下无已启用模型"]')}}</p>
-                        <p v-else>{{$t('ModelManagement["此分类下无模型"]')}}</p>
+                        <p v-if="isCreateShow">{{$t('ModelManagement["此分组下无已启用模型"]')}}</p>
+                        <p v-else>{{$t('ModelManagement["此分组下无模型"]')}}</p>
                         <bk-button type="primary" class="create-btn" @click="showAddModel">{{$t('Common["立即创建"]')}}</bk-button>
                     </div>
                 </div>
@@ -627,7 +627,7 @@
             deleteClassify () {
                 var self = this
                 this.$bkInfo({
-                    title: this.$t('ModelManagement["确认要删除此分类？"]'),
+                    title: this.$t('ModelManagement["确认要删除此分组？"]'),
                     confirmFn () {
                         self.deletes()
                     }
