@@ -13,17 +13,19 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
+	"time"
+
+	"github.com/emicklei/go-restful"
+	"github.com/rs/xid"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"github.com/emicklei/go-restful"
-	"github.com/rs/xid"
-	"strconv"
-	"time"
 )
 
 const HistoryCollection = "cc_History"
@@ -56,7 +58,8 @@ func (s *Service) AddHistory(req *restful.Request, resp *restful.Response) {
 		CreateTime: time.Now().UTC(),
 	}
 
-	_, err := s.Instance.Insert("cc_History", history)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	err := s.Instance.Table(common.BKTableNameHistory).Insert(ctx, history)
 	if nil != err {
 		blog.Error("add history failed, err: %v, params: %+v", err, history)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
@@ -92,14 +95,15 @@ func (s *Service) GetHistorys(req *restful.Request, resp *restful.Response) {
 	fields := []string{"id", "content", common.CreateTimeField, "user"}
 	var result []meta.HistoryMeta
 	sort := "-" + common.LastTimeField
-	err = s.Instance.GetMutilByCondition(HistoryCollection, fields, conds, &result, sort, start, limit)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	err = s.Instance.Table(common.BKTableNameHistory).Find(conds).Fields(fields...).Sort(sort).Limit(uint64(limit)).Start(uint64(start)).All(ctx, result)
 	if nil != err {
 		blog.Error("query  history failed, err: %v, params: %v", err, conds)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return
 	}
 
-	nums, err := s.Instance.GetCntByCondition(HistoryCollection, conds)
+	nums, err := s.Instance.Table(common.BKTableNameHistory).Find(conds).Count(ctx)
 	if nil != err {
 		blog.Error("query  history failed, err: %v, params:%v", err, conds)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
