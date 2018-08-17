@@ -13,8 +13,11 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"reflect"
+
+	"configcenter/src/storage/dal"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -38,9 +41,9 @@ var defaultNameLanguagePkg = map[string]map[string][]string{
 }
 
 //GetCntByCondition get count by condition
-func (cli *Service) GetCntByCondition(objType string, condition interface{}) (int, error) {
+func (cli *Service) GetCntByCondition(ctx context.Context, db dal.RDB, objType string, condition interface{}) (uint64, error) {
 	tName := common.GetInstTableName(objType)
-	cnt, err := cli.Instance.GetCntByCondition(tName, condition)
+	cnt, err := db.Table(tName).Find(condition).Count(ctx)
 	if nil != err {
 		return 0, err
 	}
@@ -48,14 +51,14 @@ func (cli *Service) GetCntByCondition(objType string, condition interface{}) (in
 }
 
 // GetHostByCondition query
-func (cli *Service) GetHostByCondition(fields []string, condition, result interface{}, sort string, skip, limit int) error {
-	return cli.Instance.GetMutilByCondition("cc_HostBase", fields, condition, result, sort, skip, limit)
+func (cli *Service) GetHostByCondition(ctx context.Context, db dal.RDB, fields []string, condition, result interface{}, sort string, skip, limit int) error {
+	return db.Table(common.BKTableNameBaseHost).Find(condition).Limit(uint64(limit)).Start(uint64(skip)).Sort(sort).All(ctx, result)
 }
 
 //GetObjectByCondition get object by condition
-func (cli *Service) GetObjectByCondition(defLang language.DefaultCCLanguageIf, objType string, fields []string, condition, result interface{}, sort string, skip, limit int) error {
+func (cli *Service) GetObjectByCondition(ctx context.Context, db dal.RDB, defLang language.DefaultCCLanguageIf, objType string, fields []string, condition, result interface{}, sort string, skip, limit int) error {
 	tName := common.GetInstTableName(objType)
-	if err := cli.Instance.GetMutilByCondition(tName, fields, condition, result, sort, skip, limit); err != nil {
+	if err := db.Table(tName).Find(condition).Fields(fields...).Limit(uint64(limit)).Start(uint64(skip)).Sort(sort).All(ctx, result); err != nil {
 		blog.Errorf("failed to query the inst , error info %s", err.Error())
 		return err
 	}
@@ -79,9 +82,9 @@ func (cli *Service) GetObjectByCondition(defLang language.DefaultCCLanguageIf, o
 	return nil
 }
 
-func (cli *Service) DelObjByCondition(objType string, condition interface{}) error {
+func (cli *Service) DelObjByCondition(ctx context.Context, db dal.RDB, objType string, condition interface{}) error {
 	tName := common.GetInstTableName(objType)
-	err := cli.Instance.DelByCondition(tName, condition)
+	err := db.Table(tName).Delete(ctx, condition)
 	if nil != err {
 		return err
 	}
@@ -89,9 +92,9 @@ func (cli *Service) DelObjByCondition(objType string, condition interface{}) err
 }
 
 //UpdateObjByCondition update object by condition
-func (cli *Service) UpdateObjByCondition(objType string, data interface{}, condition interface{}) error {
+func (cli *Service) UpdateObjByCondition(ctx context.Context, db dal.RDB, objType string, data interface{}, condition interface{}) error {
 	tName := common.GetInstTableName(objType)
-	err := cli.Instance.UpdateByCondition(tName, data, condition)
+	err := db.Table(tName).Update(ctx, condition, data)
 	if nil != err {
 		return err
 	}
@@ -99,28 +102,28 @@ func (cli *Service) UpdateObjByCondition(objType string, data interface{}, condi
 }
 
 //CreateObjectIntoDB add new object
-func (cli *Service) CreateObjectIntoDB(objType string, input interface{}, idName *string) (int, error) {
+func (cli *Service) CreateObjectIntoDB(ctx context.Context, db dal.RDB, objType string, input interface{}, idName *string) (int, error) {
 	tName := common.GetInstTableName(objType)
-	objID, err := cli.Instance.GetIncID(tName)
+	objID, err := db.NextSequence(ctx, tName)
 	if err != nil {
 		return 0, err
 	}
 	inputc := input.(map[string]interface{})
 	*idName = common.GetInstIDField(objType)
 	inputc[*idName] = objID
-	cli.Instance.Insert(tName, inputc)
-	return int(objID), nil
+	err = db.Table(tName).Insert(ctx, inputc)
+	return int(objID), err
 }
 
 //GetObjectByID get object by id
-func (cli *Service) GetObjectByID(objType string, fields []string, id int, result interface{}, sort string) error {
+func (cli *Service) GetObjectByID(ctx context.Context, db dal.RDB, objType string, fields []string, id int, result interface{}, sort string) error {
 	tName := common.GetInstTableName(objType)
 	condition := make(map[string]interface{}, 1)
 	condition[common.GetInstIDField(objType)] = id
 	if tName == common.BKTableNameBaseInst && objType != common.BKINnerObjIDObject {
 		condition[common.BKObjIDField] = objType
 	}
-	err := cli.Instance.GetOneByCondition(tName, fields, condition, result)
+	err := db.Table(tName).Find(condition).Fields(fields...).All(ctx, result)
 	return err
 }
 

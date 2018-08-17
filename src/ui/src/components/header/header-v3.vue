@@ -86,13 +86,12 @@
             },
             // 更新最近浏览记录
             updateRecently (path) {
-                if (!this.recently.includes(path)) {
-                    const model = this.getRouteModel(path)
-                    if (model && !['bk_host_manage', 'bk_back_config'].includes(model.classificationId)) {
-                        this.$store.dispatch('usercustom/updateUserCustom', {
-                            [this.recentlyKey]: [path, ...this.recently]
-                        })
-                    }
+                const recently = this.recently.filter(oldPath => oldPath !== path)
+                const model = this.getRouteModel(path)
+                if (model && !['bk_host_manage', 'bk_back_config'].includes(model.classificationId)) {
+                    this.$store.dispatch('usercustom/updateUserCustom', {
+                        [this.recentlyKey]: [path, ...recently]
+                    })
                 }
             }
         }

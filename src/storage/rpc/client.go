@@ -39,10 +39,11 @@ type Client struct {
 	responses chan *Message
 	seq       uint32
 	messages  map[uint32]*Message
-	stream    map[uint32]*StreamMessage
+	stream    *streamstore
 	wire      Wire
 	peerAddr  string
 	err       error
+	codec     Codec
 }
 
 //NewClient replica client
@@ -55,6 +56,8 @@ func NewClient(conn net.Conn) *Client {
 		send:      make(chan *Message, 1024),
 		responses: make(chan *Message, 1024),
 		messages:  map[uint32]*Message{},
+		codec:     JSONCodec,
+		stream:    newStreamStore(),
 	}
 	blog.V(3).Infof("connected to %s", c.TargetID())
 	go c.loop()
@@ -105,15 +108,7 @@ func (c *Client) TargetID() string {
 
 // Call replica client
 func (c *Client) Call(cmd string, input interface{}, result interface{}) error {
-	cmdlength := len(cmd)
-	if len(cmd) > commanLimit {
-		return ErrCommandOverLength
-	}
-
-	ncmd := command{}
-	copy(ncmd[:], []byte(cmd)[:cmdlength])
-
-	msg, err := c.operation(TypeRequest, command(ncmd), input)
+	msg, err := c.operation(TypeRequest, cmd, input)
 	if err != nil {
 		return err
 	}
@@ -122,39 +117,29 @@ func (c *Client) Call(cmd string, input interface{}, result interface{}) error {
 
 // CallStream replica client
 func (c *Client) CallStream(cmd string, input interface{}) (*StreamMessage, error) {
-	cmdlength := len(cmd)
-	if len(cmd) > commanLimit {
-		return nil, ErrCommandOverLength
-	}
-
-	ncmd := command{}
-	copy(ncmd[:], []byte(cmd)[:cmdlength])
-
-	msg, err := c.operation(TypeRequest, command(ncmd), input)
+	msg, err := c.operation(TypeRequest, cmd, input)
 	if err != nil {
 		return nil, err
 	}
 
-	sm := NewStreamMessage()
+	sm := NewStreamMessage(msg)
+	c.stream.store(msg.seq, sm)
 	go func() {
-	streamloop:
+	clientstreamloop:
 		for {
 			select {
 			case streammsg := <-sm.output:
-				streammsg.magicVersion = MagicVersion
-				streammsg.seq = msg.seq
-				streammsg.Codec = msg.Codec
-				streammsg.typz = TypeStream
 				c.send <- streammsg
 				if msg.typz == TypeStreamClose {
-					break streamloop
+					break clientstreamloop
 				}
 			case <-sm.done:
-				break streamloop
+				break clientstreamloop
 			case <-c.end:
-				break streamloop
+				break clientstreamloop
 			}
 		}
+		sm.err = ErrStreamStoped
 		close(sm.input)
 		close(sm.output)
 		close(sm.done)
@@ -165,19 +150,19 @@ func (c *Client) CallStream(cmd string, input interface{}) (*StreamMessage, erro
 
 //Ping replica client
 func (c *Client) Ping() error {
-	_, err := c.operation(TypePing, command{}, nil)
+	_, err := c.operation(TypePing, "", nil)
 	return err
 }
 
-func (c *Client) operation(op MessageType, cmd command, data interface{}) (*Message, error) {
+func (c *Client) operation(op MessageType, cmd string, data interface{}) (*Message, error) {
 	retry := 0
 	for {
 		msg := Message{
 			magicVersion: MagicVersion,
+			codec:        c.codec,
 			seq:          c.nextSeq(),
 			complete:     make(chan struct{}, 1),
 			typz:         op,
-			Codec:        CodexJSON,
 			cmd:          cmd,
 			Data:         nil,
 		}
@@ -272,6 +257,7 @@ func (c *Client) handleRequest(req *Message) {
 
 func (c *Client) handleResponse(resp *Message) {
 	blog.V(5).Infof("[rpc client]receive message data: %s", resp.Data)
+	resp.codec = c.codec
 	if resp.transportErr != nil {
 		c.err = resp.transportErr
 		// Terminate all in flight
@@ -281,19 +267,18 @@ func (c *Client) handleResponse(resp *Message) {
 		// TODO reconnect when transportErr?
 		return
 	}
+	if resp.typz == TypeStream || resp.typz == TypeStreamClose {
+		stream, ok := c.stream.get(resp.seq)
+		if ok {
+			stream.input <- resp
+		} else {
+			blog.Warnf("[rpc client] stream not found, resp is %s", resp.Data)
+		}
+		return
+	}
 	if req, ok := c.messages[resp.seq]; ok {
 		if c.err != nil {
 			c.replyError(req)
-			return
-		}
-
-		if resp.typz == TypeStream {
-			stream, ok := c.stream[resp.seq]
-			if ok {
-				stream.input <- resp
-			} else {
-				blog.Warnf("[rpc client] stream not found, resp is %s", resp.Data)
-			}
 			return
 		}
 

@@ -15,15 +15,16 @@ package rpc_test
 import (
 	"configcenter/src/common/util"
 	"configcenter/src/storage/rpc"
+	"fmt"
 	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 )
 
 func TestStream(t *testing.T) {
-	rpcsrv := rpc.NewServer()
-
+	fmt.Println("test started")
 	type Param struct {
 		Args string
 	}
@@ -36,7 +37,8 @@ func TestStream(t *testing.T) {
 		Args string
 	}
 
-	var streamfunc = func(param *rpc.Message, stream *rpc.StreamMessage) error {
+	var streamfunc = func(param rpc.Request, stream rpc.ServerStream) error {
+		fmt.Fprintln(os.Stdout, "server started")
 		var p = Param{}
 		err := param.Decode(&p)
 		require.NoError(t, err)
@@ -49,13 +51,13 @@ func TestStream(t *testing.T) {
 		err = stream.Send(&Resp{Args: "resp"})
 		require.NoError(t, err)
 
-		err = stream.Recv(&req)
-		require.EqualError(t, err, rpc.ErrStreamStoped.Error())
+		fmt.Fprintln(os.Stdout, "server stoped")
 		return nil
 	}
 
-	mux := http.NewServeMux()
+	rpcsrv := rpc.NewServer()
 	rpcsrv.HandleStream("streamtest", streamfunc)
+	mux := http.NewServeMux()
 	mux.Handle("/rpc", rpcsrv)
 
 	ts := httptest.NewServer(mux)
@@ -66,7 +68,7 @@ func TestStream(t *testing.T) {
 	cli, err := rpc.DialHTTPPath("tcp", address, "/rpc")
 	require.NoError(t, err)
 
-	stream, err := cli.CallStream("rpc", nil)
+	stream, err := cli.CallStream("streamtest", &Param{Args: "param"})
 	require.NoError(t, err)
 
 	err = stream.Send(&Req{Args: "req"})
@@ -76,6 +78,9 @@ func TestStream(t *testing.T) {
 	err = stream.Recv(&resp)
 	require.NoError(t, err)
 	require.Equal(t, "resp", resp.Args)
+
+	err = stream.Recv(&resp)
+	require.EqualError(t, err, rpc.ErrStreamStoped.Error())
 
 	err = stream.Close()
 	require.NoError(t, err)
