@@ -40,6 +40,7 @@ func NewServer() *Server {
 }
 
 var connected = "200 Connected to CC RPC"
+var connectfaile = "400 Connect failed to CC RPC"
 
 // ServeHTTP implements http.Handler interface
 func (s *Server) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
@@ -54,10 +55,17 @@ func (s *Server) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 		blog.Errorf("rpc hijacking %s: %s", req.RemoteAddr, err.Error())
 		return
 	}
-	io.WriteString(conn, "HTTP/1.0 "+connected+"\n\n")
 
+	session, err := NewServerSession(s, conn, "deflate")
+	if err != nil {
+		blog.Errorf("rpc new server session faile %s: %s", req.RemoteAddr, err.Error())
+		io.WriteString(conn, "HTTP/1.0 "+connectfaile+"\n\n")
+		return
+	}
+
+	io.WriteString(conn, "HTTP/1.0 "+connected+"\n\n")
 	blog.V(3).Infof("connect from rpc client %s", req.RemoteAddr)
-	session := NewServerSession(s, conn)
+
 	if err = session.Run(); err != nil {
 		blog.Errorf("dissconnect from rpc client %s: %s ", req.RemoteAddr, err.Error())
 		return
@@ -90,16 +98,20 @@ type ServerSession struct {
 }
 
 // NewServerSession returns a new ServerSession
-func NewServerSession(srv *Server, conn io.ReadWriteCloser) *ServerSession {
+func NewServerSession(srv *Server, conn io.ReadWriteCloser, compress string) (*ServerSession, error) {
 	ctx, cancel := context.WithCancel(srv.ctx)
+	wire, err := NewBinaryWire(conn, compress)
+	if err != nil {
+		return nil, err
+	}
 	return &ServerSession{
 		srv:       srv,
-		wire:      NewBinaryWire(conn),
+		wire:      wire,
 		responses: make(chan *Message, 1024),
 		done:      ctx,
 		cancel:    cancel,
 		stream:    newStreamStore(),
-	}
+	}, nil
 }
 
 // Run run the Serssion
