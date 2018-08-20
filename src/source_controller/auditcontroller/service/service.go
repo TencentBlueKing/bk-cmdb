@@ -23,13 +23,13 @@ import (
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/source_controller/auditcontroller/logics"
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
 )
 
 type Service struct {
 	*backbone.Engine
 	*logics.Logics
-	Instance storage.DI
+	Instance dal.RDB
 }
 
 func (s *Service) WebService() *restful.WebService {
