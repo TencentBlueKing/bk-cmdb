@@ -13,6 +13,11 @@
 package api
 
 import (
+	"crypto/tls"
+	"encoding/json"
+
+	redis "gopkg.in/redis.v5"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/conf"
@@ -27,8 +32,6 @@ import (
 	//_ "configcenter/src/common/ssl"
 	//"configcenter/src/storage"
 	//"configcenter/src/storage/dbclient"
-	"crypto/tls"
-	"encoding/json"
 
 	restful "github.com/emicklei/go-restful"
 )
@@ -66,7 +69,7 @@ type APIResource struct {
 	Wactions     []*webserver.Action
 	//MetaCli      storage.DI
 	//InstCli      storage.DI
-	//CacheCli     storage.DI
+	CacheCli  *redis.Client
 	Error     errors.CCErrorIf
 	HostCtrl  func() string
 	ObjCtrl   func() string

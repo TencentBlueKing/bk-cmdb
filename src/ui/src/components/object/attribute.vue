@@ -393,10 +393,10 @@
                             return bkPropertyId === key
                         })
                         if (property['bk_property_type'] === 'enum') {
-                            let isDefault = property.option.find(({id}) => {
+                            let enumProperty = property.option.find(({id}) => {
                                 return id === this.formData[key]
-                            })['is_default']
-                            if (!isDefault) {
+                            })
+                            if (enumProperty && !enumProperty['is_default']) {
                                 isConfirmShow = true
                                 break
                             }
@@ -747,6 +747,7 @@
             }
             .attribute-item-field{
                 display: inline-block;
+                height: 36px;
             }
         }
     }
