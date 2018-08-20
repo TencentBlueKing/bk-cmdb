@@ -15,10 +15,10 @@ package upgrader
 import (
 	"context"
 	"errors"
-	"github.com/mongodb/mongo-go-driver/bson"
 
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal"
+	"github.com/mongodb/mongo-go-driver/bson"
 )
 
 // Upsert inset row but updata it whitout ignores key if exists same value with keys

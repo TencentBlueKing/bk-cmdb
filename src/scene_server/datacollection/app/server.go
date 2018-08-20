@@ -13,14 +13,14 @@
 package app
 
 import (
-	"configcenter/src/storage/dal/mongo"
-	"configcenter/src/storage/dal/redis"
 	"context"
 	"fmt"
 	"os"
 	"sync"
 	"time"
 
+	"configcenter/src/storage/dal/mongo"
+	"configcenter/src/storage/dal/redis"
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/apimachinery"

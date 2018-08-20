@@ -14,10 +14,10 @@ package v3v0v8
 
 import (
 	"context"
-	"gopkg.in/mgo.v2"
 
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
+	"gopkg.in/mgo.v2"
 )
 
 func createTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
@@ -139,5 +139,4 @@ var tables = map[string][]dal.Index{
 	"cc_UserAPI":            []dal.Index{},
 	"cc_UserCustom":         []dal.Index{},
 	"cc_UserGroup":          []dal.Index{},
-	"cc_UserGroupPrivilege": []dal.Index{},
-	"cc_idgenerator":        []dal.Index{}, "cc_System": []dal.Index{}}
+	"cc_UserGroupPrivilege": []dal.Index{}, "cc_idgenerator": []dal.Index{}, "cc_System": []dal.Index{}}

@@ -13,6 +13,10 @@
 package service
 
 import (
+	"context"
+
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
@@ -21,9 +25,6 @@ import (
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal"
-	"context"
-	"github.com/emicklei/go-restful"
-
 	redis "gopkg.in/redis.v5"
 )
 
