@@ -50,6 +50,14 @@ if [ -f $new_version_package ];then
         cp -R -f $(pwd)/upgrade_tmp/cmdb/web .
     fi
 
+    if [ -f $(pwd)/upgrade_tmp/cmdb/init.py ]; then
+        cp -R -f $(pwd)/upgrade_tmp/cmdb/init.py .
+    fi
+
+    if [ -f $(pwd)/upgrade_tmp/cmdb/upgrade.sh ]; then
+        cp -R -f $(pwd)/upgrade_tmp/cmdb/upgrade.sh .
+    fi
+
     # delete the template directory
     rm -rf $(pwd)/upgrade_tmp/
 

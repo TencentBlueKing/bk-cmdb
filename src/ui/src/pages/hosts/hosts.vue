@@ -31,6 +31,25 @@
             </div>
         </slot>
         <div class="table-container">
+            <bk-dropdown-menu ref="dropdown" class="fl mr10" :trigger="'click'">
+                <bk-button class="dropdown-btn checkbox" type="default" slot="dropdown-trigger">
+                    <template v-if="table.chooseId.length">
+                        <i class="checkbox-btn" :class="{'checked': table.chooseId.length!==table.pagination.count, 'checked-all': table.chooseId.length===table.pagination.count}" @click.stop="tableChecked('cancel')"></i>
+                    </template>
+                    <template v-else>
+                        <i class="checkbox-btn" @click.stop="tableChecked('current')"></i>
+                    </template>
+                    <i class="bk-icon icon-angle-down"></i>
+                </bk-button>
+                <ul class="bk-dropdown-list" slot="dropdown-content">
+                    <li>
+                        <a href="javascript:;" @click="tableChecked('current')">{{$t("Common['全选本页']")}}</a>
+                    </li>
+                    <li>
+                        <a href="javascript:;" @click="tableChecked('all')">{{$t("Common['跨页全选']")}}</a>
+                    </li>
+                </ul>
+            </bk-dropdown-menu>
             <div class="btn-wrapper clearfix" :class="{'disabled': !table.chooseId.length}">
                 <bk-dropdown-menu ref="dropdown" class="mr10" :trigger="'click'">
                     <bk-button class="dropdown-btn" type="default" slot="dropdown-trigger" style="width:100px" :disabled="!table.chooseId.length">
@@ -94,6 +113,7 @@
                 :checked="table.chooseId"
                 :wrapperMinusHeight="wrapperMinusHeight"
                 :visible="tableVisible"
+                :isCheckboxShow="false"
                 @handlePageChange="setTableCurrentPage"
                 @handleSizeChange="setTablePageSize"
                 @handleSortChange="setTableSort"
@@ -425,6 +445,17 @@
             }
         },
         methods: {
+            tableChecked (type) {
+                if (type === 'all') {
+                    this.getAllHostID(true)
+                } else if (type === 'cancel') {
+                    this.table.chooseId = []
+                } else {
+                    let chooseId = []
+                    this.table.tableList.map(item => chooseId.push(item.host['bk_host_id']))
+                    this.table.chooseId = chooseId
+                }
+            },
             getHostRelation (data) {
                 return getHostRelation(data)
             },
@@ -1008,10 +1039,13 @@
     .dropdown-btn{
         width: 100px;
         cursor: pointer;
+        &.checkbox {
+            width: 75px;
+        }
     }
     .btn-group{
         display: inline-block;
-        width: calc(100% - 111px);
+        width: calc(100% - 196px);
         vertical-align: middle;
         font-size: 0;
         .bk-button{

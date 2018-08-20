@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"github.com/tidwall/gjson"
-	redis "gopkg.in/redis.v5"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -55,7 +54,7 @@ func (m *OwnerManager) InitOwner() error {
 		return err
 	}
 	if !exist {
-		rediscli := api.GetAPIResource().CacheCli.GetSession().(*redis.Client)
+		rediscli := api.GetAPIResource().CacheCli
 		for {
 			ok, err := rediscli.SetNX(common.BKCacheKeyV3Prefix+"owner_init_lock"+m.OwnerID, m.OwnerID, 60*time.Second).Result()
 			if nil != err {
