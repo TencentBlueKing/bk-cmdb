@@ -31,7 +31,7 @@ type HostInstanceResult struct {
 }
 
 type FavoriteResult struct {
-	Count int                      `json:"count"`
+	Count uint64                   `json:"count"`
 	Info  []map[string]interface{} `json:"info"`
 }
 
@@ -63,7 +63,7 @@ type HistoryMeta struct {
 }
 
 type HistoryResult struct {
-	Count int           `json:"count"`
+	Count uint64        `json:"count"`
 	Info  []HistoryMeta `json:"info"`
 }
 
@@ -143,7 +143,7 @@ type UserConfig struct {
 }
 
 type UserConfigResult struct {
-	Count int           `json:"count"`
+	Count uint64        `json:"count"`
 	Info  []interface{} `json:"info"`
 }
 
