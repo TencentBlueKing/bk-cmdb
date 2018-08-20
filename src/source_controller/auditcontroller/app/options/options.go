@@ -16,7 +16,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"configcenter/src/common/core/cc/config"
-	"configcenter/src/storage/mgoclient"
+	"configcenter/src/storage/dal/mongo"
 )
 
 //ServerOption define option of server in flags
@@ -42,5 +42,5 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 }
 
 type Config struct {
-	Mongo *mgoclient.MongoConfig
+	Mongo *mongo.Config
 }

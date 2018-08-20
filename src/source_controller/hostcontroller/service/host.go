@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -40,6 +41,7 @@ func (s *Service) GetHostByID(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ownerID := util.GetOwnerID(pheader)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
 	pathParams := req.PathParameters()
 	hostID, err := strconv.Atoi(pathParams["bk_host_id"])
@@ -49,11 +51,10 @@ func (s *Service) GetHostByID(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	var result map[string]interface{}
+	result := make(map[string]interface{}, 0)
 	condition := common.KvMap{common.BKHostIDField: hostID}
 	condition = util.SetModOwner(condition, ownerID)
-	fields := make([]string, 0)
-	err = s.Instance.GetOneByCondition(HostBaseCollection, fields, condition, &result)
+	err = s.Instance.Table(common.BKTableNameBaseHost).Find(condition).One(ctx, result)
 	if err != nil {
 		blog.Error("get host by id[%s] failed, err: %v", hostID, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
@@ -71,8 +72,8 @@ func (s *Service) GetHosts(req *restful.Request, resp *restful.Response) {
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	lang := s.Core.Language.CreateDefaultCCLanguageIf(util.GetLanguage(pheader))
 	ownerID := util.GetOwnerID(pheader)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
-	objType := common.BKInnerObjIDHost
 	var dat meta.ObjQueryInput
 	if err := json.NewDecoder(req.Request.Body).Decode(&dat); err != nil {
 		blog.Errorf("get hosts failed with decode body err: %v", err)
@@ -84,17 +85,16 @@ func (s *Service) GetHosts(req *restful.Request, resp *restful.Response) {
 	condition = util.SetModOwner(condition, ownerID)
 	fieldArr := strings.Split(dat.Fields, ",")
 	result := make([]map[string]interface{}, 0)
-
-	err := s.Logics.GetObjectByCondition(lang, objType, fieldArr, condition, &result, dat.Sort, dat.Start, dat.Limit)
+	err := s.Logics.GetObjectByCondition(ctx, lang, common.BKInnerObjIDHost, fieldArr, condition, &result, dat.Sort, dat.Start, dat.Limit)
 	if err != nil {
-		blog.Error("get object failed type:%s,input:%v error:%v", objType, dat, err)
+		blog.Error("get object failed type:%s,input:%v error:%v", common.BKInnerObjIDHost, dat, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostSelectInst)})
 		return
 	}
 
-	count, err := s.Instance.GetCntByCondition(common.GetInstTableName(objType), condition)
+	count, err := s.Instance.Table(common.BKTableNameBaseHost).Find(condition).Count(ctx)
 	if err != nil {
-		blog.Error("get object failed type:%s ,input: %v error: %v", objType, dat, err)
+		blog.Error("get object failed type:%s ,input: %v error: %v", common.BKInnerObjIDHost, dat, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostSelectInst)})
 		return
 	}
@@ -102,7 +102,7 @@ func (s *Service) GetHosts(req *restful.Request, resp *restful.Response) {
 	resp.WriteEntity(meta.GetHostsResult{
 		BaseResp: meta.SuccessBaseResp,
 		Data: meta.HostInfo{
-			Count: count,
+			Count: int(count),
 			Info:  result,
 		},
 	})
@@ -112,6 +112,7 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ownerID := util.GetOwnerID(pheader)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
 	objType := common.BKInnerObjIDHost
 	input := make(map[string]interface{})
@@ -120,11 +121,10 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-
 	input[common.CreateTimeField] = time.Now()
 	input = util.SetModOwner(input, ownerID)
 	var idName string
-	id, err := s.Logics.CreateObject(objType, input, &idName)
+	id, err := s.Logics.CreateObject(ctx, objType, input, &idName)
 	if err != nil {
 		blog.Errorf("create object type:%s ,data: %v error: %v", objType, input, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostCreateInst)})
@@ -133,7 +133,7 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 
 	// record event
 	originData := map[string]interface{}{}
-	if err := s.Logics.GetObjectByID(objType, nil, id, originData, ""); err != nil {
+	if err := s.Logics.GetObjectByID(ctx, objType, nil, id, originData, ""); err != nil {
 		blog.Error("create event error:%v", err)
 	} else {
 		ec := eventclient.NewEventContextByReq(pheader, s.Cache)
@@ -174,6 +174,7 @@ func (s *Service) GetHostModulesIDs(req *restful.Request, resp *restful.Response
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ownerID := util.GetOwnerID(pheader)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
 	params := meta.ModuleHostConfigParams{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
@@ -184,7 +185,7 @@ func (s *Service) GetHostModulesIDs(req *restful.Request, resp *restful.Response
 
 	condition := map[string]interface{}{common.BKAppIDField: params.ApplicationID, common.BKHostIDField: params.HostID}
 	condition = util.SetModOwner(condition, ownerID)
-	moduleIDs, err := s.Logics.GetModuleIDsByHostID(condition) //params.HostID, params.ApplicationID)
+	moduleIDs, err := s.Logics.GetModuleIDsByHostID(ctx, condition) //params.HostID, params.ApplicationID)
 	if nil != err {
 		blog.Errorf("get host module id failed, err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrGetModule)})
@@ -201,6 +202,7 @@ func (s *Service) AddModuleHostConfig(req *restful.Request, resp *restful.Respon
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ownerID := util.GetOwnerID(pheader)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
 	params := meta.ModuleHostConfigParams{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
@@ -211,7 +213,7 @@ func (s *Service) AddModuleHostConfig(req *restful.Request, resp *restful.Respon
 
 	ec := eventclient.NewEventContextByReq(req.Request.Header, s.Cache)
 	for _, moduleID := range params.ModuleID {
-		_, err := s.Logics.AddSingleHostModuleRelation(ec, params.HostID, moduleID, params.ApplicationID, ownerID)
+		_, err := s.Logics.AddSingleHostModuleRelation(ctx, ec, params.HostID, moduleID, params.ApplicationID, ownerID)
 		if nil != err {
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostTransferModule)})
 			return
@@ -225,6 +227,7 @@ func (s *Service) DelModuleHostConfig(req *restful.Request, resp *restful.Respon
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ownerID := util.GetOwnerID(pheader)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
 	params := meta.ModuleHostConfigParams{}
 	var moduleIDs []int64
@@ -237,10 +240,9 @@ func (s *Service) DelModuleHostConfig(req *restful.Request, resp *restful.Respon
 	getModuleParams := make(map[string]interface{}, 2)
 	getModuleParams[common.BKHostIDField] = params.HostID
 	getModuleParams[common.BKAppIDField] = params.ApplicationID
-
 	if 0 == len(params.ModuleID) {
 		var err error
-		moduleIDs, err = s.Logics.GetModuleIDsByHostID(getModuleParams) //params.HostID, params.ApplicationID)
+		moduleIDs, err = s.Logics.GetModuleIDsByHostID(ctx, getModuleParams) //params.HostID, params.ApplicationID)
 		if nil != err {
 			blog.Errorf("delete module host config failed, %v", err)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrGetOriginHostModuelRelationship)})
@@ -252,7 +254,7 @@ func (s *Service) DelModuleHostConfig(req *restful.Request, resp *restful.Respon
 
 	ec := eventclient.NewEventContextByReq(req.Request.Header, s.Cache)
 	for _, moduleID := range moduleIDs {
-		_, err := s.Logics.DelSingleHostModuleRelation(ec, params.HostID, moduleID, params.ApplicationID, ownerID)
+		_, err := s.Logics.DelSingleHostModuleRelation(ctx, ec, params.HostID, moduleID, params.ApplicationID, ownerID)
 		if nil != err {
 			blog.Errorf("delete module host config, but delete module relation failed, err: %v", err)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrDelOriginHostModuelRelationship)})
@@ -267,6 +269,7 @@ func (s *Service) DelDefaultModuleHostConfig(req *restful.Request, resp *restful
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ownerID := util.GetOwnerID(pheader)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
 	params := meta.ModuleHostConfigParams{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
@@ -274,8 +277,7 @@ func (s *Service) DelDefaultModuleHostConfig(req *restful.Request, resp *restful
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-
-	defaultModuleIDs, err := s.Logics.GetDefaultModuleIDs(params.ApplicationID)
+	defaultModuleIDs, err := s.Logics.GetDefaultModuleIDs(ctx, params.ApplicationID)
 	if nil != err {
 		blog.Errorf("defaultModuleIds appID:%d, error:%v", params.ApplicationID, err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrGetModule)})
@@ -285,7 +287,7 @@ func (s *Service) DelDefaultModuleHostConfig(req *restful.Request, resp *restful
 	//delete default host module relation
 	ec := eventclient.NewEventContextByReq(req.Request.Header, s.Cache)
 	for _, defaultModuleID := range defaultModuleIDs {
-		_, err := s.Logics.DelSingleHostModuleRelation(ec, params.HostID, defaultModuleID, params.ApplicationID, ownerID)
+		_, err := s.Logics.DelSingleHostModuleRelation(ctx, ec, params.HostID, defaultModuleID, params.ApplicationID, ownerID)
 		if nil != err {
 			blog.Errorf("del default module host config failed, with relation, err:%v", err)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrDelDefaultModuleHostConfig)})
@@ -300,6 +302,7 @@ func (s *Service) MoveHost2ResourcePool(req *restful.Request, resp *restful.Resp
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ownerID := util.GetOwnerID(pheader)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
 	ec := eventclient.NewEventContextByReq(req.Request.Header, s.Cache)
 	params := new(meta.ParamData)
@@ -308,15 +311,14 @@ func (s *Service) MoveHost2ResourcePool(req *restful.Request, resp *restful.Resp
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-
-	idleModuleID, err := s.Logics.GetIDleModuleID(params.ApplicationID)
+	idleModuleID, err := s.Logics.GetIDleModuleID(ctx, params.ApplicationID)
 	if nil != err {
 		blog.Error("get default module failed, error:%s", err.Error())
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrGetModule)})
 		return
 	}
 
-	errHostIDs, faultHostIDs, err := s.Logics.CheckHostInIDle(params.ApplicationID, idleModuleID, params.HostID)
+	errHostIDs, faultHostIDs, err := s.Logics.CheckHostInIDle(ctx, params.ApplicationID, idleModuleID, params.HostID)
 	if nil != err {
 		blog.Error("get host relationship failed, err: %s", err.Error())
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrGetModule)})
@@ -333,7 +335,7 @@ func (s *Service) MoveHost2ResourcePool(req *restful.Request, resp *restful.Resp
 	for _, hostID := range params.HostID {
 		//host not belong to other biz, add new host
 		if !util.ContainsInt(faultHostIDs, hostID) {
-			_, err = s.Logics.AddSingleHostModuleRelation(ec, hostID, params.OwnerModuleID, params.OwnerAppplicationID, ownerID)
+			_, err = s.Logics.AddSingleHostModuleRelation(ctx, ec, hostID, params.OwnerModuleID, params.OwnerAppplicationID, ownerID)
 			if nil != err {
 				addErr = append(addErr, hostID)
 				continue
@@ -341,7 +343,7 @@ func (s *Service) MoveHost2ResourcePool(req *restful.Request, resp *restful.Resp
 		}
 
 		//delete origin relation
-		_, err := s.Logics.DelSingleHostModuleRelation(ec, hostID, idleModuleID, params.ApplicationID, ownerID)
+		_, err := s.Logics.DelSingleHostModuleRelation(ctx, ec, hostID, idleModuleID, params.ApplicationID, ownerID)
 		if nil != err {
 			delErr = append(delErr, hostID)
 			continue
@@ -363,6 +365,7 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ownerID := util.GetOwnerID(pheader)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
 	ec := eventclient.NewEventContextByReq(req.Request.Header, s.Cache)
 	params := new(meta.AssignHostToAppParams)
@@ -375,7 +378,7 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 	getModuleParams := make(map[string]interface{})
 	for _, hostID := range params.HostID {
 		// delete relation in default app module
-		_, err := s.Logics.DelSingleHostModuleRelation(ec, hostID, params.OwnerModuleID, params.OwnerApplicationID, ownerID)
+		_, err := s.Logics.DelSingleHostModuleRelation(ctx, ec, hostID, params.OwnerModuleID, params.OwnerApplicationID, ownerID)
 		if nil != err {
 			blog.Errorf("assign host to app, but delete host module relationship failed, err: %v")
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrTransferHostFromPool)})
@@ -383,7 +386,7 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 		}
 
 		getModuleParams[common.BKHostIDField] = hostID
-		moduleIDs, err := s.Logics.GetModuleIDsByHostID(getModuleParams)
+		moduleIDs, err := s.Logics.GetModuleIDsByHostID(ctx, getModuleParams)
 		if nil != err {
 			blog.Errorf("assign host to app, but get module failed, err: %v", err)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrGetModule)})
@@ -397,7 +400,7 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 		}
 
 		// add new host
-		_, err = s.Logics.AddSingleHostModuleRelation(ec, hostID, params.ModuleID, params.ApplicationID, ownerID)
+		_, err = s.Logics.AddSingleHostModuleRelation(ctx, ec, hostID, params.ModuleID, params.ApplicationID, ownerID)
 		if nil != err {
 			blog.Errorf("assign host to app, but add single host module relation failed, err: %v", err)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrTransferHostFromPool)})
@@ -408,6 +411,7 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 }
 
 func (s *Service) GetModulesHostConfig(req *restful.Request, resp *restful.Response) {
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ownerID := util.GetOwnerID(pheader)
@@ -427,9 +431,8 @@ func (s *Service) GetModulesHostConfig(req *restful.Request, resp *restful.Respo
 	}
 
 	query = util.SetModOwner(query, ownerID)
-	fields := []string{common.BKAppIDField, common.BKHostIDField, common.BKSetIDField, common.BKModuleIDField}
-	var result []meta.ModuleHost
-	err := s.Instance.GetMutilByCondition(ModuleHostCollection, fields, query, &result, common.BKHostIDField, 0, common.BKNoLimit)
+	result := make([]meta.ModuleHost, 0)
+	err := s.Instance.Table(common.BKTableNameModuleHostConfig).Find(query).Limit(uint64(common.BKNoLimit)).All(ctx, result)
 	if err != nil {
 		blog.Error("get module host config failed, err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})

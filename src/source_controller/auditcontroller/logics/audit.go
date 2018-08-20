@@ -13,16 +13,18 @@
 package logics
 
 import (
+	"context"
 	"strings"
 	"time"
 
+	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 )
 
 // AddLogMulti insert multiple row
-func (lgc *Logics) AddLogMulti(appID int64, opType auditoplog.AuditOpType, opTarget string, contents []auditoplog.AuditLogContext, opDesc, ownerID, user string) error {
+func (lgc *Logics) AddLogMulti(ctx context.Context, appID int64, opType auditoplog.AuditOpType, opTarget string, contents []auditoplog.AuditLogContext, opDesc, ownerID, user string) error {
 	var logRows []interface{}
 
 	for _, content := range contents {
@@ -44,13 +46,12 @@ func (lgc *Logics) AddLogMulti(appID int64, opType auditoplog.AuditOpType, opTar
 	if len(logRows) == 0 {
 		return nil
 	}
-	logRow := metadata.OperationLog{}
-	err := lgc.Instance.InsertMuti(logRow.TableName(), logRows...)
+	err := lgc.Instance.Table(common.BKTableNameOperationLog).Insert(ctx, logRows)
 	return err
 }
 
 // AddLogMultiWithExtKey insert multiple row with  extension key
-func (lgc *Logics) AddLogMultiWithExtKey(appID int64, opType auditoplog.AuditOpType, opTarget string, contents []auditoplog.AuditLogExt, opDesc, ownerID, user string) error {
+func (lgc *Logics) AddLogMultiWithExtKey(ctx context.Context, appID int64, opType auditoplog.AuditOpType, opTarget string, contents []auditoplog.AuditLogExt, opDesc, ownerID, user string) error {
 	var logRows []interface{}
 
 	for _, content := range contents {
@@ -72,13 +73,12 @@ func (lgc *Logics) AddLogMultiWithExtKey(appID int64, opType auditoplog.AuditOpT
 	if len(logRows) == 0 {
 		return nil
 	}
-	logRow := metadata.OperationLog{}
-	err := lgc.Instance.InsertMuti(logRow.TableName(), logRows...)
+	err := lgc.Instance.Table(common.BKTableNameOperationLog).Insert(ctx, logRows)
 	return err
 }
 
 // AddLogWithStr insert row
-func (lgc *Logics) AddLogWithStr(appID, instID int64, opType auditoplog.AuditOpType, opTarget string, content interface{}, extKey, opDesc, ownerID, user string) error {
+func (lgc *Logics) AddLogWithStr(ctx context.Context, appID, instID int64, opType auditoplog.AuditOpType, opTarget string, content interface{}, extKey, opDesc, ownerID, user string) error {
 	logRow := &metadata.OperationLog{
 		OwnerID:       ownerID,
 		ApplicationID: appID,
@@ -91,32 +91,30 @@ func (lgc *Logics) AddLogWithStr(appID, instID int64, opType auditoplog.AuditOpT
 		CreateTime:    time.Now(),
 		InstID:        instID,
 	}
-	_, err := lgc.Instance.Insert(logRow.TableName(), logRow)
+	err := lgc.Instance.Table(common.BKTableNameOperationLog).Insert(ctx, logRow)
 	return err
 }
 
 // Search query operation log
-func (lgc *Logics) Search(dat *metadata.ObjQueryInput) ([]metadata.OperationLog, int, error) {
+func (lgc *Logics) Search(ctx context.Context, dat *metadata.ObjQueryInput) ([]metadata.OperationLog, int, error) {
 	fields := dat.Fields
 	condition := dat.Condition
 	dat.ConvTime()
 	skip := dat.Start
 	limit := dat.Limit
-	sort := dat.Sort
 	fieldArr := strings.Split(fields, ",")
 	rows := make([]metadata.OperationLog, 0)
-	logRow := metadata.OperationLog{}
-	err := lgc.Instance.GetMutilByCondition(logRow.TableName(), fieldArr, condition, &rows, sort, skip, limit)
+	err := lgc.Instance.Table(common.BKTableNameOperationLog).Find(condition).Sort(dat.Sort).Fields(fieldArr...).Start(uint64(skip)).Limit(uint64(limit)).All(ctx, rows)
 	if nil != err {
-		blog.Errorf("query database error:%s, condition:%v", err.Error, condition)
+		blog.Errorf("query database error:%s, condition:%v", err.Error(), condition)
 		return nil, 0, err
 	}
-	cnt, err := lgc.Instance.GetCntByCondition(logRow.TableName(), condition)
+	cnt, err := lgc.Instance.Table(common.BKTableNameOperationLog).Find(condition).Count(ctx)
 	if nil != err {
-		blog.Errorf("query database error:%s, condition:%v", err.Error, condition)
+		blog.Errorf("query database error:%s, condition:%v", err.Error(), condition)
 		return nil, 0, err
 	}
 
-	return rows, cnt, nil
+	return rows, int(cnt), nil
 
 }

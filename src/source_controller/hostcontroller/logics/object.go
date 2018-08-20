@@ -13,6 +13,7 @@
 package logics
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"reflect"
@@ -23,7 +24,7 @@ import (
 	"configcenter/src/common/util"
 )
 
-func (lgc *Logics) GetObjectByID(objType string, fields []string, id int64, result interface{}, sort string) error {
+func (lgc *Logics) GetObjectByID(ctx context.Context, objType string, fields []string, id int64, result interface{}, sort string) error {
 	tName := common.GetInstTableName(objType)
 	condition := make(map[string]interface{}, 1)
 	switch objType {
@@ -44,24 +45,24 @@ func (lgc *Logics) GetObjectByID(objType string, fields []string, id int64, resu
 	default:
 		return errors.New("invalid object type")
 	}
-	err := lgc.Instance.GetOneByCondition(tName, fields, condition, result)
+	err := lgc.Instance.Table(tName).Find(condition).Fields(fields...).One(ctx, result)
 	return err
 }
 
-func (lgc *Logics) CreateObject(objType string, input interface{}, idName *string) (int64, error) {
+func (lgc *Logics) CreateObject(ctx context.Context, objType string, input interface{}, idName *string) (int64, error) {
 	tName := common.GetInstTableName(objType)
-	objID, err := lgc.Instance.GetIncID(tName)
+	objID, err := lgc.Instance.NextSequence(ctx, tName)
 	if err != nil {
 		return 0, err
 	}
 	inputc := input.(map[string]interface{})
 	*idName = common.GetInstIDField(objType)
 	inputc[*idName] = objID
-	_, err = lgc.Instance.Insert(tName, inputc)
+	err = lgc.Instance.Table(tName).Insert(ctx, inputc)
 	if err != nil {
 		return 0, err
 	}
-	return objID, nil
+	return int64(objID), nil
 }
 
 var defaultNameLanguagePkg = map[string]map[string][]string{
@@ -77,9 +78,9 @@ var defaultNameLanguagePkg = map[string]map[string][]string{
 	},
 }
 
-func (lgc *Logics) GetObjectByCondition(defLang language.DefaultCCLanguageIf, objType string, fields []string, condition, result interface{}, sort string, skip, limit int) error {
+func (lgc *Logics) GetObjectByCondition(ctx context.Context, defLang language.DefaultCCLanguageIf, objType string, fields []string, condition, result interface{}, sort string, skip, limit int) error {
 	tName := common.GetInstTableName(objType)
-	if err := lgc.Instance.GetMutilByCondition(tName, fields, condition, result, sort, skip, limit); err != nil {
+	if err := lgc.Instance.Table(tName).Find(condition).Fields(fields...).Sort(sort).Start(uint64(skip)).Limit(uint64(limit)).All(ctx, &result); err != nil {
 		blog.Errorf("failed to query the inst , error info %s", err.Error())
 		return err
 	}
