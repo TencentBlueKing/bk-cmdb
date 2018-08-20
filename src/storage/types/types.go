@@ -13,7 +13,9 @@
 package types
 
 import (
+	"configcenter/src/common"
 	"fmt"
+	"net/http"
 	"reflect"
 	"strconv"
 	"time"
@@ -30,6 +32,15 @@ type Tansaction struct {
 	Status     TxStatus  `bson:"status"`      // 事务状态，作为定时补偿判断条件，这个字段需要加索引
 	CreateTime time.Time `bson:"create_time"` // 创建时间，作为定时补偿判断条件和统计信息存在，这个字段需要加索引
 	LastTime   time.Time `bson:"last_time"`   // 修改时间，作为统计信息存在
+}
+
+func (t Tansaction) IntoHeader(header http.Header) http.Header {
+	tar := http.Header{}
+	for key := range header {
+		tar.Set(key, header.Get(key))
+	}
+	tar.Set(common.BKHTTPCCTransactionID, t.TxnID)
+	return tar
 }
 
 // TxStatus describe

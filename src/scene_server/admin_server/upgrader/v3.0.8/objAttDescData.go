@@ -612,5 +612,5 @@ var provincesEnum = []validator.EnumVal{
 
 var ispNameEnum = []validator.EnumVal{
 	{ID: "0", Name: "其他", Type: "text"},
-	{ID: "1", Name: "电信", Type: "text"},
-	{ID: "2", Name: "联通", Type: "text"}, {ID: "3", Name: "移动", Type: "text"}}
+	{ID: "1", Name: "电信", Type: "text"}, {ID: "2", Name: "联通", Type: "text"}, {ID: "3", Name: "移动", Type: "text"},
+}
