@@ -30,8 +30,8 @@ import (
 	"configcenter/src/source_controller/auditcontroller/app/options"
 	"configcenter/src/source_controller/auditcontroller/logics"
 	"configcenter/src/source_controller/auditcontroller/service"
-	"configcenter/src/storage"
-	"configcenter/src/storage/mgoclient"
+	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo"
 )
 
 //Run ccapi server
@@ -94,11 +94,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("Failed to get configuration")
 	}
 	mgc := audit.Config.Mongo
-	audit.Instance, err = mgoclient.NewMgoCli(mgc.Address, mgc.Port, mgc.User, mgc.Password, mgc.Mechanism, mgc.Database)
-	if err != nil {
-		return fmt.Errorf("new mongo client failed, err: %s", err.Error())
-	}
-	err = audit.Instance.Open()
+	audit.Instance, err = mongo.NewMgo(mgc.BuildURI())
 	if err != nil {
 		return fmt.Errorf("new mongo client failed, err: %s", err.Error())
 	}
@@ -114,21 +110,19 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 // AuditController  audit controller config
 type AuditController struct {
 	Core     *backbone.Engine
-	Instance storage.DI
+	Instance dal.RDB
 	Config   options.Config
 }
 
 func (h *AuditController) onAduitConfigUpdate(previous, current cc.ProcessConfig) {
-	prefix := storage.DI_MONGO
-	h.Config.Mongo = &mgoclient.MongoConfig{
-		Address:      current.ConfigMap[prefix+".host"],
-		User:         current.ConfigMap[prefix+".usr"],
-		Password:     current.ConfigMap[prefix+".pwd"],
-		Database:     current.ConfigMap[prefix+".database"],
-		Port:         current.ConfigMap[prefix+".port"],
-		MaxOpenConns: current.ConfigMap[prefix+".maxOpenConns"],
-		MaxIdleConns: current.ConfigMap[prefix+".maxIDleConns"],
-		Mechanism:    current.ConfigMap[prefix+".mechanism"],
+	h.Config.Mongo = &mongo.Config{
+		Address:      current.ConfigMap["mongo.address"],
+		User:         current.ConfigMap["mongo.usr"],
+		Password:     current.ConfigMap["mongo.pwd"],
+		Database:     current.ConfigMap["mongo.database"],
+		MaxOpenConns: current.ConfigMap["mongo.maxOpenConns"],
+		MaxIdleConns: current.ConfigMap["mongo.maxIDleConns"],
+		Mechanism:    current.ConfigMap["mongo.mechanism"],
 	}
 }
 
