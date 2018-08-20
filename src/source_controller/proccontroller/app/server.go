@@ -16,70 +16,73 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
-	"configcenter/src/common/blog"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/source_controller/proccontroller/app/options"
 	"configcenter/src/source_controller/proccontroller/service"
-	"configcenter/src/storage/mgoclient"
-	"configcenter/src/storage/redisclient"
+	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo"
+	dalredis "configcenter/src/storage/dal/redis"
+
+	restful "github.com/emicklei/go-restful"
+	redis "gopkg.in/redis.v5"
 )
 
 //Run ccapi server
 func Run(ctx context.Context, op *options.ServerOption) error {
-	// clientset
-	apiMachConf := &util.APIMachineryConfig{
+	svrInfo, err := newServerInfo(op)
+	if err != nil {
+		return fmt.Errorf("wrap server info failed, err: %v", err)
+	}
+
+	c := &util.APIMachineryConfig{
 		ZkAddr:    op.ServConf.RegDiscover,
 		QPS:       op.ServConf.Qps,
 		Burst:     op.ServConf.Burst,
 		TLSConfig: nil,
 	}
 
-	apiMachinery, err := apimachinery.NewApiMachinery(apiMachConf)
+	machinery, err := apimachinery.NewApiMachinery(c)
 	if err != nil {
-		return fmt.Errorf("create api machinery object failed. err: %v", err)
-	}
-	// server
-	svrInfo, err := newServerInfo(op)
-	if err != nil {
-		return fmt.Errorf("creae server info object failed. err: %v", err)
+		return fmt.Errorf("new api machinery failed, err: %v", err)
 	}
 
-	proctrlSvr := new(service.ProctrlServer)
-
-	bksvr := backbone.Server{
+	coreService := new(service.ProctrlServer)
+	server := backbone.Server{
 		ListenAddr: svrInfo.IP,
 		ListenPort: svrInfo.Port,
-		Handler:    proctrlSvr.WebService(),
+		Handler:    restful.NewContainer().Add(coreService.WebService()),
 		TLS:        backbone.TLSConfig{},
 	}
 
 	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_PROCCONTROLLER, svrInfo.IP)
-	bkConf := &backbone.Config{
+	bonC := &backbone.Config{
 		RegisterPath: regPath,
 		RegisterInfo: *svrInfo,
-		CoreAPI:      apiMachinery,
-		Server:       bksvr,
+		CoreAPI:      machinery,
+		Server:       server,
 	}
 
-	proctrlSvr.Core, err = backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
+	procCtr := new(ProcController)
+	procCtr.Core, err = backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
 		types.CC_MODULE_PROCCONTROLLER,
 		op.ServConf.ExConfig,
-		proctrlSvr.OnProcessConfUpdate,
-		bkConf)
+		procCtr.onProcConfigUpdate,
+		bonC)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
-
 	configReady := false
 	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
-		if nil == proctrlSvr.MongoCfg {
+		if nil == procCtr.Config {
 			time.Sleep(time.Second)
 		} else {
 			configReady = true
@@ -90,25 +93,68 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("Configuration item not found")
 	}
 
-	proctrlSvr.DbInstance, err = mgoclient.NewMgoCli(proctrlSvr.MongoCfg.Address, proctrlSvr.MongoCfg.Port, proctrlSvr.MongoCfg.User, proctrlSvr.MongoCfg.Password, proctrlSvr.MongoCfg.Mechanism, proctrlSvr.MongoCfg.Database)
-	if err != nil {
-		return fmt.Errorf("new mongo client failed, err: %v", err)
-	}
-	err = proctrlSvr.DbInstance.Open()
+	procCtr.Instance, err = mongo.NewMgo(procCtr.Config.Mongo.BuildURI())
 	if err != nil {
 		return fmt.Errorf("new mongo client failed, err: %v", err)
 	}
 
-	proctrlSvr.CacheDI, err = redisclient.NewFromConfig(*proctrlSvr.RedisCfg)
+	rdsc := procCtr.Config.Redis
+	dbNum, err := strconv.Atoi(rdsc.Database)
+	//not set use default db num 0
+	if nil != err {
+		return fmt.Errorf("redis config db[%s] not integer", rdsc.Database)
+	}
+	procCtr.Cache = redis.NewClient(
+		&redis.Options{
+			Addr:     rdsc.Address,
+			PoolSize: 100,
+			Password: rdsc.Password,
+			DB:       dbNum,
+		})
+	err = procCtr.Cache.Ping().Err()
 	if err != nil {
 		return fmt.Errorf("new redis client failed, err: %v", err)
 	}
+
+	coreService.Core = procCtr.Core
+	coreService.Instance = procCtr.Instance
+	coreService.Cache = procCtr.Cache
+
 	select {
 	case <-ctx.Done():
-		blog.Errorf("processctroller will exit!")
+	}
+	return nil
+}
+
+type ProcController struct {
+	Core     *backbone.Engine
+	Instance dal.RDB
+	Cache    *redis.Client
+	Config   *options.Config
+}
+
+func (h *ProcController) onProcConfigUpdate(previous, current cc.ProcessConfig) {
+
+	mongo := mongo.Config{
+		Address:      current.ConfigMap["mongo.address"],
+		User:         current.ConfigMap["mongo.usr"],
+		Password:     current.ConfigMap["mongo.pwd"],
+		Database:     current.ConfigMap["mongo.database"],
+		MaxOpenConns: current.ConfigMap["mongo.maxOpenConns"],
+		MaxIdleConns: current.ConfigMap["mongo.maxIDleConns"],
+		Mechanism:    current.ConfigMap["mongo.mechanism"],
 	}
 
-	return nil
+	rediscfg := dalredis.Config{
+		Address:  current.ConfigMap["redis.address"],
+		Password: current.ConfigMap["redis.pwd"],
+		Database: current.ConfigMap["redis.database"],
+	}
+
+	h.Config = &options.Config{
+		Mongo: mongo,
+		Redis: rediscfg,
+	}
 }
 
 func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
