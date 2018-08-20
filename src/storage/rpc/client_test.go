@@ -13,6 +13,8 @@
 package rpc
 
 import (
+	"bytes"
+	"encoding/binary"
 	"net/http"
 	"net/http/httptest"
 	gorpc "net/rpc"
@@ -27,8 +29,28 @@ type Req struct {
 	Name string
 }
 
+func (r *Req) MarshalBinary() (data []byte, err error) {
+	buf := &bytes.Buffer{}
+	writeString(buf, r.Name)
+	return buf.Bytes(), nil
+}
+func (r *Req) UnmarshalBinary(data []byte) error {
+	r.Name, _ = readString(bytes.NewBuffer(data))
+	return nil
+}
+
 type Reply struct {
 	OK bool
+}
+
+func (r *Reply) MarshalBinary() (data []byte, err error) {
+	buf := &bytes.Buffer{}
+	binary.Write(buf, binary.LittleEndian, r.OK)
+	return buf.Bytes(), nil
+}
+func (r *Reply) UnmarshalBinary(data []byte) error {
+	binary.Read(bytes.NewBuffer(data), binary.LittleEndian, &r.OK)
+	return nil
 }
 
 func OK(msg Request) (interface{}, error) {

@@ -44,7 +44,7 @@ func (n *Node) getChildObjID() string {
 	return ""
 }
 
-func (n *Node) getInstID() (int64, error) {
+func (n *Node) getInstID() (uint64, error) {
 	id, err := getInt64(n.Data[common.GetInstIDField(n.ObjID)])
 	if nil != err {
 		return 0, fmt.Errorf("node has no instID: %+v", *n)
@@ -74,16 +74,16 @@ func (n *Node) getInstNameField() string {
 	return common.GetInstNameField(n.ObjID)
 }
 
-func getInt64(v interface{}) (int64, error) {
+func getInt64(v interface{}) (uint64, error) {
 	switch id := v.(type) {
 	case int:
-		return int64(id), nil
+		return uint64(id), nil
 	case int64:
-		return int64(id), nil
+		return uint64(id), nil
 	case float32:
-		return int64(id), nil
+		return uint64(id), nil
 	case float64:
-		return int64(id), nil
+		return uint64(id), nil
 	default:
 		return 0, fmt.Errorf("v is not number : %+v", v)
 	}
@@ -128,9 +128,9 @@ type Topo struct {
 }
 
 type ProModule struct {
-	ProcessID  int64  `json:"bk_process_id" bson:"bk_process_id,omitempty"`
+	ProcessID  uint64 `json:"bk_process_id" bson:"bk_process_id,omitempty"`
 	ModuleName string `json:"bk_module_name" bson:"bk_module_name,omitempty"`
-	BizID      int64  `json:"bk_biz_id" bson:"bk_biz_id,omitempty"`
+	BizID      uint64 `json:"bk_biz_id" bson:"bk_biz_id,omitempty"`
 }
 
 type Process struct {

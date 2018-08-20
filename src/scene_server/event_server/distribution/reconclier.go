@@ -13,6 +13,7 @@
 package distribution
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"strings"
@@ -25,22 +26,24 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/types"
-	"configcenter/src/storage"
-	"configcenter/src/storage/dbclient"
+	"configcenter/src/storage/dal"
+	ccredis "configcenter/src/storage/dal/redis"
 )
 
 type reconciler struct {
-	db                   storage.DI
+	db                   dal.RDB
 	cache                *redis.Client
 	cached               map[string][]string
 	persisted            map[string][]string
 	cachedSubscribers    []string
 	persistedSubscribers []string
 	processID            string
+	ctx                  context.Context
 }
 
-func newReconciler(cache *redis.Client, db storage.DI) *reconciler {
+func newReconciler(ctx context.Context, cache *redis.Client, db dal.RDB) *reconciler {
 	return &reconciler{
+		ctx:                  ctx,
 		db:                   db,
 		cache:                cache,
 		cached:               map[string][]string{},
@@ -66,7 +69,7 @@ func (r *reconciler) loadAllCached() {
 
 func (r *reconciler) loadAllPersisted() {
 	subscriptions := []metadata.Subscription{}
-	if err := r.db.GetMutilByCondition(common.BKTableNameSubscription, nil, nil, &subscriptions, "", 0, 0); err != nil {
+	if err := r.db.Table(common.BKTableNameSubscription).Find(nil).All(r.ctx, &subscriptions); err != nil {
 		blog.Errorf("reconcile err: %v", err)
 	}
 	blog.Infof("loaded %v subscriptions from persistent", len(subscriptions))
@@ -105,22 +108,12 @@ func (r *reconciler) reconcile() {
 }
 
 func SubscribeChannel(config map[string]string) (err error) {
-	dType := storage.DI_REDIS
-	host := config[dType+".host"]
-	port := config[dType+".port"]
-	user := config[dType+".usr"]
-	pwd := config[dType+".pwd"]
-	dbName := config[dType+".database"]
-	dataCli, err := dbclient.NewDB(host, port, user, pwd, "", dbName, dType)
+	redisConf := ccredis.NewConfigFromKV("redis", config)
+
+	redisCli, err := ccredis.NewFromConfig(*redisConf)
 	if err != nil {
 		return err
 	}
-	err = dataCli.Open()
-	if err != nil {
-		return err
-	}
-	session := dataCli.GetSession().(*redis.Client)
-	redisCli := *session
 	subChan, err := redisCli.PSubscribe(types.EventCacheProcessChannel)
 	if err != nil {
 		return err
