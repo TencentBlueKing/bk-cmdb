@@ -13,6 +13,7 @@
 package identifier
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -186,10 +187,9 @@ func (ih *IdentifierHandler) findHost(objType string, instID int64) (hostIDs []s
 		common.GetInstIDField(objType): instID,
 	}
 	if objType == common.BKInnerObjIDPlat {
-
-		ih.db.GetMutilByCondition(common.BKTableNameBaseHost, []string{common.BKHostIDField}, condiction, &relations, "", -1, -1)
+		ih.db.Table(common.BKTableNameBaseHost).Find(condiction).Fields(common.BKHostIDField).All(ih.ctx, &relations)
 	} else {
-		ih.db.GetMutilByCondition(common.BKTableNameModuleHostConfig, []string{common.BKHostIDField}, condiction, &relations, "", -1, -1)
+		ih.db.Table(common.BKTableNameModuleHostConfig).Find(condiction).Fields(common.BKHostIDField).All(ih.ctx, &relations)
 	}
 
 	for index := range relations {
@@ -297,7 +297,7 @@ func getCache(cache *redis.Client, db dal.RDB, objType string, instID int64, fro
 			condiction := map[string]interface{}{
 				common.GetInstIDField(objType): instID,
 			}
-			db.GetMutilByCondition(common.BKTableNameModuleHostConfig, nil, condiction, &relations, "", -1, -1)
+			db.Table(common.BKTableNameModuleHostConfig).Find(condiction).All(ctx, &relations)
 			for _, rela := range relations {
 				inst.ident.Module[fmt.Sprint(rela.ModuleID)] = &Module{
 					SetID:    rela.SetID,
@@ -372,8 +372,8 @@ func (ih *IdentifierHandler) fetchHostCache() {
 	relations := []metadata.ModuleHost{}
 	hosts := []*HostIdentifier{}
 
-	ih.db.GetMutilByCondition(common.BKTableNameModuleHostConfig, nil, map[string]interface{}{}, &relations, "", -1, -1)
-	ih.db.GetMutilByCondition(common.BKTableNameBaseHost, nil, map[string]interface{}{}, &hosts, "", -1, -1)
+	ih.db.Table(common.BKTableNameModuleHostConfig).Find(map[string]interface{}{}).All(ctx, &relations)
+	ih.db.Table(common.BKTableNameBaseHost).Find(map[string]interface{}{}).All(ctx, &hosts)
 
 	relationMap := map[int64][]metadata.ModuleHost{}
 	for _, relate := range relations {
@@ -399,7 +399,7 @@ func (ih *IdentifierHandler) fetchHostCache() {
 	objs := []string{common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDPlat}
 	for _, objID := range objs {
 		caches := []map[string]interface{}{}
-		ih.db.GetMutilByCondition(common.GetInstTableName(objID), nil, map[string]interface{}{}, &caches, "", -1, -1)
+		ih.db.Table(common.GetInstTableName(objID)).Find(map[string]interface{}{}).All(ctx, &caches)
 
 		for _, cache := range caches {
 			out, _ := json.Marshal(cache)
@@ -426,8 +426,9 @@ func checkDifferent(curdata, predata map[string]interface{}, fields ...string) (
 type IdentifierHandler struct {
 	cache *redis.Client
 	db    dal.RDB
+	ctx   context.Context
 }
 
-func NewIdentifierHandler(cache *redis.Client, db dal.RDB) *IdentifierHandler {
-	return &IdentifierHandler{cache: cache, db: db}
+func NewIdentifierHandler(ctx context.Context, cache *redis.Client, db dal.RDB) *IdentifierHandler {
+	return &IdentifierHandler{cache: cache, db: db, ctx: ctx}
 }
