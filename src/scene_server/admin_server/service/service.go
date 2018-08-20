@@ -20,17 +20,25 @@ import (
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
+	"context"
 
 	"github.com/emicklei/go-restful"
 )
 
 type Service struct {
 	*backbone.Engine
-	db storage.DI
+	db  dal.RDB
+	ctx context.Context
 }
 
-func (s *Service) SetDB(db storage.DI) {
+func NewService(ctx context.Context) *Service {
+	return &Service{
+		ctx: ctx,
+	}
+}
+
+func (s *Service) SetDB(db dal.RDB) {
 	s.db = db
 }
 

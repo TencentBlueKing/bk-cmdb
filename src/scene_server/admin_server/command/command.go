@@ -13,6 +13,7 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -21,13 +22,14 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
-	"configcenter/src/storage/mgoclient"
+	"configcenter/src/storage/dal/mongo"
 )
 
 const bkbizCmdName = "bkbiz"
 
 // Parse run app command
 func Parse(args []string) error {
+	ctx := context.Background()
 	if len(args) <= 1 || args[1] != bkbizCmdName {
 		return nil
 	}
@@ -61,17 +63,12 @@ func Parse(args []string) error {
 	if nil != err {
 		return fmt.Errorf("parse config file error %s", err.Error())
 	}
-	config := mgoclient.NewMongoConfig(pconfig.ConfigMap)
+	config := mongo.NewConfigFromKV("mongodb", pconfig.ConfigMap)
 	// connect to mongo db
-	db, err := mgoclient.NewFromConfig(*config)
+	db, err := mongo.NewMgo(config.BuildURI())
 	if err != nil {
 		return fmt.Errorf("connect mongo server failed %s", err.Error())
 	}
-	err = db.Open()
-	if err != nil {
-		return fmt.Errorf("connect mongo server failed %s", err.Error())
-	}
-
 	opt := &option{
 		position: filepath,
 		OwnerID:  common.BKDefaultOwnerID,
@@ -89,7 +86,7 @@ func Parse(args []string) error {
 
 		}
 		fmt.Printf("exporting blueking business to %s in \033[34m%s\033[0m mode\n", filepath, mode)
-		if err := export(db, opt); err != nil {
+		if err := export(ctx, db, opt); err != nil {
 			blog.Errorf("export error: %s", err.Error())
 			os.Exit(2)
 		}
@@ -98,7 +95,7 @@ func Parse(args []string) error {
 		fmt.Printf("importing blueking business from %s\n", filepath)
 		opt.mini = false
 		opt.scope = "all"
-		if err := importBKBiz(db, opt); err != nil {
+		if err := importBKBiz(ctx, db, opt); err != nil {
 			blog.Errorf("import error: %s", err.Error())
 			os.Exit(2)
 		}

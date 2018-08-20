@@ -16,15 +16,16 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
+	"context"
 )
 
-func addSystemData(db storage.DI, conf *upgrader.Config) error {
+func addSystemData(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tablename := "cc_System"
 	blog.V(3).Infof("add data for  %s table ", tablename)
 	data := map[string]interface{}{
 		common.HostCrossBizField: common.HostCrossBizValue}
-	isExist, err := db.GetCntByCondition(tablename, data)
+	isExist, err := db.Table(tablename).Find(data).Count(ctx)
 	if nil != err {
 		blog.Errorf("add data for  %s table error  %s", tablename, err)
 		return err
@@ -32,7 +33,7 @@ func addSystemData(db storage.DI, conf *upgrader.Config) error {
 	if isExist > 0 {
 		return nil
 	}
-	_, err = db.Insert(tablename, data)
+	err = db.Table(tablename).Insert(ctx, data)
 	if nil != err {
 		blog.Errorf("add data for  %s table error  %s", tablename, err)
 		return err

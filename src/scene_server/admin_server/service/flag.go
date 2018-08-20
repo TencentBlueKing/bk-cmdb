@@ -36,7 +36,7 @@ func (s *Service) Set(req *restful.Request, resp *restful.Response) {
 		common.HostCrossBizField: common.HostCrossBizValue + ownerID,
 	}
 
-	err := s.db.UpdateByCondition("cc_System", data, cond)
+	err := s.db.Table("cc_System").Update(s.ctx, cond, data)
 	if nil != err {
 		blog.Errorf("modify data for  %s table error  %s", "cc_System", err)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommMigrateFailed)})
