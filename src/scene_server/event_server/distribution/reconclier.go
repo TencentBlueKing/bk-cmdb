@@ -26,7 +26,7 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/types"
 	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dbclient"
+	"configcenter/src/storage/dal/mongo"
 )
 
 type reconciler struct {
