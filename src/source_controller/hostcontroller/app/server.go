@@ -32,9 +32,9 @@ import (
 	"configcenter/src/source_controller/hostcontroller/app/options"
 	"configcenter/src/source_controller/hostcontroller/logics"
 	"configcenter/src/source_controller/hostcontroller/service"
-	"configcenter/src/storage"
-	"configcenter/src/storage/mgoclient"
-	"configcenter/src/storage/redisclient"
+	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo"
+	dalredis "configcenter/src/storage/dal/redis"
 )
 
 //Run ccapi server
@@ -95,11 +95,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	mgc := hostCtrl.Config.Mongo
-	hostCtrl.Instance, err = mgoclient.NewMgoCli(mgc.Address, mgc.Port, mgc.User, mgc.Password, mgc.Mechanism, mgc.Database)
-	if err != nil {
-		return fmt.Errorf("new mongo client failed, err: %v", err)
-	}
-	err = hostCtrl.Instance.Open()
+	hostCtrl.Instance, err = mongo.NewMgo(mgc.BuildURI())
 	if err != nil {
 		return fmt.Errorf("new mongo client failed, err: %v", err)
 	}
@@ -112,11 +108,12 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 	hostCtrl.Cache = redis.NewClient(
 		&redis.Options{
-			Addr:     rdsc.Address + ":" + rdsc.Port,
+			Addr:     rdsc.Address,
 			PoolSize: 100,
 			Password: rdsc.Password,
 			DB:       dbNum,
 		})
+
 	err = hostCtrl.Cache.Ping().Err()
 	if err != nil {
 		return fmt.Errorf("new redis client failed, err: %v", err)
@@ -133,31 +130,26 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 type HostController struct {
 	Core     *backbone.Engine
-	Instance storage.DI
+	Instance dal.RDB
 	Cache    *redis.Client
 	Config   *options.Config
 }
 
 func (h *HostController) onHostConfigUpdate(previous, current cc.ProcessConfig) {
-	prefix := storage.DI_MONGO
-	mongo := mgoclient.MongoConfig{
-		Address:      current.ConfigMap[prefix+".host"],
-		User:         current.ConfigMap[prefix+".usr"],
-		Password:     current.ConfigMap[prefix+".pwd"],
-		Database:     current.ConfigMap[prefix+".database"],
-		Port:         current.ConfigMap[prefix+".port"],
-		MaxOpenConns: current.ConfigMap[prefix+".maxOpenConns"],
-		MaxIdleConns: current.ConfigMap[prefix+".maxIDleConns"],
-		Mechanism:    current.ConfigMap[prefix+".mechanism"],
+	mongo := mongo.Config{
+		Address:      current.ConfigMap["mongo.address"],
+		User:         current.ConfigMap["mongo.usr"],
+		Password:     current.ConfigMap["mongo.pwd"],
+		Database:     current.ConfigMap["mongo.database"],
+		MaxOpenConns: current.ConfigMap["mongo.maxOpenConns"],
+		MaxIdleConns: current.ConfigMap["mongo.maxIDleConns"],
+		Mechanism:    current.ConfigMap["mongo.mechanism"],
 	}
 
-	prefix = storage.DI_REDIS
-	redis := redisclient.RedisConfig{
-		Address:  current.ConfigMap[prefix+".host"],
-		User:     current.ConfigMap[prefix+".usr"],
-		Password: current.ConfigMap[prefix+".pwd"],
-		Database: current.ConfigMap[prefix+".database"],
-		Port:     current.ConfigMap[prefix+".port"],
+	redis := dalredis.Config{
+		Address:  current.ConfigMap["redis.address"],
+		Password: current.ConfigMap["redis.pwd"],
+		Database: current.ConfigMap["redis.database"],
 	}
 
 	h.Config = &options.Config{

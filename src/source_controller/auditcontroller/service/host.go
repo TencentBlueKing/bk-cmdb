@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
@@ -26,7 +27,7 @@ import (
 
 //主机操作日志
 func (s *Service) AddHostLog(req *restful.Request, resp *restful.Response) {
-
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	language := util.GetLanguage(req.Request.Header)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
@@ -48,7 +49,7 @@ func (s *Service) AddHostLog(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	err = s.Logics.AddLogWithStr(appID, params.HostID, params.OpType, common.BKInnerObjIDHost, params.Content, params.InnerIP, params.OpDesc, ownerID, user)
+	err = s.Logics.AddLogWithStr(ctx, appID, params.HostID, params.OpType, common.BKInnerObjIDHost, params.Content, params.InnerIP, params.OpDesc, ownerID, user)
 	if nil != err {
 		blog.Errorf("AddHostLog add host log error:%s", err.Error())
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
@@ -59,7 +60,7 @@ func (s *Service) AddHostLog(req *restful.Request, resp *restful.Response) {
 
 //插入多行主机操作日志型操作
 func (s *Service) AddHostLogs(req *restful.Request, resp *restful.Response) {
-
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	language := util.GetLanguage(req.Request.Header)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
@@ -81,7 +82,7 @@ func (s *Service) AddHostLogs(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	err = s.Logics.AddLogMultiWithExtKey(appID, params.OpType, common.BKInnerObjIDHost, params.Content, params.OpDesc, ownerID, user)
+	err = s.Logics.AddLogMultiWithExtKey(ctx, appID, params.OpType, common.BKInnerObjIDHost, params.Content, params.OpDesc, ownerID, user)
 	if nil != err {
 		blog.Errorf("AddHostLogs add host log error:%s", err.Error())
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
