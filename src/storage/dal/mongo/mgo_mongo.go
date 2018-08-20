@@ -16,11 +16,12 @@ import (
 	"context"
 	"strings"
 
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
+
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/types"
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
 )
 
 // Mongo implement client.DALRDB interface
@@ -207,12 +208,12 @@ func (c *Mongo) StartTransaction(ctx context.Context) error {
 }
 
 // Commit 提交事务
-func (c *Mongo) Commit() error {
+func (c *Mongo) Commit(ctx context.Context) error {
 	return nil
 }
 
 // Abort 取消事务
-func (c *Mongo) Abort() error {
+func (c *Mongo) Abort(ctx context.Context) error {
 	return nil
 }
 
