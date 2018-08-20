@@ -25,7 +25,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/types"
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
 )
 
 var hostIndentDiffFiels = map[string][]string{
@@ -279,7 +279,7 @@ func NewHostIdentifier(m map[string]interface{}) *HostIdentifier {
 	ident.Module = map[string]*Module{}
 	return &ident
 }
-func getCache(cache *redis.Client, db storage.DI, objType string, instID int64, fromdb bool) (*Inst, error) {
+func getCache(cache *redis.Client, db dal.RDB, objType string, instID int64, fromdb bool) (*Inst, error) {
 	ret := cache.Get(types.EventCacheIdentInstPrefix + objType + fmt.Sprint("_", instID)).Val()
 	inst := Inst{objType: objType, instID: instID, ident: &HostIdentifier{}, data: map[string]interface{}{}}
 	if "" == ret || "nil" == ret || fromdb {
@@ -287,7 +287,7 @@ func getCache(cache *redis.Client, db storage.DI, objType string, instID int64, 
 		getobjCondition := map[string]interface{}{
 			common.GetInstIDField(objType): instID,
 		}
-		err := db.GetOneByCondition(common.GetInstTableName(objType), nil, getobjCondition, &inst.data)
+		err := db.Table(common.GetInstTableName(objType)).Find(getobjCondition).One(ctx, &inst.data)
 		if err != nil {
 			return nil, err
 		}
@@ -425,9 +425,9 @@ func checkDifferent(curdata, predata map[string]interface{}, fields ...string) (
 
 type IdentifierHandler struct {
 	cache *redis.Client
-	db    storage.DI
+	db    dal.RDB
 }
 
-func NewIdentifierHandler(cache *redis.Client, db storage.DI) *IdentifierHandler {
+func NewIdentifierHandler(cache *redis.Client, db dal.RDB) *IdentifierHandler {
 	return &IdentifierHandler{cache: cache, db: db}
 }

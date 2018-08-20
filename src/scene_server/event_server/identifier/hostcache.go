@@ -20,7 +20,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
 )
 
 type HostIdentifier struct {
@@ -55,7 +55,7 @@ func (iden *HostIdentifier) MarshalBinary() (data []byte, err error) {
 	return json.Marshal(iden)
 }
 
-func (iden *HostIdentifier) fillIden(cache *redis.Client, db storage.DI) *HostIdentifier {
+func (iden *HostIdentifier) fillIden(cache *redis.Client, db dal.RDB) *HostIdentifier {
 
 	for moduleID := range iden.Module {
 

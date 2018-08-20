@@ -367,6 +367,7 @@ func newImporter(ctx context.Context, db dal.RDB, opt *option) *importer {
 		parentID: 0,
 		ownerID:  "",
 
+		ctx: ctx,
 		db:  db,
 		opt: opt,
 	}

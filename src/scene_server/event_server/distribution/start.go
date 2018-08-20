@@ -16,10 +16,10 @@ import (
 	redis "gopkg.in/redis.v5"
 
 	"configcenter/src/scene_server/event_server/identifier"
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
 )
 
-func Start(cache *redis.Client, db storage.DI) error {
+func Start(cache *redis.Client, db dal.RDB) error {
 	chErr := make(chan error)
 
 	eh := &EventHandler{cache: cache}
@@ -43,5 +43,5 @@ func Start(cache *redis.Client, db storage.DI) error {
 type EventHandler struct{ cache *redis.Client }
 type DistHandler struct {
 	cache *redis.Client
-	db    storage.DI
+	db    dal.RDB
 }

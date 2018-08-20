@@ -19,26 +19,26 @@ import (
 
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/scene_server/event_server/types"
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
 )
 
 func initTester() {
 	config := map[string]string{
-		storage.DI_REDIS + ".host":     "127.0.0.1",
-		storage.DI_REDIS + ".port":     "6379",
-		storage.DI_REDIS + ".usr":      "cc",
-		storage.DI_REDIS + ".pwd":      "cc",
-		storage.DI_REDIS + ".database": "0",
+		dal.RDB_REDIS + ".host":     "127.0.0.1",
+		dal.RDB_REDIS + ".port":     "6379",
+		dal.RDB_REDIS + ".usr":      "cc",
+		dal.RDB_REDIS + ".pwd":      "cc",
+		dal.RDB_REDIS + ".database": "0",
 
-		storage.DI_MONGO + ".host":     "127.0.0.1",
-		storage.DI_MONGO + ".port":     "27017",
-		storage.DI_MONGO + ".usr":      "cc",
-		storage.DI_MONGO + ".pwd":      "cc",
-		storage.DI_MONGO + ".database": "0",
+		dal.RDB_MONGO + ".host":     "127.0.0.1",
+		dal.RDB_MONGO + ".port":     "27017",
+		dal.RDB_MONGO + ".usr":      "cc",
+		dal.RDB_MONGO + ".pwd":      "cc",
+		dal.RDB_MONGO + ".database": "0",
 	}
 	a := api.NewAPIResource()
-	a.GetDataCli(config, storage.DI_REDIS)
-	a.GetDataCli(config, storage.DI_MONGO)
+	a.GetDataCli(config, dal.RDB_REDIS)
+	a.GetDataCli(config, dal.RDB_MONGO)
 }
 
 func TestSendCallback(t *testing.T) {
