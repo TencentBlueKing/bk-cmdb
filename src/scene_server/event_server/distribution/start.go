@@ -13,13 +13,14 @@
 package distribution
 
 import (
+	"context"
 	redis "gopkg.in/redis.v5"
 
 	"configcenter/src/scene_server/event_server/identifier"
 	"configcenter/src/storage/dal"
 )
 
-func Start(cache *redis.Client, db dal.RDB) error {
+func Start(ctx context.Context, cache *redis.Client, db dal.RDB) error {
 	chErr := make(chan error)
 
 	eh := &EventHandler{cache: cache}
@@ -27,12 +28,12 @@ func Start(cache *redis.Client, db dal.RDB) error {
 		chErr <- eh.StartHandleInsts()
 	}()
 
-	dh := &DistHandler{cache: cache, db: db}
+	dh := &DistHandler{cache: cache, db: db, ctx: ctx}
 	go func() {
 		chErr <- dh.StartDistribute()
 	}()
 
-	ih := identifier.NewIdentifierHandler(cache, db)
+	ih := identifier.NewIdentifierHandler(ctx, cache, db)
 	go func() {
 		chErr <- ih.StartHandleInsts()
 	}()
@@ -44,4 +45,5 @@ type EventHandler struct{ cache *redis.Client }
 type DistHandler struct {
 	cache *redis.Client
 	db    dal.RDB
+	ctx   context.Context
 }
