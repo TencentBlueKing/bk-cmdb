@@ -40,14 +40,15 @@ func (ps *ProctrlServer) DeleteProc2Module(req *restful.Request, resp *restful.R
 	// retrieve original data
 	var originals []interface{}
 
+	cxt := util.GetDBContext(context.Background(), req.Request.Header)
 	//ps.Instance.//.GetMutilByCondition(common.BKTableNameProcModule, []string{}, input, &originals, "", 0, 0); err != nil
-	if err := ps.Instance.Table(common.BKTableNameProcModule).Find(input).Limit(0).Start(0).Sort("").All(context.Background(), originals); err != nil {
+	if err := ps.Instance.Table(common.BKTableNameProcModule).Find(input).Limit(0).Start(0).Sort("").All(cxt, originals); err != nil {
 		blog.Warnf("retrieve original error:%v", err)
 	}
 
 	// delete proc module config
 	blog.Infof("delete proc module config %v", input)
-	if err := ps.Instance.Table(common.BKTableNameProcModule).Delete(context.Background(), input); err != nil {
+	if err := ps.Instance.Table(common.BKTableNameProcModule).Delete(cxt, input); err != nil {
 		blog.Errorf("delete proc module config error: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcDeleteProc2Module)})
 		return
@@ -80,9 +81,10 @@ func (ps *ProctrlServer) CreateProc2Module(req *restful.Request, resp *restful.R
 	}
 
 	blog.Infof("create proc module config: %v ", input)
+	cxt := util.GetDBContext(context.Background(), req.Request.Header)
 	ec := eventclient.NewEventContextByReq(req.Request.Header, ps.Cache)
 	for _, i := range input {
-		if err := ps.Instance.Table(common.BKTableNameProcModule).Insert(context.Background(), i); err != nil {
+		if err := ps.Instance.Table(common.BKTableNameProcModule).Insert(cxt, i); err != nil {
 			blog.Errorf("create proc module config error:%v", err)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcCreateProc2Module)})
 			return
@@ -112,7 +114,8 @@ func (ps *ProctrlServer) GetProc2Module(req *restful.Request, resp *restful.Resp
 	blog.Infof("get proc module config condition: %v ", input)
 	result := make([]interface{}, 0)
 
-	if err := ps.Instance.Table(common.BKTableNameProcModule).Find(input).All(context.Background(), result); err != nil {
+	cxt := util.GetDBContext(context.Background(), req.Request.Header)
+	if err := ps.Instance.Table(common.BKTableNameProcModule).Find(input).All(cxt, result); err != nil {
 		blog.Errorf("get process2module config failed. err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcSelectProc2Module)})
 		return
