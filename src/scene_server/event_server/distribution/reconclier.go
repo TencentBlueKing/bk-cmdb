@@ -25,12 +25,12 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/types"
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dbclient"
 )
 
 type reconciler struct {
-	db                   storage.DI
+	db                   dal.RDB
 	cache                *redis.Client
 	cached               map[string][]string
 	persisted            map[string][]string
@@ -39,7 +39,7 @@ type reconciler struct {
 	processID            string
 }
 
-func newReconciler(cache *redis.Client, db storage.DI) *reconciler {
+func newReconciler(cache *redis.Client, db dal.RDB) *reconciler {
 	return &reconciler{
 		db:                   db,
 		cache:                cache,
@@ -66,7 +66,7 @@ func (r *reconciler) loadAllCached() {
 
 func (r *reconciler) loadAllPersisted() {
 	subscriptions := []metadata.Subscription{}
-	if err := r.db.GetMutilByCondition(common.BKTableNameSubscription, nil, nil, &subscriptions, "", 0, 0); err != nil {
+	if err := r.db.Table(common.BKTableNameSubscription).Find(nil).All(ctx, &subscriptions); err != nil {
 		blog.Errorf("reconcile err: %v", err)
 	}
 	blog.Infof("loaded %v subscriptions from persistent", len(subscriptions))
@@ -105,7 +105,7 @@ func (r *reconciler) reconcile() {
 }
 
 func SubscribeChannel(config map[string]string) (err error) {
-	dType := storage.DI_REDIS
+	dType := dal.RDB_REDIS
 	host := config[dType+".host"]
 	port := config[dType+".port"]
 	user := config[dType+".usr"]

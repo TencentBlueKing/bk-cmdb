@@ -32,8 +32,8 @@ import (
 	"configcenter/src/scene_server/event_server/app/options"
 	"configcenter/src/scene_server/event_server/distribution"
 	svc "configcenter/src/scene_server/event_server/service"
-	"configcenter/src/storage/mgoclient"
-	"configcenter/src/storage/redisclient"
+	"configcenter/src/storage/dal/mongo"
+	"configcenter/src/storage/dal/redis"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
