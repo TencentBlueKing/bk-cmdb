@@ -33,7 +33,7 @@ import (
 	"configcenter/src/scene_server/admin_server/app/options"
 	"configcenter/src/scene_server/admin_server/configures"
 	svc "configcenter/src/scene_server/admin_server/service"
-	"configcenter/src/storage/mgoclient"
+	"configcenter/src/storage/dal/mongo"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -61,7 +61,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("new api machinery failed, err: %v", err)
 	}
 
-	service := new(svc.Service)
+	service := svc.NewService(ctx)
 	server := backbone.Server{
 		ListenAddr: svrInfo.IP,
 		ListenPort: svrInfo.Port,
@@ -96,11 +96,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			blog.V(3).Info("config not found, retry 2s later")
 			continue
 		}
-		db, err := mgoclient.NewFromConfig(process.Config.MongoDB)
-		if err != nil {
-			return fmt.Errorf("connect mongo server failed %s", err.Error())
-		}
-		err = db.Open()
+		db, err := mongo.NewMgo(process.Config.MongoDB.BuildURI())
 		if err != nil {
 			return fmt.Errorf("connect mongo server failed %s", err.Error())
 		}
@@ -139,13 +135,9 @@ func (h *MigrateServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 
 		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ") //ignore err, cause ConfigMap is map[string]string
 		blog.V(3).Infof("config updated: \n%s", out)
-		h.Config.MongoDB.Address = current.ConfigMap["mongodb.host"]
-		h.Config.MongoDB.User = current.ConfigMap["mongodb.usr"]
-		h.Config.MongoDB.Password = current.ConfigMap["mongodb.pwd"]
-		h.Config.MongoDB.Database = current.ConfigMap["mongodb.database"]
-		h.Config.MongoDB.Port = current.ConfigMap["mongodb.port"]
-		h.Config.MongoDB.MaxOpenConns = current.ConfigMap["mongodb.maxOpenConns"]
-		h.Config.MongoDB.MaxIdleConns = current.ConfigMap["mongodb.maxIDleConns"]
+
+		mongoConf := mongo.NewConfigFromKV("mongodb", current.ConfigMap)
+		h.Config.MongoDB = *mongoConf
 
 		h.Config.Errors.Res = current.ConfigMap["errors.res"]
 		h.Config.Language.Res = current.ConfigMap["language.res"]

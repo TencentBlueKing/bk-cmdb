@@ -13,6 +13,7 @@
 package v3v0v8
 
 import (
+	"context"
 	"time"
 
 	"configcenter/src/common"
@@ -20,29 +21,29 @@ import (
 	"configcenter/src/common/metadata"
 	mCommon "configcenter/src/scene_server/admin_server/common"
 	"configcenter/src/scene_server/admin_server/upgrader"
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
 )
 
-func addPresetObjects(db storage.DI, conf *upgrader.Config) (err error) {
-	err = addClassifications(db, conf)
+func addPresetObjects(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	err = addClassifications(ctx, db, conf)
 	if err != nil {
 		return err
 	}
-	err = addPropertyGroupData(db, conf)
+	err = addPropertyGroupData(ctx, db, conf)
 	if err != nil {
 		return err
 	}
-	err = addObjDesData(db, conf)
-	if err != nil {
-		return err
-	}
-
-	err = addObjAttDescData(db, conf)
+	err = addObjDesData(ctx, db, conf)
 	if err != nil {
 		return err
 	}
 
-	err = addAsstData(db, conf)
+	err = addObjAttDescData(ctx, db, conf)
+	if err != nil {
+		return err
+	}
+
+	err = addAsstData(ctx, db, conf)
 	if err != nil {
 		return err
 	}
@@ -50,13 +51,13 @@ func addPresetObjects(db storage.DI, conf *upgrader.Config) (err error) {
 	return nil
 }
 
-func addAsstData(db storage.DI, conf *upgrader.Config) error {
+func addAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tablename := common.BKTableNameObjAsst
 	blog.Errorf("add data for  %s table ", tablename)
 	rows := getAddAsstData(conf.OwnerID)
 	for _, row := range rows {
 		// topo mainline could be changed,so need to ignore bk_asst_obj_id
-		_, _, err := upgrader.Upsert(db, tablename, row, "id", []string{common.BKObjIDField, common.BKObjAttIDField, common.BKOwnerIDField}, []string{"id", "bk_asst_obj_id"})
+		_, _, err := upgrader.Upsert(ctx, db, tablename, row, "id", []string{common.BKObjIDField, common.BKObjAttIDField, common.BKOwnerIDField}, []string{"id", "bk_asst_obj_id"})
 		if nil != err {
 			blog.Errorf("add data for  %s table error  %s", tablename, err)
 			return err
@@ -67,12 +68,12 @@ func addAsstData(db storage.DI, conf *upgrader.Config) error {
 	return nil
 }
 
-func addObjAttDescData(db storage.DI, conf *upgrader.Config) error {
+func addObjAttDescData(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tablename := common.BKTableNameObjAttDes
 	blog.Infof("add data for  %s table ", tablename)
 	rows := getObjAttDescData(conf.OwnerID)
 	for _, row := range rows {
-		_, _, err := upgrader.Upsert(db, tablename, row, "id", []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}, []string{})
+		_, _, err := upgrader.Upsert(ctx, db, tablename, row, "id", []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}, []string{})
 		if nil != err {
 			blog.Errorf("add data for  %s table error  %s", tablename, err)
 			return err
@@ -92,17 +93,17 @@ func addObjAttDescData(db storage.DI, conf *upgrader.Config) error {
 		common.BKPropertyIDField: "bk_name",
 	}
 
-	db.DelByCondition(tablename, selector)
+	db.Table(tablename).Delete(ctx, selector)
 
 	return nil
 }
 
-func addObjDesData(db storage.DI, conf *upgrader.Config) error {
+func addObjDesData(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tablename := common.BKTableNameObjDes
 	blog.Errorf("add data for  %s table ", tablename)
 	rows := getObjectDesData(conf.OwnerID)
 	for _, row := range rows {
-		if _, _, err := upgrader.Upsert(db, tablename, row, "id", []string{common.BKObjIDField, common.BKClassificationIDField, common.BKOwnerIDField}, []string{"id"}); err != nil {
+		if _, _, err := upgrader.Upsert(ctx, db, tablename, row, "id", []string{common.BKObjIDField, common.BKClassificationIDField, common.BKOwnerIDField}, []string{"id"}); err != nil {
 			blog.Errorf("add data for  %s table error  %s", tablename, err)
 			return err
 		}
@@ -111,11 +112,11 @@ func addObjDesData(db storage.DI, conf *upgrader.Config) error {
 	return nil
 }
 
-func addClassifications(db storage.DI, conf *upgrader.Config) (err error) {
+func addClassifications(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	tablename := common.BKTableNameObjClassifiction
 	blog.Infof("add %s rows", tablename)
 	for _, row := range classificationRows {
-		if _, _, err = upgrader.Upsert(db, tablename, row, "id", []string{common.BKClassificationIDField}, []string{"id"}); err != nil {
+		if _, _, err = upgrader.Upsert(ctx, db, tablename, row, "id", []string{common.BKClassificationIDField}, []string{"id"}); err != nil {
 			blog.Errorf("add data for  %s table error  %s", tablename, err)
 			return err
 		}
@@ -123,12 +124,12 @@ func addClassifications(db storage.DI, conf *upgrader.Config) (err error) {
 	return
 }
 
-func addPropertyGroupData(db storage.DI, conf *upgrader.Config) error {
+func addPropertyGroupData(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tablename := common.BKTableNamePropertyGroup
 	blog.Errorf("add data for  %s table ", tablename)
 	rows := getPropertyGroupData(conf.OwnerID)
 	for _, row := range rows {
-		if _, _, err := upgrader.Upsert(db, tablename, row, "id", []string{common.BKObjIDField, "bk_group_id"}, []string{"id"}); err != nil {
+		if _, _, err := upgrader.Upsert(ctx, db, tablename, row, "id", []string{common.BKObjIDField, "bk_group_id"}, []string{"id"}); err != nil {
 			blog.Errorf("add data for  %s table error  %s", tablename, err)
 			return err
 		}

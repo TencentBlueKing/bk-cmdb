@@ -13,15 +13,16 @@
 package v3v0v8
 
 import (
+	"context"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
 )
 
-func addPlatData(db storage.DI, conf *upgrader.Config) error {
+func addPlatData(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tablename := "cc_PlatBase"
 	blog.Errorf("add data for  %s table ", tablename)
 	rows := []map[string]interface{}{
@@ -35,7 +36,7 @@ func addPlatData(db storage.DI, conf *upgrader.Config) error {
 	}
 	for _, row := range rows {
 		// ensure id plug > 1, 1Reserved
-		platID, err := db.GetIncID(tablename)
+		platID, err := db.NextSequence(ctx, tablename)
 		if err != nil {
 			return err
 		}
@@ -45,7 +46,7 @@ func addPlatData(db storage.DI, conf *upgrader.Config) error {
 		}
 
 		row[common.BKCloudIDField] = platID
-		_, _, err = upgrader.Upsert(db, tablename, row, "", []string{common.BKCloudNameField, common.BKOwnerIDField}, []string{common.BKCloudIDField})
+		_, _, err = upgrader.Upsert(ctx, db, tablename, row, "", []string{common.BKCloudNameField, common.BKOwnerIDField}, []string{common.BKCloudIDField})
 		if nil != err {
 			blog.Errorf("add data for  %s table error  %s", tablename, err)
 			return err
