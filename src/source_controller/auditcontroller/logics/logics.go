@@ -14,11 +14,11 @@ package logics
 
 import (
 	"configcenter/src/common/backbone"
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
 )
 
 // Logics framwork need
 type Logics struct {
 	*backbone.Engine
-	Instance storage.DI
+	Instance dal.RDB
 }

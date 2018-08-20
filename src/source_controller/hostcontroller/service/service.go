@@ -24,12 +24,12 @@ import (
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/source_controller/hostcontroller/logics"
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
 )
 
 type Service struct {
 	Core     *backbone.Engine
-	Instance storage.DI
+	Instance dal.RDB
 	Cache    *redis.Client
 	Logics   logics.Logics
 }

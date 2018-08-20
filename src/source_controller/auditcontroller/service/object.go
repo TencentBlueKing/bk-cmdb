@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
@@ -28,6 +29,7 @@ import (
 func (s *Service) AddObjectLog(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
 	ownerID := util.GetOwnerID(req.Request.Header)
 	strAppID := req.PathParameter("biz_id")
@@ -46,7 +48,7 @@ func (s *Service) AddObjectLog(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	err = s.Logics.AddLogWithStr(appID, params.InstID, params.OpType, params.OpTarget, params.Content, "", params.OpDesc, ownerID, user)
+	err = s.Logics.AddLogWithStr(ctx, appID, params.InstID, params.OpType, params.OpTarget, params.Content, "", params.OpDesc, ownerID, user)
 	if nil != err {
 		blog.Errorf("AddObjectLog add module log error:%s", err.Error())
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
@@ -62,7 +64,7 @@ func (s *Service) AddObjectLog(req *restful.Request, resp *restful.Response) {
 func (s *Service) AddObjectLogs(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
-
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	strAppID := req.PathParameter("biz_id")
 	user := req.PathParameter("user")
@@ -81,7 +83,7 @@ func (s *Service) AddObjectLogs(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	err = s.Logics.AddLogMulti(appID, params.OpType, params.OpTarget, params.Content, params.OpDesc, ownerID, user)
+	err = s.Logics.AddLogMulti(ctx, appID, params.OpType, params.OpTarget, params.Content, params.OpDesc, ownerID, user)
 	if nil != err {
 		blog.Errorf("AddObjectLogs add module log error:%s", err.Error())
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
@@ -97,7 +99,7 @@ func (s *Service) AddObjectLogs(req *restful.Request, resp *restful.Response) {
 func (s *Service) AddProcLog(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
-
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	strAppID := req.PathParameter("biz_id")
 	user := req.PathParameter("user")
@@ -115,7 +117,7 @@ func (s *Service) AddProcLog(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	err = s.Logics.AddLogWithStr(appID, params.ProcID, params.OpType, common.BKInnerObjIDProc, params.Content, "", params.OpDesc, ownerID, user)
+	err = s.Logics.AddLogWithStr(ctx, appID, params.ProcID, params.OpType, common.BKInnerObjIDProc, params.Content, "", params.OpDesc, ownerID, user)
 	if nil != err {
 		blog.Errorf("AddProcLog json unmarshal failed,input:%v error:%s", err.Error())
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
@@ -128,7 +130,7 @@ func (s *Service) AddProcLog(req *restful.Request, resp *restful.Response) {
 func (s *Service) AddProcLogs(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
-
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	strAppID := req.PathParameter("biz_id")
 	user := req.PathParameter("user")
@@ -147,7 +149,7 @@ func (s *Service) AddProcLogs(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	err = s.Logics.AddLogMulti(appID, params.OpType, common.BKInnerObjIDProc, params.Content, params.OpDesc, ownerID, user)
+	err = s.Logics.AddLogMulti(ctx, appID, params.OpType, common.BKInnerObjIDProc, params.Content, params.OpDesc, ownerID, user)
 	if nil != err {
 		blog.Errorf("AddProcLogs json unmarshal failed,  error:%v", err.Error())
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})

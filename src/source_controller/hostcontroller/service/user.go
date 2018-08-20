@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -31,6 +32,7 @@ func (s *Service) AddUserConfig(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ownerID := util.GetOwnerID(pheader)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
 	addQuery := new(meta.AddConfigQuery)
 	if err := json.NewDecoder(req.Request.Body).Decode(&addQuery); err != nil {
@@ -58,7 +60,7 @@ func (s *Service) AddUserConfig(req *restful.Request, resp *restful.Response) {
 
 	queryParams := common.KvMap{"name": addQuery.Name, common.BKAppIDField: addQuery.AppID}
 	queryParams = util.SetModOwner(queryParams, ownerID)
-	rowCount, err := s.Instance.GetCntByCondition(UserQueryCollection, queryParams)
+	rowCount, err := s.Instance.Table(common.BKTableNameUserAPI).Find(queryParams).Count(ctx)
 	if nil != err {
 		blog.Errorf("add user config, query user api fail, error information is %s, params:%v", err.Error(), queryParams)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
@@ -83,7 +85,7 @@ func (s *Service) AddUserConfig(req *restful.Request, resp *restful.Response) {
 		UpdateTime: time.Now().UTC(),
 	}
 
-	_, err = s.Instance.Insert(UserQueryCollection, userQuery)
+	err = s.Instance.Table(common.BKTableNameUserAPI).Insert(ctx, userQuery)
 	if err != nil {
 		blog.Error("add user config, create user query failed, query:%+v err:%v", userQuery, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
@@ -101,6 +103,7 @@ func (s *Service) UpdateUserConfig(req *restful.Request, resp *restful.Response)
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ownerID := util.GetOwnerID(pheader)
 	id := req.PathParameter("id")
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
 	appID, err := strconv.ParseInt(req.PathParameter(common.BKAppIDField), 10, 64)
 	if err != nil {
@@ -118,7 +121,7 @@ func (s *Service) UpdateUserConfig(req *restful.Request, resp *restful.Response)
 
 	params := common.KvMap{"id": id, common.BKAppIDField: appID}
 	params = util.SetModOwner(params, ownerID)
-	rowCount, err := s.Instance.GetCntByCondition(UserQueryCollection, params)
+	rowCount, err := s.Instance.Table(common.BKTableNameUserAPI).Find(params).Count(ctx)
 	if nil != err {
 		blog.Error("query user api fail, error information is %s, params:%v", err.Error(), params)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
@@ -133,7 +136,7 @@ func (s *Service) UpdateUserConfig(req *restful.Request, resp *restful.Response)
 	if len(data.Name) != 0 {
 		dupParams := common.KvMap{"name": data.Name, common.BKAppIDField: appID, common.BKFieldID: common.KvMap{common.BKDBNE: id}}
 		dupParams = util.SetModOwner(dupParams, ownerID)
-		rowCount, getErr := s.Instance.GetCntByCondition(UserQueryCollection, dupParams)
+		rowCount, getErr := s.Instance.Table(common.BKTableNameUserAPI).Find(dupParams).Count(ctx)
 		if nil != getErr {
 			blog.Error("query user api validate name duplicate fail, error information is %s, params:%v", getErr.Error(), dupParams)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
@@ -150,7 +153,7 @@ func (s *Service) UpdateUserConfig(req *restful.Request, resp *restful.Response)
 	data.ModifyUser = util.GetUser(req.Request.Header)
 	data.AppID = appID
 	data.OwnerID = ownerID
-	err = s.Instance.UpdateByCondition(UserQueryCollection, data, params)
+	err = s.Instance.Table(common.BKTableNameUserAPI).Update(ctx, params, data)
 	if nil != err {
 		blog.Error("update user api fail, error information is %s, params:%v", err.Error(), params)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBUpdateFailed)})
@@ -164,6 +167,7 @@ func (s *Service) DeleteUserConfig(req *restful.Request, resp *restful.Response)
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ownerID := util.GetOwnerID(pheader)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
 	id := req.PathParameter("id")
 	appID, err := strconv.ParseInt(req.PathParameter(common.BKAppIDField), 10, 64)
@@ -175,7 +179,7 @@ func (s *Service) DeleteUserConfig(req *restful.Request, resp *restful.Response)
 
 	params := common.KvMap{"id": id, common.BKAppIDField: appID}
 	params = util.SetModOwner(params, ownerID)
-	rowCount, err := s.Instance.GetCntByCondition(UserQueryCollection, params)
+	rowCount, err := s.Instance.Table(common.BKTableNameUserAPI).Find(params).Count(ctx)
 	if nil != err {
 		blog.Error("query user api fail, error information is %s, params:%v", err.Error(), params)
 		resp.WriteError(http.StatusBadGateway, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
@@ -187,7 +191,7 @@ func (s *Service) DeleteUserConfig(req *restful.Request, resp *restful.Response)
 		return
 	}
 
-	err = s.Instance.DelByCondition(UserQueryCollection, params)
+	err = s.Instance.Table(common.BKTableNameUserAPI).Delete(ctx, params)
 	if nil != err {
 		blog.Error("delete user api fail, error information is %s, params:%v", err.Error(), params)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBDeleteFailed)})
@@ -201,6 +205,7 @@ func (s *Service) GetUserConfig(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ownerID := util.GetOwnerID(pheader)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
 	dat := new(meta.ObjQueryInput)
 	if err := json.NewDecoder(req.Request.Body).Decode(dat); err != nil {
@@ -236,14 +241,14 @@ func (s *Service) GetUserConfig(req *restful.Request, resp *restful.Response) {
 
 	condition[common.BKAppIDField] = appID
 	condition = util.SetModOwner(condition, ownerID)
-	count, err := s.Instance.GetCntByCondition(UserQueryCollection, condition)
+	count, err := s.Instance.Table(common.BKTableNameUserAPI).Find(condition).Count(ctx)
 	if err != nil {
 		blog.Error("get user api information failed, err:%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return
 	}
-	var result []interface{}
-	err = s.Instance.GetMutilByCondition(UserQueryCollection, fieldArr, condition, &result, sort, start, limit)
+	result := make([]interface{}, 0)
+	err = s.Instance.Table(common.BKTableNameUserAPI).Find(condition).Fields(fieldArr...).Sort(sort).Start(uint64(start)).Limit(uint64(limit)).All(ctx, result)
 	if err != nil {
 		blog.Error("get user api information failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
@@ -264,6 +269,7 @@ func (s *Service) UserConfigDetail(req *restful.Request, resp *restful.Response)
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ownerID := util.GetOwnerID(pheader)
 	id := req.PathParameter("id")
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
 	appID, err := strconv.ParseInt(req.PathParameter(common.BKAppIDField), 10, 64)
 	if err != nil {
@@ -272,11 +278,10 @@ func (s *Service) UserConfigDetail(req *restful.Request, resp *restful.Response)
 		return
 	}
 
-	var fieldArr []string
 	params := common.KvMap{"id": id, common.BKAppIDField: appID}
 	params = util.SetModOwner(params, ownerID)
 	result := new(meta.UserConfigMeta)
-	err = s.Instance.GetOneByCondition(UserQueryCollection, fieldArr, params, result)
+	err = s.Instance.Table(common.BKTableNameUserAPI).Find(params).One(ctx, result)
 	if err != nil && mgo_on_not_found_error != err.Error() {
 		blog.Error("get user api information error,input:%v error:%v", id, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
@@ -294,6 +299,7 @@ func (s *Service) AddUserCustom(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(language)
 	ownerID := util.GetOwnerID(req.Request.Header)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
 	data := make(map[string]interface{})
 	if err := json.NewDecoder(req.Request.Body).Decode(&data); err != nil {
@@ -306,7 +312,7 @@ func (s *Service) AddUserCustom(req *restful.Request, resp *restful.Response) {
 	data["id"] = ID.String()
 	data["bk_user"] = req.PathParameter("bk_user")
 	data = util.SetModOwner(data, ownerID)
-	_, err := s.Instance.Insert(userCustomTableName, data)
+	err := s.Instance.Table(common.BKTableNameUserCustom).Insert(ctx, data)
 	if nil != err {
 		blog.Errorf("Create  user custom fail, err: %v, params:%v", err, data)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCreateUserCustom)})
@@ -320,6 +326,7 @@ func (s *Service) UpdateUserCustomByID(req *restful.Request, resp *restful.Respo
 	language := util.GetLanguage(req.Request.Header)
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(language)
 	ownerID := util.GetOwnerID(req.Request.Header)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
 	conditons := make(map[string]interface{})
 	conditons["id"] = req.PathParameter("id")
@@ -333,7 +340,7 @@ func (s *Service) UpdateUserCustomByID(req *restful.Request, resp *restful.Respo
 	}
 
 	conditons = util.SetModOwner(conditons, ownerID)
-	err := s.Instance.UpdateByCondition(userCustomTableName, data, conditons)
+	err := s.Instance.Table(common.BKTableNameUserCustom).Update(ctx, conditons, data)
 	if nil != err {
 		blog.Errorf("update  user custom failed, err: %v, data:%v", err, data)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBUpdateFailed)})
@@ -347,12 +354,13 @@ func (s *Service) GetUserCustomByUser(req *restful.Request, resp *restful.Respon
 	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
 	conds, result := make(map[string]interface{}), make(map[string]interface{})
 	conds["bk_user"] = req.PathParameter("bk_user")
 	conds = util.SetModOwner(conds, ownerID)
 
-	err := s.Instance.GetOneByCondition(userCustomTableName, nil, conds, &result)
+	err := s.Instance.Table(common.BKTableNameUserCustom).Find(conds).One(ctx, result)
 	if nil != err && mgo_on_not_found_error != err.Error() {
 		blog.Error("add  user custom failed, err: %v, params:%v", err, conds)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
@@ -369,12 +377,13 @@ func (s *Service) GetDefaultUserCustom(req *restful.Request, resp *restful.Respo
 	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
 	conds, result := make(map[string]interface{}), make(map[string]interface{})
 	conds["is_default"] = 1
 	conds = util.SetModOwner(conds, ownerID)
 
-	err := s.Instance.GetOneByCondition(userCustomTableName, nil, conds, &result)
+	err := s.Instance.Table(common.BKTableNameUserCustom).Find(conds).One(ctx, result)
 	if nil != err {
 		blog.Error("get default user custom fail, err: %v, params:%v", err, conds)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})

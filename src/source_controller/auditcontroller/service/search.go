@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
@@ -28,7 +29,7 @@ func (s *Service) Get(req *restful.Request, resp *restful.Response) {
 	language := util.GetActionLanguage(req)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 	ownerID := util.GetOwnerID(req.Request.Header)
-
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	dat := new(metadata.ObjQueryInput)
 	if err := json.NewDecoder(req.Request.Body).Decode(dat); err != nil {
 		blog.Error("Get json unmarshal failed,  error:%v", err)
@@ -36,7 +37,7 @@ func (s *Service) Get(req *restful.Request, resp *restful.Response) {
 		return
 	}
 	dat.Condition = util.SetModOwner(dat.Condition, ownerID)
-	rows, cnt, err := s.Logics.Search(dat)
+	rows, cnt, err := s.Logics.Search(ctx, dat)
 	if nil != err {
 		blog.Error("get data from data  error:%s", err.Error())
 		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
