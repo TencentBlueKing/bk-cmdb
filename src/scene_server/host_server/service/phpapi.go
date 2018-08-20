@@ -845,8 +845,13 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 
 	valid := validator.NewValidMap(util.GetOwnerID(req.Request.Header), common.BKInnerObjIDPlat, req.Request.Header, s.Engine)
 	validErr := valid.ValidMap(input, common.ValidCreate, 0)
+
 	if nil != validErr {
 		blog.Errorf("CreatePlat error: %v, input:%v", validErr, input)
+		if strings.Contains(defErr.Error(common.CCErrCommDuplicateItem).Error(), validErr.Error()) {
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDuplicateItem)})
+			return
+		}
 		resp.WriteError(http.StatusBadGateway, &meta.RespError{Msg: defErr.Error(common.CCErrTopoInstCreateFailed)})
 		return
 	}
