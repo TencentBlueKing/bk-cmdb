@@ -125,3 +125,10 @@ type GseProcConfigmap struct {
 	Path string `json:"path,omitempty"`
 	Md5  string `json:"md5,omitempty"`
 }
+
+type ProcessModule struct {
+	AppID      int64  `json:"bk_biz_id" bson:"bk_biz_id"`
+	ModuleName string `json:"bk_module_name" bson:"bk_module_name"`
+	ProcessID  int64  `json:"bk_process_id" bson:"bk_process_id"`
+	OwnerID    string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+}
