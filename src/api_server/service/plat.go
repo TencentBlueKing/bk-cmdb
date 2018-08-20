@@ -14,6 +14,7 @@ package service
 
 import (
 	"context"
+	"strconv"
 	"strings"
 
 	"configcenter/src/api_server/ccapi/logics/v2/common/converter"
@@ -163,8 +164,12 @@ func (s *Service) createPlats(req *restful.Request, resp *restful.Response) {
 	param, _ = s.Logics.AutoInputV3Field(param, common.BKInnerObjIDPlat, user, pheader)
 
 	result, err := s.CoreAPI.HostServer().CreatePlat(context.Background(), pheader, param)
-	if err != nil {
+	if nil != err {
 		blog.Errorf("createPlats  error:%v", err)
+		if strings.Contains(err.Error(), strconv.Itoa(common.CCErrCommDuplicateItem)) {
+			converter.RespFailV2(common.CCErrCommDuplicateItem, defErr.Error(common.CCErrCommDuplicateItem).Error(), resp)
+			return
+		}
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
