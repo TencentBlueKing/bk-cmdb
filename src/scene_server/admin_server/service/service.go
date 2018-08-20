@@ -13,6 +13,8 @@
 package service
 
 import (
+	"context"
+
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
@@ -21,8 +23,6 @@ import (
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal"
-	"context"
-
 	"github.com/emicklei/go-restful"
 )
 

@@ -14,10 +14,10 @@ package distribution
 
 import (
 	"context"
-	redis "gopkg.in/redis.v5"
 
 	"configcenter/src/scene_server/event_server/identifier"
 	"configcenter/src/storage/dal"
+	redis "gopkg.in/redis.v5"
 )
 
 func Start(ctx context.Context, cache *redis.Client, db dal.RDB) error {
