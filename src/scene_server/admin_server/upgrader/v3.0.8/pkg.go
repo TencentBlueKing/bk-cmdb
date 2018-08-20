@@ -13,36 +13,38 @@
 package v3v0v8
 
 import (
+	"context"
+
 	"configcenter/src/scene_server/admin_server/upgrader"
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
 )
 
 func init() {
 	upgrader.RegistUpgrader("v3.0.8", upgrade)
 }
 
-func upgrade(db storage.DI, conf *upgrader.Config) (err error) {
-	err = createTable(db, conf)
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	err = createTable(ctx, db, conf)
 	if err != nil {
 		return err
 	}
-	err = addPresetObjects(db, conf)
+	err = addPresetObjects(ctx, db, conf)
 	if err != nil {
 		return err
 	}
-	err = addPlatData(db, conf)
+	err = addPlatData(ctx, db, conf)
 	if err != nil {
 		return err
 	}
-	err = addSystemData(db, conf)
+	err = addSystemData(ctx, db, conf)
 	if err != nil {
 		return err
 	}
-	err = addDefaultBiz(db, conf)
+	err = addDefaultBiz(ctx, db, conf)
 	if err != nil {
 		return err
 	}
-	err = addBKApp(db, conf)
+	err = addBKApp(ctx, db, conf)
 	if err != nil {
 		return err
 	}

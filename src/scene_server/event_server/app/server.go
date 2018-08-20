@@ -32,8 +32,8 @@ import (
 	"configcenter/src/scene_server/event_server/app/options"
 	"configcenter/src/scene_server/event_server/distribution"
 	svc "configcenter/src/scene_server/event_server/service"
-	"configcenter/src/storage/mgoclient"
-	"configcenter/src/storage/redisclient"
+	"configcenter/src/storage/dal/mongo"
+	"configcenter/src/storage/dal/redis"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -54,7 +54,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("new api machinery failed, err: %v", err)
 	}
 
-	service := new(svc.Service)
+	service := svc.NewService(ctx)
 	server := backbone.Server{
 		ListenAddr: svrInfo.IP,
 		ListenPort: svrInfo.Port,
@@ -90,23 +90,19 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			blog.V(3).Info("config not found, retry 2s later")
 			continue
 		}
-		db, err := mgoclient.NewFromConfig(process.Config.MongoDB)
-		if err != nil {
-			return fmt.Errorf("connect mongo server failed %s", err.Error())
-		}
-		err = db.Open()
+		db, err := mongo.NewMgo(process.Config.MongoDB.BuildURI())
 		if err != nil {
 			return fmt.Errorf("connect mongo server failed %s", err.Error())
 		}
 		process.Service.SetDB(db)
 
-		cache, err := redisclient.NewFromConfig(process.Config.Redis)
+		cache, err := redis.NewFromConfig(process.Config.Redis)
 		if err != nil {
 			return fmt.Errorf("connect redis server failed %s", err.Error())
 		}
 		process.Service.SetCache(cache)
 		go func() {
-			errCh <- distribution.Start(cache, db)
+			errCh <- distribution.Start(ctx, cache, db)
 		}()
 		break
 	}
@@ -137,18 +133,11 @@ func (h *EventServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		}
 		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ") //ignore err, cause ConfigMap is map[string]string
 		blog.Infof("config updated: \n%s", out)
-		h.Config.MongoDB.Address = current.ConfigMap["mongodb.host"]
-		h.Config.MongoDB.User = current.ConfigMap["mongodb.usr"]
-		h.Config.MongoDB.Password = current.ConfigMap["mongodb.pwd"]
-		h.Config.MongoDB.Database = current.ConfigMap["mongodb.database"]
-		h.Config.MongoDB.Port = current.ConfigMap["mongodb.port"]
-		h.Config.MongoDB.MaxOpenConns = current.ConfigMap["mongodb.maxOpenConns"]
-		h.Config.MongoDB.MaxIdleConns = current.ConfigMap["mongodb.maxIDleConns"]
+		mongoConf := mongo.NewConfigFromKV("mongodb", current.ConfigMap)
+		h.Config.MongoDB = *mongoConf
 
-		h.Config.Redis.Address = current.ConfigMap["redis.host"]
-		h.Config.Redis.Password = current.ConfigMap["redis.pwd"]
-		h.Config.Redis.Database = current.ConfigMap["redis.database"]
-		h.Config.Redis.Port = current.ConfigMap["redis.port"]
+		redisConf := redis.NewConfigFromKV("redis", current.ConfigMap)
+		h.Config.Redis = *redisConf
 	}
 }
 

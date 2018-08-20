@@ -34,7 +34,7 @@ func (dh *DistHandler) StartDistribute() (err error) {
 		blog.Errorf("%s", debug.Stack())
 	}()
 
-	rccler := newReconciler(dh.cache, dh.db)
+	rccler := newReconciler(dh.ctx, dh.cache, dh.db)
 	rccler.loadAll()
 	rccler.reconcile()
 	subscribers := rccler.persistedSubscribers

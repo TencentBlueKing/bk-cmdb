@@ -33,7 +33,7 @@ type ParamSubscriptionSearch struct {
 }
 
 type RspSubscriptionSearch struct {
-	Count int            `json:"count"`
+	Count uint64         `json:"count"`
 	Info  []Subscription `json:"info"`
 }
 
