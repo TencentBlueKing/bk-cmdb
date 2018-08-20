@@ -30,17 +30,23 @@ type Wire interface {
 // BinaryWire implements Wire interface
 type BinaryWire struct {
 	conn   io.ReadWriteCloser
-	writer *bufio.Writer
+	writer flushWriter
 	reader io.Reader
 }
 
 // NewBinaryWire returns a new BinaryWire
-func NewBinaryWire(rwc io.ReadWriteCloser) *BinaryWire {
+func NewBinaryWire(rwc io.ReadWriteCloser, compress string) (*BinaryWire, error) {
+	w := bufio.NewWriterSize(rwc, writeBufferSize)
+	r := bufio.NewReaderSize(rwc, readBufferSize)
+	compressor, err := newCompressor(r, w, compress)
+	if err != nil {
+		return nil, err
+	}
 	return &BinaryWire{
 		conn:   rwc,
-		writer: bufio.NewWriterSize(rwc, writeBufferSize),
-		reader: bufio.NewReaderSize(rwc, readBufferSize),
-	}
+		writer: compressor,
+		reader: compressor,
+	}, nil
 }
 
 func (w *BinaryWire) Write(msg *Message) error {
@@ -59,10 +65,10 @@ func (w *BinaryWire) Write(msg *Message) error {
 	if err = binary.Write(w.writer, binary.LittleEndian, msg.typz); err != nil {
 		return err
 	}
-	if err = w.writeString(msg.cmd); err != nil {
+	if err = writeString(w.writer, msg.cmd); err != nil {
 		return err
 	}
-	if err = w.writeBytes(msg.Data); err != nil {
+	if err = writeBytes(w.writer, msg.Data); err != nil {
 		return err
 	}
 	return w.writer.Flush()
@@ -88,10 +94,10 @@ func (w *BinaryWire) Read() (*Message, error) {
 	if err = binary.Read(w.reader, binary.LittleEndian, &msg.typz); err != nil {
 		return nil, err
 	}
-	if msg.cmd, err = w.readString(); err != nil {
+	if msg.cmd, err = readString(w.reader); err != nil {
 		return nil, err
 	}
-	if msg.Data, err = w.readBytes(); err != nil {
+	if msg.Data, err = readBytes(w.reader); err != nil {
 		return nil, err
 	}
 	return &msg, nil
@@ -102,51 +108,51 @@ func (w *BinaryWire) Close() error {
 	return w.conn.Close()
 }
 
-func (w *BinaryWire) readString() (string, error) {
+func readString(reader io.Reader) (string, error) {
 	var length uint32
-	if err := binary.Read(w.reader, binary.LittleEndian, &length); err != nil {
+	if err := binary.Read(reader, binary.LittleEndian, &length); err != nil {
 		return "", err
 	}
 	if length <= 0 {
 		return "", nil
 	}
 	data := make([]byte, length)
-	if _, err := io.ReadFull(w.reader, data); err != nil {
+	if _, err := io.ReadFull(reader, data); err != nil {
 		return "", err
 	}
 	return string(data), nil
 }
 
-func (w *BinaryWire) writeString(s string) error {
-	if err := binary.Write(w.writer, binary.LittleEndian, uint32(len(s))); err != nil {
+func writeString(writer io.Writer, s string) error {
+	if err := binary.Write(writer, binary.LittleEndian, uint32(len(s))); err != nil {
 		return err
 	}
-	if _, err := w.writer.WriteString(s); err != nil {
+	if _, err := io.WriteString(writer, s); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (w *BinaryWire) readBytes() (data []byte, err error) {
+func readBytes(reader io.Reader) (data []byte, err error) {
 	var length uint32
-	if err = binary.Read(w.reader, binary.LittleEndian, &length); err != nil {
+	if err = binary.Read(reader, binary.LittleEndian, &length); err != nil {
 		return nil, err
 	}
 	if length > 0 {
 		data = make([]byte, length)
-		if _, err = io.ReadFull(w.reader, data); err != nil {
+		if _, err = io.ReadFull(reader, data); err != nil {
 			return nil, err
 		}
 	}
 	return
 }
 
-func (w *BinaryWire) writeBytes(data []byte) (err error) {
-	if err = binary.Write(w.writer, binary.LittleEndian, uint32(len(data))); err != nil {
+func writeBytes(writer io.Writer, data []byte) (err error) {
+	if err = binary.Write(writer, binary.LittleEndian, uint32(len(data))); err != nil {
 		return err
 	}
 	if len(data) > 0 {
-		if _, err = w.writer.Write(data); err != nil {
+		if _, err = writer.Write(data); err != nil {
 			return err
 		}
 	}

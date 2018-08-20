@@ -47,9 +47,13 @@ type Client struct {
 }
 
 //NewClient replica client
-func NewClient(conn net.Conn) *Client {
+func NewClient(conn net.Conn, compress string) (*Client, error) {
+	wire, err := NewBinaryWire(conn, compress)
+	if err != nil {
+		return nil, err
+	}
 	c := &Client{
-		wire:      NewBinaryWire(conn),
+		wire:      wire,
 		peerAddr:  conn.RemoteAddr().String(),
 		end:       make(chan struct{}, 1024),
 		requests:  make(chan *Message, 1024),
@@ -63,7 +67,7 @@ func NewClient(conn net.Conn) *Client {
 	go c.loop()
 	go c.write()
 	go c.read()
-	return c
+	return c, nil
 }
 
 // DialHTTPPath connects to an HTTP RPC server
@@ -80,7 +84,7 @@ func DialHTTPPath(network, address, path string) (*Client, error) {
 	// before switching to RPC protocol.
 	resp, err := http.ReadResponse(bufio.NewReader(conn), &http.Request{Method: "CONNECT"})
 	if err == nil && resp.Status == connected {
-		return NewClient(conn), nil
+		return NewClient(conn, "deflate")
 	}
 	if err == nil {
 		err = errors.New("unexpected HTTP response: " + resp.Status)

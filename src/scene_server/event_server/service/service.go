@@ -13,6 +13,10 @@
 package service
 
 import (
+	"context"
+
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
@@ -20,19 +24,24 @@ import (
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
-	"configcenter/src/storage"
-	"github.com/emicklei/go-restful"
-
+	"configcenter/src/storage/dal"
 	redis "gopkg.in/redis.v5"
 )
 
 type Service struct {
 	*backbone.Engine
-	db    storage.DI
+	db    dal.RDB
 	cache *redis.Client
+	ctx   context.Context
 }
 
-func (s *Service) SetDB(db storage.DI) {
+func NewService(ctx context.Context) *Service {
+	return &Service{
+		ctx: ctx,
+	}
+}
+
+func (s *Service) SetDB(db dal.RDB) {
 	s.db = db
 }
 

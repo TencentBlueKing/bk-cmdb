@@ -13,6 +13,7 @@
 package v3v0v8
 
 import (
+	"context"
 	"fmt"
 
 	"strings"
@@ -23,7 +24,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
 )
 
 // 进程:功能:port
@@ -72,10 +73,10 @@ var setModuleKv = map[string]map[string]string{"作业平台": {"job": "job_java
 	"集成平台": {"esb": "uwsgi", "login": "uwsgi", "paas": "uwsgi", "appengine": "uwsgi", "console": "uwsgi", "appo": "paas_agent", "appt": "paas_agent"},
 }
 
-var procName2ID map[string]int64
+var procName2ID map[string]uint64
 
 //addBKApp add bk app
-func addBKApp(db storage.DI, conf *upgrader.Config) error {
+func addBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
 	// add bk app
 	appModelData := map[string]interface{}{}
@@ -89,7 +90,7 @@ func addBKApp(db storage.DI, conf *upgrader.Config) error {
 	appModelData[common.BKSupplierIDField] = conf.SupplierID
 	filled := fillEmptyFields(appModelData, AppRow())
 	var preData map[string]interface{}
-	bizID, preData, err := upgrader.Upsert(db, "cc_ApplicationBase", appModelData, common.BKAppIDField, []string{common.BKAppNameField, common.BKOwnerIDField}, append(filled, common.BKAppIDField))
+	bizID, preData, err := upgrader.Upsert(ctx, db, "cc_ApplicationBase", appModelData, common.BKAppIDField, []string{common.BKAppNameField, common.BKOwnerIDField}, append(filled, common.BKAppIDField))
 	if err != nil {
 		blog.Error("add addBKApp error ", err.Error())
 		return err
@@ -109,7 +110,7 @@ func addBKApp(db storage.DI, conf *upgrader.Config) error {
 	}
 	logRow := &metadata.OperationLog{
 		OwnerID:       conf.OwnerID,
-		ApplicationID: bizID,
+		ApplicationID: int64(bizID),
 		OpType:        int(auditoplog.AuditOpTypeAdd),
 		OpTarget:      "biz",
 		User:          conf.User,
@@ -117,13 +118,13 @@ func addBKApp(db storage.DI, conf *upgrader.Config) error {
 		OpDesc:        "create app",
 		Content:       auditContent,
 		CreateTime:    time.Now(),
-		InstID:        bizID,
+		InstID:        int64(bizID),
 	}
 	if preData != nil {
 		logRow.OpDesc = "update process"
 		logRow.OpType = int(auditoplog.AuditOpTypeModify)
 	}
-	if _, err = db.Insert(logRow.TableName(), logRow); err != nil {
+	if err = db.Table(logRow.TableName()).Insert(ctx, logRow); err != nil {
 		blog.Error("add audit log error ", err.Error())
 		return err
 	}
@@ -136,7 +137,7 @@ func addBKApp(db storage.DI, conf *upgrader.Config) error {
 	inputSetInfo[common.BKDefaultField] = common.DefaultResSetFlag
 	inputSetInfo[common.BKOwnerIDField] = conf.OwnerID
 	filled = fillEmptyFields(inputSetInfo, SetRow())
-	setID, _, err := upgrader.Upsert(db, "cc_SetBase", inputSetInfo, common.BKSetIDField, []string{common.BKOwnerIDField, common.BKAppIDField, common.BKSetNameField}, append(filled, common.BKSetIDField))
+	setID, _, err := upgrader.Upsert(ctx, db, "cc_SetBase", inputSetInfo, common.BKSetIDField, []string{common.BKOwnerIDField, common.BKAppIDField, common.BKSetNameField}, append(filled, common.BKSetIDField))
 	if err != nil {
 		blog.Error("add defaultSet error ", err.Error())
 		return err
@@ -151,7 +152,7 @@ func addBKApp(db storage.DI, conf *upgrader.Config) error {
 	inputResModuleInfo[common.BKDefaultField] = common.DefaultResModuleFlag
 	inputResModuleInfo[common.BKOwnerIDField] = conf.OwnerID
 	filled = fillEmptyFields(inputResModuleInfo, ModuleRow())
-	_, _, err = upgrader.Upsert(db, "cc_ModuleBase", inputResModuleInfo, common.BKModuleIDField, []string{common.BKOwnerIDField, common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField}, append(filled, common.BKModuleIDField))
+	_, _, err = upgrader.Upsert(ctx, db, "cc_ModuleBase", inputResModuleInfo, common.BKModuleIDField, []string{common.BKOwnerIDField, common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField}, append(filled, common.BKModuleIDField))
 	if err != nil {
 		blog.Error("add defaultResModule error ", err.Error())
 		return err
@@ -165,16 +166,16 @@ func addBKApp(db storage.DI, conf *upgrader.Config) error {
 	inputFaultModuleInfo[common.BKDefaultField] = common.DefaultFaultModuleFlag
 	inputFaultModuleInfo[common.BKOwnerIDField] = conf.OwnerID
 	filled = fillEmptyFields(inputFaultModuleInfo, ModuleRow())
-	_, _, err = upgrader.Upsert(db, "cc_ModuleBase", inputFaultModuleInfo, common.BKModuleIDField, []string{common.BKOwnerIDField, common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField}, append(filled, common.BKModuleIDField))
+	_, _, err = upgrader.Upsert(ctx, db, "cc_ModuleBase", inputFaultModuleInfo, common.BKModuleIDField, []string{common.BKOwnerIDField, common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField}, append(filled, common.BKModuleIDField))
 	if err != nil {
 		blog.Error("add defaultFaultModule error ", err.Error())
 		return err
 	}
 
-	if err := addBKProcess(db, conf, bizID); err != nil {
+	if err := addBKProcess(ctx, db, conf, bizID); err != nil {
 		blog.Error("add addBKProcess error ", err.Error())
 	}
-	if err := addSetInBKApp(db, conf, bizID); err != nil {
+	if err := addSetInBKApp(ctx, db, conf, bizID); err != nil {
 		blog.Error("add addSetInBKApp error ", err.Error())
 	}
 
@@ -182,8 +183,8 @@ func addBKApp(db storage.DI, conf *upgrader.Config) error {
 }
 
 //addBKProcess add bk process
-func addBKProcess(db storage.DI, conf *upgrader.Config, bizID int64) error {
-	procName2ID = make(map[string]int64)
+func addBKProcess(ctx context.Context, db dal.RDB, conf *upgrader.Config, bizID uint64) error {
+	procName2ID = make(map[string]uint64)
 
 	for _, procStr := range prc2port {
 		procArr := strings.Split(procStr, ":")
@@ -214,7 +215,7 @@ func addBKProcess(db storage.DI, conf *upgrader.Config, bizID int64) error {
 
 		filled := fillEmptyFields(procModelData, ProcRow())
 		var preData map[string]interface{}
-		processID, preData, err := upgrader.Upsert(db, "cc_Process", procModelData, common.BKProcessIDField, []string{common.BKProcessNameField, common.BKAppIDField, common.BKOwnerIDField}, append(filled, common.BKProcessIDField))
+		processID, preData, err := upgrader.Upsert(ctx, db, "cc_Process", procModelData, common.BKProcessIDField, []string{common.BKProcessNameField, common.BKAppIDField, common.BKOwnerIDField}, append(filled, common.BKProcessIDField))
 		if err != nil {
 			blog.Error("add addBKProcess error ", err.Error())
 			return err
@@ -235,7 +236,7 @@ func addBKProcess(db storage.DI, conf *upgrader.Config, bizID int64) error {
 		}
 		logRow := &metadata.OperationLog{
 			OwnerID:       conf.OwnerID,
-			ApplicationID: bizID,
+			ApplicationID: int64(bizID),
 			OpType:        int(auditoplog.AuditOpTypeAdd),
 			OpTarget:      "process",
 			User:          conf.User,
@@ -243,13 +244,13 @@ func addBKProcess(db storage.DI, conf *upgrader.Config, bizID int64) error {
 			OpDesc:        "create process",
 			Content:       auditContent,
 			CreateTime:    time.Now(),
-			InstID:        processID,
+			InstID:        int64(processID),
 		}
 		if preData != nil {
 			logRow.OpDesc = "update process"
 			logRow.OpType = int(auditoplog.AuditOpTypeModify)
 		}
-		if _, err = db.Insert(logRow.TableName(), logRow); err != nil {
+		if err = db.Table(logRow.TableName()).Insert(ctx, logRow); err != nil {
 			blog.Error("add audit log error ", err.Error())
 			return err
 		}
@@ -260,7 +261,7 @@ func addBKProcess(db storage.DI, conf *upgrader.Config, bizID int64) error {
 }
 
 //addSetInBKApp add set in bk app
-func addSetInBKApp(db storage.DI, conf *upgrader.Config, bizID int64) error {
+func addSetInBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config, bizID uint64) error {
 	for setName, moduleArr := range setModuleKv {
 		setModelData := map[string]interface{}{}
 		setModelData[common.BKSetNameField] = setName
@@ -272,7 +273,7 @@ func addSetInBKApp(db storage.DI, conf *upgrader.Config, bizID int64) error {
 		setModelData[common.LastTimeField] = time.Now()
 		filled := fillEmptyFields(setModelData, SetRow())
 		var preData map[string]interface{}
-		setID, preData, err := upgrader.Upsert(db, "cc_SetBase", setModelData, common.BKSetIDField, []string{common.BKSetNameField, common.BKOwnerIDField, common.BKAppIDField}, append(filled, common.BKSetIDField))
+		setID, preData, err := upgrader.Upsert(ctx, db, "cc_SetBase", setModelData, common.BKSetIDField, []string{common.BKSetNameField, common.BKOwnerIDField, common.BKAppIDField}, append(filled, common.BKSetIDField))
 		if err != nil {
 			blog.Error("add addSetInBKApp error ", err.Error())
 			return err
@@ -292,7 +293,7 @@ func addSetInBKApp(db storage.DI, conf *upgrader.Config, bizID int64) error {
 		}
 		logRow := &metadata.OperationLog{
 			OwnerID:       conf.OwnerID,
-			ApplicationID: bizID,
+			ApplicationID: int64(bizID),
 			OpType:        int(auditoplog.AuditOpTypeAdd),
 			OpTarget:      "set",
 			User:          conf.User,
@@ -300,19 +301,19 @@ func addSetInBKApp(db storage.DI, conf *upgrader.Config, bizID int64) error {
 			OpDesc:        "create set",
 			Content:       auditContent,
 			CreateTime:    time.Now(),
-			InstID:        setID,
+			InstID:        int64(setID),
 		}
 		if preData != nil {
 			logRow.OpDesc = "update set"
 			logRow.OpType = int(auditoplog.AuditOpTypeModify)
 		}
-		if _, err = db.Insert(logRow.TableName(), logRow); err != nil {
+		if err = db.Table(logRow.TableName()).Insert(ctx, logRow); err != nil {
 			blog.Error("add audit log error ", err.Error())
 			return err
 		}
 
 		// add module in set
-		if err := addModuleInSet(db, conf, moduleArr, setID, bizID); err != nil {
+		if err := addModuleInSet(ctx, db, conf, moduleArr, setID, bizID); err != nil {
 			return err
 		}
 	}
@@ -320,7 +321,7 @@ func addSetInBKApp(db storage.DI, conf *upgrader.Config, bizID int64) error {
 }
 
 //addModuleInSet add module in set
-func addModuleInSet(db storage.DI, conf *upgrader.Config, moduleArr map[string]string, setID, bizID int64) error {
+func addModuleInSet(ctx context.Context, db dal.RDB, conf *upgrader.Config, moduleArr map[string]string, setID, bizID uint64) error {
 	for moduleName, processNameStr := range moduleArr {
 		moduleModelData := map[string]interface{}{}
 		moduleModelData[common.BKModuleNameField] = moduleName
@@ -331,7 +332,7 @@ func addModuleInSet(db storage.DI, conf *upgrader.Config, moduleArr map[string]s
 		moduleModelData[common.BKDefaultField] = 0
 		var preData map[string]interface{}
 		filled := fillEmptyFields(moduleModelData, ModuleRow())
-		moduleID, preData, err := upgrader.Upsert(db, "cc_ModuleBase", moduleModelData, common.BKModuleIDField, []string{common.BKModuleNameField, common.BKOwnerIDField, common.BKAppIDField, common.BKSetIDField},
+		moduleID, preData, err := upgrader.Upsert(ctx, db, "cc_ModuleBase", moduleModelData, common.BKModuleIDField, []string{common.BKModuleNameField, common.BKOwnerIDField, common.BKAppIDField, common.BKSetIDField},
 			append(filled, common.BKModuleIDField))
 		if err != nil {
 			blog.Error("add addModuleInSet error ", err.Error())
@@ -353,7 +354,7 @@ func addModuleInSet(db storage.DI, conf *upgrader.Config, moduleArr map[string]s
 		}
 		logRow := &metadata.OperationLog{
 			OwnerID:       conf.OwnerID,
-			ApplicationID: bizID,
+			ApplicationID: int64(bizID),
 			OpType:        int(auditoplog.AuditOpTypeAdd),
 			OpTarget:      "module",
 			User:          conf.User,
@@ -361,19 +362,19 @@ func addModuleInSet(db storage.DI, conf *upgrader.Config, moduleArr map[string]s
 			OpDesc:        "create module",
 			Content:       auditContent,
 			CreateTime:    time.Now(),
-			InstID:        moduleID,
+			InstID:        int64(moduleID),
 		}
 		if preData != nil {
 			logRow.OpDesc = "update module"
 			logRow.OpType = int(auditoplog.AuditOpTypeModify)
 		}
-		if _, err = db.Insert(logRow.TableName(), logRow); err != nil {
+		if err = db.Table(logRow.TableName()).Insert(ctx, logRow); err != nil {
 			blog.Error("add audit log error ", err.Error())
 			return err
 		}
 
 		//add module process config
-		if err := addModule2Process(db, conf, processNameStr, moduleName, bizID); err != nil {
+		if err := addModule2Process(ctx, db, conf, processNameStr, moduleName, bizID); err != nil {
 			return err
 		}
 
@@ -382,7 +383,7 @@ func addModuleInSet(db storage.DI, conf *upgrader.Config, moduleArr map[string]s
 }
 
 //addModule2Process add process 2 module
-func addModule2Process(db storage.DI, conf *upgrader.Config, processNameStr string, moduleName string, bizID int64) (err error) {
+func addModule2Process(ctx context.Context, db dal.RDB, conf *upgrader.Config, processNameStr string, moduleName string, bizID uint64) (err error) {
 	processNameArr := strings.Split(processNameStr, ",")
 	for _, processName := range processNameArr {
 		processID, ok := procName2ID[processName]
@@ -394,7 +395,7 @@ func addModule2Process(db storage.DI, conf *upgrader.Config, processNameStr stri
 		module2Process[common.BKModuleNameField] = moduleName
 		module2Process[common.BKProcessIDField] = processID
 
-		if _, _, err = upgrader.Upsert(db, "cc_Proc2Module", module2Process, "", []string{common.BKModuleNameField, common.BKAppIDField, common.BKProcessIDField}, nil); err != nil {
+		if _, _, err = upgrader.Upsert(ctx, db, "cc_Proc2Module", module2Process, "", []string{common.BKModuleNameField, common.BKAppIDField, common.BKProcessIDField}, nil); err != nil {
 			blog.Error("add addModuleInSet error ", err.Error())
 			return err
 		}
@@ -409,7 +410,7 @@ func addModule2Process(db storage.DI, conf *upgrader.Config, processNameStr stri
 		}
 		logRow := &metadata.OperationLog{
 			OwnerID:       conf.OwnerID,
-			ApplicationID: bizID,
+			ApplicationID: int64(bizID),
 			OpType:        int(auditoplog.AuditOpTypeModify),
 			OpTarget:      "module",
 			User:          conf.User,
@@ -417,9 +418,9 @@ func addModule2Process(db storage.DI, conf *upgrader.Config, processNameStr stri
 			OpDesc:        fmt.Sprintf("bind module [%s]", moduleName),
 			Content:       "",
 			CreateTime:    time.Now(),
-			InstID:        bizID,
+			InstID:        int64(bizID),
 		}
-		if _, err = db.Insert(logRow.TableName(), logRow); err != nil {
+		if err = db.Table(logRow.TableName()).Insert(ctx, logRow); err != nil {
 			blog.Error("add audit log error ", err.Error())
 			return err
 		}
