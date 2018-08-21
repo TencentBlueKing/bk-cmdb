@@ -13,19 +13,19 @@
 package types
 
 import (
-	"configcenter/src/common"
 	"fmt"
 	"net/http"
 	"reflect"
 	"strconv"
 	"time"
 
+	"configcenter/src/common"
 	"encoding/json"
 
 	"configcenter/src/common/blog"
 )
 
-type Tansaction struct {
+type Transaction struct {
 	TxnID      string    `bson:"txn_id"`      // 事务ID,uuid
 	RequestID  string    `bson:"request_id"`  // 请求ID,可选项
 	Processor  string    `bson:"processor"`   // 处理进程号，结构为"IP:PORT-PID"用于识别事务session被存于那个TM多活实例
@@ -34,7 +34,7 @@ type Tansaction struct {
 	LastTime   time.Time `bson:"last_time"`   // 修改时间，作为统计信息存在
 }
 
-func (t Tansaction) IntoHeader(header http.Header) http.Header {
+func (t Transaction) IntoHeader(header http.Header) http.Header {
 	tar := http.Header{}
 	for key := range header {
 		tar.Set(key, header.Get(key))

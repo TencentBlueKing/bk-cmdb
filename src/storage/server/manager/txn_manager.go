@@ -35,15 +35,15 @@ type TxnManager struct {
 	cache        map[string]*Session
 	db           mongobyc.Client
 
-	eventChan   chan *types.Tansaction
-	subscribers map[chan<- *types.Tansaction]bool
+	eventChan   chan *types.Transaction
+	subscribers map[chan<- *types.Transaction]bool
 
 	ctx   context.Context
 	mutex sync.Mutex
 }
 
 type Session struct {
-	Txninst *types.Tansaction
+	Txninst *types.Transaction
 	mongobyc.Session
 }
 
@@ -55,19 +55,19 @@ func New(ctx context.Context, opt options.TransactionConfig, db mongobyc.Client,
 		cache:        map[string]*Session{},
 		db:           db,
 
-		eventChan:   make(chan *types.Tansaction, 2048),
-		subscribers: map[chan<- *types.Tansaction]bool{},
+		eventChan:   make(chan *types.Transaction, 2048),
+		subscribers: map[chan<- *types.Transaction]bool{},
 
 		ctx: ctx,
 	}
 	return tm
 }
 
-func (tm *TxnManager) Subscribe(ch chan<- *types.Tansaction) {
+func (tm *TxnManager) Subscribe(ch chan<- *types.Transaction) {
 	tm.subscribers[ch] = true
 }
 
-func (tm *TxnManager) UnSubscribe(ch chan<- *types.Tansaction) {
+func (tm *TxnManager) UnSubscribe(ch chan<- *types.Transaction) {
 	delete(tm.subscribers, ch)
 }
 
@@ -119,7 +119,7 @@ func (tm *TxnManager) reconcilePersistence() {
 			ticker.Stop()
 			return
 		case <-ticker.C:
-			txns := []types.Tansaction{}
+			txns := []types.Transaction{}
 			err := tm.db.Collection(common.BKTableNameTransaction).Find(tm.ctx, nil, nil, &txns)
 			if err != nil {
 				blog.Errorf("reconcile persistence faile: %v, we will retry %v later", err, tm.txnLifeLimit)
@@ -166,7 +166,7 @@ func (tm *TxnManager) removeSession(txnID string) {
 }
 
 func (tm *TxnManager) CreateTransaction(requestID string, processor string) (*Session, error) {
-	txn := types.Tansaction{
+	txn := types.Transaction{
 		RequestID:  requestID,
 		Processor:  tm.processor,
 		Status:     types.TxStatusOnProgress,

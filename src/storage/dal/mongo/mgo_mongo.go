@@ -115,7 +115,9 @@ func (f *Find) Fields(fields ...string) dal.Find {
 
 // Sort 查询排序
 func (f *Find) Sort(sort string) dal.Find {
-	f.sort = strings.Split(sort, ",")
+	if sort != "" {
+		f.sort = strings.Split(sort, ",")
+	}
 	return f
 }
 
@@ -135,6 +137,7 @@ func (f *Find) Limit(limit uint64) dal.Find {
 func (f *Find) All(ctx context.Context, result interface{}) error {
 	f.dbc.Refresh()
 	query := f.dbc.DB(f.dbname).C(f.collName).Find(f.filter)
+	query = query.Select(f.projection)
 	query = query.Skip(int(f.start))
 	query = query.Limit(int(f.limit))
 	query = query.Sort(f.sort...)
@@ -218,8 +221,8 @@ func (c *Mongo) Abort(ctx context.Context) error {
 }
 
 // TxnInfo 当前事务信息，用于事务发起者往下传递
-func (c *Mongo) TxnInfo() *types.Tansaction {
-	return &types.Tansaction{}
+func (c *Mongo) TxnInfo() *types.Transaction {
+	return &types.Transaction{}
 }
 
 // HasTable 判断是否存在集合

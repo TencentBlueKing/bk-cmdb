@@ -28,8 +28,7 @@ type Config struct {
 }
 
 // NewConfigFromKV returns new config
-func NewConfigFromKV(profix string, conifgmap map[string]string) *Config {
-	prefix := "redis"
+func NewConfigFromKV(prefix string, conifgmap map[string]string) *Config {
 	return &Config{
 		Address:    conifgmap[prefix+".address"],
 		Password:   conifgmap[prefix+".pwd"],
