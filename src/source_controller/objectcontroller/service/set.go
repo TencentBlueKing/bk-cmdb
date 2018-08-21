@@ -154,7 +154,7 @@ func (cli *Service) delModuleConfigSet(ctx context.Context, db dal.RDB, input ma
 	}
 	if 0 < len(addIdleModuleDatas) {
 		err := db.Table(common.BKTableNameModuleHostConfig).Insert(ctx, addIdleModuleDatas)
-		if getErr != nil {
+		if err != nil {
 			blog.Error("fail to exist relation host error: %v", err)
 			return err
 		}
