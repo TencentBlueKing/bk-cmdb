@@ -14,9 +14,11 @@ package distribution
 
 import (
 	"context"
+	"time"
 
 	redis "gopkg.in/redis.v5"
 
+	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/event_server/identifier"
 	"configcenter/src/storage/dal"
 )
@@ -37,6 +39,16 @@ func Start(ctx context.Context, cache *redis.Client, db dal.RDB) error {
 	ih := identifier.NewIdentifierHandler(ctx, cache, db)
 	go func() {
 		chErr <- ih.StartHandleInsts()
+	}()
+
+	th := &TxnHandler{cache: cache, db: db, ctx: ctx}
+	go func() {
+		for {
+			if err := th.Run(); err != nil {
+				blog.Errorf("TxnHandler stoped with error: %v, we will try 1s later", err)
+			}
+			time.Sleep(time.Second)
+		}
 	}()
 
 	return <-chErr

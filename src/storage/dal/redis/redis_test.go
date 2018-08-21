@@ -13,13 +13,10 @@
 package redis_test
 
 import (
-	"fmt"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	goredis "gopkg.in/redis.v5"
-
+	// goredis "gopkg.in/redis.v5"
 	"configcenter/src/storage/dal/redis"
 )
 
@@ -32,15 +29,16 @@ func TestRedis(t *testing.T) {
 	cache, err := redis.NewFromConfig(*conf)
 	require.NoError(t, err)
 
-	err = cache.LPush("test_queue", "values1").Err()
+	err = cache.LPush("test_queue", "values1", "values2").Err()
 	require.NoError(t, err)
 
-	var value string
-	for value != "nil" {
-		err = cache.RPopLPush("test_queue", "test_queue2").Err()
-		fmt.Fprintf(os.Stdout, "%s", value)
-		// require.NoError(t, err)
-
+	for {
+		var value string
+		err = cache.RPopLPush("test_queue", "test_queue2").Scan(&value)
+		if redis.IsNil(err) {
+			break
+		}
+		t.Logf("value : %s", value)
 	}
 
 	err = cache.Del("test_queue", "test_queue2").Err()
