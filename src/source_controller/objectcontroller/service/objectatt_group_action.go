@@ -119,8 +119,6 @@ func (cli *Service) UpdatePropertyGroup(req *restful.Request, resp *restful.Resp
 // SelectGroup search groups
 func (cli *Service) SelectGroup(req *restful.Request, resp *restful.Response) {
 
-	blog.Info("select property group")
-
 	// get the language
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetOwnerID(req.Request.Header)

@@ -92,7 +92,7 @@ func (ccWeb *CCWebServer) Start() error {
 
 	/// fetch config of itselft
 	var confData []byte
-	_ = confData
+
 	for {
 		confData = ccWeb.cfCenter.GetConfigureCtx()
 
@@ -156,7 +156,7 @@ func (ccWeb *CCWebServer) Start() error {
 			}
 		}
 	}
-
+	fmt.Println("cfg:", config)
 	site := config["site.domain_url"] + "/"
 	version := config["api.version"]
 	loginURL := config["site.bk_login_url"]
@@ -171,8 +171,8 @@ func (ccWeb *CCWebServer) Start() error {
 	apiSite, _ := a.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
 	static := config["site.html_root"]
 	webCommon.ResourcePath = config["site.resources_path"]
-	redisIp := config["session.host"]
-	redisPort := config["session.port"]
+	redisAddress := config["session.address"]
+	//redisPort := config["session.port"]
 	redisSecret := config["session.secret"]
 	multipleOwner := config["session.multiple_owner"]
 	agentAppUrl := config["app.agent_app_url"]
@@ -181,7 +181,7 @@ func (ccWeb *CCWebServer) Start() error {
 
 	a.CacheCli = redis.NewClient(
 		&redis.Options{
-			Addr:     fmt.Sprintf("%s:%s", redisIp, redisPort),
+			Addr:     redisAddress,
 			PoolSize: 100,
 			Password: redisSecret,
 			DB:       0,
@@ -193,7 +193,7 @@ func (ccWeb *CCWebServer) Start() error {
 	}
 
 	go func() {
-		store, rediserr := sessions.NewRedisStore(10, "tcp", redisIp+":"+redisPort, redisSecret, []byte("secret"))
+		store, rediserr := sessions.NewRedisStore(10, "tcp", redisAddress, redisSecret, []byte("secret"))
 		if rediserr != nil {
 			panic(rediserr)
 		}

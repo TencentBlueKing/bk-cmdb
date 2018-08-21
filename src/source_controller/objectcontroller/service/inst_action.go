@@ -243,7 +243,7 @@ func (cli *Service) SearchInstObjects(req *restful.Request, resp *restful.Respon
 	info := make(map[string]interface{})
 	info["count"] = count
 	info["info"] = result
-
+	//fmt.Println("result:", result)
 	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: info})
 
 }
