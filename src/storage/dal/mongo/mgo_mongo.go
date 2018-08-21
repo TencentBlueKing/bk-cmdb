@@ -203,8 +203,8 @@ type Idgen struct {
 }
 
 // StartTransaction 开启新事务
-func (c *Mongo) StartTransaction(ctx context.Context) error {
-	return nil
+func (c *Mongo) StartTransaction(ctx context.Context) (dal.RDB, error) {
+	return c, nil
 }
 
 // Commit 提交事务
