@@ -100,6 +100,12 @@ func GetHTTPCCRequestID(header http.Header) string {
 	return rid
 }
 
+// GetHTTPCCTransaction return configcenter request id from http header
+func GetHTTPCCTransaction(header http.Header) string {
+	rid := header.Get(common.BKHTTPCCTransactionID)
+	return rid
+}
+
 // GetDBContext returns a new context that contains JoinOption
 func GetDBContext(parent context.Context, header http.Header) context.Context {
 	return context.WithValue(parent, common.CCContextKeyJoinOption, dal.JoinOption{

@@ -31,9 +31,10 @@ type Config struct {
 func NewConfigFromKV(profix string, conifgmap map[string]string) *Config {
 	prefix := "redis"
 	return &Config{
-		Address:  conifgmap[prefix+".address"],
-		Password: conifgmap[prefix+".pwd"],
-		Database: conifgmap[prefix+".database"],
+		Address:    conifgmap[prefix+".address"],
+		Password:   conifgmap[prefix+".pwd"],
+		Database:   conifgmap[prefix+".database"],
+		MasterName: conifgmap[prefix+".mastername"],
 	}
 }
 

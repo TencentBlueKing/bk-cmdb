@@ -16,11 +16,12 @@ import (
 	"context"
 	"strings"
 
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
+
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/types"
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
 )
 
 // Mongo implement client.DALRDB interface
@@ -114,7 +115,9 @@ func (f *Find) Fields(fields ...string) dal.Find {
 
 // Sort 查询排序
 func (f *Find) Sort(sort string) dal.Find {
-	f.sort = strings.Split(sort, ",")
+	if sort != "" {
+		f.sort = strings.Split(sort, ",")
+	}
 	return f
 }
 
@@ -134,6 +137,7 @@ func (f *Find) Limit(limit uint64) dal.Find {
 func (f *Find) All(ctx context.Context, result interface{}) error {
 	f.dbc.Refresh()
 	query := f.dbc.DB(f.dbname).C(f.collName).Find(f.filter)
+	query = query.Select(f.projection)
 	query = query.Skip(int(f.start))
 	query = query.Limit(int(f.limit))
 	query = query.Sort(f.sort...)
@@ -202,17 +206,17 @@ type Idgen struct {
 }
 
 // StartTransaction 开启新事务
-func (c *Mongo) StartTransaction(ctx context.Context) error {
-	return nil
+func (c *Mongo) StartTransaction(ctx context.Context) (dal.RDB, error) {
+	return c, nil
 }
 
 // Commit 提交事务
-func (c *Mongo) Commit() error {
+func (c *Mongo) Commit(ctx context.Context) error {
 	return nil
 }
 
 // Abort 取消事务
-func (c *Mongo) Abort() error {
+func (c *Mongo) Abort(ctx context.Context) error {
 	return nil
 }
 

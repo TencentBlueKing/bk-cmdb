@@ -21,9 +21,11 @@ import (
 
 // Errors defind
 var (
-	ErrDocumentNotFound = errors.New("document not found")
-	ErrNotImplemented   = errors.New("not implemented")
-	ErrDuplicated       = errors.New("duplicated")
+	ErrTransactionStated   = errors.New("transaction already started")
+	ErrTransactionNotFound = errors.New("not in transaction environment")
+	ErrDocumentNotFound    = errors.New("document not found")
+	ErrNotImplemented      = errors.New("not implemented")
+	ErrDuplicated          = errors.New("duplicated")
 )
 
 // RDB db operation interface
@@ -32,11 +34,11 @@ type RDB interface {
 	// Table collection 操作
 	Table(collection string) Table
 	// StartTransaction 开启新事务
-	StartTransaction(ctx context.Context) error
+	StartTransaction(ctx context.Context) (RDB, error)
 	// Commit 提交事务
-	Commit() error
+	Commit(context.Context) error
 	// Abort 取消事务
-	Abort() error
+	Abort(context.Context) error
 	// TxnInfo 当前事务信息，用于事务发起者往下传递
 	TxnInfo() *types.Tansaction
 	// NextSequence 获取新序列号(非事务)
