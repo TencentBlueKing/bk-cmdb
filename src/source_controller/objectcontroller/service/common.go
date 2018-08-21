@@ -62,7 +62,7 @@ func (cli *Service) GetObjectByCondition(ctx context.Context, db dal.RDB, defLan
 		blog.Errorf("failed to query the inst , error info %s", err.Error())
 		return err
 	}
-
+	//fmt.Println("result:", result)
 	// translate language for default name
 	if m, ok := defaultNameLanguagePkg[objType]; nil != defLang && ok {
 		switch result.(type) {
