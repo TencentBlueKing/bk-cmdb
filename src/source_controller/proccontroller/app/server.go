@@ -24,11 +24,11 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/source_controller/proccontroller/app/options"
 	"configcenter/src/source_controller/proccontroller/service"
-	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
 	dalredis "configcenter/src/storage/dal/redis"
 
@@ -72,7 +72,8 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	procCtr := new(ProcController)
-	procCtr.Core, err = backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
+	procCtr.ProctrlServer = coreService
+	procCtr.ProctrlServer.Core, err = backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
 		types.CC_MODULE_PROCCONTROLLER,
 		op.ServConf.ExConfig,
 		procCtr.onProcConfigUpdate,
@@ -93,33 +94,6 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("Configuration item not found")
 	}
 
-	procCtr.Instance, err = mongo.NewMgo(procCtr.Config.Mongo.BuildURI())
-	if err != nil {
-		return fmt.Errorf("new mongo client failed, err: %v", err)
-	}
-
-	rdsc := procCtr.Config.Redis
-	dbNum, err := strconv.Atoi(rdsc.Database)
-	//not set use default db num 0
-	if nil != err {
-		return fmt.Errorf("redis config db[%s] not integer", rdsc.Database)
-	}
-	procCtr.Cache = redis.NewClient(
-		&redis.Options{
-			Addr:     rdsc.Address,
-			PoolSize: 100,
-			Password: rdsc.Password,
-			DB:       dbNum,
-		})
-	err = procCtr.Cache.Ping().Err()
-	if err != nil {
-		return fmt.Errorf("new redis client failed, err: %v", err)
-	}
-
-	coreService.Core = procCtr.Core
-	coreService.Instance = procCtr.Instance
-	coreService.Cache = procCtr.Cache
-
 	select {
 	case <-ctx.Done():
 	}
@@ -127,15 +101,13 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 }
 
 type ProcController struct {
-	Core     *backbone.Engine
-	Instance dal.RDB
-	Cache    *redis.Client
-	Config   *options.Config
+	*service.ProctrlServer
+	Config *options.Config
 }
 
 func (h *ProcController) onProcConfigUpdate(previous, current cc.ProcessConfig) {
 
-	mongo := mongo.Config{
+	mongocfg := mongo.Config{
 		Address:      current.ConfigMap["mongo.address"],
 		User:         current.ConfigMap["mongo.usr"],
 		Password:     current.ConfigMap["mongo.pwd"],
@@ -152,9 +124,37 @@ func (h *ProcController) onProcConfigUpdate(previous, current cc.ProcessConfig) 
 	}
 
 	h.Config = &options.Config{
-		Mongo: mongo,
+		Mongo: mongocfg,
 		Redis: rediscfg,
 	}
+
+	instance, err := mongo.NewMgo(h.Config.Mongo.BuildURI())
+	if err != nil {
+		blog.Errorf("new mongo client failed, err: %v", err)
+		return
+	}
+	h.ProctrlServer.Instance = instance
+
+	rdsc := h.Config.Redis
+	dbNum, err := strconv.Atoi(rdsc.Database)
+	//not set use default db num 0
+	if nil != err {
+		blog.Errorf("redis config db[%s] not integer", rdsc.Database)
+		return
+	}
+	h.ProctrlServer.Cache = redis.NewClient(
+		&redis.Options{
+			Addr:     rdsc.Address,
+			PoolSize: 100,
+			Password: rdsc.Password,
+			DB:       dbNum,
+		})
+	err = h.ProctrlServer.Cache.Ping().Err()
+	if err != nil {
+		blog.Errorf("new redis client failed, err: %v", err)
+		return
+	}
+
 }
 
 func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {

@@ -25,12 +25,12 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/source_controller/auditcontroller/app/options"
 	"configcenter/src/source_controller/auditcontroller/logics"
 	"configcenter/src/source_controller/auditcontroller/service"
-	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
 )
 
@@ -71,7 +71,8 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	audit := new(AuditController)
-	audit.Core, err = backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
+	audit.Service = coreService
+	audit.Service.Engine, err = backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
 		types.CC_MODULE_AUDITCONTROLLER,
 		op.ServConf.ExConfig,
 		audit.onAduitConfigUpdate,
@@ -93,25 +94,20 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if false == configReady {
 		return fmt.Errorf("Failed to get configuration")
 	}
-	mgc := audit.Config.Mongo
-	audit.Instance, err = mongo.NewMgo(mgc.BuildURI())
-	if err != nil {
-		return fmt.Errorf("new mongo client failed, err: %s", err.Error())
+
+	coreService.Logics = &logics.Logics{Instance: audit.Instance, Engine: audit.Service.Engine}
+
+	select {
+	case <-ctx.Done():
+		break
 	}
-
-	coreService.Engine = audit.Core
-	coreService.Instance = audit.Instance
-	coreService.Logics = &logics.Logics{Instance: audit.Instance, Engine: audit.Core}
-
-	select {}
 	return nil
 }
 
 // AuditController  audit controller config
 type AuditController struct {
-	Core     *backbone.Engine
-	Instance dal.RDB
-	Config   options.Config
+	*service.Service
+	Config options.Config
 }
 
 func (h *AuditController) onAduitConfigUpdate(previous, current cc.ProcessConfig) {
@@ -124,6 +120,15 @@ func (h *AuditController) onAduitConfigUpdate(previous, current cc.ProcessConfig
 		MaxIdleConns: current.ConfigMap["mongo.maxIDleConns"],
 		Mechanism:    current.ConfigMap["mongo.mechanism"],
 	}
+
+	mgc := h.Config.Mongo
+	instance, err := mongo.NewMgo(mgc.BuildURI())
+	if err != nil {
+		blog.Errorf("new mongo client failed, err: %s", err.Error())
+		return
+	}
+	h.Service.Instance = instance
+
 }
 
 func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
@@ -150,5 +155,6 @@ func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
 		Version:  version.GetVersion(),
 		Pid:      os.Getpid(),
 	}
+
 	return info, nil
 }
