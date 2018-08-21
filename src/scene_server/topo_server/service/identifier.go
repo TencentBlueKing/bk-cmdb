@@ -39,5 +39,4 @@ func (s *topoService) SearchIdentifier(params types.ContextParams, pathParams, q
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, "param not set")
 	}
 	return s.core.IdentifierOperation().SearchIdentifier(params, pathParams("obj_type"), param)
-
 }
