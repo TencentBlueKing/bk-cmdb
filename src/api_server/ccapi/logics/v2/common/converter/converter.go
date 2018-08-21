@@ -588,33 +588,62 @@ func ResToV2ForCustomerGroupResult(result bool, message string, dataInfo interfa
 func ResToV2ForHostDataList(result bool, message string, data interface{}) (common.KvMap, error) {
 	resDataV3, err := getResDataV3(result, message, data)
 	blog.Debug("resDataV3:%v", resDataV3)
+	fmt.Println("aaaaa---")
 	if nil != err {
 		return nil, err
 	}
 	convFields := []string{common.BKAppNameField, common.BKModuleNameField, common.BKBakOperatorField, common.BKSetNameField, common.BKOperatorField, common.BKSetIDField, common.BKAppIDField, common.BKModuleIDField}
-	var ret []common.KvMap
+	var ret common.KvMap
+
 	if "" != resDataV3 {
-		resDataArrV3 := resDataV3.([]interface{})
+		resDataArrV3, ok := resDataV3.([]interface{})
+		if !ok {
+			blog.Errorf("ResToV2ForHostDataList not array data :%+v", data)
+			return nil, errors.New(fmt.Sprintf("data is not array %+v", resDataV3))
+		}
+		var operators []string
+		var bakOperators []string
+		var moduleIDs []string
+		var moduleNames []string
+		var setIDs []string
+		var setNames []string
+
 		for _, item := range resDataArrV3 {
 			itemMap := item.(map[string]interface{})
 			itemMap = convertFieldsNilToString(itemMap, convFields)
-			setName, _ := itemMap[common.BKSetNameField]
-
-			ret = append(ret, common.KvMap{
+			moduleName, ok := itemMap[common.BKModuleNameField].(string)
+			if ok && "" != moduleName {
+				moduleNames = append(moduleNames, moduleName)
+				moduleIDs = append(moduleIDs, fmt.Sprintf("%v", itemMap[common.BKModuleIDField]))
+			}
+			setName, ok := itemMap[common.BKSetNameField].(string)
+			if ok && "" != setName {
+				setNames = append(setNames, setName)
+				setIDs = append(setIDs, fmt.Sprintf("%v", itemMap[common.BKSetIDField]))
+			}
+			operator, ok := itemMap[common.BKOperatorField].(string)
+			if ok && "" != operator {
+				operators = append(operators, operator)
+			}
+			bakOperator, ok := itemMap[common.BKBakOperatorField].(string)
+			if ok && "" != bakOperator {
+				bakOperators = append(bakOperators, bakOperator)
+			}
+			ret = common.KvMap{
 				"ApplicationName": itemMap[common.BKAppNameField],
-				"ModuleName":      itemMap[common.BKModuleNameField],
-				"BakOperator":     itemMap[common.BKBakOperatorField],
-				"SetName":         setName, //itemMap[common.BKSetNameField],
-				"Operator":        itemMap[common.BKOperatorField],
-				"SetID":           itemMap[common.BKSetIDField],
 				"ApplicationID":   itemMap[common.BKAppIDField],
-				"ModuleID":        itemMap[common.BKModuleIDField],
-			})
-
+			}
 		}
+		ret["ModuleName"] = strings.Join(moduleNames, ",")
+		ret["ModuleID"] = strings.Join(moduleIDs, ",")
+		ret["SetName"] = strings.Join(moduleNames, ",")
+		ret["SetID"] = strings.Join(setIDs, ",")
+		ret["Operator"] = strings.Join(operators, ",")
+		ret["BakOperator"] = strings.Join(bakOperators, ",")
 	}
-	if 1 == len(ret) {
-		return ret[0], nil
+	if 1 <= len(ret) {
+
+		return ret, nil
 	}
 	return nil, nil
 
