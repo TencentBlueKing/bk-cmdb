@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
@@ -352,6 +353,7 @@ func (ps *ProcServer) SearchProcess(req *restful.Request, resp *restful.Response
 	}
 
 	var srchparam params.SearchParams
+	srchparam.Condition = mapstr.New()
 	if err := json.NewDecoder(req.Request.Body).Decode(&srchparam); err != nil {
 		blog.Errorf("decode request body err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
