@@ -33,7 +33,6 @@ import (
 // CreateObjectAssociation create object association map
 func (cli *Service) CreateObjectAssociation(req *restful.Request, resp *restful.Response) {
 
-	blog.Info("create obj-association")
 	// get the language
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetOwnerID(req.Request.Header)
@@ -78,8 +77,6 @@ func (cli *Service) CreateObjectAssociation(req *restful.Request, resp *restful.
 
 // DeleteObjectAssociation delete object association map
 func (cli *Service) DeleteObjectAssociation(req *restful.Request, resp *restful.Response) {
-
-	blog.Info("delete obj-association")
 
 	// get the language
 	language := util.GetActionLanguage(req)
@@ -143,8 +140,6 @@ func (cli *Service) DeleteObjectAssociation(req *restful.Request, resp *restful.
 // UpdateObjectAssociation update object association map
 func (cli *Service) UpdateObjectAssociation(req *restful.Request, resp *restful.Response) {
 
-	blog.Info("update object association")
-
 	// get the language
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetOwnerID(req.Request.Header)
@@ -191,8 +186,6 @@ func (cli *Service) UpdateObjectAssociation(req *restful.Request, resp *restful.
 
 // SelectObjectAssociations search all object association map
 func (cli *Service) SelectObjectAssociations(req *restful.Request, resp *restful.Response) {
-
-	blog.Info("search object association")
 
 	// get the language
 	language := util.GetActionLanguage(req)
