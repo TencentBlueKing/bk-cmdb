@@ -71,3 +71,8 @@ func NewFromConfig(cfg Config) (*redis.Client, error) {
 
 	return client, err
 }
+
+// IsNilErr returns whether err is nil error
+func IsNilErr(err error) bool {
+	return redis.Nil == err
+}

@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal"
+	ccredis "configcenter/src/storage/dal/redis"
 	daltypes "configcenter/src/storage/types"
 )
 
@@ -40,14 +41,24 @@ func (th *TxnHandler) Run() (err error) {
 
 	blog.Info("transaction handle process started")
 	go th.fetchTimeout()
+outer:
 	for txnID := range th.commited {
-		var value string
-		for "nil" != value {
-			value, err = th.cache.RPopLPush(common.EventCacheEventTxnQueuePrefix+txnID, common.EventCacheEventQueueKey).Result()
+		for {
+			err = th.cache.RPopLPush(common.EventCacheEventTxnQueuePrefix+txnID, common.EventCacheEventQueueKey).Err()
+			if ccredis.IsNilErr(err) {
+				break
+			}
 			if err != nil {
 				blog.Warnf("move commited event to event queue failed: %v, we will try again later", err)
-				continue
+				continue outer
 			}
+		}
+		if err = th.cache.Del(common.EventCacheEventTxnQueuePrefix + txnID).Err(); err != nil {
+			blog.Warnf("remove [%s] transaction queue failed: %v, we will try again later", txnID, err)
+			continue
+		}
+		if err = th.cache.ZRem(common.EventCacheEventTxnSet, txnID).Err(); err != nil {
+			blog.Warnf("remove [%s] from transaction set failed: %v, we will try again later", txnID, err)
 		}
 	}
 	return nil
@@ -97,10 +108,10 @@ func (th *TxnHandler) dropTransaction(txnIDs []string) {
 		dropKeys[index] = common.EventCacheEventTxnQueuePrefix + txnID
 	}
 	if err := th.cache.Del(dropKeys...).Err(); err != nil {
-		blog.Warnf("drop transaction queue failed: %v, we will try again later", err)
+		blog.Warnf("drop transaction queue [%v] failed: %v, we will try again later", dropKeys, err)
 		return
 	}
-	if err := th.cache.ZRem(common.EventCacheEventTxnSet, dropTxnIDs).Err(); err != nil {
-		blog.Warnf("drop transaction set failed: %v, we will try again later", err)
+	if err := th.cache.ZRem(common.EventCacheEventTxnSet, dropTxnIDs...).Err(); err != nil {
+		blog.Warnf("drop [%v] from transaction set failed: %v, we will try again later", dropTxnIDs, err)
 	}
 }
