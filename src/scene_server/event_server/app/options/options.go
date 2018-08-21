@@ -16,6 +16,7 @@ import (
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/storage/rpc"
 
 	"github.com/spf13/pflag"
 )
@@ -45,4 +46,5 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 type Config struct {
 	MongoDB mongo.Config
 	Redis   redis.Config
+	RPC     rpc.ClientConfig
 }
