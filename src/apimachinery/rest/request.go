@@ -282,12 +282,13 @@ func (r *Result) Into(obj interface{}) error {
 	if nil != r.Err {
 		return r.Err
 	}
-	if http.StatusOK != r.StatusCode {
-		return fmt.Errorf("error info %s", string(r.Body))
-	}
+
 	if 0 != len(r.Body) {
 		err := json.Unmarshal(r.Body, obj)
 		if nil != err {
+			if http.StatusOK != r.StatusCode {
+				return fmt.Errorf("error info %s", string(r.Body))
+			}
 			blog.Errorf("http reply not json, reply:%s, error:%s", string(r.Body), err.Error())
 			return err
 		}
