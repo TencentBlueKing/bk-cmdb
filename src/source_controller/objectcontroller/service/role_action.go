@@ -58,7 +58,7 @@ func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	err = db.Table(common.BKTableNamePrivilege).Find(cond).All(ctx, &result)
+	err = db.Table(common.BKTableNamePrivilege).Find(cond).One(ctx, &result)
 	if nil != err {
 		blog.Error("get role pri field error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBSelectFailed, err.Error())})

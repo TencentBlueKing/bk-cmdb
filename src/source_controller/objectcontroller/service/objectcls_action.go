@@ -169,6 +169,7 @@ func (cli *Service) SelectClassifications(req *restful.Request, resp *restful.Re
 	ownerID := util.GetOwnerID(req.Request.Header)
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+
 	db := cli.Instance.Clone()
 
 	// decode json object
@@ -229,7 +230,6 @@ func (cli *Service) SelectClassificationWithObject(req *restful.Request, resp *r
 	}
 
 	// select object by cls
-	blog.InfoJSON("select clsresults: %s", clsResults)
 	for tmpidx, tmpobj := range clsResults {
 		selector := map[string]interface{}{
 			"bk_classification_id": tmpobj.ClassificationID,
