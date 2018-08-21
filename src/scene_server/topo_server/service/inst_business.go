@@ -15,6 +15,8 @@ package service
 import (
 	"strconv"
 
+	"configcenter/src/common/mapstr"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -133,7 +135,9 @@ func (s *topoService) SearchBusiness(params types.ContextParams, pathParams, que
 		return nil, err
 	}
 
-	searchCond := &gparams.SearchParams{Condition: mapstr.New()}
+	searchCond := &gparams.SearchParams{
+		Condition: mapstr.New(),
+	}
 	if err := data.MarshalJSONInto(&searchCond); nil != err {
 		blog.Errorf("failed to parse the params, error info is %s", err.Error())
 		return nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())

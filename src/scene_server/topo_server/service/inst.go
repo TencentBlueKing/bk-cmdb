@@ -173,7 +173,9 @@ func (s *topoService) SearchInsts(params types.ContextParams, pathParams, queryP
 	}
 
 	// construct the query inst condition
-	queryCond := &paraparse.SearchParams{Condition: mapstr.New()}
+	queryCond := &paraparse.SearchParams{
+		Condition: mapstr.New(),
+	}
 	if err := data.MarshalJSONInto(queryCond); nil != err {
 		blog.Errorf("[api-inst] failed to parse the data and the condition, the input (%#v), error info is %s", data, err.Error())
 		return nil, err
@@ -213,7 +215,9 @@ func (s *topoService) SearchInstAndAssociationDetail(params types.ContextParams,
 
 	// construct the query inst condition
 
-	queryCond := &paraparse.SearchParams{Condition: mapstr.New()}
+	queryCond := &paraparse.SearchParams{
+		Condition: mapstr.New(),
+	}
 	if err := data.MarshalJSONInto(queryCond); nil != err {
 		blog.Errorf("[api-inst] failed to parse the data and the condition, the input (%#v), error info is %s", data, err.Error())
 		return nil, err
@@ -250,7 +254,9 @@ func (s *topoService) SearchInstByObject(params types.ContextParams, pathParams,
 		return nil, err
 	}
 
-	queryCond := &paraparse.SearchParams{Condition: mapstr.New()}
+	queryCond := &paraparse.SearchParams{
+		Condition: mapstr.New(),
+	}
 	if err := data.MarshalJSONInto(queryCond); nil != err {
 		blog.Errorf("[api-inst] failed to parse the data and the condition, the input (%#v), error info is %s", data, err.Error())
 		return nil, err
