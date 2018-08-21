@@ -132,7 +132,9 @@ func (s *topoService) SearchModule(params types.ContextParams, pathParams, query
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "set id")
 	}
 
-	paramsCond := &gparams.SearchParams{Condition: mapstr.New()}
+	paramsCond := &gparams.SearchParams{
+		Condition: mapstr.New(),
+	}
 	if err = data.MarshalJSONInto(paramsCond); nil != err {
 		return nil, err
 	}
