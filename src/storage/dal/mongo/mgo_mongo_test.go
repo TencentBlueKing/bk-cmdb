@@ -49,9 +49,10 @@ func TestOfficial(t *testing.T) {
 
 	// find all
 	findall := []map[string]interface{}{}
-	err = cli.Table(tablename).Find(nil).All(ctx, &findall)
+	err = cli.Table(tablename).Find(nil).Fields("").Sort("").All(ctx, &findall)
 	require.NoError(t, err, "find all")
-	require.True(t, len(findall) > 0)
+	require.True(t, len(findall) > 1)
+	t.Logf("%v", findall)
 
 	// update
 	err = cli.Table(tablename).Update(ctx, map[string]interface{}{"name": "name1"}, map[string]interface{}{"name": "name4"})
