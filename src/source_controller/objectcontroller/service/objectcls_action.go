@@ -223,7 +223,7 @@ func (cli *Service) SelectClassificationWithObject(req *restful.Request, resp *r
 	clsResults := make([]meta.ObjClassificationObject, 0)
 	selector = util.SetQueryOwner(selector, ownerID)
 	// select from storage
-	if selErr := db.Table(common.BKTableNameObjClassifiction).Find(selector).Limit(uint64(page.Limit)).Start(uint64(page.Start)).Sort(page.Sort).All(ctx, &clsResults); nil != selErr {
+	if selErr := db.Table(common.BKTableNameObjClassifiction).Find(selector).Limit(uint64(page.Limit)).Start(uint64(page.Start)).Sort(page.Sort).All(ctx, &clsResults); nil != selErr && !db.IsNotFoundError(selErr) {
 		blog.Error("select data failed, error:%s", selErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, selErr.Error())})
 		return
@@ -236,7 +236,7 @@ func (cli *Service) SelectClassificationWithObject(req *restful.Request, resp *r
 			common.BKOwnerIDField:  ownerID,
 		}
 		selector = util.SetQueryOwner(selector, ownerID)
-		if selErr := db.Table(common.BKTableNameObjDes).Find(selector).Limit(common.BKNoLimit).All(ctx, &clsResults[tmpidx].Objects); nil != selErr {
+		if selErr := db.Table(common.BKTableNameObjDes).Find(selector).Limit(common.BKNoLimit).All(ctx, &clsResults[tmpidx].Objects); nil != selErr && db.IsNotFoundError(selErr) {
 			blog.Error("select data failed, error:%s", selErr.Error())
 			continue
 		}

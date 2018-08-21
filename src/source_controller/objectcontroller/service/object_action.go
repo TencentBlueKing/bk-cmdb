@@ -236,7 +236,7 @@ func (cli *Service) SelectObjects(req *restful.Request, resp *restful.Response) 
 	}
 
 	selector = util.SetQueryOwner(selector, ownerID)
-	if selErr := db.Table(common.BKTableNameObjDes).Find(selector).Limit(uint64(page.Limit)).Start(uint64(page.Start)).Sort(page.Sort).All(ctx, &results); nil != selErr {
+	if selErr := db.Table(common.BKTableNameObjDes).Find(selector).Limit(uint64(page.Limit)).Start(uint64(page.Start)).Sort(page.Sort).All(ctx, &results); nil != selErr && !db.IsNotFoundError(selErr) {
 		blog.Error("select data failed, error information is %s", selErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, selErr.Error())})
 		return

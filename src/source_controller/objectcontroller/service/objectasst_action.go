@@ -223,7 +223,7 @@ func (cli *Service) SelectObjectAssociations(req *restful.Request, resp *restful
 	selector, _ := js.Map()
 	selector = util.SetModOwner(selector, ownerID)
 	// select from storage
-	if selErr := db.Table(common.BKTableNameObjAsst).Find(selector).Limit(uint64(page.Limit)).Start(uint64(page.Start)).Sort(page.Sort).All(ctx, &results); nil != selErr {
+	if selErr := db.Table(common.BKTableNameObjAsst).Find(selector).Limit(uint64(page.Limit)).Start(uint64(page.Start)).Sort(page.Sort).All(ctx, &results); nil != selErr && !db.IsNotFoundError(selErr) {
 		blog.Error("select data failed, error information is %s", selErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, selErr.Error())})
 		return
