@@ -27,10 +27,11 @@ import (
 // RPC implement client.DALRDB interface
 type RPC struct {
 	RequestID string // 请求ID,可选项
-	Processor string // 处理进程号，结构为"IP:PORT-PID"用于识别事务session被存于那个TM多活实例
 	TxnID     string // 事务ID,uuid
 	rpc       *rpc.Client
 	getServer types.GetServerFunc
+
+	parent *RPC
 }
 
 var _ dal.RDB = new(RPC)
@@ -75,7 +76,10 @@ func (c *RPC) Ping() error {
 
 func (c *RPC) Clone() dal.RDB {
 	nc := RPC{
-		rpc: c.rpc,
+		TxnID:     c.TxnID,
+		RequestID: c.RequestID,
+		rpc:       c.rpc,
+		parent:    c,
 	}
 	return &nc
 }
@@ -91,7 +95,6 @@ func (c *RPC) IsNotFoundError(error) bool {
 func (c *RPC) Table(collection string) dal.Table {
 	col := RPCCollection{
 		RequestID: c.RequestID,
-		Processor: c.Processor,
 		TxnID:     c.TxnID,
 	}
 	col.collection = collection
@@ -381,7 +384,10 @@ func (c *RPC) NextSequence(ctx context.Context, sequenceName string) (uint64, er
 }
 
 // StartTransaction 开启新事务
-func (c *RPC) StartTransaction(ctx context.Context) error {
+func (c *RPC) StartTransaction(ctx context.Context) (dal.RDB, error) {
+	if c.TxnID != "" {
+		return nil, dal.ErrTransactionStated
+	}
 	// build msg
 	msg := types.OPSTARTTTRANSATION{}
 	msg.OPCode = types.OPStartTransaction
@@ -396,20 +402,23 @@ func (c *RPC) StartTransaction(ctx context.Context) error {
 	reply := types.OPREPLY{}
 	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if !reply.Success {
-		return errors.New(reply.Message)
+		return nil, errors.New(reply.Message)
 	}
 
-	c.TxnID = reply.TxnID
-	c.Processor = reply.Processor
-	c.RequestID = reply.RequestID
-	return nil
+	clone := c.Clone().(*RPC)
+	clone.TxnID = reply.TxnID
+	clone.RequestID = reply.RequestID
+	return clone, nil
 }
 
 // Commit 提交事务
-func (c *RPC) Commit() error {
+func (c *RPC) Commit(ctx context.Context) error {
+	if c.TxnID == "" {
+		return dal.ErrTransactionNotFound
+	}
 	msg := types.OPCOMMIT{}
 	msg.OPCode = types.OPCommit
 	msg.RequestID = c.RequestID
@@ -428,7 +437,10 @@ func (c *RPC) Commit() error {
 }
 
 // Abort 取消事务
-func (c *RPC) Abort() error {
+func (c *RPC) Abort(ctx context.Context) error {
+	if c.TxnID == "" {
+		return dal.ErrTransactionNotFound
+	}
 	msg := types.OPABORT{}
 	msg.OPCode = types.OPAbort
 	msg.RequestID = c.RequestID
@@ -451,7 +463,6 @@ func (c *RPC) TxnInfo() *types.Tansaction {
 	return &types.Tansaction{
 		RequestID: c.RequestID,
 		TxnID:     c.TxnID,
-		Processor: c.Processor,
 	}
 }
 

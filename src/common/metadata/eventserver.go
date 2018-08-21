@@ -95,6 +95,7 @@ func (s Subscription) GetTimeout() time.Duration {
 
 type EventInst struct {
 	ID          int64       `json:"event_id,omitempty"`
+	TxnID       string      `json:"txn_id"`
 	EventType   string      `json:"event_type"`
 	Action      string      `json:"action"`
 	ActionTime  Time        `json:"action_time"`
