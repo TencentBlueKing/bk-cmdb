@@ -230,7 +230,6 @@ func (cli *Service) SelectClassificationWithObject(req *restful.Request, resp *r
 	}
 
 	// select object by cls
-	blog.InfoJSON("select clsresults: %s", clsResults)
 	for tmpidx, tmpobj := range clsResults {
 		selector := map[string]interface{}{
 			"bk_classification_id": tmpobj.ClassificationID,
