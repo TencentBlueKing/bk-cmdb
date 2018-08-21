@@ -49,7 +49,7 @@ func TestOfficial(t *testing.T) {
 
 	// find all
 	findall := []map[string]interface{}{}
-	err = cli.Table(tablename).Find(nil).All(ctx, &findall)
+	err = cli.Table(tablename).Find(nil).Sort("").All(ctx, &findall)
 	require.NoError(t, err, "find all")
 	require.True(t, len(findall) > 0)
 
