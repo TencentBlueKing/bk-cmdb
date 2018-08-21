@@ -8,6 +8,7 @@ docker_file_template_str ='''
 FROM  $base_image
 $run_items
 $copy_items
+WORKDIR $cwd
 ENTRYPOINT $cwd/start.sh
 '''
 
