@@ -99,7 +99,7 @@ func ResToV2ForAppList(resDataV3 metadata.InstResult) (interface{}, error) {
 }
 
 //ResToV2ForAppList: convert cc v3 json data to cc v2 for application list
-func ResToV2ForRoleApp(resDataV3 interface{}, uin string, roleArr []string) (interface{}, error) {
+func ResToV2ForRoleApp(resDataV3 metadata.InstResult, uin string, roleArr []string) (interface{}, error) {
 
 	resDataV2 := make(map[string][]interface{})
 
@@ -107,15 +107,8 @@ func ResToV2ForRoleApp(resDataV3 interface{}, uin string, roleArr []string) (int
 		resDataV2[role] = make([]interface{}, 0)
 	}
 
-	resMapDataInfoV3, ok := resDataV3.(map[string]interface{})
-	var resDataInfoV3 []interface{}
-	if true == ok {
-		resDataInfoV3, _ = resMapDataInfoV3["info"].([]interface{})
-
-	}
-
-	for _, item := range resDataInfoV3 {
-		itemMap := item.(map[string]interface{})
+	resDataInfoV3 := resDataV3.Info
+	for _, itemMap := range resDataInfoV3 {
 
 		mapV2, err := convertOneApp(itemMap)
 		if nil != err {
