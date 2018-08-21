@@ -128,18 +128,21 @@ func (h *DCServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		h.Config.CCRedis.Password = current.ConfigMap[ccredisPrefix+".pwd"]
 		h.Config.CCRedis.Database = current.ConfigMap[ccredisPrefix+".database"]
 		h.Config.CCRedis.Port = current.ConfigMap[ccredisPrefix+".port"]
+		h.Config.CCRedis.MasterName = current.ConfigMap[ccredisPrefix+".mastername"]
 
 		snapPrefix := "snap-redis"
 		h.Config.SnapRedis.Address = current.ConfigMap[snapPrefix+".host"]
 		h.Config.SnapRedis.Password = current.ConfigMap[snapPrefix+".pwd"]
 		h.Config.SnapRedis.Database = current.ConfigMap[snapPrefix+".database"]
 		h.Config.SnapRedis.Port = current.ConfigMap[snapPrefix+".port"]
+		h.Config.SnapRedis.MasterName = current.ConfigMap[snapPrefix+".mastername"]
 
 		discoverPrefix := "discover-redis"
 		h.Config.DiscoverRedis.Address = current.ConfigMap[discoverPrefix+".host"]
 		h.Config.DiscoverRedis.Password = current.ConfigMap[discoverPrefix+".pwd"]
 		h.Config.DiscoverRedis.Database = current.ConfigMap[discoverPrefix+".database"]
 		h.Config.DiscoverRedis.Port = current.ConfigMap[discoverPrefix+".port"]
+		h.Config.DiscoverRedis.MasterName = current.ConfigMap[discoverPrefix+".mastername"]
 	}
 }
 
