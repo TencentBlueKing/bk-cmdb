@@ -15,6 +15,7 @@ package eventclient
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"gopkg.in/redis.v5"
 
@@ -74,6 +75,13 @@ func (c *EventContext) InsertEvent(eventType, objType, action string, curData in
 	}
 
 	if c.TxnID != "" {
+		z := redis.Z{
+			Score:  float64(time.Now().UTC().Unix()),
+			Member: c.TxnID,
+		}
+		if err = c.CacheCli.ZAddNX(common.EventCacheEventTxnSet, z).Err(); err != nil {
+			return err
+		}
 		return c.CacheCli.LPush(common.EventCacheEventTxnQueuePrefix+c.TxnID, value).Err()
 	}
 	return c.CacheCli.LPush(common.EventCacheEventQueueKey, value).Err()

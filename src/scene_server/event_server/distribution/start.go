@@ -41,7 +41,7 @@ func Start(ctx context.Context, cache *redis.Client, db dal.RDB) error {
 		chErr <- ih.StartHandleInsts()
 	}()
 
-	th := &TxnHandler{cache: cache, db: db, ctx: ctx}
+	th := &TxnHandler{cache: cache, db: db, ctx: ctx, commited: make(chan string, 100)}
 	go func() {
 		for {
 			if err := th.Run(); err != nil {
@@ -66,5 +66,4 @@ type TxnHandler struct {
 	db       dal.RDB
 	ctx      context.Context
 	commited chan string
-	droped   chan string
 }

@@ -22,6 +22,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 	ccredis "configcenter/src/storage/dal/redis"
 	daltypes "configcenter/src/storage/types"
@@ -43,6 +44,7 @@ func (th *TxnHandler) Run() (err error) {
 	go th.fetchTimeout()
 outer:
 	for txnID := range th.commited {
+		blog.V(4).Infof("transaction %v commited", txnID)
 		for {
 			err = th.cache.RPopLPush(common.EventCacheEventTxnQueuePrefix+txnID, common.EventCacheEventQueueKey).Err()
 			if ccredis.IsNilErr(err) {
@@ -65,13 +67,14 @@ outer:
 }
 
 func (th *TxnHandler) fetchTimeout() {
-	tick := time.Tick(time.Second * (60))
+	ticker := util.NewTicker(time.Second * 60)
 	opt := redis.ZRangeBy{
 		Min: "-inf",
 	}
-	for now := range tick {
+	ticker.Tick()
+	for now := range ticker.C {
 		txnIDs := []string{}
-		opt.Max = strconv.Itoa(now.UTC().Second())
+		opt.Max = strconv.FormatInt(now.UTC().Unix(), 10)
 
 		if err := th.cache.ZRangeByScore(common.EventCacheEventTxnSet, opt).ScanSlice(&txnIDs); err != nil {
 			blog.Warnf("fetch timeout txnID from redis failed: %v, we will try again later", err)
@@ -83,6 +86,7 @@ func (th *TxnHandler) fetchTimeout() {
 			blog.Warnf("fetch transaction from mongo failed: %v, we will try again later", err)
 			continue
 		}
+		blog.V(4).Infof("fetch transaction by score %v, resturns %v, txns: %v", opt.Max, txnIDs, txns)
 		droped := []string{}
 		for _, txn := range txns {
 			switch txn.Status {
@@ -93,14 +97,19 @@ func (th *TxnHandler) fetchTimeout() {
 			case daltypes.TxStatusAborted, daltypes.TxStatusException:
 				droped = append(droped, txn.TxnID)
 			default:
-				blog.Warnf("unknow transaction status %s", txn.Status)
+				blog.Warnf("unknow transaction status %#v", txn.Status)
 			}
 		}
+
 		go th.dropTransaction(droped)
 	}
 }
 
 func (th *TxnHandler) dropTransaction(txnIDs []string) {
+	if len(txnIDs) <= 0 {
+		return
+	}
+	blog.V(4).Infof("transaction %v should drop", txnIDs)
 	dropKeys := make([]string, len(txnIDs))
 	dropTxnIDs := make([]interface{}, len(txnIDs))
 	for index, txnID := range txnIDs {
