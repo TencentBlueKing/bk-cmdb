@@ -15,7 +15,6 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -170,7 +169,7 @@ func (cli *Service) SelectClassifications(req *restful.Request, resp *restful.Re
 	ownerID := util.GetOwnerID(req.Request.Header)
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
-	fmt.Println("instance:", cli.Instance)
+
 	db := cli.Instance.Clone()
 
 	// decode json object
