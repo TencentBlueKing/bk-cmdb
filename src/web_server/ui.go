@@ -13,13 +13,14 @@
 package main
 
 import (
+	"fmt"
+	"os"
+	"runtime"
+
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 	"configcenter/src/web_server/application"
 	"configcenter/src/web_server/application/options"
-	"fmt"
-	"os"
-	"runtime"
 
 	"configcenter/src/common"
 	"configcenter/src/common/types"
@@ -40,7 +41,7 @@ func main() {
 	util.InitFlags()
 
 	if err := app.Run(op); err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
+		fmt.Fprintf(os.Stderr, "exit:%v\n", err)
 		blog.Fatal(err)
 	}
 }
