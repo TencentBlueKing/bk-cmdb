@@ -16,6 +16,8 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/src/common/mapstr"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
@@ -134,7 +136,9 @@ func (s *topoService) SearchSet(params types.ContextParams, pathParams, queryPar
 		return nil, err
 	}
 
-	paramsCond := &gparams.SearchParams{Condition: mapstr.New()}
+	paramsCond := &gparams.SearchParams{
+		Condition: mapstr.New(),
+	}
 	if err = data.MarshalJSONInto(paramsCond); nil != err {
 		return nil, err
 	}
