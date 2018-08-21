@@ -112,13 +112,13 @@ type AuditController struct {
 
 func (h *AuditController) onAduitConfigUpdate(previous, current cc.ProcessConfig) {
 	h.Config.Mongo = &mongo.Config{
-		Address:      current.ConfigMap["mongo.address"],
-		User:         current.ConfigMap["mongo.usr"],
-		Password:     current.ConfigMap["mongo.pwd"],
-		Database:     current.ConfigMap["mongo.database"],
-		MaxOpenConns: current.ConfigMap["mongo.maxOpenConns"],
-		MaxIdleConns: current.ConfigMap["mongo.maxIDleConns"],
-		Mechanism:    current.ConfigMap["mongo.mechanism"],
+		Address:      current.ConfigMap["mongodb.address"],
+		User:         current.ConfigMap["mongodb.usr"],
+		Password:     current.ConfigMap["mongodb.pwd"],
+		Database:     current.ConfigMap["mongodb.database"],
+		MaxOpenConns: current.ConfigMap["mongodb.maxOpenConns"],
+		MaxIdleConns: current.ConfigMap["mongodb.maxIDleConns"],
+		Mechanism:    current.ConfigMap["mongodb.mechanism"],
 	}
 
 	mgc := h.Config.Mongo
