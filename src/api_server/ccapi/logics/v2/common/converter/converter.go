@@ -682,19 +682,19 @@ func ResV2ToForProcList(resDataV3 interface{}, defLang language.DefaultCCLanguag
 // GeneralV2Data  general convertor v2 funcation
 func GeneralV2Data(data interface{}) interface{} {
 
-	dataArr, ok := data.([]interface{})
-	if true == ok {
+	switch realData := data.(type) {
+	case []interface{}:
 		mapItem := make([]interface{}, 0)
-		for _, item := range dataArr {
+		for _, item := range realData {
+			if nil == item {
+				continue
+			}
 			mapItem = append(mapItem, GeneralV2Data(item))
 		}
 		return mapItem
-	}
-
-	dataMap, ok := data.(map[string]interface{})
-	if true == ok {
+	case map[string]interface{}:
 		mapItem := make(map[string]interface{})
-		for key, val := range dataMap {
+		for key, val := range realData {
 			key = ConverterV3Fields(key, "")
 			if key == "CreateTime" || key == "LastTime" || key == common.CreateTimeField || key == common.LastTimeField {
 				ts, ok := val.(time.Time)
@@ -727,6 +727,7 @@ func GeneralV2Data(data interface{}) interface{} {
 		}
 		return mapItem
 	}
+
 	if nil == data {
 		return ""
 	}
