@@ -221,8 +221,8 @@ func (c *Mongo) Abort(ctx context.Context) error {
 }
 
 // TxnInfo 当前事务信息，用于事务发起者往下传递
-func (c *Mongo) TxnInfo() *types.Tansaction {
-	return &types.Tansaction{}
+func (c *Mongo) TxnInfo() *types.Transaction {
+	return &types.Transaction{}
 }
 
 // HasTable 判断是否存在集合

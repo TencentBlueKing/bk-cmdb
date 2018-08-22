@@ -18,6 +18,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"time"
 
 	"configcenter/src/common/blog"
@@ -70,11 +71,23 @@ func NewClient(conn net.Conn, compress string) (*Client, error) {
 	return c, nil
 }
 
+func Dial(connect string) (*Client, error) {
+	uri, err := url.Parse(connect)
+	if err != nil {
+		return nil, err
+	}
+	var port = uri.Port()
+	if uri.Port() == "" {
+		port = "80"
+	}
+	return DialHTTPPath("tcp", uri.Hostname()+":"+port, uri.Path)
+}
+
 // DialHTTPPath connects to an HTTP RPC server
 // at the specified network address and path.
 func DialHTTPPath(network, address, path string) (*Client, error) {
 	var err error
-	conn, err := net.Dial(network, address)
+	conn, err := net.Dial("tcp", address)
 	if err != nil {
 		return nil, err
 	}

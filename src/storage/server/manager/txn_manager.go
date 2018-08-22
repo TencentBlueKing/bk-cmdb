@@ -35,15 +35,16 @@ type TxnManager struct {
 	cache        map[string]*Session
 	db           mongobyc.Client
 
-	eventChan   chan *types.Tansaction
-	subscribers map[chan<- *types.Tansaction]bool
+	eventChan   chan *types.Transaction
+	subscribers map[chan<- *types.Transaction]bool
 
-	ctx   context.Context
-	mutex sync.Mutex
+	ctx          context.Context
+	sessionMutex sync.Mutex
+	pubsubMutex  sync.Mutex
 }
 
 type Session struct {
-	Txninst *types.Tansaction
+	Txninst *types.Transaction
 	mongobyc.Session
 }
 
@@ -55,29 +56,37 @@ func New(ctx context.Context, opt options.TransactionConfig, db mongobyc.Client,
 		cache:        map[string]*Session{},
 		db:           db,
 
-		eventChan:   make(chan *types.Tansaction, 2048),
-		subscribers: map[chan<- *types.Tansaction]bool{},
+		eventChan:   make(chan *types.Transaction, 2048),
+		subscribers: map[chan<- *types.Transaction]bool{},
 
 		ctx: ctx,
 	}
 	return tm
 }
 
-func (tm *TxnManager) Subscribe(ch chan<- *types.Tansaction) {
+func (tm *TxnManager) Subscribe(ch chan<- *types.Transaction) {
+	tm.pubsubMutex.Lock()
 	tm.subscribers[ch] = true
+	tm.pubsubMutex.Unlock()
 }
 
-func (tm *TxnManager) UnSubscribe(ch chan<- *types.Tansaction) {
+func (tm *TxnManager) UnSubscribe(ch chan<- *types.Transaction) {
+	tm.pubsubMutex.Lock()
 	delete(tm.subscribers, ch)
+	tm.pubsubMutex.Unlock()
 }
 
 func (tm *TxnManager) Publish() {
-	event := <-tm.eventChan
-	for subscriber := range tm.subscribers {
-		select {
-		case subscriber <- event:
-		case <-time.After(time.Second):
+	for {
+		event := <-tm.eventChan
+		tm.pubsubMutex.Lock()
+		for subscriber := range tm.subscribers {
+			select {
+			case subscriber <- event:
+			case <-time.After(time.Second):
+			}
 		}
+		tm.pubsubMutex.Unlock()
 	}
 }
 
@@ -99,14 +108,14 @@ func (tm *TxnManager) reconcileCache() {
 			ticker.Stop()
 			return
 		case <-ticker.C:
-			tm.mutex.Lock()
+			tm.sessionMutex.Lock()
 			for _, session := range tm.cache {
 				if time.Since(session.Txninst.LastTime) > tm.txnLifeLimit {
 					// ignore the abort error, cause the session will not be used again
 					go tm.Abort(session.Txninst.TxnID)
 				}
 			}
-			tm.mutex.Unlock()
+			tm.sessionMutex.Unlock()
 		}
 	}
 }
@@ -119,7 +128,7 @@ func (tm *TxnManager) reconcilePersistence() {
 			ticker.Stop()
 			return
 		case <-ticker.C:
-			txns := []types.Tansaction{}
+			txns := []types.Transaction{}
 			err := tm.db.Collection(common.BKTableNameTransaction).Find(tm.ctx, nil, nil, &txns)
 			if err != nil {
 				blog.Errorf("reconcile persistence faile: %v, we will retry %v later", err, tm.txnLifeLimit)
@@ -147,26 +156,26 @@ func (tm *TxnManager) reconcilePersistence() {
 }
 
 func (tm *TxnManager) GetSession(txnID string) *Session {
-	tm.mutex.Lock()
+	tm.sessionMutex.Lock()
 	session := tm.cache[txnID]
-	tm.mutex.Unlock()
+	tm.sessionMutex.Unlock()
 	return session
 }
 
 func (tm *TxnManager) storeSession(txnID string, session *Session) {
-	tm.mutex.Lock()
+	tm.sessionMutex.Lock()
 	tm.cache[txnID] = session
-	tm.mutex.Unlock()
+	tm.sessionMutex.Unlock()
 }
 
 func (tm *TxnManager) removeSession(txnID string) {
-	tm.mutex.Lock()
+	tm.sessionMutex.Lock()
 	delete(tm.cache, txnID)
-	tm.mutex.Unlock()
+	tm.sessionMutex.Unlock()
 }
 
-func (tm *TxnManager) CreateTransaction(requestID string, processor string) (*Session, error) {
-	txn := types.Tansaction{
+func (tm *TxnManager) CreateTransaction(requestID string) (*Session, error) {
+	txn := types.Transaction{
 		RequestID:  requestID,
 		Processor:  tm.processor,
 		Status:     types.TxStatusOnProgress,

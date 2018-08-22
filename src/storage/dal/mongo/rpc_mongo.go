@@ -459,8 +459,8 @@ func (c *RPC) Abort(ctx context.Context) error {
 }
 
 // TxnInfo 当前事务信息，用于事务发起者往下传递
-func (c *RPC) TxnInfo() *types.Tansaction {
-	return &types.Tansaction{
+func (c *RPC) TxnInfo() *types.Transaction {
+	return &types.Transaction{
 		RequestID: c.RequestID,
 		TxnID:     c.TxnID,
 	}
