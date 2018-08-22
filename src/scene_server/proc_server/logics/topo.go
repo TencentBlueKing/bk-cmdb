@@ -20,6 +20,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -28,7 +29,7 @@ func (lgc *Logics) getModuleNameByID(ctx context.Context, ID int64, header http.
 	supplierID := util.GetOwnerID(header)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	dat := new(metadata.QueryInput)
-	dat.Condition = common.KvMap{common.BKModuleIDField: ID}
+	dat.Condition = mapstr.MapStr{common.BKModuleIDField: ID}
 	dat.Fields = fmt.Sprintf("%s,%s,%s", common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField)
 	dat.Limit = common.BKNoLimit
 	ret, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDModule, header, dat)

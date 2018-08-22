@@ -20,11 +20,12 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
 
-func (lgc *Logics) GetProcessbyProcID(procID string, forward http.Header) (map[string]interface{}, error) {
+func (lgc *Logics) GetProcbyProcID(procID string, forward http.Header) (map[string]interface{}, error) {
 	condition := map[string]interface{}{
 		common.BKProcessIDField: procID,
 	}
@@ -44,27 +45,27 @@ func (lgc *Logics) GetProcessbyProcID(procID string, forward http.Header) (map[s
 }
 
 func (lgc *Logics) getProcInfoByID(ctx context.Context, procID []int64, header http.Header) (map[int64]*metadata.InlineProcInfo, error) {
-	supplierID := util.GetOwnerID(header)
+	ownerID := util.GetOwnerID(header)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	if 0 == len(procID) {
 		return nil, nil
 	}
 	gseProc := make(map[int64]*metadata.InlineProcInfo, 0)
 	dat := new(metadata.QueryInput)
-	dat.Condition = common.KvMap{common.BKProcessIDField: common.KvMap{common.BKDBIN: procID}}
+	dat.Condition = mapstr.MapStr{common.BKProcessIDField: mapstr.MapStr{common.BKDBIN: procID}}
 	dat.Limit = common.BKNoLimit
 	ret, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDProc, header, dat)
 	if nil != err {
-		blog.Errorf("getProcInfoByID procID %v supplierID %s  http do error:%s", procID, supplierID, err.Error())
+		blog.Errorf("getProcInfoByID procID %v supplierID %s  http do error:%s", procID, ownerID, err.Error())
 		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !ret.Result {
-		blog.Errorf("getProcInfoByID procID %v supplierID %s  http reply error:%s", procID, supplierID, ret.ErrMsg)
+		blog.Errorf("getProcInfoByID procID %v supplierID %s  http reply error:%s", procID, ownerID, ret.ErrMsg)
 		return nil, defErr.New(ret.Code, ret.ErrMsg)
 
 	}
 	if 0 == ret.Data.Count {
-		blog.Errorf("getProcInfoByID procID %v supplierID %s  not found process info", procID, supplierID)
+		blog.Errorf("getProcInfoByID procID %v supplierID %s  not found process info", procID, ownerID)
 		return nil, nil
 	}
 	for _, proc := range ret.Data.Info {

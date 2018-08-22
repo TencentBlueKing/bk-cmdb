@@ -21,6 +21,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -119,14 +120,14 @@ func (lgc *Logics) unregisterProcInstanceToGse(gseproc *metadata.GseProcRequest,
 
 	unregisterProcDetail := make([]interface{}, 0)
 	for _, host := range gseproc.Hosts {
-		unregisterProcDetail = append(unregisterProcDetail, common.KvMap{
+		unregisterProcDetail = append(unregisterProcDetail, mapstr.MapStr{
 			common.BKAppIDField:     gseproc.AppID,
 			common.BKModuleIDField:  gseproc.ModuleID,
 			common.BKHostIDField:    host.HostID,
 			common.BKProcessIDField: gseproc.ProcID})
 	}
 
-	procInstDetail, err := lgc.CoreAPI.ProcController().DeleteProcInstanceDetail(context.Background(), forward, common.KvMap{common.BKDBOR: unregisterProcDetail})
+	procInstDetail, err := lgc.CoreAPI.ProcController().DeleteProcInstanceDetail(context.Background(), forward, mapstr.MapStr{common.BKDBOR: unregisterProcDetail})
 	if err != nil {
 		blog.Errorf("register process(%s) detail failed. err: %v", gseproc.Meta.Name, err)
 		return defErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -153,7 +154,7 @@ func (lgc *Logics) OperateProcInstanceByGse(procOp *metadata.ProcessOperate, ins
 		}
 
 		// get processinfo
-		procInfo, err := lgc.GetProcessbyProcID(string(model.ProcID), forward)
+		procInfo, err := lgc.GetProcbyProcID(string(model.ProcID), forward)
 		if err != nil {
 			blog.Warnf("OperateProcInstanceByGse getProcessByProcID failed. err: %v", err)
 			continue
@@ -286,8 +287,8 @@ func (lgc *Logics) handleGseTaskResult(ctx context.Context, item *metadata.Proce
 	}
 	if isChangeStatus {
 		updateConds := new(metadata.UpdateParams)
-		data := common.KvMap{"detail": taskStatusData}
-		updateConds.Condition = common.KvMap{"task_id": item.TaskID, "bk_task_id": item.GseTaskID}
+		data := mapstr.MapStr{"detail": taskStatusData}
+		updateConds.Condition = mapstr.MapStr{"task_id": item.TaskID, "bk_task_id": item.GseTaskID}
 		if isErr {
 			data[common.BKStatusField] = metadata.ProcessOperateTaskStatusErr
 		} else if isWaiting {

@@ -24,10 +24,10 @@ import (
 	"configcenter/src/common/util"
 )
 
-func (lgc *Logics) MatchProcessInstance(ctx context.Context, appID int64, setName, moduleName, funcID, instID string, forward http.Header) (map[string]*metadata.ProcInstanceModel, error) {
-	setConds := make(map[string]interface{})
-	setConds[common.BKAppIDField] = appID
-	setIDs, _, err := lgc.matchName(ctx, forward, setName, common.BKInnerObjIDSet, common.BKSetIDField, common.BKSetNameField, setConds)
+func (lgc *Logics) MatchProcessInstance(ctx context.Context, params *metadata.MatchProcInstParam, header http.Header) (map[string]*metadata.ProcInstanceModel, error) {
+	setConds := mapstr.MapStr{}
+	setConds.Set(common.BKAppIDField, params.ApplicationID)
+	setIDs, _, err := lgc.matchName(ctx, header, params.SetName, common.BKInnerObjIDSet, common.BKSetIDField, common.BKSetNameField, setConds)
 	if nil != err {
 		blog.Errorf("MatchProcessInstance error:%s", err.Error())
 		return nil, err
@@ -36,9 +36,9 @@ func (lgc *Logics) MatchProcessInstance(ctx context.Context, appID int64, setNam
 		return nil, nil
 	}
 	moduleConds := make(map[string]interface{}, 0)
-	moduleConds[common.BKAppIDField] = appID
-	moduleConds[common.BKSetIDField] = common.KvMap{common.BKDBIN: setIDs}
-	moduleIDs, _, err := lgc.matchName(ctx, forward, moduleName, common.BKInnerObjIDModule, common.BKModuleIDField, common.BKModuleNameField, moduleConds)
+	moduleConds[common.BKAppIDField] = params.ApplicationID
+	moduleConds[common.BKSetIDField] = mapstr.MapStr{common.BKDBIN: setIDs}
+	moduleIDs, _, err := lgc.matchName(ctx, header, params.ModuleName, common.BKInnerObjIDModule, common.BKModuleIDField, common.BKModuleNameField, moduleConds)
 	if nil != err {
 		blog.Errorf("MatchProcessInstance error:%s", err.Error())
 		return nil, err
@@ -47,16 +47,16 @@ func (lgc *Logics) MatchProcessInstance(ctx context.Context, appID int64, setNam
 		return nil, nil
 	}
 	conds := make(map[string]interface{}, 0)
-	conds[common.BKAppIDField] = appID
-	conds[common.BKSetIDField] = common.KvMap{common.BKDBIN: setIDs}
-	conds[common.BKModuleIDField] = common.KvMap{common.BKDBIN: moduleIDs}
-	return lgc.matchFuncIDInstID(ctx, forward, funcID, instID, conds)
+	conds[common.BKAppIDField] = params.ApplicationID
+	conds[common.BKSetIDField] = mapstr.MapStr{common.BKDBIN: setIDs}
+	conds[common.BKModuleIDField] = mapstr.MapStr{common.BKDBIN: moduleIDs}
+	return lgc.matchFuncIDInstID(ctx, header, params.FuncID, params.HostInstanceID, conds)
 
 }
 
 // matchName match module or set by match role
-func (lgc *Logics) matchName(ctx context.Context, forward http.Header, match, objID, instIDKey, instNameKey string, conds map[string]interface{}) (instIDs []int64, data map[int64]mapstr.MapStr, err error) {
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(forward))
+func (lgc *Logics) matchName(ctx context.Context, header http.Header, match, objID, instIDKey, instNameKey string, conds mapstr.MapStr) (instIDs []int64, data map[int64]mapstr.MapStr, err error) {
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	// paseConds mongodb query condition,
 	scopeMatch := NewScopeMatch(match, true)
 
@@ -69,12 +69,12 @@ func (lgc *Logics) matchName(ctx context.Context, forward http.Header, match, ob
 	query.Limit = common.BKNoLimit
 	if nil != parseConds {
 		if nil == conds {
-			conds = make(map[string]interface{})
+			conds = make(mapstr.MapStr, 0)
 		}
 		conds[instNameKey] = parseConds
 	}
 	query.Condition = conds
-	ret, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, objID, forward, query)
+	ret, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, objID, header, query)
 	if nil != err {
 		blog.Errorf("matchName get %s instance error:%s", objID, err.Error())
 		return nil, nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -106,8 +106,8 @@ func (lgc *Logics) matchName(ctx context.Context, forward http.Header, match, ob
 }
 
 // matchID get the matching rules list by funcID and Instance ID
-func (lgc *Logics) matchFuncIDInstID(ctx context.Context, forward http.Header, funcIDMath, HostIDMatch string, conds map[string]interface{}) (data map[string]*metadata.ProcInstanceModel, err error) {
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(forward))
+func (lgc *Logics) matchFuncIDInstID(ctx context.Context, header http.Header, funcIDMath, HostIDMatch string, conds map[string]interface{}) (data map[string]*metadata.ProcInstanceModel, err error) {
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	funcScopeMatch := NewScopeMatch(funcIDMath, false)
 	// funcIDConds mongodb query condition,
 	funcIDConds, err := funcScopeMatch.ParseConds()
@@ -140,7 +140,7 @@ func (lgc *Logics) matchFuncIDInstID(ctx context.Context, forward http.Header, f
 	query := new(metadata.QueryInput)
 	query.Limit = common.BKNoLimit
 	query.Condition = conds
-	ret, err := lgc.CoreAPI.ProcController().GetProcInstanceModel(ctx, forward, query)
+	ret, err := lgc.CoreAPI.ProcController().GetProcInstanceModel(ctx, header, query)
 	if nil != err {
 		blog.Errorf("matchID get set instance error:%s", err.Error())
 		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)

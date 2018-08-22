@@ -36,15 +36,21 @@ func (ps *ProcServer) OperateProcessInstance(req *restful.Request, resp *restful
 		return
 	}
 
-	forward := req.Request.Header
-	procInstModel, err := ps.Logics.MatchProcessInstance(context.Background(), procOpParam.ApplicationID, procOpParam.SetName, procOpParam.ModuleName, procOpParam.FuncID, procOpParam.HostInstanceID, req.Request.Header)
+	header := req.Request.Header
+	matchProcInstParam := new(meta.MatchProcInstParam)
+	matchProcInstParam.ApplicationID = procOpParam.ApplicationID
+	matchProcInstParam.FuncID = procOpParam.FuncID
+	matchProcInstParam.HostInstanceID = procOpParam.HostInstanceID
+	matchProcInstParam.ModuleName = procOpParam.ModuleName
+	matchProcInstParam.SetName = procOpParam.SetName
+	procInstModel, err := ps.Logics.MatchProcessInstance(context.Background(), matchProcInstParam, header)
 	if err != nil {
 		blog.Errorf("match process instance failed in OperateProcessInstance. err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcOperateFaile)})
 		return
 	}
 
-	result, err := ps.Logics.OperateProcInstanceByGse(procOpParam, procInstModel, forward)
+	result, err := ps.Logics.OperateProcInstanceByGse(procOpParam, procInstModel, header)
 	if err != nil {
 		blog.Errorf("operate process failed. err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcOperateFaile)})

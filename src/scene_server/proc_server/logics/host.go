@@ -20,6 +20,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -46,7 +47,7 @@ func (lgc *Logics) getHostByModuleID(ctx context.Context, header http.Header, mo
 		return nil, defErr.New(ret.Code, ret.ErrMsg)
 	}
 	if 0 == len(ret.Data) {
-		blog.V(5).Infof("getHostByModuleID moduleID %d supplierID %s GetModulesHostConfig len equal 0", moduleID, supplierID)
+		blog.V(3).Infof("getHostByModuleID moduleID %d supplierID %s GetModulesHostConfig len equal 0", moduleID, supplierID)
 		return nil, nil
 	}
 	var hostIDs []int64
@@ -54,7 +55,7 @@ func (lgc *Logics) getHostByModuleID(ctx context.Context, header http.Header, mo
 		hostIDs = append(hostIDs, item.HostID)
 	}
 	opt := new(metadata.QueryInput)
-	opt.Condition = common.KvMap{common.BKHostIDField: common.KvMap{common.BKDBIN: hostIDs}}
+	opt.Condition = mapstr.MapStr{common.BKHostIDField: common.KvMap{common.BKDBIN: hostIDs}}
 	opt.Fields = fmt.Sprintf("%s,%s,%s", common.BKHostIDField, common.BKHostInnerIPField, common.BKCloudIDField)
 	opt.Limit = common.BKNoLimit
 	hosts, err := lgc.CoreAPI.HostController().Host().GetHosts(ctx, header, opt)

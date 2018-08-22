@@ -34,13 +34,17 @@ type ProcInstanceModel struct {
 	OwnerID        string `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
-type ProcessOperate struct {
+type MatchProcInstParam struct {
 	ApplicationID  int64  `json:"bk_biz_id"`
 	SetName        string `json:"bk_set_name"`
 	ModuleName     string `json:"bk_module_name"`
 	FuncID         string `json:"bk_func_id"`
 	HostInstanceID string `json:"bk_host_instance_id"`
-	OpType         int    `json:"bk_proc_optype"`
+}
+
+type ProcessOperate struct {
+	MatchProcInstParam `json:",inline"`
+	OpType             int `json:"bk_proc_optype"`
 }
 
 type ProcModuleResult struct {
