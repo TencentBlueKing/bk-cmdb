@@ -453,18 +453,15 @@ func (s *Service) editApp(req *restful.Request, resp *restful.Response) {
 	LifeCycle := formData.Get("LifeCycle")
 
 	if "" != LifeCycle {
-		lifeMap := map[string]bool{AppStatusTest: true, AppStatusOnline: true, AppStatusStop: true}
-		if !lifeMap[LifeCycle] {
-			if LifeCycle == AppStatusTestI {
-				LifeCycle = AppStatusTest
-			} else if LifeCycle == AppStatusOnlineI {
-				LifeCycle = AppStatusOnline
-			} else if LifeCycle == AppStatusStopI {
-				LifeCycle = AppStatusStop
-			} else {
-				converter.RespFailV2(common.CCErrCommParamsIsInvalid, defErr.Errorf(common.CCErrCommParamsIsInvalid, "LifeCycle").Error(), resp)
-				return
-			}
+		if LifeCycle == AppStatusTestI || LifeCycle == AppStatusTest {
+			LifeCycle = AppStatusTestI
+		} else if LifeCycle == AppStatusOnlineI || LifeCycle == AppStatusOnline {
+			LifeCycle = AppStatusOnlineI
+		} else if LifeCycle == AppStatusStopI || LifeCycle == AppStatusStop {
+			LifeCycle = AppStatusStopI
+		} else {
+			converter.RespFailV2(common.CCErrCommParamsIsInvalid, defErr.Errorf(common.CCErrCommParamsIsInvalid, "LifeCycle").Error(), resp)
+			return
 		}
 	}
 
