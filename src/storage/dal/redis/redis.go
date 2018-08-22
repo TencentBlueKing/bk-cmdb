@@ -28,8 +28,7 @@ type Config struct {
 }
 
 // NewConfigFromKV returns new config
-func NewConfigFromKV(profix string, conifgmap map[string]string) *Config {
-	prefix := "redis"
+func NewConfigFromKV(prefix string, conifgmap map[string]string) *Config {
 	return &Config{
 		Address:    conifgmap[prefix+".address"],
 		Password:   conifgmap[prefix+".pwd"],
@@ -71,4 +70,9 @@ func NewFromConfig(cfg Config) (*redis.Client, error) {
 	}
 
 	return client, err
+}
+
+// IsNilErr returns whether err is nil error
+func IsNilErr(err error) bool {
+	return redis.Nil == err
 }

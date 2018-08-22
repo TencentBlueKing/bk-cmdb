@@ -40,7 +40,7 @@ type RDB interface {
 	// Abort 取消事务
 	Abort(context.Context) error
 	// TxnInfo 当前事务信息，用于事务发起者往下传递
-	TxnInfo() *types.Tansaction
+	TxnInfo() *types.Transaction
 	// NextSequence 获取新序列号(非事务)
 	NextSequence(ctx context.Context, sequenceName string) (uint64, error)
 	// Ping 健康检查
