@@ -686,6 +686,9 @@ func GeneralV2Data(data interface{}) interface{} {
 	if true == ok {
 		mapItem := make([]interface{}, 0)
 		for _, item := range dataArr {
+			if nil == item {
+				return nil
+			}
 			mapItem = append(mapItem, GeneralV2Data(item))
 		}
 		return mapItem
