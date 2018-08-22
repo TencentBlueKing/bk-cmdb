@@ -49,7 +49,7 @@ func (ps *ProcServer) GetProcessPortByApplicationID(req *restful.Request, resp *
 
 	forward := req.Request.Header
 	// 根据模块获取所有关联的进程，建立Map ModuleToProcesses
-	moduleToProcessesMap := make(map[int64][]interface{})
+	moduleToProcessesMap := make(map[int64][]mapstr.MapStr)
 	for _, module := range modules {
 		moduleName, ok := module[common.BKModuleNameField].(string)
 		if !ok {
@@ -106,7 +106,7 @@ func (ps *ProcServer) GetProcessPortByApplicationID(req *restful.Request, resp *
 	}
 	blog.V(3).Infof("GetProcessPortByApplicationID  hostMap:%v", hostMap)
 
-	hostProcs := make(map[int][]interface{}, 0)
+	hostProcs := make(map[int][]mapstr.MapStr, 0)
 	for _, moduleHostConf := range moduleHostConfigs {
 		hostID, ok := moduleHostConf[common.BKHostIDField]
 		if !ok {
@@ -124,7 +124,7 @@ func (ps *ProcServer) GetProcessPortByApplicationID(req *restful.Request, resp *
 
 		procs, ok := hostProcs[hostID]
 		if !ok {
-			procs = make([]interface{}, 0)
+			procs = make([]mapstr.MapStr, 0)
 		}
 
 		processes, ok := moduleToProcessesMap[int64(moduleID)]
@@ -138,7 +138,7 @@ func (ps *ProcServer) GetProcessPortByApplicationID(req *restful.Request, resp *
 	for hostID, host := range hostMap {
 		processes, ok := hostProcs[hostID]
 		if !ok {
-			processes = make([]interface{}, 0)
+			processes = make([]mapstr.MapStr, 0)
 		}
 		host[common.BKProcField] = processes
 		host[common.BKAppNameField] = appInfo[common.BKAppNameField]
@@ -272,9 +272,9 @@ func (ps *ProcServer) GetProcessPortByIP(req *restful.Request, resp *restful.Res
 }
 
 // 根据模块获取所有关联的进程，建立Map ModuleToProcesses
-func (ps *ProcServer) getProcessesByModuleName(forward http.Header, moduleName string) ([]interface{}, error) {
-	procData := make([]interface{}, 0)
-	params := map[string]interface{}{
+func (ps *ProcServer) getProcessesByModuleName(forward http.Header, moduleName string) ([]mapstr.MapStr, error) {
+	procData := make([]mapstr.MapStr, 0)
+	params := mapstr.MapStr{
 		common.BKModuleNameField: moduleName,
 	}
 
@@ -284,8 +284,7 @@ func (ps *ProcServer) getProcessesByModuleName(forward http.Header, moduleName s
 		return procData, err
 	}
 
-	procData = append(procData, ret.Data)
-	return procData, nil
+	return ret.Data, nil
 }
 
 func (ps *ProcServer) getModuleHostConfigsByAppID(appID int, forward http.Header) (moduleHostConfigs []map[string]int, err error) {
