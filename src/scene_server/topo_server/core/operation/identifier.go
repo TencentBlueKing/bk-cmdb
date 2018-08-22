@@ -23,7 +23,7 @@ import (
 )
 
 type IdentifierOperationInterface interface {
-	SearchIdentifier(params types.ContextParams, objType string, param *metadata.SearchIdentifierParam) ([]metadata.HostIdentifier, error)
+	SearchIdentifier(params types.ContextParams, objType string, param *metadata.SearchIdentifierParam) (*metadata.SearchHostIdentifierResult, error)
 }
 
 func NewIdentifier(client apimachinery.ClientSetInterface) IdentifierOperationInterface {
@@ -34,7 +34,7 @@ type identifier struct {
 	clientSet apimachinery.ClientSetInterface
 }
 
-func (g *identifier) SearchIdentifier(params types.ContextParams, objType string, param *metadata.SearchIdentifierParam) ([]metadata.HostIdentifier, error) {
+func (g *identifier) SearchIdentifier(params types.ContextParams, objType string, param *metadata.SearchIdentifierParam) (*metadata.SearchHostIdentifierResult, error) {
 	rsp, err := g.clientSet.ObjectController().Identifier().SearchIdentifier(context.Background(), params.Header, objType, param)
 	if nil != err {
 		return nil, err
@@ -45,5 +45,5 @@ func (g *identifier) SearchIdentifier(params types.ContextParams, objType string
 		return nil, params.Err.New(common.CCErrObjectSelectIdentifierFailed, rsp.ErrMsg)
 	}
 
-	return rsp.Data.Info, nil
+	return rsp, nil
 }
