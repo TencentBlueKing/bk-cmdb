@@ -16,6 +16,7 @@ import (
 	"context"
 	"net/http"
 	"reflect"
+	"sync/atomic"
 
 	restful "github.com/emicklei/go-restful"
 
@@ -121,4 +122,34 @@ func IsNil(value interface{}) bool {
 		return rflValue.IsNil()
 	}
 	return true
+}
+
+type AtomicBool int32
+
+func NewBool(yes bool) *AtomicBool {
+	var n = AtomicBool(0)
+	if yes {
+		n = AtomicBool(1)
+	}
+	return &n
+}
+
+func (b *AtomicBool) Set() {
+	atomic.StoreInt32((*int32)(b), 1)
+}
+
+func (b *AtomicBool) UnSet() {
+	atomic.StoreInt32((*int32)(b), 0)
+}
+
+func (b *AtomicBool) IsSet() bool {
+	return atomic.LoadInt32((*int32)(b)) == 1
+}
+
+func (b *AtomicBool) SetTo(yes bool) {
+	if yes {
+		atomic.StoreInt32((*int32)(b), 1)
+	} else {
+		atomic.StoreInt32((*int32)(b), 0)
+	}
 }
