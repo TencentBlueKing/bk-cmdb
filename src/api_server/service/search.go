@@ -158,7 +158,14 @@ func (s *Service) getHostListByIP(req *restful.Request, resp *restful.Response) 
 	}
 
 	if len(formData["platID"]) > 0 {
-		param[common.BKCloudIDField] = formData["platID"][0]
+		platIDStr := formData["platID"][0]
+		platID, err := strconv.Atoi(platIDStr)
+		if nil != err {
+			param[common.BKCloudIDField] = 0
+		} else {
+			param[common.BKCloudIDField] = platID
+		}
+
 	}
 
 	result, err := s.CoreAPI.HostServer().HostSearchByIP(context.Background(), pheader, param)

@@ -18,6 +18,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	gparams "configcenter/src/common/paraparse"
@@ -133,7 +134,7 @@ func (s *topoService) SearchSet(params types.ContextParams, pathParams, queryPar
 		return nil, err
 	}
 
-	paramsCond := &gparams.SearchParams{}
+	paramsCond := &gparams.SearchParams{Condition: mapstr.New()}
 	if err = data.MarshalJSONInto(paramsCond); nil != err {
 		return nil, err
 	}
