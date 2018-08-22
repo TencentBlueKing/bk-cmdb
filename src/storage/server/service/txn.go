@@ -14,7 +14,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -50,6 +49,7 @@ func NewTXRPC(rpcsrv *rpc.Server) *TXRPC {
 	txrpc.rpcsrv = rpcsrv
 
 	rpcsrv.Handle(types.CommandRDBOperation, txrpc.RDBOperation)
+	rpcsrv.HandleStream(types.CommandWatchTransactionOperation, txrpc.WatchTransaction)
 	return txrpc
 }
 
@@ -76,13 +76,12 @@ func (t *TXRPC) RDBOperation(input rpc.Request) (interface{}, error) {
 			reply.Message = "session not found"
 			return &reply, nil
 		}
-		// TODO proxy to rpc
 		transaction = session.Session
 	}
 
 	switch header.OPCode {
 	case types.OPStartTransaction:
-		session, err := t.man.CreateTransaction(header.RequestID, buildProcessor(t.ServerInfo.IP, t.ServerInfo.Port, t.ServerInfo.Pid))
+		session, err := t.man.CreateTransaction(header.RequestID)
 		if nil != err {
 			reply.Message = err.Error()
 			return &reply, nil
@@ -119,23 +118,14 @@ func (t *TXRPC) RDBOperation(input rpc.Request) (interface{}, error) {
 	}
 }
 
-func (*TXRPC) Watch(input interface{}, output string) error {
-	blog.V(3).Infof("Watch %#v", input)
+func (t *TXRPC) WatchTransaction(input rpc.Request, stream rpc.ServerStream) (err error) {
+	ch := make(chan *types.Transaction, 100)
+	t.man.Subscribe(ch)
+	defer t.man.UnSubscribe(ch)
+	for txn := range ch {
+		if err = stream.Send(txn); err != nil {
+			return err
+		}
+	}
 	return nil
-}
-func (*TXRPC) Search(input interface{}, output string) error {
-	blog.V(3).Infof("Search %#v", input)
-	return nil
-}
-func (*TXRPC) Healthz(input interface{}, output string) error {
-	blog.V(3).Infof("Healthz %#v", input)
-	return nil
-}
-func (*TXRPC) Metrics(input interface{}, output string) error {
-	blog.V(3).Infof("Metrics %#v", input)
-	return nil
-}
-
-func buildProcessor(ip string, port uint, pid int) string {
-	return fmt.Sprintf("%s:%d-%d", ip, port, pid)
 }

@@ -130,7 +130,8 @@ func (d *Documents) Encode(result interface{}) error {
 }
 
 const (
-	CommandRDBOperation = "RDB"
+	CommandRDBOperation              = "RDB"
+	CommandWatchTransactionOperation = "WatchTransaction"
 )
 
 type Page struct {
