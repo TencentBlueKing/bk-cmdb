@@ -77,7 +77,7 @@ func (th *TxnHandler) watchTransaction() {
 		return
 	}
 
-	stream, err := th.rc.CallStream("WatchTransaction", nil)
+	stream, err := th.rc.CallStream(daltypes.CommandWatchTransactionOperation, nil)
 	if err != nil {
 		blog.Errorf("WatchTransaction faile %v", err)
 		return
