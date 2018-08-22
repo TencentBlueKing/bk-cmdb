@@ -75,7 +75,7 @@ func (lgc *Logics) GetAppTopo(user string, pheader http.Header, appID int64, con
 
 		setID, err := util.GetInt64ByInterface(setInfo[common.BKSetIDField])
 		if nil != err {
-			blog.Error("GetAppTopo get set id by getsets  return info  error, module info:%v  error", setInfo)
+			blog.Error("GetAppTopo get set id by getsets  return  info:%v  error:%v", setInfo, err)
 			return nil, common.CCErrCommHTTPDoRequestFailed
 		}
 		setName, _ := setInfo[common.BKSetNameField]
