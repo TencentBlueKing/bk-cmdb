@@ -17,8 +17,6 @@ import (
 	"sort"
 	"sync"
 
-	"gopkg.in/mgo.v2"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	ccversion "configcenter/src/common/version"
@@ -99,7 +97,7 @@ func getVersion(ctx context.Context, db dal.RDB) (*Version, error) {
 		"type": SystemTypeVersion,
 	}
 	err := db.Table(common.BKTableNameSystem).Find(condition).One(ctx, &data)
-	if err == mgo.ErrNotFound {
+	if db.IsNotFoundError(err) {
 		data = new(Version)
 		data.Type = SystemTypeVersion
 
