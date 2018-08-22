@@ -18,6 +18,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -93,7 +94,7 @@ func ImportObject(c *gin.Context) {
 
 	apiSite, _ := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
 
-	attrItems, err := logics.GetImportInsts(f, objID, apiSite, c.Request.Header, 3, false, defLang)
+	attrItems, errMsg, err := logics.GetImportInsts(f, objID, apiSite, c.Request.Header, 3, false, defLang)
 	if 0 == len(attrItems) {
 		msg := ""
 		if nil != err {
@@ -101,6 +102,11 @@ func ImportObject(c *gin.Context) {
 		} else {
 			msg = getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail, "").Error(), nil)
 		}
+		c.String(http.StatusOK, string(msg))
+		return
+	}
+	if 0 != len(errMsg) {
+		msg := getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail, strings.Join(errMsg, ",")).Error(), common.KvMap{"err": errMsg})
 		c.String(http.StatusOK, string(msg))
 		return
 	}
