@@ -17,6 +17,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -76,14 +77,19 @@ func ImportInst(c *gin.Context) {
 
 	apiAddr, err := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
 	url := apiAddr
-	insts, err := logics.GetImportInsts(f, objID, url, c.Request.Header, 0, true, defLang)
-	if 0 == len(insts) {
-		msg := getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail, err.Error()).Error(), nil)
+	insts, errMsg, err := logics.GetImportInsts(f, objID, url, c.Request.Header, 0, true, defLang)
+	if 0 != len(errMsg) {
+		msg := getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail, strings.Join(errMsg, ",")).Error(), common.KvMap{"err": errMsg})
 		c.String(http.StatusOK, string(msg))
 		return
 	}
 	if nil != err {
 		msg := getReturnStr(common.CCErrWebFileContentEmpty, defErr.Errorf(common.CCErrWebOpenFileFail, "").Error(), nil)
+		c.String(http.StatusOK, string(msg))
+		return
+	}
+	if 0 == len(insts) {
+		msg := getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail, "").Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
 	}
