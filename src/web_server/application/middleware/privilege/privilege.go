@@ -142,7 +142,7 @@ func (p *Privilege) GetUserPrivilegeApp(appRole []string) map[int64][]string {
 			if false == ok {
 				continue
 			}
-			roleStr := roleData.(string)
+			roleStr, ok := roleData.(string)
 			if false == ok {
 				continue
 			}
