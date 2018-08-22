@@ -15,10 +15,12 @@ package upgrader
 import (
 	"context"
 	"errors"
+	"fmt"
+
+	"gopkg.in/mgo.v2/bson"
 
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal"
-	"github.com/mongodb/mongo-go-driver/bson"
 )
 
 // Upsert inset row but updata it whitout ignores key if exists same value with keys
@@ -30,10 +32,10 @@ func Upsert(ctx context.Context, db dal.RDB, tablename string, row interface{}, 
 	default:
 		out, err := bson.Marshal(row)
 		if err != nil {
-			return 0, nil, err
+			return 0, nil, fmt.Errorf("marshal error %v", err)
 		}
 		if err = bson.Unmarshal(out, data); err != nil {
-			return 0, nil, err
+			return 0, nil, fmt.Errorf("unmarshal error %v", err)
 		}
 	}
 
@@ -55,10 +57,13 @@ func Upsert(ctx context.Context, db dal.RDB, tablename string, row interface{}, 
 		}
 		// blog.Infof("%s insert %v", tablename, data)
 		err = db.Table(tablename).Insert(ctx, data)
-		return instID, nil, err
+		if err != nil {
+			return instID, nil, fmt.Errorf("insert error %v", err)
+		}
+		return instID, nil, nil
 	}
 	if nil != err {
-		return 0, nil, err
+		return 0, nil, fmt.Errorf("Find error %v", err)
 	}
 
 	ignoreset := map[string]bool{idfieldname: true}
@@ -82,7 +87,7 @@ func Upsert(ctx context.Context, db dal.RDB, tablename string, row interface{}, 
 		if instID <= 0 {
 			instID, err = db.NextSequence(ctx, tablename)
 			if err != nil {
-				return 0, nil, err
+				return 0, nil, fmt.Errorf("get NextSequence error %v", err)
 			}
 			data[idfieldname] = instID
 			delete(ignoreset, idfieldname)
@@ -101,5 +106,9 @@ func Upsert(ctx context.Context, db dal.RDB, tablename string, row interface{}, 
 		newData[key] = value
 	}
 	// blog.Infof("%s update %v", tablename, newData)
-	return instID, existOne, db.Table(tablename).Update(ctx, condition, newData)
+	err = db.Table(tablename).Update(ctx, condition, newData)
+	if err != nil {
+		return instID, existOne, fmt.Errorf("update error %v", err)
+	}
+	return instID, existOne, nil
 }

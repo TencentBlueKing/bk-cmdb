@@ -22,8 +22,6 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/mgo.v2"
-
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal"
@@ -407,10 +405,10 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 			condition := getModifyCondition(node.Data, []string{common.BKSetNameField, common.BKInstParentStr})
 			set := map[string]interface{}{}
 			err := ipt.db.Table(common.GetInstTableName(node.ObjID)).Find(condition).One(ipt.ctx, &set)
-			if nil != err && mgo.ErrNotFound != err {
+			if nil != err && !ipt.db.IsNotFoundError(err) {
 				return fmt.Errorf("get set by %+v error: %s", condition, err.Error())
 			}
-			if mgo.ErrNotFound == err {
+			if ipt.db.IsNotFoundError(err) {
 				node.mark = actionCreate
 				nid, err := ipt.db.NextSequence(ipt.ctx, common.GetInstTableName(node.ObjID))
 				if nil != err {
@@ -437,10 +435,10 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 			condition := getModifyCondition(node.Data, []string{common.BKModuleNameField, common.BKInstParentStr})
 			module := map[string]interface{}{}
 			err := ipt.db.Table(common.GetInstTableName(node.ObjID)).Find(condition).One(ipt.ctx, &module)
-			if nil != err && mgo.ErrNotFound != err {
+			if nil != err && !ipt.db.IsNotFoundError(err) {
 				return fmt.Errorf("get module by %+v error: %s", condition, err.Error())
 			}
-			if mgo.ErrNotFound == err {
+			if ipt.db.IsNotFoundError(err) {
 				node.mark = actionCreate
 				nid, err := ipt.db.NextSequence(ipt.ctx, common.GetInstTableName(node.ObjID))
 				if nil != err {
@@ -462,10 +460,10 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 			condition[common.BKObjIDField] = node.ObjID
 			inst := map[string]interface{}{}
 			err := ipt.db.Table(common.GetInstTableName(node.ObjID)).Find(condition).One(ipt.ctx, &inst)
-			if nil != err && mgo.ErrNotFound != err {
+			if nil != err && !ipt.db.IsNotFoundError(err) {
 				return fmt.Errorf("get inst by %+v error: %s", condition, err.Error())
 			}
-			if mgo.ErrNotFound == err {
+			if ipt.db.IsNotFoundError(err) {
 				node.mark = actionCreate
 				nid, err := ipt.db.NextSequence(ipt.ctx, common.GetInstTableName(node.ObjID))
 				if nil != err {
