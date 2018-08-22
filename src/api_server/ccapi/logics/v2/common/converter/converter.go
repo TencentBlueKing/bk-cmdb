@@ -588,7 +588,6 @@ func ResToV2ForCustomerGroupResult(result bool, message string, dataInfo interfa
 func ResToV2ForHostDataList(result bool, message string, data interface{}) (common.KvMap, error) {
 	resDataV3, err := getResDataV3(result, message, data)
 	blog.Debug("resDataV3:%v", resDataV3)
-	fmt.Println("aaaaa---")
 	if nil != err {
 		return nil, err
 	}
@@ -609,7 +608,11 @@ func ResToV2ForHostDataList(result bool, message string, data interface{}) (comm
 		var setNames []string
 
 		for _, item := range resDataArrV3 {
-			itemMap := item.(map[string]interface{})
+			itemMap, ok := item.(map[string]interface{})
+			if !ok {
+				blog.Warnf("ResToV2ForHostDataList item %+v not map[string]interface{}, raw data", item, data)
+				continue
+			}
 			itemMap = convertFieldsNilToString(itemMap, convFields)
 			moduleName, ok := itemMap[common.BKModuleNameField].(string)
 			if ok && "" != moduleName {
