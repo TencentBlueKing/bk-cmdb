@@ -16,6 +16,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/rentiansheng/xlsx"
@@ -146,9 +147,9 @@ func setExcelRowDataByIndex(rowMap map[string]interface{}, sheet *xlsx.Sheet, ro
 
 }
 
-func getDataFromByExcelRow(row *xlsx.Row, rowIndex int, fields map[string]Property, defFields common.KvMap, nameIndexMap map[int]string, defLang lang.DefaultCCLanguageIf) (map[string]interface{}, error) {
-	host := make(map[string]interface{})
-	errMsg := ""
+func getDataFromByExcelRow(row *xlsx.Row, rowIndex int, fields map[string]Property, defFields common.KvMap, nameIndexMap map[int]string, defLang lang.DefaultCCLanguageIf) (host map[string]interface{}, errMsg []string) {
+	host = make(map[string]interface{})
+	//errMsg := make([]string, 0)
 	for celIDnex, cell := range row.Cells {
 		fieldName, ok := nameIndexMap[celIDnex]
 		if false == ok {
@@ -160,70 +161,76 @@ func getDataFromByExcelRow(row *xlsx.Row, rowIndex int, fields map[string]Proper
 		if "" == cell.Value {
 			continue
 		}
+
 		switch cell.Type() {
 		case xlsx.CellTypeString:
 			host[fieldName] = cell.String()
 		case xlsx.CellTypeStringFormula:
 			host[fieldName] = cell.String()
 		case xlsx.CellTypeNumeric:
-
-			cellValue, err := cell.Int()
+			cellValue, err := cell.Int64()
 			if nil != err {
-				errMsg = defLang.Languagef("web_excel_row_handle_error", errMsg, fieldName, (celIDnex + 1)) //fmt.Sprintf("%s第%d行%d列无法处理内容;", errMsg, (index + 1), (celIDnex + 1))
+				errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, (celIDnex+1))) //fmt.Sprintf("%s第%d行%d列无法处理内容;", errMsg, (index + 1), (celIDnex + 1))
 				blog.Errorf("%d row %s column get content error:%s", rowIndex+1, fieldName, err.Error())
 				continue
 			}
 			host[fieldName] = cellValue
-
 		case xlsx.CellTypeBool:
 			cellValue := cell.Bool()
 			host[fieldName] = cellValue
 		case xlsx.CellTypeDate:
 			cellValue, err := cell.GetTime(true)
 			if nil != err {
-				errMsg = defLang.Languagef("web_excel_row_handle_error", errMsg, fieldName, (celIDnex + 1)) //fmt.Sprintf("%s第%d行%d列无法处理内容;", errMsg, (index + 1), (celIDnex + 1))
+				errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", errMsg, fieldName, (celIDnex+1))) //fmt.Sprintf("%s第%d行%d列无法处理内容;", errMsg, (index + 1), (celIDnex + 1))
 				blog.Errorf("%d row %s column get content error:%s", rowIndex+1, fieldName, err.Error())
 				continue
 			}
 			host[fieldName] = cellValue
 		default:
-			errMsg = defLang.Languagef("web_excel_row_handle_error", errMsg, fieldName, (celIDnex + 1)) //fmt.Sprintf("%s第%d行%d列无法处理内容;", errMsg, (index + 1), (celIDnex + 1))
+			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, (celIDnex+1))) //fmt.Sprintf("%s第%d行%d列无法处理内容;", errMsg, (index + 1), (celIDnex + 1))
 			blog.Error("unknown the type, %v,   %v", reflect.TypeOf(cell), cell.Type())
 			continue
 		}
+
 		field, ok := fields[fieldName]
-
-		if true == ok {
-			switch field.PropertyType {
-			case common.FieldTypeBool:
-
-				switch cell.Value {
-				case fieldTypeBoolFalse:
-					host[fieldName] = false
-				case fieldTypeBoolTrue:
-					host[fieldName] = true
-				}
-
-			case common.FieldTypeEnum:
-				option, optionOk := field.Option.([]interface{})
-
-				if optionOk {
-					host[fieldName] = getEnumIDByName(cell.Value, option)
-				}
-			case common.FieldTypeInt:
-				intVal, err := util.GetInt64ByInterface(host[fieldName])
-				//convertor int not err , set field value to correct type
-				if nil == err {
-					host[fieldName] = intVal
-				} else {
-					blog.Debug("get excel cell value error, field:%s, value:%s, error:%s", fieldName, host[fieldName], err.Error())
-				}
-
-			}
+		if !ok {
+			blog.Errorf("%d row %s field not found ", rowIndex+1, fieldName)
+			continue
 		}
+		switch field.PropertyType {
+		case common.FieldTypeBool:
+			switch host[fieldName].(type) {
+			case bool:
+			default:
+				bl, err := strconv.ParseBool(cell.Value)
+				if nil == err {
+					host[fieldName] = bl
+				}
+			}
+		case common.FieldTypeEnum:
+			option, optionOk := field.Option.([]interface{})
+
+			if optionOk {
+				host[fieldName] = getEnumIDByName(cell.Value, option)
+			}
+		case common.FieldTypeInt:
+			intVal, err := util.GetInt64ByInterface(host[fieldName])
+			//convertor int not err , set field value to correct type
+			if nil == err {
+				host[fieldName] = intVal
+			} else {
+				blog.Debug("get excel cell value error, field:%s, value:%s, error:%s", fieldName, host[fieldName], err.Error())
+			}
+		default:
+			if util.IsStrProperty(field.PropertyType) {
+				host[fieldName] = cell.Value
+			}
+
+		}
+
 	}
-	if "" != errMsg {
-		return nil, errors.New(errMsg)
+	if 0 != len(errMsg) {
+		return nil, errMsg
 	}
 	if 0 == len(host) {
 		return host, nil
