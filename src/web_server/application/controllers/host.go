@@ -175,6 +175,9 @@ func ExportHost(c *gin.Context) {
 	err = file.Save(dirFileName)
 	if err != nil {
 		blog.Error("ExportHost save file error:%s", err.Error())
+		reply := getReturnStr(common.CCErrWebCreateEXCELFail, defErr.Errorf(common.CCErrCommExcelTemplateFailed, err.Error()).Error(), nil)
+		c.Writer.Write([]byte(reply))
+		return
 	}
 	logics.AddDownExcelHttpHeader(c, "host.xlsx")
 	c.File(dirFileName)
@@ -188,7 +191,7 @@ func BuildDownLoadExcelTemplate(c *gin.Context) {
 	logics.SetProxyHeader(c)
 	objID := c.Param(common.BKObjIDField)
 	cc := api.NewAPIResource()
-	apiSite, _ := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
+	apiSite := cc.APIAddr()
 	randNum := rand.Uint32()
 	dir := webCommon.ResourcePath + "/template/"
 	_, err := os.Stat(dir)
