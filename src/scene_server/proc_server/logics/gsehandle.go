@@ -26,36 +26,6 @@ import (
 	"configcenter/src/common/util"
 )
 
-func (lgc *Logics) MatchProcessInstance(ctx context.Context, procOp *metadata.ProcessOperate, forward http.Header) (map[string]*metadata.ProcInstanceModel, error) {
-	setConds := make(map[string]interface{})
-	setConds[common.BKAppIDField] = procOp.ApplicationID
-	setIDs, _, err := lgc.matchName(ctx, forward, procOp.SetName, common.BKInnerObjIDSet, common.BKSetIDField, common.BKSetNameField, setConds)
-	if nil != err {
-		blog.Errorf("MatchProcessInstance error:%s", err.Error())
-		return nil, err
-	}
-	if 0 == len(setIDs) {
-		return nil, nil
-	}
-	moduleConds := make(map[string]interface{}, 0)
-	moduleConds[common.BKAppIDField] = procOp.ApplicationID
-	moduleConds[common.BKSetIDField] = common.KvMap{common.BKDBIN: setIDs}
-	moduleIDs, _, err := lgc.matchName(ctx, forward, procOp.ModuleName, common.BKInnerObjIDModule, common.BKModuleIDField, common.BKModuleNameField, moduleConds)
-	if nil != err {
-		blog.Errorf("MatchProcessInstance error:%s", err.Error())
-		return nil, err
-	}
-	if 0 == len(moduleIDs) {
-		return nil, nil
-	}
-	conds := make(map[string]interface{}, 0)
-	conds[common.BKAppIDField] = procOp.ApplicationID
-	conds[common.BKSetIDField] = common.KvMap{common.BKDBIN: setIDs}
-	conds[common.BKModuleIDField] = common.KvMap{common.BKDBIN: moduleIDs}
-	return lgc.matchID(ctx, forward, procOp.FuncID, procOp.InstanceID, conds)
-
-}
-
 func (lgc *Logics) RegisterProcInstanceToGse(moduleID int64, gseHost []metadata.GseHost, procInfo map[string]interface{}, forward http.Header) error {
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(forward))
 	if 0 == len(procInfo) {
@@ -150,14 +120,14 @@ func (lgc *Logics) unregisterProcInstanceToGse(gseproc *metadata.GseProcRequest,
 
 	unregisterProcDetail := make([]interface{}, 0)
 	for _, host := range gseproc.Hosts {
-		unregisterProcDetail = append(unregisterProcDetail, common.KvMap{
+		unregisterProcDetail = append(unregisterProcDetail, mapstr.MapStr{
 			common.BKAppIDField:     gseproc.AppID,
 			common.BKModuleIDField:  gseproc.ModuleID,
 			common.BKHostIDField:    host.HostID,
 			common.BKProcessIDField: gseproc.ProcID})
 	}
 
-	procInstDetail, err := lgc.CoreAPI.ProcController().DeleteProcInstanceDetail(context.Background(), forward, common.KvMap{common.BKDBOR: unregisterProcDetail})
+	procInstDetail, err := lgc.CoreAPI.ProcController().DeleteProcInstanceDetail(context.Background(), forward, mapstr.MapStr{common.BKDBOR: unregisterProcDetail})
 	if err != nil {
 		blog.Errorf("register process(%s) detail failed. err: %v", gseproc.Meta.Name, err)
 		return defErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -184,7 +154,7 @@ func (lgc *Logics) OperateProcInstanceByGse(procOp *metadata.ProcessOperate, ins
 		}
 
 		// get processinfo
-		procInfo, err := lgc.GetProcessbyProcID(string(model.ProcID), forward)
+		procInfo, err := lgc.GetProcbyProcID(string(model.ProcID), forward)
 		if err != nil {
 			blog.Warnf("OperateProcInstanceByGse getProcessByProcID failed. err: %v", err)
 			continue
@@ -317,14 +287,14 @@ func (lgc *Logics) handleGseTaskResult(ctx context.Context, item *metadata.Proce
 	}
 	if isChangeStatus {
 		updateConds := new(metadata.UpdateParams)
-		data := common.KvMap{"detail": taskStatusData}
-		updateConds.Condition = common.KvMap{"task_id": item.TaskID, "bk_task_id": item.GseTaskID}
+		data := mapstr.MapStr{"detail": taskStatusData}
+		updateConds.Condition = mapstr.MapStr{"task_id": item.TaskID, "bk_task_id": item.GseTaskID}
 		if isErr {
-			data["status"] = metadata.ProcessOperateTaskStatusErr
+			data[common.BKStatusField] = metadata.ProcessOperateTaskStatusErr
 		} else if isWaiting {
-			data["status"] = metadata.ProcessOperateTaskStatusWaitOP
+			data[common.BKStatusField] = metadata.ProcessOperateTaskStatusWaitOP
 		} else {
-			data["status"] = metadata.ProcessOperateTaskStatusSucc
+			data[common.BKStatusField] = metadata.ProcessOperateTaskStatusSucc
 		}
 		updateConds.Data = data
 		updateRet, err := lgc.CoreAPI.ProcController().UpdateOperateTaskInfo(ctx, forward, updateConds)
@@ -403,134 +373,4 @@ func (lgc *Logics) GetHostForGse(appId, hostId int64, forward http.Header) ([]me
 	gseHosts = append(gseHosts, gseHost)
 
 	return gseHosts, nil
-}
-
-func (lgc *Logics) matchName(ctx context.Context, forward http.Header, match, objID, instIDKey, instNameKey string, conds map[string]interface{}) (instIDs []int64, data map[int64]mapstr.MapStr, err error) {
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(forward))
-	parseConds, notParse, err := ParseProcInstMatchCondition(match, true)
-	if nil != err {
-		blog.Errorf("matchName  parse set regex %s error %s", match, err.Error())
-		return nil, nil, defErr.Errorf(common.CCErrCommUtilHandleFail, fmt.Sprintf("parse math %s", match), err.Error())
-	}
-	query := new(metadata.QueryInput)
-	query.Limit = common.BKNoLimit
-	if nil != parseConds {
-		if nil == conds {
-			conds = make(map[string]interface{})
-		}
-		conds[instNameKey] = parseConds
-
-	}
-	query.Condition = conds
-	ret, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, objID, forward, query)
-	if nil != err {
-		blog.Errorf("matchName get %s instance error:%s", objID, err.Error())
-		return nil, nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if !ret.Result {
-		blog.Errorf("matchName get %s instance error:%s", objID, ret.ErrMsg)
-		return nil, nil, defErr.New(ret.Code, ret.ErrMsg)
-	}
-	var rangeRegexrole *RegexRole
-	if notParse {
-		rangeRegexrole, err = NewRegexRole(match, true)
-		if nil != err {
-			blog.Errorf("regex role %s parse error %s", match, err.Error())
-			return nil, nil, defErr.Errorf(common.CCErrCommInstFieldConvFail, "match string", match, "regex role", err.Error())
-		}
-	}
-	for _, inst := range ret.Data.Info {
-		ID, err := inst.Int64(instIDKey)
-		if nil != err {
-			blog.Errorf("matchName %s info %v get key %s by int error", objID, inst, instIDKey)
-			return nil, nil, defErr.Errorf(common.CCErrCommInstFieldConvFail, objID, "inst id", "int", err.Error())
-		}
-		if notParse {
-			name, err := inst.String(instNameKey)
-			if nil != err {
-				blog.Errorf("matchName %s info %v get key %s by int error", objID, inst, instNameKey)
-				return nil, nil, defErr.Errorf(common.CCErrCommInstFieldConvFail, objID, "inst name", "string", err.Error())
-			}
-			if rangeRegexrole.MatchStr(name) {
-				instIDs = append(instIDs, ID)
-				data[ID] = inst
-			}
-		} else {
-			instIDs = append(instIDs, ID)
-			data[ID] = inst
-		}
-	}
-
-	return instIDs, data, nil
-}
-
-func (lgc *Logics) matchID(ctx context.Context, forward http.Header, funcIDMath, HostIDMatch string, conds map[string]interface{}) (data map[string]*metadata.ProcInstanceModel, err error) {
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(forward))
-	funcIDConds, funcIDNotParse, err := ParseProcInstMatchCondition(funcIDMath, false)
-	if nil != err {
-		blog.Errorf("matchID  parse funcID regex %s error %s", funcIDMath, err.Error())
-		return nil, defErr.Errorf(common.CCErrCommUtilHandleFail, fmt.Sprintf("parse math %s", funcIDMath), err.Error())
-	}
-	var funcRegexRole *RegexRole
-	if funcIDNotParse {
-		funcRegexRole, err = NewRegexRole(funcIDMath, false)
-		if nil != err {
-			blog.Errorf("regex role %s parse error %s", funcIDMath, err.Error())
-			return nil, defErr.Errorf(common.CCErrCommInstFieldConvFail, "match string", funcIDMath, "regex role", err.Error())
-		}
-	}
-	hostConds, hostIDNotParse, err := ParseProcInstMatchCondition(HostIDMatch, false)
-	if nil != err {
-		blog.Errorf("matchID  parse host instance id regex %s error %s", HostIDMatch, err.Error())
-		return nil, defErr.Errorf(common.CCErrCommUtilHandleFail, fmt.Sprintf("parse math %s", HostIDMatch), err.Error())
-	}
-	var hostRegexRole *RegexRole
-	if funcIDNotParse {
-		hostRegexRole, err = NewRegexRole(HostIDMatch, false)
-		if nil != err {
-			blog.Errorf("regex role %s parse error %s", HostIDMatch, err.Error())
-			return nil, defErr.Errorf(common.CCErrCommInstFieldConvFail, "match string", HostIDMatch, "regex role", err.Error())
-		}
-	}
-	if nil != funcIDConds {
-		if nil == conds {
-			conds = make(map[string]interface{})
-		}
-		conds[common.BKFuncIDField] = funcIDConds
-
-	}
-	if nil != hostConds {
-		if nil == conds {
-			conds = make(map[string]interface{})
-		}
-		conds[common.BKFuncIDField] = hostConds
-
-	}
-	query := new(metadata.QueryInput)
-	query.Limit = common.BKNoLimit
-	query.Condition = conds
-	ret, err := lgc.CoreAPI.ProcController().GetProcInstanceModel(ctx, forward, query)
-	if nil != err {
-		blog.Errorf("matchID get set instance error:%s", err.Error())
-		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if !ret.Result {
-		blog.Errorf("matchID get set instance error:%s", ret.ErrMsg)
-		return nil, defErr.New(ret.Code, ret.ErrMsg)
-	}
-	data = make(map[string]*metadata.ProcInstanceModel, 0)
-	for _, item := range ret.Data.Info {
-		isAdd := true
-		if funcIDNotParse {
-			isAdd = funcRegexRole.MatchInt64(item.FuncID)
-		}
-		if hostIDNotParse {
-			isAdd = hostRegexRole.MatchInt64(int64(item.HostInstanID))
-		}
-		if isAdd {
-			data[fmt.Sprintf("%d.%d.%d.%d", item.SetID, item.ModuleID, item.FuncID, item.HostID)] = &item
-		}
-	}
-
-	return data, nil
 }

@@ -27,20 +27,24 @@ type ProcInstanceModel struct {
 	ModuleID       int64  `json:"bk_module_id" bson:"bk_module_id,omitempty"`
 	ProcID         int64  `json:"bk_process_id" bson:"bk_process_id"`
 	FuncID         int64  `json:"bk_func_id" bson:"bk_func_id"`
-	ProcInstanceID uint64 `json:"bk_instance_id" bson:"bk_instance_id"`
+	ProcInstanceID uint64 `json:"proc_instance_id" bson:"proc_instance_id"`
 	HostID         int64  `json:"bk_host_id" bson:"bk_host_id"`
-	HostInstanID   uint64 `json:"host_instan_id" bson:"host_instan_id"`
+	HostInstanID   uint64 `json:"bk_host_instance_id" bson:"bk_host_instance_id"`
 	HostProcID     uint64 `json:"host_proc_id" bson:"host_proc_id"`
 	OwnerID        string `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
+type MatchProcInstParam struct {
+	ApplicationID  int64  `json:"bk_biz_id"`
+	SetName        string `json:"bk_set_name"`
+	ModuleName     string `json:"bk_module_name"`
+	FuncID         string `json:"bk_func_id"`
+	HostInstanceID string `json:"bk_host_instance_id"`
+}
+
 type ProcessOperate struct {
-	ApplicationID string `json: "bk_biz_id"`
-	SetName       string `json: "bk_set_name"`
-	ModuleName    string `json: "bk_module_name"`
-	FuncID        string `json: "bk_func_id"`
-	InstanceID    string `json: "bk_instance_id"`
-	OpType        int    `json: "bk_proc_optype"`
+	MatchProcInstParam `json:",inline"`
+	OpType             int `json:"bk_proc_optype"`
 }
 
 type ProcModuleResult struct {

@@ -61,9 +61,9 @@ func (ps *ProcServer) SearchTemplateVersion(req *restful.Request, resp *restful.
 	var input meta.QueryInput
 
 	conditon = types.MapStr{common.BKOwnerIDField: ownerID, common.BKAppIDField: appID, common.BKTemlateIDField: templateID}
-	status, ok := params[common.TemplateStatusField]
+	status, ok := params[common.BKStatusField]
 	if ok {
-		conditon[common.TemplateStatusField] = status
+		conditon[common.BKStatusField] = status
 	}
 	input.Condition = conditon
 	input.Fields = ""
@@ -112,11 +112,11 @@ func (ps *ProcServer) CreateTemplateVersion(req *restful.Request, resp *restful.
 	}
 
 	input := types.MapStr{common.BKAppIDField: appID,
-		common.BKOperatorField:     user,
-		common.BKTemlateIDField:    templateID,
-		common.BKContentField:      params.Content,
-		common.TemplateStatusField: params.Status,
-		common.BKDescriptionField:  params.Description}
+		common.BKOperatorField:    user,
+		common.BKTemlateIDField:   templateID,
+		common.BKContentField:     params.Content,
+		common.BKStatusField:      params.Status,
+		common.BKDescriptionField: params.Description}
 	valid := validator.NewValidMap(ownerID, common.BKInnerObjIDTempVersion, pHeader, ps.Engine)
 	if err := valid.ValidMap(input, common.ValidCreate, 0); err != nil {
 		blog.Errorf("fail to valid input parameters. err:%s", err.Error())
@@ -142,11 +142,11 @@ func (ps *ProcServer) CreateTemplateVersion(req *restful.Request, resp *restful.
 
 	//only one online status
 	if params.Status == common.TemplateStatusOnline {
-		data := types.MapStr{common.TemplateStatusField: common.TemplateStatusHistory}
+		data := types.MapStr{common.BKStatusField: common.TemplateStatusHistory}
 		condition := types.MapStr{
-			common.BKTemlateIDField:    types.MapStr{common.BKDBEQ: versionID},
-			common.BKOwnerIDField:      ownerID,
-			common.TemplateStatusField: common.TemplateStatusOnline}
+			common.BKTemlateIDField: types.MapStr{common.BKDBEQ: versionID},
+			common.BKOwnerIDField:   ownerID,
+			common.BKStatusField:    common.TemplateStatusOnline}
 		input := types.MapStr{"condition": condition, "data": data}
 		ret, err := ps.CoreAPI.ObjectController().Instance().UpdateObject(context.Background(), common.BKInnerObjIDTempVersion, pHeader, input)
 		if nil != err || !ret.Result {
@@ -211,12 +211,12 @@ func (ps *ProcServer) UpdateTemplateVersion(req *restful.Request, resp *restful.
 
 	//only one online status
 	if params.Status == common.TemplateStatusOnline {
-		data := types.MapStr{common.TemplateStatusField: common.TemplateStatusHistory}
+		data := types.MapStr{common.BKStatusField: common.TemplateStatusHistory}
 		condition := types.MapStr{
-			common.BKTemlateIDField:    templateID,
-			common.BKVersionIDField:    types.MapStr{common.BKDBNE: versionID},
-			common.BKOwnerIDField:      ownerID,
-			common.TemplateStatusField: common.TemplateStatusOnline}
+			common.BKTemlateIDField: templateID,
+			common.BKVersionIDField: types.MapStr{common.BKDBNE: versionID},
+			common.BKOwnerIDField:   ownerID,
+			common.BKStatusField:    common.TemplateStatusOnline}
 
 		input := types.MapStr{"condition": condition, "data": data}
 		ret, err := ps.CoreAPI.ObjectController().Instance().UpdateObject(context.Background(), common.BKInnerObjIDTempVersion, pHeader, input)

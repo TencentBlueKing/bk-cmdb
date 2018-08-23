@@ -459,6 +459,8 @@ const (
 
 	// BKInstKeyField the inst key field for metric discover
 	BKInstKeyField = "bk_inst_key"
+
+	BKProcinstanceID = "proc_instance_id"
 )
 
 // DefaultResSetName the inner module set
@@ -743,6 +745,7 @@ const (
 )
 
 const TemplateStatusField = "status"
+const BKStatusField = "status"
 
 const (
 	TemplateStatusDraft   = "draft"

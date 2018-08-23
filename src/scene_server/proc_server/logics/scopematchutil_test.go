@@ -15,7 +15,7 @@ func TestCondtion(t *testing.T) {
 		input           string
 		isInteger       bool
 		output_condtion common.KvMap
-		output_notParse bool
+		needExtCompare  bool
 		isErr           bool
 		isNil           bool
 	}
@@ -64,12 +64,12 @@ func TestCondtion(t *testing.T) {
 		testData{
 			input:           "aaa[1-10]",
 			output_condtion: nil, //"^app.$",
-			output_notParse: true,
+			needExtCompare:  true,
 		},
 		testData{
 			input:           "aaa[1,4-3,a]",
 			output_condtion: nil, //"^app.$",
-			output_notParse: true,
+			needExtCompare:  true,
 		},
 		testData{
 			input:           "aaa?1111",
@@ -104,8 +104,9 @@ func TestCondtion(t *testing.T) {
 	}
 
 	for _, item := range td {
-		cond, notParse, err := ParseProcInstMatchCondition(item.input, !item.isInteger)
+		sm := NewScopeMatch(item.input, !item.isInteger)
 
+		cond, err := sm.ParseConds()
 		if item.isErr {
 			if nil == err {
 				t.Errorf("test item %v need error", item)
@@ -118,8 +119,8 @@ func TestCondtion(t *testing.T) {
 			t.Errorf("test item %v error:%s", item, err.Error())
 			continue
 		}
-		if notParse != item.output_notParse {
-			t.Errorf("test not parse return error, need %v not %v", item.output_notParse, notParse)
+		if sm.needExtCompare != item.needExtCompare {
+			t.Errorf("test not parse return error, need %v not %v, role:%s", item.needExtCompare, sm.needExtCompare, item.input)
 			continue
 		}
 		//a, _ := json.Marshal(cond)
@@ -239,84 +240,82 @@ func TestPrivateSplitRegexRange(t *testing.T) {
 	type checkData struct {
 		reg      string
 		isString bool
-		result   RegexRole
+		result   ScopeMatch
 		isErr    bool
 	}
 	tc := []checkData{
 		checkData{
 			reg:      "xxx[1-2]",
 			isString: true,
-			result: RegexRole{
+			result: ScopeMatch{
 				prefix: "xxx",
-				ranges: []regexRange{regexRange{min: 1, max: 2}},
+				ranges: []scopeItem{scopeItem{min: 1, max: 2}},
 			},
 		},
 		checkData{
 			reg:      "xxx[x1,1-2,x100,3-100]",
 			isString: true,
-			result: RegexRole{
+			result: ScopeMatch{
 				prefix: "xxx",
 				mixed:  []string{"xxxx1", "xxxx100"},
-				ranges: []regexRange{regexRange{min: 1, max: 2}},
+				ranges: []scopeItem{scopeItem{min: 1, max: 2}},
 			},
 		},
 		checkData{
 			reg: "1[1-2]",
-			result: RegexRole{
+			result: ScopeMatch{
 				prefix: "1",
-				ranges: []regexRange{regexRange{min: 1, max: 2}},
+				ranges: []scopeItem{scopeItem{min: 1, max: 2}},
 			},
 		},
 		checkData{
 			reg: "1[1,2-3,400,5-100]",
-			result: RegexRole{
+			result: ScopeMatch{
 				prefix: "1",
 				mixed:  []string{"11", "1400"},
-				ranges: []regexRange{regexRange{min: 2, max: 3}, regexRange{min: 5, max: 100}},
+				ranges: []scopeItem{scopeItem{min: 2, max: 3}, scopeItem{min: 5, max: 100}},
 			},
 		},
 		checkData{
 			reg: "1[1,6-3,400,5-100]",
-			result: RegexRole{
+			result: ScopeMatch{
 				prefix: "1",
 				mixed:  []string{"11", "1400"},
-				ranges: []regexRange{regexRange{min: 5, max: 100}},
+				ranges: []scopeItem{scopeItem{min: 5, max: 100}},
 			},
 		},
 		checkData{
 			reg:    "1[1,a-3,400,5-100]",
 			isErr:  true,
-			result: RegexRole{},
+			result: ScopeMatch{},
 		},
 		checkData{
 			reg:    "1[1,6-d,400,5-100]",
 			isErr:  true,
-			result: RegexRole{},
+			result: ScopeMatch{},
 		},
 		checkData{
 			reg:    "1[1,6-d,400,5-100-]",
 			isErr:  true,
-			result: RegexRole{},
+			result: ScopeMatch{},
 		},
 		checkData{
 			reg:    "1[1,6-d,400,5-]",
 			isErr:  true,
-			result: RegexRole{},
+			result: ScopeMatch{},
 		},
 	}
 
 	for _, tc := range tc {
-		reg, err := NewRegexRole(tc.reg, tc.isString)
+		reg := NewScopeMatch(tc.reg, tc.isString)
+		_, err := reg.ParseConds()
 		if tc.isErr {
 			if nil == err {
 				t.Errorf(" item %v need return error", reg)
 			}
 			continue
 		}
-		if nil != err {
-			t.Errorf("test item %v new regex role errror %s", tc, err.Error())
-			continue
-		}
+
 		if len(reg.mixed) != len(tc.result.mixed) {
 			t.Errorf("test item %v return regex %s len error val %v not equal %v ", tc, tc.reg, reg.mixed, tc.result.mixed)
 			continue
@@ -424,7 +423,9 @@ func TestMatchStr(t *testing.T) {
 
 	for _, tmItem := range tm {
 		regStr := tmItem.regStr
-		reg, err := NewRegexRole(regStr, true)
+		reg := NewScopeMatch(regStr, true)
+
+		_, err := reg.ParseConds()
 		if nil != err {
 			t.Errorf("test regex %s new regex role errror %s", regStr, err.Error())
 			return
@@ -508,7 +509,9 @@ func TestMatchInt(t *testing.T) {
 
 	for _, tmItem := range tm {
 		regStr := tmItem.regStr
-		reg, err := NewRegexRole(regStr, true)
+		reg := NewScopeMatch(regStr, true)
+
+		_, err := reg.ParseConds()
 		if nil != err {
 			t.Errorf("test regex %s new regex role errror %s", regStr, err.Error())
 			return
