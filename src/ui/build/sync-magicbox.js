@@ -4,11 +4,7 @@ const readPkg = require('read-pkg')
 const writePkg = require('write-pkg')
 const { execSync } = require('child_process')
 const dependencyKeys = [
-    'dependencies',
-    'devDependencies',
-    'peerDependencies',
-    'bundledDependencies',
-    'optionalDependencies'
+    'dependencies'
 ]
 try {
     const config = {}
