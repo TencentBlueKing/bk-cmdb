@@ -282,14 +282,14 @@ func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ownerID := common.BKDefaultOwnerID
 
-	agents := make(mapstr.MapStr)
+	agents := new(meta.AddHostFromAgentHostList)
 	if err := json.NewDecoder(req.Request.Body).Decode(&agents); err != nil {
 		blog.Errorf("add host from agent failed with decode body err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
-	if len(agents) == 0 {
+	if len(agents.HostInfo) == 0 {
 		blog.Errorf("add host from agent, but got 0 agents from body.")
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, "HostInfo")})
 		return
@@ -310,9 +310,9 @@ func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response)
 		return
 	}
 
-	agents["import_from"] = common.HostAddMethodAgent
+	agents.HostInfo["import_from"] = common.HostAddMethodAgent
 	addHost := make(map[int64]map[string]interface{})
-	addHost[1] = agents
+	addHost[1] = agents.HostInfo
 
 	succ, updateErrRow, errRow, err := s.Logics.AddHost(appID, []int64{moduleID}, common.BKDefaultOwnerID, pheader, addHost, "")
 	if err != nil {

@@ -54,6 +54,10 @@ type HostList struct {
 	InputType     HostInputType                    `json:"input_type"`
 }
 
+type AddHostFromAgentHostList struct {
+	HostInfo map[string]interface{} `json:"host_info"`
+}
+
 type HostSyncList struct {
 	ApplicationID int64                            `json:"bk_biz_id"`
 	HostInfo      map[int64]map[string]interface{} `json:"host_info"`

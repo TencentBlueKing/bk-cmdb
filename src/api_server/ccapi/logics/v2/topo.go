@@ -27,7 +27,6 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
-	//	"configcenter/src/scene_server/topo_server/topo_service/manager"
 )
 
 func (lgc *Logics) GetAppTopo(user string, pheader http.Header, appID int64, conds mapstr.MapStr) (map[string]interface{}, int) {
@@ -40,12 +39,7 @@ func (lgc *Logics) GetAppTopo(user string, pheader http.Header, appID int64, con
 		blog.Errorf("GetAppTopo not find app by id:%d", appID)
 		return nil, common.CCErrCommNotFound
 	}
-	appInfo, ok := apps[0].(map[string]interface{})
-	if false == ok {
-		blog.Errorf("GetAppTopo not find app by id %s, response:%v", apps)
-		return nil, common.CCErrCommNotFound
-	}
-
+	appInfo := apps[0]
 	appName, ok := appInfo[common.BKAppNameField]
 	if nil == appName || false == ok {
 		appName = ""
@@ -77,16 +71,11 @@ func (lgc *Logics) GetAppTopo(user string, pheader http.Header, appID int64, con
 		return nil, common.CCErrCommNotFound
 	}
 	retSets := make([]map[string]interface{}, 0)
-	for _, set := range sets {
-		setInfo, ok := set.(map[string]interface{})
-		if false == ok {
-			blog.Error("GetAppTopo getSets  return info error, set info:%v  error", set)
-			return nil, common.CCErrCommHTTPDoRequestFailed
-		}
+	for _, setInfo := range sets {
 
 		setID, err := util.GetInt64ByInterface(setInfo[common.BKSetIDField])
 		if nil != err {
-			blog.Error("GetAppTopo get set id by getsets  return info  error, module info:%v  error", set)
+			blog.Error("GetAppTopo get set id by getsets  return  info:%v  error:%v", setInfo, err)
 			return nil, common.CCErrCommHTTPDoRequestFailed
 		}
 		setName, _ := setInfo[common.BKSetNameField]
@@ -290,17 +279,18 @@ func (lgc *Logics) GetModuleHostCount(appID, mouduleID interface{}, user string,
 	return len(rspV3MapData), nil
 }
 
-func (lgc *Logics) getSets(user string, pheader http.Header, appID int64) ([]interface{}, int) {
+func (lgc *Logics) getSets(user string, pheader http.Header, appID int64) ([]mapstr.MapStr, int) {
 
 	page := mapstr.MapStr{"start": 0, "limit": common.BKNoLimit}
-	param := &params.SearchParams{Page: page}
+	param := &params.SearchParams{Page: page, Condition: mapstr.MapStr{}}
+
 	appIDStr := strconv.FormatInt(appID, 10)
 	result, err := lgc.CoreAPI.TopoServer().Instance().SearchSet(context.Background(), user, appIDStr, pheader, param)
 	if err != nil {
 		blog.Error("get sets   error:%v", err)
 		return nil, common.CCErrCommHTTPDoRequestFailed
 	}
-	return getRspV3DataInfo("getSets", result.Result, result.Code, result.Data)
+	return result.Data.Info, 0
 }
 
 func (lgc *Logics) getModules(user string, pheader http.Header, appID int64) ([]interface{}, int) {
@@ -324,20 +314,18 @@ func (lgc *Logics) getModulesByConds(user string, pheader http.Header, appIDStr 
 	return getRspV3DataInfo("getModules", result.Result, result.Code, result.Data)
 }
 
-func (lgc *Logics) getAppInfo(user string, pheader http.Header, appID int64) ([]interface{}, int) {
+func (lgc *Logics) getAppInfo(user string, pheader http.Header, appID int64) ([]mapstr.MapStr, int) {
 
 	page := mapstr.MapStr{"start": 0, "limit": 2}
 	condition := mapstr.MapStr{common.BKAppIDField: appID}
 	param := &params.SearchParams{Condition: condition, Page: page}
-
 	result, err := lgc.CoreAPI.TopoServer().Instance().SearchApp(context.Background(), user, pheader, param)
-
 	if nil != err {
 		blog.Errorf("get app info error:%v", err)
 		return nil, common.CCErrCommHTTPDoRequestFailed
 	}
 
-	return getRspV3DataInfo("getAppInfo", result.Result, result.Code, result.Data)
+	return result.Data.Info, 0
 }
 
 func getRspV3DataInfo(logPrex string, result bool, code int, data interface{}) ([]interface{}, int) {

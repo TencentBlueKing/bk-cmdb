@@ -110,22 +110,23 @@ func GetHostData(appIDStr, hostIDStr, apiAddr string, header http.Header) ([]int
 }
 
 // GetImportHosts get import hosts
-func GetImportHosts(f *xlsx.File, url string, header http.Header, defLang lang.DefaultCCLanguageIf) (map[int]map[string]interface{}, error) {
+// return inst array data, errmsg collection, error
+func GetImportHosts(f *xlsx.File, url string, header http.Header, defLang lang.DefaultCCLanguageIf) (map[int]map[string]interface{}, []string, error) {
 
 	if 0 == len(f.Sheets) {
-		return nil, errors.New(defLang.Language("web_excel_content_empty"))
+		return nil, nil, errors.New(defLang.Language("web_excel_content_empty"))
 	}
 	fields, err := GetObjFieldIDs(common.BKInnerObjIDHost, url, nil, header)
 	if nil != err {
-		return nil, errors.New(defLang.Languagef("web_get_object_field_failure", err.Error()))
+		return nil, nil, errors.New(defLang.Languagef("web_get_object_field_failure", err.Error()))
 	}
 
 	sheet := f.Sheets[0]
 	if nil == sheet {
-		return nil, errors.New(defLang.Language("web_excel_sheet_not_found"))
+		return nil, nil, errors.New(defLang.Language("web_excel_sheet_not_found"))
 	}
 	if nil == sheet {
-		return nil, errors.New(defLang.Language("web_excel_sheet_not_found"))
+		return nil, nil, errors.New(defLang.Language("web_excel_sheet_not_found"))
 	}
 
 	return GetExcelData(sheet, fields, common.KvMap{"import_from": common.HostAddMethodExcel}, true, 0, defLang)
