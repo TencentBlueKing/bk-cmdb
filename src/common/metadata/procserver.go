@@ -11,6 +11,10 @@
  */
 package metadata
 
+import (
+	"configcenter/src/common/mapstr"
+)
+
 type ProcModuleConfig struct {
 	ApplicationID int    `json:"bk_biz_id"`
 	ModuleName    string `json:"bk_module_name"`
@@ -65,6 +69,10 @@ type GseProcMeta struct {
 	Labels    map[string]string `json:"labels,omitempty"`
 }
 
+type ProcInfoArrResult struct {
+	BaseResp `json:",inline"`
+	Data     []mapstr.MapStr `json:"data"`
+}
 type GseProcRequest struct {
 	Meta   GseProcMeta `json:"meta,omitempty"`
 	Hosts  []GseHost   `json:"hosts,omitempty"`

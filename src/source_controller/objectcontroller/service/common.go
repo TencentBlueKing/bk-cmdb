@@ -123,7 +123,7 @@ func (cli *Service) GetObjectByID(ctx context.Context, db dal.RDB, objType strin
 	if tName == common.BKTableNameBaseInst && objType != common.BKINnerObjIDObject {
 		condition[common.BKObjIDField] = objType
 	}
-	err := db.Table(tName).Find(condition).Fields(fields...).All(ctx, result)
+	err := db.Table(tName).Find(condition).Fields(fields...).One(ctx, result)
 	return err
 }
 

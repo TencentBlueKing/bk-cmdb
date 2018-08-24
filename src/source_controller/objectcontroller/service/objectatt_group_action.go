@@ -149,7 +149,7 @@ func (cli *Service) SelectGroup(req *restful.Request, resp *restful.Response) {
 	condition = util.SetQueryOwner(condition, ownerID)
 
 	results := make([]meta.Group, 0)
-	if selErr := db.Table(common.BKTableNamePropertyGroup).Find(condition).Limit(uint64(page.Limit)).Start(uint64(page.Start)).Sort(page.Sort).All(ctx, &results); nil != selErr {
+	if selErr := db.Table(common.BKTableNamePropertyGroup).Find(condition).Limit(uint64(page.Limit)).Start(uint64(page.Start)).Sort(page.Sort).All(ctx, &results); nil != selErr && db.IsNotFoundError(selErr) {
 		blog.Error("find object by selector failed, error information is %s", selErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectPropertyGroupSelectFailed, selErr.Error())})
 		return

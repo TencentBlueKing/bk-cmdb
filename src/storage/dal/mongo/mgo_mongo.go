@@ -107,7 +107,11 @@ type Find struct {
 
 // Fields 查询字段
 func (f *Find) Fields(fields ...string) dal.Find {
+
 	for _, field := range fields {
+		if len(field) <= 0 {
+			continue
+		}
 		f.projection[field] = true
 	}
 	return f
