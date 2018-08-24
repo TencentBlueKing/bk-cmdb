@@ -19,9 +19,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
-	"github.com/emicklei/go-restful"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"

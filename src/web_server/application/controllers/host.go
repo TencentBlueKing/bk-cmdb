@@ -29,6 +29,7 @@ import (
 	"configcenter/src/common/core/cc/wactions"
 	"configcenter/src/common/http/httpclient"
 	"configcenter/src/common/types"
+	"configcenter/src/common/util"
 	"configcenter/src/web_server/application/logics"
 	webCommon "configcenter/src/web_server/common"
 )
@@ -82,10 +83,16 @@ func ImportHost(c *gin.Context) {
 		return
 	}
 	apiSite, _ := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
-	hosts, err := logics.GetImportHosts(f, apiSite, c.Request.Header, defLang)
+	hosts, errMsg, err := logics.GetImportHosts(f, apiSite, c.Request.Header, defLang)
 
 	if nil != err {
+		blog.Errorf("ImportHost logID:%s, error:%s", util.GetHTTPCCRequestID(c.Request.Header), err.Error())
 		msg := getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail, err.Error()).Error(), nil)
+		c.String(http.StatusOK, string(msg))
+		return
+	}
+	if 0 != len(errMsg) {
+		msg := getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail, " file empty").Error(), common.KvMap{"err": errMsg})
 		c.String(http.StatusOK, string(msg))
 		return
 	}
@@ -168,6 +175,9 @@ func ExportHost(c *gin.Context) {
 	err = file.Save(dirFileName)
 	if err != nil {
 		blog.Error("ExportHost save file error:%s", err.Error())
+		reply := getReturnStr(common.CCErrWebCreateEXCELFail, defErr.Errorf(common.CCErrCommExcelTemplateFailed, err.Error()).Error(), nil)
+		c.Writer.Write([]byte(reply))
+		return
 	}
 	logics.AddDownExcelHttpHeader(c, "host.xlsx")
 	c.File(dirFileName)
@@ -181,7 +191,7 @@ func BuildDownLoadExcelTemplate(c *gin.Context) {
 	logics.SetProxyHeader(c)
 	objID := c.Param(common.BKObjIDField)
 	cc := api.NewAPIResource()
-	apiSite, _ := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
+	apiSite := cc.APIAddr()
 	randNum := rand.Uint32()
 	dir := webCommon.ResourcePath + "/template/"
 	_, err := os.Stat(dir)
