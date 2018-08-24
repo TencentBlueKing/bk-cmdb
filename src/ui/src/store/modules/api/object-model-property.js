@@ -8,7 +8,7 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-import { $Axios, $axios } from '@/api/axios'
+import $http from '@/api'
 
 const state = {
 
@@ -28,7 +28,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     createObjectAttribute ({ commit, state, dispatch }, { params }) {
-        return $axios.post(`object/attr`, params)
+        return $http.post(`object/attr`, params)
     },
 
     /**
@@ -40,7 +40,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     deleteObjectAttribute ({ commit, state, dispatch }, { id }) {
-        return $axios.delete(`object/attr/${id}`)
+        return $http.delete(`object/attr/${id}`)
     },
 
     /**
@@ -53,7 +53,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     updateObjectAttribute ({ commit, state, dispatch }, { id, params }) {
-        return $axios.put(`object/attr/${id}`, params)
+        return $http.put(`object/attr/${id}`, params)
     },
 
     /**
@@ -64,8 +64,29 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    searchObjectAttribute({ commit, state, dispatch }, { params }) {
-        return $axios.post(`object/attr/search`, params)
+    searchObjectAttribute ({ commit, state, dispatch }, { params, config }) {
+        return $http.post(`object/attr/search`, params, config)
+    },
+
+    /**
+     * 批量查询对象属性模型
+     * @param {Function} commit store commit mutation hander
+     * @param {Object} state store state
+     * @param {String} dispatch store dispatch action hander
+     * @param {Object} params 参数
+     * @return {promises} promises 对象
+     */
+    batchSearchObjectAttribute ({ commit, state, dispatch }, { params, config }) {
+        return $http.post(`object/attr/search`, params, config).then(properties => {
+            const result = {}
+            params['bk_obj_id']['$in'].forEach(objId => {
+                result[objId] = []
+            })
+            properties.forEach(property => {
+                result[property['bk_obj_id']].push(property)
+            })
+            return result
+        })
     }
 }
 

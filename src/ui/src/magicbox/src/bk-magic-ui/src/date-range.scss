@@ -1,0 +1,344 @@
+@charset "utf-8";
+@import "./conf.scss";
+
+.bk-date-range {
+    width: 300px;
+    height: 36px;
+    border-radius: 2px;
+    position: relative;
+    cursor: pointer;
+
+    input[name="date-select"] {
+        display: block;
+        width: 100%;
+        height: 36px;
+        border: 1px solid #c3cdd7;
+        line-height: 36px;
+        font-size: 14px;
+        outline: none;
+        padding: 0 36px 0 10px;
+        color: #999;
+        cursor: pointer;
+        &:focus {
+            border: 1px solid #3c96ff;
+        }
+    }
+
+    input[disabled] {
+        background: #fafafa;
+        color: #ccc;
+        cursor: not-allowed;
+    }
+
+    input::-webkit-input-placeholder {
+        color: #c3cdd7;
+    }
+
+    &.disabled {
+        &:after {
+            cursor: not-allowed;
+        }
+    }
+
+    &:after {
+        content: '';
+        width: 36px;
+        height: 36px;
+        position: absolute;
+        right: 0;
+        top: 0;
+        border-left: 1px solid #c3cdd7;
+        background: url('#{$imagePath}/date/bk-date-icon.png') no-repeat center center;
+        cursor: pointer;
+    }
+
+    .date-dropdown-panel {
+        position: absolute;
+        width: 100%;
+        // left: 0;
+        // top: 38px;
+        border: 1px solid #dde4eb;
+        -webkit-box-shadow: 0 3px 10px rgba(0,0,0,.1);
+        -moz-box-shadow: 0 3px 10px rgba(0,0,0,.1);
+        -ms-box-shadow: 0 3px 10px rgba(0,0,0,.1);
+        box-shadow: 0 3px 10px rgba(0,0,0,.1);
+        border-radius: 2px;
+        background: #fff;
+        padding: 15px 16px 0 16px;
+        cursor: default;
+        z-index: $dateZIndex;
+
+        &.has-sidebar {
+            min-width: 740px;
+        }
+    }
+
+    .daterange-dropdown-panel {
+        min-width: 602px;
+        padding: 0;
+    }
+
+    .date-top-bar {
+        text-align: center;
+        line-height: 16px;
+
+        span {
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .current-date {
+            font-size: 14px;
+            color: #737987;
+            font-weight: bold;
+        }
+
+        .year-switch-icon {
+            width: 16px;
+            height: 16px;
+            margin-top: 2px;
+            cursor: pointer;
+
+            &:before {
+                content: '';
+                float: left;
+                width: 8px;
+                height: 16px;
+                background: url('#{$imagePath}/date/switch-icon.png') no-repeat center center;
+            }
+
+            &:after {
+                content: '';
+                float: left;
+                width: 8px;
+                height: 16px;
+                background: url('#{$imagePath}/date/switch-icon.png') no-repeat center center;
+                // background: url('#{$imagePath}/date/switch-icon-disabled.png') no-repeat center center;
+            }
+
+            &:hover {
+                &:before {
+                    background: url('#{$imagePath}/date/switch-icon-on.png') no-repeat center center;
+                }
+                &:after {
+                    background: url('#{$imagePath}/date/switch-icon-on.png') no-repeat center center;
+                }
+            }
+
+            &.is-disabled {
+                &:before,
+                &:after {
+                    cursor: not-allowed;
+                    background: url('#{$imagePath}/date/switch-icon-disabled.png') no-repeat center center;
+                }
+                &:hover {
+                    &:before,
+                    &:after {
+                        background: url('#{$imagePath}/date/switch-icon-disabled.png') no-repeat center center;
+                    }
+                }
+            }
+
+        }
+
+        .month-switch-icon {
+            width: 8px;
+            height: 16px;
+            background: url('#{$imagePath}/date/switch-icon.png') no-repeat center center;
+            margin-top: 2px;
+            cursor: pointer;
+            &:hover {
+                background: url('#{$imagePath}/date/switch-icon-on.png') no-repeat center center;
+            }
+            &.is-disabled {
+                cursor: not-allowed;
+                background: url('#{$imagePath}/date/switch-icon-disabled.png') no-repeat center center;
+                &:hover {
+                    background: url('#{$imagePath}/date/switch-icon-disabled.png') no-repeat center center;
+                }
+            }
+        }
+
+        .next-year, .next-month {
+            transform: rotate(180deg);
+        }
+
+        .next-month, .pre-year {
+            margin-right: 12px;
+        }
+
+    }
+
+    .date-select-panel {
+        margin: 16px 0;
+
+        dl {
+
+            font-size: 0;
+            letter-spacing: -5px;
+
+            .date-item-view, .date-table-item {
+                display: inline-block;
+                width: 38px;
+                height: 34px;
+                font-size: 12px;
+                color: #737987;
+                text-align: center;
+                line-height: 32px;
+                letter-spacing: 0;
+            }
+
+            .date-disable-item {
+                color: #c3cdd7;
+                cursor: not-allowed;
+            }
+
+            .date-table-item {
+                &:hover,
+                &.selected {
+                    background: #3c96ff;
+                    color: #FFF;
+                    cursor: pointer;
+                }
+            }
+
+            .date-range-view {
+                background: #ebf4ff;
+            }
+
+            .today {
+                color: #3c96ff;
+            }
+
+            dd {
+                display: inline-block;
+                margin: 0;
+            }
+
+        }
+    }
+
+    .time-set-panel {
+        height: 40px;
+        background: #fafbfd;
+        border-top: 1px solid #dde4eb;
+        margin: 0 -16px;
+        font-size: 0;
+        letter-spacing: -5px;
+
+        .time-item {
+            display: inline-block;
+            font-size: 14px;
+            line-height: 40px;
+            letter-spacing: 0;
+            color: #737987;
+            width: 33.333%;
+            border-left: 1px solid #dde4eb;
+            padding: 0 8px 0 18px;
+
+            &:first-child {
+                border-left: 0;
+            }
+
+            input::-webkit-outer-spin-button,
+            input::-webkit-inner-spin-button {
+                -webkit-appearance: none;
+            }
+            input[type="number"]{
+                width: 30px;
+                -moz-appearance: textfield;
+                border: none;
+                outline: none;
+                background: none;
+                &:focus {
+                  //
+                }
+            }
+
+        }
+
+        .time-option {
+            margin-top: 8px;
+        }
+
+        i {
+            display: block;
+            width: 10px;
+            height: 6px;
+            background: url('#{$imagePath}/date/time-icon.png');
+            cursor: pointer;
+
+            &:hover {
+                background: url('#{$imagePath}/date/time-icon-on.png');
+            }
+
+            &.no-hover {
+                background: url('#{$imagePath}/date/time-icon.png');
+                cursor: default;
+            }
+
+            &.up {
+                margin-bottom: 10px;
+            }
+
+            &.down {
+                -webkit-transform: rotate(180deg);
+                -moz-transform: rotate(180deg);
+                -ms-transform: rotate(180deg);
+                transform: rotate(180deg);
+            }
+        }
+
+    }
+
+    .date-select-container {
+        width: 300px;
+        height: auto;
+        padding: 15px 16px 0 16px;
+        border-right: 1px solid #dde4eb;
+        &:last-child {
+            border-right: none;
+        }
+    }
+
+    .range-config {
+        width: 138px;
+        padding: 6px 0;
+        a {
+            display: block;
+            font-size: 14px;
+            color: #737987;
+            text-decoration: none;
+            line-height: 16px;
+            padding: 8px 16px;
+
+            &.active {
+                background: #ebf4ff;
+            }
+
+            &:hover {
+                color: #3c96ff;
+            }
+        }
+    }
+
+    .range-action {
+        padding: 6px 0;
+        a {
+            display: inline-block;
+            font-size: 14px;
+            color: #3c96ff;
+            text-decoration: none;
+            line-height: 16px;
+            padding: 8px 0 8px 16px;
+
+            &.active {
+                background: #ebf4ff;
+            }
+
+            &:hover {
+                color: #3c96ff;
+            }
+        }
+    }
+}

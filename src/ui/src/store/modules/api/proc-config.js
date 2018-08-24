@@ -8,7 +8,7 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-import { $Axios, $axios } from '@/api/axios'
+import $http from '@/api'
 
 const state = {
 
@@ -30,7 +30,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     createProcess ({ commit, state, dispatch }, { bkSupplierAccount, bkBizId, params }) {
-        return $axios.post(`proc/${bkSupplierAccount}/${bkBizId}`, params)
+        return $http.post(`proc/${bkSupplierAccount}/${bkBizId}`, params)
     },
 
     /**
@@ -44,7 +44,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchProcess ({ commit, state, dispatch }, { bkSupplierAccount, bkBizId, params }) {
-        return $axios.post(`proc/search/${bkSupplierAccount}/${bkBizId}`, params)
+        return $http.post(`proc/search/${bkSupplierAccount}/${bkBizId}`, params)
     },
 
     /**
@@ -58,7 +58,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     getProcessDetail ({ commit, state, dispatch }, { bkSupplierAccount, bkBizId, bkProcessId }) {
-        return $axios.get(`proc/${bkSupplierAccount}/${bkBizId}/${bkProcessId}`)
+        return $http.get(`proc/${bkSupplierAccount}/${bkBizId}/${bkProcessId}`)
     },
 
     /**
@@ -72,7 +72,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     deleteProcess ({ commit, state, dispatch }, { bkSupplierAccount, bkBizId, bkProcessId }) {
-        return $axios.delete(`proc/${bkSupplierAccount}/${bkBizId}/${bkProcessId}`)
+        return $http.delete(`proc/${bkSupplierAccount}/${bkBizId}/${bkProcessId}`)
     },
 
     /**
@@ -87,7 +87,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     updateProcess ({ commit, state, dispatch }, { bkSupplierAccount, bkBizId, bkProcessId, params }) {
-        return $axios.put(`proc/${bkSupplierAccount}/${bkBizId}/${bkProcessId}`, params)
+        return $http.put(`proc/${bkSupplierAccount}/${bkBizId}/${bkProcessId}`, params)
     },
 
     /**
@@ -101,7 +101,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     batchUpdateProcess ({ commit, state, dispatch }, { bkSupplierAccount, bkBizId, params }) {
-        return $axios.put(`proc/${bkSupplierAccount}/${bkBizId}`, params)
+        return $http.put(`proc/${bkSupplierAccount}/${bkBizId}`, params)
     },
 
     /**
@@ -115,7 +115,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     getProcessBindModule ({ commit, state, dispatch }, { bkSupplierAccount, bkBizId, bkProcessId }) {
-        return $axios.get(`proc/${bkSupplierAccount}/${bkBizId}/${bkProcessId}`)
+        return $http.get(`proc/${bkSupplierAccount}/${bkBizId}/${bkProcessId}`)
     },
 
     /**
@@ -130,7 +130,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     bindProcessModule ({ commit, state, dispatch }, { bkSupplierAccount, bkBizId, bkProcessId, bkModuleName }) {
-        return $axios.put(`proc/module/${bkSupplierAccount}/${bkBizId}/${bkProcessId}/${bkModuleName}`)
+        return $http.put(`proc/module/${bkSupplierAccount}/${bkBizId}/${bkProcessId}/${bkModuleName}`)
     },
 
     /**
@@ -145,7 +145,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     deleteProcessModuleBinding ({ commit, state, dispatch }, { bkSupplierAccount, bkBizId, bkProcessId, bkModuleName }) {
-        return $axios.delete(`proc/module/${bkSupplierAccount}/${bkBizId}/${bkProcessId}/${bkModuleName}`)
+        return $http.delete(`proc/module/${bkSupplierAccount}/${bkBizId}/${bkProcessId}/${bkModuleName}`)
     }
 }
 
