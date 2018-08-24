@@ -1,4 +1,5 @@
-build/*.js
-config/*.js
-src/common/js/*.js
-src/magicbox/**
+/build/
+/config/
+/dist/
+/*.js
+/src/magicbox/src/

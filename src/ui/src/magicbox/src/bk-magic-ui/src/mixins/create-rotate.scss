@@ -1,0 +1,5 @@
+// 加载动画二，旋转
+@mixin create-rotate($time, $deg) {
+    animation-delay: $time;
+    transform: rotate($deg);
+}

@@ -1,0 +1,91 @@
+@import './conf.scss';
+@import './mixins/status-theme';
+
+$message: '.bk-message';
+
+$colors: (
+    'errorBG': #fbdddd,
+    'errorBorder': #ffcdcd,
+    'errorClose': #f5a1a1,
+    'errorText': $dangerColor,
+    'warningBG': #ffeeca,
+    'warningBorder': #ffe4ae,
+    'warningClose': #ffca5d,
+    'warningText': $warningColor,
+    'successBG': #d5fde5,
+    'successBorder': #bff3d4,
+    'successClose': #98e7b8,
+    'successText': $successColor,
+    'primaryBG': #e1f3ff,
+    'primaryBorder': #bfdfff,
+    'primaryClose': #8ec3f7,
+    'primaryText': $primaryColor
+);
+
+#{$message} {
+    z-index: $messageZIndex;
+    position: fixed;
+    top: 3px;
+    left: 50%;
+    padding: 0 35px 0 10px;
+    transform: translateX(-50%);
+    transition: all linear .2s;
+    display: flex;
+    min-width: 247px;
+    min-height: 42px;
+    border: 1px solid #fff;
+    border-radius: 3px;
+    background-color: #fff;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+    &:before,
+    &:after {
+        content: '';
+        display: table;
+        line-height: 0;
+    }
+    &:after {
+        clear: both;
+    }
+    &-icon-wrapper {
+        float: left;
+    }
+    &-icon {
+        width: 20px;
+        height: 20px;
+        line-height: 22px;
+        margin: 14px 10px 0 0;
+        text-align: center;
+        font-size: 12px;
+        border-radius: 50%;
+    }
+    &-content {
+        word-break: break-all;
+        min-height: 42px;
+        padding: 14px 0;
+        line-height: 20px;
+        font: {
+            size: 14px;
+            weight: bold;
+        }
+    }
+    &-close {
+        position: absolute;
+        right: 3px;
+        top: 9px;
+        width: 26px;
+        height: 26px;
+        cursor: pointer;
+        font-size: 14px;
+        text-align: center;
+        line-height: 26px;
+    }
+    @include status-theme(error);
+    @include status-theme(warning);
+    @include status-theme(success);
+    @include status-theme(primary);
+
+    /* 基于原生 JS 版本的样式 */
+    &.dom-version {
+        top: -50px;
+    }
+}

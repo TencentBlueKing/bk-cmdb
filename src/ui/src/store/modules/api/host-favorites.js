@@ -8,7 +8,7 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-import { $Axios, $axios } from '@/api/axios'
+import $http from '@/api'
 
 const state = {
 
@@ -28,7 +28,7 @@ const actions = {
      * @return {Promise} promise 对象
      */
     createFavorites ({ commit, state, dispatch }, { params }) {
-        return $axios.post(`hosts/favorites`, params)
+        return $http.post(`hosts/favorites`, params)
     },
 
     /**
@@ -41,7 +41,7 @@ const actions = {
      * @return {Promise} promise 对象
      */
     udpateFavorites ({ commit, state, dispatch }, { id, params }) {
-        return $axios.put(`hosts/favorites/${id}`, params)
+        return $http.put(`hosts/favorites/${id}`, params)
     },
 
     /**
@@ -53,7 +53,7 @@ const actions = {
      * @return {Promise} promise 对象
      */
     deleteFavorites ({ commit, state, dispatch }, { id }) {
-        return $axios.delete(`hosts/favorites/${id}`)
+        return $http.delete(`hosts/favorites/${id}`)
     },
 
     /**
@@ -65,7 +65,7 @@ const actions = {
      * @return {Promise} promise 对象
      */
     incrFavorites ({ commit, state, dispatch }, { id }) {
-        return $axios.put(`hosts/favorites/${id}/incr`)
+        return $http.put(`hosts/favorites/${id}/incr`)
     }
 }
 

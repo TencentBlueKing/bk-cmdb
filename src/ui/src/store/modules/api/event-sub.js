@@ -8,7 +8,7 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-import { $Axios, $axios } from '@/api/axios'
+import $http from '@/api'
 
 const state = {
 
@@ -24,13 +24,12 @@ const actions = {
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 开发商账号
      * @param {Object} bkBizId 业务id
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    subscribeEvent ({ commit, state, dispatch }, {bkSupplierAccount, bkBizId, params}) {
-        return $axios.post(`event/subscribe/${bkSupplierAccount}/${bkBizId}`, params)
+    subscribeEvent ({ commit, state, dispatch, rootGetters }, {bkBizId, params, config}) {
+        return $http.post(`event/subscribe/${rootGetters.supplierAccount}/${bkBizId}`, params, config)
     },
 
     /**
@@ -38,13 +37,12 @@ const actions = {
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 开发商账号
      * @param {Number} bkBizId 业务id
      * @param {Number} subscriptionId 订阅id
      * @return {Promise} promise 对象
      */
-    unsubcribeEvent ({commit, state, dispatch}, {bkSupplierAccount, bkBizId, subscriptionId}) {
-        return $axios.delete(`event/subscribe/${bkSupplierAccount}/${bkBizId}/${subscriptionId}`)
+    unsubcribeEvent ({commit, state, dispatch, rootGetters}, {bkBizId, subscriptionId}) {
+        return $http.delete(`event/subscribe/${rootGetters.supplierAccount}/${bkBizId}/${subscriptionId}`)
     },
 
     /**
@@ -52,14 +50,13 @@ const actions = {
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 开发商账号
      * @param {Number} bkBizId 业务id
      * @param {Number} subscriptionId 订阅id
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    updateEventSubscribe ({commit, state, dispatch}, {bkSupplierAccount, bkBizId, subscriptionId, params}) {
-        return $axios.put(`event/subscribe/${bkSupplierAccount}/${bkBizId}/${subscriptionId}`, params)
+    updateEventSubscribe ({commit, state, dispatch, rootGetters}, {bkBizId, subscriptionId, params, config}) {
+        return $http.put(`event/subscribe/${rootGetters.supplierAccount}/${bkBizId}/${subscriptionId}`, params, config)
     },
 
     /**
@@ -67,13 +64,12 @@ const actions = {
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 开发商账号
      * @param {Number} bkBizId 业务id
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    searchSubscription ({commit, state, dispatch}, {bkSupplierAccount, bkBizId, params}) {
-        return $axios.post(`event/subscribe/search/${bkSupplierAccount}/${bkBizId}`, params)
+    searchSubscription ({commit, state, dispatch, rootGetters}, {bkBizId, params, config}) {
+        return $http.post(`event/subscribe/search/${rootGetters.supplierAccount}/${bkBizId}`, params, config)
     },
 
     /**
@@ -84,8 +80,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    pingSubscription ({ commit, state, dispatch }, params) {
-        return $axios.post(`event/subscribe/ping`, params)
+    pingSubscription ({ commit, state, dispatch }, {params, config}) {
+        return $http.post(`event/subscribe/ping`, params, config)
     },
 
     /**
@@ -96,8 +92,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    testingConnection ({ commit, state, dispatch }, params) {
-        return $axios.post(`event/subscribe/telnet`, params)
+    testingConnection ({ commit, state, dispatch }, {params, config}) {
+        return $http.post(`event/subscribe/telnet`, params, config)
     }
 }
 

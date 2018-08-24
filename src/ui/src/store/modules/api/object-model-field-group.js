@@ -8,7 +8,7 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-import { $Axios, $axios } from '@/api/axios'
+import $http from '@/api'
 
 const state = {
 
@@ -28,7 +28,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     createGroup ({ commit, state, dispatch }, { params }) {
-        return $axios.post(`objectatt/group/new`, params)
+        return $http.post(`objectatt/group/new`, params)
     },
 
     /**
@@ -40,8 +40,8 @@ const actions = {
      * @param {String} bkObjId 模型id
      * @return {promises} promises 对象
      */
-    searchGroup ({ commit, state, dispatch }, { bkSupplierAccount, bkObjId }) {
-        return $axios.post(`objectatt/group/property/owner/${bkSupplierAccount}/object/${bkObjId}`)
+    searchGroup ({ commit, state, dispatch, rootGetters }, {objId, config}) {
+        return $http.post(`objectatt/group/property/owner/${rootGetters.supplierAccount}/object/${objId}`, {}, config)
     },
 
     /**
@@ -53,7 +53,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     updateGroup ({ commit, state, dispatch }, { params }) {
-        return $axios.put(`objectatt/group/update`, params)
+        return $http.put(`objectatt/group/update`, params)
     },
 
     /**
@@ -65,7 +65,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     deleteGroup ({ commit, state, dispatch }, { id }) {
-        return $axios.delete(`objectatt/group/groupid/${id}`)
+        return $http.delete(`objectatt/group/groupid/${id}`)
     },
 
     /**
@@ -77,7 +77,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     updatePropertyGroup ({ commit, state, dispatch }, { params }) {
-        return $axios.put(`objectatt/group/property`, params)
+        return $http.put(`objectatt/group/property`, params)
     },
 
     /**
@@ -91,8 +91,8 @@ const actions = {
      * @param {String} bkGroupId 分组id
      * @return {promises} promises 对象
      */
-    deleteObjectPropertyGroup({ commit, state, dispatch }, { bkSupplierAccount, bkObjId, bkPropertyId, bkGroupId }) {
-        return $axios.delete(`objectatt/group/owner/${bkSupplierAccount}/object/${bkObjId}/propertyids/${bkPropertyId}/groupids/${bkGroupId}`)
+    deleteObjectPropertyGroup ({ commit, state, dispatch }, { bkSupplierAccount, bkObjId, bkPropertyId, bkGroupId }) {
+        return $http.delete(`objectatt/group/owner/${bkSupplierAccount}/object/${bkObjId}/propertyids/${bkPropertyId}/groupids/${bkGroupId}`)
     }
 }
 

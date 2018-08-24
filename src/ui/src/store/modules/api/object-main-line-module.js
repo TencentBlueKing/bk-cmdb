@@ -8,7 +8,7 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-import { $Axios, $axios } from '@/api/axios'
+import $http from '@/api'
 
 const state = {
 
@@ -28,7 +28,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     createMainlineObject ({ commit, state, dispatch }, { params }) {
-        return $axios.post(`topo/model/mainline`, params)
+        return $http.post(`topo/model/mainline`, params)
     },
 
     /**
@@ -41,7 +41,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     deleteMainlineObject ({ commit, state, dispatch }, { bkSupplierAccount, bkObjId }) {
-        return $axios.delete(`topo/model/mainline/owners/${bkSupplierAccount}/objectids/${bkObjId}`)
+        return $http.delete(`topo/model/mainline/owners/${bkSupplierAccount}/objectids/${bkObjId}`)
     },
 
     /**
@@ -49,11 +49,10 @@ const actions = {
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 开发商账号
      * @return {promises} promises 对象
      */
-    searchMainlineObject ({ commit, state, dispatch }, { bkSupplierAccount }) {
-        return $axios.get(`topo/model/${bkSupplierAccount}`)
+    searchMainlineObject ({ commit, state, dispatch, rootGetters }) {
+        return $http.get(`topo/model/${rootGetters.supplierAccount}`)
     },
 
     /**
@@ -66,7 +65,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     getInstTopo ({ commit, state, dispatch }, { bkSupplierAccount, bkBizId }) {
-        return $axios.get(`topo/inst/${bkSupplierAccount}/${bkBizId}`)
+        return $http.get(`topo/inst/${bkSupplierAccount}/${bkBizId}`)
     },
 
     /**
@@ -81,7 +80,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchInstTopo ({ commit, state, dispatch }, { bkSupplierAccount, bkObjId, bkBizId, bkInstId }) {
-        return $axios.get(`topo/inst/child/${bkSupplierAccount}/${bkObjId}/${bkBizId}/${bkInstId}`)
+        return $http.get(`topo/inst/child/${bkSupplierAccount}/${bkObjId}/${bkBizId}/${bkInstId}`)
     },
 
     /**
@@ -94,7 +93,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     getInternalTopo ({ commit, state, dispatch }, { bkSupplierAccount, bkBizId }) {
-        return $axios.get(`topo/internal/${bkSupplierAccount}/${bkBizId}`)
+        return $http.get(`topo/internal/${bkSupplierAccount}/${bkBizId}`)
     }
 }
 

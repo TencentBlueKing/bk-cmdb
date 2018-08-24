@@ -8,7 +8,7 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-import { $Axios, $axios } from '@/api/axios'
+import $http from '@/api'
 
 const state = {
 
@@ -29,7 +29,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     exportObjectAttribute ({ commit, state, dispatch }, { bkSupplierAccount, bkObjId }) {
-        return $axios.post(`object/owner/${bkSupplierAccount}/object/${bkObjId}/export`)
+        return $http.post(`object/owner/${bkSupplierAccount}/object/${bkObjId}/export`)
     },
 
     /**
@@ -43,7 +43,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     importObjectAttribute ({ commit, state, dispatch }, { bkSupplierAccount, bkObjId, parmas }) {
-        return $axios.post(`object/owner/${bkSupplierAccount}/object/${bkObjId}/import`)
+        return $http.post(`object/owner/${bkSupplierAccount}/object/${bkObjId}/import`)
     }
 }
 

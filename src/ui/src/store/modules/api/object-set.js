@@ -8,7 +8,7 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-import { $Axios, $axios } from '@/api/axios'
+import $http from '@/api'
 
 const state = {
 
@@ -29,7 +29,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     createSet ({ commit, state, dispatch }, { bkBizId, params }) {
-        return $axios.post(`set/${bkBizId}`, params)
+        return $http.post(`set/${bkBizId}`, params)
     },
 
     /**
@@ -42,7 +42,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     deleteSet ({ commit, state, dispatch }, { bkBizId, bkSetId }) {
-        return $axios.delete(`set/${bkBizId}/${bkSetId}`)
+        return $http.delete(`set/${bkBizId}/${bkSetId}`)
     },
 
     /**
@@ -56,7 +56,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     updateSet ({ commit, state, dispatch }, { bkBizId, bkSetId, params }) {
-        return $axios.put(`set/${bkBizId}/${bkSetId}`, params)
+        return $http.put(`set/${bkBizId}/${bkSetId}`, params)
     },
 
     /**
@@ -70,7 +70,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchSet ({ commit, state, dispatch }, { bkSupplierAccount, bkBizId, params }) {
-        return $axios.post(`set/search/${bkSupplierAccount}/${bkBizId}`, params)
+        return $http.post(`set/search/${bkSupplierAccount}/${bkBizId}`, params)
     }
 }
 
