@@ -8,7 +8,7 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-import { $Axios, $axios } from '@/api/axios'
+import $http from '@/api'
 
 const state = {
 
@@ -28,7 +28,7 @@ const actions = {
      * @return {Promise} promise 对象
      */
     createCustomQuery ({ commit, state, dispatch }, { params }) {
-        return $axios.post(`userapi`, params)
+        return $http.post(`userapi`, params)
     },
     
     /**
@@ -42,7 +42,7 @@ const actions = {
      * @return {Promise} promise 对象
      */
     updateCustomQuery ({ commit, state, dispatch }, { bkBizId, id, params }) {
-        return $axios.post(`userapi/${bkBizId}/${id}`, params)
+        return $http.post(`userapi/${bkBizId}/${id}`, params)
     },
 
     /**
@@ -55,7 +55,7 @@ const actions = {
      * @return {Promise} promise 对象
      */
     deleteCustomQuery ({ commit, state, dispatch }, { bkBizId, id }) {
-        return $axios.delete(`userapi/${bkBizId}/${id}`)
+        return $http.delete(`userapi/${bkBizId}/${id}`)
     },
 
     /**
@@ -68,7 +68,7 @@ const actions = {
      * @return {Promise} promise 对象
      */
     searchCustomQuery ({ commit, state, dispatch }, { bkBizId, params }) {
-        return $axios.post(`userapi/search/${bkBizId}`, params)
+        return $http.post(`userapi/search/${bkBizId}`, params)
     },
 
     /**
@@ -81,7 +81,7 @@ const actions = {
      * @return {Promise} promise 对象
      */
     getCustomQueryDetail ({ commit, state, dispatch }, { bkBizId, id }) {
-        return $axios.get(`userapi/detail/${bkBizId}/${id}`)
+        return $http.get(`userapi/detail/${bkBizId}/${id}`)
     },
 
     /**
@@ -96,7 +96,7 @@ const actions = {
      * @return {Promise} promise 对象
      */
     getCustomQueryData ({ commit, state, dispatch }, { bkBizId, id, start, limit, params }) {
-        return $axios.get(`userapi/detail/${bkBizId}/${id}/${start}/${limit}`)
+        return $http.get(`userapi/detail/${bkBizId}/${id}/${start}/${limit}`)
     }
 }
 

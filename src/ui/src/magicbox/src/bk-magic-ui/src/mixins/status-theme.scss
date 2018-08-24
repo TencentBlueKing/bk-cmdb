@@ -1,0 +1,30 @@
+@mixin status-theme($theme) {
+    $bgc: map_get($colors, #{$theme}BG);
+    $borderColor: map_get($colors, #{$theme}Border);
+    $text: map_get($colors, #{$theme}Text);
+    $close: map_get($colors, #{$theme}Close);
+
+    &.#{$theme} {
+        background-color: $bgc;
+        border-color: $borderColor;
+        #{$message} {
+            &-icon {
+                @if $theme !='primary' {
+                    background-color: $text;
+                    color: $bgc;
+                }
+                @else {
+                    color: $text;
+                    font-size: 16px;
+                    margin-top: 13px;
+                }
+            }
+            &-content {
+                color: $text;
+            }
+            &-close {
+                color: $close;
+            }
+        }
+    }
+}
