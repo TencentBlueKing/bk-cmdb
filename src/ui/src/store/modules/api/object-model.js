@@ -8,7 +8,7 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-import { $Axios, $axios } from '@/api/axios'
+import $http from '@/api'
 
 const state = {
 
@@ -28,7 +28,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     createObject ({ commit, state, dispatch }, { params }) {
-        return $axios.post(`object`, params)
+        return $http.post(`object`, params)
     },
 
     /**
@@ -40,7 +40,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     deleteObject ({ commit, state, dispatch }, { id }) {
-        return $axios.delete(`object/${id}`)
+        return $http.delete(`object/${id}`)
     },
 
     /**
@@ -53,7 +53,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     updateObject ({ commit, state, dispatch }, { id, params }) {
-        return $axios.put(`object/${id}`, params)
+        return $http.put(`object/${id}`, params)
     },
 
     /**
@@ -65,7 +65,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchObjects ({ commit, state, dispatch }, { params }) {
-        return $axios.post(`objects`, params)
+        return $http.post(`objects`, params)
     },
 
     /**
@@ -77,7 +77,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchObjectTopo ({ commit, state, dispatch }, { params }) {
-        return $axios.post(`objects/topo`, params)
+        return $http.post(`objects/topo`, params)
     }
 }
 

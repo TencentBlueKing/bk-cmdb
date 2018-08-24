@@ -8,7 +8,7 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-import { $Axios, $axios } from '@/api/axios'
+import $http from '@/api'
 
 const state = {
 
@@ -30,7 +30,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     createModule ({ commit, state, dispatch }, { bkBizId, bkSetId, params }) {
-        return $axios.post(`module/${bkBizId}/${bkSetId}`, params)
+        return $http.post(`module/${bkBizId}/${bkSetId}`, params)
     },
 
     /**
@@ -44,7 +44,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     deleteModule ({ commit, state, dispatch }, { bkBizId, bkSetId, bkModuleId }) {
-        return $axios.delete(`module/${bkBizId}/${bkSetId}/${bkModuleId}`)
+        return $http.delete(`module/${bkBizId}/${bkSetId}/${bkModuleId}`)
     },
 
     /**
@@ -58,7 +58,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     updateModule ({ commit, state, dispatch }, { bkBizId, bkSetId, bkModuleId, params }) {
-        return $axios.put(`module/${bkBizId}/${bkSetId}/${bkModuleId}`, params)
+        return $http.put(`module/${bkBizId}/${bkSetId}/${bkModuleId}`, params)
     },
 
     /**
@@ -72,7 +72,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchModule ({ commit, state, dispatch }, { bkSupplierAccount, bkBizId, bkSetId, params }) {
-        return $axios.post(`module/${bkSupplierAccount}/${bkBizId}/${bkSetId}`, params)
+        return $http.post(`module/${bkSupplierAccount}/${bkBizId}/${bkSetId}`, params)
     }
 }
 

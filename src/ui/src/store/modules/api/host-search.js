@@ -8,7 +8,7 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-import { $Axios, $axios } from '@/api/axios'
+import $http from '@/api'
 
 const state = {
 
@@ -27,8 +27,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    searchHost ({ commit, state, dispatch }, { params }) {
-        return $axios.post(`hosts/search`, params)
+    searchHost ({ commit, state, dispatch }, {params, config}) {
+        return $http.post(`hosts/search`, params, config)
     },
 
     /**
@@ -41,7 +41,7 @@ const actions = {
      * @return {Promise} promise 对象
      */
     getHostBaseInfo ({ commit, state, dispatch }, { bkSupplierAccount, bkHostId }) {
-        return $axios.get(`hosts/${bkSupplierAccount}/${bkHostId}`)
+        return $http.get(`hosts/${bkSupplierAccount}/${bkHostId}`)
     },
 
     /**
@@ -53,7 +53,7 @@ const actions = {
      * @return {Promise} promise 对象
      */
     getHostSnapshot ({ commit, state, dispatch }, { bkHostId }) {
-        return $axios.get(`hosts/snapshot/${bkHostId}`)
+        return $http.get(`hosts/snapshot/${bkHostId}`)
     },
 
     /**
@@ -65,7 +65,7 @@ const actions = {
      * @return {Promise} promise 对象
      */
     searchHostByCondition ({ commit, state, dispatch }, { params }) {
-        return $axios.post(`hosts/snapshot/asstdetail`, params)
+        return $http.post(`hosts/snapshot/asstdetail`, params)
     }
 }
 
