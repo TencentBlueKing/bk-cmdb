@@ -30,8 +30,8 @@ module.exports = {
     }),
 
     // Paths
-    assetsSubDirectory: 'static',
-    assetsPublicPath: '/',
+    assetsSubDirectory: '',
+    assetsPublicPath: '/static/',
     proxyTable: {},
 
     // Various Dev Server settings
@@ -82,8 +82,8 @@ module.exports = {
     // Paths
     assetsRoot: `${path.resolve(config.BUILD_OUTPUT)}/web`,
 
-    assetsSubDirectory: 'static',
-    assetsPublicPath: '/',
+    assetsSubDirectory: '',
+    assetsPublicPath: '/static/',
 
     /**
      * Source Maps
