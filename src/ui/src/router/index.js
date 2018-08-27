@@ -14,6 +14,7 @@ const hosts = () => import(/* webpackChunkName: hosts */ '@/views/hosts')
 const eventpush = () => import(/* webpackChunkName: hosts */ '@/views/eventpush')
 const permission = () => import(/* webpackChunkName: hosts */ '@/views/permission')
 const resource = () => import(/* webpackChunkName: resource */ '@/views/resource')
+const topology = () => import(/* webpackChunkName: topology */ '@/views/topology')
 const error = () => import(/* webpackChunkName: error */ '@/views/status/error')
 
 Vue.use(Router)
@@ -65,6 +66,9 @@ const router = new Router({
     }, {
         path: '/resource',
         component: resource
+    }, {
+        path: '/topology',
+        component: topology
     }]
 })
 
