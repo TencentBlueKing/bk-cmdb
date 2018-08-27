@@ -229,6 +229,14 @@ input.cmdb-form-input{
     color: #ff5656;
 }
 
+.mask{
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
 /* rewrite magicbox style -----start----- */
 .bk-tab2{
     border: none !important;
