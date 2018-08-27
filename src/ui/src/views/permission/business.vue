@@ -13,7 +13,7 @@
             <h2 class="authority-title fl">{{$t('Permission["功能选择"]')}}</h2>
             <div class="checkbox-container clearfix">
                 <span v-for="authority in authorities.list" class="checkbox-span fl">
-                    <label class="bk-form-checkbox bk-checkbox-small authority-checkbox"
+                    <label class="cmdb-form-checkbox cmdb-checkbox-small authority-checkbox"
                         :class="{'disabled': isMaintainers}"
                         :for="'business-authority-' + authority.id"
                         :title="$t(authority.name)">
