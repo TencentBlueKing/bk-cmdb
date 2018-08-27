@@ -1,0 +1,225 @@
+<template>
+    <div class="base-info-wrapper">
+        <div class="form-item">
+            <label class="form-label">{{$t('ModelManagement["图标选择"]')}}<span class="color-danger"> * </span></label>
+            <div class="select-wrapper">
+                <div class="select-box clearfix">
+                    <div class="select-content">
+                        <i class="icon-cc-default"></i>
+                    </div>
+                    <span class="arrow"><i class="bk-icon icon-angle-down"></i></span>
+                </div>
+                <div class="select-mask" @click="closeDrop"></div>
+                <div class="select-list">
+                    <ul class="clearfix select-icon-list">
+                        <li v-tooltip="{content: language === 'zh-CN' ? item.nameZh : item.nameEn}" v-for="(item,index) in curIconList" :class="{'active': false}" :key="index" @click.stop.prevent="chooseIcon(index, item)">
+                            <i :class="item.value"></i>
+                        </li>
+                    </ul>
+                    <div class="page-wrapper clearfix">
+                        <div class="input-wrapper">
+                            <input type="text" class="cmdb-form-input" v-model="iconInfo.searchText" :placeholder="$t('ModelManagement[\'请输入关键词\']')">
+                            <i class="bk-icon icon-search"></i>
+                        </div>
+                        <ul class="clearfix page">
+                            <li v-for="(page, index) in iconInfo.totalPage"
+                            class="page-item" :class="{'cur-page': iconInfo.curPage === page}"
+                            :key="index"
+                            @click="iconInfo.curPage = page"
+                            >
+                                {{page}}
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script>
+    import iconList from '@/assets/json/model-icon'
+    import { mapGetters } from 'vuex'
+    export default {
+        data () {
+            return {
+                iconInfo: {
+                    selected: '',
+                    searchText: '',
+                    list: iconList,
+                    count: 0,
+                    curPage: 1,
+                    totalPage: 0,
+                    size: 24
+                }
+            }
+        },
+        methods: {
+            chooseIcon (item, index) {
+                this.iconInfo.selected = item
+            }
+        },
+        computed: {
+            ...mapGetters([
+                'language'
+            ]),
+            curIconList () {
+                let {
+                    searchText,
+                    list,
+                    curPage,
+                    size
+                } = this.iconInfo
+                let curIconList = list
+                if (searchText.length) {
+                    curIconList = list.filter(icon => {
+                        return icon.nameZh.toLowerCase().indexOf(searchText.toLowerCase()) > -1 || icon.nameEn.toLowerCase().indexOf(searchText.toLowerCase()) > -1
+                    })
+                }
+                this.iconInfo.count = list.length
+                this.iconInfo.totalPage = Math.ceil(list.length / size)
+                return curIconList.slice((curPage - 1) * size, curPage * size)
+            }
+        }
+    }
+</script>
+
+<style lang="scss" scoped>
+    .base-info-wrapper{
+        padding: 20px 0;
+        width: 100%;
+        display: flex;
+        .form-item{
+            flex: 1;
+            margin-right: 46px;
+            &:last-child{
+                margin-right: 0;
+            }
+            .form-label{
+                display: inline-block;
+                width: 70px;
+                vertical-align: top;
+                text-align: right;
+                font-size: 14px;
+                line-height: 36px;
+                span{
+                    display: inline-block;
+                    padding-left: 3px;
+                }
+            }
+        }
+        .select-wrapper{
+            position: relative;
+            display: inline-block;
+            .select-box{
+                border: 1px solid $cmdbBorderColor;
+                text-align: center;
+                height: 36px;
+                line-height: 34px;
+                cursor: pointer;
+                .select-content{
+                    position: relative;
+                    float: left;
+                    height: 34px;
+                    padding: 0 6px 0 15px;
+                    color: $cmdbBorderFocusColor;
+                    font-size: 24px;
+                    i{
+                        position: relative;
+                        top: -1px;
+                    }
+                }
+                .arrow{
+                    float: left;
+                    width: 26px;
+                    font-size: 12px;
+                }
+            }
+            .select-list{
+                position: absolute;
+                padding: 10px;
+                top: 44px;
+                left: 0;
+                width: 382px;
+                height: 248px;
+                border: 1px solid $cmdbFnMainColor;
+                z-index: 500;
+                background: #fff;
+                box-shadow: 0 2px 2px rgba(0, 0, 0, .1);
+                overflow: auto;
+                @include scrollbar;
+                .select-icon-list{
+                    padding: 0;
+                    margin: 0;
+                    width: 360px;
+                    height: 184px;
+                    li{
+                        width: 60px;
+                        height: 46px;
+                        text-align: center;
+                        line-height: 46px;
+                        float: left;
+                        cursor: pointer;
+                        &.active{
+                            color: $cmdbBorderFocusColor;
+                            background: #e2efff;
+                        }
+                        i{
+                            font-size: 24px;
+                        }
+                        &:hover{
+                            background: #e2efff;
+                        }
+                        &:nth-child(6n){
+                            margin-right: 0;
+                        }
+                    }
+                }
+                .page-wrapper {
+                    padding: 15px 18px 5px;
+                    .input-wrapper {
+                        float: left;
+                        position: relative;
+                        vertical-align: bottom;
+                        color: $cmdbBorderColor;
+                        input {
+                            width: 116px;
+                            height: 22px;
+                            font-size: 12px;
+                            padding: 0 25px 0 5px;
+                        }
+                        .bk-icon {
+                            position: absolute;
+                            font-size: 12px;
+                            top: 5px;
+                            right: 8px;
+                        }
+                    }
+                }
+                .page{
+                    float: right;
+                    li{
+                        text-align: center;
+                        float: left;
+                        margin-right: 5px;
+                        width: 22px;
+                        height: 22px;
+                        line-height: 20px;
+                        border-radius: 2px;
+                        font-size: 12px;
+                        cursor: pointer;
+                        border: 1px solid $cmdbBorderColor;
+                        &.cur-page{
+                            color: #fff;
+                            background: $cmdbBorderFocusColor;
+                            border-color: $cmdbBorderFocusColor;
+                        }
+                        &:last-child{
+                            margin: 0;
+                        }
+                    }
+                }
+            }
+        }
+    }
+</style>
