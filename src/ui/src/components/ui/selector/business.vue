@@ -2,6 +2,7 @@
     <bk-selector
         :list="privilegeBusiness"
         :selected.sync="localSelected"
+        :searchable="privilegeBusiness.length > 5"
         setting-key="bk_biz_id"
         display-key="bk_biz_name">
     </bk-selector>
