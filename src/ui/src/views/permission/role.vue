@@ -4,11 +4,11 @@
             <div class="role-options-search fl clearfix">
                 <div class="search-group fl">
                     <label for="searchGroupName">{{$t('Permission["角色名搜索"]')}}</label>
-                    <input class="bk-form-input" type="text" id="searchGroupName" v-model.trim="filter['group_name']" @keyup.enter="getRoleList">
+                    <input class="cmdb-form-input" type="text" id="searchGroupName" v-model.trim="filter['group_name']" @keyup.enter="getRoleList">
                 </div>
                 <div class="search-group fl">
                     <label for="SearchUserName">{{$t('Permission["成员搜索"]')}}</label>
-                    <input class="bk-form-input" type="text" id="SearchUserName" v-model.trim="filter['user_list']" @keyup.enter="getRoleList">
+                    <input class="cmdb-form-input" type="text" id="SearchUserName" v-model.trim="filter['user_list']" @keyup.enter="getRoleList">
                 </div>
             </div>
             <div class="role-options-create fr">

@@ -14,6 +14,7 @@ const hosts = () => import(/* webpackChunkName: hosts */ '@/views/hosts')
 const eventpush = () => import(/* webpackChunkName: hosts */ '@/views/eventpush')
 const permission = () => import(/* webpackChunkName: hosts */ '@/views/permission')
 const resource = () => import(/* webpackChunkName: resource */ '@/views/resource')
+const audit = () => import(/* webpackChunkName: hosts */ '@/views/audit')
 const topology = () => import(/* webpackChunkName: topology */ '@/views/topology')
 const error = () => import(/* webpackChunkName: error */ '@/views/status/error')
 
@@ -66,6 +67,9 @@ const router = new Router({
     }, {
         path: '/resource',
         component: resource
+    }, {
+        path: '/auditing',
+        component: audit
     }, {
         path: '/topology',
         component: topology
