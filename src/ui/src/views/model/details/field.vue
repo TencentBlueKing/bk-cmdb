@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="field-wrapper">
        <v-base-info></v-base-info> 
     </div>
 </template>
@@ -12,3 +12,9 @@
         }
     }
 </script>
+
+<style lang="scss" scoped>
+    .field-wrapper {
+        padding: 0 30px;
+    }
+</style>

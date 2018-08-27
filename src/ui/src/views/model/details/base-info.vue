@@ -1,39 +1,67 @@
 <template>
     <div class="base-info-wrapper">
-        <div class="form-item">
-            <label class="form-label">{{$t('ModelManagement["图标选择"]')}}<span class="color-danger"> * </span></label>
-            <div class="select-wrapper">
-                <div class="select-box clearfix">
-                    <div class="select-content">
-                        <i class="icon-cc-default"></i>
-                    </div>
-                    <span class="arrow"><i class="bk-icon icon-angle-down"></i></span>
-                </div>
-                <div class="select-mask" @click="closeDrop"></div>
-                <div class="select-list">
-                    <ul class="clearfix select-icon-list">
-                        <li v-tooltip="{content: language === 'zh-CN' ? item.nameZh : item.nameEn}" v-for="(item,index) in curIconList" :class="{'active': false}" :key="index" @click.stop.prevent="chooseIcon(index, item)">
-                            <i :class="item.value"></i>
-                        </li>
-                    </ul>
-                    <div class="page-wrapper clearfix">
-                        <div class="input-wrapper">
-                            <input type="text" class="cmdb-form-input" v-model="iconInfo.searchText" :placeholder="$t('ModelManagement[\'请输入关键词\']')">
-                            <i class="bk-icon icon-search"></i>
+        <div class="form-box">
+            <div class="form-item">
+                <label class="form-label">{{$t('ModelManagement["图标选择"]')}}<span class="color-danger"> * </span></label>
+                <div class="select-wrapper">
+                    <div class="select-box clearfix" @click.stop.prevent="toggleDrop" :class="{'active': iconInfo.isIconDrop}">
+                        <div class="select-content">
+                            <i class="icon-cc-default"></i>
                         </div>
-                        <ul class="clearfix page">
-                            <li v-for="(page, index) in iconInfo.totalPage"
-                            class="page-item" :class="{'cur-page': iconInfo.curPage === page}"
-                            :key="index"
-                            @click="iconInfo.curPage = page"
-                            >
-                                {{page}}
+                        <span class="arrow"><i class="bk-icon icon-angle-down"></i></span>
+                    </div>
+                    <div class="mask" v-if="iconInfo.isIconDrop" @click="closeDrop"></div>
+                    <div class="select-list" v-if="iconInfo.isIconDrop">
+                        <ul class="clearfix select-icon-list">
+                            <li v-tooltip="{content: language === 'zh-CN' ? item.nameZh : item.nameEn}" v-for="(item,index) in curIconList" :class="{'active': false}" :key="index" @click.stop.prevent="chooseIcon(index, item)">
+                                <i :class="item.value"></i>
                             </li>
                         </ul>
+                        <div class="page-wrapper clearfix">
+                            <div class="input-wrapper">
+                                <input type="text" class="cmdb-form-input" v-model="iconInfo.searchText" :placeholder="$t('ModelManagement[\'请输入关键词\']')">
+                                <i class="bk-icon icon-search"></i>
+                            </div>
+                            <ul class="clearfix page">
+                                <li v-for="(page, index) in iconInfo.totalPage"
+                                class="page-item" :class="{'cur-page': iconInfo.curPage === page}"
+                                :key="index"
+                                @click="iconInfo.curPage = page"
+                                >
+                                    {{page}}
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
+            <div class="form-item">
+                <label for="name" class="form-label">{{$t('ModelManagement["中文名称"]')}}<span class="color-danger"> * </span></label>
+                <div class="input-box">
+                    <input type="text" id="name" class="cmdb-form-input"
+                        maxlength="20"
+                        v-model.trim="baseInfo.name"
+                        :data-vv-name="$t('ModelManagement[\'中文名称\']')"
+                        v-validate="'required|singlechar'">
+                    <span v-show="errors.has($t('ModelManagement[\'中文名称\']'))" class="error-msg color-danger">{{ errors.first($t('ModelManagement[\'中文名称\']')) }}</span>
+                </div>
+            </div>
+            <div class="form-item">
+                <label for="name" class="form-label">{{$t('ModelManagement["英文名称"]')}}<span class="color-danger"> * </span></label>
+                <div class="input-box">
+                    <input type="text" id="desc" class="cmdb-form-input"
+                        maxlength="20"
+                        v-model.trim="baseInfo.desc"
+                        :data-vv-name="$t('ModelManagement[\'英文名称\']')"
+                        v-validate="'required|modelId'">
+                    <span v-show="errors.has($t('ModelManagement[\'英文名称\']'))" class="error-msg color-danger">{{ errors.first($t('ModelManagement[\'英文名称\']')) }}</span>
+                </div>
+            </div>
         </div>
+        <footer class="footer">
+            <bk-button type="primary" @click="saveBaseInfo" :loading="$loading('saveBaseInfo')">{{$t('Common["确定"]')}}</bk-button>
+            <bk-button class="default" type="default" :title="$t('Common[\'取消\']')" @click="cancel">{{$t('Common["取消"]')}}</bk-button>
+        </footer>
     </div>
 </template>
 
@@ -44,6 +72,7 @@
         data () {
             return {
                 iconInfo: {
+                    isIconDrop: false,
                     selected: '',
                     searchText: '',
                     list: iconList,
@@ -51,12 +80,11 @@
                     curPage: 1,
                     totalPage: 0,
                     size: 24
+                },
+                baseInfo: {
+                    name: '',
+                    desc: ''
                 }
-            }
-        },
-        methods: {
-            chooseIcon (item, index) {
-                this.iconInfo.selected = item
             }
         },
         computed: {
@@ -80,22 +108,45 @@
                 this.iconInfo.totalPage = Math.ceil(list.length / size)
                 return curIconList.slice((curPage - 1) * size, curPage * size)
             }
+        },
+        methods: {
+            chooseIcon (item, index) {
+                this.iconInfo.selected = item
+            },
+            toggleDrop () {
+                this.iconInfo.isIconDrop = !this.iconInfo.isIconDrop
+            },
+            closeDrop () {
+                this.iconInfo.isIconDrop = false
+            },
+            saveBaseInfo () {
+
+            },
+            cancel () {
+
+            }
         }
     }
 </script>
 
 <style lang="scss" scoped>
-    .base-info-wrapper{
+    .base-info-wrapper {
         padding: 20px 0;
         width: 100%;
-        display: flex;
-        .form-item{
-            flex: 1;
-            margin-right: 46px;
-            &:last-child{
-                margin-right: 0;
+        .form-box {
+            display: flex;
+        }
+        .form-item {
+            width: 230px;
+            margin-right: 45px;
+            &:first-child {
+                width: 150px;
             }
-            .form-label{
+            &:last-child {
+                margin-right: 0;
+                text-align: right;
+            }
+            .form-label {
                 display: inline-block;
                 width: 70px;
                 vertical-align: top;
@@ -107,35 +158,48 @@
                     padding-left: 3px;
                 }
             }
+            .input-box {
+                display: inline-block;
+                text-align: left;
+                width: 150px;
+                .error-msg {
+                    font-size: 12px;
+                    line-height: 1;
+                }
+            }
+            .cmdb-form-input {
+                width: 150px;
+            }
         }
-        .select-wrapper{
+        .select-wrapper {
             position: relative;
             display: inline-block;
-            .select-box{
+            vertical-align: top;
+            .select-box {
                 border: 1px solid $cmdbBorderColor;
                 text-align: center;
                 height: 36px;
                 line-height: 34px;
                 cursor: pointer;
-                .select-content{
+                .select-content {
                     position: relative;
                     float: left;
                     height: 34px;
                     padding: 0 6px 0 15px;
                     color: $cmdbBorderFocusColor;
                     font-size: 24px;
-                    i{
+                    i {
                         position: relative;
                         top: -1px;
                     }
                 }
-                .arrow{
+                .arrow {
                     float: left;
                     width: 26px;
                     font-size: 12px;
                 }
             }
-            .select-list{
+            .select-list {
                 position: absolute;
                 padding: 10px;
                 top: 44px;
@@ -148,29 +212,29 @@
                 box-shadow: 0 2px 2px rgba(0, 0, 0, .1);
                 overflow: auto;
                 @include scrollbar;
-                .select-icon-list{
+                .select-icon-list {
                     padding: 0;
                     margin: 0;
                     width: 360px;
                     height: 184px;
-                    li{
+                    li {
                         width: 60px;
                         height: 46px;
                         text-align: center;
                         line-height: 46px;
                         float: left;
                         cursor: pointer;
-                        &.active{
+                        &.active {
                             color: $cmdbBorderFocusColor;
                             background: #e2efff;
                         }
-                        i{
+                        i {
                             font-size: 24px;
                         }
-                        &:hover{
+                        &:hover {
                             background: #e2efff;
                         }
-                        &:nth-child(6n){
+                        &:nth-child(6n) {
                             margin-right: 0;
                         }
                     }
@@ -219,6 +283,18 @@
                         }
                     }
                 }
+            }
+        }
+        .footer {
+            width: 100%;
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            padding: 14px 10px;
+            background: $cmdbPrimaryColor;
+            button {
+                min-width: 110px;
+                margin-left: 10px;
             }
         }
     }
