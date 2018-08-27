@@ -7,7 +7,7 @@
                         {{$t('EventPush["推送名称"]')}}<span class="color-danger">*</span>
                     </label>
                     <div class="item-content">
-                        <input type="text" class="bk-form-input" :placeholder="$t('EventPush[\'请输入推送名称\']')"
+                        <input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'请输入推送名称\']')"
                             maxlength="20"
                             v-model.trim="tempEventData['subscription_name']"
                             :data-vv-name="$t('EventPush[\'推送名称\']')"
@@ -21,7 +21,7 @@
                         {{$t('EventPush["系统名称"]')}}
                     </label>
                     <div class="item-content">
-                        <input type="text" class="bk-form-input" :placeholder="$t('EventPush[\'请输入系统名称\']')"
+                        <input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'请输入系统名称\']')"
                             v-model.trim="tempEventData['system_name']"
                             v-validate="'singlechar'"
                             :data-vv-name="$t('EventPush[\'系统名称\']')"
@@ -34,7 +34,7 @@
                         URL<span class="color-danger">*</span>
                     </label>
                     <div class="item-content">
-                        <input type="text" class="bk-form-input" :placeholder="$t('EventPush[\'请输入URL\']')"
+                        <input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'请输入URL\']')"
                             v-model.trim="tempEventData['callback_url']"
                             v-validate="'required|http'"
                             data-vv-name="http"
@@ -48,23 +48,23 @@
                         {{$t('EventPush["成功确认方式"]')}}<span class="color-danger">*</span>
                     </label>
                     <div class="item-content">
-                        <label for="http" class="bk-form-radio bk-radio-small">
+                        <label for="http" class="cmdb-form-radio cmdb-radio-small">
                             <input type="radio" name="confimType" id="http" value="httpstatus"
                                 v-model="tempEventData['confirm_mode']"
                             >{{$t('EventPush["HTTP状态"]')}}
                         </label>
-                        <label for="reg" class="bk-form-radio bk-radio-small">
+                        <label for="reg" class="cmdb-form-radio cmdb-radio-small">
                             <input type="radio" name="confimType" id="reg" value="regular"
                                 v-model="tempEventData['confirm_mode']"
                             >{{$t('Common["正则验证"]')}}
                         </label>
-                        <input type="text" class="bk-form-input" :placeholder="$t('EventPush[\'请输入正则验证\']')"
+                        <input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'请输入正则验证\']')"
                             v-if="tempEventData['confirm_mode'] === 'regular'"
                             v-model.trim="tempEventData['confirm_pattern']['regular']"
                             :data-vv-name="$t('Common[\'该字段\']')"
                             v-validate="'required'"
                         >
-                        <input type="text" class="bk-form-input number" :placeholder="$t('EventPush[\'成功标志\']')"
+                        <input type="text" class="cmdb-form-input number" :placeholder="$t('EventPush[\'成功标志\']')"
                             v-else
                             v-model.trim="tempEventData['confirm_pattern']['httpstatus']"
                             v-validate="{required: true, regex: /^[0-9]+$/}"
@@ -78,7 +78,7 @@
                         {{$t('EventPush["超时时间"]')}}<span class="color-danger">*</span>
                     </label>
                     <div class="item-content length-short">
-                        <input type="text" class="bk-form-input" :placeholder="$t('EventPush[\'单位：秒\']')"
+                        <input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'单位：秒\']')"
                             v-model.trim="tempEventData['time_out']"
                             v-validate="{required: true, regex: /^[0-9]+$/}"
                             :data-vv-name="$t('EventPush[\'超时时间\']')"
@@ -105,82 +105,82 @@
                                 <template v-if="item.id === 'resource'">
                                     <label for="" class="label-name" :title="item.name">{{item.name}}</label>
                                     <div class="options">
-                                        <label for="resourceall" class="bk-form-checkbox bk-checkbox-small">
+                                        <label for="resourceall" class="cmdb-form-checkbox cmdb-checkbox-small">
                                             <input type="checkbox"
                                             value="resourceall"
                                             :checked="tempEventData['subscription_form'][item.id].length == 2"
-                                            id="resourceall" @change="checkAll('resource')"><i class="bk-checkbox-text" :title="$t('Common[\'全选\']')">{{$t('Common["全选"]')}}</i>
+                                            id="resourceall" @change="checkAll('resource')"><i class="cmdb-checkbox-text" :title="$t('Common[\'全选\']')">{{$t('Common["全选"]')}}</i>
                                         </label>
-                                        <label for="hostcreate" class="bk-form-checkbox bk-checkbox-small">
+                                        <label for="hostcreate" class="cmdb-form-checkbox cmdb-checkbox-small">
                                             <input type="checkbox"
                                             v-model="tempEventData['subscription_form'][item.id]"
                                             value="hostcreate"
-                                            id="hostcreate"><i class="bk-checkbox-text" :title="$t('EventPush[\'新增主机\']')">{{$t('EventPush["新增主机"]')}}</i>
+                                            id="hostcreate"><i class="cmdb-checkbox-text" :title="$t('EventPush[\'新增主机\']')">{{$t('EventPush["新增主机"]')}}</i>
                                         </label>
-                                        <label for="hostdelete" class="bk-form-checkbox bk-checkbox-small">
+                                        <label for="hostdelete" class="cmdb-form-checkbox cmdb-checkbox-small">
                                             <input type="checkbox"
                                             value="hostdelete"
                                             v-model="tempEventData['subscription_form'][item.id]"
-                                            id="hostdelete"><i class="bk-checkbox-text" :title="$t('EventPush[\'删除主机\']')">{{$t('EventPush["删除主机"]')}}</i>
+                                            id="hostdelete"><i class="cmdb-checkbox-text" :title="$t('EventPush[\'删除主机\']')">{{$t('EventPush["删除主机"]')}}</i>
                                         </label>
                                     </div>
                                 </template>
                                 <template v-else-if="item.id === 'host'">
                                     <label for="" class="label-name" :title="item.name">{{item.name}}</label>
                                     <div class="options">
-                                        <label :for="'hostall'" class="bk-form-checkbox bk-checkbox-small">
+                                        <label :for="'hostall'" class="cmdb-form-checkbox cmdb-checkbox-small">
                                             <input type="checkbox"
                                             :value="'hostall'"
                                             :checked="tempEventData['subscription_form'][item.id].length == 3"
-                                            :id="'hostall'" @change="checkAll('host')"><i class="bk-checkbox-text" :title="$t('Common[\'全选\']')">{{$t('Common["全选"]')}}</i>
+                                            :id="'hostall'" @change="checkAll('host')"><i class="cmdb-checkbox-text" :title="$t('Common[\'全选\']')">{{$t('Common["全选"]')}}</i>
                                         </label>
-                                        <label :for="item.id+'update'" class="bk-form-checkbox bk-checkbox-small">
+                                        <label :for="item.id+'update'" class="cmdb-form-checkbox cmdb-checkbox-small">
                                             <input type="checkbox"
                                             v-model="tempEventData['subscription_form'][item.id]"
                                             :value="item.id+'update'"
-                                            :id="item.id+'update'"><i class="bk-checkbox-text" :title="$t('Common[\'编辑\']')">{{$t('Common["编辑"]')}}</i>
+                                            :id="item.id+'update'"><i class="cmdb-checkbox-text" :title="$t('Common[\'编辑\']')">{{$t('Common["编辑"]')}}</i>
                                         </label>
-                                        <label for="moduletransfer" class="bk-form-checkbox bk-checkbox-small">
+                                        <label for="moduletransfer" class="cmdb-form-checkbox cmdb-checkbox-small">
                                             <input type="checkbox"
                                             value="moduletransfer"
                                             v-model="tempEventData['subscription_form'][item.id]"
-                                            id="moduletransfer"><i class="bk-checkbox-text" :title="$t('EventPush[\'模块转移\']')">{{$t('EventPush["模块转移"]')}}</i>
+                                            id="moduletransfer"><i class="cmdb-checkbox-text" :title="$t('EventPush[\'模块转移\']')">{{$t('EventPush["模块转移"]')}}</i>
                                         </label>
-                                        <label for="hostidentifier" class="bk-form-checkbox bk-checkbox-small">
+                                        <label for="hostidentifier" class="cmdb-form-checkbox cmdb-checkbox-small">
                                             <input type="checkbox"
                                             value="hostidentifier"
                                             v-model="tempEventData['subscription_form'][item.id]"
-                                            id="hostidentifier"><i class="bk-checkbox-text" :title="$t('EventPush[\'主机身份\']')">{{$t('EventPush["主机身份"]')}}</i>
+                                            id="hostidentifier"><i class="cmdb-checkbox-text" :title="$t('EventPush[\'主机身份\']')">{{$t('EventPush["主机身份"]')}}</i>
                                         </label>
                                     </div>
                                 </template>
                                 <template v-else>
                                     <label for="" class="label-name" :title="item.name">{{item.name}}</label>
                                     <div class="options">
-                                        <label :for="`${item.id}all`" class="bk-form-checkbox bk-checkbox-small">
+                                        <label :for="`${item.id}all`" class="cmdb-form-checkbox cmdb-checkbox-small">
                                             <input type="checkbox"
                                             :value="`${item.id}all`"
                                             @change="checkAll(item.id)"
                                             :checked="tempEventData['subscription_form'][item.id].length == 3"
-                                            :id="`${item.id}all`"><i class="bk-checkbox-text" :title="$t('Common[\'全选\']')">{{$t('Common["全选"]')}}</i>
+                                            :id="`${item.id}all`"><i class="cmdb-checkbox-text" :title="$t('Common[\'全选\']')">{{$t('Common["全选"]')}}</i>
                                         </label>
-                                        <label :for="`${item.id}create`" class="bk-form-checkbox bk-checkbox-small">
+                                        <label :for="`${item.id}create`" class="cmdb-form-checkbox cmdb-checkbox-small">
                                             <input type="checkbox"
                                             v-model="tempEventData['subscription_form'][item.id]"
                                             :value="`${item.id}create`"
-                                            :id="`${item.id}create`"><i class="bk-checkbox-text" :title="$t('Common[\'新增\']')">{{$t('Common["新增"]')}}</i>
+                                            :id="`${item.id}create`"><i class="cmdb-checkbox-text" :title="$t('Common[\'新增\']')">{{$t('Common["新增"]')}}</i>
                                         </label>
-                                        <label :for="`${item.id}update`" class="bk-form-checkbox bk-checkbox-small">
+                                        <label :for="`${item.id}update`" class="cmdb-form-checkbox cmdb-checkbox-small">
                                             <input type="checkbox"
                                             :value="`${item.id}update`"
                                             v-model="tempEventData['subscription_form'][item.id]"
-                                            :id="`${item.id}update`"><i class="bk-checkbox-text" :title="$t('Common[\'编辑\']')">{{$t('Common["编辑"]')}}</i>
+                                            :id="`${item.id}update`"><i class="cmdb-checkbox-text" :title="$t('Common[\'编辑\']')">{{$t('Common["编辑"]')}}</i>
                                         </label>
-                                        <label :for="`${item.id}delete`" class="bk-form-checkbox bk-checkbox-small">
+                                        <label :for="`${item.id}delete`" class="cmdb-form-checkbox cmdb-checkbox-small">
                                             <input type="checkbox"
                                             :value="`${item.id}delete`"
                                             v-model="tempEventData['subscription_form'][item.id]"
-                                            :id="`${item.id}delete`"><i class="bk-checkbox-text" :title="$t('Common[\'删除\']')">{{$t('Common["删除"]')}}</i>
+                                            :id="`${item.id}delete`"><i class="cmdb-checkbox-text" :title="$t('Common[\'删除\']')">{{$t('Common["删除"]')}}</i>
                                         </label>
                                     </div>
                                 </template>
@@ -533,7 +533,7 @@
                 margin-left: 22px;
                 width: 420px;
                 float: left;
-                .bk-form-radio{
+                .cmdb-form-radio{
                     cursor: pointer;
                     height: 32px;
                     margin-bottom: 10px;
@@ -541,7 +541,7 @@
                         margin-top: -2px;
                     }
                 }
-                .bk-form-input.number{
+                .cmdb-form-input.number{
                     display: block;
                     width: 97px;
                 }
@@ -624,14 +624,14 @@
                         height: 18px;
                         width: 110px;
                         margin-right: 10px;
-                        &.bk-form-checkbox{
+                        &.cmdb-form-checkbox{
                             padding: 0;
                             cursor: pointer;
                         }
                         input[type="checkbox"]{
                             margin-right: 10px;
                         }
-                        .bk-checkbox-text{
+                        .cmdb-checkbox-text{
                             display: inline-block;
                             width: 82px;
                             overflow: hidden;
