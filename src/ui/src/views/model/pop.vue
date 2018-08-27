@@ -17,7 +17,7 @@
                     <ul class="content-left">
                         <li class="content-item">
                             <label for="">{{$t('ModelManagement["中文名"]')}}<span class="color-danger">*</span></label>
-                            <input type="text" class="bk-form-input fr" 
+                            <input type="text" class="cmdb-form-input fr" 
                             v-focus
                             v-model.trim="localValue['bk_classification_name']"
                             :disabled="classification['bk_classification_type'] === 'inner'"
@@ -28,7 +28,7 @@
                         </li> 
                         <li class="content-item">
                             <label for="">{{$t('ModelManagement["英文名"]')}}<span class="color-danger">*</span></label>
-                            <input type="text" class="bk-form-input fr" v-model.trim="localValue['bk_classification_id']"
+                            <input type="text" class="cmdb-form-input fr" v-model.trim="localValue['bk_classification_id']"
                             :data-vv-name="$t('ModelManagement[\'英文名\']')"
                             :disabled="classification['bk_classification_type'] === 'inner' || isEdit"
                             v-validate="'required|classifyId'">
@@ -213,7 +213,7 @@
                                     color: #ff5656;
                                 }
                             }
-                            .bk-form-input{
+                            .cmdb-form-input{
                                 width: 259px;
                                 vertical-align: baseline;
                             }

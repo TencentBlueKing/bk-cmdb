@@ -18,7 +18,7 @@
                         <h3 class="system-title fl">{{$t(config.name)}}</h3>
                         <ul class="system-list fl">
                             <li class="system-item fl"  v-for="authority in config.authorities">
-                                <label class="bk-form-checkbox bk-checkbox-small"
+                                <label class="cmdb-form-checkbox cmdb-checkbox-small"
                                     :for="'systemAuth-' + authority.id" 
                                     :title="$t(authority.name)">
                                     <input type="checkbox"
@@ -44,7 +44,7 @@
                                 <li class="model-item clearfix" v-for="(model,modelIndex) in classify.models">
                                     <h4 class="model-authority fl" :title="model['bk_obj_name']">{{model['bk_obj_name']}}</h4>
                                     <span class="model-authority-checkbox fl">
-                                        <label class="bk-form-checkbox bk-checkbox-small"
+                                        <label class="cmdb-form-checkbox cmdb-checkbox-small"
                                             :for="'model-all-'+model['bk_obj_id']">
                                             <input type="checkbox"
                                                 :id="'model-all-'+model['bk_obj_id']" 
@@ -53,7 +53,7 @@
                                         </label>
                                     </span>
                                     <span class="model-authority-checkbox fl">
-                                        <label class="bk-form-checkbox bk-checkbox-small"
+                                        <label class="cmdb-form-checkbox cmdb-checkbox-small"
                                             :for="'model-search-'+model['bk_obj_id']">
                                             <input type="checkbox" value='search' 
                                                 :id="'model-search-'+model['bk_obj_id']" 
@@ -62,7 +62,7 @@
                                         </label>
                                     </span>
                                     <span class="model-authority-checkbox fl">
-                                        <label class="bk-form-checkbox bk-checkbox-small" 
+                                        <label class="cmdb-form-checkbox cmdb-checkbox-small" 
                                             :for="'model-update-'+model['bk_obj_id']" 
                                             :class="{'disabled': model.selectedAuthorities.indexOf('search') === -1}">
                                             <input type="checkbox" value='update' 
@@ -72,7 +72,7 @@
                                         </label>
                                     </span>
                                     <span class="model-authority-checkbox fl">
-                                        <label class="bk-form-checkbox bk-checkbox-small" 
+                                        <label class="cmdb-form-checkbox cmdb-checkbox-small" 
                                             :for="'model-delete-'+model['bk_obj_id']" 
                                             :class="{'disabled': model.selectedAuthorities.indexOf('search') === -1}">
                                             <input type="checkbox" value='delete' 
@@ -408,7 +408,7 @@
             }
         }
     }
-    label.bk-form-checkbox{
+    label.cmdb-form-checkbox{
         max-width: 130px;
         line-height: 32px;
         padding: 0;
