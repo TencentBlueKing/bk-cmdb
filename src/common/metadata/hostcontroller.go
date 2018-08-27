@@ -13,8 +13,9 @@
 package metadata
 
 import (
-	"configcenter/src/common/mapstr"
 	"time"
+
+	"configcenter/src/common/mapstr"
 )
 
 type ID struct {
