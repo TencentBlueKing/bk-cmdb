@@ -46,7 +46,7 @@
                 </ul>
             </div>
         </transition>
-        <bk-button type="danger" class="bk-button vis-button vis-del" :title="$t('ModelManagement[\'删除\']')" v-if="!isInnerType" @click="deleteClassify">
+        <bk-button type="default" class="vis-button vis-del" :title="$t('ModelManagement[\'删除\']')" v-if="!isInnerType" @click="deleteClassify">
             <i class="icon icon-cc-del"></i>
         </bk-button>
     </div>
@@ -378,9 +378,10 @@
         &.vis-zoomIn,
         &.vis-zoomOut,
         &.vis-zoomExtends,
-        &.vis-setup{
+        &.vis-setup,
+        &.vis-enable{
             &:hover{
-                color: #6eb1ff;
+                color: #6eb1ff !important;
             }
             &:active{
                 color: #3188ed;
@@ -448,7 +449,7 @@
         .icon{
             font-weight: normal;
         }
-        &:hover{
+        &:hover .icon{
             color: #ef4c4c;
         }
     }

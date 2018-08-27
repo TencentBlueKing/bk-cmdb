@@ -23,13 +23,11 @@
                 @editModel="editModel"
             ></v-topo>
             <v-global-models v-else></v-global-models>
-            <!-- <bk-button type="primary" class="topo-btn edit" @click="editModelClass">
-                <i class="icon icon-cc-edit"></i>
-            </bk-button>
-            <bk-button type="danger" class="topo-btn del" v-if="activeClassify['bk_classification_type']!=='inner'" @click="deleteModelClass">
-                <i class="icon icon-cc-del"></i>
-            </bk-button> -->
         </div>
+        <cmdb-slider
+            :isShow.sync="slider.isShow" :title="slider.title">
+            <v-details slot="content"></v-details>
+        </cmdb-slider>
     </div>
 </template>
 
@@ -38,10 +36,21 @@
     import vGlobalModels from './topo/global-models'
     import vTopo from './topo/topo'
     import vTopoList from './topo/topo-list'
+    import vDetails from './details'
     export default {
+        components: {
+            vModelNav,
+            vGlobalModels,
+            vTopo,
+            vTopoList,
+            vDetails
+        },
         data () {
             return {
-
+                slider: {
+                    isShow: false,
+                    title: ''
+                }
             }
         },
         computed: {
@@ -51,23 +60,17 @@
         },
         methods: {
             createModel () {
-                this.sliderTitle.text = '新增模型'
-                this.isSlideShow = true
+                this.slider.title = '新增模型'
+                this.slider.isShow = true
             },
             editModel (model) {
-                this.sliderTitle.text = model['bk_obj_name']
+                this.slider.title = model['bk_obj_name']
                 this.activeModel = model
-                this.isSlideShow = true
+                this.slider.isShow = true
             },
             editModelClass () {
 
             }
-        },
-        components: {
-            vModelNav,
-            vGlobalModels,
-            vTopo,
-            vTopoList
         }
     }
 </script>

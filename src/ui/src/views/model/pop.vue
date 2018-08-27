@@ -8,8 +8,14 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 <template>
-    <div class="pop-wrapper">
-        <div class="pop-box">
+    <bk-dialog
+        :is-show.sync="isShow" 
+        :has-header="false" 
+        :has-footer="false" 
+        :quick-close="false" 
+        :width="565" 
+        :padding="0">
+        <div class="pop-box" slot="content">
             <div class="pop-info">
                 <div class="title" v-if="!isEdit">{{$t('ModelManagement["新增分组"]')}}</div>
                 <div class="title" v-else>{{$t('ModelManagement["编辑分组"]')}}</div>
@@ -24,7 +30,7 @@
                             @blur="validate"
                             :data-vv-name="$t('Common[\'中文名\']')"
                             v-validate="'required|classifyName'">
-                            <span v-show="errors.has($t('Common[\'中文名\']'))" class="help is-danger">{{ errors.first($t('Common[\'中文名\']')) }}</span>
+                            <span v-show="errors.has($t('Common[\'中文名\']'))" class="error-msg color-danger">{{ errors.first($t('Common[\'中文名\']')) }}</span>
                         </li> 
                         <li class="content-item">
                             <label for="">{{$t('ModelManagement["英文名"]')}}<span class="color-danger">*</span></label>
@@ -32,7 +38,7 @@
                             :data-vv-name="$t('ModelManagement[\'英文名\']')"
                             :disabled="classification['bk_classification_type'] === 'inner' || isEdit"
                             v-validate="'required|classifyId'">
-                            <div v-show="errors.has($t('ModelManagement[\'英文名\']'))" class="help is-danger">{{ errors.first($t('ModelManagement[\'英文名\']')) }}</div>
+                            <div v-show="errors.has($t('ModelManagement[\'英文名\']'))" class="error-msg color-danger">{{ errors.first($t('ModelManagement[\'英文名\']')) }}</div>
                         </li> 
                     </ul>
                     <div class="content-right" @click="isIconListShow = true">
@@ -68,17 +74,13 @@
                 </div>
             </div>
         </div>
-    </div>
+    </bk-dialog>
 </template>
 
 <script>
     import iconList from '@/assets/json/class-icon.json'
     export default {
         props: {
-            isShow: {
-                type: Boolean,
-                default: false
-            },
             isEdit: {
                 type: Boolean,
                 default: false
@@ -96,6 +98,7 @@
         },
         data () {
             return {
+                isShow: true,
                 iconList,
                 isIconListShow: false,
                 localValue: JSON.parse(JSON.stringify(this.classification))
@@ -119,7 +122,10 @@
                 取消
             */
             cancel () {
-                this.$emit('cancel')
+                this.isShow = false
+                setTimeout(() => {
+                    this.$emit('cancel')
+                }, 300)
             },
             /*
                 关闭选择图标弹窗
@@ -161,153 +167,143 @@
 </script>
 
 <style lang="scss" scoped>
-    .pop-wrapper{
-        position: fixed;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: rgba(0, 0, 0, .6);
-        z-index: 1299;
-        .is-danger{
-            color: #ff5656;
-            font-size: 12px;
-            margin-left: 58px;
-        }
-        .pop-box{
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 565px;
-            height: 310px;
-            border-radius: 2px;
-            background-color: #fff;
-            box-shadow: 0px 3px 7px 0px rgba(0, 0, 0, 0.1);
-            .pop-info{
-                .title{
-                    margin: 50px auto 40px;
-                    text-align: center;
-                    font-size: 18px;
-                    color: #333948;
+    .error-danger{
+        font-size: 12px;
+        margin-left: 58px;
+    }
+    .pop-box{
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 565px;
+        height: 310px;
+        border-radius: 2px;
+        background-color: #fff;
+        box-shadow: 0px 3px 7px 0px rgba(0, 0, 0, 0.1);
+        .pop-info{
+            .title{
+                margin: 50px auto 40px;
+                text-align: center;
+                font-size: 18px;
+                color: #333948;
+                line-height: 1;
+            }
+            .content{
+                height: 92px;
+                .content-left{
+                    float: left;
+                    width: 388px;
+                    padding-left: 70px;
                     line-height: 1;
+                    .content-item{
+                        height: 36px;
+                        &:first-child{
+                            margin-bottom: 20px;
+                        }
+                        label{
+                            line-height: 36px;
+                            float: left;
+                            margin-right: 8px;
+                            font-size: 14px;
+                            .color-danger{
+                                color: #ff5656;
+                            }
+                        }
+                        .cmdb-form-input{
+                            width: 259px;
+                            vertical-align: baseline;
+                        }
+                    }
                 }
-                .content{
+                .content-right{
+                    width: 88px;
                     height: 92px;
-                    .content-left{
-                        float: left;
-                        width: 388px;
-                        padding-left: 70px;
-                        line-height: 1;
-                        .content-item{
-                            height: 36px;
-                            &:first-child{
-                                margin-bottom: 20px;
-                            }
-                            label{
-                                line-height: 36px;
-                                float: left;
-                                margin-right: 8px;
-                                font-size: 14px;
-                                .color-danger{
-                                    color: #ff5656;
-                                }
-                            }
-                            .cmdb-form-input{
-                                width: 259px;
-                                vertical-align: baseline;
-                            }
-                        }
+                    float: right;
+                    margin-right: 69px;
+                    border: 1px solid #c3cdd7;
+                    border-radius: 2px;
+                    cursor: pointer;
+                    .icon-wrapper{
+                        padding-top: 4px;
+                        width: 100%;
+                        height: 63px;
+                        font-size: 38px;
+                        text-align: center;
+                        color: #63abff;
                     }
-                    .content-right{
-                        width: 88px;
-                        height: 92px;
-                        float: right;
-                        margin-right: 69px;
-                        border: 1px solid #c3cdd7;
-                        border-radius: 2px;
-                        cursor: pointer;
-                        .icon-wrapper{
-                            padding-top: 4px;
-                            width: 100%;
-                            height: 63px;
-                            font-size: 38px;
-                            text-align: center;
-                            color: #63abff;
-                        }
-                        .text{
-                            height: 27px;
-                            color: #737987;
-                            background: #f9fafb;
-                            font-size: 12px;
-                            line-height: 27px;
-                            text-align: center;
-                        }
-                    }
-                }
-                .footer{
-                    padding: 12px 18px;
-                    margin-top: 50px;
-                    height: 60px;
-                    border-top: 1px solid #e5e5e5;
-                    background: #fafbfd;
-                    text-align: right;
-                    font-size: 0;
-                    .btn-group{
-                        .confirm-btn{
-                            margin-right: 10px;
-                        }
+                    .text{
+                        height: 27px;
+                        color: #737987;
+                        background: #f9fafb;
+                        font-size: 12px;
+                        line-height: 27px;
+                        text-align: center;
                     }
                 }
             }
-            .pop-icon-list{
-                position: absolute;
-                width: 565px;
-                height: 310px;
-                background: #fff;
-                top: 0;
-                left: 0;
-                padding: 20px 13px 0;
-                .icon-box{
-                    height: 236px;
-                    .icon{
-                        float: left;
-                        width: 77px;
-                        height: 49px;
-                        padding: 5px;
-                        font-size: 30px;
-                        text-align: center;
-                        margin-bottom: 10px;
-                        cursor: pointer;
-                        &:hover,
-                        &.active{
-                            background: #e2efff;
-                            color: #3c96ff;
-                        }
+            .footer{
+                padding: 12px 18px;
+                margin-top: 50px;
+                height: 60px;
+                border-top: 1px solid #e5e5e5;
+                background: #fafbfd;
+                text-align: right;
+                font-size: 0;
+                .btn-group{
+                    .confirm-btn{
+                        margin-right: 10px;
                     }
                 }
-                .back{
-                    position: absolute;
-                    right: -47px;
-                    top: 0;
-                    width: 44px;
-                    height: 44px;
-                    padding: 7px;
-                    cursor: pointer;
-                    font-size: 18px;
+            }
+        }
+        .pop-icon-list{
+            position: absolute;
+            width: 565px;
+            height: 310px;
+            background: #fff;
+            top: 0;
+            left: 0;
+            padding: 20px 13px 0;
+            .icon-box{
+                height: 236px;
+                .icon{
+                    float: left;
+                    width: 77px;
+                    height: 49px;
+                    padding: 5px;
+                    font-size: 30px;
                     text-align: center;
-                    background: #2f2f2f;
-                    color: #fff;
-                }
-                .page{
-                    height: 52px;
-                    .info{
-                        padding-right: 25px;
-                        line-height: 52px;
-                        float: right;
-                        color: #c3cdd7;
-                        font-size: 16px;
+                    margin-bottom: 10px;
+                    cursor: pointer;
+                    &:hover,
+                    &.active{
+                        background: #e2efff;
+                        color: #3c96ff;
                     }
+                }
+            }
+            .back{
+                position: absolute;
+                right: -47px;
+                top: 0;
+                width: 44px;
+                height: 44px;
+                padding: 7px;
+                cursor: pointer;
+                font-size: 18px;
+                text-align: center;
+                background: #2f2f2f;
+                color: #fff;
+            }
+            .page{
+                height: 52px;
+                .info{
+                    padding-right: 25px;
+                    line-height: 52px;
+                    float: right;
+                    color: #c3cdd7;
+                    font-size: 16px;
                 }
             }
         }
