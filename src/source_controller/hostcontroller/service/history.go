@@ -96,7 +96,7 @@ func (s *Service) GetHistorys(req *restful.Request, resp *restful.Response) {
 	var result []meta.HistoryMeta
 	sort := "-" + common.LastTimeField
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
-	err = s.Instance.Table(common.BKTableNameHistory).Find(conds).Fields(fields...).Sort(sort).Limit(uint64(limit)).Start(uint64(start)).All(ctx, result)
+	err = s.Instance.Table(common.BKTableNameHistory).Find(conds).Fields(fields...).Sort(sort).Limit(uint64(limit)).Start(uint64(start)).All(ctx, &result)
 	if nil != err {
 		blog.Error("query  history failed, err: %v, params: %v", err, conds)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})

@@ -13,6 +13,7 @@
 package metadata
 
 import (
+	"configcenter/src/common/mapstr"
 	"time"
 )
 
@@ -73,8 +74,8 @@ type GetHistoryResult struct {
 }
 
 type HostInfo struct {
-	Count int                      `json:"count"`
-	Info  []map[string]interface{} `json:"info"`
+	Count int             `json:"count"`
+	Info  []mapstr.MapStr `json:"info"`
 }
 
 type GetHostsResult struct {
