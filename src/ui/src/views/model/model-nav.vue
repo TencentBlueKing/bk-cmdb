@@ -64,6 +64,14 @@
                 return this.$route.params.classifyId
             },
             activeClassify () {
+                if (!this.isEdit) {
+                    return {
+                        bk_classification_id: '',
+                        bk_classification_icon: '',
+                        bk_classification_name: '',
+                        bk_classification_type: ''
+                    }
+                }
                 let activeClassify = this.classifications.find(({bk_classification_id: bkClassificationId}) => bkClassificationId === this.bkClassificationId)
                 return activeClassify
             }
