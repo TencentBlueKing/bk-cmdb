@@ -51,8 +51,8 @@ const actions = {
      * @param {String} dispatch store dispatch action hander
      * @return {promises} promises 对象
      */
-    searchMainlineObject ({ commit, state, dispatch, rootGetters }) {
-        return $http.get(`topo/model/${rootGetters.supplierAccount}`)
+    searchMainlineObject ({ commit, state, dispatch, rootGetters }, config) {
+        return $http.get(`topo/model/${rootGetters.supplierAccount}`, config)
     },
 
     /**
@@ -60,12 +60,11 @@ const actions = {
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 开发商账号
      * @param {String} bkBizId 业务id
      * @return {promises} promises 对象
      */
-    getInstTopo ({ commit, state, dispatch }, { bkSupplierAccount, bkBizId }) {
-        return $http.get(`topo/inst/${bkSupplierAccount}/${bkBizId}`)
+    getInstTopo ({ commit, state, dispatch, rootGetters }, { bizId, config }) {
+        return $http.get(`topo/inst/${rootGetters.supplierAccount}/${bizId}?level=-1`, config)
     },
 
     /**
@@ -92,8 +91,8 @@ const actions = {
      * @param {String} bkBizId 业务id
      * @return {promises} promises 对象
      */
-    getInternalTopo ({ commit, state, dispatch }, { bkSupplierAccount, bkBizId }) {
-        return $http.get(`topo/internal/${bkSupplierAccount}/${bkBizId}`)
+    getInternalTopo ({ commit, state, dispatch, rootGetters }, { bizId, config }) {
+        return $http.get(`topo/internal/${rootGetters.supplierAccount}/${bizId}`)
     }
 }
 

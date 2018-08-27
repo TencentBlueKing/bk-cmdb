@@ -20,6 +20,8 @@ import timezone from './form/timezone.vue'
 import enumeration from './form/enum.vue'
 import objuser from './form/objuser.vue'
 import associateInput from './form/associate-input.vue'
+import tree from './tree/tree.vue'
+import resize from './other/resize.vue'
 const install = (Vue, opts = {}) => {
     const components = [
         businessSelector,
@@ -42,7 +44,9 @@ const install = (Vue, opts = {}) => {
         timezone,
         enumeration,
         objuser,
-        associateInput
+        associateInput,
+        tree,
+        resize
     ]
     components.forEach(component => {
         Vue.component(component.name, component)
@@ -71,5 +75,7 @@ export default {
     timezone,
     enumeration,
     objuser,
-    associateInput
+    associateInput,
+    tree,
+    resize
 }
