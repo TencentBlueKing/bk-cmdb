@@ -6,14 +6,14 @@
                 <div class="select-wrapper">
                     <div class="select-box clearfix" @click.stop.prevent="toggleDrop" :class="{'active': iconInfo.isIconDrop}">
                         <div class="select-content">
-                            <i class="icon-cc-default"></i>
+                            <i :class="baseInfo['bk_obj_icon']"></i>
                         </div>
                         <span class="arrow"><i class="bk-icon icon-angle-down"></i></span>
                     </div>
                     <div class="mask" v-if="iconInfo.isIconDrop" @click="closeDrop"></div>
                     <div class="select-list" v-if="iconInfo.isIconDrop">
                         <ul class="clearfix select-icon-list">
-                            <li v-tooltip="{content: language === 'zh-CN' ? item.nameZh : item.nameEn}" v-for="(item,index) in curIconList" :class="{'active': false}" :key="index" @click.stop.prevent="chooseIcon(index, item)">
+                            <li v-tooltip="{content: language === 'zh-CN' ? item.nameZh : item.nameEn}" v-for="(item,index) in curIconList" :class="{'active': false}" :key="index" @click.stop.prevent="chooseIcon(item)">
                                 <i :class="item.value"></i>
                             </li>
                         </ul>
@@ -40,7 +40,7 @@
                 <div class="input-box">
                     <input type="text" id="name" class="cmdb-form-input"
                         maxlength="20"
-                        v-model.trim="baseInfo.name"
+                        v-model.trim="baseInfo['bk_obj_name']"
                         :data-vv-name="$t('ModelManagement[\'中文名称\']')"
                         v-validate="'required|singlechar'">
                     <span v-show="errors.has($t('ModelManagement[\'中文名称\']'))" class="error-msg color-danger">{{ errors.first($t('ModelManagement[\'中文名称\']')) }}</span>
@@ -51,7 +51,8 @@
                 <div class="input-box">
                     <input type="text" id="desc" class="cmdb-form-input"
                         maxlength="20"
-                        v-model.trim="baseInfo.desc"
+                        :disabled="isEdit"
+                        v-model.trim="baseInfo['bk_obj_id']"
                         :data-vv-name="$t('ModelManagement[\'英文名称\']')"
                         v-validate="'required|modelId'">
                     <span v-show="errors.has($t('ModelManagement[\'英文名称\']'))" class="error-msg color-danger">{{ errors.first($t('ModelManagement[\'英文名称\']')) }}</span>
@@ -67,13 +68,18 @@
 
 <script>
     import iconList from '@/assets/json/model-icon'
-    import { mapGetters } from 'vuex'
+    import { mapGetters, mapActions } from 'vuex'
     export default {
+        props: {
+            isReadOnly: {
+                type: Boolean,
+                default: false
+            }
+        },
         data () {
             return {
                 iconInfo: {
                     isIconDrop: false,
-                    selected: '',
                     searchText: '',
                     list: iconList,
                     count: 0,
@@ -82,15 +88,30 @@
                     size: 24
                 },
                 baseInfo: {
-                    name: '',
-                    desc: ''
-                }
+                    bk_obj_name: '',
+                    bk_obj_id: '',
+                    bk_classification_id: '',
+                    bk_supplier_account: '',
+                    bk_obj_icon: 'icon-cc-default'
+                },
+                baseInfoCopy: {}
             }
         },
         computed: {
             ...mapGetters([
-                'language'
+                'language',
+                'userName',
+                'supplierAccount'
             ]),
+            ...mapGetters('objectModel', [
+                'activeModel'
+            ]),
+            isEdit () {
+                return this.activeModel.hasOwnProperty('bk_obj_id')
+            },
+            isMainLine () {
+                return this.activeModel.hasOwnProperty('bk_asst_obj_id') && this.activeModel['bk_asst_obj_id'] !== ''
+            },
             curIconList () {
                 let {
                     searchText,
@@ -109,9 +130,24 @@
                 return curIconList.slice((curPage - 1) * size, curPage * size)
             }
         },
+        created () {
+            if (this.isEdit) {
+                this.getObjInfo()
+            } else {
+                this.baseInfo['bk_classification_id'] = this.activeModel['bk_classification_id']
+            }
+        },
         methods: {
-            chooseIcon (item, index) {
-                this.iconInfo.selected = item
+            ...mapActions('objectModel', [
+                'createObject',
+                'updateObject',
+                'searchObjects'
+            ]),
+            ...mapActions('objectMainLineModule', [
+                'createMainlineObject'
+            ]),
+            chooseIcon (item) {
+                this.baseInfo['bk_obj_icon'] = item.value
             },
             toggleDrop () {
                 this.iconInfo.isIconDrop = !this.iconInfo.isIconDrop
@@ -119,11 +155,49 @@
             closeDrop () {
                 this.iconInfo.isIconDrop = false
             },
-            saveBaseInfo () {
-
+            async saveBaseInfo () {
+                if (!await this.$validator.validateAll()) {
+                    return
+                }
+                let params = {
+                    bk_supplier_account: this.supplierAccount,
+                    bk_obj_name: this.baseInfo['bk_obj_name'],
+                    bk_obj_icon: this.baseInfo['bk_obj_icon'],
+                    bk_classification_id: this.activeModel['bk_classification_id'],
+                    bk_obj_id: this.baseInfo['bk_obj_id']
+                }
+                if (this.isEdit) {
+                    if (this.baseInfo['bk_obj_name'] === this.baseInfoCopy['bk_obj_name'] && this.baseInfo['bk_obj_icon'] === this.baseInfoCopy['bk_obj_icon']) {
+                        this.cancel()
+                        return
+                    }
+                    await this.updateObject({
+                        id: this.activeModel['id'],
+                        params: {...params, ...{modifier: this.userName}}
+                    })
+                } else {
+                    if (this.isMainLine) {
+                        await this.createMainlineObject({
+                            params: {...params, ...{creator: this.userName, bk_asst_obj_id: this.activeModel['bk_asst_obj_id']}}
+                        })
+                    } else {
+                        await this.createObject({
+                            params: {...params, ...{creator: this.userName}}
+                        })
+                    }
+                }
+            },
+            async getObjInfo () {
+                const res = await this.searchObjects({
+                    params: {
+                        bk_obj_id: this.activeModel['bk_obj_id']
+                    }
+                })
+                this.baseInfo = res[0]
+                this.baseInfoCopy = this.$tools.clone(res[0])
             },
             cancel () {
-
+                this.$emit('cancel')
             }
         }
     }

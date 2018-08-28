@@ -26,7 +26,8 @@
         </div>
         <cmdb-slider
             :isShow.sync="slider.isShow" :title="slider.title">
-            <v-details slot="content"></v-details>
+            <v-details slot="content"
+            ></v-details>
         </cmdb-slider>
     </div>
 </template>
@@ -37,6 +38,7 @@
     import vTopo from './topo/topo'
     import vTopoList from './topo/topo-list'
     import vDetails from './details'
+    import { mapMutations } from 'vuex'
     export default {
         components: {
             vModelNav,
@@ -59,13 +61,21 @@
             }
         },
         methods: {
-            createModel () {
+            ...mapMutations('objectModel', [
+                'setActiveModel'
+            ]),
+            createModel (prevModelId) {
                 this.slider.title = '新增模型'
                 this.slider.isShow = true
+                this.setActiveModel({
+                    bk_classification_id: this.bkClassificationId,
+                    bk_asst_obj_id: prevModelId
+                })
             },
             editModel (model) {
+                console.log(1)
                 this.slider.title = model['bk_obj_name']
-                this.activeModel = model
+                this.setActiveModel(model)
                 this.slider.isShow = true
             },
             editModelClass () {
