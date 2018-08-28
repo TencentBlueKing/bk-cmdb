@@ -13,7 +13,9 @@
 package identifier
 
 import (
+	"configcenter/src/common/util"
 	"encoding/json"
+	"sort"
 
 	redis "gopkg.in/redis.v5"
 
@@ -40,6 +42,15 @@ type HostIdentifier struct {
 	Process         []Process          `json:"process" bson:"process"`
 }
 
+type PorcessSorter []Process
+
+func (p PorcessSorter) Len() int      { return len(p) }
+func (p PorcessSorter) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
+func (p PorcessSorter) Less(i, j int) bool {
+	sort.Sort(util.Int64Slice(p[i].BindModules))
+	return p[i].ProcessID < p[j].ProcessID
+}
+
 type Process struct {
 	ProcessID       int64   `json:"bk_process_id" bson:"bk_process_id"`               // 进程名称
 	ProcessName     string  `json:"bk_process_name" bson:"bk_process_name"`           // 进程名称
@@ -64,6 +75,7 @@ type Module struct {
 }
 
 func (iden *HostIdentifier) MarshalBinary() (data []byte, err error) {
+	sort.Sort(PorcessSorter(iden.Process))
 	return json.Marshal(iden)
 }
 
