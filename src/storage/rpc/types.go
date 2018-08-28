@@ -54,9 +54,7 @@ func (s *streamstore) store(seq uint32, stream *StreamMessage) {
 }
 
 func (s *streamstore) get(seq uint32) (*StreamMessage, bool) {
-	s.RLock()
 	stream, ok := s.stream[seq]
-	s.RUnlock()
 	return stream, ok
 }
 func (s *streamstore) remove(seq uint32) {
