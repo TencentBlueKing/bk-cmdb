@@ -75,7 +75,7 @@ input.cmdb-form-input{
 }
 .cmdb-form-radio{
     font-size: 14px;
-    color: #666666;
+    color: #737987;
     margin-right: 30px;
     line-height: 18px;
     display: inline-block;
@@ -139,7 +139,7 @@ input.cmdb-form-input{
 }
 .cmdb-form-checkbox{
     font-size: 14px;
-    color: #666666;
+    color: #737987;
     margin-right: 30px;
     line-height: 18px;
     display: inline-block;
@@ -258,6 +258,15 @@ input.cmdb-form-input{
 }
 .bk-selector .bk-selector-list-item .text{
     @include ellipsis;
+}
+.bk-selector.bk-selector-small {
+    .bk-selector-input {
+        height: 30px;
+        line-height: 30px;
+    }
+    .bk-selector-icon {
+        top: 9px;
+    }
 }
 /* rewrite magicbox style ------end------ */
 
@@ -418,3 +427,32 @@ input.cmdb-form-input{
 }
 /* permission -------end------- */
 
+/* model-field -------start------- */
+.model-field-wrapper {
+    .form-item {
+        font-size: 0;
+        float: left;
+        vertical-align: middle;
+        &.has-right-content {
+            margin-right: 20px;
+        }
+        .form-label {
+            display: inline-block;
+            width: 80px;
+            padding-right: 5px;
+            font-size: 14px;
+            text-align: right;
+        }
+        .cmdb-form-input {
+            display: inline-block;
+            width: 130px;
+            height: 30px;
+            line-height: 28px;
+        }
+        .form-selector {
+            width: 130px;
+            display: inline-block;
+        }
+    }
+}
+/* model-field -------end------- */
