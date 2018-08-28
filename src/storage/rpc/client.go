@@ -13,6 +13,7 @@
 package rpc
 
 import (
+	"sync/atomic"
 	"bufio"
 	"errors"
 	"io"
@@ -38,6 +39,7 @@ const commanLimit = 40
 type Client struct {
 	send     chan *Message
 	seq      uint32
+	messageMutex sync.RWMutex
 	messages map[uint32]*Message
 	stream   *streamstore
 	wire     Wire
@@ -173,7 +175,7 @@ func (c *Client) operation(op MessageType, cmd string, data interface{}) (*Messa
 			magicVersion: MagicVersion,
 			codec:        c.codec,
 			seq:          c.nextSeq(),
-			complete:     make(chan struct{}, 1),
+			complete:     make(chan struct{}),
 			typz:         op,
 			cmd:          cmd,
 			Data:         nil,
@@ -229,12 +231,14 @@ func (c *Client) operation(op MessageType, cmd string, data interface{}) (*Messa
 }
 
 func (c *Client) nextSeq() uint32 {
-	c.seq++
-	return c.seq
+	return atomic.AddUint32(&c.seq, 1)
 }
 
 func (c *Client) replyError(req *Message) {
-	delete(c.messages, req.seq) // no need lock cause the loop is serial
+	c.messageMutex.Lock()
+	delete(c.messages, req.seq)
+	c.messageMutex.Unlock()
+
 	req.typz = TypeError
 	req.Data = []byte(c.err.Error())
 	req.complete <- struct{}{}
@@ -247,7 +251,10 @@ func (c *Client) handleRequest(req *Message) {
 		return
 	}
 
+	c.messageMutex.Lock()
 	c.messages[req.seq] = req
+	c.messageMutex.Unlock()
+
 	c.send <- req
 	blog.V(5).Infof("[rpc client]sent message data: %s", req.Data)
 }
@@ -258,14 +265,18 @@ func (c *Client) handleResponse(resp *Message) {
 	if resp.transportErr != nil {
 		c.err = resp.transportErr
 		// Terminate all in flight
+		c.messageMutex.RLock()
 		for _, msg := range c.messages {
 			c.replyError(msg)
 		}
+		c.messageMutex.RUnlock()
 		// TODO reconnect when transportErr?
 		return
 	}
 	if resp.typz == TypeStream || resp.typz == TypeStreamClose {
+		c.stream.RLock()
 		stream, ok := c.stream.get(resp.seq)
+		c.stream.RUnlock()
 		if ok {
 			stream.input <- resp
 		} else {
@@ -273,16 +284,22 @@ func (c *Client) handleResponse(resp *Message) {
 		}
 		return
 	}
+	c.messageMutex.Lock()
 	if req, ok := c.messages[resp.seq]; ok {
 		if c.err != nil {
+			c.messageMutex.Unlock()
 			c.replyError(req)
 			return
 		}
 
-		delete(c.messages, resp.seq) // no need lock cause the loop is serial
+		delete(c.messages, resp.seq) 
+		c.messageMutex.Unlock()
+
 		req.typz = resp.typz
 		req.Data = resp.Data
-		req.complete <- struct{}{}
+		close(req.complete)
+	}else{
+		c.messageMutex.Unlock()
 	}
 }
 

@@ -167,11 +167,11 @@ func (s *ServerSession) readFromWire() error {
 
 func (s *ServerSession) handle(f HandlerFunc, msg *Message) {
 	defer func() {
-		// runtimeErr := recover()
-		// if runtimeErr != nil {
-		// 	stack := debug.Stack()
-		// 	blog.Errorf("command [%s] failed: %v\n%s", msg.cmd, runtimeErr, stack)
-		// }
+		runtimeErr := recover()
+		if runtimeErr != nil {
+			stack := debug.Stack()
+			blog.Errorf("command [%s] failed: %v\n%s", msg.cmd, runtimeErr, stack)
+		}
 	}()
 	result, err := f(msg)
 	if encodeErr := msg.Encode(result); encodeErr != nil {
