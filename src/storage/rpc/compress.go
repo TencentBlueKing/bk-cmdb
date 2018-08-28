@@ -29,9 +29,30 @@ type flushWriter interface {
 }
 
 type Compressor struct {
-	zr    io.Reader
+	zr io.Reader
+	zw flushWriter
+}
+
+type flushWraper struct {
 	zw    flushWriter
 	flush func() error
+}
+
+func (f *flushWraper) Flush() error {
+	if err := f.zw.Flush(); err != nil {
+		return err
+	}
+	return f.flush()
+}
+func (f *flushWraper) Write(p []byte) (n int, err error) {
+	return f.zw.Write(p)
+}
+
+func newFlushWraper(w flushWriter, flush func() error) flushWriter {
+	return &flushWraper{
+		zw:    w,
+		flush: flush,
+	}
 }
 
 func newCompressor(r io.Reader, w io.Writer, compress string) (*Compressor, error) {
@@ -39,24 +60,25 @@ func newCompressor(r io.Reader, w io.Writer, compress string) (*Compressor, erro
 	var zw flushWriter
 	var err error
 
-	br := bufio.NewReaderSize(r, readBufferSize)
-	
+	bw := bufio.NewWriterSize(w, writeBufferSize)
+	compress = ""
 	switch compress {
 	case "deflate":
-		zr = flate.NewReader(br)
-		zw, err = flate.NewWriter(w, flate.DefaultCompression)
+		zr = flate.NewReader(r)
+		zw, err = flate.NewWriter(bw, flate.DefaultCompression)
 		if err != nil {
 			return nil, err
 		}
+		zw = newFlushWraper(zw, bw.Flush)
 	default:
-		bw := bufio.NewWriterSize(w, writeBufferSize)
+		br := bufio.NewReaderSize(r, readBufferSize)
 		zr = br
 		zw = bw
 	}
 
 	return &Compressor{
-		zr:    zr,
-		zw:    zw, 
+		zr: zr,
+		zw: zw,
 	}, nil
 }
 

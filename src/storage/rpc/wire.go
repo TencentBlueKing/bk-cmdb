@@ -35,7 +35,7 @@ type BinaryWire struct {
 
 // NewBinaryWire returns a new BinaryWire
 func NewBinaryWire(rwc io.ReadWriteCloser, compress string) (*BinaryWire, error) {
-	compressor, err := newCompressor(rwc, rwc, compress)
+	compressor, err := newCompressor(rwc,rwc, compress)
 	if err != nil {
 		return nil, err
 	}

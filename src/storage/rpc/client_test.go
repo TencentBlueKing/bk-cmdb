@@ -73,7 +73,7 @@ func BenchmarkGORPC(b *testing.B) {
 	cli, err := gorpc.DialHTTPPath("tcp", address, "/rpc")
 	require.NoError(b, err)
 
-	b.ResetTimer() 
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		reply := Reply{}
 		err := cli.Call("GORPC.OK", &Req{Name: "ok"}, &reply)
