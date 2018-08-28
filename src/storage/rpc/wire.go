@@ -13,7 +13,6 @@
 package rpc
 
 import (
-	"bufio"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -36,9 +35,7 @@ type BinaryWire struct {
 
 // NewBinaryWire returns a new BinaryWire
 func NewBinaryWire(rwc io.ReadWriteCloser, compress string) (*BinaryWire, error) {
-	w := bufio.NewWriterSize(rwc, writeBufferSize)
-	r := bufio.NewReaderSize(rwc, readBufferSize)
-	compressor, err := newCompressor(r, w, compress)
+	compressor, err := newCompressor(rwc, rwc, compress)
 	if err != nil {
 		return nil, err
 	}
