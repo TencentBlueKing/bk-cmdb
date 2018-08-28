@@ -13,6 +13,7 @@
 package rpc
 
 import (
+	"bufio"
 	"compress/flate"
 	"io"
 )
@@ -33,26 +34,29 @@ type Compressor struct {
 	flush func() error
 }
 
-func newCompressor(r io.Reader, w flushWriter, compress string) (*Compressor, error) {
+func newCompressor(r io.Reader, w io.Writer, compress string) (*Compressor, error) {
 	var zr io.Reader
 	var zw flushWriter
 	var err error
+
+	br := bufio.NewReaderSize(r, readBufferSize)
+	
 	switch compress {
 	case "deflate":
-		zr = flate.NewReader(r)
+		zr = flate.NewReader(br)
 		zw, err = flate.NewWriter(w, flate.DefaultCompression)
 		if err != nil {
 			return nil, err
 		}
 	default:
-		zr = r
-		zw = w
+		bw := bufio.NewWriterSize(w, writeBufferSize)
+		zr = br
+		zw = bw
 	}
 
 	return &Compressor{
 		zr:    zr,
 		zw:    zw, 
-		flush: w.Flush,
 	}, nil
 }
 
@@ -63,8 +67,5 @@ func (c *Compressor) Write(p []byte) (n int, err error) {
 	return c.zw.Write(p)
 }
 func (c *Compressor) Flush() (err error) {
-	if err = c.zw.Flush(); err != nil {
-		return err
-	}
-	return c.flush()
+	return c.zw.Flush()
 }
