@@ -19,9 +19,11 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 
 	"configcenter/src/common/blog"
+	"configcenter/src/common/util"
 )
 
 var (
@@ -34,17 +36,19 @@ const commanLimit = 40
 
 //Client replica client
 type Client struct {
-	end       chan struct{}
-	requests  chan *Message
-	send      chan *Message
-	responses chan *Message
-	seq       uint32
-	messages  map[uint32]*Message
-	stream    *streamstore
-	wire      Wire
-	peerAddr  string
-	err       error
-	codec     Codec
+	send     chan *Message
+	seq      uint32
+	messages map[uint32]*Message
+	stream   *streamstore
+	wire     Wire
+	peerAddr string
+	err      error
+	codec    Codec
+
+	request  Message
+	response Message
+	done     *util.AtomicBool
+	wg       sync.WaitGroup
 }
 
 //NewClient replica client
@@ -54,18 +58,15 @@ func NewClient(conn net.Conn, compress string) (*Client, error) {
 		return nil, err
 	}
 	c := &Client{
-		wire:      wire,
-		peerAddr:  conn.RemoteAddr().String(),
-		end:       make(chan struct{}, 1024),
-		requests:  make(chan *Message, 1024),
-		send:      make(chan *Message, 1024),
-		responses: make(chan *Message, 1024),
-		messages:  map[uint32]*Message{},
-		codec:     JSONCodec,
-		stream:    newStreamStore(),
+		wire:     wire,
+		peerAddr: conn.RemoteAddr().String(),
+		done:     util.NewBool(false),
+		send:     make(chan *Message, 1024),
+		messages: map[uint32]*Message{},
+		codec:    JSONCodec,
+		stream:   newStreamStore(),
 	}
 	blog.V(3).Infof("connected to %s", c.TargetID())
-	go c.loop()
 	go c.write()
 	go c.read()
 	return c, nil
@@ -114,7 +115,7 @@ func DialHTTPPath(network, address, path string) (*Client, error) {
 //Close replica client
 func (c *Client) Close() error {
 	c.wire.Close()
-	c.end <- struct{}{}
+	c.done.Set()
 	return nil
 }
 
@@ -142,24 +143,18 @@ func (c *Client) CallStream(cmd string, input interface{}) (*StreamMessage, erro
 	sm := NewStreamMessage(msg)
 	c.stream.store(msg.seq, sm)
 	go func() {
-	clientstreamloop:
-		for {
-			select {
-			case streammsg := <-sm.output:
-				c.send <- streammsg
-				if msg.typz == TypeStreamClose {
-					break clientstreamloop
-				}
-			case <-sm.done:
-				break clientstreamloop
-			case <-c.end:
-				break clientstreamloop
+		for streammsg := range sm.output {
+			c.send <- streammsg
+			if msg.typz == TypeStreamClose {
+				break
+			}
+			if sm.done.IsSet() || c.done.IsSet() {
+				break
 			}
 		}
 		sm.err = ErrStreamStoped
 		close(sm.input)
 		close(sm.output)
-		close(sm.done)
 	}()
 
 	return sm, nil
@@ -174,7 +169,7 @@ func (c *Client) Ping() error {
 func (c *Client) operation(op MessageType, cmd string, data interface{}) (*Message, error) {
 	retry := 0
 	for {
-		msg := Message{
+		msg := &Message{
 			magicVersion: MagicVersion,
 			codec:        c.codec,
 			seq:          c.nextSeq(),
@@ -199,14 +194,14 @@ func (c *Client) operation(op MessageType, cmd string, data interface{}) (*Messa
 			return time.After(opPingTimeout)
 		}(msg.typz)
 
-		c.requests <- &msg
+		c.handleRequest(msg)
 
 		select {
 		case <-msg.complete:
 			if msg.typz == TypeError {
 				return nil, errors.New(string(msg.Data))
 			}
-			return &msg, nil
+			return msg, nil
 		case <-timeout:
 			switch msg.typz {
 			case TypeRequest:
@@ -229,21 +224,6 @@ func (c *Client) operation(op MessageType, cmd string, data interface{}) (*Messa
 				// TODO print journal
 				return nil, err
 			}
-		}
-	}
-}
-
-func (c *Client) loop() {
-	defer close(c.send)
-
-	for {
-		select {
-		case <-c.end:
-			return
-		case req := <-c.requests:
-			c.handleRequest(req)
-		case resp := <-c.responses:
-			c.handleResponse(resp)
 		}
 	}
 }
@@ -309,23 +289,19 @@ func (c *Client) handleResponse(resp *Message) {
 func (c *Client) write() {
 	for msg := range c.send {
 		if err := c.wire.Write(msg); err != nil {
-			c.responses <- &Message{
-				transportErr: err,
-			}
+			c.handleResponse(msg)
 		}
 	}
 }
 
 func (c *Client) read() {
 	for {
-		msg, err := c.wire.Read()
+		err := c.wire.Read(&c.response)
 		if err != nil {
 			blog.Errorf("Error reading from wire: %v", err)
-			c.responses <- &Message{
-				transportErr: err,
-			}
+			c.handleResponse(&c.response)
 			break
 		}
-		c.responses <- msg
+		c.handleResponse(&c.response)
 	}
 }
