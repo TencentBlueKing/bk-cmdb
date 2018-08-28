@@ -23,7 +23,7 @@ import (
 // Wire define a wire
 type Wire interface {
 	Write(*Message) error
-	Read() (*Message, error)
+	Read(*Message,) ( error)
 	Close() error
 }
 
@@ -74,33 +74,32 @@ func (w *BinaryWire) Write(msg *Message) error {
 	return w.writer.Flush()
 }
 
-func (w *BinaryWire) Read() (*Message, error) {
+func (w *BinaryWire) Read(msg *Message) (error) {
 	var (
-		msg Message
 		err error
 	)
 
 	if err = binary.Read(w.reader, binary.LittleEndian, &msg.magicVersion); err != nil {
-		return nil, err
+		return err
 	}
 
 	if msg.magicVersion != MagicVersion {
-		return nil, fmt.Errorf("Wrong API version received: 0x%x", &msg.magicVersion)
+		return fmt.Errorf("Wrong API version received: 0x%x", &msg.magicVersion)
 	}
 
 	if err = binary.Read(w.reader, binary.LittleEndian, &msg.seq); err != nil {
-		return nil, err
+		return err
 	}
 	if err = binary.Read(w.reader, binary.LittleEndian, &msg.typz); err != nil {
-		return nil, err
+		return err
 	}
 	if msg.cmd, err = readString(w.reader); err != nil {
-		return nil, err
+		return err
 	}
 	if msg.Data, err = readBytes(w.reader); err != nil {
-		return nil, err
+		return err
 	}
-	return &msg, nil
+	return  nil
 }
 
 // Close close the wire

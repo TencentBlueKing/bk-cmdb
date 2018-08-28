@@ -13,6 +13,7 @@
 package rpc
 
 import (
+	"configcenter/src/common/util"
 	"bytes"
 	"encoding"
 	"encoding/json"
@@ -53,7 +54,9 @@ func (s *streamstore) store(seq uint32, stream *StreamMessage) {
 }
 
 func (s *streamstore) get(seq uint32) (*StreamMessage, bool) {
+	s.RLock()
 	stream, ok := s.stream[seq]
+	s.RUnlock()
 	return stream, ok
 }
 func (s *streamstore) remove(seq uint32) {
@@ -67,7 +70,7 @@ type StreamMessage struct {
 	root   *Message
 	input  chan *Message
 	output chan *Message
-	done   chan struct{}
+	done   *util.AtomicBool
 	err    error
 }
 
@@ -83,7 +86,7 @@ func NewStreamMessage(root *Message) *StreamMessage {
 		root:   root,
 		input:  make(chan *Message, 10),
 		output: make(chan *Message, 10),
-		done:   make(chan struct{}),
+		done:   util.NewBool(false),
 	}
 }
 
@@ -207,6 +210,10 @@ func (msg *Message) Decode(value interface{}) error {
 
 // Encode encode the value to message data
 func (msg *Message) Encode(value interface{}) error {
+	if value == nil {
+		msg.Data=msg.Data[:0]
+		return nil
+	}
 	var err error
 	if encoder, ok := value.(encoding.BinaryMarshaler); ok {
 		msg.Data, err = encoder.MarshalBinary()

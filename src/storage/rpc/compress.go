@@ -51,7 +51,7 @@ func newCompressor(r io.Reader, w flushWriter, compress string) (*Compressor, er
 
 	return &Compressor{
 		zr:    zr,
-		zw:    zw,
+		zw:    zw, 
 		flush: w.Flush,
 	}, nil
 }
