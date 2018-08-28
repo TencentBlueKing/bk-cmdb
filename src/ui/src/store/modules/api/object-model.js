@@ -11,11 +11,11 @@
 import $http from '@/api'
 
 const state = {
-
+    activeModel: null
 }
 
 const getters = {
-
+    activeModel: (state) => state.activeModel
 }
 
 const actions = {
@@ -27,8 +27,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    createObject ({ commit, state, dispatch }, { params }) {
-        return $http.post(`object`, params)
+    createObject ({ commit, state, dispatch }, { params, config }) {
+        return $http.post(`object`, params, config)
     },
 
     /**
@@ -82,7 +82,9 @@ const actions = {
 }
 
 const mutations = {
-
+    setActiveModel (state, activeModel) {
+        state.activeModel = activeModel
+    }
 }
 
 export default {
