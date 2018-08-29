@@ -69,8 +69,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    searchSet ({ commit, state, dispatch }, { bkSupplierAccount, bkBizId, params }) {
-        return $http.post(`set/search/${bkSupplierAccount}/${bkBizId}`, params)
+    searchSet ({ commit, state, dispatch, rootGetters }, { bizId, params, config }) {
+        return $http.post(`set/search/${rootGetters.supplierAccount}/${bizId}`, params, config)
     }
 }
 
