@@ -40,6 +40,7 @@
                 <div class="input-box">
                     <input type="text" id="name" class="cmdb-form-input"
                         maxlength="20"
+                        :disabled="isReadOnly || activeModel['ispre']"
                         v-model.trim="baseInfo['bk_obj_name']"
                         :data-vv-name="$t('ModelManagement[\'中文名称\']')"
                         v-validate="'required|singlechar'">
@@ -59,7 +60,7 @@
                 </div>
             </div>
         </div>
-        <footer class="footer">
+        <footer class="footer" v-if="!isReadOnly">
             <bk-button type="primary" @click="saveBaseInfo" :loading="$loading('saveBaseInfo')">{{$t('Common["确定"]')}}</bk-button>
             <bk-button class="default" type="default" :title="$t('Common[\'取消\']')" @click="cancel">{{$t('Common["取消"]')}}</bk-button>
         </footer>
@@ -72,6 +73,10 @@
     export default {
         props: {
             isReadOnly: {
+                type: Boolean,
+                default: false
+            },
+            isEdit: {
                 type: Boolean,
                 default: false
             }
@@ -106,9 +111,6 @@
             ...mapGetters('objectModel', [
                 'activeModel'
             ]),
-            isEdit () {
-                return this.activeModel.hasOwnProperty('bk_obj_id')
-            },
             isMainLine () {
                 return this.activeModel.hasOwnProperty('bk_asst_obj_id') && this.activeModel['bk_asst_obj_id'] !== ''
             },
@@ -185,6 +187,7 @@
                             params: {...params, ...{creator: this.userName}}
                         })
                     }
+                    this.$emit('update:isEdit', true)
                 }
             },
             async getObjInfo () {

@@ -1,21 +1,21 @@
 <template>
     <ul class="label-wrapper clearfix">
         <li v-if="isEditableShow">
-            <label for="editable" class="cmdb-form-checkbox cmdb-checkbox-small">
+            <label class="cmdb-form-checkbox cmdb-checkbox-small">
                 <span class="cmdb-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</span>
-                <input id="editable" type="checkbox">
+                <input type="checkbox" v-model="localValue.editable">
             </label>
         </li>
         <li v-if="isRequiredShow">
-            <label for="isrequired" class="cmdb-form-checkbox cmdb-checkbox-small">
+            <label class="cmdb-form-checkbox cmdb-checkbox-small">
                 <span class="cmdb-checkbox-text mr5">{{$t('ModelManagement["是否必填"]')}}</span>
-                <input id="isrequired" type="checkbox">
+                <input type="checkbox" v-model="localValue.isrequired">
             </label>
         </li>
         <li v-if="isOnlyShow">
-            <label for="isonly" class="cmdb-form-checkbox cmdb-checkbox-small">
+            <label class="cmdb-form-checkbox cmdb-checkbox-small">
                 <span class="cmdb-checkbox-text mr5">{{$t('ModelManagement["是否唯一"]')}}</span>
-                <input id="isonly" type="checkbox">
+                <input type="checkbox" v-model="localValue.isonly">
             </label>
         </li>
     </ul>
@@ -24,9 +24,25 @@
 <script>
     export default {
         props: {
+            isReadOnly: {
+                type: Boolean,
+                default: false
+            },
             type: {
                 type: String,
                 required: true
+            },
+            editable: {
+                type: Boolean,
+                default: true
+            },
+            isrequired: {
+                type: Boolean,
+                default: false
+            },
+            isonly: {
+                type: Boolean,
+                default: false
             }
         },
         data () {
@@ -57,7 +73,12 @@
                     'singlechar',
                     'int',
                     'longchar'
-                ]
+                ],
+                localValue: {
+                    editable: this.editable,
+                    isrequired: this.isrequired,
+                    isonly: this.isonly
+                }
             }
         },
         computed: {
@@ -69,6 +90,20 @@
             },
             isOnlyShow () {
                 return this.isonlyMap.indexOf(this.type) !== -1
+            }
+        },
+        methods: {
+            getValue () {
+                let {
+                    editable,
+                    isrequired,
+                    isonly
+                } = this.localValue
+                return {
+                    editable,
+                    isrequired: this.isRequiredShow ? isrequired : false,
+                    isonly: this.isOnlyShow ? isonly : false
+                }
             }
         }
     }
