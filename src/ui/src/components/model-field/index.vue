@@ -4,19 +4,31 @@
             <h3>{{$t('ModelManagement["字段配置"]')}}</h3>
             <div class="form-item has-right-content">
                 <label class="form-label">{{$t('ModelManagement["中文名"]')}}<span class="color-danger"> * </span></label>
-                <input type="text" class="cmdb-form-input">
+                <div class="input-box">
+                    <input type="text" class="cmdb-form-input"
+                        v-model.trim="fieldInfo['bk_property_name']"
+                        v-validate="'required|enumName'"
+                        name="fieldName">
+                    <span v-show="errors.has('fieldName')" class="error-msg color-danger">{{ errors.first('fieldName') }}</span>
+                </div>
             </div>
             <div class="form-item has-right-content">
                 <label class="form-label">{{$t('ModelManagement["英文名"]')}}<span class="color-danger"> * </span></label>
-                <input type="text" class="cmdb-form-input">
+                <div class="input-box">
+                    <input type="text" class="cmdb-form-input"
+                        v-model.trim="fieldInfo['bk_property_id']"
+                        v-validate="'required|fieldId'"
+                        name="fieldId">
+                    <span v-show="errors.has('fieldId')" class="error-msg color-danger">{{ errors.first('fieldId') }}</span>
+                </div>
             </div>
             <div class="form-item">
                 <label class="form-label">{{$t('ModelManagement["单位"]')}}</label>
-                <input type="text" class="cmdb-form-input">
+                <input type="text" class="cmdb-form-input" v-model.trim="fieldInfo['unit']">
             </div>
             <div class="form-item block">
                 <label class="form-label">{{$t('ModelManagement["提示语"]')}}</label>
-                <input type="text" class="cmdb-form-input">
+                <input type="text" class="cmdb-form-input" v-model.trim="fieldInfo['placeholder']">
             </div>
         </div>
         <div class="form-content">
@@ -26,14 +38,29 @@
                     <label class="form-label">{{$t('ModelManagement["类型"]')}}</label>
                     <bk-selector
                         class="form-selector bk-selector-small"
-                        :list="fieldInfo.list"
-                        :selected.sync="fieldInfo.type"
+                        :list="fieldTypeList"
+                        :selected.sync="fieldInfo['bk_property_type']"
                     ></bk-selector>
                 </div>
-                <v-config :type="fieldInfo.type"></v-config>
+                <v-config :type="fieldInfo['bk_property_type']"
+                    :isReadOnly="isReadOnly"
+                    :editable="fieldInfo['editable']"
+                    :isrequired="fieldInfo['isrequired']"
+                    :isonly="fieldInfo['isonly']"></v-config>
             </div>
             <div class="field-config clearfix" v-if="isComponentShow">
-                <component :is="`model-field-${fieldName}`"></component>
+                <component :is="`model-field-${fieldType}`"
+                    :isEditField="isEditField"
+                    :option="fieldInfo.option"
+                ></component>
+            </div>
+            <div class="btn-wrapper">
+                <bk-button type="primary" class="" :loading="$loading('saveNew')" @click="save">
+                    {{$t('Common["保存"]')}}
+                </bk-button>
+                <bk-button type="default" class="" @click="cancel">
+                    {{$t('Common["取消"]')}}
+                </bk-button>
             </div>
         </div>
     </div>
@@ -45,6 +72,7 @@
     import modelFieldEnum from './enum'
     import modelFieldAsst from './asst'
     import vConfig from './config'
+    import { mapGetters, mapActions } from 'vuex'
     export default {
         components: {
             modelFieldChar,
@@ -53,56 +81,80 @@
             modelFieldAsst,
             vConfig
         },
+        props: {
+            field: {
+                type: Object
+            },
+            isReadOnly: {
+                type: Boolean,
+                default: false
+            },
+            isEditField: {
+                type: Boolean,
+                default: false
+            }
+        },
         data () {
             return {
+                fieldTypeList: [{
+                    id: 'singlechar',
+                    name: this.$t('ModelManagement["短字符"]')
+                }, {
+                    id: 'int',
+                    name: this.$t('ModelManagement["数字"]')
+                }, {
+                    id: 'enum',
+                    name: this.$t('ModelManagement["枚举"]')
+                }, {
+                    id: 'date',
+                    name: this.$t('ModelManagement["日期"]')
+                }, {
+                    id: 'time',
+                    name: this.$t('ModelManagement["时间"]')
+                }, {
+                    id: 'longchar',
+                    name: this.$t('ModelManagement["长字符"]')
+                }, {
+                    id: 'singleasst',
+                    name: this.$t('ModelManagement["单关联"]')
+                }, {
+                    id: 'multiasst',
+                    name: this.$t('ModelManagement["多关联"]')
+                }, {
+                    id: 'objuser',
+                    name: this.$t('ModelManagement["用户"]')
+                }, {
+                    id: 'timezone',
+                    name: this.$t('ModelManagement["时区"]')
+                }, {
+                    id: 'bool',
+                    name: 'bool'
+                }],
                 fieldInfo: {
-                    type: 'singlechar',
-                    list: [{
-                        id: 'singlechar',
-                        name: this.$t('ModelManagement["短字符"]')
-                    }, {
-                        id: 'int',
-                        name: this.$t('ModelManagement["数字"]')
-                    }, {
-                        id: 'enum',
-                        name: this.$t('ModelManagement["枚举"]')
-                    }, {
-                        id: 'date',
-                        name: this.$t('ModelManagement["日期"]')
-                    }, {
-                        id: 'time',
-                        name: this.$t('ModelManagement["时间"]')
-                    }, {
-                        id: 'longchar',
-                        name: this.$t('ModelManagement["长字符"]')
-                    }, {
-                        id: 'singleasst',
-                        name: this.$t('ModelManagement["单关联"]')
-                    }, {
-                        id: 'multiasst',
-                        name: this.$t('ModelManagement["多关联"]')
-                    }, {
-                        id: 'objuser',
-                        name: this.$t('ModelManagement["用户"]')
-                    }, {
-                        id: 'timezone',
-                        name: this.$t('ModelManagement["时区"]')
-                    }, {
-                        id: 'bool',
-                        name: 'bool'
-                    }]
+                    bk_property_name: '',
+                    bk_property_id: '',
+                    unit: '',
+                    placeholder: '',
+                    bk_property_type: 'singlechar',
+                    editable: true,
+                    isrequired: false,
+                    isonly: false,
+                    option: null
                 },
-                charMap: ['singlechar', 'multichar'],
+                charMap: ['singlechar', 'longchar'],
                 asstMap: ['singleasst', 'multiasst']
             }
         },
         computed: {
-            isComponentShow () {
-                return ['singlechar', 'multichar', 'singleasst', 'multiasst', 'enum', 'int'].indexOf(this.fieldInfo.type) !== -1
+            params () {
+                
             },
-            fieldName () {
+            isComponentShow () {
+                return ['singlechar', 'longchar', 'multichar', 'singleasst', 'multiasst', 'enum', 'int'].indexOf(this.fieldInfo['bk_property_type']) !== -1
+            },
+            fieldType () {
                 let {
-                    type
+                    bk_property_type: type
                 } = this.fieldInfo
                 if (this.charMap.indexOf(type) !== -1) {
                     return 'char'
@@ -110,6 +162,30 @@
                     return 'asst'
                 }
                 return type
+            }
+        },
+        methods: {
+            ...mapActions('objectModelProperty', [
+                'createObjectAttribute'
+            ]),
+            initData () {
+                for (let key in this.fieldInfo) {
+                    this.fieldInfo[key] = this.field[key]
+                }
+            },
+            save () {
+                // this.createObjectAttribute({
+                //     params: {}
+                // })
+                this.$emit('save')
+            },
+            cancel () {
+                this.$emit('cancel')
+            }
+        },
+        mounted () {
+            if (this.isEditField) {
+                this.initData()
             }
         }
     }
@@ -134,9 +210,25 @@
                         width: 590px;
                     }
                 }
+                .input-box {
+                    display: inline-block;
+                }
             }
             .field-config {
                 margin-top: 20px;
+            }
+            .btn-wrapper {
+                margin-top: 30px;
+                padding-left: 80px;
+                font-size: 0px;
+                button {
+                    height: 30px;
+                    line-height: 28px;
+                    min-width: 90px;
+                    &:first-child {
+                        margin-right: 10px;
+                    }
+                }
             }
         }
     }
