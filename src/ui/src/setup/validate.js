@@ -43,10 +43,15 @@ const customRules = {
         }
     },
     enumName: {
-        validate: value => {
+        validate: (value) => {
             /* eslint-disable */
             return /^([a-zA-Z0-9_]|[\u4e00-\u9fa5]|[()+-《》,，；;“”‘’。\."\' \\/:]){1,15}$/.test(value)
             /* eslint-enable */
+        }
+    },
+    repeat: {
+        validate: (value, otherValue) => {
+            return otherValue.findIndex(item => item === value) === -1
         }
     },
     number: {
@@ -80,7 +85,8 @@ const dictionary = {
             enumId: () => '请输入正确的内容',
             enumName: () => '请输入正确的内容',
             number: () => '请输入正确的内容',
-            isBigger: () => '必须大于最小值'
+            isBigger: () => '必须大于最小值',
+            repeat: () => '重复的值'
         }
     },
     en: {
@@ -96,7 +102,8 @@ const dictionary = {
             enumId: () => 'Please enter the correct content',
             enumName: () => 'Please enter the correct content',
             number: () => 'Please enter the correct content',
-            isBigger: () => 'Must be greater than the minimum'
+            isBigger: () => 'Must be greater than the minimum',
+            repeat: () => 'This value should not be repeated'
         }
     }
 }
