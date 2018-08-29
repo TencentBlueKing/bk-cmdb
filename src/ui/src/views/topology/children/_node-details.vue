@@ -113,13 +113,14 @@
     .property-list{
         padding: 4px 0;
         .property-item{
-            margin: 32px 0 0;
+            margin: 12px 0 0;
             font-size: 14px;
-            line-height: 16px;
+            height: 36px;
+            line-height: 36px;
             .property-name{
                 position: relative;
                 width: 120px;
-                padding: 0 16px 0 0;
+                padding: 0 26px 0 0;
                 text-align: right;
                 color: $cmdbTextColor;
                 @include ellipsis;
@@ -184,7 +185,6 @@
         background-color: #fff;
         padding: 20px 0 0 120px;
         .button-edit{
-            width: 110px;
             margin-right: 4px;
         }
     }
