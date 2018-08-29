@@ -248,7 +248,7 @@ func (s *Service) GetUserConfig(req *restful.Request, resp *restful.Response) {
 		return
 	}
 	result := make([]interface{}, 0)
-	err = s.Instance.Table(common.BKTableNameUserAPI).Find(condition).Fields(fieldArr...).Sort(sort).Start(uint64(start)).Limit(uint64(limit)).All(ctx, result)
+	err = s.Instance.Table(common.BKTableNameUserAPI).Find(condition).Fields(fieldArr...).Sort(sort).Start(uint64(start)).Limit(uint64(limit)).All(ctx, &result)
 	if err != nil {
 		blog.Error("get user api information failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})

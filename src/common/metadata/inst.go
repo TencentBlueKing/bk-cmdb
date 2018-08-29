@@ -60,9 +60,22 @@ type HostIdentifier struct {
 	CPU             int64                       `json:"bk_cpu" bson:"bk_cpu"`                   // CPU逻辑核心数
 	Disk            int64                       `json:"bk_disk" bson:"bk_disk"`                 // 磁盘容量
 	HostIdentModule map[string]*HostIdentModule `json:"associations" bson:"associations"`
+	Process         []HostIdentProcess          `json:"process" bson:"process"`
 }
 
-// Module HostIdentifier module define
+type HostIdentProcess struct {
+	ProcessID       int64   `json:"bk_process_id" bson:"bk_process_id"`               // 进程名称
+	ProcessName     string  `json:"bk_process_name" bson:"bk_process_name"`           // 进程名称
+	BindIP          string  `json:"bind_ip" bson:"bind_ip"`                           // 绑定IP, 枚举: [{ID: "1", Name: "127.0.0.1"}, {ID: "2", Name: "0.0.0.0"}, {ID: "3", Name: "第一内网IP"}, {ID: "4", Name: "第一外网IP"}]
+	PORT            string  `json:"port" bson:"port"`                                 // 端口, 单个端口："8080", 多个连续端口："8080-8089", 多个不连续端口："8080-8089,8199"
+	PROTOCOL        string  `json:"protocol" bson:"protocol"`                         // 协议, 枚举: [{ID: "1", Name: "TCP"}, {ID: "2", Name: "UDP"}],
+	FuncID          string  `json:"bk_func_id" bson:"bk_func_id"`                     // 功能ID
+	FuncName        string  `json:"bk_func_name" bson:"bk_func_name"`                 // 功能名称
+	StartParamRegex string  `json:"bk_start_param_regex" bson:"bk_start_param_regex"` // 启动参数匹配规则
+	BindModules     []int64 `json:"bind_modules" bson:"bind_modules"`                 // 进程绑定的模块ID，数字数组
+}
+
+// HostIdentModule HostIdentifier module define
 type HostIdentModule struct {
 	BizID      int64  `json:"bk_biz_id"`         // 业务ID
 	BizName    string `json:"bk_biz_name"`       // 业务名称

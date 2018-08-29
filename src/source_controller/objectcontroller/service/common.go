@@ -62,7 +62,7 @@ func (cli *Service) GetObjectByCondition(ctx context.Context, db dal.RDB, defLan
 		blog.Errorf("failed to query the inst , error info %s", err.Error())
 		return err
 	}
-
+	//fmt.Println("result:", result)
 	// translate language for default name
 	if m, ok := defaultNameLanguagePkg[objType]; nil != defLang && ok {
 		switch result.(type) {
@@ -123,7 +123,7 @@ func (cli *Service) GetObjectByID(ctx context.Context, db dal.RDB, objType strin
 	if tName == common.BKTableNameBaseInst && objType != common.BKINnerObjIDObject {
 		condition[common.BKObjIDField] = objType
 	}
-	err := db.Table(tName).Find(condition).Fields(fields...).All(ctx, result)
+	err := db.Table(tName).Find(condition).Fields(fields...).One(ctx, result)
 	return err
 }
 

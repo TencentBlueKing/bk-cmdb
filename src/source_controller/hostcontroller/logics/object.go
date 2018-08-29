@@ -13,10 +13,10 @@
 package logics
 
 import (
+	"configcenter/src/common/mapstr"
 	"context"
 	"errors"
 	"fmt"
-	"reflect"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -78,28 +78,23 @@ var defaultNameLanguagePkg = map[string]map[string][]string{
 	},
 }
 
-func (lgc *Logics) GetObjectByCondition(ctx context.Context, defLang language.DefaultCCLanguageIf, objType string, fields []string, condition, result interface{}, sort string, skip, limit int) error {
+func (lgc *Logics) GetObjectByCondition(ctx context.Context, defLang language.DefaultCCLanguageIf, objType string, fields []string, condition interface{}, sort string, skip, limit int) ([]mapstr.MapStr, error) {
+	results := make([]mapstr.MapStr, 0)
 	tName := common.GetInstTableName(objType)
-	if err := lgc.Instance.Table(tName).Find(condition).Fields(fields...).Sort(sort).Start(uint64(skip)).Limit(uint64(limit)).All(ctx, &result); err != nil {
+	if err := lgc.Instance.Table(tName).Find(condition).Fields(fields...).Sort(sort).Start(uint64(skip)).Limit(uint64(limit)).All(ctx, &results); err != nil {
 		blog.Errorf("failed to query the inst , error info %s", err.Error())
-		return err
+		return nil, err
 	}
 
 	// translate language for default name
 	if m, ok := defaultNameLanguagePkg[objType]; nil != defLang && ok {
-		switch result.(type) {
-		case *[]map[string]interface{}:
-			results := *result.(*[]map[string]interface{})
-			for index := range results {
-				l := m[fmt.Sprint(results[index]["default"])]
-				if len(l) >= 3 {
-					results[index][l[1]] = util.FirstNotEmptyString(defLang.Language(l[0]), fmt.Sprint(results[index][l[1]]), fmt.Sprint(results[index][l[2]]))
-				}
+		for index, info := range results {
+			l := m[fmt.Sprint(info["default"])]
+			if len(l) >= 3 {
+				results[index][l[1]] = util.FirstNotEmptyString(defLang.Language(l[0]), fmt.Sprint(info[l[1]]), fmt.Sprint(info[l[2]]))
 			}
-		default:
-			blog.Infof("get object by condition translate error: %v", reflect.TypeOf(result))
 		}
 	}
 
-	return nil
+	return results, nil
 }

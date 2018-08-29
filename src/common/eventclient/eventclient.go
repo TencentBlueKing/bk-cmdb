@@ -15,6 +15,7 @@ package eventclient
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"gopkg.in/redis.v5"
 
@@ -27,16 +28,16 @@ import (
 type EventContext struct {
 	RequestID   string
 	RequestTime metadata.Time
+	TxnID       string
 	ownerID     string
 	CacheCli    *redis.Client
 }
 
 func NewEventContextByReq(pheader http.Header, cacheCli *redis.Client) *EventContext {
-	// TODO get reqid and time from req
-	ownerID := util.GetOwnerID(pheader)
 	return &EventContext{
-		ownerID:     ownerID,
-		RequestID:   "xxx-xxxx-xxx-xxx",
+		ownerID:     util.GetOwnerID(pheader),
+		TxnID:       util.GetHTTPCCTransaction(pheader),
+		RequestID:   util.GetHTTPCCRequestID(pheader),
 		RequestTime: metadata.Now(),
 		CacheCli:    cacheCli,
 	}
@@ -52,6 +53,7 @@ func (c *EventContext) InsertEvent(eventType, objType, action string, curData in
 	}
 	ei := &metadata.EventInst{
 		ID:         int64(eventID),
+		TxnID:      c.TxnID,
 		EventType:  eventType,
 		Action:     action,
 		ActionTime: metadata.Now(),
@@ -72,9 +74,15 @@ func (c *EventContext) InsertEvent(eventType, objType, action string, curData in
 		return err
 	}
 
-	err = c.CacheCli.LPush(common.EventCacheEventQueueKey, value).Err()
-	if err != nil {
-		return
+	if c.TxnID != "" {
+		z := redis.Z{
+			Score:  float64(time.Now().UTC().Unix()),
+			Member: c.TxnID,
+		}
+		if err = c.CacheCli.ZAddNX(common.EventCacheEventTxnSet, z).Err(); err != nil {
+			return err
+		}
+		return c.CacheCli.LPush(common.EventCacheEventTxnQueuePrefix+c.TxnID, value).Err()
 	}
-	return nil
+	return c.CacheCli.LPush(common.EventCacheEventQueueKey, value).Err()
 }

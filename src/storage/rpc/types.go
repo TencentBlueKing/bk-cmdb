@@ -215,3 +215,7 @@ func (msg *Message) Encode(value interface{}) error {
 	}
 	return err
 }
+
+type ClientConfig struct {
+	Address string
+}

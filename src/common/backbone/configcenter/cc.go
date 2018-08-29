@@ -214,7 +214,7 @@ func (c *CC) sync() {
 }
 
 func (c *CC) syncProc() {
-	blog.V(4).Infof("start sync proc config from config center.")
+	blog.V(5).Infof("start sync proc config from config center.")
 	procPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, c.procName)
 	data, err := c.disc.Read(procPath)
 	if err != nil {
@@ -230,12 +230,12 @@ func (c *CC) syncProc() {
 
 	c.Lock()
 	if reflect.DeepEqual(conf, c.previousProc) {
-		blog.V(4).Infof("sync process config, but nothing is changed.")
+		blog.V(5).Infof("sync process config, but nothing is changed.")
 		c.Unlock()
 		return
 	}
-	blog.V(4).Infof("sync process[%s] config, before change is: %+#v", c.procName, *(c.previousProc))
-	blog.V(4).Infof("sync process[%s] config, after change is: %+#v", c.procName, *conf)
+	blog.V(5).Infof("sync process[%s] config, before change is: %+#v", c.procName, *(c.previousProc))
+	blog.V(5).Infof("sync process[%s] config, after change is: %+#v", c.procName, *conf)
 
 	event := &crd.DiscoverEvent{
 		Err:  nil,
@@ -248,7 +248,7 @@ func (c *CC) syncProc() {
 }
 
 func (c *CC) syncLang() {
-	blog.V(4).Infof("start sync lang config from config center.")
+	blog.V(5).Infof("start sync lang config from config center.")
 	data, err := c.disc.Read(types.CC_SERVLANG_BASEPATH)
 	if err != nil {
 		blog.Errorf("sync process config failed, err: %v", err)
@@ -264,13 +264,13 @@ func (c *CC) syncLang() {
 	c.Lock()
 
 	if reflect.DeepEqual(lang, c.previousLang) {
-		blog.V(4).Infof("sync language config, but nothing is changed.")
+		blog.V(5).Infof("sync language config, but nothing is changed.")
 		c.Unlock()
 		return
 	}
 
-	blog.V(4).Infof("sync language config, before change is: %v", c.previousLang)
-	blog.V(4).Infof("sync language config, after change is: %v", lang)
+	blog.V(5).Infof("sync language config, before change is: %v", c.previousLang)
+	blog.V(5).Infof("sync language config, after change is: %v", lang)
 
 	event := &crd.DiscoverEvent{
 		Err:  nil,
@@ -281,7 +281,7 @@ func (c *CC) syncLang() {
 }
 
 func (c *CC) syncErr() {
-	blog.V(4).Infof("start sync error config from config center.")
+	blog.V(5).Infof("start sync error config from config center.")
 	data, err := c.disc.Read(types.CC_SERVERROR_BASEPATH)
 	if err != nil {
 		blog.Errorf("sync process config failed, err: %v", err)
@@ -296,13 +296,13 @@ func (c *CC) syncErr() {
 
 	c.Lock()
 	if reflect.DeepEqual(errCode, c.previousError) {
-		blog.V(4).Infof("sync error code config, but nothing is changed.")
+		blog.V(5).Infof("sync error code config, but nothing is changed.")
 		c.Unlock()
 		return
 	}
 
-	blog.V(4).Infof("sync language config, before change is: %v", c.previousError)
-	blog.V(4).Infof("sync language config, after change is: %v", errCode)
+	blog.V(5).Infof("sync language config, before change is: %v", c.previousError)
+	blog.V(5).Infof("sync language config, after change is: %v", errCode)
 
 	event := &crd.DiscoverEvent{
 		Err:  nil,

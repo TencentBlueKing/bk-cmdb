@@ -1,6 +1,25 @@
 <template>
     <div class="process-wrapper">
         <div class="process-filter clearfix">
+            <bk-dropdown-menu ref="dropdown" class="fl mr10" :trigger="'click'">
+                <bk-button class="dropdown-btn checkbox" type="default" slot="dropdown-trigger">
+                    <template v-if="table.chooseId.length">
+                        <i class="checkbox-btn" :class="{'checked': table.chooseId.length!==table.pagination.count, 'checked-all': table.chooseId.length===table.pagination.count}" @click.stop="tableChecked('cancel')"></i>
+                    </template>
+                    <template v-else>
+                        <i class="checkbox-btn" @click.stop="tableChecked('current')"></i>
+                    </template>
+                    <i class="bk-icon icon-angle-down"></i>
+                </bk-button>
+                <ul class="bk-dropdown-list" slot="dropdown-content">
+                    <li>
+                        <a href="javascript:;" @click="tableChecked('current')">{{$t("Common['全选本页']")}}</a>
+                    </li>
+                    <li>
+                        <a href="javascript:;" @click="tableChecked('all')">{{$t("Common['跨页全选']")}}</a>
+                    </li>
+                </ul>
+            </bk-dropdown-menu>
             <v-application-selector class="filter-selector fl"
                 :filterable="true" 
                 :selected.sync="filter.bkBizId">
@@ -26,6 +45,7 @@
             :loading="table.isLoading"
             :wrapperMinusHeight="150"
             :checked="table.chooseId"
+            :isCheckboxShow="false"
             @handlePageChange="setCurrentPage"
             @handleSizeChange="setCurrentSize"
             @handleSortChange="setCurrentSort"
@@ -215,6 +235,17 @@
             }
         },
         methods: {
+            tableChecked (type) {
+                if (type === 'all') {
+                    this.getAllProcessID(true)
+                } else if (type === 'cancel') {
+                    this.table.chooseId = []
+                } else {
+                    let chooseId = []
+                    this.table.list.map(({bk_process_id: bkProcessId}) => chooseId.push(bkProcessId))
+                    this.table.chooseId = chooseId
+                }
+            },
             multipleUpdate () {
                 this.slider.title.text = this.$t("ProcessManagement['批量编辑']")
                 this.slider.tab.attribute.isMultipleUpdate = true
@@ -271,6 +302,7 @@
                 this.slider.title.text = this.$t("ProcessManagement['新增进程']")
                 this.slider.tab.active = 'attribute'
                 this.slider.tab.type = 'create'
+                this.slider.tab.attribute.isMultipleUpdate = false
                 this.slider.tab.attribute.type = 'create'
                 this.slider.tab.attribute.formValues = {}
                 this.slider.isShow = true
@@ -329,7 +361,7 @@
                 })
             },
             showProcessAttribute (item) {
-                this.slider.title.text = this.$t("ProcessManagement['编辑进程']")
+                this.slider.title.text = `${this.$t("ProcessManagement['编辑进程']")}`
                 this.slider.tab.active = 'attribute'
                 this.slider.tab.type = 'update'
                 this.slider.tab.attribute.isMultipleUpdate = false
@@ -347,6 +379,7 @@
                             values[column['bk_property_id']] = column['bk_property_value']
                         })
                         this.slider.tab.attribute.formValues = values
+                        this.slider.title.text = `${this.$t("ProcessManagement['编辑进程']")} ${this.slider.tab.attribute.formValues['bk_process_name']}`
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
                     }
@@ -424,6 +457,9 @@
         padding: 20px;
     }
     .process-filter{
+        .dropdown-btn {
+            width: 75px;
+        }
         .filter-selector{
             width: 170px;
             margin-right: 10px;
