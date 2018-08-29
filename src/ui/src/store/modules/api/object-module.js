@@ -43,8 +43,8 @@ const actions = {
      * @param {Number} bkModuleId 模块id
      * @return {promises} promises 对象
      */
-    deleteModule ({ commit, state, dispatch }, { bkBizId, bkSetId, bkModuleId }) {
-        return $http.delete(`module/${bkBizId}/${bkSetId}/${bkModuleId}`)
+    deleteModule ({ commit, state, dispatch }, { bizId, setId, moduleId, config }) {
+        return $http.delete(`module/${bizId}/${setId}/${moduleId}`, config)
     },
 
     /**

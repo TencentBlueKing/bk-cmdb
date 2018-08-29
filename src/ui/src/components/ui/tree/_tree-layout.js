@@ -59,6 +59,19 @@ class TreeLayout {
     addFlatternNode (node) {
         this.flatternNodes.push(node)
     }
+
+    removeFlatternNode (node) {
+        this.flatternNodes = this.flatternNodes.filter(flatternNode => flatternNode !== node)
+    }
+
+    removeExpandedNode (node) {
+        this.expandedNodes = this.expandedNodes.filter(expandedNode => expandedNode !== node)
+    }
+
+    destory (node) {
+        this.removeFlatternNode(node)
+        this.removeExpandedNode(node)
+    }
 }
 
 export default TreeLayout
