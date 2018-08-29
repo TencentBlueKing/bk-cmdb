@@ -2,14 +2,15 @@
     <ul class="form-enum-wrapper">
         <li class="form-item clearfix" v-for="(item, index) in enumList" :key="index">
             <div class="enum-default">
-                <input type="radio" :value="index" name="enum-radio" v-model="defaultIndex">
+                <input type="radio" :value="index" name="enum-radio" v-model="defaultIndex" @change="handleChange(defaultIndex)">
             </div>
             <div class="enum-id">
                 <input type="text"
                     class="cmdb-form-input"
                     :placeholder="$t('ModelManagement[\'请输入ID\']')"
                     v-model.trim="item.id"
-                    v-validate="'enumId'"
+                    v-validate="`required|enumId|repeat:${getOtherId(index)}`"
+                    @input="handleInput"
                     :name="`id${index}`">
                     <span v-show="errors.has(`id${index}`)" class="error-msg color-danger">{{ errors.first(`id${index}`) }}</span>
             </div>
@@ -18,11 +19,12 @@
                     class="cmdb-form-input"
                     :placeholder="$t('ModelManagement[\'请输入名称英文数字\']')"
                     v-model.trim="item.name"
-                    v-validate="'required|enumName'"
+                    v-validate="`required|enumName|repeat:${getOtherName(index)}`"
+                    @input="handleInput"
                     :name="`name${index}`">
                     <span v-show="errors.has(`name${index}`)" class="error-msg color-danger">{{ errors.first(`name${index}`) }}</span>
             </div>
-            <button class="enum-btn" @click="deleteEnum(index)">
+            <button class="enum-btn" @click="deleteEnum(index)" :disabled="enumList.length === 1">
                 <i class="icon-cc-del"></i>
             </button>
             <button class="enum-btn" @click="addEnum">
@@ -35,8 +37,8 @@
 <script>
     export default {
         props: {
-            option: {
-                required: true
+            value: {
+                default: ''
             }
         },
         data () {
@@ -45,24 +47,80 @@
                     id: '',
                     is_default: true,
                     name: ''
-                }, {
-                    id: '',
-                    is_default: false,
-                    name: ''
                 }],
                 defaultIndex: 0
             }
         },
+        computed: {
+        },
+        watch: {
+            value () {
+                this.initValue()
+            }
+        },
+        created () {
+            this.initValue()
+        },
         methods: {
+            getOtherId (index) {
+                let idList = []
+                this.enumList.map((item, enumIndex) => {
+                    if (index !== enumIndex) {
+                        idList.push(item.id)
+                    }
+                })
+                return idList.join(',')
+            },
+            getOtherName (index) {
+                let nameList = []
+                this.enumList.map((item, enumIndex) => {
+                    if (index !== enumIndex) {
+                        nameList.push(item.name)
+                    }
+                })
+                return nameList.join(',')
+            },
+            initValue () {
+                if (this.value === '') {
+                    this.enumList = [{
+                        id: '',
+                        is_default: true,
+                        name: ''
+                    }]
+                } else {
+                    this.enumList = this.value
+                }
+            },
+            handleInput () {
+                this.$nextTick(async () => {
+                    const res = await this.$validator.validateAll()
+                    if (res) {
+                        this.$emit('input', this.enumList)
+                    }
+                })
+            },
+            handleChange (index) {
+                let defaultItem = this.enumList.find(({is_default: isDefault}) => isDefault)
+                if (defaultItem) {
+                    defaultItem['is_default'] = false
+                }
+                this.enumList[index]['is_default'] = true
+                this.handleInput()
+            },
             addEnum () {
                 this.enumList.push({
                     id: '',
                     is_default: false,
                     name: ''
                 })
+                this.handleInput()
             },
             deleteEnum (index) {
                 this.enumList.splice(index, 1)
+                if (this.defaultIndex === index) {
+                    this.defaultIndex = 0
+                    this.enumList[0]['is_default'] = true
+                }
             }
         }
     }
