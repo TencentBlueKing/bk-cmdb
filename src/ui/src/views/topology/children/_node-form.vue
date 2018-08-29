@@ -216,15 +216,18 @@
             margin: 12px 0 0;
             padding: 0 54px 0 0;
             font-size: 14px;
+            height: 36px;
+            line-height: 36px;
             .property-name{
                 position: relative;
                 display: block;
                 width: 120px;
-                line-height: 36px;
-                padding: 0 10px 0 0;
+                padding: 0 16px 0 0;
                 color: $cmdbTextColor;
                 text-align: right;
+                font-size: 0;
                 &:after{
+                    font-size: 14px;
                     content: ":";
                     position: absolute;
                     right: 10px;
@@ -236,6 +239,7 @@
                 max-width: calc(100% - 20px);
                 padding: 0 10px 0 0;
                 vertical-align: middle;
+                font-size: 14px;
                 @include ellipsis;
                 &.required:after{
                     position: absolute;
@@ -258,7 +262,6 @@
                 height: 36px;
                 width: calc(100% - 120px);
                 max-width: 450px;
-                line-height: 36px;
                 font-size: 12px;
                 position: relative;
             }
