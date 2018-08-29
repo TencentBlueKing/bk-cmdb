@@ -12,7 +12,7 @@
 </template>
 
 <script>
-    import vModelField from '@/components/model-field'
+    import vModelField from './model-field'
     import { mapActions } from 'vuex'
     export default {
         components: {
