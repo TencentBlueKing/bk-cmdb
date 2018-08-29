@@ -43,8 +43,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    searchProcess ({ commit, state, dispatch }, { bkSupplierAccount, bkBizId, params }) {
-        return $http.post(`proc/search/${bkSupplierAccount}/${bkBizId}`, params)
+    searchProcess ({ commit, state, dispatch, rootGetters }, { bizId, params, config }) {
+        return $http.post(`proc/search/${rootGetters.supplierAccount}/${bizId}`, params, config)
     },
 
     /**
