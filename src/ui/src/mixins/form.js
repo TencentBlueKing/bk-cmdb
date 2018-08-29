@@ -16,7 +16,8 @@ export default {
         },
         $sortedProperties () {
             const sortKey = 'bk_property_index'
-            return [...this.properties].sort((propertyA, propertyB) => propertyA[sortKey] - propertyB[sortKey])
+            const properties = this.properties.filter(property => !property['bk_isapi'])
+            return properties.sort((propertyA, propertyB) => propertyA[sortKey] - propertyB[sortKey])
         },
         $groupedProperties () {
             return this.$sortedGroups.map(group => {

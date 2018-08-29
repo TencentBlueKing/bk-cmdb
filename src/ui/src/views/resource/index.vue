@@ -15,8 +15,12 @@
                 </cmdb-form-bool>
             </div>
         </cmdb-hosts-filter>
-        <div class="resource-main">
-            <div class="resource-options clearfix">
+        <cmdb-hosts-table class="resource-main" ref="resourceTable"
+            :columns-config-key="table.columnsConfigKey"
+            :columns-config-properties="properties.host"
+            @on-checked="handleChecked"
+            @on-set-header="handleSetHeader">
+            <div class="resource-options clearfix" slot="options">
                 <cmdb-selector class="options-business-selector"
                     :placeholder="$t('HostResourcePool[\'分配到业务空闲机池\']')"
                     :disabled="!table.checked.length"
@@ -57,7 +61,7 @@
                 <div class="fr">
                     <bk-button class="options-button" type="default"
                         v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')"
-                        @click="columnsConfig.show = true">
+                        @click="handleColumnsConfig">
                         <i class="icon-cc-setting"></i>
                     </bk-button>
                     <bk-button class="options-button" type="default"
@@ -71,127 +75,56 @@
                     </bk-button>
                 </div>
             </div>
-            <cmdb-table class="resource-table"
-                :loading="$loading()"
-                :checked.sync="table.checked"
-                :header="table.header"
-                :list="table.list"
-                :pagination.sync="table.pagination"
-                :defaultSort="table.defaultSort"
-                :wrapperMinusHeight="157"
-                @handleRowClick="handleRowClick"
-                @handleSortChange="handleSortChange"
-                @handlePageChange="handlePageChange"
-                @handleSizeChange="handleSizeChange"
-                @handleCheckAll="handleCheckAll">
-                <template v-for="(header, index) in table.header" :slot="header.id" slot-scope="{ item }">
-                    <label style="width:100%;text-align:center;" class="bk-form-checkbox bk-checkbox-small"
-                        v-if="header.id === 'bk_host_id'" 
-                        @click.stop>
-                        <input type="checkbox"
-                            :value="item['host']['bk_host_id']" 
-                            v-model="table.checked">
-                    </label>
-                    <span v-else>
-                        {{getHostCellText(header, item)}}
-                    </span>
-                </template>
-            </cmdb-table>
-        </div>
-        <cmdb-slider :isShow.sync="slider.show" :title="slider.title">
-            <bk-tab :active-name.sync="tab.active" slot="content">
-                <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')">
-                    <cmdb-details v-if="tab.attribute.type === 'details'"
-                        :properties="properties.host"
-                        :propertyGroups="propertyGroups"
-                        :inst="tab.attribute.inst.details"
-                        :show-delete="false"
-                        @on-edit="handleEdit">
-                    </cmdb-details>
-                    <cmdb-form v-else-if="tab.attribute.type === 'update'"
-                        :properties="properties.host"
-                        :propertyGroups="propertyGroups"
-                        :inst="tab.attribute.inst.edit"
-                        :type="tab.attribute.type"
-                        @on-submit="handleSave"
-                        @on-cancel="handleCancel">
-                    </cmdb-form>
-                    <cmdb-form-multiple v-else-if="tab.attribute.type === 'multiple'"
-                        :properties="properties.host"
-                        :propertyGroups="propertyGroups"
-                        @on-submit="handleMultipleSave"
-                        @on-cancel="handleMultipleCancel">
-                    </cmdb-form-multiple>
-                </bk-tabpanel>
-                <bk-tabpanel name="relevance" :title="$t('HostResourcePool[\'关联\']')"></bk-tabpanel>
-                <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')">
-                    <cmdb-audit-history v-if="tab.active === 'history'"
-                        target="host"
-                        :ext-key="{'$in': [tab.attribute.inst.details['bk_host_innerip']]}">
-                    </cmdb-audit-history>
-                </bk-tabpanel>
-            </bk-tab>
-        </cmdb-slider>
-        <cmdb-slider
-            :is-show.sync="columnsConfig.show"
-            :width="600"
-            :title="$t('BusinessTopology[\'列表显示属性配置\']')">
-            <cmdb-columns-config slot="content"
-                :properties="properties.host"
-                :selected="columnsConfig.selected"
-                @on-apply="handleApplyColumnsConfig"
-                @on-cancel="columnsConfig.show = false"
-                @on-reset="handleResetColumnsConfig">
-            </cmdb-columns-config>
-        </cmdb-slider>
+        </cmdb-hosts-table>
+
     </div>
 </template>
 
 <script>
     import { mapGetters, mapActions } from 'vuex'
-    import hostsMixin from '@/mixins/hosts'
-    import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
+    import cmdbHostsFilter from '@/components/hosts/filter'
+    import cmdbHostsTable from '@/components/hosts/table'
     export default {
-        mixins: [hostsMixin],
         components: {
-            cmdbAuditHistory
+            cmdbHostsFilter,
+            cmdbHostsTable
         },
         data () {
             return {
+                properties: {
+                    biz: [],
+                    host: [],
+                    set: [],
+                    module: []
+                },
                 table: {
-                    columnsConfigKey: 'resource_table_columns'
+                    checked: [],
+                    header: [],
+                    columnsConfigKey: 'resource_table_columns',
+                    exportUrl: `${window.Site.url}hosts/export`
                 },
                 filter: {
                     filterConfigKey: 'resource_filter_fields',
                     business: -1,
-                    assigned: false
+                    assigned: false,
+                    params: null,
+                    paramsResolver: null
                 },
                 assignBusiness: ''
             }
         },
         computed: {
-            ...mapGetters('objectBiz', ['business'])
-        },
-        watch: {
-            'filter.business' (business) {
-                if (this.businessResolver) {
-                    this.businessResolver()
-                } else {
-                    this.getHostList()
-                }
-            },
-            customColumns () {
-                this.setTableHeader()
+            ...mapGetters('objectBiz', ['business']),
+            clipboardList () {
+                return this.table.header.filter(header => header.type !== 'checkbox')
             }
         },
         async created () {
             try {
-                await this.getParams()
                 await Promise.all([
-                    this.getProperties(),
-                    this.getHostPropertyGroups()
+                    this.getParams(),
+                    this.getProperties()
                 ])
-                await this.setTableHeader()
                 this.getHostList()
             } catch (e) {
                 console.log(e)
@@ -201,6 +134,7 @@
             ...mapActions('hostSearch', ['searchHost']),
             ...mapActions('hostDelete', ['deleteHost']),
             ...mapActions('hostRelation', ['transferResourcehostToIdlemodule']),
+            ...mapActions('objectModelProperty', ['batchSearchObjectAttribute']),
             getParams () {
                 return new Promise((resolve, reject) => {
                     this.filter.paramsResolver = () => {
@@ -209,65 +143,33 @@
                     }
                 })
             },
-            setTableHeader () {
-                return new Promise((resolve, reject) => {
-                    const headerProperties = this.$tools.getHeaderProperties(this.properties.host, this.customColumns)
-                    resolve(headerProperties)
-                }).then(properties => {
-                    this.table.header = [{
-                        id: 'bk_host_id',
-                        type: 'checkbox',
-                        objId: 'host',
-                        width: 50
-                    }].concat(properties.map(property => {
-                        return {
-                            id: property['bk_property_id'],
-                            name: property['bk_property_name'],
-                            objId: property['bk_obj_id']
-                        }
-                    }))
-                    this.columnsConfig.selected = properties.map(property => property['bk_property_id'])
+            getProperties () {
+                return this.batchSearchObjectAttribute({
+                    params: {
+                        bk_obj_id: {'$in': Object.keys(this.properties)},
+                        bk_supplier_account: this.supplierAccount
+                    },
+                    config: {
+                        requestId: 'hostsAttribute',
+                        fromCache: true
+                    }
+                }).then(result => {
+                    Object.keys(this.properties).forEach(objId => {
+                        this.properties[objId] = result[objId]
+                    })
+                    return result
                 })
+            },
+            handleRefresh (params) {
+                this.filter.params = params
+                if (this.filter.paramsResolver) {
+                    this.filter.paramsResolver()
+                } else {
+                    this.getHostList()
+                }
             },
             getHostList () {
-                this.searchHost({
-                    params: {
-                        ...this.getScopedParams(),
-                        'bk_biz_id': this.filter.business,
-                        page: {
-                            start: (this.table.pagination.current - 1) * this.table.pagination.size,
-                            limit: this.table.pagination.size,
-                            sort: this.table.sort
-                        }
-                    },
-                    config: {
-                        requestId: 'hostSearch'
-                    }
-                }).then(data => {
-                    this.table.pagination.count = data.count
-                    this.table.list = data.info
-                    this.setAllHostList(data.info)
-                    return data
-                }).catch(e => {
-                    this.table.checked = []
-                    this.table.list = []
-                    this.table.pagination.count = 0
-                })
-            },
-            getAllHostList () {
-                return this.searchHost({
-                    params: {
-                        ...this.getScopedParams(),
-                        'bk_biz_id': this.filter.business,
-                        page: {}
-                    },
-                    config: {
-                        requestId: 'hostSearchAll'
-                    }
-                }).then(data => {
-                    this.table.allList = data.info
-                    return data
-                })
+                this.$refs.resourceTable.search(this.filter.business, this.getScopedParams())
             },
             getScopedParams () {
                 const params = this.$tools.clone(this.filter.params)
@@ -303,7 +205,8 @@
                 }
             },
             hasSelectAssignedHost () {
-                const list = this.table.allList.filter(item => this.table.checked.includes(item['host']['bk_host_id']))
+                const allList = this.$refs.resourceTable.table.allList
+                const list = allList.filter(item => this.table.checked.includes(item['host']['bk_host_id']))
                 const existAssigned = list.some(item => item['biz'].some(biz => biz.default !== 1))
                 return existAssigned
             },
@@ -348,6 +251,21 @@
                     ])
                 }
                 return content
+            },
+            handleChecked (checked) {
+                this.table.checked = checked
+            },
+            handleSetHeader (header) {
+                this.table.header = header
+            },
+            handleColumnsConfig () {
+                this.$refs.resourceTable.columnsConfig.show = true
+            },
+            handleCopy (target) {
+                this.$refs.resourceTable.handleCopy(target)
+            },
+            handleMultipleEdit () {
+                this.$refs.resourceTable.handleMultipleEdit()
             },
             handleMultipleDelete () {
                 this.$bkInfo({
