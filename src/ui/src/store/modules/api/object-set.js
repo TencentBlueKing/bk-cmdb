@@ -28,8 +28,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    createSet ({ commit, state, dispatch }, { bkBizId, params }) {
-        return $http.post(`set/${bkBizId}`, params)
+    createSet ({ commit, state, dispatch }, { bizId, params, config }) {
+        return $http.post(`set/${bizId}`, params, config)
     },
 
     /**
@@ -55,8 +55,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    updateSet ({ commit, state, dispatch }, { bkBizId, bkSetId, params }) {
-        return $http.put(`set/${bkBizId}/${bkSetId}`, params)
+    updateSet ({ commit, state, dispatch }, { bizId, setId, params, config }) {
+        return $http.put(`set/${bizId}/${setId}`, params, config)
     },
 
     /**
