@@ -1,0 +1,220 @@
+<template>
+    <li class="tree-node-item"
+        :class="{
+            'tree-node-leaf': leaf,
+            'tree-node-expanded': state.expanded,
+            'tree-node-hidden': state.hidden
+        }">
+        <div class="tree-node-info-layout clearfix" :class="{'tree-node-info-layout-root': level === 1}">
+            <i class="tree-node-expanded-icon fl" v-if="!leaf"
+                :class="[state.expanded ? 'icon-cc-rect-sub': 'icon-cc-rect-add']"
+                @click="handleExpandClick(!state.expanded)">
+            </i>
+            <tree-node-info class="tree-node-info" @click.native="handleNodeClick"
+                :class="{
+                    'tree-node-info-leaf': leaf,
+                    'tree-node-info-selected': state.selected
+                }"
+                :state="state"
+                :layout="layout">
+            </tree-node-info>
+        </div>
+        <ul v-if="!leaf" v-show="state.expanded" class="tree-node-children">
+            <cmdb-tree-node v-for="(child, index) in children"
+                :key="layout.getNodeId(child)"
+                :node="child"
+                :layout="layout"
+                :level="level + 1">
+            </cmdb-tree-node>
+        </ul>
+    </li>
+</template>
+
+<script>
+    import TreeLayout from './_tree-layout.js'
+    import treeNodeInfo from './_tree-node-info.js'
+    export default {
+        name: 'cmdb-tree-node',
+        components: {
+            treeNodeInfo
+        },
+        props: {
+            node: {
+                type: Object,
+                required: true
+            },
+            layout: {
+                validator (val) {
+                    return val instanceof TreeLayout
+                },
+                required: true
+            },
+            level: {
+                type: Number,
+                required: true
+            }
+        },
+        data () {
+            const basicState = {
+                disabled: false,
+                expanded: false,
+                visible: false,
+                selected: false
+            }
+            const state = {
+                ...basicState,
+                id: this.layout.getNodeId(this.node),
+                level: this.level,
+                parent: this.level === 1 ? null : this.$parent,
+                node: this.node
+            }
+            return {
+                basicState,
+                state
+            }
+        },
+        computed: {
+            treeInstance () {
+                return this.layout.instance
+            },
+            children () {
+                return this.node[this.treeInstance.childrenKey] || []
+            },
+            leaf () {
+                return !this.children.length
+            }
+        },
+        watch: {
+            node: {
+                deep: true,
+                handler (val, oldVal) {
+                    let stateChanged = Object.keys(this.basicState).some(key => val[key] !== oldVal[key])
+                    if (stateChanged) {
+                        this.updateBasicState()
+                    }
+                }
+            },
+            'state.disabled' (disabled) {
+                this.treeInstance.$emit('on-disable-change', this.node, this.state, disabled)
+            },
+            'state.expanded' (expanded) {
+                this.treeInstance.$emit('on-expand', this.node, this.state, expanded)
+            },
+            'state.visible' (visible) {
+                this.treeInstance.$emit('on-visible-change', this.node, this.state, visible)
+            },
+            'state.selected' (selected) {
+                if (selected) {
+                    this.treeInstance.$emit('on-selected', this.node, this.state)
+                }
+            }
+        },
+        created () {
+            this.layout.addFlatternNode(this.state)
+            this.updateBasicState()
+        },
+        beforeDestory () {
+            this.layout.destory(this.state)
+        },
+        methods: {
+            updateBasicState () {
+                const node = this.node
+                const basicState = this.basicState
+                const stateHandler = {
+                    selected: this.handleNodeClick,
+                    expanded: this.handleExpandClick
+                }
+                const changedState = {
+                    id: this.layout.getNodeId(node)
+                }
+                for (let key in basicState) {
+                    if (node.hasOwnProperty(key) && node[key] !== this.state[key]) {
+                        changedState[key] = node[key]
+                    }
+                }
+                Object.assign(this.state, changedState)
+                for (let key in changedState) {
+                    if (stateHandler.hasOwnProperty(key)) {
+                        stateHandler[key](changedState[key])
+                    }
+                }
+            },
+            handleExpandClick (expanded) {
+                this.layout.toggleExpanded(this.state.id, expanded)
+            },
+            handleNodeClick () {
+                const selectedNode = this.layout.selectedNode
+                if (!selectedNode || selectedNode.id !== this.state.id) {
+                    this.layout.selectNode(this.state.id)
+                }
+            }
+        }
+    }
+</script>
+
+<style lang="scss" scoped>
+    .tree-node-item {
+        position: relative;
+        white-space: nowrap;
+        font-size: 0;
+        margin: 8px 0;
+        &.tree-node-expanded:before{
+                position: absolute;
+                left: 7px;
+                top: 19px;
+                width: 0;
+                height: calc(100% - 31px);
+                content: '';
+                border-left: 1px dashed #d3d8e7;
+                z-index: 1;
+        }
+        .tree-node-expanded-icon{
+            display: block;
+            margin: 5px 0 0 0;
+            font-size: 14px;
+            color: #c3cdd7;
+            cursor: pointer;
+            &:hover{
+                color: #3c96ff;
+            }
+        }
+    }
+    .tree-node-info-layout{
+        position: relative;
+        &:not(.tree-node-info-layout-root):before{
+            position: absolute;
+            top: 12px;
+            left: -15px;
+            width: 20px;
+            height: 0;
+            content: '';
+            border-top: 1px dashed #d3d8e7;
+            z-index: 1;
+        }
+        .tree-node-info{
+            height: 24px;
+            padding: 0 0 0 14px;
+            line-height: 24px;
+            font-size: 14px;
+            overflow: hidden;
+            cursor: pointer;
+            &:hover{
+                background-color: #f1f7ff;
+                color: #498fe0;
+            }
+            &.tree-node-info-leaf{
+                margin: 0 0 0 14px;
+            }
+            &.tree-node-info-selected{
+                background-color: #e2efff;
+                color: #498fe0;
+            }
+        }
+    }
+    .tree-node-children{
+        margin: 0 0 0 24px;
+    }
+    .test{
+        display: inline-block;
+    }
+</style>
