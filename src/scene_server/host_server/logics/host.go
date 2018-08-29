@@ -260,7 +260,7 @@ func (lgc *Logics) EnterIP(pheader http.Header, ownerID string, appID, moduleID 
 	return nil
 }
 
-func (lgc *Logics) GetHostInfoByConds(pheader http.Header, cond map[string]interface{}) ([]map[string]interface{}, error) {
+func (lgc *Logics) GetHostInfoByConds(pheader http.Header, cond map[string]interface{}) ([]mapstr.MapStr, error) {
 	query := &metadata.QueryInput{
 		Condition: cond,
 		Start:     0,
