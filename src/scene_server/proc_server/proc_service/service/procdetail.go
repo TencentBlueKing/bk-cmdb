@@ -21,9 +21,9 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	
 
 	"github.com/emicklei/go-restful"
 )
@@ -246,7 +246,7 @@ func (ps *ProcServer) getInstAsst(forward http.Header, ownerID, objID string, id
 
 	input.Condition = condition
 
-	var dataInfo []map[string]interface{}
+	var dataInfo []mapstr.MapStr
 	cnt := 0
 	switch objID {
 	case common.BKInnerObjIDHost:
