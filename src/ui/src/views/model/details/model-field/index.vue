@@ -49,9 +49,17 @@
                     :isonly="fieldInfo['isonly']"></v-config>
             </div>
             <div class="field-config clearfix" v-if="isComponentShow">
-                <component :is="`model-field-${fieldType}`"
+                <component v-if="fieldType !== 'asst'"
+                    :is="`model-field-${fieldType}`"
                     :isEditField="isEditField"
-                    :option="fieldInfo.option"
+                    v-model="fieldInfo.option"
+                    ref="component"
+                ></component>
+                <component v-else
+                     :is="`model-field-${fieldType}`"
+                    :isEditField="isEditField"
+                    v-model="fieldInfo['bk_asst_obj_id']"
+                    ref="component"
                 ></component>
             </div>
             <div class="btn-wrapper">
@@ -139,7 +147,8 @@
                     editable: true,
                     isrequired: false,
                     isonly: false,
-                    option: null
+                    option: '',
+                    bk_asst_obj_id: ''
                 },
                 charMap: ['singlechar', 'longchar'],
                 asstMap: ['singleasst', 'multiasst']
@@ -166,7 +175,8 @@
         },
         methods: {
             ...mapActions('objectModelProperty', [
-                'createObjectAttribute'
+                'createObjectAttribute',
+                'updateObjectAttribute'
             ]),
             initData () {
                 for (let key in this.fieldInfo) {
@@ -174,9 +184,17 @@
                 }
             },
             save () {
-                // this.createObjectAttribute({
-                //     params: {}
-                // })
+                if (this.isEditField) {
+                    // this.updateObjectAttribute()
+                } else {
+                    // this.createObjectAttribute({
+                    //     params: this.fieldInfo
+                    // })
+                }
+                this.$validator.validateAll().then(res => {
+                    this.$refs.component.validate()
+                })
+                console.log(1)
                 this.$emit('save')
             },
             cancel () {

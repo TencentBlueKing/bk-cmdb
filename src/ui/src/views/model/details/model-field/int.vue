@@ -4,7 +4,8 @@
             <label class="form-label">{{$t('ModelManagement["最小值"]')}}</label>
             <div class="input-box">
                 <input type="text" class="cmdb-form-input" placeholder=""
-                    v-model="min"
+                    v-model="localValue.min"
+                    @input="handleInput"
                     v-validate="`number`"
                     maxlength="11"
                     :name="'min'">
@@ -14,9 +15,10 @@
         <div class="form-item">
             <label class="form-label">{{$t('ModelManagement["最大值"]')}}</label>
             <div class="input-box">
-                <input type="text" class="cmdb-form-input" placeholder="" v-model="max"
+                <input type="text" class="cmdb-form-input" placeholder="" v-model="localValue.max"
                     name="max"
-                    v-validate="`number|isBigger:${min}`">
+                    @input="handleInput"
+                    v-validate="`number|isBigger:${localValue.min}`">
                 <span v-show="errors.has('max')" class="error-msg color-danger">{{ errors.first('max') }}</span>
             </div>
         </div>
@@ -25,10 +27,49 @@
 
 <script>
     export default {
+        props: {
+            value: {
+                default: {
+                    min: '',
+                    max: ''
+                }
+            }
+        },
         data () {
             return {
-                max: '',
-                min: ''
+                localValue: {
+                    min: '',
+                    max: ''
+                }
+            }
+        },
+        watch: {
+            value: {
+                handler () {
+                    this.initValue()
+                },
+                deep: true
+            }
+        },
+        created () {
+            this.initValue()
+        },
+        methods: {
+            initValue () {
+                if (this.value === '' || this.value === null) {
+                    this.localValue = {
+                        min: '',
+                        max: ''
+                    }
+                } else {
+                    this.localValue = this.value
+                }
+            },
+            async handleInput () {
+                const res = await this.$validator.validateAll()
+                if (res) {
+                    this.$emit('input', this.localValue)
+                }
             }
         }
     }
