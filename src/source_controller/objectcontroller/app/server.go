@@ -19,6 +19,8 @@ import (
 	"strconv"
 	"time"
 
+	"configcenter/src/common/blog"
+
 	restful "github.com/emicklei/go-restful"
 	redis "gopkg.in/redis.v5"
 
@@ -31,7 +33,6 @@ import (
 	"configcenter/src/common/version"
 	"configcenter/src/source_controller/objectcontroller/app/options"
 	"configcenter/src/source_controller/objectcontroller/service"
-	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
 	dalredis "configcenter/src/storage/dal/redis"
 )
@@ -72,7 +73,8 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	objCtr := new(ObjectController)
-	objCtr.Core, err = backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
+	objCtr.Service = coreService
+	objCtr.Service.Core, err = backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
 		types.CC_MODULE_HOSTCONTROLLER,
 		op.ServConf.ExConfig,
 		objCtr.onObjectConfigUpdate,
@@ -93,33 +95,6 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("Configuration item not found")
 	}
 
-	objCtr.Instance, err = mongo.NewMgo(objCtr.Config.Mongo.BuildURI())
-	if err != nil {
-		return fmt.Errorf("new mongo client failed, err: %v", err)
-	}
-
-	rdsc := objCtr.Config.Redis
-	dbNum, err := strconv.Atoi(rdsc.Database)
-	//not set use default db num 0
-	if nil != err {
-		return fmt.Errorf("redis config db[%s] not integer", rdsc.Database)
-	}
-	objCtr.Cache = redis.NewClient(
-		&redis.Options{
-			Addr:     rdsc.Address,
-			PoolSize: 100,
-			Password: rdsc.Password,
-			DB:       dbNum,
-		})
-	err = objCtr.Cache.Ping().Err()
-	if err != nil {
-		return fmt.Errorf("new redis client failed, err: %v", err)
-	}
-
-	coreService.Core = objCtr.Core
-	coreService.Instance = objCtr.Instance
-	coreService.Cache = objCtr.Cache
-
 	select {
 	case <-ctx.Done():
 	}
@@ -127,22 +102,20 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 }
 
 type ObjectController struct {
-	Core     *backbone.Engine
-	Instance dal.RDB
-	Cache    *redis.Client
-	Config   *options.Config
+	*service.Service
+	Config *options.Config
 }
 
 func (h *ObjectController) onObjectConfigUpdate(previous, current cc.ProcessConfig) {
 
-	mongo := mongo.Config{
-		Address:      current.ConfigMap["mongo.address"],
-		User:         current.ConfigMap["mongo.usr"],
-		Password:     current.ConfigMap["mongo.pwd"],
-		Database:     current.ConfigMap["mongo.database"],
-		MaxOpenConns: current.ConfigMap["mongo.maxOpenConns"],
-		MaxIdleConns: current.ConfigMap["mongo.maxIDleConns"],
-		Mechanism:    current.ConfigMap["mongo.mechanism"],
+	mongocfg := mongo.Config{
+		Address:      current.ConfigMap["mongodb.address"],
+		User:         current.ConfigMap["mongodb.usr"],
+		Password:     current.ConfigMap["mongodb.pwd"],
+		Database:     current.ConfigMap["mongodb.database"],
+		MaxOpenConns: current.ConfigMap["mongodb.maxOpenConns"],
+		MaxIdleConns: current.ConfigMap["mongodb.maxIDleConns"],
+		Mechanism:    current.ConfigMap["mongodb.mechanism"],
 	}
 
 	rediscfg := dalredis.Config{
@@ -152,9 +125,37 @@ func (h *ObjectController) onObjectConfigUpdate(previous, current cc.ProcessConf
 	}
 
 	h.Config = &options.Config{
-		Mongo: mongo,
+		Mongo: mongocfg,
 		Redis: rediscfg,
 	}
+
+	instance, err := mongo.NewMgo(h.Config.Mongo.BuildURI())
+	if err != nil {
+		blog.Errorf("new mongo client failed, err: %v", err)
+		return
+	}
+	h.Service.Instance = instance
+
+	rdsc := h.Config.Redis
+	dbNum, err := strconv.Atoi(rdsc.Database)
+	//not set use default db num 0
+	if nil != err {
+		blog.Errorf("redis config db[%s] not integer", rdsc.Database)
+		return
+	}
+	h.Cache = redis.NewClient(
+		&redis.Options{
+			Addr:     rdsc.Address,
+			PoolSize: 100,
+			Password: rdsc.Password,
+			DB:       dbNum,
+		})
+	err = h.Cache.Ping().Err()
+	if err != nil {
+		blog.Errorf("new redis client failed, err: %v", err)
+		return
+	}
+
 }
 
 func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {

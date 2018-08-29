@@ -13,7 +13,7 @@
 package dal
 
 import (
-	"github.com/mongodb/mongo-go-driver/bson"
+	"gopkg.in/mgo.v2/bson"
 
 	"configcenter/src/common"
 )

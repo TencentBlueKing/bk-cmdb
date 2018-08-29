@@ -25,14 +25,16 @@ import (
 
 func (dh *DistHandler) StartDistribute() (err error) {
 	defer func() {
-		if err == nil {
-			syserror := recover()
-			if syserror != nil {
-				err = fmt.Errorf("system error: %v", syserror)
-			}
+		syserror := recover()
+		if syserror != nil {
+			err = fmt.Errorf("system error: %v", syserror)
 		}
-		blog.Errorf("%s", debug.Stack())
+		if err != nil {
+			blog.Errorf("distribute process stop with error: %v, stack:%s", err, debug.Stack())
+		}
 	}()
+
+	blog.Info("distribution handle process started")
 
 	rccler := newReconciler(dh.ctx, dh.cache, dh.db)
 	rccler.loadAll()

@@ -17,7 +17,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/emicklei/go-restful"
@@ -54,7 +53,7 @@ func (s *Service) GetHostByID(req *restful.Request, resp *restful.Response) {
 	result := make(map[string]interface{}, 0)
 	condition := common.KvMap{common.BKHostIDField: hostID}
 	condition = util.SetModOwner(condition, ownerID)
-	err = s.Instance.Table(common.BKTableNameBaseHost).Find(condition).One(ctx, result)
+	err = s.Instance.Table(common.BKTableNameBaseHost).Find(condition).One(ctx, &result)
 	if err != nil {
 		blog.Error("get host by id[%s] failed, err: %v", hostID, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
@@ -83,9 +82,8 @@ func (s *Service) GetHosts(req *restful.Request, resp *restful.Response) {
 
 	condition := util.ConvParamsTime(dat.Condition)
 	condition = util.SetModOwner(condition, ownerID)
-	fieldArr := strings.Split(dat.Fields, ",")
-	result := make([]map[string]interface{}, 0)
-	err := s.Logics.GetObjectByCondition(ctx, lang, common.BKInnerObjIDHost, fieldArr, condition, &result, dat.Sort, dat.Start, dat.Limit)
+	fieldArr := util.SplitStrField(dat.Fields, ",")
+	result, err := s.Logics.GetObjectByCondition(ctx, lang, common.BKInnerObjIDHost, fieldArr, condition, dat.Sort, dat.Start, dat.Limit)
 	if err != nil {
 		blog.Error("get object failed type:%s,input:%v error:%v", common.BKInnerObjIDHost, dat, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostSelectInst)})
@@ -432,7 +430,7 @@ func (s *Service) GetModulesHostConfig(req *restful.Request, resp *restful.Respo
 
 	query = util.SetModOwner(query, ownerID)
 	result := make([]meta.ModuleHost, 0)
-	err := s.Instance.Table(common.BKTableNameModuleHostConfig).Find(query).Limit(uint64(common.BKNoLimit)).All(ctx, result)
+	err := s.Instance.Table(common.BKTableNameModuleHostConfig).Find(query).Limit(uint64(common.BKNoLimit)).All(ctx, &result)
 	if err != nil {
 		blog.Error("get module host config failed, err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})

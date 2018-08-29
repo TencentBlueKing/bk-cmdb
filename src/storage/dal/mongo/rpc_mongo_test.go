@@ -82,7 +82,7 @@ func TestRPCClient(t *testing.T) {
 }
 
 func TestTransaction(t *testing.T) {
-	txncli, err := mongo.NewRPC("127.0.0.1:50010")
+	cli, err := mongo.NewRPC("127.0.0.1:50010")
 	require.NoError(t, err)
 	normalcli, err := mongo.NewRPC("127.0.0.1:50010")
 	require.NoError(t, err)
@@ -91,7 +91,7 @@ func TestTransaction(t *testing.T) {
 	ctx = context.WithValue(ctx, common.BKHTTPCCTransactionID, dal.JoinOption{RequestID: "xxx"})
 	tablename := "testtable"
 
-	err = txncli.StartTransaction(ctx)
+	txncli, err := cli.StartTransaction(ctx)
 	require.NoError(t, err, "StartTransaction")
 
 	// inset one
@@ -149,6 +149,6 @@ func TestTransaction(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, len(findall) <= 0)
 
-	err = txncli.Commit()
+	err = txncli.Commit(ctx)
 	require.NoError(t, err)
 }

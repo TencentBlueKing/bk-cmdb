@@ -71,7 +71,7 @@ func (lgc *Logics) DelSingleHostModuleRelation(ctx context.Context, ec *eventcli
 
 	// retrieve original datas
 	origindatas := make([]map[string]interface{}, 0)
-	getErr := lgc.Instance.Table(common.BKTableNameModuleHostConfig).Find(delCondition).All(ctx, delCondition)
+	getErr := lgc.Instance.Table(common.BKTableNameModuleHostConfig).Find(delCondition).All(ctx, &origindatas)
 	if getErr != nil {
 		blog.Errorf("delete single host relation, retrieve original data error:%v", getErr)
 		return false, getErr
@@ -160,7 +160,7 @@ func (lgc *Logics) GetDefaultModuleIDs(ctx context.Context, appID int64) ([]int6
 	result := make([]interface{}, 0)
 	var ret []int64
 
-	err := lgc.Instance.Table(common.BKTableNameBaseModule).Find(defaultModuleCond).Fields(common.BKModuleIDField, common.BKDefaultField).All(ctx, result)
+	err := lgc.Instance.Table(common.BKTableNameBaseModule).Find(defaultModuleCond).Fields(common.BKModuleIDField, common.BKDefaultField).All(ctx, &result)
 	if nil != err {
 		blog.Errorf("get default module ids failed,  error:%s, params:%v, %v", err.Error(), defaultModuleCond, result)
 		return ret, errors.New("can not find the module")
@@ -186,7 +186,7 @@ func (lgc *Logics) GetModuleIDsByHostID(ctx context.Context, moduleCond interfac
 	result := make([]metadata.ModuleHost, 0)
 	var ret []int64
 
-	err := lgc.Instance.Table(common.BKTableNameModuleHostConfig).Find(moduleCond).Fields(common.BKModuleIDField).All(ctx, result)
+	err := lgc.Instance.Table(common.BKTableNameModuleHostConfig).Find(moduleCond).Fields(common.BKModuleIDField).All(ctx, &result)
 	if nil != err {
 		blog.Error("get moudle id by host id failed, error: %s", err.Error())
 		return ret, errors.New("can not find the module that host belongs to")
@@ -201,7 +201,7 @@ func (lgc *Logics) GetModuleIDsByHostID(ctx context.Context, moduleCond interfac
 func (lgc *Logics) GetResourcePoolApp(ctx context.Context, ownerID int64) (int64, error) {
 	params := common.KvMap{common.BKOwnerIDField: ownerID, common.BKDefaultField: 1}
 	result := make(map[string]interface{}, 0)
-	err := lgc.Instance.Table(common.BKTableNameBaseApp).Find(params).Fields(common.BKAppIDField).One(ctx, result)
+	err := lgc.Instance.Table(common.BKTableNameBaseApp).Find(params).Fields(common.BKAppIDField).One(ctx, &result)
 	if nil != err {
 		blog.Errorf("get resource pool app failed,  error:%", err.Error())
 		return 0, errors.New("get resource pool app failed")
@@ -224,7 +224,7 @@ func (lgc *Logics) CheckHostInIDle(ctx context.Context, appID, emptyModuleID int
 	conds := common.KvMap{common.BKHostIDField: bson.M{common.BKDBIN: hostIDs}}
 	result := make([]metadata.ModuleHost, 0)
 
-	err := lgc.Instance.Table(common.BKTableNameModuleHostConfig).Find(conds).Fields(common.BKHostIDField, common.BKModuleIDField, common.BKAppIDField).All(ctx, result)
+	err := lgc.Instance.Table(common.BKTableNameModuleHostConfig).Find(conds).Fields(common.BKHostIDField, common.BKModuleIDField, common.BKAppIDField).All(ctx, &result)
 	if nil != err {
 		return nil, nil, fmt.Errorf("get relation between host and module failed, err: %v", err)
 	}
@@ -253,7 +253,7 @@ func (lgc *Logics) CheckHostInIDle(ctx context.Context, appID, emptyModuleID int
 func (lgc *Logics) GetIDleModuleID(ctx context.Context, appID int64) (int64, error) {
 	cond := common.KvMap{common.BKDefaultField: common.DefaultResModuleFlag, common.BKAppIDField: appID}
 	result := make(map[string]interface{}, 0)
-	err := lgc.Instance.Table(common.BKTableNameBaseModule).Find(cond).Fields(common.BKModuleIDField).One(ctx, result)
+	err := lgc.Instance.Table(common.BKTableNameBaseModule).Find(cond).Fields(common.BKModuleIDField).One(ctx, &result)
 	if nil != err {
 		return 0, fmt.Errorf("can not find module, err:　%v", err)
 	}

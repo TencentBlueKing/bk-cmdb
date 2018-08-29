@@ -14,13 +14,19 @@ package distribution
 
 import (
 	"context"
+	"sync"
+	"time"
 
+	redis "gopkg.in/redis.v5"
+
+	"configcenter/src/common/blog"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/identifier"
 	"configcenter/src/storage/dal"
-	redis "gopkg.in/redis.v5"
+	"configcenter/src/storage/rpc"
 )
 
-func Start(ctx context.Context, cache *redis.Client, db dal.RDB) error {
+func Start(ctx context.Context, cache *redis.Client, db dal.RDB, rc *rpc.Client) error {
 	chErr := make(chan error)
 
 	eh := &EventHandler{cache: cache}
@@ -38,6 +44,16 @@ func Start(ctx context.Context, cache *redis.Client, db dal.RDB) error {
 		chErr <- ih.StartHandleInsts()
 	}()
 
+	th := &TxnHandler{cache: cache, db: db, ctx: ctx, rc: rc, commited: make(chan string, 100), shouldClose: util.NewBool(false)}
+	go func() {
+		for {
+			if err := th.Run(); err != nil {
+				blog.Errorf("TxnHandler stoped with error: %v, we will try 1s later", err)
+			}
+			time.Sleep(time.Second)
+		}
+	}()
+
 	return <-chErr
 }
 
@@ -46,4 +62,14 @@ type DistHandler struct {
 	cache *redis.Client
 	db    dal.RDB
 	ctx   context.Context
+}
+
+type TxnHandler struct {
+	rc          *rpc.Client
+	cache       *redis.Client
+	db          dal.RDB
+	ctx         context.Context
+	commited    chan string
+	shouldClose *util.AtomicBool
+	wg          sync.WaitGroup
 }

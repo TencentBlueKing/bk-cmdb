@@ -229,13 +229,13 @@ func (cli *Service) SearchInstObjects(req *restful.Request, resp *restful.Respon
 	fieldArr := strings.Split(fields, ",")
 	result := make([]map[string]interface{}, 0)
 	count, err := cli.GetCntByCondition(ctx, db, objType, condition)
-	if err != nil {
+	if err != nil && !db.IsNotFoundError(err) {
 		blog.Error("get object type:%s,input:%v error:%v", objType, string(value), err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectSelectInstFailed, err.Error())})
 		return
 	}
 	err = cli.GetObjectByCondition(ctx, db, defLang, objType, fieldArr, condition, &result, sort, skip, limit)
-	if err != nil {
+	if err != nil && !db.IsNotFoundError(err) {
 		blog.Error("get object type:%s,input:%v error:%v", string(objType), string(value), err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectSelectInstFailed, err.Error())})
 		return
@@ -243,7 +243,7 @@ func (cli *Service) SearchInstObjects(req *restful.Request, resp *restful.Respon
 	info := make(map[string]interface{})
 	info["count"] = count
 	info["info"] = result
-
+	//fmt.Println("result:", result)
 	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: info})
 
 }

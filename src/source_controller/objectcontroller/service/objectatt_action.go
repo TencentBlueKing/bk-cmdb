@@ -229,7 +229,7 @@ func (cli *Service) SelectObjectAttByID(req *restful.Request, resp *restful.Resp
 	condition = util.SetQueryOwner(condition, ownerID)
 	// select from storage
 	result := make([]meta.Attribute, 0)
-	if selErr := db.Table(common.BKTableNameObjAttDes).Find(condition).All(ctx, &result); nil != selErr {
+	if selErr := db.Table(common.BKTableNameObjAttDes).Find(condition).All(ctx, &result); nil != selErr && !db.IsNotFoundError(selErr) {
 		blog.Error("find object by selector failed, error:%s", selErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
@@ -282,7 +282,7 @@ func (cli *Service) SelectObjectAttWithParams(req *restful.Request, resp *restfu
 	}
 	selector = util.SetQueryOwner(selector, ownerID)
 
-	if selErr := db.Table(common.BKTableNameObjAttDes).Find(selector).Start(uint64(page.Start)).Limit(uint64(page.Limit)).Sort(page.Sort).All(ctx, &results); nil != selErr {
+	if selErr := db.Table(common.BKTableNameObjAttDes).Find(selector).Start(uint64(page.Start)).Limit(uint64(page.Limit)).Sort(page.Sort).All(ctx, &results); nil != selErr && !db.IsNotFoundError(selErr) {
 		blog.Error("find object by selector failed, error information is %s", selErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, selErr.Error())})
 		return

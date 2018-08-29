@@ -22,6 +22,8 @@ import (
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
 
+	redis "gopkg.in/redis.v5"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
@@ -32,7 +34,6 @@ import (
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
-	"configcenter/src/storage/redisclient"
 	confCenter "configcenter/src/web_server/application/config"
 	"configcenter/src/web_server/application/logics"
 	"configcenter/src/web_server/application/middleware"
@@ -91,7 +92,7 @@ func (ccWeb *CCWebServer) Start() error {
 
 	/// fetch config of itselft
 	var confData []byte
-	_ = confData
+
 	for {
 		confData = ccWeb.cfCenter.GetConfigureCtx()
 
@@ -155,7 +156,7 @@ func (ccWeb *CCWebServer) Start() error {
 			}
 		}
 	}
-
+	fmt.Println("cfg:", config)
 	site := config["site.domain_url"] + "/"
 	version := config["api.version"]
 	loginURL := config["site.bk_login_url"]
@@ -170,27 +171,29 @@ func (ccWeb *CCWebServer) Start() error {
 	apiSite, _ := a.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
 	static := config["site.html_root"]
 	webCommon.ResourcePath = config["site.resources_path"]
-	redisIp := config["session.host"]
-	redisPort := config["session.port"]
+	redisAddress := config["session.address"]
+	//redisPort := config["session.port"]
 	redisSecret := config["session.secret"]
 	multipleOwner := config["session.multiple_owner"]
 	agentAppUrl := config["app.agent_app_url"]
 	redisSecret = strings.TrimSpace(redisSecret)
 	curl := fmt.Sprintf(loginURL, appCode, site)
 
-	redisCli, err := redisclient.NewRedis(redisIp, redisPort, "", redisSecret, "0")
-	if nil != err {
-		blog.Errorf("connect redis error %s", err.Error())
-		return err
+	a.CacheCli = redis.NewClient(
+		&redis.Options{
+			Addr:     redisAddress,
+			PoolSize: 100,
+			Password: redisSecret,
+			DB:       0,
+		})
+
+	err := a.CacheCli.Ping().Err()
+	if err != nil {
+		return fmt.Errorf("new redis client failed, err: %v", err)
 	}
-	err = redisCli.Open()
-	if nil != err {
-		blog.Errorf("connect redis error %s", err.Error())
-		return err
-	}
-	a.CacheCli = redisCli
+
 	go func() {
-		store, rediserr := sessions.NewRedisStore(10, "tcp", redisIp+":"+redisPort, redisSecret, []byte("secret"))
+		store, rediserr := sessions.NewRedisStore(10, "tcp", redisAddress, redisSecret, []byte("secret"))
 		if rediserr != nil {
 			panic(rediserr)
 		}

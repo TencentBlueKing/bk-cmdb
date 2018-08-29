@@ -34,6 +34,7 @@ import (
 	svc "configcenter/src/scene_server/event_server/service"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/storage/rpc"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -101,8 +102,16 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			return fmt.Errorf("connect redis server failed %s", err.Error())
 		}
 		process.Service.SetCache(cache)
+
+		var rpccli *rpc.Client
+		if process.Config.RPC.Address != "" {
+			rpccli, err = rpc.Dial(process.Config.RPC.Address)
+			if err != nil {
+				return fmt.Errorf("connect rpc server failed %s", err.Error())
+			}
+		}
 		go func() {
-			errCh <- distribution.Start(ctx, cache, db)
+			errCh <- distribution.Start(ctx, cache, db, rpccli)
 		}()
 		break
 	}
@@ -138,6 +147,8 @@ func (h *EventServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 
 		redisConf := redis.NewConfigFromKV("redis", current.ConfigMap)
 		h.Config.Redis = *redisConf
+
+		h.Config.RPC.Address = current.ConfigMap["rpc.address"]
 	}
 }
 

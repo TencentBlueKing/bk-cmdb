@@ -67,7 +67,7 @@
                         </bk-daterangepicker>
                     </span>
                     <span v-else-if="property.bkPropertyType === 'enum'">
-                        <bk-select :selected.sync="property.value" class="userapi-enum fl">
+                        <bk-select :selected.sync="property.value" :filterable="true" class="userapi-enum fl">
                             <bk-select-option v-for="option in getEnumOptions(property)"
                                 :key="option.id"
                                 :value="option.id"
@@ -219,11 +219,6 @@
                         id: 'module',
                         name: this.$t("Hosts['模块']"),
                         properties: []
-                    },
-                    'biz': {
-                        id: 'biz',
-                        name: this.$t("Common['业务']"),
-                        properties: []
                     }
                 },
                 selectedObjId: 'host',
@@ -288,6 +283,8 @@
                     if (property.bkPropertyType === 'singleasst' || property.bkPropertyType === 'multiasst') {
                         paramsMap.push({
                             'bk_obj_id': property.bkAsstObjId,
+                            'bk_source_property_id': property.bkPropertyId,
+                            'bk_source_obj_id': property.bkObjId,
                             fields: [],
                             condition: [{
                                 field: specialObj.hasOwnProperty(property.bkAsstObjId) ? specialObj[property.bkAsstObjId] : 'bk_inst_name',
@@ -436,12 +433,11 @@
                 }
             },
             initObjectProperties () {
-                this.$Axios.all([this.getObjectProperty('host'), this.getObjectProperty('set'), this.getObjectProperty('module'), this.getObjectProperty('biz')])
+                this.$Axios.all([this.getObjectProperty('host'), this.getObjectProperty('set'), this.getObjectProperty('module')])
                 .then(this.$Axios.spread((hostRes, setRes, moduleRes, bizRes) => {
                     this.object['host']['properties'] = (hostRes.result ? hostRes.data : []).filter(property => !property['bk_isapi'])
                     this.object['set']['properties'] = (setRes.result ? setRes.data : []).filter(property => !property['bk_isapi'])
                     this.object['module']['properties'] = (moduleRes.result ? moduleRes.data : []).filter(property => !property['bk_isapi'])
-                    this.object['biz']['properties'] = (bizRes.result ? bizRes.data : []).filter(property => !property['bk_isapi'])
                     this.addDisabled()
                 }))
             },
@@ -489,7 +485,13 @@
                 let info = JSON.parse(detail['info'])
                 info.condition.forEach(condition => {
                     condition['condition'].forEach(property => {
-                        let originalProperty = this.getOriginalProperty(property.field, condition['bk_obj_id'])
+                        let objId = condition['bk_obj_id']
+                        let field = property.field
+                        if (['host', 'module', 'set'].indexOf(objId) === -1) {
+                            objId = condition['bk_source_obj_id']
+                            field = condition['bk_source_property_id']
+                        }
+                        let originalProperty = this.getOriginalProperty(field, objId)
                         if (originalProperty) {
                             if (['time', 'date'].includes(originalProperty['bk_property_type']) && properties.some(({bkPropertyId}) => bkPropertyId === originalProperty['bk_property_id'])) {
                                 let repeatProperty = properties.find(({bkPropertyId}) => bkPropertyId === originalProperty['bk_property_id'])
