@@ -61,7 +61,7 @@
 
 <script>
     import vBaseInfo from './base-info'
-    import vModelField from '@/components/model-field'
+    import vModelField from './model-field'
     import vCreateField from './create-field'
     import { mapActions, mapGetters } from 'vuex'
     export default {
