@@ -21,7 +21,7 @@
         </div>
         <ul v-if="!leaf" v-show="state.expanded" class="tree-node-children">
             <cmdb-tree-node v-for="(child, index) in children"
-                :key="index"
+                :key="layout.getNodeId(child)"
                 :node="child"
                 :layout="layout"
                 :level="level + 1">
@@ -55,17 +55,21 @@
             }
         },
         data () {
-            const state = {
-                id: this.layout.getNodeId(this.node),
+            const basicState = {
                 disabled: false,
                 expanded: false,
                 hidden: false,
-                selected: false,
+                selected: false
+            }
+            const state = {
+                ...basicState,
+                id: this.layout.getNodeId(this.node),
                 level: this.level,
                 parent: this.level === 1 ? null : this.$parent,
                 node: this.node
             }
             return {
+                basicState,
                 state
             }
         },
@@ -80,18 +84,46 @@
                 return !this.children.length
             }
         },
-        created () {
-            this.layout.addFlatternNode(this.state)
-            if (this.node.selected) {
-                this.handleNodeClick()
-            }
-            if (this.node.expanded) {
-                this.handleExpandClick()
+        watch: {
+            node: {
+                deep: true,
+                handler (val, oldVal) {
+                    let stateChanged = Object.keys(this.basicState).some(key => val[key] !== oldVal[key])
+                    if (stateChanged) {
+                        this.updateBasicState()
+                    }
+                }
             }
         },
+        created () {
+            this.layout.addFlatternNode(this.state)
+            this.updateBasicState()
+        },
         methods: {
-            handleExpandClick () {
-                this.layout.toggleExpanded(this.state.id, !this.state.expanded)
+            updateBasicState () {
+                const node = this.node
+                const basicState = this.basicState
+                const stateHandler = {
+                    selected: this.handleNodeClick,
+                    expanded: this.handleExpandClick
+                }
+                const changedState = {
+                    id: this.layout.getNodeId(node)
+                }
+                for (let key in basicState) {
+                    if (node.hasOwnProperty(key) && node[key] !== this.state[key]) {
+                        changedState[key] = node[key]
+                    }
+                }
+                Object.assign(this.state, changedState)
+                for (let key in changedState) {
+                    if (stateHandler.hasOwnProperty(key)) {
+                        stateHandler[key](changedState[key])
+                    }
+                }
+            },
+            handleExpandClick (expanded) {
+                this.layout.toggleExpanded(this.state.id, expanded === undefined ? !this.state.expanded : expanded)
                 this.treeInstance.$emit('on-expand', this.node, this.state)
             },
             handleNodeClick () {
