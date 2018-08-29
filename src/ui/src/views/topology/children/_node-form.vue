@@ -13,7 +13,6 @@
                             :key="propertyIndex">
                             <div class="property-name fl">
                                 <span class="property-name-text" :class="{required: property['isrequired']}">{{property['bk_property_name']}}</span>
-                                <i class="property-name-tooltips bk-icon icon-info-circle-shape" v-if="property['placeholder']" v-tooltip="htmlEncode(property['placeholder'])"></i>
                             </div>
                             <div class="property-value fl">
                                 <component class="form-component"
@@ -36,6 +35,9 @@
                                     v-model.trim="values[property['bk_property_id']]">
                                 </component>
                                 <span class="form-error">{{errors.first(property['bk_property_name'])}}</span>
+                            </div>
+                            <div class="property-tips fl">
+                                <i class="property-name-tooltips bk-icon icon-info-circle-shape" v-if="property['placeholder']" v-tooltip="htmlEncode(property['placeholder'])"></i>
                             </div>
                         </li>
                     </ul>
@@ -250,6 +252,17 @@
                     color: #ff5656;
                 }
             }
+            .property-value{
+                height: 36px;
+                width: calc(100% - 140px);
+                max-width: 450px;
+                font-size: 12px;
+                position: relative;
+            }
+            .property-tips{
+                width: 20px;
+                text-align: right;
+            }
             .property-name-tooltips{
                 display: inline-block;
                 vertical-align: middle;
@@ -257,13 +270,6 @@
                 height: 16px;
                 font-size: 16px;
                 color: #ffb400;
-            }
-            .property-value{
-                height: 36px;
-                width: calc(100% - 120px);
-                max-width: 450px;
-                font-size: 12px;
-                position: relative;
             }
         }
     }

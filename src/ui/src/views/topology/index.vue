@@ -64,6 +64,11 @@
                 </bk-tabpanel>
                 <bk-tabpanel name="process" :title="$t('ProcessManagement[\'进程信息\']')"
                     :show="showProcessPanel">
+                    <cmdb-topo-node-process
+                        v-if="tab.active === 'process'"
+                        :business="business"
+                        :module="tree.selectedNode">
+                    </cmdb-topo-node-process>
                 </bk-tabpanel>
             </bk-tab>
         </div>
@@ -75,11 +80,13 @@
     import cmdbHostsTable from '@/components/hosts/table'
     import cmdbTopoNodeDetails from './children/_node-details'
     import cmdbTopoNodeForm from './children/_node-form'
+    import cmdbTopoNodeProcess from './children/_node-process'
     export default {
         components: {
             cmdbHostsTable,
             cmdbTopoNodeDetails,
-            cmdbTopoNodeForm
+            cmdbTopoNodeForm,
+            cmdbTopoNodeProcess
         },
         data () {
             return {
@@ -444,7 +451,9 @@
                     this.tab.type = 'details'
                     this.tree.selectedNodeInst = {}
                     this.tree.flatternedSelectedNodeInst = {}
-                    this.handleRefresh()
+                    if (active === 'hosts') {
+                        this.handleRefresh()
+                    }
                 }
             },
             handleEdit () {
