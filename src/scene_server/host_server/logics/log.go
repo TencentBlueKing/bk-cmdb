@@ -88,7 +88,7 @@ type HostModuleLog struct {
 	instID    []int64
 	pre       []metadata.ModuleHost
 	cur       []metadata.ModuleHost
-	hostInfos []map[string]interface{}
+	hostInfos []mapstr.MapStr
 	desc      string
 }
 
@@ -265,7 +265,7 @@ func (h *HostModuleLog) getHostModuleConfig() ([]metadata.ModuleHost, error) {
 	return result.Data, nil
 }
 
-func (h *HostModuleLog) getInnerIP() ([]map[string]interface{}, error) {
+func (h *HostModuleLog) getInnerIP() ([]mapstr.MapStr, error) {
 	query := &metadata.QueryInput{
 		Start:     0,
 		Limit:     1,

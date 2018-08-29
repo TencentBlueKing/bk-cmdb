@@ -21,6 +21,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	hutil "configcenter/src/scene_server/host_server/util"
@@ -72,7 +73,7 @@ func (lgc *Logics) getInstAsstDetail(owerID, objID string, IDs []string, pheader
 }
 
 func (lgc *Logics) getRawInstAsst(ownerID, objID string, IDs []string, pheader http.Header, query *meta.QueryInput, isDetail bool) ([]InstNameAsst, int, error) {
-	var infos []map[string]interface{}
+	var infos []mapstr.MapStr
 	var count int
 	var instName, instID string
 	tmpIDs := []int{}
@@ -246,16 +247,16 @@ func (lgc *Logics) getRawInstAsst(ownerID, objID string, IDs []string, pheader h
 }
 
 // get inst detail sub without association object detail
-func (lgc *Logics) GetInstDetailsSub(pheader http.Header, objID, ownerID string, input []map[string]interface{}, page meta.BasePage) ([]map[string]interface{}, error) {
+func (lgc *Logics) GetInstDetailsSub(pheader http.Header, objID, ownerID string, input []mapstr.MapStr, page meta.BasePage) ([]mapstr.MapStr, error) {
 	return lgc.getInstDetailsSub(pheader, objID, ownerID, input, page, false)
 }
 
 // get inst detail sub with association object detail
-func (lgc *Logics) GetInstAsstDetailsSub(pheader http.Header, objID, ownerID string, input []map[string]interface{}, page meta.BasePage) ([]map[string]interface{}, error) {
+func (lgc *Logics) GetInstAsstDetailsSub(pheader http.Header, objID, ownerID string, input []mapstr.MapStr, page meta.BasePage) ([]mapstr.MapStr, error) {
 	return lgc.getInstDetailsSub(pheader, objID, ownerID, input, page, true)
 }
 
-func (lgc *Logics) getInstDetailsSub(pheader http.Header, objID, ownerID string, input []map[string]interface{}, page meta.BasePage, isDetail bool) ([]map[string]interface{}, error) {
+func (lgc *Logics) getInstDetailsSub(pheader http.Header, objID, ownerID string, input []mapstr.MapStr, page meta.BasePage, isDetail bool) ([]mapstr.MapStr, error) {
 	asso, err := lgc.GetObjectAsst(ownerID, pheader)
 	if err != nil {
 		return nil, err
