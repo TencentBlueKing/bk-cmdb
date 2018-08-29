@@ -54,6 +54,9 @@
         methods: {
             toggleExpanded (id, expanded) {
                 this.layout.toggleExpanded(id, expanded)
+            },
+            selectNode (id) {
+                this.layout.selectNode(id)
             }
         }
     }

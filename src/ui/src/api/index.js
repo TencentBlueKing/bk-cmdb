@@ -6,10 +6,12 @@ import RequestQueue from './_request-queue'
 import { $error, $warn } from '@/magicbox'
 
 const Site = window.Site
-
+const API_BASE_URL = Site.url.split('//')
+API_BASE_URL[0] = window.location.protocol
+window.API_BASE_URL = API_BASE_URL.join('//')
 // axios实例
 const axiosInstance = Axios.create({
-    baseURL: `${Site.url}api/${Site.version}`,
+    baseURL: `${window.API_BASE_URL}api/${Site.version}`,
     xsrfCookieName: 'data_csrftoken',
     xsrfHeaderName: 'X-CSRFToken',
     withCredentials: true
