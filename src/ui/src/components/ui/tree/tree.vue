@@ -1,7 +1,7 @@
 <template>
     <ul class="tree-list">
         <cmdb-tree-node v-for="(node, index) in tree"
-            :key="index"
+            :key="layout.getNodeId(node)"
             :node="node"
             :level="1"
             :layout="layout">
