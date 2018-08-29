@@ -442,6 +442,8 @@ input.cmdb-form-input{
             padding-right: 5px;
             font-size: 14px;
             text-align: right;
+            vertical-align: top;
+            line-height: 30px;
         }
         .cmdb-form-input {
             display: inline-block;
@@ -452,6 +454,13 @@ input.cmdb-form-input{
         .form-selector {
             width: 130px;
             display: inline-block;
+        }
+        .error-msg {
+            font-size: 12px;
+        }
+        .input-box {
+            display: inline-block;
+            width: 130px;
         }
     }
 }

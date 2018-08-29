@@ -27,6 +27,7 @@
         <cmdb-slider
             :isShow.sync="slider.isShow" :title="slider.title">
             <v-details slot="content"
+                :isEdit.sync="slider.isEdit"
             ></v-details>
         </cmdb-slider>
     </div>
@@ -51,7 +52,8 @@
             return {
                 slider: {
                     isShow: false,
-                    title: ''
+                    title: '',
+                    isEdit: false
                 }
             }
         },
@@ -67,15 +69,16 @@
             createModel (prevModelId) {
                 this.slider.title = '新增模型'
                 this.slider.isShow = true
+                this.slider.isEdit = false
                 this.setActiveModel({
                     bk_classification_id: this.bkClassificationId,
                     bk_asst_obj_id: prevModelId
                 })
             },
             editModel (model) {
-                console.log(1)
                 this.slider.title = model['bk_obj_name']
                 this.setActiveModel(model)
+                this.slider.isEdit = true
                 this.slider.isShow = true
             },
             editModelClass () {
