@@ -6,8 +6,8 @@
                 v-if="$groupedProperties[groupIndex].length"
                 v-show="group['bk_group_id'] !== 'none' || showNoneGroup">
                 <h3 class="group-name">{{group['bk_group_name']}}</h3>
-                <ul class="property-list clearfix">
-                    <li class="property-item clearfix fl"
+                <ul class="property-list">
+                    <li class="property-item clearfix"
                         v-for="(property, propertyIndex) in $groupedProperties[groupIndex]"
                         :key="propertyIndex"
                         :title="getTitle(inst, property)">
@@ -28,27 +28,19 @@
                 </a>
             </div>
         </template>
-        <slot name="details-options">
-            <div class="details-options" v-if="showOptions">
-                <bk-button class="button-edit" type="primary"
-                    v-if="showEdit"
-                    @click="handleEdit">
-                    {{editText}}
-                </bk-button>
-                <bk-button class="button-delete" type="danger"
-                    v-if="showDelete"
-                    @click="handleDelete">
-                    {{deleteText}}
-                </bk-button>
-            </div>
-        </slot>
+        <div class="details-options" v-if="showOptions">
+            <bk-button class="button-edit" type="primary"
+                v-if="showEdit"
+                @click="handleEdit">
+                {{editText}}
+            </bk-button>
+        </div>
     </div>
 </template>
 
 <script>
     import formMixins from '@/mixins/form'
     export default {
-        name: 'cmdb-details',
         mixins: [formMixins],
         props: {
             inst: {
@@ -70,10 +62,6 @@
             showEdit: {
                 type: Boolean,
                 default: true
-            },
-            showDelete: {
-                type: Boolean,
-                default: true
             }
         },
         data () {
@@ -83,7 +71,7 @@
         },
         computed: {
             editText () {
-                return this.editButtonText || this.$t("Common['属性编辑']")
+                return this.editButtonText || this.$t("Common['编辑']")
             },
             deleteText () {
                 return this.deleteButtonText || this.$t("Common['删除']")
@@ -105,10 +93,10 @@
 
 <style lang="scss" scoped>
     .details-layout{
+        position: relative;
         height: 100%;
         padding: 0 0 0 32px;
-        overflow: auto;
-        @include scrollbar;
+        @include scrollbar-y;
     }
     .property-group{
         padding: 17px 0 0 0;
@@ -125,14 +113,14 @@
     .property-list{
         padding: 4px 0;
         .property-item{
-            width: 50%;
             margin: 12px 0 0;
-            font-size: 12px;
-            line-height: 16px;
+            font-size: 14px;
+            height: 36px;
+            line-height: 36px;
             .property-name{
                 position: relative;
-                width: 35%;
-                padding: 0 16px 0 0;
+                width: 120px;
+                padding: 0 26px 0 0;
                 text-align: right;
                 color: $cmdbTextColor;
                 @include ellipsis;
@@ -143,7 +131,7 @@
                 }
             }
             .property-value{
-                width: 65%;
+                width: calc(100% - 120px);
                 padding: 0 15px 0 0;
                 @include ellipsis;
                 &-text{
@@ -191,21 +179,13 @@
         }
     }
     .details-options{
-        position: absolute;
+        position: sticky;
         bottom: 0;
         left: 0;
-        width: 100%;
-        height: 62px;
-        padding: 14px 20px;
-        background-color: #f9f9f9;
+        background-color: #fff;
+        padding: 20px 0 0 120px;
         .button-edit{
-            width: 110px;
             margin-right: 4px;
-        }
-        .button-delete{
-            width: 110px;
-            background-color: #fff;
-            color: #ff5656;
         }
     }
 </style>
