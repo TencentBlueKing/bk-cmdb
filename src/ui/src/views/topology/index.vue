@@ -185,9 +185,21 @@
                 'batchSearchObjectAttribute'
             ]),
             ...mapActions('objectModelFieldGroup', ['searchGroup']),
-            ...mapActions('objectSet', ['searchSet']),
-            ...mapActions('objectModule', ['searchModule']),
-            ...mapActions('objectCommonInst', ['searchInst']),
+            ...mapActions('objectSet', [
+                'searchSet',
+                'createSet',
+                'updateSet'
+            ]),
+            ...mapActions('objectModule', [
+                'searchModule',
+                'createModule',
+                'updateModule'
+            ]),
+            ...mapActions('objectCommonInst', [
+                'searchInst',
+                'createInst',
+                'updateInst'
+            ]),
             ...mapActions('objectMainLineModule', [
                 'searchMainlineObject',
                 'getInstTopo',
@@ -429,6 +441,7 @@
                     this.tab.type = 'details'
                     this.tree.selectedNodeInst = {}
                     this.tree.flatternedSelectedNodeInst = {}
+                    this.handleRefresh()
                 }
             },
             handleEdit () {
@@ -442,7 +455,108 @@
                     this.tab.active = 'attribute'
                 }
             },
-            handleSubmit (value, changedValue, originalInst, type) {},
+            handleSubmit (value, changedValue, originalInst, type) {
+                if (type === 'create') {
+                    this.createNode(value)
+                } else {
+                    this.updateNode(value)
+                }
+            },
+            createNode (value) {
+                const selectedNode = this.tree.selectedNode
+                const selectedNodeModel = this.topoModel.find(model => model['bk_obj_id'] === selectedNode['bk_obj_id'])
+                const nextObjId = selectedNodeModel['bk_next_obj']
+                const formData = {
+                    ...value,
+                    'bk_biz_id': this.business,
+                    'bk_parent_id': selectedNode['bk_inst_id']
+                }
+                let promise
+                let instIdKey
+                let instNameKey
+                if (nextObjId === 'set') {
+                    formData['bk_supplier_account'] = this.supplierAccount
+                    instIdKey = 'bk_set_id'
+                    instNameKey = 'bk_set_name'
+                    promise = this.createSet({
+                        bizId: this.business,
+                        params: formData
+                    })
+                } else if (nextObjId === 'module') {
+                    formData['bk_supplier_account'] = this.supplierAccount
+                    instIdKey = 'bk_module_id'
+                    instNameKey = 'bk_module_name'
+                    promise = this.createModule({
+                        bizId: this.business,
+                        setId: selectedNode['bk_inst_id'],
+                        params: formData
+                    })
+                } else {
+                    instIdKey = 'bk_inst_id'
+                    instNameKey = 'bk_inst_name'
+                    promise = this.createInst({
+                        objId: nextObjId,
+                        params: formData
+                    })
+                }
+                promise.then(inst => {
+                    const children = selectedNode.child || []
+                    const newNode = {
+                        default: 0,
+                        child: [],
+                        'bk_inst_id': inst[instIdKey],
+                        'bk_inst_name': inst[instNameKey],
+                        'bk_obj_id': nextObjId,
+                        'bk_obj_name': selectedNodeModel['bk_next_name']
+                    }
+                    if (selectedNode['bk_obj_id'] === 'biz') {
+                        children.splice(2, 0, newNode)
+                    } else {
+                        children.unshift(newNode)
+                    }
+                    this.$set(selectedNode, 'child', children)
+                    this.$set(selectedNode, 'expanded', true)
+                    this.tab.active = 'hosts'
+                    this.tab.type = 'details'
+                    this.$success(this.$t('Common[\'新建成功\']'))
+                })
+            },
+            updateNode (value) {
+                const formData = {...value}
+                const selectedNode = this.tree.selectedNode
+                const objId = selectedNode['bk_obj_id']
+                let promise
+                if (objId === 'set') {
+                    formData['bk_supplier_account'] = this.supplierAccount
+                    promise = this.updateSet({
+                        bizId: this.business,
+                        setId: selectedNode['bk_inst_id'],
+                        params: formData
+                    })
+                } else if (objId === 'module') {
+                    formData['bk_supplier_account'] = this.supplierAccount
+                    promise = this.updateModule({
+                        bizId: this.business,
+                        setId: value['bk_set_id'],
+                        moduleId: selectedNode['bk_inst_id'],
+                        params: formData
+                    })
+                } else {
+                    promise = this.updateInst({
+                        objId: objId,
+                        instId: selectedNode['bk_inst_id'],
+                        params: formData
+                    })
+                }
+                promise.then(() => {
+                    const instNameKey = ['set', 'module'].includes(objId) ? `bk_${objId}_name` : 'bk_inst_name'
+                    selectedNode['bk_inst_name'] = formData[instNameKey]
+                    this.tree.selectedNodeInst = value
+                    this.tree.flatternedSelectedNodeInst = this.$tools.flatternList(this.tab.properties, [value])[0]
+                    this.tab.type = 'details'
+                    this.$success(this.$t('Common[\'修改成功\']'))
+                })
+            },
             handleCancel () {
                 if (this.tab.type === 'update') {
                     this.tab.type = 'details'

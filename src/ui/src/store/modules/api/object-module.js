@@ -29,8 +29,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    createModule ({ commit, state, dispatch }, { bkBizId, bkSetId, params }) {
-        return $http.post(`module/${bkBizId}/${bkSetId}`, params)
+    createModule ({ commit, state, dispatch }, { bizId, setId, params, config }) {
+        return $http.post(`module/${bizId}/${setId}`, params, config)
     },
 
     /**
@@ -57,8 +57,8 @@ const actions = {
      * @param {Number} bkModuleId 模块id
      * @return {promises} promises 对象
      */
-    updateModule ({ commit, state, dispatch }, { bkBizId, bkSetId, bkModuleId, params }) {
-        return $http.put(`module/${bkBizId}/${bkSetId}/${bkModuleId}`, params)
+    updateModule ({ commit, state, dispatch }, { bizId, setId, moduleId, params, config }) {
+        return $http.put(`module/${bizId}/${setId}/${moduleId}`, params, config)
     },
 
     /**
