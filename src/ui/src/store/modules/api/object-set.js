@@ -41,8 +41,8 @@ const actions = {
      * @param {Number} bkSetId 集群id
      * @return {promises} promises 对象
      */
-    deleteSet ({ commit, state, dispatch }, { bkBizId, bkSetId }) {
-        return $http.delete(`set/${bkBizId}/${bkSetId}`)
+    deleteSet ({ commit, state, dispatch }, { bizId, setId, config }) {
+        return $http.delete(`set/${bizId}/${bizId}`, config)
     },
 
     /**

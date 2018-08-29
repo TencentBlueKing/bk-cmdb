@@ -14,7 +14,7 @@
                 :id-generator="getTopoNodeId"
                 :tree="tree.data"
                 @on-selected="handleNodeSelected">
-                <div class="tree-node clearfix" slot-scope="{node, state}">
+                <div class="tree-node clearfix" slot-scope="{node, state}" :class="{'tree-node-selected': state.selected}">
                     <template v-if="[1, 2].includes(node.default)">
                         <i class='topo-node-icon topo-node-icon-internal icon-cc-host-free-pool' v-if="node.default === 1"></i>
                         <i class='topo-node-icon topo-node-icon-internal icon-cc-host-breakdown' v-else></i>
@@ -188,17 +188,20 @@
             ...mapActions('objectSet', [
                 'searchSet',
                 'createSet',
-                'updateSet'
+                'updateSet',
+                'deleteSet'
             ]),
             ...mapActions('objectModule', [
                 'searchModule',
                 'createModule',
-                'updateModule'
+                'updateModule',
+                'deleteModule'
             ]),
             ...mapActions('objectCommonInst', [
                 'searchInst',
                 'createInst',
-                'updateInst'
+                'updateInst',
+                'deleteInst'
             ]),
             ...mapActions('objectMainLineModule', [
                 'searchMainlineObject',
@@ -565,7 +568,47 @@
                     this.tab.type = 'update'
                 }
             },
-            handleDelete () {},
+            handleDelete () {
+                const selectedNode = this.tree.selectedNode
+                const parentNode = this.tree.selectedNodeState.parent.node
+                const objId = selectedNode['bk_obj_id']
+                const config = {requestId: 'deleteNode'}
+                this.$bkInfo({
+                    title: `${this.$t('Common["确定删除"]')} ${selectedNode['bk_inst_name']}?`,
+                    content: objId === 'module'
+                        ? this.$t('Common["请先转移其下所有的主机"]')
+                        : this.$t('Common[\'下属层级都会被删除，请先转移其下所有的主机\']'),
+                    confirmFn: () => {
+                        let promise
+                        if (objId === 'set') {
+                            promise = this.deleteSet({
+                                bizId: this.business,
+                                setId: selectedNode['bk_inst_id'],
+                                config
+                            })
+                        } else if (objId === 'module') {
+                            promise = this.deleteModule({
+                                bizId: this.business,
+                                setId: parentNode['bk_inst_id'],
+                                moduleId: selectedNode['bk_inst_id'],
+                                config
+                            })
+                        } else {
+                            promise = this.deleteInst({
+                                objId,
+                                instId: selectedNode['bk_inst_id'],
+                                config
+                            })
+                        }
+                        promise.then(() => {
+                            parentNode.child = parentNode.child.filter(node => node !== selectedNode)
+                            this.tab.active = 'hosts'
+                            this.$refs.topoTree.selectNode(this.getTopoNodeId(this.tree.data[0]))
+                            this.$success(this.$t('Common[\'删除成功\']'))
+                        })
+                    }
+                })
+            },
             showCreate (node, state) {
                 const selected = state.selected
                 const isBlueKing = this.tree.data[0]['bk_inst_name'] === '蓝鲸'
@@ -597,6 +640,22 @@
             @include scrollbar-y;
             .tree-node {
                 font-size: 0;
+                &:hover{
+                    .topo-node-icon.topo-node-icon-text{
+                        background-color: #50abff;
+                    }
+                    .topo-node-icon.topo-node-icon-internal{
+                        color: #50abff;
+                    }
+                }
+                &.tree-node-selected{
+                    .topo-node-icon.topo-node-icon-text{
+                        background-color: #498fe0;
+                    }
+                    .topo-node-icon.topo-node-icon-internal{
+                        color: #ffb400;
+                    }
+                }
             }
             .topo-node-icon{
                 display: inline-block;
