@@ -8,7 +8,7 @@
         <div class="tree-node-info-layout clearfix" :class="{'tree-node-info-layout-root': level === 1}">
             <i class="tree-node-expanded-icon fl" v-if="!leaf"
                 :class="[state.expanded ? 'icon-cc-rect-sub': 'icon-cc-rect-add']"
-                @click="handleExpandClick">
+                @click="handleExpandClick(!state.expanded)">
             </i>
             <tree-node-info class="tree-node-info" @click.native="handleNodeClick"
                 :class="{
@@ -58,7 +58,7 @@
             const basicState = {
                 disabled: false,
                 expanded: false,
-                hidden: false,
+                visible: false,
                 selected: false
             }
             const state = {
@@ -93,11 +93,28 @@
                         this.updateBasicState()
                     }
                 }
+            },
+            'state.disabled' (disabled) {
+                this.treeInstance.$emit('on-disable-change', this.node, this.state, disabled)
+            },
+            'state.expanded' (expanded) {
+                this.treeInstance.$emit('on-expand', this.node, this.state, expanded)
+            },
+            'state.visible' (visible) {
+                this.treeInstance.$emit('on-visible-change', this.node, this.state, visible)
+            },
+            'state.selected' (selected) {
+                if (selected) {
+                    this.treeInstance.$emit('on-selected', this.node, this.state)
+                }
             }
         },
         created () {
             this.layout.addFlatternNode(this.state)
             this.updateBasicState()
+        },
+        beforeDestory () {
+            this.layout.destory(this.state)
         },
         methods: {
             updateBasicState () {
@@ -123,14 +140,12 @@
                 }
             },
             handleExpandClick (expanded) {
-                this.layout.toggleExpanded(this.state.id, expanded === undefined ? !this.state.expanded : expanded)
-                this.treeInstance.$emit('on-expand', this.node, this.state)
+                this.layout.toggleExpanded(this.state.id, expanded)
             },
             handleNodeClick () {
                 const selectedNode = this.layout.selectedNode
                 if (!selectedNode || selectedNode.id !== this.state.id) {
                     this.layout.selectNode(this.state.id)
-                    this.treeInstance.$emit('on-selected', this.node, this.state)
                 }
             }
         }
