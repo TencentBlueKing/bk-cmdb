@@ -6,16 +6,16 @@
                     :key="groupIndex"
                     v-if="checkGroupAvailable(groupedProperties[groupIndex])">
                     <h3 class="group-name">{{group['bk_group_name']}}</h3>
-                    <ul class="property-list clearfix">
-                        <li class="property-item fl"
+                    <ul class="property-list">
+                        <li class="property-item clearfix"
                             v-for="(property, propertyIndex) in groupedProperties[groupIndex]"
                             v-if="checkEditable(property)"
                             :key="propertyIndex">
-                            <div class="property-name">
+                            <div class="property-name fl">
                                 <span class="property-name-text" :class="{required: property['isrequired']}">{{property['bk_property_name']}}</span>
                                 <i class="property-name-tooltips bk-icon icon-info-circle-shape" v-if="property['placeholder']" v-tooltip="htmlEncode(property['placeholder'])"></i>
                             </div>
-                            <div class="property-value">
+                            <div class="property-value fl">
                                 <component class="form-component"
                                     v-if="property['bk_property_type'] === 'enum'"
                                     :is="`cmdb-form-${property['bk_property_type']}`"
@@ -44,12 +44,13 @@
         </div>
         <slot name="form-options">
             <div class="form-options" v-if="showOptions">
-                <bk-button class="button-save" type="primary"
+                <bk-button class="options-btn button-save" type="primary"
                     :disabled="!hasChange || $loading()"
                     @click="handleSave">
                     {{$t("Common['保存']")}}
                 </bk-button>
-                <bk-button class="button-cancel" @click="handleCancel">{{$t("Common['取消']")}}</bk-button>
+                <bk-button  class="options-btn button-cancel" type="default" @click="handleCancel">{{$t("Common['取消']")}}</bk-button>
+                <bk-button  class="options-btn button-delete" type="danger" @click="handleDelete">{{$t("Common['删除']")}}</bk-button>
             </div>
         </slot>
     </div>
@@ -58,7 +59,6 @@
 <script>
     import formMixins from '@/mixins/form'
     export default {
-        name: 'cmdb-form',
         mixins: [formMixins],
         props: {
             inst: {
@@ -183,6 +183,9 @@
             },
             handleCancel () {
                 this.$emit('on-cancel')
+            },
+            handleDelete () {
+                this.$emit('on-delete')
             }
         }
     }
@@ -193,10 +196,7 @@
         height: 100%;
     }
     .form-groups{
-        height: calc(100% - 62px);
         padding: 0 0 0 32px;
-        overflow: auto;
-        @include scrollbar;
     }
     .property-group{
         padding: 17px 0 0 0;
@@ -213,14 +213,22 @@
     .property-list{
         padding: 4px 0;
         .property-item{
-            width: 50%;
             margin: 12px 0 0;
             padding: 0 54px 0 0;
-            font-size: 12px;
+            font-size: 14px;
             .property-name{
+                position: relative;
                 display: block;
-                margin: 6px 0 9px;
+                width: 120px;
+                line-height: 36px;
+                padding: 0 10px 0 0;
                 color: $cmdbTextColor;
+                text-align: right;
+                &:after{
+                    content: ":";
+                    position: absolute;
+                    right: 10px;
+                }
             }
             .property-name-text{
                 position: relative;
@@ -248,6 +256,8 @@
             }
             .property-value{
                 height: 36px;
+                width: calc(100% - 120px);
+                max-width: 450px;
                 line-height: 36px;
                 font-size: 12px;
                 position: relative;
@@ -255,20 +265,9 @@
         }
     }
     .form-options{
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 62px;
-        padding: 14px 20px;
-        background-color: #f9f9f9;
-        .button-save{
-            width: 110px;
-            margin-right: 4px;
-        }
-        .button-cancel{
-            width: 110px;
-            background-color: #fff;
+        padding: 20px 0 0 152px;
+        .options-btn{
+            margin: 0 10px 0 0;
         }
     }
     .form-error {

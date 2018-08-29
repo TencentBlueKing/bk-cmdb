@@ -95,8 +95,11 @@
                 this.treeInstance.$emit('on-expand', this.node, this.state)
             },
             handleNodeClick () {
-                this.layout.selectNode(this.state.id)
-                this.treeInstance.$emit('on-selected', this.node, this.state)
+                const selectedNode = this.layout.selectedNode
+                if (!selectedNode || selectedNode.id !== this.state.id) {
+                    this.layout.selectNode(this.state.id)
+                    this.treeInstance.$emit('on-selected', this.node, this.state)
+                }
             }
         }
     }
