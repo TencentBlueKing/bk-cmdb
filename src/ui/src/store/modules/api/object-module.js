@@ -71,8 +71,8 @@ const actions = {
      * @param {Number} bkSetId 集群id
      * @return {promises} promises 对象
      */
-    searchModule ({ commit, state, dispatch }, { bkSupplierAccount, bkBizId, bkSetId, params }) {
-        return $http.post(`module/${bkSupplierAccount}/${bkBizId}/${bkSetId}`, params)
+    searchModule ({ commit, state, dispatch, rootGetters }, { bizId, setId, params, config }) {
+        return $http.post(`module/search/${rootGetters.supplierAccount}/${bizId}/${setId}`, params, config)
     }
 }
 
