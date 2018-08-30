@@ -149,15 +149,15 @@
         },
         watch: {
             '$route.params.classifyId' () {
-                this.initNetwork()
+                this.initTopo()
             }
         },
         methods: {
             deleteClassify () {
-
+                this.$emit('deleteClassify')
             },
             editClassify () {
-
+                this.$emit('editClassify')
             },
             createModel () {
                 this.$emit('createModel')
@@ -180,7 +180,7 @@
                 }
                 this.networkInstance.moveTo({scale: scale})
             },
-            async initNetwork () {
+            async initTopo () {
                 this.setNodes()
                 await this.setEdges()
                 this.networkInstance = new Vis.Network(this.$refs.topo, {
@@ -332,7 +332,7 @@
             }
         },
         mounted () {
-            this.initNetwork()
+            this.initTopo()
         }
     }
 </script>

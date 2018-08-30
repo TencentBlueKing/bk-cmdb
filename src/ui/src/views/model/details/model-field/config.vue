@@ -3,19 +3,19 @@
         <li v-if="isEditableShow">
             <label class="cmdb-form-checkbox cmdb-checkbox-small">
                 <span class="cmdb-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</span>
-                <input type="checkbox" v-model="localValue.editable">
+                <input type="checkbox" v-model="localValue.editable" :disabled="isReadOnly">
             </label>
         </li>
         <li v-if="isRequiredShow">
             <label class="cmdb-form-checkbox cmdb-checkbox-small">
                 <span class="cmdb-checkbox-text mr5">{{$t('ModelManagement["是否必填"]')}}</span>
-                <input type="checkbox" v-model="localValue.isrequired">
+                <input type="checkbox" v-model="localValue.isrequired" :disabled="isReadOnly">
             </label>
         </li>
         <li v-if="isOnlyShow">
             <label class="cmdb-form-checkbox cmdb-checkbox-small">
                 <span class="cmdb-checkbox-text mr5">{{$t('ModelManagement["是否唯一"]')}}</span>
-                <input type="checkbox" v-model="localValue.isonly">
+                <input type="checkbox" v-model="localValue.isonly" :disabled="isReadOnly">
             </label>
         </li>
     </ul>
@@ -92,18 +92,30 @@
                 return this.isonlyMap.indexOf(this.type) !== -1
             }
         },
-        methods: {
-            getValue () {
-                let {
-                    editable,
-                    isrequired,
-                    isonly
-                } = this.localValue
-                return {
-                    editable,
-                    isrequired: this.isRequiredShow ? isrequired : false,
-                    isonly: this.isOnlyShow ? isonly : false
+        watch: {
+            editable (editable) {
+                this.localValue.editable = editable
+            },
+            isrequired (isrequired) {
+                this.localValue.isrequired = isrequired
+            },
+            isonly (isonly) {
+                this.localValue.isonly = isonly
+            },
+            'localValue.editable' (editable) {
+                this.$emit('update:editable', editable)
+            },
+            'localValue.isrequired' (isrequired) {
+                if (!isrequired && this.isOnlyShow) {
+                    this.localValue.isonly = false
                 }
+                this.$emit('update:isrequired', isrequired)
+            },
+            'localValue.isonly' (isonly) {
+                if (isonly && this.isRequiredShow) {
+                    this.localValue.isrequired = true
+                }
+                this.$emit('update:isonly', isonly)
             }
         }
     }

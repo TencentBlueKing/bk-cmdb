@@ -2,23 +2,32 @@
     <div class="details-wrapper">
         <bk-tab :active-name.sync="curTabName">
             <bk-tabpanel name="host" :title="$t('ModelManagement[\'模型配置\']')">
-                <v-field :isEdit.sync="isEdit"></v-field>
+                <v-field :isEdit.sync="isEdit"
+                    @confirm="updateModel"
+                    @cancel="cancel"
+                ></v-field>
             </bk-tabpanel>
-            <!-- <bk-tabpanel name="host" :title="$t('ModelManagement[\'字段分组\']')">
+            <bk-tabpanel name="layout" :title="$t('ModelManagement[\'字段分组\']')" :show="isEdit">
                 <v-layout></v-layout>
             </bk-tabpanel>
-            <bk-tabpanel name="host" :title="$t('ModelManagement[\'其他操作\']')">
-                <v-other></v-other>
-            </bk-tabpanel> -->
+            <bk-tabpanel name="other" :title="$t('ModelManagement[\'其他操作\']')" :show="isEdit">
+                <v-other
+                    @closeSlider="updateModel"
+                ></v-other>
+            </bk-tabpanel>
         </bk-tab>
     </div>
 </template>
 
 <script>
     import vField from './field'
+    import vLayout from './layout'
+    import vOther from './other'
     export default {
         components: {
-            vField
+            vField,
+            vLayout,
+            vOther
         },
         props: {
             isEdit: {
@@ -32,6 +41,12 @@
             }
         },
         methods: {
+            cancel () {
+                this.$emit('cancel')
+            },
+            updateModel () {
+                this.$emit('updateModel')
+            }
         }
     }
 </script>

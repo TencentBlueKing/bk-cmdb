@@ -308,7 +308,7 @@
         "内置字段不可删除": "Built-in fields cannot be deleted",
         "导入成功": "Imported Successfully",
         "导入失败": "Failed to import",
-        "确定删除字段？": "Are you sure to delete the field?",
+        "确定删除字段？": "Are you sure to delete the field {name}?",
         "未命名": "unnamed",
         "该名字已经存在": "The name already exists",
         "已经存在未命名分组": "Unnamed grouping already exists",

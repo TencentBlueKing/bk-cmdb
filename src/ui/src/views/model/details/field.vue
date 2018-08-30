@@ -1,18 +1,18 @@
 <template>
     <div class="field-wrapper">
-        <v-base-info :isReadOnly="isReadOnly" :isEdit.sync="isEdit"></v-base-info>
+        <v-base-info :isReadOnly="isReadOnly" :isEdit.sync="isEdit" @confirm="confirm" @cancel="cancel"></v-base-info>
         <div class="field-content clearfix" v-if="isEdit">
-            <div class="create-field">
-                <bk-button type="primary" :title="$t('ModelManagement[\'新增字段\']')" @click="createField">
+            <div class="create-field clearfix">
+                <bk-button v-if="!isReadOnly" type="primary" :title="$t('ModelManagement[\'新增字段\']')" @click="createField">
                     {{$t('ModelManagement["新增字段"]')}}
                 </bk-button>
                 <div class="btn-group">
-                    <bk-button type="default" :title="$t('ModelManagement[\'导入\']')" disabled="" class="btn mr10">
+                    <bk-button type="default" :loading="$loading('importObjectAttribute')" :title="$t('ModelManagement[\'导入\']')" :disabled="isReadOnly" class="btn mr10">
                         {{$t('ModelManagement["导入"]')}}
-                        <input ref="fileInput" type="file" @change.prevent="">
+                        <input v-if="!isReadOnly" ref="fileInput" type="file" @change.prevent="handleFile">
                     </bk-button>
-                    <form action="" method="POST" class="form">
-                        <bk-button type="default submit" :title="$t('ModelManagement[\'导出\']')" class="btn">
+                    <form :action="exportUrl" method="POST" class="form">
+                        <bk-button type="default submit" :title="$t('ModelManagement[\'导出\']')">
                             {{$t('ModelManagement["导出"]')}}
                         </bk-button>
                     </form>
@@ -26,18 +26,18 @@
                     <li class="table-item">{{$t('ModelManagement["字段名"]')}}</li>
                     <li class="table-item">{{$t('ModelManagement["操作"]')}}</li>
                 </ul>
-                <ul class="table-content" v-bkloading="{isLoading: $loading('initFieldList')}">
+                <ul class="table-content" v-bkloading="{isLoading: $loading(['initFieldList', 'deleteObjectAttribute'])}">
                     <li v-for="(field, index) in fieldList" :key="index">
-                        <ul class="field-item clearfix" :class="{'disabled': field['ispre']}" @click="toggleDetailShow(field, index)">
-                            <li class="table-item"><i class=" fb bk-icon icon-check-1" v-show="field['isonly']"></i></li>
-                            <li class="table-item"><i class=" fb bk-icon icon-check-1" v-show="field['isrequired']"></i></li>
+                        <ul class="field-item clearfix" :class="{'disabled': field['ispre'] || isReadOnly}" @click="toggleDetailShow(field, index)">
+                            <li class="table-item"><i class="bk-icon icon-check-1" v-show="field['isonly']"></i></li>
+                            <li class="table-item"><i class="bk-icon icon-check-1" v-show="field['isrequired']"></i></li>
                             <li class="table-item">{{fieldTypeMap[field['bk_property_type']]}}</li>
                             <li class="table-item" :title="`${field['bk_property_name']}(${field['bk_property_id']})`">{{field['bk_property_name']}}({{field['bk_property_id']}})</li>
                             <li class="table-item">
                                 <div class="btn-contain">
                                     <i class="icon-cc-del"  v-if="!field['ispre'] && !isReadOnly"
                                         :class="{'editable':field['ispre'] || isReadOnly}"
-                                        @click.stop="showConfirmDialog('delete',field, {id:field['id'], index:index})"
+                                        @click.stop="showConfirmDialog(field, index)"
                                     ></i>
                                 </div>
                             </li>
@@ -46,7 +46,9 @@
                             <v-model-field
                                 :isReadOnly="isReadOnly"
                                 :isEditField="true"
-                                :field="field">
+                                :field="field"
+                                @save="initFieldList"
+                                @cancel="toggleDetailShow(field, index)">
                             </v-model-field>
                         </div>
                     </li>
@@ -54,7 +56,8 @@
             </div>
         </div>
         <v-create-field v-if="createForm.isShow"
-            @closeBox="closeCreateForm"
+            @save="saveCreateForm"
+            @cancel="closeCreateForm"
         ></v-create-field>
     </div>
 </template>
@@ -98,11 +101,18 @@
             }
         },
         computed: {
+            ...mapGetters([
+                'supplierAccount',
+                'site'
+            ]),
             ...mapGetters('objectModel', [
                 'activeModel'
             ]),
             isReadOnly () {
                 return this.activeModel['bk_ispaused']
+            },
+            exportUrl () {
+                return `${this.site.url}object/owner/${this.supplierAccount}/object/${this.activeModel['bk_obj_id']}/export`
             }
         },
         created () {
@@ -110,16 +120,38 @@
         },
         methods: {
             ...mapActions('objectModelProperty', [
-                'searchObjectAttribute'
+                'searchObjectAttribute',
+                'deleteObjectAttribute'
+            ]),
+            ...mapActions('objectBatch', [
+                'importObjectAttribute'
             ]),
             createField () {
                 this.createForm.isShow = true
             },
+            saveCreateForm () {
+                this.initFieldList()
+                this.closeCreateForm()
+            },
             closeCreateForm () {
                 this.createForm.isShow = false
             },
-            showConfirmDialog () {
-
+            showConfirmDialog (field, index) {
+                this.$bkInfo({
+                    title: this.$tc('ModelManagement["确定删除字段？"]', field['bk_property_name'], {name: field['bk_property_name']}),
+                    confirmFn: () => {
+                        this.deleteField(field, index)
+                    }
+                })
+            },
+            async deleteField (field, index) {
+                await this.deleteObjectAttribute({
+                    id: field.id,
+                    config: {
+                        requestId: 'deleteObjectAttribute'
+                    }
+                })
+                this.fieldList.splice(index, 1)
             },
             toggleDetailShow (field, index) {
                 if (!field.isShow) {
@@ -155,6 +187,45 @@
                     }
                 })
                 this.fieldList = [...listHeader, ...listBody, ...listTail]
+            },
+            async handleFile (e) {
+                let files = e.target.files
+                let formData = new FormData()
+                formData.append('file', files[0])
+                try {
+                    const res = await this.importObjectAttribute({
+                        params: formData,
+                        bkObjId: this.activeModel['bk_obj_id'],
+                        config: {
+                            requestId: 'importObjectAttribute',
+                            globalError: false,
+                            originalResponse: true
+                        }
+                    })
+                    if (res.result) {
+                        let data = res.data[this.activeModel['bk_obj_id']]
+                        if (data.hasOwnProperty('insert_failed')) {
+                            this.$error(data['insert_failed'][0])
+                        } else if (data.hasOwnProperty('update_failed')) {
+                            this.$error(data['update_failed'][0])
+                        } else {
+                            this.$success(this.$t('ModelManagement["导入成功"]'), 'success')
+                            this.initFieldList()
+                        }
+                    } else {
+                        this.$error(res['bk_error_msg'])
+                    }
+                } catch (e) {
+                    this.$error(e.data['bk_error_msg'])
+                } finally {
+                    this.$refs.fileInput.value = ''
+                }
+            },
+            confirm () {
+                this.$emit('confirm')
+            },
+            cancel () {
+                this.$emit('cancel')
             }
         }
     }

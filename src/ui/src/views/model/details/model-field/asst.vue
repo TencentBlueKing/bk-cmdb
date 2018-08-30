@@ -2,13 +2,21 @@
     <div class="form-item">
         <div class="form-item">
             <label class="form-label">{{$t('ModelManagement["关联模型"]')}}</label>
-            <bk-selector
-                class="form-selector bk-selector-small"
-                :list="asstList"
-                :has-children='true'
-                :selected.sync="selected"
-                @item-selected="handleChange"
-            ></bk-selector>
+            <div class="input-box">
+                <bk-selector
+                    class="form-selector bk-selector-small"
+                    :list="asstList"
+                    :has-children='true'
+                    :selected.sync="selected"
+                    @item-selected="handleChange"
+                    :disabled="isReadOnly || isEditField"
+                ></bk-selector>
+                <input type="text" hidden 
+                    v-model="selected"
+                    v-validate="'required'"
+                    name="asst">
+                <span v-show="errors.has('asst')" class="error-msg color-danger">{{ errors.first('asst') }}</span>
+            </div>
         </div>
     </div>
 </template>
@@ -19,6 +27,14 @@
         props: {
             value: {
                 default: ''
+            },
+            isEditField: {
+                type: Boolean,
+                default: false
+            },
+            isReadOnly: {
+                type: Boolean,
+                default: false
             }
         },
         data () {
@@ -69,6 +85,9 @@
             },
             initValue () {
                 this.selected = this.value
+            },
+            validate () {
+                return this.$validator.validateAll()
             }
         }
     }
