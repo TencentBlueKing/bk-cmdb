@@ -62,7 +62,7 @@
                 })
                 this.topoList = topoList
             },
-            async init () {
+            async initTopo () {
                 const res = await Promise.all([
                     this.getTopoStructure(),
                     this.getBiz()
@@ -74,7 +74,7 @@
             }
         },
         created () {
-            this.init()
+            this.initTopo()
         }
     }
 </script>

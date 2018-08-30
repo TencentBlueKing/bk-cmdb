@@ -8,6 +8,7 @@
                     @input="handleInput"
                     v-validate="`number`"
                     maxlength="11"
+                    :disabled="isReadOnly"
                     :name="'min'">
                 <span v-show="errors.has('min')" class="error-msg color-danger">{{ errors.first('min') }}</span>
             </div>
@@ -18,6 +19,7 @@
                 <input type="text" class="cmdb-form-input" placeholder="" v-model="localValue.max"
                     name="max"
                     @input="handleInput"
+                    :disabled="isReadOnly"
                     v-validate="`number|isBigger:${localValue.min}`">
                 <span v-show="errors.has('max')" class="error-msg color-danger">{{ errors.first('max') }}</span>
             </div>
@@ -33,6 +35,10 @@
                     min: '',
                     max: ''
                 }
+            },
+            isReadOnly: {
+                type: Boolean,
+                default: false
             }
         },
         data () {
@@ -70,6 +76,9 @@
                 if (res) {
                     this.$emit('input', this.localValue)
                 }
+            },
+            validate () {
+                return this.$validator.validateAll()
             }
         }
     }

@@ -4,7 +4,7 @@
             <div class="form-item">
                 <label class="form-label">{{$t('ModelManagement["图标选择"]')}}<span class="color-danger"> * </span></label>
                 <div class="select-wrapper">
-                    <div class="select-box clearfix" @click.stop.prevent="toggleDrop" :class="{'active': iconInfo.isIconDrop}">
+                    <div class="select-box clearfix" @click.stop.prevent="toggleDrop" :class="{'active': iconInfo.isIconDrop, 'disabled': isReadOnly}">
                         <div class="select-content">
                             <i :class="baseInfo['bk_obj_icon']"></i>
                         </div>
@@ -152,6 +152,9 @@
                 this.baseInfo['bk_obj_icon'] = item.value
             },
             toggleDrop () {
+                if (this.isReadOnly) {
+                    return
+                }
                 this.iconInfo.isIconDrop = !this.iconInfo.isIconDrop
             },
             closeDrop () {
@@ -189,6 +192,7 @@
                     }
                     this.$emit('update:isEdit', true)
                 }
+                this.$emit('confirm')
             },
             async getObjInfo () {
                 const res = await this.searchObjects({
@@ -258,6 +262,10 @@
                 height: 36px;
                 line-height: 34px;
                 cursor: pointer;
+                &.disabled {
+                    background: #fafafa;
+                    cursor: not-allowed;
+                }
                 .select-content {
                     position: relative;
                     float: left;
@@ -364,6 +372,7 @@
         }
         .footer {
             width: 100%;
+            margin: 0 -20px;
             position: absolute;
             left: 0;
             bottom: 0;

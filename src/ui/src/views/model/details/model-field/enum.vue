@@ -2,7 +2,7 @@
     <ul class="form-enum-wrapper">
         <li class="form-item clearfix" v-for="(item, index) in enumList" :key="index">
             <div class="enum-default">
-                <input type="radio" :value="index" name="enum-radio" v-model="defaultIndex" @change="handleChange(defaultIndex)">
+                <input type="radio" :value="index" name="enum-radio" v-model="defaultIndex" @change="handleChange(defaultIndex)" :disabled="isReadOnly">
             </div>
             <div class="enum-id">
                 <input type="text"
@@ -11,6 +11,7 @@
                     v-model.trim="item.id"
                     v-validate="`required|enumId|repeat:${getOtherId(index)}`"
                     @input="handleInput"
+                    :disabled="isReadOnly"
                     :name="`id${index}`">
                     <span v-show="errors.has(`id${index}`)" class="error-msg color-danger">{{ errors.first(`id${index}`) }}</span>
             </div>
@@ -21,13 +22,14 @@
                     v-model.trim="item.name"
                     v-validate="`required|enumName|repeat:${getOtherName(index)}`"
                     @input="handleInput"
+                    :disabled="isReadOnly"
                     :name="`name${index}`">
                     <span v-show="errors.has(`name${index}`)" class="error-msg color-danger">{{ errors.first(`name${index}`) }}</span>
             </div>
-            <button class="enum-btn" @click="deleteEnum(index)" :disabled="enumList.length === 1">
+            <button class="enum-btn" @click="deleteEnum(index)" :disabled="enumList.length === 1 || isReadOnly">
                 <i class="icon-cc-del"></i>
             </button>
-            <button class="enum-btn" @click="addEnum">
+            <button class="enum-btn" @click="addEnum" :disabled="isReadOnly">
                 <i class="bk-icon icon-plus"></i>
             </button>
         </li>
@@ -39,6 +41,10 @@
         props: {
             value: {
                 default: ''
+            },
+            isReadOnly: {
+                type: Boolean,
+                default: false
             }
         },
         data () {
@@ -89,6 +95,7 @@
                     }]
                 } else {
                     this.enumList = this.value
+                    this.defaultIndex = this.enumList.findIndex(({is_default: isDefault}) => isDefault)
                 }
             },
             handleInput () {
@@ -121,6 +128,9 @@
                     this.defaultIndex = 0
                     this.enumList[0]['is_default'] = true
                 }
+            },
+            validate () {
+                return this.$validator.validateAll()
             }
         }
     }

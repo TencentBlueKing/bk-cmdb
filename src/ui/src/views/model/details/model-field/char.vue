@@ -3,6 +3,7 @@
         <label class="form-label">{{$t('Common["正则验证"]')}}</label>
         <input type="text" class="cmdb-form-input" name="" placeholder="" 
             v-model="localValue"
+            :disabled="isReadOnly"
             @input="handleInput">
     </div>
 </template>
@@ -12,6 +13,10 @@
         props: {
             value: {
                 default: ''
+            },
+            isReadOnly: {
+                type: Boolean,
+                default: false
             }
         },
         data () {
