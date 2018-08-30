@@ -107,7 +107,7 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 		return nil, cli.params.Err.Error(rsp.Code)
 	}
 
-	return CreateInst(cli.params, cli.clientSet, targetModel, mapstr.NewArrayFromInterface(rsp.Data.Info)), nil
+	return CreateInst(cli.params, cli.clientSet, targetModel, mapstr.NewArrayFromMapStr(rsp.Data.Info)), nil
 
 }
 
