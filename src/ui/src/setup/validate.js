@@ -87,6 +87,11 @@ const dictionary = {
             number: () => '请输入正确的内容',
             isBigger: () => '必须大于最小值',
             repeat: () => '重复的值'
+        },
+        custom: {
+            asst: {
+                required: '请选择关联模型'
+            }
         }
     },
     en: {
@@ -104,6 +109,11 @@ const dictionary = {
             number: () => 'Please enter the correct content',
             isBigger: () => 'Must be greater than the minimum',
             repeat: () => 'This value should not be repeated'
+        },
+        custom: {
+            asst: {
+                required: 'Please select the associated model'
+            }
         }
     }
 }

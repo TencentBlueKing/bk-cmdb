@@ -1,11 +1,13 @@
 <template>
     <div class="create-field-wrapper">
-        <div class="title" @click="closeBox">
+        <div class="title" @click="cancel">
             <img src="../../../assets/images/icon/down_icon.png" alt="">
         </div>
         <div class="field-content">
             <v-model-field
                 :isEditField="false"
+                @save="save"
+                @cancel="cancel"
             ></v-model-field>
         </div>
     </div>
@@ -27,11 +29,11 @@
             ...mapActions('objectModelProperty', [
                 'createObjectAttribute'
             ]),
-            closeBox () {
-                this.$emit('closeBox')
-            },
             save () {
-
+                this.$emit('save')
+            },
+            cancel () {
+                this.$emit('cancel')
             }
         }
     }

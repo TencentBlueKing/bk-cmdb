@@ -136,7 +136,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     updateClassification ({ commit, state, dispatch }, { id, params }) {
-        return $http.delete(`object/classification/${id}`, params)
+        return $http.put(`object/classification/${id}`, params)
     },
 
     /**
@@ -170,7 +170,7 @@ const mutations = {
     setClassificationsObjects (state, classifications) {
         state.classifications = classifications
     },
-    updateClassification (state, classification) {
+    updateClassify (state, classification) {
         let activeClassification = state.classifications.find(({bk_classification_id: bkClassificationId}) => bkClassificationId === classification['bk_classification_id'])
         if (activeClassification) {
             activeClassification['bk_classification_icon'] = classification['bk_classification_icon']
