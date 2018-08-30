@@ -233,7 +233,7 @@ func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Respons
 			}
 		}
 		// fill process
-		appmoduleProcID2moduleIDs := map[int64][]int64{}
+		appmoduleProcID2moduleIDs := map[int64][]int64{} // ProcID->moduleIDs
 		for key, moduleIDs := range appmodulename2moduleIDs {
 			for _, procID := range appmodulename2ProcIDs[key] {
 				appmoduleProcID2moduleIDs[procID] = append(appmoduleProcID2moduleIDs[procID], moduleIDs...)
