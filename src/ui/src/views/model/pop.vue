@@ -23,22 +23,26 @@
                     <ul class="content-left">
                         <li class="content-item">
                             <label for="">{{$t('ModelManagement["中文名"]')}}<span class="color-danger">*</span></label>
-                            <input type="text" class="cmdb-form-input fr" 
-                            v-focus
-                            v-model.trim="localValue['bk_classification_name']"
-                            :disabled="classification['bk_classification_type'] === 'inner'"
-                            @blur="validate"
-                            :data-vv-name="$t('Common[\'中文名\']')"
-                            v-validate="'required|classifyName'">
-                            <span v-show="errors.has($t('Common[\'中文名\']'))" class="error-msg color-danger">{{ errors.first($t('Common[\'中文名\']')) }}</span>
+                            <div class="input-box">
+                                <input type="text" class="cmdb-form-input fr" 
+                                v-focus
+                                v-model.trim="localValue['bk_classification_name']"
+                                :disabled="classification['bk_classification_type'] === 'inner'"
+                                @blur="validate"
+                                :data-vv-name="$t('Common[\'中文名\']')"
+                                v-validate="'required|classifyName'">
+                                <span v-show="errors.has($t('Common[\'中文名\']'))" class="error-msg color-danger">{{ errors.first($t('Common[\'中文名\']')) }}</span>
+                            </div>
                         </li> 
                         <li class="content-item">
                             <label for="">{{$t('ModelManagement["英文名"]')}}<span class="color-danger">*</span></label>
-                            <input type="text" class="cmdb-form-input fr" v-model.trim="localValue['bk_classification_id']"
-                            :data-vv-name="$t('ModelManagement[\'英文名\']')"
-                            :disabled="classification['bk_classification_type'] === 'inner' || isEdit"
-                            v-validate="'required|classifyId'">
-                            <div v-show="errors.has($t('ModelManagement[\'英文名\']'))" class="error-msg color-danger">{{ errors.first($t('ModelManagement[\'英文名\']')) }}</div>
+                            <div class="input-box">
+                                <input type="text" class="cmdb-form-input fr" v-model.trim="localValue['bk_classification_id']"
+                                :data-vv-name="$t('ModelManagement[\'英文名\']')"
+                                :disabled="classification['bk_classification_type'] === 'inner' || isEdit"
+                                v-validate="'required|classifyId'">
+                                <span v-show="errors.has($t('ModelManagement[\'英文名\']'))" class="error-msg color-danger">{{ errors.first($t('ModelManagement[\'英文名\']')) }}</span>
+                            </div>
                         </li> 
                     </ul>
                     <div class="content-right" @click="isIconListShow = true">
@@ -50,7 +54,7 @@
                 </div>
                 <div class="footer">
                     <div class="btn-group">
-                        <bk-button type="primary" :loading="$loading('saveClassify')" class="confirm-btn" @click="confirm">{{$t('Common["确定"]')}}</bk-button>
+                        <bk-button type="primary" :loading="$loading('saveClassify')" class="confirm-btn" @click="saveClassify">{{$t('Common["确定"]')}}</bk-button>
                         <bk-button type="default" @click="cancel">{{$t('Common["取消"]')}}</bk-button>
                     </div>
                 </div>
@@ -79,6 +83,7 @@
 
 <script>
     import iconList from '@/assets/json/class-icon.json'
+    import { mapGetters, mapActions, mapMutations } from 'vuex'
     export default {
         props: {
             isEdit: {
@@ -104,7 +109,69 @@
                 localValue: JSON.parse(JSON.stringify(this.classification))
             }
         },
+        computed: {
+            ...mapGetters('objectModelClassify', [
+                'classifications'
+            ]),
+            classificationId () {
+                return this.$route.params.classifyId
+            },
+            activeClassify () {
+                if (!this.isEdit) {
+                    return {
+                        bk_classification_id: '',
+                        bk_classification_icon: '',
+                        bk_classification_name: '',
+                        bk_classification_type: ''
+                    }
+                }
+                let activeClassify = this.classifications.find(({bk_classification_id: bkClassificationId}) => bkClassificationId === this.classificationId)
+                return activeClassify
+            }
+        },
         methods: {
+            ...mapActions('objectModelClassify', [
+                'createClassification',
+                'updateClassification'
+            ]),
+            ...mapMutations('objectModelClassify', [
+                'updateClassify'
+            ]),
+            async createClassify () {
+                let params = {
+                    bk_classification_icon: this.localValue['bk_classification_icon'],
+                    bk_classification_id: this.localValue['bk_classification_id'],
+                    bk_classification_name: this.localValue['bk_classification_name']
+                }
+                await this.createClassification({params})
+                Object.assign(params, {bk_supplier_account: this.supplierAccount})
+                this.updateClassify(params)
+                this.$emit('closePop')
+            },
+            async editClassify () {
+                let params = {
+                    bk_classification_icon: this.localValue['bk_classification_icon'],
+                    bk_classification_name: this.localValue['bk_classification_name']
+                }
+                await this.updateClassification({
+                    id: this.activeClassify['id'],
+                    params
+                })
+                this.updateClassify({
+                    ...params,
+                    ...{
+                        bk_classification_id: this.activeClassify['bk_classification_id']
+                    }
+                })
+                this.$emit('closePop')
+            },
+            saveClassify () {
+                if (this.isEdit) {
+                    this.editClassify()
+                } else {
+                    this.createClassify()
+                }
+            },
             validate () {
                 this.$validator.validateAll()
             },
@@ -124,7 +191,7 @@
             cancel () {
                 this.isShow = false
                 setTimeout(() => {
-                    this.$emit('cancel')
+                    this.$emit('closePop')
                 }, 300)
             },
             /*
@@ -144,9 +211,9 @@
         created () {
             if (this.isEdit) {
                 this.localValue = {
-                    bk_classification_icon: this.classification['bk_classification_icon'],
-                    bk_classification_name: this.classification['bk_classification_name'],
-                    bk_classification_id: this.classification['bk_classification_id']
+                    bk_classification_icon: this.activeClassify['bk_classification_icon'],
+                    bk_classification_name: this.activeClassify['bk_classification_name'],
+                    bk_classification_id: this.activeClassify['bk_classification_id']
                 }
             } else {
                 this.localValue = {
@@ -200,6 +267,10 @@
                         height: 36px;
                         &:first-child{
                             margin-bottom: 20px;
+                        }
+                        .input-box {
+                            width: 259px;
+                            float: left;
                         }
                         label{
                             line-height: 36px;

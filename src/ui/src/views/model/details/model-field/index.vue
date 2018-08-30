@@ -8,6 +8,7 @@
                     <input type="text" class="cmdb-form-input"
                         v-model.trim="fieldInfo['bk_property_name']"
                         v-validate="'required|enumName'"
+                        :disabled="isReadOnly"
                         name="fieldName">
                     <span v-show="errors.has('fieldName')" class="error-msg color-danger">{{ errors.first('fieldName') }}</span>
                 </div>
@@ -18,17 +19,18 @@
                     <input type="text" class="cmdb-form-input"
                         v-model.trim="fieldInfo['bk_property_id']"
                         v-validate="'required|fieldId'"
+                        :disabled="isEditField"
                         name="fieldId">
                     <span v-show="errors.has('fieldId')" class="error-msg color-danger">{{ errors.first('fieldId') }}</span>
                 </div>
             </div>
             <div class="form-item">
                 <label class="form-label">{{$t('ModelManagement["单位"]')}}</label>
-                <input type="text" class="cmdb-form-input" v-model.trim="fieldInfo['unit']">
+                <input type="text" class="cmdb-form-input" v-model.trim="fieldInfo['unit']" :disabled="isReadOnly">
             </div>
             <div class="form-item block">
                 <label class="form-label">{{$t('ModelManagement["提示语"]')}}</label>
-                <input type="text" class="cmdb-form-input" v-model.trim="fieldInfo['placeholder']">
+                <input type="text" class="cmdb-form-input" v-model.trim="fieldInfo['placeholder']" :disabled="isReadOnly">
             </div>
         </div>
         <div class="form-content">
@@ -40,33 +42,35 @@
                         class="form-selector bk-selector-small"
                         :list="fieldTypeList"
                         :selected.sync="fieldInfo['bk_property_type']"
+                        :disabled="isEditField"
                     ></bk-selector>
                 </div>
                 <v-config :type="fieldInfo['bk_property_type']"
                     :isReadOnly="isReadOnly"
-                    :editable="fieldInfo['editable']"
-                    :isrequired="fieldInfo['isrequired']"
-                    :isonly="fieldInfo['isonly']"></v-config>
+                    :editable.sync="fieldInfo['editable']"
+                    :isrequired.sync="fieldInfo['isrequired']"
+                    :isonly.sync="fieldInfo['isonly']"></v-config>
             </div>
             <div class="field-config clearfix" v-if="isComponentShow">
                 <component v-if="fieldType !== 'asst'"
                     :is="`model-field-${fieldType}`"
-                    :isEditField="isEditField"
                     v-model="fieldInfo.option"
+                    :isReadOnly="isReadOnly"
                     ref="component"
                 ></component>
                 <component v-else
-                     :is="`model-field-${fieldType}`"
+                    :is="`model-field-${fieldType}`"
                     :isEditField="isEditField"
                     v-model="fieldInfo['bk_asst_obj_id']"
+                    :isReadOnly="isReadOnly"
                     ref="component"
                 ></component>
             </div>
-            <div class="btn-wrapper">
-                <bk-button type="primary" class="" :loading="$loading('saveNew')" @click="save">
+            <div class="btn-wrapper" v-if="!isReadOnly">
+                <bk-button type="primary" :loading="$loading(['createObjectAttribute', 'updateObjectAttribute'])" @click="save">
                     {{$t('Common["保存"]')}}
                 </bk-button>
-                <bk-button type="default" class="" @click="cancel">
+                <bk-button type="default" @click="cancel">
                     {{$t('Common["取消"]')}}
                 </bk-button>
             </div>
@@ -155,6 +159,13 @@
             }
         },
         computed: {
+            ...mapGetters([
+                'userName',
+                'supplierAccount'
+            ]),
+            ...mapGetters('objectModel', [
+                'activeModel'
+            ]),
             params () {
                 
             },
@@ -180,21 +191,49 @@
             ]),
             initData () {
                 for (let key in this.fieldInfo) {
-                    this.fieldInfo[key] = this.field[key]
+                    this.fieldInfo[key] = this.$tools.clone(this.field[key])
                 }
             },
-            save () {
-                if (this.isEditField) {
-                    // this.updateObjectAttribute()
-                } else {
-                    // this.createObjectAttribute({
-                    //     params: this.fieldInfo
-                    // })
+            async validateValue () {
+                let res = await this.$validator.validateAll()
+                if (!res) {
+                    return false
                 }
-                this.$validator.validateAll().then(res => {
-                    this.$refs.component.validate()
-                })
-                console.log(1)
+                if (this.$refs.component && this.$refs.component.hasOwnProperty('validate')) {
+                    res = await this.$refs.component.validate()
+                    if (!res) {
+                        return false
+                    }
+                }
+                return true
+            },
+            async save () {
+                if (!await this.validateValue()) {
+                    return
+                }
+                
+                if (this.isEditField) {
+                    this.updateObjectAttribute({
+                        id: this.field.id,
+                        params: this.fieldInfo,
+                        config: {
+                            requestId: 'updateObjectAttribute'
+                        }
+                    })
+                } else {
+                    let otherParams = {
+                        creator: this.userName,
+                        bk_property_group: 'default',
+                        bk_obj_id: this.activeModel['bk_obj_id'],
+                        bk_supplier_account: this.supplierAccount
+                    }
+                    await this.createObjectAttribute({
+                        params: {...this.fieldInfo, ...otherParams},
+                        config: {
+                            requestId: 'createObjectAttribute'
+                        }
+                    })
+                }
                 this.$emit('save')
             },
             cancel () {
