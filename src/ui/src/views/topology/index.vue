@@ -105,9 +105,7 @@
                     selectedNode: null,
                     selectedNodeState: null,
                     selectedNodeInst: {},
-                    flatternedSelectedNodeInst: {},
-                    internalIdleId: null,
-                    internalFaultId: null
+                    flatternedSelectedNodeInst: {}
                 },
                 tab: {
                     active: 'hosts',
@@ -360,20 +358,12 @@
                             'bk_inst_name': module['bk_module_name']
                         }
                     })
-                    internalModule.forEach(node => {
-                        if (node.default === 1) {
-                            this.tree.internalIdleId = node['bk_inst_id']
-                        } else {
-                            this.tree.internalFaultId = node['bk_inst_id']
-                        }
-                    })
-                    instTopo[0] = {
+                    this.tree.data = [{
                         selected: true,
                         expanded: true,
                         ...instTopo[0],
                         child: [...internalModule, ...instTopo[0].child]
-                    }
-                    this.tree.data = instTopo
+                    }]
                 })
             },
             getModelByObjId (id) {
@@ -468,11 +458,10 @@
                 }
             },
             handleSubmit (value, changedValue, originalInst, type) {
-                if (type === 'create') {
-                    this.createNode(value)
-                } else {
-                    this.updateNode(value)
-                }
+                let promise = type === 'create' ? this.createNode(value) : this.updateNode(value)
+                promise.then(() => {
+                    this.$http.cancelCache('getInstTopo')
+                })
             },
             createNode (value) {
                 const selectedNode = this.tree.selectedNode
@@ -532,6 +521,7 @@
                     this.tab.type = 'details'
                     this.$success(this.$t('Common[\'新建成功\']'))
                 })
+                return promise
             },
             updateNode (value) {
                 const formData = {...value}
@@ -568,6 +558,7 @@
                     this.tab.type = 'details'
                     this.$success(this.$t('Common[\'修改成功\']'))
                 })
+                return promise
             },
             handleCancel () {
                 if (this.tab.type === 'update') {
