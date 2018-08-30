@@ -86,14 +86,14 @@
                 isShow: false,
                 clsName: '',
                 type: 'default',
-                title: this.t('infobox.title'),
+                title: '',
                 content: false,
                 icon: '',
                 statusOpts: {},
                 closeIcon: true,
                 theme: 'primary',
-                confirm: this.t('infobox.ok'),
-                cancel: this.t('infobox.cancel'),
+                confirm: '',
+                cancel: '',
                 quickClose: false,
                 delay: false,
                 confirmFn () {},
@@ -164,6 +164,9 @@
             }
         },
         mounted () {
+            this.title = this.t('infobox.title')
+            this.confirm = this.t('infobox.ok')
+            this.cancel = this.t('infobox.cancel')
             this.hide = false
             if (this.delay) {
                 this.startCountDown()
