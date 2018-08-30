@@ -13,12 +13,12 @@
 package identifier
 
 import (
-	"configcenter/src/common/util"
 	"encoding/json"
 	"sort"
-
+	
 	redis "gopkg.in/redis.v5"
-
+	
+	"configcenter/src/common/util" 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/storage"
