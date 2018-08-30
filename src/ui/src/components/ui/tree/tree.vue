@@ -41,6 +41,9 @@
             childrenKey: {
                 type: String,
                 default: 'children'
+            },
+            beforeSelect: {
+                type: Function
             }
         },
         data () {
@@ -56,7 +59,7 @@
                 this.layout.toggleExpanded(id, expanded)
             },
             selectNode (id) {
-                this.layout.selectNode(id)
+                this.layout.selectState(id)
             }
         }
     }

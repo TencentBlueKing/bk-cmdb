@@ -490,3 +490,20 @@ export function computeCoordinateBaseEdge (placementInfo, offset) {
         default:
     }
 }
+
+export const requestAnimationFrame = window.requestAnimationFrame
+    || window.webkitRequestAnimationFrame
+    || window.mozRequestAnimationFrame
+    || window.oRequestAnimationFrame
+    || window.msRequestAnimationFrame
+    || function (callback) {
+        window.setTimeout(callback, 1000 / 60)
+    }
+export const cancelAnimationFrame = window.cancelAnimationFrame
+    || window.webkitCancelAnimationFrame
+    || window.mozCancelAnimationFrame
+    || window.oCancelAnimationFrame
+    || window.msCancelAnimationFrame
+    || function (id) {
+        window.clearTimeout(id)
+    }

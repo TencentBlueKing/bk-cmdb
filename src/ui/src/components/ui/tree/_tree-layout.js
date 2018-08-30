@@ -2,9 +2,9 @@ let ID_SEED = 1
 class TreeLayout {
     constructor (options) {
         this.instance = null
-        this.flatternNodes = []
-        this.selectedNode = null
-        this.expandedNodes = []
+        this.flatternStates = []
+        this.selectedState = null
+        this.expandedStates = []
         this.expandedLevel = 0
         for (let name in options) {
             if (options.hasOwnProperty(name)) {
@@ -28,49 +28,64 @@ class TreeLayout {
         }
     }
 
-    getNodeById (id) {
-        return this.flatternNodes.find(node => node.id === id)
+    getStateById (id) {
+        return this.flatternStates.find(state => state.id === id)
     }
 
-    selectNode (id) {
-        this.flatternNodes.forEach(node => {
-            if (node.id === id) {
-                node.selected = true
-                this.selectedNode = node
+    selectState (id) {
+        this.flatternStates.forEach(state => {
+            if (state.id === id) {
+                state.selected = true
+                this.selectedState = state
             } else {
-                node.selected = false
+                state.selected = false
+            }
+            if (state.node.hasOwnProperty('selected')) {
+                state.node.selected = state.selected
             }
         })
     }
 
-    toggleExpanded (id, expanded) {
-        const node = this.getNodeById(id)
-        if (node) {
-            node.expanded = expanded
-            if (expanded) {
-                this.expandedNodes.push(node)
-            } else {
-                this.expandedNodes = this.expandedNodes.filter(node => node.id !== id)
-            }
-            this.expandedLevel = Math.max.apply(null, this.expandedNodes.map(node => node.level))
+    unselectState (id) {
+        const state = this.getStateById(id)
+        state.selected = false
+        this.selectedState = null
+        if (state.node.hasOwnProperty('selected')) {
+            state.node.selected = false
         }
     }
 
-    addFlatternNode (node) {
-        this.flatternNodes.push(node)
+    toggleExpanded (id, expanded) {
+        const state = this.getStateById(id)
+        if (state) {
+            state.expanded = expanded
+            if (expanded) {
+                this.expandedStates.push(state)
+            } else {
+                this.expandedStates = this.expandedStates.filter(state => state.id !== id)
+            }
+            this.expandedLevel = Math.max.apply(null, this.expandedStates.map(state => state.level))
+            if (state.node.hasOwnProperty('expanded')) {
+                state.node.expanded = expanded
+            }
+        }
     }
 
-    removeFlatternNode (node) {
-        this.flatternNodes = this.flatternNodes.filter(flatternNode => flatternNode !== node)
+    addFlatternState (state) {
+        this.flatternStates.push(state)
     }
 
-    removeExpandedNode (node) {
-        this.expandedNodes = this.expandedNodes.filter(expandedNode => expandedNode !== node)
+    removeFlatternState (state) {
+        this.flatternStates = this.flatternStates.filter(flatternState => flatternState !== state)
     }
 
-    destory (node) {
-        this.removeFlatternNode(node)
-        this.removeExpandedNode(node)
+    removeExpandedState (state) {
+        this.expandedStates = this.expandedStates.filter(expandedState => expandedState !== state)
+    }
+
+    destory (state) {
+        this.removeFlatternState(state)
+        this.removeExpandedState(state)
     }
 }
 
