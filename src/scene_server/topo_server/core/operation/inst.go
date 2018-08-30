@@ -922,7 +922,7 @@ func (c *commonInst) FindOriginInst(params types.ContextParams, obj model.Object
 			return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 		}
 
-		return &metatype.InstResult{Count: rsp.Data.Count, Info: frtypes.NewArrayFromInterface(rsp.Data.Info)}, nil
+		return &metatype.InstResult{Count: rsp.Data.Count, Info: frtypes.NewArrayFromMapStr(rsp.Data.Info)}, nil
 
 	default:
 
