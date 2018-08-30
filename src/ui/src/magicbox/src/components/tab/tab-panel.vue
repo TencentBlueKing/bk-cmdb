@@ -20,8 +20,6 @@ export default {
             default: true
         },
         tag: {
-            type: String,
-            default: ''
         }
     },
     data () {

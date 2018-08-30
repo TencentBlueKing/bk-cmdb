@@ -3,6 +3,7 @@
         :list="privilegeBusiness"
         :selected.sync="localSelected"
         :searchable="privilegeBusiness.length > 5"
+        :disabled="disabled"
         setting-key="bk_biz_id"
         display-key="bk_biz_name">
     </bk-selector>
@@ -15,6 +16,10 @@
         props: {
             value: {
                 default: ''
+            },
+            disabled: {
+                type: Boolean,
+                default: false
             }
         },
         data () {

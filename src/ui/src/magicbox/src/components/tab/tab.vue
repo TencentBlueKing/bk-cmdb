@@ -16,6 +16,9 @@
                     v-if="item.show"
                     v-for="(item, index) in navList" >
                     <Render v-if="item.label" :render="item.label"></Render>
+                    <div class="bk-panel-label" v-if="item.tag !== undefined">
+                        <span class="bk-panel-tag">{{item.tag}}</span>
+                    </div>
                     <span class="bk-panel-title">{{item.title}}</span>
                 </div>
             </div>
