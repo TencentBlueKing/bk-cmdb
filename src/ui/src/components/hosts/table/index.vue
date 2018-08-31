@@ -116,9 +116,17 @@
             :has-header="false"
             :padding="0"
             :width="720">
-            <div class="transfer-title" slot="tools">主机转移</div>
+            <div class="transfer-title" slot="tools">
+                <i class="icon icon-cc-shift mr5"></i>
+                <span>{{$t('Common[\'主机转移\']')}}</span>
+                <span v-if="selectedHosts.length === 1">{{selectedHosts[0]['host']['bk_host_innerip']}}</span>
+            </div>
             <div class="transfer-content" slot="content">
-                <cmdb-transfer-host v-if="transfer.show"></cmdb-transfer-host>
+                <cmdb-transfer-host v-if="transfer.show"
+                    :selected-hosts="selectedHosts"
+                    @on-success="handleTransferSuccess"
+                    @on-cancel="transfer.show = false">
+                </cmdb-transfer-host>
             </div>
         </bk-dialog>
     </div>
@@ -206,6 +214,9 @@
             },
             clipboardList () {
                 return this.table.header.filter(header => header.type !== 'checkbox')
+            },
+            selectedHosts () {
+                return this.table.allList.filter(host => this.table.checked.includes(host['host']['bk_host_id']))
             }
         },
         watch: {
@@ -454,6 +465,11 @@
                     [this.columnsConfigKey]: []
                 })
                 this.columnsConfig.show = false
+            },
+            handleTransferSuccess () {
+                this.table.checked = []
+                this.transfer.show = false
+                this.getHostList()
             }
         }
     }
