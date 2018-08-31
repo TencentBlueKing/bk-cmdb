@@ -2,13 +2,19 @@
     <div class="details-wrapper">
         <bk-tab :active-name.sync="curTabName">
             <bk-tabpanel name="host" :title="$t('ModelManagement[\'模型配置\']')">
-                <v-field :isEdit.sync="isEdit"
+                <v-field 
+                    v-if="curTabName === 'host'"
+                    :isEdit.sync="isEdit"
                     @confirm="updateModel"
                     @cancel="cancel"
+                    ref="tab"
                 ></v-field>
             </bk-tabpanel>
             <bk-tabpanel name="layout" :title="$t('ModelManagement[\'字段分组\']')" :show="isEdit">
-                <v-layout v-if="curTabName === 'layout'"></v-layout>
+                <v-layout v-if="curTabName === 'layout'"
+                    @cancel="cancel"
+                    ref="tab"
+                ></v-layout>
             </bk-tabpanel>
             <bk-tabpanel name="other" :title="$t('ModelManagement[\'其他操作\']')" :show="isEdit">
                 <v-other
@@ -38,7 +44,7 @@
         },
         data () {
             return {
-                curTabName: ''
+                curTabName: 'host'
             }
         },
         methods: {
@@ -47,6 +53,9 @@
             },
             updateModel () {
                 this.$emit('updateModel')
+            },
+            isCloseConfirmShow () {
+                return this.$refs.tab.isCloseConfirmShow()
             }
         }
     }
