@@ -8,10 +8,11 @@
                 ></v-field>
             </bk-tabpanel>
             <bk-tabpanel name="layout" :title="$t('ModelManagement[\'字段分组\']')" :show="isEdit">
-                <v-layout></v-layout>
+                <v-layout v-if="curTabName === 'layout'"></v-layout>
             </bk-tabpanel>
             <bk-tabpanel name="other" :title="$t('ModelManagement[\'其他操作\']')" :show="isEdit">
                 <v-other
+                    v-if="curTabName === 'other'"
                     @closeSlider="updateModel"
                 ></v-other>
             </bk-tabpanel>

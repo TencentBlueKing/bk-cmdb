@@ -143,10 +143,11 @@
                     bk_classification_id: this.localValue['bk_classification_id'],
                     bk_classification_name: this.localValue['bk_classification_name']
                 }
-                await this.createClassification({params})
-                Object.assign(params, {bk_supplier_account: this.supplierAccount})
+                const res = await this.createClassification({params})
+                Object.assign(params, {bk_supplier_account: this.supplierAccount, id: res.id})
                 this.updateClassify(params)
                 this.$emit('closePop')
+                this.$router.push(`/model/${this.localValue['bk_classification_id']}`)
             },
             async editClassify () {
                 let params = {
