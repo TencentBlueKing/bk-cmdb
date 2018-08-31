@@ -204,7 +204,7 @@ func (b *business) DeleteBusiness(params types.ContextParams, obj model.Object, 
 	innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	innerCond.Field(common.BKAppIDField).Eq(bizID)
 
-	return b.inst.DeleteInst(params, bizObj, innerCond)
+	return b.inst.DeleteInst(params, bizObj, innerCond, true)
 }
 
 func (b *business) FindBusiness(params types.ContextParams, obj model.Object, fields []string, cond condition.Condition) (count int, results []inst.Inst, err error) {
