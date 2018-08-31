@@ -11,8 +11,7 @@
                 v-model="hiddenField" 
                 index="0" 
                 :options="{animation: 150, group: 'field'}"
-                :move="checkMove"
-                @end="moveEnd">
+                :move="checkMove">
                     <div v-for="(field, index) in hiddenField" :key="index" class="hidden-list-item">
                         <span class="triple-dot">
                             <i></i><i></i><i></i>
@@ -35,7 +34,7 @@
                         <span class="layout-title-icon">
                             <i class="bk-icon icon-arrows-up" v-if="groupIndex" @click="groupMove(groupIndex, groupIndex - 1)"></i>
                             <i class="bk-icon icon-arrows-down" v-if="groupIndex !== groupFieldList.length - 1" @click="groupMove(groupIndex, groupIndex + 1)"></i>
-                            <i class="icon-cc-del f14 vm" @click="deleteGroup(group, groupIndex)"></i>
+                            <i class="icon-cc-del" v-if="!(group['ispre'] || group['bk_group_id'] === 'default')" @click="deleteGroup(group, groupIndex)"></i>
                         </span>
                     </div>
                     <vue-draggable
@@ -43,8 +42,7 @@
                     v-model="group.properties"
                     :index="groupIndex"
                     :options="{animation: 150, group:'field'}" 
-                    :move="checkMove" 
-                    @end="moveEnd">
+                    :move="checkMove" >
                         <div class="layout-item" 
                         v-for="(property, propertyIndex) in group.properties"
                         :key="propertyIndex">
@@ -92,7 +90,9 @@
             return {
                 activeGroupName: '',
                 hiddenField: [],
-                groupFieldList: []
+                groupFieldList: [],
+                groupFieldListCopy: [],
+                hiddenFieldCopy: []
             }
         },
         computed: {
@@ -119,11 +119,50 @@
             ...mapActions('objectModelFieldGroup', [
                 'searchGroup',
                 'updateGroup',
-                'createGroup'
+                'createGroup',
+                'updatePropertyGroup'
             ]),
             ...mapActions('objectModelProperty', [
                 'searchObjectAttribute'
             ]),
+            isCloseConfirmShow () {
+                let {
+                    hiddenField,
+                    hiddenFieldCopy,
+                    groupFieldList,
+                    groupFieldListCopy
+                } = this
+                if (hiddenField.length !== hiddenFieldCopy.length || groupFieldList.length !== groupFieldListCopy.length) {
+                    return true
+                }
+
+                let result = hiddenField.some((field, index) => {
+                    return hiddenFieldCopy[index]['bk_property_id'] !== field['bk_property_id']
+                })
+                if (result) {
+                    return true
+                }
+                return groupFieldList.some((group, groupIndex) => {
+                    let curGroupCopy = groupFieldListCopy[groupIndex]
+                    if (group.properties.length !== curGroupCopy.properties.length) {
+                        return true
+                    }
+                    let res = group.properties.some((property, propertyIndex) => {
+                        return property['bk_property_id'] !== curGroupCopy.properties[propertyIndex]['bk_property_id']
+                    })
+                    return res
+                })
+            },
+            editGroupName (group) {
+                if (!this.isEditTitle) {
+                    group.isEditTitle = true
+                    this.activeGroupName = group['bk_group_name']
+                }
+            },
+            hideField (property, propertyIndex, groupIndex) {
+                this.groupFieldList[groupIndex].properties.splice(propertyIndex, 1)
+                this.hiddenField.push(property)
+            },
             async getFieldData () {
                 const res = await Promise.all([
                     this.searchGroup({
@@ -147,6 +186,7 @@
             setGroupFieldList (data) {
                 let groupList = data[0]
                 let fieldList = data[1]
+                groupList.sort((groupA, groupB) => groupA['bk_group_index'] - groupB['bk_group_index'])
                 groupList.map(group => {
                     Object.assign(group, {isEditTitle: false})
                     if (!group.hasOwnProperty('properties')) {
@@ -170,6 +210,8 @@
                 
                 this.groupFieldList = groupList
                 this.hiddenField = hiddenField
+                this.groupFieldListCopy = this.$tools.clone(groupList)
+                this.hiddenFieldCopy = this.$tools.clone(hiddenField)
             },
             /**
              * 检查是否可移动到指定区域
@@ -180,11 +222,24 @@
                 // 唯一字段、必填字段不能够被隐藏
                 return !(evt.to.attributes[2].value === 'hidden-list-content' && (evt.draggedContext.element.isonly || evt.draggedContext.element.isrequired))
             },
-            moveEnd () {
-                
-            },
-            changeGroupName () {
-
+            async changeGroupName (group) {
+                if (!this.checkGroupParams(group)) {
+                    return
+                }
+                let params = {
+                    condition: {
+                        id: group.id
+                    },
+                    data: {
+                        bk_group_name: group['bk_group_name']
+                    }
+                }
+                await this.updateGroup({
+                    params
+                })
+                let activeGroup = this.groupFieldList.find(({id}) => id === group.id)
+                activeGroup['bk_group_name'] = group['bk_group_name']
+                group.isEditTitle = false
             },
             /**
              * 调整分组位置
@@ -223,8 +278,22 @@
                     })
                 ])
             },
-            deleteGroup () {
-
+            deleteGroup (group, groupIndex) {
+                let isPropertyExist = group.properties.find(property => {
+                    return property['isrequired']
+                })
+                if (isPropertyExist) {
+                    this.$error(this.$t('ModelManagement["该分组中存在必填字段，不可删除"]'))
+                    return
+                }
+                this.$store.dispatch('objectModelFieldGroup/deleteGroup', {
+                    id: group.id
+                })
+                group.properties.map(property => {
+                    property['bk_property_group'] = 'none'
+                    this.hiddenField.push(property)
+                })
+                this.groupFieldList.splice(groupIndex, 1)
             },
             checkGroupParams (group) {
                 if (group) {
@@ -236,7 +305,7 @@
                         return bkGroupName === group['bk_group_name'] && bkGroupId !== group['bk_group_id']
                     }) > -1
                     if (isExist) {
-                        this.$alertMsg(this.$t('ModelManagement["该名字已经存在"]'))
+                        this.$error(this.$t('ModelManagement["该名字已经存在"]'))
                         return false
                     }
                 } else {
@@ -244,7 +313,7 @@
                         return bkGroupName === this.$t('ModelManagement["未命名"]')
                     }) > -1
                     if (isExist) {
-                        this.$alertMsg(this.$t('ModelManagement["已经存在未命名分组"]'))
+                        this.$error(this.$t('ModelManagement["已经存在未命名分组"]'))
                         return false
                     }
                 }
@@ -284,8 +353,45 @@
                     properties: []
                 })
             },
-            confirm () {
-
+            async confirm () {
+                let params = []
+                this.groupFieldList.map(group => {
+                    group.properties.map((property, index) => {
+                        params.push({
+                            condition: {
+                                bk_obj_id: property['bk_obj_id'],
+                                bk_property_id: property['bk_property_id'],
+                                bk_supplier_account: this.supplierAccount
+                            },
+                            data: {
+                                bk_property_group: group['bk_group_id'],
+                                bk_property_index: index
+                            }
+                        })
+                    })
+                })
+                this.hiddenField.map((property, index) => {
+                    params.push({
+                        condition: {
+                            bk_obj_id: property['bk_obj_id'],
+                            bk_property_id: property['bk_property_id'],
+                            bk_supplier_account: this.supplierAccount
+                        },
+                        data: {
+                            bk_property_group: 'none',
+                            bk_property_index: index
+                        }
+                    })
+                })
+                await this.updatePropertyGroup({
+                    params,
+                    config: {
+                        requestId: 'updateFe'
+                    }
+                })
+                this.$success(this.$t('Common["更新成功"]'))
+                this.groupFieldListCopy = this.$tools.clone(this.groupFieldList)
+                this.hiddenFieldCopy = this.$tools.clone(this.hiddenField)
             },
             cancel () {
 
