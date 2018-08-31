@@ -268,7 +268,7 @@ func (h *HostModuleLog) getHostModuleConfig() ([]metadata.ModuleHost, error) {
 func (h *HostModuleLog) getInnerIP() ([]map[string]interface{}, error) {
 	query := &metadata.QueryInput{
 		Start:     0,
-		Limit:     1,
+		Limit:     len(h.instID),
 		Sort:      common.BKAppIDField,
 		Condition: common.KvMap{common.BKHostIDField: common.KvMap{common.BKDBIN: h.instID}},
 		Fields:    fmt.Sprintf("%s,%s", common.BKHostIDField, common.BKHostInnerIPField),
