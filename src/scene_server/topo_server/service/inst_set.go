@@ -16,8 +16,6 @@ import (
 	"strconv"
 	"strings"
 
-	"configcenter/src/common/mapstr"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
