@@ -80,7 +80,11 @@ var defaultNameLanguagePkg = map[string]map[string][]string{
 
 func (lgc *Logics) GetObjectByCondition(ctx context.Context, defLang language.DefaultCCLanguageIf, objType string, fields []string, condition, result interface{}, sort string, skip, limit int) error {
 	tName := common.GetInstTableName(objType)
-	if err := lgc.Instance.Table(tName).Find(condition).Fields(fields...).Sort(sort).Start(uint64(skip)).Limit(uint64(limit)).All(ctx, &result); err != nil {
+	dbInst := lgc.Instance.Table(tName).Find(condition).Sort(sort).Start(uint64(skip)).Limit(uint64(limit))//.All(ctx, &result)
+	if 0 < len(fields) {
+	  dbInst.Fields(fields...)
+	}
+	if err := dbInst.All(ctx, &result); err != nil {
 		blog.Errorf("failed to query the inst , error info %s", err.Error())
 		return err
 	}
