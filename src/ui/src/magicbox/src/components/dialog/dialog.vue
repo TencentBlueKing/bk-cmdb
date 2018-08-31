@@ -6,12 +6,15 @@
             <div class="bk-dialog-wrapper">
                 <div class="bk-dialog-position"
                     @click.self="handleQuickClose">
-                    <div class="bk-dialog-style"
+                    <div class="bk-dialog-style" ref="dialogContent"
                         :style="{width: typeof width === 'String' ? width : (width + 'px')}">
-                        <div class="bk-dialog-tool"
-                            v-if="hasHeader && closeIcon">
-                            <i class="bk-dialog-close bk-icon icon-close"
-                                @click="handleCancel">
+                        <div class="bk-dialog-tool clearfix"
+                            :class="{draggable}"
+                            v-if="hasHeader || closeIcon || draggable"
+                            @mousedown.left="handlerDragStart($event)">
+                            <slot name="tools"></slot>
+                            <i class="bk-dialog-close bk-icon icon-close" v-if="closeIcon"
+                                @click.stop="handleCancel">
                             </i>
                         </div>
                         <div class="bk-dialog-header" v-if="hasHeader">
@@ -57,6 +60,7 @@
      *  @param title {String} - 弹窗的标题
      *  @param content {String, Boolean} - 弹窗的内容
      *  @param hasHeader {Boolean} - 是否显示头部，默认为true
+     *  @param draggable {Boolean} - 弹层是否可以拖拽, 默认为false
      *  @param extCls {String} - 自定义的样式，传入的CSS类会被加在组件最外层的DOM上
      *  @param padding {Number, String} - 弹窗内容区的内边距
      *  @param closeIcon {Boolean} - 是否显示关闭按钮，默认为true
@@ -77,7 +81,7 @@
             </div>
         </bk-dialog>
     */
-    import {addClass, removeClass} from '../../util.js'
+    import {addClass, removeClass, requestAnimationFrame, cancelAnimationFrame} from '../../util.js'
     import locale from '../../mixins/locale'
 
     export default{
@@ -103,6 +107,10 @@
             hasHeader: {
                 type: Boolean,
                 default: true
+            },
+            draggable: {
+                type: Boolean,
+                default: false
             },
             extCls: {
                 type: String,
@@ -149,7 +157,8 @@
         data () {
             return {
                 defaultTitle: this.t('dialog.title'),
-                defaultContent: this.t('dialog.content')
+                defaultContent: this.t('dialog.content'),
+                dragState: {}
             }
         },
         computed: {
@@ -166,6 +175,9 @@
                 } else {
                     setTimeout(() => {
                         removeClass(document.body, 'bk-dialog-shown')
+                        if (this.draggable) {
+                            this.resetDragPostion()
+                        }
                     }, 200)
                 }
             }
@@ -192,6 +204,58 @@
                 if (this.quickClose) {
                     this.close()
                 }
+            },
+            handlerDragStart (event) {
+                if (!this.draggable) return false
+                const $dialogContent = this.$refs.dialogContent
+                const computedStyle = window.getComputedStyle($dialogContent)
+                document.onselectstart = () => { return false }
+                document.ondragstart = () => { return false }
+                document.body.style.cursor = 'move'
+                this.dragState = {
+                    startX: event.clientX,
+                    startY: event.clientY,
+                    contentRect: $dialogContent.getBoundingClientRect(),
+                    dialogRect: this.$el.getBoundingClientRect(),
+                    startPosLeft: parseInt(computedStyle.left, 10) || 0,
+                    startPosTop: parseInt(computedStyle.top, 10) || 0,
+                    dragging: true,
+                    animationId: null
+                }
+
+                const handleMousemove = (event) => {
+                    this.dragState.animationId = requestAnimationFrame(() => {
+                        const dragState = this.dragState
+                        const contentRect = dragState.contentRect
+                        const dialogRect = dragState.dialogRect
+                        let deltaX = event.clientX - dragState.startX
+                        let deltaY = event.clientY - dragState.startY
+                        deltaX = Math.floor(Math.max(-1 * contentRect.x, Math.min(deltaX, dialogRect.width - contentRect.x - contentRect.width)))
+                        deltaY = Math.floor(Math.max(-1 * contentRect.top, Math.min(deltaY, dialogRect.height - contentRect.y - contentRect.height)))
+                        $dialogContent.style.left = dragState.startPosLeft + deltaX + 'px'
+                        $dialogContent.style.top = dragState.startPosTop + deltaY + 'px'
+                    })
+                }
+
+                const handleMouseup = (event) => {
+                    event.stopPropagation()
+                    event.preventDefault()
+                    cancelAnimationFrame(this.dragState.animationId)
+                    this.dragState = {}
+                    document.onselectstart = null
+                    document.ondragstart = null
+                    document.body.style.cursor = 'default'
+                    document.removeEventListener('mousemove', handleMousemove)
+                    document.removeEventListener('mouseup', handleMouseup)
+                }
+
+                document.addEventListener('mousemove', handleMousemove)
+                document.addEventListener('mouseup', handleMouseup)
+            },
+            resetDragPostion () {
+                const $dialogContent = this.$refs.dialogContent
+                $dialogContent.style.left = 0
+                $dialogContent.style.top = 0
             }
         }
     }

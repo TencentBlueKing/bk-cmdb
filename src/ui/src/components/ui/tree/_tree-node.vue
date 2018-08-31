@@ -5,18 +5,24 @@
             'tree-node-expanded': state.expanded,
             'tree-node-hidden': state.hidden
         }">
-        <div class="tree-node-info-layout clearfix" :class="{'tree-node-info-layout-root': level === 1}">
-            <i class="tree-node-expanded-icon fl" v-if="!leaf"
+        <div class="tree-node-info-layout clearfix"
+            :class="{
+                'tree-node-info-layout-root': level === 1,
+                'tree-node-info-layout-parent-hidden': state.parent && state.parent.state.hidden
+            }">
+            <i class="tree-node-expanded-icon fl" v-if="!leaf && !state.hidden"
                 :class="[state.expanded ? 'icon-cc-rect-sub': 'icon-cc-rect-add']"
                 @click="handleExpandClick(!state.expanded)">
             </i>
-            <tree-node-info class="tree-node-info" @click.native="handleNodeClick"
+            <tree-node-info class="tree-node-info"
+                v-if="!state.hidden"
                 :class="{
                     'tree-node-info-leaf': leaf,
                     'tree-node-info-selected': state.selected
                 }"
                 :state="state"
-                :layout="layout">
+                :layout="layout"
+                @click.native="handleNodeClick">
             </tree-node-info>
         </div>
         <ul v-if="!leaf" v-show="state.expanded" class="tree-node-children">
@@ -59,7 +65,8 @@
                 disabled: false,
                 expanded: false,
                 visible: false,
-                selected: false
+                selected: false,
+                hidden: false
             }
             const state = {
                 ...basicState,
@@ -107,10 +114,13 @@
                 if (selected) {
                     this.treeInstance.$emit('on-selected', this.node, this.state)
                 }
+            },
+            'state.hidden' (hidden) {
+                this.treeInstance.$emit('on-hidden-change', this.node, this.state, hidden)
             }
         },
         created () {
-            this.layout.addFlatternNode(this.state)
+            this.layout.addFlatternState(this.state)
             this.updateBasicState()
         },
         beforeDestory () {
@@ -142,10 +152,22 @@
             handleExpandClick (expanded) {
                 this.layout.toggleExpanded(this.state.id, expanded)
             },
-            handleNodeClick () {
-                const selectedNode = this.layout.selectedNode
-                if (!selectedNode || selectedNode.id !== this.state.id) {
-                    this.layout.selectNode(this.state.id)
+            async handleNodeClick () {
+                if (typeof this.treeInstance.beforeSelect === 'function') {
+                    let confirm
+                    try {
+                        confirm = await Promise.resolve(this.treeInstance.beforeSelect(this.node, this.state))
+                    } catch (e) {
+                        confirm = e
+                    }
+                    if (!confirm) {
+                        this.layout.unselectState(this.state.id)
+                        return false
+                    }
+                }
+                const selectedState = this.layout.selectedState
+                if (!selectedState || selectedState.id !== this.state.id) {
+                    this.layout.selectState(this.state.id)
                 }
             }
         }
@@ -158,15 +180,15 @@
         white-space: nowrap;
         font-size: 0;
         margin: 8px 0;
-        &.tree-node-expanded:before{
-                position: absolute;
-                left: 7px;
-                top: 19px;
-                width: 0;
-                height: calc(100% - 31px);
-                content: '';
-                border-left: 1px dashed #d3d8e7;
-                z-index: 1;
+        &.tree-node-expanded:not(.tree-node-hidden):before{
+            position: absolute;
+            left: 7px;
+            top: 19px;
+            width: 0;
+            height: calc(100% - 31px);
+            content: '';
+            border-left: 1px dashed #d3d8e7;
+            z-index: 1;
         }
         .tree-node-expanded-icon{
             display: block;
@@ -181,7 +203,7 @@
     }
     .tree-node-info-layout{
         position: relative;
-        &:not(.tree-node-info-layout-root):before{
+        &:not(.tree-node-info-layout-root):not(.tree-node-info-layout-parent-hidden):before{
             position: absolute;
             top: 12px;
             left: -15px;
