@@ -81,6 +81,7 @@ var defaultNameLanguagePkg = map[string]map[string][]string{
 func (lgc *Logics) GetObjectByCondition(ctx context.Context, defLang language.DefaultCCLanguageIf, objType string, fields []string, condition interface{}, sort string, skip, limit int) ([]mapstr.MapStr, error) {
 	results := make([]mapstr.MapStr, 0)
 	tName := common.GetInstTableName(objType)
+
 	dbInst := lgc.Instance.Table(tName).Find(condition).Sort(sort).Start(uint64(skip)).Limit(uint64(limit))
 	if 0 < len(fields) {
 		dbInst.Fields(fields...)
