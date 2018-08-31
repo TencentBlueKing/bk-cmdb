@@ -1,0 +1,4 @@
+{
+    "process_description_bk_start_param_regex": "Processes are uniquely identified by process startup parameters, such as kafka and zookeeper, whose binary names are Java, and by boot parameters including kafka or zookeeper",
+    "": ""
+}
