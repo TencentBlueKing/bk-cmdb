@@ -69,11 +69,22 @@ func NewClientSet(client util.HttpClient, discover discovery.DiscoveryInterface,
 	}
 }
 
+func NewMockClientSet() *ClientSet {
+	return &ClientSet{
+		version:  "unit_test",
+		client:   nil,
+		discover: discovery.NewMockDiscoveryInterface(),
+		throttle: flowctrl.NewMockRateLimiter(),
+		Mock:     util.MockInfo{Mocked: true},
+	}
+}
+
 type ClientSet struct {
 	version  string
 	client   util.HttpClient
 	discover discovery.DiscoveryInterface
 	throttle flowctrl.RateLimiter
+	Mock     util.MockInfo
 }
 
 func (cs *ClientSet) HostServer() hostserver.HostServerClientInterface {
@@ -81,7 +92,9 @@ func (cs *ClientSet) HostServer() hostserver.HostServerClientInterface {
 		Client:   cs.client,
 		Discover: cs.discover.HostServer(),
 		Throttle: cs.throttle,
+		Mock:     cs.Mock,
 	}
+	cs.Mock.SetMockData = false
 	return hostserver.NewHostServerClientInterface(c, cs.version)
 }
 
@@ -90,7 +103,9 @@ func (cs *ClientSet) TopoServer() toposerver.TopoServerClientInterface {
 		Client:   cs.client,
 		Discover: cs.discover.TopoServer(),
 		Throttle: cs.throttle,
+		Mock:     cs.Mock,
 	}
+	cs.Mock.SetMockData = false
 	return toposerver.NewTopoServerClient(c, cs.version)
 }
 
@@ -99,6 +114,7 @@ func (cs *ClientSet) ObjectController() objcontroller.ObjControllerClientInterfa
 		Client:   cs.client,
 		Discover: cs.discover.ObjectCtrl(),
 		Throttle: cs.throttle,
+		Mock:     cs.Mock,
 	}
 	return objcontroller.NewObjectControllerInterface(c, cs.version)
 }
@@ -109,6 +125,7 @@ func (cs *ClientSet) ProcServer() procserver.ProcServerClientInterface {
 		Discover: cs.discover.ProcServer(),
 		Throttle: cs.throttle,
 	}
+	cs.Mock.SetMockData = false
 	return procserver.NewProcServerClientInterface(c, cs.version)
 }
 
@@ -117,7 +134,9 @@ func (cs *ClientSet) AdminServer() adminserver.AdminServerClientInterface {
 		Client:   cs.client,
 		Discover: cs.discover.MigrateServer(),
 		Throttle: cs.throttle,
+		Mock:     cs.Mock,
 	}
+	cs.Mock.SetMockData = false
 	return adminserver.NewAdminServerClientInterface(c, cs.version)
 }
 
@@ -126,7 +145,9 @@ func (cs *ClientSet) EventServer() eventserver.EventServerClientInterface {
 		Client:   cs.client,
 		Discover: cs.discover.EventServer(),
 		Throttle: cs.throttle,
+		Mock:     cs.Mock,
 	}
+	cs.Mock.SetMockData = false
 	return eventserver.NewEventServerClientInterface(c, cs.version)
 }
 
@@ -135,7 +156,9 @@ func (cs *ClientSet) AuditController() auditcontroller.AuditCtrlInterface {
 		Client:   cs.client,
 		Discover: cs.discover.AuditCtrl(),
 		Throttle: cs.throttle,
+		Mock:     cs.Mock,
 	}
+	cs.Mock.SetMockData = false
 	return auditcontroller.NewAuditCtrlInterface(c, cs.version)
 }
 
@@ -144,7 +167,9 @@ func (cs *ClientSet) ProcController() proccontroller.ProcCtrlClientInterface {
 		Client:   cs.client,
 		Discover: cs.discover.ProcCtrl(),
 		Throttle: cs.throttle,
+		Mock:     cs.Mock,
 	}
+	cs.Mock.SetMockData = false
 	return proccontroller.NewProcCtrlClientInterface(c, cs.version)
 }
 
@@ -153,6 +178,7 @@ func (cs *ClientSet) HostController() hostcontroller.HostCtrlClientInterface {
 		Client:   cs.client,
 		Discover: cs.discover.HostCtrl(),
 		Throttle: cs.throttle,
+		Mock:     cs.Mock,
 	}
 	return hostcontroller.NewHostCtrlClientInterface(c, cs.version)
 }
@@ -162,7 +188,9 @@ func (cs *ClientSet) GseProcServer() gseprocserver.GseProcClientInterface {
 		Client:   cs.client,
 		Discover: cs.discover.GseProcServ(),
 		Throttle: cs.throttle,
+		Mock:     cs.Mock,
 	}
+	cs.Mock.SetMockData = false
 	return gseprocserver.NewGseProcClientInterface(c, "v1")
 }
 
