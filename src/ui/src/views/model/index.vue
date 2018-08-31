@@ -39,7 +39,6 @@
             ref="pop"
             v-if="pop.isShow"
             :isEdit="pop.isEdit"
-            :classification="activeClassify"
             @closePop="closePop"
         ></v-pop>
     </div>
@@ -76,23 +75,8 @@
             }
         },
         computed: {
-            ...mapGetters('objectModelClassify', [
-                'classifications'
-            ]),
             bkClassificationId () {
                 return this.$route.params.classifyId
-            },
-            activeClassify () {
-                if (!this.isEdit) {
-                    return {
-                        bk_classification_id: '',
-                        bk_classification_icon: '',
-                        bk_classification_name: '',
-                        bk_classification_type: ''
-                    }
-                }
-                let activeClassify = this.classifications.find(({bk_classification_id: bkClassificationId}) => bkClassificationId === this.bkClassificationId)
-                return activeClassify
             }
         },
         methods: {
@@ -103,7 +87,7 @@
                 'setActiveModel'
             ]),
             createModel (prevModelId) {
-                this.slider.title = '新增模型'
+                this.slider.title = this.$t('ModelManagement["新增模型"]')
                 this.slider.isShow = true
                 this.slider.isEdit = false
                 this.setActiveModel({

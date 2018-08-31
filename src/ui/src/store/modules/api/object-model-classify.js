@@ -201,6 +201,11 @@ const mutations = {
         if (updateModel.hasOwnProperty('position')) {
             curModel['position'] = updateModel['position']
         }
+    },
+    deleteClassify (state, classificationId) {
+        let index = state.classifications.findIndex(({bk_classification_id: bkClassificationId}) => bkClassificationId === classificationId)
+        console.log(index)
+        state.classifications.splice(index, 1)
     }
 }
 

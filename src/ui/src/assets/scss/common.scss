@@ -464,4 +464,19 @@ input.cmdb-form-input{
         }
     }
 }
+.model-wrapper .details-wrapper {
+    .footer-btn {
+        width: calc(100% + 40px);
+        margin: 0 -20px;
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        padding: 14px 10px;
+        background: $cmdbPrimaryColor;
+        button {
+            min-width: 110px;
+            margin-left: 10px;
+        }
+    }
+}
 /* model-field -------end------- */
