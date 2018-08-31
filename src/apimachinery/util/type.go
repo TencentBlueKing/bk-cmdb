@@ -42,28 +42,6 @@ type MockInfo struct {
 	MockData    interface{}
 }
 
-// // Attention: all the fields must be string, or the ToHeader method will be panic.
-// // the struct filed tag is the key of header, and the header's value is the struct
-// // filed value.
-// type Headers struct {
-// 	Language string `HTTP_BLUEKING_LANGUAGE`
-// 	User     string `BK_User`
-// 	OwnerID  string `HTTP_BLUEKING_SUPPLIER_ID`
-// }
-//
-// func (h Headers) ToHeader() http.Header {
-// 	header := make(http.Header)
-//
-// 	valueof := reflect.ValueOf(h)
-// 	for i := 0; i < valueof.NumField(); i++ {
-// 		k := reflect.TypeOf(h).Field(i).Tag
-// 		v := valueof.Field(i).String()
-// 		header[string(k)] = []string{v}
-// 	}
-//
-// 	return header
-// }
-
 type TLSClientConfig struct {
 	// Server should be accessed without verifying the TLS certificate. For testing only.
 	InsecureSkipVerify bool
