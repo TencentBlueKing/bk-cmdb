@@ -1,3 +1,488 @@
 <template>
-    
+    <div class="layout-wrapper">
+        <div class="layout-box">
+            <div class="hidden-list">
+                <div class="hidden-list-title">
+                    <i class="bk-icon icon-eye-slash-shape"></i>
+                    <span>{{$t('ModelManagement["隐藏字段"]')}}</span>
+                </div>
+                <vue-draggable ref="draggableHideField" 
+                class="hidden-list-content"
+                v-model="hiddenField" 
+                index="0" 
+                :options="{animation: 150, group: 'field'}"
+                :move="checkMove"
+                @end="moveEnd">
+                    <div v-for="(field, index) in hiddenField" :key="index" class="hidden-list-item">
+                        <span class="triple-dot">
+                            <i></i><i></i><i></i>
+                        </span>
+                        <span class="hidden-list-text">
+                            <span class="text-name">{{field['bk_property_name']}}</span>
+                            <i v-if="field['isrequired'] && !field['isonly']" class="icon-cc-required color-danger"></i>
+                            <i v-if="field['isonly']" class="icon-cc-key"></i>
+                        </span>
+                    </div>
+                </vue-draggable>
+            </div>
+            <ul class="layout-list">
+                <li class="layout-group" v-for="(group, groupIndex) in groupFieldList" :key="groupIndex">
+                    <div class="layout-title">
+                        <span class="layout-title-text" v-if="!group.isEditTitle">{{group['bk_group_name']}}</span>
+                        <input v-else v-focus maxlength="20" @blur="changeGroupName(group)" type="text" class="layout-title-text cmdb-form-input" v-model="group['bk_group_name']"
+                        >
+                        <i class="icon-cc-edit" @click.stop.prevent="editGroupName(group)"></i>
+                        <span class="layout-title-icon">
+                            <i class="bk-icon icon-arrows-up" v-if="groupIndex" @click="groupMove(groupIndex, groupIndex - 1)"></i>
+                            <i class="bk-icon icon-arrows-down" v-if="groupIndex !== groupFieldList.length - 1" @click="groupMove(groupIndex, groupIndex + 1)"></i>
+                            <i class="icon-cc-del f14 vm" @click="deleteGroup(group, groupIndex)"></i>
+                        </span>
+                    </div>
+                    <vue-draggable
+                    class="layout-group-field"
+                    v-model="group.properties"
+                    :index="groupIndex"
+                    :options="{animation: 150, group:'field'}" 
+                    :move="checkMove" 
+                    @end="moveEnd">
+                        <div class="layout-item" 
+                        v-for="(property, propertyIndex) in group.properties"
+                        :key="propertyIndex">
+                            <span class="triple-dot">
+                                <i></i><i></i><i></i>
+                            </span>
+                            <span class="layout-list-text">
+                                <span class="text-name">{{property['bk_property_name']}}</span>
+                                <i v-if="property['isrequired'] && !property['isonly']" class="icon-cc-required color-danger"></i><i v-if="property['isonly']" class="icon-cc-key"></i>
+                            </span>
+                            <i class="bk-icon icon-eye-slash-shape" v-if="!property['isonly'] && !property['isrequired']" @click="hideField(property, propertyIndex, groupIndex)"></i>
+                        </div>
+                    </vue-draggable>
+                </li>
+                <li class="layout-list-add">
+                    <span @click="addGroup">
+                        <i class="bk-icon icon-plus"></i>
+                        <span>{{$t('ModelManagement["新增字段分组"]')}}</span>
+                    </span>
+                </li>
+            </ul>
+        </div>
+        <footer class="footer-btn" v-if="!isReadOnly">
+            <bk-button type="primary" @click="confirm" :loading="$loading('saveBaseInfo')">{{$t('Common["确定"]')}}</bk-button>
+            <bk-button class="default" type="default" :title="$t('Common[\'取消\']')" @click="cancel">{{$t('Common["取消"]')}}</bk-button>
+        </footer>
+    </div>
 </template>
+
+<script>
+    import vueDraggable from 'vuedraggable'
+    import { mapGetters, mapActions } from 'vuex'
+    export default {
+        components: {
+            vueDraggable
+        },
+        directives: {
+            focus: {
+                inserted: function (el) {
+                    el.focus()
+                }
+            }
+        },
+        data () {
+            return {
+                activeGroupName: '',
+                hiddenField: [],
+                groupFieldList: []
+            }
+        },
+        computed: {
+            ...mapGetters([
+                'supplierAccount'
+            ]),
+            ...mapGetters('objectModel', [
+                'activeModel'
+            ]),
+            isReadOnly () {
+                return this.activeModel['bk_ispaused']
+            },
+            isEditTitle () {
+                let isEdit = this.groupFieldList.find(({isEditTitle}) => {
+                    return isEditTitle
+                })
+                return !!isEdit
+            }
+        },
+        created () {
+            this.getFieldData()
+        },
+        methods: {
+            ...mapActions('objectModelFieldGroup', [
+                'searchGroup',
+                'updateGroup',
+                'createGroup'
+            ]),
+            ...mapActions('objectModelProperty', [
+                'searchObjectAttribute'
+            ]),
+            async getFieldData () {
+                const res = await Promise.all([
+                    this.searchGroup({
+                        objId: this.activeModel['bk_obj_id'],
+                        config: {
+                            requestId: 'searchGroup'
+                        }
+                    }),
+                    this.searchObjectAttribute({
+                        params: {
+                            bk_supplier_account: this.supplierAccount,
+                            bk_obj_id: this.activeModel['bk_obj_id']
+                        },
+                        config: {
+                            requestId: 'searchObjectAttribute'
+                        }
+                    })
+                ])
+                this.setGroupFieldList(res)
+            },
+            setGroupFieldList (data) {
+                let groupList = data[0]
+                let fieldList = data[1]
+                groupList.map(group => {
+                    Object.assign(group, {isEditTitle: false})
+                    if (!group.hasOwnProperty('properties')) {
+                        Object.assign(group, {properties: []})
+                    }
+                })
+                let hiddenField = []
+                fieldList.map(field => {
+                    let group = groupList.find(({bk_group_id: groupId}) => groupId === field['bk_property_group'])
+                    if (group) {
+                        group.properties.push(field)
+                    } else {
+                        hiddenField.push(field)
+                    }
+                })
+
+                groupList.map(group => {
+                    group.properties.sort((propertyA, propertyB) => propertyA['bk_property_index'] - propertyB['bk_property_index'])
+                })
+                hiddenField.sort((propertyA, propertyB) => propertyA['bk_property_index'] - propertyB['bk_property_index'])
+                
+                this.groupFieldList = groupList
+                this.hiddenField = hiddenField
+            },
+            /**
+             * 检查是否可移动到指定区域
+             * @param evt {Object} - 拖拽对象的相关属性
+             * @return - 返回false会取消移动操作
+             */
+            checkMove (evt) {
+                // 唯一字段、必填字段不能够被隐藏
+                return !(evt.to.attributes[2].value === 'hidden-list-content' && (evt.draggedContext.element.isonly || evt.draggedContext.element.isrequired))
+            },
+            moveEnd () {
+                
+            },
+            changeGroupName () {
+
+            },
+            /**
+             * 调整分组位置
+             * @param from {Number} - 当前项的index
+             * @param to {Number} - 要移动到的项的index
+             */
+            async groupMove (from, to) {
+                let {
+                    groupFieldList
+                } = this
+                await this.updateGroupIndex(groupFieldList[from], groupFieldList[to]);
+                [groupFieldList[from], groupFieldList[to]] = [groupFieldList[to], groupFieldList[from]]
+                this.$forceUpdate()
+            },
+            updateGroupIndex (fromGroup, toGroup) {
+                return Promise.all([
+                    this.updateGroup({
+                        params: {
+                            condition: {
+                                id: fromGroup.id
+                            },
+                            data: {
+                                bk_group_id: toGroup['bk_group_index']
+                            }
+                        }
+                    }),
+                    this.updateGroup({
+                        params: {
+                            condition: {
+                                id: toGroup.id
+                            },
+                            data: {
+                                bk_group_id: fromGroup['bk_group_index']
+                            }
+                        }
+                    })
+                ])
+            },
+            deleteGroup () {
+
+            },
+            checkGroupParams (group) {
+                if (group) {
+                    if (this.activeGroupName === group['bk_group_name']) {
+                        group.isEditTitle = false
+                        return false
+                    }
+                    let isExist = this.groupFieldList.findIndex(({bk_group_name: bkGroupName, bk_group_id: bkGroupId}) => {
+                        return bkGroupName === group['bk_group_name'] && bkGroupId !== group['bk_group_id']
+                    }) > -1
+                    if (isExist) {
+                        this.$alertMsg(this.$t('ModelManagement["该名字已经存在"]'))
+                        return false
+                    }
+                } else {
+                    let isExist = this.groupFieldList.findIndex(({bk_group_name: bkGroupName}) => {
+                        return bkGroupName === this.$t('ModelManagement["未命名"]')
+                    }) > -1
+                    if (isExist) {
+                        this.$alertMsg(this.$t('ModelManagement["已经存在未命名分组"]'))
+                        return false
+                    }
+                }
+                return true
+            },
+            async addGroup () {
+                if (this.isEditTitle || !this.checkGroupParams()) {
+                    return
+                }
+                let reg = /^[0-9]+$/
+                let groupId = 0
+                let groupIndex = 0
+                this.groupFieldList.map(({bk_group_id: groupId, bk_group_index: bkGroupIndex}) => {
+                    if (reg.test(groupId)) {
+                        groupId = parseInt(groupId) > groupId ? parseInt(groupId) : groupId
+                    }
+                    groupIndex = bkGroupIndex > groupIndex ? bkGroupIndex : groupIndex
+                })
+                groupId++
+                groupIndex++
+
+                const res = await this.createGroup({
+                    params: {
+                        bk_group_id: groupId.toString(),
+                        bk_group_name: this.$t('ModelManagement["未命名"]'),
+                        bk_group_index: groupIndex,
+                        bk_obj_id: this.activeModel['bk_obj_id'],
+                        bk_supplier_account: this.supplierAccount
+                    }
+                })
+                this.groupFieldList.push({
+                    bk_group_id: groupId.toString(),
+                    bk_group_index: groupIndex,
+                    bk_group_name: this.$t('ModelManagement["未命名"]'),
+                    isEditTitle: false,
+                    id: res.id,
+                    properties: []
+                })
+            },
+            confirm () {
+
+            },
+            cancel () {
+
+            }
+        }
+    }
+</script>
+
+<style lang="scss" scoped>
+    .layout-wrapper {
+        position: relative;
+        height: 100%;
+        padding: 30px 30px 20px;
+        .layout-box {
+            height: calc(100% - 64px);
+            border: 1px solid $cmdbBorderLightColor;
+        }
+        .triple-dot {
+            display: inline-block;
+            position: absolute;
+            left: 6px;
+            top: 14px;
+            width: 3px;
+            height: 15px;
+            overflow: hidden;
+            i {
+                float: left;
+                width: 3px;
+                height: 3px;
+                background: $cmdbBorderLightColor;
+                margin: 1px 0;
+            }
+        }
+        .hidden-list {
+            float: left;
+            width: 143px;
+            height: 100%;
+            text-align: center;
+            border-right: 1px solid $cmdbBorderLightColor;
+            .hidden-list-title {
+                background: $cmdbPrimaryColor;
+                line-height: 42px;
+                padding-top: 4px;
+                font-weight: bold;
+                font-size: 0;
+                border-bottom: 1px solid $cmdbBorderLightColor;
+                >i,
+                >span {
+                    font-size: 14px;
+                    vertical-align: middle;
+                }
+                >i {
+                    padding-right: 5px;
+                }
+            }
+            .hidden-list-content {
+                height: calc(100% - 46px);
+                @include scrollbar;
+                .hidden-list-item {
+                    position: relative;
+                    border-bottom: 1px solid $cmdbBorderLightColor;
+                    font-size: 0;
+                    cursor: move;
+                    transition: all .35s;
+                }
+                .hidden-list-text {
+                    padding: 0 10px 0 15px;
+                    width: 100%;
+                    height: 40px;
+                    line-height: 40px;
+                    font-size: 12px;
+                    @include ellipsis;
+                    .text-name {
+                        display: inline-block;
+                        max-width: calc(100% - 40px);
+                        @include ellipsis;
+                        vertical-align: middle;
+                    }
+                }
+            }
+        }
+        .layout-list {
+            float: right;
+            width: calc(100% - 143px);
+            padding: 0 20px;
+            height: 100%;
+            @include scrollbar;
+            .layout-group {
+                .layout-title {
+                    line-height: 42px;
+                    height: 46px;
+                    padding-top: 4px;
+                    border-bottom: 1px dashed $cmdbBorderLightColor;
+                    &:hover {
+                        .icon-cc-edit {
+                            display: inline-block;
+                        }
+                        .layout-title-icon i {
+                            opacity: 1;
+                        }
+                    }
+                    .layout-title-text {
+                        display: inline-block;
+                        width: auto;
+                        color: #c3cdd7;
+                        font-weight: bold;
+                        line-height: 24px;
+                        height: 26px;
+                        &.cmdb-form-input {
+                            color: $cmdbTextColor;
+                        }
+                    }
+                    .icon-cc-edit {
+                        display: none;
+                        cursor: pointer;
+                    }
+                    .layout-title-icon {
+                        float: right;
+                        cursor: pointer;
+                        .icon-cc-del:hover {
+                            color: $cmdbDangerColor;
+                        }
+                        i {
+                            color: #c3cdd7;
+                            opacity: .5;
+                            transition: all .5s;
+                        }
+                    }
+                }
+                .layout-group-field {
+                    width: 100%;
+                    padding: 10px 0;
+                    min-height: 50px;
+                    font-size: 0;
+                    .layout-item {
+                        display: inline-block;
+                        position: relative;
+                        width: 50%;
+                        height: 30px;
+                        @include ellipsis;
+                        cursor: move;
+                        &:hover {
+                            background: #f1f7ff;
+                            .triple-dot,
+                            .icon-eye-slash-shape {
+                                display: inline-block;
+                            }
+                        }
+                    }
+                    .layout-list-text {
+                        display: inline-block;
+                        padding: 0 32px 0 15px;
+                        width: 100%;
+                        height: 30px;
+                        line-height: 30px;
+                        font-size: 14px;
+                        @include ellipsis;
+                    }
+                    .triple-dot {
+                        display: none;
+                        top: 7px;
+                        i {
+                            background: $cmdbTextColor;
+                        }
+                    }
+                    .icon-eye-slash-shape {
+                        display: none;
+                        font-size: 12px;
+                        position: absolute;
+                        right: 12px;
+                        top: 9px;
+                        cursor: pointer;
+                    }
+                }
+            }
+            .layout-list-add {
+                width: 100%;
+                border-top:1px solid $cmdbBorderLightColor;
+                text-align: center;
+                color: $cmdbMainBtnColor;
+                line-height: 36px;
+                margin-top: 18px;
+                .icon-plus{
+                    font-size: 12px;
+                    position: relative;
+                    top: -1px;
+                    cursor: pointer;
+                }
+                span{
+                    display: inline-block;
+                    cursor: pointer;
+                }
+            }
+        }
+        .icon-cc-key {
+            transform: scale(calc(9 / 12));
+            color: #ffb400;
+        }
+    }
+</style>
