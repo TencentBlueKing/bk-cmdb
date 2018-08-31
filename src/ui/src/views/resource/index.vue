@@ -133,7 +133,7 @@
         methods: {
             ...mapActions('hostSearch', ['searchHost']),
             ...mapActions('hostDelete', ['deleteHost']),
-            ...mapActions('hostRelation', ['transferResourcehostToIdlemodule']),
+            ...mapActions('hostRelation', ['transferResourcehostToIdleModule']),
             ...mapActions('objectModelProperty', ['batchSearchObjectAttribute']),
             getParams () {
                 return new Promise((resolve, reject) => {
@@ -211,7 +211,7 @@
                 return existAssigned
             },
             assignHosts (business) {
-                this.transferResourcehostToIdlemodule({
+                this.transferResourcehostToIdleModule({
                     params: {
                         'bk_biz_id': business['bk_biz_id'],
                         'bk_host_id': this.table.checked

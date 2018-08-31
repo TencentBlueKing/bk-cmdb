@@ -2,13 +2,6 @@
     <div class="models-layout">
         <div class="models-options clearfix">
             <div class="options-button fl">
-                <cmdb-table-selector class="models-table-selector"
-                    :disabled="$loading() || !table.pagination.count"
-                    :total="table.pagination.count"
-                    :selected-count="table.checked.length"
-                    @on-cancel="handleTableUnselect"
-                    @on-select="handleTableSelect">
-                </cmdb-table-selector>
                 <bk-button class="models-button" v-tooltip="$t('ModelManagement[\'导入\']')">
                     <i class="icon-cc-import"></i>
                 </bk-button>
@@ -80,7 +73,8 @@
             @handleRowClick="handleRowClick"
             @handleSortChange="handleSortChange"
             @handleSizeChange="handleSizeChange"
-            @handlePageChange="handlePageChange">
+            @handlePageChange="handlePageChange"
+            @handleCheckAll="handleCheckAll">
         </cmdb-table>
         <cmdb-slider :isShow.sync="slider.show" :title="slider.title">
             <bk-tab :active-name.sync="tab.active" slot="content">
@@ -132,6 +126,7 @@
     import { mapGetters, mapActions } from 'vuex'
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
+    let INIT_DATA
     export default {
         components: {
             cmdbColumnsConfig,
@@ -145,6 +140,7 @@
                     checked: [],
                     header: [],
                     list: [],
+                    allList: [],
                     pagination: {
                         count: 0,
                         size: 10,
@@ -224,6 +220,7 @@
             ]),
             async reload () {
                 try {
+                    this.resetData()
                     this.properties = await this.searchObjectAttribute({
                         params: {
                             bk_obj_id: this.objId,
@@ -242,6 +239,21 @@
                     this.getTableData()
                 } catch (e) {
                     // ignore
+                }
+            },
+            resetData () {
+                this.table = {
+                    checked: [],
+                    header: [],
+                    list: [],
+                    allList: [],
+                    pagination: {
+                        count: 0,
+                        size: 10,
+                        current: 1
+                    },
+                    defaultSort: 'bk_inst_id',
+                    sort: 'bk_inst_id'
                 }
             },
             getPropertyGroups () {
@@ -286,16 +298,13 @@
                     }
                 }))
             },
-            async handleTableSelect (type) {
+            async handleCheckAll (type) {
                 if (type === 'current') {
                     this.table.checked = this.table.list.map(inst => inst['bk_inst_id'])
                 } else {
                     const allData = await this.getAllInstList()
                     this.table.checked = allData.info.map(inst => inst['bk_inst_id'])
                 }
-            },
-            handleTableUnselect () {
-                this.table.checked = []
             },
             handleRowClick (item) {
                 this.slider.show = true
@@ -333,12 +342,27 @@
                         requestId: `${this.objId}AllList`,
                         cancelPrevious: true
                     }
+                }).then(data => {
+                    this.table.allList = data.info
+                    return data
                 })
+            },
+            setAllHostList (list) {
+                if (this.table.allList.length === this.table.pagination.count) return
+                const newList = []
+                list.forEach(item => {
+                    const exist = this.table.allList.some(existItem => existItem['bk_inst_id'] === item['bk_inst_id'])
+                    if (!exist) {
+                        newList.push(item)
+                    }
+                })
+                this.table.allList = [...this.table.allList, ...newList]
             },
             getTableData () {
                 this.getInstList().then(data => {
                     this.table.list = this.$tools.flatternList(this.properties, data.info)
                     this.table.pagination.count = data.count
+                    this.setAllHostList(data.info)
                     return data
                 })
             },
