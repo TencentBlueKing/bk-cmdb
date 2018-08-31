@@ -8,8 +8,6 @@
             <cmdb-business-selector class="business-selector" v-model="business">
             </cmdb-business-selector>
             <cmdb-tree ref="topoTree" class="topo-tree"
-                id-key="bk_inst_id"
-                label-key="bk_inst_name"
                 children-key="child"
                 :id-generator="getTopoNodeId"
                 :tree="tree.data"
