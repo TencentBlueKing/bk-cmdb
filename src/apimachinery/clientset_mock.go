@@ -18,9 +18,5 @@ type MockClientSet struct {
 func (mc *MockClientSet) MockDo(output interface{}) ClientSetInterface {
 	mc.ClientSet.Mock.SetMockData = true
 	mc.ClientSet.Mock.MockData = output
-	// = util.MockInfo{
-	//     SetMockData: true,
-	//     MockData: output,
-	// }
 	return mc.ClientSet
 }
