@@ -10,7 +10,8 @@
                 </bk-button>
                 <bk-button class="options-button" type="default"
                     v-tooltip="$t('BusinessTopology[\'转移\']')"
-                    :disabled="!table.checked.length">
+                    :disabled="!table.checked.length"
+                    @click="transfer.show = true">
                     <i class="icon-cc-shift"></i>
                 </bk-button>
                 <bk-button class="options-button" type="submit default"
@@ -107,6 +108,27 @@
                 @on-reset="handleResetColumnsConfig">
             </cmdb-columns-config>
         </cmdb-slider>
+        <bk-dialog
+            :is-show.sync="transfer.show"
+            :draggable="true"
+            :close-icon="false"
+            :has-footer="false"
+            :has-header="false"
+            :padding="0"
+            :width="720">
+            <div class="transfer-title" slot="tools">
+                <i class="icon icon-cc-shift mr5"></i>
+                <span>{{$t('Common[\'主机转移\']')}}</span>
+                <span v-if="selectedHosts.length === 1">{{selectedHosts[0]['host']['bk_host_innerip']}}</span>
+            </div>
+            <div class="transfer-content" slot="content">
+                <cmdb-transfer-host v-if="transfer.show"
+                    :selected-hosts="selectedHosts"
+                    @on-success="handleTransferSuccess"
+                    @on-cancel="transfer.show = false">
+                </cmdb-transfer-host>
+            </div>
+        </bk-dialog>
     </div>
 </template>
 
@@ -115,11 +137,13 @@
     import cmdbHostsFilter from '@/components/hosts/filter'
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
+    import cmdbTransferHost from '@/components/hosts/transfer'
     export default {
         components: {
             cmdbHostsFilter,
             cmdbColumnsConfig,
-            cmdbAuditHistory
+            cmdbAuditHistory,
+            cmdbTransferHost
         },
         props: {
             columnsConfigProperties: {
@@ -176,6 +200,9 @@
                 columnsConfig: {
                     show: false,
                     selected: []
+                },
+                transfer: {
+                    show: false
                 }
             }
         },
@@ -187,6 +214,9 @@
             },
             clipboardList () {
                 return this.table.header.filter(header => header.type !== 'checkbox')
+            },
+            selectedHosts () {
+                return this.table.allList.filter(host => this.table.checked.includes(host['host']['bk_host_id']))
             }
         },
         watch: {
@@ -435,6 +465,11 @@
                     [this.columnsConfigKey]: []
                 })
                 this.columnsConfig.show = false
+            },
+            handleTransferSuccess () {
+                this.table.checked = []
+                this.transfer.show = false
+                this.getHostList()
             }
         }
     }
@@ -457,5 +492,18 @@
     }
     .hosts-table{
         margin-top: 20px;
+    }
+    .transfer-title{
+        height: 50px;
+        line-height: 50px;
+        background-color: #f9f9f9;
+        color: #333948;
+        font-weight: bold;
+        font-size: 14px;
+        padding: 0 30px;
+        border-bottom: 1px solid $cmdbBorderColor;
+    }
+    .transfer-content {
+        height: 540px;
     }
 </style>

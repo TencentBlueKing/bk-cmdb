@@ -1,12 +1,16 @@
 import Vue from 'vue'
-import magicBox from './src/index'
+import i18n from '@/i18n'
+import magicbox from './src'
+import magicboxLocal from './src/locale'
+import magicboxEn from './src/locale/lang/en-US'
+import magicboxCn from './src/locale/lang/zh-CN'
 
-const languageMaps = {
-    'zh_CN': 'zhCN',
-    'en': 'enUS'
-}
+i18n.setLocaleMessage('zh_CN', Object.assign({}, magicboxCn, i18n.messages['zh_CN']))
+i18n.setLocaleMessage('en', Object.assign({}, magicboxEn, i18n.messages.en))
 
-Vue.use(magicBox)
+magicboxLocal.i18n((key, value) => i18n.t(key, value))
+
+Vue.use(magicbox)
 
 const Message = Vue.prototype.$bkMessage
 
