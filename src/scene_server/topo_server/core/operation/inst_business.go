@@ -212,7 +212,7 @@ func (b *business) FindBusiness(params types.ContextParams, obj model.Object, fi
 	query := &metadata.QueryInput{}
 	cond.Field(common.BKDefaultField).Eq(0)
 	query.Condition = cond.ToMapStr()
-	query.Limit = common.BKNoLimit
+	query.Limit = int(cond.GetLimit())
 	query.Fields = strings.Join(fields, ",")
 	query.Sort = cond.GetSort()
 	query.Start = int(cond.GetStart())
