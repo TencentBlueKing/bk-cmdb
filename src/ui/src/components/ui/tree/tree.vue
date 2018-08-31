@@ -60,6 +60,12 @@
             },
             selectNode (id) {
                 this.layout.selectState(id)
+            },
+            unselectNode (id) {
+                this.layout.unselectNode(id)
+            },
+            getStateById (id) {
+                return this.layout.getStateById(id)
             }
         }
     }
