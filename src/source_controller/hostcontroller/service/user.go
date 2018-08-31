@@ -361,7 +361,7 @@ func (s *Service) GetUserCustomByUser(req *restful.Request, resp *restful.Respon
 	conds = util.SetModOwner(conds, ownerID)
 
 	err := s.Instance.Table(common.BKTableNameUserCustom).Find(conds).One(ctx, result)
-	if nil != err && mgo_on_not_found_error != err.Error() {
+	if nil != err && !s.Instance.IsNotFoundError(err) {
 		blog.Error("add  user custom failed, err: %v, params:%v", err, conds)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return
