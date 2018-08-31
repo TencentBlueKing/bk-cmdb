@@ -35,8 +35,8 @@ import (
 type InstOperationInterface interface {
 	CreateInst(params types.ContextParams, obj model.Object, data frtypes.MapStr) (inst.Inst, error)
 	CreateInstBatch(params types.ContextParams, obj model.Object, batchInfo *InstBatchInfo) (*BatchResult, error)
-	DeleteInst(params types.ContextParams, obj model.Object, cond condition.Condition) error
-	DeleteInstByInstID(params types.ContextParams, obj model.Object, instID []int64) error
+	DeleteInst(params types.ContextParams, obj model.Object, cond condition.Condition, needCheckHost bool) error
+	DeleteInstByInstID(params types.ContextParams, obj model.Object, instID []int64, needCheckHost bool) error
 	FindInst(params types.ContextParams, obj model.Object, cond *metatype.QueryInput, needAsstDetail bool) (count int, results []inst.Inst, err error)
 	FindInstByAssociationInst(params types.ContextParams, obj model.Object, data frtypes.MapStr) (cont int, results []inst.Inst, err error)
 	FindInstChildTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []interface{}, err error)
@@ -385,7 +385,7 @@ func (c *commonInst) hasHost(params types.ContextParams, targetInst inst.Inst) (
 	return instIDS, false, nil
 }
 
-func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Object, instID []int64) error {
+func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Object, instID []int64, needCheckHost bool) error {
 
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
@@ -403,17 +403,19 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 	}
 
 	deleteIDS := []deletedInst{}
-	for _, inst := range insts {
-		ids, exists, err := c.hasHost(params, inst)
-		if nil != err {
-			return params.Err.Error(common.CCErrTopoHasHostCheckFailed)
-		}
+	if needCheckHost {
+		for _, inst := range insts {
+			ids, exists, err := c.hasHost(params, inst)
+			if nil != err {
+				return params.Err.Error(common.CCErrTopoHasHostCheckFailed)
+			}
 
-		if exists {
-			return params.Err.Error(common.CCErrTopoHasHostCheckFailed)
-		}
+			if exists {
+				return params.Err.Error(common.CCErrTopoHasHostCheckFailed)
+			}
 
-		deleteIDS = append(deleteIDS, ids...)
+			deleteIDS = append(deleteIDS, ids...)
+		}
 	}
 
 	for _, delInst := range deleteIDS {
@@ -461,7 +463,7 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 	return nil
 }
 
-func (c *commonInst) DeleteInst(params types.ContextParams, obj model.Object, cond condition.Condition) error {
+func (c *commonInst) DeleteInst(params types.ContextParams, obj model.Object, cond condition.Condition, needCheckHost bool) error {
 
 	// clear inst associations
 	query := &metatype.QueryInput{}
@@ -478,7 +480,7 @@ func (c *commonInst) DeleteInst(params types.ContextParams, obj model.Object, co
 		if nil != err {
 			return err
 		}
-		err = c.DeleteInstByInstID(params, obj, []int64{targetInstID})
+		err = c.DeleteInstByInstID(params, obj, []int64{targetInstID}, needCheckHost)
 		if nil != err {
 			return err
 		}
