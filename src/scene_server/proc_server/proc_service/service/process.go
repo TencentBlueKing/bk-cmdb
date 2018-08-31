@@ -18,8 +18,6 @@ import (
 	"strconv"
 	"strings"
 
-	"configcenter/src/common/mapstr"
-
 	"github.com/emicklei/go-restful"
 	"github.com/gin-gonic/gin/json"
 
