@@ -13,9 +13,10 @@
 package apimachinery
 
 import (
-	"configcenter/src/common/metadata"
 	"reflect"
 	"testing"
+
+	"configcenter/src/common/metadata"
 )
 
 func TestStructMockDo(t *testing.T) {
