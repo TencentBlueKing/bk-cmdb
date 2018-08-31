@@ -28,11 +28,15 @@
             <v-global-models v-else></v-global-models>
         </div>
         <cmdb-slider
-            :isShow.sync="slider.isShow" :title="slider.title">
+            :hasCloseConfirm="true"
+            :isCloseConfirmShow="slider.isCloseConfirmShow"
+            :isShow.sync="slider.isShow" :title="slider.title"
+            @closeSlider="closeSlider">
             <v-details slot="content"
+                ref="details"
                 :isEdit.sync="slider.isEdit"
                 @updateModel="updateTopo"
-                @cancel="slider.isShow = false"
+                @cancel="closeSlider"
             ></v-details>
         </cmdb-slider>
         <v-pop
@@ -66,7 +70,8 @@
                 slider: {
                     isShow: false,
                     title: '',
-                    isEdit: false
+                    isEdit: false,
+                    isCloseConfirmShow: false
                 },
                 pop: {
                     isShow: false,
@@ -108,6 +113,9 @@
             createClassify () {
                 this.pop.isEdit = false
                 this.pop.isShow = true
+            },
+            closeSlider () {
+                this.slider.isCloseConfirmShow = this.$refs.details.isCloseConfirmShow()
             },
             closePop () {
                 this.pop.isShow = false
