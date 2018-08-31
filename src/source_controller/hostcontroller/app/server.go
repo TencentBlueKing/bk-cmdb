@@ -75,6 +75,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 	hostCtrl := new(HostController)
 	hostCtrl.Service = coreService
+	coreService.Logics = &logics.Logics{Instance: nil}
 
 	hostCtrl.Core, err = backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
 		types.CC_MODULE_HOSTCONTROLLER,
@@ -84,6 +85,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
+
 	configReady := false
 	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
 		if nil == hostCtrl.Config {
@@ -96,8 +98,6 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if false == configReady {
 		return fmt.Errorf("Configuration item not found")
 	}
-
-	coreService.Logics = logics.Logics{Instance: hostCtrl.Instance}
 
 	select {
 	case <-ctx.Done():
@@ -140,6 +140,7 @@ func (h *HostController) onHostConfigUpdate(previous, current cc.ProcessConfig) 
 		return
 	}
 	h.Service.Instance = instance
+	h.Service.Logics.Instance = instance
 
 	rdsc := h.Config.Redis
 	dbNum, err := strconv.Atoi(rdsc.Database)

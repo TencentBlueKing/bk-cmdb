@@ -72,6 +72,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 	audit := new(AuditController)
 	audit.Service = coreService
+	coreService.Logics = &logics.Logics{Instance: audit.Instance, Engine: audit.Service.Engine}
 	audit.Service.Engine, err = backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
 		types.CC_MODULE_AUDITCONTROLLER,
 		op.ServConf.ExConfig,
@@ -94,8 +95,6 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if false == configReady {
 		return fmt.Errorf("Failed to get configuration")
 	}
-
-	coreService.Logics = &logics.Logics{Instance: audit.Instance, Engine: audit.Service.Engine}
 
 	select {
 	case <-ctx.Done():
@@ -128,6 +127,7 @@ func (h *AuditController) onAduitConfigUpdate(previous, current cc.ProcessConfig
 		return
 	}
 	h.Service.Instance = instance
+	h.Service.Logics.Instance = instance
 
 }
 
