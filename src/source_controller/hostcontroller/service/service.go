@@ -31,7 +31,7 @@ type Service struct {
 	Core     *backbone.Engine
 	Instance dal.RDB
 	Cache    *redis.Client
-	Logics   logics.Logics
+	Logics   *logics.Logics
 }
 
 func (s *Service) WebService() *restful.WebService {
