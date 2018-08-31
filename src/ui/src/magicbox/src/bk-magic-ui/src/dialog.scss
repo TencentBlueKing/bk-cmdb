@@ -48,26 +48,28 @@ $activeWarning: $warningActiveColor;
         box-shadow: 0 0 7px 3px rgba(0, 0, 0, 0.1);
     }
     &-tool {
-        position: absolute;
-        top: 0;
-        right: 0;
+        min-height: 30px;
+        position: relative;
+        &.draggable {
+            cursor: move;
+        }
         #{$bkDialog}-mark {
             cursor: pointer;
         }
     }
     .bk-dialog-close {
-        display: block;
-        width: 27px;
-        height: 27px;
-        line-height: 27px;
+        position: absolute;
+        top: 2px;
+        right: 4px;
+        width: 26px;
+        height: 26px;
+        line-height: 26px;
         text-align: center;
-        margin: 4px 4px 0 0;
         border-radius: 50%;
         background-repeat: no-repeat;
         background-size: 11px 11px;
         background-position: 50% 50%;
         cursor: pointer;
-        display: inline-block;
         &:hover {
             background-color: #f3f3f3;
         }
@@ -87,7 +89,7 @@ $activeWarning: $warningActiveColor;
         }
     }
     &-header {
-        padding: 40px 30px 10px;
+        padding: 10px 30px 10px;
         color: #333;
         font-size: 22px;
         .bk-dialog-title {

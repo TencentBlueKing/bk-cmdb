@@ -1,5 +1,5 @@
 <template>
-    <div class="resize-layout">
+    <div class="resize-layout" :class="localDirections">
         <slot></slot>
         <i v-for="(direction, index) in localDirections"
             :class="['resize-handler', direction]"
@@ -158,6 +158,12 @@
 <style lang="scss" scoped>
     .resize-layout {
         position: relative;
+        &.right{
+            padding-right: 5px;
+        }
+        &.bottom{
+            padding-bottom: 5px;
+        }
     }
     .resize-handler {
         position: absolute;
