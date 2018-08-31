@@ -60,7 +60,7 @@
                 </div>
             </div>
         </div>
-        <footer class="footer" v-if="!isReadOnly">
+        <footer class="footer-btn" v-if="!isReadOnly">
             <bk-button type="primary" @click="saveBaseInfo" :loading="$loading('saveBaseInfo')">{{$t('Common["确定"]')}}</bk-button>
             <bk-button class="default" type="default" :title="$t('Common[\'取消\']')" @click="cancel">{{$t('Common["取消"]')}}</bk-button>
         </footer>
@@ -112,7 +112,7 @@
                 'activeModel'
             ]),
             isMainLine () {
-                return this.activeModel.hasOwnProperty('bk_asst_obj_id') && this.activeModel['bk_asst_obj_id'] !== ''
+                return this.activeModel.hasOwnProperty('bk_asst_obj_id') && this.activeModel['bk_asst_obj_id']
             },
             curIconList () {
                 let {
@@ -368,19 +368,6 @@
                         }
                     }
                 }
-            }
-        }
-        .footer {
-            width: 100%;
-            margin: 0 -20px;
-            position: absolute;
-            left: 0;
-            bottom: 0;
-            padding: 14px 10px;
-            background: $cmdbPrimaryColor;
-            button {
-                min-width: 110px;
-                margin-left: 10px;
             }
         }
     }
