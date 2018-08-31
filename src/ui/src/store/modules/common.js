@@ -76,7 +76,7 @@ const actions = {
     },
     getMemberList ({commit, state}, type) {
         state.memberLoading = true
-        $axios.get(`${window.API_BASE_URL}user/list?_t=${(new Date()).getTime()}`, { type }).then((res) => {
+        $axios.get(`/user/list?_t=${(new Date()).getTime()}`, { type }).then((res) => {
             if (res.result) {
                 commit('setMemberList', res.data)
             } else {
