@@ -87,7 +87,13 @@
                         @on-cancel="handleMultipleCancel">
                     </cmdb-form-multiple>
                 </bk-tabpanel>
-                <bk-tabpanel name="relevance" :title="$t('HostResourcePool[\'关联\']')"></bk-tabpanel>
+                <bk-tabpanel name="relevance" :title="$t('HostResourcePool[\'关联\']')">
+                    <cmdb-relation
+                        v-if="tab.active === 'relevance'"
+                        obj-id="host"
+                        :inst-id="tab.attribute.inst.details['bk_host_id']">
+                    </cmdb-relation>
+                </bk-tabpanel>
                 <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')">
                     <cmdb-audit-history v-if="tab.active === 'history'"
                         target="host"
@@ -103,6 +109,7 @@
             <cmdb-columns-config slot="content"
                 :properties="columnsConfigProperties"
                 :selected="columnsConfig.selected"
+                :disabled-columns="columnsConfig.disabledColumns"
                 @on-apply="handleApplyColumnsConfig"
                 @on-cancel="columnsConfig.show = false"
                 @on-reset="handleResetColumnsConfig">
@@ -138,12 +145,14 @@
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
     import cmdbTransferHost from '@/components/hosts/transfer'
+    import cmdbRelation from '@/components/relation'
     export default {
         components: {
             cmdbHostsFilter,
             cmdbColumnsConfig,
             cmdbAuditHistory,
-            cmdbTransferHost
+            cmdbTransferHost,
+            cmdbRelation
         },
         props: {
             columnsConfigProperties: {
@@ -153,6 +162,12 @@
             columnsConfigKey: {
                 type: String,
                 required: true
+            },
+            columnsConfigDisabledColumns: {
+                type: Array,
+                default () {
+                    return ['bk_host_innerip', 'bk_cloud_id', 'bk_module_name']
+                }
             }
         },
         data () {
@@ -284,7 +299,7 @@
             },
             setTableHeader () {
                 return new Promise((resolve, reject) => {
-                    const headerProperties = this.$tools.getHeaderProperties(this.columnsConfigProperties, this.customColumns)
+                    const headerProperties = this.$tools.getHeaderProperties(this.columnsConfigProperties, this.customColumns, this.columnsConfigDisabledColumns)
                     resolve(headerProperties)
                 }).then(properties => {
                     this.table.header = [{

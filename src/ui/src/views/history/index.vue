@@ -115,7 +115,14 @@
                     'biz': 'bk_biz_id',
                     'plat': 'bk_plat_id'
                 }
-                const headerProperties = this.$tools.getHeaderProperties(this.properties, this.customColumns)
+                const fixedPropertyMap = {
+                    'host': ['bk_host_innerip', 'bk_cloud_id'],
+                    'set': ['bk_set_name'],
+                    'module': ['bk_module_name'],
+                    'biz': ['bk_biz_name'],
+                    'plat': ['bk_plat_name']
+                }
+                const headerProperties = this.$tools.getHeaderProperties(this.properties, this.customColumns, fixedPropertyMap[this.objId] || ['bk_inst_name'])
                 this.header = [{
                     id: idMap[this.objId] || 'bk_inst_id',
                     name: 'ID'
