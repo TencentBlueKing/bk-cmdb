@@ -386,8 +386,7 @@ func (m *hostModuleConfigAction) moveHostToModuleByName(req *restful.Request, re
 		if nil != err {
 			return http.StatusBadGateway, nil, defErr.Errorf(common.CCErrAddHostToModuleFailStr, conds[common.BKModuleNameField].(string)+" not foud ")
 		}
-		moduleHostConfigParams := make(map[string]interface{})
-		moduleHostConfigParams[common.BKAppIDField] = data.ApplicationID
+
 		logClient, err := logics.NewHostModuleConfigLog(req, data.HostID, m.CC.HostCtrl(), m.CC.ObjCtrl(), m.CC.AuditCtrl())
 		if nil != err {
 
@@ -395,6 +394,8 @@ func (m *hostModuleConfigAction) moveHostToModuleByName(req *restful.Request, re
 		}
 
 		for _, hostID := range data.HostID {
+			moduleHostConfigParams := make(map[string]interface{})
+			moduleHostConfigParams[common.BKAppIDField] = data.ApplicationID
 			bl, err := logics.IsExistHostIDInApp(m.CC, req, data.ApplicationID, hostID, defLang)
 			if nil != err {
 				blog.Error("check host is exist in app error, params:{appid:%d, hostid:%s}, error:%s", data.ApplicationID, hostID, err.Error())
