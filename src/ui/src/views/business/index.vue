@@ -83,6 +83,7 @@
             <cmdb-columns-config slot="content"
                 :properties="properties"
                 :selected="columnsConfig.selected"
+                :disabled-columns="columnsConfig.disabledColumns"
                 @on-apply="handleApplayColumnsConfig"
                 @on-cancel="columnsConfig.show = false"
                 @on-reset="handleResetColumnsConfig">
@@ -134,7 +135,8 @@
                 },
                 columnsConfig: {
                     show: false,
-                    selected: []
+                    selected: [],
+                    disabledColumns: ['bk_biz_name']
                 }
             }
         },
@@ -194,7 +196,7 @@
             },
             setTableHeader () {
                 return new Promise((resolve, reject) => {
-                    const headerProperties = this.$tools.getHeaderProperties(this.properties, this.customBusinessColumns)
+                    const headerProperties = this.$tools.getHeaderProperties(this.properties, this.customBusinessColumns, this.columnsConfig.disabledColumns)
                     resolve(headerProperties)
                 }).then(properties => {
                     this.updateTableHeader(properties)

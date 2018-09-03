@@ -103,6 +103,7 @@
             <cmdb-columns-config slot="content"
                 :properties="columnsConfigProperties"
                 :selected="columnsConfig.selected"
+                :disabled-columns="columnsConfig.disabledColumns"
                 @on-apply="handleApplyColumnsConfig"
                 @on-cancel="columnsConfig.show = false"
                 @on-reset="handleResetColumnsConfig">
@@ -199,7 +200,8 @@
                 },
                 columnsConfig: {
                     show: false,
-                    selected: []
+                    selected: [],
+                    disabledColumns: ['bk_host_innerip']
                 },
                 transfer: {
                     show: false
@@ -284,7 +286,7 @@
             },
             setTableHeader () {
                 return new Promise((resolve, reject) => {
-                    const headerProperties = this.$tools.getHeaderProperties(this.columnsConfigProperties, this.customColumns)
+                    const headerProperties = this.$tools.getHeaderProperties(this.columnsConfigProperties, this.customColumns, this.columnsConfig.disabledColumns)
                     resolve(headerProperties)
                 }).then(properties => {
                     this.table.header = [{
