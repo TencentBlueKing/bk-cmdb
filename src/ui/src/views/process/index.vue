@@ -10,7 +10,7 @@
                 <i class="icon-cc-edit"></i>
                 <span>{{$t("BusinessTopology['修改']")}}</span>
             </bk-button>
-            <bk-button class="process-btn" type="primary" @click="createProcess">{{$t("ProcessManagement['新增进程']")}}</bk-button>
+            <bk-button class="process-btn" type="primary" @click="handleCreate">{{$t("ProcessManagement['新增进程']")}}</bk-button>
             <div class="filter-text fr">
                 <input type="text" class="bk-form-input" :placeholder="$t('ProcessManagement[\'进程名称搜索\']')" 
                     v-model.trim="filter.text" @keyup.enter="setCurrentPage(1)">
@@ -29,15 +29,55 @@
             @handleSortChange="handleSortChange"
             @handleSizeChange="handleSizeChange"
             @handlePageChange="handlePageChange"
-            @handleCheckAll="handleCheckAll"></cmdb-table>
+            @handleCheckAll="handleCheckAll">
+        </cmdb-table>
+        <cmdb-slider :isShow.sync="slider.show" :title="slider.title">
+            <bk-tab :active-name.sync="tab.active" slot="content">
+                <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')">
+                    <cmdb-details v-if="attribute.type === 'details'"
+                        :properties="properties"
+                        :propertyGroups="propertyGroups"
+                        :inst="attribute.inst.details"
+                        @on-edit="handleEdit"
+                        @on-delete="handleDelete">
+                    </cmdb-details>
+                    <cmdb-form v-else-if="['update', 'create'].includes(attribute.type)"
+                        :properties="properties"
+                        :propertyGroups="propertyGroups"
+                        :inst="attribute.inst.edit"
+                        :type="attribute.type"
+                        @on-submit="handleSave"
+                        @on-cancel="handleCancel">
+                    </cmdb-form>
+                </bk-tabpanel>
+                <bk-tabpanel name="relevance" :title="$t('HostResourcePool[\'关联\']')"></bk-tabpanel>
+                <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')">
+                    <cmdb-audit-history v-if="tab.active === 'history'"
+                        target="biz"
+                        :instId="attribute.inst.details['bk_process_id']">
+                    </cmdb-audit-history>
+                </bk-tabpanel>
+            </bk-tab>
+        </cmdb-slider>
     </div>
 </template>
 
 <script>
-    import { mapActions } from 'vuex'
+    import { mapGetters, mapActions } from 'vuex'
     export default {
         data () {
             return {
+                slider: {
+                    show: false,
+                    title: ''
+                },
+                attribute: {
+                    type: null,
+                    inst: {}
+                },
+                tab: {
+                    active: 'attribute'
+                },
                 filter: {
                     bizId: '',
                     text: ''
@@ -45,6 +85,7 @@
                 table: {
                     header: [],
                     list: [],
+                    allList: [],
                     pagination: {
                         current: 1,
                         count: 0,
@@ -56,60 +97,186 @@
                 }
             }
         },
+        computed: {
+            ...mapGetters(['supplierAccount'])
+        },
         created () {
             this.reload()
         },
         methods: {
+            ...mapActions('objectModelFieldGroup', ['searchGroup']),
             ...mapActions('objectModelProperty', ['searchObjectAttribute']),
-            createProcess () {
-
-            },
-            multipleUpdate () {
-
+            ...mapActions('procConfig', ['searchProcess', 'deleteProcess', 'createProcess', 'updateProcess']),
+            handleMultipleEdit () {
+                this.attribute.type = 'multiple'
+                this.slider.title = this.$t('Inst[\'批量更新\']')
+                this.slider.show = true
             },
             async reload () {
                 this.properties = await this.searchObjectAttribute({
                     params: {
-                        bk_obj_id: this.objId,
+                        bk_obj_id: 'process',
                         bk_supplier_account: this.supplierAccount
                     },
                     config: {
-                        requestId: `${this.objId}Attribute`,
+                        requestId: `processAttribute`,
                         fromCache: true
                     }
                 })
-                // await Promise.all([
-                //     this.getPropertyGroups(),
-                //     this.setTableHeader(),
-                //     this.setFilterOptions()
-                // ])
+                await Promise.all([
+                    this.getPropertyGroups(),
+                    this.setTableHeader()
+                ])
                 this.getTableData()
             },
-            // getPropertyGroups () {
-            //     return this.searchGroup({
-            //         objId: this.objId,
-            //         config: {
-            //             fromCache: true,
-            //             requestId: `${this.objId}AttributeGroup`
-            //         }
-            //     }).then(groups => {
-            //         this.propertyGroups = groups
-            //         return groups
-            //     })
-            // },
+            getPropertyGroups () {
+                return this.searchGroup({
+                    objId: 'process',
+                    config: {
+                        fromCache: true,
+                        requestId: 'searchProcessGroup'
+                    }
+                }).then(groups => {
+                    this.propertyGroups = groups
+                    return groups
+                })
+            },
+            setTableHeader () {
+                let header = []
+                let headerMap = ['bk_process_name', 'bk_func_id', 'bind_ip', 'port', 'protocol', 'bk_func_name']
+                this.properties.map(property => {
+                    let {
+                        'bk_property_id': propertyId,
+                        'bk_property_name': propertyName
+                    } = property
+                    let index = headerMap.indexOf(propertyId)
+                    if (index !== -1) {
+                        header[index] = {
+                            id: propertyId,
+                            name: propertyName
+                        }
+                    }
+                })
+                header.unshift({
+                    id: 'bk_process_id',
+                    type: 'checkbox',
+                    width: 50
+                })
+                this.table.header = header
+            },
+            async handleEdit (flatternItem) {
+                const list = await this.getProcessList({fromCache: true})
+                const inst = list.info.find(item => item['bk_process_id'] === flatternItem['bk_process_id'])
+                this.attribute.inst.edit = inst
+                this.attribute.type = 'update'
+            },
+            handleCreate () {
+                this.attribute.type = 'create'
+                this.attribute.inst.edit = {}
+                this.slider.show = true
+                this.slider.title = `${this.$t("Common['创建']")} ${this.$model['bk_obj_name']}`
+            },
+            handleDelete (process) {
+                this.$bkInfo({
+                    title: this.$t("Common['确认要删除']", {name: process['bk_process_name']}),
+                    confirmFn: () => {
+                        this.deleteProcess({
+                            bizId: this.filter.bizId,
+                            processId: process['bk_process_id']
+                        }).then(() => {
+                            this.slider.show = false
+                            this.$success(this.$t('Common["删除成功"]'))
+                            this.handlePageChange(1)
+                        })
+                    }
+                })
+            },
+            handleSave (values, changedValues, originalValues, type) {
+                if (type === 'update') {
+                    this.updateProcess({
+                        bizId: this.bizId,
+                        processId: originalValues['bk_process_id'],
+                        params: values
+                    }).then(() => {
+                        this.getTableData()
+                        this.handleCancel()
+                        this.$success(this.$t("Common['修改成功']"))
+                    })
+                } else {
+                    this.createProcess({
+                        params: values,
+                        bizId: this.filter.bizId
+                    }).then(() => {
+                        this.handlePageChange(1)
+                        this.handleCancel()
+                        this.$success(this.$t("Inst['创建成功']"))
+                    })
+                }
+            },
+            handleCancel () {
+                if (this.attribute.type === 'create') {
+                    this.slider.show = false
+                } else {
+                    this.attribute.type = 'details'
+                }
+            },
+            getProcessList (config = {cancelPrevious: true}) {
+                return this.searchProcess({
+                    bizId: this.filter.bizId,
+                    params: this.getSearchParams(),
+                    config: Object.assign({requestId: 'requestProcess'}, config)
+                })
+            },
+            getAllProcessList () {
+                return this.searchProcess({
+                    bizId: this.filter.bizId,
+                    params: {
+                        ...this.getSearchParams(),
+                        page: {}
+                    },
+                    config: {
+                        requestId: `processAllList`,
+                        cancelPrevious: true
+                    }
+                })
+            },
+            getTableData () {
+                this.getProcessList().then(data => {
+                    this.table.list = this.$tools.flatternList(this.properties, data.info)
+                    this.table.pagination.count = data.count
+                    return data
+                })
+            },
+            getSearchParams () {
+                let params = {
+                    condition: {
+                        'bk_biz_id': this.filter.bizId
+                    },
+                    fields: [],
+                    page: {
+                        start: (this.table.pagination.current - 1) * this.table.pagination.size,
+                        limit: this.table.pagination.size,
+                        sort: this.table.sort
+                    }
+                }
+                if (this.filter.text !== '') {
+                    params['condition']['bk_process_name'] = this.filter.text
+                }
+                return params
+            },
             async handleCheckAll (type) {
                 if (type === 'current') {
-                    this.table.checked = this.table.list.map(inst => inst['bk_inst_id'])
+                    this.table.checked = this.table.list.map(inst => inst['bk_process_id'])
                 } else {
-                    // const allData = await this.getAllInstList()
-                    // this.table.checked = allData.info.map(inst => inst['bk_inst_id'])
+                    const allData = await this.getAllProcessList()
+                    this.table.checked = allData.info.map(inst => inst['bk_process_id'])
                 }
             },
             handleRowClick (item) {
                 this.slider.show = true
-                // this.slider.title = `${this.$t("Common['编辑']")} ${item['bk_inst_name']}`
-                // this.attribute.inst.details = item
-                // this.attribute.type = 'details'
+                this.slider.title = `${this.$t("Common['编辑']")} ${item['bk_process_name']}`
+                this.attribute.inst.details = item
+                this.attribute.type = 'details'
             },
             handleSortChange (sort) {
                 this.table.sort = sort
