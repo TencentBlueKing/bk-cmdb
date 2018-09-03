@@ -154,6 +154,12 @@
             columnsConfigKey: {
                 type: String,
                 required: true
+            },
+            columnsConfigDisabledColumns: {
+                type: Array,
+                default () {
+                    return ['bk_host_innerip', 'bk_cloud_id', 'bk_module_name']
+                }
             }
         },
         data () {
@@ -200,8 +206,7 @@
                 },
                 columnsConfig: {
                     show: false,
-                    selected: [],
-                    disabledColumns: ['bk_host_innerip']
+                    selected: []
                 },
                 transfer: {
                     show: false
@@ -286,7 +291,7 @@
             },
             setTableHeader () {
                 return new Promise((resolve, reject) => {
-                    const headerProperties = this.$tools.getHeaderProperties(this.columnsConfigProperties, this.customColumns, this.columnsConfig.disabledColumns)
+                    const headerProperties = this.$tools.getHeaderProperties(this.columnsConfigProperties, this.customColumns, this.columnsConfigDisabledColumns)
                     resolve(headerProperties)
                 }).then(properties => {
                     this.table.header = [{

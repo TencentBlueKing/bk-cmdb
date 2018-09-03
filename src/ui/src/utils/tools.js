@@ -235,25 +235,26 @@ export function getCustomHeaderProperties (properties, customColumns) {
  * 获取模型表头
  * @param {Array} properties - 模型属性
  * @param {Array} customColumns - 自定义表头
- * @param {Array} fixedProperties - 需固定在表格前面的属性ID
+ * @param {Array} fixedPropertyIds - 需固定在表格前面的属性ID
  * @return {Array} 表头属性
  */
-export function getHeaderProperties (properties, customColumns, fixedProperties = []) {
+export function getHeaderProperties (properties, customColumns, fixedPropertyIds = []) {
     let headerProperties
     if (customColumns && customColumns.length) {
         headerProperties = getCustomHeaderProperties(properties, customColumns)
     } else {
         headerProperties = getDefaultHeaderProperties(properties)
     }
-    if (fixedProperties.length) {
-        const finallyProperties = headerProperties.filter(property => !fixedProperties.includes(property['bk_property_id']))
-        fixedProperties.forEach(id => {
+    if (fixedPropertyIds.length) {
+        headerProperties = headerProperties.filter(property => !fixedPropertyIds.includes(property['bk_property_id']))
+        const fixedProperties = []
+        fixedPropertyIds.forEach(id => {
             const property = properties.find(property => property['bk_property_id'] === id)
             if (property) {
-                finallyProperties.unshift(property)
+                fixedProperties.push(property)
             }
         })
-        return finallyProperties
+        return [...fixedProperties, ...headerProperties]
     }
     return headerProperties
 }
