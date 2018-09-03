@@ -15,9 +15,11 @@ package identifier
 import (
 	"context"
 	"encoding/json"
-
+	"sort"
+	
 	redis "gopkg.in/redis.v5"
-
+	
+	"configcenter/src/common/util" 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal"
@@ -39,6 +41,15 @@ type HostIdentifier struct {
 	Disk            int64              `json:"bk_disk" bson:"bk_disk"`
 	Module          map[string]*Module `json:"associations" bson:"associations"`
 	Process         []Process          `json:"process" bson:"process"`
+}
+
+type PorcessSorter []Process
+
+func (p PorcessSorter) Len() int      { return len(p) }
+func (p PorcessSorter) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
+func (p PorcessSorter) Less(i, j int) bool {
+	sort.Sort(util.Int64Slice(p[i].BindModules))
+	return p[i].ProcessID < p[j].ProcessID
 }
 
 type Process struct {
@@ -65,6 +76,7 @@ type Module struct {
 }
 
 func (iden *HostIdentifier) MarshalBinary() (data []byte, err error) {
+	sort.Sort(PorcessSorter(iden.Process))
 	return json.Marshal(iden)
 }
 

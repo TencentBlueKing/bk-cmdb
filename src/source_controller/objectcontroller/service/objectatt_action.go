@@ -237,6 +237,7 @@ func (cli *Service) SelectObjectAttByID(req *restful.Request, resp *restful.Resp
 	// translate language
 	for index := range result {
 		result[index].PropertyName = cli.TranslatePropertyName(defLang, &result[index])
+		result[index].Description = cli.TranslateDescription(defLang, &result[index])
 		if result[index].PropertyType == common.FieldTypeEnum {
 			result[index].Option = cli.TranslateEnumName(defLang, &result[index], result[index].Option)
 		}
@@ -291,6 +292,7 @@ func (cli *Service) SelectObjectAttWithParams(req *restful.Request, resp *restfu
 	// translate language
 	for index := range results {
 		results[index].PropertyName = cli.TranslatePropertyName(defLang, &results[index])
+		results[index].Description = cli.TranslateDescription(defLang, &results[index])
 		if results[index].PropertyType == common.FieldTypeEnum {
 			results[index].Option = cli.TranslateEnumName(defLang, &results[index], results[index].Option)
 		}

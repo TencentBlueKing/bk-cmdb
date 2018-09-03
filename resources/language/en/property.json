@@ -80,6 +80,7 @@
     "process_property_pid_file": "PID filepath",
     "process_property_auto_start": "autostart",
     "process_property_auto_time_gap": "autostart period",
+    "process_property_bk_start_param_regex": "Startup parameter REGEX",
 
     "bk_switch_property_bk_asset_id":"asset id",
     "bk_switch_property_bk_sn":"SN",

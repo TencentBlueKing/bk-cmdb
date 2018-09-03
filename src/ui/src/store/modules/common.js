@@ -76,9 +76,7 @@ const actions = {
     },
     getMemberList ({commit, state}, type) {
         state.memberLoading = true
-        let baseURL = $axios.defaults.baseURL
-        $axios.defaults.baseURL = window.siteUrl
-        $axios.get(`/user/list?_t=${(new Date()).getTime()}`, { type }).then((res) => {
+        $axios.get(`${window.location.origin}/user/list?_t=${(new Date()).getTime()}`, { type }).then((res) => {
             if (res.result) {
                 commit('setMemberList', res.data)
             } else {
@@ -88,7 +86,6 @@ const actions = {
         }).catch(() => {
             state.memberLoading = false
         })
-        $axios.defaults.baseURL = baseURL
     }
 }
 
