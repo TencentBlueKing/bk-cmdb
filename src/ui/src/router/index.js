@@ -16,6 +16,7 @@ const permission = () => import(/* webpackChunkName: hosts */ '@/views/permissio
 const resource = () => import(/* webpackChunkName: resource */ '@/views/resource')
 const audit = () => import(/* webpackChunkName: hosts */ '@/views/audit')
 const topology = () => import(/* webpackChunkName: topology */ '@/views/topology')
+const process = () => import(/* webpackChunkName: process */ '@/views/process')
 const error = () => import(/* webpackChunkName: error */ '@/views/status/error')
 
 Vue.use(Router)
@@ -73,6 +74,9 @@ const router = new Router({
     }, {
         path: '/topology',
         component: topology
+    }, {
+        path: '/process',
+        component: process
     }]
 })
 
