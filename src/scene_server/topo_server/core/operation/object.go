@@ -274,7 +274,7 @@ func (o *object) FindObjectBatch(params types.ContextParams, data frtypes.MapStr
 			return nil, err
 		}
 
-		attrs, err := obj.GetAttributes()
+		attrs, err := obj.GetAttributesExceptInnerFields()
 		if nil != err {
 			return nil, err
 		}
