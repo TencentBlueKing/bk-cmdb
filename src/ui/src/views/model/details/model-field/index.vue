@@ -166,9 +166,6 @@
             ...mapGetters('objectModel', [
                 'activeModel'
             ]),
-            params () {
-                
-            },
             isComponentShow () {
                 return ['singlechar', 'longchar', 'multichar', 'singleasst', 'multiasst', 'enum', 'int'].indexOf(this.fieldInfo['bk_property_type']) !== -1
             },
@@ -189,6 +186,16 @@
                 'createObjectAttribute',
                 'updateObjectAttribute'
             ]),
+            isCloseConfirmShow () {
+                let result = false
+                for (let key in this.fieldInfo) {
+                    if (this.fieldInfo[key] !== this.field[key]) {
+                        result = true
+                        break
+                    }
+                }
+                return result
+            },
             initData () {
                 for (let key in this.fieldInfo) {
                     this.fieldInfo[key] = this.$tools.clone(this.field[key])
