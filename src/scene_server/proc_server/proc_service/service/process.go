@@ -317,7 +317,7 @@ func (ps *ProcServer) DeleteProcess(req *restful.Request, resp *restful.Response
 	}
 
 	condition := mapstr.MapStr{common.BKProcIDField: procID}
-	// get process by module
+	// get process by module,restrict the process deletion of the associated module
 	p2mRet, err := ps.CoreAPI.ProcController().GetProc2Module(context.Background(), req.Request.Header, condition)
 	if err != nil || !p2mRet.Result || 0 != len(p2mRet.Data) {
 		blog.Errorf("fail to GetProcessBindModule when do GetProc2Module. err:%v, errcode:%d, errmsg:%s", err, p2mRet.Code, p2mRet.ErrMsg)
