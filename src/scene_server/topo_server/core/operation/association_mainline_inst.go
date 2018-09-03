@@ -103,7 +103,6 @@ func (cli *association) ResetMainlineInstAssociatoin(params types.ContextParams,
 			return err
 		}
 		for _, child := range childs {
-			blog.Infof("the child: %s", child.GetObject().GetID())
 
 			// set the child's parent
 			if err = child.SetMainlineParentInst(parent); nil != err {
@@ -115,7 +114,7 @@ func (cli *association) ResetMainlineInstAssociatoin(params types.ContextParams,
 		// delete the current inst
 		cond := condition.CreateCondition()
 		cond.Field(currentInst.GetObject().GetInstIDFieldName()).Eq(instID)
-		if err = cli.inst.DeleteInst(params, current, cond); nil != err {
+		if err = cli.inst.DeleteInst(params, current, cond, false); nil != err {
 			blog.Errorf("[operation-asst] failed to delete the current inst(%#v), error info is %s", currentInst.ToMapStr(), err.Error())
 			return err
 		}
