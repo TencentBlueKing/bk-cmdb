@@ -21,6 +21,7 @@ import objectModelFieldGroup from './modules/api/object-model-field-group.js'
 import objectModelProperty from './modules/api/object-model-property.js'
 import objectModel from './modules/api/object-model.js'
 import objectModule from './modules/api/object-module.js'
+import objectRelation from './modules/api/object-relation.js'
 import objectSet from './modules/api/object-set.js'
 import operationAudit from './modules/api/operation-audit.js'
 import procConfig from './modules/api/proc-config.js'
@@ -51,6 +52,7 @@ export default new Vuex.Store({
         objectModelProperty,
         objectModel,
         objectModule,
+        objectRelation,
         objectSet,
         operationAudit,
         procConfig,
