@@ -87,7 +87,13 @@
                         @on-cancel="handleMultipleCancel">
                     </cmdb-form-multiple>
                 </bk-tabpanel>
-                <bk-tabpanel name="relevance" :title="$t('HostResourcePool[\'关联\']')"></bk-tabpanel>
+                <bk-tabpanel name="relevance" :title="$t('HostResourcePool[\'关联\']')">
+                    <cmdb-relation
+                        v-if="tab.active === 'relevance'"
+                        obj-id="host"
+                        :inst-id="tab.attribute.inst.details['bk_host_id']">
+                    </cmdb-relation>
+                </bk-tabpanel>
                 <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')">
                     <cmdb-audit-history v-if="tab.active === 'history'"
                         target="host"
@@ -139,12 +145,14 @@
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
     import cmdbTransferHost from '@/components/hosts/transfer'
+    import cmdbRelation from '@/components/relation'
     export default {
         components: {
             cmdbHostsFilter,
             cmdbColumnsConfig,
             cmdbAuditHistory,
-            cmdbTransferHost
+            cmdbTransferHost,
+            cmdbRelation
         },
         props: {
             columnsConfigProperties: {

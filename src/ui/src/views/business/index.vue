@@ -51,7 +51,7 @@
             @handlePageChange="handlePageChange">
         </cmdb-table>
         <cmdb-slider :isShow.sync="slider.show" :title="slider.title">
-            <bk-tab :active-name.sync="tab.active" slot="content" style="padding: 0 20px;">
+            <bk-tab :active-name.sync="tab.active" slot="content">
                 <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')">
                     <cmdb-details v-if="attribute.type === 'details'"
                         :properties="properties"
