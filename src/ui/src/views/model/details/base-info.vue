@@ -61,7 +61,7 @@
             </div>
         </div>
         <footer class="footer-btn" v-if="!isReadOnly">
-            <bk-button type="primary" @click="saveBaseInfo" :loading="$loading('saveBaseInfo')">{{$t('Common["确定"]')}}</bk-button>
+            <bk-button type="primary" @click="saveBaseInfo" :loading="$loading('createModel')">{{$t('Common["确定"]')}}</bk-button>
             <bk-button class="default" type="default" :title="$t('Common[\'取消\']')" @click="cancel">{{$t('Common["取消"]')}}</bk-button>
         </footer>
     </div>
@@ -148,6 +148,12 @@
             ...mapActions('objectMainLineModule', [
                 'createMainlineObject'
             ]),
+            isCloseConfirmShow () {
+                if (JSON.stringify(this.baseInfo) !== JSON.stringify(this.baseInfoCopy)) {
+                    return true
+                }
+                return false
+            },
             chooseIcon (item) {
                 this.baseInfo['bk_obj_icon'] = item.value
             },
@@ -180,19 +186,27 @@
                         id: this.activeModel['id'],
                         params: {...params, ...{modifier: this.userName}}
                     })
+                    this.$emit('confirm')
                 } else {
+                    let res = null
                     if (this.isMainLine) {
-                        await this.createMainlineObject({
-                            params: {...params, ...{creator: this.userName, bk_asst_obj_id: this.activeModel['bk_asst_obj_id']}}
+                        res = await this.createMainlineObject({
+                            params: {...params, ...{creator: this.userName, bk_asst_obj_id: this.activeModel['bk_asst_obj_id']}},
+                            config: {
+                                requestId: 'createModel'
+                            }
                         })
                     } else {
-                        await this.createObject({
-                            params: {...params, ...{creator: this.userName}}
+                        res = await this.createObject({
+                            params: {...params, ...{creator: this.userName}},
+                            config: {
+                                requestId: 'createModel'
+                            }
                         })
                     }
-                    this.$emit('update:isEdit', true)
+                    this.$store.commit('objectModel/setActiveModel', res)
+                    this.$emit('createObject')
                 }
-                this.$emit('confirm')
             },
             async getObjInfo () {
                 const res = await this.searchObjects({
