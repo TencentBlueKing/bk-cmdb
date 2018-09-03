@@ -66,7 +66,7 @@
                 this.$router.go(-1)
             },
             setTableHeader () {
-                const headerProperties = this.$tools.getHeaderProperties(this.properties, this.customBusinessColumns)
+                const headerProperties = this.$tools.getHeaderProperties(this.properties, this.customBusinessColumns, ['bk_biz_name'])
                 this.header = [{
                     id: 'bk_biz_id',
                     name: 'ID'
