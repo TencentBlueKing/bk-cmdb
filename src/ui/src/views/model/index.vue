@@ -36,7 +36,7 @@
                 ref="details"
                 :isEdit.sync="slider.isEdit"
                 @updateModel="updateTopo"
-                @cancel="closeSlider"
+                @cancel="slider.isShow = false"
             ></v-details>
         </cmdb-slider>
         <v-pop
@@ -116,6 +116,9 @@
             },
             closeSlider () {
                 this.slider.isCloseConfirmShow = this.$refs.details.isCloseConfirmShow()
+                if (!this.slider.isCloseConfirmShow) {
+                    this.slider.isShow = false
+                }
             },
             closePop () {
                 this.pop.isShow = false

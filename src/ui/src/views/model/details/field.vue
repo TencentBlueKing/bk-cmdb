@@ -1,6 +1,11 @@
 <template>
     <div class="field-wrapper">
-        <v-base-info :isReadOnly="isReadOnly" :isEdit.sync="isEdit" @confirm="confirm" @cancel="cancel"></v-base-info>
+        <v-base-info ref="baseInfo" 
+        :isReadOnly="isReadOnly" 
+        :isEdit.sync="isEdit" 
+        @createObject="createObject" 
+        @confirm="confirm" 
+        @cancel="cancel"></v-base-info>
         <div class="field-content clearfix" v-if="isEdit">
             <div class="create-field clearfix">
                 <bk-button v-if="!isReadOnly" type="primary" :title="$t('ModelManagement[\'新增字段\']')" @click="createField">
@@ -44,6 +49,7 @@
                         </ul>
                         <div class="field-detail" v-if="field.isShow">
                             <v-model-field
+                                ref="modelField"
                                 :isReadOnly="isReadOnly"
                                 :isEditField="true"
                                 :field="field"
@@ -126,6 +132,19 @@
             ...mapActions('objectBatch', [
                 'importObjectAttribute'
             ]),
+            createObject () {
+                this.$emit('update:isEdit', true)
+                this.initFieldList()
+            },
+            isCloseConfirmShow () {
+                if (this.$refs.baseInfo.isCloseConfirmShow()) {
+                    return true
+                }
+                if (this.$refs.modelField[0] && this.$refs.modelField[0].isCloseConfirmShow()) {
+                    return true
+                }
+                return false
+            },
             createField () {
                 this.createForm.isShow = true
             },
