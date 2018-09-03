@@ -229,11 +229,9 @@ func (s *Service) GetUserCustomQueryResult(req *restful.Request, resp *restful.R
 	input.AppID = intAppID
 
 	err = json.Unmarshal([]byte(result.Data.Info), &input)
-	fmt.Println("GetUserCustomQueryResult", appID, ID, result.Data.Info, input)
-
 	if nil != err {
+		blog.Errorf("UserAPIResult custom unmarshal failed,  err: %v, appid:%s, id:%s, logID:%s", err.Error(), appID, ID, util.GetHTTPCCRequestID(req.Request.Header))
 		resp.WriteError(http.StatusBadGateway, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
-
 		return
 	}
 
