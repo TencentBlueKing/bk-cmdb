@@ -63,7 +63,7 @@
 
 <style lang="scss" scoped>
     .details-wrapper{
-        padding: 8px 20px 0;
+        padding: 8px 0 0;
         height: 100%;
     }
 </style>
