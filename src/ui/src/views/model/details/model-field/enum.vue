@@ -29,7 +29,7 @@
             <button class="enum-btn" @click="deleteEnum(index)" :disabled="enumList.length === 1 || isReadOnly">
                 <i class="icon-cc-del"></i>
             </button>
-            <button class="enum-btn" @click="addEnum" :disabled="isReadOnly">
+            <button class="enum-btn" @click="addEnum" :disabled="isReadOnly" v-if="index === enumList.length - 1">
                 <i class="bk-icon icon-plus"></i>
             </button>
         </li>
