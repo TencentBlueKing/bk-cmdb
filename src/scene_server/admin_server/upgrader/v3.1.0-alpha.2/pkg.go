@@ -10,16 +10,27 @@
  * limitations under the License.
  */
 
-package models
+package v3v0v1alpha2
 
 import (
-	"encoding/json"
+	"context"
+
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage/dal"
 )
 
-func GetOptionStr(o interface{}) string {
-	ret, err := json.Marshal(o)
+func init() {
+	upgrader.RegistUpgrader("v3.1.0-alpha.2", upgrade)
+}
+
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	err = addBkStartParamRegex(ctx, db, conf)
 	if err != nil {
-		return ""
+		return err
 	}
-	return string(ret)
+	err = updateLanguageField(ctx, db, conf)
+	if err != nil {
+		return err
+	}
+	return
 }

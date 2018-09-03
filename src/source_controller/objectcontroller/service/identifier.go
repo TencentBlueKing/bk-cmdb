@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 
 	"github.com/emicklei/go-restful"
 
@@ -237,14 +238,24 @@ func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Respons
 			}
 		}
 		// fill process
+		appmoduleProcID2moduleIDs := map[int64][]int64{} // ProcID->moduleIDs
 		for key, moduleIDs := range appmodulename2moduleIDs {
 			for _, procID := range appmodulename2ProcIDs[key] {
-				if proc, ok := procs[procID]; ok {
-					proc.BindModules = append(proc.BindModules, moduleIDs...)
-					inst.Process = append(inst.Process, proc)
-				}
+				appmoduleProcID2moduleIDs[procID] = append(appmoduleProcID2moduleIDs[procID], moduleIDs...)
 			}
 		}
+
+		for procID, moduleIDs := range appmoduleProcID2moduleIDs {
+			if proc, ok := procs[procID]; ok {
+				proc.BindModules = append(proc.BindModules, moduleIDs...)
+				inst.Process = append(inst.Process, proc)
+			}
+		}
+
+	}
+
+	for _, host := range hosts {
+		sort.Sort(metadata.HostIdentProcessSorter(host.Process))
 	}
 
 	// returns
