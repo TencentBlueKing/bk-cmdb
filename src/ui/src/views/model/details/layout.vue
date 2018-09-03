@@ -394,7 +394,7 @@
                 this.hiddenFieldCopy = this.$tools.clone(this.hiddenField)
             },
             cancel () {
-
+                this.$emit('cancel')
             }
         }
     }
@@ -589,6 +589,10 @@
         .icon-cc-key {
             transform: scale(calc(9 / 12));
             color: #ffb400;
+        }
+        .icon-cc-required {
+            font-size: 12px;
+            transform: scale(calc(9 / 12));
         }
     }
 </style>
