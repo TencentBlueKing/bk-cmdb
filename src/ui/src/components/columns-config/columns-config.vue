@@ -16,11 +16,22 @@
             <div class="wrapper-header selected-header">
                 <label class="header-label">{{$t("Inst['已显示属性']")}}</label>
             </div>
-            <vue-draggable element="ul" class="property-list property-list-selected" v-model="selectedProperties" :options="{animation: 150}">
-                <li class="property-item" v-for="(property, index) in selectedProperties">
-                    <i class="icon-triple-dot"></i>
+            <vue-draggable element="ul" class="property-list property-list-selected"
+                v-model="selectedProperties"
+                :options="{
+                    animation: 150,
+                    filter: '.disabled'
+                }">
+                <li class="property-item"
+                    v-for="(property, index) in selectedProperties"
+                    :class="{disabled: checkDisabled(property)}">
+                    <i class="icon-triple-dot" v-if="!checkDisabled(property)"></i>
                     <span>{{property['bk_property_name']}}</span>
-                    <i class="bk-icon icon-eye-slash-shape" @click="unselectProperty(property)" v-tooltip="$t('Common[\'隐藏\']')"></i>
+                    <i class="bk-icon icon-eye-slash-shape"
+                        v-if="!checkDisabled(property)"
+                        v-tooltip="$t('Common[\'隐藏\']')"
+                        @click="unselectProperty(property)">
+                    </i>
                 </li>
             </vue-draggable>
         </div>
@@ -47,6 +58,12 @@
                 }
             },
             selected: {
+                type: Array,
+                default () {
+                    return []
+                }
+            },
+            disabledColumns: {
                 type: Array,
                 default () {
                     return []
@@ -122,6 +139,9 @@
                     this.$info(this.$t('Common["至少选择N项"]', {n: this.min}))
                 }
             },
+            checkDisabled (property) {
+                return this.disabledColumns.includes(property['bk_property_id'])
+            },
             handleApply () {
                 if (this.localSelcted.length > this.max) {
                     this.$info(this.$t('Common["最多选择N项"]', {n: this.max}))
@@ -192,6 +212,9 @@
             line-height: 42px;
             padding: 0 0 0 27px;
             cursor: pointer;
+            &.disabled {
+                cursor: not-allowed;
+            }
             &:hover{
                 background-color: #f9f9f9;
             }
