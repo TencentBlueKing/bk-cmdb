@@ -17,7 +17,8 @@
         </cmdb-hosts-filter>
         <cmdb-hosts-table class="resource-main" ref="resourceTable"
             :columns-config-key="table.columnsConfigKey"
-            :columns-config-properties="properties.host"
+            :columns-config-properties="columnsConfigProperties"
+            :columns-config-disabled-columns="['bk_host_innerip', 'bk_cloud_id', 'bk_biz_name', 'bk_module_name']"
             @on-checked="handleChecked"
             @on-set-header="handleSetHeader">
             <div class="resource-options clearfix" slot="options">
@@ -117,6 +118,13 @@
             ...mapGetters('objectBiz', ['business']),
             clipboardList () {
                 return this.table.header.filter(header => header.type !== 'checkbox')
+            },
+            columnsConfigProperties () {
+                const setProperties = this.properties.set.filter(property => ['bk_set_name'].includes(property['bk_property_id']))
+                const moduleProperties = this.properties.module.filter(property => ['bk_module_name'].includes(property['bk_property_id']))
+                const businessProperties = this.properties.biz.filter(property => ['bk_biz_name'].includes(property['bk_property_id']))
+                const hostProperties = this.properties.host
+                return [...setProperties, ...moduleProperties, ...businessProperties, ...hostProperties]
             }
         },
         async created () {
