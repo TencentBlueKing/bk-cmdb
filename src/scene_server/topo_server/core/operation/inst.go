@@ -208,7 +208,7 @@ func (c *commonInst) setInstAsst(params types.ContextParams, obj model.Object, i
 	if nil != err {
 		return err
 	}
-	attrs, err := obj.GetAttributes()
+	attrs, err := obj.GetAttributesExceptInnerFields()
 	if nil != err {
 		return err
 	}
