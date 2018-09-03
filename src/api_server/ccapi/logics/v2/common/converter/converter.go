@@ -297,7 +297,10 @@ func convertToV2HostListMain(resDataInfoV3 interface{}) (interface{}, error) {
 		common.BKHostNameField,
 		common.BKOSNameField}
 	for _, item := range resDataInfoV3.([]interface{}) {
-		itemMap := item.(map[string]interface{})
+		itemMap, ok := item.(map[string]interface{})
+		if !ok {
+			continue
+		}
 
 		convMap, err := convertFieldsIntToStr(itemMap, convFields)
 		if nil != err {
