@@ -1,6 +1,6 @@
 <template>
     <div class="layout-wrapper">
-        <div class="layout-box">
+        <div class="layout-box" v-bkloading="{isLoading: $loading(['searchObjectAttribute', 'searchGroup', 'updatePropertyGroup'])}">
             <div class="hidden-list">
                 <div class="hidden-list-title">
                     <i class="bk-icon icon-eye-slash-shape"></i>
@@ -66,7 +66,7 @@
             </ul>
         </div>
         <footer class="footer-btn" v-if="!isReadOnly">
-            <bk-button type="primary" @click="confirm" :loading="$loading('saveBaseInfo')">{{$t('Common["确定"]')}}</bk-button>
+            <bk-button type="primary" @click="confirm" :loading="$loading('updatePropertyGroup')">{{$t('Common["确定"]')}}</bk-button>
             <bk-button class="default" type="default" :title="$t('Common[\'取消\']')" @click="cancel">{{$t('Common["取消"]')}}</bk-button>
         </footer>
     </div>
@@ -386,7 +386,7 @@
                 await this.updatePropertyGroup({
                     params,
                     config: {
-                        requestId: 'updateFe'
+                        requestId: 'updatePropertyGroup'
                     }
                 })
                 this.$success(this.$t('Common["更新成功"]'))
