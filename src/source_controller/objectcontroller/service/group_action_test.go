@@ -14,7 +14,6 @@ package service
 
 import (
 	"errors"
-	"github.com/emicklei/go-restful"
 	"testing"
 )
 
