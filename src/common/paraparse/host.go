@@ -62,26 +62,26 @@ func ParseHostParams(input []metadata.ConditionItem, output map[string]interface
 		case common.BKDBEQ:
 			output[i.Field] = i.Value
 		case common.BKDBIN:
-			d := make(map[string]interface{})
-			d[i.Operator] = i.Value
-			output[i.Field] = d
+			queryCondItem := make(map[string]interface{})
+			queryCondItem[i.Operator] = i.Value
+			output[i.Field] = queryCondItem
 		case common.BKDBLIKE:
 			//d := make(map[string]interface{})
-			field, ok := output[i.Field].(map[string]interface{})
+			queryCondItem, ok := output[i.Field].(map[string]interface{})
 			if !ok {
-				field = make(map[string]interface{})
+				queryCondItem = make(map[string]interface{})
 			}
 			valStr, ok := i.Value.(string)
 			if ok {
-				field[i.Operator] = SpeceialCharChange(valStr)
+				queryCondItem[i.Operator] = SpeceialCharChange(valStr)
 			} else {
-				field[i.Operator] = i.Value
+				queryCondItem[i.Operator] = i.Value
 			}
-			output[i.Field] = field
+			output[i.Field] = queryCondItem
 		default:
-			field, ok := output[i.Field].(map[string]interface{})
+			queryCondItem, ok := output[i.Field].(map[string]interface{})
 			if !ok {
-				field = make(map[string]interface{})
+				queryCondItem = make(map[string]interface{})
 			}
 			switch rawVal := i.Value.(type) {
 			case string:
@@ -89,8 +89,8 @@ func ParseHostParams(input []metadata.ConditionItem, output map[string]interface
 					i.Value = util.Str2Time(rawVal)
 				}
 			}
-			field[i.Operator] = i.Value
-			output[i.Field] = field
+			queryCondItem[i.Operator] = i.Value
+			output[i.Field] = queryCondItem
 		}
 	}
 	return nil
