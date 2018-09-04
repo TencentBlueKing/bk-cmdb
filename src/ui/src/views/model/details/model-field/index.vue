@@ -33,7 +33,7 @@
                 <input type="text" class="cmdb-form-input" v-model.trim="fieldInfo['placeholder']" :disabled="isReadOnly">
             </div>
         </div>
-        <div class="form-content">
+        <div class="form-content details">
             <h3>{{$t('ModelManagement["选项"]')}}</h3>
             <div class="clearfix">
                 <div class="form-item has-right-content">
@@ -258,8 +258,16 @@
 
 <style lang="scss" scoped>
     .model-field-wrapper {
+        height: 100%;
         .form-content {
             margin-bottom: 30px;
+            &.details {
+                height: calc(100% - 134px);
+                .field-config {
+                    max-height: calc(100% - 154px);
+                    @include scrollbar;
+                }
+            }
             h3 {
                 margin-bottom: 10px;
                 padding-left: 4px;

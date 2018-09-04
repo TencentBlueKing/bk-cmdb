@@ -8,7 +8,7 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 <template>
-    <div class="topo-box model" :class="{'no-edit': bkClassificationId === 'bk_host_manage'}" v-bkloading="{isLoading: false}">
+    <div class="topo-box model" :class="{'no-edit': bkClassificationId === 'bk_host_manage'}" v-bkloading="{isLoading: isLoading}">
         <div ref="topo" class="topo" v-show="modelList.length !== 0"></div>
         <button v-if="bkClassificationId !== 'bk_host_manage'" class="bk-button vis-button vis-setup" @click="editClassify" :title="$t('Common[\'编辑\']')">
             <i class="icon icon-cc-edit"></i>
@@ -60,6 +60,7 @@
     export default {
         data () {
             return {
+                isLoading: false,
                 networkInstance: null,
                 networkDataSet: {
                     nodes: null,
@@ -204,6 +205,7 @@
                 this.networkInstance.moveTo({scale: scale})
             },
             async initTopo () {
+                this.isLoading = true
                 this.setNodes()
                 await this.setEdges()
                 this.networkInstance = new Vis.Network(this.$refs.topo, {
@@ -211,6 +213,7 @@
                     edges: this.networkDataSet.edges
                 }, this.network.options)
                 this.addListener()
+                this.isLoading = false
             },
             async getTopoStructure () {
                 const res = await this.$store.dispatch('objectModel/searchObjectTopo', {params: {bk_classification_id: this.bkClassificationId}})

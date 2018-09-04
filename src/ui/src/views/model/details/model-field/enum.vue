@@ -57,8 +57,6 @@
                 defaultIndex: 0
             }
         },
-        computed: {
-        },
         watch: {
             value () {
                 this.initValue()
