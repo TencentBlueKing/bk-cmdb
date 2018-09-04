@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package x08_09_04_1
+package x08_09_04_01
 
 import (
 	"configcenter/src/common/blog"
@@ -19,23 +19,23 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("x08.09.04.1", upgrade)
+	upgrader.RegistUpgrader("x08.09.04.01", upgrade)
 }
 
 func upgrade(db storage.DI, conf *upgrader.Config) (err error) {
 	err = updateSystemProperty(db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x08.09.04.1] updateSystemProperty error  %s", err.Error())
+		blog.Errorf("[upgrade x08.09.04.01] updateSystemProperty error  %s", err.Error())
 		return err
 	}
 	err = updateIcon(db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x08.09.04.1] updateIcon error  %s", err.Error())
+		blog.Errorf("[upgrade x08.09.04.01] updateIcon error  %s", err.Error())
 		return err
 	}
 	err = fixesProcess(db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x08.09.04.1] fixesProcess error  %s", err.Error())
+		blog.Errorf("[upgrade x08.09.04.01] fixesProcess error  %s", err.Error())
 		return err
 	}
 	return

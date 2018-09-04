@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package x08_09_04_1
+package x08_09_04_01
 
 import (
 	"configcenter/src/common"
