@@ -248,6 +248,8 @@ const (
 	CCErrTopoBizTopoLevelOverLimit = 1101035
 	// CCErrTopoInstHasBeenAssociation the mainline topo level over limit
 	CCErrTopoInstHasBeenAssociation = 1101036
+	// it is forbidden to delete , that has some insts
+	CCErrTopoObjectHasSomeInstsForbiddenToDelete = 1101037
 
 	CCErrTopoAppDeleteFailed                       = 1001031
 	CCErrTopoAppUpdateFailed                       = 1001032
