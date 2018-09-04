@@ -20,11 +20,6 @@
         components: {
             vModelField
         },
-        data () {
-            return {
-                
-            }
-        },
         methods: {
             ...mapActions('objectModelProperty', [
                 'createObjectAttribute'
@@ -59,6 +54,7 @@
             }
         }
         .field-content {
+            height: calc(100% - 40px);
             padding: 0 40px;
         }
     }
