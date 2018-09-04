@@ -67,33 +67,30 @@ func ParseHostParams(input []metadata.ConditionItem, output map[string]interface
 			output[i.Field] = d
 		case common.BKDBLIKE:
 			//d := make(map[string]interface{})
-			d, ok := output[i.Field].(map[string]interface{})
+			field, ok := output[i.Field].(map[string]interface{})
 			if !ok {
-				d = make(map[string]interface{})
+				field = make(map[string]interface{})
 			}
 			valStr, ok := i.Value.(string)
 			if ok {
-				d[i.Operator] = SpeceialCharChange(valStr)
+				field[i.Operator] = SpeceialCharChange(valStr)
 			} else {
-				d[i.Operator] = i.Value
+				field[i.Operator] = i.Value
 			}
-			output[i.Field] = d
+			output[i.Field] = field
 		default:
-			d, ok := output[i.Field].(map[string]interface{})
+			field, ok := output[i.Field].(map[string]interface{})
 			if !ok {
-				d = make(map[string]interface{})
+				field = make(map[string]interface{})
 			}
-			switch i.Value.(type) {
+			switch rawVal := i.Value.(type) {
 			case string:
-				valStr := i.Value.(string)
-				if util.IsTime(valStr) {
-
-					i.Value = util.Str2Time(valStr)
+				if util.IsTime(rawVal) {
+					i.Value = util.Str2Time(rawVal)
 				}
-
 			}
-			d[i.Operator] = i.Value
-			output[i.Field] = d
+			field[i.Operator] = i.Value
+			output[i.Field] = field
 		}
 	}
 	return nil
