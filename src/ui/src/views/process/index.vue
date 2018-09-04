@@ -18,7 +18,7 @@
             </div>
         </div>
         <cmdb-table class="process-table" ref="table"
-            :loading="$loading()"
+            :loading="$loading('requestProcess')"
             :checked.sync="table.checked"
             :header="table.header"
             :list="table.list"
@@ -49,11 +49,22 @@
                         @on-submit="handleSave"
                         @on-cancel="handleCancel">
                     </cmdb-form>
+                    <cmdb-form-multiple v-else-if="attribute.type === 'multiple'"
+                        :properties="properties"
+                        :propertyGroups="propertyGroups"
+                        @on-submit="handleMultipleSave"
+                        @on-cancel="handleMultipleCancel">
+                    </cmdb-form-multiple>
                 </bk-tabpanel>
-                <bk-tabpanel name="relevance" :title="$t('HostResourcePool[\'关联\']')"></bk-tabpanel>
+                <bk-tabpanel name="moduleBind" :title="$t('ProcessManagement[\'模块绑定\']')">
+                    <v-module v-if="tab.active === 'moduleBind'"
+                        :processId="attribute.inst.details['bk_process_id']"
+                        :bizId="filter.bizId"
+                    ></v-module>
+                </bk-tabpanel>
                 <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')">
                     <cmdb-audit-history v-if="tab.active === 'history'"
-                        target="biz"
+                        target="process"
                         :instId="attribute.inst.details['bk_process_id']">
                     </cmdb-audit-history>
                 </bk-tabpanel>
@@ -64,7 +75,13 @@
 
 <script>
     import { mapGetters, mapActions } from 'vuex'
+    import cmdbAuditHistory from '@/components/audit-history/audit-history'
+    import vModule from './module'
     export default {
+        components: {
+            cmdbAuditHistory,
+            vModule
+        },
         data () {
             return {
                 slider: {
@@ -106,11 +123,29 @@
         methods: {
             ...mapActions('objectModelFieldGroup', ['searchGroup']),
             ...mapActions('objectModelProperty', ['searchObjectAttribute']),
-            ...mapActions('procConfig', ['searchProcess', 'deleteProcess', 'createProcess', 'updateProcess']),
+            ...mapActions('procConfig', ['searchProcess', 'deleteProcess', 'createProcess', 'updateProcess', 'batchUpdateProcess']),
             handleMultipleEdit () {
                 this.attribute.type = 'multiple'
                 this.slider.title = this.$t('Inst[\'批量更新\']')
                 this.slider.show = true
+            },
+            handleMultipleSave (values) {
+                this.batchUpdateProcess({
+                    bizId: this.filter.bizId,
+                    params: {
+                        ...values,
+                        bk_process_id: this.table.checked.join(',')
+                    },
+                    config: {
+                        requestId: `processBatchUpdate`
+                    }
+                }).then(() => {
+                    this.$success(this.$t('Common["修改成功"]'))
+                    this.handlePageChange(1)
+                })
+            },
+            handleMultipleCancel () {
+                this.slider.show = false
             },
             async reload () {
                 this.properties = await this.searchObjectAttribute({
