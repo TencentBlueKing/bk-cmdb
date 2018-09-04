@@ -10,20 +10,32 @@
  * limitations under the License.
  */
 
-package v3v0v1alpha2
+package x08_09_04_1
 
 import (
+	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage"
 )
 
 func init() {
-	upgrader.RegistUpgrader("v3.1.0-alpha.2", upgrade)
+	upgrader.RegistUpgrader("x08.09.04.1", upgrade)
 }
 
 func upgrade(db storage.DI, conf *upgrader.Config) (err error) {
 	err = updateSystemProperty(db, conf)
 	if err != nil {
+		blog.Errorf("[upgrade x08.09.04.1] updateSystemProperty error  %s", err.Error())
+		return err
+	}
+	err = updateIcon(db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade x08.09.04.1] updateIcon error  %s", err.Error())
+		return err
+	}
+	err = fixesProcess(db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade x08.09.04.1] fixesProcess error  %s", err.Error())
 		return err
 	}
 	return
