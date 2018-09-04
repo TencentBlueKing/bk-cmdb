@@ -19,33 +19,74 @@ import (
 	"configcenter/src/common/language"
 	"configcenter/src/storage/mock"
 	"github.com/emicklei/go-restful"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"testing"
 )
 
-func NewRestfulTestCase(data string) (*Service, *restful.Request, *restful.Response) {
-	req, resp := NewRestfulRequestResponse(data)
-	return NewService(), req, resp
+type TestCase struct {
+	RequestBody        string
+	ExpectResponseBody string
+	ExpectStatus       int
+	Callback           func(responseBody string, status int) error
 }
 
-func NewRestfulRequestResponse(data string) (*restful.Request, *restful.Response) {
-	bodyReader := strings.NewReader(data)
+func AssertEqual(t *testing.T, svc func(request *restful.Request, response *restful.Response), requestBody string, expectResponseBody string, expectStatus int) {
+	resp, body := CallService(svc, requestBody)
+	if strings.TrimSpace(expectResponseBody) != strings.TrimSpace(body) {
+		t.Fail()
+	}
+	if expectStatus != resp.StatusCode() {
+		t.Fail()
+	}
+}
+
+func AssertCallback(t *testing.T, svc func(request *restful.Request, response *restful.Response), requestBody string, callback func(responseBody string, status int) error) {
+	resp, body := CallService(svc, requestBody)
+	if err := callback(body, resp.StatusCode()); err != nil {
+		t.Fail()
+	}
+}
+
+func AssertCases(t *testing.T, svc func(request *restful.Request, response *restful.Response), cases []*TestCase) {
+	for _, c := range cases {
+		if c.Callback == nil {
+			AssertEqual(t, svc, c.RequestBody, c.ExpectResponseBody, c.ExpectStatus)
+		} else {
+			AssertCallback(t, svc, c.RequestBody, c.Callback)
+		}
+	}
+}
+
+func CallService(svc func(request *restful.Request, response *restful.Response), requestBody string) (response *restful.Response, responseBody string) {
+
+	// build request
+	bodyReader := strings.NewReader(requestBody)
 	httpRequest, _ := http.NewRequest("POST", "/", bodyReader)
 	httpRequest.Header.Set("Content-Type", "application/json")
+	//httpRequest.Header.Set("Accept", "application/json;application/xml")
 	httpRequest.Header.Set(common.BKHTTPOwnerID, "")
-	request := &restful.Request{Request: httpRequest}
+	req := &restful.Request{Request: httpRequest}
 
-	resp := &restful.Response{ResponseWriter: httptest.NewRecorder()}
+	// build response
+	recorder := httptest.NewRecorder()
+	response = &restful.Response{ResponseWriter: recorder}
+	response.SetRequestAccepts("application/json;application/xml")
+	response.WriteHeader(200)
 
-	resp.SetRequestAccepts("application/json;application/xml")
-	resp.WriteHeader(200)
-	resp.Write([]byte("ok"))
+	// call real service
+	svc(req, response)
 
-	return request, resp
+	// get response body
+	body, _ := ioutil.ReadAll(recorder.Result().Body)
+	responseBody = string(body)
+
+	return
 }
 
-func NewService() *Service {
+func NewMockService() *Service {
 	core := &backbone.Engine{
 		Language: language.NewFromCtx(language.EmptyLanguageSetting),
 		CCErr:    errors.NewFromCtx(errors.EmptyErrorsSetting),

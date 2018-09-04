@@ -13,121 +13,46 @@
 package service
 
 import (
-	"testing"
-
+	"errors"
 	"github.com/emicklei/go-restful"
+	"testing"
 )
 
 func TestService_CreateUserGroup(t *testing.T) {
-	type args struct {
-		req  *restful.Request
-		resp *restful.Response
+
+	// assert with response for custom
+	resp, respBody := CallService(NewMockService().CreateUserGroup, `abcd`)
+	if resp.StatusCode() != 400 {
+		t.Fail()
+	}
+	if respBody == `{"result":false,"bk_error_code":1199000,"bk_error_msg":"invalid character 'a' looking for beginning of value","data":null}
+` {
+		t.Fail()
 	}
 
-	// get mock object
-	svc, req, resp := NewRestfulTestCase(`{"k":"v"}`)
+	// assert with case array
+	AssertCases(t, NewMockService().CreateUserGroup, []*TestCase{
+		// case with expect response
+		&TestCase{`{"k":"v"}`, `{"result":true,"bk_error_code":0,"bk_error_msg":"success","data":null}`, 200, nil},
 
-	tests := []struct {
-		name    string
-		service *Service
-		args    args
-	}{
-		// TODO: Add test cases.
-		{"", svc, args{req, resp}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.service.CreateUserGroup(tt.args.req, tt.args.resp)
-			if tt.args.resp.StatusCode() != 200 {
-				t.Fail()
+		// case with callback
+		&TestCase{`[1,2]`, ``, 0, func(responseBody string, status int) error {
+			if status != 400 {
+				return errors.New("bad status")
 			}
-		})
-	}
-}
+			return nil
+		}},
+	})
 
-func TestService_UpdateUserGroup(t *testing.T) {
-	type fields struct {
-		Core     *backbone.Engine
-		Instance storage.DI
-		Cache    *redis.Client
-	}
-	type args struct {
-		req  *restful.Request
-		resp *restful.Response
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cli := &Service{
-				Core:     tt.fields.Core,
-				Instance: tt.fields.Instance,
-				Cache:    tt.fields.Cache,
-			}
-			cli.UpdateUserGroup(tt.args.req, tt.args.resp)
-		})
-	}
-}
+	// assert with callback
+	AssertCallback(t, NewMockService().CreateUserGroup, `{"k":"v"}`, func(responseBody string, status int) error {
+		if status != 200 {
+			return errors.New("bad status")
+		}
+		return nil
+	})
 
-func TestService_DeleteUserGroup(t *testing.T) {
-	type fields struct {
-		Core     *backbone.Engine
-		Instance storage.DI
-		Cache    *redis.Client
-	}
-	type args struct {
-		req  *restful.Request
-		resp *restful.Response
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cli := &Service{
-				Core:     tt.fields.Core,
-				Instance: tt.fields.Instance,
-				Cache:    tt.fields.Cache,
-			}
-			cli.DeleteUserGroup(tt.args.req, tt.args.resp)
-		})
-	}
-}
+	// assert with expect
+	AssertEqual(t, NewMockService().CreateUserGroup, `{"k":"v"}`, `{"result":true,"bk_error_code":0,"bk_error_msg":"success","data":null}`, 200)
 
-func TestService_SearchUserGroup(t *testing.T) {
-	type fields struct {
-		Core     *backbone.Engine
-		Instance storage.DI
-		Cache    *redis.Client
-	}
-	type args struct {
-		req  *restful.Request
-		resp *restful.Response
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cli := &Service{
-				Core:     tt.fields.Core,
-				Instance: tt.fields.Instance,
-				Cache:    tt.fields.Cache,
-			}
-			cli.SearchUserGroup(tt.args.req, tt.args.resp)
-		})
-	}
 }
