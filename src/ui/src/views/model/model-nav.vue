@@ -36,7 +36,6 @@
 
 <script>
     import { mapGetters } from 'vuex'
-    import bus from '@/utils/bus'
     export default {
         data () {
             return {
