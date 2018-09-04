@@ -107,8 +107,8 @@ const actions = {
      * @param {Number} processId 进程id
      * @return {promises} promises 对象
      */
-    getProcessBindModule ({ commit, state, dispatch, rootGetters }, { bizId, processId }) {
-        return $http.get(`proc/${rootGetters.supplierAccount}/${bizId}/${processId}`)
+    getProcessBindModule ({ commit, state, dispatch, rootGetters }, { bizId, processId, config }) {
+        return $http.get(`proc/module/${rootGetters.supplierAccount}/${bizId}/${processId}`, config)
     },
 
     /**
@@ -118,11 +118,11 @@ const actions = {
      * @param {String} dispatch store dispatch action hander
      * @param {Number} bizId 业务id
      * @param {Number} processId 进程id
-     * @param {String} bkModuleName 模块名称
+     * @param {String} moduleName 模块名称
      * @return {promises} promises 对象
      */
-    bindProcessModule ({ commit, state, dispatch, rootGetters }, { bizId, processId, bkModuleName }) {
-        return $http.put(`proc/module/${rootGetters.supplierAccount}/${bizId}/${processId}/${bkModuleName}`)
+    bindProcessModule ({ commit, state, dispatch, rootGetters }, { bizId, processId, moduleName, config }) {
+        return $http.put(`proc/module/${rootGetters.supplierAccount}/${bizId}/${processId}/${moduleName}`, {}, config)
     },
 
     /**
@@ -132,11 +132,11 @@ const actions = {
      * @param {String} dispatch store dispatch action hander
      * @param {Number} bizId 业务id
      * @param {Number} processId 进程id
-     * @param {String} bkModuleName 模块名称
+     * @param {String} moduleName 模块名称
      * @return {promises} promises 对象
      */
-    deleteProcessModuleBinding ({ commit, state, dispatch, rootGetters }, { bizId, processId, bkModuleName }) {
-        return $http.delete(`proc/module/${rootGetters.supplierAccount}/${bizId}/${processId}/${bkModuleName}`)
+    deleteProcessModuleBinding ({ commit, state, dispatch, rootGetters }, { bizId, processId, moduleName, config }) {
+        return $http.delete(`proc/module/${rootGetters.supplierAccount}/${bizId}/${processId}/${moduleName}`, config)
     }
 }
 
