@@ -18,7 +18,7 @@ import (
 	"configcenter/src/framework/core/types"
 )
 
-func createPlat(target model.Model) (Inst, error) {
+func createPlat(target model.Model) (CommonInstInterface, error) {
 	return &inst{target: target, datas: types.MapStr{}}, nil
 }
 
