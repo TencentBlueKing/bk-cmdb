@@ -10,12 +10,13 @@
  * limitations under the License.
  */
 
-package v3v0v1alpha2
+package x08_09_04_1
 
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/validator"
 	"configcenter/src/storage"
 )
 
@@ -44,4 +45,40 @@ func updateSystemProperty(db storage.DI, conf *upgrader.Config) (err error) {
 	}
 
 	return db.UpdateByCondition(tablename, data, condition)
+}
+
+func updateIcon(db storage.DI, conf *upgrader.Config) (err error) {
+	condition := map[string]interface{}{
+		"bk_obj_id": common.BKInnerObjIDTomcat,
+	}
+	data := map[string]interface{}{
+		"bk_obj_icon": "icon-cc-tomcat",
+	}
+	err = db.UpdateByCondition(common.BKTableNameObjDes, data, condition)
+	if err != nil {
+		return err
+	}
+	condition = map[string]interface{}{
+		"bk_obj_id": common.BKInnerObjIDApache,
+	}
+	data = map[string]interface{}{
+		"bk_obj_icon": "icon-cc-apache",
+	}
+
+	return db.UpdateByCondition(common.BKTableNameObjDes, data, condition)
+}
+
+func fixesProcess(db storage.DI, conf *upgrader.Config) (err error) {
+	condition := map[string]interface{}{
+		common.BKObjIDField:      common.BKInnerObjIDProc,
+		common.BKPropertyIDField: map[string]interface{}{"$in": []string{"priority", "proc_num", "auto_time_gap", "timeout"}},
+	}
+	data := map[string]interface{}{
+		"option": validator.IntOption{Min: "1", Max: "10000"},
+	}
+	err = db.UpdateByCondition(common.BKTableNameObjAttDes, data, condition)
+	if nil != err {
+		return err
+	}
+	return nil
 }
