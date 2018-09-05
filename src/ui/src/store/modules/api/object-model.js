@@ -64,8 +64,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    searchObjects ({ commit, state, dispatch }, { params }) {
-        return $http.post(`objects`, params)
+    searchObjects ({ commit, state, dispatch }, { params, config }) {
+        return $http.post(`objects`, params, config)
     },
 
     /**
