@@ -12,7 +12,7 @@
 
 package config
 
-var config Config
+var config = Config{}
 
 // Get returns the parsed config
 func Get() Config {
