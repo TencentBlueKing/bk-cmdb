@@ -15,10 +15,12 @@ package logics
 import (
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
+	"configcenter/src/thirdpartyclient/esbserver"
 )
 
 type Logics struct {
 	*backbone.Engine
+	EsbServ      esbserver.EsbClientInterface
 	ProcHostInst *ProcHostInstConfig
 	ErrHandle    errors.DefaultCCErrorIf
 }
