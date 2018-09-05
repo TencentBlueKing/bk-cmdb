@@ -137,6 +137,7 @@
                 this.getObjInfo()
             } else {
                 this.baseInfo['bk_classification_id'] = this.activeModel['bk_classification_id']
+                this.baseInfoCopy = this.$tools.clone(this.baseInfo)
             }
         },
         methods: {
@@ -205,6 +206,7 @@
                         })
                     }
                     this.$store.commit('objectModel/setActiveModel', res)
+                    this.baseInfoCopy = this.$tools.clone(this.baseInfo)
                     this.$emit('createObject')
                 }
             },

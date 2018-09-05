@@ -5,6 +5,7 @@
                 <v-field 
                     v-if="curTabName === 'host'"
                     :isEdit.sync="isEdit"
+                    @createObject="createObject"
                     @confirm="updateModel"
                     @cancel="cancel"
                     ref="tab"
@@ -50,6 +51,10 @@
         methods: {
             cancel () {
                 this.$emit('cancel')
+            },
+            createObject () {
+                this.$emit('createModel')
+                this.$emit('update:isEdit', true)
             },
             updateModel () {
                 this.$emit('updateModel')

@@ -133,14 +133,14 @@
                 'importObjectAttribute'
             ]),
             createObject () {
-                this.$emit('update:isEdit', true)
+                this.$emit('createObject')
                 this.initFieldList()
             },
             isCloseConfirmShow () {
                 if (this.$refs.baseInfo.isCloseConfirmShow()) {
                     return true
                 }
-                if (this.$refs.modelField[0] && this.$refs.modelField[0].isCloseConfirmShow()) {
+                if (this.$refs.modelField && this.$refs.modelField.length && this.$refs.modelField[0].isCloseConfirmShow()) {
                     return true
                 }
                 return false
