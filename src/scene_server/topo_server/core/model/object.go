@@ -37,7 +37,7 @@ type Object interface {
 	Parse(data frtypes.MapStr) (*meta.Object, error)
 
 	Origin() meta.Object
-
+	IsMainlineObject() (bool, error)
 	IsCommon() bool
 
 	SetRecordID(id int64)
@@ -135,6 +135,21 @@ func (o *object) GetObjectType() string {
 }
 func (o *object) IsCommon() bool {
 	return o.obj.IsCommon()
+}
+
+func (o *object) IsMainlineObject() (bool, error) {
+	attrs, err := o.GetAttributes()
+	if nil != err {
+		return false, err
+	}
+
+	for _, att := range attrs {
+		if att.IsMainlineField() {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 func (o *object) searchAttributes(cond condition.Condition) ([]Attribute, error) {
