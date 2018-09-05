@@ -276,8 +276,11 @@ func (lgc *Logics) getInstDetailsSub(pheader http.Header, objID, ownerID string,
 					Limit: page.Limit,
 					Sort:  page.Sort,
 				}
+				if "" == strings.TrimSpace(keyItemStr) {
+					dataItem[key] = make([]InstNameAsst, 0)
+					continue
+				}
 				if true == isDetail {
-
 					retData, _, err = lgc.getInstAsstDetail(ownerID, objID, strings.Split(keyItemStr, ","), pheader, query)
 				} else {
 					retData, _, err = lgc.getInstAsst(ownerID, objID, strings.Split(keyItemStr, ","), pheader, query)
