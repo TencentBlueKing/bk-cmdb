@@ -15,6 +15,7 @@ package condition
 import (
 	"reflect"
 
+	"configcenter/src/common"
 	types "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
@@ -52,19 +53,13 @@ type condition struct {
 // SetPage set the page
 func (cli *condition) SetPage(page types.MapStr) error {
 
-	start, err := page.Int64(metadata.PageStart)
-	if nil != err {
+	pageInfo := metadata.BasePage{}
+	if err := page.MarshalJSONInto(&pageInfo); nil != err {
 		return err
 	}
-
-	cli.start = start
-
-	sort, err := page.String(metadata.PageSort)
-	if nil != err {
-		return err
-	}
-	cli.sort = sort
-
+	cli.start = int64(pageInfo.Start)
+	cli.limit = int64(pageInfo.Limit)
+	cli.sort = pageInfo.Sort
 	return nil
 }
 
@@ -78,11 +73,11 @@ func (cli *condition) GetFields() []string {
 // Parse load the data into condition object
 func (cli *condition) Parse(data types.MapStr) error {
 
-	var fieldFunc func(tmpField *field, val interface{})
-	fieldFunc = func(tmpField *field, val interface{}) {
+	var fieldFunc func(tmpField *field, val interface{}) error
+	fieldFunc = func(tmpField *field, val interface{}) error {
 
 		if nil == val {
-			return
+			return nil
 		}
 		valType := reflect.TypeOf(val)
 
@@ -94,10 +89,10 @@ func (cli *condition) Parse(data types.MapStr) error {
 
 			tmpMap, err := types.NewFromInterface(val)
 			if nil != err {
-				panic(err) // very  serious
+				return err
 			}
 
-			tmpMap.ForEach(func(key string, subVal interface{}) {
+			tmpMap.ForEach(func(key string, subVal interface{}) error {
 				switch key {
 
 				default:
@@ -105,30 +100,37 @@ func (cli *condition) Parse(data types.MapStr) error {
 					tmp.fieldName = key
 					tmp.opeartor = BKDBEQ
 					tmp.condition = tmpField.condition
-					fieldFunc(tmp, subVal)
+					if err := fieldFunc(tmp, subVal); nil != err {
+						return err
+					}
 					tmpField.fields = append(tmpField.fields, tmp)
 				case BKDBEQ, BKDBGT, BKDBGTE, BKDBIN, BKDBNIN, BKDBLIKE, BKDBLT, BKDBLTE, BKDBNE, BKDBOR:
 					tmpField.opeartor = key
-					fieldFunc(tmpField, subVal)
+					if err := fieldFunc(tmpField, subVal); nil != err {
+						return err
+					}
 				}
 
+				return nil
 			})
 		}
-
+		return nil
 	}
 
-	data.ForEach(func(key string, val interface{}) {
+	return data.ForEach(func(key string, val interface{}) error {
 
 		tmpField := &field{}
 		tmpField.condition = cli
 		tmpField.fieldName = key
 		tmpField.opeartor = BKDBEQ
-		fieldFunc(tmpField, val)
+		if err := fieldFunc(tmpField, val); nil != err {
+			return err
+		}
 		cli.fields = append(cli.fields, tmpField)
 
+		return nil
 	})
 
-	return nil
 }
 
 // SetStart set the start
@@ -148,6 +150,9 @@ func (cli *condition) SetLimit(limit int64) {
 
 // GetLimit return the limit num
 func (cli *condition) GetLimit() int64 {
+	if cli.limit <= 0 {
+		return common.BKNoLimit
+	}
 	return cli.limit
 }
 

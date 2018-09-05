@@ -34,7 +34,7 @@ type iteratorInstSet struct {
 	bufIdx      int
 }
 
-func newIteratorInstSet(target model.Model, cond common.Condition) (SetIterator, error) {
+func NewIteratorInstSet(target model.Model, cond common.Condition) (SetIterator, error) {
 
 	iter := &iteratorInstSet{
 		targetModel: target,
