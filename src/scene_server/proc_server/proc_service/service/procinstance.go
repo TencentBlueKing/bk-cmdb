@@ -59,7 +59,7 @@ func (ps *ProcServer) OperateProcessInstance(req *restful.Request, resp *restful
 }
 
 func (ps *ProcServer) QueryProcessOperateResult(req *restful.Request, resp *restful.Response) {
-	language := util.GetLanguage(req.Request.Header)
+	/*language := util.GetLanguage(req.Request.Header)
 	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
 
 	namespace := req.PathParameter("namespace")
@@ -85,13 +85,13 @@ func (ps *ProcServer) QueryProcessOperateResult(req *restful.Request, resp *rest
 		result = append(result, ret.Data)
 	}
 
-	resp.WriteEntity(meta.NewSuccessResp(result))
+	resp.WriteEntity(meta.NewSuccessResp(result))*/
 }
 
 func (ps *ProcServer) operateProcInstanceByGse(procOp *meta.ProcessOperate, instModels map[string]*meta.ProcInstanceModel, namespace string, forward http.Header) (map[string]string, error) {
-	var err error
+	//var err error
 	model_TaskId := make(map[string]string)
-	for key, model := range instModels {
+	/*for key, model := range instModels {
 		gseprocReq := new(meta.GseProcRequest)
 		// hostInfo
 		gseprocReq.Hosts, err = ps.getHostForGse(string(model.ApplicationID), string(model.HostId), forward)
@@ -136,14 +136,14 @@ func (ps *ProcServer) operateProcInstanceByGse(procOp *meta.ProcessOperate, inst
 		}
 
 		model_TaskId[key] = taskId
-	}
+	}*/
 
 	return model_TaskId, nil
 }
 
 func (ps *ProcServer) registerProcInstanceToGse(namespace string, procInfo map[string]interface{}, forward http.Header) error {
 	// process
-	procName, _ := procInfo[common.BKProcessNameField].(string)
+	/*procName, _ := procInfo[common.BKProcessNameField].(string)
 	pidFilePath, _ := procInfo[common.BKProcPidFile].(string)
 	workPath, _ := procInfo[common.BKProcWorkPath].(string)
 	startCmd, _ := procInfo[common.BKProcStartCmd].(string)
@@ -164,7 +164,7 @@ func (ps *ProcServer) registerProcInstanceToGse(namespace string, procInfo map[s
 	ret, err := ps.CoreAPI.GseProcServer().RegisterProcInfo(context.Background(), forward, namespace, gseproc)
 	if err != nil || (err == nil && !ret.Result) {
 		return fmt.Errorf("register process(%s) into gse failed. err: %v, errcode: %d, errmsg: %s", procName, err, ret.Code, ret.ErrMsg)
-	}
+	}*/
 
 	return nil
 }
