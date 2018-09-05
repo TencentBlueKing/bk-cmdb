@@ -19,7 +19,7 @@
                     <span class="text">{{classify['bk_classification_name']}}</span>
                 </router-link>
             </ul>
-            <div class="add-btn-wrapper" @click="showPop(false)">
+            <div class="add-btn-wrapper" @click="createClassify()">
                 <a class="add-btn" href="javascript:;">
                     <span>{{$t('Common["新增"]')}}</span>
                 </a>
@@ -30,42 +30,26 @@
                     <span class="text">{{$t("ModelManagement['全局视图']")}}</span>
                 </button>
             </router-link>
-            <v-pop
-                ref="pop"
-                v-if="isPopShow"
-                :isEdit="isEdit"
-                :classification="activeClassify"
-                @confirm="saveClassify"
-                @cancel="closePop"
-            ></v-pop>
         </div>
     </div>
 </template>
 
 <script>
-    import vPop from './pop'
     import { mapGetters } from 'vuex'
-    import bus from '@/utils/bus'
     export default {
         data () {
             return {
                 topoView: 'models',
-                isPopShow: false, // 弹窗显示状态
-                isEdit: false, // 弹窗是否处于编辑状态
                 localClassify: []
             }
         },
         computed: {
+            ...mapGetters(['supplierAccount']),
             ...mapGetters('objectModelClassify', [
                 'classifications'
             ]),
-            ...mapGetters(['supplierAccount']),
             bkClassificationId () {
                 return this.$route.params.classifyId
-            },
-            activeClassify () {
-                let activeClassify = this.classifications.find(({bk_classification_id: bkClassificationId}) => bkClassificationId === this.bkClassificationId)
-                return activeClassify
             }
         },
         watch: {
@@ -74,35 +58,8 @@
             }
         },
         methods: {
-            async createClassify (classification) {
-                let params = {
-                    bk_classification_icon: classification['bk_classification_icon'],
-                    bk_classification_id: classification['bk_classification_id'],
-                    bk_classification_name: classification['bk_classification_name']
-                }
-                await this.$store.dispatch('objectModelClassify/createClassification', {params})
-                Object.assign(params, {bk_supplier_account: this.supplierAccount})
-                this.$store.commit('objectModelClassify/updateClassification', params)
-                this.closePop()
-            },
-            async editClassify (classification) {
-                let params = {
-                    bk_classification_icon: classification['bk_classification_icon'],
-                    bk_classification_name: classification['bk_classification_name']
-                }
-                await this.$store.dispatch('objectModelClassify/updateClassification', {params})
-                this.closePop()
-            },
-            saveClassify (classification) {
-                if (this.isEdit) {
-                    this.editClassify(classification)
-                } else {
-                    this.createClassify(classification)
-                }
-            },
-            showPop (isEdit) {
-                this.isPopShow = true
-                this.isEdit = isEdit
+            createClassify () {
+                this.$emit('createClassify')
             },
             init () {
                 if (this.bkClassificationId) {
@@ -114,22 +71,10 @@
                 } else {
                     this.topoView = 'GLOBAL'
                 }
-            },
-            closePop () {
-                this.isPopShow = false
             }
         },
         created () {
-            bus.$on('editModelClass', () => {
-                this.showPop(true)
-            })
-            bus.$on('deleteModelClass', () => {
-                this.deleteModelClassify()
-            })
             this.init()
-        },
-        components: {
-            vPop
         }
     }
 </script>
