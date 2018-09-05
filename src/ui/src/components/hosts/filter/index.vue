@@ -2,7 +2,7 @@
     <div class="hosts-filter-layout" :class="{close}">
         <i class="filter-toggle bk-icon icon-angle-right" @click="close = !close"></i>
         <div class="filter-main">
-            <bk-tab class="filter-tab" size="small" :active-name.sync="tab.active">
+            <bk-tab class="filter-tab" size="small" :active-name.sync="tab.active" style="padding: 0">
                 <bk-tabpanel name="filter" :title="$t('HostResourcePool[\'筛选\']')" v-if="activeTab.includes('filter')">
                     <keep-alive>
                         <the-filter ref="theFilter"
