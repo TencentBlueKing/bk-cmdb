@@ -40,8 +40,8 @@ const actions = {
      * @param {Number} bkHostId 主机id
      * @return {Promise} promise 对象
      */
-    getHostBaseInfo ({ commit, state, dispatch }, { bkSupplierAccount, bkHostId }) {
-        return $http.get(`hosts/${bkSupplierAccount}/${bkHostId}`)
+    getHostBaseInfo ({ commit, state, dispatch, rootGetters }, { hostId, config }) {
+        return $http.get(`hosts/${rootGetters.supplierAccount}/${hostId}`)
     },
 
     /**
