@@ -17,6 +17,8 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/src/common/errors"
+
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -33,8 +35,9 @@ import (
 type InstOperationInterface interface {
 	CreateInst(params types.ContextParams, obj model.Object, data frtypes.MapStr) (inst.Inst, error)
 	CreateInstBatch(params types.ContextParams, obj model.Object, batchInfo *InstBatchInfo) (*BatchResult, error)
-	DeleteInst(params types.ContextParams, obj model.Object, cond condition.Condition) error
-	DeleteInstByInstID(params types.ContextParams, obj model.Object, instID []int64) error
+	DeleteInst(params types.ContextParams, obj model.Object, cond condition.Condition, needCheckHost bool) error
+	DeleteInstByInstID(params types.ContextParams, obj model.Object, instID []int64, needCheckHost bool) error
+	FindOriginInst(params types.ContextParams, obj model.Object, cond *metatype.QueryInput) (*metatype.InstResult, error)
 	FindInst(params types.ContextParams, obj model.Object, cond *metatype.QueryInput, needAsstDetail bool) (count int, results []inst.Inst, err error)
 	FindInstByAssociationInst(params types.ContextParams, obj model.Object, data frtypes.MapStr) (cont int, results []inst.Inst, err error)
 	FindInstChildTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []interface{}, err error)
@@ -128,10 +131,12 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 			// check update
 			targetInstID, err := item.GetInstID()
 			if nil != err {
+				blog.Errorf("[operation-inst] failed to get inst id, error info is %s", err.Error())
 				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
 				continue
 			}
 			if err = NewSupplementary().Validator(c).ValidatorUpdate(params, obj, item.ToMapStr(), targetInstID, nil); nil != err {
+				blog.Errorf("[operation-inst] failed to valid, error info is %s", err.Error())
 				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
 				continue
 			}
@@ -139,8 +144,15 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		} else {
 			// check create
 			if err = NewSupplementary().Validator(c).ValidatorCreate(params, obj, item.ToMapStr()); nil != err {
-				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
-				continue
+				switch tmpErr := err.(type) {
+				case errors.CCErrorCoder:
+					if tmpErr.GetCode() != common.CCErrCommDuplicateItem {
+						blog.Errorf("[operation-inst] failed to valid, input value(%#v) the instname is %s, error info is %s", item.GetValues(), obj.GetInstNameFieldName(), err.Error())
+						results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
+						continue
+					}
+				}
+
 			}
 		}
 
@@ -197,7 +209,7 @@ func (c *commonInst) setInstAsst(params types.ContextParams, obj model.Object, i
 	if nil != err {
 		return err
 	}
-	attrs, err := obj.GetAttributes()
+	attrs, err := obj.GetAttributesExceptInnerFields()
 	if nil != err {
 		return err
 	}
@@ -346,6 +358,7 @@ func (c *commonInst) hasHost(params types.ContextParams, targetInst inst.Inst) (
 			}
 
 			if exists {
+
 				return nil, true, nil
 			}
 		}
@@ -353,7 +366,7 @@ func (c *commonInst) hasHost(params types.ContextParams, targetInst inst.Inst) (
 
 	instIDS := []deletedInst{}
 	instIDS = append(instIDS, deletedInst{instID: id, obj: targetObj})
-	childInsts, err := targetInst.GetChildInst()
+	childInsts, err := targetInst.GetMainlineChildInst()
 	if nil != err {
 		return nil, false, err
 	}
@@ -373,7 +386,7 @@ func (c *commonInst) hasHost(params types.ContextParams, targetInst inst.Inst) (
 	return instIDS, false, nil
 }
 
-func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Object, instID []int64) error {
+func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Object, instID []int64, needCheckHost bool) error {
 
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
@@ -391,17 +404,19 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 	}
 
 	deleteIDS := []deletedInst{}
-	for _, inst := range insts {
-		ids, exists, err := c.hasHost(params, inst)
-		if nil != err {
-			return params.Err.Error(common.CCErrTopoHasHostCheckFailed)
-		}
+	if needCheckHost {
+		for _, inst := range insts {
+			ids, exists, err := c.hasHost(params, inst)
+			if nil != err {
+				return params.Err.Error(common.CCErrTopoHasHostCheckFailed)
+			}
 
-		if exists {
-			return params.Err.Error(common.CCErrTopoHasHostCheckFailed)
-		}
+			if exists {
+				return params.Err.Error(common.CCErrTopoHasHostCheckFailed)
+			}
 
-		deleteIDS = append(deleteIDS, ids...)
+			deleteIDS = append(deleteIDS, ids...)
+		}
 	}
 
 	for _, delInst := range deleteIDS {
@@ -449,7 +464,7 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 	return nil
 }
 
-func (c *commonInst) DeleteInst(params types.ContextParams, obj model.Object, cond condition.Condition) error {
+func (c *commonInst) DeleteInst(params types.ContextParams, obj model.Object, cond condition.Condition, needCheckHost bool) error {
 
 	// clear inst associations
 	query := &metatype.QueryInput{}
@@ -466,7 +481,7 @@ func (c *commonInst) DeleteInst(params types.ContextParams, obj model.Object, co
 		if nil != err {
 			return err
 		}
-		err = c.DeleteInstByInstID(params, obj, []int64{targetInstID})
+		err = c.DeleteInstByInstID(params, obj, []int64{targetInstID}, needCheckHost)
 		if nil != err {
 			return err
 		}
@@ -933,6 +948,10 @@ func (c *commonInst) FindOriginInst(params types.ContextParams, obj model.Object
 func (c *commonInst) FindInst(params types.ContextParams, obj model.Object, cond *metatype.QueryInput, needAsstDetail bool) (count int, results []inst.Inst, err error) {
 
 	rsp, err := c.FindOriginInst(params, obj, cond)
+	if nil != err {
+		blog.Errorf("[operation-inst] failed to find origin inst , error info is %s", err.Error())
+		return 0, nil, err
+	}
 
 	asstObjAttrs, err := c.asst.SearchObjectAssociation(params, obj.GetID())
 	if nil != err {

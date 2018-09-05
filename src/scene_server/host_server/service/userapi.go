@@ -202,6 +202,13 @@ func (s *Service) GetUserCustomQueryResult(req *restful.Request, resp *restful.R
 	appID := req.PathParameter("bk_biz_id")
 	ID := req.PathParameter("id")
 
+	intAppID, err := util.GetInt64ByInterface(appID)
+	if nil != err {
+		blog.Errorf("UserAPIResult custom query failed,  err: %v, appid:%s, id:%s, logID:%s", err.Error(), appID, ID, util.GetHTTPCCRequestID(req.Request.Header))
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, "ApplicationID")})
+		return
+	}
+
 	result, err := s.CoreAPI.HostController().User().GetUserConfigDetail(context.Background(), appID, ID, req.Request.Header)
 	if nil != err || (nil == err && !result.Result) {
 		if nil == err {
@@ -212,12 +219,19 @@ func (s *Service) GetUserCustomQueryResult(req *restful.Request, resp *restful.R
 		return
 	}
 
+	if "" == result.Data.Name {
+		blog.Errorf("UserAPIResult custom query failed,  err: %v, appid:%s, id:%s, logID:%s", err.Error(), appID, ID, util.GetHTTPCCRequestID(req.Request.Header))
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommNotFound)})
+		return
+	}
+
 	var input meta.HostCommonSearch
+	input.AppID = intAppID
 
 	err = json.Unmarshal([]byte(result.Data.Info), &input)
 	if nil != err {
+		blog.Errorf("UserAPIResult custom unmarshal failed,  err: %v, appid:%s, id:%s, logID:%s", err.Error(), appID, ID, util.GetHTTPCCRequestID(req.Request.Header))
 		resp.WriteError(http.StatusBadGateway, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
-
 		return
 	}
 

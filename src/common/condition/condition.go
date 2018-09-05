@@ -15,6 +15,7 @@ package condition
 import (
 	"reflect"
 
+	"configcenter/src/common"
 	types "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
@@ -33,6 +34,8 @@ type Condition interface {
 	GetLimit() int64
 	SetSort(sort string)
 	GetSort() string
+	SetFields(fields []string)
+	GetFields() []string
 	Field(fieldName string) Field
 	Parse(data types.MapStr) error
 	ToMapStr() types.MapStr
@@ -40,29 +43,31 @@ type Condition interface {
 
 // Condition the condition definition
 type condition struct {
-	start  int64
-	limit  int64
-	sort   string
-	fields []Field
+	start        int64
+	limit        int64
+	sort         string
+	fields       []Field
+	filterFields []string
 }
 
 // SetPage set the page
 func (cli *condition) SetPage(page types.MapStr) error {
 
-	start, err := page.Int64(metadata.PageStart)
-	if nil != err {
+	pageInfo := metadata.BasePage{}
+	if err := page.MarshalJSONInto(&pageInfo); nil != err {
 		return err
 	}
-
-	cli.start = start
-
-	sort, err := page.String(metadata.PageSort)
-	if nil != err {
-		return err
-	}
-	cli.sort = sort
-
+	cli.start = int64(pageInfo.Start)
+	cli.limit = int64(pageInfo.Limit)
+	cli.sort = pageInfo.Sort
 	return nil
+}
+
+func (cli *condition) SetFields(fields []string) {
+	cli.filterFields = fields
+}
+func (cli *condition) GetFields() []string {
+	return cli.filterFields
 }
 
 // Parse load the data into condition object
@@ -138,6 +143,9 @@ func (cli *condition) SetLimit(limit int64) {
 
 // GetLimit return the limit num
 func (cli *condition) GetLimit() int64 {
+	if cli.limit <= 0 {
+		return common.BKNoLimit
+	}
 	return cli.limit
 }
 

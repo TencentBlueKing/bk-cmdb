@@ -18,6 +18,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	gparams "configcenter/src/common/paraparse"
@@ -67,6 +68,10 @@ func (s *topoService) DeleteSets(params types.ContextParams, pathParams, queryPa
 
 // DeleteSet delete the set
 func (s *topoService) DeleteSet(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+
+	if "batch" == pathParams("set_id") {
+		return s.DeleteSets(params, pathParams, queryParams, data)
+	}
 
 	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
 	if nil != err {
@@ -129,7 +134,9 @@ func (s *topoService) SearchSet(params types.ContextParams, pathParams, queryPar
 		return nil, err
 	}
 
-	paramsCond := &gparams.SearchParams{}
+	paramsCond := &gparams.SearchParams{
+		Condition: mapstr.New(),
+	}
 	if err = data.MarshalJSONInto(paramsCond); nil != err {
 		return nil, err
 	}
@@ -140,6 +147,10 @@ func (s *topoService) SearchSet(params types.ContextParams, pathParams, queryPar
 	queryCond := &metadata.QueryInput{}
 	queryCond.Condition = paramsCond.Condition
 	queryCond.Fields = strings.Join(paramsCond.Fields, ",")
+	page := metadata.ParsePage(paramsCond.Page)
+	queryCond.Start = page.Start
+	queryCond.Sort = page.Sort
+	queryCond.Limit = page.Limit
 
 	cnt, instItems, err := s.core.SetOperation().FindSet(params, obj, queryCond)
 	if nil != err {

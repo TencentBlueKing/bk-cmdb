@@ -74,6 +74,10 @@ type GseProcMeta struct {
 	Labels    map[string]string `json:"labels,omitempty"`
 }
 
+type ProcInfoArrResult struct {
+	BaseResp `json:",inline"`
+	Data     []mapstr.MapStr `json:"data"`
+}
 type GseProcRequest struct {
 	AppID    int64       `json:"bk_biz_id"  bson:"bk_biz_id"`
 	ModuleID int64       `json:"bk_module_id" bson:"bk_module_id"`
@@ -232,4 +236,11 @@ type EsbBaseResponse struct {
 	Code         int    `json:"code"`
 	Message      string `json:"message"`
 	EsbRequestID string `json:"request_id"`
+}
+
+type ProcessModule struct {
+	AppID      int64  `json:"bk_biz_id" bson:"bk_biz_id"`
+	ModuleName string `json:"bk_module_name" bson:"bk_module_name"`
+	ProcessID  int64  `json:"bk_process_id" bson:"bk_process_id"`
+	OwnerID    string `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }

@@ -257,6 +257,8 @@ const (
 	CCErrTopoBizTopoLevelOverLimit = 1101035
 	// CCErrTopoInstHasBeenAssociation the mainline topo level over limit
 	CCErrTopoInstHasBeenAssociation = 1101036
+	// it is forbidden to delete , that has some insts
+	CCErrTopoObjectHasSomeInstsForbiddenToDelete = 1101037
 
 	CCErrTopoAppDeleteFailed                       = 1001031
 	CCErrTopoAppUpdateFailed                       = 1001032
@@ -368,7 +370,6 @@ const (
 	CCErrProcSelectProc2Template = 1107013
 
 	// procserver 1108XXX
-
 	CCErrProcSearchDetailFaile          = 1108001
 	CCErrProcBindToMoudleFaile          = 1108002
 	CCErrProcUnBindToMoudleFaile        = 1108003
@@ -381,7 +382,7 @@ const (
 	CCErrProcGetByApplicationIDFail     = 1108010
 	CCErrProcGetByIP                    = 1108011
 	CCErrProcOperateFaile               = 1108012
-	CCErrProcCreateTemplateFail         = 1108013
+	CCErrProcBindWithModule             = 1108013
 	CCErrProcDeleteTemplateFail         = 1108014
 	CCErrProcUpdateTemplateFail         = 1108015
 	CCErrProcSearchTemplateFail         = 1108016
@@ -391,6 +392,7 @@ const (
 	CCErrProcQueryTaskInfoFail          = 1108020
 	CCErrProcQueryTaskWaitOPFail        = 1108021
 	CCErrProcQueryTaskOPErrFail         = 1108022
+	CCErrProcCreateTemplateFail         = 1108023
 
 	// auditlog 1109XXX
 	CCErrAuditSaveLogFaile      = 1109001

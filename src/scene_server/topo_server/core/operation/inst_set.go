@@ -79,6 +79,11 @@ func (s *set) hasHost(params types.ContextParams, bizID int64, setIDS []int64) (
 func (s *set) CreateSet(params types.ContextParams, obj model.Object, bizID int64, data mapstr.MapStr) (inst.Inst, error) {
 
 	data.Set(common.BKAppIDField, bizID)
+
+	if !data.Exists(common.BKDefaultField) {
+		data.Set(common.BKDefaultField, 0)
+	}
+
 	//data.Set(common.CreateTimeField, util.GetCurrentTimeStr())
 	return s.inst.CreateInst(params, obj, data)
 }
@@ -118,7 +123,7 @@ func (s *set) DeleteSet(params types.ContextParams, obj model.Object, bizID int6
 	}
 
 	// clear the sets
-	return s.inst.DeleteInst(params, obj, setCond)
+	return s.inst.DeleteInst(params, obj, setCond, false)
 }
 
 func (s *set) FindSet(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (count int, results []inst.Inst, err error) {

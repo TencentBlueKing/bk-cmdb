@@ -10,25 +10,33 @@
  * limitations under the License.
  */
 
-package openapi
+package x08_09_04_01
 
 import (
-	"context"
-	"net/http"
-
-	"configcenter/src/apimachinery/rest"
-	"configcenter/src/common/metadata"
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage"
 )
 
-type OpenApiInterface interface {
-	GetProcessesByModuleName(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.ProcInfoArrResult, err error)
-	DeleteSetHost(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
+func init() {
+	upgrader.RegistUpgrader("x08.09.04.01", upgrade)
 }
 
-func NewOpenApiInterface(client rest.ClientInterface) OpenApiInterface {
-	return &openAPI{client: client}
-}
-
-type openAPI struct {
-	client rest.ClientInterface
+func upgrade(db storage.DI, conf *upgrader.Config) (err error) {
+	err = updateSystemProperty(db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade x08.09.04.01] updateSystemProperty error  %s", err.Error())
+		return err
+	}
+	err = updateIcon(db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade x08.09.04.01] updateIcon error  %s", err.Error())
+		return err
+	}
+	err = fixesProcess(db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade x08.09.04.01] fixesProcess error  %s", err.Error())
+		return err
+	}
+	return
 }

@@ -21,15 +21,13 @@ import (
 )
 
 type APIMachineryConfig struct {
-    // the address of zookeeper address, comma separated.
-    ZkAddr string
-    // request's qps value
-    QPS int64
-    // request's burst value
-    Burst int64
-    TLSConfig *TLSClientConfig
-    // gse process server
-    GseProcServ string
+	// the address of zookeeper address, comma separated.
+	ZkAddr string
+	// request's qps value
+	QPS int64
+	// request's burst value
+	Burst     int64
+	TLSConfig *TLSClientConfig
 }
 
 type HttpClient interface {
@@ -65,14 +63,14 @@ func (h Headers) ToHeader() http.Header {
 }
 
 type TLSClientConfig struct {
-    // Server should be accessed without verifying the TLS certificate. For testing only.
-    InsecureSkipVerify bool
-    // Server requires TLS client certificate authentication
-    CertFile string
-    // Server requires TLS client certificate authentication
-    KeyFile string
-    // Trusted root certificates for server
-    CAFile string
-    // the password to decrypt the certificate
-    Password string
+	// Server should be accessed without verifying the TLS certificate. For testing only.
+	InsecureSkipVerify bool
+	// Server requires TLS client certificate authentication
+	CertFile string
+	// Server requires TLS client certificate authentication
+	KeyFile string
+	// Trusted root certificates for server
+	CAFile string
+	// the password to decrypt the certificate
+	Password string
 }

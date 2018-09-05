@@ -23,7 +23,7 @@
             </i18n>
         </div>
         <bk-paging class="pagination-list fr"
-            v-if="pagination.count"
+            v-if="pagination.count && pagination.count > pagination.size"
             :type="'compact'"
             :totalPage="totalPage"
             :curPage="pagination.current"

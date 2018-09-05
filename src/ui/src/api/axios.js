@@ -71,8 +71,11 @@ const transformResponse = (config, data) => {
     })
     return data
 }
+const API_BASE_URL = window.siteUrl.split('//')
+API_BASE_URL[0] = window.location.protocol
+window.API_BASE_URL = API_BASE_URL.join('//')
 let axios = Axios.create({
-    baseURL: `${window.siteUrl}api/${window.version}/`,
+    baseURL: `/api/${window.version}/`,
     xsrfCookieName: 'data_csrftoken',
     xsrfHeaderName: 'X-CSRFToken',
     withCredentials: true,
@@ -110,10 +113,6 @@ axios.interceptors.response.use(
                     break
                 case 403:
                     alertMsg(error.response.statusText)
-                    break
-                case 500:
-                    // 异常
-                    alert('系统出现异常, 请记录下错误场景并与开发人员联系, 谢谢!')
                     break
                 default:
                     catchErrorMsg(error.response)

@@ -14,6 +14,7 @@ package service
 
 import (
 	"strconv"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -130,7 +131,9 @@ func (s *topoService) SearchModule(params types.ContextParams, pathParams, query
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "set id")
 	}
 
-	paramsCond := &gparams.SearchParams{}
+	paramsCond := &gparams.SearchParams{
+		Condition: frtypes.New(),
+	}
 	if err = data.MarshalJSONInto(paramsCond); nil != err {
 		return nil, err
 	}
@@ -140,6 +143,11 @@ func (s *topoService) SearchModule(params types.ContextParams, pathParams, query
 
 	queryCond := &metadata.QueryInput{}
 	queryCond.Condition = paramsCond.Condition
+	queryCond.Fields = strings.Join(paramsCond.Fields, ",")
+	page := metadata.ParsePage(paramsCond.Page)
+	queryCond.Limit = page.Limit
+	queryCond.Sort = page.Sort
+	queryCond.Start = page.Start
 
 	cnt, instItems, err := s.core.ModuleOperation().FindModule(params, obj, queryCond)
 	if nil != err {
