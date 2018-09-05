@@ -101,7 +101,13 @@
                         @on-cancel="handleMultipleCancel">
                     </cmdb-form-multiple>
                 </bk-tabpanel>
-                <bk-tabpanel name="relevance" :title="$t('HostResourcePool[\'关联\']')"></bk-tabpanel>
+                <bk-tabpanel name="relevance" :title="$t('HostResourcePool[\'关联\']')">
+                    <cmdb-relation
+                        v-if="tab.active === 'relevance'"
+                        :obj-id="objId"
+                        :inst-id="attribute.inst.details['bk_inst_id']">
+                    </cmdb-relation>
+                </bk-tabpanel>
                 <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')">
                     <cmdb-audit-history v-if="tab.active === 'history'"
                         :target="objId"
@@ -127,11 +133,12 @@
     import { mapGetters, mapActions } from 'vuex'
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
-    let INIT_DATA
+    import cmdbRelation from '@/components/relation'
     export default {
         components: {
             cmdbColumnsConfig,
-            cmdbAuditHistory
+            cmdbAuditHistory,
+            cmdbRelation
         },
         data () {
             return {
