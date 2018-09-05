@@ -186,8 +186,9 @@ func (s *topoService) SearchModuleBySetProperty(params types.ContextParams, path
 	}
 	cond := condition.CreateCondition()
 
-	data.ForEach(func(key string, val interface{}) {
+	data.ForEach(func(key string, val interface{}) error {
 		cond.Field(key).In([]interface{}{val})
+		return nil
 	})
 	cond.Field(common.BKAppIDField).Eq(bizID)
 	return s.core.CompatibleV2Operation().Module(params).SearchModuleBySetProperty(bizID, cond)
@@ -215,13 +216,14 @@ func (s *topoService) AddMultiModule(params types.ContextParams, pathParams, que
 	}
 
 	// prepare the data
-	data.ForEach(func(key string, val interface{}) {
+	data.ForEach(func(key string, val interface{}) error {
 		switch key {
 		case common.BKSetIDField, common.BKOperatorField, common.BKBakOperatorField, common.BKModuleTypeField:
-			return
+			return nil
 		}
 		// clear the unused key
 		data.Remove(key)
+		return nil
 	})
 
 	err = s.core.CompatibleV2Operation().Module(params).AddMultiModule(bizID, setID, strings.Split(moduleNameStr, ","), data)
