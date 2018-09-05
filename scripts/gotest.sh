@@ -10,8 +10,8 @@ PACKAGES=$(go list ../src/...)
 	echo "collect-cover-data"
 	echo "mode: count" > coverage-all.out
 	for pkg in $PACKAGES;do
-		echo ${pkg}
-		go test -v -coverprofile=coverage.out -covermode=count ${pkg} || exit $$?;\
+		echo "collect package:"${pkg}
+		go test -v -coverprofile=coverage.out -covermode=count ${pkg};\
 		if [ -f coverage.out ]; then\
 			tail -n +2 coverage.out >> coverage-all.out;\
 		fi\

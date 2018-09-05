@@ -10,26 +10,25 @@
  * limitations under the License.
  */
 
-package storage
+package v3v0v1alpha2
 
 import (
-	_ "configcenter/src/source_controller/common/metadata"
-	"fmt"
-	"testing"
-	_ "time"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage"
 )
 
-func TestType1(t *testing.T) {
-	db, _ := NewDB("127.0.0.1", "27017", "user", "pwd", "cmdb", "mongodb")
-	db.Open()
-	condition := make(map[string]interface{})
-	condition["ApplicationID"] = 17
-	//	host["HostName"] = "vm2"
-	//	host["InnerIP"] = "127.0.0.1"
-	//	db.Insert("cc_HostBase", host)
-	var result interface{}
-	//fields := []string{"ApplicationName"}
-	fields := make([]string, 0)
-	db.GetOneByCondition("cc_ApplicationBase", fields, nil, &result)
-	fmt.Println(result)
+func init() {
+	upgrader.RegistUpgrader("v3.1.0-alpha.2", upgrade)
+}
+
+func upgrade(db storage.DI, conf *upgrader.Config) (err error) {
+	err = addBkStartParamRegex(db, conf)
+	if err != nil {
+		return err
+	}
+	err = updateLanguageField(db, conf)
+	if err != nil {
+		return err
+	}
+	return
 }

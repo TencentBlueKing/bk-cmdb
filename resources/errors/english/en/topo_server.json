@@ -57,6 +57,7 @@
 	"1101033": "query business failed,%s",
 	"1101034": "query module failed,%s",
 	"1101035": "Business topology level exceeds the limit",
-
+	"1101036": "the instance has been associated by [%s], coule not be delete or archived",
+	"1101037": "the object [%s] has been instantiated and cannot be deleted",
 	"": "" 
 }
