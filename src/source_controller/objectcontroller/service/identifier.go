@@ -185,7 +185,7 @@ func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Respons
 
 	if len(procIDs) > 0 {
 		tmps := []metadata.HostIdentProcess{}
-		err = getCache(cli.Instance, common.BKTableNameBaseProcess, common.BKProcIDField, procIDs, &tmps)
+		err = getCache(cli.Instance, common.BKTableNameBaseProcess, common.BKProcessIDField, procIDs, &tmps)
 		if err != nil && !cli.Instance.IsNotFoundErr(err) {
 			blog.Errorf("SearchIdentifier error:%s", err.Error())
 			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.New(common.CCErrObjectSelectIdentifierFailed, err.Error())})

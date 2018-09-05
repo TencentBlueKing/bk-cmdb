@@ -154,9 +154,9 @@ func (ih *IdentifierHandler) handleInst(e *metadata.EventInst) {
 					continue
 				}
 
-				instID := getInt(curdata, common.BKProcIDField)
+				instID := getInt(curdata, common.BKProcessIDField)
 				if 0 == instID {
-					blog.Errorf("identifier: conver instID faile the raw is %+v", curdata[common.BKProcIDField])
+					blog.Errorf("identifier: conver instID faile the raw is %+v", curdata[common.BKProcessIDField])
 					continue
 				}
 
@@ -459,7 +459,7 @@ func getCache(cache *redis.Client, db storage.DI, objType string, instID int64, 
 					processids = append(processids, proc2module.ProcessID)
 				}
 				process := []Process{}
-				cond = condition.CreateCondition().Field(common.BKProcIDField).In(processids)
+				cond = condition.CreateCondition().Field(common.BKProcessIDField).In(processids)
 				if err = db.GetMutilByCondition(common.BKTableNameBaseProcess, nil, cond.ToMapStr(), &process, "", -1, -1); err != nil {
 					return nil, err
 				}
