@@ -12,6 +12,12 @@
 
 package metadata
 
+import (
+	"sort"
+
+	"configcenter/src/common/util"
+)
+
 type SetInst struct {
 	SetID     int64  `bson:"bk_set_id"`
 	SetName   string `bson:"bk_set_name"`
@@ -45,7 +51,6 @@ type ProcessInst struct {
 }
 
 type HostIdentifier struct {
-	// cache     *HostIdenCache
 	HostID          int64                       `json:"bk_host_id" bson:"bk_host_id"`           // 主机ID(host_id)								数字
 	HostName        string                      `json:"bk_host_name" bson:"bk_host_name"`       // 主机名称
 	SupplierID      int64                       `json:"bk_supplier_id"`                         // 开发商ID（bk_supplier_id）				数字
@@ -73,6 +78,15 @@ type HostIdentProcess struct {
 	FuncName        string  `json:"bk_func_name" bson:"bk_func_name"`                 // 功能名称
 	StartParamRegex string  `json:"bk_start_param_regex" bson:"bk_start_param_regex"` // 启动参数匹配规则
 	BindModules     []int64 `json:"bind_modules" bson:"bind_modules"`                 // 进程绑定的模块ID，数字数组
+}
+
+type HostIdentProcessSorter []HostIdentProcess
+
+func (p HostIdentProcessSorter) Len() int      { return len(p) }
+func (p HostIdentProcessSorter) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
+func (p HostIdentProcessSorter) Less(i, j int) bool {
+	sort.Sort(util.Int64Slice(p[i].BindModules))
+	return p[i].ProcessID < p[j].ProcessID
 }
 
 // HostIdentModule HostIdentifier module define
