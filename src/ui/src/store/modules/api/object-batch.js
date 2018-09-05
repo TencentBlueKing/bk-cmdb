@@ -28,8 +28,8 @@ const actions = {
      * @param {String} bkObjId 模型id
      * @return {promises} promises 对象
      */
-    exportObjectAttribute ({ commit, state, dispatch }, { bkSupplierAccount, bkObjId }) {
-        return $http.post(`object/owner/${bkSupplierAccount}/object/${bkObjId}/export`)
+    exportObjectAttribute ({ commit, state, dispatch, rootGetters }, { bkObjId }) {
+        return $http.post(`${rootGetters.site.url}object/owner/${rootGetters.supplierAccount}/object/${bkObjId}/export`)
     },
 
     /**
@@ -42,8 +42,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    importObjectAttribute ({ commit, state, dispatch }, { bkSupplierAccount, bkObjId, parmas }) {
-        return $http.post(`object/owner/${bkSupplierAccount}/object/${bkObjId}/import`)
+    importObjectAttribute ({ commit, state, dispatch, rootGetters }, { bkObjId, params, config }) {
+        return $http.post(`${rootGetters.site.url}object/owner/${rootGetters.supplierAccount}/object/${bkObjId}/import`, params, config)
     }
 }
 

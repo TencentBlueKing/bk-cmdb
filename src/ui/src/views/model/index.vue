@@ -10,38 +10,73 @@
 
 <template>
     <div class="model-wrapper">
-        <v-model-nav></v-model-nav>
+        <v-model-nav @createClassify="createClassify"></v-model-nav>
         <div class="topo-wrapper">
             <v-topo-list 
                 v-if="bkClassificationId === 'bk_biz_topo'"
                 @createModel="createModel"
                 @editModel="editModel"
+                ref="topo"
             ></v-topo-list>
             <v-topo
                 v-else-if="bkClassificationId !== void 0"
                 @createModel="createModel"
                 @editModel="editModel"
+                @editClassify="editClassify"
+                ref="topo"
             ></v-topo>
             <v-global-models v-else></v-global-models>
-            <!-- <bk-button type="primary" class="topo-btn edit" @click="editModelClass">
-                <i class="icon icon-cc-edit"></i>
-            </bk-button>
-            <bk-button type="danger" class="topo-btn del" v-if="activeClassify['bk_classification_type']!=='inner'" @click="deleteModelClass">
-                <i class="icon icon-cc-del"></i>
-            </bk-button> -->
         </div>
+        <cmdb-slider
+            :hasCloseConfirm="true"
+            :isCloseConfirmShow="slider.isCloseConfirmShow"
+            :isShow.sync="slider.isShow" :title="slider.title"
+            @closeSlider="closeSlider">
+            <v-details slot="content"
+                ref="details"
+                :isEdit.sync="slider.isEdit"
+                @updateModel="updateTopo"
+                @cancel="slider.isShow = false"
+            ></v-details>
+        </cmdb-slider>
+        <v-pop
+            ref="pop"
+            v-if="pop.isShow"
+            :isEdit="pop.isEdit"
+            @closePop="closePop"
+        ></v-pop>
     </div>
 </template>
 
 <script>
+    import vPop from './pop'
     import vModelNav from './model-nav'
     import vGlobalModels from './topo/global-models'
     import vTopo from './topo/topo'
     import vTopoList from './topo/topo-list'
+    import vDetails from './details'
+    import { mapGetters, mapMutations, mapActions } from 'vuex'
     export default {
+        components: {
+            vModelNav,
+            vGlobalModels,
+            vTopo,
+            vTopoList,
+            vDetails,
+            vPop
+        },
         data () {
             return {
-
+                slider: {
+                    isShow: false,
+                    title: '',
+                    isEdit: false,
+                    isCloseConfirmShow: false
+                },
+                pop: {
+                    isShow: false,
+                    isEdit: false
+                }
             }
         },
         computed: {
@@ -50,24 +85,49 @@
             }
         },
         methods: {
-            createModel () {
-                this.sliderTitle.text = '新增模型'
-                this.isSlideShow = true
+            ...mapActions('objectModelClassify', [
+                'searchClassificationsObjects'
+            ]),
+            ...mapMutations('objectModel', [
+                'setActiveModel'
+            ]),
+            createModel (prevModelId) {
+                this.slider.title = this.$t('ModelManagement["新增模型"]')
+                this.slider.isShow = true
+                this.slider.isEdit = false
+                this.setActiveModel({
+                    bk_classification_id: this.bkClassificationId,
+                    bk_asst_obj_id: prevModelId
+                })
             },
             editModel (model) {
-                this.sliderTitle.text = model['bk_obj_name']
-                this.activeModel = model
-                this.isSlideShow = true
+                this.slider.title = model['bk_obj_name']
+                this.setActiveModel(model)
+                this.slider.isEdit = true
+                this.slider.isShow = true
             },
-            editModelClass () {
-
+            editClassify () {
+                this.pop.isEdit = true
+                this.pop.isShow = true
+            },
+            createClassify () {
+                this.pop.isEdit = false
+                this.pop.isShow = true
+            },
+            closeSlider () {
+                this.slider.isCloseConfirmShow = this.$refs.details.isCloseConfirmShow()
+                if (!this.slider.isCloseConfirmShow) {
+                    this.slider.isShow = false
+                }
+            },
+            closePop () {
+                this.pop.isShow = false
+            },
+            async updateTopo () {
+                await this.searchClassificationsObjects({})
+                this.slider.isShow = false
+                this.$refs.topo.initTopo()
             }
-        },
-        components: {
-            vModelNav,
-            vGlobalModels,
-            vTopo,
-            vTopoList
         }
     }
 </script>

@@ -11,11 +11,11 @@
 import $http from '@/api'
 
 const state = {
-
+    activeModel: null
 }
 
 const getters = {
-
+    activeModel: (state) => state.activeModel
 }
 
 const actions = {
@@ -27,8 +27,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    createObject ({ commit, state, dispatch }, { params }) {
-        return $http.post(`object`, params)
+    createObject ({ commit, state, dispatch }, { params, config }) {
+        return $http.post(`object`, params, config)
     },
 
     /**
@@ -39,8 +39,8 @@ const actions = {
      * @param {Number} id 被删除的数据记录的id
      * @return {promises} promises 对象
      */
-    deleteObject ({ commit, state, dispatch }, { id }) {
-        return $http.delete(`object/${id}`)
+    deleteObject ({ commit, state, dispatch }, { id, config }) {
+        return $http.delete(`object/${id}`, config)
     },
 
     /**
@@ -52,8 +52,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    updateObject ({ commit, state, dispatch }, { id, params }) {
-        return $http.put(`object/${id}`, params)
+    updateObject ({ commit, state, dispatch }, { id, params, config }) {
+        return $http.put(`object/${id}`, params, config)
     },
 
     /**
@@ -82,7 +82,9 @@ const actions = {
 }
 
 const mutations = {
-
+    setActiveModel (state, activeModel) {
+        state.activeModel = activeModel
+    }
 }
 
 export default {
