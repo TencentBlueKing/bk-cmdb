@@ -13,6 +13,8 @@
 package util
 
 import (
+	"net/http"
+
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/flowctrl"
 )
@@ -25,8 +27,10 @@ type APIMachineryConfig struct {
 	// request's burst value
 	Burst     int64
 	TLSConfig *TLSClientConfig
-	// gse process server
-	GseProcServ string
+}
+
+type HttpClient interface {
+	Do(req *http.Request) (*http.Response, error)
 }
 
 type Capability struct {
