@@ -288,9 +288,21 @@ func convertToV2HostListMain(resDataInfoV3 interface{}) (interface{}, error) {
 		return resDataV2, nil
 	}
 
+	convFields := []string{
+		common.BKAppIDField,
+		common.BKSetIDField,
+		common.BKModuleIDField,
+		common.BKHostIDField,
+		common.BKCloudIDField,
+		common.BKHostNameField,
+		common.BKOSNameField}
 	for _, item := range resDataInfoV3.([]interface{}) {
-		itemMap := item.(map[string]interface{})
-		convMap, err := convertFieldsIntToStr(itemMap, []string{common.BKAppIDField, common.BKSetIDField, common.BKModuleIDField, common.BKHostIDField, common.BKCloudIDField})
+		itemMap, ok := item.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		convMap, err := convertFieldsIntToStr(itemMap, convFields)
 		if nil != err {
 			blog.Errorf("ResToV2ForHostList resDataInfoV3 %v, error:%s", resDataInfoV3, err.Error())
 			return nil, err
@@ -316,8 +328,8 @@ func convertToV2HostListMain(resDataInfoV3 interface{}) (interface{}, error) {
 			continue
 		}
 
-		operator, _ := itemMap[common.BKOperatorField]
-		bakOperator, _ := itemMap[common.BKBakOperatorField]
+		operator, _ := itemMap[common.BKOperatorField].(string)       //field is not required, can be ignored
+		bakOperator, _ := itemMap[common.BKBakOperatorField].(string) // field is not required, can be ignored
 
 		resDataV2 = append(resDataV2, map[string]interface{}{
 			"ApplicationID": convMap[common.BKAppIDField],

@@ -274,7 +274,7 @@ func (o *object) FindObjectBatch(params types.ContextParams, data frtypes.MapStr
 			return nil, err
 		}
 
-		attrs, err := obj.GetAttributes()
+		attrs, err := obj.GetAttributesExceptInnerFields()
 		if nil != err {
 			return nil, err
 		}
@@ -382,6 +382,26 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 
 	for _, obj := range objs {
 
+		// check if it has some insts
+		cond := condition.CreateCondition()
+		cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+		if obj.IsCommon() {
+			cond.Field(common.BKObjIDField).Eq(obj.GetID())
+		}
+
+		query := &metadata.QueryInput{}
+		query.Condition = cond.ToMapStr()
+		findInstResponse, err := o.inst.FindOriginInst(params, obj, query)
+		if nil != err {
+			blog.Errorf("[operation-obj] failed to check if it (%s) has some insts, error info is %s", obj.GetID(), err.Error())
+			return err
+		}
+		if 0 != findInstResponse.Count {
+			blog.Errorf("the object [%s] has been instantiated and cannot be deleted", obj.GetID())
+			return params.Err.Errorf(common.CCErrTopoObjectHasSomeInstsForbiddenToDelete, obj.GetID())
+		}
+
+		// delete object
 		attrCond := condition.CreateCondition()
 		attrCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 		attrCond.Field(common.BKObjIDField).Eq(obj.GetID())
