@@ -140,7 +140,6 @@
             },
             getPanelTitle (panel) {
                 const panelModel = this.allModels.find(model => model['bk_obj_id'] === panel)
-                console.log(`${panelModel['bk_obj_name']}(${this.resultTab.count[panel]})`)
                 return panelModel ? `${panelModel['bk_obj_name']}(${this.resultTab.count[panel]})` : null
             },
             initSearchList (data) {

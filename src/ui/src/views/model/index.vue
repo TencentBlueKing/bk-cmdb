@@ -35,7 +35,8 @@
             <v-details slot="content"
                 ref="details"
                 :isEdit.sync="slider.isEdit"
-                @updateModel="updateTopo"
+                @createModel="updateTopo(true)"
+                @updateModel="updateTopo(false)"
                 @cancel="slider.isShow = false"
             ></v-details>
         </cmdb-slider>
@@ -123,9 +124,9 @@
             closePop () {
                 this.pop.isShow = false
             },
-            async updateTopo () {
+            async updateTopo (isShow) {
                 await this.searchClassificationsObjects({})
-                this.slider.isShow = false
+                this.slider.isShow = isShow
                 this.$refs.topo.initTopo()
             }
         }
