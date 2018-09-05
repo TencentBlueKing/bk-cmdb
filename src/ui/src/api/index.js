@@ -144,10 +144,10 @@ function handleReject (error, config) {
         const nextError = {message: error.message}
         if (status === 401) {
             window.location.href = Site.login
-        } else if (status === 500) {
-            nextError.message = '系统出现异常, 请记录下错误场景并与开发人员联系, 谢谢!'
         } else if (data && data['bk_error_msg']) {
             nextError.message = data['bk_error_msg']
+        } else if (status === 500) {
+            nextError.message = '系统出现异常, 请记录下错误场景并与开发人员联系, 谢谢!'
         }
         $error(nextError.message)
         return Promise.reject(nextError)
