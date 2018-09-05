@@ -219,7 +219,13 @@
                     month: this.BkDate.month,
                     day: value
                 }
-                let isToday = JSON.stringify(currentSelectedDate) === JSON.stringify(this.BkDate.currentDay)
+                const currentDate = new Date()
+                const current = {
+                    year: currentDate.getFullYear(),
+                    month: currentDate.getMonth() + 1,
+                    day: currentDate.getDate()
+                }
+                let isToday = JSON.stringify(currentSelectedDate) === JSON.stringify(current)
                 if (isToday) {
                     return this.t('datepicker.now')
                 }
