@@ -40,8 +40,8 @@ const actions = {
      * @param {String} bkObjId 对象的模型id
      * @return {promises} promises 对象
      */
-    deleteMainlineObject ({ commit, state, dispatch }, { bkSupplierAccount, bkObjId }) {
-        return $http.delete(`topo/model/mainline/owners/${bkSupplierAccount}/objectids/${bkObjId}`)
+    deleteMainlineObject ({ commit, state, dispatch, rootGetters }, { bkObjId, config }) {
+        return $http.delete(`topo/model/mainline/owners/${rootGetters.supplierAccount}/objectids/${bkObjId}`, config)
     },
 
     /**
