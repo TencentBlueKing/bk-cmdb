@@ -1,6 +1,8 @@
 <template>
     <div class="relation-topology-layout">
-        <div class="topology-container" ref="container" v-bkloading="{isLoading: $loading()}">
+        <div class="tolology-loading" v-bkloading="{isLoading: $loading(getRelationRequestId)}">
+            <div class="topology-container" ref="container">
+            </div>
         </div>
         <ul class="topology-legend">
             <li class="legend-item" 
@@ -48,6 +50,7 @@
     export default {
         data () {
             return {
+                getRelationRequestId: null,
                 network: null,
                 nodes: [],
                 edges: [],
@@ -145,11 +148,12 @@
                 this.legends = node.legends
             },
             getRelation (objId, instId, node = null) {
+                this.getRelationRequestId = `get_${objId}_${instId}_relation`
                 return this.getInstRelation({
                     objId,
                     instId,
                     config: {
-                        requestId: `get_${objId}_${instId}_relation`
+                        requestId: this.getRelationRequestId
                     }
                 }).then(async data => {
                     this.legends = []
@@ -541,6 +545,9 @@
         height: calc(100% - 64px);
         background-color: #f9f9f9;
         position: relative;
+        .tolology-loading {
+            height: 100%;
+        }
         .topology-container {
             height: 100%;
         }
@@ -613,7 +620,7 @@
             position: relative;
             display: inline-block;
             width: 710px;
-            max-height: 250px;
+            min-height: 250px;
             max-height: 80%;
             margin: 0 45px 0 0;
             vertical-align: middle;
