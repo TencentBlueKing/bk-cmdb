@@ -208,9 +208,8 @@ var (
 )
 
 type ProcessOperateTaskResult struct {
-	EsbBaseResponse `json:",inline"`
-
-	Data struct {
+	BaseResp `json:",inline"`
+	Data     struct {
 		Count int                  `json:"count"`
 		Info  []ProcessOperateTask `json:"info"`
 	} `json:"data"`
