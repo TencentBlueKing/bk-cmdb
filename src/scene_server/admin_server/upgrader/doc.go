@@ -10,16 +10,10 @@
  * limitations under the License.
  */
 
-package models
+// Package upgrader
+// Upgrade uprade the db datas to newest verison
+// we use date instead of version later since 2018.09.04, because the version wasn't manage by the developer
+// when use date instead of version, the date should add x prefix, cause x > v
+// example: x08.09.04.01
 
-import (
-	"encoding/json"
-)
-
-func GetOptionStr(o interface{}) string {
-	ret, err := json.Marshal(o)
-	if err != nil {
-		return ""
-	}
-	return string(ret)
-}
+package upgrader

@@ -10,15 +10,33 @@
  * limitations under the License.
  */
 
-package distribution
+package x08_09_04_01
 
 import (
-	"testing"
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage"
 )
 
-func TestReconciler(t *testing.T) {
-	initTester()
-	reconcil := newReconciler()
-	reconcil.loadAll()
-	reconcil.reconcile()
+func init() {
+	upgrader.RegistUpgrader("x08.09.04.01", upgrade)
+}
+
+func upgrade(db storage.DI, conf *upgrader.Config) (err error) {
+	err = updateSystemProperty(db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade x08.09.04.01] updateSystemProperty error  %s", err.Error())
+		return err
+	}
+	err = updateIcon(db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade x08.09.04.01] updateIcon error  %s", err.Error())
+		return err
+	}
+	err = fixesProcess(db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade x08.09.04.01] fixesProcess error  %s", err.Error())
+		return err
+	}
+	return
 }
