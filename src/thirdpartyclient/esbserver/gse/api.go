@@ -13,18 +13,29 @@ package gse
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"configcenter/src/common/metadata"
+	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 )
 
-func (p *gse) OperateProcess(ctx context.Context, h http.Header, data interface{}) (resp *metadata.EsbResponse, err error) {
+func (p *gse) OperateProcess(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error) {
 	resp = new(metadata.EsbResponse)
 	subPath := "/v2/gse/operate_proc/"
+	type esbParams struct {
+		*esbutil.EsbCommParams
+		*metadata.GseProcRequest `"json:inline"`
+	}
+	params := &esbParams{
+		EsbCommParams:  esbutil.GetEsbRequestParams(p.config.GetConfig(), h),
+		GseProcRequest: data,
+	}
 
 	err = p.client.Post().
 		WithContext(ctx).
-		Body(data).
+		Body(params).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
@@ -33,13 +44,20 @@ func (p *gse) OperateProcess(ctx context.Context, h http.Header, data interface{
 	return
 }
 
-func (p *gse) QueryProcOperateResult(ctx context.Context, h http.Header, taskid string) (resp *metadata.GseProcessOperateTaskResult, err error) {
+func (p *gse) QueryProcOperateResult(ctx context.Context, h http.Header, taskID string) (resp *metadata.GseProcessOperateTaskResult, err error) {
 	resp = new(metadata.GseProcessOperateTaskResult)
 	subPath := "/v2/gse/get_proc_operate_result/"
-
+	type esbParams struct {
+		*esbutil.EsbCommParams
+		TaskID string `"json:task_id"`
+	}
+	params := &esbParams{
+		EsbCommParams: esbutil.GetEsbRequestParams(p.config.GetConfig(), h),
+		TaskID:        taskID,
+	}
 	err = p.client.Get().
 		WithContext(ctx).
-		Body(nil).
+		Body(params).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
@@ -48,13 +66,20 @@ func (p *gse) QueryProcOperateResult(ctx context.Context, h http.Header, taskid 
 	return
 }
 
-func (p *gse) QueryProcStatus(ctx context.Context, h http.Header, data interface{}) (resp *metadata.EsbResponse, err error) {
+func (p *gse) QueryProcStatus(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error) {
 	resp = new(metadata.EsbResponse)
 	subPath := "/v2/gse/get_proc_status/"
-
+	type esbParams struct {
+		*esbutil.EsbCommParams
+		*metadata.GseProcRequest `"json:inline"`
+	}
+	params := &esbParams{
+		EsbCommParams:  esbutil.GetEsbRequestParams(p.config.GetConfig(), h),
+		GseProcRequest: data,
+	}
 	err = p.client.Post().
 		WithContext(ctx).
-		Body(data).
+		Body(params).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
@@ -63,13 +88,21 @@ func (p *gse) QueryProcStatus(ctx context.Context, h http.Header, data interface
 	return
 }
 
-func (p *gse) RegisterProcInfo(ctx context.Context, h http.Header, data interface{}) (resp *metadata.EsbResponse, err error) {
+func (p *gse) RegisterProcInfo(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error) {
 	resp = new(metadata.EsbResponse)
 	subPath := "/v2/gse/register_proc_info/"
+	type esbParams struct {
+		*esbutil.EsbCommParams
+		*metadata.GseProcRequest `"json:inline"`
+	}
+	params := &esbParams{
+		EsbCommParams:  esbutil.GetEsbRequestParams(p.config.GetConfig(), h),
+		GseProcRequest: data,
+	}
 
 	err = p.client.Post().
 		WithContext(ctx).
-		Body(data).
+		Body(params).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
@@ -78,13 +111,21 @@ func (p *gse) RegisterProcInfo(ctx context.Context, h http.Header, data interfac
 	return
 }
 
-func (p *gse) UnRegisterProcInfo(ctx context.Context, h http.Header, data interface{}) (resp *metadata.EsbResponse, err error) {
+func (p *gse) UnRegisterProcInfo(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error) {
 	resp = new(metadata.EsbResponse)
 	subPath := "/v2/gse/unregister_proc_info/"
+	type esbParams struct {
+		*esbutil.EsbCommParams
+		*metadata.GseProcRequest `"json:inline"`
+	}
+	params := &esbParams{
+		EsbCommParams:  esbutil.GetEsbRequestParams(p.config.GetConfig(), h),
+		GseProcRequest: data,
+	}
 
 	err = p.client.Delete().
 		WithContext(ctx).
-		Body(data).
+		Body(params).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().

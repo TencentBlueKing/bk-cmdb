@@ -22,7 +22,11 @@ type EsbConfigServ struct {
 	sync.RWMutex
 }
 
-func NewEsbServConfig(srvChan chan EsbConfig) *EsbConfigServ {
+type EsbServDiscoveryInterace interface {
+	GetServers() ([]string, error)
+}
+
+func NewEsbConfigServ(srvChan chan EsbConfig) *EsbConfigServ {
 	esb := &EsbConfigServ{}
 	go func() {
 		if nil == srvChan {
@@ -41,16 +45,21 @@ func NewEsbServConfig(srvChan chan EsbConfig) *EsbConfigServ {
 	return esb
 }
 
+func (esb *EsbConfigServ) GetEsbServDiscoveryInterace() EsbServDiscoveryInterace {
+	// mabye will deal some logic about server
+	return esb
+}
+
 func (esb *EsbConfigServ) GetServers() ([]string, error) {
 	// mabye will deal some logic about server
 	esb.RLock()
-	defer esb.Unlock()
+	defer esb.RUnlock()
 	return []string{esb.addrs}, nil
 }
 
 func (esb *EsbConfigServ) GetConfig() EsbConfig {
 	esb.RLock()
-	defer esb.Unlock()
+	defer esb.RUnlock()
 	return EsbConfig{
 		Addrs:     esb.addrs,
 		AppCode:   esb.appCode,

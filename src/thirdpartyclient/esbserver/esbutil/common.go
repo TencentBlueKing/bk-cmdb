@@ -11,8 +11,30 @@
  */
 package esbutil
 
+import (
+	"net/http"
+
+	"configcenter/src/common/util"
+)
+
 type EsbConfig struct {
 	Addrs     string
 	AppCode   string
 	AppSecret string
+}
+
+type EsbCommParams struct {
+	AppCode    string `json:"bk_app_code"`
+	AppSecret  string `json:"bk_app_secret"`
+	UserName   string `json:"bk_username"`
+	SupplierID string `json:"bk_supplier_id"`
+}
+
+func GetEsbRequestParams(esbConfig EsbConfig, header http.Header) *EsbCommParams {
+	return &EsbCommParams{
+		AppCode:    esbConfig.AppCode,
+		AppSecret:  esbConfig.AppSecret,
+		UserName:   util.GetUser(header),
+		SupplierID: util.GetOwnerID(header),
+	}
 }

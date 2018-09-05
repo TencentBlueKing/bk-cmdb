@@ -21,11 +21,11 @@ import (
 )
 
 type GseClientInterface interface {
-	OperateProcess(ctx context.Context, h http.Header, data interface{}) (resp *metadata.EsbResponse, err error)
+	OperateProcess(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error)
 	QueryProcOperateResult(ctx context.Context, h http.Header, taskid string) (resp *metadata.GseProcessOperateTaskResult, err error)
-	QueryProcStatus(ctx context.Context, h http.Header, data interface{}) (resp *metadata.EsbResponse, err error)
-	RegisterProcInfo(ctx context.Context, h http.Header, data interface{}) (resp *metadata.EsbResponse, err error)
-	UnRegisterProcInfo(ctx context.Context, h http.Header, data interface{}) (resp *metadata.EsbResponse, err error)
+	QueryProcStatus(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error)
+	RegisterProcInfo(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error)
+	UnRegisterProcInfo(ctx context.Context, h http.Header, data *metadata.GseProcRequest) (resp *metadata.EsbResponse, err error)
 }
 
 func NewGsecClientInterface(client rest.ClientInterface, config *esbutil.EsbConfigServ) GseClientInterface {

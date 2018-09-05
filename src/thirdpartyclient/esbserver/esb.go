@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"sync"
 
+	"configcenter/src/apimachinery/flowctrl"
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
@@ -34,17 +35,26 @@ type esbsrv struct {
 	c         *util.Capability
 }
 
-func NewEsb(c *util.Capability, config chan esbutil.EsbConfig, version string) EsbClientInterface {
+func NewEsb(apiMachineryConfig *util.APIMachineryConfig, config chan esbutil.EsbConfig) (EsbClientInterface, error) {
 	base := fmt.Sprintf("/api/c/compapi")
-	esbCapability := *c
-	esbConfig := esbutil.NewEsbServConfig(config)
-	esbCapability.Discover = esbConfig
 
+	client, err := util.NewClient(apiMachineryConfig.TLSConfig)
+	if nil != err {
+		return nil, err
+	}
+	flowcontrol := flowctrl.NewRateLimiter(apiMachineryConfig.QPS, apiMachineryConfig.Burst)
+	esbConfig := esbutil.NewEsbConfigServ(config)
+
+	esbCapability := &util.Capability{
+		Client:   client,
+		Discover: esbConfig,
+		Throttle: flowcontrol,
+	}
 	esb := &esbsrv{
-		client:    rest.NewRESTClient(&esbCapability, base),
+		client:    rest.NewRESTClient(esbCapability, base),
 		esbConfig: esbConfig,
 	}
-	return esb
+	return esb, nil
 }
 
 func (e *esbsrv) GseSrv() gse.GseClientInterface {
@@ -58,4 +68,8 @@ func (e *esbsrv) GseSrv() gse.GseClientInterface {
 		e.Unlock()
 	}
 	return srv
+}
+
+func (e *esbsrv) GetEsbConfigSrv() *esbutil.EsbConfigServ {
+	return e.esbConfig
 }
