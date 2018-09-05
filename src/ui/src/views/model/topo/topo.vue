@@ -223,7 +223,7 @@
                 let nodes = []
                 this.network.nodes = this.modelList.map(nodeData => {
                     let fontColor = nodeData['ispre'] ? '#6894c8' : '#868b97'
-                    if (nodeData['bk_classification_id'] !== this.bkClassificationId) {
+                    if (nodeData['bk_classification_id'] !== this.bkClassificationId || nodeData['bk_obj_id'] === 'plat') {
                         fontColor = '#c3cdd7'
                     }
                     let node = {
@@ -269,7 +269,7 @@
                     image.onload = () => {
                         let fontColor = node.data['ispre'] ? '#6894c8' : '#868b97'
                         let iconColor = node.data['ispre'] ? '#6894c8' : '#868b97'
-                        if (node.data['bk_classification_id'] !== this.bkClassificationId) {
+                        if (node.data['bk_classification_id'] !== this.bkClassificationId || node.data['bk_obj_id'] === 'plat') {
                             fontColor = '#c3cdd7'
                             iconColor = '#c3cdd7'
                         }
@@ -340,7 +340,7 @@
                     if (params.nodes.length) {
                         let id = params.nodes[0]
                         let model = this.modelList.find(({bk_obj_id: bkObjId}) => bkObjId === id)
-                        if (model && id !== 'plat') {
+                        if (model && model['bk_classification_id'] === this.bkClassificationId && id !== 'plat') {
                             this.$emit('editModel', model)
                         }
                     }
