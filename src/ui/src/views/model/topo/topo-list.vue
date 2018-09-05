@@ -1,5 +1,5 @@
 <template>
-    <ul class="topolist-wrapper clearfix">
+    <ul class="topolist-wrapper clearfix" v-bkloading="{isLoading: $loading(['searchObjects', 'searchMainlineObject'])}">
         <li class="line"
             :class="{'default': model['bk_obj_id'] === 'biz', 'custom-item': model['ispre']}"
             v-for="(model, index) in topoList"
@@ -38,13 +38,15 @@
                 this.$emit('createModel', this.findPrevModelId(model))
             },
             editModel (model) {
-                this.$emit('editModel', model)
+                if (model['bk_obj_id'] !== 'biz') {
+                    this.$emit('editModel', model)
+                }
             },
             getBiz () {
-                return this.$store.dispatch('objectModel/searchObjects', {params: {bk_obj_id: 'biz'}})
+                return this.$store.dispatch('objectModel/searchObjects', {params: {bk_obj_id: 'biz'}, config: {requestId: 'searchObjects'}})
             },
             getTopoStructure () {
-                return this.$store.dispatch('objectMainLineModule/searchMainlineObject')
+                return this.$store.dispatch('objectMainLineModule/searchMainlineObject', {requestId: 'searchMainlineObject'})
             },
             getTopoModel () {
                 return this.classifications.find(({bk_classification_id: bkClassificationId}) => bkClassificationId === 'bk_biz_topo')['bk_objects']
@@ -103,9 +105,6 @@
             &.line{
                 float: none;
                 margin: 60px auto 0;
-                &:first-child{
-                    margin-top: 0;
-                }
                 &::after{
                     content: "";
                     height: 60px;
@@ -126,6 +125,7 @@
                 }
             }
             &.default{
+                margin-top: 0;
                 border-style: solid;
                 border-width: 1px;
                 background: transparent;
