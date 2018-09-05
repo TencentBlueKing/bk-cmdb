@@ -3,9 +3,11 @@
         <slot></slot>
         <i v-for="(direction, index) in localDirections"
             :class="['resize-handler', direction]"
+            :style="getHandlerStyle(direction)"
             @mousedown.left="handleMousedown($event, direction)">
         </i>
         <i :class="['resize-proxy', state.direction]" ref="resizeProxy"></i>
+        <div class="resize-mask" ref="resizeMask"></div>
     </div>
 </template>
 
@@ -48,6 +50,14 @@
                 validator (val) {
                     return ['object', 'number'].includes(typeof val)
                 }
+            },
+            handlerWidth: {
+                type: Number,
+                default: 5
+            },
+            handlerOffset: {
+                type: Number,
+                default: 0
             }
         },
         data () {
@@ -90,12 +100,26 @@
             }
         },
         methods: {
+            getHandlerStyle (direction) {
+                const style = {}
+                if (direction === 'right') {
+                    style.width = this.handlerWidth + 'px'
+                    style.marginLeft = this.handlerOffset - this.handlerWidth + 'px'
+                } else {
+                    style.height = this.handlerWidth + 'px'
+                    style.marginTop = this.handlerOffset - this.handlerWidth + 'px'
+                }
+                return style
+            },
             handleMousedown (event, direction) {
                 const $handler = event.currentTarget
                 const handlerRect = $handler.getBoundingClientRect()
                 const $container = this.$el
                 const containerRect = $container.getBoundingClientRect()
                 const $resizeProxy = this.$refs.resizeProxy
+                const $resizeMask = this.$refs.resizeMask
+                $resizeProxy.style.visibility = 'visible'
+                $resizeMask.style.display = 'block'
                 if (direction === 'right') {
                     this.state = {
                         direction,
@@ -104,6 +128,7 @@
                     }
                     $resizeProxy.style.top = 0
                     $resizeProxy.style.left = this.state.startLeft + 'px'
+                    $resizeMask.style.cursor = 'col-resize'
                 } else {
                     this.state = {
                         direction,
@@ -112,8 +137,8 @@
                     }
                     $resizeProxy.style.left = 0
                     $resizeProxy.style.top = this.state.startTop + 'px'
+                    $resizeMask.style.cursor = 'row-resize'
                 }
-                $resizeProxy.style.visibility = 'visible'
                 document.onselectstart = () => { return false }
                 document.ondragstart = () => { return false }
                 const handleMouseMove = (event) => {
@@ -122,15 +147,13 @@
                         const proxyLeft = this.state.startLeft + deltaLeft
                         const maxLeft = this.localMax.right
                         const minLeft = this.localMin.right
-                        $resizeProxy.style.left = Math.min(maxLeft, Math.max(minLeft, proxyLeft)) + 'px'
-                        document.body.style.cursor = 'col-resize'
+                        $resizeProxy.style.left = Math.min(maxLeft, Math.max(minLeft, proxyLeft)) + this.handlerOffset + 'px'
                     } else {
                         const deltaTop = event.clientY - this.state.startMouseTop
                         const proxyTop = this.state.startTop + deltaTop
                         const maxTop = this.localMax.bottom
                         const minTop = this.localMin.bottom
-                        $resizeProxy.style.top = Math.min(maxTop, Math.max(minTop, proxyTop)) + 'px'
-                        document.body.style.cursor = 'row-resize'
+                        $resizeProxy.style.top = Math.min(maxTop, Math.max(minTop, proxyTop)) + this.handlerOffset + 'px'
                     }
                 }
                 const handleMouseUp = (event) => {
@@ -141,8 +164,8 @@
                         const finalTop = parseInt($resizeProxy.style.top, 10)
                         this.$el.style.height = finalTop + 'px'
                     }
-                    document.body.style.cursor = 'auto'
                     $resizeProxy.style.visibility = 'hidden'
+                    this.$refs.resizeMask.style.display = 'none'
                     document.removeEventListener('mousemove', handleMouseMove)
                     document.removeEventListener('mouseup', handleMouseUp)
                     document.onselectstart = null
@@ -158,12 +181,6 @@
 <style lang="scss" scoped>
     .resize-layout {
         position: relative;
-        &.right{
-            padding-right: 5px;
-        }
-        &.bottom{
-            padding-bottom: 5px;
-        }
     }
     .resize-handler {
         position: absolute;
@@ -173,7 +190,6 @@
             left: 100%;
             width: 5px;
             height: 100%;
-            margin: 0 0 0 -5px;
             cursor: col-resize;
         }
         &.bottom {
@@ -181,7 +197,6 @@
             left: 0;
             width: 100%;
             height: 5px;
-            margin: -5px 0 0 0;
             cursor: row-resize;
         }
     }
@@ -200,5 +215,14 @@
             width: 100%;
             border-top: 1px dashed #d1d5e0;
         }
+    }
+    .resize-mask {
+        display: none;
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 9999;
     }
 </style>
