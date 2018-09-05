@@ -18,7 +18,6 @@ import (
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/eventserver"
 	"configcenter/src/apimachinery/flowctrl"
-	"configcenter/src/apimachinery/gseprocserver"
 	"configcenter/src/apimachinery/healthz"
 	"configcenter/src/apimachinery/hostcontroller"
 	"configcenter/src/apimachinery/hostserver"
@@ -41,7 +40,6 @@ type ClientSetInterface interface {
 	ProcController() proccontroller.ProcCtrlClientInterface
 	HostController() hostcontroller.HostCtrlClientInterface
 
-	GseProcServer() gseprocserver.GseProcClientInterface
 	Healthz() healthz.HealthzInterface
 }
 
@@ -51,7 +49,7 @@ func NewApiMachinery(c *util.APIMachineryConfig) (ClientSetInterface, error) {
 		return nil, err
 	}
 
-	discover, err := discovery.NewDiscoveryInterface(c.ZkAddr, c.GseProcServ)
+	discover, err := discovery.NewDiscoveryInterface(c.ZkAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -155,15 +153,6 @@ func (cs *ClientSet) HostController() hostcontroller.HostCtrlClientInterface {
 		Throttle: cs.throttle,
 	}
 	return hostcontroller.NewHostCtrlClientInterface(c, cs.version)
-}
-
-func (cs *ClientSet) GseProcServer() gseprocserver.GseProcClientInterface {
-	c := &util.Capability{
-		Client:   cs.client,
-		Discover: cs.discover.GseProcServ(),
-		Throttle: cs.throttle,
-	}
-	return gseprocserver.NewGseProcClientInterface(c, "v1")
 }
 
 func (cs *ClientSet) Healthz() healthz.HealthzInterface {
