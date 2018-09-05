@@ -99,6 +99,7 @@ func (lgc *Logics) getProcInfoByID(ctx context.Context, procID []int64, header h
 			blog.Errorf("getHostByModuleID  proc %v  AppID  not interger, json:%s", proc, string(byteHost))
 			return nil, err
 		}
+		item.ProcInfo = proc
 
 		gseProc[procID] = item
 	}

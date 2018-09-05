@@ -28,6 +28,7 @@ import (
 
 func (lgc *Logics) HandleHostProcDataChange(ctx context.Context, eventData *metadata.EventInst) {
 	chnOpLock.Do(lgc.bgHandle)
+
 	switch eventData.ObjType {
 	case metadata.EventObjTypeProcModule:
 		handEventDataChan <- chanItem{ctx: ctx, eventData: eventData, opFunc: lgc.eventProcInstByProcModule}
@@ -128,15 +129,15 @@ func (lgc *Logics) HandleProcInstNumByModuleID(ctx context.Context, header http.
 	if nil != err {
 		return err
 	}
-	for _, info := range procInfos {
-		gseHost := make([]metadata.GseHost, 0)
-		for _, host := range hostInfos {
-			gseHost = append(gseHost, *host)
-		}
-		if 0 == len(gseHost) {
+	gseHost := make([]metadata.GseHost, 0)
+	for _, host := range hostInfos {
+		gseHost = append(gseHost, *host)
+	}
+	if 0 != len(gseHost) {
+		for _, info := range procInfos {
 			err := lgc.RegisterProcInstanceToGse(moduleID, gseHost, info.ProcInfo, header)
 			if nil != err {
-				blog.Errorf("RegisterProcInstanceToGse error%s", err.Error())
+				blog.Errorf("RegisterProcInstanceToGse error %s", err.Error())
 				return err
 			}
 		}

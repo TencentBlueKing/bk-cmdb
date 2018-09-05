@@ -87,6 +87,7 @@ func (ps *ProcServer) QueryProcessOperateResult(req *restful.Request, resp *rest
 func (ps *ProcServer) RefreshProcHostInstByEvent(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
+
 	input := new(meta.EventInst)
 	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
 		blog.Errorf("fail to decode RefreshProcHostInstByEvent request body. err: %v", err)
@@ -94,7 +95,7 @@ func (ps *ProcServer) RefreshProcHostInstByEvent(req *restful.Request, resp *res
 		return
 	}
 	ps.Logics.HandleHostProcDataChange(context.Background(), input)
-	resp.WriteEntity(meta.NewSuccessResp(nil))
+	resp.WriteEntity(meta.NewSuccessResp("adads"))
 }
 
 func (ps *ProcServer) deleteProcInstanceModel(appId, procId, moduleName string, forward http.Header) error {

@@ -121,6 +121,9 @@ func (lgc *Logics) unregisterProcInstDetall(ctx context.Context, header http.Hea
 			return nil
 		}
 		for _, item := range ret.Data.Info {
+			if 0 == len(item.Hosts) {
+				continue
+			}
 			gseProc := new(metadata.GseProcRequest)
 			gseProc.OpType = common.GSEProcOPUnregister
 			gseProc.AppID = item.AppID

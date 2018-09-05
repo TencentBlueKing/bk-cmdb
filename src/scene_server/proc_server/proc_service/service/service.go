@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/proc_server/logics"
+	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 )
 
 type ProcServer struct {
@@ -146,6 +147,16 @@ func (s *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
 	resp.WriteEntity(answer)
 }
 
-func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig) {
+func (ps *ProcServer) OnProcessConfigUpdate(esbChange chan esbutil.EsbConfig) func(previous, current cfnc.ProcessConfig) {
+
 	//
+	return func(previous, current cfnc.ProcessConfig) {
+		esbAddr, addrOk := current.ConfigMap["esb.addr"]
+		esbAppCode, appCodeOk := current.ConfigMap["esb.appCode"]
+		esbAppSecret, appSecretOk := current.ConfigMap["esb.appSecret"]
+		if addrOk && appCodeOk && appSecretOk {
+			esbChange <- esbutil.EsbConfig{Addrs: esbAddr, AppCode: esbAppCode, AppSecret: esbAppSecret}
+		}
+
+	}
 }

@@ -34,7 +34,7 @@ func (lgc *Logics) RegisterProcInstanceToGse(moduleID int64, gseHost []metadata.
 
 	// process
 	procName, ok := procInfo[common.BKProcessNameField].(string)
-	if ok {
+	if !ok {
 		blog.Errorf("process name not found, raw process:%+v", procInfo)
 		return defErr.Errorf(common.CCErrCommInstFieldNotFound, "process name", "process")
 	}
@@ -227,8 +227,8 @@ func (lgc *Logics) QueryProcessOperateResult(ctx context.Context, taskID string,
 			return nil, nil, nil, lgc.CCErr.Error(util.GetLanguage(forward), common.CCErrCommHTTPDoRequestFailed)
 		}
 		if !ret.Result {
-			blog.Errorf("QueryProcessOperateResult http search task info taskID:%s error:%s logID:%s", taskID, ret.Message, util.GetHTTPCCRequestID(forward))
-			return nil, nil, nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(forward)).New(ret.Code, ret.Message)
+			blog.Errorf("QueryProcessOperateResult http search task info taskID:%s error:%s logID:%s", taskID, ret.ErrMsg, util.GetHTTPCCRequestID(forward))
+			return nil, nil, nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(forward)).New(ret.Code, ret.ErrMsg)
 		}
 		if 0 == ret.Data.Count {
 			return nil, nil, nil, nil

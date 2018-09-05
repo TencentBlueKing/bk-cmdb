@@ -28,6 +28,8 @@ import (
 	"configcenter/src/scene_server/proc_server/app/options"
 	"configcenter/src/scene_server/proc_server/logics"
 	"configcenter/src/scene_server/proc_server/proc_service/service"
+	"configcenter/src/thirdpartyclient/esbserver"
+	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 )
 
 //Run ccapi server
@@ -71,14 +73,19 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		Server:       bkbsvr,
 	}
 
+	esbConfigChan := make(chan esbutil.EsbConfig, 0)
 	engine, err := backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
 		types.CC_MODULE_PROC,
 		op.ServConf.ExConfig,
-		procSvr.OnProcessConfigUpdate,
+		procSvr.OnProcessConfigUpdate(esbConfigChan),
 		bkbCfg)
 
+	esbSrv, err := esbserver.NewEsb(apiMachConf, esbConfigChan)
+	if err != nil {
+		return fmt.Errorf("create esb api  object failed. err: %v", err)
+	}
 	procSvr.Engine = engine
-	procSvr.Logics = &logics.Logics{Engine: engine}
+	procSvr.Logics = &logics.Logics{Engine: engine, EsbServ: esbSrv}
 
 	select {
 	case <-ctx.Done():
