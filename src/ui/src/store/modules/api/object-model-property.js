@@ -27,8 +27,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    createObjectAttribute ({ commit, state, dispatch }, { params }) {
-        return $http.post(`object/attr`, params)
+    createObjectAttribute ({ commit, state, dispatch }, { params, config }) {
+        return $http.post(`object/attr`, params, config)
     },
 
     /**
@@ -39,8 +39,8 @@ const actions = {
      * @param {Object} id 被删除的数据记录的唯一标识id
      * @return {promises} promises 对象
      */
-    deleteObjectAttribute ({ commit, state, dispatch }, { id }) {
-        return $http.delete(`object/attr/${id}`)
+    deleteObjectAttribute ({ commit, state, dispatch }, { id, config }) {
+        return $http.delete(`object/attr/${id}`, config)
     },
 
     /**
@@ -52,8 +52,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    updateObjectAttribute ({ commit, state, dispatch }, { id, params }) {
-        return $http.put(`object/attr/${id}`, params)
+    updateObjectAttribute ({ commit, state, dispatch }, { id, params, config }) {
+        return $http.put(`object/attr/${id}`, params, config)
     },
 
     /**

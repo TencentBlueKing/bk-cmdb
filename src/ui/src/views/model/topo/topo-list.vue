@@ -4,10 +4,10 @@
             :class="{'default': model['bk_obj_id'] === 'biz', 'custom-item': model['ispre']}"
             v-for="(model, index) in topoList"
             :key="index"
-            @click="editModel"
+            @click="editModel(model)"
         >
             <div class="content">
-                <i @click="createModel(model)" class="icon-add icon-cc-round-plus" v-if="model['bk_obj_id'] !== 'biz'"></i>
+                <i @click.stop="createModel(model)" class="icon-add icon-cc-round-plus" v-if="model['bk_obj_id'] !== 'biz'"></i>
                 <div>
                     <i class="topo-icon" :class="model['bk_obj_icon']"></i>
                 </div>
@@ -38,7 +38,7 @@
                 this.$emit('createModel', this.findPrevModelId(model))
             },
             editModel (model) {
-                this.$emit('editMode', model)
+                this.$emit('editModel', model)
             },
             getBiz () {
                 return this.$store.dispatch('objectModel/searchObjects', {params: {bk_obj_id: 'biz'}})
@@ -62,7 +62,7 @@
                 })
                 this.topoList = topoList
             },
-            async init () {
+            async initTopo () {
                 const res = await Promise.all([
                     this.getTopoStructure(),
                     this.getBiz()
@@ -74,7 +74,7 @@
             }
         },
         created () {
-            this.init()
+            this.initTopo()
         }
     }
 </script>

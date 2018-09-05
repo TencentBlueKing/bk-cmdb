@@ -8,7 +8,7 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 <template>
-    <div class="topo-box model" :class="{'no-edit': bkClassificationId === 'bk_host_manage'}" v-bkloading="{isLoading: false}">
+    <div class="topo-box model" :class="{'no-edit': bkClassificationId === 'bk_host_manage'}" v-bkloading="{isLoading: isLoading}">
         <div ref="topo" class="topo" v-show="modelList.length !== 0"></div>
         <button v-if="bkClassificationId !== 'bk_host_manage'" class="bk-button vis-button vis-setup" @click="editClassify" :title="$t('Common[\'编辑\']')">
             <i class="icon icon-cc-edit"></i>
@@ -24,9 +24,10 @@
                 <span class="vis-button-text">{{$t('Common["新增"]')}}</span>
             </bk-button>
         </div>
-        <div class="no-model-prompting tc" v-if="!modelList.length && !disableModelList.length">
+        <div class="no-model-prompting tc" v-if="!modelList.length || !disableModelList.length">
             <img src="../../../assets/images/no_model_prompting.png">
-            <p>{{$t('ModelManagement["此分类下无模型"]')}}</p>
+            <p v-if="modelList.length === 0 && disableModelList.length">{{$t('ModelManagement["此分组下无已启用模型"]')}}</p>
+            <p v-else>{{$t('ModelManagement["此分组下无模型"]')}}</p>
             <bk-button type="primary" class="create-btn" @click="createModel">{{$t('Common["立即创建"]')}}</bk-button>
         </div>
         <bk-button class="bk-button vis-button vis-enable" v-if="addModelAvailable && disableModelList.length" @click="isShowDisableList = true">
@@ -46,7 +47,7 @@
                 </ul>
             </div>
         </transition>
-        <bk-button type="danger" class="bk-button vis-button vis-del" :title="$t('ModelManagement[\'删除\']')" v-if="!isInnerType" @click="deleteClassify">
+        <bk-button type="default" class="vis-button vis-del" :title="$t('ModelManagement[\'删除\']')" v-if="!isInnerType" @click="deleteClassify">
             <i class="icon icon-cc-del"></i>
         </bk-button>
     </div>
@@ -54,11 +55,12 @@
 
 <script>
     import Vis from 'vis'
-    import { mapGetters } from 'vuex'
+    import { mapGetters, mapActions, mapMutations } from 'vuex'
     import { generateObjIcon as GET_OBJ_ICON } from '@/utils/util'
     export default {
         data () {
             return {
+                isLoading: false,
                 networkInstance: null,
                 networkDataSet: {
                     nodes: null,
@@ -114,6 +116,13 @@
         },
         computed: {
             ...mapGetters(['supplierAccount']),
+            ...mapGetters('objectModelClassify', [
+                'classifications'
+            ]),
+            activeClassify () {
+                let activeClassify = this.classifications.find(({bk_classification_id: bkClassificationId}) => bkClassificationId === this.bkClassificationId)
+                return activeClassify
+            },
             isInnerType () {
                 return this.$classifications.find(({bk_classification_id: bkClassificationId}) => bkClassificationId === this.bkClassificationId)['bk_classification_type'] === 'inner'
             },
@@ -149,15 +158,30 @@
         },
         watch: {
             '$route.params.classifyId' () {
-                this.initNetwork()
+                this.initTopo()
             }
         },
         methods: {
-            deleteClassify () {
-
+            ...mapActions('objectModelClassify', [
+                'deleteClassification'
+            ]),
+            ...mapMutations('objectModelClassify', [
+                'deleteClassify'
+            ]),
+            async deleteClassify () {
+                this.$bkInfo({
+                    title: this.$t('ModelManagement["确认要删除此分组？"]'),
+                    confirmFn: async () => {
+                        await this.deleteClassification({
+                            id: this.activeClassify['id']
+                        })
+                        this.$router.push('/model')
+                        this.$store.commit('objectModelClassify/deleteClassify', this.bkClassificationId)
+                    }
+                })
             },
             editClassify () {
-
+                this.$emit('editClassify')
             },
             createModel () {
                 this.$emit('createModel')
@@ -180,7 +204,8 @@
                 }
                 this.networkInstance.moveTo({scale: scale})
             },
-            async initNetwork () {
+            async initTopo () {
+                this.isLoading = true
                 this.setNodes()
                 await this.setEdges()
                 this.networkInstance = new Vis.Network(this.$refs.topo, {
@@ -188,6 +213,7 @@
                     edges: this.networkDataSet.edges
                 }, this.network.options)
                 this.addListener()
+                this.isLoading = false
             },
             async getTopoStructure () {
                 const res = await this.$store.dispatch('objectModel/searchObjectTopo', {params: {bk_classification_id: this.bkClassificationId}})
@@ -332,7 +358,7 @@
             }
         },
         mounted () {
-            this.initNetwork()
+            this.initTopo()
         }
     }
 </script>
@@ -378,9 +404,10 @@
         &.vis-zoomIn,
         &.vis-zoomOut,
         &.vis-zoomExtends,
-        &.vis-setup{
+        &.vis-setup,
+        &.vis-enable{
             &:hover{
-                color: #6eb1ff;
+                color: #6eb1ff !important;
             }
             &:active{
                 color: #3188ed;
@@ -448,7 +475,7 @@
         .icon{
             font-weight: normal;
         }
-        &:hover{
+        &:hover .icon{
             color: #ef4c4c;
         }
     }

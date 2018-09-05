@@ -1,0 +1,61 @@
+<template>
+    <div class="create-field-wrapper">
+        <div class="title" @click="cancel">
+            <img src="../../../assets/images/icon/down_icon.png" alt="">
+        </div>
+        <div class="field-content">
+            <v-model-field
+                :isEditField="false"
+                @save="save"
+                @cancel="cancel"
+            ></v-model-field>
+        </div>
+    </div>
+</template>
+
+<script>
+    import vModelField from './model-field'
+    import { mapActions } from 'vuex'
+    export default {
+        components: {
+            vModelField
+        },
+        methods: {
+            ...mapActions('objectModelProperty', [
+                'createObjectAttribute'
+            ]),
+            save () {
+                this.$emit('save')
+            },
+            cancel () {
+                this.$emit('cancel')
+            }
+        }
+    }
+</script>
+
+
+<style lang="scss" scoped>
+    .create-field-wrapper {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #fff;
+        .title {
+            width: 100%;
+            height: 40px;
+            background: linear-gradient(to bottom, #f9f9f9, #fff);
+            cursor: pointer;
+            text-align: center;
+            img {
+                margin-top: 14px;
+            }
+        }
+        .field-content {
+            height: calc(100% - 40px);
+            padding: 0 40px;
+        }
+    }
+</style>

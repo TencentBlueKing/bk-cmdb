@@ -27,8 +27,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    createGroup ({ commit, state, dispatch }, { params }) {
-        return $http.post(`objectatt/group/new`, params)
+    createGroup ({ commit, state, dispatch }, { params, config }) {
+        return $http.post(`objectatt/group/new`, params, config)
     },
 
     /**
@@ -52,8 +52,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    updateGroup ({ commit, state, dispatch }, { params }) {
-        return $http.put(`objectatt/group/update`, params)
+    updateGroup ({ commit, state, dispatch }, { params, config }) {
+        return $http.put(`objectatt/group/update`, params, config)
     },
 
     /**
@@ -76,8 +76,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    updatePropertyGroup ({ commit, state, dispatch }, { params }) {
-        return $http.put(`objectatt/group/property`, params)
+    updatePropertyGroup ({ commit, state, dispatch }, { params, config }) {
+        return $http.put(`objectatt/group/property`, params, config)
     },
 
     /**
