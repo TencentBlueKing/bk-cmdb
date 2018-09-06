@@ -30,7 +30,7 @@
             <bk-tabpanel name="collect" :title="$t('Hosts[\'收藏\']')" :show="isShowCollect">
                 <v-collect :favoriteList="tab.favorite.list" :active="tab.active === 'collect'" @delete="getFavoriteList" @update="updateFavoriteList" @apply="applyCollect"></v-collect>
             </bk-tabpanel>
-            <bk-tabpanel name="history" :title="$t('Hosts[\'历史\']')" :show="isShowHistory">
+            <bk-tabpanel name="history" :title="$t('Hosts[\'历史\']')" :show="false">
                 <v-history :isShow="tab.active === 'history'" @apply="applyHistory"></v-history>
             </bk-tabpanel>
             <template slot="setting">
