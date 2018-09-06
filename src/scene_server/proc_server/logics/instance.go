@@ -113,15 +113,8 @@ func (lgc *Logics) HandleProcInstNumByModuleID(ctx context.Context, header http.
 		}
 
 	}
-	unregisterProcDetail := make([]metadata.ProcInstanceModel, 0)
-	for key, info := range procInst {
-		_, ok := isExistHostInst[key]
-		if !ok {
-			unregisterProcDetail = append(unregisterProcDetail, info)
-		}
-	}
 
-	err = lgc.setProcInstDetallStatusUnregister(ctx, header, appID, moduleID, unregisterProcDetail)
+	err = lgc.setProcInstDetallStatusUnregister(ctx, header, appID, moduleID)
 	if nil != err {
 		return err
 	}
@@ -143,7 +136,7 @@ func (lgc *Logics) HandleProcInstNumByModuleID(ctx context.Context, header http.
 		}
 	}
 
-	err = lgc.unregisterProcInstDetall(ctx, header, appID, moduleID, unregisterProcDetail)
+	err = lgc.unregisterProcInstDetall(ctx, header, appID, moduleID)
 	if nil != err {
 		return err
 	}

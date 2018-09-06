@@ -98,13 +98,10 @@ func sendEventFrefreshModuleNotice() {
 	}
 }
 
-func (lgc *Logics) unregisterProcInstDetall(ctx context.Context, header http.Header, appID, moduleID int64, unregister []metadata.ProcInstanceModel) error {
-	if 0 == len(unregister) {
-		return nil
-	}
+func (lgc *Logics) unregisterProcInstDetall(ctx context.Context, header http.Header, appID, moduleID int64) error {
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	dat := new(metadata.QueryInput)
-	dat.Condition = map[string]interface{}{common.BKDBOR: unregister}
+	dat.Condition = map[string]interface{}{common.BKAppIDField: appID, common.BKModuleIDField: moduleID, common.BKStatusField: metadata.ProcInstanceDetailStatusUnRegisterFailed}
 	dat.Limit = 200
 	dat.Start = 0
 	for {
@@ -149,18 +146,12 @@ func (lgc *Logics) unregisterProcInstDetall(ctx context.Context, header http.Hea
 }
 
 // setProcInstDetallStatusUnregister modify process instance status to unregister in cmdb table
-func (lgc *Logics) setProcInstDetallStatusUnregister(ctx context.Context, header http.Header, appID, moduleID int64, unregister []metadata.ProcInstanceModel) error {
+func (lgc *Logics) setProcInstDetallStatusUnregister(ctx context.Context, header http.Header, appID, moduleID int64) error {
 
-	if 0 == len(unregister) {
-		return nil
-	}
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
-	unregisterProcDetail := make([]interface{}, 0)
-	for _, item := range unregister {
-		unregisterProcDetail = append(unregisterProcDetail, common.KvMap{common.BKAppIDField: item.ApplicationID, common.BKModuleIDField: item.ModuleID, common.BKHostIDField: item.HostID, common.BKProcessIDField: item.ProcID})
-	}
+
 	dat := new(metadata.ModifyProcInstanceDetail)
-	dat.Conds = map[string]interface{}{common.BKDBOR: unregisterProcDetail}
+	dat.Conds = map[string]interface{}{common.BKAppIDField: appID, common.BKModuleIDField: moduleID}
 	dat.Data = map[string]interface{}{common.BKStatusField: metadata.ProcInstanceDetailStatusUnRegisterFailed}
 	ret, err := lgc.CoreAPI.ProcController().ModifyProcInstanceDetail(ctx, header, dat)
 	if nil != err {

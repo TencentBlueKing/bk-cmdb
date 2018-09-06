@@ -371,6 +371,5 @@ func (lgc *Logics) GetHostForGse(appId, hostId int64, forward http.Header) ([]me
 	gseHost.BkSupplierId = supplierID
 
 	gseHosts = append(gseHosts, gseHost)
-
 	return gseHosts, nil
 }

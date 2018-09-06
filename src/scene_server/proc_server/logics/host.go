@@ -89,6 +89,7 @@ func (lgc *Logics) getHostByModuleID(ctx context.Context, header http.Header, mo
 			blog.Errorf("getHostByModuleID  hostInfo %v  innerip  not found, json:%s", host, string(byteHost))
 			return nil, err
 		}
+		item.HostID = hostID
 		item.BkCloudId = cloudID
 		item.Ip = innerIP
 		item.BkSupplierId = intSupplierID
