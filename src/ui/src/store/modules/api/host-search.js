@@ -52,8 +52,8 @@ const actions = {
      * @param {Number} bkHostId 主机id
      * @return {Promise} promise 对象
      */
-    getHostSnapshot ({ commit, state, dispatch }, { bkHostId }) {
-        return $http.get(`hosts/snapshot/${bkHostId}`)
+    getHostSnapshot ({ commit, state, dispatch }, { hostId }) {
+        return $http.get(`hosts/snapshot/${hostId}`)
     },
 
     /**
