@@ -13,8 +13,6 @@ package gse
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"configcenter/src/common/metadata"
@@ -123,7 +121,7 @@ func (p *gse) UnRegisterProcInfo(ctx context.Context, h http.Header, data *metad
 		GseProcRequest: data,
 	}
 
-	err = p.client.Delete().
+	err = p.client.Post().
 		WithContext(ctx).
 		Body(params).
 		SubResource(subPath).
