@@ -42,25 +42,31 @@
                         {{property.objName}} - {{property.propertyName}}
                     </label>
                     <div class="filter-content clearfix">
-                        <cmdb-form-enum class="filter-field-value fr"
+                        <filter-field-operator class="filter-field-operator fl"
+                            v-if="!['date', 'time'].includes(property.propertyType)"
+                            :type="getOperatorType(property)"
+                            v-model="property.operator">
+                        </filter-field-operator>
+                        <cmdb-form-enum class="filter-field-value filter-field-enum fl"
                             v-if="property.propertyType === 'enum'"
                             :allow-clear="true"
                             :options="property.option || []"
                             v-model="property.value">
                         </cmdb-form-enum>
-                        <cmdb-form-bool-input class="filter-field-value filter-field-bool-input fr"
+                        <cmdb-form-bool-input class="filter-field-value filter-field-bool-input fl"
                             v-else-if="property.propertyType === 'bool'"
                             v-model="property.value">
                         </cmdb-form-bool-input>
-                        <cmdb-form-associate-input class="filter-field-value filter-field-associate fr"
+                        <cmdb-form-associate-input class="filter-field-value filter-field-associate fl"
                             v-else-if="['singleasst', 'multiasst'].includes(property.propertyType)"
                             v-model="property.value">
                         </cmdb-form-associate-input>
-                        <component class="filter-field-value fr" :class="`filter-field-${property.propertyType}`"
+                        <component class="filter-field-value fl" :class="`filter-field-${property.propertyType}`"
                             v-else
                             :is="`cmdb-form-${property.propertyType}`"
                             v-model="property.value">
                         </component>
+                        <i class="userapi-delete fr bk-icon icon-close" @click="deleteUserProperty(property, index)"></i>
                     </div>
                 </li>
             </ul>
@@ -90,14 +96,35 @@
                     </div>
                 </div>
             </div>
+            <div class="userapi-btn-group">
+                <bk-button type="primary" class="userapi-btn" :disabled="errors.any()" @click.stop="previewUserAPI">
+                    {{$t("CustomQuery['预览']")}}
+                </bk-button>
+                <bk-button type="primary" :loading="$loading('saveUserAPI')" class="userapi-btn" :disabled="errors.any()" @click="saveUserAPI">
+                    {{$t("Common['保存']")}}
+                </bk-button>
+                <bk-button type="default" class="userapi-btn vice-btn" @click="closeSlider">
+                    {{$t("Common['取消']")}}
+                </bk-button>
+                <bk-button type="default" :loading="$loading('deleteUserAPI')" class="userapi-btn del-btn" @click="deleteUserAPI" v-if="type === 'update'">
+                    {{$t("Common['删除']")}}
+                </bk-button>
+            </div>
         </div>
     </div>
 </template>
 
 <script>
     import { mapActions, mapGetters } from 'vuex'
+    import filterFieldOperator from '@/components/hosts/filter/_filter-field-operator'
     export default {
         components: {
+            filterFieldOperator
+        },
+        props: {
+            type: {
+                type: String
+            }
         },
         data () {
             return {
@@ -190,7 +217,6 @@
             'object.host.properties' (properties) {
                 let selected = []
                 let tempList = []
-                console.log(properties)
                 properties.map(property => {
                     let isDefaultPropery = false
                     selected = this.attribute.default.map(defaultProperty => {
@@ -214,6 +240,42 @@
             ...mapActions('objectModelProperty', [
                 'searchObjectAttribute'
             ]),
+            previewUserAPI () {
+
+            },
+            saveUserAPI () {
+
+            },
+            closeSlider () {
+
+            },
+            deleteUserAPI () {
+
+            },
+            deleteUserProperty (userProperty, index) {
+                let propertyIndex = this.propertySelected[userProperty.objId].findIndex(propertyId => propertyId === userProperty.propertyId)
+                if (propertyIndex !== -1) {
+                    this.propertySelected[userProperty.objId].splice(propertyIndex, 1)
+                }
+                this.userProperties.splice(index, 1)
+            },
+            getEnumOptions (userProperty) {
+                let property = this.getOriginalProperty(userProperty.propertyId, userProperty.objId)
+                if (property) {
+                    return property.option || []
+                }
+                return []
+            },
+            getOperatorType (property) {
+                const propertyType = property.propertyType
+                const propertyId = property.propertyId
+                if (['bk_set_name', 'bk_module_name'].includes(propertyId)) {
+                    return 'name'
+                } else if (['singlechar', 'longchar', 'singleasst', 'multiasst'].includes(propertyType)) {
+                    return 'char'
+                }
+                return 'common'
+            },
             async initObjectProperties () {
                 const res = await Promise.all([
                     this.searchObjectAttribute({
@@ -231,12 +293,6 @@
                     this.searchObjectAttribute({
                         params: {
                             bk_obj_id: 'module',
-                            bk_supplier_account: this.supplierAccount
-                        }
-                    }),
-                    this.searchObjectAttribute({
-                        params: {
-                            bk_obj_id: 'biz',
                             bk_supplier_account: this.supplierAccount
                         }
                     })
@@ -278,7 +334,6 @@
                                 propertyId,
                                 objId
                             })
-                            property.disabled = true
                             let isExist = this.userProperties.findIndex(property => {
                                 return propertyId === property.propertyId
                             }) > -1
@@ -329,14 +384,19 @@
     }
 </script>
 
-
 <style lang="scss" scoped>
     .define-wrapper {
-        padding: 30px;
+        padding: 30px 15px 30px 30px;
+        height: 100%;
+        .define-box {
+            height: 100%;
+            @include scrollbar;
+        }
         .userapi-group {
             margin-bottom: 15px;
+            width: 370px;
             &.content {
-                margin-bottom: 40px;
+                margin-bottom: 30px;
                 .content-selector {
                     position: relative;
                 }
@@ -371,11 +431,32 @@
             }
         }
         .userapi-list {
+            width: 370px;
             .filter-label {
                 display: block;
+                margin-top: 20px;
+                line-height: 1;
             }
             .filter-content {
-
+                margin-top: 10px;
+                width: 100%;
+                .filter-field-operator {
+                    width: 87px;
+                    margin-right: 10px;
+                }
+                .filter-field-value {
+                    width: 237px;
+                    &.filter-field-enum,
+                    &.filter-field-time,
+                    &.filter-field-date {
+                        width: 334px;
+                    }
+                }
+                .userapi-delete {
+                    margin: 11px 12px 0 0;
+                    color: #c3cdd7;
+                    cursor: pointer;
+                }
             }
         }
         .userapi-new{
@@ -426,6 +507,15 @@
                     }
                 }
             }
+        }
+        .userapi-btn-group {
+            position: sticky;
+            margin-top: 30px;
+            bottom: 0;
+            left: 0;
+            background: #fff;
+            line-height: 36px;
+            height: 36px;
         }
     }
 </style>
