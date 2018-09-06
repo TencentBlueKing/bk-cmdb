@@ -3,6 +3,7 @@
         <cmdb-resize-layout class="tree-layout fl"
             v-bkloading="{isLoading: $loading(['getInstTopo', 'getInternalTopo'])}"
             direction="right"
+            :handler-offset="3"
             :min="200"
             :max="480">
             <cmdb-business-selector class="business-selector" v-model="business">

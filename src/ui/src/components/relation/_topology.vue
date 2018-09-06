@@ -1,6 +1,13 @@
 <template>
-    <div class="relation-topology-layout">
-        <div class="topology-container" ref="container" v-bkloading="{isLoading: $loading()}">
+    <div class="relation-topology-layout" :class="{'full-screen': fullScreen}">
+        <bk-button class="exit-full-screen icon-cc-resize-small" size="small" type="default"
+            v-show="fullScreen"
+            @click="toggleFullScreen(false)">
+            {{$t('Common["退出"]')}}
+        </bk-button>
+        <div class="tolology-loading" v-bkloading="{isLoading: $loading(getRelationRequestId)}">
+            <div class="topology-container" ref="container">
+            </div>
         </div>
         <ul class="topology-legend">
             <li class="legend-item" 
@@ -24,30 +31,28 @@
                 {{$t('Common["删除关联"]')}}
             </a>
         </div>
-        <div class="topology-details-layout" v-if="details.show">
-            <div class="details-container" ref="detailsContainer" v-bkloading="{isLoading: $loading()}" v-click-outside="handleHideDetails">
-                <div class="details-title" ref="detailsTitle">
-                    {{details.title}}
-                    <i class="bk-icon icon-close" @click="handleHideDetails"></i>
-                </div>
-                <cmdb-details ref="detailsPopup" class="details-popup"
-                    :showOptions="false"
-                    :inst="details.inst"
-                    :properties="details.properties"
-                    :property-groups="details.propertyGroups">
-                </cmdb-details>
-            </div>
-        </div>
+        <cmdb-topo-details v-if="details.show"
+            :objId="details.objId"
+            :instId="details.instId"
+            :title="details.title"
+            :show.sync="details.show">
+        </cmdb-topo-details>
     </div>
 </template>
 
 <script>
     import { mapActions, mapGetters } from 'vuex'
+    import cmdbTopoDetails from './_details.vue'
     import Vis from 'vis'
     let NODE_ID = 0
     export default {
+        components: {
+            cmdbTopoDetails
+        },
         data () {
             return {
+                getRelationRequestId: null,
+                fullScreen: false,
                 network: null,
                 nodes: [],
                 edges: [],
@@ -98,9 +103,8 @@
                 details: {
                     show: false,
                     title: '',
-                    inst: {},
-                    properties: [],
-                    propertyGroups: []
+                    objId: null,
+                    instId: null
                 }
             }
         },
@@ -109,7 +113,11 @@
         },
         async mounted () {
             try {
-                await this.getRelation(this.$parent.objId, this.$parent.instId)
+                const [rootData] = await this.getRelation(this.$parent.objId, this.$parent.instId)
+                const validRelation = rootData.next.filter(next => !this.ignore.includes(next['bk_obj_id']))
+                if (validRelation.length) {
+                    this.$emit('on-relation-loaded', validRelation)
+                }
             } catch (e) {
                 console.log(e)
             }
@@ -145,11 +153,13 @@
                 this.legends = node.legends
             },
             getRelation (objId, instId, node = null) {
+                this.getRelationRequestId = `get_${objId}_${instId}_relation`
                 return this.getInstRelation({
                     objId,
                     instId,
                     config: {
-                        requestId: `get_${objId}_${instId}_relation`
+                        requestId: this.getRelationRequestId,
+                        clearCache: true
                     }
                 }).then(async data => {
                     this.legends = []
@@ -422,6 +432,7 @@
                 const allDeleteNodes = [deleteNode, ...this.getAllDeleteNodes(deleteNode)]
                 this.nodes = this.nodes.filter(node => !allDeleteNodes.includes(node))
                 this.resetNetwork()
+                this.$http.cancelCache(`get_${this.$parent.objId}_${this.$parent.instId}_relation`)
             },
             getAllDeleteNodes (deleteNode) {
                 let allDeleteNodes = []
@@ -452,85 +463,19 @@
                 })
                 return relation
             },
-            async handleShowDetails () {
-                const node = this.hoverNode
-                const objId = node.data['bk_obj_id']
+            handleShowDetails () {
+                const nodeData = this.hoverNode.data
+                this.details.objId = nodeData['bk_obj_id']
+                this.details.instId = nodeData['bk_inst_id']
+                this.details.title = `${nodeData['bk_obj_name']}-${nodeData['bk_inst_name']}`
                 this.details.show = true
-                this.details.title = `${node.data['bk_obj_name']}-${node.data['bk_inst_name']}`
-                const [properties, propertyGroups] = await Promise.all([
-                    this.getObjectProperties(objId),
-                    this.searchGroup({
-                        objId,
-                        config: {
-                            requestId: `get_${objId}_property_groups`
-                        }
-                    })
-                ])
-                this.details.properties = properties
-                this.details.propertyGroups = propertyGroups
-                const inst = await this.getNodeDetails(node)
-                this.details.inst = this.$tools.flatternList(properties, [inst])[0]
+            },
+            toggleFullScreen (fullScreen) {
+                this.fullScreen = fullScreen
                 this.$nextTick(() => {
-                    const detailsContainerHeight = this.$refs.detailsContainer.getBoundingClientRect().height
-                    const detailsTitleHeight = this.$refs.detailsTitle.getBoundingClientRect().height
-                    this.$refs.detailsPopup.$el.style.height = detailsContainerHeight - detailsTitleHeight + 'px'
+                    this.network.redraw()
+                    this.network.moveTo({scale: 0.8})
                 })
-            },
-            handleHideDetails () {
-                this.details = {
-                    show: false,
-                    title: '',
-                    inst: {},
-                    properties: [],
-                    propertyGroups: []
-                }
-            },
-            getNodeDetails (node) {
-                const objId = node.data['bk_obj_id']
-                const instId = node.data['bk_inst_id']
-                let promise
-                if (objId === 'host') {
-                    promise = this.getHostDetails(instId)
-                } else if (objId === 'biz') {
-                    promise = this.getBusinessDetails(instId)
-                } else {
-                    promise = this.getInstDetails(objId, instId)
-                }
-                return promise
-            },
-            getHostDetails (hostId) {
-                return this.getHostBaseInfo({hostId}).then(data => {
-                    const inst = {}
-                    data.forEach(field => {
-                        inst[field['bk_property_id']] = field['bk_property_value']
-                    })
-                    return inst
-                })
-            },
-            getBusinessDetails (businessId) {
-                return this.searchBusiness({
-                    params: {
-                        condition: {'bk_biz_id': businessId},
-                        fields: [],
-                        page: {start: 0, limit: 1}
-                    }
-                }).then(({info}) => info[0])
-            },
-            getInstDetails (objId, instId) {
-                return this.searchInst({
-                    objId,
-                    params: {
-                        condition: {
-                            [objId]: [{
-                                field: 'bk_inst_id',
-                                operator: '$eq',
-                                value: instId
-                            }]
-                        },
-                        fields: {},
-                        page: {start: 0, limit: 1}
-                    }
-                }).then(({info}) => info[0])
             }
         }
     }
@@ -541,13 +486,33 @@
         height: calc(100% - 64px);
         background-color: #f9f9f9;
         position: relative;
+        &.full-screen {
+            position: fixed;
+            left: 0;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            height: 100%;
+            .exit-full-screen {
+                position: absolute;
+                top: 20px;
+                right: 20px;
+                height: 24px;
+                line-height: 22px;
+                font-size: 12px;
+                z-index: 9999;
+            }
+        }
+        .tolology-loading {
+            height: 100%;
+        }
         .topology-container {
             height: 100%;
         }
         .topology-legend {
             position: absolute;
-            left: 10px;
-            top: 10px;
+            left: 20px;
+            top: 20px;
             font-size: 14px;
             background-color: #f9f9f9;
             .legend-item {
@@ -592,60 +557,6 @@
                         color: #ff5656;
                     }
                 }
-            }
-        }
-    }
-    .topology-details-layout {
-        position: fixed;
-        left: 0;
-        right: 0;
-        top: 0;
-        bottom: 0;
-        text-align: right;
-        &:before {
-            content: "";
-            display: inline-block;
-            vertical-align: middle;
-            width: 0;
-            height: 100%;
-        }
-        .details-container {
-            position: relative;
-            display: inline-block;
-            width: 710px;
-            max-height: 250px;
-            max-height: 80%;
-            margin: 0 45px 0 0;
-            vertical-align: middle;
-            text-align: left;
-            background-color: #fff;
-            box-shadow: 0px 2px 9.6px 0.4px rgba(0, 0, 0, 0.4);
-            z-index: 100;
-            .details-title {
-                position: relative;
-                height: 49px;
-                padding: 0 0 0 16px;
-                border-bottom: 1px solid $cmdbBorderColor;
-                line-height: 48px;
-                color: #333948;
-                background-color: #f7f7f7;
-                .icon-close {
-                    position: absolute;
-                    right: 6px;
-                    top: 12px;
-                    padding: 6px;
-                    font-size: 12px;
-                    cursor: pointer;
-                    color: #333948;
-                    border-radius: 50%;
-                    &:hover {
-                        background-color: #e5e5e5;
-                    }
-                }
-            }
-            .details-popup {
-                padding-bottom: 20px;
-                @include scrollbar-y;
             }
         }
     }
