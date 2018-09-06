@@ -95,7 +95,7 @@ func (ps *ProcServer) RefreshProcHostInstByEvent(req *restful.Request, resp *res
 		return
 	}
 	ps.Logics.HandleHostProcDataChange(context.Background(), input)
-	resp.WriteEntity(meta.NewSuccessResp("adads"))
+	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
 func (ps *ProcServer) deleteProcInstanceModel(appId, procId, moduleName string, forward http.Header) error {
