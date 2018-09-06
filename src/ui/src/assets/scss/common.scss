@@ -499,6 +499,11 @@ input.cmdb-form-input{
                 border: solid 1px $cmdbFnMainColor;
             }
         }
+        .userapi-content-selector {
+            .bk-selector-list {
+                top: 36px;
+            }
+        }
     }
 }
 /* custom-query -------end------- */
