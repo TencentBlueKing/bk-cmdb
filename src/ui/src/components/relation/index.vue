@@ -2,18 +2,34 @@
     <div class="relation-layout">
         <div class="relation-options clearfix">
             <div class="fl">
-                <a :class="['options-tab', {active: tab.active === 'topology'}]" href="javascript:void(0)" @click.prevent="tab.active = 'topology'">
+                <a href="javascript:void(0)"
+                    :class="['options-tab', {active: activeComponent === 'cmdbRelationTopology'}]"
+                    @click.prevent="activeComponent = 'cmdbRelationTopology'">
                     <i class="icon-cc-resources"></i>
                     {{$t('Association["拓扑"]')}}
                 </a>
-                <a :class="['options-tab', {active: tab.active === 'tree'}]" href="javascript:void(0)" @click.prevent="tab.active = 'tree'">
+                <a  href="javascript:void(0)"
+                    :class="['options-tab', {active: activeComponent === 'cmdbRelationTree'}]"
+                    @click.prevent="activeComponent = 'cmdbRelationTree'">
                     <i class="icon-cc-tree"></i>
                     {{$t('Association["树形"]')}}
                 </a>
             </div>
+            <div class="fr" v-if="activeComponent = 'cmdbRelationTopology'">
+                <span class="options-full-screen"
+                    v-tooltip="$t('Common[\'全屏\']')"
+                    @click="handleFullScreen">
+                    <i class="icon-cc-resize-full"></i>
+                </span>
+                <bk-button class="options-create" size="small" type="primary"
+                    :disabled="!hasRelation"
+                    @click="activeComponent = 'cmdbRelationUpdate'">
+                    {{$t('Association["新增关联"]')}}
+                </bk-button>
+            </div>
         </div>
         <div class="relation-component">
-            <cmdb-relation-topology></cmdb-relation-topology>
+            <component ref="dynamicComponent" :is="activeComponent" @on-relation-loaded="handleRelationLoaded"></component>
         </div>
     </div>
 </template>
@@ -40,9 +56,17 @@
         },
         data () {
             return {
-                tab: {
-                    active: 'topology'
-                }
+                hasRelation: false,
+                fullScreen: false,
+                activeComponent: 'cmdbRelationTree'
+            }
+        },
+        methods: {
+            handleFullScreen () {
+                this.$refs.dynamicComponent.toggleFullScreen(true)
+            },
+            handleRelationLoaded (relation) {
+                this.hasRelation = !!relation.length
             }
         }
     }
@@ -71,6 +95,23 @@
                 background-color: #3c96ff;
                 color: #fff;
             }
+        }
+        .options-full-screen {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            margin-right: 10px;
+            line-height: 22px;
+            font-size: 14px;
+            vertical-align: bottom;
+            text-align: center;
+            border: 1px solid $cmdbBorderColor;
+            cursor: pointer;
+        }
+        .options-create {
+            height: 24px;
+            line-height: 22px;
+            font-size: 12px;
         }
     }
     .relation-component {
