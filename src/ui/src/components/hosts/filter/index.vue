@@ -17,9 +17,6 @@
                 <bk-tabpanel name="collection" :title="$t('Hosts[\'收藏\']')" v-if="activeTab.includes('collection')">
                     <the-collection v-if="tab.active === 'collection'"></the-collection>
                 </bk-tabpanel>
-                <bk-tabpanel name="history" :title="$t('Hosts[\'历史\']')" v-if="activeTab.includes('history')">
-                    <the-history v-if="tab.active === 'history'"></the-history>
-                </bk-tabpanel>
                 <the-setting slot="setting"
                     :active-setting="activeSetting"
                     :filter-config-key="filterConfigKey"
@@ -33,13 +30,11 @@
 <script>
     import theFilter from './_filter'
     import theCollection from './_collection'
-    import theHistory from './_history'
     import theSetting from './_setting.vue'
     export default {
         components: {
             theFilter,
             theCollection,
-            theHistory,
             theSetting
         },
         props: {
