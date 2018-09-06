@@ -334,7 +334,7 @@
         .process-filter {
             .business-selector {
                 float: left;
-                width: 135px;
+                width: 170px;
                 margin-right: 10px;
             }
             .process-btn {

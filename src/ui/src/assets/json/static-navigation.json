@@ -35,7 +35,7 @@
             "classificationId": "bk_host_manage"
         }, {
             "i18n": "CustomQuery['自定义查询']",
-            "path": "/customQuery",
+            "path": "/custom-query",
             "id": "custom_query",
             "icon": "icon-cc-columnar",
             "name": "自定义查询",
