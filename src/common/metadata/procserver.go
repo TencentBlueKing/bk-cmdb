@@ -62,10 +62,10 @@ type ProcInstModelResult struct {
 }
 
 type GseHost struct {
-	HostID       int64
+	HostID       int64  `json:"bk_host_id,omitempty"`
 	Ip           string `json:"ip,omitempty"`
-	BkCloudId    int64  `json:"bk_cloud_id,omitempty"`
-	BkSupplierId int64  `json:"bk_supplier_ed,omitempty"`
+	BkCloudId    int64  `json:"bk_cloud_id"`
+	BkSupplierId int64  `json:"bk_supplier_id"`
 }
 
 type GseProcMeta struct {
@@ -89,9 +89,9 @@ type GseProcRequest struct {
 }
 
 type ProcInstanceDetail struct {
-	GseProcRequest `json:",inline"`
+	GseProcRequest `json:",inline" bson:",inline"`
 	OwnerID        string                   `json:"bk_supplier_account" bson:"bk_supplier_account"`
-	HostID         int64                    `json:"bk_hsot_id", bson:"bk_host_id"`
+	HostID         int64                    `json:"bk_host_id" bson:"bk_host_id"`
 	Status         ProcInstanceDetailStatus `json:"status" bson:"status"` //1 register gse sucess, 2 register error need retry 3 unregister error need retry
 }
 
@@ -123,7 +123,7 @@ type GseProcSpec struct {
 	Resource         GseProcResource         `json:"resource,omitempty"`
 	MonitorPolicy    GseProcMonitorPlolicy   `json:"monitor_policy,omitempty"`
 	WarnReportPolicy GseProcWarnReportPolicy `json:"warn_report_policy,omitempty"`
-	Configmap        GseProcConfigmap        `json:"configmap,omitempty"`
+	Configmap        []GseProcConfigmap      `json:"configmap,omitempty"`
 }
 
 type GseProcIdentity struct {
