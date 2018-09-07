@@ -190,7 +190,6 @@
                 this.getPreviewList()
             },
             closePreview () {
-                console.log('close')
                 this.$emit('close')
             }
         }
