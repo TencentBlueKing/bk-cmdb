@@ -27,8 +27,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    createCustomQuery ({ commit, state, dispatch }, { params }) {
-        return $http.post(`userapi`, params)
+    createCustomQuery ({ commit, state, dispatch }, { params, config }) {
+        return $http.post(`userapi`, params, config)
     },
     
     /**
@@ -41,8 +41,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    updateCustomQuery ({ commit, state, dispatch }, { bizId, id, params }) {
-        return $http.post(`userapi/${bizId}/${id}`, params)
+    updateCustomQuery ({ commit, state, dispatch }, { bizId, id, params, config }) {
+        return $http.put(`userapi/${bizId}/${id}`, params, config)
     },
 
     /**
