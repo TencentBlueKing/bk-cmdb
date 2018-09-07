@@ -54,7 +54,7 @@
                 })
             },
             setLocalSelected () {
-                const selected = parseInt(window.localStorage.getItem('selectedBusiness'))
+                const selected = this.value || parseInt(window.localStorage.getItem('selectedBusiness'))
                 const exist = this.privilegeBusiness.some(business => business['bk_biz_id'] === selected)
                 if (exist) {
                     this.localSelected = selected
