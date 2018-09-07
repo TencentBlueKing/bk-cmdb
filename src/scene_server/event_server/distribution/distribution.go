@@ -18,7 +18,9 @@ import (
 	"runtime/debug"
 	"time"
 
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/event_server/types"
 )
@@ -86,6 +88,10 @@ func (dh *DistHandler) StartDistribute() (err error) {
 			switch action {
 			case "create":
 				blog.Infof("starting subscribers process %d", subscriber.SubscriptionID)
+				if renewCh, ok := renewMaps[subscriber.SubscriptionID]; ok {
+					renewCh <- subscriber
+					continue
+				}
 				done := make(chan struct{})
 				renewCh := make(chan metadata.Subscription)
 				go func() {
@@ -98,7 +104,11 @@ func (dh *DistHandler) StartDistribute() (err error) {
 				renewMaps[subscriber.SubscriptionID] = renewCh
 			case "update":
 				blog.Infof("renew subscribers process %d", subscriber.SubscriptionID)
-				renewMaps[subscriber.SubscriptionID] <- subscriber
+				if renewCh, ok := renewMaps[subscriber.SubscriptionID]; ok {
+					renewCh <- subscriber
+				} else {
+					MsgChan <- "create" + mesg[:6]
+				}
 			case "delete":
 				blog.Infof("stoping subscribers process %d", subscriber.SubscriptionID)
 				if routines[subscriber.SubscriptionID] != nil {
@@ -117,17 +127,16 @@ func (dh *DistHandler) StartDistribute() (err error) {
 func (dh *DistHandler) distToSubscribe(param metadata.Subscription, chNew chan metadata.Subscription, done chan struct{}) (err error) {
 	blog.Infof("start handle dist %v", param.SubscriptionID)
 	defer func() {
-		if err == nil {
-			syserror := recover()
-			if syserror != nil {
-				err = fmt.Errorf("system error: %v", syserror)
-			}
+		syserror := recover()
+		if syserror != nil {
+			err = fmt.Errorf("system error: %v", syserror)
 		}
 		if err != nil {
 			blog.Infof("event inst handle process stoped by %v: %s", err, debug.Stack())
 		}
 	}()
 	sub := param
+	ticker := time.NewTicker(time.Minute)
 	defer blog.Infof("ended handle dist %v", sub.SubscriptionID)
 	for {
 		select {
@@ -137,6 +146,16 @@ func (dh *DistHandler) distToSubscribe(param metadata.Subscription, chNew chan m
 				blog.Infof("refreshed subcriber %v", sub.GetCacheKey())
 			} else {
 				blog.Infof("refresh ignore, subcriber cache key not change\nold:%s\nnew:%s ", sub.GetCacheKey(), nsub.GetCacheKey())
+			}
+		case <-ticker.C:
+			count, counterr := dh.db.GetCntByCondition(common.BKTableNameSubscription, condition.CreateCondition().Field(common.BKSubscriptionIDField).Eq(sub.SubscriptionID).ToMapStr())
+			if counterr != nil {
+				blog.Errorf("get subscription count error %v", counterr)
+				continue
+			}
+			if count <= 0 {
+				ticker.Stop()
+				return
 			}
 		case <-done:
 			return
