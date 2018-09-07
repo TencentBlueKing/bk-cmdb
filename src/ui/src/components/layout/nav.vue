@@ -111,7 +111,7 @@
             // 当前导航对应的分类
             activeClassify () {
                 let relativePath = this.$route.query.relative
-                let path = relativePath || this.$route.fullPath
+                let path = relativePath || this.$route.path
                 return [...this.staticClassify, ...this.customClassify].find(classify => {
                     if (classify.hasOwnProperty('path')) {
                         return classify.path === path
@@ -122,7 +122,7 @@
             },
             // 当前导航对应的分类ID
             activeClassifyId () {
-                return this.activeClassify ? this.activeClassify.id : this.$route.fullPath === '/index' ? 'bk_index' : null
+                return this.activeClassify ? this.activeClassify.id : this.$route.path === '/index' ? 'bk_index' : null
             },
             // 展开的分类子菜单高度
             openedClassifyHeight () {

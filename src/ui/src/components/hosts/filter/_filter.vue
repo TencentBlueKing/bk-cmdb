@@ -121,11 +121,26 @@
             }
         },
         async created () {
+            this.setQueryParams()
             await this.getProperties()
             this.refresh()
         },
         methods: {
             ...mapActions('objectModelProperty', ['batchSearchObjectAttribute']),
+            setQueryParams () {
+                const query = this.$route.query
+                Object.keys(query).forEach(key => {
+                    if (key === 'ip') {
+                        this.ip.text = query.ip
+                    } else if (key === 'inner') {
+                        this.ip['bk_host_innerip'] = ['true', 'false'].includes(query.inner) ? query.inner === 'true' : !!query.inner
+                    } else if (key === 'outer') {
+                        this.ip['bk_host_outerip'] = ['true', 'false'].includes(query.outer) ? query.outer === 'true' : !!query.outer
+                    } else if (key === 'exact') {
+                        this.ip.exact = parseInt(query.exact)
+                    }
+                })
+            },
             getProperties () {
                 return this.batchSearchObjectAttribute({
                     params: {

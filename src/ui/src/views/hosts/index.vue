@@ -78,6 +78,11 @@
         methods: {
             ...mapActions('objectModelProperty', ['batchSearchObjectAttribute']),
             getBusiness () {
+                const query = this.$route.query
+                if (query.hasOwnProperty('business')) {
+                    this.filter.business = parseInt(query.business)
+                    return Promise.resolve()
+                }
                 return new Promise((resolve, reject) => {
                     this.filter.businessResolver = () => {
                         this.filter.businessResolver = null
