@@ -88,7 +88,7 @@ const cancelRequest = () => {
 
 router.beforeEach(async (to, from, next) => {
     try {
-        if (to.fullPath !== '/error') {
+        if (to.path !== '/error') {
             router.app.$store.commit('setGlobalLoading', true)
             await cancelRequest()
             await preload(router.app)
