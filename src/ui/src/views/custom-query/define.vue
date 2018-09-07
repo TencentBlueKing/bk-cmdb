@@ -396,7 +396,6 @@
                                     'value': property.value
                                 })
                             }
-                            // originalProperty.disabled = true
                         }
                     })
                     if (condition['bk_obj_id'] === 'host') {
@@ -505,18 +504,27 @@
                         params: {
                             bk_obj_id: 'host',
                             bk_supplier_account: this.supplierAccount
+                        },
+                        config: {
+                            fromCache: true
                         }
                     }),
                     this.searchObjectAttribute({
                         params: {
                             bk_obj_id: 'set',
                             bk_supplier_account: this.supplierAccount
+                        },
+                        config: {
+                            fromCache: true
                         }
                     }),
                     this.searchObjectAttribute({
                         params: {
                             bk_obj_id: 'module',
                             bk_supplier_account: this.supplierAccount
+                        },
+                        config: {
+                            fromCache: true
                         }
                     })
                 ])
