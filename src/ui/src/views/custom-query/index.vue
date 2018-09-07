@@ -40,9 +40,12 @@
             @closeSlider="closeSliderConfirm">
             <v-define slot="content"
                 :id="slider.id"
-                :bkBizId="filter.bizId"
-                :isShow="slider.isShow"
-                :type="slider.type">
+                :bizId="filter.bizId"
+                :type="slider.type"
+                @delete="getUserAPIList"
+                @create="handleCreate"
+                @update="getUserAPIList"
+                @cancel="hideUserAPISlider">
             </v-define>
         </cmdb-slider>
     </div>
@@ -120,8 +123,17 @@
             ...mapActions('hostCustomApi', [
                 'searchCustomQuery'
             ]),
+            hideUserAPISlider () {
+                this.slider.isShow = false
+                this.slider.id = null
+            },
             closeSliderConfirm () {
 
+            },
+            handleCreate (data) {
+                this.slider.id = data['id']
+                this.slider.type = 'update'
+                this.handlePageChange(1)
             },
             async getUserAPIList () {
                 const res = await this.searchCustomQuery({
@@ -151,16 +163,16 @@
                 this.slider.title = this.$t('CustomQuery["编辑查询"]')
             },
             handlePageChange (current) {
-                this.pagination.current = current
-                this.refresh()
+                this.table.pagination.current = current
+                this.getUserAPIList()
             },
             handleSizeChange (size) {
-                this.pagination.size = size
+                this.table.pagination.size = size
                 this.handlePageChange(1)
             },
             handleSortChange (sort) {
-                this.sort = sort
-                this.refresh()
+                this.table.sort = sort
+                this.getUserAPIList()
             }
         }
     }
