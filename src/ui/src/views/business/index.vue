@@ -160,6 +160,11 @@
                 this.filter.value = ''
                 this.filter.type = (this.$tools.getProperty(this.properties, id) || {})['bk_property_type']
             },
+            'slider.show' (show) {
+                if (!show) {
+                    this.tab.active = 'attribute'
+                }
+            },
             customBusinessColumns () {
                 this.setTableHeader()
             }

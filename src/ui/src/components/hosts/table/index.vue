@@ -250,6 +250,11 @@
             'table.header' (header) {
                 this.$emit('on-set-header', header)
             },
+            'slider.show' (show) {
+                if (!show) {
+                    this.tab.active = 'attribute'
+                }
+            },
             customColumns () {
                 this.setTableHeader()
             }

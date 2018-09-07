@@ -140,7 +140,6 @@
             },
             getPanelTitle (panel) {
                 const panelModel = this.allModels.find(model => model['bk_obj_id'] === panel)
-                console.log(`${panelModel['bk_obj_name']}(${this.resultTab.count[panel]})`)
                 return panelModel ? `${panelModel['bk_obj_name']}(${this.resultTab.count[panel]})` : null
             },
             initSearchList (data) {
@@ -168,35 +167,19 @@
                 this.handleClickOutside()
             },
             showMoreHost () {
-                this.$store.commit('setHostSearch', {
-                    ip: this.keyword,
-                    exact: 0,
-                    innerip: true,
-                    outerip: true,
-                    assigned: true
+                this.$router.push({
+                    path: 'resource',
+                    query: {
+                        ip: this.keyword,
+                        exact: 0,
+                        inner: true,
+                        outer: true,
+                        assigned: true
+                    }
                 })
-                this.$router.push('/resource')
             },
             handleClickOutside () {
                 this.focus = false
-            },
-            // 跳转至选中的搜索结果的路由
-            handleEnter () {
-                if (this.highlightIndex >= 0) {
-                    let targetResult = this.searchList[this.highlightIndex]
-                    let targetInnerip = targetResult['host']['bk_host_innerip']
-                    let targetDefault = targetResult['biz'][0]['default'] // 1为资源池下的主机，其他为业务下的主机
-                    this.$store.commit('setQuickSearchParams', {
-                        text: targetInnerip,
-                        type: 'ip'
-                    })
-                    if (targetDefault === 1) {
-                        this.$router.push('/resource')
-                    } else {
-                        this.$store.commit('setBkBizId', targetResult['biz'][0]['bk_biz_id'])
-                        this.$router.push('/hosts')
-                    }
-                }
             }
         }
     }

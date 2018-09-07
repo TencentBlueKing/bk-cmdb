@@ -159,8 +159,16 @@
                 return [...setProperties, ...moduleProperties, ...businessProperties, ...hostProperties]
             }
         },
+        watch: {
+            'importInst.show' (show) {
+                if (!show) {
+                    this.importInst.active = 'import'
+                }
+            }
+        },
         async created () {
             try {
+                this.setQueryParams()
                 await Promise.all([
                     this.getParams(),
                     this.getProperties()
@@ -175,6 +183,12 @@
             ...mapActions('hostDelete', ['deleteHost']),
             ...mapActions('hostRelation', ['transferResourcehostToIdleModule']),
             ...mapActions('objectModelProperty', ['batchSearchObjectAttribute']),
+            setQueryParams () {
+                const query = this.$route.query
+                if (query.hasOwnProperty('assigned')) {
+                    this.filter.assigned = ['true', 'false'].includes(query.assigned) ? query.assigned === 'true' : !!query.assigned
+                }
+            },
             getParams () {
                 return new Promise((resolve, reject) => {
                     this.filter.paramsResolver = () => {
