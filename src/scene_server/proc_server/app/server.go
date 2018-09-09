@@ -16,11 +16,13 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
+	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
@@ -28,6 +30,7 @@ import (
 	"configcenter/src/scene_server/proc_server/app/options"
 	"configcenter/src/scene_server/proc_server/logics"
 	"configcenter/src/scene_server/proc_server/proc_service/service"
+	redis "configcenter/src/storage/redisclient"
 	"configcenter/src/thirdpartyclient/esbserver"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 )
@@ -55,6 +58,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	procSvr := new(service.ProcServer)
+	procSvr.EsbConfigChn = make(chan esbutil.EsbConfig, 0)
 	container := restful.NewContainer()
 	container.Add(procSvr.WebService())
 
@@ -73,19 +77,37 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		Server:       bkbsvr,
 	}
 
-	esbConfigChan := make(chan esbutil.EsbConfig, 0)
 	engine, err := backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
 		types.CC_MODULE_PROC,
 		op.ServConf.ExConfig,
-		procSvr.OnProcessConfigUpdate(esbConfigChan),
+		procSvr.OnProcessConfigUpdate,
 		bkbCfg)
+	configReady := false
+	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
+		if nil == procSvr.Config {
+			time.Sleep(time.Second)
+		} else {
+			configReady = true
+			break
+		}
+	}
+	if false == configReady {
+		return fmt.Errorf("Configuration item not found")
+	}
+	cacheDB, err := redis.NewFromConfig(*procSvr.Config.Redis)
+	if err != nil {
+		blog.Errorf("new redis client failed, err: %s", err.Error())
+		return fmt.Errorf("new redis client failed, err: %s", err)
+	}
 
-	esbSrv, err := esbserver.NewEsb(apiMachConf, esbConfigChan)
+	esbSrv, err := esbserver.NewEsb(apiMachConf, procSvr.EsbConfigChn)
 	if err != nil {
 		return fmt.Errorf("create esb api  object failed. err: %v", err)
 	}
 	procSvr.Engine = engine
 	procSvr.Logics = &logics.Logics{Engine: engine, EsbServ: esbSrv}
+	procSvr.SetCache(cacheDB)
+	go procSvr.InitFunc()
 
 	select {
 	case <-ctx.Done():

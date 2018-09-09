@@ -13,6 +13,8 @@
 package logics
 
 import (
+	redis "gopkg.in/redis.v5"
+
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
 	"configcenter/src/thirdpartyclient/esbserver"
@@ -23,6 +25,16 @@ type Logics struct {
 	EsbServ      esbserver.EsbClientInterface
 	ProcHostInst *ProcHostInstConfig
 	ErrHandle    errors.DefaultCCErrorIf
+	cache        *redis.Client
+}
+
+func (lgc *Logics) InitFunc() {
+	chnOpLock.Do(lgc.bgHandle)
+
+}
+
+func (lgc *Logics) SetCache(db *redis.Client) {
+	lgc.cache = db
 }
 
 //refresh process host instance number need config
