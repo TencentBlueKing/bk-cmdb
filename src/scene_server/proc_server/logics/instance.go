@@ -27,7 +27,6 @@ import (
 //var handEventDataChan chan chanItem // := make(chan chanItem, 10000)
 
 func (lgc *Logics) HandleHostProcDataChange(ctx context.Context, eventData *metadata.EventInst) {
-	chnOpLock.Do(lgc.bgHandle)
 
 	switch eventData.ObjType {
 	case metadata.EventObjTypeProcModule:
@@ -44,9 +43,9 @@ func (lgc *Logics) HandleHostProcDataChange(ctx context.Context, eventData *meta
 
 func (lgc *Logics) bgHandle() {
 	if nil == lgc.ProcHostInst {
-		reshReshInitChan(0, 0) // use default value
+		lgc.reshReshInitChan(0, 0) // use default value
 	} else {
-		reshReshInitChan(lgc.ProcHostInst.MaxEventCount, lgc.ProcHostInst.MaxRefreshModuleCount)
+		lgc.reshReshInitChan(lgc.ProcHostInst.MaxEventCount, lgc.ProcHostInst.MaxRefreshModuleCount)
 	}
 
 	go func() {
@@ -54,23 +53,19 @@ func (lgc *Logics) bgHandle() {
 		for {
 			select {
 			case item := <-handEventDataChan:
-
 				err := item.opFunc(item.ctx, item.eventData)
 				if nil != err {
 					blog.Error(err.Error())
 				}
-
-			case <-eventRefreshModuleData.eventChn:
-				for {
-					item := getEventRefreshModuleItem()
-					if nil == item {
-						break
-					}
-					err := lgc.HandleProcInstNumByModuleID(context.Background(), item.header, item.appID, item.moduleID)
-					if nil != err {
-						blog.Errorf("HandleProcInstNumByModuleID  error %s", err.Error())
-					}
+			case item := <-eventRefreshModuleDataChan:
+				if nil == item {
+					break
 				}
+				err := lgc.HandleProcInstNumByModuleID(context.Background(), item.Header, item.AppID, item.ModuleID)
+				if nil != err {
+					blog.Errorf("HandleProcInstNumByModuleID  error %s", err.Error())
+				}
+
 			}
 
 		}
@@ -82,6 +77,7 @@ func (lgc *Logics) bgHandle() {
 func (lgc *Logics) HandleProcInstNumByModuleID(ctx context.Context, header http.Header, appID, moduleID int64) error {
 	maxInstID, procInst, err := lgc.getProcInstInfoByModuleID(ctx, appID, moduleID, header)
 	if nil != err {
+		blog.Errorf("handleInstanceNum getProcInstInfoByModuleID error %s", err.Error())
 		return err
 	}
 	var hostInfos map[int64]*metadata.GseHost
@@ -100,7 +96,6 @@ func (lgc *Logics) HandleProcInstNumByModuleID(ctx context.Context, header http.
 	for procID, info := range procInfos {
 		for hostID, _ := range hostInfos {
 			procInstInfo, ok := procInst[getInlineProcInstKey(hostID, moduleID)]
-
 			hostInstID := uint64(0)
 			if !ok {
 				maxInstID++
@@ -174,10 +169,8 @@ func (lgc *Logics) eventHostModuleChangeProcHostInstNum(ctx context.Context, eve
 			blog.Errorf("productHostInstanceNum event data  moduleID not integer  item %v raw josn %s", hostInfos, string(byteData))
 			return err
 		}
-		addEventRefreshModuleItem(appID, moduleID, header)
-
+		lgc.addEventRefreshModuleItem(appID, moduleID, header)
 	}
-	sendEventFrefreshModuleNotice()
 	return nil
 }
 
@@ -223,9 +216,8 @@ func (lgc *Logics) eventProcInstByProcModule(ctx context.Context, eventData *met
 			blog.Errorf("eventProcInstByProcModule HandleProcInstNumByModuleName error %s item %v raw josn %s", err.Error(), data, string(byteData))
 			return err
 		}
-		addEventRefreshModuleItems(appID, moduleID, header)
+		lgc.addEventRefreshModuleItems(appID, moduleID, header)
 	}
-	sendEventFrefreshModuleNotice()
 	return nil
 }
 
@@ -263,9 +255,8 @@ func (lgc *Logics) eventProcInstByProcess(ctx context.Context, eventData *metada
 			blog.Errorf("eventProcInstByProcess get process bind module info  by appID %d, procID %d error %s item %v raw josn %s", appID, procID, err.Error(), data, string(byteData))
 			return err
 		}
-		addEventRefreshModuleItems(appID, mdouleID, header)
+		lgc.addEventRefreshModuleItems(appID, mdouleID, header)
 	}
-	sendEventFrefreshModuleNotice()
 	return nil
 }
 
@@ -317,12 +308,11 @@ func (lgc *Logics) eventProcInstByHostInfo(ctx context.Context, eventData *metad
 					return err
 				}
 				for _, item := range hostModule {
-					addEventRefreshModuleItem(item.AppID, item.ModuleID, header)
+					lgc.addEventRefreshModuleItem(item.AppID, item.ModuleID, header)
 				}
 			}
 		}
 	}
-	sendEventFrefreshModuleNotice()
 	return nil
 }
 

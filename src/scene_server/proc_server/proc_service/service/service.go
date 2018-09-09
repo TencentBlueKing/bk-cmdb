@@ -21,13 +21,18 @@ import (
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
+	"configcenter/src/scene_server/proc_server/app/options"
 	"configcenter/src/scene_server/proc_server/logics"
+	"configcenter/src/storage"
+	"configcenter/src/storage/redisclient"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 )
 
 type ProcServer struct {
 	*backbone.Engine
 	*logics.Logics
+	EsbConfigChn chan esbutil.EsbConfig
+	Config       *options.Config
 }
 
 func (ps *ProcServer) WebService() *restful.WebService {
@@ -147,16 +152,36 @@ func (s *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
 	resp.WriteEntity(answer)
 }
 
-func (ps *ProcServer) OnProcessConfigUpdate(esbChange chan esbutil.EsbConfig) func(previous, current cfnc.ProcessConfig) {
+func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig) {
 
 	//
-	return func(previous, current cfnc.ProcessConfig) {
-		esbAddr, addrOk := current.ConfigMap["esb.addr"]
-		esbAppCode, appCodeOk := current.ConfigMap["esb.appCode"]
-		esbAppSecret, appSecretOk := current.ConfigMap["esb.appSecret"]
-		if addrOk && appCodeOk && appSecretOk {
-			esbChange <- esbutil.EsbConfig{Addrs: esbAddr, AppCode: esbAppCode, AppSecret: esbAppSecret}
-		}
+	esbAddr, addrOk := current.ConfigMap["esb.addr"]
+	esbAppCode, appCodeOk := current.ConfigMap["esb.appCode"]
+	esbAppSecret, appSecretOk := current.ConfigMap["esb.appSecret"]
+	if addrOk && appCodeOk && appSecretOk {
+		go func() {
+			ps.EsbConfigChn <- esbutil.EsbConfig{Addrs: esbAddr, AppCode: esbAppCode, AppSecret: esbAppSecret}
+		}()
+	}
 
+	prefix := storage.DI_REDIS
+	port, ok := current.ConfigMap[prefix+".port"]
+	if !ok {
+		port = "6379"
+	}
+	dbNum, ok := current.ConfigMap[prefix+".database"]
+	if !ok {
+		dbNum = "0"
+	}
+
+	redis := &redisclient.RedisConfig{
+		Address:  current.ConfigMap[prefix+".host"],
+		User:     current.ConfigMap[prefix+".usr"],
+		Password: current.ConfigMap[prefix+".pwd"],
+		Database: dbNum,
+		Port:     port,
+	}
+	ps.Config = &options.Config{
+		Redis: redis,
 	}
 }
