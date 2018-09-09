@@ -768,3 +768,6 @@ const (
 	GSEProcOPReload         = 8
 	GSEProcOPKill           = 9
 )
+const (
+	RedisProcSrvHostInstanceRefreshModuleKey = BKCacheKeyV3Prefix + "prochostinstancerefresh"
+)
