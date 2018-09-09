@@ -19,6 +19,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -55,7 +56,12 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 	}
 	sub.LastTime = &now
 	sub.OwnerID = ownerID
+
 	sub.SubscriptionForm = strings.Replace(sub.SubscriptionForm, " ", "", 0)
+	events := strings.Split(sub.SubscriptionForm, ",")
+	sort.Strings(events)
+	sub.SubscriptionForm = strings.Join(events, ",")
+
 	sub.SubscriptionID, err = s.db.GetIncID(common.BKTableNameSubscription)
 	if nil != err {
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeInsertFailed)})
@@ -75,7 +81,6 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 	}
 
 	// save to subscribeform in cache
-	events := strings.Split(sub.SubscriptionForm, ",")
 	for _, event := range events {
 		if err := s.cache.SAdd(types.EventSubscriberCacheKey(ownerID, event), sub.SubscriptionID).Err(); err != nil {
 			blog.Errorf("create subscription failed, error:%s", err.Error())
@@ -191,7 +196,12 @@ func (s *Service) Rebook(req *restful.Request, resp *restful.Response) {
 	now := commontypes.Now()
 	sub.LastTime = &now
 	sub.OwnerID = ownerID
+
 	sub.SubscriptionForm = strings.Replace(sub.SubscriptionForm, " ", "", 0)
+	events := strings.Split(sub.SubscriptionForm, ",")
+	sort.Strings(events)
+	sub.SubscriptionForm = strings.Join(events, ",")
+
 	sub.Operator = util.GetUser(req.Request.Header)
 	if updateerr := s.db.UpdateByCondition(common.BKTableNameSubscription, sub, util.NewMapBuilder(common.BKSubscriptionIDField, id, common.BKOwnerIDField, ownerID).Build()); nil != updateerr {
 		blog.Errorf("fail update subscription by condition, error information is %s", updateerr.Error())

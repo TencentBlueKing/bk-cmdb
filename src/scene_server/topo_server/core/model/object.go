@@ -37,7 +37,7 @@ type Object interface {
 	Parse(data frtypes.MapStr) (*meta.Object, error)
 
 	Origin() meta.Object
-
+	IsMainlineObject() (bool, error)
 	IsCommon() bool
 
 	SetRecordID(id int64)
@@ -57,6 +57,7 @@ type Object interface {
 
 	GetGroups() ([]Group, error)
 	GetAttributes() ([]Attribute, error)
+	GetAttributesExceptInnerFields() ([]Attribute, error)
 
 	SetClassification(class Classification)
 	GetClassification() (Classification, error)
@@ -134,6 +135,58 @@ func (o *object) GetObjectType() string {
 }
 func (o *object) IsCommon() bool {
 	return o.obj.IsCommon()
+}
+
+func (o *object) IsMainlineObject() (bool, error) {
+	attrs, err := o.GetAttributes()
+	if nil != err {
+		return false, err
+	}
+
+	for _, att := range attrs {
+		if att.IsMainlineField() {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func (o *object) searchAttributes(cond condition.Condition) ([]Attribute, error) {
+
+	rsp, err := o.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), o.params.Header, cond.ToMapStr())
+	if nil != err {
+		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
+		return nil, o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("failed to search the object(%s), error info is %s", o.obj.ObjectID, rsp.ErrMsg)
+		return nil, o.params.Err.Error(rsp.Code)
+	}
+
+	rstItems := make([]Attribute, 0)
+	for _, item := range rsp.Data {
+
+		attr := &attribute{
+			attr:      item,
+			params:    o.params,
+			clientSet: o.clientSet,
+		}
+
+		// reset the group name
+		grp, err := attr.GetGroup()
+		if nil != err {
+			blog.Errorf("[model-obj] failed to get the attribute group info , error info is %s", err.Error())
+			return nil, err
+		}
+		attr.SetGroup(grp)
+
+		rstItems = append(rstItems, attr)
+
+	}
+
+	return rstItems, nil
 }
 
 func (o *object) search(cond condition.Condition) ([]meta.Object, error) {
@@ -626,43 +679,21 @@ func (o *object) CreateAttribute() Attribute {
 	}
 }
 
+func (o *object) GetAttributesExceptInnerFields() ([]Attribute, error) {
+
+	cond := condition.CreateCondition()
+	cond.Field(meta.AttributeFieldObjectID).Eq(o.obj.ObjectID)
+	cond.Field(meta.AttributeFieldSupplierAccount).Eq(o.params.SupplierAccount)
+	cond.Field(meta.AttributeFieldIsSystem).NotEq(true)
+	cond.Field(meta.AttributeFieldIsAPI).NotEq(true)
+	return o.searchAttributes(cond)
+}
+
 func (o *object) GetAttributes() ([]Attribute, error) {
 
 	cond := condition.CreateCondition()
 	cond.Field(meta.AttributeFieldObjectID).Eq(o.obj.ObjectID).Field(meta.AttributeFieldSupplierAccount).Eq(o.params.SupplierAccount)
-	rsp, err := o.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), o.params.Header, cond.ToMapStr())
-	if nil != err {
-		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
-		return nil, o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to search the object(%s), error info is %s", o.obj.ObjectID, rsp.ErrMsg)
-		return nil, o.params.Err.Error(rsp.Code)
-	}
-
-	rstItems := make([]Attribute, 0)
-	for _, item := range rsp.Data {
-
-		attr := &attribute{
-			attr:      item,
-			params:    o.params,
-			clientSet: o.clientSet,
-		}
-
-		// reset the group name
-		grp, err := attr.GetGroup()
-		if nil != err {
-			blog.Errorf("[model-obj] failed to get the attribute group info , error info is %s", err.Error())
-			return nil, err
-		}
-		attr.SetGroup(grp)
-
-		rstItems = append(rstItems, attr)
-
-	}
-
-	return rstItems, nil
+	return o.searchAttributes(cond)
 }
 
 func (o *object) GetGroups() ([]Group, error) {
