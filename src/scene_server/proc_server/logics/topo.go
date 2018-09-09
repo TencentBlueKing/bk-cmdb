@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -110,4 +111,67 @@ func (lgc *Logics) GetModuleIDByHostID(ctx context.Context, header http.Header, 
 	}
 
 	return ret.Data, nil
+}
+
+func (lgc *Logics) GetModueleIDByAppID(ctx context.Context, header http.Header, appID int64) ([]int64, error) {
+	supplierID := util.GetOwnerID(header)
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	dat := new(metadata.QueryInput)
+	dat.Condition = mapstr.MapStr{common.BKAppIDField: appID}
+	dat.Fields = fmt.Sprintf("%s,%s,%s", common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField)
+	dat.Limit = common.BKNoLimit
+	ret, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDModule, header, dat)
+	if nil != err {
+		blog.Errorf("GetModueleIDByAppID appID %v supplierID %s  http do error:%s", appID, supplierID, err.Error())
+		return make([]int64, 0), defErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !ret.Result {
+		blog.Errorf("GetModueleIDByAppID appID %v supplierID %s  http reply error:%s", appID, supplierID, ret.ErrMsg)
+		return make([]int64, 0), defErr.New(ret.Code, ret.ErrMsg)
+
+	}
+	if 0 == ret.Data.Count {
+		blog.Infof("GetModueleIDByAppID appID %v supplierID %s  not found module info", appID, supplierID)
+		return make([]int64, 0), nil
+	}
+	moduleIDs := make([]int64, 0)
+	for _, module := range ret.Data.Info {
+		moduleID, err := module.Int64(common.BKModuleIDField)
+		if nil != err {
+			byteModule, _ := json.Marshal(module)
+			blog.Errorf("GetModueleIDByAppID moduleID %v supplierID %s  get set name error:%s raw:%s", appID, supplierID, err.Error(), string(byteModule))
+			return nil, err
+		}
+		moduleIDs = append(moduleIDs, moduleID)
+	}
+
+	return moduleIDs, nil
+}
+
+func (lgc *Logics) GetAppList(ctx context.Context, header http.Header, fields string) ([]mapstr.MapStr, error) {
+	if "" == util.GetOwnerID(header) {
+		header.Set(common.BKHTTPOwnerID, common.BKSuperOwnerID)
+	}
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	dat := new(metadata.QueryInput)
+	if "" != strings.TrimSpace(fields) {
+		dat.Fields = fields
+	}
+	dat.Limit = common.BKNoLimit
+	ret, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDModule, header, dat)
+	if nil != err {
+		blog.Errorf("GetAppList  http do error:%s", err.Error())
+		return make([]mapstr.MapStr, 0), defErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !ret.Result {
+		blog.Errorf("GetAppList  http reply error:%s", ret.ErrMsg)
+		return make([]mapstr.MapStr, 0), defErr.New(ret.Code, ret.ErrMsg)
+
+	}
+	if 0 == ret.Data.Count {
+		blog.Infof("GetAppList  not found module info")
+		return make([]mapstr.MapStr, 0), nil
+	}
+
+	return ret.Data.Info, nil
 }
