@@ -275,8 +275,8 @@
                 $('#validate_form').parsley().validate()
                 if (!$('#validate_form').parsley().isValid()) return
                 let params = {
-                    bk_creator: window.userName,
-                    bk_modifier: window.userName,
+                    creator: window.userName,
+                    modifier: window.userName,
                     bk_classification_id: this.classificationId,
                     bk_obj_name: this.baseInfo['bk_obj_name'],
                     bk_supplier_account: this.bkSupplierAccount,
@@ -300,7 +300,7 @@
                                     id: res.data['id']
                                 })
                             } else {
-                                this.$alertMsg(this.$t('ModelManagement["创建模型失败"]'))
+                                this.$alertMsg(res['bk_error_msg'])
                             }
                         })
                     } else {

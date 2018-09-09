@@ -51,6 +51,8 @@ func RegistUpgrader(version string, handlerFunc func(storage.DI, *Config) error)
 }
 
 // Upgrade uprade the db datas to newest verison
+// we use date instead of version later since 2018.09.04, because the version wasn't manage by the developer
+// ps: when use date instead of version, the date should add x prefix cause x > v
 func Upgrade(db storage.DI, conf *Config) (err error) {
 	sort.Slice(upgraderPool, func(i, j int) bool {
 		return upgraderPool[i].version < upgraderPool[j].version

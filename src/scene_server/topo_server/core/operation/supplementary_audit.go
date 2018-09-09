@@ -15,12 +15,11 @@ package operation
 import (
 	"context"
 
-	"configcenter/src/common/condition"
-
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/inst"
@@ -70,7 +69,7 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action audit
 			return
 		}
 
-		var preDataTmp, currDataTmp interface{}
+		var preDataTmp, currDataTmp mapstr.MapStr
 		if !isPreItem {
 			currDataTmp = targetItem.GetValues()
 		} else {
@@ -97,12 +96,23 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action audit
 		case auditoplog.AuditOpTypeDel:
 			desc = "delete " + a.obj.GetObjectType()
 		case auditoplog.AuditOpTypeModify:
-			desc = "update " + a.obj.GetObjectType()
+			if currDataTmp[common.BKDataStatusField] != preDataTmp[common.BKDataStatusField] {
+				switch currDataTmp[common.BKDataStatusField] {
+				case common.DataStatusDisabled, string(common.DataStatusDisabled):
+					desc = "disabled " + a.obj.GetObjectType()
+				case common.DataStatusEnable, string(common.DataStatusEnable):
+					desc = "enable " + a.obj.GetObjectType()
+				default:
+					desc = "update " + a.obj.GetObjectType()
+				}
+			} else {
+				desc = "update " + a.obj.GetObjectType()
+			}
 
 		}
 
 		headers := []Header{}
-		attrs, err := a.obj.GetAttributes()
+		attrs, err := a.obj.GetAttributesExceptInnerFields()
 		if nil != err {
 			blog.Errorf("[audit]failed to get the object(%s)' attribute, error info is %s", a.obj.GetID(), err.Error())
 			return
