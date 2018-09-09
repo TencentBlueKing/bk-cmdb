@@ -10,25 +10,33 @@
  * limitations under the License.
  */
 
-package inst
+package x08_09_04_01
 
 import (
-	"configcenter/src/framework/common"
-	"configcenter/src/framework/core/output/module/model"
-	"configcenter/src/framework/core/types"
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage"
 )
 
-func createPlat(target model.Model) (CommonInstInterface, error) {
-	return &inst{target: target, datas: types.MapStr{}}, nil
+func init() {
+	upgrader.RegistUpgrader("x08.09.04.01", upgrade)
 }
 
-// findPlatsLikeName find all insts by inst name
-func findPlatsLikeName(target model.Model, platName string) (Iterator, error) {
-	cond := common.CreateCondition().Field(PlatName).Like(platName)
-	return newIteratorInst(target, cond)
-}
-
-// findPlatsByCondition find all insts by condition
-func findPlatsByCondition(target model.Model, cond common.Condition) (Iterator, error) {
-	return newIteratorInst(target, cond)
+func upgrade(db storage.DI, conf *upgrader.Config) (err error) {
+	err = updateSystemProperty(db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade x08.09.04.01] updateSystemProperty error  %s", err.Error())
+		return err
+	}
+	err = updateIcon(db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade x08.09.04.01] updateIcon error  %s", err.Error())
+		return err
+	}
+	err = fixesProcess(db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade x08.09.04.01] fixesProcess error  %s", err.Error())
+		return err
+	}
+	return
 }
