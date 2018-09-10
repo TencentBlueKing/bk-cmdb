@@ -35,7 +35,8 @@ type ObjectOperationInterface interface {
 	CreateObjectBatch(params types.ContextParams, data frtypes.MapStr) (frtypes.MapStr, error)
 	FindObjectBatch(params types.ContextParams, data frtypes.MapStr) (frtypes.MapStr, error)
 	CreateObject(params types.ContextParams, data frtypes.MapStr) (model.Object, error)
-	DeleteObject(params types.ContextParams, id int64, cond condition.Condition) error
+	CanDelete(params types.ContextParams, targetObj model.Object) error
+	DeleteObject(params types.ContextParams, id int64, cond condition.Condition, needCheckInst bool) error
 	FindObject(params types.ContextParams, cond condition.Condition) ([]model.Object, error)
 	FindObjectTopo(params types.ContextParams, cond condition.Condition) ([]metadata.ObjectTopo, error)
 	FindSingleObject(params types.ContextParams, objectID string) (model.Object, error)
@@ -367,7 +368,29 @@ func (o *object) CreateObject(params types.ContextParams, data frtypes.MapStr) (
 	return obj, nil
 }
 
-func (o *object) DeleteObject(params types.ContextParams, id int64, cond condition.Condition) error {
+func (o *object) CanDelete(params types.ContextParams, targetObj model.Object) error {
+
+	cond := condition.CreateCondition()
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+	if targetObj.IsCommon() {
+		cond.Field(common.BKObjIDField).Eq(targetObj.GetID())
+	}
+
+	query := &metadata.QueryInput{}
+	query.Condition = cond.ToMapStr()
+	findInstResponse, err := o.inst.FindOriginInst(params, targetObj, query)
+	if nil != err {
+		blog.Errorf("[operation-obj] failed to check if it (%s) has some insts, error info is %s", targetObj.GetID(), err.Error())
+		return err
+	}
+	if 0 != findInstResponse.Count {
+		blog.Errorf("the object [%s] has been instantiated and cannot be deleted", targetObj.GetID())
+		return params.Err.Errorf(common.CCErrTopoObjectHasSomeInstsForbiddenToDelete, targetObj.GetID())
+	}
+
+	return nil
+}
+func (o *object) DeleteObject(params types.ContextParams, id int64, cond condition.Condition, needCheckInst bool) error {
 
 	if 0 < id {
 		cond = condition.CreateCondition()
@@ -382,23 +405,11 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 
 	for _, obj := range objs {
 
-		// check if it has some insts
-		cond := condition.CreateCondition()
-		cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-		if obj.IsCommon() {
-			cond.Field(common.BKObjIDField).Eq(obj.GetID())
-		}
-
-		query := &metadata.QueryInput{}
-		query.Condition = cond.ToMapStr()
-		findInstResponse, err := o.inst.FindOriginInst(params, obj, query)
-		if nil != err {
-			blog.Errorf("[operation-obj] failed to check if it (%s) has some insts, error info is %s", obj.GetID(), err.Error())
-			return err
-		}
-		if 0 != findInstResponse.Count {
-			blog.Errorf("the object [%s] has been instantiated and cannot be deleted", obj.GetID())
-			return params.Err.Errorf(common.CCErrTopoObjectHasSomeInstsForbiddenToDelete, obj.GetID())
+		// check if is can be deleted
+		if needCheckInst {
+			if err := o.CanDelete(params, obj); nil != err {
+				return err
+			}
 		}
 
 		// delete object
