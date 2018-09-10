@@ -2,7 +2,7 @@
     <div class="models-layout">
         <div class="models-options clearfix">
             <div class="options-button fl">
-                <bk-button class="models-button" v-tooltip="$t('ModelManagement[\'导入\']')">
+                <bk-button class="models-button" v-tooltip="$t('ModelManagement[\'导入\']')" @click="importSlider.show = true">
                     <i class="icon-cc-import"></i>
                 </bk-button>
                 <bk-button class="models-button" type="default submit" form="exportForm"
@@ -126,6 +126,16 @@
                 @on-reset="handleResetColumnsConfig">
             </cmdb-columns-config>
         </cmdb-slider>
+        <cmdb-slider
+            :is-show.sync="importSlider.show"
+            :title="$t('HostResourcePool[\'批量导入\']')">
+            <cmdb-import v-if="importSlider.show" slot="content" 
+                :templateUrl="url.template" 
+                :importUrl="url.import" 
+                @success="handlePageChange(1)"
+                @partialSuccess="handlePageChange(1)">
+            </cmdb-import>
+        </cmdb-slider>
     </div>
 </template>
 
@@ -134,11 +144,13 @@
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
     import cmdbRelation from '@/components/relation'
+    import cmdbImport from '@/components/import/import'
     export default {
         components: {
             cmdbColumnsConfig,
             cmdbAuditHistory,
-            cmdbRelation
+            cmdbRelation,
+            cmdbImport
         },
         data () {
             return {
@@ -181,6 +193,9 @@
                     show: false,
                     selected: [],
                     disabledColumns: ['bk_inst_name']
+                },
+                importSlider: {
+                    show: false
                 }
             }
         },
@@ -194,10 +209,11 @@
                 return this.usercustom[`${this.objId}_table_columns`]
             },
             url () {
-                const prefix = `${window.Site.url}insts/owner/${this.supplierAccount}/object/${this.objId}/`
+                const prefix = `${window.API_BASE_URL}insts/owner/${this.supplierAccount}/object/${this.objId}/`
                 return {
                     import: prefix + 'import',
-                    export: prefix + 'export'
+                    export: prefix + 'export',
+                    template: `${window.API_BASE_URL}importtemplate/${this.objId}`
                 }
             }
         },
@@ -205,6 +221,11 @@
             'filter.id' (id) {
                 this.filter.value = ''
                 this.filter.type = (this.$tools.getProperty(this.properties, id) || {})['bk_property_type']
+            },
+            'slider.show' (show) {
+                if (!show) {
+                    this.tab.active = 'attribute'
+                }
             },
             customColumns () {
                 this.setTableHeader()

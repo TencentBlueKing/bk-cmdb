@@ -2,6 +2,7 @@
     <div class="hosts-layout clearfix">
         <cmdb-hosts-filter class="hosts-filter fr"
             :filter-config-key="filter.filterConfigKey"
+            :collection-content="{business: filter.business}"
             @on-refresh="handleRefresh">
             <div class="filter-group" slot="business">
                 <label class="filter-label">{{$t('Hosts[\'选择业务\']')}}</label>
@@ -46,6 +47,7 @@
         },
         computed: {
             ...mapGetters(['supplierAccount']),
+            ...mapGetters('hostFavorites', ['applyingInfo']),
             columnsConfigProperties () {
                 const setProperties = this.properties.set.filter(property => ['bk_set_name'].includes(property['bk_property_id']))
                 const moduleProperties = this.properties.module.filter(property => ['bk_module_name'].includes(property['bk_property_id']))
@@ -61,6 +63,12 @@
                     this.table.checked = []
                     this.getHostList()
                 }
+            },
+            applyingInfo (info) {
+                if (info) {
+                    console.log(info)
+                    this.filter.business = info['bk_biz_id']
+                }
             }
         },
         async created () {
@@ -75,9 +83,22 @@
                 console.log(e)
             }
         },
+        beforeRouteUpdate (to, from, next) {
+            this.$store.commit('hostFavorites/setApplying', null)
+            next()
+        },
+        beforeRouteLeave (to, from, next) {
+            this.$store.commit('hostFavorites/setApplying', null)
+            next()
+        },
         methods: {
             ...mapActions('objectModelProperty', ['batchSearchObjectAttribute']),
             getBusiness () {
+                const query = this.$route.query
+                if (query.hasOwnProperty('business')) {
+                    this.filter.business = parseInt(query.business)
+                    return Promise.resolve()
+                }
                 return new Promise((resolve, reject) => {
                     this.filter.businessResolver = () => {
                         this.filter.businessResolver = null

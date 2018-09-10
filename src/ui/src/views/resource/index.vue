@@ -71,13 +71,37 @@
                         <i class="icon-cc-history"></i>
                     </bk-button>
                     <bk-button class="options-button" type="primary"
-                        v-tooltip="$t('HostResourcePool[\'导入主机\']')">
+                        v-tooltip="$t('HostResourcePool[\'导入主机\']')"
+                        @click="importInst.show = true">
                         <i class="icon-cc-import"></i>
                     </bk-button>
                 </div>
             </div>
         </cmdb-hosts-table>
-
+        <cmdb-slider :is-show.sync="importInst.show" :title="$t('HostResourcePool[\'批量导入\']')">
+           <bk-tab :active-name.sync="importInst.active" slot="content">
+                <bk-tabpanel name="import" :title="$t('HostResourcePool[\'批量导入\']')">
+                    <cmdb-import v-if="importInst.show && importInst.active === 'import'"
+                        :templateUrl="importInst.templateUrl"
+                        :importUrl="importInst.importUrl"
+                        @success="getHostList()"
+                        @partialSuccess="getHostList()">
+                        <span slot="download-desc" style="display: inline-block;vertical-align: top;">
+                            {{$t('HostResourcePool["说明：内网IP为必填列"]')}}
+                        </span>
+                    </cmdb-import>
+                </bk-tabpanel>
+                <bk-tabpanel name="agent" :title="$t('HostResourcePool[\'自动导入\']')">
+                    <div class="automatic-import">
+                        <p>{{$t("HostResourcePool['agent安装说明']")}}</p>
+                        <div class="back-contain">
+                            <i class="icon-cc-skip"></i>
+                            <a href="javascript:void(0)" @click="openAgentApp">{{$t("HostResourcePool['点此进入节点管理']")}}</a>
+                        </div>
+                    </div>
+                </bk-tabpanel>
+            </bk-tab>
+        </cmdb-slider>
     </div>
 </template>
 
@@ -85,10 +109,12 @@
     import { mapGetters, mapActions } from 'vuex'
     import cmdbHostsFilter from '@/components/hosts/filter'
     import cmdbHostsTable from '@/components/hosts/table'
+    import cmdbImport from '@/components/import/import'
     export default {
         components: {
             cmdbHostsFilter,
-            cmdbHostsTable
+            cmdbHostsTable,
+            cmdbImport
         },
         data () {
             return {
@@ -111,7 +137,13 @@
                     params: null,
                     paramsResolver: null
                 },
-                assignBusiness: ''
+                assignBusiness: '',
+                importInst: {
+                    show: false,
+                    active: 'import',
+                    templateUrl: `${window.API_BASE_URL}importtemplate/host`,
+                    importUrl: `${window.API_BASE_URL}hosts/import`
+                }
             }
         },
         computed: {
@@ -127,8 +159,16 @@
                 return [...setProperties, ...moduleProperties, ...businessProperties, ...hostProperties]
             }
         },
+        watch: {
+            'importInst.show' (show) {
+                if (!show) {
+                    this.importInst.active = 'import'
+                }
+            }
+        },
         async created () {
             try {
+                this.setQueryParams()
                 await Promise.all([
                     this.getParams(),
                     this.getProperties()
@@ -143,6 +183,12 @@
             ...mapActions('hostDelete', ['deleteHost']),
             ...mapActions('hostRelation', ['transferResourcehostToIdleModule']),
             ...mapActions('objectModelProperty', ['batchSearchObjectAttribute']),
+            setQueryParams () {
+                const query = this.$route.query
+                if (query.hasOwnProperty('assigned')) {
+                    this.filter.assigned = ['true', 'false'].includes(query.assigned) ? query.assigned === 'true' : !!query.assigned
+                }
+            },
             getParams () {
                 return new Promise((resolve, reject) => {
                     this.filter.paramsResolver = () => {
@@ -299,6 +345,18 @@
                         })
                     }
                 })
+            },
+            openAgentApp () {
+                let agentAppUrl = window.Site.agent
+                if (agentAppUrl) {
+                    if (agentAppUrl.indexOf('paasee-g.o.qcloud.com') !== -1) {
+                        window.top.postMessage(JSON.stringify({action: 'open_other_app', app_code: 'bk_nodeman'}), '*')
+                    } else {
+                        window.open(agentAppUrl)
+                    }
+                } else {
+                    this.$warn(this.$t("HostResourcePool['未配置Agent安装APP地址']"))
+                }
             }
         }
     }
@@ -360,5 +418,18 @@
     }
     .resource-table{
         margin-top: 20px;
+    }
+    .automatic-import{
+        padding:40px 30px 0 30px;
+        .back-contain{
+            cursor:pointer;
+            color: #3c96ff;
+            img{
+                margin-right: 5px;
+            }
+            a{
+                color:#3c96ff;
+            }
+        }
     }
 </style>

@@ -35,6 +35,11 @@
                 window.localStorage.setItem('selectedBusiness', localSelected)
                 this.$emit('input', localSelected)
                 this.$emit('on-select', localSelected)
+            },
+            value (value) {
+                if (value !== this.localSelected) {
+                    this.setLocalSelected()
+                }
             }
         },
         async created () {
@@ -54,7 +59,7 @@
                 })
             },
             setLocalSelected () {
-                const selected = parseInt(window.localStorage.getItem('selectedBusiness'))
+                const selected = this.value || parseInt(window.localStorage.getItem('selectedBusiness'))
                 const exist = this.privilegeBusiness.some(business => business['bk_biz_id'] === selected)
                 if (exist) {
                     this.localSelected = selected
