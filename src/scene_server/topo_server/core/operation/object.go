@@ -422,12 +422,16 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 			return err
 		}
 		
-		grps, err := o.grp.FindGroupByObject(params,obj.GetID(),condition.CreateCondition())
+		grps, err := o.grp.FindGroupByObject(params,obj.GetID(),condition.CreateCondition()); 
+		if nil != err {
+				blog.Errorf("[operation-obj] failed to find the object(%d)'s groupid set, error info is %s", id, err.Error())
+				return err
+		}
 		for _,grp := range grps{
 			m,_ := grp.ToMapStr()
 			gid := strconv.FormatInt(m["id"].(int64),10)
 			if err :=o.grp.DeleteObjectGroup(params,gid); nil != err{
-				blog.Errorf("[operation-grp] failed to delete the groupid (%d)'s, error info is %s", gid, err.Error())
+				blog.Errorf("[operation-grp] failed to delete the object (%d)'s groupid(%d), error info is %s", id, gid, err.Error())
 				return err
 			}
 		}		
