@@ -421,6 +421,16 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 			blog.Errorf("[operation-obj] failed to delete the object(%d)'s attribute, error info is %s", id, err.Error())
 			return err
 		}
+		
+		grps, err := o.grp.FindGroupByObject(params,obj.GetID(),condition.CreateCondition())
+		for _,grp := range grps{
+			m,_ := grp.ToMapStr()
+			gid := strconv.FormatInt(m["id"].(int64),10)
+			if err :=o.grp.DeleteObjectGroup(params,gid); nil != err{
+				blog.Errorf("[operation-grp] failed to delete the groupid (%d)'s, error info is %s", gid, err.Error())
+				return err
+			}
+		}		
 
 		rsp, err := o.clientSet.ObjectController().Meta().DeleteObject(context.Background(), obj.GetRecordID(), params.Header, cond.ToMapStr())
 
