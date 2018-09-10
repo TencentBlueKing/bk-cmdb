@@ -450,12 +450,17 @@
             .hidden-list-content {
                 height: calc(100% - 46px);
                 @include scrollbar;
-                .hidden-list-item {
+                >div {
                     position: relative;
                     border-bottom: 1px solid $cmdbBorderLightColor;
-                    font-size: 0;
+                    font-size: 12px;
+                    line-height: 40px;
+                    height: 40px;
                     cursor: move;
                     transition: all .35s;
+                    .icon-eye-slash-shape {
+                        display: none;
+                    }
                 }
                 .hidden-list-text {
                     padding: 0 10px 0 15px;
@@ -526,7 +531,7 @@
                     padding: 10px 0;
                     min-height: 50px;
                     font-size: 0;
-                    .layout-item {
+                    >div {
                         display: inline-block;
                         position: relative;
                         width: 50%;
