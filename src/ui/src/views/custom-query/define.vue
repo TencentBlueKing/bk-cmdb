@@ -219,7 +219,12 @@
                     'time': '$in',
                     'enum': '$eq'
                 },
-                isPreviewShow: false
+                isPreviewShow: false,
+                dataCopy: {
+                    name: '',
+                    userProperties: [],
+                    attributeSelectd: ''
+                }
             }
         },
         computed: {
@@ -367,6 +372,21 @@
                 'updateCustomQuery',
                 'deleteCustomQuery'
             ]),
+            isCloseConfirmShow () {
+                if (this.name !== this.dataCopy.name || this.dataCopy.attributeSelected !== this.attribute.selected || this.userProperties.length !== this.dataCopy.userProperties.length) {
+                    return true
+                }
+                for (let i = 0; i < this.userProperties.length; i++) {
+                    let property = this.userProperties[i]
+                    let propertyCopy = this.dataCopy.userProperties[i]
+                    for (let key in property) {
+                        if (property[key] !== propertyCopy[key]) {
+                            return true
+                        }
+                    }
+                }
+                return false
+            },
             async getUserAPIDetail () {
                 const res = await this.getCustomQueryDetail({
                     bizId: this.bizId,

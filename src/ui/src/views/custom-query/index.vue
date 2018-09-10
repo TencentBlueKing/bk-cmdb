@@ -9,7 +9,7 @@
                 {{$t("CustomQuery['新增查询']")}}
             </bk-button>
             <div class="api-input fr">
-                <input type="text" class="cmdb-form-input" :placeholder="$t('Inst[\'快速查询\']')" v-model="filter.name">
+                <input type="text" class="cmdb-form-input" :placeholder="$t('Inst[\'快速查询\']')" v-model="filter.name" @keyup.enter="getUserAPIList">
             </div>
         </div>
         <cmdb-table
@@ -128,7 +128,7 @@
                 this.slider.id = null
             },
             closeSliderConfirm () {
-
+                
             },
             handleCreate (data) {
                 this.slider.id = data['id']
