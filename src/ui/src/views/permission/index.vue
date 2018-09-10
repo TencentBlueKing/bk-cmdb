@@ -65,7 +65,7 @@
 
 <style lang="scss" scoped>
     .permission-wrapper{
-        padding-top: 0;
+        padding: 0 0 20px;
         height: 100%;
     }
 </style>

@@ -157,6 +157,7 @@
             },
             chooseIcon (item) {
                 this.baseInfo['bk_obj_icon'] = item.value
+                this.closeDrop()
             },
             toggleDrop () {
                 if (this.isReadOnly) {
