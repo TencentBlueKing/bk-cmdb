@@ -13,13 +13,13 @@
 package rpc
 
 import (
-	"configcenter/src/common/util"
 	"context"
 	"io"
 	"net/http"
 	"runtime/debug"
 
 	"configcenter/src/common/blog"
+	"configcenter/src/common/util"
 )
 
 // Server define
@@ -126,7 +126,7 @@ func (s *ServerSession) Stop() {
 }
 
 func (s *ServerSession) readFromWire() error {
-	msg := Message{codec:s.srv.codec}
+	msg := Message{codec: s.srv.codec}
 	err := s.wire.Read(&msg)
 	if err == io.EOF {
 		return err
