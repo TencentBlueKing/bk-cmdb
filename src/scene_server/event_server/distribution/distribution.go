@@ -78,14 +78,16 @@ func (dh *DistHandler) StartDistribute() (err error) {
 		defer blog.Warn("discovering subscriber change process stoped")
 		for {
 			mesg := <-MsgChan
-			action := mesg[:6]
+			mesgAction := getChangeAction(mesg)
+			mesgBody := getChangeBody(mesg)
+
 			subscriber := metadata.Subscription{}
-			blog.Infof("mesg: action:%s ,body:%s", mesg[:6], mesg[6:])
-			if err := json.Unmarshal([]byte(mesg[6:]), &subscriber); err != nil {
+			blog.Infof("mesg: action:%s ,body:%s", mesgAction, mesgBody)
+			if err := json.Unmarshal([]byte(mesgBody), &subscriber); err != nil {
 				chErr <- err
 				return
 			}
-			switch action {
+			switch mesgAction {
 			case "create":
 				blog.Infof("starting subscribers process %d", subscriber.SubscriptionID)
 				if renewCh, ok := renewMaps[subscriber.SubscriptionID]; ok {
@@ -107,7 +109,7 @@ func (dh *DistHandler) StartDistribute() (err error) {
 				if renewCh, ok := renewMaps[subscriber.SubscriptionID]; ok {
 					renewCh <- subscriber
 				} else {
-					MsgChan <- "create" + mesg[:6]
+					MsgChan <- "create" + mesgBody
 				}
 			case "delete":
 				blog.Infof("stoping subscribers process %d", subscriber.SubscriptionID)
@@ -256,4 +258,11 @@ func (dh *DistHandler) saveDistDone(dist *metadata.DistInstCtx) (err error) {
 		return
 	}
 	return
+}
+
+func getChangeAction(mesg string) string {
+	return mesg[:6]
+}
+func getChangeBody(mesg string) string {
+	return mesg[6:]
 }
