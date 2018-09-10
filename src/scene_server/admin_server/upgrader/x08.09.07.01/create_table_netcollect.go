@@ -43,10 +43,10 @@ var tables = map[string][]storage.Index{
 	"cc_Netcollect_Device": []storage.Index{
 		storage.Index{Name: "", Columns: []string{"device_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"device_name"}, Type: storage.INDEX_TYPE_BACKGROUP},
+		storage.Index{Name: "", Columns: []string{"bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
 	},
 
 	"cc_Netcollect_Property": []storage.Index{
 		storage.Index{Name: "", Columns: []string{"netcollect_property_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"oid"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"device_id", "bk_property_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
+		storage.Index{Name: "", Columns: []string{"bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
 	}}
