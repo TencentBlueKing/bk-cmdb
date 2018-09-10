@@ -81,6 +81,15 @@ const router = new Router({
     }, {
         path: '/custom-query',
         component: customQuery
+    }, {
+        path: '/404',
+        components: require('@/views/status/404')
+    }, {
+        path: '/403',
+        components: require('@/views/status/403')
+    }, {
+        path: '*',
+        redirect: '/404'
     }]
 })
 
