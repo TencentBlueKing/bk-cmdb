@@ -85,7 +85,7 @@ func (h *HostLog) GetContent(hostID int64) *metadata.Content {
 type HostModuleLog struct {
 	logic     *Logics
 	header    http.Header
-	instID    []int64
+	instIDArr []int64
 	pre       []metadata.ModuleHost
 	cur       []metadata.ModuleHost
 	hostInfos []mapstr.MapStr
@@ -94,11 +94,11 @@ type HostModuleLog struct {
 
 func (lgc *Logics) NewHostModuleLog(header http.Header, instID []int64) *HostModuleLog {
 	return &HostModuleLog{
-		logic:  lgc,
-		instID: instID,
-		pre:    make([]metadata.ModuleHost, 0),
-		cur:    make([]metadata.ModuleHost, 0),
-		header: header,
+		logic:     lgc,
+		instIDArr: instID,
+		pre:       make([]metadata.ModuleHost, 0),
+		cur:       make([]metadata.ModuleHost, 0),
+		header:    header,
 	}
 }
 
@@ -257,7 +257,7 @@ func (h *HostModuleLog) SaveAudit(appID, user, desc string) error {
 }
 
 func (h *HostModuleLog) getHostModuleConfig() ([]metadata.ModuleHost, error) {
-	conds := map[string][]int64{common.BKHostIDField: h.instID}
+	conds := map[string][]int64{common.BKHostIDField: h.instIDArr}
 	result, err := h.logic.CoreAPI.HostController().Module().GetModulesHostConfig(context.Background(), h.header, conds)
 	if err != nil || (err == nil && !result.Result) {
 		return nil, fmt.Errorf("%v, %v", err, result.ErrMsg)
@@ -268,9 +268,9 @@ func (h *HostModuleLog) getHostModuleConfig() ([]metadata.ModuleHost, error) {
 func (h *HostModuleLog) getInnerIP() ([]mapstr.MapStr, error) {
 	query := &metadata.QueryInput{
 		Start:     0,
-		Limit:     1,
+		Limit:     len(h.instIDArr),
 		Sort:      common.BKAppIDField,
-		Condition: common.KvMap{common.BKHostIDField: common.KvMap{common.BKDBIN: h.instID}},
+		Condition: common.KvMap{common.BKHostIDField: common.KvMap{common.BKDBIN: h.instIDArr}},
 		Fields:    fmt.Sprintf("%s,%s", common.BKHostIDField, common.BKHostInnerIPField),
 	}
 

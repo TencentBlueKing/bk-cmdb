@@ -15,6 +15,7 @@ package condition
 import (
 	"reflect"
 
+	"configcenter/src/common"
 	types "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
@@ -52,19 +53,13 @@ type condition struct {
 // SetPage set the page
 func (cli *condition) SetPage(page types.MapStr) error {
 
-	start, err := page.Int64(metadata.PageStart)
-	if nil != err {
+	pageInfo := metadata.BasePage{}
+	if err := page.MarshalJSONInto(&pageInfo); nil != err {
 		return err
 	}
-
-	cli.start = start
-
-	sort, err := page.String(metadata.PageSort)
-	if nil != err {
-		return err
-	}
-	cli.sort = sort
-
+	cli.start = int64(pageInfo.Start)
+	cli.limit = int64(pageInfo.Limit)
+	cli.sort = pageInfo.Sort
 	return nil
 }
 
@@ -148,6 +143,9 @@ func (cli *condition) SetLimit(limit int64) {
 
 // GetLimit return the limit num
 func (cli *condition) GetLimit() int64 {
+	if cli.limit <= 0 {
+		return common.BKNoLimit
+	}
 	return cli.limit
 }
 

@@ -33,7 +33,7 @@ func LogOutUser(c *gin.Context) {
 	loginPage := fmt.Sprintf(loginURL, appCode, site)
 	session := sessions.Default(c)
 	session.Clear()
-	c.Redirect(301, loginPage)
+	c.Redirect(302, loginPage)
 }
 
 func init() {
