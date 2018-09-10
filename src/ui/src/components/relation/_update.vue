@@ -60,7 +60,7 @@
         },
         data () {
             return {
-                properties: [],
+                properties: {},
                 filter: {
                     objId: '',
                     property: {
@@ -152,7 +152,7 @@
                 return 'bk_inst_id'
             },
             associationOptions () {
-                const validAssociation = this.association.filter(model => !['plat', 'process'].includes(model['bk_obj_id']))
+                const validAssociation = this.association.filter(model => !['plat', 'process', 'module', 'set'].includes(model['bk_obj_id']))
                 return validAssociation.map(model => {
                     return {
                         value: model['bk_obj_id'],
@@ -161,7 +161,7 @@
                 })
             },
             selectedAssociationProperty () {
-                return this.properties.find(property => property['bk_asst_obj_id'] === this.filter.objId)
+                return this.properties[this.objId].find(property => property['bk_asst_obj_id'] === this.filter.objId)
             },
             multiple () {
                 return this.selectedAssociationProperty && this.selectedAssociationProperty['bk_property_type'] === 'multiasst'
@@ -195,20 +195,16 @@
                     this.table.pagination.current = 1
                     this.table.pagination.count = 0
                     this.table.list = []
-                    const properties = await this.getObjProperties(filterObjId)
-                    this.properties = properties
+                    await this.getObjProperties(filterObjId)
                     this.getInstance()
                 }
             },
             'filter.property.id' (id) {
-                console.log(id)
-                if (id) {
-                    this.setTableHeader()
-                }
+                this.setTableHeader()
             }
         },
         async created () {
-            this.properties = await this.getObjProperties(this.objId)
+            await this.getObjProperties(this.objId)
             this.getAssociationTopo()
         },
         methods: {
@@ -227,10 +223,13 @@
                         requestId: `get_${objId}_attribute`,
                         fromCache: true
                     }
+                }).then(properties => {
+                    this.$set(this.properties, objId, properties)
+                    return properties
                 })
             },
             close () {
-                this.$emit('handleNewAssociationClose')
+                this.$emit('on-new-relation-close')
             },
             search () {
                 this.setCurrentPage(1)
@@ -263,16 +262,16 @@
                         name: this.getProperty(filterPropertyId, filterObjId)['bk_property_name']
                     })
                 }
-                console.log(header)
                 this.table.header = header
             },
-            getAssociationTopo () {
+            getAssociationTopo (config = {}) {
                 this.getInstRelation({
                     objId: this.objId,
                     instId: this.instId,
                     config: {
                         requestId: `get_${this.objId}_${this.instId}_relation`,
-                        fromCache: true
+                        fromCache: true,
+                        ...config
                     }
                 }).then(data => {
                     this.association = data[0].next
@@ -282,7 +281,7 @@
                 let payload = {
                     updateType: updateType,
                     objId: this.objId,
-                    associated: this.selectedInstId,
+                    relation: this.selectedInstId,
                     id: this.selectedAssociationProperty['bk_property_id'],
                     value: instId,
                     multiple: this.multiple
@@ -297,7 +296,7 @@
                 const response = await this.updateInstRelation({
                     params: payload
                 })
-                this.getAssociationTopo()
+                this.getAssociationTopo({clearCache: true})
                 const msg = updateType === 'remove' ? this.$t('Association["取消关联成功"]') : this.$t('Association["添加关联成功"]')
                 this.$success(msg)
             },
@@ -399,7 +398,7 @@
                 return condition
             },
             setTableList (data, filterObjId) {
-                const properties = this.properties
+                const properties = this.properties[filterObjId]
                 this.table.pagination.count = data.count
                 if (filterObjId === 'host') {
                     data.info = data.info.map(item => item['host'])
@@ -435,7 +434,7 @@
                 return label
             },
             getProperty (propertyId, objId) {
-                return this.properties.find(({bk_property_id: bkPropertyId}) => bkPropertyId === propertyId)
+                return this.properties[objId].find(({bk_property_id: bkPropertyId}) => bkPropertyId === propertyId)
             },
             handlePropertySelected (value, data) {
                 this.filter.property.id = data['bk_property_id']
@@ -455,6 +454,8 @@
     .new-association{
         background-color: #fff;
         font-size: 14px;
+        position: relative;
+        top: -54px;
         .association-close-handle{
             display: block;
             height: 35px;
