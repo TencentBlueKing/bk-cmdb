@@ -19,6 +19,7 @@ import (
 	"runtime/debug"
 
 	"configcenter/src/common/blog"
+	"configcenter/src/common/util"
 )
 
 // Server define
@@ -91,15 +92,14 @@ func (s *Server) SetCodec(codec Codec) {
 type ServerSession struct {
 	srv       *Server
 	wire      Wire
+	request   Message
 	responses chan *Message
-	done      context.Context
-	cancel    func()
+	done      *util.AtomicBool
 	stream    *streamstore
 }
 
 // NewServerSession returns a new ServerSession
 func NewServerSession(srv *Server, conn io.ReadWriteCloser, compress string) (*ServerSession, error) {
-	ctx, cancel := context.WithCancel(srv.ctx)
 	wire, err := NewBinaryWire(conn, compress)
 	if err != nil {
 		return nil, err
@@ -108,9 +108,9 @@ func NewServerSession(srv *Server, conn io.ReadWriteCloser, compress string) (*S
 		srv:       srv,
 		wire:      wire,
 		responses: make(chan *Message, 1024),
-		done:      ctx,
-		cancel:    cancel,
+		done:      util.NewBool(false),
 		stream:    newStreamStore(),
+		request:   Message{codec: srv.codec},
 	}, nil
 }
 
@@ -122,49 +122,47 @@ func (s *ServerSession) Run() error {
 
 // Stop stop the server session
 func (s *ServerSession) Stop() {
-	s.cancel()
+	s.done.Set()
 }
 
-func (s *ServerSession) readFromWire(ret chan<- error) {
-	msg, err := s.wire.Read()
+func (s *ServerSession) readFromWire() error {
+	msg := Message{codec: s.srv.codec}
+	err := s.wire.Read(&msg)
 	if err == io.EOF {
-		ret <- err
-		return
+		return err
 	} else if err != nil {
 		blog.Errorf("Failed to read: %v", err)
-		ret <- err
-		return
+		return err
 	}
-	msg.codec = s.srv.codec
 
 	switch msg.typz {
 	case TypeRequest:
 		blog.V(3).Infof("[rpc server] calling [%s]", msg.cmd)
 		if handlerFunc, ok := s.srv.handlers[msg.cmd]; ok {
-			go s.handle(handlerFunc, msg)
+			go s.handle(handlerFunc, &msg)
 		} else if handlerFunc, ok := s.srv.streamHandlers[msg.cmd]; ok {
-			go s.handleStream(handlerFunc, msg)
+			go s.handleStream(handlerFunc, &msg)
 		} else {
 			cmds := []string{}
 			for cmd := range s.srv.handlers {
 				cmds = append(cmds, cmd)
 			}
 			blog.V(3).Infof("[rpc server] command [%s] not found, existing command are: %#v", msg.cmd, s.srv.handlers)
-			s.pushResponse(msg, ErrCommandNotFount)
+			s.pushResponse(&msg, ErrCommandNotFount)
 		}
 	case TypeStream, TypeStreamClose:
 		s.stream.RLock()
 		stream, ok := s.stream.get(msg.seq)
 		if ok {
-			stream.input <- msg
+			stream.input <- &msg
 		}
 		s.stream.RUnlock()
 	case TypePing:
-		go s.handlePing(msg)
+		go s.handlePing(&msg)
 	default:
 		blog.Warnf("[rpc server] unknow message type: %v", msg.typz)
 	}
-	ret <- nil
+	return nil
 }
 
 func (s *ServerSession) handle(f HandlerFunc, msg *Message) {
@@ -172,7 +170,7 @@ func (s *ServerSession) handle(f HandlerFunc, msg *Message) {
 		runtimeErr := recover()
 		if runtimeErr != nil {
 			stack := debug.Stack()
-			blog.Errorf("command [%s] runtime error:\n%s", msg.cmd, stack)
+			blog.Errorf("command [%s] failed: %v\n%s", msg.cmd, runtimeErr, stack)
 		}
 	}()
 	result, err := f(msg)
@@ -191,7 +189,7 @@ func (s *ServerSession) handleStream(f HandlerStreamFunc, msg *Message) {
 			runtimeErr := recover()
 			if runtimeErr != nil {
 				stack := debug.Stack()
-				blog.Errorf("stream command [%s] runtime error:\n%s", msg.cmd, stack)
+				blog.Errorf("stream command [%s] failed: %v\n%s", msg.cmd, runtimeErr, stack)
 			}
 		}()
 		err := f(msg, stream)
@@ -204,25 +202,19 @@ func (s *ServerSession) handleStream(f HandlerStreamFunc, msg *Message) {
 	}()
 	go func() {
 	serverstreamloop:
-		for {
-			select {
-			case smsg := <-stream.output:
-				s.responses <- smsg
-				if smsg.typz == TypeStreamClose {
-					break serverstreamloop
-				}
-			case <-s.done.Done():
-				stream.err = ErrStreamStoped
+		for smsg := range stream.output {
+			s.responses <- smsg
+			if smsg.typz == TypeStreamClose {
 				break serverstreamloop
-			case <-stream.done:
+			}
+			if s.done.IsSet() || stream.done.IsSet() {
 				stream.err = ErrStreamStoped
-				break serverstreamloop
+				break
 			}
 		}
 		s.stream.remove(msg.seq)
 		close(stream.input)
 		close(stream.output)
-		close(stream.done)
 	}()
 }
 
@@ -242,32 +234,25 @@ func (s *ServerSession) pushResponse(msg *Message, err error) {
 }
 
 func (s *ServerSession) readloop() error {
-	ret := make(chan error)
+	var err error
 	for {
-		go s.readFromWire(ret)
-
-		select {
-		case err := <-ret:
-			if err != nil {
-				s.Stop()
-				return err
-			}
-			continue
-		case <-s.done.Done():
+		if s.done.IsSet() {
 			blog.Infof("[rpc server] RPC server stopped")
+			return nil
+		}
+		if err = s.readFromWire(); err != nil {
+			s.Stop()
 			return nil
 		}
 	}
 }
 
 func (s *ServerSession) writeloop() {
-	for {
-		select {
-		case msg := <-s.responses:
-			if err := s.wire.Write(msg); err != nil {
-				blog.Errorf("Failed to write: %v", err)
-			}
-		case <-s.done.Done():
+	for msg := range s.responses {
+		if err := s.wire.Write(msg); err != nil {
+			blog.Errorf("Failed to write: %v", err)
+		}
+		if s.done.IsSet() {
 			if queuelen := len(s.responses); queuelen > 0 {
 				for queuelen > 0 {
 					msg := <-s.responses
