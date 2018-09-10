@@ -179,6 +179,7 @@
             font-weight: bold;
             margin: 0;
             background: #f9f9f9;
+            @include ellipsis;
             .icon-mainframe{
                 position: relative;
                 top: 0px;
