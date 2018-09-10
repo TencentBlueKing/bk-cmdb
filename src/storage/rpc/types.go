@@ -13,12 +13,13 @@
 package rpc
 
 import (
-	"configcenter/src/common/util"
 	"bytes"
 	"encoding"
 	"encoding/json"
 	"errors"
 	"sync"
+
+	"configcenter/src/common/util"
 )
 
 // Errors define
@@ -209,7 +210,7 @@ func (msg *Message) Decode(value interface{}) error {
 // Encode encode the value to message data
 func (msg *Message) Encode(value interface{}) error {
 	if value == nil {
-		msg.Data=msg.Data[:0]
+		msg.Data = msg.Data[:0]
 		return nil
 	}
 	var err error
