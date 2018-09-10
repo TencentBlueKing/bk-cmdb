@@ -13,15 +13,18 @@
 package rpc
 
 import (
+	"sync/atomic"
 	"bufio"
 	"errors"
 	"io"
 	"net"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 
 	"configcenter/src/common/blog"
+	"configcenter/src/common/util"
 )
 
 var (
@@ -34,17 +37,20 @@ const commanLimit = 40
 
 //Client replica client
 type Client struct {
-	end       chan struct{}
-	requests  chan *Message
-	send      chan *Message
-	responses chan *Message
-	seq       uint32
-	messages  map[uint32]*Message
-	stream    *streamstore
-	wire      Wire
-	peerAddr  string
-	err       error
-	codec     Codec
+	send     chan *Message
+	seq      uint32
+	messageMutex sync.RWMutex
+	messages map[uint32]*Message
+	stream   *streamstore
+	wire     Wire
+	peerAddr string
+	err      error
+	codec    Codec
+
+	request  Message
+	response Message
+	done     *util.AtomicBool
+	wg       sync.WaitGroup
 }
 
 //NewClient replica client
@@ -54,18 +60,15 @@ func NewClient(conn net.Conn, compress string) (*Client, error) {
 		return nil, err
 	}
 	c := &Client{
-		wire:      wire,
-		peerAddr:  conn.RemoteAddr().String(),
-		end:       make(chan struct{}, 1024),
-		requests:  make(chan *Message, 1024),
-		send:      make(chan *Message, 1024),
-		responses: make(chan *Message, 1024),
-		messages:  map[uint32]*Message{},
-		codec:     JSONCodec,
-		stream:    newStreamStore(),
+		wire:     wire,
+		peerAddr: conn.RemoteAddr().String(),
+		done:     util.NewBool(false),
+		send:     make(chan *Message, 1024),
+		messages: map[uint32]*Message{},
+		codec:    JSONCodec,
+		stream:   newStreamStore(),
 	}
 	blog.V(3).Infof("connected to %s", c.TargetID())
-	go c.loop()
 	go c.write()
 	go c.read()
 	return c, nil
@@ -114,7 +117,7 @@ func DialHTTPPath(network, address, path string) (*Client, error) {
 //Close replica client
 func (c *Client) Close() error {
 	c.wire.Close()
-	c.end <- struct{}{}
+	c.done.Set()
 	return nil
 }
 
@@ -142,24 +145,18 @@ func (c *Client) CallStream(cmd string, input interface{}) (*StreamMessage, erro
 	sm := NewStreamMessage(msg)
 	c.stream.store(msg.seq, sm)
 	go func() {
-	clientstreamloop:
-		for {
-			select {
-			case streammsg := <-sm.output:
-				c.send <- streammsg
-				if msg.typz == TypeStreamClose {
-					break clientstreamloop
-				}
-			case <-sm.done:
-				break clientstreamloop
-			case <-c.end:
-				break clientstreamloop
+		for streammsg := range sm.output {
+			c.send <- streammsg
+			if msg.typz == TypeStreamClose {
+				break
+			}
+			if sm.done.IsSet() || c.done.IsSet() {
+				break
 			}
 		}
 		sm.err = ErrStreamStoped
 		close(sm.input)
 		close(sm.output)
-		close(sm.done)
 	}()
 
 	return sm, nil
@@ -174,11 +171,11 @@ func (c *Client) Ping() error {
 func (c *Client) operation(op MessageType, cmd string, data interface{}) (*Message, error) {
 	retry := 0
 	for {
-		msg := Message{
+		msg := &Message{
 			magicVersion: MagicVersion,
 			codec:        c.codec,
 			seq:          c.nextSeq(),
-			complete:     make(chan struct{}, 1),
+			complete:     make(chan struct{}),
 			typz:         op,
 			cmd:          cmd,
 			Data:         nil,
@@ -199,14 +196,14 @@ func (c *Client) operation(op MessageType, cmd string, data interface{}) (*Messa
 			return time.After(opPingTimeout)
 		}(msg.typz)
 
-		c.requests <- &msg
+		c.handleRequest(msg)
 
 		select {
 		case <-msg.complete:
 			if msg.typz == TypeError {
 				return nil, errors.New(string(msg.Data))
 			}
-			return &msg, nil
+			return msg, nil
 		case <-timeout:
 			switch msg.typz {
 			case TypeRequest:
@@ -233,28 +230,15 @@ func (c *Client) operation(op MessageType, cmd string, data interface{}) (*Messa
 	}
 }
 
-func (c *Client) loop() {
-	defer close(c.send)
-
-	for {
-		select {
-		case <-c.end:
-			return
-		case req := <-c.requests:
-			c.handleRequest(req)
-		case resp := <-c.responses:
-			c.handleResponse(resp)
-		}
-	}
-}
-
 func (c *Client) nextSeq() uint32 {
-	c.seq++
-	return c.seq
+	return atomic.AddUint32(&c.seq, 1)
 }
 
 func (c *Client) replyError(req *Message) {
-	delete(c.messages, req.seq) // no need lock cause the loop is serial
+	c.messageMutex.Lock()
+	delete(c.messages, req.seq)
+	c.messageMutex.Unlock()
+
 	req.typz = TypeError
 	req.Data = []byte(c.err.Error())
 	req.complete <- struct{}{}
@@ -267,7 +251,10 @@ func (c *Client) handleRequest(req *Message) {
 		return
 	}
 
+	c.messageMutex.Lock()
 	c.messages[req.seq] = req
+	c.messageMutex.Unlock()
+
 	c.send <- req
 	blog.V(5).Infof("[rpc client]sent message data: %s", req.Data)
 }
@@ -278,14 +265,18 @@ func (c *Client) handleResponse(resp *Message) {
 	if resp.transportErr != nil {
 		c.err = resp.transportErr
 		// Terminate all in flight
+		c.messageMutex.RLock()
 		for _, msg := range c.messages {
 			c.replyError(msg)
 		}
+		c.messageMutex.RUnlock()
 		// TODO reconnect when transportErr?
 		return
 	}
 	if resp.typz == TypeStream || resp.typz == TypeStreamClose {
+		c.stream.RLock()
 		stream, ok := c.stream.get(resp.seq)
+		c.stream.RUnlock()
 		if ok {
 			stream.input <- resp
 		} else {
@@ -293,39 +284,41 @@ func (c *Client) handleResponse(resp *Message) {
 		}
 		return
 	}
+	c.messageMutex.Lock()
 	if req, ok := c.messages[resp.seq]; ok {
 		if c.err != nil {
+			c.messageMutex.Unlock()
 			c.replyError(req)
 			return
 		}
 
-		delete(c.messages, resp.seq) // no need lock cause the loop is serial
+		delete(c.messages, resp.seq) 
+		c.messageMutex.Unlock()
+
 		req.typz = resp.typz
 		req.Data = resp.Data
-		req.complete <- struct{}{}
+		close(req.complete)
+	}else{
+		c.messageMutex.Unlock()
 	}
 }
 
 func (c *Client) write() {
 	for msg := range c.send {
 		if err := c.wire.Write(msg); err != nil {
-			c.responses <- &Message{
-				transportErr: err,
-			}
+			c.handleResponse(msg)
 		}
 	}
 }
 
 func (c *Client) read() {
 	for {
-		msg, err := c.wire.Read()
+		err := c.wire.Read(&c.response)
 		if err != nil {
 			blog.Errorf("Error reading from wire: %v", err)
-			c.responses <- &Message{
-				transportErr: err,
-			}
+			c.handleResponse(&c.response)
 			break
 		}
-		c.responses <- msg
+		c.handleResponse(&c.response)
 	}
 }
