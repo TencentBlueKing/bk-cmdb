@@ -8,6 +8,8 @@
                         <the-filter ref="theFilter"
                             v-if="tab.active === 'filter'"
                             :filter-config-key="filterConfigKey"
+                            :collection-content="collectionContent"
+                            @on-collection-toggle="handleCollectionToggle"
                             @on-refresh="handleRefresh">
                             <slot name="business" slot="business"></slot>
                             <slot name="scope" slot="scope"></slot>
@@ -15,12 +17,13 @@
                     </keep-alive>
                 </bk-tabpanel>
                 <bk-tabpanel name="collection" :title="$t('Hosts[\'收藏\']')" v-if="activeTab.includes('collection')">
-                    <the-collection v-if="tab.active === 'collection'"></the-collection>
+                    <the-collection v-if="tab.active === 'collection'" @on-apply="handleApplyCollection"></the-collection>
                 </bk-tabpanel>
-                <the-setting slot="setting"
+                <the-setting slot="setting" ref="theSetting" v-show="tab.active === 'filter'"
                     :active-setting="activeSetting"
                     :filter-config-key="filterConfigKey"
-                    @on-reset="handleReset">
+                    @on-reset="handleReset"
+                    @on-collection="handleCollection">
                 </the-setting>
             </bk-tab>
         </div>
@@ -53,6 +56,12 @@
             filterConfigKey: {
                 type: String,
                 required: true
+            },
+            collectionContent: {
+                type: Object,
+                default () {
+                    return {}
+                }
             }
         },
         data () {
@@ -66,6 +75,18 @@
         methods: {
             handleReset () {
                 this.$refs.theFilter.reset()
+            },
+            handleCollectionToggle (show) {
+                this.$refs.theSetting.collection.show = show
+            },
+            handleCollection () {
+                this.$refs.theFilter.collection.show = true
+            },
+            handleApplyCollection () {
+                this.tab.active = 'filter'
+                this.$nextTick(() => {
+                    this.$refs.theFilter.refresh()
+                })
             },
             handleRefresh (params) {
                 this.$emit('on-refresh', params)

@@ -1,53 +1,80 @@
 <template>
-    <div class="filter-layout">
-        <slot name="business"></slot>
-        <div class="filter-group">
-            <label for="filterIp" class="filter-label">IP</label>
-            <textarea id="filterIp" class="filter-field filter-field-ip" v-model.trim="ip.text"></textarea>
-            <cmdb-form-bool class="filter-field-bool" v-model="ip.bk_host_innerip" :disabled="!ip.bk_host_outerip">
-                <span class="filter-field-bool-label">{{$t('HostResourcePool[\'内网\']')}}</span>
-            </cmdb-form-bool>
-            <cmdb-form-bool class="filter-field-bool" v-model="ip.bk_host_outerip" :disabled="!ip.bk_host_innerip">
-                <span class="filter-field-bool-label">{{$t('HostResourcePool[\'外网\']')}}</span>
-            </cmdb-form-bool>
-            <cmdb-form-bool class="filter-field-bool" v-model="ip.exact" :true-value="1" :false-value="0">
-                <span class="filter-field-bool-label">{{$t('HostResourcePool[\'精确\']')}}</span>
-            </cmdb-form-bool>
-        </div>
-        <slot name="scope"></slot>
-        <div class="filter-group"
-            v-for="(property, index) in customFieldProperties"
-            :key="index">
-            <label class="filter-label">{{getFilterLabel(property)}}</label>
-            <div class="filter-field clearfix">
-                <filter-field-operator class="filter-field-operator fl"
-                    v-if="!['date', 'time'].includes(property['bk_property_type'])"
-                    :type="getOperatorType(property)"
-                    v-model="condition[property['bk_obj_id']][property['bk_property_id']]['operator']">
-                </filter-field-operator>
-                <cmdb-form-enum class="filter-field-value fr"
-                    v-if="property['bk_property_type'] === 'enum'"
-                    :allow-clear="true"
-                    :options="property.option || []"
-                    v-model="condition[property['bk_obj_id']][property['bk_property_id']]['value']">
-                </cmdb-form-enum>
-                <cmdb-form-bool-input class="filter-field-value filter-field-bool-input fr"
-                    v-else-if="property['bk_property_type'] === 'bool'"
-                    v-model="condition[property['bk_obj_id']][property['bk_property_id']]['value']">
-                </cmdb-form-bool-input>
-                <cmdb-form-associate-input class="filter-field-value filter-field-associate fr"
-                    v-else-if="['singleasst', 'multiasst'].includes(property['bk_property_type'])"
-                    v-model="condition[property['bk_obj_id']][property['bk_property_id']]['value']">
-                </cmdb-form-associate-input>
-                <component class="filter-field-value fr" :class="`filter-field-${property['bk_property_type']}`"
-                    v-else
-                    :is="`cmdb-form-${property['bk_property_type']}`"
-                    v-model="condition[property['bk_obj_id']][property['bk_property_id']]['value']">
-                </component>
+    <div class="filter-container">
+        <div class="filter-layout">
+            <slot name="business"></slot>
+            <div class="filter-group">
+                <label for="filterIp" class="filter-label">IP</label>
+                <textarea id="filterIp" class="filter-field filter-field-ip" v-model.trim="ip.text"></textarea>
+                <cmdb-form-bool class="filter-field-bool" v-model="ip.bk_host_innerip" :disabled="!ip.bk_host_outerip">
+                    <span class="filter-field-bool-label">{{$t('HostResourcePool[\'内网\']')}}</span>
+                </cmdb-form-bool>
+                <cmdb-form-bool class="filter-field-bool" v-model="ip.bk_host_outerip" :disabled="!ip.bk_host_innerip">
+                    <span class="filter-field-bool-label">{{$t('HostResourcePool[\'外网\']')}}</span>
+                </cmdb-form-bool>
+                <cmdb-form-bool class="filter-field-bool" v-model="ip.exact" :true-value="1" :false-value="0">
+                    <span class="filter-field-bool-label">{{$t('HostResourcePool[\'精确\']')}}</span>
+                </cmdb-form-bool>
+            </div>
+            <slot name="scope"></slot>
+            <div class="filter-group"
+                v-for="(property, index) in customFieldProperties"
+                :key="index">
+                <label class="filter-label">{{getFilterLabel(property)}}</label>
+                <div class="filter-field clearfix">
+                    <filter-field-operator class="filter-field-operator fl"
+                        v-if="!['date', 'time'].includes(property['bk_property_type'])"
+                        :type="getOperatorType(property)"
+                        v-model="condition[property['bk_obj_id']][property['bk_property_id']]['operator']">
+                    </filter-field-operator>
+                    <cmdb-form-enum class="filter-field-value fr"
+                        v-if="property['bk_property_type'] === 'enum'"
+                        :allow-clear="true"
+                        :options="property.option || []"
+                        v-model="condition[property['bk_obj_id']][property['bk_property_id']]['value']">
+                    </cmdb-form-enum>
+                    <cmdb-form-bool-input class="filter-field-value filter-field-bool-input fr"
+                        v-else-if="property['bk_property_type'] === 'bool'"
+                        v-model="condition[property['bk_obj_id']][property['bk_property_id']]['value']">
+                    </cmdb-form-bool-input>
+                    <cmdb-form-associate-input class="filter-field-value filter-field-associate fr"
+                        v-else-if="['singleasst', 'multiasst'].includes(property['bk_property_type'])"
+                        v-model="condition[property['bk_obj_id']][property['bk_property_id']]['value']">
+                    </cmdb-form-associate-input>
+                    <component class="filter-field-value fr" :class="`filter-field-${property['bk_property_type']}`"
+                        v-else
+                        :is="`cmdb-form-${property['bk_property_type']}`"
+                        v-model="condition[property['bk_obj_id']][property['bk_property_id']]['value']">
+                    </component>
+                </div>
+            </div>
+            <div class="filter-button">
+                <bk-button type="primary" @click="refresh" :disabled="$loading()">{{$t('HostResourcePool[\'刷新查询\']')}}</bk-button>
             </div>
         </div>
-        <div class="filter-button">
-            <bk-button type="primary" @click="refresh" :disabled="$loading()">{{$t('HostResourcePool[\'刷新查询\']')}}</bk-button>
+        <div class="collection-form" v-click-outside="handleCloseCollection" v-if="collection.show">
+            <div class="form-title">{{$t('Hosts[\'收藏此查询\']')}}</div>
+            <div class="form-group">
+                <input type="text" class="form-name cmdb-form-input"
+                    v-validate="'required'"
+                    v-model.trim="collection.name"
+                    data-vv-name="collectionName"
+                    :placeholder="$t('Hosts[\'请填写名称\']')">
+                <span v-show="errors.has('collectionName')" class="form-error">{{errors.first('collectionName')}}</span>
+            </div>
+            <div class="form-group">
+                <div class="form-content">{{collection.content}}</div>
+            </div>
+            <div class="form-group form-group-button">
+                <bk-button type="primary"
+                    :loading="$loading('create_collection')"
+                    :disabled="$loading('create_collection') || !collection.name"
+                    @click="handleSaveCollection">
+                    {{$t('Hosts[\'确认\']')}}
+                </bk-button>
+                <bk-button type="default" @click="handleCloseCollection">
+                    {{$t('Common[\'取消\']')}}
+                </bk-button>
+            </div>
         </div>
     </div>
 </template>
@@ -63,6 +90,12 @@
             filterConfigKey: {
                 type: String,
                 required: true
+            },
+            collectionContent: {
+                type: Object,
+                default () {
+                    return {}
+                }
             }
         },
         data () {
@@ -85,13 +118,24 @@
                     'plat': 'bk_cloud_name',
                     'module': 'bk_module_name',
                     'set': 'bk_set_name'
+                },
+                collection: {
+                    show: false,
+                    name: '',
+                    content: ''
                 }
             }
         },
         computed: {
             ...mapGetters('userCustom', ['usercustom']),
+            ...mapGetters('hostFavorites', [
+                'applying',
+                'applyingInfo',
+                'applyingProperties',
+                'applyingConditions'
+            ]),
             customFields () {
-                return this.usercustom[this.filterConfigKey] || []
+                return this.applyingProperties.length ? this.applyingProperties : (this.usercustom[this.filterConfigKey] || [])
             },
             customFieldProperties () {
                 const customFieldProperties = []
@@ -116,8 +160,40 @@
             }
         },
         watch: {
+            applyingInfo (info) {
+                if (info) {
+                    this.ip.text = info['ip_list'].join('\n')
+                    this.ip['bk_host_innerip'] = info['bk_host_innerip']
+                    this.ip['bk_host_outerip'] = info['bk_host_outerip']
+                    this.ip.exact = info['exact_search']
+                } else {
+                    this.ip.text = ''
+                    this.ip['bk_host_innerip'] = true
+                    this.ip['bk_host_outerip'] = true
+                    this.ip.exact = 0
+                }
+            },
+            applyingProperties (properties) {
+                let hasUnloadObj = false
+                properties.forEach(property => {
+                    if (!this.properties.hasOwnProperty(property['bk_obj_id'])) {
+                        hasUnloadObj = true
+                        this.$set(this.properties, property['bk_obj_id'], [])
+                    }
+                })
+                if (hasUnloadObj) {
+                    this.$http.cancel('hostsAttribute')
+                    this.getProperties()
+                }
+            },
             customFieldProperties () {
                 this.setCondition()
+            },
+            'collection.show' (show) {
+                if (show) {
+                    this.setCollectionContent()
+                }
+                this.$emit('on-collection-toggle', show)
             }
         },
         async created () {
@@ -127,6 +203,7 @@
         },
         methods: {
             ...mapActions('objectModelProperty', ['batchSearchObjectAttribute']),
+            ...mapActions('hostFavorites', ['createFavorites']),
             setQueryParams () {
                 const query = this.$route.query
                 Object.keys(query).forEach(key => {
@@ -246,13 +323,24 @@
                     module: {}
                 }
                 this.customFieldProperties.forEach(property => {
-                    condition[property['bk_obj_id']][property['bk_property_id']] = {
-                        field: property['bk_property_id'],
-                        operator: '',
-                        value: ''
-                    }
+                    condition[property['bk_obj_id']][property['bk_property_id']] = this.getPropertyCondition(property)
                 })
                 this.condition = condition
+            },
+            getPropertyCondition (property) {
+                const objId = property['bk_obj_id']
+                const propertyId = property['bk_property_id']
+                const condition = {
+                    field: propertyId,
+                    operator: '',
+                    value: ''
+                }
+                const collectionConditon = (this.applyingConditions[objId] || []).find(condition => condition.field === propertyId)
+                if (collectionConditon) {
+                    condition.operator = collectionConditon.operator
+                    condition.value = collectionConditon.value
+                }
+                return condition
             },
             reset () {
                 this.ip = {
@@ -271,12 +359,89 @@
             },
             refresh () {
                 this.$emit('on-refresh', this.getParams())
+            },
+            setCollectionContent () {
+                const content = []
+                const params = this.getParams()
+                if (this.collectionContent.hasOwnProperty('business')) {
+                    content.push(`bk_biz_id:${this.collectionContent.business}`)
+                }
+                if (params.ip.data.length) {
+                    content.push(`ip:${params.ip.data.join(',')}`)
+                }
+                const operatorMap = {
+                    '$ne': '!=',
+                    '$eq': '=',
+                    '$regex': '~',
+                    '$in': '~'
+                }
+                params.condition.forEach(({condition, bk_obj_id: objId}) => {
+                    if (!['biz'].includes(objId) && condition.length) {
+                        const objContent = []
+                        condition.forEach(({field, operator, value}) => {
+                            objContent.push(`${field}${operatorMap[operator]}${Array.isArray(value) ? value.join(',') : value}`)
+                        })
+                        content.push(`${objId}: ${objContent.join(' | ')}`)
+                    }
+                })
+                this.collection.content = content.join(' | ')
+            },
+            handleSaveCollection () {
+                this.$validator.validate('collectionName').then(result => {
+                    if (result) {
+                        this.createFavorites({
+                            params: this.getCollectionParams(),
+                            config: {
+                                requestId: 'create_collection'
+                            }
+                        }).then(() => {
+                            this.handleCloseCollection()
+                            this.$success(this.$t('Common["收藏成功"]'))
+                        })
+                    }
+                })
+            },
+            getCollectionParams () {
+                const params = this.getParams()
+                const info = {
+                    'bk_biz_id': this.collectionContent.business || -1,
+                    'exact_search': this.ip.exact,
+                    'bk_host_innerip': this.ip['bk_host_innerip'],
+                    'bk_host_outerip': this.ip['bk_host_outerip'],
+                    'ip_list': params.ip.data
+                }
+                const queryParams = []
+                params.condition.forEach(({condition, bk_obj_id: objId}) => {
+                    condition.forEach(({field, operator, value}) => {
+                        queryParams.push({
+                            'bk_obj_id': objId,
+                            field,
+                            operator,
+                            value: Array.isArray(value) ? value.join(',') : value
+                        })
+                    })
+                })
+                return {
+                    name: this.collection.name,
+                    info: JSON.stringify(info),
+                    'query_params': JSON.stringify(queryParams),
+                    'is_default': 2
+                }
+            },
+            handleCloseCollection () {
+                this.collection.show = false
+                this.collection.name = ''
+                this.collection.content = ''
             }
         }
     }
 </script>
 
 <style lang="scss" scoped>
+    .filter-container {
+        height: 100%;
+        position: relative;
+    }
     .filter-layout{
         position: relative;
         height: 100%;
@@ -333,5 +498,66 @@
         height: 76px;
         line-height: 76px;
         background-color: #fff;
+    }
+    .collection-form {
+        position: absolute;
+        top: 10px;
+        right: 0;
+        width: 100%;
+        padding: 20px;
+        border-radius: 2px;
+        box-shadow: 0 2px 10px 4px rgba(12,34,59,.13);
+        color: #3c96ff;
+        z-index: 9999;
+        background-color: #fff;
+        &:before,
+        &:after {
+            position: absolute;
+            right: 33px;
+            bottom: 100%;
+            width: 0;
+            height: 0;
+            content: "";
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+        }
+        &:before {
+            border-bottom: 10px solid #e7e9ef;
+            margin-bottom: 2px;
+        }
+        &:after {
+            border-bottom: 10px solid #fff;
+        }
+        .form-group {
+            margin: 15px 0 0 0;
+            position: relative;
+            &-button {
+                text-align: right;
+            }
+        }
+        .form-title {
+            border-left: 2px solid #6b7baa;
+            padding-left: 5px;
+            font-size: 12px;
+        }
+        .form-name {
+            color: $cmdbTextColor;    
+        }
+        .form-error {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            color: $cmdbDangerColor;
+            font-size: 12px;
+        }
+        .form-content {
+            min-height: 100px;
+            max-height: 300px;
+            font-size: 14px;
+            padding: 10px;
+            word-break: break-all;
+            background-color: #f9f9f9;
+            @include scrollbar-y;
+        }
     }
 </style>
