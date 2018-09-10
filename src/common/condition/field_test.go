@@ -10,31 +10,29 @@
  * limitations under the License.
  */
 
-package common
+package condition
 
 import (
-	"os"
 	"testing"
 )
 
-func Test_AtomicFileNew(t *testing.T) {
-	atomFile, err := AtomicFileNew("./test.txt", os.FileMode(0755))
-	if err != nil {
-		t.Errorf("AtomicFileNew failed! err:%s", err.Error())
-		return
+func TestField(t *testing.T) {
+	f := &field{
+		condition: CreateCondition(),
 	}
 
-	defer atomFile.Close()
-
-	_, err = atomFile.Write([]byte("test"))
+	f.Eq("f_eq")
+	f.NotEq("f_neq")
+	f.Like("f_like")
+	f.In("f_in")
+	f.NotIn("f_notin")
+	f.Lt("f_lt")
+	f.Lte("f_lte")
+	f.Gt("f_gt")
+	f.Gte("f_gte")
+	_, err := f.ToMapStr().ToJSON()
 	if err != nil {
-		t.Errorf("fail to write data. err:%s", err.Error())
-		return
+		t.Fail()
 	}
 
-	err = atomFile.Abort()
-	if err != nil {
-		t.Errorf("fail to abort file:%s", err.Error())
-		return
-	}
 }
