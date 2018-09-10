@@ -17,6 +17,7 @@ const resource = () => import(/* webpackChunkName: resource */ '@/views/resource
 const audit = () => import(/* webpackChunkName: hosts */ '@/views/audit')
 const topology = () => import(/* webpackChunkName: topology */ '@/views/topology')
 const process = () => import(/* webpackChunkName: process */ '@/views/process')
+const customQuery = () => import(/* webpackChunkName: process */ '@/views/custom-query')
 const error = () => import(/* webpackChunkName: error */ '@/views/status/error')
 
 Vue.use(Router)
@@ -77,6 +78,9 @@ const router = new Router({
     }, {
         path: '/process',
         component: process
+    }, {
+        path: '/custom-query',
+        component: customQuery
     }]
 })
 
