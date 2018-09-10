@@ -93,7 +93,7 @@ func ValidLogin(params ...string) gin.HandlerFunc {
 				})
 				return
 			} else {
-				c.Redirect(301, loginPage)
+				c.Redirect(302, loginPage)
 			}
 
 		}
