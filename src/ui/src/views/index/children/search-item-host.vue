@@ -28,21 +28,23 @@
         methods: {
             handleHostClick () {
                 const path = this.host['biz'][0]['default'] === 1 ? this.pathMap.resource : this.pathMap.hosts
+                const bizId = this.host['biz'][0]['bk_biz_id']
                 if (path === this.pathMap.hosts) {
-                    const bizId = this.host['biz'][0]['bk_biz_id']
-                    if (this.checkoutBizAuth(bizId)) {
-                        this.$store.commit('setBkBizId', bizId)
-                    } else {
+                    if (!this.checkoutBizAuth(bizId)) {
                         this.$error(this.$t('Hosts["权限不足"]'))
                         return
                     }
                 }
-                this.$store.commit('setHostSearch', {
-                    ip: this.host['host']['bk_host_innerip'],
-                    outerip: false,
-                    exact: 1
+                this.$router.push({
+                    path,
+                    query: {
+                        business: bizId,
+                        ip: this.host['host']['bk_host_innerip'],
+                        outer: false,
+                        inner: true,
+                        exact: 1
+                    }
                 })
-                this.$router.push(path)
             },
             checkoutBizAuth (bizId) {
                 return this.privilegeBusiness.some(biz => biz['bk_biz_id'] === bizId)
