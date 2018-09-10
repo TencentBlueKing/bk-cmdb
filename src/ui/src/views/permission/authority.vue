@@ -14,6 +14,7 @@
                 <div class="authority-group-content">
                     <div class="authority-type system clearfix" 
                         v-for="(config, configId) in sysConfig" 
+                        :key="configId"
                         v-if="config.authorities.length">
                         <h3 class="system-title fl">{{$t(config.name)}}</h3>
                         <ul class="system-list fl">
@@ -34,14 +35,16 @@
             <div class="authority-group model clearfix">
                 <h2 class="authority-group-title"><span>{{$t('Permission["模型相关"]')}}</span></h2>
                 <div class="authority-group-content">
-                    <div class="authority-type model" v-for="(classify,classifyIndex) in classifications" v-if="classify.models.length"> 
+                    <div class="authority-type model" v-for="(classify,classifyIndex) in classifications" 
+                    :key="classifyIndex"
+                    v-if="classify.models.length"> 
                         <h3 class="classify-name clearfix" :title="classify.name" @click="classify.open = !classify.open">
                             <span class="fl">{{classify.name}}</span>
                             <i class="bk-icon icon-angle-down angle fr" :class="{'open': classify.open}"></i>
                         </h3>
                         <transition name="slide">
                             <ul class="model-list" v-show="classify.open" :style="calcModelListStyle(classify.models.length)">
-                                <li class="model-item clearfix" v-for="(model,modelIndex) in classify.models">
+                                <li class="model-item clearfix" v-for="(model,modelIndex) in classify.models" :key="modelIndex">
                                     <h4 class="model-authority fl" :title="model['bk_obj_name']">{{model['bk_obj_name']}}</h4>
                                     <span class="model-authority-checkbox fl">
                                         <label class="cmdb-form-checkbox cmdb-checkbox-small"
@@ -430,7 +433,7 @@
     }
     .footer{
         width: 100%;
-        position: absolute;
+        position: sticky;
         left: 0;
         bottom: 0;
         padding: 14px 20px;
