@@ -13,6 +13,7 @@
 package x08_09_07_01
 
 import (
+	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage"
 )
@@ -24,8 +25,9 @@ func init() {
 func upgrade(db storage.DI, conf *upgrader.Config) (err error) {
 	err = createTable(db, conf)
 	if err != nil {
+		blog.Errorf("[upgrade x08.09.07.01] create table netcollect error  %s", err.Error())
 		return err
 	}
 
-	return
+	return nil
 }
