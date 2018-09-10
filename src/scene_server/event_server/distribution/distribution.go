@@ -63,6 +63,16 @@ func (dh *DistHandler) StartDistribute() (err error) {
 	}
 
 	go func() {
+		for range time.Tick(time.Second * 60) {
+			rccler.loadAll()
+			rccler.reconcile()
+			for _, sub := range rccler.persistedSubscribers {
+				MsgChan <- "update" + sub
+			}
+		}
+	}()
+
+	go func() {
 		blog.Infof("discovering subscriber change")
 
 		defer blog.Warn("discovering subscriber change process stoped")
@@ -116,21 +126,20 @@ func (dh *DistHandler) distToSubscribe(param metadata.Subscription, chNew chan m
 			}
 		}
 		if err != nil {
-			blog.Info("event inst handle process stoped by %v", err)
-			debug.PrintStack()
+			blog.Infof("event inst handle process stoped by %v: %s", err, debug.Stack())
 		}
 	}()
 	sub := param
-	go func() {
-		for {
-			sub = <-chNew
-			blog.Infof("refreshed subcriber %v", sub.SubscriptionID)
-		}
-	}()
 	defer blog.Infof("ended handle dist %v", sub.SubscriptionID)
 	for {
 		select {
-		case sub = <-chNew:
+		case nsub := <-chNew:
+			if nsub.GetCacheKey() != sub.GetCacheKey() {
+				sub = nsub
+				blog.Infof("refreshed subcriber %v", sub.GetCacheKey())
+			} else {
+				blog.Infof("refresh ignore, subcriber cache key not change\nold:%s\nnew:%s ", sub.GetCacheKey(), nsub.GetCacheKey())
+			}
 		case <-done:
 			return
 		default:
@@ -206,7 +215,7 @@ func (dh *DistHandler) handleDist(sub *metadata.Subscription, dist *metadata.Dis
 }
 
 func (dh *DistHandler) popDistInst(subID int64) *metadata.DistInstCtx {
-	eventslice := dh.cache.BLPop(time.Second*60, types.EventCacheDistQueuePrefix+fmt.Sprint(subID)).Val()
+	eventslice := dh.cache.BLPop(time.Second*10, types.EventCacheDistQueuePrefix+fmt.Sprint(subID)).Val()
 
 	if len(eventslice) <= 0 {
 		return nil

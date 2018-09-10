@@ -16,6 +16,8 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"sort"
+	"strings"
 	"time"
 )
 
@@ -77,6 +79,9 @@ func (Subscription) TableName() string {
 }
 
 func (s Subscription) GetCacheKey() string {
+	eventnames := strings.Split(s.SubscriptionForm, ",")
+	sort.Strings(eventnames)
+	s.SubscriptionForm = strings.Join(eventnames, ",")
 	ns := &Subscription{
 		SubscriptionID:   s.SubscriptionID,
 		CallbackURL:      s.CallbackURL,

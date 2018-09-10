@@ -40,7 +40,8 @@ func (s *topoService) SearchObjectAttribute(params types.ContextParams, pathPara
 		blog.Errorf("failed to parset the data into condition, error info is %s", err.Error())
 		return nil, err
 	}
-	cond.Field(metadata.AttributeFieldIsSystem).Eq(false)
+	cond.Field(metadata.AttributeFieldIsSystem).NotEq(true)
+	cond.Field(metadata.AttributeFieldIsAPI).NotEq(true)
 	return s.core.AttributeOperation().FindObjectAttributeWithDetail(params, cond)
 }
 
