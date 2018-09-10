@@ -66,7 +66,6 @@
             },
             applyingInfo (info) {
                 if (info) {
-                    console.log(info)
                     this.filter.business = info['bk_biz_id']
                 }
             }
