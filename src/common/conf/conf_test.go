@@ -131,3 +131,29 @@ func TestParseConf(t *testing.T) {
 		})
 	}
 }
+
+func TestConfig_InitConfig(t *testing.T) {
+	type fields struct {
+		Configmap map[string]string
+		strcet    string
+	}
+	type args struct {
+		path string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+	}{
+		{"", fields{map[string]string{}, "strcet_string"}, args{"./not_exist_file"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &Config{
+				Configmap: tt.fields.Configmap,
+				strcet:    tt.fields.strcet,
+			}
+			c.InitConfig(tt.args.path)
+		})
+	}
+}
