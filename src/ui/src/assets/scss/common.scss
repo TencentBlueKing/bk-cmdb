@@ -212,16 +212,16 @@ input.cmdb-form-input{
 }
 
 .text-primary{
-    color: #737987;
+    color: #3c96ff;
     &:hover{
-        color: #498fe0;
+        color: #0082ff;
     }
 }
 
 .text-danger {
-    color: #737987;
+    color: #ff5656;
     &:hover{
-        color: #ff5656;
+        color: #f72239;
     }
 }
 
@@ -412,11 +412,13 @@ input.cmdb-form-input{
     border: none;
     .bk-tab2-head{
         height: 80px;
-        .tab2-nav-item{
-            height: 79px;
-            line-height: 79px;
-            min-width: 93px;
-            text-align: center;
+        .bk-tab2-nav {
+            .tab2-nav-item{
+                height: 79px;
+                line-height: 79px;
+                min-width: 93px;
+                text-align: center;
+            }
         }
     }
     .bk-tab2-content{

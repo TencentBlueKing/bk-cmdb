@@ -10,14 +10,14 @@
 <template>
     <div class="topo-box model" :class="{'no-edit': bkClassificationId === 'bk_host_manage'}" v-bkloading="{isLoading: isLoading}">
         <div ref="topo" class="topo" v-show="modelList.length !== 0"></div>
-        <button v-if="bkClassificationId !== 'bk_host_manage'" class="bk-button vis-button vis-setup" @click="editClassify" :title="$t('Common[\'编辑\']')">
+        <button v-if="bkClassificationId !== 'bk_host_manage'" class="bk-button vis-button vis-setup" @click="editClassify" v-tooltip="$t('Common[\'编辑\']')">
             <i class="icon icon-cc-edit"></i>
         </button>
-        <button class="bk-button vis-button vis-zoomExtends bk-icon icon-full-screen" @click="resizeFull" :title="$t('ModelManagement[\'还原\']')">
+        <button class="bk-button vis-button vis-zoomExtends bk-icon icon-full-screen" @click="resizeFull" v-tooltip="$t('ModelManagement[\'还原\']')">
         </button>
-        <button class="bk-button vis-button vis-zoomIn bk-icon icon-plus" @click="zoomIn" :title="$t('ModelManagement[\'放大\']')">
+        <button class="bk-button vis-button vis-zoomIn bk-icon icon-plus" @click="zoomIn" v-tooltip="$t('ModelManagement[\'放大\']')">
         </button>
-        <button class="bk-button vis-button vis-zoomOut bk-icon icon-minus" @click="zoomOut" :title="$t('ModelManagement[\'缩小\']')">
+        <button class="bk-button vis-button vis-zoomOut bk-icon icon-minus" @click="zoomOut" v-tooltip="$t('ModelManagement[\'缩小\']')">
         </button>
         <div class="has-model" v-if="modelList.length !== 0 && modelList.length !== disableModelList.length">
             <bk-button type="primary" v-if="addModelAvailable" class="bk-button vis-button vis-create" @click="createModel">
@@ -47,7 +47,7 @@
                 </ul>
             </div>
         </transition>
-        <bk-button type="default" class="vis-button vis-del" :title="$t('ModelManagement[\'删除\']')" v-if="!isInnerType" @click="deleteClassify">
+        <bk-button type="default" class="vis-button vis-del" v-tooltip="$t('ModelManagement[\'删除\']')" v-if="!isInnerType" @click="deleteClassify">
             <i class="icon icon-cc-del"></i>
         </bk-button>
     </div>

@@ -506,6 +506,7 @@
                             bk_supplier_account: this.supplierAccount
                         },
                         config: {
+                            requestId: 'hostsAttribute',
                             fromCache: true
                         }
                     }),
@@ -515,6 +516,7 @@
                             bk_supplier_account: this.supplierAccount
                         },
                         config: {
+                            requestId: 'setAttribute',
                             fromCache: true
                         }
                     }),
@@ -524,6 +526,7 @@
                             bk_supplier_account: this.supplierAccount
                         },
                         config: {
+                            requestId: 'moduleAttribute',
                             fromCache: true
                         }
                     })
