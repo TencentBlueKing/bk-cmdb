@@ -563,13 +563,13 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 			return
 		}
 
-		user := util.GetUser(pheader)
-		if err := audit.SaveAudit(strconv.FormatInt(conf.ApplicationID, 10), user, "host to "+moduleNameLogKey+" module"); err != nil {
-			blog.Errorf("move host to module %s, save audit log failed, err: %v", moduleName, err)
-			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")})
-			return
-		}
+	}
 
+	user := util.GetUser(pheader)
+	if err := audit.SaveAudit(strconv.FormatInt(conf.ApplicationID, 10), user, "host to "+moduleNameLogKey+" module"); err != nil {
+		blog.Errorf("move host to module %s, save audit log failed, err: %v", moduleName, err)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")})
+		return
 	}
 	resp.WriteEntity(metadata.NewSuccessResp(nil))
 }

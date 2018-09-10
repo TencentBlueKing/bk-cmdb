@@ -137,7 +137,7 @@
                         if (res.result) {
                             this.$emit('deleteModel', this.item)
                         } else {
-                            this.$alertMsg(this.$t('ModelManagement["删除模型失败"]'))
+                            this.$alertMsg(res['bk_error_msg'])
                         }
                     })
                 } else {

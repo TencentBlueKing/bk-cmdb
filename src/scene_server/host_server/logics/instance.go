@@ -78,11 +78,17 @@ func (lgc *Logics) getRawInstAsst(ownerID, objID string, IDs []string, pheader h
 	var instName, instID string
 	tmpIDs := []int{}
 	for _, ID := range IDs {
+		if "" == strings.TrimSpace(ID) {
+			continue
+		}
 		tmpID, err := strconv.Atoi(ID)
 		if nil != err {
 			return nil, 0, fmt.Errorf("assocate id not integer, ids:%v", strings.Join(IDs, ","))
 		}
 		tmpIDs = append(tmpIDs, tmpID)
+	}
+	if 0 == len(tmpIDs) {
+		return make([]InstNameAsst, 0), 0, nil
 	}
 	condition := make(map[string]interface{})
 	if nil != query.Condition {
@@ -277,8 +283,11 @@ func (lgc *Logics) getInstDetailsSub(pheader http.Header, objID, ownerID string,
 					Limit: page.Limit,
 					Sort:  page.Sort,
 				}
+				if "" == strings.TrimSpace(keyItemStr) {
+					dataItem[key] = make([]InstNameAsst, 0)
+					continue
+				}
 				if true == isDetail {
-
 					retData, _, err = lgc.getInstAsstDetail(ownerID, objID, strings.Split(keyItemStr, ","), pheader, query)
 				} else {
 					retData, _, err = lgc.getInstAsst(ownerID, objID, strings.Split(keyItemStr, ","), pheader, query)

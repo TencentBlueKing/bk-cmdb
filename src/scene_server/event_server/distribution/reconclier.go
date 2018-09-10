@@ -16,18 +16,18 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"reflect"
 	"strings"
+	"time"
 
 	redis "gopkg.in/redis.v5"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/core/cc/actions"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/types"
 	"configcenter/src/storage/dal"
-	ccredis "configcenter/src/storage/dal/redis"
 )
 
 type reconciler struct {
@@ -55,6 +55,9 @@ func newReconciler(ctx context.Context, cache *redis.Client, db dal.RDB) *reconc
 var MsgChan = make(chan string, 3)
 
 func (r *reconciler) loadAll() {
+	r.cached = map[string][]string{}
+	r.persisted = map[string][]string{}
+	r.persistedSubscribers = []string{}
 	r.loadAllCached()
 	r.loadAllPersisted()
 }
@@ -105,42 +108,36 @@ func (r *reconciler) reconcile() {
 	for k := range r.cached {
 		r.cache.Del(types.EventCacheSubscribeformKey + k)
 	}
+
 }
 
-func SubscribeChannel(config map[string]string) (err error) {
-	redisConf := ccredis.NewConfigFromKV("redis", config)
-
-	redisCli, err := ccredis.NewFromConfig(*redisConf)
-	if err != nil {
-		return err
-	}
+func SubscribeChannel(redisCli *redis.Client) (err error) {
 	subChan, err := redisCli.PSubscribe(types.EventCacheProcessChannel)
 	if err != nil {
 		return err
 	}
-	blog.Info("receiving massages 2")
+	blog.Info("receiving massages")
 	for {
 		mesg, err := subChan.Receive()
-		if err != nil {
-			return err
-		}
-		msg, ok := mesg.(*redis.Message)
-		if !ok {
-			continue
-		}
 		if err == redis.Nil || err == io.EOF {
 			continue
 		}
 		if nil != err {
-			blog.Error("reids err %s", err.Error())
+			blog.Warnf("SubscribeChannel err %s,, continue", err.Error())
 			subChan.Unsubscribe(types.EventCacheProcessChannel)
+			time.Sleep(time.Second)
 			subChan.Subscribe(types.EventCacheProcessChannel)
 			continue
 		}
+		msg, ok := mesg.(*redis.Message)
+		if !ok {
+			blog.Warnf("SubscribeChannel msg not message type but %v, continue", reflect.TypeOf(mesg).String())
+			continue
+		}
 		if "" == msg.Payload {
+			blog.Warnf("SubscribeChannel Payload empty, continue")
 			continue
 		}
 		MsgChan <- msg.Payload
 	}
 }
-func init() { actions.RegisterNewAutoAction(actions.AutoAction{"SubscribeChannel", SubscribeChannel}) }
