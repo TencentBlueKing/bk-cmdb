@@ -223,7 +223,8 @@
                 },
                 columnsConfig: {
                     show: false,
-                    selected: []
+                    selected: [],
+                    disabledColumns: ['bk_host_innerip', 'bk_cloud_id', 'bk_module_name', 'bk_set_name']
                 },
                 transfer: {
                     show: false

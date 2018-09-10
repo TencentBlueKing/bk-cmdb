@@ -35,6 +35,11 @@
                 window.localStorage.setItem('selectedBusiness', localSelected)
                 this.$emit('input', localSelected)
                 this.$emit('on-select', localSelected)
+            },
+            value (value) {
+                if (value !== this.localSelected) {
+                    this.setLocalSelected()
+                }
             }
         },
         async created () {
