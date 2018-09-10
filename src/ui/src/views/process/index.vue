@@ -13,8 +13,8 @@
             <bk-button class="process-btn" type="primary" @click="handleCreate">{{$t("ProcessManagement['新增进程']")}}</bk-button>
             <div class="filter-text fr">
                 <input type="text" class="bk-form-input" :placeholder="$t('ProcessManagement[\'进程名称搜索\']')" 
-                    v-model.trim="filter.text" @keyup.enter="setCurrentPage(1)">
-                    <i class="bk-icon icon-search" @click="setCurrentPage(1)"></i>
+                    v-model.trim="filter.text" @keyup.enter="handlePageChange(1)">
+                    <i class="bk-icon icon-search" @click="handlePageChange(1)"></i>
             </div>
         </div>
         <cmdb-table class="process-table" ref="table"
