@@ -25,8 +25,6 @@ type APIMachineryConfig struct {
 	// request's burst value
 	Burst     int64
 	TLSConfig *TLSClientConfig
-	// gse process server
-	GseProcServ string
 }
 
 type Capability struct {
