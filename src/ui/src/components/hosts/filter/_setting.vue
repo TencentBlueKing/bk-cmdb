@@ -5,7 +5,9 @@
             @click="handleReset">
         </i>
         <i class="setting-icon icon-cc-collection" v-tooltip="$t('Hosts[\'收藏\']')"
-            v-if="activeSetting.includes('collection')">
+            v-if="activeSetting.includes('collection')"
+            :class="{active: collection.show}"
+            @click="handleCollection">
         </i>
         <i class="setting-icon icon-cc-funnel" v-tooltip="$t('HostResourcePool[\'设置筛选项\']')"
             v-if="activeSetting.includes('filter-config')"
@@ -51,14 +53,33 @@
                         'set': [],
                         'module': []
                     }
+                },
+                collection: {
+                    show: false
                 }
             }
         },
         computed: {
             ...mapGetters(['supplierAccount']),
             ...mapGetters('userCustom', ['usercustom']),
+            ...mapGetters('hostFavorites', ['applyingProperties']),
             customFilterFields () {
-                return this.usercustom[this.filterConfigKey] || []
+                return this.applyingProperties.length ? this.applyingProperties : (this.usercustom[this.filterConfigKey] || [])
+            }
+        },
+        watch: {
+            applyingProperties (properties) {
+                let hasUnloadObj = false
+                properties.forEach(property => {
+                    if (!this.filterConfig.properties.hasOwnProperty(property['bk_obj_id'])) {
+                        hasUnloadObj = true
+                        this.$set(this.filterConfig.properties, property['bk_obj_id'], [])
+                    }
+                })
+                if (hasUnloadObj) {
+                    this.$http.cancel('hostsAttribute')
+                    this.getProperties()
+                }
             }
         },
         async created () {
@@ -92,11 +113,16 @@
                             'bk_obj_id': property['bk_obj_id']
                         }
                     })
+                }).then(() => {
+                    this.$store.commit('hostFavorites/setApplying', null)
                 })
                 this.filterConfig.show = false
             },
             handleReset () {
                 this.$emit('on-reset')
+            },
+            handleCollection () {
+                this.$emit('on-collection')
             }
         }
     }
@@ -108,5 +134,8 @@
         margin: 0 -20px 0 30px;
         cursor: pointer;
         color: #c3cdd7;
+        &.active {
+            color: #ffb400;
+        }
     }
 </style>

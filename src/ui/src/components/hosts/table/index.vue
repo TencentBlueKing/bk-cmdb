@@ -94,6 +94,13 @@
                         :inst-id="tab.attribute.inst.details['bk_host_id']">
                     </cmdb-relation>
                 </bk-tabpanel>
+                <bk-tabpanel name="status" :title="$t('HostResourcePool[\'实时状态\']')">
+                    <cmdb-host-status
+                        v-if="tab.active === 'status'"
+                        :host-id="tab.attribute.inst.details['bk_host_id']"
+                        :is-windows="tab.attribute.inst.details['bk_os_type'] === 'Windows'">
+                    </cmdb-host-status>
+                </bk-tabpanel>
                 <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')">
                     <cmdb-audit-history v-if="tab.active === 'history'"
                         target="host"
@@ -146,13 +153,15 @@
     import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
     import cmdbTransferHost from '@/components/hosts/transfer'
     import cmdbRelation from '@/components/relation'
+    import cmdbHostStatus from '@/components/hosts/status/status'
     export default {
         components: {
             cmdbHostsFilter,
             cmdbColumnsConfig,
             cmdbAuditHistory,
             cmdbTransferHost,
-            cmdbRelation
+            cmdbRelation,
+            cmdbHostStatus
         },
         props: {
             columnsConfigProperties: {
@@ -214,7 +223,8 @@
                 },
                 columnsConfig: {
                     show: false,
-                    selected: []
+                    selected: [],
+                    disabledColumns: ['bk_host_innerip', 'bk_cloud_id', 'bk_module_name', 'bk_set_name']
                 },
                 transfer: {
                     show: false
@@ -240,6 +250,11 @@
             },
             'table.header' (header) {
                 this.$emit('on-set-header', header)
+            },
+            'slider.show' (show) {
+                if (!show) {
+                    this.tab.active = 'attribute'
+                }
             },
             customColumns () {
                 this.setTableHeader()

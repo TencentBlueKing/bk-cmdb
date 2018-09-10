@@ -15,7 +15,7 @@
                     {{$t('Association["树形"]')}}
                 </a>
             </div>
-            <div class="fr" v-if="activeComponent = 'cmdbRelationTopology'">
+            <div class="fr" v-if="activeComponent === 'cmdbRelationTopology'">
                 <span class="options-full-screen"
                     v-tooltip="$t('Common[\'全屏\']')"
                     @click="handleFullScreen">
@@ -29,7 +29,11 @@
             </div>
         </div>
         <div class="relation-component">
-            <component ref="dynamicComponent" :is="activeComponent" @on-relation-loaded="handleRelationLoaded"></component>
+            <component ref="dynamicComponent"
+                :is="activeComponent"
+                @on-relation-loaded="handleRelationLoaded"
+                @on-new-relation-close="activeComponent = 'cmdbRelationTopology'">
+            </component>
         </div>
     </div>
 </template>
@@ -58,7 +62,7 @@
             return {
                 hasRelation: false,
                 fullScreen: false,
-                activeComponent: 'cmdbRelationTree'
+                activeComponent: 'cmdbRelationTopology'
             }
         },
         methods: {
