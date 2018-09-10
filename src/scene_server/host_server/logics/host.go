@@ -74,6 +74,9 @@ func (lgc *Logics) GetHostInstanceDetails(pheader http.Header, ownerID, hostID s
 			strItem := util.GetStrByInterface(item)
 			ids := make([]int64, 0)
 			for _, strID := range strings.Split(strItem, ",") {
+				if "" == strings.TrimSpace(strID) {
+					continue
+				}
 				id, err := strconv.ParseInt(strID, 10, 64)
 				if err != nil {
 					return nil, "", err
