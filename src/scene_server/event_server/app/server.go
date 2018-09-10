@@ -110,6 +110,16 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 				return fmt.Errorf("connect rpc server failed %s", err.Error())
 			}
 		}
+
+		subcli, err := redis.NewFromConfig(process.Config.Redis)
+		if err != nil {
+			return fmt.Errorf("connect subcli redis server failed %s", err.Error())
+		}
+
+		go func() {
+			errCh <- distribution.SubscribeChannel(subcli)
+		}()
+
 		go func() {
 			errCh <- distribution.Start(ctx, cache, db, rpccli)
 		}()

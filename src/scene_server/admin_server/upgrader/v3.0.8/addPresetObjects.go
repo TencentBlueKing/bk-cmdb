@@ -151,8 +151,8 @@ func getObjectDesData(ownerID string) []*metadata.ObjectDes {
 		&metadata.ObjectDes{ObjCls: "bk_network", ObjectID: common.BKInnerObjIDFirewall, ObjectName: "防火墙", ObjIcon: "icon-cc-firewall", Position: `{"bk_network":{"x":-650,"y":-50}}`},
 
 		&metadata.ObjectDes{ObjCls: "bk_middleware", ObjectID: common.BKInnerObjIDWeblogic, ObjectName: "weblogic", ObjIcon: "icon-cc-weblogic", Position: `{"bk_middleware":{"x":-200,"y":-50}}`},
-		&metadata.ObjectDes{ObjCls: "bk_middleware", ObjectID: common.BKInnerObjIDApache, ObjectName: "apache", ObjIcon: "icon-cc-tomcat", Position: `{"bk_middleware":{"x":-500,"y":-50}}`},
-		&metadata.ObjectDes{ObjCls: "bk_middleware", ObjectID: common.BKInnerObjIDTomcat, ObjectName: "tomcat", ObjIcon: "icon-cc-apache", Position: `{"bk_middleware":{"x":-350,"y":-50}}`},
+		&metadata.ObjectDes{ObjCls: "bk_middleware", ObjectID: common.BKInnerObjIDApache, ObjectName: "apache", ObjIcon: "icon-cc-apache", Position: `{"bk_middleware":{"x":-500,"y":-50}}`},
+		&metadata.ObjectDes{ObjCls: "bk_middleware", ObjectID: common.BKInnerObjIDTomcat, ObjectName: "tomcat", ObjIcon: "icon-cc-tomcat", Position: `{"bk_middleware":{"x":-350,"y":-50}}`},
 	}
 	t := time.Now()
 	for _, r := range dataRows {

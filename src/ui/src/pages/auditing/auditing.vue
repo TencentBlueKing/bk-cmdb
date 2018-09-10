@@ -87,7 +87,6 @@
                         :header="tableHeader"
                         :list="tableList"
                         :pagination.sync="pagination"
-                        :pagination="pagination"
                         :loading="$loading('auditSearch')"
                         :defaultSort="defaultSort"
                         :wrapperMinusHeight="150"
@@ -311,11 +310,11 @@
                 }]
             }
         },
-        created () {
+        async created () {
+            await this.getBkBizList()
             this.getTableList()
-            if (!this.bkBizList.length) {
-                this.getBkBizList()
-            }
+            // if (!this.bkBizList.length) {
+            //     }
             if (this.language === 'en') {
                 this.ranges = this.rangesForEn
             } else {
