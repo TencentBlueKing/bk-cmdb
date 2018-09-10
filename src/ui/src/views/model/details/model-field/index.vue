@@ -33,7 +33,7 @@
                 <input type="text" class="cmdb-form-input" v-model.trim="fieldInfo['placeholder']" :disabled="isReadOnly">
             </div>
         </div>
-        <div class="form-content details">
+        <div class="form-content" :class="{'details': fieldInfo['bk_property_type'] === 'enum'}">
             <h3>{{$t('ModelManagement["选项"]')}}</h3>
             <div class="clearfix">
                 <div class="form-item has-right-content">
