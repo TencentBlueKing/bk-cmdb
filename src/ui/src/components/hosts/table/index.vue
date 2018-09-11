@@ -51,13 +51,14 @@
             @handleCheckAll="handleCheckAll">
             <template v-for="(header, index) in table.header" :slot="header.id" slot-scope="{ item }">
                 <label class="table-checkbox bk-form-checkbox bk-checkbox-small"
+                    :key="index"
                     v-if="header.id === 'bk_host_id'" 
                     @click.stop>
                     <input type="checkbox"
                         :value="item['host']['bk_host_id']" 
                         v-model="table.checked">
                 </label>
-                <span v-else>
+                <span v-else :key="index">
                     {{getHostCellText(header, item)}}
                 </span>
             </template>
