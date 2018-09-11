@@ -10,31 +10,25 @@
  * limitations under the License.
  */
 
-package util
+package common
 
 import "testing"
 
-func TestGetDailAddress(t *testing.T) {
+func TestGetInstTableName(t *testing.T) {
 	type args struct {
-		URL string
+		objID string
 	}
 	tests := []struct {
-		name    string
-		args    args
-		want    string
-		wantErr bool
+		name string
+		args args
+		want string
 	}{
-		{"", args{"http://localhost:80/path?q=a"}, "localhost:80", false},
+		{"", args{BKInnerObjIDApp}, BKTableNameBaseApp},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetDailAddress(tt.args.URL)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetDailAddress() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("GetDailAddress() = %v, want %v", got, tt.want)
+			if got := GetInstTableName(tt.args.objID); got != tt.want {
+				t.Errorf("GetInstTableName() = %v, want %v", got, tt.want)
 			}
 		})
 	}
