@@ -49,6 +49,12 @@ const router = new Router({
             meta: {
                 relative: '/model'
             }
+        }, {
+            path: '',
+            component: modelTopo,
+            meta: {
+                relative: '/model'
+            }
         }]
     }, {
         path: '/eventpush',

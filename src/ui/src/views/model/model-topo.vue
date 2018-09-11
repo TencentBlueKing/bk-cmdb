@@ -15,10 +15,8 @@
         ></v-topo>
         <v-global-models v-else></v-global-models>
         <cmdb-slider
-            :hasCloseConfirm="true"
-            :isCloseConfirmShow="slider.isCloseConfirmShow"
             :isShow.sync="slider.isShow" :title="slider.title"
-            @closeSlider="closeSlider">
+            :beforeClose="handleSliderBeforeClose">
             <v-details slot="content"
                 ref="details"
                 :isEdit.sync="slider.isEdit"
@@ -83,11 +81,21 @@
             editClassify () {
                 this.$emit('editClassify')
             },
-            closeSlider () {
-                this.slider.isCloseConfirmShow = this.$refs.details.isCloseConfirmShow()
-                if (!this.slider.isCloseConfirmShow) {
-                    this.slider.isShow = false
+            handleSliderBeforeClose () {
+                if (this.$refs.details.isCloseConfirmShow()) {
+                    return new Promise((resolve, reject) => {
+                        this.$bkInfo({
+                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                            confirmFn: () => {
+                                resolve(true)
+                            },
+                            cancelFn: () => {
+                                resolve(false)
+                            }
+                        })
+                    })
                 }
+                return true
             },
             async updateTopo (isShow) {
                 await this.searchClassificationsObjects({})
