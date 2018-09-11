@@ -32,7 +32,10 @@ const router = new Router({
         redirect: '/index'
     }, {
         path: '/index',
-        component: index
+        component: index,
+        meta: {
+            ignoreAuthorize: true
+        }
     }, {
         path: '/business',
         component: business
@@ -65,7 +68,10 @@ const router = new Router({
         component: deleteHistory
     }, {
         path: '/hosts',
-        component: hosts
+        component: hosts,
+        meta: {
+            requireBusiness: true
+        }
     }, {
         path: '/resource',
         component: resource
@@ -74,22 +80,43 @@ const router = new Router({
         component: audit
     }, {
         path: '/topology',
-        component: topology
+        component: topology,
+        meta: {
+            requireBusiness: true
+        }
     }, {
         path: '/process',
-        component: process
+        component: process,
+        meta: {
+            requireBusiness: true
+        }
     }, {
         path: '/custom-query',
-        component: customQuery
+        component: customQuery,
+        meta: {
+            requireBusiness: true
+        }
     }, {
-        path: '/404',
-        components: require('@/views/status/404')
+        path: '/status-require-business',
+        components: require('@/views/status/require-business'),
+        meta: {
+            ignoreAuthorize: true
+        }
     }, {
-        path: '/403',
-        components: require('@/views/status/403')
+        path: '/status-404',
+        components: require('@/views/status/404'),
+        meta: {
+            ignoreAuthorize: true
+        }
+    }, {
+        path: '/status-403',
+        components: require('@/views/status/403'),
+        meta: {
+            ignoreAuthorize: true
+        }
     }, {
         path: '*',
-        redirect: '/404'
+        redirect: '/status-404'
     }]
 })
 
@@ -99,22 +126,69 @@ const cancelRequest = () => {
     return $http.cancel(requestQueue.map(request => request.requestId))
 }
 
+const hasAuthority = (to) => {
+    if (to.meta.ignoreAuthorize) {
+        return true
+    }
+    const path = to.meta.relative || to.query.relative || to.path
+    const authorizedNavigation = router.app.$store.getters['objectModelClassify/authorizedNavigation']
+    return authorizedNavigation.some(navigation => {
+        if (navigation.hasOwnProperty('path')) {
+            return navigation.path === path
+        }
+        return navigation.children.some(child => child.path === path)
+    })
+}
+
+const hasPrivilegeBusiness = () => {
+    const privilegeBusiness = router.app.$store.getters['objectBiz/privilegeBusiness']
+    return !!privilegeBusiness.length
+}
+
 router.beforeEach(async (to, from, next) => {
     try {
         if (to.path !== '/error') {
             router.app.$store.commit('setGlobalLoading', true)
             await cancelRequest()
             await preload(router.app)
-            next()
+            if (to.meta.ignoreAuthorize) {
+                next()
+            } else if (hasAuthority(to)) {
+                if (to.meta.requireBusiness && !hasPrivilegeBusiness()) {
+                    next({
+                        path: '/status-require-business',
+                        query: {
+                            relative: to.path
+                        }
+                    })
+                } else {
+                    next()
+                }
+            } else {
+                next({
+                    path: '/status-403',
+                    query: {
+                        relative: to.path
+                    }
+                })
+            }
         } else {
             next()
         }
     } catch (e) {
-        next('/error', e)
+        next({
+            path: '/status-error',
+            query: {
+                relative: to.path
+            }
+        })
     }
 })
 
-router.afterEach(() => {
+router.afterEach((to, from) => {
+    if (to.path === '/status-error') {
+        $http.cancel()
+    }
     router.app.$store.commit('setGlobalLoading', false)
 })
 

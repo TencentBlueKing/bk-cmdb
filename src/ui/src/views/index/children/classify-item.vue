@@ -1,6 +1,9 @@
 <template>
     <div class="classify">
-        <h4 class="classify-name">{{`${classify['bk_classification_name']}(${classify['bk_objects'].length})`}}</h4>
+        <h4 class="classify-name" :title="classify['bk_classification_name']">
+            <span class="classify-name-text">{{classify['bk_classification_name']}}</span>
+            <span class="classify-name-count">({{classify['bk_objects'].length}})</span>
+        </h4>
         <div class="models-layout">
             <div class="models-link" v-for="(model, index) in classify['bk_objects']"
                 :key="index"
@@ -88,9 +91,23 @@
         padding: 13px 5px;
         margin: 0 20px;
         line-height: 20px;
-        font-size: 14px;
+        font-size: 0;
         color: $cmdbTextColor;
         border-bottom: 1px solid #ebf0f5;
+        &-text {
+            display: inline-block;
+            padding: 0 2px 0 0;
+            vertical-align: middle;
+            max-width: calc(100% - 40px);
+            font-size: 14px;
+            @include ellipsis;
+        }
+        &-count {
+            display: inline-block;
+            width: 40px;
+            vertical-align: middle;
+            font-size: 14px;
+        }
     }
     .models-layout{
         padding: 8px 0;
