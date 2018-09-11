@@ -55,7 +55,7 @@
         <div class="form-options">
             <slot name="details-options">
                 <bk-button class="button-save" type="primary"
-                    :disabled="!hasChange || $loading()"
+                    :disabled="!$authorized.update || !hasChange || $loading()"
                     @click="handleSave">
                     {{$t("Common['保存']")}}
                 </bk-button>

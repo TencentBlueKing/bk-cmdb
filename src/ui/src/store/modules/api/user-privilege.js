@@ -11,7 +11,13 @@
 import $http from '@/api'
 
 const state = {
-    privilege: {},
+    privilege: {
+        'model_config': {},
+        'sys_config': {
+            'global_busi': null,
+            'back_config': null
+        }
+    },
     roles: []
 }
 

@@ -47,20 +47,10 @@
                 type: Boolean,
                 default: true
             },
-            /*
-                是否需要显示二次确认弹窗
-            */
-            hasCloseConfirm: {
-                type: Boolean,
-                default: false
-            },
-            /*
-                二次确认弹窗显示状态
-            */
-            isCloseConfirmShow: {
-                type: Boolean,
-                default: false
+            beforeClose: {
+                type: Function
             }
+
         },
         watch: {
             isShow (isShow) {
@@ -77,21 +67,17 @@
             }
         },
         methods: {
-            closeSlider () {
-                if (this.hasCloseConfirm) {
-                    this.$emit('closeSlider')
-                    this.$nextTick(() => {
-                        if (this.isCloseConfirmShow) {
-                            this.$bkInfo({
-                                title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
-                                confirmFn: () => {
-                                    this.$emit('update:isShow', false)
-                                }
-                            })
-                        } else {
-                            this.$emit('update:isShow', false)
-                        }
-                    })
+            async closeSlider () {
+                if (typeof this.beforeClose === 'function') {
+                    let confirmed
+                    try {
+                        confirmed = await Promise.resolve(this.beforeClose())
+                    } catch (e) {
+                        confirmed = false
+                    }
+                    if (confirmed) {
+                        this.$emit('update:isShow', false)
+                    }
                 } else {
                     this.$emit('update:isShow', false)
                 }
