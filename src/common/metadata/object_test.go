@@ -13,15 +13,37 @@
 package metadata
 
 import (
+	"configcenter/src/common"
 	types "configcenter/src/common/mapstr"
 	"testing"
 )
 
-func TestAttribute(t *testing.T) {
+func TestObject(t *testing.T) {
 	m, err := types.NewFromInterface(map[string]interface{}{"id": 0, "bk_supplier_account": "bk_supplier_account"})
-	attr := &Attribute{}
+	attr := &Object{}
 	attr, err = attr.Parse(m)
+
 	if str, _ := attr.ToMapStr().String("bk_supplier_account"); str != "bk_supplier_account" || err != nil {
+		t.Fail()
+	}
+
+	if !attr.IsCommon() {
+		t.Fail()
+	}
+
+	if attr.GetObjectType() != common.BKINnerObjIDObject {
+		t.Fail()
+	}
+
+	if attr.GetInstNameFieldName() != common.BKInstNameField {
+		t.Fail()
+	}
+
+	if attr.GetInstIDFieldName() != common.BKInstIDField {
+		t.Fail()
+	}
+
+	if attr.GetDefaultInstPropertyName() != "" {
 		t.Fail()
 	}
 
