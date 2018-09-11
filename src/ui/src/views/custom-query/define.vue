@@ -1,5 +1,5 @@
 <template>
-    <div class="define-wrapper">
+    <div class="define-wrapper" v-bkloading="{isLoading: $loading(['hostsAttribute', 'setAttribute', 'moduleAttribute', 'getUserAPIDetail'])}">
         <div class="define-box">
             <div class="userapi-group">
                 <label class="userapi-label">
@@ -219,7 +219,12 @@
                     'time': '$in',
                     'enum': '$eq'
                 },
-                isPreviewShow: false
+                isPreviewShow: false,
+                dataCopy: {
+                    name: '',
+                    userProperties: [],
+                    attributeSelectd: ''
+                }
             }
         },
         computed: {
@@ -367,10 +372,29 @@
                 'updateCustomQuery',
                 'deleteCustomQuery'
             ]),
+            isCloseConfirmShow () {
+                if (this.name !== this.dataCopy.name || JSON.stringify(this.dataCopy.attributeSelected) !== JSON.stringify(this.attribute.selected) || this.userProperties.length !== this.dataCopy.userProperties.length) {
+                    return true
+                }
+                return this.userProperties.some((property, index) => {
+                    let propertyCopy = this.dataCopy.userProperties[index]
+                    let res = false
+                    for (let key in property) {
+                        if (property[key] !== propertyCopy[key]) {
+                            res = true
+                            break
+                        }
+                    }
+                    return res
+                })
+            },
             async getUserAPIDetail () {
                 const res = await this.getCustomQueryDetail({
                     bizId: this.bizId,
-                    id: this.id
+                    id: this.id,
+                    config: {
+                        requestId: 'getUserAPIDetail'
+                    }
                 })
                 this.setUserProperties(res)
             },
@@ -506,6 +530,7 @@
                             bk_supplier_account: this.supplierAccount
                         },
                         config: {
+                            requestId: 'hostsAttribute',
                             fromCache: true
                         }
                     }),
@@ -515,6 +540,7 @@
                             bk_supplier_account: this.supplierAccount
                         },
                         config: {
+                            requestId: 'setAttribute',
                             fromCache: true
                         }
                     }),
@@ -524,6 +550,7 @@
                             bk_supplier_account: this.supplierAccount
                         },
                         config: {
+                            requestId: 'moduleAttribute',
                             fromCache: true
                         }
                     })
@@ -754,7 +781,7 @@
             left: 0;
             background: #fff;
             line-height: 36px;
-            height: 36px;
+            height: 37px;
             .button-delete {
                 background-color: #fff;
                 color: #ff5656;

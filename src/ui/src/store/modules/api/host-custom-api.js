@@ -80,8 +80,8 @@ const actions = {
      * @param {String} id 主键id
      * @return {Promise} promise 对象
      */
-    getCustomQueryDetail ({ commit, state, dispatch }, { bizId, id }) {
-        return $http.get(`userapi/detail/${bizId}/${id}`)
+    getCustomQueryDetail ({ commit, state, dispatch }, { bizId, id, config }) {
+        return $http.get(`userapi/detail/${bizId}/${id}`, config)
     },
 
     /**
