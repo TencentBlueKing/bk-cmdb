@@ -57,7 +57,8 @@
         "name": "后台配置",
         "children": [{
             "i18n": "ModelManagement['模型管理']",
-            "path": "/model",
+            "path": "/model/bk_host_manage",
+            "relative": "/model",
             "id": "model",
             "name": "模型管理",
             "classificationId": "bk_back_config"
