@@ -11,40 +11,7 @@
 <template>
     <div class="model-wrapper">
         <v-model-nav @createClassify="createClassify"></v-model-nav>
-        <!-- <div class="topo-wrapper">
-            <v-topo-list 
-                v-if="bkClassificationId === 'bk_biz_topo'"
-                @createModel="createModel"
-                @editModel="editModel"
-                ref="topo"
-            ></v-topo-list>
-            <v-topo
-                v-else-if="bkClassificationId !== void 0"
-                @createModel="createModel"
-                @editModel="editModel"
-                @editClassify="editClassify"
-                ref="topo"
-            ></v-topo>
-            <v-global-models v-else></v-global-models>
-        </div> -->
-        <router-view
-            @createModel="createModel"
-            @editModel="editModel"
-            @editClassify="editClassify"
-        ></router-view>
-        <!-- <cmdb-slider
-            :hasCloseConfirm="true"
-            :isCloseConfirmShow="slider.isCloseConfirmShow"
-            :isShow.sync="slider.isShow" :title="slider.title"
-            @closeSlider="closeSlider">
-            <v-details slot="content"
-                ref="details"
-                :isEdit.sync="slider.isEdit"
-                @createModel="updateTopo(true)"
-                @updateModel="updateTopo(false)"
-                @cancel="slider.isShow = false"
-            ></v-details>
-        </cmdb-slider> -->
+        <router-view @editClassify="editClassify"></router-view>
         <v-pop
             ref="pop"
             v-if="pop.isShow"
@@ -57,55 +24,20 @@
 <script>
     import vPop from './pop'
     import vModelNav from './model-nav'
-    import vDetails from './details'
-    import { mapGetters, mapMutations, mapActions } from 'vuex'
     export default {
         components: {
             vModelNav,
-            vDetails,
             vPop
         },
         data () {
             return {
-                slider: {
-                    isShow: false,
-                    title: '',
-                    isEdit: false,
-                    isCloseConfirmShow: false
-                },
                 pop: {
                     isShow: false,
                     isEdit: false
                 }
             }
         },
-        computed: {
-            bkClassificationId () {
-                return this.$route.params.classifyId
-            }
-        },
         methods: {
-            ...mapActions('objectModelClassify', [
-                'searchClassificationsObjects'
-            ]),
-            ...mapMutations('objectModel', [
-                'setActiveModel'
-            ]),
-            createModel (prevModelId) {
-                this.slider.title = this.$t('ModelManagement["新增模型"]')
-                this.slider.isShow = true
-                this.slider.isEdit = false
-                this.setActiveModel({
-                    bk_classification_id: this.bkClassificationId,
-                    bk_asst_obj_id: prevModelId
-                })
-            },
-            editModel (model) {
-                this.slider.title = model['bk_obj_name']
-                this.setActiveModel(model)
-                this.slider.isEdit = true
-                this.slider.isShow = true
-            },
             editClassify () {
                 this.pop.isEdit = true
                 this.pop.isShow = true
@@ -114,19 +46,8 @@
                 this.pop.isEdit = false
                 this.pop.isShow = true
             },
-            closeSlider () {
-                this.slider.isCloseConfirmShow = this.$refs.details.isCloseConfirmShow()
-                if (!this.slider.isCloseConfirmShow) {
-                    this.slider.isShow = false
-                }
-            },
             closePop () {
                 this.pop.isShow = false
-            },
-            async updateTopo (isShow) {
-                await this.searchClassificationsObjects({})
-                this.slider.isShow = isShow
-                this.$refs.topo.initTopo()
             }
         }
     }
