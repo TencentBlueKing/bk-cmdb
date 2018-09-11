@@ -46,11 +46,7 @@
         },
         methods: {
             handleInput (event) {
-                let value = event.target.value.trim()
-                if (value === '') {
-                    value = null
-                }
-                value = parseInt(value)
+                let value = parseInt(event.target.value.trim())
                 if (isNaN(value)) {
                     value = null
                 }
