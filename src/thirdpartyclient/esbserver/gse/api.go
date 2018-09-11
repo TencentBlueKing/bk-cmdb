@@ -47,13 +47,14 @@ func (p *gse) QueryProcOperateResult(ctx context.Context, h http.Header, taskID 
 	subPath := "/v2/gse/get_proc_operate_result/"
 	type esbParams struct {
 		*esbutil.EsbCommParams
-		TaskID string `"json:task_id"`
+		TaskID string `json:"task_id"`
 	}
 	params := &esbParams{
 		EsbCommParams: esbutil.GetEsbRequestParams(p.config.GetConfig(), h),
 		TaskID:        taskID,
 	}
-	err = p.client.Get().
+
+	err = p.client.Post().
 		WithContext(ctx).
 		Body(params).
 		SubResource(subPath).

@@ -14,7 +14,9 @@ package logics
 
 import (
 	"fmt"
+	"github.com/rs/xid"
 
+	"configcenter/src/common"
 	"configcenter/src/common/metadata"
 )
 
@@ -24,6 +26,11 @@ func getInlineProcInstKey(hostID, moduleID int64) string {
 
 func getGseProcNameSpace(appID, moduleID int64) string {
 	return fmt.Sprintf("%d.%d", appID, moduleID)
+}
+
+func getTaskID() string {
+	return fmt.Sprintf("cc:gse:task:%s:%s", common.BKSTRIDPrefix, xid.New().String())
+
 }
 
 func GetProcInstModel(appID, setID, moduleID, hostID, procID, funcID, procNum int64, maxInstID uint64) []*metadata.ProcInstanceModel {

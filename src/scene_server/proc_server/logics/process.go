@@ -25,7 +25,7 @@ import (
 	"configcenter/src/common/util"
 )
 
-func (lgc *Logics) GetProcbyProcID(procID string, forward http.Header) (map[string]interface{}, error) {
+func (lgc *Logics) GetProcbyProcID(procID int64, forward http.Header) (map[string]interface{}, error) {
 	condition := map[string]interface{}{
 		common.BKProcessIDField: procID,
 	}

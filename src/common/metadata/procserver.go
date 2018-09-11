@@ -36,11 +36,11 @@ type ProcInstanceModel struct {
 }
 
 type MatchProcInstParam struct {
-	ApplicationID  int64  `json:"bk_biz_id"`
-	SetName        string `json:"bk_set_name"`
-	ModuleName     string `json:"bk_module_name"`
-	FuncID         string `json:"bk_func_id"`
-	HostInstanceID string `json:"bk_host_instance_id"`
+	ApplicationID  int64  `json:"bk_biz_id" bson:"bk_biz_id"`
+	SetName        string `json:"bk_set_name" bson:"bk_set_name"`
+	ModuleName     string `json:"bk_module_name" bson:"bk_module_name"`
+	FuncID         string `json:"bk_func_id" bson:"bk_func_id"`
+	HostInstanceID string `json:"bk_host_instance_id" bson:"bk_host_instance_id"`
 }
 
 type ProcessOperate struct {
@@ -196,6 +196,8 @@ type ProcessOperateTask struct {
 	OwnerID     string                              `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	User        string                              `json:"user,omitempty" bson:"user,omitempty"`
 	Detail      map[string]ProcessOperateTaskDetail `json:"detail" bson:"detail"`
+	Host        []GseHost                           `json:"host_info" bson:"host_info"`
+	ProcName    string                              `json:"bk_process_name" bson:"bk_process_name"`
 }
 
 type ProcessOperateTaskStatus int64
@@ -221,7 +223,7 @@ type ProcessOperateTaskDetail struct {
 }
 
 type GseProcessOperateTaskResult struct {
-	Data            map[string]ProcessOperateTaskDetail `json:"result"`
+	Data            map[string]ProcessOperateTaskDetail `json:"data"`
 	EsbBaseResponse `json:",inline"`
 }
 
