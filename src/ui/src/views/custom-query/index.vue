@@ -9,7 +9,7 @@
                 {{$t("CustomQuery['新增查询']")}}
             </bk-button>
             <div class="api-input fr">
-                <input type="text" class="cmdb-form-input" :placeholder="$t('Inst[\'快速查询\']')" v-model="filter.name">
+                <input type="text" class="cmdb-form-input" :placeholder="$t('Inst[\'快速查询\']')" v-model="filter.name" @keyup.enter="getUserAPIList">
             </div>
         </div>
         <cmdb-table
@@ -39,6 +39,7 @@
             :isCloseConfirmShow="slider.isCloseConfirmShow"
             @closeSlider="closeSliderConfirm">
             <v-define slot="content"
+                ref="define"
                 :id="slider.id"
                 :bizId="filter.bizId"
                 :type="slider.type"
@@ -128,7 +129,7 @@
                 this.slider.id = null
             },
             closeSliderConfirm () {
-
+                this.slider.isCloseConfirmShow = this.$refs.define.isCloseConfirmShow()
             },
             handleCreate (data) {
                 this.slider.id = data['id']
