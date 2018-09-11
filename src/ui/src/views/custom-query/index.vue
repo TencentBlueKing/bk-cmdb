@@ -39,6 +39,7 @@
             :isCloseConfirmShow="slider.isCloseConfirmShow"
             @closeSlider="closeSliderConfirm">
             <v-define slot="content"
+                ref="define"
                 :id="slider.id"
                 :bizId="filter.bizId"
                 :type="slider.type"
@@ -128,7 +129,7 @@
                 this.slider.id = null
             },
             closeSliderConfirm () {
-                
+                this.slider.isCloseConfirmShow = this.$refs.define.isCloseConfirmShow()
             },
             handleCreate (data) {
                 this.slider.id = data['id']
