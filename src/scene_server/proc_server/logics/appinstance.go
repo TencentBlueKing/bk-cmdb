@@ -16,11 +16,17 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
+)
+
+const (
+	timedTriggerTime       time.Duration = time.Hour * 1
+	timedTriggerLockExpire time.Duration = time.Hour * 23
 )
 
 func (lgc *Logics) RefreshHostInstanceByApp(ctx context.Context, header http.Header, appID int64, appInfo mapstr.MapStr) error {
@@ -68,4 +74,25 @@ func (lgc *Logics) RefreshAllHostInstance(ctx context.Context, header http.Heade
 		}
 	}
 	return nil
+}
+
+func (lgc *Logics) timedTriggerRefreshHostInstance() {
+	go func() {
+		triggerChn := time.NewTicker(timedTriggerTime)
+		for range triggerChn.C {
+			locked, err := lgc.cache.SetNX(common.RedisProcSrvHostInstanceAllRefreshLockKey, "", timedTriggerLockExpire).Result()
+			if nil != err {
+				blog.Errorf("locked refresh  error:%s", err.Error())
+				continue
+			}
+			if locked {
+				err := lgc.RefreshAllHostInstance(context.Background(), nil)
+				if nil != err {
+					blog.Errorf("RefreshAllHostInstance error:%s", err.Error())
+					continue
+				}
+			}
+		}
+	}()
+
 }
