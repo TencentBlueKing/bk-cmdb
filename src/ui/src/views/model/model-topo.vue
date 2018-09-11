@@ -31,14 +31,17 @@
 </template>
 
 <script>
+    import { mapMutations, mapActions } from 'vuex'
     import vGlobalModels from './topo/global-models'
     import vTopo from './topo/topo'
     import vTopoList from './topo/topo-list'
+    import vDetails from './details'
     export default {
         components: {
             vGlobalModels,
             vTopo,
-            vTopoList
+            vTopoList,
+            vDetails
         },
         data () {
             return {
@@ -56,6 +59,12 @@
             }
         },
         methods: {
+            ...mapActions('objectModelClassify', [
+                'searchClassificationsObjects'
+            ]),
+            ...mapMutations('objectModel', [
+                'setActiveModel'
+            ]),
             createModel (prevModelId) {
                 this.slider.title = this.$t('ModelManagement["新增模型"]')
                 this.slider.isShow = true
@@ -72,18 +81,18 @@
                 this.slider.isShow = true
             },
             editClassify () {
-                this.pop.isEdit = true
-                this.pop.isShow = true
-            },
-            createClassify () {
-                this.pop.isEdit = false
-                this.pop.isShow = true
+                this.$emit('editClassify')
             },
             closeSlider () {
                 this.slider.isCloseConfirmShow = this.$refs.details.isCloseConfirmShow()
                 if (!this.slider.isCloseConfirmShow) {
                     this.slider.isShow = false
                 }
+            },
+            async updateTopo (isShow) {
+                await this.searchClassificationsObjects({})
+                this.slider.isShow = isShow
+                this.$refs.topo.initTopo()
             }
         }
     }
