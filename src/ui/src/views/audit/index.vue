@@ -3,12 +3,14 @@
         <div class="title-content clearfix">
             <div class="group-content group-content-business">
                 <div class="selector-content selector-content-business">
-                    <cmdb-business-selector></cmdb-business-selector>
                     <bk-selector
                         :list="business"
-                        :selectd.sync="filter.biz"
+                        :selected.sync="filter.bizId"
                         :searchable="true"
-
+                        :allow-clear="true"
+                        display-key="bk_biz_name"
+                        search-key="bk_biz_id"
+                        setting-key="bk_biz_id"
                     ></bk-selector>
                 </div>
             </div>
