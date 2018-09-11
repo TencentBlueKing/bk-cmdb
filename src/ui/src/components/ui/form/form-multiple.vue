@@ -155,10 +155,10 @@
                 }
                 if (option) {
                     if (propertyType === 'int') {
-                        if (option.hasOwnProperty('min') && ['', null, undefined].includes(option.min)) {
+                        if (option.hasOwnProperty('min') && !['', null, undefined].includes(option.min)) {
                             rules['min_value'] = option.min
                         }
-                        if (option.hasOwnProperty('max') && ['', null, undefined].includes(option.max)) {
+                        if (option.hasOwnProperty('max') && !['', null, undefined].includes(option.max)) {
                             rules['max_value'] = option.max
                         }
                     } else if (['singlechar', 'longchar'].includes(propertyType)) {
