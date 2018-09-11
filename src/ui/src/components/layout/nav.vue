@@ -109,21 +109,9 @@
                 })
                 return customClassify
             },
-            // 当前导航对应的分类
-            activeClassify () {
-                let relativePath = this.$route.query.relative
-                let path = relativePath || this.$route.path
-                return [...this.staticClassify, ...this.customClassify].find(classify => {
-                    if (classify.hasOwnProperty('path')) {
-                        return classify.path === path
-                    } else if (classify.children && classify.children.length) {
-                        return classify.children.some(model => model.path === path)
-                    }
-                })
-            },
             // 当前导航对应的分类ID
             activeClassifyId () {
-                return this.activeClassify ? this.activeClassify.id : this.$route.path === '/index' ? 'bk_index' : null
+                return this.$classify.classificationId
             },
             // 展开的分类子菜单高度
             openedClassifyHeight () {
