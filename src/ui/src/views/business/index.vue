@@ -58,6 +58,7 @@
                         :propertyGroups="propertyGroups"
                         :inst="attribute.inst.details"
                         :deleteButtonText="$t('Inst[\'归档\']')"
+                        :show-delete="attribute.inst.details['bk_biz_name'] !== '蓝鲸'"
                         @on-edit="handleEdit"
                         @on-delete="handleDelete">
                     </cmdb-details>
