@@ -10,7 +10,7 @@
                         v-validate="'required|enumName'"
                         :disabled="isReadOnly"
                         name="fieldName">
-                    <span v-show="errors.has('fieldName')" class="error-msg color-danger">{{ errors.first('fieldName') }}</span>
+                    <div v-show="errors.has('fieldName')" class="error-msg color-danger">{{ errors.first('fieldName') }}</div>
                 </div>
             </div>
             <div class="form-item has-right-content">
@@ -21,7 +21,7 @@
                         v-validate="'required|fieldId'"
                         :disabled="isEditField"
                         name="fieldId">
-                    <span v-show="errors.has('fieldId')" class="error-msg color-danger">{{ errors.first('fieldId') }}</span>
+                    <div v-show="errors.has('fieldId')" class="error-msg color-danger">{{ errors.first('fieldId') }}</div>
                 </div>
             </div>
             <div class="form-item">
@@ -179,6 +179,24 @@
                     return 'asst'
                 }
                 return type
+            }
+        },
+        watch: {
+            'fieldInfo.bk_property_type' (type) {
+                if (!this.isEditField) {
+                    switch (type) {
+                        case 'int':
+                            this.fieldInfo.option = {
+                                min: '',
+                                max: ''
+                            }
+                            this.fieldInfo.bk_asst_obj_id = ''
+                            break
+                        default:
+                            this.fieldInfo.option = ''
+                            this.fieldInfo.bk_asst_obj_id = ''
+                    }
+                }
             }
         },
         methods: {

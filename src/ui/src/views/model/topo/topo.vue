@@ -19,12 +19,12 @@
         </button>
         <button class="bk-button vis-button vis-zoomOut bk-icon icon-minus" @click="zoomOut" v-tooltip="$t('ModelManagement[\'缩小\']')">
         </button>
-        <div class="has-model" v-if="modelList.length !== 0 && modelList.length !== disableModelList.length">
+        <div class="has-model" v-if="modelList.length !== 0">
             <bk-button type="primary" v-if="addModelAvailable" class="bk-button vis-button vis-create" @click="createModel">
                 <span class="vis-button-text">{{$t('Common["新增"]')}}</span>
             </bk-button>
         </div>
-        <div class="no-model-prompting tc" v-if="!modelList.length || !disableModelList.length">
+        <div class="no-model-prompting tc" v-if="!modelList.length">
             <img src="../../../assets/images/no_model_prompting.png">
             <p v-if="modelList.length === 0 && disableModelList.length">{{$t('ModelManagement["此分组下无已启用模型"]')}}</p>
             <p v-else>{{$t('ModelManagement["此分组下无模型"]')}}</p>

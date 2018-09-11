@@ -35,9 +35,7 @@
             :hasQuickClose="true"
             :width="430"
             :title="slider.title"
-            :hasCloseConfirm="true"
-            :isCloseConfirmShow="slider.isCloseConfirmShow"
-            @closeSlider="closeSliderConfirm">
+            :beforeClose="handleSliderBeforeClose">
             <v-define slot="content"
                 ref="define"
                 :id="slider.id"
@@ -128,8 +126,21 @@
                 this.slider.isShow = false
                 this.slider.id = null
             },
-            closeSliderConfirm () {
-                this.slider.isCloseConfirmShow = this.$refs.define.isCloseConfirmShow()
+            handleSliderBeforeClose () {
+                if (this.$refs.define.isCloseConfirmShow()) {
+                    return new Promise((resolve, reject) => {
+                        this.$bkInfo({
+                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                            confirmFn: () => {
+                                resolve(true)
+                            },
+                            cancelFn: () => {
+                                resolve(false)
+                            }
+                        })
+                    })
+                }
+                return true
             },
             handleCreate (data) {
                 this.slider.id = data['id']
