@@ -6,6 +6,7 @@ import $http from '@/api'
 
 const index = () => import(/* webpackChunkName: index */ '@/views/index')
 const model = () => import(/* webpackChunkName: model */ '@/views/model')
+const modelTopo = () => import(/* webpackChunkName: model */ '@/views/model/model-topo')
 const business = () => import(/* webpackChunkName: business */ '@/views/business')
 const businessArchived = () => import(/* webpackChunkName: businessArchived */ '@/views/business/archived')
 const generalModel = () => import(/* webpackChunkName: generalModel */ '@/views/general-model')
@@ -37,14 +38,15 @@ const router = new Router({
         path: '/business',
         component: business
     }, {
-        path: '/model/:classifyId',
-        component: model,
-        meta: {
-            relative: '/model'
-        }
-    }, {
         path: '/model',
-        component: model
+        component: model,
+        children: [{
+            path: ':classifyId',
+            component: modelTopo,
+            meta: {
+                relative: '/model'
+            }
+        }]
     }, {
         path: '/eventpush',
         component: eventpush
