@@ -180,7 +180,7 @@ func (lgc *Logics) OperateProcInstanceByGse(procOp *metadata.ProcessOperate, ins
 			continue
 		}
 
-		taskID, ok := gseRsp.Data[common.BKGseTaskIdField].(string)
+		taskID, ok := gseRsp.Data[common.BKGseTaskIDField].(string)
 		if !ok {
 			blog.Warnf("OperateProcInstanceByGse convert gse process operate taskid to string failed. value: %v", gseRsp.Result)
 			continue
@@ -215,6 +215,7 @@ func (lgc *Logics) OperateProcInstanceByGse(procOp *metadata.ProcessOperate, ins
 func (lgc *Logics) QueryProcessOperateResult(ctx context.Context, taskID string, header http.Header) (succ, waitExec []string, mapExceErr map[string]string, err error) {
 
 	dat := new(metadata.QueryInput)
+	dat.Condition = mapstr.MapStr{common.BKTaskIDField: taskID}
 	dat.Limit = 200
 	succ = make([]string, 0)
 	waitExec = make([]string, 0)
@@ -222,6 +223,7 @@ func (lgc *Logics) QueryProcessOperateResult(ctx context.Context, taskID string,
 
 	for {
 		ret, err := lgc.CoreAPI.ProcController().SearchOperateTaskInfo(ctx, header, dat)
+		dat.Start += dat.Limit
 		if nil != err {
 			blog.Errorf("QueryProcessOperateResult http search task info taskID:%s  http do error:%s logID:%s", taskID, err.Error(), util.GetHTTPCCRequestID(header))
 			return nil, nil, nil, lgc.CCErr.Error(util.GetLanguage(header), common.CCErrCommHTTPDoRequestFailed)
@@ -231,7 +233,7 @@ func (lgc *Logics) QueryProcessOperateResult(ctx context.Context, taskID string,
 			return nil, nil, nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(ret.Code, ret.ErrMsg)
 		}
 		if 0 == ret.Data.Count {
-			return nil, nil, nil, nil
+			break
 		}
 		for _, item := range ret.Data.Info {
 			itemSucc, itemWaitExce, itemMapExecErr, err := lgc.handleGseTaskResult(ctx, &item, header)
