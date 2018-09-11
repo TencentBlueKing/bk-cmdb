@@ -23,11 +23,9 @@
                 </template>
         </cmdb-table>
         <cmdb-slider
-            :hasCloseConfirm="true"
-            :isCloseConfirmShow="slider.isCloseConfirmShow"
             :isShow.sync="slider.isShow"
             :title="slider.title"
-            @closeSlider="closeSliderConfirm">
+            :beforeClose="handleSliderBeforeClose">
             <v-push-detail
                 ref="detail"
                 slot="content"
@@ -92,8 +90,21 @@
                 'searchSubscription',
                 'unsubcribeEvent'
             ]),
-            closeSliderConfirm () {
-                this.slider.isCloseConfirmShow = this.$refs.detail.isCloseConfirmShow()
+            handleSliderBeforeClose () {
+                if (this.$refs.detail.isCloseConfirmShow()) {
+                    return new Promise((resolve, reject) => {
+                        this.$bkInfo({
+                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                            confirmFn: () => {
+                                resolve(true)
+                            },
+                            cancelFn: () => {
+                                resolve(false)
+                            }
+                        })
+                    })
+                }
+                return true
             },
             createPush () {
                 this.slider.isShow = true
