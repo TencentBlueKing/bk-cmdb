@@ -11,7 +11,7 @@
 <template>
     <div class="model-wrapper">
         <v-model-nav @createClassify="createClassify"></v-model-nav>
-        <div class="topo-wrapper">
+        <!-- <div class="topo-wrapper">
             <v-topo-list 
                 v-if="bkClassificationId === 'bk_biz_topo'"
                 @createModel="createModel"
@@ -26,8 +26,13 @@
                 ref="topo"
             ></v-topo>
             <v-global-models v-else></v-global-models>
-        </div>
-        <cmdb-slider
+        </div> -->
+        <router-view
+            @createModel="createModel"
+            @editModel="editModel"
+            @editClassify="editClassify"
+        ></router-view>
+        <!-- <cmdb-slider
             :hasCloseConfirm="true"
             :isCloseConfirmShow="slider.isCloseConfirmShow"
             :isShow.sync="slider.isShow" :title="slider.title"
@@ -39,7 +44,7 @@
                 @updateModel="updateTopo(false)"
                 @cancel="slider.isShow = false"
             ></v-details>
-        </cmdb-slider>
+        </cmdb-slider> -->
         <v-pop
             ref="pop"
             v-if="pop.isShow"
@@ -52,17 +57,11 @@
 <script>
     import vPop from './pop'
     import vModelNav from './model-nav'
-    import vGlobalModels from './topo/global-models'
-    import vTopo from './topo/topo'
-    import vTopoList from './topo/topo-list'
     import vDetails from './details'
     import { mapGetters, mapMutations, mapActions } from 'vuex'
     export default {
         components: {
             vModelNav,
-            vGlobalModels,
-            vTopo,
-            vTopoList,
             vDetails,
             vPop
         },
