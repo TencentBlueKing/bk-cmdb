@@ -14,6 +14,7 @@ package logics
 
 import (
 	redis "gopkg.in/redis.v5"
+	"time"
 
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
@@ -28,17 +29,23 @@ type Logics struct {
 	cache        *redis.Client
 }
 
+//InitFunc The method that needs to be executed when the service starts.
 func (lgc *Logics) InitFunc() {
+	//init resource
 	chnOpLock.Do(lgc.bgHandle)
+	// timed tigger refresh  host
+	go lgc.timedTriggerRefreshHostInstance()
 
 }
 
+// SetCache  set the cache object
 func (lgc *Logics) SetCache(db *redis.Client) {
 	lgc.cache = db
 }
 
-//refresh process host instance number need config
+//ProcHostInstConfig refresh process host instance number need config
 type ProcHostInstConfig struct {
 	MaxEventCount         int
 	MaxRefreshModuleCount int
+	GetModuleIDInterval   time.Duration
 }

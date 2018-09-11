@@ -42,12 +42,7 @@ func (lgc *Logics) HandleHostProcDataChange(ctx context.Context, eventData *meta
 }
 
 func (lgc *Logics) bgHandle() {
-	if nil == lgc.ProcHostInst {
-		lgc.reshReshInitChan(0, 0) // use default value
-	} else {
-		lgc.reshReshInitChan(lgc.ProcHostInst.MaxEventCount, lgc.ProcHostInst.MaxRefreshModuleCount)
-	}
-
+	lgc.reshReshInitChan(lgc.ProcHostInst)
 	go func() {
 		defer lgc.bgHandle()
 		for {
@@ -57,7 +52,7 @@ func (lgc *Logics) bgHandle() {
 				if nil != err {
 					blog.Error(err.Error())
 				}
-			case item := <-eventRefreshModuleDataChan:
+			case item := <-refreshHostInstModuleIDChan:
 				if nil == item {
 					break
 				}

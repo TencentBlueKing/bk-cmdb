@@ -56,23 +56,23 @@ func (lgc *Logics) getProcInfoByID(ctx context.Context, procID []int64, header h
 	dat.Limit = common.BKNoLimit
 	ret, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDProc, header, dat)
 	if nil != err {
-		blog.Errorf("getProcInfoByID procID %v supplierID %s  http do error:%s", procID, ownerID, err.Error())
+		blog.Errorf("getProcInfoByID procID %v supplierID %s  http do error:%s, logID::%s", procID, ownerID, err.Error(), util.GetHTTPCCRequestID(header))
 		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !ret.Result {
-		blog.Errorf("getProcInfoByID procID %v supplierID %s  http reply error:%s", procID, ownerID, ret.ErrMsg)
+		blog.Errorf("getProcInfoByID procID %v supplierID %s  http reply error:%s, logID:%s", procID, ownerID, ret.ErrMsg, util.GetHTTPCCRequestID(header))
 		return nil, defErr.New(ret.Code, ret.ErrMsg)
 
 	}
 	if 0 == ret.Data.Count {
-		blog.Errorf("getProcInfoByID procID %v supplierID %s  not found process info", procID, ownerID)
+		blog.Errorf("getProcInfoByID procID %v supplierID %s  not found process info, logID:%s", procID, ownerID, util.GetHTTPCCRequestID(header))
 		return nil, nil
 	}
 	for _, proc := range ret.Data.Info {
 		procID, err := proc.Int64(common.BKProcessIDField)
 		if nil != err {
 			byteHost, _ := json.Marshal(proc)
-			blog.Errorf("getHostByModuleID  proc %v  procID  not interger, json:%s", proc, string(byteHost))
+			blog.Errorf("getHostByModuleID  proc %v  procID  not interger, json:%s, logID:%s", proc, string(byteHost), util.GetHTTPCCRequestID(header))
 			return nil, err
 		}
 		item := new(metadata.InlineProcInfo)
@@ -83,20 +83,20 @@ func (lgc *Logics) getProcInfoByID(ctx context.Context, procID []int64, header h
 			item.ProcNum, err = proc.Int64(common.BKProcInstNum)
 			if nil != err {
 				byteHost, _ := json.Marshal(proc)
-				blog.Errorf("getHostByModuleID  proc %v  procNum  not interger, json:%s", proc, string(byteHost))
+				blog.Errorf("getHostByModuleID  proc %v  procNum  not interger, json:%s, logID:%s", proc, string(byteHost), util.GetHTTPCCRequestID(header))
 				return nil, err
 			}
 		}
 		item.AppID, err = proc.Int64(common.BKAppIDField)
 		if nil != err {
 			byteHost, _ := json.Marshal(proc)
-			blog.Errorf("getHostByModuleID  proc %v  AppID  not interger, json:%s", proc, string(byteHost))
+			blog.Errorf("getHostByModuleID  proc info  AppID  not interger, error:%s, json:%s, logID:%s", err.Error(), string(byteHost), util.GetHTTPCCRequestID(header))
 			return nil, err
 		}
 		item.FunID, err = proc.Int64(common.BKFuncIDField)
 		if nil != err {
 			byteHost, _ := json.Marshal(proc)
-			blog.Errorf("getHostByModuleID  proc %v  AppID  not interger, json:%s", proc, string(byteHost))
+			blog.Errorf("getHostByModuleID  proc info   FunID  not interger, error:%s, json:%s, logID:%s", err.Error(), string(byteHost), util.GetHTTPCCRequestID(header))
 			return nil, err
 		}
 		item.ProcInfo = proc
