@@ -373,19 +373,20 @@
                 'deleteCustomQuery'
             ]),
             isCloseConfirmShow () {
-                if (this.name !== this.dataCopy.name || this.dataCopy.attributeSelected !== this.attribute.selected || this.userProperties.length !== this.dataCopy.userProperties.length) {
+                if (this.name !== this.dataCopy.name || JSON.stringify(this.dataCopy.attributeSelected) !== JSON.stringify(this.attribute.selected) || this.userProperties.length !== this.dataCopy.userProperties.length) {
                     return true
                 }
-                for (let i = 0; i < this.userProperties.length; i++) {
-                    let property = this.userProperties[i]
-                    let propertyCopy = this.dataCopy.userProperties[i]
+                return this.userProperties.some((property, index) => {
+                    let propertyCopy = this.dataCopy.userProperties[index]
+                    let res = false
                     for (let key in property) {
                         if (property[key] !== propertyCopy[key]) {
-                            return true
+                            res = true
+                            break
                         }
                     }
-                }
-                return false
+                    return res
+                })
             },
             async getUserAPIDetail () {
                 const res = await this.getCustomQueryDetail({
