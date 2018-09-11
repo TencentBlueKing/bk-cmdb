@@ -10,31 +10,39 @@
  * limitations under the License.
  */
 
-package util
+package common
 
 import "testing"
 
-func TestGetDailAddress(t *testing.T) {
+func TestSetIdentification(t *testing.T) {
 	type args struct {
-		URL string
+		id string
 	}
 	tests := []struct {
-		name    string
-		args    args
-		want    string
-		wantErr bool
+		name string
+		args args
 	}{
-		{"", args{"http://localhost:80/path?q=a"}, "localhost:80", false},
+		{"", args{"id"}},
+		{"", args{"unkown"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetDailAddress(tt.args.URL)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetDailAddress() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("GetDailAddress() = %v, want %v", got, tt.want)
+			SetIdentification(tt.args.id)
+		})
+	}
+}
+
+func TestGetIdentification(t *testing.T) {
+	tests := []struct {
+		name string
+		want string
+	}{
+		{"", "unkown"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetIdentification(); got != tt.want {
+				t.Errorf("GetIdentification() = %v, want %v", got, tt.want)
 			}
 		})
 	}
