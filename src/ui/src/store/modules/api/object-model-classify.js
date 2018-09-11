@@ -13,7 +13,11 @@ import STATIC_NAVIGATION from '@/assets/json/static-navigation.json'
 
 const state = {
     classifications: [],
-    invisibleClassifications: ['bk_host_manage', 'bk_biz_topo']
+    invisibleClassifications: ['bk_host_manage', 'bk_biz_topo'],
+    interceptStaticModel: {
+        'bk_host_manage': ['resource'],
+        'bk_back_config': ['event', 'model', 'audit']
+    }
 }
 
 const getters = {
