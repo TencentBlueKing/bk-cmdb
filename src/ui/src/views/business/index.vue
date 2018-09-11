@@ -50,7 +50,7 @@
             @handleSizeChange="handleSizeChange"
             @handlePageChange="handlePageChange">
         </cmdb-table>
-        <cmdb-slider :isShow.sync="slider.show" :title="slider.title">
+        <cmdb-slider :isShow.sync="slider.show" :title="slider.title" :beforeClose="handleSliderBeforeClose">
             <bk-tab :active-name.sync="tab.active" slot="content">
                 <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')">
                     <cmdb-details v-if="attribute.type === 'details'"
@@ -62,6 +62,7 @@
                         @on-delete="handleDelete">
                     </cmdb-details>
                     <cmdb-form v-else-if="['update', 'create'].includes(attribute.type)"
+                        ref="form"
                         :properties="properties"
                         :propertyGroups="propertyGroups"
                         :inst="attribute.inst.edit"
@@ -357,6 +358,27 @@
             },
             routeToHistory () {
                 this.$router.push('/history/biz?relative=/business')
+            },
+            handleSliderBeforeClose () {
+                if (this.tab.active === 'attribute' && this.attribute.type !== 'details') {
+                    const $form = this.$refs.form
+                    const changedValues = $form.changedValues
+                    if (Object.keys(changedValues).length) {
+                        return new Promise((resolve, reject) => {
+                            this.$bkInfo({
+                                title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                                confirmFn: () => {
+                                    resolve(true)
+                                },
+                                cancelFn: () => {
+                                    resolve(false)
+                                }
+                            })
+                        })
+                    }
+                    return true
+                }
+                return true
             }
         }
     }

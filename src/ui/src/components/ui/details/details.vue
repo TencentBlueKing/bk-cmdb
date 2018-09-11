@@ -32,11 +32,13 @@
             <div class="details-options" v-if="showOptions">
                 <bk-button class="button-edit" type="primary"
                     v-if="showEdit"
+                    :disabled="!$authorized.update"
                     @click="handleEdit">
                     {{editText}}
                 </bk-button>
                 <bk-button class="button-delete" type="danger"
                     v-if="showDelete"
+                    :disabled="!$authorized.delete"
                     @click="handleDelete">
                     {{deleteText}}
                 </bk-button>
