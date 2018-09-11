@@ -13,16 +13,26 @@
 package metadata
 
 import (
-	types "configcenter/src/common/mapstr"
+	"reflect"
 	"testing"
 )
 
-func TestAttribute(t *testing.T) {
-	m, err := types.NewFromInterface(map[string]interface{}{"id": 0, "bk_supplier_account": "bk_supplier_account"})
-	attr := &Attribute{}
-	attr, err = attr.Parse(m)
-	if str, _ := attr.ToMapStr().String("bk_supplier_account"); str != "bk_supplier_account" || err != nil {
-		t.Fail()
+func TestParsePage(t *testing.T) {
+	type args struct {
+		origin interface{}
 	}
-
+	tests := []struct {
+		name string
+		args args
+		want BasePage
+	}{
+		{"", args{map[string]interface{}{"sort": "f", "limit": 9, "start": 3}}, BasePage{Sort: "f", Limit: 9, Start: 3}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ParsePage(tt.args.origin); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ParsePage() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
