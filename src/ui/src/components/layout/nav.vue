@@ -29,8 +29,9 @@
                     <div class="classify-models"
                         v-if="classify.children && classify.children.length"
                         :style="getClassifyModelsStyle(classify)">
-                        <router-link class="model-link" :class="{active: model.id === $model['bk_obj_id']}"
+                        <router-link class="model-link"
                             v-for="(model, modelIndex) in classify.children"
+                            :class="{active: ($route.meta.relative || $route.query.relative || $route.path) === model.path}"
                             :key="modelIndex"
                             :to="model.path"
                             :title="model.i18n ? $t(model.i18n) : model.name">

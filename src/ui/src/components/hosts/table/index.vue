@@ -62,7 +62,7 @@
                 </span>
             </template>
         </cmdb-table>
-        <cmdb-slider :isShow.sync="slider.show" :title="slider.title">
+        <cmdb-slider :isShow.sync="slider.show" :title="slider.title" :beforeClose="handleSliderBeforeClose">
             <bk-tab :active-name.sync="tab.active" slot="content">
                 <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')">
                     <cmdb-details v-if="tab.attribute.type === 'details'"
@@ -73,6 +73,7 @@
                         @on-edit="handleEdit">
                     </cmdb-details>
                     <cmdb-form v-else-if="tab.attribute.type === 'update'"
+                        ref="form"
                         :properties="properties.host"
                         :propertyGroups="propertyGroups"
                         :inst="tab.attribute.inst.edit"
@@ -81,27 +82,28 @@
                         @on-cancel="handleCancel">
                     </cmdb-form>
                     <cmdb-form-multiple v-else-if="tab.attribute.type === 'multiple'"
+                        ref="multipleForm"
                         :properties="properties.host"
                         :propertyGroups="propertyGroups"
                         @on-submit="handleMultipleSave"
                         @on-cancel="handleMultipleCancel">
                     </cmdb-form-multiple>
                 </bk-tabpanel>
-                <bk-tabpanel name="relevance" :title="$t('HostResourcePool[\'关联\']')">
+                <bk-tabpanel name="relevance" :title="$t('HostResourcePool[\'关联\']')" :show="['details', 'update'].includes(tab.attribute.type)">
                     <cmdb-relation
                         v-if="tab.active === 'relevance'"
                         obj-id="host"
                         :inst-id="tab.attribute.inst.details['bk_host_id']">
                     </cmdb-relation>
                 </bk-tabpanel>
-                <bk-tabpanel name="status" :title="$t('HostResourcePool[\'实时状态\']')">
+                <bk-tabpanel name="status" :title="$t('HostResourcePool[\'实时状态\']')" :show="['details', 'update'].includes(tab.attribute.type)">
                     <cmdb-host-status
                         v-if="tab.active === 'status'"
                         :host-id="tab.attribute.inst.details['bk_host_id']"
                         :is-windows="tab.attribute.inst.details['bk_os_type'] === 'Windows'">
                     </cmdb-host-status>
                 </bk-tabpanel>
-                <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')">
+                <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')" :show="['details', 'update'].includes(tab.attribute.type)">
                     <cmdb-audit-history v-if="tab.active === 'history'"
                         target="host"
                         :ext-key="{'$in': [tab.attribute.inst.details['bk_host_innerip']]}">
@@ -500,6 +502,27 @@
                 this.table.checked = []
                 this.transfer.show = false
                 this.getHostList()
+            },
+            handleSliderBeforeClose () {
+                if (this.tab.active === 'attribute' && this.tab.attribute.type !== 'details') {
+                    const $form = this.tab.attribute.type === 'update' ? this.$refs.form : this.$refs.multipleForm
+                    const changedValues = $form.changedValues
+                    if (Object.keys(changedValues).length) {
+                        return new Promise((resolve, reject) => {
+                            this.$bkInfo({
+                                title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                                confirmFn: () => {
+                                    resolve(true)
+                                },
+                                cancelFn: () => {
+                                    resolve(false)
+                                }
+                            })
+                        })
+                    }
+                    return true
+                }
+                return true
             }
         }
     }
