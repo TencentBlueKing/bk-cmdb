@@ -31,7 +31,7 @@
                         :style="getClassifyModelsStyle(classify)">
                         <router-link class="model-link"
                             v-for="(model, modelIndex) in classify.children"
-                            :class="{active: ($route.meta.relative || $route.query.relative || $route.path) === model.path}"
+                            :class="{active: [model.path, model.relative].includes($route.meta.relative || $route.query.relative || $route.path)}"
                             :key="modelIndex"
                             :to="model.path"
                             :title="model.i18n ? $t(model.i18n) : model.name">

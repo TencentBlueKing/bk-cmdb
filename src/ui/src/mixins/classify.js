@@ -16,7 +16,7 @@ export default {
                     break
                 }
                 if (classify.children && classify.children.length) {
-                    const targetModel = classify.children.find(model => model.path === path)
+                    const targetModel = classify.children.find(child => child.path === path || child.relative === path)
                     if (targetModel) {
                         $classify = targetModel
                         break
