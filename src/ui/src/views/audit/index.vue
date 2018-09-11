@@ -4,6 +4,12 @@
             <div class="group-content group-content-business">
                 <div class="selector-content selector-content-business">
                     <cmdb-business-selector></cmdb-business-selector>
+                    <bk-selector
+                        :list="business"
+                        :selectd.sync="filter.biz"
+                        :searchable="true"
+
+                    ></bk-selector>
                 </div>
             </div>
             <div class="group-content group-content-ip">
@@ -69,7 +75,7 @@
         data () {
             return {
                 filter: { // 查询筛选参数
-                    bkBizId: '',
+                    bizId: '',
                     bkIP: '',
                     classify: '',
                     bkOpType: '',
@@ -183,7 +189,7 @@
                     limit: this.table.pagination.size,
                     sort: this.table.sort
                 }
-                this.setParams(params.condition, 'bk_biz_id', this.filter.bkBizId)
+                this.setParams(params.condition, 'bk_biz_id', this.filter.bizId)
                 this.setParams(params.condition, 'op_type', this.filter.bkOpType)
                 this.setParams(params.condition, 'op_target', this.filter.classify)
                 if (this.filter.bkIP) { // 将IP分隔成查询数组
