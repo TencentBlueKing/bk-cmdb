@@ -17,10 +17,22 @@ import (
 	"testing"
 )
 
-func TestAttribute(t *testing.T) {
+func TestPrivilege(t *testing.T) {
 	m, err := types.NewFromInterface(map[string]interface{}{"id": 0, "bk_supplier_account": "bk_supplier_account"})
-	attr := &Attribute{}
+	attr := &PrivilegeUserGroup{}
 	attr, err = attr.Parse(m)
+
+	if str, _ := attr.ToMapStr().String("bk_supplier_account"); str != "bk_supplier_account" || err != nil {
+		t.Fail()
+	}
+
+}
+
+func TestUserGroup(t *testing.T) {
+	m, err := types.NewFromInterface(map[string]interface{}{"id": 0, "bk_supplier_account": "bk_supplier_account"})
+	attr := &UserGroup{}
+	attr, err = attr.Parse(m)
+
 	if str, _ := attr.ToMapStr().String("bk_supplier_account"); str != "bk_supplier_account" || err != nil {
 		t.Fail()
 	}
