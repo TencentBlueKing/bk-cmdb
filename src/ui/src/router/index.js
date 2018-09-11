@@ -144,7 +144,7 @@ const hasAuthority = (to) => {
         if (navigation.hasOwnProperty('path')) {
             return navigation.path === path
         }
-        return navigation.children.some(child => child.path === path)
+        return navigation.children.some(child => child.path === path || child.relative === path)
     })
 }
 
