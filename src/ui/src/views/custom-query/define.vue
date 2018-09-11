@@ -1,5 +1,5 @@
 <template>
-    <div class="define-wrapper">
+    <div class="define-wrapper" v-bkloading="{isLoading: $loading(['hostsAttribute', 'setAttribute', 'moduleAttribute', 'getUserAPIDetail'])}">
         <div class="define-box">
             <div class="userapi-group">
                 <label class="userapi-label">
@@ -391,7 +391,10 @@
             async getUserAPIDetail () {
                 const res = await this.getCustomQueryDetail({
                     bizId: this.bizId,
-                    id: this.id
+                    id: this.id,
+                    config: {
+                        requestId: 'getUserAPIDetail'
+                    }
                 })
                 this.setUserProperties(res)
             },
@@ -778,7 +781,7 @@
             left: 0;
             background: #fff;
             line-height: 36px;
-            height: 36px;
+            height: 37px;
             .button-delete {
                 background-color: #fff;
                 color: #ff5656;
