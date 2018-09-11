@@ -12,6 +12,8 @@
 package service
 
 import (
+	"time"
+
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
@@ -21,6 +23,7 @@ import (
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/proc_server/app/options"
 	"configcenter/src/scene_server/proc_server/logics"
 	"configcenter/src/storage"
@@ -184,4 +187,26 @@ func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig
 	ps.Config = &options.Config{
 		Redis: redis,
 	}
+
+	hostInstPrefix := "host instance"
+	procHostInstConfig := &logics.ProcHostInstConfig{}
+	if val, ok := current.ConfigMap[hostInstPrefix+".maxEventCount"]; ok {
+		eventCount, err := util.GetIntByInterface(val)
+		if nil == err {
+			procHostInstConfig.MaxEventCount = eventCount
+		}
+	}
+	if val, ok := current.ConfigMap[hostInstPrefix+".maxModuleIDCount"]; ok {
+		mid_count, err := util.GetIntByInterface(val)
+		if nil == err {
+			procHostInstConfig.MaxRefreshModuleCount = mid_count
+		}
+	}
+	if val, ok := current.ConfigMap[hostInstPrefix+".getModuleIDInterval"]; ok {
+		get_mid_interval, err := util.GetIntByInterface(val)
+		if nil == err {
+			procHostInstConfig.GetModuleIDInterval = time.Duration(get_mid_interval) * time.Second
+		}
+	}
+	ps.Logics.ProcHostInst = procHostInstConfig
 }

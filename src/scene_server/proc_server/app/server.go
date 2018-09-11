@@ -58,6 +58,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	procSvr := new(service.ProcServer)
+	procSvr.Logics = &logics.Logics{}
 	procSvr.EsbConfigChn = make(chan esbutil.EsbConfig, 0)
 	container := restful.NewContainer()
 	container.Add(procSvr.WebService())
@@ -105,7 +106,8 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("create esb api  object failed. err: %v", err)
 	}
 	procSvr.Engine = engine
-	procSvr.Logics = &logics.Logics{Engine: engine, EsbServ: esbSrv}
+	procSvr.Logics.Engine = engine
+	procSvr.Logics.EsbServ = esbSrv
 	procSvr.SetCache(cacheDB)
 	go procSvr.InitFunc()
 
