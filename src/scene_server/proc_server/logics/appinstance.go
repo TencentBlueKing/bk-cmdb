@@ -24,11 +24,6 @@ import (
 	"configcenter/src/common/util"
 )
 
-const (
-	timedTriggerTime       time.Duration = time.Hour * 1
-	timedTriggerLockExpire time.Duration = time.Hour * 23
-)
-
 func (lgc *Logics) RefreshHostInstanceByApp(ctx context.Context, header http.Header, appID int64, appInfo mapstr.MapStr) error {
 	ownerID, err := appInfo.String(common.BKOwnerIDField)
 	if nil != err {
@@ -67,6 +62,12 @@ func (lgc *Logics) RefreshAllHostInstance(ctx context.Context, header http.Heade
 			blog.Warnf("RefreshAllHostInstance get appID by app Info:%+v error:%s", appInfo, err.Error())
 			continue
 		}
+		ownerID, err := appInfo.String(common.BKOwnerIDField)
+		if nil != err {
+			blog.Warnf("RefreshAllHostInstance get supplier accout by app Info:%+v error:%s", appInfo, err.Error())
+			continue
+		}
+		header.Set(common.BKHTTPOwnerID, ownerID)
 		err = lgc.RefreshHostInstanceByApp(ctx, header, appID, appInfo)
 		if nil != err {
 			blog.Warnf("RefreshAllHostInstance RefreshHostInstanceByApp by app Info:%+v error:%s", appInfo, err.Error())
@@ -80,6 +81,7 @@ func (lgc *Logics) timedTriggerRefreshHostInstance() {
 	go func() {
 		triggerChn := time.NewTicker(timedTriggerTime)
 		for range triggerChn.C {
+			lgc.cache.Del(common.RedisProcSrvHostInstanceAllRefreshLockKey)
 			locked, err := lgc.cache.SetNX(common.RedisProcSrvHostInstanceAllRefreshLockKey, "", timedTriggerLockExpire).Result()
 			if nil != err {
 				blog.Errorf("locked refresh  error:%s", err.Error())

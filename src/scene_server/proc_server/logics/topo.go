@@ -118,7 +118,7 @@ func (lgc *Logics) GetModueleIDByAppID(ctx context.Context, header http.Header, 
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	dat := new(metadata.QueryInput)
 	dat.Condition = mapstr.MapStr{common.BKAppIDField: appID}
-	dat.Fields = fmt.Sprintf("%s,%s,%s", common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField)
+	dat.Fields = fmt.Sprintf("%s,%s,%s,%s", common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField, common.BKModuleIDField)
 	dat.Limit = common.BKNoLimit
 	ret, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDModule, header, dat)
 	if nil != err {
@@ -151,6 +151,7 @@ func (lgc *Logics) GetModueleIDByAppID(ctx context.Context, header http.Header, 
 func (lgc *Logics) GetAppList(ctx context.Context, header http.Header, fields string) ([]mapstr.MapStr, error) {
 	if "" == util.GetOwnerID(header) {
 		header.Set(common.BKHTTPOwnerID, common.BKSuperOwnerID)
+		header.Set(common.BKHTTPHeaderUser, common.BKProcInstanceOpUser)
 	}
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	dat := new(metadata.QueryInput)
@@ -158,7 +159,7 @@ func (lgc *Logics) GetAppList(ctx context.Context, header http.Header, fields st
 		dat.Fields = fields
 	}
 	dat.Limit = common.BKNoLimit
-	ret, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDModule, header, dat)
+	ret, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDApp, header, dat)
 	if nil != err {
 		blog.Errorf("GetAppList  http do error:%s", err.Error())
 		return make([]mapstr.MapStr, 0), defErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -169,7 +170,7 @@ func (lgc *Logics) GetAppList(ctx context.Context, header http.Header, fields st
 
 	}
 	if 0 == ret.Data.Count {
-		blog.Infof("GetAppList  not found module info")
+		blog.Infof("GetAppList  not found app info")
 		return make([]mapstr.MapStr, 0), nil
 	}
 

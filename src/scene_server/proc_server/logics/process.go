@@ -95,9 +95,7 @@ func (lgc *Logics) getProcInfoByID(ctx context.Context, procID []int64, header h
 		}
 		item.FunID, err = proc.Int64(common.BKFuncIDField)
 		if nil != err {
-			byteHost, _ := json.Marshal(proc)
-			blog.Errorf("getHostByModuleID  proc info   FunID  not interger, error:%s, json:%s, logID:%s", err.Error(), string(byteHost), util.GetHTTPCCRequestID(header))
-			return nil, err
+			continue
 		}
 		item.ProcInfo = proc
 

@@ -17,7 +17,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sync"
 	"time"
 
 	redis "gopkg.in/redis.v5"
@@ -26,30 +25,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-)
-
-type chanItem struct {
-	ctx       context.Context
-	eventData *metadata.EventInst
-	opFunc    func(ctx context.Context, eventData *metadata.EventInst) error
-	retry     int
-}
-
-type refreshHostInstModuleID struct {
-	Header   http.Header `json:"header"`
-	AppID    int64       `json:"bk_biz_id"`
-	ModuleID int64       `json:"bk_module_id"`
-}
-
-var (
-	handEventDataChan           chan chanItem
-	chnOpLock                   *sync.Once = new(sync.Once)
-	initDataLock                *sync.Once = new(sync.Once)
-	refreshHostInstModuleIDChan chan *refreshHostInstModuleID
-	maxRefreshModuleData        int           = 100
-	maxEventDataChan            int           = 10000
-	retry                       int           = 3
-	SPOPINTERVAL                time.Duration = time.Second * 30
 )
 
 func (lgc *Logics) reshReshInitChan(config *ProcHostInstConfig) {
