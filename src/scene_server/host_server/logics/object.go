@@ -209,7 +209,7 @@ func (lgc *Logics) GetObjectInstByCond(pheader http.Header, objID string, cond [
 	query := &meta.QueryInput{
 		Condition: condc,
 		Start:     0,
-		Limit:     1,
+		Limit:     common.BKNoLimit,
 		Sort:      common.BKAppIDField,
 	}
 	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), objType, pheader, query)
