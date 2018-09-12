@@ -18,9 +18,9 @@ import (
 )
 
 func TestIntArrIntersection(t *testing.T) {
-	slice1 := []int{1, 2, 3}
-	slice2 := []int{3, 4, 5}
+	slice1 := []int64{1, 2, 3}
+	slice2 := []int64{3, 4, 5}
 	slice3 := IntArrIntersection(slice1, slice2)
-	require.Equal(t, 3, slice3[0])
+	require.Equal(t, int64(3), slice3[0])
 
 }
