@@ -411,18 +411,13 @@ input.cmdb-form-input{
     height: 100%;
     border: none;
     .bk-tab2-head{
-        height: 80px;
         .bk-tab2-nav {
             .tab2-nav-item{
-                height: 79px;
-                line-height: 79px;
-                min-width: 93px;
                 text-align: center;
             }
         }
     }
     .bk-tab2-content{
-        height: calc(100% - 124px);
         @include scrollbar;
         >section{
             height: 100%;
@@ -505,6 +500,7 @@ input.cmdb-form-input{
         .userapi-content-selector {
             .bk-selector-list {
                 top: 36px;
+                left: 1px;
             }
         }
     }

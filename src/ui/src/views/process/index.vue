@@ -117,6 +117,11 @@
         computed: {
             ...mapGetters(['supplierAccount'])
         },
+        watch: {
+            'filter.bizId' () {
+                this.handlePageChange(1)
+            }
+        },
         created () {
             this.reload()
         },
