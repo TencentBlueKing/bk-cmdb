@@ -198,6 +198,17 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 		return nil, err
 	}
 
+	// create the default group
+	grp := currentObj.CreateGroup()
+	grp.SetDefault(true)
+	grp.SetIndex(-1)
+	grp.SetName("Default")
+	grp.SetID("default")
+	if err = grp.Save(nil); nil != err {
+		blog.Errorf("[operation-obj] failed to create the default group, error info is %s", err.Error())
+		return nil, err
+	}
+
 	defaultInstNameAttr := currentObj.CreateAttribute()
 	defaultInstNameAttr.SetIsSystem(false)
 	defaultInstNameAttr.SetIsOnly(true)
@@ -207,6 +218,8 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 	defaultInstNameAttr.SetIsRequired(true)
 	defaultInstNameAttr.SetID(currentObj.GetInstNameFieldName())
 	defaultInstNameAttr.SetName(currentObj.GetDefaultInstPropertyName())
+	defaultInstNameAttr.SetGroupIndex(-1)
+	defaultInstNameAttr.SetGroup(grp)
 
 	if err = defaultInstNameAttr.Save(nil); nil != err {
 		blog.Errorf("[operation-asst] failed to create the object(%s) attribute(%s), error info is %s", currentObj.GetID(), currentObj.GetDefaultInstPropertyName(), err.Error())
