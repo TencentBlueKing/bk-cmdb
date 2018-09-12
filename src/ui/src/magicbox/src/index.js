@@ -38,6 +38,7 @@ import bkTimeline from './components/timeline'
 import bkProcess from './components/process'
 import bkCombox from './components/combox'
 
+import bkException from './components/exception'
 import locale from './locale'
 import localeMixin from './mixins/locale'
 import enUS from './locale/lang/en-US'
@@ -53,38 +54,41 @@ const {
     bkTabpanel
 } = Tab
 
-const bkMagic = {
-    bkCombox,
-    bkButton,
-    bkDropdownMenu,
-    bkSideslider,
-    bkSwitcher,
-    bkTagInput,
-    bkDialog,
-    bkIconButton,
-    bkSteps,
+const components = {
     bkBadge,
-    bkDropdown,
-    bkTooltip,
-    bkDatePicker,
-    bkDateRange,
-    bkSelector,
-    bkTab,
-    bkTabpanel,
-    bkPaging,
-    bkTransfer,
-    bkTree,
+    bkButton,
     bkCollapse,
     bkCollapseItem,
-    bkRound,
-    bkTimeline,
+    bkCombox,
+    bkDatePicker,
+    bkDateRange,
+    bkDialog,
+    bkDropdown,
+    bkDropdownMenu,
+    bkIconButton,
+    bkPaging,
     bkProcess,
+    bkRound,
+    bkSelector,
+    bkSideslider,
+    bkSteps,
+    bkSwitcher,
+    bkTab,
+    bkTabpanel,
+    bkTagInput,
+    bkTimeline,
+    bkTooltip,
+    bkTransfer,
+    bkTree,
     bkUpload
 }
 
 export function install (Vue, opts = {}) {
-    Object.keys(bkMagic).forEach(key => {
-        Vue.component(bkMagic[key].name, bkMagic[key])
+    locale.use(opts.locale)
+    locale.i18n(opts.i18n)
+
+    Object.keys(components).forEach(key => {
+        Vue.component(components[key].name, components[key])
     })
 
     // locale.use({
@@ -93,8 +97,6 @@ export function install (Vue, opts = {}) {
     //         selectDate: '选择日期sdsd'
     //     }
     // })
-    locale.use(opts.locale)
-    locale.i18n(opts.i18n)
 }
 
 Vue.use(bkLoading.directive)
@@ -115,40 +117,56 @@ if (typeof window !== 'undefined' && window.Vue) {
     install(window.Vue)
 }
 
-export {
-    bkCombox,
-    bkButton,
-    bkDropdownMenu,
-    bkSideslider,
-    bkSwitcher,
-    bkTagInput,
-    bkDialog,
-    bkIconButton,
+const bkMagic = {
+    bkException,
+    ...components,
     bkLoading,
-    bkSteps,
-    bkBadge,
     bkMessage,
     bkTooltips,
-    bkDropdown,
     bkInfoBox,
-    bkTooltip,
-    bkDatePicker,
-    bkDateRange,
-    bkSelector,
-    bkTab,
-    bkTabpanel,
-    bkPaging,
     locale,
     langPkg,
     localeMixin,
-    bkTransfer,
-    bkTree,
-    bkCollapse,
-    bkCollapseItem,
-    bkRound,
-    bkTimeline,
-    bkProcess,
-    bkUpload
+    install
 }
 
-export default Object.assign(bkMagic, {install})
+// 组件单独抛出，方便 import {bkBadge} from '@tencent/bk-magic' 这样引用
+export {
+    bkBadge,
+    bkButton,
+    bkCollapse,
+    bkCollapseItem,
+    bkCombox,
+    bkDatePicker,
+    bkDateRange,
+    bkDialog,
+    bkDropdown,
+    bkDropdownMenu,
+    bkIconButton,
+    bkPaging,
+    bkProcess,
+    bkRound,
+    bkSelector,
+    bkSideslider,
+    bkSteps,
+    bkSwitcher,
+    bkTab,
+    bkTabpanel,
+    bkTagInput,
+    bkTimeline,
+    bkTooltip,
+    bkTransfer,
+    bkTree,
+    bkUpload,
+    bkLoading,
+    bkMessage,
+    bkTooltips,
+    bkInfoBox,
+    locale,
+    bkException,
+    langPkg,
+    localeMixin
+}
+
+// export default Object.assign(bkMagic, {install})
+export default bkMagic
