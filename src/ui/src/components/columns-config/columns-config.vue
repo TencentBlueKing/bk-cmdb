@@ -7,7 +7,7 @@
             </div>
             <ul class="property-list">
                 <li ref="unselectedPropertyItem" class="property-item" v-for="(property, index) in unselectedProperties" @click="selectProperty(property)">
-                    <span>{{property['bk_property_name']}}</span>
+                    <span class="property-name">{{property['bk_property_name']}}</span>
                     <i class="bk-icon icon-angle-right"></i>
                 </li>
             </ul>
@@ -26,7 +26,7 @@
                     v-for="(property, index) in selectedProperties"
                     :class="{disabled: checkDisabled(property)}">
                     <i class="icon-triple-dot" v-if="!checkDisabled(property)"></i>
-                    <span>{{property['bk_property_name']}}</span>
+                    <span class="property-name" :title="property['bk_property_name']">{{property['bk_property_name']}}</span>
                     <i class="bk-icon icon-eye-slash-shape"
                         v-if="!checkDisabled(property)"
                         v-tooltip="$t('Common[\'隐藏\']')"
@@ -75,7 +75,7 @@
             },
             max: {
                 type: Number,
-                default: 10
+                default: 20
             }
         },
         data () {
@@ -91,7 +91,11 @@
                 })
             },
             unselectedProperties () {
-                return this.sortedProperties.filter(property => !this.localSelcted.includes(property['bk_property_id']))
+                return this.sortedProperties.filter(property => {
+                    const unselected = !this.localSelcted.includes(property['bk_property_id'])
+                    const includesFilter = property['bk_property_name'].toLowerCase().indexOf(this.filter.toLowerCase()) !== -1
+                    return unselected && includesFilter
+                })
             },
             selectedProperties: {
                 get () {
@@ -107,15 +111,6 @@
         watch: {
             selected (selected) {
                 this.initLocalSelected()
-            },
-            filter (filter) {
-                this.unselectedProperties.forEach((property, index) => {
-                    if (property['bk_property_name'].toLowerCase().indexOf(filter.toLowerCase()) !== -1) {
-                        this.$refs.unselectedPropertyItem[index].style.display = 'block'
-                    } else {
-                        this.$refs.unselectedPropertyItem[index].style.display = 'none'
-                    }
-                })
             }
         },
         created () {
@@ -217,6 +212,17 @@
             }
             &:hover{
                 background-color: #f9f9f9;
+            }
+            .property-name {
+                display: inline-block;
+                vertical-align: top;
+                max-width: calc(100% - 50px);
+                @include ellipsis;
+            }
+            .icon-triple-dot {
+                position: absolute;
+                left: 15px;
+                top: 19px;
             }
             .icon-angle-right{
                 position: absolute;
