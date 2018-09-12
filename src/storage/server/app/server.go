@@ -142,14 +142,14 @@ func (h *TXServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ") //ignore err, cause ConfigMap is map[string]string
 		blog.Infof("config updated: \n%s", out)
 		h.Config.MongoDB.Connect = current.ConfigMap["mongodb.connect"]
-		h.Config.MongoDB.Address = current.ConfigMap["mongodb.host"]
+		h.Config.mongodb.host = current.ConfigMap["mongodb.host"]
 		h.Config.MongoDB.User = current.ConfigMap["mongodb.usr"]
 		h.Config.MongoDB.Password = current.ConfigMap["mongodb.pwd"]
 		h.Config.MongoDB.Database = current.ConfigMap["mongodb.database"]
 		h.Config.MongoDB.MaxOpenConns = current.ConfigMap["mongodb.maxOpenConns"]
 		h.Config.MongoDB.MaxIdleConns = current.ConfigMap["mongodb.maxIDleConns"]
 
-		h.Config.Redis.Address = current.ConfigMap["redis.host"]
+		h.Config.redis.host = current.ConfigMap["redis.host"]
 		h.Config.Redis.Password = current.ConfigMap["redis.pwd"]
 		h.Config.Redis.Database = current.ConfigMap["redis.database"]
 

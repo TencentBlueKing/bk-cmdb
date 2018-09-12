@@ -26,72 +26,77 @@ def generate_config_file(rd_server_v,db_name_v,redis_ip_v,redis_port_v,redis_use
 
     # auditcontroller.conf
     auditcontroller_file_template_str='''[mongodb]
-address = $mongo_address
+host = $mongo_host
 usr = $mongo_user
 pwd = $mongo_pass
 database = $db
+port = $mongo_port
 maxOpenConns = 3000
 maxIdleConns = 1000
 '''
     template = FileTemplate(auditcontroller_file_template_str)
-    result = template.substitute(dict(db=db_name_v,mongo_user=mongo_user_v,mongo_address=mongo_ip_v+":"+str(mongo_port_v),mongo_pass=mongo_pass_v))
+    result = template.substitute(dict(db=db_name_v,mongo_user=mongo_user_v,mongo_host=mongo_ip_v,mongo_pass=mongo_pass_v,mongo_port=mongo_port_v))
     with open( output + "auditcontroller.conf",'w') as tmp_file:
         tmp_file.write(result)
 
     # datacollection.conf
     datacollection_file_template_str='''[mongodb]
-address = $mongo_address
+host = $mongo_host
 usr = $mongo_user
 pwd = $mongo_pass
 database = $db
+port = $mongo_port
 maxOpenConns = 3000
 maxIdleConns = 1000
 
 [snap-redis]
-address = $redis_address
+host = $redis_host
+usr = $redis_user
 pwd = $redis_pass
 database = 0
+chan = 3_snapshot
 
 [discover-redis]
-address = $redis_address
-pwd = $redis_pass
-database = 0
-
-[discover-redis]
-address = $redis_address
+host = $redis_host
+usr = $redis_user
 pwd = $redis_pass
 database = 0
 chan = 3_snapshot
 
 [redis]
-address = $redis_address
+host = $redis_host
+usr = $redis_user
 pwd = $redis_pass
 database = 0
 '''
 
     template = FileTemplate(datacollection_file_template_str)
-    result = template.substitute(dict(db=db_name_v,redis_address=redis_ip_v+":"+str(redis_port_v),redis_pass=redis_pass_v, mongo_user=mongo_user_v,mongo_address=mongo_ip_v+":"+str(mongo_port_v),mongo_pass=mongo_pass_v))
+    result = template.substitute(dict(db=db_name_v,redis_host=redis_ip_v+":"+str(redis_port_v),redis_user=redis_user_v,redis_pass=redis_pass_v, mongo_user=mongo_user_v,mongo_host=mongo_ip_v,mongo_pass=mongo_pass_v,mongo_port=mongo_port_v))
     with open( output + "datacollection.conf",'w') as tmp_file:
         tmp_file.write(result)
 
     # eventserver.conf
     eventserver_file_template_str='''[mongodb]
-address=$mongo_address
+host=$mongo_host
 usr=$mongo_user
 pwd=$mongo_pass
 database=$db
+port=$mongo_port
 maxOpenConns=3000
 maxIDleConns=1000
 
 [redis]
-address=$redis_address
+host=$redis_host
+usr=$redis_user
 pwd=$redis_pass
 database=0
+port=$redis_port
 maxOpenConns=3000
+maxIDleConns=1000
 '''
     
     template = FileTemplate(eventserver_file_template_str)
-    result = template.substitute(dict(db=db_name_v,redis_address=redis_ip_v+":"+str(redis_port_v),redis_pass=redis_pass_v, mongo_user=mongo_user_v,mongo_address=mongo_ip_v+":"+str(mongo_port_v),mongo_pass=mongo_pass_v))
+    result = template.substitute(dict(db=db_name_v,redis_host=redis_ip_v,redis_port=redis_port_v,redis_user=redis_user_v,redis_pass=redis_pass_v, mongo_user=mongo_user_v,mongo_host=mongo_ip_v,mongo_pass=mongo_pass_v,mongo_port=mongo_port_v))
     with open( output + "eventserver.conf",'w') as tmp_file:
         tmp_file.write(result)
 
@@ -108,23 +113,26 @@ pwd=L%blKas
 
     # hostcontroller.conf
     hostcontroller_file_template_str='''[mongodb]
-address=$mongo_address
+host=$mongo_host
 usr=$mongo_user
 pwd=$mongo_pass
 database=$db
+port=$mongo_port
 maxOpenConns=3000
 maxIDleConns=1000
 
 [redis]
-address=$redis_address
+host=$redis_host
+usr=$redis_user
 pwd=$redis_pass
 database=0
+port=$redis_port
 maxOpenConns=3000
 maxIDleConns=1000
 '''
 
     template = FileTemplate(hostcontroller_file_template_str)
-    result = template.substitute(dict(db=db_name_v,redis_address=redis_ip_v+":"+str(redis_port_v),redis_pass=redis_pass_v, mongo_user=mongo_user_v,mongo_address=mongo_ip_v+":"+str(mongo_port_v),mongo_pass=mongo_pass_v))
+    result = template.substitute(dict(db=db_name_v,redis_host=redis_ip_v,redis_port=redis_port_v,redis_user=redis_user_v,redis_pass=redis_pass_v, mongo_user=mongo_user_v,mongo_host=mongo_ip_v,mongo_pass=mongo_pass_v,mongo_port=mongo_port_v))
     with open( output + "hostcontroller.conf",'w') as tmp_file:
         tmp_file.write(result)
 
@@ -133,17 +141,17 @@ maxIDleConns=1000
 addrs=$rd_server
 usr=
 pwd=
-
 [register-server]
 addrs=$rd_server
 usr=
 pwd=
 
 [mongodb]
-address=$mongo_address
+host =$mongo_host
 usr = $mongo_user
 pwd = $mongo_pass
 database = $db
+port = $mongo_port
 maxOpenConns = 3000
 maxIDleConns = 1000
 
@@ -155,32 +163,35 @@ res=conf/errors
 
 [language]
 res=conf/language
-'''
+    '''
 
     template = FileTemplate(migrate_file_template_str)
-    result = template.substitute(dict(db=db_name_v,configures_dir=output,rd_server=rd_server_v,redis_address=redis_ip_v+":"+str(redis_port_v),redis_pass=redis_pass_v, mongo_user=mongo_user_v,mongo_address=mongo_ip_v+":"+str(mongo_port_v),mongo_pass=mongo_pass_v))
+    result = template.substitute(dict(db=db_name_v,configures_dir=output,rd_server=rd_server_v,redis_host=redis_ip_v,redis_port=redis_port_v,redis_user=redis_user_v,redis_pass=redis_pass_v, mongo_user=mongo_user_v,mongo_host=mongo_ip_v,mongo_pass=mongo_pass_v,mongo_port=mongo_port_v))
     with open( output + "migrate.conf",'w') as tmp_file:
         tmp_file.write(result)
 
     # objectcontroller.conf
     objectcontroller_file_template_str='''[mongodb]
-address=$mongo_address
+host=$mongo_host
 usr=$mongo_user
 pwd=$mongo_pass
 database=$db
+port=$mongo_port
 maxOpenConns=3000
 maxIDleConns=1000
 
 [redis]
-address=$redis_address
+host=$redis_host
+usr=$redis_user
 pwd=$redis_pass
 database=0
+port=$redis_port
 maxOpenConns=3000
 maxIDleConns=1000
 '''
 
     template = FileTemplate(objectcontroller_file_template_str)
-    result = template.substitute(dict(db=db_name_v,redis_address=redis_ip_v+":"+str(redis_port_v),redis_pass=redis_pass_v, mongo_user=mongo_user_v,mongo_address=mongo_ip_v+":"+str(mongo_port_v),mongo_pass=mongo_pass_v))
+    result = template.substitute(dict(db=db_name_v,redis_host=redis_ip_v,redis_port=redis_port_v,redis_user=redis_user_v,redis_pass=redis_pass_v, mongo_user=mongo_user_v,mongo_host=mongo_ip_v,mongo_pass=mongo_pass_v,mongo_port=mongo_port_v))
     with open( output + "objectcontroller.conf",'w') as tmp_file:
         tmp_file.write(result)
 
@@ -194,38 +205,42 @@ maxIDleConns=1000
 
     # proccontroller.conf
     proccontroller_file_template_str='''[mongodb]
-address=$mongo_address
+host=$mongo_host
 usr=$mongo_user
 pwd=$mongo_pass
 database=$db
+port=$mongo_port
 maxOpenConns=3000
 maxIDleConns=1000
 
 [redis]
-address=$redis_address
+host=$redis_host
+usr=$redis_user
 pwd=$redis_pass
 database=0
+port=$redis_port
 maxOpenConns=3000
 maxIDleConns=1000
 '''
 
     template = FileTemplate(proccontroller_file_template_str)
-    result = template.substitute(dict(db=db_name_v,redis_address=redis_ip_v+":"+str(redis_port_v),redis_pass=redis_pass_v, mongo_user=mongo_user_v,mongo_address=mongo_ip_v+":"+str(mongo_port_v),mongo_pass=mongo_pass_v))
+    result = template.substitute(dict(db=db_name_v,redis_host=redis_ip_v,redis_port=redis_port_v,redis_user=redis_user_v,redis_pass=redis_pass_v, mongo_user=mongo_user_v,mongo_host=mongo_ip_v,mongo_pass=mongo_pass_v,mongo_port=mongo_port_v))
     with open( output + "proccontroller.conf",'w') as tmp_file:
         tmp_file.write(result)
 
     # topo.conf
     topo_file_template_str='''[mongodb]
-address=$mongo_address
+host=$mongo_host
 usr=$mongo_user
 pwd=$mongo_pass
 database=$db
+port=$mongo_port
 maxOpenConns=3000
 maxIDleConns=1000
 '''
 
     template = FileTemplate(topo_file_template_str)
-    result = template.substitute(dict(db=db_name_v,mongo_user=mongo_user_v,mongo_address=mongo_ip_v+":"+str(mongo_port_v),mongo_pass=mongo_pass_v))
+    result = template.substitute(dict(db=db_name_v,mongo_user=mongo_user_v,mongo_host=mongo_ip_v,mongo_pass=mongo_pass_v,mongo_port=mongo_port_v))
     with open( output + "topo.conf",'w') as tmp_file:
         tmp_file.write(result)
 
@@ -236,7 +251,8 @@ version=v3
 name=cc3
 skip=1
 defaultlanguage=zh-cn
-address=$redis_address
+host=$redis_host
+port=$redis_port
 secret=$redis_pass
 multiple_owner=0
 
@@ -254,7 +270,7 @@ agent_app_url=${agent_url}/console/?app=bk_agent_setup
 '''
     ui_root_v = os.getcwd()+"/web"
     template = FileTemplate(webserver_file_template_str)
-    result = template.substitute(dict(redis_address=redis_ip_v+":"+str(redis_port_v),redis_pass=redis_pass_v,cc_url=cc_url_v,paas_url=paas_url_v,ui_root=ui_root_v,agent_url=paas_url_v))
+    result = template.substitute(dict(redis_host=redis_ip_v,redis_port=redis_port_v,redis_pass=redis_pass_v,cc_url=cc_url_v,paas_url=paas_url_v,ui_root=ui_root_v,agent_url=paas_url_v))
     with open( output + "webserver.conf",'w') as tmp_file:
         tmp_file.write(result)
 

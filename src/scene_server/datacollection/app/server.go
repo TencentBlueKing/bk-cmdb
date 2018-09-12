@@ -21,9 +21,6 @@ import (
 
 	"github.com/emicklei/go-restful"
 
-	"configcenter/src/storage/dal/mongo"
-	"configcenter/src/storage/dal/redis"
-
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/backbone"
@@ -34,6 +31,8 @@ import (
 	"configcenter/src/scene_server/datacollection/app/options"
 	"configcenter/src/scene_server/datacollection/datacollection"
 	svc "configcenter/src/scene_server/datacollection/service"
+	"configcenter/src/storage/dal/mongo"
+	"configcenter/src/storage/dal/redis"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -118,20 +117,20 @@ func (h *DCServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 			h.Config = new(options.Config)
 		}
 		dbprefix := "mongodb"
-		mongoConf := mongo.NewConfigFromKV(dbprefix, current.ConfigMap)
-		h.Config.MongoDB = *mongoConf
+		mongoConf := mongo.ParseConfigFromKV(dbprefix, current.ConfigMap)
+		h.Config.MongoDB = mongoConf
 
 		ccredisPrefix := "redis"
-		redisConf := redis.NewConfigFromKV(ccredisPrefix, current.ConfigMap)
-		h.Config.CCRedis = *redisConf
+		redisConf := redis.ParseConfigFromKV(ccredisPrefix, current.ConfigMap)
+		h.Config.CCRedis = redisConf
 
 		snapPrefix := "snap-redis"
-		snapredisConf := redis.NewConfigFromKV(snapPrefix, current.ConfigMap)
-		h.Config.SnapRedis = *snapredisConf
+		snapredisConf := redis.ParseConfigFromKV(snapPrefix, current.ConfigMap)
+		h.Config.SnapRedis = snapredisConf
 
 		discoverPrefix := "discover-redis"
-		discoverRedisConf := redis.NewConfigFromKV(discoverPrefix, current.ConfigMap)
-		h.Config.DiscoverRedis = *discoverRedisConf
+		discoverRedisConf := redis.ParseConfigFromKV(discoverPrefix, current.ConfigMap)
+		h.Config.DiscoverRedis = discoverRedisConf
 
 	}
 }

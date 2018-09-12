@@ -63,7 +63,7 @@ func Parse(args []string) error {
 	if nil != err {
 		return fmt.Errorf("parse config file error %s", err.Error())
 	}
-	config := mongo.NewConfigFromKV("mongodb", pconfig.ConfigMap)
+	config := mongo.ParseConfigFromKV("mongodb", pconfig.ConfigMap)
 	// connect to mongo db
 	db, err := mongo.NewMgo(config.BuildURI())
 	if err != nil {

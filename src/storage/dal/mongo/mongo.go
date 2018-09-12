@@ -14,12 +14,14 @@ package mongo
 
 import (
 	"fmt"
+	"strings"
 )
 
 // Config config
 type Config struct {
 	Connect      string
 	Address      string
+	Port         string
 	User         string
 	Password     string
 	Database     string
@@ -35,6 +37,10 @@ func (c Config) BuildURI() string {
 		return c.Connect
 	}
 
+	if !strings.Contains(c.Address, ":") && len(c.Port) > 0 {
+		c.Address = c.Address + ":" + c.Port
+	}
+
 	uri := fmt.Sprintf("mongodb://%s:%s@%s/%s", c.User, c.Password, c.Address, c.Database)
 	if c.Mechanism != "" {
 		uri += "?authMechanism=" + c.Mechanism
@@ -42,10 +48,11 @@ func (c Config) BuildURI() string {
 	return uri
 }
 
-// NewConfigFromKV returns a new config
-func NewConfigFromKV(prefix string, conifgmap map[string]string) *Config {
-	return &Config{
-		Address:      conifgmap[prefix+".address"],
+// ParseConfigFromKV returns a new config
+func ParseConfigFromKV(prefix string, conifgmap map[string]string) Config {
+	return Config{
+		Address:      conifgmap[prefix+".host"],
+		Port:         conifgmap[prefix+".port"],
 		User:         conifgmap[prefix+".usr"],
 		Password:     conifgmap[prefix+".pwd"],
 		Database:     conifgmap[prefix+".database"],
