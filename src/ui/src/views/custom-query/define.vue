@@ -354,6 +354,7 @@
                 })
                 this.attribute.list = tempList.concat(this.attribute.default)
                 this.attribute.selected = selected
+                this.dataCopy.attributeSelected = this.$tools.clone(selected)
             }
         },
         async created () {
