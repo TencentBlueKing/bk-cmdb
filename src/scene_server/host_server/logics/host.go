@@ -434,7 +434,7 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 		return nil, err
 	}
 
-	if len(appCond.Condition) > 0 || len(setCond.Condition) > 0 || len(moduleCond.Condition) > 0 || -1 != data.AppID {
+	if len(appCond.Condition) > 0 || len(setCond.Condition) > 0 || len(moduleCond.Condition) > 0 || len(objectCondMap) > 0 || -1 != data.AppID {
 		hostCond.Condition = append(hostCond.Condition, metadata.ConditionItem{
 			Field:    common.BKHostIDField,
 			Operator: common.BKDBIN,
