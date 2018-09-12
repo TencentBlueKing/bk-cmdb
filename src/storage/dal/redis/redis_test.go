@@ -21,8 +21,8 @@ import (
 )
 
 func TestRedis(t *testing.T) {
-	conf := redis.NewConfigFromKV("redis", map[string]string{
-		"redis.address":  "127.0.0.1:6379",
+	conf := redis.ParseConfigFromKV("redis", map[string]string{
+		"redis.host":     "127.0.0.1:6379",
 		"redis.pwd":      "cc",
 		"redis.database": "0",
 	})

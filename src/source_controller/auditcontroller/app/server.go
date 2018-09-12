@@ -84,7 +84,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 	configReady := false
 	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
-		if nil == audit.Config.Mongo {
+		if nil == audit.Config {
 			time.Sleep(time.Second)
 			continue
 		} else {
@@ -106,22 +106,15 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 // AuditController  audit controller config
 type AuditController struct {
 	*service.Service
-	Config options.Config
+	Config *options.Config
 }
 
 func (h *AuditController) onAduitConfigUpdate(previous, current cc.ProcessConfig) {
-	h.Config.Mongo = &mongo.Config{
-		Address:      current.ConfigMap["mongodb.address"],
-		User:         current.ConfigMap["mongodb.usr"],
-		Password:     current.ConfigMap["mongodb.pwd"],
-		Database:     current.ConfigMap["mongodb.database"],
-		MaxOpenConns: current.ConfigMap["mongodb.maxOpenConns"],
-		MaxIdleConns: current.ConfigMap["mongodb.maxIDleConns"],
-		Mechanism:    current.ConfigMap["mongodb.mechanism"],
+	h.Config = &options.Config{
+		Mongo: mongo.ParseConfigFromKV("mongodb", current.ConfigMap),
 	}
 
-	mgc := h.Config.Mongo
-	instance, err := mongo.NewMgo(mgc.BuildURI())
+	instance, err := mongo.NewMgo(h.Config.Mongo.BuildURI())
 	if err != nil {
 		blog.Errorf("new mongo client failed, err: %s", err.Error())
 		return
