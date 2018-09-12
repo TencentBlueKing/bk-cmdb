@@ -39,7 +39,6 @@ export default {
                         authorized = modelAuthority.hasOwnProperty(model['classificationId']) ? modelAuthority[model['classificationId']][model['id']] : []
                     }
                 }
-                console.log(model)
             }
             return {
                 search: authorized.indexOf('search') === -1,
