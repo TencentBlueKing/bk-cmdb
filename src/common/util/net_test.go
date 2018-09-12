@@ -10,31 +10,32 @@
  * limitations under the License.
  */
 
-package common
+package util
 
-import (
-	"os"
-	"testing"
-)
+import "testing"
 
-func Test_AtomicFileNew(t *testing.T) {
-	atomFile, err := AtomicFileNew("./test.txt", os.FileMode(0755))
-	if err != nil {
-		t.Errorf("AtomicFileNew failed! err:%s", err.Error())
-		return
+func TestGetDailAddress(t *testing.T) {
+	type args struct {
+		URL string
 	}
-
-	defer atomFile.Close()
-
-	_, err = atomFile.Write([]byte("test"))
-	if err != nil {
-		t.Errorf("fail to write data. err:%s", err.Error())
-		return
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{"", args{"http://localhost:80/path?q=a"}, "localhost:80", false},
 	}
-
-	err = atomFile.Abort()
-	if err != nil {
-		t.Errorf("fail to abort file:%s", err.Error())
-		return
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := GetDailAddress(tt.args.URL)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetDailAddress() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("GetDailAddress() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

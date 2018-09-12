@@ -10,31 +10,24 @@
  * limitations under the License.
  */
 
-package common
+package language
 
-import (
-	"os"
-	"testing"
-)
+import "testing"
 
-func Test_AtomicFileNew(t *testing.T) {
-	atomFile, err := AtomicFileNew("./test.txt", os.FileMode(0755))
-	if err != nil {
-		t.Errorf("AtomicFileNew failed! err:%s", err.Error())
-		return
+func Test_Typefunc(t *testing.T) {
+	l := &ccLanguage{
+		key: "key",
+		callback: func() string {
+			return "callback"
+		},
 	}
 
-	defer atomFile.Close()
-
-	_, err = atomFile.Write([]byte("test"))
-	if err != nil {
-		t.Errorf("fail to write data. err:%s", err.Error())
-		return
+	if l.GetKey() != "key" {
+		t.Fail()
 	}
 
-	err = atomFile.Abort()
-	if err != nil {
-		t.Errorf("fail to abort file:%s", err.Error())
-		return
+	if l.Content() != "callback" {
+		t.Fail()
 	}
+
 }

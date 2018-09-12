@@ -10,31 +10,31 @@
  * limitations under the License.
  */
 
-package common
+package metadata
 
 import (
-	"os"
+	types "configcenter/src/common/mapstr"
 	"testing"
 )
 
-func Test_AtomicFileNew(t *testing.T) {
-	atomFile, err := AtomicFileNew("./test.txt", os.FileMode(0755))
-	if err != nil {
-		t.Errorf("AtomicFileNew failed! err:%s", err.Error())
-		return
+func TestPrivilege(t *testing.T) {
+	m, err := types.NewFromInterface(map[string]interface{}{"id": 0, "bk_supplier_account": "bk_supplier_account"})
+	attr := &PrivilegeUserGroup{}
+	attr, err = attr.Parse(m)
+
+	if str, _ := attr.ToMapStr().String("bk_supplier_account"); str != "bk_supplier_account" || err != nil {
+		t.Fail()
 	}
 
-	defer atomFile.Close()
+}
 
-	_, err = atomFile.Write([]byte("test"))
-	if err != nil {
-		t.Errorf("fail to write data. err:%s", err.Error())
-		return
+func TestUserGroup(t *testing.T) {
+	m, err := types.NewFromInterface(map[string]interface{}{"id": 0, "bk_supplier_account": "bk_supplier_account"})
+	attr := &UserGroup{}
+	attr, err = attr.Parse(m)
+
+	if str, _ := attr.ToMapStr().String("bk_supplier_account"); str != "bk_supplier_account" || err != nil {
+		t.Fail()
 	}
 
-	err = atomFile.Abort()
-	if err != nil {
-		t.Errorf("fail to abort file:%s", err.Error())
-		return
-	}
 }

@@ -10,31 +10,26 @@
  * limitations under the License.
  */
 
-package common
+package util
 
-import (
-	"os"
-	"testing"
-)
+import "testing"
 
-func Test_AtomicFileNew(t *testing.T) {
-	atomFile, err := AtomicFileNew("./test.txt", os.FileMode(0755))
-	if err != nil {
-		t.Errorf("AtomicFileNew failed! err:%s", err.Error())
-		return
+func TestFileExists(t *testing.T) {
+	type args struct {
+		name string
 	}
-
-	defer atomFile.Close()
-
-	_, err = atomFile.Write([]byte("test"))
-	if err != nil {
-		t.Errorf("fail to write data. err:%s", err.Error())
-		return
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{"", args{"file_not_found"}, false},
 	}
-
-	err = atomFile.Abort()
-	if err != nil {
-		t.Errorf("fail to abort file:%s", err.Error())
-		return
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := FileExists(tt.args.name); got != tt.want {
+				t.Errorf("FileExists() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
