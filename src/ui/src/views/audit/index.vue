@@ -43,7 +43,7 @@
             <div class="group-content group-content-time">
                 <span class="title-name">{{$t('OperationAudit[\'时间\']')}}</span>
                 <div class="selector-content selector-content-time">
-                    <cmdb-form-date-range class="date-range" v-model="filter.bkCreateTime"></cmdb-form-date-range>
+                    <cmdb-form-date-range class="date-range" position="left" v-model="filter.bkCreateTime"></cmdb-form-date-range>
                 </div>
             </div>
             <div class="group-content group-content-btn fr">

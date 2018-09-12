@@ -7,7 +7,7 @@
             @click="editModel(model)"
         >
             <div class="content">
-                <i @click.stop="createModel(model)" class="icon-add icon-cc-round-plus" v-if="model['bk_obj_id'] !== 'biz'"></i>
+                <i @click.stop="createModel(model)" class="icon-add icon-cc-round-plus" v-if="model['bk_obj_id'] !== 'biz' && model['bk_obj_id'] !== 'module'"></i>
                 <div>
                     <i class="topo-icon" :class="model['bk_obj_icon']"></i>
                 </div>
@@ -85,6 +85,7 @@
     .topolist-wrapper{
         padding: 80px 0;
         margin: 0 auto;
+        min-height: 100%;
         li{
             position: relative;
             float: left;

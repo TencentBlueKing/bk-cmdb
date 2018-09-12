@@ -60,6 +60,9 @@
                 this.$emit('updateModel')
             },
             isCloseConfirmShow () {
+                if (this.curTabName === 'other') {
+                    return false
+                }
                 return this.$refs.tab.isCloseConfirmShow()
             }
         }
