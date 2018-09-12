@@ -37,6 +37,7 @@
                         ref="content"
                         :list="attribute.list"
                         @visible-toggle="toggleContentSelector"
+                        :content-max-height="200"
                         setting-key="bk_property_id"
                         display-key="bk_property_name"
                         :selected.sync="attribute.selected"

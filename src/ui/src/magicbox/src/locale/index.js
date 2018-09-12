@@ -3,16 +3,39 @@
  * @author ielgnaw <wuji0223@gmail.com>
  */
 
+import Vue from 'vue'
 import defaultLang from './lang/zh-CN'
+import deepmerge from '../utils/deepmerge'
 
 let curLang = defaultLang
 
+// Vue.locale = () => {}
+
+let merged = false
 /**
  * 检测是否使用 vue-i18n，如果使用了，那么会用 vue-i18n 的 $t 来取值
  */
 let i18nHandler = function () {
-    const i18n = Object.getPrototypeOf(this).$t
+    const i18n = Object.getPrototypeOf(this || Vue).$t
+    // vuei18n 6.x 没有 locale 方法
+    // if (typeof i18n === 'function' && !!Vue.locale) {
+    //     if (!merged) {
+    //         merged = true
+    //         Vue.locale(
+    //             Vue.config.lang,
+    //             deepmerge(curLang, Vue.locale(Vue.config.lang) || {}, {clone: true})
+    //         )
+    //     }
+    //     return i18n.apply(this, arguments)
+    // }
     if (typeof i18n === 'function') {
+        if (!merged && !!Vue.locale) {
+            merged = true
+            Vue.locale(
+                Vue.config.lang,
+                deepmerge(curLang, Vue.locale(Vue.config.lang) || {}, {clone: true})
+            )
+        }
         return i18n.apply(this, arguments)
     }
 }
@@ -67,7 +90,9 @@ export const t = function (path, data) {
  * @param {Object} l 使用的语言包
  */
 export const use = l => {
-    curLang = l || curLang
+    if (l) {
+        curLang = deepmerge(curLang, l)
+    }
 }
 
 /**

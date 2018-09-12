@@ -246,6 +246,13 @@ $selectorHighlight: #eef6fe;
                 border-top: none;
             }
         }
+        &.active {
+            color: $primaryColor;
+
+            .bk-selector-node {
+                background-color: $selectorHighlight;
+            }
+        }
         .bk-selector-node {
             &.is-disabled {
                 color: #c3cdd7;
