@@ -10,39 +10,55 @@
  * limitations under the License.
  */
 
-package common
+package util
 
-import "testing"
+import (
+	"configcenter/src/common"
+	"reflect"
+	"testing"
+)
 
-func TestSetIdentification(t *testing.T) {
+func TestSetQueryOwner(t *testing.T) {
 	type args struct {
-		id string
+		condition interface{}
+		ownerID   string
 	}
 	tests := []struct {
 		name string
 		args args
+		want map[string]interface{}
 	}{
-		{"", args{"id"}},
-		{"", args{"unkown"}},
+		{"", args{nil, "ownerid"}, map[string]interface{}{
+			common.BKOwnerIDField: map[string]interface{}{common.BKDBIN: []string{common.BKDefaultOwnerID, "ownerid"}},
+		}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			SetIdentification(tt.args.id)
+			if got := SetQueryOwner(tt.args.condition, tt.args.ownerID); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("SetQueryOwner() = %v, want %v", got, tt.want)
+			}
 		})
 	}
 }
 
-func TestGetIdentification(t *testing.T) {
+func TestSetModOwner(t *testing.T) {
+	type args struct {
+		condition interface{}
+		ownerID   string
+	}
 	tests := []struct {
 		name string
-		want string
+		args args
+		want map[string]interface{}
 	}{
-		{"", "unkonw"},
+		{"", args{nil, "ownerid"}, map[string]interface{}{
+			common.BKOwnerIDField: "ownerid",
+		}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := GetIdentification(); got != tt.want {
-				t.Errorf("GetIdentification() = %v, want %v", got, tt.want)
+			if got := SetModOwner(tt.args.condition, tt.args.ownerID); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("SetModOwner() = %v, want %v", got, tt.want)
 			}
 		})
 	}
