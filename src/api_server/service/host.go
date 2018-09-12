@@ -345,8 +345,15 @@ func (s *Service) updateHostModule(req *restful.Request, resp *restful.Response)
 	hostModuleParam.ApplicationID = int64(appIDInt)
 	hostModuleParam.HostID = HostID64Arr
 	if len(moduleIDArr) > 1 {
-		for moduleId := range moduleIDArr {
-			moduleName := moduleMap[moduleId].(map[string]interface{})[common.BKModuleNameField].(string)
+		for _, moduleID := range moduleIDArr {
+			moduleInfo, ok := moduleMap[moduleID].(map[string]interface{})
+			if !ok {
+				continue
+			}
+			moduleName, ok := moduleInfo[common.BKModuleNameField].(string)
+			if !ok {
+				continue
+			}
 			if moduleName == common.DefaultFaultModuleName || moduleName == common.DefaultResModuleName {
 				msg := defErr.Error(common.CCErrAPIServerV2HostModuleContainDefaultModuleErr).Error()
 				blog.Errorf("updateHostModule error: %v", msg)
