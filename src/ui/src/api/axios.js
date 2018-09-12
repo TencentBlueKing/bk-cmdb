@@ -71,9 +71,7 @@ const transformResponse = (config, data) => {
     })
     return data
 }
-const siteUrl = window.siteUrl.split('//')
-siteUrl[0] = window.location.protocol
-window.siteUrl = siteUrl.join('//')
+window.siteUrl = window.location.origin + '/'
 let axios = Axios.create({
     baseURL: `${window.siteUrl}api/${window.version}/`,
     xsrfCookieName: 'data_csrftoken',
