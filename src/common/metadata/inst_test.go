@@ -10,40 +10,21 @@
  * limitations under the License.
  */
 
-package common
+package metadata
 
 import "testing"
 
-func TestSetIdentification(t *testing.T) {
-	type args struct {
-		id string
+func TestSort(t *testing.T) {
+	sorter := HostIdentProcessSorter{
+		{BindModules: []int64{1, 2}, ProcessID: 1}, {BindModules: []int64{2, 3}, ProcessID: 2},
 	}
-	tests := []struct {
-		name string
-		args args
-	}{
-		{"", args{"id"}},
-		{"", args{"unkown"}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			SetIdentification(tt.args.id)
-		})
-	}
-}
 
-func TestGetIdentification(t *testing.T) {
-	tests := []struct {
-		name string
-		want string
-	}{
-		{"", "unkonw"},
+	sorter.Swap(0, 1)
+	if sorter.Len() != 2 {
+		t.Fail()
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := GetIdentification(); got != tt.want {
-				t.Errorf("GetIdentification() = %v, want %v", got, tt.want)
-			}
-		})
+	if sorter.Less(0, 1) {
+		t.Fail()
 	}
+
 }

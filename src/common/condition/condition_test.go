@@ -31,6 +31,7 @@ func TestCondition(t *testing.T) {
 	}
 
 	cond.SetFields([]string{})
+	cond.GetFields()
 	cond.SetStart(0)
 	if cond.GetStart() != 0 {
 		t.Fail()
