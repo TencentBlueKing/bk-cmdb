@@ -39,15 +39,16 @@ const (
 
 //bk search
 const (
-	BK_APP_SEARCH    = "biz/search"
-	BK_SET_SEARCH    = "set/search"
-	BK_MODULE_SEARCH = "module/search"
-	BK_INST_SEARCH   = "inst/search"
-	BK_HOSTS_SEARCH  = "hosts/search"
-	BK_HOSTS_SNAP    = "hosts/snapshot"
-	BK_HOSTS_HIS     = "hosts/history"
-	BK_TOPO_MODEL    = "topo/model"
-	BK_INST_ASSOCIATION_TOPO_SEARCH = "inst/association/topo/search"
+	BK_APP_SEARCH                    = "biz/search"
+	BK_SET_SEARCH                    = "set/search"
+	BK_MODULE_SEARCH                 = "module/search"
+	BK_INST_SEARCH                   = "inst/search"
+	BK_HOSTS_SEARCH                  = "hosts/search"
+	BK_HOSTS_SNAP                    = "hosts/snapshot"
+	BK_HOSTS_HIS                     = "hosts/history"
+	BK_TOPO_MODEL                    = "topo/model"
+	BK_INST_ASSOCIATION_TOPO_SEARCH  = "inst/association/topo/search"
+	BK_INST_ASSOCIATION_OWNER_SEARCH = "inst/association/search/owner"
 )
 
 //bk topo
