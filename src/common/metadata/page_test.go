@@ -10,31 +10,29 @@
  * limitations under the License.
  */
 
-package common
+package metadata
 
 import (
-	"os"
+	"reflect"
 	"testing"
 )
 
-func Test_AtomicFileNew(t *testing.T) {
-	atomFile, err := AtomicFileNew("./test.txt", os.FileMode(0755))
-	if err != nil {
-		t.Errorf("AtomicFileNew failed! err:%s", err.Error())
-		return
+func TestParsePage(t *testing.T) {
+	type args struct {
+		origin interface{}
 	}
-
-	defer atomFile.Close()
-
-	_, err = atomFile.Write([]byte("test"))
-	if err != nil {
-		t.Errorf("fail to write data. err:%s", err.Error())
-		return
+	tests := []struct {
+		name string
+		args args
+		want BasePage
+	}{
+		{"", args{map[string]interface{}{"sort": "f", "limit": 9, "start": 3}}, BasePage{Sort: "f", Limit: 9, Start: 3}},
 	}
-
-	err = atomFile.Abort()
-	if err != nil {
-		t.Errorf("fail to abort file:%s", err.Error())
-		return
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ParsePage(tt.args.origin); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ParsePage() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

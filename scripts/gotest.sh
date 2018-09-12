@@ -23,4 +23,10 @@ PACKAGES=$(go list ../src/...)
 
 #test-cover-func:
 	echo "test-cover-func"
-	go tool cover -func=coverage-all.out 
+	go tool cover -func=coverage-all.out
+
+#get total result
+	total=`go tool cover -func=coverage-all.out | tail -n 1 | awk '{print $3}'`
+	echo "total coverage: "${total}
+	
+

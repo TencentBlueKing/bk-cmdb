@@ -12,29 +12,24 @@
 
 package common
 
-import (
-	"os"
-	"testing"
-)
+import "testing"
 
-func Test_AtomicFileNew(t *testing.T) {
-	atomFile, err := AtomicFileNew("./test.txt", os.FileMode(0755))
-	if err != nil {
-		t.Errorf("AtomicFileNew failed! err:%s", err.Error())
-		return
+func TestGetInstTableName(t *testing.T) {
+	type args struct {
+		objID string
 	}
-
-	defer atomFile.Close()
-
-	_, err = atomFile.Write([]byte("test"))
-	if err != nil {
-		t.Errorf("fail to write data. err:%s", err.Error())
-		return
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{"", args{BKInnerObjIDApp}, BKTableNameBaseApp},
 	}
-
-	err = atomFile.Abort()
-	if err != nil {
-		t.Errorf("fail to abort file:%s", err.Error())
-		return
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetInstTableName(tt.args.objID); got != tt.want {
+				t.Errorf("GetInstTableName() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
