@@ -79,7 +79,7 @@
                         'bk_obj_id': this.objId
                     },
                     config: {
-                        requestId: `get_${this.objId}_attribute`,
+                        requestId: `post_searchObjectAttribute_${this.objId}`,
                         fromCache: true
                     }
                 })

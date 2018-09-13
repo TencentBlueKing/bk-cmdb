@@ -89,7 +89,13 @@
                 'searchObjectAttribute'
             ]),
             async getBusinessRoles () {
-                const res = await this.searchObjectAttribute({params: {bk_obj_id: 'biz'}, config: {fromCache: true}})
+                const res = await this.searchObjectAttribute({
+                    params: {bk_obj_id: 'biz'},
+                    config: {
+                        requestId: 'post_searchObjectAttribute_biz',
+                        fromCache: true
+                    }
+                })
                 let roles = []
                 res.map(role => {
                     if (role['bk_property_type'] === 'objuser') {

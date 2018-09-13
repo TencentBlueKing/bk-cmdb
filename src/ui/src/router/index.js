@@ -155,7 +155,7 @@ const hasPrivilegeBusiness = () => {
 
 router.beforeEach(async (to, from, next) => {
     try {
-        if (to.path !== '/error') {
+        if (to.path !== '/status-error') {
             router.app.$store.commit('setGlobalLoading', true)
             await cancelRequest()
             await preload(router.app)
@@ -184,6 +184,7 @@ router.beforeEach(async (to, from, next) => {
             next()
         }
     } catch (e) {
+        console.log(e)
         next({
             path: '/status-error',
             query: {

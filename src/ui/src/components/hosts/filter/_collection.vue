@@ -39,7 +39,7 @@
                     v-click-outside="handleCancelDelete">
                     <p class="confirm-title">{{$t('Hosts[\'确认删除\']')}}</p>
                     <bk-button class="confirm-btn" size="small" type="primary"
-                        :loading="$loading(`delete_collection_${collection.id}`)"
+                        :loading="$loading(`delete_deleteFavorites_${collection.id}`)"
                         @click.stop="handleDeleteCollection(collection)">
                         {{$t('Hosts[\'确认\']')}}
                     </bk-button>
@@ -171,7 +171,7 @@
                 this.deleteFavorites({
                     id: deleteCollection.id,
                     config: {
-                        requestId: `delete_collection_${deleteCollection.id}`,
+                        requestId: `delete_deleteFavorites_${deleteCollection.id}`,
                         fromCache: true
                     }
                 }).then(() => {

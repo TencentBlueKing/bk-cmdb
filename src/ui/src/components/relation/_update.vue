@@ -220,7 +220,7 @@
                         'bk_supplier_account': this.supplierAccount
                     },
                     config: {
-                        requestId: `get_${objId}_attribute`,
+                        requestId: `post_searchObjectAttribute_${objId}`,
                         fromCache: true
                     }
                 }).then(properties => {
@@ -269,7 +269,7 @@
                     objId: this.objId,
                     instId: this.instId,
                     config: {
-                        requestId: `get_${this.objId}_${this.instId}_relation`,
+                        requestId: `get_getInstRelation_${this.objId}_${this.instId}`,
                         fromCache: true,
                         ...config
                     }

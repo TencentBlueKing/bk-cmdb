@@ -39,7 +39,7 @@
             </div>
         </div>
         <cmdb-table class="business-table" ref="table"
-            :loading="$loading('requestBusiness')"
+            :loading="$loading('post_searchBusiness_list')"
             :header="table.header"
             :list="table.list"
             :pagination.sync="table.pagination"
@@ -179,7 +179,7 @@
                         bk_supplier_account: this.supplierAccount
                     },
                     config: {
-                        requestId: 'bizAttribute',
+                        requestId: 'post_searchObjectAttribute_biz',
                         fromCache: true
                     }
                 })
@@ -202,7 +202,7 @@
                     objId: 'biz',
                     config: {
                         fromCache: true,
-                        requestId: 'searchBizGroup'
+                        requestId: 'post_searchGroup_biz'
                     }
                 }).then(groups => {
                     this.propertyGroups = groups
@@ -259,7 +259,7 @@
             getBusinessList (config = {cancelPrevious: true}) {
                 return this.searchBusiness({
                     params: this.getSearchParams(),
-                    config: Object.assign({requestId: 'requestBusiness'}, config)
+                    config: Object.assign({requestId: 'post_searchBusiness_list'}, config)
                 })
             },
             getTableData () {
