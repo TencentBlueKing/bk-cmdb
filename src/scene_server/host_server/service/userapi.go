@@ -220,7 +220,7 @@ func (s *Service) GetUserCustomQueryResult(req *restful.Request, resp *restful.R
 	}
 
 	if "" == result.Data.Name {
-		blog.Errorf("UserAPIResult custom query failed,  err: %v, appid:%s, id:%s, logID:%s", err.Error(), appID, ID, util.GetHTTPCCRequestID(req.Request.Header))
+		blog.Errorf("UserAPIResult custom query not found, appid:%s, id:%s, logID:%s", appID, ID, util.GetHTTPCCRequestID(req.Request.Header))
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommNotFound)})
 		return
 	}
