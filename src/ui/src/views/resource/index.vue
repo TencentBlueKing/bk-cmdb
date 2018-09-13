@@ -333,15 +333,9 @@
                                 }
                             }
                         }).then(() => {
-                            this.$bkInfo({
-                                statusOpts: {
-                                    title: this.$t("HostResourcePool['成功删除选中的主机']"),
-                                    subtitle: false
-                                },
-                                type: 'success'
-                            })
-                            this.table.checked = []
-                            this.handlePageChange(1)
+                            this.$success(this.$t("HostResourcePool['成功删除选中的主机']"))
+                            this.$refs.resourceTable.table.checked = []
+                            this.$refs.resourceTable.handlePageChange(1)
                         })
                     }
                 })

@@ -284,7 +284,6 @@
                 if (this.searchable && this.condition) {
                     const arr = []
                     const key = this.searchKey
-
                     const len = this.list.length
                     for (let i = 0; i < len; i++) {
                         const item = this.list[i]

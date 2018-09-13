@@ -8,33 +8,46 @@ import moment from 'moment'
 export function flatternList (properties, list) {
     if (!list.length) return list
     const flatternedList = clone(list)
-    properties.forEach(property => {
-        flatternedList.forEach((item, index) => {
-            flatternedList[index] = flatternItem(property, item)
-        })
+    flatternedList.forEach((item, index) => {
+        flatternedList[index] = flatternItem(properties, item)
     })
     return flatternedList
 }
 
 /**
  * 拍平实例具体的属性
- * @param {Object} property - 模型具体属性
+ * @param {Object} properties - 模型具体属性
  * @param {Object} item - 模型实例
  * @return {Object} 拍平后的模型实例
  */
-export function flatternItem (property, item) {
+export function flatternItem (properties, item) {
     const flatternedItem = clone(item)
+    properties.forEach(property => {
+        flatternedItem[property['bk_property_id']] = getPropertyText(property, flatternedItem)
+    })
+    return flatternedItem
+}
+
+/**
+ * 获取实例中某个属性的展示值
+ * @param {Object} property - 模型具体属性
+ * @param {Object} item - 模型实例
+ * @return {String} 拍平后的模型属性对应的值
+ */
+
+export function getPropertyText (property, item) {
     const propertyId = property['bk_property_id']
     const propertyType = property['bk_property_type']
+    let propertyValue = item[propertyId]
     if (propertyType === 'enum') {
-        const enumOption = (property.option || []).find(option => option.id === flatternedItem[propertyId])
-        flatternedItem[propertyId] = enumOption ? enumOption.name : null
+        const enumOption = (property.option || []).find(option => option.id === propertyValue)
+        propertyValue = enumOption ? enumOption.name : null
     } else if (['singleasst', 'multiasst'].includes(propertyType)) {
-        flatternedItem[propertyId] = (flatternedItem[propertyId] || []).map(inst => inst['bk_inst_name']).join(',')
+        propertyValue = (propertyValue || []).map(inst => inst['bk_inst_name']).join(',')
     } else if (['date', 'time'].includes(propertyType)) {
-        flatternedItem[propertyId] = formatTime(flatternedItem[propertyId], propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
+        propertyValue = formatTime(propertyValue, propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
     }
-    return flatternedItem
+    return propertyValue || '--'
 }
 
 /**
@@ -46,13 +59,8 @@ export function flatternItem (property, item) {
 export function flatternHostList (properties, list) {
     if (!list.length) return list
     const flatternedList = clone(list)
-    const objIds = Object.keys(properties)
-    objIds.forEach(objId => {
-        properties[objId].forEach(property => {
-            flatternedList.forEach((item, index) => {
-                flatternedList[index] = flatternHostItem(property, item)
-            })
-        })
+    flatternedList.forEach((item, index) => {
+        flatternedList[index] = flatternHostItem(properties, item)
     })
     return flatternedList
 }
@@ -63,61 +71,17 @@ export function flatternHostList (properties, list) {
  * @param {Object} item - 模型实例
  * @return {Object} 拍平后的模型实例
  */
-export function flatternHostItem (property, item) {
+export function flatternHostItem (properties, item) {
     const flatternedItem = clone(item)
-    const objId = property['bk_obj_id']
-    const propertyId = property['bk_property_id']
-    const propertyType = property['bk_property_type']
-    if (propertyType === 'enum') {
-        if (flatternedItem[objId] instanceof Array) {
-            flatternedItem[objId].forEach(subItem => {
-                const enumOption = (property.option || []).find(option => option.id === subItem[propertyId])
-                subItem[propertyId] = enumOption ? enumOption.name : null
+    for (let objId in properties) {
+        properties[objId].forEach(property => {
+            const originalValue = item[objId] instanceof Array ? item[objId] : [item[objId]]
+            originalValue.forEach(value => {
+                value[property['bk_property_id']] = getPropertyText(property, value)
             })
-        } else {
-            const enumOption = (property.option || []).find(option => option.id === flatternedItem[objId][propertyId])
-            flatternedItem[objId][propertyId] = enumOption ? enumOption.name : null
-        }
-    } else if (['singleasst', 'multiasst'].includes(propertyType)) {
-        if (flatternedItem[objId] instanceof Array) {
-            flatternedItem[objId].forEach(subItem => {
-                subItem[propertyId] = (subItem[propertyId] || []).map(inst => inst['bk_inst_name']).join(',')
-            })
-        } else {
-            flatternedItem[objId][propertyId] = (flatternedItem[objId][propertyId] || []).map(inst => inst['bk_inst_name']).join(',')
-        }
-    } else if (['date', 'time'].includes(propertyType)) {
-        if (flatternedItem[objId] instanceof Array) {
-            flatternedItem[objId].forEach(subItem => {
-                subItem[propertyId] = formatTime(subItem[propertyId], propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
-            })
-        } else {
-            flatternedItem[objId][propertyId] = formatTime(flatternedItem[objId][propertyId], propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
-        }
+        })
     }
     return flatternedItem
-}
-
-/**
- * 获取主机表格展示的文本
- * @param {Object} inst - 主机实例
- * @param {String} objId - 主机属性模型ID
- * @param {String} propertyId - 属性ID
- * @return {Object} 实例真实值
- */
-export function getHostCellText (inst, objId, propertyId) {
-    const valueObj = inst[objId]
-    const values = []
-    if (valueObj instanceof Array) {
-        valueObj.forEach(value => {
-            if (!['', null].includes(value[propertyId])) {
-                values.push(value[propertyId])
-            }
-        })
-    } else {
-        values.push(valueObj[propertyId])
-    }
-    return values.join(',') || '--'
 }
 
 /**
@@ -270,6 +234,7 @@ export function clone (object) {
 
 export default {
     getProperty,
+    getPropertyText,
     getPropertyPriority,
     getEnumOptions,
     getDefaultHeaderProperties,
@@ -279,7 +244,6 @@ export default {
     flatternItem,
     flatternHostList,
     flatternHostItem,
-    getHostCellText,
     formatTime,
     clone,
     getInstFormValues

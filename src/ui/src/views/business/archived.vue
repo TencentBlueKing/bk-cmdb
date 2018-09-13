@@ -92,10 +92,10 @@
                     }
                 }).then(business => {
                     this.pagination.count = business.count
-                    this.list = business.info.map(biz => {
+                    this.list = this.$tools.flatternList(this.properties, business.info.map(biz => {
                         biz['last_time'] = this.$tools.formatTime(biz['last_time'], 'YYYY-MM-DD HH:mm:ss')
                         return biz
-                    })
+                    }))
                 })
             },
             getSearchParams () {

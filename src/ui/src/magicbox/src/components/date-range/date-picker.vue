@@ -140,7 +140,8 @@
         data () {
             return {
                 BkDate: this.bkDate,
-                selectedValue: this.initDate
+                selectedValue: this.initDate,
+                currentDate: new Date()
             }
         },
         computed: {
@@ -256,7 +257,12 @@
                     month: this.BkDate.month,
                     day: value
                 }
-                let isToday = JSON.stringify(currentSelectedDate) === JSON.stringify(this.BkDate.currentDay)
+                const current = {
+                    year: this.currentDate.getFullYear(),
+                    month: this.currentDate.getMonth() + 1,
+                    day: this.currentDate.getDate()
+                }
+                let isToday = JSON.stringify(currentSelectedDate) === JSON.stringify(current)
                 if (isToday) {
                     return this.t('dateRange.datePicker.today')
                 }
