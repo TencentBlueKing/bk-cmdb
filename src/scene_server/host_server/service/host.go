@@ -651,7 +651,7 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 	}
 
 	if 0 == len(hostResult) {
-		blog.Errorf("no host in set")
+		blog.Warnf("no host in set")
 		resp.WriteEntity(meta.NewSuccessResp(nil))
 		return
 	}
