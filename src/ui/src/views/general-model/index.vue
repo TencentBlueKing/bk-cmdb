@@ -259,7 +259,7 @@
                             bk_supplier_account: this.supplierAccount
                         },
                         config: {
-                            requestId: `${this.objId}Attribute`,
+                            requestId: `post_searchObjectAttribute_${this.objId}`,
                             fromCache: true
                         }
                     })
@@ -293,7 +293,7 @@
                     objId: this.objId,
                     config: {
                         fromCache: true,
-                        requestId: `${this.objId}AttributeGroup`
+                        requestId: `post_searchGroup_${this.objId}`
                     }
                 }).then(groups => {
                     this.propertyGroups = groups
@@ -360,7 +360,7 @@
                 return this.searchInst({
                     objId: this.objId,
                     params: this.getSearchParams(),
-                    config: Object.assign({requestId: `${this.objId}List`}, config)
+                    config: Object.assign({requestId: `post_searchInst_${this.objId}`}, config)
                 })
             },
             getAllInstList () {

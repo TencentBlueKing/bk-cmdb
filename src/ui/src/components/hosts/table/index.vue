@@ -293,7 +293,7 @@
                         bk_supplier_account: this.supplierAccount
                     },
                     config: {
-                        requestId: 'hostsAttribute',
+                        requestId: `post_batchSearchObjectAttribute_${Object.keys(this.properties).join('_')}`,
                         fromCache: true
                     }
                 }).then(result => {
@@ -308,7 +308,7 @@
                     objId: 'host',
                     config: {
                         fromCache: true,
-                        requestId: 'hostAttributeGroup'
+                        requestId: 'post_searchGroup_host'
                     }
                 }).then(groups => {
                     this.propertyGroups = groups

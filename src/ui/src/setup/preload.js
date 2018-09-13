@@ -4,11 +4,19 @@ const preloadConfig = {
 }
 
 function _preloadPrivilege (app) {
-    return app.$store.dispatch('userPrivilege/getUserPrivilege', preloadConfig)
+    return app.$store.dispatch('userPrivilege/getUserPrivilege', {
+        ...preloadConfig,
+        requestId: 'get_getUserPrivilege'
+    })
 }
 
 function _preloadClassifications (app) {
-    return app.$store.dispatch('objectModelClassify/searchClassificationsObjects', {config: preloadConfig})
+    return app.$store.dispatch('objectModelClassify/searchClassificationsObjects', {
+        config: {
+            ...preloadConfig,
+            requestId: 'post_searchClassificationsObjects'
+        }
+    })
 }
 
 function _preloadBusiness (app) {
@@ -21,7 +29,10 @@ function _preloadBusiness (app) {
                 }
             }
         },
-        config: preloadConfig
+        config: {
+            ...preloadConfig,
+            requestId: 'post_searchBusiness_$ne_disabled'
+        }
     }).then(business => {
         app.$store.commit('objectBiz/setBusiness', business.info)
         return business
@@ -30,7 +41,10 @@ function _preloadBusiness (app) {
 
 function _preloadUserCustom (app) {
     return app.$store.dispatch('userCustom/searchUsercustom', {
-        config: preloadConfig
+        config: {
+            ...preloadConfig,
+            requestId: 'post_searchUsercustom'
+        }
     })
 }
 

@@ -82,8 +82,8 @@
                         bk_supplier_account: this.supplierAccount
                     },
                     config: {
-                        requestId: `${this.objId}Attribute`,
-                        fromCache: false
+                        requestId: `post_searchObjectAttribute_${this.objId}`,
+                        fromCache: true
                     }
                 })
                 await this.setTableHeader()
