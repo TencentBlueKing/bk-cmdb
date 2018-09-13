@@ -123,6 +123,10 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapS
 				continue
 			}
 
+			if targetAttr.PropertyID == common.BKChildStr || targetAttr.PropertyID == common.BKInstParentStr {
+				continue
+			}
+
 			if 0 == len(targetAttr.PropertyGroupName) {
 				targetAttr.PropertyGroup = "Default"
 			}
