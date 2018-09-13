@@ -350,9 +350,13 @@
                 const objId = header.objId
                 const propertyId = header.id
                 const headerProperty = this.$tools.getProperty(this.properties[objId], propertyId)
-                const flatternedItem = this.$tools.flatternHostItem(headerProperty, item)
-                const text = this.$tools.getHostCellText(flatternedItem, objId, propertyId)
-                return text
+                const originalValues = item[objId] instanceof Array ? item[objId] : [item[objId]]
+                let text = []
+                originalValues.forEach(value => {
+                    const flatternedText = this.$tools.getPropertyText(headerProperty, value)
+                    flatternedText ? text.push(flatternedText) : void (0)
+                })
+                return text.join(',') || '--'
             },
             getHostList () {
                 this.searchHost({
@@ -445,7 +449,7 @@
                 this.table.checked = list.map(item => item['host']['bk_host_id'])
             },
             handleRowClick (item) {
-                const inst = item['host']
+                const inst = this.$tools.flatternItem(this.properties['host'], item['host'])
                 this.slider.show = true
                 this.slider.title = `${this.$t("Common['编辑']")} ${inst['bk_host_innerip']}`
                 this.tab.attribute.inst.details = inst

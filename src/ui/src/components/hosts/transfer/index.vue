@@ -120,7 +120,7 @@
                 'getInternalTopo'
             ]),
             ...mapActions('hostRelation', [
-                'transferHostToResourcemodule',
+                'transferHostToResourceModule',
                 'transferHostToIdleModule',
                 'transferHostToFaultModule',
                 'transferHostModule'
@@ -275,7 +275,7 @@
                 })
             },
             transferToSource (config) {
-                return this.transferHostToResourcemodule({
+                return this.transferHostToResourceModule({
                     params: {
                         'bk_biz_id': this.businessId,
                         'bk_host_id': this.hostIds
