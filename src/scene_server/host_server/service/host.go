@@ -563,7 +563,7 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 		return
 	}
 	if 0 == len(hostList.ModuleID) {
-		blog.Errorf("host sync app %d not found, reply:%v", hostList.ApplicationID, appInfo)
+		blog.Errorf("host sync app  parameters required moduleID", hostList.ApplicationID)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, common.BKModuleIDField)})
 		return
 	}
