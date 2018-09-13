@@ -140,7 +140,7 @@
         },
         methods: {
             getMemberList () {
-                return this.$http.get(`${window.API_BASE_URL}user/list?_t=${(new Date()).getTime()}`, {
+                return this.$http.get(`${window.API_HOST}user/list?_t=${(new Date()).getTime()}`, {
                     requestId: 'getMemberList',
                     fromCache: true,
                     cancelWhenRouteChange: false

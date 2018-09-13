@@ -108,8 +108,7 @@
         },
         computed: {
             ...mapGetters([
-                'supplierAccount',
-                'site'
+                'supplierAccount'
             ]),
             ...mapGetters('objectModel', [
                 'activeModel'
@@ -118,7 +117,7 @@
                 return this.activeModel['bk_ispaused']
             },
             exportUrl () {
-                return `${this.site.url}object/owner/${this.supplierAccount}/object/${this.activeModel['bk_obj_id']}/export`
+                return `${window.API_HOST}object/owner/${this.supplierAccount}/object/${this.activeModel['bk_obj_id']}/export`
             }
         },
         created () {

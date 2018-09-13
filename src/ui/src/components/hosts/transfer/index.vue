@@ -1,5 +1,5 @@
 <template>
-    <div class="transfer-layout clearfix" v-bkloading="{isLoading: $loading(['getInstTopo','getInternalTopo', 'transferHost'])}">
+    <div class="transfer-layout clearfix" v-bkloading="{isLoading: loading}">
         <div class="columns-layout fl">
             <div class="business-layout">
                 <label class="business-label">{{$t('Common[\'业务\']')}}</label>
@@ -100,6 +100,15 @@
                 const isMoreThanOne = this.selectedHosts.length > 1
                 const hasSpecialModule = this.selectedModuleStates.some(({node}) => node['bk_inst_id'] === 'source' || [1, 2].includes(node.default))
                 return !!this.selectedModuleStates.length && isMoreThanOne && !hasSpecialModule
+            },
+            loading () {
+                const requestIds = [
+                    'get_searchMainlineObject',
+                    `get_getInstTopo_${this.businessId}`,
+                    `get_getInternalTopo_${this.businessId}`,
+                    'post_transferHost'
+                ]
+                return this.$loading(requestIds)
             }
         },
         watch: {
@@ -126,7 +135,10 @@
                 'transferHostModule'
             ]),
             getMainlineModel () {
-                return this.searchMainlineObject({fromCache: true}).then(topoModel => {
+                return this.searchMainlineObject({
+                    requestId: 'get_searchMainlineObject',
+                    fromCache: true
+                }).then(topoModel => {
                     this.topoModel = topoModel
                     return topoModel
                 })
@@ -136,14 +148,14 @@
                     this.getInstTopo({
                         bizId: this.businessId,
                         config: {
-                            requestId: 'getInstTopo',
+                            requestId: `get_getInstTopo_${this.businessId}`,
                             fromCache: true
                         }
                     }),
                     this.getInternalTopo({
                         bizId: this.businessId,
                         config: {
-                            requestId: 'getInternalTopo',
+                            requestId: `get_getInternalTopo_${this.businessId}`,
                             fromCache: true
                         }
                     })

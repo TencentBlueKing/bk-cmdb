@@ -26,9 +26,6 @@ Vue.use(Router)
 const router = new Router({
     linkActiveClass: 'active',
     routes: [{
-        path: '/error',
-        component: error
-    }, {
         path: '/',
         redirect: '/index'
     }, {
@@ -111,14 +108,20 @@ const router = new Router({
             ignoreAuthorize: true
         }
     }, {
+        path: '/status-403',
+        components: require('@/views/status/403'),
+        meta: {
+            ignoreAuthorize: true
+        }
+    }, {
         path: '/status-404',
         components: require('@/views/status/404'),
         meta: {
             ignoreAuthorize: true
         }
     }, {
-        path: '/status-403',
-        components: require('@/views/status/403'),
+        path: '/status-error',
+        component: error,
         meta: {
             ignoreAuthorize: true
         }
@@ -155,7 +158,7 @@ const hasPrivilegeBusiness = () => {
 
 router.beforeEach(async (to, from, next) => {
     try {
-        if (to.path !== '/error') {
+        if (to.path !== '/status-error') {
             router.app.$store.commit('setGlobalLoading', true)
             await cancelRequest()
             await preload(router.app)

@@ -5,7 +5,7 @@
             :list="list"
             :defaultSort="defaultSort"
             :pagination.sync="pagination"
-            :loading="$loading(['getProcessAttribute', 'searchProcess'])"
+            :loading="$loading(['post_searchObjectAttribute_process', 'searchProcess'])"
             :wrapperMinusHeight="minusHeight"
             @handlePageChange="handlePageChange"
             @handleSizeChange="handleSizeChange"
@@ -78,7 +78,7 @@
                         'bk_supplier_account': this.supplierAccount
                     },
                     config: {
-                        requestId: 'getProcessAttribute',
+                        requestId: 'post_searchObjectAttribute_process',
                         fromCache: true
                     }
                 })
