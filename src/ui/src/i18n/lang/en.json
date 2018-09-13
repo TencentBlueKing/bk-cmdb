@@ -172,7 +172,7 @@
         "推送成功": "Success",
         "推送失败": "Push Failed",
         "已选择": "{number} selected",
-        "至少选择1个事件": "Select at least 1 events",
+        "至少选择1个事件": "Select at least 1 events,",
         "新增主机": "Add Host",
         "删除主机": "Delete Host",
         "模块转移": "Module Transfer",
@@ -392,7 +392,8 @@
         "修改人": "Modified Person",
         "修改时间": "Update Time",
         "查询定义": "Query Definition",
-        "确认要删除": "Confirm to delete {name}?"
+        "确认要删除": "Confirm to delete {name}?",
+        "保存后的查询可通过接口调用生效": "The saved query can be validated through an interface call"
     },
     "ProcessManagement": {
         "进程管理": "Process Manage",
