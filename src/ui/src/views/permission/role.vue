@@ -31,19 +31,13 @@
             </template>  
         </cmdb-table>
         <v-role-form 
+            ref="roleForm"
             v-if="form.isShow"
             :data="form.data" 
             :type="form.type"
             @on-success="handleCreateSuccess"
             @closeRoleForm="form.isShow = false">
         </v-role-form>
-        <bk-dialog 
-            :has-header="false" 
-            :is-show="deleteInfo.isShow" 
-            :content="deleteInfo.content"
-            @confirm="deleteRole(deleteInfo.role)"
-            @cancel="cancelDeleteRole">
-        </bk-dialog>
     </div>
 </template>
 
@@ -56,11 +50,6 @@
                 filter: {
                     group_name: '',
                     user_list: ''
-                },
-                deleteInfo: {
-                    isShow: false,
-                    content: '',
-                    role: null
                 },
                 table: {
                     header: [{
@@ -104,22 +93,23 @@
             handleCreateSuccess () {
                 this.filter.group_name = ''
                 this.filter.user_list = ''
+                this.$refs.roleForm.closeRoleForm()
                 this.$nextTick(() => {
                     this.getRoleList()
                 })
             },
             confirmDeleteRole (role) {
-                this.deleteInfo.content = this.$tc('Permission["确认删除角色"]', role['group_name'], {name: role['group_name']})
-                this.deleteInfo.role = role
-                this.deleteInfo.isShow = true
+                this.$bkInfo({
+                    title: this.$tc('Permission["确认删除角色"]', role['group_name'], {name: role['group_name']}),
+                    confirmFn: () => {
+                        this.deleteRole(role)
+                    }
+                })
             },
             async deleteRole (role) {
                 await this.deleteUserGroup({bkGroupId: role['group_id']})
                 this.$success(this.$t('Permission["删除成功"]'))
                 this.getRoleList()
-            },
-            cancelDeleteRole () {
-                this.deleteInfo.isShow = false
             },
             editRole (role) {
                 this.form.data = Object.assign({}, role, {'user_list': role['user_list'].split(';').join(',')})
