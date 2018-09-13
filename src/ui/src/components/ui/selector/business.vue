@@ -33,6 +33,11 @@
         watch: {
             localSelected (localSelected) {
                 window.localStorage.setItem('selectedBusiness', localSelected)
+                if (this.$route.meta.requireBusiness) {
+                    this.$http.setHeader('bk_biz_id', localSelected)
+                } else {
+                    this.$http.deleteHeader('bk_biz_id')
+                }
                 this.$emit('input', localSelected)
                 this.$emit('on-select', localSelected)
             },
@@ -42,6 +47,9 @@
                 }
             }
         },
+        beforeCreate () {
+            this.$http.deleteHeader('bk_biz_id')
+        },
         async created () {
             await this.getPrivilegeBusiness()
             if (this.privilegeBusiness.length) {
@@ -49,6 +57,9 @@
             } else {
                 this.$error(this.$t('Common["您没有业务权限"]'))
             }
+        },
+        beforeDestroy () {
+            this.$http.deleteHeader('bk_biz_id')
         },
         methods: {
             getPrivilegeBusiness () {
