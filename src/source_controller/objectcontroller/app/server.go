@@ -16,19 +16,16 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strconv"
 	"time"
 
-	"configcenter/src/common/blog"
-
 	restful "github.com/emicklei/go-restful"
-	redis "gopkg.in/redis.v5"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/source_controller/objectcontroller/app/options"
@@ -107,26 +104,9 @@ type ObjectController struct {
 }
 
 func (h *ObjectController) onObjectConfigUpdate(previous, current cc.ProcessConfig) {
-
-	mongocfg := mongo.Config{
-		Address:      current.ConfigMap["mongodb.address"],
-		User:         current.ConfigMap["mongodb.usr"],
-		Password:     current.ConfigMap["mongodb.pwd"],
-		Database:     current.ConfigMap["mongodb.database"],
-		MaxOpenConns: current.ConfigMap["mongodb.maxOpenConns"],
-		MaxIdleConns: current.ConfigMap["mongodb.maxIDleConns"],
-		Mechanism:    current.ConfigMap["mongodb.mechanism"],
-	}
-
-	rediscfg := dalredis.Config{
-		Address:  current.ConfigMap["redis.address"],
-		Password: current.ConfigMap["redis.pwd"],
-		Database: current.ConfigMap["redis.database"],
-	}
-
 	h.Config = &options.Config{
-		Mongo: mongocfg,
-		Redis: rediscfg,
+		Mongo: mongo.ParseConfigFromKV("mongodb", current.ConfigMap),
+		Redis: dalredis.ParseConfigFromKV("redis", current.ConfigMap),
 	}
 
 	instance, err := mongo.NewMgo(h.Config.Mongo.BuildURI())
@@ -136,26 +116,12 @@ func (h *ObjectController) onObjectConfigUpdate(previous, current cc.ProcessConf
 	}
 	h.Service.Instance = instance
 
-	rdsc := h.Config.Redis
-	dbNum, err := strconv.Atoi(rdsc.Database)
-	//not set use default db num 0
-	if nil != err {
-		blog.Errorf("redis config db[%s] not integer", rdsc.Database)
-		return
-	}
-	h.Cache = redis.NewClient(
-		&redis.Options{
-			Addr:     rdsc.Address,
-			PoolSize: 100,
-			Password: rdsc.Password,
-			DB:       dbNum,
-		})
-	err = h.Cache.Ping().Err()
+	cache, err := dalredis.NewFromConfig(h.Config.Redis)
 	if err != nil {
 		blog.Errorf("new redis client failed, err: %v", err)
 		return
 	}
-
+	h.Cache = cache
 }
 
 func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
