@@ -107,7 +107,6 @@ func (lgc *Logics) GetSetIDByObjectCond(pheader http.Header, appID int64, object
 	condition := make([]meta.ConditionItem, 0)
 
 	instItem := meta.ConditionItem{}
-	nodefaultItem := meta.ConditionItem{}
 	for _, i := range objectCond {
 		if i.Field != common.BKInstIDField {
 			continue
@@ -120,13 +119,14 @@ func (lgc *Logics) GetSetIDByObjectCond(pheader http.Header, appID int64, object
 		instItem.Operator = i.Operator
 		instItem.Value = i.Value
 
-		nodefaultItem.Field = common.BKDefaultField
-		nodefaultItem.Operator = common.BKDBNE
-		nodefaultItem.Value = i.Value
-
 		objectIDArr = append(objectIDArr, value)
 	}
 	condition = append(condition, instItem)
+
+	nodefaultItem := meta.ConditionItem{}
+	nodefaultItem.Field = common.BKDefaultField
+	nodefaultItem.Operator = common.BKDBNE
+	nodefaultItem.Value = common.DefaultResSetFlag
 
 	appIDItem := meta.ConditionItem{
 		Field:    common.BKAppIDField,
