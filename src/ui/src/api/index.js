@@ -38,6 +38,12 @@ const $http = {
     },
     cancel: requestId => {
         return Promise.all([$http.cancelRequest(requestId), $http.cancelCache(requestId)])
+    },
+    setHeader: (key, value) => {
+        axiosInstance.defaults.headers[key] = value
+    },
+    deleteHeader: key => {
+        delete axiosInstance.defaults.headers[key]
     }
 }
 
