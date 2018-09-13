@@ -203,7 +203,7 @@
                     },
                     defaultSort: 'bk_host_id',
                     sort: 'bk_host_id',
-                    exportUrl: `${window.Site.url}hosts/export`,
+                    exportUrl: `${window.API_HOST}hosts/export`,
                     tableMinusHeight: 200
                 },
                 filter: {
@@ -293,7 +293,7 @@
                         bk_supplier_account: this.supplierAccount
                     },
                     config: {
-                        requestId: 'hostsAttribute',
+                        requestId: `post_batchSearchObjectAttribute_${Object.keys(this.properties).join('_')}`,
                         fromCache: true
                     }
                 }).then(result => {
@@ -308,7 +308,7 @@
                     objId: 'host',
                     config: {
                         fromCache: true,
-                        requestId: 'hostAttributeGroup'
+                        requestId: 'post_searchGroup_host'
                     }
                 }).then(groups => {
                     this.propertyGroups = groups

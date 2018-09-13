@@ -1,7 +1,7 @@
 <template>
     <div class="topology-layout clearfix">
         <cmdb-resize-layout class="tree-layout fl"
-            v-bkloading="{isLoading: $loading(['getInstTopo', 'getInternalTopo'])}"
+            v-bkloading="{isLoading: $loading([`get_getInstTopo_${business}`, `get_getInternalTopo_${business}`])}"
             direction="right"
             :handler-offset="3"
             :min="200"
@@ -227,7 +227,7 @@
                         bk_supplier_account: this.supplierAccount
                     },
                     config: {
-                        requestId: 'hostsAttribute',
+                        requestId: `post_batchSearchObjectAttribute_${Object.keys(this.properties).join('_')}`,
                         fromCache: true
                     }
                 }).then(result => {
@@ -249,7 +249,7 @@
                         'bk_supplier_account': this.supplierAccount
                     },
                     config: {
-                        requestId: `${objId}Attribute`,
+                        requestId: `post_searchObjectAttribute_${objId}`,
                         fromCache: true
                     }
                 }).then(properties => {
@@ -264,7 +264,7 @@
                     objId,
                     config: {
                         fromCache: true,
-                        requestId: `${objId}AttributeGroup`
+                        requestId: `post_searchGroup_${objId}`
                     }
                 }).then(groups => {
                     this.tab.propertyGroups = groups
@@ -325,7 +325,10 @@
                 })
             },
             getMainlineModel () {
-                return this.searchMainlineObject({fromCache: true}).then(topoModel => {
+                return this.searchMainlineObject({
+                    requestId: 'get_searchMainlineObject',
+                    fromCache: true
+                }).then(topoModel => {
                     this.topoModel = topoModel
                     return topoModel
                 })
@@ -335,14 +338,14 @@
                     this.getInstTopo({
                         bizId: this.business,
                         config: {
-                            requestId: 'getInstTopo',
+                            requestId: `get_getInstTopo_${this.business}`,
                             cancelPrevious: true
                         }
                     }),
                     this.getInternalTopo({
                         bizId: this.business,
                         config: {
-                            requestId: 'getInternalTopo',
+                            requestId: `get_getInternalTopo_${this.business}`,
                             cancelPrevious: true
                         }
                     })
