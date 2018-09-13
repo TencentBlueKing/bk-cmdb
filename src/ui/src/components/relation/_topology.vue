@@ -153,7 +153,7 @@
                 this.legends = node.legends
             },
             getRelation (objId, instId, node = null) {
-                this.getRelationRequestId = `get_${objId}_${instId}_relation`
+                this.getRelationRequestId = `get_getInstRelation_${objId}_${instId}`
                 return this.getInstRelation({
                     objId,
                     instId,
@@ -448,7 +448,7 @@
                         'bk_obj_id': objId
                     },
                     config: {
-                        requestId: `get_${objId}_attribute`,
+                        requestId: `post_searchObjectAttribute_${objId}`,
                         fromCache: true
                     }
                 })

@@ -15,7 +15,7 @@
                 </div>
             </div>
             <cmdb-table
-                :loading="$loading(`searchObjectAttribute${objId}`)"
+                :loading="$loading(`post_searchObjectAttribute_${objId}`)"
                 :sortable="false"
                 :width="width? width : 700"
                 :wrapperMinusHeight="300"
@@ -210,7 +210,7 @@
                         bk_obj_id: this.objId
                     },
                     config: {
-                        requestId: `searchObjectAttribute${this.objId}`,
+                        requestId: `post_searchObjectAttribute_${this.objId}`,
                         fromCache: true
                     }
                 })

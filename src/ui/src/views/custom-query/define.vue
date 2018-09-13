@@ -1,5 +1,12 @@
 <template>
-    <div class="define-wrapper" v-bkloading="{isLoading: $loading(['hostsAttribute', 'setAttribute', 'moduleAttribute', 'getUserAPIDetail'])}">
+    <div class="define-wrapper" v-bkloading="{
+        isLoading: $loading([
+            'post_searchObjectAttribute_host',
+            'post_searchObjectAttribute_set',
+            'post_searchObjectAttribute_module',
+            'getUserAPIDetail'
+            ])
+        }">
         <div class="define-box">
             <div class="userapi-group">
                 <label class="userapi-label">
@@ -530,7 +537,7 @@
                             bk_supplier_account: this.supplierAccount
                         },
                         config: {
-                            requestId: 'hostsAttribute',
+                            requestId: 'post_searchObjectAttribute_host',
                             fromCache: true
                         }
                     }),
@@ -540,7 +547,7 @@
                             bk_supplier_account: this.supplierAccount
                         },
                         config: {
-                            requestId: 'setAttribute',
+                            requestId: 'post_searchObjectAttribute_set',
                             fromCache: true
                         }
                     }),
@@ -550,7 +557,7 @@
                             bk_supplier_account: this.supplierAccount
                         },
                         config: {
-                            requestId: 'moduleAttribute',
+                            requestId: 'post_searchObjectAttribute_module',
                             fromCache: true
                         }
                     })

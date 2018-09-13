@@ -65,6 +65,7 @@
             getPrivilegeBusiness () {
                 return this.$store.dispatch('objectBiz/searchBusiness', {
                     config: {
+                        requestId: 'post_searchBusiness',
                         fromCache: true
                     }
                 })
