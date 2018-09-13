@@ -18,7 +18,7 @@
             </div>
         </div>
         <cmdb-table class="process-table" ref="table"
-            :loading="$loading('requestProcess')"
+            :loading="$loading('post_searchProcess_list')"
             :checked.sync="table.checked"
             :header="table.header"
             :list="table.list"
@@ -159,7 +159,7 @@
                         bk_supplier_account: this.supplierAccount
                     },
                     config: {
-                        requestId: `processAttribute`,
+                        requestId: `post_searchObjectAttribute_process`,
                         fromCache: true
                     }
                 })
@@ -174,7 +174,7 @@
                     objId: 'process',
                     config: {
                         fromCache: true,
-                        requestId: 'searchProcessGroup'
+                        requestId: 'post_searchGroup_process'
                     }
                 }).then(groups => {
                     this.propertyGroups = groups
@@ -264,7 +264,7 @@
                 return this.searchProcess({
                     bizId: this.filter.bizId,
                     params: this.getSearchParams(),
-                    config: Object.assign({requestId: 'requestProcess'}, config)
+                    config: Object.assign({requestId: 'post_searchProcess_list'}, config)
                 })
             },
             getAllProcessList () {
@@ -275,7 +275,7 @@
                         page: {}
                     },
                     config: {
-                        requestId: `processAllList`,
+                        requestId: `post_searchProcess_list`,
                         cancelPrevious: true
                     }
                 })

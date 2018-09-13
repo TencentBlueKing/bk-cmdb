@@ -120,7 +120,7 @@
                         bk_supplier_account: this.supplierAccount
                     },
                     config: {
-                        requestId: 'hostsAttribute',
+                        requestId: `post_batchSearchObjectAttribute_${Object.keys(this.properties).join('_')}`,
                         fromCache: true
                     }
                 }).then(result => {

@@ -49,7 +49,7 @@
                         bk_supplier_account: this.supplierAccount
                     },
                     config: {
-                        requestId: 'bizAttribute',
+                        requestId: 'post_searchObjectAttribute_biz',
                         fromCache: true
                     }
                 })
