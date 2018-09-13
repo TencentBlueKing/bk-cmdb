@@ -1,23 +1,29 @@
 <template>
     <div class="relation-tree-layout" v-bkloading="{isLoading: $loading()}">
-        <div
-            v-for="(relation, index) in next" :key="index">
-            <div class="tree-row" @click="handleRowClick(relation)">
-                <i class="tree-row-expand-icon icon-cc-triangle-sider"
-                    v-if="relation.children.length"
-                    :class="{expanded: relation.show}">
-                </i>
-                <i :class="['tree-row-icon', relation['bk_obj_icon']]"></i>
-                <span>{{relation['bk_obj_name']}}</span>
-                <span class="tree-row-count fr" v-if="relation.children.length">{{relation.children.length}}</span>
-            </div>
-            <div v-show="relation.show">
-                <div class="tree-row tree-row-child" v-for="(inst, index) in relation.children" :key="index">
+        <template v-if="next.length">
+            <div
+                v-for="(relation, index) in next" :key="index">
+                <div class="tree-row" @click="handleRowClick(relation)">
+                    <i class="tree-row-expand-icon icon-cc-triangle-sider"
+                        v-if="relation.children.length"
+                        :class="{expanded: relation.show}">
+                    </i>
                     <i :class="['tree-row-icon', relation['bk_obj_icon']]"></i>
-                    <span>{{inst['bk_inst_name']}}</span>
-                    <span class="tree-row-details fr" @click="handleShowDetails(relation, inst)">{{$t('Common["详情信息"]')}}</span>
+                    <span>{{relation['bk_obj_name']}}</span>
+                    <span class="tree-row-count fr" v-if="relation.children.length">{{relation.children.length}}</span>
+                </div>
+                <div v-show="relation.show">
+                    <div class="tree-row tree-row-child" v-for="(inst, index) in relation.children" :key="index">
+                        <i :class="['tree-row-icon', relation['bk_obj_icon']]"></i>
+                        <span>{{inst['bk_inst_name']}}</span>
+                        <span class="tree-row-details fr" @click="handleShowDetails(relation, inst)">{{$t('Common["详情信息"]')}}</span>
+                    </div>
                 </div>
             </div>
+        </template>
+        <div class="relation-empty" v-else>
+            <img class="empty-image" src="../../assets/images/relevance-empty.png">
+            <span class="empty-text">{{$t("Common['当前还未有关联项']")}}</span>
         </div>
         <cmdb-topo-details v-if="details.show"
             :objId="details.objId"
@@ -145,6 +151,17 @@
             border-radius: 2px;
             color: #737987;
             background: #fff;
+        }
+    }
+    .relation-empty {
+        text-align: center;
+        .empty-image {
+            display: block;
+            margin: 50px auto 20px;
+            width: 130px;
+        }
+        .empty-text {
+            font-size: 14px;
         }
     }
 </style>

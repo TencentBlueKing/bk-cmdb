@@ -15,6 +15,7 @@
         </div>
         <cmdb-table class="history-table"
             :sortable="false"
+            :loading="$loading()"
             :pagination.sync="pagination"
             :list="list"
             :header="header"
@@ -40,7 +41,8 @@
                     count: 0
                 },
                 ranges: {},
-                opTime: []
+                opTime: [],
+                opTimeResolver: null
             }
         },
         computed: {
@@ -63,6 +65,15 @@
                 return this.$tools.formatTime(moment(), 'YYYY-MM-DD')
             }
         },
+        watch: {
+            opTime (opTime) {
+                if (this.opTimeResolver) {
+                    this.opTimeResolver()
+                } else {
+                    this.handlePageChange(1)
+                }
+            }
+        },
         async created () {
             try {
                 this.properties = await this.searchObjectAttribute({
@@ -72,11 +83,13 @@
                     },
                     config: {
                         requestId: `${this.objId}Attribute`,
-                        fromCache: true
+                        fromCache: false
                     }
                 })
                 await this.setTableHeader()
+                await this.setTimeResolver()
                 await this.initFilterTime()
+                this.getTableData()
             } catch (e) {
                 // ignore
             }
@@ -86,6 +99,14 @@
             ...mapActions('operationAudit', ['getOperationLog']),
             back () {
                 this.$router.go(-1)
+            },
+            setTimeResolver () {
+                return new Promise((resolve, reject) => {
+                    this.opTimeResolver = () => {
+                        this.opTimeResolver = null
+                        resolve()
+                    }
+                })
             },
             initFilterTime () {
                 const language = this.$i18n.locale
@@ -132,7 +153,8 @@
                         name: property['bk_property_name']
                     }
                 })).concat([{
-                    id: 'last_time',
+                    id: 'op_time',
+                    width: 180,
                     name: this.$t('Common["更新时间"]')
                 }])
                 return Promise.resolve(this.header)
@@ -141,7 +163,6 @@
                 this.opTime = newVal.split(' - ').map((date, index) => {
                     return index === 0 ? (date + ' 00:00:00') : (date + ' 23:59:59')
                 })
-                this.handlePageChange(1)
             },
             getTableData () {
                 this.getOperationLog({
@@ -152,7 +173,13 @@
                     }
                 }).then(log => {
                     this.pagination.count = log.count
-                    this.list = []
+                    const list = log.info.map(data => {
+                        return {
+                            ...data.content['cur_data'],
+                            'op_time': this.$tools.formatTime(data['op_time'])
+                        }
+                    })
+                    this.list = this.$tools.flatternList(this.properties, list)
                 })
             },
             getSearchParams () {
