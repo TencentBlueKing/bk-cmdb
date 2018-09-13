@@ -124,7 +124,7 @@
                         'bk_supplier_account': this.supplierAccount
                     },
                     config: {
-                        requestId: `get_${objId}_attribute`,
+                        requestId: `post_searchObjectAttribute_${objId}`,
                         fromCache: true
                     }
                 })

@@ -71,7 +71,7 @@
                     objId: this.objId,
                     instId: this.instId,
                     config: {
-                        requestId: `get_${this.objId}_${this.instId}_relation`,
+                        requestId: `get_getInstRelation_${this.objId}_${this.instId}`,
                         fromCache: true
                     }
                 }).then(data => {
