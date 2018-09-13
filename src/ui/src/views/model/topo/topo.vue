@@ -175,7 +175,7 @@
                         await this.deleteClassification({
                             id: this.activeClassify['id']
                         })
-                        this.$router.push('/model')
+                        this.$router.push('/model/bk_host_manage')
                         this.$store.commit('objectModelClassify/deleteClassify', this.bkClassificationId)
                     }
                 })

@@ -1,7 +1,7 @@
 <template>
     <div class="push-wrapper">
         <div class="btn-wrapper clearfix">
-            <bk-button class="fr" type="primary" @click="createPush">{{$t('EventPush["新增推送"]')}}</bk-button>
+            <bk-button type="primary" @click="createPush">{{$t('EventPush["新增推送"]')}}</bk-button>
         </div>
         <cmdb-table
             :loading="$loading('searchSubscription')"
@@ -25,6 +25,7 @@
         <cmdb-slider
             :isShow.sync="slider.isShow"
             :title="slider.title"
+            :width="564"
             :beforeClose="handleSliderBeforeClose">
             <v-push-detail
                 ref="detail"

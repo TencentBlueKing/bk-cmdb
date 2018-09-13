@@ -12,7 +12,7 @@
         <div class="authority-wrapper clearfix">
             <h2 class="authority-title fl">{{$t('Permission["功能选择"]')}}</h2>
             <div class="checkbox-container clearfix">
-                <span v-for="authority in authorities.list" class="checkbox-span fl">
+                <span v-for="(authority, index) in authorities.list" class="checkbox-span fl" :key="index">
                     <label class="cmdb-form-checkbox cmdb-checkbox-small authority-checkbox"
                         :class="{'disabled': isMaintainers}"
                         :for="'business-authority-' + authority.id"
@@ -109,8 +109,9 @@
                     this.authorities.selected = res.length ? res : []
                 }
             },
-            updateAuthorities () {
-                this.bindRolePrivilege({bkObjId: 'biz', bkPropertyId: this.selectedBusinessRole, params: this.authorities.selected, config: {requestId: 'updateAuthorities'}})
+            async updateAuthorities () {
+                await this.bindRolePrivilege({bkObjId: 'biz', bkPropertyId: this.selectedBusinessRole, params: this.authorities.selected, config: {requestId: 'updateAuthorities'}})
+                this.$success(this.$t('Common[\'保存成功\']'))
             }
         },
         created () {
