@@ -114,7 +114,7 @@
                 <bk-button type="primary" class="userapi-btn" :disabled="errors.any()" @click.stop="previewUserAPI">
                     {{$t("CustomQuery['预览']")}}
                 </bk-button>
-                <bk-button type="primary" :loading="$loading(['createCustomQuery', 'updateCustomQuery'])" class="userapi-btn" :disabled="errors.any()" @click="saveUserAPI">
+                <bk-button v-tooltip="$t('CustomQuery[\'保存后的查询可通过接口调用生效\']')" type="primary" :loading="$loading(['createCustomQuery', 'updateCustomQuery'])" class="userapi-btn" :disabled="errors.any()" @click="saveUserAPI">
                     {{$t("Common['保存']")}}
                 </bk-button>
                 <bk-button type="default" class="userapi-btn" @click="closeSlider">
