@@ -211,11 +211,11 @@
                 return this.usercustom[`${this.objId}_table_columns`]
             },
             url () {
-                const prefix = `${window.API_BASE_URL}insts/owner/${this.supplierAccount}/object/${this.objId}/`
+                const prefix = `${window.API_HOST}insts/owner/${this.supplierAccount}/object/${this.objId}/`
                 return {
                     import: prefix + 'import',
                     export: prefix + 'export',
-                    template: `${window.API_BASE_URL}importtemplate/${this.objId}`
+                    template: `${window.API_HOST}importtemplate/${this.objId}`
                 }
             }
         },
