@@ -203,7 +203,7 @@
                     },
                     defaultSort: 'bk_host_id',
                     sort: 'bk_host_id',
-                    exportUrl: `${window.Site.url}hosts/export`,
+                    exportUrl: `${window.API_HOST}hosts/export`,
                     tableMinusHeight: 200
                 },
                 filter: {
