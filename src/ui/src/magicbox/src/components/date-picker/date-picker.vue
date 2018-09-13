@@ -30,7 +30,8 @@
                               :class="{
                                  'date-table-item': isAvailableDate(currentMonthItem),
                                  'date-item-view date-disable-item': !isAvailableDate(currentMonthItem),
-                                 'selected': shouldBeSelected(currentMonthItem)
+                                 'selected': shouldBeSelected(currentMonthItem),
+                                 'today': shouldShowToday(currentMonthItem) === t('datePicker.today')
                               }"
                               @click.stop.prevent="selectDay(currentMonthItem)">{{shouldShowToday(currentMonthItem)}}</span>
                         </dd>
@@ -214,6 +215,7 @@
                 transitionName: transitionName,
                 BkDate: bkDate,
                 selectedValue: this.initDate || '',
+                currentDate: new Date(),
                 showDatePanel: false,
                 isSetTimer: false
             }
@@ -362,8 +364,13 @@
                     month: this.BkDate.month,
                     day: value
                 }
-                let isToday = JSON.stringify(currentSelectedDate) === JSON.stringify(this.BkDate.currentDay)
-                if (isToday && this.shouldBeSelected(value)) {
+                const current = {
+                    year: this.currentDate.getFullYear(),
+                    month: this.currentDate.getMonth() + 1,
+                    day: this.currentDate.getDate()
+                }
+                let isToday = JSON.stringify(currentSelectedDate) === JSON.stringify(current)
+                if (isToday) {
                     return this.t('datePicker.today')
                 }
                 return value

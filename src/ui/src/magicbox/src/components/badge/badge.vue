@@ -13,7 +13,8 @@
                     }
                 ]"
                 :style="{
-                    color: hexTheme ? '#fff' : ''
+                    color: hexTheme ? '#fff' : '',
+                    backgroundColor: hexTheme ? theme : ''
                 }"
                 @mouseenter="handleHover"
                 @mouseleave="handleLeave">
@@ -117,7 +118,8 @@
                 }
             },
             hexTheme () {
-                return this.theme.indexOf('#') === 0
+                return /^#[0-9a-fA-F]{3,6}$/.test(this.theme)
+                // return this.theme.indexOf('#') === 0
             }
         },
         methods: {
