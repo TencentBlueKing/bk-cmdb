@@ -392,7 +392,8 @@
         "修改人": "Modified Person",
         "修改时间": "Update Time",
         "查询定义": "Query Definition",
-        "确认要删除": "Confirm to delete {name}?"
+        "确认要删除": "Confirm to delete {name}?",
+        "保存后的查询可通过接口调用生效": "The saved query can be validated through an interface call"
     },
     "ProcessManagement": {
         "进程管理": "Process Manage",
