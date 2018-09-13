@@ -562,6 +562,11 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommParamsNeedSet)})
 		return
 	}
+	if 0 == len(hostList.ModuleID) {
+		blog.Errorf("host sync app  parameters required moduleID", hostList.ApplicationID)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, common.BKModuleIDField)})
+		return
+	}
 
 	if common.BatchHostAddMaxRow < len(hostList.HostInfo) {
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommXXExceedLimit, "host_info ", common.BatchHostAddMaxRow)})
@@ -592,12 +597,12 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 	}
 	moduleIDS, err := s.Logics.GetModuleIDByCond(req.Request.Header, moduleCond) //s.Logics.NewHostSyncValidModule(req, data.ApplicationID, data.ModuleID, m.CC.ObjCtrl())
 	if nil != err {
-		resp.WriteError(http.StatusInternalServerError, defErr.Errorf(common.CCErrTopoGetModuleFailed, err.Error()))
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrTopoGetModuleFailed, err.Error())})
 		return
 	}
 	if len(moduleIDS) != len(hostList.ModuleID) {
 		blog.Errorf("not found part module: source:%v, db:%v", hostList.ModuleID, moduleIDS)
-		resp.WriteError(http.StatusInternalServerError, defErr.Errorf(common.CCErrTopoGetModuleFailed, " not found part moudle id"))
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrTopoGetModuleFailed, " not found part moudle id")})
 		return
 
 	}
