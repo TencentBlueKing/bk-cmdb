@@ -17,6 +17,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage"
 )
@@ -53,4 +54,43 @@ func addOperationLogIndex(db storage.DI, conf *upgrader.Config) (err error) {
 		}
 	}
 	return nil
+}
+
+func reconcileOperationLog(db storage.DI, conf *upgrader.Config) (err error) {
+	all := []mapstr.MapStr{}
+
+	if err = db.GetMutilByCondition(common.BKTableNameUserGroupPrivilege, nil, nil, &all, "", 0, 0); err != nil {
+		return err
+	}
+	flag := "updateflag"
+	expectM := map[string]mapstr.MapStr{}
+	for _, privilege := range all {
+		groupID, err := privilege.String("group_id")
+		if err != nil {
+			return err
+		}
+		privilege.Set(flag, true)
+		expectM[groupID] = privilege
+	}
+
+	for _, privilege := range expectM {
+		if _, err = db.Insert(common.BKTableNameUserGroupPrivilege, privilege); err != nil {
+			return err
+		}
+	}
+
+	if err = db.DelByCondition(common.BKTableNameUserGroupPrivilege, map[string]interface{}{
+		flag: map[string]interface{}{
+			"$ne": true,
+		},
+	}); err != nil {
+		return err
+	}
+
+	if err = db.DropColumn(common.BKTableNameUserGroupPrivilege, flag); err != nil {
+		return err
+	}
+
+	return nil
+
 }
