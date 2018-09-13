@@ -172,7 +172,7 @@
         "推送成功": "Success",
         "推送失败": "Push Failed",
         "已选择": "{number} selected",
-        "至少选择1个事件": "Select at least 1 events",
+        "至少选择1个事件": "Select at least 1 events,",
         "新增主机": "Add Host",
         "删除主机": "Delete Host",
         "模块转移": "Module Transfer",
