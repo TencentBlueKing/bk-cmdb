@@ -68,12 +68,8 @@
                 }
                 this.$store.dispatch('userCustom/saveUsercustom', {
                     [this.classifyNavigationKey]: newCustom
-                }).then(res => {
-                    if (res.result) {
-                        this.$success(isAdd ? this.$t('Index["添加导航成功"]') : this.$t('Index["取消导航成功"]'))
-                    } else {
-                        this.$error(res['bk_error_msg'])
-                    }
+                }).then(() => {
+                    this.$success(isAdd ? this.$t('Index["添加导航成功"]') : this.$t('Index["取消导航成功"]'))
                 })
             }
         }

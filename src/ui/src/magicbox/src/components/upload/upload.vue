@@ -63,6 +63,10 @@ export default {
             type: String,
             default: '*'
         },
+        delayTime: {
+            type: Number,
+            default: 0
+        },
         url: {
             required: true,
             type: String
@@ -90,6 +94,9 @@ export default {
         tip: {
             type: String,
             default: ''
+        },
+        validateName: {
+            type: RegExp
         },
         withCredentials: {
             type: Boolean,
@@ -169,6 +176,11 @@ export default {
                 if ((type !== 'image' || !safariImageType) && fileObj.size > (fileObj.maxFileSize * 1000)) {
                     fileObj.errorMsg = `${fileObj.name}文件不能超过${fileObj.maxFileSize}MB`
                 }
+                if (this.validateName) {
+                    if (!this.validateName.test(fileObj.name)) {
+                        fileObj.errorMsg = '文件名不合法'
+                    }
+                }
                 this.fileList.push(fileObj)
             })
             let len = this.fileList.length
@@ -179,6 +191,13 @@ export default {
                 this.fileIndex = 0
             }
             e.target.value = ''
+        },
+        hideFileList () {
+            if (this.delayTime) {
+                setTimeout(() => {
+                    this.fileList = []
+                }, this.delayTime)
+            }
         },
         uploadFile (fileObj) {
             if (fileObj.errorMsg) {
@@ -205,7 +224,8 @@ export default {
                                 this.$emit('on-error', fileObj, this.fileList)
                             }
                         } catch (error) {
-                            console.error(error)
+                            fileObj.progress = 100 + '%'
+                            fileObj.errorMsg = error.message
                         }
                     }
                     this.fileIndex += 1
@@ -214,6 +234,7 @@ export default {
                     fileObj.status = 'done'
                     if (this.fileIndex === this.fileList.length) {
                         this.$emit('on-done', this.fileList)
+                        this.hideFileList()
                     }
                 }
             }
