@@ -28,5 +28,15 @@ func upgrade(db storage.DI, conf *upgrader.Config) (err error) {
 		blog.Errorf("[upgrade x08.09.13.01] updateSystemProperty error  %s", err.Error())
 		return err
 	}
+	err = reconcileOperationLog(db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade x08.09.13.01] reconcileOperationLog error  %s", err.Error())
+		return err
+	}
+	err = reconcileOperationLog(db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade x08.09.13.01] reconcileOperationLog error  %s", err.Error())
+		return err
+	}
 	return
 }
