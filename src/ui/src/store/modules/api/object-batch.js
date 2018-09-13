@@ -29,7 +29,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     exportObjectAttribute ({ commit, state, dispatch, rootGetters }, { bkObjId }) {
-        return $http.post(`${rootGetters.site.url}object/owner/${rootGetters.supplierAccount}/object/${bkObjId}/export`)
+        return $http.post(`${window.API_HOST}object/owner/${rootGetters.supplierAccount}/object/${bkObjId}/export`)
     },
 
     /**
@@ -43,7 +43,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     importObjectAttribute ({ commit, state, dispatch, rootGetters }, { bkObjId, params, config }) {
-        return $http.post(`${rootGetters.site.url}object/owner/${rootGetters.supplierAccount}/object/${bkObjId}/import`, params, config)
+        return $http.post(`${window.API_HOST}object/owner/${rootGetters.supplierAccount}/object/${bkObjId}/import`, params, config)
     }
 }
 

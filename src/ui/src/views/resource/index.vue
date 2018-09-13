@@ -128,7 +128,7 @@
                     checked: [],
                     header: [],
                     columnsConfigKey: 'resource_table_columns',
-                    exportUrl: `${window.Site.url}hosts/export`
+                    exportUrl: `${window.API_HOST}hosts/export`
                 },
                 filter: {
                     filterConfigKey: 'resource_filter_fields',
@@ -141,8 +141,8 @@
                 importInst: {
                     show: false,
                     active: 'import',
-                    templateUrl: `${window.API_BASE_URL}importtemplate/host`,
-                    importUrl: `${window.API_BASE_URL}hosts/import`
+                    templateUrl: `${window.API_HOST}importtemplate/host`,
+                    importUrl: `${window.API_HOST}hosts/import`
                 }
             }
         },
