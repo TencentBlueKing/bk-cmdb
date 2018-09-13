@@ -42,5 +42,5 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 }
 
 type Config struct {
-	Mongo *mongo.Config
+	Mongo mongo.Config
 }

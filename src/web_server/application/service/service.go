@@ -21,7 +21,6 @@ import (
 
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
-
 	redis "gopkg.in/redis.v5"
 
 	"configcenter/src/common"
@@ -171,14 +170,17 @@ func (ccWeb *CCWebServer) Start() error {
 	apiSite, _ := a.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
 	static := config["site.html_root"]
 	webCommon.ResourcePath = config["site.resources_path"]
-	redisAddress := config["session.address"]
-	//redisPort := config["session.port"]
+	redisAddress := config["session.host"]
+	redisPort := config["session.port"]
 	redisSecret := config["session.secret"]
 	multipleOwner := config["session.multiple_owner"]
 	agentAppUrl := config["app.agent_app_url"]
 	redisSecret = strings.TrimSpace(redisSecret)
 	curl := fmt.Sprintf(loginURL, appCode, site)
 
+	if !strings.Contains(redisAddress, ":") && len(redisPort) > 0 {
+		redisAddress = redisAddress + ":" + redisPort
+	}
 	a.CacheCli = redis.NewClient(
 		&redis.Options{
 			Addr:     redisAddress,

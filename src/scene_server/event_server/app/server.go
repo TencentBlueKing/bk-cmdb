@@ -152,11 +152,11 @@ func (h *EventServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		}
 		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ") //ignore err, cause ConfigMap is map[string]string
 		blog.Infof("config updated: \n%s", out)
-		mongoConf := mongo.NewConfigFromKV("mongodb", current.ConfigMap)
-		h.Config.MongoDB = *mongoConf
+		mongoConf := mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
+		h.Config.MongoDB = mongoConf
 
-		redisConf := redis.NewConfigFromKV("redis", current.ConfigMap)
-		h.Config.Redis = *redisConf
+		redisConf := redis.ParseConfigFromKV("redis", current.ConfigMap)
+		h.Config.Redis = redisConf
 
 		h.Config.RPC.Address = current.ConfigMap["rpc.address"]
 	}
