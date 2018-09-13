@@ -44,6 +44,7 @@
                         ref="content"
                         :list="attribute.list"
                         @visible-toggle="toggleContentSelector"
+                        :content-max-height="200"
                         setting-key="bk_property_id"
                         display-key="bk_property_name"
                         :selected.sync="attribute.selected"
@@ -120,7 +121,7 @@
                 <bk-button type="primary" class="userapi-btn" :disabled="errors.any()" @click.stop="previewUserAPI">
                     {{$t("CustomQuery['预览']")}}
                 </bk-button>
-                <bk-button type="primary" :loading="$loading(['createCustomQuery', 'updateCustomQuery'])" class="userapi-btn" :disabled="errors.any()" @click="saveUserAPI">
+                <bk-button v-tooltip="$t('CustomQuery[\'保存后的查询可通过接口调用生效\']')" type="primary" :loading="$loading(['createCustomQuery', 'updateCustomQuery'])" class="userapi-btn" :disabled="errors.any()" @click="saveUserAPI">
                     {{$t("Common['保存']")}}
                 </bk-button>
                 <bk-button type="default" class="userapi-btn" @click="closeSlider">
@@ -360,6 +361,7 @@
                 })
                 this.attribute.list = tempList.concat(this.attribute.default)
                 this.attribute.selected = selected
+                this.dataCopy.attributeSelected = this.$tools.clone(selected)
             }
         },
         async created () {
