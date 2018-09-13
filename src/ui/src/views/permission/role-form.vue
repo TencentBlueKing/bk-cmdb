@@ -6,6 +6,7 @@
     :quick-close="false" 
     :width="565" 
     :padding="0"
+    @cancel="closeRoleForm">
     >
         <form class="role-form" slot="content">
             <h2 class="role-form-title">{{title}}</h2>

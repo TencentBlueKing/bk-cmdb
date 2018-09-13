@@ -1,92 +1,94 @@
 <template>
     <div class="authority-wrapper">
         <template v-if="roles.length">
-            <div class="authority-group clearfix">
-                <h2 class="authority-group-title fl">{{$t('Permission["角色选择"]')}}</h2>
-                <bk-selector class="role-selector fl"
-                    :list="localRoles.list"
-                    :selected.sync="localRoles.selected"
-                    :searchable="true">
-                </bk-selector>
-            </div>
-            <div class="authority-group clearfix">
-                <h2 class="authority-group-title fl">{{$t('Permission["系统相关"]')}}</h2>
-                <div class="authority-group-content">
-                    <div class="authority-type system clearfix" 
-                        v-for="(config, configId) in sysConfig" 
-                        :key="configId"
-                        v-if="config.authorities.length">
-                        <h3 class="system-title fl">{{$t(config.name)}}</h3>
-                        <ul class="system-list fl">
-                            <li class="system-item fl"  v-for="authority in config.authorities">
-                                <label class="cmdb-form-checkbox cmdb-checkbox-small"
-                                    :for="'systemAuth-' + authority.id" 
-                                    :title="$t(authority.name)">
-                                    <input type="checkbox"
-                                        :id="'systemAuth-' + authority.id" 
-                                        :value="authority.id"
-                                        v-model="config.selectedAuthorities">{{$t(authority.name)}}
-                                </label>
-                            </li>
-                        </ul>
-                    </div>
+            <div class="authority-box">
+                <div class="authority-group clearfix">
+                    <h2 class="authority-group-title fl">{{$t('Permission["角色选择"]')}}</h2>
+                    <bk-selector class="role-selector fl"
+                        :list="localRoles.list"
+                        :selected.sync="localRoles.selected"
+                        :searchable="true">
+                    </bk-selector>
                 </div>
-            </div>
-            <div class="authority-group model clearfix">
-                <h2 class="authority-group-title"><span>{{$t('Permission["模型相关"]')}}</span></h2>
-                <div class="authority-group-content">
-                    <div class="authority-type model" v-for="(classify,classifyIndex) in classifications" 
-                    :key="classifyIndex"
-                    v-if="classify.models.length"> 
-                        <h3 class="classify-name clearfix" :title="classify.name" @click="classify.open = !classify.open">
-                            <span class="fl">{{classify.name}}</span>
-                            <i class="bk-icon icon-angle-down angle fr" :class="{'open': classify.open}"></i>
-                        </h3>
-                        <transition name="slide">
-                            <ul class="model-list" v-show="classify.open" :style="calcModelListStyle(classify.models.length)">
-                                <li class="model-item clearfix" v-for="(model,modelIndex) in classify.models" :key="modelIndex">
-                                    <h4 class="model-authority fl" :title="model['bk_obj_name']">{{model['bk_obj_name']}}</h4>
-                                    <span class="model-authority-checkbox fl">
-                                        <label class="cmdb-form-checkbox cmdb-checkbox-small"
-                                            :for="'model-all-'+model['bk_obj_id']">
-                                            <input type="checkbox"
-                                                :id="'model-all-'+model['bk_obj_id']" 
-                                                :checked="model.selectedAuthorities.length === 3"
-                                                @change="checkAllModelAuthorities(classifyIndex,modelIndex,$event)">{{$t('Common["全选"]')}}
-                                        </label>
-                                    </span>
-                                    <span class="model-authority-checkbox fl">
-                                        <label class="cmdb-form-checkbox cmdb-checkbox-small"
-                                            :for="'model-search-'+model['bk_obj_id']">
-                                            <input type="checkbox" value='search' 
-                                                :id="'model-search-'+model['bk_obj_id']" 
-                                                v-model="model.selectedAuthorities"
-                                                @change="checkOtherAuthorities(classifyIndex,modelIndex,$event)">{{$t('Common["查询"]')}}
-                                        </label>
-                                    </span>
-                                    <span class="model-authority-checkbox fl">
-                                        <label class="cmdb-form-checkbox cmdb-checkbox-small" 
-                                            :for="'model-update-'+model['bk_obj_id']" 
-                                            :class="{'disabled': model.selectedAuthorities.indexOf('search') === -1}">
-                                            <input type="checkbox" value='update' 
-                                                :id="'model-update-'+model['bk_obj_id']"
-                                                :disabled="model.selectedAuthorities.indexOf('search') === -1"  
-                                                v-model="model.selectedAuthorities">{{$t('Common["编辑"]')}}
-                                        </label>
-                                    </span>
-                                    <span class="model-authority-checkbox fl">
-                                        <label class="cmdb-form-checkbox cmdb-checkbox-small" 
-                                            :for="'model-delete-'+model['bk_obj_id']" 
-                                            :class="{'disabled': model.selectedAuthorities.indexOf('search') === -1}">
-                                            <input type="checkbox" value='delete' 
-                                                :id="'model-delete-'+model['bk_obj_id']"
-                                                :disabled="model.selectedAuthorities.indexOf('search') === -1" 
-                                                v-model="model.selectedAuthorities">{{$t('Common["删除"]')}}
-                                        </label>
-                                    </span>
+                <div class="authority-group clearfix">
+                    <h2 class="authority-group-title fl">{{$t('Permission["系统相关"]')}}</h2>
+                    <div class="authority-group-content">
+                        <div class="authority-type system clearfix" 
+                            v-for="(config, configId) in sysConfig" 
+                            :key="configId"
+                            v-if="config.authorities.length">
+                            <h3 class="system-title fl">{{$t(config.name)}}</h3>
+                            <ul class="system-list fl">
+                                <li class="system-item fl"  v-for="(authority, index) in config.authorities" :key="index">
+                                    <label class="cmdb-form-checkbox cmdb-checkbox-small"
+                                        :for="'systemAuth-' + authority.id" 
+                                        :title="$t(authority.name)">
+                                        <input type="checkbox"
+                                            :id="'systemAuth-' + authority.id" 
+                                            :value="authority.id"
+                                            v-model="config.selectedAuthorities">{{$t(authority.name)}}
+                                    </label>
                                 </li>
                             </ul>
-                        </transition>
+                        </div>
+                    </div>
+                </div>
+                <div class="authority-group model clearfix">
+                    <h2 class="authority-group-title"><span>{{$t('Permission["模型相关"]')}}</span></h2>
+                    <div class="authority-group-content">
+                        <div class="authority-type model" v-for="(classify,classifyIndex) in classifications" 
+                        :key="classifyIndex"
+                        v-if="classify.models.length"> 
+                            <h3 class="classify-name clearfix" :title="classify.name" @click="classify.open = !classify.open">
+                                <span class="fl">{{classify.name}}</span>
+                                <i class="bk-icon icon-angle-down angle fr" :class="{'open': classify.open}"></i>
+                            </h3>
+                            <transition name="slide">
+                                <ul class="model-list" v-show="classify.open" :style="calcModelListStyle(classify.models.length)">
+                                    <li class="model-item clearfix" v-for="(model,modelIndex) in classify.models" :key="modelIndex">
+                                        <h4 class="model-authority fl" :title="model['bk_obj_name']">{{model['bk_obj_name']}}</h4>
+                                        <span class="model-authority-checkbox fl">
+                                            <label class="cmdb-form-checkbox cmdb-checkbox-small"
+                                                :for="'model-all-'+model['bk_obj_id']">
+                                                <input type="checkbox"
+                                                    :id="'model-all-'+model['bk_obj_id']" 
+                                                    :checked="model.selectedAuthorities.length === 3"
+                                                    @change="checkAllModelAuthorities(classifyIndex,modelIndex,$event)">{{$t('Common["全选"]')}}
+                                            </label>
+                                        </span>
+                                        <span class="model-authority-checkbox fl">
+                                            <label class="cmdb-form-checkbox cmdb-checkbox-small"
+                                                :for="'model-search-'+model['bk_obj_id']">
+                                                <input type="checkbox" value='search' 
+                                                    :id="'model-search-'+model['bk_obj_id']" 
+                                                    v-model="model.selectedAuthorities"
+                                                    @change="checkOtherAuthorities(classifyIndex,modelIndex,$event)">{{$t('Common["查询"]')}}
+                                            </label>
+                                        </span>
+                                        <span class="model-authority-checkbox fl">
+                                            <label class="cmdb-form-checkbox cmdb-checkbox-small" 
+                                                :for="'model-update-'+model['bk_obj_id']" 
+                                                :class="{'disabled': model.selectedAuthorities.indexOf('search') === -1}">
+                                                <input type="checkbox" value='update' 
+                                                    :id="'model-update-'+model['bk_obj_id']"
+                                                    :disabled="model.selectedAuthorities.indexOf('search') === -1"  
+                                                    v-model="model.selectedAuthorities">{{$t('Common["编辑"]')}}
+                                            </label>
+                                        </span>
+                                        <span class="model-authority-checkbox fl">
+                                            <label class="cmdb-form-checkbox cmdb-checkbox-small" 
+                                                :for="'model-delete-'+model['bk_obj_id']" 
+                                                :class="{'disabled': model.selectedAuthorities.indexOf('search') === -1}">
+                                                <input type="checkbox" value='delete' 
+                                                    :id="'model-delete-'+model['bk_obj_id']"
+                                                    :disabled="model.selectedAuthorities.indexOf('search') === -1" 
+                                                    v-model="model.selectedAuthorities">{{$t('Common["删除"]')}}
+                                            </label>
+                                        </span>
+                                    </li>
+                                </ul>
+                            </transition>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -189,8 +191,9 @@
             changeTab () {
                 this.$emit('createRole')
             },
-            updateGroupAuthorities () {
-                this.updateGroupPrivilege({bkGroupId: this.localRoles.selected, params: this.updateParams, config: {requestId: 'updateGroupAuthorities'}})
+            async updateGroupAuthorities () {
+                await this.updateGroupPrivilege({bkGroupId: this.localRoles.selected, params: this.updateParams, config: {requestId: 'updateGroupAuthorities'}})
+                this.$success(this.$t('Common[\'保存成功\']'))
             },
             checkAllModelAuthorities (classifyIndex, modelIndex, event) {
                 let model = this.classifications[classifyIndex]['models'][modelIndex]
@@ -296,8 +299,12 @@
 
 <style lang="scss" scoped>
     .authority-wrapper{
-        padding: 20px 0;
         height: 100%;
+        .authority-box {
+            padding: 20px 0;
+            max-height: calc(100% - 44px);
+            @include scrollbar;
+        }
     }
     .authority-group{
         font-size: 14px;
@@ -433,7 +440,7 @@
     }
     .footer{
         width: 100%;
-        position: sticky;
+        position: absolute;
         left: 0;
         bottom: 0;
         padding: 14px 20px;
