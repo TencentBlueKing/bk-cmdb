@@ -38,7 +38,7 @@
                         </span>
                     </div>
                     <vue-draggable
-                    class="layout-group-field"
+                    class="layout-group-field clearfix"
                     v-model="group.properties"
                     :index="groupIndex"
                     :options="{animation: 150, group:'field'}" 
@@ -326,9 +326,9 @@
                 let reg = /^[0-9]+$/
                 let groupId = 0
                 let groupIndex = 0
-                this.groupFieldList.map(({bk_group_id: groupId, bk_group_index: bkGroupIndex}) => {
-                    if (reg.test(groupId)) {
-                        groupId = parseInt(groupId) > groupId ? parseInt(groupId) : groupId
+                this.groupFieldList.map(({bk_group_id: bkGroupId, bk_group_index: bkGroupIndex}) => {
+                    if (reg.test(bkGroupId)) {
+                        groupId = parseInt(bkGroupId) > groupId ? parseInt(bkGroupId) : groupId
                     }
                     groupIndex = bkGroupIndex > groupIndex ? bkGroupIndex : groupIndex
                 })
@@ -532,7 +532,8 @@
                     min-height: 50px;
                     font-size: 0;
                     >div {
-                        display: inline-block;
+                        float: left;
+                        // display: inline-block;
                         position: relative;
                         width: 50%;
                         height: 30px;
