@@ -66,6 +66,7 @@ func TestIsAssocateProperty(t *testing.T) {
 		want bool
 	}{
 		{"", args{"property"}, false},
+		{"", args{common.FieldTypeSingleAsst}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -86,6 +87,7 @@ func TestIsStrProperty(t *testing.T) {
 		want bool
 	}{
 		{"", args{"property"}, false},
+		{"", args{common.FieldTypeLongChar}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
