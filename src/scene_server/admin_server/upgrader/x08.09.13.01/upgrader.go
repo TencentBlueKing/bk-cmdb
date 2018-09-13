@@ -32,7 +32,10 @@ func addOperationLogIndex(db storage.DI, conf *upgrader.Config) (err error) {
 	}
 
 	for _, index := range indexs {
-		blog.V(3).Infof("drop index %s", index.Name)
+		blog.V(3).Infof("droping index %s", index.Name)
+		if index.Name == "_id_" {
+			continue
+		}
 		if err = col.DropIndexName(index.Name); err != nil {
 			return err
 		}
