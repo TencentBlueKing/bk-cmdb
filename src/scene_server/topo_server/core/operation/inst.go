@@ -545,6 +545,7 @@ func (c *commonInst) convertInstIDIntoStruct(params types.ContextParams, asstObj
 
 		if needAsstDetail {
 			instAsstNames = append(instAsstNames, metatype.InstNameAsst{
+				ID:         strconv.Itoa(int(instID)),
 				ObjID:      obj.GetID(),
 				ObjectName: obj.GetName(),
 				ObjIcon:    obj.GetIcon(),
@@ -556,6 +557,7 @@ func (c *commonInst) convertInstIDIntoStruct(params types.ContextParams, asstObj
 		}
 
 		instAsstNames = append(instAsstNames, metatype.InstNameAsst{
+			ID:         strconv.Itoa(int(instID)),
 			ObjID:      obj.GetID(),
 			ObjectName: obj.GetName(),
 			ObjIcon:    obj.GetIcon(),
@@ -766,6 +768,7 @@ func (c *commonInst) FindInstTopo(params types.ContextParams, obj model.Object, 
 		commonInst.ObjID = inst.GetObject().GetID()
 		commonInst.ObjIcon = inst.GetObject().GetIcon()
 		commonInst.InstID = id
+		commonInst.ID = strconv.Itoa(int(id))
 		commonInst.InstName = name
 
 		_, parentInsts, err := c.FindInstParentTopo(params, inst.GetObject(), id, nil)
