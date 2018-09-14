@@ -465,16 +465,28 @@ func (s *Service) cloneHostProperty(req *restful.Request, resp *restful.Response
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
-	appId := formData.Get("ApplicationID")
-	orgIp := formData.Get("orgIp")
-	dstIp := formData.Get("dstIp")
-	platId := formData.Get("platId")
+	appIDStr := formData.Get("ApplicationID")
+	orgIP := formData.Get("orgIp")
+	dstIP := formData.Get("dstIp")
+	platIDStr := formData.Get("platId")
+
+	appID, err := util.GetInt64ByInterface(appIDStr)
+	if nil != err {
+		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, "ApplicationID not integer").Error(), resp)
+		return
+	}
+
+	platID, err := util.GetInt64ByInterface(platIDStr)
+	if nil != err {
+		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, "platId not integer").Error(), resp)
+		return
+	}
 
 	var param metadata.CloneHostPropertyParams
-	param.AppIDStr = appId
-	param.DstIP = dstIp
-	param.OrgIP = orgIp
-	param.CloudIDStr = platId
+	param.AppID = appID
+	param.DstIP = dstIP
+	param.OrgIP = orgIP
+	param.CloudID = platID
 
 	result, err := s.CoreAPI.HostServer().CloneHostProperty(context.Background(), pheader, &param)
 	if err != nil {
