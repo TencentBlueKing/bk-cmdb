@@ -545,6 +545,7 @@ func (c *commonInst) convertInstIDIntoStruct(params types.ContextParams, asstObj
 
 		if needAsstDetail {
 			instAsstNames = append(instAsstNames, metatype.InstNameAsst{
+				ID:         strconv.Itoa(int(instID)),
 				ObjID:      obj.GetID(),
 				ObjectName: obj.GetName(),
 				ObjIcon:    obj.GetIcon(),
@@ -556,6 +557,7 @@ func (c *commonInst) convertInstIDIntoStruct(params types.ContextParams, asstObj
 		}
 
 		instAsstNames = append(instAsstNames, metatype.InstNameAsst{
+			ID:         strconv.Itoa(int(instID)),
 			ObjID:      obj.GetID(),
 			ObjectName: obj.GetName(),
 			ObjIcon:    obj.GetIcon(),
