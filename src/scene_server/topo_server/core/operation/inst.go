@@ -768,6 +768,7 @@ func (c *commonInst) FindInstTopo(params types.ContextParams, obj model.Object, 
 		commonInst.ObjID = inst.GetObject().GetID()
 		commonInst.ObjIcon = inst.GetObject().GetIcon()
 		commonInst.InstID = id
+		commonInst.ID = strconv.Itoa(int(id))
 		commonInst.InstName = name
 
 		_, parentInsts, err := c.FindInstParentTopo(params, inst.GetObject(), id, nil)
