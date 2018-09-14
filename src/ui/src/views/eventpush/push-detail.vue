@@ -34,12 +34,14 @@
                         URL<span class="color-danger">*</span>
                     </label>
                     <div class="item-content url" :class="{'en': language !== 'zh_CN'}">
-                        <input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'请输入URL\']')"
-                            v-model.trim="tempEventData['callback_url']"
-                            v-validate="'required|http'"
-                            data-vv-name="http"
-                        >
-                        <span v-show="errors.has('http')" class="color-danger">{{ errors.first('http') }}</span>
+                        <div class="url-box">
+                            <input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'请输入URL\']')"
+                                v-model.trim="tempEventData['callback_url']"
+                                v-validate="'required|http'"
+                                name="http"
+                            >
+                            <span v-show="errors.has('http')" class="color-danger">{{ errors.first('http') }}</span>
+                        </div>
                         <bk-button class="test-btn" type="primary" @click.prevent="testPush">{{$t('EventPush["测试推送"]')}}</bk-button>
                     </div>
                 </li>
@@ -228,7 +230,7 @@
                 tempEventData: {
                     subscription_name: '', // 订阅名
                     system_name: '', // 系统名称
-                    callback_url: 'http://', // 回调地址
+                    callback_url: '', // 回调地址
                     confirm_mode: 'httpstatus', // 回调成功确认模式   httpstatus/regular
                     confirm_pattern: {
                         httpstatus: '200',
@@ -240,7 +242,7 @@
                 eventData: {
                     subscription_name: '',
                     system_name: '',
-                    callback_url: 'http://',
+                    callback_url: '',
                     confirm_mode: 'httpstatus',
                     confirm_pattern: '200',
                     subscription_form: [],
@@ -542,11 +544,12 @@
                 float: left;
                 &.url {
                     font-size: 0;
-                    .cmdb-form-input {
+                    .url-box {
+                        display: inline-block;
                         width: calc(100% - 106px);
                     }
                     .test-btn {
-                        vertical-align: bottom;
+                        vertical-align: top;
                         margin-left: 10px;
                         width: 96px;
                     }
@@ -558,6 +561,9 @@
                             width: 125px;
                         }
                     }
+                }
+                span {
+                    font-size: 14px;
                 }
                 .input-box {
                     position: relative;
