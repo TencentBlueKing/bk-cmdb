@@ -322,6 +322,10 @@
                 this.$refs.resourceTable.handleMultipleEdit()
             },
             handleMultipleDelete () {
+                if (this.hasSelectAssignedHost()) {
+                    this.$error(this.$t('Hosts["请勿选择已分配主机"]'))
+                    return false
+                }
                 this.$bkInfo({
                     title: `${this.$t("HostResourcePool['确定删除选中的主机']")}？`,
                     confirmFn: () => {
