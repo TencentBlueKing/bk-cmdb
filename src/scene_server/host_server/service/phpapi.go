@@ -494,47 +494,6 @@ func (s *Service) UpdateCustomProperty(req *restful.Request, resp *restful.Respo
 
 }
 
-func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response) {
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
-	input := &meta.CloneHostPropertyParams{}
-	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
-		blog.Errorf("CloneHostProperty , but decode body failed, err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
-		return
-	}
-
-	blog.V(0).Infof("CloneHostProperty input:%v", input)
-	appID, err := util.GetInt64ByInterface(input.AppIDStr) // util.GetInt64ByInterface(input.[common.BKAppIDField])
-	if nil != err {
-		blog.Errorf("CloneHostProperty ,appliation not int , err: %v, input:%v", err, input)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, "ApplicationID")})
-		return
-	}
-	if "" == input.CloudIDStr {
-		blog.Errorf("CloneHostProperty ,set not found , err: %v, input:%v", err, input)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, "ApplicationID")})
-		return
-	}
-
-	CloudID, err := util.GetInt64ByInterface(input.CloudIDStr)
-	if nil != err {
-		blog.Errorf("CloneHostProperty ,appliation not int , err: %v, input:%v", err, input)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, "ApplicationID")})
-		return
-	}
-	res, err := s.Logics.CloneHostProperty(input, appID, CloudID, req.Request.Header)
-	if nil != err {
-		blog.Errorf("CloneHostProperty ,appliation not int , err: %v, input:%v", err, input)
-		resp.WriteError(http.StatusBadGateway, &meta.RespError{Msg: err})
-		return
-	}
-
-	resp.WriteEntity(meta.Response{
-		BaseResp: meta.SuccessBaseResp,
-		Data:     res,
-	})
-}
-
 func (s *Service) GetHostAppByCompanyId(req *restful.Request, resp *restful.Response) {
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
 	input := &meta.GetHostAppByCompanyIDParams{}
