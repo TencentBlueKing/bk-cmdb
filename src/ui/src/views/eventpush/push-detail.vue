@@ -58,18 +58,21 @@
                                 v-model="tempEventData['confirm_mode']"
                             >{{$t('Common["正则验证"]')}}
                         </label>
-                        <input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'请输入正则验证\']')"
-                            v-if="tempEventData['confirm_mode'] === 'regular'"
-                            v-model.trim="tempEventData['confirm_pattern']['regular']"
-                            :data-vv-name="$t('Common[\'该字段\']')"
-                            v-validate="'required'"
-                        >
-                        <input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'成功标志\']')"
-                            v-else
-                            v-model.trim="tempEventData['confirm_pattern']['httpstatus']"
-                            v-validate="{required: true, regex: /^[0-9]+$/}"
-                            :data-vv-name="$t('Common[\'该字段\']')"
-                        >
+                        <div class="input-box">
+                            <input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'请输入正则验证\']')"
+                                v-if="tempEventData['confirm_mode'] === 'regular'"
+                                v-model.trim="tempEventData['confirm_pattern']['regular']"
+                                :data-vv-name="$t('Common[\'该字段\']')"
+                                v-validate="'required'"
+                            >
+                            <input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'成功标志\']')"
+                                v-else
+                                v-model.trim="tempEventData['confirm_pattern']['httpstatus']"
+                                v-validate="{required: true, regex: /^[0-9]+$/}"
+                                :data-vv-name="$t('Common[\'该字段\']')"
+                            >
+                            <i class="tip" :class="{'reg': tempEventData['confirm_mode'] === 'regular'}"></i>
+                        </div>
                         <span v-show="errors.has($t('Common[\'该字段\']'))" class="color-danger">{{ errors.first($t('Common[\'该字段\']')) }}</span>
                     </div>
                 </li>
@@ -553,6 +556,30 @@
                         }
                         .test-btn {
                             width: 125px;
+                        }
+                    }
+                }
+                .input-box {
+                    position: relative;
+                    .cmdb-form-input:focus {
+                        +.tip {
+                            border-top: 1px solid $cmdbBorderFocusColor;
+                            border-right: 1px solid $cmdbBorderFocusColor;
+                        }
+                    }
+                    .tip {
+                        position: absolute;
+                        display: inline-block;
+                        left: 2px;
+                        top: -4px;
+                        width: 8px;
+                        height: 8px;
+                        background: #fff;
+                        border-top: 1px solid $cmdbBorderColor;
+                        border-right: 1px solid $cmdbBorderColor;
+                        transform: rotate(-45deg);
+                        &.reg {
+                            left: 121px;
                         }
                     }
                 }
