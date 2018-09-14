@@ -157,7 +157,7 @@
         "新增推送": "Add Push",
         "请输入推送名称": "Please enter a push name",
         "请输入系统名称": "Please enter the system name",
-        "请输入URL": "Please enter URL",
+        "请输入URL": "Please enter http(s)://",
         "成功确认方式": "Confirm By",
         "HTTP状态": "HTTP Status",
         "成功标志": "Success",
