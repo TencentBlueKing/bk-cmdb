@@ -29,7 +29,7 @@ const customRules = {
     },
     http: {
         validate: value => {
-            return /^http:\/\/[^\s]+/.test(value)
+            return /^http(s?):\/\/[^\s]+/.test(value)
         }
     },
     modelId: {
@@ -80,7 +80,7 @@ const dictionary = {
             classifyId: () => '请输入正确的内容',
             // required: (field) => '请输入' + field,
             required: () => '该字段是必填项',
-            http: () => '请输入以http://开头的URL',
+            http: () => '请输入以http(s)://开头的URL',
             modelId: () => '格式不正确，只能包含下划线，数字，英文小写',
             enumId: () => '请输入正确的内容',
             enumName: () => '请输入正确的内容',
@@ -102,7 +102,7 @@ const dictionary = {
             classifyId: () => 'Please enter the correct content',
             // required: (field) => 'Please enter ' + field,
             required: () => 'This field is required',
-            http: () => 'Please enter a URL beginning with http://',
+            http: () => 'Please enter a URL beginning with http(s)://',
             modelId: () => 'The format is incorrect and can only contain underscores, numbers, and lowercase English',
             enumId: () => 'Please enter the correct content',
             enumName: () => 'Please enter the correct content',
