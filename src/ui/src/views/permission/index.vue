@@ -69,3 +69,23 @@
         height: 100%;
     }
 </style>
+
+<style lang="scss">
+    .permission-tab.bk-tab2{
+        height: 100%;
+        border: none;
+        .bk-tab2-head{
+            .bk-tab2-nav {
+                .tab2-nav-item{
+                    text-align: center;
+                }
+            }
+        }
+        .bk-tab2-content{
+            @include scrollbar;
+            >section{
+                height: 100%;
+            }
+        }
+    }
+</style>

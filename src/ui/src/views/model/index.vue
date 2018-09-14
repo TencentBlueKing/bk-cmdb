@@ -105,3 +105,7 @@
         }
     }
 </style>
+
+<style lang="scss">
+    @import '@/assets/scss/model.scss'
+</style>
