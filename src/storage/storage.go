@@ -38,6 +38,7 @@ type DI interface {
 	Ping() error
 	Close()
 	GetSession() interface{}
+	GetDBName() string
 }
 
 const (
