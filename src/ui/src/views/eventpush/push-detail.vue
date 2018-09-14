@@ -629,7 +629,6 @@
                     }
                 }
                 ul{
-                    // width: 680px;
                     width: 100%;
                     float: left;
                 }

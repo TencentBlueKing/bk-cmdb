@@ -211,3 +211,29 @@
         }
     }
 </style>
+
+<style lang="scss">
+    .api-wrapper {
+        .define-wrapper {
+            .userapi-new-selector-wrapper {
+                .bk-selector-wrapper {
+                    display: none;
+                }
+                .bk-selector-list {
+                    display: block !important;
+                    position: static;
+                    margin-top: 5px;
+                    z-index: 1;
+                    box-shadow: none;
+                    border: solid 1px $cmdbFnMainColor;
+                }
+            }
+            .userapi-content-selector {
+                .bk-selector-list {
+                    top: 36px;
+                    left: 1px;
+                }
+            }
+        }
+    }
+</style>
