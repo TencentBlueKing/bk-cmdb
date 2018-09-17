@@ -394,7 +394,12 @@ func (ps *ProcServer) SearchProcess(req *restful.Request, resp *restful.Response
 	if nil != err {
 		searchParams.Limit = common.BKNoLimit
 	}
-	searchParams.Sort = page["sort"].(string)
+
+	if sort, ok := page["sort"].(string); !ok {
+		searchParams.Sort = ""
+	} else {
+		searchParams.Sort = sort
+	}
 
 	// query process by module name
 	if moduleName, ok := condition[common.BKModuleNameField]; ok {

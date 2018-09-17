@@ -15,13 +15,12 @@ package operation
 import (
 	"context"
 
-	"configcenter/src/common/metadata"
-
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -70,6 +69,10 @@ func (a *attribute) CreateObjectAttribute(params types.ContextParams, data frtyp
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to parse the attribute data (%#v), error info is %s", data, err.Error())
 		return nil, err
+	}
+
+	if att.GetID() == common.BKChildStr || att.GetID() == common.BKInstParentStr {
+		return nil, params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, "could not create bk_childid or bk_parent_id")
 	}
 
 	// check the object id

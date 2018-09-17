@@ -120,7 +120,7 @@
                     } = property
                     if (!bkIsapi) {
                         const isCurrentShownProperty = this.shownList.some(property => property['bk_obj_id'] === bkObjId && this.shownProperty.indexOf(bkPropertyId) !== -1)
-                        if (!isCurrentShownProperty) {
+                        if (!isCurrentShownProperty && property['bk_property_name'].toLowerCase().indexOf(this.object.filter.toLowerCase()) !== -1) {
                             if (this.isShowExclude) {
                                 hideList.push(property)
                             } else if (this.excludeFields.indexOf(bkPropertyId) === -1) {
@@ -142,16 +142,6 @@
                 } else {
                     this.object.selected = ''
                 }
-            },
-            'object.filter' (filter) {
-                filter = filter.toLowerCase()
-                this.hideList.map((property, index) => {
-                    if (property['bk_property_name'].toLowerCase().indexOf(filter) === -1) {
-                        this.$refs.hideItem[index].style.display = 'none'
-                    } else {
-                        this.$refs.hideItem[index].style.display = 'block'
-                    }
-                })
             },
             'object.selected' (selectedObjId) {
                 let targetFieldOption = this.fieldOptions.find(({bk_obj_id: bkObjId}) => selectedObjId === bkObjId)
@@ -350,7 +340,7 @@
             cursor: move;
             span{
                 display: inline-block;
-                width: 200px;
+                width: calc(100% - 66px);
                 @include ellipsis;
                 vertical-align: bottom;
             }

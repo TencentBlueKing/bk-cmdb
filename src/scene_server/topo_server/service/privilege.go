@@ -24,7 +24,6 @@ import (
 func (s *topoService) UpdateUserGroupPrivi(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	priviData := &metadata.PrivilegeUserGroup{}
-
 	_, err := priviData.Parse(data)
 	if nil != err {
 		blog.Errorf("[api-privilege] failed to parse the input data, error info is %s ", err.Error())
