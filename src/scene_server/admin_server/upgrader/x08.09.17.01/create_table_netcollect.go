@@ -13,6 +13,7 @@
 package x08_09_17_01
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage"
 
@@ -40,13 +41,13 @@ func createTable(db storage.DI, conf *upgrader.Config) (err error) {
 }
 
 var tables = map[string][]storage.Index{
-	"cc_Netcollect_Device": []storage.Index{
+	common.BKTableNameNetcollectDevice: []storage.Index{
 		storage.Index{Name: "", Columns: []string{"device_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"device_name"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
 	},
 
-	"cc_Netcollect_Property": []storage.Index{
+	common.BKTableNameNetcollectProperty: []storage.Index{
 		storage.Index{Name: "", Columns: []string{"netcollect_property_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
 		storage.Index{Name: "", Columns: []string{"bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
 	}}
