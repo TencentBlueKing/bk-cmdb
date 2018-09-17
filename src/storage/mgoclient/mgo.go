@@ -17,17 +17,17 @@ import (
 	"fmt"
 	"strings"
 
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/storage"
-
-	// "log"
-	// "os"
 	"strconv"
 	"time"
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/storage"
+	// "log"
+	// "os"
 )
 
 type MongoConfig struct {
@@ -368,4 +368,7 @@ func (m *MgoCli) IsDuplicateErr(err error) bool {
 // IsNotFoundErr returns whether err is not found error
 func (m *MgoCli) IsNotFoundErr(err error) bool {
 	return mgo.ErrNotFound == err
+}
+func (m *MgoCli) GetDBName() string {
+	return m.dbName
 }
