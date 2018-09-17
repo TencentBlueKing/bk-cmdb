@@ -261,6 +261,11 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 		return
 	}
 
+	if 0 == len(conf.HostID) {
+		resp.WriteEntity(metadata.NewSuccessResp(nil))
+		return
+	}
+
 	cond := hutil.NewOperation().WithAppID(conf.ApplicationID).Data()
 	appInfo, err := s.Logics.GetAppDetails(common.BKOwnerIDField, cond, pheader)
 	if err != nil {
@@ -268,8 +273,19 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrHostMoveResourcePoolFail, fmt.Sprintf("%v", conf.HostID))})
 		return
 	}
+	if 0 == len(appInfo) {
+		blog.Errorf("assign host to app error, not foud app appID: %d", conf.ApplicationID)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommNotFound)})
+		return
+	}
 
-	ownerID := appInfo[common.BKOwnerIDField].(string)
+	ownerID, err := appInfo.String(common.BKOwnerIDField)
+	if nil != err {
+		blog.Errorf("move host to resource pool , but get app detail failed, err: %v", err)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, "OwnerID")})
+		return
+	}
+
 	if "" == ownerID {
 		blog.Errorf("move host to resource pool, but get app detail failed, err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: errors.New(defLang.Language("host_resource_pool_not_exist"))})
@@ -347,9 +363,14 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CC_Err_Comm_APP_QUERY_FAIL)})
 		return
 	}
+	if 0 == len(appInfo) {
+		blog.Errorf("assign host to app error, not foud app appID: %d", conf.ApplicationID)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommNotFound)})
+		return
+	}
 
-	ownerID := appInfo[common.BKOwnerIDField].(string)
-	if "" == ownerID {
+	ownerID, err := appInfo.String(common.BKOwnerIDField)
+	if nil != err {
 		blog.Errorf("assign host to app, but get app detail failed, err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, "OwnerID")})
 		return

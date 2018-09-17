@@ -10,32 +10,23 @@
  * limitations under the License.
  */
 
-package controllers
+package x08_09_11_01
 
 import (
-	"fmt"
-
-	"github.com/gin-gonic/contrib/sessions"
-	"github.com/gin-gonic/gin"
-
-	"configcenter/src/common"
-	"configcenter/src/common/core/cc/api"
-	"configcenter/src/common/core/cc/wactions"
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage"
 )
 
-//LogOutUser log out user
-func LogOutUser(c *gin.Context) {
-	a := api.NewAPIResource()
-	config, _ := a.ParseConfig()
-	site := config["site.domain_url"]
-	loginURL := config["site.bk_login_url"]
-	appCode := config["site.app_code"]
-	loginPage := fmt.Sprintf(loginURL, appCode, site)
-	session := sessions.Default(c)
-	session.Clear()
-	c.Redirect(302, loginPage)
+func init() {
+	upgrader.RegistUpgrader("x08.09.11.01", upgrade)
 }
 
-func init() {
-	wactions.RegisterNewAction(wactions.Action{common.HTTPSelectGet, "/logout", nil, LogOutUser})
+func upgrade(db storage.DI, conf *upgrader.Config) (err error) {
+	err = addOperationLogIndex(db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade x08.09.11.01] updateSystemProperty error  %s", err.Error())
+		return err
+	}
+	return
 }

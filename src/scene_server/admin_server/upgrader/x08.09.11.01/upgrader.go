@@ -10,32 +10,21 @@
  * limitations under the License.
  */
 
-package controllers
+package x08_09_11_01
 
 import (
-	"fmt"
-
-	"github.com/gin-gonic/contrib/sessions"
-	"github.com/gin-gonic/gin"
+	"gopkg.in/mgo.v2"
 
 	"configcenter/src/common"
-	"configcenter/src/common/core/cc/api"
-	"configcenter/src/common/core/cc/wactions"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage"
 )
 
-//LogOutUser log out user
-func LogOutUser(c *gin.Context) {
-	a := api.NewAPIResource()
-	config, _ := a.ParseConfig()
-	site := config["site.domain_url"]
-	loginURL := config["site.bk_login_url"]
-	appCode := config["site.app_code"]
-	loginPage := fmt.Sprintf(loginURL, appCode, site)
-	session := sessions.Default(c)
-	session.Clear()
-	c.Redirect(302, loginPage)
-}
+func addOperationLogIndex(db storage.DI, conf *upgrader.Config) (err error) {
+	index := storage.Index{Name: "", Columns: []string{"-opt_time"}, Type: storage.INDEX_TYPE_BACKGROUP}
 
-func init() {
-	wactions.RegisterNewAction(wactions.Action{common.HTTPSelectGet, "/logout", nil, LogOutUser})
+	if err = db.Index(common.BKTableNameOperationLog, &index); err != nil && !mgo.IsDup(err) {
+		return err
+	}
+	return nil
 }
