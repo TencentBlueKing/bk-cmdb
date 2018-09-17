@@ -25,25 +25,30 @@
             </div>
             <div class="field-table">
                 <ul class="table-title">
+                    <li class="table-item">{{$t('ModelManagement["字段名"]')}}</li>
+                    <li class="table-item">{{$t('ModelManagement["类型"]')}}</li>
                     <li class="table-item">{{$t('ModelManagement["唯一"]')}}</li>
                     <li class="table-item">{{$t('ModelManagement["必填字段"]')}}</li>
-                    <li class="table-item">{{$t('ModelManagement["类型"]')}}</li>
-                    <li class="table-item">{{$t('ModelManagement["字段名"]')}}</li>
                     <li class="table-item">{{$t('ModelManagement["操作"]')}}</li>
                 </ul>
                 <ul class="table-content" v-bkloading="{isLoading: $loading(['initFieldList', 'deleteObjectAttribute'])}">
                     <li v-for="(field, index) in fieldList" :key="index">
                         <ul class="field-item clearfix" :class="{'disabled': field['ispre'] || isReadOnly}" @click="toggleDetailShow(field, index)">
+                            <li class="table-item" :title="`${field['bk_property_name']}(${field['bk_property_id']})`">{{field['bk_property_name']}}({{field['bk_property_id']}})</li>
+                            <li class="table-item">{{fieldTypeMap[field['bk_property_type']]}}</li>
                             <li class="table-item"><i class="bk-icon icon-check-1" v-show="field['isonly']"></i></li>
                             <li class="table-item"><i class="bk-icon icon-check-1" v-show="field['isrequired']"></i></li>
-                            <li class="table-item">{{fieldTypeMap[field['bk_property_type']]}}</li>
-                            <li class="table-item" :title="`${field['bk_property_name']}(${field['bk_property_id']})`">{{field['bk_property_name']}}({{field['bk_property_id']}})</li>
                             <li class="table-item">
                                 <div class="btn-contain">
-                                    <i class="icon-cc-del"  v-if="!field['ispre'] && !isReadOnly"
+                                    <span class="text-primary">{{$t('Common["编辑"]')}}</span>
+                                    <span class="text-danger" v-if="!field['ispre'] && !isReadOnly"
+                                    @click.stop="showConfirmDialog(field, index)">
+                                        {{$t('Common["删除"]')}}
+                                    </span>
+                                    <!-- <i class="icon-cc-del"  v-if="!field['ispre'] && !isReadOnly"
                                         :class="{'editable':field['ispre'] || isReadOnly}"
                                         @click.stop="showConfirmDialog(field, index)"
-                                    ></i>
+                                    ></i> -->
                                 </div>
                             </li>
                         </ul>
@@ -252,7 +257,7 @@
 <style lang="scss" scoped>
     .field-wrapper {
         position: relative;
-        padding: 0 30px;
+        padding: 0 10px;
         height: 100%;
         .field-content {
             height: calc(100% - 140px);
@@ -290,31 +295,31 @@
             }
             .table-item {
                 float: left;
+                padding: 0 20px;
                 height: 40px;
                 line-height: 40px;
                 background: $cmdbPrimaryColor;
-                text-align: center;
                 border: 1px solid $cmdbBorderLightColor;
                 border-right: none;
                 &:nth-child(1) {
-                    width:80px;
+                    width: 290px;
                 }
                 &:nth-child(2) {
-                    width:80px;
+                    width: 145px;
                 }
                 &:nth-child(3) {
-                    width:145px;
+                    width: 95px;
                 }
                 &:nth-child(4) {
-                    width:290px;
+                    width: 95px;
                 }
                 &:nth-child(5) {
-                    width: 105px;
+                    width: 115px;
                     border-right: 1px solid $cmdbBorderLightColor;
                 }
             }
             .table-content {
-                width: 720px;
+                width: 760px;
                 height: calc(100% - 40px);
                 @include scrollbar;
                 .field-item {
@@ -329,14 +334,20 @@
                         &:first-child {
                             border-left: 1px solid $cmdbBorderLightColor;
                         }
-                        .icon-cc-del {
-                            color: #ccc;
+                        .btn-contain {
+                            font-size: 0;
+                            >span {
+                                font-size: 14px;
+                                &:first-child {
+                                    margin-right: 10px;
+                                }
+                            }
                         }
                     }
                 }
                 .field-detail {
-                    width: 700px;
-                    padding: 30px 14px 0;
+                    width: 740px;
+                    padding: 20px;
                     border: 1px solid $cmdbBorderLightColor;
                     border-top: none;
                 }
