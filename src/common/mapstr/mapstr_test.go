@@ -14,7 +14,9 @@ package mapstr_test
 
 import (
 	. "configcenter/src/common/mapstr"
+	"fmt"
 	"testing"
+	"time"
 )
 
 func TestMapStrInto(t *testing.T) {
@@ -29,7 +31,7 @@ func TestMapStrInto(t *testing.T) {
 
 	tmp := &testData{}
 	target.MarshalJSONInto(tmp)
-	t.Logf("the test tmp %#v", tmp)
+	//t.Logf("the test tmp %#v", tmp)
 
 	maps := NewArrayFromInterface([]map[string]interface{}{
 		{"k": "value"}, {"i": 0},
@@ -37,11 +39,12 @@ func TestMapStrInto(t *testing.T) {
 	target1 := maps[0]
 
 	target2, err := NewFromInterface(map[string]interface{}{
-		"k": "v", "i": 1, "j": 2, "time": "2018-01-01 00:00:00", "map": map[string]interface{}{},
+		"k": "v", "i": 1, "j": 2, "time": time.Now(), "map": map[string]interface{}{}, "bool": true,
 	})
 	if err != nil {
 		t.Fail()
 	}
+	target1.Different(target2)
 	target1.Merge(target2)
 
 	target1.Set("set_key", "set_value")
@@ -54,6 +57,10 @@ func TestMapStrInto(t *testing.T) {
 		t.Fail()
 	}
 
+	if b, _ := target1.Bool("bool"); !b {
+		t.Fail()
+	}
+
 	if i, _ := target1.Float("i"); i != 1 {
 		t.Fail()
 	}
@@ -63,6 +70,7 @@ func TestMapStrInto(t *testing.T) {
 	}
 
 	if _, err := target1.Time("time"); err != nil {
+		fmt.Println(err)
 		t.Fail()
 	}
 
@@ -89,5 +97,7 @@ func TestMapStrInto(t *testing.T) {
 	if target1.IsEmpty() {
 		t.Fail()
 	}
+
+	target1.Reset()
 
 }
