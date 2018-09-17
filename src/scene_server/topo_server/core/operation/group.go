@@ -14,14 +14,14 @@ package operation
 
 import (
 	"context"
-
-	"configcenter/src/common"
-	"configcenter/src/common/metadata"
+	"strconv"
 
 	"configcenter/src/apimachinery"
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -30,7 +30,7 @@ import (
 // GroupOperationInterface group operation methods
 type GroupOperationInterface interface {
 	CreateObjectGroup(params types.ContextParams, data frtypes.MapStr) (model.Group, error)
-	DeleteObjectGroup(params types.ContextParams, groupID string) error
+	DeleteObjectGroup(params types.ContextParams, groupID int64) error
 	FindObjectGroup(params types.ContextParams, cond condition.Condition) ([]model.Group, error)
 	FindGroupByObject(params types.ContextParams, objID string, cond condition.Condition) ([]model.Group, error)
 	UpdateObjectGroup(params types.ContextParams, cond *metadata.UpdateGroupCondition) error
@@ -85,9 +85,9 @@ func (g *group) CreateObjectGroup(params types.ContextParams, data frtypes.MapSt
 	return grp, nil
 }
 
-func (g *group) DeleteObjectGroup(params types.ContextParams, groupID string) error {
+func (g *group) DeleteObjectGroup(params types.ContextParams, groupID int64) error {
 
-	rsp, err := g.clientSet.ObjectController().Meta().DeletePropertyGroup(context.Background(), groupID, params.Header)
+	rsp, err := g.clientSet.ObjectController().Meta().DeletePropertyGroup(context.Background(), strconv.FormatInt(groupID, 10), params.Header)
 	if nil != err {
 		blog.Error("[operation-grp]failed to request object controller, error info is %s", err.Error())
 		return err

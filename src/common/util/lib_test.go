@@ -13,7 +13,6 @@
 package util
 
 import (
-	"configcenter/src/common"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -21,6 +20,8 @@ import (
 
 	restful "github.com/emicklei/go-restful"
 	"github.com/stretchr/testify/require"
+
+	"configcenter/src/common"
 )
 
 func TestInArray(t *testing.T) {
@@ -159,6 +160,7 @@ func TestGetActionLanguage(t *testing.T) {
 
 	language := GetActionLanguage(restful.NewRequest(req))
 	//require.Empty(t, language)
+	require.Equal(t, language, "zh-cn")
 
 	req.Header.Set(common.BKHTTPLanguage, "cn")
 	language = GetActionLanguage(restful.NewRequest(req))
@@ -244,7 +246,7 @@ func TestGetActionOnwerID(t *testing.T) {
 		args args
 		want string
 	}{
-		// TODO: Add test cases.
+	// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -264,7 +266,7 @@ func TestGetUser(t *testing.T) {
 		args args
 		want string
 	}{
-		// TODO: Add test cases.
+	// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -284,7 +286,7 @@ func TestGetOwnerID(t *testing.T) {
 		args args
 		want string
 	}{
-		// TODO: Add test cases.
+	// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -305,7 +307,7 @@ func TestGetOwnerIDAndUser(t *testing.T) {
 		want  string
 		want1 string
 	}{
-		// TODO: Add test cases.
+	// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -330,7 +332,7 @@ func TestGetActionOnwerIDAndUser(t *testing.T) {
 		want  string
 		want1 string
 	}{
-		// TODO: Add test cases.
+	// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -354,7 +356,7 @@ func TestGetActionLanguageByHTTPHeader(t *testing.T) {
 		args args
 		want string
 	}{
-		// TODO: Add test cases.
+	// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -374,7 +376,7 @@ func TestGetActionOnwerIDByHTTPHeader(t *testing.T) {
 		args args
 		want string
 	}{
-		// TODO: Add test cases.
+	// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -394,7 +396,7 @@ func TestGetHTTPCCRequestID(t *testing.T) {
 		args args
 		want string
 	}{
-		// TODO: Add test cases.
+	// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -411,7 +413,7 @@ func TestInt64Slice_Len(t *testing.T) {
 		p    Int64Slice
 		want int
 	}{
-		// TODO: Add test cases.
+	// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -433,7 +435,7 @@ func TestInt64Slice_Less(t *testing.T) {
 		args args
 		want bool
 	}{
-		// TODO: Add test cases.
+	// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -454,7 +456,7 @@ func TestInt64Slice_Swap(t *testing.T) {
 		p    Int64Slice
 		args args
 	}{
-		// TODO: Add test cases.
+	// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

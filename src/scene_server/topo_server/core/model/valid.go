@@ -42,7 +42,7 @@ func (f *FieldValid) Valid(params types.ContextParams, data mapstr.MapStr, field
 // ValidID check the property ID
 func (f *FieldValid) ValidID(params types.ContextParams, value string) error {
 
-	match, err := regexp.MatchString(`[a-z\d_]+`, value)
+	match, err := regexp.MatchString(`^[a-z\d_]+$`, value)
 	if nil != err {
 		return err
 	}
