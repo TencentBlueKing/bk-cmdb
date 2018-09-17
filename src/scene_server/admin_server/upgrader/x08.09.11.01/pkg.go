@@ -9,18 +9,26 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package util
+
+package x08_09_11_01
 
 import (
-	"testing"
+	"context"
 
-	"github.com/stretchr/testify/require"
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage/dal"
 )
 
-func TestIntArrIntersection(t *testing.T) {
-	slice1 := []int64{1, 2, 3}
-	slice2 := []int64{3, 4, 5}
-	slice3 := IntArrIntersection(slice1, slice2)
-	require.Equal(t, int64(3), slice3[0])
+func init() {
+	upgrader.RegistUpgrader("x08.09.11.01", upgrade)
+}
 
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	err = addOperationLogIndex(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade x08.09.11.01] updateSystemProperty error  %s", err.Error())
+		return err
+	}
+	return
 }

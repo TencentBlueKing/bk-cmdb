@@ -17,12 +17,11 @@ import (
 	"strconv"
 	"strings"
 
-	"configcenter/src/common/errors"
-
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/errors"
 	frtypes "configcenter/src/common/mapstr"
 	metatype "configcenter/src/common/metadata"
 	gparams "configcenter/src/common/paraparse"
@@ -342,7 +341,7 @@ func (c *commonInst) innerHasHost(params types.ContextParams, moduleIDS []int64)
 
 	return 0 != len(rsp.Data), nil
 }
-func (c *commonInst) hasHost(params types.ContextParams, targetInst inst.Inst) ([]deletedInst, bool, error) {
+func (c *commonInst) hasHost(params types.ContextParams, targetInst inst.Inst, checkhost bool) ([]deletedInst, bool, error) {
 
 	id, err := targetInst.GetInstID()
 	if nil != err {
@@ -350,17 +349,18 @@ func (c *commonInst) hasHost(params types.ContextParams, targetInst inst.Inst) (
 	}
 
 	targetObj := targetInst.GetObject()
-	if !targetObj.IsCommon() {
-		if targetObj.GetObjectType() == common.BKInnerObjIDModule {
-			exists, err := c.innerHasHost(params, []int64{id})
-			if nil != err {
-				return nil, false, err
-			}
+	if !targetObj.IsCommon() &&
+		targetObj.GetObjectType() == common.BKInnerObjIDModule &&
+		checkhost {
 
-			if exists {
+		exists, err := c.innerHasHost(params, []int64{id})
+		if nil != err {
+			return nil, false, err
+		}
 
-				return nil, true, nil
-			}
+		if exists {
+
+			return nil, true, nil
 		}
 	}
 
@@ -373,7 +373,7 @@ func (c *commonInst) hasHost(params types.ContextParams, targetInst inst.Inst) (
 
 	for _, childInst := range childInsts {
 
-		ids, exists, err := c.hasHost(params, childInst)
+		ids, exists, err := c.hasHost(params, childInst, checkhost)
 		if nil != err {
 			return nil, false, err
 		}
@@ -404,19 +404,17 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 	}
 
 	deleteIDS := []deletedInst{}
-	if needCheckHost {
-		for _, inst := range insts {
-			ids, exists, err := c.hasHost(params, inst)
-			if nil != err {
-				return params.Err.Error(common.CCErrTopoHasHostCheckFailed)
-			}
-
-			if exists {
-				return params.Err.Error(common.CCErrTopoHasHostCheckFailed)
-			}
-
-			deleteIDS = append(deleteIDS, ids...)
+	for _, inst := range insts {
+		ids, exists, err := c.hasHost(params, inst, needCheckHost)
+		if nil != err {
+			return params.Err.Error(common.CCErrTopoHasHostCheckFailed)
 		}
+
+		if exists {
+			return params.Err.Error(common.CCErrTopoHasHostCheckFailed)
+		}
+
+		deleteIDS = append(deleteIDS, ids...)
 	}
 
 	for _, delInst := range deleteIDS {
@@ -472,6 +470,12 @@ func (c *commonInst) DeleteInst(params types.ContextParams, obj model.Object, co
 	query.Condition = cond.ToMapStr()
 
 	_, insts, err := c.FindInst(params, obj, query, false)
+	instIDs := []int64{}
+	for _, inst := range insts {
+		instID, _ := inst.GetInstID()
+		instIDs = append(instIDs, instID)
+	}
+	blog.V(4).Infof("[DeleteInst] find inst by %+v, returns %+v", query, instIDs)
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to search insts by the condition(%#v), error info is %s", cond.ToMapStr(), err.Error())
 		return err
@@ -541,6 +545,7 @@ func (c *commonInst) convertInstIDIntoStruct(params types.ContextParams, asstObj
 
 		if needAsstDetail {
 			instAsstNames = append(instAsstNames, metatype.InstNameAsst{
+				ID:         strconv.Itoa(int(instID)),
 				ObjID:      obj.GetID(),
 				ObjectName: obj.GetName(),
 				ObjIcon:    obj.GetIcon(),
@@ -552,6 +557,7 @@ func (c *commonInst) convertInstIDIntoStruct(params types.ContextParams, asstObj
 		}
 
 		instAsstNames = append(instAsstNames, metatype.InstNameAsst{
+			ID:         strconv.Itoa(int(instID)),
 			ObjID:      obj.GetID(),
 			ObjectName: obj.GetName(),
 			ObjIcon:    obj.GetIcon(),
@@ -762,6 +768,7 @@ func (c *commonInst) FindInstTopo(params types.ContextParams, obj model.Object, 
 		commonInst.ObjID = inst.GetObject().GetID()
 		commonInst.ObjIcon = inst.GetObject().GetIcon()
 		commonInst.InstID = id
+		commonInst.ID = strconv.Itoa(int(id))
 		commonInst.InstName = name
 
 		_, parentInsts, err := c.FindInstParentTopo(params, inst.GetObject(), id, nil)

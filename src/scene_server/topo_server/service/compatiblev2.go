@@ -187,7 +187,7 @@ func (s *topoService) SearchModuleBySetProperty(params types.ContextParams, path
 	cond := condition.CreateCondition()
 
 	data.ForEach(func(key string, val interface{}) {
-		cond.Field(key).In([]interface{}{val})
+		cond.Field(key).In(val)
 	})
 	cond.Field(common.BKAppIDField).Eq(bizID)
 	return s.core.CompatibleV2Operation().Module(params).SearchModuleBySetProperty(bizID, cond)

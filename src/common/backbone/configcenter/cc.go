@@ -117,7 +117,7 @@ func (c *CC) run() error {
 }
 
 func (c *CC) onProcChange(cur *crd.DiscoverEvent) {
-	blog.V(3).Infof("config center received event that *%s* config has changed. event: %s", c.procName, string(cur.Data))
+	blog.V(5).Infof("config center received event that *%s* config has changed. event: %s", c.procName, string(cur.Data))
 
 	if cur.Err != nil {
 		blog.Errorf("config center received event that %s config has changed, but got err: %v", c.procName, cur.Err)
@@ -137,11 +137,11 @@ func (c *CC) onProcChange(cur *crd.DiscoverEvent) {
 	if c.handler != nil {
 		go c.handler.OnProcessUpdate(*prev, *now)
 	}
-	blog.V(3).Infof("config center received event that *%s* config has changed. prev: %v, cur: %v", c.procName, *prev, *now)
+	blog.V(5).Infof("config center received event that *%s* config has changed. prev: %v, cur: %v", c.procName, *prev, *now)
 }
 
 func (c *CC) onErrorChange(cur *crd.DiscoverEvent) {
-	blog.V(3).Infof("config center received event that *ERROR CODE* config has changed. event: %s", string(cur.Data))
+	blog.V(5).Infof("config center received event that *ERROR CODE* config has changed. event: %s", string(cur.Data))
 
 	if cur.Err != nil {
 		blog.Errorf("config center received event that *ERROR CODE* config has changed, but got err: %v", cur.Err)
@@ -162,11 +162,11 @@ func (c *CC) onErrorChange(cur *crd.DiscoverEvent) {
 	if c.handler != nil {
 		go c.handler.OnErrorUpdate(prev, deepCopyError(now))
 	}
-	blog.V(3).Infof("config center received event that *ERROR CODE* config has changed. prev: %v, cur: %v", prev, now)
+	blog.V(5).Infof("config center received event that *ERROR CODE* config has changed. prev: %v, cur: %v", prev, now)
 }
 
 func (c *CC) onLanguageChange(cur *crd.DiscoverEvent) {
-	blog.V(3).Infof("config center received event that *LANGUAGE* config has changed. event: %s", string(cur.Data))
+	blog.V(5).Infof("config center received event that *LANGUAGE* config has changed. event: %s", string(cur.Data))
 
 	if cur.Err != nil {
 		blog.Errorf("config center received event that *LANGUAGE* config has changed, but got err: %v", cur.Err)
@@ -187,7 +187,7 @@ func (c *CC) onLanguageChange(cur *crd.DiscoverEvent) {
 	if c.handler != nil {
 		go c.handler.OnLanguageUpdate(prev, deepCopyLanguage(now))
 	}
-	blog.V(3).Infof("config center received event that *LANGUAGE* config has changed. prev: %v, cur: %v", prev, now)
+	blog.V(5).Infof("config center received event that *LANGUAGE* config has changed. prev: %v, cur: %v", prev, now)
 }
 
 func (c *CC) sync() {
