@@ -562,6 +562,11 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommParamsNeedSet)})
 		return
 	}
+	if 0 == len(hostList.ModuleID) {
+		blog.Errorf("host sync app  parameters required moduleID", hostList.ApplicationID)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, common.BKModuleIDField)})
+		return
+	}
 
 	if common.BatchHostAddMaxRow < len(hostList.HostInfo) {
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommXXExceedLimit, "host_info ", common.BatchHostAddMaxRow)})
@@ -592,12 +597,12 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 	}
 	moduleIDS, err := s.Logics.GetModuleIDByCond(req.Request.Header, moduleCond) //s.Logics.NewHostSyncValidModule(req, data.ApplicationID, data.ModuleID, m.CC.ObjCtrl())
 	if nil != err {
-		resp.WriteError(http.StatusInternalServerError, defErr.Errorf(common.CCErrTopoGetModuleFailed, err.Error()))
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrTopoGetModuleFailed, err.Error())})
 		return
 	}
 	if len(moduleIDS) != len(hostList.ModuleID) {
 		blog.Errorf("not found part module: source:%v, db:%v", hostList.ModuleID, moduleIDS)
-		resp.WriteError(http.StatusInternalServerError, defErr.Errorf(common.CCErrTopoGetModuleFailed, " not found part moudle id"))
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrTopoGetModuleFailed, " not found part moudle id")})
 		return
 
 	}
@@ -651,7 +656,7 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 	}
 
 	if 0 == len(hostResult) {
-		blog.Errorf("no host in set")
+		blog.Warnf("no host in set")
 		resp.WriteEntity(meta.NewSuccessResp(nil))
 		return
 	}
@@ -735,4 +740,32 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 
 	resp.WriteEntity(meta.NewSuccessResp(nil))
 	return
+}
+
+func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response) {
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
+	input := &meta.CloneHostPropertyParams{}
+	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
+		blog.Errorf("CloneHostProperty , but decode body failed, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	if 0 == input.AppID {
+		blog.Errorf("CloneHostProperty ,appliation not foud input:%v", input)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, "ApplicationID")})
+		return
+	}
+
+	res, err := s.Logics.CloneHostProperty(input, input.AppID, input.CloudID, req.Request.Header)
+	if nil != err {
+		blog.Errorf("CloneHostProperty ,appliation not int , err: %v, input:%v", err, input)
+		resp.WriteError(http.StatusBadGateway, &meta.RespError{Msg: err})
+		return
+	}
+
+	resp.WriteEntity(meta.Response{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     res,
+	})
 }
