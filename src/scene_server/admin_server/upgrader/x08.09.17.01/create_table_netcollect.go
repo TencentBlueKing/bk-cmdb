@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package x08_09_07_01
+package x08_09_17_01
 
 import (
 	"configcenter/src/scene_server/admin_server/upgrader"
