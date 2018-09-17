@@ -50,3 +50,4 @@ func (m *MockDB) Open() error                                                   
 func (m *MockDB) Ping() error                                                        { return nil }
 func (m *MockDB) Close()                                                             {}
 func (m *MockDB) GetSession() interface{}                                            { return nil }
+func (m *MockDB) GetDBName() string                                                  { return "mock_db" }

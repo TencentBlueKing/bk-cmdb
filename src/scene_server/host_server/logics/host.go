@@ -434,7 +434,7 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 		return nil, err
 	}
 
-	if len(appCond.Condition) > 0 || len(setCond.Condition) > 0 || len(moduleCond.Condition) > 0 || -1 != data.AppID {
+	if len(appCond.Condition) > 0 || len(setCond.Condition) > 0 || len(moduleCond.Condition) > 0 || len(objectCondMap) > 0 || -1 != data.AppID {
 		hostCond.Condition = append(hostCond.Condition, metadata.ConditionItem{
 			Field:    common.BKHostIDField,
 			Operator: common.BKDBIN,
@@ -563,6 +563,7 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 		if false == ok {
 			continue
 		}
+		hostAppIDArr = util.IntArrayUnique(hostAppIDArr)
 		hostAppData := make([]interface{}, 0)
 		for _, appID := range hostAppIDArr {
 			appInfo, mapOk := hostAppMap[appID]
@@ -575,6 +576,10 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 
 		//setdata
 		hostSetIDArr, ok := hostSetConfig[hostID]
+		if false == ok {
+			continue
+		}
+		hostSetIDArr = util.IntArrayUnique(hostSetIDArr)
 		hostSetData := make([]interface{}, 0)
 		for _, setID := range hostSetIDArr {
 			setInfo, isOk := hostSetMap[setID]
@@ -616,6 +621,10 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 
 		//moduledata
 		hostModuleIDArr, ok := hostModuleConfig[hostID]
+		if false == ok {
+			continue
+		}
+		hostModuleIDArr = util.IntArrayUnique(hostModuleIDArr)
 		hostModuleData := make([]interface{}, 0)
 		for _, ModuleID := range hostModuleIDArr {
 			moduleInfo, ok := hostModuleMap[ModuleID]
