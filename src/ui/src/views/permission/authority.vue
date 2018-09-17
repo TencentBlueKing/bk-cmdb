@@ -1,112 +1,96 @@
 <template>
-    <div class="authority-wrapper">
-        <template v-if="roles.length">
-            <div class="authority-box">
-                <div class="authority-group clearfix">
-                    <h2 class="authority-group-title fl">{{$t('Permission["角色选择"]')}}</h2>
-                    <bk-selector class="role-selector fl"
-                        :list="localRoles.list"
-                        :selected.sync="localRoles.selected"
-                        :searchable="true">
-                    </bk-selector>
+    <div class="authority-wrapper" v-bkloading="{isLoading: $loading('searchUserPrivilege')}">
+        <div class="authority-box">
+            <div class="authority-group clearfix">
+                <h2 class="authority-group-title">{{$t('Permission["系统权限"]')}}</h2>
+                <div class="authority-group-content">
+                    <div class="authority-type system clearfix" 
+                        v-for="(config, configId) in sysConfig" 
+                        :key="configId"
+                        v-if="config.authorities.length">
+                        <h3 class="system-title fl">{{$t(config.name)}}:</h3>
+                        <ul class="system-list fl">
+                            <li class="system-item fl"  v-for="(authority, index) in config.authorities" :key="index">
+                                <label class="cmdb-form-checkbox cmdb-checkbox-small"
+                                    :for="'systemAuth-' + authority.id" 
+                                    :title="$t(authority.name)">
+                                    <input type="checkbox"
+                                        :id="'systemAuth-' + authority.id" 
+                                        :value="authority.id"
+                                        v-model="config.selectedAuthorities">{{$t(authority.name)}}
+                                </label>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
-                <div class="authority-group clearfix">
-                    <h2 class="authority-group-title fl">{{$t('Permission["系统相关"]')}}</h2>
-                    <div class="authority-group-content">
-                        <div class="authority-type system clearfix" 
-                            v-for="(config, configId) in sysConfig" 
-                            :key="configId"
-                            v-if="config.authorities.length">
-                            <h3 class="system-title fl">{{$t(config.name)}}</h3>
-                            <ul class="system-list fl">
-                                <li class="system-item fl"  v-for="(authority, index) in config.authorities" :key="index">
-                                    <label class="cmdb-form-checkbox cmdb-checkbox-small"
-                                        :for="'systemAuth-' + authority.id" 
-                                        :title="$t(authority.name)">
-                                        <input type="checkbox"
-                                            :id="'systemAuth-' + authority.id" 
-                                            :value="authority.id"
-                                            v-model="config.selectedAuthorities">{{$t(authority.name)}}
-                                    </label>
+            </div>
+            <div class="authority-group model clearfix">
+                <h2 class="authority-group-title"><span>{{$t('Permission["模型权限"]')}}</span></h2>
+                <div class="authority-group-content">
+                    <div class="authority-type model" v-for="(classify,classifyIndex) in classifications" 
+                    :key="classifyIndex"
+                    v-if="classify.models.length"> 
+                        <h3 class="classify-name clearfix" :title="classify.name" @click="classify.open = !classify.open">
+                            <i class="bk-icon icon-angle-down angle fl" :class="{'open': classify.open}"></i>
+                            <span class="fl">{{classify.name}}</span>
+                        </h3>
+                        <transition name="slide">
+                            <ul class="model-list" v-show="classify.open" :style="calcModelListStyle(classify.models.length)">
+                                <li class="model-item clearfix" v-for="(model,modelIndex) in classify.models" :key="modelIndex">
+                                    <h4 class="model-authority fl" :title="model['bk_obj_name']">{{model['bk_obj_name']}}:</h4>
+                                    <span class="model-authority-checkbox fl first">
+                                        <label class="cmdb-form-checkbox cmdb-checkbox-small"
+                                            :for="'model-all-'+model['bk_obj_id']">
+                                            <input type="checkbox"
+                                                :id="'model-all-'+model['bk_obj_id']" 
+                                                :checked="model.selectedAuthorities.length === 3"
+                                                @change="checkAllModelAuthorities(classifyIndex,modelIndex,$event)">{{$t('Common["全选"]')}}
+                                        </label>
+                                    </span>
+                                    <span class="model-authority-checkbox fl">
+                                        <label class="cmdb-form-checkbox cmdb-checkbox-small"
+                                            :for="'model-search-'+model['bk_obj_id']">
+                                            <input type="checkbox" value='search' 
+                                                :id="'model-search-'+model['bk_obj_id']" 
+                                                v-model="model.selectedAuthorities"
+                                                @change="checkOtherAuthorities(classifyIndex,modelIndex,$event)">{{$t('Common["查询"]')}}
+                                        </label>
+                                    </span>
+                                    <span class="model-authority-checkbox fl">
+                                        <label class="cmdb-form-checkbox cmdb-checkbox-small" 
+                                            :for="'model-update-'+model['bk_obj_id']" 
+                                            :class="{'disabled': model.selectedAuthorities.indexOf('search') === -1}">
+                                            <input type="checkbox" value='update' 
+                                                :id="'model-update-'+model['bk_obj_id']"
+                                                :disabled="model.selectedAuthorities.indexOf('search') === -1"  
+                                                v-model="model.selectedAuthorities">{{$t('Common["编辑"]')}}
+                                        </label>
+                                    </span>
+                                    <span class="model-authority-checkbox fl">
+                                        <label class="cmdb-form-checkbox cmdb-checkbox-small" 
+                                            :for="'model-delete-'+model['bk_obj_id']" 
+                                            :class="{'disabled': model.selectedAuthorities.indexOf('search') === -1}">
+                                            <input type="checkbox" value='delete' 
+                                                :id="'model-delete-'+model['bk_obj_id']"
+                                                :disabled="model.selectedAuthorities.indexOf('search') === -1" 
+                                                v-model="model.selectedAuthorities">{{$t('Common["删除"]')}}
+                                        </label>
+                                    </span>
                                 </li>
                             </ul>
-                        </div>
-                    </div>
-                </div>
-                <div class="authority-group model clearfix">
-                    <h2 class="authority-group-title"><span>{{$t('Permission["模型相关"]')}}</span></h2>
-                    <div class="authority-group-content">
-                        <div class="authority-type model" v-for="(classify,classifyIndex) in classifications" 
-                        :key="classifyIndex"
-                        v-if="classify.models.length"> 
-                            <h3 class="classify-name clearfix" :title="classify.name" @click="classify.open = !classify.open">
-                                <span class="fl">{{classify.name}}</span>
-                                <i class="bk-icon icon-angle-down angle fr" :class="{'open': classify.open}"></i>
-                            </h3>
-                            <transition name="slide">
-                                <ul class="model-list" v-show="classify.open" :style="calcModelListStyle(classify.models.length)">
-                                    <li class="model-item clearfix" v-for="(model,modelIndex) in classify.models" :key="modelIndex">
-                                        <h4 class="model-authority fl" :title="model['bk_obj_name']">{{model['bk_obj_name']}}</h4>
-                                        <span class="model-authority-checkbox fl">
-                                            <label class="cmdb-form-checkbox cmdb-checkbox-small"
-                                                :for="'model-all-'+model['bk_obj_id']">
-                                                <input type="checkbox"
-                                                    :id="'model-all-'+model['bk_obj_id']" 
-                                                    :checked="model.selectedAuthorities.length === 3"
-                                                    @change="checkAllModelAuthorities(classifyIndex,modelIndex,$event)">{{$t('Common["全选"]')}}
-                                            </label>
-                                        </span>
-                                        <span class="model-authority-checkbox fl">
-                                            <label class="cmdb-form-checkbox cmdb-checkbox-small"
-                                                :for="'model-search-'+model['bk_obj_id']">
-                                                <input type="checkbox" value='search' 
-                                                    :id="'model-search-'+model['bk_obj_id']" 
-                                                    v-model="model.selectedAuthorities"
-                                                    @change="checkOtherAuthorities(classifyIndex,modelIndex,$event)">{{$t('Common["查询"]')}}
-                                            </label>
-                                        </span>
-                                        <span class="model-authority-checkbox fl">
-                                            <label class="cmdb-form-checkbox cmdb-checkbox-small" 
-                                                :for="'model-update-'+model['bk_obj_id']" 
-                                                :class="{'disabled': model.selectedAuthorities.indexOf('search') === -1}">
-                                                <input type="checkbox" value='update' 
-                                                    :id="'model-update-'+model['bk_obj_id']"
-                                                    :disabled="model.selectedAuthorities.indexOf('search') === -1"  
-                                                    v-model="model.selectedAuthorities">{{$t('Common["编辑"]')}}
-                                            </label>
-                                        </span>
-                                        <span class="model-authority-checkbox fl">
-                                            <label class="cmdb-form-checkbox cmdb-checkbox-small" 
-                                                :for="'model-delete-'+model['bk_obj_id']" 
-                                                :class="{'disabled': model.selectedAuthorities.indexOf('search') === -1}">
-                                                <input type="checkbox" value='delete' 
-                                                    :id="'model-delete-'+model['bk_obj_id']"
-                                                    :disabled="model.selectedAuthorities.indexOf('search') === -1" 
-                                                    v-model="model.selectedAuthorities">{{$t('Common["删除"]')}}
-                                            </label>
-                                        </span>
-                                    </li>
-                                </ul>
-                            </transition>
-                        </div>
+                        </transition>
                     </div>
                 </div>
             </div>
-            <footer class="footer">
-                <bk-button type="primary" :loading="$loading('updateGroupAuthorities')" @click="updateGroupAuthorities">
-                    {{$t('Common["保存"]')}}
-                </bk-button>
-            </footer>
-        </template>
-        <template v-else>
-            <div class="user-none">
-                <img src="../../assets/images/user-none.png" :alt="$t('Permission[\'没有创建角色\']')">
-                <p class="mt20">
-                    {{$t('Permission["没有创建角色"]')}}
-                    <span class="btn" @click="changeTab">{{$t('Permission["点击新增"]')}}</span>
-                </p>
-            </div>
-        </template>
+        </div>
+        <footer class="footer">
+            <bk-button type="primary" :loading="$loading('updateGroupAuthorities')" @click="updateGroupAuthorities">
+                {{$t('Common["保存"]')}}
+            </bk-button>
+            <bk-button type="default" @click="cancel">
+                {{$t('Common["取消"]')}}
+            </bk-button>
+        </footer>
     </div>
 </template>
 
@@ -120,10 +104,6 @@
         },
         data () {
             return {
-                localRoles: {
-                    list: [],
-                    selected: ''
-                },
                 sysConfig: {
                     global_busi: {
                         id: 'global_busi',
@@ -176,24 +156,21 @@
                 return updateParams
             }
         },
-        watch: {
-            'localRoles.selected' (groupId) {
-                if (groupId) {
-                    this.getGroupAuthorities(groupId)
-                }
-            }
+        created () {
+            this.getGroupAuthorities()
         },
         methods: {
             ...mapActions('userPrivilege', [
                 'searchUserPrivilege',
                 'updateGroupPrivilege'
             ]),
-            changeTab () {
-                this.$emit('createRole')
+            cancel () {
+                this.$emit('cancel')
             },
             async updateGroupAuthorities () {
-                await this.updateGroupPrivilege({bkGroupId: this.localRoles.selected, params: this.updateParams, config: {requestId: 'updateGroupAuthorities'}})
+                await this.updateGroupPrivilege({bkGroupId: this.groupId, params: this.updateParams, config: {requestId: 'updateGroupAuthorities'}})
                 this.$success(this.$t('Common[\'保存成功\']'))
+                this.$emit('cancel')
             },
             checkAllModelAuthorities (classifyIndex, modelIndex, event) {
                 let model = this.classifications[classifyIndex]['models'][modelIndex]
@@ -203,15 +180,15 @@
                     model.selectedAuthorities = []
                 }
             },
-            async getGroupAuthorities (groupId) {
-                const res = await this.searchUserPrivilege({bkGroupId: groupId})
+            async getGroupAuthorities () {
+                const res = await this.searchUserPrivilege({bkGroupId: this.groupId, config: {requestId: 'searchUserPrivilege'}})
                 this.groupAuthorities = res.privilege
                 this.initSystemAuthorities()
                 this.initClassifications()
             },
             calcModelListStyle (total) {
                 return {
-                    height: `${total * 42 - 10}px`
+                    height: `${total * 32}px`
                 }
             },
             /* 模型权限没有选择'查询'，则无'新增'、编辑'、删除'权限 */
@@ -276,23 +253,7 @@
                     }
                 })
                 this.classifications = classifications
-            },
-            initRoles () {
-                this.localRoles.list = this.roles.map(role => {
-                    return Object.assign(role, {
-                        id: role['group_id'],
-                        name: role['group_name']
-                    })
-                })
-                if (this.localRoles.list.length) {
-                    this.localRoles.selected = this.groupId === '' ? this.localRoles.list[0].id : this.groupId
-                } else {
-                    this.localRoles.selected = ''
-                }
             }
-        },
-        created () {
-            this.initRoles()
         }
     }
 </script>
@@ -301,89 +262,57 @@
     .authority-wrapper{
         height: 100%;
         .authority-box {
-            padding: 20px 0;
-            max-height: calc(100% - 44px);
+            padding: 30px 20px 0 30px;
+            max-height: calc(100% - 76px);
             @include scrollbar;
         }
     }
     .authority-group{
-        font-size: 14px;
-        margin: 30px 0 0 0;
+        font-size: 0;
         &.model{
             margin-top: 14px;
-            .authority-group-title{
-                width: auto;
-                height: 44px;
-                line-height: 44px;
-                background-color: #f9f9f9;
-                span{
-                    display: block;
-                    width: 107px;
-                    text-align: right; 
-                }
-            }
             .authority-group-content{
                 padding: 0;
             }
         } 
         .authority-group-title{
-            width: 137px;
-            height: 36px;
-            margin: 0;
-            line-height: 36px;
             font-weight: bold;
             font-size: 14px;
-            padding: 0 30px 0 0;
-            text-align: right;
-        }
-        .authority-group-content{
-            overflow: visible;
-            padding: 44px 0 0 137px;
-        }
-        .role-selector{
-            width: 286px;
+            line-height: 1;
         }
     }
     .authority-type.system{
         line-height: 32px;
         &:first-child{
-            margin-top: 0;
+            margin-top: 10px;
         }
         .system-title{
             width: 100px;
             margin: 0;
             font-size: 14px;
             font-weight: normal;
-            color: #498fe0;
+            text-align: right;
+            @include ellipsis;
         }
         .system-list{
             white-space: nowrap;
             .system-item{
-                width: 150px;
+                width: 115px;
                 height: 32px;
-                margin: 0 0 10px 16px;
+                margin: 0 0 0 5px;
             }
         }
     }
     .authority-type.model{
         line-height: 32px;
-        padding: 10px 0;
-        border-bottom: 1px solid #eceef5;
         .classify-name{
             font-size: 12px;
             cursor: pointer;
-            margin: 0;
-            span{
-                display: block;
-                width: 107px;
-                text-align: right;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-            }
+            margin-top: 10px;
             .icon-angle-down{
-                font-size: 14px;
-                margin: 9px 30px 0 0;
+                font-size: 12px;
+                margin: 9px 8px 0 0;
+                font-weight: bold;
                 transform: rotate(180deg);
                 transition: transform .5s cubic-bezier(.23, 1, .23, 1);
                 &.open{
@@ -393,7 +322,6 @@
         }
         .model-list{
             .model-item{
-                padding: 10px 0 0 138px;
                 &:first-child{
                     padding-top: 0;
                 }
@@ -404,15 +332,16 @@
             margin: 0;
             font-size: 14px;
             font-weight: normal;
-            color: #498fe0;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            text-align: right;
+            @include ellipsis;
         }
         .model-authority-checkbox{
-            width: 150px;
+            width: 75px;
             height: 32px;
-            margin: 0 0 0 16px;
+            margin: 0 0 0 5px;
+            &.first {
+                width: 115px;
+            }
             &:last-child{
                 width: auto;
             }
@@ -439,19 +368,11 @@
         }
     }
     .footer{
-        width: 100%;
-        position: absolute;
-        left: 0;
-        bottom: 0;
-        padding: 14px 20px;
-        background: #f9f9f9;
-        .bk-button{
-            height: 36px;
-            line-height: 34px;
-            border-radius: 2px;
-            display: inline-block;
-            min-width: 110px;
-            vertical-align: bottom;
+        padding: 20px 0 20px 135px;
+        background: #fff;
+        font-size: 0;
+        .bk-button:first-child {
+            margin-right: 10px;
         }
     }
     .slide-enter-active, .slide-leave-active{
@@ -460,20 +381,5 @@
     }
     .slide-enter, .slide-leave-to{
         height: 0 !important;
-    }
-    .user-none{
-        position: absolute;
-        top: 40%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        margin: 0 auto;
-        text-align: center;
-        img{
-            width: 180px;
-        }
-        span{
-            color: #3c96ff;
-            cursor: pointer;
-        }
     }
 </style>
