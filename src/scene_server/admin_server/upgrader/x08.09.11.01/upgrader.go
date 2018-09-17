@@ -10,15 +10,21 @@
  * limitations under the License.
  */
 
-package main
+package x08_09_11_01
 
 import (
-	_ "configcenter/src/scene_server/admin_server/upgrader/v3.0.8"
-	_ "configcenter/src/scene_server/admin_server/upgrader/v3.0.9-beta.1"
-	_ "configcenter/src/scene_server/admin_server/upgrader/v3.0.9-beta.3"
-	_ "configcenter/src/scene_server/admin_server/upgrader/v3.1.0-alpha.2"
-	_ "configcenter/src/scene_server/admin_server/upgrader/x08.09.04.01"
-	_ "configcenter/src/scene_server/admin_server/upgrader/x08.09.11.01"
-	_ "configcenter/src/scene_server/admin_server/upgrader/x08.09.13.01"
-	_ "configcenter/src/scene_server/admin_server/upgrader/x08.09.17.01"
+	"gopkg.in/mgo.v2"
+
+	"configcenter/src/common"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage"
 )
+
+func addOperationLogIndex(db storage.DI, conf *upgrader.Config) (err error) {
+	index := storage.Index{Name: "", Columns: []string{"-opt_time"}, Type: storage.INDEX_TYPE_BACKGROUP}
+
+	if err = db.Index(common.BKTableNameOperationLog, &index); err != nil && !mgo.IsDup(err) {
+		return err
+	}
+	return nil
+}

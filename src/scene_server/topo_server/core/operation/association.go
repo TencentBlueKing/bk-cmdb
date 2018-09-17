@@ -42,7 +42,7 @@ type AssociationOperationInterface interface {
 	CreateCommonInstAssociation(params types.ContextParams, data *metadata.InstAsst) error
 	DeleteInstAssociation(params types.ContextParams, cond condition.Condition) error
 
-	SetProxy(cls ClassificationOperationInterface, obj ObjectOperationInterface, attr AttributeOperationInterface, inst InstOperationInterface, targetModel model.Factory, targetInst inst.Factory)
+	SetProxy(cls ClassificationOperationInterface, obj ObjectOperationInterface, grp GroupOperationInterface, attr AttributeOperationInterface, inst InstOperationInterface, targetModel model.Factory, targetInst inst.Factory)
 }
 
 // NewAssociationOperation create a new association operation instance
@@ -56,17 +56,19 @@ type association struct {
 	clientSet    apimachinery.ClientSetInterface
 	cls          ClassificationOperationInterface
 	obj          ObjectOperationInterface
+	grp          GroupOperationInterface
 	attr         AttributeOperationInterface
 	inst         InstOperationInterface
 	modelFactory model.Factory
 	instFactory  inst.Factory
 }
 
-func (a *association) SetProxy(cls ClassificationOperationInterface, obj ObjectOperationInterface, attr AttributeOperationInterface, inst InstOperationInterface, targetModel model.Factory, targetInst inst.Factory) {
+func (a *association) SetProxy(cls ClassificationOperationInterface, obj ObjectOperationInterface, grp GroupOperationInterface, attr AttributeOperationInterface, inst InstOperationInterface, targetModel model.Factory, targetInst inst.Factory) {
 	a.cls = cls
 	a.obj = obj
 	a.attr = attr
 	a.inst = inst
+	a.grp = grp
 	a.modelFactory = targetModel
 	a.instFactory = targetInst
 }

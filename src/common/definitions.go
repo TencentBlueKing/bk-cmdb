@@ -444,6 +444,17 @@ const (
 
 	// BKInstKeyField the inst key field for metric discover
 	BKInstKeyField = "bk_inst_key"
+
+	// for net collect device
+	BKDeviceIDField    = "device_id"
+	BKDeviceNameField  = "device_name"
+	BKDeviceModelField = "device_model"
+
+	// for net collect property of device
+	BKNetcollectPropertyIDlField = "netcollect_property_id"
+	BKOIDField                   = "oid"
+	BKPeriodField                = "period"
+	BKActionField                = "action"
 )
 
 // DefaultResSetName the inner module set
