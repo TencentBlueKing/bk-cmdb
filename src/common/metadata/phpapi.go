@@ -45,13 +45,6 @@ type GetIPAndProxyByCompanyParams struct {
 	CloudIDStr *string  `json:"bk_cloud_id"`
 }
 
-type CloneHostPropertyParams struct {
-	AppIDStr   string `json:"bk_biz_id"`
-	OrgIP      string `json:"bk_org_ip"`
-	DstIP      string `json:"bk_dst_ip"`
-	CloudIDStr string `json:"bk_cloud_id"`
-}
-
 type GetHostAppByCompanyIDParams struct {
 	CompaynID  string `json:"bk_supplier_account"`
 	IPs        string `json:"ip"`
