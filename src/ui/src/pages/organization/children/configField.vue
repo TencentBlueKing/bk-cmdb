@@ -22,7 +22,7 @@
                 </div>
                 <ul class="list-wrapper">
                     <li v-for="(item, index) in shownList" 
-                        @click="addItem(index)"
+                        @click="addItem(item, index)"
                         :key="index">
                         <span :title="item['bk_property_name']">{{item['bk_property_name']}}</span>
                         <i class="bk-icon icon-angle-right"></i>
@@ -39,7 +39,7 @@
                     <div slot="contentRight">
                         <draggable class="content-right" v-model="localHasSelectionList" :options="{animation: 150}">
                             <div v-for="(item, index) in localHasSelectionList" :key="index" class="item">
-                                <i class="icon-triple-dot"></i><span :title="item['bk_property_name']">{{item['bk_property_name']}}</span><i class="bk-icon icon-eye-slash-shape" @click="removeItem(index)" v-tooltip="$t('Common[\'隐藏\']')"></i>
+                                <i class="icon-triple-dot"></i><span :title="item['bk_property_name']">{{item['bk_property_name']}}</span><i class="bk-icon icon-eye-slash-shape" @click="removeItem(item, index)" v-tooltip="$t('Common[\'隐藏\']')"></i>
                             </div>
                         </draggable>
                     </div>
@@ -138,11 +138,13 @@
                     this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
                 }
             },
-            addItem (index) {
-                this.localHasSelectionList = this.localHasSelectionList.concat(this.localForSelectionList.splice(index, 1))
+            addItem (item, index) {
+                this.localForSelectionList = this.localForSelectionList.filter(property => property['bk_property_id'] !== item['bk_property_id'])
+                this.localHasSelectionList.push(item)
             },
-            removeItem (index) {
-                this.localForSelectionList = this.localForSelectionList.concat(this.localHasSelectionList.splice(index, 1))
+            removeItem (item, index) {
+                this.localHasSelectionList = this.localHasSelectionList.filter(property => property['bk_property_id'] !== item['bk_property_id'])
+                this.localForSelectionList.push(item)
             },
             /*
                 更新用户字段
@@ -475,7 +477,7 @@
                         }
                         span{
                             display: inline-block;
-                            width: 200px;
+                            width: calc(100% - 46px);
                             @include ellipsis;
                             vertical-align: bottom;
                         }
