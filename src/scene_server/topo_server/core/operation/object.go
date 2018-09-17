@@ -123,6 +123,10 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapS
 				continue
 			}
 
+			if targetAttr.PropertyID == common.BKChildStr || targetAttr.PropertyID == common.BKInstParentStr {
+				continue
+			}
+
 			if 0 == len(targetAttr.PropertyGroupName) {
 				targetAttr.PropertyGroup = "Default"
 			}
@@ -422,17 +426,29 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 			return err
 		}
 
+		if groups, err := obj.GetGroups(); err != nil {
+			blog.Errorf("[operation-asst] failed to get the object's groups, error info is %s", err.Error())
+			return err
+		} else {
+			for _, group := range groups {
+				if err = o.grp.DeleteObjectGroup(params, group.GetRecordID()); err != nil {
+					blog.Errorf("[operation-asst] failed to delete the object's groups, error info is %s", err.Error())
+					return err
+				}
+			}
+		}
+
 		rsp, err := o.clientSet.ObjectController().Meta().DeleteObject(context.Background(), obj.GetRecordID(), params.Header, cond.ToMapStr())
 
 		if nil != err {
 			blog.Errorf("[operation-obj] failed to request the object controller, error info is %s", err.Error())
 			return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
-
 		if common.CCSuccess != rsp.Code {
 			blog.Errorf("[opration-obj] failed to delete the object by the condition(%#v) or the id(%d)", cond.ToMapStr(), id)
 			return params.Err.Error(rsp.Code)
 		}
+
 	}
 	return nil
 }

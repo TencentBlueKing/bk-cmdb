@@ -14,6 +14,7 @@ package condition
 
 import (
 	types "configcenter/src/common/mapstr"
+	"configcenter/src/common/util"
 )
 
 // Field create a field
@@ -84,7 +85,7 @@ func (cli *field) Like(val interface{}) Condition {
 // In in a array
 func (cli *field) In(val interface{}) Condition {
 	cli.opeartor = BKDBIN
-	cli.fieldValue = val
+	cli.fieldValue = util.ConverToInterfaceSlice(val)
 	return cli.condition
 }
 
