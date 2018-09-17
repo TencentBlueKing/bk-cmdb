@@ -741,3 +741,31 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 	resp.WriteEntity(meta.NewSuccessResp(nil))
 	return
 }
+
+func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response) {
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
+	input := &meta.CloneHostPropertyParams{}
+	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
+		blog.Errorf("CloneHostProperty , but decode body failed, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	if 0 == input.AppID {
+		blog.Errorf("CloneHostProperty ,appliation not foud input:%v", input)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, "ApplicationID")})
+		return
+	}
+
+	res, err := s.Logics.CloneHostProperty(input, input.AppID, input.CloudID, req.Request.Header)
+	if nil != err {
+		blog.Errorf("CloneHostProperty ,appliation not int , err: %v, input:%v", err, input)
+		resp.WriteError(http.StatusBadGateway, &meta.RespError{Msg: err})
+		return
+	}
+
+	resp.WriteEntity(meta.Response{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     res,
+	})
+}
