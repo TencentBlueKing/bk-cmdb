@@ -1,21 +1,21 @@
 <template>
     <ul class="label-wrapper clearfix">
-        <li v-if="isEditableShow">
+        <li v-if="isOnlyShow">
             <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                <span class="cmdb-checkbox-text mr5">{{$t('ModelManagement["是否可编辑"]')}}</span>
-                <input type="checkbox" v-model="localValue.editable" :disabled="isReadOnly">
+                <span class="cmdb-checkbox-text mr5">{{$t('ModelManagement["唯一"]')}}</span>
+                <input type="checkbox" v-model="localValue.isonly" :disabled="isReadOnly">
             </label>
         </li>
         <li v-if="isRequiredShow">
             <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                <span class="cmdb-checkbox-text mr5">{{$t('ModelManagement["是否必填"]')}}</span>
+                <span class="cmdb-checkbox-text mr5">{{$t('ModelManagement["必填"]')}}</span>
                 <input type="checkbox" v-model="localValue.isrequired" :disabled="isReadOnly">
             </label>
         </li>
-        <li v-if="isOnlyShow">
+        <li v-if="isEditableShow">
             <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                <span class="cmdb-checkbox-text mr5">{{$t('ModelManagement["是否唯一"]')}}</span>
-                <input type="checkbox" v-model="localValue.isonly" :disabled="isReadOnly">
+                <span class="cmdb-checkbox-text mr5">{{$t('ModelManagement["可编辑"]')}}</span>
+                <input type="checkbox" v-model="localValue.editable" :disabled="isReadOnly">
             </label>
         </li>
     </ul>

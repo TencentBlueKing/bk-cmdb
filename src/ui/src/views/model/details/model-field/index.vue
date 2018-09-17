@@ -3,7 +3,7 @@
         <div class="form-content clearfix">
             <h3>{{$t('ModelManagement["字段配置"]')}}</h3>
             <div class="form-item has-right-content">
-                <label class="form-label">{{$t('ModelManagement["中文名"]')}}<span class="color-danger"> * </span></label>
+                <label class="form-label">{{$t('ModelManagement["中文名"]')}}<span class="color-danger">*</span></label>
                 <div class="input-box">
                     <input type="text" class="cmdb-form-input"
                         v-model.trim="fieldInfo['bk_property_name']"
@@ -14,7 +14,7 @@
                 </div>
             </div>
             <div class="form-item has-right-content">
-                <label class="form-label">{{$t('ModelManagement["英文名"]')}}<span class="color-danger"> * </span></label>
+                <label class="form-label">{{$t('ModelManagement["英文名"]')}}<span class="color-danger">*</span></label>
                 <div class="input-box">
                     <input type="text" class="cmdb-form-input"
                         v-model.trim="fieldInfo['bk_property_id']"
@@ -25,7 +25,7 @@
                 </div>
             </div>
             <div class="form-item">
-                <label class="form-label">{{$t('ModelManagement["单位"]')}}</label>
+                <label class="form-label unit">{{$t('ModelManagement["单位"]')}}</label>
                 <input type="text" class="cmdb-form-input" v-model.trim="fieldInfo['unit']" :disabled="isReadOnly">
             </div>
             <div class="form-item block">
@@ -297,11 +297,14 @@
                 &.block {
                     margin-top: 20px;
                     .cmdb-form-input {
-                        width: 590px;
+                        width: 625px;
                     }
                 }
                 .input-box {
                     display: inline-block;
+                }
+                .unit {
+                    width: 28px;
                 }
             }
             .field-config {
