@@ -495,8 +495,7 @@
         bottom: 0;
         left: 0;
         width: 100%;
-        height: 76px;
-        line-height: 76px;
+        margin: 20px 0 0 0;
         background-color: #fff;
     }
     .collection-form {
