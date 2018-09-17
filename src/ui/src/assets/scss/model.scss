@@ -4,12 +4,12 @@
         float: left;
         vertical-align: middle;
         &.has-right-content {
-            margin-right: 20px;
+            margin-right: 30px;
         }
         .form-label {
             display: inline-block;
-            width: 80px;
-            padding-right: 5px;
+            width: 65px;
+            margin-right: 10px;
             font-size: 14px;
             text-align: right;
             vertical-align: top;
@@ -17,12 +17,12 @@
         }
         .cmdb-form-input {
             display: inline-block;
-            width: 130px;
+            width: 150px;
             height: 30px;
             line-height: 28px;
         }
         .form-selector {
-            width: 130px;
+            width: 150px;
             display: inline-block;
         }
         .error-msg {
@@ -31,7 +31,7 @@
         }
         .input-box {
             display: inline-block;
-            width: 130px;
+            width: 150px;
         }
     }
 }

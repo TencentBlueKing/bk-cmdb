@@ -1,6 +1,24 @@
 <template>
     <div class="details-wrapper">
         <bk-tab :active-name.sync="curTabName">
+            <template slot="setting" v-if="isEdit">
+                <div class="btn-group">
+                    <span class="btn-box" v-if="!(ispre || isMainLine)" v-tooltip="$t('ModelManagement[\'保留模型和相应实例，隐藏关联关系\']')">
+                        <span v-if="ispaused" @click="dialogConfirm('restart')">
+                            <i class="icon bk-icon icon-minus-circle-shape"></i>
+                            <span class="text">{{$t('ModelManagement["启用模型"]')}}</span>
+                        </span>
+                        <span v-else @click="dialogConfirm('stop')">
+                            <i class="icon bk-icon icon-minus-circle-shape"></i>
+                            <span class="text">{{$t('ModelManagement["停用模型"]')}}</span>
+                        </span>
+                    </span>
+                    <span class="btn-box" @click="dialogConfirm('delete')" v-tooltip="$t('ModelManagement[\'删除模型和其下所有实例，此动作不可逆，请谨慎操作\']')">
+                        <i class="icon icon-cc-del"></i>
+                        <span class="text">{{$t('ModelManagement["删除模型"]')}}</span>
+                    </span>
+                </div>
+            </template>
             <bk-tabpanel name="host" :title="$t('ModelManagement[\'模型配置\']')">
                 <v-field 
                     v-if="curTabName === 'host'"
@@ -17,12 +35,6 @@
                     ref="tab"
                 ></v-layout>
             </bk-tabpanel>
-            <bk-tabpanel name="other" :title="$t('ModelManagement[\'其他操作\']')" :show="isEdit">
-                <v-other
-                    v-if="curTabName === 'other'"
-                    @closeSlider="updateModel"
-                ></v-other>
-            </bk-tabpanel>
         </bk-tab>
     </div>
 </template>
@@ -31,6 +43,7 @@
     import vField from './field'
     import vLayout from './layout'
     import vOther from './other'
+    import { mapGetters, mapActions } from 'vuex'
     export default {
         components: {
             vField,
@@ -48,7 +61,87 @@
                 curTabName: 'host'
             }
         },
+        computed: {
+            ...mapGetters('objectModel', [
+                'activeModel'
+            ]),
+            ispre () {
+                return this.activeModel['ispre']
+            },
+            ispaused () {
+                return this.activeModel['bk_ispaused']
+            },
+            isMainLine () {
+                return this.activeModel['bk_classification_id'] === 'bk_biz_topo'
+            }
+        },
         methods: {
+            ...mapActions('objectModel', [
+                'updateObject',
+                'deleteObject'
+            ]),
+            ...mapActions('objectMainLineModule', [
+                'deleteMainlineObject'
+            ]),
+            dialogConfirm (type) {
+                switch (type) {
+                    case 'restart':
+                        this.$bkInfo({
+                            title: this.$t('ModelManagement["确认要启用该模型？"]'),
+                            confirmFn: () => {
+                                this.updateModelObject(false)
+                            }
+                        })
+                        break
+                    case 'stop':
+                        this.$bkInfo({
+                            title: this.$t('ModelManagement["确认要停用该模型？"]'),
+                            confirmFn: () => {
+                                this.updateModelObject(true)
+                            }
+                        })
+                        break
+                    case 'delete':
+                        this.$bkInfo({
+                            title: this.$t('ModelManagement["确认要删除该模型？"]'),
+                            confirmFn: () => {
+                                this.deleteModel()
+                            }
+                        })
+                        break
+                    default:
+                }
+            },
+            async updateModelObject (ispaused) {
+                await this.updateObject({
+                    id: this.activeModel['id'],
+                    params: {
+                        bk_ispaused: ispaused
+                    },
+                    config: {
+                        requestId: 'updateModel'
+                    }
+                })
+                this.updateModel()
+            },
+            async deleteModel () {
+                if (this.isMainLine) {
+                    await this.deleteMainlineObject({
+                        bkObjId: this.activeModel['bk_obj_id'],
+                        config: {
+                            requestId: 'deleteModel'
+                        }
+                    })
+                } else {
+                    await this.deleteObject({
+                        id: this.activeModel['id'],
+                        config: {
+                            requestId: 'deleteModel'
+                        }
+                    })
+                }
+                this.updateModel()
+            },
             cancel () {
                 this.$emit('cancel')
             },
@@ -73,5 +166,23 @@
     .details-wrapper{
         padding: 8px 0 0;
         height: 100%;
+        .btn-group {
+            font-size: 0;
+            >span {
+                font-size: 14px;
+                &:last-child {
+                    margin-left: 30px;
+                }
+            }
+            .icon,
+            .text {
+                vertical-align: middle;
+                font-size: 14px;
+                cursor: pointer;
+            }
+            .icon {
+                margin-right: 5px;
+            }
+        }
     }
 </style>
