@@ -345,8 +345,15 @@ func (s *Service) updateHostModule(req *restful.Request, resp *restful.Response)
 	hostModuleParam.ApplicationID = int64(appIDInt)
 	hostModuleParam.HostID = HostID64Arr
 	if len(moduleIDArr) > 1 {
-		for moduleId := range moduleIDArr {
-			moduleName := moduleMap[moduleId].(map[string]interface{})[common.BKModuleNameField].(string)
+		for _, moduleID := range moduleIDArr {
+			moduleInfo, ok := moduleMap[moduleID].(map[string]interface{})
+			if !ok {
+				continue
+			}
+			moduleName, ok := moduleInfo[common.BKModuleNameField].(string)
+			if !ok {
+				continue
+			}
 			if moduleName == common.DefaultFaultModuleName || moduleName == common.DefaultResModuleName {
 				msg := defErr.Error(common.CCErrAPIServerV2HostModuleContainDefaultModuleErr).Error()
 				blog.Errorf("updateHostModule error: %v", msg)
@@ -458,16 +465,28 @@ func (s *Service) cloneHostProperty(req *restful.Request, resp *restful.Response
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
-	appId := formData.Get("ApplicationID")
-	orgIp := formData.Get("orgIp")
-	dstIp := formData.Get("dstIp")
-	platId := formData.Get("platId")
+	appIDStr := formData.Get("ApplicationID")
+	orgIP := formData.Get("orgIp")
+	dstIP := formData.Get("dstIp")
+	platIDStr := formData.Get("platId")
+
+	appID, err := util.GetInt64ByInterface(appIDStr)
+	if nil != err {
+		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, "ApplicationID not integer").Error(), resp)
+		return
+	}
+
+	platID, err := util.GetInt64ByInterface(platIDStr)
+	if nil != err {
+		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, "platId not integer").Error(), resp)
+		return
+	}
 
 	var param metadata.CloneHostPropertyParams
-	param.AppIDStr = appId
-	param.DstIP = dstIp
-	param.OrgIP = orgIp
-	param.CloudIDStr = platId
+	param.AppID = appID
+	param.DstIP = dstIP
+	param.OrgIP = orgIP
+	param.CloudID = platID
 
 	result, err := s.CoreAPI.HostServer().CloneHostProperty(context.Background(), pheader, &param)
 	if err != nil {

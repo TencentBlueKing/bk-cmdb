@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 	"strconv"
 )
 
@@ -167,4 +168,23 @@ func GetStrValsFromArrMapInterfaceByKey(arrI []interface{}, key string) []string
 
 	return ret
 
+}
+
+func ConverToInterfaceSlice(value interface{}) []interface{} {
+	rflval := reflect.ValueOf(value)
+	for rflval.CanAddr() {
+		rflval = rflval.Elem()
+	}
+	if rflval.Kind() != reflect.Slice {
+		return []interface{}{value}
+	}
+
+	result := []interface{}{}
+	for i := 0; i < rflval.Len(); i++ {
+		if rflval.Index(i).CanInterface() {
+			result = append(result, rflval.Index(i).Interface())
+		}
+	}
+
+	return result
 }
