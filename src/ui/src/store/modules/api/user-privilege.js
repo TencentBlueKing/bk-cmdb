@@ -111,8 +111,8 @@ const actions = {
      * @param {String} bkGroupId 分组id
      * @return {promises} promises 对象
      */
-    searchUserPrivilege ({ commit, state, dispatch, rootGetters }, { bkGroupId }) {
-        return $http.get(`topo/privilege/group/detail/${rootGetters.supplierAccount}/${bkGroupId}`)
+    searchUserPrivilege ({ commit, state, dispatch, rootGetters }, { bkGroupId, config }) {
+        return $http.get(`topo/privilege/group/detail/${rootGetters.supplierAccount}/${bkGroupId}`, config)
     },
 
     /**

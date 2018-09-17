@@ -8,13 +8,6 @@
                     v-if="activeTabName === 'role'"
                 ></v-role>
             </bk-tabpanel>
-            <bk-tabpanel name="authority" :title="$t('Permission[\'权限\']')">
-                <v-authority
-                    v-if="activeTabName === 'authority'"
-                    :groupId="groupId"
-                    @createRole="createRole"
-                ></v-authority>
-            </bk-tabpanel>
             <bk-tabpanel name="business" :title="$t('Permission[\'业务权限\']')">
                 <v-business v-if="activeTabName === 'business'"></v-business>
             </bk-tabpanel>
@@ -24,7 +17,6 @@
 
 <script>
     import vRole from './role'
-    import vAuthority from './authority'
     import vBusiness from './business'
     export default {
         data () {
@@ -57,7 +49,6 @@
         },
         components: {
             vRole,
-            vAuthority,
             vBusiness
         }
     }
