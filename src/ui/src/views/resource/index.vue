@@ -212,6 +212,7 @@
                     },
                     config: {
                         requestId: `post_batchSearchObjectAttribute_${Object.keys(this.properties).join('_')}`,
+                        requestGroup: Object.keys(this.properties).map(id => `post_searchObjectAttribute_${id}`),
                         fromCache: true
                     }
                 }).then(result => {

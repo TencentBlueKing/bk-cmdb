@@ -236,6 +236,8 @@
                 }
                 await this.updateGroup({
                     params
+                }).then(() => {
+                    this.$http.cancel(`post_searchGroup_${this.activeModel['bk_obj_id']}`)
                 })
                 let activeGroup = this.groupFieldList.find(({id}) => id === group.id)
                 activeGroup['bk_group_name'] = group['bk_group_name']
@@ -388,6 +390,8 @@
                     config: {
                         requestId: 'updatePropertyGroup'
                     }
+                }).then(() => {
+                    this.$http.cancel(`post_searchGroup_${this.activeModel['bk_obj_id']}`)
                 })
                 this.$success(this.$t('Common["更新成功"]'))
                 this.groupFieldListCopy = this.$tools.clone(this.groupFieldList)
