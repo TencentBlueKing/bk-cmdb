@@ -174,6 +174,8 @@
                     config: {
                         requestId: 'deleteObjectAttribute'
                     }
+                }).then(() => {
+                    this.$http.cancel(`post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`)
                 })
                 this.fieldList.splice(index, 1)
             },
@@ -225,6 +227,9 @@
                             globalError: false,
                             originalResponse: true
                         }
+                    }).then(res => {
+                        this.$http.cancel(`post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`)
+                        return res
                     })
                     if (res.result) {
                         let data = res.data[this.activeModel['bk_obj_id']]
