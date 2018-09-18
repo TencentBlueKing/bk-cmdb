@@ -63,6 +63,7 @@ type MockResult struct {
 	Count      uint64
 	SequenceID uint64
 	Info       types.Transaction
+	Indexs     []dal.Index
 }
 
 func (c *Mock) Mock(retval MockResult) *Mock {
@@ -386,6 +387,16 @@ func (c *MockCollection) DropIndex(ctx context.Context, indexName string) error 
 	c.cache[key] = c.retval
 	c.retval = nil
 	return nil
+}
+
+func (c *MockCollection) Indexes(ctx context.Context) ([]dal.Index, error) {
+	key := "INDEXES:" + c.collName
+	if retval, ok := c.cache[key]; ok {
+		return retval.Indexs, retval.Err
+	}
+	c.cache[key] = c.retval
+	c.retval = nil
+	return nil, nil
 }
 
 // AddColumn 添加字段

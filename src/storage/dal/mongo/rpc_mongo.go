@@ -491,6 +491,11 @@ func (c *RPCCollection) DropIndex(ctx context.Context, indexName string) error {
 	return dal.ErrNotImplemented
 }
 
+// Indexes 查询索引
+func (c *RPCCollection) Indexes(ctx context.Context) ([]dal.Index, error) {
+	return nil, dal.ErrNotImplemented
+}
+
 // AddColumn 添加字段
 func (c *RPCCollection) AddColumn(ctx context.Context, column string, value interface{}) error {
 	return dal.ErrNotImplemented
