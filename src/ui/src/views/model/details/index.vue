@@ -121,25 +121,31 @@
                     config: {
                         requestId: 'updateModel'
                     }
+                }).then(() => {
+                    this.$http.cancel('post_searchClassificationsObjects')
                 })
                 this.updateModel()
             },
             async deleteModel () {
+                let promise
                 if (this.isMainLine) {
-                    await this.deleteMainlineObject({
+                    promise = await this.deleteMainlineObject({
                         bkObjId: this.activeModel['bk_obj_id'],
                         config: {
                             requestId: 'deleteModel'
                         }
                     })
                 } else {
-                    await this.deleteObject({
+                    promise = await this.deleteObject({
                         id: this.activeModel['id'],
                         config: {
                             requestId: 'deleteModel'
                         }
                     })
                 }
+                promise.then(() => {
+                    this.$http.cancel('post_searchClassificationsObjects')
+                })
                 this.updateModel()
             },
             cancel () {
