@@ -21,9 +21,9 @@ import (
 type Config struct {
 	Connect      string
 	Address      string
-	Port         string
 	User         string
 	Password     string
+	Port         string
 	Database     string
 	Mechanism    string
 	MaxOpenConns string
