@@ -41,6 +41,7 @@
                     <bk-selector
                         class="form-selector"
                         :list="fieldTypeList"
+                        :content-max-height="200"
                         :selected.sync="fieldInfo['bk_property_type']"
                         :disabled="isEditField"
                     ></bk-selector>
