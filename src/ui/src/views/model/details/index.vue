@@ -168,6 +168,9 @@
         height: 100%;
         .btn-group {
             font-size: 0;
+            .btn-box {
+                cursor: pointer;
+            }
             >span {
                 font-size: 14px;
                 &:last-child {
@@ -178,7 +181,6 @@
             .text {
                 vertical-align: middle;
                 font-size: 14px;
-                cursor: pointer;
             }
             .icon {
                 margin-right: 5px;
