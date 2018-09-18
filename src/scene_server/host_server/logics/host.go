@@ -202,7 +202,6 @@ func (lgc *Logics) EnterIP(pheader http.Header, ownerID string, appID, moduleID 
 		}
 		hostAsstData := ExtractDataFromAssociationField(hostID, host, assResult.Data)
 		for _, item := range hostAsstData {
-			fmt.Println(item)
 			cResult, err := lgc.CoreAPI.ObjectController().Instance().CreateObject(context.Background(), common.BKTableNameInstAsst, pheader, item)
 			if err != nil {
 				return err
