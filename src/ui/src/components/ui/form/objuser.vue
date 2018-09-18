@@ -5,10 +5,16 @@
         @click="handleClick">
         <div class="objuser-layout"
             v-bkloading="{isLoading: $loading('get_user_list')}"
-            @contextmenu.prevent.stop="handleContextmenu($event)">
+            @contextmenu="handleContextmenu($event)">
             <div class="objuser-container"
                 ref="container"
-                :class="{disabled, focus, ellipsis}">
+                :class="{
+                    focus,
+                    ellipsis,
+                    disabled: localDisabled,
+                    placeholder: !localValue.length && !focus
+                }"
+                :data-placeholder="localPlaceholder">
                 <span class="objuser-selected"
                     v-for="(user, index) in selectedUsers"
                     ref="selected"
@@ -83,7 +89,8 @@
                 shouldUpdate: true,
                 focus: false,
                 ellipsis: false,
-                contextmenu: false
+                contextmenu: false,
+                exception: false
             }
         },
         computed: {
@@ -103,6 +110,17 @@
                     })
                 }
                 return []
+            },
+            localDisabled () {
+                return this.disabled || this.exception
+            },
+            localPlaceholder () {
+                if (this.exception) {
+                    return this.$t('Common["获取人员列表失败"]')
+                } else if (this.placeholder) {
+                    return this.placeholder
+                }
+                return this.$t('Form["请输入用户"]')
             }
         },
         watch: {
@@ -137,6 +155,7 @@
             try {
                 this.users = await this.$store.dispatch('getUserList')
             } catch (e) {
+                this.exception = true
                 this.users = []
             }
             this.setLocalValue()
@@ -180,7 +199,7 @@
                 this.contextmenu = false
             },
             handleClick () {
-                if (this.disabled) {
+                if (this.localDisabled) {
                     return false
                 }
                 if (!this.multiple) {
@@ -190,13 +209,13 @@
                 this.moveInput(0)
             },
             handleSelectedMousedown (event, index) {
-                if (this.disabled) {
+                if (this.localDisabled) {
                     return false
                 }
                 this.shouldUpdate = false
             },
             handleSelectedMouseup (event, index) {
-                if (this.disabled) {
+                if (this.localDisabled) {
                     return false
                 }
                 if (this.multiple) {
@@ -212,13 +231,13 @@
                 this.moveInput(0)
             },
             handleUserMousedown (user, index) {
-                if (this.disabled) {
+                if (this.localDisabled) {
                     return false
                 }
                 this.shouldUpdate = false
             },
             handleUserMouseup (user, index) {
-                if (this.disabled) {
+                if (this.localDisabled) {
                     return false
                 }
                 if (this.multiple) {
@@ -369,9 +388,12 @@
                 })
             },
             handleContextmenu (event) {
+                this.focus = false
                 if (!this.localValue.length) {
                     return false
                 }
+                event.preventDefault()
+                event.stopPropagation()
                 const $contextmenu = this.$refs.contextmenu
                 const $layout = event.currentTarget
                 let $refrence = $layout
@@ -453,6 +475,7 @@
     .form-objuser {
         height: 36px;
         font-size: 14px;
+        cursor: text;
         .objuser-layout {
             position: relative;
             min-height: 100%;
@@ -468,6 +491,7 @@
                 overflow: hidden;
                 &.disabled {
                     cursor: not-allowed;
+                    background-color: #fafafa;
                 }
                 &.focus {
                     white-space: normal;
@@ -475,18 +499,29 @@
                     z-index: 1;
                 }
                 &.ellipsis:after{
-                    font-size: 12px;
-                    content: ""; 
                     position: absolute; 
                     bottom: 1px; 
                     right: -1px; 
                     height: 34px;
-                    line-height: 34px;
                     padding: 0 0 0 15px;
+                    line-height: 34px;
+                    font-size: 12px;
+                    content: ""; 
                     border-right: 1px solid $cmdbBorderColor;
                     background: -webkit-linear-gradient(left, transparent, #fff 55%);
                     background: -o-linear-gradient(left, transparent, #fff 55%);
                     background: linear-gradient(to right, transparent, #fff 55%);
+                }
+                &.placeholder:after {
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    height: 100%;
+                    padding: 0 0 0 10px;
+                    line-height: 34px;
+                    content: attr(data-placeholder);
+                    font-size: 12px;
+                    color: #c3cdd7;
                 }
             }
         }
