@@ -238,12 +238,14 @@
                 }
                 
                 if (this.isEditField) {
-                    this.updateObjectAttribute({
+                    await this.updateObjectAttribute({
                         id: this.field.id,
                         params: this.fieldInfo,
                         config: {
                             requestId: 'updateObjectAttribute'
                         }
+                    }).then(() => {
+                        this.$http.cancel(`post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`)
                     })
                 } else {
                     let otherParams = {
@@ -257,6 +259,8 @@
                         config: {
                             requestId: 'createObjectAttribute'
                         }
+                    }).then(() => {
+                        this.$http.cancel(`post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`)
                     })
                 }
                 this.$emit('save')

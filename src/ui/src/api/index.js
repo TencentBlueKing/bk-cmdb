@@ -114,7 +114,7 @@ async function getPromise (method, url, data, userConfig = {}) {
     // 添加请求队列
     $http.queue.set(config)
     // 添加请求缓存
-    $http.cache.set(config.requestId, promise)
+    $http.cache.set(config.requestId, promise, config)
     return promise
 }
 
@@ -169,10 +169,14 @@ function handleReject (error, config) {
  * @return {Promise} 本次http请求的Promise
  */
 function initConfig (method, url, userConfig) {
+    if (userConfig.hasOwnProperty('requestGroup')) {
+        userConfig.requestGroup = userConfig.requestGroup instanceof Array ? userConfig.requestGroup : [userConfig.requestGroup]
+    }
     const defaultConfig = {
         ...getCancelToken(),
         // http请求默认id
         requestId: md5(method + url),
+        requestGroup: [],
         // 是否全局捕获异常
         globalError: true,
         // 是否直接复用缓存的请求
