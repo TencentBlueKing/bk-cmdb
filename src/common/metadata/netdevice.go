@@ -14,8 +14,6 @@ package metadata
 
 import (
 	"time"
-
-	"configcenter/src/common"
 )
 
 type NetcollectDevice struct {
@@ -44,20 +42,4 @@ type NetcollectProperty struct {
 	OwnerID              string     `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	CreateTime           *time.Time `field:"create_time" json:"create_time,omitempty" bson:"create_time"`
 	LastTime             *time.Time `field:"last_time" json:"last_time,omitempty" bson:"last_time"`
-}
-
-// IsNetDeviceObject is net device object
-func IsNetDeviceObject(objID string) bool {
-	switch objID {
-	case common.BKInnerObjIDSwitch:
-		return true
-	case common.BKInnerObjIDBlance:
-		return true
-	case common.BKInnerObjIDFirewall:
-		return true
-	case common.BKInnerObjIDRouter:
-		return true
-	}
-
-	return false
 }
