@@ -71,7 +71,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 	objCtr := new(ObjectController)
 	objCtr.Service = coreService
-	objCtr.Service.Core, err = backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
+	objCtr.Core, err = backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
 		types.CC_MODULE_OBJECTCONTROLLER,
 		op.ServConf.ExConfig,
 		objCtr.onObjectConfigUpdate,

@@ -55,14 +55,12 @@ func newReconciler(ctx context.Context, cache *redis.Client, db dal.RDB) *reconc
 var MsgChan = make(chan string, 3)
 
 func (r *reconciler) loadAll() {
-	r.cached = map[string][]string{}
-	r.persisted = map[string][]string{}
-	r.persistedSubscribers = []string{}
 	r.loadAllCached()
 	r.loadAllPersisted()
 }
 
 func (r *reconciler) loadAllCached() {
+	r.cached = map[string][]string{}
 	for _, formkey := range r.cache.Keys(types.EventCacheSubscribeformKey + "*").Val() {
 		if formkey != "" && formkey != "nil" && formkey != "redis" {
 			r.cached[strings.TrimPrefix(formkey, types.EventCacheSubscribeformKey)] = r.cache.SMembers(formkey).Val()
@@ -71,6 +69,8 @@ func (r *reconciler) loadAllCached() {
 }
 
 func (r *reconciler) loadAllPersisted() {
+	r.persisted = map[string][]string{}
+	r.persistedSubscribers = []string{}
 	subscriptions := []metadata.Subscription{}
 	if err := r.db.Table(common.BKTableNameSubscription).Find(nil).All(r.ctx, &subscriptions); err != nil {
 		blog.Errorf("reconcile err: %v", err)
