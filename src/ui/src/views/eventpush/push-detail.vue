@@ -33,15 +33,17 @@
                     <label for="" class="label-name">
                         URL<span class="color-danger">*</span>
                     </label>
-                    <div class="item-content">
-                        <input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'请输入URL\']')"
-                            v-model.trim="tempEventData['callback_url']"
-                            v-validate="'required|http'"
-                            data-vv-name="http"
-                        >
-                        <span v-show="errors.has('http')" class="color-danger">{{ errors.first('http') }}</span>
+                    <div class="item-content url" :class="{'en': language !== 'zh_CN'}">
+                        <div class="url-box">
+                            <input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'请输入URL\']')"
+                                v-model.trim="tempEventData['callback_url']"
+                                v-validate="'required|http'"
+                                name="http"
+                            >
+                            <span v-show="errors.has('http')" class="color-danger">{{ errors.first('http') }}</span>
+                        </div>
+                        <bk-button class="test-btn" type="primary" @click.prevent="testPush">{{$t('EventPush["测试推送"]')}}</bk-button>
                     </div>
-                    <bk-button class="fl" type="default" style="margin-left:10px" @click.prevent="testPush">{{$t('EventPush["测试推送"]')}}</bk-button>
                 </li>
                 <li class="form-item">
                     <label for="" class="label-name">
@@ -58,18 +60,21 @@
                                 v-model="tempEventData['confirm_mode']"
                             >{{$t('Common["正则验证"]')}}
                         </label>
-                        <input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'请输入正则验证\']')"
-                            v-if="tempEventData['confirm_mode'] === 'regular'"
-                            v-model.trim="tempEventData['confirm_pattern']['regular']"
-                            :data-vv-name="$t('Common[\'该字段\']')"
-                            v-validate="'required'"
-                        >
-                        <input type="text" class="cmdb-form-input number" :placeholder="$t('EventPush[\'成功标志\']')"
-                            v-else
-                            v-model.trim="tempEventData['confirm_pattern']['httpstatus']"
-                            v-validate="{required: true, regex: /^[0-9]+$/}"
-                            :data-vv-name="$t('Common[\'该字段\']')"
-                        >
+                        <div class="input-box">
+                            <input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'请输入正则验证\']')"
+                                v-if="tempEventData['confirm_mode'] === 'regular'"
+                                v-model.trim="tempEventData['confirm_pattern']['regular']"
+                                :data-vv-name="$t('Common[\'该字段\']')"
+                                v-validate="'required'"
+                            >
+                            <input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'成功标志\']')"
+                                v-else
+                                v-model.trim="tempEventData['confirm_pattern']['httpstatus']"
+                                v-validate="{required: true, regex: /^[0-9]+$/}"
+                                :data-vv-name="$t('Common[\'该字段\']')"
+                            >
+                            <i class="tip" :class="{'reg': tempEventData['confirm_mode'] === 'regular'}"></i>
+                        </div>
                         <span v-show="errors.has($t('Common[\'该字段\']'))" class="color-danger">{{ errors.first($t('Common[\'该字段\']')) }}</span>
                     </div>
                 </li>
@@ -89,15 +94,16 @@
                 </li>
             </ul>
             <div class="info">
-                <span :class="{'color-danger': subscriptionFormError}">{{$t('EventPush["至少选择1个事件"]')}}</span>，<i18n path="EventPush['已选择']"><span class="num" place="number">{{selectNum}}</span></i18n>
+                <i class="bk-icon icon-exclamation-circle"></i>
+                <span :class="{'color-danger': subscriptionFormError}">{{$t('EventPush["至少选择1个事件"]')}}</span><i18n path="EventPush['已选择']"><span class="num" place="number">{{selectNum}}</span></i18n>
             </div>
             <ul class="event-wrapper">
                 <li class="event-box clearfix"
                     :key="index"
                     v-for="(classify, index) in eventPushList">
-                    <div class="event-title">
+                    <div class="event-title" @click="toggleEventList(classify)">
+                        <i class="bk-icon icon-angle-down" :class="{'up': classify.isHidden}"></i>
                         {{classify.name}}
-                        <i class="bk-icon icon-angle-down fr" :class="{'up': classify.isHidden}" @click="toggleEventList(classify)"></i>
                     </div>
                     <transition name="slide">
                         <ul v-if="!classify.isHidden" :style="eventHeight(classify.children.length)">
@@ -205,7 +211,7 @@
 
 <script>
     import vPop from './pop'
-    import { mapActions } from 'vuex'
+    import { mapGetters, mapActions } from 'vuex'
     export default {
         props: {
             curPush: {
@@ -224,7 +230,7 @@
                 tempEventData: {
                     subscription_name: '', // 订阅名
                     system_name: '', // 系统名称
-                    callback_url: 'http://', // 回调地址
+                    callback_url: '', // 回调地址
                     confirm_mode: 'httpstatus', // 回调成功确认模式   httpstatus/regular
                     confirm_pattern: {
                         httpstatus: '200',
@@ -236,7 +242,7 @@
                 eventData: {
                     subscription_name: '',
                     system_name: '',
-                    callback_url: 'http://',
+                    callback_url: '',
                     confirm_mode: 'httpstatus',
                     confirm_pattern: '200',
                     subscription_form: [],
@@ -245,6 +251,9 @@
             }
         },
         computed: {
+            ...mapGetters([
+                'language'
+            ]),
             selectNum () {
                 let num = 0
                 let {
@@ -501,7 +510,7 @@
             right: 0;
         }
         .detail-box{
-            padding: 40px 40px 20px 20px;
+            padding: 20px 30px;
             height: calc(100% - 63px);
             overflow-y: auto;
             @include scrollbar;
@@ -519,20 +528,67 @@
             .label-name{
                 position: relative;
                 float: left;
-                width: 110px;
+                width: 85px;
                 text-align: right;
                 line-height: 36px;
                 font-size: 14px;
                 .color-danger{
                     position: absolute;
                     top: 2px;
-                    right: -6px;
+                    right: -10px;
                 }
             }
             .item-content{
-                margin-left: 22px;
-                width: 420px;
+                margin-left: 15px;
+                width: calc(100% - 100px);
                 float: left;
+                &.url {
+                    font-size: 0;
+                    .url-box {
+                        display: inline-block;
+                        width: calc(100% - 106px);
+                    }
+                    .test-btn {
+                        vertical-align: top;
+                        margin-left: 10px;
+                        width: 96px;
+                    }
+                    &.en {
+                        .cmdb-form-input {
+                            width: calc(100% - 135px);
+                        }
+                        .test-btn {
+                            width: 125px;
+                        }
+                    }
+                }
+                span {
+                    font-size: 14px;
+                }
+                .input-box {
+                    position: relative;
+                    .cmdb-form-input:focus {
+                        +.tip {
+                            border-top: 1px solid $cmdbBorderFocusColor;
+                            border-right: 1px solid $cmdbBorderFocusColor;
+                        }
+                    }
+                    .tip {
+                        position: absolute;
+                        display: inline-block;
+                        left: 2px;
+                        top: -4px;
+                        width: 8px;
+                        height: 8px;
+                        background: #fff;
+                        border-top: 1px solid $cmdbBorderColor;
+                        border-right: 1px solid $cmdbBorderColor;
+                        transform: rotate(-45deg);
+                        &.reg {
+                            left: 121px;
+                        }
+                    }
+                }
                 .cmdb-form-radio{
                     cursor: pointer;
                     height: 32px;
@@ -540,10 +596,6 @@
                     input[type="radio"]{
                         margin-top: -2px;
                     }
-                }
-                .cmdb-form-input.number{
-                    display: block;
-                    width: 97px;
                 }
                 &.length-short{
                     position: relative;
@@ -560,19 +612,32 @@
             }
         }
         .info{
-            background: #f9f9f9;
+            background: #fff3da;
+            border-radius: 2px;
             width: 100%;
             padding-left: 20px;
-            height: 44px;
-            line-height: 44px;
+            height: 42px;
+            line-height: 40px;
+            font-size: 0;
+            border: 1px solid #ffc947;
+            .bk-icon {
+                position: relative;
+                top: -1px;
+                margin-right: 10px;
+                color: #ffc947;
+                font-size: 20px;
+            }
+            span {
+                font-size: 14px;
+                vertical-align: middle;
+            }
             .num{
-                color: #479cff;
                 font-weight: bold;
             }
         }
         .event-wrapper{
             .event-box{
-                padding: 13px 20px;
+                padding: 13px 0;
                 border-bottom: 1px solid #eceef5;
                 .event-title{
                     margin-right: 10px;
@@ -581,21 +646,23 @@
                     white-space: nowrap;
                     height: 32px;
                     line-height: 32px;
+                    font-weight: bold;
+                    cursor: pointer;
                 }
                 .bk-icon{
-                    float: right;
                     line-height: 32px;
                     width: 32px;
                     text-align: center;
                     margin-right: -6px;
+                    font-size: 12px;
+                    font-weight: bold;
                     transition: all .5s;
-                    cursor: pointer;
                     &.up{
                         transform: rotate(180deg);
                     }
                 }
                 ul{
-                    width: 680px;
+                    width: 100%;
                     float: left;
                 }
             }
@@ -610,30 +677,38 @@
                 }
                 .label-name{
                     float: left;
-                    width: 158px;
+                    width: 85px;
                     text-align: right;
                     font-size: 14px;
-                    margin-right: 22px;
+                    margin-right: 15px;
                     font-weight: bold;
                     white-space: nowrap;
                     text-overflow: ellipsis;
                     overflow: hidden;
                 }
                 .options{
+                    font-size: 0;
                     label{
                         height: 18px;
-                        width: 110px;
+                        width: 85px;
                         margin-right: 10px;
+                        &:nth-child(1) {
+                            width: 120px;
+                        }
+                        &:nth-child(4) {
+                            width: 76px;
+                            margin-right: 0;
+                        }
                         &.cmdb-form-checkbox{
                             padding: 0;
                             cursor: pointer;
                         }
                         input[type="checkbox"]{
-                            margin-right: 10px;
+                            margin-right: 6px;
                         }
                         .cmdb-checkbox-text{
                             display: inline-block;
-                            width: 82px;
+                            width: calc(100% - 20px);
                             overflow: hidden;
                             text-overflow: ellipsis;
                             white-space: nowrap;
@@ -647,12 +722,8 @@
             line-height: 63px;
             background: #f9f9f9;
             font-size: 0;
-            padding-left: 20px;
+            padding-left: 130px;
             .btn{
-                font-size: 14px;
-                width: 110px;
-                height: 34px;
-                line-height: 32px;
                 margin-right: 11px;
             }
         }
