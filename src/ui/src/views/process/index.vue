@@ -24,7 +24,7 @@
             :list="table.list"
             :pagination.sync="table.pagination"
             :defaultSort="table.defaultSort"
-            :wrapperMinusHeight="157"
+            :wrapperMinusHeight="300"
             @handleRowClick="handleRowClick"
             @handleSortChange="handleSortChange"
             @handleSizeChange="handleSizeChange"
@@ -84,6 +84,7 @@
         },
         data () {
             return {
+                properties: [],
                 slider: {
                     show: false,
                     title: ''
