@@ -67,41 +67,10 @@
             background-size: 10px 10px;
             @include ellipsis;
             overflow: auto;
-            .topo-btn{
-                position: absolute;
-                width: 30px;
-                height: 30px;
-                line-height: 30px;
-                top: 9px;
-                padding: 0;
-                cursor: pointer;
-                border-radius: 50%;
-                box-shadow: 0px 1px 5px 0px rgba(12, 34, 59, 0.2);
-                border: none;
-                text-align: center;
-                font-size: 0;
-                background: #fff;
-                .icon{
-                    font-size: 14px;
-                    color: #737987;
-                }
-                &.edit{
-                    left: 15px;
-                    &:hover{
-                        .icon{
-                            color: $cmdbMainBtnColor;
-                        }
-                    }
-                }
-                &.del{
-                    right: 9px;
-                    &:hover{
-                        .icon{
-                            color: #ef4c4c;
-                        }
-                    }
-                }
-            }
         }
     }
+</style>
+
+<style lang="scss">
+    @import '@/assets/scss/model.scss'
 </style>

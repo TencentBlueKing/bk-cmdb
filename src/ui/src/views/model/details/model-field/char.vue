@@ -39,3 +39,9 @@
         }
     }
 </script>
+
+<style lang="scss" scoped>
+    .cmdb-form-input {
+        width: 625px !important;
+    }
+</style>
