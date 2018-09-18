@@ -3,7 +3,7 @@
         <div class="form-content clearfix">
             <h3>{{$t('ModelManagement["字段配置"]')}}</h3>
             <div class="form-item has-right-content">
-                <label class="form-label">{{$t('ModelManagement["中文名"]')}}<span class="color-danger"> * </span></label>
+                <label class="form-label">{{$t('ModelManagement["中文名称"]')}}<span class="color-danger">*</span></label>
                 <div class="input-box">
                     <input type="text" class="cmdb-form-input"
                         v-model.trim="fieldInfo['bk_property_name']"
@@ -14,7 +14,7 @@
                 </div>
             </div>
             <div class="form-item has-right-content">
-                <label class="form-label">{{$t('ModelManagement["英文名"]')}}<span class="color-danger"> * </span></label>
+                <label class="form-label">{{$t('ModelManagement["英文名称"]')}}<span class="color-danger">*</span></label>
                 <div class="input-box">
                     <input type="text" class="cmdb-form-input"
                         v-model.trim="fieldInfo['bk_property_id']"
@@ -25,7 +25,7 @@
                 </div>
             </div>
             <div class="form-item">
-                <label class="form-label">{{$t('ModelManagement["单位"]')}}</label>
+                <label class="form-label unit">{{$t('ModelManagement["单位"]')}}</label>
                 <input type="text" class="cmdb-form-input" v-model.trim="fieldInfo['unit']" :disabled="isReadOnly">
             </div>
             <div class="form-item block">
@@ -39,7 +39,7 @@
                 <div class="form-item has-right-content">
                     <label class="form-label">{{$t('ModelManagement["类型"]')}}</label>
                     <bk-selector
-                        class="form-selector bk-selector-small"
+                        class="form-selector"
                         :list="fieldTypeList"
                         :selected.sync="fieldInfo['bk_property_type']"
                         :disabled="isEditField"
@@ -277,8 +277,9 @@
 <style lang="scss" scoped>
     .model-field-wrapper {
         height: 100%;
+        padding: 20px 20px 10px;
         .form-content {
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             &.details {
                 height: calc(100% - 134px);
                 .field-config {
@@ -288,33 +289,31 @@
             }
             h3 {
                 margin-bottom: 10px;
-                padding-left: 4px;
                 font-size: 14px;
                 line-height: 1;
-                border-left: 4px solid $cmdbTextColor;
             }
             .form-item {
                 &.block {
-                    margin-top: 20px;
+                    margin-top: 10px;
                     .cmdb-form-input {
-                        width: 590px;
+                        width: 625px;
                     }
                 }
                 .input-box {
                     display: inline-block;
                 }
+                .unit {
+                    width: 28px;
+                }
             }
             .field-config {
-                margin-top: 20px;
+                margin-top: 10px;
             }
             .btn-wrapper {
-                margin-top: 30px;
+                margin-top: 20px;
                 padding-left: 80px;
                 font-size: 0px;
                 button {
-                    height: 30px;
-                    line-height: 28px;
-                    min-width: 90px;
                     &:first-child {
                         margin-right: 10px;
                     }

@@ -2,7 +2,7 @@
     <div class="base-info-wrapper">
         <div class="form-box">
             <div class="form-item">
-                <label class="form-label">{{$t('ModelManagement["图标选择"]')}}<span class="color-danger"> * </span></label>
+                <label class="form-label">{{$t('ModelManagement["图标选择"]')}}<span class="color-danger">*</span></label>
                 <div class="select-wrapper">
                     <div class="select-box clearfix" @click.stop.prevent="toggleDrop" :class="{'active': iconInfo.isIconDrop, 'disabled': isReadOnly}">
                         <div class="select-content">
@@ -235,8 +235,8 @@
             display: flex;
         }
         .form-item {
-            width: 230px;
-            margin-right: 45px;
+            margin-right: 30px;
+            font-size: 0;
             &:first-child {
                 width: 150px;
             }
@@ -246,27 +246,27 @@
             }
             .form-label {
                 display: inline-block;
-                width: 70px;
+                width: 65px;
                 vertical-align: top;
                 text-align: right;
                 font-size: 14px;
                 line-height: 36px;
+                margin-right: 10px;
                 span{
                     display: inline-block;
-                    padding-left: 3px;
                 }
             }
             .input-box {
                 display: inline-block;
                 text-align: left;
-                width: 150px;
+                width: 198px;
                 .error-msg {
                     font-size: 12px;
                     line-height: 1;
                 }
             }
             .cmdb-form-input {
-                width: 150px;
+                width: 198px;
             }
         }
         .select-wrapper {
@@ -287,7 +287,7 @@
                     position: relative;
                     float: left;
                     height: 34px;
-                    padding: 0 6px 0 15px;
+                    padding: 0 3px 0 10px;
                     color: $cmdbBorderFocusColor;
                     font-size: 24px;
                     i {

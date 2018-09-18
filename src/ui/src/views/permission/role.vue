@@ -1,20 +1,21 @@
 <template>
     <div class="role-wrapper">
         <div class="role-options clearfix">
-            <div class="role-options-search fl clearfix">
-                <div class="search-group fl">
-                    <label for="searchGroupName">{{$t('Permission["角色名搜索"]')}}</label>
-                    <input class="cmdb-form-input" type="text" id="searchGroupName" v-model.trim="filter['group_name']" @keyup.enter="getRoleList">
-                </div>
-                <div class="search-group fl">
-                    <label for="SearchUserName">{{$t('Permission["成员搜索"]')}}</label>
-                    <input class="cmdb-form-input" type="text" id="SearchUserName" v-model.trim="filter['user_list']" @keyup.enter="getRoleList">
-                </div>
-            </div>
-            <div class="role-options-create fr">
+            <div class="role-options-create fl">
                 <bk-button type="primary" @click="createRole">
                     {{$t('Permission["新增角色"]')}}
                 </bk-button>
+            </div>
+            <div class="role-options-search fr clearfix">
+                <bk-selector
+                    class="search-selector"
+                    :list="typeList"
+                    :selected.sync="filter.type"
+                    :allow-clear="true"
+                ></bk-selector>
+                <input class="cmdb-form-input" :placeholder="$t('Common[\'请输入\']')" type="text" id="SearchUserName" v-model.trim="filter.text" @keyup.enter="getRoleList">
+                <i class="filter-search bk-icon icon-search"
+                @click="getRoleList"></i>
             </div>
         </div>
         <cmdb-table
@@ -25,7 +26,7 @@
             :list="table.list"
             :wrapperMinusHeight="240">
             <template slot="operation" slot-scope="{ item }">
-                <span class="text-primary" @click="skipToUser(item)">{{$t('Permission["跳转配置"]')}}</span>
+                <span class="text-primary" @click="showDetails(item)">{{$t('Permission["权限详情"]')}}</span>
                 <span class="text-primary" @click.stop="editRole(item)">{{$t('Common["编辑"]')}}</span>
                 <span class="text-danger" @click.stop="confirmDeleteRole(item)">{{$t('Common["删除"]')}}</span>
             </template>  
@@ -38,19 +39,41 @@
             @on-success="handleCreateSuccess"
             @closeRoleForm="form.isShow = false">
         </v-role-form>
+        <cmdb-slider
+        :width="514"
+        :isShow.sync="slider.isShow">
+            <vAuthority
+                slot="content"
+                v-if="slider.isShow"
+                :groupId="slider.groupId"
+                @cancel="slider.isShow = false"
+            ></vAuthority>
+        </cmdb-slider>
     </div>
 </template>
 
 <script>
     import vRoleForm from './role-form'
+    import vAuthority from './authority'
     import { mapActions, mapMutations } from 'vuex'
     export default {
+        components: {
+            vRoleForm,
+            vAuthority
+        },
         data () {
             return {
                 filter: {
-                    group_name: '',
-                    user_list: ''
+                    type: '',
+                    text: ''
                 },
+                typeList: [{
+                    id: 'group_name',
+                    name: this.$t('Permission["角色名"]')
+                }, {
+                    id: 'user_list',
+                    name: this.$t('Permission["角色成员"]')
+                }],
                 table: {
                     header: [{
                         id: 'group_name',
@@ -76,8 +99,15 @@
                         user_list: '',
                         PaasUserList: ''
                     }
+                },
+                slider: {
+                    isShow: false,
+                    groupId: ''
                 }
             }
+        },
+        created () {
+            this.getRoleList()
         },
         methods: {
             ...mapActions('userPrivilege', [
@@ -87,8 +117,9 @@
             ...mapMutations('userPrivilege', [
                 'setRoles'
             ]),
-            skipToUser (item) {
-                this.$emit('skipToUser', item['group_id'])
+            showDetails (item) {
+                this.slider.groupId = item['group_id']
+                this.slider.isShow = true
             },
             handleCreateSuccess () {
                 this.filter.group_name = ''
@@ -127,16 +158,14 @@
                 this.form.isShow = true
             },
             async getRoleList () {
-                const res = await this.searchUserGroup({params: this.filter, config: {requestId: 'searchUserGroup'}})
+                let params = {}
+                if (this.filter.type) {
+                    params[this.filter.type] = this.filter.text
+                }
+                const res = await this.searchUserGroup({params, config: {requestId: 'searchUserGroup'}})
                 this.table.list = res && res.length ? res : []
                 this.setRoles(this.table.list)
             }
-        },
-        created () {
-            this.getRoleList()
-        },
-        components: {
-            vRoleForm
         }
     }
 </script>
@@ -145,36 +174,52 @@
     .role-options{
         padding: 20px 0;
         .role-options-search{
+            position: relative;
             height: 36px;
             line-height: 36px;
         }
-        .role-options-create{
-            .btn-create{
-                width: 124px;
-                height: 36px;
-                background-color: #6b7baa;
-                border-radius: 2px;
-                outline: 0;
-                border: none;
-                color: #fff;
+        .search-selector {
+            position: relative;
+            float: left;
+            width: 120px;
+            margin-right: -1px;
+            z-index: 1;
+        }
+        .cmdb-form-input {
+            position: relative;
+            width: 300px;
+            border-radius: 0 2px 2px 0;
+            &:focus {
+                z-index: 2;
             }
         }
-        .search-group{
-            margin: 0 48px 0 0;
-            font-size: 0;
-            label{
-                padding: 0 9px 0 0;
-                font-size: 14px;
-            }
-            input{
-                width: 210px;
-                vertical-align: initial;
-            }
+        .icon-search {
+            position: absolute;
+            right: 10px;
+            top: 11px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        label{
+            padding: 0 9px 0 0;
+            font-size: 14px;
         }
     }
     .role-table{
         .text-primary {
             margin-right: 10px;
+        }
+    }
+</style>
+
+<style lang="scss">
+    .role-wrapper {
+        .role-options-search {
+            .search-selector {
+                input {
+                    border-radius: 2px 0 0 2px;
+                }
+            }
         }
     }
 </style>
