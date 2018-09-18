@@ -13,13 +13,11 @@
             font-size: 14px;
             text-align: right;
             vertical-align: top;
-            line-height: 30px;
+            line-height: 36px;
         }
         .cmdb-form-input {
             display: inline-block;
             width: 150px;
-            height: 30px;
-            line-height: 28px;
         }
         .form-selector {
             width: 150px;
@@ -42,10 +40,12 @@
         position: absolute;
         left: 0;
         bottom: 0;
-        padding: 14px 10px;
-        background: $cmdbPrimaryColor;
+        padding: 10px;
+        background: #fff;
+        font-size: 0;
+        border-top: 1px solid #e7e9ef;
+        z-index: 3;
         button {
-            min-width: 110px;
             margin-left: 10px;
         }
     }

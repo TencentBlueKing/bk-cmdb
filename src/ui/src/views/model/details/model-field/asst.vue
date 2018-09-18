@@ -4,7 +4,7 @@
             <label class="form-label">{{$t('ModelManagement["关联模型"]')}}</label>
             <div class="input-box">
                 <bk-selector
-                    class="form-selector bk-selector-small"
+                    class="form-selector"
                     :list="asstList"
                     :has-children='true'
                     :selected.sync="selected"
