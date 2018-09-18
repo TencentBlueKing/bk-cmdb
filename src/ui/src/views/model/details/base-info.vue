@@ -235,7 +235,6 @@
             display: flex;
         }
         .form-item {
-            // width: 230px;
             margin-right: 30px;
             font-size: 0;
             &:first-child {

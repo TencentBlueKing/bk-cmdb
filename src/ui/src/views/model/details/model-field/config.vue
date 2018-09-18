@@ -2,20 +2,20 @@
     <ul class="label-wrapper clearfix">
         <li v-if="isOnlyShow">
             <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                <span class="cmdb-checkbox-text mr5">{{$t('ModelManagement["唯一"]')}}</span>
                 <input type="checkbox" v-model="localValue.isonly" :disabled="isReadOnly">
+                <span class="cmdb-checkbox-text">{{$t('ModelManagement["唯一"]')}}</span>
             </label>
         </li>
         <li v-if="isRequiredShow">
             <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                <span class="cmdb-checkbox-text mr5">{{$t('ModelManagement["必填"]')}}</span>
                 <input type="checkbox" v-model="localValue.isrequired" :disabled="isReadOnly">
+                <span class="cmdb-checkbox-text">{{$t('ModelManagement["必填"]')}}</span>
             </label>
         </li>
         <li v-if="isEditableShow">
             <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                <span class="cmdb-checkbox-text mr5">{{$t('ModelManagement["可编辑"]')}}</span>
                 <input type="checkbox" v-model="localValue.editable" :disabled="isReadOnly">
+                <span class="cmdb-checkbox-text">{{$t('ModelManagement["可编辑"]')}}</span>
             </label>
         </li>
     </ul>
@@ -130,6 +130,9 @@
             height: 30px;
             label {
                 line-height: 1;
+                input {
+                    margin-right: 5px;
+                }
             }
         }
     }

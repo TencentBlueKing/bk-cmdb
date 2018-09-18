@@ -8,8 +8,9 @@
         @cancel="cancel"></v-base-info>
         <div class="field-content clearfix" v-if="isEdit">
             <div class="create-field clearfix">
-                <bk-button v-if="!isReadOnly" type="primary" :title="$t('ModelManagement[\'新增字段\']')" @click="createField">
-                    {{$t('ModelManagement["新增字段"]')}}
+                <bk-button class="create-btn" :class="{'open': createForm.isShow}" v-if="!isReadOnly" type="primary" :title="$t('ModelManagement[\'新增字段\']')" @click="createField">
+                    {{$t('ModelManagement["新增字段"]')}}<i class="bk-icon icon-angle-down"></i>
+                    <i class="create-btn-mask"></i>
                 </bk-button>
                 <div class="btn-group">
                     <bk-button type="default" :loading="$loading('importObjectAttribute')" :title="$t('ModelManagement[\'导入\']')" :disabled="isReadOnly" class="btn mr10">
@@ -65,24 +66,28 @@
                     </li>
                 </ul>
             </div>
+            <div class="field-mask"></div>
         </div>
-        <v-create-field v-if="createForm.isShow"
-            @save="saveCreateForm"
-            @cancel="closeCreateForm"
-        ></v-create-field>
+        <transition name="slide">
+            <div class="create-field-wrapper" v-if="createForm.isShow">
+                <v-model-field
+                    :isEditField="false"
+                    @save="saveCreateForm"
+                    @cancel="closeCreateForm"
+                ></v-model-field>
+            </div>
+        </transition>
     </div>
 </template>
 
 <script>
     import vBaseInfo from './base-info'
     import vModelField from './model-field'
-    import vCreateField from './create-field'
     import { mapActions, mapGetters } from 'vuex'
     export default {
         components: {
             vBaseInfo,
-            vModelField,
-            vCreateField
+            vModelField
         },
         props: {
             isEdit: {
@@ -255,16 +260,63 @@
 </script>
 
 <style lang="scss" scoped>
+    .slide-enter-active, .slide-leave-active{
+        transition: height .2s;
+        overflow: hidden;
+        height: 338px;
+    }
+    .slide-enter, .slide-leave-to{
+        height: 0;
+    }
     .field-wrapper {
         position: relative;
         padding: 0 10px;
         height: 100%;
         .field-content {
-            height: calc(100% - 140px);
-            padding: 20px 0;
+            height: calc(100% - 132px);
+            padding-top: 20px;
             border-top: 1px solid $cmdbBorderLightColor;
+            .field-mask {
+                position: absolute;
+                bottom: 57px;
+                left: -20px;
+                width: calc(100% + 40px);
+                height: 52px;
+                background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, .8));
+            }
         }
         .create-field {
+            .create-btn {
+                position: relative;
+                z-index: 2;
+                &.open {
+                    background: #fff;
+                    color: #737987;
+                    border: 1px solid #c3cdd7;
+                    border-bottom-color: transparent;
+                    box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.2);
+                    .icon-angle-down {
+                        transform: rotate(180deg);
+                    }
+                    .create-btn-mask {
+                        width: calc(100% + 2px);
+                        height: 12px;
+                        background: #fff;
+                        display: inline-block;
+                        position: absolute;
+                        bottom: -12px;
+                        left: -1px;
+                        border-left: 1px solid #c3cdd7;
+                        border-right: 1px solid #c3cdd7;
+                    }
+                }
+                .icon-angle-down {
+                    margin-left: 5px;
+                    font-size: 12px;
+                    font-weight: bold;
+                    transition: all .2s linear;
+                }
+            }
             .btn-group {
                 float: right;
                 font-size: 0;
@@ -319,6 +371,7 @@
                 }
             }
             .table-content {
+                padding-bottom: 20px;
                 width: 760px;
                 height: calc(100% - 40px);
                 @include scrollbar;
@@ -347,9 +400,28 @@
                 }
                 .field-detail {
                     width: 740px;
-                    padding: 20px;
                     border: 1px solid $cmdbBorderLightColor;
                     border-top: none;
+                }
+            }
+        }
+        .create-field-wrapper {
+            position: absolute;
+            z-index: 1;
+            top: 143px;
+            left: 10px;
+            right: 10px;
+            background: #fff;
+            border: 1px solid #c3cdd7;
+            box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.2);
+            .title {
+                width: 100%;
+                height: 40px;
+                background: linear-gradient(to bottom, #f9f9f9, #fff);
+                cursor: pointer;
+                text-align: center;
+                img {
+                    margin-top: 14px;
                 }
             }
         }
