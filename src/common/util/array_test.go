@@ -14,6 +14,8 @@ package util
 import (
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestStrArrayUnique(t *testing.T) {
@@ -40,7 +42,7 @@ func TestIntArrIntersection(t *testing.T) {
 	slice2 := []int64{3, 4, 5}
 	slice3 := IntArrIntersection(slice1, slice2)
 	require.Equal(t, int64(3), slice3[0])
-
+}
 func TestIntArrayUnique(t *testing.T) {
 	type args struct {
 		a []int64
