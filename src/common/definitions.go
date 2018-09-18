@@ -722,3 +722,7 @@ const (
 	BKDataStatusField   = "bk_data_status"
 	BKDataRecoverSuffix = "(recover)"
 )
+
+const (
+	BKDefaultLoginUserPluginVersion = "self"
+)
