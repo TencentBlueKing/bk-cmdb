@@ -69,6 +69,7 @@
                 this.$store.dispatch('userCustom/saveUsercustom', {
                     [this.classifyNavigationKey]: newCustom
                 }).then(() => {
+                    this.$http.cancel('post_searchUsercustom')
                     this.$success(isAdd ? this.$t('Index["添加导航成功"]') : this.$t('Index["取消导航成功"]'))
                 })
             }

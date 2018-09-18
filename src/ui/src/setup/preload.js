@@ -3,14 +3,14 @@ const preloadConfig = {
     cancelWhenRouteChange: false
 }
 
-function _preloadPrivilege (app) {
+export function _preloadPrivilege (app) {
     return app.$store.dispatch('userPrivilege/getUserPrivilege', {
         ...preloadConfig,
         requestId: 'get_getUserPrivilege'
     })
 }
 
-function _preloadClassifications (app) {
+export function _preloadClassifications (app) {
     return app.$store.dispatch('objectModelClassify/searchClassificationsObjects', {
         config: {
             ...preloadConfig,
@@ -19,7 +19,7 @@ function _preloadClassifications (app) {
     })
 }
 
-function _preloadBusiness (app) {
+export function _preloadBusiness (app) {
     return app.$store.dispatch('objectBiz/searchBusiness', {
         params: {
             'fields': ['bk_biz_id', 'bk_biz_name'],
@@ -39,7 +39,7 @@ function _preloadBusiness (app) {
     })
 }
 
-function _preloadUserCustom (app) {
+export function _preloadUserCustom (app) {
     return app.$store.dispatch('userCustom/searchUsercustom', {
         config: {
             ...preloadConfig,

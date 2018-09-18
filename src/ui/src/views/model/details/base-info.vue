@@ -187,6 +187,8 @@
                     await this.updateObject({
                         id: this.activeModel['id'],
                         params: {...params, ...{modifier: this.userName}}
+                    }).then(() => {
+                        this.$http.cancel('post_searchClassificationsObjects')
                     })
                     this.$emit('confirm')
                 } else {
@@ -197,6 +199,9 @@
                             config: {
                                 requestId: 'createModel'
                             }
+                        }).then(res => {
+                            this.$http.cancel('post_searchClassificationsObjects')
+                            return res
                         })
                     } else {
                         res = await this.createObject({
@@ -204,6 +209,9 @@
                             config: {
                                 requestId: 'createModel'
                             }
+                        }).then(res => {
+                            this.$http.cancel('post_searchClassificationsObjects')
+                            return res
                         })
                     }
                     this.$store.commit('objectModel/setActiveModel', res)
