@@ -1,38 +1,60 @@
 <template>
-    <div  v-click-outside="handleClickOutside"
-        :data-placeholder="computedPlaceholder"
-        :class="['member-selector', {active, disabled, 'placeholder': !focus && !localSelected.length}]">
-        <div class="member-wrapper">
-            <div ref="memberContainer" :class="['member-container', {'active': active , 'ellipsis': showEllipsis}]" @click="handleSelectorClick(localSelected.length)">
-                <span ref="memberSelected" class="member-selected" 
-                    v-for="(selectedMember, index) in localSelected"
-                    :title="getFullName(selectedMember)"
-                    @click.stop="handleSelectorClick(index, $event)">
-                    <span class="member-input-emitter before" @click.stop="locateInputPosition(index)"></span>
-                    {{getFullName(selectedMember)}}
-                    <span class="member-input-emitter after" @click.stop="locateInputPosition(index + 1)"></span>
-                </span>
-                <span ref="memberInput"  contenteditable class="member-input" spellcheck="false"
-                    v-show="active"
-                    :data-shadow-member="shadowMember"
+    <div class="cmdb-form form-objuser"
+        v-click-outside="handleClickOutside"
+        @mousedown="shouldUpdate = false"
+        @click="handleClick">
+        <div class="objuser-layout"
+            v-bkloading="{isLoading: $loading('get_user_list')}"
+            @contextmenu="handleContextmenu($event)">
+            <div class="objuser-container"
+                ref="container"
+                :class="{
+                    focus,
+                    ellipsis,
+                    disabled: localDisabled,
+                    placeholder: !localValue.length && !focus
+                }"
+                :data-placeholder="localPlaceholder">
+                <span class="objuser-selected"
+                    v-for="(user, index) in selectedUsers"
+                    ref="selected"
+                    :key="index"
                     @click.stop
-                    @keyup="setMemberInputText($event)"
+                    @mousedown.left.stop="handleSelectedMousedown($event, index)"
+                    @mouseup.left.stop="handleSelectedMouseup($event, index)">
+                    {{getLable(user)}}
+                </span>
+                <span ref="input" class="objuser-input"
+                    spellcheck="false"
+                    contenteditable
+                    v-show="focus"
+                    @click.stop
+                    @input="handleInput"
+                    @blur="handleBlur"
+                    @paste="handlePaste"
                     @keydown="handleKeydown($event)">
                 </span>
             </div>
-            <transition name="toggle-slide">
-                <ul ref="memberList" class="member-list" v-show="active && filterMembers.length">
-                    <li ref="memberItem" v-for="(member, index) in filterMembers"
-                        :class="['member-item', {'highlight': selectedIndex === index}]" 
-                        :title="getLable(member)"
-                        @click.stop="handleMemberItemClick(member)">
-                        {{getLable(member)}}
-                    </li>
-                </ul>
-            </transition>
+            <ul class="suggestion-list" ref="suggestionList" v-show="focus && matchedUsers.length">
+                <li class="suggestion-item"
+                    v-for="(user, index) in matchedUsers"
+                    ref="suggestionItem"
+                    :title="getLable(user)"
+                    :class="{highlight: index === highlightIndex}"
+                    @click.stop
+                    @mousedown.left.stop="handleUserMousedown(user, index)"
+                    @mouseup.left.stop="handleUserMouseup(user, index)">
+                    {{getLable(user)}}
+                </li>
+            </ul>
+            <a href="javascript:void(0)" class="objuser-menu"
+                ref="contextmenu"
+                v-show="contextmenu"
+                @click.stop="handleCopy">{{$t('Common["复制"]')}}</a>
         </div>
     </div>
 </template>
+
 <script>
     export default {
         name: 'cmdb-form-objuser',
@@ -44,10 +66,6 @@
                 type: String,
                 default: ''
             },
-            exclude: {
-                type: Boolean,
-                default: false
-            },
             disabled: {
                 type: Boolean,
                 default: false
@@ -55,486 +73,500 @@
             multiple: {
                 type: Boolean,
                 default: true
+            },
+            exclude: {
+                type: Boolean,
+                default: true
             }
         },
         data () {
             return {
-                active: false,
+                users: [],
+                localValue: [],
+                inputValue: '',
+                inputIndex: 0,
+                highlightIndex: -1,
+                shouldUpdate: true,
                 focus: false,
-                localSelected: [],
-                members: [],
-                memberInputText: '',
-                inputIndex: null,
-                selectedIndex: null,
-                filterMembers: [],
-                showEllipsis: false
+                ellipsis: false,
+                contextmenu: false,
+                exception: false
             }
         },
         computed: {
-            computedPlaceholder () {
-                return this.placeholder ? this.placeholder : this.$t('Form["请选择用户"]')
+            selectedUsers () {
+                return this.localValue.map(enName => this.users.find(user => user['english_name'] === enName) || {'english_name': enName})
             },
-            /* 跟随在光标后的提示人员 */
-            shadowMember () {
-                if (this.selectedIndex !== null) {
-                    let highlightMemberName = this.filterMembers[this.selectedIndex]['english_name']
-                    return highlightMemberName.startsWith(this.memberInputText) ? highlightMemberName.substring(this.memberInputText.length) : ''
+            matchedUsers () {
+                const inputValue = this.inputValue.toLowerCase()
+                if (inputValue) {
+                    return this.users.filter(user => {
+                        const enName = user['english_name']
+                        const cnName = user['chinese_name']
+                        const isEnMatch = enName.toLowerCase().indexOf(inputValue) !== -1
+                        const isCnMatch = cnName.toLowerCase().indexOf(inputValue) !== -1
+                        const isSelected = this.localValue.includes(enName)
+                        return (isEnMatch || isCnMatch) && !isSelected
+                    })
                 }
-                return ''
+                return []
+            },
+            localDisabled () {
+                return this.disabled || this.exception
+            },
+            localPlaceholder () {
+                if (this.exception) {
+                    return this.$t('Common["获取人员列表失败"]')
+                } else if (this.placeholder) {
+                    return this.placeholder
+                }
+                return this.$t('Form["请输入用户"]')
             }
         },
         watch: {
-            value (value) {
-                this.setLocalSelected()
-            },
-            localSelected (localSelected) {
-                let localSelectedStr = localSelected.join(',')
-                if (typeof this.valuevalue === 'string' && localSelectedStr !== this.valuevalue) {
-                    this.$emit('input', localSelectedStr)
-                } else if (Array.isArray(this.valuevalue) && this.valuevalue.join(',') !== this.localSelectedStr) {
-                    this.$emit('input', localSelected)
-                } else if (this.valuevalue === undefined) {
-                    this.$emit('input', localSelectedStr)
-                }
-                this.setFilterMember() // 更新人员列表，已选择的不显示在人员列表中
-                this.calcEllipsis() // 计算是否溢出
-                this.calcEmmiter() // 计算已选人员tag前后光标定位元素的宽度
-            },
-            memberInputText (memberInputText) {
-                this.setFilterMember()
-                this.$refs.memberList.scrollTop = 0
-            },
             focus (focus) {
-                this.calcEmmiter() // 获得焦点时，选择器会展开, 需要重新计算已选人员tag前后光标定位元素的宽度
-                if (focus) {
-                    this.updateMemberListPosition()
+                if (this.focus) {
+                    this.ellipsis = false
                 } else {
-                    this.selectedIndex = null
-                    this.$refs.memberList.scrollTop = 0
+                    this.reset()
+                    this.calcEllipsis()
                 }
             },
-            selectedIndex (selectedIndex) {
-                // 根据当前上下移动选择的索引计算列表滚动
-                let memberListItemHeight = 32
-                let scrollCount = 4
-                if (selectedIndex !== null && selectedIndex > scrollCount) {
-                    this.$refs.memberList.scrollTop = (selectedIndex - scrollCount) * memberListItemHeight
-                } else {
-                    this.$refs.memberList.scrollTop = 0
+            value (value) {
+                if (this.localValue.join(',') !== value) {
+                    this.setLocalValue()
                 }
-                this.updateMemberListPosition()
             },
-            members (members) {
-                this.setFilterMember()
-            },
-            active (active) {
-                if (!active) {
-                    this.inputIndex = null
+            localValue (localValue, oldValue) {
+                const localValueStr = localValue.join(',')
+                if (localValueStr !== this.value) {
+                    this.$emit('input', localValueStr)
+                    this.$emit('on-change', localValueStr, oldValue.join(','))
                 }
+            },
+            matchedUsers (matchedUsers) {
+                this.highlightIndex = -1
+            },
+            highlightIndex () {
+                this.updateScroller()
             }
         },
         async created () {
-            this.members = await this.getMemberList()
-            this.setLocalSelected()
-            this.setFilterMember()
+            try {
+                this.users = await this.$store.dispatch('getUserList')
+            } catch (e) {
+                this.exception = true
+                this.users = []
+            }
+            this.setLocalValue()
+        },
+        mounted () {
+            this.calcEllipsis()
         },
         methods: {
-            getMemberList () {
-                return this.$http.get(`${window.API_HOST}user/list?_t=${(new Date()).getTime()}`, {
-                    requestId: 'getMemberList',
-                    fromCache: true,
-                    cancelWhenRouteChange: false
+            setLocalValue () {
+                const value = (this.value || '').split(',')
+                const localValue = []
+                value.forEach(enName => {
+                    if (this.users.some(user => user['english_name'] === enName)) {
+                        localValue.push(enName)
+                    }
                 })
+                this.localValue = localValue
             },
-            getFullName (englishName) {
-                const member = this.members.find(meta => meta['english_name'] === englishName)
-                if (member) {
-                    return `${englishName}(${member['chinese_name']})`
-                }
-                return englishName
-            },
-            /* 设置本地存储数据 */
-            setLocalSelected () {
-                let selected = this.value
-                let localSelected = [...this.localSelected]
-                if (typeof selected === 'string' && localSelected.join(',') !== selected) {
-                    localSelected = !selected ? [] : selected.split(',')
-                } else if (Array.isArray(selected) && selected.join(',') !== localSelected.join(',')) {
-                    localSelected = [...selected]
-                } else if (selected === undefined && localSelected.length) {
-                    localSelected = []
-                }
-                if (!this.exclude) {
-                    localSelected = localSelected.filter(selected => this.members.some(({english_name: englishName}) => englishName === selected))
-                }
-                this.localSelected = localSelected
-            },
-            /* 根据当前输入筛选人员列表 */
-            setFilterMember () {
-                let filterVal = this.memberInputText.toLowerCase()
-                this.selectedIndex = null
-                this.filterMembers = this.members.filter(member => {
-                    let enInclude = member['english_name'].toLowerCase().indexOf(filterVal) !== -1
-                    let cnInclude = member['chinese_name'].toLowerCase().indexOf(filterVal) !== -1
-                    let isSelected = this.localSelected.includes(member['english_name'])
-                    return (enInclude || cnInclude) && !isSelected
-                })
-            },
-            /* 计算是否显示省略符号 */
             calcEllipsis () {
                 this.$nextTick(() => {
-                    let $memberSelected = this.$refs.memberSelected
-                    let selectedMargin = 8
-                    let containerPadding = 8
-                    let memberSelectedWidth = 0
-                    if ($memberSelected && $memberSelected.length) {
-                        $memberSelected.forEach($selected => {
-                            memberSelectedWidth = memberSelectedWidth + $selected.offsetWidth
-                        })
-                        memberSelectedWidth = memberSelectedWidth + $memberSelected.length * selectedMargin
-                        this.showEllipsis = memberSelectedWidth > (this.$refs.memberContainer.offsetWidth - containerPadding)
-                    } else {
-                        this.showEllipsis = false
+                    const $selected = this.$refs.selected
+                    if ($selected && $selected.length) {
+                        const $container = this.$refs.container
+                        const $lastSelected = this.$refs.selected[$selected.length - 1]
+                        const lastSelectedWidth = $lastSelected.offsetWidth
+                        const lastSelectedLeft = $lastSelected.offsetLeft
+                        const containerWidth = $container.offsetWidth
+                        this.ellipsis = (lastSelectedWidth + lastSelectedLeft) > containerWidth
                     }
                 })
             },
-            /* 计算每个已选人员后面的输入定位元素的宽度 */
-            calcEmmiter () {
-                this.$nextTick(() => {
-                    let $memberSelected = this.$refs.memberSelected
-                    if ($memberSelected) {
-                        let rows = {}
-                        let selectedMarginTop = 8
-                        let selectedHeight = 16
-                        let memberInputDefaultWidth = 2
-                        let rowOffsetTop = selectedMarginTop + selectedHeight
-                        // 将已选人员的DOM按行换分
-                        $memberSelected.forEach($selected => {
-                            let row = ($selected.offsetTop - selectedMarginTop) / rowOffsetTop + 1
-                            if (rows.hasOwnProperty(row)) {
-                                rows[row].push($selected)
-                            } else {
-                                rows[row] = [$selected]
-                            }
-                        })
-                        // 将每行的最后一个已选人员的光标定位宽度设置为该行的剩余宽度
-                        for (let row in rows) {
-                            let $rowSelected = rows[row]
-                            let $lastRowSelected = $rowSelected.pop()
-                            let afterEmitterWidth = this.$refs.memberContainer.offsetWidth - ($lastRowSelected.offsetLeft + $lastRowSelected.offsetWidth) - memberInputDefaultWidth
-                            $lastRowSelected.querySelector('.member-input-emitter.after').style.width = `${afterEmitterWidth}px`
-                            $rowSelected.forEach($selected => {
-                                $selected.querySelectorAll('.member-input-emitter').forEach($emitter => {
-                                    $emitter.style.width = `${selectedMarginTop}px`
-                                })
-                            })
-                        }
-                    }
-                })
+            getLable (user) {
+                const enName = user['english_name']
+                const cnName = user['chinese_name']
+                if (enName && cnName) {
+                    return `${user['english_name']}(${user['chinese_name']})`
+                }
+                return enName
             },
-            updateMemberListPosition () {
-                this.$nextTick(() => {
-                    this.$refs.memberList.style.top = `${this.$refs.memberContainer.offsetHeight}px`
-                })
+            handleClickOutside () {
+                this.contextmenu = false
             },
-            /* 激活人员选择器，定位光标位置，如果是点击的已选人员，未超过一半，设置在其前，否则在其后 */
-            handleSelectorClick (index, event) {
-                if (!this.disabled) {
-                    this.active = true
-                    if (event) {
-                        let offsetWidth = event.target.offsetWidth
-                        let eventX = event.offsetX
-                        index = eventX > (offsetWidth / 2) ? index + 1 : index
-                    }
-                    this.locateInputPosition(index)
+            handleClick () {
+                if (this.localDisabled) {
+                    return false
+                }
+                if (!this.multiple) {
+                    this.localValue = []
+                }
+                this.inputIndex = this.localValue.length
+                this.moveInput(0)
+            },
+            handleSelectedMousedown (event, index) {
+                if (this.localDisabled) {
+                    return false
+                }
+                this.shouldUpdate = false
+            },
+            handleSelectedMouseup (event, index) {
+                if (this.localDisabled) {
+                    return false
+                }
+                if (this.multiple) {
+                    let $refrenceTarget = event.target
+                    const offsetWidth = $refrenceTarget.offsetWidth
+                    const eventX = event.offsetX
+                    const $input = this.$refs.input
+                    this.inputIndex = eventX > (offsetWidth / 2) ? index + 1 : index
+                } else {
+                    this.localValue = []
+                    this.inputIndex = 0
+                }
+                this.moveInput(0)
+            },
+            handleUserMousedown (user, index) {
+                if (this.localDisabled) {
+                    return false
+                }
+                this.shouldUpdate = false
+            },
+            handleUserMouseup (user, index) {
+                if (this.localDisabled) {
+                    return false
+                }
+                if (this.multiple) {
+                    this.localValue.splice(this.inputIndex, 0, user['english_name'])
+                    this.$nextTick(() => {
+                        this.moveInput(1)
+                        this.setSelection({reset: true})
+                    })
+                } else {
+                    this.localValue = [user['english_name']]
+                    this.reset()
+                    this.handleBlur()
                 }
             },
-            /* 移动模拟输入元素的DOM位置并获取焦点 */
-            locateInputPosition (index) {
-                if (!this.disabled) {
-                    if (!this.multiple) {
-                        index = 0
-                        this.inputIndex = 0
-                        this.localSelected = []
-                    }
-                    let $memberInput = this.$refs.memberInput
-                    let $memberSelected = this.$refs.memberSelected
-                    if (index !== this.inputIndex) {
-                        let $refrenceElement = $memberSelected && $memberSelected[index] ? $memberSelected[index] : null
-                        this.inputIndex = $memberSelected && $memberSelected.length ? index : null
-                        this.$refs.memberContainer.insertBefore($memberInput, $refrenceElement)
-                        this.memberInputFocus()
-                    } else {
-                        this.setCaretPosition()
-                    }
+            setSelection (option = {}) {
+                if (option.reset) {
+                    this.reset()
                 }
-            },
-            /* 同样的位置，将光标定位至最后 */
-            setCaretPosition () {
-                let $memberInput = this.$refs.memberInput
                 this.focus = true
+                this.shouldUpdate = true
                 this.$nextTick(() => {
-                    $memberInput.focus()
+                    const $input = this.$refs.input
+                    $input.focus()
                     if (window.getSelection) {
                         let range = window.getSelection()
-                        range.selectAllChildren($memberInput)
+                        range.selectAllChildren($input)
                         range.collapseToEnd()
                     } else if (document.selection) {
                         let range = document.selection.createRange()
-                        range.moveToElementText($memberInput)
+                        range.moveToElementText($input)
                         range.collapse(false)
                         range.select()
                     }
                 })
             },
-            /* 处于输入状态时对不同按键的响应 */
             handleKeydown (event) {
-                let eventKey = event.key
-                let keyFunc = {
-                    'Enter': this.handleConfirm,
+                const key = event.key
+                const keyMap = {
+                    'Enter': this.handleEnter,
                     'Backspace': this.handleBackspace,
                     'Delete': this.handleBackspace,
                     'ArrowLeft': this.handleArrow,
                     'ArrowRight': this.handleArrow,
-                    'ArrowDown': this.handleArrow,
-                    'ArrowUp': this.handleArrow
+                    'ArrowUp': this.handleArrow,
+                    'ArrowDown': this.handleArrow
                 }
-                if (keyFunc.hasOwnProperty(eventKey)) {
-                    keyFunc[eventKey](event)
+                if (keyMap.hasOwnProperty(key)) {
+                    keyMap[key](event)
                 }
             },
-            /* 按下回车确认输入，添加人员 */
-            handleConfirm (event) {
+            handleEnter (event) {
                 event.preventDefault()
-                let memberInputText = this.memberInputText
-                if (memberInputText.length) {
-                    let member = this.exclude ? {'english_name': memberInputText} : this.filterMembers.find(({english_name: englishName}) => englishName === memberInputText)
-                    if (this.exclude) {
-                        this.localSelected.splice(this.inputIndex, 0, memberInputText)
+                this.shouldUpdate = false
+                if (this.highlightIndex !== -1) {
+                    if (this.multiple) {
+                        this.localValue.splice(this.inputIndex, 0, this.matchedUsers[this.highlightIndex]['english_name'])
+                        this.moveInput(1, {reset: true})
                     } else {
-                        const member = this.selectedIndex !== null ? this.filterMembers[this.selectedIndex] : this.filterMembers.find(({english_name: englishName}) => englishName === memberInputText)
-                        if (member) {
-                            this.localSelected.splice(this.inputIndex, 0, member['english_name'])
+                        this.localValue = [this.matchedUsers[this.highlightIndex]['english_name']]
+                        this.reset()
+                        this.handleBlur()
+                    }
+                } else if (this.inputValue) {
+                    if (!this.exclude && !this.localValue.includes(this.inputValue)) {
+                        if (this.multiple) {
+                            this.localValue.splice(this.inputIndex, 0, this.inputValue)
+                            this.moveInput(1, {reset: true})
+                        } else {
+                            this.localValue = [this.inputValue]
+                            this.reset()
+                            this.handleBlur()
+                        }
+                    } else {
+                        this.reset()
+                    }
+                } else {
+                    this.handleBlur()
+                }
+            },
+            handleBackspace (event) {
+                if (this.inputValue || !this.localValue.length || !this.inputIndex) {
+                    return true
+                }
+                this.localValue.splice(this.inputIndex - 1, 1)
+                this.moveInput(-1)
+            },
+            handleArrow (event) {
+                const arrow = event.key
+                if (['ArrowLeft', 'ArrowRight'].includes(arrow)) {
+                    if (this.inputValue || !this.localValue.length) {
+                        return true
+                    }
+                    if (arrow === 'ArrowLeft' && this.inputIndex !== 0) {
+                        this.moveInput(-1)
+                    } else if (arrow === 'ArrowRight' && this.inputIndex !== this.localValue.length) {
+                        this.moveInput(1)
+                    }
+                } else if (this.matchedUsers.length) {
+                    event.preventDefault()
+                    if (arrow === 'ArrowDown' && this.highlightIndex < (this.matchedUsers.length - 1)) {
+                        this.highlightIndex++
+                    } else if (arrow === 'ArrowUp' && this.highlightIndex !== -1) {
+                        this.highlightIndex--
+                    }
+                }
+            },
+            handleInput () {
+                this.inputValue = this.$refs.input.textContent.trim()
+            },
+            handleBlur () {
+                if (!this.shouldUpdate) {
+                    return true
+                }
+                this.focus = false
+                if (this.inputValue) {
+                    if (!this.exclude) {
+                        if (!this.localValue.includes(this.inputValue)) {
+                            this.localValue.splice(this.inputIndex, 0, this.inputValue)
+                        }
+                    } else {
+                        const matchedUser = this.getMatchedUser(this.inputValue)
+                        if (matchedUser) {
+                            this.localValue.splice(this.inputIndex, 0, matchedUser['english_name'])
                         }
                     }
                 }
-                this.selectedIndex = null
-                this.inputIndex = null
-                this.memberInputReset()
             },
-            /* 删除已选人员 */
-            handleBackspace () {
-                if (!this.memberInputText && this.inputIndex > 0) {
-                    let memberInput = this.$refs.memberInput
-                    this.localSelected.splice(--this.inputIndex, 1)
-                    this.$refs.memberContainer.insertBefore(memberInput, memberInput.previousSibling)
-                    this.memberInputFocus()
-                }
-            },
-            /* 按下箭头 */
-            handleArrow (event) {
-                let $memberInput = this.$refs.memberInput
-                let $memberSelected = this.$refs.memberSelected
-                let arrow = event.key
-                if (!this.memberInputText && arrow === 'ArrowLeft' && this.inputIndex > 0) { // 无输入时，向左移动光标位置
-                    this.inputIndex--
-                    this.$refs.memberContainer.insertBefore($memberInput, $memberSelected[this.inputIndex])
-                    this.memberInputFocus()
-                } else if (!this.memberInputText && arrow === 'ArrowRight' && this.inputIndex < $memberSelected.length) { // 无输入时，向右移动光标位置
-                    this.inputIndex++
-                    this.$refs.memberContainer.insertBefore($memberInput, $memberSelected[this.inputIndex])
-                    this.memberInputFocus()
-                } else if (arrow === 'ArrowDown' && this.filterMembers.length) { // 向下选择列表人员
-                    event.preventDefault()
-                    if (this.selectedIndex === null) {
-                        this.selectedIndex = 0
-                    } else if (this.selectedIndex < this.filterMembers.length - 1) {
-                        this.selectedIndex++
-                    }
-                } else if (arrow === 'ArrowUp' && this.filterMembers.length) { // 向上选择列表人员
-                    event.preventDefault()
-                    if (this.selectedIndex > 0 && this.selectedIndex !== null) {
-                        this.selectedIndex--
-                    } else {
-                        this.selectedIndex = null
-                    }
-                }
-            },
-            /* 光标获取焦点 */
-            memberInputFocus () {
-                this.memberInputReset()
-                this.focus = true
+            handlePaste () {
                 this.$nextTick(() => {
-                    let $memberInput = this.$refs.memberInput
-                    $memberInput.focus()
+                    const values = [...new Set(this.inputValue.split(/,|;/))]
+                    const pasteValue = []
+                    values.forEach(name => {
+                        const user = this.getMatchedUser(name)
+                        if (user) {
+                            pasteValue.push(user['english_name'])
+                        }
+                    })
+                    this.localValue.splice(this.inputIndex, 0, ...pasteValue)
+                    this.moveInput(pasteValue.length, {reset: true})
                 })
             },
-            /* 清空输入内容 */
-            memberInputReset () {
+            handleCopy () {
+                this.contextmenu = false
+                this.$copyText(this.localValue.join(',')).then(() => {
+                    this.$success(this.$t('Common["复制成功"]'))
+                }, () => {
+                    this.$error(this.$t('Common["复制失败"]'))
+                })
+            },
+            handleContextmenu (event) {
                 this.focus = false
-                this.$refs.memberInput.innerHTML = ''
+                if (!this.localValue.length) {
+                    return false
+                }
+                event.preventDefault()
+                event.stopPropagation()
+                const $contextmenu = this.$refs.contextmenu
+                const $layout = event.currentTarget
+                let $refrence = $layout
+                let invisible = false
+                while (!invisible && $refrence.nodeName !== 'BODY') {
+                    $refrence = $refrence.parentElement
+                    const overflow = window.getComputedStyle($refrence).getPropertyValue('overflow-y')
+                    invisible = ['hidden', 'auto', 'scroll'].includes(overflow)
+                }
+                this.contextmenu = true
                 this.$nextTick(() => {
-                    this.memberInputText = ''
+                    const menuRect = $contextmenu.getBoundingClientRect()
+                    const refrenceRect = $refrence.getBoundingClientRect()
+                    const layoutRect = $layout.getBoundingClientRect()
+                    let left = event.x - layoutRect.left
+                    let top = event.y - layoutRect.top
+                    if (event.x + menuRect.width + 5 < refrenceRect.right) {
+                        left = left + 5
+                    } else {
+                        left = left - menuRect.width
+                    }
+                    if (event.y + menuRect > refrenceRect.bottom) {
+                        top = top - menuRect.height
+                    }
+                    $contextmenu.style.left = left + 'px'
+                    $contextmenu.style.top = top + 'px'
                 })
             },
-            /* 从过滤出来的人员列表中选中指定人员 */
-            handleMemberItemClick (member) {
-                if (!this.localSelected.some(selected => selected === member['english_name'])) {
-                    this.localSelected.splice(this.inputIndex, 0, member['english_name'])
-                    this.active = false
+            getMatchedUser (nameToMatch) {
+                const user = this.users.find(user => {
+                    const enName = user['english_name']
+                    const cnName = user['chinese_name']
+                    const isMatch = [enName, cnName].some(name => name.toLowerCase() === nameToMatch.toLowerCase())
+                    const isSelected = this.localValue.includes(enName)
+                    return isMatch && !isSelected
+                })
+                return user
+            },
+            moveInput (step, option = {}) {
+                this.$nextTick(() => {
+                    this.inputIndex = this.inputIndex + step
+                    const $refrenceTarget = this.$refs.selected ? this.$refs.selected[this.inputIndex] : null
+                    this.$refs.container.insertBefore(this.$refs.input, $refrenceTarget)
+                    this.setSelection(option)
+                })
+            },
+            updateScroller () {
+                const highlightIndex = this.highlightIndex
+                const $suggestionList = this.$refs.suggestionList
+                if (highlightIndex !== -1) {
+                    const $suggestionItem = this.$refs.suggestionItem[highlightIndex]
+                    const listClientHeight = $suggestionList.clientHeight
+                    const listScrollTop = $suggestionList.scrollTop
+                    const listScrollHeight = $suggestionList.scrollHeight
+                    const itemOffsetTop = $suggestionItem.offsetTop
+                    const itemOffsetHeight = $suggestionItem.offsetHeight
+                    if (itemOffsetTop >= listScrollTop && (itemOffsetTop + itemOffsetHeight) <= (listScrollTop + listClientHeight)) {
+                        return false
+                    } else if (itemOffsetTop <= listScrollTop) {
+                        $suggestionList.scrollTop = itemOffsetTop
+                    } else if ((itemOffsetTop + itemOffsetHeight) > (listScrollTop + listClientHeight)) {
+                        $suggestionList.scrollTop = itemOffsetTop + itemOffsetHeight - listClientHeight
+                    }
+                } else {
+                    $suggestionList.scrollTop = 0
                 }
-                this.memberInputReset()
             },
-            /* 输入时设置本地存储文本，用于筛选列表 */
-            setMemberInputText (event) {
-                this.memberInputText = this.$refs.memberInput.textContent.trim()
-            },
-            /* 获取人员列表展示的文本 */
-            getLable (member) {
-                if (!member['chinese_name']) {
-                    return member['english_name']
-                }
-                return `${member['english_name']}(${member['chinese_name']})`
-            },
-            handleClickOutside () {
-                this.active = false
-                this.memberInputReset()
+            reset () {
+                this.shouldUpdate = true
+                this.highlightIndex = -1
+                this.inputValue = ''
+                this.$refs.input.innerHTML = ''
             }
         }
     }
 </script>
+
 <style lang="scss" scoped>
-    .member-selector{
-        width: 100%;
+    .form-objuser {
         height: 36px;
+        font-size: 14px;
         cursor: text;
-        position: relative;
-        z-index: 1;
-        &.active{
-            z-index: 999;
-        }
-        &.disabled{
-            cursor: not-allowed;
-            background-color: #fafafa;
-        }
-        .member-wrapper{
-            height: 100%;
-        }
-        .member-container{
-            width: 100%;
+        .objuser-layout {
+            position: relative;
             min-height: 100%;
-            padding: 0 4px 8px 4px;
-            border: 1px solid #c3cdd7;
-            font-size: 0;
-            border-radius: 2px;
-            white-space: nowrap;
-            overflow: hidden;
-            background-color: #fff;
-            max-height: 114px;
-            line-height: 24px;
-            &.active{
-                white-space: normal;
-                position: absolute;
-                top: 0;
-                left: 0;
-                border-color: $cmdbBorderFocusColor;
-                @include scrollbar-y;
-                &::-webkit-scrollbar {
-                    width: 4px;
-                    height: 4px;
+            .objuser-container {
+                position: relative;
+                min-width: 100%;
+                min-height: 36px;
+                padding: 3px 0;
+                line-height: 1;
+                border: 1px solid $cmdbBorderColor;
+                border-radius: 2px;
+                background-color: #fff;
+                white-space: nowrap;
+                overflow: hidden;
+                &.disabled {
+                    cursor: not-allowed;
+                    background-color: #fafafa;
+                }
+                &.focus {
+                    white-space: normal;
+                    border-color: $cmdbBorderFocusColor;
+                    z-index: 1;
+                }
+                &.ellipsis:after{
+                    position: absolute; 
+                    bottom: 1px; 
+                    right: -1px; 
+                    height: 34px;
+                    padding: 0 0 0 15px;
+                    line-height: 34px;
+                    font-size: 12px;
+                    content: ""; 
+                    border-right: 1px solid $cmdbBorderColor;
+                    background: -webkit-linear-gradient(left, transparent, #fff 55%);
+                    background: -o-linear-gradient(left, transparent, #fff 55%);
+                    background: linear-gradient(to right, transparent, #fff 55%);
+                }
+                &.placeholder:after {
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    height: 100%;
+                    padding: 0 0 0 10px;
+                    line-height: 34px;
+                    content: attr(data-placeholder);
+                    font-size: 12px;
+                    color: #c3cdd7;
                 }
             }
-            &.active.ellipsis:after{
-                display: none;
-            }
-            &.ellipsis:after{
-                font-size: 12px;
-                content: "···"; 
-                position: absolute; 
-                bottom: 1px; 
-                right: 1px; 
-                height: 34px;
-                line-height: 34px;
-                padding: 0 2px 0 10px;
-                letter-spacing: 0;
-                background: -webkit-linear-gradient(left, transparent, #fff 55%);
-                background: -o-linear-gradient(left, transparent, #fff 55%);
-                background: linear-gradient(to right, transparent, #fff 55%);
-            }
-        }
-        &.placeholder:after{
-            content: attr(data-placeholder);
-            position: absolute;
-            left: 10px;
-            top: 0;
-            height: 34px;
-            line-height: 34px;
-            font-size: 12px;
-            color: #c3cdd7;
-            pointer-events: none;
         }
     }
-    .member-selected{
+    .objuser-selected {
         display: inline-block;
-        vertical-align: top;
-        height: 18px;
-        line-height: 16px;
+        height: 22px;
+        margin: 3px;
+        max-width: calc(100% - 4px);
         padding: 0 4px;
-        margin: 8px 4px 0 4px;
-        font-size: 12px;
-        background-color: #fafafa;
+        line-height: 20px;
+        vertical-align: top;
         border: 1px solid #d9d9d9;
         border-radius: 2px;
-        position: relative;
-        .member-input-emitter {
-            position: absolute;
-            width: 8px;
-            height: 34px;
-            top: -9px;
-            z-index: 1;
-            &.before{
-                right: 100%;
-            }
-            &.after{
-                left: 100%;
-            }
-        }
+        cursor: default;
+        @include ellipsis;
     }
-    .member-input{
+    .objuser-input {
         display: inline-block;
+        max-width: 100%;
+        height: 22px;
+        margin: 3px 0 0;
+        padding: 0 4px;
+        white-space: nowrap;
+        line-height: 22px;
         vertical-align: top;
-        font-size: 12px;
-        min-width: 2px;
-        height: 18px;
-        line-height: 18px;
-        margin: 8px 0 0 0;
-        outline: 0;
-        position: relative;
-        z-index: 2;
-        &:after{
-            display: none;
-            content: attr(data-shadow-member);
-            color: #c3cdd7;
-        }
+        outline: none;
+        overflow: hidden;
     }
-    .member-list{
+    .suggestion-list{
         position: absolute;
         top: 100%;
         left: 0;
         width: 100%;
-        font-size: 14px;
         max-height: 162px;
+        margin: 1px 0 0 0;
+        font-size: 14px;
         background: #fff;
         box-shadow: 0 0 1px 1px rgba(0, 0, 0, 0.1);
         border: 1px solid #c3cdd7;
         border-radius: 2px;
-        z-index: 1000;
+        z-index: 1;
         @include scrollbar-y;
-        &::-webkit-scrollbar {
-            width: 4px;
-            height: 4px;
-        }
-        .member-item{
+        .suggestion-item{
             padding: 0 10px;
             height: 32px;
             line-height: 32px;
@@ -542,8 +574,18 @@
             @include ellipsis;
             &.highlight,
             &:hover{
-                background-color: #f5f5f5;
+                background-color: #f1f7ff;
             }
         }
+    }
+    .objuser-menu {
+        position: absolute;
+        top: 0;
+        left: 0;
+        padding: 5px 10px;
+        background-color: #fff;
+        box-shadow: 0 0 1px 1px rgba(0, 0, 0, 0.1);
+        font-size: 14px;
+        z-index: 9999;
     }
 </style>

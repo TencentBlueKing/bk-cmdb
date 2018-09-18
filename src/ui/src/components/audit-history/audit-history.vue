@@ -7,7 +7,7 @@
             </div>
             <div class="options-group fl">
                 <label class="options-label">{{$t("HostResourcePool['操作账号']")}}</label>
-                <cmdb-form-objuser class="options-filter" v-model="operator"></cmdb-form-objuser>
+                <cmdb-form-objuser class="options-filter" v-model="operator" :exclude="false" :multiple="false"></cmdb-form-objuser>
             </div>
             <bk-button class="fr" type="primary" @click="refresh">{{$t("Common['查询']")}}</bk-button>
         </div>
@@ -138,6 +138,9 @@
                 }
                 if (!isNaN(this.instId)) {
                     condition['inst_id'] = this.instId
+                }
+                if (this.operator) {
+                    condition.operator = this.operator
                 }
                 return {
                     condition,
