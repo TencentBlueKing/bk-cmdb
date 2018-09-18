@@ -10,7 +10,7 @@
             </div>
         </div>
         <div class="authority-wrapper clearfix">
-            <h2 class="authority-title fl">{{$t('Permission["功能选择"]')}}</h2>
+            <h2 class="authority-title fl">{{$t('Permission["权限设置"]')}}</h2>
             <div class="checkbox-container clearfix">
                 <span v-for="(authority, index) in authorities.list" class="checkbox-span fl" :key="index">
                     <label class="cmdb-form-checkbox cmdb-checkbox-small authority-checkbox"
