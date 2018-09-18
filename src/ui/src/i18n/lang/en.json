@@ -86,6 +86,7 @@
         "跨业务导入": "Cross Business Import",
         "导入成功": "Imported Successfully",
         "复制": "Copy",
+        "复制属性": "Copy Property",
         "复制成功": "Copy Success",
         "复制失败": "Copy Fail",
         "退出会导致未保存信息丢失，是否确认？": "The exit will cause the unsaved information to be lost. Are you sure?",
@@ -106,7 +107,8 @@
         "至少选择N项": "Select {n} item(s) at least",
         "该字段无可复制的值": "There are no available values to copy for selected property",
         "全选本页": "Select current page",
-        "跨页全选": "Select all page"
+        "跨页全选": "Select all page",
+        "获取人员列表失败": "Failed to get user list"
     },
     "Index": {
         "首页": "Index",
@@ -520,7 +522,7 @@
     "Form": {
         "请输入长字符": "Please input long char",
         "请输入短字符": "Please input single char",
-        "请选择用户": "Please select user",
+        "请输入用户": "Please input user",
         "请输入数字": "Please input integer"
     }
 }

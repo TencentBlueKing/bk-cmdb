@@ -1,30 +1,38 @@
 <template>
     <div class="models-layout">
         <div class="models-options clearfix">
-            <div class="options-button fl">
-                <bk-button class="models-button" v-tooltip="$t('ModelManagement[\'导入\']')" @click="importSlider.show = true">
-                    <i class="icon-cc-import"></i>
-                </bk-button>
-                <bk-button class="models-button" type="default submit" form="exportForm"
-                    v-tooltip="$t('ModelManagement[\'导出\']')"
-                    :disabled="!table.checked.length">
-                    <i class="icon-cc-derivation"></i>
-                </bk-button>
+            <div class="options-button clearfix fl">
+                <div class="fl">
+                    <bk-button class="models-button" v-tooltip="$t('ModelManagement[\'导入\']')" @click="importSlider.show = true">
+                        <i class="icon-cc-import"></i>
+                    </bk-button>
+                </div>
+                <div class="fl" v-tooltip="$t('ModelManagement[\'导出\']')">
+                    <bk-button class="models-button" type="default submit" form="exportForm"
+                        :disabled="!table.checked.length">
+                        <i class="icon-cc-derivation"></i>
+                    </bk-button>
+                </div>
                 <form id="exportForm" :action="url.export" method="POST" hidden>
                     <input type="hidden" name="bk_inst_id" :value="table.checked.join(',')">
                 </form>
-                <bk-button class="models-button"
-                    v-tooltip="$t('Inst[\'批量更新\']')"
-                    :disabled="!table.checked.length"
-                    @click="handleMultipleEdit">
-                    <i class="icon-cc-edit"></i>
-                </bk-button>
-                <bk-button class="models-button" v-tooltip="$t('Common[\'删除\']')"
-                    :disabled="!table.checked.length"
-                    @click="handleMultipleDelete">
-                    <i class="icon-cc-del"></i>
-                </bk-button>
-                <bk-button style="margin-left: 20px;" type="primary" @click="handleCreate">{{$t("Inst['立即创建']")}}</bk-button>
+                <div class="fl" v-tooltip="$t('Inst[\'批量更新\']')">
+                    <bk-button class="models-button"
+                        :disabled="!table.checked.length"
+                        @click="handleMultipleEdit">
+                        <i class="icon-cc-edit"></i>
+                    </bk-button>
+                </div>
+                <div class="fl" v-tooltip="$t('Common[\'删除\']')">
+                    <bk-button class="models-button button-delete"
+                        :disabled="!table.checked.length"
+                        @click="handleMultipleDelete">
+                        <i class="icon-cc-del"></i>
+                    </bk-button>
+                </div>
+                <div class="fl">
+                    <bk-button style="margin-left: 20px;" type="primary" @click="handleCreate">{{$t("Inst['立即创建']")}}</bk-button>
+                </div>
             </div>
             <div class="options-button fr">
                 <bk-button v-tooltip="$t('Common[\'查看删除历史\']')" @click="routeToHistory">
@@ -625,6 +633,10 @@
     position: relative;
     &:hover{
         z-index: 1;
+        &.button-delete {
+            color: $cmdbDangerColor;
+            border-color: $cmdbDangerColor; 
+        }
     }
 }
 .options-button{

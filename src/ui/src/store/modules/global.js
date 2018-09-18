@@ -1,4 +1,5 @@
 import { language } from '@/i18n'
+import $http from '@/api'
 
 const state = {
     site: window.Site,
@@ -12,7 +13,8 @@ const state = {
     },
     header: {
         back: false
-    }
+    },
+    userList: []
 }
 
 const getters = {
@@ -26,7 +28,21 @@ const getters = {
     globalLoading: state => state.globalLoading,
     navStick: state => state.nav.stick,
     navFold: state => state.nav.fold,
-    showBack: state => state.header.back
+    showBack: state => state.header.back,
+    userList: state => state.userList
+}
+
+const actions = {
+    getUserList ({commit}) {
+        return $http.get(`${window.API_HOST}user/list?_t=${(new Date()).getTime()}`, {
+            requestId: 'get_user_list',
+            fromCache: true,
+            cancelWhenRouteChange: false
+        }).then(list => {
+            commit('setUserList', list)
+            return list
+        })
+    }
 }
 
 const mutations = {
@@ -38,6 +54,9 @@ const mutations = {
     },
     setHeaderStatus (state, status) {
         Object.assign(state.header, status)
+    },
+    setUserList (state, list) {
+        state.userList = list
     }
 }
 
@@ -45,5 +64,6 @@ export default {
     namespaced: true,
     state,
     getters,
+    actions,
     mutations
 }

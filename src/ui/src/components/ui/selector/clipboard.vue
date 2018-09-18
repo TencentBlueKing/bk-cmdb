@@ -1,8 +1,7 @@
 <template>
-    <bk-dropdown-menu trigger="click" :disabled="disabled">
+    <bk-dropdown-menu trigger="click" :disabled="disabled" v-tooltip="$t('Common[\'复制属性\']')">
         <bk-button class="clipboard-trigger" type="default" slot="dropdown-trigger"
-            :disabled="disabled"
-            v-tooltip="$t('Common[\'复制\']')">
+            :disabled="disabled">
             <i class="bk-icon icon-clipboard"></i>
             <i class="bk-icon icon-angle-down"></i>
         </bk-button>
