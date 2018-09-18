@@ -280,6 +280,36 @@ func (c *Collection) DropIndex(ctx context.Context, indexName string) error {
 	return c.dbc.DB(c.dbname).C(c.collName).DropIndexName(indexName)
 }
 
+// Indexes 查询索引
+func (c *Collection) Indexes(ctx context.Context) ([]dal.Index, error) {
+	c.dbc.Refresh()
+	dbindexs, err := c.dbc.DB(c.dbname).C(c.collName).Indexes()
+	if err != nil {
+		return nil, err
+	}
+
+	indexs := []dal.Index{}
+	for _, dbindex := range dbindexs {
+		keys := map[string]interface{}{}
+		for _, key := range dbindex.Key {
+			if strings.HasPrefix(key, "-") {
+				key = strings.TrimLeft(key, "-")
+				keys[key] = -1
+			} else {
+				keys[key] = 1
+			}
+		}
+
+		index := dal.Index{}
+		index.Name = dbindex.Name
+		index.Unique = dbindex.Unique
+		index.Background = dbindex.Background
+		index.Keys = keys
+		indexs = append(indexs, index)
+	}
+	return indexs, nil
+}
+
 // AddColumn 添加字段
 func (c *Collection) AddColumn(ctx context.Context, column string, value interface{}) error {
 	c.dbc.Refresh()

@@ -16,16 +16,14 @@ import (
 	"context"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
 
 func addOperationLogIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	/* TODO: 重新实现
-	session := db.GetSession().(*mgo.Session)
-	col := session.DB(db.GetDBName()).C(common.BKTableNameOperationLog)
-	indexs, err := col.Indexes()
+	indexs, err := db.Table(common.BKTableNameOperationLog).Indexes(ctx)
 	if err != nil {
 		return err
 	}
@@ -35,23 +33,22 @@ func addOperationLogIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config
 		if index.Name == "_id_" {
 			continue
 		}
-		if err = col.DropIndexName(index.Name); err != nil {
+		if err = db.Table(common.BKTableNameOperationLog).DropIndex(ctx, index.Name); err != nil {
 			return err
 		}
 	}
 
-	idxs := []mgo.Index{
-		{Name: "op_target_1_inst_id_1_op_time_-1", Key: []string{"op_target", "inst_id", "-op_time"}, Background: true},
-		{Name: "bk_supplier_account_1_op_time_-1", Key: []string{"bk_supplier_account", "-op_time"}, Background: true},
-		{Name: "bk_biz_id_1_bk_supplier_account_1_op_time_-1", Key: []string{"bk_biz_id", "bk_supplier_account", "-op_time"}, Background: true},
-		{Name: "ext_key_1_bk_supplier_account_1_op_time_-1", Key: []string{"ext_key", "bk_supplier_account", "-op_time"}, Background: true},
+	idxs := []dal.Index{
+		{Name: "op_target_1_inst_id_1_op_time_-1", Keys: map[string]interface{}{"op_target": 1, "inst_id": 1, "op_time": -1}, Background: true},
+		{Name: "bk_supplier_account_1_op_time_-1", Keys: map[string]interface{}{"bk_supplier_account": 1, "op_time": -1}, Background: true},
+		{Name: "bk_biz_id_1_bk_supplier_account_1_op_time_-1", Keys: map[string]interface{}{"bk_biz_id": 1, "bk_supplier_account": 1, "op_time": -1}, Background: true},
+		{Name: "ext_key_1_bk_supplier_account_1_op_time_-1", Keys: map[string]interface{}{"ext_key": 1, "bk_supplier_account": 1, "op_time": -1}, Background: true},
 	}
 	for _, idx := range idxs {
-		if err = col.EnsureIndex(idx); err != nil {
+		if err = db.Table(common.BKTableNameOperationLog).CreateIndex(ctx, idx); err != nil {
 			return err
 		}
 	}
-	*/
 	return nil
 }
 
