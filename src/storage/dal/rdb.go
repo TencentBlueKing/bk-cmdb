@@ -72,6 +72,9 @@ type Table interface {
 	CreateIndex(ctx context.Context, index Index) error
 	// DropIndex 移除索引
 	DropIndex(ctx context.Context, indexName string) error
+	// DropIndex 查询索引
+	Indexes(ctx context.Context) ([]Index, error)
+
 	// AddColumn 添加字段
 	AddColumn(ctx context.Context, column string, value interface{}) error
 	// RenameColumn 重命名字段
