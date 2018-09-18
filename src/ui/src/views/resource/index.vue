@@ -22,43 +22,50 @@
             @on-checked="handleChecked"
             @on-set-header="handleSetHeader">
             <div class="resource-options clearfix" slot="options">
-                <cmdb-selector class="options-business-selector"
-                    :placeholder="$t('HostResourcePool[\'分配到业务空闲机池\']')"
-                    :disabled="!table.checked.length"
-                    :list="business"
-                    :auto-select="false"
-                    setting-key="bk_biz_id"
-                    display-key="bk_biz_name"
-                    v-model="assignBusiness"
-                    @on-selected="handleAssignHosts">
-                </cmdb-selector>
-                <bk-button class="options-button" type="default"
-                    v-tooltip="$t('BusinessTopology[\'修改\']')"
-                    :disabled="!table.checked.length"
-                    @click="handleMultipleEdit">
-                    <i class="icon-cc-edit"></i>
-                </bk-button>
-                <bk-button class="options-button options-button-delete" type="default"
-                    v-tooltip="$t('Common[\'删除\']')"
-                    :disabled="!table.checked.length"
-                    @click="handleMultipleDelete">
-                    <i class="icon-cc-del"></i>
-                </bk-button>
-                <bk-button class="options-button" type="submit default"
-                    form="exportForm"
-                    v-tooltip="$t('HostResourcePool[\'导出选中\']')"
-                    :disabled="!table.checked.length">
-                    <i class="icon-cc-derivation"></i>
-                </bk-button>
+                <div class="fl">
+                    <cmdb-selector class="options-business-selector"
+                        :placeholder="$t('HostResourcePool[\'分配到业务空闲机池\']')"
+                        :disabled="!table.checked.length"
+                        :list="business"
+                        :auto-select="false"
+                        setting-key="bk_biz_id"
+                        display-key="bk_biz_name"
+                        v-model="assignBusiness"
+                        @on-selected="handleAssignHosts">
+                    </cmdb-selector>
+                </div>
+                <div class="fl" v-tooltip="$t('BusinessTopology[\'修改\']')">
+                    <bk-button class="options-button" type="default"
+                        :disabled="!table.checked.length"
+                        @click="handleMultipleEdit">
+                        <i class="icon-cc-edit"></i>
+                    </bk-button>
+                </div>
+                <div class="fl" v-tooltip="$t('Common[\'删除\']')">
+                    <bk-button class="options-button options-button-delete" type="default"
+                        :disabled="!table.checked.length"
+                        @click="handleMultipleDelete">
+                        <i class="icon-cc-del"></i>
+                    </bk-button>
+                </div>
+                <div class="fl" v-tooltip="$t('HostResourcePool[\'导出选中\']')">
+                    <bk-button class="options-button" type="submit default"
+                        form="exportForm"
+                        :disabled="!table.checked.length">
+                        <i class="icon-cc-derivation"></i>
+                    </bk-button>
+                </div>
                 <form id="exportForm" :action="table.exportUrl" method="POST" hidden>
                     <input type="hidden" name="bk_host_id" :value="table.checked">
                     <input type="hidden" name="bk_biz_id" value="-1">
                 </form>
-                <cmdb-clipboard-selector class="options-button"
-                    :list="clipboardList"
-                    :disabled="!table.checked.length"
-                    @on-copy="handleCopy">
-                </cmdb-clipboard-selector>
+                <div class="fl">
+                    <cmdb-clipboard-selector class="options-button"
+                        :list="clipboardList"
+                        :disabled="!table.checked.length"
+                        @on-copy="handleCopy">
+                    </cmdb-clipboard-selector>
+                </div>
                 <div class="fr">
                     <bk-button class="options-button" type="default"
                         v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')"
@@ -322,6 +329,10 @@
                 this.$refs.resourceTable.handleMultipleEdit()
             },
             handleMultipleDelete () {
+                if (this.hasSelectAssignedHost()) {
+                    this.$error(this.$t('Hosts["请勿选择已分配主机"]'))
+                    return false
+                }
                 this.$bkInfo({
                     title: `${this.$t("HostResourcePool['确定删除选中的主机']")}？`,
                     confirmFn: () => {
