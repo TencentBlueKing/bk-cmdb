@@ -5,7 +5,7 @@ export default class RequestQueue {
 
     get (id) {
         if (typeof id === 'undefined') return this.queue
-        return this.queue.find(request => request.requestId === id)
+        return this.queue.find(request => request.requestId === id || request.requestGroup.includes(id))
     }
 
     set (newRequest) {
