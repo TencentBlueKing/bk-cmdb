@@ -129,6 +129,7 @@
                         cancelWhenRouteChange: false
                     }
                 }).then(() => {
+                    this.$http.cancel('post_searchBusiness_$ne_disabled')
                     this.$success(this.$t('Inst["恢复业务成功"]'))
                     this.handlePageChange(1)
                 })
