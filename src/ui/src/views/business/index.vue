@@ -314,6 +314,7 @@
                             this.slider.show = false
                             this.$success(this.$t('Common["归档成功"]'))
                             this.handlePageChange(1)
+                            this.$http.cancel('post_searchBusiness_$ne_disabled')
                         })
                     }
                 })
@@ -327,6 +328,7 @@
                         this.getTableData()
                         this.handleCancel()
                         this.$success(this.$t("Common['修改成功']"))
+                        this.$http.cancel('post_searchBusiness_$ne_disabled')
                     })
                 } else {
                     this.createBusiness({
@@ -335,6 +337,7 @@
                         this.handlePageChange(1)
                         this.handleCancel()
                         this.$success(this.$t("Inst['创建成功']"))
+                        this.$http.cancel('post_searchBusiness_$ne_disabled')
                     })
                 }
             },

@@ -165,7 +165,7 @@
         },
         methods: {
             setLocalValue () {
-                const value = this.value.split(',')
+                const value = (this.value || '').split(',')
                 const localValue = []
                 value.forEach(enName => {
                     if (this.users.some(user => user['english_name'] === enName)) {
@@ -484,6 +484,7 @@
                 min-width: 100%;
                 min-height: 36px;
                 padding: 3px 0;
+                line-height: 1;
                 border: 1px solid $cmdbBorderColor;
                 border-radius: 2px;
                 background-color: #fff;
