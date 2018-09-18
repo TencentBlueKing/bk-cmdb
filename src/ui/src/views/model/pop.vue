@@ -143,7 +143,10 @@
                     bk_classification_id: this.localValue['bk_classification_id'],
                     bk_classification_name: this.localValue['bk_classification_name']
                 }
-                const res = await this.createClassification({params})
+                const res = await this.createClassification({params}).then(res => {
+                    this.$http.cancel('post_searchClassificationsObjects')
+                    return res
+                })
                 Object.assign(params, {bk_supplier_account: this.supplierAccount, id: res.id})
                 this.updateClassify(params)
                 this.$emit('closePop')
@@ -157,6 +160,8 @@
                 await this.updateClassification({
                     id: this.activeClassify['id'],
                     params
+                }).then(() => {
+                    this.$http.cancel('post_searchClassificationsObjects')
                 })
                 this.updateClassify({
                     ...params,
