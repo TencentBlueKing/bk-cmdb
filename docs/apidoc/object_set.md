@@ -1,4 +1,3 @@
-
 ### 创建集群
 
 - API: POST  /api/{version}/set/{bk_biz_id}   
@@ -32,11 +31,65 @@
 |bk_set_name|string|是|无|集群名字 |set name|
 |bk_capacity|int|否|无|设计容量|the design the capacity|
 |description|string|否|无|备注|the remark|
-|bk_service_status|enum|否|开放|服务状态:开发/关闭|the service status:open/close|
-|bk_set_env|enum|否|正式|环境类型：测试/体验/正式|environment type:test/experience/formal|
+|bk_service_status|enum|否|开放|服务状态:1/2(1:开放,2:关闭)|the service status:1/2 (1:open,2:close)|
+|bk_set_env|enum|否|正式|环境类型：1/2/3(1:测试,2:体验,3:正式)|environment type:1/2/3(1:test,2:experience,3:formal)|
 |bk_set_desc|string|否|无|集群描述|the set description|
 
  **注: 用户自定义的字段也可以作为参数传入。**
+
+
+
+
+### 批量删除集群
+
+- API: DELETE  /api/{version}/set/{bk_biz_id}/batch
+- API 名称：batch_delete_set
+- 功能说明：
+	- 中文：批量删除集群
+	- English：batch to delete set
+
+- input body
+
+``` json
+
+{
+    "delete":{
+    "inst_ids":[]
+    }
+}
+
+```
+
+- input参数说明：
+
+| 字段|类型|必填|默认值|说明|Description|
+|---|---|---|---|---|---|
+|bk_biz_id|int|是|无|业务ID|business ID|
+|inst_ids|int array|是|无|集群ID集合|the set id collection|
+
+
+- output
+
+``` json
+{
+    "result": true,
+    "bk_error_code": 0,
+    "bk_error_msg": null,
+    "data": "success"
+}
+```
+
+**注:以上 JSON 数据中各字段的取值仅为示例数据。**
+
+- output 字段说明
+
+| 字段|类型|说明|Description|
+|---|---|---|---|
+|result|bool|ture：成功，false：失败 |true:success, false: failure|
+| bk_error_code | int | 错误编码。 0表示success，>0表示失败错误 |error code. 0 represent success, >0 represent failure code |
+| bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
+|data|string|操作结果|the result|
+
 
 
 ### 删除集群
@@ -92,11 +145,14 @@
 
 ``` json
 {
-
-    "bk_set_name":"",
-    "bk_parent_id":0,
-    "bk_parent_id":1,
-    "default":0
+    "bk_biz_id":2,
+    "bk_set_name":"公共组件",
+    "bk_set_desc":"",
+    "bk_set_env":"3",
+    "bk_service_status":"1",
+    "description":"",
+    "bk_capacity":null,
+    "bk_supplier_account":"0"
 }
 ```
 
@@ -111,8 +167,8 @@
 |bk_set_name|string|否|无|集群名字 |set name|
 |bk_capacity|int|否|无|设计容量|the design the capacity|
 |description|string|否|无|备注|the remark|
-|bk_service_status|enum|否|开放|服务状态:开发/关闭|the service status:open/close|
-|bk_set_env|enum|否|正式|环境类型：测试/体验/正式|environment type:test/experience/formal|
+|bk_service_status|enum|否|开放|服务状态:1/2(1:开放,2:关闭)|the service status:1/2 (1:open,2:close)|
+|bk_set_env|enum|否|正式|环境类型：1/2/3(1:测试,2:体验,3:正式)|environment type:1/2/3(1:test,2:experience,3:formal)|
 |bk_set_desc|string|否|无|集群描述|the set description|
 
 
@@ -194,8 +250,8 @@ fields参数说明：
 |bk_set_name|string|否|无|集群名字 |set name|
 |bk_capacity|int|否|无|设计容量|the design the capacity|
 |description|string|否|无|备注|the remark|
-|bk_service_status|enum|否|开放|服务状态:开发/关闭|the service status:open/close|
-|bk_set_env|enum|否|正式|环境类型：测试/体验/正式|environment type:test/experience/formal|
+|bk_service_status|enum|否|开放|服务状态:1/2(1:开放,2:关闭)|the service status:1/2 (1:open,2:close)|
+|bk_set_env|enum|否|正式|环境类型：1/2/3(1:测试,2:体验,3:正式)|environment type:1/2/3(1:test,2:experience,3:formal)|
 |bk_set_desc|string|否|无|集群描述|the set description|
 
 **注:所有字段均为Set定义的字段，这些字段包括预置字段，也包括用户自定义字段。**
@@ -209,8 +265,8 @@ condition 参数说明：
 |bk_set_name|string|否|无|集群名字 |set name|
 |bk_capacity|int|否|无|设计容量|the design the capacity|
 |description|string|否|无|备注|the remark|
-|bk_service_status|enum|否|开放|服务状态:开发/关闭|the service status:open/close|
-|bk_set_env|enum|否|正式|环境类型：测试/体验/正式|environment type:test/experience/formal|
+|bk_service_status|enum|否|开放|服务状态:1/2(1:开放,2:关闭)|the service status:1/2 (1:open,2:close)|
+|bk_set_env|enum|否|正式|环境类型：1/2/3(1:测试,2:体验,3:正式)|environment type:1/2/3(1:test,2:experience,3:formal)|
 |bk_set_desc|string|否|无|集群描述|the set description|
 
 **注:所有字段均为Set定义的字段，这些字段包括预置字段，也包括用户自定义字段。**
@@ -260,8 +316,8 @@ info 说明
 |bk_set_name|string|集群名字 |set name|
 |bk_capacity|int|设计容量|the design the capacity|
 |description|string|备注|the remark|
-|bk_service_status|enum|服务状态:开发/关闭|the service status:open/close|
-|bk_set_env|enum|环境类型：测试/体验/正式|environment type:test/experience/formal|
+|bk_service_status|enum|服务状态:1/2(1:开放,2:关闭)|the service status:1/2 (1:open,2:close)|
+|bk_set_env|enum|环境类型：1/2/3(1:测试,2:体验,3:正式)|environment type:1/2/3(1:test,2:experience,3:formal)|
 |bk_set_desc|string|集群描述|the set description|
 
 **注：此处按照fields所指定的字段进行配置，所有字段均为Set定义的字段，这些字段包括预置字段，也包括用户自定义字段。**
