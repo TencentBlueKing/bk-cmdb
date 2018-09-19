@@ -27,20 +27,6 @@ import (
 type publicUser struct {
 }
 
-var getUserFailData = map[string]interface{}{
-	"result":        false,
-	"bk_error_msg":  "get user list false",
-	"bk_error_code": "",
-	"data":          nil,
-}
-
-type userResult struct {
-	Message string     `json:"message"`
-	Data    []userInfo `json:"data"`
-	Code    string     `json:"code"`
-	Result  bool       `json:"result"`
-}
-
 type userInfo struct {
 	UserName string `json:"username"`
 	QQ       string `json:"qq"`
