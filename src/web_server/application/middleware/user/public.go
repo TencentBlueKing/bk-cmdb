@@ -13,8 +13,6 @@
 package user
 
 import (
-	"fmt"
-
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
 
