@@ -10,16 +10,24 @@
  * limitations under the License.
  */
 
-package main
+package x08_09_17_01
 
 import (
-	_ "configcenter/src/scene_server/admin_server/upgrader/v3.0.8"
-	_ "configcenter/src/scene_server/admin_server/upgrader/v3.0.9-beta.1"
-	_ "configcenter/src/scene_server/admin_server/upgrader/v3.0.9-beta.3"
-	_ "configcenter/src/scene_server/admin_server/upgrader/v3.1.0-alpha.2"
-	_ "configcenter/src/scene_server/admin_server/upgrader/x08.09.04.01"
-	_ "configcenter/src/scene_server/admin_server/upgrader/x08.09.11.01"
-	_ "configcenter/src/scene_server/admin_server/upgrader/x08.09.13.01"
-	_ "configcenter/src/scene_server/admin_server/upgrader/x08.09.17.01"
-	_ "configcenter/src/scene_server/admin_server/upgrader/x08.09.18.01"
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage"
 )
+
+func init() {
+	upgrader.RegistUpgrader("x08.09.17.01", upgrade)
+}
+
+func upgrade(db storage.DI, conf *upgrader.Config) (err error) {
+	err = createTable(db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade x08.09.17.01] create table netcollect error  %s", err.Error())
+		return err
+	}
+
+	return nil
+}
