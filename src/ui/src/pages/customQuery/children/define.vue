@@ -225,7 +225,8 @@
                 propertySelected: {
                     host: '',
                     set: '',
-                    module: ''
+                    module: '',
+                    biz: ''
                 },
                 operatorMap: {
                     'time': '$in',
