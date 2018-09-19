@@ -25,7 +25,7 @@ func TestGetInstTableName(t *testing.T) {
 	}{
 		{"", args{BKInnerObjIDApp}, BKTableNameBaseApp},
 		{"", args{BKInnerObjIDSet}, BKTableNameBaseSet},
-		{"", args{BKTableNameBaseModule}, BKTableNameBaseModule},
+		{"", args{BKInnerObjIDModule}, BKTableNameBaseModule},
 		{"", args{BKINnerObjIDObject}, BKTableNameBaseInst},
 		{"", args{BKInnerObjIDHost}, BKTableNameBaseHost},
 		{"", args{BKInnerObjIDProc}, BKTableNameBaseProcess},
