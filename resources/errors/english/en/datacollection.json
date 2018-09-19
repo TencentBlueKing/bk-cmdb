@@ -1,0 +1,9 @@
+{
+    "1112000": "Add device failed",
+    "1112001": "Search device failed",
+    "1112002": "Delete device failed",
+    "1112003": "Object ID and object name are different",
+    "1112004": "Object ID or object name is not net collect device",
+    "1112005": "Object name is not exist or a net collect device",
+    "": ""
+}

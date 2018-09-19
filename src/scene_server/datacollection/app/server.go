@@ -30,7 +30,9 @@ import (
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/datacollection/app/options"
 	"configcenter/src/scene_server/datacollection/datacollection"
+	"configcenter/src/scene_server/datacollection/logics"
 	svc "configcenter/src/scene_server/datacollection/service"
+	"configcenter/src/storage/mgoclient"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -87,7 +89,18 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			continue
 		}
 
-		err := datacollection.NewDataCollection(process.Config, process.Core).Run()
+		mgc := process.Config.MongoDB
+		instance, err := mgoclient.NewMgoCli(mgc.Address, mgc.Port, mgc.User, mgc.Password, mgc.Mechanism, mgc.Database)
+		if err != nil {
+			return fmt.Errorf("new mongo client failed, err: %s", err.Error())
+		}
+		err = instance.Open()
+		if err != nil {
+			return fmt.Errorf("new mongo client failed, err: %s", err.Error())
+		}
+		process.Service.Logics = &logics.Logics{Instance: instance, Engine: service.Engine}
+
+		err = datacollection.NewDataCollection(process.Config, process.Core).Run()
 		if err != nil {
 			return fmt.Errorf("run datacollection routine failed %s", err.Error())
 		}
