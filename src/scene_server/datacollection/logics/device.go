@@ -91,19 +91,22 @@ func (lgc *Logics) SearchDevice(pheader http.Header, params *meta.NetCollSearchP
 	}
 
 	searchResult := meta.SearchNetDevice{}
-	err := lgc.findDevice(params.Fields, deviceCond, &searchResult.Info, params.Page.Sort, params.Page.Start, params.Page.Limit)
-	if nil != err {
-		blog.Errorf("search net device fail, search net device by condition [%#v] error: %v", deviceCond, err)
-		return meta.SearchNetDevice{}, defErr.Errorf(common.CCErrCollectNetDeviceGetFail)
-	}
+	var err error
 
 	searchResult.Count, err = lgc.Instance.GetCntByCondition(common.BKTableNameNetcollectDevice, deviceCond)
-	if err != nil {
+	if nil != err {
 		blog.Errorf("search net device fail, count net device by condition [%#v] error: %v", deviceCond, err)
 		return meta.SearchNetDevice{}, nil
 	}
 	if 0 == searchResult.Count {
 		searchResult.Info = []mapStr.MapStr{}
+		return searchResult, nil
+	}
+
+	err = lgc.findDevice(params.Fields, deviceCond, &searchResult.Info, params.Page.Sort, params.Page.Start, params.Page.Limit)
+	if nil != err {
+		blog.Errorf("search net device fail, search net device by condition [%#v] error: %v", deviceCond, err)
+		return meta.SearchNetDevice{}, defErr.Errorf(common.CCErrCollectNetDeviceGetFail)
 	}
 
 	return searchResult, nil
@@ -323,7 +326,7 @@ func (lgc *Logics) getNetDeviceObjIDsByCond(objCond map[string]interface{}, phea
 		objResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjects(context.Background(), pheader, objCond)
 		if nil != err {
 			blog.Errorf("check net device object ID, search objectName fail, %v", err)
-			return []string{}, nil
+			return []string{}, err
 		}
 
 		if !objResult.Result {
