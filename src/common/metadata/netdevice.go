@@ -1,0 +1,45 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package metadata
+
+import (
+	"time"
+)
+
+type NetcollectDevice struct {
+	DeviceID    int64      `json:"device_id,omitempty" bson:"device_id"`
+	DeviceName  string     `json:"device_name" bson:"device_name"`
+	DeviceModel string     `json:"device_model" bson:"device_model"`
+	ObjectID    string     `json:"bk_obj_id" bson:"bk_obj_id"`
+	ObjectName  string     `json:"bk_obj_name" bson:"-"`
+	BkVendor    string     `json:"bk_vendor" bson:"bk_vendor"`
+	OwnerID     string     `json:"-" bson:"bk_supplier_account"`
+	CreateTime  *time.Time `field:"create_time" json:"create_time,omitempty" bson:"create_time"`
+	LastTime    *time.Time `field:"last_time" json:"last_time,omitempty" bson:"last_time"`
+}
+
+type NetcollectProperty struct {
+	NetcollectPropertyID int64      `json:"netcollect_property_id,omitempty" bson:"netcollect_property_id"`
+	PropertyID           string     `json:"bk_property_id" bson:"bk_property_id"`
+	PropertyName         string     `json:"bk_property_name" bson:"-"`
+	DeviceID             string     `json:"device_id" bson:"device_id"`
+	DeviceName           string     `json:"device_name" bson:"-"`
+	ObjectID             string     `json:"bk_obj_id" bson:"bk_obj_id"`
+	ObjectName           string     `json:"bk_obj_name" bson:"-"`
+	OID                  string     `json:"oid" bson:"oid"`
+	Period               string     `json:"period" bson:"period"`
+	Action               string     `json:"action" bson:"action"`
+	OwnerID              string     `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	CreateTime           *time.Time `field:"create_time" json:"create_time,omitempty" bson:"create_time"`
+	LastTime             *time.Time `field:"last_time" json:"last_time,omitempty" bson:"last_time"`
+}
