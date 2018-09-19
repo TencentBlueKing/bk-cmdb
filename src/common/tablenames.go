@@ -66,6 +66,9 @@ const (
 	BKTableNameIdentifier       = "cc_idgenerator"
 	BKTableNameObjAsst          = "cc_ObjAsst"
 	BKTableNameTopoGraphics     = "cc_TopoGraphics"
+
+	BKTableNameNetcollectDevice   = "cc_Netcollect_Device"
+	BKTableNameNetcollectProperty = "cc_Netcollect_Property"
 )
 
 // AllTables alltables
