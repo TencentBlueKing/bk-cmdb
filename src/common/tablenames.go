@@ -68,6 +68,9 @@ const (
 	BKTableNameTopoGraphics     = "cc_TopoGraphics"
 	BKTableNameTransaction      = "cc_Transaction"
 	BKTableNameIDgenerator      = "cc_idgenerator"
+
+	BKTableNameNetcollectDevice   = "cc_Netcollect_Device"
+	BKTableNameNetcollectProperty = "cc_Netcollect_Property"
 )
 
 // AllTables alltables
