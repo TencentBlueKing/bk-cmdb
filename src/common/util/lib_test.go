@@ -13,15 +13,14 @@
 package util
 
 import (
+	"configcenter/src/common"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
 
-	restful "github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful"
 	"github.com/stretchr/testify/require"
-
-	"configcenter/src/common"
 )
 
 func TestInArray(t *testing.T) {
@@ -160,7 +159,6 @@ func TestGetActionLanguage(t *testing.T) {
 
 	language := GetActionLanguage(restful.NewRequest(req))
 	//require.Empty(t, language)
-	require.Equal(t, language, "zh-cn")
 
 	req.Header.Set(common.BKHTTPLanguage, "cn")
 	language = GetActionLanguage(restful.NewRequest(req))
@@ -192,275 +190,47 @@ func TestInStrArr(t *testing.T) {
 	}
 }
 
-func TestGetLanguage(t *testing.T) {
-	type args struct {
-		header http.Header
-	}
+func TestHeader(t *testing.T) {
 	header := http.Header{}
 	header.Set(common.BKHTTPLanguage, "zh")
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		{"", args{header}, "zh"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := GetLanguage(tt.args.header); got != tt.want {
-				t.Errorf("GetLanguage() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
+	header.Set(common.BKHTTPHeaderUser, "user")
+	header.Set(common.BKHTTPOwnerID, "owner")
+	header.Set(common.BKHTTPCCRequestID, "rid")
 
-func TestGetActionUser(t *testing.T) {
-	type args struct {
-		req *restful.Request
-	}
-	req := &http.Request{Header: http.Header{}}
-	req.Header.Set(common.BKHTTPHeaderUser, "user")
+	req := &http.Request{Header: header}
 	r := restful.NewRequest(req)
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		{"", args{r}, "user"},
+	if GetLanguage(header) != "zh" {
+		t.Fail()
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := GetActionUser(tt.args.req); got != tt.want {
-				t.Errorf("GetActionUser() = %v, want %v", got, tt.want)
-			}
-		})
+	if GetActionLanguage(r) != "zh" {
+		t.Fail()
 	}
-}
 
-func TestGetActionOnwerID(t *testing.T) {
-	type args struct {
-		req *restful.Request
+	if GetActionUser(r) != "user" {
+		t.Fail()
 	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-	// TODO: Add test cases.
+	if GetUser(header) != "user" {
+		t.Fail()
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := GetActionOnwerID(tt.args.req); got != tt.want {
-				t.Errorf("GetActionOnwerID() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
 
-func TestGetUser(t *testing.T) {
-	type args struct {
-		header http.Header
+	if GetActionOnwerID(r) != "owner" {
+		t.Fail()
 	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-	// TODO: Add test cases.
+	if GetOwnerID(header) != "owner" {
+		t.Fail()
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := GetUser(tt.args.header); got != tt.want {
-				t.Errorf("GetUser() = %v, want %v", got, tt.want)
-			}
-		})
+	if GetActionOnwerIDByHTTPHeader(header) != "owner" {
+		t.Fail()
 	}
-}
 
-func TestGetOwnerID(t *testing.T) {
-	type args struct {
-		header http.Header
+	if o, u := GetOwnerIDAndUser(header); o != "owner" || u != "user" {
+		t.Fail()
 	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-	// TODO: Add test cases.
+	if o, u := GetActionOnwerIDAndUser(r); o != "owner" || u != "user" {
+		t.Fail()
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := GetOwnerID(tt.args.header); got != tt.want {
-				t.Errorf("GetOwnerID() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
 
-func TestGetOwnerIDAndUser(t *testing.T) {
-	type args struct {
-		header http.Header
-	}
-	tests := []struct {
-		name  string
-		args  args
-		want  string
-		want1 string
-	}{
-	// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := GetOwnerIDAndUser(tt.args.header)
-			if got != tt.want {
-				t.Errorf("GetOwnerIDAndUser() got = %v, want %v", got, tt.want)
-			}
-			if got1 != tt.want1 {
-				t.Errorf("GetOwnerIDAndUser() got1 = %v, want %v", got1, tt.want1)
-			}
-		})
-	}
-}
-
-func TestGetActionOnwerIDAndUser(t *testing.T) {
-	type args struct {
-		req *restful.Request
-	}
-	tests := []struct {
-		name  string
-		args  args
-		want  string
-		want1 string
-	}{
-	// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := GetActionOnwerIDAndUser(tt.args.req)
-			if got != tt.want {
-				t.Errorf("GetActionOnwerIDAndUser() got = %v, want %v", got, tt.want)
-			}
-			if got1 != tt.want1 {
-				t.Errorf("GetActionOnwerIDAndUser() got1 = %v, want %v", got1, tt.want1)
-			}
-		})
-	}
-}
-
-func TestGetActionLanguageByHTTPHeader(t *testing.T) {
-	type args struct {
-		header http.Header
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-	// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := GetActionLanguageByHTTPHeader(tt.args.header); got != tt.want {
-				t.Errorf("GetActionLanguageByHTTPHeader() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestGetActionOnwerIDByHTTPHeader(t *testing.T) {
-	type args struct {
-		header http.Header
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-	// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := GetActionOnwerIDByHTTPHeader(tt.args.header); got != tt.want {
-				t.Errorf("GetActionOnwerIDByHTTPHeader() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestGetHTTPCCRequestID(t *testing.T) {
-	type args struct {
-		header http.Header
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-	// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := GetHTTPCCRequestID(tt.args.header); got != tt.want {
-				t.Errorf("GetHTTPCCRequestID() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestInt64Slice_Len(t *testing.T) {
-	tests := []struct {
-		name string
-		p    Int64Slice
-		want int
-	}{
-	// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.p.Len(); got != tt.want {
-				t.Errorf("Int64Slice.Len() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestInt64Slice_Less(t *testing.T) {
-	type args struct {
-		i int
-		j int
-	}
-	tests := []struct {
-		name string
-		p    Int64Slice
-		args args
-		want bool
-	}{
-	// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.p.Less(tt.args.i, tt.args.j); got != tt.want {
-				t.Errorf("Int64Slice.Less() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestInt64Slice_Swap(t *testing.T) {
-	type args struct {
-		i int
-		j int
-	}
-	tests := []struct {
-		name string
-		p    Int64Slice
-		args args
-	}{
-	// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.p.Swap(tt.args.i, tt.args.j)
-		})
+	if GetHTTPCCRequestID(header) != "rid" {
+		t.Fail()
 	}
 }

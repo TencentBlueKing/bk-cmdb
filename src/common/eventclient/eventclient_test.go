@@ -16,7 +16,6 @@ import (
 	commontypes "configcenter/src/common/types"
 	"gopkg.in/redis.v5"
 	"net/http"
-	"reflect"
 	"testing"
 )
 
@@ -37,8 +36,8 @@ func TestNewEventContextByReq(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewEventContextByReq(tt.args.pheader, tt.args.cacheCli); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewEventContextByReq() = %v, want %v", got, tt.want)
+			if got := NewEventContextByReq(tt.args.pheader, tt.args.cacheCli); got.RequestID != "xxx-xxxx-xxx-xxx" {
+				t.Errorf("NewEventContextByReq() = %v, want %v", got.RequestID, tt.want.RequestID)
 			}
 		})
 	}
