@@ -326,12 +326,12 @@ func (lgc *Logics) getNetDeviceObjIDsByCond(objCond map[string]interface{}, phea
 		objResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjects(context.Background(), pheader, objCond)
 		if nil != err {
 			blog.Errorf("check net device object ID, search objectName fail, %v", err)
-			return []string{}, err
+			return nil, err
 		}
 
 		if !objResult.Result {
 			blog.Errorf("check net device object ID, errors: %s", objResult.ErrMsg)
-			return []string{}, defErr.Errorf(objResult.Code)
+			return nil, defErr.Errorf(objResult.Code)
 		}
 
 		if nil != objResult.Data {
