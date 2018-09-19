@@ -51,7 +51,27 @@ func (s *Service) CreateDevice(req *restful.Request, resp *restful.Response) {
 }
 
 func (s *Service) SearchDevice(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
+	body := new(meta.NetCollSearchParams)
+	if err := json.NewDecoder(req.Request.Body).Decode(body); err != nil {
+		blog.Errorf("search net device failed with decode body err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	devices, err := s.Logics.SearchDevice(pheader, body)
+	if err != nil {
+		blog.Errorf("search net device failed, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostGetFail)})
+		return
+	}
+
+	resp.WriteEntity(meta.SearchNetDeviceResult{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     devices,
+	})
 }
 
 func (s *Service) DeleteDevice(req *restful.Request, resp *restful.Response) {
