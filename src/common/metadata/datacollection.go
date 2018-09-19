@@ -29,3 +29,9 @@ type SearchNetDeviceResult struct {
 	BaseResp `json:",inline"`
 	Data     SearchNetDevice `json:"data"`
 }
+
+type NetCollSearchParams struct {
+	Page      BasePage        `json:"page,omitempty"`
+	Fields    []string        `json:"fields,omitempty"`
+	Condition []ConditionItem `json:"condition,omitempty"`
+}
