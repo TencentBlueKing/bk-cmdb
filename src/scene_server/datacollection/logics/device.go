@@ -19,6 +19,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	mapStr "configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -46,10 +47,69 @@ func (lgc *Logics) AddDevices(pheader http.Header, deviceInfoList []meta.Netcoll
 	return resultList, hasError
 }
 
-func (lgc *Logics) SearchDevice(pheader http.Header, params *meta.AssociationParams) (*meta.SearchNetDevice, error) {
-	//ownerID := util.GetOwnerID(pheader)
+func (lgc *Logics) SearchDevice(pheader http.Header, params *meta.NetCollSearchParams) (meta.SearchNetDevice, error) {
+	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
-	return nil, nil
+	deviceCond := map[string]interface{}{}
+	deviceCond[common.BKOwnerIDField] = util.GetOwnerID(pheader)
+
+	objCond := map[string]interface{}{}
+
+	// get condition, condtion of objs and condtion of device
+	for _, cond := range params.Condition {
+		switch cond.Operator {
+		case common.BKDBEQ:
+			if common.BKObjNameField == cond.Field {
+				objCond[cond.Field] = cond.Value
+			} else {
+				deviceCond[cond.Field] = cond.Value
+			}
+		default:
+			if common.BKObjNameField == cond.Field {
+				objCond[cond.Field] = map[string]interface{}{
+					cond.Operator: cond.Value,
+				}
+			} else {
+				deviceCond[cond.Field] = map[string]interface{}{
+					cond.Operator: cond.Value,
+				}
+			}
+		}
+	}
+
+	// if condition only has bk_obj_name but not bk_obj_id
+	// get net device bk_obj_id from bk_obj_name
+	if _, ok := deviceCond[common.BKObjIDField]; !ok && 0 < len(objCond) {
+		objIDs, err := lgc.getNetDeviceObjIDsByCond(objCond, pheader)
+		if nil != err {
+			blog.Errorf("search net device fail, search net device obj id by condition [%#v] error: %v", objCond, err)
+			return meta.SearchNetDevice{}, defErr.Errorf(common.CCErrCollectNetDeviceGetFail)
+		}
+		deviceCond[common.BKObjIDField] = map[string]interface{}{
+			common.BKDBIN: objIDs,
+		}
+	}
+
+	searchResult := meta.SearchNetDevice{}
+	var err error
+
+	searchResult.Count, err = lgc.Instance.GetCntByCondition(common.BKTableNameNetcollectDevice, deviceCond)
+	if nil != err {
+		blog.Errorf("search net device fail, count net device by condition [%#v] error: %v", deviceCond, err)
+		return meta.SearchNetDevice{}, nil
+	}
+	if 0 == searchResult.Count {
+		searchResult.Info = []mapStr.MapStr{}
+		return searchResult, nil
+	}
+
+	err = lgc.findDevice(params.Fields, deviceCond, &searchResult.Info, params.Page.Sort, params.Page.Start, params.Page.Limit)
+	if nil != err {
+		blog.Errorf("search net device fail, search net device by condition [%#v] error: %v", deviceCond, err)
+		return meta.SearchNetDevice{}, defErr.Errorf(common.CCErrCollectNetDeviceGetFail)
+	}
+
+	return searchResult, nil
 }
 
 // add a device
@@ -115,6 +175,15 @@ func (lgc *Logics) addDevice(deviceInfo meta.NetcollectDevice, pheader http.Head
 	return deviceInfo.DeviceID, nil
 }
 
+func (lgc *Logics) findDevice(fields []string, condition, result interface{}, sort string, skip, limit int) error {
+	if err := lgc.Instance.GetMutilByCondition(common.BKTableNameNetcollectDevice, fields, condition, result, sort, skip, limit); err != nil {
+		blog.Errorf("failed to query the inst, error info %s", err.Error())
+		return err
+	}
+
+	return nil
+}
+
 // check the deviceInfo if is a net object
 // by checking if bk_obj_id and bk_obj_name function parameter are valid net device object or not
 func (lgc *Logics) checkIfNetDeviceObject(deviceInfo *meta.NetcollectDevice, pheader http.Header) (bool, error) {
@@ -178,6 +247,7 @@ func (lgc *Logics) getNetDeviceObjIDFromObjName(objectName string, pheader http.
 	if "" == objectName {
 		return "", defErr.Errorf(common.CCErrCollectObjNameNotNetDevice)
 	}
+
 	cond := make(map[string]interface{}, 0)
 	cond[common.BKObjNameField] = objectName
 	cond[common.BKClassificationIDField] = common.BKNetwork
@@ -190,7 +260,7 @@ func (lgc *Logics) getNetDeviceObjIDFromObjName(objectName string, pheader http.
 
 	if !objResult.Result {
 		blog.Errorf("check net device object ID, errors: %s", objResult.ErrMsg)
-		return "", defErr.Errorf(common.CCErrObjectSelectInstFailed)
+		return "", defErr.Errorf(objResult.Code)
 	}
 
 	if nil == objResult.Data || 0 == len(objResult.Data) {
@@ -243,4 +313,33 @@ func (lgc *Logics) checkIfObjIDIsNetDevice(objID string, pheader http.Header) (b
 	}
 
 	return nil != objResult.Data && 0 < len(objResult.Data), nil
+}
+
+// get net device obj ID
+func (lgc *Logics) getNetDeviceObjIDsByCond(objCond map[string]interface{}, pheader http.Header) ([]string, error) {
+	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+
+	objIDs := []string{}
+
+	if _, ok := objCond[common.BKObjNameField]; ok {
+		objCond[common.BKClassificationIDField] = common.BKNetwork
+		objResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjects(context.Background(), pheader, objCond)
+		if nil != err {
+			blog.Errorf("check net device object ID, search objectName fail, %v", err)
+			return nil, err
+		}
+
+		if !objResult.Result {
+			blog.Errorf("check net device object ID, errors: %s", objResult.ErrMsg)
+			return nil, defErr.Errorf(objResult.Code)
+		}
+
+		if nil != objResult.Data {
+			for _, data := range objResult.Data {
+				objIDs = append(objIDs, data.ObjectID)
+			}
+		}
+	}
+
+	return objIDs, nil
 }
