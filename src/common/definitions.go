@@ -725,4 +725,19 @@ const (
 
 const (
 	BKDefaultLoginUserPluginVersion = "self"
+	HTTPCookieBKToken               = "bk_token"
+
+	WEBSessionUinKey           = "username"
+	WEBSessionChineseNameKey   = "chName"
+	WEBSessionPhoneKey         = "phone"
+	WEBSessionEmailKey         = "email"
+	WEBSessionRoleKey          = "role"
+	WEBSessionOwnerUinKey      = "owner_uin"
+	WEBSessionOwnerUinListeKey = "owner_uin_list"
+	WEBSessionAvatarUrlKey     = "avatar_url"
+	WEBSessionMultiSupplierKey = "multisupplier"
+	WEBSessionLanguageKey      = "language"
+
+	LoginSystemMultiSupplierTrue  = "1"
+	LoginSystemMultiSupplierFalse = "0"
 )
