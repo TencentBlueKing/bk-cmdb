@@ -68,10 +68,10 @@ func (lgc *Logics) checkNetObjectProperty(netDeviceObjID, propertyName, property
 		common.BKOwnerIDField: util.GetOwnerID(pheader),
 		common.BKObjIDField:   netDeviceObjID}
 
-	if "" == propertyName {
+	if "" != propertyName {
 		propertyCond[common.BKPropertyNameField] = propertyName
 	}
-	if "" == propertyID {
+	if "" != propertyID {
 		propertyCond[common.BKPropertyIDField] = propertyID
 	}
 
@@ -105,10 +105,10 @@ func (lgc *Logics) checkNetDeviceExist(deviceName, deviceID string, pheader http
 
 	deviceCond := map[string]interface{}{common.BKOwnerIDField: util.GetOwnerID(pheader)}
 
-	if "" == deviceName {
+	if "" != deviceName {
 		deviceCond[common.BKDeviceNameField] = deviceName
 	}
-	if "" == deviceID {
+	if "" != deviceID {
 		deviceCond[common.BKDeviceIDField] = deviceID
 	}
 
