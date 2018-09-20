@@ -18,7 +18,8 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/metadata"
-	"configcenter/src/web_server/application/middleware/user/plugins/register"
+	"configcenter/src/web_server/application/middleware/user/plugins/manager"
+	_ "configcenter/src/web_server/application/middleware/user/plugins/register"
 )
 
 func CurrentPlugin(c *gin.Context) metadata.LoginUserPluginInerface {
@@ -28,8 +29,9 @@ func CurrentPlugin(c *gin.Context) metadata.LoginUserPluginInerface {
 	if !ok {
 		version = common.BKDefaultLoginUserPluginVersion
 	}
+
 	var selfPlugin *metadata.LoginPluginInfo
-	for _, plugin := range register.LoginPluginInfo {
+	for _, plugin := range manager.LoginPluginInfo {
 		if plugin.Version == version {
 			return plugin.HandleFunc
 		}
