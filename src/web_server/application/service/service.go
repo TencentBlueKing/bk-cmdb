@@ -167,17 +167,19 @@ func (ccWeb *CCWebServer) Start() error {
 	if "" == defaultlanguage {
 		defaultlanguage = "zh-cn"
 	}
-	apiSite, _ := a.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
+	//apiSite, _ := a.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
 	static := config["site.html_root"]
 	webCommon.ResourcePath = config["site.resources_path"]
 	redisIp := config["session.host"]
 	redisPort := config["session.port"]
 	redisSecret := config["session.secret"]
-	multipleOwner := config["session.multiple_owner"]
 	agentAppUrl := config["app.agent_app_url"]
 	redisSecret = strings.TrimSpace(redisSecret)
 	curl := fmt.Sprintf(loginURL, appCode, site)
 
+	if "" == check_url {
+		return fmt.Errorf("config site.check_url item not found")
+	}
 	redisCli, err := redisclient.NewRedis(redisIp, redisPort, "", redisSecret, "0")
 	if nil != err {
 		blog.Errorf("connect redis error %s", err.Error())
@@ -199,7 +201,7 @@ func (ccWeb *CCWebServer) Start() error {
 
 		ccWeb.RegisterActions(a.Wactions)
 		middleware.APIAddr = rdapi.GetRdAddrSrvHandle(types.CC_MODULE_APISERVER, a.AddrSrv)
-		ccWeb.httpServ.Use(middleware.ValidLogin(loginURL, appCode, site, check_url, apiSite, skipLogin, multipleOwner, defaultlanguage))
+		ccWeb.httpServ.Use(middleware.ValidLogin(skipLogin, defaultlanguage))
 		ccWeb.httpServ.Static("/static", static)
 		blog.Info(static)
 		ccWeb.httpServ.LoadHTMLFiles(static + "/index.html") //("static/index.html")
@@ -216,10 +218,11 @@ func (ccWeb *CCWebServer) Start() error {
 			})
 		}
 		ccWeb.httpServ.GET("/", func(c *gin.Context) {
+
 			session := sessions.Default(c)
-			role := session.Get("role")
-			userName, _ := session.Get("userName").(string)
-			language, _ := session.Get("language").(string)
+			role := session.Get(common.WEBSessionRoleKey)
+			userName, _ := session.Get(common.WEBSessionUinKey).(string)
+			language, _ := session.Get(common.WEBSessionLanguageKey).(string)
 			apiSite, err := a.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
 			if nil != err {
 				blog.Errorf("api server not start %s", err.Error())
