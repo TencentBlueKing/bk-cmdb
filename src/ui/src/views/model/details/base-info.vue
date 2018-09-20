@@ -281,6 +281,9 @@
             position: relative;
             display: inline-block;
             vertical-align: top;
+            .mask {
+                z-index: 10;
+            }
             .select-box {
                 border: 1px solid $cmdbBorderColor;
                 text-align: center;
