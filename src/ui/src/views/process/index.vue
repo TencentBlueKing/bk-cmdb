@@ -129,6 +129,7 @@
                 if (this.filter.businessResolver) {
                     this.filter.businessResolver()
                 } else {
+                    this.table.checked = []
                     this.handlePageChange(1)
                 }
             }
