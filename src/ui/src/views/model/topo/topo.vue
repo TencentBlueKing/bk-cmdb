@@ -241,7 +241,7 @@
                     if (index === -1) {
                         topoStructure.push(structure)
                     } else {
-                        topoStructure[index].label += `,${structure.label}`
+                        topoStructure[index]['label_name'] += `,${structure['label_name']}`
                     }
                 })
                 this.topoStructure = topoStructure
@@ -280,7 +280,7 @@
                 this.topoStructure.map((edge, index) => {
                     edges.push({
                         dashes: !(edge['from']['bk_classification_id'] === this.bkClassificationId && edge['to']['bk_classification_id'] === this.bkClassificationId),
-                        label: edge['label'],
+                        label: edge['label_name'],
                         arrows: edge['arrows'],
                         to: edge['to']['bk_obj_id'],
                         from: edge['from']['bk_obj_id']
