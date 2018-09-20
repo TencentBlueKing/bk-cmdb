@@ -136,18 +136,32 @@
                 let currentClassify = this.$classifications.find(({bk_classification_id: bkClassificationId}) => this.bkClassificationId === bkClassificationId)
                 let modelList = currentClassify['bk_objects'].filter(({bk_ispaused: bkIspaused}) => !bkIspaused)
                 this.disableModelList = currentClassify['bk_objects'].filter(({bk_ispaused: bkIspaused}) => bkIspaused)
+                let asstList = []
                 for (let key in currentClassify['bk_asst_objects']) {
                     let object = currentClassify['bk_asst_objects'][key]
                     object.map(asstModel => {
-                        let model = modelList.find(({bk_classification_id: bkClassificationId}) => {
+                        let model = asstList.find(({bk_classification_id: bkClassificationId}) => {
                             return bkClassificationId === asstModel['bk_classification_id']
                         })
-                        if (!model) {
-                            modelList.push(asstModel)
-                        }
+                        
+                        this.topoStructure.map(structure => {
+                            let isExist = -1
+                            if (asstModel['bk_obj_id'] === structure.to['bk_obj_id']) {
+                                isExist = modelList.findIndex(model => {
+                                    return model['bk_obj_id'] === structure.from['bk_obj_id']
+                                })
+                            } else if (asstModel['bk_obj_id'] === structure.from['bk_obj_id']) {
+                                isExist = modelList.findIndex(model => {
+                                    return model['bk_obj_id'] === structure.to['bk_obj_id']
+                                })
+                            }
+                            if (isExist !== -1 && asstList.findIndex(({bk_obj_id: objId}) => objId === asstModel['bk_obj_id']) === -1 && modelList.findIndex(({bk_obj_id: objId}) => objId === asstModel['bk_obj_id']) === -1) {
+                                asstList.push(asstModel)
+                            }
+                        })
                     })
                 }
-                return modelList
+                return [...modelList, ...asstList]
             },
             noPositionNodes () {
                 return this.network.nodes.filter(node => {
@@ -206,8 +220,8 @@
             },
             async initTopo () {
                 this.isLoading = true
-                this.setNodes()
                 await this.setEdges()
+                this.setNodes()
                 this.networkInstance = new Vis.Network(this.$refs.topo, {
                     nodes: this.networkDataSet.nodes,
                     edges: this.networkDataSet.edges
@@ -217,7 +231,20 @@
             },
             async getTopoStructure () {
                 const res = await this.$store.dispatch('objectModel/searchObjectTopo', {params: {bk_classification_id: this.bkClassificationId}})
-                this.topoStructure = res
+                let topoStructure = []
+                res.map(structure => {
+                    let index = topoStructure.findIndex(item => {
+                        if ((item.to['bk_obj_id'] === structure.to['bk_obj_id'] && item.from['bk_obj_id'] === structure.from['bk_obj_id']) || (item.to['bk_obj_id'] === structure.from['bk_obj_id'] && item.from['bk_obj_id'] === structure.to['bk_obj_id'])) {
+                            return true
+                        }
+                    })
+                    if (index === -1) {
+                        topoStructure.push(structure)
+                    } else {
+                        topoStructure[index].label += `,${structure.label}`
+                    }
+                })
+                this.topoStructure = topoStructure
             },
             setNodes () {
                 let nodes = []

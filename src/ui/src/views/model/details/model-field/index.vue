@@ -264,7 +264,7 @@
                         this.$http.cancel(`post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`)
                     })
                 }
-                this.$emit('save')
+                this.$emit('save', this.fieldInfo['bk_property_type'])
             },
             cancel () {
                 this.$emit('cancel')

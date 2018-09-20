@@ -11,7 +11,6 @@
                     class="search-selector"
                     :list="typeList"
                     :selected.sync="filter.type"
-                    :allow-clear="true"
                 ></bk-selector>
                 <input class="cmdb-form-input" :placeholder="$t('Common[\'请输入\']')" type="text" id="SearchUserName" v-model.trim="filter.text" @keyup.enter="getRoleList">
                 <i class="filter-search bk-icon icon-search"
@@ -64,7 +63,7 @@
         data () {
             return {
                 filter: {
-                    type: '',
+                    type: 'group_name',
                     text: ''
                 },
                 typeList: [{
