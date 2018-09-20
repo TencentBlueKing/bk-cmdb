@@ -22,6 +22,7 @@
                     </li>
                 </ul>
             </transition>
+            <div class="mask" v-if="isShowUserDropdown" @click="isShowUserDropdown = false"></div>
         </div>
     </header>
 </template>
