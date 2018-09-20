@@ -432,12 +432,17 @@ const (
 	CCErrWebGetObjectFail    = 1111008
 
 	// datacollection 1112xxx
-	CCErrCollectNetDeviceCreateFail = 1112000
-	CCErrCollectNetDeviceGetFail    = 1112001
-	CCErrCollectNetDeviceDeleteFail = 1112002
-	CCErrCollectDiffObjIDAndName    = 1112003
-	CCErrCollectObjIDNotNetDevice   = 1112004
-	CCErrCollectObjNameNotNetDevice = 1112005
+	CCErrCollectNetDeviceCreateFail   = 1112000
+	CCErrCollectNetDeviceGetFail      = 1112001
+	CCErrCollectNetDeviceDeleteFail   = 1112002
+	CCErrCollectDiffObjIDAndName      = 1112003
+	CCErrCollectObjIDNotNetDevice     = 1112004
+	CCErrCollectObjNameNotNetDevice   = 1112005
+	CCErrCollectNetPropertyCreateFail = 1112006
+	CCErrCollectNetPropertyGetFail    = 1112007
+	CCErrCollectNetPropertyDeleteFail = 1112008
+	CCErrCollectPropertyNotExist      = 1112009
+	CCErrCollectDeviceNotExist        = 1112010
 
 	CC_Err_Comm_HOST_CREATE_FAIL          = 4300
 	CC_Err_Comm_HOST_CREATE_FAIL_STR      = "create host fail"
