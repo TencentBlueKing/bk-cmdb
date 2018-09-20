@@ -511,6 +511,12 @@ const BKMainLine = "mainline"
 const BKNetwork = "bk_network"
 
 const (
+	ActionGet = "get"
+
+	ActionWalk = "walk"
+)
+
+const (
 	// DefaultResModuleFlag the default resource module flag
 	DefaultResModuleFlag int = 1
 
