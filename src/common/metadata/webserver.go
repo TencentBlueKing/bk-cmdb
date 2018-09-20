@@ -18,18 +18,26 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type LoginUserInfoOwnerUinList struct {
+	OwnerID   string `json:"id"`
+	OwnerName string `json:"name"`
+	Role      int64  `json:"role"`
+}
+
 type LoginUserInfo struct {
-	UserName    string
-	ChName      string
-	Phone       string
-	Email       string
-	Role        int64
-	BkToken     string
-	OnwerUin    string
-	OwnerUinArr []string               //user all owner uin
-	IsOwner     bool                   // is master
-	Extra       map[string]interface{} //custom information
-	Language    string
+	UserName      string                      `json:"username"`
+	ChName        string                      `json:"chname"`
+	Phone         string                      `json:"phone"`
+	Email         string                      `json:"email"`
+	Role          string                      `json:"-"`
+	BkToken       string                      `json:"bk_token"`
+	OnwerUin      string                      `json:"current_supplier"`
+	OwnerUinArr   []LoginUserInfoOwnerUinList `json:"supplier_list"` //user all owner uin
+	IsOwner       bool                        `json:"-"`             // is master
+	Extra         map[string]interface{}      `json:"extra"`         //custom information
+	Language      string                      `json:"-"`
+	AvatarUrl     string                      `json:"avatar_url"`
+	MultiSupplier bool                        `json:"multi_supplier"`
 }
 
 type LoginPluginInfo struct {
@@ -49,6 +57,7 @@ type LoginUserPluginParams struct {
 type LoginUserPluginInerface interface {
 	LoginUser(c *gin.Context, config map[string]string, isMultiOwner bool) (user *LoginUserInfo, loginSucc bool)
 	GetUserList(c *gin.Context, config map[string]string) ([]*LoginSystemUserInfo, error)
+	GetLoginUrl(c *gin.Context, config map[string]string, siteUrl string) string
 }
 
 type LoginSystemUserInfo struct {
@@ -59,4 +68,25 @@ type LoginSystemUserInfo struct {
 type LonginSystemUserListResult struct {
 	BaseResp `json",inline"`
 	Data     []*LoginSystemUserInfo `json:"data"`
+}
+
+type LoginUserInfoDetail struct {
+	UserName      string                      `json:"username"`
+	ChName        string                      `json:"chname"`
+	OnwerUin      string                      `json:"current_supplier"`
+	OwnerUinArr   []LoginUserInfoOwnerUinList `json:"supplier_list"` //user all owner uin
+	AvatarUrl     string                      `json:"avatar_url"`
+	MultiSupplier bool                        `json:"multi_supplier"`
+}
+
+type LonginUserInfoResult struct {
+	BaseResp `json",inline"`
+	Data     LoginUserInfoDetail `json:"data"`
+}
+
+type LonginChangeSupplierResult struct {
+	BaseResp `json",inline"`
+	Data     struct {
+		ID string `json:"bk_supplier_account"`
+	} `json:"data"`
 }
