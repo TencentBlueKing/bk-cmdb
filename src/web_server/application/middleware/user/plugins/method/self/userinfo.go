@@ -100,7 +100,6 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 		blog.Errorf("get user info return error: %v", err)
 		return nil, false
 	}
-	fmt.Println(string(loginResultByteArr))
 	blog.V(3).Infof("get user info cond %v, return: %s ", string(loginURL), string(loginResultByteArr))
 	var resultData loginResult
 	err = json.Unmarshal(loginResultByteArr, &resultData)
