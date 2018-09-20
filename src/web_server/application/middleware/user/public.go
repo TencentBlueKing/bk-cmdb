@@ -13,6 +13,9 @@
 package user
 
 import (
+	"encoding/json"
+	"strings"
+
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
 
@@ -40,45 +43,62 @@ type userInfo struct {
 }
 
 // LoginUser  user login
-func (m *publicUser) LoginUser(c *gin.Context, checkUrl string, isMultiOwner bool) bool {
+func (m *publicUser) LoginUser(c *gin.Context) bool {
 
 	ccapi := api.NewAPIResource()
 	config, _ := ccapi.ParseConfig()
 	user := plugins.CurrentPlugin(c)
+	isMultiOwner := false
+	multipleOwner, ok := config["session.multiple_owner"]
+	if ok && common.LoginSystemMultiSupplierTrue == multipleOwner {
+		isMultiOwner = false
+	}
 	userInfo, loginSucc := user.LoginUser(c, config, isMultiOwner)
 	if !loginSucc {
 		return false
 	}
 
-	if true == isMultiOwner {
+	if true == isMultiOwner || true == userInfo.MultiSupplier {
 		err := NewOwnerManager(userInfo.UserName, userInfo.OnwerUin, userInfo.Language).InitOwner()
 		if nil != err {
 			blog.Error("InitOwner error: %v", err)
 			return false
 		}
 	}
+	strOwnerUinlist := []byte("")
+	if 0 != len(userInfo.OwnerUinArr) {
+		strOwnerUinlist, _ = json.Marshal(userInfo.OwnerUinArr)
+	}
 
 	cookielanguage, _ := c.Cookie("blueking_language")
 	session := sessions.Default(c)
-	session.Set("userName", userInfo.UserName)
-	session.Set("chName", userInfo.ChName)
-	session.Set("phone", userInfo.Phone)
-	session.Set("email", userInfo.Email)
-	session.Set("role", userInfo.Role)
-	session.Set("bk_token", userInfo.BkToken)
-	session.Set("owner_uin", userInfo.OnwerUin)
+	session.Set(common.WEBSessionUinKey, userInfo.UserName)
+	session.Set(common.WEBSessionChineseNameKey, userInfo.ChName)
+	session.Set(common.WEBSessionPhoneKey, userInfo.Phone)
+	session.Set(common.WEBSessionEmailKey, userInfo.Email)
+	session.Set(common.WEBSessionRoleKey, userInfo.Role)
+	session.Set(common.HTTPCookieBKToken, userInfo.BkToken)
+	session.Set(common.WEBSessionOwnerUinKey, userInfo.OnwerUin)
+	session.Set(common.WEBSessionAvatarUrlKey, userInfo.AvatarUrl)
+	session.Set(common.WEBSessionOwnerUinListeKey, string(strOwnerUinlist))
+	if userInfo.MultiSupplier {
+		session.Set(common.WEBSessionMultiSupplierKey, common.LoginSystemMultiSupplierTrue)
+	} else {
+		session.Set(common.WEBSessionMultiSupplierKey, common.LoginSystemMultiSupplierFalse)
+	}
+
 	session.Set(webCommon.IsSkipLogin, "0")
 	if "" != cookielanguage {
-		session.Set("language", cookielanguage)
+		session.Set(common.WEBSessionLanguageKey, cookielanguage)
 	} else {
-		session.Set("language", userInfo.Language)
+		session.Set(common.WEBSessionLanguageKey, userInfo.Language)
 	}
 	session.Save()
 	return true
 }
 
 // GetUserList get user list from paas
-func (m *publicUser) GetUserList(c *gin.Context, accountURL string) (int, interface{}) {
+func (m *publicUser) GetUserList(c *gin.Context) (int, interface{}) {
 
 	ccapi := api.NewAPIResource()
 	config, _ := ccapi.ParseConfig()
@@ -90,6 +110,20 @@ func (m *publicUser) GetUserList(c *gin.Context, accountURL string) (int, interf
 		rspBody.ErrMsg = err.Error()
 		rspBody.Result = false
 	}
+	rspBody.Result = true
+	userList = append(userList, &metadata.LoginSystemUserInfo{CnName: "admin", EnName: "sss"})
 	rspBody.Data = userList
 	return 200, rspBody
+}
+
+func (m *publicUser) GetLoginUrl(c *gin.Context) string {
+	ccapi := api.NewAPIResource()
+	config, _ := ccapi.ParseConfig()
+	siteUrl, ok := config["site.domain_url"]
+	if ok {
+		siteUrl = strings.Trim(siteUrl, "/")
+	}
+	user := plugins.CurrentPlugin(c)
+	return user.GetLoginUrl(c, config, siteUrl)
+
 }
