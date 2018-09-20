@@ -431,7 +431,7 @@ const (
 	CCErrWebCreateEXCELFail  = 1111007
 	CCErrWebGetObjectFail    = 1111008
 
-	// TODO datacollection 1112xxx
+	// datacollection 1112xxx
 	CCErrCollectNetDeviceCreateFail          = 1112000
 	CCErrCollectNetDeviceGetFail             = 1112001
 	CCErrCollectNetDeviceDeleteFail          = 1112002
