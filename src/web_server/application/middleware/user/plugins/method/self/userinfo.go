@@ -24,7 +24,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/httpclient"
 	"configcenter/src/common/metadata"
-	"configcenter/src/web_server/application/middleware/user/plugins/register"
+	"configcenter/src/web_server/application/middleware/user/plugins/manager"
 	webCommon "configcenter/src/web_server/common"
 )
 
@@ -34,7 +34,7 @@ func init() {
 		Version:    common.BKDefaultLoginUserPluginVersion,
 		HandleFunc: &user{},
 	}
-	register.RegisterPlugin(plugin) //("blueking login system", "self", "")
+	manager.RegisterPlugin(plugin) //("blueking login system", "self", "")
 }
 
 type loginResultData struct {
@@ -42,7 +42,7 @@ type loginResultData struct {
 	ChName   string `json:"chname"`
 	Phone    string `json:"Phone"`
 	Email    string `json:"email"`
-	Role     int64  `json:"role"`
+	Role     string `json:"role"`
 	Language string `json:"language"`
 	OwnerUin string `json:"owner_uin"`
 }
@@ -78,14 +78,14 @@ type user struct {
 
 // LoginUser  user login
 func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner bool) (user *metadata.LoginUserInfo, loginSucc bool) {
-	bk_token, err := c.Cookie("bk_token")
+	bk_token, err := c.Cookie(common.HTTPCookieBKToken)
 	if nil != err {
 		return nil, false
 	}
 	if nil != err || 0 == len(bk_token) {
 		return nil, false
 	}
-	checkUrl, ok := config["site.bk_login_url"]
+	checkUrl, ok := config["site.check_url"]
 	if !ok {
 		blog.Errorf("get login url config item not found")
 		return nil, false
@@ -93,17 +93,19 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 	loginURL := checkUrl + bk_token
 	httpCli := httpclient.NewHttpClient()
 	httpCli.SetTimeOut(30 * time.Second)
+	httpCli.SetTlsNoVerity()
 	loginResultByteArr, err := httpCli.GET(loginURL, nil, nil)
 
 	if nil != err {
 		blog.Errorf("get user info return error: %v", err)
 		return nil, false
 	}
+	fmt.Println(string(loginResultByteArr))
 	blog.V(3).Infof("get user info cond %v, return: %s ", string(loginURL), string(loginResultByteArr))
 	var resultData loginResult
 	err = json.Unmarshal(loginResultByteArr, &resultData)
 	if nil != err {
-		blog.Errorf("get user info json error: %v", err)
+		blog.Errorf("get user info json error: %v, rawData:%s", err, string(loginResultByteArr))
 		return nil, false
 	}
 
@@ -113,6 +115,9 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 	}
 
 	userDetail := resultData.Data
+	if "" == userDetail.OwnerUin {
+		userDetail.OwnerUin = common.BKDefaultOwnerID
+	}
 	user = &metadata.LoginUserInfo{
 		UserName: userDetail.UserName,
 		ChName:   userDetail.ChName,
@@ -149,7 +154,7 @@ func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadat
 		return adminData, nil
 	}
 
-	token := session.Get("bk_token")
+	token := session.Get(common.HTTPCookieBKToken)
 	getURL := fmt.Sprintf(accountURL, token)
 	httpClient := httpclient.NewHttpClient()
 
@@ -178,4 +183,17 @@ func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadat
 	}
 
 	return userListArr, nil
+}
+
+func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, siteUrl string) string {
+	loginURL, ok := config["site.bk_login_url"]
+	if !ok {
+		loginURL = ""
+	}
+	appCode, ok := config["site.app_code"]
+	if !ok {
+		appCode = ""
+	}
+	loginURL = fmt.Sprintf(loginURL, appCode, fmt.Sprintf("%s%s", siteUrl, c.Request.URL.String()))
+	return loginURL
 }
