@@ -43,6 +43,7 @@ export function _preloadUserCustom (app) {
     return app.$store.dispatch('userCustom/searchUsercustom', {
         config: {
             ...preloadConfig,
+            fromCache: false,
             requestId: 'post_searchUsercustom'
         }
     })

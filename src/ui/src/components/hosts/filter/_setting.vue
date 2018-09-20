@@ -1,36 +1,16 @@
 <template>
     <div class="setting-layout">
-        <i class="setting-icon icon-cc-broom" v-tooltip="$t('HostResourcePool[\'清空查询条件\']')"
-            v-if="activeSetting.includes('reset')"
-            @click="handleReset">
-        </i>
         <i class="setting-icon icon-cc-collection" v-tooltip="$t('Hosts[\'收藏\']')"
             v-if="activeSetting.includes('collection')"
             :class="{active: collection.show}"
             @click="handleCollection">
         </i>
-        <i class="setting-icon icon-cc-funnel" v-tooltip="$t('HostResourcePool[\'设置筛选项\']')"
-            v-if="activeSetting.includes('filter-config')"
-            @click="filterConfig.show = true">
-        </i>
-        <cmdb-slider :is-show.sync="filterConfig.show" :title="$t('HostResourcePool[\'主机筛选项设置\']')" :width="600">
-            <cmdb-filter-config slot="content"
-                :properties="filterConfig.properties"
-                :selected="customFilterFields"
-                @on-cancel="filterConfig.show = false"
-                @on-apply="handleApplyFilterConfig">
-            </cmdb-filter-config>
-        </cmdb-slider>
     </div>
 </template>
 
 <script>
     import { mapGetters, mapActions } from 'vuex'
-    import cmdbFilterConfig from './_filter-config.vue'
     export default {
-        components: {
-            cmdbFilterConfig
-        },
         props: {
             activeSetting: {
                 type: Array,
