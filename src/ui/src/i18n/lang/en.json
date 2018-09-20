@@ -528,5 +528,8 @@
         "请输入短字符": "Please input single char",
         "请输入用户": "Please input user",
         "请输入数字": "Please input integer"
+    },
+    "NetworkDiscovery": {
+        "网络发现": "Network Discovery"
     }
 }

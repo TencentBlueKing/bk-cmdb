@@ -19,6 +19,7 @@ const audit = () => import(/* webpackChunkName: hosts */ '@/views/audit')
 const topology = () => import(/* webpackChunkName: topology */ '@/views/topology')
 const process = () => import(/* webpackChunkName: process */ '@/views/process')
 const customQuery = () => import(/* webpackChunkName: process */ '@/views/custom-query')
+const networkDiscovery = () => import(/* webpackChunkName: process */ '@/views/network-discovery')
 const error = () => import(/* webpackChunkName: error */ '@/views/status/error')
 
 Vue.use(Router)
@@ -101,6 +102,9 @@ const router = new Router({
         meta: {
             requireBusiness: true
         }
+    }, {
+        path: '/network-discovery',
+        component: networkDiscovery
     }, {
         path: '/status-require-business',
         components: require('@/views/status/require-business'),
