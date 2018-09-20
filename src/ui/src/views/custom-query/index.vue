@@ -29,6 +29,11 @@
             <template slot="last_time" slot-scope="{item}">
                 {{$tools.formatTime(item['last_time'])}}
             </template>
+            <div class="empty-info" slot="data-empty">
+                <p>{{$t("Common['暂时没有数据']")}}</p>
+                <p>{{$t("CustomQuery['当前业务并无自定义查询，可点击下方按钮新增']")}}</p>
+                <bk-button class="process-btn" type="primary" @click="showUserAPISlider('create')">{{$t("CustomQuery['新增查询']")}}</bk-button>
+            </div>
         </cmdb-table>
         <cmdb-slider
             :isShow.sync="slider.isShow"

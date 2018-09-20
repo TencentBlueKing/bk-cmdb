@@ -28,7 +28,12 @@
                 <span class="text-primary" @click="showDetails(item)">{{$t('Permission["权限详情"]')}}</span>
                 <span class="text-primary" @click.stop="editRole(item)">{{$t('Common["编辑"]')}}</span>
                 <span class="text-danger" @click.stop="confirmDeleteRole(item)">{{$t('Common["删除"]')}}</span>
-            </template>  
+            </template>
+            <div class="empty-info" slot="data-empty">
+                <p>{{$t("Common['暂时没有数据']")}}</p>
+                <p>{{$t("Permission['当前并无角色，可点击下方按钮新增']")}}</p>
+                <bk-button class="process-btn" type="primary" @click="createRole">{{$t("Permission['新增角色']")}}</bk-button>
+            </div>
         </cmdb-table>
         <v-role-form 
             ref="roleForm"
