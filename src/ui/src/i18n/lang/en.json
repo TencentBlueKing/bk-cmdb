@@ -189,7 +189,8 @@
         "主机": "Host",
         "收起": "Collapse",
         "展开": "Expand",
-        "主机身份": "Host Identifier"
+        "主机身份": "Host Identifier",
+        "当前并无推送，可点击下方按钮新增": "There is currently no push. Click the button below to add"
     },
     "Permission": {
         "权限管理": "Permission Manage",
@@ -227,7 +228,8 @@
         "角色成员": "Member",
         "新建角色成功": "Successful New Role",
         "更新角色成功": "Updates the role of success",
-        "点击新增": "Click to add"
+        "点击新增": "Click to add",
+        "当前并无角色，可点击下方按钮新增": "Currently does not have a role, click the button below to add"
     },
     "ModelManagement": {
         "模型管理": "Model Manage",
@@ -394,7 +396,8 @@
         "修改时间": "Update Time",
         "查询定义": "Query Definition",
         "确认要删除": "Confirm to delete {name}?",
-        "保存后的查询可通过接口调用生效": "The saved query can be validated through an interface call"
+        "保存后的查询可通过接口调用生效": "The saved query can be validated through an interface call",
+        "当前业务并无自定义查询，可点击下方按钮新增": "The current business does not have a Custom Query, click the button below to add"
     },
     "ProcessManagement": {
         "进程管理": "Process Manage",
@@ -421,7 +424,8 @@
         "批量编辑": "Batch Modify",
         "在进程管理中绑定进程到模块，": "To bind a process to a module in process management,",
         "点击此跳转": "click to jump",
-        "进程信息": "Process information"
+        "进程信息": "Process information",
+        "当前业务并无进程，可点击下方按钮新增": "The current business does not have a process, click the button below to add"
     },
     "BusinessTopology": {
         "业务拓扑": "Business Topology",
