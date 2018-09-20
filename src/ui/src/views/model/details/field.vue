@@ -153,7 +153,10 @@
             createField () {
                 this.createForm.isShow = true
             },
-            saveCreateForm () {
+            saveCreateForm (type) {
+                if (['singleasst', 'multiasst'].indexOf(type) !== -1) {
+                    this.$emit('updateTopo', true)
+                }
                 this.initFieldList()
                 this.closeCreateForm()
             },
@@ -177,6 +180,9 @@
                 }).then(() => {
                     this.$http.cancel(`post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`)
                 })
+                if (field['bk_property_type'] === 'singleasst' || field['bk_property_type'] === 'multiasst') {
+                    this.$emit('updateTopo', true)
+                }
                 this.fieldList.splice(index, 1)
             },
             toggleDetailShow (field, index) {
@@ -284,6 +290,7 @@
                 width: calc(100% + 40px);
                 height: 52px;
                 background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, .8));
+                pointer-events: none;
             }
         }
         .create-field {
