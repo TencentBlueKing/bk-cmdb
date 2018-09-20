@@ -103,7 +103,8 @@
                 },
                 filter: {
                     bizId: '',
-                    text: ''
+                    text: '',
+                    businessResolver: null
                 },
                 table: {
                     header: [],
@@ -125,7 +126,11 @@
         },
         watch: {
             'filter.bizId' () {
-                this.handlePageChange(1)
+                if (this.filter.businessResolver) {
+                    this.filter.businessResolver()
+                } else {
+                    this.handlePageChange(1)
+                }
             }
         },
         created () {
@@ -158,6 +163,14 @@
             handleMultipleCancel () {
                 this.slider.show = false
             },
+            getBusiness () {
+                return new Promise((resolve, reject) => {
+                    this.filter.businessResolver = () => {
+                        this.filter.businessResolver = null
+                        resolve()
+                    }
+                })
+            },
             async reload () {
                 this.properties = await this.searchObjectAttribute({
                     params: {
@@ -170,10 +183,11 @@
                     }
                 })
                 await Promise.all([
+                    this.getBusiness(),
                     this.getPropertyGroups(),
                     this.setTableHeader()
                 ])
-                this.getTableData()
+                this.handlePageChange(1)
             },
             getPropertyGroups () {
                 return this.searchGroup({
