@@ -431,18 +431,16 @@ const (
 	CCErrWebCreateEXCELFail  = 1111007
 	CCErrWebGetObjectFail    = 1111008
 
-	// datacollection 1112xxx
-	CCErrCollectNetDeviceCreateFail   = 1112000
-	CCErrCollectNetDeviceGetFail      = 1112001
-	CCErrCollectNetDeviceDeleteFail   = 1112002
-	CCErrCollectDiffObjIDAndName      = 1112003
-	CCErrCollectObjIDNotNetDevice     = 1112004
-	CCErrCollectObjNameNotNetDevice   = 1112005
-	CCErrCollectNetPropertyCreateFail = 1112006
-	CCErrCollectNetPropertyGetFail    = 1112007
-	CCErrCollectNetPropertyDeleteFail = 1112008
-	CCErrCollectPropertyNotExist      = 1112009
-	CCErrCollectDeviceNotExist        = 1112010
+	// TODO datacollection 1112xxx
+	CCErrCollectNetDeviceCreateFail          = 1112000
+	CCErrCollectNetDeviceGetFail             = 1112001
+	CCErrCollectNetDeviceDeleteFail          = 1112002
+	CCErrCollectObjIDNotNetDevice            = 1112003
+	CCErrCollectNetPropertyCreateFail        = 1112004
+	CCErrCollectNetPropertyGetFail           = 1112005
+	CCErrCollectNetPropertyDeleteFail        = 1112006
+	CCErrCollectDeviceNotExist               = 1112007
+	CCErrCollectNetDeviceObjPropertyNotExist = 1112008
 
 	CC_Err_Comm_HOST_CREATE_FAIL          = 4300
 	CC_Err_Comm_HOST_CREATE_FAIL_STR      = "create host fail"
