@@ -1,6 +1,6 @@
 <template>
     <div class="filter-container">
-        <div class="filter-layout">
+        <div class="filter-layout" ref="filterLayout">
             <slot name="business"></slot>
             <div class="filter-group">
                 <label for="filterIp" class="filter-label">IP</label>
@@ -16,6 +16,13 @@
                 </cmdb-form-bool>
             </div>
             <slot name="scope"></slot>
+            <div class="filter-group">
+                <strong class="filter-setting-label">{{$t('Common["其他筛选项"]')}}</strong>
+                <i class="filter-setting icon-cc-setting"
+                    v-tooltip="$t('HostResourcePool[\'设置筛选项\']')"
+                    @click="filterConfig.show = true">
+                </i>
+            </div>
             <div class="filter-group"
                 v-for="(property, index) in customFieldProperties"
                 :key="index">
@@ -47,44 +54,58 @@
                     </component>
                 </div>
             </div>
-            <div class="filter-button">
-                <bk-button type="primary" @click="refresh" :disabled="$loading()">{{$t('HostResourcePool[\'刷新查询\']')}}</bk-button>
+            <div class="filter-button clearfix" :class="{sticky: layout.scroll}">
+                <bk-button type="primary" @click="refresh" :disabled="$loading()">{{$t('Common["查询"]')}}</bk-button>
+                <bk-button type="default" @click="reset">{{$t('Common["清空"]')}}</bk-button>
+                <bk-button class="fr" type="default" @click="collection.show = true">
+                    <i class="icon-cc-collection"></i>
+                </bk-button>
+                <div class="collection-form" v-click-outside="handleCloseCollection" v-if="collection.show">
+                    <div class="form-title">{{$t('Hosts[\'收藏此查询\']')}}</div>
+                    <div class="form-group">
+                        <input type="text" class="form-name cmdb-form-input"
+                            v-validate="'required'"
+                            v-model.trim="collection.name"
+                            data-vv-name="collectionName"
+                            :placeholder="$t('Hosts[\'请填写名称\']')">
+                        <span v-show="errors.has('collectionName')" class="form-error">{{errors.first('collectionName')}}</span>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-content">{{collection.content}}</div>
+                    </div>
+                    <div class="form-group form-group-button">
+                        <bk-button type="primary"
+                            :loading="$loading('create_collection')"
+                            :disabled="$loading('create_collection') || !collection.name"
+                            @click="handleSaveCollection">
+                            {{$t('Hosts[\'确认\']')}}
+                        </bk-button>
+                        <bk-button type="default" @click="handleCloseCollection">
+                            {{$t('Common[\'取消\']')}}
+                        </bk-button>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="collection-form" v-click-outside="handleCloseCollection" v-if="collection.show">
-            <div class="form-title">{{$t('Hosts[\'收藏此查询\']')}}</div>
-            <div class="form-group">
-                <input type="text" class="form-name cmdb-form-input"
-                    v-validate="'required'"
-                    v-model.trim="collection.name"
-                    data-vv-name="collectionName"
-                    :placeholder="$t('Hosts[\'请填写名称\']')">
-                <span v-show="errors.has('collectionName')" class="form-error">{{errors.first('collectionName')}}</span>
-            </div>
-            <div class="form-group">
-                <div class="form-content">{{collection.content}}</div>
-            </div>
-            <div class="form-group form-group-button">
-                <bk-button type="primary"
-                    :loading="$loading('create_collection')"
-                    :disabled="$loading('create_collection') || !collection.name"
-                    @click="handleSaveCollection">
-                    {{$t('Hosts[\'确认\']')}}
-                </bk-button>
-                <bk-button type="default" @click="handleCloseCollection">
-                    {{$t('Common[\'取消\']')}}
-                </bk-button>
-            </div>
-        </div>
+        <cmdb-slider :is-show.sync="filterConfig.show" :title="$t('HostResourcePool[\'主机筛选项设置\']')" :width="600">
+            <cmdb-filter-config slot="content"
+                :properties="filterConfigProperties"
+                :selected="customFields"
+                @on-cancel="filterConfig.show = false"
+                @on-apply="handleApplyFilterConfig">
+            </cmdb-filter-config>
+        </cmdb-slider>
     </div>
 </template>
 
 <script>
     import { mapGetters, mapActions } from 'vuex'
     import filterFieldOperator from './_filter-field-operator.vue'
+    import cmdbFilterConfig from './_filter-config.vue'
     export default {
         components: {
-            filterFieldOperator
+            filterFieldOperator,
+            cmdbFilterConfig
         },
         props: {
             filterConfigKey: {
@@ -123,6 +144,12 @@
                     show: false,
                     name: '',
                     content: ''
+                },
+                filterConfig: {
+                    show: false
+                },
+                layout: {
+                    scroll: false
                 }
             }
         },
@@ -134,6 +161,15 @@
                 'applyingProperties',
                 'applyingConditions'
             ]),
+            filterConfigProperties () {
+                const properties = {}
+                Object.keys(this.properties).forEach(objId => {
+                    if (!['biz'].includes(objId)) {
+                        properties[objId] = this.properties[objId]
+                    }
+                })
+                return properties
+            },
             customFields () {
                 return this.applyingProperties.length ? this.applyingProperties : (this.usercustom[this.filterConfigKey] || [])
             },
@@ -188,12 +224,12 @@
             },
             customFieldProperties () {
                 this.setCondition()
+                this.updateFilterButtonStyles()
             },
             'collection.show' (show) {
                 if (show) {
                     this.setCollectionContent()
                 }
-                this.$emit('on-collection-toggle', show)
             }
         },
         async created () {
@@ -433,6 +469,25 @@
                 this.collection.show = false
                 this.collection.name = ''
                 this.collection.content = ''
+            },
+            handleApplyFilterConfig (properties) {
+                this.$store.dispatch('userCustom/saveUsercustom', {
+                    [this.filterConfigKey]: properties.map(property => {
+                        return {
+                            'bk_property_id': property['bk_property_id'],
+                            'bk_obj_id': property['bk_obj_id']
+                        }
+                    })
+                }).then(() => {
+                    this.$store.commit('hostFavorites/setApplying', null)
+                })
+                this.filterConfig.show = false
+            },
+            updateFilterButtonStyles () {
+                this.$nextTick(() => {
+                    const $filterLayout = this.$refs.filterLayout
+                    this.layout.scroll = $filterLayout.offsetHeight < $filterLayout.scrollHeight
+                })
             }
         }
     }
@@ -446,11 +501,13 @@
     .filter-layout{
         position: relative;
         height: 100%;
-        padding: 0 2px;
         @include scrollbar-y;
     }
     .filter-group {
-        margin-top: 20px;
+        margin: 20px 0 0 0;
+        padding: 0 20px;
+        position: relative;
+        background-color: #fff;
         .filter-label{
             display: block;
             font-size: 14px;
@@ -491,19 +548,35 @@
             }
         }
     }
+    .filter-setting-label {
+        display: inline-block;
+        vertical-align: middle;
+        font-size: 14px;
+    }
+    .filter-setting {
+        display: inline-block;
+        vertical-align: middle;
+        cursor: pointer;
+        font-size: 16px;
+    }
     .filter-button{
         position: sticky;
         bottom: 0;
         left: 0;
         width: 100%;
-        margin: 20px 0 0 0;
+        padding: 20px 20px 0;
         background-color: #fff;
+        &.sticky {
+            border-top: 1px solid $cmdbBorderColor;
+            padding: 10px 20px 0;
+        }
     }
     .collection-form {
         position: absolute;
-        top: 10px;
+        bottom: 100%;
         right: 0;
         width: 100%;
+        margin: 0 0 10px 0;
         padding: 20px;
         border-radius: 2px;
         box-shadow: 0 2px 10px 4px rgba(12,34,59,.13);
@@ -513,8 +586,8 @@
         &:before,
         &:after {
             position: absolute;
-            right: 33px;
-            bottom: 100%;
+            right: 20px;
+            top: 100%;
             width: 0;
             height: 0;
             content: "";
@@ -522,11 +595,11 @@
             border-right: 6px solid transparent;
         }
         &:before {
-            border-bottom: 10px solid #e7e9ef;
-            margin-bottom: 2px;
+            border-top: 10px solid #e7e9ef;
+            margin-top: 2px;
         }
         &:after {
-            border-bottom: 10px solid #fff;
+            border-top: 10px solid #fff;
         }
         .form-group {
             margin: 15px 0 0 0;
