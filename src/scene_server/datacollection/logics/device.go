@@ -178,15 +178,11 @@ func (lgc *Logics) addDevice(deviceInfo meta.NetcollectDevice, pheader http.Head
 	}
 
 	// check if bk_object_id and bk_object_name are net device object
-	isNetDevice, err := lgc.checkIfNetDeviceObject(&deviceInfo, pheader)
+	err = lgc.checkIfNetDeviceObject(&deviceInfo, pheader)
 	if nil != err {
-		blog.Errorf("add net device fail, error: %v", err)
+		blog.Errorf("add net device fail, error: %v, object name [%s] and object ID [%s]",
+			err, deviceInfo.ObjectName, deviceInfo.ObjectID)
 		return -1, err
-	}
-	if !isNetDevice {
-		blog.Errorf("add net device fail, object name [%s] and object ID [%s] is not netcollect device",
-			deviceInfo.ObjectName, deviceInfo.ObjectID)
-		return -1, defErr.Errorf(common.CCErrCollectObjIDNotNetDevice)
 	}
 
 	// add to the storage
@@ -222,89 +218,10 @@ func (lgc *Logics) findDevice(fields []string, condition, result interface{}, so
 
 // check the deviceInfo if is a net object
 // by checking if bk_obj_id and bk_obj_name function parameter are valid net device object or not
-func (lgc *Logics) checkIfNetDeviceObject(deviceInfo *meta.NetcollectDevice, pheader http.Header) (bool, error) {
-	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-
-	if "" == deviceInfo.ObjectName && "" == deviceInfo.ObjectID {
-		blog.Errorf("check net device object ID, empty bk_obj_id and bk_obj_name")
-		return false, defErr.Errorf(common.CCErrCommParamsLostField, common.BKObjIDField)
-	}
-
-	// netDeviceObjID is a net device objID from deviceInfo.ObjectName
-	var (
-		netDeviceObjID string
-		err            error
-	)
-
-	// one of objectName and objectID must not be empty
-	// if objectName is not empty, get net device objectID from deviceInfo.ObjectName
-	if "" != deviceInfo.ObjectName {
-		netDeviceObjID, err = lgc.getNetDeviceObjIDFromObjName(deviceInfo.ObjectName, pheader)
-		if nil != err {
-			blog.Errorf("check net device object ID, error: %v", err)
-			return false, err
-		}
-
-		// if deviceInfo.ObjectName is not empty, netDeviceObjID must not be empty
-		if "" == netDeviceObjID {
-			blog.Errorf("check net device object ID, get empty objID from object name [%s]", deviceInfo.ObjectName)
-			return false, defErr.Errorf(common.CCErrCollectObjNameNotNetDevice)
-		}
-
-		// return true if objectID is empty or netDeviceObjID and objectID are the same
-		switch {
-		case "" == deviceInfo.ObjectID:
-			deviceInfo.ObjectID = netDeviceObjID
-			return true, nil
-		case netDeviceObjID == deviceInfo.ObjectID:
-			return true, nil
-		}
-
-		// objectID are not empty, netDeviceObjID and objectID are the same
-		blog.Errorf("check net device object ID, get objID [%s] from object name [%s], different between object ID [%s]",
-			netDeviceObjID, deviceInfo.ObjectID, deviceInfo.ObjectName)
-		return false, defErr.Errorf(common.CCErrCollectDiffObjIDAndName)
-	}
-
-	// objectName from function parameter is empty and objectID must not be empty
-	// check if objectID is one of net collect device, such as bk_router, bk_switch...
-	isNetDeviceObjID, err := lgc.checkIfObjIDIsNetDevice(deviceInfo.ObjectID, pheader)
-	if nil != err {
-		return false, err
-	}
-
-	return isNetDeviceObjID, nil
-}
-
-// get value of net device bk_obj_id from bk_obj_name
-// return error if bk_obj_name is empty or bk_obj_name is not net device
-func (lgc *Logics) getNetDeviceObjIDFromObjName(objectName string, pheader http.Header) (string, error) {
-	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-	if "" == objectName {
-		return "", defErr.Errorf(common.CCErrCollectObjNameNotNetDevice)
-	}
-
-	cond := make(map[string]interface{}, 0)
-	cond[common.BKObjNameField] = objectName
-	cond[common.BKClassificationIDField] = common.BKNetwork
-
-	objResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjects(context.Background(), pheader, cond)
-	if nil != err {
-		blog.Errorf("check net device object ID, search objectName fail, %v", err)
-		return "", defErr.Errorf(common.CCErrObjectSelectInstFailed)
-	}
-
-	if !objResult.Result {
-		blog.Errorf("check net device object ID, errors: %s", objResult.ErrMsg)
-		return "", defErr.Errorf(objResult.Code)
-	}
-
-	if nil == objResult.Data || 0 == len(objResult.Data) {
-		blog.Errorf("check net device object ID, object Name[%s] is not exist", objectName)
-		return "", defErr.Errorf(common.CCErrCollectObjNameNotNetDevice)
-	}
-
-	return objResult.Data[0].ObjectID, nil
+func (lgc *Logics) checkIfNetDeviceObject(deviceInfo *meta.NetcollectDevice, pheader http.Header) error {
+	var err error
+	deviceInfo.ObjectID, deviceInfo.ObjectName, err = lgc.checkNetObject(deviceInfo.ObjectID, deviceInfo.ObjectName, pheader)
+	return err
 }
 
 // check if net device name exist
@@ -324,31 +241,6 @@ func (lgc *Logics) checkIfNetDeviceNameExist(deviceName string, ownerID string) 
 	}
 
 	return false, nil
-}
-
-// check if objID is net device object
-func (lgc *Logics) checkIfObjIDIsNetDevice(objID string, pheader http.Header) (bool, error) {
-	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-
-	if "" == objID {
-		return false, nil
-	}
-
-	cond := make(map[string]interface{}, 0)
-	cond[common.BKObjIDField] = objID
-
-	objResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjects(context.Background(), pheader, cond)
-	if nil != err {
-		blog.Errorf("check if objID is net device object, search objID [%s] fail, %v", objID, err)
-		return false, defErr.Errorf(common.CCErrObjectSelectInstFailed)
-	}
-
-	if !objResult.Result {
-		blog.Errorf("check if objID is net device object, errors: %s", objResult.ErrMsg)
-		return false, defErr.Errorf(objResult.Code)
-	}
-
-	return nil != objResult.Data && 0 < len(objResult.Data), nil
 }
 
 // get net device obj ID
