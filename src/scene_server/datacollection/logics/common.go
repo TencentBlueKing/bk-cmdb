@@ -24,7 +24,7 @@ import (
 )
 
 // by checking if bk_obj_id and bk_obj_name function parameter are valid net device object or not
-// one of bk_obj_id and bk_obj_name can be empty and will return both value if no error
+// one of bk_obj_id and bk_obj_name can be empty and will return both bk_obj_id if no error
 func (lgc *Logics) checkNetObject(objID string, objName string, pheader http.Header) (string, string, error) {
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
@@ -64,7 +64,7 @@ func (lgc *Logics) checkNetObject(objID string, objName string, pheader http.Hea
 }
 
 // by checking if bk_property_id and bk_property_name function parameter are valid net device object property or not
-// one of bk_property_id and bk_property_name can be empty and will return both value if no error
+// one of bk_property_id and bk_property_name can be empty and will return bk_property_id value if no error
 func (lgc *Logics) checkNetObjectProperty(netDeviceObjID, propertyID, propertyName string, pheader http.Header) (string, error) {
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
@@ -111,7 +111,8 @@ func (lgc *Logics) checkNetObjectProperty(netDeviceObjID, propertyID, propertyNa
 }
 
 // by checking if bk_device_id and bk_device_name function parameter are valid net device or not
-// one of bk_device_id and bk_device_name can be empty and will return both value if no error
+// one of bk_device_id and bk_device_name can be empty and will return bk_device_id and bk_obj_id value if no error
+// bk_obj_id is used to check property
 func (lgc *Logics) checkNetDeviceExist(deviceID int64, deviceName string, pheader http.Header) (int64, string, error) {
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
