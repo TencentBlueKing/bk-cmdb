@@ -743,3 +743,8 @@ const (
 	BKDataStatusField   = "bk_data_status"
 	BKDataRecoverSuffix = "(recover)"
 )
+
+const (
+	// period default value
+	Infinite = "∞"
+)
