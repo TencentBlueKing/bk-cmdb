@@ -124,7 +124,7 @@ func (a *association) CreateCommonAssociation(params types.ContextParams, data *
 	//  check the association
 	cond := condition.CreateCondition()
 	cond.Field(metadata.AssociationFieldAssociationObjectID).Eq(data.AsstObjID)
-	cond.Field(metadata.AssociationFieldObjectID).Eq(data.ObjectAttID)
+	cond.Field(metadata.AssociationFieldObjectID).Eq(data.ObjectID)
 	cond.Field(metadata.AssociationFieldSupplierAccount).Eq(params.SupplierAccount)
 
 	rsp, err := a.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), params.Header, cond.ToMapStr())
