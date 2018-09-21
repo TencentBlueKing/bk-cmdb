@@ -105,8 +105,7 @@ func (lgc *Logics) SearchDevice(pheader http.Header, params *meta.NetCollSearchP
 		return searchResult, nil
 	}
 
-	err = lgc.findDevice(params.Fields, deviceCond, &searchResult.Info, params.Page.Sort, params.Page.Start, params.Page.Limit)
-	if nil != err {
+	if err = lgc.findDevice(params.Fields, deviceCond, &searchResult.Info, params.Page.Sort, params.Page.Start, params.Page.Limit); nil != err {
 		blog.Errorf("search net device fail, search net device by condition [%#v] error: %v", deviceCond, err)
 		return meta.SearchNetDevice{}, defErr.Errorf(common.CCErrCollectNetDeviceGetFail)
 	}
@@ -138,8 +137,7 @@ func (lgc *Logics) DeleteDevice(pheader http.Header, ID string) error {
 		return errors.New("device not exists")
 	}
 
-	err = lgc.Instance.DelByCondition(common.BKTableNameNetcollectDevice, deviceCond)
-	if nil != err {
+	if err = lgc.Instance.DelByCondition(common.BKTableNameNetcollectDevice, deviceCond); nil != err {
 		blog.Errorf("delete net device with id[%d] failed, err: %v, params: %#v", netDeviceID, err, deviceCond)
 		return err
 	}
@@ -198,8 +196,7 @@ func (lgc *Logics) addDevice(deviceInfo meta.NetcollectDevice, pheader http.Head
 		return -1, defErr.Errorf(common.CCErrCollectNetDeviceCreateFail)
 	}
 
-	_, err = lgc.Instance.Insert(common.BKTableNameNetcollectDevice, deviceInfo)
-	if nil != err {
+	if _, err = lgc.Instance.Insert(common.BKTableNameNetcollectDevice, deviceInfo); nil != err {
 		blog.Error("failed to insert net device, error: %v", err)
 		return -1, defErr.Errorf(common.CCErrCollectNetDeviceCreateFail)
 	}
