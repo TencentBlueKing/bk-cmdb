@@ -12,7 +12,11 @@ export default {
     computed: {
         $sortedGroups () {
             const sortKey = 'bk_group_index'
-            return [...this.propertyGroups].sort((groupA, groupB) => groupA[sortKey] - groupB[sortKey]).concat(['none'])
+            const groups = [...this.propertyGroups].sort((groupA, groupB) => groupA[sortKey] - groupB[sortKey])
+            return groups.concat([{
+                'bk_group_id': 'none',
+                'bk_group_name': this.$t('Common["更多属性"]')
+            }])
         },
         $sortedProperties () {
             const sortKey = 'bk_property_index'
