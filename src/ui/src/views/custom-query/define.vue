@@ -31,13 +31,12 @@
                 <label class="userapi-label">
                     {{$t("CustomQuery['查询内容']")}}<span class="color-danger"> * </span>
                 </label>
-                <div class="userapi-content-display clearfix">
-                    <textarea class="userapi-textarea" v-model="selectedName" disabled name="content" id="" cols="30" rows="10" v-validate="'required'"></textarea>
-                    <bk-button :disabled="attribute.isShow" v-tooltip="$t('Common[\'新增\']')" type="primary" class="btn-icon icon-cc-plus" @click="toggleContentSelector(true)"></bk-button>
-                    <input type="text" v-model="selectedName" v-validate="'required'" name="content" hidden>
-                </div>
-                <span v-show="errors.has('content')" class="color-danger">{{ errors.first('content') }}</span>
-                <div class="content-selector" v-show="attribute.isShow" ref="userapiContentSelector">
+                <div class="userapi-content-display">
+                    <div class="text-content" @click="toggleContentSelector(true)" :class="{'open': attribute.isShow}">
+                        {{selectedName}}
+                        <i class="bk-icon icon-angle-down"></i>
+                    </div>
+                    <div class="userapi-content-display-mask" v-if="attribute.isShow"></div>
                     <bk-selector class="fl userapi-content-selector"
                         :searchable="true"
                         search-key="bk_property_name"
@@ -667,37 +666,48 @@
             width: 370px;
             &.content {
                 margin-bottom: 30px;
-                .content-selector {
-                    position: relative;
-                }
             }
             .userapi-label {
                 display: block;
                 margin-bottom: 5px;
             }
-            .userapi-textarea {
-                float: left;
-                width: 334px;
-                height: 80px;
-                padding: 5px 16px;
-                margin-bottom: 10px;
-                font-size: 14px;
-                resize: none;
-                outline: none;
-                vertical-align: bottom;
-                color: #666;
-                background: #fff;
-                border-color: $cmdbBorderColor;
-            }
-            .btn-icon {
-                margin-left: 10px;
-                vertical-align: top;
-                width: 26px;
-                height: 26px;
-                padding: 0;
-                margin-top: 0;
-                font-size: 20px;
-                line-height: 25px;
+            .userapi-content-display {
+                position: relative;
+                .text-content {
+                    border-radius: 2px;
+                    border: 1px solid $cmdbBorderColor;
+                    padding: 0 28px 0 16px;
+                    height: 32px;
+                    line-height: 30px;
+                    overflow: hidden;
+                    &.open {
+                        padding: 5px 28px 5px 16px;
+                        height: auto;
+                        line-height: 20px;
+                        overflow: visible;
+                        border-color: $cmdbBorderFocusColor;
+                        .icon-angle-down {
+                            color: $cmdbBorderFocusColor;
+                            transform: rotate(180deg);
+                        }
+                    }
+                }
+                .userapi-content-display-mask {
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    right: 0;
+                    bottom: 0;
+                    width: 100%;
+                    height: 100%;
+                }
+                .icon-angle-down {
+                    position: absolute;
+                    right: 8px;
+                    top: 8px;
+                    font-size: 12px;
+                    transition: transform .2s linear;
+                }
             }
         }
         .userapi-list {
@@ -798,3 +808,38 @@
         }
     }
 </style>
+
+<style lang="scss">
+    .api-wrapper {
+        .define-wrapper {
+            .userapi-new-selector-wrapper {
+                .bk-selector-wrapper {
+                    display: none;
+                }
+                .bk-selector-list {
+                    display: block !important;
+                    position: static;
+                    margin-top: 5px;
+                    z-index: 1;
+                    box-shadow: none;
+                    border: solid 1px $cmdbFnMainColor;
+                }
+            }
+            .userapi-content-display {
+                .userapi-content-selector {
+                    position: absolute;
+                    left: 0;
+                    bottom: 32px;
+                }
+                .bk-selector-wrapper {
+                    display: none;
+                }
+                .bk-selector-list {
+                    top: 36px;
+                    left: 1px;
+                }
+            }
+        }
+    }
+</style>
+
