@@ -82,16 +82,19 @@ func (lgc *Logics) addProperty(propertyInfo meta.NetcollectProperty, pheader htt
 		return -1, defErr.Errorf(common.CCErrCommParamsInvalid, common.BKActionField)
 	}
 
+	// check device
 	if err = lgc.checkIfNetDeviceExist(&propertyInfo, pheader); nil != err {
 		blog.Errorf("add net collect property fail, error: %v", err)
 		return -1, err
 	}
 
+	// check property
 	if err = lgc.checkIfNetProperty(&propertyInfo, pheader); nil != err {
 		blog.Errorf("add net collect property fail, error: %v", err)
 		return -1, err
 	}
 
+	// check if data duplication
 	isExist, err := lgc.checkNetPropertyExist(propertyInfo.DeviceID, propertyInfo.PropertyID, ownerID)
 	if nil != err {
 		blog.Errorf("add net collect property fail, error: %v", err)
@@ -129,18 +132,23 @@ func (lgc *Logics) addProperty(propertyInfo meta.NetcollectProperty, pheader htt
 	return propertyInfo.NetcollectPropertyID, nil
 }
 
+// check if bk_property_id is valid and from object of net device
+// if bk_property_id is valid, propertyInfo will get bk_property_id of property
 func (lgc *Logics) checkIfNetProperty(propertyInfo *meta.NetcollectProperty, pheader http.Header) error {
 	var err error
 	propertyInfo.PropertyID, err = lgc.checkNetObjectProperty(propertyInfo.ObjectID, propertyInfo.PropertyID, propertyInfo.PropertyName, pheader)
 	return err
 }
 
+// check if device exist or not
+// if device exist, propertyInfo will get bk_device_id of device
 func (lgc *Logics) checkIfNetDeviceExist(propertyInfo *meta.NetcollectProperty, pheader http.Header) error {
 	var err error
 	propertyInfo.DeviceID, propertyInfo.ObjectID, err = lgc.checkNetDeviceExist(propertyInfo.DeviceID, propertyInfo.DeviceName, pheader)
 	return err
 }
 
+// check if there is the same propertyInfo
 func (lgc *Logics) checkNetPropertyExist(deviceID int64, propertyID, ownerID string) (bool, error) {
 	queryParams := common.KvMap{
 		common.BKDeviceIDField: deviceID, common.BKPropertyIDField: propertyID, common.BKOwnerIDField: ownerID}
@@ -162,7 +170,7 @@ func (lgc *Logics) checkNetPropertyExist(deviceID int64, propertyID, ownerID str
 	return false, nil
 }
 
-const periodRegexp = "^\\d*[DHMS]$"
+const periodRegexp = "^\\d*[DHMS]$" // period regexp to check period
 
 // 00002H --> 2H
 // 0000D/0M ---> ∞
