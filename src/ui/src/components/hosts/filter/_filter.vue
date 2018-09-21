@@ -57,7 +57,9 @@
             <div class="filter-button clearfix" :class="{sticky: layout.scroll}">
                 <bk-button type="primary" @click="refresh" :disabled="$loading()">{{$t('Common["查询"]')}}</bk-button>
                 <bk-button type="default" @click="reset">{{$t('Common["清空"]')}}</bk-button>
-                <bk-button class="fr" type="default" @click="collection.show = true">
+                <bk-button class="collection-button fr" type="default"
+                    :class="{collecting: collection.show}"
+                    @click="collection.show = true">
                     <i class="icon-cc-collection"></i>
                 </bk-button>
                 <div class="collection-form" v-click-outside="handleCloseCollection" v-if="collection.show">
@@ -569,6 +571,9 @@
         &.sticky {
             border-top: 1px solid $cmdbBorderColor;
             padding: 10px 20px 0;
+        }
+        .collection-button.collecting {
+            color: #ffb400;
         }
     }
     .collection-form {
