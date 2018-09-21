@@ -11,10 +11,42 @@
  */
 package service
 
-import restful "github.com/emicklei/go-restful"
+import (
+	"encoding/json"
+	"net/http"
+
+	restful "github.com/emicklei/go-restful"
+
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	meta "configcenter/src/common/metadata"
+	"configcenter/src/common/util"
+)
 
 func (s *Service) CreateProperty(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
+	propertyList := make([]meta.NetcollectProperty, 0)
+	if err := json.NewDecoder(req.Request.Body).Decode(&propertyList); err != nil {
+		blog.Errorf("add property failed with decode body err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	resultList, hasError := s.Logics.AddProperty(pheader, propertyList)
+	if hasError {
+		resp.WriteEntity(meta.Response{
+			BaseResp: meta.BaseResp{
+				Result: false,
+				Code:   common.CCErrCollectNetPropertyCreateFail,
+				ErrMsg: defErr.Error(common.CCErrCollectNetPropertyCreateFail).Error()},
+			Data: resultList,
+		})
+		return
+	}
+
+	resp.WriteEntity(meta.NewSuccessResp(resultList))
 }
 
 func (s *Service) SearchProperty(req *restful.Request, resp *restful.Response) {
