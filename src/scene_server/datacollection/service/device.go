@@ -75,5 +75,22 @@ func (s *Service) SearchDevice(req *restful.Request, resp *restful.Response) {
 }
 
 func (s *Service) DeleteDevice(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
+	ID := req.PathParameter("bk_device_id")
+	if "" == ID || "0" == ID {
+		blog.Errorf("delete net device failed, with bk_device_id [%s]", ID)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
+		return
+	}
+
+	err := s.Logics.DeleteDevice(pheader, ID)
+	if nil != err {
+		blog.Errorf("delete net device failed, with bk_device_id [%s], err: %v", ID, err)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCollectNetDeviceDeleteFail)})
+		return
+	}
+
+	resp.WriteEntity(meta.NewSuccessResp(nil))
 }

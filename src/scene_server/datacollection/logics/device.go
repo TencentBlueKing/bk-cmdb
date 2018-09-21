@@ -14,7 +14,9 @@ package logics
 
 import (
 	"context"
+	"errors"
 	"net/http"
+	"strconv"
 	"time"
 
 	"configcenter/src/common"
@@ -110,6 +112,40 @@ func (lgc *Logics) SearchDevice(pheader http.Header, params *meta.NetCollSearchP
 	}
 
 	return searchResult, nil
+}
+
+func (lgc *Logics) DeleteDevice(pheader http.Header, ID string) error {
+	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+
+	netDeviceID, err := strconv.ParseInt(ID, 10, 64)
+	if nil != err {
+		blog.Errorf("delete net device with id[%d] to parse the net device id, error: %v", netDeviceID, err)
+		return defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKDeviceIDField)
+	}
+
+	deviceCond := map[string]interface{}{
+		common.BKOwnerIDField:  util.GetOwnerID(pheader),
+		common.BKDeviceIDField: netDeviceID}
+
+	rowCount, err := lgc.Instance.GetCntByCondition(common.BKTableNameNetcollectDevice, deviceCond)
+	if nil != err {
+		blog.Errorf("delete net device with id[%d], but query failed, err: %v, params: %#v", netDeviceID, err, deviceCond)
+		return err
+	}
+
+	if 1 != rowCount {
+		blog.V(4).Infof("delete net device with id[%d], but device not exists, params: %#v", netDeviceID, deviceCond)
+		return errors.New("device not exists")
+	}
+
+	err = lgc.Instance.DelByCondition(common.BKTableNameNetcollectDevice, deviceCond)
+	if nil != err {
+		blog.Errorf("delete net device with id[%d] failed, err: %v, params: %#v", netDeviceID, err, deviceCond)
+		return err
+	}
+
+	blog.V(4).Infof("delete net device with id[%d] success, info: %v", netDeviceID, err)
+	return nil
 }
 
 // add a device
