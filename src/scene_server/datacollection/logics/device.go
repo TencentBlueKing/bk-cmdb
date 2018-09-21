@@ -115,6 +115,7 @@ func (lgc *Logics) SearchDevice(pheader http.Header, params *meta.NetCollSearchP
 
 func (lgc *Logics) DeleteDevice(pheader http.Header, ID string) error {
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	ownerID := util.GetOwnerID(pheader)
 
 	netDeviceID, err := strconv.ParseInt(ID, 10, 64)
 	if nil != err {
@@ -123,7 +124,7 @@ func (lgc *Logics) DeleteDevice(pheader http.Header, ID string) error {
 	}
 
 	deviceCond := map[string]interface{}{
-		common.BKOwnerIDField:  util.GetOwnerID(pheader),
+		common.BKOwnerIDField:  ownerID,
 		common.BKDeviceIDField: netDeviceID}
 
 	rowCount, err := lgc.Instance.GetCntByCondition(common.BKTableNameNetcollectDevice, deviceCond)
@@ -135,6 +136,16 @@ func (lgc *Logics) DeleteDevice(pheader http.Header, ID string) error {
 	if 1 != rowCount {
 		blog.V(4).Infof("delete net device with id[%d], but device not exists, params: %#v", netDeviceID, deviceCond)
 		return errors.New("device not exists")
+	}
+
+	// check if net device has property
+	hasProperty, err := lgc.checkDeviceHasProperty(netDeviceID, ownerID)
+	if nil != err {
+		return err
+	}
+	if hasProperty {
+		blog.V(4).Infof("delete net device fail, net device has property [%d]", netDeviceID)
+		return defErr.Error(common.CCErrCollectNetPropertyHasPropertyDeleteFail)
 	}
 
 	if err = lgc.Instance.DelByCondition(common.BKTableNameNetcollectDevice, deviceCond); nil != err {
@@ -267,4 +278,19 @@ func (lgc *Logics) getNetDeviceObjIDsByCond(objCond map[string]interface{}, phea
 	}
 
 	return objIDs, nil
+}
+
+// check if device has property
+func (lgc *Logics) checkDeviceHasProperty(deviceID int64, ownerID string) (bool, error) {
+	queryParams := common.KvMap{
+		common.BKDeviceIDField: deviceID, common.BKOwnerIDField: ownerID}
+
+	rowCount, err := lgc.Instance.GetCntByCondition(common.BKTableNameNetcollectProperty, queryParams)
+	if nil != err {
+		blog.Errorf("check if net deviceID and propertyID exist, query device fail, error information is %v, params:%v",
+			err, queryParams)
+		return false, err
+	}
+
+	return 0 != rowCount, nil
 }
