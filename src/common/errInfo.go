@@ -439,8 +439,9 @@ const (
 	CCErrCollectNetPropertyCreateFail        = 1112004
 	CCErrCollectNetPropertyGetFail           = 1112005
 	CCErrCollectNetPropertyDeleteFail        = 1112006
-	CCErrCollectDeviceNotExist               = 1112007
-	CCErrCollectNetDeviceObjPropertyNotExist = 1112008
+	CCErrCollectNetDeviceObjPropertyNotExist = 1112007
+	CCErrCollectDeviceNotExist               = 1112008
+	CCErrCollectPeridFormatFail              = 1112009
 
 	CC_Err_Comm_HOST_CREATE_FAIL          = 4300
 	CC_Err_Comm_HOST_CREATE_FAIL_STR      = "create host fail"
