@@ -69,6 +69,7 @@ func (lgc *Logics) addProperty(propertyInfo meta.NetcollectProperty, pheader htt
 	if "" != propertyInfo.Period && common.Infinite != propertyInfo.Period {
 		propertyInfo.Period, err = util.FormatPeriod(propertyInfo.Period)
 		if nil != err {
+			blog.Errorf("add net collect property, format perid [%s] fail, error: %v", err)
 			return -1, defErr.Errorf(common.CCErrCollectPeridFormatFail)
 		}
 	}
