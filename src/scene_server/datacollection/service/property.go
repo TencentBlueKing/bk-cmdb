@@ -50,7 +50,27 @@ func (s *Service) CreateProperty(req *restful.Request, resp *restful.Response) {
 }
 
 func (s *Service) SearchProperty(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
+	body := new(meta.NetCollSearchParams)
+	if err := json.NewDecoder(req.Request.Body).Decode(body); nil != err {
+		blog.Errorf("search net device property failed with decode body err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	propertys, err := s.Logics.SearchProperty(pheader, body)
+	if nil != err {
+		blog.Errorf("search net device property failed, err: %v", err)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCollectNetPropertyGetFail)})
+		return
+	}
+
+	resp.WriteEntity(meta.SearchNetDeviceResult{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     propertys,
+	})
 }
 
 func (s *Service) DeleteProperty(req *restful.Request, resp *restful.Response) {

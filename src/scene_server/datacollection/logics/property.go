@@ -13,16 +13,19 @@
 package logics
 
 import (
+	"context"
 	"net/http"
 	"regexp"
 	"strconv"
 	"time"
 
 	restful "github.com/emicklei/go-restful"
+	mgo "gopkg.in/mgo.v2"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	mapStr "configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -51,8 +54,73 @@ func (lgc *Logics) AddProperty(
 	return resultList, hasError
 }
 
-func (lgc *Logics) SearchProperty(req *restful.Request, resp *restful.Response) {
+func (lgc *Logics) SearchProperty(pheader http.Header, params *meta.NetCollSearchParams) (meta.SearchNetProperty, error) {
+	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	ownerID := util.GetOwnerID(pheader)
 
+	deviceCond, objectCond, propertyCond, netPropertyCond := lgc.classifyNetPropertyCondition(params.Condition)
+
+	searchResult := meta.SearchNetProperty{0, []mapStr.MapStr{}}
+
+	var (
+		err                error
+		objIDs             []string
+		deviceIDs          []string
+		propertyIDs        []string
+		showFeilds         netPropertyShowFeilds
+		objIDMapShowFeilds map[string]objShowFeild
+	)
+	// 如果有对 obj 有筛选条件
+	if 0 < len(objectCond) {
+		objIDs, objIDMapShowFeilds, err = lgc.getObjIDsAndShowFeilds(objectCond, pheader)
+		if nil != err {
+			blog.Errorf("check net device object, get net device object fail, error: %v, condition [%#v]", err, objectCond)
+			return searchResult, err
+		}
+
+		if 0 == len(objIDs) {
+			return searchResult, nil
+		}
+		deviceCond[common.BKObjIDField] = map[string]interface{}{common.BKDBIN: objIDs}
+		propertyCond[common.BKObjIDField] = map[string]interface{}{common.BKDBIN: objIDs}
+	}
+
+	// 如果有对 device 有筛选条件
+	if 0 < len(deviceCond) || 0 < len(objIDs) {
+		deviceCond[common.BKOwnerIDField] = ownerID
+
+		deviceIDs, showFeilds.deviceIDMapDeviceShowFeilds, err = lgc.getDeviceIDsAndShowFeilds(deviceCond, pheader)
+		if nil != err {
+			blog.Errorf("check net device object, get net device object fail, error: %v, condition [%#v]", err, objectCond)
+			return searchResult, err
+		}
+
+		if 0 == len(deviceIDs) {
+			return searchResult, nil
+		}
+		netPropertyCond[common.BKDeviceIDField] = map[string]interface{}{common.BKDBIN: deviceIDs}
+	}
+
+	// 如果有对 property 有筛选条件
+	if 0 < len(propertyCond) || 0 < len(objIDs) {
+		propertyIDs, showFeilds.propertyIDMapShowFeilds, err = lgc.getPropertyIDsAndShowFeilds(propertyCond, pheader)
+		if nil != err {
+			blog.Errorf("check net device object, get net device object fail, error: %v, condition [%#v]", err, objectCond)
+			return searchResult, err
+		}
+
+		if 0 == len(propertyIDs) {
+			return searchResult, nil
+		}
+		netPropertyCond[common.BKPropertyIDField] = map[string]interface{}{common.BKDBIN: propertyIDs}
+	}
+
+	if err = lgc.findProperty(params.Fields, deviceCond, &searchResult.Info, params.Page.Sort, params.Page.Start, params.Page.Limit); nil != err {
+		blog.Errorf("search net device fail, search net device by condition [%#v] error: %v", deviceCond, err)
+		return meta.SearchNetProperty{}, defErr.Errorf(common.CCErrCollectNetDeviceGetFail)
+	}
+
+	return searchResult, nil
 }
 
 func (lgc *Logics) DeleteProperty(req *restful.Request, resp *restful.Response) {
@@ -201,4 +269,195 @@ func (lgc *Logics) formatPeriod(period string, defErr errors.DefaultCCErrorIf) (
 
 func (lgc *Logics) isValidAction(action string) bool {
 	return common.ActionGet == action || common.ActionWalk == action
+}
+
+func (lgc *Logics) findProperty(fields []string, condition, result interface{}, sort string, skip, limit int) error {
+	if err := lgc.Instance.GetMutilByCondition(common.BKTableNameNetcollectProperty, fields, condition, result, sort, skip, limit); err != nil {
+		blog.Errorf("failed to query the inst, error info %s", err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func (lgc *Logics) classifyNetPropertyCondition(conditionList []meta.ConditionItem) (map[string]interface{}, map[string]interface{}, map[string]interface{}, map[string]interface{}) {
+	var deviceCond, objectCond, propertyCond, netPropertyCond map[string]interface{}
+
+	for _, cond := range conditionList {
+		if cond.Operator == common.BKDBEQ {
+			switch cond.Field {
+			case meta.AttributeFieldUnit:
+				fallthrough
+			case common.BKPropertyNameField:
+				fallthrough
+			case common.BKPropertyIDField:
+				propertyCond[cond.Field] = cond.Value
+			case common.BKObjIDField:
+				fallthrough
+			case common.BKObjNameField:
+				objectCond[cond.Field] = cond.Value
+			case common.BKDeviceIDField:
+				fallthrough
+			case common.BKDeviceNameField:
+				fallthrough
+			case common.BKDeviceModelField:
+				deviceCond[cond.Field] = cond.Value
+			default:
+				netPropertyCond[cond.Field] = cond.Value
+			}
+
+		} else {
+			switch cond.Field {
+			case meta.AttributeFieldUnit:
+				fallthrough
+			case common.BKPropertyNameField:
+				fallthrough
+			case common.BKPropertyIDField:
+				propertyCond[cond.Field] = map[string]interface{}{cond.Operator: cond.Value}
+			case common.BKObjIDField:
+				fallthrough
+			case common.BKObjNameField:
+				objectCond[cond.Field] = map[string]interface{}{cond.Operator: cond.Value}
+			case common.BKDeviceIDField:
+				fallthrough
+			case common.BKDeviceNameField:
+				fallthrough
+			case common.BKDeviceModelField:
+				deviceCond[cond.Field] = map[string]interface{}{cond.Operator: cond.Value}
+			default:
+				netPropertyCond[cond.Field] = map[string]interface{}{cond.Operator: cond.Value}
+			}
+		}
+
+	}
+
+	return deviceCond, objectCond, propertyCond, netPropertyCond
+}
+
+// id map feilds
+type netPropertyShowFeilds struct {
+	deviceIDMapDeviceShowFeilds map[string]deviceShowFeild
+	propertyIDMapShowFeilds     map[string]propertyShowFeild
+}
+
+type objShowFeild struct {
+	objName string
+}
+type deviceShowFeild struct {
+	deviceName  string
+	deviceModel string
+	objID       string
+	objName     string
+}
+
+type propertyShowFeild struct {
+	unit         string
+	propertyName string
+}
+
+// get obj ID list and get feild to show by map (bk_obj_id --> bk_obj_name)
+func (lgc *Logics) getObjIDsAndShowFeilds(objectCond map[string]interface{}, pheader http.Header) ([]string, map[string]objShowFeild, error) {
+	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	objectCond[common.BKClassificationIDField] = common.BKNetwork
+
+	objResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjects(context.Background(), pheader, objectCond)
+	if nil != err {
+		blog.Errorf("check net device object, get net device object fail, error: %v, condition [%#v]", err, objectCond)
+		return nil, nil, defErr.Errorf(common.CCErrObjectSelectInstFailed)
+	}
+
+	if !objResult.Result {
+		blog.Errorf("check net device object, errors: %s, condition [%#v]", objResult.ErrMsg, objectCond)
+		return nil, nil, defErr.Errorf(objResult.Code)
+	}
+
+	if nil == objResult.Data || 0 == len(objResult.Data) {
+		return nil, nil, nil
+	}
+
+	objIDs := []string{}
+	objIDMapobjName := map[string]objShowFeild{}
+	for _, obj := range objResult.Data {
+		objIDs = append(objIDs, obj.ObjectID)
+		objIDMapobjName[obj.ObjectID] = objShowFeild{obj.ObjectName}
+	}
+	objResult = nil
+
+	return objIDs, objIDMapobjName, nil
+}
+
+// get device ID list and get feild to show by map (bk_device_id --> bk_device_name, ...)
+func (lgc *Logics) getDeviceIDsAndShowFeilds(deviceCond map[string]interface{}, objIDMapShowFeilds map[string]objShowFeild, pheader http.Header) ([]string, map[string]deviceShowFeild, error) {
+	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+
+	deviceFeild := []string{common.BKDeviceIDField, common.BKDeviceNameField, common.BKDeviceModelField}
+	deviceResult := []mapStr.MapStr{}
+
+	if err := lgc.findDevice(deviceFeild, deviceCond, &deviceResult, "", 0, 0); nil != err {
+		blog.Errorf("search net device fail, search net device by condition [%#v] error: %v", deviceCond, err)
+		if mgo.ErrNotFound == err {
+			return nil, nil, nil
+		}
+		return nil, nil, defErr.Errorf(common.CCErrCollectNetDeviceGetFail)
+	}
+
+	if 0 == len(deviceResult) {
+		return nil, nil, nil
+	}
+
+	deviceIDs := []string{}
+	deviceIDMapDeviceShowFeilds := map[string]deviceShowFeild{}
+	for _, device := range deviceResult {
+		deviceID := device[common.BKDeviceIDField].(string)
+		deviceIDs = append(deviceIDs, deviceID)
+		deviceIDMapDeviceShowFeilds[deviceID] = deviceShowFeild{
+			device[common.BKDeviceNameField].(string),
+			device[common.BKDeviceModelField].(string),
+			device[common.BKObjIDField].(string),
+			objIDMapShowFeilds[device[common.BKObjIDField].(string)].objName,
+		}
+	}
+	deviceResult = nil
+
+	return deviceIDs, deviceIDMapDeviceShowFeilds, nil
+}
+
+// get property ID list and get feild to show by map (bk_property_id --> bk_property_name, ...)
+func (lgc *Logics) getPropertyIDsAndShowFeilds(propertyCond map[string]interface{}, pheader http.Header) ([]string, map[string]propertyShowFeild, error) {
+	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+
+	attrResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), pheader, propertyCond)
+	if nil != err {
+		blog.Errorf("get object attribute fail, error: %v, condition [%#v]", err, propertyCond)
+		if mgo.ErrNotFound == err {
+			return nil, nil, nil
+		}
+		return nil, nil, defErr.Errorf(common.CCErrTopoObjectAttributeSelectFailed)
+	}
+	if !attrResult.Result {
+		blog.Errorf("check net device object property, errors: %s", attrResult.ErrMsg)
+		return nil, nil, defErr.Errorf(attrResult.Code)
+	}
+
+	if nil == attrResult.Data || 0 == len(attrResult.Data) {
+		blog.Errorf("check net device object property, property is not exist, condition [%#v]", propertyCond)
+		return nil, nil, nil
+	}
+
+	propertyIDs := []string{}
+	propertyIDMapDeviceShowFeilds := map[string]propertyShowFeild{}
+	for _, property := range attrResult.Data {
+		propertyIDs = append(propertyIDs, property.PropertyID)
+		propertyIDMapDeviceShowFeilds[property.PropertyID] = propertyShowFeild{
+			property.Unit,
+			property.PropertyName,
+		}
+	}
+	attrResult = nil
+
+	return propertyIDs, propertyIDMapDeviceShowFeilds, nil
+}
+
+func (lgc *Logics) mergeShowFeild() {
+
 }
