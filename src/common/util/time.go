@@ -168,7 +168,7 @@ func FormatPeriod(period string) (string, error) {
 	}
 
 	if !validPeriod.MatchString(period) {
-		return "", fmt.Errorf("Formatting error")
+		return "", fmt.Errorf("invalid period")
 	}
 
 	num, err := strconv.Atoi(period[:len(period)-1])
