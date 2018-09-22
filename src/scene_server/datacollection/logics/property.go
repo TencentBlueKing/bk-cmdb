@@ -14,15 +14,12 @@ package logics
 
 import (
 	"net/http"
-	"regexp"
-	"strconv"
 	"time"
 
 	restful "github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/errors"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -70,9 +67,9 @@ func (lgc *Logics) addProperty(propertyInfo meta.NetcollectProperty, pheader htt
 	// check period
 	var err error
 	if "" != propertyInfo.Period && common.Infinite != propertyInfo.Period {
-		propertyInfo.Period, err = lgc.formatPeriod(propertyInfo.Period, defErr)
+		propertyInfo.Period, err = util.FormatPeriod(propertyInfo.Period)
 		if nil != err {
-			return -1, err
+			return -1, defErr.Errorf(common.CCErrCollectPeridFormatFail)
 		}
 	}
 
@@ -107,7 +104,6 @@ func (lgc *Logics) addProperty(propertyInfo meta.NetcollectProperty, pheader htt
 
 	now := time.Now()
 	propertyInfo.CreateTime = &now
-	now = time.Now()
 	propertyInfo.LastTime = &now
 	propertyInfo.OwnerID = ownerID
 	// set default value
@@ -168,35 +164,6 @@ func (lgc *Logics) checkNetPropertyExist(deviceID int64, propertyID, ownerID str
 	}
 
 	return false, nil
-}
-
-const periodRegexp = "^\\d*[DHMS]$" // period regexp to check period
-
-// 00002H --> 2H
-// 0000D/0M ---> ∞
-// empty string / ∞ ---> ∞
-// regexp matched: positive integer (include positive integer begin with more the one '0') + [D/H/M/S]
-// eg. 0H, 000H, 0002H, 32M，34S...
-// examples of no matched:  1.4H, -2H, +2H ...
-func (lgc *Logics) formatPeriod(period string, defErr errors.DefaultCCErrorIf) (string, error) {
-	if common.Infinite == period || "" == period {
-		return common.Infinite, nil
-	}
-
-	ok, _ := regexp.Match(periodRegexp, []byte(period))
-	if !ok {
-		return "", defErr.Errorf(common.CCErrCommParamsInvalid, common.BKPeriodField)
-	}
-
-	num, err := strconv.Atoi(period[:len(period)-1])
-	if nil != err {
-		return "", defErr.Error(common.CCErrCollectPeridFormatFail)
-	}
-	if 0 == num {
-		return common.Infinite, nil
-	}
-
-	return strconv.Itoa(num) + period[len(period)-1:], nil
 }
 
 func (lgc *Logics) isValidAction(action string) bool {
