@@ -2,8 +2,12 @@
     "1112000": "Add device failed",
     "1112001": "Search device failed",
     "1112002": "Delete device failed",
-    "1112003": "Object ID and object name are different",
-    "1112004": "Object ID or object name is not net collect device",
-    "1112005": "Object name is not exist or a net collect device",
+    "1112003": "Object ID or object name is not net collect device",
+    "1112004": "Add property failed",
+    "1112005": "Search property failed",
+    "1112006": "Delete property failed",
+    "1112007": "Property does not exist",
+    "1112008": "Device does not exist",
+    "1112009": "Format perid feild failed",
     "": ""
 }
