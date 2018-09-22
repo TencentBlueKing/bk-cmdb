@@ -511,6 +511,12 @@ const BKMainLine = "mainline"
 const BKNetwork = "bk_network"
 
 const (
+	ActionGet = "get"
+
+	ActionWalk = "walk"
+)
+
+const (
 	// DefaultResModuleFlag the default resource module flag
 	DefaultResModuleFlag int = 1
 
@@ -736,4 +742,9 @@ const (
 const (
 	BKDataStatusField   = "bk_data_status"
 	BKDataRecoverSuffix = "(recover)"
+)
+
+const (
+	// period default value
+	Infinite = "∞"
 )

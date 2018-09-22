@@ -32,14 +32,14 @@ type NetcollectProperty struct {
 	NetcollectPropertyID int64      `json:"netcollect_property_id,omitempty" bson:"netcollect_property_id"`
 	PropertyID           string     `json:"bk_property_id" bson:"bk_property_id"`
 	PropertyName         string     `json:"bk_property_name" bson:"-"`
-	DeviceID             string     `json:"device_id" bson:"device_id"`
+	DeviceID             int64      `json:"device_id" bson:"device_id"`
 	DeviceName           string     `json:"device_name" bson:"-"`
-	ObjectID             string     `json:"bk_obj_id" bson:"bk_obj_id"`
-	ObjectName           string     `json:"bk_obj_name" bson:"-"`
+	ObjectID             string     `json:"bk_obj_id,omitempty" bson:"-"`
+	ObjectName           string     `json:"bk_obj_name,omitempty" bson:"-"`
 	OID                  string     `json:"oid" bson:"oid"`
 	Period               string     `json:"period" bson:"period"`
 	Action               string     `json:"action" bson:"action"`
-	OwnerID              string     `json:"bk_supplier_account" bson:"bk_supplier_account"`
-	CreateTime           *time.Time `field:"create_time" json:"create_time,omitempty" bson:"create_time"`
-	LastTime             *time.Time `field:"last_time" json:"last_time,omitempty" bson:"last_time"`
+	OwnerID              string     `json:"-" bson:"bk_supplier_account"`
+	CreateTime           *time.Time `field:"create_time,omitempty" json:"create_time,omitempty" bson:"create_time"`
+	LastTime             *time.Time `field:"last_time,omitempty" json:"last_time,omitempty" bson:"last_time"`
 }
