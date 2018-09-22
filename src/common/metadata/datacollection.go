@@ -35,3 +35,9 @@ type NetCollSearchParams struct {
 	Fields    []string        `json:"fields,omitempty"`
 	Condition []ConditionItem `json:"condition,omitempty"`
 }
+
+type AddNetPropertyResult struct {
+	Result               bool   `json:"result"`
+	ErrMsg               string `json:"error_msg"`
+	NetcollectPropertyID int64  `json:"netcollect_property_id"`
+}
