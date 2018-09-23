@@ -376,15 +376,15 @@ func (lgc *Logics) classifyNetPropertyCondition(
 	return deviceCond, objectCond, propertyCond, netPropertyCond
 }
 
-// id map value group of fields
 type netPropertyShowFields struct {
-	deviceIDMapDeviceShowFields map[int64]deviceShowField
-	propertyIDMapShowFields     map[string]propertyShowField
+	deviceIDMapDeviceShowFields map[int64]deviceShowField    // id map value group of device fields
+	propertyIDMapShowFields     map[string]propertyShowField // propertyID+objID map value group of property fields
 }
 
 type objShowField struct {
 	objName string
 }
+
 type deviceShowField struct {
 	deviceName  string
 	deviceModel string
@@ -451,12 +451,10 @@ func (lgc *Logics) getDeviceIDsAndShowFields(
 	}
 
 	deviceIDs := []int64{}
-	objIDs := []string{}
 	deviceIDMapDeviceShowFields := map[int64]deviceShowField{}
 	for _, device := range deviceResult {
 		deviceID := device[common.BKDeviceIDField].(int64)
 		deviceIDs = append(deviceIDs, deviceID)
-		objIDs = append(objIDs, device[common.BKObjIDField].(string))
 		deviceIDMapDeviceShowFields[deviceID] = deviceShowField{
 			device[common.BKDeviceNameField].(string),
 			device[common.BKDeviceModelField].(string),
@@ -537,6 +535,7 @@ func (lgc *Logics) getDeviceIDsAndPropertyIDsFromNetPropertys(netPropertys []map
 	return deviceIDs, propertyIDs
 }
 
+// get device shown info by deviceIDs
 func (lgc *Logics) getDeviceShowField(deviceIDs []int64, pheader http.Header) (map[int64]deviceShowField, error) {
 	_, objIDMapShowFields, err := lgc.getObjIDsAndShowFields(map[string]interface{}{}, pheader)
 	if nil != err {
@@ -562,6 +561,7 @@ func (lgc *Logics) getDeviceShowField(deviceIDs []int64, pheader http.Header) (m
 	return deviceIDMapDeviceShowFields, nil
 }
 
+// get property shown info by propertyIDs
 func (lgc *Logics) getPropertyShowField(propertyIDs []string, pheader http.Header) (map[string]propertyShowField, error) {
 	propertyCond := map[string]interface{}{
 		common.BKPropertyIDField: map[string]interface{}{common.BKDBIN: propertyIDs},
