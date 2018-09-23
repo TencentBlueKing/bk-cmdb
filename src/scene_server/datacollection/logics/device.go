@@ -146,7 +146,7 @@ func (lgc *Logics) DeleteDevice(pheader http.Header, ID string) error {
 	}
 	if hasProperty {
 		blog.V(4).Infof("delete net device fail, net device has property [%d]", netDeviceID)
-		return defErr.Error(common.CCErrCollectNetPropertyHasPropertyDeleteFail)
+		return defErr.Error(common.CCErrCollectNetDeviceHasPropertyDeleteFail)
 	}
 
 	if err = lgc.Instance.DelByCondition(common.BKTableNameNetcollectDevice, deviceCond); nil != err {
