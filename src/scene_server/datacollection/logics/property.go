@@ -17,7 +17,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	mgo "gopkg.in/mgo.v2"
@@ -189,18 +188,9 @@ func (lgc *Logics) SearchProperty(pheader http.Header, params *meta.NetCollSearc
 	return searchResult, nil
 }
 
-func (lgc *Logics) DeleteProperty(pheader http.Header, ID string) error {
-	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-	ownerID := util.GetOwnerID(pheader)
-
-	netPropertyID, err := strconv.ParseInt(ID, 10, 64)
-	if nil != err {
-		blog.Errorf("delete net property with id[%d] to parse the net property id, error: %v", netPropertyID, err)
-		return defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKNetcollectPropertyIDlField)
-	}
-
+func (lgc *Logics) DeleteProperty(pheader http.Header, netPropertyID int64) error {
 	netPropertyCond := map[string]interface{}{
-		common.BKOwnerIDField:               ownerID,
+		common.BKOwnerIDField:               util.GetOwnerID(pheader),
 		common.BKNetcollectPropertyIDlField: netPropertyID}
 
 	rowCount, err := lgc.Instance.GetCntByCondition(common.BKTableNameNetcollectProperty, netPropertyCond)
