@@ -79,13 +79,14 @@ func (s *Service) DeleteDevice(req *restful.Request, resp *restful.Response) {
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	ID := req.PathParameter("bk_device_id")
-	if "" == ID || "0" == ID {
+	deviceID, err := s.Logics.ConvertStringToID(ID)
+	if nil != err {
 		blog.Errorf("delete net device failed, with bk_device_id [%s]", ID)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
 
-	err := s.Logics.DeleteDevice(pheader, ID)
+	err = s.Logics.DeleteDevice(pheader, deviceID)
 	if nil == err {
 		resp.WriteEntity(meta.NewSuccessResp(nil))
 		return
