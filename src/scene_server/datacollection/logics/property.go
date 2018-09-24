@@ -206,8 +206,8 @@ func (lgc *Logics) DeleteProperty(pheader http.Header, netPropertyID int64) erro
 	}
 
 	if 1 < rowCount {
-		blog.V(4).Infof("delete net property with id[%d], but net property not exists, params: %#v", netPropertyID, netPropertyCond)
-		return defErr.Error(common.CCErrCollectNetDeviceObjPropertyNotExist)
+		blog.Errorf("delete net property with id[%d], there are [%d] net property with same condition: %#v", netPropertyID, netPropertyCond)
+		return defErr.Error(common.CCErrCollectNetDeviceDeleteFail)
 	}
 
 	if err = lgc.Instance.DelByCondition(common.BKTableNameNetcollectProperty, netPropertyCond); nil != err {
