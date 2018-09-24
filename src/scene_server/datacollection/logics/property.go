@@ -23,7 +23,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	mapStr "configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -46,19 +45,23 @@ func (lgc *Logics) AddProperty(
 			hasError = true
 		}
 
-		resultList = append(resultList, meta.AddNetPropertyResult{result, errMsg, propertyID})
+		resultList = append(resultList, meta.AddNetPropertyResult{
+			Result:               result,
+			ErrMsg:               errMsg,
+			NetcollectPropertyID: propertyID,
+		})
 	}
 
 	return resultList, hasError
 }
 
-func (lgc *Logics) SearchProperty(pheader http.Header, params *meta.NetCollSearchParams) (meta.SearchNetProperty, error) {
+func (lgc *Logics) SearchProperty(pheader http.Header, params *meta.NetCollSearchParams) (*meta.SearchNetProperty, error) {
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	// classify condition
 	deviceCond, objectCond, propertyCond, netPropertyCond := lgc.classifyNetPropertyCondition(params.Condition)
 
-	searchResult := meta.SearchNetProperty{Count: 0, Info: []mapStr.MapStr{}}
+	searchResult := meta.SearchNetProperty{Count: 0, Info: []meta.NetcollectProperty{}}
 
 	var (
 		err                error
@@ -73,13 +76,13 @@ func (lgc *Logics) SearchProperty(pheader http.Header, params *meta.NetCollSearc
 		// get propertyID and value of fields to be shown by property condition
 		objIDs, propertyIDs, showFields.propertyIDMapShowFields, err = lgc.getPropertyIDsAndShowFields(pheader, propertyCond)
 		if nil != err {
-			blog.Errorf("search net property, get property fail, error: %v, condition [%#v]", err, propertyCond)
-			return meta.SearchNetProperty{}, err
+			blog.Errorf("[NetProperty] search net property, get property fail, error: %v, condition [%#v]", err, propertyCond)
+			return nil, err
 		}
 
 		// if find any propertyIDs matched condition, will must not find any property propetry
 		if 0 == len(propertyIDs) || 0 == len(objIDs) {
-			return searchResult, nil
+			return &searchResult, nil
 		}
 
 		// propertyIDs as filter conditoin of net property
@@ -92,13 +95,13 @@ func (lgc *Logics) SearchProperty(pheader http.Header, params *meta.NetCollSearc
 		// get objID and value of fields to be shown by obj condition
 		objIDs, objIDMapShowFields, err = lgc.getObjIDsAndShowFields(pheader, objectCond)
 		if nil != err {
-			blog.Errorf("search net property, get net object fail, error: %v, condition [%#v]", err, objectCond)
-			return meta.SearchNetProperty{}, err
+			blog.Errorf("[NetProperty] search net property, get net object fail, error: %v, condition [%#v]", err, objectCond)
+			return nil, err
 		}
 
 		// if not find any objID matched condition, will not find any device propetry
 		if 0 == len(objIDs) {
-			return searchResult, nil
+			return &searchResult, nil
 		}
 
 		// if could get object from object condition, condition of device and property will not empty
@@ -112,24 +115,25 @@ func (lgc *Logics) SearchProperty(pheader http.Header, params *meta.NetCollSearc
 		if 0 == len(objIDMapShowFields) {
 			_, objIDMapShowFields, err = lgc.getObjIDsAndShowFields(pheader, map[string]interface{}{})
 			if nil != err {
-				return meta.SearchNetProperty{}, err
+				return nil, err
 			}
 			if 0 == len(objIDMapShowFields) {
-				blog.Errorf("search net obj failed, could not get any net obj")
-				return meta.SearchNetProperty{}, defErr.Errorf(common.CCErrCollectNetPropertyGetFail)
+				blog.Errorf("[NetProperty] search net object failed, could not get any net object")
+				return nil, defErr.Errorf(common.CCErrCollectNetPropertyGetFail)
 			}
 		}
-		// get deviceID and value of fields to be shown by device condition
-		deviceIDs, showFields.deviceIDMapDeviceShowFields, err = lgc.getDeviceIDsAndShowFields(pheader, deviceCond, objIDMapShowFields)
 
+		// get deviceID and value of fields to be shown by device condition
+		deviceIDs, showFields.deviceIDMapDeviceShowFields, err = lgc.getDeviceIDsAndShowFields(
+			pheader, deviceCond, objIDMapShowFields)
 		if nil != err {
-			blog.Errorf("search net property, get net device fail, error: %v, condition [%#v]", err, deviceCond)
-			return meta.SearchNetProperty{}, err
+			blog.Errorf("[NetProperty] search net property, get net device fail, error: %v, condition [%#v]", err, deviceCond)
+			return nil, err
 		}
 
 		// if find any deviceIDs matched condition, will must not find any device propetry
 		if 0 == len(deviceIDs) {
-			return searchResult, nil
+			return &searchResult, nil
 		}
 
 		// deviceIDs as filter conditoin of net property
@@ -139,11 +143,11 @@ func (lgc *Logics) SearchProperty(pheader http.Header, params *meta.NetCollSearc
 	netPropertyCond[common.BKOwnerIDField] = util.GetOwnerID(pheader)
 	searchResult.Count, err = lgc.Instance.GetCntByCondition(common.BKTableNameNetcollectProperty, netPropertyCond)
 	if nil != err {
-		blog.Errorf("search net property fail, count net property by condition [%#v] error: %v", propertyCond, err)
-		return meta.SearchNetProperty{}, err
+		blog.Errorf("[NetProperty] search net property fail, count net property by condition [%#v] error: %v", propertyCond, err)
+		return nil, err
 	}
 	if 0 == searchResult.Count {
-		return searchResult, nil
+		return &searchResult, nil
 	}
 
 	// field device_id and bk_property_id must be in params.Fields
@@ -153,8 +157,8 @@ func (lgc *Logics) SearchProperty(pheader http.Header, params *meta.NetCollSearc
 	}
 
 	if err = lgc.findProperty(params.Fields, netPropertyCond, &searchResult.Info, params.Page.Sort, params.Page.Start, params.Page.Limit); nil != err {
-		blog.Errorf("search net property fail, search net property by condition [%#v] error: %v", propertyCond, err)
-		return meta.SearchNetProperty{}, defErr.Errorf(common.CCErrCollectNetPropertyGetFail)
+		blog.Errorf("[NetProperty] search net property fail, search net property by condition [%#v] error: %v", propertyCond, err)
+		return nil, defErr.Errorf(common.CCErrCollectNetPropertyGetFail)
 	}
 
 	// if net property are not empty, should add property and device shown info to the net property result
@@ -164,28 +168,28 @@ func (lgc *Logics) SearchProperty(pheader http.Header, params *meta.NetCollSearc
 	// if object condition cond and device condition is empty, device shown fields will be empty
 	// if property condition is empty, property shown fields will be empty
 	if 0 == deviceShowFieldLen || 0 == propertyShowFieldLen {
-		deviceIDs, propertyIDs = lgc.getDeviceIDsAndPropertyIDsFromNetPropertys(searchResult.Info)
+		deviceIDs, propertyIDs = lgc.getDeviceIDsAndPropertyIDsFromNetPropertys(&(searchResult.Info))
 	}
 
 	if 0 == deviceShowFieldLen {
 		showFields.deviceIDMapDeviceShowFields, err = lgc.getDeviceShowField(pheader, deviceIDs)
 		if nil != err {
-			blog.Errorf("search net property fail, error: %v", err)
-			return meta.SearchNetProperty{}, defErr.Errorf(common.CCErrCollectNetPropertyGetFail)
+			blog.Errorf("[NetProperty] search net property, get device show info fail, error: %v", err)
+			return nil, defErr.Errorf(common.CCErrCollectNetPropertyGetFail)
 		}
 	}
 	if 0 == propertyShowFieldLen {
 		showFields.propertyIDMapShowFields, err = lgc.getPropertyShowField(pheader, propertyIDs)
 		if nil != err {
-			blog.Errorf("search net property fail, error: %v", err)
-			return meta.SearchNetProperty{}, defErr.Errorf(common.CCErrCollectNetPropertyGetFail)
+			blog.Errorf("[NetProperty] search net property, get device show info fail, error: %v", err)
+			return nil, defErr.Errorf(common.CCErrCollectNetPropertyGetFail)
 		}
 	}
 
 	// add value of fields from other tables into search result
-	lgc.addShowFieldValueIntoNetProperty(&searchResult, showFields)
+	lgc.addShowFieldValueIntoNetProperty(&(searchResult.Info), showFields)
 
-	return searchResult, nil
+	return &searchResult, nil
 }
 
 func (lgc *Logics) DeleteProperty(req *restful.Request, resp *restful.Response) {
@@ -196,7 +200,7 @@ func (lgc *Logics) addProperty(pheader http.Header, propertyInfo meta.Netcollect
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	if "" == propertyInfo.OID { // check oid
-		blog.Errorf("add net collect property fail, oid is empty")
+		blog.Errorf("[NetProperty] add net collect property fail, oid is empty")
 		return -1, defErr.Errorf(common.CCErrCommParamsLostField, common.BKOIDField)
 	}
 
@@ -205,37 +209,37 @@ func (lgc *Logics) addProperty(pheader http.Header, propertyInfo meta.Netcollect
 	if "" != propertyInfo.Period && common.Infinite != propertyInfo.Period {
 		propertyInfo.Period, err = util.FormatPeriod(propertyInfo.Period)
 		if nil != err {
-			blog.Errorf("add net collect property, format perid [%s] fail, error: %v", err)
-			return -1, defErr.Errorf(common.CCErrCollectPeridFormatFail)
+			blog.Errorf("[NetProperty] add net collect property, format period [%s] fail, error: %v", err)
+			return -1, defErr.Errorf(common.CCErrCollectPeriodFormatFail)
 		}
 	}
 
 	// check action
 	if "" != propertyInfo.Action && !lgc.isValidAction(propertyInfo.Action) {
-		blog.Errorf("add net collect property fail, action [%s] must be 'get' or 'walk' ")
+		blog.Errorf("[NetProperty] add net collect property, check action fail, action [%s] must be 'get' or 'walk'")
 		return -1, defErr.Errorf(common.CCErrCommParamsInvalid, common.BKActionField)
 	}
 
 	// check device
 	if err = lgc.checkIfNetDeviceExist(pheader, &propertyInfo); nil != err {
-		blog.Errorf("add net collect property fail, error: %v", err)
+		blog.Errorf("[NetProperty] add net collect property, check device fail, error: %v", err)
 		return -1, err
 	}
 
 	// check property
 	if err = lgc.checkIfNetProperty(pheader, &propertyInfo); nil != err {
-		blog.Errorf("add net collect property fail, error: %v", err)
+		blog.Errorf("[NetProperty] add net collect property, check property fail, error: %v", err)
 		return -1, err
 	}
 
 	// check if data duplication
 	isExist, err := lgc.checkNetPropertyExist(propertyInfo.DeviceID, propertyInfo.PropertyID, ownerID)
 	if nil != err {
-		blog.Errorf("add net collect property fail, error: %v", err)
+		blog.Errorf("[NetProperty] add net collect property, check data duplication fail, error: %v", err)
 		return -1, defErr.Errorf(common.CCErrCollectNetPropertyCreateFail)
 	}
 	if isExist {
-		blog.Errorf("add net collect property fail, error: duplicate [deviceID propertyID]")
+		blog.Errorf("[NetProperty] add net collect property fail, error: duplicate [deviceID+propertyID]")
 		return -1, defErr.Errorf(common.CCErrCommDuplicateItem)
 	}
 
@@ -254,12 +258,12 @@ func (lgc *Logics) addProperty(pheader http.Header, propertyInfo meta.Netcollect
 
 	propertyInfo.NetcollectPropertyID, err = lgc.Instance.GetIncID(common.BKTableNameNetcollectProperty)
 	if nil != err {
-		blog.Errorf("add net collect property, failed to get id, error: %v", err)
+		blog.Errorf("[NetProperty] add net collect property, failed to get id, error: %v", err)
 		return -1, defErr.Errorf(common.CCErrCollectNetDeviceCreateFail)
 	}
 
 	if _, err = lgc.Instance.Insert(common.BKTableNameNetcollectProperty, propertyInfo); nil != err {
-		blog.Errorf("failed to insert net collect property, error: %v", err)
+		blog.Errorf("[NetProperty] failed to insert net collect property, error: %v", err)
 		return -1, defErr.Errorf(common.CCErrCollectNetDeviceCreateFail)
 	}
 
@@ -289,14 +293,14 @@ func (lgc *Logics) checkNetPropertyExist(deviceID int64, propertyID, ownerID str
 
 	rowCount, err := lgc.Instance.GetCntByCondition(common.BKTableNameNetcollectProperty, queryParams)
 	if nil != err {
-		blog.Errorf("check if net deviceID and propertyID exist, query device fail, error information is %v, params:%v",
+		blog.Errorf("[NetProperty] check if net deviceID and propertyID exist, query device fail, error information is %v, params:%v",
 			err, queryParams)
 		return false, err
 	}
 
 	if 0 != rowCount {
 		blog.V(4).Infof(
-			"check if net deviceID and propertyID exist, bk_device_id is [%s] bk_property_id [%s] device is exist",
+			"[NetProperty] check if net deviceID and propertyID exist, bk_device_id is [%s] bk_property_id [%s] device is exist",
 			deviceID, propertyID)
 		return true, nil
 	}
@@ -310,7 +314,7 @@ func (lgc *Logics) isValidAction(action string) bool {
 
 func (lgc *Logics) findProperty(fields []string, condition, result interface{}, sort string, skip, limit int) error {
 	if err := lgc.Instance.GetMutilByCondition(common.BKTableNameNetcollectProperty, fields, condition, result, sort, skip, limit); err != nil {
-		blog.Errorf("failed to query the inst, error info %s", err.Error())
+		blog.Errorf("[NetProperty] failed to query the inst, error info %s", err.Error())
 		return err
 	}
 
@@ -382,12 +386,11 @@ func (lgc *Logics) getObjIDsAndShowFields(pheader http.Header, objectCond map[st
 
 	objResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjects(context.Background(), pheader, objectCond)
 	if nil != err {
-		blog.Errorf("check net device object, get net device object fail, error: %v, condition [%#v]", err, objectCond)
+		blog.Errorf("[NetProperty] get net device object fail, error: %v, condition [%#v]", err, objectCond)
 		return nil, nil, defErr.Errorf(common.CCErrObjectSelectInstFailed)
 	}
-
 	if !objResult.Result {
-		blog.Errorf("check net device object, errors: %s, condition [%#v]", objResult.ErrMsg, objectCond)
+		blog.Errorf("[NetProperty] get net device object fail, errors: %s, condition [%#v]", objResult.ErrMsg, objectCond)
 		return nil, nil, defErr.Errorf(objResult.Code)
 	}
 
@@ -414,102 +417,132 @@ func (lgc *Logics) getDeviceIDsAndShowFields(
 
 	deviceCond[common.BKOwnerIDField] = util.GetOwnerID(pheader)
 	deviceField := []string{common.BKDeviceIDField, common.BKDeviceNameField, common.BKDeviceModelField, common.BKObjIDField}
-	deviceResult := []mapStr.MapStr{}
+	deviceResult := []meta.NetcollectDevice{}
 
 	if err := lgc.findDevice(deviceField, deviceCond, &deviceResult, "", 0, 0); nil != err {
-		blog.Errorf("search net device fail, search net device by condition [%#v] error: %v", deviceCond, err)
+		blog.Errorf("[NetProperty] search net device fail by condition [%#v], error: %v", deviceCond, err)
 		if mgo.ErrNotFound == err {
 			return nil, nil, nil
 		}
 		return nil, nil, defErr.Errorf(common.CCErrCollectNetDeviceGetFail)
 	}
 
-	if 0 == len(deviceResult) {
-		return nil, nil, nil
-	}
+	deviceIDs, deviceIDMapDeviceShowFields := lgc.assembleDeviceShowFieldValue(&deviceResult, objIDMapShowFields)
 
-	deviceIDs := []int64{}
-	deviceIDMapDeviceShowFields := map[int64]deviceShowField{}
-	for _, device := range deviceResult {
-		deviceID := device[common.BKDeviceIDField].(int64)
-		deviceIDs = append(deviceIDs, deviceID)
-		deviceIDMapDeviceShowFields[deviceID] = deviceShowField{
-			device[common.BKDeviceNameField].(string),
-			device[common.BKDeviceModelField].(string),
-			device[common.BKObjIDField].(string),
-			objIDMapShowFields[device[common.BKObjIDField].(string)].objName,
-		}
+	if 0 == len(deviceIDs) {
+		return nil, nil, nil
 	}
 
 	return deviceIDs, deviceIDMapDeviceShowFields, nil
 }
 
+// get device IDs from device list
+// assemble value of device list: [deviceID] map [deviceName, deviceModel, objID, objName]
+// objName is taken from objIDMapShowFields
+func (lgc *Logics) assembleDeviceShowFieldValue(deviceData *[]meta.NetcollectDevice, objIDMapShowFields map[string]objShowField) (
+	deviceIDs []int64, deviceIDMapDeviceShowFields map[int64]deviceShowField) {
+
+	if nil == deviceData || 0 == len(*deviceData) {
+		return deviceIDs, deviceIDMapDeviceShowFields
+	}
+
+	deviceIDMapDeviceShowFields = map[int64]deviceShowField{}
+
+	for _, device := range *deviceData {
+		// get device IDs from device list
+		deviceIDs = append(deviceIDs, device.DeviceID)
+		// assemble value of device list: [deviceID] map [deviceName, deviceModel, objID, objName]
+		deviceIDMapDeviceShowFields[device.DeviceID] = deviceShowField{
+			device.DeviceName, device.DeviceModel, device.ObjectID, objIDMapShowFields[device.ObjectID].objName,
+		}
+	}
+
+	return deviceIDs, deviceIDMapDeviceShowFields
+}
+
 // get objectID, property ID list and get field to show by map (bk_property_id --> bk_property_name, ...)
-func (lgc *Logics) getPropertyIDsAndShowFields(pheader http.Header, propertyCond map[string]interface{}) ([]string, []string, map[string]propertyShowField, error) {
+func (lgc *Logics) getPropertyIDsAndShowFields(
+	pheader http.Header, propertyCond map[string]interface{}) ([]string, []string, map[string]propertyShowField, error) {
+
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
-	attrResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), pheader, propertyCond)
+	attrResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(
+		context.Background(), pheader, propertyCond)
 	if nil != err {
-		blog.Errorf("get object attribute fail, error: %v, condition [%#v]", err, propertyCond)
-		if mgo.ErrNotFound == err {
-			return nil, nil, nil, nil
-		}
+		blog.Errorf("[NetProperty] get property fail, error: %v, condition [%#v]", err, propertyCond)
 		return nil, nil, nil, defErr.Errorf(common.CCErrTopoObjectAttributeSelectFailed)
 	}
 	if !attrResult.Result {
-		blog.Errorf("check net device object property, errors: %s", attrResult.ErrMsg)
+		blog.Errorf("[NetProperty] get property fail, error: %s", attrResult.ErrMsg)
 		return nil, nil, nil, defErr.Errorf(attrResult.Code)
 	}
 
-	if nil == attrResult.Data || 0 == len(attrResult.Data) {
-		blog.Errorf("check net device object property, property is not exist, condition [%#v]", propertyCond)
+	objIDs, propertyIDs, propertyIDMapPropertyShowFields := lgc.assembleAttrShowFieldValue(&(attrResult.Data))
+
+	if 0 == len(objIDs) || 0 == len(propertyIDs) || 0 == len(propertyIDMapPropertyShowFields) {
+		blog.Errorf("[NetProperty] get property fail, property is not exist, condition [%#v]", propertyCond)
 		return nil, nil, nil, nil
 	}
 
-	propertyIDs := []string{}
-	objIDs := []string{}
-	propertyIDMapPropertyShowFields := map[string]propertyShowField{}
-	for _, property := range attrResult.Data {
+	return objIDs, propertyIDs, propertyIDMapPropertyShowFields, nil
+}
+
+// get obj IDs and property IDs , assemble value of attribute list:[propertyID + objID] map [property show fields]
+func (lgc *Logics) assembleAttrShowFieldValue(attrData *[]meta.Attribute) (
+	objIDs []string, propertyIDs []string, propertyIDMapPropertyShowFields map[string]propertyShowField) {
+
+	if nil == attrData || 0 == len(*attrData) {
+		return []string{}, []string{}, map[string]propertyShowField{}
+	}
+
+	// get obj IDs and property IDs from attribute list
+	propertyIDs, objIDs = []string{}, []string{}
+	// assemble value of attribute list: [propertyID + objID] map [property unit, property name]
+	propertyIDMapPropertyShowFields = map[string]propertyShowField{}
+
+	for _, property := range *attrData {
 		propertyIDs = append(propertyIDs, property.PropertyID)
 		objIDs = append(objIDs, property.ObjectID)
+
 		propertyIDMapPropertyShowFields[property.PropertyID+property.ObjectID] = propertyShowField{
 			property.Unit,
 			property.PropertyName,
 		}
 	}
 
-	return objIDs, propertyIDs, propertyIDMapPropertyShowFields, nil
+	return objIDs, propertyIDs, propertyIDMapPropertyShowFields
 }
 
 // add group value of device and property to net property
 func (lgc *Logics) addShowFieldValueIntoNetProperty(
-	searchNetProperty *meta.SearchNetProperty, netPropShowFields netPropertyShowFields) {
+	netProperty *[]meta.NetcollectProperty, netPropShowFields netPropertyShowFields) {
 
-	for _, netProperty := range searchNetProperty.Info {
-		deviceID := netProperty[common.BKDeviceIDField].(int64)
-		propertyID := netProperty[common.BKPropertyIDField].(string)
+	for index := range *netProperty {
 
-		deviceValue := netPropShowFields.deviceIDMapDeviceShowFields[deviceID]
+		deviceValue := netPropShowFields.deviceIDMapDeviceShowFields[(*netProperty)[index].DeviceID]
 
 		// add group value of device
-		netProperty[common.BKDeviceModelField] = deviceValue.deviceModel
-		netProperty[common.BKDeviceNameField] = deviceValue.deviceName
-		netProperty[common.BKObjIDField] = deviceValue.objID
-		netProperty[common.BKObjNameField] = deviceValue.objName
+		(*netProperty)[index].DeviceModel = deviceValue.deviceModel
+		(*netProperty)[index].DeviceName = deviceValue.deviceName
+		(*netProperty)[index].ObjectID = deviceValue.objID
+		(*netProperty)[index].ObjectName = deviceValue.objName
 
+		propertyID := (*netProperty)[index].PropertyID
 		propertyValue := netPropShowFields.propertyIDMapShowFields[propertyID+deviceValue.objID]
 		// add group value of property
-		netProperty[meta.AttributeFieldUnit] = propertyValue.unit
-		netProperty[common.BKPropertyNameField] = propertyValue.propertyName
+		(*netProperty)[index].Unit = propertyValue.unit
+		(*netProperty)[index].PropertyName = propertyValue.propertyName
 	}
 }
 
-func (lgc *Logics) getDeviceIDsAndPropertyIDsFromNetPropertys(netPropertys []mapStr.MapStr) ([]int64, []string) {
-	deviceIDs, propertyIDs := []int64{}, []string{}
-	for _, netProperty := range netPropertys {
-		deviceIDs = append(deviceIDs, netProperty[common.BKDeviceIDField].(int64))
-		propertyIDs = append(propertyIDs, netProperty[common.BKPropertyIDField].(string))
+func (lgc *Logics) getDeviceIDsAndPropertyIDsFromNetPropertys(
+	netProperty *[]meta.NetcollectProperty) (deviceIDs []int64, propertyIDs []string) {
+
+	for index := range *netProperty {
+		deviceIDs = append(deviceIDs, (*netProperty)[index].DeviceID)
+		propertyIDs = append(propertyIDs, (*netProperty)[index].PropertyID)
 	}
+
 	return deviceIDs, propertyIDs
 }
 
@@ -520,7 +553,7 @@ func (lgc *Logics) getDeviceShowField(pheader http.Header, deviceIDs []int64) (m
 		return nil, err
 	}
 	if 0 == len(objIDMapShowFields) {
-		return nil, fmt.Errorf("search net obj failed, could not get any net obj")
+		return nil, fmt.Errorf("search net object failed, could not get any net object")
 	}
 
 	deviceCond := map[string]interface{}{
@@ -533,7 +566,7 @@ func (lgc *Logics) getDeviceShowField(pheader http.Header, deviceIDs []int64) (m
 	}
 
 	if 0 == len(deviceIDMapDeviceShowFields) {
-		return nil, fmt.Errorf("search device failed, could not get any device by condition [%#+v]", deviceCond)
+		return nil, fmt.Errorf("search net device failed, could not get any net device by condition [%#+v]", deviceCond)
 	}
 
 	return deviceIDMapDeviceShowFields, nil
