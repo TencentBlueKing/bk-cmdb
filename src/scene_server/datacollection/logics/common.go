@@ -20,6 +20,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
 
@@ -130,17 +131,17 @@ func (lgc *Logics) checkNetDeviceExist(deviceID int64, deviceName string, pheade
 		deviceCond[common.BKDeviceIDField] = deviceID
 	}
 
-	attrResult := map[string]interface{}{}
+	deviceData := meta.NetcollectDevice{}
 	if err := lgc.Instance.GetOneByCondition(common.BKTableNameNetcollectDevice,
-		[]string{common.BKDeviceIDField, common.BKObjIDField},
-		deviceCond, &attrResult); nil != err {
+		[]string{common.BKDeviceIDField, common.BKObjIDField}, deviceCond, &deviceData); nil != err {
 
 		blog.Errorf("[NetCollect] check net device exist fail, error: %v, condition [%#v]", err, deviceCond)
+
 		if mgo.ErrNotFound == err {
 			return 0, "", defErr.Errorf(common.CCErrCollectNetDeviceGetFail)
 		}
 		return 0, "", err
 	}
 
-	return attrResult[common.BKDeviceIDField].(int64), attrResult[common.BKObjIDField].(string), nil
+	return deviceData.DeviceID, deviceData.ObjectID, nil
 }
