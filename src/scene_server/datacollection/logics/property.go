@@ -14,7 +14,6 @@ package logics
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -189,6 +188,8 @@ func (lgc *Logics) SearchProperty(pheader http.Header, params *meta.NetCollSearc
 }
 
 func (lgc *Logics) DeleteProperty(pheader http.Header, netPropertyID int64) error {
+	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+
 	netPropertyCond := map[string]interface{}{
 		common.BKOwnerIDField:               util.GetOwnerID(pheader),
 		common.BKNetcollectPropertyIDlField: netPropertyID}
@@ -196,17 +197,22 @@ func (lgc *Logics) DeleteProperty(pheader http.Header, netPropertyID int64) erro
 	rowCount, err := lgc.Instance.GetCntByCondition(common.BKTableNameNetcollectProperty, netPropertyCond)
 	if nil != err {
 		blog.Errorf("delete net property with id[%d], but query failed, err: %v, params: %#v", netPropertyID, err, netPropertyCond)
-		return err
+		return defErr.Error(common.CCErrCollectNetDeviceDeleteFail)
 	}
 
-	if 1 != rowCount {
+	if 0 == rowCount {
 		blog.V(4).Infof("delete net property with id[%d], but net property not exists, params: %#v", netPropertyID, netPropertyCond)
-		return errors.New("net property not exists")
+		return defErr.Error(common.CCErrCollectNetDeviceObjPropertyNotExist)
+	}
+
+	if 1 < rowCount {
+		blog.V(4).Infof("delete net property with id[%d], but net property not exists, params: %#v", netPropertyID, netPropertyCond)
+		return defErr.Error(common.CCErrCollectNetDeviceObjPropertyNotExist)
 	}
 
 	if err = lgc.Instance.DelByCondition(common.BKTableNameNetcollectProperty, netPropertyCond); nil != err {
 		blog.Errorf("delete net property with id[%d] failed, err: %v, params: %#v", netPropertyID, err, netPropertyCond)
-		return err
+		return defErr.Error(common.CCErrCollectNetDeviceDeleteFail)
 	}
 
 	blog.V(4).Infof("delete net property with id[%d] success, info: %v", netPropertyID, err)
