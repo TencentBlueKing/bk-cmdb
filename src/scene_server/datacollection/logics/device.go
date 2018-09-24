@@ -16,7 +16,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strconv"
 	"time"
 
 	"configcenter/src/common"
@@ -114,15 +113,9 @@ func (lgc *Logics) SearchDevice(pheader http.Header, params *meta.NetCollSearchP
 	return searchResult, nil
 }
 
-func (lgc *Logics) DeleteDevice(pheader http.Header, ID string) error {
+func (lgc *Logics) DeleteDevice(pheader http.Header, netDeviceID int64) error {
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ownerID := util.GetOwnerID(pheader)
-
-	netDeviceID, err := strconv.ParseInt(ID, 10, 64)
-	if nil != err {
-		blog.Errorf("delete net device with id[%d] to parse the net device id, error: %v", netDeviceID, err)
-		return defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKDeviceIDField)
-	}
 
 	deviceCond := map[string]interface{}{
 		common.BKOwnerIDField:  ownerID,
