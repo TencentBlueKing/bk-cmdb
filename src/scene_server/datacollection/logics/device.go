@@ -96,7 +96,7 @@ func (lgc *Logics) SearchDevice(pheader http.Header, params *meta.NetCollSearchP
 	searchResult.Count, err = lgc.Instance.GetCntByCondition(common.BKTableNameNetcollectDevice, deviceCond)
 	if nil != err {
 		blog.Errorf("[NetDevice] search net device fail, count net device by condition [%#v] error: %v", deviceCond, err)
-		return meta.SearchNetDevice{}, nil
+		return meta.SearchNetDevice{}, err
 	}
 	if 0 == searchResult.Count {
 		searchResult.Info = []meta.NetcollectDevice{}
@@ -190,8 +190,7 @@ func (lgc *Logics) addDevice(deviceInfo meta.NetcollectDevice, pheader http.Head
 	}
 
 	// check if bk_object_id and bk_object_name are net device object
-	err = lgc.checkIfNetDeviceObject(&deviceInfo, pheader)
-	if nil != err {
+	if err = lgc.checkIfNetDeviceObject(&deviceInfo, pheader); nil != err {
 		blog.Errorf("[NetDevice] add net device fail, error: %v, object name [%s] and object ID [%s]",
 			err, deviceInfo.ObjectName, deviceInfo.ObjectID)
 		return -1, err
