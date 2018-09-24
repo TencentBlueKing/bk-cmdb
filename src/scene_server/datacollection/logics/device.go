@@ -14,7 +14,6 @@ package logics
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -128,31 +127,36 @@ func (lgc *Logics) DeleteDevice(pheader http.Header, ID string) error {
 
 	rowCount, err := lgc.Instance.GetCntByCondition(common.BKTableNameNetcollectDevice, deviceCond)
 	if nil != err {
-		blog.Errorf("[NetDevice] delete net device with id[%d], but query failed, err: %v, params: %#v", netDeviceID, err, deviceCond)
-		return err
+		blog.Errorf("[NetDevice] delete net device with id [%d], but query failed, err: %v, params: %#v", netDeviceID, err, deviceCond)
+		return defErr.Error(common.CCErrCollectNetDeviceDeleteFail)
 	}
 
-	if 1 != rowCount {
-		blog.V(4).Infof("[NetDevice] delete net device with id[%d], but device not exists, params: %#v", netDeviceID, deviceCond)
-		return errors.New("device not exists")
+	if 0 == rowCount {
+		blog.Errorf("[NetDevice] delete net device with id [%d] fail, but device not exists, params: %#v", netDeviceID, deviceCond)
+		return defErr.Error(common.CCErrCollectDeviceNotExist)
+	}
+
+	if 1 < rowCount {
+		blog.Errorf("[NetDevice] delete net device with id [%d] fail, there are [%d] devices with same deviceID", netDeviceID, rowCount)
+		return defErr.Error(common.CCErrCollectNetDeviceDeleteFail)
 	}
 
 	// check if net device has property
 	hasProperty, err := lgc.checkDeviceHasProperty(netDeviceID, ownerID)
 	if nil != err {
-		return err
+		return defErr.Error(common.CCErrCollectNetDeviceDeleteFail)
 	}
 	if hasProperty {
-		blog.V(4).Infof("[NetDevice] delete net device fail, net device has property [%d]", netDeviceID)
+		blog.Errorf("[NetDevice] delete net device fail, net device has property [%d]", netDeviceID)
 		return defErr.Error(common.CCErrCollectNetPropertyHasPropertyDeleteFail)
 	}
 
 	if err = lgc.Instance.DelByCondition(common.BKTableNameNetcollectDevice, deviceCond); nil != err {
-		blog.Errorf("[NetDevice] delete net device with id[%d] failed, err: %v, params: %#v", netDeviceID, err, deviceCond)
-		return err
+		blog.Errorf("[NetDevice] delete net device with id [%d] failed, err: %v, params: %#v", netDeviceID, err, deviceCond)
+		return defErr.Error(common.CCErrCollectNetDeviceDeleteFail)
 	}
 
-	blog.V(4).Infof("[NetDevice] delete net device with id[%d] success, info: %v", netDeviceID, err)
+	blog.V(4).Infof("[NetDevice] delete net device with id [%d] success", netDeviceID)
 	return nil
 }
 
