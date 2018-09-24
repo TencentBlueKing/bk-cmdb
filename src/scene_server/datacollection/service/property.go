@@ -85,11 +85,18 @@ func (s *Service) DeleteProperty(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	if err := s.Logics.DeleteProperty(pheader, netPropertyID); nil != err {
-		blog.Errorf("delete net property failed, with netcollect_property_id [%s], err: %v %", ID, err)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCollectNetDeviceDeleteFail)})
+	err = s.Logics.DeleteProperty(pheader, netPropertyID)
+	if nil == err {
+		resp.WriteEntity(meta.NewSuccessResp(nil))
 		return
 	}
 
-	resp.WriteEntity(meta.NewSuccessResp(nil))
+	blog.Errorf("delete net property failed, with netcollect_property_id [%s], err: %v %", ID, err)
+
+	if err.Error() == defErr.Error(common.CCErrCollectNetDeviceObjPropertyNotExist).Error() {
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
+		return
+	}
+
+	resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 }
