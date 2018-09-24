@@ -29,7 +29,7 @@ func (lgc *Logics) checkNetObject(objID string, objName string, pheader http.Hea
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	if "" == objName && "" == objID {
-		blog.Errorf("check net device object, empty bk_obj_id and bk_obj_name")
+		blog.Errorf("[NetCollect] check net device object, empty bk_obj_id and bk_obj_name")
 		return "", "", defErr.Errorf(common.CCErrCommParamsLostField, common.BKObjIDField)
 	}
 
@@ -46,17 +46,17 @@ func (lgc *Logics) checkNetObject(objID string, objName string, pheader http.Hea
 
 	objResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjects(context.Background(), pheader, objCond)
 	if nil != err {
-		blog.Errorf("check net device object, get net device object fail, error: %v, condition [%#v]", err, objCond)
+		blog.Errorf("[NetCollect] check net device object, get net device object fail, error: %v, condition [%#v]", err, objCond)
 		return "", "", defErr.Errorf(common.CCErrObjectSelectInstFailed)
 	}
 
 	if !objResult.Result {
-		blog.Errorf("check net device object, errors: %s, condition [%#v]", objResult.ErrMsg, objCond)
+		blog.Errorf("[NetCollect] check net device object, errors: %s, condition [%#v]", objResult.ErrMsg, objCond)
 		return "", "", defErr.Errorf(objResult.Code)
 	}
 
 	if nil == objResult.Data || 0 == len(objResult.Data) {
-		blog.Errorf("check net device object, device object is not exist, condition [%#v]", objCond)
+		blog.Errorf("[NetCollect] check net device object, device object is not exist, condition [%#v]", objCond)
 		return "", "", defErr.Errorf(common.CCErrCollectObjIDNotNetDevice)
 	}
 
@@ -69,12 +69,12 @@ func (lgc *Logics) checkNetObjectProperty(netDeviceObjID, propertyID, propertyNa
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	if "" == netDeviceObjID {
-		blog.Errorf("check net device object, empty bk_obj_id")
+		blog.Errorf("[NetCollect] check net device object, empty bk_obj_id")
 		return "", defErr.Errorf(common.CCErrCommParamsLostField, common.BKObjIDField)
 	}
 
 	if "" == propertyName && "" == propertyID {
-		blog.Errorf("check net device object, empty bk_property_id and bk_property_name")
+		blog.Errorf("[NetCollect] check net device object, empty bk_property_id and bk_property_name")
 		return "", defErr.Errorf(common.CCErrCommParamsLostField, common.BKPropertyIDField)
 	}
 
@@ -91,19 +91,19 @@ func (lgc *Logics) checkNetObjectProperty(netDeviceObjID, propertyID, propertyNa
 
 	attrResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), pheader, propertyCond)
 	if nil != err {
-		blog.Errorf("get object attribute fail, error: %v, condition [%#v]", err, propertyCond)
+		blog.Errorf("[NetCollect] get object attribute fail, error: %v, condition [%#v]", err, propertyCond)
 		if mgo.ErrNotFound == err {
 			return "", defErr.Errorf(common.CCErrCollectNetDeviceObjPropertyNotExist)
 		}
 		return "", defErr.Errorf(common.CCErrTopoObjectAttributeSelectFailed)
 	}
 	if !attrResult.Result {
-		blog.Errorf("check net device object property, errors: %s", attrResult.ErrMsg)
+		blog.Errorf("[NetCollect] check net device object property, errors: %s", attrResult.ErrMsg)
 		return "", defErr.Errorf(attrResult.Code)
 	}
 
 	if nil == attrResult.Data || 0 == len(attrResult.Data) {
-		blog.Errorf("check net device object property, property is not exist, condition [%#v]", propertyCond)
+		blog.Errorf("[NetCollect] check net device object property, property is not exist, condition [%#v]", propertyCond)
 		return "", defErr.Errorf(common.CCErrCollectNetDeviceObjPropertyNotExist)
 	}
 
@@ -117,7 +117,7 @@ func (lgc *Logics) checkNetDeviceExist(deviceID int64, deviceName string, pheade
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	if "" == deviceName && 0 == deviceID {
-		blog.Errorf("check net device exist fail, empty device_id and device_name")
+		blog.Errorf("[NetCollect] check net device exist fail, empty device_id and device_name")
 		return 0, "", defErr.Errorf(common.CCErrCommParamsLostField, common.BKDeviceIDField)
 	}
 
@@ -135,7 +135,7 @@ func (lgc *Logics) checkNetDeviceExist(deviceID int64, deviceName string, pheade
 		[]string{common.BKDeviceIDField, common.BKObjIDField},
 		deviceCond, &attrResult); nil != err {
 
-		blog.Errorf("check net device exist fail, error: %v, condition [%#v]", err, deviceCond)
+		blog.Errorf("[NetCollect] check net device exist fail, error: %v, condition [%#v]", err, deviceCond)
 		if mgo.ErrNotFound == err {
 			return 0, "", defErr.Errorf(common.CCErrCollectNetDeviceGetFail)
 		}
