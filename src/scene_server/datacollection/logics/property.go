@@ -196,26 +196,26 @@ func (lgc *Logics) DeleteProperty(pheader http.Header, netPropertyID int64) erro
 
 	rowCount, err := lgc.Instance.GetCntByCondition(common.BKTableNameNetcollectProperty, netPropertyCond)
 	if nil != err {
-		blog.Errorf("delete net property with id[%d], but query failed, err: %v, params: %#v", netPropertyID, err, netPropertyCond)
-		return defErr.Error(common.CCErrCollectNetDeviceDeleteFail)
+		blog.Errorf("delete net property with id [%d], but query failed, err: %v, params: %#v", netPropertyID, err, netPropertyCond)
+		return defErr.Error(common.CCErrCollectNetPropertyDeleteFail)
 	}
 
 	if 0 == rowCount {
-		blog.V(4).Infof("delete net property with id[%d], but net property not exists, params: %#v", netPropertyID, netPropertyCond)
+		blog.Errorf("delete net property with id [%d] fail, but net property not exists, params: %#v", netPropertyID, netPropertyCond)
 		return defErr.Error(common.CCErrCollectNetDeviceObjPropertyNotExist)
 	}
 
 	if 1 < rowCount {
-		blog.Errorf("delete net property with id[%d], there are [%d] net property with same condition: %#v", netPropertyID, netPropertyCond)
-		return defErr.Error(common.CCErrCollectNetDeviceDeleteFail)
+		blog.Errorf("delete net property fail, there are [%d] net propertys with same id [%d], params: %#v", rowCount, netPropertyID, netPropertyCond)
+		return defErr.Error(common.CCErrCollectNetPropertyDeleteFail)
 	}
 
 	if err = lgc.Instance.DelByCondition(common.BKTableNameNetcollectProperty, netPropertyCond); nil != err {
-		blog.Errorf("delete net property with id[%d] failed, err: %v, params: %#v", netPropertyID, err, netPropertyCond)
-		return defErr.Error(common.CCErrCollectNetDeviceDeleteFail)
+		blog.Errorf("delete net property with id [%d] failed, err: %v, params: %#v", netPropertyID, err, netPropertyCond)
+		return defErr.Error(common.CCErrCollectNetPropertyDeleteFail)
 	}
 
-	blog.V(4).Infof("delete net property with id[%d] success, info: %v", netPropertyID, err)
+	blog.V(4).Infof("delete net property with id [%d] success", netPropertyID)
 
 	return nil
 }
