@@ -105,7 +105,6 @@ func (lgc *Logics) SearchDevice(pheader http.Header, params *meta.NetCollSearchP
 		return searchResult, nil
 	}
 
-	params.Fields = append(params.Fields, []string{common.BKDeviceIDField, common.BKPropertyIDField}...)
 	if err = lgc.findDevice(params.Fields, deviceCond, &searchResult.Info, params.Page.Sort, params.Page.Start, params.Page.Limit); nil != err {
 		blog.Errorf("search net device fail, search net device by condition [%#v] error: %v", deviceCond, err)
 		return meta.SearchNetDevice{}, defErr.Errorf(common.CCErrCollectNetDeviceGetFail)
