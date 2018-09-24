@@ -14,7 +14,9 @@ package logics
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"strconv"
 
 	mgo "gopkg.in/mgo.v2"
 
@@ -143,4 +145,18 @@ func (lgc *Logics) checkNetDeviceExist(deviceID int64, deviceName string, pheade
 	}
 
 	return attrResult[common.BKDeviceIDField].(int64), attrResult[common.BKObjIDField].(string), nil
+}
+
+// check param ID is a num string and convert to num
+func (lgc *Logics) ConvertStringToID(stringID string) (int64, error) {
+	if "" == stringID || "0" == stringID {
+		return 0, fmt.Errorf("invalid stringID")
+	}
+
+	ID, err := strconv.ParseInt(stringID, 10, 64)
+	if nil != err {
+		return 0, err
+	}
+
+	return ID, nil
 }
