@@ -41,6 +41,6 @@ type NetcollectProperty struct {
 	Action               string     `json:"action" bson:"action"`
 	OwnerID              string     `json:"-" bson:"bk_supplier_account"`
 	CreateTime           *time.Time `field:"create_time,omitempty" json:"create_time,omitempty" bson:"create_time"`
-	LastTime             *time.Time `field:"last_time,omitempty" json:"last_ time,omitempty" bson:"last_time"`
+	LastTime             *time.Time `field:"last_time,omitempty" json:"last_time,omitempty" bson:"last_time"`
 	Unit                 string     `json:"unit,omitempty" bson:"-"`
 }
