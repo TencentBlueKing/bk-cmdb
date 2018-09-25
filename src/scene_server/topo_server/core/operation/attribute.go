@@ -89,6 +89,7 @@ func (a *attribute) CreateObjectAttribute(params types.ContextParams, data frtyp
 	}
 
 	// create association
+	// will abandon
 	attrMeta := &metadata.Association{}
 	if err = data.MarshalJSONInto(attrMeta); nil != err {
 		blog.Errorf("[operation-attr] failed to parse the association data, error info is %s", err.Error())
@@ -97,13 +98,18 @@ func (a *attribute) CreateObjectAttribute(params types.ContextParams, data frtyp
 
 	if 0 != len(attrMeta.AsstObjID) {
 
+		blog.Errorf("[operation-attr] create association attr %s is forbidden", att.GetID())
+		return nil, params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, "create association attr is forbideen")
+
 		// check the object id
 		err = a.obj.IsValidObject(params, attrMeta.AsstObjID)
 		if nil != err {
 			return nil, params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
 		}
 
-		attrMeta.ObjectAttID = att.GetID() // the structural difference
+		//attrMeta.ObjectAttID = att.GetID() // the structural difference
+		attrMeta.AsstName = att.GetID()
+
 		if err := a.asst.CreateCommonAssociation(params, attrMeta); nil != err {
 			blog.Errorf("[operation-attr] failed to create the association(%v), error info is %s", attrMeta, err.Error())
 			return nil, params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
@@ -135,7 +141,7 @@ func (a *attribute) DeleteObjectAttribute(params types.ContextParams, id int64, 
 		asstCond := condition.CreateCondition()
 		asstCond.Field(metadata.AssociationFieldObjectID).Eq(attrItem.GetObjectID())
 		asstCond.Field(metadata.AssociationFieldSupplierAccount).Eq(attrItem.GetSupplierAccount())
-		asstCond.Field(metadata.AssociationFieldObjectAttributeID).Eq(attrItem.GetID())
+		asstCond.Field(metadata.AssociationFieldAssociationName).Eq(attrItem.GetID())
 		if err = a.asst.DeleteAssociation(params, asstCond); nil != err {
 			blog.Errorf("[operation-attr] failed to delete the attribute association(%v), error info is %s", asstCond.ToMapStr(), err.Error())
 			return params.Err.New(common.CCErrTopoObjectAttributeDeleteFailed, err.Error())
@@ -185,7 +191,8 @@ func (a *attribute) FindObjectAttributeWithDetail(params types.ContextParams, co
 		}
 
 		for _, asst := range assts {
-			if asst.ObjectAttID == attr.GetID() { // should be only one
+			//if asst.ObjectAttID == attr.GetID() { // should be only one
+			if asst.AsstName == attr.GetID() {
 				result.AssociationID = asst.AsstObjID
 				result.AsstForward = asst.AsstForward
 			}
