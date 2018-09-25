@@ -44,7 +44,8 @@
             @closeRoleForm="form.isShow = false">
         </v-role-form>
         <cmdb-slider
-        :width="514"
+        :width="600"
+        :title="slider.title"
         :isShow.sync="slider.isShow">
             <vAuthority
                 slot="content"
@@ -106,7 +107,8 @@
                 },
                 slider: {
                     isShow: false,
-                    groupId: ''
+                    groupId: '',
+                    title: ''
                 }
             }
         },
@@ -123,6 +125,7 @@
             ]),
             showDetails (item) {
                 this.slider.groupId = item['group_id']
+                this.slider.title = `${item['group_name']} ${this.$t('Permission["权限详情"]')}`
                 this.slider.isShow = true
             },
             handleCreateSuccess () {
