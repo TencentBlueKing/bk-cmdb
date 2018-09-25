@@ -529,7 +529,7 @@ func (h *importInstance) UpdateInstAssociation(pheader http.Header, instID int64
 	}
 
 	for _, asst := range result.Data {
-		if _, ok := input[asst.ObjectAttID]; ok {
+		if _, ok := input[asst.AsstName]; ok {
 			err := h.deleteInstAssociation(instID, objID, asst.AsstObjID)
 			if nil != err {
 				blog.Errorf("failed to delete the old inst association, error info is %s", err.Error())

@@ -156,7 +156,7 @@ func (a *attribute) GetParentObject() (Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(metadata.AssociationFieldSupplierAccount).Eq(a.params.SupplierAccount)
 	cond.Field(metadata.AssociationFieldObjectID).Eq(a.attr.ObjectID)
-	cond.Field(metadata.AssociationFieldObjectAttributeID).Eq(a.attr.PropertyID)
+	cond.Field(metadata.AssociationFieldAssociationName).Eq(a.attr.PropertyID)
 
 	rsp, err := a.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), a.params.Header, cond.ToMapStr())
 	if nil != err {
@@ -186,7 +186,7 @@ func (a *attribute) GetChildObject() (Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(metadata.AssociationFieldSupplierAccount).Eq(a.params.SupplierAccount)
 	cond.Field(metadata.AssociationFieldAssociationObjectID).Eq(a.attr.ObjectID)
-	cond.Field(metadata.AssociationFieldObjectAttributeID).Eq(a.attr.PropertyID)
+	cond.Field(metadata.AssociationFieldAssociationName).Eq(a.attr.PropertyID)
 
 	rsp, err := a.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), a.params.Header, cond.ToMapStr())
 	if nil != err {
@@ -216,7 +216,7 @@ func (a *attribute) SetParentObject(objID string) error {
 
 	cond := condition.CreateCondition()
 	cond.Field(metadata.AssociationFieldSupplierAccount).Eq(a.params.SupplierAccount)
-	cond.Field(metadata.AssociationFieldObjectAttributeID).Eq(a.attr.PropertyID)
+	cond.Field(metadata.AssociationFieldAssociationName).Eq(a.attr.PropertyID)
 	cond.Field(metadata.AssociationFieldObjectID).Eq(a.attr.ObjectID)
 
 	rsp, err := a.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), a.params.Header, cond.ToMapStr())
@@ -235,7 +235,7 @@ func (a *attribute) SetParentObject(objID string) error {
 
 		asst := &metadata.Association{}
 		asst.OwnerID = a.params.SupplierAccount
-		asst.ObjectAttID = a.attr.PropertyID
+		asst.AsstName = a.attr.PropertyID
 		asst.AsstObjID = objID
 		asst.ObjectID = a.attr.ObjectID
 
@@ -277,7 +277,7 @@ func (a *attribute) SetChildObject(objID string) error {
 
 	cond := condition.CreateCondition()
 	cond.Field(metadata.AssociationFieldSupplierAccount).Eq(a.params.SupplierAccount)
-	cond.Field(metadata.AssociationFieldObjectAttributeID).Eq(a.attr.PropertyID)
+	cond.Field(metadata.AssociationFieldAssociationName).Eq(a.attr.PropertyID)
 	cond.Field(metadata.AssociationFieldAssociationObjectID).Eq(a.attr.ObjectID)
 
 	rsp, err := a.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), a.params.Header, cond.ToMapStr())
@@ -296,7 +296,7 @@ func (a *attribute) SetChildObject(objID string) error {
 
 		asst := &metadata.Association{}
 		asst.OwnerID = a.params.SupplierAccount
-		asst.ObjectAttID = a.attr.PropertyID
+		asst.AsstName = a.attr.PropertyID
 		asst.AsstObjID = a.attr.ObjectID
 		asst.ObjectID = objID
 

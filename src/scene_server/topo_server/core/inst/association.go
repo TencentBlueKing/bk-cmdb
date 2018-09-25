@@ -384,7 +384,7 @@ func (cli *inst) getAsstChildInstIDSByAsstField(asstObj model.Object) ([]int64, 
 	}
 	instIDS := []int64{}
 	for _, item := range rsp.Data {
-		asstVals, exists := cli.datas.Get(item.ObjectAttID)
+		asstVals, exists := cli.datas.Get(item.AsstName)
 		if !exists {
 			continue
 		}
@@ -400,7 +400,7 @@ func (cli *inst) getAsstChildInstIDSByAsstField(asstObj model.Object) ([]int64, 
 				}
 				id, err := strconv.ParseInt(asstID, 10, 64)
 				if nil != err {
-					blog.Errorf("[inst-asst] failed to parse the asst value, the object(%s) the field(%s) the value(%s), error info is %s", cli.target.GetID(), item.ObjectAttID, asstID, err.Error())
+					blog.Errorf("[inst-asst] failed to parse the asst value, the object(%s) the field(%s) the value(%s), error info is %s", cli.target.GetID(), item.AsstName, asstID, err.Error())
 					return nil, err
 				}
 				instIDS = append(instIDS, id)

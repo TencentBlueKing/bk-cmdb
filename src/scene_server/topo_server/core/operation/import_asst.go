@@ -334,7 +334,7 @@ func (a *asstObjectInst) getObjectFields(objID, sort string) ([]metadata.ObjAttD
 		cond := condition.CreateCondition()
 		cond.Field(metadata.AssociationFieldSupplierAccount).Eq(a.ownerID)
 		cond.Field(metadata.AssociationFieldObjectID).Eq(attr.ObjectID)
-		cond.Field(metadata.AssociationFieldObjectAttributeID).Eq(attr.PropertyID)
+		cond.Field(metadata.AssociationFieldAssociationName).Eq(attr.PropertyID)
 		assResult, err := a.CoreAPI.ObjectController().Meta().SelectObjectAssociations(context.Background(), a.pheader, cond.ToMapStr())
 		if err != nil || (err == nil && !result.Result) {
 			return nil, fmt.Errorf("search host obj associations failed, err: %v, result err: %s", err, result.ErrMsg)
