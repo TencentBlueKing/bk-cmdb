@@ -42,21 +42,24 @@
                 </div>
             </template>
         </div>
-        <slot name="form-options">
-            <div class="form-options" v-if="showOptions">
+        <div class="form-options"
+            v-if="showOptions"
+            :class="{sticky: scrollbar}">
+            <slot name="form-options">
                 <bk-button class="button-save" type="primary"
                     :disabled="!$authorized.update || !hasChange || $loading()"
                     @click="handleSave">
                     {{$t("Common['保存']")}}
                 </bk-button>
                 <bk-button class="button-cancel" @click="handleCancel">{{$t("Common['取消']")}}</bk-button>
-            </div>
-        </slot>
+            </slot>
+        </div>
     </div>
 </template>
 
 <script>
     import formMixins from '@/mixins/form'
+    import RESIZE_EVENTS from '@/utils/resize-events'
     export default {
         name: 'cmdb-form',
         mixins: [formMixins],
@@ -81,7 +84,8 @@
         data () {
             return {
                 values: {},
-                refrenceValues: {}
+                refrenceValues: {},
+                scrollbar: false
             }
         },
         computed: {
@@ -114,7 +118,17 @@
         created () {
             this.initValues()
         },
+        mounted () {
+            RESIZE_EVENTS.addResizeListener(this.$el, this.checkScrollbar)
+        },
+        beforeDestroy () {
+            RESIZE_EVENTS.removeResizeListener(this.$el, this.checkScrollbar)
+        },
         methods: {
+            checkScrollbar () {
+                const $layout = this.$el
+                this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
+            },
             initValues () {
                 this.values = this.$tools.getInstFormValues(this.properties, this.inst)
                 this.refrenceValues = this.$tools.clone(this.values)
@@ -191,17 +205,15 @@
 <style lang="scss" scoped>
     .form-layout{
         height: 100%;
+        @include scrollbar-y;
     }
     .form-groups{
-        height: calc(100% - 62px);
         padding: 0 0 0 32px;
-        overflow: auto;
-        @include scrollbar;
     }
     .property-group{
-        padding: 17px 0 0 0;
+        padding: 7px 0 10px 0;
         &:first-child{
-            padding: 28px 0 0 0;
+            padding: 28px 0 10px 0;
         }
     }
     .group-name{
@@ -255,19 +267,22 @@
         }
     }
     .form-options{
-        position: absolute;
+        position: sticky;
         bottom: 0;
         left: 0;
         width: 100%;
-        height: 62px;
-        padding: 14px 20px;
-        background-color: #f9f9f9;
+        padding: 28px 32px 0;
+        &.sticky {
+            padding: 10px 32px;
+            border-top: 1px solid $cmdbBorderColor;
+            background-color: #fff;
+        }
         .button-save{
-            width: 110px;
+            min-width: 76px;
             margin-right: 4px;
         }
         .button-cancel{
-            width: 110px;
+            min-width: 76px;
             background-color: #fff;
         }
     }

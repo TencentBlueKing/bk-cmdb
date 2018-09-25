@@ -108,7 +108,10 @@
         "该字段无可复制的值": "There are no available values to copy for selected property",
         "全选本页": "Select current page",
         "跨页全选": "Select all page",
-        "获取人员列表失败": "Failed to get user list"
+        "获取人员列表失败": "Failed to get user list",
+        "其他筛选项": "Other filters",
+        "清空": "Clear",
+        "帮助文档": "Help"
     },
     "Index": {
         "首页": "Index",
