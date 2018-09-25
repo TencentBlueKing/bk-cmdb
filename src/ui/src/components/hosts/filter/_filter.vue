@@ -104,6 +104,7 @@
     import { mapGetters, mapActions } from 'vuex'
     import filterFieldOperator from './_filter-field-operator.vue'
     import cmdbFilterConfig from './_filter-config.vue'
+    import RESIZE_EVENTS from '@/utils/resize-events'
     export default {
         components: {
             filterFieldOperator,
@@ -238,6 +239,12 @@
             this.setQueryParams()
             await this.getProperties()
             this.refresh()
+        },
+        mounted () {
+            RESIZE_EVENTS.addResizeListener(this.$refs.filterLayout, this.updateFilterButtonStyles)
+        },
+        beforeDestroy () {
+            RESIZE_EVENTS.removeResizeListener(this.$refs.filterLayout, this.updateFilterButtonStyles)
         },
         methods: {
             ...mapActions('objectModelProperty', ['batchSearchObjectAttribute']),
@@ -488,7 +495,7 @@
             updateFilterButtonStyles () {
                 this.$nextTick(() => {
                     const $filterLayout = this.$refs.filterLayout
-                    this.layout.scroll = $filterLayout.offsetHeight < $filterLayout.scrollHeight
+                    this.layout.scroll = $filterLayout.offsetHeight !== $filterLayout.scrollHeight
                 })
             }
         }
