@@ -91,6 +91,28 @@ func (a *association) SearchObjectAssociation(params types.ContextParams, objID 
 		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
+	// DELETE: query the property name as the associated name,the follow code need to be deleted after relationships refactoring
+	propertyIDS := make([]string, 0)
+	for _, asst := range rsp.Data {
+		propertyIDS = append(propertyIDS, asst.ObjectAttID)
+	}
+	attrCond := condition.CreateCondition()
+	attrCond.Field(metadata.AttributeFieldSupplierAccount).Eq(params.SupplierAccount)
+	attrCond.Field(metadata.AttributeFieldPropertyID).In(propertyIDS)
+	attributes, err := a.attr.FindObjectAttribute(params, attrCond)
+	if nil != err {
+		blog.Errorf("[operation-asst] failed to query attributes by the condition(%v), error info is %s", attrCond.ToMapStr(), err.Error())
+		return rsp.Data, nil // return the origin data
+	}
+
+	for asstIDX, asst := range rsp.Data {
+		for _, attr := range attributes {
+			if asst.ObjectAttID == attr.GetID() {
+				rsp.Data[asstIDX].AsstName = attr.GetName()
+			}
+		}
+	}
+
 	return rsp.Data, nil
 }
 
@@ -137,9 +159,12 @@ func (a *association) CreateCommonAssociation(params types.ContextParams, data *
 		blog.Errorf("[operation-asst] failed to create the association (%#v) , error info is %s", cond.ToMapStr(), rsp.ErrMsg)
 		return params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
+	if len(rsp.Data) > 0 {
+		blog.Errorf("[operation-asst] failed to create the association (%#v) , the associations %s->%s already exist ", cond.ToMapStr(), data.ObjectID, data.AsstObjID)
+		return params.Err.Errorf(common.CCErrTopoAssociationAlreadyExist, data.ObjectID, data.AsstObjID)
+	}
 
 	// create a new
-
 	rspAsst, err := a.clientSet.ObjectController().Meta().CreateObjectAssociation(context.Background(), params.Header, data)
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to request object controller, error info is %s", err.Error())
