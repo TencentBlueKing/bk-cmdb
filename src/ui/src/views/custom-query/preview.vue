@@ -102,6 +102,13 @@
                         })
                         return setName.join(',')
                     }
+                    if (property['bk_property_id'] === 'bk_biz_name') {
+                        let bizName = []
+                        item.biz.map(({bk_biz_name: bkbizName}) => {
+                            bizName.push(bkbizName)
+                        })
+                        return bizName.join(',')
+                    }
                     if (property['bk_asst_obj_id'] && Array.isArray(value)) {
                         let tempValue = []
                         value.map(({bk_inst_name: bkInstName}) => {
@@ -148,6 +155,12 @@
                             objId: 'module',
                             id: 'bk_module_name',
                             name: this.$t("Hosts['模块']")
+                        }
+                    } else if (propertyId === 'bk_biz_name') {
+                        header = {
+                            objId: 'biz',
+                            id: 'bk_biz_name',
+                            name: this.$t("Common['业务']")
                         }
                     } else {
                         let property = this.attribute.host.properties.find(property => propertyId === property['bk_property_id'])
