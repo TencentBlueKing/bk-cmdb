@@ -79,14 +79,21 @@ type LoginUserInfoDetail struct {
 	MultiSupplier bool                        `json:"multi_supplier"`
 }
 
-type LonginUserInfoResult struct {
+type LoginUserInfoResult struct {
 	BaseResp `json",inline"`
 	Data     LoginUserInfoDetail `json:"data"`
 }
 
-type LonginChangeSupplierResult struct {
+type LoginChangeSupplierResult struct {
 	BaseResp `json",inline"`
 	Data     struct {
 		ID string `json:"bk_supplier_account"`
+	} `json:"data"`
+}
+
+type LogoutResult struct {
+	BaseResp `json",inline"`
+	Data     struct {
+		LogoutURL string `json:"url"`
 	} `json:"data"`
 }
