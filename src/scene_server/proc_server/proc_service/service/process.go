@@ -56,7 +56,7 @@ func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response
 	valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDProc, req.Request.Header, ps.Engine)
 	if err := valid.ValidMap(input, common.ValidCreate, 0); err != nil {
 		blog.Errorf("fail to valid input parameters. err:%s", err.Error())
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommFieldNotValid)})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
 		return
 	}
 
@@ -118,7 +118,7 @@ func (ps *ProcServer) UpdateProcess(req *restful.Request, resp *restful.Response
 	valid := validator.NewValidMap(util.GetOwnerID(req.Request.Header), common.BKInnerObjIDProc, req.Request.Header, ps.Engine)
 	if err := valid.ValidMap(procData, common.ValidUpdate, int64(procID)); err != nil {
 		blog.Errorf("fail to valid input parameters. err:%s", err.Error())
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommFieldNotValid)})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
 		return
 	}
 
@@ -207,7 +207,7 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 
 		if err := valid.ValidMap(procData, common.ValidUpdate, int64(procID)); err != nil {
 			blog.Errorf("fail to valid proc parameters. err:%s", err.Error())
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommFieldNotValid)})
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
 			return
 		}
 		details, err := ps.getProcDetail(req, ownerID, appID, procID)
