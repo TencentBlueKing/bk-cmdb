@@ -44,7 +44,7 @@
                         v-model.trim="baseInfo['bk_obj_name']"
                         :data-vv-name="$t('ModelManagement[\'中文名称\']')"
                         v-validate="'required|singlechar'">
-                    <span v-show="errors.has($t('ModelManagement[\'中文名称\']'))" class="error-msg color-danger">{{ errors.first($t('ModelManagement[\'中文名称\']')) }}</span>
+                    <div v-show="errors.has($t('ModelManagement[\'中文名称\']'))" class="error-msg color-danger">{{ errors.first($t('ModelManagement[\'中文名称\']')) }}</div>
                 </div>
             </div>
             <div class="form-item">
@@ -56,7 +56,7 @@
                         v-model.trim="baseInfo['bk_obj_id']"
                         :data-vv-name="$t('ModelManagement[\'英文名称\']')"
                         v-validate="'required|modelId'">
-                    <span v-show="errors.has($t('ModelManagement[\'英文名称\']'))" class="error-msg color-danger">{{ errors.first($t('ModelManagement[\'英文名称\']')) }}</span>
+                    <div v-show="errors.has($t('ModelManagement[\'英文名称\']'))" class="error-msg color-danger">{{ errors.first($t('ModelManagement[\'英文名称\']')) }}</div>
                 </div>
             </div>
         </div>
