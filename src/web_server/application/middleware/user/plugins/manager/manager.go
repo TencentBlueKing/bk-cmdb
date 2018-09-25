@@ -10,19 +10,16 @@
  * limitations under the License.
  */
 
-package user
+package manager
 
 import (
-	"github.com/gin-gonic/gin"
+	"configcenter/src/common/metadata"
 )
 
-type User interface {
-	LoginUser(c *gin.Context) (isLogin bool)
-	GetUserList(c *gin.Context) (int, interface{})
-	GetLoginUrl(c *gin.Context) string
-}
+var (
+	LoginPluginInfo []*metadata.LoginPluginInfo
+)
 
-//NewUser return user instance by type
-func NewUser() User {
-	return &publicUser{}
+func RegisterPlugin(params *metadata.LoginPluginInfo) {
+	LoginPluginInfo = append(LoginPluginInfo, params)
 }
