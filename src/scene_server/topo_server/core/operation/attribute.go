@@ -81,13 +81,6 @@ func (a *attribute) CreateObjectAttribute(params types.ContextParams, data frtyp
 		return nil, params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
 	}
 
-	// create a new one
-	err = att.Create()
-	if nil != err {
-		blog.Errorf("[operation-attr] failed to save the attribute data (%#v), error info is %s", data, err.Error())
-		return nil, err
-	}
-
 	// create association
 	attrMeta := &metadata.Association{}
 	if err = data.MarshalJSONInto(attrMeta); nil != err {
@@ -108,6 +101,13 @@ func (a *attribute) CreateObjectAttribute(params types.ContextParams, data frtyp
 			blog.Errorf("[operation-attr] failed to create the association(%v), error info is %s", attrMeta, err.Error())
 			return nil, params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
 		}
+	}
+
+	// create a new one
+	err = att.Create()
+	if nil != err {
+		blog.Errorf("[operation-attr] failed to save the attribute data (%#v), error info is %s", data, err.Error())
+		return nil, err
 	}
 
 	return att, nil
