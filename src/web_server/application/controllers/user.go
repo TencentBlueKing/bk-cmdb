@@ -100,7 +100,7 @@ func UpdateUserLanguage(c *gin.Context) {
 func UserInfo(c *gin.Context) {
 
 	session := sessions.Default(c)
-	resultData := metadata.LonginUserInfoResult{}
+	resultData := metadata.LoginUserInfoResult{}
 	resultData.Result = true
 	uin, ok := session.Get(common.WEBSessionUinKey).(string)
 	if ok {
@@ -186,7 +186,7 @@ func UpdateSupplier(c *gin.Context) {
 	session.Set(common.WEBSessionOwnerUinKey, supplier.OwnerID)
 	session.Set(common.WEBSessionRoleKey, strconv.FormatInt(supplier.Role, 10))
 	session.Save()
-	ret := metadata.LonginChangeSupplierResult{}
+	ret := metadata.LoginChangeSupplierResult{}
 	ret.Result = true
 	ret.Data.ID = ownerID
 

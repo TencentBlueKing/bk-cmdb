@@ -18,6 +18,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/core/cc/wactions"
+	"configcenter/src/common/metadata"
 	"configcenter/src/web_server/application/middleware/user"
 )
 
@@ -27,8 +28,12 @@ func LogOutUser(c *gin.Context) {
 	session.Clear()
 	c.Request.URL.Path = ""
 	userManger := user.NewUser()
-	c.Redirect(302, userManger.GetLoginUrl(c))
-
+	loginURL := userManger.GetLoginUrl(c)
+	ret := metadata.LogoutResult{}
+	ret.BaseResp.Result = true
+	ret.Data.LogoutURL = loginURL
+	c.JSON(200, ret)
+	return
 }
 
 func init() {
