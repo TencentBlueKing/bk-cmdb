@@ -128,6 +128,15 @@ func isAuthed(c *gin.Context, skipLogin, defaultlanguage string) bool {
 	if nil == cc_token {
 		return user.LoginUser(c)
 	}
+	userName, ok := session.Get(common.WEBSessionUinKey).(string)
+	if !ok || "" == userName {
+		return user.LoginUser(c)
+	}
+	ownerID, ok := session.Get(common.WEBSessionOwnerUinKey).(string)
+	if !ok || "" == ownerID {
+		return user.LoginUser(c)
+	}
+
 	bk_token, err := c.Cookie(common.HTTPCookieBKToken)
 	blog.Info("valid user login session token %s, cookie token %s", cc_token, bk_token)
 	if nil != err || bk_token != cc_token {
