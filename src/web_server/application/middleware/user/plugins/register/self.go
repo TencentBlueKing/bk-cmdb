@@ -10,19 +10,8 @@
  * limitations under the License.
  */
 
-package user
+package manager
 
 import (
-	"github.com/gin-gonic/gin"
+	_ "configcenter/src/web_server/application/middleware/user/plugins/method/self"
 )
-
-type User interface {
-	LoginUser(c *gin.Context) (isLogin bool)
-	GetUserList(c *gin.Context) (int, interface{})
-	GetLoginUrl(c *gin.Context) string
-}
-
-//NewUser return user instance by type
-func NewUser() User {
-	return &publicUser{}
-}
