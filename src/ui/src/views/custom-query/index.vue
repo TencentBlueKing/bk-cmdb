@@ -150,6 +150,7 @@
             handleCreate (data) {
                 this.slider.id = data['id']
                 this.slider.type = 'update'
+                this.slider.title = this.$t('CustomQuery["编辑查询"]')
                 this.handlePageChange(1)
             },
             async getUserAPIList () {
