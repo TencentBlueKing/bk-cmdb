@@ -33,7 +33,7 @@
                 </label>
                 <div class="userapi-content-display">
                     <div class="text-content" @click="toggleContentSelector(true)" :class="{'open': attribute.isShow}">
-                        {{selectedName}}
+                        <span class="default-name">{{attribute.defaultName}}</span><span v-if="selectedName.length">,{{selectedName}}</span>
                         <i class="bk-icon icon-angle-down"></i>
                     </div>
                     <div class="userapi-content-display-mask" v-if="attribute.isShow"></div>
@@ -156,6 +156,7 @@
                     list: [],
                     selected: [],
                     isShow: false,
+                    defaultName: `${this.$t("Common['内网IP']")},${this.$t("Hosts['集群']")},${this.$t("Hosts['模块']")},${this.$t("Common['业务']")},${this.$t("Hosts['云区域']")}`,
                     default: [{
                         'bk_property_id': 'bk_host_innerip',
                         'bk_property_name': this.$t("Common['内网IP']")
@@ -347,7 +348,8 @@
                         tempList.push(property)
                     }
                 })
-                this.attribute.list = tempList.concat(this.attribute.default)
+                // this.attribute.list = tempList.concat(this.attribute.default)
+                this.attribute.list = tempList
                 this.attribute.selected = selected
                 this.dataCopy.attributeSelected = this.$tools.clone(selected)
             }
@@ -683,6 +685,9 @@
                             color: $cmdbBorderFocusColor;
                             transform: rotate(180deg);
                         }
+                    }
+                    .default-name {
+                        color: $cmdbBorderColor;
                     }
                 }
                 .userapi-content-display-mask {
