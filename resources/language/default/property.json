@@ -164,5 +164,20 @@
     "bk_apache_property_bk_max_connect":"最大连接请求数",
     "bk_apache_property_bk_max_keepalive":"最大keepAlive请求数",
 
+    "net_device_property_netcollect_device_id":"设备ID",
+    "net_device_property_device_name":"设备名",
+    "net_device_property_device_model":"设备型号",
+    "net_device_property_bk_obj_name":"模型名",
+    "net_device_property_bk_vendor":"厂商名",
+
+    "net_property_property_netcollect_property_id":"设备属性ID",
+    "net_property_property_device_name":"所属设备名",
+    "net_property_property_bk_property_name":"属性名",
+    "net_property_property_bk_obj_name":"模型名",
+    "net_property_property_unit":"单位",
+    "net_property_property_oid":"对象标识符",
+    "net_property_property_period":"采集周期",
+    "net_property_property_action":"采集方式",
+
     "": ""
 }
