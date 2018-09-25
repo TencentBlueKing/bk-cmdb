@@ -12,7 +12,7 @@
                         {{group['bk_group_name']}}
                     </span>
                 </h3>
-                <bk-collapse-transition>
+                <cmdb-collapse-transition @after-enter="checkScrollbar" @after-leave="checkScrollbar">
                     <ul class="property-list clearfix"
                         v-show="!collapseStatus[group['bk_group_id']]">
                         <li class="property-item clearfix fl"
@@ -27,11 +27,13 @@
                             <span class="property-value fl" v-else>{{inst[property['bk_property_id']] || '--'}}</span>
                         </li>
                     </ul>
-                </bk-collapse-transition>
+                </cmdb-collapse-transition>
             </div>
         </template>
-        <slot name="details-options" >
-            <div class="details-options" v-if="showOptions" ref="test">
+        <div class="details-options"
+            v-if="showOptions"
+            :class="{sticky: scrollbar}">
+            <slot name="details-options" >
                 <bk-button class="button-edit" type="primary"
                     v-if="showEdit"
                     :disabled="!$authorized.update"
@@ -44,13 +46,14 @@
                     @click="handleDelete">
                     {{deleteText}}
                 </bk-button>
-            </div>
-        </slot>
+            </slot>
+        </div>
     </div>
 </template>
 
 <script>
     import formMixins from '@/mixins/form'
+    import RESIZE_EVENTS from '@/utils/resize-events'
     export default {
         name: 'cmdb-details',
         mixins: [formMixins],
@@ -84,21 +87,29 @@
             return {
                 collapseStatus: {
                     none: true
-                }
+                },
+                scrollbar: false
             }
         },
         computed: {
             editText () {
-                return this.editButtonText || this.$t("Common['属性编辑']")
+                return this.editButtonText || this.$t("Common['编辑']")
             },
             deleteText () {
                 return this.deleteButtonText || this.$t("Common['删除']")
             }
         },
         mounted () {
-            console.log(this.$refs)
+            RESIZE_EVENTS.addResizeListener(this.$el, this.checkScrollbar)
+        },
+        beforeDestroy () {
+            RESIZE_EVENTS.removeResizeListener(this.$el, this.checkScrollbar)
         },
         methods: {
+            checkScrollbar () {
+                const $layout = this.$el
+                this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
+            },
             handleToggleGroup (group) {
                 const groupId = group['bk_group_id']
                 const collapse = !!this.collapseStatus[groupId]
@@ -121,13 +132,12 @@
     .details-layout{
         height: 100%;
         padding: 0 0 0 32px;
-        overflow: auto;
-        @include scrollbar;
+        @include scrollbar-y;
     }
     .property-group{
-        padding: 17px 0 0 0;
+        padding: 7px 0 10px 0;
         &:first-child{
-            padding: 28px 0 0 0;
+            padding: 28px 0 10px 0;
         }
     }
     .group-name{
@@ -187,19 +197,24 @@
         }
     }
     .details-options{
-        position: absolute;
+        position: sticky;
         bottom: 0;
         left: 0;
         width: 100%;
-        height: 62px;
-        padding: 14px 20px;
-        background-color: #f9f9f9;
+        padding: 28px 18px 0;
+        &.sticky {
+            width: calc(100% + 32px);
+            margin: 0 0 0 -40px;
+            padding: 10px 50px;
+            border-top: 1px solid $cmdbBorderColor;
+            background-color: #fff;
+        }
         .button-edit{
-            width: 110px;
+            min-width: 76px;
             margin-right: 4px;
         }
         .button-delete{
-            width: 110px;
+            min-width: 76px;
             background-color: #fff;
             color: #ff5656;
         }

@@ -154,3 +154,8 @@ export const removeResizeListener = function (element, fn) {
         }
     }
 }
+
+export default {
+    addResizeListener,
+    removeResizeListener
+}
