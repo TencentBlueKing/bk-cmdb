@@ -31,13 +31,12 @@
                 <label class="userapi-label">
                     {{$t("CustomQuery['查询内容']")}}<span class="color-danger"> * </span>
                 </label>
-                <div class="userapi-content-display clearfix">
-                    <textarea class="userapi-textarea" v-model="selectedName" disabled name="content" id="" cols="30" rows="10" v-validate="'required'"></textarea>
-                    <bk-button :disabled="attribute.isShow" v-tooltip="$t('Common[\'新增\']')" type="primary" class="btn-icon icon-cc-plus" @click="toggleContentSelector(true)"></bk-button>
-                    <input type="text" v-model="selectedName" v-validate="'required'" name="content" hidden>
-                </div>
-                <span v-show="errors.has('content')" class="color-danger">{{ errors.first('content') }}</span>
-                <div class="content-selector" v-show="attribute.isShow" ref="userapiContentSelector">
+                <div class="userapi-content-display">
+                    <div class="text-content" @click="toggleContentSelector(true)" :class="{'open': attribute.isShow}">
+                        <span class="default-name">{{attribute.defaultName}}</span><span v-if="selectedName.length">,{{selectedName}}</span>
+                        <i class="bk-icon icon-angle-down"></i>
+                    </div>
+                    <div class="userapi-content-display-mask" v-if="attribute.isShow"></div>
                     <bk-selector class="fl userapi-content-selector"
                         :searchable="true"
                         search-key="bk_property_name"
@@ -90,32 +89,20 @@
             </ul>
             <div class="userapi-new">
                 <button class="userapi-new-btn" @click="toggleUserAPISelector(true)">{{$t("CustomQuery['新增查询条件']")}}</button>
-                <div class="userapi-pop-wrapper" ref="userapiPop" v-show="objectInfo.isPropertiesShow" @click="toggleUserAPISelector(false)">
-                    <div class="userapi-new-selector-pop" @click.stop>
-                        <p class="pop-title">{{$t("CustomQuery['新增查询条件']")}}</p>
-                        <bk-selector class="userapi-new-selector" 
-                            :list="objectInfo.list"
-                            :selected.sync="objectInfo.selected">
-                        </bk-selector>
-                        <div class="userapi-new-selector-wrapper">
-                            <bk-selector
-                                :searchable="true"
-                                search-key="bk_property_name"
-                                ref="propertySelector"
-                                :list="object[objectInfo.selected]['properties']"
-                                :selected.sync="propertySelected[objectInfo.selected]"
-                                setting-key="bk_property_id"
-                                display-key="bk_property_name"
-                                :content-max-height="200"
-                                :multiSelect="true">
-                            </bk-selector>
-                        </div>
-                        <div class="btn-wrapper">
-                            <bk-button type="primary" class="btn confirm" @click="addUserProperties">{{$t("Common['确定']")}}</bk-button>
-                            <bk-button type="default" class="btn vice-btn" @click="toggleUserAPISelector(false)">{{$t("Common['取消']")}}</bk-button>
-                        </div>
-                    </div>
-                </div>
+                <div class="userapi-new-mask" v-if="filter.isShow"></div>
+                <bk-selector class="userapi-new-selector"
+                    v-if="filter.isShow"
+                    :searchable="true"
+                    search-key="filter_name"
+                    ref="propertySelector"
+                    :list="filterList"
+                    @visible-toggle="toggleUserAPISelector"
+                    :content-max-height="200"
+                    setting-key="filter_id"
+                    display-key="filter_name"
+                    @item-selected="addUserProperties"
+                    :selected="''">
+                </bk-selector>
             </div>
             <div class="userapi-btn-group">
                 <bk-button type="primary" class="userapi-btn" :disabled="errors.any()" @click.stop="previewUserAPI">
@@ -169,6 +156,7 @@
                     list: [],
                     selected: [],
                     isShow: false,
+                    defaultName: `${this.$t("Common['内网IP']")},${this.$t("Hosts['集群']")},${this.$t("Hosts['模块']")},${this.$t("Common['业务']")},${this.$t("Hosts['云区域']")}`,
                     default: [{
                         'bk_property_id': 'bk_host_innerip',
                         'bk_property_name': this.$t("Common['内网IP']")
@@ -179,23 +167,16 @@
                         'bk_property_id': 'bk_module_name',
                         'bk_property_name': this.$t("Hosts['模块']")
                     }, {
+                        'bk_property_id': 'bk_biz_name',
+                        'bk_property_name': this.$t("Common['业务']")
+                    }, {
                         'bk_property_id': 'bk_cloud_id',
                         'bk_property_name': this.$t("Hosts['云区域']")
                     }]
                 },
-                objectInfo: {
-                    isPropertiesShow: false,
-                    selected: 'host',
-                    list: [{
-                        id: 'host',
-                        name: this.$t("Hosts['主机']")
-                    }, {
-                        id: 'set',
-                        name: this.$t("Hosts['集群']")
-                    }, {
-                        id: 'module',
-                        name: this.$t("Hosts['模块']")
-                    }]
+                filter: {
+                    isShow: false,
+                    allList: []
                 },
                 object: {
                     'host': {
@@ -215,12 +196,13 @@
                         name: this.$t("Hosts['模块']"),
                         properties: [],
                         selected: []
+                    },
+                    'biz': {
+                        id: 'biz',
+                        name: this.$t("Common['业务']"),
+                        properties: [],
+                        selected: []
                     }
-                },
-                propertySelected: {
-                    host: [],
-                    set: [],
-                    module: []
                 },
                 userProperties: [],
                 operatorMap: {
@@ -250,6 +232,13 @@
                     }
                 })
                 return nameList.join(',')
+            },
+            filterList () {
+                return this.filter.allList.filter(item => {
+                    return !this.userProperties.some(property => {
+                        return item['bk_obj_id'] === property.objId && item['bk_property_id'] === property.propertyId
+                    })
+                })
             },
             /* 生成保存自定义API的参数 */
             apiParams () {
@@ -359,7 +348,8 @@
                         tempList.push(property)
                     }
                 })
-                this.attribute.list = tempList.concat(this.attribute.default)
+                // this.attribute.list = tempList.concat(this.attribute.default)
+                this.attribute.list = tempList
                 this.attribute.selected = selected
                 this.dataCopy.attributeSelected = this.$tools.clone(selected)
             }
@@ -508,10 +498,6 @@
                 })
             },
             deleteUserProperty (userProperty, index) {
-                let propertyIndex = this.propertySelected[userProperty.objId].findIndex(propertyId => propertyId === userProperty.propertyId)
-                if (propertyIndex !== -1) {
-                    this.propertySelected[userProperty.objId].splice(propertyIndex, 1)
-                }
                 this.userProperties.splice(index, 1)
             },
             getEnumOptions (userProperty) {
@@ -562,11 +548,53 @@
                             requestId: 'post_searchObjectAttribute_module',
                             fromCache: true
                         }
+                    }),
+                    this.searchObjectAttribute({
+                        params: {
+                            bk_obj_id: 'biz',
+                            bk_supplier_account: this.supplierAccount
+                        },
+                        config: {
+                            requestId: 'post_searchObjectAttribute_biz',
+                            fromCache: true
+                        }
                     })
                 ])
+                let hostList = res[0].filter(property => !property['bk_isapi'])
+                let setList = res[1].filter(property => !property['bk_isapi'])
+                let moduleList = res[2].filter(property => !property['bk_isapi'])
+                hostList = hostList.map(property => {
+                    return {
+                        ...property,
+                        ...{
+                            filter_id: `${property['bk_obj_id']}-${property['bk_property_id']}`,
+                            filter_name: `${this.$t("Hosts['主机']")}-${property['bk_property_name']}`
+                        }
+                    }
+                })
+                setList = setList.map(property => {
+                    return {
+                        ...property,
+                        ...{
+                            filter_id: `${property['bk_obj_id']}-${property['bk_property_id']}`,
+                            filter_name: `${this.$t("Hosts['集群']")}-${property['bk_property_name']}`
+                        }
+                    }
+                })
+                moduleList = moduleList.map(property => {
+                    return {
+                        ...property,
+                        ...{
+                            filter_id: `${property['bk_obj_id']}-${property['bk_property_id']}`,
+                            filter_name: `${this.$t("Hosts['模块']")}-${property['bk_property_name']}`
+                        }
+                    }
+                })
+                this.filter.allList = [...hostList, ...setList, ...moduleList]
                 this.object['host']['properties'] = res[0].filter(property => !property['bk_isapi'])
                 this.object['set']['properties'] = res[1].filter(property => !property['bk_isapi'])
                 this.object['module']['properties'] = res[2].filter(property => !property['bk_isapi'])
+                this.object['biz']['properties'] = res[3].filter(property => !property['bk_isapi'])
             },
             /* 通过选择的propertyId, 查找其对应的对象，以获得更多信息 */
             getOriginalProperty (bkPropertyId, bkObjId) {
@@ -585,70 +613,36 @@
                 }
                 return property
             },
-            addUserProperties () {
-                let selectedList = []
-                for (let key in this.propertySelected) {
-                    if (this.propertySelected[key].length) {
-                        this.propertySelected[key].map(propertyId => {
-                            let property = this.getOriginalProperty(propertyId, key)
-                            let {
-                                'bk_property_name': propertyName,
-                                'bk_property_type': propertyType,
-                                'bk_asst_obj_id': asstObjId,
-                                'bk_obj_id': objId
-                            } = property
-                            selectedList.push({
-                                propertyId,
-                                objId
-                            })
-                            let isExist = this.userProperties.findIndex(property => {
-                                return propertyId === property.propertyId
-                            }) > -1
-                            if (!isExist) {
-                                this.userProperties.push({
-                                    objId,
-                                    propertyId,
-                                    propertyType,
-                                    propertyName,
-                                    objName: this.object[objId].name,
-                                    asstObjId,
-                                    operator: this.operatorMap.hasOwnProperty(propertyType) ? this.operatorMap[propertyType] : '',
-                                    value: ''
-                                })
-                            }
-                        })
-                    }
-                }
-                this.userProperties = this.userProperties.filter(property => {
-                    return selectedList.findIndex(({propertyId, objId}) => {
-                        return propertyId === property.propertyId && objId === property.objId
-                    }) > -1
+            addUserProperties (key, property) {
+                let {
+                    'bk_property_id': propertyId,
+                    'bk_property_name': propertyName,
+                    'bk_property_type': propertyType,
+                    'bk_asst_obj_id': asstObjId,
+                    'bk_obj_id': objId
+                } = property
+                this.userProperties.push({
+                    objId,
+                    propertyId,
+                    propertyType,
+                    propertyName,
+                    objName: this.object[objId].name,
+                    asstObjId,
+                    operator: this.operatorMap.hasOwnProperty(propertyType) ? this.operatorMap[propertyType] : '',
+                    value: ''
                 })
-                this.toggleUserAPISelector(false)
             },
             toggleContentSelector (isShow) {
                 this.$refs.content.open = isShow
                 this.attribute.isShow = isShow
             },
             toggleUserAPISelector (isPropertiesShow) {
-                if (!isPropertiesShow) {
-                    let properties = {
-                        host: [],
-                        set: [],
-                        module: []
-                    }
-                    this.userProperties.map(property => {
-                        properties[property.objId].push(property.propertyId)
+                this.filter.isShow = isPropertiesShow
+                if (isPropertiesShow) {
+                    this.$nextTick(() => {
+                        this.$refs.propertySelector.open = isPropertiesShow
                     })
-                    this.object.host.selected = properties.host
-                    this.object.set.selected = properties.set
-                    this.object.module.selected = properties.module
-                    this.propertySelected.host = properties.host
-                    this.propertySelected.set = properties.set
-                    this.propertySelected.module = properties.module
                 }
-                this.objectInfo.isPropertiesShow = isPropertiesShow
-                this.$refs.userapiPop.style.zIndex = ++this.zIndex
             }
         }
     }
@@ -667,37 +661,51 @@
             width: 370px;
             &.content {
                 margin-bottom: 30px;
-                .content-selector {
-                    position: relative;
-                }
             }
             .userapi-label {
                 display: block;
                 margin-bottom: 5px;
             }
-            .userapi-textarea {
-                float: left;
-                width: 334px;
-                height: 80px;
-                padding: 5px 16px;
-                margin-bottom: 10px;
-                font-size: 14px;
-                resize: none;
-                outline: none;
-                vertical-align: bottom;
-                color: #666;
-                background: #fff;
-                border-color: $cmdbBorderColor;
-            }
-            .btn-icon {
-                margin-left: 10px;
-                vertical-align: top;
-                width: 26px;
-                height: 26px;
-                padding: 0;
-                margin-top: 0;
-                font-size: 20px;
-                line-height: 25px;
+            .userapi-content-display {
+                position: relative;
+                .text-content {
+                    border-radius: 2px;
+                    border: 1px solid $cmdbBorderColor;
+                    padding: 0 28px 0 16px;
+                    height: 32px;
+                    line-height: 30px;
+                    overflow: hidden;
+                    &.open {
+                        padding: 5px 28px 5px 16px;
+                        height: auto;
+                        line-height: 20px;
+                        overflow: visible;
+                        border-color: $cmdbBorderFocusColor;
+                        .icon-angle-down {
+                            color: $cmdbBorderFocusColor;
+                            transform: rotate(180deg);
+                        }
+                    }
+                    .default-name {
+                        color: $cmdbBorderColor;
+                    }
+                }
+                .userapi-content-display-mask {
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    right: 0;
+                    bottom: 0;
+                    width: 100%;
+                    height: 100%;
+                }
+                .icon-angle-down {
+                    position: absolute;
+                    right: 8px;
+                    top: 8px;
+                    font-size: 12px;
+                    transition: transform .2s linear;
+                }
             }
         }
         .userapi-list {
@@ -732,7 +740,7 @@
             }
         }
         .userapi-new{
-            width: 334px;
+            width: 370px;
             margin-top: 20px;
             font-size: 14px;
             .userapi-new-btn{
@@ -742,10 +750,19 @@
                 border-radius: 2px;
                 border: 1px dashed #c3cdd7;
                 outline: 0;
-                color: #c7ced6;
+                color: $cmdbBorderFocusColor;
                 &:hover{
                     box-shadow: 0px 3px 6px 0px rgba(51, 60, 72, 0.1);
                 }
+            }
+            .userapi-new-mask {
+                position: absolute;
+                left: 0;
+                top: 0;
+                right: 0;
+                bottom: 0;
+                width: 100%;
+                height: 100%;
             }
             .userapi-pop-wrapper {
                 position: fixed;
@@ -791,6 +808,10 @@
             background: #fff;
             line-height: 36px;
             height: 37px;
+            font-size: 0;
+            .bk-button {
+                margin-right: 10px;
+            }
             .button-delete {
                 background-color: #fff;
                 color: #ff5656;
@@ -798,3 +819,53 @@
         }
     }
 </style>
+
+<style lang="scss">
+    .api-wrapper {
+        .define-wrapper {
+            .userapi-new {
+                position: relative;
+                .userapi-new-selector {
+                    position: absolute;
+                    left: 0;
+                    bottom: 32px;
+                }
+                .bk-selector-wrapper {
+                    display: none;
+                }
+                .bk-selector-list {
+                    top: 36px;
+                    left: 1px;
+                }
+            }
+            .userapi-new-selector-wrapper {
+                .bk-selector-wrapper {
+                    display: none;
+                }
+                .bk-selector-list {
+                    display: block !important;
+                    position: static;
+                    margin-top: 5px;
+                    z-index: 1;
+                    box-shadow: none;
+                    border: solid 1px $cmdbFnMainColor;
+                }
+            }
+            .userapi-content-display {
+                .userapi-content-selector {
+                    position: absolute;
+                    left: 0;
+                    bottom: 32px;
+                }
+                .bk-selector-wrapper {
+                    display: none;
+                }
+                .bk-selector-list {
+                    top: 36px;
+                    left: 1px;
+                }
+            }
+        }
+    }
+</style>
+
