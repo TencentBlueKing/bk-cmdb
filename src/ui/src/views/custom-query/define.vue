@@ -745,7 +745,7 @@
                 border-radius: 2px;
                 border: 1px dashed #c3cdd7;
                 outline: 0;
-                color: #c7ced6;
+                color: $cmdbBorderFocusColor;
                 &:hover{
                     box-shadow: 0px 3px 6px 0px rgba(51, 60, 72, 0.1);
                 }
