@@ -383,6 +383,7 @@
                     this.tab.type = 'details'
                     this.handleTabChanged(activeTab)
                 } else if (activeTab === 'hosts') {
+                    this.$refs.topoTable.table.checked = []
                     this.setSearchParams()
                     this.handleRefresh()
                 }
