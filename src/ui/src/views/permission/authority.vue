@@ -8,7 +8,7 @@
                         v-for="(config, configId) in sysConfig" 
                         :key="configId"
                         v-if="config.authorities.length">
-                        <h3 class="system-title fl">{{$t(config.name)}}:</h3>
+                        <h3 class="system-title fl">{{$t(config.name)}}：</h3>
                         <ul class="system-list fl">
                             <li class="system-item fl"  v-for="(authority, index) in config.authorities" :key="index">
                                 <label class="cmdb-form-checkbox cmdb-checkbox-small"
@@ -37,7 +37,7 @@
                         <transition name="slide">
                             <ul class="model-list" v-show="classify.open" :style="calcModelListStyle(classify.models.length)">
                                 <li class="model-item clearfix" v-for="(model,modelIndex) in classify.models" :key="modelIndex">
-                                    <h4 class="model-authority fl" :title="model['bk_obj_name']">{{model['bk_obj_name']}}:</h4>
+                                    <h4 class="model-authority fl" :title="model['bk_obj_name']">{{model['bk_obj_name']}}：</h4>
                                     <span class="model-authority-checkbox fl first">
                                         <label class="cmdb-form-checkbox cmdb-checkbox-small"
                                             :for="'model-all-'+model['bk_obj_id']">
@@ -336,7 +336,7 @@
             @include ellipsis;
         }
         .model-authority-checkbox{
-            width: 75px;
+            width: 115px;
             height: 32px;
             margin: 0 0 0 5px;
             &.first {

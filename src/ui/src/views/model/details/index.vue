@@ -24,6 +24,7 @@
                     v-if="curTabName === 'host'"
                     :isEdit.sync="isEdit"
                     @createObject="createObject"
+                    @updateTopo="updateModel"
                     @confirm="updateModel"
                     @cancel="cancel"
                     ref="tab"
@@ -124,29 +125,26 @@
                 }).then(() => {
                     this.$http.cancel('post_searchClassificationsObjects')
                 })
-                this.updateModel()
+                this.updateModel(false)
             },
             async deleteModel () {
-                let promise
                 if (this.isMainLine) {
-                    promise = await this.deleteMainlineObject({
+                    await this.deleteMainlineObject({
                         bkObjId: this.activeModel['bk_obj_id'],
                         config: {
                             requestId: 'deleteModel'
                         }
                     })
                 } else {
-                    promise = await this.deleteObject({
+                    await this.deleteObject({
                         id: this.activeModel['id'],
                         config: {
                             requestId: 'deleteModel'
                         }
                     })
                 }
-                promise.then(() => {
-                    this.$http.cancel('post_searchClassificationsObjects')
-                })
-                this.updateModel()
+                this.$http.cancel('post_searchClassificationsObjects')
+                this.updateModel(false)
             },
             cancel () {
                 this.$emit('cancel')
@@ -155,8 +153,8 @@
                 this.$emit('createModel')
                 this.$emit('update:isEdit', true)
             },
-            updateModel () {
-                this.$emit('updateModel')
+            updateModel (isShow) {
+                this.$emit('updateModel', isShow)
             },
             isCloseConfirmShow () {
                 if (this.curTabName === 'other') {
@@ -174,6 +172,9 @@
         height: 100%;
         .btn-group {
             font-size: 0;
+            .btn-box {
+                cursor: pointer;
+            }
             >span {
                 font-size: 14px;
                 &:last-child {
@@ -184,7 +185,6 @@
             .text {
                 vertical-align: middle;
                 font-size: 14px;
-                cursor: pointer;
             }
             .icon {
                 margin-right: 5px;

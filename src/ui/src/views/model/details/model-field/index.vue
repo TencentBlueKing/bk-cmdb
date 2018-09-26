@@ -41,6 +41,7 @@
                     <bk-selector
                         class="form-selector"
                         :list="fieldTypeList"
+                        :content-max-height="200"
                         :selected.sync="fieldInfo['bk_property_type']"
                         :disabled="isEditField"
                     ></bk-selector>
@@ -263,7 +264,7 @@
                         this.$http.cancel(`post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`)
                     })
                 }
-                this.$emit('save')
+                this.$emit('save', this.fieldInfo['bk_property_type'])
             },
             cancel () {
                 this.$emit('cancel')

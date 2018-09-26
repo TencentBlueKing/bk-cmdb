@@ -11,7 +11,6 @@
                     class="search-selector"
                     :list="typeList"
                     :selected.sync="filter.type"
-                    :allow-clear="true"
                 ></bk-selector>
                 <input class="cmdb-form-input" :placeholder="$t('Common[\'请输入\']')" type="text" id="SearchUserName" v-model.trim="filter.text" @keyup.enter="getRoleList">
                 <i class="filter-search bk-icon icon-search"
@@ -29,7 +28,12 @@
                 <span class="text-primary" @click="showDetails(item)">{{$t('Permission["权限详情"]')}}</span>
                 <span class="text-primary" @click.stop="editRole(item)">{{$t('Common["编辑"]')}}</span>
                 <span class="text-danger" @click.stop="confirmDeleteRole(item)">{{$t('Common["删除"]')}}</span>
-            </template>  
+            </template>
+            <div class="empty-info" slot="data-empty">
+                <p>{{$t("Common['暂时没有数据']")}}</p>
+                <p>{{$t("Permission['当前并无角色，可点击下方按钮新增']")}}</p>
+                <bk-button class="process-btn" type="primary" @click="createRole">{{$t("Permission['新增角色']")}}</bk-button>
+            </div>
         </cmdb-table>
         <v-role-form 
             ref="roleForm"
@@ -40,7 +44,8 @@
             @closeRoleForm="form.isShow = false">
         </v-role-form>
         <cmdb-slider
-        :width="514"
+        :width="600"
+        :title="slider.title"
         :isShow.sync="slider.isShow">
             <vAuthority
                 slot="content"
@@ -64,7 +69,7 @@
         data () {
             return {
                 filter: {
-                    type: '',
+                    type: 'group_name',
                     text: ''
                 },
                 typeList: [{
@@ -102,7 +107,8 @@
                 },
                 slider: {
                     isShow: false,
-                    groupId: ''
+                    groupId: '',
+                    title: ''
                 }
             }
         },
@@ -119,6 +125,7 @@
             ]),
             showDetails (item) {
                 this.slider.groupId = item['group_id']
+                this.slider.title = `${item['group_name']} ${this.$t('Permission["权限详情"]')}`
                 this.slider.isShow = true
             },
             handleCreateSuccess () {

@@ -6,6 +6,7 @@
                 v-if="showBack"
                 @click="back"></i>
             <h2 class="breadcrumbs-current">{{$classify.i18n ? $t($classify.i18n) : $classify.name}}</h2>
+            <i v-if="$classify.id === 'custom_query'" class="bk-icon icon-info-circle" v-tooltip="{content: $t('CustomQuery[\'保存后的查询可通过接口调用生效\']'), classes: 'custom-query-header-tooltip'}"></i>
         </div>
         <div class="header-options fr">
             <div class="user" v-click-outside="handleCloseUser">
@@ -118,6 +119,10 @@
             font-size: 16px;
             font-weight: normal;
         }
+        .icon-info-circle {
+            margin-left: 5px;
+            font-size: 16px;
+        }
     }
     .header-options {
         text-align: right;
@@ -201,6 +206,44 @@
                     background-color: #f1f7ff;
                     color: #498fe0;
                 }
+            }
+        }
+    }
+</style>
+
+<style lang="scss">
+    .tooltip.custom-query-header-tooltip {
+        .tooltip-inner {
+            margin-top: 5px;
+            background: white;
+            color: $cmdbTextColor;
+            padding: 30px;
+            max-width: 300px;
+            box-shadow: 0px 1px 6px 0px rgba(0, 0, 0, 0.3);
+        }
+        .tooltip-arrow {
+            width: 0;
+            height: 0;
+            margin-top: 5px;
+            border-style: solid;
+            position: absolute;
+            border-color: rgba(0, 0, 0, 0.3);
+            z-index: 2;
+            &:before {
+                content: "";
+                border-width: 0 5px 5px 5px;
+                border-left-color: transparent !important;
+                border-right-color: transparent !important;
+                border-top-color: transparent !important;
+                top: -5px;
+                left: calc(50% - 5px);
+                width: 0;
+                height: 0;
+                margin-top: 5px;
+                border-style: solid;
+                position: absolute;
+                border-color: white;
+                z-index: 1;
             }
         }
     }
