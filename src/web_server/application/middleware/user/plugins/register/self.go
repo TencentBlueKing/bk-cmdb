@@ -10,32 +10,8 @@
  * limitations under the License.
  */
 
-package controllers
+package manager
 
 import (
-	"github.com/gin-gonic/contrib/sessions"
-	"github.com/gin-gonic/gin"
-
-	"configcenter/src/common"
-	"configcenter/src/common/core/cc/wactions"
-	"configcenter/src/common/metadata"
-	"configcenter/src/web_server/application/middleware/user"
+	_ "configcenter/src/web_server/application/middleware/user/plugins/method/self"
 )
-
-//LogOutUser log out user
-func LogOutUser(c *gin.Context) {
-	session := sessions.Default(c)
-	session.Clear()
-	c.Request.URL.Path = ""
-	userManger := user.NewUser()
-	loginURL := userManger.GetLoginUrl(c)
-	ret := metadata.LogoutResult{}
-	ret.BaseResp.Result = true
-	ret.Data.LogoutURL = loginURL
-	c.JSON(200, ret)
-	return
-}
-
-func init() {
-	wactions.RegisterNewAction(wactions.Action{common.HTTPSelectGet, "/logout", nil, LogOutUser})
-}
