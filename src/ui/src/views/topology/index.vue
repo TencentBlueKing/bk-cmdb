@@ -31,7 +31,7 @@
         <div class="hosts-layout">
             <bk-tab :active-name.sync="tab.active" @tab-changed="handleTabChanged">
                 <bk-tabpanel class="topo-tabpanel" name="hosts" :title="$t('BusinessTopology[\'主机调配\']')">
-                    <bk-button class="topo-table-btn-refresh" type="primary"
+                    <bk-button class="topo-table-btn-refresh" type="primary" style="display: none;"
                         :disabled="$loading()"
                         @click="handleRefresh">
                         {{$t("HostResourcePool['刷新查询']")}}
