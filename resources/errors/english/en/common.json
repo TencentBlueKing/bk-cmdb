@@ -13,7 +13,7 @@
     "1199011": "'%s' the parameter is invalid or does not exist",
     "1199012": "uniqueness does not pass",
     "1199013": "Failed to read Data field data",
-    "1199014": "Duplicate data",
+    "1199014": "data uniqueness check failed",
     "1199015": "Data out of bounds",
 	"1199016": "Field regular check failed",
     "1199017": "Failed to query data",
