@@ -31,7 +31,7 @@ var dataWithCondition = []inputDatas{
 	inputDatas{
 		data: mapstr.MapStr{
 			metadata.AttributeFieldPropertyIndex: -3,
-			metadata.AttributeFieldPlaceHoler:    `对外显示的服务名</br> 比如程序的二进制名称为Java的服务zookeeper，则填zookeeper`,
+			metadata.AttributeFieldPlaceHoler:    `对外显示的服务名</br> 比如程序的二进制名称为java的服务zookeeper，则填zookeeper`,
 		},
 		cond: mapstr.MapStr{
 			metadata.AttributeFieldPropertyID: common.BKProcessNameField,
@@ -43,7 +43,7 @@ var dataWithCondition = []inputDatas{
 			metadata.AttributeFieldPropertyIndex: -2,
 			metadata.AttributeFieldIsRequired:    true,
 			metadata.AttributeFieldPropertyGroup: mCommon.BaseInfo,
-			metadata.AttributeFieldPlaceHoler:    `程序的二进制名称</br> 比如zookeeper的二进制名称是Java，则填Java`,
+			metadata.AttributeFieldPlaceHoler:    `程序的二进制名称</br> 比如zookeeper的二进制名称是java，则填java`,
 		},
 		cond: mapstr.MapStr{
 			metadata.AttributeFieldPropertyID: "bk_func_name",
