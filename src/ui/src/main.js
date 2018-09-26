@@ -41,6 +41,9 @@ const bkMagicLang = {
 let language = Cookies.get('blueking_language') || 'zh_CN'
 language = languageTranslate.hasOwnProperty(language) ? languageTranslate[language] : language
 document.body.setAttribute('lang', language)
+
+Cookies.set('http_scheme', window.location.protocol.replace(':', ''))
+
 Vue.use(vDrag)
 Vue.use(VTooltip)
 Vue.use(vClickOutside)

@@ -72,16 +72,15 @@
             },
             // 退出登陆
             logOut () {
-                this.$axios.get(`${window.siteUrl}logout`).then(res => {
+                this.$axios.post(`${window.siteUrl}logout`, {
+                    'http_scheme': window.location.protocol.replace(':', '')
+                }).then(res => {
                     if (res.result) {
-                        this.redirect(res.data.url)
+                        window.location.href = res.data.url
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
                     }
                 })
-            },
-            redirect (url) {
-                window.location.href = url.replace(/http:|https:/, window.location.protocol)
             },
             // 获取当前路由对应的模型
             getRouteModel (path) {
