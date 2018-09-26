@@ -576,7 +576,6 @@
                 this.$store.dispatch('userCustom/saveUsercustom', {
                     [`${this.objId}_table_columns`]: []
                 })
-                this.columnsConfig.show = false
             },
             routeToHistory () {
                 this.$router.push(`/history/${this.objId}?relative=/general-model/${this.objId}`)

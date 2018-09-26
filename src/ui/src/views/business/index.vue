@@ -358,7 +358,6 @@
                 this.$store.dispatch('userCustom/saveUsercustom', {
                     'biz_table_columns': []
                 })
-                this.columnsConfig.show = false
             },
             routeToHistory () {
                 this.$router.push('/history/biz?relative=/business')
