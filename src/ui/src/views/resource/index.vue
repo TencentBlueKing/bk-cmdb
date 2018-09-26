@@ -23,6 +23,10 @@
             @on-set-header="handleSetHeader">
             <div class="resource-options clearfix" slot="options">
                 <div class="fl">
+                    <bk-button class="options-button" type="primary" style="margin-left: 0"
+                        @click="importInst.show = true">
+                        {{$t('HostResourcePool[\'导入主机\']')}}
+                    </bk-button>
                     <cmdb-selector class="options-business-selector"
                         :placeholder="$t('HostResourcePool[\'分配到业务空闲机池\']')"
                         :disabled="!table.checked.length"
@@ -33,54 +37,41 @@
                         v-model="assignBusiness"
                         @on-selected="handleAssignHosts">
                     </cmdb-selector>
-                </div>
-                <div class="fl" v-tooltip="$t('BusinessTopology[\'修改\']')">
                     <bk-button class="options-button" type="default"
                         :disabled="!table.checked.length"
                         @click="handleMultipleEdit">
-                        <i class="icon-cc-edit"></i>
+                        {{$t('BusinessTopology[\'修改\']')}}
                     </bk-button>
-                </div>
-                <div class="fl" v-tooltip="$t('Common[\'删除\']')">
                     <bk-button class="options-button options-button-delete" type="default"
                         :disabled="!table.checked.length"
                         @click="handleMultipleDelete">
-                        <i class="icon-cc-del"></i>
+                        {{$t('Common[\'删除\']')}}
                     </bk-button>
-                </div>
-                <div class="fl" v-tooltip="$t('HostResourcePool[\'导出选中\']')">
                     <bk-button class="options-button" type="submit default"
                         form="exportForm"
                         :disabled="!table.checked.length">
-                        <i class="icon-cc-derivation"></i>
+                        {{$t('HostResourcePool[\'导出选中\']')}}
                     </bk-button>
-                </div>
-                <form id="exportForm" :action="table.exportUrl" method="POST" hidden>
-                    <input type="hidden" name="bk_host_id" :value="table.checked">
-                    <input type="hidden" name="bk_biz_id" value="-1">
-                </form>
-                <div class="fl">
-                    <cmdb-clipboard-selector class="options-button"
+                    <form id="exportForm" :action="table.exportUrl" method="POST" hidden>
+                        <input type="hidden" name="bk_host_id" :value="table.checked">
+                        <input type="hidden" name="bk_biz_id" value="-1">
+                    </form>
+                    <cmdb-clipboard-selector class="options-clipboard"
                         :list="clipboardList"
                         :disabled="!table.checked.length"
                         @on-copy="handleCopy">
                     </cmdb-clipboard-selector>
                 </div>
                 <div class="fr">
-                    <bk-button class="options-button" type="default"
+                    <bk-button class="options-button options-icon" type="default"
                         v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')"
                         @click="handleColumnsConfig">
                         <i class="icon-cc-setting"></i>
                     </bk-button>
-                    <bk-button class="options-button" type="default"
+                    <bk-button class="options-button options-icon" type="default"
                         v-tooltip="$t('Common[\'查看删除历史\']')"
                         @click="routeToHistory">
                         <i class="icon-cc-history"></i>
-                    </bk-button>
-                    <bk-button class="options-button" type="primary"
-                        v-tooltip="$t('HostResourcePool[\'导入主机\']')"
-                        @click="importInst.show = true">
-                        <i class="icon-cc-import"></i>
                     </bk-button>
                 </div>
             </div>
@@ -397,9 +388,9 @@
             position: relative;
             display: inline-block;
             vertical-align: middle;
-            border-radius: 0;
             font-size: 14px;
-            margin-left: -1px;
+            margin: 0 5px;
+            padding: 0 10px;
             &:hover{
                 z-index: 1;
             }
@@ -413,10 +404,17 @@
                 margin: 0 0 0 10px;
                 border-radius: 2px;
             }
+            &.options-icon {
+                border-radius: 0;
+                margin: 0 -1px 0 0;
+            }
+        }
+        .options-clipboard {
+            margin: 0 5px;
         }
         .options-table-selector,
         .options-business-selector{
-            margin: 0 10px 0 0;
+            margin: 0 5px 0 0;
         }
         .options-business-selector{
             width: 180px;
