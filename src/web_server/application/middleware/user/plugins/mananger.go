@@ -10,32 +10,38 @@
  * limitations under the License.
  */
 
-package controllers
+package plugins
 
 import (
-	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
 
 	"configcenter/src/common"
-	"configcenter/src/common/core/cc/wactions"
+	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/metadata"
-	"configcenter/src/web_server/application/middleware/user"
+	"configcenter/src/web_server/application/middleware/user/plugins/manager"
+	_ "configcenter/src/web_server/application/middleware/user/plugins/register"
 )
 
-//LogOutUser log out user
-func LogOutUser(c *gin.Context) {
-	session := sessions.Default(c)
-	session.Clear()
-	c.Request.URL.Path = ""
-	userManger := user.NewUser()
-	loginURL := userManger.GetLoginUrl(c)
-	ret := metadata.LogoutResult{}
-	ret.BaseResp.Result = true
-	ret.Data.LogoutURL = loginURL
-	c.JSON(200, ret)
-	return
-}
+func CurrentPlugin(c *gin.Context) metadata.LoginUserPluginInerface {
+	ccapi := api.NewAPIResource()
+	config, _ := ccapi.ParseConfig()
+	version, ok := config["login.version"]
+	if !ok {
+		version = common.BKDefaultLoginUserPluginVersion
+	}
 
-func init() {
-	wactions.RegisterNewAction(wactions.Action{common.HTTPSelectGet, "/logout", nil, LogOutUser})
+	var selfPlugin *metadata.LoginPluginInfo
+	for _, plugin := range manager.LoginPluginInfo {
+		if plugin.Version == version {
+			return plugin.HandleFunc
+		}
+		if common.BKDefaultLoginUserPluginVersion == plugin.Version {
+			selfPlugin = plugin
+		}
+	}
+	if nil != selfPlugin {
+		return selfPlugin.HandleFunc
+	}
+
+	return nil
 }

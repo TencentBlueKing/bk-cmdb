@@ -43,7 +43,7 @@ func (m *publicAuth) ValidResAccess(pathArr []string, c *gin.Context) bool {
 			return true
 		}
 	}
-	iuserName := session.Get("userName")
+	iuserName := session.Get(common.WEBSessionUinKey)
 	if nil == iuserName {
 		blog.Error("user name error")
 		return false
