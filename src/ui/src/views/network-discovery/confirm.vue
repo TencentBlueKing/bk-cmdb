@@ -69,18 +69,32 @@
         </footer>
         <bk-dialog
         :is-show.sync="resultInfo.isShow" 
-        :has-header="false" 
-        :has-footer="false" 
-        :quick-close="false" 
+        :has-header="false"
+        :has-footer="false"
+        :quick-close="false"
         :width="448">
             <div slot="content">
+                <h2>{{$t('NetworkDiscovery["执行结果"]')}}</h2>
                 <div>
-                    <h3>{{$t('NetworkDiscovery["执行结果"]')}}</h3>
                     <p>{{$t('NetworkDiscovery["属性变更成功"]')}}</p>
                     <p>{{$t('NetworkDiscovery["关联关系变更成功"]')}}</p>
                     <p>{{$t('NetworkDiscovery["属性变更失败"]')}}</p>
                     <p>{{$t('NetworkDiscovery["关联关系变更失败"]')}}</p>
                 </div>
+                <div>
+                    <p>
+                        <i class="bk-icon icon-angle-down"></i>
+                        <span>{{$t('NetworkDiscovery["展开详情"]')}}</span>
+                    </p>
+                    <div class="detail-content">
+                        asdfasdf
+                    </div>
+                </div>
+                <footer>
+                    <bk-button type="primary">
+                        {{$t('Hosts["确认"]')}}
+                    </bk-button>
+                </footer>
             </div>
         </bk-dialog>
     </div>
