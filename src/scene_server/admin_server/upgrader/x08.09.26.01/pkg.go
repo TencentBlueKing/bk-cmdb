@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package x08_09_19_01
+package x08_09_26_01
 
 import (
 	"configcenter/src/common/blog"
@@ -19,7 +19,7 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("x08.09.19.01", upgrade)
+	upgrader.RegistUpgrader("x08.09.26.01", upgrade)
 }
 
 func upgrade(db storage.DI, conf *upgrader.Config) (err error) {
