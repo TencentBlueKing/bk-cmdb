@@ -29,6 +29,11 @@
             <template slot="last_time" slot-scope="{item}">
                 {{$tools.formatTime(item['last_time'])}}
             </template>
+            <div class="empty-info" slot="data-empty">
+                <p>{{$t("Common['暂时没有数据']")}}</p>
+                <p>{{$t("CustomQuery['当前业务并无自定义查询，可点击下方按钮新增']")}}</p>
+                <bk-button class="process-btn" type="primary" @click="showUserAPISlider('create')">{{$t("CustomQuery['新增查询']")}}</bk-button>
+            </div>
         </cmdb-table>
         <cmdb-slider
             :isShow.sync="slider.isShow"
@@ -145,6 +150,7 @@
             handleCreate (data) {
                 this.slider.id = data['id']
                 this.slider.type = 'update'
+                this.slider.title = this.$t('CustomQuery["编辑查询"]')
                 this.handlePageChange(1)
             },
             async getUserAPIList () {
@@ -212,28 +218,3 @@
     }
 </style>
 
-<style lang="scss">
-    .api-wrapper {
-        .define-wrapper {
-            .userapi-new-selector-wrapper {
-                .bk-selector-wrapper {
-                    display: none;
-                }
-                .bk-selector-list {
-                    display: block !important;
-                    position: static;
-                    margin-top: 5px;
-                    z-index: 1;
-                    box-shadow: none;
-                    border: solid 1px $cmdbFnMainColor;
-                }
-            }
-            .userapi-content-selector {
-                .bk-selector-list {
-                    top: 36px;
-                    left: 1px;
-                }
-            }
-        }
-    }
-</style>
