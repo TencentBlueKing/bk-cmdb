@@ -1,13 +1,13 @@
 <template>
-    <div class="form-bool" @click="handleClick">
+    <div class="form-bool" @click="handleChange">
         <input class="form-bool-input" type="checkbox"
             ref="input"
             :checked="checked"
             :disabled="disabled"
             :true-value="trueValue"
             :false-value="falseValue"
-            @click.stop
-            @change="handleChange($event)">
+            v-model="localChecked"
+            @click.stop>
         <slot></slot>
     </div>
 </template>
@@ -33,6 +33,23 @@
                 default: false
             }
         },
+        data () {
+            return {
+                localChecked: this.checked
+            }
+        },
+        watch: {
+            checked (checked) {
+                this.localChecked = checked
+            },
+            localChecked (localChecked) {
+                this.$emit('change', localChecked, this)
+                this.$emit('on-change', localChecked, this)
+            }
+        },
+        created () {
+            this.localChecked = this.checked
+        },
         mounted () {
             for (let attr in this.$attrs) {
                 this.$el.setAttribute(attr, '')
@@ -40,15 +57,8 @@
             }
         },
         methods: {
-            handleClick () {
-                const value = this.$refs.input.checked ? this.falseValue : this.trueValue
-                this.$emit('change', value)
-                this.$emit('on-change', value)
-            },
-            handleChange (event) {
-                const value = event.target.checked ? this.trueValue : this.falseValue
-                this.$emit('change', value)
-                this.$emit('on-change', value)
+            handleChange () {
+                this.localChecked = this.localChecked ? this.falseValue : this.trueValue
             }
         }
     }
