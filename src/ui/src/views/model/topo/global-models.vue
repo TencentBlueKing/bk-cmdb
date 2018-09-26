@@ -115,7 +115,7 @@
                                     from: node['bk_obj_id'],
                                     to: asst['bk_obj_id'],
                                     arrows: 'to',
-                                    label: asst['bk_object_att_id']
+                                    label: asst['bk_asst_name']
                                 })
                             }
                         })
