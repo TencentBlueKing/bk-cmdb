@@ -497,9 +497,6 @@
                 position: absolute;
                 top: 20px;
                 right: 20px;
-                height: 24px;
-                line-height: 22px;
-                font-size: 12px;
                 z-index: 9999;
             }
         }

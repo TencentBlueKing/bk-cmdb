@@ -1,9 +1,8 @@
 <template>
     <div class="new-association">
-        <a href="javascript:void(0)" class="association-close-handle bk-icon icon-angle-double-down" @click="close"></a>
         <div class="association-filter clearfix">
             <label class="filter-label fl">{{$t('Association["关联列表"]')}}</label>
-            <cmdb-selector class="association-list-selector fl"
+            <cmdb-selector class="fl" style="width: 280px;"
                 :list="associationOptions"
                 setting-key="value"
                 display-key="label"
@@ -35,19 +34,27 @@
             @handleSizeChange="search"
             @handleSortChange="setCurrentSort">
             <template slot="options" slot-scope="{ item }">
-                <bk-button type="default" class="btn-option btn-option-remove"
+                <a href="javascript:void(0)" class="option-link"
                     v-if="selectedInstId.includes(item[instanceIdKey])"
                     :disabled="selectedAssociationProperty && !selectedAssociationProperty['editable']"
                     @click="updateAssociation(item[instanceIdKey], 'remove')">
                     {{$t('Association["取消关联"]')}}
-                </bk-button>
-                <bk-button type="primary" class="btn-option btn-option-new" v-else
+                </a>
+                <a href="javascript:void(0)" class="option-link" v-else
+                    v-click-outside="handleCloseConfirm"
                     :disabled="selectedAssociationProperty && !selectedAssociationProperty['editable']"
-                    @click="updateAssociation(item[instanceIdKey], 'new')">
+                    @click.stop="beforeUpdate($event, item[instanceIdKey], 'new')">
                     {{$t('Association["添加关联"]')}}
-                </bk-button>
+                </a>
             </template>
         </cmdb-table>
+        <div class="confirm-tips" ref="confirmTips" v-click-outside="cancelUpdate" v-show="confirm.id">
+            <p class="tips-content">{{$t('Association["更新确认"]')}}</p>
+            <div class="tips-option">
+                <bk-button class="tips-button" type="primary" @click="confirmUpdate">{{$t('Common["确认"]')}}</bk-button>
+                <bk-button class="tips-button" type="default" @click="cancelUpdate">{{$t('Common["取消"]')}}</bk-button>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -88,6 +95,10 @@
                     'plat': 'bk_cloud_name',
                     'module': 'bk_module_name',
                     'set': 'bk_set_name'
+                },
+                confirm: {
+                    instance: null,
+                    id: null
                 }
             }
         },
@@ -300,6 +311,30 @@
                 const msg = updateType === 'remove' ? this.$t('Association["取消关联成功"]') : this.$t('Association["添加关联成功"]')
                 this.$success(msg)
             },
+            beforeUpdate (event, instId, updateType = 'new') {
+                if (this.multiple || !this.selectedInstId.length) {
+                    this.updateAssociation(instId, updateType)
+                } else {
+                    this.confirm.id = instId
+                    this.confirm.instance && this.confirm.instance.destroy()
+                    this.confirm.instance = this.$tooltips({
+                        duration: -1,
+                        theme: 'light',
+                        zIndex: 9999,
+                        width: 230,
+                        container: document.body,
+                        target: event.target
+                    })
+                    this.confirm.instance.$el.append(this.$refs.confirmTips)
+                }
+            },
+            confirmUpdate () {
+                this.updateAssociation(this.confirm.id, 'new')
+                this.cancelUpdate()
+            },
+            cancelUpdate () {
+                this.confirm.instance && this.confirm.instance.setVisible(false)
+            },
             async getInstance () {
                 const filterObjId = this.filter.objId
                 const config = {
@@ -436,6 +471,12 @@
             getProperty (propertyId, objId) {
                 return this.properties[objId].find(({bk_property_id: bkPropertyId}) => bkPropertyId === propertyId)
             },
+            setConfirmContent () {
+                
+            },
+            handleCloseConfirm () {
+                this.confirm.id = null
+            },
             handlePropertySelected (value, data) {
                 this.filter.property.id = data['bk_property_id']
                 this.filter.property.name = data['bk_property_name']
@@ -455,16 +496,7 @@
         background-color: #fff;
         font-size: 14px;
         position: relative;
-        top: -54px;
-        .association-close-handle{
-            display: block;
-            height: 35px;
-            line-height: 35px;
-            color: $cmdbTextColor;
-            margin: 0 0 25px 0;
-            text-align: center;
-            background-image: linear-gradient(#f9f9f9, #fff);
-        }
+        border: 1px solid $cmdbBorderColor;
     }
     .association-filter{
         margin: 10px 20px 0;
@@ -476,9 +508,6 @@
         line-height: 36px;
         margin: 0 10px 0 0;
     }
-    .association-list-selector{
-        width: 280px !important;
-    }
     .filter-group{
         &.filter-group-name{
             .filter-name{
@@ -489,29 +518,30 @@
     .btn-search{
         margin: 0 0 0 8px;
     }
-    .btn-option{
-        height: 22px;
-        line-height: 20px;
+    .option-link{
         font-size: 12px;
-        padding: 0 8px;
-        &-new{
-            background-color: #30d878;
-            border-color: #30d878;
-            &:hover{
-                background-color: #10ed6f;
-                border-color: #10ed6f;
-            }
-        }
-        &-remove{
-            background-color: #fff;
-            color: #3c96ff;
-            border-color: currentcolor;
-            &:hover{
-                color: #0082ff;
-            }
-        }
+        color: #3c96ff;
     }
     .new-association-table{
-        margin: 20px 20px 0;
+        margin: 20px 0 0;
+        border: none;
+    }
+    .confirm-tips {
+        padding: 9px 22px;
+        .tips-content {
+            color: $cmdbTextColor;
+            line-height: 20px;
+        }
+        .tips-option {
+            margin: 12px 0 0 0;
+            text-align: right;
+            .tips-button {
+                height: 26px;
+                line-height: 24px;
+                padding: 0 16px;
+                min-width: 56px;
+                font-size: 12px;
+            }
+        }
     }
 </style>
