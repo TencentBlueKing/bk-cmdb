@@ -1,5 +1,5 @@
 <template>
-    <div class="relation-tree-layout" v-bkloading="{isLoading: $loading()}">
+    <div class="relation-tree-layout" v-bkloading="{isLoading: $loading(`get_getInstRelation_${objId}_${instId}`)}">
         <template v-if="next.length">
             <div
                 v-for="(relation, index) in next" :key="index">
@@ -10,13 +10,16 @@
                     </i>
                     <i :class="['tree-row-icon', relation['bk_obj_icon']]"></i>
                     <span>{{relation['bk_obj_name']}}</span>
-                    <span class="tree-row-count fr" v-if="relation.children.length">{{relation.children.length}}</span>
+                    <span class="tree-row-count" v-if="relation.children.length">({{relation.children.length}})</span>
                 </div>
                 <div v-show="relation.show">
-                    <div class="tree-row tree-row-child" v-for="(inst, index) in relation.children" :key="index">
+                    <div class="tree-row tree-row-child"
+                        v-for="(inst, index) in relation.children"
+                        :key="index"
+                        :class="{active: details.instId === inst['bk_inst_id'] && details.objId === relation['bk_obj_id']}"
+                        @click="handleShowDetails(relation, inst)">
                         <i :class="['tree-row-icon', relation['bk_obj_icon']]"></i>
                         <span>{{inst['bk_inst_name']}}</span>
-                        <span class="tree-row-details fr" @click="handleShowDetails(relation, inst)">{{$t('Common["详情信息"]')}}</span>
                     </div>
                 </div>
             </div>
@@ -61,6 +64,15 @@
                 return this.$parent.instId
             }
         },
+        watch: {
+            'details.show' (show) {
+                if (!show) {
+                    this.details.objId = null
+                    this.details.instId = null
+                    this.details.title = ''
+                }
+            }
+        },
         created () {
             this.getRelationData()
         },
@@ -99,23 +111,22 @@
 <style lang="scss" scoped>
     .relation-tree-layout {
         min-height: 250px;
+        border: 1px solid $cmdbBorderColor;
     }
     .tree-row {
         position: relative;
-        margin: -1px 0 0 0;
         padding: 0 0 0 45px;
-        border: 1px solid #bec6de;
         line-height: 36px;
         color: #6b7baa;
-        cursor: pointer;
         &.tree-row-child {
+            cursor: pointer;
             padding: 0 0 0 65px;
         }
         &:hover {
             background-color: #f1f7ff;
-            .tree-row-details {
-                display: block;
-            }
+        }
+        &.active {
+            background-color: #ebf4ff;
         }
         .tree-row-expand-icon {
             position: absolute;
@@ -128,18 +139,8 @@
             }
         }
         .tree-row-icon {
-            color: #ffb400;
+            color: $cmdbTextColor;
             margin: 0 6px 0 0;
-        }
-        .tree-row-count {
-            height: 14px;
-            padding: 0 8px;
-            margin: 11px 13px 11px 10px;
-            color: #ffb80f;
-            background: #fff7e5;
-            border-radius: 7px;
-            font-size: 12px;
-            line-height: 14px;
         }
         .tree-row-details {
             display: none;
