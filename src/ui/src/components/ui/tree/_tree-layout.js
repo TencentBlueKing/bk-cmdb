@@ -68,6 +68,8 @@ class TreeLayout {
             if (state.node.hasOwnProperty('expanded')) {
                 state.node.expanded = expanded
             }
+        } else {
+            console.error('state lost, cannot toggle expand with node id:' + id)
         }
     }
 

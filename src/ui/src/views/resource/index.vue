@@ -282,7 +282,7 @@
                     this.$success(this.$t("HostResourcePool['分配成功']"))
                     this.table.checked = []
                     this.assignBusiness = ''
-                    this.handlePageChange(1)
+                    this.$refs.resourceTable.handlePageChange(1)
                 })
             },
             getConfirmContent (business) {
