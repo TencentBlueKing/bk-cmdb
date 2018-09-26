@@ -10,6 +10,7 @@
                     :selected.sync="selected"
                     @item-selected="handleChange"
                     :disabled="isReadOnly || isEditField"
+                    :content-max-height="200"
                 ></bk-selector>
                 <input type="text" hidden 
                     v-model="selected"
@@ -62,10 +63,12 @@
                                 })
                             }
                         })
-                        asstList.push({
-                            name: classify['bk_classification_name'],
-                            children: objects
-                        })
+                        if (objects.length) {
+                            asstList.push({
+                                name: classify['bk_classification_name'],
+                                children: objects
+                            })
+                        }
                     }
                 })
                 return asstList
