@@ -30,6 +30,11 @@
             @handleSizeChange="handleSizeChange"
             @handlePageChange="handlePageChange"
             @handleCheckAll="handleCheckAll">
+            <div class="empty-info" slot="data-empty">
+                <p>{{$t("Common['暂时没有数据']")}}</p>
+                <p>{{$t("ProcessManagement['当前业务并无进程，可点击下方按钮新增']")}}</p>
+                <bk-button class="process-btn" type="primary" @click="handleCreate">{{$t("ProcessManagement['新增进程']")}}</bk-button>
+            </div>
         </cmdb-table>
         <cmdb-slider :isShow.sync="slider.show" :title="slider.title">
             <bk-tab :active-name.sync="tab.active" slot="content">
@@ -98,7 +103,8 @@
                 },
                 filter: {
                     bizId: '',
-                    text: ''
+                    text: '',
+                    businessResolver: null
                 },
                 table: {
                     header: [],
@@ -120,7 +126,12 @@
         },
         watch: {
             'filter.bizId' () {
-                this.handlePageChange(1)
+                if (this.filter.businessResolver) {
+                    this.filter.businessResolver()
+                } else {
+                    this.table.checked = []
+                    this.handlePageChange(1)
+                }
             }
         },
         created () {
@@ -153,6 +164,14 @@
             handleMultipleCancel () {
                 this.slider.show = false
             },
+            getBusiness () {
+                return new Promise((resolve, reject) => {
+                    this.filter.businessResolver = () => {
+                        this.filter.businessResolver = null
+                        resolve()
+                    }
+                })
+            },
             async reload () {
                 this.properties = await this.searchObjectAttribute({
                     params: {
@@ -165,10 +184,11 @@
                     }
                 })
                 await Promise.all([
+                    this.getBusiness(),
                     this.getPropertyGroups(),
                     this.setTableHeader()
                 ])
-                this.getTableData()
+                this.handlePageChange(1)
             },
             getPropertyGroups () {
                 return this.searchGroup({
@@ -314,6 +334,7 @@
                 }
             },
             handleRowClick (item) {
+                this.tab.active = 'attribute'
                 this.slider.show = true
                 this.slider.title = `${this.$t("Common['编辑']")} ${item['bk_process_name']}`
                 this.attribute.inst.details = item

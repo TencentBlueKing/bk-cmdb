@@ -322,8 +322,10 @@ input.cmdb-form-input {
         color: white;
         border-radius: 2px;
         padding: 5px 10px 4px;
+        max-width: 200px;
         font-size: 14px;
         line-height: 16px;
+        word-break: break-all;
     }
 
     .tooltip-arrow {
@@ -423,3 +425,20 @@ input.cmdb-form-input {
 
 
 /* v-tooltip -------end------- */
+
+
+/* table -------start------- */
+
+.cc-table-body {
+    .empty-info {
+        p {
+            margin-bottom: 10px;
+        }
+        .bk-button {
+            margin-top: 10px;
+        }
+    }
+}
+
+/* table -------end------- */
+
