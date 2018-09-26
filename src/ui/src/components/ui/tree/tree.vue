@@ -42,8 +42,12 @@
                 type: String,
                 default: 'children'
             },
-            beforeSelect: {
+            beforeClick: {
                 type: Function
+            },
+            selectable: {
+                type: Boolean,
+                default: true
             }
         },
         data () {
