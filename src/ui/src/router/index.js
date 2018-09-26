@@ -12,14 +12,15 @@ const businessArchived = () => import(/* webpackChunkName: businessArchived */ '
 const generalModel = () => import(/* webpackChunkName: generalModel */ '@/views/general-model')
 const deleteHistory = () => import(/* webpackChunkName: deleteHistory */ '@/views/history')
 const hosts = () => import(/* webpackChunkName: hosts */ '@/views/hosts')
-const eventpush = () => import(/* webpackChunkName: hosts */ '@/views/eventpush')
-const permission = () => import(/* webpackChunkName: hosts */ '@/views/permission')
+const eventpush = () => import(/* webpackChunkName: eventpush */ '@/views/eventpush')
+const permission = () => import(/* webpackChunkName: permission */ '@/views/permission')
 const resource = () => import(/* webpackChunkName: resource */ '@/views/resource')
-const audit = () => import(/* webpackChunkName: hosts */ '@/views/audit')
+const audit = () => import(/* webpackChunkName: audit */ '@/views/audit')
 const topology = () => import(/* webpackChunkName: topology */ '@/views/topology')
 const process = () => import(/* webpackChunkName: process */ '@/views/process')
-const customQuery = () => import(/* webpackChunkName: process */ '@/views/custom-query')
-const networkDiscovery = () => import(/* webpackChunkName: process */ '@/views/network-discovery')
+const customQuery = () => import(/* webpackChunkName: customQuery */ '@/views/custom-query')
+const networkDiscovery = () => import(/* webpackChunkName: networkDiscovery */ '@/views/network-discovery')
+const networkConfirm = () => import(/* webpackChunkName: networkConfirm */ '@/views/network-discovery/confirm')
 const error = () => import(/* webpackChunkName: error */ '@/views/status/error')
 
 Vue.use(Router)
@@ -105,6 +106,13 @@ const router = new Router({
     }, {
         path: '/network-discovery',
         component: networkDiscovery
+    }, {
+        path: '/network-discovery/confirm',
+        component: networkConfirm,
+        meta: {
+            ignoreAuthorize: true,
+            relative: '/network-discovery'
+        }
     }, {
         path: '/status-require-business',
         components: require('@/views/status/require-business'),
