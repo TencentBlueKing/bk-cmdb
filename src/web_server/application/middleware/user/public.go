@@ -30,18 +30,6 @@ import (
 type publicUser struct {
 }
 
-type userInfo1 struct {
-	UserName string `json:"username"`
-	QQ       string `json:"qq"`
-	Role     string `json:"role"`
-	Language string `json:"language"`
-	Phone    string `json:"phone"`
-	WxUserid string `json:"wx_userid"`
-	Email    string `json:"email"`
-	Chname   string `json:"chname"`
-	TimeZone string `json:"time_zone"`
-}
-
 // LoginUser  user login
 func (m *publicUser) LoginUser(c *gin.Context) bool {
 

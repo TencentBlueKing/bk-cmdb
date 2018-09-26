@@ -188,7 +188,6 @@ func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *meta
 	var ok bool
 	var loginURL string
 	var siteURL string
-	fmt.Println(input.HTTPScheme)
 
 	if common.LogoutHTTPSchemeHTTPS == input.HTTPScheme {
 		loginURL, ok = config["site.bk_https_login_url"]
