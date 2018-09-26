@@ -262,7 +262,9 @@
                 } else {
                     const confirm = await this.beforeNodeSelect(node, state)
                     if (confirm) {
-                        this.selectedModuleStates.push(state)
+                        if (!this.selectedModuleStates.includes(state)) {
+                            this.selectedModuleStates.push(state)
+                        }
                     } else {
                         vNode.localChecked = false
                     }
