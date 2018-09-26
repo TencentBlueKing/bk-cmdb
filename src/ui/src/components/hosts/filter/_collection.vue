@@ -8,15 +8,18 @@
                     v-model.trim="filter.text">
             </label>
             <div class="options-sort fr">
-                <span class="sort-item" v-for="(option, index) in sortOptions" :key="index">
+                <span class="sort-item"
+                    v-for="(option, index) in sortOptions"
+                    :key="index"
+                    @click="setFilterSort(option, filter.order === 'asc' ? 'desc': 'asc')">
                     <span>{{option.name}}</span>
                     <i class="sort-angle ascing"
                         :class="{'cur-sort' : filter.sort === option.id && filter.order === 'asc'}"
-                        @click="setFilterSort(option, 'asc')">
+                        @click.stop="setFilterSort(option, 'asc')">
                     </i>
                     <i class="sort-angle descing"
                         :class="{'cur-sort' : filter.sort === option.id && filter.order === 'desc'}"
-                        @click="setFilterSort(option, 'desc')">
+                        @click.stop="setFilterSort(option, 'desc')">
                     </i>
                 </span>
             </div>
@@ -197,42 +200,44 @@
 <style lang="scss" scoped>
     .collection-layout {
         height: 100%;
-        padding: 20px 0 0 0;
     }
     .collection-options {
+        margin: 20px 20px 0;
         .options-search {
             position: relative;
-            width: 175px;
+            width: 165px;
             .search-input {
-                padding: 0 10px 0 28px;
+                padding: 0 28px 0 12px;
                 height: 30px;
                 line-height: 28px;
-                border: 1px solid transparent;
                 font-size: 12px;
-                &:focus {
-                    border-color: #3c96ff;
-                }
             }
             .icon-search {
                 position: absolute;
                 top: 7px;
-                left: 7px;
+                right: 10px;
+                font-size: 18px;
+                color: $cmdbBorderColor;
             }
         }
         .options-sort {
-            font-size: 12px;
             color: #c3cdd7;
-            line-height: 30px;
+            line-height: 28px;
+            font-size: 0;
             .sort-item {
                 position: relative;
                 display: inline-block;
                 vertical-align: middle;
-                padding: 0 12px 0 0;
+                padding: 0 24px 0 12px;
                 margin: 0 0 0 10px;
+                font-size: 12px;
+                border: 1px solid $cmdbBorderColor;
+                border-radius: 2px;
+                cursor: pointer;
             }
             .sort-angle {
                 position: absolute;
-                right: 0;
+                right: 10px;
                 width: 0;
                 height: 0;
                 border: 5px solid transparent;
@@ -245,28 +250,29 @@
                     border-bottom-color: #4b8fe0;
                 }
                 &.ascing {
-                    top: 4px;
+                    top: 3px;
                 }
                 &.descing {
-                    bottom: 4px;
+                    bottom: 3px;
                     transform: rotate(180deg);
                 }
             }
         }
     }
     .collection-list {
-        height: calc(100% - 32px);
+        height: calc(100% - 60px);
+        margin: 10px 0 0 0;
         font-size: 12px;
         @include scrollbar-y;
         .collection-item {
             position: relative;
-            height: 30px;
-            padding: 0 10px 0 0;
-            line-height: 30px;
+            height: 40px;
+            padding: 0 10px 0 20px;
+            line-height: 40px;
             cursor: pointer;
             &:hover,
             &.delete-confirm {
-                background-color: #f9f9f9;
+                background-color: #ebf4ff;
                 .collection-icon {
                     display: block;
                 }
@@ -280,14 +286,15 @@
                 width: 250px;
                 height: 30px;
                 padding: 0 0 0 8px;
+                margin: 5px 0;
                 line-height: 28px;
                 font-size: 12px;
             }
             .collection-icon {
                 display: none;
                 width: 24px;
-                height: 30px;
-                line-height: 30px;
+                height: 40px;
+                line-height: 40px;
                 text-align: center;
                 cursor: pointer;
                 &:hover {

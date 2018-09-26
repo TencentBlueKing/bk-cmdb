@@ -248,6 +248,9 @@ input.cmdb-form-input {
     right: 0;
 }
 
+.collapse-transition {
+    transition: .2s height ease-in-out, .2s padding-top ease-in-out, .2s padding-bottom ease-in-out
+}
 
 /* rewrite magicbox style -----start----- */
 

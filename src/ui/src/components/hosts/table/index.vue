@@ -1,41 +1,33 @@
 <template>
     <div class="hosts-table-layout">
         <slot name="options">
-            <div class="hosts-options clearfix">
-                <div class="fl" v-tooltip="$t('BusinessTopology[\'修改\']')">
-                    <bk-button class="options-button" type="default"
-                        :disabled="!table.checked.length"
-                        @click="handleMultipleEdit">
-                        <i class="icon-cc-edit"></i>
-                    </bk-button>
-                </div>
-                <div class="fl" v-tooltip="$t('BusinessTopology[\'转移\']')">
-                    <bk-button class="options-button" type="default"
-                        :disabled="!table.checked.length"
-                        @click="transfer.show = true">
-                        <i class="icon-cc-shift"></i>
-                    </bk-button>
-                </div>
-                <div class="fl" v-tooltip="$t('HostResourcePool[\'导出选中\']')">
-                    <bk-button class="options-button" type="submit default"
-                        form="exportForm"
-                        :disabled="!table.checked.length">
-                        <i class="icon-cc-derivation"></i>
-                    </bk-button>
-                </div>
+            <div class="hosts-options">
+                <bk-button class="options-button" type="primary"
+                    :disabled="!table.checked.length"
+                    @click="handleMultipleEdit">
+                    {{$t('Common["编辑"]')}}
+                </bk-button>
+                <bk-button class="options-button" type="default"
+                    :disabled="!table.checked.length"
+                    @click="transfer.show = true">
+                    {{$t('BusinessTopology["转移"]')}}
+                </bk-button>
+                <bk-button class="options-button" type="submit default"
+                    form="exportForm"
+                    :disabled="!table.checked.length">
+                    {{$t('ModelManagement["导出"]')}}
+                </bk-button>
                 <form id="exportForm" :action="table.exportUrl" method="POST" hidden>
                     <input type="hidden" name="bk_host_id" :value="table.checked">
                     <input type="hidden" name="bk_biz_id" value="-1">
                 </form>
-                <div class="fl" v-tooltip="$t('Common[\'复制属性\']')">
-                    <cmdb-clipboard-selector class="options-button"
-                        :list="clipboardList"
-                        :disabled="!table.checked.length"
-                        @on-copy="handleCopy">
-                    </cmdb-clipboard-selector>
-                </div>
-                <div class="fl" v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')">
-                    <bk-button class="options-button" type="default"
+                <cmdb-clipboard-selector class="options-button"
+                    :list="clipboardList"
+                    :disabled="!table.checked.length"
+                    @on-copy="handleCopy">
+                </cmdb-clipboard-selector>
+                <div class="fr" v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')">
+                    <bk-button class="options-button" type="default" style="margin-right: 0"
                         @click="columnsConfig.show = true">
                         <i class="icon-cc-setting"></i>
                     </bk-button>
@@ -548,7 +540,7 @@
             vertical-align: middle;
             border-radius: 0;
             font-size: 14px;
-            margin-left: -1px;
+            margin: 0 5px;
             &:hover{
                 z-index: 1;
             }
