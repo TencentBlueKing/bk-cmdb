@@ -533,6 +533,7 @@
 
 <style lang="scss" scoped>
     .hosts-options{
+        font-size: 0;
         .options-button{
             position: relative;
             display: inline-block;
