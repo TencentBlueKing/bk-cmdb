@@ -9,11 +9,25 @@
             <div class="tree-layout">
                 <cmdb-tree ref="topoTree" class="topo-tree"
                     children-key="child"
+                    :selectable="false"
                     :id-generator="getTopoNodeId"
                     :tree="tree.data"
-                    :before-select="beforeNodeSelect"
-                    @on-selected="handleNodeSelected">
-                    <div class="tree-node clearfix" slot-scope="{node, state}" :class="{'tree-node-selected': state.selected}">
+                    :before-click="beforeNodeSelect"
+                    @on-click="handleNodeClick">
+                    <div class="tree-node clearfix" slot-scope="{node, state}"
+                        :class="{
+                            'tree-node-selected': state.selected,
+                            'tree-node-leaf-module': node['bk_obj_id'] === 'module'
+                        }">
+                        <cmdb-form-bool class="topo-node-checkbox"
+                            v-if="node['bk_obj_id'] === 'module'"
+                            :checked="selectedModuleStates.includes(state)"
+                            :true-value="true"
+                            :false-value="false"
+                            @click.stop
+                            @change="handleNodeCheck(...arguments, node, state)"
+                            >
+                        </cmdb-form-bool>
                         <template v-if="[1, 2].includes(node.default)">
                             <i class='topo-node-icon topo-node-icon-internal icon-cc-host-free-pool' v-if="node.default === 1"></i>
                             <i class='topo-node-icon topo-node-icon-internal icon-cc-host-breakdown' v-else></i>
@@ -226,14 +240,15 @@
                         this.$bkInfo({
                             title: this.$t('Common[\'转移确认\']', {target: node['bk_inst_name']}),
                             confirmFn: () => {
+                                this.selectedModuleStates = []
                                 confirmResolver(true)
                             },
                             cancelFn: () => {
-                                confirmRejecter(false)
+                                confirmResolver(false)
                             }
                         })
                     } else {
-                        if (hasSpecialNode) {
+                        if (hasSpecialNode && !this.selectedModuleStates.includes(state)) {
                             this.selectedModuleStates = []
                         }
                         confirmResolver(true)
@@ -241,11 +256,27 @@
                 }
                 return asyncConfirm
             },
-            handleNodeSelected (node, state) {
+            async handleNodeCheck (checked, vNode, node, state) {
+                if (!checked) {
+                    this.selectedModuleStates = this.selectedModuleStates.filter(moduleState => moduleState !== state)
+                } else {
+                    const confirm = await this.beforeNodeSelect(node, state)
+                    if (confirm) {
+                        this.selectedModuleStates.push(state)
+                    } else {
+                        vNode.localChecked = false
+                    }
+                }
+            },
+            handleNodeClick (node, state) {
                 const isModule = node['bk_obj_id'] === 'module'
-                const isExist = this.selectedModuleStates.some(selectedState => selectedState.id === state.id)
-                if (isModule && !isExist) {
-                    this.selectedModuleStates.push(state)
+                const isExist = this.selectedModuleStates.some(selectedState => selectedState === state)
+                if (isModule) {
+                    if (isExist) {
+                        this.selectedModuleStates = this.selectedModuleStates.filter(selectedState => selectedState !== state)
+                    } else {
+                        this.selectedModuleStates.push(state)
+                    }
                 }
             },
             removeSelectedModule (state, index) {
@@ -392,18 +423,30 @@
                     color: #ffb400;
                 }
             }
+            &.tree-node-leaf-module {
+                margin: 0 0 0 -2px !important;
+                padding-left: 0;
+            }
+        }
+        .topo-node-checkbox {
+            position: relative;
+            margin: 0 10px 0 0;
+            transform: scale(0.888);
+            background-color: #fff;
+            z-index: 2;
         }
         .topo-node-icon{
             display: inline-block;
             vertical-align: middle;
-            width: 16px;
-            height: 16px;
+            width: 18px;
+            height: 18px;
             line-height: 16px;
             font-size: 12px;
             text-align: center;
             color: #fff;
             font-style: normal;
             background-color: #c3cdd7;
+            border-radius: 50%;
             &.topo-node-icon-internal{
                 font-size: 16px;
                 color: $cmdbTextColor;

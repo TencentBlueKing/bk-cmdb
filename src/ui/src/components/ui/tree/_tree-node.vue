@@ -113,6 +113,8 @@
             'state.selected' (selected) {
                 if (selected) {
                     this.treeInstance.$emit('on-selected', this.node, this.state)
+                } else {
+                    this.treeInstance.$emit('on-cancel-selected', this.node, this.state)
                 }
             },
             'state.hidden' (hidden) {
@@ -153,10 +155,10 @@
                 this.layout.toggleExpanded(this.state.id, expanded)
             },
             async handleNodeClick () {
-                if (typeof this.treeInstance.beforeSelect === 'function') {
+                if (typeof this.treeInstance.beforeClick === 'function') {
                     let confirm
                     try {
-                        confirm = await Promise.resolve(this.treeInstance.beforeSelect(this.node, this.state))
+                        confirm = await Promise.resolve(this.treeInstance.beforeClick(this.node, this.state))
                     } catch (e) {
                         confirm = e
                     }
@@ -165,10 +167,13 @@
                         return false
                     }
                 }
-                const selectedState = this.layout.selectedState
-                if (!selectedState || selectedState.id !== this.state.id) {
-                    this.layout.selectState(this.state.id)
+                if (this.treeInstance.selectable) {
+                    const selectedState = this.layout.selectedState
+                    if (!selectedState || selectedState.id !== this.state.id) {
+                        this.layout.selectState(this.state.id)
+                    }
                 }
+                this.treeInstance.$emit('on-click', this.node, this.state)
             }
         }
     }
@@ -193,9 +198,11 @@
         .tree-node-expanded-icon{
             display: block;
             margin: 5px 0 0 0;
-            font-size: 14px;
+            font-size: 16px;
             color: #c3cdd7;
             cursor: pointer;
+            position: relative;
+            z-index: 2;
             &:hover{
                 color: #3c96ff;
             }
@@ -206,8 +213,8 @@
         &:not(.tree-node-info-layout-root):not(.tree-node-info-layout-parent-hidden):before{
             position: absolute;
             top: 12px;
-            left: -15px;
-            width: 20px;
+            left: -20px;
+            width: 35px;
             height: 0;
             content: '';
             border-top: 1px dashed #d3d8e7;
@@ -220,6 +227,8 @@
             font-size: 14px;
             overflow: hidden;
             cursor: pointer;
+            position: relative;
+            z-index: 1;
             &:hover{
                 background-color: #f1f7ff;
                 color: #498fe0;
@@ -234,7 +243,7 @@
         }
     }
     .tree-node-children{
-        margin: 0 0 0 24px;
+        margin: 0 0 0 30px;
     }
     .test{
         display: inline-block;

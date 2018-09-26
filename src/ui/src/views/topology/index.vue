@@ -663,14 +663,15 @@
             .topo-node-icon{
                 display: inline-block;
                 vertical-align: middle;
-                width: 16px;
-                height: 16px;
+                width: 18px;
+                height: 18px;
                 line-height: 16px;
                 font-size: 12px;
                 text-align: center;
                 color: #fff;
                 font-style: normal;
                 background-color: #c3cdd7;
+                border-radius: 50%;
                 &.topo-node-icon-internal{
                     font-size: 16px;
                     color: $cmdbTextColor;
