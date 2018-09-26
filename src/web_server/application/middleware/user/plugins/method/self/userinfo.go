@@ -184,15 +184,34 @@ func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadat
 	return userListArr, nil
 }
 
-func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, siteUrl string) string {
-	loginURL, ok := config["site.bk_login_url"]
+func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *metadata.LogoutRequestParams) string {
+	var ok bool
+	var loginURL string
+	var siteURL string
+	fmt.Println(input.HTTPScheme)
+
+	if common.LogoutHTTPSchemeHTTPS == input.HTTPScheme {
+		loginURL, ok = config["site.bk_https_login_url"]
+	} else {
+		loginURL, ok = config["site.bk_login_url"]
+	}
 	if !ok {
 		loginURL = ""
 	}
+	if common.LogoutHTTPSchemeHTTPS == input.HTTPScheme {
+		siteURL, ok = config["site.https_domain_url"]
+	} else {
+		siteURL, ok = config["site.domain_url"]
+	}
+	if !ok {
+		siteURL = ""
+	}
+
 	appCode, ok := config["site.app_code"]
 	if !ok {
 		appCode = ""
 	}
-	loginURL = fmt.Sprintf(loginURL, appCode, fmt.Sprintf("%s%s", siteUrl, c.Request.URL.String()))
+
+	loginURL = fmt.Sprintf(loginURL, appCode, fmt.Sprintf("%s%s", siteURL, c.Request.URL.String()))
 	return loginURL
 }
