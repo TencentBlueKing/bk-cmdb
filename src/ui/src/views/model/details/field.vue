@@ -8,7 +8,7 @@
         @cancel="cancel"></v-base-info>
         <div class="field-content clearfix" v-if="isEdit">
             <div class="create-field clearfix">
-                <bk-button class="create-btn" :class="{'open': createForm.isShow}" v-if="!isReadOnly" type="primary" :title="$t('ModelManagement[\'新增字段\']')" @click="createField">
+                <bk-button class="create-btn" :class="{'open': createForm.isShow}" v-if="!isReadOnly" type="primary" :title="$t('ModelManagement[\'新增字段\']')" @click="createForm.isShow = !createForm.isShow">
                     {{$t('ModelManagement["新增字段"]')}}<i class="bk-icon icon-angle-down"></i>
                     <i class="create-btn-mask"></i>
                 </bk-button>
@@ -34,22 +34,18 @@
                 </ul>
                 <ul class="table-content" v-bkloading="{isLoading: $loading(['initFieldList', 'deleteObjectAttribute'])}">
                     <li v-for="(field, index) in fieldList" :key="index">
-                        <ul class="field-item clearfix" :class="{'disabled': field['ispre'] || isReadOnly}" @click="toggleDetailShow(field, index)">
+                        <ul class="field-item clearfix" :class="{'disabled': field['ispre'] || isReadOnly}">
                             <li class="table-item" :title="`${field['bk_property_name']}(${field['bk_property_id']})`">{{field['bk_property_name']}}({{field['bk_property_id']}})</li>
                             <li class="table-item">{{fieldTypeMap[field['bk_property_type']]}}</li>
                             <li class="table-item"><i class="bk-icon icon-check-1" v-show="field['isonly']"></i></li>
                             <li class="table-item"><i class="bk-icon icon-check-1" v-show="field['isrequired']"></i></li>
                             <li class="table-item">
                                 <div class="btn-contain">
-                                    <span class="text-primary">{{$t('Common["编辑"]')}}</span>
+                                    <span class="text-primary" @click="toggleDetailShow(field, index)">{{$t('Common["编辑"]')}}</span>
                                     <span class="text-danger" v-if="!field['ispre'] && !isReadOnly"
                                     @click.stop="showConfirmDialog(field, index)">
                                         {{$t('Common["删除"]')}}
                                     </span>
-                                    <!-- <i class="icon-cc-del"  v-if="!field['ispre'] && !isReadOnly"
-                                        :class="{'editable':field['ispre'] || isReadOnly}"
-                                        @click.stop="showConfirmDialog(field, index)"
-                                    ></i> -->
                                 </div>
                             </li>
                         </ul>
@@ -157,7 +153,10 @@
             createField () {
                 this.createForm.isShow = true
             },
-            saveCreateForm () {
+            saveCreateForm (type) {
+                if (['singleasst', 'multiasst'].indexOf(type) !== -1) {
+                    this.$emit('updateTopo', true)
+                }
                 this.initFieldList()
                 this.closeCreateForm()
             },
@@ -181,6 +180,9 @@
                 }).then(() => {
                     this.$http.cancel(`post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`)
                 })
+                if (field['bk_property_type'] === 'singleasst' || field['bk_property_type'] === 'multiasst') {
+                    this.$emit('updateTopo', true)
+                }
                 this.fieldList.splice(index, 1)
             },
             toggleDetailShow (field, index) {
@@ -288,6 +290,7 @@
                 width: calc(100% + 40px);
                 height: 52px;
                 background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, .8));
+                pointer-events: none;
             }
         }
         .create-field {
@@ -381,7 +384,6 @@
                 height: calc(100% - 40px);
                 @include scrollbar;
                 .field-item {
-                    cursor: pointer;
                     &.disabled {
                         color: #ccc;
                     }
@@ -395,6 +397,7 @@
                         .btn-contain {
                             font-size: 0;
                             >span {
+                                cursor: pointer;
                                 font-size: 14px;
                                 &:first-child {
                                     margin-right: 10px;

@@ -21,7 +21,7 @@
                 ref="details"
                 :isEdit.sync="slider.isEdit"
                 @createModel="updateTopo(true)"
-                @updateModel="updateTopo(false)"
+                @updateModel="updateTopo"
                 @cancel="slider.isShow = false"
             ></v-details>
         </cmdb-slider>

@@ -109,13 +109,13 @@
                             const twoWayAsst = this.getTwoWayAsst(node, asst, edges)
                             if (twoWayAsst) { // 双向关联，将已存在的线改为双向
                                 twoWayAsst.arrows = 'to,from'
-                                twoWayAsst.label = [twoWayAsst.label, asst['bk_object_att_id']].join(',\n')
+                                twoWayAsst.label = [twoWayAsst.label, asst['bk_asst_name']].join(',\n')
                             } else {
                                 edges.push({
                                     from: node['bk_obj_id'],
                                     to: asst['bk_obj_id'],
                                     arrows: 'to',
-                                    label: asst['bk_object_att_id']
+                                    label: asst['bk_asst_name']
                                 })
                             }
                         })
