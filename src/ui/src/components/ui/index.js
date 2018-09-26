@@ -22,6 +22,7 @@ import objuser from './form/objuser.vue'
 import associateInput from './form/associate-input.vue'
 import tree from './tree/tree.vue'
 import resize from './other/resize.vue'
+import collapseTransition from './transition/collapse.js'
 const install = (Vue, opts = {}) => {
     const components = [
         businessSelector,
@@ -46,7 +47,8 @@ const install = (Vue, opts = {}) => {
         objuser,
         associateInput,
         tree,
-        resize
+        resize,
+        collapseTransition
     ]
     components.forEach(component => {
         Vue.component(component.name, component)
@@ -77,5 +79,6 @@ export default {
     objuser,
     associateInput,
     tree,
-    resize
+    resize,
+    collapseTransition
 }

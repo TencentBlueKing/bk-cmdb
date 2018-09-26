@@ -1,8 +1,8 @@
 <template>
-    <bk-dropdown-menu trigger="click" :disabled="disabled" v-tooltip="$t('Common[\'复制属性\']')">
+    <bk-dropdown-menu trigger="click" :disabled="disabled">
         <bk-button class="clipboard-trigger" type="default" slot="dropdown-trigger"
             :disabled="disabled">
-            <i class="bk-icon icon-clipboard"></i>
+            {{$t('Common["复制"]')}}
             <i class="bk-icon icon-angle-down"></i>
         </bk-button>
         <ul class="clipboard-list" slot="dropdown-content">
@@ -50,6 +50,10 @@
 <style lang="scss" scoped>
     .clipboard-trigger{
         padding: 0 16px;
+        .icon-angle-down {
+            font-size: 12px;
+            top: 0;
+        }
     }
     .clipboard-list{
         width: 100%;

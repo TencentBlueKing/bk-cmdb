@@ -182,7 +182,7 @@
                 display: inline-block;
                 vertical-align: middle;
                 width: 120px;
-                margin: 0 20px 0 0;
+                margin: 0 10px 0 0;
             }
             .header-label{
                 display: inline-block;
@@ -208,7 +208,6 @@
         padding: 15px 0;
         @include scrollbar-y;
         &-selected{
-            color: #bec6de;
             .property-item{
                 cursor: move;
             }
