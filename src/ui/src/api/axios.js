@@ -90,6 +90,18 @@ const updateLoadingStatus = (config) => {
     }
 }
 
+const logout = () => {
+    axios.post(`${window.siteUrl}logout`, {
+        'http_scheme': window.location.protocol.replace(':', '')
+    }).then(res => {
+        if (res.result) {
+            window.location.href = res.data.url
+        } else {
+            alertMsg(res['bk_error_msg'])
+        }
+    })
+}
+
 axios.interceptors.request.use(config => {
     addQueue(config)
     transformRequest(config)
@@ -107,7 +119,7 @@ axios.interceptors.response.use(
         if (globalError && error.response) {
             switch (error.response.status) {
                 case 401:
-                    window.location.href = window.loginUrl
+                    logout()
                     break
                 case 403:
                     alertMsg(error.response.statusText)

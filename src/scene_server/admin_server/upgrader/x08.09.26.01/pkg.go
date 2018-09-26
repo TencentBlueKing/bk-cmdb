@@ -10,32 +10,27 @@
  * limitations under the License.
  */
 
-package controllers
+package x08_09_26_01
 
 import (
-	"github.com/gin-gonic/contrib/sessions"
-	"github.com/gin-gonic/gin"
+	"context"
 
-	"configcenter/src/common"
-	"configcenter/src/common/core/cc/wactions"
-	"configcenter/src/common/metadata"
-	"configcenter/src/web_server/application/middleware/user"
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage/dal"
 )
 
-//LogOutUser log out user
-func LogOutUser(c *gin.Context) {
-	session := sessions.Default(c)
-	session.Clear()
-	c.Request.URL.Path = ""
-	userManger := user.NewUser()
-	loginURL := userManger.GetLoginUrl(c)
-	ret := metadata.LogoutResult{}
-	ret.BaseResp.Result = true
-	ret.Data.LogoutURL = loginURL
-	c.JSON(200, ret)
-	return
+func init() {
+	upgrader.RegistUpgrader("x08.09.26.01", upgrade)
 }
 
-func init() {
-	wactions.RegisterNewAction(wactions.Action{common.HTTPSelectGet, "/logout", nil, LogOutUser})
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+
+	err = updateProcessTooltips(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade x08.09.19.01] updateProcessTooltips error  %s", err.Error())
+		return err
+	}
+
+	return nil
 }
