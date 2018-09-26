@@ -30,7 +30,7 @@ import (
 type publicUser struct {
 }
 
-type userInfo struct {
+type userInfo1 struct {
 	UserName string `json:"username"`
 	QQ       string `json:"qq"`
 	Role     string `json:"role"`
@@ -123,7 +123,15 @@ func (m *publicUser) GetLoginUrl(c *gin.Context) string {
 	if ok {
 		siteUrl = strings.Trim(siteUrl, "/")
 	}
+	params := new(metadata.LogoutRequestParams)
+	err := json.NewDecoder(c.Request.Body).Decode(params)
+	if nil != err || (common.LogoutHTTPSchemeHTTP != params.HTTPScheme && common.LogoutHTTPSchemeHTTPS != params.HTTPScheme) {
+		params.HTTPScheme, err = c.Cookie(common.LogoutHTTPSchemeCookieKey)
+		if nil != err || (common.LogoutHTTPSchemeHTTP != params.HTTPScheme && common.LogoutHTTPSchemeHTTPS != params.HTTPScheme) {
+			params.HTTPScheme = common.LogoutHTTPSchemeHTTP
+		}
+	}
 	user := plugins.CurrentPlugin(c)
-	return user.GetLoginUrl(c, config, siteUrl)
+	return user.GetLoginUrl(c, config, params)
 
 }
