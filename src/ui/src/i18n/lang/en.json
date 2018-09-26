@@ -520,7 +520,8 @@
         "添加关联成功": "Add association success",
         "条件筛选": "Filter",
         "树形": "Tree",
-        "拓扑": "Topo"
+        "拓扑": "Topo",
+        "更新确认": "It's single relationship with current model, update relationship will cancel the previous relationship, confirm to update?"
     },
     "Form": {
         "请输入长字符": "Please input long char",
