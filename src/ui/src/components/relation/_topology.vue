@@ -81,7 +81,7 @@
                         shape: 'image',
                         font: {
                             color: '#737987',
-                            size: 12,
+                            size: 16,
                             vadjust: -5
                         },
                         scaling: {
@@ -89,7 +89,7 @@
                             max: 25
                         },
                         widthConstraint: {
-                            maximum: 50
+                            maximum: 200
                         }
                     },
                     layout: {

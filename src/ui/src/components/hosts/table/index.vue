@@ -500,7 +500,6 @@
                 this.$store.dispatch('userCustom/saveUsercustom', {
                     [this.columnsConfigKey]: []
                 })
-                this.columnsConfig.show = false
             },
             handleTransferSuccess () {
                 this.table.checked = []
