@@ -58,13 +58,13 @@
         <div v-pre class="clearfix"></div>
         <div class="options-layout clearfix">
             <div class="increment-layout content-middle fl" v-if="showIncrementOption">
-                <label class="increment-label" for="increment" :title="$t('Hosts[\'增量更新\']')">
+                <label class="cmdb-form-radio cmdb-radio-small" for="increment" :title="$t('Hosts[\'增量更新\']')">
                     <input id="increment" type="radio" v-model="increment" :value="true">
-                    {{$t('Hosts["增量更新"]')}}
+                    <span class="cmdb-radio-text">{{$t('Hosts["增量更新"]')}}</span>
                 </label>
-                <label class="increment-label" for="replacement" :title="$t('Hosts[\'完全替换\']')">
+                <label class="cmdb-form-radio cmdb-radio-small" for="replacement" :title="$t('Hosts[\'完全替换\']')">
                     <input id="replacement" type="radio" v-model="increment" :value="false">
-                    {{$t('Hosts["完全替换"]')}}
+                    <span class="cmdb-radio-text">{{$t('Hosts["完全替换"]')}}</span>
                 </label>
             </div>
             <div class="button-layout content-middle fr">
@@ -528,17 +528,12 @@
     .increment-layout {
         width: 500px;
         white-space: nowrap;
-        .increment-label {
-            display: inline-block;
-            max-width: calc(50% - 25px);
-            margin: 0 0 0 20px;
+        padding-left: 20px;
+        .cmdb-form-radio {
+            max-width: 230px;
             vertical-align: middle;
-            line-height: 24px;
             @include ellipsis;
-            input[type="radio"] {
-                display: inline-block;
-                vertical-align: -2px;
-            }
+            margin-right: 10px;
         }
     }
     .button-layout {
