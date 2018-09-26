@@ -124,7 +124,7 @@ func (a *association) CreateCommonAssociation(params types.ContextParams, data *
 	//  check the association
 	cond := condition.CreateCondition()
 	cond.Field(metadata.AssociationFieldAssociationObjectID).Eq(data.AsstObjID)
-	cond.Field(metadata.AssociationFieldObjectID).Eq(data.ObjectAttID)
+	cond.Field(metadata.AssociationFieldObjectID).Eq(data.ObjectID)
 	cond.Field(metadata.AssociationFieldSupplierAccount).Eq(params.SupplierAccount)
 
 	rsp, err := a.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), params.Header, cond.ToMapStr())
@@ -138,8 +138,12 @@ func (a *association) CreateCommonAssociation(params types.ContextParams, data *
 		return params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	// create a new
+	if len(rsp.Data) > 0 {
+		blog.Errorf("[operation-asst] failed to create the association (%#v) , the associations %s->%s already exist ", cond.ToMapStr(), data.ObjectID, data.AsstObjID)
+		return params.Err.Errorf(common.CCErrTopoAssociationAlreadyExist, data.ObjectID, data.AsstObjID)
+	}
 
+	// create a new
 	rspAsst, err := a.clientSet.ObjectController().Meta().CreateObjectAssociation(context.Background(), params.Header, data)
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to request object controller, error info is %s", err.Error())
