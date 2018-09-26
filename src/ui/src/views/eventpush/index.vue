@@ -21,6 +21,11 @@
                     <span class="text-primary mr20" @click.stop="editPush(item)">{{$t('Common["编辑"]')}}</span>
                     <span class="text-danger" @click.stop="deleteConfirm(item)">{{$t('Common["删除"]')}}</span>
                 </template>
+                <div class="empty-info" slot="data-empty">
+                    <p>{{$t("Common['暂时没有数据']")}}</p>
+                    <p>{{$t("EventPush['当前并无推送，可点击下方按钮新增']")}}</p>
+                    <bk-button class="process-btn" type="primary" @click="createPush">{{$t("EventPush['新增推送']")}}</bk-button>
+                </div>
         </cmdb-table>
         <cmdb-slider
             :isShow.sync="slider.isShow"
