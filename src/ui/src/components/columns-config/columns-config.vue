@@ -16,24 +16,27 @@
             <div class="wrapper-header selected-header">
                 <label class="header-label">{{$t("Inst['已显示属性']")}}</label>
             </div>
-            <vue-draggable element="ul" class="property-list property-list-selected"
-                v-model="selectedProperties"
-                :options="{
-                    animation: 150,
-                    filter: '.disabled'
-                }">
-                <li class="property-item"
-                    v-for="(property, index) in selectedProperties"
-                    :class="{disabled: checkDisabled(property)}">
-                    <i class="icon-triple-dot" v-if="!checkDisabled(property)"></i>
-                    <span class="property-name" :title="property['bk_property_name']">{{property['bk_property_name']}}</span>
-                    <i class="bk-icon icon-eye-slash-shape"
-                        v-if="!checkDisabled(property)"
-                        v-tooltip="$t('Common[\'隐藏\']')"
-                        @click="unselectProperty(property)">
-                    </i>
-                </li>
-            </vue-draggable>
+            <div class="property-list-layout">
+                <ul class="property-list property-list-selected">
+                    <li class="property-item disabled"
+                        v-for="(property, index) in undragbbleProperties">
+                        <span class="property-name" :title="property['bk_property_name']">{{property['bk_property_name']}}</span>
+                    </li>
+                </ul>
+                <vue-draggable element="ul" class="property-list property-list-selected"
+                    v-model="drabbleProperties"
+                    :options="{animation: 150}">
+                    <li class="property-item"
+                        v-for="(property, index) in drabbleProperties">
+                        <i class="icon-triple-dot"></i>
+                        <span class="property-name" :title="property['bk_property_name']">{{property['bk_property_name']}}</span>
+                        <i class="bk-icon icon-eye-slash-shape"
+                            v-tooltip="$t('Common[\'隐藏\']')"
+                            @click="unselectProperty(property)">
+                        </i>
+                    </li>
+                </vue-draggable>
+            </div>
         </div>
         <div class="config-options clearfix">
             <bk-button class="config-button fl" type="primary" @click="handleApply">{{$t('Inst[\'应用\']')}}</bk-button>
@@ -97,14 +100,33 @@
                     return unselected && includesFilter
                 })
             },
-            selectedProperties: {
+            undragbbleProperties () {
+                const undragbbleProperties = []
+                this.localSelcted.forEach(propertyId => {
+                    if (this.disabledColumns.includes(propertyId)) {
+                        const property = this.properties.find(property => property['bk_property_id'] === propertyId)
+                        if (property) {
+                            undragbbleProperties.push(property)
+                        }
+                    }
+                })
+                return undragbbleProperties
+            },
+            drabbleProperties: {
                 get () {
-                    return this.localSelcted.map(propertyId => {
-                        return this.properties.find(property => property['bk_property_id'] === propertyId)
+                    const drabbleProperties = []
+                    this.localSelcted.forEach(propertyId => {
+                        if (!this.disabledColumns.includes(propertyId)) {
+                            const property = this.properties.find(property => property['bk_property_id'] === propertyId)
+                            if (property) {
+                                drabbleProperties.push(property)
+                            }
+                        }
                     })
+                    return drabbleProperties
                 },
-                set (properties) {
-                    this.localSelcted = properties.map(property => property['bk_property_id'])
+                set (drabbleProperties) {
+                    this.localSelcted = [...this.undragbbleProperties, ...this.drabbleProperties].map(property => property['bk_property_id'])
                 }
             }
         },
@@ -143,7 +165,7 @@
                 } else if (this.localSelcted.length < this.min) {
                     this.$info(this.$t('Common["至少选择N项"]', {n: this.min}))
                 } else {
-                    this.$emit('on-apply', this.selectedProperties)
+                    this.$emit('on-apply', [...this.undragbbleProperties, ...this.drabbleProperties])
                 }
             },
             handleCancel () {
@@ -191,12 +213,13 @@
             }
         }
     }
-    .property-list{
+    .property-list-layout {
         height: calc(100% - 78px);
         padding: 15px 0;
         @include scrollbar-y;
+    }
+    .property-list {
         &-selected{
-            color: #bec6de;
             .property-item{
                 cursor: move;
             }

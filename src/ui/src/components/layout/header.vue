@@ -8,22 +8,36 @@
             <h2 class="breadcrumbs-current">{{$classify.i18n ? $t($classify.i18n) : $classify.name}}</h2>
             <i v-if="$classify.id === 'custom_query'" class="bk-icon icon-info-circle" v-tooltip="{content: $t('CustomQuery[\'保存后的查询可通过接口调用生效\']'), classes: 'custom-query-header-tooltip'}"></i>
         </div>
-        <div class="user fr">
-            <p class="user-name" @click="isShowUserDropdown = !isShowUserDropdown">
-                {{userName}}({{userRole}})
-                <i class="user-name-angle bk-icon icon-angle-down"
-                    :class="{dropped: isShowUserDropdown}">
-                </i>
-            </p>
-            <transition name="toggle-slide">
-                <ul class="user-dropdown" v-show="isShowUserDropdown">
-                    <li class="user-dropdown-item" @click="logOut">
-                        <i class="icon-cc-logout"></i>
-                        {{$t("Common['注销']")}}
-                    </li>
-                </ul>
-            </transition>
-            <div class="mask" v-if="isShowUserDropdown" @click="isShowUserDropdown = false"></div>
+        <div class="header-options fr">
+            <div class="user" v-click-outside="handleCloseUser">
+                <p class="user-name" @click="isShowUserDropdown = !isShowUserDropdown">
+                    {{userName}}({{userRole}})
+                    <i class="user-name-angle bk-icon icon-angle-down"
+                        :class="{dropped: isShowUserDropdown}">
+                    </i>
+                </p>
+                <transition name="toggle-slide">
+                    <ul class="user-dropdown" v-show="isShowUserDropdown">
+                        <li class="user-dropdown-item" @click="logOut">
+                            <i class="icon-cc-logout"></i>
+                            {{$t("Common['注销']")}}
+                        </li>
+                    </ul>
+                </transition>
+            </div>
+            <div class="helper" v-click-outside="handleCloseHelper">
+                <i class="helper-icon bk-icon icon-question-circle" @click="isShowHelper = !isShowHelper"></i>
+                <div class="helper-list" v-show="isShowHelper">
+                    <a href="https://github.com/Tencent/bk-cmdb/wiki/FAQ" target="_blank" class="helper-link"
+                        @click="isShowHelper = false">
+                        {{$t('Common["帮助文档"]')}}
+                    </a>
+                    <a href="https://github.com/Tencent/bk-cmdb" target="_blank" class="helper-link"
+                        @click="isShowHelper = false">
+                        Github
+                    </a>
+                </div>
+            </div>
         </div>
     </header>
 </template>
@@ -33,7 +47,8 @@
     export default {
         data () {
             return {
-                isShowUserDropdown: false
+                isShowUserDropdown: false,
+                isShowHelper: false
             }
         },
         computed: {
@@ -53,6 +68,12 @@
             // 退出登陆
             logOut () {
                 window.location.href = this.site.login
+            },
+            handleCloseUser () {
+                this.isShowUserDropdown = false
+            },
+            handleCloseHelper () {
+                this.isShowHelper = false
             }
         }
     }
@@ -76,7 +97,7 @@
         position: relative;
         margin: 0 0 0 25px;
         font-size: 0;
-        &-back{
+        .breadcrumbs-back{
             display: inline-block;
             vertical-align: middle;
             width: 24px;
@@ -90,7 +111,7 @@
                 color: #3c96ff;
             }
         }
-        &-current{
+        .breadcrumbs-current{
             margin: 0;
             padding: 0;
             display: inline-block;
@@ -103,18 +124,23 @@
             font-size: 16px;
         }
     }
+    .header-options {
+        text-align: right;
+    }
     .user{
+        display: inline-block;
+        vertical-align: top;
         font-size: 0;
         line-height: 60px;
         position: relative;
-        &-name{
+        .user-name{
             padding: 0 20px;
             margin: 0;
             font-size: 14px;
             font-weight: bold;
             color: rgba(115,121,135,1);
             cursor: pointer;
-            &-angle{
+            .user-name-angle{
                 display: inline-block;
                 font-size: 12px;
                 margin: 0 2px;
@@ -125,7 +151,7 @@
                 }
             }
         }
-        &-dropdown{
+        .user-dropdown{
             position: absolute;
             width: 100px;
             top: 55px;
@@ -136,10 +162,47 @@
             background-color: #fff;
             box-shadow: 0 1px 5px 0 rgba(12,34,59, .1);
             z-index: 1;
-            &-item{
+            .user-dropdown-item{
                 padding: 0 0 0 12px;
+                text-align: left;
                 cursor: pointer;
                 &:hover{
+                    background-color: #f1f7ff;
+                    color: #498fe0;
+                }
+            }
+        }
+    }
+    .helper {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        text-align: center;
+        vertical-align: top;
+        line-height: 60px;
+        border-left: 1px solid #ebf0f5;
+        .helper-icon {
+            font-size: 20px;
+            cursor: pointer;
+            &:hover {
+                color: #0082ff;
+            }
+        }
+        .helper-list {
+            position: absolute;
+            top: 55px;
+            right: 0;
+            text-align: left;
+            line-height: 40px;
+            background-color: #fff;
+            border-radius: 2px;
+            border: 1px solid $cmdbBorderColor;
+            .helper-link {
+                display: block;
+                padding: 0 20px;
+                font-size: 14px;
+                white-space: nowrap;
+                &:hover {
                     background-color: #f1f7ff;
                     color: #498fe0;
                 }

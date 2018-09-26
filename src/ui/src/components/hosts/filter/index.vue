@@ -19,12 +19,6 @@
                 <bk-tabpanel name="collection" :title="$t('Hosts[\'收藏\']')" v-if="activeTab.includes('collection')">
                     <the-collection v-if="tab.active === 'collection'" @on-apply="handleApplyCollection"></the-collection>
                 </bk-tabpanel>
-                <the-setting slot="setting" ref="theSetting" v-show="tab.active === 'filter'"
-                    :active-setting="activeSetting"
-                    :filter-config-key="filterConfigKey"
-                    @on-reset="handleReset"
-                    @on-collection="handleCollection">
-                </the-setting>
             </bk-tab>
         </div>
     </div>
@@ -33,12 +27,10 @@
 <script>
     import theFilter from './_filter'
     import theCollection from './_collection'
-    import theSetting from './_setting.vue'
     export default {
         components: {
             theFilter,
-            theCollection,
-            theSetting
+            theCollection
         },
         props: {
             activeTab: {
@@ -135,13 +127,16 @@
     .filter-main{
         width: 358px;
         height: 100%;
-        padding: 10px 20px;
+        padding: 10px 0 0 0;
         border-left: 1px solid $cmdbBorderColor;
     }
 </style>
 
 <style lang="scss">
     .hosts-filter-layout{
+        .bk-tab2.filter-tab .bk-tab2-head {
+            padding: 0 20px;
+        }
         .bk-tab2.filter-tab .bk-tab2-head .bk-tab2-nav .tab2-nav-item{
             padding: 0 15px !important;
         }
