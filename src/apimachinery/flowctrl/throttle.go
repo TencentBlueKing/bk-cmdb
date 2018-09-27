@@ -59,3 +59,25 @@ func (t *tokenBucket) QPS() int64 {
 func (t *tokenBucket) Burst() int64 {
 	return t.burst
 }
+
+func NewMockRateLimiter() RateLimiter {
+	return &mockRatelimiter{}
+}
+
+type mockRatelimiter struct{}
+
+func (*mockRatelimiter) TryAccept() bool {
+	return true
+}
+
+func (*mockRatelimiter) Accept() {
+
+}
+
+func (*mockRatelimiter) QPS() int64 {
+	return 0
+}
+
+func (*mockRatelimiter) Burst() int64 {
+	return 0
+}
