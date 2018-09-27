@@ -57,7 +57,7 @@ type LoginUserPluginParams struct {
 type LoginUserPluginInerface interface {
 	LoginUser(c *gin.Context, config map[string]string, isMultiOwner bool) (user *LoginUserInfo, loginSucc bool)
 	GetUserList(c *gin.Context, config map[string]string) ([]*LoginSystemUserInfo, error)
-	GetLoginUrl(c *gin.Context, config map[string]string, siteUrl string) string
+	GetLoginUrl(c *gin.Context, config map[string]string, input *LogoutRequestParams) string
 }
 
 type LoginSystemUserInfo struct {
@@ -96,4 +96,8 @@ type LogoutResult struct {
 	Data     struct {
 		LogoutURL string `json:"url"`
 	} `json:"data"`
+}
+
+type LogoutRequestParams struct {
+	HTTPScheme string `json:"http_scheme"`
 }

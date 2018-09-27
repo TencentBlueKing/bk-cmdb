@@ -30,18 +30,6 @@ import (
 type publicUser struct {
 }
 
-type userInfo struct {
-	UserName string `json:"username"`
-	QQ       string `json:"qq"`
-	Role     string `json:"role"`
-	Language string `json:"language"`
-	Phone    string `json:"phone"`
-	WxUserid string `json:"wx_userid"`
-	Email    string `json:"email"`
-	Chname   string `json:"chname"`
-	TimeZone string `json:"time_zone"`
-}
-
 // LoginUser  user login
 func (m *publicUser) LoginUser(c *gin.Context) bool {
 
@@ -123,7 +111,15 @@ func (m *publicUser) GetLoginUrl(c *gin.Context) string {
 	if ok {
 		siteUrl = strings.Trim(siteUrl, "/")
 	}
+	params := new(metadata.LogoutRequestParams)
+	err := json.NewDecoder(c.Request.Body).Decode(params)
+	if nil != err || (common.LogoutHTTPSchemeHTTP != params.HTTPScheme && common.LogoutHTTPSchemeHTTPS != params.HTTPScheme) {
+		params.HTTPScheme, err = c.Cookie(common.LogoutHTTPSchemeCookieKey)
+		if nil != err || (common.LogoutHTTPSchemeHTTP != params.HTTPScheme && common.LogoutHTTPSchemeHTTPS != params.HTTPScheme) {
+			params.HTTPScheme = common.LogoutHTTPSchemeHTTP
+		}
+	}
 	user := plugins.CurrentPlugin(c)
-	return user.GetLoginUrl(c, config, siteUrl)
+	return user.GetLoginUrl(c, config, params)
 
 }
