@@ -219,7 +219,7 @@ func (cli *Service) SelectObjectAssociations(req *restful.Request, resp *restful
 
 	results := make([]meta.Association, 0)
 	selector, _ := js.Map()
-	selector = util.SetModOwner(selector, ownerID)
+	selector = util.SetQueryOwner(selector, ownerID)
 	// select from storage
 	if selErr := cli.Instance.GetMutilByCondition("cc_ObjAsst", nil, selector, &results, page.Sort, page.Start, page.Limit); nil != selErr && !cli.Instance.IsNotFoundErr(selErr) {
 		blog.Error("select data failed, error information is %s", selErr.Error())

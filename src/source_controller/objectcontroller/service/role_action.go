@@ -42,7 +42,7 @@ func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
 	cond[common.BKObjIDField] = objID
 	cond[common.BKPropertyIDField] = propertyID
 	var result map[string]interface{}
-	cond = util.SetModOwner(cond, ownerID)
+	cond = util.SetQueryOwner(cond, ownerID)
 	cnt, err := cli.Instance.GetCntByCondition(common.BKTableNamePrivilege, cond)
 	if nil != err && !cli.Instance.IsNotFoundErr(err) {
 		blog.Error("get user group privi error :%v", err)
