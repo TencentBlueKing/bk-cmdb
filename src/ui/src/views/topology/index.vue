@@ -31,7 +31,7 @@
         <div class="hosts-layout">
             <bk-tab :active-name.sync="tab.active" @tab-changed="handleTabChanged">
                 <bk-tabpanel class="topo-tabpanel" name="hosts" :title="$t('BusinessTopology[\'主机调配\']')">
-                    <bk-button class="topo-table-btn-refresh" type="primary"
+                    <bk-button class="topo-table-btn-refresh" type="primary" style="display: none;"
                         :disabled="$loading()"
                         @click="handleRefresh">
                         {{$t("HostResourcePool['刷新查询']")}}
@@ -383,6 +383,7 @@
                     this.tab.type = 'details'
                     this.handleTabChanged(activeTab)
                 } else if (activeTab === 'hosts') {
+                    this.$refs.topoTable.table.checked = []
                     this.setSearchParams()
                     this.handleRefresh()
                 }
@@ -663,14 +664,15 @@
             .topo-node-icon{
                 display: inline-block;
                 vertical-align: middle;
-                width: 16px;
-                height: 16px;
+                width: 18px;
+                height: 18px;
                 line-height: 16px;
                 font-size: 12px;
                 text-align: center;
                 color: #fff;
                 font-style: normal;
                 background-color: #c3cdd7;
+                border-radius: 50%;
                 &.topo-node-icon-internal{
                     font-size: 16px;
                     color: $cmdbTextColor;

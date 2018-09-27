@@ -5,13 +5,13 @@
                 {{$t('NetworkConfig["新增设备"]')}}
             </bk-button>
             <bk-button type="default">
-                {{$t('NetworkConfig["删除"]')}}
+                {{$t('Common["删除"]')}}
             </bk-button>
             <bk-button type="default">
-                {{$t('NetworkConfig["导入"]')}}
+                {{$t('ModelManagement["导入"]')}}
             </bk-button>
             <bk-button type="default">
-                {{$t('NetworkConfig["导出"]')}}
+                {{$t('ModelManagement["导出"]')}}
             </bk-button>
         </div>
         <cmdb-table

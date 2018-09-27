@@ -175,7 +175,7 @@
                     this.pagination.count = log.count
                     const list = log.info.map(data => {
                         return {
-                            ...data.content['cur_data'],
+                            ...(data.content['cur_data'] ? data.content['cur_data'] : data.content['pre_data']),
                             'op_time': this.$tools.formatTime(data['op_time'])
                         }
                     })

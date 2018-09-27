@@ -63,7 +63,7 @@
         </cmdb-table>
         <cmdb-slider :isShow.sync="slider.show" :title="slider.title" :beforeClose="handleSliderBeforeClose">
             <bk-tab :active-name.sync="tab.active" slot="content">
-                <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')">
+                <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-details v-if="tab.attribute.type === 'details'"
                         :properties="properties.host"
                         :propertyGroups="propertyGroups"
@@ -500,7 +500,6 @@
                 this.$store.dispatch('userCustom/saveUsercustom', {
                     [this.columnsConfigKey]: []
                 })
-                this.columnsConfig.show = false
             },
             handleTransferSuccess () {
                 this.table.checked = []
@@ -534,6 +533,7 @@
 
 <style lang="scss" scoped>
     .hosts-options{
+        font-size: 0;
         .options-button{
             position: relative;
             display: inline-block;

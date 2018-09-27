@@ -52,7 +52,7 @@
         <div class="form-empty" v-else>
             {{$t("Inst['暂无可批量更新的属性']")}}
         </div>
-        <div class="form-options">
+        <div class="form-options" :class="{sticky: scrollbar}">
             <slot name="details-options">
                 <bk-button class="button-save" type="primary"
                     :disabled="!$authorized.update || !hasChange || $loading()"
@@ -67,6 +67,7 @@
 
 <script>
     import formMixins from '@/mixins/form'
+    import RESIZE_EVENTS from '@/utils/resize-events'
     export default {
         name: 'cmdb-form-multiple',
         mixins: [formMixins],
@@ -74,7 +75,8 @@
             return {
                 values: {},
                 refrenceValues: {},
-                editable: {}
+                editable: {},
+                scrollbar: false
             }
         },
         computed: {
@@ -122,7 +124,17 @@
             this.initValues()
             this.initEditableStatus()
         },
+        mounted () {
+            RESIZE_EVENTS.addResizeListener(this.$el, this.checkScrollbar)
+        },
+        beforeDestroy () {
+            RESIZE_EVENTS.removeResizeListener(this.$el, this.checkScrollbar)
+        },
         methods: {
+            checkScrollbar () {
+                const $layout = this.$el
+                this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
+            },
             initValues () {
                 this.values = this.$tools.getInstFormValues(this.properties, {})
                 this.refrenceValues = this.$tools.clone(this.values)
@@ -198,16 +210,16 @@
 
 <style lang="scss" scoped>
     .form-layout{
-        height: calc(100% - 62px);
+        height: 100%;
         @include scrollbar;
     }
     .form-groups{
         padding: 0 0 0 32px;
     }
     .property-group{
-        padding: 17px 0 0 0;
+        padding: 7px 0 10px 0;
         &:first-child{
-            padding: 28px 0 0 0;
+            padding: 28px 0 10px 0;
         }
     }
     .group-name{
@@ -269,19 +281,22 @@
         }
     }
     .form-options{
-        position: absolute;
+        position: sticky;
         bottom: 0;
         left: 0;
         width: 100%;
-        height: 62px;
-        padding: 14px 20px;
-        background-color: #f9f9f9;
+        padding: 28px 32px 0;
+        &.sticky {
+            padding: 10px 32px;
+            border-top: 1px solid $cmdbBorderColor;
+            background-color: #fff;
+        }
         .button-save{
-            width: 110px;
+            min-width: 76px;
             margin-right: 4px;
         }
         .button-cancel{
-            width: 110px;
+            min-width: 76px;
             background-color: #fff;
         }
     }

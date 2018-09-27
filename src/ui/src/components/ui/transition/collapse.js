@@ -61,14 +61,33 @@ const Transition = {
     }
 }
 
-export default {
-    name: 'bk-collapse-transition',
-    functional: true,
-    render (h, { children }) {
-        const data = {
-            on: Transition
-        }
+const toCamelCase = function (str) {
+    return str.replace(/-([a-z])/g, function (g) { return g[1].toUpperCase() })
+}
 
-        return h('transition', data, children)
+export default {
+    name: 'cmdb-collapse-transition',
+    functional: true,
+    render (h, context) {
+        const events = context.data.on || {}
+        const camelCaseEvents = {}
+        const transitionEvents = {}
+        for (let event in events) {
+            camelCaseEvents[toCamelCase(event)] = events[event]
+        }
+        for (let event in Transition) {
+            if (camelCaseEvents.hasOwnProperty(event)) {
+                transitionEvents[event] = el => {
+                    Transition[event](el)
+                    camelCaseEvents[event]()
+                }
+            } else {
+                transitionEvents[event] = Transition[event]
+            }
+        }
+        const data = {
+            on: transitionEvents
+        }
+        return h('transition', data, context.children)
     }
 }
