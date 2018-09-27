@@ -179,7 +179,12 @@ func (a *association) CreateCommonAssociation(params types.ContextParams, data *
 		return params.Err.New(common.CCErrCommParamsInvalid, errmsg)
 	}
 
-	data.AsstName = fmt.Sprintf("%s-%s", data.ObjectID, data.AsstObjID)
+	if data.AsstName == "" {
+		errmsg := fmt.Sprintf("[operation-asst] failed to create the association , asstname is required")
+		blog.Error(errmsg)
+		return params.Err.New(common.CCErrCommParamsInvalid, errmsg)
+
+	}
 
 	// create a new
 
@@ -315,7 +320,12 @@ func (a *association) UpdateAssociation(params types.ContextParams, data frtypes
 		return params.Err.New(common.CCErrCommParamsInvalid, errmsg)
 	}
 
-	asst.AsstName = fmt.Sprintf("%s-%s", asst.ObjectID, asst.AsstObjID)
+	if asst.AsstName == "" {
+		errmsg := fmt.Sprintf("[operation-asst] failed to create the association , asstname is required")
+		blog.Error(errmsg)
+		return params.Err.New(common.CCErrCommParamsInvalid, errmsg)
+
+	}
 
 	rspAsst, err := a.clientSet.ObjectController().Meta().UpdateObjectAssociation(context.Background(), asst.ID, params.Header, asst.ToMapStr())
 	if nil != err {

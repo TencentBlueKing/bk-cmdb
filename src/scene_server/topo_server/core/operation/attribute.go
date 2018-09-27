@@ -71,10 +71,6 @@ func (a *attribute) CreateObjectAttribute(params types.ContextParams, data frtyp
 		return nil, err
 	}
 
-	if att.GetID() == common.BKChildStr || att.GetID() == common.BKInstParentStr {
-		return nil, params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, "could not create bk_childid or bk_parent_id")
-	}
-
 	// check the object id
 	err = a.obj.IsValidObject(params, att.GetObjectID())
 	if nil != err {
