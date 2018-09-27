@@ -81,12 +81,7 @@ func (a *attribute) CreateObjectAttribute(params types.ContextParams, data frtyp
 		return nil, params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
 	}
 
-	// create a new one
-	err = att.Create()
-	if nil != err {
-		blog.Errorf("[operation-attr] failed to save the attribute data (%#v), error info is %s", data, err.Error())
-		return nil, err
-	}
+	// create association by attribute is forbidden
 
 	// create association
 	// will abandon
@@ -97,10 +92,18 @@ func (a *attribute) CreateObjectAttribute(params types.ContextParams, data frtyp
 	}
 
 	if 0 != len(attrMeta.AsstObjID) {
-
 		blog.Errorf("[operation-attr] create association attr %s is forbidden", att.GetID())
 		return nil, params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, "create association attr is forbideen")
+	}
 
+	// create a new one
+	err = att.Create()
+	if nil != err {
+		blog.Errorf("[operation-attr] failed to save the attribute data (%#v), error info is %s", data, err.Error())
+		return nil, err
+	}
+
+	if 0 != len(attrMeta.AsstObjID) {
 		// check the object id
 		err = a.obj.IsValidObject(params, attrMeta.AsstObjID)
 		if nil != err {
