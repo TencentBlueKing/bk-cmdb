@@ -748,3 +748,9 @@ const (
 	// period default value
 	Infinite = "∞"
 )
+
+// netcollect
+const (
+	BKNetDevice   = "net_device"
+	BKNetProperty = "net_property"
+)
