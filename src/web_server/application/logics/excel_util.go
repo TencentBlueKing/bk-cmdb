@@ -130,8 +130,6 @@ func setExcelRowDataByIndex(rowMap map[string]interface{}, sheet *xlsx.Sheet, ro
 			if nil == err {
 				cell.SetInt64(intVal)
 			}
-			blog.Errorf("intVal %d", intVal)
-
 		default:
 			switch val.(type) {
 			case string:
