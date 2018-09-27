@@ -44,38 +44,39 @@ func ImportNetProperty(c *gin.Context) {
 	defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
 	defErr := cc.Error.CreateDefaultCCErrorIf(language)
 
-	file, err := c.FormFile("file")
+	fileHeader, err := c.FormFile("file")
 	if nil != err {
-		blog.Errorf("Import Net Device get file error:%s", err.Error())
+		blog.Errorf("Import Net Property get file error:%s", err.Error())
 		msg := getReturnStr(common.CCErrWebFileNoFound, defErr.Error(common.CCErrWebFileNoFound).Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
 	}
 	logics.SetProxyHeader(c)
 
-	randNum := rand.Uint32()
 	dir := webCommon.ResourcePath + "/import/"
-	_, err = os.Stat(dir)
-	if nil != err {
+	if _, err = os.Stat(dir); nil != err {
 		os.MkdirAll(dir, os.ModeDir|os.ModePerm)
 	}
-	filePath := fmt.Sprintf("%s/importnetdevice-%d-%d.xlsx", dir, time.Now().UnixNano(), randNum)
-	err = c.SaveUploadedFile(file, filePath)
-	if nil != err {
+
+	randNum := rand.Uint32()
+	filePath := fmt.Sprintf("%s/importnetproperty-%d-%d.xlsx", dir, time.Now().UnixNano(), randNum)
+	if err = c.SaveUploadedFile(fileHeader, filePath); nil != err {
 		msg := getReturnStr(common.CCErrWebFileSaveFail, defErr.Errorf(common.CCErrWebFileSaveFail, err.Error()).Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
 	}
+
 	defer os.Remove(filePath) //del file
-	f, err := xlsx.OpenFile(filePath)
+
+	file, err := xlsx.OpenFile(filePath)
 	if nil != err {
 		msg := getReturnStr(common.CCErrWebOpenFileFail, defErr.Errorf(common.CCErrWebOpenFileFail, err.Error()).Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
 	}
-	apiSite, _ := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
-	hosts, errMsg, err := logics.GetImportHosts(f, apiSite, c.Request.Header, defLang) //TODO
 
+	apiSite, _ := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
+	netproperty, errMsg, err := logics.GetImportHosts(file, apiSite, c.Request.Header, defLang) //TODO
 	if nil != err {
 		blog.Errorf("ImportHost logID:%s, error:%s", util.GetHTTPCCRequestID(c.Request.Header), err.Error())
 		msg := getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail, err.Error()).Error(), nil)
@@ -87,29 +88,30 @@ func ImportNetProperty(c *gin.Context) {
 		c.String(http.StatusOK, string(msg))
 		return
 	}
-	if 0 == len(hosts) {
+	if 0 == len(netproperty) {
 		msg := getReturnStr(common.CCErrWebFileContentEmpty, defErr.Errorf(common.CCErrWebFileContentEmpty, "").Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
 	}
 
-	url := apiSite + fmt.Sprintf("/api/%s/hosts/add", webCommon.API_VERSION)
-	params := make(map[string]interface{})
-	params["host_info"] = hosts
-	params["bk_supplier_id"] = common.BKDefaultSupplierID
-	params["input_type"] = common.InputTypeExcel
+	url := apiSite + fmt.Sprintf("/api/%s/netcollect/property/action/create", webCommon.API_VERSION)
+	blog.Infof("add net property url: %v", url)
 
-	blog.Infof("add host url: %v", url)
-	blog.Infof("add host content: %v", params)
+	params := make([]interface{}, 0)
+	for _, value := range netproperty {
+		params = append(params, value)
+	}
+	blog.Infof("add net property content: %v", params)
+
 	reply, err := httpRequest(url, params, c.Request.Header)
-	blog.Infof("add host result: %v", reply)
+	blog.Infof("add net property result: %v", reply)
 
 	if nil != err {
 		c.String(http.StatusOK, err.Error())
-	} else {
-		c.String(http.StatusOK, reply)
+		return
 	}
 
+	c.String(http.StatusOK, reply)
 }
 
 func ExportNetProperty(c *gin.Context) {
