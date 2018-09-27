@@ -37,5 +37,5 @@ func LogOutUser(c *gin.Context) {
 }
 
 func init() {
-	wactions.RegisterNewAction(wactions.Action{common.HTTPSelectGet, "/logout", nil, LogOutUser})
+	wactions.RegisterNewAction(wactions.Action{common.HTTPCreate, "/logout", nil, LogOutUser})
 }
