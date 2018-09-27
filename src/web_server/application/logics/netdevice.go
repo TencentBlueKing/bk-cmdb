@@ -13,36 +13,121 @@
 package logics
 
 import (
+	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 
+	simplejson "github.com/bitly/go-simplejson"
 	"github.com/rentiansheng/xlsx"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/language"
+	webCommon "configcenter/src/web_server/common"
 )
 
-func GetImportNetDevices(f *xlsx.File, url string, header http.Header, defLang language.DefaultCCLanguageIf) (map[int]map[string]interface{}, []string, error) {
+// get date from excel file to import device
+func GetImportNetDevices(
+	header http.Header, defLang language.DefaultCCLanguageIf, f *xlsx.File, url string) (map[int]map[string]interface{}, []string, error) {
 
-	return nil, nil, nil
+	if 0 == len(f.Sheets) {
+		return nil, nil, errors.New(defLang.Language("web_excel_content_empty"))
+	}
+
+	fields := GetNetDevicefield(defLang)
+
+	sheet := f.Sheets[0]
+	if nil == sheet {
+		return nil, nil, errors.New(defLang.Language("web_excel_sheet_not_found"))
+	}
+
+	return GetExcelData(sheet, fields, nil, true, 0, defLang)
+}
+
+func BuildNetDeviceExcelFromData(defLang language.DefaultCCLanguageIf, fields map[string]Property, data []interface{}, sheet *xlsx.Sheet) error {
+	productExcelHealer(fields, nil, sheet, defLang)
+
+	rowIndex := common.HostAddMethodExcelIndexOffset
+	for _, row := range data {
+		deviceData, ok := row.(map[string]interface{})
+		if !ok {
+			msg := fmt.Sprintf("data format error:%v", row)
+			blog.Errorf(msg)
+			return errors.New(msg)
+		}
+
+		setExcelRowDataByIndex(deviceData, sheet, rowIndex, fields)
+		rowIndex++
+	}
+
+	return nil
+}
+
+// get net device data to export
+func GetNetDeviceData(header http.Header, apiAddr, deviceIDStr string) ([]interface{}, error) {
+	deviceIDStrArr := strings.Split(deviceIDStr, ",")
+	deviceIDArr := []int64{}
+
+	for _, deviceIDStr := range deviceIDStrArr {
+		deviceID, _ := strconv.ParseInt(deviceIDStr, 10, 64)
+		deviceIDArr = append(deviceIDArr, deviceID)
+	}
+
+	deviceCond := map[string]interface{}{
+		"field": []string{},
+		"condition": []map[string]interface{}{
+			map[string]interface{}{
+				"field":    common.BKDeviceIDField,
+				"operator": common.BKDBIN,
+				"value":    deviceIDArr,
+			},
+		},
+	}
+
+	url := apiAddr + fmt.Sprintf("/api/%s/netcollect/device/action/search", webCommon.API_VERSION)
+	result, _ := httpRequest(url, deviceCond, header)
+
+	blog.Infof("search device url:%s", url)
+	blog.Infof("search device return:%s", result)
+
+	js, _ := simplejson.NewJson([]byte(result))
+	deviceDataResult, _ := js.Map()
+
+	if !deviceDataResult["result"].(bool) {
+		return nil, errors.New(deviceDataResult["bk_error_msg"].(string))
+	}
+
+	deviceData := deviceDataResult["data"].(map[string]interface{})
+	deviceInfo := deviceData["info"].([]interface{})
+	deviceCount, _ := deviceData["count"].(json.Number).Int64()
+
+	if 0 == deviceCount {
+		return deviceInfo, errors.New("no device")
+	}
+
+	blog.Infof("search return device info:%s", deviceInfo)
+	return deviceInfo, nil
 }
 
 //BuildNetDeviceExcelTemplate  return httpcode, error
-func BuildNetDeviceExcelTemplate(url, objID, filename string, header http.Header, defLang language.DefaultCCLanguageIf) error {
+func BuildNetDeviceExcelTemplate(header http.Header, defLang language.DefaultCCLanguageIf, url, filename string) error {
 	var file *xlsx.File
 	file = xlsx.NewFile()
+
 	sheet, err := file.AddSheet(common.BKNetDevice)
-	if err != nil {
-		blog.Errorf("get %s fields error:", objID, err.Error())
+	if nil != err {
+		blog.Errorf("add comment sheet error, sheet name:%s, error:%s", common.BKNetDevice, err.Error())
 		return err
 	}
 
-	fields := getNetDevicefield(defLang)
+	fields := GetNetDevicefield(defLang)
 
-	blog.V(5).Infof("BuildNetDeviceExcelTemplate fields count:%d", fields)
+	blog.V(5).Infof("BuildNetDeviceExcelTemplate fields count:%d", len(fields))
 
 	productExcelHealer(fields, nil, sheet, defLang)
-	ProductExcelCommentSheet(file, defLang)
 
 	if err = file.Save(filename); nil != err {
 		return err
@@ -51,7 +136,8 @@ func BuildNetDeviceExcelTemplate(url, objID, filename string, header http.Header
 	return nil
 }
 
-func getNetDevicefield(lang language.DefaultCCLanguageIf) map[string]Property {
+// get feild to import device or generate template
+func GetNetDevicefield(lang language.DefaultCCLanguageIf) map[string]Property {
 
 	return map[string]Property{
 		common.BKDeviceNameField: Property{
@@ -70,5 +156,30 @@ func getNetDevicefield(lang language.DefaultCCLanguageIf) map[string]Property {
 			Name: lang.Language("import_device_comment_vendor"), ID: common.BKVendorField,
 			PropertyType: common.FieldTypeSingleChar, ExcelColIndex: 3, IsRequire: true,
 		},
+	}
+}
+
+// add extra feild to export device
+func AddNetDeviceExtFields(originField *map[string]Property, lang language.DefaultCCLanguageIf) {
+
+	field := map[string]Property{
+		common.BKDeviceIDField: Property{
+			Name:         lang.Language("import_device_comment_device_id"),
+			ID:           common.BKDeviceIDField,
+			PropertyType: common.FieldTypeInt,
+		},
+		common.BKObjIDField: Property{
+			Name:         lang.Language("import_device_comment_obj_id"),
+			ID:           common.BKObjIDField,
+			PropertyType: common.FieldTypeSingleChar,
+		},
+	}
+
+	originFieldLen := len(*originField)
+
+	for key, value := range field {
+		value.ExcelColIndex = originFieldLen
+		originFieldLen++
+		(*originField)[key] = value
 	}
 }
