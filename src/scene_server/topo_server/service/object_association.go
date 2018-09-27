@@ -18,6 +18,7 @@ import (
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
+	"strconv"
 )
 
 // CreateObjectAssociation create a new object association
@@ -55,6 +56,16 @@ func (s *topoService) DeleteObjectAssociation(params types.ContextParams, pathPa
 	cond := condition.CreateCondition()
 	cond.Field(metadata.AssociationFieldAssociationId).Eq(pathParams("id"))
 	err := s.core.AssociationOperation().DeleteAssociation(params, cond)
+	return nil, err
+
+}
+
+// UpdateObjectAssociation update object association
+func (s *topoService) UpdateObjectAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+	id, _ := strconv.ParseInt(pathParams("id"), 10, 64)
+	cond := condition.CreateCondition()
+	cond.Field(metadata.AssociationFieldAssociationId).Eq(id)
+	err := s.core.AssociationOperation().UpdateAssociation(params, data, cond)
 	return nil, err
 
 }

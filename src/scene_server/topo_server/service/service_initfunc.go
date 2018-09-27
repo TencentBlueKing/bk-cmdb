@@ -30,9 +30,10 @@ func (s *topoService) initAssociation() {
 	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/inst/{owner_id}/{app_id}", HandlerFunc: s.SearchBusinessTopo})
 	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/inst/child/{owner_id}/{obj_id}/{app_id}/{inst_id}", HandlerFunc: s.SearchMainLineChildInstTopo})
 
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/objectasso/", HandlerFunc: s.CreateObjectAssociation})
-	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/objectasso/{id}", HandlerFunc: s.DeleteObjectAssociation})
-	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/objectasso/search", HandlerFunc: s.SearchObjectAssociation})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/objectasst/", HandlerFunc: s.CreateObjectAssociation})
+	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/objectasst/{id}", HandlerFunc: s.DeleteObjectAssociation})
+	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/objectasst/{id}", HandlerFunc: s.SearchObjectAssociation})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/objectasst/{id}", HandlerFunc: s.UpdateObjectAssociation})
 }
 
 func (s *topoService) initAuditLog() {

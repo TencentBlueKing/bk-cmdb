@@ -31,6 +31,42 @@ const (
 	AssociationFieldAssociationId = "id"
 )
 
+// 关联关系
+type AsstTypeValue int
+
+const (
+	// 默认0无
+	AsstTypeNone = iota
+	// 1从属
+	AsstTypeBelong
+	// 2引用
+	AsstTypeRef
+)
+
+// 关联方式
+type AsstWayValue int
+
+const (
+	// 默认0无
+	AsstWayNone = iota
+	// 1 1-N
+	AsstWay1N
+	// 2 N-1
+	AsstWayN1
+	// 3 N-N
+	AsstWayNN
+)
+
+// 关联位置
+type AsstPositionValue int
+
+const (
+	// 默认0无
+	AsstPosNone = iota
+	// 1 上级
+	AsstPosSuperior
+)
+
 // Association define object association struct
 type Association struct {
 	ID          int64  `field:"id" json:"id" bson:"id"`
@@ -40,12 +76,11 @@ type Association struct {
 	AsstObjID   string `field:"bk_asst_obj_id" json:"bk_asst_obj_id" bson:"bk_asst_obj_id"`
 	AsstName    string `field:"bk_asst_name" json:"bk_asst_name" bson:"bk_asst_name"`
 
-	// 关联类型
-	AsstType string `field:"bk_asst_type" json:"bk_asst_type" bson:"bk_asst_type"`
+	AsstType AsstTypeValue `field:"bk_asst_type" json:"bk_asst_type" bson:"bk_asst_type"`
 	// 关联位置
-	AsstPosition string `field:"bk_asst_position" json:"bk_asst_position" bson:"bk_asst_position"`
+	AsstPosition AsstPositionValue `field:"bk_asst_position" json:"bk_asst_position" bson:"bk_asst_position"`
 	// 关联方式
-	AsstWay string `field:"bk_asst_way" json:"bk_asst_way" bson:"bk_asst_way"`
+	AsstWay AsstWayValue `field:"bk_asst_way" json:"bk_asst_way" bson:"bk_asst_way"`
 
 	//ObjectAttID      string `field:"bk_object_att_id" json:"bk_object_att_id" bson:"bk_object_att_id"`
 	ClassificationID string `field:"bk_classification_id" bson:"-"`
