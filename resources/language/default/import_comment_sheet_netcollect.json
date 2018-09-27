@@ -1,6 +1,8 @@
 {
     "import_device_comment_device_name":"设备名",
+    "import_device_comment_device_id":"设备ID",
     "import_device_comment_obj_name":"模型名",
+    "import_device_comment_obj_id":"模型名ID",
     "import_device_comment_device_model":"设备型号",
     "import_device_comment_vendor":"厂商",
 
