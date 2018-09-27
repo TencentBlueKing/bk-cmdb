@@ -79,7 +79,7 @@ func (cli *Service) GetProcessesByModuleName(req *restful.Request, resp *restful
 	procQuery[common.BKProcIDField] = map[string]interface{}{
 		"$in": processIdArr,
 	}
-	procQuery = util.SetModOwner(procQuery, ownerID)
+	procQuery = util.SetQueryOwner(procQuery, ownerID)
 	var resultProc []interface{}
 	err = cli.Instance.GetMutilByCondition("cc_Process", []string{}, procQuery, &resultProc, common.BKProcIDField, 0, 100000)
 	blog.Infof("GetProcessesByModuleName params:%v, result:%v", procQuery, resultProc)

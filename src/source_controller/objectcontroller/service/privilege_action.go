@@ -151,7 +151,7 @@ func (cli *Service) GetUserGroupPrivi(req *restful.Request, resp *restful.Respon
 	cond := make(map[string]interface{})
 	cond[common.BKOwnerIDField] = ownerID
 	cond[common.BKUserGroupIDField] = groupID
-	cond = util.SetModOwner(cond, ownerID)
+	cond = util.SetQueryOwner(cond, ownerID)
 
 	blog.V(3).Infof("get user group privi by condition %+v", cond)
 	cnt, err := cli.Instance.GetCntByCondition(common.BKTableNameUserGroupPrivilege, cond)
