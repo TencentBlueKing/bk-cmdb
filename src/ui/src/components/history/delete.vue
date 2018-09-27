@@ -227,8 +227,12 @@
                 this.isLoading = true
                 try {
                     let res = await this.$axios.post(this.axiosConfig.url, this.axiosConfig.params)
-                    this.initTableList(res.data.info)
-                    this.pagination.count = res.data.count
+                    if (res.result) {
+                        this.initTableList(res.data.info)
+                        this.pagination.count = res.data.count
+                    } else {
+                        this.$alertMsg(res['bk_error_msg'])
+                    }
                 } catch (e) {
                     this.$alertMsg(e.message || e.data['bk_error_msg'] || e.statusText)
                 } finally {
