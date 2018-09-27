@@ -52,6 +52,9 @@ func newReconciler(cache *redis.Client, db storage.DI) *reconciler {
 var MsgChan = make(chan string, 3)
 
 func (r *reconciler) loadAll() {
+	r.cached = map[string][]string{}
+	r.persisted = map[string][]string{}
+	r.persistedSubscribers = []string{}
 	r.loadAllCached()
 	r.loadAllPersisted()
 }
