@@ -70,7 +70,7 @@
 
 <style lang="scss" scoped>
     .network-wrapper {
-        background: #f5f6fa;
+        background: $cmdbBackgroundColor;
         .filter-wrapper {
             .filter-content {
                 .cmdb-form-input {

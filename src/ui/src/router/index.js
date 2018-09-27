@@ -19,6 +19,7 @@ const audit = () => import(/* webpackChunkName: audit */ '@/views/audit')
 const topology = () => import(/* webpackChunkName: topology */ '@/views/topology')
 const process = () => import(/* webpackChunkName: process */ '@/views/process')
 const customQuery = () => import(/* webpackChunkName: customQuery */ '@/views/custom-query')
+const networkDiscoveryConfiguration = () => import(/* webpackChunkName: networkDiscovery */ '@/views/network-config')
 const networkDiscovery = () => import(/* webpackChunkName: networkDiscovery */ '@/views/network-discovery')
 const networkConfirm = () => import(/* webpackChunkName: networkConfirm */ '@/views/network-discovery/confirm')
 const error = () => import(/* webpackChunkName: error */ '@/views/status/error')
@@ -103,6 +104,9 @@ const router = new Router({
         meta: {
             requireBusiness: true
         }
+    }, {
+        path: '/network-discovery-configuration',
+        component: networkDiscoveryConfiguration
     }, {
         path: '/network-discovery',
         component: networkDiscovery

@@ -63,36 +63,80 @@
             <v-confirm-details slot="content"></v-confirm-details>
         </cmdb-slider>
         <footer class="footer">
-            <bk-button type="primary" @click="changeConfirm">
+            <bk-button type="primary" @click="confirmDialog.isShow = true">
                 {{$t('NetworkDiscovery["确认变更"]')}}
             </bk-button>
         </footer>
         <bk-dialog
-        :is-show.sync="resultInfo.isShow" 
+        class="result-dialog"
+        :is-show.sync="resultDialog.isShow" 
         :has-header="false"
         :has-footer="false"
         :quick-close="false"
+        :close-icon="false"
         :width="448">
             <div slot="content">
                 <h2>{{$t('NetworkDiscovery["执行结果"]')}}</h2>
-                <div>
-                    <p>{{$t('NetworkDiscovery["属性变更成功"]')}}</p>
-                    <p>{{$t('NetworkDiscovery["关联关系变更成功"]')}}</p>
-                    <p>{{$t('NetworkDiscovery["属性变更失败"]')}}</p>
-                    <p>{{$t('NetworkDiscovery["关联关系变更失败"]')}}</p>
-                </div>
-                <div>
+                <div class="dialog-content">
                     <p>
+                        <span class="info">{{$t('NetworkDiscovery["属性变更成功"]')}}</span>
+                        <span class="number">22条</span>
+                    </p>
+                    <p>
+                        <span class="info">{{$t('NetworkDiscovery["关联关系变更成功"]')}}</span>
+                        <span class="number">22条</span>
+                    </p>
+                    <p class="fail">
+                        <span class="info">{{$t('NetworkDiscovery["属性变更失败"]')}}</span>
+                        <span class="number">22条</span>
+                    </p>
+                    <p class="fail">
+                        <span class="info">{{$t('NetworkDiscovery["关联关系变更失败"]')}}</span>
+                        <span class="number">22条</span>
+                    </p>
+                </div>
+                <div class="dialog-details">
+                    <p @click="toggleDialogDetails">
                         <i class="bk-icon icon-angle-down"></i>
                         <span>{{$t('NetworkDiscovery["展开详情"]')}}</span>
                     </p>
-                    <div class="detail-content">
-                        asdfasdf
-                    </div>
+                    <transition name="slide">
+                        <div class="detail-content-box" v-if="resultDialog.isDetailsShow">
+                            <div class="detail-content">
+                                Lorem ipsum dolor sit amet consectetur adipisicing elit. Officiis repellat sequi, eum fugiat, consectetur sunt omnis minus exercitationem in dolorum, asperiores hic nobis perspiciatis dignissimos dolorem non ipsam! Adipisci, facere!
+                                Lorem ipsum dolor sit amet consectetur adipisicing elit. Officiis repellat sequi, eum fugiat, consectetur sunt omnis minus exercitationem in dolorum, asperiores hic nobis perspiciatis dignissimos dolorem non ipsam! Adipisci, facere!
+                            </div>
+                        </div>
+                    </transition>
                 </div>
-                <footer>
+                <footer class="footer">
                     <bk-button type="primary">
                         {{$t('Hosts["确认"]')}}
+                    </bk-button>
+                </footer>
+            </div>
+        </bk-dialog>
+        <bk-dialog
+        class="confirm-dialog"
+        :is-show.sync="confirmDialog.isShow" 
+        :title="$t('NetworkDiscovery[\'是否确认变更\']')"
+        :has-footer="false"
+        :quick-close="false"
+        padding="0"
+        :width="390">
+            <div slot="content" class="dialog-content">
+                <p>
+                    {{$t('NetworkDiscovery["要在返回前确认变更吗？"]')}}
+                </p>
+                <footer class="footer">
+                    <bk-button type="primary">
+                        {{$t('NetworkDiscovery["确认变更"]')}}
+                    </bk-button>
+                    <bk-button type="default">
+                        {{$t('NetworkDiscovery["丢弃"]')}}
+                    </bk-button>
+                    <bk-button type="default">
+                        {{$t('Common["取消"]')}}
                     </bk-button>
                 </footer>
             </div>
@@ -108,7 +152,11 @@
         },
         data () {
             return {
-                resultInfo: {
+                resultDialog: {
+                    isShow: false,
+                    isDetailsShow: true
+                },
+                confirmDialog: {
                     isShow: false
                 },
                 slider: {
@@ -192,15 +240,26 @@
                 this.slider.isShow = true
             },
             changeConfirm () {
-                this.resultInfo.isShow = true
+                this.resultDialog.isShow = true
+            },
+            toggleDialogDetails () {
+                this.resultDialog.isDetailsShow = !this.resultDialog.isDetailsShow
             }
         }
     }
 </script>
 
 <style lang="scss" scoped>
+    .slide-enter-active, .slide-leave-active{
+        transition: all .2s;
+        overflow: hidden;
+        height: 190px;
+    }
+    .slide-enter, .slide-leave-to{
+        height: 0 !important;
+    }
     .network-confirm-wrapper {
-        background: #f5f6fa;
+        background: $cmdbBackgroundColor;
         .filter-wrapper {
             &.open {
                 >.bk-button {
@@ -257,7 +316,7 @@
             margin-top: 20px;
             background: #fff;
         }
-        .footer {
+        >.footer {
             position: fixed;
             bottom: 0;
             left: 0;
@@ -266,6 +325,76 @@
             text-align: right;
             background: #fff;
             box-shadow: 0 -2px 5px 0 rgba(0, 0, 0, 0.05);
+        }
+        .result-dialog {
+            h2 {
+                margin-bottom: 10px;
+                font-size: 22px;
+                color: #333948;
+            }
+            .dialog-content {
+                >p {
+                    line-height: 26px;
+                    span {
+                        display: inline-block;
+                    }
+                    .info {
+                        width: 155px;
+                    }
+                }
+                .fail {
+                    color: $cmdbDangerColor;
+                }
+            }
+            .dialog-details {
+                margin-top: 10px;
+                >p {
+                    font-weight: bold;
+                    cursor: pointer;
+                    .icon-angle-down {
+                        font-size: 12px;
+                        font-weight: bold;
+                    }
+                }
+                .dialog-content-box {
+                    height: 220px;
+                }
+                .detail-content {
+                    margin-top: 10px;
+                    padding: 15px 20px;
+                    border: 1px dashed #dde4eb;
+                    background: #fafbfd;
+                    border-radius: 5px;
+                    overflow-y: auto;
+                    height: 190px;
+                    @include scrollbar;
+                }
+            }
+            .footer {
+                border-top: 1px solid #e5e5e5;
+                padding-right: 20px;
+                margin: 25px -20px -20px;
+                text-align: right;
+                font-size: 0;
+                background: #fafbfd;
+                height: 54px;
+                line-height: 54px;
+            }
+        }
+        .confirm-dialog {
+            .dialog-content {
+                text-align: center;
+                >p {
+                    margin: 10px 0 20px;
+                }
+                .footer {
+                    padding-bottom: 40px;
+                    font-size: 0;
+                    .bk-button.bk-default {
+                        margin-left: 10px;
+                    }
+                }
+            }
         }
     }
 </style>
