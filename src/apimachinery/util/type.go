@@ -13,9 +13,6 @@
 package util
 
 import (
-	"net/http"
-	"reflect"
-
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/flowctrl"
 )
@@ -30,36 +27,17 @@ type APIMachineryConfig struct {
 	TLSConfig *TLSClientConfig
 }
 
-type HttpClient interface {
-	Do(req *http.Request) (*http.Response, error)
-}
-
 type Capability struct {
 	Client   HttpClient
 	Discover discovery.Interface
 	Throttle flowctrl.RateLimiter
+	Mock     MockInfo
 }
 
-// Attention: all the fields must be string, or the ToHeader method will be panic.
-// the struct filed tag is the key of header, and the header's value is the struct
-// filed value.
-type Headers struct {
-	Language string `HTTP_BLUEKING_LANGUAGE`
-	User     string `BK_User`
-	OwnerID  string `HTTP_BLUEKING_SUPPLIER_ID`
-}
-
-func (h Headers) ToHeader() http.Header {
-	header := make(http.Header)
-
-	valueof := reflect.ValueOf(h)
-	for i := 0; i < valueof.NumField(); i++ {
-		k := reflect.TypeOf(h).Field(i).Tag
-		v := valueof.Field(i).String()
-		header[string(k)] = []string{v}
-	}
-
-	return header
+type MockInfo struct {
+	Mocked      bool
+	SetMockData bool
+	MockData    interface{}
 }
 
 type TLSClientConfig struct {
