@@ -960,6 +960,8 @@ func (c *commonInst) FindInst(params types.ContextParams, obj model.Object, cond
 		return 0, nil, err
 	}
 
+	// TODO 查看实例数据，通过关联字段查询其他关联值，改为通过关联属性查询
+
 	asstObjAttrs, err := c.asst.SearchObjectAssociation(params, obj.GetID())
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to search object associations, error info is %s", err.Error())
