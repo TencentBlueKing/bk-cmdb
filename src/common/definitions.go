@@ -761,4 +761,8 @@ const (
 
 	LoginSystemMultiSupplierTrue  = "1"
 	LoginSystemMultiSupplierFalse = "0"
+
+	LogoutHTTPSchemeCookieKey = "http_scheme"
+	LogoutHTTPSchemeHTTP      = "http"
+	LogoutHTTPSchemeHTTPS     = "https"
 )

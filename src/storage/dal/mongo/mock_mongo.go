@@ -34,7 +34,9 @@ var _ dal.RDB = new(Mock)
 
 // NewMock returns new RDB
 func NewMock() *Mock {
-	return &Mock{}
+	return &Mock{
+		cache: map[string]*MockResult{},
+	}
 }
 
 // Close replica client
