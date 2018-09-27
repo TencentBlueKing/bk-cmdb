@@ -78,7 +78,7 @@ func ImportNetProperty(c *gin.Context) {
 	apiSite, _ := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
 	netproperty, errMsg, err := logics.GetImportHosts(file, apiSite, c.Request.Header, defLang) //TODO
 	if nil != err {
-		blog.Errorf("ImportHost logID:%s, error:%s", util.GetHTTPCCRequestID(c.Request.Header), err.Error())
+		blog.Errorf("ImportNetProperty logID:%s, error:%s", util.GetHTTPCCRequestID(c.Request.Header), err.Error())
 		msg := getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail, err.Error()).Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
@@ -115,9 +115,103 @@ func ImportNetProperty(c *gin.Context) {
 }
 
 func ExportNetProperty(c *gin.Context) {
+	logics.SetProxyHeader(c)
+
+	cc := api.NewAPIResource()
+	language := logics.GetLanguageByHTTPRequest(c)
+	defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
+	defErr := cc.Error.CreateDefaultCCErrorIf(language)
+
+	netPropertyIDstr := c.PostForm(common.BKNetcollectPropertyIDlField)
+	apiSite, _ := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
+
+	netPropertyInfo, err := logics.GetNetPropertyData(c.Request.Header, apiSite, netPropertyIDstr)
+	if nil != err {
+		blog.Error(err.Error())
+		msg := getReturnStr(common.CCErrWebGetHostFail, defErr.Errorf(common.CCErrWebGetHostFail, err.Error()).Error(), nil)
+		c.String(http.StatusBadGateway, msg, nil)
+		return
+	}
+
+	file := xlsx.NewFile()
+	sheet, err := file.AddSheet(common.BKNetProperty)
+	if nil != err {
+		blog.Error(err.Error())
+		msg := getReturnStr(common.CCErrWebCreateEXCELFail,
+			defErr.Errorf(common.CCErrWebCreateEXCELFail,
+				err.Error()).Error(), nil)
+		c.String(http.StatusBadGateway, msg, nil)
+		return
+	}
+
+	fields := logics.GetNetPropertyField(defLang)
+	logics.AddNetPropertyExtFields(&fields, defLang)
+
+	if err = logics.BuildNetPropertyExcelFromData(defLang, fields, netPropertyInfo, sheet); nil != err {
+		blog.Errorf("ExportNetProperty object:%s error:%s", err.Error())
+		reply := getReturnStr(
+			common.CCErrCommExcelTemplateFailed,
+			defErr.Errorf(common.CCErrCommExcelTemplateFailed, common.BKNetProperty).Error(),
+			nil)
+		c.Writer.Write([]byte(reply))
+		return
+	}
+
+	dirFileName := fmt.Sprintf("%s/export", webCommon.ResourcePath)
+	if _, err = os.Stat(dirFileName); nil != err {
+		os.MkdirAll(dirFileName, os.ModeDir|os.ModePerm)
+	}
+
+	fileName := fmt.Sprintf("%dnetproperty.xlsx", time.Now().UnixNano())
+	dirFileName = fmt.Sprintf("%s/%s", dirFileName, fileName)
+
+	logics.ProductExcelCommentSheet(file, defLang)
+
+	if err = file.Save(dirFileName); nil != err {
+		blog.Error("ExportNetProperty save file error:%s", err.Error())
+		reply := getReturnStr(common.CCErrWebCreateEXCELFail,
+			defErr.Errorf(common.CCErrCommExcelTemplateFailed, err.Error()).Error(),
+			nil)
+		c.Writer.Write([]byte(reply))
+		return
+	}
+
+	logics.AddDownExcelHttpHeader(c, "netproperty.xlsx")
+	c.File(dirFileName)
+
+	os.Remove(dirFileName)
 
 }
 
 func BuildDownLoadNetPropertyExcelTemplate(c *gin.Context) {
+	logics.SetProxyHeader(c)
+	cc := api.NewAPIResource()
 
+	dir := webCommon.ResourcePath + "/template/"
+	if _, err := os.Stat(dir); nil != err {
+		os.MkdirAll(dir, os.ModeDir|os.ModePerm)
+	}
+
+	language := logics.GetLanguageByHTTPRequest(c)
+	defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
+	defErr := cc.Error.CreateDefaultCCErrorIf(language)
+
+	randNum := rand.Uint32()
+	file := fmt.Sprintf("%s/%stemplate-%d-%d.xlsx", dir, common.BKNetProperty, time.Now().UnixNano(), randNum)
+
+	apiSite := cc.APIAddr()
+	if err := logics.BuildNetPropertyExcelTemplate(c.Request.Header, defLang, apiSite, file); nil != err {
+		blog.Errorf("Build NetProperty Excel Template, error:%s", err.Error())
+		reply := getReturnStr(common.CCErrCommExcelTemplateFailed,
+			defErr.Errorf(common.CCErrCommExcelTemplateFailed, common.BKNetProperty).Error(),
+			nil)
+		c.Writer.Write([]byte(reply))
+		return
+	}
+
+	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("template_%s.xlsx", common.BKNetProperty))
+
+	c.File(file)
+	os.Remove(file)
+	return
 }
