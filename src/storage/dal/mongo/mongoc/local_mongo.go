@@ -29,6 +29,7 @@ import (
 	"configcenter/src/storage/types"
 )
 
+// ErrSessionMissing session missing
 var ErrSessionMissing = errors.New("session missing")
 
 // Client implement client.DALRDB interface
@@ -77,6 +78,16 @@ func (c *Client) Clone() dal.RDB {
 	return &nc
 }
 
+// IsDuplicatedError interface compatibility
+func (c *Client) IsDuplicatedError(err error) bool {
+	return false
+}
+
+// IsNotFoundError interface compatibility
+func (c *Client) IsNotFoundError(err error) bool {
+	return false
+}
+
 // Table collection operation
 func (c *Client) Table(collName string) dal.Table {
 	col := Collection{}
@@ -89,6 +100,11 @@ func (c *Client) Table(collName string) dal.Table {
 type Collection struct {
 	collName string // 集合名
 	*Client
+}
+
+// Indexes 查询索引
+func (c *Collection) Indexes(ctx context.Context) ([]dal.Index, error) {
+	return nil, errors.New("not implement")
 }
 
 // Find 查询多个并反序列化到 Result
@@ -221,24 +237,24 @@ func (c *Client) NextSequence(ctx context.Context, sequenceName string) (uint64,
 }
 
 // StartTransaction 开启新事务
-func (c *Client) StartTransaction(ctx context.Context) error {
+func (c *Client) StartTransaction(ctx context.Context) (dal.RDB, error) {
 	txc := c.pool.Pop()
 	c.txc = txc
 	session := txc.Session().Create()
 	if err := session.Open(); err != nil {
 		session.Close()
-		return err
+		return nil, err
 	}
 	c.session = session
 	err := session.StartTransaction()
 	if err != nil {
 		session.Close()
 	}
-	return err
+	return c, nil
 }
 
 // Commit 提交事务
-func (c *Client) Commit() error {
+func (c *Client) Commit(context.Context) error {
 	if c.session == nil {
 		return ErrSessionMissing
 	}
@@ -256,7 +272,7 @@ func (c *Client) Commit() error {
 }
 
 // Abort 取消事务
-func (c *Client) Abort() error {
+func (c *Client) Abort(context.Context) error {
 	if c.session == nil {
 		return ErrSessionMissing
 	}
@@ -305,7 +321,7 @@ func (c *Collection) CreateIndex(ctx context.Context, index dal.Index) error {
 		Keys:       mapstr.MapStr(index.Keys),
 		Name:       index.Name,
 		Unique:     index.Unique,
-		Backgroupd: index.Backgroupd,
+		Backgroupd: index.Background,
 	}
 
 	dbc := c.pool.Pop()
