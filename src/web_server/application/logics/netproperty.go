@@ -180,7 +180,7 @@ func AddNetPropertyExtFields(originField *map[string]Property, lang language.Def
 		common.BKDeviceIDField: Property{
 			Name:         lang.Language("import_property_comment_device_id"),
 			ID:           common.BKDeviceIDField,
-			PropertyType: common.FieldTypeSingleChar,
+			PropertyType: common.FieldTypeInt,
 		},
 		common.BKObjIDField: Property{
 			Name:         lang.Language("import_property_comment_object_id"),
