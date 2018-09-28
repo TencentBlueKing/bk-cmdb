@@ -1,79 +1,160 @@
 <template>
     <div class="device-wrapper">
         <div class="title">
-            <bk-button type="primary">
+            <bk-button type="primary" @click="toggleCreateDialog">
                 {{$t('NetworkConfig["新增属性"]')}}
             </bk-button>
             <bk-button type="default">
                 {{$t('Common["删除"]')}}
             </bk-button>
-            <bk-button type="default">
+            <bk-button type="default" @click="importSlider.isShow = true">
                 {{$t('ModelManagement["导入"]')}}
             </bk-button>
-            <bk-button type="default">
+            <bk-button type="default" form="exportForm">
                 {{$t('ModelManagement["导出"]')}}
             </bk-button>
+            <form id="exportForm" :action="url.export" method="POST" hidden>
+                <input type="hidden" name="netcollect_property_id" :value="table.checked.join(',')">
+            </form>
             <div class="filter">
                 <bk-selector
                     class="search-selector"
-                    :list="typeList"
+                    :list="filter.typeList"
                     :selected.sync="filter.type"
                 ></bk-selector>
-                <input class="cmdb-form-input" :placeholder="$t('Common[\'请输入\']')" type="text" id="SearchUserName" v-model.trim="filter.text" @keyup.enter="getRoleList">
+                <input class="cmdb-form-input" :placeholder="$t('Common[\'请输入\']')" type="text" v-model.trim="filter.text" @keyup.enter="getTableData">
                 <i class="filter-search bk-icon icon-search"
-                @click="getRoleList"></i>
+                @click="getTableData"></i>
             </div>
         </div>
         <cmdb-table
             class="device-table"
-            :loading="$loading('searchSubscription')"
+            :loading="$loading('searchNetcollectProperty')"
             :header="table.header"
             :list="table.list"
             :pagination.sync="table.pagination"
             :defaultSort="table.defaultSort">
         </cmdb-table>
+        <bk-dialog
+        class="create-dialog"
+        :is-show.sync="createDialog.isShow" 
+        :title="$t('NetworkConfig[\'新增属性\']')"
+        :has-footer="false"
+        :close-icon="false"
+        :width="424">
+            <div slot="content">
+                <label>
+                    <span>{{$t('NetworkConfig["所属设备"]')}}<span class="color-danger">*</span></span>
+                    <bk-selector
+                        :list="createDialog.deviceList"
+                        :searchable="true"
+                        search-key="device_name"
+                        setting-key="device_id"
+                        display-key="device_name"
+                        :selected.sync="createDialog.device_id"
+                    ></bk-selector>
+                    <input type="text" hidden name="device_id" v-model="createDialog['device_id']" v-validate="'required'">
+                    <div v-show="errors.has('device_id')" class="color-danger">{{ errors.first('device_id') }}</div>
+                </label>
+                <label>
+                    <span>oid<span class="color-danger">*</span></span>
+                    <input type="text" class="cmdb-form-input" name="oid" v-model="createDialog.oid" v-validate="'required|oid'">
+                    <div v-show="errors.has('oid')" class="color-danger">{{ errors.first('oid') }}</div>
+                </label>
+                <label>
+                    <span>{{$t('NetworkConfig["模型属性"]')}}<span class="color-danger">*</span></span>
+                    <bk-selector
+                        search-key="bk_property_name"
+                        setting-key="bk_property_id"
+                        display-key="bk_property_name"
+                        :list="createDialog.attrList"
+                        :selected.sync="createDialog.bk_property_id"
+                    ></bk-selector>
+                    <input type="text" hidden name="bk_property_id" v-model="createDialog['bk_property_id']" v-validate="'required'">
+                    <div v-show="errors.has('bk_property_id')" class="color-danger">{{ errors.first('bk_property_id') }}</div>
+                </label>
+                <footer class="footer">
+                    <bk-button type="primary" @click="saveProperty">
+                        {{$t('Common["保存"]')}}
+                    </bk-button>
+                    <bk-button type="default" @click="toggleCreateDialog">
+                        {{$t('Common["取消"]')}}
+                    </bk-button>
+                </footer>
+            </div>
+        </bk-dialog>
+        <cmdb-slider
+            :is-show.sync="importSlider.isShow"
+            :title="$t('HostResourcePool[\'批量导入\']')">
+            <cmdb-import v-if="importSlider.isShow" slot="content" 
+                :templateUrl="url.template" 
+                :importUrl="url.import" 
+                @success="handlePageChange(1)"
+                @partialSuccess="handlePageChange(1)">
+            </cmdb-import>
+        </cmdb-slider>
     </div>
 </template>
 
 <script>
+    import { mapActions } from 'vuex'
+    import cmdbImport from '@/components/import/import'
     export default {
+        components: {
+            cmdbImport
+        },
         data () {
             return {
-                typeList: [],
+                importSlider: {
+                    isShow: false
+                },
+                createDialog: {
+                    isShow: false,
+                    deviceList: [],
+                    attrList: [],
+                    oid: '',
+                    device_id: '',
+                    bk_property_id: ''
+                },
                 filter: {
-                    type: '',
+                    typeList: [{
+                        id: 'device_name',
+                        name: this.$t('NetworkConfig["所属设备"]')
+                    }, {
+                        id: 'bk_obj_name',
+                        name: this.$t('OperationAudit["模型"]')
+                    }, {
+                        id: 'bk_property_name',
+                        name: this.$t('NetworkConfig["模型属性"]')
+                    }],
+                    type: 'device_name',
                     text: ''
                 },
                 table: {
                     header: [{
+                        id: 'netcollect_property_id',
                         type: 'checkbox'
                     }, {
-                        id: 'id',
+                        id: 'netcollect_property_id',
                         name: 'ID'
                     }, {
-                        id: 'device',
+                        id: 'device_name',
                         name: this.$t('NetworkConfig["所属设备"]')
                     }, {
-                        id: 'type',
+                        id: 'unit',
                         name: this.$t('NetworkConfig["计量单位"]')
                     }, {
-                        id: 'type',
+                        id: 'oid',
                         name: 'oid'
                     }, {
-                        id: 'name',
+                        id: 'bk_obj_name',
                         name: this.$t('OperationAudit["模型"]')
                     }, {
-                        id: 'model',
+                        id: 'bk_property_name',
                         name: this.$t('NetworkConfig["模型属性"]')
                     }],
-                    list: [{
-                        change: 'asdf',
-                        unique: 'asdf',
-                        type: 'asdf',
-                        ip: 'asdf',
-                        config: 'aaa',
-                        time: 'ddd'
-                    }],
+                    list: [],
+                    checked: [],
                     pagination: {
                         count: 0,
                         size: 10,
@@ -82,6 +163,94 @@
                     defaultSort: '-last_time',
                     sort: '-last_time'
                 }
+            }
+        },
+        computed: {
+            url () {
+                const prefix = `${window.API_HOST}netproperty/`
+                return {
+                    import: prefix + 'import',
+                    export: prefix + 'export',
+                    template: `${window.API_HOST}netcollect/importtemplate/netproperty`
+                }
+            }
+        },
+        watch: {
+            'createDialog.device_id' (deviceId) {
+                if (deviceId) {
+                    let device = this.createDialog.deviceList.find(device => device.device_id === deviceId)
+                    if (device) {
+                        this.getObjAttr(device)
+                    }
+                }
+            }
+        },
+        async created () {
+            this.getTableData()
+        },
+        methods: {
+            ...mapActions('objectModelProperty', ['searchObjectAttribute']),
+            ...mapActions('netCollectDevice', ['searchDevice']),
+            ...mapActions('netCollectProperty', [
+                'createNetcollectProperty',
+                'searchNetcollectProperty'
+            ]),
+            async toggleCreateDialog () {
+                this.createDialog.isShow = !this.createDialog.isShow
+                if (this.createDialog.isShow) {
+                    const res = await this.searchDevice({params: {}, config: {requestId: 'searchDevice', fromCache: true}})
+                    this.createDialog.deviceList = res.info
+                }
+            },
+            async getObjAttr (device) {
+                this.createDialog.attrList = await this.searchObjectAttribute({
+                    params: {bk_obj_id: device['bk_obj_id']},
+                    config: {
+                        requestId: `post_searchObjectAttribute_${device['bk_obj_id']}`,
+                        fromCache: true
+                    }
+                })
+            },
+            async saveProperty () {
+                if (!await this.$validator.validateAll()) {
+                    return
+                }
+                let params = [{
+                    device_id: this.createDialog['device_id'],
+                    bk_property_id: this.createDialog['bk_property_id'],
+                    oid: this.createDialog.oid
+                }]
+                await this.createNetcollectProperty({params, config: {requestId: 'createNetcollectProperty'}})
+                this.toggleCreateDialog()
+                this.handlePageChange(1)
+            },
+            async getTableData () {
+                let pagination = this.table.pagination
+                let params = {
+                    page: {
+                        start: (pagination.current - 1) * pagination.size,
+                        limit: pagination.size,
+                        sort: this.table.sort
+                    }
+                }
+                if (this.filter.text.length) {
+                    Object.assign(params, {condition: [{field: this.filter.type, operation: '$in', value: this.filter.text}]})
+                }
+                const res = await this.searchNetcollectProperty({params, config: {requestId: 'searchNetcollectProperty'}})
+                this.table.pagination.count = res.count
+                this.table.list = res.info
+            },
+            handleSortChange (sort) {
+                this.table.sort = sort
+                this.handlePageChange(1)
+            },
+            handleSizeChange (size) {
+                this.table.pagination.size = size
+                this.handlePageChange(1)
+            },
+            handlePageChange (page) {
+                this.table.pagination.current = page
+                this.getTableData()
             }
         }
     }
@@ -128,6 +297,21 @@
         .device-table {
             margin-top: 20px;
             background: #fff;
+        }
+        .create-dialog {
+            .footer {
+                border-top: 1px solid #e5e5e5;
+                padding-right: 20px;
+                margin: 25px -20px -20px;
+                text-align: right;
+                font-size: 0;
+                background: #fafbfd;
+                height: 54px;
+                line-height: 54px;
+                .bk-default {
+                    margin-left: 10px;
+                }
+            }
         }
     }
 </style>
