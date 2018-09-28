@@ -76,7 +76,7 @@ func ImportNetProperty(c *gin.Context) {
 	}
 
 	apiSite, _ := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
-	netproperty, errMsg, err := logics.GetImportHosts(file, apiSite, c.Request.Header, defLang) //TODO
+	netproperty, errMsg, err := logics.GetImportNetProperty(c.Request.Header, defLang, file, apiSite) //TODO
 	if nil != err {
 		blog.Errorf("ImportNetProperty logID:%s, error:%s", util.GetHTTPCCRequestID(c.Request.Header), err.Error())
 		msg := getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail, err.Error()).Error(), nil)
