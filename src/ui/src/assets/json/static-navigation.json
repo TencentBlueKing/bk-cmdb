@@ -86,12 +86,6 @@
             "id": "network",
             "name": "网络发现",
             "classificationId": "bk_back_config"
-        }, {
-            "i18n": "NetworkConfig['网络发现配置']",
-            "path": "/network-discovery-configuration",
-            "id": "networkConfig",
-            "name": "网络发现配置",
-            "classificationId": "bk_back_config"
         }]
     }
 }
