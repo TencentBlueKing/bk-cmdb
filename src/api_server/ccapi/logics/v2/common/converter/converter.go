@@ -688,6 +688,12 @@ func ResV2ToForProcList(resDataV3 interface{}, defLang language.DefaultCCLanguag
 func GeneralV2Data(data interface{}) interface{} {
 
 	switch realData := data.(type) {
+	case []mapstr.MapStr:
+		mapItem := make([]map[string]interface{}, 0)
+		for _, item := range realData {
+			mapItem = append(mapItem, convMapInterface(item))
+		}
+		return mapItem
 	case []interface{}:
 		mapItem := make([]interface{}, 0)
 		for _, item := range realData {
@@ -697,40 +703,10 @@ func GeneralV2Data(data interface{}) interface{} {
 			mapItem = append(mapItem, GeneralV2Data(item))
 		}
 		return mapItem
+	case mapstr.MapStr:
+		return convMapInterface(realData)
 	case map[string]interface{}:
-		mapItem := make(map[string]interface{})
-		for key, val := range realData {
-			key = ConverterV3Fields(key, "")
-			if key == "CreateTime" || key == "LastTime" || key == common.CreateTimeField || key == common.LastTimeField {
-				ts, ok := val.(time.Time)
-				if ok {
-					mapItem[key] = ts.Format("2006-01-02 15:04:05")
-
-				} else {
-					mapItem[key] = ""
-				}
-			} else if common.BKProtocol == key || "Protocol" == key {
-				//v2 api erturn use protocol name
-				protocal, ok := val.(string)
-				if false == ok {
-					protocal = ""
-				} else {
-					switch protocal {
-					case "1":
-						protocal = "TCP"
-					case "2":
-						protocal = "UDP"
-					default:
-						protocal = ""
-					}
-				}
-				mapItem[key] = protocal
-			} else {
-				mapItem[key] = GeneralV2Data(val)
-			}
-
-		}
-		return mapItem
+		return convMapInterface(realData)
 	}
 
 	if nil == data {
@@ -739,6 +715,58 @@ func GeneralV2Data(data interface{}) interface{} {
 
 	return fmt.Sprintf("%v", data)
 
+}
+
+func convMapInterface(data map[string]interface{}) map[string]interface{} {
+	mapItem := make(map[string]interface{})
+	for key, val := range data {
+		key = ConverterV3Fields(key, "")
+		if key == "CreateTime" || key == "LastTime" || key == common.CreateTimeField || key == common.LastTimeField {
+			ts, ok := val.(time.Time)
+			if ok {
+				mapItem[key] = ts.Format("2006-01-02 15:04:05")
+
+			} else {
+				mapItem[key] = ""
+			}
+		} else if common.BKProtocol == key || "Protocol" == key {
+			//v2 api erturn use protocol name
+			protocal, ok := val.(string)
+			if false == ok {
+				protocal = ""
+			} else {
+				switch protocal {
+				case "1":
+					protocal = "TCP"
+				case "2":
+					protocal = "UDP"
+				default:
+					protocal = ""
+				}
+			}
+			mapItem[key] = protocal
+		} else if key == common.BKOSTypeField {
+
+			switch realVal := val.(type) {
+			case string:
+				switch realVal {
+				case common.HostOSTypeEnumLinux:
+					mapItem[key] = "linux"
+				case common.HostOSTypeEnumWindows:
+					mapItem[key] = "windows"
+				default:
+					mapItem[key] = realVal
+				}
+			default:
+				mapItem[key] = realVal
+			}
+
+		} else {
+			mapItem[key] = GeneralV2Data(val)
+		}
+
+	}
+	return mapItem
 }
 
 // getOneLevelData  get one level data
