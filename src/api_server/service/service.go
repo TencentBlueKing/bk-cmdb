@@ -108,6 +108,8 @@ func (s *Service) V2WebService() *restful.WebService {
 
 	ws.Route(ws.POST("Property/getList").To(s.getObjProperty))
 
+	ws.Route(ws.POST("/Host/getAppOwnerHostList").To(s.getHostListByOwner))
+
 	return ws
 
 }
