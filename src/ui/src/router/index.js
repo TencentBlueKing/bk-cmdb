@@ -22,6 +22,7 @@ const customQuery = () => import(/* webpackChunkName: customQuery */ '@/views/cu
 const networkDiscoveryConfiguration = () => import(/* webpackChunkName: networkDiscovery */ '@/views/network-config')
 const networkDiscovery = () => import(/* webpackChunkName: networkDiscovery */ '@/views/network-discovery')
 const networkConfirm = () => import(/* webpackChunkName: networkConfirm */ '@/views/network-discovery/confirm')
+const networkHistory = () => import(/* webpackChunkName: networkConfirm */ '@/views/network-discovery/history')
 const error = () => import(/* webpackChunkName: error */ '@/views/status/error')
 
 Vue.use(Router)
@@ -105,14 +106,25 @@ const router = new Router({
             requireBusiness: true
         }
     }, {
-        path: '/network-discovery-configuration',
-        component: networkDiscoveryConfiguration
-    }, {
         path: '/network-discovery',
         component: networkDiscovery
     }, {
+        path: '/network-discovery/config',
+        component: networkDiscoveryConfiguration,
+        meta: {
+            ignoreAuthorize: true,
+            relative: '/network-discovery'
+        }
+    }, {
         path: '/network-discovery/confirm',
         component: networkConfirm,
+        meta: {
+            ignoreAuthorize: true,
+            relative: '/network-discovery'
+        }
+    }, {
+        path: '/network-discovery/history',
+        component: networkHistory,
         meta: {
             ignoreAuthorize: true,
             relative: '/network-discovery'

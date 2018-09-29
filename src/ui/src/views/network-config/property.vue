@@ -23,7 +23,7 @@
                     :selected.sync="filter.type"
                 ></bk-selector>
                 <input class="cmdb-form-input" :placeholder="$t('Common[\'请输入\']')" type="text" v-model.trim="filter.text" @keyup.enter="getTableData">
-                <i class="filter-search bk-icon icon-search"
+                <i class="bk-icon icon-search"
                 @click="getTableData"></i>
             </div>
         </div>
@@ -33,7 +33,10 @@
             :header="table.header"
             :list="table.list"
             :pagination.sync="table.pagination"
-            :defaultSort="table.defaultSort">
+            :defaultSort="table.defaultSort"
+            @handleSortChange="handleSortChange"
+            @handleSizeChange="handleSizeChange"
+            @handlePageChange="handlePageChange">
         </cmdb-table>
         <bk-dialog
         class="create-dialog"
@@ -234,7 +237,7 @@
                     }
                 }
                 if (this.filter.text.length) {
-                    Object.assign(params, {condition: [{field: this.filter.type, operation: '$in', value: this.filter.text}]})
+                    Object.assign(params, {condition: [{field: this.filter.type, operation: '$regex', value: this.filter.text}]})
                 }
                 const res = await this.searchNetcollectProperty({params, config: {requestId: 'searchNetcollectProperty'}})
                 this.table.pagination.count = res.count

@@ -38,11 +38,14 @@
         </div>
         <cmdb-table
             class="confirm-table"
-            :loading="$loading('searchSubscription')"
+            :loading="$loading('searchNetcollectList')"
             :header="table.header"
             :list="table.list"
             :pagination.sync="table.pagination"
-            :defaultSort="table.defaultSort">
+            :defaultSort="table.defaultSort"
+            @handleSortChange="handleSortChange"
+            @handleSizeChange="handleSizeChange"
+            @handlePageChange="handlePageChange">
             <template v-for="(header, index) in table.header" :slot="header.id" slot-scope="{ item }">
                 <template v-if="header.id === 'operation'">
                     <div :key="index">
@@ -63,7 +66,7 @@
             <v-confirm-details slot="content"></v-confirm-details>
         </cmdb-slider>
         <footer class="footer">
-            <bk-button type="primary" @click="confirmDialog.isShow = true">
+            <bk-button type="primary" @click="resultDialog.isShow = true">
                 {{$t('NetworkDiscovery["确认变更"]')}}
             </bk-button>
         </footer>
@@ -100,7 +103,7 @@
                         <i class="bk-icon icon-angle-down"></i>
                         <span>{{$t('NetworkDiscovery["展开详情"]')}}</span>
                     </p>
-                    <transition name="slide">
+                    <transition name="toggle-slide">
                         <div class="detail-content-box" v-if="resultDialog.isDetailsShow">
                             <div class="detail-content">
                                 Lorem ipsum dolor sit amet consectetur adipisicing elit. Officiis repellat sequi, eum fugiat, consectetur sunt omnis minus exercitationem in dolorum, asperiores hic nobis perspiciatis dignissimos dolorem non ipsam! Adipisci, facere!
@@ -145,6 +148,7 @@
 </template>
 
 <script>
+    import { mapActions } from 'vuex'
     import vConfirmDetails from './details'
     export default {
         components: {
@@ -172,7 +176,7 @@
                         id: 'create',
                         name: this.$t("Common['新增']")
                     }, {
-                        id: 'change',
+                        id: 'update',
                         name: this.$t("networkDiscovery['变更']")
                     }, {
                         id: 'delete',
@@ -191,22 +195,22 @@
                 },
                 table: {
                     header: [{
-                        id: 'change',
-                        name: this.$t('Hosts["云区域"]')
+                        id: 'action',
+                        name: this.$t('NetworkDiscovery["变更方式"]')
                     }, {
-                        id: 'type',
+                        id: 'device_type',
                         name: this.$t('ModelManagement["类型"]')
                     }, {
-                        id: 'unique',
+                        id: 'device_name',
                         name: this.$t('NetworkDiscovery["唯一标识"]')
                     }, {
-                        id: 'ip',
+                        id: 'bk_inner_ip',
                         name: 'IP'
                     }, {
-                        id: 'config',
+                        id: 'device_attributes',
                         name: this.$t('NetworkDiscovery["配置信息"]')
                     }, {
-                        id: 'time',
+                        id: 'last_time',
                         name: this.$t('NetworkDiscovery["发现时间"]')
                     }, {
                         id: 'operation',
@@ -214,12 +218,12 @@
                         sortable: false
                     }],
                     list: [{
-                        change: 'asdf',
-                        unique: 'asdf',
-                        type: 'asdf',
-                        ip: 'asdf',
-                        config: 'aaa',
-                        time: 'ddd'
+                        action: 'create',
+                        device_type: 'switch',
+                        device_name: 'asdf',
+                        bk_inner_ip: '192.168.1.1',
+                        device_attributes: '24个10/100M自适应RJ4端口',
+                        last_time: '2018-04-17T15:00:49.274+08:00'
                     }],
                     pagination: {
                         count: 0,
@@ -231,7 +235,16 @@
                 }
             }
         },
+        computed: {
+            params () {
+                let params = {}
+                return params
+            }
+        },
         methods: {
+            ...mapActions('netDiscovery', [
+                'searchNetcollectList'
+            ]),
             toggleFilter () {
                 this.filter.isShow = !this.filter.isShow
             },
@@ -244,18 +257,35 @@
             },
             toggleDialogDetails () {
                 this.resultDialog.isDetailsShow = !this.resultDialog.isDetailsShow
+            },
+            async getTableData () {
+                const res = await this.searchNetcollectList({params: this.params, config: {requestId: 'searchNetcollectList'}})
+                this.table.pagination.count = res.count
+                this.table.list = res.info
+            },
+            handleSortChange (sort) {
+                this.table.sort = sort
+                this.handlePageChange(1)
+            },
+            handleSizeChange (size) {
+                this.table.pagination.size = size
+                this.handlePageChange(1)
+            },
+            handlePageChange (page) {
+                this.table.pagination.current = page
+                this.getTableData()
             }
         }
     }
 </script>
 
 <style lang="scss" scoped>
-    .slide-enter-active, .slide-leave-active{
-        transition: all .2s;
+    .toggle-slide-enter-active, .toggle-slide-leave-active{
+        transition: height .2s;
         overflow: hidden;
         height: 190px;
     }
-    .slide-enter, .slide-leave-to{
+    .toggle-slide-enter, .toggle-slide-leave-to{
         height: 0 !important;
     }
     .network-confirm-wrapper {

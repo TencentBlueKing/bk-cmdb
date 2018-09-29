@@ -11,13 +11,13 @@
         </div>
         <cmdb-table
             class="collect-table"
-            :sortable="false"
             :loading="$loading('searchUserGroup')"
+            :checked="table.checked"
             :header="table.header"
             :list="table.list"
             :wrapperMinusHeight="240">
             <template slot="status" slot-scope="{ item }">
-                <div class="status-wrapper" v-tooltip="'asdf'">
+                <div class="status-wrapper" @mouseover="setTooltip($event, item)" @mouseleave="removeTooltip">
                     asdf
                 </div>
             </template>
@@ -39,18 +39,29 @@
                     <h2 class="title">
                         {{$t('NetworkConfig["配置采集器"]')}}
                     </h2>
-                    <p>{{$t('NetworkConfig["SNMP扫描范围"]')}}<i></i></p>
+                    <label>
+                        <span>{{$t('NetworkConfig["SNMP扫描范围"]')}}</span>
+                        <span class="color-danger">*</span>
+                        <i class="bk-icon icon-exclamation-circle" v-tooltip="{content: htmlEncode(), classes: 'collect-tooltip'}"></i>
+                    </label>
                     <textarea name="" id="" cols="30" rows="10"></textarea>
-                    <p>{{$t('NetworkConfig["采集频率"]')}}<span class="color-danger">*</span></p>
+                    <label>
+                        <span>{{$t('NetworkConfig["采集频率"]')}}</span>
+                        <span class="color-danger">*</span>
+                    </label>
                     <bk-selector
                         :list="configDialog.periodList"
                         :selected.sync="configDialog.period"
                     ></bk-selector>
-                    <p>{{$t('NetworkConfig["团体字"]')}}<i></i></p>
+                    <label>
+                        <span>{{$t('NetworkConfig["团体字"]')}}</span>
+                        <span class="color-danger">*</span>
+                        <i class="bk-icon icon-exclamation-circle" v-tooltip="'Community String'"></i>
+                    </label>
                     <input type="text" class="cmdb-form-input">
                     <div class="info">
                         <i class="bk-icon icon-exclamation-circle"></i>
-                        <span>下发配置失败，请重新下发</span></i18n>
+                        <span>下发配置失败，请重新下发</span>
                     </div>
                 </div>
                 <footer class="footer">
@@ -63,15 +74,24 @@
                 </footer>
             </div>
         </bk-dialog>
+        <div class="status-tips" ref='tooltipContent' v-show="tooltip.id">
+            <p class="tips-content">采集器状态：<span>正常</span></p>
+            <p class="tips-content">配置状态：<span class="color-success">asdf</span></p>
+            <p class="tips-content">上报状态：<span>完成</span></p>
+        </div>
     </div>
 </template>
 
 <script>
+    import { mapActions } from 'vuex'
     export default {
         data () {
             return {
                 table: {
                     header: [{
+                        id: 'bk_inner_ip',
+                        type: 'checkbox'
+                    }, {
                         id: 'bk_cloud_name',
                         name: this.$t('Hosts["云区域"]')
                     }, {
@@ -95,8 +115,13 @@
                         sortable: false
                     }],
                     list: [{
+                        bk_inner_ip: '1',
                         status: 'a'
+                    }, {
+                        bk_inner_ip: '2',
+                        status: '2adsf'
                     }],
+                    checked: [],
                     pagination: {
                         count: 0,
                         size: 10,
@@ -112,12 +137,67 @@
                         id: '',
                         name: this.$t('NetworkConfig["手动"]')
                     }]
+                },
+                tooltip: {
+                    instance: null,
+                    id: ''
                 }
             }
         },
         methods: {
+            ...mapActions('netDataCollection', [
+                'searchDataCollection',
+                'collectDataCollection'
+            ]),
             showConfig () {
                 this.configDialog.isShow = true
+            },
+            removeTooltip () {
+                this.tooltip.instance && this.tooltip.instance.destroy()
+            },
+            setTooltip (event, item) {
+                this.tooltip.id = item['bk_inner_ip']
+                this.tooltip.instance && this.tooltip.instance.destroy()
+                this.tooltip.instance = this.$tooltips({
+                    duration: -1,
+                    theme: 'light',
+                    zIndex: 9999,
+                    container: document.body,
+                    target: event.target
+                })
+                this.tooltip.instance.$el.append(this.$refs.tooltipContent)
+            },
+            htmlEncode () {
+                let temp = document.createElement('div')
+                temp.innerHTML = `填写格式&lt;/br&gt;指定IP：192.168.1.1&lt;/br&gt;IP范围：192.168.1.1-192.168.1.200&lt;/br&gt;cidr ip 范围：192.168.1.1/32`
+                let output = temp.innerText
+                temp = null
+                return output
+            },
+            async getTableData () {
+                let pagination = this.table.pagination
+                let params = {
+                    page: {
+                        start: (pagination.current - 1) * pagination.size,
+                        limit: pagination.size,
+                        sort: this.table.sort
+                    }
+                }
+                const res = await this.searchDataCollection({params, config: {requestId: 'searchDataCollection'}})
+                this.table.pagination.count = res.count
+                this.table.list = res.info
+            },
+            handleSortChange (sort) {
+                this.table.sort = sort
+                this.handlePageChange(1)
+            },
+            handleSizeChange (size) {
+                this.table.pagination.size = size
+                this.handlePageChange(1)
+            },
+            handlePageChange (page) {
+                this.table.pagination.current = page
+                this.getTableData()
             }
         }
     }
@@ -155,8 +235,13 @@
                         font-size: 22px;
                         line-height: 1;
                     }
-                    >p {
+                    >label {
+                        display: block;
                         margin: 15px 0 5px;
+                        span,
+                        i {
+                            vertical-align: middle;
+                        }
                     }
                     >textarea {
                         width: 100%;
@@ -202,6 +287,18 @@
                     }
                 }
             }
+        }
+    }
+    .status-tips {
+        padding: 5px 10px;
+        font-size: 12px;
+    }
+</style>
+
+<style lang="scss">
+    .collect-tooltip {
+        .tooltip-inner {
+            max-width: 300px;
         }
     }
 </style>
