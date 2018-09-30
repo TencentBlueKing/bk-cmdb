@@ -99,6 +99,7 @@ func ImportNetProperty(c *gin.Context) {
 	if nil != err {
 		c.String(http.StatusInternalServerError, getReturnStr(common.CCErrWebGetAddNetPropertyResultFail,
 			defErr.Errorf(common.CCErrWebGetAddNetPropertyResultFail).Error(), nil))
+		return
 	}
 
 	c.String(http.StatusOK, reply)
