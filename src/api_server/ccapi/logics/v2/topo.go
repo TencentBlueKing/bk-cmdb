@@ -23,8 +23,10 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	httpcli "configcenter/src/common/http/httpclient"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 )
@@ -373,4 +375,43 @@ func (lgc *Logics) CheckAppTopoIsThreeLevel(user string, pheader http.Header) (b
 	}
 
 	return true, nil
+}
+
+func (lgc *Logics) GetAppListByOwnerIDAndUin(ctx context.Context, pheader http.Header, ownerID, uin string) (appInfoArr []mapstr.MapStr, errCode int, err errors.CCError) {
+
+	pheader.Set(common.BKHTTPOwnerID, ownerID)
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+
+	userLike := mapstr.MapStr{
+		common.BKDBLIKE: fmt.Sprintf("^%s,|,%s,|,%s$|^%s$", uin, uin, uin, uin),
+	}
+	var condItemArr []mapstr.MapStr
+	var conds mapstr.MapStr
+	if ownerID != uin {
+		condItemArr = append(condItemArr, mapstr.MapStr{common.CreatorField: userLike})
+		condItemArr = append(condItemArr, mapstr.MapStr{common.BKMaintainersField: userLike})
+		conds = mapstr.MapStr{common.BKDBOR: condItemArr}
+	}
+	s := &metadata.SearchParams{}
+	if nil != conds {
+		s.Condition = conds
+	}
+
+	result, err := lgc.CoreAPI.TopoServer().Instance().InstSearch(ctx, ownerID, common.BKInnerObjIDApp, pheader, s)
+	if nil != err {
+		blog.Errorf("GetAppListByOwnerIDAndUin http do error, error:%s, request-id:%s", err.Error(), util.GetHTTPCCRequestID(pheader))
+		return nil, common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if !result.Result {
+		blog.Errorf("GetAppListByOwnerIDAndUin http reply error, error code:%d, error message:%s, request-id:%s", result.Code, result.ErrMsg, util.GetHTTPCCRequestID(pheader))
+		return nil, common.CCErrCommHTTPDoRequestFailed, defErr.New(result.Code, result.ErrMsg)
+	}
+
+	if 1 <= len(result.Data.Info) {
+		return nil, common.CCErrCommNotFound, defErr.Error(common.CCErrCommNotFound)
+	}
+
+	return result.Data.Info, 0, nil
+
 }
