@@ -41,3 +41,13 @@ type AddNetPropertyResult struct {
 	ErrMsg               string `json:"error_msg"`
 	NetcollectPropertyID int64  `json:"netcollect_property_id"`
 }
+
+type SearchNetProperty struct {
+	Count int                  `json:"count"`
+	Info  []NetcollectProperty `json:"info"`
+}
+
+type SearchNetPropertyResult struct {
+	BaseResp `json:",inline"`
+	Data     SearchNetProperty `json:"data"`
+}
