@@ -409,7 +409,6 @@ func (lgc *Logics) GetAppListByOwnerIDAndUin(ctx context.Context, pheader http.H
 	}
 
 	if 1 <= len(result.Data.Info) {
-		de
 		return nil, common.CCErrCommNotFound, defErr.Error(common.CCErrCommNotFound)
 	}
 
