@@ -760,7 +760,7 @@ func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response
 	res, err := s.Logics.CloneHostProperty(input, input.AppID, input.CloudID, req.Request.Header)
 	if nil != err {
 		blog.Errorf("CloneHostProperty ,appliation not int , err: %v, input:%v", err, input)
-		resp.WriteError(http.StatusBadGateway, &meta.RespError{Msg: err})
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}
 
