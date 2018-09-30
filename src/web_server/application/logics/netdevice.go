@@ -186,7 +186,7 @@ func GetNetDevicefield(lang language.DefaultCCLanguageIf) map[string]Property {
 }
 
 // add extra feild to export device
-func AddNetDeviceExtFields(originField *map[string]Property, lang language.DefaultCCLanguageIf) {
+func AddNetDeviceExtFields(originField map[string]Property, lang language.DefaultCCLanguageIf) {
 
 	field := map[string]Property{
 		common.BKDeviceIDField: Property{
@@ -201,11 +201,11 @@ func AddNetDeviceExtFields(originField *map[string]Property, lang language.Defau
 		},
 	}
 
-	originFieldLen := len(*originField)
+	originFieldLen := len(originField)
 
 	for key, value := range field {
 		value.ExcelColIndex = originFieldLen
 		originFieldLen++
-		(*originField)[key] = value
+		originField[key] = value
 	}
 }
