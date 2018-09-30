@@ -511,9 +511,9 @@ const BKMainLine = "mainline"
 const BKNetwork = "bk_network"
 
 const (
-	ActionGet = "get"
+	SNMPActionGet = "get"
 
-	ActionWalk = "walk"
+	SNMPActionWalk = "walk"
 )
 
 const (
