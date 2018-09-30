@@ -54,7 +54,7 @@ func BuildNetDeviceExcelFromData(defLang language.DefaultCCLanguageIf, fields ma
 	for _, row := range data {
 		deviceData, ok := row.(map[string]interface{})
 		if !ok {
-			msg := fmt.Sprintf("data format error:%v", row)
+			msg := fmt.Sprintf("[Export Net Device] Build NetDevice excel from data, convert to map[string]interface{} fail, data: %v", row)
 			blog.Errorf(msg)
 			return errors.New(msg)
 		}
@@ -88,13 +88,22 @@ func GetNetDeviceData(header http.Header, apiAddr, deviceIDStr string) ([]interf
 	}
 
 	url := apiAddr + fmt.Sprintf("/api/%s/netcollect/device/action/search", webCommon.API_VERSION)
-	result, _ := httpRequest(url, deviceCond, header)
+	result, err := httpRequest(url, deviceCond, header)
+	if nil != err {
+		blog.Errorf("[Export Net Device] http request error:%v", err)
+	}
 
-	blog.Infof("search device url:%s", url)
-	blog.Infof("search device return:%s", result)
+	blog.V(4).Infof("[Export Net Device] search device url:%s", url)
+	blog.V(4).Infof("[Export Net Device] search device return:%s", result)
 
-	js, _ := simplejson.NewJson([]byte(result))
-	deviceDataResult, _ := js.Map()
+	js, err := simplejson.NewJson([]byte(result))
+	if nil != err {
+		blog.Errorf("[Export Net Device] convert http reponse string [%s] to json error:%v", result, err)
+	}
+	deviceDataResult, err := js.Map()
+	if nil != err {
+		blog.Errorf("[Export Net Device] convert http reponse json [%#+v] to map[string]interface{} error:%v", deviceDataResult, err)
+	}
 
 	if !deviceDataResult["result"].(bool) {
 		return nil, errors.New(deviceDataResult["bk_error_msg"].(string))
@@ -108,7 +117,7 @@ func GetNetDeviceData(header http.Header, apiAddr, deviceIDStr string) ([]interf
 		return deviceInfo, errors.New("no device")
 	}
 
-	blog.Infof("search return device info:%s", deviceInfo)
+	blog.V(4).Infof("[Export Net Device] search return device info:%s", deviceInfo)
 	return deviceInfo, nil
 }
 
@@ -119,13 +128,13 @@ func BuildNetDeviceExcelTemplate(header http.Header, defLang language.DefaultCCL
 
 	sheet, err := file.AddSheet(common.BKNetDevice)
 	if nil != err {
-		blog.Errorf("add comment sheet error, sheet name:%s, error:%s", common.BKNetDevice, err.Error())
+		blog.Errorf("[Build NetDevice Excel Template] add comment sheet error, sheet name:%s, error:%s", common.BKNetDevice, err.Error())
 		return err
 	}
 
 	fields := GetNetDevicefield(defLang)
 
-	blog.V(5).Infof("BuildNetDeviceExcelTemplate fields count:%d", len(fields))
+	blog.V(4).Infof("[Build NetDevice Excel Template] fields count:%d", len(fields))
 
 	productExcelHealer(fields, nil, sheet, defLang)
 
