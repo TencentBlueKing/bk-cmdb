@@ -109,9 +109,22 @@ func GetNetDeviceData(header http.Header, apiAddr, deviceIDStr string) ([]interf
 		return nil, errors.New(deviceDataResult["bk_error_msg"].(string))
 	}
 
-	deviceData := deviceDataResult["data"].(map[string]interface{})
-	deviceInfo := deviceData["info"].([]interface{})
-	deviceCount, _ := deviceData["count"].(json.Number).Int64()
+	deviceData, ok := deviceDataResult["data"].(map[string]interface{})
+	if !ok {
+		blog.Errorf("[Export Net Device] http reponse 'data'[%#+v] is not map[string]interface{}", deviceDataResult["data"])
+	}
+	deviceInfo, ok := deviceData["info"].([]interface{})
+	if !ok {
+		blog.Errorf("[Export Net Device] http reponse 'info'[%#+v] is not []interface{}", deviceData["info"])
+	}
+	_, ok = deviceData["count"].(json.Number)
+	if !ok {
+		blog.Errorf("[Export Net Device] http reponse 'count'[%#+v] is not a number", deviceData["count"])
+	}
+	deviceCount, err := deviceData["count"].(json.Number).Int64()
+	if nil != err {
+		blog.Errorf("[Export Net Device] http reponse 'count'[%#+v] convert to int64 error:%v", deviceData["count"], err)
+	}
 
 	if 0 == deviceCount {
 		return deviceInfo, errors.New("no device")
