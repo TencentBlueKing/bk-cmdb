@@ -88,7 +88,10 @@ func GetNetPropertyData(header http.Header, apiAddr, netPropertyIDStr string) ([
 	}
 
 	url := apiAddr + fmt.Sprintf("/api/%s/netcollect/property/action/search", webCommon.API_VERSION)
-	result, _ := httpRequest(url, netPropertyCond, header)
+	result, err := httpRequest(url, netPropertyCond, header)
+	if nil != err {
+		blog.Errorf("[Export Net Property] http request error:%v", err)
+	}
 
 	blog.V(4).Infof("[Export Net Property] search netProperty url:%s", url)
 	blog.V(4).Infof("[Export Net Property] search netProperty return:%s", result)
