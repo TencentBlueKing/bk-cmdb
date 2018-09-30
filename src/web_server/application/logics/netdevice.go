@@ -105,7 +105,11 @@ func GetNetDeviceData(header http.Header, apiAddr, deviceIDStr string) ([]interf
 		blog.Errorf("[Export Net Device] convert http reponse json [%#+v] to map[string]interface{} error:%v", deviceDataResult, err)
 	}
 
-	if !deviceDataResult["result"].(bool) {
+	deviceResult, ok := deviceDataResult["result"].(bool)
+	if !ok {
+		blog.Errorf("[Export Net Device] http reponse 'result'[%#+v] is bool", deviceDataResult["result"])
+	}
+	if !deviceResult {
 		return nil, errors.New(deviceDataResult["bk_error_msg"].(string))
 	}
 
