@@ -52,7 +52,7 @@
         </cmdb-table>
         <cmdb-slider :isShow.sync="slider.show" :title="slider.title" :beforeClose="handleSliderBeforeClose">
             <bk-tab :active-name.sync="tab.active" slot="content">
-                <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')">
+                <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-details v-if="attribute.type === 'details'"
                         :properties="properties"
                         :propertyGroups="propertyGroups"
@@ -72,14 +72,14 @@
                         @on-cancel="handleCancel">
                     </cmdb-form>
                 </bk-tabpanel>
-                <bk-tabpanel name="relevance" :title="$t('HostResourcePool[\'关联\']')" :show="attribute.type==='details'">
+                <bk-tabpanel name="relevance" :title="$t('HostResourcePool[\'关联\']')" :show="attribute.type !== 'create'">
                     <cmdb-relation
                         v-if="tab.active === 'relevance'"
                         obj-id="biz"
                         :inst-id="attribute.inst.details['bk_biz_id']">
                     </cmdb-relation>
                 </bk-tabpanel>
-                <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')" :show="attribute.type==='details'">
+                <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')" :show="attribute.type !== 'create'">
                     <cmdb-audit-history v-if="tab.active === 'history'"
                         target="biz"
                         :instId="attribute.inst.details['bk_biz_id']">
@@ -297,6 +297,8 @@
             async handleEdit (flatternItem) {
                 const list = await this.getBusinessList({fromCache: true})
                 const inst = list.info.find(item => item['bk_biz_id'] === flatternItem['bk_biz_id'])
+                const bizNameProperty = this.$tools.getProperty(this.properties, 'bk_biz_name')
+                bizNameProperty.isreadonly = inst['bk_biz_name'] === '蓝鲸'
                 this.attribute.inst.edit = inst
                 this.attribute.type = 'update'
             },

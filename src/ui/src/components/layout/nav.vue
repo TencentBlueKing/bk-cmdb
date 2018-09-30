@@ -15,7 +15,7 @@
             <ul class="classify-list">
                 <li class="classify-item"
                     v-for="(classify, index) in [...staticClassify, ...customClassify]"
-                    :class="{active: activeClassifyId === classify.id}">
+                    :class="{active: checkActive(classify)}">
                     <h3 class="classify-info clearfix"
                         :class="{'classify-link': classify.hasOwnProperty('path')}"
                         @click="handleClassifyClick(classify)">
@@ -129,6 +129,10 @@
             }
         },
         methods: {
+            checkActive (classify) {
+                const path = this.$route.meta.relative || this.$route.query.relative || this.$route.path
+                return this.activeClassifyId === classify.id || classify.path === path
+            },
             handleMouseEnter () {
                 if (this.timer) {
                     clearTimeout(this.timer)

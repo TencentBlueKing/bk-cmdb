@@ -162,6 +162,7 @@
         padding: 4px 0;
         .property-item{
             width: 50%;
+            max-width: 400px;
             margin: 12px 0 0;
             font-size: 12px;
             line-height: 16px;

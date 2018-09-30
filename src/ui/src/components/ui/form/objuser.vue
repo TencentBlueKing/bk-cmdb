@@ -35,7 +35,9 @@
                     @keydown="handleKeydown($event)">
                 </span>
             </div>
-            <ul class="suggestion-list" ref="suggestionList" v-show="focus && matchedUsers.length">
+            <ul class="suggestion-list" ref="suggestionList"
+                v-show="focus && matchedUsers.length"
+                :class="suggestionListPostion">
                 <li class="suggestion-item"
                     v-for="(user, index) in matchedUsers"
                     ref="suggestionItem"
@@ -90,7 +92,9 @@
                 focus: false,
                 ellipsis: false,
                 contextmenu: false,
-                exception: false
+                exception: false,
+                updateTimer: null,
+                suggestionListPostion: 'bottom'
             }
         },
         computed: {
@@ -146,6 +150,9 @@
             },
             matchedUsers (matchedUsers) {
                 this.highlightIndex = -1
+                if (matchedUsers.length) {
+                    this.updateSuggestionPosition()
+                }
             },
             highlightIndex () {
                 this.updateScroller()
@@ -461,6 +468,26 @@
                     $suggestionList.scrollTop = 0
                 }
             },
+            updateSuggestionPosition () {
+                this.updateTimer && clearTimeout(this.updateTimer)
+                this.updateTimer = setTimeout(() => {
+                    const $suggestionList = this.$refs.suggestionList
+                    let $refrence = $suggestionList
+                    let invisible = false
+                    while (!invisible && $refrence.nodeName !== 'BODY') {
+                        $refrence = $refrence.parentElement
+                        const overflow = window.getComputedStyle($refrence).getPropertyValue('overflow-y')
+                        invisible = ['hidden', 'auto', 'scroll'].includes(overflow)
+                    }
+                    const refrenceRect = $refrence.getBoundingClientRect()
+                    const suggestionListRect = $suggestionList.getBoundingClientRect()
+                    if (suggestionListRect.bottom + suggestionListRect.height < refrenceRect.bottom) {
+                        this.suggestionListPostion = 'bottom'
+                    } else {
+                        this.suggestionListPostion = 'top'
+                    }
+                }, 0)
+            },
             reset () {
                 this.shouldUpdate = true
                 this.highlightIndex = -1
@@ -554,11 +581,10 @@
     }
     .suggestion-list{
         position: absolute;
-        top: 100%;
         left: 0;
         width: 100%;
         max-height: 162px;
-        margin: 1px 0 0 0;
+        
         font-size: 14px;
         background: #fff;
         box-shadow: 0 0 1px 1px rgba(0, 0, 0, 0.1);
@@ -566,6 +592,14 @@
         border-radius: 2px;
         z-index: 1;
         @include scrollbar-y;
+        &.bottom {
+            top: 100%;
+            margin: 1px 0 0 0;
+        }
+        &.top {
+            bottom: 100%;
+            margin: 0 0 1px 0;
+        }
         .suggestion-item{
             padding: 0 10px;
             height: 32px;
