@@ -38,14 +38,14 @@ func (s *Service) getHostListByOwner(req *restful.Request, resp *restful.Respons
 
 	formData := req.Request.Form
 
-	res, msg := utils.ValidateFormData(formData, []string{"OwnerID"})
+	res, msg := utils.ValidateFormData(formData, []string{"OwnerQQ"})
 	if !res {
 		blog.Errorf("getHostListByOwner error: %s", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
 
-	dataArr, dataErr := s.Logics.GetAllHostAndModuleRelation(context.Background(), formData["OwnerID"][0], pheader)
+	dataArr, dataErr := s.Logics.GetAllHostAndModuleRelation(context.Background(), formData["OwnerQQ"][0], pheader)
 	if nil != dataErr {
 		blog.Errorf("getHostListByOwner error: %s", err.Error())
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, err.Error(), resp)

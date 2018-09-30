@@ -562,13 +562,13 @@ func (s *Service) getAppByOwnerAndUin(req *restful.Request, resp *restful.Respon
 
 	formData := req.Request.Form
 
-	res, msg := utils.ValidateFormData(formData, []string{"OwnerID", "Uin"})
+	res, msg := utils.ValidateFormData(formData, []string{"Owner_uin", "Uin"})
 	if !res {
 		blog.Errorf("getHostListByOwner error: %s", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
-	ownerID := formData["OwnerID"][0]
+	ownerID := formData["Owner_uin"][0]
 	uin := formData["Uin"][0]
 	appInfoArr, errCode, err := s.Logics.GetAppListByOwnerIDAndUin(context.Background(), pheader, ownerID, uin)
 	if nil != err {
