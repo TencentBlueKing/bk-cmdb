@@ -44,7 +44,7 @@ func (lgc *Logics) GetAllHostAndModuleRelation(ctx context.Context, ownerID stri
 	}
 
 	dat := &params.HostCommonSearch{
-		AppID: -1,
+		//search all host
 		Condition: []params.SearchCondition{
 			params.SearchCondition{
 				Fields:   []string{common.BKAppIDField},
