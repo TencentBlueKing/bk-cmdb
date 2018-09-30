@@ -67,6 +67,7 @@ const (
 	BKTableNameObjAsst          = "cc_ObjAsst"
 	BKTableNameTopoGraphics     = "cc_TopoGraphics"
 
+	BKTableNameNetcollectConfig   = "cc_Netcollect_config"
 	BKTableNameNetcollectDevice   = "cc_Netcollect_Device"
 	BKTableNameNetcollectProperty = "cc_Netcollect_Property"
 )
@@ -102,6 +103,9 @@ var AllTables = []string{
 	BKTableNameIdentifier,
 	BKTableNameObjAsst,
 	BKTableNameTopoGraphics,
+	BKTableNameNetcollectConfig,
+	BKTableNameNetcollectDevice,
+	BKTableNameNetcollectProperty,
 }
 
 // GetInstTableName returns inst data table name

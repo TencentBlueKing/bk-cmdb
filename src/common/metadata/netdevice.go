@@ -45,3 +45,43 @@ type NetcollectProperty struct {
 	Unit                 string     `json:"unit,omitempty" bson:"-"`
 	DeviceModel          string     `json:"device_model" bson:"device_model"`
 }
+
+type NetcollectorSearchResult struct {
+	CloudID    int64              `json:"bk_cloud_id"`
+	CloudName  string             `json:"bk_cloud_name"`
+	InnerIP    string             `json:"bk_host_innerip"`
+	Status     NetcollectorStatus `json:"status"`
+	DeployTime time.Time          `json:"deploy_time"`
+	Version    string             `json:"version"`
+	Config     NetcollectConfig   `json:"config"`
+}
+
+type NetcollectorConfig struct {
+	CloudID int64            `json:"bk_cloud_id" bson:"bk_cloud_id" `
+	InnerIP string           `json:"bk_host_innerip" bson:"bk_host_innerip"`
+	Config  NetcollectConfig `json:"config"`
+}
+
+type NetcollectorStatus struct {
+	CollectorStatus string `json:"collector_status"`
+	ConfigStatus    string `json:"config_status"`
+	ReportStatus    string `json:"report_status"`
+}
+
+// NetcollectorStatus define
+const (
+	CollectorStatusNormal   = "normal"
+	CollectorStatusAbnormal = "abnormal"
+
+	CollectorConfigStatusNormal   = "normal"
+	CollectorConfigStatusAbnormal = "abnormal"
+
+	CollectorReportStatusNormal   = "normal"
+	CollectorReportStatusAbnormal = "abnormal"
+)
+
+type NetcollectConfig struct {
+	ScanRange []string `json:"scan_range"`
+	Period    string   `json:"period"`
+	Community string   `json:"community"`
+}
