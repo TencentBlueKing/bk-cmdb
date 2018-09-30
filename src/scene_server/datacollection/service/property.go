@@ -29,7 +29,7 @@ func (s *Service) CreateProperty(req *restful.Request, resp *restful.Response) {
 
 	propertyList := make([]meta.NetcollectProperty, 0)
 	if err := json.NewDecoder(req.Request.Body).Decode(&propertyList); err != nil {
-		blog.Errorf("add property failed with decode body err: %v", err)
+		blog.Errorf("[NetProperty] add property failed with decode body err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
@@ -55,21 +55,21 @@ func (s *Service) SearchProperty(req *restful.Request, resp *restful.Response) {
 
 	body := new(meta.NetCollSearchParams)
 	if err := json.NewDecoder(req.Request.Body).Decode(body); nil != err {
-		blog.Errorf("search net property failed with decode body err: %v", err)
+		blog.Errorf("[NetProperty] search net property failed with decode body err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
 	propertys, err := s.Logics.SearchProperty(pheader, body)
 	if nil != err {
-		blog.Errorf("search net property failed, err: %v", err)
+		blog.Errorf("[NetProperty] search net property failed, err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCollectNetPropertyGetFail)})
 		return
 	}
 
 	resp.WriteEntity(meta.SearchNetPropertyResult{
 		BaseResp: meta.SuccessBaseResp,
-		Data:     propertys,
+		Data:     *propertys,
 	})
 }
 

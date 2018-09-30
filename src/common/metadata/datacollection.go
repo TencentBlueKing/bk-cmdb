@@ -43,8 +43,8 @@ type AddNetPropertyResult struct {
 }
 
 type SearchNetProperty struct {
-	Count int             `json:"count"`
-	Info  []mapstr.MapStr `json:"info"`
+	Count int                  `json:"count"`
+	Info  []NetcollectProperty `json:"info"`
 }
 
 type SearchNetPropertyResult struct {
