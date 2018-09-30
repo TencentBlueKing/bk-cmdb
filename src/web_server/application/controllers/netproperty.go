@@ -140,7 +140,7 @@ func ExportNetProperty(c *gin.Context) {
 	}
 
 	fields := logics.GetNetPropertyField(defLang)
-	logics.AddNetPropertyExtFields(&fields, defLang)
+	logics.AddNetPropertyExtFields(fields, defLang)
 
 	if err = logics.BuildNetPropertyExcelFromData(defLang, fields, netPropertyInfo, sheet); nil != err {
 		blog.Errorf("[Export Net Property] build net property excel data error:%s", err.Error())
@@ -152,7 +152,13 @@ func ExportNetProperty(c *gin.Context) {
 
 	dirFileName := fmt.Sprintf("%s/export", webCommon.ResourcePath)
 	if _, err = os.Stat(dirFileName); nil != err {
-		os.MkdirAll(dirFileName, os.ModeDir|os.ModePerm)
+		if err = os.MkdirAll(dirFileName, os.ModeDir|os.ModePerm); nil != err {
+			blog.Errorf("[Export Net Property] mkdir error:%s", err.Error())
+			msg := getReturnStr(common.CCErrCommExcelTemplateFailed,
+				defErr.Errorf(common.CCErrCommExcelTemplateFailed, common.BKNetProperty).Error(), nil)
+			c.String(http.StatusInternalServerError, msg, nil)
+			return
+		}
 	}
 
 	fileName := fmt.Sprintf("%dnetproperty.xlsx", time.Now().UnixNano())
@@ -161,7 +167,7 @@ func ExportNetProperty(c *gin.Context) {
 	logics.ProductExcelCommentSheet(file, defLang)
 
 	if err = file.Save(dirFileName); nil != err {
-		blog.Errorf("ExportNetProperty save file error:%s", err.Error())
+		blog.Errorf("[Export Net Property] save file error:%s", err.Error())
 		msg := getReturnStr(common.CCErrWebCreateEXCELFail,
 			defErr.Errorf(common.CCErrCommExcelTemplateFailed, err.Error()).Error(), nil)
 		c.String(http.StatusInternalServerError, msg, nil)
