@@ -271,8 +271,8 @@
                     }
                 }).then(() => {
                     this.$success(this.$t("HostResourcePool['分配成功']"))
-                    this.table.checked = []
                     this.assignBusiness = ''
+                    this.$refs.resourceTable.table.checked = []
                     this.$refs.resourceTable.handlePageChange(1)
                 })
             },

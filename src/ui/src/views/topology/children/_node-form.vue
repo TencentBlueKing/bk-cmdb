@@ -52,7 +52,9 @@
                     {{$t("Common['保存']")}}
                 </bk-button>
                 <bk-button  class="options-btn button-cancel" type="default" @click="handleCancel">{{$t("Common['取消']")}}</bk-button>
-                <bk-button  class="options-btn button-delete" type="danger" @click="handleDelete">{{$t("Common['删除']")}}</bk-button>
+                <bk-button  class="options-btn button-delete" type="danger"
+                    v-if="type === 'update'"
+                    @click="handleDelete">{{$t("Common['删除']")}}</bk-button>
             </div>
         </slot>
     </div>

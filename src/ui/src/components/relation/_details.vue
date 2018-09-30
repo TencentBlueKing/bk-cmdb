@@ -1,5 +1,5 @@
 <template>
-    <div class="topology-details-layout">
+    <div class="topology-details-layout" :class="{'full-screen': fullScreen}">
         <div class="details-container" ref="detailsContainer" v-bkloading="{isLoading: $loading()}" v-click-outside="handleHideDetails">
             <div class="details-title" ref="detailsTitle">
                 {{title}}
@@ -19,6 +19,10 @@
     import { mapActions } from 'vuex'
     export default {
         props: {
+            fullScreen: {
+                type: Boolean,
+                default: false
+            },
             objId: {
                 type: String,
                 required: true
@@ -147,6 +151,9 @@
         top: 0;
         bottom: 0;
         text-align: right;
+        &.full-screen {
+            text-align: center;
+        }
         &:before {
             content: "";
             display: inline-block;

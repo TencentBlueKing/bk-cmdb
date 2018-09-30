@@ -27,6 +27,20 @@
                     </bk-button>
                 </div>
             </cmdb-tree>
+            <bk-dialog
+                :is-show.sync="tree.create.active"
+                :has-header="false"
+                :has-footer="false"
+                :padding="0"
+                :quick-close="false"
+                @cancel="handleCancelCreateNode">
+                <tree-node-create v-if="tree.create.active" slot="content"
+                    :properties="tree.create.properties"
+                    :state="tree.selectedNodeState"
+                    @on-submit="handleCreateNode"
+                    @on-cancel="handleCancelCreateNode">
+                </tree-node-create>
+            </bk-dialog>
         </cmdb-resize-layout>
         <div class="hosts-layout">
             <bk-tab :active-name.sync="tab.active" @tab-changed="handleTabChanged">
@@ -44,13 +58,14 @@
                 <bk-tabpanel name="attribute" :title="$t('BusinessTopology[\'节点属性\']')"
                     v-bkloading="{isLoading: $loading()}"
                     :show="showAttributePanel">
-                    <cmdb-topo-node-details 
+                    <cmdb-details class="topology-details"
                         v-if="isNodeDetailsActive"
+                        :showDelete="false"
                         :properties="tab.properties"
                         :property-groups="tab.propertyGroups"
                         :inst="tree.flatternedSelectedNodeInst"
                         @on-edit="handleEdit">
-                    </cmdb-topo-node-details>
+                    </cmdb-details>
                     <cmdb-topo-node-form v-else-if="['update', 'create'].includes(tab.type)"
                         :properties="tab.properties"
                         :property-groups="tab.propertyGroups"
@@ -77,15 +92,15 @@
 <script>
     import { mapGetters, mapActions } from 'vuex'
     import cmdbHostsTable from '@/components/hosts/table'
-    import cmdbTopoNodeDetails from './children/_node-details'
     import cmdbTopoNodeForm from './children/_node-form'
     import cmdbTopoNodeProcess from './children/_node-process'
+    import treeNodeCreate from './children/_node-create.vue'
     export default {
         components: {
             cmdbHostsTable,
-            cmdbTopoNodeDetails,
             cmdbTopoNodeForm,
-            cmdbTopoNodeProcess
+            cmdbTopoNodeProcess,
+            treeNodeCreate
         },
         data () {
             return {
@@ -104,7 +119,11 @@
                     selectedNode: null,
                     selectedNodeState: null,
                     selectedNodeInst: {},
-                    flatternedSelectedNodeInst: {}
+                    flatternedSelectedNodeInst: {},
+                    create: {
+                        active: false,
+                        properties: []
+                    }
                 },
                 tab: {
                     active: 'hosts',
@@ -243,7 +262,6 @@
                     this.tab.properties = this.properties[objId]
                     return Promise.resolve(this.properties[objId])
                 }
-                this.properties[objId] = []
                 return this.searchObjectAttribute({
                     params: {
                         'bk_obj_id': objId,
@@ -254,7 +272,7 @@
                         fromCache: true
                     }
                 }).then(properties => {
-                    this.properties[objId] = properties
+                    this.$set(this.properties, objId, properties)
                     this.tab.properties = properties
                     return properties
                 })
@@ -453,13 +471,21 @@
             handleEdit () {
                 this.tab.type = 'update'
             },
-            handleCreate () {
-                this.tab.type = 'create'
-                if (this.tab.active === 'attribute') {
-                    this.handleTabChanged(this.tab.active)
-                } else {
-                    this.tab.active = 'attribute'
-                }
+            async handleCreate () {
+                this.tree.create.active = true
+                const selectedNode = this.tree.selectedNode
+                const model = this.topoModel.find(model => model['bk_obj_id'] === selectedNode['bk_obj_id'])
+                const properties = await this.getCommonProperties(model['bk_next_obj'])
+                this.tree.create.properties = properties
+            },
+            handleCreateNode (values) {
+                this.createNode(values).then(() => {
+                    this.handleCancelCreateNode()
+                })
+            },
+            handleCancelCreateNode () {
+                this.tree.create.active = false
+                this.tree.create.properties = []
             },
             handleSubmit (value, changedValue, originalInst, type) {
                 let promise = type === 'create' ? this.createNode(value) : this.updateNode(value)
@@ -712,5 +738,10 @@
         .options{
             margin: 30px 0 0 150px;
         }
+    }
+    .topology-details {
+        width: calc(100% + 80px);
+        margin-left: -40px;
+        padding: 0 20px 0 52px;
     }
 </style>
