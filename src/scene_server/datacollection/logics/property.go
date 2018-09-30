@@ -18,7 +18,6 @@ import (
 	"net/http"
 	"time"
 
-	restful "github.com/emicklei/go-restful"
 	mgo "gopkg.in/mgo.v2"
 
 	"configcenter/src/common"
@@ -192,8 +191,37 @@ func (lgc *Logics) SearchProperty(pheader http.Header, params *meta.NetCollSearc
 	return &searchResult, nil
 }
 
-func (lgc *Logics) DeleteProperty(req *restful.Request, resp *restful.Response) {
+func (lgc *Logics) DeleteProperty(pheader http.Header, netPropertyID int64) error {
+	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
+	netPropertyCond := map[string]interface{}{
+		common.BKOwnerIDField:               util.GetOwnerID(pheader),
+		common.BKNetcollectPropertyIDlField: netPropertyID}
+
+	rowCount, err := lgc.Instance.GetCntByCondition(common.BKTableNameNetcollectProperty, netPropertyCond)
+	if nil != err {
+		blog.Errorf("delete net property with id [%d], but query failed, err: %v, params: %#v", netPropertyID, err, netPropertyCond)
+		return defErr.Error(common.CCErrCollectNetPropertyDeleteFail)
+	}
+
+	if 0 == rowCount {
+		blog.Errorf("delete net property with id [%d] fail, but net property not exists, params: %#v", netPropertyID, netPropertyCond)
+		return defErr.Error(common.CCErrCollectNetDeviceObjPropertyNotExist)
+	}
+
+	if 1 < rowCount {
+		blog.Errorf("delete net property fail, there are [%d] net propertys with same id [%d], params: %#v", rowCount, netPropertyID, netPropertyCond)
+		return defErr.Error(common.CCErrCollectNetPropertyDeleteFail)
+	}
+
+	if err = lgc.Instance.DelByCondition(common.BKTableNameNetcollectProperty, netPropertyCond); nil != err {
+		blog.Errorf("delete net property with id [%d] failed, err: %v, params: %#v", netPropertyID, err, netPropertyCond)
+		return defErr.Error(common.CCErrCollectNetPropertyDeleteFail)
+	}
+
+	blog.V(4).Infof("delete net property with id [%d] success", netPropertyID)
+
+	return nil
 }
 
 func (lgc *Logics) addProperty(pheader http.Header, propertyInfo meta.NetcollectProperty, ownerID string) (int64, error) {
