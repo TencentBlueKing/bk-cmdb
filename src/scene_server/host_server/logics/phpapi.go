@@ -77,7 +77,7 @@ func (lgc *Logics) UpdateHost(input map[string]interface{}, appID int64, header 
 	blog.V(3).Infof("hostIDArr:%v", hostIDArr)
 	if nil != err {
 		blog.Errorf("updateHostMain error:%v", err)
-		return nil, http.StatusBadGateway, defErr.Error(common.CCErrHostGetFail)
+		return nil, http.StatusInternalServerError, defErr.Error(common.CCErrHostGetFail)
 	}
 
 	if len(hostIDArr) != 0 {
@@ -95,7 +95,7 @@ func (lgc *Logics) UpdateHost(input map[string]interface{}, appID int64, header 
 	res, err := phpapi.UpdateHostMain(hostCondition, data, appID)
 	if nil != err {
 		blog.Errorf("updateHostMain error:%v", err)
-		return nil, http.StatusBadGateway, defErr.Error(common.CCErrHostModifyFail)
+		return nil, http.StatusInternalServerError, defErr.Error(common.CCErrHostModifyFail)
 	}
 
 	return res, 0, nil
@@ -113,13 +113,13 @@ func (lgc *Logics) UpdateHostByAppID(input *meta.UpdateHostParams, appID int64, 
 
 	if nil != err {
 		blog.Errorf("getDefaultModules input: %v, error:%v, module:%v", input, err, moduleInfo)
-		return nil, http.StatusBadGateway, defErr.Error(common.CCErrTopoModuleSelectFailed)
+		return nil, http.StatusInternalServerError, defErr.Error(common.CCErrTopoModuleSelectFailed)
 	}
 
 	defaultModuleID, err := moduleInfo.Int64(common.BKModuleIDField)
 	if nil != err {
 		blog.Errorf("getDefaultModules input: %v, error:%v, module:%v", input, err, moduleInfo)
-		return nil, http.StatusBadGateway, defErr.Error(common.CCErrTopoModuleSelectFailed)
+		return nil, http.StatusInternalServerError, defErr.Error(common.CCErrTopoModuleSelectFailed)
 	}
 	for _, pro := range input.ProxyList {
 		proMap := pro.(map[string]interface{})
@@ -132,7 +132,7 @@ func (lgc *Logics) UpdateHostByAppID(input *meta.UpdateHostParams, appID int64, 
 		hostData, err := phpapi.GetHostByIPAndSource(innerIP.(string), input.CloudID)
 		if nil != err {
 			blog.Errorf("UpdateHostByAppID getHostByIPAndSource, input:%v, innerip:%v, platID:%v error:%v", input, innerIP, input.CloudID, err)
-			return nil, http.StatusBadGateway, defErr.Error(common.CCErrHostGetFail)
+			return nil, http.StatusInternalServerError, defErr.Error(common.CCErrHostGetFail)
 		}
 
 		blog.Errorf("hostData:%v", hostData)
@@ -146,11 +146,11 @@ func (lgc *Logics) UpdateHostByAppID(input *meta.UpdateHostParams, appID int64, 
 				bl, err := lgc.IsPlatExist(header, platConds)
 				if nil != err {
 					blog.Errorf("is exist plat  error:%s", err.Error())
-					return nil, http.StatusBadGateway, defErr.Errorf(common.CCErrTopoGetCloudErrStrFaild, err.Error())
+					return nil, http.StatusInternalServerError, defErr.Errorf(common.CCErrTopoGetCloudErrStrFaild, err.Error())
 				}
 				if !bl {
 					blog.Errorf("is exist plat  not foud platid :%v", platID)
-					return nil, http.StatusBadGateway, defErr.Error(common.CCErrTopoCloudNotFound)
+					return nil, http.StatusInternalServerError, defErr.Error(common.CCErrTopoCloudNotFound)
 				}
 			}
 			proMap["import_from"] = common.HostAddMethodAgent
@@ -158,7 +158,7 @@ func (lgc *Logics) UpdateHostByAppID(input *meta.UpdateHostParams, appID int64, 
 			hostIDNew, err := phpapi.AddHost(proMap)
 			if nil != err {
 				blog.Errorf("addHost error:%v", err)
-				return nil, http.StatusBadGateway, defErr.Error(common.CCErrHostCreateFail)
+				return nil, http.StatusInternalServerError, defErr.Error(common.CCErrHostCreateFail)
 			}
 
 			hostID = hostIDNew
@@ -169,14 +169,14 @@ func (lgc *Logics) UpdateHostByAppID(input *meta.UpdateHostParams, appID int64, 
 
 			if nil != err {
 				blog.Errorf("addModuleHostConfig error:%v, input:%v", err, input)
-				return nil, http.StatusBadGateway, defErr.Error(common.CCErrHostTransferModule)
+				return nil, http.StatusInternalServerError, defErr.Error(common.CCErrHostTransferModule)
 			}
 
 		} else {
 			hostID, err = hostData[0].Int64(common.BKHostIDField)
 			if nil != err {
 				blog.Errorf("UpdateHostByAppID getHostByIPAndSource not found hostid, hostinfo:%v, input:%v, innerip:%v, platID:%v error:%v", hostData[0], input, innerIP, input.CloudID, err)
-				return nil, http.StatusBadGateway, defErr.Error(common.CCErrHostGetFail)
+				return nil, http.StatusInternalServerError, defErr.Error(common.CCErrHostGetFail)
 			}
 
 		}
@@ -193,7 +193,7 @@ func (lgc *Logics) UpdateHostByAppID(input *meta.UpdateHostParams, appID int64, 
 			_, err := phpapi.UpdateHostMain(hostCondition, data, appID)
 			if nil != err {
 				blog.Errorf("updateHostMain error:%v", err)
-				return nil, http.StatusBadGateway, defErr.Error(common.CCErrHostModifyFail)
+				return nil, http.StatusInternalServerError, defErr.Error(common.CCErrHostModifyFail)
 			}
 		}
 
