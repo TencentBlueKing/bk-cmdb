@@ -5,6 +5,7 @@
             <bk-button class="fr" type="primary" @click="back">{{$t('Common["返回"]')}}</bk-button>
         </div>
         <cmdb-table class="archived-table"
+            rowCursor="default"
             :sortable="false"
             :pagination.sync="pagination"
             :list="list"

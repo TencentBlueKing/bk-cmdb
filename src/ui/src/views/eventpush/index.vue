@@ -4,6 +4,7 @@
             <bk-button type="primary" @click="createPush">{{$t('EventPush["新增推送"]')}}</bk-button>
         </div>
         <cmdb-table
+            rowCursor="default"
             :loading="$loading('searchSubscription')"
             :header="table.header"
             :list="table.list"

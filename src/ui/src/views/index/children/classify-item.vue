@@ -32,14 +32,22 @@
         },
         data () {
             return {
+                maxCustomNavigationCount: 8,
                 notCollectable: ['bk_host_manage', 'bk_organization'],
                 notModelClassify: ['bk_host_manage', 'bk_back_config']
             }
         },
         computed: {
             ...mapGetters('userCustom', ['usercustom', 'classifyNavigationKey']),
+            ...mapGetters('objectModelClassify', ['authorizedNavigation']),
             customNavigation () {
                 return this.usercustom[this.classifyNavigationKey] || []
+            },
+            usefulNavigation () {
+                const usefulNavigation = this.customNavigation.filter(customId => {
+                    return this.authorizedNavigation.some(({children}) => children.some(navigation => navigation.id === customId))
+                })
+                return usefulNavigation
             }
         },
         methods: {
@@ -65,6 +73,10 @@
                 } else {
                     isAdd = true
                     newCustom = [...oldCustom, model['bk_obj_id']]
+                }
+                if (isAdd && this.usefulNavigation.length >= this.maxCustomNavigationCount) {
+                    this.$warn(this.$t('Index["限制添加导航提示"]', {max: this.maxCustomNavigationCount}))
+                    return false
                 }
                 this.$store.dispatch('userCustom/saveUsercustom', {
                     [this.classifyNavigationKey]: newCustom

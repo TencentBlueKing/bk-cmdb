@@ -31,7 +31,9 @@
                 {{$t('Common["删除关联"]')}}
             </a>
         </div>
-        <cmdb-topo-details v-if="details.show"
+        <cmdb-topo-details
+            v-if="details.show"
+            :fullScreen="fullScreen"
             :objId="details.objId"
             :instId="details.instId"
             :title="details.title"
