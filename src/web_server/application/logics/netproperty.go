@@ -145,13 +145,13 @@ func BuildNetPropertyExcelTemplate(header http.Header, defLang language.DefaultC
 
 	sheet, err := file.AddSheet(common.BKNetProperty)
 	if nil != err {
-		blog.Errorf("[Build NetDevice Excel Template] add comment sheet error, sheet name:%s, error:%s", common.BKNetProperty, err.Error())
+		blog.Errorf("[Build NetProperty Excel Template] add comment sheet error, sheet name:%s, error:%s", common.BKNetProperty, err.Error())
 		return err
 	}
 
 	fields := GetNetPropertyField(defLang)
 
-	blog.V(4).Infof("[Build NetDevice Excel Template]  fields count:%d", len(fields))
+	blog.V(4).Infof("[Build NetProperty Excel Template]  fields count:%d", len(fields))
 
 	productExcelHealer(fields, nil, sheet, defLang)
 
@@ -189,7 +189,7 @@ func GetNetPropertyField(lang language.DefaultCCLanguageIf) map[string]Property 
 	}
 }
 
-// add extra feild to export device
+// add extra feild to export property
 func AddNetPropertyExtFields(originField *map[string]Property, lang language.DefaultCCLanguageIf) {
 
 	field := map[string]Property{
