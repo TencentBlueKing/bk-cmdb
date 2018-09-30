@@ -65,7 +65,7 @@ func (lgc *Logics) checkNetObject(objID string, objName string, pheader http.Hea
 
 // by checking if bk_property_id and bk_property_name function parameter are valid net device object property or not
 // one of bk_property_id and bk_property_name can be empty and will return bk_property_id value if no error
-func (lgc *Logics) checkNetObjectProperty(netDeviceObjID, propertyID, propertyName string, pheader http.Header) (string, error) {
+func (lgc *Logics) checkNetObjectProperty(pheader http.Header, netDeviceObjID, propertyID, propertyName string) (string, error) {
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	if "" == netDeviceObjID {
@@ -113,7 +113,7 @@ func (lgc *Logics) checkNetObjectProperty(netDeviceObjID, propertyID, propertyNa
 // by checking if bk_device_id and bk_device_name function parameter are valid net device or not
 // one of bk_device_id and bk_device_name can be empty and will return bk_device_id and bk_obj_id value if no error
 // bk_obj_id is used to check property
-func (lgc *Logics) checkNetDeviceExist(deviceID int64, deviceName string, pheader http.Header) (int64, string, error) {
+func (lgc *Logics) checkNetDeviceExist(pheader http.Header, deviceID int64, deviceName string) (int64, string, error) {
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	if "" == deviceName && 0 == deviceID {
