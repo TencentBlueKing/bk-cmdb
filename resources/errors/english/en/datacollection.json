@@ -8,7 +8,7 @@
     "1112006": "Delete property failed",
     "1112007": "Property does not exist",
     "1112008": "Device does not exist",
-    "1112009": "Format perid feild failed",
+    "1112009": "Format period field failed",
     "1112010": "The device has configured properties and fail to delete it",
     "": ""
 }
