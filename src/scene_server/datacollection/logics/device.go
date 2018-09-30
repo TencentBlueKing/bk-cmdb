@@ -14,13 +14,11 @@ package logics
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	mapStr "configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -83,7 +81,7 @@ func (lgc *Logics) SearchDevice(pheader http.Header, params *meta.NetCollSearchP
 	if _, ok := deviceCond[common.BKObjIDField]; !ok && 0 < len(objCond) {
 		objIDs, err := lgc.getNetDeviceObjIDsByCond(objCond, pheader)
 		if nil != err {
-			blog.Errorf("search net device fail, search net device obj id by condition [%#v] error: %v", objCond, err)
+			blog.Errorf("[NetDevice] search net device fail, search net device obj id by condition [%#v] error: %v", objCond, err)
 			return meta.SearchNetDevice{}, defErr.Errorf(common.CCErrCollectNetDeviceGetFail)
 		}
 		deviceCond[common.BKObjIDField] = map[string]interface{}{
@@ -96,16 +94,16 @@ func (lgc *Logics) SearchDevice(pheader http.Header, params *meta.NetCollSearchP
 
 	searchResult.Count, err = lgc.Instance.GetCntByCondition(common.BKTableNameNetcollectDevice, deviceCond)
 	if nil != err {
-		blog.Errorf("search net device fail, count net device by condition [%#v] error: %v", deviceCond, err)
-		return meta.SearchNetDevice{}, nil
+		blog.Errorf("[NetDevice] search net device fail, count net device by condition [%#v] error: %v", deviceCond, err)
+		return meta.SearchNetDevice{}, err
 	}
 	if 0 == searchResult.Count {
-		searchResult.Info = []mapStr.MapStr{}
+		searchResult.Info = []meta.NetcollectDevice{}
 		return searchResult, nil
 	}
 
 	if err = lgc.findDevice(params.Fields, deviceCond, &searchResult.Info, params.Page.Sort, params.Page.Start, params.Page.Limit); nil != err {
-		blog.Errorf("search net device fail, search net device by condition [%#v] error: %v", deviceCond, err)
+		blog.Errorf("[NetDevice] search net device fail, search net device by condition [%#v] error: %v", deviceCond, err)
 		return meta.SearchNetDevice{}, defErr.Errorf(common.CCErrCollectNetDeviceGetFail)
 	}
 
@@ -122,31 +120,36 @@ func (lgc *Logics) DeleteDevice(pheader http.Header, netDeviceID int64) error {
 
 	rowCount, err := lgc.Instance.GetCntByCondition(common.BKTableNameNetcollectDevice, deviceCond)
 	if nil != err {
-		blog.Errorf("delete net device with id[%d], but query failed, err: %v, params: %#v", netDeviceID, err, deviceCond)
-		return err
+		blog.Errorf("[NetDevice] delete net device with id [%d], but query failed, err: %v, params: %#v", netDeviceID, err, deviceCond)
+		return defErr.Error(common.CCErrCollectNetDeviceDeleteFail)
 	}
 
-	if 1 != rowCount {
-		blog.V(4).Infof("delete net device with id[%d], but device not exists, params: %#v", netDeviceID, deviceCond)
-		return errors.New("device not exists")
+	if 0 == rowCount {
+		blog.Errorf("[NetDevice] delete net device with id [%d] fail, but device not exists, params: %#v", netDeviceID, deviceCond)
+		return defErr.Error(common.CCErrCollectDeviceNotExist)
+	}
+
+	if 1 < rowCount {
+		blog.Errorf("[NetDevice] delete net device with id [%d] fail, there are [%d] devices with same deviceID", netDeviceID, rowCount)
+		return defErr.Error(common.CCErrCollectNetDeviceDeleteFail)
 	}
 
 	// check if net device has property
 	hasProperty, err := lgc.checkDeviceHasProperty(netDeviceID, ownerID)
 	if nil != err {
-		return err
+		return defErr.Error(common.CCErrCollectNetDeviceDeleteFail)
 	}
 	if hasProperty {
-		blog.V(4).Infof("delete net device fail, net device has property [%d]", netDeviceID)
+		blog.Errorf("[NetDevice] delete net device fail, net device has property [%d]", netDeviceID)
 		return defErr.Error(common.CCErrCollectNetDeviceHasPropertyDeleteFail)
 	}
 
 	if err = lgc.Instance.DelByCondition(common.BKTableNameNetcollectDevice, deviceCond); nil != err {
-		blog.Errorf("delete net device with id[%d] failed, err: %v, params: %#v", netDeviceID, err, deviceCond)
-		return err
+		blog.Errorf("[NetDevice] delete net device with id [%d] failed, err: %v, params: %#v", netDeviceID, err, deviceCond)
+		return defErr.Error(common.CCErrCollectNetDeviceDeleteFail)
 	}
 
-	blog.V(4).Infof("delete net device with id[%d] success, info: %v", netDeviceID, err)
+	blog.V(4).Infof("[NetDevice] delete net device with id [%d] success", netDeviceID)
 	return nil
 }
 
@@ -154,35 +157,34 @@ func (lgc *Logics) DeleteDevice(pheader http.Header, netDeviceID int64) error {
 func (lgc *Logics) addDevice(deviceInfo meta.NetcollectDevice, pheader http.Header, ownerID string) (int64, error) {
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	if "" == deviceInfo.DeviceModel {
-		blog.Errorf("add net device fail, device_model is empty")
+		blog.Errorf("[NetDevice] add net device fail, device_model is empty")
 		return -1, defErr.Errorf(common.CCErrCommParamsLostField, common.BKDeviceModelField)
 	}
 
 	if "" == deviceInfo.BkVendor {
-		blog.Errorf("add net device fail, bk_vendor is empty")
+		blog.Errorf("[NetDevice] add net device fail, bk_vendor is empty")
 		return -1, defErr.Errorf(common.CCErrCommParamsLostField, common.BKVendorField)
 	}
 
 	if "" == deviceInfo.DeviceName {
-		blog.Errorf("add net device fail, device_name is empty")
+		blog.Errorf("[NetDevice] add net device fail, device_name is empty")
 		return -1, defErr.Errorf(common.CCErrCommParamsLostField, common.BKDeviceModelField)
 	}
 
 	// check if device_name exist
 	isExist, err := lgc.checkIfNetDeviceNameExist(deviceInfo.DeviceName, ownerID)
 	if nil != err {
-		blog.Errorf("add net device fail, error: %v", err)
+		blog.Errorf("[NetDevice] add net device fail, error: %v", err)
 		return -1, defErr.Errorf(common.CCErrCollectNetDeviceCreateFail)
 	}
 	if isExist {
-		blog.Errorf("add net device fail, error: duplicate device_name")
+		blog.Errorf("[NetDevice] add net device fail, error: duplicate device_name")
 		return -1, defErr.Errorf(common.CCErrCommDuplicateItem)
 	}
 
 	// check if bk_object_id and bk_object_name are net device object
-	err = lgc.checkIfNetDeviceObject(&deviceInfo, pheader)
-	if nil != err {
-		blog.Errorf("add net device fail, error: %v, object name [%s] and object ID [%s]",
+	if err = lgc.checkIfNetDeviceObject(&deviceInfo, pheader); nil != err {
+		blog.Errorf("[NetDevice] add net device fail, error: %v, object name [%s] and object ID [%s]",
 			err, deviceInfo.ObjectName, deviceInfo.ObjectID)
 		return -1, err
 	}
@@ -196,7 +198,7 @@ func (lgc *Logics) addDevice(deviceInfo meta.NetcollectDevice, pheader http.Head
 
 	deviceInfo.DeviceID, err = lgc.Instance.GetIncID(common.BKTableNameNetcollectDevice)
 	if nil != err {
-		blog.Errorf("add net device, failed to get id, error: %v", err)
+		blog.Errorf("[NetDevice] add net device, failed to get id, error: %v", err)
 		return -1, defErr.Errorf(common.CCErrCollectNetDeviceCreateFail)
 	}
 
@@ -210,7 +212,7 @@ func (lgc *Logics) addDevice(deviceInfo meta.NetcollectDevice, pheader http.Head
 
 func (lgc *Logics) findDevice(fields []string, condition, result interface{}, sort string, skip, limit int) error {
 	if err := lgc.Instance.GetMutilByCondition(common.BKTableNameNetcollectDevice, fields, condition, result, sort, skip, limit); err != nil {
-		blog.Errorf("failed to query the inst, error info %s", err.Error())
+		blog.Errorf("[NetDevice] failed to query the inst, error info %s", err.Error())
 		return err
 	}
 
@@ -231,13 +233,13 @@ func (lgc *Logics) checkIfNetDeviceNameExist(deviceName string, ownerID string) 
 
 	rowCount, err := lgc.Instance.GetCntByCondition(common.BKTableNameNetcollectDevice, queryParams)
 	if nil != err {
-		blog.Errorf("check if net device name exist, query device fail, error information is %v, params:%v",
+		blog.Errorf("[NetDevice] check if net device name exist, query device fail, error information is %v, params:%v",
 			err, queryParams)
 		return false, err
 	}
 
 	if 0 != rowCount {
-		blog.V(4).Infof("check if net device name exist, bk_device_name is [%s] device is exist", deviceName)
+		blog.V(4).Infof("[NetDevice] check if net device name exist, bk_device_name is [%s] device is exist", deviceName)
 		return true, nil
 	}
 
@@ -254,12 +256,12 @@ func (lgc *Logics) getNetDeviceObjIDsByCond(objCond map[string]interface{}, phea
 		objCond[common.BKClassificationIDField] = common.BKNetwork
 		objResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjects(context.Background(), pheader, objCond)
 		if nil != err {
-			blog.Errorf("check net device object ID, search objectName fail, %v", err)
+			blog.Errorf("[NetDevice] check net device object ID, search objectName fail, %v", err)
 			return nil, err
 		}
 
 		if !objResult.Result {
-			blog.Errorf("check net device object ID, errors: %s", objResult.ErrMsg)
+			blog.Errorf("[NetDevice] check net device object ID, errors: %s", objResult.ErrMsg)
 			return nil, defErr.Errorf(objResult.Code)
 		}
 
@@ -280,7 +282,7 @@ func (lgc *Logics) checkDeviceHasProperty(deviceID int64, ownerID string) (bool,
 
 	rowCount, err := lgc.Instance.GetCntByCondition(common.BKTableNameNetcollectProperty, queryParams)
 	if nil != err {
-		blog.Errorf("check if net deviceID and propertyID exist, query device fail, error information is %v, params:%v",
+		blog.Errorf("[NetDevice] check if net deviceID and propertyID exist, query device fail, error information is %v, params:%v",
 			err, queryParams)
 		return false, err
 	}
