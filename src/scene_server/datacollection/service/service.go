@@ -55,7 +55,7 @@ func (s *Service) WebService() *restful.WebService {
 
 	ws.Route(ws.POST("/netcollect/property/action/create").To(s.CreateProperty))
 	ws.Route(ws.POST("/netcollect/property/action/search").To(s.SearchProperty))
-	ws.Route(ws.DELETE("/netcollect/property/{bk_netcollect_property_id}/action/delete").To(s.DeleteProperty))
+	ws.Route(ws.DELETE("/netcollect/property/{netcollect_property_id}/action/delete").To(s.DeleteProperty))
 
 	ws.Route(ws.GET("/healthz").To(s.Healthz))
 

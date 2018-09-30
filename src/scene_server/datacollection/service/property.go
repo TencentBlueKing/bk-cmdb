@@ -74,5 +74,29 @@ func (s *Service) SearchProperty(req *restful.Request, resp *restful.Response) {
 }
 
 func (s *Service) DeleteProperty(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
+	ID := req.PathParameter("netcollect_property_id")
+	netPropertyID, err := s.Logics.ConvertStringToID(ID)
+	if nil != err {
+		blog.Errorf("delete net property failed, with netcollect_property_id [%s]", ID)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
+		return
+	}
+
+	err = s.Logics.DeleteProperty(pheader, netPropertyID)
+	if nil == err {
+		resp.WriteEntity(meta.NewSuccessResp(nil))
+		return
+	}
+
+	blog.Errorf("delete net property failed, with netcollect_property_id [%s], err: %v", ID, err)
+
+	if err.Error() == defErr.Error(common.CCErrCollectNetDeviceObjPropertyNotExist).Error() {
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
+		return
+	}
+
+	resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 }
