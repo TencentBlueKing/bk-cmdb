@@ -63,8 +63,7 @@ func ImportNetDevice(c *gin.Context) {
 	apiSite, err := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
 	if nil != err {
 		blog.Errorf("[Import Net Device] get api site error:%s", err.Error())
-		c.String(http.StatusInternalServerError, getReturnStr(common.CCErrWebGetAddNetDeviceResultFail,
-			defErr.Errorf(common.CCErrWebGetAddNetDeviceResultFail, err.Error()).Error(), nil))
+		c.String(http.StatusInternalServerError, string(errMsg))
 		return
 	}
 
@@ -152,7 +151,13 @@ func ExportNetDevice(c *gin.Context) {
 
 	dirFileName := fmt.Sprintf("%s/export", webCommon.ResourcePath)
 	if _, err = os.Stat(dirFileName); nil != err {
-		os.MkdirAll(dirFileName, os.ModeDir|os.ModePerm)
+		if err = os.MkdirAll(dirFileName, os.ModeDir|os.ModePerm); nil != err {
+			blog.Errorf("[Export Net Device] mkdir error:%s", err.Error())
+			msg := getReturnStr(common.CCErrCommExcelTemplateFailed,
+				defErr.Errorf(common.CCErrCommExcelTemplateFailed, err.Error()).Error(), nil)
+			c.String(http.StatusInternalServerError, msg, nil)
+			return
+		}
 	}
 
 	fileName := fmt.Sprintf("%dnetdevice.xlsx", time.Now().UnixNano())
@@ -178,14 +183,20 @@ func BuildDownLoadNetDeviceExcelTemplate(c *gin.Context) {
 	logics.SetProxyHeader(c)
 	cc := api.NewAPIResource()
 
-	dir := webCommon.ResourcePath + "/template/"
-	if _, err := os.Stat(dir); nil != err {
-		os.MkdirAll(dir, os.ModeDir|os.ModePerm)
-	}
-
 	language := logics.GetLanguageByHTTPRequest(c)
 	defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
 	defErr := cc.Error.CreateDefaultCCErrorIf(language)
+
+	dir := webCommon.ResourcePath + "/template/"
+	if _, err := os.Stat(dir); nil != err {
+		if err = os.MkdirAll(dir, os.ModeDir|os.ModePerm); nil != err {
+			blog.Errorf("[Build NetDevice Excel Template] mkdir error:%s", err.Error())
+			msg := getReturnStr(common.CCErrCommExcelTemplateFailed,
+				defErr.Errorf(common.CCErrCommExcelTemplateFailed, common.BKNetDevice).Error(), nil)
+			c.String(http.StatusInternalServerError, msg, nil)
+			return
+		}
+	}
 
 	file := fmt.Sprintf("%s/%stemplate-%d-%d.xlsx", dir, common.BKNetDevice, time.Now().UnixNano(), rand.Uint32())
 
@@ -215,7 +226,13 @@ func openDeviceUploadedFile(c *gin.Context, defErr errors.DefaultCCErrorIf) (fil
 
 	dir := webCommon.ResourcePath + "/import/"
 	if _, err = os.Stat(dir); nil != err {
-		os.MkdirAll(dir, os.ModeDir|os.ModePerm)
+		if err = os.MkdirAll(dir, os.ModeDir|os.ModePerm); nil != err {
+			blog.Errorf("[Import Net Device] mkdir error:%s", err.Error())
+			msg := getReturnStr(common.CCErrCommExcelTemplateFailed,
+				defErr.Errorf(common.CCErrCommExcelTemplateFailed, common.BKNetDevice).Error(), nil)
+			c.String(http.StatusInternalServerError, msg, nil)
+			return
+		}
 	}
 
 	filePath := fmt.Sprintf("%s/importnetdevice-%d-%d.xlsx", dir, time.Now().UnixNano(), rand.Uint32())
