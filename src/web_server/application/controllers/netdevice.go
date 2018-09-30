@@ -99,6 +99,7 @@ func ImportNetDevice(c *gin.Context) {
 	if nil != err {
 		c.String(http.StatusInternalServerError, getReturnStr(common.CCErrWebGetAddNetDeviceResultFail,
 			defErr.Errorf(common.CCErrWebGetAddNetDeviceResultFail).Error(), nil))
+		return
 	}
 
 	c.String(http.StatusOK, reply)
@@ -139,7 +140,7 @@ func ExportNetDevice(c *gin.Context) {
 	}
 
 	fields := logics.GetNetDevicefield(defLang)
-	logics.AddNetDeviceExtFields(&fields, defLang)
+	logics.AddNetDeviceExtFields(fields, defLang)
 
 	if err = logics.BuildNetDeviceExcelFromData(defLang, fields, deviceInfo, sheet); nil != err {
 		blog.Errorf("[Export Net Device] build net device excel data error:%s", err.Error())
