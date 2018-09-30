@@ -66,7 +66,7 @@
             <v-confirm-details slot="content"></v-confirm-details>
         </cmdb-slider>
         <footer class="footer">
-            <bk-button type="primary" @click="resultDialog.isShow = true">
+            <bk-button type="primary" @click="showResultDialog">
                 {{$t('NetworkDiscovery["确认变更"]')}}
             </bk-button>
         </footer>
@@ -135,7 +135,7 @@
                     <bk-button type="primary">
                         {{$t('NetworkDiscovery["确认变更"]')}}
                     </bk-button>
-                    <bk-button type="default">
+                    <bk-button type="default" @click="routeToLeave">
                         {{$t('NetworkDiscovery["丢弃"]')}}
                     </bk-button>
                     <bk-button type="default">
@@ -158,10 +158,13 @@
             return {
                 resultDialog: {
                     isShow: false,
-                    isDetailsShow: true
+                    isDetailsShow: true,
+                    confirmLeave: false,
+                    data: {}
                 },
                 confirmDialog: {
-                    isShow: false
+                    isShow: false,
+                    isLeave: false
                 },
                 slider: {
                     title: '',
@@ -241,10 +244,26 @@
                 return params
             }
         },
+        async beforeRouteLeave (to, from, next) {
+            // this.confirmDialog.isShow = true
+            // await new Promise((resolve, reject) => {
+            //     let resolver = () => {
+            //         if (this.confirmDialog.isLeave) {
+            //             resolve()
+            //         }
+            //     }
+            // })
+            // if
+            next()
+        },
         methods: {
             ...mapActions('netDiscovery', [
-                'searchNetcollectList'
+                'searchNetcollectList',
+                'searchNetcollectChange'
             ]),
+            routeToLeave () {
+                this.confirmDialog.isLeave = true
+            },
             toggleFilter () {
                 this.filter.isShow = !this.filter.isShow
             },
@@ -252,8 +271,10 @@
                 this.slider.title = 'asdf'
                 this.slider.isShow = true
             },
-            changeConfirm () {
+            async showResultDialog () {
                 this.resultDialog.isShow = true
+                const res = await this.searchNetcollectList()
+                this.resultDialog.data = res
             },
             toggleDialogDetails () {
                 this.resultDialog.isDetailsShow = !this.resultDialog.isDetailsShow

@@ -111,12 +111,21 @@
                 'searchNetcollect'
             ]),
             routeToConfig () {
+                this.$store.commit('setHeaderStatus', {
+                    back: true
+                })
                 this.$router.push('/network-discovery/config')
             },
             routeToConfirm () {
+                this.$store.commit('setHeaderStatus', {
+                    back: true
+                })
                 this.$router.push('/network-discovery/confirm')
             },
             routeToHistory () {
+                this.$store.commit('setHeaderStatus', {
+                    back: true
+                })
                 this.$router.push('/network-discovery/history')
             },
             async getTableData () {
