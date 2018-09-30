@@ -143,8 +143,8 @@ func ExportNetDevice(c *gin.Context) {
 
 	if err = logics.BuildNetDeviceExcelFromData(defLang, fields, deviceInfo, sheet); nil != err {
 		blog.Errorf("[Export Net Device] build net device excel data error:%s", err.Error())
-		msg := getReturnStr(common.CCErrCommExcelTemplateFailed,
-			defErr.Errorf(common.CCErrCommExcelTemplateFailed, common.BKNetDevice).Error(), nil)
+		msg := getReturnStr(common.CCErrWebCreateEXCELFail,
+			defErr.Errorf(common.CCErrWebCreateEXCELFail, err.Error()).Error(), nil)
 		c.String(http.StatusInternalServerError, msg, nil)
 		return
 	}
@@ -153,8 +153,8 @@ func ExportNetDevice(c *gin.Context) {
 	if _, err = os.Stat(dirFileName); nil != err {
 		if err = os.MkdirAll(dirFileName, os.ModeDir|os.ModePerm); nil != err {
 			blog.Errorf("[Export Net Device] mkdir error:%s", err.Error())
-			msg := getReturnStr(common.CCErrCommExcelTemplateFailed,
-				defErr.Errorf(common.CCErrCommExcelTemplateFailed, err.Error()).Error(), nil)
+			msg := getReturnStr(common.CCErrWebCreateEXCELFail,
+				defErr.Errorf(common.CCErrWebCreateEXCELFail, err.Error()).Error(), nil)
 			c.String(http.StatusInternalServerError, msg, nil)
 			return
 		}
@@ -228,10 +228,9 @@ func openDeviceUploadedFile(c *gin.Context, defErr errors.DefaultCCErrorIf) (fil
 	if _, err = os.Stat(dir); nil != err {
 		if err = os.MkdirAll(dir, os.ModeDir|os.ModePerm); nil != err {
 			blog.Errorf("[Import Net Device] mkdir error:%s", err.Error())
-			msg := getReturnStr(common.CCErrCommExcelTemplateFailed,
-				defErr.Errorf(common.CCErrCommExcelTemplateFailed, common.BKNetDevice).Error(), nil)
-			c.String(http.StatusInternalServerError, msg, nil)
-			return
+			errMsg = getReturnStr(common.CCErrWebFileSaveFail,
+				defErr.Errorf(common.CCErrWebFileSaveFail, err.Error()).Error(), nil)
+			return nil, err, errMsg
 		}
 	}
 
