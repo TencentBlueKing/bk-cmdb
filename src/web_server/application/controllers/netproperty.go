@@ -177,21 +177,29 @@ func ExportNetProperty(c *gin.Context) {
 	logics.AddDownExcelHttpHeader(c, "netproperty.xlsx")
 	c.File(dirFileName)
 
-	os.Remove(dirFileName)
+	if err = os.Remove(dirFileName); nil != err {
+		blog.Errorf("[Export Net Property] remove file error:%s", err.Error())
+	}
 }
 
 func BuildDownLoadNetPropertyExcelTemplate(c *gin.Context) {
 	logics.SetProxyHeader(c)
 	cc := api.NewAPIResource()
 
-	dir := webCommon.ResourcePath + "/template/"
-	if _, err := os.Stat(dir); nil != err {
-		os.MkdirAll(dir, os.ModeDir|os.ModePerm)
-	}
-
 	language := logics.GetLanguageByHTTPRequest(c)
 	defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
 	defErr := cc.Error.CreateDefaultCCErrorIf(language)
+
+	dir := webCommon.ResourcePath + "/template/"
+	if _, err := os.Stat(dir); nil != err {
+		if err = os.MkdirAll(dir, os.ModeDir|os.ModePerm); nil != err {
+			blog.Errorf("[Build Net Property Excel Template] mkdir error:%s", err.Error())
+			msg := getReturnStr(common.CCErrCommExcelTemplateFailed,
+				defErr.Errorf(common.CCErrCommExcelTemplateFailed, common.BKNetProperty).Error(), nil)
+			c.String(http.StatusInternalServerError, msg, nil)
+			return
+		}
+	}
 
 	file := fmt.Sprintf("%s/%stemplate-%d-%d.xlsx", dir, common.BKNetProperty, time.Now().UnixNano(), rand.Uint32())
 
@@ -208,7 +216,10 @@ func BuildDownLoadNetPropertyExcelTemplate(c *gin.Context) {
 	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("template_%s.xlsx", common.BKNetProperty))
 
 	c.File(file)
-	os.Remove(file)
+
+	if err := os.Remove(file); nil != err {
+		blog.Errorf("[Build Net Property Excel Template] mkdir error:%s", err.Error())
+	}
 }
 
 func openNetPropertyUploadedFile(c *gin.Context, defErr errors.DefaultCCErrorIf) (file *xlsx.File, err error, errMsg string) {
@@ -220,7 +231,13 @@ func openNetPropertyUploadedFile(c *gin.Context, defErr errors.DefaultCCErrorIf)
 
 	dir := webCommon.ResourcePath + "/import/"
 	if _, err = os.Stat(dir); nil != err {
-		os.MkdirAll(dir, os.ModeDir|os.ModePerm)
+		if err = os.MkdirAll(dir, os.ModeDir|os.ModePerm); nil != err {
+			blog.Errorf("[Import Net Property] mkdir error:%s", err.Error())
+			msg := getReturnStr(common.CCErrCommExcelTemplateFailed,
+				defErr.Errorf(common.CCErrCommExcelTemplateFailed, common.BKNetProperty).Error(), nil)
+			c.String(http.StatusInternalServerError, msg, nil)
+			return
+		}
 	}
 
 	filePath := fmt.Sprintf("%s/importnetproperty-%d-%d.xlsx", dir, time.Now().UnixNano(), rand.Uint32())
