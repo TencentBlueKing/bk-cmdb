@@ -176,7 +176,9 @@ func ExportNetDevice(c *gin.Context) {
 	logics.AddDownExcelHttpHeader(c, "netdevice.xlsx")
 	c.File(dirFileName)
 
-	os.Remove(dirFileName)
+	if err = os.Remove(dirFileName); nil != err {
+		blog.Error("[Export Net Device] remove file error:%s", err.Error())
+	}
 }
 
 func BuildDownLoadNetDeviceExcelTemplate(c *gin.Context) {
@@ -213,7 +215,9 @@ func BuildDownLoadNetDeviceExcelTemplate(c *gin.Context) {
 	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("template_%s.xlsx", common.BKNetDevice))
 
 	c.File(file)
-	os.Remove(file)
+	if err := os.Remove(file); nil != err {
+		blog.Error("[Export Net Device] remove file error:%s", err.Error())
+	}
 	return
 }
 
