@@ -190,7 +190,7 @@ func GetNetPropertyField(lang language.DefaultCCLanguageIf) map[string]Property 
 }
 
 // add extra feild to export property
-func AddNetPropertyExtFields(originField *map[string]Property, lang language.DefaultCCLanguageIf) {
+func AddNetPropertyExtFields(originField map[string]Property, lang language.DefaultCCLanguageIf) {
 
 	field := map[string]Property{
 		common.BKNetcollectPropertyIDlField: Property{
@@ -225,11 +225,11 @@ func AddNetPropertyExtFields(originField *map[string]Property, lang language.Def
 		},
 	}
 
-	originFieldLen := len(*originField)
+	originFieldLen := len(originField)
 
 	for key, value := range field {
 		value.ExcelColIndex = originFieldLen
 		originFieldLen++
-		(*originField)[key] = value
+		originField[key] = value
 	}
 }
