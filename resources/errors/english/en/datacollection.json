@@ -10,5 +10,8 @@
     "1112008": "Device does not exist",
     "1112009": "Format period field failed",
     "1112010": "The device has configured properties and fail to delete it",
+    "1112011": "search collector failed",
+    "1112012": "update collector failed",
+    "1112013": "discover failed",
     "": ""
 }
