@@ -81,7 +81,7 @@
                 isResultOpen: false,
                 isResultShow: false,
                 resultInfo: {
-                    result: true,
+                    result: false,
                     bk_error_msg: '',
                     data: ''
                 }

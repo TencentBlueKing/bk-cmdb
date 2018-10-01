@@ -18,14 +18,15 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/api_server/ccapi/logics/v2/common/converter"
 	"configcenter/src/api_server/ccapi/logics/v2/common/utils"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-
-	"github.com/emicklei/go-restful"
 )
 
 func (s *Service) updateHostStatus(req *restful.Request, resp *restful.Response) {
@@ -564,4 +565,56 @@ func (s *Service) getGitServerIp(req *restful.Request, resp *restful.Response) {
 		return
 	}
 	converter.RespSuccessV2(resDataV2, resp)
+}
+
+func (s *Service) GetHostHardInfo(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	err := req.Request.ParseForm()
+	if err != nil {
+		blog.Errorf("GetHostExtInfo error:%v", err)
+		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
+		return
+	}
+	formData := req.Request.Form
+	blog.Infof("GetHostExtInfo data: %v", formData)
+	res, msg := utils.ValidateFormData(formData, []string{"ApplicationID"})
+	if !res {
+		blog.Errorf("GetHostExtInfo error: %s", msg)
+		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
+		return
+	}
+	appID, err := util.GetInt64ByInterface(formData["ApplicationID"][0])
+	if nil != err {
+		blog.Errorf("GetHostExtInfo error: %v", err)
+		converter.RespFailV2(common.CCErrCommParamsNeedInt, defErr.Errorf(common.CCErrCommParamsNeedInt, "ApplicationID").Error(), resp)
+		return
+	}
+	param := map[string]interface{}{
+		common.BKAppIDField: appID,
+	}
+	result, err := s.CoreAPI.HostServer().HostSearchByAppID(context.Background(), pheader, param)
+	if err != nil {
+		blog.Errorf("GetHostExtInfo  error:%v", err)
+		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
+		return
+	}
+	if !result.Result {
+		blog.Errorf("GetHostExtInfo  error, error code:%s, error message:%s", result.Code, result.ErrMsg)
+		converter.RespFailV2(result.Code, result.ErrMsg, resp)
+		return
+	}
+	dataArr := result.Data.([]interface{})
+	var dataMapArr []mapstr.MapStr
+	for _, item := range dataArr {
+		mapItem, err := mapstr.NewFromInterface(item)
+		if nil != err {
+			blog.Errorf("GetHostExtInfo  error, error:%s, host info:%+v, request parammetes:%+v, request-id:%s", err.Error(), formData, util.GetHTTPCCRequestID(pheader))
+			converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, "host info not map[string]interface").Error(), resp)
+			return
+		}
+		dataMapArr = append(dataMapArr, mapItem)
+	}
+	data := converter.GetHostHardInfo(appID, dataMapArr)
+	converter.RespSuccessV2(data, resp)
 }

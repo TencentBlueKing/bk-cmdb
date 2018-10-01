@@ -502,6 +502,8 @@ const DefaultAppFlag int = 1
 // DefaultAppName the default app name
 const DefaultAppName string = "资源池"
 
+const DefaultCloudName string = "default area"
+
 // BKAppName the default app name
 const BKAppName string = "蓝鲸"
 
@@ -747,4 +749,33 @@ const (
 const (
 	// period default value
 	Infinite = "∞"
+)
+
+const (
+	// period default value
+	BKDefaultLoginUserPluginVersion = "self"
+	HTTPCookieBKToken               = "bk_token"
+
+	WEBSessionUinKey           = "username"
+	WEBSessionChineseNameKey   = "chName"
+	WEBSessionPhoneKey         = "phone"
+	WEBSessionEmailKey         = "email"
+	WEBSessionRoleKey          = "role"
+	WEBSessionOwnerUinKey      = "owner_uin"
+	WEBSessionOwnerUinListeKey = "owner_uin_list"
+	WEBSessionAvatarUrlKey     = "avatar_url"
+	WEBSessionMultiSupplierKey = "multisupplier"
+	WEBSessionLanguageKey      = "language"
+
+	LoginSystemMultiSupplierTrue  = "1"
+	LoginSystemMultiSupplierFalse = "0"
+
+	LogoutHTTPSchemeCookieKey = "http_scheme"
+	LogoutHTTPSchemeHTTP      = "http"
+	LogoutHTTPSchemeHTTPS     = "https"
+)
+
+const (
+	HostFieldDockerClientVersion = "docker_client_version"
+	HostFieldDockerServerVersion = "docker_server_version"
 )
