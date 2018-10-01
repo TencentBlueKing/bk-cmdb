@@ -250,6 +250,8 @@ const (
 	CCErrTopoInstHasBeenAssociation = 1101036
 	// it is forbidden to delete , that has some insts
 	CCErrTopoObjectHasSomeInstsForbiddenToDelete = 1101037
+	// the associations %s->%s already exist
+	CCErrTopoAssociationAlreadyExist = 1101038
 
 	CCErrTopoAppDeleteFailed                       = 1001031
 	CCErrTopoAppUpdateFailed                       = 1001032
