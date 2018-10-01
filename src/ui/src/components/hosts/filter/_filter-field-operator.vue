@@ -62,7 +62,7 @@
         },
         methods: {
             setLocalSelected () {
-                if (this.value && this.list.some(item => item.id === this.value)) {
+                if (this.list.some(item => item.id === this.value)) {
                     this.localSelected = this.value
                 } else {
                     this.localSelected = this.list[0].id
