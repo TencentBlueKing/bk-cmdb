@@ -125,8 +125,10 @@
             }
         },
         created () {
-            this.layout.addFlatternState(this.state)
-            this.updateBasicState()
+            this.$nextTick(() => {
+                this.layout.addFlatternState(this.state)
+                this.updateBasicState()
+            })
         },
         beforeDestroy () {
             this.layout.destory(this.state)
