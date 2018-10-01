@@ -38,7 +38,7 @@
         </cmdb-table>
         <cmdb-slider :isShow.sync="slider.show" :title="slider.title">
             <bk-tab :active-name.sync="tab.active" slot="content">
-                <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')">
+                <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-details v-if="attribute.type === 'details'"
                         :properties="properties"
                         :propertyGroups="propertyGroups"
