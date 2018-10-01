@@ -67,7 +67,11 @@
             },
             // 退出登陆
             logOut () {
-                window.location.href = this.site.login
+                this.$http.post(`${window.API_HOST}logout`, {
+                    'http_scheme': window.location.protocol.replace(':', '')
+                }).then(data => {
+                    window.location.href = data.url
+                })
             },
             handleCloseUser () {
                 this.isShowUserDropdown = false
