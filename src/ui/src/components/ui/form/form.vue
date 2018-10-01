@@ -55,6 +55,7 @@
                 </bk-button>
                 <bk-button class="button-cancel" @click="handleCancel">{{$t("Common['取消']")}}</bk-button>
             </slot>
+            <slot name="extra-options"></slot>
         </div>
     </div>
 </template>
@@ -274,6 +275,7 @@
         left: 0;
         width: 100%;
         padding: 28px 32px 0;
+        font-size: 0;
         &.sticky {
             padding: 10px 32px;
             border-top: 1px solid $cmdbBorderColor;
@@ -285,6 +287,7 @@
         }
         .button-cancel{
             min-width: 76px;
+            margin: 0 4px;
             background-color: #fff;
         }
     }
