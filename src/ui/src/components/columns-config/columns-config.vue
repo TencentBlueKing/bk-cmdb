@@ -5,7 +5,7 @@
                 <label class="header-label">{{$t("Inst['隐藏属性']")}}</label>
                 <input class="header-filter" type="text" :placeholder="$t('Inst[\'搜索属性\']')" v-model.trim="filter">
             </div>
-            <ul class="property-list">
+            <ul class="property-list property-list-unselected">
                 <li ref="unselectedPropertyItem" class="property-item" v-for="(property, index) in unselectedProperties" @click="selectProperty(property)">
                     <span class="property-name">{{property['bk_property_name']}}</span>
                     <i class="bk-icon icon-angle-right"></i>
@@ -223,6 +223,10 @@
             .property-item{
                 cursor: move;
             }
+        }
+        &-unselected {
+            height: calc(100% - 78px);
+            @include scrollbar-y;
         }
         .property-item{
             position: relative;
