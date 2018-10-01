@@ -12,9 +12,86 @@
 
 package service
 
+import (
+	"encoding/json"
+	"net/http"
+
+	"github.com/emicklei/go-restful"
+
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
+)
+
 func (s *Service) SearchCollector(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-	ownerID := util.GetOwnerID(pheader)
 
+	cond := metadata.ParamNetcollectorSearch{}
+	if err := json.NewDecoder(req.Request.Body).Decode(&cond); err != nil {
+		blog.Errorf("[SearchCollector] decode body failed, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+	blog.Infof("[SearchCollector] search by %+v", cond)
+
+	count, result, err := s.Logics.SearchCollector(cond)
+	if err != nil {
+		resp.WriteError(http.StatusInternalServerError,
+			&metadata.RespError{Msg: defErr.Error(common.CCErrCollectNetCollectorSearchFail)})
+		return
+	}
+
+	resp.WriteEntity(metadata.NewSuccessResp(metadata.RspNetcollectorSearch{
+		Count: count,
+		Info:  result,
+	}))
+	return
+}
+
+func (s *Service) UpdateCollector(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+
+	cond := metadata.NetcollectorConfig{}
+	if err := json.NewDecoder(req.Request.Body).Decode(&cond); err != nil {
+		blog.Errorf("[UpdateCollector] decode body failed, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+	blog.Infof("[UpdateCollector] update by %+v", cond)
+
+	err := s.Logics.UpdateCollector(cond)
+	if err != nil {
+		resp.WriteError(http.StatusInternalServerError,
+			&metadata.RespError{Msg: defErr.Error(common.CCErrCollectNetCollectorUpdateFail)})
+		return
+	}
+
+	resp.WriteEntity(metadata.NewSuccessResp(nil))
+	return
+}
+
+func (s *Service) DiscoverNetDevice(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+
+	cond := []metadata.NetcollectorConfig{}
+	if err := json.NewDecoder(req.Request.Body).Decode(cond); err != nil {
+		blog.Errorf("[DiscoverNetDevice] decode body failed, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+	blog.Infof("[DiscoverNetDevice] discover by %+v", cond)
+
+	err := s.Logics.DiscoverNetDevice(cond)
+	if err != nil {
+		resp.WriteError(http.StatusInternalServerError,
+			&metadata.RespError{Msg: defErr.Error(common.CCErrCollectNetCollectorDiscoverFail)})
+		return
+	}
+
+	resp.WriteEntity(metadata.NewSuccessResp(nil))
+	return
 }

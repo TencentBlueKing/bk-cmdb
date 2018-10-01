@@ -21,10 +21,10 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-func (lgc *Logics) SearchCollector() ([]metadata.NetcollectorSearchResult, error) {
-	result := []metadata.NetcollectorSearchResult{}
+func (lgc *Logics) SearchCollector(cond metadata.ParamNetcollectorSearch) (int64, []metadata.Netcollector, error) {
+	result := []metadata.Netcollector{}
 
-	mock := metadata.NetcollectorSearchResult{
+	mock := metadata.Netcollector{
 		CloudID:   0,
 		CloudName: "default area",
 		InnerIP:   "192.168.1.1",
@@ -42,7 +42,7 @@ func (lgc *Logics) SearchCollector() ([]metadata.NetcollectorSearchResult, error
 		},
 	}
 	result = append(result, mock)
-	return result, nil
+	return 1, result, nil
 }
 
 func (lgc *Logics) UpdateCollector(config metadata.NetcollectorConfig) error {
@@ -70,9 +70,9 @@ func (lgc *Logics) UpdateCollector(config metadata.NetcollectorConfig) error {
 		return err
 	}
 
-	return lgc.DiscoverNetDevice(config)
+	return lgc.DiscoverNetDevice([]metadata.NetcollectorConfig{config})
 }
 
-func (lgc *Logics) DiscoverNetDevice(config metadata.NetcollectorConfig) error {
+func (lgc *Logics) DiscoverNetDevice(config []metadata.NetcollectorConfig) error {
 	return nil
 }

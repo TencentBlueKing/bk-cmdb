@@ -46,7 +46,16 @@ type NetcollectProperty struct {
 	DeviceModel          string     `json:"device_model" bson:"device_model"`
 }
 
-type NetcollectorSearchResult struct {
+type ParamNetcollectorSearch struct {
+	Query string   `json:"query"`
+	Page  BasePage `json:"page"`
+}
+type RspNetcollectorSearch struct {
+	Count int64          `json:"count"`
+	Info  []Netcollector `json:"info"`
+}
+
+type Netcollector struct {
 	CloudID    int64              `json:"bk_cloud_id"`
 	CloudName  string             `json:"bk_cloud_name"`
 	InnerIP    string             `json:"bk_host_innerip"`
