@@ -78,6 +78,10 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.GET("/userapi/detail/{bk_biz_id}/{id}").To(s.GetUserCustomQueryDetail))
 	ws.Route(ws.GET("/userapi/data/{bk_biz_id}/{id}/{start}/{limit}").To(s.GetUserCustomQueryResult))
 
+	ws.Route(ws.POST("/host/lock").To(s.LockHost))
+	ws.Route(ws.DELETE("/host/lock").To(s.UnlockHost))
+	ws.Route(ws.POST("/host/lock/search").To(s.QueryHostLock))
+
 	ws.Route(ws.GET("/host/getHostListByAppidAndField/{" + common.BKAppIDField + "}/{field}").To(s.getHostListByAppidAndField))
 	ws.Route(ws.GET("getAgentStatus/{appid}").To(s.GetAgentStatus))
 	ws.Route(ws.PUT("/openapi/host/{" + common.BKAppIDField + "}").To(s.UpdateHost))

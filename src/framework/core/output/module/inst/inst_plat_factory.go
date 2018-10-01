@@ -25,10 +25,10 @@ func createPlat(target model.Model) (CommonInstInterface, error) {
 // findPlatsLikeName find all insts by inst name
 func findPlatsLikeName(target model.Model, platName string) (Iterator, error) {
 	cond := common.CreateCondition().Field(PlatName).Like(platName)
-	return newIteratorInst(target, cond)
+	return NewIteratorInst(target, cond)
 }
 
 // findPlatsByCondition find all insts by condition
 func findPlatsByCondition(target model.Model, cond common.Condition) (Iterator, error) {
-	return newIteratorInst(target, cond)
+	return NewIteratorInst(target, cond)
 }
