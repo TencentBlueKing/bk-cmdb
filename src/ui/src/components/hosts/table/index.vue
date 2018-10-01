@@ -1,7 +1,7 @@
 <template>
     <div class="hosts-table-layout">
-        <slot name="options">
-            <div class="hosts-options">
+        <div class="hosts-options">
+            <slot name="options">
                 <bk-button class="options-button" type="primary"
                     :disabled="!table.checked.length"
                     @click="handleMultipleEdit">
@@ -26,14 +26,29 @@
                     :disabled="!table.checked.length"
                     @on-copy="handleCopy">
                 </cmdb-clipboard-selector>
+                <bk-button class="options-button quick-search-button" type="default"
+                    v-if="quickSearch"
+                    ref="quickSearchButton"
+                    @click="quickSearchStatus.active = true">
+                    {{$t('HostResourcePool["筛选"]')}}
+                    <i class="bk-icon icon-angle-down"></i>
+                </bk-button>
                 <div class="fr" v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')">
                     <bk-button class="options-button" type="default" style="margin-right: 0"
                         @click="columnsConfig.show = true">
                         <i class="icon-cc-setting"></i>
                     </bk-button>
                 </div>
-            </div>
-        </slot>
+            </slot>
+        </div>
+        <cmdb-collapse-transition>
+            <cmdb-host-quick-search
+                v-if="quickSearch && quickSearchStatus.active"
+                :properties="properties.host"
+                @on-toggle="quickSearchStatus.active = false"
+                @on-search="handleQuickSearch">
+            </cmdb-host-quick-search>
+        </cmdb-collapse-transition>
         <cmdb-table class="hosts-table" ref="hostsTable"
             :loading="$loading()"
             :checked.sync="table.checked"
@@ -155,6 +170,7 @@
     import cmdbTransferHost from '@/components/hosts/transfer'
     import cmdbRelation from '@/components/relation'
     import cmdbHostStatus from '@/components/hosts/status/status'
+    import cmdbHostQuickSearch from './_quick-search.vue'
     export default {
         components: {
             cmdbHostsFilter,
@@ -162,7 +178,8 @@
             cmdbAuditHistory,
             cmdbTransferHost,
             cmdbRelation,
-            cmdbHostStatus
+            cmdbHostStatus,
+            cmdbHostQuickSearch
         },
         props: {
             columnsConfigProperties: {
@@ -178,6 +195,10 @@
                 default () {
                     return ['bk_host_innerip', 'bk_cloud_id', 'bk_module_name']
                 }
+            },
+            quickSearch: {
+                type: Boolean,
+                default: false
             }
         },
         data () {
@@ -189,6 +210,9 @@
                     module: []
                 },
                 propertyGroups: [],
+                quickSearchStatus: {
+                    active: false
+                },
                 table: {
                     checked: [],
                     header: [],
@@ -526,6 +550,9 @@
                     return true
                 }
                 return true
+            },
+            handleQuickSearch (property, value) {
+                this.$emit('on-quick-search', property, value)
             }
         }
     }
@@ -541,6 +568,15 @@
             border-radius: 0;
             font-size: 14px;
             margin: 0 5px;
+            &.quick-search-button {
+                .icon-angle-down {
+                    font-size: 12px;
+                    top: 0;
+                }
+            }
+            &:first-child {
+                margin-left: 0;
+            }
             &:hover{
                 z-index: 1;
             }

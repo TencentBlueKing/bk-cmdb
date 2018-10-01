@@ -14,7 +14,12 @@
                     :true-value="true"
                     :false-value="false"
                     v-model="tree.simplify">
-                    {{$t('BusinessTopology["精简显示"]')}}
+                    <span v-if="tree.simplify">
+                        {{$t('BusinessTopology["完整显示"]')}}
+                    </span>
+                    <span v-else>
+                        {{$t('BusinessTopology["精简显示"]')}}
+                    </span>
                 </cmdb-form-bool>
                 <v-popover style="display: inline-block;" trigger="hover" :delay="200">
                     <i class="bk-icon icon-info-circle">
@@ -70,7 +75,9 @@
                     </bk-button>
                     <cmdb-hosts-table class="topo-table" ref="topoTable"
                         :columns-config-key="table.columnsConfigKey"
-                        :columns-config-properties="columnsConfigProperties">
+                        :columns-config-properties="columnsConfigProperties"
+                        :quick-search="true"
+                        @on-quick-search="handleQuickSearch">
                     </cmdb-hosts-table>
                 </bk-tabpanel>
                 <bk-tabpanel name="attribute" :title="$t('BusinessTopology[\'节点属性\']')"
@@ -92,7 +99,8 @@
                         @on-submit="handleSubmit"
                         @on-cancel="handleCancel">
                         <template slot="extra-options">
-                            <bk-button type="danger" style="margin-left: 4px" @click="handleDelete">{{$t('Common["删除"]')}}</bk-button>
+                            <bk-button type="danger" style="margin-left: 4px" @click="handleDelete">{{$t('Common["删除"]')}}
+                            </bk-button>
                         </template>
                     </cmdb-form>
                 </bk-tabpanel>
@@ -153,7 +161,11 @@
                 },
                 table: {
                     params: null,
-                    columnsConfigKey: 'topology_table_columns'
+                    columnsConfigKey: 'topology_table_columns',
+                    quickSearch: {
+                        property: null,
+                        value: ''
+                    }
                 }
             }
         },
@@ -436,6 +448,12 @@
                     this.handleRefresh()
                 }
             },
+            handleQuickSearch (property, value) {
+                this.table.quickSearch.property = property
+                this.table.quickSearch.value = value
+                this.setSearchParams()
+                this.handleRefresh()
+            },
             handleRefresh () {
                 this.$refs.topoTable.search(this.business, this.table.params)
             },
@@ -455,6 +473,26 @@
                         flag: 'bk_host_innerip|bk_host_outerip'
                     },
                     condition
+                }
+                const quickSearch = this.table.quickSearch
+                if (quickSearch.property && quickSearch.value !== null) {
+                    if (['singleasst', 'multiasst'].includes(quickSearch.property['bk_property_type'])) {
+                        condition.push({
+                            'bk_obj_id': quickSearch.property['bk_asst_obj_id'],
+                            condition: [{
+                                field: 'bk_inst_name',
+                                operator: '$regex',
+                                value: quickSearch.value
+                            }]
+                        })
+                    } else {
+                        const hostCondition = condition.find(condition => condition['bk_obj_id'] === 'host')
+                        hostCondition.condition.push({
+                            field: quickSearch.property['bk_property_id'],
+                            operator: '$regex',
+                            value: quickSearch.value
+                        })
+                    }
                 }
                 const selectedNodeObjId = this.tree.selectedNode['bk_obj_id']
                 if (['module', 'set'].includes(selectedNodeObjId)) {
