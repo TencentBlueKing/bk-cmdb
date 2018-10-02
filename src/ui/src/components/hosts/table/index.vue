@@ -41,7 +41,7 @@
                 </div>
             </slot>
         </div>
-        <cmdb-collapse-transition>
+        <cmdb-collapse-transition @after-enter="handleQuickSearchToggle" @after-leave="handleQuickSearchToggle">
             <cmdb-host-quick-search
                 v-if="quickSearch && quickSearchStatus.active"
                 :properties="properties.host"
@@ -303,7 +303,7 @@
             ...mapActions('objectModelProperty', ['batchSearchObjectAttribute']),
             ...mapActions('objectModelFieldGroup', ['searchGroup']),
             ...mapActions('hostUpdate', ['updateHost']),
-            ...mapActions('hostSearch', ['searchHost']),
+            ...mapActions('hostSearch', ['searchHost', 'searchHostByInnerip']),
             calcTableMinusHeight () {
                 const $table = this.$refs.hostsTable.$el
                 this.table.tableMinusHeight = $table.getBoundingClientRect().top + 20
@@ -478,17 +478,24 @@
                 this.tab.attribute.inst.details = inst
                 this.tab.attribute.type = 'details'
             },
-            handleSave (values, changedValues, inst, type) {
-                this.batchUpdate({
+            async handleSave (values, changedValues, inst, type) {
+                await this.batchUpdate({
                     ...changedValues,
                     'bk_host_id': inst['bk_host_id'].toString()
                 })
+                this.tab.attribute.type = 'details'
+                this.searchHostByInnerip({
+                    bizId: this.filter.business,
+                    innerip: inst['bk_host_innerip']
+                }).then(host => {
+                    this.tab.attribute.inst.details = this.$tools.flatternItem(this.properties['host'], host)
+                })
             },
             batchUpdate (params) {
-                this.updateHost(params).then(() => {
+                return this.updateHost(params).then(data => {
                     this.$success(this.$t('Common[\'保存成功\']'))
                     this.getHostList()
-                    this.slider.show = false
+                    return data
                 })
             },
             handleCancel () {
@@ -505,11 +512,12 @@
                 this.slider.title = this.$t('HostResourcePool[\'主机属性\']')
                 this.slider.show = true
             },
-            handleMultipleSave (changedValues) {
-                this.batchUpdate({
+            async handleMultipleSave (changedValues) {
+                await this.batchUpdate({
                     ...changedValues,
                     'bk_host_id': this.table.checked.join(',')
                 })
+                this.slider.show = false
             },
             handleMultipleCancel () {
                 this.slider.show = false
@@ -550,6 +558,9 @@
                     return true
                 }
                 return true
+            },
+            handleQuickSearchToggle () {
+                this.calcTableMinusHeight()
             },
             handleQuickSearch (property, value) {
                 this.$emit('on-quick-search', property, value)

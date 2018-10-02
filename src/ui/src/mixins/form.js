@@ -25,7 +25,11 @@ export default {
         },
         $groupedProperties () {
             return this.$sortedGroups.map(group => {
-                return this.$sortedProperties.filter(property => property['bk_property_group'] === group['bk_group_id'])
+                return this.$sortedProperties.filter(property => {
+                    const inGroup = property['bk_property_group'] === group['bk_group_id']
+                    const isAsst = ['singleasst', 'multiasst'].includes(property['bk_property_type'])
+                    return inGroup && !isAsst
+                })
             })
         }
     }
