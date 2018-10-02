@@ -85,6 +85,7 @@
                         :inst="tab.attribute.inst.details"
                         :show-delete="false"
                         @on-edit="handleEdit">
+                        <cmdb-host-topo slot="details-header" :host="tab.attribute.inst.original"></cmdb-host-topo>
                     </cmdb-details>
                     <cmdb-form v-else-if="tab.attribute.type === 'update'"
                         ref="form"
@@ -171,6 +172,7 @@
     import cmdbRelation from '@/components/relation'
     import cmdbHostStatus from '@/components/hosts/status/status'
     import cmdbHostQuickSearch from './_quick-search.vue'
+    import cmdbHostTopo from './_host-topo.vue'
     export default {
         components: {
             cmdbHostsFilter,
@@ -179,7 +181,8 @@
             cmdbTransferHost,
             cmdbRelation,
             cmdbHostStatus,
-            cmdbHostQuickSearch
+            cmdbHostQuickSearch,
+            cmdbHostTopo
         },
         props: {
             columnsConfigProperties: {
@@ -242,7 +245,8 @@
                         type: 'details',
                         inst: {
                             details: {},
-                            edit: {}
+                            edit: {},
+                            original: {}
                         }
                     }
                 },
@@ -476,6 +480,7 @@
                 this.slider.show = true
                 this.slider.title = `${this.$t("Common['编辑']")} ${inst['bk_host_innerip']}`
                 this.tab.attribute.inst.details = inst
+                this.tab.attribute.inst.original = item
                 this.tab.attribute.type = 'details'
             },
             async handleSave (values, changedValues, inst, type) {
@@ -487,8 +492,8 @@
                 this.searchHostByInnerip({
                     bizId: this.filter.business,
                     innerip: inst['bk_host_innerip']
-                }).then(host => {
-                    this.tab.attribute.inst.details = this.$tools.flatternItem(this.properties['host'], host)
+                }).then(data => {
+                    this.tab.attribute.inst.details = this.$tools.flatternItem(this.properties['host'], data.host)
                 })
             },
             batchUpdate (params) {

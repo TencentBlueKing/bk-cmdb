@@ -34,10 +34,12 @@ const actions = {
     searchHostByInnerip (context, { bizId, innerip, config }) {
         return $http.post(`hosts/search`, {
             'bk_biz_id': bizId,
-            condition: [{
-                'bk_obj_id': 'host',
-                condition: []
-            }],
+            condition: ['biz', 'set', 'module', 'host'].map(model => {
+                return {
+                    'bk_obj_id': model,
+                    condition: []
+                }
+            }),
             ip: {
                 flag: 'bk_host_innerip',
                 exact: 1,
@@ -48,7 +50,7 @@ const actions = {
                 limit: 1
             }
         }, config).then(data => {
-            return (data.info[0] || {host: {}})['host']
+            return data.info[0] || {}
         })
     },
 
