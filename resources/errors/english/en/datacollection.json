@@ -13,5 +13,7 @@
     "1112011": "search collector failed",
     "1112012": "update collector failed",
     "1112013": "discover failed",
+    "1112014": "search report failed",
+    "1112015": "confirm changes failed",
     "": ""
 }

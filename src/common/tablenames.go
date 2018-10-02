@@ -67,9 +67,13 @@ const (
 	BKTableNameObjAsst          = "cc_ObjAsst"
 	BKTableNameTopoGraphics     = "cc_TopoGraphics"
 
-	BKTableNameNetcollectConfig   = "cc_Netcollect_config"
-	BKTableNameNetcollectDevice   = "cc_Netcollect_Device"
-	BKTableNameNetcollectProperty = "cc_Netcollect_Property"
+	BKTableNameNetcollectConfig   = "cc_NetcollectConfig"
+	BKTableNameNetcollectDevice   = "cc_NetcollectDevice"
+	BKTableNameNetcollectProperty = "cc_NetcollectProperty"
+
+	BKTableNameNetcollectReport      = "cc_NetcollectReport"
+	BKTableNameNetcollectAttribute   = "cc_NetcollectAttribute"
+	BKTableNameNetcollectAssociation = "cc_NetcollectAssociation"
 
 	BKTableNameHostLock = "cc_HostLock"
 )
