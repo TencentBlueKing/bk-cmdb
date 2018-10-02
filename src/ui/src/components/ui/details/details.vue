@@ -1,5 +1,6 @@
 <template>
     <div class="details-layout">
+        <slot name="details-header"></slot>
         <template v-for="(group, groupIndex) in $sortedGroups">
             <div class="property-group"
                 :key="groupIndex"
