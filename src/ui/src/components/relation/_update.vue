@@ -310,6 +310,7 @@
                 this.getAssociationTopo({clearCache: true})
                 const msg = updateType === 'remove' ? this.$t('Association["取消关联成功"]') : this.$t('Association["添加关联成功"]')
                 this.$success(msg)
+                this.$emit('on-update')
             },
             beforeUpdate (event, instId, updateType = 'new') {
                 if (this.multiple || !this.selectedInstId.length) {

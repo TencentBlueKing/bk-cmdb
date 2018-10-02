@@ -31,6 +31,27 @@ const actions = {
         return $http.post(`hosts/search`, params, config)
     },
 
+    searchHostByInnerip (context, { bizId, innerip, config }) {
+        return $http.post(`hosts/search`, {
+            'bk_biz_id': bizId,
+            condition: [{
+                'bk_obj_id': 'host',
+                condition: []
+            }],
+            ip: {
+                flag: 'bk_host_innerip',
+                exact: 1,
+                data: [innerip]
+            },
+            page: {
+                start: 0,
+                limit: 1
+            }
+        }, config).then(data => {
+            return (data.info[0] || {host: {}})['host']
+        })
+    },
+
     /**
      * 获取主机详情
      * @param {Function} commit store commit mutation hander

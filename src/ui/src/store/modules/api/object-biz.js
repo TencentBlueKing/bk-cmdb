@@ -98,6 +98,23 @@ const actions = {
      */
     searchBusiness ({ commit, state, dispatch, rootGetters }, {params, config}) {
         return $http.post(`biz/search/${rootGetters.supplierAccount}`, params, config)
+    },
+
+    searchBusinessById ({rootGetters}, {bizId, config}) {
+        return $http.post(`biz/search/${rootGetters.supplierAccount}`, {
+            condition: {
+                'bk_biz_id': {
+                    '$eq': bizId
+                }
+            },
+            fields: [],
+            page: {
+                start: 0,
+                limit: 1
+            }
+        }, config).then(data => {
+            return data.info[0] || {}
+        })
     }
 }
 

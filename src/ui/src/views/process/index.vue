@@ -96,7 +96,10 @@
                 },
                 attribute: {
                     type: null,
-                    inst: {}
+                    inst: {
+                        details: {},
+                        edit: {}
+                    }
                 },
                 tab: {
                     active: 'attribute'
@@ -140,7 +143,14 @@
         methods: {
             ...mapActions('objectModelFieldGroup', ['searchGroup']),
             ...mapActions('objectModelProperty', ['searchObjectAttribute']),
-            ...mapActions('procConfig', ['searchProcess', 'deleteProcess', 'createProcess', 'updateProcess', 'batchUpdateProcess']),
+            ...mapActions('procConfig', [
+                'searchProcess',
+                'deleteProcess',
+                'createProcess',
+                'updateProcess',
+                'batchUpdateProcess',
+                'searchProcessById'
+            ]),
             handleMultipleEdit () {
                 this.attribute.type = 'multiple'
                 this.slider.title = this.$t('Inst[\'批量更新\']')
@@ -255,11 +265,17 @@
             handleSave (values, changedValues, originalValues, type) {
                 if (type === 'update') {
                     this.updateProcess({
-                        bizId: this.bizId,
+                        bizId: this.filter.bizId,
                         processId: originalValues['bk_process_id'],
                         params: values
                     }).then(() => {
                         this.getTableData()
+                        this.searchProcessById({
+                            bizId: this.filter.bizId,
+                            processId: originalValues['bk_process_id']
+                        }).then(process => {
+                            this.attribute.inst.details = this.$tools.flatternItem(this.properties, process)
+                        })
                         this.handleCancel()
                         this.$success(this.$t("Common['修改成功']"))
                     })
