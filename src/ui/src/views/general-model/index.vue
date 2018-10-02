@@ -256,7 +256,8 @@
                 'updateInst',
                 'batchUpdateInst',
                 'deleteInst',
-                'batchDeleteInst'
+                'batchDeleteInst',
+                'searchInstById'
             ]),
             async reload () {
                 try {
@@ -494,6 +495,12 @@
                         params: values
                     }).then(() => {
                         this.getTableData()
+                        this.searchInstById({
+                            objId: this.objId,
+                            instId: originalValues['bk_inst_id']
+                        }).then(item => {
+                            this.attribute.inst.details = this.$tools.flatternItem(this.properties, item)
+                        })
                         this.handleCancel()
                         this.$success(this.$t("Common['修改成功']"))
                     })
