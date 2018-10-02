@@ -45,6 +45,18 @@ const actions = {
         return $http.post(`proc/search/${rootGetters.supplierAccount}/${bizId}`, params, config)
     },
 
+    searchProcessById ({ rootGetters }, { bizId, processId, config }) {
+        return $http.post(`proc/search/${rootGetters.supplierAccount}/${bizId}`, {
+            condition: {
+                'bk_biz_id': bizId,
+                'bk_process_id': {
+                    '$eq': processId
+                }
+            }
+        }, config).then(data => {
+            return data.info[0] || {}
+        })
+    },
     /**
      * 获取进程详情
      * @param {Function} commit store commit mutation hander

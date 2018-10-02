@@ -141,7 +141,10 @@
                 },
                 attribute: {
                     type: null,
-                    inst: {}
+                    inst: {
+                        edit: {},
+                        details: {}
+                    }
                 },
                 columnsConfig: {
                     show: false,
@@ -196,7 +199,13 @@
         methods: {
             ...mapActions('objectModelFieldGroup', ['searchGroup']),
             ...mapActions('objectModelProperty', ['searchObjectAttribute']),
-            ...mapActions('objectBiz', ['searchBusiness', 'archiveBusiness', 'updateBusiness', 'createBusiness']),
+            ...mapActions('objectBiz', [
+                'searchBusiness',
+                'archiveBusiness',
+                'updateBusiness',
+                'createBusiness',
+                'searchBusinessById'
+            ]),
             getPropertyGroups () {
                 return this.searchGroup({
                     objId: 'biz',
@@ -328,6 +337,9 @@
                         params: values
                     }).then(() => {
                         this.getTableData()
+                        this.searchBusinessById({bizId: originalValues['bk_biz_id']}).then(item => {
+                            this.attribute.inst.details = this.$tools.flatternItem(this.properties, item)
+                        })
                         this.handleCancel()
                         this.$success(this.$t("Common['修改成功']"))
                         this.$http.cancel('post_searchBusiness_$ne_disabled')
