@@ -14,6 +14,8 @@ package metadata
 
 import (
 	"time"
+
+	"configcenter/src/common/types"
 )
 
 type NetcollectDevice struct {
@@ -24,8 +26,8 @@ type NetcollectDevice struct {
 	ObjectName  string     `json:"bk_obj_name" bson:"-"`
 	BkVendor    string     `json:"bk_vendor" bson:"bk_vendor"`
 	OwnerID     string     `json:"-" bson:"bk_supplier_account"`
-	CreateTime  *time.Time `field:"create_time" json:"create_time,omitempty" bson:"create_time"`
-	LastTime    *time.Time `field:"last_time" json:"last_time,omitempty" bson:"last_time"`
+	CreateTime  *time.Time `json:"create_time,omitempty" bson:"create_time"`
+	LastTime    *time.Time `json:"last_time,omitempty" bson:"last_time"`
 }
 
 type NetcollectProperty struct {
@@ -40,8 +42,8 @@ type NetcollectProperty struct {
 	Period               string     `json:"period" bson:"period"`
 	Action               string     `json:"action" bson:"action"`
 	OwnerID              string     `json:"-" bson:"bk_supplier_account"`
-	CreateTime           *time.Time `field:"create_time,omitempty" json:"create_time,omitempty" bson:"create_time"`
-	LastTime             *time.Time `field:"last_time,omitempty" json:"last_time,omitempty" bson:"last_time"`
+	CreateTime           *time.Time `json:"create_time,omitempty" bson:"create_time"`
+	LastTime             *time.Time `json:"last_time,omitempty" bson:"last_time"`
 	Unit                 string     `json:"unit,omitempty" bson:"-"`
 	DeviceModel          string     `json:"device_model" bson:"device_model"`
 }
@@ -93,4 +95,72 @@ type NetcollectConfig struct {
 	ScanRange []string `json:"scan_range"`
 	Period    string   `json:"period"`
 	Community string   `json:"community"`
+}
+
+type ParamSearchNetcollectReport struct {
+	Action    string   `json:"action"`
+	ObjectID  string   `json:"bk_object_id"`
+	CloudName string   `json:"bk_cloud_name"`
+	CloudID   int64    `json:"bk_cloud_id"`
+	InnerIP   string   `json:"bk_host_innerip"`
+	Page      BasePage `json:"page"`
+}
+
+type NetcollectReportSummary struct {
+	CloudID    int64          `json:"bk_cloud_id"`
+	CloudName  string         `json:"bk_cloud_name"`
+	LastTime   *types.Time    `json:"last_time"`
+	Statistics map[string]int `json:"statistics"`
+}
+
+type RspNetcollectReport struct {
+	Count int64               `json:"count"`
+	Info  []*NetcollectReport `json:"info"`
+}
+
+type NetcollectReport struct {
+	CloudID       int64  `json:"bk_cloud_id"`
+	CloudName     string `json:"bk_cloud_name"`
+	ObjectID      string `json:"bk_obj_id"`
+	ObjectName    string `json:"bk_obj_name"`
+	InnerIP       string `json:"bk_host_innerip"`
+	Configuration string `json:"configuration"`
+
+	InstID   int64                  `json:"bk_inst_id"`
+	InstName int64                  `json:"bk_inst_name"`
+	LastTime *types.Time            `json:"last_time"`
+	Detail   NetcollectReportDetail `json:"detail"`
+}
+
+type NetcollectReportDetail struct {
+	Attributes   []NetcollectReportAttribute   `json:"attributes" bson:"attributes"`
+	Associations []NetcollectReportAssociation `json:"associations" bson:"associations"`
+}
+
+type NetcollectReportAttribute struct {
+	CloudID      int64
+	InstID       int64       `json:"bk_inst_id"`
+	InstName     string      `json:"bk_inst_name"`
+	PropertyID   string      `json:"bk_property_id" bson:"bk_property_id"`
+	PropertyName string      `json:"bk_property_name" bson:"bk_property_name"`
+	ObjectID     string      `json:"bk_obj_id" bson:"bk_obj_id"`
+	ObjectName   string      `json:"bk_obj_name" bson:"bk_obj_name"`
+	IsRequired   bool        `json:"isrequired" bson:"isrequired"`
+	NewValue     interface{} `json:"new_value" bson:"new_value"`
+	PreValue     interface{} `json:"pre_value" bson:"pre_value"`
+	LastTime     *types.Time `json:"last_time"`
+}
+
+type NetcollectReportAssociation struct {
+	CloudID    int64
+	InstID     int64  `json:"bk_inst_id"`
+	InstName   string `json:"bk_inst_name"`
+	ObjectID   string `json:"bk_obj_id"`
+	ObjectName string `json:"bk_obj_name"`
+
+	AsstInstID     int64       `json:"bk_asst_inst_id"`
+	AsstInstName   int64       `json:"bk_asst_inst_name"`
+	AsstObjectID   string      `json:"bk_asst_obj_id"`
+	AsstObjectName string      `json:"bk_asst_obj_name"`
+	LastTime       *types.Time `json:"last_time"`
 }
