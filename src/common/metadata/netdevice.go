@@ -146,7 +146,7 @@ type NetcollectReportAttribute struct {
 	ObjectID     string      `json:"bk_obj_id" bson:"bk_obj_id"`
 	ObjectName   string      `json:"bk_obj_name" bson:"bk_obj_name"`
 	IsRequired   bool        `json:"isrequired" bson:"isrequired"`
-	NewValue     interface{} `json:"new_value" bson:"new_value"`
+	CurValue     interface{} `json:"new_value" bson:"cur_value"`
 	PreValue     interface{} `json:"pre_value" bson:"pre_value"`
 	LastTime     *types.Time `json:"last_time"`
 }
@@ -158,9 +158,16 @@ type NetcollectReportAssociation struct {
 	ObjectID   string `json:"bk_obj_id"`
 	ObjectName string `json:"bk_obj_name"`
 
-	AsstInstID     int64       `json:"bk_asst_inst_id"`
-	AsstInstName   int64       `json:"bk_asst_inst_name"`
-	AsstObjectID   string      `json:"bk_asst_obj_id"`
-	AsstObjectName string      `json:"bk_asst_obj_name"`
-	LastTime       *types.Time `json:"last_time"`
+	AsstInstID     int64  `json:"bk_asst_inst_id"`
+	AsstInstName   int64  `json:"bk_asst_inst_name"`
+	AsstObjectID   string `json:"bk_asst_obj_id"`
+	AsstCond       []NetcollectReportAsstCond
+	AsstObjectName string `json:"bk_asst_obj_name"`
+
+	LastTime *types.Time `json:"last_time"`
+}
+
+type NetcollectReportAsstCond struct {
+	FieldName string
+	Value     interface{}
 }
