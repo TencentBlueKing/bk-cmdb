@@ -20,6 +20,7 @@ const (
 	RedisDisKeyPrefix               = common.BKCacheKeyV3Prefix + "discover:"
 	MasterProcLockKey               = common.BKCacheKeyV3Prefix + "snapshot:masterlock"
 	MasterDisLockKey                = common.BKCacheKeyV3Prefix + "discover:masterlock"
+	MasterNetLockKey                = common.BKCacheKeyV3Prefix + "netcollect:masterlock"
 	RedisSnapKeyChannelStatus       = common.BKCacheKeyV3Prefix + "snapshot:channelstatus"
 	RedisNetcollectKeyChannelStatus = common.BKCacheKeyV3Prefix + "netcollect:channelstatus"
 )

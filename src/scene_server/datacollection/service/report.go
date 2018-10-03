@@ -80,7 +80,7 @@ func (s *Service) ConfirmReport(req *restful.Request, resp *restful.Response) {
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	param := metadata.ParamSearchNetcollectReport{}
-	if err := json.NewDecoder(req.Request.Body).Decode(&param); err != nil {
+	if err = json.NewDecoder(req.Request.Body).Decode(&param); err != nil {
 		blog.Errorf("[SearchReportSummary] decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return

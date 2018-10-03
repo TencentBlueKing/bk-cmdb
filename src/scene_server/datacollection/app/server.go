@@ -14,6 +14,7 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"sync"
@@ -127,6 +128,10 @@ func (h *DCServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		if h.Config == nil {
 			h.Config = new(options.Config)
 		}
+
+		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ") //ignore err, cause ConfigMap is map[string]string
+		blog.V(3).Infof("config updated: \n%s", out)
+
 		dbprefix := "mongodb"
 		h.Config.MongoDB.Address = current.ConfigMap[dbprefix+".host"]
 		h.Config.MongoDB.User = current.ConfigMap[dbprefix+".usr"]
@@ -156,6 +161,13 @@ func (h *DCServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		h.Config.DiscoverRedis.Database = current.ConfigMap[discoverPrefix+".database"]
 		h.Config.DiscoverRedis.Port = current.ConfigMap[discoverPrefix+".port"]
 		h.Config.DiscoverRedis.MasterName = current.ConfigMap[discoverPrefix+".mastername"]
+
+		netcollectPrefix := "netcollect-redis"
+		h.Config.NetcollectRedis.Address = current.ConfigMap[netcollectPrefix+".host"]
+		h.Config.NetcollectRedis.Password = current.ConfigMap[netcollectPrefix+".pwd"]
+		h.Config.NetcollectRedis.Database = current.ConfigMap[netcollectPrefix+".database"]
+		h.Config.NetcollectRedis.Port = current.ConfigMap[netcollectPrefix+".port"]
+		h.Config.NetcollectRedis.MasterName = current.ConfigMap[netcollectPrefix+".mastername"]
 	}
 }
 
