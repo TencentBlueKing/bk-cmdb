@@ -140,6 +140,6 @@ func (lgc *Logics) searchDetail(cloudID int64, ips []string) ([]metadata.Netcoll
 	return attributes, associations, nil
 }
 
-func (lgc *Logics) ComfirmReport(metadata.RspNetcollectReport) {
+func (lgc *Logics) ComfirmReport(report metadata.RspNetcollectReport) {
 
 }
