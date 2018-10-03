@@ -779,3 +779,9 @@ const (
 	HostFieldDockerClientVersion = "docker_client_version"
 	HostFieldDockerServerVersion = "docker_server_version"
 )
+
+// netcollect
+const (
+	BKNetDevice   = "net_device"
+	BKNetProperty = "net_property"
+)

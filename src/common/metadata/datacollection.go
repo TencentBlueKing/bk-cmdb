@@ -12,8 +12,6 @@
 
 package metadata
 
-import "configcenter/src/common/mapstr"
-
 type AddDeviceResult struct {
 	Result   bool   `json:"result"`
 	ErrMsg   string `json:"error_msg"`
@@ -21,8 +19,8 @@ type AddDeviceResult struct {
 }
 
 type SearchNetDevice struct {
-	Count int             `json:"count"`
-	Info  []mapstr.MapStr `json:"info"`
+	Count int                `json:"count"`
+	Info  []NetcollectDevice `json:"info"`
 }
 
 type SearchNetDeviceResult struct {
