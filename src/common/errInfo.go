@@ -424,14 +424,18 @@ const (
 	CCErrHostAgentStatusFail           = 1110050
 
 	//web  1111XXX
-	CCErrWebFileNoFound      = 1111001
-	CCErrWebFileSaveFail     = 1111002
-	CCErrWebOpenFileFail     = 1111003
-	CCErrWebFileContentEmpty = 1111004
-	CCErrWebFileContentFail  = 1111005
-	CCErrWebGetHostFail      = 1111006
-	CCErrWebCreateEXCELFail  = 1111007
-	CCErrWebGetObjectFail    = 1111008
+	CCErrWebFileNoFound                 = 1111001
+	CCErrWebFileSaveFail                = 1111002
+	CCErrWebOpenFileFail                = 1111003
+	CCErrWebFileContentEmpty            = 1111004
+	CCErrWebFileContentFail             = 1111005
+	CCErrWebGetHostFail                 = 1111006
+	CCErrWebCreateEXCELFail             = 1111007
+	CCErrWebGetObjectFail               = 1111008
+	CCErrWebGetAddNetDeviceResultFail   = 1111009
+	CCErrWebGetAddNetPropertyResultFail = 1111010
+	CCErrWebGetNetDeviceFail            = 1111011
+	CCErrWebGetNetPropertyFail          = 1111012
 
 	// datacollection 1112xxx
 	CCErrCollectNetDeviceCreateFail              = 1112000
