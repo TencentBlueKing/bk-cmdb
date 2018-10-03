@@ -121,13 +121,13 @@ func (h *Netcollect) Run() {
 	defer func() {
 		syserr := recover()
 		if syserr != nil {
-			blog.Errorf("emergency error happened %s, we will try again 10s later, stack: \n%s", syserr, debug.Stack())
+			blog.Errorf("[NetDevice] emergency error happened %s, we will try again 10s later, stack: \n%s", syserr, debug.Stack())
 		}
 		close(h.doneCh)
 		h.isMaster = false
 		return
 	}()
-	blog.Infof("datacollection start with maxconcurrent: %d", h.maxconcurrent)
+	blog.Infof("[NetDevice] datacollection start with maxconcurrent: %d", h.maxconcurrent)
 	ticker := time.NewTicker(getMasterProcIntervalTime)
 	var err error
 	var msg string
@@ -138,7 +138,7 @@ func (h *Netcollect) Run() {
 	if h.saveRunning() {
 		go h.subChan(h.snapCli, h.hostChanName)
 	} else {
-		blog.Infof("run: there is other master process exists, recheck after %v ", getMasterProcIntervalTime)
+		blog.Infof("[NetDevice] run: there is other master process exists, recheck after %v ", getMasterProcIntervalTime)
 	}
 	for {
 		select {
@@ -174,7 +174,7 @@ func (h *Netcollect) Run() {
 			waitCnt = 0
 			for {
 				if waitCnt > h.maxconcurrent*2 {
-					blog.Warnf("reset handlers")
+					blog.Warnf("[NetDevice] reset handlers")
 					close(h.resetHandle)
 					waitCnt = 0
 					h.resetHandle = make(chan struct{})
@@ -188,7 +188,7 @@ func (h *Netcollect) Run() {
 				time.Sleep(time.Millisecond * 100)
 			}
 		case err = <-h.interrupt:
-			blog.Warn("interrupted", err.Error())
+			blog.Warn("[NetDevice] interrupted", err.Error())
 			h.concede()
 		}
 
@@ -197,7 +197,7 @@ func (h *Netcollect) Run() {
 
 func (h *Netcollect) handleMsg(msgs []string, resetHandle chan struct{}) error {
 	defer atomic.AddInt64(&routeCnt, -1)
-	blog.Infof("handle %d num mesg, routines %d", len(msgs), atomic.LoadInt64(&routeCnt))
+	blog.Infof("[NetDevice] handle %d num mesg, routines %d", len(msgs), atomic.LoadInt64(&routeCnt))
 	for index, raw := range msgs {
 		if raw == "" {
 			continue
@@ -205,17 +205,17 @@ func (h *Netcollect) handleMsg(msgs []string, resetHandle chan struct{}) error {
 		handlelock.Lock()
 		handleCnt++
 		if handleCnt%10000 == 0 {
-			blog.Infof("handle rate: %d/sec", int(float64(handleCnt)/time.Now().Sub(handlets).Seconds()))
+			blog.Infof("[NetDevice] handle rate: %d/sec", int(float64(handleCnt)/time.Now().Sub(handlets).Seconds()))
 			handleCnt = 0
 			handlets = time.Now()
 		}
 		handlelock.Unlock()
 		select {
 		case <-resetHandle:
-			blog.Warnf("reset handler, handled %d, set maxSize to %d ", index, h.maxSize)
+			blog.Warnf("[NetDevice] reset handler, handled %d, set maxSize to %d ", index, h.maxSize)
 			return nil
 		case <-h.doneCh:
-			blog.Warnf("close handler, handled %d")
+			blog.Warnf("[NetDevice] close handler, handled %d")
 			return nil
 		default:
 			blog.V(4).Infof("[NetDevice] receive message %s", raw)
@@ -319,12 +319,12 @@ func (h *Netcollect) findInst(objectID string, query *metadata.QueryInput) ([]ma
 }
 
 func (h *Netcollect) concede() {
-	blog.Info("concede")
+	blog.Info("[NetDevice] concede")
 	h.isMaster = false
 	h.subscribing = false
-	val := h.redisCli.Get(MasterProcLockKey).Val()
+	val := h.redisCli.Get(MasterNetLockKey).Val()
 	if val != h.id {
-		h.redisCli.Del(MasterProcLockKey)
+		h.redisCli.Del(MasterNetLockKey)
 	}
 }
 
@@ -332,13 +332,13 @@ func (h *Netcollect) saveRunning() (ok bool) {
 	var err error
 	if h.isMaster {
 		var val string
-		val, err = h.redisCli.Get(MasterProcLockKey).Result()
+		val, err = h.redisCli.Get(MasterNetLockKey).Result()
 		if err != nil {
 			blog.Errorf("[NetDevice] master: saveRunning err %v", err)
 			h.isMaster = false
 		} else if val == h.id {
 			blog.Infof("[NetDevice] master check : i am still master")
-			h.redisCli.Set(MasterProcLockKey, h.id, masterProcLockLiveTime)
+			h.redisCli.Set(MasterNetLockKey, h.id, masterProcLockLiveTime)
 			ok = true
 			h.isMaster = true
 		} else {
@@ -347,7 +347,7 @@ func (h *Netcollect) saveRunning() (ok bool) {
 			ok = false
 		}
 	} else {
-		ok, err = h.redisCli.SetNX(MasterProcLockKey, h.id, masterProcLockLiveTime).Result()
+		ok, err = h.redisCli.SetNX(MasterNetLockKey, h.id, masterProcLockLiveTime).Result()
 		if err != nil {
 			blog.Errorf("[NetDevice] slave: saveRunning err %v", err)
 			h.isMaster = false
@@ -437,7 +437,7 @@ func (h *Netcollect) subChan(snapcli *redis.Client, chanName []string) {
 func (h *Netcollect) clearMsgChan() {
 	ts := h.ts
 	msgCnt := len(h.msgChan) - h.maxSize
-	blog.Warnf("start clear %d", msgCnt)
+	blog.Warnf("[NetDevice] start clear %d", msgCnt)
 	var cnt int
 	for msgCnt > cnt {
 		h.Lock()
@@ -455,7 +455,7 @@ func (h *Netcollect) clearMsgChan() {
 	if ts == h.ts {
 		close(h.resetHandle)
 	}
-	blog.Warnf("cleared %d", cnt)
+	blog.Warnf("[NetDevice] cleared %d", cnt)
 }
 
 func (h *Netcollect) healthCheck(closeChan chan struct{}) {
@@ -474,7 +474,7 @@ func (h *Netcollect) healthCheck(closeChan chan struct{}) {
 				channelstatus = common.CCErrHostGetSnapshotChannelClose
 				blog.Errorf("[NetDevice] snap redis server connection error: %s", err.Error())
 			} else if time.Now().Sub(h.lastMesgTs) > time.Minute {
-				blog.Errorf("[NetDevice] snapchannel was empty in last 1 min ")
+				blog.Errorf("[NetDevice] %v was empty in last 1 min ", h.hostChanName)
 				channelstatus = common.CCErrHostGetSnapshotChannelEmpty
 			} else {
 				channelstatus = common.CCSuccess
