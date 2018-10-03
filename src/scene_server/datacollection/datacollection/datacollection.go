@@ -15,8 +15,11 @@ package datacollection
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/signal"
 	"reflect"
 	"strconv"
+	"syscall"
 	"time"
 
 	"configcenter/src/common"
@@ -103,6 +106,8 @@ func (d *DataCollection) Run() error {
 	netcollect := NewNetcollect(context.Background(), netdevChanName, MaxNetcollectSize, rediscli, netcli, db, d.Engine)
 	netcollect.Start()
 
+	go d.mock(netdevChanName[0])
+
 	blog.Infof("datacollection started")
 	return nil
 }
@@ -142,20 +147,28 @@ func (d *DataCollection) getDefaultAppID() (defaultAppID string, err error) {
 	return
 }
 
-func (d *DataCollection) mock(config map[string]string, channel string) {
-	blog.Infof("start mocking ")
-
+func (d *DataCollection) mock(channel string) {
 	mockCli, err := redisclient.NewFromConfig(d.Config.SnapRedis)
 	if nil != err {
 		blog.Error("start mock error")
 		return
 	}
 
+	blog.Infof("start mocking ")
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, syscall.SIGUSR1)
+
+	for range ch {
+		err := mockCli.Publish(channel, MOCKMSG).Err()
+		if err != nil {
+			blog.Error("publish mock failed %v", err)
+		}
+	}
+
 	delta := time.Second * 5
 	var ts = time.Now()
 	var cnt int64
 	for {
-		err := mockCli.Publish(channel, MOCKMSG).Err()
 		if err != nil {
 
 		}
