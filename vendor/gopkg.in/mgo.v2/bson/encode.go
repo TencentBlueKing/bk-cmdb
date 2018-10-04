@@ -260,10 +260,6 @@ func (e *encoder) addElem(name string, v reflect.Value, minSize bool) {
 	}
 
 	if getter, ok := v.Interface().(Getter); ok {
-		if isNil(getter) {
-			e.addElem(name, reflect.ValueOf(nil), minSize)
-			return
-		}
 		getv, err := getter.GetBSON()
 		if err != nil {
 			panic(err)

@@ -140,7 +140,6 @@ type NetcollectReportAttribute struct {
 	IsRequired   bool        `json:"isrequired" bson:"-"`
 	CurValue     interface{} `json:"value" bson:"value"`
 	PreValue     interface{} `json:"pre_value" bson:"-"`
-	LastTime     *types.Time `json:"last_time"`
 }
 
 type NetcollectReportAssociation struct {
@@ -155,8 +154,6 @@ type NetcollectReportAssociation struct {
 	AsstObjectID   string                     `json:"bk_asst_obj_id" bson:"bk_asst_obj_id`
 	AsstObjectName string                     `json:"bk_asst_obj_name" bson:"bk_asst_obj_name`
 	AsstCond       []NetcollectReportAsstCond `json:"asst_cond" bson:"asst_cond`
-
-	LastTime *types.Time `json:"last_time" bson:"last_time"`
 }
 
 type NetcollectReportAsstCond struct {
@@ -164,3 +161,9 @@ type NetcollectReportAsstCond struct {
 	PropertyName string      `json:"bk_property_name" bson:"bk_property_name`
 	Value        interface{} `json:"value" bson:"value`
 }
+
+const (
+	ReporctActionCreate = "create"
+	ReporctActionUpdate = "update"
+	ReporctActionDelete = "delete"
+)

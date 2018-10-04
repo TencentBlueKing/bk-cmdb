@@ -70,7 +70,7 @@ func (t Time) GetBSON() (interface{}, error) {
 }
 
 func (t *Time) SetBSON(raw bson.Raw) error {
-	return raw.Unmarshal(t.Time)
+	return raw.Unmarshal(&t.Time)
 }
 
 func Now() Time {
