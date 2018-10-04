@@ -15,6 +15,8 @@ package service
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
+	"strings"
 
 	restful "github.com/emicklei/go-restful"
 
@@ -30,7 +32,7 @@ func (s *Service) CreateDevice(req *restful.Request, resp *restful.Response) {
 
 	deviceList := make([]meta.NetcollectDevice, 0)
 	if err := json.NewDecoder(req.Request.Body).Decode(&deviceList); err != nil {
-		blog.Errorf("add device failed with decode body err: %v", err)
+		blog.Errorf("[NetDevice] add device failed with decode body err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
@@ -56,14 +58,14 @@ func (s *Service) SearchDevice(req *restful.Request, resp *restful.Response) {
 
 	body := new(meta.NetCollSearchParams)
 	if err := json.NewDecoder(req.Request.Body).Decode(body); nil != err {
-		blog.Errorf("search net device failed with decode body err: %v", err)
+		blog.Errorf("[NetDevice] search net device failed with decode body err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
 	devices, err := s.Logics.SearchDevice(pheader, body)
 	if nil != err {
-		blog.Errorf("search net device failed, err: %v", err)
+		blog.Errorf("[NetDevice] search net device failed, err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCollectNetDeviceGetFail)})
 		return
 	}
@@ -78,28 +80,39 @@ func (s *Service) DeleteDevice(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
-	ID := req.PathParameter("bk_device_id")
-	deviceID, err := s.Logics.ConvertStringToID(ID)
-	if nil != err {
-		blog.Errorf("delete net device failed, with bk_device_id [%s]", ID)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
+	deleteNetDeviceBatchOpt := new(meta.DeleteNetDeviceBatchOpt)
+	if err := json.NewDecoder(req.Request.Body).Decode(deleteNetDeviceBatchOpt); nil != err {
+		blog.Errorf("[NetDevice] delete net device batch, but decode body failed, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
-	err = s.Logics.DeleteDevice(pheader, deviceID)
-	if nil == err {
-		resp.WriteEntity(meta.NewSuccessResp(nil))
-		return
+	deviceIDStrArr := strings.Split(deleteNetDeviceBatchOpt.DeviceIDs, ",")
+	var deviceIDArr []int64
+
+	for _, deviceIDStr := range deviceIDStrArr {
+		deviceID, err := strconv.ParseInt(deviceIDStr, 10, 64)
+		if nil != err {
+			blog.Errorf("[NetDevice] delete net device batch, but got invalid device id, err: %v", err)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, common.BKDeviceIDField)})
+			return
+		}
+		deviceIDArr = append(deviceIDArr, deviceID)
 	}
 
-	blog.Errorf("delete net device failed, with bk_device_id [%s], err: %v", ID, err)
+	for _, deviceID := range deviceIDArr {
+		if err := s.Logics.DeleteDevice(pheader, deviceID); nil != err {
+			blog.Errorf("[NetDevice] delete net device failed, with bk_device_id [%s], err: %v", deviceID, err)
 
-	if err.Error() == defErr.Error(common.CCErrCollectNetDeviceHasPropertyDeleteFail).Error() ||
-		err.Error() == defErr.Error(common.CCErrCollectDeviceNotExist).Error() {
+			if defErr.Error(common.CCErrCollectNetDeviceHasPropertyDeleteFail).Error() == err.Error() {
+				resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
+				return
+			}
 
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
-		return
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCollectNetDeviceDeleteFail)})
+			return
+		}
 	}
 
-	resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
