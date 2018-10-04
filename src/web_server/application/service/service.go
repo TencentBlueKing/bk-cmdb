@@ -156,29 +156,32 @@ func (ccWeb *CCWebServer) Start() error {
 		}
 	}
 
-	site := config["site.domain_url"] + "/"
-	version := config["api.version"]
-	loginURL := config["site.bk_login_url"]
-	appCode := config["site.app_code"]
-	check_url := config["site.check_url"]
-	sessionName := config["session.name"]
-	skipLogin := config["session.skip"]
-	defaultlanguage := config["session.defaultlanguage"]
+	site, _ := config["site.domain_url"]
+	site = site + "/"
+	version, _ := config["api.version"]
+	loginURL, _ := config["site.bk_login_url"]
+	appCode, _ := config["site.app_code"]
+	checkURL, _ := config["site.check_url"]
+	sessionName, _ := config["session.name"]
+	skipLogin, _ := config["session.skip"]
+	defaultlanguage, _ := config["session.defaultlanguage"]
 	if "" == defaultlanguage {
 		defaultlanguage = "zh-cn"
 	}
-	apiSite, _ := a.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
-	static := config["site.html_root"]
-	webCommon.ResourcePath = config["site.resources_path"]
-	redisIp := config["session.host"]
-	redisPort := config["session.port"]
-	redisSecret := config["session.secret"]
-	multipleOwner := config["session.multiple_owner"]
-	agentAppUrl := config["app.agent_app_url"]
+	//apiSite, _ := a.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
+	static, _ := config["site.html_root"]
+	webCommon.ResourcePath, _ = config["site.resources_path"]
+	redisIP, _ := config["session.host"]
+	redisPort, _ := config["session.port"]
+	redisSecret, _ := config["session.secret"]
+	agentAppURL, _ := config["app.agent_app_url"]
 	redisSecret = strings.TrimSpace(redisSecret)
 	curl := fmt.Sprintf(loginURL, appCode, site)
 
-	redisCli, err := redisclient.NewRedis(redisIp, redisPort, "", redisSecret, "0")
+	if "" == checkURL {
+		return fmt.Errorf("config site.check_url item not found")
+	}
+	redisCli, err := redisclient.NewRedis(redisIP, redisPort, "", redisSecret, "0")
 	if nil != err {
 		blog.Errorf("connect redis error %s", err.Error())
 		return err
@@ -190,7 +193,7 @@ func (ccWeb *CCWebServer) Start() error {
 	}
 	a.CacheCli = redisCli
 	go func() {
-		store, rediserr := sessions.NewRedisStore(10, "tcp", redisIp+":"+redisPort, redisSecret, []byte("secret"))
+		store, rediserr := sessions.NewRedisStore(10, "tcp", redisIP+":"+redisPort, redisSecret, []byte("secret"))
 		if rediserr != nil {
 			panic(rediserr)
 		}
@@ -199,7 +202,7 @@ func (ccWeb *CCWebServer) Start() error {
 
 		ccWeb.RegisterActions(a.Wactions)
 		middleware.APIAddr = rdapi.GetRdAddrSrvHandle(types.CC_MODULE_APISERVER, a.AddrSrv)
-		ccWeb.httpServ.Use(middleware.ValidLogin(loginURL, appCode, site, check_url, apiSite, skipLogin, multipleOwner, defaultlanguage))
+		ccWeb.httpServ.Use(middleware.ValidLogin(skipLogin, defaultlanguage))
 		ccWeb.httpServ.Static("/static", static)
 		blog.Info(static)
 		ccWeb.httpServ.LoadHTMLFiles(static + "/index.html") //("static/index.html")
@@ -216,10 +219,11 @@ func (ccWeb *CCWebServer) Start() error {
 			})
 		}
 		ccWeb.httpServ.GET("/", func(c *gin.Context) {
+
 			session := sessions.Default(c)
-			role := session.Get("role")
-			userName, _ := session.Get("userName").(string)
-			language, _ := session.Get("language").(string)
+			role := session.Get(common.WEBSessionRoleKey)
+			userName, _ := session.Get(common.WEBSessionUinKey).(string)
+			language, _ := session.Get(common.WEBSessionLanguageKey).(string)
 			apiSite, err := a.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
 			if nil != err {
 				blog.Errorf("api server not start %s", err.Error())
@@ -277,7 +281,7 @@ func (ccWeb *CCWebServer) Start() error {
 				"role":        role,
 				"curl":        curl,
 				"userName":    userName,
-				"agentAppUrl": agentAppUrl,
+				"agentAppUrl": agentAppURL,
 			})
 		})
 

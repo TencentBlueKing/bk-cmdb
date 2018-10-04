@@ -547,3 +547,35 @@ func (s *Service) getHostAppByCompanyId(req *restful.Request, resp *restful.Resp
 	blog.Infof("GetHostAppByCompanyId success, data length: %d", len(resDataV2))
 	converter.RespSuccessV2(resDataV2, resp)
 }
+
+func (s *Service) getAppByOwnerAndUin(req *restful.Request, resp *restful.Response) {
+
+	pheader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+
+	err := req.Request.ParseForm()
+	if err != nil {
+		blog.Errorf("getHostListByOwner error:%s, request-id:%s", err.Error(), util.GetHTTPCCRequestID(pheader))
+		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
+		return
+	}
+
+	formData := req.Request.Form
+
+	res, msg := utils.ValidateFormData(formData, []string{"Owner_uin", "Uin"})
+	if !res {
+		blog.Errorf("getHostListByOwner error: %s", msg)
+		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
+		return
+	}
+	ownerID := formData["Owner_uin"][0]
+	uin := formData["Uin"][0]
+	appInfoArr, errCode, err := s.Logics.GetAppListByOwnerIDAndUin(context.Background(), pheader, ownerID, uin)
+	if nil != err {
+		blog.Errorf("getHostListByOwner error:%s, request data:%+v, request-id:%s", err.Error(), formData, util.GetHTTPCCRequestID(pheader))
+		converter.RespFailV2(errCode, err.Error(), resp)
+		return
+	}
+	converter.RespSuccessV2(converter.GeneralV2Data(appInfoArr), resp)
+
+}
