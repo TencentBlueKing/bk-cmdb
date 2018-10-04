@@ -19,6 +19,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 
 	"configcenter/src/common"
+	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/eventclient"
 	"configcenter/src/common/metadata"
@@ -27,6 +28,7 @@ import (
 )
 
 type Logics struct {
+	*backbone.Engine
 	Instance storage.DI
 }
 
