@@ -79,10 +79,49 @@ func (s *Service) ConfirmReport(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
-	param := metadata.ParamSearchNetcollectReport{}
+	param := metadata.ParamNetcollectComfirm{}
 	if err = json.NewDecoder(req.Request.Body).Decode(&param); err != nil {
+		blog.Errorf("[NetDevice][ConfirmReport] decode body failed, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	result := s.Logics.ConfirmReport(pheader, param.Reports)
+	if len(result.Errors) > 0 {
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{
+			Msg:  defErr.Error(common.CCErrCollectNetReportSearchFail),
+			Data: result,
+		})
+		return
+	}
+
+	resp.WriteEntity(metadata.NewSuccessResp(result))
+	return
+
+}
+
+func (s *Service) SearchHistory(req *restful.Request, resp *restful.Response) {
+	var err error
+	pheader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+
+	param := metadata.ParamSearchNetcollectReport{}
+	if err := json.NewDecoder(req.Request.Body).Decode(&param); err != nil {
 		blog.Errorf("[NetDevice][SearchReportSummary] decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
+
+	count, result, err := s.Logics.SearchHistory(pheader, param)
+	if err != nil {
+		blog.Errorf("[NetDevice][SearchReportSummary] SearchReportSummary failed, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCollectNetReportSearchFail)})
+		return
+	}
+
+	resp.WriteEntity(metadata.NewSuccessResp(metadata.RspNetcollectHistory{
+		Count: count,
+		Info:  result,
+	}))
+	return
 }
