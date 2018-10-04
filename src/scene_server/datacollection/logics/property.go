@@ -200,42 +200,42 @@ func (lgc *Logics) DeleteProperty(pheader http.Header, netPropertyID int64) erro
 
 	rowCount, err := lgc.Instance.GetCntByCondition(common.BKTableNameNetcollectProperty, netPropertyCond)
 	if nil != err {
-		blog.Errorf("delete net property with id [%d], but query failed, err: %v, params: %#v", netPropertyID, err, netPropertyCond)
+		blog.Errorf("[NetProperty] delete net property with id [%d], but query failed, err: %v, params: %#v", netPropertyID, err, netPropertyCond)
 		return defErr.Error(common.CCErrCollectNetPropertyDeleteFail)
 	}
 
 	if 0 == rowCount {
-		blog.Errorf("delete net property with id [%d] fail, but net property not exists, params: %#v", netPropertyID, netPropertyCond)
+		blog.Errorf("[NetProperty] delete net property with id [%d] fail, but net property not exists, params: %#v", netPropertyID, netPropertyCond)
 		return defErr.Error(common.CCErrCollectNetDeviceObjPropertyNotExist)
 	}
 
 	if 1 < rowCount {
-		blog.Errorf("delete net property fail, there are [%d] net propertys with same id [%d], params: %#v", rowCount, netPropertyID, netPropertyCond)
+		blog.Errorf("[NetProperty] delete net property fail, there are [%d] net propertys with same id [%d], params: %#v", rowCount, netPropertyID, netPropertyCond)
 		return defErr.Error(common.CCErrCollectNetPropertyDeleteFail)
 	}
 
 	if err = lgc.Instance.DelByCondition(common.BKTableNameNetcollectProperty, netPropertyCond); nil != err {
-		blog.Errorf("delete net property with id [%d] failed, err: %v, params: %#v", netPropertyID, err, netPropertyCond)
+		blog.Errorf("[NetProperty] delete net property with id [%d] failed, err: %v, params: %#v", netPropertyID, err, netPropertyCond)
 		return defErr.Error(common.CCErrCollectNetPropertyDeleteFail)
 	}
 
-	blog.V(4).Infof("delete net property with id [%d] success", netPropertyID)
+	blog.V(4).Infof("[NetProperty] delete net property with id [%d] success", netPropertyID)
 
 	return nil
 }
 
-func (lgc *Logics) addProperty(pheader http.Header, propertyInfo meta.NetcollectProperty, ownerID string) (int64, error) {
+func (lgc *Logics) addProperty(pheader http.Header, netPropertyInfo meta.NetcollectProperty, ownerID string) (int64, error) {
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
-	if "" == propertyInfo.OID { // check oid
+	if "" == netPropertyInfo.OID { // check oid
 		blog.Errorf("[NetProperty] add net collect property fail, oid is empty")
 		return -1, defErr.Errorf(common.CCErrCommParamsLostField, common.BKOIDField)
 	}
 
 	// check period
 	var err error
-	if "" != propertyInfo.Period && common.Infinite != propertyInfo.Period {
-		propertyInfo.Period, err = util.FormatPeriod(propertyInfo.Period)
+	if "" != netPropertyInfo.Period && common.Infinite != netPropertyInfo.Period {
+		netPropertyInfo.Period, err = util.FormatPeriod(netPropertyInfo.Period)
 		if nil != err {
 			blog.Errorf("[NetProperty] add net collect property, format period [%s] fail, error: %v", err)
 			return -1, defErr.Errorf(common.CCErrCollectPeriodFormatFail)
@@ -243,25 +243,25 @@ func (lgc *Logics) addProperty(pheader http.Header, propertyInfo meta.Netcollect
 	}
 
 	// check action
-	if "" != propertyInfo.Action && !lgc.isValidAction(propertyInfo.Action) {
+	if "" != netPropertyInfo.Action && !lgc.isValidAction(netPropertyInfo.Action) {
 		blog.Errorf("[NetProperty] add net collect property, check action fail, action [%s] must be 'get' or 'walk'")
 		return -1, defErr.Errorf(common.CCErrCommParamsInvalid, common.BKActionField)
 	}
 
 	// check device
-	if err = lgc.checkIfNetDeviceExist(pheader, &propertyInfo); nil != err {
+	if err = lgc.checkIfNetDeviceExist(pheader, &netPropertyInfo); nil != err {
 		blog.Errorf("[NetProperty] add net collect property, check device fail, error: %v", err)
 		return -1, err
 	}
 
 	// check property
-	if err = lgc.checkIfNetProperty(pheader, &propertyInfo); nil != err {
+	if err = lgc.checkIfNetProperty(pheader, &netPropertyInfo); nil != err {
 		blog.Errorf("[NetProperty] add net collect property, check property fail, error: %v", err)
 		return -1, err
 	}
 
 	// check if data duplication
-	isExist, err := lgc.checkNetPropertyExist(propertyInfo.DeviceID, propertyInfo.PropertyID, ownerID)
+	isExist, err := lgc.checkNetPropertyExist(netPropertyInfo.DeviceID, netPropertyInfo.PropertyID, ownerID)
 	if nil != err {
 		blog.Errorf("[NetProperty] add net collect property, check data duplication fail, error: %v", err)
 		return -1, defErr.Errorf(common.CCErrCollectNetPropertyCreateFail)
@@ -272,30 +272,80 @@ func (lgc *Logics) addProperty(pheader http.Header, propertyInfo meta.Netcollect
 	}
 
 	now := time.Now()
-	propertyInfo.CreateTime = &now
-	propertyInfo.LastTime = &now
-	propertyInfo.OwnerID = ownerID
+	netPropertyInfo.LastTime = &now
+	netPropertyInfo.OwnerID = ownerID
 
-	// set default value
-	if "" == propertyInfo.Action {
-		propertyInfo.Action = common.SNMPActionGet
-	}
-	if "" == propertyInfo.Period {
-		propertyInfo.Period = common.Infinite
+	if !isExist {
+		netPropertyInfo.CreateTime = &now
+
+		// set default value
+		if "" == netPropertyInfo.Action {
+			netPropertyInfo.Action = common.SNMPActionGet
+		}
+		if "" == netPropertyInfo.Period {
+			netPropertyInfo.Period = common.Infinite
+		}
+
+		netPropertyInfo.NetcollectPropertyID, err = lgc.Instance.GetIncID(common.BKTableNameNetcollectProperty)
+		if nil != err {
+			blog.Errorf("[NetProperty] add net collect property, failed to get id, error: %v", err)
+			return -1, defErr.Errorf(common.CCErrCollectNetPropertyCreateFail)
+		}
+
+		if _, err = lgc.Instance.Insert(common.BKTableNameNetcollectProperty, netPropertyInfo); nil != err {
+			blog.Errorf("[NetProperty] failed to insert net collect property, error: %v", err)
+			return -1, defErr.Errorf(common.CCErrCollectNetPropertyCreateFail)
+		}
+
+		blog.V(4).Infof("[NetProperty] add net property by netPropertyInfo [%#+v]", netPropertyInfo)
+
+		return netPropertyInfo.NetcollectPropertyID, nil
 	}
 
-	propertyInfo.NetcollectPropertyID, err = lgc.Instance.GetIncID(common.BKTableNameNetcollectProperty)
+	netPropertyID, err := lgc.getNetPropertyID(netPropertyInfo.PropertyID, netPropertyInfo.DeviceID, ownerID)
 	if nil != err {
-		blog.Errorf("[NetProperty] add net collect property, failed to get id, error: %v", err)
-		return -1, defErr.Errorf(common.CCErrCollectNetDeviceCreateFail)
+		blog.Errorf("[NetProperty] update net proeprty, failed to get id, error: %v", err)
+		return -1, defErr.Errorf(common.CCErrCollectNetPropertyCreateFail)
 	}
 
-	if _, err = lgc.Instance.Insert(common.BKTableNameNetcollectProperty, propertyInfo); nil != err {
-		blog.Errorf("[NetProperty] failed to insert net collect property, error: %v", err)
-		return -1, defErr.Errorf(common.CCErrCollectNetDeviceCreateFail)
+	if err = lgc.updateNetProperty(netPropertyInfo); nil != err {
+		blog.Errorf("[NetProperty] update net proeprty failed, error: %v", err)
+		return -1, err
 	}
 
-	return propertyInfo.NetcollectPropertyID, nil
+	blog.V(4).Infof("[NetProperty] update net proeprty netPropertyInfo [%#+v]", netPropertyInfo)
+
+	return netPropertyID, nil
+}
+
+func (lgc *Logics) getNetPropertyID(propertyID string, deviceID int64, ownerID string) (int64, error) {
+	queryParams := common.KvMap{
+		common.BKDeviceIDField: deviceID, common.BKPropertyIDField: propertyID, common.BKOwnerIDField: ownerID}
+
+	result := meta.NetcollectProperty{}
+
+	if err := lgc.Instance.GetOneByCondition(common.BKTableNameNetcollectProperty, nil, queryParams, &result); nil != err {
+		blog.Errorf(
+			"[NetProperty] get net property ID by propertyID and deviceID, query device fail, error information is %v, params:%v",
+			err, queryParams)
+		return 0, err
+	}
+
+	return result.NetcollectPropertyID, nil
+}
+
+func (lgc *Logics) updateNetProperty(netPropertyInfo meta.NetcollectProperty) error {
+	queryParams := common.KvMap{
+		common.BKDeviceIDField:   netPropertyInfo.DeviceID,
+		common.BKPropertyIDField: netPropertyInfo.PropertyID,
+		common.BKOwnerIDField:    netPropertyInfo.OwnerID}
+
+	if err := lgc.Instance.UpdateByCondition(common.BKTableNameNetcollectProperty, netPropertyInfo, queryParams); nil != err {
+		blog.Errorf("[NetProperty] update net property fail, error information is %v, params:%v", err, queryParams)
+		return err
+	}
+
+	return nil
 }
 
 // check if bk_property_id is valid and from object of net device
