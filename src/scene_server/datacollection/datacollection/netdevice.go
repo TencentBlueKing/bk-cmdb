@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/rs/xid"
-	"gopkg.in/mgo.v2"
 	redis "gopkg.in/redis.v5"
 
 	"configcenter/src/common"
@@ -196,6 +195,12 @@ func (h *Netcollect) Run() {
 }
 
 func (h *Netcollect) handleMsg(msgs []string, resetHandle chan struct{}) error {
+	defer func() {
+		syserr := recover()
+		if syserr != nil {
+			blog.Errorf("[NetDevice] handleMsg emergency error happened %s [recovered] stack: \n%s", syserr, debug.Stack())
+		}
+	}()
 	defer atomic.AddInt64(&routeCnt, -1)
 	blog.Infof("[NetDevice] handle %d num mesg, routines %d", len(msgs), atomic.LoadInt64(&routeCnt))
 	for index, raw := range msgs {
@@ -218,7 +223,7 @@ func (h *Netcollect) handleMsg(msgs []string, resetHandle chan struct{}) error {
 			blog.Warnf("[NetDevice] close handler, handled %d")
 			return nil
 		default:
-			blog.V(4).Infof("[NetDevice] receive message %s", raw)
+			blog.V(4).Infof("[NetDevice] received message: %s", raw)
 			msg := NetcollectMessage{}
 			err := json.Unmarshal([]byte(raw), &msg)
 			if err != nil {
@@ -226,8 +231,10 @@ func (h *Netcollect) handleMsg(msgs []string, resetHandle chan struct{}) error {
 				continue
 			}
 
-			for _, metric := range msg.Data {
-				h.handleData(metric)
+			for _, report := range msg.Data {
+				if err = h.handleReport(&report); err != nil {
+					blog.Errorf("handleData failed: %v,raw: %s", raw)
+				}
 			}
 		}
 	}
@@ -235,74 +242,41 @@ func (h *Netcollect) handleMsg(msgs []string, resetHandle chan struct{}) error {
 	return nil
 }
 
-func (h *Netcollect) handleData(metric NetcollectMetric) error {
-	cond := condition.CreateCondition()
-	if metric.ObjectID == common.BKInnerObjIDHost {
-		cond.Field(common.BKHostInnerIPField).Eq(metric.IP)
-		cond.Field(common.BKCloudIDField).Eq(metric.CloudID)
-	}
-	insts, err := h.findInst(metric.ObjectID, &metadata.QueryInput{Condition: cond})
-	if err != nil {
+func (h *Netcollect) handleReport(report *metadata.NetcollectReport) (err error) {
+	// TODO compare 若有变化才插入
+	if err = h.upsertReport(report); err != nil {
+		blog.Errorf("[NetDevice] upsert association error: %v", err)
 		return err
-	}
-	for _, attr := range metric.Attributes {
-		attr.InstName = metric.InstName
-		attr.ObjectID = metric.ObjectID
-		if len(insts) > 0 {
-			attr.PreValue, _ = insts[0].Get(attr.PropertyID)
-		}
-		if attr.PreValue != attr.CurValue {
-			if err = h.upsertAttribute(&attr); err != nil {
-				blog.Errorf("[NetDevice] upsert attribute error: %v", err)
-			}
-		}
-	}
-
-	for _, asst := range metric.Associations {
-		asst.InstName = metric.InstName
-		asst.ObjectID = metric.ObjectID
-		if err = h.upsertAssociation(&asst); err != nil {
-			blog.Errorf("[NetDevice] upsert association error: %v", err)
-		}
 	}
 
 	return nil
 }
 
-func (h *Netcollect) upsertAttribute(attr *metadata.NetcollectReportAttribute) error {
-	existCond := condition.CreateCondition()
-	existCond.Field(common.BKObjIDField).Eq(attr.ObjectID)
-	existCond.Field(common.BKPropertyIDField).Eq(attr.PropertyID)
-
-	existOne := mapstr.MapStr{}
-	err := h.db.GetOneByCondition(common.BKTableNameNetcollectAttribute, nil, existCond.ToMapStr(), &existOne)
-	if mgo.ErrNotFound == err {
-		_, err = h.db.Insert(common.BKTableNameNetcollectAttribute, attr)
-		return err
+func buildReport(metric *NetcollectMetric) *metadata.NetcollectReport {
+	report := metadata.NetcollectReport{}
+	report.CloudID = metric.CloudID
+	switch metric.ObjectID {
+	case common.BKInnerObjIDSwitch:
 	}
-	if err != nil {
-		return err
-	}
-
-	return h.db.UpdateByCondition(common.BKTableNameNetcollectAttribute, attr, existCond)
+	return &report
 }
 
-func (h *Netcollect) upsertAssociation(asst *metadata.NetcollectReportAssociation) error {
+func (h *Netcollect) upsertReport(report *metadata.NetcollectReport) error {
 	existCond := condition.CreateCondition()
-	existCond.Field(common.BKObjIDField).Eq(asst.ObjectID)
-	existCond.Field(common.BKInstNameField).Eq(asst.InstName)
+	existCond.Field(common.BKCloudIDField).Eq(report.CloudID)
+	existCond.Field(common.BKObjIDField).Eq(report.ObjectID)
+	existCond.Field(common.BKInstKeyField).Eq(report.InstKey)
 
-	existOne := mapstr.MapStr{}
-	err := h.db.GetOneByCondition(common.BKTableNameNetcollectAssociation, nil, existCond.ToMapStr(), &existOne)
-	if mgo.ErrNotFound == err {
-		_, err = h.db.Insert(common.BKTableNameNetcollectAssociation, asst)
-		return err
-	}
+	count, err := h.db.GetCntByCondition(common.BKTableNameNetcollectReport, existCond.ToMapStr())
 	if err != nil {
 		return err
 	}
+	if count <= 0 {
+		_, err = h.db.Insert(common.BKTableNameNetcollectReport, report)
+		return err
+	}
 
-	return h.db.UpdateByCondition(common.BKTableNameNetcollectAssociation, asst, existCond)
+	return h.db.UpdateByCondition(common.BKTableNameNetcollectReport, report, existCond)
 }
 
 func (h *Netcollect) findInst(objectID string, query *metadata.QueryInput) ([]mapstr.MapStr, error) {
@@ -485,12 +459,12 @@ func (h *Netcollect) healthCheck(closeChan chan struct{}) {
 }
 
 type NetcollectMessage struct {
-	Timestamp time.Time          `json:"timestamp"`
-	Dataid    int                `json:"dataid"`
-	Type      string             `json:"type"`
-	Counter   int                `json:"counter"`
-	Build     CollectorBuild     `json:"build"`
-	Data      []NetcollectMetric `json:"data"`
+	Timestamp time.Time                   `json:"timestamp"`
+	Dataid    int                         `json:"dataid"`
+	Type      string                      `json:"type"`
+	Counter   int                         `json:"counter"`
+	Build     CollectorBuild              `json:"build"`
+	Data      []metadata.NetcollectReport `json:"data"`
 }
 
 type CollectorBuild struct {
@@ -501,10 +475,37 @@ type CollectorBuild struct {
 }
 
 type NetcollectMetric struct {
-	ObjectID     string
-	InstName     string
-	IP           string
-	CloudID      int64
-	Attributes   []metadata.NetcollectReportAttribute
-	Associations []metadata.NetcollectReportAssociation
+	CloudID      int64                                  `json:"bk_cloud_id"`
+	ObjectID     string                                 `json:"bk_obj_id"`
+	Attributes   []metadata.NetcollectReportAttribute   `json:"attributes"`
+	Associations []metadata.NetcollectReportAssociation `json:"associations"`
 }
+
+const netcollectMockMsg = `{
+    "dataid": 1014,
+    "type": "netdevicebeat",
+    "counter": 1,
+    "Build": {
+        "version": "1.0.0",
+        "build_commit": "3fb6cb0b5a55cffae028d3df7bee71f90155a2f5",
+        "buildtime": "2018-10-03 17:09:00",
+        "go_version": "1.11.2"
+    },
+    "data": [
+        {
+            "bk_obj_id": "bk_switch",
+            "bk_inst_key": "huawei 5789#56-79-9a-ii",
+            "bk_host_innerip": "192.168.100.130",
+			"bk_cloud_id": 0,
+            "attributes": [
+                {
+                    "bk_property_id": "bk_inst_name",
+                    "value": "huawei 5789#56-79-9a-ii",
+                    "last_time": "2018-10-03 17:09:00"
+                }
+            ],
+            "associations": []
+        }
+    ]
+}
+`

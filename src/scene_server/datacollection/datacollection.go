@@ -33,9 +33,6 @@ func main() {
 	common.SetIdentification(types.CC_MODULE_DATACOLLECTION)
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	blog.InitLogs()
-	defer blog.CloseLogs()
-
 	var mock bool
 	pflag.CommandLine.BoolVar(&mock, "mock", false, "send mock message")
 
@@ -46,11 +43,14 @@ func main() {
 	if mock {
 		if err := sigmock(); err != nil {
 			fmt.Printf("sigmock failed %v\n", err)
+			os.Exit(1)
 		}
 		fmt.Printf("sigmock success\n")
 		return
 	}
 
+	blog.InitLogs()
+	defer blog.CloseLogs()
 	if err := common.SavePid(); err != nil {
 		blog.Error("fail to save pid. err: %s", err.Error())
 	}
