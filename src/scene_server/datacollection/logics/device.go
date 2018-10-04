@@ -112,7 +112,11 @@ func (lgc *Logics) SearchDevice(pheader http.Header, params *meta.NetCollSearchP
 		return meta.SearchNetDevice{}, defErr.Errorf(common.CCErrCollectNetDeviceGetFail)
 	}
 
-	//TODO 增加 obj_name
+	objIDMapObjName, err := lgc.getObjIDMapObjNameFromNetDevice(pheader, searchResult.Info)
+	if nil != err {
+		return meta.SearchNetDevice{}, defErr.Errorf(common.CCErrCollectNetDeviceGetFail)
+	}
+	lgc.addShowFieldValueIntoNetDevice(searchResult.Info, objIDMapObjName)
 
 	return searchResult, nil
 }
@@ -240,6 +244,54 @@ func (lgc *Logics) findDevice(fields []string, condition, result interface{}, so
 	}
 
 	return nil
+}
+
+// get objID map objName from objID of net device
+func (lgc *Logics) getObjIDMapObjNameFromNetDevice(
+	pheader http.Header, netDevice []meta.NetcollectDevice) (objIDMapObjName map[string]string, err error) {
+
+	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+
+	objIDs := []string{}
+	for index := range netDevice {
+		objIDs = append(objIDs, netDevice[index].ObjectID)
+	}
+
+	objCond := map[string]interface{}{
+		common.BKClassificationIDField: common.BKNetwork,
+	}
+	if 0 != len(objIDs) {
+		objCond[common.BKObjIDField] = map[string]interface{}{
+			common.BKDBIN: objIDs,
+		}
+	}
+
+	objResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjects(context.Background(), pheader, objCond)
+	if nil != err {
+		blog.Errorf("[NetDevice] search net device object, search objectName fail, %v", err)
+		return nil, err
+	}
+	if !objResult.Result {
+		blog.Errorf("[NetDevice] search net device object, errors: %s", objResult.ErrMsg)
+		return nil, defErr.Errorf(objResult.Code)
+	}
+
+	if nil != objResult.Data {
+		for _, data := range objResult.Data {
+			objIDMapObjName[data.ObjectID] = data.ObjectName
+		}
+	}
+
+	return objIDMapObjName, nil
+}
+
+func (lgc *Logics) addShowFieldValueIntoNetDevice(
+	netDevice []meta.NetcollectDevice, objIDMapObjName map[string]string) {
+
+	for index := range netDevice {
+		objName := objIDMapObjName[netDevice[index].ObjectID]
+		netDevice[index].ObjectName = objName
+	}
 }
 
 // check the deviceInfo if is a net object
