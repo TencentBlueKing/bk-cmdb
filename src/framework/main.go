@@ -13,7 +13,18 @@
 package main
 
 import (
+	"time"
+
+	"fmt"
+	"os"
+	"os/signal"
+	"runtime"
+	"syscall"
+
+	"github.com/spf13/pflag"
+
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 	"configcenter/src/framework/api"
 	"configcenter/src/framework/core/config"
@@ -23,18 +34,6 @@ import (
 	"configcenter/src/framework/core/monitor/metric"
 	"configcenter/src/framework/core/option"
 	"configcenter/src/framework/core/output/module/client"
-	"time"
-
-	"configcenter/src/common/blog"
-
-	"fmt"
-	"github.com/spf13/pflag"
-
-	"os"
-	"os/signal"
-	"runtime"
-	"syscall"
-
 	_ "configcenter/src/framework/plugins" // load all plugins
 )
 

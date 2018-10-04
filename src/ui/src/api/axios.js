@@ -71,7 +71,9 @@ const transformResponse = (config, data) => {
     })
     return data
 }
-window.siteUrl = window.location.origin + '/'
+if (window.buildVersion.indexOf('dev') === -1) {
+    window.siteUrl = window.location.origin + '/'
+}
 let axios = Axios.create({
     baseURL: `${window.siteUrl}api/${window.version}/`,
     xsrfCookieName: 'data_csrftoken',
@@ -88,6 +90,18 @@ const updateLoadingStatus = (config) => {
         queue.splice(queue.indexOf(config.id), 1)
         window.CMDB_APP.$store.commit('updateAxiosQueue', queue)
     }
+}
+
+const logout = () => {
+    axios.post(`${window.siteUrl}logout`, {
+        'http_scheme': window.location.protocol.replace(':', '')
+    }).then(res => {
+        if (res.result) {
+            window.location.href = res.data.url
+        } else {
+            alertMsg(res['bk_error_msg'])
+        }
+    })
 }
 
 axios.interceptors.request.use(config => {
@@ -107,7 +121,7 @@ axios.interceptors.response.use(
         if (globalError && error.response) {
             switch (error.response.status) {
                 case 401:
-                    window.location.href = window.loginUrl
+                    logout()
                     break
                 case 403:
                     alertMsg(error.response.statusText)

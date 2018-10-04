@@ -24,7 +24,7 @@
 |---|---|---|---|---| ---|
 |bk_classification_id|string|是|无|分类ID，英文描述用于系统内部使用|the classification identifier|
 |bk_classification_name|string|是|无|分类名|the name of the classification  |
-|bk_classification_icon|string|否|无|模型分类的图标|the icon of the classification|
+|bk_classification_icon|string|否|无|模型分类的图标,取值可参考，取值可参考[(classIcon.json)](resource_define/classIcon.json)|the icon of the classification|
 
 
 - output 
@@ -130,7 +130,7 @@ data 字段说明
 |---|---|---|---|---|---|
 |id|int|是|无|数据记录的ID|the id of the classification data record|
 |bk_classification_name|string|否|无|分类名|the classification name of a object |
-|bk_classification_icon|string|否|无|模型分类的图标|the classification icon of a object|
+|bk_classification_icon|string|否|无|模型分类的图标,取值可参考，取值可参考[(classIcon.json)](resource_define/classIcon.json)|the icon of the classification|
 
 
 -  output
@@ -203,8 +203,8 @@ data 字段说明：
 |---|---|---|---|
 |bk_classification_id|string|分类ID，英文描述用于系统内部使用|the classification identifier|
 |bk_classification_name|string|分类名|the classification name|
-|bk_classification_type|string|用于对分类进行分类（如：inner）|system inner classification or customize|
-|bk_classification_icon|string|模型分类的图标|the classification icon|
+|bk_classification_type|string|用于对分类进行分类（如：inner代码为内置分类，空字符串为自定义分类）|system inner classification or customize|
+|bk_classification_icon|string|否|无|模型分类的图标,取值可参考，取值可参考[(classIcon.json)](resource_define/classIcon.json)|the icon of the classification|
 |id|int|数据记录ID|the data record id|
 
 
@@ -230,7 +230,8 @@ data 字段说明：
 
 |字段|类型|是否必须|默认值|说明|Description|
 |---|---|---|---|---|---|
-|bk_classification_id|string|否|无|分类的标识符|the classification identifier|
+|bk_classification_icon|string|否|无|模型分类的图标,取值可参考，取值可参考[(classIcon.json)](resource_define/classIcon.json)|the icon of the classification|
+|bk_supplier_account|string|是|无|开发商账号|supplier account code|
 
 
 - output
@@ -255,7 +256,7 @@ data 字段说明：
                         "creator": "cc_system",
                         "description": "",
                         "id": 6,
-                        "ispaused": false,
+                        "bk_ispaused": false,
                         "ispre": true,
                         "last_time": null,
                         "modifier": "",
@@ -274,7 +275,7 @@ data 字段说明：
                     "creator": "cc_system",
                     "description": "",
                     "id": 6,
-                    "ispaused": false,
+                    "bk_ispaused": false,
                     "ispre": true,
                     "last_time": null,
                     "modifier": "",
@@ -307,8 +308,8 @@ data字段说明
 |---|---|---|---|
 |bk_classification_id|string|分类ID，英文描述用于系统内部使用|the classification identifier|
 |bk_classification_name|string|分类名|the classification name it will be shown|
-|bk_classification_type|string|用于对分类进行分类（如：inner）|system inner classification or customize|
-|bk_classification_icon|string|模型分类的图标|the classification icon|
+|bk_classification_type|string|用于对分类进行分类（如：inner代码为内置分类，空字符串为自定义分类）|system inner classification or customize|
+|bk_classification_icon|string|否|无|模型分类的图标,取值可参考，取值可参考[(classIcon.json)](resource_define/classIcon.json)|the icon of the classification|
 |bk_objects|array|当前分类下的所有模型|the objects of the classification|
 |bk_asst_objects|map[string]array|当前分类下的模型关联的其他模型|the association map|
 
@@ -321,7 +322,7 @@ bk_objects 字段说明
 |creator|string|创建者|the creator|
 |description|string|模型描述|the object describtion|
 |id|int|模型数据记录的ID|the object data record id|
-|ispaused|bool|是否停用|if it is paused|
+|bk_ispaused|bool|是否停用|if it is paused|
 |ispre|bool|是否内置|if it is the system inner|
 |last_time|string|更新时间|the last updated time|
 |modifier|string|最后修改人员|the last modifier|
@@ -341,7 +342,7 @@ bk_asst_objects 字段说明
 |creator|string|创建者|the creator|
 |description|string|模型描述|the object describtion|
 |id|int|模型数据记录的ID|the object data record id|
-|ispaused|bool|是否停用|if it is paused|
+|bk_ispaused|bool|是否停用|if it is paused|
 |ispre|bool|是否内置|if it is the system inner|
 |last_time|string|更新时间|the last updated time|
 |modifier|string|最后修改人员|the last modifier|
