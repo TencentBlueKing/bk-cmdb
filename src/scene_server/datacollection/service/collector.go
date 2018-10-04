@@ -30,11 +30,11 @@ func (s *Service) SearchCollector(req *restful.Request, resp *restful.Response) 
 
 	cond := metadata.ParamNetcollectorSearch{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&cond); err != nil {
-		blog.Errorf("[SearchCollector] decode body failed, err: %v", err)
+		blog.Errorf("[NetDevice][SearchCollector] decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-	blog.Infof("[SearchCollector] search by %+v", cond)
+	blog.Infof("[NetDevice][SearchCollector] search by %+v", cond)
 
 	count, result, err := s.Logics.SearchCollector(cond)
 	if err != nil {
@@ -56,11 +56,11 @@ func (s *Service) UpdateCollector(req *restful.Request, resp *restful.Response) 
 
 	cond := metadata.NetcollectorConfig{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&cond); err != nil {
-		blog.Errorf("[UpdateCollector] decode body failed, err: %v", err)
+		blog.Errorf("[NetDevice][UpdateCollector] decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-	blog.Infof("[UpdateCollector] update by %+v", cond)
+	blog.Infof("[NetDevice][UpdateCollector] update by %+v", cond)
 
 	err := s.Logics.UpdateCollector(cond)
 	if err != nil {
@@ -79,11 +79,11 @@ func (s *Service) DiscoverNetDevice(req *restful.Request, resp *restful.Response
 
 	cond := []metadata.NetcollectorConfig{}
 	if err := json.NewDecoder(req.Request.Body).Decode(cond); err != nil {
-		blog.Errorf("[DiscoverNetDevice] decode body failed, err: %v", err)
+		blog.Errorf("[NetDevice][DiscoverNetDevice] decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-	blog.Infof("[DiscoverNetDevice] discover by %+v", cond)
+	blog.Infof("[NetDevice][DiscoverNetDevice] discover by %+v", cond)
 
 	err := s.Logics.DiscoverNetDevice(cond)
 	if err != nil {
