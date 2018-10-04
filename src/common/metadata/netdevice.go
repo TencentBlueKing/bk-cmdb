@@ -117,6 +117,14 @@ type RspNetcollectReport struct {
 	Count int64              `json:"count"`
 	Info  []NetcollectReport `json:"info"`
 }
+type RspNetcollectHistory struct {
+	Count int64               `json:"count"`
+	Info  []NetcollectHistory `json:"info"`
+}
+
+type ParamNetcollectComfirm struct {
+	Reports []NetcollectReport `json:reports`
+}
 
 type NetcollectReport struct {
 	Action        string `json:"action" bson:"action"`
@@ -134,12 +142,21 @@ type NetcollectReport struct {
 	Associations []NetcollectReportAssociation `json:"associations" bson:"associations"`
 }
 
+type NetcollectHistory struct {
+	*NetcollectReport `json:",inline" bson:",inline"`
+	Success           bool `json:"success" bson:"success"`
+}
+
 type NetcollectReportAttribute struct {
 	PropertyID   string      `json:"bk_property_id" bson:"bk_property_id"`
 	PropertyName string      `json:"bk_property_name" bson:"-"`
 	IsRequired   bool        `json:"isrequired" bson:"-"`
 	CurValue     interface{} `json:"value" bson:"value"`
 	PreValue     interface{} `json:"pre_value" bson:"-"`
+
+	Method  string `json:"method,omitempty" bson:"-"`
+	Success bool   `json:"success,omitempty" bson:"-"`
+	Error   string `json:"error,omitempty" bson:"-"`
 }
 
 type NetcollectReportAssociation struct {
@@ -162,8 +179,20 @@ type NetcollectReportAsstCond struct {
 	Value        interface{} `json:"value" bson:"value`
 }
 
+type RspNetcollectConfirm struct {
+	ChangeAttributeSuccess int      `json:"change_attribute_success"`
+	ChangeAttributeFailure int      `json:"change_attribute_failure"`
+	ChangeRelationSuccess  int      `json:"change_relation_success"`
+	ChangeRelationFailure  int      `json:"change_relation_failure"`
+	Errors                 []string `json:"errors"`
+}
+
 const (
 	ReporctActionCreate = "create"
 	ReporctActionUpdate = "update"
 	ReporctActionDelete = "delete"
+)
+const (
+	ReporctMethodAccept = "accept"
+	ReporctMethodIgnore = "ignore"
 )
