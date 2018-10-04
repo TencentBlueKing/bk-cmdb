@@ -112,11 +112,11 @@ func (lgc *Logics) SearchDevice(pheader http.Header, params *meta.NetCollSearchP
 		return meta.SearchNetDevice{}, defErr.Errorf(common.CCErrCollectNetDeviceGetFail)
 	}
 
-	objIDMapObjName, err := lgc.getObjIDMapObjNameFromNetDevice(pheader, &searchResult.Info)
+	objIDMapObjName, err := lgc.getObjIDMapObjNameFromNetDevice(pheader, searchResult.Info)
 	if nil != err {
 		return meta.SearchNetDevice{}, defErr.Errorf(common.CCErrCollectNetDeviceGetFail)
 	}
-	lgc.addShowFieldValueIntoNetDevice(&searchResult.Info, objIDMapObjName)
+	lgc.addShowFieldValueIntoNetDevice(searchResult.Info, objIDMapObjName)
 
 	return searchResult, nil
 }
@@ -248,13 +248,13 @@ func (lgc *Logics) findDevice(fields []string, condition, result interface{}, so
 
 // get objID map objName from objID of net device
 func (lgc *Logics) getObjIDMapObjNameFromNetDevice(
-	pheader http.Header, netDevice *[]meta.NetcollectDevice) (objIDMapObjName map[string]string, err error) {
+	pheader http.Header, netDevice []meta.NetcollectDevice) (objIDMapObjName map[string]string, err error) {
 
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	objIDs := []string{}
-	for index := range *netDevice {
-		objIDs = append(objIDs, (*netDevice)[index].ObjectID)
+	for index := range netDevice {
+		objIDs = append(objIDs, netDevice[index].ObjectID)
 	}
 
 	objCond := map[string]interface{}{
@@ -286,11 +286,11 @@ func (lgc *Logics) getObjIDMapObjNameFromNetDevice(
 }
 
 func (lgc *Logics) addShowFieldValueIntoNetDevice(
-	netDevice *[]meta.NetcollectDevice, objIDMapObjName map[string]string) {
+	netDevice []meta.NetcollectDevice, objIDMapObjName map[string]string) {
 
-	for index := range *netDevice {
-		objName := objIDMapObjName[(*netDevice)[index].ObjectID]
-		(*netDevice)[index].ObjectName = objName
+	for index := range netDevice {
+		objName := objIDMapObjName[netDevice[index].ObjectID]
+		netDevice[index].ObjectName = objName
 	}
 }
 
