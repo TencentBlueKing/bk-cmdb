@@ -751,8 +751,13 @@ const (
 	Infinite = "∞"
 )
 
+// netcollect
 const (
-	// period default value
+	BKNetDevice   = "net_device"
+	BKNetProperty = "net_property"
+)
+
+const (
 	BKDefaultLoginUserPluginVersion = "self"
 	HTTPCookieBKToken               = "bk_token"
 
@@ -778,10 +783,4 @@ const (
 const (
 	HostFieldDockerClientVersion = "docker_client_version"
 	HostFieldDockerServerVersion = "docker_server_version"
-)
-
-// netcollect
-const (
-	BKNetDevice   = "net_device"
-	BKNetProperty = "net_property"
 )
