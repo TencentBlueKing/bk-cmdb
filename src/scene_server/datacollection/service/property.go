@@ -14,6 +14,8 @@ package service
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
+	"strings"
 
 	restful "github.com/emicklei/go-restful"
 
@@ -77,26 +79,39 @@ func (s *Service) DeleteProperty(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
-	ID := req.PathParameter("netcollect_property_id")
-	netPropertyID, err := s.Logics.ConvertStringToID(ID)
-	if nil != err {
-		blog.Errorf("delete net property failed, with netcollect_property_id [%s]", ID)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
+	deleteNetPropertyBatchOpt := new(meta.DeleteNetPropertyBatchOpt)
+	if err := json.NewDecoder(req.Request.Body).Decode(deleteNetPropertyBatchOpt); nil != err {
+		blog.Errorf("[NetProperty] delete net property batch , but decode body failed, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
-	err = s.Logics.DeleteProperty(pheader, netPropertyID)
-	if nil == err {
-		resp.WriteEntity(meta.NewSuccessResp(nil))
-		return
+	netPropertyIDStrArr := strings.Split(deleteNetPropertyBatchOpt.NetcollectPropertyID, ",")
+	var netPropertyIDArr []int64
+
+	for _, netPropertyIDStr := range netPropertyIDStrArr {
+		netPropertyID, err := strconv.ParseInt(netPropertyIDStr, 10, 64)
+		if nil != err {
+			blog.Errorf("[NetProperty] delete net property batch, but got invalid net property id, err: %v", err)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, common.BKNetcollectPropertyIDlField)})
+			return
+		}
+		netPropertyIDArr = append(netPropertyIDArr, netPropertyID)
 	}
 
-	blog.Errorf("delete net property failed, with netcollect_property_id [%s], err: %v", ID, err)
+	for _, netPropertyID := range netPropertyIDArr {
+		if err := s.Logics.DeleteProperty(pheader, netPropertyID); nil != err {
+			blog.Errorf("[NetProperty] delete net property failed, with netcollect_property_id [%s], err: %v", netPropertyID, err)
 
-	if err.Error() == defErr.Error(common.CCErrCollectNetDeviceObjPropertyNotExist).Error() {
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
-		return
+			if defErr.Error(common.CCErrCollectNetDeviceObjPropertyNotExist).Error() == err.Error() {
+				resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
+				return
+			}
+
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+			return
+		}
 	}
 
-	resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
