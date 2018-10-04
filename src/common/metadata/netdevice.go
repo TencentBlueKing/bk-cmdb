@@ -114,60 +114,53 @@ type NetcollectReportSummary struct {
 }
 
 type RspNetcollectReport struct {
-	Count int64               `json:"count"`
-	Info  []*NetcollectReport `json:"info"`
+	Count int64              `json:"count"`
+	Info  []NetcollectReport `json:"info"`
 }
 
 type NetcollectReport struct {
-	CloudID       int64  `json:"bk_cloud_id"`
-	CloudName     string `json:"bk_cloud_name"`
-	ObjectID      string `json:"bk_obj_id"`
-	ObjectName    string `json:"bk_obj_name"`
-	InnerIP       string `json:"bk_host_innerip"`
-	Configuration string `json:"configuration"`
+	Action        string `json:"action" bson:"action"`
+	CloudID       int64  `json:"bk_cloud_id" bson:"bk_cloud_id"`
+	CloudName     string `json:"bk_cloud_name" bson:"-"`
+	ObjectID      string `json:"bk_obj_id" bson:"bk_obj_id"`
+	ObjectName    string `json:"bk_obj_name" bson:"-"`
+	InnerIP       string `json:"bk_host_innerip" bson:"bk_host_innerip"`
+	Configuration string `json:"configuration" bson:"configuration"`
 
-	InstID   int64                  `json:"bk_inst_id"`
-	InstName int64                  `json:"bk_inst_name"`
-	LastTime *types.Time            `json:"last_time"`
-	Detail   NetcollectReportDetail `json:"detail"`
-}
-
-type NetcollectReportDetail struct {
+	InstID       int64                         `json:"bk_inst_id" bson:"bk_inst_id"`
+	InstKey      string                        `json:"bk_inst_key" bson:"bk_inst_key"`
+	LastTime     *types.Time                   `json:"last_time" bson:"last_time"`
 	Attributes   []NetcollectReportAttribute   `json:"attributes" bson:"attributes"`
 	Associations []NetcollectReportAssociation `json:"associations" bson:"associations"`
 }
 
 type NetcollectReportAttribute struct {
-	CloudID      int64
-	InstID       int64       `json:"bk_inst_id"`
-	InstName     string      `json:"bk_inst_name"`
 	PropertyID   string      `json:"bk_property_id" bson:"bk_property_id"`
-	PropertyName string      `json:"bk_property_name" bson:"bk_property_name"`
-	ObjectID     string      `json:"bk_obj_id" bson:"bk_obj_id"`
-	ObjectName   string      `json:"bk_obj_name" bson:"bk_obj_name"`
-	IsRequired   bool        `json:"isrequired" bson:"isrequired"`
-	CurValue     interface{} `json:"new_value" bson:"cur_value"`
-	PreValue     interface{} `json:"pre_value" bson:"pre_value"`
+	PropertyName string      `json:"bk_property_name" bson:"-"`
+	IsRequired   bool        `json:"isrequired" bson:"-"`
+	CurValue     interface{} `json:"value" bson:"value"`
+	PreValue     interface{} `json:"pre_value" bson:"-"`
 	LastTime     *types.Time `json:"last_time"`
 }
 
 type NetcollectReportAssociation struct {
-	CloudID    int64
-	InstID     int64  `json:"bk_inst_id"`
-	InstName   string `json:"bk_inst_name"`
-	ObjectID   string `json:"bk_obj_id"`
-	ObjectName string `json:"bk_obj_name"`
+	CloudID    int64  `json:"bk_cloud_id" bson:"bk_cloud_id"`
+	InstID     int64  `json:"bk_inst_id" bson:"-"`
+	InstKey    string `json:"bk_inst_key" bson:"bk_inst_key"`
+	ObjectID   string `json:"bk_obj_id" bson:"bk_obj_id"`
+	ObjectName string `json:"bk_obj_name" bson:"bk_obj_name"`
 
-	AsstInstID     int64  `json:"bk_asst_inst_id"`
-	AsstInstName   int64  `json:"bk_asst_inst_name"`
-	AsstObjectID   string `json:"bk_asst_obj_id"`
-	AsstCond       []NetcollectReportAsstCond
-	AsstObjectName string `json:"bk_asst_obj_name"`
+	AsstInstID     int64                      `json:"bk_asst_inst_id" bson:"bk_asst_inst_id`
+	AsstInstName   int64                      `json:"bk_asst_inst_name" bson:"bk_asst_inst_name`
+	AsstObjectID   string                     `json:"bk_asst_obj_id" bson:"bk_asst_obj_id`
+	AsstObjectName string                     `json:"bk_asst_obj_name" bson:"bk_asst_obj_name`
+	AsstCond       []NetcollectReportAsstCond `json:"asst_cond" bson:"asst_cond`
 
-	LastTime *types.Time `json:"last_time"`
+	LastTime *types.Time `json:"last_time" bson:"last_time"`
 }
 
 type NetcollectReportAsstCond struct {
-	FieldName string
-	Value     interface{}
+	PropertyID   string      `json:"bk_property_id" bson:"bk_property_id`
+	PropertyName string      `json:"bk_property_name" bson:"bk_property_name`
+	Value        interface{} `json:"value" bson:"value`
 }

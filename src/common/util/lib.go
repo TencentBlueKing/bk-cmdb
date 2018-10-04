@@ -14,6 +14,7 @@ package util
 
 import (
 	"net/http"
+	"reflect"
 	"sync/atomic"
 
 	restful "github.com/emicklei/go-restful"
@@ -96,6 +97,15 @@ func GetActionOnwerIDByHTTPHeader(header http.Header) string {
 func GetHTTPCCRequestID(header http.Header) string {
 	rid := header.Get(common.BKHTTPCCRequestID)
 	return rid
+}
+
+// IsNil returns whether value is nil value, including map[string]interface{}{nil}, *Struct{nil}
+func IsNil(value interface{}) bool {
+	rflValue := reflect.ValueOf(value)
+	if rflValue.IsValid() {
+		return rflValue.IsNil()
+	}
+	return true
 }
 
 type AtomicBool int32

@@ -13,7 +13,9 @@
 package datacollection
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/signal"
@@ -158,8 +160,14 @@ func (d *DataCollection) mock(channel string) {
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGUSR1)
 
+	buf := &bytes.Buffer{}
+
+	if err = json.Compact(buf, []byte(netcollectMockMsg)); err != nil {
+		blog.Fatalf("inden mock message failed: %v. raw: %s", err, netcollectMockMsg)
+	}
+	msg := buf.String()
 	for range ch {
-		err := mockCli.Publish(channel, MOCKMSG).Err()
+		err := mockCli.Publish(channel, msg).Err()
 		if err != nil {
 			blog.Error("publish mock failed %v", err)
 		}
