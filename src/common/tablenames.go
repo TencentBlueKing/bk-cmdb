@@ -67,13 +67,12 @@ const (
 	BKTableNameObjAsst          = "cc_ObjAsst"
 	BKTableNameTopoGraphics     = "cc_TopoGraphics"
 
-	BKTableNameNetcollectConfig   = "cc_NetcollectConfig"
-	BKTableNameNetcollectDevice   = "cc_NetcollectDevice"
-	BKTableNameNetcollectProperty = "cc_NetcollectProperty"
+	BKTableNameNetcollectDevice   = "cc_Netcollect_Device"
+	BKTableNameNetcollectProperty = "cc_Netcollect_Property"
 
-	BKTableNameNetcollectReport      = "cc_NetcollectReport"
-	BKTableNameNetcollectAttribute   = "cc_NetcollectAttribute"
-	BKTableNameNetcollectAssociation = "cc_NetcollectAssociation"
+	BKTableNameNetcollectConfig  = "cc_NetcollectConfig"
+	BKTableNameNetcollectReport  = "cc_NetcollectReport"
+	BKTableNameNetcollectHistory = "cc_NetcollectHistory"
 
 	BKTableNameHostLock = "cc_HostLock"
 )
@@ -112,6 +111,8 @@ var AllTables = []string{
 	BKTableNameNetcollectConfig,
 	BKTableNameNetcollectDevice,
 	BKTableNameNetcollectProperty,
+	BKTableNameNetcollectReport,
+	BKTableNameNetcollectHistory,
 	BKTableNameHostLock,
 }
 
