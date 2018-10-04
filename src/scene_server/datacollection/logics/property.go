@@ -167,7 +167,7 @@ func (lgc *Logics) SearchProperty(pheader http.Header, params *meta.NetCollSearc
 	// if object condition cond and device condition is empty, device shown fields will be empty
 	// if property condition is empty, property shown fields will be empty
 	if 0 == deviceShowFieldLen || 0 == propertyShowFieldLen {
-		deviceIDs, propertyIDs = lgc.getDeviceIDsAndPropertyIDsFromNetPropertys(&(searchResult.Info))
+		deviceIDs, propertyIDs = lgc.getDeviceIDsAndPropertyIDsFromNetPropertys(searchResult.Info)
 	}
 
 	if 0 == deviceShowFieldLen {
@@ -186,7 +186,7 @@ func (lgc *Logics) SearchProperty(pheader http.Header, params *meta.NetCollSearc
 	}
 
 	// add value of fields from other tables into search result
-	lgc.addShowFieldValueIntoNetProperty(&(searchResult.Info), showFields)
+	lgc.addShowFieldValueIntoNetProperty(searchResult.Info, showFields)
 
 	return &searchResult, nil
 }
@@ -505,7 +505,7 @@ func (lgc *Logics) getDeviceIDsAndShowFields(
 		return nil, nil, defErr.Errorf(common.CCErrCollectNetDeviceGetFail)
 	}
 
-	deviceIDs, deviceIDMapDeviceShowFields := lgc.assembleDeviceShowFieldValue(&deviceResult, objIDMapShowFields)
+	deviceIDs, deviceIDMapDeviceShowFields := lgc.assembleDeviceShowFieldValue(deviceResult, objIDMapShowFields)
 
 	if 0 == len(deviceIDs) {
 		return nil, nil, nil
@@ -517,16 +517,16 @@ func (lgc *Logics) getDeviceIDsAndShowFields(
 // get device IDs from device list
 // assemble value of device list: [deviceID] map [deviceName, deviceModel, objID, objName]
 // objName is taken from objIDMapShowFields
-func (lgc *Logics) assembleDeviceShowFieldValue(deviceData *[]meta.NetcollectDevice, objIDMapShowFields map[string]objShowField) (
+func (lgc *Logics) assembleDeviceShowFieldValue(deviceData []meta.NetcollectDevice, objIDMapShowFields map[string]objShowField) (
 	deviceIDs []int64, deviceIDMapDeviceShowFields map[int64]deviceShowField) {
 
-	if nil == deviceData || 0 == len(*deviceData) {
+	if nil == deviceData || 0 == len(deviceData) {
 		return deviceIDs, deviceIDMapDeviceShowFields
 	}
 
 	deviceIDMapDeviceShowFields = map[int64]deviceShowField{}
 
-	for _, device := range *deviceData {
+	for _, device := range deviceData {
 		// get device IDs from device list
 		deviceIDs = append(deviceIDs, device.DeviceID)
 		// assemble value of device list: [deviceID] map [deviceName, deviceModel, objID, objName]
@@ -555,7 +555,7 @@ func (lgc *Logics) getPropertyIDsAndShowFields(
 		return nil, nil, nil, defErr.Errorf(attrResult.Code)
 	}
 
-	objIDs, propertyIDs, propertyIDMapPropertyShowFields := lgc.assembleAttrShowFieldValue(&(attrResult.Data))
+	objIDs, propertyIDs, propertyIDMapPropertyShowFields := lgc.assembleAttrShowFieldValue(attrResult.Data)
 
 	if 0 == len(objIDs) || 0 == len(propertyIDs) || 0 == len(propertyIDMapPropertyShowFields) {
 		blog.Errorf("[NetProperty] get property fail, property is not exist, condition [%#v]", propertyCond)
@@ -566,10 +566,10 @@ func (lgc *Logics) getPropertyIDsAndShowFields(
 }
 
 // get obj IDs and property IDs , assemble value of attribute list:[propertyID + objID] map [property show fields]
-func (lgc *Logics) assembleAttrShowFieldValue(attrData *[]meta.Attribute) (
+func (lgc *Logics) assembleAttrShowFieldValue(attrData []meta.Attribute) (
 	objIDs []string, propertyIDs []string, propertyIDMapPropertyShowFields map[string]propertyShowField) {
 
-	if nil == attrData || 0 == len(*attrData) {
+	if nil == attrData || 0 == len(attrData) {
 		return []string{}, []string{}, map[string]propertyShowField{}
 	}
 
@@ -578,7 +578,7 @@ func (lgc *Logics) assembleAttrShowFieldValue(attrData *[]meta.Attribute) (
 	// assemble value of attribute list: [propertyID + objID] map [property unit, property name]
 	propertyIDMapPropertyShowFields = map[string]propertyShowField{}
 
-	for _, property := range *attrData {
+	for _, property := range attrData {
 		propertyIDs = append(propertyIDs, property.PropertyID)
 		objIDs = append(objIDs, property.ObjectID)
 
@@ -593,32 +593,32 @@ func (lgc *Logics) assembleAttrShowFieldValue(attrData *[]meta.Attribute) (
 
 // add group value of device and property to net property
 func (lgc *Logics) addShowFieldValueIntoNetProperty(
-	netProperty *[]meta.NetcollectProperty, netPropShowFields netPropertyShowFields) {
+	netProperty []meta.NetcollectProperty, netPropShowFields netPropertyShowFields) {
 
-	for index := range *netProperty {
+	for index := range netProperty {
 
-		deviceValue := netPropShowFields.deviceIDMapDeviceShowFields[(*netProperty)[index].DeviceID]
+		deviceValue := netPropShowFields.deviceIDMapDeviceShowFields[netProperty[index].DeviceID]
 
 		// add group value of device
-		(*netProperty)[index].DeviceModel = deviceValue.deviceModel
-		(*netProperty)[index].DeviceName = deviceValue.deviceName
-		(*netProperty)[index].ObjectID = deviceValue.objID
-		(*netProperty)[index].ObjectName = deviceValue.objName
+		netProperty[index].DeviceModel = deviceValue.deviceModel
+		netProperty[index].DeviceName = deviceValue.deviceName
+		netProperty[index].ObjectID = deviceValue.objID
+		netProperty[index].ObjectName = deviceValue.objName
 
-		propertyID := (*netProperty)[index].PropertyID
+		propertyID := netProperty[index].PropertyID
 		propertyValue := netPropShowFields.propertyIDMapShowFields[propertyID+deviceValue.objID]
 		// add group value of property
-		(*netProperty)[index].Unit = propertyValue.unit
-		(*netProperty)[index].PropertyName = propertyValue.propertyName
+		netProperty[index].Unit = propertyValue.unit
+		netProperty[index].PropertyName = propertyValue.propertyName
 	}
 }
 
 func (lgc *Logics) getDeviceIDsAndPropertyIDsFromNetPropertys(
-	netProperty *[]meta.NetcollectProperty) (deviceIDs []int64, propertyIDs []string) {
+	netProperty []meta.NetcollectProperty) (deviceIDs []int64, propertyIDs []string) {
 
-	for index := range *netProperty {
-		deviceIDs = append(deviceIDs, (*netProperty)[index].DeviceID)
-		propertyIDs = append(propertyIDs, (*netProperty)[index].PropertyID)
+	for index := range netProperty {
+		deviceIDs = append(deviceIDs, netProperty[index].DeviceID)
+		propertyIDs = append(propertyIDs, netProperty[index].PropertyID)
 	}
 
 	return deviceIDs, propertyIDs
