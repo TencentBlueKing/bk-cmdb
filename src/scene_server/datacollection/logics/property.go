@@ -267,7 +267,7 @@ func (lgc *Logics) addProperty(pheader http.Header, netPropertyInfo meta.Netcoll
 		return -1, defErr.Errorf(common.CCErrCollectNetPropertyCreateFail)
 	}
 	if isExist {
-		blog.Errorf("[NetProperty] add net collect property fail, error: duplicate [deviceID+propertyID]")
+		blog.Errorf("[NetProperty] add net collect property fail, error: duplicate [deviceID:propertyID]")
 		return -1, defErr.Errorf(common.CCErrCommDuplicateItem)
 	}
 
@@ -438,7 +438,7 @@ func (lgc *Logics) classifyNetPropertyCondition(
 
 type netPropertyShowFields struct {
 	deviceIDMapDeviceShowFields map[int64]deviceShowField    // id map value group of device fields
-	propertyIDMapShowFields     map[string]propertyShowField // propertyID+objID map value group of property fields
+	propertyIDMapShowFields     map[string]propertyShowField // propertyID:objID map value group of property fields
 }
 
 type objShowField struct {
@@ -565,7 +565,7 @@ func (lgc *Logics) getPropertyIDsAndShowFields(
 	return objIDs, propertyIDs, propertyIDMapPropertyShowFields, nil
 }
 
-// get obj IDs and property IDs , assemble value of attribute list:[propertyID + objID] map [property show fields]
+// get obj IDs and property IDs , assemble value of attribute list:[propertyID : objID] map [property show fields]
 func (lgc *Logics) assembleAttrShowFieldValue(attrData *[]meta.Attribute) (
 	objIDs []string, propertyIDs []string, propertyIDMapPropertyShowFields map[string]propertyShowField) {
 
@@ -575,14 +575,14 @@ func (lgc *Logics) assembleAttrShowFieldValue(attrData *[]meta.Attribute) (
 
 	// get obj IDs and property IDs from attribute list
 	propertyIDs, objIDs = []string{}, []string{}
-	// assemble value of attribute list: [propertyID + objID] map [property unit, property name]
+	// assemble value of attribute list: [propertyID : objID] map [property unit, property name]
 	propertyIDMapPropertyShowFields = map[string]propertyShowField{}
 
 	for _, property := range *attrData {
 		propertyIDs = append(propertyIDs, property.PropertyID)
 		objIDs = append(objIDs, property.ObjectID)
 
-		propertyIDMapPropertyShowFields[property.PropertyID+property.ObjectID] = propertyShowField{
+		propertyIDMapPropertyShowFields[property.PropertyID+":"+property.ObjectID] = propertyShowField{
 			property.Unit,
 			property.PropertyName,
 		}
@@ -606,7 +606,7 @@ func (lgc *Logics) addShowFieldValueIntoNetProperty(
 		(*netProperty)[index].ObjectName = deviceValue.objName
 
 		propertyID := (*netProperty)[index].PropertyID
-		propertyValue := netPropShowFields.propertyIDMapShowFields[propertyID+deviceValue.objID]
+		propertyValue := netPropShowFields.propertyIDMapShowFields[propertyID+":"+deviceValue.objID]
 		// add group value of property
 		(*netProperty)[index].Unit = propertyValue.unit
 		(*netProperty)[index].PropertyName = propertyValue.propertyName
