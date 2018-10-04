@@ -47,7 +47,7 @@ func (s *Service) WebService() *restful.WebService {
 		return s.CCErr
 	}
 
-	ws.Path("/collector/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	ws.Path("/collector/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
 
 	ws.Route(ws.POST("/netcollect/device/action/create").To(s.CreateDevice))
 	ws.Route(ws.POST("/netcollect/device/action/search").To(s.SearchDevice))
@@ -56,6 +56,10 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.POST("/netcollect/property/action/create").To(s.CreateProperty))
 	ws.Route(ws.POST("/netcollect/property/action/search").To(s.SearchProperty))
 	ws.Route(ws.DELETE("/netcollect/property/action/delete").To(s.DeleteProperty))
+
+	ws.Route(ws.POST("/netcollect/summary/action/search").To(s.SearchReportSummary))
+	ws.Route(ws.POST("/netcollect/report/action/search").To(s.SearchReport))
+	ws.Route(ws.POST("/netcollect/report/action/comfirm").To(s.ConfirmReport))
 
 	ws.Route(ws.GET("/healthz").To(s.Healthz))
 

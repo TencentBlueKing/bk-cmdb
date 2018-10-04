@@ -17,15 +17,18 @@ import (
 )
 
 const (
-	RedisDisKeyPrefix         = common.BKCacheKeyV3Prefix + "discover:"
-	MasterProcLockKey         = common.BKCacheKeyV3Prefix + "snapshot:masterlock"
-	MasterDisLockKey          = common.BKCacheKeyV3Prefix + "discover:masterlock"
-	RedisSnapKeyChannelStatus = common.BKCacheKeyV3Prefix + "snapshot:channelstatus"
+	RedisDisKeyPrefix               = common.BKCacheKeyV3Prefix + "discover:"
+	MasterProcLockKey               = common.BKCacheKeyV3Prefix + "snapshot:masterlock"
+	MasterDisLockKey                = common.BKCacheKeyV3Prefix + "discover:masterlock"
+	MasterNetLockKey                = common.BKCacheKeyV3Prefix + "netcollect:masterlock"
+	RedisSnapKeyChannelStatus       = common.BKCacheKeyV3Prefix + "snapshot:channelstatus"
+	RedisNetcollectKeyChannelStatus = common.BKCacheKeyV3Prefix + "netcollect:channelstatus"
 )
 
 const (
-	MaxSnapSize     = 2000
-	MaxDiscoverSize = 1000
+	MaxSnapSize       = 2000
+	MaxNetcollectSize = 1000
+	MaxDiscoverSize   = 1000
 )
 
 const (
