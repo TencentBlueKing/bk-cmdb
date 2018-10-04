@@ -17,22 +17,22 @@ import (
 )
 
 type NetcollectDevice struct {
-	DeviceID    int64      `json:"device_id,omitempty" bson:"device_id"`
-	DeviceName  string     `json:"device_name" bson:"device_name"`
-	DeviceModel string     `json:"device_model" bson:"device_model"`
-	ObjectID    string     `json:"bk_obj_id" bson:"bk_obj_id"`
+	DeviceID    int64      `json:"device_id,omitempty" bson:"device_id,omitempty"`
+	DeviceName  string     `json:"device_name" bson:"device_name,omitempty"`
+	DeviceModel string     `json:"device_model" bson:"device_model,omitempty"`
+	ObjectID    string     `json:"bk_obj_id" bson:"bk_obj_id,omitempty"`
 	ObjectName  string     `json:"bk_obj_name" bson:"-"`
-	BkVendor    string     `json:"bk_vendor" bson:"bk_vendor"`
+	BkVendor    string     `json:"bk_vendor" bson:"bk_vendor,omitempty"`
 	OwnerID     string     `json:"-" bson:"bk_supplier_account"`
-	CreateTime  *time.Time `field:"create_time" json:"create_time,omitempty" bson:"create_time"`
-	LastTime    *time.Time `field:"last_time" json:"last_time,omitempty" bson:"last_time"`
+	CreateTime  *time.Time `field:"create_time" json:"create_time,omitempty" bson:"create_time,omitempty"`
+	LastTime    *time.Time `field:"last_time" json:"last_time,omitempty" bson:"last_time,omitempty"`
 }
 
 type NetcollectProperty struct {
-	NetcollectPropertyID int64      `json:"netcollect_property_id,omitempty" bson:"netcollect_property_id"`
-	PropertyID           string     `json:"bk_property_id" bson:"bk_property_id"`
+	NetcollectPropertyID int64      `json:"netcollect_property_id,omitempty" bson:"netcollect_property_id,omitempty"`
+	PropertyID           string     `json:"bk_property_id" bson:"bk_property_id,omitempty"`
 	PropertyName         string     `json:"bk_property_name" bson:"-"`
-	DeviceID             int64      `json:"device_id" bson:"device_id"`
+	DeviceID             int64      `json:"device_id" bson:"device_id,omitempty"`
 	DeviceName           string     `json:"device_name" bson:"-"`
 	ObjectID             string     `json:"bk_obj_id,omitempty" bson:"-"`
 	ObjectName           string     `json:"bk_obj_name,omitempty" bson:"-"`
@@ -40,8 +40,8 @@ type NetcollectProperty struct {
 	Period               string     `json:"period" bson:"period"`
 	Action               string     `json:"action" bson:"action"`
 	OwnerID              string     `json:"-" bson:"bk_supplier_account"`
-	CreateTime           *time.Time `field:"create_time,omitempty" json:"create_time,omitempty" bson:"create_time"`
-	LastTime             *time.Time `field:"last_time,omitempty" json:"last_time,omitempty" bson:"last_time"`
+	CreateTime           *time.Time `field:"create_time,omitempty" json:"create_time,omitempty" bson:"create_time,omitempty"`
+	LastTime             *time.Time `field:"last_time,omitempty" json:"last_ time,omitempty" bson:"last_time,omitempty"`
 	Unit                 string     `json:"unit,omitempty" bson:"-"`
 	DeviceModel          string     `json:"device_model" bson:"device_model"`
 }
