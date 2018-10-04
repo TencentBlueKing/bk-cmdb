@@ -51,11 +51,11 @@ func (s *Service) WebService() *restful.WebService {
 
 	ws.Route(ws.POST("/netcollect/device/action/create").To(s.CreateDevice))
 	ws.Route(ws.POST("/netcollect/device/action/search").To(s.SearchDevice))
-	ws.Route(ws.DELETE("/netcollect/device/{bk_device_id}/action/delete").To(s.DeleteDevice))
+	ws.Route(ws.DELETE("/netcollect/device/action/delete").To(s.DeleteDevice))
 
 	ws.Route(ws.POST("/netcollect/property/action/create").To(s.CreateProperty))
 	ws.Route(ws.POST("/netcollect/property/action/search").To(s.SearchProperty))
-	ws.Route(ws.DELETE("/netcollect/property/{netcollect_property_id}/action/delete").To(s.DeleteProperty))
+	ws.Route(ws.DELETE("/netcollect/property/action/delete").To(s.DeleteProperty))
 
 	ws.Route(ws.GET("/healthz").To(s.Healthz))
 
