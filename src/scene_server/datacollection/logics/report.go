@@ -37,22 +37,18 @@ func (lgc *Logics) SearchReportSummary(header http.Header, param metadata.ParamS
 	for _, report := range reports {
 		summary, ok := summarym[report.CloudID]
 		if !ok {
-			summarym[report.CloudID] = &metadata.NetcollectReportSummary{
+			summary = &metadata.NetcollectReportSummary{
 				CloudID:    report.CloudID,
 				CloudName:  report.CloudName,
 				Statistics: map[string]int{},
 			}
+			summarym[report.CloudID] = summary
 		}
 
 		summary.Statistics["associations"] += len(report.Associations)
-		for _, association := range report.Associations {
-			if association.LastTime.Time.Sub(summary.LastTime.Time) > 0 {
-				summary.LastTime = association.LastTime
-			}
-		}
-
 		summary.Statistics[report.ObjectName]++
-		if report.LastTime.Time.Sub(summary.LastTime.Time) > 0 {
+
+		if report.LastTime != nil && summary.LastTime != nil && report.LastTime.Time.Sub(summary.LastTime.Time) > 0 {
 			summary.LastTime = report.LastTime
 		}
 	}
@@ -85,9 +81,9 @@ func (lgc *Logics) SearchReport(header http.Header, param metadata.ParamSearchNe
 		cond.Field(common.BKHostInnerIPField).Like(param.InnerIP)
 	}
 
-	count, err := lgc.Instance.GetCntByCondition(common.BKTableNameNetcollectReport, cond)
+	count, err := lgc.Instance.GetCntByCondition(common.BKTableNameNetcollectReport, cond.ToMapStr())
 	if err != nil {
-		blog.Errorf("[NetDevice][SearchReport] GetMutilByCondition failed: %v", err)
+		blog.Errorf("[NetDevice][SearchReport] GetCntByCondition failed: %v", err)
 		return 0, nil, err
 	}
 
@@ -101,9 +97,21 @@ func (lgc *Logics) SearchReport(header http.Header, param metadata.ParamSearchNe
 
 	// search details
 	objIDs := []string{}
+	cloudIDs := []int64{}
 	for _, report := range reports {
 		objIDs = append(objIDs, report.ObjectID)
+		cloudIDs = append(cloudIDs, report.CloudID)
 	}
+
+	cloudCond := condition.CreateCondition()
+	cloudCond.Field(common.BKCloudIDField).In(cloudIDs)
+
+	cloudMap, err := lgc.findInstMap(header, common.BKInnerObjIDPlat, &metadata.QueryInput{Condition: cloudCond.ToMapStr()})
+	if err != nil {
+		blog.Errorf("[NetDevice][SearchReport] find clouds failed: %v", err)
+		return 0, nil, err
+	}
+
 	objMap, err := lgc.findObjectMap(header, objIDs...)
 	if err != nil {
 		blog.Errorf("[NetDevice][SearchReport] findObjectMap failed: %v", err)
@@ -115,28 +123,38 @@ func (lgc *Logics) SearchReport(header http.Header, param metadata.ParamSearchNe
 		return 0, nil, err
 	}
 
-	for _, report := range reports {
-		if object, ok := objMap[report.ObjectID]; ok {
-			report.ObjectName = object.ObjectName
+	for index := range reports {
+		if object, ok := objMap[reports[index].ObjectID]; ok {
+			reports[index].ObjectName = object.ObjectName
+		}
+		if clodInst, ok := cloudMap[reports[index].CloudID]; ok {
+			clodname, err := clodInst.String(common.BKCloudNameField)
+			if err != nil {
+				blog.Errorf("[NetDevice][SearchReport] bk_cloud_name field invalied: %v", err)
+			}
+			reports[index].CloudName = clodname
 		}
 
 		cond := condition.CreateCondition()
-		cond.Field(common.BKInstNameField).Eq(report.InstKey)
-		cond.Field(common.BKObjIDField).Eq(report.ObjectID)
-		insts, err := lgc.findInst(header, report.ObjectID, &metadata.QueryInput{Condition: cond.ToMapStr()})
+		cond.Field(common.BKInstNameField).Eq(reports[index].InstKey)
+		cond.Field(common.BKObjIDField).Eq(reports[index].ObjectID)
+		insts, err := lgc.findInst(header, reports[index].ObjectID, &metadata.QueryInput{Condition: cond.ToMapStr()})
 		if err != nil {
 			blog.Errorf("[NetDevice][SearchReport] find inst failed %v", err)
 			return 0, nil, err
 		}
 		if len(insts) > 0 {
+			reports[index].Action = metadata.ReporctActionUpdate
 			inst := insts[0]
-			for _, attribute := range report.Attributes {
+			for _, attribute := range reports[index].Attributes {
 				attribute.PreValue = inst[attribute.PropertyID]
-				if property, ok := attrsMap[report.ObjectID+":"+attribute.PropertyID]; ok {
+				if property, ok := attrsMap[reports[index].ObjectID+":"+attribute.PropertyID]; ok {
 					attribute.PropertyName = property.PropertyName
 					attribute.IsRequired = property.IsRequired
 				}
 			}
+		} else {
+			reports[index].Action = metadata.ReporctActionCreate
 		}
 
 	}
@@ -202,6 +220,23 @@ func (lgc *Logics) findObject(header http.Header, cond interface{}) ([]metadata.
 		return nil, err
 	}
 	return resp.Data, nil
+}
+
+func (lgc *Logics) findInstMap(header http.Header, objectID string, query *metadata.QueryInput) (map[int64]mapstr.MapStr, error) {
+	insts, err := lgc.findInst(header, objectID, query)
+	if err != nil {
+		return nil, err
+	}
+
+	instMap := map[int64]mapstr.MapStr{}
+	for _, inst := range insts {
+		id, err := inst.Int64(common.GetInstIDField(objectID))
+		if err != nil {
+			return nil, err
+		}
+		instMap[id] = inst
+	}
+	return instMap, nil
 }
 
 func (lgc *Logics) findInst(header http.Header, objectID string, query *metadata.QueryInput) ([]mapstr.MapStr, error) {
