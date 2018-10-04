@@ -104,7 +104,7 @@ func (s *Service) DeleteDevice(req *restful.Request, resp *restful.Response) {
 		if err := s.Logics.DeleteDevice(pheader, deviceID); nil != err {
 			blog.Errorf("[NetDevice] delete net device failed, with bk_device_id [%s], err: %v", deviceID, err)
 
-			if defErr.Error(common.CCErrCollectNetPropertyHasPropertyDeleteFail).Error() == err.Error() {
+			if defErr.Error(common.CCErrCollectNetDeviceHasPropertyDeleteFail).Error() == err.Error() {
 				resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
 				return
 			}

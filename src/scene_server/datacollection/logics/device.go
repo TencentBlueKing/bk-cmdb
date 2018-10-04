@@ -152,7 +152,7 @@ func (lgc *Logics) DeleteDevice(pheader http.Header, netDeviceID int64) error {
 	}
 	if hasProperty {
 		blog.Errorf("[NetDevice] delete net device fail, net device has property [%d]", netDeviceID)
-		return defErr.Error(common.CCErrCollectNetPropertyHasPropertyDeleteFail)
+		return defErr.Error(common.CCErrCollectNetDeviceHasPropertyDeleteFail)
 	}
 
 	if err = lgc.Instance.DelByCondition(common.BKTableNameNetcollectDevice, deviceCond); nil != err {
@@ -179,7 +179,7 @@ func (lgc *Logics) addDevice(deviceInfo meta.NetcollectDevice, pheader http.Head
 
 	if "" == deviceInfo.DeviceName {
 		blog.Errorf("[NetDevice] add net device fail, device_name is empty")
-		return -1, defErr.Errorf(common.CCErrCommParamsLostField, common.BKDeviceModelField)
+		return -1, defErr.Errorf(common.CCErrCommParamsLostField, common.BKDeviceNameField)
 	}
 
 	// check if bk_object_id and bk_object_name are net device object
@@ -248,7 +248,7 @@ func (lgc *Logics) findDevice(fields []string, condition, result interface{}, so
 
 // get objID map objName from objID of net device
 func (lgc *Logics) getObjIDMapObjNameFromNetDevice(
-	pheader http.Header, netDevice []meta.NetcollectDevice) (objIDMapObjName map[string]string, err error) {
+	pheader http.Header, netDevice []meta.NetcollectDevice) (map[string]string, error) {
 
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
@@ -276,6 +276,7 @@ func (lgc *Logics) getObjIDMapObjNameFromNetDevice(
 		return nil, defErr.Errorf(objResult.Code)
 	}
 
+	objIDMapObjName := map[string]string{}
 	if nil != objResult.Data {
 		for _, data := range objResult.Data {
 			objIDMapObjName[data.ObjectID] = data.ObjectName
