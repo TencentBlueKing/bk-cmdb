@@ -266,10 +266,6 @@ func (lgc *Logics) addProperty(pheader http.Header, netPropertyInfo meta.Netcoll
 		blog.Errorf("[NetProperty] add net collect property, check data duplication fail, error: %v", err)
 		return -1, defErr.Errorf(common.CCErrCollectNetPropertyCreateFail)
 	}
-	if isExist {
-		blog.Errorf("[NetProperty] add net collect property fail, error: duplicate [deviceID:propertyID]")
-		return -1, defErr.Errorf(common.CCErrCommDuplicateItem)
-	}
 
 	now := time.Now()
 	netPropertyInfo.LastTime = &now
