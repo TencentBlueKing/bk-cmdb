@@ -28,7 +28,7 @@ import (
 
 // by checking if bk_obj_id and bk_obj_name function parameter are valid net device object or not
 // one of bk_obj_id and bk_obj_name can be empty and will return both bk_obj_id if no error
-func (lgc *Logics) checkNetObject(objID string, objName string, pheader http.Header) (string, string, error) {
+func (lgc *Logics) checkNetObject(pheader http.Header, objID string, objName string) (string, string, error) {
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	if "" == objName && "" == objID {
