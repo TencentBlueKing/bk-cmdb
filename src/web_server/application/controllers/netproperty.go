@@ -102,13 +102,6 @@ func ImportNetProperty(c *gin.Context) {
 		return
 	}
 
-	// rebuild response body
-	reply, err = rebuildNetPropertyReponseBody(reply, line_numbers)
-	if nil != err {
-		c.String(http.StatusInternalServerError, getReturnStr(common.CCErrWebGetAddNetPropertyResultFail,
-			defErr.Errorf(common.CCErrWebGetAddNetPropertyResultFail).Error(), nil))
-	}
-
 	c.String(http.StatusOK, reply)
 }
 

@@ -20,13 +20,13 @@ import (
 
 type NetcollectDevice struct {
 	DeviceID    int64      `json:"device_id,omitempty" bson:"device_id,omitempty"`
-	DeviceName  string     `json:"device_name" bson:"device_name,omitempty"`
-	DeviceModel string     `json:"device_model" bson:"device_model,omitempty"`
+	DeviceName  string     `json:"device_name,omitempty" bson:"device_name,omitempty"`
+	DeviceModel string     `json:"device_model,omitempty" bson:"device_model,omitempty"`
 	ObjectID    string     `json:"bk_obj_id" bson:"bk_obj_id,omitempty"`
-	ObjectName  string     `json:"bk_obj_name" bson:"-"`
-	BkVendor    string     `json:"bk_vendor" bson:"bk_vendor,omitempty"`
+	ObjectName  string     `json:"bk_obj_name,omitempty" bson:"-"`
+	BkVendor    string     `json:"bk_vendor,omitempty" bson:"bk_vendor,omitempty"`
 	OwnerID     string     `json:"-" bson:"bk_supplier_account"`
-	CreateTime  *time.Time `field:"create_time" json:"create_time,omitempty" bson:"create_time,omitempty"`
+	CreateTime  *time.Time `field:"create_time,omitempty" json:"create_time,omitempty" bson:"create_time,omitempty"`
 	LastTime    *time.Time `field:"last_time" json:"last_time,omitempty" bson:"last_time,omitempty"`
 }
 
@@ -38,14 +38,14 @@ type NetcollectProperty struct {
 	DeviceName           string     `json:"device_name" bson:"-"`
 	ObjectID             string     `json:"bk_obj_id,omitempty" bson:"-"`
 	ObjectName           string     `json:"bk_obj_name,omitempty" bson:"-"`
-	OID                  string     `json:"oid" bson:"oid"`
-	Period               string     `json:"period" bson:"period"`
-	Action               string     `json:"action" bson:"action"`
+	OID                  string     `json:"oid,omitempty" bson:"oid"`
+	Period               string     `json:"period,omitempty" bson:"period"`
+	Action               string     `json:"action,omitempty" bson:"action"`
 	OwnerID              string     `json:"-" bson:"bk_supplier_account"`
 	CreateTime           *time.Time `field:"create_time,omitempty" json:"create_time,omitempty" bson:"create_time,omitempty"`
 	LastTime             *time.Time `field:"last_time,omitempty" json:"last_time,omitempty" bson:"last_time,omitempty"`
 	Unit                 string     `json:"unit,omitempty" bson:"-"`
-	DeviceModel          string     `json:"device_model" bson:"device_model"`
+	DeviceModel          string     `json:"device_model,omitempty" bson:"-"`
 }
 
 type ParamNetcollectorSearch struct {

@@ -33,7 +33,7 @@ func (lgc *Logics) AddDevices(pheader http.Header, deviceInfoList []meta.Netcoll
 		errMsg := ""
 		result := true
 
-		deviceID, err := lgc.addDevice(deviceInfo, pheader, ownerID)
+		deviceID, err := lgc.addDevice(pheader, deviceInfo, ownerID)
 		if nil != err {
 			errMsg = err.Error()
 			result = false
@@ -79,7 +79,7 @@ func (lgc *Logics) SearchDevice(pheader http.Header, params *meta.NetCollSearchP
 	// if condition only has bk_obj_name but not bk_obj_id
 	// get net device bk_obj_id from bk_obj_name
 	if _, ok := deviceCond[common.BKObjIDField]; !ok && 0 < len(objCond) {
-		objIDs, err := lgc.getNetDeviceObjIDsByCond(objCond, pheader)
+		objIDs, err := lgc.getNetDeviceObjIDsByCond(pheader, objCond)
 		if nil != err {
 			blog.Errorf("[NetDevice] search net device fail, search net device obj id by condition [%#v] error: %v", objCond, err)
 			return meta.SearchNetDevice{}, defErr.Errorf(common.CCErrCollectNetDeviceGetFail)
@@ -165,7 +165,7 @@ func (lgc *Logics) DeleteDevice(pheader http.Header, netDeviceID int64) error {
 }
 
 // add a device
-func (lgc *Logics) addDevice(deviceInfo meta.NetcollectDevice, pheader http.Header, ownerID string) (int64, error) {
+func (lgc *Logics) addDevice(pheader http.Header, deviceInfo meta.NetcollectDevice, ownerID string) (int64, error) {
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	if "" == deviceInfo.DeviceModel {
 		blog.Errorf("[NetDevice] add net device fail, device_model is empty")
@@ -183,7 +183,7 @@ func (lgc *Logics) addDevice(deviceInfo meta.NetcollectDevice, pheader http.Head
 	}
 
 	// check if bk_object_id and bk_object_name are net device object
-	err := lgc.checkIfNetDeviceObject(&deviceInfo, pheader)
+	err := lgc.checkIfNetDeviceObject(pheader, &deviceInfo)
 	if nil != err {
 		blog.Errorf("[NetDevice] add net device fail, error: %v, object name [%s] and object ID [%s]",
 			err, deviceInfo.ObjectName, deviceInfo.ObjectID)
@@ -297,9 +297,9 @@ func (lgc *Logics) addShowFieldValueIntoNetDevice(
 
 // check the deviceInfo if is a net object
 // by checking if bk_obj_id and bk_obj_name function parameter are valid net device object or not
-func (lgc *Logics) checkIfNetDeviceObject(deviceInfo *meta.NetcollectDevice, pheader http.Header) error {
+func (lgc *Logics) checkIfNetDeviceObject(pheader http.Header, deviceInfo *meta.NetcollectDevice) error {
 	var err error
-	deviceInfo.ObjectID, deviceInfo.ObjectName, err = lgc.checkNetObject(deviceInfo.ObjectID, deviceInfo.ObjectName, pheader)
+	deviceInfo.ObjectID, deviceInfo.ObjectName, err = lgc.checkNetObject(pheader, deviceInfo.ObjectID, deviceInfo.ObjectName)
 	return err
 }
 
@@ -352,7 +352,7 @@ func (lgc *Logics) updateNetDeviceByName(deviceInfo meta.NetcollectDevice) error
 }
 
 // get net device obj ID
-func (lgc *Logics) getNetDeviceObjIDsByCond(objCond map[string]interface{}, pheader http.Header) ([]string, error) {
+func (lgc *Logics) getNetDeviceObjIDsByCond(pheader http.Header, objCond map[string]interface{}) ([]string, error) {
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	objIDs := []string{}
