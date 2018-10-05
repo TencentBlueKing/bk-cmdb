@@ -143,8 +143,8 @@ type NetcollectReport struct {
 }
 
 type NetcollectHistory struct {
-	*NetcollectReport `json:",inline" bson:",inline"`
-	Success           bool `json:"success" bson:"success"`
+	NetcollectReport `json:",inline" bson:",inline"`
+	Success          bool `json:"success" bson:"success"`
 }
 
 type NetcollectReportAttribute struct {
