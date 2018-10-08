@@ -17,8 +17,9 @@ import (
 )
 
 type User interface {
-	LoginUser(c *gin.Context, checkUrl string, isMultiOwner bool) bool
-	GetUserList(c *gin.Context, accountURL string) (int, interface{})
+	LoginUser(c *gin.Context) (isLogin bool)
+	GetUserList(c *gin.Context) (int, interface{})
+	GetLoginUrl(c *gin.Context) string
 }
 
 //NewUser return user instance by type

@@ -1018,8 +1018,9 @@ func (c *commonInst) UpdateInst(params types.ContextParams, data frtypes.MapStr,
 	}
 	for _, inst := range insts {
 
-		data.ForEach(func(key string, val interface{}) {
+		data.ForEach(func(key string, val interface{}) error {
 			inst.SetValue(key, val)
+			return nil
 		})
 
 		if err := c.setInstAsst(params, obj, inst); nil != err {
