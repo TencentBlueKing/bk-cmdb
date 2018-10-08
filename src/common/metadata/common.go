@@ -75,6 +75,11 @@ type Response struct {
 	Data     interface{} `json:"data"`
 }
 
+type MapArrayResponse struct {
+	BaseResp `json:",inline"`
+	Data     []map[string]interface{} `json:"data"`
+}
+
 type QueryInput struct {
 	Condition interface{} `json:"condition"`
 	Fields    string      `json:"fields,omitempty"`
@@ -214,6 +219,11 @@ type SearchParams struct {
 
 // PropertyGroupCondition used to reflect the property group json
 type PropertyGroupCondition struct {
+	Condition map[string]interface{} `json:"condition"`
+	Data      map[string]interface{} `json:"data"`
+}
+
+type UpdateParams struct {
 	Condition map[string]interface{} `json:"condition"`
 	Data      map[string]interface{} `json:"data"`
 }
