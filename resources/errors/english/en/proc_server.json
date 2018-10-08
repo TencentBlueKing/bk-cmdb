@@ -7,5 +7,6 @@
     "1108006": "The query process failed",
     "1108007": "Delete process failed",
     "1108008": "The creation process failed",
+	"1108013": "the process bind with module",
     "": ""
 }

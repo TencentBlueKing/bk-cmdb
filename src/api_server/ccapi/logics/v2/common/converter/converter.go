@@ -283,69 +283,45 @@ func ResToV2ForHostList(result bool, message string, data interface{}) (interfac
 }
 
 func convertToV2HostListMain(resDataInfoV3 interface{}) (interface{}, error) {
-	resDataV2 := make([]map[string]interface{}, 0)
+	resDataV2 := make([]interface{}, 0)
 	if nil == resDataInfoV3 {
 		return resDataV2, nil
 	}
 
-	for _, item := range resDataInfoV3.([]interface{}) {
-		itemMap := item.(map[string]interface{})
-		convMap, err := convertFieldsIntToStr(itemMap, []string{common.BKAppIDField, common.BKSetIDField, common.BKModuleIDField, common.BKHostIDField, common.BKCloudIDField})
-		if nil != err {
-			blog.Errorf("ResToV2ForHostList resDataInfoV3 %v, error:%s", resDataInfoV3, err.Error())
-			return nil, err
+	var dataArr []mapstr.MapStr
+	switch realData := resDataInfoV3.(type) {
+	case []mapstr.MapStr:
+		dataArr = realData
+	case []interface{}:
+		for _, item := range realData {
+			itemMap, err := mapstr.NewFromInterface(item)
+			if nil != err {
+				blog.Errorf("ResToV2ForHostList not map[string]interface resDataInfoV3 %v, error:%s", resDataInfoV3, err.Error())
+				return nil, errors.New("http reply data error")
+			}
+			dataArr = append(dataArr, itemMap)
 		}
+	default:
+		blog.Errorf("ResToV2ForHostList not []map[string]interface resDataInfoV3 %v", resDataInfoV3)
+		return nil, errors.New("http reply data error")
+	}
 
-		OSType, ok := itemMap[common.BKOSTypeField].(string)
-		if false == ok {
-			blog.Error("assign error itemMap.bk_os_type is not string, itemMap:%v", itemMap)
-			OSType = ""
-		}
-		OSType = strings.ToLower(OSType)
-		switch OSType {
-		case common.HostOSTypeEnumLinux:
-			OSType = "linux"
-		case common.HostOSTypeEnumWindows:
-			OSType = "windows"
-		default:
-			OSType = ""
-		}
-		setName, ok := itemMap[common.BKSetNameField].(string)
-		if false == ok {
-			blog.Error("assign error itemMap.SetName is not string, itemMap:%v", itemMap)
+	for _, itemMap := range dataArr {
+
+		hostID, err := util.GetInt64ByInterface(itemMap[common.BKHostIDField])
+		if nil != err {
+			blog.Warnf("convertToV2HostListMain hostID not found, appID:%s, hostInfo:%+v", itemMap[common.BKAppIDField], itemMap)
 			continue
 		}
 
-		operator, _ := itemMap[common.BKOperatorField]
-		bakOperator, _ := itemMap[common.BKBakOperatorField]
-
-		resDataV2 = append(resDataV2, map[string]interface{}{
-			"ApplicationID": convMap[common.BKAppIDField],
-			"SetID":         convMap[common.BKSetIDField],
-			"ModuleID":      convMap[common.BKModuleIDField],
-			"HostID":        convMap[common.BKHostIDField],
-			"OSType":        OSType,
-			"osType":        OSType,
-			//"AssetID": "",
-			"HostName": itemMap[common.BKHostNameField],
-			//"DeviceClass": "",
-			"Operator":    operator,
-			"BakOperator": bakOperator,
-			"InnerIP":     itemMap[common.BKHostInnerIPField],
-			"OuterIP":     itemMap[common.BKHostOuterIPField],
-			//"Status": "",
-			"CreateTime": convertToV2Time(itemMap[common.CreateTimeField]),
-			//"HardMemo": "",
-			"Region":    "",
-			"CompanyID": itemMap[common.BKOwnerIDField],
-			"OSName":    itemMap[common.BKOSNameField],
-			//"IDcName": "",
-			"ApplicationName": itemMap[common.BKAppNameField],
-			"SetName":         setName,
-			"ModuleName":      itemMap[common.BKModuleNameField],
-			"ModuleType":      itemMap[common.BKModuleTypeField],
-			"Source":          convMap[common.BKCloudIDField],
-		})
+		innerIP, ok := itemMap[common.BKHostInnerIPField].(string)
+		if !ok {
+			blog.Warnf("convertToV2HostListMain innerIP not found, appID:%s, hostInfo:%+v", itemMap[common.BKAppIDField], itemMap)
+			continue
+		}
+		hostHard := convHostHardInfo(hostID, innerIP, itemMap)
+		itemMap.Set("ExtInfo", hostHard)
+		resDataV2 = append(resDataV2, GeneralV2Data(itemMap))
 	}
 	return resDataV2, nil
 }
@@ -676,6 +652,12 @@ func ResV2ToForProcList(resDataV3 interface{}, defLang language.DefaultCCLanguag
 func GeneralV2Data(data interface{}) interface{} {
 
 	switch realData := data.(type) {
+	case []mapstr.MapStr:
+		mapItem := make([]map[string]interface{}, 0)
+		for _, item := range realData {
+			mapItem = append(mapItem, convMapInterface(item))
+		}
+		return mapItem
 	case []interface{}:
 		mapItem := make([]interface{}, 0)
 		for _, item := range realData {
@@ -685,40 +667,10 @@ func GeneralV2Data(data interface{}) interface{} {
 			mapItem = append(mapItem, GeneralV2Data(item))
 		}
 		return mapItem
+	case mapstr.MapStr:
+		return convMapInterface(realData)
 	case map[string]interface{}:
-		mapItem := make(map[string]interface{})
-		for key, val := range realData {
-			key = ConverterV3Fields(key, "")
-			if key == "CreateTime" || key == "LastTime" || key == common.CreateTimeField || key == common.LastTimeField {
-				ts, ok := val.(time.Time)
-				if ok {
-					mapItem[key] = ts.Format("2006-01-02 15:04:05")
-
-				} else {
-					mapItem[key] = ""
-				}
-			} else if common.BKProtocol == key || "Protocol" == key {
-				//v2 api erturn use protocol name
-				protocal, ok := val.(string)
-				if false == ok {
-					protocal = ""
-				} else {
-					switch protocal {
-					case "1":
-						protocal = "TCP"
-					case "2":
-						protocal = "UDP"
-					default:
-						protocal = ""
-					}
-				}
-				mapItem[key] = protocal
-			} else {
-				mapItem[key] = GeneralV2Data(val)
-			}
-
-		}
-		return mapItem
+		return convMapInterface(realData)
 	}
 
 	if nil == data {
@@ -727,6 +679,141 @@ func GeneralV2Data(data interface{}) interface{} {
 
 	return fmt.Sprintf("%v", data)
 
+}
+
+func GetHostHardInfo(appID int64, hostInfoArr []mapstr.MapStr) []mapstr.MapStr {
+	hostHardInfoArr := make([]mapstr.MapStr, 0)
+	alreadyIPMap := make(map[int64]bool, 0)
+	for _, host := range hostInfoArr {
+		hostID, err := host.Int64(common.BKHostIDField)
+		if nil != err {
+			blog.Warnf("GetHostHardInfo hostID not found, appID:%s, hostInfo:%+v", appID, host)
+			continue
+		}
+		innerIP, err := host.String(common.BKHostInnerIPField)
+		if nil != err {
+			blog.Warnf("GetHostHardInfo innerIP not found, appID:%s, hostInfo:%+v", appID, host)
+			continue
+		}
+		_, isHandle := alreadyIPMap[hostID]
+		if isHandle {
+			continue
+		}
+		alreadyIPMap[hostID] = true
+		hostHardInfoArr = append(hostHardInfoArr, convHostHardInfo(hostID, innerIP, host))
+	}
+	return hostHardInfoArr
+}
+func convHostHardInfo(hostID int64, innerIP string, host mapstr.MapStr) (hostHardInfo mapstr.MapStr) {
+	hostHardInfo = mapstr.New()
+	osVersionEnumID, err := host.String(common.BKOSTypeField)
+	osVersion := ""
+	if nil != err {
+		hostHardInfo.Set("PlatformOS", "")
+	} else {
+		osVersion = getOSTypeByEnumID(osVersionEnumID)
+		hostHardInfo.Set("PlatformOS", osVersion)
+	}
+	network := mapstr.New()
+	innerMac, ok := host.Get("bk_mac")
+	if ok {
+		network.Set(innerIP, innerMac)
+	}
+	outerIP, err := host.String(common.BKHostOuterIPField)
+	if nil == err {
+		if 0 < len(outerIP) {
+			outerMac, err := host.String("bk_outer_mac")
+			if nil == err {
+				network.Set(outerIP, outerMac)
+			}
+		}
+	}
+	system := mapstr.New()
+	system.Set("OS", osVersion)
+	dockerClientVersion, clientOk := host.Get(common.HostFieldDockerClientVersion)
+	dockerServerVersion, serverOk := host.Get(common.HostFieldDockerServerVersion)
+	if clientOk || serverOk {
+		system.Set("clientDockerVersion", dockerClientVersion)
+		system.Set("serverDockerVersion", dockerServerVersion)
+	}
+	system.Set("kernelVersion", "")
+	mem, err := host.Int64("bk_mem")
+	if nil != err {
+		mem = 0
+	} else {
+		mem = mem * 1024 * 1024
+	}
+	disk, err := host.Int64("bk_disk")
+	if nil != err {
+		disk = 0
+	} else {
+		disk = disk * 1024 * 1024 * 1024
+	}
+	cpu, err := host.Int64("bk_cpu")
+	if nil != err {
+		cpu = 0
+	}
+	hostHardInfo.Set("System", system)
+	hostHardInfo.Set("network", network)
+	hostHardInfo.Set("InnerIP", innerIP)
+	hostHardInfo.Set("OuterIP", outerIP)
+	hostHardInfo.Set("HostID", fmt.Sprintf("%d", hostID))
+	hostHardInfo.Set("Memory", mapstr.MapStr{"Total": mem})
+	hostHardInfo.Set("Disk", mapstr.MapStr{"Total": disk})
+	hostHardInfo.Set("Cpu", mapstr.MapStr{"CpuNum": cpu})
+	return hostHardInfo
+}
+
+func convMapInterface(data map[string]interface{}) map[string]interface{} {
+	mapItem := make(map[string]interface{})
+	for key, val := range data {
+		key = ConverterV3Fields(key, "")
+		if key == "CreateTime" || key == "LastTime" || key == common.CreateTimeField || key == common.LastTimeField {
+			ts, ok := val.(time.Time)
+			if ok {
+				mapItem[key] = ts.Format("2006-01-02 15:04:05")
+
+			} else {
+				mapItem[key] = ""
+			}
+		} else if common.BKProtocol == key || "Protocol" == key {
+			//v2 api erturn use protocol name
+			protocal, ok := val.(string)
+			if false == ok {
+				protocal = ""
+			} else {
+				switch protocal {
+				case "1":
+					protocal = "TCP"
+				case "2":
+					protocal = "UDP"
+				default:
+					protocal = ""
+				}
+			}
+			mapItem[key] = protocal
+		} else if key == common.BKOSTypeField {
+
+			switch realVal := val.(type) {
+			case string:
+				switch realVal {
+				case common.HostOSTypeEnumLinux:
+					mapItem[key] = "linux"
+				case common.HostOSTypeEnumWindows:
+					mapItem[key] = "windows"
+				default:
+					mapItem[key] = realVal
+				}
+			default:
+				mapItem[key] = realVal
+			}
+
+		} else {
+			mapItem[key] = GeneralV2Data(val)
+		}
+
+	}
+	return mapItem
 }
 
 // getOneLevelData  get one level data
@@ -1197,4 +1284,16 @@ func getFieldsMap(objType string) map[string]string {
 		"auto_time_gap":    "AutoTimeGap",
 	}
 	return fieldsMap
+}
+
+func getOSTypeByEnumID(enumID string) (OSType string) {
+	switch enumID {
+	case common.HostOSTypeEnumLinux:
+		OSType = "linux"
+	case common.HostOSTypeEnumWindows:
+		OSType = "windows"
+	default:
+		OSType = enumID
+	}
+	return
 }

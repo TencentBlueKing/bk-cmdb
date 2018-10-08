@@ -1,25 +1,26 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package util
 
 import (
 	"configcenter/src/common"
-	"github.com/stretchr/testify/require"
+	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
 
-	restful "github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful"
+	"github.com/stretchr/testify/require"
 )
 
 func TestInArray(t *testing.T) {
@@ -157,7 +158,7 @@ func TestGetActionLanguage(t *testing.T) {
 	req := httptest.NewRequest("POST", "http://127.0.0.1/call", nil)
 
 	language := GetActionLanguage(restful.NewRequest(req))
-	require.Empty(t, language)
+	//require.Empty(t, language)
 
 	req.Header.Set(common.BKHTTPLanguage, "cn")
 	language = GetActionLanguage(restful.NewRequest(req))
@@ -166,4 +167,70 @@ func TestGetActionLanguage(t *testing.T) {
 	req.Header.Set(common.BKHTTPLanguage, "cnn")
 	language = GetActionLanguage(restful.NewRequest(req))
 	require.NotEqual(t, "cn", language)
+}
+
+func TestInStrArr(t *testing.T) {
+	type args struct {
+		arr []string
+		key string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{"", args{[]string{"key"}, "key"}, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := InStrArr(tt.args.arr, tt.args.key); got != tt.want {
+				t.Errorf("InStrArr() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestHeader(t *testing.T) {
+	header := http.Header{}
+	header.Set(common.BKHTTPLanguage, "zh")
+	header.Set(common.BKHTTPHeaderUser, "user")
+	header.Set(common.BKHTTPOwnerID, "owner")
+	header.Set(common.BKHTTPCCRequestID, "rid")
+
+	req := &http.Request{Header: header}
+	r := restful.NewRequest(req)
+	if GetLanguage(header) != "zh" {
+		t.Fail()
+	}
+	if GetActionLanguage(r) != "zh" {
+		t.Fail()
+	}
+
+	if GetActionUser(r) != "user" {
+		t.Fail()
+	}
+	if GetUser(header) != "user" {
+		t.Fail()
+	}
+
+	if GetActionOnwerID(r) != "owner" {
+		t.Fail()
+	}
+	if GetOwnerID(header) != "owner" {
+		t.Fail()
+	}
+	if GetActionOnwerIDByHTTPHeader(header) != "owner" {
+		t.Fail()
+	}
+
+	if o, u := GetOwnerIDAndUser(header); o != "owner" || u != "user" {
+		t.Fail()
+	}
+	if o, u := GetActionOnwerIDAndUser(r); o != "owner" || u != "user" {
+		t.Fail()
+	}
+
+	if GetHTTPCCRequestID(header) != "rid" {
+		t.Fail()
+	}
 }

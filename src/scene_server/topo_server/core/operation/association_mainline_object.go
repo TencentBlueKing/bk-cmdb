@@ -40,7 +40,7 @@ func (a *association) DeleteMainlineAssociaton(params types.ContextParams, objID
 
 	// update associations
 	childObj, err := targetObj.GetMainlineChildObject()
-	if nil != err {
+	if nil != err && io.EOF != err {
 		blog.Errorf("[operation-asst] failed to find the object(%s)'s child, error info is %s", objID, err.Error())
 		return err
 	}
@@ -50,13 +50,16 @@ func (a *association) DeleteMainlineAssociaton(params types.ContextParams, objID
 		return err
 	}
 
-	if err = childObj.SetMainlineParentObject(parentObj.GetID()); nil != err && io.EOF != err {
-		blog.Errorf("[operation-asst] failed to update the association, error info is %s", err.Error())
-		return err
-	}
+	if nil != childObj { // FIX: 正常情况下 childObj 不可以能为 nil，只有在拓扑异常的时候才会出现
 
+		if err = childObj.SetMainlineParentObject(parentObj.GetID()); nil != err && io.EOF != err {
+			blog.Errorf("[operation-asst] failed to update the association, error info is %s", err.Error())
+			return err
+		}
+
+	}
 	// delete objects
-	if err = a.obj.DeleteObject(params, targetObj.GetRecordID(), nil); nil != err && io.EOF != err {
+	if err = a.obj.DeleteObject(params, targetObj.GetRecordID(), nil, false); nil != err && io.EOF != err {
 		blog.Errorf("[operation-asst] failed to delete the object(%s), error info is %s", targetObj.GetID(), err.Error())
 		return err
 	}
@@ -195,6 +198,17 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 		return nil, err
 	}
 
+	// create the default group
+	grp := currentObj.CreateGroup()
+	grp.SetDefault(true)
+	grp.SetIndex(-1)
+	grp.SetName("Default")
+	grp.SetID("default")
+	if err = grp.Save(nil); nil != err {
+		blog.Errorf("[operation-obj] failed to create the default group, error info is %s", err.Error())
+		return nil, err
+	}
+
 	defaultInstNameAttr := currentObj.CreateAttribute()
 	defaultInstNameAttr.SetIsSystem(false)
 	defaultInstNameAttr.SetIsOnly(true)
@@ -204,6 +218,8 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 	defaultInstNameAttr.SetIsRequired(true)
 	defaultInstNameAttr.SetID(currentObj.GetInstNameFieldName())
 	defaultInstNameAttr.SetName(currentObj.GetDefaultInstPropertyName())
+	defaultInstNameAttr.SetGroupIndex(-1)
+	defaultInstNameAttr.SetGroup(grp)
 
 	if err = defaultInstNameAttr.Save(nil); nil != err {
 		blog.Errorf("[operation-asst] failed to create the object(%s) attribute(%s), error info is %s", currentObj.GetID(), currentObj.GetDefaultInstPropertyName(), err.Error())
