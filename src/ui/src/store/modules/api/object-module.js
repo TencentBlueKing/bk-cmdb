@@ -8,7 +8,7 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-import { $Axios, $axios } from '@/api/axios'
+import $http from '@/api'
 
 const state = {
 
@@ -29,8 +29,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    createModule ({ commit, state, dispatch }, { bkBizId, bkSetId, params }) {
-        return $axios.post(`module/${bkBizId}/${bkSetId}`, params)
+    createModule ({ commit, state, dispatch }, { bizId, setId, params, config }) {
+        return $http.post(`module/${bizId}/${setId}`, params, config)
     },
 
     /**
@@ -43,8 +43,8 @@ const actions = {
      * @param {Number} bkModuleId 模块id
      * @return {promises} promises 对象
      */
-    deleteModule ({ commit, state, dispatch }, { bkBizId, bkSetId, bkModuleId }) {
-        return $axios.delete(`module/${bkBizId}/${bkSetId}/${bkModuleId}`)
+    deleteModule ({ commit, state, dispatch }, { bizId, setId, moduleId, config }) {
+        return $http.delete(`module/${bizId}/${setId}/${moduleId}`, config)
     },
 
     /**
@@ -57,8 +57,8 @@ const actions = {
      * @param {Number} bkModuleId 模块id
      * @return {promises} promises 对象
      */
-    updateModule ({ commit, state, dispatch }, { bkBizId, bkSetId, bkModuleId, params }) {
-        return $axios.put(`module/${bkBizId}/${bkSetId}/${bkModuleId}`, params)
+    updateModule ({ commit, state, dispatch }, { bizId, setId, moduleId, params, config }) {
+        return $http.put(`module/${bizId}/${setId}/${moduleId}`, params, config)
     },
 
     /**
@@ -71,8 +71,8 @@ const actions = {
      * @param {Number} bkSetId 集群id
      * @return {promises} promises 对象
      */
-    searchModule ({ commit, state, dispatch }, { bkSupplierAccount, bkBizId, bkSetId, params }) {
-        return $axios.post(`module/${bkSupplierAccount}/${bkBizId}/${bkSetId}`, params)
+    searchModule ({ commit, state, dispatch, rootGetters }, { bizId, setId, params, config }) {
+        return $http.post(`module/search/${rootGetters.supplierAccount}/${bizId}/${setId}`, params, config)
     }
 }
 

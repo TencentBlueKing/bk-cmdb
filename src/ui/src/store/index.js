@@ -1,42 +1,63 @@
-/*
- * Tencent is pleased to support the open source community by making 蓝鲸 available.
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at http://opensource.org/licenses/MIT
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and limitations under the License.
- */
-
-/*
-    Vuex 配置文件
-*/
-
 import Vue from 'vue'
 import Vuex from 'vuex'
-import common from './modules/common'
-import main from './modules/main'
-import process from './modules/process'
-import index from './modules/index'
-import hostTransferPop from './modules/hostTransferPop'
-import hostSnapshot from './modules/hostSnapshot'
-import usercustom from './modules/usercustom'
-import navigation from './modules/navigation'
-import object from './modules/object'
-import association from './modules/association'
+
+import global from './modules/global.js'
+import request from './modules/request.js'
+
+import eventSub from './modules/api/event-sub.js'
+import hostCustomApi from './modules/api/host-custom-api.js'
+import hostDelete from './modules/api/host-delete.js'
+import hostFavorites from './modules/api/host-favorites.js'
+import hostRelation from './modules/api/host-relation.js'
+import hostSearchHistory from './modules/api/host-search-history.js'
+import hostSearch from './modules/api/host-search.js'
+import hostUpdate from './modules/api/host-update.js'
+import objectBatch from './modules/api/object-batch.js'
+import objectBiz from './modules/api/object-biz.js'
+import objectCommonInst from './modules/api/object-common-inst.js'
+import objectMainLineModule from './modules/api/object-main-line-module.js'
+import objectModelClassify from './modules/api/object-model-classify.js'
+import objectModelFieldGroup from './modules/api/object-model-field-group.js'
+import objectModelProperty from './modules/api/object-model-property.js'
+import objectModel from './modules/api/object-model.js'
+import objectModule from './modules/api/object-module.js'
+import objectRelation from './modules/api/object-relation.js'
+import objectSet from './modules/api/object-set.js'
+import operationAudit from './modules/api/operation-audit.js'
+import procConfig from './modules/api/proc-config.js'
+import userCustom from './modules/api/user-custom.js'
+import userPrivilege from './modules/api/user-privilege.js'
+import globalModels from './modules/api/global-models.js'
+
 Vue.use(Vuex)
 
 export default new Vuex.Store({
+    ...global,
     modules: {
-        common,
-        main,
-        process,
-        index,
-        hostTransferPop,
-        hostSnapshot,
-        usercustom,
-        navigation,
-        object,
-        association
+        request,
+        eventSub,
+        hostCustomApi,
+        hostDelete,
+        hostFavorites,
+        hostRelation,
+        hostSearchHistory,
+        hostSearch,
+        hostUpdate,
+        objectBatch,
+        objectBiz,
+        objectCommonInst,
+        objectMainLineModule,
+        objectModelClassify,
+        objectModelFieldGroup,
+        objectModelProperty,
+        objectModel,
+        objectModule,
+        objectRelation,
+        objectSet,
+        operationAudit,
+        procConfig,
+        userCustom,
+        userPrivilege,
+        globalModels
     }
 })
