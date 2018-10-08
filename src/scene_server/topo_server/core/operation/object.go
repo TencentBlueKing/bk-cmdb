@@ -487,7 +487,7 @@ func (o *object) FindObjectTopo(params types.ContextParams, cond condition.Condi
 
 		for _, asst := range asstItems {
 
-			if asst.ObjectAttID == common.BKChildStr {
+			if asst.AsstName == common.BKChildStr {
 				continue
 			}
 
@@ -503,7 +503,7 @@ func (o *object) FindObjectTopo(params types.ContextParams, cond condition.Condi
 
 			for _, asstObj := range asstObjs {
 				tmp := metadata.ObjectTopo{}
-				tmp.Label = asst.ObjectAttID
+				tmp.Label = asst.AsstName
 				tmp.LabelName = asst.AsstName
 				tmp.From.ObjID = obj.GetID()
 				cls, err := obj.GetClassification()

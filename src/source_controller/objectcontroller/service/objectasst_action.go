@@ -18,7 +18,7 @@ import (
 	"net/http"
 	"strconv"
 
-	simplejson "github.com/bitly/go-simplejson"
+	"github.com/bitly/go-simplejson"
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/common"

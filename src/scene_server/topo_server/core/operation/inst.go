@@ -256,7 +256,7 @@ func (c *commonInst) setInstAsst(params types.ContextParams, obj model.Object, i
 
 		// update the inst association
 		for _, asst := range assts {
-			if asst.ObjectAttID != attr.GetID() {
+			if asst.AsstName != attr.GetID() {
 				continue
 			}
 
@@ -960,6 +960,8 @@ func (c *commonInst) FindInst(params types.ContextParams, obj model.Object, cond
 		return 0, nil, err
 	}
 
+	// TODO 查看实例数据，通过关联字段查询其他关联值，改为通过关联属性查询
+
 	asstObjAttrs, err := c.asst.SearchObjectAssociation(params, obj.GetID())
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to search object associations, error info is %s", err.Error())
@@ -969,17 +971,17 @@ func (c *commonInst) FindInst(params types.ContextParams, obj model.Object, cond
 	for idx, instInfo := range rsp.Info {
 
 		for _, attrAsst := range asstObjAttrs {
-			if attrAsst.ObjectAttID == common.BKChildStr || attrAsst.ObjectAttID == common.BKInstParentStr {
+			if attrAsst.AsstName == common.BKChildStr || attrAsst.AsstName == common.BKInstParentStr {
 				continue
 			}
 
-			if !instInfo.Exists(attrAsst.ObjectAttID) { // the inst data is old, but the attribute is new.
+			if !instInfo.Exists(attrAsst.AsstName) { // the inst data is old, but the attribute is new.
 				continue
 			}
 
-			asstFieldValue, err := instInfo.String(attrAsst.ObjectAttID)
+			asstFieldValue, err := instInfo.String(attrAsst.AsstName)
 			if nil != err {
-				blog.Errorf("[operation-inst] failed to get the inst'attr(%s) value int the data(%#v), error info is %s", attrAsst.ObjectAttID, instInfo, err.Error())
+				blog.Errorf("[operation-inst] failed to get the inst'attr(%s) value int the data(%#v), error info is %s", attrAsst.AsstName, instInfo, err.Error())
 				return 0, nil, err
 			}
 			instVals, err := c.convertInstIDIntoStruct(params, attrAsst, strings.Split(asstFieldValue, ","), needAsstDetail)
@@ -987,7 +989,7 @@ func (c *commonInst) FindInst(params types.ContextParams, obj model.Object, cond
 				blog.Errorf("[operation-inst] failed to convert association asst(%#v) origin value(%#v) value(%s), error info is %s", attrAsst, instInfo, asstFieldValue, err.Error())
 				return 0, nil, err
 			}
-			rsp.Info[idx].Set(attrAsst.ObjectAttID, instVals)
+			rsp.Info[idx].Set(attrAsst.AsstName, instVals)
 
 		}
 	}
@@ -1016,8 +1018,9 @@ func (c *commonInst) UpdateInst(params types.ContextParams, data frtypes.MapStr,
 	}
 	for _, inst := range insts {
 
-		data.ForEach(func(key string, val interface{}) {
+		data.ForEach(func(key string, val interface{}) error {
 			inst.SetValue(key, val)
+			return nil
 		})
 
 		if err := c.setInstAsst(params, obj, inst); nil != err {

@@ -18,7 +18,7 @@ const (
 	// AssociationFieldObjectID the association data field definition
 	AssociationFieldObjectID = "bk_obj_id"
 	// AssociationFieldObjectAttributeID the association data field definition
-	AssociationFieldObjectAttributeID = "bk_object_att_id"
+	//AssociationFieldObjectAttributeID = "bk_object_att_id"
 	// AssociationFieldSupplierAccount the association data field definition
 	AssociationFieldSupplierAccount = "bk_supplier_account"
 	// AssociationFieldAssociationForward the association data field definition
@@ -27,17 +27,62 @@ const (
 	AssociationFieldAssociationObjectID = "bk_asst_obj_id"
 	// AssociationFieldAssociationName the association data field definition
 	AssociationFieldAssociationName = "bk_asst_name"
+	// AssociationFieldAssociationId auto incr id
+	AssociationFieldAssociationId = "id"
+)
+
+// 关联关系
+type AsstTypeValue int
+
+const (
+	// 默认0无
+	AsstTypeNone = iota
+	// 1从属
+	AsstTypeBelong
+	// 2引用
+	AsstTypeRef
+)
+
+// 关联方式
+type AsstWayValue int
+
+const (
+	// 默认0无
+	AsstWayNone = iota
+	// 1 1-N
+	AsstWay1N
+	// 2 N-1
+	AsstWayN1
+	// 3 N-N
+	AsstWayNN
+)
+
+// 关联位置
+type AsstPositionValue int
+
+const (
+	// 默认0无
+	AsstPosNone = iota
+	// 1 上级
+	AsstPosSuperior
 )
 
 // Association define object association struct
 type Association struct {
-	ID               int64  `field:"id" json:"id" bson:"id"`
-	ObjectID         string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
-	OwnerID          string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
-	AsstForward      string `field:"bk_asst_forward" json:"bk_asst_forward" bson:"bk_asst_forward"`
-	AsstObjID        string `field:"bk_asst_obj_id" json:"bk_asst_obj_id" bson:"bk_asst_obj_id"`
-	AsstName         string `field:"bk_asst_name" json:"bk_asst_name" bson:"bk_asst_name"`
-	ObjectAttID      string `field:"bk_object_att_id" json:"bk_object_att_id" bson:"bk_object_att_id"`
+	ID          int64  `field:"id" json:"id" bson:"id"`
+	ObjectID    string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
+	OwnerID     string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	AsstForward string `field:"bk_asst_forward" json:"bk_asst_forward" bson:"bk_asst_forward"`
+	AsstObjID   string `field:"bk_asst_obj_id" json:"bk_asst_obj_id" bson:"bk_asst_obj_id"`
+	AsstName    string `field:"bk_asst_name" json:"bk_asst_name" bson:"bk_asst_name"`
+
+	AsstType AsstTypeValue `field:"bk_asst_type" json:"bk_asst_type" bson:"bk_asst_type"`
+	// 关联位置
+	AsstPosition AsstPositionValue `field:"bk_asst_position" json:"bk_asst_position" bson:"bk_asst_position"`
+	// 关联方式
+	AsstWay AsstWayValue `field:"bk_asst_way" json:"bk_asst_way" bson:"bk_asst_way"`
+
+	//ObjectAttID      string `field:"bk_object_att_id" json:"bk_object_att_id" bson:"bk_object_att_id"`
 	ClassificationID string `field:"bk_classification_id" bson:"-"`
 	ObjectIcon       string `field:"bk_obj_icon" bson:"-"`
 	ObjectName       string `field:"bk_obj_name" bson:"-"`
