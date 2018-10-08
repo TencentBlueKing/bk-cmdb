@@ -224,7 +224,7 @@ func (ps *ProcServer) GetProcessPortByIP(req *restful.Request, resp *restful.Res
 		//获取绑定关系
 		result := make(map[string]interface{})
 		for _, itemProcData := range procData {
-			procId, err := util.GetIntByInterface(itemProcData[common.BKProcIDField])
+			procId, err := util.GetIntByInterface(itemProcData[common.BKProcessIDField])
 			if err != nil {
 				blog.Warnf("fail to get procid in procdata(%+v)", itemProcData)
 				continue
@@ -260,7 +260,7 @@ func (ps *ProcServer) GetProcessPortByIP(req *restful.Request, resp *restful.Res
 					}
 
 					delete(itemProcData, common.BKAppIDField)
-					delete(itemProcData, common.BKProcIDField)
+					delete(itemProcData, common.BKProcessIDField)
 					result["process"] = itemProcData
 					resultData = append(resultData, result)
 				}
@@ -467,7 +467,7 @@ func (ps *ProcServer) getProcessBindModule(appId, procId int, forward http.Heade
 	}
 
 	moduleArr := objModRet.Data.Info
-	condition[common.BKProcIDField] = procId
+	condition[common.BKProcessIDField] = procId
 	procRet, err := ps.CoreAPI.ProcController().GetProc2Module(context.Background(), forward, condition)
 	if err != nil || (err == nil && !procRet.Result) {
 		return nil, fmt.Errorf("fail to GetProc2Module in getProcessBindModule. err: %v, errcode: %d, errmsg: %s", err, procRet.Code, procRet.ErrMsg)
