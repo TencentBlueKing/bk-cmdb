@@ -57,13 +57,13 @@ func (m *OwnerManager) InitOwner() error {
 	if !exist {
 		rediscli := api.GetAPIResource().CacheCli.GetSession().(*redis.Client)
 		for {
-			ok, err := rediscli.SetNX(common.BKCacheKeyV3Prefix+"owner_init_lock"+m.OwnerID, m.OwnerID, 60*time.Second).Result()
+			ok, err := rediscli.SetNX(common.BKCacheKeyV3Prefix+"owner_init_lock:"+m.OwnerID, m.OwnerID, 60*time.Second).Result()
 			if nil != err {
 				blog.Errorf("owner_init_lock error %s", err.Error())
 				return err
 			}
 			if ok {
-				defer rediscli.Del(common.BKCacheKeyV3Prefix + "owner_init_lock" + m.OwnerID)
+				defer rediscli.Del(common.BKCacheKeyV3Prefix + "owner_init_lock:" + m.OwnerID)
 				break
 			}
 			time.Sleep(time.Second)
