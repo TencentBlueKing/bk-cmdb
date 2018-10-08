@@ -13,15 +13,19 @@
 package controllers
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/core/cc/wactions"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/web_server/application/middleware/user"
 )
 
@@ -30,6 +34,8 @@ const BkAccountUrl = "site.bk_account_url"
 func init() {
 	wactions.RegisterNewAction(wactions.Action{common.HTTPSelectGet, "/user/list", nil, GetUserList})
 	wactions.RegisterNewAction(wactions.Action{common.HTTPUpdate, "/user/language/:language", nil, UpdateUserLanguage})
+	wactions.RegisterNewAction(wactions.Action{common.HTTPSelectGet, "/userinfo", nil, UserInfo})
+	wactions.RegisterNewAction(wactions.Action{common.HTTPUpdate, "/user/current/supplier/:id", nil, UpdateSupplier})
 
 }
 
@@ -56,11 +62,8 @@ var getUserFailData = userDataResult{
 
 // GetUserList get user list
 func GetUserList(c *gin.Context) {
-	a := api.NewAPIResource()
-	config, _ := a.ParseConfig()
-	accountURL := config[BkAccountUrl]
 	user := user.NewUser()
-	code, data := user.GetUserList(c, accountURL)
+	code, data := user.GetUserList(c)
 	c.JSON(code, data)
 	return
 }
@@ -69,7 +72,7 @@ func UpdateUserLanguage(c *gin.Context) {
 	session := sessions.Default(c)
 	language := c.Param("language")
 
-	session.Set("language", language)
+	session.Set(common.WEBSessionLanguageKey, language)
 	err := session.Save()
 
 	if nil != err {
@@ -91,5 +94,102 @@ func UpdateUserLanguage(c *gin.Context) {
 		Code:    "00",
 		Data:    nil,
 	})
+	return
+}
+
+func UserInfo(c *gin.Context) {
+
+	session := sessions.Default(c)
+	resultData := metadata.LoginUserInfoResult{}
+	resultData.Result = true
+	uin, ok := session.Get(common.WEBSessionUinKey).(string)
+	if ok {
+		resultData.Data.UserName = uin
+	}
+	name, ok := session.Get(common.WEBSessionChineseNameKey).(string)
+	if ok {
+		resultData.Data.ChName = name
+	}
+	ownerUin, ok := session.Get(common.WEBSessionOwnerUinKey).(string)
+	if ok {
+		resultData.Data.OnwerUin = ownerUin
+	}
+	strOwnerUinList, ok := session.Get(common.WEBSessionOwnerUinListeKey).(string)
+	if ok {
+		ownerUinList := make([]metadata.LoginUserInfoOwnerUinList, 0)
+		err := json.Unmarshal([]byte(strOwnerUinList), &ownerUinList)
+		if nil != err {
+			blog.Errorf("[UserInfo] json unmarshal error:%s, logID:%s", err.Error(), util.GetHTTPCCRequestID(c.Request.Header))
+		} else {
+			resultData.Data.OwnerUinArr = ownerUinList
+		}
+	}
+	avatarUrl, ok := session.Get(common.WEBSessionAvatarUrlKey).(string)
+	if ok {
+		resultData.Data.AvatarUrl = avatarUrl
+	}
+	iultiSupplier, ok := session.Get(common.WEBSessionMultiSupplierKey).(string)
+	if ok && common.LoginSystemMultiSupplierTrue == iultiSupplier {
+		resultData.Data.MultiSupplier = true // true
+	} else {
+		resultData.Data.MultiSupplier = false // true
+	}
+
+	c.JSON(200, resultData)
+	return
+}
+
+func UpdateSupplier(c *gin.Context) {
+
+	session := sessions.Default(c)
+
+	strOwnerUinList, ok := session.Get(common.WEBSessionOwnerUinListeKey).(string)
+	if "" == strOwnerUinList {
+		c.JSON(http.StatusBadRequest, metadata.BaseResp{
+			Result: false,
+			Code:   common.CCErrCommNotFound,
+			ErrMsg: "not found",
+		})
+		return
+	}
+	ownerUinList := make([]metadata.LoginUserInfoOwnerUinList, 0)
+	if ok {
+		err := json.Unmarshal([]byte(strOwnerUinList), &ownerUinList)
+		if nil != err {
+			blog.Errorf("[UserInfo] json unmarshal error:%s, logID:%s", err.Error(), util.GetHTTPCCRequestID(c.Request.Header))
+			c.JSON(http.StatusBadRequest, metadata.BaseResp{
+				Result: false,
+				Code:   common.CCErrCommJSONUnmarshalFailed,
+				ErrMsg: "json unmarshal error",
+			})
+			return
+		}
+
+	}
+
+	ownerID := c.Param("id")
+	var supplier *metadata.LoginUserInfoOwnerUinList
+	for idx, row := range ownerUinList {
+		if row.OwnerID == ownerID {
+			supplier = &ownerUinList[idx]
+		}
+	}
+
+	if nil == supplier {
+		c.JSON(http.StatusBadRequest, metadata.BaseResp{
+			Result: false,
+			Code:   common.CCErrCommNotFound,
+			ErrMsg: "not found",
+		})
+		return
+	}
+	session.Set(common.WEBSessionOwnerUinKey, supplier.OwnerID)
+	session.Set(common.WEBSessionRoleKey, strconv.FormatInt(supplier.Role, 10))
+	session.Save()
+	ret := metadata.LoginChangeSupplierResult{}
+	ret.Result = true
+	ret.Data.ID = ownerID
+
+	c.JSON(200, ret)
 	return
 }

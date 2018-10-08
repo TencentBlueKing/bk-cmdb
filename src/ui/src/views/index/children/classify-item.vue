@@ -163,8 +163,12 @@
             .model-star{
                 display: none;
                 position: absolute;
-                right: 25px;
-                top: 11px;
+                width: 36px;
+                height: 36px;
+                line-height: 36px;
+                text-align: center;
+                right: 12px;
+                top: 0;
                 color: #c3cdd7;
                 font-size: 14px;
                 cursor: pointer;

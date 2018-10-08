@@ -81,43 +81,43 @@ func (cli *association) ResetMainlineInstAssociatoin(params types.ContextParams,
 		return err
 	}
 
+	// NEED FIX: 下面循环中的continue ，会在处理实例异常的时候跳过当前拓扑的处理，此方式可能会导致某个业务拓扑失败，但是不会影响所有。
 	// reset the parent's inst
 	for _, currentInst := range currentInsts {
 		// delete the current inst
 		instID, err := currentInst.GetInstID()
 		if nil != err {
 			blog.Errorf("[operation-asst] failed to get the inst id from the inst(%#v)", currentInst.ToMapStr())
-			return err
+			continue
 		}
 
 		parent, err := currentInst.GetMainlineParentInst()
 		if nil != err {
 			blog.Errorf("[operation-asst] failed to get the object(%s) mainline parent inst, the current inst(%v), error info is %s", current.GetID(), currentInst.GetValues(), err.Error())
-			return err
+			continue
 		}
 
 		// reset the child's parent
 		childs, err := currentInst.GetMainlineChildInst()
 		if nil != err {
 			blog.Errorf("[operation-asst] failed to get the object(%s) mainline child inst, error info is %s", current.GetID(), err.Error())
-			return err
+			continue
 		}
 		for _, child := range childs {
-			blog.Infof("the child: %s", child.GetObject().GetID())
 
 			// set the child's parent
 			if err = child.SetMainlineParentInst(parent); nil != err {
 				blog.Errorf("[operation-asst] failed to set the object(%s) mainline child inst, error info is %s", child.GetObject().GetID(), err.Error())
-				return err
+				continue
 			}
 		}
 
 		// delete the current inst
 		cond := condition.CreateCondition()
 		cond.Field(currentInst.GetObject().GetInstIDFieldName()).Eq(instID)
-		if err = cli.inst.DeleteInst(params, current, cond); nil != err {
+		if err = cli.inst.DeleteInst(params, current, cond, false); nil != err {
 			blog.Errorf("[operation-asst] failed to delete the current inst(%#v), error info is %s", currentInst.ToMapStr(), err.Error())
-			return err
+			continue
 		}
 	}
 

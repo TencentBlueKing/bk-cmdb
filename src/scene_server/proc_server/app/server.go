@@ -32,11 +32,10 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 	// clientset
 	apiMachConf := &util.APIMachineryConfig{
-		ZkAddr:      op.ServConf.RegDiscover,
-		QPS:         op.ServConf.Qps,
-		Burst:       op.ServConf.Burst,
-		TLSConfig:   nil,
-		GseProcServ: "", // TODO, get gseprocserver from configure
+		ZkAddr:    op.ServConf.RegDiscover,
+		QPS:       op.ServConf.Qps,
+		Burst:     op.ServConf.Burst,
+		TLSConfig: nil,
 	}
 
 	apiMachinery, err := apimachinery.NewApiMachinery(apiMachConf)
