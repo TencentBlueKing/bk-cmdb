@@ -8,7 +8,7 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-import { $Axios, $axios } from '@/api/axios'
+import $http from '@/api'
 
 const state = {
 
@@ -27,8 +27,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    addHostToResource ({ commit, state, dispatch }, { params }) {
-        return $axios.post(`hosts/add`, params)
+    addHostToResource ({ commit, state, dispatch }, { params, config }) {
+        return $http.post(`hosts/add`, params, config)
     },
 
     /**
@@ -39,8 +39,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    transferHostModule ({ commit, state, dispatch }, { params }) {
-        return $axios.post(`hosts/modules`, params)
+    transferHostModule ({ commit, state, dispatch }, { params, config }) {
+        return $http.post(`hosts/modules`, params, config)
     },
 
     /**
@@ -51,8 +51,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    transferResourcehostToIdlemodule ({ commit, state, dispatch }, { params }) {
-        return $axios.post(`hosts/modules/resource/idle`, params)
+    transferResourcehostToIdleModule ({ commit, state, dispatch }, { params, config }) {
+        return $http.post(`hosts/modules/resource/idle`, params, config)
     },
 
     /**
@@ -63,8 +63,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    transferHostToFaultmodule ({ commit, state, dispatch }, { params }) {
-        return $axios.post(`hosts/modules/fault`, params)
+    transferHostToFaultModule ({ commit, state, dispatch }, { params, config }) {
+        return $http.post(`hosts/modules/fault`, params, config)
     },
 
     /**
@@ -75,8 +75,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    transferHostToIdlemodule ({ commit, state, dispatch }, { params }) {
-        return $axios.post(`hosts/modules/idle`, params)
+    transferHostToIdleModule ({ commit, state, dispatch }, { params, config }) {
+        return $http.post(`hosts/modules/idle`, params, config)
     },
 
     /**
@@ -87,8 +87,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    transferHostToResourcemodule ({ commit, state, dispatch }, { params }) {
-        return $axios.post(`hosts/modules/resource`, params)
+    transferHostToResourceModule ({ commit, state, dispatch }, { params, config }) {
+        return $http.post(`hosts/modules/resource`, params, config)
     },
 
     /**
@@ -99,8 +99,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    transferHostToMutipleBizModule ({ commit, state, dispatch }, { params }) {
-        return $axios.post(`hosts/modules/biz/mutilple`, params)
+    transferHostToMutipleBizModule ({ commit, state, dispatch }, { params, config }) {
+        return $http.post(`hosts/modules/biz/mutilple`, params, config)
     }
 }
 

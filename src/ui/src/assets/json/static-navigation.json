@@ -1,0 +1,85 @@
+{
+    "bk_index": {
+        "i18n": "Index['首页']",
+        "icon": "bk-icon icon-home-shape",
+        "id": "bk_index",
+        "name": "首页",
+        "path": "/index",
+        "children": [],
+        "classificationId": "bk_index"
+    },
+    "bk_host_manage": {
+        "i18n": "Hosts['主机管理']",
+        "icon": "icon-cc-host",
+        "id": "bk_host_manage",
+        "name": "主机管理",
+        "children": [{
+            "i18n": "Hosts['主机']",
+            "path": "/hosts",
+            "id": "host",
+            "icon": "icon-cc-host",
+            "name": "主机",
+            "classificationId": "bk_host_manage"
+        }, {
+            "i18n": "BusinessTopology['业务拓扑']",
+            "path": "/topology",
+            "id": "topology",
+            "icon": "icon-cc-square",
+            "name": "业务拓扑",
+            "classificationId": "bk_host_manage"
+        }, {
+            "i18n": "ProcessManagement['进程管理']",
+            "path": "/process",
+            "id": "process",
+            "icon": "icon-cc-process",
+            "name": "进程管理",
+            "classificationId": "bk_host_manage"
+        }, {
+            "i18n": "CustomQuery['自定义查询']",
+            "path": "/custom-query",
+            "id": "custom_query",
+            "icon": "icon-cc-columnar",
+            "name": "自定义查询",
+            "classificationId": "bk_host_manage"
+        }, {
+            "i18n": "HostResourcePool['主机资源池']",
+            "path": "/resource",
+            "id": "resource",
+            "icon": "icon-cc-host-free-pool",
+            "name": "主机资源池",
+            "classificationId": "bk_host_manage"
+        }]
+    },
+    "bk_back_config": {
+        "i18n": "Common['后台配置']",
+        "icon": "icon-cc-setting",
+        "id": "bk_back_config",
+        "name": "后台配置",
+        "children": [{
+            "i18n": "ModelManagement['模型管理']",
+            "path": "/model/bk_host_manage",
+            "relative": "/model",
+            "id": "model",
+            "name": "模型管理",
+            "classificationId": "bk_back_config"
+        }, {
+            "i18n": "Permission['权限管理']",
+            "path": "/permission",
+            "id": "permission",
+            "name": "权限管理",
+            "classificationId": "bk_back_config"
+        }, {
+            "i18n": "EventPush['事件推送']",
+            "path": "/eventpush",
+            "id": "event",
+            "name": "事件推送",
+            "classificationId": "bk_back_config"
+        }, {
+            "i18n": "OperationAudit['操作审计']",
+            "path": "/auditing",
+            "id": "audit",
+            "name": "操作审计",
+            "classificationId": "bk_back_config"
+        }]
+    }
+}

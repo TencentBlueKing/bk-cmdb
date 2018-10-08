@@ -8,7 +8,7 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-import { $Axios, $axios } from '@/api/axios'
+import $http from '@/api'
 
 const state = {
 
@@ -28,7 +28,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     createMainlineObject ({ commit, state, dispatch }, { params }) {
-        return $axios.post(`topo/model/mainline`, params)
+        return $http.post(`topo/model/mainline`, params)
     },
 
     /**
@@ -40,8 +40,8 @@ const actions = {
      * @param {String} bkObjId 对象的模型id
      * @return {promises} promises 对象
      */
-    deleteMainlineObject ({ commit, state, dispatch }, { bkSupplierAccount, bkObjId }) {
-        return $axios.delete(`topo/model/mainline/owners/${bkSupplierAccount}/objectids/${bkObjId}`)
+    deleteMainlineObject ({ commit, state, dispatch, rootGetters }, { bkObjId, config }) {
+        return $http.delete(`topo/model/mainline/owners/${rootGetters.supplierAccount}/objectids/${bkObjId}`, config)
     },
 
     /**
@@ -49,11 +49,10 @@ const actions = {
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 开发商账号
      * @return {promises} promises 对象
      */
-    searchMainlineObject ({ commit, state, dispatch }, { bkSupplierAccount }) {
-        return $axios.get(`topo/model/${bkSupplierAccount}`)
+    searchMainlineObject ({ commit, state, dispatch, rootGetters }, config) {
+        return $http.get(`topo/model/${rootGetters.supplierAccount}`, config)
     },
 
     /**
@@ -61,12 +60,11 @@ const actions = {
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 开发商账号
      * @param {String} bkBizId 业务id
      * @return {promises} promises 对象
      */
-    getInstTopo ({ commit, state, dispatch }, { bkSupplierAccount, bkBizId }) {
-        return $axios.get(`topo/inst/${bkSupplierAccount}/${bkBizId}`)
+    getInstTopo ({ commit, state, dispatch, rootGetters }, { bizId, config }) {
+        return $http.get(`topo/inst/${rootGetters.supplierAccount}/${bizId}?level=-1`, config)
     },
 
     /**
@@ -81,7 +79,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchInstTopo ({ commit, state, dispatch }, { bkSupplierAccount, bkObjId, bkBizId, bkInstId }) {
-        return $axios.get(`topo/inst/child/${bkSupplierAccount}/${bkObjId}/${bkBizId}/${bkInstId}`)
+        return $http.get(`topo/inst/child/${bkSupplierAccount}/${bkObjId}/${bkBizId}/${bkInstId}`)
     },
 
     /**
@@ -93,8 +91,8 @@ const actions = {
      * @param {String} bkBizId 业务id
      * @return {promises} promises 对象
      */
-    getInternalTopo ({ commit, state, dispatch }, { bkSupplierAccount, bkBizId }) {
-        return $axios.get(`topo/internal/${bkSupplierAccount}/${bkBizId}`)
+    getInternalTopo ({ commit, state, dispatch, rootGetters }, { bizId, config }) {
+        return $http.get(`topo/internal/${rootGetters.supplierAccount}/${bizId}`, config)
     }
 }
 
