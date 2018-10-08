@@ -71,6 +71,8 @@ const (
 
 	BKTableNameNetcollectDevice   = "cc_Netcollect_Device"
 	BKTableNameNetcollectProperty = "cc_Netcollect_Property"
+
+	BKTableNameHostLock = "cc_HostLock"
 )
 
 // AllTables alltables
@@ -106,6 +108,7 @@ var AllTables = []string{
 	BKTableNameTopoGraphics,
 	BKTableNameTransaction,
 	BKTableNameIDgenerator,
+	BKTableNameHostLock,
 }
 
 // GetInstTableName returns inst data table name

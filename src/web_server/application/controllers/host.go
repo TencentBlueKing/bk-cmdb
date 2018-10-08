@@ -138,7 +138,7 @@ func ExportHost(c *gin.Context) {
 	if err != nil {
 		blog.Error(err.Error())
 		msg := getReturnStr(common.CCErrWebGetHostFail, defErr.Errorf(common.CCErrWebGetHostFail, err.Error()).Error(), nil)
-		c.String(http.StatusBadGateway, msg, nil)
+		c.String(http.StatusInternalServerError, msg, nil)
 		return
 	}
 	var file *xlsx.File

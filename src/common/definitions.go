@@ -502,6 +502,8 @@ const DefaultAppFlag int = 1
 // DefaultAppName the default app name
 const DefaultAppName string = "资源池"
 
+const DefaultCloudName string = "default area"
+
 // BKAppName the default app name
 const BKAppName string = "蓝鲸"
 
@@ -765,4 +767,9 @@ const (
 	LogoutHTTPSchemeCookieKey = "http_scheme"
 	LogoutHTTPSchemeHTTP      = "http"
 	LogoutHTTPSchemeHTTPS     = "https"
+)
+
+const (
+	HostFieldDockerClientVersion = "docker_client_version"
+	HostFieldDockerServerVersion = "docker_server_version"
 )
