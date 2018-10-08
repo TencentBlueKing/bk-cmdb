@@ -24,28 +24,26 @@ import (
 	"configcenter/src/common/util"
 )
 
-// DeleteProc2Module delete proc module config
-func (ps *ProctrlServer) DeleteProc2Module(req *restful.Request, resp *restful.Response) {
+func (ps *ProctrlServer) DeleteProc2Template(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.Core.CCErr.CreateDefaultCCErrorIf(language)
 
 	input := make(map[string]interface{})
 	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
-		blog.Errorf("delete process2module failed! decode request body err: %v", err)
+		blog.Errorf("delete process2template failed! decode request body err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
-	input = util.SetModOwner(input, util.GetOwnerID(req.Request.Header))
 	// retrieve original data
 	var originals []interface{}
-	if err := ps.DbInstance.GetMutilByCondition(common.BKTableNameProcModule, []string{}, input, &originals, "", 0, 0); err != nil {
+	if err := ps.DbInstance.GetMutilByCondition(common.BKTableNameProcTemplate, []string{}, input, &originals, "", 0, 0); err != nil {
 		blog.Warnf("retrieve original error:%v", err)
 	}
 
 	// delete proc module config
 	blog.Infof("delete proc module config %v", input)
-	if err := ps.DbInstance.DelByCondition(common.BKTableNameProcModule, input); err != nil {
+	if err := ps.DbInstance.DelByCondition(common.BKTableNameProcTemplate, input); err != nil {
 		blog.Errorf("delete proc module config error: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcDeleteProc2Module)})
 		return
@@ -55,7 +53,7 @@ func (ps *ProctrlServer) DeleteProc2Module(req *restful.Request, resp *restful.R
 	if len(originals) > 0 {
 		ec := eventclient.NewEventContextByReq(req.Request.Header, ps.CacheDI)
 		for _, i := range originals {
-			if err := ec.InsertEvent(meta.EventTypeRelation, meta.EventObjTypeProcModule, meta.EventActionDelete, nil, i); err != nil {
+			if err := ec.InsertEvent(meta.EventTypeRelation, "processtemplate", meta.EventActionDelete, nil, i); err != nil {
 				blog.Warnf("create event error:%s", err.Error())
 			}
 		}
@@ -64,15 +62,14 @@ func (ps *ProctrlServer) DeleteProc2Module(req *restful.Request, resp *restful.R
 	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
-func (ps *ProctrlServer) CreateProc2Module(req *restful.Request, resp *restful.Response) {
-	// get the language
+func (ps *ProctrlServer) CreateProc2Template(req *restful.Request, resp *restful.Response) {
+
 	language := util.GetLanguage(req.Request.Header)
-	// get the error factory by the language
 	defErr := ps.Core.CCErr.CreateDefaultCCErrorIf(language)
 
 	input := make([]interface{}, 0)
 	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
-		blog.Errorf("create process2module failed! decode request body err: %v", err)
+		blog.Errorf("create process2template failed! decode request body err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
@@ -80,14 +77,13 @@ func (ps *ProctrlServer) CreateProc2Module(req *restful.Request, resp *restful.R
 	blog.Infof("create proc module config: %v ", input)
 	ec := eventclient.NewEventContextByReq(req.Request.Header, ps.CacheDI)
 	for _, i := range input {
-		i := util.SetModOwner(i, util.GetOwnerID(req.Request.Header))
-		if _, err := ps.DbInstance.Insert(common.BKTableNameProcModule, i); err != nil {
+		if _, err := ps.DbInstance.Insert(common.BKTableNameProcTemplate, i); err != nil {
 			blog.Errorf("create proc module config error:%v", err)
-			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcCreateProc2Module)})
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcCreateProc2Template)})
 			return
 		}
 		//  record events
-		if err := ec.InsertEvent(meta.EventTypeRelation, meta.EventObjTypeProcModule, meta.EventActionCreate, i, nil); err != nil {
+		if err := ec.InsertEvent(meta.EventTypeRelation, "processtemplate", meta.EventActionCreate, i, nil); err != nil {
 			blog.Errorf("create event error: %v", err)
 		}
 	}
@@ -95,24 +91,21 @@ func (ps *ProctrlServer) CreateProc2Module(req *restful.Request, resp *restful.R
 	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
-func (ps *ProctrlServer) GetProc2Module(req *restful.Request, resp *restful.Response) {
-	// get the language
+func (ps *ProctrlServer) GetProc2Template(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
-	// get the error factory by the language
 	defErr := ps.Core.CCErr.CreateDefaultCCErrorIf(language)
 
 	input := make(map[string]interface{})
 	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
-		blog.Errorf("get process2module failed! decode request body err: %v", err)
+		blog.Errorf("get process2template failed! decode request body err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
-	blog.Infof("get proc module config condition: %v ", input)
-	input = util.SetModOwner(input, util.GetOwnerID(req.Request.Header))
-	result := make([]interface{}, 0)
-	if err := ps.DbInstance.GetMutilByCondition(common.BKTableNameProcModule, nil, input, &result, "", 0, 0); err != nil {
-		blog.Errorf("get process2module config failed. err: %v", err)
+	blog.Infof("get proc template condition: %v ", input)
+	result := make([]map[string]interface{}, 0)
+	if err := ps.DbInstance.GetMutilByCondition(common.BKTableNameProcTemplate, nil, input, &result, "", 0, 0); err != nil {
+		blog.Errorf("get process2template config failed. err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcSelectProc2Module)})
 		return
 	}
