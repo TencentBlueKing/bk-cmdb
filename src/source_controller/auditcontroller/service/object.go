@@ -37,21 +37,21 @@ func (s *Service) AddObjectLog(req *restful.Request, resp *restful.Response) {
 	appID, err := util.GetInt64ByInterface(strAppID)
 	if nil != err {
 		blog.Errorf("AddObjectLog json unmarshal error:%v", err)
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
 		return
 	}
 
 	params := new(metadata.AuditObjParams) //paramsStruct{}
 	if json.NewDecoder(req.Request.Body).Decode(params); err != nil {
 		blog.Errorf("AddObjectLog json unmarshal failed,  error:%v", err)
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
 	err = s.Logics.AddLogWithStr(ctx, appID, params.InstID, params.OpType, params.OpTarget, params.Content, "", params.OpDesc, ownerID, user)
 	if nil != err {
 		blog.Errorf("AddObjectLog add module log error:%s", err.Error())
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
 		return
 	} else {
 		resp.WriteEntity(metadata.NewSuccessResp(nil))
@@ -72,21 +72,21 @@ func (s *Service) AddObjectLogs(req *restful.Request, resp *restful.Response) {
 	appID, err := util.GetInt64ByInterface(strAppID)
 	if nil != err {
 		blog.Errorf("AddObjectLogs json unmarshal error:%v", err)
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
 		return
 	}
 
 	params := new(metadata.AuditObjsParams)
 	if json.NewDecoder(req.Request.Body).Decode(params); err != nil {
 		blog.Errorf("AddObjectLogs json unmarshal failed,  error:%v", err)
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
 	err = s.Logics.AddLogMulti(ctx, appID, params.OpType, params.OpTarget, params.Content, params.OpDesc, ownerID, user)
 	if nil != err {
 		blog.Errorf("AddObjectLogs add module log error:%s", err.Error())
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
 		return
 	} else {
 		resp.WriteEntity(metadata.NewSuccessResp(nil))
@@ -107,20 +107,20 @@ func (s *Service) AddProcLog(req *restful.Request, resp *restful.Response) {
 	appID, err := util.GetInt64ByInterface(strAppID)
 	if nil != err {
 		blog.Errorf("AddProcLog json unmarshal error:%v", err)
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
 		return
 	}
 	params := new(metadata.AuditProcParams)
 	if json.NewDecoder(req.Request.Body).Decode(params); err != nil {
 		blog.Errorf("AddProcLog json unmarshal failed,  error:%v", err)
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
 	err = s.Logics.AddLogWithStr(ctx, appID, params.ProcID, params.OpType, common.BKInnerObjIDProc, params.Content, "", params.OpDesc, ownerID, user)
 	if nil != err {
 		blog.Errorf("AddProcLog json unmarshal failed,input:%v error:%s", err.Error())
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
 		return
 	}
 	resp.WriteEntity(metadata.NewSuccessResp(nil))
@@ -138,21 +138,21 @@ func (s *Service) AddProcLogs(req *restful.Request, resp *restful.Response) {
 	appID, err := util.GetInt64ByInterface(strAppID)
 	if nil != err {
 		blog.Errorf("AddProcLogs json unmarshal error:%v", err)
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
 		return
 	}
 
 	params := new(metadata.AuditProcsParams)
 	if json.NewDecoder(req.Request.Body).Decode(params); err != nil {
 		blog.Errorf("AddProcLogs json unmarshal failed,  error:%v", err)
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
 	err = s.Logics.AddLogMulti(ctx, appID, params.OpType, common.BKInnerObjIDProc, params.Content, params.OpDesc, ownerID, user)
 	if nil != err {
 		blog.Errorf("AddProcLogs json unmarshal failed,  error:%v", err.Error())
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
 		return
 	}
 	resp.WriteEntity(metadata.NewSuccessResp(nil))
