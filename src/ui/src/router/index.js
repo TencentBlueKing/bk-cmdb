@@ -113,6 +113,7 @@ const router = new Router({
         component: networkDiscoveryConfiguration,
         meta: {
             ignoreAuthorize: true,
+            returnPath: '/network-discovery',
             relative: '/network-discovery'
         }
     }, {
@@ -120,6 +121,7 @@ const router = new Router({
         component: networkConfirm,
         meta: {
             ignoreAuthorize: true,
+            returnPath: '/network-discovery',
             relative: '/network-discovery'
         }
     }, {
@@ -127,6 +129,7 @@ const router = new Router({
         component: networkHistory,
         meta: {
             ignoreAuthorize: true,
+            returnPath: '/network-discovery',
             relative: '/network-discovery'
         }
     }, {

@@ -9,7 +9,6 @@
  */
 
 import $http from '@/api'
-let SITE_URL = 'http://dev.open.oa.com:8081/api/v3/'
 
 const state = {
 
@@ -28,7 +27,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     createDevice ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`${SITE_URL}netcollect/device/action/create`, params, config)
+        return $http.post(`netcollect/device/action/create`, params, config)
     },
     /**
      * 查询设备
@@ -38,18 +37,18 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchDevice ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`${SITE_URL}netcollect/device/action/search`, params, config)
+        return $http.post(`netcollect/device/action/search`, params, config)
     },
     /**
-     * 查询设备
+     * 批量删除设备
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {Number} deviceId 设备id
+     * @param {Object} params 设备id
      * @return {promises} promises 对象
      */
-    deleteDevice ({ commit, state, dispatch, rootGetters }, { deviceId, config }) {
-        return $http.delete(`${SITE_URL}netcollect/device/${deviceId}/action/delete`, config)
+    deleteDevice ({ commit, state, dispatch, rootGetters }, { params, config }) {
+        return $http.delete(`netcollect/device/action/delete`, params, config)
     },
     /**
      * 导入设备

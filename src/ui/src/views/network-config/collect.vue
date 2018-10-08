@@ -2,10 +2,10 @@
     <div class="collect-wrapper">
         <div class="title">
             <bk-button type="primary">
-                {{$t('NetworkConfig["执行发现"]')}}
+                {{$t('NetworkDiscovery["执行发现"]')}}
             </bk-button>
             <div class="input-box">
-                <input type="text" class="cmdb-form-input" :placeholder="$t('NetworkConfig[\'搜索IP、云区域\']')">
+                <input type="text" class="cmdb-form-input" :placeholder="$t('NetworkDiscovery[\'搜索IP、云区域\']')" v-model.trim="filter.text">
                 <i class="bk-icon icon-search"></i>
             </div>
         </div>
@@ -18,8 +18,31 @@
             :wrapperMinusHeight="240">
             <template slot="status" slot-scope="{ item }">
                 <div class="status-wrapper" @mouseover="setTooltip($event, item)" @mouseleave="removeTooltip">
-                    asdf
+                    <template v-if="item.status['report_status'] !== 'normal'">
+                        <div class="bk-spin-loading bk-spin-loading-mini bk-spin-loading-primary">
+                            <div class="rotate rotate1"></div>
+                            <div class="rotate rotate2"></div>
+                            <div class="rotate rotate3"></div>
+                            <div class="rotate rotate4"></div>
+                            <div class="rotate rotate5"></div>
+                            <div class="rotate rotate6"></div>
+                            <div class="rotate rotate7"></div>
+                            <div class="rotate rotate8"></div>
+                        </div>
+                        <span class="text" :id="item['bk_host_innerip']">{{$t('NetworkDiscovery["上报中"]')}}</span>
+                    </template>
+                    <template v-else-if="item.status['collector_status'] !== 'normal' || item.status['config_status'] !== 'normal'">
+                        <i class="bk-icon icon-circle color-danger" :id="item['bk_host_innerip']"></i>
+                        <span class="text">{{$t('NetworkDiscovery["异常"]')}}</span>
+                    </template>
+                    <template v-else>
+                        <i class="bk-icon icon-circle color-success" :id="item['bk_host_innerip']"></i>
+                        <span class="text">{{$t('NetworkDiscovery["正常"]')}}</span>
+                    </template>
                 </div>
+            </template>
+            <template slot="period" slot-scope="{ item }">
+                {{item.config.period}}
             </template>
             <template slot="operation" slot-scope="{ item }">
                 <span class="text-primary" @click="showConfig(item)">{{$t('EventPush["配置"]')}}</span>
@@ -37,16 +60,17 @@
             <div slot="content" class="dialog-content">
                 <div class="content-box">
                     <h2 class="title">
-                        {{$t('NetworkConfig["配置采集器"]')}}
+                        {{$t('NetworkDiscovery["配置采集器"]')}}
                     </h2>
                     <label>
-                        <span>{{$t('NetworkConfig["SNMP扫描范围"]')}}</span>
+                        <span>{{$t('NetworkDiscovery["SNMP扫描范围"]')}}</span>
                         <span class="color-danger">*</span>
                         <i class="bk-icon icon-exclamation-circle" v-tooltip="{content: htmlEncode(), classes: 'collect-tooltip'}"></i>
                     </label>
-                    <textarea name="" id="" cols="30" rows="10"></textarea>
+                    <textarea name="scan_range" id="" cols="30" rows="10" v-validate="'required'" v-model.trim="configDialog.scan_range"></textarea>
+                    <div v-show="errors.has('scan_range')" class="color-danger">{{ errors.first('scan_range') }}</div>
                     <label>
-                        <span>{{$t('NetworkConfig["采集频率"]')}}</span>
+                        <span>{{$t('NetworkDiscovery["采集频率"]')}}</span>
                         <span class="color-danger">*</span>
                     </label>
                     <bk-selector
@@ -54,30 +78,45 @@
                         :selected.sync="configDialog.period"
                     ></bk-selector>
                     <label>
-                        <span>{{$t('NetworkConfig["团体字"]')}}</span>
+                        <span>{{$t('NetworkDiscovery["团体字"]')}}</span>
                         <span class="color-danger">*</span>
                         <i class="bk-icon icon-exclamation-circle" v-tooltip="'Community String'"></i>
                     </label>
-                    <input type="text" class="cmdb-form-input">
+                    <input type="text" name="community" class="cmdb-form-input" v-validate="'required'" v-model.trim="configDialog.community">
+                    <div v-show="errors.has('community')" class="color-danger">{{ errors.first('community') }}</div>
                     <div class="info">
                         <i class="bk-icon icon-exclamation-circle"></i>
-                        <span>下发配置失败，请重新下发</span>
+                        <span>
+                            {{$t('NetworkDiscovery["下发配置失败，请重新下发"]')}}
+                        </span>
                     </div>
                 </div>
                 <footer class="footer">
-                    <bk-button type="primary">
-                        {{$t('NetworkConfig["保存并下发"]')}}
+                    <bk-button type="primary" @click="saveConfig">
+                        {{$t('NetworkDiscovery["保存并下发"]')}}
                     </bk-button>
-                    <bk-button type="default">
+                    <bk-button type="default" @click="hideConfig">
                         {{$t('Common["取消"]')}}
                     </bk-button>
                 </footer>
             </div>
         </bk-dialog>
-        <div class="status-tips" ref='tooltipContent' v-show="tooltip.id">
-            <p class="tips-content">采集器状态：<span>正常</span></p>
-            <p class="tips-content">配置状态：<span class="color-success">asdf</span></p>
-            <p class="tips-content">上报状态：<span>完成</span></p>
+        <div class="status-tips" ref='tooltipContent' v-if="tooltip.id">
+            <p class="tips-content">{{$t('NetworkDiscovery["采集器状态"]')}}：
+                <span :class="tooltip.content.status.collector_status === 'normal' ? 'color-success' : 'color-danger'">
+                    {{tooltip.content.status.collector_status === 'normal' ? $t('NetworkDiscovery["正常"]') : $t('NetworkDiscovery["异常"]')}}
+                </span>
+            </p>
+            <p class="tips-content">{{$t('NetworkDiscovery["配置状态"]')}}：
+                <span :class="tooltip.content.status.config_status === 'normal' ? 'color-success' : 'color-danger'">
+                    {{tooltip.content.status.collector_status === 'normal' ? $t('NetworkDiscovery["正常"]') : $t('NetworkDiscovery["更新失败"]')}}
+                </span>
+            </p>
+            <p class="tips-content">{{$t('NetworkDiscovery["上报状态"]')}}：
+                <span :class="{'color-success': tooltip.content.status.report_status === 'normal'}">
+                    {{tooltip.content.status.collector_status === 'normal' ? $t('NetworkDiscovery["完成"]') : $t('NetworkDiscovery["上报中"]')}}
+                </span>
+            </p>
         </div>
     </div>
 </template>
@@ -87,40 +126,37 @@
     export default {
         data () {
             return {
+                filter: {
+                    text: ''
+                },
                 table: {
                     header: [{
-                        id: 'bk_inner_ip',
+                        id: 'bk_host_innerip',
                         type: 'checkbox'
                     }, {
                         id: 'bk_cloud_name',
                         name: this.$t('Hosts["云区域"]')
                     }, {
-                        id: 'bk_inner_ip',
+                        id: 'bk_host_innerip',
                         name: this.$t('Common["内网IP"]')
                     }, {
                         id: 'status',
                         name: this.$t('ProcessManagement["状态"]')
                     }, {
                         id: 'version',
-                        name: `${this.$t('NetworkConfig["版本"]')}（最新1.3）`
+                        name: `${this.$t('NetworkDiscovery["版本"]')}（最新1.3）`
                     }, {
                         id: 'period',
-                        name: this.$t('NetworkConfig["采集频率"]')
+                        name: this.$t('NetworkDiscovery["采集频率"]')
                     }, {
-                        id: 'deploy_time',
-                        name: this.$t('NetworkConfig["采集统计"]')
+                        id: 'report_total',
+                        name: this.$t('NetworkDiscovery["采集统计"]')
                     }, {
                         id: 'operation',
                         name: this.$t('Association["操作"]'),
                         sortable: false
                     }],
-                    list: [{
-                        bk_inner_ip: '1',
-                        status: 'a'
-                    }, {
-                        bk_inner_ip: '2',
-                        status: '2adsf'
-                    }],
+                    list: [],
                     checked: [],
                     pagination: {
                         count: 0,
@@ -133,39 +169,76 @@
                 configDialog: {
                     isShow: false,
                     period: '',
+                    scan_range: '',
+                    community: '',
+                    bk_inner_ip: '',
+                    bk_cloud_id: '',
                     periodList: [{
                         id: '',
-                        name: this.$t('NetworkConfig["手动"]')
+                        name: this.$t('NetworkDiscovery["手动"]')
                     }]
                 },
                 tooltip: {
                     instance: null,
+                    content: null,
                     id: ''
                 }
             }
         },
+        created () {
+            this.getTableData()
+        },
         methods: {
             ...mapActions('netDataCollection', [
                 'searchDataCollection',
-                'collectDataCollection'
+                'collectDataCollection',
+                'updateDataCollection'
             ]),
-            showConfig () {
+            showConfig (item) {
+                this.configDialog.scan_range = item.config['scan_range'] === null ? '' : item.config['scan_range']
+                this.configDialog.bk_inner_ip = item['bk_host_innerip']
+                this.configDialog.bk_cloud_id = item['bk_cloud_id']
+                this.configDialog.period = item.config.period
+                this.configDialog.community = item.config.period
                 this.configDialog.isShow = true
+            },
+            hideConfig () {
+                this.configDialog.isShow = false
+            },
+            async saveConfig () {
+                if (!await this.$validator.validateAll()) {
+                    return
+                }
+                let params = {
+                    bk_cloud_id: this.configDialog['bk_cloud_id'],
+                    bk_inner_ip: this.configDialog['bk_inner_ip'],
+                    config: {
+                        scan_range: this.configDialog.scan_range.split(/\n|;|；|,|，/),
+                        period: this.configDialog.period,
+                        community: this.configDialog.community
+                    }
+                }
+                await this.updateDataCollection({params, config: {requestId: 'updateDataCollection'}})
+                this.hideConfig()
+                this.getTableData()
             },
             removeTooltip () {
                 this.tooltip.instance && this.tooltip.instance.destroy()
             },
             setTooltip (event, item) {
-                this.tooltip.id = item['bk_inner_ip']
-                this.tooltip.instance && this.tooltip.instance.destroy()
-                this.tooltip.instance = this.$tooltips({
-                    duration: -1,
-                    theme: 'light',
-                    zIndex: 9999,
-                    container: document.body,
-                    target: event.target
+                this.tooltip.content = item
+                this.tooltip.id = item['bk_host_innerip']
+                this.$nextTick(() => {
+                    this.tooltip.instance && this.tooltip.instance.destroy()
+                    this.tooltip.instance = this.$tooltips({
+                        duration: -1,
+                        theme: 'light',
+                        zIndex: 9999,
+                        container: document.body,
+                        target: document.getElementById(item['bk_host_innerip'])
+                    })
+                    this.tooltip.instance.$el.append(this.$refs.tooltipContent)
                 })
-                this.tooltip.instance.$el.append(this.$refs.tooltipContent)
             },
             htmlEncode () {
                 let temp = document.createElement('div')
@@ -177,6 +250,7 @@
             async getTableData () {
                 let pagination = this.table.pagination
                 let params = {
+                    query: this.filter.text,
                     page: {
                         start: (pagination.current - 1) * pagination.size,
                         limit: pagination.size,
@@ -225,6 +299,16 @@
         .collect-table {
             margin-top: 20px;
             background: #fff;
+            .status-wrapper {
+                .bk-icon {
+                    font-weight: bold;
+                }
+                .bk-icon,
+                .bk-spin-loading,
+                .text {
+                    vertical-align: middle;
+                }
+            }
         }
         .config-dialog {
             .dialog-content {

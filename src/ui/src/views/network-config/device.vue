@@ -2,7 +2,7 @@
     <div class="device-wrapper">
         <div class="title">
             <bk-button type="primary" @click="toggleCreateDialog">
-                {{$t('NetworkConfig["新增设备"]')}}
+                {{$t('NetworkDiscovery["新增设备"]')}}
             </bk-button>
             <bk-button type="default">
                 {{$t('Common["删除"]')}}
@@ -35,13 +35,13 @@
         <bk-dialog
         class="create-dialog"
         :is-show.sync="createDialog.isShow" 
-        :title="$t('NetworkConfig[\'新增设备\']')"
+        :title="$t('NetworkDiscovery[\'新增设备\']')"
         :has-footer="false"
         :close-icon="false"
         :width="424">
             <div slot="content">
                 <label>
-                    <span>{{$t('NetworkConfig["设备型号"]')}}<span class="color-danger">*</span></span>
+                    <span>{{$t('NetworkDiscovery["设备型号"]')}}<span class="color-danger">*</span></span>
                     <input type="text" 
                     class="cmdb-form-input" 
                     name="device_model"
@@ -50,12 +50,12 @@
                     <div v-show="errors.has('device_model')" class="color-danger">{{ errors.first('device_model') }}</div>
                 </label>
                 <label>
-                    <span>{{$t('NetworkConfig["设备名称"]')}}<span class="color-danger">*</span></span>
+                    <span>{{$t('NetworkDiscovery["设备名称"]')}}<span class="color-danger">*</span></span>
                     <input type="text" class="cmdb-form-input" name="device_name" v-model="createDialog['device_name']" v-validate="'required|singlechar'">
                     <div v-show="errors.has('device_name')" class="color-danger">{{ errors.first('device_name') }}</div>
                 </label>
                 <label>
-                    <span>{{$t('NetworkConfig["对应模型"]')}}<span class="color-danger">*</span></span>
+                    <span>{{$t('NetworkDiscovery["对应模型"]')}}<span class="color-danger">*</span></span>
                     <bk-selector
                         :list="netList"
                         setting-key="bk_obj_id"
@@ -66,7 +66,7 @@
                     <div v-show="errors.has('bk_obj_id')" class="color-danger">{{ errors.first('bk_obj_id') }}</div>
                 </label>
                 <label>
-                    <span>{{$t('NetworkConfig["厂商"]')}}<span class="color-danger">*</span></span>
+                    <span>{{$t('NetworkDiscovery["厂商"]')}}<span class="color-danger">*</span></span>
                     <input type="text" class="cmdb-form-input" name="bk_vendor" v-model="createDialog['bk_vendor']" v-validate="'required|singlechar'">
                     <div v-show="errors.has('bk_vendor')" class="color-danger">{{ errors.first('bk_vendor') }}</div>
                 </label>
@@ -122,16 +122,16 @@
                         name: 'ID'
                     }, {
                         id: 'device_model',
-                        name: this.$t('NetworkConfig["设备型号"]')
+                        name: this.$t('NetworkDiscovery["设备型号"]')
                     }, {
                         id: 'device_name',
-                        name: this.$t('NetworkConfig["设备名称"]')
+                        name: this.$t('NetworkDiscovery["设备名称"]')
                     }, {
                         id: 'bk_obj_id',
-                        name: this.$t('NetworkConfig["对应模型"]')
+                        name: this.$t('NetworkDiscovery["对应模型"]')
                     }, {
                         id: 'bk_vendor',
-                        name: this.$t('NetworkConfig["厂商"]')
+                        name: this.$t('NetworkDiscovery["厂商"]')
                     }],
                     checked: [],
                     list: [],

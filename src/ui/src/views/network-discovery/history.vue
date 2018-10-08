@@ -4,20 +4,20 @@
             <cmdb-form-date-range class="date-range"></cmdb-form-date-range>
             <bk-selector
                 class="selector"
-                :placeholder="$t('networkDiscovery[\'全部变更\']')"
+                :placeholder="$t('NetworkDiscovery[\'全部变更\']')"
                 :allow-clear="true"
                 :list="changeList"
                 :selected="filter['action']"
             ></bk-selector>
             <bk-selector
                 class="selector"
-                :placeholder="$t('networkDiscovery[\'全部类型\']')"
+                :placeholder="$t('NetworkDiscovery[\'全部类型\']')"
                 :allow-clear="true"
                 :list="typeList"
                 :selected="filter['device_type']"
             ></bk-selector>
             <input type="text" class="cmdb-form-input" :placeholder="$t('NetworkDiscovery[\'请输入云区域名称\']')" v-model.trim="filter['bk_cloud_name']">
-            <input type="text" class="cmdb-form-input" :placeholder="$t('networkDiscovery[\'请输入IP\']')" v-model.trim="filter['bk_inner_ip']">
+            <input type="text" class="cmdb-form-input" :placeholder="$t('NetworkDiscovery[\'请输入IP\']')" v-model.trim="filter['bk_inner_ip']">
             <bk-button type="primary" @click="getTableData">
                 {{$t("Common['查询']")}}
             </bk-button>
@@ -46,6 +46,7 @@
 </template>
 
 <script>
+    import { mapActions } from 'vuex'
     export default {
         data () {
             return {
@@ -61,14 +62,14 @@
                     name: this.$t("Common['新增']")
                 }, {
                     id: 'update',
-                    name: this.$t("networkDiscovery['变更']")
+                    name: this.$t("NetworkDiscovery['变更']")
                 }, {
                     id: 'delete',
                     name: this.$t("Common['删除']")
                 }],
                 typeList: [{
                     id: 'switch',
-                    name: this.$t("networkDiscovery['交换机']")
+                    name: this.$t("NetworkDiscovery['交换机']")
                 }, {
                     id: 'host',
                     name: this.$t("Hosts['主机']")
@@ -118,22 +119,35 @@
                 },
                 actionMap: {
                     'create': this.$t("Common['新增']"),
-                    'update': this.$t("networkDiscovery['变更']"),
+                    'update': this.$t("NetworkDiscovery['变更']"),
                     'delete': this.$t("Common['删除']")
                 }
             }
         },
         computed: {
             params () {
-                let params = {}
+                let params = {
+                    bk_cloud_name: this.filter['bk_cloud_name'],
+                    bk_inner_ip: this.filter['bk_inner_ip'],
+                    device_type: this.filter['device_type'],
+                    action: this.filter['action'],
+                    time: this.filter['time']
+                }
                 return params
             }
         },
+        created () {
+            this.$route.meta.title = this.$t('NetworkDiscovery["完成历史"]')
+            this.getTableData()
+        },
         methods: {
+            ...mapActions('netDiscovery', [
+                'searchNetcollectHistory'
+            ]),
             async getTableData () {
-                // const res = await this.searchNetcollect({params: this.params, config: {requestId: 'searchNetcollect'}})
-                // this.table.pagination.count = res.count
-                // this.table.list = res.info
+                const res = await this.searchNetcollectHistory({params: this.params, config: {requestId: 'searchNetcollect'}})
+                this.table.pagination.count = res.count
+                this.table.list = res.info
             },
             handleSortChange (sort) {
                 this.table.sort = sort

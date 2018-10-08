@@ -41,15 +41,15 @@ const actions = {
         return $http.post(`${SITE_URL}netcollect/property/action/search`, params, config)
     },
     /**
-     * 查询属性
+     * 批量删除属性
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {Number} deviceId 属性id
+     * @param {Object} params 属性id
      * @return {promises} promises 对象
      */
-    deleteNetcollectProperty ({ commit, state, dispatch, rootGetters }, { deviceId, config }) {
-        return $http.delete(`${SITE_URL}netcollect/property/${deviceId}/action/delete`, config)
+    deleteNetcollectProperty ({ commit, state, dispatch, rootGetters }, { params, config }) {
+        return $http.delete(`${SITE_URL}netcollect/property/action/delete`, params, config)
     },
     /**
      * 导入属性

@@ -26,18 +26,28 @@ const actions = {
      * @param {String} dispatch store dispatch action hander
      * @return {promises} promises 对象
      */
-    searchDataCollection ({ commit, state, dispatch, rootGetters }, { config }) {
-        return $http.post(`${window.API_HOST}datacollection/v3/netcollect/collector/action/search`, config)
+    searchDataCollection ({ commit, state, dispatch, rootGetters }, { params, config }) {
+        return $http.post(`collector/netcollect/collector/action/search`, params, config)
     },
     /**
-     *  采集器查询
+     *  采集器配置保存
+     * @param {Function} commit store commit mutation hander
+     * @param {Object} state store state
+     * @param {String} dispatch store dispatch action hander
+     * @return {promises} promises 对象
+     */
+    updateDataCollection ({ commit, state, dispatch, rootGetters }, { params, config }) {
+        return $http.post(`collector/netcollect/collector/action/update`, params, config)
+    },
+    /**
+     *  采集器执行发现
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
      * @return {promises} promises 对象
      */
     collectDataCollection ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`${window.API_HOST}datacollection/v3/netcollect/collector/action/collect`, params, config)
+        return $http.post(`collector/netcollect/collector/action/collect`, params, config)
     }
 }
 

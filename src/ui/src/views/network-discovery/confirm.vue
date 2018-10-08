@@ -2,34 +2,34 @@
     <div class="network-confirm-wrapper">
         <div class="filter-wrapper" :class="{'open': filter.isShow}">
             <bk-button type="default" @click="toggleFilter">
-                {{$t('networkDiscovery["高级操作"]')}}
+                {{$t('NetworkDiscovery["高级操作"]')}}
                 <i class="bk-icon icon-angle-down"></i>
             </bk-button>
             <div class="filter-details clearfix" v-show="filter.isShow">
                 <div class="details-left">
                     <bk-button type="default">
-                        {{$t('networkDiscovery["忽略"]')}}
+                        {{$t('NetworkDiscovery["忽略"]')}}
                     </bk-button>
                     <bk-button type="default">
-                        {{$t('networkDiscovery["取消忽略"]')}}
+                        {{$t('NetworkDiscovery["取消忽略"]')}}
                     </bk-button>
                     <label class="cmdb-form-checkbox">
                         <input type="checkbox">
-                        <span class="cmdb-checkbox-text">{{$t('networkDiscovery["显示忽略"]')}}</span>
+                        <span class="cmdb-checkbox-text">{{$t('NetworkDiscovery["显示忽略"]')}}</span>
                     </label>
                 </div>
                 <div class="details-right clearfix">
                     <bk-selector
                         :list="changeInfo.list"
                         :selected="changeInfo.selected"
-                        :placeholder="$t('networkDiscovery[\'全部变更\']')"
+                        :placeholder="$t('NetworkDiscovery[\'全部变更\']')"
                     ></bk-selector>
                     <bk-selector
                         :list="typeInfo.list"
                         :selected="typeInfo.selected"
-                        :placeholder="$t('networkDiscovery[\'全部类型\']')"
+                        :placeholder="$t('NetworkDiscovery[\'全部类型\']')"
                     ></bk-selector>
-                    <input type="text" class="cmdb-form-input" :placeholder="$t('networkDiscovery[\'请输入IP\']')">
+                    <input type="text" class="cmdb-form-input" :placeholder="$t('NetworkDiscovery[\'请输入IP\']')">
                     <bk-button type="default">
                         {{$t('Common["查询"]')}}
                     </bk-button>
@@ -138,7 +138,7 @@
                     <bk-button type="default" @click="routeToLeave">
                         {{$t('NetworkDiscovery["丢弃"]')}}
                     </bk-button>
-                    <bk-button type="default">
+                    <bk-button type="default" @click="confirmDialog.isShow = false">
                         {{$t('Common["取消"]')}}
                     </bk-button>
                 </footer>
@@ -164,7 +164,8 @@
                 },
                 confirmDialog: {
                     isShow: false,
-                    isLeave: false
+                    isLeave: false,
+                    leaveResolver: null
                 },
                 slider: {
                     title: '',
@@ -180,7 +181,7 @@
                         name: this.$t("Common['新增']")
                     }, {
                         id: 'update',
-                        name: this.$t("networkDiscovery['变更']")
+                        name: this.$t("NetworkDiscovery['变更']")
                     }, {
                         id: 'delete',
                         name: this.$t("Common['删除']")
@@ -190,7 +191,7 @@
                     selected: '',
                     list: [{
                         id: 'switch',
-                        name: this.$t("networkDiscovery['交换机']")
+                        name: this.$t("NetworkDiscovery['交换机']")
                     }, {
                         id: 'host',
                         name: this.$t("Hosts['主机']")
@@ -245,16 +246,17 @@
             }
         },
         async beforeRouteLeave (to, from, next) {
-            // this.confirmDialog.isShow = true
-            // await new Promise((resolve, reject) => {
-            //     let resolver = () => {
-            //         if (this.confirmDialog.isLeave) {
-            //             resolve()
-            //         }
-            //     }
-            // })
-            // if
+            this.confirmDialog.isShow = true
+            await new Promise(async (resolve, reject) => {
+                this.confirmDialog.leaveResolver = () => {
+                    resolve()
+                }
+            })
+            this.confirmDialog.isShow = false
             next()
+        },
+        created () {
+            this.$route.meta.title = this.$t('NetworkDiscovery["变更确认"]')
         },
         methods: {
             ...mapActions('netDiscovery', [
@@ -262,7 +264,9 @@
                 'searchNetcollectChange'
             ]),
             routeToLeave () {
-                this.confirmDialog.isLeave = true
+                if (this.confirmDialog.leaveResolver) {
+                    this.confirmDialog.leaveResolver()
+                }
             },
             toggleFilter () {
                 this.filter.isShow = !this.filter.isShow

@@ -6,7 +6,7 @@
                 <span>{{$t('Common["属性"]')}}</span>
                 <label class="cmdb-form-checkbox cmdb-checkbox-small">
                     <input type="checkbox" :disabled="!isAccept">
-                    <span class="cmdb-checkbox-text">{{$t('networkDiscovery["显示忽略"]')}}</span>
+                    <span class="cmdb-checkbox-text">{{$t('NetworkDiscovery["显示忽略"]')}}</span>
                 </label>
             </p>
             <cmdb-table
@@ -17,7 +17,7 @@
                 :pagination.sync="propertyTable.pagination"
                 :defaultSort="propertyTable.defaultSort">
                 <template slot="isrequired" slot-scope="{ item }">
-                    {{item.isrequired ? $t('networkDiscovery["是"]') : $t('networkDiscovery["否"]')}}
+                    {{item.isrequired ? $t('NetworkDiscovery["是"]') : $t('NetworkDiscovery["否"]')}}
                 </template>
                 <template slot="operation" slot-scope="{ item }">
                     <span class="text-primary" :class="{'disabled': !isAccept}" @click.stop="">{{$t('NetworkDiscovery["忽略"]')}}</span>
@@ -28,10 +28,10 @@
         <div class="table-box relation">
             <p class="title clearfix">
                 <i class="bk-icon icon-angle-down"></i>
-                <span>{{$t('networkDiscovery["关系"]')}}</span>
+                <span>{{$t('NetworkDiscovery["关系"]')}}</span>
                 <label class="cmdb-form-checkbox cmdb-checkbox-small">
                     <input type="checkbox" :disabled="!isAccept">
-                    <span class="cmdb-checkbox-text">{{$t('networkDiscovery["显示忽略"]')}}</span>
+                    <span class="cmdb-checkbox-text">{{$t('NetworkDiscovery["显示忽略"]')}}</span>
                 </label>
             </p>
             <cmdb-table
@@ -51,7 +51,7 @@
             </cmdb-table>
         </div>
         <footer class="footer">
-            <span>{{$t('networkDiscovery["导入实例"]')}}</span>
+            <span>{{$t('NetworkDiscovery["导入实例"]')}}</span>
             <bk-switcher
                 class="switcher"
                 size="small"
@@ -59,10 +59,10 @@
                 @change="toggleSwitcher">
             </bk-switcher>
             <bk-button type="default">
-                {{$t('networkDiscovery["上一个"]')}}
+                {{$t('NetworkDiscovery["上一个"]')}}
             </bk-button>
             <bk-button type="default">
-                {{$t('networkDiscovery["下一个"]')}}
+                {{$t('NetworkDiscovery["下一个"]')}}
             </bk-button>
         </footer>
     </div>
@@ -113,7 +113,7 @@
                         name: this.$t('NetworkDiscovery["操作方式"]')
                     }, {
                         id: 'bk_obj_name',
-                        name: this.$t('NetworkDiscovery["模型"]')
+                        name: this.$t('OperationAudit["模型"]')
                     }, {
                         id: 'device_attributes',
                         name: this.$t('NetworkDiscovery["配置信息"]')

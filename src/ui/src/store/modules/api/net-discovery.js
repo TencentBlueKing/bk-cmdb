@@ -28,7 +28,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchNetcollect ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`${window.API_HOST}datacollection/v3/netcollect/summary/action/search`, params, config)
+        return $http.post(`collector/netcollect/summary/action/search`, params, config)
     },
     /**
      * 网络发现报告详情列表查询
@@ -39,10 +39,10 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchNetcollectList ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`${window.API_HOST}datacollection/v3/netcollect/bk_cloud_id/${rootGetters.supplierAccount}/report/action/search`, params, config)
+        return $http.post(`collector/netcollect/report/action/search`, params, config)
     },
     /**
-     * 网络发现报告变更详细查询
+     * 网络发现报告变更确认
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
@@ -50,18 +50,18 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchNetcollectChangeDetail ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`${window.API_HOST}datacollection/v3/netcollect/bk_cloud_id/${rootGetters.supplierAccount}/report/action/detail`, params, config)
+        return $http.post(`collector/netcollect/report/action/confirm`, params, config)
     },
     /**
-     * 网络发现报告变更详情
+     * 网络发现完成历史
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    searchNetcollectChange ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`${window.API_HOST}datacollection/v3/netcollect/bk_cloud_id/${rootGetters.supplierAccount}/report/action/confirm`, params, config)
+    searchNetcollectHistory ({ commit, state, dispatch, rootGetters }, { params, config }) {
+        return $http.post(`collector/netcollect/history/action/search`, params, config)
     }
 }
 

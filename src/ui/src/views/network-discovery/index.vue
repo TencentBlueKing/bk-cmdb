@@ -106,6 +106,9 @@
                 return params
             }
         },
+        created () {
+            this.getTableData()
+        },
         methods: {
             ...mapActions('netDiscovery', [
                 'searchNetcollect'

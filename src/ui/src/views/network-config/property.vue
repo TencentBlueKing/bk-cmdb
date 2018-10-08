@@ -2,7 +2,7 @@
     <div class="device-wrapper">
         <div class="title">
             <bk-button type="primary" @click="toggleCreateDialog">
-                {{$t('NetworkConfig["新增属性"]')}}
+                {{$t('NetworkDiscovery["新增属性"]')}}
             </bk-button>
             <bk-button type="default">
                 {{$t('Common["删除"]')}}
@@ -41,13 +41,13 @@
         <bk-dialog
         class="create-dialog"
         :is-show.sync="createDialog.isShow" 
-        :title="$t('NetworkConfig[\'新增属性\']')"
+        :title="$t('NetworkDiscovery[\'新增属性\']')"
         :has-footer="false"
         :close-icon="false"
         :width="424">
             <div slot="content">
                 <label>
-                    <span>{{$t('NetworkConfig["所属设备"]')}}<span class="color-danger">*</span></span>
+                    <span>{{$t('NetworkDiscovery["所属设备"]')}}<span class="color-danger">*</span></span>
                     <bk-selector
                         :list="createDialog.deviceList"
                         :searchable="true"
@@ -65,7 +65,7 @@
                     <div v-show="errors.has('oid')" class="color-danger">{{ errors.first('oid') }}</div>
                 </label>
                 <label>
-                    <span>{{$t('NetworkConfig["模型属性"]')}}<span class="color-danger">*</span></span>
+                    <span>{{$t('NetworkDiscovery["模型属性"]')}}<span class="color-danger">*</span></span>
                     <bk-selector
                         search-key="bk_property_name"
                         setting-key="bk_property_id"
@@ -122,13 +122,13 @@
                 filter: {
                     typeList: [{
                         id: 'device_name',
-                        name: this.$t('NetworkConfig["所属设备"]')
+                        name: this.$t('NetworkDiscovery["所属设备"]')
                     }, {
                         id: 'bk_obj_name',
                         name: this.$t('OperationAudit["模型"]')
                     }, {
                         id: 'bk_property_name',
-                        name: this.$t('NetworkConfig["模型属性"]')
+                        name: this.$t('NetworkDiscovery["模型属性"]')
                     }],
                     type: 'device_name',
                     text: ''
@@ -142,10 +142,10 @@
                         name: 'ID'
                     }, {
                         id: 'device_name',
-                        name: this.$t('NetworkConfig["所属设备"]')
+                        name: this.$t('NetworkDiscovery["所属设备"]')
                     }, {
                         id: 'unit',
-                        name: this.$t('NetworkConfig["计量单位"]')
+                        name: this.$t('NetworkDiscovery["计量单位"]')
                     }, {
                         id: 'oid',
                         name: 'oid'
@@ -154,7 +154,7 @@
                         name: this.$t('OperationAudit["模型"]')
                     }, {
                         id: 'bk_property_name',
-                        name: this.$t('NetworkConfig["模型属性"]')
+                        name: this.$t('NetworkDiscovery["模型属性"]')
                     }],
                     list: [],
                     checked: [],
