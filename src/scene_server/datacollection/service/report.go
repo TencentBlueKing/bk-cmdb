@@ -89,7 +89,7 @@ func (s *Service) ConfirmReport(req *restful.Request, resp *restful.Response) {
 	result := s.Logics.ConfirmReport(pheader, param.Reports)
 	if len(result.Errors) > 0 {
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{
-			Msg:  defErr.Error(common.CCErrCollectNetReportSearchFail),
+			Msg:  defErr.Error(common.CCErrCollectNetReportConfirmFail),
 			Data: result,
 		})
 		return
@@ -115,7 +115,7 @@ func (s *Service) SearchHistory(req *restful.Request, resp *restful.Response) {
 	count, result, err := s.Logics.SearchHistory(pheader, param)
 	if err != nil {
 		blog.Errorf("[NetDevice][SearchReportSummary] SearchReportSummary failed, err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCollectNetReportSearchFail)})
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCollectNetHistorySearchFail)})
 		return
 	}
 

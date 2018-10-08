@@ -59,7 +59,12 @@ func (s *Service) WebService() *restful.WebService {
 
 	ws.Route(ws.POST("/netcollect/summary/action/search").To(s.SearchReportSummary))
 	ws.Route(ws.POST("/netcollect/report/action/search").To(s.SearchReport))
-	ws.Route(ws.POST("/netcollect/report/action/comfirm").To(s.ConfirmReport))
+	ws.Route(ws.POST("/netcollect/report/action/confirm").To(s.ConfirmReport))
+	ws.Route(ws.POST("/netcollect/history/action/search").To(s.SearchHistory))
+
+	ws.Route(ws.POST("/netcollect/collector/action/search").To(s.SearchCollector))
+	ws.Route(ws.POST("/netcollect/collector/action/update").To(s.UpdateCollector))
+	ws.Route(ws.POST("/netcollect/collector/action/discover").To(s.DiscoverNetDevice))
 
 	ws.Route(ws.GET("/healthz").To(s.Healthz))
 
