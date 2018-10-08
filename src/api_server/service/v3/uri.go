@@ -182,8 +182,8 @@ func (u *V3URLPath) WithDataCollect(req *restful.Request) (isHit bool) {
 	from, to := rootPath, dataCollectRoot
 
 	switch {
-	case strings.HasPrefix(string(*u), rootPath+"/netcollect/"):
-		from, to, isHit = rootPath+"/netcollect", dataCollectRoot+"/netcollect", true
+	case strings.HasPrefix(string(*u), rootPath+"/collector/"):
+		from, to, isHit = rootPath+"/collector", dataCollectRoot, true
 
 	default:
 		isHit = false
