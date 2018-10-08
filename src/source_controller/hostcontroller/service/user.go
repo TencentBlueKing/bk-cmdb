@@ -178,7 +178,7 @@ func (s *Service) DeleteUserConfig(req *restful.Request, resp *restful.Response)
 	rowCount, err := s.Instance.GetCntByCondition(UserQueryCollection, params)
 	if nil != err {
 		blog.Error("query user api fail, error information is %s, params:%v", err.Error(), params)
-		resp.WriteError(http.StatusBadGateway, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return
 	}
 	if 1 != rowCount {

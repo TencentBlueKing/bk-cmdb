@@ -39,7 +39,7 @@ func (s *Service) LockHost(req *restful.Request, resp *restful.Response) {
 	err := s.Logics.LockHost(context.Background(), req.Request.Header, input)
 	if nil != err {
 		blog.Errorf("lock host, lock host handle failed, err: %s, input:%+v, logID:%s", err.Error(), input, util.GetHTTPCCRequestID(req.Request.Header))
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: err})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err})
 		return
 	}
 
@@ -62,7 +62,7 @@ func (s *Service) UnlockHost(req *restful.Request, resp *restful.Response) {
 	err := s.Logics.UnlockHost(context.Background(), req.Request.Header, input)
 	if nil != err {
 		blog.Errorf("unlock host, unlock host handle failed, err: %s, input:%+v, logID:%s", err.Error(), input, util.GetHTTPCCRequestID(req.Request.Header))
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: err})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err})
 		return
 	}
 
@@ -85,7 +85,7 @@ func (s *Service) QueryLockHost(req *restful.Request, resp *restful.Response) {
 	hostLockArr, err := s.Logics.QueryHostLock(context.Background(), req.Request.Header, input)
 	if nil != err {
 		blog.Errorf("unlock host, unlock host handle failed, err: %s, input:%+v, logID:%s", err.Error(), input, util.GetHTTPCCRequestID(req.Request.Header))
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: err})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err})
 		return
 	}
 	result := metadata.HostLockQueryResponse{
