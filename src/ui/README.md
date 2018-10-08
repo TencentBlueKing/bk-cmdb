@@ -1,6 +1,6 @@
-# web
+# bk-cmdb-ui
 
-> cmdb_v3
+> ui of bk-cmdb
 
 ## Build Setup
 

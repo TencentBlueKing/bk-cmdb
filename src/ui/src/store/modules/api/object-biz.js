@@ -8,14 +8,20 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-import { $Axios, $axios } from '@/api/axios'
+import $http from '@/api'
+import jsCookie from 'js-cookie'
 
 const state = {
-
+    business: []
 }
 
 const getters = {
-
+    business: state => state.business,
+    privilegeBusiness: (state, getters, rootState, rootGetters) => {
+        if (rootGetters.admin) return state.business
+        const privilege = (jsCookie.get('bk_privi_biz_id') || '').split('-')
+        return state.business.filter(business => privilege.includes(business['bk_biz_id'].toString()))
+    }
 }
 
 const actions = {
@@ -28,8 +34,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    createBusiness ({ commit, state, dispatch }, { bkSupplierAccount, params }) {
-        return $axios.post(`biz/${bkSupplierAccount}`, params)
+    createBusiness ({ commit, state, dispatch, rootGetters }, { params, config }) {
+        return $http.post(`biz/${rootGetters.supplierAccount}`, params, config)
     },
 
     /**
@@ -42,7 +48,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     deleteBusiness ({ commit, state, dispatch }, { bkSupplierAccount, bkBizId }) {
-        return $axios.delete(`biz/${bkSupplierAccount}/${bkBizId}`)
+        return $http.delete(`biz/${bkSupplierAccount}/${bkBizId}`)
     },
 
     /**
@@ -55,8 +61,30 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    updateBusiness ({ commit, state, dispatch }, { bkSupplierAccount, bkBizId, params }) {
-        return $axios.put(`biz/${bkSupplierAccount}/${bkBizId}`, params)
+    updateBusiness ({ commit, state, dispatch, rootGetters }, { bizId, params, config }) {
+        return $http.put(`biz/${rootGetters.supplierAccount}/${bizId}`, params, config)
+    },
+
+    /**
+     * 归档业务
+     * @param {Function} commit store commit mutation hander
+     * @param {Object} state store state
+     * @param {String} dispatch store dispatch action hander
+     * @param {Object} params 参数
+     * @return {promises} promises 对象
+     */
+    archiveBusiness ({ commit, state, dispatch, rootGetters }, bizId) {
+        return $http.put(`biz/status/disabled/${rootGetters.supplierAccount}/${bizId}`)
+    },
+
+    /**
+     * 恢复业务
+     * @param {Function} commit store commit mutation hander
+     * @param {Number} bizId 业务id
+     * @return {promises} promises 对象
+     */
+    recoveryBusiness ({ commit, state, dispatch, rootGetters }, {params, config}) {
+        return $http.put(`biz/status/enable/${rootGetters.supplierAccount}/${params['bk_biz_id']}`, {}, config)
     },
 
     /**
@@ -68,13 +96,32 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    searchBusiness ({ commit, state, dispatch }, { bkSupplierAccount, params }) {
-        return $axios.post(`biz/search/${bkSupplierAccount}`, params)
+    searchBusiness ({ commit, state, dispatch, rootGetters }, {params, config}) {
+        return $http.post(`biz/search/${rootGetters.supplierAccount}`, params, config)
+    },
+
+    searchBusinessById ({rootGetters}, {bizId, config}) {
+        return $http.post(`biz/search/${rootGetters.supplierAccount}`, {
+            condition: {
+                'bk_biz_id': {
+                    '$eq': bizId
+                }
+            },
+            fields: [],
+            page: {
+                start: 0,
+                limit: 1
+            }
+        }, config).then(data => {
+            return data.info[0] || {}
+        })
     }
 }
 
 const mutations = {
-
+    setBusiness (state, business) {
+        state.business = business
+    }
 }
 
 export default {
