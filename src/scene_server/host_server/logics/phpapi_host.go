@@ -20,6 +20,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	hutil "configcenter/src/scene_server/host_server/util"
@@ -199,11 +200,13 @@ func (phpapi *PHPAPI) SetHostData(moduleHostConfig []map[string]int64, hostMap m
 		return hostData, err
 	}
 	for _, config := range moduleHostConfig {
-		host, hasHost := hostMap[config[common.BKHostIDField]]
+		hostItem, hasHost := hostMap[config[common.BKHostIDField]]
 		if !hasHost {
 			blog.Errorf("hostMap has not hostID: %d", config[common.BKHostIDField])
 			continue
 		}
+		host := mapstr.New()
+		host.Merge(hostItem)
 
 		module := moduleMap[config[common.BKModuleIDField]]
 		set := setMap[config[common.BKSetIDField]]
