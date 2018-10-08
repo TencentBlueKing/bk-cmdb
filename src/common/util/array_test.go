@@ -12,15 +12,67 @@
 package util
 
 import (
+	"reflect"
 	"testing"
-
-	"github.com/stretchr/testify/require"
 )
 
-func TestIntArrIntersection(t *testing.T) {
-	slice1 := []int{1, 2, 3}
-	slice2 := []int{3, 4, 5}
-	slice3 := IntArrIntersection(slice1, slice2)
-	require.Equal(t, 3, slice3[0])
+func TestStrArrayUnique(t *testing.T) {
+	type args struct {
+		a []string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantRet []string
+	}{
+		{"", args{[]string{"1", "1"}}, []string{"1"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotRet := StrArrayUnique(tt.args.a); !reflect.DeepEqual(gotRet, tt.wantRet) {
+				t.Errorf("StrArrayUnique() = %v, want %v", gotRet, tt.wantRet)
+			}
+		})
+	}
+}
 
+func TestIntArrayUnique(t *testing.T) {
+	type args struct {
+		a []int64
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantRet []int64
+	}{
+		{"", args{[]int64{1, 1}}, []int64{1}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotRet := IntArrayUnique(tt.args.a); !reflect.DeepEqual(gotRet, tt.wantRet) {
+				t.Errorf("IntArrayUnique() = %v, want %v", gotRet, tt.wantRet)
+			}
+		})
+	}
+}
+
+func TestIntArrIntersection(t *testing.T) {
+	type args struct {
+		slice1 []int64
+		slice2 []int64
+	}
+	tests := []struct {
+		name string
+		args args
+		want []int64
+	}{
+		{"", args{[]int64{1}, []int64{2, 1}}, []int64{1}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IntArrIntersection(tt.args.slice1, tt.args.slice2); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("IntArrIntersection() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

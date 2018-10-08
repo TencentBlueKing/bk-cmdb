@@ -47,3 +47,7 @@ func NewClient(c *TLSClientConfig) (*http.Client, error) {
 	client.Transport = transport
 	return client, nil
 }
+
+type HttpClient interface {
+	Do(req *http.Request) (*http.Response, error)
+}
