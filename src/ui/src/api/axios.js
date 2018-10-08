@@ -71,7 +71,9 @@ const transformResponse = (config, data) => {
     })
     return data
 }
-window.siteUrl = window.location.origin + '/'
+if (window.buildVersion.indexOf('dev') === -1) {
+    window.siteUrl = window.location.origin + '/'
+}
 let axios = Axios.create({
     baseURL: `${window.siteUrl}api/${window.version}/`,
     xsrfCookieName: 'data_csrftoken',
