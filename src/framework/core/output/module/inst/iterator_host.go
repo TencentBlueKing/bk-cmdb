@@ -36,7 +36,7 @@ type hostIterator struct {
 	bufIdx      int
 }
 
-func newHostIterator(target model.Model, cond common.Condition) (*hostIterator, error) {
+func NewHostIterator(target model.Model, cond common.Condition) (*hostIterator, error) {
 	grpIterator := &hostIterator{
 		targetModel: target,
 		cond:        cond,

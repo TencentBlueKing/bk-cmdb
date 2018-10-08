@@ -56,7 +56,7 @@ func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response
 	valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDProc, req.Request.Header, ps.Engine)
 	if err := valid.ValidMap(input, common.ValidCreate, 0); err != nil {
 		blog.Errorf("fail to valid input parameters. err:%s", err.Error())
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommFieldNotValid)})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
 		return
 	}
 
@@ -118,7 +118,7 @@ func (ps *ProcServer) UpdateProcess(req *restful.Request, resp *restful.Response
 	valid := validator.NewValidMap(util.GetOwnerID(req.Request.Header), common.BKInnerObjIDProc, req.Request.Header, ps.Engine)
 	if err := valid.ValidMap(procData, common.ValidUpdate, int64(procID)); err != nil {
 		blog.Errorf("fail to valid input parameters. err:%s", err.Error())
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommFieldNotValid)})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
 		return
 	}
 
@@ -207,7 +207,7 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 
 		if err := valid.ValidMap(procData, common.ValidUpdate, int64(procID)); err != nil {
 			blog.Errorf("fail to valid proc parameters. err:%s", err.Error())
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommFieldNotValid)})
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
 			return
 		}
 		details, err := ps.getProcDetail(req, ownerID, appID, procID)
@@ -316,6 +316,15 @@ func (ps *ProcServer) DeleteProcess(req *restful.Request, resp *restful.Response
 		return
 	}
 
+	condition := mapstr.MapStr{common.BKProcIDField: procID}
+	// get process by module,restrict the process deletion of the associated module
+	p2mRet, err := ps.CoreAPI.ProcController().GetProc2Module(context.Background(), req.Request.Header, condition)
+	if err != nil || !p2mRet.Result || 0 != len(p2mRet.Data) {
+		blog.Errorf("fail to GetProcessBindModule when do GetProc2Module. err:%v, errcode:%d, errmsg:%s", err, p2mRet.Code, p2mRet.ErrMsg)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcBindWithModule)})
+		return
+	}
+
 	// take snapshot before operation
 	preProcDetail, err := ps.getProcDetail(req, ownerID, appID, procID)
 	if err != nil {
@@ -385,7 +394,12 @@ func (ps *ProcServer) SearchProcess(req *restful.Request, resp *restful.Response
 	if nil != err {
 		searchParams.Limit = common.BKNoLimit
 	}
-	searchParams.Sort = page["sort"].(string)
+
+	if sort, ok := page["sort"].(string); !ok {
+		searchParams.Sort = ""
+	} else {
+		searchParams.Sort = sort
+	}
 
 	// query process by module name
 	if moduleName, ok := condition[common.BKModuleNameField]; ok {

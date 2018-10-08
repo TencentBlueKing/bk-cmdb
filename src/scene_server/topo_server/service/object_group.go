@@ -14,6 +14,7 @@ package service
 
 import (
 	"encoding/json"
+	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/condition"
@@ -53,8 +54,12 @@ func (s *topoService) UpdateObjectGroup(params types.ContextParams, pathParams, 
 
 // DeleteObjectGroup delete the object group
 func (s *topoService) DeleteObjectGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+	gid, err := strconv.ParseInt(pathParams("id"), 10, 64)
+	if nil != err {
+		return nil, err
+	}
 
-	err := s.core.GroupOperation().DeleteObjectGroup(params, pathParams("id"))
+	err = s.core.GroupOperation().DeleteObjectGroup(params, gid)
 	if nil != err {
 		return nil, err
 	}

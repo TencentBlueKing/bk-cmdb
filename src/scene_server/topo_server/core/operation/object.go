@@ -35,7 +35,8 @@ type ObjectOperationInterface interface {
 	CreateObjectBatch(params types.ContextParams, data frtypes.MapStr) (frtypes.MapStr, error)
 	FindObjectBatch(params types.ContextParams, data frtypes.MapStr) (frtypes.MapStr, error)
 	CreateObject(params types.ContextParams, data frtypes.MapStr) (model.Object, error)
-	DeleteObject(params types.ContextParams, id int64, cond condition.Condition) error
+	CanDelete(params types.ContextParams, targetObj model.Object) error
+	DeleteObject(params types.ContextParams, id int64, cond condition.Condition, needCheckInst bool) error
 	FindObject(params types.ContextParams, cond condition.Condition) ([]model.Object, error)
 	FindObjectTopo(params types.ContextParams, cond condition.Condition) ([]metadata.ObjectTopo, error)
 	FindSingleObject(params types.ContextParams, objectID string) (model.Object, error)
@@ -119,6 +120,10 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapS
 				blog.Error("not found the  objid: %s", objID)
 				subResult["errors"] = err.Error()
 				result[objID] = subResult
+				continue
+			}
+
+			if targetAttr.PropertyID == common.BKChildStr || targetAttr.PropertyID == common.BKInstParentStr {
 				continue
 			}
 
@@ -274,7 +279,7 @@ func (o *object) FindObjectBatch(params types.ContextParams, data frtypes.MapStr
 			return nil, err
 		}
 
-		attrs, err := obj.GetAttributes()
+		attrs, err := obj.GetAttributesExceptInnerFields()
 		if nil != err {
 			return nil, err
 		}
@@ -367,7 +372,29 @@ func (o *object) CreateObject(params types.ContextParams, data frtypes.MapStr) (
 	return obj, nil
 }
 
-func (o *object) DeleteObject(params types.ContextParams, id int64, cond condition.Condition) error {
+func (o *object) CanDelete(params types.ContextParams, targetObj model.Object) error {
+
+	cond := condition.CreateCondition()
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+	if targetObj.IsCommon() {
+		cond.Field(common.BKObjIDField).Eq(targetObj.GetID())
+	}
+
+	query := &metadata.QueryInput{}
+	query.Condition = cond.ToMapStr()
+	findInstResponse, err := o.inst.FindOriginInst(params, targetObj, query)
+	if nil != err {
+		blog.Errorf("[operation-obj] failed to check if it (%s) has some insts, error info is %s", targetObj.GetID(), err.Error())
+		return err
+	}
+	if 0 != findInstResponse.Count {
+		blog.Errorf("the object [%s] has been instantiated and cannot be deleted", targetObj.GetID())
+		return params.Err.Errorf(common.CCErrTopoObjectHasSomeInstsForbiddenToDelete, targetObj.GetID())
+	}
+
+	return nil
+}
+func (o *object) DeleteObject(params types.ContextParams, id int64, cond condition.Condition, needCheckInst bool) error {
 
 	if 0 < id {
 		cond = condition.CreateCondition()
@@ -382,6 +409,14 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 
 	for _, obj := range objs {
 
+		// check if is can be deleted
+		if needCheckInst {
+			if err := o.CanDelete(params, obj); nil != err {
+				return err
+			}
+		}
+
+		// delete object
 		attrCond := condition.CreateCondition()
 		attrCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 		attrCond.Field(common.BKObjIDField).Eq(obj.GetID())
@@ -391,17 +426,29 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 			return err
 		}
 
+		if groups, err := obj.GetGroups(); err != nil {
+			blog.Errorf("[operation-asst] failed to get the object's groups, error info is %s", err.Error())
+			return err
+		} else {
+			for _, group := range groups {
+				if err = o.grp.DeleteObjectGroup(params, group.GetRecordID()); err != nil {
+					blog.Errorf("[operation-asst] failed to delete the object's groups, error info is %s", err.Error())
+					return err
+				}
+			}
+		}
+
 		rsp, err := o.clientSet.ObjectController().Meta().DeleteObject(context.Background(), obj.GetRecordID(), params.Header, cond.ToMapStr())
 
 		if nil != err {
 			blog.Errorf("[operation-obj] failed to request the object controller, error info is %s", err.Error())
 			return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
-
 		if common.CCSuccess != rsp.Code {
 			blog.Errorf("[opration-obj] failed to delete the object by the condition(%#v) or the id(%d)", cond.ToMapStr(), id)
 			return params.Err.Error(rsp.Code)
 		}
+
 	}
 	return nil
 }

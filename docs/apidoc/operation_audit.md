@@ -1,6 +1,6 @@
 #### 根据条件获取操作日志
 
-* API:  POST /api/v1/audit/search
+* API:  POST /api/v3/audit/search
 * API 名称：get_operation_log
 * 功能说明：
 	- 中文： 获取操作日志
@@ -36,7 +36,7 @@
 | bk_biz_id| int| 是|无|业务ID |  business ID|
 |ext_key|object|否|无|当bk_op_type为0， 填入多个IP地址| if bk_op_type=0, the input is ip array|
 |op_target|string|否|无|操作对象，可以为biz host process set module object| op target, and it can be biz host process set module object|
-|op_type|string|否|无|操作类型，1,2,3   1:add 2:update 3:delete  | op type, and it can be 1,2,3  1:add , 2:update ,2:delete|
+|op_type|string|否|无|操作类型， add delete update | op type, and it can be add , delete ,update|
 |op_time|string数组|否|无|没有条件，为空, 开始和结束时间成对出现 | no condition, start time and end time is pair|
 | start|int|是|无|记录开始位置 |start record|
 | limit|int|是|无|每页限制条数,最大200 |page limit, max is 200|
