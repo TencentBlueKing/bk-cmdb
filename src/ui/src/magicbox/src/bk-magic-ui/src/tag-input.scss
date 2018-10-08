@@ -1,0 +1,117 @@
+
+.bk-tag-input {
+    padding: 3px 0 0 3px;
+    border: 1px solid #e6e6e7;
+    min-height: 36px;
+    border-radius: 2px;
+    font-size: 12px;
+    position: relative;
+    z-index: 1;
+    background: #fff;
+    cursor: pointer;
+    overflow: hidden;
+    &.disabled {
+        background: #fafafa;
+        cursor: not-allowed;
+        .tag-list {
+            > li {
+                cursor: not-allowed;
+            }
+            .key-node {
+                padding-right: 2px;
+            }
+        }
+    }
+    .placeholder {
+        margin: 0;
+        padding: 0;
+        position: absolute;
+        top: 7px;
+        left: 10px;
+        color: #c3cdd7;
+    }
+    .input {
+        width: 10px;
+        height: 24px;
+        padding: 0;
+        border: 0;
+        box-shadow: border-box;
+        outline: none;
+        max-width: 295px;
+        margin-top: 2px;
+    }
+    .tag-list {
+        display: inline-block;
+        max-height: 135px;
+        overflow: auto;
+        float: left;
+        margin: 0;
+        padding: 0;
+        >li {
+            display: inline-block;
+            cursor: pointer;
+            position: relative;
+            padding: 0 2px;
+            margin: 0 3px 3px 0;
+            border-radius: 2px;
+            float: left;
+            height: 28px;
+            line-height: 26px;
+            &.key-node {
+                border: solid 1px #e6e6e7;
+            }
+        }
+        .key-node {
+            background: #fafafa;
+            padding-right: 20px;
+            .remove-key {
+                display: inline-block;
+            }
+        }
+        .remove-key {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            line-height: 16px;
+            bottom: 3px;
+            right: 7px;
+            display: inline-block;
+            font-size: 12px;
+            text-align: center;
+            color: #666;
+            display: none;
+            text-decoration: none;
+        }
+    }
+    .tag {
+        display: inline-block;
+        background-color: #fafafa;
+        color: #666;
+        font-size: 12px;
+        border: none;
+        vertical-align: middle;
+        box-sizing: border-box;
+        overflow: hidden;
+        border-radius: 2px;
+        padding: 0 9px;
+        min-height: 21px;
+        line-height: 21px;
+        word-break: break-all;
+        max-width: 200px;
+        overflow: hidden;
+        display: inline-block;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .dropdown-actions {
+        width: 100%;
+        font-size: 0;
+        .bk-button {
+            width: 50%;
+            margin: 0;
+            border-radius: 0;
+            border-width: 0;
+            border-top-width: 1px;
+        }
+    }
+}

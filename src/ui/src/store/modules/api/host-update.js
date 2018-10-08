@@ -8,7 +8,7 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-import { $Axios, $axios } from '@/api/axios'
+import $http from '@/api'
 
 const state = {
 
@@ -27,8 +27,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    updateHost ({ commit, state, dispatch }, { params }) {
-        return $axios.put(`hosts/batch`, params)
+    updateHost ({ commit, state, dispatch }, params) {
+        return $http.put(`hosts/batch`, params)
     }
 }
 

@@ -1,0 +1,111 @@
+@charset "utf-8";
+@import "./conf.scss";
+
+
+/*===================================================*\
+ * bk-dropdown-menu
+\*===================================================*/
+.bk-dropdown-menu {
+    display: inline-block;
+    position: relative;
+    &.disabled{
+        cursor: not-allowed;
+    }
+
+    .bk-dropdown-trigger {
+        .bk-icon {
+            transition: all ease 0.2s;
+            &.icon-flip {
+                transform: rotate(180deg);
+            }
+        }
+    }
+
+    .bk-dropdown-content {
+        min-width: 100%;
+        height: auto;
+        background: $defaultColor;
+        padding: 0;
+        margin: 0;
+        position: absolute;
+        z-index: $dropdownMenuZIndex;
+        border-radius: 2px;
+        border: 1px solid $borderColor;
+        box-sizing: border-box;
+        opacity: 0;
+        transition: all ease 0.3s;
+        box-shadow: 0 2px 6px rgba(51,60,72,0.1);
+        display: none;
+        text-align: left;
+
+        &::-webkit-scrollbar {
+            width: 4px;
+            background-color: lighten(#e6e9ea, 80%);
+        }
+        &::-webkit-scrollbar-thumb {
+            height: 5px;
+            border-radius: 2px;
+            background-color: #e6e9ea;
+        }
+
+        &.is-show {
+            opacity: 1;
+            display: inline-block;
+            overflow: auto;
+            height: auto;
+        }
+
+        &.left-align {
+            left: 0;
+        }
+
+        &.right-align {
+            right: 0;
+        }
+
+        &.center-align {
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+    }
+    .bk-dropdown-list {
+        width: 100%;
+        max-height: 166px;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        &::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            border-radius: 20px;
+            background: $scrollbarColor;
+            -webkit-box-shadow: inset 0 0 6px hsla(0,0%,80%,.3);
+        }
+
+        > li {
+            width: 100%;
+            margin: 0;
+            display: inline-block;
+            > a {
+                display: block;
+                line-height: 41px;
+                padding: 0 15px;
+                color: $fnMainColor;
+                font-size: 14px;
+                text-decoration: none;
+                white-space: nowrap;
+                &:hover {
+                    background: #ebf4ff;
+                    color: $primaryColor;
+                }
+            }
+            .bk-icon {
+                margin-right: 5px;
+            }
+        }
+    }
+}

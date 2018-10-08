@@ -8,7 +8,7 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-import { $Axios, $axios } from '@/api/axios'
+import $http from '@/api'
 
 const state = {
 
@@ -27,8 +27,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    createCustomQuery ({ commit, state, dispatch }, { params }) {
-        return $axios.post(`userapi`, params)
+    createCustomQuery ({ commit, state, dispatch }, { params, config }) {
+        return $http.post(`userapi`, params, config)
     },
     
     /**
@@ -36,13 +36,13 @@ const actions = {
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {Number} bkBizId 业务Id
+     * @param {Number} bizId 业务Id
      * @param {String} id 主键id
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    updateCustomQuery ({ commit, state, dispatch }, { bkBizId, id, params }) {
-        return $axios.post(`userapi/${bkBizId}/${id}`, params)
+    updateCustomQuery ({ commit, state, dispatch }, { bizId, id, params, config }) {
+        return $http.put(`userapi/${bizId}/${id}`, params, config)
     },
 
     /**
@@ -50,12 +50,12 @@ const actions = {
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {Number} bkBizId 业务Id
+     * @param {Number} bizId 业务Id
      * @param {String} id 主键id
      * @return {Promise} promise 对象
      */
-    deleteCustomQuery ({ commit, state, dispatch }, { bkBizId, id }) {
-        return $axios.delete(`userapi/${bkBizId}/${id}`)
+    deleteCustomQuery ({ commit, state, dispatch }, { bizId, id }) {
+        return $http.delete(`userapi/${bizId}/${id}`)
     },
 
     /**
@@ -63,12 +63,12 @@ const actions = {
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {Number} bkBizId 业务Id
+     * @param {Number} bizId 业务Id
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    searchCustomQuery ({ commit, state, dispatch }, { bkBizId, params }) {
-        return $axios.post(`userapi/search/${bkBizId}`, params)
+    searchCustomQuery ({ commit, state, dispatch }, { bizId, params, config }) {
+        return $http.post(`userapi/search/${bizId}`, params, config)
     },
 
     /**
@@ -76,12 +76,12 @@ const actions = {
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {Number} bkBizId 业务Id
+     * @param {Number} bizId 业务Id
      * @param {String} id 主键id
      * @return {Promise} promise 对象
      */
-    getCustomQueryDetail ({ commit, state, dispatch }, { bkBizId, id }) {
-        return $axios.get(`userapi/detail/${bkBizId}/${id}`)
+    getCustomQueryDetail ({ commit, state, dispatch }, { bizId, id, config }) {
+        return $http.get(`userapi/detail/${bizId}/${id}`, config)
     },
 
     /**
@@ -89,14 +89,14 @@ const actions = {
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {Number} bkBizId 业务Id
+     * @param {Number} bizId 业务Id
      * @param {String} id 主键id
      * @param {Number} start 记录开始位置
      * @param {Number} limit 每夜限制条数，最大200
      * @return {Promise} promise 对象
      */
-    getCustomQueryData ({ commit, state, dispatch }, { bkBizId, id, start, limit, params }) {
-        return $axios.get(`userapi/detail/${bkBizId}/${id}/${start}/${limit}`)
+    getCustomQueryData ({ commit, state, dispatch }, { bizId, id, start, limit, params }) {
+        return $http.get(`userapi/detail/${bizId}/${id}/${start}/${limit}`)
     }
 }
 
