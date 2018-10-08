@@ -20,6 +20,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	hutil "configcenter/src/scene_server/host_server/util"
@@ -199,11 +200,13 @@ func (phpapi *PHPAPI) SetHostData(moduleHostConfig []map[string]int64, hostMap m
 		return hostData, err
 	}
 	for _, config := range moduleHostConfig {
-		host, hasHost := hostMap[config[common.BKHostIDField]]
+		hostItem, hasHost := hostMap[config[common.BKHostIDField]]
 		if !hasHost {
 			blog.Errorf("hostMap has not hostID: %d", config[common.BKHostIDField])
 			continue
 		}
+		host := mapstr.New()
+		host.Merge(hostItem)
 
 		module := moduleMap[config[common.BKModuleIDField]]
 		set := setMap[config[common.BKSetIDField]]
@@ -233,9 +236,9 @@ func (phpapi *PHPAPI) handleHostAssocation(instID int64, input map[string]interf
 		return fmt.Errorf("search host attribute failed, err: %v, result err: %s", err, result.ErrMsg)
 	}
 	for _, asst := range result.Data {
-		if _, ok := input[asst.ObjectAttID]; ok {
+		if _, ok := input[asst.AsstName]; ok {
 			opt := hutil.NewOperation().WithInstID(instID).WithObjID(common.BKInnerObjIDHost)
-			if "" != asst.ObjectAttID {
+			if "" != asst.AsstName {
 				opt.WithAssoObjID(asst.AsstObjID)
 			}
 			result, err := phpapi.logic.CoreAPI.ObjectController().Instance().DelObject(context.Background(), common.BKTableNameInstAsst, phpapi.header, opt.Data())

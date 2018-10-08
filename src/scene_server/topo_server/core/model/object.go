@@ -211,7 +211,7 @@ func (o *object) GetMainlineParentObject() (Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
 	cond.Field(meta.AssociationFieldObjectID).Eq(o.obj.ObjectID)
-	cond.Field(meta.AssociationFieldObjectAttributeID).Eq(common.BKChildStr)
+	cond.Field(meta.AssociationFieldAssociationName).Eq(common.BKChildStr)
 
 	rsp, err := o.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), o.params.Header, cond.ToMapStr())
 	if nil != err {
@@ -246,7 +246,7 @@ func (o *object) GetMainlineChildObject() (Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
 	cond.Field(meta.AssociationFieldAssociationObjectID).Eq(o.obj.ObjectID)
-	cond.Field(meta.AssociationFieldObjectAttributeID).Eq(common.BKChildStr)
+	cond.Field(meta.AssociationFieldAssociationName).Eq(common.BKChildStr)
 
 	rsp, err := o.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), o.params.Header, cond.ToMapStr())
 	if nil != err {
@@ -305,7 +305,7 @@ func (o *object) GetChildObjectByFieldID(fieldID string) ([]Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
 	cond.Field(meta.AssociationFieldObjectID).Eq(o.obj.ObjectID)
-	cond.Field(meta.AssociationFieldObjectAttributeID).Eq(fieldID)
+	cond.Field(meta.AssociationFieldAssociationName).Eq(fieldID)
 
 	return o.searchObjects(true, cond)
 }
@@ -314,7 +314,7 @@ func (o *object) GetParentObject() ([]Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
 	cond.Field(meta.AssociationFieldAssociationObjectID).Eq(o.obj.ObjectID)
-	cond.Field(meta.AssociationFieldObjectAttributeID).NotEq(common.BKChildStr)
+	cond.Field(meta.AssociationFieldAssociationName).NotEq(common.BKChildStr)
 
 	return o.searchObjects(false, cond)
 }
@@ -323,7 +323,7 @@ func (o *object) GetChildObject() ([]Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
 	cond.Field(meta.AssociationFieldObjectID).Eq(o.obj.ObjectID)
-	cond.Field(meta.AssociationFieldObjectAttributeID).NotEq(common.BKChildStr)
+	cond.Field(meta.AssociationFieldAssociationName).NotEq(common.BKChildStr)
 
 	return o.searchObjects(true, cond)
 }
@@ -334,7 +334,7 @@ func (o *object) SetMainlineParentObject(objID string) error {
 
 	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
 	cond.Field(meta.AssociationFieldObjectID).Eq(o.obj.ObjectID)
-	cond.Field(meta.AssociationFieldObjectAttributeID).Eq(common.BKChildStr)
+	cond.Field(meta.AssociationFieldAssociationName).Eq(common.BKChildStr)
 
 	rsp, err := o.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), o.params.Header, cond.ToMapStr())
 	if nil != err {
@@ -352,7 +352,7 @@ func (o *object) SetMainlineParentObject(objID string) error {
 
 		asst := &meta.Association{}
 		asst.OwnerID = o.params.SupplierAccount
-		asst.ObjectAttID = common.BKChildStr
+		asst.AsstName = common.BKChildStr
 		asst.ObjectID = o.obj.ObjectID
 		asst.AsstObjID = objID
 
@@ -375,7 +375,7 @@ func (o *object) SetMainlineParentObject(objID string) error {
 	for _, asst := range rsp.Data {
 
 		asst.AsstObjID = objID
-		asst.ObjectAttID = common.BKChildStr
+		asst.AsstName = common.BKChildStr
 
 		rsp, err := o.clientSet.ObjectController().Meta().UpdateObjectAssociation(context.Background(), asst.ID, o.params.Header, asst.ToMapStr())
 		if nil != err {
@@ -396,7 +396,7 @@ func (o *object) SetMainlineChildObject(objID string) error {
 	cond := condition.CreateCondition()
 
 	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
-	cond.Field(meta.AssociationFieldObjectAttributeID).Eq(common.BKChildStr)
+	cond.Field(meta.AssociationFieldAssociationName).Eq(common.BKChildStr)
 	cond.Field(meta.AssociationFieldAssociationObjectID).Eq(o.obj.ObjectID)
 
 	rsp, err := o.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), o.params.Header, cond.ToMapStr())
@@ -415,7 +415,7 @@ func (o *object) SetMainlineChildObject(objID string) error {
 
 		asst := &meta.Association{}
 		asst.OwnerID = o.params.SupplierAccount
-		asst.ObjectAttID = common.BKChildStr
+		asst.AsstName = common.BKChildStr
 		asst.ObjectID = objID
 		asst.AsstObjID = o.obj.ObjectID
 
@@ -438,7 +438,7 @@ func (o *object) SetMainlineChildObject(objID string) error {
 	for _, asst := range rsp.Data { // should be only one item
 
 		asst.ObjectID = objID
-		asst.ObjectAttID = common.BKChildStr
+		asst.AsstName = common.BKChildStr
 
 		rsp, err := o.clientSet.ObjectController().Meta().UpdateObjectAssociation(context.Background(), asst.ID, o.params.Header, asst.ToMapStr())
 		if nil != err {
