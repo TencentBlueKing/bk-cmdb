@@ -54,14 +54,22 @@ func (ps *ProctrlServer) WebService() http.Handler {
 	ws.Route(ws.POST("/module").To(ps.CreateProc2Module))
 	ws.Route(ws.POST("/module/search").To(ps.GetProc2Module))
 
-	ws.Route(ws.POST("/conftemp").To(ps.CreateConfigTemp))
-	ws.Route(ws.PUT("/conftemp").To(ps.UpdateConfigTemp))
-	ws.Route(ws.DELETE("/conftemp").To(ps.DeleteConfigTemp))
-	ws.Route(ws.POST("/conftemp/search").To(ps.QueryConfigTemp))
+	ws.Route(ws.POST("/template").To(ps.CreateProc2Template))
+	ws.Route(ws.DELETE("/template").To(ps.DeleteProc2Template))
+	ws.Route(ws.POST("/template/search").To(ps.GetProc2Template))
 
 	ws.Route(ws.POST("/instance/model").To(ps.CreateProcInstanceModel))
 	ws.Route(ws.POST("/instance/model/search").To(ps.GetProcInstanceModel))
 	ws.Route(ws.DELETE("/instance/model").To(ps.DeleteProcInstanceModel))
+	ws.Route(ws.POST("/instance/register/detail").To(ps.RegisterProcInstaceDetail))
+	ws.Route(ws.PUT("/instance/register/detail").To(ps.ModifyRegisterProcInstanceDetail))
+	ws.Route(ws.POST("/instance/register/detail/search").To(ps.GetProcInstanceDetail))
+	ws.Route(ws.DELETE("/instance/register/detail").To(ps.DeleteRegisterProcInstanceDetail))
+
+	ws.Route(ws.POST("/operate/task").To(ps.AddOperateTaskInfo))
+	ws.Route(ws.PUT("/operate/task").To(ps.UpdateOperateTaskInfo))
+	ws.Route(ws.POST("/operate/task/search").To(ps.SearchOperateTaskInfo))
+
 	ws.Route(ws.GET("/healthz").To(ps.Healthz))
 
 	container.Add(ws)
