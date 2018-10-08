@@ -95,6 +95,12 @@ const (
 	// BKInnerObjIDProc the inner object
 	BKInnerObjIDProc = "process"
 
+	// BKInnerObjIDConfigTemp the inner object
+	BKInnerObjIDConfigTemp = "config_template"
+
+	// BKInnerObjIDTempVerion the inner object
+	BKInnerObjIDTempVersion = "template_version"
+
 	// BKInnerObjIDPlat the inner object
 	BKInnerObjIDPlat = "plat"
 
@@ -248,6 +254,18 @@ const (
 
 	// BKProcNameField the proc name field
 	BKProcNameField = "bk_process_name"
+
+	// BKTemlateIDField the process template id field
+	BKTemlateIDField = "template_id"
+
+	// BKVesionIDField the version id field
+	BKVersionIDField = "version_id"
+
+	// BKTemplateNameField the template name field
+	BKTemplateNameField = "template_name"
+
+	// BKFileNameField the file name field
+	BKFileNameField = "file_name"
 
 	// BKPropertyIDField the propety id field
 	BKPropertyIDField = "bk_property_id"
@@ -431,8 +449,9 @@ const (
 	// BKIsOnlyField the isonly name field
 	BKIsOnlyField = "isonly"
 	// BKGseTaskIdField the gse taskid
-	BKGseTaskIdField = "task_id"
-	// BKProcPidFile the process pid file
+	BKGseTaskIDField = "task_id"
+	// BKTaskIdField the gse taskid
+	BKTaskIDField    = "task_id"
 	BKProcPidFile    = "pid_file"
 	BKProcStartCmd   = "start_cmd"
 	BKProcStopCmd    = "stop_cmd"
@@ -444,6 +463,8 @@ const (
 
 	// BKInstKeyField the inst key field for metric discover
 	BKInstKeyField = "bk_inst_key"
+
+	BKProcinstanceID = "proc_instance_id"
 )
 
 // DefaultResSetName the inner module set
@@ -643,6 +664,10 @@ const (
 )
 
 const (
+	BKSTRIDPrefix = "cc"
+)
+
+const (
 	// LocalHostName the local host name definition
 	LocalHostName = "localhost"
 
@@ -751,4 +776,33 @@ const (
 const (
 	HostFieldDockerClientVersion = "docker_client_version"
 	HostFieldDockerServerVersion = "docker_server_version"
+)
+
+const TemplateStatusField = "status"
+const BKStatusField = "status"
+
+const (
+	TemplateStatusDraft   = "draft"
+	TemplateStatusOnline  = "online"
+	TemplateStatusHistory = "history"
+)
+
+const (
+	BKProcInstanceOpUser = "proc instance user"
+)
+
+const (
+	GSEProcOPStop           = 1
+	GSEProcOPQueryStatus    = 2
+	GSEProcOPRegister       = 3
+	GSEProcOPUnregister     = 4
+	GSEProcOPRegisterStart  = 5
+	GSEProcOPUnregisterStop = 6
+	GSEProcOPRestart        = 7
+	GSEProcOPReload         = 8
+	GSEProcOPKill           = 9
+)
+const (
+	RedisProcSrvHostInstanceRefreshModuleKey  = BKCacheKeyV3Prefix + "prochostinstancerefresh"
+	RedisProcSrvHostInstanceAllRefreshLockKey = BKCacheKeyV3Prefix + "lock:prochostinstancerefresh"
 )
