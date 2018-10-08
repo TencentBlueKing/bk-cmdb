@@ -22,8 +22,8 @@ import (
 )
 
 func (lgc *Logics) SearchCollector(cond metadata.ParamNetcollectorSearch) (int64, []metadata.Netcollector, error) {
-	result := []metadata.Netcollector{}
-
+	collectors := []metadata.Netcollector{}
+	// mock fetch from nodeman
 	mock := metadata.Netcollector{
 		CloudID:   0,
 		CloudName: "default area",
@@ -41,8 +41,25 @@ func (lgc *Logics) SearchCollector(cond metadata.ParamNetcollectorSearch) (int64
 			Community: "",
 		},
 	}
-	result = append(result, mock)
-	return 1, result, nil
+	collectors = append(collectors, mock)
+
+	// fill config field from our db
+	for index := range collectors {
+		collector := &collectors[index]
+		cond := condition.CreateCondition()
+		cond.Field(common.BKCloudIDField).Eq(collector.CloudID)
+		cond.Field(common.BKHostInnerIPField).Eq(collector.InnerIP)
+		existsOne := metadata.Netcollector{}
+		err := lgc.Instance.GetOneByCondition(common.BKTableNameNetcollectConfig, nil, cond.ToMapStr(), &existsOne)
+		if lgc.Instance.IsNotFoundErr(err) {
+			continue
+		} else if err != nil {
+			blog.Errorf("[UpdateCollector] get collector config failed")
+			continue
+		}
+		collector.Config = existsOne.Config
+	}
+	return 1, collectors, nil
 }
 
 func (lgc *Logics) UpdateCollector(config metadata.NetcollectorConfig) error {

@@ -70,7 +70,7 @@ type Netcollector struct {
 type NetcollectorConfig struct {
 	CloudID int64            `json:"bk_cloud_id" bson:"bk_cloud_id" `
 	InnerIP string           `json:"bk_host_innerip" bson:"bk_host_innerip"`
-	Config  NetcollectConfig `json:"config"`
+	Config  NetcollectConfig `json:"config" bson:"config"`
 }
 
 type NetcollectorStatus struct {
@@ -92,9 +92,9 @@ const (
 )
 
 type NetcollectConfig struct {
-	ScanRange []string `json:"scan_range"`
-	Period    string   `json:"period"`
-	Community string   `json:"community"`
+	ScanRange []string `json:"scan_range" bson:"scan_range"`
+	Period    string   `json:"period" bson:"period"`
+	Community string   `json:"community" bson:"community"`
 }
 
 type ParamSearchNetcollectReport struct {
@@ -143,8 +143,8 @@ type NetcollectReport struct {
 }
 
 type NetcollectHistory struct {
-	*NetcollectReport `json:",inline" bson:",inline"`
-	Success           bool `json:"success" bson:"success"`
+	NetcollectReport `json:",inline" bson:",inline"`
+	Success          bool `json:"success" bson:"success"`
 }
 
 type NetcollectReportAttribute struct {
