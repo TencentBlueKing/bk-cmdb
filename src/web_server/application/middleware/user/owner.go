@@ -63,7 +63,11 @@ func (m *OwnerManager) InitOwner() error {
 				return err
 			}
 			if ok {
-				defer rediscli.Del(common.BKCacheKeyV3Prefix + "owner_init_lock:" + m.OwnerID)
+				defer func() {
+					if err := rediscli.Del(common.BKCacheKeyV3Prefix + "owner_init_lock:" + m.OwnerID).Err(); err != nil {
+						blog.Errorf("owner_init_lock error %s", err.Error())
+					}
+				}()
 				break
 			}
 			time.Sleep(time.Second)
