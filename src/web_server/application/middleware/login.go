@@ -92,13 +92,12 @@ func ValidLogin(skipLogin, defaultlanguage string) gin.HandlerFunc {
 // IsAuthed check user is authed
 func isAuthed(c *gin.Context, skipLogin, defaultlanguage string) bool {
 	if "1" == skipLogin {
-		blog.Info("skip login")
 		session := sessions.Default(c)
 
 		cookieLanuage, err := c.Cookie(common.BKHTTPCookieLanugageKey)
 		if "" == cookieLanuage || nil != err {
 			c.SetCookie(common.BKHTTPCookieLanugageKey, defaultlanguage, 0, "/", "", false, false)
-			session.Set("language", defaultlanguage)
+			session.Set(common.WEBSessionLanguageKey, defaultlanguage)
 		} else if cookieLanuage != session.Get(common.WEBSessionLanguageKey) {
 			session.Set(common.WEBSessionLanguageKey, cookieLanuage)
 		}
@@ -114,8 +113,10 @@ func isAuthed(c *gin.Context, skipLogin, defaultlanguage string) bool {
 				blog.Errorf("init owner fail %s", err.Error())
 				return true
 			}
-
 		}
+
+		blog.Info("skip login, cookieLanuage: %s, cookieOwnerID: %s", cookieLanuage, cookieOwnerID)
+
 		session.Set(common.WEBSessionUinKey, "admin")
 		session.Set(common.WEBSessionRoleKey, "1")
 		session.Set(webCommon.IsSkipLogin, "1")
