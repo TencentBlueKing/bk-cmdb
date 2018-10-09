@@ -2,35 +2,35 @@
     <div class="network-confirm-wrapper">
         <div class="filter-wrapper" :class="{'open': filter.isShow}">
             <bk-button type="default" @click="toggleFilter">
-                {{$t('NetworkDiscovery["高级操作"]')}}
+                {{$t('NetworkDiscovery["批量操作"]')}}
                 <i class="bk-icon icon-angle-down"></i>
             </bk-button>
             <div class="filter-details clearfix" v-show="filter.isShow">
                 <div class="details-left">
-                    <bk-button type="default">
+                    <bk-button type="default" @click="toggleIgnore(true)">
                         {{$t('NetworkDiscovery["忽略"]')}}
                     </bk-button>
-                    <bk-button type="default">
+                    <bk-button type="default" @click="toggleIgnore(false)">
                         {{$t('NetworkDiscovery["取消忽略"]')}}
                     </bk-button>
                     <label class="cmdb-form-checkbox">
-                        <input type="checkbox">
+                        <input type="checkbox" v-model="filter.isShowIgnore">
                         <span class="cmdb-checkbox-text">{{$t('NetworkDiscovery["显示忽略"]')}}</span>
                     </label>
                 </div>
                 <div class="details-right clearfix">
                     <bk-selector
-                        :list="changeInfo.list"
-                        :selected="changeInfo.selected"
+                        :list="changeList"
+                        :selected.sync="filterCopy.action"
                         :placeholder="$t('NetworkDiscovery[\'全部变更\']')"
                     ></bk-selector>
                     <bk-selector
-                        :list="typeInfo.list"
-                        :selected="typeInfo.selected"
+                        :list="typeList"
+                        :selected.sync="filterCopy['bk_obj_name']"
                         :placeholder="$t('NetworkDiscovery[\'全部类型\']')"
                     ></bk-selector>
                     <input type="text" class="cmdb-form-input" :placeholder="$t('NetworkDiscovery[\'请输入IP\']')">
-                    <bk-button type="default">
+                    <bk-button type="default" @click="search">
                         {{$t('Common["查询"]')}}
                     </bk-button>
                 </div>
@@ -40,22 +40,33 @@
             class="confirm-table"
             :loading="$loading('searchNetcollectList')"
             :header="table.header"
-            :list="table.list"
-            :pagination.sync="table.pagination"
+            :list="tableList"
             :defaultSort="table.defaultSort"
-            @handleSortChange="handleSortChange"
-            @handleSizeChange="handleSizeChange"
-            @handlePageChange="handlePageChange">
+            :checked.sync="table.checked"
+            @handleSortChange="handleSortChange">
             <template v-for="(header, index) in table.header" :slot="header.id" slot-scope="{ item }">
-                <template v-if="header.id === 'operation'">
+                <label class="table-checkbox bk-form-checkbox bk-checkbox-small"
+                    :key="index"
+                    v-if="header.id === 'id'" 
+                    @click.stop>
+                    <input type="checkbox"
+                        :value="item['bk_inst_key']"
+                        v-model="table.checked">
+                </label>
+                <template v-else-if="header.id === 'operation'">
                     <div :key="index">
-                        <span class="text-primary" @click.stop="showDetails">{{$t('NetworkDiscovery["详情"]')}}</span>
-                        <span class="text-primary" @click.stop="">{{$t('NetworkDiscovery["忽略"]')}}</span>
-                        <span class="text-primary" @click.stop="">{{$t('NetworkDiscovery["取消忽略"]')}}</span>
+                        <span class="text-primary" @click.stop="showDetails(item)">{{$t('NetworkDiscovery["详情"]')}}</span>
+                        <span class="text-primary" @click.stop="item.ignore = !item.ignore">{{item.ignore ? $t('NetworkDiscovery["取消忽略"]') : $t('NetworkDiscovery["忽略"]')}}</span>
                     </div>
                 </template>
+                <template v-else-if="header.id === 'action'">
+                    <span :key="index" :class="{'ignore': item.ignore, 'color-warning': item.action === 'update', 'color-danger' : item.action === 'delete'}">{{actionMap[item.action]}}</span>
+                </template>
+                <template v-else-if="header.id === 'last_time'">
+                    <span :key="index" :class="{'ignore': item.ignore}">{{$tools.formatTime(item['last_time'])}}</span>
+                </template>
                 <template v-else>
-                    {{item[header.id]}}
+                    <span :key="index" :class="{'ignore': item.ignore}">{{item[header.id]}}</span>
                 </template>
             </template>
         </cmdb-table>
@@ -63,7 +74,13 @@
             :width="740"
             :title="slider.title"
             :isShow.sync="slider.isShow">
-            <v-confirm-details slot="content"></v-confirm-details>
+            <v-confirm-details
+            slot="content"
+            :ignore="activeItem.ignore"
+            :attributes.sync="activeItem.attributes"
+            :associations.sync="activeItem.associations"
+            @toggleSwitcher="toggleSwitcher"
+            ></v-confirm-details>
         </cmdb-slider>
         <footer class="footer">
             <bk-button type="primary" @click="showResultDialog">
@@ -71,34 +88,34 @@
             </bk-button>
         </footer>
         <bk-dialog
-        class="result-dialog"
-        :is-show.sync="resultDialog.isShow" 
-        :has-header="false"
-        :has-footer="false"
-        :quick-close="false"
-        :close-icon="false"
-        :width="448">
+            class="result-dialog"
+            :is-show.sync="resultDialog.isShow" 
+            :has-header="false"
+            :has-footer="false"
+            :quick-close="false"
+            :close-icon="false"
+            :width="448">
             <div slot="content">
                 <h2>{{$t('NetworkDiscovery["执行结果"]')}}</h2>
                 <div class="dialog-content">
                     <p>
                         <span class="info">{{$t('NetworkDiscovery["属性变更成功"]')}}</span>
-                        <span class="number">22条</span>
+                        <span class="number">{{resultDialog.data['change_attribute_success']}}条</span>
                     </p>
                     <p>
                         <span class="info">{{$t('NetworkDiscovery["关联关系变更成功"]')}}</span>
-                        <span class="number">22条</span>
+                        <span class="number">{{resultDialog.data['change_relation_success']}}条</span>
                     </p>
                     <p class="fail">
                         <span class="info">{{$t('NetworkDiscovery["属性变更失败"]')}}</span>
-                        <span class="number">22条</span>
+                        <span class="number">{{resultDialog.data['change_attribute_failure']}}条</span>
                     </p>
                     <p class="fail">
                         <span class="info">{{$t('NetworkDiscovery["关联关系变更失败"]')}}</span>
-                        <span class="number">22条</span>
+                        <span class="number">{{resultDialog.data['change_relation_failure']}}条</span>
                     </p>
                 </div>
-                <div class="dialog-details">
+                <div class="dialog-details" v-if="resultDialog.data.errors.length">
                     <p @click="toggleDialogDetails">
                         <i class="bk-icon icon-angle-down"></i>
                         <span>{{$t('NetworkDiscovery["展开详情"]')}}</span>
@@ -106,35 +123,36 @@
                     <transition name="toggle-slide">
                         <div class="detail-content-box" v-if="resultDialog.isDetailsShow">
                             <div class="detail-content">
-                                Lorem ipsum dolor sit amet consectetur adipisicing elit. Officiis repellat sequi, eum fugiat, consectetur sunt omnis minus exercitationem in dolorum, asperiores hic nobis perspiciatis dignissimos dolorem non ipsam! Adipisci, facere!
-                                Lorem ipsum dolor sit amet consectetur adipisicing elit. Officiis repellat sequi, eum fugiat, consectetur sunt omnis minus exercitationem in dolorum, asperiores hic nobis perspiciatis dignissimos dolorem non ipsam! Adipisci, facere!
+                                <div v-for="(item, index) in resultDialog.data.errors" :key="index">
+                                    {{item}}
+                                </div>
                             </div>
                         </div>
                     </transition>
                 </div>
                 <footer class="footer">
-                    <bk-button type="primary">
+                    <bk-button type="primary" @click="resultDialog.isShow = false">
                         {{$t('Hosts["确认"]')}}
                     </bk-button>
                 </footer>
             </div>
         </bk-dialog>
         <bk-dialog
-        class="confirm-dialog"
-        :is-show.sync="confirmDialog.isShow" 
-        :title="$t('NetworkDiscovery[\'是否确认变更\']')"
-        :has-footer="false"
-        :quick-close="false"
-        padding="0"
-        :width="390">
+            class="confirm-dialog"
+            :is-show.sync="confirmDialog.isShow" 
+            :title="$t('NetworkDiscovery[\'是否丢弃\']')"
+            :has-footer="false"
+            :quick-close="false"
+            padding="0"
+            :width="390">
             <div slot="content" class="dialog-content">
                 <p>
                     {{$t('NetworkDiscovery["要在返回前确认变更吗？"]')}}
                 </p>
                 <footer class="footer">
-                    <bk-button type="primary">
+                    <!-- <bk-button type="primary">
                         {{$t('NetworkDiscovery["确认变更"]')}}
-                    </bk-button>
+                    </bk-button> -->
                     <bk-button type="default" @click="routeToLeave">
                         {{$t('NetworkDiscovery["丢弃"]')}}
                     </bk-button>
@@ -148,7 +166,7 @@
 </template>
 
 <script>
-    import { mapActions } from 'vuex'
+    import { mapActions, mapGetters } from 'vuex'
     import vConfirmDetails from './details'
     export default {
         components: {
@@ -159,8 +177,9 @@
                 resultDialog: {
                     isShow: false,
                     isDetailsShow: true,
-                    confirmLeave: false,
-                    data: {}
+                    data: {
+                        errors: []
+                    }
                 },
                 confirmDialog: {
                     isShow: false,
@@ -172,46 +191,49 @@
                     isShow: false
                 },
                 filter: {
-                    isShow: false
+                    isShow: false,
+                    isShowIgnore: true,
+                    action: '',
+                    bk_obj_name: '',
+                    bk_host_innerip: ''
                 },
-                changeInfo: {
-                    selected: '',
-                    list: [{
-                        id: 'create',
-                        name: this.$t("Common['新增']")
-                    }, {
-                        id: 'update',
-                        name: this.$t("NetworkDiscovery['变更']")
-                    }, {
-                        id: 'delete',
-                        name: this.$t("Common['删除']")
-                    }]
+                filterCopy: {
+                    action: '',
+                    bk_obj_name: '',
+                    bk_host_innerip: ''
                 },
-                typeInfo: {
-                    selected: '',
-                    list: [{
-                        id: 'switch',
-                        name: this.$t("NetworkDiscovery['交换机']")
-                    }, {
-                        id: 'host',
-                        name: this.$t("Hosts['主机']")
-                    }]
-                },
+                changeList: [{
+                    id: 'create',
+                    name: this.$t("Common['新增']")
+                }, {
+                    id: 'update',
+                    name: this.$t("NetworkDiscovery['变更']")
+                }, {
+                    id: 'delete',
+                    name: this.$t("Common['删除']")
+                }],
+                typeList: [{
+                    id: 'switch',
+                    name: this.$t("NetworkDiscovery['交换机']")
+                }, {
+                    id: 'host',
+                    name: this.$t("Hosts['主机']")
+                }],
                 table: {
                     header: [{
                         id: 'action',
                         name: this.$t('NetworkDiscovery["变更方式"]')
                     }, {
-                        id: 'device_type',
+                        id: 'bk_obj_name',
                         name: this.$t('ModelManagement["类型"]')
                     }, {
-                        id: 'device_name',
+                        id: 'bk_inst_key',
                         name: this.$t('NetworkDiscovery["唯一标识"]')
                     }, {
-                        id: 'bk_inner_ip',
+                        id: 'bk_host_innerip',
                         name: 'IP'
                     }, {
-                        id: 'device_attributes',
+                        id: 'configuration',
                         name: this.$t('NetworkDiscovery["配置信息"]')
                     }, {
                         id: 'last_time',
@@ -221,14 +243,9 @@
                         name: this.$t('Association["操作"]'),
                         sortable: false
                     }],
-                    list: [{
-                        action: 'create',
-                        device_type: 'switch',
-                        device_name: 'asdf',
-                        bk_inner_ip: '192.168.1.1',
-                        device_attributes: '24个10/100M自适应RJ4端口',
-                        last_time: '2018-04-17T15:00:49.274+08:00'
-                    }],
+                    list: [],
+                    listCopy: [],
+                    checked: [],
                     pagination: {
                         count: 0,
                         size: 10,
@@ -236,69 +253,161 @@
                     },
                     defaultSort: '-last_time',
                     sort: '-last_time'
+                },
+                actionMap: {
+                    'create': this.$t("Common['新增']"),
+                    'update': this.$t("NetworkDiscovery['变更']"),
+                    'delete': this.$t("Common['删除']")
+                },
+                activeItem: {
+                    ignore: false,
+                    attributes: [],
+                    associations: []
                 }
             }
         },
         computed: {
-            params () {
-                let params = {}
-                return params
+            ...mapGetters('netDiscovery', ['cloudName']),
+            tableList () {
+                this.$success('computed')
+                let list = this.table.list.filter(item => {
+                    if (!this.filter.isShowIgnore && item.ignore) {
+                        return false
+                    }
+                    if (this.filter['bk_obj_name'] !== '' && item['bk_obj_name'] !== this.filter['bk_obj_name']) {
+                        return false
+                    }
+                    if (this.filter.action !== '' && item.action !== this.filter.action) {
+                        return false
+                    }
+                    if (!item['bk_host_innerip'].includes(this.filter.bk_host_innerip)) {
+                        return false
+                    }
+                    return true
+                })
+                return list
             }
         },
-        async beforeRouteLeave (to, from, next) {
-            this.confirmDialog.isShow = true
-            await new Promise(async (resolve, reject) => {
-                this.confirmDialog.leaveResolver = () => {
-                    resolve()
+        beforeRouteEnter (to, from, next) {
+            next(vm => {
+                if (vm.cloudName === null) {
+                    vm.$router.push('/network-discovery')
                 }
             })
-            this.confirmDialog.isShow = false
-            next()
+        },
+        async beforeRouteLeave (to, from, next) {
+            if (this.cloudName === null) {
+                next()
+            } else {
+                this.confirmDialog.isShow = true
+                await new Promise(async (resolve, reject) => {
+                    this.confirmDialog.leaveResolver = () => {
+                        resolve()
+                    }
+                })
+                this.confirmDialog.isShow = false
+                next()
+            }
         },
         created () {
-            this.$route.meta.title = this.$t('NetworkDiscovery["变更确认"]')
+            this.$route.meta.title = `${this.cloudName}${this.$t('NetworkDiscovery["变更确认"]')}`
+            this.getTableData()
         },
         methods: {
             ...mapActions('netDiscovery', [
                 'searchNetcollectList',
                 'searchNetcollectChange'
             ]),
+            search () {
+                this.filter['bk_obj_id'] = this.filterCopy['bk_obj_id']
+                this.filter.action = this.filterCopy.action
+                this.filter['bk_host_innerip'] = this.filterCopy['bk_host_innerip']
+            },
+            toggleIgnore (ignore) {
+                this.table.checked.map(instKey => {
+                    let item = this.table.list.find(({bk_inst_key: bkInstKey}) => bkInstKey === instKey)
+                    if (item) {
+                        item.ignore = ignore
+                    }
+                })
+            },
+            toggleSwitcher (value) {
+                this.activeItem.ignore = !value
+            },
             routeToLeave () {
                 if (this.confirmDialog.leaveResolver) {
                     this.confirmDialog.leaveResolver()
                 }
             },
             toggleFilter () {
+                if (this.filter.isShow) {
+                    this.table.header.shift()
+                } else {
+                    this.table.header.unshift({
+                        type: 'checkbox',
+                        id: 'id'
+                    })
+                }
                 this.filter.isShow = !this.filter.isShow
             },
-            showDetails () {
-                this.slider.title = 'asdf'
+            showDetails (item) {
+                this.activeItem = item
+                this.slider.title = item['bk_host_innerip']
                 this.slider.isShow = true
             },
             async showResultDialog () {
+                let params = {
+                    reports: this.table.list
+                }
+                let reports = []
+                this.table.list.map(item => {
+                    if (!item.ignore) {
+                        let detail = {
+                            bk_cloud_id: item['bk_cloud_id'],
+                            bk_obj_id: item['bk_obj_id'],
+                            attributes: [],
+                            relations: []
+                        }
+                        item.attributes.map(attr => {
+                            if (attr.method === 'accept') {
+                                detail.attributes.push({
+                                    bk_property_id: attr['bk_property_id'],
+                                    bk_obj_id: attr['bk_obj_id'],
+                                    method: 'accept'
+                                })
+                            }
+                        })
+                        item.associations.map(asst => {
+                            if (asst.method === 'accept') {
+                                detail.associations.push({
+                                    bk_property_id: asst['bk_property_id'],
+                                    bk_obj_id: asst['bk_obj_id'],
+                                    method: 'accept'
+                                })
+                            }
+                        })
+                    }
+                })
                 this.resultDialog.isShow = true
-                const res = await this.searchNetcollectList()
-                this.resultDialog.data = res
+                // const res = await this.confirmNetcollectChange()
+                // this.resultDialog.data = res
             },
             toggleDialogDetails () {
                 this.resultDialog.isDetailsShow = !this.resultDialog.isDetailsShow
             },
             async getTableData () {
-                const res = await this.searchNetcollectList({params: this.params, config: {requestId: 'searchNetcollectList'}})
-                this.table.pagination.count = res.count
+                const res = await this.searchNetcollectList({params: {bk_cloud_id: Number(this.$route.params.cloudId)}, config: {requestId: 'searchNetcollectList'}})
+                res.info.map(item => {
+                    Object.assign(item, {ignore: false})
+                    item.attributes.map(attr => Object.assign(attr, {method: 'accept'}))
+                    item.associations.map(relation => Object.assign(relation.asst, {method: 'accept'}))
+                })
                 this.table.list = res.info
+                this.table.listCopy = this.$tools.clone(res.info)
             },
             handleSortChange (sort) {
                 this.table.sort = sort
                 this.handlePageChange(1)
-            },
-            handleSizeChange (size) {
-                this.table.pagination.size = size
-                this.handlePageChange(1)
-            },
-            handlePageChange (page) {
-                this.table.pagination.current = page
-                this.getTableData()
             }
         }
     }
@@ -370,6 +479,17 @@
         .confirm-table {
             margin-top: 20px;
             background: #fff;
+            .ignore {
+                color: $cmdbBorderColor;
+                &.color-danger {
+                    color: $cmdbDangerColor;
+                    opacity: .6;
+                }
+                &.color-warning {
+                    color: $cmdbWarningColor;
+                    opacity: .6;
+                }
+            }
         }
         >.footer {
             position: fixed;

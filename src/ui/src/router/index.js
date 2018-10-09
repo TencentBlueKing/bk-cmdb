@@ -117,7 +117,7 @@ const router = new Router({
             relative: '/network-discovery'
         }
     }, {
-        path: '/network-discovery/confirm',
+        path: '/network-discovery/:cloudId/confirm',
         component: networkConfirm,
         meta: {
             ignoreAuthorize: true,

@@ -22,30 +22,27 @@
             :loading="$loading('searchNetcollect')"
             :header="table.header"
             :list="table.list"
-            :pagination.sync="table.pagination"
             :defaultSort="table.defaultSort"
             @handleSortChange="handleSortChange"
             @handleSizeChange="handleSizeChange"
             @handlePageChange="handlePageChange">
             <template slot="info" slot-scope="{ item }">
                 <div>
-                    <span>{{$t("NetworkDiscovery['交换机']")}}({{item.info.switch}})</span>
-                    <span>{{$t("Hosts['主机']")}}({{item.info.host}})</span>
-                    <span>{{$t("Hosts['关联关系']")}}({{item.info.relation}})</span>
+                    {{getConfigInfo(item)}}
                 </div>
             </template>
             <template slot="last_time" slot-scope="{ item }">
                 {{$tools.formatTime(item['last_time'], 'YYYY-MM-DD')}}
             </template>
             <template slot="operation" slot-scope="{ item }">
-                <span class="text-primary" @click.stop="routeToConfirm">{{$t('NetworkDiscovery["详情确认"]')}}</span>
+                <span class="text-primary" @click.stop="routeToConfirm(item)">{{$t('NetworkDiscovery["详情确认"]')}}</span>
             </template>
         </cmdb-table>
     </div>
 </template>
 
 <script>
-    import { mapActions } from 'vuex'
+    import { mapActions, mapMutations } from 'vuex'
     export default {
         data () {
             return {
@@ -110,20 +107,34 @@
             this.getTableData()
         },
         methods: {
+            ...mapMutations('netDiscovery', ['setCloudName']),
             ...mapActions('netDiscovery', [
                 'searchNetcollect'
             ]),
+            getConfigInfo (item) {
+                if (item.statistics) {
+                    let str = ''
+                    Object.keys(item.statistics).map(key => {
+                        if (key !== 'associations') {
+                            str += `${key}(${item.statistics[key]}) `
+                        }
+                    })
+                    str += `${this.$t("Hosts['关联关系']")}(${item.statistics.associations})`
+                    return str
+                }
+            },
             routeToConfig () {
                 this.$store.commit('setHeaderStatus', {
                     back: true
                 })
                 this.$router.push('/network-discovery/config')
             },
-            routeToConfirm () {
+            routeToConfirm (item) {
                 this.$store.commit('setHeaderStatus', {
                     back: true
                 })
-                this.$router.push('/network-discovery/confirm')
+                this.setCloudName(item['bk_cloud_name'])
+                this.$router.push(`/network-discovery/${item['bk_cloud_id']}/confirm`)
             },
             routeToHistory () {
                 this.$store.commit('setHeaderStatus', {
@@ -133,8 +144,7 @@
             },
             async getTableData () {
                 const res = await this.searchNetcollect({params: this.params, config: {requestId: 'searchNetcollect'}})
-                this.table.pagination.count = res.count
-                this.table.list = res.info
+                this.table.list = res
             },
             handleSortChange (sort) {
                 this.table.sort = sort

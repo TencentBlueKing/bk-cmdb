@@ -11,11 +11,11 @@
 import $http from '@/api'
 
 const state = {
-
+    cloudName: null
 }
 
 const getters = {
-
+    cloudName: state => state.cloudName
 }
 
 const actions = {
@@ -49,7 +49,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    searchNetcollectChangeDetail ({ commit, state, dispatch, rootGetters }, { params, config }) {
+    confirmNetcollectChange ({ commit, state, dispatch, rootGetters }, { params, config }) {
         return $http.post(`collector/netcollect/report/action/confirm`, params, config)
     },
     /**
@@ -66,7 +66,9 @@ const actions = {
 }
 
 const mutations = {
-
+    setCloudName (state, cloudName) {
+        state.cloudName = cloudName
+    }
 }
 
 export default {
