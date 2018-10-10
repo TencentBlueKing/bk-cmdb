@@ -473,11 +473,14 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 		Sort:      data.Page.Sort,
 	}
 	gResult, err := lgc.CoreAPI.HostController().Host().GetHosts(context.Background(), pheader, query)
-	if err != nil || (err == nil && !gResult.Result) {
+	if err != nil {
 		blog.Errorf("get hosts failed, err: %v", err)
 		return nil, err
 	}
-
+	if !gResult.Result {
+		blog.Errorf("get host failed, error code:%d, error message:%s", gResult.Code, gResult.ErrMsg)
+		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader)).New(gResult.Code, gResult.ErrMsg)
+	}
 	hostResult := gResult.Data.Info
 
 	// deal the host
