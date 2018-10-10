@@ -12,8 +12,10 @@
 package metadata
 
 import (
-	"configcenter/src/common/mapstr"
+	"net/http"
 	"time"
+
+	"configcenter/src/common/mapstr"
 )
 
 type ProcModuleConfig struct {
@@ -191,22 +193,25 @@ type ProcessOperateTask struct {
 	TaskID      string                              `json:"task_id" bson:"task_id"`
 	GseTaskID   string                              `json:"gse_task_id" bson:"gse_task_id"`
 	Namespace   string                              `json:"namespace" bson:"namespace"`
-	Status      ProcessOperateTaskStatus            `json:"status" bson:"status"`
+	Status      ProcOpTaskStatus                    `json:"status" bson:"status"`
 	CreateTime  time.Time                           `json:"create_time" bson:"create_time"`
 	OwnerID     string                              `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	User        string                              `json:"user,omitempty" bson:"user,omitempty"`
 	Detail      map[string]ProcessOperateTaskDetail `json:"detail" bson:"detail"`
 	Host        []GseHost                           `json:"host_info" bson:"host_info"`
 	ProcName    string                              `json:"bk_process_name" bson:"bk_process_name"`
+	HTTPHeader  http.Header                         `json:"http_header" bson:"http_header"`
 }
 
-type ProcessOperateTaskStatus int64
+type ProcOpTaskStatus int64
 
 var (
-	ProcessOperateTaskStatusWaitOP ProcessOperateTaskStatus = 1
-	ProcessOperateTaskStatusRuning ProcessOperateTaskStatus = 115
-	ProcessOperateTaskStatusErr    ProcessOperateTaskStatus = 2
-	ProcessOperateTaskStatusSucc   ProcessOperateTaskStatus = 3
+	ProcOpTaskStatusWaitOP       ProcOpTaskStatus = 1
+	ProcOpTaskStatusExecuteing   ProcOpTaskStatus = 115
+	ProcOpTaskStatusErr          ProcOpTaskStatus = 2
+	ProcOpTaskStatusSucc         ProcOpTaskStatus = 3
+	ProcOpTaskStatusHTTPErr      ProcOpTaskStatus = 1101
+	ProcOpTaskStatusNotTaskIDErr ProcOpTaskStatus = 1112
 )
 
 type ProcessOperateTaskResult struct {

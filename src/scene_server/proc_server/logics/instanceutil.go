@@ -17,35 +17,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
-
-	redis "gopkg.in/redis.v5"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
-
-func (lgc *Logics) reshReshInitChan(config *ProcHostInstConfig) {
-	if nil == config {
-		config = &ProcHostInstConfig{
-			MaxEventCount:         0,
-			MaxRefreshModuleCount: 0,
-			GetModuleIDInterval:   0,
-		}
-	}
-	if 0 != config.MaxEventCount {
-		maxEventDataChan = config.MaxEventCount
-	}
-	if 0 != config.MaxRefreshModuleCount {
-		maxRefreshModuleData = config.MaxRefreshModuleCount
-	}
-	handEventDataChan = make(chan chanItem, maxEventDataChan)
-	refreshHostInstModuleIDChan = make(chan *refreshHostInstModuleID, maxRefreshModuleData)
-	// get appID,moduleID from redis
-	go lgc.getEventRefreshModuleItemFromRedis(config.GetModuleIDInterval)
-}
 
 func getMustNeedHeader(header http.Header) http.Header {
 	mustNeedHeader := make(http.Header, 0)
@@ -87,33 +65,6 @@ func (lgc *Logics) addEventRefreshModuleItems(appID int64, moduleIDs []int64, he
 		blog.Errorf("addEventRefreshModuleItem save info to cache appID:%d, infos:%v, error:%s", appID, valInfoArrs, err.Error())
 	}
 	return err
-}
-
-// getEventRefreshModuleItemFromRedis Run once at startup
-func (lgc *Logics) getEventRefreshModuleItemFromRedis(interval time.Duration) {
-	for {
-		val, err := lgc.cache.SPop(common.RedisProcSrvHostInstanceRefreshModuleKey).Result()
-		if redis.Nil == err {
-			if 0 >= interval {
-				interval = SPOPINTERVAL
-			}
-			time.Sleep(interval)
-			continue
-		}
-		if nil != err {
-			blog.Warnf("getEventRefreshModuleItemFromRedis error:%s", err.Error())
-			continue
-		}
-		item := &refreshHostInstModuleID{}
-		err = json.Unmarshal([]byte(val), item)
-		if nil != err {
-			blog.Warnf("getEventRefreshModuleItemFromRedis  error:%s", err.Error())
-			continue
-		}
-		refreshHostInstModuleIDChan <- item
-
-	}
-
 }
 
 func (lgc *Logics) unregisterProcInstDetall(ctx context.Context, header http.Header, appID, moduleID int64) error {

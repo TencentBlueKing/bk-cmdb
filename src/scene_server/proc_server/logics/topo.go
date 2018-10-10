@@ -149,10 +149,6 @@ func (lgc *Logics) GetModueleIDByAppID(ctx context.Context, header http.Header, 
 }
 
 func (lgc *Logics) GetAppList(ctx context.Context, header http.Header, fields string) ([]mapstr.MapStr, error) {
-	if "" == util.GetOwnerID(header) {
-		header.Set(common.BKHTTPOwnerID, common.BKSuperOwnerID)
-		header.Set(common.BKHTTPHeaderUser, common.BKProcInstanceOpUser)
-	}
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	dat := new(metadata.QueryInput)
 	if "" != strings.TrimSpace(fields) {

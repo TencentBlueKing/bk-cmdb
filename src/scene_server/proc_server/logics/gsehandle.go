@@ -14,8 +14,8 @@ package logics
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -23,6 +23,13 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
+
+// opGseProcInfo op gse proc data
+type opGseProcInfo struct {
+	ProcID    int64
+	ModuleID  int64
+	HostIDArr []int64
+}
 
 func (lgc *Logics) RegisterProcInstanceToGse(moduleID int64, gseHost []metadata.GseHost, procInfo map[string]interface{}, header http.Header) error {
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
@@ -137,64 +144,137 @@ func (lgc *Logics) unregisterProcInstanceToGse(gseproc *metadata.GseProcRequest,
 	return nil
 }
 
-func (lgc *Logics) OperateProcInstanceByGse(procOp *metadata.ProcessOperate, instModels map[string]*metadata.ProcInstanceModel, header http.Header) (string, error) {
-	var err error
+func (lgc *Logics) getOperateProcInstanceData(ctx context.Context, procOp *metadata.ProcessOperate, instModels map[string]*metadata.ProcInstanceModel, header http.Header) ([]*metadata.GseProcRequest, error) {
 
-	ccTaskID := getTaskID()
-	opProcInsts := make([]*metadata.ProcessOperateTask, 0)
+	allHostIDArr := make([]int64, 0)
+	allProcIDArr := make([]int64, 0)
+	opGseProcInstMap := make(map[string]*opGseProcInfo, 0)
 	for _, model := range instModels {
-		gseprocReq := new(metadata.GseProcRequest)
-		// hostInfo
-		gseprocReq.Hosts, err = lgc.GetHostForGse(model.ApplicationID, model.HostID, header)
-		if err != nil {
-			blog.Warnf("OperateProcInstanceByGse getHostForGse failed. err: %s, logID:%s", err.Error(), util.GetHTTPCCRequestID(header))
-			continue
+		key := getGseOpInstKey(model.ModuleID, model.ProcID)
+		gseProcInst, ok := opGseProcInstMap[key]
+		if !ok {
+			gseProcInst = &opGseProcInfo{
+				ProcID:   model.ProcID,
+				ModuleID: model.ModuleID,
+			}
+			opGseProcInstMap[key] = gseProcInst
 		}
+		allHostIDArr = append(allHostIDArr, model.HostID)
+		allProcIDArr = append(allProcIDArr, model.ProcID)
+		gseProcInst.HostIDArr = append(gseProcInst.HostIDArr, model.HostID)
+	}
 
-		// get processinfo
-		procInfo, err := lgc.GetProcbyProcID(model.ProcID, header)
-		if err != nil {
+	// get processinfo
+	procInfoArr, err := lgc.GetProcbyProcIDArr(ctx, allProcIDArr, header)
+	if err != nil {
+		blog.Warnf("OperateProcInstanceByGse getProcessByProcID failed. err: %s, logID:%s", err.Error(), util.GetHTTPCCRequestID(header))
+		return nil, err
+	}
+	procInfoMap := make(map[int64]mapstr.MapStr, 0)
+	for _, procInfo := range procInfoArr {
+		procID, procIDErr := procInfo.Int64(common.BKProcessIDField)
+		if procIDErr != nil {
 			blog.Warnf("OperateProcInstanceByGse getProcessByProcID failed. err: %s, logID:%s", err.Error(), util.GetHTTPCCRequestID(header))
 			continue
 		}
+		procInfoMap[procID] = procInfo
+	}
 
-		// register process into gse
-		if err := lgc.RegisterProcInstanceToGse(model.ModuleID, gseprocReq.Hosts, procInfo, header); err != nil {
-			blog.Warnf("OperateProcInstanceByGse register process into gse failed. err: %v", err)
-			continue
-		}
+	gseHostArr, err := lgc.GetHostForGse(ctx, procOp.ApplicationID, allHostIDArr, header)
+	// register process into gse
+	if err != nil {
+		blog.Errorf("OperateProcInstanceByGse register process into gse failed. err: %v", err, util.GetHTTPCCRequestID(header))
+		return nil, err
+	}
+	hostInfoMap := make(map[int64]*metadata.GseHost, 0)
+	for _, hostInfo := range gseHostArr {
+		hostInfoMap[hostInfo.HostID] = hostInfo
+	}
 
-		procName, ok := procInfo[common.BKProcessNameField].(string)
+	gseReqArr := make([]*metadata.GseProcRequest, 0)
+	for _, opGseProcInfo := range opGseProcInstMap {
+		procInfo, ok := procInfoMap[opGseProcInfo.ProcID]
 		if !ok {
-			blog.Warnf("OperateProcInstanceByGse convert process name to string failed")
 			continue
 		}
-
-		gseprocReq.Meta.Name = procName
-		gseprocReq.Meta.Namespace = getGseProcNameSpace(model.ApplicationID, model.ModuleID)
-		gseprocReq.OpType = procOp.OpType
-
-		gseRsp, err := lgc.EsbServ.GseSrv().OperateProcess(context.Background(), header, gseprocReq)
-		if err != nil || (err == nil && !gseRsp.Result) {
-			blog.Warnf("OperateProcInstanceByGse fail to operate process by gse process server. err: %v, errcode: %d, errmsg: %s", err, gseRsp.Code, gseRsp.Message)
+		hostInfoArr := make([]*metadata.GseHost, 0)
+		for _, hostID := range opGseProcInfo.HostIDArr {
+			hostInfo, ok := hostInfoMap[hostID]
+			if !ok {
+				continue
+			}
+			hostInfoArr = append(hostInfoArr, hostInfo)
+		}
+		procName, err := procInfo.String(common.BKProcessNameField)
+		if nil != err {
+			blog.Warnf("OperateProcInstanceByGse convert process name to string failed, error:%s, logID:%s", err.Error(), util.GetHTTPCCRequestID(header))
 			continue
+		}
+		gseprocReq := new(metadata.GseProcRequest)
+		gseprocReq.Meta.Name = procName
+		gseprocReq.Meta.Namespace = getGseProcNameSpace(procOp.ApplicationID, opGseProcInfo.ModuleID)
+		gseprocReq.OpType = procOp.OpType
+		gseReqArr = append(gseReqArr, gseprocReq)
+	}
+
+	return gseReqArr, nil
+}
+
+func (lgc *Logics) OperateProcInstanceByGse(ctx context.Context, procOp *metadata.ProcessOperate, instModels map[string]*metadata.ProcInstanceModel, header http.Header) (string, error) {
+
+	ccTaskID := getTaskID()
+	opProcInsts := make([]*metadata.ProcessOperateTask, 0)
+
+	gseReqArr, err := lgc.getOperateProcInstanceData(ctx, procOp, instModels, header)
+	if nil != err {
+		return "", err
+	}
+
+	mustNeedHeader := getMustNeedHeader(header)
+	cacheTaskInfo := opProcTask{}
+	cacheTaskInfo.TaskID = ccTaskID
+	cacheTaskInfo.Header = mustNeedHeader
+	for _, gseReq := range gseReqArr {
+		gseRsp, err := lgc.EsbServ.GseSrv().OperateProcess(context.Background(), header, gseReq)
+		status := metadata.ProcOpTaskStatusWaitOP
+		detail := make(map[string]metadata.ProcessOperateTaskDetail, 0)
+		if nil != err {
+			blog.Errorf("OperateProcInstanceByGse fail to operate process by gse process server. err: %v, logID:%s", err, util.GetHTTPCCRequestID(header))
+			status = metadata.ProcOpTaskStatusHTTPErr
+			detail["http_request_error"] = metadata.ProcessOperateTaskDetail{
+				Errcode: common.CCErrCommHTTPDoRequestFailed,
+				ErrMsg:  err.Error(),
+			}
+		} else if !gseRsp.Result {
+			blog.Errorf("OperateProcInstanceByGse fail to operate process by gse process server. errcode: %d, errmsg: %s, logID:%s", gseRsp.Code, gseRsp.Message, util.GetHTTPCCRequestID(header))
+			status = metadata.ProcOpTaskStatusErr
+			detail["gse_error_message"] = metadata.ProcessOperateTaskDetail{
+				Errcode: gseRsp.Code,
+				ErrMsg:  gseRsp.Message,
+			}
 		}
 
 		taskID, ok := gseRsp.Data[common.BKGseTaskIDField].(string)
 		if !ok {
-			blog.Warnf("OperateProcInstanceByGse convert gse process operate taskid to string failed. value: %v", gseRsp.Result)
-			continue
+			blog.Warnf("OperateProcInstanceByGse convert gse process operate taskid to string failed. value: %v", gseRsp.Data)
+			status = metadata.ProcOpTaskStatusNotTaskIDErr
+			detail["not_foud_gse_task_id"] = metadata.ProcessOperateTaskDetail{
+				Errcode: common.CCErrCommNotFound,
+				ErrMsg:  gseRsp.Message,
+			}
 		}
 
 		opProcInsts = append(opProcInsts, &metadata.ProcessOperateTask{
 			OperateInfo: procOp,
 			TaskID:      ccTaskID,
 			GseTaskID:   taskID,
-			Namespace:   gseprocReq.Meta.Namespace,
-			Status:      metadata.ProcessOperateTaskStatusWaitOP,
-			Host:        gseprocReq.Hosts,
-			ProcName:    procName,
+			Namespace:   gseReq.Meta.Namespace,
+			Status:      status,
+			Host:        gseReq.Hosts,
+			ProcName:    gseReq.Meta.Name,
+			Detail:      detail,
 		})
+		cacheTaskInfo.GseTaskIDArr = append(cacheTaskInfo.GseTaskIDArr, taskID)
 	}
 
 	if 0 < len(opProcInsts) {
@@ -207,115 +287,75 @@ func (lgc *Logics) OperateProcInstanceByGse(procOp *metadata.ProcessOperate, ins
 			blog.Errorf("OperateProcInstanceByGse AddOperateTaskInfo  error:%s, input:%v", ret.Result, procOp)
 			return "", lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(ret.Code, ret.ErrMsg)
 		}
+		cacheInfoStr, err := json.Marshal(cacheTaskInfo)
+		if nil != err {
+			blog.Errorf("OperateProcInstanceByGse cache OperateTaskInfo json marshal error:%s, logID:%s", err.Error(), util.GetHTTPCCRequestID(header))
+			return "", err
+		}
+		_, err = lgc.cache.SAdd(common.RedisProcSrvQueryProcOPResultKey, string(cacheInfoStr)).Result()
+		if nil != err {
+			blog.Errorf("OperateProcInstanceByGse cache TaskIDInfo  error:%s, logID:%s", err.Error(), util.GetHTTPCCRequestID(header))
+			return "", err
+		}
 	}
 
 	return ccTaskID, nil
 }
 
-func (lgc *Logics) QueryProcessOperateResult(ctx context.Context, taskID string, header http.Header) (succ, waitExec []string, mapExceErr map[string]string, err error) {
+func (lgc *Logics) QueryProcessOperateResult(ctx context.Context, taskID string, header http.Header) (succ, waitExec []string, exceErrMap map[string]string, err error) {
+
+	waitExecArr, execErrMap, err := lgc.handleOPProcTask(ctx, header, taskID)
+	if nil != err || 0 < len(execErrMap) || 0 < len(waitExecArr) {
+		return nil, waitExecArr, execErrMap, err
+	}
 
 	dat := new(metadata.QueryInput)
 	dat.Condition = mapstr.MapStr{common.BKTaskIDField: taskID}
-	dat.Limit = 200
+	dat.Limit = common.BKNoLimit
 	succ = make([]string, 0)
 	waitExec = make([]string, 0)
-	mapExceErr = make(map[string]string, 0)
+	exceErrMap = make(map[string]string, 0)
 
-	for {
-		ret, err := lgc.CoreAPI.ProcController().SearchOperateTaskInfo(ctx, header, dat)
-		dat.Start += dat.Limit
-		if nil != err {
-			blog.Errorf("QueryProcessOperateResult http search task info taskID:%s  http do error:%s logID:%s", taskID, err.Error(), util.GetHTTPCCRequestID(header))
-			return nil, nil, nil, lgc.CCErr.Error(util.GetLanguage(header), common.CCErrCommHTTPDoRequestFailed)
-		}
-		if !ret.Result {
-			blog.Errorf("QueryProcessOperateResult http search task info taskID:%s error:%s logID:%s", taskID, ret.ErrMsg, util.GetHTTPCCRequestID(header))
-			return nil, nil, nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(ret.Code, ret.ErrMsg)
-		}
-		if 0 == ret.Data.Count {
-			break
-		}
-		for _, item := range ret.Data.Info {
-			itemSucc, itemWaitExce, itemMapExecErr, err := lgc.handleGseTaskResult(ctx, &item, header)
-			if nil != err {
-				return nil, nil, nil, err
+	ret, err := lgc.CoreAPI.ProcController().SearchOperateTaskInfo(ctx, header, dat)
+	dat.Start += dat.Limit
+	if nil != err {
+		blog.Errorf("QueryProcessOperateResult http search task info taskID:%s  http do error:%s logID:%s", taskID, err.Error(), util.GetHTTPCCRequestID(header))
+		return nil, nil, nil, lgc.CCErr.Error(util.GetLanguage(header), common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !ret.Result {
+		blog.Errorf("QueryProcessOperateResult http search task info taskID:%s error:%s logID:%s", taskID, ret.ErrMsg, util.GetHTTPCCRequestID(header))
+		return nil, nil, nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(ret.Code, ret.ErrMsg)
+	}
+
+	for _, item := range ret.Data.Info {
+		for key, info := range item.Detail {
+			switch info.Errcode {
+			case int(metadata.ProcOpTaskStatusExecuteing):
+				waitExecArr = append(waitExecArr, key)
+			case int(metadata.ProcOpTaskStatusSucc):
+				succ = append(succ, key)
+			default:
+				exceErrMap[key] = info.ErrMsg
 			}
-			if 0 != len(itemMapExecErr) {
-				return nil, nil, itemMapExecErr, nil
-			}
-			if 0 != len(itemWaitExce) {
-				return nil, itemWaitExce, nil, err
-			}
-			succ = append(succ, itemSucc...)
+		}
+
+		if 0 != len(exceErrMap) {
+			return nil, nil, exceErrMap, nil
+		}
+		if 0 != len(exceErrMap) {
+			return nil, waitExecArr, nil, err
 		}
 	}
+
 	return succ, nil, nil, nil
 
 }
 
-func (lgc *Logics) handleGseTaskResult(ctx context.Context, item *metadata.ProcessOperateTask, header http.Header) (succ, waitExec []string, mapExceErr map[string]string, err error) {
-	isWaiting := false
-	isErr := false
-	isChangeStatus := false
-	taskStatusData := item.Detail
-	succ = make([]string, 0)
-	waitExec = make([]string, 0)
-	mapExceErr = make(map[string]string, 0)
-	if item.Status == metadata.ProcessOperateTaskStatusWaitOP || item.Status == metadata.ProcessOperateTaskStatusRuning {
-		gseRet, err := lgc.EsbServ.GseSrv().QueryProcOperateResult(ctx, header, item.GseTaskID)
-		if err != nil {
-			blog.Errorf("QueryProcessOperateResult query task info from gse  error, taskID:%s, gseTaskID:%s, error:%s logID:%s", item.TaskID, item.GseTaskID, err.Error(), util.GetHTTPCCRequestID(header))
-			return nil, nil, nil, lgc.CCErr.Error(util.GetLanguage(header), common.CCErrCommHTTPDoRequestFailed)
-		} else if !gseRet.Result {
-			blog.Errorf("QueryProcessOperateResult query task info from gse failed,  taskID:%s, gseTaskID:%s, gse return error:%s, error code:%d logID:%s", item.TaskID, item.GseTaskID, gseRet.Message, gseRet.Code, util.GetHTTPCCRequestID(header))
-			return nil, nil, nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(gseRet.Code, gseRet.Message)
-		}
-		taskStatusData = gseRet.Data
-		isChangeStatus = true
-	}
-
-	for key, item := range taskStatusData {
-		if 0 == item.Errcode {
-			succ = append(succ, key)
-		} else {
-			if int(metadata.ProcessOperateTaskStatusRuning) == item.Errcode {
-				waitExec = append(waitExec, key)
-				isWaiting = true
-			} else {
-				mapExceErr[key] = item.ErrMsg
-				isErr = true
-			}
-		}
-	}
-	if isChangeStatus {
-		updateConds := new(metadata.UpdateParams)
-		data := mapstr.MapStr{"detail": taskStatusData}
-		updateConds.Condition = mapstr.MapStr{"task_id": item.TaskID, "bk_task_id": item.GseTaskID}
-		if isErr {
-			data[common.BKStatusField] = metadata.ProcessOperateTaskStatusErr
-		} else if isWaiting {
-			data[common.BKStatusField] = metadata.ProcessOperateTaskStatusWaitOP
-		} else {
-			data[common.BKStatusField] = metadata.ProcessOperateTaskStatusSucc
-		}
-		updateConds.Data = data
-		updateRet, err := lgc.CoreAPI.ProcController().UpdateOperateTaskInfo(ctx, header, updateConds)
-		if err != nil {
-			blog.Errorf("QueryProcessOperateResult update task http do error, taskID:%s, gseTaskID:%s, error:%s logID:%s", item.TaskID, item.TaskID, item.GseTaskID, updateRet.ErrMsg, util.GetHTTPCCRequestID(header))
-			return nil, nil, nil, lgc.CCErr.Error(util.GetLanguage(header), common.CCErrCommHTTPDoRequestFailed)
-		} else if !updateRet.Result {
-			blog.Errorf("QueryProcessOperateResult update task  reply error,  taskID:%s, gseTaskID:%s, gse return error:%s, error code:%d logID:%s", item.TaskID, item.GseTaskID, updateRet.ErrMsg, updateRet.Code, util.GetHTTPCCRequestID(header))
-			return nil, nil, nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(updateRet.Code, updateRet.ErrMsg)
-		}
-	}
-	return
-}
-
-func (lgc *Logics) GetHostForGse(appId, hostId int64, header http.Header) ([]metadata.GseHost, error) {
-	gseHosts := make([]metadata.GseHost, 0)
+func (lgc *Logics) GetHostForGse(ctx context.Context, appID int64, hostIDArr []int64, header http.Header) ([]*metadata.GseHost, error) {
+	gseHosts := make([]*metadata.GseHost, 0)
 	// get bk_supplier_id from applicationbase
 	condition := make(map[string]interface{})
-	condition[common.BKAppIDField] = appId
+	condition[common.BKAppIDField] = appID
 	reqParam := new(metadata.QueryInput)
 	reqParam.Condition = condition
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
@@ -332,7 +372,7 @@ func (lgc *Logics) GetHostForGse(appId, hostId int64, header http.Header) ([]met
 	if len(appRet.Data.Info) >= 1 {
 		tmp, ok := appRet.Data.Info[0].Get(common.BKSupplierIDField)
 		if !ok {
-			blog.Errorf("there is no supplierID in appID(%d)", appId)
+			blog.Errorf("there is no supplierID in appID(%d)", appID)
 			return nil, defErr.Errorf(common.CCErrCommInstFieldNotFound, "supplierID", "application", err.Error())
 		}
 		supplierID, err = util.GetInt64ByInterface(tmp)
@@ -340,38 +380,43 @@ func (lgc *Logics) GetHostForGse(appId, hostId int64, header http.Header) ([]met
 			return nil, defErr.Errorf(common.CCErrCommInstFieldConvFail, "supplierID", "int", err.Error())
 		}
 	}
-
+	hostQuery := new(metadata.QueryInput)
+	hostQuery.Condition = mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: hostIDArr}}
+	hostQuery.Limit = len(hostIDArr)
 	// get host info
-	hostRet, err := lgc.CoreAPI.HostController().Host().GetHostByID(context.Background(), strconv.FormatInt(hostId, 10), header)
+	hostRet, err := lgc.CoreAPI.HostController().Host().GetHosts(context.Background(), header, hostQuery)
 	if err != nil {
-		blog.Errorf("get host by hostid(%d) failed. err: %v ", hostId, err)
+		blog.Errorf("get host by hostid(%d) failed. err: %v ", hostIDArr, err)
 		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	} else if err == nil && !hostRet.Result {
-		blog.Errorf("get host by hostid(%d) failed.   errcode: %d, errmsg: %s", hostId, hostRet.Code, hostRet.ErrMsg)
+		blog.Errorf("get host by hostid(%d) failed.   errcode: %d, errmsg: %s", hostIDArr, hostRet.Code, hostRet.ErrMsg)
 		return nil, defErr.New(hostRet.Code, hostRet.ErrMsg)
 	}
 
-	hostIp, ok := hostRet.Data[common.BKHostInnerIPField].(string)
-	if !ok {
-		return nil, defErr.Errorf(common.CCErrCommInstFieldConvFail, "host", "innerIP", "string", err.Error())
+	for _, hostInfo := range hostRet.Data.Info {
+		hostIp, ok := hostInfo[common.BKHostInnerIPField].(string)
+		if !ok {
+			return nil, defErr.Errorf(common.CCErrCommInstFieldConvFail, "host", "innerIP", "string", err.Error())
+		}
+
+		cloudId, err := util.GetInt64ByInterface(hostInfo[common.BKCloudIDField])
+		if nil != err {
+			return nil, defErr.Errorf(common.CCErrCommInstFieldConvFail, "host", "cloud id", "int", err.Error())
+		}
+
+		hostID, err := util.GetInt64ByInterface(hostInfo[common.BKHostIDField])
+		if nil != err {
+			return nil, defErr.Errorf(common.CCErrCommInstFieldConvFail, "host", "host id", "int", err.Error())
+		}
+
+		gseHost := &metadata.GseHost{}
+		gseHost.HostID = hostID
+		gseHost.Ip = hostIp
+		gseHost.BkCloudId = cloudId
+		gseHost.BkSupplierId = supplierID
+
+		gseHosts = append(gseHosts, gseHost)
 	}
 
-	cloudId, err := util.GetInt64ByInterface(hostRet.Data[common.BKCloudIDField])
-	if nil != err {
-		return nil, defErr.Errorf(common.CCErrCommInstFieldConvFail, "host", "cloud id", "int", err.Error())
-	}
-
-	hostID, err := util.GetInt64ByInterface(hostRet.Data[common.BKHostIDField])
-	if nil != err {
-		return nil, defErr.Errorf(common.CCErrCommInstFieldConvFail, "host", "host id", "int", err.Error())
-	}
-
-	var gseHost metadata.GseHost
-	gseHost.HostID = hostID
-	gseHost.Ip = hostIp
-	gseHost.BkCloudId = cloudId
-	gseHost.BkSupplierId = supplierID
-
-	gseHosts = append(gseHosts, gseHost)
 	return gseHosts, nil
 }

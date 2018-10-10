@@ -34,15 +34,25 @@ type refreshHostInstModuleID struct {
 	ModuleID int64       `json:"bk_module_id"`
 }
 
+type opProcTask struct {
+	GseTaskIDArr []string    `json:"gse_task_id"`
+	TaskID       string      `json:"task_id"`
+	OpTime       time.Time   `json:"op_time"`
+	Header       http.Header `json:"header"`
+}
+
 var (
 	handEventDataChan           chan chanItem
 	chnOpLock                   *sync.Once = new(sync.Once)
 	initDataLock                *sync.Once = new(sync.Once)
 	refreshHostInstModuleIDChan chan *refreshHostInstModuleID
+	gseOPProcTaskChan           chan *opProcTask
 	maxRefreshModuleData        int           = 100
 	maxEventDataChan            int           = 10000
 	retry                       int           = 3
 	SPOPINTERVAL                time.Duration = time.Second * 30
 	timedTriggerTime            time.Duration = time.Hour * 1
 	timedTriggerLockExpire      time.Duration = time.Hour * 23
+	GETTASKIDSPOPINTERVAL       time.Duration = time.Second * 5
+	timedTriggerTaskTime        time.Duration = time.Minute * 20
 )

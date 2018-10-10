@@ -50,6 +50,10 @@ func (lgc *Logics) RefreshAllHostInstance(ctx context.Context, header http.Heade
 	if nil == header {
 		header = make(http.Header, 0)
 	}
+	if "" == util.GetOwnerID(header) {
+		header.Set(common.BKHTTPOwnerID, common.BKSuperOwnerID)
+		header.Set(common.BKHTTPHeaderUser, common.BKProcInstanceOpUser)
+	}
 	fields := fmt.Sprintf("%s,%s", common.BKAppIDField, common.BKOwnerIDField)
 	appInfoArr, err := lgc.GetAppList(ctx, header, fields)
 	if nil != err {

@@ -25,23 +25,26 @@ import (
 	"configcenter/src/common/util"
 )
 
-func (lgc *Logics) GetProcbyProcID(procID int64, forward http.Header) (map[string]interface{}, error) {
+func (lgc *Logics) GetProcbyProcIDArr(ctx context.Context, procID []int64, header http.Header) ([]mapstr.MapStr, error) {
 	condition := map[string]interface{}{
-		common.BKProcessIDField: procID,
+		common.BKProcessIDField: mapstr.MapStr{common.BKDBIN: procID},
 	}
 
 	reqParam := new(metadata.QueryInput)
 	reqParam.Condition = condition
-	ret, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDProc, forward, reqParam)
+	ret, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDProc, header, reqParam)
 	if err != nil || (err == nil && !ret.Result) {
-		return nil, fmt.Errorf("get process by procID(%s) failed. err: %v, errcode: %d, errmsg: %s", procID, err, ret.Code, ret.ErrMsg)
+		return nil, fmt.Errorf("get process by procID(%+v) failed. err: %v", procID, err)
+	}
+	if !ret.Result {
+		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(ret.Code, ret.ErrMsg)
 	}
 
 	if len(ret.Data.Info) < 1 {
 		return nil, fmt.Errorf("there is no process with procID(%s)", procID)
 	}
 
-	return ret.Data.Info[0], nil
+	return ret.Data.Info, nil
 }
 
 func (lgc *Logics) getProcInfoByID(ctx context.Context, procID []int64, header http.Header) (map[int64]*metadata.InlineProcInfo, error) {
