@@ -190,8 +190,8 @@ type NetcollectReportAsstCond struct {
 type RspNetcollectConfirm struct {
 	ChangeAttributeSuccess int      `json:"change_attribute_success"`
 	ChangeAttributeFailure int      `json:"change_attribute_failure"`
-	ChangeRelationSuccess  int      `json:"change_relation_success"`
-	ChangeRelationFailure  int      `json:"change_relation_failure"`
+	ChangeRelationSuccess  int      `json:"change_associations_success"`
+	ChangeRelationFailure  int      `json:"change_associations_failure"`
 	Errors                 []string `json:"errors"`
 }
 

@@ -14,6 +14,7 @@ package logics
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"configcenter/src/common"
@@ -299,71 +300,11 @@ func (lgc *Logics) ConfirmReport(header http.Header, reports []metadata.Netcolle
 	result := metadata.RspNetcollectConfirm{}
 	for index := range reports {
 		report := &reports[index]
-		data := mapstr.MapStr{}
-		attrCount := 0
-		for _, attr := range report.Attributes {
-			if attr.Method == metadata.ReporctMethodAccept {
-				data.Set(attr.PropertyID, attr.CurValue)
-				attrCount++
-			}
-		}
-
-		if len(data) <= 0 {
-			blog.Warnf("[NetDevice][ConfirmReport] empty data, continue next")
-			continue
-		}
-
-		objType := common.GetObjByType(report.ObjectID)
-		cond := condition.CreateCondition()
-
-		cond.Field(common.GetInstNameField(report.ObjectID)).Eq(report.InstKey)
-		if objType == common.BKINnerObjIDObject {
-			cond.Field(common.BKObjIDField).Eq(report.ObjectID)
-			data.Set(common.BKObjIDField, report.ObjectID)
-		}
-
-		insts, err := lgc.findInst(header, report.ObjectID, &metadata.QueryInput{Condition: cond.ToMapStr()})
-		if err != nil {
-			blog.Errorf("[NetDevice][ConfirmReport] find inst failed %v", err)
-			lgc.saveHistory(report, false)
-			continue
-		}
-		blog.V(4).Infof("[NetDevice][ConfirmReport] find inst result: %#v, condition: %#v", insts, cond.ToMapStr())
-		if len(insts) > 0 {
-			updateBody := map[string]interface{}{
-				"data":      data,
-				"condition": cond.ToMapStr(),
-			}
-			resp, err := lgc.CoreAPI.ObjectController().Instance().UpdateObject(context.Background(), report.ObjectID, header, updateBody)
+		if len(report.Attributes) > 0 {
+			attrCount, err := lgc.confirmAttributes(header, report)
 			if err != nil {
-				blog.Errorf("[NetDevice][ConfirmReport] update inst error: %v, %+v", err, updateBody)
 				result.ChangeAttributeFailure += attrCount
 				result.Errors = append(result.Errors, err.Error())
-				lgc.saveHistory(report, false)
-				continue
-			}
-			if !resp.Result {
-				blog.Errorf("[NetDevice][ConfirmReport] update inst error: %v, %+v", resp.ErrMsg, updateBody)
-				result.ChangeAttributeFailure += attrCount
-				result.Errors = append(result.Errors, resp.ErrMsg)
-				lgc.saveHistory(report, false)
-				continue
-			}
-			result.ChangeAttributeSuccess += attrCount
-			lgc.saveHistory(report, true)
-		} else {
-			resp, err := lgc.CoreAPI.ObjectController().Instance().CreateObject(context.Background(), report.ObjectID, header, data)
-			if err != nil {
-				blog.Errorf("[NetDevice][ConfirmReport] create inst error: %v, %+v", err, data)
-				result.ChangeAttributeFailure += attrCount
-				result.Errors = append(result.Errors, err.Error())
-				lgc.saveHistory(report, false)
-				continue
-			}
-			if !resp.Result {
-				blog.Errorf("[NetDevice][ConfirmReport] create inst error: %v, %+v", resp.ErrMsg, data)
-				result.ChangeAttributeFailure += attrCount
-				result.Errors = append(result.Errors, resp.ErrMsg)
 				lgc.saveHistory(report, false)
 				continue
 			}
@@ -372,6 +313,64 @@ func (lgc *Logics) ConfirmReport(header http.Header, reports []metadata.Netcolle
 		}
 	}
 	return &result
+}
+
+func (lgc *Logics) confirmAttributes(header http.Header, report *metadata.NetcollectReport) (int, error) {
+	data := mapstr.MapStr{}
+	attrCount := 0
+	for _, attr := range report.Attributes {
+		if attr.Method == metadata.ReporctMethodAccept {
+			data.Set(attr.PropertyID, attr.CurValue)
+			attrCount++
+		}
+	}
+
+	if len(data) <= 0 {
+		blog.Warnf("[NetDevice][ConfirmReport] empty data, continue next")
+		return attrCount, nil
+	}
+
+	objType := common.GetObjByType(report.ObjectID)
+	cond := condition.CreateCondition()
+
+	cond.Field(common.GetInstNameField(report.ObjectID)).Eq(report.InstKey)
+	if objType == common.BKINnerObjIDObject {
+		cond.Field(common.BKObjIDField).Eq(report.ObjectID)
+		data.Set(common.BKObjIDField, report.ObjectID)
+	}
+
+	insts, err := lgc.findInst(header, report.ObjectID, &metadata.QueryInput{Condition: cond.ToMapStr()})
+	if err != nil {
+		blog.Errorf("[NetDevice][ConfirmReport] find inst failed %v", err)
+		return attrCount, err
+	}
+	blog.V(4).Infof("[NetDevice][ConfirmReport] find inst result: %#v, condition: %#v", insts, cond.ToMapStr())
+	if len(insts) > 0 {
+		updateBody := map[string]interface{}{
+			"data":      data,
+			"condition": cond.ToMapStr(),
+		}
+		resp, err := lgc.CoreAPI.ObjectController().Instance().UpdateObject(context.Background(), report.ObjectID, header, updateBody)
+		if err != nil {
+			blog.Errorf("[NetDevice][ConfirmReport] update inst error: %v, %+v", err, updateBody)
+			return attrCount, err
+		}
+		if !resp.Result {
+			blog.Errorf("[NetDevice][ConfirmReport] update inst error: %v, %+v", resp.ErrMsg, updateBody)
+			return attrCount, fmt.Errorf(resp.ErrMsg)
+		}
+	} else {
+		resp, err := lgc.CoreAPI.ObjectController().Instance().CreateObject(context.Background(), report.ObjectID, header, data)
+		if err != nil {
+			blog.Errorf("[NetDevice][ConfirmReport] create inst error: %v, %+v", err, data)
+			return attrCount, err
+		}
+		if !resp.Result {
+			blog.Errorf("[NetDevice][ConfirmReport] create inst error: %v, %+v", resp.ErrMsg, data)
+			return attrCount, fmt.Errorf(resp.ErrMsg)
+		}
+	}
+	return attrCount, nil
 }
 
 func (lgc *Logics) saveHistory(report *metadata.NetcollectReport, success bool) error {
