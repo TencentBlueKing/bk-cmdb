@@ -1,12 +1,15 @@
 <template>
     <div class="collect-wrapper">
         <div class="title">
-            <bk-button type="primary">
+            <bk-button type="primary"
+            :disabled="!table.checked.length"
+            :loading="$loading('collectDataCollection')"
+            @click="executionDiscovery">
                 {{$t('NetworkDiscovery["执行发现"]')}}
             </bk-button>
             <div class="input-box">
-                <input type="text" class="cmdb-form-input" :placeholder="$t('NetworkDiscovery[\'搜索IP、云区域\']')" v-model.trim="filter.text">
-                <i class="bk-icon icon-search"></i>
+                <input type="text" class="cmdb-form-input" :placeholder="$t('NetworkDiscovery[\'搜索IP、云区域\']')" v-model.trim="filter.text" @keyup.enter="getTableData">
+                <i class="bk-icon icon-search" @click="getTableData"></i>
             </div>
         </div>
         <cmdb-table
@@ -16,6 +19,14 @@
             :header="table.header"
             :list="table.list"
             :wrapperMinusHeight="240">
+            <template slot="id" slot-scope="{ item }">
+                <label class="table-checkbox bk-form-checkbox bk-checkbox-small"
+                    @click.stop>
+                    <input type="checkbox"
+                        :value="`${item['bk_cloud_id']}#${item['bk_host_innerip']}`"
+                        v-model="table.checked">
+                </label>
+            </template>
             <template slot="status" slot-scope="{ item }">
                 <div class="status-wrapper" @mouseover="setTooltip($event, item)" @mouseleave="removeTooltip">
                     <template v-if="item.status['report_status'] !== 'normal'">
@@ -131,7 +142,7 @@
                 },
                 table: {
                     header: [{
-                        id: 'bk_host_innerip',
+                        id: 'id',
                         type: 'checkbox'
                     }, {
                         id: 'bk_cloud_name',
@@ -174,8 +185,17 @@
                     bk_inner_ip: '',
                     bk_cloud_id: '',
                     periodList: [{
-                        id: '',
+                        id: '∞',
                         name: this.$t('NetworkDiscovery["手动"]')
+                    }, {
+                        id: '12H',
+                        name: '12H'
+                    }, {
+                        id: '24H',
+                        name: '24H'
+                    }, {
+                        id: '7D',
+                        name: '7D'
                     }]
                 },
                 tooltip: {
@@ -194,6 +214,18 @@
                 'collectDataCollection',
                 'updateDataCollection'
             ]),
+            executionDiscovery () {
+                let params = {
+                    collectors: []
+                }
+                this.table.checked.map(key => {
+                    params.collectors.push({
+                        bk_cloud_id: Number(key.split('#')[0]),
+                        bk_host_innerip: key.split('#')[1]
+                    })
+                })
+                this.collectDataCollection({params, config: {requestId: 'collectDataCollection'}})
+            },
             showConfig (item) {
                 this.configDialog.scan_range = item.config['scan_range'] === null ? '' : item.config['scan_range']
                 this.configDialog.bk_inner_ip = item['bk_host_innerip']
@@ -242,7 +274,7 @@
             },
             htmlEncode () {
                 let temp = document.createElement('div')
-                temp.innerHTML = `填写格式&lt;/br&gt;指定IP：192.168.1.1&lt;/br&gt;IP范围：192.168.1.1-192.168.1.200&lt;/br&gt;cidr ip 范围：192.168.1.1/32`
+                temp.innerHTML = `${this.$t('NetworkDiscovery["填写格式"]')}&lt;/br&gt;${this.$t('NetworkDiscovery["指定IP"]')}：192.168.1.1&lt;/br&gt;IP ${this.$t('NetworkDiscovery["范围"]')}：192.168.1.1-192.168.1.200&lt;/br&gt;cidr ip ${this.$t('NetworkDiscovery["范围"]')}：192.168.1.1/32`
                 let output = temp.innerText
                 temp = null
                 return output

@@ -1,23 +1,23 @@
 <template>
     <div class="history-table">
         <div class="filter-wrapper clearfix">
-            <cmdb-form-date-range class="date-range"></cmdb-form-date-range>
+            <cmdb-form-date-range class="date-range" v-model="filter['last_time']"></cmdb-form-date-range>
             <bk-selector
                 class="selector"
                 :placeholder="$t('NetworkDiscovery[\'全部变更\']')"
                 :allow-clear="true"
                 :list="changeList"
-                :selected="filter['action']"
+                :selected.sync="filter['action']"
             ></bk-selector>
             <bk-selector
                 class="selector"
                 :placeholder="$t('NetworkDiscovery[\'全部类型\']')"
                 :allow-clear="true"
                 :list="typeList"
-                :selected="filter['device_type']"
+                :selected.sync="filter['bk_obj_id']"
             ></bk-selector>
             <input type="text" class="cmdb-form-input" :placeholder="$t('NetworkDiscovery[\'请输入云区域名称\']')" v-model.trim="filter['bk_cloud_name']">
-            <input type="text" class="cmdb-form-input" :placeholder="$t('NetworkDiscovery[\'请输入IP\']')" v-model.trim="filter['bk_inner_ip']">
+            <input type="text" class="cmdb-form-input" :placeholder="$t('NetworkDiscovery[\'请输入IP\']')" v-model.trim="filter['bk_host_innerip']">
             <bk-button type="primary" @click="getTableData">
                 {{$t("Common['查询']")}}
             </bk-button>
@@ -38,8 +38,8 @@
             <template slot="last_time" slot-scope="{ item }">
                 {{$tools.formatTime(item['last_time'], 'YYYY-MM-DD')}}
             </template>
-            <template slot="status" slot-scope="{ item }">
-                <span :class="{'color-success': item.status === 'success', 'color-danger': item.status === 'error'}">{{item.status}}</span>
+            <template slot="success" slot-scope="{ item }">
+                <span :class="item.success ? 'color-success' : 'color-danger'">{{item.status}}</span>
             </template>
         </cmdb-table>
     </div>
@@ -51,11 +51,11 @@
         data () {
             return {
                 filter: {
-                    time: '',
+                    last_time: [],
                     action: '',
-                    device_type: '',
+                    bk_obj_id: '',
                     bk_cloud_name: '',
-                    bk_inner_ip: ''
+                    bk_host_innerip: ''
                 },
                 changeList: [{
                     id: 'create',
@@ -82,22 +82,22 @@
                         id: 'bk_cloud_name',
                         name: this.$t('Hosts["云区域"]')
                     }, {
-                        id: 'device_type',
+                        id: 'bk_obj_name',
                         name: this.$t('ModelManagement["类型"]')
                     }, {
-                        id: 'device_name',
+                        id: 'bk_inst_key',
                         name: this.$t('NetworkDiscovery["唯一标识"]')
                     }, {
-                        id: 'bk_inner_ip',
+                        id: 'bk_host_innerip',
                         name: 'IP'
                     }, {
-                        id: 'device_attributes',
+                        id: 'configuration',
                         name: this.$t('NetworkDiscovery["配置信息"]')
                     }, {
                         id: 'last_time',
                         name: this.$t('NetworkDiscovery["发现时间"]')
                     }, {
-                        id: 'status',
+                        id: 'success',
                         name: this.$t('ProcessManagement["状态"]')
                     }],
                     list: [{
@@ -128,10 +128,10 @@
             params () {
                 let params = {
                     bk_cloud_name: this.filter['bk_cloud_name'],
-                    bk_inner_ip: this.filter['bk_inner_ip'],
-                    device_type: this.filter['device_type'],
+                    bk_host_innerip: this.filter['bk_host_innerip'],
+                    bk_obj_id: this.filter['bk_obj_id'],
                     action: this.filter['action'],
-                    time: this.filter['time']
+                    last_time: this.filter['last_time']
                 }
                 return params
             }

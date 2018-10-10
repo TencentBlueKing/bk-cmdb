@@ -7,7 +7,7 @@
                     <span>{{$t('Common["属性"]')}}</span>
                 </label>
                 <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                    <input type="checkbox" :disabled="ignore">
+                    <input type="checkbox" :disabled="ignore" v-model="propertyTable.isShowIgnore">
                     <span class="cmdb-checkbox-text">{{$t('NetworkDiscovery["显示忽略"]')}}</span>
                 </label>
             </p>
@@ -17,7 +17,7 @@
                         class="table"
                         :loading="$loading('searchNetcollectChangeDetail')"
                         :header="propertyTable.header"
-                        :list="propertyTable.list"
+                        :list="propertyTableList"
                         :pagination.sync="propertyTable.pagination"
                         :defaultSort="propertyTable.defaultSort">
                         <template v-for="(header, index) in propertyTable.header" :slot="header.id" slot-scope="{ item }">
@@ -44,7 +44,7 @@
                     <span>{{$t('NetworkDiscovery["关系"]')}}</span>
                 </label>
                 <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                    <input type="checkbox" :disabled="ignore">
+                    <input type="checkbox" :disabled="ignore" v-model="relationTable.isShowIgnore">
                     <span class="cmdb-checkbox-text">{{$t('NetworkDiscovery["显示忽略"]')}}</span>
                 </label>
             </p>
@@ -54,7 +54,7 @@
                         class="table"
                         :loading="$loading('searchNetcollectChangeDetail')"
                         :header="relationTable.header"
-                        :list="relationTable.list"
+                        :list="relationTableList"
                         :pagination.sync="relationTable.pagination"
                         :defaultSort="relationTable.defaultSort">
                         <template v-for="(header, index) in relationTable.header" :slot="header.id" slot-scope="{ item }">
@@ -73,18 +73,18 @@
             </cmdb-collapse-transition>
         </div>
         <footer class="footer">
-            <span>{{$t('NetworkDiscovery["导入实例"]')}}</span>
+            <span>{{$t('NetworkDiscovery["忽略此实例"]')}}</span>
             <bk-switcher
                 class="switcher"
                 size="small"
                 :show-text="false"
-                :selected="!ignore"
+                :selected="ignore"
                 @change="toggleSwitcher">
             </bk-switcher>
-            <bk-button type="default">
+            <bk-button type="default" :disabled="detailPage.prev" @click="updateView('prev')">
                 {{$t('NetworkDiscovery["上一个"]')}}
             </bk-button>
-            <bk-button type="default">
+            <bk-button type="default" :disabled="detailPage.next" @click="updateView('next')">
                 {{$t('NetworkDiscovery["下一个"]')}}
             </bk-button>
         </footer>
@@ -103,12 +103,16 @@
             },
             ignore: {
                 type: Boolean
+            },
+            detailPage: {
+                type: Object
             }
         },
         data () {
             return {
                 isAccept: false,
                 propertyTable: {
+                    isShowIgnore: true,
                     isShow: true,
                     header: [{
                         id: 'bk_property_name',
@@ -120,20 +124,13 @@
                         id: 'pre_value',
                         name: this.$t('NetworkDiscovery["原值"]')
                     }, {
-                        id: 'new_value',
+                        id: 'value',
                         name: this.$t('NetworkDiscovery["新值"]')
                     }, {
                         id: 'operation',
                         name: this.$t('Association["操作"]')
                     }],
-                    list: [{
-                        bk_property_id: 'bk_inst_name',
-                        bk_property_name: '实例名',
-                        bk_obj_id: 'bk_switch',
-                        isrequired: true,
-                        new_value: 'ddd',
-                        pre_value: 'asd'
-                    }],
+                    list: [],
                     pagination: {
                         count: 0,
                         size: 10,
@@ -143,15 +140,16 @@
                     sort: '-last_time'
                 },
                 relationTable: {
+                    isShowIgnore: true,
                     isShow: true,
                     header: [{
                         id: 'action',
                         name: this.$t('NetworkDiscovery["操作方式"]')
                     }, {
-                        id: 'bk_obj_name',
+                        id: 'bk_asst_obj_name',
                         name: this.$t('OperationAudit["模型"]')
                     }, {
-                        id: 'device_attributes',
+                        id: 'configuration',
                         name: this.$t('NetworkDiscovery["配置信息"]')
                     }, {
                         id: 'last_time',
@@ -160,17 +158,7 @@
                         id: 'operation',
                         name: this.$t('Association["操作"]')
                     }],
-                    list: [{
-                        action: 'update',
-                        asst: {
-                            bk_inst_id: 1,
-                            bk_obj_id: 'bk_switch',
-                            bk_obj_name: '交换机',
-                            bk_asst_inst_id: 0,
-                            bk_asst_obj_id: 'host',
-                            bk_asst_obj_name: '主机'
-                        }
-                    }],
+                    list: [],
                     pagination: {
                         count: 0,
                         size: 10,
@@ -185,11 +173,36 @@
                 }
             }
         },
+        computed: {
+            propertyTableList () {
+                return this.propertyTable.list.filter(item => {
+                    if (!this.propertyTable.isShowIgnore && item.method !== 'accept') {
+                        return false
+                    }
+                    return true
+                })
+            },
+            relationTableList () {
+                return this.relationTable.list.filter(item => {
+                    if (!this.relationTable.isShowIgnore && item.asst.method !== 'accept') {
+                        return false
+                    }
+                    return true
+                })
+            }
+        },
         created () {
             this.propertyTable.list = this.$tools.clone(this.attributes)
             this.relationTable.list = this.$tools.clone(this.associations)
         },
         methods: {
+            updateView (type) {
+                this.$emit('updateView', type)
+                this.$nextTick(() => {
+                    this.propertyTable.list = this.$tools.clone(this.attributes)
+                    this.relationTable.list = this.$tools.clone(this.associations)
+                })
+            },
             toggleSwitcher (value) {
                 this.$emit('toggleSwitcher', value)
             },

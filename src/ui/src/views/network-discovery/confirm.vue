@@ -21,11 +21,13 @@
                 <div class="details-right clearfix">
                     <bk-selector
                         :list="changeList"
+                        :allow-clear="true"
                         :selected.sync="filterCopy.action"
                         :placeholder="$t('NetworkDiscovery[\'全部变更\']')"
                     ></bk-selector>
                     <bk-selector
                         :list="typeList"
+                        :allow-clear="true"
                         :selected.sync="filterCopy['bk_obj_name']"
                         :placeholder="$t('NetworkDiscovery[\'全部类型\']')"
                     ></bk-selector>
@@ -79,7 +81,9 @@
             :ignore="activeItem.ignore"
             :attributes.sync="activeItem.attributes"
             :associations.sync="activeItem.associations"
+            :detailPage="detailPage"
             @toggleSwitcher="toggleSwitcher"
+            @updateView="updateView"
             ></v-confirm-details>
         </cmdb-slider>
         <footer class="footer">
@@ -140,21 +144,18 @@
         <bk-dialog
             class="confirm-dialog"
             :is-show.sync="confirmDialog.isShow" 
-            :title="$t('NetworkDiscovery[\'是否丢弃\']')"
+            :title="$t('NetworkDiscovery[\'退出确认\']')"
             :has-footer="false"
             :quick-close="false"
             padding="0"
             :width="390">
             <div slot="content" class="dialog-content">
                 <p>
-                    {{$t('NetworkDiscovery["要在返回前确认变更吗？"]')}}
+                    {{$t('NetworkDiscovery["当前改动尚未生效，是否放弃？"]')}}
                 </p>
                 <footer class="footer">
-                    <!-- <bk-button type="primary">
-                        {{$t('NetworkDiscovery["确认变更"]')}}
-                    </bk-button> -->
                     <bk-button type="default" @click="routeToLeave">
-                        {{$t('NetworkDiscovery["丢弃"]')}}
+                        {{$t('NetworkDiscovery["放弃改动"]')}}
                     </bk-button>
                     <bk-button type="default" @click="confirmDialog.isShow = false">
                         {{$t('Common["取消"]')}}
@@ -254,12 +255,14 @@
                     defaultSort: '-last_time',
                     sort: '-last_time'
                 },
+                dataCopy: {},
                 actionMap: {
                     'create': this.$t("Common['新增']"),
                     'update': this.$t("NetworkDiscovery['变更']"),
                     'delete': this.$t("Common['删除']")
                 },
                 activeItem: {
+                    index: 0,
                     ignore: false,
                     attributes: [],
                     associations: []
@@ -269,8 +272,7 @@
         computed: {
             ...mapGetters('netDiscovery', ['cloudName']),
             tableList () {
-                this.$success('computed')
-                let list = this.table.list.filter(item => {
+                return this.table.list.filter(item => {
                     if (!this.filter.isShowIgnore && item.ignore) {
                         return false
                     }
@@ -285,7 +287,13 @@
                     }
                     return true
                 })
-                return list
+            },
+            detailPage () {
+                let index = this.tableList.findIndex(({bk_inst_key: instKey}) => instKey === this.activeItem['bk_inst_key'])
+                return {
+                    prev: index === 0,
+                    next: index === this.tableList.length - 1
+                }
             }
         },
         beforeRouteEnter (to, from, next) {
@@ -316,8 +324,17 @@
         methods: {
             ...mapActions('netDiscovery', [
                 'searchNetcollectList',
-                'searchNetcollectChange'
+                'searchNetcollectChange',
+                'confirmNetcollectChange'
             ]),
+            updateView (type) {
+                let index = this.tableList.findIndex(({bk_inst_key: instKey}) => instKey === this.activeItem['bk_inst_key'])
+                if (type === 'prev') {
+                    this.activeItem = this.tableList[index - 1]
+                } else {
+                    this.activeItem = this.tableList[index + 1]
+                }
+            },
             search () {
                 this.filter['bk_obj_id'] = this.filterCopy['bk_obj_id']
                 this.filter.action = this.filterCopy.action
@@ -332,7 +349,7 @@
                 })
             },
             toggleSwitcher (value) {
-                this.activeItem.ignore = !value
+                this.activeItem.ignore = value
             },
             routeToLeave () {
                 if (this.confirmDialog.leaveResolver) {
@@ -357,22 +374,23 @@
             },
             async showResultDialog () {
                 let params = {
-                    reports: this.table.list
+                    reports: []
                 }
-                let reports = []
                 this.table.list.map(item => {
                     if (!item.ignore) {
                         let detail = {
                             bk_cloud_id: item['bk_cloud_id'],
                             bk_obj_id: item['bk_obj_id'],
+                            bk_inst_key: item['bk_inst_key'],
                             attributes: [],
-                            relations: []
+                            associations: []
                         }
                         item.attributes.map(attr => {
                             if (attr.method === 'accept') {
                                 detail.attributes.push({
                                     bk_property_id: attr['bk_property_id'],
-                                    bk_obj_id: attr['bk_obj_id'],
+                                    bk_property_name: attr['bk_property_name'],
+                                    value: attr['value'],
                                     method: 'accept'
                                 })
                             }
@@ -380,17 +398,19 @@
                         item.associations.map(asst => {
                             if (asst.method === 'accept') {
                                 detail.associations.push({
-                                    bk_property_id: asst['bk_property_id'],
-                                    bk_obj_id: asst['bk_obj_id'],
+                                    bk_asst_inst_name: asst['bk_asst_inst_name'],
+                                    bk_asst_obj_id: asst['bk_asst_obj_id'],
+                                    bk_asst_obj_name: asst['bk_asst_obj_name'],
                                     method: 'accept'
                                 })
                             }
                         })
+                        params.reports.push(detail)
                     }
                 })
+                const res = await this.confirmNetcollectChange({params, config: {requestId: 'confirmNetcollectChange'}})
                 this.resultDialog.isShow = true
-                // const res = await this.confirmNetcollectChange()
-                // this.resultDialog.data = res
+                this.resultDialog.data = res
             },
             toggleDialogDetails () {
                 this.resultDialog.isDetailsShow = !this.resultDialog.isDetailsShow

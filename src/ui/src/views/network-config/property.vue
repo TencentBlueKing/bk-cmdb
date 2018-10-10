@@ -4,13 +4,16 @@
             <bk-button type="primary" @click="toggleCreateDialog">
                 {{$t('NetworkDiscovery["新增属性"]')}}
             </bk-button>
-            <bk-button type="default">
+            <bk-button type="default"
+            :loading="$loading('deleteNetcollectProperty')"
+            :disabled="!table.checked.length"
+            @click="deleteProperty">
                 {{$t('Common["删除"]')}}
             </bk-button>
             <bk-button type="default" @click="importSlider.isShow = true">
                 {{$t('ModelManagement["导入"]')}}
             </bk-button>
-            <bk-button type="default" form="exportForm">
+            <bk-button type="default" form="exportForm" :disabled="!table.checked.length">
                 {{$t('ModelManagement["导出"]')}}
             </bk-button>
             <form id="exportForm" :action="url.export" method="POST" hidden>
@@ -32,6 +35,7 @@
             :loading="$loading('searchNetcollectProperty')"
             :header="table.header"
             :list="table.list"
+            :checked.sync="table.checked"
             :pagination.sync="table.pagination"
             :defaultSort="table.defaultSort"
             @handleSortChange="handleSortChange"
@@ -196,8 +200,16 @@
             ...mapActions('netCollectDevice', ['searchDevice']),
             ...mapActions('netCollectProperty', [
                 'createNetcollectProperty',
-                'searchNetcollectProperty'
+                'searchNetcollectProperty',
+                'deleteNetcollectProperty'
             ]),
+            async deleteProperty () {
+                let params = {
+                    netcollect_property_id: this.table.checked.join(',')
+                }
+                await this.deleteNetcollectProperty({config: {data: params, requestId: 'deleteNetcollectProperty'}})
+                this.handlePageChange(1)
+            },
             async toggleCreateDialog () {
                 this.createDialog.isShow = !this.createDialog.isShow
                 if (this.createDialog.isShow) {

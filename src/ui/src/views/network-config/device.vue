@@ -4,13 +4,16 @@
             <bk-button type="primary" @click="toggleCreateDialog">
                 {{$t('NetworkDiscovery["新增设备"]')}}
             </bk-button>
-            <bk-button type="default">
+            <bk-button type="default"
+            :loading="$loading('deleteDevice')"
+            :disabled="!table.checked.length"
+            @click="deleteDevices">
                 {{$t('Common["删除"]')}}
             </bk-button>
             <bk-button type="default" @click="importSlider.isShow = true">
                 {{$t('ModelManagement["导入"]')}}
             </bk-button>
-            <bk-button type="default submit" form="exportForm">
+            <bk-button :disabled="!table.checked.length" type="default submit" form="exportForm">
                 {{$t('ModelManagement["导出"]')}}
             </bk-button>
             <form id="exportForm" :action="url.export" method="POST" hidden>
@@ -147,13 +150,11 @@
         },
         computed: {
             url () {
-                const prefix = `http://dev.open.oa.com:8081/netdevice/`
-                // const prefix = `${window.API_HOST}netdevice/`
+                const prefix = `${window.API_HOST}netdevice/`
                 return {
                     import: prefix + 'import',
                     export: prefix + 'export',
-                    template: `http://dev.open.oa.com:8081/netcollect/importtemplate/netdevice`
-                    // template: `${window.API_HOST}netcollect/importtemplate/netdevice`
+                    template: `${window.API_HOST}netcollect/importtemplate/netdevice`
                 }
             }
         },
@@ -176,8 +177,16 @@
             ]),
             ...mapActions('netCollectDevice', [
                 'createDevice',
-                'searchDevice'
+                'searchDevice',
+                'deleteDevice'
             ]),
+            async deleteDevices () {
+                let params = {
+                    device_id: this.table.checked.join(',')
+                }
+                await this.deleteDevice({config: {data: params, requestId: 'deleteDevice'}})
+                this.handlePageChange(1)
+            },
             toggleCreateDialog () {
                 if (!this.createDialog.isShow) {
                     this.createDialog.device_model = ''

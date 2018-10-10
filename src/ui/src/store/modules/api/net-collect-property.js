@@ -9,7 +9,6 @@
  */
 
 import $http from '@/api'
-let SITE_URL = 'http://dev.open.oa.com:8081/api/v3/'
 
 const state = {
 
@@ -28,7 +27,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     createNetcollectProperty ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`${SITE_URL}netcollect/property/action/create`, params, config)
+        return $http.post(`collector/netcollect/property/action/create`, params, config)
     },
     /**
      * 查询属性
@@ -38,7 +37,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchNetcollectProperty ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`${SITE_URL}netcollect/property/action/search`, params, config)
+        return $http.post(`collector/netcollect/property/action/search`, params, config)
     },
     /**
      * 批量删除属性
@@ -48,8 +47,8 @@ const actions = {
      * @param {Object} params 属性id
      * @return {promises} promises 对象
      */
-    deleteNetcollectProperty ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.delete(`${SITE_URL}netcollect/property/action/delete`, params, config)
+    deleteNetcollectProperty ({ commit, state, dispatch, rootGetters }, { config }) {
+        return $http.delete(`collector/netcollect/property/action/delete`, config)
     },
     /**
      * 导入属性
@@ -60,7 +59,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     importNetNetcollectProperty ({ commit, state, dispatch, rootGetters }, { config }) {
-        return $http.post(`${window.API_HOST}/netproperty/import`, config)
+        return $http.post(`${window.API_HOST}collector/netproperty/import`, config)
     },
     /**
      * 导出属性
@@ -70,7 +69,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     exportNetcollectProperty ({ commit, state, dispatch, rootGetters }, { config }) {
-        return $http.post(`${window.API_HOST}/netproperty/export`, config)
+        return $http.post(`${window.API_HOST}collector/netproperty/export`, config)
     },
     /**
      * 获取导入属性模版
@@ -80,7 +79,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     getNetDeviceImportTemplate ({ commit, state, dispatch, rootGetters }, { config }) {
-        return $http.get(`${window.API_HOST}/netcollect/importtemplate/netproperty`, config)
+        return $http.get(`${window.API_HOST}collector/netcollect/importtemplate/netproperty`, config)
     }
 }
 

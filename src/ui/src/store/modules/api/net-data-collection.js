@@ -47,7 +47,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     collectDataCollection ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`collector/netcollect/collector/action/collect`, params, config)
+        return $http.post(`collector/netcollect/collector/action/discover`, params, config)
     }
 }
 

@@ -27,7 +27,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     createDevice ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`netcollect/device/action/create`, params, config)
+        return $http.post(`collector/netcollect/device/action/create`, params, config)
     },
     /**
      * 查询设备
@@ -37,7 +37,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchDevice ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`netcollect/device/action/search`, params, config)
+        return $http.post(`collector/netcollect/device/action/search`, params, config)
     },
     /**
      * 批量删除设备
@@ -47,8 +47,8 @@ const actions = {
      * @param {Object} params 设备id
      * @return {promises} promises 对象
      */
-    deleteDevice ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.delete(`netcollect/device/action/delete`, params, config)
+    deleteDevice ({ commit, state, dispatch, rootGetters }, { config }) {
+        return $http.delete(`collector/netcollect/device/action/delete`, config)
     },
     /**
      * 导入设备
@@ -59,7 +59,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     importNetDevice ({ commit, state, dispatch, rootGetters }, { config }) {
-        return $http.post(`${window.API_HOST}/netdevice/import`, config)
+        return $http.post(`${window.API_HOST}collector/netdevice/import`, config)
     },
     /**
      * 导出设备
@@ -69,7 +69,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     exportNetDevice ({ commit, state, dispatch, rootGetters }, { config }) {
-        return $http.post(`${window.API_HOST}/netdevice/export`, config)
+        return $http.post(`${window.API_HOST}collector/netdevice/export`, config)
     },
     /**
      * 获取导入设备模版
@@ -79,7 +79,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     getNetDeviceImportTemplate ({ commit, state, dispatch, rootGetters }, { config }) {
-        return $http.get(`${window.API_HOST}/netcollect/importtemplate/netdevice`, config)
+        return $http.get(`${window.API_HOST}collector/netcollect/importtemplate/netdevice`, config)
     }
 }
 
