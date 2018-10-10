@@ -1,133 +1,206 @@
-/*
- * Tencent is pleased to support the open source community by making 蓝鲸 available.
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at http://opensource.org/licenses/MIT
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and limitations under the License.
- */
-
 import Vue from 'vue'
-import {mapMutations, mapGetters} from 'vuex'
-import store from '@/store'
 import Router from 'vue-router'
+import store from '@/store'
+import preload from '@/setup/preload'
+import $http from '@/api'
+
+const index = () => import(/* webpackChunkName: index */ '@/views/index')
+const model = () => import(/* webpackChunkName: model */ '@/views/model')
+const modelTopo = () => import(/* webpackChunkName: model */ '@/views/model/model-topo')
+const business = () => import(/* webpackChunkName: business */ '@/views/business')
+const businessArchived = () => import(/* webpackChunkName: businessArchived */ '@/views/business/archived')
+const generalModel = () => import(/* webpackChunkName: generalModel */ '@/views/general-model')
+const deleteHistory = () => import(/* webpackChunkName: deleteHistory */ '@/views/history')
+const hosts = () => import(/* webpackChunkName: hosts */ '@/views/hosts')
+const eventpush = () => import(/* webpackChunkName: hosts */ '@/views/eventpush')
+const permission = () => import(/* webpackChunkName: hosts */ '@/views/permission')
+const resource = () => import(/* webpackChunkName: resource */ '@/views/resource')
+const audit = () => import(/* webpackChunkName: hosts */ '@/views/audit')
+const topology = () => import(/* webpackChunkName: topology */ '@/views/topology')
+const process = () => import(/* webpackChunkName: process */ '@/views/process')
+const customQuery = () => import(/* webpackChunkName: process */ '@/views/custom-query')
+const error = () => import(/* webpackChunkName: error */ '@/views/status/error')
 
 Vue.use(Router)
 
-const pageIndex = () => import(/* webpackChunkName: "page-index" */ '@/pages/index/index-v3')
-const pageHosts = () => import(/* webpackChunkName: "page-hosts" */ '@/pages/hosts/hosts')
-const pageModel = () => import(/* webpackChunkName: "page-model" */ '@/pages/model/model')
-const pageResource = () => import(/* webpackChunkName: "page-resource" */ '@/pages/resource/resource')
-const pageProcess = () => import(/* webpackChunkName: "page-process" */ '@/pages/process/process')
-const pagePermission = () => import(/* webpackChunkName: "page-permission" */ '@/pages/permission/permission')
-const pageEventpush = () => import(/* webpackChunkName: "page-eventpush" */ '@/pages/eventpush/eventpush')
-const pageAuditing = () => import(/* webpackChunkName: "page-auditing" */ '@/pages/auditing/auditing')
-const pageOrganization = () => import(/* webpackChunkName: "page-organization" */ '@/pages/organization/object')
-const pageTopology = () => import(/* webpackChunkName: "page-topology" */ '@/pages/topology/topology')
-const pageCustomQuery = () => import(/* webpackChunkName: "page-customQuery" */ '@/pages/customQuery/customQuery')
-
-var routerVue = new Vue({
-    store: store,
-    computed: {
-        ...mapGetters('navigation', ['authorizedNavigation'])
-    },
-    methods: {
-        ...mapMutations(['setGlobalLoading']),
-        ...mapMutations('navigation', ['updateHistoryCount']),
-        async isAuthorized (to) {
-            await this.$store.dispatch('navigation/getAuthority')
-            await Promise.all([this.$store.dispatch('navigation/getClassifications'), this.$store.dispatch('usercustom/getUserCustom')])
-            let isAuthorized = false
-            let authorizedPath = ['/index', '/403', '/404']
-            if (authorizedPath.includes(to.path)) {
-                isAuthorized = true
-            } else {
-                isAuthorized = this.authorizedNavigation.some(({id, children}) => {
-                    return children.some(({path}) => path === to.path)
-                })
-            }
-            return Promise.resolve(isAuthorized)
-        }
-    }
-})
-
-var router = new Router({
+const router = new Router({
     linkActiveClass: 'active',
     routes: [{
-        path: '/404',
-        components: require('@/pages/404')
-    }, {
-        path: '/403',
-        components: require('@/pages/403')
-    }, {
         path: '/',
         redirect: '/index'
     }, {
         path: '/index',
-        component: pageIndex
-    }, {
-        path: '/hosts',
-        component: pageHosts,
+        component: index,
         meta: {
-            setBkBizId: true
+            ignoreAuthorize: true
         }
+    }, {
+        path: '/business',
+        component: business
     }, {
         path: '/model',
-        component: pageModel
-    }, {
-        path: '/resource',
-        component: pageResource
-    }, {
-        path: '/process',
-        component: pageProcess,
-        meta: {
-            setBkBizId: true
-        }
-    }, {
-        path: '/permission',
-        component: pagePermission
+        component: model,
+        children: [{
+            path: ':classifyId',
+            component: modelTopo,
+            meta: {
+                relative: '/model'
+            }
+        }, {
+            path: '',
+            component: modelTopo,
+            meta: {
+                relative: '/model'
+            }
+        }]
     }, {
         path: '/eventpush',
-        component: pageEventpush
+        component: eventpush
     }, {
-        path: '/auditing',
-        component: pageAuditing
+        path: '/permission',
+        component: permission
     }, {
-        path: '/organization/:objId',
-        component: pageOrganization
-    }, {
-        path: '/topology',
-        component: pageTopology,
+        path: '/history/biz',
+        component: businessArchived,
         meta: {
-            setBkBizId: true
+            relative: '/business'
         }
     }, {
-        path: '/customQuery',
-        component: pageCustomQuery,
+        path: '/general-model/:objId',
+        component: generalModel
+    }, {
+        path: '/history/:objId',
+        component: deleteHistory
+    }, {
+        path: '/hosts',
+        component: hosts,
         meta: {
-            setBkBizId: true
+            requireBusiness: true
+        }
+    }, {
+        path: '/resource',
+        component: resource
+    }, {
+        path: '/auditing',
+        component: audit
+    }, {
+        path: '/topology',
+        component: topology,
+        meta: {
+            requireBusiness: true
+        }
+    }, {
+        path: '/process',
+        component: process,
+        meta: {
+            requireBusiness: true
+        }
+    }, {
+        path: '/custom-query',
+        component: customQuery,
+        meta: {
+            requireBusiness: true
+        }
+    }, {
+        path: '/status-require-business',
+        components: require('@/views/status/require-business'),
+        meta: {
+            ignoreAuthorize: true
+        }
+    }, {
+        path: '/status-403',
+        components: require('@/views/status/403'),
+        meta: {
+            ignoreAuthorize: true
+        }
+    }, {
+        path: '/status-404',
+        components: require('@/views/status/404'),
+        meta: {
+            ignoreAuthorize: true
+        }
+    }, {
+        path: '/status-error',
+        component: error,
+        meta: {
+            ignoreAuthorize: true
         }
     }, {
         path: '*',
-        redirect: '/404'
+        redirect: '/status-404'
     }]
 })
 
-router.beforeEach(async (to, from, next) => {
-    routerVue.setGlobalLoading(true)
-    routerVue.updateHistoryCount(-1)
-    let isAuthorized = await routerVue.isAuthorized(to)
-    if (isAuthorized) {
-        if (!to.matched.some(({meta}) => meta.setBkBizId)) {
-            delete routerVue.$axios.defaults.headers.bk_biz_id
+const cancelRequest = () => {
+    const allRequest = $http.queue.get()
+    const requestQueue = allRequest.filter(request => request.cancelWhenRouteChange)
+    return $http.cancel(requestQueue.map(request => request.requestId))
+}
+
+const hasAuthority = (to) => {
+    if (to.meta.ignoreAuthorize) {
+        return true
+    }
+    const path = to.meta.relative || to.query.relative || to.path
+    const authorizedNavigation = router.app.$store.getters['objectModelClassify/authorizedNavigation']
+    return authorizedNavigation.some(navigation => {
+        if (navigation.hasOwnProperty('path')) {
+            return navigation.path === path
         }
-        next()
-    } else {
-        next('/403')
+        return navigation.children.some(child => child.path === path || child.relative === path)
+    })
+}
+
+const hasPrivilegeBusiness = () => {
+    const privilegeBusiness = router.app.$store.getters['objectBiz/privilegeBusiness']
+    return !!privilegeBusiness.length
+}
+
+router.beforeEach(async (to, from, next) => {
+    try {
+        if (to.path !== '/status-error') {
+            router.app.$store.commit('setGlobalLoading', true)
+            await cancelRequest()
+            await preload(router.app)
+            if (to.meta.ignoreAuthorize) {
+                next()
+            } else if (hasAuthority(to)) {
+                if (to.meta.requireBusiness && !hasPrivilegeBusiness()) {
+                    next({
+                        path: '/status-require-business',
+                        query: {
+                            relative: to.path
+                        }
+                    })
+                } else {
+                    next()
+                }
+            } else {
+                next({
+                    path: '/status-403',
+                    query: {
+                        relative: to.path
+                    }
+                })
+            }
+        } else {
+            next()
+        }
+    } catch (e) {
+        next({
+            path: '/status-error',
+            query: {
+                relative: to.path
+            }
+        })
     }
 })
+
 router.afterEach((to, from) => {
-    routerVue.setGlobalLoading(false)
+    if (to.path === '/status-error') {
+        $http.cancel()
+    }
+    router.app.$store.commit('setGlobalLoading', false)
 })
+
 export default router

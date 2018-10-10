@@ -1,6 +1,6 @@
-# web
+# bk-cmdb-ui
 
-> cmdb_v3
+> ui of bk-cmdb
 
 ## Build Setup
 
@@ -8,7 +8,9 @@
 # install dependencies
 npm install
 
-# serve with hot reload at localhost:8080
+# set dev config -- API_URL in 'config/index.js'  
+# the API_URL is the address of apiServer and it should start with 'http(s)://', end with '/'  
+# serve with hot reload at localhost:9090
 npm run dev
 
 # build for production with minification

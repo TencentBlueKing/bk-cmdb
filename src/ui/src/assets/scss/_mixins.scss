@@ -1,0 +1,30 @@
+@mixin ellipsis {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@mixin scrollbar {
+    overflow: auto;
+    &::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+        &-thumb {
+            border-radius: 20px;
+            background: #a5a5a5;
+            box-shadow: inset 0 0 6px hsla(0,0%,80%,.3);
+        }
+    }
+}
+
+@mixin scrollbar-x{
+    @include scrollbar;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+@mixin scrollbar-y{
+    @include scrollbar;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
