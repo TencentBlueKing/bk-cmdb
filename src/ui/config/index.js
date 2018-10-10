@@ -1,64 +1,109 @@
-
 'use strict'
-// Template version: 1.1.3
+// Template version: 1.3.1
 // see http://vuejs-templates.github.io/webpack for documentation.
 
 const path = require('path')
-var merge = require('webpack-merge')
 
-var buildEnv = require('./build.env')
-var env4Dev = merge(require('./dev.env'), buildEnv)
-var env4Build = merge(require('./prod.env'), buildEnv)
-var baseOutputPath = process.cmdb.BUILD_OUTPUT ? path.resolve(process.cmdb.BUILD_OUTPUT) : path.resolve(__dirname, '../../bin/enterprise/cmdb')
+const config = {
+    'BUILD_VERSION': '',
+    'BUILD_TITLE': '配置平台 | 蓝鲸智云企业版',
+    'BUILD_OUTPUT': '../../bin/enterprise/cmdb'
+}
+
+process.argv.slice(2).forEach(str => {
+    const argv = str.split('=')
+    config[argv[0]] = argv.slice(1).join('=')
+})
+process.CMDB_CONFIG = config
+
 module.exports = {
+  dev: {
+    // custom config
+    config: Object.assign({}, config, {
+        'API_URL': '""',
+        'API_VERSION': '"v3"',
+        'API_LOGIN': '""',
+        'AGENT_URL': 'null',
+        'BUILD_VERSION': 'dev',
+        'USER_ROLE': '"1"',
+        'USER_NAME': '"admin"'
+    }),
+
+    // Paths
+    assetsSubDirectory: '',
+    assetsPublicPath: '/static/',
+    proxyTable: {},
+
+    // Various Dev Server settings
+    host: 'localhost', // can be overwritten by process.env.HOST
+    port: 9090, // can be overwritten by process.env.PORT, if port is in use, a free one will be determined
+    autoOpenBrowser: true,
+    errorOverlay: true,
+    notifyOnErrors: true,
+    poll: false, // https://webpack.js.org/configuration/dev-server/#devserver-watchoptions-
+
+    // Use Eslint Loader?
+    // If true, your code will be linted during bundling and
+    // linting errors and warnings will be shown in the console.
+    useEslint: true,
+    // If true, eslint errors and warnings will also be shown in the error overlay
+    // in the browser.
+    showEslintErrorsInOverlay: true,
+
+    /**
+     * Source Maps
+     */
+
+    // https://webpack.js.org/configuration/devtool/#development
+    devtool: 'cheap-module-eval-source-map',
+
+    // If you have problems debugging vue-files in devtools,
+    // set this to false - it *may* help
+    // https://vue-loader.vuejs.org/en/options.html#cachebusting
+    cacheBusting: true,
+
+    cssSourceMap: true
+  },
+
   build: {
-    env: env4Build,
-    cmdb: process.cmdb,
-    index: `${baseOutputPath}/web/index.html`,
-    assetsRoot: `${baseOutputPath}/web`,
+    // custom config
+    config: Object.assign({}, config, {
+        'API_URL': '{{.site}}',
+        'API_VERSION': '{{.version}}',
+        'API_LOGIN': '{{.curl}}',
+        'AGENT_URL': '{{.agentAppUrl}}',
+        'USER_ROLE': '{{.role}}',
+        'USER_NAME': '{{.userName}}'
+    }),
+
+    // Template for index.html
+    index: `${path.resolve(config.BUILD_OUTPUT)}/web/index.html`,
+
+    // Paths
+    assetsRoot: `${path.resolve(config.BUILD_OUTPUT)}/web`,
+
     assetsSubDirectory: '',
     assetsPublicPath: '/static/',
 
-    productionSourceMap: buildEnv.BUILD_ENV == 'product',
+    /**
+     * Source Maps
+     */
+
+    productionSourceMap: true,
+    // https://webpack.js.org/configuration/devtool/#production
+    devtool: '#source-map',
+
     // Gzip off by default as many popular static hosts such as
     // Surge or Netlify already gzip all static assets for you.
     // Before setting to `true`, make sure to:
     // npm install --save-dev compression-webpack-plugin
     productionGzip: false,
     productionGzipExtensions: ['js', 'css'],
+
     // Run the build command with an extra argument to
     // View the bundle analyzer report after build finishes:
     // `npm run build --report`
     // Set to `true` or `false` to always turn it on or off
     bundleAnalyzerReport: process.env.npm_config_report
-  },
-  dev: {
-    env: env4Dev,
-    port: process.env.PORT || 8080,
-    autoOpenBrowser: true,
-    assetsSubDirectory: 'static',
-    assetsPublicPath: '/',
-    proxyTable: {
-      '**': {
-          logLevel: 'debug',
-          filter: function(pathname, req) {
-              // 代理ajax请求
-              if (req.headers["x-requested-with"] == 'XMLHttpRequest') {
-                  return true;
-              }
-          },
-          target: '127.0.0.1',
-          changeOrigin: true,
-          onProxyReq(proxyReq, req, res) {
-            console.warn(req.originalUrl, ' --> ', req.url)
-          }
-      }
-    },
-    // CSS Sourcemaps off by default because relative paths are "buggy"
-    // with this option, according to the CSS-Loader README
-    // (https://github.com/webpack/css-loader#sourcemaps)
-    // In our experience, they generally work as expected,
-    // just be aware of this issue when enabling this option.
-    cssSourceMap: true
   }
 }
