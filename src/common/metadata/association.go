@@ -31,41 +31,163 @@ const (
 	AssociationFieldAssociationId = "id"
 )
 
-// 关联关系
-type AsstTypeValue int
+type SearchAssociationTypeRequest struct {
+	Page struct {
+		Start int    `json:"start"`
+		Limit int    `json:"limit"`
+		Sort  string `json:"sort"`
+	} `json:"page"`
+	Condition map[string]interface{} `json:"condition"`
+}
 
-const (
-	// 默认0无
-	AsstTypeNone = iota
-	// 1从属
-	AsstTypeBelong
-	// 2引用
-	AsstTypeRef
-)
+type SearchAssociationTypeResult struct {
+	BaseResp struct {
+		Result bool   `json:"result"`
+		Code   int    `json:"bk_error_code"`
+		ErrMsg string `json:"bk_error_msg"`
+	} `json",inline"`
+	Data struct {
+		Count int                `json:"count"`
+		Info  []*AssociationType `json:"info"`
+	} `json:"data"`
+}
 
-// 关联方式
-type AsstWayValue int
+type CreateAssociationTypeResult struct {
+	BaseResp struct {
+		Result bool   `json:"result"`
+		Code   int    `json:"bk_error_code"`
+		ErrMsg string `json:"bk_error_msg"`
+	} `json",inline"`
+	Data struct {
+		Id int `json:"id"`
+	} `json:"data"`
+}
 
-const (
-	// 默认0无
-	AsstWayNone = iota
-	// 1 1-N
-	AsstWay1N
-	// 2 N-1
-	AsstWayN1
-	// 3 N-N
-	AsstWayNN
-)
+type UpdateAssociationTypeRequest struct {
+	AsstName  string `field:"bk_asst_name" json:"bk_asst_name" bson:"bk_asst_name"`
+	SrcDes    string `field:"src_des" json:"src_des" bson:"src_des"`
+	DestDes   string `field:"dest_des" json:"dest_des" bson:"dest_des"`
+	Direction int    `field:"direction" json:"direction" bson:"direction"`
+}
 
-// 关联位置
-type AsstPositionValue int
+type UpdateAssociationTypeResult struct {
+	BaseResp struct {
+		Result bool   `json:"result"`
+		Code   int    `json:"bk_error_code"`
+		ErrMsg string `json:"bk_error_msg"`
+	} `json",inline"`
+	Data string `json:"data"`
+}
 
-const (
-	// 默认0无
-	AsstPosNone = iota
-	// 1 上级
-	AsstPosSuperior
-)
+type DeleteAssociationTypeResult struct {
+	BaseResp struct {
+		Result bool   `json:"result"`
+		Code   int    `json:"bk_error_code"`
+		ErrMsg string `json:"bk_error_msg"`
+	} `json",inline"`
+	Data string `json:"data"`
+}
+
+type SearchAssociationObjectRequest struct {
+	Condition map[string]interface{} `json:"condition"`
+}
+
+type SearchAssociationObjectResult struct {
+	BaseResp struct {
+		Result bool   `json:"result"`
+		Code   int    `json:"bk_error_code"`
+		ErrMsg string `json:"bk_error_msg"`
+	} `json",inline"`
+	Data []*Association `json:"data"`
+}
+
+type CreateAssociationObjectResult struct {
+	BaseResp struct {
+		Result bool   `json:"result"`
+		Code   int    `json:"bk_error_code"`
+		ErrMsg string `json:"bk_error_msg"`
+	} `json",inline"`
+	Data struct {
+		Id int `json:"id"`
+	} `json:"data"`
+}
+
+type UpdateAssociationObjectRequest struct {
+	AsstName string `field:"bk_asst_name" json:"bk_asst_name" bson:"bk_asst_name"`
+}
+
+type UpdateAssociationObjectResult struct {
+	BaseResp struct {
+		Result bool   `json:"result"`
+		Code   int    `json:"bk_error_code"`
+		ErrMsg string `json:"bk_error_msg"`
+	} `json",inline"`
+	Data string `json:"data"`
+}
+
+type DeleteAssociationObjectResult struct {
+	BaseResp struct {
+		Result bool   `json:"result"`
+		Code   int    `json:"bk_error_code"`
+		ErrMsg string `json:"bk_error_msg"`
+	} `json",inline"`
+	Data string `json:"data"`
+}
+
+type SearchAssociationInstRequest struct {
+	Condition map[string]interface{} `json:"condition"`
+}
+
+type SearchAssociationInstResult struct {
+	BaseResp struct {
+		Result bool   `json:"result"`
+		Code   int    `json:"bk_error_code"`
+		ErrMsg string `json:"bk_error_msg"`
+	} `json",inline"`
+	Data []*InstAsst `json:"data"`
+}
+
+type CreateAssociationInstRequest struct {
+	ObjectAsstId bool   `json:"bk_obj_asst_id"`
+	InstId       int    `json:"bk_inst_id"`
+	AsstInstId   string `json:"bk_asst_inst_id"`
+}
+type CreateAssociationInstResult struct {
+	BaseResp struct {
+		Result bool   `json:"result"`
+		Code   int    `json:"bk_error_code"`
+		ErrMsg string `json:"bk_error_msg"`
+	} `json",inline"`
+	Data struct {
+		Id int `json:"id"`
+	} `json:"data"`
+}
+
+type DeleteAssociationInstRequest struct {
+	ObjectAsstID string `field:"bk_obj_asst_id" json:"bk_obj_asst_id" bson:"bk_obj_asst_id"`
+	InstID       int64  `field:"bk_inst_id" json:"bk_inst_id"`
+	AsstInstID   int64  `field:"bk_asst_inst_id" json:"bk_asst_inst_id"`
+}
+
+type DeleteAssociationInstResult struct {
+	BaseResp struct {
+		Result bool   `json:"result"`
+		Code   int    `json:"bk_error_code"`
+		ErrMsg string `json:"bk_error_msg"`
+	} `json",inline"`
+	Data string `json:"data"`
+}
+
+// 关联类型
+type AssociationType struct {
+	ID        int64  `field:"id" json:"id" bson:"id"`
+	AsstID    string `field:"bk_asst_id" json:"bk_asst_id" bson:"bk_asst_id"`
+	AsstName  string `field:"bk_asst_name" json:"bk_asst_name" bson:"bk_asst_name"`
+	OwnerID   string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	SrcDes    string `field:"src_des" json:"src_des" bson:"src_des"`
+	DestDes   string `field:"dest_des" json:"dest_des" bson:"dest_des"`
+	Direction int    `field:"direction" json:"direction" bson:"direction"`
+}
 
 // Association define object association struct
 type Association struct {
@@ -76,11 +198,10 @@ type Association struct {
 	AsstObjID   string `field:"bk_asst_obj_id" json:"bk_asst_obj_id" bson:"bk_asst_obj_id"`
 	AsstName    string `field:"bk_asst_name" json:"bk_asst_name" bson:"bk_asst_name"`
 
-	AsstType AsstTypeValue `field:"bk_asst_type" json:"bk_asst_type" bson:"bk_asst_type"`
-	// 关联位置
-	AsstPosition AsstPositionValue `field:"bk_asst_position" json:"bk_asst_position" bson:"bk_asst_position"`
-	// 关联方式
-	AsstWay AsstWayValue `field:"bk_asst_way" json:"bk_asst_way" bson:"bk_asst_way"`
+	ObjectAsstID string `field:"bk_obj_asst_id" json:"bk_obj_asst_id" bson:"bk_obj_asst_id"`
+	AsstID       string `field:"bk_asst_id" json:"bk_asst_id" bson:"bk_asst_id"`
+	Mapping      int    `field:"mapping" json:"mapping" bson:"mappingo"`
+	OnDelete     int    `field:"on_delete" json:"on_delete" bson:"on_delete"`
 
 	//ObjectAttID      string `field:"bk_object_att_id" json:"bk_object_att_id" bson:"bk_object_att_id"`
 	ClassificationID string `field:"bk_classification_id" bson:"-"`
@@ -111,7 +232,10 @@ type InstAsst struct {
 	ObjectID     string `field:"bk_obj_id" json:"bk_obj_id"`
 	AsstInstID   int64  `field:"bk_asst_inst_id" json:"bk_asst_inst_id"`
 	AsstObjectID string `field:"bk_asst_obj_id" json:"bk_asst_obj_id"`
+	OwnerID      string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	ObjectAsstID string `field:"bk_obj_asst_id" json:"bk_obj_asst_id" bson:"bk_obj_asst_id"`
 }
+
 type InstNameAsst struct {
 	ID         string                 `json:"id"`
 	ObjID      string                 `json:"bk_obj_id"`
