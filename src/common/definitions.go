@@ -451,20 +451,25 @@ const (
 	// BKGseTaskIdField the gse taskid
 	BKGseTaskIDField = "task_id"
 	// BKTaskIdField the gse taskid
-	BKTaskIDField    = "task_id"
-	BKProcPidFile    = "pid_file"
-	BKProcStartCmd   = "start_cmd"
-	BKProcStopCmd    = "stop_cmd"
-	BKProcReloadCmd  = "reload_cmd"
-	BKProcRestartCmd = "restart_cmd"
-	BKProcTimeOut    = "timeout"
-	BKProcWorkPath   = "work_path"
-	BKProcInstNum    = "proc_num"
+	BKTaskIDField = "task_id"
+	// BKGseOpTaskIDField the gse taskid
+	BKGseOpTaskIDField = "gse_task_id"
+	BKProcPidFile      = "pid_file"
+	BKProcStartCmd     = "start_cmd"
+	BKProcStopCmd      = "stop_cmd"
+	BKProcReloadCmd    = "reload_cmd"
+	BKProcRestartCmd   = "restart_cmd"
+	BKProcTimeOut      = "timeout"
+	BKProcWorkPath     = "work_path"
+	BKProcInstNum      = "proc_num"
 
 	// BKInstKeyField the inst key field for metric discover
 	BKInstKeyField = "bk_inst_key"
 
 	BKProcinstanceID = "proc_instance_id"
+
+	// BKGseOpProcTaskDetailField gse operate process return detail
+	BKGseOpProcTaskDetailField = "detail"
 )
 
 // DefaultResSetName the inner module set
@@ -803,6 +808,7 @@ const (
 	GSEProcOPKill           = 9
 )
 const (
-	RedisProcSrvHostInstanceRefreshModuleKey  = BKCacheKeyV3Prefix + "prochostinstancerefresh"
+	RedisProcSrvHostInstanceRefreshModuleKey  = BKCacheKeyV3Prefix + "prochostinstancerefresh:set"
 	RedisProcSrvHostInstanceAllRefreshLockKey = BKCacheKeyV3Prefix + "lock:prochostinstancerefresh"
+	RedisProcSrvQueryProcOPResultKey          = BKCacheKeyV3Prefix + "procsrv:query:opresult:set"
 )

@@ -30,7 +30,10 @@ func getGseProcNameSpace(appID, moduleID int64) string {
 
 func getTaskID() string {
 	return fmt.Sprintf("cc:gse:task:%s:%s", common.BKSTRIDPrefix, xid.New().String())
+}
 
+func getGseOpInstKey(moduleID, procID int64) string {
+	return fmt.Sprintf("%d-%d", moduleID, procID)
 }
 
 func GetProcInstModel(appID, setID, moduleID, hostID, procID, funcID, procNum int64, maxInstID uint64) []*metadata.ProcInstanceModel {

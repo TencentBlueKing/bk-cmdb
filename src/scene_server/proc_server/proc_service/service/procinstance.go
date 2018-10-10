@@ -50,7 +50,7 @@ func (ps *ProcServer) OperateProcessInstance(req *restful.Request, resp *restful
 		return
 	}
 
-	result, err := ps.Logics.OperateProcInstanceByGse(procOpParam, procInstModel, header)
+	result, err := ps.Logics.OperateProcInstanceByGse(context.Background(), procOpParam, procInstModel, header)
 	if err != nil {
 		blog.Errorf("operate process failed. err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcOperateFaile)})

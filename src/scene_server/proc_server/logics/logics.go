@@ -45,7 +45,8 @@ func (lgc *Logics) SetCache(db *redis.Client) {
 
 //ProcHostInstConfig refresh process host instance number need config
 type ProcHostInstConfig struct {
-	MaxEventCount         int
-	MaxRefreshModuleCount int
-	GetModuleIDInterval   time.Duration
+	MaxEventCount                int
+	MaxRefreshModuleCount        int
+	GetModuleIDInterval          time.Duration
+	FetchGseOPProcResultInterval time.Duration
 }
