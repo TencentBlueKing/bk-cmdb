@@ -168,31 +168,24 @@ type NetcollectReportAttribute struct {
 }
 
 type NetcollectReportAssociation struct {
-	CloudID    int64  `json:"bk_cloud_id" bson:"bk_cloud_id"`
-	InstID     int64  `json:"bk_inst_id" bson:"-"`
-	InstKey    string `json:"bk_inst_key" bson:"bk_inst_key"`
-	ObjectID   string `json:"bk_obj_id" bson:"bk_obj_id"`
-	ObjectName string `json:"bk_obj_name" bson:"bk_obj_name"`
-
-	AsstInstID     int64                      `json:"bk_asst_inst_id" bson:"bk_asst_inst_id`
-	AsstInstName   int64                      `json:"bk_asst_inst_name" bson:"bk_asst_inst_name`
-	AsstObjectID   string                     `json:"bk_asst_obj_id" bson:"bk_asst_obj_id`
-	AsstObjectName string                     `json:"bk_asst_obj_name" bson:"bk_asst_obj_name`
-	AsstCond       []NetcollectReportAsstCond `json:"asst_cond" bson:"asst_cond`
+	AsstInstID     int64  `json:"bk_asst_inst_id" bson:"bk_asst_inst_id"`
+	AsstInstName   string `json:"bk_asst_inst_name" bson:"bk_asst_inst_name"`
+	AsstObjectID   string `json:"bk_asst_obj_id" bson:"bk_asst_obj_id"`
+	AsstObjectName string `json:"bk_asst_obj_name" bson:"bk_asst_obj_name"`
 }
 
 type NetcollectReportAsstCond struct {
-	PropertyID   string      `json:"bk_property_id" bson:"bk_property_id`
-	PropertyName string      `json:"bk_property_name" bson:"bk_property_name`
-	Value        interface{} `json:"value" bson:"value`
+	PropertyID   string      `json:"bk_property_id" bson:"bk_property_id"`
+	PropertyName string      `json:"bk_property_name" bson:"bk_property_name"`
+	Value        interface{} `json:"value" bson:"value"`
 }
 
 type RspNetcollectConfirm struct {
-	ChangeAttributeSuccess int      `json:"change_attribute_success"`
-	ChangeAttributeFailure int      `json:"change_attribute_failure"`
-	ChangeRelationSuccess  int      `json:"change_associations_success"`
-	ChangeRelationFailure  int      `json:"change_associations_failure"`
-	Errors                 []string `json:"errors"`
+	ChangeAttributeSuccess    int      `json:"change_attribute_success"`
+	ChangeAttributeFailure    int      `json:"change_attribute_failure"`
+	ChangeAssociationsSuccess int      `json:"change_associations_success"`
+	ChangeAssociationsFailure int      `json:"change_associations_failure"`
+	Errors                    []string `json:"errors"`
 }
 
 const (
