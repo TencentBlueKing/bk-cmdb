@@ -311,6 +311,17 @@ func (lgc *Logics) ConfirmReport(header http.Header, reports []metadata.Netcolle
 			result.ChangeAttributeSuccess += attrCount
 			lgc.saveHistory(report, true)
 		}
+		if len(report.Associations) > 0 {
+			asstCount, err := lgc.confirmAssociations(header, report)
+			if err != nil {
+				result.ChangeAssociationsSuccess += asstCount
+				result.Errors = append(result.Errors, err.Error())
+				lgc.saveHistory(report, false)
+				continue
+			}
+			result.ChangeAssociationsFailure += asstCount
+			lgc.saveHistory(report, true)
+		}
 	}
 	return &result
 }
@@ -332,11 +343,15 @@ func (lgc *Logics) confirmAttributes(header http.Header, report *metadata.Netcol
 
 	objType := common.GetObjByType(report.ObjectID)
 	cond := condition.CreateCondition()
-
-	cond.Field(common.GetInstNameField(report.ObjectID)).Eq(report.InstKey)
 	if objType == common.BKINnerObjIDObject {
+		cond.Field(common.GetInstNameField(report.ObjectID)).Eq(report.InstKey)
 		cond.Field(common.BKObjIDField).Eq(report.ObjectID)
 		data.Set(common.BKObjIDField, report.ObjectID)
+	}
+
+	if objType == common.BKInnerObjIDHost {
+		cond.Field(common.BKCloudIDField).Eq(report.CloudID)
+		cond.Field(common.BKHostInnerIPField).Eq(report.InstKey)
 	}
 
 	insts, err := lgc.findInst(header, report.ObjectID, &metadata.QueryInput{Condition: cond.ToMapStr()})
@@ -371,6 +386,50 @@ func (lgc *Logics) confirmAttributes(header http.Header, report *metadata.Netcol
 		}
 	}
 	return attrCount, nil
+}
+
+func (lgc *Logics) confirmAssociations(header http.Header, report *metadata.NetcollectReport) (int, error) {
+	asstCount := 0
+	// for _, asst := range report.Associations {
+	// 	objType := common.GetObjByType(report.ObjectID)
+	// 	cond := condition.CreateCondition()
+	// 	if objType == common.BKINnerObjIDObject {
+	// 		cond.Field(common.GetInstNameField(report.ObjectID)).Eq(report.InstKey)
+	// 		cond.Field(common.BKObjIDField).Eq(report.ObjectID)
+	// 	}
+
+	// 	if objType == common.BKInnerObjIDHost {
+	// 		cond.Field(common.BKCloudIDField).Eq(report.CloudID)
+	// 		cond.Field(common.BKHostInnerIPField).Eq(report.InstKey)
+	// 	}
+	// 	insts, err := lgc.findInst(header, report.ObjectID, &metadata.QueryInput{Condition: cond.ToMapStr()})
+	// 	if err != nil {
+	// 		blog.Errorf("[NetDevice][ConfirmReport] find inst failed %v", err)
+	// 		return asstCount, err
+	// 	}
+	// 	blog.V(4).Infof("[NetDevice][ConfirmReport] find inst result: %#v, condition: %#v", insts, cond.ToMapStr())
+	// 	if len(insts) > 0 {
+	// 		inst := insts[0]
+	// 		id, err := inst.Int64(common.GetInstIDField(objectID))
+	// 		if err != nil {
+	// 			return asstCount, err
+	// 		}
+	// 		updateBody := map[string]interface{}{
+	// 			"data":      data,
+	// 			"condition": cond.ToMapStr(),
+	// 		}
+	// 		resp, err := lgc.CoreAPI.ObjectController().Instance().UpdateObject(context.Background(), report.ObjectID, header, updateBody)
+	// 		if err != nil {
+	// 			blog.Errorf("[NetDevice][ConfirmReport] update inst error: %v, %+v", err, updateBody)
+	// 			return asstCount, err
+	// 		}
+	// 		if !resp.Result {
+	// 			blog.Errorf("[NetDevice][ConfirmReport] update inst error: %v, %+v", resp.ErrMsg, updateBody)
+	// 			return asstCount, fmt.Errorf(resp.ErrMsg)
+	// 		}
+	// 	}
+	// }
+	return asstCount, nil
 }
 
 func (lgc *Logics) saveHistory(report *metadata.NetcollectReport, success bool) error {

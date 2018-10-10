@@ -87,7 +87,7 @@ func GetNetDeviceData(header http.Header, apiAddr, deviceIDStr string) ([]interf
 		},
 	}
 
-	url := apiAddr + fmt.Sprintf("/api/%s/netcollect/device/action/search", webCommon.API_VERSION)
+	url := apiAddr + fmt.Sprintf("/api/%s/collector/netcollect/device/action/search", webCommon.API_VERSION)
 	result, err := httpRequest(url, deviceCond, header)
 	if nil != err {
 		blog.Errorf("[Export Net Device] http request error:%v", err)

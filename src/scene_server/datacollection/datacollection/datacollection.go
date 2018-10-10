@@ -115,7 +115,7 @@ func (d *DataCollection) Run() error {
 }
 
 func (d *DataCollection) getNetcollectChanName(defaultAppID string) []string {
-	return []string{"netdevice" + defaultAppID}
+	return []string{"netdevice2"}
 }
 
 func (d *DataCollection) getDiscoverChanName(defaultAppID string) string {
