@@ -1,17 +1,7 @@
-/*
- * Tencent is pleased to support the open source community by making 蓝鲸 available.
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at http://opensource.org/licenses/MIT
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and limitations under the License.
- */
-
-<template lang="html">
+<template>
     <div>
         <div class="up-file upload-file" v-bkloading="{isLoading: isLoading}">
-            <img src="../../common/images/up_file.png">
+            <img src="../../assets/images/up_file.png">
             <input ref="fileInput" type="file" class="fullARea" @change.prevent="handleFile"/>
             <i18n path="Inst['导入提示']" tag="p" :places="{allowType: allowType.join(','), maxSize: maxSize}">
                 <b place="clickUpload">{{$t("Inst['点击上传']")}}</b>
@@ -54,7 +44,7 @@
         <div class="clearfix down-model-content">
             <slot name="download-desc"></slot>
             <a :href="templateUrl" style="text-decoration: none;">
-                <img src="../../common/images/icon/down_model_icon.png" alt="">
+                <img src="../../assets/images/icon/down_model_icon.png">
                 <span class="submit-btn">{{$t("Inst['下载模版']")}}</span>
             </a>
         </div>
@@ -112,11 +102,11 @@
                 let fileInfo = files[0]
                 if (!this.allowTypeRegExp.test(fileInfo.name)) {
                     this.$refs.fileInput.value = ''
-                    this.$alertMsg(this.$t("Inst['文件格式非法']", {allowType: this.allowType.join(',')}))
+                    this.$error(this.$t("Inst['文件格式非法']", {allowType: this.allowType.join(',')}))
                     return false
                 } else if (fileInfo.size / 1024 > this.maxSize) {
                     this.$refs.fileInput.value = ''
-                    this.$alertMsg(this.$t("Inst['文件大小溢出']", {maxSize: this.maxSize}))
+                    this.$error(this.$t("Inst['文件大小溢出']", {maxSize: this.maxSize}))
                     return false
                 } else {
                     this.fileInfo.name = fileInfo.name
@@ -124,7 +114,7 @@
                     let formData = new FormData()
                     formData.append('file', files[0])
                     this.isLoading = true
-                    this.$axios.post(this.importUrl, formData).then(res => {
+                    this.$http.post(this.importUrl, formData, {originalResponse: true, globalError: false}).then(res => {
                         this.uploadResult = Object.assign(this.uploadResult, res.data || {success: null, error: null, update_error: null})
                         if (res.result) {
                             this.uploaded = true
@@ -137,7 +127,7 @@
                         } else {
                             this.failed = true
                             this.fileInfo.status = this.$t("Inst['失败']")
-                            this.$alertMsg(res['bk_error_msg'])
+                            this.$error(res['bk_error_msg'])
                             this.$emit('error', res)
                         }
                         this.$refs.fileInput.value = ''
