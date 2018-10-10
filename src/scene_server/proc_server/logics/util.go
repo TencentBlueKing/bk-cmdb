@@ -29,7 +29,7 @@ func getGseProcNameSpace(appID, moduleID int64) string {
 }
 
 func getTaskID() string {
-	return fmt.Sprintf("cc:gse:task:%s:%s", common.BKSTRIDPrefix, xid.New().String())
+	return fmt.Sprintf("cc:task:gse:%s:%s", common.BKSTRIDPrefix, xid.New().String())
 }
 
 func getGseOpInstKey(moduleID, procID int64) string {
