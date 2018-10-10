@@ -1,0 +1,674 @@
+@charset "utf-8";
+@import "./conf";
+
+/*===================================================*\
+ * bk-form
+\*===================================================*/
+.bk-form {
+  // 行内表单
+  &.bk-inline-form {
+    display: inline-block;
+    .bk-form-item {
+      display: inline-block;
+      margin-bottom: 0;
+      margin-left: 10px;
+      &:first-child {
+        margin-left: 0;
+      }
+      +.bk-form-item {
+        margin-top: 0;
+      }
+    }
+    .bk-form-inline-item {
+      display: inline-block;
+      vertical-align: top;
+      &.is-required {
+        .bk-label {
+          position: relative;
+        }
+        .bk-label:after {
+            content: '*';
+            color: #ff5656;
+            position: absolute;
+            margin: 3px -7px 0 2px;
+            display: inline-block;
+            vertical-align: middle;
+            right: 18px;
+        }
+      }
+    }
+    .bk-label {
+      width: auto;
+      display: inline-block;
+      padding: 10px 15px 10px 0;
+    }
+    &.is-required {
+      > .bk-label {
+        &:after {
+          right: 5px;
+        }
+      }
+    }
+
+    .bk-form-content {
+      display: inline-block;
+      margin-left: 0;
+    }
+
+  }
+
+  // 垂直表单
+  &.bk-form-vertical {
+    .bk-label {
+      width: auto;
+      text-align: left;
+    }
+    .bk-form-content {
+      clear: both;
+      margin-left: 0 !important;
+    }
+    .bk-form-item {
+      & + .bk-form-item {
+        margin-top: 8px;
+      }
+      &.bk-form-action {
+        margin-top: 20px;
+      }
+    }
+    .bk-form-tip {
+      padding: 0;
+      margin: 10px 0 0 0;
+      position: relative;
+      height: auto;
+      line-height: 1;
+      left: 0;
+      .bk-tip-text {
+        float: none;
+        vertical-align: middle;
+      }
+      .bk-badge {
+        margin-right: 5px;
+      }
+    }
+  }
+
+  .bk-label{
+    width: 150px;
+    text-align: right;
+    vertical-align: middle;
+    float: left;
+    font-size: 14px;
+    font-weight: normal;
+    color: #666;
+    line-height: 1;
+    box-sizing: border-box;
+    padding: 10px 28px 10px 0;
+  }
+
+  .bk-form-content{
+    width: auto;
+    margin-left: 150px;
+    position: relative;
+
+    > .bk-tip-text {
+      font-size: 14px;
+      color: $fnMainColor;
+      margin: 10px 0 0 0;
+    }
+
+    > .bk-form-tip {
+      padding: 0;
+      margin: 10px 0 0 0;
+      position: relative;
+      height: auto;
+      line-height: 1;
+      left: 0;
+      .bk-tip-text {
+        float: none;
+        vertical-align: middle;
+      }
+      .bk-badge {
+        margin-right: 5px;
+      }
+    }
+  }
+
+  ::placeholder{
+    color: $fnMinorColor;
+  }
+
+  //清浮动
+  &::after,
+  .bk-form-item::before {
+    display: table;
+    content: "";
+    clear: both;
+    visibility: hidden;
+    font-size: 0;
+  }
+
+  input:-webkit-autofill, textarea:-webkit-autofill, select:-webkit-autofill{
+    background: #fff !important;
+  }
+}
+
+.bk-form-item{
+  position: relative;
+  label{
+    margin-bottom: 0;
+  }
+  +.bk-form-item{
+    margin-top: 20px;
+  }
+  &.is-required{
+    .bk-label{
+      position: relative;
+      &:after{
+        content: '*';
+        color: $dangerColor;
+        position: relative;
+        margin: 2px -7px 0 2px;
+        display: inline-block;
+        vertical-align: middle;
+      }
+    }
+  }
+
+  &.is-readonly{
+    input[type="text"],
+    input[type="password"],
+    textarea,
+    select{
+      background-color: #fafafa;
+    }
+  }
+  &.is-disabled{
+    input[type="text"],
+    input[type="password"],
+    textarea,
+    select{
+      background-color: #fafafa;
+    }
+  }
+
+  &.is-danger,
+  &.is-error {
+    input[type="text"],
+    input[type="password"],
+    textarea,
+    select{
+      border-color: $dangerColor;
+    }
+  }
+
+  &.is-warning{
+    input[type="text"],
+    input[type="password"],
+    textarea,
+    select{
+      border-color: $warningColor;
+    }
+  }
+
+  &.is-success{
+    input[type="text"],
+    input[type="password"],
+    textarea,
+    select{
+      border-color: $successColor;
+    }
+  }
+
+  input.bk-success,
+  select.bk-success,
+  textarea.bk-success,
+  input.is-success,
+  select.is-success,
+  textarea.is-success {
+    + .bk-form-tip {
+      .bk-tip-text {
+        color: $successColor;
+      }
+    }
+  }
+
+  input.bk-error,
+  select.bk-error,
+  textarea.bk-error,
+  input.is-danger,
+  select.is-danger,
+  textarea.is-danger {
+    border-color: $dangerColor;
+    background-color: #fff4f4;
+    color: $dangerColor;
+    &::placeholder{
+      color: $dangerColor;
+    }
+
+    + .bk-form-tip {
+      .bk-tip-text {
+        color: $dangerColor;
+      }
+    }
+  }
+
+}
+
+
+.bk-form-input,
+.bk-form-password,
+.bk-form-select,
+.bk-form-textarea{
+  box-sizing: border-box;
+  height: 36px;
+  line-height: 1;
+  color: #666;
+  background-color: #fff;
+  border-radius: 2px;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid $formBorderColor;
+  padding: 0 10px;
+  font-size: 14px;
+  text-align: left;
+  vertical-align: middle;
+  outline: none;
+  resize:none;
+  transition: border linear .2s;
+  &:focus{
+    border-color: $primaryColor !important;
+    background-color: #fff !important;
+    color: $fnMainColor !important;
+    &::placeholder{
+      color: $fnMinorColor !important;
+    }
+  }
+  &::placeholder{
+    color: $fnMinorColor;
+  }
+
+  &[disabled],
+  &[readonly]{
+    background-color: #fafafa;
+  }
+  &[disabled]{
+    color: #ccc;
+  }
+}
+
+.bk-form-select{
+  line-height: 32px;
+  padding-left: 0\9\0;
+  padding-right: 0\9\0;
+}
+
+.bk-form-textarea{
+  min-height: 70px;
+  padding: 10px;
+}
+
+.bk-form-mini{
+  .bk-form-input,
+  .bk-form-password,
+  .bk-form-select,
+  .bk-form-textarea{
+    height: 24px;
+    font-size: 12px;
+  }
+}
+
+.bk-form-small{
+  .bk-form-input,
+  .bk-form-password,
+  .bk-form-select,
+  .bk-form-textarea{
+    height: 32px;
+    font-size: 12px;
+  }
+}
+
+.bk-form-large{
+  .bk-form-input,
+  .bk-form-password,
+  .bk-form-select,
+  .bk-form-textarea{
+    height: 42px;
+    font-size: 14px;
+  }
+}
+
+.bk-form-larger{
+  .bk-form-input,
+  .bk-form-password,
+  .bk-form-select,
+  .bk-form-textarea{
+    height: 54px;
+    font-size: 18px;
+  }
+}
+
+.bk-form-tip{
+  height: 36px;
+  line-height: 36px;
+  padding: 0 10px 0 35px;
+  position: relative;
+  .bk-badge{
+    vertical-align: middle;
+  }
+  .bk-tip-text{
+    float: left;
+    font-size: 14px;
+    color: $fnMainColor;
+    display: inline-block;
+    padding: 0;
+    margin: 0;
+    white-space: nowrap;
+  }
+  position: absolute;
+  left: 100%;
+  top: 0;
+}
+
+.bk-form-radio{
+  font-size: 14px;
+  color: #666666;
+  margin-right: 30px;
+  line-height: 18px;
+  display: inline-block;
+  padding: 7px 0;
+
+  .bk-radio-text{
+    font-style: normal;
+    font-weight: normal;
+    cursor: pointer;
+    vertical-align: middle;
+  }
+
+  input[type=radio]{
+    width: 18px;
+    height: 18px;
+    outline: none;
+    visibility: visible;
+    cursor: pointer;
+    vertical-align: middle;
+    background-color: #fff;
+    background-image: url('#{$imagePath}/bk_check.png');
+    display: inline-block;
+    background-position: 0 0;
+    -webkit-appearance: none;
+
+    margin: 0 5px 0 0;
+
+    &:checked {
+      background-position: -33px 0;
+      &[disabled]{
+        color: #ccc;
+        background-position: -99px 0;
+      }
+    }
+    &[disabled]{
+      background-position: -66px 0;
+      cursor: default;
+      & + .bk-radio-text{
+        color: #ccc;
+        cursor: default;
+      }
+    }
+  }
+
+  &.bk-radio-small{
+    input[type=radio]{
+      width: 14px;
+      height: 14px;
+      background-position: 0 -33px;
+
+      &:checked {
+        background-position: -33px -33px;
+        &[disabled]{
+          background-position: -99px -33px;
+        }
+      }
+      &[disabled]{
+        background-position: -66px -33px;
+      }
+    }
+  }
+}
+
+.bk-form-checkbox{
+  font-size: 14px;
+  color: #666666;
+  margin-right: 30px;
+  line-height: 18px;
+  display: inline-block;
+  padding: 7px 0;
+
+  .bk-checkbox-text{
+    font-style: normal;
+    font-weight: normal;
+    cursor: pointer;
+    vertical-align: middle;
+  }
+
+  input[type=checkbox]{
+    width: 18px;
+    height: 18px;
+    outline: none;
+    visibility: visible;
+    cursor: pointer;
+    vertical-align: middle;
+    background: #fff;
+    background-image: url('#{$imagePath}/bk_check.png');
+    display: inline-block;
+    background-position: 0 -62px;
+    -webkit-appearance: none;
+    margin: 0 5px 0 0;
+
+    &:checked {
+      background-position: -33px -62px;
+      &[disabled]{
+        color: #ccc;
+        background-position: -99px -62px;
+      }
+    }
+    &[disabled]{
+      background-position: -66px -62px;
+      cursor: default;
+      & + .bk-checkbox-text{
+        color: #ccc;
+        cursor: default;
+      }
+    }
+  }
+
+  &.bk-checkbox-small{
+    input[type=checkbox]{
+      width: 14px;
+      height: 14px;
+      background-position: 0 -95px;
+
+      &:checked {
+        background-position: -33px -95px;
+        &[disabled]{
+          background-position: -99px -95px;
+        }
+      }
+      &[disabled]{
+        background-position: -66px -95px;
+      }
+    }
+  }
+}
+
+.bk-radio{
+    box-sizing: border-box;
+    display: inline-block;
+    cursor:pointer;
+    height: 34px;
+    padding: 8px 0;
+    position:relative;
+    &.bk-radio-small{
+        input[type='radio']{
+            width: 14px;
+            height: 14px;
+        }
+        .bk-radio-control{
+            width: 14px;
+            height: 14px;
+        }
+        .bk-radio-text{
+            line-height: 14px;
+        }
+    }
+    input[type='radio']{
+        width: 18px;
+        height: 18px;
+        opacity: 0;
+        vertical-align: middle;
+    }
+    .bk-radio-control{
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        border: 1px solid #cdcdcd;
+        box-sizing: border-box;
+        display: inline-block;
+        position: absolute;
+        left:0;
+        top: 50%;
+        margin-top: -9px;
+    }
+    .bk-radio-text{
+        color: #666;
+        font-size: 12px;
+        line-height: 18px;
+        padding: 0 32px 0 7px;
+        vertical-align: top;
+    }
+    input:checked ~ .bk-radio-control, input[checked="checked"] ~ .bk-radio-control{
+        &:after{
+            content: "";
+            width: 50%;
+            height:50%;
+            background:url('#{$imagePath}/radio.png');
+            background-size: cover;
+            border-radius: 80px;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%,-50%);
+            -ms-transform: translate(-50%,-50%);
+            -moz-transform: translate(-50%,-50%);
+            -webkit-transform: translate(-50%,-50%);
+        }
+    }
+    input[disabled] ~ .bk-radio-control{
+        cursor:not-allowed;
+    }
+    input[disabled] ~ .bk-radio-text{
+       color:#ccc;
+       cursor:not-allowed;
+    }
+    input[disabled][checked] ~ .bk-radio-control{
+        &:after{
+            content: "";
+            width: 50%;
+            height: 50%;
+            background: #ccc;
+            border-radius: 80px;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%,-50%);
+            -ms-transform: translate(-50%,-50%);
+            -moz-transform: translate(-50%,-50%);
+            -webkit-transform: translate(-50%,-50%);
+        }
+   }
+}
+
+.bk-checkbox{
+    box-sizing: border-box;
+    cursor:pointer;
+    height: 34px;
+    position:relative;
+    display: inline-block;
+    padding: 8px 0;
+    &.bk-checkbox-small{
+        input[type='checkbox']{
+            width: 14px;
+            height: 14px;
+        }
+        .bk-checkbox-control{
+            width: 14px;
+            height: 14px;
+        }
+        .bk-checkbox-text{
+            line-height: 14px;
+        }
+    }
+    input[type='checkbox']{
+        width: 18px;
+        height: 18px;
+        opacity: 0;
+    }
+    .bk-checkbox-control{
+        width: 18px;
+        height: 18px;
+        border: 1px solid #cdcdcd;
+        box-sizing: border-box;
+        display: inline-block;
+        position: absolute;
+        left:0;
+        top: 50%;
+        margin-top: -9px;
+    }
+    .bk-checkbox-text{
+        color: #666;
+        font-size: 12px;
+        line-height: 18px;
+        padding: 0 32px 0 7px;
+        vertical-align: top;
+    }
+    input:checked ~ .bk-checkbox-control,input[checked="checked"] ~ .bk-checkbox-control{
+        &:after{
+            content: "";
+            width: 50%;
+            height:50%;
+            background:url('#{$imagePath}/checkbox.png') no-repeat;
+            background-size:cover;
+            background-position:center center;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%,-50%);
+            -ms-transform: translate(-50%,-50%);
+            -moz-transform: translate(-50%,-50%);
+            -webkit-transform: translate(-50%,-50%);
+        }
+    }
+    input[disabled] ~ .bk-checkbox-control{
+        cursor:not-allowed;
+    }
+    input[disabled] ~ .bk-checkbox-text{
+        color:#ccc;
+        cursor:not-allowed;
+    }
+    input[disabled][checked] ~ .bk-checkbox-control{
+        &:after{
+            content: "";
+            width: 50%;
+            height: 50%;
+            background:url('#{$imagePath}/checkbox-disabled.png') no-repeat;
+            background-size:cover;
+            background-position:center center;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%,-50%);
+            -ms-transform: translate(-50%,-50%);
+            -moz-transform: translate(-50%,-50%);
+            -webkit-transform: translate(-50%,-50%);
+        }
+   }
+}
