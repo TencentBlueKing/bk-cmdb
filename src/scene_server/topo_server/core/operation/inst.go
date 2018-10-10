@@ -609,6 +609,12 @@ func (c *commonInst) FindInstChildTopo(params types.ContextParams, obj model.Obj
 	if nil != err {
 		return 0, nil, err
 	}
+
+	assts, err := c.asst.SearchObjectAssociation(params, obj.GetID())
+	if nil != err {
+		return 0, nil, err
+	}
+
 	//fmt.Println("cond:", obj.GetID(), query, len(insts))
 	tmpResults := map[string]*commonInstTopo{}
 	for _, inst := range insts {
@@ -620,6 +626,16 @@ func (c *commonInst) FindInstChildTopo(params types.ContextParams, obj model.Obj
 
 		for _, child := range childs {
 
+			asstAttributeID := ""
+			asstName := ""
+			for _, asst := range assts {
+				if asst.AsstObjID == child.Object.GetID() {
+					asstAttributeID = asst.ObjectAttID
+					asstName = asst.AsstName
+					break
+				}
+			}
+
 			commonInst, exists := tmpResults[child.Object.GetID()]
 			if !exists {
 				commonInst = &commonInstTopo{}
@@ -627,6 +643,8 @@ func (c *commonInst) FindInstChildTopo(params types.ContextParams, obj model.Obj
 				commonInst.ObjIcon = child.Object.GetIcon()
 				commonInst.ObjID = child.Object.GetID()
 				commonInst.Children = []metatype.InstNameAsst{}
+				commonInst.AsstName = asstName
+				commonInst.AsstID = asstAttributeID
 				tmpResults[child.Object.GetID()] = commonInst
 			}
 
@@ -651,6 +669,8 @@ func (c *commonInst) FindInstChildTopo(params types.ContextParams, obj model.Obj
 				instAsst.ObjectName = child.Object.GetName()
 				instAsst.ObjIcon = child.Object.GetIcon()
 				instAsst.ObjID = child.Object.GetID()
+				instAsst.AsstName = asstName
+				instAsst.AsstID = asstAttributeID
 
 				tmpResults[child.Object.GetID()].Children = append(tmpResults[child.Object.GetID()].Children, instAsst)
 			}
@@ -689,6 +709,19 @@ func (c *commonInst) FindInstParentTopo(params types.ContextParams, obj model.Ob
 		}
 
 		for _, parent := range parents {
+			asstAttributeID := ""
+			asstName := ""
+			assts, err := c.asst.SearchObjectAssociation(params, parent.Object.GetID())
+			if nil != err {
+				return 0, nil, err
+			}
+			for _, asst := range assts {
+				if asst.AsstObjID == obj.GetID() {
+					asstAttributeID = asst.ObjectAttID
+					asstName = asst.AsstName
+					break
+				}
+			}
 
 			commonInst, exists := tmpResults[parent.Object.GetID()]
 			if !exists {
@@ -697,6 +730,8 @@ func (c *commonInst) FindInstParentTopo(params types.ContextParams, obj model.Ob
 				commonInst.ObjIcon = parent.Object.GetIcon()
 				commonInst.ObjID = parent.Object.GetID()
 				commonInst.Children = []metatype.InstNameAsst{}
+				commonInst.AsstID = asstAttributeID
+				commonInst.AsstName = asstName
 				tmpResults[parent.Object.GetID()] = commonInst
 			}
 
@@ -719,6 +754,8 @@ func (c *commonInst) FindInstParentTopo(params types.ContextParams, obj model.Ob
 				instAsst.ObjectName = parent.Object.GetName()
 				instAsst.ObjIcon = parent.Object.GetIcon()
 				instAsst.ObjID = parent.Object.GetID()
+				instAsst.AsstID = asstAttributeID
+				instAsst.AsstName = asstName
 
 				tmpResults[parent.Object.GetID()].Children = append(tmpResults[parent.Object.GetID()].Children, instAsst)
 			}
