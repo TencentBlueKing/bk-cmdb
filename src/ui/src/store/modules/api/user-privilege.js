@@ -8,14 +8,22 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-import { $Axios, $axios } from '@/api/axios'
+import $http from '@/api'
 
 const state = {
-
+    privilege: {
+        'model_config': {},
+        'sys_config': {
+            'global_busi': null,
+            'back_config': null
+        }
+    },
+    roles: []
 }
 
 const getters = {
-
+    privilege: state => state.privilege,
+    roles: state => state.roles
 }
 
 const actions = {
@@ -24,13 +32,12 @@ const actions = {
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 开发商账号
      * @param {String} bkObjId 对象id
      * @param {String} bkPropertyId 属性id
      * @return {promises} promises 对象
      */
-    getRolePrivilege ({ commit, state, dispatch }, { bkSupplierAccount, bkObjId, bkPropertyId }) {
-        return $axios.get(`topo/privilege/${bkSupplierAccount}/${bkObjId}/${bkPropertyId}`)
+    getRolePrivilege ({ commit, state, dispatch, rootGetters }, { bkObjId, bkPropertyId }) {
+        return $http.get(`topo/privilege/${rootGetters.supplierAccount}/${bkObjId}/${bkPropertyId}`)
     },
 
     /**
@@ -38,14 +45,13 @@ const actions = {
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 开发商账号
      * @param {String} bkObjId 对象id
      * @param {String} bkPropertyId 属性id
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    bindRolePrivilege ({ commit, state, dispatch }, { bkSupplierAccount, bkObjId, bkPropertyId, params }) {
-        return $axios.post(`topo/privilege/${bkSupplierAccount}/${bkObjId}/${bkPropertyId}`, params)
+    bindRolePrivilege ({ commit, state, dispatch, rootGetters }, { bkObjId, bkPropertyId, params, config }) {
+        return $http.post(`topo/privilege/${rootGetters.supplierAccount}/${bkObjId}/${bkPropertyId}`, params, config)
     },
 
     /**
@@ -53,12 +59,11 @@ const actions = {
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 开发商账号
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    createUserGroup ({ commit, state, dispatch }, { bkSupplierAccount, params }) {
-        return $axios.post(`topo/privilege/group/${bkSupplierAccount}`, params)
+    createUserGroup ({ commit, state, dispatch, rootGetters }, { params, config }) {
+        return $http.post(`topo/privilege/group/${rootGetters.supplierAccount}`, params, config)
     },
 
     /**
@@ -66,13 +71,12 @@ const actions = {
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 开发商账号
      * @param {String} bkGroupId 分组id
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    updateUserGroup ({ commit, state, dispatch }, { bkSupplierAccount, bkGroupId, params }) {
-        return $axios.put(`topo/privilege/group/${bkSupplierAccount}/${bkGroupId}`, params)
+    updateUserGroup ({ commit, state, dispatch, rootGetters }, { bkGroupId, params, config }) {
+        return $http.put(`topo/privilege/group/${rootGetters.supplierAccount}/${bkGroupId}`, params, config)
     },
 
     /**
@@ -80,12 +84,11 @@ const actions = {
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 开发商账号
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    searchUserGroup ({ commit, state, dispatch }, { bkSupplierAccount, params }) {
-        return $axios.post(`topo/privilege/group/${bkSupplierAccount}/search`, params)
+    searchUserGroup ({ commit, state, dispatch, rootGetters }, { params, config }) {
+        return $http.post(`topo/privilege/group/${rootGetters.supplierAccount}/search`, params, config)
     },
 
     /**
@@ -93,12 +96,11 @@ const actions = {
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 开发商账号
      * @param {String} bkGroupId 分组id
      * @return {promises} promises 对象
      */
-    deleteUserGroup ({ commit, state, dispatch }, { bkSupplierAccount, params }) {
-        return $axios.delete(`topo/privilege/group/${bkSupplierAccount}/${bkGroupId}`)
+    deleteUserGroup ({ commit, state, dispatch, rootGetters }, { bkGroupId }) {
+        return $http.delete(`topo/privilege/group/${rootGetters.supplierAccount}/${bkGroupId}`)
     },
 
     /**
@@ -106,12 +108,11 @@ const actions = {
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 开发商账号
      * @param {String} bkGroupId 分组id
      * @return {promises} promises 对象
      */
-    searchUserPrivilege ({ commit, state, dispatch }, { bkSupplierAccount, bkGroupId }) {
-        return $axios.get(`topo/privilege/group/detail/${bkSupplierAccount}/${bkGroupId}`)
+    searchUserPrivilege ({ commit, state, dispatch, rootGetters }, { bkGroupId, config }) {
+        return $http.get(`topo/privilege/group/detail/${rootGetters.supplierAccount}/${bkGroupId}`, config)
     },
 
     /**
@@ -119,12 +120,13 @@ const actions = {
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 开发商账号
      * @param {String} userName 用户名
      * @return {promises} promises 对象
      */
-    getUserPrivilege ({ commit, state, dispatch }, { bkSupplierAccount, userName }) {
-        return $axios.get(`topo/privilege/group/detail/${bkSupplierAccount}/${userName}`)
+    getUserPrivilege ({ commit, state, dispatch, rootGetters }, httpConfig) {
+        return $http.get(`topo/privilege/user/detail/${rootGetters.supplierAccount}/${rootGetters.userName}`, httpConfig).then(privilege => {
+            commit('setUserPrivilege', privilege)
+        })
     },
 
     /**
@@ -132,17 +134,21 @@ const actions = {
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 开发商账号
      * @param {String} bkGroupId 分组id
      * @return {promises} promises 对象
      */
-    updateGroupPrivilege ({ commit, state, dispatch }, { bkSupplierAccount, bkGroupId }) {
-        return $axios.post(`topo/privilege/group/detail/${bkSupplierAccount}/${bkGroupId}`, params)
+    updateGroupPrivilege ({ commit, state, dispatch, rootGetters }, { bkGroupId, params, config }) {
+        return $http.post(`topo/privilege/group/detail/${rootGetters.supplierAccount}/${bkGroupId}`, params, config)
     }
 }
 
 const mutations = {
-
+    setUserPrivilege (state, privilege) {
+        state.privilege = privilege
+    },
+    setRoles (state, roles) {
+        state.roles = roles
+    }
 }
 
 export default {

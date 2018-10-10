@@ -30,6 +30,10 @@ import (
 	// "os"
 )
 
+var (
+	maxExecuteTime time.Duration = time.Second * 10
+)
+
 type MongoConfig struct {
 	Address      string
 	User         string
@@ -170,6 +174,7 @@ func (m *MgoCli) GetOneByCondition(cName string, fields []string, condiction int
 	if 0 < len(fieldmap) {
 		query.Select(fieldmap)
 	}
+	query.SetMaxTime(maxExecuteTime)
 	return query.One(result)
 }
 
@@ -203,6 +208,7 @@ func (m *MgoCli) GetMutilByCondition(cName string, fields []string, condiction i
 	if 0 < limit {
 		query = query.Limit(limit)
 	}
+	query.SetMaxTime(maxExecuteTime)
 	err := query.All(result)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
@@ -218,7 +224,7 @@ func (m *MgoCli) GetCntByCondition(cName string, condition interface{}) (cnt int
 	m.session.Refresh()
 	c := m.session.DB(m.dbName).C(cName)
 	count := 0
-	count, err = c.Find(condition).Count()
+	count, err = c.Find(condition).SetMaxTime(maxExecuteTime).Count()
 	if err != nil {
 		return count, err
 	}
