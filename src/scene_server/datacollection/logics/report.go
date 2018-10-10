@@ -66,14 +66,14 @@ func (lgc *Logics) buildSearchCond(header http.Header, param metadata.ParamSearc
 	if param.CloudID >= 0 {
 		cond.Field(common.BKCloudIDField).Eq(param.CloudID)
 	}
-	if param.CloudName != "" {
+	cloudIDs := []int64{}
+	if param.CloudName != "" || param.Query != "" {
 		cloudCond := condition.CreateCondition()
 		cloudCond.Field(common.BKCloudNameField).Like(param.CloudName)
 		clouds, err := lgc.findInst(header, common.BKInnerObjIDPlat, &metadata.QueryInput{Condition: cloudCond.ToMapStr()})
 		if err != nil {
 			return nil, err
 		}
-		cloudIDs := []int64{}
 		for _, cloud := range clouds {
 			id, err := cloud.Int64(common.BKCloudIDField)
 			if err != nil {
@@ -81,6 +81,8 @@ func (lgc *Logics) buildSearchCond(header http.Header, param metadata.ParamSearc
 			}
 			cloudIDs = append(cloudIDs, id)
 		}
+	}
+	if param.CloudName != "" {
 		cond.Field(common.BKCloudIDField).In(cloudIDs)
 	}
 	if param.Action != "" {
@@ -91,6 +93,24 @@ func (lgc *Logics) buildSearchCond(header http.Header, param metadata.ParamSearc
 	}
 	if param.InnerIP != "" {
 		cond.Field(common.BKHostInnerIPField).Like(param.InnerIP)
+	}
+	if param.Query != "" {
+		cond.Field(common.BKDBOR).Eq([]map[string]interface{}{
+			{
+				common.BKHostInnerIPField: map[string]interface{}{
+					common.BKDBLIKE: param.InnerIP,
+				},
+			},
+			{
+				common.BKCloudIDField: map[string]interface{}{
+					common.BKDBIN: cloudIDs,
+				},
+			},
+		})
+	}
+	if len(param.LastTime) >= 2 {
+		cond.Field(common.LastTimeField).Gte(param.LastTime[0])
+		cond.Field(common.LastTimeField).Lte(param.LastTime[1])
 	}
 	return cond, nil
 }

@@ -58,19 +58,25 @@ type RspNetcollectorSearch struct {
 }
 
 type Netcollector struct {
-	CloudID    int64              `json:"bk_cloud_id"`
-	CloudName  string             `json:"bk_cloud_name"`
-	InnerIP    string             `json:"bk_host_innerip"`
-	Status     NetcollectorStatus `json:"status"`
-	DeployTime time.Time          `json:"deploy_time"`
-	Version    string             `json:"version"`
-	Config     NetcollectConfig   `json:"config"`
+	CloudID       int64              `json:"bk_cloud_id"`
+	CloudName     string             `json:"bk_cloud_name"`
+	InnerIP       string             `json:"bk_host_innerip"`
+	Status        NetcollectorStatus `json:"status"`
+	DeployTime    time.Time          `json:"deploy_time"`
+	Version       string             `json:"version"`
+	LatestVersion string             `json:"latest_ersion"`
+	ReportTotal   int64              `json:"report_total"`
+	Config        NetcollectConfig   `json:"config"`
 }
 
 type NetcollectorConfig struct {
 	CloudID int64            `json:"bk_cloud_id" bson:"bk_cloud_id" `
 	InnerIP string           `json:"bk_host_innerip" bson:"bk_host_innerip"`
 	Config  NetcollectConfig `json:"config" bson:"config"`
+}
+
+type ParamNetcollectDiscover struct {
+	Collectors []NetcollectorConfig `json:"collectors"`
 }
 
 type NetcollectorStatus struct {
@@ -98,12 +104,14 @@ type NetcollectConfig struct {
 }
 
 type ParamSearchNetcollectReport struct {
-	Action    string   `json:"action"`
-	ObjectID  string   `json:"bk_object_id"`
-	CloudName string   `json:"bk_cloud_name"`
-	CloudID   int64    `json:"bk_cloud_id"`
-	InnerIP   string   `json:"bk_host_innerip"`
-	Page      BasePage `json:"page"`
+	Action    string       `json:"action"`
+	ObjectID  string       `json:"bk_object_id"`
+	Query     string       `json:"query"`
+	CloudName string       `json:"bk_cloud_name"`
+	CloudID   int64        `json:"bk_cloud_id"`
+	InnerIP   string       `json:"bk_host_innerip"`
+	LastTime  []types.Time `json:"last_time"`
+	Page      BasePage     `json:"page"`
 }
 
 type NetcollectReportSummary struct {

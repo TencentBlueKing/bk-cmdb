@@ -33,8 +33,10 @@ func (lgc *Logics) SearchCollector(cond metadata.ParamNetcollectorSearch) (int64
 			ConfigStatus:    metadata.CollectorConfigStatusNormal,
 			ReportStatus:    metadata.CollectorReportStatusNormal,
 		},
-		DeployTime: time.Now(),
-		Version:    "",
+		DeployTime:    time.Now(),
+		Version:       "1.0.0",
+		LatestVersion: "1.0.2",
+		ReportTotal:   100,
 		Config: metadata.NetcollectConfig{
 			ScanRange: nil,
 			Period:    "",
