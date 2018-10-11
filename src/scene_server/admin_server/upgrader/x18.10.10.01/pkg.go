@@ -23,22 +23,22 @@ func init() {
 func upgrade(db storage.DI, conf *upgrader.Config) (err error) {
 	err = addProcOpTaskTable(db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x08_09_17_01] addProcOpTaskTable error  %s", err.Error())
+		blog.Errorf("[upgrade x18_10_10_01] addProcOpTaskTable error  %s", err.Error())
 		return err
 	}
 	err = addProcInstanceModelTable(db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x08_09_17_01] addProcInstanceModelTable error  %s", err.Error())
+		blog.Errorf("[upgrade x18_10_10_01] addProcInstanceModelTable error  %s", err.Error())
 		return err
 	}
 	err = addProcInstanceDetailTable(db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x08_09_17_01] addProcInstanceDetailTable error  %s", err.Error())
+		blog.Errorf("[upgrade x18_10_10_01] addProcInstanceDetailTable error  %s", err.Error())
 		return err
 	}
 	err = addProcFreshInstance(db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x08_09_17_01] addProcFreshInstance error  %s", err.Error())
+		blog.Errorf("[upgrade x18_10_10_01] addProcFreshInstance error  %s", err.Error())
 		return err
 	}
 	return
