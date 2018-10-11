@@ -32,33 +32,21 @@ const (
 )
 
 type SearchAssociationTypeRequest struct {
-	Page struct {
-		Start int    `json:"start"`
-		Limit int    `json:"limit"`
-		Sort  string `json:"sort"`
-	} `json:"page"`
+	BasePage  `json:"page"`
 	Condition map[string]interface{} `json:"condition"`
 }
 
 type SearchAssociationTypeResult struct {
-	BaseResp struct {
-		Result bool   `json:"result"`
-		Code   int    `json:"bk_error_code"`
-		ErrMsg string `json:"bk_error_msg"`
-	} `json",inline"`
-	Data struct {
+	BaseResp `json:",inline"`
+	Data     struct {
 		Count int                `json:"count"`
 		Info  []*AssociationType `json:"info"`
 	} `json:"data"`
 }
 
 type CreateAssociationTypeResult struct {
-	BaseResp struct {
-		Result bool   `json:"result"`
-		Code   int    `json:"bk_error_code"`
-		ErrMsg string `json:"bk_error_msg"`
-	} `json",inline"`
-	Data struct {
+	BaseResp `json:",inline"`
+	Data     struct {
 		Id int `json:"id"`
 	} `json:"data"`
 }
@@ -71,21 +59,13 @@ type UpdateAssociationTypeRequest struct {
 }
 
 type UpdateAssociationTypeResult struct {
-	BaseResp struct {
-		Result bool   `json:"result"`
-		Code   int    `json:"bk_error_code"`
-		ErrMsg string `json:"bk_error_msg"`
-	} `json",inline"`
-	Data string `json:"data"`
+	BaseResp `json:",inline"`
+	Data     string `json:"data"`
 }
 
 type DeleteAssociationTypeResult struct {
-	BaseResp struct {
-		Result bool   `json:"result"`
-		Code   int    `json:"bk_error_code"`
-		ErrMsg string `json:"bk_error_msg"`
-	} `json",inline"`
-	Data string `json:"data"`
+	BaseResp `json:",inline"`
+	Data     string `json:"data"`
 }
 
 type SearchAssociationObjectRequest struct {
@@ -93,21 +73,13 @@ type SearchAssociationObjectRequest struct {
 }
 
 type SearchAssociationObjectResult struct {
-	BaseResp struct {
-		Result bool   `json:"result"`
-		Code   int    `json:"bk_error_code"`
-		ErrMsg string `json:"bk_error_msg"`
-	} `json",inline"`
-	Data []*Association `json:"data"`
+	BaseResp `json:",inline"`
+	Data     []*Association `json:"data"`
 }
 
 type CreateAssociationObjectResult struct {
-	BaseResp struct {
-		Result bool   `json:"result"`
-		Code   int    `json:"bk_error_code"`
-		ErrMsg string `json:"bk_error_msg"`
-	} `json",inline"`
-	Data struct {
+	BaseResp `json:",inline"`
+	Data     struct {
 		Id int `json:"id"`
 	} `json:"data"`
 }
@@ -117,21 +89,13 @@ type UpdateAssociationObjectRequest struct {
 }
 
 type UpdateAssociationObjectResult struct {
-	BaseResp struct {
-		Result bool   `json:"result"`
-		Code   int    `json:"bk_error_code"`
-		ErrMsg string `json:"bk_error_msg"`
-	} `json",inline"`
-	Data string `json:"data"`
+	BaseResp `json:",inline"`
+	Data     string `json:"data"`
 }
 
 type DeleteAssociationObjectResult struct {
-	BaseResp struct {
-		Result bool   `json:"result"`
-		Code   int    `json:"bk_error_code"`
-		ErrMsg string `json:"bk_error_msg"`
-	} `json",inline"`
-	Data string `json:"data"`
+	BaseResp `json:",inline"`
+	Data     string `json:"data"`
 }
 
 type SearchAssociationInstRequest struct {
@@ -139,12 +103,8 @@ type SearchAssociationInstRequest struct {
 }
 
 type SearchAssociationInstResult struct {
-	BaseResp struct {
-		Result bool   `json:"result"`
-		Code   int    `json:"bk_error_code"`
-		ErrMsg string `json:"bk_error_msg"`
-	} `json",inline"`
-	Data []*InstAsst `json:"data"`
+	BaseResp `json:",inline"`
+	Data     []*InstAsst `json:"data"`
 }
 
 type CreateAssociationInstRequest struct {
@@ -153,12 +113,8 @@ type CreateAssociationInstRequest struct {
 	AsstInstId   string `json:"bk_asst_inst_id"`
 }
 type CreateAssociationInstResult struct {
-	BaseResp struct {
-		Result bool   `json:"result"`
-		Code   int    `json:"bk_error_code"`
-		ErrMsg string `json:"bk_error_msg"`
-	} `json",inline"`
-	Data struct {
+	BaseResp `json:",inline"`
+	Data     struct {
 		Id int `json:"id"`
 	} `json:"data"`
 }
@@ -170,12 +126,8 @@ type DeleteAssociationInstRequest struct {
 }
 
 type DeleteAssociationInstResult struct {
-	BaseResp struct {
-		Result bool   `json:"result"`
-		Code   int    `json:"bk_error_code"`
-		ErrMsg string `json:"bk_error_msg"`
-	} `json",inline"`
-	Data string `json:"data"`
+	BaseResp `json:",inline"`
+	Data     string `json:"data"`
 }
 
 // 关联类型
