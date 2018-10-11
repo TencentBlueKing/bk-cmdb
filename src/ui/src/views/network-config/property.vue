@@ -50,8 +50,10 @@
         :close-icon="false"
         :width="424">
             <div slot="content">
-                <label>
-                    <span>{{$t('NetworkDiscovery["所属设备"]')}}<span class="color-danger">*</span></span>
+                <div>
+                    <label class="label first">
+                        <span>{{$t('NetworkDiscovery["所属设备"]')}}<span class="color-danger">*</span></span>
+                    </label>
                     <bk-selector
                         :list="createDialog.deviceList"
                         :searchable="true"
@@ -62,24 +64,29 @@
                     ></bk-selector>
                     <input type="text" hidden name="device_id" v-model="createDialog['device_id']" v-validate="'required'">
                     <div v-show="errors.has('device_id')" class="color-danger">{{ errors.first('device_id') }}</div>
-                </label>
-                <label>
-                    <span>oid<span class="color-danger">*</span></span>
+                </div>
+                <div>
+                    <label class="label">
+                        <span>oid<span class="color-danger">*</span></span>
+                    </label>
                     <input type="text" class="cmdb-form-input" name="oid" v-model="createDialog.oid" v-validate="'required|oid'">
                     <div v-show="errors.has('oid')" class="color-danger">{{ errors.first('oid') }}</div>
-                </label>
-                <label>
-                    <span>{{$t('NetworkDiscovery["模型属性"]')}}<span class="color-danger">*</span></span>
+                </div>
+                <div>
+                    <label class="label">
+                        <span>{{$t('NetworkDiscovery["模型属性"]')}}<span class="color-danger">*</span></span>
+                    </label>
                     <bk-selector
                         search-key="bk_property_name"
                         setting-key="bk_property_id"
                         display-key="bk_property_name"
+                        :searchable="true"
                         :list="createDialog.attrList"
                         :selected.sync="createDialog.bk_property_id"
                     ></bk-selector>
                     <input type="text" hidden name="bk_property_id" v-model="createDialog['bk_property_id']" v-validate="'required'">
                     <div v-show="errors.has('bk_property_id')" class="color-danger">{{ errors.first('bk_property_id') }}</div>
-                </label>
+                </div>
                 <footer class="footer">
                     <bk-button type="primary" @click="saveProperty">
                         {{$t('Common["保存"]')}}
@@ -208,6 +215,7 @@
                     netcollect_property_id: this.table.checked.join(',')
                 }
                 await this.deleteNetcollectProperty({config: {data: params, requestId: 'deleteNetcollectProperty'}})
+                this.table.checked = []
                 this.handlePageChange(1)
             },
             async toggleCreateDialog () {
@@ -249,7 +257,7 @@
                     }
                 }
                 if (this.filter.text.length) {
-                    Object.assign(params, {condition: [{field: this.filter.type, operation: '$regex', value: this.filter.text}]})
+                    Object.assign(params, {condition: [{field: this.filter.type, operator: '$regex', value: this.filter.text}]})
                 }
                 const res = await this.searchNetcollectProperty({params, config: {requestId: 'searchNetcollectProperty'}})
                 this.table.pagination.count = res.count
@@ -314,6 +322,13 @@
             background: #fff;
         }
         .create-dialog {
+            .label {
+                &.first {
+                    margin: 0;
+                }
+                display: block;
+                margin: 15px 0 5px;
+            }
             .footer {
                 border-top: 1px solid #e5e5e5;
                 padding-right: 20px;

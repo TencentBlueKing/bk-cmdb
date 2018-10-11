@@ -18,7 +18,11 @@
             :checked="table.checked"
             :header="table.header"
             :list="table.list"
-            :wrapperMinusHeight="240">
+            :wrapperMinusHeight="240"
+            @handleSortChange="handleSortChange"
+            @handlePageChange="handlePageChange"
+            @handleSizeChange="handleSizeChange"
+            @handleCheckAll="handleCheckAll">
             <template slot="id" slot-scope="{ item }">
                 <label class="table-checkbox bk-form-checkbox bk-checkbox-small"
                     @click.stop>
@@ -304,6 +308,9 @@
             handlePageChange (page) {
                 this.table.pagination.current = page
                 this.getTableData()
+            },
+            handleCheckAll () {
+                this.table.checked = this.table.list.map(item => `${item['bk_cloud_id']}#${item['bk_host_innerip']}`)
             }
         }
     }

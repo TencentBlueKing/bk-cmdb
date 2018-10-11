@@ -170,17 +170,20 @@
         .date-range {
             float: left;
             margin-right: 10px;
-            width: 240px;
+            width: calc((100% - 135px) * (240 / 920));
         }
         .selector {
             float: left;
             margin-right: 10px;
-            width: 140px;
+            width: calc((100% - 135px) * (140 / 920));
         }
         .cmdb-form-input {
             float: left;
             margin-right: 10px;
-            width: 200px;
+            width: calc((100% - 135px) * (200 / 920));
+        }
+        .bk-button {
+            width: 85px;
         }
     }
     .history-table {

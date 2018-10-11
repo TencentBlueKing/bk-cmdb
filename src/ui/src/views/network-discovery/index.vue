@@ -21,11 +21,9 @@
             class="network-table"
             :loading="$loading('searchNetcollect')"
             :header="table.header"
-            :list="table.list"
+            :list="tableList"
             :defaultSort="table.defaultSort"
-            @handleSortChange="handleSortChange"
-            @handleSizeChange="handleSizeChange"
-            @handlePageChange="handlePageChange">
+            @handleSortChange="handleSortChange">
             <template slot="info" slot-scope="{ item }">
                 <div>
                     {{getConfigInfo(item)}}
@@ -55,7 +53,8 @@
                         name: this.$t('Hosts["云区域"]')
                     }, {
                         id: 'info',
-                        name: this.$t('NetworkDiscovery["配置信息"]')
+                        name: this.$t('NetworkDiscovery["配置信息"]'),
+                        sortable: false
                     }, {
                         id: 'last_time',
                         name: this.$t('NetworkDiscovery["发现时间"]')
@@ -84,23 +83,8 @@
             }
         },
         computed: {
-            params () {
-                let pagination = this.table.pagination
-                let params = {
-                    page: {
-                        start: (pagination.current - 1) * pagination.size,
-                        limit: pagination.size,
-                        sort: this.table.sort
-                    }
-                }
-                if (this.filter.text.length) {
-                    Object.assign(params, {condition: [{
-                        field: 'bk_cloud_name',
-                        operator: '$regex',
-                        value: this.filter.text
-                    }]})
-                }
-                return params
+            tableList () {
+                return this.table.list.filter(({bk_cloud_name: cloudName}) => cloudName.includes(this.filter.text))
             }
         },
         created () {
@@ -143,20 +127,26 @@
                 this.$router.push('/network-discovery/history')
             },
             async getTableData () {
-                const res = await this.searchNetcollect({params: this.params, config: {requestId: 'searchNetcollect'}})
+                const res = await this.searchNetcollect({params: {}, config: {requestId: 'searchNetcollect'}})
                 this.table.list = res
             },
             handleSortChange (sort) {
-                this.table.sort = sort
-                this.handlePageChange(1)
-            },
-            handleSizeChange (size) {
-                this.table.pagination.size = size
-                this.handlePageChange(1)
-            },
-            handlePageChange (page) {
-                this.table.pagination.current = page
-                this.getTableData()
+                let key = sort
+                if (sort[0] === '-') {
+                    key = sort.substr(1, sort.length - 1)
+                }
+                this.table.list.sort((itemA, itemB) => {
+                    if (itemA[key] === null) {
+                        itemA[key] = ''
+                    }
+                    if (itemB[key] === null) {
+                        itemB[key] = ''
+                    }
+                    return itemA[key].localeCompare(itemB[key])
+                })
+                if (sort[0] === '-') {
+                    this.table.list.reverse()
+                }
             }
         }
     }

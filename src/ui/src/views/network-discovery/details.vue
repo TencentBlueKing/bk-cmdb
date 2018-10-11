@@ -2,8 +2,8 @@
     <div class="details-wrapper">
         <div class="table-box">
             <p class="title clearfix">
-                <label @click="propertyTable.isShow = !propertyTable.isShow">
-                    <i class="bk-icon icon-angle-down" :class="{'hide': !propertyTable.isShow}"></i>
+                <label class="label" @click="propertyTable.isShow = !propertyTable.isShow">
+                    <i class="bk-icon icon-angle-down" :class="{'rotate': !propertyTable.isShow}"></i>
                     <span>{{$t('Common["属性"]')}}</span>
                 </label>
                 <label class="cmdb-form-checkbox cmdb-checkbox-small">
@@ -19,7 +19,8 @@
                         :header="propertyTable.header"
                         :list="propertyTableList"
                         :pagination.sync="propertyTable.pagination"
-                        :defaultSort="propertyTable.defaultSort">
+                        :defaultSort="propertyTable.defaultSort"
+                        @handleSortChange="propertyHandleSortChange">
                         <template v-for="(header, index) in propertyTable.header" :slot="header.id" slot-scope="{ item }">
                             <template v-if="header.id === 'isrequired'">
                                 <span :key="index" :class="{'disabled': item.method !== 'accept'}">
@@ -39,8 +40,8 @@
         </div>
         <div class="table-box relation">
             <p class="title clearfix">
-                <label class="title" @click="relationTable.isShow = !relationTable.isShow">
-                    <i class="bk-icon icon-angle-down"></i>
+                <label class="label" @click="relationTable.isShow = !relationTable.isShow">
+                    <i class="bk-icon icon-angle-down" :class="{'rotate': !relationTable.isShow}"></i>
                     <span>{{$t('NetworkDiscovery["关系"]')}}</span>
                 </label>
                 <label class="cmdb-form-checkbox cmdb-checkbox-small">
@@ -56,7 +57,8 @@
                         :header="relationTable.header"
                         :list="relationTableList"
                         :pagination.sync="relationTable.pagination"
-                        :defaultSort="relationTable.defaultSort">
+                        :defaultSort="relationTable.defaultSort"
+                        @handleSortChange="relationHandleSortChange">
                         <template v-for="(header, index) in relationTable.header" :slot="header.id" slot-scope="{ item }">
                             <template v-if="header.id === 'action'">
                                 <span :key="index" :class="{'color-danger': item.action === 'delete', 'disabled': item.asst.method !== 'accept'}">{{actionMap[item.action]}}</span>
@@ -128,7 +130,8 @@
                         name: this.$t('NetworkDiscovery["新值"]')
                     }, {
                         id: 'operation',
-                        name: this.$t('Association["操作"]')
+                        name: this.$t('Association["操作"]'),
+                        sortable: false
                     }],
                     list: [],
                     pagination: {
@@ -156,7 +159,8 @@
                         name: this.$t('NetworkDiscovery["发现时间"]')
                     }, {
                         id: 'operation',
-                        name: this.$t('Association["操作"]')
+                        name: this.$t('Association["操作"]'),
+                        sortable: false
                     }],
                     list: [],
                     pagination: {
@@ -219,6 +223,42 @@
                 }
                 item.asst.method = item.asst.method === 'accept' ? 'reject' : 'accept'
                 this.$emit('update:associations', this.propertyTable.list)
+            },
+            propertyHandleSortChange (sort) {
+                let key = sort
+                if (sort[0] === '-') {
+                    key = sort.substr(1, sort.length - 1)
+                }
+                this.propertyTable.list.sort((itemA, itemB) => {
+                    if (itemA[key] === null) {
+                        itemA[key] = ''
+                    }
+                    if (itemB[key] === null) {
+                        itemB[key] = ''
+                    }
+                    return itemA[key].localeCompare(itemB[key])
+                })
+                if (sort[0] === '-') {
+                    this.propertyTable.list.reverse()
+                }
+            },
+            relationHandleSortChange (sort) {
+                let key = sort
+                if (sort[0] === '-') {
+                    key = sort.substr(1, sort.length - 1)
+                }
+                this.relationTable.list.sort((itemA, itemB) => {
+                    if (itemA[key] === null) {
+                        itemA[key] = ''
+                    }
+                    if (itemB[key] === null) {
+                        itemB[key] = ''
+                    }
+                    return itemA[key].localeCompare(itemB[key])
+                })
+                if (sort[0] === '-') {
+                    this.relationTable.list.reverse()
+                }
             }
         }
     }
@@ -239,9 +279,16 @@
                 >.cmdb-form-checkbox {
                     float: right;
                 }
+                .label {
+                    cursor: pointer;
+                }
                 .icon-angle-down {
                     font-size: 12px;
                     font-weight: bold;
+                    transition: all .2s;
+                    &.rotate {
+                        transform: rotate(180deg);
+                    }
                 }
             }
             .table {

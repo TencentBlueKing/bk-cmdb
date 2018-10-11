@@ -43,22 +43,28 @@
         :close-icon="false"
         :width="424">
             <div slot="content">
-                <label>
-                    <span>{{$t('NetworkDiscovery["设备型号"]')}}<span class="color-danger">*</span></span>
+                <div>
+                    <label class="label first">
+                        <span>{{$t('NetworkDiscovery["设备型号"]')}}<span class="color-danger">*</span></span>
+                    </label>
                     <input type="text" 
                     class="cmdb-form-input" 
                     name="device_model"
                     v-model="createDialog['device_model']" 
                     v-validate="'required|singlechar'">
                     <div v-show="errors.has('device_model')" class="color-danger">{{ errors.first('device_model') }}</div>
-                </label>
-                <label>
-                    <span>{{$t('NetworkDiscovery["设备名称"]')}}<span class="color-danger">*</span></span>
+                </div>
+                <div>
+                    <label class="label">
+                        <span>{{$t('NetworkDiscovery["设备名称"]')}}<span class="color-danger">*</span></span>
+                    </label>
                     <input type="text" class="cmdb-form-input" name="device_name" v-model="createDialog['device_name']" v-validate="'required|singlechar'">
                     <div v-show="errors.has('device_name')" class="color-danger">{{ errors.first('device_name') }}</div>
-                </label>
-                <label>
-                    <span>{{$t('NetworkDiscovery["对应模型"]')}}<span class="color-danger">*</span></span>
+                </div>
+                <div>
+                    <label class="label">
+                        <span>{{$t('NetworkDiscovery["对应模型"]')}}<span class="color-danger">*</span></span>
+                    </label>
                     <bk-selector
                         :list="netList"
                         setting-key="bk_obj_id"
@@ -67,12 +73,14 @@
                     ></bk-selector>
                     <input type="text" hidden name="bk_obj_id" v-model="createDialog['bk_obj_id']" v-validate="'required'">
                     <div v-show="errors.has('bk_obj_id')" class="color-danger">{{ errors.first('bk_obj_id') }}</div>
-                </label>
-                <label>
-                    <span>{{$t('NetworkDiscovery["厂商"]')}}<span class="color-danger">*</span></span>
+                </div>
+                <div>
+                    <label class="label">
+                        <span>{{$t('NetworkDiscovery["厂商"]')}}<span class="color-danger">*</span></span>
+                    </label>
                     <input type="text" class="cmdb-form-input" name="bk_vendor" v-model="createDialog['bk_vendor']" v-validate="'required|singlechar'">
                     <div v-show="errors.has('bk_vendor')" class="color-danger">{{ errors.first('bk_vendor') }}</div>
-                </label>
+                </div>
                 <footer class="footer">
                     <bk-button type="primary" @click="saveDevice" :loading="$loading('createDevice')">
                         {{$t('Common["保存"]')}}
@@ -185,6 +193,7 @@
                     device_id: this.table.checked.join(',')
                 }
                 await this.deleteDevice({config: {data: params, requestId: 'deleteDevice'}})
+                this.table.checked = []
                 this.handlePageChange(1)
             },
             toggleCreateDialog () {
@@ -260,6 +269,13 @@
             background: #fff;
         }
         .create-dialog {
+            .label {
+                &.first {
+                    margin: 0;
+                }
+                display: block;
+                margin: 15px 0 5px;
+            }
             .footer {
                 border-top: 1px solid #e5e5e5;
                 padding-right: 20px;

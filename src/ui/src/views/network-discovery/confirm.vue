@@ -45,7 +45,8 @@
             :list="tableList"
             :defaultSort="table.defaultSort"
             :checked.sync="table.checked"
-            @handleSortChange="handleSortChange">
+            @handleSortChange="handleSortChange"
+            @handleCheckAll="handleCheckAll">
             <template v-for="(header, index) in table.header" :slot="header.id" slot-scope="{ item }">
                 <label class="table-checkbox bk-form-checkbox bk-checkbox-small"
                     :key="index"
@@ -255,7 +256,6 @@
                     defaultSort: '-last_time',
                     sort: '-last_time'
                 },
-                dataCopy: {},
                 actionMap: {
                     'create': this.$t("Common['新增']"),
                     'update': this.$t("NetworkDiscovery['变更']"),
@@ -307,13 +307,15 @@
             if (this.cloudName === null) {
                 next()
             } else {
-                this.confirmDialog.isShow = true
-                await new Promise(async (resolve, reject) => {
-                    this.confirmDialog.leaveResolver = () => {
-                        resolve()
-                    }
-                })
-                this.confirmDialog.isShow = false
+                if (JSON.stringify(this.table.list) !== JSON.stringify(this.table.listCopy)) {
+                    this.confirmDialog.isShow = true
+                    await new Promise(async (resolve, reject) => {
+                        this.confirmDialog.leaveResolver = () => {
+                            resolve()
+                        }
+                    })
+                    this.confirmDialog.isShow = false
+                }
                 next()
             }
         },
@@ -411,6 +413,7 @@
                 const res = await this.confirmNetcollectChange({params, config: {requestId: 'confirmNetcollectChange'}})
                 this.resultDialog.isShow = true
                 this.resultDialog.data = res
+                this.getTableData()
             },
             toggleDialogDetails () {
                 this.resultDialog.isDetailsShow = !this.resultDialog.isDetailsShow
@@ -426,8 +429,25 @@
                 this.table.listCopy = this.$tools.clone(res.info)
             },
             handleSortChange (sort) {
-                this.table.sort = sort
-                this.handlePageChange(1)
+                let key = sort
+                if (sort[0] === '-') {
+                    key = sort.substr(1, sort.length - 1)
+                }
+                this.table.list.sort((itemA, itemB) => {
+                    if (itemA[key] === null) {
+                        itemA[key] = ''
+                    }
+                    if (itemB[key] === null) {
+                        itemB[key] = ''
+                    }
+                    return itemA[key].localeCompare(itemB[key])
+                })
+                if (sort[0] === '-') {
+                    this.table.list.reverse()
+                }
+            },
+            handleCheckAll () {
+                this.table.checked = this.table.list.map(item => item['bk_inst_key'])
             }
         }
     }
