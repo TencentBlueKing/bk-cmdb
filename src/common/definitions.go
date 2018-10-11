@@ -128,6 +128,9 @@ const (
 	// BKDBOR the db operator
 	BKDBOR = "$or"
 
+	// BKDBOR the db operator
+	BKDBAND = "$and"
+
 	// BKDBLIKE the db operator
 	BKDBLIKE = "$regex"
 
@@ -151,6 +154,10 @@ const (
 
 	// BKDBGTE the db opeartor
 	BKDBGTE = "$gte"
+
+	// BKDBExists the db opeartor
+	BKDBExists = "$exists"
+
 	// BKDBSortFieldSep the db sort field split char
 	BKDBSortFieldSep = ","
 )
@@ -446,6 +453,11 @@ const (
 	BKInstKeyField = "bk_inst_key"
 )
 
+const (
+	BKRequestField = "bk_request_id"
+	BKTxnIDField   = "bk_txn_id"
+)
+
 // DefaultResSetName the inner module set
 const DefaultResSetName string = "空闲机池"
 
@@ -637,9 +649,11 @@ const (
 
 // event cache keys
 const (
-	EventCacheEventIDKey    = BKCacheKeyV3Prefix + "event:inst_id"
-	EventCacheEventQueueKey = BKCacheKeyV3Prefix + "event:inst_queue"
-	RedisSnapKeyPrefix      = BKCacheKeyV3Prefix + "snapshot:"
+	EventCacheEventIDKey          = BKCacheKeyV3Prefix + "event:inst_id"
+	EventCacheEventQueueKey       = BKCacheKeyV3Prefix + "event:inst_queue"
+	EventCacheEventTxnQueuePrefix = BKCacheKeyV3Prefix + "event:inst_txn_queue:"
+	EventCacheEventTxnSet         = BKCacheKeyV3Prefix + "event:txn_set"
+	RedisSnapKeyPrefix            = BKCacheKeyV3Prefix + "snapshot:"
 )
 
 const (
@@ -661,7 +675,14 @@ const (
 	BKHTTPCookieLanugageKey = "blueking_language"
 	BKSessionLanugageKey    = "language"
 
-	BKHTTPCCRequestID = "rid"
+	BKHTTPCCRequestID     = "cc_request_id"
+	BKHTTPCCTransactionID = "cc_txn_id"
+)
+
+type CCContextKey string
+
+const (
+	CCContextKeyJoinOption = CCContextKey("cc_context_joinoption")
 )
 
 const (

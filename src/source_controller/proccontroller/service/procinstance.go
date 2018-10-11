@@ -12,6 +12,7 @@
 package service
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/emicklei/go-restful"
@@ -35,7 +36,9 @@ func (ps *ProctrlServer) CreateProcInstanceModel(req *restful.Request, resp *res
 	}
 
 	blog.Infof("will create process instance model: %+v", reqParam)
-	if err := ps.DbInstance.InsertMuti(common.BKTableNameProcInstanceModel, reqParam); err != nil {
+
+	cxt := util.GetDBContext(context.Background(), req.Request.Header)
+	if err := ps.Instance.Table(common.BKTableNameProcInstanceModel).Insert(cxt, reqParam); err != nil {
 		blog.Errorf("create process instance model failed. err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcCreateInstanceModel)})
 		return
@@ -57,7 +60,9 @@ func (ps *ProctrlServer) GetProcInstanceModel(req *restful.Request, resp *restfu
 
 	blog.Infof("will get process instance model. condition: %v", reqParam)
 	var result []interface{}
-	if err := ps.DbInstance.GetMutilByCondition(common.BKTableNameProcInstanceModel, []string{}, reqParam, &result, "", 0, 0); err != nil {
+
+	cxt := util.GetDBContext(context.Background(), req.Request.Header)
+	if err := ps.Instance.Table(common.BKTableNameProcInstanceModel).Find(reqParam).All(cxt, result); err != nil {
 		blog.Errorf("get process instance model failed. err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcGetInstanceModel)})
 		return
@@ -78,7 +83,8 @@ func (ps *ProctrlServer) DeleteProcInstanceModel(req *restful.Request, resp *res
 	}
 
 	blog.Infof("will delete process instance model. condition: %+v", reqParam)
-	if err := ps.DbInstance.DelByCondition(common.BKTableNameProcInstanceModel, reqParam); err != nil {
+	cxt := util.GetDBContext(context.Background(), req.Request.Header)
+	if err := ps.Instance.Table(common.BKTableNameProcInstanceModel).Delete(cxt, reqParam); err != nil {
 		blog.Errorf("delete process instance model failed. err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcDeleteInstanceModel)})
 		return

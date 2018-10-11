@@ -66,6 +66,8 @@ const (
 	BKTableNameIdentifier       = "cc_idgenerator"
 	BKTableNameObjAsst          = "cc_ObjAsst"
 	BKTableNameTopoGraphics     = "cc_TopoGraphics"
+	BKTableNameTransaction      = "cc_Transaction"
+	BKTableNameIDgenerator      = "cc_idgenerator"
 
 	BKTableNameNetcollectDevice   = "cc_Netcollect_Device"
 	BKTableNameNetcollectProperty = "cc_Netcollect_Property"
@@ -104,6 +106,8 @@ var AllTables = []string{
 	BKTableNameIdentifier,
 	BKTableNameObjAsst,
 	BKTableNameTopoGraphics,
+	BKTableNameTransaction,
+	BKTableNameIDgenerator,
 	BKTableNameHostLock,
 }
 

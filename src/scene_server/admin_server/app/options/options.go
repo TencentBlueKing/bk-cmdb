@@ -14,7 +14,7 @@ package options
 
 import (
 	"configcenter/src/common/core/cc/config"
-	"configcenter/src/storage/mgoclient"
+	"configcenter/src/storage/dal/mongo"
 
 	"github.com/spf13/pflag"
 )
@@ -40,7 +40,7 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 }
 
 type Config struct {
-	MongoDB    mgoclient.MongoConfig
+	MongoDB    mongo.Config
 	Errors     ErrorConfig
 	Language   LanguageConfig
 	Configures ConfConfig

@@ -12,6 +12,7 @@
 package service
 
 import (
+	"configcenter/src/common/metadata"
 	"net/http"
 
 	"github.com/emicklei/go-restful"
@@ -123,7 +124,7 @@ func (s *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
 	info := metric.HealthInfo{
 		Module:     types.CC_MODULE_HOST,
 		HealthMeta: meta,
-		AtTime:     types.Now(),
+		AtTime:     metadata.Now(),
 	}
 
 	answer := metric.HealthResponse{
