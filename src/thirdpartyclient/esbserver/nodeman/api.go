@@ -24,9 +24,9 @@ type NodeManClientInterface interface {
 	SearchPackage(ctx context.Context, h http.Header, processname string) (resp *SearchPluginPackageResult, err error)
 	SearchProcess(ctx context.Context, h http.Header, processname string) (resp *SearchPluginProcessResult, err error)
 	SearchProcessInfo(ctx context.Context, h http.Header, processname string) (resp *SearchPluginProcessInfoResult, err error)
-	UpgradePlugin(ctx context.Context, h http.Header, bizID string, data UpgradePluginRequest) (resp *UpgradePluginResult, err error)
+	UpgradePlugin(ctx context.Context, h http.Header, bizID string, data *UpgradePluginRequest) (resp *UpgradePluginResult, err error)
 	SearchTask(ctx context.Context, h http.Header, bizID string, taskID string) (resp *SearchTaskResult, err error)
-	SearchPluginHost(ctx context.Context, h http.Header, bizID string, processname string) (resp *SearchPluginHostResult, err error)
+	SearchPluginHost(ctx context.Context, h http.Header, processname string) (resp *SearchPluginHostResult, err error)
 }
 
 func NewNodeManClientInterface(client rest.ClientInterface, config *esbutil.EsbConfigServ) NodeManClientInterface {
@@ -203,27 +203,31 @@ type UpgradePluginRequest struct {
 	NodeType     string `json:"node_type"` // # 操作对象  PLUGIN
 	OpType       string `json:"op_type"`   // # 操作   更新: UPDATE
 	GlobalParams struct {
-		Plugin  PluginProcess     `json:"plugin"`
-		Package PluginPackage     `json:"package"`
-		Control PluginProcessInfo `json:"control"`
+		Plugin  *PluginProcess     `json:"plugin"`
+		Package *PluginPackage     `json:"package"`
+		Control *PluginProcessInfo `json:"control"`
 		Option  struct {
 			KeepConfig int `json:"keep_config"` // # 是否保留原配置文件  1: 保留(勾选)  0：不保留(不勾选)
 			NoRestart  int `json:"no_restart"`  // # 更新后是否重启     1: 不重启(勾选)  0：重启(不勾选)
 			NoDelegate int `json:"no_delegate"` // # 下发后不托管       1：不托管(勾选)  0：托管(不勾选)
 		}
-		UpgradeType string `json:"upgrade_type"` //  # 覆盖方式  "APPEND": 增量更新(仅覆盖)  "OVERRIDE": 覆盖更新(先删除原目录后覆盖)
-		Configs     []struct {
-			InnerIPs string `json:"inner_ips"` // # 支持多台机器使用同一配置文件 机器ip必须在hosts参数中存在 否则不操作
-			Content  []byte `json:"content"`
-		}
+		UpgradeType string                `json:"upgrade_type"` //  # 覆盖方式  "APPEND": 增量更新(仅覆盖)  "OVERRIDE": 覆盖更新(先删除原目录后覆盖)
+		Configs     []UpgradePluginConfig `json:"configs"`
 	} `json:"global_params"`
-	Hosts []struct {
-		InnerIPs string `json:"inner_ips"`
-	} `json:"hosts"`
+	Hosts []UpgradePluginConfig `json:"hosts"`
+}
+
+type UpgradePluginConfig struct {
+	InnerIPs []string `json:"inner_ips"` // # 支持多台机器使用同一配置文件 机器ip必须在hosts参数中存在 否则不操作
+	Content  string   `json:"content,omitempty"`
 }
 
 type UpgradePluginResult struct {
+	ESBBaseResult `json:",inline"`
+	JJJ           `json:",inline"`
 }
+
+type JJJ map[string]interface{}
 
 // SearchTaskResult define
 // {
@@ -364,7 +368,7 @@ type Task struct {
 
 type Host struct {
 	BkBizID   string `json:"bk_biz_id"`
-	BkCloudID string `json:"bk_cloud_id"`
+	BkCloudID int64  `json:"bk_cloud_id,string"`
 	OuterIP   string `json:"outer_ip"`
 	NodeType  string `json:"node_type"`
 	InnerIP   string `json:"inner_ip"`
