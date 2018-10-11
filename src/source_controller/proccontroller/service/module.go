@@ -115,7 +115,7 @@ func (ps *ProctrlServer) GetProc2Module(req *restful.Request, resp *restful.Resp
 	result := make([]interface{}, 0)
 
 	cxt := util.GetDBContext(context.Background(), req.Request.Header)
-	if err := ps.Instance.Table(common.BKTableNameProcModule).Find(input).All(cxt, result); err != nil {
+	if err := ps.Instance.Table(common.BKTableNameProcModule).Find(input).All(cxt, &result); err != nil {
 		blog.Errorf("get process2module config failed. err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcSelectProc2Module)})
 		return
