@@ -41,7 +41,7 @@ func (lgc *Logics) GetProcbyProcIDArr(ctx context.Context, procID []int64, heade
 	}
 
 	if len(ret.Data.Info) < 1 {
-		return nil, fmt.Errorf("there is no process with procID(%s)", procID)
+		return nil, fmt.Errorf("there is no process with procID(%d)", procID)
 	}
 
 	return ret.Data.Info, nil
@@ -80,7 +80,7 @@ func (lgc *Logics) getProcInfoByID(ctx context.Context, procID []int64, header h
 		}
 		item := new(metadata.InlineProcInfo)
 
-		item.ProcNum = 1
+		item.ProcNum = 1 //ProcNum not set, use default value 1
 		procNumI, ok := proc.Get(common.BKProcInstNum)
 		if ok && nil != procNumI {
 			item.ProcNum, err = proc.Int64(common.BKProcInstNum)
@@ -100,6 +100,7 @@ func (lgc *Logics) getProcInfoByID(ctx context.Context, procID []int64, header h
 		if nil != err {
 			continue
 		}
+		item.ProcID = procID
 		item.ProcInfo = proc
 
 		gseProc[procID] = item

@@ -20,7 +20,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )

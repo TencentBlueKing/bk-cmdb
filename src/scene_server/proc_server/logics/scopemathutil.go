@@ -31,6 +31,7 @@ func NewScopeMatch(reg string, isString bool) *ScopeMatch {
 	return ret
 }
 
+// ParseConds parse gse kit control conidtion, eg: 11[1-10],11?,*
 func (s *ScopeMatch) ParseConds() (data interface{}, err error) {
 	if "*" == s.rawRegex {
 		return nil, nil
@@ -242,7 +243,7 @@ func (s *ScopeMatch) splitIntRightN(num int64, n int) (head string, foot int64, 
 func (s *ScopeMatch) splitIntScope() error {
 	splitRange := strings.Split(s.rawRegex, "[")
 	if 2 != len(splitRange) {
-		return fmt.Errorf("not found regex role ")
+		return fmt.Errorf("matching rule format error ")
 	}
 	secPart := strings.TrimRight(splitRange[1], "]")
 	s.prefix = splitRange[0]

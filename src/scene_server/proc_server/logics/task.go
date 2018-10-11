@@ -90,13 +90,13 @@ func (lgc *Logics) getGseOPProcTaskIDFromRedis(interval time.Duration) {
 			continue
 		}
 		if nil != err {
-			blog.Warnf("handleGseOPProcResult error:%s", err.Error())
+			blog.Warnf("get timed trigger host instance event from redis,  error:%s", err.Error())
 			continue
 		}
 		item := &opProcTask{}
 		err = json.Unmarshal([]byte(val), item)
 		if nil != err {
-			blog.Warnf("handleGseOPProcResult  error:%s", err.Error())
+			blog.Warnf("get timed trigger host instance event from redis,  content not json,  error:%s", err.Error())
 			continue
 		}
 		gseOPProcTaskChan <- item

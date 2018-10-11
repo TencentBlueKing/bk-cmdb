@@ -15,6 +15,7 @@ package logics
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"configcenter/src/common"
@@ -31,38 +32,39 @@ type opGseProcInfo struct {
 	HostIDArr []int64
 }
 
-func (lgc *Logics) RegisterProcInstanceToGse(moduleID int64, gseHost []metadata.GseHost, procInfo map[string]interface{}, header http.Header) error {
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
-	if 0 == len(procInfo) {
-		return defErr.Errorf(common.CCErrCommInstDataNil, "process ")
-	}
+func (lgc *Logics) RegisterProcInstanceToGse(appID, moduleID, procID int64, gseHost []metadata.GseHost, procInfo map[string]interface{}, header http.Header) error {
 
-	// process
 	procName, ok := procInfo[common.BKProcessNameField].(string)
 	if !ok {
-		blog.Errorf("process name not found, raw process:%+v", procInfo)
-		return defErr.Errorf(common.CCErrCommInstFieldNotFound, "process name", "process")
-	}
-	// process
-	procID, err := util.GetInt64ByInterface(procInfo[common.BKProcessIDField])
-	if nil != err {
-		blog.Errorf("process id not found, raw process:%+v", procInfo)
-		return defErr.Errorf(common.CCErrCommInstFieldNotFound, "process id", "process")
+		blog.Errorf("register process to gse, appID(%d) moduleID(%d) procID(%d)  not found process name", appID, moduleID, procID)
+		return errors.New("process name not found")
 	}
 
-	// process
-	appID, err := util.GetInt64ByInterface(procInfo[common.BKAppIDField])
-	if nil != err {
-		blog.Errorf("application id not found, raw process:%+v", procInfo)
-		return defErr.Errorf(common.CCErrCommInstFieldNotFound, "application id", "process")
+	// under value allow nil , can ignore error, value is empty
+	pidFilePath, ok := procInfo[common.BKProcPidFile].(string)
+	if !ok {
+		blog.Warnf("register process to gse, appID(%d) moduleID(%d) procID(%d)  not found process name", appID, moduleID, procID)
 	}
-	// under value allow nil , can ignore error
-	pidFilePath, _ := procInfo[common.BKProcPidFile].(string)
-	workPath, _ := procInfo[common.BKProcWorkPath].(string)
-	startCmd, _ := procInfo[common.BKProcStartCmd].(string)
-	stopCmd, _ := procInfo[common.BKProcStopCmd].(string)
-	reloadCmd, _ := procInfo[common.BKProcReloadCmd].(string)
-	restartCmd, _ := procInfo[common.BKProcRestartCmd].(string)
+	workPath, ok := procInfo[common.BKProcWorkPath].(string)
+	if !ok {
+		blog.Warnf("register process to gse, appID(%d) moduleID(%d) procID(%d)  not found process name", appID, moduleID, procID)
+	}
+	startCmd, ok := procInfo[common.BKProcStartCmd].(string)
+	if !ok {
+		blog.Warnf("register process to gse, appID(%d) moduleID(%d) procID(%d)  not found process name", appID, moduleID, procID)
+	}
+	stopCmd, ok := procInfo[common.BKProcStopCmd].(string)
+	if !ok {
+		blog.Warnf("register process to gse, appID(%d) moduleID(%d) procID(%d)  not found process name", appID, moduleID, procID)
+	}
+	reloadCmd, ok := procInfo[common.BKProcReloadCmd].(string)
+	if !ok {
+		blog.Warnf("register process to gse, appID(%d) moduleID(%d) procID(%d)  not found process name", appID, moduleID, procID)
+	}
+	restartCmd, ok := procInfo[common.BKProcRestartCmd].(string)
+	if !ok {
+		blog.Warnf("register process to gse, appID(%d) moduleID(%d) procID(%d)  not found process name", appID, moduleID, procID)
+	}
 
 	namespace := getGseProcNameSpace(appID, moduleID)
 	gseproc := new(metadata.GseProcRequest)

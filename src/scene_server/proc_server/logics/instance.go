@@ -70,6 +70,7 @@ func (lgc *Logics) bgHandle() {
 }
 
 func (lgc *Logics) HandleProcInstNumByModuleID(ctx context.Context, header http.Header, appID, moduleID int64) error {
+	//defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	maxInstID, procInst, err := lgc.getProcInstInfoByModuleID(ctx, appID, moduleID, header)
 	if nil != err {
 		blog.Errorf("handleInstanceNum getProcInstInfoByModuleID error %s", err.Error())
@@ -118,10 +119,10 @@ func (lgc *Logics) HandleProcInstNumByModuleID(ctx context.Context, header http.
 	}
 	if 0 != len(gseHost) {
 		for _, info := range procInfos {
-			err := lgc.RegisterProcInstanceToGse(moduleID, gseHost, info.ProcInfo, header)
+			err = lgc.RegisterProcInstanceToGse(info.AppID, moduleID, info.ProcID, gseHost, info.ProcInfo, header)
 			if nil != err {
 				blog.Errorf("RegisterProcInstanceToGse error %s", err.Error())
-				return err
+				continue
 			}
 		}
 	}
