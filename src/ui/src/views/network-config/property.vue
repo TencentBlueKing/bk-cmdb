@@ -210,13 +210,18 @@
                 'searchNetcollectProperty',
                 'deleteNetcollectProperty'
             ]),
-            async deleteProperty () {
-                let params = {
-                    netcollect_property_id: this.table.checked.join(',')
-                }
-                await this.deleteNetcollectProperty({config: {data: params, requestId: 'deleteNetcollectProperty'}})
-                this.table.checked = []
-                this.handlePageChange(1)
+            deleteProperty () {
+                this.$bkInfo({
+                    title: this.$t('NetworkDiscovery["确认删除属性"]'),
+                    confirmFn: async () => {
+                        let params = {
+                            netcollect_property_id: this.table.checked.join(',')
+                        }
+                        await this.deleteNetcollectProperty({config: {data: params, requestId: 'deleteNetcollectProperty'}})
+                        this.table.checked = []
+                        this.handlePageChange(1)
+                    }
+                })
             },
             async toggleCreateDialog () {
                 this.createDialog.isShow = !this.createDialog.isShow

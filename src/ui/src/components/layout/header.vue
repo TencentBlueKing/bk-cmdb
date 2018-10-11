@@ -3,7 +3,7 @@
         :class="{'nav-sticked': navStick}">
         <div class="breadcrumbs fl">
             <i class="breadcrumbs-back bk-icon icon-arrows-left" href="javascript:void(0)"
-                v-if="showBack || $classify.returnPath"
+                v-if="showBack || $route.meta.returnPath"
                 @click="back"></i>
             <h2 class="breadcrumbs-current">{{title}}</h2>
             <i v-if="$classify.id === 'custom_query'" class="bk-icon icon-info-circle" v-tooltip="{content: $t('CustomQuery[\'保存后的查询可通过接口调用生效\']'), classes: 'custom-query-header-tooltip'}"></i>
@@ -61,13 +61,13 @@
                     $classify
                 } = this
                 let title = $classify.i18n ? this.$t($classify.i18n) : $classify.name
-                return $classify.title ? $classify.title : title
+                return this.$route.meta.title ? this.$route.meta.title : title
             }
         },
         methods: {
             // 回退路由
             back () {
-                if (this.$route.meta.returnPath) {
+                if (!this.showBack && this.$route.meta.returnPath) {
                     this.$router.push(this.$route.meta.returnPath)
                 } else {
                     this.$store.commit('setHeaderStatus', {

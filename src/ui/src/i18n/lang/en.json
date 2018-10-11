@@ -569,6 +569,8 @@
         "采集器管理": "collector manage",
         "设备管理": "collect device type manage",
         "属性管理": "attribute manage",
+        "确认删除设备": "Are you sure to delete the device",
+        "确认删除属性": "Are you sure to delete the attribute",
         "版本": "version",
         "采集频率": "frequency",
         "采集统计": "statistics",
@@ -611,6 +613,7 @@
         "下一个": "previous",
         "是": "YES",
         "否": "NO",
-        "条": ""
+        "条": "",
+        "最新": "latest"
     }
 }

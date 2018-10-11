@@ -188,13 +188,18 @@
                 'searchDevice',
                 'deleteDevice'
             ]),
-            async deleteDevices () {
-                let params = {
-                    device_id: this.table.checked.join(',')
-                }
-                await this.deleteDevice({config: {data: params, requestId: 'deleteDevice'}})
-                this.table.checked = []
-                this.handlePageChange(1)
+            deleteDevices () {
+                this.$bkInfo({
+                    title: this.$t('NetworkDiscovery["确认删除设备"]'),
+                    confirmFn: async () => {
+                        let params = {
+                            device_id: this.table.checked.join(',')
+                        }
+                        await this.deleteDevice({config: {data: params, requestId: 'deleteDevice'}})
+                        this.table.checked = []
+                        this.handlePageChange(1)
+                    }
+                })
             },
             toggleCreateDialog () {
                 if (!this.createDialog.isShow) {

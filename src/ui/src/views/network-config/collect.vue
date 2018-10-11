@@ -27,7 +27,7 @@
                 <label class="table-checkbox bk-form-checkbox bk-checkbox-small"
                     @click.stop>
                     <input type="checkbox"
-                        :value="`${item['bk_cloud_id']}#${item['bk_host_innerip']}`"
+                        :value="`${item['bk_cloud_id']}#${item['bk_host_innerip']}#${item['bk_biz_id']}`"
                         v-model="table.checked">
                 </label>
             </template>
@@ -99,12 +99,12 @@
                     </label>
                     <input type="text" name="community" class="cmdb-form-input" v-validate="'required'" v-model.trim="configDialog.community">
                     <div v-show="errors.has('community')" class="color-danger">{{ errors.first('community') }}</div>
-                    <div class="info">
+                    <!-- <div class="info">
                         <i class="bk-icon icon-exclamation-circle"></i>
                         <span>
                             {{$t('NetworkDiscovery["下发配置失败，请重新下发"]')}}
                         </span>
-                    </div>
+                    </div> -->
                 </div>
                 <footer class="footer">
                     <bk-button type="primary" @click="saveConfig">
@@ -159,7 +159,7 @@
                         name: this.$t('ProcessManagement["状态"]')
                     }, {
                         id: 'version',
-                        name: `${this.$t('NetworkDiscovery["版本"]')}（最新1.3）`
+                        name: `${this.$t('NetworkDiscovery["版本"]')}`
                     }, {
                         id: 'period',
                         name: this.$t('NetworkDiscovery["采集频率"]')
@@ -225,7 +225,8 @@
                 this.table.checked.map(key => {
                     params.collectors.push({
                         bk_cloud_id: Number(key.split('#')[0]),
-                        bk_host_innerip: key.split('#')[1]
+                        bk_host_innerip: key.split('#')[1],
+                        bk_biz_id: key.split('#')[2]
                     })
                 })
                 this.collectDataCollection({params, config: {requestId: 'collectDataCollection'}})
@@ -296,6 +297,13 @@
                 const res = await this.searchDataCollection({params, config: {requestId: 'searchDataCollection'}})
                 this.table.pagination.count = res.count
                 this.table.list = res.info
+                if (res.info.length) {
+                    this.table.header[4] = {
+                        id: 'version',
+                        name: `${this.$t('NetworkDiscovery["版本"]')}(${this.$t('NetworkDiscovery["最新"]')}${res.info[0]['latest_ersion']})`
+                    }
+                    this.table.header.splice()
+                }
             },
             handleSortChange (sort) {
                 this.table.sort = sort

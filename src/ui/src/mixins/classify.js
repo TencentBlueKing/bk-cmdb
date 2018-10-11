@@ -9,8 +9,6 @@ export default {
             let $classify = {}
             let relativePath = this.$route.meta.relative || this.$route.query.relative || null
             let path = relativePath || this.$route.path
-            let returnPath = this.$route.meta.returnPath
-            let title = this.$route.meta.title
             for (let i = 0; i < this.$authorizedNavigation.length; i++) {
                 const classify = this.$authorizedNavigation[i]
                 if (classify.hasOwnProperty('path') && classify.path === path) {
@@ -24,16 +22,6 @@ export default {
                         break
                     }
                 }
-            }
-            if (returnPath) {
-                Object.assign($classify, { returnPath })
-            } else {
-                delete $classify.returnPath
-            }
-            if (title) {
-                Object.assign($classify, { title })
-            } else {
-                delete $classify.title
             }
             return $classify
         },
