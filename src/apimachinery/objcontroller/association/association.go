@@ -45,7 +45,7 @@ func (asst *Association) CreateType(ctx context.Context, h http.Header, request 
 		Into(resp)
 	return
 }
-func (asst *Association) UpdateType(ctx context.Context, h http.Header, asst_type_id int, request *metadata.UpdateAssociationTypeRequest) (resp *metadata.UpdateTypeResult, err error) {
+func (asst *Association) UpdateType(ctx context.Context, h http.Header, asst_type_id int, request *metadata.UpdateAssociationTypeRequest) (resp *metadata.UpdateAssociationTypeResult, err error) {
 	resp = new(metadata.UpdateAssociationTypeResult)
 	subPath := fmt.Sprintf("/association/%d/action/update", asst_type_id)
 
