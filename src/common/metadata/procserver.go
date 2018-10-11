@@ -186,6 +186,7 @@ type InlineProcInfo struct {
 	ProcNum  int64
 	AppID    int64 // use gse proc namespace
 	FunID    int64
+	ProcID   int64
 }
 
 type ProcessOperateTask struct {

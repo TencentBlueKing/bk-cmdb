@@ -47,7 +47,7 @@ func (v *Variables) GetAppVariables() types.MapStr {
 	result, err := v.logic.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDApp, v.header, &input)
 
 	if nil != err || !result.Result || 0 == len(result.Data.Info) {
-		blog.Errorf("get data error %v", err)
+		blog.Errorf("get app info use template variables, error %v. error code:%d, error message:%s", err, result.Code, result.ErrMsg)
 		return data
 	}
 
