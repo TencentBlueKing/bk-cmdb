@@ -146,7 +146,6 @@ func (lgc *Logics) SearchReport(header http.Header, param metadata.ParamSearchNe
 
 	cloudCond := condition.CreateCondition()
 	cloudCond.Field(common.BKCloudIDField).In(cloudIDs)
-
 	cloudMap, err := lgc.findInstMap(header, common.BKInnerObjIDPlat, &metadata.QueryInput{Condition: cloudCond.ToMapStr()})
 	if err != nil {
 		blog.Errorf("[NetDevice][SearchReport] find clouds failed: %v", err)
@@ -169,11 +168,11 @@ func (lgc *Logics) SearchReport(header http.Header, param metadata.ParamSearchNe
 			reports[index].ObjectName = object.ObjectName
 		}
 		if clodInst, ok := cloudMap[reports[index].CloudID]; ok {
-			clodname, err := clodInst.String(common.BKCloudNameField)
+			cloudname, err := clodInst.String(common.BKCloudNameField)
 			if err != nil {
 				blog.Errorf("[NetDevice][SearchReport] bk_cloud_name field invalied: %v", err)
 			}
-			reports[index].CloudName = clodname
+			reports[index].CloudName = cloudname
 		}
 
 		cond := condition.CreateCondition()
