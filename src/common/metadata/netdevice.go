@@ -60,9 +60,11 @@ type RspNetcollectorSearch struct {
 type Netcollector struct {
 	CloudID       int64              `json:"bk_cloud_id"`
 	CloudName     string             `json:"bk_cloud_name"`
+	BizID         int64              `json:"bk_biz_id" bson:"bk_biz_id"`
 	InnerIP       string             `json:"bk_host_innerip"`
 	Status        NetcollectorStatus `json:"status"`
-	DeployTime    time.Time          `json:"deploy_time"`
+	TaskID        string             `json:"task_id"`
+	DeployTime    *time.Time         `json:"deploy_time"`
 	Version       string             `json:"version"`
 	LatestVersion string             `json:"latest_ersion"`
 	ReportTotal   int64              `json:"report_total"`

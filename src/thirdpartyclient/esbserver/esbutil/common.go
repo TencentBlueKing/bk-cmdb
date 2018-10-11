@@ -12,6 +12,7 @@
 package esbutil
 
 import (
+	"fmt"
 	"net/http"
 
 	"configcenter/src/common/util"
@@ -37,4 +38,12 @@ func GetEsbRequestParams(esbConfig EsbConfig, header http.Header) *EsbCommParams
 		UserName:   util.GetUser(header),
 		SupplierID: util.GetOwnerID(header),
 	}
+}
+
+func GetEsbQueryParameters(esbConfig EsbConfig, header http.Header) string {
+	return fmt.Sprintf("bk_app_code=%s&bk_app_secret=%s&bk_username=%s",
+		esbConfig.AppCode,
+		esbConfig.AppSecret,
+		util.GetUser(header),
+	)
 }

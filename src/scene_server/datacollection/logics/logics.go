@@ -15,10 +15,12 @@ package logics
 import (
 	"configcenter/src/common/backbone"
 	"configcenter/src/storage"
+	"configcenter/src/thirdpartyclient/esbserver"
 )
 
 // Logics framwork need
 type Logics struct {
 	*backbone.Engine
 	Instance storage.DI
+	esb      esbserver.EsbClientInterface
 }
