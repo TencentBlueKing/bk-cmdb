@@ -63,15 +63,7 @@
                         name: this.$t('Association["操作"]'),
                         sortable: false
                     }],
-                    list: [{
-                        bk_cloud_name: 'asdf',
-                        info: {
-                            switch: 1,
-                            host: 1,
-                            relation: 2
-                        },
-                        last_time: '2018-04-17T15:00:49.274+08:00'
-                    }],
+                    list: [],
                     pagination: {
                         count: 0,
                         size: 10,

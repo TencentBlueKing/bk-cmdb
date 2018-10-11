@@ -235,6 +235,7 @@
                 this.configDialog.scan_range = item.config['scan_range'] === null ? '' : item.config['scan_range']
                 this.configDialog.bk_inner_ip = item['bk_host_innerip']
                 this.configDialog.bk_cloud_id = item['bk_cloud_id']
+                this.configDialog.bk_biz_id = item['bk_biz_id']
                 this.configDialog.period = item.config.period
                 this.configDialog.community = item.config.period
                 this.configDialog.isShow = true
@@ -249,6 +250,7 @@
                 let params = {
                     bk_cloud_id: this.configDialog['bk_cloud_id'],
                     bk_inner_ip: this.configDialog['bk_inner_ip'],
+                    bk_biz_id: this.configDialog['bk_biz_id'],
                     config: {
                         scan_range: this.configDialog.scan_range.split(/\n|;|；|,|，/),
                         period: this.configDialog.period,
