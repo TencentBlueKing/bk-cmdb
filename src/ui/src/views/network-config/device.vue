@@ -276,7 +276,7 @@
         .create-dialog {
             .label {
                 &.first {
-                    margin: 0;
+                    margin-top: 0;
                 }
                 display: block;
                 margin: 15px 0 5px;
