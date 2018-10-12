@@ -7,7 +7,7 @@ const path = require('path')
 const config = {
     'BUILD_VERSION': '',
     'BUILD_TITLE': '配置平台 | 蓝鲸智云企业版',
-    'BUILD_OUTPUT': '../../bin/enterprise/cmdb'
+    'BUILD_OUTPUT': '../bin/enterprise/cmdb'
 }
 
 process.argv.slice(2).forEach(str => {
