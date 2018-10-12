@@ -13,6 +13,7 @@ import bkDropdownMenu from './components/dropdown-menu'
 import bkSideslider from './components/sideslider'
 import bkSwitcher from './components/switcher'
 import bkTagInput from './components/tag-input'
+import bkMemberSelector from './components/member-selector'
 import bkDialog from './components/dialog'
 import bkIconButton from './components/icon-button'
 import bkLoading from './components/loading'
@@ -76,11 +77,13 @@ const components = {
     bkTab,
     bkTabpanel,
     bkTagInput,
+    bkMemberSelector,
     bkTimeline,
     bkTooltip,
     bkTransfer,
     bkTree,
-    bkUpload
+    bkUpload,
+    bkException
 }
 
 export function install (Vue, opts = {}) {
@@ -153,6 +156,7 @@ export {
     bkTab,
     bkTabpanel,
     bkTagInput,
+    bkMemberSelector,
     bkTimeline,
     bkTooltip,
     bkTransfer,
