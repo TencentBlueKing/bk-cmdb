@@ -80,6 +80,12 @@
             "id": "audit",
             "name": "操作审计",
             "classificationId": "bk_back_config"
+        }, {
+            "i18n": "NetworkDiscovery['网络发现']",
+            "path": "/network-discovery",
+            "id": "network",
+            "name": "网络发现",
+            "classificationId": "bk_back_config"
         }]
     }
 }
