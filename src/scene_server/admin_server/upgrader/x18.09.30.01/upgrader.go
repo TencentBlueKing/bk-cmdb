@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
@@ -55,8 +54,6 @@ func cleanBKCloud(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err e
 			flag:                    true,
 		}
 	}
-
-	blog.Info("[cleanBKCloud] expects: %+v", expects)
 
 	for _, expect := range expects {
 		if err = db.Table(common.BKTableNameBasePlat).Insert(ctx, expect); err != nil {

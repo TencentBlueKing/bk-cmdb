@@ -30,9 +30,10 @@ func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
 	ownerID := common.BKDefaultOwnerID
 
 	err := upgrader.Upgrade(s.ctx, s.db, &upgrader.Config{
-		OwnerID:    ownerID,
-		SupplierID: common.BKDefaultSupplierID,
-		User:       "migrate",
+		OwnerID:      ownerID,
+		SupplierID:   common.BKDefaultSupplierID,
+		User:         "migrate",
+		CCApiSrvAddr: s.ccApiSrvAddr,
 	})
 
 	if nil != err {
