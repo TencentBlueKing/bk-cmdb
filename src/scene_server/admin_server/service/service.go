@@ -15,6 +15,8 @@ package service
 import (
 	"context"
 
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
@@ -23,13 +25,13 @@ import (
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal"
-	"github.com/emicklei/go-restful"
 )
 
 type Service struct {
 	*backbone.Engine
-	db  dal.RDB
-	ctx context.Context
+	db           dal.RDB
+	ccApiSrvAddr string
+	ctx          context.Context
 }
 
 func NewService(ctx context.Context) *Service {
@@ -40,6 +42,10 @@ func NewService(ctx context.Context) *Service {
 
 func (s *Service) SetDB(db dal.RDB) {
 	s.db = db
+}
+
+func (s *Service) SetApiSrvAddr(ccApiSrvAddr string) {
+	s.ccApiSrvAddr = ccApiSrvAddr
 }
 
 func (s *Service) WebService() *restful.WebService {
