@@ -39,11 +39,13 @@ func (lgc *Logics) SearchCollector(header http.Header, cond metadata.ParamNetcol
 	collectors := []metadata.Netcollector{}
 
 	// fetch package info
-	packageResp, err := lgc.esb.NodemanSrv().SearchPackage(context.Background(), header, Netdevicebeat)
+	packageResp, err := lgc.ESB.NodemanSrv().SearchPackage(context.Background(), header, Netdevicebeat)
 	if err != nil {
+		blog.Errorf("[NetDevice][SearchCollector] SearchPackage failed: %v", err)
 		return 0, nil, err
 	}
 	if !packageResp.Result {
+		blog.Errorf("[NetDevice][SearchCollector] SearchPackage failed: %+v", packageResp)
 		return 0, nil, fmt.Errorf("search plugin host from nodeman failed: %s", packageResp.Message)
 	}
 	var pkg nodeman.PluginPackage
@@ -52,11 +54,13 @@ func (lgc *Logics) SearchCollector(header http.Header, cond metadata.ParamNetcol
 	}
 
 	// fetch hosts
-	pluginHostResp, err := lgc.esb.NodemanSrv().SearchPluginHost(context.Background(), header, Netdevicebeat)
+	pluginHostResp, err := lgc.ESB.NodemanSrv().SearchPluginHost(context.Background(), header, Netdevicebeat)
 	if err != nil {
+		blog.Errorf("[NetDevice][SearchCollector] SearchPluginHost failed: %v", err)
 		return 0, nil, err
 	}
 	if !pluginHostResp.Result {
+		blog.Errorf("[NetDevice][SearchCollector] SearchPluginHost failed: %v", pluginHostResp.Message)
 		return 0, nil, fmt.Errorf("search plugin host from nodeman failed: %s", pluginHostResp.Message)
 	}
 
@@ -148,7 +152,7 @@ func (lgc *Logics) findCollectorMap(cond interface{}) (map[string]metadata.Netco
 	return collectorMap, nil
 }
 
-func (lgc *Logics) UpdateCollector(header http.Header, config metadata.NetcollectorConfig) error {
+func (lgc *Logics) UpdateCollector(header http.Header, config metadata.Netcollector) error {
 	cond := condition.CreateCondition()
 	cond.Field(common.BKCloudIDField).Eq(config.CloudID)
 	cond.Field(common.BKHostInnerIPField).Eq(config.InnerIP)
@@ -173,13 +177,13 @@ func (lgc *Logics) UpdateCollector(header http.Header, config metadata.Netcollec
 		return err
 	}
 
-	return lgc.DiscoverNetDevice(header, []metadata.NetcollectorConfig{config})
+	return lgc.DiscoverNetDevice(header, []metadata.Netcollector{config})
 }
 
-func (lgc *Logics) DiscoverNetDevice(header http.Header, configs []metadata.NetcollectorConfig) error {
+func (lgc *Logics) DiscoverNetDevice(header http.Header, configs []metadata.Netcollector) error {
 
 	// fetch global_params
-	pkgResp, err := lgc.esb.NodemanSrv().SearchPackage(context.Background(), header, Netdevicebeat)
+	pkgResp, err := lgc.ESB.NodemanSrv().SearchPackage(context.Background(), header, Netdevicebeat)
 	if err != nil {
 		blog.Errorf("[NetDevice][DiscoverNetDevice] SearchPackage failed %v", err)
 		return err
@@ -193,7 +197,7 @@ func (lgc *Logics) DiscoverNetDevice(header http.Header, configs []metadata.Netc
 		pkg = pkgResp.Data[0]
 	}
 
-	procResp, err := lgc.esb.NodemanSrv().SearchProcess(context.Background(), header, Netdevicebeat)
+	procResp, err := lgc.ESB.NodemanSrv().SearchProcess(context.Background(), header, Netdevicebeat)
 	if err != nil {
 		blog.Errorf("[NetDevice][DiscoverNetDevice] SearchProcess failed %v", err)
 		return err
@@ -202,7 +206,7 @@ func (lgc *Logics) DiscoverNetDevice(header http.Header, configs []metadata.Netc
 		blog.Errorf("[NetDevice][DiscoverNetDevice] SearchProcess failed %v", pkgResp.Message)
 		return fmt.Errorf("search plugin host from nodeman failed: %s", procResp.Message)
 	}
-	procInfoResp, err := lgc.esb.NodemanSrv().SearchProcessInfo(context.Background(), header, Netdevicebeat)
+	procInfoResp, err := lgc.ESB.NodemanSrv().SearchProcessInfo(context.Background(), header, Netdevicebeat)
 	if err != nil {
 		blog.Errorf("[NetDevice][DiscoverNetDevice] SearchProcess failed %v", err)
 		return err
@@ -240,7 +244,7 @@ func (lgc *Logics) DiscoverNetDevice(header http.Header, configs []metadata.Netc
 			blog.Errorf("[NetDevice][DiscoverNetDevice] get collector config for %s failed, %v", key, err)
 		}
 		blog.InfoJSON("[NetDevice][DiscoverNetDevice] UpgradePlugin request %s", upgradeReq)
-		upgradeResp, err := lgc.esb.NodemanSrv().UpgradePlugin(context.Background(), header, strconv.FormatInt(collector.BizID, 10), upgradeReq)
+		upgradeResp, err := lgc.ESB.NodemanSrv().UpgradePlugin(context.Background(), header, strconv.FormatInt(collector.BizID, 10), upgradeReq)
 		if err != nil {
 			blog.Errorf("[NetDevice][DiscoverNetDevice] get collector config for %s failed", key)
 			continue

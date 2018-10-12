@@ -22,5 +22,5 @@ import (
 type Logics struct {
 	*backbone.Engine
 	Instance storage.DI
-	esb      esbserver.EsbClientInterface
+	ESB      esbserver.EsbClientInterface
 }
