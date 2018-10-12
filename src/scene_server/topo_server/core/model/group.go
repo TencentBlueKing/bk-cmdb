@@ -57,6 +57,9 @@ type Group interface {
 	SetIsPre(isPre bool)
 	GetIsPre() bool
 
+	SetRecordID(int64)
+	GetRecordID() int64
+
 	ToMapStr() (frtypes.MapStr, error)
 }
 
@@ -324,6 +327,14 @@ func (g *group) SetIndex(groupIndex int64) {
 
 func (g *group) GetIndex() int64 {
 	return int64(g.grp.GroupIndex)
+}
+
+func (g *group) SetRecordID(recordID int64) {
+	g.grp.ID = recordID
+}
+
+func (g *group) GetRecordID() int64 {
+	return int64(g.grp.ID)
 }
 
 func (g *group) SetSupplierAccount(supplierAccount string) {

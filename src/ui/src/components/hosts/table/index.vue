@@ -1,7 +1,7 @@
 <template>
     <div class="hosts-table-layout">
-        <slot name="options">
-            <div class="hosts-options">
+        <div class="hosts-options">
+            <slot name="options">
                 <bk-button class="options-button" type="primary"
                     :disabled="!table.checked.length"
                     @click="handleMultipleEdit">
@@ -26,14 +26,29 @@
                     :disabled="!table.checked.length"
                     @on-copy="handleCopy">
                 </cmdb-clipboard-selector>
+                <bk-button class="options-button quick-search-button" type="default"
+                    v-if="quickSearch"
+                    ref="quickSearchButton"
+                    @click="quickSearchStatus.active = true">
+                    {{$t('HostResourcePool["筛选"]')}}
+                    <i class="bk-icon icon-angle-down"></i>
+                </bk-button>
                 <div class="fr" v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')">
                     <bk-button class="options-button" type="default" style="margin-right: 0"
                         @click="columnsConfig.show = true">
                         <i class="icon-cc-setting"></i>
                     </bk-button>
                 </div>
-            </div>
-        </slot>
+            </slot>
+        </div>
+        <cmdb-collapse-transition @after-enter="handleQuickSearchToggle" @after-leave="handleQuickSearchToggle">
+            <cmdb-host-quick-search
+                v-if="quickSearch && quickSearchStatus.active"
+                :properties="properties.host"
+                @on-toggle="quickSearchStatus.active = false"
+                @on-search="handleQuickSearch">
+            </cmdb-host-quick-search>
+        </cmdb-collapse-transition>
         <cmdb-table class="hosts-table" ref="hostsTable"
             :loading="$loading()"
             :checked.sync="table.checked"
@@ -70,6 +85,7 @@
                         :inst="tab.attribute.inst.details"
                         :show-delete="false"
                         @on-edit="handleEdit">
+                        <cmdb-host-topo slot="details-header" :host="tab.attribute.inst.original"></cmdb-host-topo>
                     </cmdb-details>
                     <cmdb-form v-else-if="tab.attribute.type === 'update'"
                         ref="form"
@@ -155,6 +171,8 @@
     import cmdbTransferHost from '@/components/hosts/transfer'
     import cmdbRelation from '@/components/relation'
     import cmdbHostStatus from '@/components/hosts/status/status'
+    import cmdbHostQuickSearch from './_quick-search.vue'
+    import cmdbHostTopo from './_host-topo.vue'
     export default {
         components: {
             cmdbHostsFilter,
@@ -162,7 +180,9 @@
             cmdbAuditHistory,
             cmdbTransferHost,
             cmdbRelation,
-            cmdbHostStatus
+            cmdbHostStatus,
+            cmdbHostQuickSearch,
+            cmdbHostTopo
         },
         props: {
             columnsConfigProperties: {
@@ -178,6 +198,10 @@
                 default () {
                     return ['bk_host_innerip', 'bk_cloud_id', 'bk_module_name']
                 }
+            },
+            quickSearch: {
+                type: Boolean,
+                default: false
             }
         },
         data () {
@@ -189,6 +213,9 @@
                     module: []
                 },
                 propertyGroups: [],
+                quickSearchStatus: {
+                    active: false
+                },
                 table: {
                     checked: [],
                     header: [],
@@ -218,7 +245,8 @@
                         type: 'details',
                         inst: {
                             details: {},
-                            edit: {}
+                            edit: {},
+                            original: {}
                         }
                     }
                 },
@@ -279,7 +307,7 @@
             ...mapActions('objectModelProperty', ['batchSearchObjectAttribute']),
             ...mapActions('objectModelFieldGroup', ['searchGroup']),
             ...mapActions('hostUpdate', ['updateHost']),
-            ...mapActions('hostSearch', ['searchHost']),
+            ...mapActions('hostSearch', ['searchHost', 'searchHostByInnerip']),
             calcTableMinusHeight () {
                 const $table = this.$refs.hostsTable.$el
                 this.table.tableMinusHeight = $table.getBoundingClientRect().top + 20
@@ -452,19 +480,27 @@
                 this.slider.show = true
                 this.slider.title = `${this.$t("Common['编辑']")} ${inst['bk_host_innerip']}`
                 this.tab.attribute.inst.details = inst
+                this.tab.attribute.inst.original = item
                 this.tab.attribute.type = 'details'
             },
-            handleSave (values, changedValues, inst, type) {
-                this.batchUpdate({
+            async handleSave (values, changedValues, inst, type) {
+                await this.batchUpdate({
                     ...changedValues,
                     'bk_host_id': inst['bk_host_id'].toString()
                 })
+                this.tab.attribute.type = 'details'
+                this.searchHostByInnerip({
+                    bizId: this.filter.business,
+                    innerip: inst['bk_host_innerip']
+                }).then(data => {
+                    this.tab.attribute.inst.details = this.$tools.flatternItem(this.properties['host'], data.host)
+                })
             },
             batchUpdate (params) {
-                this.updateHost(params).then(() => {
+                return this.updateHost(params).then(data => {
                     this.$success(this.$t('Common[\'保存成功\']'))
                     this.getHostList()
-                    this.slider.show = false
+                    return data
                 })
             },
             handleCancel () {
@@ -481,11 +517,12 @@
                 this.slider.title = this.$t('HostResourcePool[\'主机属性\']')
                 this.slider.show = true
             },
-            handleMultipleSave (changedValues) {
-                this.batchUpdate({
+            async handleMultipleSave (changedValues) {
+                await this.batchUpdate({
                     ...changedValues,
                     'bk_host_id': this.table.checked.join(',')
                 })
+                this.slider.show = false
             },
             handleMultipleCancel () {
                 this.slider.show = false
@@ -526,6 +563,12 @@
                     return true
                 }
                 return true
+            },
+            handleQuickSearchToggle () {
+                this.calcTableMinusHeight()
+            },
+            handleQuickSearch (property, value) {
+                this.$emit('on-quick-search', property, value)
             }
         }
     }
@@ -541,6 +584,15 @@
             border-radius: 0;
             font-size: 14px;
             margin: 0 5px;
+            &.quick-search-button {
+                .icon-angle-down {
+                    font-size: 12px;
+                    top: 0;
+                }
+            }
+            &:first-child {
+                margin-left: 0;
+            }
             &:hover{
                 z-index: 1;
             }

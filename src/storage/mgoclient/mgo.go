@@ -17,17 +17,21 @@ import (
 	"fmt"
 	"strings"
 
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/storage"
-
-	// "log"
-	// "os"
 	"strconv"
 	"time"
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/storage"
+	// "log"
+	// "os"
+)
+
+var (
+	maxExecuteTime time.Duration = time.Second * 10
 )
 
 type MongoConfig struct {
@@ -170,6 +174,7 @@ func (m *MgoCli) GetOneByCondition(cName string, fields []string, condiction int
 	if 0 < len(fieldmap) {
 		query.Select(fieldmap)
 	}
+	query.SetMaxTime(maxExecuteTime)
 	return query.One(result)
 }
 
@@ -203,6 +208,7 @@ func (m *MgoCli) GetMutilByCondition(cName string, fields []string, condiction i
 	if 0 < limit {
 		query = query.Limit(limit)
 	}
+	query.SetMaxTime(maxExecuteTime)
 	err := query.All(result)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
@@ -218,7 +224,7 @@ func (m *MgoCli) GetCntByCondition(cName string, condition interface{}) (cnt int
 	m.session.Refresh()
 	c := m.session.DB(m.dbName).C(cName)
 	count := 0
-	count, err = c.Find(condition).Count()
+	count, err = c.Find(condition).SetMaxTime(maxExecuteTime).Count()
 	if err != nil {
 		return count, err
 	}
@@ -368,4 +374,7 @@ func (m *MgoCli) IsDuplicateErr(err error) bool {
 // IsNotFoundErr returns whether err is not found error
 func (m *MgoCli) IsNotFoundErr(err error) bool {
 	return mgo.ErrNotFound == err
+}
+func (m *MgoCli) GetDBName() string {
+	return m.dbName
 }

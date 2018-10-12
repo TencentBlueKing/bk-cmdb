@@ -95,6 +95,6 @@ func (s *topoService) DeleteObject(params types.ContextParams, pathParams, query
 		return nil, err
 	}
 
-	err = s.core.ObjectOperation().DeleteObject(params, id, cond)
+	err = s.core.ObjectOperation().DeleteObject(params, id, cond, true)
 	return nil, err
 }

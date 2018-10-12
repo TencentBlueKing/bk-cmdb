@@ -18,7 +18,9 @@ import (
 	"runtime/debug"
 	"time"
 
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/event_server/types"
 )
@@ -61,21 +63,37 @@ func (dh *DistHandler) StartDistribute() (err error) {
 	}
 
 	go func() {
+		for range time.Tick(time.Second * 60) {
+			rccler.loadAll()
+			rccler.reconcile()
+			for _, sub := range rccler.persistedSubscribers {
+				MsgChan <- "update" + sub
+			}
+		}
+	}()
+
+	go func() {
 		blog.Infof("discovering subscriber change")
 
 		defer blog.Warn("discovering subscriber change process stoped")
 		for {
 			mesg := <-MsgChan
-			action := mesg[:6]
+			mesgAction := getChangeAction(mesg)
+			mesgBody := getChangeBody(mesg)
+
 			subscriber := metadata.Subscription{}
-			blog.Infof("mesg: action:%s ,body:%s", mesg[:6], mesg[6:])
-			if err := json.Unmarshal([]byte(mesg[6:]), &subscriber); err != nil {
+			blog.Infof("mesg: action:%s ,body:%s", mesgAction, mesgBody)
+			if err := json.Unmarshal([]byte(mesgBody), &subscriber); err != nil {
 				chErr <- err
 				return
 			}
-			switch action {
+			switch mesgAction {
 			case "create":
 				blog.Infof("starting subscribers process %d", subscriber.SubscriptionID)
+				if renewCh, ok := renewMaps[subscriber.SubscriptionID]; ok {
+					renewCh <- subscriber
+					continue
+				}
 				done := make(chan struct{})
 				renewCh := make(chan metadata.Subscription)
 				go func() {
@@ -88,7 +106,11 @@ func (dh *DistHandler) StartDistribute() (err error) {
 				renewMaps[subscriber.SubscriptionID] = renewCh
 			case "update":
 				blog.Infof("renew subscribers process %d", subscriber.SubscriptionID)
-				renewMaps[subscriber.SubscriptionID] <- subscriber
+				if renewCh, ok := renewMaps[subscriber.SubscriptionID]; ok {
+					renewCh <- subscriber
+				} else {
+					MsgChan <- "create" + mesgBody
+				}
 			case "delete":
 				blog.Infof("stoping subscribers process %d", subscriber.SubscriptionID)
 				if routines[subscriber.SubscriptionID] != nil {
@@ -107,28 +129,36 @@ func (dh *DistHandler) StartDistribute() (err error) {
 func (dh *DistHandler) distToSubscribe(param metadata.Subscription, chNew chan metadata.Subscription, done chan struct{}) (err error) {
 	blog.Infof("start handle dist %v", param.SubscriptionID)
 	defer func() {
-		if err == nil {
-			syserror := recover()
-			if syserror != nil {
-				err = fmt.Errorf("system error: %v", syserror)
-			}
+		syserror := recover()
+		if syserror != nil {
+			err = fmt.Errorf("system error: %v", syserror)
 		}
 		if err != nil {
-			blog.Info("event inst handle process stoped by %v", err)
-			debug.PrintStack()
+			blog.Infof("event inst handle process stoped by %v: %s", err, debug.Stack())
 		}
 	}()
 	sub := param
-	go func() {
-		for {
-			sub = <-chNew
-			blog.Infof("refreshed subcriber %v", sub.SubscriptionID)
-		}
-	}()
+	ticker := time.NewTicker(time.Minute)
 	defer blog.Infof("ended handle dist %v", sub.SubscriptionID)
 	for {
 		select {
-		case sub = <-chNew:
+		case nsub := <-chNew:
+			if nsub.GetCacheKey() != sub.GetCacheKey() {
+				sub = nsub
+				blog.Infof("refreshed subcriber %v", sub.GetCacheKey())
+			} else {
+				blog.Infof("refresh ignore, subcriber cache key not change\nold:%s\nnew:%s ", sub.GetCacheKey(), nsub.GetCacheKey())
+			}
+		case <-ticker.C:
+			count, counterr := dh.db.GetCntByCondition(common.BKTableNameSubscription, condition.CreateCondition().Field(common.BKSubscriptionIDField).Eq(sub.SubscriptionID).ToMapStr())
+			if counterr != nil {
+				blog.Errorf("get subscription count error %v", counterr)
+				continue
+			}
+			if count <= 0 {
+				ticker.Stop()
+				return
+			}
 		case <-done:
 			return
 		default:
@@ -204,7 +234,7 @@ func (dh *DistHandler) handleDist(sub *metadata.Subscription, dist *metadata.Dis
 }
 
 func (dh *DistHandler) popDistInst(subID int64) *metadata.DistInstCtx {
-	eventslice := dh.cache.BLPop(time.Second*60, types.EventCacheDistQueuePrefix+fmt.Sprint(subID)).Val()
+	eventslice := dh.cache.BLPop(time.Second*10, types.EventCacheDistQueuePrefix+fmt.Sprint(subID)).Val()
 
 	if len(eventslice) <= 0 {
 		return nil
@@ -228,4 +258,11 @@ func (dh *DistHandler) saveDistDone(dist *metadata.DistInstCtx) (err error) {
 		return
 	}
 	return
+}
+
+func getChangeAction(mesg string) string {
+	return mesg[:6]
+}
+func getChangeBody(mesg string) string {
+	return mesg[6:]
 }

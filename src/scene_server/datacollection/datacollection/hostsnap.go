@@ -324,19 +324,24 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 
 	osbit := val.Get("data.system.info.systemtype").String()
 
+	dockerClientVersion := val.Get("data.system.docker.Client.Version").String()
+	dockerServerVersion := val.Get("data.system.docker.Server.Version").String()
+
 	setter := map[string]interface{}{
-		"bk_cpu":        cupnum,
-		"bk_cpu_module": cpumodule,
-		"bk_cpu_mhz":    CPUMhz,
-		"bk_disk":       disk / 1024 / 1024 / 1024,
-		"bk_mem":        mem / 1024 / 1024,
-		"bk_os_type":    ostype,
-		"bk_os_name":    osname,
-		"bk_os_version": version,
-		"bk_host_name":  hostname,
-		"bk_outer_mac":  OuterMAC,
-		"bk_mac":        InnerMAC,
-		"bk_os_bit":     osbit,
+		"bk_cpu":                            cupnum,
+		"bk_cpu_module":                     cpumodule,
+		"bk_cpu_mhz":                        CPUMhz,
+		"bk_disk":                           disk / 1024 / 1024 / 1024,
+		"bk_mem":                            mem / 1024 / 1024,
+		"bk_os_type":                        ostype,
+		"bk_os_name":                        osname,
+		"bk_os_version":                     version,
+		"bk_host_name":                      hostname,
+		"bk_outer_mac":                      OuterMAC,
+		"bk_mac":                            InnerMAC,
+		"bk_os_bit":                         osbit,
+		common.HostFieldDockerClientVersion: dockerClientVersion,
+		common.HostFieldDockerServerVersion: dockerServerVersion,
 	}
 
 	if cupnum <= 0 {

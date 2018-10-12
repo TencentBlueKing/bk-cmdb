@@ -636,7 +636,7 @@
             font-size: 12px;
         }
         .form-content {
-            min-height: 100px;
+            min-height: 70px;
             max-height: 300px;
             font-size: 14px;
             padding: 10px;

@@ -19,6 +19,7 @@
         </div>
         <cmdb-table
             class="role-table"
+            rowCursor="default"
             :sortable="false"
             :loading="$loading('searchUserGroup')"
             :header="table.header"

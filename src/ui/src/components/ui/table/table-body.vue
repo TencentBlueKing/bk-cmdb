@@ -4,7 +4,10 @@
             <col v-for="(width, index) in layout.colgroup" :key="index" :width="width">
         </colgroup>
         <tbody v-show="table.list.length">
-            <tr v-for="(item, rowIndex) in table.list" 
+            <tr v-for="(item, rowIndex) in table.list"
+                :style="{
+                    cursor: table.rowCursor
+                }"
                 :key="rowIndex"
                 @click="handleRowClick(item, rowIndex)"
                 @mouseover="handleRowMouseover($event, item, rowIndex)"
@@ -18,7 +21,8 @@
                                 @change="handleRowCheck(item[head[table.valueKey]], rowIndex)">
                         </label>
                     </td>
-                    <td is="data-content" :class="['data-content', {'checkbox-content': head.type === 'checkbox'}]" v-else
+                    <td is="data-content" v-else
+                        :class="['data-content', {'checkbox-content': head.type === 'checkbox'}]"
                         :key="colIndex"
                         :item="item"
                         :head="head"
@@ -152,7 +156,6 @@
         tr {
             td {
                 height: 40px;
-                cursor: pointer;
                 @include ellipsis;
             }
         }

@@ -129,3 +129,10 @@ type SetHostConfigParams struct {
 	SetID         int64 `json:"bk_set_id"`
 	ModuleID      int64 `json:"bk_module_id"`
 }
+
+type CloneHostPropertyParams struct {
+	AppID   int64  `json:"bk_biz_id"`
+	OrgIP   string `json:"bk_org_ip"`
+	DstIP   string `json:"bk_dst_ip"`
+	CloudID int64  `json:"bk_cloud_id"`
+}

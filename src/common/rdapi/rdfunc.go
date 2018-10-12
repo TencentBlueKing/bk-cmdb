@@ -72,7 +72,7 @@ func FilterRdAddrSrv(typeSrv string) func(req *restful.Request, resp *restful.Re
 		defErr := cli.Error.CreateDefaultCCErrorIf(language)
 		if nil != err {
 			blog.Errorf("get %s addr from service discovery module error: %s", typeSrv, err.Error())
-			resp.WriteHeader(http.StatusBadGateway)
+			resp.WriteHeader(http.StatusInternalServerError)
 			rsp, rsperr := createAPIRspStr(common.CCErrCommRelyOnServerAddressFailed, defErr.Errorf(common.CCErrCommRelyOnServerAddressFailed, typeSrv).Error())
 			if nil != rsperr {
 				blog.Error("create response failed, error information is %v", rsperr)
@@ -84,7 +84,7 @@ func FilterRdAddrSrv(typeSrv string) func(req *restful.Request, resp *restful.Re
 
 		} else if "" == url {
 			blog.Errorf("get %s addr from service discovery module,no available service found", typeSrv)
-			resp.WriteHeader(http.StatusBadGateway)
+			resp.WriteHeader(http.StatusInternalServerError)
 			rsp, rsperr := createAPIRspStr(common.CCErrCommRelyOnServerAddressFailed, defErr.Errorf(common.CCErrCommRelyOnServerAddressFailed, typeSrv).Error())
 			if nil != rsperr {
 				blog.Error("create response failed, error information is %v", rsperr)
@@ -119,7 +119,7 @@ func FilterRdAddrSrvs(typeSrvs ...string) func(req *restful.Request, resp *restf
 			blog.V(3).Infof("FilterRdAddrSrv %s url:%s", typeSrv, url)
 			if nil != err {
 				blog.Errorf("get %s addr from service discovery module error: %s", typeSrv, err.Error())
-				resp.WriteHeader(http.StatusBadGateway)
+				resp.WriteHeader(http.StatusInternalServerError)
 				rsp, rsperr := createAPIRspStr(common.CCErrCommRelyOnServerAddressFailed, defErr.Errorf(common.CCErrCommRelyOnServerAddressFailed, typeSrv).Error())
 				if nil != rsperr {
 					blog.Error("create response failed, error information is %v", rsperr)
@@ -131,7 +131,7 @@ func FilterRdAddrSrvs(typeSrvs ...string) func(req *restful.Request, resp *restf
 
 			} else if "" == url {
 				blog.Errorf("get %s addr from service discovery module,no available service found", typeSrv)
-				resp.WriteHeader(http.StatusBadGateway)
+				resp.WriteHeader(http.StatusInternalServerError)
 				rsp, rsperr := createAPIRspStr(common.CCErrCommRelyOnServerAddressFailed, defErr.Errorf(common.CCErrCommRelyOnServerAddressFailed, typeSrv).Error())
 				if nil != rsperr {
 					blog.Error("create response failed, error information is %v", rsperr)
@@ -181,7 +181,7 @@ func AllGlobalFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request,
 
 		errNO, errMsg := checkHTTPAuth(req, defErr)
 		if common.CCSuccess != errNO {
-			resp.WriteHeader(http.StatusBadGateway)
+			resp.WriteHeader(http.StatusInternalServerError)
 			rsp, _ := createAPIRspStr(errNO, errMsg)
 			io.WriteString(resp, rsp)
 			return
@@ -210,7 +210,7 @@ func GlobalFilter(typeSrvs ...string) func(req *restful.Request, resp *restful.R
 
 		errNO, errMsg := checkHTTPAuth(req, defErr)
 		if common.CCSuccess != errNO {
-			resp.WriteHeader(http.StatusBadGateway)
+			resp.WriteHeader(http.StatusInternalServerError)
 			rsp, _ := createAPIRspStr(errNO, errMsg)
 			io.WriteString(resp, rsp)
 			return
@@ -226,7 +226,7 @@ func GlobalFilter(typeSrvs ...string) func(req *restful.Request, resp *restful.R
 			blog.V(3).Infof("GlobalFilter %s url:%s", typeSrv, url)
 			if nil != err {
 				blog.Errorf("get %s addr from service discovery module error: %s", typeSrv, err.Error())
-				resp.WriteHeader(http.StatusBadGateway)
+				resp.WriteHeader(http.StatusInternalServerError)
 				rsp, rsperr := createAPIRspStr(common.CCErrCommRelyOnServerAddressFailed, defErr.Errorf(common.CCErrCommRelyOnServerAddressFailed, typeSrv).Error())
 				if nil != rsperr {
 					blog.Error("create response failed, error information is %v", rsperr)
@@ -238,7 +238,7 @@ func GlobalFilter(typeSrvs ...string) func(req *restful.Request, resp *restful.R
 
 			} else if "" == url {
 				blog.Errorf("get %s addr from service discovery module,no available service found", typeSrv)
-				resp.WriteHeader(http.StatusBadGateway)
+				resp.WriteHeader(http.StatusInternalServerError)
 				rsp, rsperr := createAPIRspStr(common.CCErrCommRelyOnServerAddressFailed, defErr.Errorf(common.CCErrCommRelyOnServerAddressFailed, typeSrv).Error())
 				if nil != rsperr {
 					blog.Error("create response failed, error information is %v", rsperr)

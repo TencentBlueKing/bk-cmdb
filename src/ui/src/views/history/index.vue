@@ -14,6 +14,7 @@
             </bk-date-range>
         </div>
         <cmdb-table class="history-table"
+            rowCursor="default"
             :sortable="false"
             :loading="$loading()"
             :pagination.sync="pagination"

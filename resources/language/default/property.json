@@ -75,7 +75,7 @@
     "process_property_pid_file": "PID文件路径",
     "process_property_auto_start": "是否自动拉起",
     "process_property_auto_time_gap": "拉起间隔",
-    
+    "process_property_bk_start_param_regex": "启动参数匹配规则",
 
     "bk_switch_property_bk_asset_id":"固资编号",
     "bk_switch_property_bk_sn":"SN",

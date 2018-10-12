@@ -23,7 +23,7 @@
             },
             maxlength: {
                 type: Number,
-                default: 255
+                default: 2000
             }
         },
         methods: {

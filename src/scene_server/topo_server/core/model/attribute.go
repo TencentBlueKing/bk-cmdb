@@ -35,6 +35,7 @@ type Attribute interface {
 
 	Origin() metadata.Attribute
 
+	IsMainlineField() bool
 	IsAssociationType() bool
 
 	SetSupplierAccount(supplierAccount string)
@@ -120,6 +121,10 @@ func (a *attribute) Origin() metadata.Attribute {
 
 func (a *attribute) IsAssociationType() bool {
 	return util.IsAssocateProperty(a.attr.PropertyType)
+}
+
+func (a *attribute) IsMainlineField() bool {
+	return a.attr.PropertyID == common.BKChildStr
 }
 
 func (a *attribute) searchObjects(objID string) ([]metadata.Object, error) {

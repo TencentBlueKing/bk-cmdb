@@ -1,4 +1,3 @@
-
 ### 添加业务
 
 - API: POST /api/{version}/biz/{bk_supplier_account}
@@ -74,6 +73,54 @@
 | bk_error_code | int | 错误编码。 0表示success，>0表示失败错误 |error code. 0 represent success, >0 represent failure code |
 | bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
 |data|string|操作结果|the result|
+
+### 修改业务启用状态
+
+- API: PUT /api/{version}/biz/status/{flag}/{bk_supplier_account}/{bk_biz_id}
+- API 名称：update_business_enable_status
+- 功能说明：
+	- 中文：修改业务启用状态
+	- English：update the business enable status
+
+- input body
+
+``` json
+无
+```
+
+**注:以上 JSON 数据中各字段的取值仅为示例数据。**
+
+- input 字段说明
+
+| 字段|类型|必填|默认值|说明|Description|
+|---|---|---|---|---|---|
+|bk_biz_id|int|是|无|业务id|the business id|
+|bk_supplier_account|string|是|无|开发商账号|supplier account code|
+|flag|string|是|无|启用状态，为disabled 或者enable|the business name, it should be disabled or enable|
+
+
+
+
+- output
+
+``` json
+{
+    "result": true,
+    "bk_error_code": 0,
+    "bk_error_msg": null,
+    "data": "success"
+}
+```
+
+- output 字段说明
+
+| 字段|类型|说明|Description|
+|---|---|---|---|
+|result|bool|ture：成功，false：失败 |true:success, false: failure|
+| bk_error_code | int | 错误编码。 0表示success，>0表示失败错误 |error code. 0 represent success, >0 represent failure code |
+| bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
+|data|string|操作结果|the result|
+
 
 
 ### 修改业务

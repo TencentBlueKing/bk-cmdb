@@ -25,7 +25,10 @@
                 @click.native="handleNodeClick">
             </tree-node-info>
         </div>
-        <ul v-if="!leaf" v-show="state.expanded" class="tree-node-children">
+        <ul class="tree-node-children"
+            v-if="!leaf"
+            v-show="state.expanded"
+            :class="{'tree-node-children-root': level === 1}">
             <cmdb-tree-node v-for="(child, index) in children"
                 :key="layout.getNodeId(child)"
                 :node="child"
@@ -122,10 +125,12 @@
             }
         },
         created () {
-            this.layout.addFlatternState(this.state)
-            this.updateBasicState()
+            this.$nextTick(() => {
+                this.layout.addFlatternState(this.state)
+                this.updateBasicState()
+            })
         },
-        beforeDestory () {
+        beforeDestroy () {
             this.layout.destory(this.state)
         },
         methods: {
@@ -185,16 +190,6 @@
         white-space: nowrap;
         font-size: 0;
         margin: 8px 0;
-        &.tree-node-expanded:not(.tree-node-hidden):before{
-            position: absolute;
-            left: 7px;
-            top: 19px;
-            width: 0;
-            height: calc(100% - 31px);
-            content: '';
-            border-left: 1px dashed #d3d8e7;
-            z-index: 1;
-        }
         .tree-node-expanded-icon{
             display: block;
             margin: 5px 0 0 0;
@@ -207,18 +202,23 @@
                 color: #3c96ff;
             }
         }
+        &:last-child > .tree-node-children:before {
+            display: none;
+        }
     }
     .tree-node-info-layout{
         position: relative;
         &:not(.tree-node-info-layout-root):not(.tree-node-info-layout-parent-hidden):before{
             position: absolute;
-            top: 12px;
-            left: -20px;
-            width: 35px;
-            height: 0;
+            top: -18px;
+            left: -23px;
+            width: 36px;
+            height: 30px;
             content: '';
-            border-top: 1px dashed #d3d8e7;
+            border-bottom: 1px dashed #d3d8e7;
+            border-left: 1px dashed #d3d8e7;
             z-index: 1;
+            pointer-events: none;
         }
         .tree-node-info{
             height: 24px;
@@ -244,8 +244,16 @@
     }
     .tree-node-children{
         margin: 0 0 0 30px;
-    }
-    .test{
-        display: inline-block;
+        &:not(.tree-node-children-root):before {
+            position: absolute;
+            top: 15px;
+            left: -23px;
+            width: 0;
+            height: calc(100% - 26px);
+            content: '';
+            border-left: 1px dashed #d3d8e7;
+            z-index: 1;
+            pointer-events: none;
+        }
     }
 </style>

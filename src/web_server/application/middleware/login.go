@@ -13,7 +13,6 @@
 package middleware
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/gin-gonic/contrib/sessions"
@@ -32,23 +31,11 @@ var sLoginURL string
 var checkUrl string
 
 //ValidLogin   valid the user login status
-func ValidLogin(params ...string) gin.HandlerFunc {
-	loginURL := params[0]
-	appCode := params[1]
-	site := params[2]
+func ValidLogin(skipLogin, defaultlanguage string) gin.HandlerFunc {
 
-	checkUrl = params[3]
-	skipLogin := params[5]
-	multipleOwner := params[6]
-	isMultiOwner := true
-	defaultlanguage := params[7]
-
-	if "0" == multipleOwner {
-		isMultiOwner = false
-	}
 	return func(c *gin.Context) {
-		url := site + c.Request.URL.Path
-		loginPage := fmt.Sprintf(loginURL, appCode, url)
+		//url := site + c.Request.URL.Path
+		//loginPage := fmt.Sprintf(loginURL, appCode, url)
 		pathArr := strings.Split(c.Request.URL.Path, "/")
 		path1 := pathArr[1]
 
@@ -58,7 +45,7 @@ func ValidLogin(params ...string) gin.HandlerFunc {
 			return
 		}
 
-		if isAuthed(c, isMultiOwner, skipLogin, defaultlanguage) {
+		if isAuthed(c, skipLogin, defaultlanguage) {
 			//valid resource acess privilege
 			auth := auth.NewAuth()
 			ok := auth.ValidResAccess(pathArr, c)
@@ -70,9 +57,9 @@ func ValidLogin(params ...string) gin.HandlerFunc {
 			}
 			//http request header add user
 			session := sessions.Default(c)
-			userName, _ := session.Get("userName").(string)
-			language, _ := session.Get("language").(string)
-			ownerID, _ := session.Get("owner_uin").(string)
+			userName, _ := session.Get(common.WEBSessionUinKey).(string)
+			language, _ := session.Get(common.WEBSessionLanguageKey).(string)
+			ownerID, _ := session.Get(common.WEBSessionOwnerUinKey).(string)
 			c.Request.Header.Add(common.BKHTTPHeaderUser, userName)
 			c.Request.Header.Add(common.BKHTTPLanguage, language)
 			c.Request.Header.Add(common.BKHTTPOwnerID, ownerID)
@@ -93,7 +80,8 @@ func ValidLogin(params ...string) gin.HandlerFunc {
 				})
 				return
 			} else {
-				c.Redirect(301, loginPage)
+				user := user.NewUser()
+				c.Redirect(302, user.GetLoginUrl(c))
 			}
 
 		}
@@ -102,48 +90,58 @@ func ValidLogin(params ...string) gin.HandlerFunc {
 }
 
 // IsAuthed check user is authed
-func isAuthed(c *gin.Context, isMultiOwner bool, skipLogin, defaultlanguage string) bool {
+func isAuthed(c *gin.Context, skipLogin, defaultlanguage string) bool {
 	if "1" == skipLogin {
-		blog.Info("skip login")
 		session := sessions.Default(c)
 
 		cookieLanuage, err := c.Cookie(common.BKHTTPCookieLanugageKey)
 		if "" == cookieLanuage || nil != err {
 			c.SetCookie(common.BKHTTPCookieLanugageKey, defaultlanguage, 0, "/", "", false, false)
-			session.Set("language", defaultlanguage)
-		} else if cookieLanuage != session.Get("lanugage") {
-			session.Set("language", cookieLanuage)
+			session.Set(common.WEBSessionLanguageKey, defaultlanguage)
+		} else if cookieLanuage != session.Get(common.WEBSessionLanguageKey) {
+			session.Set(common.WEBSessionLanguageKey, cookieLanuage)
 		}
 
 		cookieOwnerID, err := c.Cookie(common.BKHTTPOwnerID)
 		if "" == cookieOwnerID || nil != err {
 			c.SetCookie(common.BKHTTPOwnerID, common.BKDefaultOwnerID, 0, "/", "", false, false)
-			session.Set("owner_uin", cookieOwnerID)
-		} else if cookieOwnerID != session.Get("owner_uin") {
-			session.Set("owner_uin", cookieOwnerID)
+			session.Set(common.WEBSessionOwnerUinKey, cookieOwnerID)
+		} else if cookieOwnerID != session.Get(common.WEBSessionOwnerUinKey) {
+			session.Set(common.WEBSessionOwnerUinKey, cookieOwnerID)
 			ownerMan := user.NewOwnerManager("admin", cookieOwnerID, cookieLanuage)
 			if err := ownerMan.InitOwner(); nil != err {
 				blog.Errorf("init owner fail %s", err.Error())
 				return true
 			}
-
 		}
-		session.Set("userName", "admin")
-		session.Set("role", "1")
+
+		blog.Info("skip login, cookieLanuage: %s, cookieOwnerID: %s", cookieLanuage, cookieOwnerID)
+
+		session.Set(common.WEBSessionUinKey, "admin")
+		session.Set(common.WEBSessionRoleKey, "1")
 		session.Set(webCommon.IsSkipLogin, "1")
 		session.Save()
 		return true
 	}
 	session := sessions.Default(c)
-	cc_token := session.Get("bk_token")
+	cc_token := session.Get(common.HTTPCookieBKToken)
 	user := user.NewUser()
 	if nil == cc_token {
-		return user.LoginUser(c, checkUrl, isMultiOwner)
+		return user.LoginUser(c)
 	}
-	bk_token, err := c.Cookie("bk_token")
+	userName, ok := session.Get(common.WEBSessionUinKey).(string)
+	if !ok || "" == userName {
+		return user.LoginUser(c)
+	}
+	ownerID, ok := session.Get(common.WEBSessionOwnerUinKey).(string)
+	if !ok || "" == ownerID {
+		return user.LoginUser(c)
+	}
+
+	bk_token, err := c.Cookie(common.HTTPCookieBKToken)
 	blog.Info("valid user login session token %s, cookie token %s", cc_token, bk_token)
 	if nil != err || bk_token != cc_token {
-		return user.LoginUser(c, checkUrl, isMultiOwner)
+		return user.LoginUser(c)
 	}
 	return true
 

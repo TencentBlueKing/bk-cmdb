@@ -2,6 +2,7 @@
     <div class="form-bool" @click="handleChange">
         <input class="form-bool-input" type="checkbox"
             ref="input"
+            :style="style"
             :checked="checked"
             :disabled="disabled"
             :true-value="trueValue"
@@ -31,11 +32,23 @@
             },
             falseValue: {
                 default: false
+            },
+            size: {
+                type: Number,
+                default: 0
             }
         },
         data () {
             return {
                 localChecked: this.checked
+            }
+        },
+        computed: {
+            style () {
+                let size = this.size ? this.size : 18
+                return {
+                    transform: `scale(${size / 18})`
+                }
             }
         },
         watch: {

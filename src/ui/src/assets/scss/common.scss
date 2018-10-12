@@ -474,14 +474,15 @@ input.cmdb-form-input {
 
     &.popover {
         .popover-inner {
-            background: #333;
-            color: #fff;
+            max-width: none;
+            background: #fff;
+            color: $cmdbTextColor;
             border-radius: 2px;
-            box-shadow: 0 5px 30px rgba(black, .1);
+            box-shadow: 0 5px 30px rgba(black, .4);
         }
 
         .popover-arrow {
-            border-color: #333;
+            border-color: #fff;
         }
     }
 

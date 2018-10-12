@@ -14,201 +14,112 @@ package user
 
 import (
 	"encoding/json"
-	"fmt"
-	"time"
+	"strings"
 
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/http/httpclient"
-	"configcenter/src/web_server/application/middleware/types"
+	"configcenter/src/common/core/cc/api"
+	"configcenter/src/common/metadata"
+	"configcenter/src/web_server/application/middleware/user/plugins"
 	webCommon "configcenter/src/web_server/common"
 )
 
 type publicUser struct {
 }
 
-var getUserFailData = map[string]interface{}{
-	"result":        false,
-	"bk_error_msg":  "get user list false",
-	"bk_error_code": "",
-	"data":          nil,
-}
-
-type userResult struct {
-	Message string     `json:"message"`
-	Data    []userInfo `json:"data"`
-	Code    string     `json:"code"`
-	Result  bool       `json:"result"`
-}
-
-type userInfo struct {
-	UserName string `json:"username"`
-	QQ       string `json:"qq"`
-	Role     string `json:"role"`
-	Language string `json:"language"`
-	Phone    string `json:"phone"`
-	WxUserid string `json:"wx_userid"`
-	Email    string `json:"email"`
-	Chname   string `json:"chname"`
-	TimeZone string `json:"time_zone"`
-}
-
 // LoginUser  user login
-func (m *publicUser) LoginUser(c *gin.Context, checkUrl string, isMultiOwner bool) bool {
-	bk_token, err := c.Cookie("bk_token")
-	if nil != err {
-		return false
-	}
-	if nil != err || 0 == len(bk_token) {
-		return false
-	}
-	loginURL := checkUrl + bk_token
-	httpCli := httpclient.NewHttpClient()
-	httpCli.SetTimeOut(30 * time.Second)
-	loginResult, err := httpCli.GET(loginURL, nil, nil)
+func (m *publicUser) LoginUser(c *gin.Context) bool {
 
-	if nil != err {
-		blog.Error("get user info return error: %v", err)
-		return false
+	ccapi := api.NewAPIResource()
+	config, _ := ccapi.ParseConfig()
+	user := plugins.CurrentPlugin(c)
+	isMultiOwner := false
+	multipleOwner, ok := config["session.multiple_owner"]
+	if ok && common.LoginSystemMultiSupplierTrue == multipleOwner {
+		isMultiOwner = true
 	}
-	blog.Infof("get user info cond %v, return: %s ", string(loginURL), string(loginResult))
-	var resultData types.LoginResult
-	err = json.Unmarshal([]byte(loginResult), &resultData)
-	if nil != err {
-		blog.Error("get user info json error: %v", err)
-		return false
-	}
-	userInfo, ok := resultData.Data.(map[string]interface{})
-	if false == ok {
-		blog.Error("get user info decode error: %v", err)
-		return false
-	}
-	userName, ok := userInfo["username"]
-	if false == ok {
-		blog.Error("get user info username error: %v", err)
-		return false
-	}
-	chName, ok := userInfo["chname"]
-	if false == ok {
-		blog.Error("get user info chname error: %v", err)
-		return false
-	}
-	phone, ok := userInfo["phone"]
-	if false == ok {
-		blog.Error("get user info phone error: %v", err)
-		return false
-	}
-	email, ok := userInfo["email"]
-	if false == ok {
-		blog.Error("get user info email error: %v", err)
-		return false
-	}
-	role, ok := userInfo["role"]
-	if false == ok {
-		blog.Error("get user info role error: %v", err)
+	userInfo, loginSucc := user.LoginUser(c, config, isMultiOwner)
+	if !loginSucc {
 		return false
 	}
 
-	language, ok := userInfo["language"]
-	if false == ok {
-		blog.Error("get language info role error: %v", err)
-	}
-	ownerID := common.BKDefaultOwnerID
-	if true == isMultiOwner {
-		ownerID, ok = userInfo["owner_uin"].(string)
-		if false == ok {
-			blog.Error("get owner_uin info role error: %v", err)
-			return false
-		}
-		_, ok = userName.(string)
-		if false == ok {
-			blog.Error("get username info role error: %v", err)
-			return false
-		}
-		_, ok = language.(string)
-		if false == ok {
-			blog.Error("get language info role error: %v", err)
-			return false
-		}
-
-		err := NewOwnerManager(userName.(string), ownerID, language.(string)).InitOwner()
+	if true == isMultiOwner || true == userInfo.MultiSupplier {
+		err := NewOwnerManager(userInfo.UserName, userInfo.OnwerUin, userInfo.Language).InitOwner()
 		if nil != err {
 			blog.Error("InitOwner error: %v", err)
 			return false
 		}
 	}
+	strOwnerUinlist := []byte("")
+	if 0 != len(userInfo.OwnerUinArr) {
+		strOwnerUinlist, _ = json.Marshal(userInfo.OwnerUinArr)
+	}
 
 	cookielanguage, _ := c.Cookie("blueking_language")
 	session := sessions.Default(c)
-	session.Set("userName", userName)
-	session.Set("chName", chName)
-	session.Set("phone", phone)
-	session.Set("email", email)
-	session.Set("role", role)
-	session.Set("bk_token", bk_token)
-	session.Set("owner_uin", ownerID)
+	session.Set(common.WEBSessionUinKey, userInfo.UserName)
+	session.Set(common.WEBSessionChineseNameKey, userInfo.ChName)
+	session.Set(common.WEBSessionPhoneKey, userInfo.Phone)
+	session.Set(common.WEBSessionEmailKey, userInfo.Email)
+	session.Set(common.WEBSessionRoleKey, userInfo.Role)
+	session.Set(common.HTTPCookieBKToken, userInfo.BkToken)
+	session.Set(common.WEBSessionOwnerUinKey, userInfo.OnwerUin)
+	session.Set(common.WEBSessionAvatarUrlKey, userInfo.AvatarUrl)
+	session.Set(common.WEBSessionOwnerUinListeKey, string(strOwnerUinlist))
+	if userInfo.MultiSupplier {
+		session.Set(common.WEBSessionMultiSupplierKey, common.LoginSystemMultiSupplierTrue)
+	} else {
+		session.Set(common.WEBSessionMultiSupplierKey, common.LoginSystemMultiSupplierFalse)
+	}
+
 	session.Set(webCommon.IsSkipLogin, "0")
 	if "" != cookielanguage {
-		session.Set("language", cookielanguage)
+		session.Set(common.WEBSessionLanguageKey, cookielanguage)
 	} else {
-		session.Set("language", language)
+		session.Set(common.WEBSessionLanguageKey, userInfo.Language)
 	}
 	session.Save()
 	return true
 }
 
 // GetUserList get user list from paas
-func (m *publicUser) GetUserList(c *gin.Context, accountURL string) (int, interface{}) {
-	session := sessions.Default(c)
-	skiplogin := session.Get(webCommon.IsSkipLogin)
-	skiplogins, ok := skiplogin.(string)
-	if ok && "1" == skiplogins {
-		blog.Info("use skip login flag: %v", skiplogin)
-		adminData := []map[string]interface{}{
-			{
-				"chinese_name": "admin",
-				"english_name": "admin",
-			},
-		}
+func (m *publicUser) GetUserList(c *gin.Context) (int, interface{}) {
 
-		return 200, map[string]interface{}{
-			"result":        true,
-			"bk_error_msg":  "get user list ok",
-			"bk_error_code": "00",
-			"data":          adminData,
-		}
-	}
-
-	token := session.Get("bk_token")
-	getURL := fmt.Sprintf(accountURL, token)
-	httpClient := httpclient.NewHttpClient()
-
-	reply, err := httpClient.GET(getURL, nil, nil)
-
+	ccapi := api.NewAPIResource()
+	config, _ := ccapi.ParseConfig()
+	user := plugins.CurrentPlugin(c)
+	userList, err := user.GetUserList(c, config)
+	rspBody := metadata.LonginSystemUserListResult{}
 	if nil != err {
-		blog.Error("get user list error：%v", err)
-		return 200, getUserFailData
+		rspBody.Code = common.CCErrCommHTTPDoRequestFailed
+		rspBody.ErrMsg = err.Error()
+		rspBody.Result = false
 	}
-	blog.Info("get user list urlL: %s, return：%s", getURL, reply)
-	var result userResult
-	info := make([]map[string]interface{}, 0)
-	err = json.Unmarshal([]byte(reply), &result)
-	if nil != err || false == result.Result {
-		return 200, getUserFailData
+	rspBody.Result = true
+	userList = append(userList, &metadata.LoginSystemUserInfo{CnName: "admin", EnName: "sss"})
+	rspBody.Data = userList
+	return 200, rspBody
+}
+
+func (m *publicUser) GetLoginUrl(c *gin.Context) string {
+	ccapi := api.NewAPIResource()
+	config, _ := ccapi.ParseConfig()
+	siteUrl, ok := config["site.domain_url"]
+	if ok {
+		siteUrl = strings.Trim(siteUrl, "/")
 	}
-	for _, user := range result.Data {
-		cellData := make(map[string]interface{})
-		cellData["chinese_name"] = user.Chname
-		cellData["english_name"] = user.UserName
-		info = append(info, cellData)
+	params := new(metadata.LogoutRequestParams)
+	err := json.NewDecoder(c.Request.Body).Decode(params)
+	if nil != err || (common.LogoutHTTPSchemeHTTP != params.HTTPScheme && common.LogoutHTTPSchemeHTTPS != params.HTTPScheme) {
+		params.HTTPScheme, err = c.Cookie(common.LogoutHTTPSchemeCookieKey)
+		if nil != err || (common.LogoutHTTPSchemeHTTP != params.HTTPScheme && common.LogoutHTTPSchemeHTTPS != params.HTTPScheme) {
+			params.HTTPScheme = common.LogoutHTTPSchemeHTTP
+		}
 	}
-	return 200, map[string]interface{}{
-		"result":        true,
-		"bk_error_msg":  "get user list ok",
-		"bk_error_code": "00",
-		"data":          info,
-	}
+	user := plugins.CurrentPlugin(c)
+	return user.GetLoginUrl(c, config, params)
+
 }

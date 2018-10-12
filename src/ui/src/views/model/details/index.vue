@@ -13,7 +13,10 @@
                             <span class="text">{{$t('ModelManagement["停用模型"]')}}</span>
                         </span>
                     </span>
-                    <span class="btn-box" @click="dialogConfirm('delete')" v-tooltip="$t('ModelManagement[\'删除模型和其下所有实例，此动作不可逆，请谨慎操作\']')">
+                    <span class="btn-box"
+                        v-if="!ispre"
+                        v-tooltip="$t('ModelManagement[\'删除模型和其下所有实例，此动作不可逆，请谨慎操作\']')"
+                        @click="dialogConfirm('delete')" >
                         <i class="icon icon-cc-del"></i>
                         <span class="text">{{$t('ModelManagement["删除模型"]')}}</span>
                     </span>

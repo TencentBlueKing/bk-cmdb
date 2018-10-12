@@ -126,6 +126,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	coreService.Instance = hostCtrl.Instance
 	coreService.Cache = hostCtrl.Cache
 	coreService.Logics = logics.Logics{Instance: hostCtrl.Instance}
+	coreService.Logics.Engine = hostCtrl.Core
 
 	select {}
 	return nil

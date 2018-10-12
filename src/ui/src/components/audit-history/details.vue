@@ -15,6 +15,8 @@
                 </div>
             </div>
             <cmdb-table
+                rowCursor="default"
+                rowHoverColor="#fff"
                 :loading="$loading(`post_searchObjectAttribute_${objId}`)"
                 :sortable="false"
                 :width="width? width : 700"

@@ -72,6 +72,25 @@ const actions = {
         return $http.post(`inst/association/search/owner/${rootGetters.supplierAccount}/object/${objId}`, params, config)
     },
 
+    searchInstById ({ rootGetters }, { config, objId, instId, idKey = 'bk_inst_id' }) {
+        return $http.post(`inst/association/search/owner/${rootGetters.supplierAccount}/object/${objId}`, {
+            condition: {
+                [objId]: [{
+                    field: idKey,
+                    operator: '$eq',
+                    value: instId
+                }]
+            },
+            fields: {},
+            page: {
+                start: 0,
+                limit: 1
+            }
+        }, config).then(data => {
+            return data.info[0] || {}
+        })
+    },
+
     /**
      * 删除对象实例
      * @param {Function} commit store commit mutation hander

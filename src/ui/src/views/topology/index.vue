@@ -8,18 +8,41 @@
             :max="480">
             <cmdb-business-selector class="business-selector" v-model="business">
             </cmdb-business-selector>
+            <div class="tree-simplify" v-if="tree.simplifyAvailable">
+                <cmdb-form-bool class="tree-simplify-checkbox"
+                    :size="16"
+                    :true-value="true"
+                    :false-value="false"
+                    v-model="tree.simplify">
+                    <span v-if="tree.simplify">
+                        {{$t('BusinessTopology["完整显示"]')}}
+                    </span>
+                    <span v-else>
+                        {{$t('BusinessTopology["精简显示"]')}}
+                    </span>
+                </cmdb-form-bool>
+                <v-popover style="display: inline-block;" trigger="hover" :delay="200">
+                    <i class="bk-icon icon-info-circle">
+                    </i>
+                    <img src="@/assets/images/simplify-tips.png" slot="popover">
+                </v-popover>
+            </div>
             <cmdb-tree ref="topoTree" class="topo-tree"
                 children-key="child"
                 :id-generator="getTopoNodeId"
                 :tree="tree.data"
                 @on-selected="handleNodeSelected">
-                <div class="tree-node clearfix" slot-scope="{node, state}" :class="{'tree-node-selected': state.selected}">
+                <div class="tree-node clearfix" slot-scope="{node, state}"
+                    :class="{
+                        'tree-node-selected': state.selected,
+                        'tree-node-module': node['bk_obj_id'] === 'module'
+                    }">
                     <template v-if="[1, 2].includes(node.default)">
                         <i class='topo-node-icon topo-node-icon-internal icon-cc-host-free-pool' v-if="node.default === 1"></i>
                         <i class='topo-node-icon topo-node-icon-internal icon-cc-host-breakdown' v-else></i>
                     </template>
                     <i class="topo-node-icon topo-node-icon-text" v-else>{{node['bk_obj_name'][0]}}</i>
-                    <span class="topo-node-text">{{node['bk_inst_name']}}</span>
+                    <span class="topo-node-text" :title="node['bk_inst_name']">{{node['bk_inst_name']}}</span>
                     <bk-button type="primary" class="topo-node-btn-create fr"
                         v-if="showCreate(node, state)"
                         @click.stop="handleCreate">
@@ -27,6 +50,20 @@
                     </bk-button>
                 </div>
             </cmdb-tree>
+            <bk-dialog
+                :is-show.sync="tree.create.active"
+                :has-header="false"
+                :has-footer="false"
+                :padding="0"
+                :quick-close="false"
+                @cancel="handleCancelCreateNode">
+                <tree-node-create v-if="tree.create.active" slot="content"
+                    :properties="tree.create.properties"
+                    :state="tree.selectedNodeState"
+                    @on-submit="handleCreateNode"
+                    @on-cancel="handleCancelCreateNode">
+                </tree-node-create>
+            </bk-dialog>
         </cmdb-resize-layout>
         <div class="hosts-layout">
             <bk-tab :active-name.sync="tab.active" @tab-changed="handleTabChanged">
@@ -38,28 +75,34 @@
                     </bk-button>
                     <cmdb-hosts-table class="topo-table" ref="topoTable"
                         :columns-config-key="table.columnsConfigKey"
-                        :columns-config-properties="columnsConfigProperties">
+                        :columns-config-properties="columnsConfigProperties"
+                        :quick-search="true"
+                        @on-quick-search="handleQuickSearch">
                     </cmdb-hosts-table>
                 </bk-tabpanel>
                 <bk-tabpanel name="attribute" :title="$t('BusinessTopology[\'节点属性\']')"
                     v-bkloading="{isLoading: $loading()}"
                     :show="showAttributePanel">
-                    <cmdb-topo-node-details 
+                    <cmdb-details class="topology-details"
                         v-if="isNodeDetailsActive"
+                        :showDelete="false"
                         :properties="tab.properties"
                         :property-groups="tab.propertyGroups"
                         :inst="tree.flatternedSelectedNodeInst"
                         @on-edit="handleEdit">
-                    </cmdb-topo-node-details>
-                    <cmdb-topo-node-form v-else-if="['update', 'create'].includes(tab.type)"
+                    </cmdb-details>
+                    <cmdb-form class="topology-details" v-else-if="['update', 'create'].includes(tab.type)"
                         :properties="tab.properties"
                         :property-groups="tab.propertyGroups"
                         :inst="tree.selectedNodeInst"
                         :type="tab.type"
                         @on-submit="handleSubmit"
-                        @on-cancel="handleCancel"
-                        @on-delete="handleDelete">
-                    </cmdb-topo-node-form>
+                        @on-cancel="handleCancel">
+                        <template slot="extra-options">
+                            <bk-button type="danger" style="margin-left: 4px" @click="handleDelete">{{$t('Common["删除"]')}}
+                            </bk-button>
+                        </template>
+                    </cmdb-form>
                 </bk-tabpanel>
                 <bk-tabpanel name="process" :title="$t('ProcessManagement[\'进程信息\']')"
                     :show="showProcessPanel">
@@ -77,15 +120,13 @@
 <script>
     import { mapGetters, mapActions } from 'vuex'
     import cmdbHostsTable from '@/components/hosts/table'
-    import cmdbTopoNodeDetails from './children/_node-details'
-    import cmdbTopoNodeForm from './children/_node-form'
     import cmdbTopoNodeProcess from './children/_node-process'
+    import treeNodeCreate from './children/_node-create.vue'
     export default {
         components: {
             cmdbHostsTable,
-            cmdbTopoNodeDetails,
-            cmdbTopoNodeForm,
-            cmdbTopoNodeProcess
+            cmdbTopoNodeProcess,
+            treeNodeCreate
         },
         data () {
             return {
@@ -101,10 +142,16 @@
                 topoModel: [],
                 tree: {
                     data: [],
+                    simplify: false,
+                    simplifyAvailable: false,
                     selectedNode: null,
                     selectedNodeState: null,
                     selectedNodeInst: {},
-                    flatternedSelectedNodeInst: {}
+                    flatternedSelectedNodeInst: {},
+                    create: {
+                        active: false,
+                        properties: []
+                    }
                 },
                 tab: {
                     active: 'hosts',
@@ -114,7 +161,11 @@
                 },
                 table: {
                     params: null,
-                    columnsConfigKey: 'topology_table_columns'
+                    columnsConfigKey: 'topology_table_columns',
+                    quickSearch: {
+                        property: null,
+                        value: ''
+                    }
                 }
             }
         },
@@ -168,6 +219,13 @@
             showProcessPanel (val) {
                 if (!val) {
                     this.tab.active = 'hosts'
+                }
+            },
+            'tree.simplify' (simplify) {
+                if (simplify) {
+                    this.simplifyTree()
+                } else {
+                    this.getBusinessTopo()
                 }
             }
         },
@@ -243,7 +301,6 @@
                     this.tab.properties = this.properties[objId]
                     return Promise.resolve(this.properties[objId])
                 }
-                this.properties[objId] = []
                 return this.searchObjectAttribute({
                     params: {
                         'bk_obj_id': objId,
@@ -254,7 +311,7 @@
                         fromCache: true
                     }
                 }).then(properties => {
-                    this.properties[objId] = properties
+                    this.$set(this.properties, objId, properties)
                     this.tab.properties = properties
                     return properties
                 })
@@ -335,6 +392,8 @@
                 })
             },
             getBusinessTopo () {
+                this.tree.simplifyAvailable = false
+                this.tree.simplify = false
                 return Promise.all([
                     this.getInstTopo({
                         bizId: this.business,
@@ -367,6 +426,7 @@
                         ...instTopo[0],
                         child: [...internalModule, ...instTopo[0].child]
                     }]
+                    this.tree.simplifyAvailable = instTopo[0].child.length === 1 && instTopo[0].child[0].child.length
                 })
             },
             getModelByObjId (id) {
@@ -388,6 +448,12 @@
                     this.handleRefresh()
                 }
             },
+            handleQuickSearch (property, value) {
+                this.table.quickSearch.property = property
+                this.table.quickSearch.value = value
+                this.setSearchParams()
+                this.handleRefresh()
+            },
             handleRefresh () {
                 this.$refs.topoTable.search(this.business, this.table.params)
             },
@@ -407,6 +473,26 @@
                         flag: 'bk_host_innerip|bk_host_outerip'
                     },
                     condition
+                }
+                const quickSearch = this.table.quickSearch
+                if (quickSearch.property && quickSearch.value !== null) {
+                    if (['singleasst', 'multiasst'].includes(quickSearch.property['bk_property_type'])) {
+                        condition.push({
+                            'bk_obj_id': quickSearch.property['bk_asst_obj_id'],
+                            condition: [{
+                                field: 'bk_inst_name',
+                                operator: '$regex',
+                                value: quickSearch.value
+                            }]
+                        })
+                    } else {
+                        const hostCondition = condition.find(condition => condition['bk_obj_id'] === 'host')
+                        hostCondition.condition.push({
+                            field: quickSearch.property['bk_property_id'],
+                            operator: '$regex',
+                            value: quickSearch.value
+                        })
+                    }
                 }
                 const selectedNodeObjId = this.tree.selectedNode['bk_obj_id']
                 if (['module', 'set'].includes(selectedNodeObjId)) {
@@ -453,13 +539,21 @@
             handleEdit () {
                 this.tab.type = 'update'
             },
-            handleCreate () {
-                this.tab.type = 'create'
-                if (this.tab.active === 'attribute') {
-                    this.handleTabChanged(this.tab.active)
-                } else {
-                    this.tab.active = 'attribute'
-                }
+            async handleCreate () {
+                this.tree.create.active = true
+                const selectedNode = this.tree.selectedNode
+                const model = this.topoModel.find(model => model['bk_obj_id'] === selectedNode['bk_obj_id'])
+                const properties = await this.getCommonProperties(model['bk_next_obj'])
+                this.tree.create.properties = properties
+            },
+            handleCreateNode (values) {
+                this.createNode(values).then(() => {
+                    this.handleCancelCreateNode()
+                })
+            },
+            handleCancelCreateNode () {
+                this.tree.create.active = false
+                this.tree.create.properties = []
             },
             handleSubmit (value, changedValue, originalInst, type) {
                 let promise = type === 'create' ? this.createNode(value) : this.updateNode(value)
@@ -618,6 +712,15 @@
                 const isBlueKing = this.tree.data[0]['bk_inst_name'] === '蓝鲸'
                 const isModule = node['bk_obj_id'] === 'module'
                 return selected && !isBlueKing && !isModule
+            },
+            simplifyTree () {
+                this.$refs.topoTree.selectNode(this.getTopoNodeId(this.tree.data[0]))
+                let instTopo = this.tree.data[0].child.slice(2)
+                while (instTopo.length === 1 && instTopo[0].child.length) {
+                    instTopo = instTopo[0].child
+                }
+                this.tree.data[0].child.splice(2, 1, ...instTopo)
+                this.$refs.topoTree.$forceUpdate()
             }
         }
     }
@@ -636,11 +739,16 @@
         .business-selector{
             display: block;
             width: auto;
-            margin: 20px;
+            margin: 20px 20px 13px;
+        }
+        .tree-simplify {
+            padding: 0 20px;
+            font-size: 14px;
         }
         .topo-tree{
             padding: 0 0 0 20px;
-            height: calc(100% - 76px);
+            margin: 10px 0 0 0;
+            height: calc(100% - 100px);
             @include scrollbar-y;
             .tree-node {
                 font-size: 0;
@@ -652,12 +760,17 @@
                         color: #50abff;
                     }
                 }
-                &.tree-node-selected{
-                    .topo-node-icon.topo-node-icon-text{
+                &.tree-node-selected {
+                    .topo-node-icon.topo-node-icon-text {
                         background-color: #498fe0;
                     }
-                    .topo-node-icon.topo-node-icon-internal{
+                    .topo-node-icon.topo-node-icon-internal {
                         color: #ffb400;
+                    }
+                }
+                &.tree-node-selected:not(.tree-node-module) {
+                    .topo-node-text {
+                        max-width: calc(100% - 65px);
                     }
                 }
             }
@@ -682,8 +795,10 @@
             .topo-node-text{
                 display: inline-block;
                 vertical-align: middle;
+                max-width: calc(100% - 18px);
                 padding: 0 0 0 8px;
                 font-size: 14px;
+                @include ellipsis;
             }
             .topo-node-btn-create{
                 width: auto;
@@ -712,5 +827,8 @@
         .options{
             margin: 30px 0 0 150px;
         }
+    }
+    .topology-details {
+        max-width: 700px;
     }
 </style>

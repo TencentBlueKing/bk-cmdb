@@ -71,6 +71,10 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.POST("/usercustom/default/search/{bk_user}").To(s.GetDefaultUserCustom))
 	ws.Route(ws.GET("/healthz").To(s.Healthz))
 
+	ws.Route(ws.POST("/host/lock").To(s.LockHost))
+	ws.Route(ws.DELETE("/host/lock").To(s.UnlockHost))
+	ws.Route(ws.POST("/host/lock/search").To(s.QueryLockHost))
+
 	return ws
 }
 

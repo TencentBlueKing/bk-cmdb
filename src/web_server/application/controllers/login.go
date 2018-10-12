@@ -13,29 +13,29 @@
 package controllers
 
 import (
-	"fmt"
-
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
 
 	"configcenter/src/common"
-	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/core/cc/wactions"
+	"configcenter/src/common/metadata"
+	"configcenter/src/web_server/application/middleware/user"
 )
 
 //LogOutUser log out user
 func LogOutUser(c *gin.Context) {
-	a := api.NewAPIResource()
-	config, _ := a.ParseConfig()
-	site := config["site.domain_url"]
-	loginURL := config["site.bk_login_url"]
-	appCode := config["site.app_code"]
-	loginPage := fmt.Sprintf(loginURL, appCode, site)
 	session := sessions.Default(c)
 	session.Clear()
-	c.Redirect(301, loginPage)
+	c.Request.URL.Path = ""
+	userManger := user.NewUser()
+	loginURL := userManger.GetLoginUrl(c)
+	ret := metadata.LogoutResult{}
+	ret.BaseResp.Result = true
+	ret.Data.LogoutURL = loginURL
+	c.JSON(200, ret)
+	return
 }
 
 func init() {
-	wactions.RegisterNewAction(wactions.Action{common.HTTPSelectGet, "/logout", nil, LogOutUser})
+	wactions.RegisterNewAction(wactions.Action{common.HTTPCreate, "/logout", nil, LogOutUser})
 }

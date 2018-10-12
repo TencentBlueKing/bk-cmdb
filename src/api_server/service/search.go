@@ -349,7 +349,7 @@ func (s *Service) getAppHostList(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	blog.Infof("getAppHostList success, data length: %d", len(resDataV2.([]map[string]interface{})))
+	blog.Infof("getAppHostList success, data length: %d", len(resDataV2.([]interface{})))
 
 	converter.RespSuccessV2(resDataV2, resp)
 }

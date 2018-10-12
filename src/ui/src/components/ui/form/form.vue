@@ -22,7 +22,8 @@
                                     :class="{error: errors.has(property['bk_property_id'])}"
                                     :disabled="checkDisabled(property)"
                                     :options="property.option || []"
-                                    :data-vv-name="property['bk_property_name']"
+                                    :data-vv-name="property['bk_property_id']"
+                                    :data-vv-as="property['bk_property_name']"
                                     v-validate="getValidateRules(property)"
                                     v-model.trim="values[property['bk_property_id']]">
                                 </component>
@@ -31,11 +32,12 @@
                                     :is="`cmdb-form-${property['bk_property_type']}`"
                                     :class="{error: errors.has(property['bk_property_id'])}"
                                     :disabled="checkDisabled(property)"
-                                    :data-vv-name="property['bk_property_name']"
+                                    :data-vv-name="property['bk_property_id']"
+                                    :data-vv-as="property['bk_property_name']"
                                     v-validate="getValidateRules(property)"
                                     v-model.trim="values[property['bk_property_id']]">
                                 </component>
-                                <span class="form-error">{{errors.first(property['bk_property_name'])}}</span>
+                                <span class="form-error">{{errors.first(property['bk_property_id'])}}</span>
                             </div>
                         </li>
                     </ul>
@@ -53,6 +55,7 @@
                 </bk-button>
                 <bk-button class="button-cancel" @click="handleCancel">{{$t("Common['取消']")}}</bk-button>
             </slot>
+            <slot name="extra-options"></slot>
         </div>
     </div>
 </template>
@@ -149,7 +152,7 @@
                 if (this.type === 'create') {
                     return false
                 }
-                return !property.editable
+                return !property.editable || property.isreadonly
             },
             htmlEncode (placeholder) {
                 let temp = document.createElement('div')
@@ -272,6 +275,7 @@
         left: 0;
         width: 100%;
         padding: 28px 32px 0;
+        font-size: 0;
         &.sticky {
             padding: 10px 32px;
             border-top: 1px solid $cmdbBorderColor;
@@ -283,6 +287,7 @@
         }
         .button-cancel{
             min-width: 76px;
+            margin: 0 4px;
             background-color: #fff;
         }
     }

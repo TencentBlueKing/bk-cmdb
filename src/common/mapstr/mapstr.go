@@ -290,12 +290,15 @@ func (cli MapStr) MapStrArray(key string) ([]MapStr, error) {
 }
 
 // ForEach for each the every item
-func (cli MapStr) ForEach(callItem func(key string, val interface{})) {
+func (cli MapStr) ForEach(callItem func(key string, val interface{}) error) error {
 
 	for key, val := range cli {
-		callItem(key, val)
+		if err := callItem(key, val); nil != err {
+			return err
+		}
 	}
 
+	return nil
 }
 
 // Remove delete the item by the key and return the deleted one
@@ -329,24 +332,25 @@ func (cli MapStr) Different(target MapStr) (more MapStr, less MapStr, changes Ma
 	changes = make(MapStr)
 
 	// check more
-	cli.ForEach(func(key string, val interface{}) {
+	cli.ForEach(func(key string, val interface{}) error {
 		if targetVal, ok := target[key]; ok {
 
 			if !reflect.DeepEqual(val, targetVal) {
 				changes[key] = val
 			}
-			return
+			return nil
 		}
 
 		more.Set(key, val)
+		return nil
 	})
 
 	// check less
-	target.ForEach(func(key string, val interface{}) {
+	target.ForEach(func(key string, val interface{}) error {
 		if !cli.Exists(key) {
 			less[key] = val
 		}
-
+		return nil
 	})
 
 	return more, less, changes

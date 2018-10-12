@@ -18,12 +18,12 @@ import (
 	"strings"
 	"time"
 
+	redis "gopkg.in/redis.v5"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 	"configcenter/src/storage"
-
-	redis "gopkg.in/redis.v5"
 )
 
 type RedisConfig struct {
@@ -427,4 +427,8 @@ func (r *Redis) IsDuplicateErr(err error) bool {
 // IsNotFoundErr returns whether err is not found error
 func (r *Redis) IsNotFoundErr(err error) bool {
 	return redis.Nil == err
+}
+
+func (m *Redis) GetDBName() string {
+	return m.dbName
 }

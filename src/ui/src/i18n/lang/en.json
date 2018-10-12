@@ -115,13 +115,14 @@
     },
     "Index": {
         "首页": "Index",
+        "限制添加导航提示": "Add {max} custom navigation at most",
         "添加导航": "Add Navigation",
         "取消导航": "Cancel Navigation",
         "添加导航成功": "Add navigation success",
         "取消导航成功": "Cancel navigation success",
         "模型数量": "Model: 1 item | Models: {count} items",
         "返回上级": "Return",
-        "开始查询": "Please enter at least 3 characters to start the query",
+        "开始查询": "Please enter at least 3 characters to start query host",
         "固定到导航": "Collections to navigation",
         "固定导航": "Fixed navigation",
         "收起导航": "retract navigation",
@@ -441,7 +442,9 @@
         "节点属性": "Node properties",
         "请输入IP地址": "Please Input IP Address",
         "未查询到该IP地址对应的主机": "Do not find host with this IP address",
-        "请输入完整IP地址进行查询": "Please input full IP address to search"
+        "请输入完整IP地址进行查询": "Please input full IP address to search",
+        "精简显示": "Simplify Display",
+        "完整显示": "Complete Display"
     },
     "Hosts": {
         "主机管理": "Hosts Manage",

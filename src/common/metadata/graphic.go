@@ -25,7 +25,8 @@ type GraphAsst struct {
 	ObjID    string            `json:"bk_obj_id"`
 	InstID   int               `json:"bk_inst_id"`
 	ObjAtt   string            `json:"bk_object_att_id"`
-	Lable    map[string]string `json:"lable"`
+	AsstName string            `json:"bk_asst_name"`
+	Label    map[string]string `json:"label"`
 }
 
 type TopoGraphics struct {

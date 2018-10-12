@@ -75,3 +75,45 @@ func (t *hostctrl) GetHostSnap(ctx context.Context, hostID string, h http.Header
 		Into(resp)
 	return
 }
+
+func (host *hostctrl) LockHost(ctx context.Context, h http.Header, input *metadata.HostLockRequest) (resp *metadata.HostLockResponse, err error) {
+	resp = new(metadata.HostLockResponse)
+	subPath := "/host/lock/"
+
+	err = host.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (host *hostctrl) UnlockHost(ctx context.Context, h http.Header, input *metadata.HostLockRequest) (resp *metadata.HostLockResponse, err error) {
+	resp = new(metadata.HostLockResponse)
+	subPath := "/host/lock/"
+
+	err = host.client.Delete().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (host *hostctrl) QueryHostLock(ctx context.Context, h http.Header, input *metadata.QueryHostLockRequest) (resp *metadata.HostLockQueryResponse, err error) {
+	resp = new(metadata.HostLockQueryResponse)
+	subPath := "/host/lock/search"
+
+	err = host.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}

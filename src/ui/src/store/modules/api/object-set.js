@@ -42,7 +42,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     deleteSet ({ commit, state, dispatch }, { bizId, setId, config }) {
-        return $http.delete(`set/${bizId}/${bizId}`, config)
+        return $http.delete(`set/${bizId}/${setId}`, config)
     },
 
     /**

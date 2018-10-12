@@ -5,7 +5,7 @@
                 <label class="header-label">{{$t("Inst['隐藏属性']")}}</label>
                 <input class="header-filter" type="text" :placeholder="$t('Inst[\'搜索属性\']')" v-model.trim="filter">
             </div>
-            <ul class="property-list">
+            <ul class="property-list property-list-unselected">
                 <li ref="unselectedPropertyItem" class="property-item" v-for="(property, index) in unselectedProperties" @click="selectProperty(property)">
                     <span class="property-name">{{property['bk_property_name']}}</span>
                     <i class="bk-icon icon-angle-right"></i>
@@ -84,7 +84,7 @@
         data () {
             return {
                 filter: '',
-                localSelcted: []
+                localSelected: []
             }
         },
         computed: {
@@ -95,14 +95,14 @@
             },
             unselectedProperties () {
                 return this.sortedProperties.filter(property => {
-                    const unselected = !this.localSelcted.includes(property['bk_property_id'])
+                    const unselected = !this.localSelected.includes(property['bk_property_id'])
                     const includesFilter = property['bk_property_name'].toLowerCase().indexOf(this.filter.toLowerCase()) !== -1
                     return unselected && includesFilter
                 })
             },
             undragbbleProperties () {
                 const undragbbleProperties = []
-                this.localSelcted.forEach(propertyId => {
+                this.localSelected.forEach(propertyId => {
                     if (this.disabledColumns.includes(propertyId)) {
                         const property = this.properties.find(property => property['bk_property_id'] === propertyId)
                         if (property) {
@@ -115,7 +115,7 @@
             drabbleProperties: {
                 get () {
                     const drabbleProperties = []
-                    this.localSelcted.forEach(propertyId => {
+                    this.localSelected.forEach(propertyId => {
                         if (!this.disabledColumns.includes(propertyId)) {
                             const property = this.properties.find(property => property['bk_property_id'] === propertyId)
                             if (property) {
@@ -126,7 +126,7 @@
                     return drabbleProperties
                 },
                 set (drabbleProperties) {
-                    this.localSelcted = [...this.undragbbleProperties, ...this.drabbleProperties].map(property => property['bk_property_id'])
+                    this.localSelected = [...this.undragbbleProperties, ...drabbleProperties].map(property => property['bk_property_id'])
                 }
             }
         },
@@ -140,18 +140,18 @@
         },
         methods: {
             initLocalSelected () {
-                this.localSelcted = this.selected.filter(propertyId => this.properties.some(property => property['bk_property_id'] === propertyId))
+                this.localSelected = this.selected.filter(propertyId => this.properties.some(property => property['bk_property_id'] === propertyId))
             },
             selectProperty (property) {
-                if (this.localSelcted.length < this.max) {
-                    this.localSelcted.push(property['bk_property_id'])
+                if (this.localSelected.length < this.max) {
+                    this.localSelected.push(property['bk_property_id'])
                 } else {
                     this.$info(this.$t('Common["最多选择N项"]', {n: this.max}))
                 }
             },
             unselectProperty (property) {
-                if (this.localSelcted.length > this.min) {
-                    this.localSelcted = this.localSelcted.filter(propertyId => propertyId !== property['bk_property_id'])
+                if (this.localSelected.length > this.min) {
+                    this.localSelected = this.localSelected.filter(propertyId => propertyId !== property['bk_property_id'])
                 } else {
                     this.$info(this.$t('Common["至少选择N项"]', {n: this.min}))
                 }
@@ -160,9 +160,9 @@
                 return this.disabledColumns.includes(property['bk_property_id'])
             },
             handleApply () {
-                if (this.localSelcted.length > this.max) {
+                if (this.localSelected.length > this.max) {
                     this.$info(this.$t('Common["最多选择N项"]', {n: this.max}))
-                } else if (this.localSelcted.length < this.min) {
+                } else if (this.localSelected.length < this.min) {
                     this.$info(this.$t('Common["至少选择N项"]', {n: this.min}))
                 } else {
                     this.$emit('on-apply', [...this.undragbbleProperties, ...this.drabbleProperties])
@@ -223,6 +223,10 @@
             .property-item{
                 cursor: move;
             }
+        }
+        &-unselected {
+            height: calc(100% - 78px);
+            @include scrollbar-y;
         }
         .property-item{
             position: relative;

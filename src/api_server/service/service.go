@@ -92,6 +92,7 @@ func (s *Service) V2WebService() *restful.WebService {
 	ws.Route(ws.POST("host/cloneHostProperty").To(s.cloneHostProperty))
 	ws.Route(ws.POST("host/delHostInApp").To(s.delHostInApp))
 	ws.Route(ws.POST("host/getgitServerIp").To(s.getGitServerIp))
+	ws.Route(ws.POST("host/hardinfo").To(s.GetHostHardInfo))
 
 	ws.Route(ws.POST("/CustomerGroup/getContentByCustomerGroupID").To(s.getContentByCustomerGroupID))
 	ws.Route(ws.POST("CustomerGroup/getContentByCustomerGroupId").To(s.getContentByCustomerGroupID))
@@ -107,6 +108,9 @@ func (s *Service) V2WebService() *restful.WebService {
 	ws.Route(ws.POST("process/getProcessPortByIP").To(s.getProcessPortByIP))
 
 	ws.Route(ws.POST("Property/getList").To(s.getObjProperty))
+
+	ws.Route(ws.POST("/Host/getAppOwnerHostList").To(s.getHostListByOwner))
+	ws.Route(ws.POST("/App/getAppByUinExt").To(s.getAppByOwnerAndUin))
 
 	return ws
 

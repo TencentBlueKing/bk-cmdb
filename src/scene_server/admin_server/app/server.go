@@ -20,12 +20,12 @@ import (
 	"sync"
 	"time"
 
-	"configcenter/src/common/backbone/configcenter"
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/backbone"
+	"configcenter/src/common/backbone/configcenter"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
@@ -105,6 +105,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			return fmt.Errorf("connect mongo server failed %s", err.Error())
 		}
 		process.Service.SetDB(db)
+		process.Service.SetApiSrvAddr(process.Config.ProcSrvConfig.CCApiSrvAddr)
 		err = process.ConfigCenter.Start(
 			process.Config.Configures.Dir,
 			process.Config.Errors.Res,
@@ -152,6 +153,8 @@ func (h *MigrateServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		h.Config.Configures.Dir = current.ConfigMap["confs.dir"]
 
 		h.Config.Register.Address = current.ConfigMap["register-server.addrs"]
+
+		h.Config.ProcSrvConfig.CCApiSrvAddr, _ = current.ConfigMap["procsrv.cc_api"]
 	}
 }
 

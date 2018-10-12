@@ -2,10 +2,9 @@ let ID_SEED = 1
 class TreeLayout {
     constructor (options) {
         this.instance = null
-        this.flatternStates = []
+        this.flatternStates = {}
         this.selectedState = null
-        this.expandedStates = []
-        this.expandedLevel = 0
+        this.expandedStates = {}
         for (let name in options) {
             if (options.hasOwnProperty(name)) {
                 this[name] = options[name]
@@ -29,11 +28,14 @@ class TreeLayout {
     }
 
     getStateById (id) {
-        return this.flatternStates.find(state => state.id === id)
+        const state = this.flatternStates[id] || null
+        return state
     }
 
     selectState (id) {
-        this.flatternStates.forEach(state => {
+        const flatternStates = this.flatternStates
+        for (let key in this.flatternStates) {
+            const state = flatternStates[key]
             if (state.id === id) {
                 state.selected = true
                 this.selectedState = state
@@ -43,7 +45,7 @@ class TreeLayout {
             if (state.node.hasOwnProperty('selected')) {
                 state.node.selected = state.selected
             }
-        })
+        }
     }
 
     unselectState (id) {
@@ -60,11 +62,10 @@ class TreeLayout {
         if (state) {
             state.expanded = expanded
             if (expanded) {
-                this.expandedStates.push(state)
+                this.expandedStates[id] = state
             } else {
-                this.expandedStates = this.expandedStates.filter(state => state.id !== id)
+                delete this.expandedStates[id]
             }
-            this.expandedLevel = Math.max.apply(null, this.expandedStates.map(state => state.level))
             if (state.node.hasOwnProperty('expanded')) {
                 state.node.expanded = expanded
             }
@@ -74,15 +75,15 @@ class TreeLayout {
     }
 
     addFlatternState (state) {
-        this.flatternStates.push(state)
+        this.flatternStates[state.id] = state
     }
 
     removeFlatternState (state) {
-        this.flatternStates = this.flatternStates.filter(flatternState => flatternState !== state)
+        delete this.flatternStates[state.id]
     }
 
     removeExpandedState (state) {
-        this.expandedStates = this.expandedStates.filter(expandedState => expandedState !== state)
+        delete this.expandedStates[state.id]
     }
 
     destory (state) {

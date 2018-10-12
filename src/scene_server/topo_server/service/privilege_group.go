@@ -53,8 +53,9 @@ func (s *topoService) SearchUserGroup(params types.ContextParams, pathParams, qu
 
 	cond := condition.CreateCondition()
 
-	data.ForEach(func(key string, val interface{}) {
+	data.ForEach(func(key string, val interface{}) error {
 		cond.Field(key).Like(val)
+		return nil
 	})
 
 	return s.core.PermissionOperation().UserGroup(params).SearchUserGroup(pathParams("bk_supplier_account"), cond)

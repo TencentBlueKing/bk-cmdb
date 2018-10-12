@@ -138,6 +138,10 @@
                 type: [String, Boolean],
                 default: '#f1f7ff'
             },
+            rowCursor: {
+                type: String,
+                default: 'pointer'
+            },
             stripe: {
                 type: Boolean,
                 default: false

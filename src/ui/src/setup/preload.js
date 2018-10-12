@@ -49,11 +49,22 @@ export function _preloadUserCustom (app) {
     })
 }
 
+export function _preloadUserList (app) {
+    return app.$store.dispatch('getUserList').then(list => {
+        window.CMDB_USER_LIST = list
+        app.$store.commit('setUserList', list)
+        return list
+    }).catch(e => {
+        window.CMDB_USER_LIST = []
+    })
+}
+
 export default function (app) {
     return Promise.all([
         _preloadPrivilege(app),
         _preloadClassifications(app),
         _preloadBusiness(app),
-        _preloadUserCustom(app)
+        _preloadUserCustom(app),
+        _preloadUserList(app)
     ])
 }

@@ -108,7 +108,7 @@ func (m *module) DeleteModule(params types.ContextParams, obj model.Object, bizI
 		innerCond.Field(common.BKModuleIDField).In(moduleIDS)
 	}
 
-	return m.inst.DeleteInst(params, obj, innerCond)
+	return m.inst.DeleteInst(params, obj, innerCond, false)
 }
 
 func (m *module) FindModule(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (count int, results []inst.Inst, err error) {

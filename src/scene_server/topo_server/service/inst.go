@@ -72,7 +72,7 @@ func (s *topoService) DeleteInsts(params types.ContextParams, pathParams, queryP
 		return nil, err
 	}
 
-	return nil, s.core.InstOperation().DeleteInstByInstID(params, obj, deleteCondition.Delete.InstID)
+	return nil, s.core.InstOperation().DeleteInstByInstID(params, obj, deleteCondition.Delete.InstID, true)
 }
 
 // DeleteInst delete the inst
@@ -94,7 +94,7 @@ func (s *topoService) DeleteInst(params types.ContextParams, pathParams, queryPa
 		return nil, err
 	}
 
-	err = s.core.InstOperation().DeleteInstByInstID(params, obj, []int64{instID})
+	err = s.core.InstOperation().DeleteInstByInstID(params, obj, []int64{instID}, true)
 	return nil, err
 }
 func (s *topoService) UpdateInsts(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
@@ -173,7 +173,9 @@ func (s *topoService) SearchInsts(params types.ContextParams, pathParams, queryP
 	}
 
 	// construct the query inst condition
-	queryCond := &paraparse.SearchParams{Condition: mapstr.New()}
+	queryCond := &paraparse.SearchParams{
+		Condition: mapstr.New(),
+	}
 	if err := data.MarshalJSONInto(queryCond); nil != err {
 		blog.Errorf("[api-inst] failed to parse the data and the condition, the input (%#v), error info is %s", data, err.Error())
 		return nil, err
@@ -213,7 +215,9 @@ func (s *topoService) SearchInstAndAssociationDetail(params types.ContextParams,
 
 	// construct the query inst condition
 
-	queryCond := &paraparse.SearchParams{Condition: mapstr.New()}
+	queryCond := &paraparse.SearchParams{
+		Condition: mapstr.New(),
+	}
 	if err := data.MarshalJSONInto(queryCond); nil != err {
 		blog.Errorf("[api-inst] failed to parse the data and the condition, the input (%#v), error info is %s", data, err.Error())
 		return nil, err
@@ -250,7 +254,9 @@ func (s *topoService) SearchInstByObject(params types.ContextParams, pathParams,
 		return nil, err
 	}
 
-	queryCond := &paraparse.SearchParams{Condition: mapstr.New()}
+	queryCond := &paraparse.SearchParams{
+		Condition: mapstr.New(),
+	}
 	if err := data.MarshalJSONInto(queryCond); nil != err {
 		blog.Errorf("[api-inst] failed to parse the data and the condition, the input (%#v), error info is %s", data, err.Error())
 		return nil, err

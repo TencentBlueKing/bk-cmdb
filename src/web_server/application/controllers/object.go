@@ -241,7 +241,7 @@ func ExportObject(c *gin.Context) {
 	if nil != err {
 		blog.Error(err.Error())
 		msg := getReturnStr(common.CCErrWebGetObjectFail, defErr.Errorf(common.CCErrWebGetObjectFail, err.Error()).Error(), nil)
-		c.String(http.StatusBadGateway, msg)
+		c.String(http.StatusInternalServerError, msg)
 		return
 	}
 
@@ -258,7 +258,7 @@ func ExportObject(c *gin.Context) {
 	if err != nil {
 		blog.Error(err.Error())
 		msg := getReturnStr(common.CCErrWebCreateEXCELFail, defErr.Errorf(common.CCErrWebCreateEXCELFail, err.Error()).Error(), nil)
-		c.String(http.StatusBadGateway, msg, nil)
+		c.String(http.StatusInternalServerError, msg, nil)
 		return
 	}
 

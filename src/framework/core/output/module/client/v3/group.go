@@ -13,13 +13,15 @@
 package v3
 
 import (
-	"configcenter/src/framework/common"
-	"configcenter/src/framework/core/log"
-	"configcenter/src/framework/core/types"
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	"github.com/tidwall/gjson"
+
+	"configcenter/src/framework/common"
+	"configcenter/src/framework/core/log"
+	"configcenter/src/framework/core/types"
 )
 
 // GroupGetter group getter
@@ -55,7 +57,6 @@ func (g *Group) CreateGroup(data types.MapStr) (int, error) {
 	targetURL := fmt.Sprintf("%s/api/v3/objectatt/group/new", g.cli.GetAddress())
 
 	out := data.ToJSON()
-	log.Infof("create group %s", out)
 	rst, err := g.cli.httpCli.POST(targetURL, nil, out)
 	if nil != err {
 		return 0, err

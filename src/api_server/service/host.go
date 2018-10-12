@@ -18,14 +18,15 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/api_server/ccapi/logics/v2/common/converter"
 	"configcenter/src/api_server/ccapi/logics/v2/common/utils"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-
-	"github.com/emicklei/go-restful"
 )
 
 func (s *Service) updateHostStatus(req *restful.Request, resp *restful.Response) {
@@ -345,8 +346,15 @@ func (s *Service) updateHostModule(req *restful.Request, resp *restful.Response)
 	hostModuleParam.ApplicationID = int64(appIDInt)
 	hostModuleParam.HostID = HostID64Arr
 	if len(moduleIDArr) > 1 {
-		for moduleId := range moduleIDArr {
-			moduleName := moduleMap[moduleId].(map[string]interface{})[common.BKModuleNameField].(string)
+		for _, moduleID := range moduleIDArr {
+			moduleInfo, ok := moduleMap[moduleID].(map[string]interface{})
+			if !ok {
+				continue
+			}
+			moduleName, ok := moduleInfo[common.BKModuleNameField].(string)
+			if !ok {
+				continue
+			}
 			if moduleName == common.DefaultFaultModuleName || moduleName == common.DefaultResModuleName {
 				msg := defErr.Error(common.CCErrAPIServerV2HostModuleContainDefaultModuleErr).Error()
 				blog.Errorf("updateHostModule error: %v", msg)
@@ -458,16 +466,28 @@ func (s *Service) cloneHostProperty(req *restful.Request, resp *restful.Response
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
-	appId := formData.Get("ApplicationID")
-	orgIp := formData.Get("orgIp")
-	dstIp := formData.Get("dstIp")
-	platId := formData.Get("platId")
+	appIDStr := formData.Get("ApplicationID")
+	orgIP := formData.Get("orgIp")
+	dstIP := formData.Get("dstIp")
+	platIDStr := formData.Get("platId")
+
+	appID, err := util.GetInt64ByInterface(appIDStr)
+	if nil != err {
+		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, "ApplicationID not integer").Error(), resp)
+		return
+	}
+
+	platID, err := util.GetInt64ByInterface(platIDStr)
+	if nil != err {
+		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, "platId not integer").Error(), resp)
+		return
+	}
 
 	var param metadata.CloneHostPropertyParams
-	param.AppIDStr = appId
-	param.DstIP = dstIp
-	param.OrgIP = orgIp
-	param.CloudIDStr = platId
+	param.AppID = appID
+	param.DstIP = dstIP
+	param.OrgIP = orgIP
+	param.CloudID = platID
 
 	result, err := s.CoreAPI.HostServer().CloneHostProperty(context.Background(), pheader, &param)
 	if err != nil {
@@ -545,4 +565,56 @@ func (s *Service) getGitServerIp(req *restful.Request, resp *restful.Response) {
 		return
 	}
 	converter.RespSuccessV2(resDataV2, resp)
+}
+
+func (s *Service) GetHostHardInfo(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	err := req.Request.ParseForm()
+	if err != nil {
+		blog.Errorf("GetHostExtInfo error:%v", err)
+		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
+		return
+	}
+	formData := req.Request.Form
+	blog.Infof("GetHostExtInfo data: %v", formData)
+	res, msg := utils.ValidateFormData(formData, []string{"ApplicationID"})
+	if !res {
+		blog.Errorf("GetHostExtInfo error: %s", msg)
+		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
+		return
+	}
+	appID, err := util.GetInt64ByInterface(formData["ApplicationID"][0])
+	if nil != err {
+		blog.Errorf("GetHostExtInfo error: %v", err)
+		converter.RespFailV2(common.CCErrCommParamsNeedInt, defErr.Errorf(common.CCErrCommParamsNeedInt, "ApplicationID").Error(), resp)
+		return
+	}
+	param := map[string]interface{}{
+		common.BKAppIDField: appID,
+	}
+	result, err := s.CoreAPI.HostServer().HostSearchByAppID(context.Background(), pheader, param)
+	if err != nil {
+		blog.Errorf("GetHostExtInfo  error:%v", err)
+		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
+		return
+	}
+	if !result.Result {
+		blog.Errorf("GetHostExtInfo  error, error code:%s, error message:%s", result.Code, result.ErrMsg)
+		converter.RespFailV2(result.Code, result.ErrMsg, resp)
+		return
+	}
+	dataArr := result.Data.([]interface{})
+	var dataMapArr []mapstr.MapStr
+	for _, item := range dataArr {
+		mapItem, err := mapstr.NewFromInterface(item)
+		if nil != err {
+			blog.Errorf("GetHostExtInfo  error, error:%s, host info:%+v, request parammetes:%+v, request-id:%s", err.Error(), formData, util.GetHTTPCCRequestID(pheader))
+			converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, "host info not map[string]interface").Error(), resp)
+			return
+		}
+		dataMapArr = append(dataMapArr, mapItem)
+	}
+	data := converter.GetHostHardInfo(appID, dataMapArr)
+	converter.RespSuccessV2(data, resp)
 }

@@ -1,4 +1,3 @@
-
 ### 新增进程
 * API： POST /api/{version}/proc/{bk_supplier_account}/{bk_biz_id}
 * API名称： create_process
@@ -10,8 +9,8 @@
 {
     "bk_process_name":"nginx",
     "port":80,
-    "bind_ip":"127.0.0.1",
-    "protocol":"tcp",
+    "bind_ip":"1",
+    "protocol":"1",
     "bk_func_name":"nginx",
     "work_path":"/data/cc/running",
     "user":"cc"
@@ -24,6 +23,8 @@
 | ---  | ---  | --- |---  | --- | ---|
 | bk_process_name| string| 是|无|进程名 |process name|
 | port|  string| 是| 无|主机端口|host port|
+|protocol|string|协议:1/2(1:tcp, 2:udp)|protocol:1/2(1:tcp, 2:udp)|
+|bind_ip|string|绑定IP:1/2/3/4(1:127.0.0.1,2:0.0.0.0,3:第一内网IP,4:第一外网IP)|1/2/3/4(1:127.0.0.1,2:0.0.0.0,3:first intranet IP,4:first extranet IP)|
 
  其它字段依赖变量的定义
 
@@ -71,7 +72,6 @@
     "condition":{
         "bk_biz_id":"12233",
         "bk_process_name":"nginx"
-        "bk_module_name":"nginx"
     }
 }
 
@@ -100,6 +100,7 @@ fields参数说明：
 | ---  | ---  | --- |---  | --- | ---|
 | bk_process_id| int| 否|无|进程ID |process id|
 | bk_process_name| string| 否|无|进程名称 |process name|
+
 参数为进程的任意属性
 
 condition 参数说明：condition 参数为进程的属性
@@ -116,8 +117,8 @@ condition 参数说明：condition 参数为进程的属性
             {
                 "bk_process_name":"nginx",
                 "port":80,
-                "bind_ip":"127.0.0.1",
-                "protocol":"tcp",
+                "bind_ip":"1",
+                "protocol":"1",
                 "bk_func_name":"nginx",
                 "work_path":"/data/cc/running",
                 "user":"cc"
@@ -125,8 +126,8 @@ condition 参数说明：condition 参数为进程的属性
             {
                 "bk_process_name":"apache",
                 "port":8080,
-                "bind_ip":"127.0.0.1",
-                "protocol":"tcp",
+                "bind_ip":"1",
+                "protocol":"1",
                 "bk_funcName":"nginx",
                 "work_path":"/data/cc/running",
                 "bk_user":"cc"
@@ -145,6 +146,8 @@ condition 参数说明：condition 参数为进程的属性
 | bk_error_msg | string | 请求失败返回的错误信息 |error message from failed request|
 | data | object | 请求返回的数据 |the data response|
 
+
+
 data 数据信息：
 
 | 名称  | 类型  | 说明 |request result true or false|
@@ -152,8 +155,7 @@ data 数据信息：
 | count| int | 请求失败返回的错误信息 |the count of data|
 | info| object | 请求返回的数据 |list of process|
 
-info字段说明：info字段为进程属性
-
+info字段说明：
 ### 获取进程详情
 
 * API: GET    /api/{version}/proc/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}
@@ -277,23 +279,18 @@ body 字段为进程属性
 | data | string | 请求返回的数据 |the data response|
 
 
-
 ### 批量更新进程
 * API:  PUT  /api/{version}/proc/{bk_supplier_account}/{bk_biz_id}
 * API名称： batch_update_process
 * 功能说明：
 	* 中文：批量更新进程
-	* English ：update process
+	* English ：batch update process
 * input body:
 ```
 {
     "bk_process_id" : "44,45,46,47,48",
 	"start_cmd": "./start.sh 8080",
 	"port": "1000"
-	...
-    // "bk_process_name": "assdfasdfasf", // 不允许批量编辑
-    // "bk_func_id" : "111", // 不允许批量编辑
-}    
 }
 ```
 
@@ -303,8 +300,8 @@ body 字段为进程属性
 | ---  | ---  | --- |---  | --- | ---|
 | bk_supplier_account| string| 是|无|开发商 code |supplier account code|
 | bk_biz_id| int | 是| 无|业务 id|business id |
-| bk_process_id|  string| 是| 无|逗号分隔的进程id列表|process id|
-body 字段为进程属性
+| bk_process_id|  string| 是| 无|进程id,int类型的bk_process_id,分割|process ids joined by ','|
+body 字段为进程属性，可指定除`bk_func_id`和`bk_process_name`以外的属性
 
 
 * output:

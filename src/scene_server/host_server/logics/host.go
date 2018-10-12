@@ -74,6 +74,9 @@ func (lgc *Logics) GetHostInstanceDetails(pheader http.Header, ownerID, hostID s
 			strItem := util.GetStrByInterface(item)
 			ids := make([]int64, 0)
 			for _, strID := range strings.Split(strItem, ",") {
+				if "" == strings.TrimSpace(strID) {
+					continue
+				}
 				id, err := strconv.ParseInt(strID, 10, 64)
 				if err != nil {
 					return nil, "", err
@@ -129,8 +132,10 @@ func (lgc *Logics) GetConfigByCond(pheader http.Header, cond map[string][]int64)
 // EnterIP 将机器导入到制定模块或者空闲机器， 已经存在机器，不操作
 func (lgc *Logics) EnterIP(pheader http.Header, ownerID string, appID, moduleID int64, ip string, cloudID int64, host map[string]interface{}, isIncrement bool) error {
 
+	langType := util.GetLanguage(pheader)
 	user := util.GetUser(pheader)
-	lang := lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(pheader))
+	lang := lgc.Language.CreateDefaultCCLanguageIf(langType)
+	ccErr := lgc.CCErr.CreateDefaultCCErrorIf(langType)
 
 	isExist, err := lgc.IsPlatExist(pheader, common.KvMap{common.BKCloudIDField: cloudID})
 	if nil != err {
@@ -177,6 +182,12 @@ func (lgc *Logics) EnterIP(pheader http.Header, ownerID string, appID, moduleID 
 			return hasErr
 		}
 
+		cond := hutil.NewOperation().WithOwnerID(ownerID).WithObjID(common.BKInnerObjIDHost).Data()
+		assResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAssociations(context.Background(), pheader, cond)
+		if err != nil || (err == nil && !assResult.Result) {
+			return fmt.Errorf("search host assosications failed, err: %v, result err: %s", err, assResult.ErrMsg)
+		}
+
 		result, err := lgc.CoreAPI.HostController().Host().AddHost(context.Background(), pheader, host)
 		if err != nil {
 			return errors.New(lang.Languagef("host_agent_add_host_fail", err.Error()))
@@ -188,6 +199,15 @@ func (lgc *Logics) EnterIP(pheader http.Header, ownerID string, appID, moduleID 
 		hostID, err = util.GetInt64ByInterface(retHost[common.BKHostIDField])
 		if err != nil {
 			return errors.New(lang.Languagef("host_agent_add_host_fail", err.Error()))
+		}
+		hostAsstData := ExtractDataFromAssociationField(hostID, host, assResult.Data)
+		for _, item := range hostAsstData {
+			cResult, err := lgc.CoreAPI.ObjectController().Instance().CreateObject(context.Background(), common.BKTableNameInstAsst, pheader, item)
+			if err != nil {
+				return err
+			} else if err == nil && !cResult.Result {
+				return ccErr.New(cResult.Code, cResult.ErrMsg)
+			}
 		}
 
 	} else if false == isIncrement {
@@ -205,12 +225,12 @@ func (lgc *Logics) EnterIP(pheader http.Header, ownerID string, appID, moduleID 
 		bl, hasErr := lgc.IsHostExistInApp(appID, hostID, pheader)
 		if nil != hasErr {
 			blog.Errorf("check host is exist in app error, params:{appid:%d, hostid:%s}, error:%s", appID, hostID, hasErr.Error())
-			return lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader)).Errorf(common.CCErrHostNotINAPPFail, hostID)
+			return ccErr.Errorf(common.CCErrHostNotINAPPFail, hostID)
 
 		}
 		if false == bl {
 			blog.Errorf("Host does not belong to the current application; error, params:{appid:%d, hostid:%s}", appID, hostID)
-			return lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader)).Errorf(common.CCErrHostNotINAPP, hostID)
+			return ccErr.Errorf(common.CCErrHostNotINAPP, hostID)
 		}
 
 	}
@@ -222,7 +242,7 @@ func (lgc *Logics) EnterIP(pheader http.Header, ownerID string, appID, moduleID 
 	}
 	result, err := lgc.CoreAPI.HostController().Module().DelDefaultModuleHostConfig(context.Background(), pheader, conf)
 	if err != nil || (err == nil && !result.Result) {
-		return lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader)).Errorf(common.CCErrHostDELResourcePool, hostID)
+		return ccErr.Errorf(common.CCErrHostDELResourcePool, hostID)
 	}
 
 	cfg := &metadata.ModuleHostConfigParams{
@@ -431,7 +451,7 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 		return nil, err
 	}
 
-	if len(appCond.Condition) > 0 || len(setCond.Condition) > 0 || len(moduleCond.Condition) > 0 || -1 != data.AppID {
+	if len(appCond.Condition) > 0 || len(setCond.Condition) > 0 || len(moduleCond.Condition) > 0 || len(objectCondMap) > 0 || -1 != data.AppID {
 		hostCond.Condition = append(hostCond.Condition, metadata.ConditionItem{
 			Field:    common.BKHostIDField,
 			Operator: common.BKDBIN,
@@ -453,11 +473,14 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 		Sort:      data.Page.Sort,
 	}
 	gResult, err := lgc.CoreAPI.HostController().Host().GetHosts(context.Background(), pheader, query)
-	if err != nil || (err == nil && !gResult.Result) {
+	if err != nil {
 		blog.Errorf("get hosts failed, err: %v", err)
 		return nil, err
 	}
-
+	if !gResult.Result {
+		blog.Errorf("get host failed, error code:%d, error message:%s", gResult.Code, gResult.ErrMsg)
+		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader)).New(gResult.Code, gResult.ErrMsg)
+	}
 	hostResult := gResult.Data.Info
 
 	// deal the host
@@ -560,6 +583,7 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 		if false == ok {
 			continue
 		}
+		hostAppIDArr = util.IntArrayUnique(hostAppIDArr)
 		hostAppData := make([]interface{}, 0)
 		for _, appID := range hostAppIDArr {
 			appInfo, mapOk := hostAppMap[appID]
@@ -572,6 +596,10 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 
 		//setdata
 		hostSetIDArr, ok := hostSetConfig[hostID]
+		if false == ok {
+			continue
+		}
+		hostSetIDArr = util.IntArrayUnique(hostSetIDArr)
 		hostSetData := make([]interface{}, 0)
 		for _, setID := range hostSetIDArr {
 			setInfo, isOk := hostSetMap[setID]
@@ -613,6 +641,10 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 
 		//moduledata
 		hostModuleIDArr, ok := hostModuleConfig[hostID]
+		if false == ok {
+			continue
+		}
+		hostModuleIDArr = util.IntArrayUnique(hostModuleIDArr)
 		hostModuleData := make([]interface{}, 0)
 		for _, ModuleID := range hostModuleIDArr {
 			moduleInfo, ok := hostModuleMap[ModuleID]

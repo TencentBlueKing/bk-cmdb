@@ -86,7 +86,7 @@
         </cmdb-table>
         <cmdb-slider :isShow.sync="slider.show" :title="slider.title" :beforeClose="handleSliderBeforeClose">
             <bk-tab :active-name.sync="tab.active" slot="content">
-                <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')">
+                <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-details v-if="attribute.type === 'details'"
                         :properties="properties"
                         :propertyGroups="propertyGroups"
@@ -256,7 +256,8 @@
                 'updateInst',
                 'batchUpdateInst',
                 'deleteInst',
-                'batchDeleteInst'
+                'batchDeleteInst',
+                'searchInstById'
             ]),
             async reload () {
                 try {
@@ -494,6 +495,12 @@
                         params: values
                     }).then(() => {
                         this.getTableData()
+                        this.searchInstById({
+                            objId: this.objId,
+                            instId: originalValues['bk_inst_id']
+                        }).then(item => {
+                            this.attribute.inst.details = this.$tools.flatternItem(this.properties, item)
+                        })
                         this.handleCancel()
                         this.$success(this.$t("Common['修改成功']"))
                     })

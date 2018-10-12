@@ -1,10 +1,25 @@
 import moment from 'moment'
+
 /**
  * 拍平列表
  * @param {Array} properties - 模型属性
  * @param {Array} list - 模型实例列表
  * @return {Array} 拍平后的模型实例列表
  */
+
+export function getFullName (names) {
+    const userList = window.CMDB_USER_LIST // set in setup/preload.js
+    const enNames = names.split(',')
+    const fullNames = enNames.map(enName => {
+        const user = userList.find(user => user['english_name'] === enName)
+        if (user) {
+            return `${user['english_name']}(${user['chinese_name']})`
+        }
+        return enName
+    })
+    return fullNames.join(',')
+}
+
 export function flatternList (properties, list) {
     if (!list.length) return list
     const flatternedList = clone(list)
@@ -46,6 +61,8 @@ export function getPropertyText (property, item) {
         propertyValue = (propertyValue || []).map(inst => inst['bk_inst_name']).join(',')
     } else if (['date', 'time'].includes(propertyType)) {
         propertyValue = formatTime(propertyValue, propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
+    } else if (propertyType === 'objuser') {
+        propertyValue = getFullName(propertyValue)
     }
     return propertyValue || '--'
 }
@@ -96,8 +113,8 @@ export function getInstFormValues (properties, inst = {}) {
         const propertyId = property['bk_property_id']
         const propertyType = property['bk_property_type']
         if (['singleasst', 'multiasst'].includes(propertyType)) {
-            const validAsst = (inst[propertyId] || []).filter(asstInst => asstInst.id !== '')
-            values[propertyId] = validAsst.map(asstInst => asstInst['bk_inst_id']).join(',')
+            // const validAsst = (inst[propertyId] || []).filter(asstInst => asstInst.id !== '')
+            // values[propertyId] = validAsst.map(asstInst => asstInst['bk_inst_id']).join(',')
         } else if (['date', 'time'].includes(propertyType)) {
             values[propertyId] = formatTime(inst[propertyId], propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
         } else if (['int'].includes(propertyType)) {

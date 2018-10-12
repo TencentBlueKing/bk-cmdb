@@ -32,14 +32,14 @@ func (s *Service) Get(req *restful.Request, resp *restful.Response) {
 	dat := new(metadata.ObjQueryInput)
 	if err := json.NewDecoder(req.Request.Body).Decode(dat); err != nil {
 		blog.Error("Get json unmarshal failed,  error:%v", err)
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 	dat.Condition = util.SetModOwner(dat.Condition, ownerID)
 	rows, cnt, err := s.Logics.Search(dat)
 	if nil != err {
 		blog.Error("get data from data  error:%s", err.Error())
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return
 	}
 	data := new(metadata.AuditQueryResult) //common.KvMap{"info": rows, "count": cnt}

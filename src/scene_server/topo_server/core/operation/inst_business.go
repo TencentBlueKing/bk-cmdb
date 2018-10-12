@@ -16,14 +16,13 @@ import (
 	"context"
 	"strings"
 
-	"configcenter/src/common/util"
-
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -146,15 +145,13 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 		return bizInst, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
 	}
 	if defaulFieldVal == int64(common.DefaultAppFlag) && params.SupplierAccount != common.BKDefaultOwnerID {
-		asstQuery := &metadata.QueryInput{
-			Condition: map[string]interface{}{
-				common.BKOwnerIDField: common.BKDefaultOwnerID,
-			},
+		asstQuery := map[string]interface{}{
+			common.BKOwnerIDField: common.BKDefaultOwnerID,
 		}
 		defaultOwnerHeader := util.CopyHeader(params.Header)
 		defaultOwnerHeader.Set(common.BKHTTPOwnerID, common.BKDefaultOwnerID)
 
-		asstRsp, err := b.clientSet.ObjectController().Instance().SearchObjects(context.Background(), common.BKTableNameInstAsst, defaultOwnerHeader, asstQuery)
+		asstRsp, err := b.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), defaultOwnerHeader, asstQuery)
 		if nil != err {
 			blog.Errorf("[operation-biz] failed to get default assts, error info is %s", err.Error())
 			return bizInst, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
@@ -162,12 +159,12 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 		if !asstRsp.Result {
 			return bizInst, params.Err.Error(asstRsp.Code)
 		}
-		assts := asstRsp.Data.Info
+		assts := asstRsp.Data
 		blog.Infof("copy asst for %s, %+v", params.SupplierAccount, assts)
 
 		for _, asst := range assts {
-			asst[common.BKOwnerIDField] = params.SupplierAccount
-			b.clientSet.ObjectController().Instance().CreateObject(context.Background(), common.BKTableNameInstAsst, params.Header, asst)
+			asst.OwnerID = params.SupplierAccount
+			b.clientSet.ObjectController().Meta().CreateObjectAssociation(context.Background(), params.Header, &asst)
 			if nil != err {
 				blog.Errorf("[operation-biz] failed to copy default assts, error info is %s", err.Error())
 				return bizInst, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
@@ -204,7 +201,7 @@ func (b *business) DeleteBusiness(params types.ContextParams, obj model.Object, 
 	innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	innerCond.Field(common.BKAppIDField).Eq(bizID)
 
-	return b.inst.DeleteInst(params, bizObj, innerCond)
+	return b.inst.DeleteInst(params, bizObj, innerCond, true)
 }
 
 func (b *business) FindBusiness(params types.ContextParams, obj model.Object, fields []string, cond condition.Condition) (count int, results []inst.Inst, err error) {
@@ -212,7 +209,7 @@ func (b *business) FindBusiness(params types.ContextParams, obj model.Object, fi
 	query := &metadata.QueryInput{}
 	cond.Field(common.BKDefaultField).Eq(0)
 	query.Condition = cond.ToMapStr()
-	query.Limit = common.BKNoLimit
+	query.Limit = int(cond.GetLimit())
 	query.Fields = strings.Join(fields, ",")
 	query.Sort = cond.GetSort()
 	query.Start = int(cond.GetStart())

@@ -6,14 +6,14 @@ const customRules = {
     singlechar: {
         validate: value => {
             /* eslint-disable */
-            return /^([a-zA-Z0-9]|[\u4e00-\u9fa5]|[\(\)\+\-《》_,，；;“”‘’。\."'\\\/])*$/.test(value)
+            return /^([a-zA-Z0-9]|[\u4e00-\u9fa5]|[\(\)\+\-《》_,，；:;“”‘’。\."'\\\/\s])*$/.test(value)
             /* eslint-enable */
         }
     },
     longchar: {
         validate: value => {
             /* eslint-disable */
-            return /^([a-zA-Z0-9]|[\u4e00-\u9fa5]|[\(\)\+\-《》_,，；;“”‘’。\."'\\\/])*$/.test(value)
+            return /^([a-zA-Z0-9]|[\u4e00-\u9fa5]|[\(\)\+\-《》_,，；:;“”‘’。\."'\\\/\s])*$/.test(value)
             /* eslint-enable */
         }
     },
@@ -79,11 +79,11 @@ const customRules = {
 const dictionary = {
     'zh_CN': {
         messages: {
-            longchar: () => '请输入正确的内容',
-            singlechar: () => '请输入正确的内容',
+            regex: () => '请输入符合自定义正则的内容',
+            longchar: () => '请输入正确的长字符内容',
+            singlechar: () => '请输入正确的短字符内容',
             classifyName: () => '请输入正确的内容',
             classifyId: () => '请输入正确的内容',
-            // required: (field) => '请输入' + field,
             required: () => '该字段是必填项',
             http: () => '请输入以http(s)://开头的URL',
             modelId: () => '格式不正确，只能包含下划线，数字，英文小写',
@@ -103,11 +103,11 @@ const dictionary = {
     },
     en: {
         messages: {
+            regex: () => 'Please enter the correct content that conform custom regex',
             longchar: () => 'Please enter the correct content',
             singlechar: () => 'Please enter the correct content',
             classifyName: () => 'Please enter the correct content',
             classifyId: () => 'Please enter the correct content',
-            // required: (field) => 'Please enter ' + field,
             required: () => 'This field is required',
             http: () => 'Please enter a URL beginning with http(s)://',
             modelId: () => 'The format is incorrect and can only contain underscores, numbers, and lowercase English',
@@ -130,6 +130,8 @@ const dictionary = {
 for (let rule in customRules) {
     Validator.extend(rule, customRules[rule])
 }
-
-Validator.localize(dictionary)
-Vue.use(veeValidate, {locale: language})
+Validator.localize(language)
+Vue.use(veeValidate, {
+    locale: language,
+    dictionary
+})

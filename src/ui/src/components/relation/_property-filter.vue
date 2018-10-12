@@ -1,20 +1,21 @@
 <template>
     <div class="property-filter clearfix">
-        <cmdb-selector class="property-selector fl"
+        <cmdb-selector class="property-selector fl" style="width: 135px;"
             :list="filteredProperties"
             setting-key="bk_property_id"
             display-key="bk_property_name"
             v-model="localSelected.id"
             @on-selected="handlePropertySelected">
         </cmdb-selector>
-        <cmdb-selector class="operator-selector fl"
+        <cmdb-selector class="operator-selector fl" style="width: 135px;"
             :list="operatorOptions"
             setting-key="value"
             display-key="label"
             v-model="localSelected.operator"
             @on-selected="handleOperatorSelected">
         </cmdb-selector>
-        <div class="property-value fl" v-if="Object.keys(selectedProperty).length">
+        <div class="property-value fl" style="width: 245px;" 
+            v-if="Object.keys(selectedProperty).length">
             <cmdb-form-enum
                 v-if="selectedProperty['bk_property_type'] === 'enum'"
                 :options="selectedProperty.option || []"
