@@ -45,6 +45,14 @@ type MatchProcInstParam struct {
 	HostInstanceID string `json:"bk_host_instance_id" bson:"bk_host_instance_id"`
 }
 
+type MatchProcInstParam struct {
+	ApplicationID  int64  `json:"bk_biz_id" bson:"bk_biz_id"`
+	SetName        string `json:"bk_set_name" bson:"bk_set_name"`
+	ModuleName     string `json:"bk_module_name" bson:"bk_module_name"`
+	FuncID         string `json:"bk_func_id" bson:"bk_func_id"`
+	HostInstanceID string `json:"bk_host_instance_id" bson:"bk_host_instance_id"`
+}
+
 type ProcessOperate struct {
 	MatchProcInstParam `json:",inline"`
 	OpType             int `json:"bk_proc_optype"`
