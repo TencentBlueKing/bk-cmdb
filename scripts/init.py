@@ -204,9 +204,15 @@ def generate_config_file(rd_server_v,db_name_v,redis_ip_v,redis_port_v,redis_use
 
     # proc.conf
     proc_file_template_str='''
+    [redis]
+    host=$redis_host
+    usr=$redis_user
+    pwd=$redis_pass
+    port=$redis_port
+    database = 0
     '''
     template = FileTemplate(proc_file_template_str)
-    result = template.substitute()
+    result = template.substitute(dict(redis_host=redis_ip_v,redis_port=redis_port_v,redis_user=redis_user_v,redis_pass=redis_pass_v))
     with open( output + "proc.conf",'w') as tmp_file:
         tmp_file.write(result)
 
