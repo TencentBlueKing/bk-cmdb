@@ -16,38 +16,31 @@
                 <i :class="['bk-icon ',{'icon-check-circle-shape':uploaded,'icon-close-circle-shape':failed}]"></i>
             </div>
         </div>
-        <template v-if="type==='inst'">
-            <div class="upload-details" v-if="(uploadResult.success && uploadResult.success.length) || (uploadResult.error && uploadResult.error.length) || (uploadResult.update_error && uploadResult.update_error.length)">
-                <div class="upload-details-success" v-if="uploadResult.success && uploadResult.success.length">
-                    <i class="bk-icon icon-check-circle-shape"></i>
-                    <span>{{$t("Inst['成功上传N条数据']", {N: uploadResult.success.length})}}</span>
-                </div>
-                <!-- 上传失败列表  -->
-                <div class="upload-details-fail" v-if="uploadResult.error && uploadResult.error.length">
-                    <div class="upload-details-fail-title">
-                        <i class="bk-icon icon-close-circle-shape"></i>
-                        <span>{{$t("Inst['上传失败列表']")}}({{uploadResult.error.length}})</span>
-                    </div>
-                    <ul ref="failList" class="upload-details-fail-list">
-                        <li v-for="(errorMsg, index) in uploadResult.error" :title="errorMsg">{{errorMsg}}</li>
-                    </ul>
-                </div>
-                <div class="upload-details-fail" v-if="uploadResult.update_error && uploadResult.update_error.length">
-                    <div class="upload-details-fail-title">
-                        <i class="bk-icon icon-close-circle-shape"></i>
-                        <span>{{$t("Inst['更新失败列表']")}}({{uploadResult.update_error.length}})</span>
-                    </div>
-                    <ul ref="failList" class="upload-details-fail-list">
-                        <li v-for="(errorMsg, index) in uploadResult.update_error" :title="errorMsg">{{errorMsg}}</li>
-                    </ul>
-                </div>
+        <div class="upload-details" v-if="(uploadResult.success && uploadResult.success.length) || (uploadResult.error && uploadResult.error.length) || (uploadResult.update_error && uploadResult.update_error.length)">
+            <div class="upload-details-success" v-if="uploadResult.success && uploadResult.success.length">
+                <i class="bk-icon icon-check-circle-shape"></i>
+                <span>{{$t("Inst['成功上传N条数据']", {N: uploadResult.success.length})}}</span>
             </div>
-        </template>
-        <template v-else>
-            <div class="upload-details">
-                
+            <!-- 上传失败列表  -->
+            <div class="upload-details-fail" v-if="uploadResult.error && uploadResult.error.length">
+                <div class="upload-details-fail-title">
+                    <i class="bk-icon icon-close-circle-shape"></i>
+                    <span>{{$t("Inst['上传失败列表']")}}({{uploadResult.error.length}})</span>
+                </div>
+                <ul ref="failList" class="upload-details-fail-list">
+                    <li v-for="(errorMsg, index) in uploadResult.error" :title="errorMsg">{{errorMsg}}</li>
+                </ul>
             </div>
-        </template>
+            <div class="upload-details-fail" v-if="uploadResult.update_error && uploadResult.update_error.length">
+                <div class="upload-details-fail-title">
+                    <i class="bk-icon icon-close-circle-shape"></i>
+                    <span>{{$t("Inst['更新失败列表']")}}({{uploadResult.update_error.length}})</span>
+                </div>
+                <ul ref="failList" class="upload-details-fail-list">
+                    <li v-for="(errorMsg, index) in uploadResult.update_error" :title="errorMsg">{{errorMsg}}</li>
+                </ul>
+            </div>
+        </div>
         <div class="clearfix down-model-content">
             <slot name="download-desc"></slot>
             <a :href="templateUrl" style="text-decoration: none;">
