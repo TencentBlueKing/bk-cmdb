@@ -58,30 +58,36 @@ func (d *DataCollection) Run() error {
 
 	discli, err := redisclient.NewFromConfig(d.Config.DiscoverRedis)
 	if nil != err {
+		blog.Errorf("[datacollection][RUN] connect discover redis failed: %v", err)
 		return err
 	}
 
 	netcli, err := redisclient.NewFromConfig(d.Config.NetcollectRedis)
 	if nil != err {
+		blog.Errorf("[datacollection][RUN] connect netcollect redis failed: %v", err)
 		return err
 	}
 
 	snapcli, err := redisclient.NewFromConfig(d.Config.SnapRedis)
 	if nil != err {
+		blog.Errorf("[datacollection][RUN] connect snap redis failed: %v", err)
 		return err
 	}
 
 	rediscli, err := redisclient.NewFromConfig(d.Config.CCRedis)
 	if nil != err {
+		blog.Errorf("[datacollection][RUN] connect cc redis failed: %v", err)
 		return err
 	}
 
 	db, err := mgoclient.NewFromConfig(d.Config.MongoDB)
 	if err != nil {
+		blog.Errorf("[datacollection][RUN] connect mongo failed: %v", err)
 		return fmt.Errorf("connect mongo server failed %s", err.Error())
 	}
 	err = db.Open()
 	if err != nil {
+		blog.Errorf("[datacollection][RUN] connect mongo failed: %v", err)
 		return fmt.Errorf("connect mongo server failed %s", err.Error())
 	}
 	d.db = db

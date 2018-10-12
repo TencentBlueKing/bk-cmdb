@@ -49,18 +49,18 @@ type ESBBaseResult struct {
 }
 
 type SearchPluginPackageResult struct {
-	ESBBaseResult `json:",inline"`
-	Data          []PluginPackage
+	ESBBaseResult
+	Data []PluginPackage `json:"data"`
 }
 
 type SearchPluginProcessResult struct {
-	ESBBaseResult `json:",inline"`
-	Data          PluginProcess
+	ESBBaseResult
+	Data PluginProcess `json:"data"`
 }
 
 type SearchPluginProcessInfoResult struct {
-	ESBBaseResult `json:",inline"`
-	Data          PluginProcessInfo
+	ESBBaseResult
+	Data PluginProcessInfo `json:"data"`
 }
 
 // PluginPackage define
@@ -223,11 +223,9 @@ type UpgradePluginConfig struct {
 }
 
 type UpgradePluginResult struct {
-	ESBBaseResult `json:",inline"`
-	JJJ           `json:",inline"`
+	ESBBaseResult
+	Data interface{} `json:"data"`
 }
-
-type JJJ map[string]interface{}
 
 // SearchTaskResult define
 // {
@@ -338,8 +336,8 @@ type JJJ map[string]interface{}
 // 	"request_id": "28dc639c2b16495791f204df5161a73a"
 //   }
 type SearchTaskResult struct {
-	ESBBaseResult `json:",inline"`
-	Data          Task `json:"data"`
+	ESBBaseResult
+	Data Task `json:"data"`
 }
 
 type Task struct {
@@ -403,8 +401,8 @@ type Host struct {
 //     "request_id": "xxxxxxxxxx"
 // }
 type SearchPluginHostResult struct {
-	ESBBaseResult `json:",inline"`
-	Data          []PluginHost `json:"data"`
+	ESBBaseResult
+	Data []PluginHost `json:"data"`
 }
 
 type PluginHost struct {
