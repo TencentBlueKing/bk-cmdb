@@ -207,6 +207,7 @@
             top: 11px;
             cursor: pointer;
             font-size: 14px;
+            z-index: 3;
         }
         label{
             padding: 0 9px 0 0;
