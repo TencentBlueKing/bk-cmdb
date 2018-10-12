@@ -14,9 +14,10 @@ package service
 
 import (
 	"encoding/json"
-	"github.com/emicklei/go-restful"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -25,6 +26,7 @@ import (
 	"strconv"
 )
 
+// SearchAssociationType Search Association Type
 func (cli *Service) SearchAssociationType(req *restful.Request, resp *restful.Response) {
 
 	// get the language
@@ -61,6 +63,7 @@ func (cli *Service) SearchAssociationType(req *restful.Request, resp *restful.Re
 
 }
 
+// CreateAssociationType Create Association Type
 func (cli *Service) CreateAssociationType(req *restful.Request, resp *restful.Response) {
 
 	// get the language
@@ -91,10 +94,12 @@ func (cli *Service) CreateAssociationType(req *restful.Request, resp *restful.Re
 		return
 	}
 
-	result := &meta.CreateAssociationTypeResult{meta.SuccessBaseResp, struct{ Id int }{Id: id}}
+	result := &meta.CreateAssociationTypeResult{BaseResp: meta.SuccessBaseResp}
+	result.Data.Id = id
 	resp.WriteEntity(result)
 }
 
+// UpdateAssociationType Update Association Type
 func (cli *Service) UpdateAssociationType(req *restful.Request, resp *restful.Response) {
 
 	// get the language
@@ -111,7 +116,7 @@ func (cli *Service) UpdateAssociationType(req *restful.Request, resp *restful.Re
 	}
 
 	id := req.PathParameter("id")
-	asstTypeId, _ := strconv.Atoi(id)
+	asstTypeID, _ := strconv.Atoi(id)
 	request := &meta.UpdateAssociationTypeRequest{}
 	if jsErr := json.Unmarshal([]byte(value), request); nil != jsErr {
 		blog.Error("failed to unmarshal the data, data is %s, error info is %s ", string(value), jsErr.Error())
@@ -119,7 +124,7 @@ func (cli *Service) UpdateAssociationType(req *restful.Request, resp *restful.Re
 		return
 	}
 
-	cond := map[string]interface{}{"id": asstTypeId}
+	cond := map[string]interface{}{"id": asstTypeID}
 	cond = util.SetModOwner(cond, ownerID)
 	err = cli.Instance.UpdateByCondition(common.BKTableNameAsstDes, request, cond)
 
@@ -129,10 +134,11 @@ func (cli *Service) UpdateAssociationType(req *restful.Request, resp *restful.Re
 		return
 	}
 
-	result := &meta.UpdateAssociationTypeResult{meta.SuccessBaseResp, "success"}
+	result := &meta.UpdateAssociationTypeResult{BaseResp: meta.SuccessBaseResp, Data: "success"}
 	resp.WriteEntity(result)
 }
 
+// DeleteAssociationType Delete Association Type
 func (cli *Service) DeleteAssociationType(req *restful.Request, resp *restful.Response) {
 
 	// get the language
@@ -142,9 +148,9 @@ func (cli *Service) DeleteAssociationType(req *restful.Request, resp *restful.Re
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 
 	id := req.PathParameter("id")
-	asstTypeId, _ := strconv.Atoi(id)
+	asstTypeID, _ := strconv.Atoi(id)
 
-	cond := map[string]interface{}{"id": asstTypeId}
+	cond := map[string]interface{}{"id": asstTypeID}
 	cond = util.SetModOwner(cond, ownerID)
 	err := cli.Instance.DelByCondition(common.BKTableNameAsstDes, cond)
 
@@ -154,6 +160,6 @@ func (cli *Service) DeleteAssociationType(req *restful.Request, resp *restful.Re
 		return
 	}
 
-	result := &meta.UpdateAssociationTypeResult{meta.SuccessBaseResp, "success"}
+	result := &meta.UpdateAssociationTypeResult{BaseResp: meta.SuccessBaseResp, Data: "success"}
 	resp.WriteEntity(result)
 }

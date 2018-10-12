@@ -108,9 +108,9 @@ type SearchAssociationInstResult struct {
 }
 
 type CreateAssociationInstRequest struct {
-	ObjectAsstId bool   `json:"bk_obj_asst_id"`
-	InstId       int    `json:"bk_inst_id"`
-	AsstInstId   string `json:"bk_asst_inst_id"`
+	ObjectAsstId string `json:"bk_obj_asst_id"`
+	InstId       int64  `json:"bk_inst_id"`
+	AsstInstId   int64  `json:"bk_asst_inst_id"`
 }
 type CreateAssociationInstResult struct {
 	BaseResp `json:",inline"`
