@@ -71,9 +71,6 @@
             maxSize: {
                 type: Number,
                 default: 500 // kb
-            },
-            type: {
-                default: 'inst' // inst network
             }
         },
         data () {
