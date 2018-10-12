@@ -228,6 +228,10 @@
                 if (this.createDialog.isShow) {
                     const res = await this.searchDevice({params: {}, config: {requestId: 'searchDevice', fromCache: true}})
                     this.createDialog.deviceList = res.info
+                } else {
+                    this.createDialog['device_id'] = ''
+                    this.createDialog['oid'] = ''
+                    this.createDialog['bk_property_id'] = ''
                 }
             },
             async getObjAttr (device) {
@@ -329,7 +333,7 @@
         .create-dialog {
             .label {
                 &.first {
-                    margin: 0;
+                    margin-top: 0;
                 }
                 display: block;
                 margin: 15px 0 5px;
