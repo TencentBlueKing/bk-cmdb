@@ -36,7 +36,7 @@ func (s *Service) SearchCollector(req *restful.Request, resp *restful.Response) 
 	}
 	blog.Infof("[NetDevice][SearchCollector] search by %+v", cond)
 
-	count, result, err := s.Logics.SearchCollector(cond)
+	count, result, err := s.Logics.SearchCollector(pheader, cond)
 	if err != nil {
 		resp.WriteError(http.StatusInternalServerError,
 			&metadata.RespError{Msg: defErr.Error(common.CCErrCollectNetCollectorSearchFail)})
@@ -54,7 +54,7 @@ func (s *Service) UpdateCollector(req *restful.Request, resp *restful.Response) 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
-	cond := metadata.NetcollectorConfig{}
+	cond := metadata.Netcollector{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&cond); err != nil {
 		blog.Errorf("[NetDevice][UpdateCollector] decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
@@ -62,7 +62,7 @@ func (s *Service) UpdateCollector(req *restful.Request, resp *restful.Response) 
 	}
 	blog.Infof("[NetDevice][UpdateCollector] update by %+v", cond)
 
-	err := s.Logics.UpdateCollector(cond)
+	err := s.Logics.UpdateCollector(pheader, cond)
 	if err != nil {
 		resp.WriteError(http.StatusInternalServerError,
 			&metadata.RespError{Msg: defErr.Error(common.CCErrCollectNetCollectorUpdateFail)})
@@ -85,7 +85,7 @@ func (s *Service) DiscoverNetDevice(req *restful.Request, resp *restful.Response
 	}
 	blog.Infof("[NetDevice][DiscoverNetDevice] discover by %+v", cond)
 
-	err := s.Logics.DiscoverNetDevice(cond.Collectors)
+	err := s.Logics.DiscoverNetDevice(pheader, cond.Collectors)
 	if err != nil {
 		resp.WriteError(http.StatusInternalServerError,
 			&metadata.RespError{Msg: defErr.Error(common.CCErrCollectNetCollectorDiscoverFail)})

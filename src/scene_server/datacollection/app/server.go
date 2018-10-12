@@ -34,6 +34,8 @@ import (
 	"configcenter/src/scene_server/datacollection/logics"
 	svc "configcenter/src/scene_server/datacollection/service"
 	"configcenter/src/storage/mgoclient"
+	"configcenter/src/thirdpartyclient/esbserver"
+	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -46,7 +48,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		ZkAddr:    op.ServConf.RegDiscover,
 		QPS:       1000,
 		Burst:     2000,
-		TLSConfig: nil,
+		TLSConfig: &util.TLSClientConfig{InsecureSkipVerify: true},
 	}
 
 	machinery, err := apimachinery.NewApiMachinery(c)
@@ -99,7 +101,15 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		if err != nil {
 			return fmt.Errorf("new mongo client failed, err: %s", err.Error())
 		}
-		process.Service.Logics = &logics.Logics{Instance: instance, Engine: service.Engine}
+
+		esbChan := make(chan esbutil.EsbConfig, 1)
+		esbChan <- process.Config.Esb
+		esb, err := esbserver.NewEsb(c, esbChan)
+		if err != nil {
+			return fmt.Errorf("new esb client failed, err: %s", err.Error())
+		}
+
+		process.Service.Logics = &logics.Logics{Instance: instance, Engine: service.Engine, ESB: esb}
 
 		err = datacollection.NewDataCollection(process.Config, process.Core).Run()
 		if err != nil {
@@ -107,6 +117,8 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		}
 		break
 	}
+
+	blog.InfoJSON("process started with info %s", svrInfo)
 
 	<-ctx.Done()
 	blog.V(0).Info("process stoped")
@@ -168,6 +180,12 @@ func (h *DCServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		h.Config.NetcollectRedis.Database = current.ConfigMap[netcollectPrefix+".database"]
 		h.Config.NetcollectRedis.Port = current.ConfigMap[netcollectPrefix+".port"]
 		h.Config.NetcollectRedis.MasterName = current.ConfigMap[netcollectPrefix+".mastername"]
+
+		esbPrefix := "esb"
+		h.Config.Esb.Addrs = current.ConfigMap[esbPrefix+".addr"]
+		h.Config.Esb.AppCode = current.ConfigMap[esbPrefix+".appCode"]
+		h.Config.Esb.AppSecret = current.ConfigMap[esbPrefix+".appSecret"]
+
 	}
 }
 

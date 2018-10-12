@@ -16,6 +16,7 @@ import (
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/mgoclient"
 	"configcenter/src/storage/redisclient"
+	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 
 	"github.com/spf13/pflag"
 )
@@ -45,4 +46,5 @@ type Config struct {
 	SnapRedis       redisclient.RedisConfig
 	DiscoverRedis   redisclient.RedisConfig
 	NetcollectRedis redisclient.RedisConfig
+	Esb             esbutil.EsbConfig
 }
