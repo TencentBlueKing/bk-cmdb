@@ -16,6 +16,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"configcenter/src/common/core/cc/config"
+	"configcenter/src/storage/redisclient"
 )
 
 //ServerOption define option of server in flags
@@ -38,4 +39,8 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	//fs.UintVar(&s.ServConf.Port, "port", 60003, "The port for the serve on")
 	fs.StringVar(&s.ServConf.RegDiscover, "regdiscv", "", "hosts of register and discover server. e.g: 127.0.0.1:2181")
 	fs.StringVar(&s.ServConf.ExConfig, "config", "", "The config path. e.g conf/api.conf")
+}
+
+type Config struct {
+	Redis *redisclient.RedisConfig
 }

@@ -26,11 +26,16 @@ import (
 
 type Service struct {
 	*backbone.Engine
-	db storage.DI
+	db           storage.DI
+	ccApiSrvAddr string
 }
 
 func (s *Service) SetDB(db storage.DI) {
 	s.db = db
+}
+
+func (s *Service) SetApiSrvAddr(ccApiSrvAddr string) {
+	s.ccApiSrvAddr = ccApiSrvAddr
 }
 
 func (s *Service) WebService() *restful.WebService {
