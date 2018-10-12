@@ -36,6 +36,7 @@ func (ps *ProctrlServer) DeleteProc2Module(req *restful.Request, resp *restful.R
 		return
 	}
 
+	input = util.SetModOwner(input, util.GetOwnerID(req.Request.Header))
 	// retrieve original data
 	var originals []interface{}
 	if err := ps.DbInstance.GetMutilByCondition(common.BKTableNameProcModule, []string{}, input, &originals, "", 0, 0); err != nil {
@@ -54,7 +55,7 @@ func (ps *ProctrlServer) DeleteProc2Module(req *restful.Request, resp *restful.R
 	if len(originals) > 0 {
 		ec := eventclient.NewEventContextByReq(req.Request.Header, ps.CacheDI)
 		for _, i := range originals {
-			if err := ec.InsertEvent(meta.EventTypeRelation, "processmodule", meta.EventActionDelete, nil, i); err != nil {
+			if err := ec.InsertEvent(meta.EventTypeRelation, meta.EventObjTypeProcModule, meta.EventActionDelete, nil, i); err != nil {
 				blog.Warnf("create event error:%s", err.Error())
 			}
 		}
@@ -79,13 +80,14 @@ func (ps *ProctrlServer) CreateProc2Module(req *restful.Request, resp *restful.R
 	blog.Infof("create proc module config: %v ", input)
 	ec := eventclient.NewEventContextByReq(req.Request.Header, ps.CacheDI)
 	for _, i := range input {
+		i := util.SetModOwner(i, util.GetOwnerID(req.Request.Header))
 		if _, err := ps.DbInstance.Insert(common.BKTableNameProcModule, i); err != nil {
 			blog.Errorf("create proc module config error:%v", err)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcCreateProc2Module)})
 			return
 		}
 		//  record events
-		if err := ec.InsertEvent(meta.EventTypeRelation, "processmodule", meta.EventActionCreate, i, nil); err != nil {
+		if err := ec.InsertEvent(meta.EventTypeRelation, meta.EventObjTypeProcModule, meta.EventActionCreate, i, nil); err != nil {
 			blog.Errorf("create event error: %v", err)
 		}
 	}
@@ -107,6 +109,7 @@ func (ps *ProctrlServer) GetProc2Module(req *restful.Request, resp *restful.Resp
 	}
 
 	blog.Infof("get proc module config condition: %v ", input)
+	input = util.SetModOwner(input, util.GetOwnerID(req.Request.Header))
 	result := make([]interface{}, 0)
 	if err := ps.DbInstance.GetMutilByCondition(common.BKTableNameProcModule, nil, input, &result, "", 0, 0); err != nil {
 		blog.Errorf("get process2module config failed. err: %v", err)
