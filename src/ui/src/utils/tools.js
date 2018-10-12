@@ -8,6 +8,7 @@ import moment from 'moment'
  */
 
 export function getFullName (names) {
+    if (!names) return ''
     const userList = window.CMDB_USER_LIST // set in setup/preload.js
     const enNames = names.split(',')
     const fullNames = enNames.map(enName => {
