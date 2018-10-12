@@ -7,8 +7,9 @@
         }">
         <div class="tree-node-info-layout clearfix"
             :class="{
-                'tree-node-info-layout-root': level === 1,
-                'tree-node-info-layout-parent-hidden': state.parent && state.parent.state.hidden
+                'tree-node-info-layout-line': level !== 1 && !(state.parent && state.parent.state.hidden),
+                'tree-node-info-layout-line-short-v': index === 0,
+                'tree-node-info-layout-line-short-h': children.length
             }">
             <i class="tree-node-expanded-icon fl" v-if="!leaf && !state.hidden"
                 :class="[state.expanded ? 'icon-cc-rect-sub': 'icon-cc-rect-add']"
@@ -31,6 +32,7 @@
             :class="{'tree-node-children-root': level === 1}">
             <cmdb-tree-node v-for="(child, index) in children"
                 :key="layout.getNodeId(child)"
+                :index="index"
                 :node="child"
                 :layout="layout"
                 :level="level + 1">
@@ -40,7 +42,6 @@
 </template>
 
 <script>
-    import TreeLayout from './_tree-layout.js'
     import treeNodeInfo from './_tree-node-info.js'
     export default {
         name: 'cmdb-tree-node',
@@ -48,20 +49,10 @@
             treeNodeInfo
         },
         props: {
-            node: {
-                type: Object,
-                required: true
-            },
-            layout: {
-                validator (val) {
-                    return val instanceof TreeLayout
-                },
-                required: true
-            },
-            level: {
-                type: Number,
-                required: true
-            }
+            node: Object,
+            layout: Object,
+            level: Number,
+            index: Number
         },
         data () {
             const basicState = {
@@ -208,7 +199,7 @@
     }
     .tree-node-info-layout{
         position: relative;
-        &:not(.tree-node-info-layout-root):not(.tree-node-info-layout-parent-hidden):before{
+        &.tree-node-info-layout-line:before {
             position: absolute;
             top: -18px;
             left: -23px;
@@ -219,6 +210,13 @@
             border-left: 1px dashed #d3d8e7;
             z-index: 1;
             pointer-events: none;
+        }
+        &.tree-node-info-layout-line-short-v:before {
+            height: 22px;
+            top: -10px;
+        }
+        &.tree-node-info-layout-line-short-h:before {
+            width: 20px;
         }
         .tree-node-info{
             height: 24px;
