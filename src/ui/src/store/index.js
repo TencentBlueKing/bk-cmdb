@@ -28,6 +28,10 @@ import procConfig from './modules/api/proc-config.js'
 import userCustom from './modules/api/user-custom.js'
 import userPrivilege from './modules/api/user-privilege.js'
 import globalModels from './modules/api/global-models.js'
+import netCollectDevice from './modules/api/net-collect-device.js'
+import netCollectProperty from './modules/api/net-collect-property.js'
+import netDataCollection from './modules/api/net-data-collection.js'
+import netDiscovery from './modules/api/net-discovery.js'
 
 Vue.use(Vuex)
 
@@ -58,6 +62,10 @@ export default new Vuex.Store({
         procConfig,
         userCustom,
         userPrivilege,
-        globalModels
+        globalModels,
+        netCollectDevice,
+        netCollectProperty,
+        netDataCollection,
+        netDiscovery
     }
 })
