@@ -228,6 +228,8 @@
             left: 50%;
             transform: translate(-50%, -50%);
             background: #fff;
+            box-shadow: 0 0 8px 4px rgba(0, 0, 0, 0.1);
+            border-radius: 2px;
             .preview-title {
                 padding-left: 24px;
                 line-height: 68px;
