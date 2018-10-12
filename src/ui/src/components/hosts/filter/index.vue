@@ -7,6 +7,7 @@
                     <keep-alive>
                         <the-filter ref="theFilter"
                             v-if="tab.active === 'filter'"
+                            :active-setting="activeSetting"
                             :filter-config-key="filterConfigKey"
                             :collection-content="collectionContent"
                             @on-collection-toggle="handleCollectionToggle"
