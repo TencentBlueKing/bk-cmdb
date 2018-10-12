@@ -185,7 +185,7 @@
                     isShow: false,
                     period: '',
                     scan_range: '',
-                    community: '',
+                    community: 'public',
                     bk_inner_ip: '',
                     bk_cloud_id: '',
                     periodList: [{
