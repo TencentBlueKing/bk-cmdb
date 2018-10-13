@@ -24,9 +24,10 @@ import (
 )
 
 var (
-	ErrNoNode        = zk.ErrNoNode
-	EventNodeDeleted = zk.EventNodeDeleted
-	ErrNodeExists    = zk.ErrNodeExists
+	ErrNoNode           = zk.ErrNoNode
+	EventNodeDeleted    = zk.EventNodeDeleted
+	ErrNodeExists       = zk.ErrNodeExists
+	ErrConnectionClosed = zk.ErrConnectionClosed
 )
 
 const (
