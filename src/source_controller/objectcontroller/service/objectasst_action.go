@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"fmt"
 )
 
 // CreateObjectAssociation create object association map
@@ -50,7 +51,42 @@ func (cli *Service) CreateObjectAssociation(req *restful.Request, resp *restful.
 	}
 
 	request.OwnerID = ownerID
-	id, err := cli.Instance.Insert(common.BKTableNameObjAsst, request)
+
+	// check uniq bk_obj_asst_id
+	if request.ObjectAsstID == "" {
+		err = fmt.Errorf("failed to create object association, bk_obj_asst_id must be set")
+		blog.Error(err.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBInsertFailed, err.Error())})
+		return
+	}
+
+	// check uniq
+	cond := map[string]interface{}{"bk_obj_asst_id": request.ObjectAsstID}
+	cond = util.SetModOwner(cond, ownerID)
+	cnt, err := cli.Instance.GetCntByCondition(common.BKTableNameObjAsst, cond)
+	if err != nil {
+		blog.Error("failed to count object association , error info is %s", err.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBInsertFailed, err.Error())})
+		return
+	}
+
+	if cnt > 1 {
+		err = fmt.Errorf("failed to create object association, bk_obj_asst_id %s exist", request.ObjectAsstID)
+		blog.Error(err.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBInsertFailed, err.Error())})
+		return
+	}
+
+	// get id
+	id, err := cli.Instance.GetIncID(common.BKTableNameObjAsst)
+	if err != nil && !cli.Instance.IsNotFoundErr(err) {
+		blog.Error("failed to get id , error info is %s", err.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBInsertFailed, err.Error())})
+		return
+	}
+	request.ID = id
+
+	_, err = cli.Instance.Insert(common.BKTableNameObjAsst, request)
 	if nil != err {
 		blog.Error("search object association error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBInsertFailed, err.Error())})
@@ -118,6 +154,15 @@ func (cli *Service) DeleteObjectAssociation(req *restful.Request, resp *restful.
 
 	cond := map[string]interface{}{"id": ID}
 	cond = util.SetModOwner(cond, ownerID)
+
+	// check exist
+	if cnt, _ := cli.Instance.GetCntByCondition(common.BKTableNameObjAsst, cond); cnt < 1 {
+		err := fmt.Errorf("failed to delete object association, id %d not found", ID)
+		blog.Error(err.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBDeleteFailed, err.Error())})
+		return
+	}
+
 	err := cli.Instance.DelByCondition(common.BKTableNameObjAsst, cond)
 
 	if nil != err {
@@ -218,6 +263,15 @@ func (cli *Service) UpdateObjectAssociation(req *restful.Request, resp *restful.
 
 	cond := map[string]interface{}{"id": ID}
 	cond = util.SetModOwner(cond, ownerID)
+
+	// check exist
+	if cnt, _ := cli.Instance.GetCntByCondition(common.BKTableNameObjAsst, cond); cnt < 1 {
+		err = fmt.Errorf("failed to update object association, id %d not found", ID)
+		blog.Error(err.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBUpdateFailed, err.Error())})
+		return
+	}
+
 	err = cli.Instance.UpdateByCondition(common.BKTableNameObjAsst, request, cond)
 
 	if nil != err {
@@ -301,7 +355,7 @@ func (cli *Service) SelectObjectAssociations(req *restful.Request, resp *restful
 	cond := request.Condition
 	cond = util.SetModOwner(cond, ownerID)
 	result := []*meta.Association{}
-	err = cli.Instance.GetMutilByCondition(common.BKTableNameObjAsst, []string{}, request.Condition, result, "", 0, 0)
+	err = cli.Instance.GetMutilByCondition(common.BKTableNameObjAsst, []string{}, request.Condition, &result, "", 0, 0)
 	if nil != err {
 		blog.Error("search association error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommNotFound, err.Error())})
