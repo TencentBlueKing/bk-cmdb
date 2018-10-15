@@ -28,7 +28,6 @@ import (
 	bkc "configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
-	httpcli "configcenter/src/common/http/httpclient"
 )
 
 type Discover struct {
@@ -52,7 +51,6 @@ type Discover struct {
 	getMasterInterval      time.Duration
 	masterProcLockLiveTime time.Duration
 
-	requests *httpcli.HttpClient
 	*backbone.Engine
 	ctx     context.Context
 	pheader http.Header
@@ -83,8 +81,8 @@ func NewDiscover(ctx context.Context, chanName string, maxSize int, redisCli, su
 		maxConcurrent:          runtime.NumCPU(),
 		getMasterInterval:      time.Second * 11,
 		masterProcLockLiveTime: getMasterProcIntervalTime + time.Second*10,
-		ctx:     ctx,
-		pheader: pheader,
+		ctx:                    ctx,
+		pheader:                pheader,
 	}
 	discover.Engine = backbone
 	return discover

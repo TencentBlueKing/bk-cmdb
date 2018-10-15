@@ -14,6 +14,7 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"sync"
@@ -30,7 +31,11 @@ import (
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/datacollection/app/options"
 	"configcenter/src/scene_server/datacollection/datacollection"
+	"configcenter/src/scene_server/datacollection/logics"
 	svc "configcenter/src/scene_server/datacollection/service"
+	"configcenter/src/storage/mgoclient"
+	"configcenter/src/thirdpartyclient/esbserver"
+	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -43,7 +48,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		ZkAddr:    op.ServConf.RegDiscover,
 		QPS:       1000,
 		Burst:     2000,
-		TLSConfig: nil,
+		TLSConfig: &util.TLSClientConfig{InsecureSkipVerify: true},
 	}
 
 	machinery, err := apimachinery.NewApiMachinery(c)
@@ -87,12 +92,33 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			continue
 		}
 
-		err := datacollection.NewDataCollection(process.Config, process.Core).Run()
+		mgc := process.Config.MongoDB
+		instance, err := mgoclient.NewMgoCli(mgc.Address, mgc.Port, mgc.User, mgc.Password, mgc.Mechanism, mgc.Database)
+		if err != nil {
+			return fmt.Errorf("new mongo client failed, err: %s", err.Error())
+		}
+		err = instance.Open()
+		if err != nil {
+			return fmt.Errorf("new mongo client failed, err: %s", err.Error())
+		}
+
+		esbChan := make(chan esbutil.EsbConfig, 1)
+		esbChan <- process.Config.Esb
+		esb, err := esbserver.NewEsb(c, esbChan)
+		if err != nil {
+			return fmt.Errorf("new esb client failed, err: %s", err.Error())
+		}
+
+		process.Service.Logics = &logics.Logics{Instance: instance, Engine: service.Engine, ESB: esb}
+
+		err = datacollection.NewDataCollection(process.Config, process.Core).Run()
 		if err != nil {
 			return fmt.Errorf("run datacollection routine failed %s", err.Error())
 		}
 		break
 	}
+
+	blog.InfoJSON("process started with info %s", svrInfo)
 
 	<-ctx.Done()
 	blog.V(0).Info("process stoped")
@@ -114,6 +140,10 @@ func (h *DCServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		if h.Config == nil {
 			h.Config = new(options.Config)
 		}
+
+		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ") //ignore err, cause ConfigMap is map[string]string
+		blog.V(3).Infof("config updated: \n%s", out)
+
 		dbprefix := "mongodb"
 		h.Config.MongoDB.Address = current.ConfigMap[dbprefix+".host"]
 		h.Config.MongoDB.User = current.ConfigMap[dbprefix+".usr"]
@@ -143,6 +173,19 @@ func (h *DCServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		h.Config.DiscoverRedis.Database = current.ConfigMap[discoverPrefix+".database"]
 		h.Config.DiscoverRedis.Port = current.ConfigMap[discoverPrefix+".port"]
 		h.Config.DiscoverRedis.MasterName = current.ConfigMap[discoverPrefix+".mastername"]
+
+		netcollectPrefix := "netcollect-redis"
+		h.Config.NetcollectRedis.Address = current.ConfigMap[netcollectPrefix+".host"]
+		h.Config.NetcollectRedis.Password = current.ConfigMap[netcollectPrefix+".pwd"]
+		h.Config.NetcollectRedis.Database = current.ConfigMap[netcollectPrefix+".database"]
+		h.Config.NetcollectRedis.Port = current.ConfigMap[netcollectPrefix+".port"]
+		h.Config.NetcollectRedis.MasterName = current.ConfigMap[netcollectPrefix+".mastername"]
+
+		esbPrefix := "esb"
+		h.Config.Esb.Addrs = current.ConfigMap[esbPrefix+".addr"]
+		h.Config.Esb.AppCode = current.ConfigMap[esbPrefix+".appCode"]
+		h.Config.Esb.AppSecret = current.ConfigMap[esbPrefix+".appSecret"]
+
 	}
 }
 
