@@ -119,7 +119,7 @@ type ParamSearchNetcollectReport struct {
 type NetcollectReportSummary struct {
 	CloudID    int64          `json:"bk_cloud_id"`
 	CloudName  string         `json:"bk_cloud_name"`
-	LastTime   *types.Time    `json:"last_time"`
+	LastTime   types.Time     `json:"last_time"`
 	Statistics map[string]int `json:"statistics"`
 }
 
@@ -147,7 +147,7 @@ type NetcollectReport struct {
 
 	InstID       int64                         `json:"bk_inst_id" bson:"bk_inst_id"`
 	InstKey      string                        `json:"bk_inst_key" bson:"bk_inst_key"`
-	LastTime     *types.Time                   `json:"last_time" bson:"last_time"`
+	LastTime     types.Time                    `json:"last_time" bson:"last_time"`
 	Attributes   []NetcollectReportAttribute   `json:"attributes" bson:"attributes"`
 	Associations []NetcollectReportAssociation `json:"associations" bson:"associations"`
 }
@@ -172,7 +172,7 @@ type NetcollectReportAttribute struct {
 type NetcollectReportAssociation struct {
 	AsstInstID     int64  `json:"bk_asst_inst_id" bson:"bk_asst_inst_id"`
 	AsstInstName   string `json:"bk_asst_inst_name" bson:"bk_asst_inst_name"`
-	AsstPropertyID string `json:"bk_asst_property_id" bson:"bk_asst_inst_name"`
+	AsstPropertyID string `json:"bk_asst_property_id" bson:"bk_asst_property_id"`
 	AsstObjectID   string `json:"bk_asst_obj_id" bson:"bk_asst_obj_id"`
 	AsstObjectName string `json:"bk_asst_obj_name" bson:"bk_asst_obj_name"`
 }
