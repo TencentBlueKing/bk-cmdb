@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"fmt"
 	"strconv"
 )
 
@@ -51,16 +52,18 @@ func (cli *Service) SearchAssociationType(req *restful.Request, resp *restful.Re
 
 	cond := request.Condition
 	cond = util.SetModOwner(cond, ownerID)
-	result := []*meta.Association{}
-	err = cli.Instance.GetMutilByCondition(common.BKTableNameAsstDes, []string{}, request.Condition, result, request.Sort, request.Start, request.Limit)
+	result := []*meta.AssociationType{}
+	err = cli.Instance.GetMutilByCondition(common.BKTableNameAsstDes, []string{}, request.Condition, &result, request.Sort, request.Start, request.Limit)
 	if nil != err {
 		blog.Error("search association error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommNotFound, err.Error())})
 		return
 	}
 
-	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: result})
-
+	ret := &meta.SearchAssociationTypeResult{BaseResp: meta.SuccessBaseResp}
+	ret.Data.Count = len(result)
+	ret.Data.Info = result
+	resp.WriteEntity(ret)
 }
 
 // CreateAssociationType Create Association Type
@@ -86,8 +89,34 @@ func (cli *Service) CreateAssociationType(req *restful.Request, resp *restful.Re
 		return
 	}
 
+	// check uniq bk_asst_id
+	cond := map[string]interface{}{"bk_asst_id": request.AsstID}
+	cond = util.SetModOwner(cond, ownerID)
+	cnt, err := cli.Instance.GetCntByCondition(common.BKTableNameAsstDes, cond)
+	if err != nil {
+		blog.Error("failed to count association , error info is %s", err.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBInsertFailed, err.Error())})
+		return
+	}
+
+	if cnt > 1 {
+		err = fmt.Errorf("failed to create association, bk_asst_id %s exist", request.AsstID)
+		blog.Error(err.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBInsertFailed, err.Error())})
+		return
+	}
+
+	// get id
+	id, err := cli.Instance.GetIncID(common.BKTableNameAsstDes)
+	if err != nil && !cli.Instance.IsNotFoundErr(err) {
+		blog.Error("failed to get id , error info is %s", err.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBInsertFailed, err.Error())})
+		return
+	}
+	request.ID = id
 	request.OwnerID = ownerID
-	id, err := cli.Instance.Insert(common.BKTableNameAsstDes, request)
+
+	_, err = cli.Instance.Insert(common.BKTableNameAsstDes, request)
 	if nil != err {
 		blog.Error("search association error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBInsertFailed, err.Error())})
@@ -126,6 +155,13 @@ func (cli *Service) UpdateAssociationType(req *restful.Request, resp *restful.Re
 
 	cond := map[string]interface{}{"id": asstTypeID}
 	cond = util.SetModOwner(cond, ownerID)
+	if cnt, _ := cli.Instance.GetCntByCondition(common.BKTableNameAsstDes, cond); cnt < 1 {
+		err = fmt.Errorf("failed to update association, id %d not found", asstTypeID)
+		blog.Error(err.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommNotFound, err.Error())})
+		return
+	}
+
 	err = cli.Instance.UpdateByCondition(common.BKTableNameAsstDes, request, cond)
 
 	if nil != err {
@@ -152,6 +188,13 @@ func (cli *Service) DeleteAssociationType(req *restful.Request, resp *restful.Re
 
 	cond := map[string]interface{}{"id": asstTypeID}
 	cond = util.SetModOwner(cond, ownerID)
+	if cnt, _ := cli.Instance.GetCntByCondition(common.BKTableNameAsstDes, cond); cnt < 1 {
+		err := fmt.Errorf("failed to delete association, id %d not found", asstTypeID)
+		blog.Error(err.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommNotFound, err.Error())})
+		return
+	}
+
 	err := cli.Instance.DelByCondition(common.BKTableNameAsstDes, cond)
 
 	if nil != err {

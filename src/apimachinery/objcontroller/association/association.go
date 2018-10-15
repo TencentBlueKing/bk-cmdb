@@ -125,7 +125,7 @@ func (asst *Association) DeleteObject(ctx context.Context, h http.Header, asst_i
 
 func (asst *Association) SearchInst(ctx context.Context, h http.Header, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error) {
 	resp = new(metadata.SearchAssociationInstResult)
-	subPath := fmt.Sprintf("/inst/association/action/searche")
+	subPath := fmt.Sprintf("/inst/association/action/search")
 
 	err = asst.client.Post().
 		WithContext(ctx).
