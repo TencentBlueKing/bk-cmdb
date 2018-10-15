@@ -12,6 +12,7 @@
 package service
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
@@ -27,6 +28,7 @@ import (
 func (ps *ProctrlServer) CreateProcInstanceModel(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
 	reqParam := make([]meta.ProcInstanceModel, 0)
 	if err := json.NewDecoder(req.Request.Body).Decode(&reqParam); err != nil {
@@ -34,6 +36,8 @@ func (ps *ProctrlServer) CreateProcInstanceModel(req *restful.Request, resp *res
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
+
+	blog.Infof("will create process instance model: %+v", reqParam)
 
 	blog.V(3).Infof("will create process instance model: %+v", reqParam)
 	if 0 == len(reqParam) {
@@ -46,7 +50,8 @@ func (ps *ProctrlServer) CreateProcInstanceModel(req *restful.Request, resp *res
 		item.OwnerID = util.GetOwnerID(req.Request.Header)
 		addInst = append(addInst, item)
 	}
-	if err := ps.DbInstance.InsertMuti(common.BKTableNameProcInstanceModel, addInst...); err != nil {
+
+	if err := ps.Instance.Table(common.BKTableNameProcInstanceModel).Insert(ctx, addInst); err != nil {
 		blog.Errorf("create process instance model failed. err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcCreateInstanceModel)})
 		return
@@ -58,6 +63,7 @@ func (ps *ProctrlServer) CreateProcInstanceModel(req *restful.Request, resp *res
 func (ps *ProctrlServer) GetProcInstanceModel(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
 	reqParam := new(meta.QueryInput)
 	if err := json.NewDecoder(req.Request.Body).Decode(&reqParam); err != nil {
@@ -65,7 +71,10 @@ func (ps *ProctrlServer) GetProcInstanceModel(req *restful.Request, resp *restfu
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-	cnt, err := ps.DbInstance.GetCntByCondition(common.BKTableNameProcInstanceModel, reqParam.Condition)
+
+	blog.Infof("will get process instance model. condition: %v", reqParam)
+
+	cnt, err := ps.Instance.Table(common.BKTableNameProcInstanceModel).Find(reqParam.Condition).Count(ctx)
 	if err != nil {
 		blog.Errorf("get process instance model failed. err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcGetInstanceModel)})
@@ -73,7 +82,8 @@ func (ps *ProctrlServer) GetProcInstanceModel(req *restful.Request, resp *restfu
 	}
 	blog.V(3).Infof("will get process instance model. condition: %v", reqParam)
 	data := make([]meta.ProcInstanceModel, 0)
-	err = ps.DbInstance.GetMutilByCondition(common.BKTableNameProcInstanceModel, strings.Split(reqParam.Fields, ","), reqParam.Condition, &data, reqParam.Sort, reqParam.Start, reqParam.Limit)
+	err = ps.Instance.Table(common.BKTableNameProcInstanceModel).Find(reqParam.Condition).Fields(strings.Split(reqParam.Fields, ",")...).
+		Sort(reqParam.Sort).Start(uint64(reqParam.Start)).Limit(uint64(reqParam.Limit)).All(ctx, &data)
 	if err != nil {
 		blog.Errorf("get process instance model failed. err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcGetInstanceModel)})
@@ -83,13 +93,14 @@ func (ps *ProctrlServer) GetProcInstanceModel(req *restful.Request, resp *restfu
 		BaseResp: meta.SuccessBaseResp,
 	}
 	ret.Data.Info = data
-	ret.Data.Count = cnt
+	ret.Data.Count = int(cnt)
 	resp.WriteEntity(ret)
 }
 
 func (ps *ProctrlServer) DeleteProcInstanceModel(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
 	reqParam := make(map[string]interface{})
 	if err := json.NewDecoder(req.Request.Body).Decode(&reqParam); err != nil {
@@ -99,8 +110,10 @@ func (ps *ProctrlServer) DeleteProcInstanceModel(req *restful.Request, resp *res
 	}
 	reqParam = util.SetModOwner(reqParam, util.GetOwnerID(req.Request.Header))
 
+	blog.Infof("will delete process instance model. condition: %+v", reqParam)
+
 	blog.V(3).Infof("will delete process instance model. condition: %+v", reqParam)
-	if err := ps.DbInstance.DelByCondition(common.BKTableNameProcInstanceModel, reqParam); err != nil {
+	if err := ps.Instance.Table(common.BKTableNameProcInstanceModel).Delete(ctx, reqParam); err != nil {
 		blog.Errorf("delete process instance model failed. err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcDeleteInstanceModel)})
 		return
@@ -112,6 +125,7 @@ func (ps *ProctrlServer) DeleteProcInstanceModel(req *restful.Request, resp *res
 func (ps *ProctrlServer) RegisterProcInstaceDetail(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
 	input := new(meta.GseProcRequest)
 	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
@@ -121,7 +135,7 @@ func (ps *ProctrlServer) RegisterProcInstaceDetail(req *restful.Request, resp *r
 	}
 	for _, gseHost := range input.Hosts {
 		conds := common.KvMap{common.BKAppIDField: input.AppID, common.BKProcessIDField: input.ProcID, common.BKModuleIDField: input.ModuleID, common.BKHostIDField: gseHost.HostID}
-		cnt, err := ps.DbInstance.GetCntByCondition(common.BKTableNameProcInstaceDetail, conds)
+		cnt, err := ps.Instance.Table(common.BKTableNameProcInstaceDetail).Find(conds).Count(ctx)
 		if nil != err {
 			blog.Errorf("register  process instance detail get info error: %s", err.Error())
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
@@ -138,9 +152,9 @@ func (ps *ProctrlServer) RegisterProcInstaceDetail(req *restful.Request, resp *r
 		detail.Hosts = append(detail.Hosts, gseHost)
 		detail.Status = meta.ProcInstanceDetailStatusRegisterSucc //1 register gse sucess, 2 register error need retry 3 unregister error need retry
 		if 0 == cnt {
-			_, err = ps.DbInstance.Insert(common.BKTableNameProcInstaceDetail, detail)
+			err = ps.Instance.Table(common.BKTableNameProcInstaceDetail).Insert(ctx, detail)
 		} else {
-			err = ps.DbInstance.UpdateByCondition(common.BKTableNameProcInstaceDetail, detail, conds)
+			err = ps.Instance.Table(common.BKTableNameProcInstaceDetail).Update(ctx, conds, detail)
 		}
 		if nil != err {
 			blog.Errorf("register  process instance detail save info error: %s", err.Error())
@@ -154,6 +168,7 @@ func (ps *ProctrlServer) RegisterProcInstaceDetail(req *restful.Request, resp *r
 func (ps *ProctrlServer) ModifyRegisterProcInstanceDetail(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
 	input := new(meta.ModifyProcInstanceDetail)
 	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
@@ -163,7 +178,7 @@ func (ps *ProctrlServer) ModifyRegisterProcInstanceDetail(req *restful.Request, 
 	}
 	input.Conds = util.SetModOwner(input.Conds, util.GetOwnerID(req.Request.Header))
 
-	err := ps.DbInstance.UpdateByCondition(common.BKTableNameProcInstaceDetail, input.Data, input.Conds)
+	err := ps.Instance.Table(common.BKTableNameProcInstaceDetail).Update(ctx, input.Conds, input.Data)
 	if nil != err {
 		blog.Errorf("update register  process instance detail  info error: %s, input:%s", err.Error(), input)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBUpdateFailed)})
@@ -175,6 +190,7 @@ func (ps *ProctrlServer) ModifyRegisterProcInstanceDetail(req *restful.Request, 
 func (ps *ProctrlServer) GetProcInstanceDetail(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
 	input := new(meta.QueryInput)
 	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
@@ -183,7 +199,7 @@ func (ps *ProctrlServer) GetProcInstanceDetail(req *restful.Request, resp *restf
 		return
 	}
 	input.Condition = util.SetModOwner(input.Condition, util.GetOwnerID(req.Request.Header))
-	cnt, err := ps.DbInstance.GetCntByCondition(common.BKTableNameProcInstaceDetail, input.Condition)
+	cnt, err := ps.Instance.Table(common.BKTableNameProcInstaceDetail).Find(input.Condition).Count(ctx)
 	if err != nil {
 		blog.Errorf("get process instance detail failed. err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
@@ -191,7 +207,8 @@ func (ps *ProctrlServer) GetProcInstanceDetail(req *restful.Request, resp *restf
 	}
 	blog.V(3).Infof("will get process instance detail. condition: %v", input)
 	data := make([]meta.ProcInstanceDetail, 0)
-	err = ps.DbInstance.GetMutilByCondition(common.BKTableNameProcInstaceDetail, strings.Split(input.Fields, ","), input.Condition, &data, input.Sort, input.Start, input.Limit)
+	err = ps.Instance.Table(common.BKTableNameProcInstaceDetail).Find(input.Condition).Fields(strings.Split(input.Fields, ",")...).
+		Sort(input.Sort).Start(uint64(input.Start)).Limit(uint64(input.Limit)).All(ctx, &data)
 	if err != nil {
 		blog.Errorf("get process instance detail failed. err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
@@ -201,13 +218,14 @@ func (ps *ProctrlServer) GetProcInstanceDetail(req *restful.Request, resp *restf
 		BaseResp: meta.SuccessBaseResp,
 	}
 	ret.Data.Info = data
-	ret.Data.Count = cnt
+	ret.Data.Count = int(cnt)
 	resp.WriteEntity(ret)
 }
 
 func (ps *ProctrlServer) DeleteRegisterProcInstanceDetail(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
 	input := make(map[string]interface{}, 0)
 	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
@@ -216,7 +234,7 @@ func (ps *ProctrlServer) DeleteRegisterProcInstanceDetail(req *restful.Request, 
 		return
 	}
 	input = util.SetModOwner(input, util.GetOwnerID(req.Request.Header))
-	err := ps.DbInstance.DelByCondition(common.BKTableNameProcInstaceDetail, input)
+	err := ps.Instance.Table(common.BKTableNameProcInstaceDetail).Delete(ctx, input)
 	if nil != err {
 		blog.Errorf("update register  process instance detail  info error: %s, input:%s", err.Error(), input)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBDeleteFailed)})

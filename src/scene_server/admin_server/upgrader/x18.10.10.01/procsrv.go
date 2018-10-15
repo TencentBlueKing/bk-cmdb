@@ -12,6 +12,7 @@
 package x18_10_10_01
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -21,10 +22,10 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
 )
 
-func addProcOpTaskTable(db storage.DI, conf *upgrader.Config) error {
+func addProcOpTaskTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tableName := common.BKTableNameProcOperateTask
 	exists, err := db.HasTable(tableName)
 	if err != nil {
@@ -35,17 +36,19 @@ func addProcOpTaskTable(db storage.DI, conf *upgrader.Config) error {
 			return err
 		}
 	}
-	indexs := []storage.Index{
-		storage.Index{Name: "idx_taskID_gseTaskID", Columns: []string{common.BKTaskIDField, common.BKGseOpTaskIDField}, Type: storage.INDEX_TYPE_BACKGROUP},
+	indexs := []dal.Index{
+		dal.Index{Name: "idx_taskID_gseTaskID", Keys: map[string]interface{}{common.BKTaskIDField: 1, common.BKGseOpTaskIDField: 1}, Background: true},
 	}
-	for index := range indexs {
-		if err = db.Index(tableName, &indexs[index]); err != nil && !mgo.IsDup(err) {
+	for _, index := range indexs {
+
+		if err = db.Table(tableName).CreateIndex(ctx, index); err != nil && !db.IsDuplicatedError(err) {
 			return err
 		}
+
 	}
 	return nil
 }
-func addProcInstanceModelTable(db storage.DI, conf *upgrader.Config) error {
+func addProcInstanceModelTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tableName := common.BKTableNameProcInstanceModel
 	exists, err := db.HasTable(tableName)
 	if err != nil {
@@ -56,19 +59,19 @@ func addProcInstanceModelTable(db storage.DI, conf *upgrader.Config) error {
 			return err
 		}
 	}
-	indexs := []storage.Index{
-		storage.Index{Name: "idx_bkBizID_bkSetID_bkModuleID_bkHostInstanceID", Columns: []string{common.BKAppIDField, common.BKSetIDField, common.BKModuleIDField, "bk_host_instance_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "idx_bkBizID_bkHostID", Columns: []string{common.BKAppIDField, common.BKHostIDField}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "idx_bkBizID_bkProcessID", Columns: []string{common.BKAppIDField, common.BKProcessIDField}, Type: storage.INDEX_TYPE_BACKGROUP},
+	indexs := []dal.Index{
+		dal.Index{Name: "idx_bkBizID_bkSetID_bkModuleID_bkHostInstanceID", Keys: map[string]interface{}{common.BKAppIDField: 1, common.BKSetIDField: 1, common.BKModuleIDField: 1, "bk_host_instance_id": 1}, Background: true},
+		dal.Index{Name: "idx_bkBizID_bkHostID", Keys: map[string]interface{}{common.BKAppIDField: 1, common.BKHostIDField: 1}, Background: true},
+		dal.Index{Name: "idx_bkBizID_bkProcessID", Keys: map[string]interface{}{common.BKAppIDField: 1, common.BKProcessIDField: 1}, Background: true},
 	}
-	for index := range indexs {
-		if err = db.Index(tableName, &indexs[index]); err != nil && !mgo.IsDup(err) {
+	for _, index := range indexs {
+		if err = db.Table(tableName).CreateIndex(ctx, index); err != nil && !db.IsDuplicatedError(err) {
 			return err
 		}
 	}
 	return nil
 }
-func addProcInstanceDetailTable(db storage.DI, conf *upgrader.Config) error {
+func addProcInstanceDetailTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tableName := common.BKTableNameProcInstaceDetail
 	exists, err := db.HasTable(tableName)
 	if err != nil {
@@ -79,27 +82,27 @@ func addProcInstanceDetailTable(db storage.DI, conf *upgrader.Config) error {
 			return err
 		}
 	}
-	indexs := []storage.Index{
-		storage.Index{Name: "idx_bkBizID_bkModuleID_bkProcessID", Columns: []string{common.BKAppIDField, common.BKModuleIDField, common.BKProcessIDField}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "idx_bkBizID_status", Columns: []string{common.BKAppIDField, common.BKStatusField}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "idx_bkBizID_bkHostID", Columns: []string{common.BKAppIDField, common.BKHostIDField}, Type: storage.INDEX_TYPE_BACKGROUP},
+	indexs := []dal.Index{
+		dal.Index{Name: "idx_bkBizID_bkModuleID_bkProcessID", Keys: map[string]interface{}{common.BKAppIDField: 1, common.BKModuleIDField: 1, common.BKProcessIDField: 1}, Background: true},
+		dal.Index{Name: "idx_bkBizID_status", Keys: map[string]interface{}{common.BKAppIDField: 1, common.BKStatusField: 1}, Background: true},
+		dal.Index{Name: "idx_bkBizID_bkHostID", Keys: map[string]interface{}{common.BKAppIDField: 1, common.BKHostIDField: 1}, Background: true},
 	}
-	for index := range indexs {
-		if err = db.Index(tableName, &indexs[index]); err != nil && !mgo.IsDup(err) {
+	for _, index := range indexs {
+		if err = db.Table(tableName).CreateIndex(ctx, index); err != nil && !db.IsDuplicatedError(err) {
 			return err
 		}
 	}
 	return nil
 }
-func addProcFreshInstance(db storage.DI, conf *upgrader.Config) error {
+func addProcFreshInstance(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	if "" != conf.CCApiSrvAddr {
 		tableName := common.BKTableNameSubscription
-		sID, err := db.GetIncID(tableName)
+		sID, err := db.NextSequence(ctx, tableName)
 		if nil != err {
 			return err
 		}
 		SubscriptionName := "process instance refresh [incorrect deletion]"
-		cnt, err := db.GetCntByCondition(tableName, mapstr.MapStr{common.BKSubscriptionNameField: SubscriptionName, common.BKOperatorField: conf.User})
+		cnt, err := db.Table(tableName).Find(mapstr.MapStr{common.BKSubscriptionNameField: SubscriptionName, common.BKOperatorField: conf.User}).Count(ctx)
 		if nil != err {
 			return err
 		}
@@ -107,7 +110,7 @@ func addProcFreshInstance(db storage.DI, conf *upgrader.Config) error {
 			return nil
 		}
 		subscription := metadata.Subscription{
-			SubscriptionID:   sID,
+			SubscriptionID:   int64(sID),
 			SubscriptionName: SubscriptionName,
 			SystemName:       "cmdb",
 			CallbackURL:      fmt.Sprintf("http://%s/api/v3/proc/process/refresh/hostinstnum", strings.Trim(conf.CCApiSrvAddr, "/")),
@@ -118,8 +121,7 @@ func addProcFreshInstance(db storage.DI, conf *upgrader.Config) error {
 			OwnerID:          common.BKDefaultOwnerID,
 			Operator:         conf.User,
 		}
-		_, err = db.Insert(tableName, subscription)
-		return err
+		return db.Table(tableName).Insert(ctx, subscription)
 	}
 	return nil
 }

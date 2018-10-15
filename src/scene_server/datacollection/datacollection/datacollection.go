@@ -23,19 +23,20 @@ import (
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/datacollection/app/options"
-	"configcenter/src/storage"
-	"configcenter/src/storage/mgoclient"
-	"configcenter/src/storage/redisclient"
+	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo"
+	"configcenter/src/storage/dal/redis"
 )
 
 type DataCollection struct {
 	Config *options.Config
 	*backbone.Engine
-	db storage.DI
+	db  dal.RDB
+	ctx context.Context
 }
 
-func NewDataCollection(config *options.Config, backbone *backbone.Engine) *DataCollection {
-	return &DataCollection{Config: config, Engine: backbone}
+func NewDataCollection(ctx context.Context, config *options.Config, backbone *backbone.Engine) *DataCollection {
+	return &DataCollection{ctx: ctx, Config: config, Engine: backbone}
 }
 
 func (d *DataCollection) Run() error {
@@ -44,26 +45,22 @@ func (d *DataCollection) Run() error {
 
 	var err error
 
-	discli, err := redisclient.NewFromConfig(d.Config.DiscoverRedis)
+	discli, err := redis.NewFromConfig(d.Config.DiscoverRedis)
 	if nil != err {
 		return err
 	}
 
-	snapcli, err := redisclient.NewFromConfig(d.Config.SnapRedis)
+	snapcli, err := redis.NewFromConfig(d.Config.SnapRedis)
 	if nil != err {
 		return err
 	}
 
-	rediscli, err := redisclient.NewFromConfig(d.Config.CCRedis)
+	rediscli, err := redis.NewFromConfig(d.Config.CCRedis)
 	if nil != err {
 		return err
 	}
 
-	db, err := mgoclient.NewFromConfig(d.Config.MongoDB)
-	if err != nil {
-		return fmt.Errorf("connect mongo server failed %s", err.Error())
-	}
-	err = db.Open()
+	db, err := mongo.NewMgo(d.Config.MongoDB.BuildURI())
 	if err != nil {
 		return fmt.Errorf("connect mongo server failed %s", err.Error())
 	}
@@ -71,7 +68,7 @@ func (d *DataCollection) Run() error {
 
 	chanName := []string{}
 	for {
-		chanName, err = d.getSnapChanName()
+		chanName, err = d.getSnapChanName(d.ctx)
 		if nil == err {
 			break
 		}
@@ -79,12 +76,12 @@ func (d *DataCollection) Run() error {
 		time.Sleep(time.Second * 10)
 	}
 
-	hostSnap := NewHostSnap(chanName, MaxSnapSize, rediscli, snapcli, db)
+	hostSnap := NewHostSnap(d.ctx, chanName, MaxSnapSize, rediscli, snapcli, db)
 	hostSnap.Start()
 
 	discoverChan := ""
 	for {
-		discoverChan, err = d.getDiscoverChanName()
+		discoverChan, err = d.getDiscoverChanName(d.ctx)
 		if nil == err {
 			break
 		}
@@ -98,19 +95,19 @@ func (d *DataCollection) Run() error {
 	return nil
 }
 
-func (d *DataCollection) getDiscoverChanName() (string, error) {
-	defaultAppID, err := d.getDefaultAppID()
+func (d *DataCollection) getDiscoverChanName(ctx context.Context) (string, error) {
+	defaultAppID, err := d.getDefaultAppID(ctx)
 	if nil != err {
 		return "", err
 	}
 	return "discover" + defaultAppID, nil
 }
 
-func (d *DataCollection) getDefaultAppID() (defaultAppID string, err error) {
+func (d *DataCollection) getDefaultAppID(ctx context.Context) (defaultAppID string, err error) {
 	condition := map[string]interface{}{common.BKAppNameField: common.BKAppName}
 	results := []map[string]interface{}{}
 
-	if err = d.db.GetMutilByCondition(common.BKTableNameBaseApp, nil, condition, &results, "", 0, 0); err != nil {
+	if err = d.db.Table(common.BKTableNameBaseApp).Find(condition).All(ctx, &results); err != nil {
 		return "", err
 	}
 
@@ -129,8 +126,8 @@ func (d *DataCollection) getDefaultAppID() (defaultAppID string, err error) {
 	return
 }
 
-func (d *DataCollection) getSnapChanName() ([]string, error) {
-	defaultAppID, err := d.getDefaultAppID()
+func (d *DataCollection) getSnapChanName(ctx context.Context) ([]string, error) {
+	defaultAppID, err := d.getDefaultAppID(ctx)
 	if nil != err {
 		return []string{}, err
 	}
@@ -140,7 +137,7 @@ func (d *DataCollection) getSnapChanName() ([]string, error) {
 func (d *DataCollection) mock(config map[string]string, channel string) {
 	blog.Infof("start mocking ")
 
-	mockCli, err := redisclient.NewFromConfig(d.Config.SnapRedis)
+	mockCli, err := redis.NewFromConfig(d.Config.SnapRedis)
 	if nil != err {
 		blog.Error("start mock error")
 		return

@@ -20,14 +20,14 @@ import (
 	"configcenter/src/common/backbone"
 	cfnc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/proc_server/app/options"
 	"configcenter/src/scene_server/proc_server/logics"
-	"configcenter/src/storage"
-	"configcenter/src/storage/redisclient"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 )
 
@@ -141,7 +141,7 @@ func (s *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
 	info := metric.HealthInfo{
 		Module:     types.CC_MODULE_HOST,
 		HealthMeta: meta,
-		AtTime:     types.Now(),
+		AtTime:     metadata.Now(),
 	}
 
 	answer := metric.HealthResponse{
@@ -167,25 +167,9 @@ func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig
 		}()
 	}
 
-	prefix := storage.DI_REDIS
-	port, ok := current.ConfigMap[prefix+".port"]
-	if !ok {
-		port = "6379"
-	}
-	dbNum, ok := current.ConfigMap[prefix+".database"]
-	if !ok {
-		dbNum = "0"
-	}
-
-	redis := &redisclient.RedisConfig{
-		Address:  current.ConfigMap[prefix+".host"],
-		User:     current.ConfigMap[prefix+".usr"],
-		Password: current.ConfigMap[prefix+".pwd"],
-		Database: dbNum,
-		Port:     port,
-	}
+	cfg := redis.ParseConfigFromKV("redis", current.ConfigMap)
 	ps.Config = &options.Config{
-		Redis: redis,
+		Redis: &cfg,
 	}
 
 	hostInstPrefix := "host instance"

@@ -13,6 +13,7 @@
 package distribution
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"runtime/debug"
@@ -27,16 +28,18 @@ import (
 
 func (dh *DistHandler) StartDistribute() (err error) {
 	defer func() {
-		if err == nil {
-			syserror := recover()
-			if syserror != nil {
-				err = fmt.Errorf("system error: %v", syserror)
-			}
+		syserror := recover()
+		if syserror != nil {
+			err = fmt.Errorf("system error: %v", syserror)
 		}
-		blog.Errorf("%s", debug.Stack())
+		if err != nil {
+			blog.Errorf("distribute process stop with error: %v, stack:%s", err, debug.Stack())
+		}
 	}()
 
-	rccler := newReconciler(dh.cache, dh.db)
+	blog.Info("distribution handle process started")
+
+	rccler := newReconciler(dh.ctx, dh.cache, dh.db)
 	rccler.loadAll()
 	rccler.reconcile()
 	subscribers := rccler.persistedSubscribers
@@ -150,7 +153,7 @@ func (dh *DistHandler) distToSubscribe(param metadata.Subscription, chNew chan m
 				blog.Infof("refresh ignore, subcriber cache key not change\nold:%s\nnew:%s ", sub.GetCacheKey(), nsub.GetCacheKey())
 			}
 		case <-ticker.C:
-			count, counterr := dh.db.GetCntByCondition(common.BKTableNameSubscription, condition.CreateCondition().Field(common.BKSubscriptionIDField).Eq(sub.SubscriptionID).ToMapStr())
+			count, counterr := dh.db.Table(common.BKTableNameSubscription).Find(condition.CreateCondition().Field(common.BKSubscriptionIDField).Eq(sub.SubscriptionID).ToMapStr()).Count(context.Background())
 			if counterr != nil {
 				blog.Errorf("get subscription count error %v", counterr)
 				continue

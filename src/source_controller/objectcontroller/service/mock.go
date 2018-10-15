@@ -13,17 +13,19 @@
 package service
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/backbone"
-	"configcenter/src/common/errors"
-	"configcenter/src/common/language"
-	"configcenter/src/storage/mock"
-	"github.com/emicklei/go-restful"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/emicklei/go-restful"
+
+	"configcenter/src/common"
+	"configcenter/src/common/backbone"
+	"configcenter/src/common/errors"
+	"configcenter/src/common/language"
+	"configcenter/src/storage/dal/mongo"
 )
 
 type TestCase struct {
@@ -91,5 +93,5 @@ func NewMockService() *Service {
 		Language: language.NewFromCtx(language.EmptyLanguageSetting),
 		CCErr:    errors.NewFromCtx(errors.EmptyErrorsSetting),
 	}
-	return &Service{Core: core, Instance: &mock.MockDB{}, Cache: nil}
+	return &Service{Core: core, Instance: mongo.NewMock(), Cache: nil}
 }
