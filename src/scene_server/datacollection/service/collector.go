@@ -62,6 +62,15 @@ func (s *Service) UpdateCollector(req *restful.Request, resp *restful.Response) 
 	}
 	blog.Infof("[NetDevice][UpdateCollector] update by %+v", cond)
 
+	if cond.BizID <= 0 {
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsLostField, common.BKAppIDField)})
+		return
+	}
+	if len(cond.InnerIP) <= 0 {
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsLostField, common.BKHostInnerIPField)})
+		return
+	}
+
 	err := s.Logics.UpdateCollector(pheader, cond)
 	if err != nil {
 		resp.WriteError(http.StatusInternalServerError,
