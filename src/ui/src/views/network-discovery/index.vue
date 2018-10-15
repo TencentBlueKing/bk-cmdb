@@ -89,14 +89,13 @@
             ]),
             getConfigInfo (item) {
                 if (item.statistics) {
-                    let str = ''
+                    let str = []
                     Object.keys(item.statistics).map(key => {
                         if (key !== 'associations') {
-                            str += `${key}(${item.statistics[key]}) `
+                            str.push(`${key}(${item.statistics[key]})`)
                         }
                     })
-                    str += `${this.$t("Hosts['关联关系']")}(${item.statistics.associations})`
-                    return str
+                    return `${str.join(' ')} ${this.$t("Hosts['关联关系']")}(${item.statistics.associations})`
                 }
             },
             routeToConfig () {

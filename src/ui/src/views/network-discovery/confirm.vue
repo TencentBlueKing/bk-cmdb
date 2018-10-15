@@ -403,6 +403,7 @@
                                     bk_asst_inst_name: asst['bk_asst_inst_name'],
                                     bk_asst_obj_id: asst['bk_asst_obj_id'],
                                     bk_asst_obj_name: asst['bk_asst_obj_name'],
+                                    bk_asst_property_id: asst['bk_asst_property_id'],
                                     method: 'accept'
                                 })
                             }
