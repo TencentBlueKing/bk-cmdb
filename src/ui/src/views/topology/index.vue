@@ -8,21 +8,18 @@
             :max="480">
             <cmdb-business-selector class="business-selector" v-model="business">
             </cmdb-business-selector>
-            <div class="tree-simplify" v-if="tree.simplifyAvailable">
+            <div class="tree-simplify" v-if="false && tree.simplifyAvailable">
                 <cmdb-form-bool class="tree-simplify-checkbox"
                     :size="16"
                     :true-value="true"
                     :false-value="false"
                     v-model="tree.simplify">
-                    <span v-if="tree.simplify">
-                        {{$t('BusinessTopology["完整显示"]')}}
-                    </span>
-                    <span v-else>
+                    <span>
                         {{$t('BusinessTopology["精简显示"]')}}
                     </span>
                 </cmdb-form-bool>
                 <v-popover style="display: inline-block;" trigger="hover" :delay="200">
-                    <i class="bk-icon icon-info-circle">
+                    <i class="tree-simplify-tips bk-icon icon-info-circle">
                     </i>
                     <img src="@/assets/images/simplify-tips.png" slot="popover">
                 </v-popover>
@@ -51,11 +48,12 @@
                 </div>
             </cmdb-tree>
             <bk-dialog
-                :is-show.sync="tree.create.active"
+                :is-show.sync="tree.create.showDialog"
                 :has-header="false"
                 :has-footer="false"
                 :padding="0"
                 :quick-close="false"
+                @after-transition-leave="handleAfterCancelCreateNode"
                 @cancel="handleCancelCreateNode">
                 <tree-node-create v-if="tree.create.active" slot="content"
                     :properties="tree.create.properties"
@@ -144,11 +142,14 @@
                     data: [],
                     simplify: false,
                     simplifyAvailable: false,
+                    simplifyParentNode: null,
                     selectedNode: null,
                     selectedNodeState: null,
                     selectedNodeInst: {},
                     flatternedSelectedNodeInst: {},
+                    internalModule: [],
                     create: {
+                        showDialog: false,
                         active: false,
                         properties: []
                     }
@@ -392,8 +393,6 @@
                 })
             },
             getBusinessTopo () {
-                this.tree.simplifyAvailable = false
-                this.tree.simplify = false
                 return Promise.all([
                     this.getInstTopo({
                         bizId: this.business,
@@ -420,14 +419,19 @@
                             'bk_inst_name': module['bk_module_name']
                         }
                     })
+                    this.tree.internalModule = internalModule
                     this.tree.data = [{
                         selected: true,
                         expanded: true,
                         ...instTopo[0],
                         child: [...internalModule, ...instTopo[0].child]
                     }]
-                    this.tree.simplifyAvailable = instTopo[0].child.length === 1 && instTopo[0].child[0].child.length
+                    this.setSimplifyAvailable()
                 })
+            },
+            setSimplifyAvailable () {
+                const simplifyData = this.tree.data.filter(data => !this.tree.internalModule.includes(data))
+                this.tree.simplifyAvailable = simplifyData.length === 1 && simplifyData[0].child.length
             },
             getModelByObjId (id) {
                 return this.topoModel.find(model => model['bk_obj_id'] === id)
@@ -540,9 +544,13 @@
                 this.tab.type = 'update'
             },
             async handleCreate () {
+                this.tree.create.showDialog = true
                 this.tree.create.active = true
-                const selectedNode = this.tree.selectedNode
-                const model = this.topoModel.find(model => model['bk_obj_id'] === selectedNode['bk_obj_id'])
+                let targetNode = this.tree.selectedNode
+                if (this.tree.simplify && targetNode['bk_obj_id'] === 'biz') {
+                    targetNode = this.tree.simplifyParentNode
+                }
+                const model = this.topoModel.find(model => model['bk_obj_id'] === targetNode['bk_obj_id'])
                 const properties = await this.getCommonProperties(model['bk_next_obj'])
                 this.tree.create.properties = properties
             },
@@ -552,6 +560,9 @@
                 })
             },
             handleCancelCreateNode () {
+                this.tree.create.showDialog = false
+            },
+            handleAfterCancelCreateNode () {
                 this.tree.create.active = false
                 this.tree.create.properties = []
             },
@@ -562,7 +573,10 @@
                 })
             },
             createNode (value) {
-                const selectedNode = this.tree.selectedNode
+                let selectedNode = this.tree.selectedNode
+                if (this.tree.simplify && selectedNode['bk_obj_id'] === 'biz') {
+                    selectedNode = this.tree.simplifyParentNode
+                }
                 const selectedNodeModel = this.topoModel.find(model => model['bk_obj_id'] === selectedNode['bk_obj_id'])
                 const nextObjId = selectedNodeModel['bk_next_obj']
                 const formData = {
@@ -715,11 +729,14 @@
             },
             simplifyTree () {
                 this.$refs.topoTree.selectNode(this.getTopoNodeId(this.tree.data[0]))
-                let instTopo = this.tree.data[0].child.slice(2)
+                let instTopo = this.tree.data[0].child.slice(this.tree.internalModule.length)
+                let simplifyParentNode
                 while (instTopo.length === 1 && instTopo[0].child.length) {
+                    simplifyParentNode = instTopo[0]
                     instTopo = instTopo[0].child
                 }
-                this.tree.data[0].child.splice(2, 1, ...instTopo)
+                this.tree.simplifyParentNode = simplifyParentNode
+                this.tree.data[0].child.splice(this.tree.internalModule.length, 1, ...instTopo)
                 this.$refs.topoTree.$forceUpdate()
             }
         }
@@ -744,6 +761,9 @@
         .tree-simplify {
             padding: 0 20px;
             font-size: 14px;
+            .tree-simplify-tips:hover {
+                color: #0082ff;
+            }
         }
         .topo-tree{
             padding: 0 0 0 20px;

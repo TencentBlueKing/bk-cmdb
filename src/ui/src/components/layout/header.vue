@@ -28,13 +28,13 @@
             <div class="helper" v-click-outside="handleCloseHelper">
                 <i class="helper-icon bk-icon icon-question-circle" @click="isShowHelper = !isShowHelper"></i>
                 <div class="helper-list" v-show="isShowHelper">
-                    <a href="https://github.com/Tencent/bk-cmdb/wiki/FAQ" target="_blank" class="helper-link"
+                    <a href="http://docs.bk.tencent.com/product_white_paper/cmdb/" target="_blank" class="helper-link"
                         @click="isShowHelper = false">
                         {{$t('Common["帮助文档"]')}}
                     </a>
                     <a href="https://github.com/Tencent/bk-cmdb" target="_blank" class="helper-link"
                         @click="isShowHelper = false">
-                        Github
+                        {{$t('Common["开源社区"]')}}
                     </a>
                 </div>
             </div>
@@ -206,12 +206,12 @@
         .helper-list {
             position: absolute;
             top: 55px;
-            right: 0;
+            right: 1px;
             text-align: left;
             line-height: 40px;
             background-color: #fff;
             border-radius: 2px;
-            border: 1px solid $cmdbBorderColor;
+            box-shadow: 0 1px 5px 0 rgba(12,34,59, .1);
             .helper-link {
                 display: block;
                 padding: 0 20px;
