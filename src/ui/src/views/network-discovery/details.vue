@@ -222,7 +222,7 @@
                     return
                 }
                 item.asst.method = item.asst.method === 'accept' ? 'reject' : 'accept'
-                this.$emit('update:associations', this.propertyTable.list)
+                this.$emit('update:associations', this.relationTable.list)
             },
             propertyHandleSortChange (sort) {
                 let key = sort
