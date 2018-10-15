@@ -71,12 +71,6 @@ type Netcollector struct {
 	Config        NetcollectConfig   `json:"config" json:"config"`
 }
 
-// type NetcollectorConfig struct {
-// 	CloudID int64            `json:"bk_cloud_id" bson:"bk_cloud_id" `
-// 	InnerIP string           `json:"bk_host_innerip" bson:"bk_host_innerip"`
-// 	Config  NetcollectConfig `json:"config" bson:"config"`
-// }
-
 type ParamNetcollectDiscover struct {
 	Collectors []Netcollector `json:"collectors"`
 }
