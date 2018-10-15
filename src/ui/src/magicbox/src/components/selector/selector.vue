@@ -390,12 +390,12 @@
                                 // 上
                                 this.listUp()
                                 break
-                        
+
                             case 40:
                                 // 下
                                 this.listDown()
                                 break
-                        
+
                             default:
                                 break
                         }
@@ -500,7 +500,7 @@
                         this.activeIndex = 0
                     }
                 }
-                
+
                 // 检测更新滚动
                 this.updateScrollTop()
             },
@@ -517,7 +517,7 @@
                         height: activeObj.clientHeight,
                         yAxios: activeObj.getBoundingClientRect().y
                     }
-                    
+
                     // 选中元素顶部坐标大于容器顶部坐标时，则该元素有部分或者全部区域不在可视区域，执行滚动
                     if (activeInfo.yAxios < panelInfo.yAxios) {
                         let currentScTop = panelObj.scrollTop
@@ -525,7 +525,7 @@
                     }
 
                     let distanceToBottom = activeInfo.yAxios + activeInfo.height - panelInfo.yAxios
-                
+
                     // 选中元素底部坐标大于容器顶部坐标，且超出容器的实际高度，则该元素有部分或者全部区域不在可视区域，执行滚动
                     if (distanceToBottom > panelInfo.height) {
                         let currentScTop = panelObj.scrollTop
@@ -567,7 +567,7 @@
                     return
                 }
                 this.$el.querySelector('.bk-selector-list .active').click()
-                this.selectedList = this.list[this.activeIndex]
+                this.selectedList = this.localList[this.activeIndex]
                 this.$emit('update:selected', this.selectedList[this.settingKey])
                 let data = {}
                 this.list.forEach(item => {
@@ -805,4 +805,5 @@
 
 <style lang="scss">
     @import '../../bk-magic-ui/src/selector.scss';
+    @import '../../bk-magic-ui/src/loading.scss';
 </style>
