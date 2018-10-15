@@ -233,7 +233,7 @@ func (h *Netcollect) handleMsg(msgs []string, resetHandle chan struct{}) error {
 
 			for _, report := range msg.Data {
 				if err = h.handleReport(&report); err != nil {
-					blog.Errorf("handleData failed: %v,raw: %s", raw)
+					blog.Errorf("handleData failed: %v,raw: %s", err, raw)
 				}
 			}
 		}
@@ -495,16 +495,23 @@ const netcollectMockMsg = `{
         {
             "bk_obj_id": "bk_switch",
             "bk_inst_key": "huawei 5789#56-79-9a-ii",
-            "bk_host_innerip": "192.168.100.130",
+            "bk_host_innerip": "192.168.1.1",
 			"bk_cloud_id": 0,
+			"last_time": "2018-10-03 17:09:00",
             "attributes": [
                 {
                     "bk_property_id": "bk_inst_name",
-                    "value": "huawei 5789#56-79-9a-ii",
-                    "last_time": "2018-10-03 17:09:00"
+                    "value": "huawei 5789#56-79-9a-ii"
                 }
             ],
-            "associations": []
+            "associations": [
+				{
+					"bk_asst_inst_name": "192.168.1.1",
+                    "bk_asst_obj_id": "bk_host",
+                    "bk_asst_obj_name": "主机",
+                    "bk_asst_property_id": "bk_host_id"
+				}
+			]
         }
     ]
 }

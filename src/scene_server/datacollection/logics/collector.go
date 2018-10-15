@@ -77,6 +77,7 @@ func (lgc *Logics) SearchCollector(header http.Header, cond metadata.ParamNetcol
 		}
 
 		collector := metadata.Netcollector{
+			BizID:   phost.Host.BkBizID,
 			CloudID: phost.Host.BkCloudID,
 			InnerIP: phost.Host.InnerIP,
 			Version: phost.Version,
@@ -333,7 +334,20 @@ func (lgc *Logics) buildNetdevicebeatConfigFile(collector *metadata.Netcollector
 		},
 	}
 
-	return yaml.Marshal(&config)
+	configContent := map[string]interface{}{
+		"netdevicebeat": config,
+		"output":        map[string]interface{}{"gse": map[string]string{"endpoint": "/var/run/ipc.state.report"}},
+		"path": map[string]interface{}{
+			"data": "/var/lib/gse",
+			"logs": "/var/log/gse",
+			"pid":  "/var/run/gse",
+		},
+		"logging": map[string]interface{}{
+			"to_files": true,
+		},
+	}
+
+	return yaml.Marshal(&configContent)
 }
 
 func (lgc *Logics) findCustom() ([]Custom, error) {
