@@ -334,7 +334,20 @@ func (lgc *Logics) buildNetdevicebeatConfigFile(collector *metadata.Netcollector
 		},
 	}
 
-	return yaml.Marshal(&config)
+	configContent := map[string]interface{}{
+		"netdevicebeat": config,
+		"output":        map[string]interface{}{"gse": map[string]string{"endpoint": "/var/run/ipc.state.report"}},
+		"path": map[string]interface{}{
+			"data": "/var/lib/gse",
+			"logs": "/var/log/gse",
+			"pid":  "/var/run/gse",
+		},
+		"logging": map[string]interface{}{
+			"to_files": true,
+		},
+	}
+
+	return yaml.Marshal(&configContent)
 }
 
 func (lgc *Logics) findCustom() ([]Custom, error) {
