@@ -35,6 +35,9 @@ const (
 	// BKTableNamePropertyGroup the table name of the property group
 	BKTableNamePropertyGroup = "cc_PropertyGroup"
 
+	// BKTableNameObjDes the table name of the asst des
+	BKTableNameAsstDes = "cc_AsstDes"
+
 	// BKTableNameObjDes the table name of the object
 	BKTableNameObjDes = "cc_ObjDes"
 
