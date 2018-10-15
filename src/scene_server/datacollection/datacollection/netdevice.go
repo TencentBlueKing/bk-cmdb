@@ -504,7 +504,11 @@ const netcollectMockMsg = `{
                     "last_time": "2018-10-03 17:09:00"
                 }
             ],
-            "associations": []
+            "associations": [
+				{
+					
+				}
+			]
         }
     ]
 }
