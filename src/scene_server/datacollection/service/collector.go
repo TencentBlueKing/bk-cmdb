@@ -78,7 +78,7 @@ func (s *Service) DiscoverNetDevice(req *restful.Request, resp *restful.Response
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	cond := metadata.ParamNetcollectDiscover{}
-	if err := json.NewDecoder(req.Request.Body).Decode(cond); err != nil {
+	if err := json.NewDecoder(req.Request.Body).Decode(&cond); err != nil {
 		blog.Errorf("[NetDevice][DiscoverNetDevice] decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
