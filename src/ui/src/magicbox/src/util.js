@@ -507,3 +507,14 @@ export const cancelAnimationFrame = window.cancelAnimationFrame
     || function (id) {
         window.clearTimeout(id)
     }
+
+// 获取唯一随机数
+export function uuid () {
+    let id = ''
+    let randomNum = Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1)
+
+    for (let i = 0; i < 7; i++) {
+        id += randomNum
+    }
+    return id
+}
