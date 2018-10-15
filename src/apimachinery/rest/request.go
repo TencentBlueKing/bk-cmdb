@@ -72,7 +72,18 @@ type Request struct {
 	// request timeout value
 	timeout time.Duration
 
-	err error
+	peek bool
+	err  error
+}
+
+func (r *Request) WithParams(params map[string]string) *Request {
+	if r.params == nil {
+		r.params = make(url.Values)
+	}
+	for paramName, value := range params {
+		r.params[paramName] = append(r.params[paramName], value)
+	}
+	return r
 }
 
 func (r *Request) WithParam(paramName, value string) *Request {
@@ -94,6 +105,11 @@ func (r *Request) WithHeaders(header http.Header) *Request {
 			r.headers.Add(key, v)
 		}
 	}
+	return r
+}
+
+func (r *Request) Peek() *Request {
+	r.peek = true
 	return r
 }
 
@@ -232,6 +248,9 @@ func (r *Request) Do() *Result {
 				r.tryThrottle(url)
 			}
 
+			if r.peek {
+				blog.Infof("[apimachinary][peek] %s %s with body %s", string(r.verb), url, r.body)
+			}
 			resp, err := client.Do(req)
 			if err != nil {
 				// "Connection reset by peer" is a special err which in most scenario is a a transient error.
@@ -265,6 +284,10 @@ func (r *Request) Do() *Result {
 			}
 			result.Body = body
 			result.StatusCode = resp.StatusCode
+			if r.peek {
+				blog.Infof("[apimachinary][peek] %s %s with body %s, response %s", string(r.verb), url, r.body, body)
+			}
+
 			return result
 		}
 
@@ -283,7 +306,7 @@ func (r *Request) tryThrottle(url string) {
 	}
 
 	if latency := time.Since(now); latency > maxLatency {
-		blog.V(3).Infof("Throttling request took %d ms, request: %s", latency, r.verb, url)
+		blog.V(3).Infof("Throttling request took %d ms, request: %s %s", latency, r.verb, url)
 	}
 }
 

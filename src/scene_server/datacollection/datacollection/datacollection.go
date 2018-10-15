@@ -13,10 +13,15 @@
 package datacollection
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
+	"os/signal"
 	"reflect"
 	"strconv"
+	"syscall"
 	"time"
 
 	"configcenter/src/common"
@@ -28,6 +33,13 @@ import (
 	"configcenter/src/storage/redisclient"
 )
 
+type Analyzer interface {
+	Analyze(mesg []string) error
+}
+
+type Collector interface {
+	Subject() []string
+}
 type DataCollection struct {
 	Config *options.Config
 	*backbone.Engine
@@ -46,64 +58,78 @@ func (d *DataCollection) Run() error {
 
 	discli, err := redisclient.NewFromConfig(d.Config.DiscoverRedis)
 	if nil != err {
+		blog.Errorf("[datacollection][RUN] connect discover redis failed: %v", err)
+		return err
+	}
+
+	netcli, err := redisclient.NewFromConfig(d.Config.NetcollectRedis)
+	if nil != err {
+		blog.Errorf("[datacollection][RUN] connect netcollect redis failed: %v", err)
 		return err
 	}
 
 	snapcli, err := redisclient.NewFromConfig(d.Config.SnapRedis)
 	if nil != err {
+		blog.Errorf("[datacollection][RUN] connect snap redis failed: %v", err)
 		return err
 	}
 
 	rediscli, err := redisclient.NewFromConfig(d.Config.CCRedis)
 	if nil != err {
+		blog.Errorf("[datacollection][RUN] connect cc redis failed: %v", err)
 		return err
 	}
 
 	db, err := mgoclient.NewFromConfig(d.Config.MongoDB)
 	if err != nil {
+		blog.Errorf("[datacollection][RUN] connect mongo failed: %v", err)
 		return fmt.Errorf("connect mongo server failed %s", err.Error())
 	}
 	err = db.Open()
 	if err != nil {
+		blog.Errorf("[datacollection][RUN] connect mongo failed: %v", err)
 		return fmt.Errorf("connect mongo server failed %s", err.Error())
 	}
 	d.db = db
 
-	chanName := []string{}
+	var defaultAppID string
 	for {
-		chanName, err = d.getSnapChanName()
+		defaultAppID, err = d.getDefaultAppID()
 		if nil == err {
 			break
 		}
-		blog.Errorf("get channame faile: %v, please init databae first, we will try 10 second later", err)
+		blog.Errorf("getDefaultAppID faile: %v, please init database first, we will try 10 second later", err)
 		time.Sleep(time.Second * 10)
 	}
 
-	hostSnap := NewHostSnap(chanName, MaxSnapSize, rediscli, snapcli, db)
+	snapChanName := d.getSnapChanName(defaultAppID)
+	hostSnap := NewHostSnap(snapChanName, MaxSnapSize, rediscli, snapcli, db)
 	hostSnap.Start()
 
-	discoverChan := ""
-	for {
-		discoverChan, err = d.getDiscoverChanName()
-		if nil == err {
-			break
-		}
-		blog.Errorf("get discover channel fail: %v, please init database first, we will try 10 second later", err)
-		time.Sleep(time.Second * 10)
-	}
-	discover := NewDiscover(context.Background(), discoverChan, MaxDiscoverSize, rediscli, discli, d.Engine)
+	discoverChanName := d.getDiscoverChanName(defaultAppID)
+	discover := NewDiscover(context.Background(), discoverChanName, MaxDiscoverSize, rediscli, discli, d.Engine)
 	discover.Start()
+
+	netdevChanName := d.getNetcollectChanName(defaultAppID)
+	netcollect := NewNetcollect(context.Background(), netdevChanName, MaxNetcollectSize, rediscli, netcli, db, d.Engine)
+	netcollect.Start()
+
+	go d.mock(netdevChanName[0])
 
 	blog.Infof("datacollection started")
 	return nil
 }
 
-func (d *DataCollection) getDiscoverChanName() (string, error) {
-	defaultAppID, err := d.getDefaultAppID()
-	if nil != err {
-		return "", err
-	}
-	return "discover" + defaultAppID, nil
+func (d *DataCollection) getNetcollectChanName(defaultAppID string) []string {
+	return []string{"netdevice2"}
+}
+
+func (d *DataCollection) getDiscoverChanName(defaultAppID string) string {
+	return "discover" + defaultAppID
+}
+
+func (d *DataCollection) getSnapChanName(defaultAppID string) []string {
+	return []string{"snapshot" + defaultAppID, defaultAppID + "_snapshot"}
 }
 
 func (d *DataCollection) getDefaultAppID() (defaultAppID string, err error) {
@@ -129,28 +155,34 @@ func (d *DataCollection) getDefaultAppID() (defaultAppID string, err error) {
 	return
 }
 
-func (d *DataCollection) getSnapChanName() ([]string, error) {
-	defaultAppID, err := d.getDefaultAppID()
-	if nil != err {
-		return []string{}, err
-	}
-	return []string{"snapshot" + defaultAppID, defaultAppID + "_snapshot"}, nil
-}
-
-func (d *DataCollection) mock(config map[string]string, channel string) {
-	blog.Infof("start mocking ")
-
+func (d *DataCollection) mock(channel string) {
 	mockCli, err := redisclient.NewFromConfig(d.Config.SnapRedis)
 	if nil != err {
 		blog.Error("start mock error")
 		return
 	}
 
+	blog.Infof("start mocking ")
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, syscall.SIGUSR1)
+
+	buf := &bytes.Buffer{}
+
+	if err = json.Compact(buf, []byte(netcollectMockMsg)); err != nil {
+		blog.Fatalf("inden mock message failed: %v. raw: %s", err, netcollectMockMsg)
+	}
+	msg := buf.String()
+	for range ch {
+		err := mockCli.Publish(channel, msg).Err()
+		if err != nil {
+			blog.Error("publish mock failed %v", err)
+		}
+	}
+
 	delta := time.Second * 5
 	var ts = time.Now()
 	var cnt int64
 	for {
-		err := mockCli.Publish(channel, MOCKMSG).Err()
 		if err != nil {
 
 		}
