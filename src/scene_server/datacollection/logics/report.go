@@ -50,7 +50,7 @@ func (lgc *Logics) SearchReportSummary(header http.Header, param metadata.ParamS
 		summary.Statistics["associations"] += len(report.Associations)
 		summary.Statistics[report.ObjectName]++
 
-		if report.LastTime != nil && summary.LastTime != nil && report.LastTime.Time.Sub(summary.LastTime.Time) > 0 {
+		if report.LastTime.Time.Sub(summary.LastTime.Time) > 0 {
 			summary.LastTime = report.LastTime
 		}
 	}
