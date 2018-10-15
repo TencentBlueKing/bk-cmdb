@@ -1,5 +1,9 @@
 <template>
-    <transition name="displacement-fade-show">
+    <transition name="displacement-fade-show"
+        @before-enter="handleBeforeEnter"
+        @after-enter="handleAfterEnter"
+        @before-leave="handleBeforeLeave"
+        @after-leave="handleAfterLeave">
         <section class="bk-dialog"
             :class="extCls"
             v-show="isShow">
@@ -204,6 +208,18 @@
                 if (this.quickClose) {
                     this.close()
                 }
+            },
+            handleBeforeEnter () {
+                this.$emit('before-transition-enter')
+            },
+            handleAfterEnter () {
+                this.$emit('after-transition-enter')
+            },
+            handleBeforeLeave () {
+                this.$emit('before-transition-leave')
+            },
+            handleAfterLeave () {
+                this.$emit('after-transition-leave')
             },
             handlerDragStart (event) {
                 if (!this.draggable) return false

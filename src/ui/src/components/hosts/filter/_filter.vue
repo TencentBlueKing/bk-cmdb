@@ -57,7 +57,7 @@
             <div class="filter-button clearfix" :class="{sticky: layout.scroll}">
                 <bk-button type="primary" @click="refresh" :disabled="$loading()">{{$t('Common["查询"]')}}</bk-button>
                 <bk-button type="default" @click="reset">{{$t('Common["清空"]')}}</bk-button>
-                <bk-button class="collection-button fr" type="default"
+                <bk-button class="collection-button fr" type="default" v-if="activeSetting.includes('collection')"
                     :class="{collecting: collection.show}"
                     @click="collection.show = true">
                     <i class="icon-cc-collection"></i>
@@ -120,7 +120,8 @@
                 default () {
                     return {}
                 }
-            }
+            },
+            activeSetting: Array
         },
         data () {
             return {
