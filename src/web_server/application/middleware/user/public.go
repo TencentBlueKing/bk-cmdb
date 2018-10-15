@@ -99,7 +99,6 @@ func (m *publicUser) GetUserList(c *gin.Context) (int, interface{}) {
 		rspBody.Result = false
 	}
 	rspBody.Result = true
-	userList = append(userList, &metadata.LoginSystemUserInfo{CnName: "admin", EnName: "sss"})
 	rspBody.Data = userList
 	return 200, rspBody
 }
