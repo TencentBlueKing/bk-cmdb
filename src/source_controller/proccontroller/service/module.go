@@ -43,7 +43,7 @@ func (ps *ProctrlServer) DeleteProc2Module(req *restful.Request, resp *restful.R
 
 	cxt := util.GetDBContext(context.Background(), req.Request.Header)
 	//ps.Instance.//.GetMutilByCondition(common.BKTableNameProcModule, []string{}, input, &originals, "", 0, 0); err != nil
-	if err := ps.Instance.Table(common.BKTableNameProcModule).Find(input).Limit(0).Start(0).Sort("").All(cxt, originals); err != nil {
+	if err := ps.Instance.Table(common.BKTableNameProcModule).Find(input).Limit(0).Start(0).Sort("").All(cxt, &originals); err != nil {
 		blog.Warnf("retrieve original error:%v", err)
 	}
 
