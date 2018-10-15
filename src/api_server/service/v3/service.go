@@ -177,6 +177,9 @@ func (s *Service) URLFilterChan(req *restful.Request, resp *restful.Response, ch
 	case HostType:
 		servers, err = s.Disc.HostServer().GetServers()
 
+	case DataCollectType:
+		servers, err = s.Disc.DataCollect().GetServers()
+
 	}
 
 	if err != nil {
