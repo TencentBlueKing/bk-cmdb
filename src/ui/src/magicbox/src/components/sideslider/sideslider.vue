@@ -7,7 +7,7 @@
                         <i class="bk-icon" :class="'icon-angle-' + direction"></i>
                     </div>
                     <div class="bk-sideslider-title" :style="{padding: this.calcDirection === 'left' ? '0 0 0 50px' : '0 50px 0 0', 'text-align': this.calcDirection}">
-                        {{defaultTitle}}
+                        {{title || '标题'}}
                     </div>
                 </div>
                 <div class="bk-sideslider-content">
@@ -39,11 +39,9 @@
         addClass,
         removeClass
     } from '../../util.js'
-    import locale from '../../mixins/locale'
 
     export default {
         name: 'bk-sideslider',
-        mixins: [locale],
         props: {
             isShow: {
                 type: Boolean,
@@ -69,16 +67,6 @@
                         'right'
                     ].indexOf(value) > -1
                 }
-            }
-        },
-        data () {
-            return {
-                defaultTitle: this.t('sideslider.title')
-            }
-        },
-        created () {
-            if (this.title) {
-                this.defaultTitle = this.title
             }
         },
         watch: {
