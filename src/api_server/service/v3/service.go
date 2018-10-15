@@ -253,7 +253,7 @@ func (s *Service) healthz(req *restful.Request, resp *restful.Response) {
 	info := metric.HealthInfo{
 		Module:     types.CC_MODULE_APISERVER,
 		HealthMeta: meta,
-		AtTime:     types.Now(),
+		AtTime:     metadata.Now(),
 	}
 
 	answer := metric.HealthResponse{

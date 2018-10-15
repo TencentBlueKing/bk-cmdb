@@ -40,11 +40,9 @@ var (
 
 func (eh *EventHandler) StartHandleInsts() (err error) {
 	defer func() {
-		if err == nil {
-			syserror := recover()
-			if syserror != nil {
-				err = fmt.Errorf("system error: %v", syserror)
-			}
+		syserror := recover()
+		if syserror != nil {
+			err = fmt.Errorf("system error: %v", syserror)
 		}
 		if err != nil {
 			blog.Info("event inst handle process stoped by %v", err)

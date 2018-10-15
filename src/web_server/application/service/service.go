@@ -21,6 +21,7 @@ import (
 
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
+	redis "gopkg.in/redis.v5"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -32,7 +33,6 @@ import (
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
-	"configcenter/src/storage/redisclient"
 	confCenter "configcenter/src/web_server/application/config"
 	"configcenter/src/web_server/application/logics"
 	"configcenter/src/web_server/application/middleware"
@@ -91,7 +91,7 @@ func (ccWeb *CCWebServer) Start() error {
 
 	/// fetch config of itselft
 	var confData []byte
-	_ = confData
+
 	for {
 		confData = ccWeb.cfCenter.GetConfigureCtx()
 
@@ -155,45 +155,47 @@ func (ccWeb *CCWebServer) Start() error {
 			}
 		}
 	}
-
-	site, _ := config["site.domain_url"]
-	site = site + "/"
-	version, _ := config["api.version"]
-	loginURL, _ := config["site.bk_login_url"]
-	appCode, _ := config["site.app_code"]
-	checkURL, _ := config["site.check_url"]
-	sessionName, _ := config["session.name"]
-	skipLogin, _ := config["session.skip"]
-	defaultlanguage, _ := config["session.defaultlanguage"]
+	fmt.Println("cfg:", config)
+	site := config["site.domain_url"] + "/"
+	version := config["api.version"]
+	loginURL := config["site.bk_login_url"]
+	appCode := config["site.app_code"]
+	//check_url := config["site.check_url"]
+	sessionName := config["session.name"]
+	skipLogin := config["session.skip"]
+	defaultlanguage := config["session.defaultlanguage"]
 	if "" == defaultlanguage {
 		defaultlanguage = "zh-cn"
 	}
 	//apiSite, _ := a.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
-	static, _ := config["site.html_root"]
-	webCommon.ResourcePath, _ = config["site.resources_path"]
-	redisIP, _ := config["session.host"]
-	redisPort, _ := config["session.port"]
-	redisSecret, _ := config["session.secret"]
-	agentAppURL, _ := config["app.agent_app_url"]
+	static := config["site.html_root"]
+	webCommon.ResourcePath = config["site.resources_path"]
+	redisAddress := config["session.host"]
+	redisPort := config["session.port"]
+	redisSecret := config["session.secret"]
+	//multipleOwner := config["session.multiple_owner"]
+	agentAppURL := config["app.agent_app_url"]
 	redisSecret = strings.TrimSpace(redisSecret)
 	curl := fmt.Sprintf(loginURL, appCode, site)
 
-	if "" == checkURL {
-		return fmt.Errorf("config site.check_url item not found")
+	if !strings.Contains(redisAddress, ":") && len(redisPort) > 0 {
+		redisAddress = redisAddress + ":" + redisPort
 	}
-	redisCli, err := redisclient.NewRedis(redisIP, redisPort, "", redisSecret, "0")
-	if nil != err {
-		blog.Errorf("connect redis error %s", err.Error())
-		return err
+	a.CacheCli = redis.NewClient(
+		&redis.Options{
+			Addr:     redisAddress,
+			PoolSize: 100,
+			Password: redisSecret,
+			DB:       0,
+		})
+
+	err := a.CacheCli.Ping().Err()
+	if err != nil {
+		return fmt.Errorf("new redis client failed, err: %v", err)
 	}
-	err = redisCli.Open()
-	if nil != err {
-		blog.Errorf("connect redis error %s", err.Error())
-		return err
-	}
-	a.CacheCli = redisCli
+
 	go func() {
-		store, rediserr := sessions.NewRedisStore(10, "tcp", redisIP+":"+redisPort, redisSecret, []byte("secret"))
+		store, rediserr := sessions.NewRedisStore(10, "tcp", redisAddress, redisSecret, []byte("secret"))
 		if rediserr != nil {
 			panic(rediserr)
 		}
