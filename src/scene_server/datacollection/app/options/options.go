@@ -16,6 +16,7 @@ import (
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/mgoclient"
 	"configcenter/src/storage/redisclient"
+	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 
 	"github.com/spf13/pflag"
 )
@@ -40,8 +41,10 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 }
 
 type Config struct {
-	MongoDB       mgoclient.MongoConfig
-	CCRedis       redisclient.RedisConfig
-	SnapRedis     redisclient.RedisConfig
-	DiscoverRedis redisclient.RedisConfig
+	MongoDB         mgoclient.MongoConfig
+	CCRedis         redisclient.RedisConfig
+	SnapRedis       redisclient.RedisConfig
+	DiscoverRedis   redisclient.RedisConfig
+	NetcollectRedis redisclient.RedisConfig
+	Esb             esbutil.EsbConfig
 }

@@ -13,22 +13,24 @@
 package service
 
 import (
+	"github.com/emicklei/go-restful"
+	redis "gopkg.in/redis.v5"
+
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
+	"configcenter/src/scene_server/datacollection/logics"
 	"configcenter/src/storage"
-
-	"github.com/emicklei/go-restful"
-	redis "gopkg.in/redis.v5"
 )
 
 type Service struct {
 	*backbone.Engine
 	db    storage.DI
 	cache *redis.Client
+	*logics.Logics
 }
 
 func (s *Service) SetDB(db storage.DI) {
@@ -44,7 +46,26 @@ func (s *Service) WebService() *restful.WebService {
 	getErrFun := func() errors.CCErrorIf {
 		return s.CCErr
 	}
-	ws.Path("/collector/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+
+	ws.Path("/collector/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
+
+	ws.Route(ws.POST("/netcollect/device/action/create").To(s.CreateDevice))
+	ws.Route(ws.POST("/netcollect/device/action/search").To(s.SearchDevice))
+	ws.Route(ws.DELETE("/netcollect/device/action/delete").To(s.DeleteDevice))
+
+	ws.Route(ws.POST("/netcollect/property/action/create").To(s.CreateProperty))
+	ws.Route(ws.POST("/netcollect/property/action/search").To(s.SearchProperty))
+	ws.Route(ws.DELETE("/netcollect/property/action/delete").To(s.DeleteProperty))
+
+	ws.Route(ws.POST("/netcollect/summary/action/search").To(s.SearchReportSummary))
+	ws.Route(ws.POST("/netcollect/report/action/search").To(s.SearchReport))
+	ws.Route(ws.POST("/netcollect/report/action/confirm").To(s.ConfirmReport))
+	ws.Route(ws.POST("/netcollect/history/action/search").To(s.SearchHistory))
+
+	ws.Route(ws.POST("/netcollect/collector/action/search").To(s.SearchCollector))
+	ws.Route(ws.POST("/netcollect/collector/action/update").To(s.UpdateCollector))
+	ws.Route(ws.POST("/netcollect/collector/action/discover").To(s.DiscoverNetDevice))
+
 	ws.Route(ws.GET("/healthz").To(s.Healthz))
 
 	return ws
