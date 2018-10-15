@@ -13,6 +13,10 @@
 package metadata
 
 type AddDeviceResult struct {
+	DeviceID int64 `json:"device_id"`
+}
+
+type BatchAddDeviceResult struct {
 	Result   bool   `json:"result"`
 	ErrMsg   string `json:"error_msg"`
 	DeviceID int64  `json:"device_id"`
