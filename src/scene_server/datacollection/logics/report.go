@@ -312,14 +312,16 @@ func (lgc *Logics) ConfirmReport(header http.Header, reports []metadata.Netcolle
 			lgc.saveHistory(report, true)
 		}
 		if len(report.Associations) > 0 {
-			asstCount, err := lgc.confirmAssociations(header, report)
-			if err != nil {
-				result.ChangeAssociationsSuccess += asstCount
-				result.Errors = append(result.Errors, err.Error())
+			successCount, errs := lgc.confirmAssociations(header, report)
+			result.ChangeAssociationsFailure += len(errs)
+			result.ChangeAssociationsSuccess += successCount
+			if len(errs) > 0 {
+				for _, err := range errs {
+					result.Errors = append(result.Errors, err.Error())
+				}
 				lgc.saveHistory(report, false)
 				continue
 			}
-			result.ChangeAssociationsFailure += asstCount
 			lgc.saveHistory(report, true)
 		}
 	}
@@ -388,9 +390,7 @@ func (lgc *Logics) confirmAttributes(header http.Header, report *metadata.Netcol
 	return attrCount, nil
 }
 
-func (lgc *Logics) confirmAssociations(header http.Header, report *metadata.NetcollectReport) (int, error) {
-	asstCount := 0
-
+func (lgc *Logics) confirmAssociations(header http.Header, report *metadata.NetcollectReport) (successCount int, errs []error) {
 	objType := common.GetObjByType(report.ObjectID)
 	cond := condition.CreateCondition()
 	if objType == common.BKINnerObjIDObject {
@@ -405,16 +405,16 @@ func (lgc *Logics) confirmAssociations(header http.Header, report *metadata.Netc
 	insts, err := lgc.findInst(header, report.ObjectID, &metadata.QueryInput{Condition: cond.ToMapStr()})
 	if err != nil {
 		blog.Errorf("[NetDevice][ConfirmReport] find inst failed %v", err)
-		return asstCount, err
+		return 0, append(errs, err)
 	}
 	if len(insts) <= 0 {
 		blog.Errorf("[NetDevice][ConfirmReport] find inst failed, inst not found by %+v", cond.ToMapStr())
-		return asstCount, fmt.Errorf("inst not found")
+		return 0, append(errs, fmt.Errorf("inst not found"))
 	}
 	instID, err := insts[0].Int64(common.GetInstIDField(report.ObjectID))
 	if err != nil {
 		blog.Errorf("[NetDevice][ConfirmReport] find inst failed, instID not found from %+v", insts[0])
-		return asstCount, fmt.Errorf("inst not found")
+		return 0, append(errs, fmt.Errorf("inst not found"))
 	}
 
 	for _, asst := range report.Associations {
@@ -430,19 +430,22 @@ func (lgc *Logics) confirmAssociations(header http.Header, report *metadata.Netc
 		}
 		asstInsts, err := lgc.findInst(header, asst.AsstObjectID, &metadata.QueryInput{Condition: asstCond.ToMapStr()})
 		if err != nil {
-			blog.Errorf("[NetDevice][ConfirmReport] find inst failed %v", err)
-			return asstCount, err
+			blog.Errorf("[NetDevice][ConfirmReport] find inst failed %v")
+			errs = append(errs, err)
+			continue
 		}
 		blog.V(4).Infof("[NetDevice][ConfirmReport] find inst result: %#v, condition: %#v", asstInsts, asstCond.ToMapStr())
 		if len(asstInsts) > 0 {
 			asstInstID, err := asstInsts[0].Int64(common.GetInstIDField(asst.AsstObjectID))
 			if err != nil {
-				return asstCount, err
+				blog.Errorf("[NetDevice][ConfirmReport] propertyID %s not exist in %+v ", common.GetInstIDField(asst.AsstObjectID), asstInsts[0])
+				errs = append(errs, err)
+				continue
 			}
 
 			asstPropertyValue, ok := asstInsts[0][asst.AsstPropertyID].(string)
 			if !ok {
-				blog.Warnf("[NetDevice][ConfirmReport] propertyID %s not exist, we reset it here", asst.AsstPropertyID)
+				blog.Warnf("[NetDevice][ConfirmReport] propertyID %s not exist in %+v, we reset it here", asst.AsstPropertyID, asstInsts[0])
 				asstPropertyValue = fmt.Sprintf("%d", asstInstID)
 			} else {
 				asstPropertyValue = fmt.Sprintf("%s,%d", asstPropertyValue, asstInstID)
@@ -454,15 +457,18 @@ func (lgc *Logics) confirmAssociations(header http.Header, report *metadata.Netc
 			resp, err := lgc.CoreAPI.TopoServer().Instance().UpdateInst(context.Background(), util.GetUser(header), report.ObjectID, instID, header, updateBody)
 			if err != nil {
 				blog.Errorf("[NetDevice][ConfirmReport] update inst error: %v, %+v", err, updateBody)
-				return asstCount, err
+				errs = append(errs, err)
+				continue
 			}
 			if !resp.Result {
 				blog.Errorf("[NetDevice][ConfirmReport] update inst error: %v, %+v", resp.ErrMsg, updateBody)
-				return asstCount, fmt.Errorf(resp.ErrMsg)
+				errs = append(errs, fmt.Errorf(resp.ErrMsg))
+				continue
 			}
+			successCount++
 		}
 	}
-	return asstCount, nil
+	return successCount, errs
 }
 
 func (lgc *Logics) saveHistory(report *metadata.NetcollectReport, success bool) error {
