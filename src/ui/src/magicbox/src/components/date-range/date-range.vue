@@ -285,8 +285,10 @@
             const bkDateEnd = this.endDate ? new BkDate('end', weekdays, this.endDate) : new BkDate('end', weekdays)
 
             let initStartDate = this.startDate ? format(this.startDate, 'YYYY-MM-DD') : format(subMonths(new Date(), 1), 'YYYY-MM-DD')
+            let initStartDateCopy = this.startDate ? format(this.startDate, 'YYYY-MM') : format(subMonths(new Date(), 1), 'YYYY-MM')
             let initEndDate = this.endDate ? format(this.endDate, 'YYYY-MM-DD') : format(new Date(), 'YYYY-MM-DD')
-            if (initStartDate === initEndDate) {
+            let initEndDateCopy = this.endDate ? format(this.endDate, 'YYYY-MM') : format(new Date(), 'YYYY-MM')
+            if (initStartDateCopy === initEndDateCopy) {
                 initEndDate = format(addMonths(initEndDate, 1), 'YYYY-MM-DD')
                 bkDateStart.nextMonthDisabled = true
                 bkDateStart.nextYearDisabled = true

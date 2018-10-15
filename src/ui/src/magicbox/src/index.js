@@ -80,7 +80,8 @@ const components = {
     bkTooltip,
     bkTransfer,
     bkTree,
-    bkUpload
+    bkUpload,
+    bkException
 }
 
 export function install (Vue, opts = {}) {
