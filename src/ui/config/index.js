@@ -20,7 +20,7 @@ module.exports = {
   dev: {
     // custom config
     config: Object.assign({}, config, {
-        'API_URL': '""',
+        'API_URL': '"http://dev.open.oa.com/"',
         'API_VERSION': '"v3"',
         'API_LOGIN': '""',
         'AGENT_URL': 'null',
