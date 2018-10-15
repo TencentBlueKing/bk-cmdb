@@ -14,6 +14,7 @@ package logics
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -23,24 +24,68 @@ import (
 	"configcenter/src/common/util"
 )
 
-func (lgc *Logics) AddDevices(pheader http.Header, deviceInfoList []meta.NetcollectDevice) ([]meta.AddDeviceResult, bool) {
+func (lgc *Logics) AddDevice(pheader http.Header, deviceInfo meta.NetcollectDevice) (meta.AddDeviceResult, error) {
+	deviceID, err := lgc.addDevice(pheader, deviceInfo, util.GetOwnerID(pheader))
+	if nil != err {
+		return meta.AddDeviceResult{-1}, err
+	}
+
+	return meta.AddDeviceResult{deviceID}, nil
+}
+
+func (lgc *Logics) UpdateDevice(pheader http.Header, netDeviceID int64, deviceInfo meta.NetcollectDevice) error {
+	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+
+	// check device id if exists or not
+	_, _, err := lgc.checkNetDeviceExist(pheader, netDeviceID, "")
+	if nil != err {
+		switch err.Error() {
+		case defErr.Errorf(common.CCErrCollectNetDeviceGetFail).Error():
+			blog.Errorf("[NetDevice] update net device, net device does not exist, deviceID: [%d]", netDeviceID)
+		default:
+			blog.Errorf("[NetDevice] update net device fail, error: %v, deviceID: [%d]", err, netDeviceID)
+		}
+		return err
+	}
+
+	// check if device name is empty
+	if "" == deviceInfo.DeviceName {
+		blog.Errorf("[NetDevice] update net device fail, device name is empty string")
+		return defErr.Errorf(common.CCErrCommParamsLostField, common.BKDeviceNameField)
+	}
+	// check device name has been occupied or not
+	deviceID, _, err := lgc.checkNetDeviceExist(pheader, 0, deviceInfo.DeviceName)
+	if nil != err && err.Error() != defErr.Errorf(common.CCErrCollectNetDeviceGetFail).Error() {
+		blog.Errorf("[NetDevice] update net device fail, error: %v, deviceID: [%d]", err, netDeviceID)
+		return err
+	}
+	// device name has been occupied
+	if nil == err && deviceID != netDeviceID {
+		blog.Errorf("[NetDevice] update net device fail, duplicate device name: [%s]", deviceInfo.DeviceName)
+		return defErr.Errorf(common.CCErrCommDuplicateItem)
+	}
+
+	return lgc.updateDevice(pheader, deviceInfo, netDeviceID, util.GetOwnerID(pheader))
+}
+
+func (lgc *Logics) BatchCreateDevice(pheader http.Header, deviceInfoList []meta.NetcollectDevice) ([]meta.BatchAddDeviceResult, bool) {
 	ownerID := util.GetOwnerID(pheader)
 
-	resultList := make([]meta.AddDeviceResult, 0)
+	resultList := make([]meta.BatchAddDeviceResult, 0)
 	hasError := false
 
 	for _, deviceInfo := range deviceInfoList {
 		errMsg := ""
 		result := true
 
-		deviceID, err := lgc.addDevice(pheader, deviceInfo, ownerID)
+		deviceID, err := lgc.addOrUpdateDevice(pheader, deviceInfo, ownerID)
 		if nil != err {
 			errMsg = err.Error()
 			result = false
 			hasError = true
 		}
 
-		resultList = append(resultList, meta.AddDeviceResult{result, errMsg, deviceID})
+		resultList = append(resultList, meta.BatchAddDeviceResult{result, errMsg, deviceID})
 	}
 
 	return resultList, hasError
@@ -164,75 +209,84 @@ func (lgc *Logics) DeleteDevice(pheader http.Header, netDeviceID int64) error {
 	return nil
 }
 
-// add a device
 func (lgc *Logics) addDevice(pheader http.Header, deviceInfo meta.NetcollectDevice, ownerID string) (int64, error) {
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-	if "" == deviceInfo.DeviceModel {
-		blog.Errorf("[NetDevice] add net device fail, device_model is empty")
-		return -1, defErr.Errorf(common.CCErrCommParamsLostField, common.BKDeviceModelField)
-	}
 
-	if "" == deviceInfo.BkVendor {
-		blog.Errorf("[NetDevice] add net device fail, bk_vendor is empty")
-		return -1, defErr.Errorf(common.CCErrCommParamsLostField, common.BKVendorField)
-	}
-
-	if "" == deviceInfo.DeviceName {
-		blog.Errorf("[NetDevice] add net device fail, device_name is empty")
-		return -1, defErr.Errorf(common.CCErrCommParamsLostField, common.BKDeviceNameField)
-	}
-
-	// check if bk_object_id and bk_object_name are net device object
-	err := lgc.checkIfNetDeviceObject(pheader, &deviceInfo)
+	isExist, err := lgc.checkNetDevice(pheader, &deviceInfo, ownerID)
 	if nil != err {
-		blog.Errorf("[NetDevice] add net device fail, error: %v, object name [%s] and object ID [%s]",
-			err, deviceInfo.ObjectName, deviceInfo.ObjectID)
+		blog.Errorf("[NetDevice] add net device fail, %v", err)
 		return -1, err
 	}
+	if isExist {
+		blog.Errorf("[NetDevice] add net device fail, error: duplicate device_name")
+		return -1, defErr.Errorf(common.CCErrCommDuplicateItem)
+	}
 
-	// check if device_name exist
-	isExist, err := lgc.checkIfNetDeviceNameExist(deviceInfo.DeviceName, ownerID)
+	// add to the storage
+	deviceID, err := lgc.addNewDevice(deviceInfo, ownerID)
 	if nil != err {
 		blog.Errorf("[NetDevice] add net device fail, error: %v", err)
 		return -1, defErr.Errorf(common.CCErrCollectNetDeviceCreateFail)
 	}
 
-	// add to the storage
-	now := time.Now()
-	deviceInfo.LastTime = &now
+	return deviceID, nil
+}
+
+func (lgc *Logics) updateDevice(
+	pheader http.Header, deviceInfo meta.NetcollectDevice, netDeviceID int64, ownerID string) error {
+
+	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+
+	if _, err := lgc.checkNetDevice(pheader, &deviceInfo, ownerID); nil != err {
+		blog.Errorf("[NetDevice] update net device fail, check device data error: %v", err)
+		return err
+	}
+
+	// update to the storage
 	deviceInfo.OwnerID = ownerID
 
-	if !isExist {
-		deviceInfo.CreateTime = &now
-
-		deviceInfo.DeviceID, err = lgc.Instance.GetIncID(common.BKTableNameNetcollectDevice)
-		if nil != err {
-			blog.Errorf("[NetDevice] add net device, failed to get id, error: %v", err)
-			return -1, defErr.Errorf(common.CCErrCollectNetDeviceCreateFail)
-		}
-
-		if _, err = lgc.Instance.Insert(common.BKTableNameNetcollectDevice, deviceInfo); nil != err {
-			blog.Errorf("[NetDevice] failed to insert net device, error: %v", err)
-			return -1, defErr.Errorf(common.CCErrCollectNetDeviceCreateFail)
-		}
-
-		blog.V(4).Infof("[NetDevice] add net device by deviceInfo [%#+v]", deviceInfo)
-
-		return deviceInfo.DeviceID, nil
+	if err := lgc.updateExistingDeviceByDeviceID(deviceInfo, netDeviceID); nil != err {
+		blog.Errorf("[NetDevice] update net device fail, update to database error: %v", err)
+		return defErr.Errorf(common.CCErrCollectNetDeviceUpdateFail)
 	}
 
-	deviceID, err := lgc.getNetDeviceIDByName(deviceInfo.DeviceName, ownerID)
+	return nil
+}
+
+// add a device or update an existing device
+func (lgc *Logics) addOrUpdateDevice(pheader http.Header, deviceInfo meta.NetcollectDevice, ownerID string) (int64, error) {
+	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+
+	isExist, err := lgc.checkNetDevice(pheader, &deviceInfo, ownerID)
 	if nil != err {
-		blog.Errorf("[NetDevice] add net device, failed to get id, error: %v", err)
-		return -1, defErr.Errorf(common.CCErrCollectNetDeviceCreateFail)
-	}
-
-	if err = lgc.updateNetDeviceByName(deviceInfo); nil != err {
-		blog.Errorf("[NetDevice] update net device failed, error: %v", err)
+		blog.Errorf("[NetDevice] batch add net device fail, %v", err)
 		return -1, err
 	}
+	if isExist {
+		// update to the storage
+		deviceInfo.OwnerID = ownerID
 
-	blog.V(4).Infof("[NetDevice] update net device by name[%s] deviceInfo [%#+v]", deviceInfo.DeviceName, deviceInfo)
+		if err := lgc.updateExistingDeviceByDeviceName(deviceInfo); nil != err {
+			blog.Errorf("[NetDevice] batch add net device fail, error: %v", err)
+			return -1, defErr.Errorf(common.CCErrCollectNetCollectorUpdateFail)
+		}
+
+		// get updated device ID
+		deviceID, _, err := lgc.checkNetDeviceExist(pheader, 0, deviceInfo.DeviceName)
+		if nil != err {
+			blog.Errorf("[NetDevice] batch add net device, get updated device id fail, error: %v", err)
+			return -1, defErr.Errorf(common.CCErrCollectNetCollectorUpdateFail)
+		}
+
+		return deviceID, nil
+	}
+
+	// add to the storage
+	deviceID, err := lgc.addNewDevice(deviceInfo, ownerID)
+	if nil != err {
+		blog.Errorf("[NetDevice] batch add net device fail, error: %v", err)
+		return -1, defErr.Errorf(common.CCErrCollectNetDeviceCreateFail)
+	}
 
 	return deviceID, nil
 }
@@ -242,6 +296,100 @@ func (lgc *Logics) findDevice(fields []string, condition, result interface{}, so
 		blog.Errorf("[NetDevice] failed to query the inst, error info %s", err.Error())
 		return err
 	}
+
+	return nil
+}
+
+func (lgc *Logics) checkNetDevice(
+	pheader http.Header, deviceInfo *meta.NetcollectDevice, ownerID string) (isExist bool, err error) {
+
+	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+
+	if "" == deviceInfo.DeviceModel {
+		return false, defErr.Errorf(common.CCErrCommParamsLostField, common.BKDeviceModelField)
+	}
+
+	if "" == deviceInfo.BkVendor {
+		return false, defErr.Errorf(common.CCErrCommParamsLostField, common.BKVendorField)
+	}
+
+	if "" == deviceInfo.DeviceName {
+		return false, defErr.Errorf(common.CCErrCommParamsLostField, common.BKDeviceNameField)
+	}
+
+	// check if bk_object_id and bk_object_name are net device object
+	if err := lgc.checkIfNetDeviceObject(pheader, deviceInfo); nil != err {
+		blog.Errorf("[NetDevice] check net device fail, object name [%s] and object ID [%s] is not netcollect device",
+			deviceInfo.ObjectName, deviceInfo.ObjectID)
+		return false, err
+	}
+
+	// check if device_name exist
+	isExist, err = lgc.checkIfNetDeviceNameExist(deviceInfo.DeviceName, ownerID)
+	if nil != err {
+		return false, defErr.Errorf(common.CCErrCommHTTPReadBodyFailed)
+	}
+
+	return isExist, nil
+}
+
+func (lgc *Logics) addNewDevice(deviceInfo meta.NetcollectDevice, ownerID string) (deviceID int64, err error) {
+	now := time.Now()
+	deviceInfo.CreateTime = &now
+	deviceInfo.LastTime = &now
+	deviceInfo.OwnerID = ownerID
+
+	deviceInfo.DeviceID, err = lgc.Instance.GetIncID(common.BKTableNameNetcollectDevice)
+	if nil != err {
+		return -1, fmt.Errorf("failed to get id, %v", err)
+	}
+
+	_, err = lgc.Instance.Insert(common.BKTableNameNetcollectDevice, deviceInfo)
+	if nil != err {
+		return -1, err
+	}
+
+	blog.V(4).Infof("[NetDevice] add net device by name[%s] deviceInfo [%#+v]", deviceInfo.DeviceName, deviceInfo)
+
+	return deviceInfo.DeviceID, nil
+}
+
+func (lgc *Logics) updateExistingDeviceByDeviceID(deviceInfo meta.NetcollectDevice, netDeviceID int64) error {
+	queryParams := common.KvMap{
+		common.BKDeviceIDField: netDeviceID,
+		common.BKOwnerIDField:  deviceInfo.OwnerID,
+	}
+
+	now := time.Now()
+	deviceInfo.LastTime = &now
+
+	if err := lgc.Instance.UpdateByCondition(common.BKTableNameNetcollectDevice, deviceInfo, queryParams); nil != err {
+		blog.Errorf("[NetDevice] update net device by id fail, error information is %v, params: %v, deviceID: %d",
+			err, queryParams, netDeviceID)
+		return err
+	}
+
+	blog.V(4).Infof("[NetDevice] update net device by id[%d] deviceInfo [%#+v]", netDeviceID, deviceInfo)
+
+	return nil
+}
+
+func (lgc *Logics) updateExistingDeviceByDeviceName(deviceInfo meta.NetcollectDevice) error {
+	queryParams := common.KvMap{
+		common.BKDeviceNameField: deviceInfo.DeviceName,
+		common.BKOwnerIDField:    deviceInfo.OwnerID,
+	}
+
+	now := time.Now()
+	deviceInfo.LastTime = &now
+
+	if err := lgc.Instance.UpdateByCondition(common.BKTableNameNetcollectDevice, deviceInfo, queryParams); nil != err {
+		blog.Errorf("[NetDevice] update net device by name fail, error information is %v, params: %v",
+			err, queryParams)
+		return err
+	}
+
+	blog.V(4).Infof("[NetDevice] update net device by name[%s], deviceInfo [%#+v]", deviceInfo.DeviceName, deviceInfo)
 
 	return nil
 }
@@ -298,9 +446,12 @@ func (lgc *Logics) addShowFieldValueIntoNetDevice(
 // check the deviceInfo if is a net object
 // by checking if bk_obj_id and bk_obj_name function parameter are valid net device object or not
 func (lgc *Logics) checkIfNetDeviceObject(pheader http.Header, deviceInfo *meta.NetcollectDevice) error {
-	var err error
-	deviceInfo.ObjectID, deviceInfo.ObjectName, err = lgc.checkNetObject(pheader, deviceInfo.ObjectID, deviceInfo.ObjectName)
-	return err
+	objectID, objectName, err := lgc.checkNetObject(pheader, deviceInfo.ObjectID, deviceInfo.ObjectName)
+	if nil != err {
+		return err
+	}
+	deviceInfo.ObjectID, deviceInfo.ObjectName = objectID, objectName
+	return nil
 }
 
 // check if net device name exist
@@ -335,20 +486,6 @@ func (lgc *Logics) getNetDeviceIDByName(deviceName string, ownerID string) (int6
 	}
 
 	return result.DeviceID, nil
-}
-
-func (lgc *Logics) updateNetDeviceByName(deviceInfo meta.NetcollectDevice) error {
-	queryParams := common.KvMap{
-		common.BKDeviceNameField: deviceInfo.DeviceName,
-		common.BKOwnerIDField:    deviceInfo.OwnerID}
-
-	if err := lgc.Instance.UpdateByCondition(common.BKTableNameNetcollectDevice, deviceInfo, queryParams); nil != err {
-		blog.Errorf("[NetDevice] update net device by name fail, error information is %v, params:%v",
-			err, queryParams)
-		return err
-	}
-
-	return nil
 }
 
 // get net device obj ID
