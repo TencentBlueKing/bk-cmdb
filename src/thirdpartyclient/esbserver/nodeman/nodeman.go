@@ -40,6 +40,7 @@ func (p *nodeman) SearchProcess(ctx context.Context, h http.Header, processname 
 		SubResource(subPath).
 		WithParams(esbutil.GetEsbQueryParameters(p.config.GetConfig(), h)).
 		WithHeaders(h).
+		Peek().
 		Do().
 		Into(resp)
 	return
@@ -52,6 +53,7 @@ func (p *nodeman) SearchProcessInfo(ctx context.Context, h http.Header, processn
 		SubResource(subPath).
 		WithParams(esbutil.GetEsbQueryParameters(p.config.GetConfig(), h)).
 		WithHeaders(h).
+		Peek().
 		Do().
 		Into(resp)
 	return
@@ -73,6 +75,7 @@ func (p *nodeman) UpgradePlugin(ctx context.Context, h http.Header, bizID string
 		Body(params).
 		SubResource(subPath).
 		WithHeaders(h).
+		Peek().
 		Do().
 		Into(resp)
 	return
@@ -85,6 +88,7 @@ func (p *nodeman) SearchTask(ctx context.Context, h http.Header, bizID string, t
 		SubResource(subPath).
 		WithParams(esbutil.GetEsbQueryParameters(p.config.GetConfig(), h)).
 		WithHeaders(h).
+		Peek().
 		Do().
 		Into(resp)
 	return
@@ -98,6 +102,7 @@ func (p *nodeman) SearchPluginHost(ctx context.Context, h http.Header, processna
 		WithParams(esbutil.GetEsbQueryParameters(p.config.GetConfig(), h)).
 		WithParam("name", processname).
 		WithHeaders(h).
+		Peek().
 		Do().
 		Into(resp)
 	return

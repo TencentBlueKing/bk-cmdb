@@ -365,14 +365,14 @@ type Task struct {
 }
 
 type Host struct {
-	BkBizID   string `json:"bk_biz_id"`
+	BkBizID   int64  `json:"bk_biz_id,string"`
 	BkCloudID int64  `json:"bk_cloud_id,string"`
 	OuterIP   string `json:"outer_ip"`
 	NodeType  string `json:"node_type"`
 	InnerIP   string `json:"inner_ip"`
 	HasCygwin bool   `json:"has_cygwin"`
 	OsType    string `json:"os_type"`
-	ID        string `json:"id"`
+	ID        int64  `json:"id"`
 }
 
 // SearchPluginHostResult define

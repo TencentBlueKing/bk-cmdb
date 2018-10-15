@@ -77,6 +77,7 @@ func (lgc *Logics) SearchCollector(header http.Header, cond metadata.ParamNetcol
 		}
 
 		collector := metadata.Netcollector{
+			BizID:   phost.Host.BkBizID,
 			CloudID: phost.Host.BkCloudID,
 			InnerIP: phost.Host.InnerIP,
 			Version: phost.Version,
