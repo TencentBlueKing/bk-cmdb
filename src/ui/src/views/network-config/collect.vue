@@ -15,7 +15,7 @@
         <cmdb-table
             class="collect-table"
             :loading="$loading('searchUserGroup')"
-            :checked="table.checked"
+            :checked.sync="table.checked"
             :header="table.header"
             :list="table.list"
             :wrapperMinusHeight="240"
@@ -223,10 +223,11 @@
                     collectors: []
                 }
                 this.table.checked.map(key => {
+                    let keyArr = key.split('#')
                     params.collectors.push({
-                        bk_cloud_id: Number(key.split('#')[0]),
-                        bk_host_innerip: key.split('#')[1],
-                        bk_biz_id: key.split('#')[2]
+                        bk_cloud_id: Number(keyArr[0]),
+                        bk_host_innerip: keyArr[1],
+                        bk_biz_id: Number(keyArr[2])
                     })
                 })
                 this.collectDataCollection({params, config: {requestId: 'collectDataCollection'}})
@@ -237,7 +238,7 @@
                 this.configDialog.bk_cloud_id = item['bk_cloud_id']
                 this.configDialog.bk_biz_id = item['bk_biz_id']
                 this.configDialog.period = item.config.period
-                this.configDialog.community = item.config.period
+                this.configDialog.community = item.config.community
                 this.configDialog.isShow = true
             },
             hideConfig () {
@@ -320,7 +321,7 @@
                 this.getTableData()
             },
             handleCheckAll () {
-                this.table.checked = this.table.list.map(item => `${item['bk_cloud_id']}#${item['bk_host_innerip']}`)
+                this.table.checked = this.table.list.map(item => `${item['bk_cloud_id']}#${item['bk_host_innerip']}#${item['bk_biz_id']}`)
             }
         }
     }
