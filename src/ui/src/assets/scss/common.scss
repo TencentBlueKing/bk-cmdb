@@ -492,6 +492,11 @@ input.cmdb-form-input {
     }
 }
 
+.v-popover {
+    .trigger {
+        outline: none;
+    }
+}
 
 /* v-tooltip -------end------- */
 
