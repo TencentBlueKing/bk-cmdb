@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 func (lgc *Logics) SearchReportSummary(header http.Header, param metadata.ParamSearchNetcollectReport) ([]*metadata.NetcollectReportSummary, error) {
@@ -389,45 +390,78 @@ func (lgc *Logics) confirmAttributes(header http.Header, report *metadata.Netcol
 
 func (lgc *Logics) confirmAssociations(header http.Header, report *metadata.NetcollectReport) (int, error) {
 	asstCount := 0
-	// for _, asst := range report.Associations {
-	// 	objType := common.GetObjByType(report.ObjectID)
-	// 	cond := condition.CreateCondition()
-	// 	if objType == common.BKINnerObjIDObject {
-	// 		cond.Field(common.GetInstNameField(report.ObjectID)).Eq(report.InstKey)
-	// 		cond.Field(common.BKObjIDField).Eq(report.ObjectID)
-	// 	}
 
-	// 	if objType == common.BKInnerObjIDHost {
-	// 		cond.Field(common.BKCloudIDField).Eq(report.CloudID)
-	// 		cond.Field(common.BKHostInnerIPField).Eq(report.InstKey)
-	// 	}
-	// 	insts, err := lgc.findInst(header, report.ObjectID, &metadata.QueryInput{Condition: cond.ToMapStr()})
-	// 	if err != nil {
-	// 		blog.Errorf("[NetDevice][ConfirmReport] find inst failed %v", err)
-	// 		return asstCount, err
-	// 	}
-	// 	blog.V(4).Infof("[NetDevice][ConfirmReport] find inst result: %#v, condition: %#v", insts, cond.ToMapStr())
-	// 	if len(insts) > 0 {
-	// 		inst := insts[0]
-	// 		id, err := inst.Int64(common.GetInstIDField(objectID))
-	// 		if err != nil {
-	// 			return asstCount, err
-	// 		}
-	// 		updateBody := map[string]interface{}{
-	// 			"data":      data,
-	// 			"condition": cond.ToMapStr(),
-	// 		}
-	// 		resp, err := lgc.CoreAPI.ObjectController().Instance().UpdateObject(context.Background(), report.ObjectID, header, updateBody)
-	// 		if err != nil {
-	// 			blog.Errorf("[NetDevice][ConfirmReport] update inst error: %v, %+v", err, updateBody)
-	// 			return asstCount, err
-	// 		}
-	// 		if !resp.Result {
-	// 			blog.Errorf("[NetDevice][ConfirmReport] update inst error: %v, %+v", resp.ErrMsg, updateBody)
-	// 			return asstCount, fmt.Errorf(resp.ErrMsg)
-	// 		}
-	// 	}
-	// }
+	objType := common.GetObjByType(report.ObjectID)
+	cond := condition.CreateCondition()
+	if objType == common.BKINnerObjIDObject {
+		cond.Field(common.GetInstNameField(report.ObjectID)).Eq(report.InstKey)
+		cond.Field(common.BKObjIDField).Eq(report.ObjectID)
+	}
+	if objType == common.BKInnerObjIDHost {
+		cond.Field(common.BKCloudIDField).Eq(report.CloudID)
+		cond.Field(common.BKHostInnerIPField).Eq(report.InstKey)
+	}
+
+	insts, err := lgc.findInst(header, report.ObjectID, &metadata.QueryInput{Condition: cond.ToMapStr()})
+	if err != nil {
+		blog.Errorf("[NetDevice][ConfirmReport] find inst failed %v", err)
+		return asstCount, err
+	}
+	if len(insts) <= 0 {
+		blog.Errorf("[NetDevice][ConfirmReport] find inst failed, inst not found by %+v", cond.ToMapStr())
+		return asstCount, fmt.Errorf("inst not found")
+	}
+	instID, err := insts[0].Int64(common.GetInstIDField(report.ObjectID))
+	if err != nil {
+		blog.Errorf("[NetDevice][ConfirmReport] find inst failed, instID not found from %+v", insts[0])
+		return asstCount, fmt.Errorf("inst not found")
+	}
+
+	for _, asst := range report.Associations {
+		asstObjType := common.GetObjByType(asst.AsstObjectID)
+		asstCond := condition.CreateCondition()
+		if asstObjType == common.BKINnerObjIDObject {
+			asstCond.Field(common.GetInstNameField(asst.AsstObjectID)).Eq(asst.AsstInstName)
+			asstCond.Field(common.BKObjIDField).Eq(asst.AsstObjectID)
+		}
+		if asstObjType == common.BKInnerObjIDHost {
+			asstCond.Field(common.BKCloudIDField).Eq(report.CloudID)
+			asstCond.Field(common.BKHostInnerIPField).Eq(asst.AsstInstName)
+		}
+		asstInsts, err := lgc.findInst(header, asst.AsstObjectID, &metadata.QueryInput{Condition: asstCond.ToMapStr()})
+		if err != nil {
+			blog.Errorf("[NetDevice][ConfirmReport] find inst failed %v", err)
+			return asstCount, err
+		}
+		blog.V(4).Infof("[NetDevice][ConfirmReport] find inst result: %#v, condition: %#v", asstInsts, asstCond.ToMapStr())
+		if len(asstInsts) > 0 {
+			asstInstID, err := asstInsts[0].Int64(common.GetInstIDField(asst.AsstObjectID))
+			if err != nil {
+				return asstCount, err
+			}
+
+			asstPropertyValue, ok := asstInsts[0][asst.AsstPropertyID].(string)
+			if !ok {
+				blog.Warnf("[NetDevice][ConfirmReport] propertyID %s not exist, we reset it here", asst.AsstPropertyID)
+				asstPropertyValue = fmt.Sprintf("%d", asstInstID)
+			} else {
+				asstPropertyValue = fmt.Sprintf("%s,%d", asstPropertyValue, asstInstID)
+			}
+
+			updateBody := map[string]interface{}{
+				common.GetInstIDField(asst.AsstObjectID): asstPropertyValue,
+			}
+			resp, err := lgc.CoreAPI.TopoServer().Instance().UpdateInst(context.Background(), util.GetUser(header), report.ObjectID, instID, header, updateBody)
+			if err != nil {
+				blog.Errorf("[NetDevice][ConfirmReport] update inst error: %v, %+v", err, updateBody)
+				return asstCount, err
+			}
+			if !resp.Result {
+				blog.Errorf("[NetDevice][ConfirmReport] update inst error: %v, %+v", resp.ErrMsg, updateBody)
+				return asstCount, fmt.Errorf(resp.ErrMsg)
+			}
+		}
+	}
 	return asstCount, nil
 }
 
