@@ -61,13 +61,13 @@
                         @handleSortChange="relationHandleSortChange">
                         <template v-for="(header, index) in relationTable.header" :slot="header.id" slot-scope="{ item }">
                             <template v-if="header.id === 'action'">
-                                <span :key="index" :class="{'color-danger': item.action === 'delete', 'disabled': item.asst.method !== 'accept'}">{{actionMap[item.action]}}</span>
+                                <span :key="index" :class="{'color-danger': item.action === 'delete', 'disabled': item.method !== 'accept'}">{{actionMap[item.action]}}</span>
                             </template>
                             <template v-else-if="header.id === 'operation'">
-                                <span :key="index" class="text-primary" :class="{'disabled': ignore}" @click.stop="toggleRelationMethod(item)">{{item.asst.method === 'accept' ? $t('NetworkDiscovery["忽略"]') : $t('NetworkDiscovery["取消忽略"]')}}</span>
+                                <span :key="index" class="text-primary" :class="{'disabled': ignore}" @click.stop="toggleRelationMethod(item)">{{item.method === 'accept' ? $t('NetworkDiscovery["忽略"]') : $t('NetworkDiscovery["取消忽略"]')}}</span>
                             </template>
                             <template v-else>
-                                <span :key="index" :class="{'disabled': item.asst.method !== 'accept'}">{{item[header.id]}}</span>
+                                <span :key="index" :class="{'disabled': item.method !== 'accept'}">{{item[header.id]}}</span>
                             </template>
                         </template>
                     </cmdb-table>
@@ -188,7 +188,7 @@
             },
             relationTableList () {
                 return this.relationTable.list.filter(item => {
-                    if (!this.relationTable.isShowIgnore && item.asst.method !== 'accept') {
+                    if (!this.relationTable.isShowIgnore && item.method !== 'accept') {
                         return false
                     }
                     return true
@@ -221,7 +221,7 @@
                 if (this.ignore) {
                     return
                 }
-                item.asst.method = item.asst.method === 'accept' ? 'reject' : 'accept'
+                item.method = item.method === 'accept' ? 'reject' : 'accept'
                 this.$emit('update:associations', this.relationTable.list)
             },
             propertyHandleSortChange (sort) {
