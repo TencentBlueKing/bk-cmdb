@@ -792,17 +792,21 @@ func convMapInterface(data map[string]interface{}) map[string]interface{} {
 				}
 			}
 			mapItem[key] = protocal
-		} else if key == common.BKOSTypeField {
+		} else if key == "osType" {
 
 			switch realVal := val.(type) {
 			case string:
 				switch realVal {
 				case common.HostOSTypeEnumLinux:
 					mapItem[key] = "linux"
+					mapItem["OSType"] = "linux"
 				case common.HostOSTypeEnumWindows:
 					mapItem[key] = "windows"
+					mapItem["OSType"] = "windows"
 				default:
 					mapItem[key] = realVal
+					mapItem["OSType"] = realVal
+
 				}
 			default:
 				mapItem[key] = realVal
