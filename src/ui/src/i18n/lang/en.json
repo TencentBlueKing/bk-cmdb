@@ -605,6 +605,7 @@
         "上报状态": "upload status",
         "完成": "complete",
         "上报中": "uploading",
+        "下发中": "pending",
         "属性名": "attribute name",
         "必须": "required",
         "原值": "current",
