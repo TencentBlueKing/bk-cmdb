@@ -13,26 +13,26 @@
 package x08_09_17_01
 
 import (
+	"context"
+
 	"configcenter/src/common"
 	"configcenter/src/scene_server/admin_server/upgrader"
-	"configcenter/src/storage"
-
-	"gopkg.in/mgo.v2"
+	"configcenter/src/storage/dal"
 )
 
-func createTable(db storage.DI, conf *upgrader.Config) (err error) {
+func createTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	for tablename, indexs := range tables {
 		exists, err := db.HasTable(tablename)
 		if err != nil {
 			return err
 		}
 		if !exists {
-			if err = db.CreateTable(tablename); err != nil && !mgo.IsDup(err) {
+			if err = db.CreateTable(tablename); err != nil && !db.IsDuplicatedError(err) {
 				return err
 			}
 		}
 		for index := range indexs {
-			if err = db.Index(tablename, &indexs[index]); err != nil && !mgo.IsDup(err) {
+			if err = db.Table(tablename).CreateIndex(ctx, indexs[index]); err != nil && !db.IsDuplicatedError(err) {
 				return err
 			}
 		}
@@ -40,14 +40,15 @@ func createTable(db storage.DI, conf *upgrader.Config) (err error) {
 	return nil
 }
 
-var tables = map[string][]storage.Index{
-	common.BKTableNameNetcollectDevice: []storage.Index{
-		storage.Index{Name: "", Columns: []string{"device_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"device_name"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
+var tables = map[string][]dal.Index{
+	common.BKTableNameNetcollectDevice: []dal.Index{
+		{Keys: map[string]interface{}{"device_id": 1}, Background: true},
+		{Keys: map[string]interface{}{"device_name": 1}, Background: true},
+		{Keys: map[string]interface{}{"bk_supplier_account": 1}, Background: true},
 	},
 
-	common.BKTableNameNetcollectProperty: []storage.Index{
-		storage.Index{Name: "", Columns: []string{"netcollect_property_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
-	}}
+	common.BKTableNameNetcollectProperty: []dal.Index{
+		{Keys: map[string]interface{}{"netcollect_property_id": 1}, Background: true},
+		{Keys: map[string]interface{}{"bk_supplier_account": 1}, Background: true},
+	},
+}

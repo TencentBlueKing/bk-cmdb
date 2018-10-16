@@ -13,12 +13,14 @@
 package x08_09_26_01
 
 import (
+	"context"
+
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	mCommon "configcenter/src/scene_server/admin_server/common"
 	"configcenter/src/scene_server/admin_server/upgrader"
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
 )
 
 type inputDatas struct {
@@ -63,10 +65,10 @@ var dataWithCondition = []inputDatas{
 	},
 }
 
-func updateProcessTooltips(db storage.DI, conf *upgrader.Config) (err error) {
+func updateProcessTooltips(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 
 	for _, input := range dataWithCondition {
-		if err := db.UpdateByCondition(common.BKTableNameObjAttDes, input.data, input.cond); nil != err {
+		if err := db.Table(common.BKTableNameObjAttDes).Update(ctx, input.cond, input.data); nil != err {
 			return err
 		}
 	}

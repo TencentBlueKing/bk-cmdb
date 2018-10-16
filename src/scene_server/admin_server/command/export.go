@@ -13,14 +13,15 @@
 package command
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
 )
 
-func export(db storage.DI, opt *option) error {
+func export(ctx context.Context, db dal.RDB, opt *option) error {
 	file, err := os.Create(opt.position)
 	if nil != err {
 		return err
@@ -28,7 +29,7 @@ func export(db storage.DI, opt *option) error {
 	defer file.Close()
 	defer file.Sync()
 
-	topo, err := getBKTopo(db, opt)
+	topo, err := getBKTopo(ctx, db, opt)
 	if nil != err {
 		return err
 	}

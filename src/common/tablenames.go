@@ -17,11 +17,17 @@ const (
 	// BKTableNameProcModule the table name of the process module
 	BKTableNameProcModule = "cc_Proc2Module"
 
-	// BKTableNameProcConf the table name of the process config
-	BKTableNameProcConf = "cc_ProcConf"
+	// BKTableNameProcTempalte the table name of the process template config
+	BKTableNameProcTemplate = "cc_Proc2Template"
 
 	// BKTableNameProcInstanceModel the table name of the process instance
 	BKTableNameProcInstanceModel = "cc_ProcInstanceModel"
+
+	// BKTableNameProcInstaceDetail  the table name of the process instance detail
+	BKTableNameProcInstaceDetail = "cc_ProcInstanceDetail"
+
+	// BKTableNameProcOperateTask  the table name of the process instance operater task info
+	BKTableNameProcOperateTask = "cc_ProcOpTask"
 
 	// BKTableNamePrivilege the table name of the privilege module
 	BKTableNamePrivilege = "cc_Privilege"
@@ -69,6 +75,8 @@ const (
 	BKTableNameIdentifier       = "cc_idgenerator"
 	BKTableNameObjAsst          = "cc_ObjAsst"
 	BKTableNameTopoGraphics     = "cc_TopoGraphics"
+	BKTableNameTransaction      = "cc_Transaction"
+	BKTableNameIDgenerator      = "cc_idgenerator"
 
 	BKTableNameNetcollectDevice   = "cc_Netcollect_Device"
 	BKTableNameNetcollectProperty = "cc_Netcollect_Property"
@@ -79,8 +87,10 @@ const (
 // AllTables alltables
 var AllTables = []string{
 	BKTableNameProcModule,
-	BKTableNameProcConf,
+	BKTableNameProcTemplate,
 	BKTableNameProcInstanceModel,
+	BKTableNameProcInstaceDetail,
+	BKTableNameProcOperateTask,
 	BKTableNamePrivilege,
 	BKTableNameUserGroup,
 	BKTableNameUserGroupPrivilege,
@@ -107,6 +117,8 @@ var AllTables = []string{
 	BKTableNameIdentifier,
 	BKTableNameObjAsst,
 	BKTableNameTopoGraphics,
+	BKTableNameTransaction,
+	BKTableNameIDgenerator,
 	BKTableNameHostLock,
 }
 
