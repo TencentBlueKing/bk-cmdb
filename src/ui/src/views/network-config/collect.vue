@@ -15,7 +15,7 @@
         <cmdb-table
             class="collect-table"
             :loading="$loading('searchUserGroup')"
-            :checked="table.checked"
+            :checked.sync="table.checked"
             :header="table.header"
             :list="table.list"
             :wrapperMinusHeight="240"
@@ -33,7 +33,7 @@
             </template>
             <template slot="status" slot-scope="{ item }">
                 <div class="status-wrapper" @mouseover="setTooltip($event, item)" @mouseleave="removeTooltip">
-                    <template v-if="item.status['report_status'] !== 'normal'">
+                    <template v-if="item.status['report_status'] !== 'normal' || item.status['collector_status'] === 'pending'">
                         <div class="bk-spin-loading bk-spin-loading-mini bk-spin-loading-primary">
                             <div class="rotate rotate1"></div>
                             <div class="rotate rotate2"></div>
@@ -44,9 +44,10 @@
                             <div class="rotate rotate7"></div>
                             <div class="rotate rotate8"></div>
                         </div>
-                        <span class="text" :id="item['bk_host_innerip']">{{$t('NetworkDiscovery["上报中"]')}}</span>
+                        <span class="text" :id="item['bk_host_innerip']" v-if="item.status['report_status'] !== 'normal'">{{$t('NetworkDiscovery["上报中"]')}}</span>
+                        <span class="text" :id="item['bk_host_innerip']" v-else>{{$t('NetworkDiscovery["下发中"]')}}</span>
                     </template>
-                    <template v-else-if="item.status['collector_status'] !== 'normal' || item.status['config_status'] !== 'normal'">
+                    <template v-else-if="item.status['collector_status'] === 'abnormal' || item.status['config_status'] !== 'normal'">
                         <i class="bk-icon icon-circle color-danger" :id="item['bk_host_innerip']"></i>
                         <span class="text">{{$t('NetworkDiscovery["异常"]')}}</span>
                     </template>
@@ -223,10 +224,11 @@
                     collectors: []
                 }
                 this.table.checked.map(key => {
+                    let keyArr = key.split('#')
                     params.collectors.push({
-                        bk_cloud_id: Number(key.split('#')[0]),
-                        bk_host_innerip: key.split('#')[1],
-                        bk_biz_id: key.split('#')[2]
+                        bk_cloud_id: Number(keyArr[0]),
+                        bk_host_innerip: keyArr[1],
+                        bk_biz_id: Number(keyArr[2])
                     })
                 })
                 this.collectDataCollection({params, config: {requestId: 'collectDataCollection'}})
@@ -237,7 +239,7 @@
                 this.configDialog.bk_cloud_id = item['bk_cloud_id']
                 this.configDialog.bk_biz_id = item['bk_biz_id']
                 this.configDialog.period = item.config.period
-                this.configDialog.community = item.config.period
+                this.configDialog.community = item.config.community
                 this.configDialog.isShow = true
             },
             hideConfig () {
@@ -320,7 +322,7 @@
                 this.getTableData()
             },
             handleCheckAll () {
-                this.table.checked = this.table.list.map(item => `${item['bk_cloud_id']}#${item['bk_host_innerip']}`)
+                this.table.checked = this.table.list.map(item => `${item['bk_cloud_id']}#${item['bk_host_innerip']}#${item['bk_biz_id']}`)
             }
         }
     }

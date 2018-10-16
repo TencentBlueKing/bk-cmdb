@@ -411,9 +411,8 @@
                         params.reports.push(detail)
                     }
                 })
-                const res = await this.confirmNetcollectChange({params, config: {requestId: 'confirmNetcollectChange'}})
+                this.resultDialog.data = await this.confirmNetcollectChange({params, config: {requestId: 'confirmNetcollectChange'}})
                 this.resultDialog.isShow = true
-                this.resultDialog.data = res
                 this.getTableData()
             },
             toggleDialogDetails () {
@@ -424,7 +423,7 @@
                 res.info.map(item => {
                     Object.assign(item, {ignore: false})
                     item.attributes.map(attr => Object.assign(attr, {method: 'accept'}))
-                    item.associations.map(relation => Object.assign(relation.asst, {method: 'accept'}))
+                    item.associations.map(relation => Object.assign(relation, {method: 'accept'}))
                 })
                 this.table.list = res.info
                 this.table.listCopy = this.$tools.clone(res.info)
