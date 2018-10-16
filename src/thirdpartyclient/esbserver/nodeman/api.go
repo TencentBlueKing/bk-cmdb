@@ -25,7 +25,7 @@ type NodeManClientInterface interface {
 	SearchProcess(ctx context.Context, h http.Header, processname string) (resp *SearchPluginProcessResult, err error)
 	SearchProcessInfo(ctx context.Context, h http.Header, processname string) (resp *SearchPluginProcessInfoResult, err error)
 	UpgradePlugin(ctx context.Context, h http.Header, bizID string, data *UpgradePluginRequest) (resp *UpgradePluginResult, err error)
-	SearchTask(ctx context.Context, h http.Header, bizID string, taskID string) (resp *SearchTaskResult, err error)
+	SearchTask(ctx context.Context, h http.Header, bizID int64, taskID int64) (resp *SearchTaskResult, err error)
 	SearchPluginHost(ctx context.Context, h http.Header, processname string) (resp *SearchPluginHostResult, err error)
 }
 
@@ -210,11 +210,11 @@ type UpgradePluginRequest struct {
 			KeepConfig int `json:"keep_config"` // # 是否保留原配置文件  1: 保留(勾选)  0：不保留(不勾选)
 			NoRestart  int `json:"no_restart"`  // # 更新后是否重启     1: 不重启(勾选)  0：重启(不勾选)
 			NoDelegate int `json:"no_delegate"` // # 下发后不托管       1：不托管(勾选)  0：托管(不勾选)
-		}
+		} `json:"option"`
 		UpgradeType string                `json:"upgrade_type"` //  # 覆盖方式  "APPEND": 增量更新(仅覆盖)  "OVERRIDE": 覆盖更新(先删除原目录后覆盖)
 		Configs     []UpgradePluginConfig `json:"configs"`
 	} `json:"global_params"`
-	Hosts []UpgradePluginConfig `json:"hosts"`
+	Hosts []UpgradePluginHostField `json:"hosts"`
 }
 
 type UpgradePluginConfig struct {
@@ -222,9 +222,15 @@ type UpgradePluginConfig struct {
 	Content  string   `json:"content,omitempty"`
 }
 
+type UpgradePluginHostField struct {
+	InnerIPs string `json:"inner_ips"` // # 支持多台机器使用同一配置文件 机器ip必须在hosts参数中存在 否则不操作
+}
+
 type UpgradePluginResult struct {
 	ESBBaseResult
-	Data interface{} `json:"data"`
+	Data struct {
+		ID int64 `json:"id"`
+	} `json:"data"`
 }
 
 // SearchTaskResult define
@@ -344,7 +350,7 @@ type Task struct {
 	BkBizID   string `json:"bk_biz_id"`
 	BkCloudID string `json:"bk_cloud_id"`
 	Hosts     []struct {
-		Status string `json:"status"`
+		Status string `json:"status"` // QUEUE: 队列等待中 RUNNING: 执行中 SUCCESS: 执行成功 FAILED: 执行失败
 		Step   string `json:"step"`
 		Host   struct {
 			BkBizID   string `json:"bk_biz_id"`
@@ -406,7 +412,7 @@ type SearchPluginHostResult struct {
 }
 
 type PluginHost struct {
-	Status   string `json:"status"`
+	Status   string `json:"status"` // UNREGISTER RUNNING TERMINATED
 	Host     Host   `json:"host"`
 	Version  string `json:"version"`
 	Name     string `json:"name"`

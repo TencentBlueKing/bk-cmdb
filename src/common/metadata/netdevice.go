@@ -63,7 +63,7 @@ type Netcollector struct {
 	BizID         int64              `json:"bk_biz_id" bson:"bk_biz_id" bson:"bk_biz_id"`
 	InnerIP       string             `json:"bk_host_innerip" bson:"bk_host_innerip"`
 	Status        NetcollectorStatus `json:"status" bson:"status"`
-	TaskID        string             `json:"task_id" bson:"task_id"`
+	TaskID        int64              `json:"task_id" bson:"task_id"`
 	DeployTime    *time.Time         `json:"deploy_time" bson:"deploy_time"`
 	Version       string             `json:"version" bson:"version"`
 	LatestVersion string             `json:"latest_ersion" bson:"latest_ersion"`
@@ -87,6 +87,7 @@ const (
 	CollectorStatusAbnormal = "abnormal"
 
 	CollectorConfigStatusNormal   = "normal"
+	CollectorConfigStatusPending  = "pending"
 	CollectorConfigStatusAbnormal = "abnormal"
 
 	CollectorReportStatusNormal   = "normal"
