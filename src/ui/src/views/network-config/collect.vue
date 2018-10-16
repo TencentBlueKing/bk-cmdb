@@ -33,7 +33,7 @@
             </template>
             <template slot="status" slot-scope="{ item }">
                 <div class="status-wrapper" @mouseover="setTooltip($event, item)" @mouseleave="removeTooltip">
-                    <template v-if="item.status['report_status'] !== 'normal'">
+                    <template v-if="item.status['report_status'] !== 'normal' || item.status['collector_status'] === 'pending'">
                         <div class="bk-spin-loading bk-spin-loading-mini bk-spin-loading-primary">
                             <div class="rotate rotate1"></div>
                             <div class="rotate rotate2"></div>
@@ -44,9 +44,10 @@
                             <div class="rotate rotate7"></div>
                             <div class="rotate rotate8"></div>
                         </div>
-                        <span class="text" :id="item['bk_host_innerip']">{{$t('NetworkDiscovery["上报中"]')}}</span>
+                        <span class="text" :id="item['bk_host_innerip']" v-if="item.status['report_status'] !== 'normal'">{{$t('NetworkDiscovery["上报中"]')}}</span>
+                        <span class="text" :id="item['bk_host_innerip']" v-else>{{$t('NetworkDiscovery["下发中"]')}}</span>
                     </template>
-                    <template v-else-if="item.status['collector_status'] !== 'normal' || item.status['config_status'] !== 'normal'">
+                    <template v-else-if="item.status['collector_status'] === 'abnormal' || item.status['config_status'] !== 'normal'">
                         <i class="bk-icon icon-circle color-danger" :id="item['bk_host_innerip']"></i>
                         <span class="text">{{$t('NetworkDiscovery["异常"]')}}</span>
                     </template>
