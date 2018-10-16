@@ -63,7 +63,7 @@ type Netcollector struct {
 	BizID         int64              `json:"bk_biz_id" bson:"bk_biz_id" bson:"bk_biz_id"`
 	InnerIP       string             `json:"bk_host_innerip" bson:"bk_host_innerip"`
 	Status        NetcollectorStatus `json:"status" bson:"status"`
-	TaskID        string             `json:"task_id" bson:"task_id"`
+	TaskID        int64              `json:"task_id" bson:"task_id"`
 	DeployTime    *time.Time         `json:"deploy_time" bson:"deploy_time"`
 	Version       string             `json:"version" bson:"version"`
 	LatestVersion string             `json:"latest_ersion" bson:"latest_ersion"`
@@ -76,9 +76,9 @@ type ParamNetcollectDiscover struct {
 }
 
 type NetcollectorStatus struct {
-	CollectorStatus string `json:"collector_status"`
-	ConfigStatus    string `json:"config_status"`
-	ReportStatus    string `json:"report_status"`
+	CollectorStatus string `json:"collector_status" bson:"collector_status"`
+	ConfigStatus    string `json:"config_status" bson:"config_status"`
+	ReportStatus    string `json:"report_status" bson:"report_status"`
 }
 
 // NetcollectorStatus define
@@ -87,6 +87,7 @@ const (
 	CollectorStatusAbnormal = "abnormal"
 
 	CollectorConfigStatusNormal   = "normal"
+	CollectorConfigStatusPending  = "pending"
 	CollectorConfigStatusAbnormal = "abnormal"
 
 	CollectorReportStatusNormal   = "normal"
@@ -131,7 +132,7 @@ type ParamNetcollectComfirm struct {
 }
 
 type NetcollectReport struct {
-	Action        string `json:"action" bson:"action"`
+	Action        string `json:"action" bson:"-"`
 	CloudID       int64  `json:"bk_cloud_id" bson:"bk_cloud_id"`
 	CloudName     string `json:"bk_cloud_name" bson:"-"`
 	ObjectID      string `json:"bk_obj_id" bson:"bk_obj_id"`
@@ -152,11 +153,12 @@ type NetcollectHistory struct {
 }
 
 type NetcollectReportAttribute struct {
-	PropertyID   string      `json:"bk_property_id" bson:"bk_property_id"`
-	PropertyName string      `json:"bk_property_name" bson:"-"`
-	IsRequired   bool        `json:"isrequired" bson:"-"`
-	CurValue     interface{} `json:"value" bson:"value"`
-	PreValue     interface{} `json:"pre_value" bson:"-"`
+	PropertyID    string      `json:"bk_property_id" bson:"bk_property_id"`
+	PropertyName  string      `json:"bk_property_name" bson:"-"`
+	IsRequired    bool        `json:"isrequired" bson:"-"`
+	CurValue      interface{} `json:"value" bson:"value"`
+	PreValue      interface{} `json:"pre_value" bson:"-"`
+	Configuration string      `json:"configuration" bson:"configuration"`
 
 	Method  string `json:"method,omitempty" bson:"-"`
 	Success bool   `json:"success,omitempty" bson:"-"`

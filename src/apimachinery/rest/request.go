@@ -61,7 +61,7 @@ type Request struct {
 	verb    VerbType
 	params  url.Values
 	headers http.Header
-	body    io.Reader
+	body    []byte
 	ctx     context.Context
 
 	// prefixed url
@@ -131,7 +131,7 @@ func (r *Request) SubResource(subPath string) *Request {
 
 func (r *Request) Body(body interface{}) *Request {
 	if nil == body {
-		r.body = bytes.NewReader([]byte(""))
+		r.body = []byte("")
 		return r
 	}
 
@@ -145,7 +145,7 @@ func (r *Request) Body(body interface{}) *Request {
 		fallthrough
 	case reflect.Slice:
 		if valueOf.IsNil() {
-			r.body = bytes.NewReader([]byte(""))
+			r.body = []byte("")
 			return r
 		}
 		break
@@ -155,18 +155,18 @@ func (r *Request) Body(body interface{}) *Request {
 
 	default:
 		r.err = errors.New("body should be one of interface, map, pointer or slice value")
-		r.body = bytes.NewReader([]byte(""))
+		r.body = []byte("")
 		return r
 	}
 
 	data, err := json.Marshal(body)
 	if nil != err {
 		r.err = err
-		r.body = bytes.NewReader([]byte(""))
+		r.body = []byte("")
 		return r
 	}
 
-	r.body = bytes.NewReader(data)
+	r.body = data
 	return r
 }
 
@@ -227,7 +227,7 @@ func (r *Request) Do() *Result {
 		for index, host := range hosts {
 			retries = try + index
 			url := host + r.WrapURL().String()
-			req, err := http.NewRequest(string(r.verb), url, r.body)
+			req, err := http.NewRequest(string(r.verb), url, bytes.NewReader(r.body))
 			if err != nil {
 				result.Err = err
 				return result
@@ -248,9 +248,6 @@ func (r *Request) Do() *Result {
 				r.tryThrottle(url)
 			}
 
-			if r.peek {
-				blog.Infof("[apimachinary][peek] %s %s with body %s", string(r.verb), url, r.body)
-			}
 			resp, err := client.Do(req)
 			if err != nil {
 				// "Connection reset by peer" is a special err which in most scenario is a a transient error.
@@ -259,6 +256,9 @@ func (r *Request) Do() *Result {
 
 				if !isConnectionReset(err) || r.verb != GET {
 					result.Err = err
+					if r.peek {
+						blog.Infof("[apimachinary][peek] %s %s with body %s, but %v", string(r.verb), url, r.body, err)
+					}
 					return result
 				}
 
@@ -278,6 +278,9 @@ func (r *Request) Do() *Result {
 						continue
 					}
 					result.Err = err
+					if r.peek {
+						blog.Infof("[apimachinary][peek] %s %s with body %s, but %v", string(r.verb), url, r.body, err)
+					}
 					return result
 				}
 				body = data
