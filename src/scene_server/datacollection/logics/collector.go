@@ -127,8 +127,22 @@ func (lgc *Logics) SearchCollector(header http.Header, cond metadata.ParamNetcol
 		collector.Config = existsOne.Config
 		collector.ReportTotal = existsOne.ReportTotal
 
-		if existsOne.Status.ConfigStatus == "" {
-			existsOne.Status.ConfigStatus = metadata.CollectorConfigStatusAbnormal
+		if existsOne.Status.ConfigStatus == "" || existsOne.Status.ConfigStatus == metadata.CollectorConfigStatusPending {
+			var taskStatus string
+			if existsOne.TaskID <= 0 {
+				taskStatus = metadata.CollectorConfigStatusAbnormal
+			} else {
+				taskStatus, err = lgc.queryCollectTask(header, collector.BizID, existsOne.TaskID)
+				if err != nil {
+					blog.Errorf("[NetDevice][SearchCollector] queryNodemanTask failed: %v", err)
+				}
+			}
+			existsOne.Status.ConfigStatus = taskStatus
+			if taskStatus == metadata.CollectorConfigStatusNormal || taskStatus == metadata.CollectorConfigStatusAbnormal {
+				if err := lgc.saveCollectTask(collector, existsOne.TaskID, taskStatus); err != nil {
+					blog.Errorf("[NetDevice][SearchCollector] saveCollectTask failed: %v", err)
+				}
+			}
 		}
 		if existsOne.Status.ReportStatus == "" {
 			existsOne.Status.ReportStatus = metadata.CollectorReportStatusAbnormal
@@ -137,6 +151,31 @@ func (lgc *Logics) SearchCollector(header http.Header, cond metadata.ParamNetcol
 		collector.Status.ReportStatus = existsOne.Status.ReportStatus
 	}
 	return int64(len(collectors)), collectors, nil
+}
+
+func (lgc *Logics) queryCollectTask(header http.Header, bizID int64, taskID int64) (string, error) {
+	resp, err := lgc.ESB.NodemanSrv().SearchTask(context.Background(), header, bizID, taskID)
+	if err != nil {
+		return metadata.CollectorConfigStatusPending, err
+	}
+	if !resp.Result {
+		blog.Errorf("[NetDevice][queryNodemanTask] failed: %+v", resp.Message)
+		return metadata.CollectorConfigStatusPending, fmt.Errorf(resp.Message)
+	}
+
+	for _, host := range resp.Data.Hosts {
+		switch host.Status {
+		case "FAILED":
+			return metadata.CollectorConfigStatusAbnormal, nil
+		case "SUCCESS":
+			return metadata.CollectorConfigStatusNormal, nil
+		case "QUEUE", "RUNNING":
+			return metadata.CollectorConfigStatusPending, nil
+		default:
+			return metadata.CollectorConfigStatusPending, nil
+		}
+	}
+	return metadata.CollectorConfigStatusPending, nil
 }
 
 func (lgc *Logics) findCollectorMap(cond interface{}) (map[string]metadata.Netcollector, error) {
@@ -256,7 +295,7 @@ func (lgc *Logics) DiscoverNetDevice(header http.Header, configs []metadata.Netc
 		}
 
 		blog.V(3).Infof("[NetDevice][DiscoverNetDevice] UpgradePlugin response %+v ", upgradeResp)
-		if err := lgc.saveCollectTask(&collector, ""); err != nil {
+		if err := lgc.saveCollectTask(&collector, upgradeResp.Data.ID, metadata.CollectorConfigStatusPending); err != nil {
 			blog.Errorf("[NetDevice][DiscoverNetDevice] saveCollectTask %s failed, %v", key, err)
 		}
 	}
@@ -264,9 +303,10 @@ func (lgc *Logics) DiscoverNetDevice(header http.Header, configs []metadata.Netc
 	return err
 }
 
-func (lgc *Logics) saveCollectTask(collector *metadata.Netcollector, taskID string) error {
+func (lgc *Logics) saveCollectTask(collector *metadata.Netcollector, taskID int64, status string) error {
 	data := mapstr.MapStr{}
 	data.Set("task_id", taskID)
+	data.Set("status", status)
 
 	cond := condition.CreateCondition()
 	cond.Field(common.BKCloudIDField).Eq(collector.CloudID)
@@ -286,9 +326,9 @@ func (lgc *Logics) buildUpgradePluginRequest(collector *metadata.Netcollector, u
 		BkCloudID: strconv.FormatInt(collector.CloudID, 10),
 		NodeType:  "PLUGIN",
 		OpType:    "UPDATE",
-		Hosts: []nodeman.UpgradePluginConfig{
+		Hosts: []nodeman.UpgradePluginHostField{
 			{
-				InnerIPs: []string{collector.InnerIP},
+				InnerIPs: collector.InnerIP,
 			},
 		},
 	}
@@ -402,23 +442,14 @@ type Report struct {
 }
 
 type Custom struct {
-	DeviceModel string `yaml:"device_model,omitempty,omitempty"`
+	DeviceModel string `yaml:"device_model,omitempty"`
 	ObjectID    string `yaml:"bk_obj_id,omitempty"`
-	BkVendor    string `yaml:"bk_vendor,omitempty,omitempty"`
-	PropertyID  string `json:"bk_property_id" bson:"bk_property_id,omitempty,omitempty"`
+	BkVendor    string `yaml:"bk_vendor,omitempty"`
+	PropertyID  string `json:"bk_property_id" bson:"bk_property_id,omitempty"`
 
 	Method string `yaml:"method,omitempty"`
 	Period string `yaml:"period,omitempty"`
 	OID    string `yaml:"oid,omitempty"`
-}
-
-var snmpDefault = SnmpConfig{
-	Port:      161,
-	Community: "public",
-	Version:   Version2c,
-	Timeout:   time.Duration(10) * time.Second,
-	Retries:   3,
-	MaxOids:   10,
 }
 
 // SnmpConfig snmp config
