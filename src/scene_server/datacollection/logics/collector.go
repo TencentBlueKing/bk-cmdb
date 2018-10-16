@@ -306,7 +306,7 @@ func (lgc *Logics) DiscoverNetDevice(header http.Header, configs []metadata.Netc
 func (lgc *Logics) saveCollectTask(collector *metadata.Netcollector, taskID int64, status string) error {
 	data := mapstr.MapStr{}
 	data.Set("task_id", taskID)
-	data.Set("status", status)
+	data.Set("status.config_status", status)
 
 	cond := condition.CreateCondition()
 	cond.Field(common.BKCloudIDField).Eq(collector.CloudID)
@@ -339,7 +339,7 @@ func (lgc *Logics) buildUpgradePluginRequest(collector *metadata.Netcollector, u
 	upgradeReq.GlobalParams.Configs = []nodeman.UpgradePluginConfig{
 		{
 			InnerIPs: []string{collector.InnerIP},
-			Content:  base64.RawStdEncoding.EncodeToString(pluginConfig),
+			Content:  base64.StdEncoding.EncodeToString(pluginConfig),
 		},
 	}
 

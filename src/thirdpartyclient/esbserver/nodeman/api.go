@@ -14,9 +14,9 @@ package nodeman
 import (
 	"context"
 	"net/http"
-	"time"
 
 	"configcenter/src/apimachinery/rest"
+	"configcenter/src/common/types"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 )
 
@@ -360,14 +360,14 @@ type Task struct {
 			InnerIP   string `json:"inner_ip"`
 			HasCygwin bool   `json:"has_cygwin"`
 			OsType    string `json:"os_type"`
-			ID        string `json:"id"`
+			ID        int64  `json:"id"`
 		} `json:"host"`
 		JobID   string `json:"job_id"`
 		ErrCode string `json:"err_code"`
 	} `json:"hosts"`
-	StartTime time.Time `json:""start_time""`
-	EndTime   string    `json:"end_time"`
-	ID        string    `json:"id"`
+	StartTime types.Time `json:"start_time"`
+	EndTime   string     `json:"end_time"`
+	ID        int64      `json:"id"`
 }
 
 type Host struct {

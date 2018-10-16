@@ -182,7 +182,7 @@ func (lgc *Logics) SearchReport(header http.Header, param metadata.ParamSearchNe
 		if objType == common.BKINnerObjIDObject {
 			cond.Field(common.BKObjIDField).Eq(reports[index].ObjectID)
 		}
-		insts, err := lgc.findInst(header, objType, &metadata.QueryInput{Condition: cond.ToMapStr()})
+		insts, err := lgc.findInst(header, reports[index].ObjectID, &metadata.QueryInput{Condition: cond.ToMapStr()})
 		if err != nil {
 			blog.Errorf("[NetDevice][SearchReport] find inst failed %v", err)
 			return 0, nil, err
@@ -297,7 +297,7 @@ func (lgc *Logics) findInst(header http.Header, objectID string, query *metadata
 }
 
 func (lgc *Logics) ConfirmReport(header http.Header, reports []metadata.NetcollectReport) *metadata.RspNetcollectConfirm {
-	result := metadata.RspNetcollectConfirm{}
+	result := metadata.RspNetcollectConfirm{Errors: []string{}}
 	for index := range reports {
 		report := &reports[index]
 		if len(report.Attributes) > 0 {
