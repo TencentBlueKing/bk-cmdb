@@ -13,12 +13,16 @@
 package util
 
 import (
+	"context"
 	"net/http"
+	"reflect"
+	"sync/atomic"
 
 	restful "github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/storage/dal"
 )
 
 func InStrArr(arr []string, key string) bool {
@@ -95,6 +99,59 @@ func GetActionOnwerIDByHTTPHeader(header http.Header) string {
 func GetHTTPCCRequestID(header http.Header) string {
 	rid := header.Get(common.BKHTTPCCRequestID)
 	return rid
+}
+
+// GetHTTPCCTransaction return configcenter request id from http header
+func GetHTTPCCTransaction(header http.Header) string {
+	rid := header.Get(common.BKHTTPCCTransactionID)
+	return rid
+}
+
+// GetDBContext returns a new context that contains JoinOption
+func GetDBContext(parent context.Context, header http.Header) context.Context {
+	return context.WithValue(parent, common.CCContextKeyJoinOption, dal.JoinOption{
+		RequestID: header.Get(common.BKHTTPCCRequestID),
+		TxnID:     header.Get(common.BKHTTPCCTransactionID),
+	})
+}
+
+// IsNil returns whether value is nil value, including map[string]interface{}{nil}, *Struct{nil}
+func IsNil(value interface{}) bool {
+	rflValue := reflect.ValueOf(value)
+	if rflValue.IsValid() {
+		return rflValue.IsNil()
+	}
+	return true
+}
+
+type AtomicBool int32
+
+func NewBool(yes bool) *AtomicBool {
+	var n = AtomicBool(0)
+	if yes {
+		n = AtomicBool(1)
+	}
+	return &n
+}
+
+func (b *AtomicBool) Set() {
+	atomic.StoreInt32((*int32)(b), 1)
+}
+
+func (b *AtomicBool) UnSet() {
+	atomic.StoreInt32((*int32)(b), 0)
+}
+
+func (b *AtomicBool) IsSet() bool {
+	return atomic.LoadInt32((*int32)(b)) == 1
+}
+
+func (b *AtomicBool) SetTo(yes bool) {
+	if yes {
+		atomic.StoreInt32((*int32)(b), 1)
+	} else {
+		atomic.StoreInt32((*int32)(b), 0)
+	}
 }
 
 type Int64Slice []int64

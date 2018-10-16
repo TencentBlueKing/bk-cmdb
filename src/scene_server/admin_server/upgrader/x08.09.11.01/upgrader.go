@@ -13,18 +13,21 @@
 package x08_09_11_01
 
 import (
-	"gopkg.in/mgo.v2"
+	"context"
 
 	"configcenter/src/common"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/admin_server/upgrader"
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
 )
 
-func addOperationLogIndex(db storage.DI, conf *upgrader.Config) (err error) {
-	index := storage.Index{Name: "", Columns: []string{"-opt_time"}, Type: storage.INDEX_TYPE_BACKGROUP}
+func addOperationLogIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 
-	if err = db.Index(common.BKTableNameOperationLog, &index); err != nil && !mgo.IsDup(err) {
+	index := dal.Index{Name: "", Keys: mapstr.MapStr{"opt_time": 1}, Background: true}
+
+	if err = db.Table(common.BKTableNameOperationLog).CreateIndex(ctx, index); err != nil && db.IsDuplicatedError(err) {
 		return err
 	}
+
 	return nil
 }

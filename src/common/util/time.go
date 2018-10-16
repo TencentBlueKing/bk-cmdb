@@ -1,21 +1,23 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package util
 
 import (
-	"configcenter/src/common"
-	"github.com/coccyx/timeparser"
 	"time"
+
+	"github.com/coccyx/timeparser"
+
+	"configcenter/src/common"
 )
 
 var (
@@ -147,4 +149,33 @@ func convItemToTime(val interface{}) (interface{}, error) {
 		return t, nil
 	}
 
+}
+
+type Ticker struct {
+	C      chan time.Time
+	ticker *time.Ticker
+	stoped bool
+}
+
+func (t *Ticker) Stop() {
+	t.ticker.Stop()
+	t.stoped = true
+}
+
+func (t *Ticker) Tick() {
+	t.C <- time.Now()
+}
+
+func NewTicker(d time.Duration) *Ticker {
+	t := &Ticker{
+		ticker: time.NewTicker(d),
+		C:      make(chan time.Time, 2),
+	}
+	go func() {
+		for !t.stoped {
+			t.C <- <-t.ticker.C
+		}
+		close(t.C)
+	}()
+	return t
 }

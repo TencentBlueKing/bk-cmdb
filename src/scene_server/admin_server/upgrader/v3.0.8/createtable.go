@@ -13,13 +13,14 @@
 package v3v0v8
 
 import (
-	"gopkg.in/mgo.v2"
+	"context"
 
 	"configcenter/src/scene_server/admin_server/upgrader"
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
+	"gopkg.in/mgo.v2"
 )
 
-func createTable(db storage.DI, conf *upgrader.Config) (err error) {
+func createTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	for tablename, indexs := range tables {
 		exists, err := db.HasTable(tablename)
 		if err != nil {
@@ -31,7 +32,7 @@ func createTable(db storage.DI, conf *upgrader.Config) (err error) {
 			}
 		}
 		for index := range indexs {
-			if err = db.Index(tablename, &indexs[index]); err != nil && !mgo.IsDup(err) {
+			if err = db.Table(tablename).CreateIndex(ctx, indexs[index]); err != nil && !db.IsDuplicatedError(err) {
 				return err
 			}
 		}
@@ -39,104 +40,103 @@ func createTable(db storage.DI, conf *upgrader.Config) (err error) {
 	return nil
 }
 
-var tables = map[string][]storage.Index{
-	"cc_ApplicationBase": []storage.Index{
-		storage.Index{Name: "", Columns: []string{"bk_biz_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_biz_name"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"default"}, Type: storage.INDEX_TYPE_BACKGROUP},
+var tables = map[string][]dal.Index{
+	"cc_ApplicationBase": []dal.Index{
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_biz_id": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_biz_name": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"default": 1}, Background: true},
 	},
 
-	"cc_HostBase": []storage.Index{
-		storage.Index{Name: "", Columns: []string{"bk_host_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_host_name"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_host_innerip"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_host_outerip"}, Type: storage.INDEX_TYPE_BACKGROUP},
+	"cc_HostBase": []dal.Index{
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_host_id": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_host_name": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_host_innerip": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_host_outerip": 1}, Background: true},
 	},
-	"cc_ModuleBase": []storage.Index{
-		storage.Index{Name: "", Columns: []string{"bk_module_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_module_name"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"default"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_biz_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_set_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_parent_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
+	"cc_ModuleBase": []dal.Index{
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_module_id": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_module_name": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"default": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_biz_id": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_supplier_account": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_set_id": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_parent_id": 1}, Background: true},
 	},
-	"cc_ModuleHostConfig": []storage.Index{
-		storage.Index{Name: "", Columns: []string{"bk_biz_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_host_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_module_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_set_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
+	"cc_ModuleHostConfig": []dal.Index{
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_biz_id": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_host_id": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_module_id": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_set_id": 1}, Background: true},
 	},
-	"cc_ObjAsst": []storage.Index{
-		storage.Index{Name: "", Columns: []string{"bk_obj_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_asst_obj_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
+	"cc_ObjAsst": []dal.Index{
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_obj_id": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_asst_obj_id": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_supplier_account": 1}, Background: true},
 	},
-	"cc_ObjAttDes": []storage.Index{
-		storage.Index{Name: "", Columns: []string{"bk_obj_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"id"}, Type: storage.INDEX_TYPE_BACKGROUP},
+	"cc_ObjAttDes": []dal.Index{
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_obj_id": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_supplier_account": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"id": 1}, Background: true},
 	},
-	"cc_ObjClassification": []storage.Index{
-		storage.Index{Name: "", Columns: []string{"bk_classification_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_classification_name"}, Type: storage.INDEX_TYPE_BACKGROUP},
+	"cc_ObjClassification": []dal.Index{
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_classification_id": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_classification_name": 1}, Background: true},
 	},
-	"cc_ObjDes": []storage.Index{
-		storage.Index{Name: "", Columns: []string{"bk_obj_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_classification_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_obj_name"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
+	"cc_ObjDes": []dal.Index{
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_obj_id": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_classification_id": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_obj_name": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_supplier_account": 1}, Background: true},
 	},
-	"cc_ObjectBase": []storage.Index{
-		storage.Index{Name: "", Columns: []string{"bk_obj_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_inst_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
+	"cc_ObjectBase": []dal.Index{
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_obj_id": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_supplier_account": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_inst_id": 1}, Background: true},
 	},
-	"cc_OperationLog": []storage.Index{
-		storage.Index{Name: "", Columns: []string{"op_target", "inst_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_biz_id", "bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"ext_key", "bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
+	"cc_OperationLog": []dal.Index{
+		dal.Index{Name: "", Keys: map[string]interface{}{"op_target": 1, "inst_id": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_supplier_account": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_biz_id": 1, "bk_supplier_account": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"ext_key": 1, "bk_supplier_account": 1}, Background: true},
 	},
-	"cc_PlatBase": []storage.Index{
-		storage.Index{Name: "", Columns: []string{"bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
+	"cc_PlatBase": []dal.Index{
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_supplier_account": 1}, Background: true},
 	},
-	"cc_Proc2Module": []storage.Index{
-		storage.Index{Name: "", Columns: []string{"bk_biz_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_process_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
+	"cc_Proc2Module": []dal.Index{
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_biz_id": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_process_id": 1}, Background: true},
 	},
-	"cc_Process": []storage.Index{
-		storage.Index{Name: "", Columns: []string{"bk_process_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_biz_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
+	"cc_Process": []dal.Index{
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_process_id": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_biz_id": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_supplier_account": 1}, Background: true},
 	},
-	"cc_PropertyGroup": []storage.Index{
-		storage.Index{Name: "", Columns: []string{"bk_obj_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_group_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
+	"cc_PropertyGroup": []dal.Index{
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_obj_id": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_supplier_account": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_group_id": 1}, Background: true},
 	},
-	"cc_SetBase": []storage.Index{
-		storage.Index{Name: "", Columns: []string{"bk_set_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_parent_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_biz_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_supplier_account"}, Type: storage.INDEX_TYPE_BACKGROUP},
-		storage.Index{Name: "", Columns: []string{"bk_set_name"}, Type: storage.INDEX_TYPE_BACKGROUP},
+	"cc_SetBase": []dal.Index{
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_set_id": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_parent_id": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_biz_id": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_supplier_account": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_set_name": 1}, Background: true},
 	},
-	"cc_Subscription": []storage.Index{
-		storage.Index{Name: "", Columns: []string{"subscription_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
+	"cc_Subscription": []dal.Index{
+		dal.Index{Name: "", Keys: map[string]interface{}{"subscription_id": 1}, Background: true},
 	},
-	"cc_TopoGraphics": []storage.Index{
-		storage.Index{Name: "", Columns: []string{"scope_type", "scope_id", "node_type", "bk_obj_id", "bk_inst_id"}, Type: storage.INDEX_TYPE_BACKGROUP_UNIQUE},
+	"cc_TopoGraphics": []dal.Index{
+		dal.Index{Name: "", Keys: map[string]interface{}{"scope_type": 1, "scope_id": 1, "node_type": 1, "bk_obj_id": 1, "bk_inst_id": 1}, Background: true, Unique: true},
 	},
-	"cc_InstAsst": []storage.Index{
-		storage.Index{Name: "", Columns: []string{"bk_obj_id", "bk_inst_id"}, Type: storage.INDEX_TYPE_BACKGROUP},
+	"cc_InstAsst": []dal.Index{
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_obj_id": 1, "bk_inst_id": 1}, Background: true},
 	},
 
-	"cc_Privilege":          []storage.Index{},
-	"cc_History":            []storage.Index{},
-	"cc_HostFavourite":      []storage.Index{},
-	"cc_UserAPI":            []storage.Index{},
-	"cc_UserCustom":         []storage.Index{},
-	"cc_UserGroup":          []storage.Index{},
-	"cc_UserGroupPrivilege": []storage.Index{},
-	"cc_idgenerator":        []storage.Index{}, "cc_System": []storage.Index{}}
+	"cc_Privilege":          []dal.Index{},
+	"cc_History":            []dal.Index{},
+	"cc_HostFavourite":      []dal.Index{},
+	"cc_UserAPI":            []dal.Index{},
+	"cc_UserCustom":         []dal.Index{},
+	"cc_UserGroup":          []dal.Index{},
+	"cc_UserGroupPrivilege": []dal.Index{}, "cc_idgenerator": []dal.Index{}, "cc_System": []dal.Index{}}

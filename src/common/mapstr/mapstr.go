@@ -38,6 +38,15 @@ func NewArrayFromInterface(datas []map[string]interface{}) []MapStr {
 	return results
 }
 
+// NewArrayFromMapStr create a new array from mapstr array
+func NewArrayFromMapStr(datas []MapStr) []MapStr {
+	results := []MapStr{}
+	for _, item := range datas {
+		results = append(results, item)
+	}
+	return results
+}
+
 // NewFromInterface create a mapstr instance from the interface
 func NewFromInterface(data interface{}) (MapStr, error) {
 
@@ -46,6 +55,10 @@ func NewFromInterface(data interface{}) (MapStr, error) {
 		return nil, fmt.Errorf("not support the kind(%s)", reflect.TypeOf(data).Kind())
 	case nil:
 		return MapStr{}, nil
+	case string:
+		result := New()
+		err := json.Unmarshal([]byte(tmp), &result)
+		return result, err
 	case *map[string]interface{}:
 		return MapStr(*tmp), nil
 	case map[string]string:

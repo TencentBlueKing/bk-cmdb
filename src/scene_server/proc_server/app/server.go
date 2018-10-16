@@ -16,15 +16,23 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
+
+	"github.com/emicklei/go-restful"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
+	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/proc_server/app/options"
+	"configcenter/src/scene_server/proc_server/logics"
 	"configcenter/src/scene_server/proc_server/proc_service/service"
+	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdpartyclient/esbserver"
+	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 )
 
 //Run ccapi server
@@ -50,11 +58,15 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	procSvr := new(service.ProcServer)
+	procSvr.Logics = &logics.Logics{}
+	procSvr.EsbConfigChn = make(chan esbutil.EsbConfig, 0)
+	container := restful.NewContainer()
+	container.Add(procSvr.WebService())
 
 	bkbsvr := backbone.Server{
 		ListenAddr: svrInfo.IP,
 		ListenPort: svrInfo.Port,
-		Handler:    procSvr.WebService(),
+		Handler:    container,
 		TLS:        backbone.TLSConfig{},
 	}
 
@@ -71,8 +83,33 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		op.ServConf.ExConfig,
 		procSvr.OnProcessConfigUpdate,
 		bkbCfg)
+	configReady := false
+	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
+		if nil == procSvr.Config {
+			time.Sleep(time.Second)
+		} else {
+			configReady = true
+			break
+		}
+	}
+	if false == configReady {
+		return fmt.Errorf("Configuration item not found")
+	}
+	cacheDB, err := redis.NewFromConfig(*procSvr.Config.Redis)
+	if err != nil {
+		blog.Errorf("new redis client failed, err: %s", err.Error())
+		return fmt.Errorf("new redis client failed, err: %s", err)
+	}
 
+	esbSrv, err := esbserver.NewEsb(apiMachConf, procSvr.EsbConfigChn)
+	if err != nil {
+		return fmt.Errorf("create esb api  object failed. err: %v", err)
+	}
 	procSvr.Engine = engine
+	procSvr.Logics.Engine = engine
+	procSvr.Logics.EsbServ = esbSrv
+	procSvr.SetCache(cacheDB)
+	go procSvr.InitFunc()
 
 	select {
 	case <-ctx.Done():
@@ -109,31 +146,3 @@ func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
 
 	return svrInfo, nil
 }
-
-/*
-//Run ccapi server
-func Run(op *options.ServerOption) error {
-
-	setConfig(op)
-
-	serv, err := ccapi.NewCCAPIServer(op.ServConf)
-	if err != nil {
-		blog.Error("fail to create ccapi server. err:%s", err.Error())
-		return err
-	}
-
-	//pid
-	if err := common.SavePid(); err != nil {
-		blog.Error("fail to save pid: err:%s", err.Error())
-	}
-
-	serv.Start()
-
-	return nil
-}
-
-func setConfig(op *options.ServerOption) {
-	//server cert directory
-
-}
-*/
