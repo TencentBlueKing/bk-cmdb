@@ -80,9 +80,9 @@ func (p *nodeman) UpgradePlugin(ctx context.Context, h http.Header, bizID string
 		Into(resp)
 	return
 }
-func (p *nodeman) SearchTask(ctx context.Context, h http.Header, bizID string, taskID string) (resp *SearchTaskResult, err error) {
+func (p *nodeman) SearchTask(ctx context.Context, h http.Header, bizID int64, taskID int64) (resp *SearchTaskResult, err error) {
 	resp = new(SearchTaskResult)
-	subPath := fmt.Sprintf("/v2/nodeman/%s/tasks/%s/", bizID, taskID)
+	subPath := fmt.Sprintf("/v2/nodeman/%d/tasks/%d/", bizID, taskID)
 	err = p.client.Get().
 		WithContext(ctx).
 		SubResource(subPath).
