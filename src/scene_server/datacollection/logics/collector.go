@@ -139,7 +139,7 @@ func (lgc *Logics) SearchCollector(header http.Header, cond metadata.ParamNetcol
 			}
 			existsOne.Status.ConfigStatus = taskStatus
 			if taskStatus == metadata.CollectorConfigStatusNormal || taskStatus == metadata.CollectorConfigStatusAbnormal {
-				if err := lgc.saveCollectTask(collector, existsOne.TaskID, taskStatus); err != nil {
+				if err = lgc.saveCollectTask(collector, existsOne.TaskID, taskStatus); err != nil {
 					blog.Errorf("[NetDevice][SearchCollector] saveCollectTask failed: %v", err)
 				}
 			}
