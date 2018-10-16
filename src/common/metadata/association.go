@@ -49,9 +49,7 @@ type SearchAssociationTypeResult struct {
 
 type CreateAssociationTypeResult struct {
 	BaseResp `json:",inline"`
-	Data     struct {
-		Id int64 `json:"id"`
-	} `json:"data"`
+	Data     RspID `json:"data"`
 }
 
 type UpdateAssociationTypeRequest struct {
@@ -82,9 +80,7 @@ type SearchAssociationObjectResult struct {
 
 type CreateAssociationObjectResult struct {
 	BaseResp `json:",inline"`
-	Data     struct {
-		Id int64 `json:"id"`
-	} `json:"data"`
+	Data     RspID `json:"data"`
 }
 
 type UpdateAssociationObjectRequest struct {
@@ -117,9 +113,7 @@ type CreateAssociationInstRequest struct {
 }
 type CreateAssociationInstResult struct {
 	BaseResp `json:",inline"`
-	Data     struct {
-		Id int64 `json:"id"`
-	} `json:"data"`
+	Data     RspID `json:"data"`
 }
 
 type DeleteAssociationInstRequest struct {
