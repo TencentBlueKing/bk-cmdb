@@ -13,9 +13,12 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"github.com/emicklei/go-restful"
 
@@ -23,8 +26,6 @@ import (
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"fmt"
-	"time"
 )
 
 // CreateInstAssociation create instance association map
@@ -38,14 +39,14 @@ func (cli *Service) CreateInstAssociation(req *restful.Request, resp *restful.Re
 
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
-		blog.Error("read http request body failed, error:%s", err.Error())
+		blog.Errorf("read http request body failed, error:%s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
 
 	request := &meta.CreateAssociationInstRequest{}
 	if jsErr := json.Unmarshal([]byte(value), request); nil != jsErr {
-		blog.Error("failed to unmarshal the data, data is %s, error info is %s ", string(value), jsErr.Error())
+		blog.Errorf("failed to unmarshal the data, data is %s, error info is %s ", string(value), jsErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, jsErr.Error())})
 		return
 	}
@@ -58,24 +59,27 @@ func (cli *Service) CreateInstAssociation(req *restful.Request, resp *restful.Re
 		CreateTime:   time.Now(),
 	}
 
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
+
 	// get id
-	id, err := cli.Instance.GetIncID(common.BKTableNameInstAsst)
-	if err != nil && !cli.Instance.IsNotFoundErr(err) {
-		blog.Error("failed to get id , error info is %s", err.Error())
+	id, err := db.NextSequence(ctx, common.BKTableNameInstAsst)
+	if err != nil {
+		blog.Errorf("failed to get id , error info is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBInsertFailed, err.Error())})
 		return
 	}
-	data.ID = id
+	data.ID = int64(id)
 
-	_, err = cli.Instance.Insert(common.BKTableNameInstAsst, data)
+	err = db.Table(common.BKTableNameInstAsst).Insert(ctx, data)
 	if nil != err {
-		blog.Error("search object association error :%v", err)
+		blog.Errorf("search object association error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBInsertFailed, err.Error())})
 		return
 	}
 
 	result := &meta.CreateAssociationInstResult{BaseResp: meta.SuccessBaseResp}
-	result.Data.Id = id
+	result.Data.ID = data.ID
 	resp.WriteEntity(result)
 }
 
@@ -90,21 +94,21 @@ func (cli *Service) DeleteInstAssociation(req *restful.Request, resp *restful.Re
 
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
-		blog.Error("read http request body failed, error:%s", err.Error())
+		blog.Errorf("read http request body failed, error:%s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
 
 	request := &meta.DeleteAssociationInstRequest{}
 	if jsErr := json.Unmarshal([]byte(value), request); nil != jsErr {
-		blog.Error("failed to unmarshal the data, data is %s, error info is %s ", string(value), jsErr.Error())
+		blog.Errorf("failed to unmarshal the data, data is %s, error info is %s ", string(value), jsErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, jsErr.Error())})
 		return
 	}
 
 	if request.AsstInstID == 0 && request.InstID == 0 {
 		errMsg := "invalid instance delparams"
-		blog.Error(errMsg)
+		blog.Errorf(errMsg)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommFieldNotValid, errMsg)})
 		return
 	}
@@ -115,18 +119,27 @@ func (cli *Service) DeleteInstAssociation(req *restful.Request, resp *restful.Re
 	}
 	cond = util.SetModOwner(cond, ownerID)
 
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
+
 	// check exist
-	if cnt, _ := cli.Instance.GetCntByCondition(common.BKTableNameInstAsst, cond); cnt < 1 {
-		err := fmt.Errorf("failed to delete inst association, not found")
-		blog.Error(err.Error())
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBUpdateFailed, err.Error())})
+	cnt, err := db.Table(common.BKTableNameInstAsst).Find(cond).Count(ctx)
+	if err != nil {
+		blog.Errorf("failed to count inst association , error info is %s", err.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommNotFound, err.Error())})
 		return
 	}
 
-	err = cli.Instance.DelByCondition(common.BKTableNameInstAsst, cond)
+	if cnt < 1 {
+		msg := fmt.Sprintf("failed to delete inst association, not found")
+		blog.Errorf(msg)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommNotFound, msg)})
+		return
+	}
 
+	err = db.Table(common.BKTableNameInstAsst).Delete(ctx, cond)
 	if nil != err {
-		blog.Error("delete inst association error :%v", err)
+		blog.Errorf("delete inst association error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBDeleteFailed, err.Error())})
 		return
 	}
@@ -146,14 +159,14 @@ func (cli *Service) SearchInstAssociations(req *restful.Request, resp *restful.R
 
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
-		blog.Error("read http request body failed, error:%s", err.Error())
+		blog.Errorf("read http request body failed, error:%s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
 
 	request := &meta.SearchAssociationInstRequest{}
 	if jsErr := json.Unmarshal([]byte(value), request); nil != jsErr {
-		blog.Error("failed to unmarshal the data, data is %s, error info is %s ", string(value), jsErr.Error())
+		blog.Errorf("failed to unmarshal the data, data is %s, error info is %s ", string(value), jsErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, jsErr.Error())})
 		return
 	}
@@ -161,10 +174,13 @@ func (cli *Service) SearchInstAssociations(req *restful.Request, resp *restful.R
 	cond := request.Condition
 	cond = util.SetModOwner(cond, ownerID)
 	result := []*meta.InstAsst{}
-	err = cli.Instance.GetMutilByCondition(common.BKTableNameInstAsst, []string{}, request.Condition, &result, "", 0, 0)
-	if nil != err {
-		blog.Error("search association error :%v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommNotFound, err.Error())})
+
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
+
+	if err := db.Table(common.BKTableNameInstAsst).Find(cond).All(ctx, &result); err != nil {
+		blog.Errorf("select data failed, error information is %s", err.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBSelectFailed, err.Error())})
 		return
 	}
 
