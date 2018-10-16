@@ -16,8 +16,8 @@ import (
 	"github.com/spf13/pflag"
 
 	"configcenter/src/common/core/cc/config"
-	"configcenter/src/storage/mgoclient"
-	"configcenter/src/storage/redisclient"
+	"configcenter/src/storage/dal/mongo"
+	dalredis "configcenter/src/storage/dal/redis"
 )
 
 //ServerOption define option of server in flags
@@ -43,6 +43,6 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 }
 
 type Config struct {
-	Mongo mgoclient.MongoConfig
-	Redis redisclient.RedisConfig
+	Mongo mongo.Config
+	Redis dalredis.Config
 }

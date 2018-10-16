@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"io/ioutil"
 	"net/http"
 
@@ -27,11 +28,13 @@ import (
 
 //CreateUserGroupPrivi create group privi
 func (cli *Service) CreateUserGroupPrivi(req *restful.Request, resp *restful.Response) {
+
 	// get the language
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetOwnerID(req.Request.Header)
-	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	pathParams := req.PathParameters()
 	groupID := pathParams["group_id"]
@@ -62,15 +65,15 @@ func (cli *Service) CreateUserGroupPrivi(req *restful.Request, resp *restful.Res
 	cond[common.BKOwnerIDField] = ownerID
 	cond[common.BKUserGroupIDField] = groupID
 	cond = util.SetModOwner(cond, ownerID)
-	cnt, err := cli.Instance.GetCntByCondition(common.BKTableNameUserGroupPrivilege, cond)
-	if nil != err && !cli.Instance.IsNotFoundErr(err) {
+	cnt, err := db.Table(common.BKTableNameUserGroupPrivilege).Find(cond).Count(ctx)
+	if nil != err && !db.IsNotFoundError(err) {
 		blog.Error("get user group privi error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}
 	if cnt > 0 {
 		blog.V(3).Infof("update user group privi: %+v, by condition %+v ", data, cond)
-		err = cli.Instance.UpdateByCondition(common.BKTableNameUserGroupPrivilege, data, cond)
+		err = db.Table(common.BKTableNameUserGroupPrivilege).Update(ctx, cond, data)
 		if nil != err {
 			blog.Error("update user group privi error :%v", err)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
@@ -81,7 +84,7 @@ func (cli *Service) CreateUserGroupPrivi(req *restful.Request, resp *restful.Res
 	}
 
 	blog.V(3).Infof("create user group privi: %+v", data)
-	_, err = cli.Instance.Insert(common.BKTableNameUserGroupPrivilege, data)
+	err = db.Table(common.BKTableNameUserGroupPrivilege).Insert(ctx, data)
 	if nil != err {
 		blog.Error("insert user group privi error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
@@ -94,13 +97,11 @@ func (cli *Service) CreateUserGroupPrivi(req *restful.Request, resp *restful.Res
 //UpdateUserGroupPrivi update group privi
 func (cli *Service) UpdateUserGroupPrivi(req *restful.Request, resp *restful.Response) {
 
-	blog.V(3).Infof("update user group privi")
-
-	// get the language
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetOwnerID(req.Request.Header)
-	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	pathParams := req.PathParameters()
 	groupID := pathParams["group_id"]
@@ -128,7 +129,7 @@ func (cli *Service) UpdateUserGroupPrivi(req *restful.Request, resp *restful.Res
 	data[common.BKPrivilegeField] = info
 	cond = util.SetModOwner(cond, ownerID)
 	blog.V(3).Infof("update user group privi: %+v, by condition %+v ", data, cond)
-	err = cli.Instance.UpdateByCondition(common.BKTableNameUserGroupPrivilege, data, cond)
+	err = db.Table(common.BKTableNameUserGroupPrivilege).Update(ctx, cond, data)
 	if nil != err {
 		blog.Error("update user group privi error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
@@ -139,11 +140,13 @@ func (cli *Service) UpdateUserGroupPrivi(req *restful.Request, resp *restful.Res
 
 //GetUserGroupPrivi get group privi
 func (cli *Service) GetUserGroupPrivi(req *restful.Request, resp *restful.Response) {
+
 	//get the language
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetOwnerID(req.Request.Header)
-	//get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	pathParams := req.PathParameters()
 	groupID := pathParams["group_id"]
@@ -154,8 +157,8 @@ func (cli *Service) GetUserGroupPrivi(req *restful.Request, resp *restful.Respon
 	cond = util.SetModOwner(cond, ownerID)
 
 	blog.V(3).Infof("get user group privi by condition %+v", cond)
-	cnt, err := cli.Instance.GetCntByCondition(common.BKTableNameUserGroupPrivilege, cond)
-	if nil != err && !cli.Instance.IsNotFoundErr(err) {
+	cnt, err := db.Table(common.BKTableNameUserGroupPrivilege).Find(cond).Count(ctx)
+	if nil != err && !db.IsNotFoundError(err) {
 		blog.Error("get user group privi error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
@@ -171,8 +174,8 @@ func (cli *Service) GetUserGroupPrivi(req *restful.Request, resp *restful.Respon
 	}
 
 	var result interface{}
-	err = cli.Instance.GetOneByCondition(common.BKTableNameUserGroupPrivilege, []string{}, cond, &result)
-	if nil != err && !cli.Instance.IsNotFoundErr(err) {
+	err = db.Table(common.BKTableNameUserGroupPrivilege).Find(cond).One(ctx, &result)
+	if nil != err {
 		blog.Error("get user group privi error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return

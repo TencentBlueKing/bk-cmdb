@@ -12,7 +12,10 @@
 
 package metadata
 
-import types "configcenter/src/common/mapstr"
+import (
+	types "configcenter/src/common/mapstr"
+	"time"
+)
 
 const (
 	// AssociationFieldObjectID the association data field definition
@@ -46,16 +49,14 @@ type SearchAssociationTypeResult struct {
 
 type CreateAssociationTypeResult struct {
 	BaseResp `json:",inline"`
-	Data     struct {
-		Id int `json:"id"`
-	} `json:"data"`
+	Data     RspID `json:"data"`
 }
 
 type UpdateAssociationTypeRequest struct {
 	AsstName  string `field:"bk_asst_name" json:"bk_asst_name" bson:"bk_asst_name"`
 	SrcDes    string `field:"src_des" json:"src_des" bson:"src_des"`
 	DestDes   string `field:"dest_des" json:"dest_des" bson:"dest_des"`
-	Direction int    `field:"direction" json:"direction" bson:"direction"`
+	Direction string `field:"direction" json:"direction" bson:"direction"`
 }
 
 type UpdateAssociationTypeResult struct {
@@ -79,9 +80,7 @@ type SearchAssociationObjectResult struct {
 
 type CreateAssociationObjectResult struct {
 	BaseResp `json:",inline"`
-	Data     struct {
-		Id int `json:"id"`
-	} `json:"data"`
+	Data     RspID `json:"data"`
 }
 
 type UpdateAssociationObjectRequest struct {
@@ -114,9 +113,7 @@ type CreateAssociationInstRequest struct {
 }
 type CreateAssociationInstResult struct {
 	BaseResp `json:",inline"`
-	Data     struct {
-		Id int `json:"id"`
-	} `json:"data"`
+	Data     RspID `json:"data"`
 }
 
 type DeleteAssociationInstRequest struct {
@@ -138,7 +135,7 @@ type AssociationType struct {
 	OwnerID   string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 	SrcDes    string `field:"src_des" json:"src_des" bson:"src_des"`
 	DestDes   string `field:"dest_des" json:"dest_des" bson:"dest_des"`
-	Direction int    `field:"direction" json:"direction" bson:"direction"`
+	Direction string `field:"direction" json:"direction" bson:"direction"`
 }
 
 // Association define object association struct
@@ -152,8 +149,8 @@ type Association struct {
 
 	ObjectAsstID string `field:"bk_obj_asst_id" json:"bk_obj_asst_id" bson:"bk_obj_asst_id"`
 	AsstID       string `field:"bk_asst_id" json:"bk_asst_id" bson:"bk_asst_id"`
-	Mapping      int    `field:"mapping" json:"mapping" bson:"mappingo"`
-	OnDelete     int    `field:"on_delete" json:"on_delete" bson:"on_delete"`
+	Mapping      string `field:"mapping" json:"mapping" bson:"mappingo"`
+	OnDelete     string `field:"on_delete" json:"on_delete" bson:"on_delete"`
 
 	//ObjectAttID      string `field:"bk_object_att_id" json:"bk_object_att_id" bson:"bk_object_att_id"`
 	ClassificationID string `field:"bk_classification_id" bson:"-"`
@@ -179,13 +176,15 @@ func (cli *Association) ToMapStr() types.MapStr {
 
 // InstAsst an association definition between instances.
 type InstAsst struct {
-	ID           int64  `field:"id" json:"-"`
-	InstID       int64  `field:"bk_inst_id" json:"bk_inst_id"`
-	ObjectID     string `field:"bk_obj_id" json:"bk_obj_id"`
-	AsstInstID   int64  `field:"bk_asst_inst_id" json:"bk_asst_inst_id"`
-	AsstObjectID string `field:"bk_asst_obj_id" json:"bk_asst_obj_id"`
-	OwnerID      string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
-	ObjectAsstID string `field:"bk_obj_asst_id" json:"bk_obj_asst_id" bson:"bk_obj_asst_id"`
+	ID           int64     `field:"id" json:"-"`
+	InstID       int64     `field:"bk_inst_id" json:"bk_inst_id" bson:"bk_inst_id"`
+	ObjectID     string    `field:"bk_obj_id" json:"bk_obj_id"`
+	AsstInstID   int64     `field:"bk_asst_inst_id" json:"bk_asst_inst_id"  bson:"bk_asst_inst_id"`
+	AsstObjectID string    `field:"bk_asst_obj_id" json:"bk_asst_obj_id"`
+	OwnerID      string    `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	ObjectAsstID string    `field:"bk_obj_asst_id" json:"bk_obj_asst_id" bson:"bk_obj_asst_id"`
+	CreateTime   time.Time `field:"create_time" json:"create_time" bson:"create_time"`
+	LastTime     time.Time `field:"last_time" json:"last_time" bson:"last_time"`
 }
 
 type InstNameAsst struct {
@@ -195,6 +194,8 @@ type InstNameAsst struct {
 	InstID     int64                  `json:"bk_inst_id"`
 	ObjectName string                 `json:"bk_obj_name"`
 	InstName   string                 `json:"bk_inst_name"`
+	AsstName   string                 `json:"bk_asst_name"`
+	AsstID     string                 `json:"bk_asst_id"`
 	InstInfo   map[string]interface{} `json:"inst_info,omitempty"`
 }
 

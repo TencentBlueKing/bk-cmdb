@@ -39,7 +39,7 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 	isMultiOwner := false
 	multipleOwner, ok := config["session.multiple_owner"]
 	if ok && common.LoginSystemMultiSupplierTrue == multipleOwner {
-		isMultiOwner = false
+		isMultiOwner = true
 	}
 	userInfo, loginSucc := user.LoginUser(c, config, isMultiOwner)
 	if !loginSucc {
@@ -99,7 +99,6 @@ func (m *publicUser) GetUserList(c *gin.Context) (int, interface{}) {
 		rspBody.Result = false
 	}
 	rspBody.Result = true
-	userList = append(userList, &metadata.LoginSystemUserInfo{CnName: "admin", EnName: "sss"})
 	rspBody.Data = userList
 	return 200, rspBody
 }
