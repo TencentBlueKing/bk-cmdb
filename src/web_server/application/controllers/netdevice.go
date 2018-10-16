@@ -75,7 +75,7 @@ func ImportNetDevice(c *gin.Context) {
 	}
 
 	// http request get device
-	url := apiSite + fmt.Sprintf("/api/%s/collector/netcollect/device/action/create", webCommon.API_VERSION)
+	url := apiSite + fmt.Sprintf("/api/%s/collector/netcollect/device/action/batch", webCommon.API_VERSION)
 	blog.V(4).Infof("[Import Net Device] add device url: %v", url)
 
 	params := make([]interface{}, 0)
