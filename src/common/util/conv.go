@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 func GetStrByInterface(a interface{}) string {
@@ -187,4 +188,12 @@ func ConverToInterfaceSlice(value interface{}) []interface{} {
 	}
 
 	return result
+}
+
+// SplitStrField    split string field, remove empty string
+func SplitStrField(str, sep string) []string {
+	if "" == str {
+		return nil
+	}
+	return strings.Split(str, sep)
 }

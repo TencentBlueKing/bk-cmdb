@@ -13,6 +13,7 @@
 package v3v0v8
 
 import (
+	"context"
 	"time"
 
 	"configcenter/src/common"
@@ -20,10 +21,10 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/scene_server/validator"
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
 )
 
-func addDefaultBiz(db storage.DI, conf *upgrader.Config) error {
+func addDefaultBiz(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	// add default biz
 	defaultBiz := map[string]interface{}{}
 	defaultBiz[common.BKAppNameField] = common.DefaultAppName
@@ -38,7 +39,7 @@ func addDefaultBiz(db storage.DI, conf *upgrader.Config) error {
 	defaultBiz[common.CreateTimeField] = time.Now()
 	defaultBiz[common.LastTimeField] = time.Now()
 	filled := fillEmptyFields(defaultBiz, AppRow())
-	bizID, _, err := upgrader.Upsert(db, "cc_ApplicationBase", defaultBiz, common.BKAppIDField, []string{common.BKOwnerIDField, common.BKAppNameField, common.BKDefaultField}, append(filled, common.BKAppIDField))
+	bizID, _, err := upgrader.Upsert(ctx, db, "cc_ApplicationBase", defaultBiz, common.BKAppIDField, []string{common.BKOwnerIDField, common.BKAppNameField, common.BKDefaultField}, append(filled, common.BKAppIDField))
 	if err != nil {
 		blog.Error("add defaultBiz error ", err.Error())
 		return err
@@ -54,7 +55,7 @@ func addDefaultBiz(db storage.DI, conf *upgrader.Config) error {
 	defaultSet[common.CreateTimeField] = time.Now()
 	defaultSet[common.LastTimeField] = time.Now()
 	filled = fillEmptyFields(defaultSet, SetRow())
-	setID, _, err := upgrader.Upsert(db, "cc_SetBase", defaultSet, common.BKSetIDField, []string{common.BKOwnerIDField, common.BKSetNameField, common.BKAppIDField, common.BKDefaultField}, append(filled, common.BKSetIDField))
+	setID, _, err := upgrader.Upsert(ctx, db, "cc_SetBase", defaultSet, common.BKSetIDField, []string{common.BKOwnerIDField, common.BKSetNameField, common.BKAppIDField, common.BKDefaultField}, append(filled, common.BKSetIDField))
 	if err != nil {
 		blog.Error("add defaultSet error ", err.Error())
 		return err
@@ -71,7 +72,7 @@ func addDefaultBiz(db storage.DI, conf *upgrader.Config) error {
 	defaultResModule[common.CreateTimeField] = time.Now()
 	defaultResModule[common.LastTimeField] = time.Now()
 	filled = fillEmptyFields(defaultResModule, ModuleRow())
-	_, _, err = upgrader.Upsert(db, "cc_ModuleBase", defaultResModule, common.BKModuleIDField, []string{common.BKOwnerIDField, common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField, common.BKDefaultField}, append(filled, common.BKModuleIDField))
+	_, _, err = upgrader.Upsert(ctx, db, "cc_ModuleBase", defaultResModule, common.BKModuleIDField, []string{common.BKOwnerIDField, common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField, common.BKDefaultField}, append(filled, common.BKModuleIDField))
 	if err != nil {
 		blog.Error("add defaultResModule error ", err.Error())
 		return err
@@ -86,7 +87,7 @@ func addDefaultBiz(db storage.DI, conf *upgrader.Config) error {
 	defaultFaultModule[common.CreateTimeField] = time.Now()
 	defaultFaultModule[common.LastTimeField] = time.Now()
 	filled = fillEmptyFields(defaultFaultModule, ModuleRow())
-	_, _, err = upgrader.Upsert(db, "cc_ModuleBase", defaultFaultModule, common.BKModuleIDField, []string{common.BKOwnerIDField, common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField, common.BKDefaultField}, append(filled, common.BKModuleIDField))
+	_, _, err = upgrader.Upsert(ctx, db, "cc_ModuleBase", defaultFaultModule, common.BKModuleIDField, []string{common.BKOwnerIDField, common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField, common.BKDefaultField}, append(filled, common.BKModuleIDField))
 	if err != nil {
 		blog.Error("add defaultFaultModule error ", err.Error())
 		return err
