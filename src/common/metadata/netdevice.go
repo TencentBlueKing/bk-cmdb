@@ -76,9 +76,9 @@ type ParamNetcollectDiscover struct {
 }
 
 type NetcollectorStatus struct {
-	CollectorStatus string `json:"collector_status"`
-	ConfigStatus    string `json:"config_status"`
-	ReportStatus    string `json:"report_status"`
+	CollectorStatus string `json:"collector_status" bson:"collector_status"`
+	ConfigStatus    string `json:"config_status" bson:"config_status"`
+	ReportStatus    string `json:"report_status" bson:"report_status"`
 }
 
 // NetcollectorStatus define
@@ -132,7 +132,7 @@ type ParamNetcollectComfirm struct {
 }
 
 type NetcollectReport struct {
-	Action        string `json:"action" bson:"action"`
+	Action        string `json:"action" bson:"-"`
 	CloudID       int64  `json:"bk_cloud_id" bson:"bk_cloud_id"`
 	CloudName     string `json:"bk_cloud_name" bson:"-"`
 	ObjectID      string `json:"bk_obj_id" bson:"bk_obj_id"`
@@ -153,11 +153,12 @@ type NetcollectHistory struct {
 }
 
 type NetcollectReportAttribute struct {
-	PropertyID   string      `json:"bk_property_id" bson:"bk_property_id"`
-	PropertyName string      `json:"bk_property_name" bson:"-"`
-	IsRequired   bool        `json:"isrequired" bson:"-"`
-	CurValue     interface{} `json:"value" bson:"value"`
-	PreValue     interface{} `json:"pre_value" bson:"-"`
+	PropertyID    string      `json:"bk_property_id" bson:"bk_property_id"`
+	PropertyName  string      `json:"bk_property_name" bson:"-"`
+	IsRequired    bool        `json:"isrequired" bson:"-"`
+	CurValue      interface{} `json:"value" bson:"value"`
+	PreValue      interface{} `json:"pre_value" bson:"-"`
+	Configuration string      `json:"configuration" bson:"configuration"`
 
 	Method  string `json:"method,omitempty" bson:"-"`
 	Success bool   `json:"success,omitempty" bson:"-"`
