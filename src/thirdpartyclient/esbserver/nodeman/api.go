@@ -94,6 +94,7 @@ type PluginPackage struct {
 // PluginProcess define
 // {
 //    "category": "official",
+//    "auto_launch": true,
 //    "config_file": "basereport.conf",
 //    "name": "basereport",
 //    "scenario": "CMDB上的实时数据，蓝鲸监控里的主机监控中的基础性能数据",
@@ -107,8 +108,9 @@ type PluginProcess struct {
 	ConfigFile   string `json:"config_file"`
 	Name         string `json:"name"`
 	Scenario     string `json:"scenario"`
-	IsBinary     int    `json:"is_binary"`
-	UseDB        int    `json:"use_db"`
+	IsBinary     bool   `json:"is_binary"`
+	AutoLaunch   bool   `json:"auto_launch"`
+	UseDB        bool   `json:"use_db"`
 	ConfigFormat string `json:"config_format"`
 	ID           int    `json:"id"`
 }
