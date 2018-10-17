@@ -155,9 +155,6 @@
                         id: 'configuration',
                         name: this.$t('NetworkDiscovery["配置信息"]')
                     }, {
-                        id: 'last_time',
-                        name: this.$t('NetworkDiscovery["发现时间"]')
-                    }, {
                         id: 'operation',
                         name: this.$t('Association["操作"]'),
                         sortable: false
