@@ -1,7 +1,7 @@
 <template>
     <div class="group-wrapper">
         <p class="btn-group">
-            <bk-button type="primary">
+            <bk-button type="primary" @click="createGroup">
                 {{$t('ModelManagement["新建分组"]')}}
             </bk-button>
             <bk-button type="default" @click="createModel">
@@ -115,8 +115,20 @@
             :is-show.sync="groupDialog.isShow">
             <div slot="content" class="dialog-content">
                 <p class="title">{{$t('ModelManagement["新增模型"]')}}</p>
-                <label for="">{{$t('ModelManagement["所属分组"]')}}<span class="color-danger">*</span></label>
-                <input type="text" class="cmdb-form-input">
+                <label for="">
+                    <span>
+                        {{$t('ModelManagement["唯一标识"]')}}
+                        <span class="color-danger">*</span>
+                    </span>
+                    <input type="text" class="cmdb-form-input">
+                </label>
+                <label for="">
+                    <span>
+                        {{$t('ModelManagement["名称"]')}}
+                        <span class="color-danger">*</span>
+                    </span>
+                    <input type="text" class="cmdb-form-input">
+                </label>
             </div>
             <div slot="footer" class="footer">
                 <bk-button type="primary">保存</bk-button>
@@ -198,6 +210,9 @@
         methods: {
             createModel () {
                 this.modelDialog.isShow = true
+            },
+            createGroup () {
+                this.groupDialog.isShow = true
             }
         }
     }
