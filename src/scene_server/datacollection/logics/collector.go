@@ -122,7 +122,7 @@ func (lgc *Logics) SearchCollector(header http.Header, cond metadata.ParamNetcol
 		key := collectorMapKey(collector.CloudID, collector.InnerIP)
 		existsOne, ok := collectorMap[key]
 		if !ok {
-			blog.Errorf("[NetDevice][SearchCollector] get collector config for %s failed", key)
+			blog.Warnf("[NetDevice][SearchCollector] get collector config for %s failed", key)
 		}
 		collector.Config = existsOne.Config
 		collector.ReportTotal = existsOne.ReportTotal
@@ -134,13 +134,13 @@ func (lgc *Logics) SearchCollector(header http.Header, cond metadata.ParamNetcol
 			} else {
 				taskStatus, err = lgc.queryCollectTask(header, collector.BizID, existsOne.TaskID)
 				if err != nil {
-					blog.Errorf("[NetDevice][SearchCollector] queryNodemanTask by BizID [%v], TaskID [%v], failed: %v", collector.BizID, existsOne.TaskID, err)
+					blog.Warnf("[NetDevice][SearchCollector] queryNodemanTask by BizID [%v], TaskID [%v], failed: %v", collector.BizID, existsOne.TaskID, err)
 				}
 			}
 			existsOne.Status.ConfigStatus = taskStatus
 			if taskStatus == metadata.CollectorConfigStatusNormal || taskStatus == metadata.CollectorConfigStatusAbnormal {
 				if err = lgc.saveCollectTask(collector, existsOne.TaskID, taskStatus); err != nil {
-					blog.Errorf("[NetDevice][SearchCollector] saveCollectTask for %+v failed: %v", collector, err)
+					blog.Warnf("[NetDevice][SearchCollector] saveCollectTask for %+v failed: %v", collector, err)
 				}
 			}
 		}
