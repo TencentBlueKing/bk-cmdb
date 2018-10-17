@@ -348,7 +348,6 @@ func (lgc *Logics) confirmAttributes(header http.Header, report *metadata.Netcol
 	if objType == common.BKINnerObjIDObject {
 		cond.Field(common.GetInstNameField(report.ObjectID)).Eq(report.InstKey)
 		cond.Field(common.BKObjIDField).Eq(report.ObjectID)
-		data.Set(common.BKObjIDField, report.ObjectID)
 	}
 
 	if objType == common.BKInnerObjIDHost {
@@ -380,11 +379,11 @@ func (lgc *Logics) confirmAttributes(header http.Header, report *metadata.Netcol
 	} else {
 		resp, err := lgc.CoreAPI.TopoServer().Instance().CreateInst(context.Background(), util.GetOwnerID(header), report.ObjectID, header, data)
 		if err != nil {
-			blog.Errorf("[NetDevice][ConfirmReport] create inst error: %v, %+v", err, data)
+			blog.Errorf("[NetDevice][ConfirmReport] create inst to %s error: %v, %+v", report.ObjectID, err, data)
 			return attrCount, err
 		}
 		if !resp.Result {
-			blog.Errorf("[NetDevice][ConfirmReport] create inst error: %v, %+v", resp, data)
+			blog.Errorf("[NetDevice][ConfirmReport] create inst to %s error: %v, %+v", report.ObjectID, resp, data)
 			return attrCount, fmt.Errorf(resp.ErrMsg)
 		}
 	}
