@@ -109,7 +109,7 @@
                     </p>
                     <p>
                         <span class="info">{{$t('NetworkDiscovery["关联关系变更成功"]')}}</span>
-                        <span class="number">{{resultDialog.data['change_relation_success']}}条</span>
+                        <span class="number">{{resultDialog.data['change_associations_success']}}条</span>
                     </p>
                     <p class="fail">
                         <span class="info">{{$t('NetworkDiscovery["属性变更失败"]')}}</span>
@@ -117,7 +117,7 @@
                     </p>
                     <p class="fail">
                         <span class="info">{{$t('NetworkDiscovery["关联关系变更失败"]')}}</span>
-                        <span class="number">{{resultDialog.data['change_relation_failure']}}条</span>
+                        <span class="number">{{resultDialog.data['change_associations_failure']}}条</span>
                     </p>
                 </div>
                 <div class="dialog-details" v-if="resultDialog.data.errors.length">
