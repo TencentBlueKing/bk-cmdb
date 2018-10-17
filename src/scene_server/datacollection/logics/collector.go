@@ -41,15 +41,15 @@ func (lgc *Logics) SearchCollector(header http.Header, cond metadata.ParamNetcol
 	// fetch package info
 	packageResp, err := lgc.ESB.NodemanSrv().SearchPackage(context.Background(), header, Netdevicebeat)
 	if err != nil {
-		blog.Errorf("[NetDevice][SearchCollector] SearchPackage failed: %v", err)
+		blog.Errorf("[NetDevice][SearchCollector] SearchPackage by %s failed: %v", Netdevicebeat, err)
 		return 0, nil, err
 	}
 	if !packageResp.Result {
-		blog.Errorf("[NetDevice][SearchCollector] SearchPackage failed: %+v", packageResp)
+		blog.Errorf("[NetDevice][SearchCollector] SearchPackage by %s failed: %+v", Netdevicebeat, packageResp)
 		return 0, nil, fmt.Errorf("search plugin host from nodeman failed: %s", packageResp.Message)
 	}
 	var pkg nodeman.PluginPackage
-	if len(packageResp.Data) > 0 {
+	if len(packageResp.Data) > 0 { // nodeman team ensure that they will sort by id in descending order
 		pkg = packageResp.Data[0]
 	}
 
@@ -60,8 +60,8 @@ func (lgc *Logics) SearchCollector(header http.Header, cond metadata.ParamNetcol
 		return 0, nil, err
 	}
 	if !pluginHostResp.Result {
-		blog.Errorf("[NetDevice][SearchCollector] SearchPluginHost failed: %v", pluginHostResp.Message)
-		return 0, nil, fmt.Errorf("search plugin host from nodeman failed: %s", pluginHostResp.Message)
+		blog.Errorf("[NetDevice][SearchCollector] SearchPluginHost by %s failed: %+v", Netdevicebeat, packageResp)
+		return 0, nil, fmt.Errorf("search plugin host from nodeman by %s failed: %s", Netdevicebeat, pluginHostResp.Message)
 	}
 
 	// build collectors
@@ -93,14 +93,14 @@ func (lgc *Logics) SearchCollector(header http.Header, cond metadata.ParamNetcol
 	cloudCond.Field(common.BKCloudIDField).In(cloudIDs)
 	cloudMap, err := lgc.findInstMap(header, common.BKInnerObjIDPlat, &metadata.QueryInput{Condition: cloudCond.ToMapStr()})
 	if err != nil {
-		blog.Errorf("[NetDevice][SearchCollector] find clouds failed: %v", err)
+		blog.Errorf("[NetDevice][SearchCollector] find clouds by %+v failed: %v", cloudCond, err)
 		return 0, nil, err
 	}
 
 	cloudCond.Field(common.BKHostInnerIPField).In(ips)
 	collectorMap, err := lgc.findCollectorMap(cloudCond.ToMapStr())
 	if err != nil {
-		blog.Errorf("[NetDevice][SearchCollector] get collector config failed")
+		blog.Errorf("[NetDevice][SearchCollector] get collector config by %+v failed %v", cloudCond, err)
 		return 0, nil, err
 	}
 
@@ -111,7 +111,7 @@ func (lgc *Logics) SearchCollector(header http.Header, cond metadata.ParamNetcol
 		if clodInst, ok := cloudMap[collector.CloudID]; ok {
 			cloudname, err := clodInst.String(common.BKCloudNameField)
 			if err != nil {
-				blog.Errorf("[NetDevice][SearchCollector] bk_cloud_name field invalied: %v", err)
+				blog.Errorf("[NetDevice][SearchCollector] bk_cloud_name field invalied: %v, inst: %+v", err, clodInst)
 			}
 			collector.CloudName = cloudname
 		}
@@ -119,7 +119,7 @@ func (lgc *Logics) SearchCollector(header http.Header, cond metadata.ParamNetcol
 		cond := condition.CreateCondition()
 		cond.Field(common.BKCloudIDField).Eq(collector.CloudID)
 
-		key := fmt.Sprintf("%d:%s", collector.CloudID, collector.InnerIP)
+		key := collectorMapKey(collector.CloudID, collector.InnerIP)
 		existsOne, ok := collectorMap[key]
 		if !ok {
 			blog.Errorf("[NetDevice][SearchCollector] get collector config for %s failed", key)
@@ -134,13 +134,13 @@ func (lgc *Logics) SearchCollector(header http.Header, cond metadata.ParamNetcol
 			} else {
 				taskStatus, err = lgc.queryCollectTask(header, collector.BizID, existsOne.TaskID)
 				if err != nil {
-					blog.Errorf("[NetDevice][SearchCollector] queryNodemanTask failed: %v", err)
+					blog.Errorf("[NetDevice][SearchCollector] queryNodemanTask by BizID [%v], TaskID [%v], failed: %v", collector.BizID, existsOne.TaskID, err)
 				}
 			}
 			existsOne.Status.ConfigStatus = taskStatus
 			if taskStatus == metadata.CollectorConfigStatusNormal || taskStatus == metadata.CollectorConfigStatusAbnormal {
 				if err = lgc.saveCollectTask(collector, existsOne.TaskID, taskStatus); err != nil {
-					blog.Errorf("[NetDevice][SearchCollector] saveCollectTask failed: %v", err)
+					blog.Errorf("[NetDevice][SearchCollector] saveCollectTask for %+v failed: %v", collector, err)
 				}
 			}
 		}
@@ -178,6 +178,10 @@ func (lgc *Logics) queryCollectTask(header http.Header, bizID int64, taskID int6
 	return metadata.CollectorConfigStatusPending, nil
 }
 
+func collectorMapKey(cloudID int64, ip string) string {
+	return fmt.Sprintf("%d:%s", cloudID, ip)
+}
+
 func (lgc *Logics) findCollectorMap(cond interface{}) (map[string]metadata.Netcollector, error) {
 	collectors := []metadata.Netcollector{}
 	err := lgc.Instance.GetMutilByCondition(common.BKTableNameNetcollectConfig, nil, cond, &collectors, "", 0, 0)
@@ -186,7 +190,7 @@ func (lgc *Logics) findCollectorMap(cond interface{}) (map[string]metadata.Netco
 	}
 	collectorMap := map[string]metadata.Netcollector{}
 	for index := range collectors {
-		key := fmt.Sprintf("%d:%s", collectors[index].CloudID, collectors[index].InnerIP)
+		key := collectorMapKey(collectors[index].CloudID, collectors[index].InnerIP)
 		collectorMap[key] = collectors[index]
 	}
 	return collectorMap, nil
@@ -199,13 +203,13 @@ func (lgc *Logics) UpdateCollector(header http.Header, config metadata.Netcollec
 
 	count, err := lgc.Instance.GetCntByCondition(common.BKTableNameNetcollectConfig, cond.ToMapStr())
 	if err != nil {
-		blog.Errorf("[UpdateCollector] count error: %v", err)
+		blog.Errorf("[UpdateCollector] count by %+v error: %v", cond.ToMapStr(), err)
 		return err
 	}
 	if count > 0 {
 		err = lgc.Instance.UpdateByCondition(common.BKTableNameNetcollectConfig, config, cond)
 		if err != nil {
-			blog.Errorf("[UpdateCollector] UpdateByCondition error: %v", err)
+			blog.Errorf("[UpdateCollector] UpdateByCondition by %+v to %+v error: %v", cond.ToMapStr(), config, err)
 			return err
 		}
 		return nil
@@ -213,7 +217,7 @@ func (lgc *Logics) UpdateCollector(header http.Header, config metadata.Netcollec
 
 	_, err = lgc.Instance.Insert(common.BKTableNameNetcollectConfig, config)
 	if err != nil {
-		blog.Errorf("[UpdateCollector] UpdateByCondition error: %v", err)
+		blog.Errorf("[UpdateCollector] Insert %+v error: %v", config, err)
 		return err
 	}
 
@@ -225,11 +229,11 @@ func (lgc *Logics) DiscoverNetDevice(header http.Header, configs []metadata.Netc
 	// fetch global_params
 	pkgResp, err := lgc.ESB.NodemanSrv().SearchPackage(context.Background(), header, Netdevicebeat)
 	if err != nil {
-		blog.Errorf("[NetDevice][DiscoverNetDevice] SearchPackage failed %v", err)
+		blog.Errorf("[NetDevice][DiscoverNetDevice] SearchPackage by %v failed %v", Netdevicebeat, err)
 		return err
 	}
 	if !pkgResp.Result {
-		blog.Errorf("[NetDevice][DiscoverNetDevice] SearchPackage failed %s", pkgResp.Message)
+		blog.Errorf("[NetDevice][DiscoverNetDevice] SearchPackage by %s, failed %s", Netdevicebeat, pkgResp.Message)
 		return fmt.Errorf("search plugin host from nodeman failed: %s", pkgResp.Message)
 	}
 	var pkg nodeman.PluginPackage
@@ -239,20 +243,20 @@ func (lgc *Logics) DiscoverNetDevice(header http.Header, configs []metadata.Netc
 
 	procResp, err := lgc.ESB.NodemanSrv().SearchProcess(context.Background(), header, Netdevicebeat)
 	if err != nil {
-		blog.Errorf("[NetDevice][DiscoverNetDevice] SearchProcess failed %v", err)
+		blog.Errorf("[NetDevice][DiscoverNetDevice] SearchProcess by %s failed %v", Netdevicebeat, err)
 		return err
 	}
 	if !procResp.Result {
-		blog.Errorf("[NetDevice][DiscoverNetDevice] SearchProcess failed %v", pkgResp.Message)
+		blog.Errorf("[NetDevice][DiscoverNetDevice] SearchProcess by %s failed %+v", Netdevicebeat, pkgResp)
 		return fmt.Errorf("search plugin host from nodeman failed: %s", procResp.Message)
 	}
 	procInfoResp, err := lgc.ESB.NodemanSrv().SearchProcessInfo(context.Background(), header, Netdevicebeat)
 	if err != nil {
-		blog.Errorf("[NetDevice][DiscoverNetDevice] SearchProcess failed %v", err)
+		blog.Errorf("[NetDevice][DiscoverNetDevice] SearchProcess by %v failed %v", Netdevicebeat, err)
 		return err
 	}
 	if !procInfoResp.Result {
-		blog.Errorf("[NetDevice][DiscoverNetDevice] SearchProcess failed %v", pkgResp.Message)
+		blog.Errorf("[NetDevice][DiscoverNetDevice] SearchProcess by %v failed %+v", Netdevicebeat, pkgResp)
 		return fmt.Errorf("search plugin host from nodeman failed: %s", procInfoResp.Message)
 	}
 
@@ -267,12 +271,12 @@ func (lgc *Logics) DiscoverNetDevice(header http.Header, configs []metadata.Netc
 	cloudCond.Field(common.BKHostInnerIPField).In(ips)
 	collectorMap, err := lgc.findCollectorMap(cloudCond.ToMapStr())
 	if err != nil {
-		blog.Errorf("[NetDevice][SearchCollector] get collector config failed, %v", err)
+		blog.Errorf("[NetDevice][SearchCollector] get collector config by %+v failed, %v", cloudCond.ToMapStr(), err)
 		return err
 	}
 
 	for _, config := range configs {
-		key := fmt.Sprintf("%d:%s", config.CloudID, config.InnerIP)
+		key := collectorMapKey(config.CloudID, config.InnerIP)
 		collector, ok := collectorMap[key]
 		if !ok {
 			blog.Errorf("[NetDevice][DiscoverNetDevice] get collector config for %s failed", key)
@@ -281,16 +285,16 @@ func (lgc *Logics) DiscoverNetDevice(header http.Header, configs []metadata.Netc
 
 		upgradeReq, err := lgc.buildUpgradePluginRequest(&collector, util.GetUser(header), &pkg, &procResp.Data, &procInfoResp.Data)
 		if err != nil {
-			blog.Errorf("[NetDevice][DiscoverNetDevice] get collector config for %s failed, %v", key, err)
+			blog.Errorf("[NetDevice][DiscoverNetDevice] buildUpgradePluginRequest %s failed, %v", key, err)
 		}
 		blog.InfoJSON("[NetDevice][DiscoverNetDevice] UpgradePlugin request %s", upgradeReq)
 		upgradeResp, err := lgc.ESB.NodemanSrv().UpgradePlugin(context.Background(), header, strconv.FormatInt(collector.BizID, 10), upgradeReq)
 		if err != nil {
-			blog.Errorf("[NetDevice][DiscoverNetDevice] get collector config for %s failed", key)
+			blog.Errorf("[NetDevice][DiscoverNetDevice] UpgradePlugin %s failed", key)
 			continue
 		}
 		if !upgradeResp.Result {
-			blog.Errorf("NetDevice][DiscoverNetDevice] search plugin host from nodeman failed: %s", upgradeResp.Message)
+			blog.Errorf("NetDevice][DiscoverNetDevice] search plugin host from nodeman failed: %+v", upgradeResp)
 			continue
 		}
 
@@ -349,7 +353,8 @@ func (lgc *Logics) buildUpgradePluginRequest(collector *metadata.Netcollector, u
 func (lgc *Logics) buildNetdevicebeatConfigFile(collector *metadata.Netcollector) ([]byte, error) {
 	customs, err := lgc.findCustom()
 	if err != nil {
-		blog.Errorf("[NetDevice][buildNetdevicebeatConfigFile] findCustom failed: %v", err)
+		blog.Errorf("[NetDevice][buildNetdevicebeatConfigFile] findCustom for %+v failed: %v", collector, err)
+		return []byte(""), err
 	}
 
 	config := NetDeviceConfig{
@@ -394,12 +399,12 @@ func (lgc *Logics) findCustom() ([]Custom, error) {
 	customs := []Custom{}
 	propertys := []metadata.NetcollectProperty{}
 	if err := lgc.Instance.GetMutilByCondition(common.BKTableNameNetcollectProperty, nil, nil, &propertys, "", 0, 0); err != nil {
-		blog.Errorf("[NetDevice] failed to query the propertys, error info %s", err.Error())
+		blog.Errorf("[NetDevice] failed to query the propertys, error info %v", err)
 		return nil, err
 	}
 	devices := []metadata.NetcollectDevice{}
 	if err := lgc.Instance.GetMutilByCondition(common.BKTableNameNetcollectDevice, nil, nil, &devices, "", 0, 0); err != nil {
-		blog.Errorf("[NetDevice] failed to query the devices, error info %s", err.Error())
+		blog.Errorf("[NetDevice] failed to query the devices, error info %v", err)
 		return nil, err
 	}
 
