@@ -34,6 +34,21 @@ func (s *topoService) initAssociation() {
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/objectasst/{id}", HandlerFunc: s.DeleteObjectAssociation})
 	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/objectasst/{id}", HandlerFunc: s.SearchObjectAssociation})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/objectasst/{id}", HandlerFunc: s.UpdateObjectAssociation})
+
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/topo/association/type/action/search", HandlerFunc: s.SearchAssociationType})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/topo/association/type/action/create", HandlerFunc: s.CreateAssociationType})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/topo/association/type/{id}/action/update", HandlerFunc: s.UpdateAssociationType})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/topo/association/type/{id}/action/delete", HandlerFunc: s.DeleteAssociationType})
+
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/object/association/action/search", HandlerFunc: s.SearchAssociationObject})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/object/association/action/create", HandlerFunc: s.CreateAssociationObject})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/object/association/{id}/action/update", HandlerFunc: s.UpdateAssociationObject})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/object/association/{id}/action/delete", HandlerFunc: s.DeleteAssociationObject})
+
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/association/action/search", HandlerFunc: s.SearchAssociationInst})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/association/action/create", HandlerFunc: s.CreateAssociationInst})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/association/action/delete", HandlerFunc: s.DeleteAssociationInst})
+
 }
 
 func (s *topoService) initAuditLog() {

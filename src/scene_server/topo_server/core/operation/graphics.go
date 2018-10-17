@@ -118,7 +118,7 @@ func (g *graphics) SelectObjectTopoGraphics(params types.ContextParams, scopeTyp
 					ObjID:    asst.AsstObjID,
 					InstID:   0,
 					ObjAtt:   asst.AsstName,
-					Lable:    map[string]string{},
+					Label:    map[string]string{},
 				})
 			}
 			nodes = append(nodes, node)
