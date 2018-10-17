@@ -71,7 +71,7 @@ const customRules = {
     },
     oid: {
         validate: (value) => {
-            return /^(\d+\.)+\d+$/.test(value)
+            return /^(\d+)?(\.\d+)+$/.test(value)
         }
     }
 }
