@@ -14,7 +14,7 @@
         </div>
         <cmdb-table
             class="collect-table"
-            :loading="$loading('searchUserGroup')"
+            :loading="$loading('searchDataCollection')"
             :checked.sync="table.checked"
             :header="table.header"
             :list="table.list"
