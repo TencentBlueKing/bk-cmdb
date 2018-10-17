@@ -250,7 +250,7 @@ func (s *Service) GetHostFavouriteByID(req *restful.Request, resp *restful.Respo
 	query := common.KvMap{"user": user, "id": ID}
 	query = util.SetModOwner(query, ownerID)
 	result := new(meta.FavouriteMeta)
-	err := s.Instance.Table(common.BKTableNameHostFavorite).Find(query).All(ctx, &result)
+	err := s.Instance.Table(common.BKTableNameHostFavorite).Find(query).One(ctx, result)
 	if err != nil && mgo_on_not_found_error != err.Error() {
 		blog.Errorf("get host favourite failed,input: %v error: %v", ID, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostFavouriteQueryFail)})
