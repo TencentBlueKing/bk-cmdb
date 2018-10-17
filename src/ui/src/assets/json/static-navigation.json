@@ -63,6 +63,13 @@
             "name": "模型管理",
             "classificationId": "bk_back_config"
         }, {
+            "i18n": "ModelManagement['模型管理']",
+            "path": "/model-manage",
+            "relative": "/model-manage",
+            "id": "model",
+            "name": "模型管理",
+            "classificationId": "bk_back_config"
+        }, {
             "i18n": "Permission['权限管理']",
             "path": "/permission",
             "id": "permission",
