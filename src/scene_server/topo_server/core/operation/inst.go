@@ -630,7 +630,7 @@ func (c *commonInst) FindInstChildTopo(params types.ContextParams, obj model.Obj
 			asstName := ""
 			for _, asst := range assts {
 				if asst.AsstObjID == child.Object.GetID() {
-					asstAttributeID = asst.ObjectAttID
+					//asstAttributeID = asst.ObjectAttID
 					asstName = asst.AsstName
 					break
 				}
@@ -717,7 +717,7 @@ func (c *commonInst) FindInstParentTopo(params types.ContextParams, obj model.Ob
 			}
 			for _, asst := range assts {
 				if asst.AsstObjID == obj.GetID() {
-					asstAttributeID = asst.ObjectAttID
+					//asstAttributeID = asst.ObjectAttID
 					asstName = asst.AsstName
 					break
 				}

@@ -75,7 +75,7 @@ func (cli *Service) CreateObjectAssociation(req *restful.Request, resp *restful.
 		return
 	}
 
-	if cnt > 1 {
+	if cnt > 0 {
 		msg := fmt.Sprintf("failed to create object association, bk_obj_asst_id %s exist", request.ObjectAsstID)
 		blog.Errorf(msg)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBInsertFailed, msg)})

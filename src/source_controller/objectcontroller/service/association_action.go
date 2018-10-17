@@ -107,7 +107,7 @@ func (cli *Service) CreateAssociationType(req *restful.Request, resp *restful.Re
 		return
 	}
 
-	if cnt > 1 {
+	if cnt > 0 {
 		msg := fmt.Sprintf("failed to create association, bk_asst_id %s exist", request.AsstID)
 		blog.Errorf(msg)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBInsertFailed, msg)})
