@@ -444,6 +444,18 @@ const (
 
 	// BKInstKeyField the inst key field for metric discover
 	BKInstKeyField = "bk_inst_key"
+
+	// for net collect device
+	BKDeviceIDField    = "device_id"
+	BKDeviceNameField  = "device_name"
+	BKDeviceModelField = "device_model"
+	BKVendorField      = "bk_vendor"
+
+	// for net collect property of device
+	BKNetcollectPropertyIDlField = "netcollect_property_id"
+	BKOIDField                   = "oid"
+	BKPeriodField                = "period"
+	BKActionField                = "action"
 )
 
 // DefaultResSetName the inner module set
@@ -496,6 +508,15 @@ const DefaultCloudName string = "default area"
 const BKAppName string = "蓝鲸"
 
 const BKMainLine = "mainline"
+
+// bk_classification_id value
+const BKNetwork = "bk_network"
+
+const (
+	SNMPActionGet = "get"
+
+	SNMPActionWalk = "walk"
+)
 
 const (
 	// DefaultResModuleFlag the default resource module flag
@@ -723,6 +744,17 @@ const (
 const (
 	BKDataStatusField   = "bk_data_status"
 	BKDataRecoverSuffix = "(recover)"
+)
+
+const (
+	// period default value
+	Infinite = "∞"
+)
+
+// netcollect
+const (
+	BKNetDevice   = "net_device"
+	BKNetProperty = "net_property"
 )
 
 const (

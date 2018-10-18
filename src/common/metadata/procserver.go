@@ -12,6 +12,9 @@
 package metadata
 
 import (
+	"net/http"
+	"time"
+
 	"configcenter/src/common/mapstr"
 )
 
@@ -33,6 +36,14 @@ type ProcInstanceModel struct {
 	HostId        uint64 `json: "bk_host_id" bson:"bk_host_id"`
 }
 
+type MatchProcInstParam struct {
+	ApplicationID  int64  `json:"bk_biz_id" bson:"bk_biz_id"`
+	SetName        string `json:"bk_set_name" bson:"bk_set_name"`
+	ModuleName     string `json:"bk_module_name" bson:"bk_module_name"`
+	FuncID         string `json:"bk_func_id" bson:"bk_func_id"`
+	HostInstanceID string `json:"bk_host_instance_id" bson:"bk_host_instance_id"`
+}
+
 type ProcessOperate struct {
 	ApplicationID string `json: "bk_biz_id"`
 	SetName       string `json: "bk_set_name"`
@@ -52,11 +63,6 @@ type ProcInstModelResult struct {
 	Data     []ProcInstanceModel `json:"data"`
 }
 
-type GseProcRespone struct {
-	BaseResp `json:",inline"`
-	Data     map[string]interface{} `json:"data"`
-}
-
 type GseHost struct {
 	Ip           string `json:"ip,omitempty"`
 	BkCloudId    int    `json:"bk_cloud_id,omitempty"`
@@ -74,10 +80,42 @@ type ProcInfoArrResult struct {
 	Data     []mapstr.MapStr `json:"data"`
 }
 type GseProcRequest struct {
-	Meta   GseProcMeta `json:"meta,omitempty"`
-	Hosts  []GseHost   `json:"hosts,omitempty"`
-	OpType int         `json:"op_type,omitempty"`
-	Spec   GseProcSpec `json:"spec,omitempty"`
+	AppID    int64       `json:"bk_biz_id"  bson:"bk_biz_id"`
+	ModuleID int64       `json:"bk_module_id" bson:"bk_module_id"`
+	ProcID   int64       `json:"bk_process_id" bson:"bk_process_id"`
+	Meta     GseProcMeta `json:"meta,omitempty" bson:"meta"`
+	Hosts    []GseHost   `json:"hosts,omitempty" bson:"hosts"`
+	OpType   int         `json:"op_type,omitempty" bson:"-"`
+	Spec     GseProcSpec `json:"spec,omitempty" bson:"spec"`
+}
+
+type ProcInstanceDetail struct {
+	GseProcRequest `json:",inline" bson:",inline"`
+	OwnerID        string                   `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	HostID         int64                    `json:"bk_host_id" bson:"bk_host_id"`
+	Status         ProcInstanceDetailStatus `json:"status" bson:"status"` //1 register gse sucess, 2 register error need retry 3 unregister error need retry
+}
+
+type ProcInstanceDetailResult struct {
+	BaseResp `json:",inline"`
+
+	Data struct {
+		Count int                  `json:"count"`
+		Info  []ProcInstanceDetail `json:"info"`
+	} `json:"data"`
+}
+
+type ProcInstanceDetailStatus int64
+
+var (
+	ProcInstanceDetailStatusRegisterSucc     ProcInstanceDetailStatus = 1
+	ProcInstanceDetailStatusRegisterFailed   ProcInstanceDetailStatus = 2
+	ProcInstanceDetailStatusUnRegisterFailed ProcInstanceDetailStatus = 10
+)
+
+type ModifyProcInstanceDetail struct {
+	Conds map[string]interface{} `json:"condition"`
+	Data  map[string]interface{} `json:"data"`
 }
 
 type GseProcSpec struct {
@@ -86,7 +124,7 @@ type GseProcSpec struct {
 	Resource         GseProcResource         `json:"resource,omitempty"`
 	MonitorPolicy    GseProcMonitorPlolicy   `json:"monitor_policy,omitempty"`
 	WarnReportPolicy GseProcWarnReportPolicy `json:"warn_report_policy,omitempty"`
-	Configmap        GseProcConfigmap        `json:"configmap,omitempty"`
+	Configmap        []GseProcConfigmap      `json:"configmap,omitempty"`
 }
 
 type GseProcIdentity struct {
@@ -134,9 +172,86 @@ type GseProcConfigmap struct {
 	Md5  string `json:"md5,omitempty"`
 }
 
+type FilePriviewMap struct {
+	Content string `json:"content"`
+	Inst    string `json:"inst"`
+}
+
+// InlineProcInfo process info convert gse proc info
+type InlineProcInfo struct {
+	//Meta    GseProcMeta
+	//Spec    GseProcSpec
+	ProcInfo map[string]interface{}
+	ProcNum  int64
+	AppID    int64 // use gse proc namespace
+	FunID    int64
+}
+
+type ProcessOperateTask struct {
+	OperateInfo *ProcessOperate                     `json:"operate_info" bson:"operate_info"`
+	TaskID      string                              `json:"task_id" bson:"task_id"`
+	GseTaskID   string                              `json:"gse_task_id" bson:"gse_task_id"`
+	Namespace   string                              `json:"namespace" bson:"namespace"`
+	Status      ProcOpTaskStatus                    `json:"status" bson:"status"`
+	CreateTime  time.Time                           `json:"create_time" bson:"create_time"`
+	OwnerID     string                              `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	User        string                              `json:"user,omitempty" bson:"user,omitempty"`
+	Detail      map[string]ProcessOperateTaskDetail `json:"detail" bson:"detail"`
+	Host        []GseHost                           `json:"host_info" bson:"host_info"`
+	ProcName    string                              `json:"bk_process_name" bson:"bk_process_name"`
+	HTTPHeader  http.Header                         `json:"http_header" bson:"http_header"`
+}
+
+type ProcOpTaskStatus int64
+
+var (
+	ProcOpTaskStatusWaitOP       ProcOpTaskStatus = 1
+	ProcOpTaskStatusExecuteing   ProcOpTaskStatus = 115
+	ProcOpTaskStatusErr          ProcOpTaskStatus = 2
+	ProcOpTaskStatusSucc         ProcOpTaskStatus = 3
+	ProcOpTaskStatusHTTPErr      ProcOpTaskStatus = 1101
+	ProcOpTaskStatusNotTaskIDErr ProcOpTaskStatus = 1112
+)
+
+type ProcessOperateTaskResult struct {
+	BaseResp `json:",inline"`
+	Data     struct {
+		Count int                  `json:"count"`
+		Info  []ProcessOperateTask `json:"info"`
+	} `json:"data"`
+}
+
+type ProcessOperateTaskDetail struct {
+	Errcode int    `json:"errcode" bson:"error_code"`
+	ErrMsg  string `json:"errmsg" bson:"error_msg"`
+}
+
+type GseProcessOperateTaskResult struct {
+	Data            map[string]ProcessOperateTaskDetail `json:"data"`
+	EsbBaseResponse `json:",inline"`
+}
+
+type EsbResponse struct {
+	EsbBaseResponse `json:",inline"`
+	Data            mapstr.MapStr `json:"data"`
+}
+
+type EsbBaseResponse struct {
+	Result       bool   `json:"result"`
+	Code         int    `json:"code"`
+	Message      string `json:"message"`
+	EsbRequestID string `json:"request_id"`
+}
+
 type ProcessModule struct {
 	AppID      int64  `json:"bk_biz_id" bson:"bk_biz_id"`
 	ModuleName string `json:"bk_module_name" bson:"bk_module_name"`
 	ProcessID  int64  `json:"bk_process_id" bson:"bk_process_id"`
 	OwnerID    string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+}
+
+type TemplateVersion struct {
+	Content     string `json:"content"`
+	Status      string `json:"status"`
+	Description string `json:"description"`
 }
