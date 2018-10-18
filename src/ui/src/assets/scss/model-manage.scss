@@ -1,0 +1,26 @@
+.model-manage-wrapper {
+    .form-label {
+        display: block;
+        margin-bottom: 20px;
+        font-size: 0;
+        >.label-text {
+            position: relative;
+            display: inline-block;
+            padding-right: 10px;
+            width: 100px;
+            line-height: 36px;
+            text-align: right;
+            font-size: 14px;
+            @include ellipsis;
+            vertical-align: middle;
+            .color-danger {
+                position: absolute;
+                right: 1px;
+            }
+        }
+        .cmdb-form-input {
+            width: calc(100% - 100px);
+            vertical-align: middle;
+        }
+    }
+}

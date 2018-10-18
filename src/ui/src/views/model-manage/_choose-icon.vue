@@ -1,16 +1,6 @@
 <template>
-    <div class="model-icon-list" v-show="isIconListShow">
-        <span class="back" @click="isIconListShow = false">
-            <i class="bk-icon icon-back2"></i>
-        </span>
-        <ul class="icon-box clearfix">
-            <li class="icon" 
-                v-for="(icon, index) in iconList" 
-                :key="index">
-                <i :class="icon.value"></i>
-            </li>
-        </ul>
-        <div class="page">
+    <div class="model-icon-list">
+        <div class="page clearfix">
             <input type="text" class="cmdb-form-input">
             <div class="page-btn">
                 <bk-button type="default">
@@ -21,6 +11,13 @@
                 </bk-button>
             </div>
         </div>
+        <ul class="icon-box clearfix">
+            <li class="icon" 
+                v-for="(icon, index) in iconList" 
+                :key="index">
+                <i :class="icon.value"></i>
+            </li>
+        </ul>
     </div>
 </template>
 
@@ -39,12 +36,31 @@
 </script>
 
 <style lang="scss" scoped>
+    .page {
+        padding: 15px;
+        .cmdb-form-input {
+            float: left;
+            width: 220px;
+            height: 30px;
+            line-height: 28px;
+        }
+        .page-btn {
+            float: right;
+            .bk-button {
+                padding: 0;
+                width: 30px;
+                height: 30px;
+                line-height: 1;
+                vertical-align: middle;
+            }
+        }
+    }
     .icon-box {
-        padding: 10px 20px;
+        padding: 0 20px 10px;
         height: 236px;
         .icon {
             float: left;
-            width: 80px;
+            width: calc(100% / 7);
             height: 49px;
             padding: 5px;
             font-size: 30px;
