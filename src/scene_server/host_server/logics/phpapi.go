@@ -319,7 +319,7 @@ func (lgc *Logics) UpdateCustomProperty(hostID, appID int64, proeprtyJson map[st
 	phpapi := lgc.NewPHPAPI(header)
 	propertys, err := phpapi.GetCustomerPropertyByOwner(common.BKInnerObjIDHost)
 	if nil != err {
-		blog.Errorf("UpdateCustomProperty error:%s,, hostID:%d, appID:%d, property:%s", hostID, appID, proeprtyJson)
+		blog.Errorf("UpdateCustomProperty error:%s, hostID:%d, appID:%d, property:%s", hostID, appID, proeprtyJson)
 		return nil, defErr.Error(common.CCErrCommSearchPropertyFailed)
 	}
 	params := make(common.KvMap)
@@ -337,7 +337,7 @@ func (lgc *Logics) UpdateCustomProperty(hostID, appID int64, proeprtyJson map[st
 	}
 	res, err := phpapi.UpdateHostMain(hostCondition, params, appID)
 	if nil != err {
-		blog.Errorf("UpdateCustomProperty error:%s,, hostID:%d, appID:%d, property:%s", hostID, appID, proeprtyJson)
+		blog.Errorf("UpdateCustomProperty error:%s,, hostID:%d, appID:%d, property:%s", err.Error(), hostID, appID, proeprtyJson)
 		return nil, defErr.Error(common.CCErrHostModifyFail)
 	}
 
