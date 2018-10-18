@@ -89,10 +89,12 @@
                     cancelPrevious: true
                 }
             }).then(data => {
-                if (data) {
-                    this.initChart()
-                }
                 this.snapshot = data
+                if (data) {
+                    this.$nextTick(() => {
+                        this.initChart()
+                    })
+                }
             })
         },
         methods: {

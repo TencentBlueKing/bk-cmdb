@@ -13,6 +13,11 @@
 package api
 
 import (
+	"crypto/tls"
+	"encoding/json"
+
+	redis "gopkg.in/redis.v5"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/conf"
@@ -24,11 +29,9 @@ import (
 	"configcenter/src/common/http/httpserver"
 	"configcenter/src/common/http/httpserver/webserver"
 	"configcenter/src/common/language"
-	_ "configcenter/src/common/ssl"
-	"configcenter/src/storage"
-	"configcenter/src/storage/dbclient"
-	"crypto/tls"
-	"encoding/json"
+	//_ "configcenter/src/common/ssl"
+	//"configcenter/src/storage"
+	//"configcenter/src/storage/dbclient"
 
 	restful "github.com/emicklei/go-restful"
 )
@@ -64,22 +67,22 @@ type APIResource struct {
 	Actions      []*httpserver.Action
 	GlobalFilter func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain)
 	Wactions     []*webserver.Action
-	MetaCli      storage.DI
-	InstCli      storage.DI
-	CacheCli     storage.DI
-	Error        errors.CCErrorIf
-	HostCtrl     func() string
-	ObjCtrl      func() string
-	ProcCtrl     func() string
-	EventCtrl    func() string
-	AuditCtrl    func() string
-	HostAPI      func() string
-	TopoAPI      func() string
-	ProcAPI      func() string
-	EventAPI     func() string
-	APIAddr      func() string
-	AddrSrv      AddrSrv
-	Lang         language.CCLanguageIf
+	//MetaCli      storage.DI
+	//InstCli      storage.DI
+	CacheCli  *redis.Client
+	Error     errors.CCErrorIf
+	HostCtrl  func() string
+	ObjCtrl   func() string
+	ProcCtrl  func() string
+	EventCtrl func() string
+	AuditCtrl func() string
+	HostAPI   func() string
+	TopoAPI   func() string
+	ProcAPI   func() string
+	EventAPI  func() string
+	APIAddr   func() string
+	AddrSrv   AddrSrv
+	Lang      language.CCLanguageIf
 }
 
 // AddrSrv get server address interface
@@ -157,6 +160,8 @@ func (a *APIResource) ParseConf(data []byte) (map[string]string, error) {
 	return ccapiConfig.Configmap, nil
 }
 
+/*
+TODO:will delete
 // GetDataCli get data cli
 func (a *APIResource) GetDataCli(config map[string]string, dType string) error {
 	host := config[dType+".host"]
@@ -183,6 +188,7 @@ func (a *APIResource) GetDataCli(config map[string]string, dType string) error {
 
 	return nil
 }
+*/
 
 // CreateAPIRspStr create api rsp str
 func (a *APIResource) CreateAPIRspStr(errcode int, info interface{}) (string, error) {

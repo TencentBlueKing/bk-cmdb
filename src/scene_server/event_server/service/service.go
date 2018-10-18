@@ -13,26 +13,35 @@
 package service
 
 import (
+	"context"
+
+	"github.com/emicklei/go-restful"
+	redis "gopkg.in/redis.v5"
+
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
-	"configcenter/src/storage"
-
-	"github.com/emicklei/go-restful"
-
-	redis "gopkg.in/redis.v5"
+	"configcenter/src/storage/dal"
 )
 
 type Service struct {
 	*backbone.Engine
-	db    storage.DI
+	db    dal.RDB
 	cache *redis.Client
+	ctx   context.Context
 }
 
-func (s *Service) SetDB(db storage.DI) {
+func NewService(ctx context.Context) *Service {
+	return &Service{
+		ctx: ctx,
+	}
+}
+
+func (s *Service) SetDB(db dal.RDB) {
 	s.db = db
 }
 
@@ -87,7 +96,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	info := metric.HealthInfo{
 		Module:     types.CC_MODULE_EVENTSERVER,
 		HealthMeta: meta,
-		AtTime:     types.Now(),
+		AtTime:     metadata.Now(),
 	}
 
 	answer := metric.HealthResponse{
