@@ -13,8 +13,9 @@
 package metadata
 
 import (
-	types "configcenter/src/common/mapstr"
 	"time"
+
+	types "configcenter/src/common/mapstr"
 )
 
 const (
