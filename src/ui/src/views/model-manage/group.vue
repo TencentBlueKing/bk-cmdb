@@ -107,7 +107,7 @@
             </li>
         </ul>
         <bk-dialog
-            class="group-dialog"
+            class="group-dialog dialog"
             :close-icon="false"
             :hasHeader="false"
             :width="600"
@@ -115,20 +115,24 @@
             :is-show.sync="groupDialog.isShow">
             <div slot="content" class="dialog-content">
                 <p class="title">{{$t('ModelManagement["新增模型"]')}}</p>
-                <label for="">
-                    <span>
-                        {{$t('ModelManagement["唯一标识"]')}}
+                <div class="content">
+                    <label for="">
+                        <span class="label-title">
+                            {{$t('ModelManagement["唯一标识"]')}}
+                        </span>
                         <span class="color-danger">*</span>
-                    </span>
-                    <input type="text" class="cmdb-form-input">
-                </label>
-                <label for="">
-                    <span>
-                        {{$t('ModelManagement["名称"]')}}
+                        <input type="text" class="cmdb-form-input">
+                        <i class="bk-icon icon-info-circle"></i>
+                    </label>
+                    <label for="">
+                        <span class="label-title">
+                            {{$t('ModelManagement["名称"]')}}
+                        </span>
                         <span class="color-danger">*</span>
-                    </span>
-                    <input type="text" class="cmdb-form-input">
-                </label>
+                        <input type="text" class="cmdb-form-input">
+                        <i class="bk-icon icon-info-circle"></i>
+                    </label>
+                </div>
             </div>
             <div slot="footer" class="footer">
                 <bk-button type="primary">保存</bk-button>
@@ -136,7 +140,7 @@
             </div>
         </bk-dialog>
         <bk-dialog
-            class="model-dialog"
+            class="model-dialog dialog"
             :close-icon="false"
             :hasHeader="false"
             :width="600"
@@ -164,20 +168,21 @@
                         <label for="">
                             <span class="label-title">{{$t('ModelManagement["唯一标识"]')}}</span>
                             <span class="color-danger">*</span>
-                            
                             <input type="text" class="cmdb-form-input">
                             <i class="bk-icon icon-info-circle"></i>
                         </label>
                         <label for="">
-                            <span class="label-title">
-                                {{$t('ModelManagement["名称"]')}}<span class="color-danger">*</span>
-                            </span>
+                            <span class="label-title">{{$t('ModelManagement["名称"]')}}</span>
+                            <span class="color-danger">*</span>
                             <input type="text" class="cmdb-form-input">
                             <i class="bk-icon icon-info-circle"></i>
                         </label>
                     </div>
                 </div>
-                <div v-if="isIconListShow">
+                <div class="model-icon-wrapper" v-if="isIconListShow">
+                    <span class="back" @click="isIconListShow = false">
+                        <i class="bk-icon icon-back2"></i>
+                    </span>
                     <v-choose-icon
                     ></v-choose-icon>
                 </div>
@@ -300,10 +305,12 @@
             }
         }
     }
-    .model-dialog {
+    .dialog {
         .dialog-content {
-            position: relative;
             padding: 20px 10px;
+            .content {
+                padding: 0 10px;
+            }
         }
         .title {
             margin-bottom: 30px;
@@ -311,8 +318,62 @@
             color: #333948;
             line-height: 1;
         }
-        .content {
-            padding: 0 10px;
+        label {
+            display: block;
+            margin-bottom: 20px;
+            font-size: 0;
+            &:last-child {
+                margin: 0;
+            }
+            .color-danger {
+                display: inline-block;
+                font-size: 16px;
+                width: 15px;
+                text-align: center;
+                vertical-align: middle;
+            }
+            .icon-info-circle {
+                font-size: 18px;
+                color: $cmdbBorderColor;
+                line-height: 36px;
+                vertical-align: middle;
+            }
+            .label-title {
+                display: inline-block;
+                width: 85px;
+                text-align: right;
+                font-size: 16px;
+                line-height: 36px;
+                vertical-align: middle;
+                @include ellipsis;
+            }
+            .selector-box,
+            .cmdb-form-input {
+                display: inline-block;
+                margin-right: 10px;
+                width: calc(100% - 130px);
+                vertical-align: middle;
+            }
+        }
+        .footer {
+            padding: 0 24px;
+            font-size: 0;
+            text-align: right;
+            .bk-primary {
+                margin-right: 10px;
+            }
+        }
+    }
+    .group-dialog {
+        .dialog-content {
+            .content {
+                padding: 30px 10px 40px;
+            }
+        }
+    }
+    .model-dialog {
+        .dialog-content {
+            position: relative;
         }
         .content-left {
             float: left;
@@ -343,40 +404,8 @@
         .content-right {
             float: right;
             width: 460px;
-            font-size: 0;
-            >label {
-                display: block;
-                margin-bottom: 20px;
-                &:last-child {
-                    margin: 0;
-                }
-                .icon-info-circle {
-                    font-size: 18px;
-                    color: $cmdbBorderColor;
-                    line-height: 36px;
-                    vertical-align: middle;
-                }
-            }
-            label {
-                width: 100px;
-                text-align: right;
-                font-size: 16px;
-                line-height: 36px;
-                vertical-align: middle;
-                @include ellipsis;
-                .color-danger {
-                    padding: 0 5px;
-                }
-            }
-            .selector-box,
-            .cmdb-form-input {
-                display: inline-block;
-                margin-right: 10px;
-                width: 330px;
-                vertical-align: middle;
-            }
         }
-        .model-icon-list {
+        .model-icon-wrapper {
             position: absolute;
             left: 0;
             top:0;
@@ -395,14 +424,6 @@
                 text-align: center;
                 background: #2f2f2f;
                 color: #fff;
-            }
-        }
-        .footer {
-            padding: 0 24px;
-            font-size: 0;
-            text-align: right;
-            .bk-primary {
-                margin-right: 10px;
             }
         }
     }

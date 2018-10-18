@@ -1,5 +1,5 @@
 <template>
-    <bk-tab :active-name.sync="activeTabName" class="tab-wrapper">
+    <bk-tab :active-name.sync="activeTabName" class="tab-wrapper model-manage-wrapper">
         <bk-tabpanel name="group" :title="$t('ModelManagement[\'模型分组\']')">
             <v-group></v-group>
         </bk-tabpanel>
@@ -34,4 +34,8 @@
     .tab-wrapper {
         padding-top: 0;
     }
+</style>
+
+<style lang="scss">
+    @import '@/assets/scss/model-manage.scss';
 </style>
