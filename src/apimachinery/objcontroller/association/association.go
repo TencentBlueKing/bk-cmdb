@@ -77,6 +77,7 @@ func (asst *Association) SearchObject(ctx context.Context, h http.Header, reques
 
 	err = asst.client.Post().
 		WithContext(ctx).
+		Body(request).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
@@ -90,6 +91,7 @@ func (asst *Association) CreateObject(ctx context.Context, h http.Header, reques
 
 	err = asst.client.Post().
 		WithContext(ctx).
+		Body(request).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
@@ -103,6 +105,7 @@ func (asst *Association) UpdateObject(ctx context.Context, h http.Header, asst_i
 
 	err = asst.client.Post().
 		WithContext(ctx).
+		Body(request).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
@@ -129,6 +132,7 @@ func (asst *Association) SearchInst(ctx context.Context, h http.Header, request 
 
 	err = asst.client.Post().
 		WithContext(ctx).
+		Body(request).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
@@ -142,6 +146,7 @@ func (asst *Association) CreateInst(ctx context.Context, h http.Header, request 
 
 	err = asst.client.Post().
 		WithContext(ctx).
+		Body(request).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
@@ -155,6 +160,7 @@ func (asst *Association) DeleteInst(ctx context.Context, h http.Header, request 
 
 	err = asst.client.Post().
 		WithContext(ctx).
+		Body(request).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().

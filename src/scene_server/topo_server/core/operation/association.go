@@ -14,6 +14,8 @@ package operation
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
@@ -25,7 +27,6 @@ import (
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
-	"fmt"
 )
 
 // AssociationOperationInterface association operation methods
@@ -42,6 +43,19 @@ type AssociationOperationInterface interface {
 	CheckBeAssociation(params types.ContextParams, obj model.Object, cond condition.Condition) error
 	CreateCommonInstAssociation(params types.ContextParams, data *metadata.InstAsst) error
 	DeleteInstAssociation(params types.ContextParams, cond condition.Condition) error
+
+	// 关联关系改造后的接口
+	SearchType(ctx context.Context, h http.Header, request *metadata.SearchAssociationTypeRequest) (resp *metadata.SearchAssociationTypeResult, err error)
+	CreateType(ctx context.Context, h http.Header, request *metadata.AssociationType) (resp *metadata.CreateAssociationTypeResult, err error)
+	UpdateType(ctx context.Context, h http.Header, asstTypeID int, request *metadata.UpdateAssociationTypeRequest) (resp *metadata.UpdateAssociationTypeResult, err error)
+	DeleteType(ctx context.Context, h http.Header, asstTypeID int) (resp *metadata.DeleteAssociationTypeResult, err error)
+	SearchObject(ctx context.Context, h http.Header, request *metadata.SearchAssociationObjectRequest) (resp *metadata.SearchAssociationObjectResult, err error)
+	CreateObject(ctx context.Context, h http.Header, request *metadata.Association) (resp *metadata.CreateAssociationObjectResult, err error)
+	UpdateObject(ctx context.Context, h http.Header, asstID int, request *metadata.UpdateAssociationObjectRequest) (resp *metadata.UpdateAssociationObjectResult, err error)
+	DeleteObject(ctx context.Context, h http.Header, asstID int) (resp *metadata.DeleteAssociationObjectResult, err error)
+	SearchInst(ctx context.Context, h http.Header, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error)
+	CreateInst(ctx context.Context, h http.Header, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error)
+	DeleteInst(ctx context.Context, h http.Header, request *metadata.DeleteAssociationInstRequest) (resp *metadata.DeleteAssociationInstResult, err error)
 
 	SetProxy(cls ClassificationOperationInterface, obj ObjectOperationInterface, grp GroupOperationInterface, attr AttributeOperationInterface, inst InstOperationInterface, targetModel model.Factory, targetInst inst.Factory)
 }
@@ -90,28 +104,6 @@ func (a *association) SearchObjectAssociation(params types.ContextParams, objID 
 	if !rsp.Result {
 		blog.Errorf("[operation-asst] failed to search the object(%s) association info , error info is %s", objID, rsp.ErrMsg)
 		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	// DELETE: query the property name as the associated name,the follow code need to be deleted after relationships refactoring
-	propertyIDS := make([]string, 0)
-	for _, asst := range rsp.Data {
-		propertyIDS = append(propertyIDS, asst.ObjectAttID)
-	}
-	attrCond := condition.CreateCondition()
-	attrCond.Field(metadata.AttributeFieldSupplierAccount).Eq(params.SupplierAccount)
-	attrCond.Field(metadata.AttributeFieldPropertyID).In(propertyIDS)
-	attributes, err := a.attr.FindObjectAttribute(params, attrCond)
-	if nil != err {
-		blog.Errorf("[operation-asst] failed to query attributes by the condition(%v), error info is %s", attrCond.ToMapStr(), err.Error())
-		return rsp.Data, nil // return the origin data
-	}
-
-	for asstIDX, asst := range rsp.Data {
-		for _, attr := range attributes {
-			if asst.ObjectAttID == attr.GetID() {
-				rsp.Data[asstIDX].AsstName = attr.GetName()
-			}
-		}
 	}
 
 	return rsp.Data, nil
@@ -197,12 +189,6 @@ func (a *association) CreateCommonAssociation(params types.ContextParams, data *
 	if !rspObjAsst.Result {
 		blog.Errorf("[operation-asst] failed to create the association (%#v) , error info is %s", data, rspObjAsst.ErrMsg)
 		return params.Err.New(rspObjAsst.Code, rspObjAsst.ErrMsg)
-	}
-
-	if data.AsstPosition == 0 || data.AsstType == 0 || data.AsstWay == 0 {
-		errmsg := fmt.Sprintf("[operation-asst] failed to create the association , asstway|assttype|asstposition is required")
-		blog.Error(errmsg)
-		return params.Err.New(common.CCErrCommParamsInvalid, errmsg)
 	}
 
 	if data.AsstName == "" {
@@ -339,12 +325,6 @@ func (a *association) UpdateAssociation(params types.ContextParams, data frtypes
 		return params.Err.New(rspObjAsst.Code, rspObjAsst.ErrMsg)
 	}
 
-	if asst.AsstPosition == 0 || asst.AsstType == 0 || asst.AsstWay == 0 {
-		errmsg := fmt.Sprintf("[operation-asst] failed to create the association , asstway|assttype|asstposition is required")
-		blog.Error(errmsg)
-		return params.Err.New(common.CCErrCommParamsInvalid, errmsg)
-	}
-
 	if asst.AsstName == "" {
 		errmsg := fmt.Sprintf("[operation-asst] failed to create the association , asstname is required")
 		blog.Error(errmsg)
@@ -381,4 +361,40 @@ func (a *association) CheckBeAssociation(params types.ContextParams, obj model.O
 		return params.Err.Errorf(common.CCErrTopoInstHasBeenAssociation, beAsstObject)
 	}
 	return nil
+}
+
+// 关联关系改造后的接口
+
+func (a *association) SearchType(ctx context.Context, h http.Header, request *metadata.SearchAssociationTypeRequest) (resp *metadata.SearchAssociationTypeResult, err error) {
+	return a.clientSet.ObjectController().Asst().SearchType(ctx, h, request)
+}
+func (a *association) CreateType(ctx context.Context, h http.Header, request *metadata.AssociationType) (resp *metadata.CreateAssociationTypeResult, err error) {
+	return a.clientSet.ObjectController().Asst().CreateType(ctx, h, request)
+}
+func (a *association) UpdateType(ctx context.Context, h http.Header, asstTypeID int, request *metadata.UpdateAssociationTypeRequest) (resp *metadata.UpdateAssociationTypeResult, err error) {
+	return a.clientSet.ObjectController().Asst().UpdateType(ctx, h, asstTypeID, request)
+}
+func (a *association) DeleteType(ctx context.Context, h http.Header, asstTypeID int) (resp *metadata.DeleteAssociationTypeResult, err error) {
+	return a.clientSet.ObjectController().Asst().DeleteType(ctx, h, asstTypeID)
+}
+func (a *association) SearchObject(ctx context.Context, h http.Header, request *metadata.SearchAssociationObjectRequest) (resp *metadata.SearchAssociationObjectResult, err error) {
+	return a.clientSet.ObjectController().Asst().SearchObject(ctx, h, request)
+}
+func (a *association) CreateObject(ctx context.Context, h http.Header, request *metadata.Association) (resp *metadata.CreateAssociationObjectResult, err error) {
+	return a.clientSet.ObjectController().Asst().CreateObject(ctx, h, request)
+}
+func (a *association) UpdateObject(ctx context.Context, h http.Header, asstID int, request *metadata.UpdateAssociationObjectRequest) (resp *metadata.UpdateAssociationObjectResult, err error) {
+	return a.clientSet.ObjectController().Asst().UpdateObject(ctx, h, asstID, request)
+}
+func (a *association) DeleteObject(ctx context.Context, h http.Header, asstID int) (resp *metadata.DeleteAssociationObjectResult, err error) {
+	return a.clientSet.ObjectController().Asst().DeleteObject(ctx, h, asstID)
+}
+func (a *association) SearchInst(ctx context.Context, h http.Header, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error) {
+	return a.clientSet.ObjectController().Asst().SearchInst(ctx, h, request)
+}
+func (a *association) CreateInst(ctx context.Context, h http.Header, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error) {
+	return a.clientSet.ObjectController().Asst().CreateInst(ctx, h, request)
+}
+func (a *association) DeleteInst(ctx context.Context, h http.Header, request *metadata.DeleteAssociationInstRequest) (resp *metadata.DeleteAssociationInstResult, err error) {
+	return a.clientSet.ObjectController().Asst().DeleteInst(ctx, h, request)
 }
