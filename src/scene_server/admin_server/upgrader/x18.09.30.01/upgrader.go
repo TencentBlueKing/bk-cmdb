@@ -13,21 +13,22 @@
 package x18_09_30_01
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/admin_server/upgrader"
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
 )
 
-func cleanBKCloud(db storage.DI, conf *upgrader.Config) (err error) {
+func cleanBKCloud(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 
 	clouds := []map[string]interface{}{}
 
-	err = db.GetMutilByCondition(common.BKTableNameBasePlat, nil, mapstr.MapStr{}, &clouds, "create_time", 0, 0)
-	if nil != err && !db.IsNotFoundErr(err) {
+	err = db.Table(common.BKTableNameBasePlat).Find(mapstr.New()).Sort("create_time").All(ctx, &clouds) //db.GetMutilByCondition(common.BKTableNameBasePlat, nil, mapstr.MapStr{}, &clouds, "create_time", 0, 0)
+	if nil != err && !db.IsNotFoundError(err) {
 		return err
 	}
 
@@ -55,12 +56,12 @@ func cleanBKCloud(db storage.DI, conf *upgrader.Config) (err error) {
 	}
 
 	for _, expect := range expects {
-		if _, err = db.Insert(common.BKTableNameBasePlat, expect); err != nil {
+		if err = db.Table(common.BKTableNameBasePlat).Insert(ctx, expect); err != nil {
 			return err
 		}
 	}
 
-	if err = db.DelByCondition(common.BKTableNameBasePlat, map[string]interface{}{
+	if err = db.Table(common.BKTableNameBasePlat).Delete(ctx, mapstr.MapStr{
 		flag: map[string]interface{}{
 			common.BKDBNE: true,
 		},
@@ -68,7 +69,7 @@ func cleanBKCloud(db storage.DI, conf *upgrader.Config) (err error) {
 		return err
 	}
 
-	if err = db.DropColumn(common.BKTableNameBasePlat, flag); err != nil {
+	if err = db.Table(common.BKTableNameBasePlat).DropColumn(ctx, flag); err != nil {
 		return err
 	}
 

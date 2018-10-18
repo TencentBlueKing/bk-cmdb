@@ -13,19 +13,21 @@
 package x08_09_04_01
 
 import (
+	"context"
+
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/scene_server/validator"
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
 )
 
-func updateSystemProperty(db storage.DI, conf *upgrader.Config) (err error) {
+func updateSystemProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	objs := []metadata.ObjectDes{}
 	condition := map[string]interface{}{
 		"bk_classification_id": "bk_biz_topo",
 	}
-	err = db.GetMutilByCondition(common.BKTableNameObjDes, nil, condition, &objs, "", 0, 0)
+	err = db.Table(common.BKTableNameObjDes).Find(condition).All(ctx, &objs)
 	if err != nil {
 		return err
 	}
@@ -44,17 +46,17 @@ func updateSystemProperty(db storage.DI, conf *upgrader.Config) (err error) {
 		"bk_issystem": true,
 	}
 
-	return db.UpdateByCondition(tablename, data, condition)
+	return db.Table(tablename).Update(ctx, condition, data)
 }
 
-func updateIcon(db storage.DI, conf *upgrader.Config) (err error) {
+func updateIcon(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	condition := map[string]interface{}{
 		"bk_obj_id": common.BKInnerObjIDTomcat,
 	}
 	data := map[string]interface{}{
 		"bk_obj_icon": "icon-cc-tomcat",
 	}
-	err = db.UpdateByCondition(common.BKTableNameObjDes, data, condition)
+	err = db.Table(common.BKTableNameObjDes).Update(ctx, condition, data)
 	if err != nil {
 		return err
 	}
@@ -65,10 +67,10 @@ func updateIcon(db storage.DI, conf *upgrader.Config) (err error) {
 		"bk_obj_icon": "icon-cc-apache",
 	}
 
-	return db.UpdateByCondition(common.BKTableNameObjDes, data, condition)
+	return db.Table(common.BKTableNameObjDes).Update(ctx, condition, data)
 }
 
-func fixesProcess(db storage.DI, conf *upgrader.Config) (err error) {
+func fixesProcess(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	condition := map[string]interface{}{
 		common.BKObjIDField:      common.BKInnerObjIDProc,
 		common.BKPropertyIDField: map[string]interface{}{"$in": []string{"priority", "proc_num", "auto_time_gap", "timeout"}},
@@ -76,7 +78,7 @@ func fixesProcess(db storage.DI, conf *upgrader.Config) (err error) {
 	data := map[string]interface{}{
 		"option": validator.IntOption{Min: "1", Max: "10000"},
 	}
-	err = db.UpdateByCondition(common.BKTableNameObjAttDes, data, condition)
+	err = db.Table(common.BKTableNameObjAttDes).Update(ctx, condition, data)
 	if nil != err {
 		return err
 	}

@@ -12,6 +12,7 @@
 package service
 
 import (
+	"context"
 	"net/http"
 	"strings"
 	"time"
@@ -28,6 +29,7 @@ import (
 func (ps *ProctrlServer) AddOperateTaskInfo(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
 	input := make([]meta.ProcessOperateTask, 0)
 	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
@@ -48,7 +50,7 @@ func (ps *ProctrlServer) AddOperateTaskInfo(req *restful.Request, resp *restful.
 		item.CreateTime = ts
 		insts = append(insts, item)
 	}
-	err := ps.DbInstance.InsertMuti(common.BKTableNameProcOperateTask, insts...)
+	err := ps.Instance.Table(common.BKTableNameProcOperateTask).Insert(ctx, insts)
 	if nil != err {
 		blog.Errorf("add  operate process task  to db failed   error:%s", err.Error())
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
@@ -61,6 +63,7 @@ func (ps *ProctrlServer) AddOperateTaskInfo(req *restful.Request, resp *restful.
 func (ps *ProctrlServer) UpdateOperateTaskInfo(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
 	input := new(meta.UpdateParams)
 	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
@@ -75,7 +78,7 @@ func (ps *ProctrlServer) UpdateOperateTaskInfo(req *restful.Request, resp *restf
 		return
 	}
 
-	err := ps.DbInstance.UpdateByCondition(common.BKTableNameProcOperateTask, input.Data, input.Condition)
+	err := ps.Instance.Table(common.BKTableNameProcOperateTask).Update(ctx, input.Condition, input.Data)
 	if nil != err {
 		blog.Errorf("update  operate process task  to db failed   error:%s", err.Error())
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBUpdateFailed)})
@@ -88,6 +91,7 @@ func (ps *ProctrlServer) UpdateOperateTaskInfo(req *restful.Request, resp *restf
 func (ps *ProctrlServer) SearchOperateTaskInfo(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
 	input := new(meta.QueryInput)
 	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
@@ -97,7 +101,7 @@ func (ps *ProctrlServer) SearchOperateTaskInfo(req *restful.Request, resp *restf
 	}
 
 	input.Condition = util.SetModOwner(input.Condition, util.GetOwnerID(req.Request.Header))
-	cnt, err := ps.DbInstance.GetCntByCondition(common.BKTableNameProcOperateTask, input.Condition)
+	cnt, err := ps.Instance.Table(common.BKTableNameProcOperateTask).Find(input.Condition).Count(ctx)
 	if err != nil {
 		blog.Errorf("search operate process taskfailed. err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
@@ -105,7 +109,8 @@ func (ps *ProctrlServer) SearchOperateTaskInfo(req *restful.Request, resp *restf
 	}
 	blog.V(3).Infof("will search operate process task. condition: %v", input)
 	data := make([]meta.ProcessOperateTask, 0)
-	err = ps.DbInstance.GetMutilByCondition(common.BKTableNameProcOperateTask, strings.Split(input.Fields, ","), input.Condition, &data, input.Sort, input.Start, input.Limit)
+	err = ps.Instance.Table(common.BKTableNameProcOperateTask).Find(input.Condition).Fields(strings.Split(input.Fields, ",")...).
+		Sort(input.Sort).Start(uint64(input.Start)).Limit(uint64(input.Limit)).All(ctx, &data)
 	if err != nil {
 		blog.Errorf("search operate process task failed. err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
@@ -115,7 +120,7 @@ func (ps *ProctrlServer) SearchOperateTaskInfo(req *restful.Request, resp *restf
 		BaseResp: meta.SuccessBaseResp,
 	}
 	ret.Data.Info = data
-	ret.Data.Count = cnt
+	ret.Data.Count = int(cnt)
 	resp.WriteEntity(ret)
 
 }

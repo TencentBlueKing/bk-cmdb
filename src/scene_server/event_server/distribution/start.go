@@ -13,13 +13,20 @@
 package distribution
 
 import (
+	"context"
+	"sync"
+	"time"
+
 	redis "gopkg.in/redis.v5"
 
+	"configcenter/src/common/blog"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/identifier"
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
+	"configcenter/src/storage/rpc"
 )
 
-func Start(cache *redis.Client, db storage.DI) error {
+func Start(ctx context.Context, cache *redis.Client, db dal.RDB, rc *rpc.Client) error {
 	chErr := make(chan error)
 
 	eh := &EventHandler{cache: cache}
@@ -27,14 +34,24 @@ func Start(cache *redis.Client, db storage.DI) error {
 		chErr <- eh.StartHandleInsts()
 	}()
 
-	dh := &DistHandler{cache: cache, db: db}
+	dh := &DistHandler{cache: cache, db: db, ctx: ctx}
 	go func() {
 		chErr <- dh.StartDistribute()
 	}()
 
-	ih := identifier.NewIdentifierHandler(cache, db)
+	ih := identifier.NewIdentifierHandler(ctx, cache, db)
 	go func() {
 		chErr <- ih.StartHandleInsts()
+	}()
+
+	th := &TxnHandler{cache: cache, db: db, ctx: ctx, rc: rc, commited: make(chan string, 100), shouldClose: util.NewBool(false)}
+	go func() {
+		for {
+			if err := th.Run(); err != nil {
+				blog.Errorf("TxnHandler stoped with error: %v, we will try 1s later", err)
+			}
+			time.Sleep(time.Second)
+		}
 	}()
 
 	return <-chErr
@@ -43,5 +60,16 @@ func Start(cache *redis.Client, db storage.DI) error {
 type EventHandler struct{ cache *redis.Client }
 type DistHandler struct {
 	cache *redis.Client
-	db    storage.DI
+	db    dal.RDB
+	ctx   context.Context
+}
+
+type TxnHandler struct {
+	rc          *rpc.Client
+	cache       *redis.Client
+	db          dal.RDB
+	ctx         context.Context
+	commited    chan string
+	shouldClose *util.AtomicBool
+	wg          sync.WaitGroup
 }

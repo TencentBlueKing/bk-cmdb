@@ -16,25 +16,23 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/emicklei/go-restful"
-	redis "gopkg.in/redis.v5"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/source_controller/hostcontroller/app/options"
 	"configcenter/src/source_controller/hostcontroller/logics"
 	"configcenter/src/source_controller/hostcontroller/service"
-	"configcenter/src/storage"
-	"configcenter/src/storage/mgoclient"
-	"configcenter/src/storage/redisclient"
+	"configcenter/src/storage/dal/mongo"
+	dalredis "configcenter/src/storage/dal/redis"
 )
 
 //Run ccapi server
@@ -73,6 +71,9 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	hostCtrl := new(HostController)
+	hostCtrl.Service = coreService
+	coreService.Logics = &logics.Logics{Instance: nil}
+
 	hostCtrl.Core, err = backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
 		types.CC_MODULE_HOSTCONTROLLER,
 		op.ServConf.ExConfig,
@@ -81,6 +82,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
+
 	configReady := false
 	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
 		if nil == hostCtrl.Config {
@@ -94,77 +96,42 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("Configuration item not found")
 	}
 
-	mgc := hostCtrl.Config.Mongo
-	hostCtrl.Instance, err = mgoclient.NewMgoCli(mgc.Address, mgc.Port, mgc.User, mgc.Password, mgc.Mechanism, mgc.Database)
-	if err != nil {
-		return fmt.Errorf("new mongo client failed, err: %v", err)
+	select {
+	case <-ctx.Done():
+		break
 	}
-	err = hostCtrl.Instance.Open()
-	if err != nil {
-		return fmt.Errorf("new mongo client failed, err: %v", err)
-	}
-
-	rdsc := hostCtrl.Config.Redis
-	dbNum, err := strconv.Atoi(rdsc.Database)
-	//not set use default db num 0
-	if nil != err {
-		return fmt.Errorf("redis config db[%s] not integer", rdsc.Database)
-	}
-	hostCtrl.Cache = redis.NewClient(
-		&redis.Options{
-			Addr:     rdsc.Address + ":" + rdsc.Port,
-			PoolSize: 100,
-			Password: rdsc.Password,
-			DB:       dbNum,
-		})
-	err = hostCtrl.Cache.Ping().Err()
-	if err != nil {
-		return fmt.Errorf("new redis client failed, err: %v", err)
-	}
-
-	coreService.Core = hostCtrl.Core
-	coreService.Instance = hostCtrl.Instance
-	coreService.Cache = hostCtrl.Cache
-	coreService.Logics = logics.Logics{Instance: hostCtrl.Instance}
-	coreService.Logics.Engine = hostCtrl.Core
-
-	select {}
 	return nil
 }
 
 type HostController struct {
-	Core     *backbone.Engine
-	Instance storage.DI
-	Cache    *redis.Client
-	Config   *options.Config
+	*service.Service
+	Config *options.Config
 }
 
 func (h *HostController) onHostConfigUpdate(previous, current cc.ProcessConfig) {
-	prefix := storage.DI_MONGO
-	mongo := mgoclient.MongoConfig{
-		Address:      current.ConfigMap[prefix+".host"],
-		User:         current.ConfigMap[prefix+".usr"],
-		Password:     current.ConfigMap[prefix+".pwd"],
-		Database:     current.ConfigMap[prefix+".database"],
-		Port:         current.ConfigMap[prefix+".port"],
-		MaxOpenConns: current.ConfigMap[prefix+".maxOpenConns"],
-		MaxIdleConns: current.ConfigMap[prefix+".maxIDleConns"],
-		Mechanism:    current.ConfigMap[prefix+".mechanism"],
-	}
-
-	prefix = storage.DI_REDIS
-	redis := redisclient.RedisConfig{
-		Address:  current.ConfigMap[prefix+".host"],
-		User:     current.ConfigMap[prefix+".usr"],
-		Password: current.ConfigMap[prefix+".pwd"],
-		Database: current.ConfigMap[prefix+".database"],
-		Port:     current.ConfigMap[prefix+".port"],
-	}
-
 	h.Config = &options.Config{
-		Mongo: mongo,
-		Redis: redis,
+		Mongo: mongo.ParseConfigFromKV("mongodb", current.ConfigMap),
+		Redis: dalredis.ParseConfigFromKV("redis", current.ConfigMap),
 	}
+
+	instance, err := mongo.NewMgo(h.Config.Mongo.BuildURI())
+	if err != nil {
+		blog.Errorf("new mongo client failed, err: %v", err)
+		return
+	}
+
+	cache, err := dalredis.NewFromConfig(h.Config.Redis)
+	if err != nil {
+		blog.Errorf("new redis client failed, err: %v", err)
+		return
+	}
+
+	h.Service.Instance = instance
+	h.Service.Logics.Instance = instance
+
+	h.Cache = cache
+	h.Service.Cache = cache
+
 }
 
 func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
