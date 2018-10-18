@@ -151,26 +151,31 @@
                         </div>
                         <div class="text">{{$t('ModelManagement["点击切换"]')}}</div>
                     </div>
-                    <ul class="content-right">
-                        <li>
-                            <label for="">{{$t('ModelManagement["所属分组"]')}}<span class="color-danger">*</span></label>
+                    <div class="content-right">
+                        <label for="">
+                            <span class="label-title">{{$t('ModelManagement["所属分组"]')}}</span>
+                            <span class="color-danger">*</span>
                             <bk-selector
                                 class="selector-box"
                                 :selected.sync="selected"
                                 :list="list"
                             ></bk-selector>
-                        </li>
-                        <li>
-                            <label for="">{{$t('ModelManagement["唯一标识"]')}}<span class="color-danger">*</span></label>
+                        </label>
+                        <label for="">
+                            <span class="label-title">{{$t('ModelManagement["唯一标识"]')}}</span>
+                            <span class="color-danger">*</span>
+                            
                             <input type="text" class="cmdb-form-input">
                             <i class="bk-icon icon-info-circle"></i>
-                        </li>
-                        <li>
-                            <label for="">{{$t('ModelManagement["名称"]')}}<span class="color-danger">*</span></label>
+                        </label>
+                        <label for="">
+                            <span class="label-title">
+                                {{$t('ModelManagement["名称"]')}}<span class="color-danger">*</span>
+                            </span>
                             <input type="text" class="cmdb-form-input">
                             <i class="bk-icon icon-info-circle"></i>
-                        </li>
-                    </ul>
+                        </label>
+                    </div>
                 </div>
                 <div v-if="isIconListShow">
                     <v-choose-icon
@@ -339,7 +344,8 @@
             float: right;
             width: 460px;
             font-size: 0;
-            >li {
+            >label {
+                display: block;
                 margin-bottom: 20px;
                 &:last-child {
                     margin: 0;
@@ -352,7 +358,6 @@
                 }
             }
             label {
-                display: inline-block;
                 width: 100px;
                 text-align: right;
                 font-size: 16px;
