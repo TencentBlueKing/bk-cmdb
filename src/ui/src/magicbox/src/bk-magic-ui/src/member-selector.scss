@@ -1,0 +1,16 @@
+@import "./conf";
+@import "./form";
+@import './mixins/scroller.scss';
+
+.bk-member-selector {
+    .bk-selector-member {
+        padding: 4px 10px;
+        display: flex;
+        align-items: center;
+    }
+    .avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+    }
+}
