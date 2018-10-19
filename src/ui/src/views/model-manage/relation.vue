@@ -48,30 +48,30 @@
                     <input type="text" class="cmdb-form-input">
                 </label>
                 <div class="radio-box overflow">
-                    <span>
+                    <label class="label-text">
                         {{$t('ModelManagement["是否有方向"]')}}
                         <span>({{$t('ModelManagement["仅视图"]')}})</span>
-                    </span>
-                    <label class="cmdb-form-radio cmdb-radio-small">
-                        <input type="radio">
-                        {{$t('ModelManagement["是，源指向目标"]')}}
                     </label>
                     <label class="cmdb-form-radio cmdb-radio-small">
                         <input type="radio">
-                        {{$t('ModelManagement["否"]')}}
+                        <span class="cmdb-radio-text">{{$t('ModelManagement["是，源指向目标"]')}}</span>
+                    </label>
+                    <label class="cmdb-form-radio cmdb-radio-small">
+                        <input type="radio">
+                        <span class="cmdb-radio-text">{{$t('ModelManagement["否"]')}}</span>
                     </label>
                 </div>
                 <div class="radio-box">
-                    <span class="title">
+                    <label class="label-text">
                         {{$t('ModelManagement["联动删除"]')}}
-                    </span>
-                    <label for="" class="cmdb-form-radio cmdb-radio-small">
-                        <input type="radio">
-                        {{$t('ModelManagement["源不存在联动删除目标"]')}}
                     </label>
-                    <label for="" class="cmdb-form-radio cmdb-radio-small">
+                    <label class="cmdb-form-radio cmdb-radio-small">
                         <input type="radio">
-                        {{$t('ModelManagement["目标不存在联动删除源"]')}}
+                        <span class="cmdb-radio-text">{{$t('ModelManagement["源不存在联动删除目标"]')}}</span>
+                    </label>
+                    <label class="cmdb-form-radio cmdb-radio-small">
+                        <input type="radio">
+                        <span class="cmdb-radio-text">{{$t('ModelManagement["目标不存在联动删除源"]')}}</span>
                     </label>
                 </div>
             </div>
@@ -151,7 +151,13 @@
         .radio-box {
             margin: 0 -30px;
             font-size: 0;
-
+            .label-text {
+                display: inline-block;
+                width: 130px;
+                font-size: 14px;
+                line-height: 32px;
+                text-align: right;
+            }
         }
     }
 </style>
