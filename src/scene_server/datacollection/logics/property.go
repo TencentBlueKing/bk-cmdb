@@ -383,7 +383,7 @@ func (lgc *Logics) checkNetPropertyExist(deviceID int64, propertyID, ownerID str
 }
 
 func (lgc *Logics) isValidAction(action string) bool {
-	return common.SNMPActionGet == action || common.SNMPActionWalk == action
+	return common.SNMPActionGet == action || common.SNMPActionGetNext == action
 }
 
 func (lgc *Logics) findProperty(fields []string, condition, result interface{}, sort string, skip, limit int) error {
