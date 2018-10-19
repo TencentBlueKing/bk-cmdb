@@ -515,7 +515,7 @@ const BKNetwork = "bk_network"
 const (
 	SNMPActionGet = "get"
 
-	SNMPActionWalk = "walk"
+	SNMPActionGetNext = "getnext"
 )
 
 const (
