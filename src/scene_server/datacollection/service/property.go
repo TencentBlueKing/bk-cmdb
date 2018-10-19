@@ -93,7 +93,7 @@ func (s *Service) DeleteProperty(req *restful.Request, resp *restful.Response) {
 		netPropertyID, err := strconv.ParseInt(netPropertyIDStr, 10, 64)
 		if nil != err {
 			blog.Errorf("[NetProperty] delete net property batch, but got invalid net property id, err: %v", err)
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, common.BKNetcollectPropertyIDlField)})
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, common.BKNetcollectPropertyIDField)})
 			return
 		}
 		netPropertyIDArr = append(netPropertyIDArr, netPropertyID)
