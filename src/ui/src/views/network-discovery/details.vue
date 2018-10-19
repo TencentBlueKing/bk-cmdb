@@ -28,7 +28,7 @@
                                 </span>
                             </template>
                             <template v-else-if="header.id === 'operation'">
-                                <span :key="index" class="text-primary" :class="{'disabled': ignore}" @click.stop="togglePropertyMethod(item)">{{item.method === 'accept' ? $t('NetworkDiscovery["忽略"]') : $t('NetworkDiscovery["取消忽略"]')}}</span>
+                                <span v-if="!item.isrequired" :key="index" class="text-primary" :class="{'disabled': ignore}" @click.stop="togglePropertyMethod(item)">{{item.method === 'accept' ? $t('NetworkDiscovery["忽略"]') : $t('NetworkDiscovery["取消忽略"]')}}</span>
                             </template>
                             <template v-else>
                                 <span :key="index" :class="{'disabled': item.method !== 'accept'}">{{item[header.id]}}</span>
