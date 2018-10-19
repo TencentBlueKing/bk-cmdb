@@ -452,10 +452,10 @@ const (
 	BKVendorField      = "bk_vendor"
 
 	// for net collect property of device
-	BKNetcollectPropertyIDlField = "netcollect_property_id"
-	BKOIDField                   = "oid"
-	BKPeriodField                = "period"
-	BKActionField                = "action"
+	BKNetcollectPropertyIDField = "netcollect_property_id"
+	BKOIDField                  = "oid"
+	BKPeriodField               = "period"
+	BKActionField               = "action"
 )
 
 // DefaultResSetName the inner module set
