@@ -187,23 +187,27 @@ func (lgc *Logics) SearchReport(header http.Header, param metadata.ParamSearchNe
 			blog.Errorf("[NetDevice][SearchReport] find inst by %+v for %v failed %v", cond.ToMapStr(), reports[index].ObjectID, err)
 			return 0, nil, err
 		}
-		if len(insts) > 0 {
-			reports[index].Action = metadata.ReporctActionUpdate
-			inst := insts[0]
-			for _, attribute := range reports[index].Attributes {
-				attribute.PreValue = inst[attribute.PropertyID]
-				if property, ok := attrsMap[reports[index].ObjectID+":"+attribute.PropertyID]; ok {
-					attribute.PropertyName = property.PropertyName
-					attribute.IsRequired = property.IsRequired
-				}
+		for attrIndex := range reports[index].Attributes {
+			attribute := &reports[index].Attributes[attrIndex]
+			if property, ok := attrsMap[attrMapKey(reports[index].ObjectID, attribute.PropertyID)]; ok {
+				attribute.PropertyName = property.PropertyName
+				attribute.IsRequired = property.IsRequired
 			}
-		} else {
-			reports[index].Action = metadata.ReporctActionCreate
+			if len(insts) > 0 {
+				attribute.PreValue = insts[0][attribute.PropertyID]
+				reports[index].Action = metadata.ReporctActionUpdate
+			} else {
+				reports[index].Action = metadata.ReporctActionCreate
+			}
 		}
 
 	}
 
 	return int64(count), reports, nil
+}
+
+func attrMapKey(objectID string, propertyID string) string {
+	return objectID + ":" + propertyID
 }
 
 func (lgc *Logics) findAttrsMap(header http.Header, objIDs ...string) (map[string]metadata.Attribute, error) {
@@ -214,7 +218,7 @@ func (lgc *Logics) findAttrsMap(header http.Header, objIDs ...string) (map[strin
 
 	attrsMap := map[string]metadata.Attribute{}
 	for _, attr := range attrs {
-		attrsMap[attr.ObjectID+":"+attr.PropertyID] = attr
+		attrsMap[attrMapKey(attr.ObjectID, attr.PropertyID)] = attr
 	}
 	return attrsMap, nil
 }
