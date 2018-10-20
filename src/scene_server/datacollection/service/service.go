@@ -50,6 +50,8 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Path("/collector/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
 
 	ws.Route(ws.POST("/netcollect/device/action/create").To(s.CreateDevice))
+	ws.Route(ws.POST("/netcollect/device/{device_id}/action/update").To(s.UpdateDevice))
+	ws.Route(ws.POST("/netcollect/device/action/batch").To(s.BatchCreateDevice))
 	ws.Route(ws.POST("/netcollect/device/action/search").To(s.SearchDevice))
 	ws.Route(ws.DELETE("/netcollect/device/action/delete").To(s.DeleteDevice))
 

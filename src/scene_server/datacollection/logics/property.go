@@ -195,8 +195,8 @@ func (lgc *Logics) DeleteProperty(pheader http.Header, netPropertyID int64) erro
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	netPropertyCond := map[string]interface{}{
-		common.BKOwnerIDField:               util.GetOwnerID(pheader),
-		common.BKNetcollectPropertyIDlField: netPropertyID}
+		common.BKOwnerIDField:              util.GetOwnerID(pheader),
+		common.BKNetcollectPropertyIDField: netPropertyID}
 
 	rowCount, err := lgc.Instance.GetCntByCondition(common.BKTableNameNetcollectProperty, netPropertyCond)
 	if nil != err {
@@ -383,7 +383,7 @@ func (lgc *Logics) checkNetPropertyExist(deviceID int64, propertyID, ownerID str
 }
 
 func (lgc *Logics) isValidAction(action string) bool {
-	return common.SNMPActionGet == action || common.SNMPActionWalk == action
+	return common.SNMPActionGet == action || common.SNMPActionGetNext == action
 }
 
 func (lgc *Logics) findProperty(fields []string, condition, result interface{}, sort string, skip, limit int) error {

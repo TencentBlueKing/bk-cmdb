@@ -455,6 +455,7 @@ const (
 	CCErrCollectNetReportSearchFail            = 1112014
 	CCErrCollectNetReportConfirmFail           = 1112015
 	CCErrCollectNetHistorySearchFail           = 1112016
+	CCErrCollectNetDeviceUpdateFail            = 1112017
 
 	CC_Err_Comm_HOST_CREATE_FAIL          = 4300
 	CC_Err_Comm_HOST_CREATE_FAIL_STR      = "create host fail"

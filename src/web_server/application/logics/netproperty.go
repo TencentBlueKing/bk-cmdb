@@ -80,7 +80,7 @@ func GetNetPropertyData(header http.Header, apiAddr, netPropertyIDStr string) ([
 		"field": []string{},
 		"condition": []map[string]interface{}{
 			map[string]interface{}{
-				"field":    common.BKNetcollectPropertyIDlField,
+				"field":    common.BKNetcollectPropertyIDField,
 				"operator": common.BKDBIN,
 				"value":    netPropertyIDArr,
 			},
@@ -193,9 +193,9 @@ func GetNetPropertyField(lang language.DefaultCCLanguageIf) map[string]Property 
 func AddNetPropertyExtFields(originField map[string]Property, lang language.DefaultCCLanguageIf) {
 
 	field := map[string]Property{
-		common.BKNetcollectPropertyIDlField: Property{
+		common.BKNetcollectPropertyIDField: Property{
 			Name:         lang.Language("import_property_comment_net_property_id"),
-			ID:           common.BKNetcollectPropertyIDlField,
+			ID:           common.BKNetcollectPropertyIDField,
 			PropertyType: common.FieldTypeInt,
 		},
 		common.BKPropertyIDField: Property{
