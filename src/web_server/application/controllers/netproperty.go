@@ -120,7 +120,7 @@ func ExportNetProperty(c *gin.Context) {
 		return
 	}
 
-	netPropertyIDstr := c.PostForm(common.BKNetcollectPropertyIDlField)
+	netPropertyIDstr := c.PostForm(common.BKNetcollectPropertyIDField)
 	netPropertyInfo, err := logics.GetNetPropertyData(c.Request.Header, apiSite, netPropertyIDstr)
 	if nil != err {
 		blog.Errorf("[Export Net Property] get property data error:%s", err.Error())
