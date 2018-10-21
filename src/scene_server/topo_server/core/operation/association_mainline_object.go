@@ -186,17 +186,20 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 		return nil, err
 	}
 
-	attr := currentObj.CreateAttribute()
-	attr.SetIsSystem(true)
-	attr.SetID(common.BKChildStr)
-	attr.SetType(common.FieldTypeLongChar)
-	attr.SetName(common.BKChildStr)
-	attr.SetOption(nil)
+	// 不再创建属性字段
+	/*
+		attr := currentObj.CreateAttribute()
+		attr.SetIsSystem(true)
+		attr.SetID(common.BKChildStr)
+		attr.SetType(common.FieldTypeLongChar)
+		attr.SetName(common.BKChildStr)
+		attr.SetOption(nil)
 
-	if err = attr.Save(nil); nil != err {
-		blog.Errorf("[operation-asst] failed to create the object(%s) attribute(%s), error info is %s", currentObj.GetID(), common.BKChildStr, err.Error())
-		return nil, err
-	}
+		if err = attr.Save(nil); nil != err {
+			blog.Errorf("[operation-asst] failed to create the object(%s) attribute(%s), error info is %s", currentObj.GetID(), common.BKChildStr, err.Error())
+			return nil, err
+		}
+	*/
 
 	// create the default group
 	grp := currentObj.CreateGroup()
