@@ -158,7 +158,7 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 			}
 
 			for _, asstItem := range asstItems {
-				if common.BKChildStr == asstItem.ObjectAttID {
+				if common.BKChildStr == asstItem.AsstName {
 					continue
 				}
 

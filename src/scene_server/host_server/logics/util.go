@@ -25,7 +25,7 @@ func ExtractDataFromAssociationField(instID int64, input map[string]interface{},
 	// extract the data for the associated field
 	asstFieldVal := make([]*metadata.InstAsst, 0)
 	for idxItem, item := range asstDes {
-		if inputVal, ok := input[item.ObjectAttID]; ok {
+		if inputVal, ok := input[item.AsstName]; ok {
 			switch t := inputVal.(type) {
 			case string:
 				asstIDS := strings.Split(t, ",")

@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strconv"
+	"time"
 
 	"github.com/emicklei/go-restful"
 
@@ -28,8 +28,8 @@ import (
 	"configcenter/src/common/util"
 )
 
-// CreateObjectAssociation create object association map
-func (cli *Service) CreateObjectAssociation(req *restful.Request, resp *restful.Response) {
+// CreateInstAssociation create instance association map
+func (cli *Service) CreateInstAssociation(req *restful.Request, resp *restful.Response) {
 
 	// get the language
 	language := util.GetActionLanguage(req)
@@ -44,111 +44,47 @@ func (cli *Service) CreateObjectAssociation(req *restful.Request, resp *restful.
 		return
 	}
 
-	request := &meta.Association{}
+	request := &meta.CreateAssociationInstRequest{}
 	if jsErr := json.Unmarshal([]byte(value), request); nil != jsErr {
 		blog.Errorf("failed to unmarshal the data, data is %s, error info is %s ", string(value), jsErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, jsErr.Error())})
 		return
 	}
 
-	request.OwnerID = ownerID
-
-	// check uniq bk_obj_asst_id
-	if request.ObjectAsstID == "" {
-		msg := fmt.Sprintf("failed to create object association, bk_obj_asst_id must be set")
-		blog.Errorf(msg)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBInsertFailed, msg)})
-		return
+	data := &meta.InstAsst{
+		ObjectAsstID: request.ObjectAsstId,
+		InstID:       request.InstId,
+		AsstInstID:   request.AsstInstId,
+		OwnerID:      ownerID,
+		CreateTime:   time.Now(),
 	}
 
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	db := cli.Instance.Clone()
 
-	// check uniq
-	cond := map[string]interface{}{"bk_obj_asst_id": request.ObjectAsstID}
-	cond = util.SetModOwner(cond, ownerID)
-
-	cnt, err := db.Table(common.BKTableNameObjAsst).Find(cond).Count(ctx)
-	if err != nil {
-		blog.Errorf("failed to count object association , error info is %s", err.Error())
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommNotFound, err.Error())})
-		return
-	}
-
-	if cnt > 0 {
-		msg := fmt.Sprintf("failed to create object association, bk_obj_asst_id %s exist", request.ObjectAsstID)
-		blog.Errorf(msg)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBInsertFailed, msg)})
-		return
-	}
-
 	// get id
-	id, err := db.NextSequence(ctx, common.BKTableNameObjAsst)
+	id, err := db.NextSequence(ctx, common.BKTableNameInstAsst)
 	if err != nil {
 		blog.Errorf("failed to get id , error info is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBInsertFailed, err.Error())})
 		return
 	}
-	request.ID = int64(id)
+	data.ID = int64(id)
 
-	err = db.Table(common.BKTableNameObjAsst).Insert(ctx, request)
+	err = db.Table(common.BKTableNameInstAsst).Insert(ctx, data)
 	if nil != err {
 		blog.Errorf("search object association error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBInsertFailed, err.Error())})
 		return
 	}
 
-	result := &meta.CreateAssociationObjectResult{BaseResp: meta.SuccessBaseResp}
-	result.Data.ID = request.ID
+	result := &meta.CreateAssociationInstResult{BaseResp: meta.SuccessBaseResp}
+	result.Data.ID = data.ID
 	resp.WriteEntity(result)
 }
 
-// DeleteObjectAssociation delete object association map
-func (cli *Service) DeleteObjectAssociation(req *restful.Request, resp *restful.Response) {
-
-	// get the language
-	language := util.GetActionLanguage(req)
-	ownerID := util.GetOwnerID(req.Request.Header)
-	// get the error factory by the language
-	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
-
-	id := req.PathParameter("id")
-	ID, _ := strconv.Atoi(id)
-
-	cond := map[string]interface{}{"id": ID}
-	cond = util.SetModOwner(cond, ownerID)
-
-	ctx := util.GetDBContext(context.Background(), req.Request.Header)
-	db := cli.Instance.Clone()
-
-	// check exist
-	cnt, err := db.Table(common.BKTableNameObjAsst).Find(cond).Count(ctx)
-	if err != nil {
-		blog.Errorf("failed to count object association , error info is %s", err.Error())
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommNotFound, err.Error())})
-		return
-	}
-
-	if cnt < 1 {
-		msg := fmt.Sprintf("failed to delete object association, id %d not found", ID)
-		blog.Errorf(msg)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommNotFound, msg)})
-		return
-	}
-
-	err = db.Table(common.BKTableNameObjAsst).Delete(ctx, cond)
-	if nil != err {
-		blog.Errorf("delete object association error :%v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBDeleteFailed, err.Error())})
-		return
-	}
-
-	result := &meta.DeleteAssociationObjectResult{BaseResp: meta.SuccessBaseResp, Data: "success"}
-	resp.WriteEntity(result)
-}
-
-// UpdateObjectAssociation update object association map
-func (cli *Service) UpdateObjectAssociation(req *restful.Request, resp *restful.Response) {
+// DeleteInstAssociation delete inst association map
+func (cli *Service) DeleteInstAssociation(req *restful.Request, resp *restful.Response) {
 
 	// get the language
 	language := util.GetActionLanguage(req)
@@ -163,51 +99,57 @@ func (cli *Service) UpdateObjectAssociation(req *restful.Request, resp *restful.
 		return
 	}
 
-	id := req.PathParameter("id")
-	ID, _ := strconv.Atoi(id)
-
-	request := &meta.UpdateAssociationObjectRequest{}
+	request := &meta.DeleteAssociationInstRequest{}
 	if jsErr := json.Unmarshal([]byte(value), request); nil != jsErr {
 		blog.Errorf("failed to unmarshal the data, data is %s, error info is %s ", string(value), jsErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, jsErr.Error())})
 		return
 	}
 
-	cond := map[string]interface{}{"id": ID}
+	if request.AsstInstID == 0 && request.InstID == 0 {
+		errMsg := "invalid instance delparams"
+		blog.Errorf(errMsg)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommFieldNotValid, errMsg)})
+		return
+	}
+	cond := map[string]interface{}{
+		"bk_obj_asst_id":  request.ObjectAsstID,
+		"bk_inst_id":      request.InstID,
+		"bk_asst_inst_id": request.AsstInstID,
+	}
 	cond = util.SetModOwner(cond, ownerID)
 
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	db := cli.Instance.Clone()
 
 	// check exist
-	cnt, err := db.Table(common.BKTableNameObjAsst).Find(cond).Count(ctx)
+	cnt, err := db.Table(common.BKTableNameInstAsst).Find(cond).Count(ctx)
 	if err != nil {
-		blog.Errorf("failed to count object association , error info is %s", err.Error())
+		blog.Errorf("failed to count inst association , error info is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommNotFound, err.Error())})
 		return
 	}
 
 	if cnt < 1 {
-		msg := fmt.Sprintf("failed to update object association, id %d not found", ID)
+		msg := fmt.Sprintf("failed to delete inst association, not found")
 		blog.Errorf(msg)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommNotFound, msg)})
 		return
 	}
 
-	err = db.Table(common.BKTableNameObjAsst).Update(ctx, cond, request)
+	err = db.Table(common.BKTableNameInstAsst).Delete(ctx, cond)
 	if nil != err {
-		blog.Errorf("update object association error :%v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBUpdateFailed, err.Error())})
+		blog.Errorf("delete inst association error :%v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBDeleteFailed, err.Error())})
 		return
 	}
 
-	result := &meta.UpdateAssociationObjectResult{BaseResp: meta.SuccessBaseResp, Data: "success"}
+	result := &meta.DeleteAssociationInstResult{BaseResp: meta.SuccessBaseResp, Data: "success"}
 	resp.WriteEntity(result)
-
 }
 
-// SelectObjectAssociations search all object association map
-func (cli *Service) SelectObjectAssociations(req *restful.Request, resp *restful.Response) {
+// SearchInstAssociations search inst association map
+func (cli *Service) SearchInstAssociations(req *restful.Request, resp *restful.Response) {
 
 	// get the language
 	language := util.GetActionLanguage(req)
@@ -222,7 +164,7 @@ func (cli *Service) SelectObjectAssociations(req *restful.Request, resp *restful
 		return
 	}
 
-	request := &meta.SearchAssociationObjectRequest{}
+	request := &meta.SearchAssociationInstRequest{}
 	if jsErr := json.Unmarshal([]byte(value), request); nil != jsErr {
 		blog.Errorf("failed to unmarshal the data, data is %s, error info is %s ", string(value), jsErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, jsErr.Error())})
@@ -231,12 +173,12 @@ func (cli *Service) SelectObjectAssociations(req *restful.Request, resp *restful
 
 	cond := request.Condition
 	cond = util.SetModOwner(cond, ownerID)
-	result := []*meta.Association{}
+	result := []*meta.InstAsst{}
 
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	db := cli.Instance.Clone()
 
-	if err := db.Table(common.BKTableNameObjAsst).Find(cond).All(ctx, &result); err != nil {
+	if err := db.Table(common.BKTableNameInstAsst).Find(cond).All(ctx, &result); err != nil {
 		blog.Errorf("select data failed, error information is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBSelectFailed, err.Error())})
 		return

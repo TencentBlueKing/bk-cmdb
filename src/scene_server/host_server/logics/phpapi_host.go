@@ -236,9 +236,9 @@ func (phpapi *PHPAPI) handleHostAssocation(instID int64, input map[string]interf
 		return fmt.Errorf("search host attribute failed, err: %v, result err: %s", err, result.ErrMsg)
 	}
 	for _, asst := range result.Data {
-		if _, ok := input[asst.ObjectAttID]; ok {
+		if _, ok := input[asst.AsstName]; ok {
 			opt := hutil.NewOperation().WithInstID(instID).WithObjID(common.BKInnerObjIDHost)
-			if "" != asst.ObjectAttID {
+			if "" != asst.AsstName {
 				opt.WithAssoObjID(asst.AsstObjID)
 			}
 			result, err := phpapi.logic.CoreAPI.ObjectController().Instance().DelObject(context.Background(), common.BKTableNameInstAsst, phpapi.header, opt.Data())
