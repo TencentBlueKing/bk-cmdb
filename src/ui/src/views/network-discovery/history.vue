@@ -1,5 +1,5 @@
 <template>
-    <div class="history-table">
+    <div class="history-wrapper">
         <div class="filter-wrapper clearfix">
             <cmdb-form-date-range class="date-range" v-model="filter['last_time']"></cmdb-form-date-range>
             <bk-selector

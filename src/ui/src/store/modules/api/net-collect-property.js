@@ -30,6 +30,17 @@ const actions = {
         return $http.post(`collector/netcollect/property/action/create`, params, config)
     },
     /**
+     * 更新属性
+     * @param {Function} commit store commit mutation hander
+     * @param {Object} state store state
+     * @param {String} dispatch store dispatch action hander
+     * @param {Number} propertyId 属性id
+     * @return {promises} promises 对象
+     */
+    updateNetcollectProperty ({ commit, state, dispatch, rootGetters }, { propertyId, params, config }) {
+        return $http.post(`collector/netcollect/property/${propertyId}/action/udpate`, params, config)
+    },
+    /**
      * 查询属性
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state

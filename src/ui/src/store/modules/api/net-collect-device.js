@@ -30,6 +30,17 @@ const actions = {
         return $http.post(`collector/netcollect/device/action/create`, params, config)
     },
     /**
+     * 更新设备
+     * @param {Function} commit store commit mutation hander
+     * @param {Object} state store state
+     * @param {String} dispatch store dispatch action hander
+     * @param {Number} deviceId 设备id
+     * @return {promises} promises 对象
+     */
+    updateDevice ({ commit, state, dispatch, rootGetters }, { deviceId, params, config }) {
+        return $http.post(`collector/netcollect/device/${deviceId}/action/update`, params, config)
+    },
+    /**
      * 查询设备
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
