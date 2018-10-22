@@ -69,8 +69,7 @@ func (s *Service) UpdateDevice(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	err = s.Logics.UpdateDevice(pheader, netDeviceID, deviceInfo)
-	if nil != err {
+	if err = s.Logics.UpdateDevice(pheader, netDeviceID, deviceInfo); nil != err {
 		if err.Error() == defErr.Error(common.CCErrCollectNetDeviceUpdateFail).Error() {
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 			return
