@@ -148,6 +148,28 @@ func (lgc *Logics) checkNetDeviceExist(pheader http.Header, deviceID int64, devi
 	return deviceData.DeviceID, deviceData.ObjectID, nil
 }
 
+// get net property id by device ID and property ID
+func (lgc *Logics) getNetPropertyID(propertyID string, deviceID int64, ownerID string) (int64, error) {
+	queryParams := common.KvMap{
+		common.BKDeviceIDField:   deviceID,
+		common.BKPropertyIDField: propertyID,
+		common.BKOwnerIDField:    ownerID,
+	}
+
+	result := meta.NetcollectProperty{}
+	if err := lgc.Instance.GetOneByCondition(
+		common.BKTableNameNetcollectProperty, []string{common.BKNetcollectPropertyIDField}, queryParams, &result); nil != err {
+
+		blog.Errorf(
+			"[NetCollect] get net property ID by propertyID and deviceID, error: %v, params: [%#+v]", err, queryParams)
+		return 0, err
+	}
+	blog.Errorf(
+		"[NetCollect] get net property ID by propertyID and deviceID, params: [%#+v]", queryParams)
+
+	return result.NetcollectPropertyID, nil
+}
+
 // check param ID is a num string and convert to num
 func (lgc *Logics) ConvertStringToID(stringID string) (int64, error) {
 	if "" == stringID || "0" == stringID {
