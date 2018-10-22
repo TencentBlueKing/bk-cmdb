@@ -56,6 +56,8 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.DELETE("/netcollect/device/action/delete").To(s.DeleteDevice))
 
 	ws.Route(ws.POST("/netcollect/property/action/create").To(s.CreateProperty))
+	ws.Route(ws.POST("/netcollect/property/{netcollect_property_id}/action/update").To(s.UpdateProperty))
+	ws.Route(ws.POST("/netcollect/property/action/batch").To(s.BatchCreateProperty))
 	ws.Route(ws.POST("/netcollect/property/action/search").To(s.SearchProperty))
 	ws.Route(ws.DELETE("/netcollect/property/action/delete").To(s.DeleteProperty))
 
