@@ -14,7 +14,7 @@
                     <span>主机</span><span class="number">(8)</span>
                 </p>
                 <ul class="model-list">
-                    <li class="model-item">
+                    <li class="model-item" @click="modelClick">
                         <div class="icon-box">
                             <i class="icon icon-cc-host"></i>
                         </div>
@@ -183,23 +183,25 @@
                     <span class="back" @click="isIconListShow = false">
                         <i class="bk-icon icon-back2"></i>
                     </span>
-                    <v-choose-icon
-                    ></v-choose-icon>
+                    <the-choose-icon
+                    ></the-choose-icon>
                 </div>
             </div>
             <div slot="footer" class="footer">
-                <bk-button type="primary">保存</bk-button>
-                <bk-button type="default">取消</bk-button>
+                <bk-button type="primary">{{$t("Common['保存']")}}</bk-button>
+                <bk-button type="default">{{$t("Common['取消']")}}</bk-button>
             </div>
         </bk-dialog>
     </div>
 </template>
 
 <script>
-    import vChooseIcon from './_choose-icon'
+    import theChooseIcon from './_choose-icon'
+    import theModel from './children'
     export default {
         components: {
-            vChooseIcon
+            theChooseIcon,
+            theModel
         },
         data () {
             return {
@@ -218,6 +220,9 @@
         created () {
         },
         methods: {
+            modelClick () {
+                this.$router.push('model-manage/11')
+            },
             createModel () {
                 this.modelDialog.isShow = true
             },
