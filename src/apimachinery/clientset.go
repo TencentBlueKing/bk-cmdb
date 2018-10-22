@@ -13,7 +13,10 @@
 package apimachinery
 
 import (
+	"fmt"
+
 	"configcenter/src/apimachinery/adminserver"
+	"configcenter/src/apimachinery/apiserver"
 	"configcenter/src/apimachinery/auditcontroller"
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/eventserver"
@@ -33,6 +36,7 @@ type ClientSetInterface interface {
 	TopoServer() toposerver.TopoServerClientInterface
 	ProcServer() procserver.ProcServerClientInterface
 	AdminServer() adminserver.AdminServerClientInterface
+	ApiServer() apiserver.ApiServerClientInterface
 	EventServer() eventserver.EventServerClientInterface
 
 	ObjectController() objcontroller.ObjControllerClientInterface
@@ -136,6 +140,16 @@ func (cs *ClientSet) AdminServer() adminserver.AdminServerClientInterface {
 	}
 	cs.Mock.SetMockData = false
 	return adminserver.NewAdminServerClientInterface(c, cs.version)
+}
+
+func (cs *ClientSet) ApiServer() apiserver.ApiServerClientInterface {
+	c := &util.Capability{
+		Client:   cs.client,
+		Discover: cs.discover.ApiServer(),
+		Throttle: cs.throttle,
+	}
+	fmt.Println(cs.discover.ApiServer())
+	return apiserver.NewApiServerClientInterface(c, cs.version)
 }
 
 func (cs *ClientSet) EventServer() eventserver.EventServerClientInterface {

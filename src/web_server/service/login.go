@@ -10,38 +10,22 @@
  * limitations under the License.
  */
 
-package main
+package service
 
 import (
-	"context"
 	"fmt"
-	"os"
-	"runtime"
 
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/types"
-	"configcenter/src/common/util"
-	"configcenter/src/web_server/app"
-	"configcenter/src/web_server/app/options"
-
-	"github.com/spf13/pflag"
+	"github.com/gin-gonic/contrib/sessions"
+	"github.com/gin-gonic/gin"
 )
 
-func main() {
-	common.SetIdentification(types.CC_MODULE_WEBSERVER)
-
-	runtime.GOMAXPROCS(runtime.NumCPU())
-	blog.InitLogs()
-	defer blog.CloseLogs()
-
-	op := options.NewServerOption()
-	op.AddFlags(pflag.CommandLine)
-
-	util.InitFlags()
-
-	if err := app.Run(context.Background(), op); err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
-		os.Exit(1)
-	}
+// LogOutUser log out user
+func (s *Service) LogOutUser(c *gin.Context) {
+	site := s.Config.Site.DomainUrl
+	loginURL := s.Config.Site.BkLoginUrl
+	appCode := s.Config.Site.AppCode
+	loginPage := fmt.Sprintf(loginURL, appCode, site)
+	session := sessions.Default(c)
+	session.Clear()
+	c.Redirect(302, loginPage)
 }

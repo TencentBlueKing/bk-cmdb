@@ -21,6 +21,7 @@ import (
 )
 
 type DiscoveryInterface interface {
+	ApiServer() Interface
 	MigrateServer() Interface
 	EventServer() Interface
 	HostServer() Interface
@@ -48,7 +49,7 @@ func NewDiscoveryInterface(zkAddr string) (DiscoveryInterface, error) {
 		servers: make(map[string]Interface),
 	}
 	for component, _ := range types.AllModule {
-		if component == types.CC_MODULE_APISERVER || component == types.CC_MODULE_WEBSERVER {
+		if component == types.CC_MODULE_WEBSERVER {
 			continue
 		}
 		path := fmt.Sprintf("%s/%s", types.CC_SERV_BASEPATH, component)
@@ -65,6 +66,10 @@ func NewDiscoveryInterface(zkAddr string) (DiscoveryInterface, error) {
 
 type discover struct {
 	servers map[string]Interface
+}
+
+func (d *discover) ApiServer() Interface {
+	return d.servers[types.CC_MODULE_APISERVER]
 }
 
 func (d *discover) MigrateServer() Interface {
