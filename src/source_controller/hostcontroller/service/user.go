@@ -282,7 +282,7 @@ func (s *Service) UserConfigDetail(req *restful.Request, resp *restful.Response)
 	params = util.SetModOwner(params, ownerID)
 	result := new(meta.UserConfigMeta)
 	err = s.Instance.Table(common.BKTableNameUserAPI).Find(params).One(ctx, result)
-	if err != nil && mgo_on_not_found_error != err.Error() {
+	if err != nil && !s.Instance.IsNotFoundError(err) {
 		blog.Error("get user api information error,input:%v error:%v", id, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return
@@ -384,7 +384,7 @@ func (s *Service) GetDefaultUserCustom(req *restful.Request, resp *restful.Respo
 	conds = util.SetModOwner(conds, ownerID)
 
 	err := s.Instance.Table(common.BKTableNameUserCustom).Find(conds).One(ctx, result)
-	if nil != err {
+	if nil != err && !s.Instance.IsNotFoundError(err) {
 		blog.Error("get default user custom fail, err: %v, params:%v", err, conds)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return
