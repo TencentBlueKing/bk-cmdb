@@ -1,109 +1,40 @@
 <template>
     <div class="group-wrapper">
         <p class="btn-group">
-            <bk-button type="primary" @click="createGroup">
+            <bk-button type="primary" @click="showGroupDialog(false)">
                 {{$t('ModelManagement["新建分组"]')}}
             </bk-button>
-            <bk-button type="default" @click="createModel">
+            <bk-button type="default" @click="showModelDialog(false)">
                 {{$t('ModelManagement["新增模型"]')}}
             </bk-button>
         </p>
         <ul class="group-list">
-            <li class="group-item clearfix">
+            <li class="group-item clearfix" v-for="(classification, classIndex) in localClassifications" :key="classIndex">
                 <p class="group-title">
-                    <span>主机</span><span class="number">(8)</span>
+                    <span>{{classification['bk_classification_name']}}</span>
+                    <span class="number">({{classification['bk_objects'].length}})</span>
+                    <i class="icon-cc-edit text-primary"
+                    v-if="classification['bk_classification_type'] !== 'inner'"
+                    @click="showGroupDialog(true, classification)"></i>
+                    <i class="icon-cc-del text-primary"
+                    v-if="classification['bk_classification_type'] !== 'inner'"
+                    @click="deleteGroup(classification)"></i>
                 </p>
-                <ul class="model-list">
-                    <li class="model-item" @click="modelClick">
+                <ul class="model-list clearfix">
+                    <li class="model-item"
+                    v-for="(model, modelIndex) in classification['bk_objects']"
+                    :key="modelIndex"
+                    @click="modelClick(model)">
                         <div class="icon-box">
-                            <i class="icon icon-cc-host"></i>
+                            <i class="icon" :class="model['bk_obj_icon']"></i>
                         </div>
                         <div class="model-details">
-                            <p class="model-name">数据库</p>
-                            <p class="model-id">adsf</p>
-                        </div>
-                    </li>
-                    <li class="model-item">
-                        <div class="icon-box">
-                            <i class="icon icon-cc-host"></i>
-                        </div>
-                        <div class="model-details">
-                            <p class="model-name">数据库</p>
-                            <p class="model-id">adsf</p>
-                        </div>
-                    </li>
-                    <li class="model-item">
-                        <div class="icon-box">
-                            <i class="icon icon-cc-host"></i>
-                        </div>
-                        <div class="model-details">
-                            <p class="model-name">数据库</p>
-                            <p class="model-id">adsf</p>
-                        </div>
-                    </li>
-                    <li class="model-item">
-                        <div class="icon-box">
-                            <i class="icon icon-cc-host"></i>
-                        </div>
-                        <div class="model-details">
-                            <p class="model-name">数据库</p>
-                            <p class="model-id">adsf</p>
+                            <p class="model-name">{{model['bk_obj_name']}}</p>
+                            <p class="model-id">{{model['bk_obj_id']}}</p>
                         </div>
                     </li>
                 </ul>
-                <i class="bk-icon icon-angle-double-down"></i>
-            </li>
-            <li class="group-item clearfix">
-                <p class="group-title">
-                    <span>主机</span><span class="number">(8)</span>
-                </p>
-                <ul class="model-list">
-                    <li class="model-item">
-                        <div class="icon-box">
-                            <i class="icon icon-cc-host"></i>
-                        </div>
-                        <div class="model-details">
-                            <p class="model-name">数据库</p>
-                            <p class="model-id">adsf</p>
-                        </div>
-                    </li>
-                    <li class="model-item">
-                        <div class="icon-box">
-                            <i class="icon icon-cc-host"></i>
-                        </div>
-                        <div class="model-details">
-                            <p class="model-name">数据库</p>
-                            <p class="model-id">adsf</p>
-                        </div>
-                    </li>
-                    <li class="model-item">
-                        <div class="icon-box">
-                            <i class="icon icon-cc-host"></i>
-                        </div>
-                        <div class="model-details">
-                            <p class="model-name">数据库</p>
-                            <p class="model-id">adsf</p>
-                        </div>
-                    </li>
-                    <li class="model-item">
-                        <div class="icon-box">
-                            <i class="icon icon-cc-host"></i>
-                        </div>
-                        <div class="model-details">
-                            <p class="model-name">数据库</p>
-                            <p class="model-id">adsf</p>
-                        </div>
-                    </li>
-                    <li class="model-item">
-                        <div class="icon-box">
-                            <i class="icon icon-cc-host"></i>
-                        </div>
-                        <div class="model-details">
-                            <p class="model-name">数据库</p>
-                            <p class="model-id">adsf</p>
-                        </div>
-                    </li>
-                </ul>
+                <i class="bk-icon icon-angle-double-down" v-if="classification['bk_objects'].length > 8"></i>
             </li>
         </ul>
         <bk-dialog
@@ -114,14 +45,14 @@
             :padding="0"
             :is-show.sync="groupDialog.isShow">
             <div slot="content" class="dialog-content">
-                <p class="title">{{$t('ModelManagement["新增模型"]')}}</p>
+                <p class="title">{{groupDialog.title}}</p>
                 <div class="content">
                     <label for="">
                         <span class="label-title">
                             {{$t('ModelManagement["唯一标识"]')}}
                         </span>
                         <span class="color-danger">*</span>
-                        <input type="text" class="cmdb-form-input">
+                        <input type="text" class="cmdb-form-input" v-model.trim="groupDialog.data['bk_classification_id']">
                         <i class="bk-icon icon-info-circle"></i>
                     </label>
                     <label for="">
@@ -129,14 +60,14 @@
                             {{$t('ModelManagement["名称"]')}}
                         </span>
                         <span class="color-danger">*</span>
-                        <input type="text" class="cmdb-form-input">
+                        <input type="text" class="cmdb-form-input" v-model.trim="groupDialog.data['bk_classification_name']">
                         <i class="bk-icon icon-info-circle"></i>
                     </label>
                 </div>
             </div>
             <div slot="footer" class="footer">
-                <bk-button type="primary">保存</bk-button>
-                <bk-button type="default">取消</bk-button>
+                <bk-button type="primary" :loading="$loading(['updateClassification', 'createClassification'])" @click="saveGroup">{{$t("Common['保存']")}}</bk-button>
+                <bk-button type="default" @click="hideGroupDialog">{{$t("Common['取消']")}}</bk-button>
             </div>
         </bk-dialog>
         <bk-dialog
@@ -168,13 +99,13 @@
                         <label for="">
                             <span class="label-title">{{$t('ModelManagement["唯一标识"]')}}</span>
                             <span class="color-danger">*</span>
-                            <input type="text" class="cmdb-form-input">
+                            <input type="text" class="cmdb-form-input" v-model.trim="modelDialog.data['bk_obj_id']">
                             <i class="bk-icon icon-info-circle"></i>
                         </label>
                         <label for="">
                             <span class="label-title">{{$t('ModelManagement["名称"]')}}</span>
                             <span class="color-danger">*</span>
-                            <input type="text" class="cmdb-form-input">
+                            <input type="text" class="cmdb-form-input" v-model.trim="modelDialog.data['bk_obj_name']">
                             <i class="bk-icon icon-info-circle"></i>
                         </label>
                     </div>
@@ -198,6 +129,7 @@
 <script>
     import theChooseIcon from './_choose-icon'
     import theModel from './children'
+    import { mapGetters, mapMutations, mapActions } from 'vuex'
     export default {
         components: {
             theChooseIcon,
@@ -206,28 +138,115 @@
         data () {
             return {
                 groupDialog: {
-                    isShow: false
+                    isShow: false,
+                    isEdit: false,
+                    title: this.$t('ModelManagement["新建分组"]'),
+                    data: {
+                        bk_classification_id: '',
+                        bk_classification_name: '',
+                        id: ''
+                    }
                 },
                 modelDialog: {
-                    isShow: false
+                    isShow: false,
+                    isEdit: false,
+                    title: this.$t('ModelManagement["新增模型"]'),
+                    data: {
+                        bk_obj_icon: '',
+                        bk_obj_id: '',
+                        bk_obj_name: ''
+                    }
                 },
                 isIconListShow: false,
                 list: [],
                 selected: '',
-                iconList: []
+                iconList: [],
+                localClassifications: []
             }
         },
+        computed: {
+            ...mapGetters(['supplierAccount']),
+            ...mapGetters('objectModelClassify', [
+                'classifications'
+            ])
+        },
         created () {
+            this.classifications.forEach(classification => {
+                this.localClassifications.push({...classification, ...{isModelShow: false}})
+            })
         },
         methods: {
-            modelClick () {
-                this.$router.push('model-manage/11')
-            },
-            createModel () {
-                this.modelDialog.isShow = true
-            },
-            createGroup () {
+            ...mapMutations('objectModelClassify', [
+                'updateClassify',
+                'deleteClassify'
+            ]),
+            ...mapActions('objectModelClassify', [
+                'createClassification',
+                'updateClassification',
+                'deleteClassification'
+            ]),
+            showGroupDialog (isEdit, group) {
+                if (isEdit) {
+                    this.groupDialog.data.id = group.id
+                    this.groupDialog.title = this.$t('ModelManagement["编辑分组"]')
+                    this.groupDialog.data.bk_classification_id = group['bk_classification_id']
+                    this.groupDialog.data.bk_classification_name = group['bk_classification_name']
+                    this.groupDialog.data.id = group.id
+                } else {
+                    this.groupDialog.title = this.$t('ModelManagement["新建分组"]')
+                    this.groupDialog.data.bk_classification_id = ''
+                    this.groupDialog.data.bk_classification_name = ''
+                    this.groupDialog.data.id = ''
+                }
+                this.groupDialog.isEdit = isEdit
                 this.groupDialog.isShow = true
+            },
+            hideGroupDialog () {
+                this.groupDialog.isShow = false
+            },
+            async saveGroup () {
+                let params = {
+                    bk_supplier_account: this.supplierAccount,
+                    bk_classification_id: this.groupDialog.data['bk_classification_id'],
+                    bk_classification_name: this.groupDialog.data['bk_classification_name']
+                }
+                if (this.groupDialog.isEdit) {
+                    const res = await this.updateClassification({
+                        id: this.groupDialog.data.id,
+                        params,
+                        config: {
+                            requestId: 'updateClassification'
+                        }
+                    })
+                    this.updateClassify({...params, ...{id: this.groupDialog.data.id}})
+                } else {
+                    const res = await this.createClassification({params, config: {requestId: 'createClassification'}})
+                    this.updateClassify({...params, ...{id: res.id}})
+                }
+                this.hideGroupDialog()
+            },
+            deleteGroup (group) {
+                this.$bkInfo({
+                    title: this.$t('ModelManagement["确认要删除此分组？"]'),
+                    confirmFn: async () => {
+                        await this.deleteClassification({
+                            id: group.id
+                        })
+                        this.$store.commit('objectModelClassify/deleteClassify', group['bk_classification_id'])
+                    }
+                })
+            },
+            showModelDialog () {
+
+            },
+            hideModelDialog () {
+
+            },
+            async saveModel () {
+
+            },
+            modelClick (model) {
+                this.$router.push(`model-manage/${model['bk_obj_id']}`)
             }
         }
     }
@@ -260,12 +279,26 @@
             }
         }
         .group-title {
+            display: inline-block;
             padding-left: 8px;
             border-left: 4px solid $cmdbBorderFocusColor;
             line-height: 16px;
             color: #333948;
+            >span {
+                display: inline-block;
+            }
             .number {
                 color: $cmdbBorderColor;
+            }
+            >.text-primary {
+                display: none;
+                vertical-align: top;
+                cursor: pointer;
+            }
+            &:hover {
+                >.text-primary {
+                    display: inline-block;
+                }
             }
         }
     }
@@ -299,7 +332,7 @@
                 float: left;
                 line-height: 16px;
                 margin-top: 20px;
-                padding-left: 5px;
+                padding-left: 10px;
             }
             .model-name {
                 font-size: 14px;
