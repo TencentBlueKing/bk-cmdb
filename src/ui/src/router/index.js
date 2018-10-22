@@ -7,6 +7,7 @@ import $http from '@/api'
 const index = () => import(/* webpackChunkName: index */ '@/views/index')
 const model = () => import(/* webpackChunkName: model */ '@/views/model')
 const modelManage = () => import(/* webpackChunkName: model */ '@/views/model-manage')
+const modelDetail = () => import(/* webpackChunkName: model */ '@/views/model-manage/children')
 const modelTopo = () => import(/* webpackChunkName: model */ '@/views/model/model-topo')
 const business = () => import(/* webpackChunkName: business */ '@/views/business')
 const businessArchived = () => import(/* webpackChunkName: businessArchived */ '@/views/business/archived')
@@ -41,6 +42,12 @@ const router = new Router({
     }, {
         path: '/model-manage',
         component: modelManage
+    }, {
+        path: '/model-manage/:modelId',
+        component: modelDetail,
+        meta: {
+            ignoreAuthorize: true
+        }
     }, {
         path: '/model',
         component: model,
