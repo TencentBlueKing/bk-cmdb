@@ -1,7 +1,7 @@
 <template>
     <div class="device-wrapper">
         <div class="title">
-            <bk-button type="primary" @click="toggleCreateDialog">
+            <bk-button type="primary" @click="showPropertyDialog('create')">
                 {{$t('NetworkDiscovery["新增属性"]')}}
             </bk-button>
             <bk-button type="default"
@@ -40,12 +40,13 @@
             :defaultSort="table.defaultSort"
             @handleSortChange="handleSortChange"
             @handleSizeChange="handleSizeChange"
-            @handlePageChange="handlePageChange">
+            @handlePageChange="handlePageChange"
+            @handleRowClick="handleRowClick">
         </cmdb-table>
         <bk-dialog
         class="create-dialog"
-        :is-show.sync="createDialog.isShow" 
-        :title="$t('NetworkDiscovery[\'新增属性\']')"
+        :is-show.sync="propertyDialog.isShow" 
+        :title="propertyDialog.title"
         :has-footer="false"
         :close-icon="false"
         :width="424">
@@ -55,22 +56,33 @@
                         <span>{{$t('NetworkDiscovery["所属设备"]')}}<span class="color-danger">*</span></span>
                     </label>
                     <bk-selector
-                        :list="createDialog.deviceList"
+                        :list="propertyDialog.deviceList"
                         :searchable="true"
                         search-key="device_name"
                         setting-key="device_id"
                         display-key="device_name"
-                        :selected.sync="createDialog.device_id"
+                        :selected.sync="propertyDialog.data.device_id"
                     ></bk-selector>
-                    <input type="text" hidden name="device_id" v-model="createDialog['device_id']" v-validate="'required'">
+                    <input type="text" hidden name="device_id" v-model="propertyDialog.data['device_id']" v-validate="'required'">
                     <div v-show="errors.has('device_id')" class="color-danger">{{ errors.first('device_id') }}</div>
                 </div>
                 <div>
                     <label class="label">
                         <span>oid<span class="color-danger">*</span></span>
                     </label>
-                    <input type="text" class="cmdb-form-input" name="oid" v-model="createDialog.oid" v-validate="'required|oid'">
+                    <input type="text" class="cmdb-form-input" name="oid" v-model="propertyDialog.data.oid" v-validate="'required|oid'">
                     <div v-show="errors.has('oid')" class="color-danger">{{ errors.first('oid') }}</div>
+                </div>
+                <div>
+                    <label class="label">
+                        <span>{{$t('NetworkDiscovery["采集方式"]')}}<span class="color-danger">*</span></span>
+                    </label>
+                    <bk-selector
+                        :list="propertyDialog.actionList"
+                        :selected.sync="propertyDialog.data.action"
+                    ></bk-selector>
+                    <input type="text" hidden name="action" v-model="propertyDialog.data.action" v-validate="'required'">
+                    <div v-show="errors.has('action')" class="color-danger">{{ errors.first('action') }}</div>
                 </div>
                 <div>
                     <label class="label">
@@ -81,20 +93,20 @@
                         setting-key="bk_property_id"
                         display-key="bk_property_name"
                         :searchable="true"
-                        :list="createDialog.attrList"
-                        :selected.sync="createDialog.bk_property_id"
+                        :list="propertyDialog.attrList"
+                        :selected.sync="propertyDialog.data.bk_property_id"
                     ></bk-selector>
-                    <input type="text" hidden name="bk_property_id" v-model="createDialog['bk_property_id']" v-validate="'required'">
+                    <input type="text" hidden name="bk_property_id" v-model="propertyDialog.data['bk_property_id']" v-validate="'required'">
                     <div v-show="errors.has('bk_property_id')" class="color-danger">{{ errors.first('bk_property_id') }}</div>
                 </div>
-                <footer class="footer">
-                    <bk-button type="primary" @click="saveProperty">
+                <div class="footer">
+                    <bk-button type="primary" @click="saveProperty" :loading="$loading(['createNetcollectProperty', 'updateNetcollectProperty'])">
                         {{$t('Common["保存"]')}}
                     </bk-button>
-                    <bk-button type="default" @click="toggleCreateDialog">
+                    <bk-button type="default" @click="hidePropertyDialog">
                         {{$t('Common["取消"]')}}
                     </bk-button>
-                </footer>
+                </div>
             </div>
         </bk-dialog>
         <cmdb-slider
@@ -122,13 +134,26 @@
                 importSlider: {
                     isShow: false
                 },
-                createDialog: {
+                propertyDialog: {
                     isShow: false,
+                    isEdit: false,
+                    title: this.$t('NetworkDiscovery[\'新增属性\']'),
                     deviceList: [],
                     attrList: [],
-                    oid: '',
-                    device_id: '',
-                    bk_property_id: ''
+                    actionList: [{
+                        id: 'get',
+                        name: this.$t('NetworkDiscovery[\'获取单个\']')
+                    }, {
+                        id: 'walk',
+                        name: this.$t('NetworkDiscovery[\'批量获取\']')
+                    }],
+                    data: {
+                        oid: '',
+                        action: '',
+                        device_id: '',
+                        bk_property_id: '',
+                        netcollect_property_id: ''
+                    }
                 },
                 filter: {
                     typeList: [{
@@ -190,9 +215,9 @@
             }
         },
         watch: {
-            'createDialog.device_id' (deviceId) {
+            'propertyDialog.data.device_id' (deviceId) {
                 if (deviceId) {
-                    let device = this.createDialog.deviceList.find(device => device.device_id === deviceId)
+                    let device = this.propertyDialog.deviceList.find(device => device.device_id === deviceId)
                     if (device) {
                         this.getObjAttr(device)
                     }
@@ -200,6 +225,8 @@
             }
         },
         async created () {
+            const res = await this.searchDevice({params: {}, config: {requestId: 'searchDevice', fromCache: true}})
+            this.propertyDialog.deviceList = res.info
             this.getTableData()
         },
         methods: {
@@ -207,6 +234,7 @@
             ...mapActions('netCollectDevice', ['searchDevice']),
             ...mapActions('netCollectProperty', [
                 'createNetcollectProperty',
+                'updateNetcollectProperty',
                 'searchNetcollectProperty',
                 'deleteNetcollectProperty'
             ]),
@@ -223,19 +251,25 @@
                     }
                 })
             },
-            async toggleCreateDialog () {
-                this.createDialog.isShow = !this.createDialog.isShow
-                if (this.createDialog.isShow) {
-                    const res = await this.searchDevice({params: {}, config: {requestId: 'searchDevice', fromCache: true}})
-                    this.createDialog.deviceList = res.info
+            async showPropertyDialog (type) {
+                if (type === 'create') {
+                    this.propertyDialog.isEdit = false
+                    this.propertyDialog.data['device_id'] = ''
+                    this.propertyDialog.data['oid'] = ''
+                    this.propertyDialog.data['action'] = ''
+                    this.propertyDialog.data['bk_property_id'] = ''
+                    this.propertyDialog.title = this.$t('NetworkDiscovery["新增属性"]')
                 } else {
-                    this.createDialog['device_id'] = ''
-                    this.createDialog['oid'] = ''
-                    this.createDialog['bk_property_id'] = ''
+                    this.propertyDialog.isEdit = true
+                    this.propertyDialog.title = this.$t('NetworkDiscovery["编辑属性"]')
                 }
+                this.propertyDialog.isShow = true
+            },
+            hidePropertyDialog () {
+                this.propertyDialog.isShow = false
             },
             async getObjAttr (device) {
-                this.createDialog.attrList = await this.searchObjectAttribute({
+                this.propertyDialog.attrList = await this.searchObjectAttribute({
                     params: {bk_obj_id: device['bk_obj_id']},
                     config: {
                         requestId: `post_searchObjectAttribute_${device['bk_obj_id']}`,
@@ -247,13 +281,22 @@
                 if (!await this.$validator.validateAll()) {
                     return
                 }
-                let params = [{
-                    device_id: this.createDialog['device_id'],
-                    bk_property_id: this.createDialog['bk_property_id'],
-                    oid: this.createDialog.oid
-                }]
-                await this.createNetcollectProperty({params, config: {requestId: 'createNetcollectProperty'}})
-                this.toggleCreateDialog()
+                let params = {
+                    device_id: this.propertyDialog.data['device_id'],
+                    bk_property_id: this.propertyDialog.data['bk_property_id'],
+                    oid: this.propertyDialog.data.oid,
+                    action: this.propertyDialog.data.action
+                }
+                if (this.propertyDialog.isEdit) {
+                    await this.updateNetcollectProperty({
+                        propertyId: this.propertyDialog.data['netcollect_property_id'],
+                        params,
+                        config: {requestId: 'updateNetcollectProperty'}
+                    })
+                } else {
+                    await this.createNetcollectProperty({params, config: {requestId: 'createNetcollectProperty'}})
+                }
+                this.hidePropertyDialog()
                 this.handlePageChange(1)
             },
             async getTableData () {
@@ -271,6 +314,14 @@
                 const res = await this.searchNetcollectProperty({params, config: {requestId: 'searchNetcollectProperty'}})
                 this.table.pagination.count = res.count
                 this.table.list = res.info
+            },
+            handleRowClick (item) {
+                this.propertyDialog.data['device_id'] = item['device_id']
+                this.propertyDialog.data['oid'] = item['oid']
+                this.propertyDialog.data['action'] = item['action']
+                this.propertyDialog.data['bk_property_id'] = item['bk_property_id']
+                this.propertyDialog.data['netcollect_property_id'] = item['netcollect_property_id']
+                this.showPropertyDialog('update')
             },
             handleSortChange (sort) {
                 this.table.sort = sort
