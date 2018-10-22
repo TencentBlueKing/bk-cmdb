@@ -49,8 +49,7 @@
                 </label>
                 <div class="radio-box overflow">
                     <label class="label-text">
-                        {{$t('ModelManagement["是否有方向"]')}}
-                        <span>({{$t('ModelManagement["仅视图"]')}})</span>
+                        {{$t('ModelManagement["是否有方向"]')}}<span class="text-desc">({{$t('ModelManagement["仅视图"]')}})</span>
                     </label>
                     <label class="cmdb-form-radio cmdb-radio-small">
                         <input type="radio">
@@ -153,10 +152,19 @@
             font-size: 0;
             .label-text {
                 display: inline-block;
+                padding-right: 2px;
                 width: 130px;
                 font-size: 14px;
                 line-height: 32px;
                 text-align: right;
+                .text-desc {
+                    color: $cmdbBorderColor;
+                }
+            }
+            .cmdb-form-radio {
+                margin-right: 10px;
+                width: 170px;
+                height: 32px;
             }
         }
     }
