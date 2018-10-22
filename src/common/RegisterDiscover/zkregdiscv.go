@@ -126,12 +126,7 @@ func (zkRD *ZkRegDiscv) Discover(path string) (<-chan *DiscoverEvent, error) {
 
 func (zkRD *ZkRegDiscv) loopDiscover(path string, discvCtx context.Context, env chan *DiscoverEvent) {
 	for {
-		discvEnv := &DiscoverEvent{
-			Err: nil,
-			Key: path,
-		}
-
-		servNodes, watchEnv, err := zkRD.zkcli.WatchChildren(path)
+		_, watchEnv, err := zkRD.zkcli.WatchChildren(path)
 		if err != nil {
 			fmt.Printf("fail to watch children for path(%s), err:%s\n", path, err.Error())
 			if zkclient.ErrNoNode == err {
@@ -145,24 +140,8 @@ func (zkRD *ZkRegDiscv) loopDiscover(path string, discvCtx context.Context, env 
 			continue
 		}
 
-		discvEnv.Nodes = append(discvEnv.Nodes, servNodes...)
-		//sort server node
-		servNodes = zkRD.sortNode(servNodes)
-
-		//get server info
-		for _, node := range servNodes {
-			servPath := path + "/" + node
-			servInfo, err := zkRD.zkcli.Get(servPath)
-			if err != nil {
-				fmt.Printf("fail to get server info from zookeeper by path(%s), err:%s\n", servPath, err.Error())
-				continue
-			}
-
-			discvEnv.Server = append(discvEnv.Server, servInfo)
-		}
-
 		//write into discoverEvent channel
-		env <- discvEnv
+		env <- zkRD.getServerInfoByPath(path)
 
 		select {
 		case <-discvCtx.Done():
@@ -172,6 +151,65 @@ func (zkRD *ZkRegDiscv) loopDiscover(path string, discvCtx context.Context, env 
 			fmt.Printf("watch found the children of path(%s) change\n", path)
 		}
 	}
+}
+
+func (zkRD *ZkRegDiscv) getServerInfoByPath(path string) *DiscoverEvent {
+	for {
+		discvEnv := &DiscoverEvent{
+			Err: nil,
+			Key: path,
+		}
+		servNodes, err := zkRD.zkcli.GetChildren(path)
+		if err != nil {
+			if zkclient.ErrNoNode == err {
+				fmt.Printf("children node(%s) is not exist, will watch after 5s\n", path)
+				time.Sleep(5 * time.Second)
+				continue
+			}
+			if err == zkclient.ErrConnectionClosed {
+				err = zkRD.zkcli.ConnectEx(zkRD.sessionTimeOut)
+				fmt.Printf("connect zookeeper error:%v,will try connect after 10s", err)
+				time.Sleep(10 * time.Second)
+				continue
+			}
+			fmt.Printf("get children node(%s) error:%v,will watch after 10s", path, err)
+			time.Sleep(10 * time.Second)
+			continue
+		}
+		discvEnv.Nodes = append(discvEnv.Nodes, servNodes...)
+		//sort server node
+		servNodes = zkRD.sortNode(servNodes)
+
+		isGetNodeInfoErr := false
+		//get server info
+		for _, node := range servNodes {
+			servPath := path + "/" + node
+			servInfo, err := zkRD.zkcli.Get(servPath)
+			if err != nil {
+				if err == zkclient.ErrNodeExists {
+					continue
+				}
+				if err == zkclient.ErrConnectionClosed {
+					err = zkRD.zkcli.ConnectEx(zkRD.sessionTimeOut)
+					fmt.Printf("connect zookeeper error:%v,will try connect after 5s", err)
+					time.Sleep(5 * time.Second)
+					isGetNodeInfoErr = true
+					break
+				}
+				isGetNodeInfoErr = true
+				fmt.Printf("fail to get server info from zookeeper by path(%s), err:%s\n", servPath, err.Error())
+				break
+			}
+
+			discvEnv.Server = append(discvEnv.Server, servInfo)
+		}
+		if isGetNodeInfoErr {
+			continue
+		}
+
+		return discvEnv
+	}
+
 }
 
 func (zkRD *ZkRegDiscv) sortNode(nodes []string) []string {
