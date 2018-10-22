@@ -13,8 +13,6 @@
 package apimachinery
 
 import (
-	"fmt"
-
 	"configcenter/src/apimachinery/adminserver"
 	"configcenter/src/apimachinery/apiserver"
 	"configcenter/src/apimachinery/auditcontroller"
@@ -148,7 +146,6 @@ func (cs *ClientSet) ApiServer() apiserver.ApiServerClientInterface {
 		Discover: cs.discover.ApiServer(),
 		Throttle: cs.throttle,
 	}
-	fmt.Println(cs.discover.ApiServer())
 	return apiserver.NewApiServerClientInterface(c, cs.version)
 }
 
