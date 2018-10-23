@@ -378,7 +378,7 @@
                 let params = {
                     reports: []
                 }
-                this.table.list.map(item => {
+                this.table.list.forEach(item => {
                     if (!item.ignore) {
                         let detail = {
                             bk_cloud_id: item['bk_cloud_id'],
@@ -387,7 +387,7 @@
                             attributes: [],
                             associations: []
                         }
-                        item.attributes.map(attr => {
+                        item.attributes.forEach(attr => {
                             if (attr.method === 'accept') {
                                 detail.attributes.push({
                                     bk_property_id: attr['bk_property_id'],
@@ -397,7 +397,7 @@
                                 })
                             }
                         })
-                        item.associations.map(asst => {
+                        item.associations.forEach(asst => {
                             if (asst.method === 'accept') {
                                 detail.associations.push({
                                     bk_asst_inst_name: asst['bk_asst_inst_name'],

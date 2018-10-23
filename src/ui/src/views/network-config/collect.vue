@@ -302,7 +302,8 @@
                 this.table.pagination.count = res.count
                 this.table.list = res.info
                 if (res.info.length) {
-                    this.table.header[4] = {
+                    let index = this.table.header.findIndex(header => header.id === 'version')
+                    this.table.header[index] = {
                         id: 'version',
                         name: `${this.$t('NetworkDiscovery["版本"]')}(${this.$t('NetworkDiscovery["最新"]')}${res.info[0]['latest_ersion']})`
                     }

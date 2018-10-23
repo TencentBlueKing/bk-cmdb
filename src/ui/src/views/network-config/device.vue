@@ -82,14 +82,14 @@
                     <input type="text" class="cmdb-form-input" name="bk_vendor" v-model.trim="deviceDialog.data['bk_vendor']" v-validate="'required|singlechar'">
                     <div v-show="errors.has('bk_vendor')" class="color-danger">{{ errors.first('bk_vendor') }}</div>
                 </div>
-                <footer class="footer">
+                <div class="footer">
                     <bk-button type="primary" @click="saveDevice" :loading="$loading(['createDevice', 'updateDevice'])">
                         {{$t('Common["保存"]')}}
                     </bk-button>
                     <bk-button type="default" @click="hideDeviceDialog">
                         {{$t('Common["取消"]')}}
                     </bk-button>
-                </footer>
+                </div>
             </div>
         </bk-dialog>
         <cmdb-slider
