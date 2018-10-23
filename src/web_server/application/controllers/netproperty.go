@@ -75,7 +75,7 @@ func ImportNetProperty(c *gin.Context) {
 	}
 
 	// http request get property
-	url := apiSite + fmt.Sprintf("/api/%s/collector/netcollect/property/action/create", webCommon.API_VERSION)
+	url := apiSite + fmt.Sprintf("/api/%s/collector/netcollect/property/action/batch", webCommon.API_VERSION)
 	blog.V(4).Infof("[Import Net Property] add net property url: %v", url)
 
 	params := make([]interface{}, 0)
@@ -120,7 +120,7 @@ func ExportNetProperty(c *gin.Context) {
 		return
 	}
 
-	netPropertyIDstr := c.PostForm(common.BKNetcollectPropertyIDlField)
+	netPropertyIDstr := c.PostForm(common.BKNetcollectPropertyIDField)
 	netPropertyInfo, err := logics.GetNetPropertyData(c.Request.Header, apiSite, netPropertyIDstr)
 	if nil != err {
 		blog.Errorf("[Export Net Property] get property data error:%s", err.Error())

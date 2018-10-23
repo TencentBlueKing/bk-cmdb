@@ -58,7 +58,7 @@
                 </div>
             </template>
             <template slot="period" slot-scope="{ item }">
-                {{item.config.period}}
+                {{periodMap[item.config.period]}}
             </template>
             <template slot="operation" slot-scope="{ item }">
                 <span class="text-primary" @click="showConfig(item)">{{$t('EventPush["配置"]')}}</span>
@@ -100,12 +100,6 @@
                     </label>
                     <input type="text" name="community" class="cmdb-form-input" v-validate="'required'" v-model.trim="configDialog.community">
                     <div v-show="errors.has('community')" class="color-danger">{{ errors.first('community') }}</div>
-                    <!-- <div class="info">
-                        <i class="bk-icon icon-exclamation-circle"></i>
-                        <span>
-                            {{$t('NetworkDiscovery["下发配置失败，请重新下发"]')}}
-                        </span>
-                    </div> -->
                 </div>
                 <footer class="footer">
                     <bk-button type="primary" @click="saveConfig">
@@ -194,19 +188,25 @@
                         name: this.$t('NetworkDiscovery["手动"]')
                     }, {
                         id: '12H',
-                        name: '12H'
+                        name: this.$t('NetworkDiscovery["12H"]')
                     }, {
                         id: '24H',
-                        name: '24H'
+                        name: this.$t('NetworkDiscovery["24H"]')
                     }, {
                         id: '7D',
-                        name: '7D'
+                        name: this.$t('NetworkDiscovery["7D"]')
                     }]
                 },
                 tooltip: {
                     instance: null,
                     content: null,
                     id: ''
+                },
+                periodMap: {
+                    '∞': this.$t('NetworkDiscovery["手动"]'),
+                    '12H': this.$t('NetworkDiscovery["12H"]'),
+                    '24H': this.$t('NetworkDiscovery["24H"]'),
+                    '7D': this.$t('NetworkDiscovery["7D"]')
                 }
             }
         },
