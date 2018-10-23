@@ -15,6 +15,7 @@ package identifier
 import (
 	"encoding/json"
 	"fmt"
+	"runtime/debug"
 	"strconv"
 	"time"
 
@@ -45,6 +46,11 @@ var hostIndentDiffFiels = map[string][]string{
 }
 
 func (ih *IdentifierHandler) handleInst(e *metadata.EventInst) {
+	defer func() {
+		if err := recover(); err != nil {
+			blog.Errorf("identifier: fatal error happened: %s, stack: \n%s", err, debug.Stack())
+		}
+	}()
 	hostIdentify := *e
 	hostIdentify.Data = nil
 	hostIdentify.EventType = metadata.EventTypeRelation
