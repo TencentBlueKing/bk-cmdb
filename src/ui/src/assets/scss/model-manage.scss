@@ -1,3 +1,4 @@
+.model-field-wrapper,
 .model-manage-wrapper {
     .form-label {
         display: block;
@@ -12,7 +13,7 @@
             text-align: right;
             font-size: 14px;
             @include ellipsis;
-            vertical-align: middle;
+            vertical-align: top;
             .color-danger {
                 position: absolute;
                 right: 1px;
