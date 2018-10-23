@@ -13,19 +13,31 @@
 package operation
 
 import (
-	"io"
+    "io"
 
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
-	"configcenter/src/common/errors"
-	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/model"
-	"configcenter/src/scene_server/topo_server/core/types"
+    "configcenter/src/common"
+    "configcenter/src/common/blog"
+    "configcenter/src/common/condition"
+    "configcenter/src/common/errors"
+    "configcenter/src/common/metadata"
+    "configcenter/src/scene_server/topo_server/core/model"
+    "configcenter/src/scene_server/topo_server/core/types"
 )
 
 func (a *association) DeleteMainlineAssociaton(params types.ContextParams, objID string) error {
 
+    // cond := condition.CreateCondition()
+    // cond.Field(common.AssociationKindIDField).Eq(common.DefaultMailineAssociationKindID)
+    // cond.Field(common.AssociationKindNameField).Eq(common.DefaultMailineAssociationKindName)
+    // cond.Field("is_pre").Eq(true)
+    // assoKind, err := a.SearchType(context.Background(), params.Header, &metadata.SearchAssociationTypeRequest{
+    //     BasePage: metadata.BasePage{},
+    //     Condition: cond.ToMapStr(),
+    //     })
+    // if err != nil {
+    //     return fmt.Errorf("[operation-asst] search default mainline association failed, err: %v", err)
+    // }
+    
 	targetObj, err := a.obj.FindSingleObject(params, objID)
 	if nil != err {
 		blog.Errorf("[opeartion-asst] failed to find the target object(%s), error info is %s", objID, err.Error())
@@ -50,8 +62,8 @@ func (a *association) DeleteMainlineAssociaton(params types.ContextParams, objID
 		return err
 	}
 
-	if nil != childObj { // FIX: 正常情况下 childObj 不可以能为 nil，只有在拓扑异常的时候才会出现
-
+	if nil != childObj { 
+	    // FIX: 正常情况下 childObj 不可以能为 nil，只有在拓扑异常的时候才会出现
 		if err = childObj.SetMainlineParentObject(parentObj.GetID()); nil != err && io.EOF != err {
 			blog.Errorf("[operation-asst] failed to update the association, error info is %s", err.Error())
 			return err
@@ -123,7 +135,7 @@ func (a *association) SearchMainlineAssociationTopo(params types.ContextParams, 
 
 func (a *association) CreateMainlineAssociation(params types.ContextParams, data *metadata.Association) (model.Object, error) {
 
-	// check the level
+	// find the mainline module's head, which is biz.
 	bizObj, err := a.obj.FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to check the mainline topo level, error info is %s", err.Error())
@@ -185,21 +197,6 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 		blog.Errorf("[operation-asst] failed to create the object(%s), error info is %s", currentObj.GetID(), err.Error())
 		return nil, err
 	}
-
-	// 不再创建属性字段
-	/*
-		attr := currentObj.CreateAttribute()
-		attr.SetIsSystem(true)
-		attr.SetID(common.BKChildStr)
-		attr.SetType(common.FieldTypeLongChar)
-		attr.SetName(common.BKChildStr)
-		attr.SetOption(nil)
-
-		if err = attr.Save(nil); nil != err {
-			blog.Errorf("[operation-asst] failed to create the object(%s) attribute(%s), error info is %s", currentObj.GetID(), common.BKChildStr, err.Error())
-			return nil, err
-		}
-	*/
 
 	// create the default group
 	grp := currentObj.CreateGroup()

@@ -833,3 +833,13 @@ const (
 	RedisProcSrvHostInstanceAllRefreshLockKey = BKCacheKeyV3Prefix + "lock:prochostinstancerefresh"
 	RedisProcSrvQueryProcOPResultKey          = BKCacheKeyV3Prefix + "procsrv:query:opresult:set"
 )
+
+// defines const fields belongs to association kind
+const(
+    // the id of the association kind
+    AssociationKindIDField = "bk_asst_id"
+    AssociationKindNameField = "bk_asst_name"
+    
+    DefaultMailineAssociationKindID = "bk_mainline_default_asst_kind"
+    DefaultMailineAssociationKindName = "蓝鲸主线模型默认关联类型"
+)
