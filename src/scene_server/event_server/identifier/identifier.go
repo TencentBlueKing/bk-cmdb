@@ -217,12 +217,24 @@ func (ih *IdentifierHandler) handleRelatedInst(hostIdentify metadata.EventInst, 
 			for _, hostID := range hosIDs[index:leftIndex] {
 				hostIDKeys = append(hostIDKeys, getInstCacheKey(common.BKInnerObjIDHost, hostID))
 			}
-			idens := ih.cache.MGet(hostIDKeys[index:leftIndex]...).Val()
-			// TODO fetch from db if not cached
+			idens, err := ih.cache.MGet(hostIDKeys...).Result()
+			blog.Infof("identifier: ih.cache.MGet val: %v,%v", idens, err)
 			for identIndex := range idens {
 				iden := HostIdentifier{}
 				if err = json.Unmarshal([]byte(getString(idens[identIndex])), &iden); err != nil {
 					blog.Warnf("identifier: unmarshal error %s", err.Error())
+					hostID := hosIDs[index:leftIndex][identIndex]
+					inst, err := getCache(ih.ctx, ih.cache, ih.db, common.BKInnerObjIDHost, hostID, true)
+					if err != nil {
+						blog.Errorf("identifier: getCache error %+v", err)
+						continue
+					}
+					if nil == inst {
+						continue
+					}
+					inst.saveCache(ih.cache)
+					d := metadata.EventData{CurData: inst.ident.fillIden(ih.ctx, ih.cache, ih.db)}
+					hostIdentify.Data = append(hostIdentify.Data, d)
 					continue
 				}
 				d := metadata.EventData{CurData: iden.fillIden(ih.ctx, ih.cache, ih.db)}
