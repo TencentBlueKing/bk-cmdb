@@ -99,7 +99,13 @@ func (s *Service) ImportHost(c *gin.Context) {
 	params["bk_supplier_id"] = common.BKDefaultSupplierID
 	params["input_type"] = common.InputTypeExcel
 
-	result, _ := s.CoreAPI.ApiServer().AddHost(context.Background(), pheader, params)
+	result, err := s.CoreAPI.ApiServer().AddHost(context.Background(), pheader, params)
+
+	if nil != err {
+		msg := getReturnStr(common.CCErrCommHTTPDoRequestFailed, defErr.Errorf(common.CCErrCommHTTPDoRequestFailed, "").Error(), nil)
+		c.String(http.StatusOK, string(msg))
+	}
+
 	c.JSON(http.StatusOK, result)
 
 }

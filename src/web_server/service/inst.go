@@ -90,7 +90,11 @@ func (s *Service) ImportInst(c *gin.Context) {
 	params := mapstr.MapStr{}
 	params["input_type"] = common.InputTypeExcel
 	params["BatchInfo"] = insts
-	result, _ := s.CoreAPI.ApiServer().AddInst(context.Background(), pheader, ownerID, objID, params)
+	result, err := s.CoreAPI.ApiServer().AddInst(context.Background(), pheader, ownerID, objID, params)
+	if nil != err {
+		msg := getReturnStr(common.CCErrCommHTTPDoRequestFailed, defErr.Errorf(common.CCErrCommHTTPDoRequestFailed, "").Error(), nil)
+		c.String(http.StatusOK, string(msg))
+	}
 	c.JSON(http.StatusOK, result)
 }
 
