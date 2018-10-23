@@ -21,11 +21,67 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
 
 func (s *Service) CreateProperty(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+
+	netPropertyInfo := meta.NetcollectProperty{}
+	if err := json.NewDecoder(req.Request.Body).Decode(&netPropertyInfo); nil != err {
+		blog.Errorf("[NetProperty] add property failed with decode body err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	result, err := s.Logics.AddProperty(pheader, netPropertyInfo)
+	if nil != err {
+		if err.Error() == defErr.Error(common.CCErrCollectNetPropertyCreateFail).Error() {
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+			return
+		}
+
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
+		return
+	}
+
+	resp.WriteEntity(meta.NewSuccessResp(result))
+}
+
+func (s *Service) UpdateProperty(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+
+	netPropertyID, err := checkNetPropertyIDPathParam(defErr, req.PathParameter("netcollect_property_id"))
+	if nil != err {
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
+		return
+	}
+
+	netPropertyInfo := meta.NetcollectProperty{}
+	if err = json.NewDecoder(req.Request.Body).Decode(&netPropertyInfo); nil != err {
+		blog.Errorf("[NetProperty] update property failed with decode body err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	if err = s.Logics.UpdateProperty(pheader, netPropertyID, netPropertyInfo); nil != err {
+		if err.Error() == defErr.Error(common.CCErrCollectNetPropertyUpdateFail).Error() {
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+			return
+		}
+
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
+		return
+	}
+
+	resp.WriteEntity(meta.NewSuccessResp(nil))
+}
+
+func (s *Service) BatchCreateProperty(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
@@ -36,7 +92,7 @@ func (s *Service) CreateProperty(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	resultList, hasError := s.Logics.AddProperty(pheader, propertyList)
+	resultList, hasError := s.Logics.BatchCreateProperty(pheader, propertyList)
 	if hasError {
 		resp.WriteEntity(meta.Response{
 			BaseResp: meta.BaseResp{
@@ -93,7 +149,8 @@ func (s *Service) DeleteProperty(req *restful.Request, resp *restful.Response) {
 		netPropertyID, err := strconv.ParseInt(netPropertyIDStr, 10, 64)
 		if nil != err {
 			blog.Errorf("[NetProperty] delete net property batch, but got invalid net property id, err: %v", err)
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, common.BKNetcollectPropertyIDField)})
+			resp.WriteError(http.StatusBadRequest,
+				&meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, common.BKNetcollectPropertyIDField)})
 			return
 		}
 		netPropertyIDArr = append(netPropertyIDArr, netPropertyID)
@@ -114,4 +171,18 @@ func (s *Service) DeleteProperty(req *restful.Request, resp *restful.Response) {
 	}
 
 	resp.WriteEntity(meta.NewSuccessResp(nil))
+}
+
+func checkNetPropertyIDPathParam(defErr errors.DefaultCCErrorIf, ID string) (int64, error) {
+	netPropertyID, err := strconv.ParseInt(ID, 10, 64)
+	if nil != err {
+		blog.Errorf("[NetProperty] update net property with id[%s] to parse the net property id, error: %v", ID, err)
+		return 0, defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKNetcollectPropertyIDField)
+	}
+	if 0 == netPropertyID {
+		blog.Errorf("[NetProperty] update net property with id[%d] should not be 0", netPropertyID)
+		return 0, defErr.Error(common.CCErrCommHTTPInputInvalid)
+	}
+
+	return netPropertyID, nil
 }
