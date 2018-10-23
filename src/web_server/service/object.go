@@ -114,12 +114,12 @@ func (s *Service) ImportObject(c *gin.Context) {
 	}
 
 	result, err := s.CoreAPI.ApiServer().AddObjectBatch(context.Background(), c.Request.Header, common.BKDefaultOwnerID, objID, params)
-	reStr, ok := result.Data.(string)
-	if nil != err || !ok {
-		c.String(http.StatusOK, err.Error())
-	} else {
-		c.String(http.StatusOK, reStr)
+
+	if nil != err {
+		msg := getReturnStr(common.CCErrCommHTTPDoRequestFailed, defErr.Errorf(common.CCErrCommHTTPDoRequestFailed, "").Error(), nil)
+		c.String(http.StatusOK, string(msg))
 	}
+	c.JSON(http.StatusOK, result)
 
 }
 
