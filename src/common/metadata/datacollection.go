@@ -43,6 +43,10 @@ type DeleteNetDeviceBatchOpt struct {
 }
 
 type AddNetPropertyResult struct {
+	NetcollectPropertyID int64 `json:"netcollect_property_id"`
+}
+
+type BatchAddNetPropertyResult struct {
 	Result               bool   `json:"result"`
 	ErrMsg               string `json:"error_msg"`
 	NetcollectPropertyID int64  `json:"netcollect_property_id"`
