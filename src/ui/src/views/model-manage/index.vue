@@ -1,13 +1,13 @@
 <template>
     <bk-tab :active-name.sync="activeTabName" class="tab-wrapper model-manage-wrapper">
         <bk-tabpanel name="group" :title="$t('ModelManagement[\'模型分组\']')">
-            <v-group></v-group>
+            <v-group v-if="activeTabName === 'group'"></v-group>
         </bk-tabpanel>
         <bk-tabpanel name="topo" :title="$t('ModelManagement[\'模型拓扑\']')">
-            <v-topo></v-topo>
+            <v-topo v-if="activeTabName === 'topo'"></v-topo>
         </bk-tabpanel>
         <bk-tabpanel name="relation" :title="$t('ModelManagement[\'关联类型\']')">
-            <v-relation></v-relation>
+            <v-relation v-if="activeTabName === 'relation'"></v-relation>
         </bk-tabpanel>
     </bk-tab>
 </template>
