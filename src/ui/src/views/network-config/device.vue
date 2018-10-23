@@ -1,7 +1,7 @@
 <template>
     <div class="device-wrapper">
         <div class="title">
-            <bk-button type="primary" @click="toggleCreateDialog">
+            <bk-button type="primary" @click="showDeviceDialog('create')">
                 {{$t('NetworkDiscovery["新增设备"]')}}
             </bk-button>
             <bk-button type="default"
@@ -30,15 +30,16 @@
             :defaultSort="table.defaultSort"
             @handleSortChange="handleSortChange"
             @handleSizeChange="handleSizeChange"
-            @handlePageChange="handlePageChange">
+            @handlePageChange="handlePageChange"
+            @handleRowClick="handleRowClick">
             <template slot="bk_obj_id" slot-scope="{ item }">
                 <template>{{getObjName(item['bk_obj_id'])}}</template>
             </template>
         </cmdb-table>
         <bk-dialog
         class="create-dialog"
-        :is-show.sync="createDialog.isShow" 
-        :title="$t('NetworkDiscovery[\'新增设备\']')"
+        :is-show.sync="deviceDialog.isShow" 
+        :title="deviceDialog.title"
         :has-footer="false"
         :close-icon="false"
         :width="424">
@@ -50,7 +51,7 @@
                     <input type="text" 
                     class="cmdb-form-input" 
                     name="device_model"
-                    v-model="createDialog['device_model']" 
+                    v-model.trim="deviceDialog.data['device_model']" 
                     v-validate="'required|singlechar'">
                     <div v-show="errors.has('device_model')" class="color-danger">{{ errors.first('device_model') }}</div>
                 </div>
@@ -58,7 +59,7 @@
                     <label class="label">
                         <span>{{$t('NetworkDiscovery["设备名称"]')}}<span class="color-danger">*</span></span>
                     </label>
-                    <input type="text" class="cmdb-form-input" name="device_name" v-model="createDialog['device_name']" v-validate="'required|singlechar'">
+                    <input type="text" class="cmdb-form-input" name="device_name" v-model.trim="deviceDialog.data['device_name']" v-validate="'required|singlechar'">
                     <div v-show="errors.has('device_name')" class="color-danger">{{ errors.first('device_name') }}</div>
                 </div>
                 <div>
@@ -69,23 +70,23 @@
                         :list="netList"
                         setting-key="bk_obj_id"
                         display-key="bk_obj_name"
-                        :selected.sync="createDialog['bk_obj_id']"
+                        :selected.sync="deviceDialog.data['bk_obj_id']"
                     ></bk-selector>
-                    <input type="text" hidden name="bk_obj_id" v-model="createDialog['bk_obj_id']" v-validate="'required'">
+                    <input type="text" hidden name="bk_obj_id" v-model.trim="deviceDialog.data['bk_obj_id']" v-validate="'required'">
                     <div v-show="errors.has('bk_obj_id')" class="color-danger">{{ errors.first('bk_obj_id') }}</div>
                 </div>
                 <div>
                     <label class="label">
                         <span>{{$t('NetworkDiscovery["厂商"]')}}<span class="color-danger">*</span></span>
                     </label>
-                    <input type="text" class="cmdb-form-input" name="bk_vendor" v-model="createDialog['bk_vendor']" v-validate="'required|singlechar'">
+                    <input type="text" class="cmdb-form-input" name="bk_vendor" v-model.trim="deviceDialog.data['bk_vendor']" v-validate="'required|singlechar'">
                     <div v-show="errors.has('bk_vendor')" class="color-danger">{{ errors.first('bk_vendor') }}</div>
                 </div>
                 <footer class="footer">
-                    <bk-button type="primary" @click="saveDevice" :loading="$loading('createDevice')">
+                    <bk-button type="primary" @click="saveDevice" :loading="$loading(['createDevice', 'updateDevice'])">
                         {{$t('Common["保存"]')}}
                     </bk-button>
-                    <bk-button type="default" @click="toggleCreateDialog">
+                    <bk-button type="default" @click="hideDeviceDialog">
                         {{$t('Common["取消"]')}}
                     </bk-button>
                 </footer>
@@ -113,12 +114,17 @@
         },
         data () {
             return {
-                createDialog: {
+                deviceDialog: {
                     isShow: false,
-                    device_model: '',
-                    device_name: '',
-                    bk_obj_id: '',
-                    bk_vendor: ''
+                    isEdit: false,
+                    title: this.$t('NetworkDiscovery[\'新增设备\']'),
+                    data: {
+                        device_model: '',
+                        device_name: '',
+                        bk_obj_id: '',
+                        bk_vendor: '',
+                        device_id: ''
+                    }
                 },
                 netList: [],
                 importSlider: {
@@ -185,6 +191,7 @@
             ]),
             ...mapActions('netCollectDevice', [
                 'createDevice',
+                'updateDevice',
                 'searchDevice',
                 'deleteDevice'
             ]),
@@ -201,14 +208,22 @@
                     }
                 })
             },
-            toggleCreateDialog () {
-                if (!this.createDialog.isShow) {
-                    this.createDialog.device_model = ''
-                    this.createDialog.device_name = ''
-                    this.createDialog.bk_obj_id = ''
-                    this.createDialog.bk_vendor = ''
+            showDeviceDialog (type) {
+                if (type === 'create') {
+                    this.deviceDialog.isEdit = false
+                    this.deviceDialog.data.device_model = ''
+                    this.deviceDialog.data.device_name = ''
+                    this.deviceDialog.data.bk_obj_id = ''
+                    this.deviceDialog.data.bk_vendor = ''
+                    this.deviceDialog.title = this.$t('NetworkDiscovery["新增设备"]')
+                } else {
+                    this.deviceDialog.isEdit = true
+                    this.deviceDialog.title = this.$t('NetworkDiscovery["编辑设备"]')
                 }
-                this.createDialog.isShow = !this.createDialog.isShow
+                this.deviceDialog.isShow = true
+            },
+            hideDeviceDialog () {
+                this.deviceDialog.isShow = false
             },
             getObjName (bkObjId) {
                 let obj = this.netList.find(({bk_obj_id: objId}) => objId === bkObjId)
@@ -221,14 +236,22 @@
                 if (!await this.$validator.validateAll()) {
                     return
                 }
-                let params = [{
-                    device_model: this.createDialog['device_model'],
-                    device_name: this.createDialog['device_name'],
-                    bk_obj_id: this.createDialog['bk_obj_id'],
-                    bk_vendor: this.createDialog['bk_vendor']
-                }]
-                await this.createDevice({params, config: {requestId: 'createDevice'}})
-                this.toggleCreateDialog()
+                let params = {
+                    device_model: this.deviceDialog.data['device_model'],
+                    device_name: this.deviceDialog.data['device_name'],
+                    bk_obj_id: this.deviceDialog.data['bk_obj_id'],
+                    bk_vendor: this.deviceDialog.data['bk_vendor']
+                }
+                if (this.deviceDialog.isEdit) {
+                    await this.updateDevice({
+                        deviceId: this.deviceDialog.data['device_id'],
+                        params,
+                        config: {requestId: 'updateDevice'}
+                    })
+                } else {
+                    await this.createDevice({params, config: {requestId: 'createDevice'}})
+                }
+                this.hideDeviceDialog()
                 this.handlePageChange(1)
             },
             async getTableData () {
@@ -243,6 +266,14 @@
                 const res = await this.searchDevice({params, config: {requestId: 'searchDevice'}})
                 this.table.pagination.count = res.count
                 this.table.list = res.info
+            },
+            handleRowClick (item) {
+                this.deviceDialog.data['device_model'] = item['device_model']
+                this.deviceDialog.data['device_name'] = item['device_name']
+                this.deviceDialog.data['bk_obj_id'] = item['bk_obj_id']
+                this.deviceDialog.data['bk_vendor'] = item['bk_vendor']
+                this.deviceDialog.data['device_id'] = item['device_id']
+                this.showDeviceDialog('update')
             },
             handleSortChange (sort) {
                 this.table.sort = sort

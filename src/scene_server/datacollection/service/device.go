@@ -22,6 +22,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -30,14 +31,69 @@ func (s *Service) CreateDevice(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
-	deviceList := make([]meta.NetcollectDevice, 0)
-	if err := json.NewDecoder(req.Request.Body).Decode(&deviceList); err != nil {
+	deviceInfo := meta.NetcollectDevice{}
+	if err := json.NewDecoder(req.Request.Body).Decode(&deviceInfo); nil != err {
 		blog.Errorf("[NetDevice] add device failed with decode body err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
-	resultList, hasError := s.Logics.AddDevices(pheader, deviceList)
+	result, err := s.Logics.AddDevice(pheader, deviceInfo)
+	if nil != err {
+		if err.Error() == defErr.Error(common.CCErrCollectNetDeviceCreateFail).Error() {
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+			return
+		}
+
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
+		return
+	}
+
+	resp.WriteEntity(meta.NewSuccessResp(result))
+}
+
+func (s *Service) UpdateDevice(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+
+	netDeviceID, err := checkDeviceIDPathParam(defErr, req.PathParameter("device_id"))
+	if nil != err {
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
+		return
+	}
+
+	deviceInfo := meta.NetcollectDevice{}
+	if err := json.NewDecoder(req.Request.Body).Decode(&deviceInfo); nil != err {
+		blog.Errorf("[NetDevice] update device failed with decode body err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	if err = s.Logics.UpdateDevice(pheader, netDeviceID, deviceInfo); nil != err {
+		if err.Error() == defErr.Error(common.CCErrCollectNetDeviceUpdateFail).Error() {
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+			return
+		}
+
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
+		return
+	}
+
+	resp.WriteEntity(meta.NewSuccessResp(nil))
+}
+
+func (s *Service) BatchCreateDevice(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+
+	deviceList := make([]meta.NetcollectDevice, 0)
+	if err := json.NewDecoder(req.Request.Body).Decode(&deviceList); nil != err {
+		blog.Errorf("[NetDevice] add device failed with decode body err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	resultList, hasError := s.Logics.BatchCreateDevice(pheader, deviceList)
 	if hasError {
 		resp.WriteEntity(meta.Response{
 			BaseResp: meta.BaseResp{
@@ -115,4 +171,18 @@ func (s *Service) DeleteDevice(req *restful.Request, resp *restful.Response) {
 	}
 
 	resp.WriteEntity(meta.NewSuccessResp(nil))
+}
+
+func checkDeviceIDPathParam(defErr errors.DefaultCCErrorIf, ID string) (int64, error) {
+	netDeviceID, err := strconv.ParseInt(ID, 10, 64)
+	if nil != err {
+		blog.Errorf("[NetDevice] update net device with id[%d] to parse the net device id, error: %v", netDeviceID, err)
+		return 0, defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKDeviceIDField)
+	}
+	if 0 == netDeviceID {
+		blog.Errorf("[NetDevice] update net device with id[%d] should not be 0", netDeviceID)
+		return 0, defErr.Error(common.CCErrCommHTTPInputInvalid)
+	}
+
+	return netDeviceID, nil
 }
