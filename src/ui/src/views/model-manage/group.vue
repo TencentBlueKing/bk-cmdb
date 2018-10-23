@@ -9,7 +9,9 @@
             </bk-button>
         </p>
         <ul class="group-list">
-            <li class="group-item clearfix" v-for="(classification, classIndex) in localClassifications" :key="classIndex">
+            <li class="group-item clearfix"
+                v-for="(classification, classIndex) in localClassifications"
+                :key="classIndex">
                 <p class="group-title">
                     <span>{{classification['bk_classification_name']}}</span>
                     <span class="number">({{classification['bk_objects'].length}})</span>
@@ -20,7 +22,8 @@
                     v-if="classification['bk_classification_type'] !== 'inner'"
                     @click="deleteGroup(classification)"></i>
                 </p>
-                <ul class="model-list clearfix">
+                <ul class="model-list clearfix" 
+                    :style="{height: calcHeight(classification)}">
                     <li class="model-item"
                     v-for="(model, modelIndex) in classification['bk_objects']"
                     :key="modelIndex"
@@ -34,7 +37,11 @@
                         </div>
                     </li>
                 </ul>
-                <i class="bk-icon icon-angle-double-down" v-if="classification['bk_objects'].length > 8"></i>
+                <i class="bk-icon icon-angle-double-down"
+                    v-if="classification['bk_objects'].length > 8"
+                    :class="{'rotate': classification.isModelShow}"
+                    @click="toggleModelList(classification)"
+                ></i>
             </li>
         </ul>
         <bk-dialog
@@ -80,9 +87,9 @@
             <div slot="content" class="dialog-content">
                 <p class="title">{{$t('ModelManagement["新增模型"]')}}</p>
                 <div class="content clearfix">
-                    <div class="content-left" @click="isIconListShow = true">
+                    <div class="content-left" @click="modelDialog.isIconListShow = true">
                         <div class="icon-wrapper">
-                            <i class="icon-cc-host"></i>
+                            <i :class="modelDialog.data['bk_obj_icon']"></i>
                         </div>
                         <div class="text">{{$t('ModelManagement["点击切换"]')}}</div>
                     </div>
@@ -92,8 +99,11 @@
                             <span class="color-danger">*</span>
                             <bk-selector
                                 class="selector-box"
-                                :selected.sync="selected"
-                                :list="list"
+                                setting-key="bk_classification_id"
+                                display-key="bk_classification_name"
+                                :content-max-height="200"
+                                :selected.sync="modelDialog.data['bk_classification_id']"
+                                :list="modelDialog.classificationList"
                             ></bk-selector>
                         </label>
                         <label for="">
@@ -110,17 +120,19 @@
                         </label>
                     </div>
                 </div>
-                <div class="model-icon-wrapper" v-if="isIconListShow">
-                    <span class="back" @click="isIconListShow = false">
+                <div class="model-icon-wrapper" v-if="modelDialog.isIconListShow">
+                    <span class="back" @click="modelDialog.isIconListShow = false">
                         <i class="bk-icon icon-back2"></i>
                     </span>
                     <the-choose-icon
+                        v-model="modelDialog.data['bk_obj_icon']"
+                        @chooseIcon="modelDialog.isIconListShow = false"
                     ></the-choose-icon>
                 </div>
             </div>
             <div slot="footer" class="footer">
-                <bk-button type="primary">{{$t("Common['保存']")}}</bk-button>
-                <bk-button type="default">{{$t("Common['取消']")}}</bk-button>
+                <bk-button type="primary" @click="saveModel">{{$t("Common['保存']")}}</bk-button>
+                <bk-button type="default" @click="hideModelDialog">{{$t("Common['取消']")}}</bk-button>
             </div>
         </bk-dialog>
     </div>
@@ -150,30 +162,30 @@
                 modelDialog: {
                     isShow: false,
                     isEdit: false,
-                    title: this.$t('ModelManagement["新增模型"]'),
+                    isIconListShow: false,
+                    classificationList: [],
                     data: {
-                        bk_obj_icon: '',
+                        bk_classification_id: '',
+                        bk_obj_icon: 'icon-cc-default',
                         bk_obj_id: '',
                         bk_obj_name: ''
                     }
-                },
-                isIconListShow: false,
-                list: [],
-                selected: '',
-                iconList: [],
-                localClassifications: []
+                }
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount']),
+            ...mapGetters(['supplierAccount', 'userName']),
             ...mapGetters('objectModelClassify', [
                 'classifications'
-            ])
-        },
-        created () {
-            this.classifications.forEach(classification => {
-                this.localClassifications.push({...classification, ...{isModelShow: false}})
-            })
+            ]),
+            localClassifications () {
+                let localClassifications = []
+                this.classifications.forEach(classification => {
+                    localClassifications.push({...classification, ...{isModelShow: false}})
+                })
+                this.modelDialog.classificationList = localClassifications.filter(({bk_classification_id: classificationId}) => !['bk_biz_topo', 'bk_host_manage', 'bk_organization'].includes(classificationId))
+                return localClassifications
+            }
         },
         methods: {
             ...mapMutations('objectModelClassify', [
@@ -181,10 +193,23 @@
                 'deleteClassify'
             ]),
             ...mapActions('objectModelClassify', [
+                'searchClassificationsObjects',
                 'createClassification',
                 'updateClassification',
                 'deleteClassification'
             ]),
+            ...mapActions('objectModel', [
+                'createObject'
+            ]),
+            toggleModelList (classification) {
+                classification.isModelShow = !classification.isModelShow
+            },
+            calcHeight (classification) {
+                if (classification.isModelShow || classification['bk_objects'].length <= 8) {
+                    return Math.ceil(classification['bk_objects'].length / 4) * 80 + 'px'
+                }
+                return '160px'
+            },
             showGroupDialog (isEdit, group) {
                 if (isEdit) {
                     this.groupDialog.data.id = group.id
@@ -237,13 +262,28 @@
                 })
             },
             showModelDialog () {
-
+                this.modelDialog.data['bk_obj_icon'] = 'icon-cc-default'
+                this.modelDialog.data['bk_obj_id'] = ''
+                this.modelDialog.data['bk_obj_name'] = ''
+                this.modelDialog.data['bk_classification_id'] = ''
+                this.modelDialog.isShow = true
             },
             hideModelDialog () {
-
+                this.modelDialog.isShow = false
             },
             async saveModel () {
-
+                let params = {
+                    bk_supplier_account: this.supplierAccount,
+                    bk_obj_name: this.modelDialog.data['bk_obj_name'],
+                    bk_obj_icon: this.modelDialog.data['bk_obj_icon'],
+                    bk_classification_id: this.modelDialog.data['bk_classification_id'],
+                    bk_obj_id: this.modelDialog.data['bk_obj_id'],
+                    userName: this.userName
+                }
+                await this.createObject({params, config: {requestId: 'createModel'}})
+                this.$http.cancel('post_searchClassificationsObjects')
+                this.searchClassificationsObjects({})
+                this.hideModelDialog()
             },
             modelClick (model) {
                 this.$router.push(`model-manage/${model['bk_obj_id']}`)
@@ -274,7 +314,7 @@
                 cursor: pointer;
                 transition: all .2s;
                 &.rotate {
-                    transform: translate(180deg);
+                    transform: rotate(180deg);
                 }
             }
         }
@@ -304,6 +344,8 @@
     }
     .model-list {
         padding-left: 12px;
+        overflow: hidden;
+        transition: height .2s;
         .model-item {
             float: left;
             margin: 10px 10px 0 0;
