@@ -13,6 +13,7 @@
 package condition
 
 import (
+	"errors"
 	"reflect"
 
 	"configcenter/src/common"
@@ -39,6 +40,7 @@ type Condition interface {
 	Field(fieldName string) Field
 	Parse(data types.MapStr) error
 	ToMapStr() types.MapStr
+	ParseOne(field, opeartor string, value interface{}) error
 }
 
 // Condition the condition definition
@@ -183,4 +185,32 @@ func (cli *condition) ToMapStr() types.MapStr {
 		tmpResult.Merge(item.ToMapStr())
 	}
 	return tmpResult
+}
+
+func (cli *condition) ParseOne(field, opeartor string, value interface{}) error {
+	switch opeartor {
+	case common.BKDBEQ:
+		cli.Field(field).Eq(value)
+	case common.BKDBGT:
+		cli.Field(field).Gt(value)
+	case common.BKDBGTE:
+		cli.Field(field).Gte(value)
+	case common.BKDBIN:
+		cli.Field(field).In(value)
+	case common.BKDBLIKE:
+		cli.Field(field).Like(value)
+	case common.BKDBLT:
+		cli.Field(field).Lt(value)
+	case common.BKDBLTE:
+		cli.Field(field).Lte(value)
+	case common.BKDBNE:
+		cli.Field(field).NotEq(value)
+	case common.BKDBNIN:
+		cli.Field(field).NotIn(value)
+	case common.BKDBOR:
+		cli.Field(field).Or(value)
+	default:
+		return errors.New("invalid operator")
+	}
+	return nil
 }

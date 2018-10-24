@@ -13,15 +13,19 @@
 package condition_test
 
 import (
+	"testing"
+
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
-	"testing"
 )
 
 func TestCondition(t *testing.T) {
 
 	cond := condition.CreateCondition()
 	cond.Field("test_field").Eq(1024).Field("test_field2").In([]int{0, 1, 2, 3}).Field("test").Lt(3)
+	if err := cond.ParseOne("test_field3", "$lt", 123); nil != err {
+		t.Fail()
+	}
 	cond.SetPage(mapstr.New())
 
 	cond.SetLimit(1)
