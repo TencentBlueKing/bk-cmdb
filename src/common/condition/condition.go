@@ -40,7 +40,7 @@ type Condition interface {
 	Field(fieldName string) Field
 	Parse(data types.MapStr) error
 	ToMapStr() types.MapStr
-	ParseOne(field, opeartor string, value interface{}) error
+	ParseOne(cond metadata.ConditionItem) error
 }
 
 // Condition the condition definition
@@ -187,28 +187,29 @@ func (cli *condition) ToMapStr() types.MapStr {
 	return tmpResult
 }
 
-func (cli *condition) ParseOne(field, opeartor string, value interface{}) error {
-	switch opeartor {
+// ParseOne add ConditionItem into condition
+func (cli *condition) ParseOne(cond metadata.ConditionItem) error {
+	switch cond.Operator {
 	case common.BKDBEQ:
-		cli.Field(field).Eq(value)
+		cli.Field(cond.Field).Eq(cond.Value)
 	case common.BKDBGT:
-		cli.Field(field).Gt(value)
+		cli.Field(cond.Field).Gt(cond.Value)
 	case common.BKDBGTE:
-		cli.Field(field).Gte(value)
+		cli.Field(cond.Field).Gte(cond.Value)
 	case common.BKDBIN:
-		cli.Field(field).In(value)
+		cli.Field(cond.Field).In(cond.Value)
 	case common.BKDBLIKE:
-		cli.Field(field).Like(value)
+		cli.Field(cond.Field).Like(cond.Value)
 	case common.BKDBLT:
-		cli.Field(field).Lt(value)
+		cli.Field(cond.Field).Lt(cond.Value)
 	case common.BKDBLTE:
-		cli.Field(field).Lte(value)
+		cli.Field(cond.Field).Lte(cond.Value)
 	case common.BKDBNE:
-		cli.Field(field).NotEq(value)
+		cli.Field(cond.Field).NotEq(cond.Value)
 	case common.BKDBNIN:
-		cli.Field(field).NotIn(value)
+		cli.Field(cond.Field).NotIn(cond.Value)
 	case common.BKDBOR:
-		cli.Field(field).Or(value)
+		cli.Field(cond.Field).Or(cond.Value)
 	default:
 		return errors.New("invalid operator")
 	}
