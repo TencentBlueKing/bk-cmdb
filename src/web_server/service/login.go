@@ -10,39 +10,26 @@
  * limitations under the License.
  */
 
-package main
+package service
 
 import (
-	"context"
-	"fmt"
-	"os"
-	"runtime"
+	"configcenter/src/common/metadata"
+	"configcenter/src/web_server/middleware/user"
 
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/types"
-	"configcenter/src/common/util"
-	"configcenter/src/web_server/app"
-	"configcenter/src/web_server/app/options"
-
-	"github.com/spf13/pflag"
+	"github.com/gin-gonic/contrib/sessions"
+	"github.com/gin-gonic/gin"
 )
 
-func main() {
-	common.SetIdentification(types.CC_MODULE_WEBSERVER)
-
-	runtime.GOMAXPROCS(runtime.NumCPU())
-	blog.InitLogs()
-	defer blog.CloseLogs()
-
-	op := options.NewServerOption()
-	op.AddFlags(pflag.CommandLine)
-
-	util.InitFlags()
-
-	if err := app.Run(context.Background(), op); err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
-		blog.CloseLogs()
-		os.Exit(1)
-	}
+// LogOutUser log out user
+func (s *Service) LogOutUser(c *gin.Context) {
+	session := sessions.Default(c)
+	session.Clear()
+	c.Request.URL.Path = ""
+	userManger := user.NewUser(s.Config)
+	loginURL := userManger.GetLoginUrl(c)
+	ret := metadata.LogoutResult{}
+	ret.BaseResp.Result = true
+	ret.Data.LogoutURL = loginURL
+	c.JSON(200, ret)
+	return
 }
