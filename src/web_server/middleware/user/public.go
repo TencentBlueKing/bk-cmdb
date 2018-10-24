@@ -33,7 +33,7 @@ type publicUser struct {
 // LoginUser  user login
 func (m *publicUser) LoginUser(c *gin.Context) bool {
 
-	user := plugins.CurrentPlugin(c)
+	user := plugins.CurrentPlugin(c, m.config.LoginVersion)
 	isMultiOwner := false
 	multipleOwner := m.config.Session.MultipleOwner
 	if common.LoginSystemMultiSupplierTrue == multipleOwner {
@@ -89,7 +89,7 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 // GetUserList get user list from paas
 func (m *publicUser) GetUserList(c *gin.Context) (int, interface{}) {
 
-	user := plugins.CurrentPlugin(c)
+	user := plugins.CurrentPlugin(c, m.config.LoginVersion)
 	config := make(map[string]string)
 	config["site.bk_account_url"] = m.config.Site.AccountUrl
 	userList, err := user.GetUserList(c, config)
@@ -117,7 +117,7 @@ func (m *publicUser) GetLoginUrl(c *gin.Context) string {
 			params.HTTPScheme = common.LogoutHTTPSchemeHTTP
 		}
 	}
-	user := plugins.CurrentPlugin(c)
+	user := plugins.CurrentPlugin(c, m.config.LoginVersion)
 	return user.GetLoginUrl(c, config, params)
 
 }

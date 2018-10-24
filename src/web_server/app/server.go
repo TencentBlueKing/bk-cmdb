@@ -172,6 +172,7 @@ func (w *WebServer) getConfig(regDiscover string) error {
 	w.Config.Session.Secret = strings.TrimSpace(config["session.secret"])
 	w.Config.Session.MultipleOwner = config["session.multiple_owner"]
 	w.Config.Session.DefaultLanguage = config["session.defaultlanguage"]
+	w.Config.LoginVersion = config["login.version"]
 	if "" == w.Config.Session.DefaultLanguage {
 		w.Config.Session.DefaultLanguage = "zh-cn"
 	}
@@ -197,6 +198,7 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	w.Config.Session.Secret = strings.TrimSpace(current.ConfigMap["session.secret"])
 	w.Config.Session.MultipleOwner = current.ConfigMap["session.multiple_owner"]
 	w.Config.Session.DefaultLanguage = current.ConfigMap["session.defaultlanguage"]
+	w.Config.LoginVersion = current.ConfigMap["login.version"]
 	if "" == w.Config.Session.DefaultLanguage {
 		w.Config.Session.DefaultLanguage = "zh-cn"
 	}

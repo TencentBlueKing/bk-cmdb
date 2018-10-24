@@ -13,7 +13,8 @@
 package service
 
 import (
-	"fmt"
+	"configcenter/src/common/metadata"
+	"configcenter/src/web_server/middleware/user"
 
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -21,11 +22,14 @@ import (
 
 // LogOutUser log out user
 func (s *Service) LogOutUser(c *gin.Context) {
-	site := s.Config.Site.DomainUrl
-	loginURL := s.Config.Site.BkLoginUrl
-	appCode := s.Config.Site.AppCode
-	loginPage := fmt.Sprintf(loginURL, appCode, site)
 	session := sessions.Default(c)
 	session.Clear()
-	c.Redirect(302, loginPage)
+	c.Request.URL.Path = ""
+	userManger := user.NewUser(s.Config)
+	loginURL := userManger.GetLoginUrl(c)
+	ret := metadata.LogoutResult{}
+	ret.BaseResp.Result = true
+	ret.Data.LogoutURL = loginURL
+	c.JSON(200, ret)
+	return
 }
