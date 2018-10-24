@@ -833,3 +833,8 @@ const (
 	RedisProcSrvHostInstanceAllRefreshLockKey = BKCacheKeyV3Prefix + "lock:prochostinstancerefresh"
 	RedisProcSrvQueryProcOPResultKey          = BKCacheKeyV3Prefix + "procsrv:query:opresult:set"
 )
+
+// association
+const (
+	AssociationHostLinkPlat = "host_link_plat"
+)
