@@ -101,14 +101,14 @@
                     <input type="text" name="community" class="cmdb-form-input" v-validate="'required'" v-model.trim="configDialog.community">
                     <div v-show="errors.has('community')" class="color-danger">{{ errors.first('community') }}</div>
                 </div>
-                <footer class="footer">
+                <div class="footer">
                     <bk-button type="primary" @click="saveConfig">
                         {{$t('NetworkDiscovery["保存并下发"]')}}
                     </bk-button>
                     <bk-button type="default" @click="hideConfig">
                         {{$t('Common["取消"]')}}
                     </bk-button>
-                </footer>
+                </div>
             </div>
         </bk-dialog>
         <div class="status-tips" ref='tooltipContent' v-if="tooltip.id">
@@ -302,7 +302,8 @@
                 this.table.pagination.count = res.count
                 this.table.list = res.info
                 if (res.info.length) {
-                    this.table.header[4] = {
+                    let index = this.table.header.findIndex(header => header.id === 'version')
+                    this.table.header[index] = {
                         id: 'version',
                         name: `${this.$t('NetworkDiscovery["版本"]')}(${this.$t('NetworkDiscovery["最新"]')}${res.info[0]['latest_ersion']})`
                     }
