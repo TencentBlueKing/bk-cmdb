@@ -229,8 +229,24 @@ func (cli *Service) SelectObjectAssociations(req *restful.Request, resp *restful
 		return
 	}
 
-	cond := request.Condition
+	cond := map[string]interface{}{
+		"bk_asst_id":     request.Condition.AsstID,
+		"bk_obj_id":      request.Condition.ObjectID,
+		"bk_asst_obj_id": request.Condition.AsstObjID,
+	}
 	cond = util.SetModOwner(cond, ownerID)
+
+	if request.Condition.BothObjectID != "" {
+		cond["$or"] = []map[string]interface{}{
+			{
+				"bk_object_id": request.Condition.ObjectID,
+			},
+			{
+				"bk_asst_object_id": request.Condition.AsstObjID,
+			},
+		}
+	}
+
 	result := []*meta.Association{}
 
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)

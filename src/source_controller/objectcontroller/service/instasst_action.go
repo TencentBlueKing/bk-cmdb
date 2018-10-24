@@ -171,8 +171,81 @@ func (cli *Service) SearchInstAssociations(req *restful.Request, resp *restful.R
 		return
 	}
 
-	cond := request.Condition
+	cond := map[string]interface{}{}
 	cond = util.SetModOwner(cond, ownerID)
+
+	if request.Condition.ObjectAsstId != "" {
+		cond["bk_obj_asst_id"] = request.Condition.ObjectAsstId
+	}
+
+	if request.Condition.AsstID != "" {
+		cond["bk_asst_id"] = request.Condition.AsstID
+	}
+
+	if request.Condition.ObjectID != "" {
+		cond["bk_object_id"] = request.Condition.ObjectID
+	}
+
+	if request.Condition.AsstObjID != "" {
+		cond["bk_asst_obj_id"] = request.Condition.AsstObjID
+	}
+
+	if len(request.Condition.InstID) > 0 {
+		if request.Condition.ObjectAsstId == "" && request.Condition.ObjectID == "" {
+			msg := fmt.Sprintf("bk_obj_asst_id or bk_object_id must be set")
+			blog.Errorf(msg)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommNotFound, msg)})
+			return
+		}
+	}
+
+	if len(request.Condition.AsstInstID) > 0 {
+		if request.Condition.ObjectAsstId == "" && request.Condition.AsstObjID == "" {
+			msg := fmt.Sprintf("bk_obj_asst_id or bk_object_id must be set")
+			blog.Errorf(msg)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommNotFound, msg)})
+			return
+		}
+	}
+
+	if len(request.Condition.BothInstID) > 0 && request.Condition.BothObjectID == "" {
+		msg := fmt.Sprintf("both_obj_id must be set")
+		blog.Errorf(msg)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommNotFound, msg)})
+		return
+	}
+
+	if request.Condition.BothObjectID != "" {
+		cond["$or"] = []map[string]interface{}{
+			{
+				"bk_object_id": request.Condition.ObjectID,
+			},
+			{
+				"bk_asst_object_id": request.Condition.AsstObjID,
+				"bk_asst_inst_id": map[string]interface{}{
+					"$in": request.Condition.AsstInstID,
+				},
+			},
+		}
+
+		if len(request.Condition.BothInstID) > 0 {
+			cond["$or"] = []map[string]interface{}{
+				{
+					"bk_object_id": request.Condition.ObjectID,
+					"bk_inst_id": map[string]interface{}{
+						"$in": request.Condition.InstID,
+					},
+				},
+				{
+					"bk_asst_object_id": request.Condition.AsstObjID,
+					"bk_asst_inst_id": map[string]interface{}{
+						"$in": request.Condition.AsstInstID,
+					},
+				},
+			}
+		}
+	}
+
 	result := []*meta.InstAsst{}
 
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
