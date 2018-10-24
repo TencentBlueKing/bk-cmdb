@@ -87,11 +87,11 @@
             @updateView="updateView"
             ></v-confirm-details>
         </cmdb-slider>
-        <footer class="footer">
+        <div class="footer">
             <bk-button type="primary" @click="showResultDialog">
                 {{$t('NetworkDiscovery["确认变更"]')}}
             </bk-button>
-        </footer>
+        </div>
         <bk-dialog
             class="result-dialog"
             :is-show.sync="resultDialog.isShow" 
@@ -135,11 +135,11 @@
                         </div>
                     </transition>
                 </div>
-                <footer class="footer">
+                <div class="footer">
                     <bk-button type="primary" @click="resultDialog.isShow = false">
                         {{$t('Hosts["确认"]')}}
                     </bk-button>
-                </footer>
+                </div>
             </div>
         </bk-dialog>
         <bk-dialog
@@ -154,14 +154,14 @@
                 <p>
                     {{$t('NetworkDiscovery["当前改动尚未生效，是否放弃？"]')}}
                 </p>
-                <footer class="footer">
+                <div class="footer">
                     <bk-button type="default" @click="routeToLeave">
                         {{$t('NetworkDiscovery["放弃改动"]')}}
                     </bk-button>
                     <bk-button type="default" @click="confirmDialog.isShow = false">
                         {{$t('Common["取消"]')}}
                     </bk-button>
-                </footer>
+                </div>
             </div>
         </bk-dialog>
     </div>

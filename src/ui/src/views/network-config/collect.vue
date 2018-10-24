@@ -101,14 +101,14 @@
                     <input type="text" name="community" class="cmdb-form-input" v-validate="'required'" v-model.trim="configDialog.community">
                     <div v-show="errors.has('community')" class="color-danger">{{ errors.first('community') }}</div>
                 </div>
-                <footer class="footer">
+                <div class="footer">
                     <bk-button type="primary" @click="saveConfig">
                         {{$t('NetworkDiscovery["保存并下发"]')}}
                     </bk-button>
                     <bk-button type="default" @click="hideConfig">
                         {{$t('Common["取消"]')}}
                     </bk-button>
-                </footer>
+                </div>
             </div>
         </bk-dialog>
         <div class="status-tips" ref='tooltipContent' v-if="tooltip.id">
