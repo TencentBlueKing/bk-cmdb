@@ -200,7 +200,7 @@
                     title: this.$t('NetworkDiscovery["确认删除设备"]'),
                     confirmFn: async () => {
                         let params = {
-                            device_id: this.table.checked.join(',')
+                            device_id: this.table.checked
                         }
                         await this.deleteDevice({config: {data: params, requestId: 'deleteDevice'}})
                         this.table.checked = []
