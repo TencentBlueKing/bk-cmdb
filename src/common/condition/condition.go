@@ -18,7 +18,7 @@ import (
 
 	"configcenter/src/common"
 	types "configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
+	// "configcenter/src/common/metadata"
 )
 
 // CreateCondition create a condition object
@@ -40,7 +40,7 @@ type Condition interface {
 	Field(fieldName string) Field
 	Parse(data types.MapStr) error
 	ToMapStr() types.MapStr
-	ParseOne(cond ConditionItem) error
+	AddContionItem(cond ConditionItem) error
 }
 
 // Condition the condition definition
@@ -59,10 +59,17 @@ type ConditionItem struct {
 	Value    interface{} `json:"value,omitempty"`
 }
 
+// BasePage for paging query
+type BasePage struct {
+	Sort  string `json:"sort,omitempty"`
+	Limit int    `json:"limit,omitempty"`
+	Start int    `json:"start,omitempty"`
+}
+
 // SetPage set the page
 func (cli *condition) SetPage(page types.MapStr) error {
 
-	pageInfo := metadata.BasePage{}
+	pageInfo := BasePage{}
 	if err := page.MarshalJSONInto(&pageInfo); nil != err {
 		return err
 	}
@@ -194,8 +201,8 @@ func (cli *condition) ToMapStr() types.MapStr {
 	return tmpResult
 }
 
-// ParseOne add ConditionItem into condition
-func (cli *condition) ParseOne(cond ConditionItem) error {
+// AddContionItem add ConditionItem into condition
+func (cli *condition) AddContionItem(cond ConditionItem) error {
 	switch cond.Operator {
 	case common.BKDBEQ:
 		cli.Field(cond.Field).Eq(cond.Value)
