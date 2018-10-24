@@ -17,7 +17,6 @@ import (
 
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
 )
 
 func TestCondition(t *testing.T) {
@@ -25,7 +24,7 @@ func TestCondition(t *testing.T) {
 	cond := condition.CreateCondition()
 	cond.Field("test_field").Eq(1024).Field("test_field2").In([]int{0, 1, 2, 3}).Field("test").Lt(3)
 
-	conditionItem := metadata.ConditionItem{Field: "test_field3", Operator: "$lt", Value: 123}
+	conditionItem := condition.ConditionItem{Field: "test_field3", Operator: "$lt", Value: 123}
 	if err := cond.ParseOne(conditionItem); nil != err {
 		t.Fail()
 	}

@@ -40,7 +40,7 @@ type Condition interface {
 	Field(fieldName string) Field
 	Parse(data types.MapStr) error
 	ToMapStr() types.MapStr
-	ParseOne(cond metadata.ConditionItem) error
+	ParseOne(cond ConditionItem) error
 }
 
 // Condition the condition definition
@@ -50,6 +50,13 @@ type condition struct {
 	sort         string
 	fields       []Field
 	filterFields []string
+}
+
+// ConditionItem subcondition
+type ConditionItem struct {
+	Field    string      `json:"field,omitempty"`
+	Operator string      `json:"operator,omitempty"`
+	Value    interface{} `json:"value,omitempty"`
 }
 
 // SetPage set the page
@@ -188,7 +195,7 @@ func (cli *condition) ToMapStr() types.MapStr {
 }
 
 // ParseOne add ConditionItem into condition
-func (cli *condition) ParseOne(cond metadata.ConditionItem) error {
+func (cli *condition) ParseOne(cond ConditionItem) error {
 	switch cond.Operator {
 	case common.BKDBEQ:
 		cli.Field(cond.Field).Eq(cond.Value)
