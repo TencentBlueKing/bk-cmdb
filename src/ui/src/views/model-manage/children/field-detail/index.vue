@@ -5,7 +5,7 @@
                 {{$t('ModelManagement["唯一标识"]')}}
                 <span class="color-danger">*</span>
             </span>
-            <input type="text" class="cmdb-form-input">
+            <input type="text" class="cmdb-form-input" v-model.trim="fieldInfo['bk_property_id']">
             <i class="bk-icon icon-info-circle"></i>
         </label>
         <label class="form-label">
@@ -13,7 +13,7 @@
                 {{$t('ModelManagement["名称"]')}}
                 <span class="color-danger">*</span>
             </span>
-            <input type="text" class="cmdb-form-input">
+            <input type="text" class="cmdb-form-input" v-model.trim="fieldInfo['bk_property_name']">
             <i class="bk-icon icon-info-circle"></i>
         </label>
         <div class="form-label">
@@ -39,6 +39,10 @@
                     <span class="cmdb-form-text">{{$t('ModelManagement["必填"]')}}</span>
                 </label>
             </div>
+            <component
+                :is="`model-field-${fieldInfo['bk_property_type']}`"
+                v-model="field.option"
+            ></component>
             <div class="form-label">
                 <span class="label-text">{{$t('ModelManagement["正则校验"]')}}</span>
                 <textarea name="" id="" cols="30" rows="10"></textarea>
@@ -48,12 +52,12 @@
             <span class="label-text">
                 {{$t('ModelManagement["单位"]')}}
             </span>
-            <input type="text" class="cmdb-form-input">
+            <input type="text" class="cmdb-form-input" v-model.trim="fieldInfo['unit']">
             <i class="bk-icon icon-info-circle"></i>
         </label>
         <div class="form-label">
             <span class="label-text">{{$t('ModelManagement["用户提示"]')}}</span>
-            <textarea name="" id="" cols="30" rows="10"></textarea>
+            <textarea v-model.trim="fieldInfo['placeholder']"></textarea>
         </div>
     </div>
 </template>
