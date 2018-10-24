@@ -58,6 +58,7 @@
 <script>
     import theField from './field'
     import theRelation from './relation'
+    import { mapActions, mapGetters } from 'vuex'
     export default {
         components: {
             theField,
@@ -68,6 +69,33 @@
                 tab: {
                     active: 'field'
                 }
+            }
+        },
+        computed: {
+            ...mapGetters([
+                'supplierAccount'
+            ])
+        },
+        watch: {
+            '$route.params.modelId' () {
+                this.initObject()
+            }
+        },
+        created () {
+            this.initObject()
+        },
+        methods: {
+            ...mapActions('objectModel', [
+                'searchObjects'
+            ]),
+            async initObject () {
+                const res = await this.searchObjects({
+                    params: {
+                        bk_obj_id: this.$route.params.modelId,
+                        bk_supplier_account: this.supplierAccount
+                    }
+                })
+                this.$store.commit('objectModel/setActiveModel', res[0])
             }
         }
     }

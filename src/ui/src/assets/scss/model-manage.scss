@@ -25,3 +25,26 @@
         }
     }
 }
+.model-field-wrapper {
+    .form-label {
+        .bk-selector,
+        .cmdb-form-input {
+            display: inline-block;
+            width: calc(100% - 145px);
+            vertical-align: middle;
+        }
+        .label-text {
+            width: 110px;
+        }
+    }
+    textarea {
+        padding: 6px;
+        width: 329px;
+        height: 84px;
+        font-size: 14px;
+        border: 1px solid $cmdbBorderColor;
+        border-radius: 2px;
+        outline: none;
+        resize: none;
+    }
+}
