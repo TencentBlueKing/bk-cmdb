@@ -79,18 +79,23 @@ func (cli *Service) CreateInstAssociation(req *restful.Request, resp *restful.Re
 		return
 	}
 
+	result := &meta.CreateAssociationInstResult{BaseResp: meta.SuccessBaseResp}
+	result.Data.ID = data.ID
+
 	ec := eventclient.NewEventContextByReq(req.Request.Header, cli.Cache)
 	err = ec.InsertEvent(metadata.EventTypeAssociation, data.ObjectID, metadata.EventActionCreate, data, nil)
 	if err != nil {
 		blog.Error("create event error:%v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Data: result.Data, Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
+		return
 	}
 	err = ec.InsertEvent(metadata.EventTypeAssociation, data.AsstObjectID, metadata.EventActionCreate, data, nil)
 	if err != nil {
 		blog.Error("create event error:%v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Data: result.Data, Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
+		return
 	}
 
-	result := &meta.CreateAssociationInstResult{BaseResp: meta.SuccessBaseResp}
-	result.Data.ID = data.ID
 	resp.WriteEntity(result)
 }
 
