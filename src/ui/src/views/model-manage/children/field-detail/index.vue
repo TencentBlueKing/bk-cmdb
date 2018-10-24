@@ -5,7 +5,7 @@
                 {{$t('ModelManagement["唯一标识"]')}}
                 <span class="color-danger">*</span>
             </span>
-            <input type="text" class="cmdb-form-input" v-model.trim="fieldInfo['bk_property_id']">
+            <input type="text" class="cmdb-form-input" v-model.trim="fieldInfo['bk_property_id']" :disabled="isEditField">
             <i class="bk-icon icon-info-circle"></i>
         </label>
         <label class="form-label">
@@ -13,7 +13,7 @@
                 {{$t('ModelManagement["名称"]')}}
                 <span class="color-danger">*</span>
             </span>
-            <input type="text" class="cmdb-form-input" v-model.trim="fieldInfo['bk_property_name']">
+            <input type="text" class="cmdb-form-input" v-model.trim="fieldInfo['bk_property_name']" :disabled="isReadOnly">
             <i class="bk-icon icon-info-circle"></i>
         </label>
         <div class="form-label">
@@ -22,48 +22,74 @@
                 <span class="color-danger">*</span>
             </span>
             <bk-selector
+                :disabled="isEditField"
                 :list="fieldTypeList"
                 :selected.sync="fieldInfo['bk_property_type']"
             ></bk-selector>
             <i class="bk-icon icon-info-circle"></i>
         </div>
         <div class="field-detail">
-            <div class="form-label">
-                <span class="label-text">{{$t('ModelManagement["字段设置"]')}}</span>
-                <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                    <input type="checkbox">
-                    <span class="cmdb-form-text">{{$t('ModelManagement["可编辑"]')}}</span>
-                </label>
-                <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                    <input type="checkbox">
-                    <span class="cmdb-form-text">{{$t('ModelManagement["必填"]')}}</span>
-                </label>
-            </div>
-            <component
-                :is="`model-field-${fieldInfo['bk_property_type']}`"
-                v-model="field.option"
+            <the-config
+                :type="fieldInfo['bk_property_type']"
+                :isReadOnly="isReadOnly"
+                :editable.sync="fieldInfo['editable']"
+                :isrequired.sync="fieldInfo['isrequired']"
+            ></the-config>
+            <component 
+                v-if="isComponentShow"
+                :isReadOnly="isReadOnly"
+                :is="`the-field-${fieldType}`"
+                v-model="fieldInfo.option"
             ></component>
-            <div class="form-label">
-                <span class="label-text">{{$t('ModelManagement["正则校验"]')}}</span>
-                <textarea name="" id="" cols="30" rows="10"></textarea>
-            </div>
         </div>
         <label class="form-label">
             <span class="label-text">
                 {{$t('ModelManagement["单位"]')}}
             </span>
-            <input type="text" class="cmdb-form-input" v-model.trim="fieldInfo['unit']">
+            <input type="text" class="cmdb-form-input" v-model.trim="fieldInfo['unit']" :isReadOnly="isReadOnly">
             <i class="bk-icon icon-info-circle"></i>
         </label>
         <div class="form-label">
             <span class="label-text">{{$t('ModelManagement["用户提示"]')}}</span>
-            <textarea v-model.trim="fieldInfo['placeholder']"></textarea>
+            <textarea v-model.trim="fieldInfo['placeholder']" :isReadOnly="isReadOnly"></textarea>
+        </div>
+        <div class="btn-group">
+            <bk-button type="primary" :loading="$loading(['updateObjectAttribute', 'createObjectAttribute'])" @click="saveField">
+                {{$t('ModelManagement["确定"]')}}
+            </bk-button>
+            <bk-button type="default" @click="cancel">
+                {{$t('ModelManagement["取消"]')}}
+            </bk-button>
         </div>
     </div>
 </template>
 
 <script>
+    import theFieldChar from './char'
+    import theFieldInt from './int'
+    import theFieldEnum from './enum'
+    import theConfig from './config'
+    import { mapGetters, mapActions } from 'vuex'
     export default {
+        components: {
+            theFieldChar,
+            theFieldInt,
+            theFieldEnum,
+            theConfig
+        },
+        props: {
+            field: {
+                type: Object
+            },
+            isReadOnly: {
+                type: Boolean,
+                default: false
+            },
+            isEditField: {
+                type: Boolean,
+                default: false
+            }
+        },
         data () {
             return {
                 fieldTypeList: [{
@@ -102,36 +128,97 @@
                     bk_property_type: 'singlechar',
                     editable: true,
                     isrequired: false,
-                    option: '',
-                    bk_asst_obj_id: ''
+                    option: ''
+                },
+                charMap: ['singlechar', 'longchar']
+            }
+        },
+        computed: {
+            ...mapGetters(['supplierAccount', 'userName']),
+            ...mapGetters('objectModel', [
+                'activeModel'
+            ]),
+            fieldType () {
+                let {
+                    bk_property_type: type
+                } = this.fieldInfo
+                if (this.charMap.indexOf(type) !== -1) {
+                    return 'char'
                 }
+                return type
+            },
+            isComponentShow () {
+                return ['singlechar', 'longchar', 'multichar', 'enum', 'int'].indexOf(this.fieldInfo['bk_property_type']) !== -1
+            }
+        },
+        watch: {
+            'fieldInfo.bk_property_type' (type) {
+                if (!this.isEditField) {
+                    switch (type) {
+                        case 'int':
+                            this.fieldInfo.option = {
+                                min: '',
+                                max: ''
+                            }
+                            break
+                        default:
+                            this.fieldInfo.option = ''
+                    }
+                }
+            }
+        },
+        created () {
+            if (this.isEditField) {
+                this.initData()
+            }
+        },
+        methods: {
+            ...mapActions('objectModelProperty', [
+                'createObjectAttribute',
+                'updateObjectAttribute'
+            ]),
+            initData () {
+                for (let key in this.fieldInfo) {
+                    this.fieldInfo[key] = this.$tools.clone(this.field[key])
+                }
+            },
+            async saveField () {
+                if (this.isEditField) {
+                    await this.updateObjectAttribute({
+                        id: this.field.id,
+                        params: this.fieldInfo,
+                        config: {
+                            requestId: 'updateObjectAttribute'
+                        }
+                    }).then(() => {
+                        this.$http.cancel(`post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`)
+                    })
+                } else {
+                    let otherParams = {
+                        creator: this.userName,
+                        bk_property_group: 'default',
+                        bk_obj_id: this.activeModel['bk_obj_id'],
+                        bk_supplier_account: this.supplierAccount
+                    }
+                    await this.createObjectAttribute({
+                        params: {...this.fieldInfo, ...otherParams},
+                        config: {
+                            requestId: 'createObjectAttribute'
+                        }
+                    }).then(() => {
+                        this.$http.cancel(`post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`)
+                    })
+                }
+                this.$emit('save')
+            },
+            cancel () {
+                this.$emit('cancel')
             }
         }
     }
 </script>
 
 <style lang="scss" scoped>
-    .form-label {
-        .bk-selector,
-        .cmdb-form-input {
-            display: inline-block;
-            width: calc(100% - 145px);
-            vertical-align: middle;
-        }
-        textarea {
-            padding: 6px;
-            width: 329px;
-            height: 84px;
-            font-size: 14px;
-            border: 1px solid $cmdbBorderColor;
-            border-radius: 2px;
-            outline: none;
-            resize: none;
-        }
-    }
-    .label-text {
-        width: 110px;
-    }
     .icon-info-circle {
         font-size: 18px;
         color: $cmdbBorderColor;
@@ -151,6 +238,13 @@
             width: 90px;
             line-height: 22px;
             vertical-align: middle;
+        }
+    }
+    .btn-group {
+        margin: 30px 0 0 110px;
+        font-size: 0;
+        .bk-primary {
+            margin-right: 10px;
         }
     }
 </style>
