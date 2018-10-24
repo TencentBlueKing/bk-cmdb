@@ -106,14 +106,14 @@ type DeleteAssociationObjectResult struct {
 }
 
 type SearchAssociationInstRequestCond struct {
-	ObjectAsstId string   `field:"bk_obj_asst_id" json:"bk_obj_asst_id"`
-	AsstID       string   `field:"bk_asst_id" json:"bk_asst_id"`
-	ObjectID     string   `field:"bk_object_id" json:"bk_object_id"`
-	AsstObjID    string   `field:"bk_asst_obj_id" json:"bk_asst_obj_id"`
-	InstID       []string `field:"bk_inst_id" json:"bk_inst_id"`
-	AsstInstID   []string `field:"bk_asst_inst_id" json:"bk_asst_inst_id"`
-	BothObjectID string   `field:"both_obj_id" json:"both_obj_id"`
-	BothInstID   []string `field:"both_inst_id" json:"both_inst_id"`
+	ObjectAsstId string  `field:"bk_obj_asst_id" json:"bk_obj_asst_id"`
+	AsstID       string  `field:"bk_asst_id" json:"bk_asst_id"`
+	ObjectID     string  `field:"bk_object_id" json:"bk_object_id"`
+	AsstObjID    string  `field:"bk_asst_obj_id" json:"bk_asst_obj_id"`
+	InstID       []int64 `field:"bk_inst_id" json:"bk_inst_id"`
+	AsstInstID   []int64 `field:"bk_asst_inst_id" json:"bk_asst_inst_id"`
+	BothObjectID string  `field:"both_obj_id" json:"both_obj_id"`
+	BothInstID   []int64 `field:"both_inst_id" json:"both_inst_id"`
 }
 
 type SearchAssociationInstRequest struct {

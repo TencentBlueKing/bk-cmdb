@@ -62,7 +62,7 @@ func (cli *Service) CreateInstAssociation(req *restful.Request, resp *restful.Re
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	db := cli.Instance.Clone()
 
-	// get id
+	// get insert id
 	id, err := db.NextSequence(ctx, common.BKTableNameInstAsst)
 	if err != nil {
 		blog.Errorf("failed to get id , error info is %s", err.Error())
@@ -70,6 +70,23 @@ func (cli *Service) CreateInstAssociation(req *restful.Request, resp *restful.Re
 		return
 	}
 	data.ID = int64(id)
+
+	// find object id
+	objCond := map[string]interface{}{
+		"bk_obj_asst_id":      request.ObjectAsstId,
+		"bk_supplier_account": ownerID,
+	}
+
+	objResult := &meta.Association{}
+	err = db.Table(common.BKTableNameObjAsst).Find(objCond).One(ctx, &objResult)
+	if nil != err {
+		blog.Errorf("not found object association error :%v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommNotFound, err.Error())})
+		return
+	}
+
+	data.ObjectID = objResult.ObjectID
+	data.AsstObjectID = objResult.AsstObjID
 
 	err = db.Table(common.BKTableNameInstAsst).Insert(ctx, data)
 	if nil != err {
@@ -165,6 +182,7 @@ func (cli *Service) SearchInstAssociations(req *restful.Request, resp *restful.R
 	}
 
 	request := &meta.SearchAssociationInstRequest{}
+
 	if jsErr := json.Unmarshal([]byte(value), request); nil != jsErr {
 		blog.Errorf("failed to unmarshal the data, data is %s, error info is %s ", string(value), jsErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, jsErr.Error())})
