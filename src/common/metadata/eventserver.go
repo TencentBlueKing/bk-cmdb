@@ -157,6 +157,7 @@ type EventType string
 const (
 	EventTypeInstData           = "instdata"
 	EventTypeRelation           = "relation"
+	EventTypeAssociation        = "association"
 	EventTypeResourcePoolModule = "resource"
 )
 
