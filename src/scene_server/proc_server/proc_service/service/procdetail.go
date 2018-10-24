@@ -21,9 +21,9 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	
 
 	"github.com/emicklei/go-restful"
 )
@@ -39,7 +39,7 @@ func (ps *ProcServer) GetProcessDetailByID(req *restful.Request, resp *restful.R
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
-	procIDStr := req.PathParameter(common.BKProcIDField)
+	procIDStr := req.PathParameter(common.BKProcessIDField)
 	procID, err := strconv.Atoi(procIDStr)
 	if err != nil {
 		blog.Errorf("convert procid from string to int failed!, err: %s", err.Error())
@@ -62,7 +62,7 @@ func (ps *ProcServer) getProcDetail(req *restful.Request, ownerID string, appID,
 	procCondition := make(map[string]interface{})
 	procCondition[common.BKOwnerIDField] = ownerID
 	procCondition[common.BKAppIDField] = appID
-	procCondition[common.BKProcIDField] = procID
+	procCondition[common.BKProcessIDField] = procID
 	searchParams := new(meta.QueryInput)
 	searchParams.Condition = procCondition
 	retObj, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDProc, req.Request.Header, searchParams)
@@ -246,7 +246,7 @@ func (ps *ProcServer) getInstAsst(forward http.Header, ownerID, objID string, id
 
 	input.Condition = condition
 
-	var dataInfo []map[string]interface{}
+	var dataInfo []mapstr.MapStr
 	cnt := 0
 	switch objID {
 	case common.BKInnerObjIDHost:

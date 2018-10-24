@@ -31,7 +31,7 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
 )
 
 type Netcollect struct {

@@ -181,3 +181,32 @@ func FormatPeriod(period string) (string, error) {
 
 	return strconv.Itoa(num) + period[len(period)-1:], nil
 }
+
+type Ticker struct {
+	C      chan time.Time
+	ticker *time.Ticker
+	stoped bool
+}
+
+func (t *Ticker) Stop() {
+	t.ticker.Stop()
+	t.stoped = true
+}
+
+func (t *Ticker) Tick() {
+	t.C <- time.Now()
+}
+
+func NewTicker(d time.Duration) *Ticker {
+	t := &Ticker{
+		ticker: time.NewTicker(d),
+		C:      make(chan time.Time, 2),
+	}
+	go func() {
+		for !t.stoped {
+			t.C <- <-t.ticker.C
+		}
+		close(t.C)
+	}()
+	return t
+}

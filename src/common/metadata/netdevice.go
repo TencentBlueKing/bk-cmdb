@@ -14,8 +14,6 @@ package metadata
 
 import (
 	"time"
-
-	"configcenter/src/common/types"
 )
 
 type NetcollectDevice struct {
@@ -101,20 +99,20 @@ type NetcollectConfig struct {
 }
 
 type ParamSearchNetcollectReport struct {
-	Action    string       `json:"action"`
-	ObjectID  string       `json:"bk_object_id"`
-	Query     string       `json:"query"`
-	CloudName string       `json:"bk_cloud_name"`
-	CloudID   int64        `json:"bk_cloud_id"`
-	InnerIP   string       `json:"bk_host_innerip"`
-	LastTime  []types.Time `json:"last_time"`
-	Page      BasePage     `json:"page"`
+	Action    string   `json:"action"`
+	ObjectID  string   `json:"bk_object_id"`
+	Query     string   `json:"query"`
+	CloudName string   `json:"bk_cloud_name"`
+	CloudID   int64    `json:"bk_cloud_id"`
+	InnerIP   string   `json:"bk_host_innerip"`
+	LastTime  []Time   `json:"last_time"`
+	Page      BasePage `json:"page"`
 }
 
 type NetcollectReportSummary struct {
 	CloudID    int64          `json:"bk_cloud_id"`
 	CloudName  string         `json:"bk_cloud_name"`
-	LastTime   types.Time     `json:"last_time"`
+	LastTime   Time           `json:"last_time"`
 	Statistics map[string]int `json:"statistics"`
 }
 
@@ -142,7 +140,7 @@ type NetcollectReport struct {
 
 	InstID       int64                         `json:"bk_inst_id" bson:"bk_inst_id"`
 	InstKey      string                        `json:"bk_inst_key" bson:"bk_inst_key"`
-	LastTime     types.Time                    `json:"last_time" bson:"last_time"`
+	LastTime     Time                          `json:"last_time" bson:"last_time"`
 	Attributes   []NetcollectReportAttribute   `json:"attributes" bson:"attributes"`
 	Associations []NetcollectReportAssociation `json:"associations" bson:"associations"`
 }
