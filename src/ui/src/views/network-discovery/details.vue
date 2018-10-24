@@ -74,7 +74,7 @@
                 </div>
             </cmdb-collapse-transition>
         </div>
-        <footer class="footer">
+        <div class="footer">
             <span>{{$t('NetworkDiscovery["忽略此实例"]')}}</span>
             <bk-switcher
                 class="switcher"
@@ -89,7 +89,7 @@
             <bk-button type="default" :disabled="detailPage.next" @click="updateView('next')">
                 {{$t('NetworkDiscovery["下一个"]')}}
             </bk-button>
-        </footer>
+        </div>
     </div>
 </template>
 
