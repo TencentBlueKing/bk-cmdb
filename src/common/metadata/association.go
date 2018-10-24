@@ -70,8 +70,15 @@ type DeleteAssociationTypeResult struct {
 	Data     string `json:"data"`
 }
 
+type SearchAssociationObjectRequestCond struct {
+	AsstID       string `field:"bk_asst_id" json:"bk_asst_id"`
+	ObjectID     string `field:"bk_obj_id" json:"bk_obj_id"`
+	AsstObjID    string `field:"bk_asst_obj_id" json:"bk_asst_obj_id"`
+	BothObjectID string `field:"both_obj_id" json:"both_obj_id"`
+}
+
 type SearchAssociationObjectRequest struct {
-	Condition map[string]interface{} `json:"condition"`
+	Condition SearchAssociationObjectRequestCond `json:"condition"`
 }
 
 type SearchAssociationObjectResult struct {
@@ -98,8 +105,19 @@ type DeleteAssociationObjectResult struct {
 	Data     string `json:"data"`
 }
 
+type SearchAssociationInstRequestCond struct {
+	ObjectAsstId string   `field:"bk_obj_asst_id" json:"bk_obj_asst_id"`
+	AsstID       string   `field:"bk_asst_id" json:"bk_asst_id"`
+	ObjectID     string   `field:"bk_object_id" json:"bk_object_id"`
+	AsstObjID    string   `field:"bk_asst_obj_id" json:"bk_asst_obj_id"`
+	InstID       []string `field:"bk_inst_id" json:"bk_inst_id"`
+	AsstInstID   []string `field:"bk_asst_inst_id" json:"bk_asst_inst_id"`
+	BothObjectID string   `field:"both_obj_id" json:"both_obj_id"`
+	BothInstID   []string `field:"both_inst_id" json:"both_inst_id"`
+}
+
 type SearchAssociationInstRequest struct {
-	Condition map[string]interface{} `json:"condition"`
+	Condition SearchAssociationInstRequestCond `json:"condition"`
 }
 
 type SearchAssociationInstResult struct {
