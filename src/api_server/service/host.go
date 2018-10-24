@@ -435,7 +435,7 @@ func (s *Service) updateCustomProperty(req *restful.Request, resp *restful.Respo
 	}
 
 	if false == result.Result {
-		converter.RespFailV2(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), resp)
+		converter.RespFailV2(result.Code, result.ErrMsg, resp)
 		return
 	}
 	converter.RespCommonResV2(result.Result, result.Code, result.ErrMsg, resp)

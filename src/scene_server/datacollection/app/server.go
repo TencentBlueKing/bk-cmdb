@@ -33,7 +33,8 @@ import (
 	"configcenter/src/scene_server/datacollection/datacollection"
 	"configcenter/src/scene_server/datacollection/logics"
 	svc "configcenter/src/scene_server/datacollection/service"
-	"configcenter/src/storage/mgoclient"
+	"configcenter/src/storage/dal/mongo"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/esbserver"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 )
@@ -111,7 +112,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 		process.Service.Logics = &logics.Logics{Instance: instance, Engine: service.Engine, ESB: esb}
 
-		err = datacollection.NewDataCollection(process.Config, process.Core).Run()
+		err := datacollection.NewDataCollection(ctx, process.Config, process.Core).Run()
 		if err != nil {
 			return fmt.Errorf("run datacollection routine failed %s", err.Error())
 		}
@@ -145,47 +146,29 @@ func (h *DCServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		blog.V(3).Infof("config updated: \n%s", out)
 
 		dbprefix := "mongodb"
-		h.Config.MongoDB.Address = current.ConfigMap[dbprefix+".host"]
-		h.Config.MongoDB.User = current.ConfigMap[dbprefix+".usr"]
-		h.Config.MongoDB.Password = current.ConfigMap[dbprefix+".pwd"]
-		h.Config.MongoDB.Database = current.ConfigMap[dbprefix+".database"]
-		h.Config.MongoDB.Port = current.ConfigMap[dbprefix+".port"]
-		h.Config.MongoDB.MaxOpenConns = current.ConfigMap[dbprefix+".maxOpenConns"]
-		h.Config.MongoDB.MaxIdleConns = current.ConfigMap[dbprefix+".maxIDleConns"]
+		mongoConf := mongo.ParseConfigFromKV(dbprefix, current.ConfigMap)
+		h.Config.MongoDB = mongoConf
 
 		ccredisPrefix := "redis"
-		h.Config.CCRedis.Address = current.ConfigMap[ccredisPrefix+".host"]
-		h.Config.CCRedis.Password = current.ConfigMap[ccredisPrefix+".pwd"]
-		h.Config.CCRedis.Database = current.ConfigMap[ccredisPrefix+".database"]
-		h.Config.CCRedis.Port = current.ConfigMap[ccredisPrefix+".port"]
-		h.Config.CCRedis.MasterName = current.ConfigMap[ccredisPrefix+".mastername"]
+		redisConf := redis.ParseConfigFromKV(ccredisPrefix, current.ConfigMap)
+		h.Config.CCRedis = redisConf
 
 		snapPrefix := "snap-redis"
-		h.Config.SnapRedis.Address = current.ConfigMap[snapPrefix+".host"]
-		h.Config.SnapRedis.Password = current.ConfigMap[snapPrefix+".pwd"]
-		h.Config.SnapRedis.Database = current.ConfigMap[snapPrefix+".database"]
-		h.Config.SnapRedis.Port = current.ConfigMap[snapPrefix+".port"]
-		h.Config.SnapRedis.MasterName = current.ConfigMap[snapPrefix+".mastername"]
+		snapredisConf := redis.ParseConfigFromKV(snapPrefix, current.ConfigMap)
+		h.Config.SnapRedis = snapredisConf
 
 		discoverPrefix := "discover-redis"
-		h.Config.DiscoverRedis.Address = current.ConfigMap[discoverPrefix+".host"]
-		h.Config.DiscoverRedis.Password = current.ConfigMap[discoverPrefix+".pwd"]
-		h.Config.DiscoverRedis.Database = current.ConfigMap[discoverPrefix+".database"]
-		h.Config.DiscoverRedis.Port = current.ConfigMap[discoverPrefix+".port"]
-		h.Config.DiscoverRedis.MasterName = current.ConfigMap[discoverPrefix+".mastername"]
+		discoverRedisConf := redis.ParseConfigFromKV(discoverPrefix, current.ConfigMap)
+		h.Config.DiscoverRedis = discoverRedisConf
 
 		netcollectPrefix := "netcollect-redis"
-		h.Config.NetcollectRedis.Address = current.ConfigMap[netcollectPrefix+".host"]
-		h.Config.NetcollectRedis.Password = current.ConfigMap[netcollectPrefix+".pwd"]
-		h.Config.NetcollectRedis.Database = current.ConfigMap[netcollectPrefix+".database"]
-		h.Config.NetcollectRedis.Port = current.ConfigMap[netcollectPrefix+".port"]
-		h.Config.NetcollectRedis.MasterName = current.ConfigMap[netcollectPrefix+".mastername"]
+		netcollectRedisConf := redis.ParseConfigFromKV(discoverPrefix, current.ConfigMap)
+		h.Config.NetcollectRedis = netcollectRedisConf
 
 		esbPrefix := "esb"
 		h.Config.Esb.Addrs = current.ConfigMap[esbPrefix+".addr"]
 		h.Config.Esb.AppCode = current.ConfigMap[esbPrefix+".appCode"]
 		h.Config.Esb.AppSecret = current.ConfigMap[esbPrefix+".appSecret"]
-
 	}
 }
 

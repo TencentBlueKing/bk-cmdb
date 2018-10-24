@@ -13,6 +13,7 @@
 package identifier
 
 import (
+	"context"
 	"encoding/json"
 	"sort"
 	
@@ -21,7 +22,7 @@ import (
 	"configcenter/src/common/util" 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
 )
 
 type HostIdentifier struct {
@@ -79,9 +80,9 @@ func (iden *HostIdentifier) MarshalBinary() (data []byte, err error) {
 	return json.Marshal(iden)
 }
 
-func (iden *HostIdentifier) fillIden(cache *redis.Client, db storage.DI) *HostIdentifier {
+func (iden *HostIdentifier) fillIden(ctx context.Context, cache *redis.Client, db dal.RDB) *HostIdentifier {
 	// fill cloudName
-	cloud, err := getCache(cache, db, common.BKInnerObjIDPlat, iden.CloudID, false)
+	cloud, err := getCache(ctx, cache, db, common.BKInnerObjIDPlat, iden.CloudID, false)
 	if err != nil {
 		blog.Errorf("identifier: getCache error %s", err.Error())
 		return iden
@@ -90,7 +91,7 @@ func (iden *HostIdentifier) fillIden(cache *redis.Client, db storage.DI) *HostId
 
 	// fill module
 	for moduleID := range iden.Module {
-		biz, err := getCache(cache, db, common.BKInnerObjIDApp, iden.Module[moduleID].BizID, false)
+		biz, err := getCache(ctx, cache, db, common.BKInnerObjIDApp, iden.Module[moduleID].BizID, false)
 		if err != nil {
 			blog.Errorf("identifier: getCache error %s", err.Error())
 			continue
@@ -99,7 +100,7 @@ func (iden *HostIdentifier) fillIden(cache *redis.Client, db storage.DI) *HostId
 		iden.SupplierAccount = getString(biz.data[common.BKOwnerIDField])
 		iden.SupplierID = getInt(biz.data, common.BKSupplierIDField)
 
-		set, err := getCache(cache, db, common.BKInnerObjIDSet, iden.Module[moduleID].SetID, false)
+		set, err := getCache(ctx, cache, db, common.BKInnerObjIDSet, iden.Module[moduleID].SetID, false)
 		if err != nil {
 			blog.Errorf("identifier: getCache error %s", err.Error())
 			continue
@@ -108,7 +109,7 @@ func (iden *HostIdentifier) fillIden(cache *redis.Client, db storage.DI) *HostId
 		iden.Module[moduleID].SetEnv = getString(set.data[common.BKSetEnvField])
 		iden.Module[moduleID].SetStatus = getString(set.data[common.BKSetStatusField])
 
-		module, err := getCache(cache, db, common.BKInnerObjIDModule, iden.Module[moduleID].ModuleID, false)
+		module, err := getCache(ctx, cache, db, common.BKInnerObjIDModule, iden.Module[moduleID].ModuleID, false)
 		if err != nil {
 			blog.Errorf("identifier: getCache error %s", err.Error())
 			continue
@@ -119,7 +120,7 @@ func (iden *HostIdentifier) fillIden(cache *redis.Client, db storage.DI) *HostId
 	// fill process
 	for procindex := range iden.Process {
 		process := &iden.Process[procindex]
-		proc, err := getCache(cache, db, common.BKInnerObjIDProc, process.ProcessID, false)
+		proc, err := getCache(ctx, cache, db, common.BKInnerObjIDProc, process.ProcessID, false)
 		if err != nil {
 			blog.Errorf("identifier: getCache for %s %d error %s", common.BKInnerObjIDProc, process.ProcessID, err.Error())
 			continue

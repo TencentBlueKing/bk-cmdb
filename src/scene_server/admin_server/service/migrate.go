@@ -29,10 +29,11 @@ func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ownerID := common.BKDefaultOwnerID
 
-	err := upgrader.Upgrade(s.db, &upgrader.Config{
-		OwnerID:    ownerID,
-		SupplierID: common.BKDefaultSupplierID,
-		User:       "migrate",
+	err := upgrader.Upgrade(s.ctx, s.db, &upgrader.Config{
+		OwnerID:      ownerID,
+		SupplierID:   common.BKDefaultSupplierID,
+		User:         "migrate",
+		CCApiSrvAddr: s.ccApiSrvAddr,
 	})
 
 	if nil != err {

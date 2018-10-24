@@ -16,20 +16,7 @@
                 <div class="content">
                     <p class="info">{{$t('EventPush["配置平台以POST方法推送以下示例数据到您配置的URL"]')}}</p>
                     <div class="content-box">
-                        <ul>
-                            <li>{</li>
-                            <li class="pl20">"event_id": 100,</li>
-                            <li class="pl20">"event_type": "instdata",</li>
-                            <li class="pl20">"action": "update",</li>
-                            <li class="pl20">"action_time": "2018-01-01 18:00 +08:00",</li>
-                            <li class="pl20">"obj_type": "set",</li>
-                            <li class="pl20">"cur_data": {},</li>
-                            <li class="pl20">"pre_data": {},</li>
-                            <li class="pl20">"dstb_id": 1,</li>
-                            <li class="pl20">"dstb_time": "2018-01-01 18:00 +08:00",</li>
-                            <li class="pl20">"subscription_id": 16</li>
-                            <li>}</li>
-                        </ul>
+                        <pre>{{example}}</pre>
                     </div>
                     <div class="btn-group">
                         <bk-button type="primary" class="btn" @click="testTelnet" :loading="$loading(['testPing', 'testTelnet'])">{{$t('EventPush["只测试连通性"]')}}</bk-button>
@@ -67,6 +54,7 @@
 
 <script>
     import { mapActions } from 'vuex'
+    import example from '@/assets/json/event-push-example.json'
     export default {
         props: {
             callbackURL: {
@@ -86,7 +74,8 @@
                     result: false,
                     bk_error_msg: '',
                     data: ''
-                }
+                },
+                example
             }
         },
         watch: {
@@ -107,7 +96,10 @@
             async testPing () {
                 this.isResultShow = true
                 const res = await this.pingSubscription({
-                    params: {callback_url: this.callbackURL},
+                    params: {
+                        callback_url: this.callbackURL,
+                        data: {}
+                    },
                     config: {requestId: 'testPing'}
                 })
                 this.resultInfo = res
