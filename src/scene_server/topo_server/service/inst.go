@@ -16,14 +16,14 @@ import (
 	"strconv"
 	"strings"
 
-	"configcenter/src/scene_server/topo_server/core/operation"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/mapstr"
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	paraparse "configcenter/src/common/paraparse"
+	"configcenter/src/scene_server/topo_server/core/operation"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -72,11 +72,15 @@ func (s *topoService) DeleteInsts(params types.ContextParams, pathParams, queryP
 		return nil, err
 	}
 
-	return nil, s.core.InstOperation().DeleteInstByInstID(params, obj, deleteCondition.Delete.InstID)
+	return nil, s.core.InstOperation().DeleteInstByInstID(params, obj, deleteCondition.Delete.InstID, true)
 }
 
 // DeleteInst delete the inst
 func (s *topoService) DeleteInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+
+	if "batch" == pathParams("inst_id") {
+		return s.DeleteInsts(params, pathParams, queryParams, data)
+	}
 
 	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
 	if nil != err {
@@ -90,7 +94,7 @@ func (s *topoService) DeleteInst(params types.ContextParams, pathParams, queryPa
 		return nil, err
 	}
 
-	err = s.core.InstOperation().DeleteInstByInstID(params, obj, []int64{instID})
+	err = s.core.InstOperation().DeleteInstByInstID(params, obj, []int64{instID}, true)
 	return nil, err
 }
 func (s *topoService) UpdateInsts(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
@@ -112,7 +116,7 @@ func (s *topoService) UpdateInsts(params types.ContextParams, pathParams, queryP
 	for _, item := range updateCondition.Update {
 
 		cond := condition.CreateCondition()
-		cond.Field(obj.GetInstIDFieldName()).In(item.InstID)
+		cond.Field(obj.GetInstIDFieldName()).Eq(item.InstID)
 		err = s.core.InstOperation().UpdateInst(params, item.InstInfo, obj, cond, item.InstID)
 		if nil != err {
 			blog.Errorf("[api-inst] failed to update the object(%s) inst (%d),the data (%#v), error info is %s", obj.GetID(), item.InstID, data, err.Error())
@@ -128,6 +132,10 @@ func (s *topoService) UpdateInst(params types.ContextParams, pathParams, queryPa
 
 	// /inst/{owner_id}/{obj_id}/{inst_id}
 
+	if "batch" == pathParams("inst_id") {
+		return s.UpdateInsts(params, pathParams, queryParams, data)
+	}
+
 	objID := pathParams("obj_id")
 
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
@@ -135,6 +143,7 @@ func (s *topoService) UpdateInst(params types.ContextParams, pathParams, queryPa
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 		return nil, err
 	}
+
 	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
 	if nil != err {
 		blog.Errorf("[api-inst]failed to parse the inst id, error info is %s", err.Error())
@@ -164,7 +173,9 @@ func (s *topoService) SearchInsts(params types.ContextParams, pathParams, queryP
 	}
 
 	// construct the query inst condition
-	queryCond := &paraparse.SearchParams{}
+	queryCond := &paraparse.SearchParams{
+		Condition: mapstr.New(),
+	}
 	if err := data.MarshalJSONInto(queryCond); nil != err {
 		blog.Errorf("[api-inst] failed to parse the data and the condition, the input (%#v), error info is %s", data, err.Error())
 		return nil, err
@@ -204,7 +215,9 @@ func (s *topoService) SearchInstAndAssociationDetail(params types.ContextParams,
 
 	// construct the query inst condition
 
-	queryCond := &paraparse.SearchParams{}
+	queryCond := &paraparse.SearchParams{
+		Condition: mapstr.New(),
+	}
 	if err := data.MarshalJSONInto(queryCond); nil != err {
 		blog.Errorf("[api-inst] failed to parse the data and the condition, the input (%#v), error info is %s", data, err.Error())
 		return nil, err
@@ -241,7 +254,9 @@ func (s *topoService) SearchInstByObject(params types.ContextParams, pathParams,
 		return nil, err
 	}
 
-	queryCond := &paraparse.SearchParams{}
+	queryCond := &paraparse.SearchParams{
+		Condition: mapstr.New(),
+	}
 	if err := data.MarshalJSONInto(queryCond); nil != err {
 		blog.Errorf("[api-inst] failed to parse the data and the condition, the input (%#v), error info is %s", data, err.Error())
 		return nil, err
@@ -312,7 +327,7 @@ func (s *topoService) SearchInstByInstID(params types.ContextParams, pathParams,
 	cond := condition.CreateCondition()
 	cond.Field(obj.GetInstIDFieldName()).Eq(instID)
 	queryCond := &metadata.QueryInput{}
-	queryCond.Condition = cond
+	queryCond.Condition = cond.ToMapStr()
 
 	cnt, instItems, err := s.core.InstOperation().FindInst(params, obj, queryCond, false)
 	if nil != err {

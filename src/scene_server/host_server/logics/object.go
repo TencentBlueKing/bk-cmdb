@@ -118,9 +118,15 @@ func (lgc *Logics) GetSetIDByObjectCond(pheader http.Header, appID int64, object
 		instItem.Field = common.BKInstParentStr
 		instItem.Operator = i.Operator
 		instItem.Value = i.Value
+
 		objectIDArr = append(objectIDArr, value)
 	}
 	condition = append(condition, instItem)
+
+	nodefaultItem := meta.ConditionItem{}
+	nodefaultItem.Field = common.BKDefaultField
+	nodefaultItem.Operator = common.BKDBNE
+	nodefaultItem.Value = common.DefaultResSetFlag
 
 	appIDItem := meta.ConditionItem{
 		Field:    common.BKAppIDField,
@@ -128,6 +134,7 @@ func (lgc *Logics) GetSetIDByObjectCond(pheader http.Header, appID int64, object
 		Value:    appID,
 	}
 	condition = append(condition, appIDItem)
+	condition = append(condition, nodefaultItem)
 
 	for {
 		sSetIDArr, err := lgc.GetSetIDByCond(pheader, condition)
@@ -156,6 +163,7 @@ func (lgc *Logics) GetSetIDByObjectCond(pheader http.Header, appID int64, object
 		condition = make([]meta.ConditionItem, 0)
 		condition = append(condition, conc)
 		condition = append(condition, appIDItem)
+		condition = append(condition, nodefaultItem)
 	}
 
 }
@@ -209,7 +217,7 @@ func (lgc *Logics) GetObjectInstByCond(pheader http.Header, objID string, cond [
 	query := &meta.QueryInput{
 		Condition: condc,
 		Start:     0,
-		Limit:     1,
+		Limit:     common.BKNoLimit,
 		Sort:      common.BKAppIDField,
 	}
 	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), objType, pheader, query)

@@ -35,7 +35,7 @@ type iteratorInstBusiness struct {
 	bufIdx      int
 }
 
-func newIteratorInstBusiness(target model.Model, cond common.Condition) (BusinessIterator, error) {
+func NewIteratorInstBusiness(target model.Model, cond common.Condition) (BusinessIterator, error) {
 
 	iter := &iteratorInstBusiness{
 		targetModel: target,

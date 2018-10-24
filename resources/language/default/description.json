@@ -1,0 +1,4 @@
+{
+    "process_description_bk_start_param_regex": "通过进程启动参数唯一识别进程，比如kafka和zookeeper的二进制名称为java，通过启动参数包含kafka或zookeeper来区分",
+    "": ""
+}

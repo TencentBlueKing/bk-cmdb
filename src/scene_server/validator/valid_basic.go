@@ -244,37 +244,27 @@ func (valid *ValidMap) validInt(val interface{}, key string) error {
 	}
 
 	var value int64
-	switch tmp := val.(type) {
-	case int:
-		value = int64(tmp)
-	case int32:
-		value = int64(tmp)
-	case int64:
-		value = int64(tmp)
-	case float64:
-		value = int64(tmp)
-	case float32:
-		value = int64(tmp)
-	default:
+	value, err := util.GetInt64ByInterface(val)
+	if nil != err {
 		blog.Errorf("params %s:%#v not int", key, val)
 		return valid.errif.Errorf(common.CCErrCommParamsNeedInt, key)
 	}
 
-	option, ok := valid.propertys[key]
+	property, ok := valid.propertys[key]
 	if !ok {
 		return nil
 	}
-	intObjOption := parseIntOption(option)
+	intObjOption := parseIntOption(property.Option)
 	if 0 == len(intObjOption.Min) || 0 == len(intObjOption.Max) {
 		return nil
 	}
 
 	maxValue, err := strconv.ParseInt(intObjOption.Max, 10, 64)
-	if err != nil {
+	if nil != err {
 		maxValue = common.MaxInt64
 	}
 	minValue, err := strconv.ParseInt(intObjOption.Min, 10, 64)
-	if err != nil {
+	if nil != err {
 		minValue = common.MinInt64
 	}
 	if value > maxValue || value < minValue {

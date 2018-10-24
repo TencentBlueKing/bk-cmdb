@@ -24,7 +24,6 @@ import (
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	
 )
 
 func (ps *ProcServer) BindModuleProcess(req *restful.Request, resp *restful.Response) {
@@ -36,13 +35,13 @@ func (ps *ProcServer) BindModuleProcess(req *restful.Request, resp *restful.Resp
 	pathParams := req.PathParameters()
 	appIDStr := pathParams[common.BKAppIDField]
 	appID, _ := strconv.Atoi(appIDStr)
-	procIDStr := pathParams[common.BKProcIDField]
+	procIDStr := pathParams[common.BKProcessIDField]
 	procID, _ := strconv.Atoi(procIDStr)
 	moduleName := pathParams[common.BKModuleNameField]
 	params := make([]interface{}, 0)
 	cell := make(map[string]interface{})
 	cell[common.BKAppIDField] = appID
-	cell[common.BKProcIDField] = procID
+	cell[common.BKProcessIDField] = procID
 	cell[common.BKModuleNameField] = moduleName
 	cell[common.BKOwnerIDField] = util.GetOwnerID(req.Request.Header)
 	params = append(params, cell)
@@ -62,7 +61,7 @@ func (ps *ProcServer) BindModuleProcess(req *restful.Request, resp *restful.Resp
 	}
 
 	// save operation log
-	log := common.KvMap{common.BKOpDescField: fmt.Sprintf("build module [%s]", moduleName), common.BKOpTypeField: auditoplog.AuditOpTypeAdd}
+	log := common.KvMap{common.BKOpDescField: fmt.Sprintf("bind module [%s]", moduleName), common.BKOpTypeField: auditoplog.AuditOpTypeAdd, "inst_id": procID, common.BKContentField: meta.Content{}}
 	ps.CoreAPI.AuditController().AddProcLog(context.Background(), ownerID, appIDStr, user, req.Request.Header, log)
 
 	resp.WriteEntity(meta.NewSuccessResp(nil))
@@ -77,12 +76,12 @@ func (ps *ProcServer) DeleteModuleProcessBind(req *restful.Request, resp *restfu
 	pathParams := req.PathParameters()
 	appIDStr := pathParams[common.BKAppIDField]
 	appID, _ := strconv.Atoi(appIDStr)
-	procIDStr := pathParams[common.BKProcIDField]
+	procIDStr := pathParams[common.BKProcessIDField]
 	procID, _ := strconv.Atoi(procIDStr)
 	moduleName := pathParams[common.BKModuleNameField]
 	cell := make(map[string]interface{})
 	cell[common.BKAppIDField] = appID
-	cell[common.BKProcIDField] = procID
+	cell[common.BKProcessIDField] = procID
 	cell[common.BKModuleNameField] = moduleName
 
 	if err := ps.deleteProcInstanceModel(appIDStr, procIDStr, moduleName, req.Request.Header); err != nil {
@@ -99,7 +98,7 @@ func (ps *ProcServer) DeleteModuleProcessBind(req *restful.Request, resp *restfu
 	}
 
 	// save operation log
-	log := common.KvMap{common.BKOpDescField: fmt.Sprintf("unbind module [%s]", moduleName), common.BKOpTypeField: auditoplog.AuditOpTypeAdd}
+	log := common.KvMap{common.BKOpDescField: fmt.Sprintf("unbind module [%s]", moduleName), common.BKOpTypeField: auditoplog.AuditOpTypeAdd, "inst_id": procID, common.BKContentField: meta.Content{}}
 	ps.CoreAPI.AuditController().AddProcLog(context.Background(), ownerID, appIDStr, user, req.Request.Header, log)
 
 	resp.WriteEntity(meta.NewSuccessResp(nil))
@@ -111,10 +110,20 @@ func (ps *ProcServer) GetProcessBindModule(req *restful.Request, resp *restful.R
 
 	pathParams := req.PathParameters()
 	appIDStr := pathParams[common.BKAppIDField]
-	appID, _ := strconv.Atoi(appIDStr)
-	procIDStr := pathParams[common.BKProcIDField]
-	procID, _ := strconv.Atoi(procIDStr)
+	appID, errAppID := strconv.Atoi(appIDStr)
+	procIDStr := pathParams[common.BKProcessIDField]
+	procID, errProcID := strconv.Atoi(procIDStr)
 
+	if nil != errAppID {
+		blog.Errorf("GetProcessBindModule application id %s not integer", appIDStr)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
+		return
+	}
+	if nil != errProcID {
+		blog.Errorf("GetProcessBindModule process id %s not integer", procIDStr)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKProcessIDField)})
+		return
+	}
 	// search object instance
 	condition := make(map[string]interface{})
 	condition[common.BKAppIDField] = appID
@@ -128,7 +137,7 @@ func (ps *ProcServer) GetProcessBindModule(req *restful.Request, resp *restful.R
 		return
 	}
 
-	condition[common.BKProcIDField] = procID
+	condition[common.BKProcessIDField] = procID
 	// get process by module
 	p2mRet, err := ps.CoreAPI.ProcController().GetProc2Module(context.Background(), req.Request.Header, condition)
 	if err != nil || (err == nil && !p2mRet.Result) {
@@ -144,19 +153,20 @@ func (ps *ProcServer) GetProcessBindModule(req *restful.Request, resp *restful.R
 			if !ok {
 				continue
 			}
-
-			isDefault64, ok := moduleInfo[common.BKDefaultField].(float64)
-			if !ok {
-				isDefault, ok := moduleInfo[common.BKDefaultField].(int)
-				if !ok || 0 != isDefault {
-					continue
+			if moduleInfo.Exists(common.BKDefaultField) {
+				isDefault64, err := moduleInfo.Int64(common.BKDefaultField)
+				if nil != err {
+					blog.Warnf("get module default error:%s", err.Error())
+				} else {
+					if 0 != isDefault64 {
+						continue
+					}
 				}
+				disModuleNameArr = append(disModuleNameArr, moduleName)
 			} else {
-				if 0 != isDefault64 {
-					continue
-				}
+				blog.Errorf("ApplicationID %d  module name %s not found default field", appID, moduleName)
 			}
-			disModuleNameArr = append(disModuleNameArr, moduleName)
+
 		}
 	}
 

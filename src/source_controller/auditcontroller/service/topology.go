@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
@@ -28,7 +29,7 @@ import (
 func (s *Service) AddAppLog(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
-
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	strAppID := req.PathParameter("biz_id")
 	user := req.PathParameter("user")
@@ -36,20 +37,20 @@ func (s *Service) AddAppLog(req *restful.Request, resp *restful.Response) {
 	appID, err := util.GetInt64ByInterface(strAppID)
 	if nil != err {
 		blog.Errorf("AddAppLog json unmarshal error:%s", err.Error())
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
 		return
 	}
 
 	params := new(metadata.AuditAppParams)
 	if err = json.NewDecoder(req.Request.Body).Decode(params); err != nil {
 		blog.Errorf("AddAppLog json unmarshal failed error:%s", err.Error())
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-	err = s.Logics.AddLogWithStr(appID, appID, params.OpType, common.BKInnerObjIDApp, params.Content, "", params.OpDesc, ownerID, user)
+	err = s.Logics.AddLogWithStr(ctx, appID, appID, params.OpType, common.BKInnerObjIDApp, params.Content, "", params.OpDesc, ownerID, user)
 	if nil != err {
 		blog.Errorf("AddAppLog add application log error:%s", err.Error())
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
 		return
 	}
 	resp.WriteEntity(metadata.NewSuccessResp(nil))
@@ -59,7 +60,7 @@ func (s *Service) AddAppLog(req *restful.Request, resp *restful.Response) {
 func (s *Service) AddSetLog(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
-
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	strAppID := req.PathParameter("biz_id")
 	user := req.PathParameter("user")
@@ -67,21 +68,21 @@ func (s *Service) AddSetLog(req *restful.Request, resp *restful.Response) {
 	appID, err := util.GetInt64ByInterface(strAppID)
 	if nil != err {
 		blog.Errorf("AddSetLog json unmarshal error:%s", err.Error())
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
 		return
 	}
 
 	params := new(metadata.AuditSetParams)
 	if err = json.NewDecoder(req.Request.Body).Decode(params); err != nil {
 		blog.Errorf("AddSetLog json unmarshal failed,error:%s", err.Error())
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
-	err = s.Logics.AddLogWithStr(appID, params.SetID, params.OpType, common.BKInnerObjIDSet, params.Content, "", params.OpDesc, ownerID, user)
+	err = s.Logics.AddLogWithStr(ctx, appID, params.SetID, params.OpType, common.BKInnerObjIDSet, params.Content, "", params.OpDesc, ownerID, user)
 	if nil != err {
 		blog.Errorf("AddSetLog add application log error:%s", err.Error())
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
 		return
 	}
 	resp.WriteEntity(metadata.NewSuccessResp(nil))
@@ -91,7 +92,7 @@ func (s *Service) AddSetLog(req *restful.Request, resp *restful.Response) {
 func (s *Service) AddSetLogs(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
-
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	strAppID := req.PathParameter("biz_id")
 	user := req.PathParameter("user")
@@ -99,21 +100,21 @@ func (s *Service) AddSetLogs(req *restful.Request, resp *restful.Response) {
 	appID, err := util.GetInt64ByInterface(strAppID)
 	if nil != err {
 		blog.Errorf("AddSetLogs json unmarshal error:%s", err.Error())
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
 		return
 	}
 
 	params := new(metadata.AuditSetsParams)
 	if err = json.NewDecoder(req.Request.Body).Decode(params); err != nil {
 		blog.Error("AddSetLogs json unmarshal failed,error:%s", err.Error())
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
-	err = s.Logics.AddLogMulti(appID, params.OpType, common.BKInnerObjIDSet, params.Content, params.OpDesc, ownerID, user)
+	err = s.Logics.AddLogMulti(ctx, appID, params.OpType, common.BKInnerObjIDSet, params.Content, params.OpDesc, ownerID, user)
 	if nil != err {
 		blog.Errorf("AddSetLogs add set log error:%s", err.Error())
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
 		return
 	}
 	resp.WriteEntity(metadata.NewSuccessResp(nil))
@@ -123,7 +124,7 @@ func (s *Service) AddSetLogs(req *restful.Request, resp *restful.Response) {
 func (s *Service) AddModuleLog(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
-
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	strAppID := req.PathParameter("biz_id")
 	user := req.PathParameter("user")
@@ -131,21 +132,21 @@ func (s *Service) AddModuleLog(req *restful.Request, resp *restful.Response) {
 	appID, err := util.GetInt64ByInterface(strAppID)
 	if nil != err {
 		blog.Errorf("AddModuleLog json unmarshal error:%s", err.Error())
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
 		return
 	}
 
 	params := new(metadata.AuditModuleParams)
 	if err = json.NewDecoder(req.Request.Body).Decode(params); err != nil {
 		blog.Error("AddModuleLog json unmarshal failed, error:%s", err.Error())
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
-	err = s.Logics.AddLogWithStr(appID, params.ModuleID, params.OpType, common.BKInnerObjIDModule, params.Content, "", params.OpDesc, ownerID, user)
+	err = s.Logics.AddLogWithStr(ctx, appID, params.ModuleID, params.OpType, common.BKInnerObjIDModule, params.Content, "", params.OpDesc, ownerID, user)
 	if nil != err {
 		blog.Errorf("AddModuleLog add module log error:%s", err.Error())
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
 		return
 	}
 	resp.WriteEntity(metadata.NewSuccessResp(nil))
@@ -155,7 +156,7 @@ func (s *Service) AddModuleLog(req *restful.Request, resp *restful.Response) {
 func (s *Service) AddModuleLogs(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
-
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	strAppID := req.PathParameter("biz_id")
 	user := req.PathParameter("user")
@@ -163,21 +164,21 @@ func (s *Service) AddModuleLogs(req *restful.Request, resp *restful.Response) {
 	appID, err := util.GetInt64ByInterface(strAppID)
 	if nil != err {
 		blog.Errorf("AddModuleLogs json unmarshal error:%s", err.Error())
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
 		return
 	}
 
 	params := new(metadata.AuditModulesParams)
 	if err = json.NewDecoder(req.Request.Body).Decode(params); err != nil {
 		blog.Errorf("AddModuleLogs json unmarshal failed, error:%s", err.Error())
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
-	err = s.Logics.AddLogMulti(appID, params.OpType, common.BKInnerObjIDModule, params.Content, params.OpDesc, ownerID, user)
+	err = s.Logics.AddLogMulti(ctx, appID, params.OpType, common.BKInnerObjIDModule, params.Content, params.OpDesc, ownerID, user)
 	if nil != err {
 		blog.Errorf("add module log error:%s", err.Error())
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
 		return
 	}
 	resp.WriteEntity(metadata.NewSuccessResp(nil))

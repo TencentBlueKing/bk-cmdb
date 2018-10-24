@@ -74,6 +74,8 @@ type InstNameAsst struct {
 	InstID     int64                  `json:"bk_inst_id"`
 	ObjectName string                 `json:"bk_obj_name"`
 	InstName   string                 `json:"bk_inst_name"`
+	AsstName   string                 `json:"bk_asst_name"`
+	AsstID     string                 `json:"bk_asst_id"`
 	InstInfo   map[string]interface{} `json:"inst_info,omitempty"`
 }
 

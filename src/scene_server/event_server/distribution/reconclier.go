@@ -13,34 +13,37 @@
 package distribution
 
 import (
+	"context"
 	"fmt"
 	"io"
+	"reflect"
 	"strings"
+	"time"
 
 	redis "gopkg.in/redis.v5"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/core/cc/actions"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/types"
-	"configcenter/src/storage"
-	"configcenter/src/storage/dbclient"
+	"configcenter/src/storage/dal"
 )
 
 type reconciler struct {
-	db                   storage.DI
+	db                   dal.RDB
 	cache                *redis.Client
 	cached               map[string][]string
 	persisted            map[string][]string
 	cachedSubscribers    []string
 	persistedSubscribers []string
 	processID            string
+	ctx                  context.Context
 }
 
-func newReconciler(cache *redis.Client, db storage.DI) *reconciler {
+func newReconciler(ctx context.Context, cache *redis.Client, db dal.RDB) *reconciler {
 	return &reconciler{
+		ctx:                  ctx,
 		db:                   db,
 		cache:                cache,
 		cached:               map[string][]string{},
@@ -52,11 +55,15 @@ func newReconciler(cache *redis.Client, db storage.DI) *reconciler {
 var MsgChan = make(chan string, 3)
 
 func (r *reconciler) loadAll() {
+	r.cached = map[string][]string{}
+	r.persisted = map[string][]string{}
+	r.persistedSubscribers = []string{}
 	r.loadAllCached()
 	r.loadAllPersisted()
 }
 
 func (r *reconciler) loadAllCached() {
+	r.cached = map[string][]string{}
 	for _, formkey := range r.cache.Keys(types.EventCacheSubscribeformKey + "*").Val() {
 		if formkey != "" && formkey != "nil" && formkey != "redis" {
 			r.cached[strings.TrimPrefix(formkey, types.EventCacheSubscribeformKey)] = r.cache.SMembers(formkey).Val()
@@ -65,8 +72,10 @@ func (r *reconciler) loadAllCached() {
 }
 
 func (r *reconciler) loadAllPersisted() {
+	r.persisted = map[string][]string{}
+	r.persistedSubscribers = []string{}
 	subscriptions := []metadata.Subscription{}
-	if err := r.db.GetMutilByCondition(common.BKTableNameSubscription, nil, nil, &subscriptions, "", 0, 0); err != nil {
+	if err := r.db.Table(common.BKTableNameSubscription).Find(nil).All(r.ctx, &subscriptions); err != nil {
 		blog.Errorf("reconcile err: %v", err)
 	}
 	blog.Infof("loaded %v subscriptions from persistent", len(subscriptions))
@@ -102,52 +111,36 @@ func (r *reconciler) reconcile() {
 	for k := range r.cached {
 		r.cache.Del(types.EventCacheSubscribeformKey + k)
 	}
+
 }
 
-func SubscribeChannel(config map[string]string) (err error) {
-	dType := storage.DI_REDIS
-	host := config[dType+".host"]
-	port := config[dType+".port"]
-	user := config[dType+".usr"]
-	pwd := config[dType+".pwd"]
-	dbName := config[dType+".database"]
-	dataCli, err := dbclient.NewDB(host, port, user, pwd, "", dbName, dType)
-	if err != nil {
-		return err
-	}
-	err = dataCli.Open()
-	if err != nil {
-		return err
-	}
-	session := dataCli.GetSession().(*redis.Client)
-	redisCli := *session
+func SubscribeChannel(redisCli *redis.Client) (err error) {
 	subChan, err := redisCli.PSubscribe(types.EventCacheProcessChannel)
 	if err != nil {
 		return err
 	}
-	blog.Info("receiving massages 2")
+	blog.Info("receiving massages")
 	for {
 		mesg, err := subChan.Receive()
-		if err != nil {
-			return err
-		}
-		msg, ok := mesg.(*redis.Message)
-		if !ok {
-			continue
-		}
 		if err == redis.Nil || err == io.EOF {
 			continue
 		}
 		if nil != err {
-			blog.Error("reids err %s", err.Error())
+			blog.Warnf("SubscribeChannel err %s,, continue", err.Error())
 			subChan.Unsubscribe(types.EventCacheProcessChannel)
+			time.Sleep(time.Second)
 			subChan.Subscribe(types.EventCacheProcessChannel)
 			continue
 		}
+		msg, ok := mesg.(*redis.Message)
+		if !ok {
+			blog.Warnf("SubscribeChannel msg not message type but %v, continue", reflect.TypeOf(mesg).String())
+			continue
+		}
 		if "" == msg.Payload {
+			blog.Warnf("SubscribeChannel Payload empty, continue")
 			continue
 		}
 		MsgChan <- msg.Payload
 	}
 }
-func init() { actions.RegisterNewAutoAction(actions.AutoAction{"SubscribeChannel", SubscribeChannel}) }

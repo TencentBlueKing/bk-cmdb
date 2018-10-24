@@ -24,11 +24,11 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/validator"
-	
 )
 
 func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response) {
@@ -69,20 +69,20 @@ func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response
 	}
 
 	//save change log
-	instID, err := ret.Data.Int64(common.BKProcIDField)
+	instID, err := ret.Data.Int64(common.BKProcessIDField)
 	if nil == err {
 
 		curDetail, err := ps.getProcDetail(req, ownerID, appID, int(instID))
 		if err != nil {
 			blog.Errorf("get process instance detail failed. err:%s", err.Error())
 		} else {
-			ps.addProcLog(ownerID, appIDStr, user, nil, curDetail, int(instID), req.Request.Header)
+			ps.addProcLog(ownerID, appIDStr, user, nil, curDetail, auditoplog.AuditOpTypeAdd, int(instID), req.Request.Header)
 		}
 	}
 
 	// return success
 	result := make(map[string]interface{})
-	result[common.BKProcIDField] = instID
+	result[common.BKProcessIDField] = instID
 	resp.WriteEntity(meta.NewSuccessResp(result))
 }
 
@@ -99,7 +99,7 @@ func (ps *ProcServer) UpdateProcess(req *restful.Request, resp *restful.Response
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
-	procIDStr := req.PathParameter(common.BKProcIDField)
+	procIDStr := req.PathParameter(common.BKProcessIDField)
 	procID, err := strconv.Atoi(procIDStr)
 	if err != nil {
 		blog.Errorf("convert procid from string to int failed!, err: %s", err.Error())
@@ -132,7 +132,7 @@ func (ps *ProcServer) UpdateProcess(req *restful.Request, resp *restful.Response
 	condition := make(map[string]interface{})
 	condition[common.BKOwnerIDField] = ownerID
 	condition[common.BKAppIDField] = appID
-	condition[common.BKProcIDField] = procID
+	condition[common.BKProcessIDField] = procID
 	input["condition"] = condition
 	input["data"] = procData
 	ret, err := ps.CoreAPI.ObjectController().Instance().UpdateObject(context.Background(), common.BKInnerObjIDProc, req.Request.Header, input)
@@ -148,7 +148,7 @@ func (ps *ProcServer) UpdateProcess(req *restful.Request, resp *restful.Response
 	if err != nil {
 		blog.Errorf("get process instance detail failed. err:%s", err.Error())
 	}
-	ps.addProcLog(ownerID, appIDStr, user, preProcDetail, curDetail, procID, req.Request.Header)
+	ps.addProcLog(ownerID, appIDStr, user, preProcDetail, curDetail, auditoplog.AuditOpTypeModify, procID, req.Request.Header)
 
 	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
@@ -245,7 +245,7 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 	condition := make(map[string]interface{})
 	condition[common.BKOwnerIDField] = ownerID
 	condition[common.BKAppIDField] = appID
-	condition[common.BKProcIDField] = map[string]interface{}{
+	condition[common.BKProcessIDField] = map[string]interface{}{
 		common.BKDBIN: iProcIDArr,
 	}
 
@@ -308,11 +308,20 @@ func (ps *ProcServer) DeleteProcess(req *restful.Request, resp *restful.Response
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
-	procIDStr := req.PathParameter(common.BKProcIDField)
+	procIDStr := req.PathParameter(common.BKProcessIDField)
 	procID, err := strconv.Atoi(procIDStr)
 	if err != nil {
 		blog.Errorf("convert procid from string to int failed!, err: %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
+		return
+	}
+
+	condition := mapstr.MapStr{common.BKProcessIDField: procID}
+	// get process by module,restrict the process deletion of the associated module
+	p2mRet, err := ps.CoreAPI.ProcController().GetProc2Module(context.Background(), req.Request.Header, condition)
+	if err != nil || !p2mRet.Result || 0 != len(p2mRet.Data) {
+		blog.Errorf("fail to GetProcessBindModule when do GetProc2Module. err:%v, errcode:%d, errmsg:%s", err, p2mRet.Code, p2mRet.ErrMsg)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcBindWithModule)})
 		return
 	}
 
@@ -324,7 +333,7 @@ func (ps *ProcServer) DeleteProcess(req *restful.Request, resp *restful.Response
 
 	conditon := make(map[string]interface{})
 	conditon[common.BKAppIDField] = appID
-	conditon[common.BKProcIDField] = procID
+	conditon[common.BKProcessIDField] = procID
 	conditon[common.BKOwnerIDField] = ownerID
 	ret, err := ps.CoreAPI.ObjectController().Instance().DelObject(context.Background(), common.BKInnerObjIDProc, req.Request.Header, conditon)
 	if err != nil || (err == nil && !ret.Result) {
@@ -334,7 +343,7 @@ func (ps *ProcServer) DeleteProcess(req *restful.Request, resp *restful.Response
 	}
 
 	// save operation log
-	ps.addProcLog(ownerID, appIDStr, user, preProcDetail, nil, procID, req.Request.Header)
+	ps.addProcLog(ownerID, appIDStr, user, preProcDetail, nil, auditoplog.AuditOpTypeDel, procID, req.Request.Header)
 
 	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
@@ -353,6 +362,7 @@ func (ps *ProcServer) SearchProcess(req *restful.Request, resp *restful.Response
 	}
 
 	var srchparam params.SearchParams
+	srchparam.Condition = mapstr.New()
 	if err := json.NewDecoder(req.Request.Body).Decode(&srchparam); err != nil {
 		blog.Errorf("decode request body err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
@@ -378,18 +388,17 @@ func (ps *ProcServer) SearchProcess(req *restful.Request, resp *restful.Response
 	searchParams.Fields = strings.Join(srchparam.Fields, ",")
 	searchParams.Start, err = util.GetIntByInterface(page["start"])
 	if nil != err {
-		blog.Errorf("request body query condition format error start not integer, input:%v", page["start"])
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, "start")})
-		return
+		searchParams.Start = 0
 	}
 	searchParams.Limit, err = util.GetIntByInterface(page["limit"])
 	if nil != err {
-		blog.Errorf("request body query condition format error limit not integer, input:%v", page["limit"])
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, "limit")})
-		return
+		searchParams.Limit = common.BKNoLimit
 	}
-	searchParams.Sort = page["sort"].(string)
-
+	if sort, ok := page["sort"].(string); !ok {
+		searchParams.Sort = ""
+	} else {
+		searchParams.Sort = sort
+	}
 	// query process by module name
 	if moduleName, ok := condition[common.BKModuleNameField]; ok {
 		reqParam := make(map[string]interface{})
@@ -405,13 +414,13 @@ func (ps *ProcServer) SearchProcess(req *restful.Request, resp *restful.Response
 		}
 
 		// parse procid array
-		procIdArr := make([]int, 0)
+		procIdArr := make([]int64, 0)
 		for _, item := range ret.Data {
 			procIdArr = append(procIdArr, item.ProcessID)
 		}
 
 		// update condition
-		condition[common.BKProcIDField] = map[string]interface{}{
+		condition[common.BKProcessIDField] = map[string]interface{}{
 			"$in": procIdArr,
 		}
 		delete(condition, common.BKModuleNameField)
@@ -429,7 +438,7 @@ func (ps *ProcServer) SearchProcess(req *restful.Request, resp *restful.Response
 	resp.WriteEntity(meta.NewSuccessResp(ret.Data))
 }
 
-func (ps *ProcServer) addProcLog(ownerID, appID, user string, preProcDetails, curProcDetails []map[string]interface{}, instanceID int, header http.Header) error {
+func (ps *ProcServer) addProcLog(ownerID, appID, user string, preProcDetails, curProcDetails []map[string]interface{}, auditType auditoplog.AuditOpType, instanceID int, header http.Header) error {
 	headers := []meta.Header{}
 	curData := map[string]interface{}{}
 	preData := map[string]interface{}{}
@@ -458,15 +467,24 @@ func (ps *ProcServer) addProcLog(ownerID, appID, user string, preProcDetails, cu
 		PreData: preData,
 		Headers: headers,
 	}
+	desc := fmt.Sprintf("unknown type:%s", auditType)
+	switch auditType {
+	case auditoplog.AuditOpTypeAdd:
+		desc = "create process"
+	case auditoplog.AuditOpTypeDel:
+		desc = "delete process"
+	case auditoplog.AuditOpTypeModify:
+		desc = "update process"
+	}
 
-	log := common.KvMap{common.BKContentField: auditContent, common.BKOpDescField: "create process", common.BKOpTypeField: auditoplog.AuditOpTypeAdd, "inst_id": instanceID}
+	log := common.KvMap{common.BKContentField: auditContent, common.BKOpDescField: desc, common.BKOpTypeField: auditType, "inst_id": instanceID}
 	_, err := ps.CoreAPI.AuditController().AddProcLog(context.Background(), ownerID, appID, user, header, log)
 	return err
 }
 
 func (ps *ProcServer) getProcessbyProcID(procID string, forward http.Header) (map[string]interface{}, error) {
 	condition := map[string]interface{}{
-		common.BKProcIDField: procID,
+		common.BKProcessIDField: procID,
 	}
 
 	reqParam := new(meta.QueryInput)

@@ -1,4 +1,3 @@
-
 # 创建对象模型属性
 
 - API:   POST /api/{version}/object/attr
@@ -21,7 +20,6 @@
 	"bk_property_id": "cc_test",
 	"bk_property_name": "cc_test",
 	"bk_property_type": "singlechar",
-	"bk_asst_forward": "undefined"
 }
 ```
 
@@ -38,17 +36,32 @@
 |ispre|bool|否|false|true:预置字段,false:非内置字段|preset fields|
 |isreadonly|bool|否|false|true:只读，false:非只读|true:read-only， false:writable|
 |isrequired|bool|否|false|true:必填，false:可选|true:required，false: option|
-|option|string|否|无|用户自定义内容，存储的内容及格式由调用方决定|custom content|
+|option|string|否|无|用户自定义内容，存储的内容及格式由调用方决定，以数字类型为例（{"min":"1","max":"2"}）|custom content（{"min":"1","max":"2"} take int for example）|
 |unit|string|否|无|单位|the unit|
 |placeholder|string|否|无|占位符|the placeholder|
 |bk_property_group|string|否|无|字段分栏的名字|group recognition|
 |bk_obj_id|string|是|无|模型ID|the object identifier|
-| bk_supplier_account| string|是|无|开发商账号|supplier account code|
+|bk_supplier_account| string|是|无|开发商账号|supplier account code|
 |bk_property_id|string|是|无|模型的属性ID|attribute identifier|
 |bk_property_name|string|是|无|模型属性名，用于展示|the attribute name|
-|bk_property_type|string|是|无|定义的属性字段用于存储数据的数据类型|the data type|
+|bk_property_type|string|是|无|定义的属性字段用于存储数据的数据类型,可取值范围（singlechar,longchar,int,enum,date,time,objuser,singleasst,multiasst,timezone,bool）|the data type（singlechar,longchar,int,enum,date,time,objuser,singleasst,multiasst,timezone,bool)|
 |bk_asst_obj_id|string|否|无|如果有关联其它的模型，那么就必需设置此字段，否则就不需要设置|the object identifier|
-|bk_asst_forward|string|否|无|关联方向，由调用方自行设置|the associated direction|
+
+**bk_property_type 取值**
+
+|标识|名字|
+|---|---|
+|singlechar|短字符|
+|longchar|长字符|
+|int|整形|
+|enum|枚举类型|
+|date|日期|
+|time|时间|
+|objuser|用户|
+|singleasst|单关联|
+|multiasst|多关联|
+|timezone|时区|
+|bool|布尔|
 
 
 - output
@@ -136,13 +149,17 @@ data 字段说明
 
 ``` json
 {
-    "ispre": true,
-    "creator": "admin",
-    "modifier": "admin",
-    "bk_classification_id": "bk_host_manage",
-    "bk_obj_name": "XXXX",
-    "bk_supplier_account": "0",
-    "bk_obj_icon": "icon-cc-business"
+    "description":"",
+    "placeholder":"",
+    "unit":"",
+    "isonly":false,
+    "isreadonly":false,
+    "isrequired":false,
+    "bk_property_group":"default",
+    "option":"{"min":"1","max":"4"}",
+    "bk_property_name":"aaa",
+    "bk_property_type":"int",
+    "bk_asst_obj_id":""
 }
 ```
 
@@ -153,22 +170,34 @@ data 字段说明
 | 字段|类型|必填|默认值|说明|Description|
 |---|---|---|---|---|---|
 |id|int|是|无|目标数据的记录ID|the id of the target data record|
-|creator|string|否|无|数据的创建者|creator|
 |description|string|否|无|数据的描述信息|description|
-|editable|bool|否|无|表明数据是否可编辑|editability|
 |isonly|bool|否|无|表明唯一性|unique identity|
 |isreadonly|bool|否|无|表明是否只读|true:read-only, false:writable|
 |isrequired|bool|否|无|表明是否必填|true:required， false: option|
-|issystem|bool|否|无|系统内部流转使用|internal use|
 |bk_property_group|string|否|无|字段分栏的名字|group recognition|
-|option|string|否|无|用户自定义内容，存储的内容及格式由调用方决定|custom content|
+|option|string|否|无|用户自定义内容，存储的内容及格式由调用方决定, 以数字内容为例（{"min":"1","max":"2"}）|custom content （{"min":"1","max":"2"}）|
 |bk_property_name|string|否|无|模型属性名，用于展示|the attribute name|
-|bk_property_type|string|否|无|定义的属性字段用于存储数据的数据类型|the data type|
-|bk_unit|string|否|无|单位|the unit|
-|bk_placeholder|string|否|无|占位符|the place holder|
+|bk_property_type|string|否|无|定义的属性字段用于存储数据的数据类型（singlechar,longchar,int,enum,date,time,objuser,singleasst,multiasst,timezone,bool)|the data type （singlechar,longchar,int,enum,date,time,objuser,singleasst,multiasst,timezone,bool)|
+|unit|string|否|无|单位|the unit|
+|placeholder|string|否|无|占位符|the place holder|
 |bk_asst_obj_id|string|否|无|如果有关联其它的模型，那么就必需设置此字段，否则就不需要设置|the object identifier|
-|bk_asst_forward|string|否|无|关联方向，由前端自行设置|the association arrow|
 
+
+**bk_property_type 取值**
+
+|标识|名字|
+|---|---|
+|singlechar|短字符|
+|longchar|长字符|
+|int|整形|
+|enum|枚举类型|
+|date|日期|
+|time|时间|
+|objuser|用户|
+|singleasst|单关联|
+|multiasst|多关联|
+|timezone|时区|
+|bool|布尔|
 
 - output
 
@@ -215,27 +244,25 @@ data 字段说明
 
 | 字段|类型|必填|默认值|说明|Description|
 |---|---|---|---|---|---|
-|issystem|bool|否|无|系统内部流转使用|internal use|
-|isapi|bool|否|无|只有API调用才需要被设置|only API calls need to be set.|
-|creator|string|否|无|数据的创建者|creator|
-|description|string|否|无|数据的描述信息|description|
-|editable|bool|否|无|表明数据是否可编辑|editability|
-|isonly|bool|否|无|表明唯一性|unique identity|
-|isreadonly|bool|否|无|表明是否只读|true:read-only,  false:writable|
-|isrequired|bool|否|无|表明是否必填|true:required， false: option|
-|bk_property_group|string|否|无|字段分栏的名字|grouping attributes|
 |bk_obj_id|string|否|无|模型ID|the object identifier|
-|option|string|否|无|用户自定义内容，存储的内容及格式由调用方决定|custom content|
 |bk_supplier_account| string| 否| 无|开发商账号|supplier account code|
-|bk_property_id|string|否|无|模型的属性ID|attribute identifier|
-|bk_property_name|string|否|无|模型属性名，用于展示|the attribute name|
-|bk_property_type|string|否|无|定义的属性字段用于存储数据的数据类型|the data type|
-|unit|string|是|无|单位|the unit|
-|placeholder|string|否|无|占位符|the placeholder|
-|create_time|string|否|无|数据创建的时间|data creation time 
-|last_time|string|否|无|数据最后被更新的时间|the last time the data is updated.|
-|bk_asst_obj_id|string|否|无|模型的标识符ID|the object identifier|
 
+
+**bk_property_type 取值**
+
+|标识|名字|
+|---|---|
+|singlechar|短字符|
+|longchar|长字符|
+|int|整形|
+|enum|枚举类型|
+|date|日期|
+|time|时间|
+|objuser|用户|
+|singleasst|单关联|
+|multiasst|多关联|
+|timezone|时区|
+|bool|布尔|
 
 - output 
 
@@ -246,7 +273,6 @@ data 字段说明
     "bk_error_msg": null,
     "data": [
         {
-            "bk_asst_forward": "",
             "bk_asst_obj_id": "",
             "bk_asst_type": 0,
             "create_time": "2018-03-08T11:30:27.898+08:00",
@@ -307,6 +333,21 @@ data字段说明
 | bk_supplier_account| string|开发商账号|supplier account code|
 |bk_property_id|string|模型的属性ID|attribute identifier|
 |bk_property_name|string|模型属性名，用于展示|the attribute name|
-|bk_property_type|string|定义的属性字段用于存储数据的数据类型|the data type|
+|bk_property_type|string|定义的属性字段用于存储数据的数据类型 （singlechar,longchar,int,enum,date,time,objuser,singleasst,multiasst,timezone,bool)|the data type （singlechar,longchar,int,enum,date,time,objuser,singleasst,multiasst,timezone,bool)|
 |bk_asst_obj_id|string|如果有关联其它的模型，那么就必需设置此字段，否则就不需要设置|the object identifier|
-|bk_asst_forward|string|关联方向，由调用方自行设置|the associated direction|
+
+**bk_property_type 取值**
+
+|标识|名字|
+|---|---|
+|singlechar|短字符|
+|longchar|长字符|
+|int|整形|
+|enum|枚举类型|
+|date|日期|
+|time|时间|
+|objuser|用户|
+|singleasst|单关联|
+|multiasst|多关联|
+|timezone|时区|
+|bool|布尔|

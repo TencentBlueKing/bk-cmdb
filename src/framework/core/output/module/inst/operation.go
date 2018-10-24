@@ -90,54 +90,54 @@ func (o *operation) DeleteHosts(supplierAccount string, hostIDS []int64) error {
 
 func (o *operation) FindCommonInstLikeName(target model.Model, instName string) (Iterator, error) {
 	cond := common.CreateCondition().Field(InstName).Like(instName)
-	return newIteratorInst(target, cond)
+	return NewIteratorInst(target, cond)
 }
 
 func (o *operation) FindCommonInstByCondition(target model.Model, cond common.Condition) (Iterator, error) {
-	return newIteratorInst(target, cond)
+	return NewIteratorInst(target, cond)
 }
 
 func (o *operation) FindBusinessLikeName(target model.Model, businessName string) (BusinessIterator, error) {
 	cond := common.CreateCondition().Field(BusinessNameField).Like(businessName)
-	return newIteratorInstBusiness(target, cond)
+	return NewIteratorInstBusiness(target, cond)
 }
 
 func (o *operation) FindBusinessByCondition(target model.Model, condition common.Condition) (BusinessIterator, error) {
-	return newIteratorInstBusiness(target, condition)
+	return NewIteratorInstBusiness(target, condition)
 }
 
 func (o *operation) FindHostsLikeName(target model.Model, hostname string) (HostIterator, error) {
 	cond := common.CreateCondition().Field(HostNameField).Like(hostname)
-	return newHostIterator(target, cond)
+	return NewHostIterator(target, cond)
 }
 
 func (o *operation) FindHostsByCondition(target model.Model, condition common.Condition) (HostIterator, error) {
-	return newHostIterator(target, condition)
+	return NewHostIterator(target, condition)
 }
 
 func (o *operation) FindModulesLikeName(target model.Model, moduleName string) (ModuleIterator, error) {
 	cond := common.CreateCondition().Field(ModuleName).Like(moduleName)
-	return newIteratorInstModule(target, cond)
+	return NewIteratorInstModule(target, cond)
 }
 
 func (o *operation) FindModulesByCondition(target model.Model, cond common.Condition) (ModuleIterator, error) {
-	return newIteratorInstModule(target, cond)
+	return NewIteratorInstModule(target, cond)
 }
 
 func (o *operation) FindPlatsLikeName(target model.Model, platName string) (Iterator, error) {
 	cond := common.CreateCondition().Field(PlatName).Like(platName)
-	return newIteratorInst(target, cond)
+	return NewIteratorInst(target, cond)
 }
 
 func (o *operation) FindPlatsByCondition(target model.Model, cond common.Condition) (Iterator, error) {
-	return newIteratorInst(target, cond)
+	return NewIteratorInst(target, cond)
 }
 
 func (o *operation) FindSetsLikeName(target model.Model, setName string) (SetIterator, error) {
 	cond := common.CreateCondition().Field(SetName).Like(setName)
-	return newIteratorInstSet(target, cond)
+	return NewIteratorInstSet(target, cond)
 }
 
 func (o *operation) FindSetsByCondition(target model.Model, cond common.Condition) (SetIterator, error) {
-	return newIteratorInstSet(target, cond)
+	return NewIteratorInstSet(target, cond)
 }

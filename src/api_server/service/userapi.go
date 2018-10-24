@@ -56,7 +56,7 @@ func (s *Service) getCustomerGroupList(req *restful.Request, resp *restful.Respo
 	postInput.Start = 0
 	postInput.Limit = common.BKNoLimit
 
-	var resDataV2 []mapstr.MapStr
+	resDataV2 := make([]mapstr.MapStr, 0)
 
 	// all application ids
 	for _, appID := range appIDs {
@@ -133,8 +133,14 @@ func (s *Service) getContentByCustomerGroupID(req *restful.Request, resp *restfu
 		intPageSize, _ := util.GetIntByInterface(pageSize)
 		if intPage > 0 {
 			intPage -= 1
+		} else {
+			page = "1"
+		}
+		if 0 >= intPageSize {
+			intPageSize = 20
 		}
 		skip = strconv.Itoa(intPage * intPageSize)
+		pageSize = strconv.Itoa(intPageSize)
 
 	} else {
 		pageSize = strconv.Itoa(common.BKNoLimit)
@@ -154,6 +160,9 @@ func (s *Service) getContentByCustomerGroupID(req *restful.Request, resp *restfu
 		blog.Error("getContentByCustomerGroupID  v%", result)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
+	}
+	if 0 == len(list) {
+		list = make([]common.KvMap, 0)
 	}
 
 	if "1" == version {

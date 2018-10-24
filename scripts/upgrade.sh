@@ -30,13 +30,13 @@ if [ -f $new_version_package ];then
                     cd $old_pwd/$tmp_item && bash ./stop.sh || true
                 popd > /dev/null
 
-                echo cp `realpath $old_pwd/$tmp_item/cmdb_*`
+                echo cp `readlink -f $old_pwd/$tmp_item/cmdb_*`
                 cp -f $tmp_item/cmdb_* $old_pwd/$tmp_item/
 
-                echo cp $tmp_item/conf/errors to `realpath $old_pwd/$tmp_item/conf/errors`
+                echo cp $tmp_item/conf/errors to `readlink -f $old_pwd/$tmp_item/conf/errors`
                 cp -R -f $tmp_item/conf/errors $old_pwd/$tmp_item/conf
 
-                echo cp $tmp_item/conf/language to `realpath $old_pwd/$tmp_item/conf/language`
+                echo cp $tmp_item/conf/language to `readlink -f $old_pwd/$tmp_item/conf/language`
                 cp -R -f $tmp_item/conf/language $old_pwd/$tmp_item/conf
             else
                 mkdir -p $old_pwd/$tmp_item
@@ -46,8 +46,16 @@ if [ -f $new_version_package ];then
     popd > /dev/null
 
     if [ -d $(pwd)/upgrade_tmp/cmdb/web ]; then 
-        echo cp `realpath $(pwd)/web`
+        echo cp `readlink -f $(pwd)/web`
         cp -R -f $(pwd)/upgrade_tmp/cmdb/web .
+    fi
+
+    if [ -f $(pwd)/upgrade_tmp/cmdb/init.py ]; then
+        cp -R -f $(pwd)/upgrade_tmp/cmdb/init.py .
+    fi
+
+    if [ -f $(pwd)/upgrade_tmp/cmdb/upgrade.sh ]; then
+        cp -R -f $(pwd)/upgrade_tmp/cmdb/upgrade.sh .
     fi
 
     # delete the template directory

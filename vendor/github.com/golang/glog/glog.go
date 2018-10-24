@@ -646,6 +646,15 @@ func (l *loggingT) printDepth(s severity, depth int, args ...interface{}) {
 	l.output(s, buf, file, line, false)
 }
 
+func (l *loggingT) printDepthf(s severity, format string, depth int, args ...interface{}) {
+	buf, file, line := l.header(s, depth)
+	fmt.Fprintf(buf, format, args...)
+	if buf.Bytes()[buf.Len()-1] != '\n' {
+		buf.WriteByte('\n')
+	}
+	l.output(s, buf, file, line, false)
+}
+
 func (l *loggingT) printf(s severity, format string, args ...interface{}) {
 	buf, file, line := l.header(s, 0)
 	fmt.Fprintf(buf, format, args...)
@@ -1056,6 +1065,12 @@ func Info(args ...interface{}) {
 // InfoDepth(0, "msg") is the same as Info("msg").
 func InfoDepth(depth int, args ...interface{}) {
 	logging.printDepth(infoLog, depth, args...)
+}
+
+// InfoDepthf acts as Info but uses depth to determine which call frame to log.
+// InfoDepthf(0, "msg") is the same as Infof("msg").
+func InfoDepthf(depth int, format string, args ...interface{}) {
+	logging.printDepthf(infoLog, format, depth, args...)
 }
 
 // Infoln logs to the INFO log.

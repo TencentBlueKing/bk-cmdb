@@ -13,6 +13,7 @@
 package datacollection
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"runtime"
@@ -29,7 +30,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
 )
 
 var (
@@ -65,7 +66,8 @@ type HostSnap struct {
 	subscribing bool
 
 	cache *Cache
-	db    storage.DI
+	ctx   context.Context
+	db    dal.RDB
 
 	wg *sync.WaitGroup
 }
@@ -75,7 +77,7 @@ type Cache struct {
 	flag  bool
 }
 
-func NewHostSnap(chanName []string, maxSize int, redisCli, snapCli *redis.Client, db storage.DI) *HostSnap {
+func NewHostSnap(ctx context.Context, chanName []string, maxSize int, redisCli, snapCli *redis.Client, db dal.RDB) *HostSnap {
 	if 0 == maxSize {
 		maxSize = 100
 	}
@@ -87,6 +89,7 @@ func NewHostSnap(chanName []string, maxSize int, redisCli, snapCli *redis.Client
 		maxSize:       maxSize,
 		redisCli:      redisCli,
 		snapCli:       snapCli,
+		ctx:           ctx,
 		db:            db,
 		ts:            time.Now(),
 		id:            xid.New().String()[5:],
@@ -107,7 +110,7 @@ func (h *HostSnap) Start() {
 		h.Run()
 		for {
 			time.Sleep(time.Second * 10)
-			NewHostSnap(h.hostChanName, h.maxSize, h.redisCli, h.snapCli, h.db).Run()
+			NewHostSnap(h.ctx, h.hostChanName, h.maxSize, h.redisCli, h.snapCli, h.db).Run()
 		}
 	}()
 }
@@ -253,7 +256,7 @@ func (h *HostSnap) handleMsg(msgs []string, resetHandle chan struct{}) error {
 			setter := parseSetter(&val, innerip, outip)
 			if needToUpdate(setter, host) {
 				blog.Infof("update by %v, to %v", condition, setter)
-				if err := h.db.UpdateByCondition(common.BKTableNameBaseHost, setter, condition); err != nil {
+				if err := h.db.Table(common.BKTableNameBaseHost).Update(h.ctx, condition, setter); err != nil {
 					blog.Error("update host error:", err.Error())
 					continue
 				}
@@ -324,19 +327,24 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 
 	osbit := val.Get("data.system.info.systemtype").String()
 
+	dockerClientVersion := val.Get("data.system.docker.Client.Version").String()
+	dockerServerVersion := val.Get("data.system.docker.Server.Version").String()
+
 	setter := map[string]interface{}{
-		"bk_cpu":        cupnum,
-		"bk_cpu_module": cpumodule,
-		"bk_cpu_mhz":    CPUMhz,
-		"bk_disk":       disk / 1024 / 1024 / 1024,
-		"bk_mem":        mem / 1024 / 1024,
-		"bk_os_type":    ostype,
-		"bk_os_name":    osname,
-		"bk_os_version": version,
-		"bk_host_name":  hostname,
-		"bk_outer_mac":  OuterMAC,
-		"bk_mac":        InnerMAC,
-		"bk_os_bit":     osbit,
+		"bk_cpu":                            cupnum,
+		"bk_cpu_module":                     cpumodule,
+		"bk_cpu_mhz":                        CPUMhz,
+		"bk_disk":                           disk / 1024 / 1024 / 1024,
+		"bk_mem":                            mem / 1024 / 1024,
+		"bk_os_type":                        ostype,
+		"bk_os_name":                        osname,
+		"bk_os_version":                     version,
+		"bk_host_name":                      hostname,
+		"bk_outer_mac":                      OuterMAC,
+		"bk_mac":                            InnerMAC,
+		"bk_os_bit":                         osbit,
+		common.HostFieldDockerClientVersion: dockerClientVersion,
+		common.HostFieldDockerServerVersion: dockerServerVersion,
 	}
 
 	if cupnum <= 0 {
@@ -419,7 +427,7 @@ func (h *HostSnap) getHostByVal(val *gjson.Result) *HostInst {
 			common.BKOwnerIDField: ownerID,
 		}
 		result := []map[string]interface{}{}
-		err = h.db.GetMutilByCondition(common.BKTableNameBaseHost, nil, condition, &result, "", 0, 0)
+		err = h.db.Table(common.BKTableNameBaseHost).Find(condition).All(h.ctx, &result)
 		if err != nil {
 			blog.Errorf("fetch db error %v", err)
 		}
@@ -615,7 +623,7 @@ func (h *HostSnap) fetchDB() {
 
 func (h *HostSnap) fetch() *HostCache {
 	result := []map[string]interface{}{}
-	err := h.db.GetMutilByCondition(common.BKTableNameBaseHost, nil, nil, &result, "", 0, 0)
+	err := h.db.Table(common.BKTableNameBaseHost).Find(nil).All(h.ctx, &result)
 	if err != nil {
 		blog.Errorf("fetch db error %v", err)
 	}

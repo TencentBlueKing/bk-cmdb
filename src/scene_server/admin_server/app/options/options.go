@@ -14,7 +14,7 @@ package options
 
 import (
 	"configcenter/src/common/core/cc/config"
-	"configcenter/src/storage/mgoclient"
+	"configcenter/src/storage/dal/mongo"
 
 	"github.com/spf13/pflag"
 )
@@ -40,11 +40,12 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 }
 
 type Config struct {
-	MongoDB    mgoclient.MongoConfig
-	Errors     ErrorConfig
-	Language   LanguageConfig
-	Configures ConfConfig
-	Register   RegisterConfig
+	MongoDB       mongo.Config
+	Errors        ErrorConfig
+	Language      LanguageConfig
+	Configures    ConfConfig
+	Register      RegisterConfig
+	ProcSrvConfig ProcSrvConfig
 }
 
 type LanguageConfig struct {
@@ -61,4 +62,8 @@ type ConfConfig struct {
 
 type RegisterConfig struct {
 	Address string
+}
+
+type ProcSrvConfig struct {
+	CCApiSrvAddr string
 }

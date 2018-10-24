@@ -17,11 +17,11 @@ import (
 	"net/http"
 
 	"configcenter/src/apimachinery/rest"
-	"configcenter/src/common/metadata"	
+	"configcenter/src/common/metadata"
 )
 
 type OpenApiInterface interface {
-	GetProcessesByModuleName(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
+	GetProcessesByModuleName(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.ProcInfoArrResult, err error)
 	DeleteSetHost(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
 }
 

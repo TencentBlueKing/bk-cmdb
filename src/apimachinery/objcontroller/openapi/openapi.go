@@ -16,11 +16,11 @@ import (
 	"context"
 	"net/http"
 
-    "configcenter/src/common/metadata"
+	"configcenter/src/common/metadata"
 )
 
-func (t *openAPI) GetProcessesByModuleName(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (t *openAPI) GetProcessesByModuleName(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.ProcInfoArrResult, err error) {
+	resp = new(metadata.ProcInfoArrResult)
 	subPath := "/openapi/proc/getProcModule"
 
 	err = t.client.Post().

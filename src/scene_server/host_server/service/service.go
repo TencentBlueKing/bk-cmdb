@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/common/metadata"
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/apimachinery/discovery"
@@ -77,6 +78,10 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.POST("/userapi/search/{bk_biz_id}").To(s.GetUserCustomQuery))
 	ws.Route(ws.GET("/userapi/detail/{bk_biz_id}/{id}").To(s.GetUserCustomQueryDetail))
 	ws.Route(ws.GET("/userapi/data/{bk_biz_id}/{id}/{start}/{limit}").To(s.GetUserCustomQueryResult))
+
+	ws.Route(ws.POST("/host/lock").To(s.LockHost))
+	ws.Route(ws.DELETE("/host/lock").To(s.UnlockHost))
+	ws.Route(ws.POST("/host/lock/search").To(s.QueryHostLock))
 
 	ws.Route(ws.GET("/host/getHostListByAppidAndField/{" + common.BKAppIDField + "}/{field}").To(s.getHostListByAppidAndField))
 	ws.Route(ws.GET("getAgentStatus/{appid}").To(s.GetAgentStatus))
@@ -147,7 +152,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	info := metric.HealthInfo{
 		Module:     types.CC_MODULE_HOST,
 		HealthMeta: meta,
-		AtTime:     types.Now(),
+		AtTime:     metadata.Now(),
 	}
 
 	answer := metric.HealthResponse{

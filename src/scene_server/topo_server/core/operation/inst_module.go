@@ -76,6 +76,10 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 
 	data.Set(common.BKSetIDField, setID)
 	data.Set(common.BKAppIDField, bizID)
+	if !data.Exists(common.BKDefaultField) {
+		data.Set(common.BKDefaultField, 0)
+	}
+
 	//data.Set(common.CreateTimeField, util.GetCurrentTimeStr())
 
 	return m.inst.CreateInst(params, obj, data)
@@ -104,7 +108,7 @@ func (m *module) DeleteModule(params types.ContextParams, obj model.Object, bizI
 		innerCond.Field(common.BKModuleIDField).In(moduleIDS)
 	}
 
-	return m.inst.DeleteInst(params, obj, innerCond)
+	return m.inst.DeleteInst(params, obj, innerCond, false)
 }
 
 func (m *module) FindModule(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (count int, results []inst.Inst, err error) {

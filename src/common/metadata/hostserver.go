@@ -54,6 +54,10 @@ type HostList struct {
 	InputType     HostInputType                    `json:"input_type"`
 }
 
+type AddHostFromAgentHostList struct {
+	HostInfo map[string]interface{} `json:"host_info"`
+}
+
 type HostSyncList struct {
 	ApplicationID int64                            `json:"bk_biz_id"`
 	HostInfo      map[int64]map[string]interface{} `json:"host_info"`
@@ -124,4 +128,11 @@ type SetHostConfigParams struct {
 	ApplicationID int64 `json:"bk_biz_id"`
 	SetID         int64 `json:"bk_set_id"`
 	ModuleID      int64 `json:"bk_module_id"`
+}
+
+type CloneHostPropertyParams struct {
+	AppID   int64  `json:"bk_biz_id"`
+	OrgIP   string `json:"bk_org_ip"`
+	DstIP   string `json:"bk_dst_ip"`
+	CloudID int64  `json:"bk_cloud_id"`
 }

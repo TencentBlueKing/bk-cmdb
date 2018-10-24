@@ -68,7 +68,7 @@ func (u *userGroupPermission) SetUserGroupPermission(supplierAccount, groupID st
 		return u.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	if nil == rsp.Data.Privilege {
+	if nil == rsp.Data.Privilege || (0 == len(rsp.Data.Privilege.ModelConfig) && nil == rsp.Data.Privilege.SysConfig) {
 		rsp, err := u.client.ObjectController().Privilege().CreateUserGroupPrivi(context.Background(), supplierAccount, groupID, u.params.Header, permission)
 		if nil != err {
 			blog.Errorf("[privilege] failed to request object controller, error info is %s", err.Error())
@@ -110,18 +110,19 @@ func (u *userGroupPermission) GetUserGroupPermission(supplierAccount, groupID st
 
 func (u *userGroupPermission) GetUserPermission(supplierAccount, userName string) (*metadata.Gprivilege, error) {
 
+	gPrivilege := metadata.Gprivilege{
+		IsHostCrossBiz: false,
+		ModelConfig:    map[string]map[string][]string{},
+	}
+
 	// get cross biz permission
 	rsp, err := u.client.ObjectController().Privilege().GetSystemFlag(context.Background(), supplierAccount, common.HostCrossBizField, u.params.Header)
 	if nil != err {
 		blog.Errorf("[privilege] failed to request object controller, error info is %s", err.Error())
-		return nil, u.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		//		return nil, u.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	} else {
+		gPrivilege.IsHostCrossBiz = rsp.Result
 	}
-
-	gPrivilege := metadata.Gprivilege{
-		IsHostCrossBiz: rsp.Result,
-		ModelConfig:    map[string]map[string][]string{},
-	}
-	gPrivilege.IsHostCrossBiz = rsp.Result
 
 	// search user group permission
 	cond := condition.CreateCondition()

@@ -13,66 +13,42 @@
 package util
 
 import (
-	"net/http"
-	"reflect"
-
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/flowctrl"
 )
 
 type APIMachineryConfig struct {
-    // the address of zookeeper address, comma separated.
-    ZkAddr string
-    // request's qps value
-    QPS int64
-    // request's burst value
-    Burst int64
-    TLSConfig *TLSClientConfig
-    // gse process server
-    GseProcServ string
-}
-
-type HttpClient interface {
-	Do(req *http.Request) (*http.Response, error)
+	// the address of zookeeper address, comma separated.
+	ZkAddr string
+	// request's qps value
+	QPS int64
+	// request's burst value
+	Burst     int64
+	TLSConfig *TLSClientConfig
 }
 
 type Capability struct {
 	Client   HttpClient
 	Discover discovery.Interface
 	Throttle flowctrl.RateLimiter
+	Mock     MockInfo
 }
 
-// Attention: all the fields must be string, or the ToHeader method will be panic.
-// the struct filed tag is the key of header, and the header's value is the struct
-// filed value.
-type Headers struct {
-	Language string `HTTP_BLUEKING_LANGUAGE`
-	User     string `BK_User`
-	OwnerID  string `HTTP_BLUEKING_SUPPLIER_ID`
-}
-
-func (h Headers) ToHeader() http.Header {
-	header := make(http.Header)
-
-	valueof := reflect.ValueOf(h)
-	for i := 0; i < valueof.NumField(); i++ {
-		k := reflect.TypeOf(h).Field(i).Tag
-		v := valueof.Field(i).String()
-		header[string(k)] = []string{v}
-	}
-
-	return header
+type MockInfo struct {
+	Mocked      bool
+	SetMockData bool
+	MockData    interface{}
 }
 
 type TLSClientConfig struct {
-    // Server should be accessed without verifying the TLS certificate. For testing only.
-    InsecureSkipVerify bool
-    // Server requires TLS client certificate authentication
-    CertFile string
-    // Server requires TLS client certificate authentication
-    KeyFile string
-    // Trusted root certificates for server
-    CAFile string
-    // the password to decrypt the certificate
-    Password string
+	// Server should be accessed without verifying the TLS certificate. For testing only.
+	InsecureSkipVerify bool
+	// Server requires TLS client certificate authentication
+	CertFile string
+	// Server requires TLS client certificate authentication
+	KeyFile string
+	// Trusted root certificates for server
+	CAFile string
+	// the password to decrypt the certificate
+	Password string
 }

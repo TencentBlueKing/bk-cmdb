@@ -38,6 +38,15 @@ func NewArrayFromInterface(datas []map[string]interface{}) []MapStr {
 	return results
 }
 
+// NewArrayFromMapStr create a new array from mapstr array
+func NewArrayFromMapStr(datas []MapStr) []MapStr {
+	results := []MapStr{}
+	for _, item := range datas {
+		results = append(results, item)
+	}
+	return results
+}
+
 // NewFromInterface create a mapstr instance from the interface
 func NewFromInterface(data interface{}) (MapStr, error) {
 
@@ -46,6 +55,10 @@ func NewFromInterface(data interface{}) (MapStr, error) {
 		return nil, fmt.Errorf("not support the kind(%s)", reflect.TypeOf(data).Kind())
 	case nil:
 		return MapStr{}, nil
+	case string:
+		result := New()
+		err := json.Unmarshal([]byte(tmp), &result)
+		return result, err
 	case *map[string]interface{}:
 		return MapStr(*tmp), nil
 	case map[string]string:
@@ -173,7 +186,7 @@ func (cli MapStr) Float(key string) (float64, error) {
 func (cli MapStr) String(key string) (string, error) {
 	switch t := cli[key].(type) {
 	case nil:
-		return "", fmt.Errorf("the key(%s) is invalid", key)
+		return "", nil
 	default:
 		return fmt.Sprintf("%v", t), nil
 	case map[string]interface{}, []interface{}:
@@ -290,12 +303,15 @@ func (cli MapStr) MapStrArray(key string) ([]MapStr, error) {
 }
 
 // ForEach for each the every item
-func (cli MapStr) ForEach(callItem func(key string, val interface{})) {
+func (cli MapStr) ForEach(callItem func(key string, val interface{}) error) error {
 
 	for key, val := range cli {
-		callItem(key, val)
+		if err := callItem(key, val); nil != err {
+			return err
+		}
 	}
 
+	return nil
 }
 
 // Remove delete the item by the key and return the deleted one
@@ -329,24 +345,25 @@ func (cli MapStr) Different(target MapStr) (more MapStr, less MapStr, changes Ma
 	changes = make(MapStr)
 
 	// check more
-	cli.ForEach(func(key string, val interface{}) {
+	cli.ForEach(func(key string, val interface{}) error {
 		if targetVal, ok := target[key]; ok {
 
 			if !reflect.DeepEqual(val, targetVal) {
 				changes[key] = val
 			}
-			return
+			return nil
 		}
 
 		more.Set(key, val)
+		return nil
 	})
 
 	// check less
-	target.ForEach(func(key string, val interface{}) {
+	target.ForEach(func(key string, val interface{}) error {
 		if !cli.Exists(key) {
 			less[key] = val
 		}
-
+		return nil
 	})
 
 	return more, less, changes

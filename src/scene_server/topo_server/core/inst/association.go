@@ -232,6 +232,9 @@ func (cli *inst) GetMainlineChildInst() ([]Inst, error) {
 
 	childObj, err := cli.target.GetMainlineChildObject()
 	if nil != err {
+		if err == io.EOF {
+			return []Inst{}, nil
+		}
 		blog.Errorf("[inst-inst]failed to get the object(%s)'s child object, error info is %s", cli.target.GetID(), err.Error())
 		return nil, err
 	}

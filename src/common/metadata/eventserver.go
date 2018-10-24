@@ -16,9 +16,9 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"sort"
+	"strings"
 	"time"
-
-	"configcenter/src/common/types"
 )
 
 type RspSubscriptionCreate struct {
@@ -35,7 +35,7 @@ type ParamSubscriptionSearch struct {
 }
 
 type RspSubscriptionSearch struct {
-	Count int            `json:"count"`
+	Count uint64         `json:"count"`
 	Info  []Subscription `json:"info"`
 }
 
@@ -64,7 +64,7 @@ type Subscription struct {
 	SubscriptionForm string      `bson:"subscription_form" json:"subscription_form"` // json format
 	Operator         string      `bson:"operator" json:"operator"`
 	OwnerID          string      `bson:"bk_supplier_account" json:"bk_supplier_account"`
-	LastTime         *types.Time `bson:"last_time" json:"last_time"`
+	LastTime         *Time       `bson:"last_time" json:"last_time"`
 	Statistics       *Statistics `bson:"-" json:"statistics"`
 }
 
@@ -79,6 +79,9 @@ func (Subscription) TableName() string {
 }
 
 func (s Subscription) GetCacheKey() string {
+	eventnames := strings.Split(s.SubscriptionForm, ",")
+	sort.Strings(eventnames)
+	s.SubscriptionForm = strings.Join(eventnames, ",")
 	ns := &Subscription{
 		SubscriptionID:   s.SubscriptionID,
 		CallbackURL:      s.CallbackURL,
@@ -97,14 +100,15 @@ func (s Subscription) GetTimeout() time.Duration {
 
 type EventInst struct {
 	ID          int64       `json:"event_id,omitempty"`
+	TxnID       string      `json:"txn_id"`
 	EventType   string      `json:"event_type"`
 	Action      string      `json:"action"`
-	ActionTime  types.Time  `json:"action_time"`
+	ActionTime  Time        `json:"action_time"`
 	ObjType     string      `json:"obj_type"`
 	Data        []EventData `json:"data"`
 	OwnerID     string      `json:"bk_supplier_account"`
 	RequestID   string      `json:"request_id"`
-	RequestTime types.Time  `json:"request_time"`
+	RequestTime Time        `json:"request_time"`
 }
 
 func (e *EventInst) MarshalBinary() (data []byte, err error) {
@@ -154,6 +158,12 @@ const (
 	EventTypeInstData           = "instdata"
 	EventTypeRelation           = "relation"
 	EventTypeResourcePoolModule = "resource"
+)
+
+// Event object type
+const (
+	EventObjTypeProcModule     = "processmodule"
+	EventObjTypeModuleTransfer = "moduletransfer"
 )
 
 // ConfirmMode define

@@ -1,7 +1,6 @@
-
 ### 订阅事件
 
-- API: POST /api/{version}/event/subscribe/{supplier_account}/{bk_biz_id}
+- API: POST /api/{version}/event/subscribe/{bk_supplier_account}/{bk_biz_id}
 - API 名称: subscribe_event
 - 功能说明：
 	- 中文：事件订阅
@@ -112,7 +111,7 @@ data 字段说明
 
 ### 修改订阅
 
-- API: PUT  /api/{version}/event/subscribe/{supplier_account}/{biz_id}/{subscription_id}
+- API: PUT  /api/{version}/event/subscribe/{bk_supplier_account}/{bk_biz_id}/{subscription_id}
 - API 名称：update_event_subscribe
 	- 中文：修改订阅
 	- English：update the event subscription
@@ -171,7 +170,7 @@ data 字段说明
 
 ### 查询订阅
 
-- API: POST /api/{version}/event/subscribe/search/{supplier_account}/{biz_id}
+- API: POST /api/{version}/event/subscribe/search/{bk_supplier_account}/{bk_biz_id}
 - API 名称：search_subscription
 	- 中文：查询订阅
 	- English：search subscriptions

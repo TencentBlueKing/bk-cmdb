@@ -82,7 +82,7 @@ func (s *Service) Do(req *restful.Request, resp *restful.Response) {
 	proxyReq, err := http.NewRequest(req.Request.Method, url, req.Request.Body)
 	if err != nil {
 		blog.Errorf("new proxy request[%s] failed, err: %v", url, err)
-		if err := resp.WriteError(http.StatusBadGateway, &metadata.RespError{
+		if err := resp.WriteError(http.StatusInternalServerError, &metadata.RespError{
 			Msg:     errors.New("proxy request failed"),
 			ErrCode: common.CCErrProxyRequestFailed,
 			Data:    nil,
@@ -102,7 +102,7 @@ func (s *Service) Do(req *restful.Request, resp *restful.Response) {
 	if err != nil {
 		blog.Errorf("*failed do request[url: %s] , err: %v", url, err)
 
-		if err := resp.WriteError(http.StatusBadGateway, &metadata.RespError{
+		if err := resp.WriteError(http.StatusInternalServerError, &metadata.RespError{
 			Msg:     errors.New("proxy request failed"),
 			ErrCode: common.CCErrProxyRequestFailed,
 			Data:    nil,
@@ -137,7 +137,7 @@ func (s *Service) URLFilterChan(req *restful.Request, resp *restful.Response, ch
 	kind, err = V3URLPath(req.Request.RequestURI).FilterChain(req)
 	if err != nil {
 		blog.Errorf("rewrite request url[%s] failed, err: %v", req.Request.RequestURI, err)
-		if err := resp.WriteError(http.StatusBadGateway, &metadata.RespError{
+		if err := resp.WriteError(http.StatusInternalServerError, &metadata.RespError{
 			Msg:     errors.New("rewrite request failed"),
 			ErrCode: common.CCErrRewriteRequestUriFailed,
 			Data:    nil,
@@ -151,7 +151,7 @@ func (s *Service) URLFilterChan(req *restful.Request, resp *restful.Response, ch
 	defer func() {
 		if err != nil {
 			blog.Errorf("proxy request url[%s] failed, err: %v", req.Request.RequestURI, err)
-			if rerr := resp.WriteError(http.StatusBadGateway, &metadata.RespError{
+			if rerr := resp.WriteError(http.StatusInternalServerError, &metadata.RespError{
 				Msg:     errors.New("rewrite request failed"),
 				ErrCode: common.CCErrRewriteRequestUriFailed,
 				Data:    nil,
@@ -253,7 +253,7 @@ func (s *Service) healthz(req *restful.Request, resp *restful.Response) {
 	info := metric.HealthInfo{
 		Module:     types.CC_MODULE_APISERVER,
 		HealthMeta: meta,
-		AtTime:     types.Now(),
+		AtTime:     metadata.Now(),
 	}
 
 	answer := metric.HealthResponse{

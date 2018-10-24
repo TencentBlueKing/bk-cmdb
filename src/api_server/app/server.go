@@ -57,7 +57,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("new proxy client failed, err: %v", err)
 	}
 
-	v3Service.Disc, err = discovery.NewDiscoveryInterface(op.ServConf.RegDiscover, "")
+	v3Service.Disc, err = discovery.NewDiscoveryInterface(op.ServConf.RegDiscover)
 	if err != nil {
 		return fmt.Errorf("new proxy discovery instance failed, err: %v", err)
 	}

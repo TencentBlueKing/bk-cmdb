@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
@@ -26,7 +27,7 @@ import (
 
 //主机操作日志
 func (s *Service) AddHostLog(req *restful.Request, resp *restful.Response) {
-
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	language := util.GetLanguage(req.Request.Header)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
@@ -37,21 +38,21 @@ func (s *Service) AddHostLog(req *restful.Request, resp *restful.Response) {
 	appID, err := util.GetInt64ByInterface(strAppID)
 	if nil != err {
 		blog.Errorf("AddHostLog json unmarshal error:%v", err)
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
 		return
 	}
 
 	params := new(metadata.AuditHostLogParams)
 	if err := json.NewDecoder(req.Request.Body).Decode(params); nil != err {
 		blog.Errorf("AddHostLog json unmarshal  error:%v", err)
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
-	err = s.Logics.AddLogWithStr(appID, params.HostID, params.OpType, common.BKInnerObjIDHost, params.Content, params.InnerIP, params.OpDesc, ownerID, user)
+	err = s.Logics.AddLogWithStr(ctx, appID, params.HostID, params.OpType, common.BKInnerObjIDHost, params.Content, params.InnerIP, params.OpDesc, ownerID, user)
 	if nil != err {
 		blog.Errorf("AddHostLog add host log error:%s", err.Error())
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
 		return
 	}
 	resp.WriteEntity(metadata.NewSuccessResp(nil))
@@ -59,7 +60,7 @@ func (s *Service) AddHostLog(req *restful.Request, resp *restful.Response) {
 
 //插入多行主机操作日志型操作
 func (s *Service) AddHostLogs(req *restful.Request, resp *restful.Response) {
-
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	language := util.GetLanguage(req.Request.Header)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
@@ -70,21 +71,21 @@ func (s *Service) AddHostLogs(req *restful.Request, resp *restful.Response) {
 	appID, err := util.GetInt64ByInterface(strAppID)
 	if nil != err {
 		blog.Errorf("AddHostLogs json unmarshal error:%v", err)
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
 		return
 	}
 
 	params := new(metadata.AuditHostsLogParams)
 	if err = json.NewDecoder(req.Request.Body).Decode(params); err != nil {
 		blog.Error("AddHostLogs json unmarshal failed, error:%v", err)
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
-	err = s.Logics.AddLogMultiWithExtKey(appID, params.OpType, common.BKInnerObjIDHost, params.Content, params.OpDesc, ownerID, user)
+	err = s.Logics.AddLogMultiWithExtKey(ctx, appID, params.OpType, common.BKInnerObjIDHost, params.Content, params.OpDesc, ownerID, user)
 	if nil != err {
 		blog.Errorf("AddHostLogs add host log error:%s", err.Error())
-		resp.WriteError(http.StatusBadGateway, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
 		return
 	}
 	resp.WriteEntity(metadata.NewSuccessResp(nil))

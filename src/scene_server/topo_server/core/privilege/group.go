@@ -61,7 +61,7 @@ func (u *userGroup) checkGroupNameRepeat(supplierAccount, groupID, groupName str
 
 	cond := condition.CreateCondition()
 	if 0 != len(groupID) {
-		cond.Field("group_id").Eq(groupID)
+		cond.Field("group_id").NotIn([]string{groupID})
 	}
 	cond.Field("group_name").Eq(groupName)
 

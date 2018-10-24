@@ -26,12 +26,23 @@ import (
 	"os"
 	"reflect"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/blog"
 )
+
+// map[url]responseDataString
+var mockResponseMap map[string]string
+var once = sync.Once{}
+
+func init() {
+	once.Do(func() {
+		mockResponseMap = make(map[string]string)
+	})
+}
 
 // http request verb type
 type VerbType string
@@ -178,6 +189,10 @@ func (r *Request) Do() *Result {
 		return result
 	}
 
+	if r.capability.Mock.Mocked {
+		return r.handleMockResult()
+	}
+
 	client := r.capability.Client
 	if client == nil {
 		client = http.DefaultClient
@@ -282,17 +297,81 @@ func (r *Result) Into(obj interface{}) error {
 	if nil != r.Err {
 		return r.Err
 	}
-	if http.StatusOK != r.StatusCode {
-		return fmt.Errorf("error info %s", string(r.Body))
-	}
+
 	if 0 != len(r.Body) {
 		err := json.Unmarshal(r.Body, obj)
 		if nil != err {
+			if http.StatusOK != r.StatusCode {
+				return fmt.Errorf("error info %s", string(r.Body))
+			}
 			blog.Errorf("http reply not json, reply:%s, error:%s", string(r.Body), err.Error())
 			return err
 		}
 	}
 	return nil
+}
+
+func (r *Request) handleMockResult() *Result {
+	if r.capability.Mock.SetMockData {
+		if r.capability.Mock.MockData == nil {
+			mockResponseMap[r.WrapURL().String()] = ""
+			return &Result{
+				Body:       []byte(""),
+				Err:        nil,
+				StatusCode: http.StatusOK,
+			}
+		}
+
+		switch reflect.ValueOf(r.capability.Mock.MockData).Kind() {
+		case reflect.String:
+			body := r.capability.Mock.MockData.(string)
+			mockResponseMap[r.WrapURL().String()] = body
+			return &Result{
+				Body:       []byte(body),
+				Err:        nil,
+				StatusCode: http.StatusOK,
+			}
+		case reflect.Interface:
+			fallthrough
+		case reflect.Map:
+			fallthrough
+		case reflect.Ptr:
+			fallthrough
+		case reflect.Struct:
+			js, err := json.Marshal(r.capability.Mock.MockData)
+			if err != nil {
+				return &Result{
+					Body:       nil,
+					Err:        err,
+					StatusCode: http.StatusOK,
+				}
+			}
+			mockResponseMap[r.WrapURL().String()] = string(js)
+			return &Result{
+				Body:       js,
+				Err:        nil,
+				StatusCode: http.StatusOK,
+			}
+		default:
+			panic("unsupported mock data")
+		}
+	}
+
+	body, exist := mockResponseMap[r.WrapURL().String()]
+	if exist {
+		return &Result{
+			Body:       []byte(body),
+			Err:        nil,
+			StatusCode: http.StatusOK,
+		}
+	}
+
+	panic("got empty mock response")
+	// return &Result{
+	//     Body: []byte(""),
+	//     Err: errors.New("got empty mock response"),
+	//     StatusCode: http.StatusOK,
+	// }
 }
 
 // Returns if the given err is "connection reset by peer" error.

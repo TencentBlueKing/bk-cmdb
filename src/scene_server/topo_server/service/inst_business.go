@@ -132,7 +132,9 @@ func (s *topoService) SearchBusiness(params types.ContextParams, pathParams, que
 		return nil, err
 	}
 
-	searchCond := &gparams.SearchParams{}
+	searchCond := &gparams.SearchParams{
+		Condition: frtypes.New(),
+	}
 	if err := data.MarshalJSONInto(&searchCond); nil != err {
 		blog.Errorf("failed to parse the params, error info is %s", err.Error())
 		return nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
@@ -155,8 +157,11 @@ func (s *topoService) SearchBusiness(params types.ContextParams, pathParams, que
 	if _, ok := searchCond.Condition[common.BKDataStatusField]; !ok {
 		innerCond.Field(common.BKDataStatusField).NotEq(common.DataStatusDisabled)
 	}
+
 	innerCond.Field(common.BKDefaultField).Eq(0)
 	innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+	innerCond.SetPage(searchCond.Page)
+	innerCond.SetFields(searchCond.Fields)
 
 	cnt, instItems, err := s.core.BusinessOperation().FindBusiness(params, obj, searchCond.Fields, innerCond)
 	if nil != err {

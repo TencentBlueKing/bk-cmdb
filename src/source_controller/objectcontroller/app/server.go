@@ -16,24 +16,22 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strconv"
 	"time"
 
 	restful "github.com/emicklei/go-restful"
-	redis "gopkg.in/redis.v5"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/source_controller/objectcontroller/app/options"
 	"configcenter/src/source_controller/objectcontroller/service"
-	"configcenter/src/storage"
-	"configcenter/src/storage/mgoclient"
-	"configcenter/src/storage/redisclient"
+	"configcenter/src/storage/dal/mongo"
+	dalredis "configcenter/src/storage/dal/redis"
 )
 
 //Run ccapi server
@@ -72,8 +70,9 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	objCtr := new(ObjectController)
+	objCtr.Service = coreService
 	objCtr.Core, err = backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
-		types.CC_MODULE_HOSTCONTROLLER,
+		types.CC_MODULE_OBJECTCONTROLLER,
 		op.ServConf.ExConfig,
 		objCtr.onObjectConfigUpdate,
 		bonC)
@@ -93,38 +92,6 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("Configuration item not found")
 	}
 
-	mgc := objCtr.Config.Mongo
-	objCtr.Instance, err = mgoclient.NewMgoCli(mgc.Address, mgc.Port, mgc.User, mgc.Password, mgc.Mechanism, mgc.Database)
-	if err != nil {
-		return fmt.Errorf("new mongo client failed, err: %v", err)
-	}
-	err = objCtr.Instance.Open()
-	if err != nil {
-		return fmt.Errorf("new mongo client failed, err: %v", err)
-	}
-
-	rdsc := objCtr.Config.Redis
-	dbNum, err := strconv.Atoi(rdsc.Database)
-	//not set use default db num 0
-	if nil != err {
-		return fmt.Errorf("redis config db[%s] not integer", rdsc.Database)
-	}
-	objCtr.Cache = redis.NewClient(
-		&redis.Options{
-			Addr:     rdsc.Address + ":" + rdsc.Port,
-			PoolSize: 100,
-			Password: rdsc.Password,
-			DB:       dbNum,
-		})
-	err = objCtr.Cache.Ping().Err()
-	if err != nil {
-		return fmt.Errorf("new redis client failed, err: %v", err)
-	}
-
-	coreService.Core = objCtr.Core
-	coreService.Instance = objCtr.Instance
-	coreService.Cache = objCtr.Cache
-
 	select {
 	case <-ctx.Done():
 	}
@@ -132,38 +99,29 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 }
 
 type ObjectController struct {
-	Core     *backbone.Engine
-	Instance storage.DI
-	Cache    *redis.Client
-	Config   *options.Config
+	*service.Service
+	Config *options.Config
 }
 
 func (h *ObjectController) onObjectConfigUpdate(previous, current cc.ProcessConfig) {
-	prefix := storage.DI_MONGO
-	mongo := mgoclient.MongoConfig{
-		Address:      current.ConfigMap[prefix+".host"],
-		User:         current.ConfigMap[prefix+".user"],
-		Password:     current.ConfigMap[prefix+".pwd"],
-		Database:     current.ConfigMap[prefix+".database"],
-		Port:         current.ConfigMap[prefix+".port"],
-		MaxOpenConns: current.ConfigMap[prefix+".maxOpenConns"],
-		MaxIdleConns: current.ConfigMap[prefix+".maxIDleConns"],
-		Mechanism:    current.ConfigMap[prefix+".mechanism"],
-	}
-
-	prefix = storage.DI_REDIS
-	redis := redisclient.RedisConfig{
-		Address:  current.ConfigMap[prefix+".host"],
-		User:     current.ConfigMap[prefix+".user"],
-		Password: current.ConfigMap[prefix+".pwd"],
-		Database: current.ConfigMap[prefix+".database"],
-		Port:     current.ConfigMap[prefix+".port"],
-	}
-
 	h.Config = &options.Config{
-		Mongo: mongo,
-		Redis: redis,
+		Mongo: mongo.ParseConfigFromKV("mongodb", current.ConfigMap),
+		Redis: dalredis.ParseConfigFromKV("redis", current.ConfigMap),
 	}
+
+	instance, err := mongo.NewMgo(h.Config.Mongo.BuildURI())
+	if err != nil {
+		blog.Errorf("new mongo client failed, err: %v", err)
+		return
+	}
+	h.Service.Instance = instance
+
+	cache, err := dalredis.NewFromConfig(h.Config.Redis)
+	if err != nil {
+		blog.Errorf("new redis client failed, err: %v", err)
+		return
+	}
+	h.Cache = cache
 }
 
 func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
