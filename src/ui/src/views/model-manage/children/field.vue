@@ -39,6 +39,7 @@
         </cmdb-table>
         <cmdb-slider
             :width="514"
+            :title="slider.title"
             :isShow.sync="slider.isShow">
             <the-field-detail
                 class="slider-content"
@@ -65,6 +66,7 @@
                 slider: {
                     isShow: false,
                     isEditField: false,
+                    title: this.$t('ModelManagement["新建字段"]'),
                     curField: {}
                 },
                 fieldTypeMap: {
@@ -135,12 +137,14 @@
             createField () {
                 this.slider.isEditField = false
                 this.slider.isReadOnly = false
+                this.slider.title = this.$t('ModelManagement["新建字段"]')
                 this.slider.curField = {}
                 this.slider.isShow = true
             },
             editField (item) {
                 this.slider.isEditField = true
                 this.slider.isReadOnly = this.isReadOnly
+                this.slider.title = this.$t('ModelManagement["编辑字段"]')
                 this.slider.curField = item
                 this.slider.isShow = true
             },

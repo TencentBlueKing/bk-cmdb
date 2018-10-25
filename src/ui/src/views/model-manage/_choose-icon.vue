@@ -13,9 +13,10 @@
         </div>
         <ul class="icon-box clearfix">
             <li class="icon" 
+                :class="{'create': type === 'create', 'active': icon.value === localValue}"
                 v-tooltip="{content: language === 'zh_CN' ? icon.nameZh : icon.nameEn}"
                 v-for="(icon, index) in curIconList" 
-                :key="index" @click="localValue = icon.value">
+                :key="index" @click="chooseIcon(icon.value)">
                 <i :class="icon.value"></i>
             </li>
         </ul>
@@ -29,6 +30,9 @@
         props: {
             value: {
                 default: 'icon-cc-default'
+            },
+            type: {
+                default: 'create'
             }
         },
         data () {
@@ -63,15 +67,16 @@
             }
         },
         watch: {
-            localValue () {
-                this.$emit('input', this.localValue)
-                this.$emit('chooseIcon')
-            },
             searchText () {
                 this.page.current = 0
             }
         },
         methods: {
+            chooseIcon (value) {
+                this.localValue = value
+                this.$emit('input', value)
+                this.$emit('chooseIcon')
+            },
             pageTurning (page) {
                 this.page.current = page
             }
@@ -82,6 +87,7 @@
 <style lang="scss" scoped>
     .model-icon-list {
         display: block;
+        height: 100%;
     }
     .page {
         padding: 15px;
@@ -103,18 +109,22 @@
         }
     }
     .icon-box {
-        padding: 0 20px 10px;
+        padding: 0 15px 10px;
         width: 100%;
-        height: 236px;
+        height: calc(100% - 60px);
         .icon {
             float: left;
             width: calc(100% / 7);
-            height: 49px;
+            height: 46px;
             padding: 5px;
-            font-size: 30px;
+            font-size: 24px;
             text-align: center;
-            margin-bottom: 10px;
             cursor: pointer;
+            &.create {
+                font-size: 30px;
+                margin-bottom: 10px;
+                height: 50px;
+            }
             &:hover,
             &.active {
                 background: #e2efff;
