@@ -445,11 +445,11 @@ func (ps *ProcServer) getProcessMapByAppID(appId int, forward http.Header) (map[
 	}
 
 	for _, info := range ret.Data.Info {
-		appId, err := info.Int64(common.BKAppIDField)
+		processId, err := info.Int64(common.BKProcessIDField)
 		if nil != err {
-			blog.Warnf("fail to get appid in getProcessMapByAppID. info: %+v", info)
+			blog.Warnf("fail to get process id in getProcessMapByAppID. info: %+v", info)
 		} else {
-			procMap[int(appId)] = info
+			procMap[int(processId)] = info
 		}
 	}
 
