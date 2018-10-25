@@ -41,6 +41,7 @@ type Condition interface {
 	Parse(data types.MapStr) error
 	ToMapStr() types.MapStr
 	AddContionItem(cond ConditionItem) error
+	IsFieldExist(fieldName string) bool
 }
 
 // Condition the condition definition
@@ -228,4 +229,14 @@ func (cli *condition) AddContionItem(cond ConditionItem) error {
 		return errors.New("invalid operator")
 	}
 	return nil
+}
+
+// IsFieldExist check fieldName is in condition or not
+func (cli *condition) IsFieldExist(fieldName string) bool {
+	for _, item := range cli.fields {
+		if item.GetFieldName() == fieldName {
+			return true
+		}
+	}
+	return false
 }
