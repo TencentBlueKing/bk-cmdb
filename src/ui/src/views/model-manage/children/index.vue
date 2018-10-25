@@ -6,12 +6,12 @@
             </div>
             <div class="model-text">
                 <span>{{$t('ModelManagement["唯一标识"]')}}：</span>
-                <span class="text-content name">asdf</span>
+                <span class="text-content name">{{activeModel ? activeModel['bk_obj_id'] : ''}}</span>
             </div>
             <div class="model-text">
                 <span>{{$t('Hosts["名称"]')}}：</span>
-                <template v-if="true">
-                    <span class="text-content">asdf<i class="icon icon-cc-edit text-primary"></i></span>
+                <template v-if="isEditName">
+                    <span class="text-content">{{activeModel ? activeModel['bk_obj_name'] : ''}}<i class="icon icon-cc-edit text-primary"></i></span>
                 </template>
                 <template v-else>
                     <input type="text" class="cmdb-form-input">
@@ -68,12 +68,16 @@
             return {
                 tab: {
                     active: 'field'
-                }
+                },
+                isEditName: false
             }
         },
         computed: {
             ...mapGetters([
                 'supplierAccount'
+            ]),
+            ...mapGetters('objectModel', [
+                'activeModel'
             ])
         },
         watch: {
