@@ -12,6 +12,7 @@ import hostRelation from './modules/api/host-relation.js'
 import hostSearchHistory from './modules/api/host-search-history.js'
 import hostSearch from './modules/api/host-search.js'
 import hostUpdate from './modules/api/host-update.js'
+import objectAssociation from './modules/api/object-association.js'
 import objectBatch from './modules/api/object-batch.js'
 import objectBiz from './modules/api/object-biz.js'
 import objectCommonInst from './modules/api/object-common-inst.js'
@@ -43,6 +44,7 @@ export default new Vuex.Store({
         hostSearchHistory,
         hostSearch,
         hostUpdate,
+        objectAssociation,
         objectBatch,
         objectBiz,
         objectCommonInst,
