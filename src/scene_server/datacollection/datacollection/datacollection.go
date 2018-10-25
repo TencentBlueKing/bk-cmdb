@@ -63,7 +63,7 @@ func (d *DataCollection) Run() error {
 		return err
 	}
 
-	netcli, err := redisclient.NewFromConfig(d.Config.NetcollectRedis)
+	netcli, err := redis.NewFromConfig(d.Config.NetcollectRedis)
 	if nil != err {
 		blog.Errorf("[datacollection][RUN] connect netcollect redis failed: %v", err)
 		return err
@@ -90,7 +90,7 @@ func (d *DataCollection) Run() error {
 
 	var defaultAppID string
 	for {
-		defaultAppID, err = d.getDefaultAppID()
+		defaultAppID, err = d.getDefaultAppID(d.ctx)
 		if nil == err {
 			break
 		}
@@ -99,15 +99,15 @@ func (d *DataCollection) Run() error {
 	}
 
 	snapChanName := d.getSnapChanName(defaultAppID)
-	hostSnap := NewHostSnap(snapChanName, MaxSnapSize, rediscli, snapcli, db)
+	hostSnap := NewHostSnap(d.ctx, snapChanName, MaxSnapSize, rediscli, snapcli, db)
 	hostSnap.Start()
 
 	discoverChanName := d.getDiscoverChanName(defaultAppID)
-	discover := NewDiscover(context.Background(), discoverChanName, MaxDiscoverSize, rediscli, discli, d.Engine)
+	discover := NewDiscover(d.ctx, discoverChanName, MaxDiscoverSize, rediscli, discli, d.Engine)
 	discover.Start()
 
 	netdevChanName := d.getNetcollectChanName(defaultAppID)
-	netcollect := NewNetcollect(context.Background(), netdevChanName, MaxNetcollectSize, rediscli, netcli, db, d.Engine)
+	netcollect := NewNetcollect(d.ctx, netdevChanName, MaxNetcollectSize, rediscli, netcli, db, d.Engine)
 	netcollect.Start()
 
 	go d.mock(netdevChanName[0])
@@ -152,7 +152,7 @@ func (d *DataCollection) getDefaultAppID(ctx context.Context) (defaultAppID stri
 }
 
 func (d *DataCollection) mock(channel string) {
-	mockCli, err := redisclient.NewFromConfig(d.Config.SnapRedis)
+	mockCli, err := redis.NewFromConfig(d.Config.SnapRedis)
 	if nil != err {
 		blog.Error("start mock error")
 		return

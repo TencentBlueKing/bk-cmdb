@@ -117,13 +117,13 @@ func (lgc *Logics) buildSearchCond(header http.Header, param metadata.ParamSearc
 	return cond, nil
 }
 
-func (lgc *Logics) SearchReport(header http.Header, param metadata.ParamSearchNetcollectReport) (int64, []metadata.NetcollectReport, error) {
+func (lgc *Logics) SearchReport(header http.Header, param metadata.ParamSearchNetcollectReport) (uint64, []metadata.NetcollectReport, error) {
 	cond, err := lgc.buildSearchCond(header, param)
 	if err != nil {
 		blog.Errorf("[NetDevice][SearchReport] build SearchReport condition for %+v, failed: %v", param, err)
 		return 0, nil, err
 	}
-	count, err := lgc.Instance.GetCntByCondition(common.BKTableNameNetcollectReport, cond.ToMapStr())
+	count, err := lgc.Instance.Table(common.BKTableNameNetcollectReport).Find(cond.ToMapStr()).Count(lgc.ctx)
 	if err != nil {
 		blog.Errorf("[NetDevice][SearchReport] GetCntByCondition %+v failed: %v", cond.ToMapStr(), err)
 		return 0, nil, err
@@ -131,7 +131,7 @@ func (lgc *Logics) SearchReport(header http.Header, param metadata.ParamSearchNe
 
 	// search reports
 	reports := []metadata.NetcollectReport{}
-	err = lgc.Instance.GetMutilByCondition(common.BKTableNameNetcollectReport, nil, cond.ToMapStr(), &reports, param.Page.Sort, param.Page.Start, param.Page.Limit)
+	err = lgc.Instance.Table(common.BKTableNameNetcollectReport).Find(cond.ToMapStr()).Sort(param.Page.Sort).Start(uint64(param.Page.Start)).Limit(uint64(param.Page.Limit)).All(lgc.ctx, &reports)
 	if err != nil {
 		blog.Errorf("[NetDevice][SearchReport] GetMutilByCondition %+v failed: %v", cond.ToMapStr(), err)
 		return 0, nil, err
@@ -203,7 +203,7 @@ func (lgc *Logics) SearchReport(header http.Header, param metadata.ParamSearchNe
 
 	}
 
-	return int64(count), reports, nil
+	return count, reports, nil
 }
 
 func attrMapKey(objectID string, propertyID string) string {
@@ -477,32 +477,32 @@ func (lgc *Logics) confirmAssociations(header http.Header, report *metadata.Netc
 
 func (lgc *Logics) saveHistory(report *metadata.NetcollectReport, success bool) error {
 	history := metadata.NetcollectHistory{NetcollectReport: *report, Success: success}
-	_, err := lgc.Instance.Insert(common.BKTableNameNetcollectHistory, history)
+	err := lgc.Instance.Table(common.BKTableNameNetcollectHistory).Insert(lgc.ctx, history)
 	if err != nil {
 		blog.Errorf("[NetDevice][ConfirmReport] save history %+v failed: %v", history, err)
 	}
 	return err
 }
 
-func (lgc *Logics) SearchHistory(header http.Header, param metadata.ParamSearchNetcollectReport) (int64, []metadata.NetcollectHistory, error) {
+func (lgc *Logics) SearchHistory(header http.Header, param metadata.ParamSearchNetcollectReport) (uint64, []metadata.NetcollectHistory, error) {
 	historys := []metadata.NetcollectHistory{}
 	cond, err := lgc.buildSearchCond(header, param)
 	if err != nil {
 		blog.Errorf("[NetDevice][SearchHistory] build SearchHistory condition for %+v failed: %v", param, err)
 		return 0, nil, err
 	}
-	count, err := lgc.Instance.GetCntByCondition(common.BKTableNameNetcollectHistory, cond.ToMapStr())
+	count, err := lgc.Instance.Table(common.BKTableNameNetcollectHistory).Find(cond.ToMapStr()).Count(lgc.ctx)
 	if err != nil {
 		blog.Errorf("[NetDevice][SearchHistory] GetCntByCondition for %+v failed: %v", cond.ToMapStr(), err)
 		return 0, nil, err
 	}
 
 	// search historys
-	err = lgc.Instance.GetMutilByCondition(common.BKTableNameNetcollectHistory, nil, cond.ToMapStr(), &historys, param.Page.Sort, param.Page.Start, param.Page.Limit)
+	err = lgc.Instance.Table(common.BKTableNameNetcollectHistory).Find(cond.ToMapStr()).Sort(param.Page.Sort).Start(uint64(param.Page.Start)).Limit(uint64(param.Page.Limit)).All(lgc.ctx, &historys)
 	if err != nil {
 		blog.Errorf("[NetDevice][SearchHistory] GetMutilByCondition for %+v failed: %v", cond.ToMapStr(), err)
 		return 0, nil, err
 	}
 
-	return int64(count), historys, nil
+	return count, historys, nil
 }

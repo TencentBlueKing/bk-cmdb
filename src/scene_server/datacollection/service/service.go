@@ -24,7 +24,6 @@ import (
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/datacollection/logics"
-	"configcenter/src/storage"
 	"configcenter/src/storage/dal"
 )
 

@@ -144,16 +144,16 @@ func (s *Service) DeleteDevice(req *restful.Request, resp *restful.Response) {
 	}
 
 	deviceIDStrArr := strings.Split(deleteNetDeviceBatchOpt.DeviceIDs, ",")
-	var deviceIDArr []int64
+	var deviceIDArr []uint64
 
 	for _, deviceIDStr := range deviceIDStrArr {
-		deviceID, err := strconv.ParseInt(deviceIDStr, 10, 64)
+		deviceID, err := strconv.ParseUint(deviceIDStr, 10, 64)
 		if nil != err {
 			blog.Errorf("[NetDevice] delete net device batch, but got invalid device id, err: %v", err)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, common.BKDeviceIDField)})
 			return
 		}
-		deviceIDArr = append(deviceIDArr, deviceID)
+		deviceIDArr = append(deviceIDArr, uint64(deviceID))
 	}
 
 	for _, deviceID := range deviceIDArr {
@@ -173,8 +173,8 @@ func (s *Service) DeleteDevice(req *restful.Request, resp *restful.Response) {
 	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
-func checkDeviceIDPathParam(defErr errors.DefaultCCErrorIf, ID string) (int64, error) {
-	netDeviceID, err := strconv.ParseInt(ID, 10, 64)
+func checkDeviceIDPathParam(defErr errors.DefaultCCErrorIf, ID string) (uint64, error) {
+	netDeviceID, err := strconv.ParseUint(ID, 10, 64)
 	if nil != err {
 		blog.Errorf("[NetDevice] update net device with id[%d] to parse the net device id, error: %v", netDeviceID, err)
 		return 0, defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKDeviceIDField)

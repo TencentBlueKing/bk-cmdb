@@ -16,7 +16,7 @@ import (
 	"net/http"
 
 	"configcenter/src/apimachinery/rest"
-	"configcenter/src/common/types"
+	"configcenter/src/common/metadata"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 )
 
@@ -367,9 +367,9 @@ type Task struct {
 		JobID   string `json:"job_id"`
 		ErrCode string `json:"err_code"`
 	} `json:"hosts"`
-	StartTime types.Time `json:"start_time"`
-	EndTime   string     `json:"end_time"`
-	ID        int64      `json:"id"`
+	StartTime metadata.Time `json:"start_time"`
+	EndTime   string        `json:"end_time"`
+	ID        int64         `json:"id"`
 }
 
 type Host struct {

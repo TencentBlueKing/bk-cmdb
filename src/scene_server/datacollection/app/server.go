@@ -93,12 +93,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			continue
 		}
 
-		mgc := process.Config.MongoDB
-		instance, err := mgoclient.NewMgoCli(mgc.Address, mgc.Port, mgc.User, mgc.Password, mgc.Mechanism, mgc.Database)
-		if err != nil {
-			return fmt.Errorf("new mongo client failed, err: %s", err.Error())
-		}
-		err = instance.Open()
+		instance, err := mongo.NewMgo(process.Config.MongoDB.BuildURI())
 		if err != nil {
 			return fmt.Errorf("new mongo client failed, err: %s", err.Error())
 		}
@@ -110,9 +105,9 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			return fmt.Errorf("new esb client failed, err: %s", err.Error())
 		}
 
-		process.Service.Logics = &logics.Logics{Instance: instance, Engine: service.Engine, ESB: esb}
+		process.Service.Logics = logics.NewLogics(ctx, service.Engine, instance, esb)
 
-		err := datacollection.NewDataCollection(ctx, process.Config, process.Core).Run()
+		err = datacollection.NewDataCollection(ctx, process.Config, process.Core).Run()
 		if err != nil {
 			return fmt.Errorf("run datacollection routine failed %s", err.Error())
 		}
@@ -162,7 +157,7 @@ func (h *DCServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		h.Config.DiscoverRedis = discoverRedisConf
 
 		netcollectPrefix := "netcollect-redis"
-		netcollectRedisConf := redis.ParseConfigFromKV(discoverPrefix, current.ConfigMap)
+		netcollectRedisConf := redis.ParseConfigFromKV(netcollectPrefix, current.ConfigMap)
 		h.Config.NetcollectRedis = netcollectRedisConf
 
 		esbPrefix := "esb"
