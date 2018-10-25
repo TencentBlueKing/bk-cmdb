@@ -953,6 +953,7 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 	blog.V(4).Infof("[FindInstByAssociationInst] search inst condition: %v", instCond)
 	return c.FindInst(params, obj, query, false)
 }
+
 func (c *commonInst) FindOriginInst(params types.ContextParams, obj model.Object, cond *metatype.QueryInput) (*metatype.InstResult, error) {
 
 	switch obj.GetID() {
@@ -974,14 +975,12 @@ func (c *commonInst) FindOriginInst(params types.ContextParams, obj model.Object
 	default:
 
 		rsp, err := c.clientSet.ObjectController().Instance().SearchObjects(context.Background(), obj.GetObjectType(), params.Header, cond)
-
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to request object controller, error info is %s", err.Error())
 			return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
 		if common.CCSuccess != rsp.Code {
-
 			blog.Errorf("[operation-inst] faild to delete the object(%s) inst by the condition(%#v), error info is %s", obj.GetID(), cond, rsp.ErrMsg)
 			return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 		}
@@ -998,38 +997,37 @@ func (c *commonInst) FindInst(params types.ContextParams, obj model.Object, cond
 	}
 
 	// TODO 查看实例数据，通过关联字段查询其他关联值，改为通过关联属性查询
-
-	asstObjAttrs, err := c.asst.SearchObjectAssociation(params, obj.GetID())
-	if nil != err {
-		blog.Errorf("[operation-inst] failed to search object associations, error info is %s", err.Error())
-		return 0, nil, err
-	}
-
-	for idx, instInfo := range rsp.Info {
-
-		for _, attrAsst := range asstObjAttrs {
-			if attrAsst.AsstName == common.BKChildStr || attrAsst.AsstName == common.BKInstParentStr {
-				continue
-			}
-
-			if !instInfo.Exists(attrAsst.AsstName) { // the inst data is old, but the attribute is new.
-				continue
-			}
-
-			asstFieldValue, err := instInfo.String(attrAsst.AsstName)
-			if nil != err {
-				blog.Errorf("[operation-inst] failed to get the inst'attr(%s) value int the data(%#v), error info is %s", attrAsst.AsstName, instInfo, err.Error())
-				return 0, nil, err
-			}
-			instVals, err := c.convertInstIDIntoStruct(params, attrAsst, strings.Split(asstFieldValue, ","), needAsstDetail)
-			if nil != err {
-				blog.Errorf("[operation-inst] failed to convert association asst(%#v) origin value(%#v) value(%s), error info is %s", attrAsst, instInfo, asstFieldValue, err.Error())
-				return 0, nil, err
-			}
-			rsp.Info[idx].Set(attrAsst.AsstName, instVals)
-
-		}
-	}
+	// asstObjAttrs, err := c.asst.SearchObjectAssociation(params, obj.GetID())
+	// if nil != err {
+	// 	blog.Errorf("[operation-inst] failed to search object associations, error info is %s", err.Error())
+	// 	return 0, nil, err
+	// }
+	//
+	// for idx, instInfo := range rsp.Info {
+	//
+	// 	for _, attrAsst := range asstObjAttrs {
+	// 		if attrAsst.AsstName == common.BKChildStr || attrAsst.AsstName == common.BKInstParentStr {
+	// 			continue
+	// 		}
+	//
+	// 		if !instInfo.Exists(attrAsst.AsstName) { // the inst data is old, but the attribute is new.
+	// 			continue
+	// 		}
+	//
+	// 		asstFieldValue, err := instInfo.String(attrAsst.AsstName)
+	// 		if nil != err {
+	// 			blog.Errorf("[operation-inst] failed to get the inst'attr(%s) value int the data(%#v), error info is %s", attrAsst.AsstName, instInfo, err.Error())
+	// 			return 0, nil, err
+	// 		}
+	// 		instVals, err := c.convertInstIDIntoStruct(params, attrAsst, strings.Split(asstFieldValue, ","), needAsstDetail)
+	// 		if nil != err {
+	// 			blog.Errorf("[operation-inst] failed to convert association asst(%#v) origin value(%#v) value(%s), error info is %s", attrAsst, instInfo, asstFieldValue, err.Error())
+	// 			return 0, nil, err
+	// 		}
+	// 		rsp.Info[idx].Set(attrAsst.AsstName, instVals)
+	//
+	// 	}
+	// }
 	return rsp.Count, inst.CreateInst(params, c.clientSet, obj, rsp.Info), nil
 }
 

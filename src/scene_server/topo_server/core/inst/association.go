@@ -26,12 +26,7 @@ import (
 	"configcenter/src/scene_server/topo_server/core/model"
 )
 
-func (cli *inst) updateMainlineAssociation(child Inst, parent Inst) error {
-
-	parentID, err := parent.GetInstID()
-	if nil != err {
-		return err
-	}
+func (cli *inst) updateMainlineAssociation(child Inst, parentID int64) error {
 
 	childID, err := child.GetInstID()
 	if nil != err {
@@ -525,15 +520,13 @@ func (cli *inst) GetChildInst() ([]Inst, error) {
 		}
 
 		result = append(result, rspItems...)
-
 	}
 
 	return result, nil
 }
 
-func (cli *inst) SetMainlineParentInst(targetInst Inst) error {
-
-	if err := cli.updateMainlineAssociation(cli, targetInst); nil != err {
+func (cli *inst) SetMainlineParentInst(instID int64) error {
+	if err := cli.updateMainlineAssociation(cli, instID); nil != err {
 		blog.Errorf("[inst-inst] failed to update the mainline association, error info is %s", err.Error())
 		return err
 	}
@@ -542,18 +535,29 @@ func (cli *inst) SetMainlineParentInst(targetInst Inst) error {
 }
 func (cli *inst) SetMainlineChildInst(targetInst Inst) error {
 
+	instID, err := targetInst.GetInstID()
+	if err != nil {
+		return err
+	}
+
 	childInsts, err := cli.GetMainlineChildInst()
 	if nil != err {
 		blog.Errorf("[inst-inst] failed to get the child inst, error info is  %s", err.Error())
 		return err
 	}
 	for _, childInst := range childInsts {
-		if err = cli.updateMainlineAssociation(childInst, targetInst); nil != err {
+		if err = cli.updateMainlineAssociation(childInst, instID); nil != err {
 			blog.Errorf("[inst-inst] failed to set the mainline child inst, error info is %s", err.Error())
 			return err
 		}
 	}
-	if err = cli.updateMainlineAssociation(targetInst, cli); nil != err {
+
+	id, err := cli.GetInstID()
+	if err != nil {
+		return err
+	}
+
+	if err = cli.updateMainlineAssociation(targetInst, id); nil != err {
 		blog.Errorf("[inst-inst] failed to update the mainline association, error info is %s", err.Error())
 		return err
 	}
