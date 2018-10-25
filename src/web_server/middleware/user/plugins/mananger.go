@@ -16,17 +16,13 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"configcenter/src/common"
-	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/metadata"
 	"configcenter/src/web_server/middleware/user/plugins/manager"
 	_ "configcenter/src/web_server/middleware/user/plugins/register"
 )
 
-func CurrentPlugin(c *gin.Context) metadata.LoginUserPluginInerface {
-	ccapi := api.NewAPIResource()
-	config, _ := ccapi.ParseConfig()
-	version, ok := config["login.version"]
-	if !ok {
+func CurrentPlugin(c *gin.Context, version string) metadata.LoginUserPluginInerface {
+	if "" == version {
 		version = common.BKDefaultLoginUserPluginVersion
 	}
 

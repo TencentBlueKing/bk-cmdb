@@ -16,6 +16,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"runtime/debug"
 	"strconv"
 	"time"
 
@@ -46,6 +47,11 @@ var hostIndentDiffFiels = map[string][]string{
 }
 
 func (ih *IdentifierHandler) handleInst(e *metadata.EventInst) {
+	defer func() {
+		if err := recover(); err != nil {
+			blog.Errorf("identifier: fatal error happened: %s, stack: \n%s", err, debug.Stack())
+		}
+	}()
 	hostIdentify := *e
 	hostIdentify.Data = nil
 	hostIdentify.EventType = metadata.EventTypeRelation
@@ -217,11 +223,24 @@ func (ih *IdentifierHandler) handleRelatedInst(hostIdentify metadata.EventInst, 
 			for _, hostID := range hosIDs[index:leftIndex] {
 				hostIDKeys = append(hostIDKeys, getInstCacheKey(common.BKInnerObjIDHost, hostID))
 			}
-			idens := ih.cache.MGet(hostIDKeys[index:leftIndex]...).Val()
+			idens, err := ih.cache.MGet(hostIDKeys...).Result()
+			blog.Infof("identifier: ih.cache.MGet val: %v,%v", idens, err)
 			for identIndex := range idens {
 				iden := HostIdentifier{}
 				if err = json.Unmarshal([]byte(getString(idens[identIndex])), &iden); err != nil {
 					blog.Warnf("identifier: unmarshal error %s", err.Error())
+					hostID := hosIDs[index:leftIndex][identIndex]
+					inst, err := getCache(ih.ctx, ih.cache, ih.db, common.BKInnerObjIDHost, hostID, true)
+					if err != nil {
+						blog.Errorf("identifier: getCache error %+v", err)
+						continue
+					}
+					if nil == inst {
+						continue
+					}
+					inst.saveCache(ih.cache)
+					d := metadata.EventData{CurData: inst.ident.fillIden(ih.ctx, ih.cache, ih.db)}
+					hostIdentify.Data = append(hostIdentify.Data, d)
 					continue
 				}
 				d := metadata.EventData{CurData: iden.fillIden(ih.ctx, ih.cache, ih.db)}
@@ -541,23 +560,74 @@ func (ih *IdentifierHandler) fetchHostCache() {
 
 	relations := []metadata.ModuleHost{}
 	hosts := []*HostIdentifier{}
+	modules := []metadata.ModuleInst{}
+	proc2modules := []metadata.ProcessModule{}
 
-	ih.db.Table(common.BKTableNameModuleHostConfig).Find(map[string]interface{}{}).All(ih.ctx, &relations)
-	ih.db.Table(common.BKTableNameBaseHost).Find(map[string]interface{}{}).All(ih.ctx, &hosts)
+	err := ih.db.Table(common.BKTableNameModuleHostConfig).Find(map[string]interface{}{}).All(ih.ctx, &relations)
+	if err != nil {
+		blog.Errorf("[identifier][fetchHostCache] get cc_ModuleHostConfig error: %v", err)
+		return
+	}
+	err = ih.db.Table(common.BKTableNameBaseHost).Find(map[string]interface{}{}).All(ih.ctx, &hosts)
+	if err != nil {
+		blog.Errorf("[identifier][fetchHostCache] get cc_HostBase error: %v", err)
+		return
+	}
+	err = ih.db.Table(common.BKTableNameProcModule).Find(map[string]interface{}{}).All(ih.ctx, &proc2modules)
+	if err != nil {
+		blog.Errorf("[identifier][fetchHostCache] get cc_Proc2Module error: %v", err)
+		return
+	}
+	err = ih.db.Table(common.BKTableNameBaseModule).Find(map[string]interface{}{}).All(ih.ctx, &modules)
+	if err != nil {
+		blog.Errorf("[identifier][fetchHostCache] get cc_ModuleBase error: %v", err)
+		return
+	}
 
 	relationMap := map[int64][]metadata.ModuleHost{}
 	for _, relate := range relations {
 		relationMap[relate.HostID] = append(relationMap[relate.HostID], relate)
 	}
 
+	proc2modulesMap := map[string][]int64{}
+	bindModulesMap := map[int64][]int64{}
+	for _, proc2module := range proc2modules {
+		proc2modulesMap[proc2module.ModuleName] = append(proc2modulesMap[proc2module.ModuleName], proc2module.ProcessID)
+		for _, module := range modules {
+			if module.BizID == proc2module.AppID && module.ModuleName == proc2module.ModuleName {
+				bindModulesMap[proc2module.ProcessID] = append(bindModulesMap[proc2module.ProcessID], module.ModuleID)
+			}
+		}
+	}
+
+	modulesMap := map[int64]metadata.ModuleInst{}
+	for _, module := range modules {
+		modulesMap[module.ModuleID] = module
+	}
+
 	for _, ident := range hosts {
 		ident.Module = map[string]*Module{}
+		hostprocs := map[int64]bool{}
 		for _, rela := range relationMap[ident.HostID] {
 			ident.Module[strconv.FormatInt(rela.ModuleID, 10)] = &Module{
 				SetID:    rela.SetID,
 				ModuleID: rela.ModuleID,
 				BizID:    rela.AppID,
 			}
+			if module, ok := modulesMap[rela.ModuleID]; ok {
+				for _, procid := range proc2modulesMap[module.ModuleName] {
+					hostprocs[procid] = true
+				}
+			}
+		}
+
+		ident.Process = []Process{}
+		for procid := range hostprocs {
+			bindModules := bindModulesMap[procid]
+			if len(bindModules) == 0 {
+				bindModules = []int64{}
+			}
+			ident.Process = append(ident.Process, Process{ProcessID: procid, BindModules: bindModules})
 		}
 
 		if err := ih.cache.Set(getInstCacheKey(common.BKInnerObjIDHost, ident.HostID), ident, 0).Err(); err != nil {
