@@ -44,7 +44,7 @@ type Inst interface {
 	SetParentInst(targetInst Inst) error
 	SetChildInst(targetInst Inst) error
 
-	SetMainlineParentInst(targetInst Inst) error
+	SetMainlineParentInst(instID int64) error
 	SetMainlineChildInst(targetInst Inst) error
 
 	GetInstID() (int64, error)

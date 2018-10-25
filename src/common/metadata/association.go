@@ -139,21 +139,58 @@ type AssociationType struct {
 	Direction string `field:"direction" json:"direction" bson:"direction"`
 }
 
-// Association define object association struct
+type AssociationOnDeleteAction string
+type AssociationMapping string
+
+const (
+	// this is a default action, which is do nothing when a association between object is deleted.
+	None AssociationOnDeleteAction = "none"
+	// delete related source object instances when the association is deleted.
+	DeleteSource AssociationOnDeleteAction = "delete_src"
+	// delete related destination object instances when the association is deleted.
+	DeleteDestinatioin AssociationOnDeleteAction = "delete_dest"
+
+	// the source object can be related with only one destination object
+	OneToOneMapping AssociationMapping = "1:1"
+	// the source object can be related with multiple destination objects
+	OneToManyMapping AssociationMapping = "1:n"
+	// multiple source object can be related with multiple destination objects
+	ManyToManyMapping AssociationMapping = "n:n"
+)
+
+// Association defines the association between two objects.
 type Association struct {
-	ID          int64  `field:"id" json:"id" bson:"id"`
-	ObjectID    string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
-	OwnerID     string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
-	AsstForward string `field:"bk_asst_forward" json:"bk_asst_forward" bson:"bk_asst_forward"`
-	AsstObjID   string `field:"bk_asst_obj_id" json:"bk_asst_obj_id" bson:"bk_asst_obj_id"`
-	AsstName    string `field:"bk_asst_name" json:"bk_asst_name" bson:"bk_asst_name"`
+	ID      int64  `field:"id" json:"id" bson:"id"`
+	OwnerID string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 
+	// the unique id belongs to  this association, should be generated with rules as follows:
+	// "$ObjectID"_"$AsstID"_"$AsstObjID"
 	ObjectAsstID string `field:"bk_obj_asst_id" json:"bk_obj_asst_id" bson:"bk_obj_asst_id"`
-	AsstID       string `field:"bk_asst_id" json:"bk_asst_id" bson:"bk_asst_id"`
-	Mapping      string `field:"mapping" json:"mapping" bson:"mappingo"`
-	OnDelete     string `field:"on_delete" json:"on_delete" bson:"on_delete"`
+	// the name of this association
+	ObjectAsstName string `field:"bk_obj_asst_name" json:"bk_obj_asst_name" bson:"bk_obj_asst_name"`
 
-	//ObjectAttID      string `field:"bk_object_att_id" json:"bk_object_att_id" bson:"bk_object_att_id"`
+	// describe which object this association is defined for.
+	ObjectID string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
+	// describe where the Object associate with.
+	AsstObjID string `field:"bk_asst_obj_id" json:"bk_asst_obj_id" bson:"bk_asst_obj_id"`
+	// the association kind used by this association.
+	AsstID string `field:"bk_asst_id" json:"bk_asst_id" bson:"bk_asst_id"`
+
+	// this field is deprecated now.
+	// AsstForward string `field:"bk_asst_forward" json:"bk_asst_forward" bson:"bk_asst_forward"`
+	// this filed is deprecated now.
+	// AsstName string `field:"bk_asst_name" json:"bk_asst_name" bson:"bk_asst_name"`
+
+	// defined which kind of association can be used between the source object and destination object.
+	Mapping AssociationMapping `field:"mapping" json:"mapping" bson:"mapping"`
+	// describe the action when this association is deleted.
+	OnDelete AssociationOnDeleteAction `field:"on_delete" json:"on_delete" bson:"on_delete"`
+	// describe whether this association is a pre-defined association or not,
+	// if true, it means this association is used by cmdb itself.
+	IsPredefined bool `field:"is_pre" json:"is_pre" bson:"is_pre"`
+
+	// deprecated from now on.
+	// ObjectAttID      string `field:"bk_object_att_id" json:"bk_object_att_id" bson:"bk_object_att_id"`
 	ClassificationID string `field:"bk_classification_id" bson:"-"`
 	ObjectIcon       string `field:"bk_obj_icon" bson:"-"`
 	ObjectName       string `field:"bk_obj_name" bson:"-"`
