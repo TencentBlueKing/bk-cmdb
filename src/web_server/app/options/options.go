@@ -60,9 +60,10 @@ type Site struct {
 }
 
 type Config struct {
-	Site        Site
-	Session     Session
-	Version     string
-	AgentAppUrl string
-	LoginUrl    string
+	Site         Site
+	Session      Session
+	Version      string
+	AgentAppUrl  string
+	LoginUrl     string
+	LoginVersion string
 }
