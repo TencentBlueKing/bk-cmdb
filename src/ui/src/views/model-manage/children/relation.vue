@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="model-relation-wrapper">
         <bk-button class="create-btn" type="primary" @click="createRelation">
             {{$t('ModelManagement["新建关联关系"]')}}
         </bk-button>

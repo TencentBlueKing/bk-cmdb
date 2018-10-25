@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="slider-content">
         <label class="form-label">
             <span class="label-text">
                 {{$t('ModelManagement["唯一标识"]')}}

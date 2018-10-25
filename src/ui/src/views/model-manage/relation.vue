@@ -6,7 +6,7 @@
             </bk-button>
             <label class="search-input">
                 <i class="bk-icon icon-search"></i>
-                <input type="text" class="cmdb-form-input" :placeholder="$t('ModelManagement[\'请输入关联类型名称\']')">
+                <input type="text" class="cmdb-form-input" v-model.trim="searchText" :placeholder="$t('ModelManagement[\'请输入关联类型名称\']')">
             </label>
         </p>
         <cmdb-table
@@ -20,84 +20,37 @@
             :width="514"
             :title="slider.title"
             :isShow.sync="slider.isShow">
-            <div slot="content" class="content">
-                <label class="form-label">
-                    <span class="label-text">
-                        {{$t('ModelManagement["唯一标识"]')}}
-                        <span class="color-danger">*</span>
-                    </span>
-                    <input type="text" class="cmdb-form-input">
-                </label>
-                <label class="form-label">
-                    <span class="label-text">
-                        {{$t('Hosts["名称"]')}}
-                        <span class="color-danger">*</span>
-                    </span>
-                    <input type="text" class="cmdb-form-input">
-                </label>
-                <label class="form-label">
-                    <span class="label-text">
-                        {{$t('ModelManagement["源->目标描述"]')}}
-                        <span class="color-danger">*</span>
-                    </span>
-                    <input type="text" class="cmdb-form-input">
-                </label>
-                <label class="form-label">
-                    <span class="label-text">{{$t('ModelManagement["目标描述->源"]')}}</span>
-                    <span class="color-danger">*</span>
-                    <input type="text" class="cmdb-form-input">
-                </label>
-                <div class="radio-box overflow">
-                    <label class="label-text">
-                        {{$t('ModelManagement["是否有方向"]')}}<span class="text-desc">({{$t('ModelManagement["仅视图"]')}})</span>
-                    </label>
-                    <label class="cmdb-form-radio cmdb-radio-small">
-                        <input type="radio">
-                        <span class="cmdb-radio-text">{{$t('ModelManagement["是，源指向目标"]')}}</span>
-                    </label>
-                    <label class="cmdb-form-radio cmdb-radio-small">
-                        <input type="radio">
-                        <span class="cmdb-radio-text">{{$t('ModelManagement["否"]')}}</span>
-                    </label>
-                </div>
-                <div class="radio-box">
-                    <label class="label-text">
-                        {{$t('ModelManagement["联动删除"]')}}
-                    </label>
-                    <label class="cmdb-form-radio cmdb-radio-small">
-                        <input type="radio">
-                        <span class="cmdb-radio-text">{{$t('ModelManagement["源不存在联动删除目标"]')}}</span>
-                    </label>
-                    <label class="cmdb-form-radio cmdb-radio-small">
-                        <input type="radio">
-                        <span class="cmdb-radio-text">{{$t('ModelManagement["目标不存在联动删除源"]')}}</span>
-                    </label>
-                </div>
-            </div>
+            <the-relation slot="content" class="slider-content"></the-relation>
         </cmdb-slider>
     </div>
 </template>
 
 <script>
+    import theRelation from './relation-type'
+    import { mapActions } from 'vuex'
     export default {
+        components: {
+            theRelation
+        },
         data () {
             return {
                 slider: {
                     isShow: false,
                     title: this.$t('ModelManagement["新增关联类型"]')
                 },
+                searchText: '',
                 table: {
                     header: [{
-                        id: 'name',
+                        id: 'bk_asst_name',
                         name: this.$t('Hosts["名称"]')
                     }, {
-                        id: 'name',
+                        id: 'bk_asst_id',
                         name: this.$t('ModelManagement["唯一标识"]')
                     }, {
-                        id: 'name',
+                        id: 'src_des',
                         name: this.$t('ModelManagement["源->目标描述"]')
                     }, {
-                        id: 'name',
+                        id: 'dest_des',
                         name: this.$t('ModelManagement["目标描述->源"]')
                     }, {
                         id: 'name',
@@ -116,6 +69,17 @@
                     sort: '-op_time'
                 }
             }
+        },
+        created () {
+            this.searchAssociationType()
+        },
+        methods: {
+            ...mapActions('objectAssociation', [
+                'searchAssociationType',
+                'createAssociationType',
+                'updateAssociationType',
+                'deleteAssociationType'
+            ])
         }
     }
 </script>
@@ -140,31 +104,6 @@
             .cmdb-form-input {
                 vertical-align: middle;
                 padding-right: 36px;
-            }
-        }
-    }
-    .relation-slider {
-        .content {
-            padding: 20px 30px;
-        }
-        .radio-box {
-            margin: 0 -30px;
-            font-size: 0;
-            .label-text {
-                display: inline-block;
-                padding-right: 2px;
-                width: 130px;
-                font-size: 14px;
-                line-height: 32px;
-                text-align: right;
-                .text-desc {
-                    color: $cmdbBorderColor;
-                }
-            }
-            .cmdb-form-radio {
-                margin-right: 10px;
-                width: 170px;
-                height: 32px;
             }
         }
     }

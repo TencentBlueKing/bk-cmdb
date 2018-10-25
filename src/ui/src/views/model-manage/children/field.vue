@@ -196,7 +196,4 @@
             color: #ccc;
         }
     }
-    .slider-content {
-        padding: 20px;
-    }
 </style>

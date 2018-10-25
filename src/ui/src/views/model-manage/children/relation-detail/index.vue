@@ -1,5 +1,5 @@
 <template>
-    <div class="model-relation-wrapper">
+    <div>
         <label class="form-label">
             <span class="label-text">
                 {{$t('ModelManagement["唯一标识"]')}}
@@ -90,25 +90,5 @@
 <style lang="scss" scoped>
     .model-relation-wrapper {
         padding: 20px;
-    }
-    .radio-box {
-        margin: 0 -20px;
-        font-size: 0;
-        .label-text {
-            display: inline-block;
-            padding-right: 10px;
-            width: 130px;
-            font-size: 14px;
-            line-height: 32px;
-            text-align: right;
-            .text-desc {
-                color: $cmdbBorderColor;
-            }
-        }
-        .cmdb-form-radio {
-            margin-right: 10px;
-            width: 170px;
-            height: 32px;
-        }
     }
 </style>
