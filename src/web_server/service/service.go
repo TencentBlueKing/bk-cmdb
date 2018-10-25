@@ -25,11 +25,13 @@ import (
 
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
+	redis "gopkg.in/redis.v5"
 )
 
 type Service struct {
 	*options.ServerOption
-	Engine *backbone.Engine
+	Engine   *backbone.Engine
+	CacheCli *redis.Client
 	*logics.Logics
 	Disc   discovery.DiscoveryInterface
 	Config options.Config
