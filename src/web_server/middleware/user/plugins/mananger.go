@@ -10,39 +10,34 @@
  * limitations under the License.
  */
 
-package main
+package plugins
 
 import (
-	"context"
-	"fmt"
-	"os"
-	"runtime"
+	"github.com/gin-gonic/gin"
 
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/types"
-	"configcenter/src/common/util"
-	"configcenter/src/web_server/app"
-	"configcenter/src/web_server/app/options"
-
-	"github.com/spf13/pflag"
+	"configcenter/src/common/metadata"
+	"configcenter/src/web_server/middleware/user/plugins/manager"
+	_ "configcenter/src/web_server/middleware/user/plugins/register"
 )
 
-func main() {
-	common.SetIdentification(types.CC_MODULE_WEBSERVER)
-
-	runtime.GOMAXPROCS(runtime.NumCPU())
-	blog.InitLogs()
-	defer blog.CloseLogs()
-
-	op := options.NewServerOption()
-	op.AddFlags(pflag.CommandLine)
-
-	util.InitFlags()
-
-	if err := app.Run(context.Background(), op); err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
-		blog.CloseLogs()
-		os.Exit(1)
+func CurrentPlugin(c *gin.Context, version string) metadata.LoginUserPluginInerface {
+	if "" == version {
+		version = common.BKDefaultLoginUserPluginVersion
 	}
+
+	var selfPlugin *metadata.LoginPluginInfo
+	for _, plugin := range manager.LoginPluginInfo {
+		if plugin.Version == version {
+			return plugin.HandleFunc
+		}
+		if common.BKDefaultLoginUserPluginVersion == plugin.Version {
+			selfPlugin = plugin
+		}
+	}
+	if nil != selfPlugin {
+		return selfPlugin.HandleFunc
+	}
+
+	return nil
 }
