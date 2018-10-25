@@ -224,7 +224,14 @@ func (ih *IdentifierHandler) handleRelatedInst(hostIdentify metadata.EventInst, 
 				hostIDKeys = append(hostIDKeys, getInstCacheKey(common.BKInnerObjIDHost, hostID))
 			}
 			idens, err := ih.cache.MGet(hostIDKeys...).Result()
-			blog.Infof("identifier: ih.cache.MGet val: %v,%v", idens, err)
+			if err != nil {
+				blog.Errorf("identifier: ih.cache.MGet by %v,%v. we will try to fetch it from db instead", hostIDKeys, err)
+				idens = make([]interface{}, len(hostIDKeys))
+				for index := range idens {
+					// simulate that redis returns all nil
+					idens[index] = "nil"
+				}
+			}
 			for identIndex := range idens {
 				iden := HostIdentifier{}
 				if err = json.Unmarshal([]byte(getString(idens[identIndex])), &iden); err != nil {
