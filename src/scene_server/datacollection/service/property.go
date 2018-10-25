@@ -15,7 +15,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
 
 	restful "github.com/emicklei/go-restful"
 
@@ -26,6 +25,7 @@ import (
 	"configcenter/src/common/util"
 )
 
+// CreateProperty create net property
 func (s *Service) CreateProperty(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -51,6 +51,7 @@ func (s *Service) CreateProperty(req *restful.Request, resp *restful.Response) {
 	resp.WriteEntity(meta.NewSuccessResp(result))
 }
 
+// UpdateProperty update net property
 func (s *Service) UpdateProperty(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -81,17 +82,18 @@ func (s *Service) UpdateProperty(req *restful.Request, resp *restful.Response) {
 	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
+// BatchCreateProperty batch create net property
 func (s *Service) BatchCreateProperty(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
-	propertyList := make([]meta.NetcollectProperty, 0)
-	if err := json.NewDecoder(req.Request.Body).Decode(&propertyList); err != nil {
-		blog.Errorf("[NetProperty] add property failed with decode body err: %v", err)
+	batchAddNetProperty := new(meta.BatchAddNetProperty)
+	if err := json.NewDecoder(req.Request.Body).Decode(&batchAddNetProperty); err != nil {
+		blog.Errorf("[NetProperty] batch add property failed with decode body err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-
+	propertyList := batchAddNetProperty.Data
 	resultList, hasError := s.Logics.BatchCreateProperty(pheader, propertyList)
 	if hasError {
 		resp.WriteEntity(meta.Response{
@@ -107,6 +109,7 @@ func (s *Service) BatchCreateProperty(req *restful.Request, resp *restful.Respon
 	resp.WriteEntity(meta.NewSuccessResp(resultList))
 }
 
+// SearchProperty search net property
 func (s *Service) SearchProperty(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -131,34 +134,21 @@ func (s *Service) SearchProperty(req *restful.Request, resp *restful.Response) {
 	})
 }
 
+// DeleteProperty delete net propertys
 func (s *Service) DeleteProperty(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	deleteNetPropertyBatchOpt := new(meta.DeleteNetPropertyBatchOpt)
 	if err := json.NewDecoder(req.Request.Body).Decode(deleteNetPropertyBatchOpt); nil != err {
-		blog.Errorf("[NetProperty] delete net property batch , but decode body failed, err: %v", err)
+		blog.Errorf("[NetProperty] delete net property batch, but decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
-	netPropertyIDStrArr := strings.Split(deleteNetPropertyBatchOpt.NetcollectPropertyID, ",")
-	var netPropertyIDArr []int64
-
-	for _, netPropertyIDStr := range netPropertyIDStrArr {
-		netPropertyID, err := strconv.ParseInt(netPropertyIDStr, 10, 64)
-		if nil != err {
-			blog.Errorf("[NetProperty] delete net property batch, but got invalid net property id, err: %v", err)
-			resp.WriteError(http.StatusBadRequest,
-				&meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, common.BKNetcollectPropertyIDField)})
-			return
-		}
-		netPropertyIDArr = append(netPropertyIDArr, netPropertyID)
-	}
-
-	for _, netPropertyID := range netPropertyIDArr {
+	for _, netPropertyID := range deleteNetPropertyBatchOpt.NetcollectPropertyIDs {
 		if err := s.Logics.DeleteProperty(pheader, netPropertyID); nil != err {
-			blog.Errorf("[NetProperty] delete net property failed, with netcollect_property_id [%s], err: %v", netPropertyID, err)
+			blog.Errorf("[NetProperty] delete net property failed, with netcollect_property_id [%d], err: %v", netPropertyID, err)
 
 			if defErr.Error(common.CCErrCollectNetDeviceObjPropertyNotExist).Error() == err.Error() {
 				resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})

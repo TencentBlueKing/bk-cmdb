@@ -93,8 +93,8 @@ func GetNetPropertyData(header http.Header, apiAddr, netPropertyIDStr string) ([
 		blog.Errorf("[Export Net Property] http request error:%v", err)
 	}
 
-	blog.V(4).Infof("[Export Net Property] search netProperty url:%s", url)
-	blog.V(4).Infof("[Export Net Property] search netProperty return:%s", result)
+	blog.V(5).Infof("[Export Net Property] search netProperty url:%s", url)
+	blog.V(5).Infof("[Export Net Property] search netProperty return:%s", result)
 
 	js, err := simplejson.NewJson([]byte(result))
 	if nil != err {
@@ -134,7 +134,7 @@ func GetNetPropertyData(header http.Header, apiAddr, netPropertyIDStr string) ([
 		return netPropertyInfo, errors.New("no netProperty")
 	}
 
-	blog.V(4).Infof("[Export Net Property] search return netProperty info:%s", netPropertyInfo)
+	blog.V(5).Infof("[Export Net Property] search return netProperty info:%s", netPropertyInfo)
 	return netPropertyInfo, nil
 }
 
@@ -151,7 +151,7 @@ func BuildNetPropertyExcelTemplate(header http.Header, defLang language.DefaultC
 
 	fields := GetNetPropertyField(defLang)
 
-	blog.V(4).Infof("[Build NetProperty Excel Template]  fields count:%d", len(fields))
+	blog.V(5).Infof("[Build NetProperty Excel Template]  fields count:%d", len(fields))
 
 	productExcelHealer(fields, nil, sheet, defLang)
 

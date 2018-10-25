@@ -76,18 +76,20 @@ func ImportNetDevice(c *gin.Context) {
 
 	// http request get device
 	url := apiSite + fmt.Sprintf("/api/%s/collector/netcollect/device/action/batch", webCommon.API_VERSION)
-	blog.V(4).Infof("[Import Net Device] add device url: %v", url)
+	blog.V(5).Infof("[Import Net Device] add device url: %v", url)
 
-	params := make([]interface{}, 0)
-	line_numbers := []int{}
+	data := make([]interface{}, 0)
+	lineNumbers := []int{}
 	for line, value := range netDevice {
-		params = append(params, value)
-		line_numbers = append(line_numbers, line)
+		data = append(data, value)
+		lineNumbers = append(lineNumbers, line)
 	}
-	blog.V(4).Infof("[Import Net Device] import device content: %v", params)
+	params := map[string]interface{}{"Data": data}
+
+	blog.V(5).Infof("[Import Net Device] import device content: %v", params)
 
 	reply, err := httpRequest(url, params, c.Request.Header)
-	blog.V(4).Infof("[Import Net Device] import device result: %v", reply)
+	blog.V(5).Infof("[Import Net Device] import device result: %v", reply)
 
 	if nil != err {
 		c.String(http.StatusInternalServerError, err.Error())
@@ -95,7 +97,7 @@ func ImportNetDevice(c *gin.Context) {
 	}
 
 	// rebuild response body
-	reply, err = rebuildDeviceReponseBody(reply, line_numbers)
+	reply, err = rebuildDeviceReponseBody(reply, lineNumbers)
 	if nil != err {
 		c.String(http.StatusInternalServerError, getReturnStr(common.CCErrWebGetAddNetDeviceResultFail,
 			defErr.Errorf(common.CCErrWebGetAddNetDeviceResultFail).Error(), nil))
@@ -283,7 +285,7 @@ func getNetDevicesFromFile(
 	return netDevice, nil, ""
 }
 
-func rebuildDeviceReponseBody(reply string, line_numbers []int) (string, error) {
+func rebuildDeviceReponseBody(reply string, lineNumbers []int) (string, error) {
 	replyBody := new(meta.Response)
 	if err := json.Unmarshal([]byte(reply), replyBody); nil != err {
 		blog.Errorf("[Import Net Device] unmarshal response body err: %v", err)
@@ -315,7 +317,7 @@ func rebuildDeviceReponseBody(reply string, line_numbers []int) (string, error) 
 
 		switch result {
 		case true:
-			succRow = append(succRow, strconv.Itoa(line_numbers[i]))
+			succRow = append(succRow, strconv.Itoa(lineNumbers[i]))
 		case false:
 			errMsg, ok := data["error_msg"].(string)
 			if !ok {
@@ -323,7 +325,7 @@ func rebuildDeviceReponseBody(reply string, line_numbers []int) (string, error) 
 				return "", fmt.Errorf("convert response body fail")
 			}
 
-			errRow = append(errRow, fmt.Sprintf("%d行%s", line_numbers[i], errMsg))
+			errRow = append(errRow, fmt.Sprintf("%d行%s", lineNumbers[i], errMsg))
 		}
 	}
 
