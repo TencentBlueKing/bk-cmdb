@@ -292,12 +292,11 @@ func (cli *classification) GetType() string {
 }
 
 func (cli *classification) SetSupplierAccount(supplierAccount string) {
-	// TODO: need to add owner field
+	cli.cls.OwnerID = supplierAccount
 }
 
 func (cli *classification) GetSupplierAccount() string {
-	// TODO: need to add owner field
-	return ""
+	return cli.cls.OwnerID
 }
 
 func (cli *classification) SetIcon(classificationIcon string) {
