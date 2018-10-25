@@ -93,8 +93,8 @@ func GetNetDeviceData(header http.Header, apiAddr, deviceIDStr string) ([]interf
 		blog.Errorf("[Export Net Device] http request error:%v", err)
 	}
 
-	blog.V(4).Infof("[Export Net Device] search device url:%s", url)
-	blog.V(4).Infof("[Export Net Device] search device return:%s", result)
+	blog.V(5).Infof("[Export Net Device] search device url:%s", url)
+	blog.V(5).Infof("[Export Net Device] search device return:%s", result)
 
 	js, err := simplejson.NewJson([]byte(result))
 	if nil != err {
@@ -134,7 +134,7 @@ func GetNetDeviceData(header http.Header, apiAddr, deviceIDStr string) ([]interf
 		return deviceInfo, errors.New("no device")
 	}
 
-	blog.V(4).Infof("[Export Net Device] search return device info:%s", deviceInfo)
+	blog.V(5).Infof("[Export Net Device] search return device info:%s", deviceInfo)
 	return deviceInfo, nil
 }
 
@@ -151,7 +151,7 @@ func BuildNetDeviceExcelTemplate(header http.Header, defLang language.DefaultCCL
 
 	fields := GetNetDevicefield(defLang)
 
-	blog.V(4).Infof("[Build NetDevice Excel Template] fields count:%d", len(fields))
+	blog.V(5).Infof("[Build NetDevice Excel Template] fields count:%d", len(fields))
 
 	productExcelHealer(fields, nil, sheet, defLang)
 

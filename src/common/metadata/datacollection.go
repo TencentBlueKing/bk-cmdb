@@ -16,6 +16,10 @@ type AddDeviceResult struct {
 	DeviceID int64 `json:"device_id"`
 }
 
+type BatchAddDevice struct {
+	Data []NetcollectDevice `json:"data"`
+}
+
 type BatchAddDeviceResult struct {
 	Result   bool   `json:"result"`
 	ErrMsg   string `json:"error_msg"`
@@ -39,7 +43,7 @@ type NetCollSearchParams struct {
 }
 
 type DeleteNetDeviceBatchOpt struct {
-	DeviceIDs string `json:"device_id"`
+	DeviceIDs []int64 `json:"device_id"`
 }
 
 type AddNetPropertyResult struct {
@@ -50,6 +54,10 @@ type BatchAddNetPropertyResult struct {
 	Result               bool   `json:"result"`
 	ErrMsg               string `json:"error_msg"`
 	NetcollectPropertyID int64  `json:"netcollect_property_id"`
+}
+
+type BatchAddNetProperty struct {
+	Data []NetcollectProperty `json:"data"`
 }
 
 type SearchNetProperty struct {
@@ -63,5 +71,5 @@ type SearchNetPropertyResult struct {
 }
 
 type DeleteNetPropertyBatchOpt struct {
-	NetcollectPropertyID string `json:"netcollect_property_id"`
+	NetcollectPropertyIDs []int64 `json:"netcollect_property_id"`
 }
