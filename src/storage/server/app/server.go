@@ -29,6 +29,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/mongobyc"
 	"configcenter/src/storage/server/app/options"
 	"configcenter/src/storage/server/manager"
@@ -141,17 +142,9 @@ func (h *TXServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		}
 		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ") //ignore err, cause ConfigMap is map[string]string
 		blog.Infof("config updated: \n%s", out)
-		h.Config.MongoDB.Connect = current.ConfigMap["mongodb.connect"]
-		h.Config.MongoDB.Address = current.ConfigMap["mongodb.address"]
-		h.Config.MongoDB.User = current.ConfigMap["mongodb.usr"]
-		h.Config.MongoDB.Password = current.ConfigMap["mongodb.pwd"]
-		h.Config.MongoDB.Database = current.ConfigMap["mongodb.database"]
-		h.Config.MongoDB.MaxOpenConns = current.ConfigMap["mongodb.maxOpenConns"]
-		h.Config.MongoDB.MaxIdleConns = current.ConfigMap["mongodb.maxIDleConns"]
+		h.Config.MongoDB = mongo.ParseConfigFromKV("mongo", current.ConfigMap)
 
-		h.Config.Redis.Address = current.ConfigMap["redis.address"]
-		h.Config.Redis.Password = current.ConfigMap["redis.pwd"]
-		h.Config.Redis.Database = current.ConfigMap["redis.database"]
+		h.Config.Redis.Address = redis.ParseConfigFromKV("redis", current.ConfigMap)
 
 		h.Config.Transaction.Enable = current.ConfigMap["transaction.enable"]
 		h.Config.Transaction.TransactionLifetimeSecond = current.ConfigMap["transaction.transactionLifetimeSecond"]
