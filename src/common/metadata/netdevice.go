@@ -17,7 +17,7 @@ import (
 )
 
 type NetcollectDevice struct {
-	DeviceID    int64      `json:"device_id,omitempty" bson:"device_id,omitempty"`
+	DeviceID    uint64     `json:"device_id,omitempty" bson:"device_id,omitempty"`
 	DeviceName  string     `json:"device_name,omitempty" bson:"device_name,omitempty"`
 	DeviceModel string     `json:"device_model,omitempty" bson:"device_model,omitempty"`
 	ObjectID    string     `json:"bk_obj_id" bson:"bk_obj_id,omitempty"`
@@ -29,10 +29,10 @@ type NetcollectDevice struct {
 }
 
 type NetcollectProperty struct {
-	NetcollectPropertyID int64      `json:"netcollect_property_id,omitempty" bson:"netcollect_property_id,omitempty"`
+	NetcollectPropertyID uint64     `json:"netcollect_property_id,omitempty" bson:"netcollect_property_id,omitempty"`
 	PropertyID           string     `json:"bk_property_id" bson:"bk_property_id,omitempty"`
 	PropertyName         string     `json:"bk_property_name" bson:"-"`
-	DeviceID             int64      `json:"device_id" bson:"device_id,omitempty"`
+	DeviceID             uint64     `json:"device_id" bson:"device_id,omitempty"`
 	DeviceName           string     `json:"device_name" bson:"-"`
 	ObjectID             string     `json:"bk_obj_id,omitempty" bson:"-"`
 	ObjectName           string     `json:"bk_obj_name,omitempty" bson:"-"`
@@ -117,11 +117,11 @@ type NetcollectReportSummary struct {
 }
 
 type RspNetcollectReport struct {
-	Count int64              `json:"count"`
+	Count uint64             `json:"count"`
 	Info  []NetcollectReport `json:"info"`
 }
 type RspNetcollectHistory struct {
-	Count int64               `json:"count"`
+	Count uint64              `json:"count"`
 	Info  []NetcollectHistory `json:"info"`
 }
 
