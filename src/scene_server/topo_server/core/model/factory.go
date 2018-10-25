@@ -117,24 +117,30 @@ func (cli *factory) CreateAttribute(params types.ContextParams) Attribute {
 }
 
 func (cli *factory) CreateGroup(params types.ContextParams) Group {
-	return &group{
+	grp := &group{
 		params:    params,
 		clientSet: cli.clientSet,
 	}
+	grp.SetSupplierAccount(params.SupplierAccount)
+	return grp
 }
 
 func (cli *factory) CreateMainLineAssociatin(params types.ContextParams, obj Object, asstKey string, asstObj Object) Association {
-	return &association{
+	asst := &association{
 		isMainLine: true,
 		params:     params,
 		clientSet:  cli.clientSet,
 	}
+	asst.SetSupplierAccount(params.SupplierAccount)
+	return asst
 }
 func (cli *factory) CreateCommonAssociation(params types.ContextParams, obj Object, asstKey string, asstObj Object) Association {
 
-	return &association{
+	asst := &association{
 		isMainLine: false,
 		params:     params,
 		clientSet:  cli.clientSet,
 	}
+	asst.SetSupplierAccount(params.SupplierAccount)
+	return asst
 }
