@@ -26,8 +26,15 @@ func TestCondition(t *testing.T) {
 
 	conditionItem := condition.ConditionItem{Field: "test_field3", Operator: "$lt", Value: 123}
 	if err := cond.AddContionItem(conditionItem); nil != err {
+		t.Errorf("AddContionItem error")
 		t.Fail()
 	}
+
+	if !cond.IsFieldExist("test_field") {
+		t.Errorf("IsFieldExist error")
+		t.Fail()
+	}
+
 	cond.SetPage(mapstr.New())
 
 	cond.SetLimit(1)
