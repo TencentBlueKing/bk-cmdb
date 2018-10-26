@@ -25,11 +25,13 @@ import (
 
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
+	redis "gopkg.in/redis.v5"
 )
 
 type Service struct {
 	*options.ServerOption
-	Engine *backbone.Engine
+	Engine   *backbone.Engine
+	CacheCli *redis.Client
 	*logics.Logics
 	Disc   discovery.DiscoveryInterface
 	Config options.Config
@@ -45,7 +47,6 @@ func (s *Service) WebService() *gin.Engine {
 
 	ws.Use(sessions.Sessions(s.Config.Session.Name, store))
 	middleware.Engine = s.Engine
-	ws.Use(middleware.Cors())
 	ws.Use(middleware.ValidLogin(s.Config, s.Disc))
 
 	ws.Static("/static", s.Config.Site.HtmlRoot)
