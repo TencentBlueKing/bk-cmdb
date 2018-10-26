@@ -222,8 +222,8 @@ func (ps *ProcServer) GetProcessPortByIP(req *restful.Request, resp *restful.Res
 		}
 		blog.V(3).Infof("procData: %v", procData)
 		//获取绑定关系
-		result := make(map[string]interface{})
 		for _, itemProcData := range procData {
+			result := make(map[string]interface{})
 			procId, err := util.GetIntByInterface(itemProcData[common.BKProcIDField])
 			if err != nil {
 				blog.Warnf("fail to get procid in procdata(%+v)", itemProcData)
@@ -259,8 +259,8 @@ func (ps *ProcServer) GetProcessPortByIP(req *restful.Request, resp *restful.Res
 						}
 					}
 
-					delete(itemProcData, common.BKAppIDField)
-					delete(itemProcData, common.BKProcIDField)
+					//delete(itemProcData, common.BKAppIDField)
+					//delete(itemProcData, common.BKProcIDField)
 					result["process"] = itemProcData
 					resultData = append(resultData, result)
 				}
@@ -430,9 +430,9 @@ func (ps *ProcServer) getModuleMapByCond(forward http.Header, field string, cond
 	return moduleMap, nil
 }
 
-func (ps *ProcServer) getProcessMapByAppID(appId int, forward http.Header) (map[int]map[string]interface{}, error) {
-	procMap := make(map[int]map[string]interface{})
-	condition := map[string]interface{}{
+func (ps *ProcServer) getProcessMapByAppID(appId int, forward http.Header) (map[int64]mapstr.MapStr, error) {
+	procMap := make(map[int64]mapstr.MapStr)
+	condition := mapstr.MapStr{
 		common.BKAppIDField: appId,
 	}
 
@@ -445,12 +445,14 @@ func (ps *ProcServer) getProcessMapByAppID(appId int, forward http.Header) (map[
 	}
 
 	for _, info := range ret.Data.Info {
-		appId, err := info.Int64(common.BKAppIDField)
+
+		processId, err := info.Int64(common.BKProcessIDField)
 		if nil != err {
 			blog.Warnf("fail to get appid in getProcessMapByAppID. info: %+v", info)
 		} else {
-			procMap[int(appId)] = info
+			procMap[processId] = info
 		}
+
 	}
 
 	return procMap, nil
