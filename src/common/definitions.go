@@ -836,5 +836,13 @@ const (
 
 // association
 const (
-	AssociationHostLinkPlat = "host_link_plat"
+	AssociationTypeContain = "contain"
+	AssociationTypeGroupby = "groupby"
+	AssociationTypeRun     = "run"
+	AssociationTypeConnect = "connect"
+)
+
+// object association
+const (
+	AssociationCloudContainHost = "plat_contain_host"
 )

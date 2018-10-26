@@ -236,8 +236,8 @@ func (ih *IdentifierHandler) handleHostCloud(e *metadata.EventInstCtx) {
 		} else {
 			asst = datas[index].CurData
 		}
-		if asst.ObjectAsstID == common.AssociationHostLinkPlat {
-
+		if asst.ObjectAsstID == common.AssociationHostCloud {
+			// TODO
 		}
 	}
 }
