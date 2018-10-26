@@ -31,7 +31,7 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
 )
 
 type Netcollect struct {
@@ -56,7 +56,7 @@ type Netcollect struct {
 	subscribing bool
 
 	cache *Cache
-	db    storage.DI
+	db    dal.RDB
 
 	routeCnt   int64
 	handleCnt  int64
@@ -70,7 +70,7 @@ type Netcollect struct {
 	wg *sync.WaitGroup
 }
 
-func NewNetcollect(ctx context.Context, chanName []string, maxSize int, redisCli, snapCli *redis.Client, db storage.DI, backbone *backbone.Engine) *Netcollect {
+func NewNetcollect(ctx context.Context, chanName []string, maxSize int, redisCli, snapCli *redis.Client, db dal.RDB, backbone *backbone.Engine) *Netcollect {
 	if 0 == maxSize {
 		maxSize = 100
 	}
@@ -267,16 +267,16 @@ func (h *Netcollect) upsertReport(report *metadata.NetcollectReport) error {
 	existCond.Field(common.BKObjIDField).Eq(report.ObjectID)
 	existCond.Field(common.BKInstKeyField).Eq(report.InstKey)
 
-	count, err := h.db.GetCntByCondition(common.BKTableNameNetcollectReport, existCond.ToMapStr())
+	count, err := h.db.Table(common.BKTableNameNetcollectReport).Find(existCond.ToMapStr()).Count(h.ctx)
 	if err != nil {
 		return err
 	}
 	if count <= 0 {
-		_, err = h.db.Insert(common.BKTableNameNetcollectReport, report)
+		err = h.db.Table(common.BKTableNameNetcollectReport).Insert(h.ctx, report)
 		return err
 	}
 
-	return h.db.UpdateByCondition(common.BKTableNameNetcollectReport, report, existCond)
+	return h.db.Table(common.BKTableNameNetcollectReport).Update(h.ctx, existCond, report)
 }
 
 func (h *Netcollect) findInst(objectID string, query *metadata.QueryInput) ([]mapstr.MapStr, error) {

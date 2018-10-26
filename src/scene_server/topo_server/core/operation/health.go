@@ -15,6 +15,7 @@ package operation
 import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	gtypes "configcenter/src/common/types"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -70,7 +71,7 @@ func (h *health) Health(params types.ContextParams) (*metric.HealthResponse, err
 	info := metric.HealthInfo{
 		Module:     gtypes.CC_MODULE_TOPO,
 		HealthMeta: meta,
-		AtTime:     gtypes.Now(),
+		AtTime:     metadata.Now(),
 	}
 
 	return &metric.HealthResponse{

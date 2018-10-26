@@ -13,15 +13,16 @@
 package x08_09_18_01
 
 import (
+	"context"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/admin_server/upgrader"
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
 )
 
-func fixedHostPlatAssocateRelation(db storage.DI, conf *upgrader.Config) (err error) {
+func fixedHostPlatAssocateRelation(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 
 	type instAsstStruct struct {
 		ID           int64     `bson:"id"`
@@ -39,8 +40,9 @@ func fixedHostPlatAssocateRelation(db storage.DI, conf *upgrader.Config) (err er
 		common.BKObjIDField:      common.BKInnerObjIDHost,
 		common.BKAsstInstIDField: common.BKInnerObjIDPlat,
 	}
-	err = db.GetMutilByCondition(common.BKTableNameInstAsst, []string{common.BKHostIDField}, instAsstConditionMap, &instAsstArr, "", 0, 0)
-	if nil != err && !db.IsNotFoundErr(err) {
+
+	err = db.Table(common.BKTableNameInstAsst).Find(instAsstConditionMap).Fields(common.BKHostIDField).All(ctx, &instAsstArr)
+	if nil != err && !db.IsNotFoundError(err) {
 		return err
 	}
 	var exitsAsstHostIDArr []int64
@@ -59,8 +61,9 @@ func fixedHostPlatAssocateRelation(db storage.DI, conf *upgrader.Config) (err er
 	if 0 < len(exitsAsstHostIDArr) {
 		hostCondition[common.BKHostIDField] = mapstr.MapStr{common.BKDBNIN: exitsAsstHostIDArr}
 	}
-	err = db.GetMutilByCondition(common.BKTableNameBaseHost, fields, hostCondition, &hostInfoMap, "", 0, 0)
-	if err != nil && !db.IsNotFoundErr(err) {
+
+	err = db.Table(common.BKTableNameBaseHost).Find(hostCondition).Fields(fields...).All(ctx, &hostInfoMap)
+	if err != nil && !db.IsNotFoundError(err) {
 		return err
 	}
 
@@ -71,17 +74,17 @@ func fixedHostPlatAssocateRelation(db storage.DI, conf *upgrader.Config) (err er
 			common.BKInstIDField:    host.HostID,
 			common.BKAsstObjIDField: common.BKInnerObjIDPlat,
 		}
-		cnt, err := db.GetCntByCondition(common.BKTableNameInstAsst, instAsstConditionMap)
+		cnt, err := db.Table(common.BKTableNameInstAsst).Find(instAsstConditionMap).Count(ctx)
 		if nil != err {
 			return err
 		}
 		if 0 == cnt {
-			id, err := db.GetIncID(common.BKTableNameInstAsst)
+			id, err := db.NextSequence(ctx, common.BKTableNameInstAsst)
 			if nil != err {
 				return err
 			}
 			addAsstInst := instAsstStruct{
-				ID:           id,
+				ID:           int64(id),
 				InstID:       host.HostID,
 				ObjectID:     common.BKInnerObjIDHost,
 				AsstInstID:   host.PlatID,
@@ -90,7 +93,7 @@ func fixedHostPlatAssocateRelation(db storage.DI, conf *upgrader.Config) (err er
 				CreateTime:   nowTime,
 				LastTime:     nowTime,
 			}
-			_, err = db.Insert(common.BKTableNameInstAsst, addAsstInst)
+			err = db.Table(common.BKTableNameInstAsst).Insert(ctx, addAsstInst)
 			if nil != err {
 				return err
 			}

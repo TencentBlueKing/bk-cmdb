@@ -14,6 +14,7 @@ package configures
 
 import (
 	"encoding/json"
+	"path/filepath"
 	"time"
 
 	"context"
@@ -155,9 +156,10 @@ func (cc *ConfCenter) writeConfs2Center(confRootPath string) error {
 	modules = append(modules, types.CC_MODULE_TOPO)
 	modules = append(modules, types.CC_MODULE_WEBSERVER)
 	modules = append(modules, types.CC_MODULE_EVENTSERVER)
+	modules = append(modules, types.CC_MODULE_TXC)
 
 	for _, moduleName := range modules {
-		filePath := confRootPath + "/" + moduleName + ".conf"
+		filePath := filepath.Join(confRootPath, moduleName+".conf")
 		key := types.CC_SERVCONF_BASEPATH + "/" + moduleName
 		if err := cc.writeConfigure(filePath, key); err != nil {
 			blog.Warnf("fail to write configure of module(%s) into center", moduleName)

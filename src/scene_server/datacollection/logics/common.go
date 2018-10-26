@@ -26,7 +26,7 @@ import (
 )
 
 // INVALIDID invalid id used as return value
-const INVALIDID = -1
+const INVALIDID uint64 = 0
 
 // by checking if bk_obj_id and bk_obj_name function parameter are valid net device object or not
 // one of bk_obj_id and bk_obj_name can be empty and will return both bk_obj_id if no error
@@ -115,7 +115,7 @@ func (lgc *Logics) checkNetObjectProperty(pheader http.Header, netDeviceObjID, p
 // by checking if bk_device_id and bk_device_name function parameter are valid net device or not
 // one of bk_device_id and bk_device_name can be empty and will return bk_device_id and bk_obj_id value if no error
 // bk_obj_id is used to check property
-func (lgc *Logics) checkNetDeviceExist(pheader http.Header, deviceID int64, deviceName string) (int64, string, error) {
+func (lgc *Logics) checkNetDeviceExist(pheader http.Header, deviceID uint64, deviceName string) (uint64, string, error) {
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	if "" == deviceName && 0 == deviceID {
@@ -133,12 +133,12 @@ func (lgc *Logics) checkNetDeviceExist(pheader http.Header, deviceID int64, devi
 	}
 
 	deviceData := meta.NetcollectDevice{}
-	if err := lgc.Instance.GetOneByCondition(common.BKTableNameNetcollectDevice,
-		[]string{common.BKDeviceIDField, common.BKObjIDField}, deviceCond, &deviceData); nil != err {
+	if err := lgc.Instance.Table(common.BKTableNameNetcollectDevice).Find(deviceCond).Fields(common.BKDeviceIDField, common.BKObjIDField).
+		One(lgc.ctx, &deviceData); nil != err {
 
 		blog.Errorf("[NetCollect] check net device exist fail, error: %v, condition [%#v]", err, deviceCond)
 
-		if lgc.Instance.IsNotFoundErr(err) {
+		if lgc.Instance.IsNotFoundError(err) {
 			return 0, "", defErr.Error(common.CCErrCollectNetDeviceGetFail)
 		}
 		return 0, "", err
@@ -148,7 +148,7 @@ func (lgc *Logics) checkNetDeviceExist(pheader http.Header, deviceID int64, devi
 }
 
 // get net property id by device ID and property ID
-func (lgc *Logics) getNetPropertyID(propertyID string, deviceID int64, ownerID string) (int64, error) {
+func (lgc *Logics) getNetPropertyID(propertyID string, deviceID uint64, ownerID string) (uint64, error) {
 	queryParams := mapstr.MapStr{
 		common.BKDeviceIDField:   deviceID,
 		common.BKPropertyIDField: propertyID,
@@ -156,8 +156,8 @@ func (lgc *Logics) getNetPropertyID(propertyID string, deviceID int64, ownerID s
 	}
 
 	result := meta.NetcollectProperty{}
-	if err := lgc.Instance.GetOneByCondition(
-		common.BKTableNameNetcollectProperty, []string{common.BKNetcollectPropertyIDField}, queryParams, &result); nil != err {
+	if err := lgc.Instance.Table(common.BKTableNameNetcollectProperty).Find(queryParams).Fields(common.BKNetcollectPropertyIDField).
+		One(lgc.ctx, &result); nil != err {
 
 		blog.Errorf(
 			"[NetCollect] get net property ID by propertyID and deviceID, error: %v, params: [%#+v]", err, queryParams)
