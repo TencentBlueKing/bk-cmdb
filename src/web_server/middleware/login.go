@@ -64,7 +64,6 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 			userName, _ := session.Get(common.WEBSessionUinKey).(string)
 			language, _ := session.Get(common.WEBSessionLanguageKey).(string)
 			ownerID, _ := session.Get(common.WEBSessionOwnerUinKey).(string)
-			ownerID = "0"
 			c.Request.Header.Add(common.BKHTTPHeaderUser, userName)
 			c.Request.Header.Add(common.BKHTTPLanguage, language)
 			c.Request.Header.Add(common.BKHTTPOwnerID, ownerID)
@@ -86,9 +85,9 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 				})
 				return
 			} else {
-				user := user.NewUser(config)
-				aa := user.GetLoginUrl(c)
-				c.Redirect(302, aa)
+				user := user.NewUser(config, Engine, CacheCli)
+				url := user.GetLoginUrl(c)
+				c.Redirect(302, url)
 			}
 
 		}
@@ -114,16 +113,9 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 			session.Set(common.WEBSessionOwnerUinKey, cookieOwnerID)
 		} else if cookieOwnerID != session.Get(common.WEBSessionOwnerUinKey) {
 			session.Set(common.WEBSessionOwnerUinKey, cookieOwnerID)
-			ownerMan := user.NewOwnerManager("admin", cookieOwnerID, cookieLanuage)
-			ownerMan.Engine = Engine
-			ownerMan.CacheCli = CacheCli
-			if err := ownerMan.InitOwner(); nil != err {
-				blog.Errorf("init owner fail %s", err.Error())
-				return true
-			}
 		}
 
-		blog.Infof("skip login, cookieLanuage: %s, cookieOwnerID: %s", cookieLanuage, cookieOwnerID)
+		blog.V(5).Infof("skip login, cookieLanuage: %s, cookieOwnerID: %s", cookieLanuage, cookieOwnerID)
 		session.Set(common.WEBSessionUinKey, "admin")
 		session.Set(common.WEBSessionRoleKey, "1")
 		session.Set(webCommon.IsSkipLogin, "1")
@@ -132,7 +124,7 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 	}
 	session := sessions.Default(c)
 	cc_token := session.Get(common.HTTPCookieBKToken)
-	user := user.NewUser(config)
+	user := user.NewUser(config, Engine, CacheCli)
 	if nil == cc_token {
 		return user.LoginUser(c)
 	}
