@@ -50,19 +50,22 @@ type Session struct {
 }
 
 type Site struct {
-	AccountUrl    string
-	DomainUrl     string
-	HtmlRoot      string
-	ResourcesPath string
-	BkLoginUrl    string
-	AppCode       string
-	CheckUrl      string
+	AccountUrl      string
+	DomainUrl       string
+	HttpsDomainUrl  string
+	HtmlRoot        string
+	ResourcesPath   string
+	BkLoginUrl      string
+	BkHttpsLoginUrl string
+	AppCode         string
+	CheckUrl        string
 }
 
 type Config struct {
-	Site        Site
-	Session     Session
-	Version     string
-	AgentAppUrl string
-	LoginUrl    string
+	Site         Site
+	Session      Session
+	Version      string
+	AgentAppUrl  string
+	LoginUrl     string
+	LoginVersion string
 }

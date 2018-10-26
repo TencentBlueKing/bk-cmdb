@@ -118,7 +118,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 	cacheCli := redis.NewClient(
 		&redis.Options{
-			Addr:     webSvr.Config.Session.Host + webSvr.Config.Session.Port,
+			Addr:     redisAddress,
 			PoolSize: 100,
 			Password: redisSecret,
 			DB:       0,
@@ -164,6 +164,8 @@ func (w *WebServer) getConfig(regDiscover string) error {
 	w.Config.Site.AppCode = config["site.app_code"]
 	w.Config.Site.CheckUrl = config["site.check_url"]
 	w.Config.Site.AccountUrl = config["site.bk_account_url"]
+	w.Config.Site.BkHttpsLoginUrl = config["site.bk_https_login_url"]
+	w.Config.Site.HttpsDomainUrl = config["site.https_domain_url"]
 
 	w.Config.Session.Name = config["session.name"]
 	w.Config.Session.Skip = config["session.skip"]
@@ -172,6 +174,7 @@ func (w *WebServer) getConfig(regDiscover string) error {
 	w.Config.Session.Secret = strings.TrimSpace(config["session.secret"])
 	w.Config.Session.MultipleOwner = config["session.multiple_owner"]
 	w.Config.Session.DefaultLanguage = config["session.defaultlanguage"]
+	w.Config.LoginVersion = config["login.version"]
 	if "" == w.Config.Session.DefaultLanguage {
 		w.Config.Session.DefaultLanguage = "zh-cn"
 	}
@@ -189,6 +192,9 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	w.Config.Site.BkLoginUrl = current.ConfigMap["site.bk_login_url"]
 	w.Config.Site.AppCode = current.ConfigMap["site.app_code"]
 	w.Config.Site.CheckUrl = current.ConfigMap["site.check_url"]
+	w.Config.Site.AccountUrl = current.ConfigMap["site.bk_account_url"]
+	w.Config.Site.BkHttpsLoginUrl = current.ConfigMap["site.bk_https_login_url"]
+	w.Config.Site.HttpsDomainUrl = current.ConfigMap["site.https_domain_url"]
 
 	w.Config.Session.Name = current.ConfigMap["session.name"]
 	w.Config.Session.Skip = current.ConfigMap["session.skip"]
@@ -197,6 +203,7 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	w.Config.Session.Secret = strings.TrimSpace(current.ConfigMap["session.secret"])
 	w.Config.Session.MultipleOwner = current.ConfigMap["session.multiple_owner"]
 	w.Config.Session.DefaultLanguage = current.ConfigMap["session.defaultlanguage"]
+	w.Config.LoginVersion = current.ConfigMap["login.version"]
 	if "" == w.Config.Session.DefaultLanguage {
 		w.Config.Session.DefaultLanguage = "zh-cn"
 	}
