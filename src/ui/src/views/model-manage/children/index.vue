@@ -65,6 +65,7 @@
                 <the-relation></the-relation>
             </bk-tabpanel>
             <bk-tabpanel name="verification" :title="$t('ModelManagement[\'唯一校验\']')">
+                <the-verification :isReadOnly="isReadOnly"></the-verification>
             </bk-tabpanel>
             <bk-tabpanel name="layout" :title="$t('ModelManagement[\'字段分组\']')">
             </bk-tabpanel>
@@ -77,13 +78,15 @@
 <script>
     import theField from './field'
     import theRelation from './relation'
+    import theVerification from './verification'
     import theChooseIcon from '../_choose-icon'
     import { mapActions, mapGetters, mapMutations } from 'vuex'
     export default {
         components: {
             theField,
             theRelation,
-            theChooseIcon
+            theChooseIcon,
+            theVerification
         },
         props: {
             isReadOnly: {
