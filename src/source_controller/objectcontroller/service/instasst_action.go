@@ -85,13 +85,13 @@ func (cli *Service) CreateInstAssociation(req *restful.Request, resp *restful.Re
 	ec := eventclient.NewEventContextByReq(req.Request.Header, cli.Cache)
 	err = ec.InsertEvent(metadata.EventTypeAssociation, data.ObjectID, metadata.EventActionCreate, data, nil)
 	if err != nil {
-		blog.Error("create event error:%v", err)
+		blog.Errorf("create event error:%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Data: result.Data, Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
 	err = ec.InsertEvent(metadata.EventTypeAssociation, data.AsstObjectID, metadata.EventActionCreate, data, nil)
 	if err != nil {
-		blog.Error("create event error:%v", err)
+		blog.Errorf("create event error:%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Data: result.Data, Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
@@ -158,11 +158,15 @@ func (cli *Service) DeleteInstAssociation(req *restful.Request, resp *restful.Re
 		ec := eventclient.NewEventContextByReq(req.Request.Header, cli.Cache)
 		err = ec.InsertEvent(metadata.EventTypeAssociation, asst.ObjectID, metadata.EventActionCreate, nil, asst)
 		if err != nil {
-			blog.Error("create event error:%v", err)
+			blog.Errorf("create event error:%v", err)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
+			return
 		}
 		err = ec.InsertEvent(metadata.EventTypeAssociation, asst.AsstObjectID, metadata.EventActionCreate, nil, asst)
 		if err != nil {
-			blog.Error("create event error:%v", err)
+			blog.Errorf("create event error:%v", err)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
+			return
 		}
 	}
 
