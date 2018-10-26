@@ -62,8 +62,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    deleteAssociationType ({ commit, state, dispatch }, { id, params, config }) {
-        return $http.delete(`topo/association/type/${id}/action/delete`, params, config)
+    deleteAssociationType ({ commit, state, dispatch }, { id, config }) {
+        return $http.delete(`topo/association/type/${id}/action/delete`, config)
     },
     /**
      * 查询模型关联
