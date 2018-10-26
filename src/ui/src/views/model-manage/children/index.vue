@@ -31,14 +31,15 @@
                 </label>
             </div>
         </div>
-        <bk-tab :active-name.sync="tab.active">
+        <bk-tab class="model-details-tab" :active-name.sync="tab.active">
             <bk-tabpanel name="field" :title="$t('ModelManagement[\'模型字段\']')">
             </bk-tabpanel>
             <bk-tabpanel name="relation" :title="$t('ModelManagement[\'模型关系\']')">
             </bk-tabpanel>
             <bk-tabpanel name="verification" :title="$t('ModelManagement[\'唯一校验\']')">
             </bk-tabpanel>
-            <bk-tabpanel name="layout" :title="$t('ModelManagement[\'字段分组\']')">
+            <bk-tabpanel name="propertyGroup" :title="$t('ModelManagement[\'字段分组\']')">
+                <the-property-group v-if="tab.active === 'propertyGroup'"></the-property-group>
             </bk-tabpanel>
             <bk-tabpanel name="history" :title="$t('ModelManagement[\'操作历史\']')">
             </bk-tabpanel>
@@ -47,11 +48,15 @@
 </template>
 
 <script>
+    import thePropertyGroup from './_property-group.vue'
     export default {
+        components: {
+            thePropertyGroup
+        },
         data () {
             return {
                 tab: {
-                    active: 'field'
+                    active: 'propertyGroup'
                 }
             }
         }
@@ -61,6 +66,10 @@
 <style lang="scss" scoped>
     .model-detail-wrapper {
         padding: 0;
+        height: 100%;
+    }
+    .model-details-tab {
+        height: calc(100% - 100px) !important;
     }
     .model-info {
         height: 100px;
