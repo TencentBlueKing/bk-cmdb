@@ -236,8 +236,24 @@ func (ih *IdentifierHandler) handleHostCloud(e *metadata.EventInstCtx) {
 		} else {
 			asst = datas[index].CurData
 		}
-		if asst.ObjectAsstID == common.AssociationHostCloud {
-			// TODO
+		if asst.ObjectAsstID == common.AssociationCloudContainHost {
+			hostID, ok := asst.GetInstID(common.BKInnerObjIDHost)
+			if !ok {
+				continue
+			}
+
+			inst, err := getCache(ih.ctx, ih.cache, ih.db, common.BKInnerObjIDHost, hostID, true)
+			if err != nil {
+				blog.Errorf("identifier: getCache error %+v", err)
+				continue
+			}
+			if nil == inst {
+				continue
+			}
+
+			inst.saveCache(ih.cache)
+			d := metadata.EventData{CurData: inst.ident.fillIden(ih.ctx, ih.cache, ih.db)}
+			hostIdentify.Data = append(hostIdentify.Data, d)
 		}
 	}
 }
@@ -470,10 +486,10 @@ func getCache(ctx context.Context, cache *redis.Client, db dal.RDB, objType stri
 
 			// 1. fill modules
 			relations := []metadata.ModuleHost{}
-			condiction := map[string]interface{}{
+			moduleHostCond := map[string]interface{}{
 				common.GetInstIDField(objType): instID,
 			}
-			if err = db.Table(common.BKTableNameModuleHostConfig).Find(condiction).All(ctx, &relations); err != nil {
+			if err = db.Table(common.BKTableNameModuleHostConfig).Find(moduleHostCond).All(ctx, &relations); err != nil {
 				return nil, err
 			}
 			for _, rela := range relations {
@@ -485,6 +501,20 @@ func getCache(ctx context.Context, cache *redis.Client, db dal.RDB, objType stri
 				}
 			}
 			inst.data["associations"] = inst.ident.Module
+
+			// fill cloud id
+			instAsstCond := condition.CreateCondition()
+			instAsstCond.Field(common.BKAsstInstIDField).Eq(instID)
+			instAsstCond.Field(common.AssociationKeyField).Eq(common.AssociationCloudContainHost)
+			cloudAssts := []metadata.InstAsst{}
+			if err = db.Table(common.BKTableNameInstAsst).Find(instAsstCond.ToMapStr()).All(ctx, &cloudAssts); err != nil {
+				return nil, err
+			}
+			for _, asst := range cloudAssts {
+				// for the compatibility considerations we only use the last cloudID
+				inst.ident.CloudID = asst.AsstInstID
+				inst.data[common.BKCloudIDField] = asst.AsstInstID
+			}
 
 			// 2. fill process
 			hostprocess := []Process{}

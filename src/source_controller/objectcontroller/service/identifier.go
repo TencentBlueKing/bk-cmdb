@@ -56,6 +56,7 @@ func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Respons
 		cloudIDs       = []int64{}
 		procIDs        = []int64{}
 		appmodulenames = map[int64][]string{}
+		host2cloud     = map[int64]int64{}
 	)
 
 	// caches
@@ -100,6 +101,22 @@ func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Respons
 		hostIDs = append(hostIDs, host.HostID)
 		cloudIDs = append(cloudIDs, host.CloudID)
 	}
+
+	// fetch all clouds
+	instAsstCond := cccondition.CreateCondition()
+	instAsstCond.Field(common.BKAsstInstIDField).In(hostIDs)
+	instAsstCond.Field(common.AssociationKeyField).Eq(common.AssociationCloudContainHost)
+	cloudAssts := []metadata.InstAsst{}
+	if err = db.Table(common.BKTableNameInstAsst).Find(instAsstCond.ToMapStr()).All(ctx, &cloudAssts); err != nil {
+		blog.Errorf("SearchIdentifier search clouds error:%s", err.Error())
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.New(common.CCErrObjectSelectIdentifierFailed, err.Error())})
+		return
+	}
+	for _, asst := range cloudAssts {
+		cloudIDs = append(cloudIDs, asst.AsstInstID)
+		host2cloud[asst.InstID] = asst.AsstInstID
+	}
+
 	relations := []metadata.ModuleHost{}
 	cond := cccondition.CreateCondition().Field(common.BKHostIDField).In(hostIDs)
 	err = db.Table(common.BKTableNameModuleHostConfig).Find(cond.ToMapStr()).All(ctx, &relations)
@@ -204,6 +221,7 @@ func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Respons
 	// fill hostidentifier
 	for _, inst := range hosts {
 		inst.HostIdentModule = map[string]*metadata.HostIdentModule{}
+		inst.CloudID = host2cloud[inst.HostID]
 		// fill cloud
 		if _, ok := clouds[inst.CloudID]; ok {
 			cloud := clouds[inst.CloudID]
