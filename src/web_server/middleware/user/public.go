@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 
 	"configcenter/src/common"
+	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/web_server/app/options"
@@ -24,10 +25,13 @@ import (
 
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
+	redis "gopkg.in/redis.v5"
 )
 
 type publicUser struct {
-	config options.Config
+	config   options.Config
+	engine   *backbone.Engine
+	cacheCli *redis.Client
 }
 
 // LoginUser  user login
@@ -47,7 +51,10 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 	}
 
 	if true == isMultiOwner || true == userInfo.MultiSupplier {
-		err := NewOwnerManager(userInfo.UserName, userInfo.OnwerUin, userInfo.Language).InitOwner()
+		ownerM := NewOwnerManager(userInfo.UserName, userInfo.OnwerUin, userInfo.Language)
+		ownerM.CacheCli = m.cacheCli
+		ownerM.Engine = m.engine
+		err := ownerM.InitOwner()
 		if nil != err {
 			blog.Error("InitOwner error: %v", err)
 			return false
@@ -109,6 +116,8 @@ func (m *publicUser) GetLoginUrl(c *gin.Context) string {
 	config["site.bk_login_url"] = m.config.Site.BkLoginUrl
 	config["site.domain_url"] = m.config.Site.DomainUrl
 	config["site.app_code"] = m.config.Site.AppCode
+	config["site.https_domain_url"] = m.config.Site.DomainUrl
+	config["site.bk_https_login_url"] = m.config.Site.BkHttpsLoginUrl
 	params := new(metadata.LogoutRequestParams)
 	err := json.NewDecoder(c.Request.Body).Decode(params)
 	if nil != err || (common.LogoutHTTPSchemeHTTP != params.HTTPScheme && common.LogoutHTTPSchemeHTTPS != params.HTTPScheme) {
