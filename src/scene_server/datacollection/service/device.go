@@ -16,7 +16,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
 
 	restful "github.com/emicklei/go-restful"
 
@@ -27,6 +26,7 @@ import (
 	"configcenter/src/common/util"
 )
 
+// CreateDevice create device
 func (s *Service) CreateDevice(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -52,6 +52,7 @@ func (s *Service) CreateDevice(req *restful.Request, resp *restful.Response) {
 	resp.WriteEntity(meta.NewSuccessResp(result))
 }
 
+// UpdateDevice update device
 func (s *Service) UpdateDevice(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -82,17 +83,19 @@ func (s *Service) UpdateDevice(req *restful.Request, resp *restful.Response) {
 	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
+// BatchCreateDevice batch create device
 func (s *Service) BatchCreateDevice(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
-	deviceList := make([]meta.NetcollectDevice, 0)
-	if err := json.NewDecoder(req.Request.Body).Decode(&deviceList); nil != err {
-		blog.Errorf("[NetDevice] add device failed with decode body err: %v", err)
+	batchAddDevice := new(meta.BatchAddDevice)
+	if err := json.NewDecoder(req.Request.Body).Decode(&batchAddDevice); nil != err {
+		blog.Errorf("[NetDevice] batch add device failed with decode body err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
+	deviceList := batchAddDevice.Data
 	resultList, hasError := s.Logics.BatchCreateDevice(pheader, deviceList)
 	if hasError {
 		resp.WriteEntity(meta.Response{
@@ -108,6 +111,7 @@ func (s *Service) BatchCreateDevice(req *restful.Request, resp *restful.Response
 	resp.WriteEntity(meta.NewSuccessResp(resultList))
 }
 
+// SearchDevice search device
 func (s *Service) SearchDevice(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -132,6 +136,7 @@ func (s *Service) SearchDevice(req *restful.Request, resp *restful.Response) {
 	})
 }
 
+// DeleteDevice delete device
 func (s *Service) DeleteDevice(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -143,22 +148,9 @@ func (s *Service) DeleteDevice(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	deviceIDStrArr := strings.Split(deleteNetDeviceBatchOpt.DeviceIDs, ",")
-	var deviceIDArr []int64
-
-	for _, deviceIDStr := range deviceIDStrArr {
-		deviceID, err := strconv.ParseInt(deviceIDStr, 10, 64)
-		if nil != err {
-			blog.Errorf("[NetDevice] delete net device batch, but got invalid device id, err: %v", err)
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, common.BKDeviceIDField)})
-			return
-		}
-		deviceIDArr = append(deviceIDArr, deviceID)
-	}
-
-	for _, deviceID := range deviceIDArr {
+	for _, deviceID := range deleteNetDeviceBatchOpt.DeviceIDs {
 		if err := s.Logics.DeleteDevice(pheader, deviceID); nil != err {
-			blog.Errorf("[NetDevice] delete net device failed, with bk_device_id [%s], err: %v", deviceID, err)
+			blog.Errorf("[NetDevice] delete net device failed, with device_id [%d], err: %v", deviceID, err)
 
 			if defErr.Error(common.CCErrCollectNetDeviceHasPropertyDeleteFail).Error() == err.Error() {
 				resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
@@ -176,7 +168,7 @@ func (s *Service) DeleteDevice(req *restful.Request, resp *restful.Response) {
 func checkDeviceIDPathParam(defErr errors.DefaultCCErrorIf, ID string) (int64, error) {
 	netDeviceID, err := strconv.ParseInt(ID, 10, 64)
 	if nil != err {
-		blog.Errorf("[NetDevice] update net device with id[%d] to parse the net device id, error: %v", netDeviceID, err)
+		blog.Errorf("[NetDevice] update net device with id[%s] to parse the net device id, error: %v", ID, err)
 		return 0, defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKDeviceIDField)
 	}
 	if 0 == netDeviceID {

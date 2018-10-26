@@ -76,18 +76,20 @@ func ImportNetProperty(c *gin.Context) {
 
 	// http request get property
 	url := apiSite + fmt.Sprintf("/api/%s/collector/netcollect/property/action/batch", webCommon.API_VERSION)
-	blog.V(4).Infof("[Import Net Property] add net property url: %v", url)
+	blog.V(5).Infof("[Import Net Property] add net property url: %v", url)
 
-	params := make([]interface{}, 0)
-	line_numbers := []int{}
+	data := make([]interface{}, 0)
+	lineNumbers := []int{}
 	for line, value := range netProperty {
-		params = append(params, value)
-		line_numbers = append(line_numbers, line)
+		data = append(data, value)
+		lineNumbers = append(lineNumbers, line)
 	}
-	blog.V(4).Infof("[Import Net Property] add net property content: %v", params)
+	params := map[string]interface{}{"Data": data}
+
+	blog.V(5).Infof("[Import Net Property] add net property content: %v", params)
 
 	reply, err := httpRequest(url, params, c.Request.Header)
-	blog.V(4).Infof("[Import Net Property] add net property result: %v", reply)
+	blog.V(5).Infof("[Import Net Property] add net property result: %v", reply)
 
 	if nil != err {
 		c.String(http.StatusInternalServerError, err.Error())
@@ -95,7 +97,7 @@ func ImportNetProperty(c *gin.Context) {
 	}
 
 	// rebuild response body
-	reply, err = rebuildNetPropertyReponseBody(reply, line_numbers)
+	reply, err = rebuildNetPropertyReponseBody(reply, lineNumbers)
 	if nil != err {
 		c.String(http.StatusInternalServerError, getReturnStr(common.CCErrWebGetAddNetPropertyResultFail,
 			defErr.Errorf(common.CCErrWebGetAddNetPropertyResultFail).Error(), nil))
@@ -281,7 +283,7 @@ func getNetPropertysFromFile(
 	return netProperty, nil, ""
 }
 
-func rebuildNetPropertyReponseBody(reply string, line_numbers []int) (string, error) {
+func rebuildNetPropertyReponseBody(reply string, lineNumbers []int) (string, error) {
 	replyBody := new(meta.Response)
 	if err := json.Unmarshal([]byte(reply), replyBody); nil != err {
 		blog.Errorf("[Import Net Property] unmarshal response body err: %v", err)
@@ -313,7 +315,7 @@ func rebuildNetPropertyReponseBody(reply string, line_numbers []int) (string, er
 
 		switch result {
 		case true:
-			succRow = append(succRow, strconv.Itoa(line_numbers[i]))
+			succRow = append(succRow, strconv.Itoa(lineNumbers[i]))
 		case false:
 			errMsg, ok := data["error_msg"].(string)
 			if !ok {
@@ -321,7 +323,7 @@ func rebuildNetPropertyReponseBody(reply string, line_numbers []int) (string, er
 				return "", fmt.Errorf("convert response body fail")
 			}
 
-			errRow = append(errRow, fmt.Sprintf("%d行%s", line_numbers[i], errMsg))
+			errRow = append(errRow, fmt.Sprintf("%d行%s", lineNumbers[i], errMsg))
 		}
 	}
 

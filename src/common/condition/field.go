@@ -28,7 +28,9 @@ type Field interface {
 	Lte(val interface{}) Condition
 	Gt(val interface{}) Condition
 	Gte(val interface{}) Condition
+	Or(val interface{}) Condition
 	ToMapStr() types.MapStr
+	GetFieldName() string
 }
 
 // Field the field object
@@ -122,4 +124,15 @@ func (cli *field) Gte(val interface{}) Condition {
 	cli.opeartor = BKDBGTE
 	cli.fieldValue = val
 	return cli.condition
+}
+
+// Or if any expression of value are true
+func (cli *field) Or(val interface{}) Condition {
+	cli.opeartor = BKDBOR
+	cli.fieldValue = val
+	return cli.condition
+}
+
+func (cli *field) GetFieldName() string {
+	return cli.fieldName
 }
