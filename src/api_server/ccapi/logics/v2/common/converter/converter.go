@@ -806,7 +806,6 @@ func convMapInterface(data map[string]interface{}) map[string]interface{} {
 				default:
 					mapItem[key] = realVal
 					mapItem["OSType"] = realVal
-
 				}
 			default:
 				mapItem[key] = realVal

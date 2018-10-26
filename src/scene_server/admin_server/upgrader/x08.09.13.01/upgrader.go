@@ -13,21 +13,17 @@
 package x08_09_13_01
 
 import (
-	"gopkg.in/mgo.v2"
+	"context"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/admin_server/upgrader"
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
 )
 
-func addOperationLogIndex(db storage.DI, conf *upgrader.Config) (err error) {
-	session := db.GetSession().(*mgo.Session)
-
-	col := session.DB(db.GetDBName()).C(common.BKTableNameOperationLog)
-
-	indexs, err := col.Indexes()
+func addOperationLogIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	indexs, err := db.Table(common.BKTableNameOperationLog).Indexes(ctx)
 	if err != nil {
 		return err
 	}
@@ -37,29 +33,29 @@ func addOperationLogIndex(db storage.DI, conf *upgrader.Config) (err error) {
 		if index.Name == "_id_" {
 			continue
 		}
-		if err = col.DropIndexName(index.Name); err != nil {
+		if err = db.Table(common.BKTableNameOperationLog).DropIndex(ctx, index.Name); err != nil {
 			return err
 		}
 	}
 
-	idxs := []mgo.Index{
-		{Name: "op_target_1_inst_id_1_op_time_-1", Key: []string{"op_target", "inst_id", "-op_time"}, Background: true},
-		{Name: "bk_supplier_account_1_op_time_-1", Key: []string{"bk_supplier_account", "-op_time"}, Background: true},
-		{Name: "bk_biz_id_1_bk_supplier_account_1_op_time_-1", Key: []string{"bk_biz_id", "bk_supplier_account", "-op_time"}, Background: true},
-		{Name: "ext_key_1_bk_supplier_account_1_op_time_-1", Key: []string{"ext_key", "bk_supplier_account", "-op_time"}, Background: true},
+	idxs := []dal.Index{
+		{Name: "op_target_1_inst_id_1_op_time_-1", Keys: map[string]interface{}{"op_target": 1, "inst_id": 1, "op_time": -1}, Background: true},
+		{Name: "bk_supplier_account_1_op_time_-1", Keys: map[string]interface{}{"bk_supplier_account": 1, "op_time": -1}, Background: true},
+		{Name: "bk_biz_id_1_bk_supplier_account_1_op_time_-1", Keys: map[string]interface{}{"bk_biz_id": 1, "bk_supplier_account": 1, "op_time": -1}, Background: true},
+		{Name: "ext_key_1_bk_supplier_account_1_op_time_-1", Keys: map[string]interface{}{"ext_key": 1, "bk_supplier_account": 1, "op_time": -1}, Background: true},
 	}
 	for _, idx := range idxs {
-		if err = col.EnsureIndex(idx); err != nil {
+		if err = db.Table(common.BKTableNameOperationLog).CreateIndex(ctx, idx); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func reconcileOperationLog(db storage.DI, conf *upgrader.Config) (err error) {
+func reconcileOperationLog(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	all := []mapstr.MapStr{}
 
-	if err = db.GetMutilByCondition(common.BKTableNameUserGroupPrivilege, nil, nil, &all, "", 0, 0); err != nil {
+	if err = db.Table(common.BKTableNameUserGroupPrivilege).Find(nil).All(ctx, &all); nil != err {
 		return err
 	}
 	flag := "updateflag"
@@ -74,12 +70,12 @@ func reconcileOperationLog(db storage.DI, conf *upgrader.Config) (err error) {
 	}
 
 	for _, privilege := range expectM {
-		if _, err = db.Insert(common.BKTableNameUserGroupPrivilege, privilege); err != nil {
+		if err = db.Table(common.BKTableNameUserGroupPrivilege).Insert(ctx, privilege); nil != err {
 			return err
 		}
 	}
 
-	if err = db.DelByCondition(common.BKTableNameUserGroupPrivilege, map[string]interface{}{
+	if err = db.Table(common.BKTableNameUserGroupPrivilege).Delete(ctx, map[string]interface{}{
 		flag: map[string]interface{}{
 			"$ne": true,
 		},
@@ -87,7 +83,7 @@ func reconcileOperationLog(db storage.DI, conf *upgrader.Config) (err error) {
 		return err
 	}
 
-	if err = db.DropColumn(common.BKTableNameUserGroupPrivilege, flag); err != nil {
+	if err = db.Table(common.BKTableNameUserGroupPrivilege).DropColumn(ctx, flag); err != nil {
 		return err
 	}
 

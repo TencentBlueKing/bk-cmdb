@@ -165,8 +165,8 @@ func (s *Service) DeleteDevice(req *restful.Request, resp *restful.Response) {
 	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
-func checkDeviceIDPathParam(defErr errors.DefaultCCErrorIf, ID string) (int64, error) {
-	netDeviceID, err := strconv.ParseInt(ID, 10, 64)
+func checkDeviceIDPathParam(defErr errors.DefaultCCErrorIf, ID string) (uint64, error) {
+	netDeviceID, err := strconv.ParseUint(ID, 10, 64)
 	if nil != err {
 		blog.Errorf("[NetDevice] update net device with id[%s] to parse the net device id, error: %v", ID, err)
 		return 0, defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKDeviceIDField)

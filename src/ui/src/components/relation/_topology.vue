@@ -241,7 +241,8 @@
                             currentNode.children.push(node)
                             const edge = {
                                 to: type === 'next' ? currentNode.id : node.id,
-                                from: type === 'next' ? node.id : currentNode.id
+                                from: type === 'next' ? node.id : currentNode.id,
+                                label: node.data['bk_asst_name']
                             }
                             const legend = relationLegends.find(legend => legend.id === obj['bk_obj_id'])
                             if (legend) {

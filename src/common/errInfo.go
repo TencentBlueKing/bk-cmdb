@@ -136,6 +136,15 @@ const (
 	CCErrProxyRequestFailed      = 1199036
 	CCErrRewriteRequestUriFailed = 1199037
 
+	// CCErrCommLogicDataNil   need data %s is null
+	CCErrCommInstDataNil = 1199038
+	// CCErrCommInstFieldNotFound  %s field does not exist in %s
+	CCErrCommInstFieldNotFound = 1199039
+	// CCErrCommInstFieldConvFail  convert %s  field %s to %s error %s
+	CCErrCommInstFieldConvFail = 1199040
+	// CCErrCommUtilFail  handle %s error %s
+	CCErrCommUtilHandleFail = 1199041
+
 	// apiserver 1100XXX
 
 	// toposerver 1101XXX
@@ -358,21 +367,34 @@ const (
 	CCErrProcCreateInstanceModel = 1107008
 	CCErrProcGetInstanceModel    = 1107009
 	CCErrProcDeleteInstanceModel = 1107010
+	CCErrProcDeleteProc2Template = 1107011
+	CCErrProcCreateProc2Template = 1107012
+	CCErrProcSelectProc2Template = 1107013
 
 	// procserver 1108XXX
-	CCErrProcSearchDetailFaile       = 1108001
-	CCErrProcBindToMoudleFaile       = 1108002
-	CCErrProcUnBindToMoudleFaile     = 1108003
-	CCErrProcSelectBindToMoudleFaile = 1108004
-	CCErrProcUpdateProcessFaile      = 1108005
-	CCErrProcSearchProcessFaile      = 1108006
-	CCErrProcDeleteProcessFaile      = 1108007
-	CCErrProcCreateProcessFaile      = 1108008
-	CCErrProcFieldValidFaile         = 1108009
-	CCErrProcGetByApplicationIDFail  = 1108010
-	CCErrProcGetByIP                 = 1108011
-	CCErrProcOperateFaile            = 1108012
-	CCErrProcBindWithModule          = 1108013
+	CCErrProcSearchDetailFaile          = 1108001
+	CCErrProcBindToMoudleFaile          = 1108002
+	CCErrProcUnBindToMoudleFaile        = 1108003
+	CCErrProcSelectBindToMoudleFaile    = 1108004
+	CCErrProcUpdateProcessFaile         = 1108005
+	CCErrProcSearchProcessFaile         = 1108006
+	CCErrProcDeleteProcessFaile         = 1108007
+	CCErrProcCreateProcessFaile         = 1108008
+	CCErrProcFieldValidFaile            = 1108009
+	CCErrProcGetByApplicationIDFail     = 1108010
+	CCErrProcGetByIP                    = 1108011
+	CCErrProcOperateFaile               = 1108012
+	CCErrProcBindWithModule             = 1108013
+	CCErrProcDeleteTemplateFail         = 1108014
+	CCErrProcUpdateTemplateFail         = 1108015
+	CCErrProcSearchTemplateFail         = 1108016
+	CCErrProcBindToTemplateFailed       = 1108017
+	CCErrProcUnBindToTemplateFailed     = 1108018
+	CCErrProcSelectBindToTemplateFailed = 1108019
+	CCErrProcQueryTaskInfoFail          = 1108020
+	CCErrProcQueryTaskWaitOPFail        = 1108021
+	CCErrProcQueryTaskOPErrFail         = 1108022
+	CCErrProcCreateTemplateFail         = 1108023
 
 	// auditlog 1109XXX
 	CCErrAuditSaveLogFaile      = 1109001

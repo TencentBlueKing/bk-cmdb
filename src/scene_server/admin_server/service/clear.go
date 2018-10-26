@@ -22,7 +22,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/common/version"
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
 )
 
 func (s *Service) clear(req *restful.Request, resp *restful.Response) {
@@ -44,7 +44,7 @@ func (s *Service) clear(req *restful.Request, resp *restful.Response) {
 	resp.WriteEntity(metadata.NewSuccessResp(nil))
 }
 
-func clearDatabase(db storage.DI) error {
+func clearDatabase(db dal.RDB) error {
 	// clear mongodb
 	for _, tablename := range common.AllTables {
 		db.DropTable(tablename)
