@@ -215,6 +215,7 @@ func importProcess(db storage.DI, opt *option, cur, tar *ProcessTopo, bizID int6
 				procmod.ModuleName = modulename
 				procmod.BizID = bizID
 				procmod.ProcessID = procID
+				procmod.OwnerID = opt.OwnerID
 				fmt.Printf("--- \033[34minsert process module data: %+v\033[0m\n", procmod)
 				if !opt.dryrun {
 					_, err = db.Insert(common.BKTableNameProcModule, &procmod)
@@ -259,6 +260,7 @@ func importProcess(db storage.DI, opt *option, cur, tar *ProcessTopo, bizID int6
 				procmod.ModuleName = modulename
 				procmod.BizID = bizID
 				procmod.ProcessID = nid
+				procmod.OwnerID = opt.OwnerID
 				fmt.Printf("--- \033[34minsert process module data: %+v\033[0m\n", topo.Data)
 				if !opt.dryrun {
 					_, err = db.Insert(common.BKTableNameProcModule, &procmod)
