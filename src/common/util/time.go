@@ -32,6 +32,11 @@ func GetCurrentTimeStr() string {
 	return time.Now().Format("2006-01-02 15:04:05")
 }
 
+func GetCurrentTimePtr() *time.Time {
+	now := time.Now()
+	return &now
+}
+
 func ConvParamsTime(data interface{}) interface{} {
 	conds, ok := data.(map[string]interface{})
 	if true != ok && nil != conds {

@@ -18,13 +18,15 @@ import (
 	"net/http"
 	"strconv"
 
-	mgo "gopkg.in/mgo.v2"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
+
+// INVALIDID invalid id used as return value
+const INVALIDID = -1
 
 // by checking if bk_obj_id and bk_obj_name function parameter are valid net device object or not
 // one of bk_obj_id and bk_obj_name can be empty and will return both bk_obj_id if no error
@@ -33,7 +35,7 @@ func (lgc *Logics) checkNetObject(pheader http.Header, objID string, objName str
 
 	if "" == objName && "" == objID {
 		blog.Errorf("[NetCollect] check net device object, empty bk_obj_id and bk_obj_name")
-		return "", "", defErr.Errorf(common.CCErrCommParamsLostField, common.BKObjIDField)
+		return "", "", defErr.Errorf(common.CCErrCommParamsNeedSet, common.BKObjIDField)
 	}
 
 	objCond := map[string]interface{}{
@@ -55,7 +57,7 @@ func (lgc *Logics) checkNetObject(pheader http.Header, objID string, objName str
 
 	if !objResult.Result {
 		blog.Errorf("[NetCollect] check net device object, errors: %s, condition [%#v]", objResult.ErrMsg, objCond)
-		return "", "", defErr.Errorf(objResult.Code)
+		return "", "", defErr.New(objResult.Code, objResult.ErrMsg)
 	}
 
 	if nil == objResult.Data || 0 == len(objResult.Data) {
@@ -73,12 +75,12 @@ func (lgc *Logics) checkNetObjectProperty(pheader http.Header, netDeviceObjID, p
 
 	if "" == netDeviceObjID {
 		blog.Errorf("[NetCollect] check net device object, empty bk_obj_id")
-		return "", defErr.Errorf(common.CCErrCommParamsLostField, common.BKObjIDField)
+		return "", defErr.Errorf(common.CCErrCommParamsNeedSet, common.BKObjIDField)
 	}
 
 	if "" == propertyName && "" == propertyID {
 		blog.Errorf("[NetCollect] check net device object, empty bk_property_id and bk_property_name")
-		return "", defErr.Errorf(common.CCErrCommParamsLostField, common.BKPropertyIDField)
+		return "", defErr.Errorf(common.CCErrCommParamsNeedSet, common.BKPropertyIDField)
 	}
 
 	propertyCond := map[string]interface{}{
@@ -95,14 +97,11 @@ func (lgc *Logics) checkNetObjectProperty(pheader http.Header, netDeviceObjID, p
 	attrResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), pheader, propertyCond)
 	if nil != err {
 		blog.Errorf("[NetCollect] get object attribute fail, error: %v, condition [%#v]", err, propertyCond)
-		if mgo.ErrNotFound == err {
-			return "", defErr.Errorf(common.CCErrCollectNetDeviceObjPropertyNotExist)
-		}
 		return "", defErr.Errorf(common.CCErrTopoObjectAttributeSelectFailed)
 	}
 	if !attrResult.Result {
 		blog.Errorf("[NetCollect] check net device object property, errors: %s", attrResult.ErrMsg)
-		return "", defErr.Errorf(attrResult.Code)
+		return "", defErr.New(attrResult.Code, attrResult.ErrMsg)
 	}
 
 	if nil == attrResult.Data || 0 == len(attrResult.Data) {
@@ -121,7 +120,7 @@ func (lgc *Logics) checkNetDeviceExist(pheader http.Header, deviceID int64, devi
 
 	if "" == deviceName && 0 == deviceID {
 		blog.Errorf("[NetCollect] check net device exist fail, empty device_id and device_name")
-		return 0, "", defErr.Errorf(common.CCErrCommParamsLostField, common.BKDeviceIDField)
+		return 0, "", defErr.Errorf(common.CCErrCommParamsNeedSet, common.BKDeviceIDField)
 	}
 
 	deviceCond := map[string]interface{}{common.BKOwnerIDField: util.GetOwnerID(pheader)}
@@ -139,8 +138,8 @@ func (lgc *Logics) checkNetDeviceExist(pheader http.Header, deviceID int64, devi
 
 		blog.Errorf("[NetCollect] check net device exist fail, error: %v, condition [%#v]", err, deviceCond)
 
-		if mgo.ErrNotFound == err {
-			return 0, "", defErr.Errorf(common.CCErrCollectNetDeviceGetFail)
+		if lgc.Instance.IsNotFoundErr(err) {
+			return 0, "", defErr.Error(common.CCErrCollectNetDeviceGetFail)
 		}
 		return 0, "", err
 	}
@@ -150,7 +149,7 @@ func (lgc *Logics) checkNetDeviceExist(pheader http.Header, deviceID int64, devi
 
 // get net property id by device ID and property ID
 func (lgc *Logics) getNetPropertyID(propertyID string, deviceID int64, ownerID string) (int64, error) {
-	queryParams := common.KvMap{
+	queryParams := mapstr.MapStr{
 		common.BKDeviceIDField:   deviceID,
 		common.BKPropertyIDField: propertyID,
 		common.BKOwnerIDField:    ownerID,
@@ -170,7 +169,7 @@ func (lgc *Logics) getNetPropertyID(propertyID string, deviceID int64, ownerID s
 	return result.NetcollectPropertyID, nil
 }
 
-// check param ID is a num string and convert to num
+// ConvertStringToID check param ID is a num string and convert to num
 func (lgc *Logics) ConvertStringToID(stringID string) (int64, error) {
 	if "" == stringID || "0" == stringID {
 		return 0, fmt.Errorf("invalid stringID")
