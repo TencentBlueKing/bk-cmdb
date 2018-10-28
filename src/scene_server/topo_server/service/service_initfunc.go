@@ -25,7 +25,7 @@ func (s *topoService) initHealth() {
 func (s *topoService) initAssociation() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/topo/model/mainline", HandlerFunc: s.CreateMainLineObject})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/topo/model/mainline/owners/{owner_id}/objectids/{obj_id}", HandlerFunc: s.DeleteMainLineObject})
-	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/model/{owner_id}", HandlerFunc: s.SearchMainLineOBjectTopo})
+	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/model/{owner_id}", HandlerFunc: s.SearchMainLineObjectTopo})
 	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/model/{owner_id}/{cls_id}/{obj_id}", HandlerFunc: s.SearchObjectByClassificationID})
 	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/inst/{owner_id}/{app_id}", HandlerFunc: s.SearchBusinessTopo})
 	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/inst/child/{owner_id}/{obj_id}/{app_id}/{inst_id}", HandlerFunc: s.SearchMainLineChildInstTopo})
@@ -33,21 +33,21 @@ func (s *topoService) initAssociation() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/objectasst/", HandlerFunc: s.CreateObjectAssociation})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/objectasst/{id}", HandlerFunc: s.DeleteObjectAssociation})
 	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/objectasst/{id}", HandlerFunc: s.SearchObjectAssociation})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/objectasst/{id}", HandlerFunc: s.UpdateObjectAssociation})
+	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/objectasst/{id}", HandlerFunc: s.UpdateObjectAssociation})
 
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/topo/association/type/action/search", HandlerFunc: s.SearchAssociationType})
+	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/association/type/action/search", HandlerFunc: s.SearchAssociationType})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/topo/association/type/action/create", HandlerFunc: s.CreateAssociationType})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/topo/association/type/{id}/action/update", HandlerFunc: s.UpdateAssociationType})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/topo/association/type/{id}/action/delete", HandlerFunc: s.DeleteAssociationType})
+	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/topo/association/type/{id}/action/update", HandlerFunc: s.UpdateAssociationType})
+	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/topo/association/type/{id}/action/delete", HandlerFunc: s.DeleteAssociationType})
 
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/object/association/action/search", HandlerFunc: s.SearchAssociationObject})
+	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/object/association/action/search", HandlerFunc: s.SearchAssociationObject})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/object/association/action/create", HandlerFunc: s.CreateAssociationObject})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/object/association/{id}/action/update", HandlerFunc: s.UpdateAssociationObject})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/object/association/{id}/action/delete", HandlerFunc: s.DeleteAssociationObject})
+	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/object/association/{id}/action/update", HandlerFunc: s.UpdateAssociationObject})
+	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/object/association/{id}/action/delete", HandlerFunc: s.DeleteAssociationObject})
 
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/association/action/search", HandlerFunc: s.SearchAssociationInst})
+	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/inst/association/action/search", HandlerFunc: s.SearchAssociationInst})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/association/action/create", HandlerFunc: s.CreateAssociationInst})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/association/action/delete", HandlerFunc: s.DeleteAssociationInst})
+	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/inst/association/action/delete", HandlerFunc: s.DeleteAssociationInst})
 
 }
 

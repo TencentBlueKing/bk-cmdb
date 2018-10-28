@@ -248,7 +248,6 @@ func (cli *inst) GetMainlineChildInst() ([]Inst, error) {
 		cond.Field(common.BKDefaultField).NotEq(common.DefaultResSetFlag)
 	}
 	cond.Field(common.BKInstParentStr).Eq(currInstID)
-	//fmt.Println("child:", cond.ToMapStr())
 	return cli.searchInsts(childObj, cond)
 }
 func (cli *inst) GetParentObjectWithInsts() ([]*ObjectWithInsts, error) {

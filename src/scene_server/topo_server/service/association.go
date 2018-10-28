@@ -45,7 +45,7 @@ func (s *topoService) DeleteMainLineObject(params types.ContextParams, pathParam
 }
 
 // SearchMainLineOBjectTopo search the main line topo
-func (s *topoService) SearchMainLineOBjectTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchMainLineObjectTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	bizObj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
@@ -119,12 +119,13 @@ func (s *topoService) SearchAssociationType(params types.ContextParams, pathPara
 	ret, err := s.core.AssociationOperation().SearchType(context.Background(), params.Header, request)
 	if err != nil {
 		return nil, err
-	} else if ret.Code != 0 {
-		return nil, params.Err.New(ret.Code, ret.ErrMsg)
-	} else {
-		return ret.Data, nil
-
 	}
+
+	if ret.Code != 0 {
+		return nil, params.Err.New(ret.Code, ret.ErrMsg)
+	}
+
+	return ret.Data, nil
 }
 
 func (s *topoService) CreateAssociationType(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
@@ -135,12 +136,13 @@ func (s *topoService) CreateAssociationType(params types.ContextParams, pathPara
 	ret, err := s.core.AssociationOperation().CreateType(context.Background(), params.Header, request)
 	if err != nil {
 		return nil, err
-	} else if ret.Code != 0 {
-		return nil, params.Err.New(ret.Code, ret.ErrMsg)
-	} else {
-		return ret.Data, nil
-
 	}
+
+	if ret.Code != 0 {
+		return nil, params.Err.New(ret.Code, ret.ErrMsg)
+	}
+
+	return ret.Data, nil
 }
 
 func (s *topoService) UpdateAssociationType(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
@@ -155,12 +157,13 @@ func (s *topoService) UpdateAssociationType(params types.ContextParams, pathPara
 	ret, err := s.core.AssociationOperation().UpdateType(context.Background(), params.Header, asstTypeID, request)
 	if err != nil {
 		return nil, err
-	} else if ret.Code != 0 {
+	} 
+	
+	if ret.Code != 0 {
 		return nil, params.Err.New(ret.Code, ret.ErrMsg)
-	} else {
-		return ret.Data, nil
-
-	}
+	} 
+	
+	return ret.Data, nil
 }
 
 func (s *topoService) DeleteAssociationType(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
@@ -168,15 +171,17 @@ func (s *topoService) DeleteAssociationType(params types.ContextParams, pathPara
 	if err != nil {
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
+	
 	ret, err := s.core.AssociationOperation().DeleteType(context.Background(), params.Header, asstTypeID)
 	if err != nil {
 		return nil, err
-	} else if ret.Code != 0 {
+	} 
+	
+	if ret.Code != 0 {
 		return nil, params.Err.New(ret.Code, ret.ErrMsg)
-	} else {
-		return ret.Data, nil
-
-	}
+	} 
+	
+	return ret.Data, nil
 }
 
 func (s *topoService) SearchAssociationObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
@@ -275,7 +280,6 @@ func (s *topoService) CreateAssociationInst(params types.ContextParams, pathPara
 		return nil, params.Err.New(ret.Code, ret.ErrMsg)
 	} else {
 		return ret.Data, nil
-
 	}
 }
 
