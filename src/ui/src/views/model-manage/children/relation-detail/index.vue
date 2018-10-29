@@ -73,15 +73,46 @@
                 <span class="cmdb-radio-text">{{$t('ModelManagement["目标不存在联动删除源"]')}}</span>
             </label>
         </div>
+        <div class="btn-group">
+            <bk-button type="primary" :loading="$loading(['updateObjectAttribute', 'createObjectAttribute'])" @click="saveRelation">
+                {{$t('ModelManagement["确定"]')}}
+            </bk-button>
+            <bk-button type="default" @click="cancel">
+                {{$t('ModelManagement["取消"]')}}
+            </bk-button>
+        </div>
     </div>
 </template>
 
 <script>
+    import { mapActions } from 'vuex'
     export default {
+        props: {
+            relation: {
+                type: Object
+            },
+            isReadOnly: {
+                type: Boolean,
+                default: false
+            },
+            isEdit: {
+                type: Boolean,
+                default: false
+            }
+        },
         data () {
             return {
                 modelList: [],
                 selected: ''
+            }
+        },
+        methods: {
+            ...mapActions('objectAssociation', [
+                'createObjectAssociation',
+                'updateObjectAssociation'
+            ]),
+            saveRelation () {
+
             }
         }
     }
