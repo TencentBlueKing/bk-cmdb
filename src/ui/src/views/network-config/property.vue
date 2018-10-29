@@ -93,6 +93,7 @@
                         setting-key="bk_property_id"
                         display-key="bk_property_name"
                         :searchable="true"
+                        :content-max-height="200"
                         :list="propertyDialog.attrList"
                         :selected.sync="propertyDialog.data.bk_property_id"
                     ></bk-selector>
