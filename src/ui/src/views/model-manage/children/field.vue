@@ -170,7 +170,7 @@
                         bk_obj_id: this.objId
                     },
                     config: {
-                        requestId: 'initFieldList'
+                        requestId: `post_searchObjectAttribute_${this.objId}`
                     }
                 })
                 this.table.list = res
