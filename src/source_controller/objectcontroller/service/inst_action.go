@@ -168,7 +168,7 @@ func (cli *Service) UpdateInstObject(req *restful.Request, resp *restful.Respons
 				return
 			}
 			realObjType := objType
-			if objType == common.BKINnerObjIDObject {
+			if objType == common.BKInnerObjIDObject {
 				var ok bool
 				realObjType, ok = originData[common.BKObjIDField].(string)
 				if !ok {
@@ -279,7 +279,7 @@ func (cli *Service) CreateInstObject(req *restful.Request, resp *restful.Respons
 	// record event
 	origindata := map[string]interface{}{}
 	realObjType := objType
-	if objType == common.BKINnerObjIDObject {
+	if objType == common.BKInnerObjIDObject {
 		var ok bool
 		realObjType, ok = input[common.BKObjIDField].(string)
 		if !ok {

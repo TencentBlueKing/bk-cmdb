@@ -389,7 +389,7 @@ func (lgc *Logics) getAsstInstByAsstObjectConds(pheader http.Header, asstInstCon
 		searchObjID := objID
 
 		if !util.IsInnerObject(objID) {
-			searchObjID = common.BKINnerObjIDObject
+			searchObjID = common.BKInnerObjIDObject
 		}
 
 		query := &metadata.QueryInput{
