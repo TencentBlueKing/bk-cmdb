@@ -30,7 +30,7 @@
                 </template>
             </div>
             <div class="btn-group">
-                <form ref="submitForm" :action="exportUrl" method="POST">
+                <form class="export-form" ref="submitForm" :action="exportUrl" method="POST">
                     <label class="label-btn" @click="exportField">
                         <i class="icon-cc-derivation"></i>
                         <span>{{$t('ModelManagement["导出"]')}}</span>
@@ -345,6 +345,9 @@
             float: right;
             height: 100px;
             line-height: 100px;
+            .export-form {
+                display: inline-block;
+            }
             .label-btn {
                 margin-left: 10px;
                 cursor: pointer;
