@@ -142,10 +142,10 @@
                     attrList: [],
                     actionList: [{
                         id: 'get',
-                        name: this.$t('NetworkDiscovery[\'获取单个\']')
+                        name: 'get'
                     }, {
                         id: 'walk',
-                        name: this.$t('NetworkDiscovery[\'批量获取\']')
+                        name: 'getnext'
                     }],
                     data: {
                         oid: '',
