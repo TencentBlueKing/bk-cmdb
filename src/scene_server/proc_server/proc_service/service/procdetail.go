@@ -233,7 +233,7 @@ func (ps *ProcServer) getInstAsst(forward http.Header, ownerID, objID string, id
 			condition[common.BKCloudIDField] = map[string]interface{}{common.BKDBIN: tmpIDS}
 		}
 	default:
-		targetOBJ = common.BKINnerObjIDObject
+		targetOBJ = common.BKInnerObjIDObject
 		instName = common.BKInstNameField
 		instID = common.BKInstIDField
 		condition[common.BKOwnerIDField] = ownerID
