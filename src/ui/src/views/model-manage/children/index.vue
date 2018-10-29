@@ -62,7 +62,7 @@
                 <the-field></the-field>
             </bk-tabpanel>
             <bk-tabpanel name="relation" :title="$t('ModelManagement[\'模型关系\']')">
-                <the-relation></the-relation>
+                <the-relation v-if="tab.active === 'relation'"></the-relation>
             </bk-tabpanel>
             <!-- <bk-tabpanel name="verification" :title="$t('ModelManagement[\'唯一校验\']')">
                 <the-verification :isReadOnly="isReadOnly"></the-verification>

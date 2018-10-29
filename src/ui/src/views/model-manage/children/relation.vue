@@ -20,7 +20,7 @@
                         <span class="text-primary mr10" @click.stop="editRelation(item)">
                             {{$t('Common["编辑"]')}}
                         </span>
-                        <span class="text-primary" v-if="!item.ispre && !isReadOnly" @click.stop="deleteRelation(item)">
+                        <span class="text-primary" v-if="!item.ispre && !isReadOnly" @click.stop="deleteRelation(item, index)">
                             {{$t('Common["删除"]')}}
                         </span>
                     </template>
@@ -113,9 +113,13 @@
                 return false
             }
         },
+        created () {
+            this.searchRelationList()
+        },
         methods: {
             ...mapActions('objectAssociation', [
-                'searchObjectAssociation'
+                'searchObjectAssociation',
+                'deleteObjectAssociation'
             ]),
             createRelation () {
                 this.slider.isEdit = false
@@ -124,18 +128,43 @@
                 this.slider.title = this.$t('ModelManagement["新建关联关系"]')
                 this.slider.isShow = true
             },
-            editRelation () {
-
+            editRelation (item) {
+                this.slider.isEdit = true
+                this.slider.isReadOnly = false
+                this.slider.relation = item
+                this.slider.title = this.$t('ModelManagement["编辑关联关系"]')
+                this.slider.isShow = true
             },
-            deleteRelation () {
-
+            deleteRelation (relation, index) {
+                this.$bkInfo({
+                    title: this.$tc('ModelManagement["确定删除关联关系？"]', relation['bk_property_name'], {name: relation['bk_property_name']}),
+                    confirmFn: async () => {
+                        await this.deleteObjectAssociation({
+                            id: relation.id,
+                            config: {
+                                requestId: 'deleteObjectAssociation'
+                            }
+                        }).then(() => {
+                            this.$http.cancel(`post_searchObjectAssociation_${this.activeModel['bk_obj_id']}`)
+                        })
+                        this.table.list.splice(index, 1)
+                    }
+                })
             },
-            saveRelation () {
-
+            async searchRelationList () {
+                this.table.list = await this.searchObjectAssociation({
+                    params: {
+                        condition: {
+                            both_obj_id: this.activeModel['bk_obj_id']
+                        }
+                    },
+                    config: {
+                        requestId: `post_searchObjectAssociation_${this.activeModel['bk_obj_id']}`
+                    }
+                })
             },
             handleSortChange (sort) {
-                this.sort = sort
-                this.refresh()
+                this.table.sort = sort
             }
         }
     }
