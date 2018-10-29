@@ -69,7 +69,7 @@ func (o *Object) GetInstIDFieldName() string {
 		return common.BKSetIDField
 	case common.BKInnerObjIDModule:
 		return common.BKModuleIDField
-	case common.BKINnerObjIDObject:
+	case common.BKInnerObjIDObject:
 		return common.BKInstIDField
 	case common.BKInnerObjIDHost:
 		return common.BKHostIDField
@@ -119,7 +119,7 @@ func (o *Object) GetObjectType() string {
 	case common.BKInnerObjIDPlat:
 		return o.ObjectID
 	default:
-		return common.BKINnerObjIDObject
+		return common.BKInnerObjIDObject
 	}
 }
 
