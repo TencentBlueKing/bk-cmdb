@@ -131,6 +131,7 @@ type ProModule struct {
 	ProcessID  int64  `json:"bk_process_id" bson:"bk_process_id,omitempty"`
 	ModuleName string `json:"bk_module_name" bson:"bk_module_name,omitempty"`
 	BizID      int64  `json:"bk_biz_id" bson:"bk_biz_id,omitempty"`
+	OwnerID    string `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
 type Process struct {
