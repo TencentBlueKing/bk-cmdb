@@ -144,7 +144,7 @@
                         id: 'get',
                         name: 'get'
                     }, {
-                        id: 'walk',
+                        id: 'getnext',
                         name: 'getnext'
                     }],
                     data: {
