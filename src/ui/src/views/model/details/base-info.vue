@@ -211,6 +211,7 @@
                             }
                         }).then(res => {
                             this.$http.cancel('post_searchClassificationsObjects')
+                            this.$http.cancel('post_searchObjects_bk_network')
                             return res
                         })
                     }
