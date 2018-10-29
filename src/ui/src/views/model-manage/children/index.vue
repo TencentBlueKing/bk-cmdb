@@ -30,7 +30,7 @@
                 </template>
             </div>
             <div class="btn-group">
-                <form ref="submitForm" :action="exportUrl" method="POST">
+                <form class="export-form" ref="submitForm" :action="exportUrl" method="POST">
                     <label class="label-btn" @click="exportField">
                         <i class="icon-cc-derivation"></i>
                         <span>{{$t('ModelManagement["导出"]')}}</span>
@@ -64,12 +64,8 @@
             <bk-tabpanel name="relation" :title="$t('ModelManagement[\'模型关系\']')">
                 <the-relation></the-relation>
             </bk-tabpanel>
-            <bk-tabpanel name="verification" :title="$t('ModelManagement[\'唯一校验\']')">
-            </bk-tabpanel>
             <bk-tabpanel name="propertyGroup" :title="$t('ModelManagement[\'字段分组\']')">
                 <the-property-group v-if="tab.active === 'propertyGroup'"></the-property-group>
-            </bk-tabpanel>
-            <bk-tabpanel name="history" :title="$t('ModelManagement[\'操作历史\']')">
             </bk-tabpanel>
         </bk-tab>
     </div>
@@ -349,6 +345,9 @@
             float: right;
             height: 100px;
             line-height: 100px;
+            .export-form {
+                display: inline-block;
+            }
             .label-btn {
                 margin-left: 10px;
                 cursor: pointer;
