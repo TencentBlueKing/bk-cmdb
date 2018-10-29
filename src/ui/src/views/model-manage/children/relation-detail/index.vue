@@ -145,8 +145,23 @@
             async initRelationList () {
                 this.relationList = await this.searchAssociationType({})
             },
-            saveRelation () {
-
+            async saveRelation () {
+                let params = this.relationInfo
+                if (this.isEdit) {
+                    await this.updateObjectAssociation({
+                        params,
+                        config: {
+                            requestId: 'updateObjectAssociation'
+                        }
+                    })
+                } else {
+                    await this.createObjectAssociation({
+                        params,
+                        config: {
+                            requestId: 'createObjectAssociation'
+                        }
+                    })
+                }
             }
         }
     }
