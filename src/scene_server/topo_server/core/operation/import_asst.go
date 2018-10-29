@@ -166,7 +166,7 @@ func (a *asstObjectInst) getAsstInstByAsstObjectConds() error {
 		searchObjID := objID
 
 		if !util.IsInnerObject(objID) {
-			searchObjID = common.BKINnerObjIDObject
+			searchObjID = common.BKInnerObjIDObject
 		}
 
 		_, data, err := a.getInstData(searchObjID, conds)
