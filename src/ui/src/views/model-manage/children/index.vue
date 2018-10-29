@@ -64,9 +64,9 @@
             <bk-tabpanel name="relation" :title="$t('ModelManagement[\'模型关系\']')">
                 <the-relation></the-relation>
             </bk-tabpanel>
-            <bk-tabpanel name="verification" :title="$t('ModelManagement[\'唯一校验\']')">
+            <!-- <bk-tabpanel name="verification" :title="$t('ModelManagement[\'唯一校验\']')">
                 <the-verification :isReadOnly="isReadOnly"></the-verification>
-            </bk-tabpanel>
+            </bk-tabpanel> -->
             <bk-tabpanel name="layout" :title="$t('ModelManagement[\'字段分组\']')">
             </bk-tabpanel>
             <bk-tabpanel name="history" :title="$t('ModelManagement[\'操作历史\']')">
