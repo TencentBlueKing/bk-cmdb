@@ -38,7 +38,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     updateNetcollectProperty ({ commit, state, dispatch, rootGetters }, { propertyId, params, config }) {
-        return $http.post(`collector/netcollect/property/${propertyId}/action/udpate`, params, config)
+        return $http.post(`collector/netcollect/property/${propertyId}/action/update`, params, config)
     },
     /**
      * 查询属性
