@@ -102,8 +102,8 @@
                         sortable: false
                     }],
                     list: [],
-                    defaultSort: '-op_time',
-                    sort: '-op_time'
+                    defaultSort: '-create_time',
+                    sort: '-create_time'
                 }
             }
         },

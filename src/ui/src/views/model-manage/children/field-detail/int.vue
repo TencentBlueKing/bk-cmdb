@@ -2,22 +2,27 @@
     <div>
         <div class="form-label">
             <span class="label-text">{{$t('ModelManagement["最小值"]')}}</span>
-            <input type="text" class="cmdb-form-input"
-                v-model="localValue.min"
-                @input="handleInput"
-                v-validate="`number`"
-                maxlength="11"
-                :disabled="isReadOnly"
-                :name="'min'">
+            <div class="cmdb-form-item">
+                <input type="text" class="cmdb-form-input"
+                    v-model="localValue.min"
+                    @input="handleInput"
+                    v-validate="`number`"
+                    maxlength="11"
+                    :disabled="isReadOnly"
+                    :name="'min'">
+            </div>
         </div>
         <div class="form-label">
             <span class="label-text">{{$t('ModelManagement["最大值"]')}}</span>
-            <input type="text" class="cmdb-form-input"
-                v-model="localValue.max"
-                name="max"
-                @input="handleInput"
-                :disabled="isReadOnly"
-                v-validate="`number|isBigger:${localValue.min}`">
+            <div class="cmdb-form-item" :class="{'is-error': errors.has('max')}">
+                <input type="text" class="cmdb-form-input"
+                    v-model="localValue.max"
+                    name="max"
+                    @input="handleInput"
+                    :disabled="isReadOnly"
+                    v-validate="`number|isBigger:${localValue.min}`">
+                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('max')"></i>
+            </div>
         </div>
     </div>
 </template>

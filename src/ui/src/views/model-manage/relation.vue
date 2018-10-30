@@ -36,6 +36,8 @@
                 class="slider-content"
                 :isEdit="slider.isEdit"
                 :relation="slider.relation"
+                @saveRelation="saveRelation"
+                @cancel="slider.isShow = false"
             ></the-relation>
         </cmdb-slider>
     </div>
@@ -159,6 +161,10 @@
                         this.searchRelation()
                     }
                 })
+            },
+            saveRelation () {
+                this.slider.isShow = false
+                this.searchRelation()
             },
             handlePageChange (current) {
                 this.pagination.current = current
