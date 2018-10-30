@@ -30,7 +30,7 @@ import (
 
 // BuildExcelFromData product excel from data
 func BuildExcelFromData(objID string, fields map[string]Property, filter []string, data []interface{}, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) error {
-	addSystemField(fields, common.BKINnerObjIDObject, defLang)
+	addSystemField(fields, common.BKInnerObjIDObject, defLang)
 	if 0 == len(filter) {
 		filter = getFilterFields(objID)
 	} else {
