@@ -177,102 +177,6 @@ func (c *commonInst) isValidInstID(params types.ContextParams, obj metatype.Obje
 	return params.Err.Error(common.CCErrTopoInstSelectFailed)
 }
 
-// func (c *commonInst) setInstAsst(params types.ContextParams, obj model.Object, inst inst.Inst) error {
-// 	// TODO: delete this function.
-// 	return nil
-//
-// 	currInstID, err := inst.GetInstID()
-// 	if nil != err {
-// 		return err
-// 	}
-// 	attrs, err := obj.GetAttributesExceptInnerFields()
-// 	if nil != err {
-// 		return err
-// 	}
-//
-// 	assts, err := c.asst.SearchObjectAssociation(params, obj.GetID())
-// 	if nil != err {
-// 		return err
-// 	}
-//
-// 	data := inst.GetValues()
-// 	for _, attr := range attrs {
-// 		// if !attr.IsAssociationType() {
-// 		// 	continue
-// 		// }
-//
-// 		// extract the assocaition insts ids
-// 		asstVal, exists := data.Get(attr.GetID())
-// 		if !exists {
-// 			continue
-// 		}
-//
-// 		asstInstIDS := []int64{}
-// 		switch targetAssts := asstVal.(type) {
-// 		default:
-// 		case string:
-// 			tmpIDS := strings.Split(targetAssts, common.InstAsstIDSplit)
-// 			for _, asstID := range tmpIDS {
-// 				if 0 == len(strings.TrimSpace(asstID)) {
-// 					continue
-// 				}
-//
-// 				id, err := strconv.ParseInt(asstID, 10, 64)
-// 				if nil != err {
-// 					blog.Errorf("[operation-inst] failed to parse  the value(%s), err: %s", asstID, err.Error())
-// 					return err
-// 				}
-// 				asstInstIDS = append(asstInstIDS, id)
-// 			}
-//
-// 		case []metatype.InstNameAsst:
-// 			for _, item := range targetAssts {
-// 				asstInstIDS = append(asstInstIDS, item.InstID)
-// 			}
-// 		}
-//
-// 		// update the inst association
-// 		for _, asst := range assts {
-// 			if asst.AsstName != attr.GetID() {
-// 				continue
-// 			}
-//
-// 			// delete the inst asst
-// 			innerCond := condition.CreateCondition()
-// 			innerCond.Field(common.BKObjIDField).Eq(obj.GetID())
-// 			innerCond.Field(common.BKAsstObjIDField).Eq(asst.AsstObjID)
-// 			innerCond.Field(common.BKInstIDField).Eq(currInstID)
-// 			if err = c.asst.DeleteInstAssociation(params, innerCond); nil != err {
-// 				blog.Errorf("[operation-inst] failed to delete inst association,by the condition(%#v), err: %s", innerCond.ToMapStr(), err.Error())
-// 				return err
-// 			}
-//
-// 			// create a new new asst
-// 			validInstIDS := []string{}
-// 			for _, asstInstID := range asstInstIDS {
-//
-// 				// check the inst id
-// 				if err := c.isValidInstID(params, metatype.Object{ObjectID: asst.AsstObjID}, asstInstID); nil != err {
-// 					blog.Warnf("[operation-int] the association object(%s)' instid(%d) is invalid", asst.AsstObjID, asstInstID)
-// 					continue
-// 				}
-// 				validInstIDS = append(validInstIDS, strconv.Itoa(int(asstInstID)))
-// 				// create a new inst in inst asst table
-// 				if err = c.asst.CreateCommonInstAssociation(params, &metatype.InstAsst{InstID: currInstID, ObjectID: obj.GetID(), AsstInstID: asstInstID, AsstObjectID: asst.AsstObjID}); nil != err {
-// 					blog.Errorf("[operation-inst] failed to create inst association, err: %s", err.Error())
-// 					return err
-// 				}
-// 			}
-//
-// 			// update asst value
-// 			inst.SetValue(attr.GetID(), strings.Join(validInstIDS, common.InstAsstIDSplit))
-// 			break
-// 		} // end foreach assts
-//
-// 	}
-//
-// 	return nil
-// }
 func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, data frtypes.MapStr) (inst.Inst, error) {
 
 	// create new insts
@@ -290,11 +194,6 @@ func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, da
 	}
 
 	NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
-
-	// if err := c.setInstAsst(params, obj, item); nil != err {
-	// 	blog.Errorf("[operation-inst] failed to set the inst asst, err: %s", err.Error())
-	// 	return nil, err
-	// }
 
 	return item, nil
 }
@@ -977,25 +876,6 @@ func (c *commonInst) UpdateInst(params types.ContextParams, data frtypes.MapStr,
 		innerCond.Field(obj.GetInstIDFieldName()).Eq(instID)
 		query.Condition = innerCond.ToMapStr()
 	}
-
-	// // TODO: delete these code.
-	// _, insts, err := c.FindInst(params, obj, query, false)
-	// if nil != err {
-	// 	blog.Errorf("[operation-inst] failed to search insts by the condition(%#v), err: %s", cond.ToMapStr(), err.Error())
-	// 	return err
-	// }
-	// for _, inst := range insts {
-	//
-	// 	data.ForEach(func(key string, val interface{}) error {
-	// 		inst.SetValue(key, val)
-	// 		return nil
-	// 	})
-	//
-	// 	if err := c.setInstAsst(params, obj, inst); nil != err {
-	// 		blog.Errorf("[operation-inst] failed to set the inst asst, err: %s", err.Error())
-	// 		return err
-	// 	}
-	// }
 
 	// update insts
 	inputParams := frtypes.New()
