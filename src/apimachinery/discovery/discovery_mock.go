@@ -22,6 +22,10 @@ func (d *MockDiscovery) MigrateServer() Interface {
 	return &mockServer{}
 }
 
+func (d *MockDiscovery) ApiServer() Interface {
+	return &mockServer{}
+}
+
 func (d *MockDiscovery) EventServer() Interface {
 	return &mockServer{}
 }

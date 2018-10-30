@@ -39,6 +39,10 @@
 
 如果想了解以上功能的详细说明，请参考[功能说明](http://bk.tencent.com/document/bkprod/000120.html)
 
+## Experience
+
+[体验蓝鲸cmdb](docs/overview/experience.md)
+
 ## Getting started
 * [下载与编译](docs/overview/source_compile.md)
 * [安装部署](docs/overview/installation.md)

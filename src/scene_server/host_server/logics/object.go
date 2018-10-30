@@ -179,7 +179,7 @@ func (lgc *Logics) getObjectByParentID(pheader http.Header, valArr []int64) ([]i
 		Start:     0,
 		Limit:     common.BKNoLimit,
 	}
-	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKINnerObjIDObject, pheader, query)
+	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDObject, pheader, query)
 	if err != nil || (err == nil && !result.Result) {
 		return nil, fmt.Errorf("get object failed, err: %v, %v", err, result.ErrMsg)
 	}
@@ -211,7 +211,7 @@ func (lgc *Logics) GetObjectInstByCond(pheader http.Header, objID string, cond [
 	} else {
 		condc[common.BKObjIDField] = objID
 		outField = common.BKInstIDField
-		objType = common.BKINnerObjIDObject
+		objType = common.BKInnerObjIDObject
 	}
 
 	query := &meta.QueryInput{
