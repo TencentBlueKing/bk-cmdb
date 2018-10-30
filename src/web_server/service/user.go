@@ -19,7 +19,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/uriwang/contrib/sessions"
+	"github.com/holmeswang/contrib/sessions"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
