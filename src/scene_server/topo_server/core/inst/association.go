@@ -13,17 +13,13 @@
 package inst
 
 import (
-	"context"
-	"io"
-	"strconv"
-	"strings"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
 	metatype "configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/model"
+	"context"
+	"io"
 )
 
 func (cli *inst) updateMainlineAssociation(child Inst, parentID int64) error {
@@ -151,7 +147,6 @@ func (cli *inst) searchInstAssociation(instID, asstInstID int64, objID, asstObjI
 	queryInput := &metatype.QueryInput{}
 	queryInput.Condition = cond.ToMapStr()
 	queryInput.Limit = common.BKNoLimit
-	//fmt.Println("cond:", cond.ToMapStr())
 	rsp, err := cli.clientSet.ObjectController().Instance().SearchObjects(context.Background(), common.BKTableNameInstAsst, cli.params.Header, queryInput)
 	if nil != err {
 		blog.Errorf("[inst-inst] failed to request the object controller , error info is %s", err.Error())
@@ -268,7 +263,6 @@ func (cli *inst) GetParentObjectWithInsts() ([]*ObjectWithInsts, error) {
 	for _, parentObj := range parentObjs {
 
 		rstObj := &ObjectWithInsts{Object: parentObj}
-		//fmt.Println("inst:", currInstID, parentObj.GetID(), cli.target.GetID())
 		asstItems, err := cli.searchInstAssociation(-1, currInstID, parentObj.GetID(), cli.target.GetID())
 		if nil != err {
 			blog.Errorf("[inst-inst] failed to search the inst association, the error info is %s", err.Error())
@@ -363,54 +357,54 @@ func (cli *inst) GetParentInst() ([]Inst, error) {
 	return result, nil
 }
 
-func (cli *inst) getAsstChildInstIDSByAsstField(asstObj model.Object) ([]int64, error) {
-
-	cond := condition.CreateCondition()
-	cond.Field(common.BKObjIDField).Eq(cli.target.GetID())
-	cond.Field(common.BKAsstObjIDField).Eq(asstObj.GetID())
-	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), cli.params.Header, cond.ToMapStr())
-	if nil != err {
-		blog.Errorf("[inst-asst] failed to request controller server, error info is %s ", err.Error())
-		return nil, err
-	}
-	if !rsp.Result {
-		return nil, cli.params.Err.New(rsp.Code, rsp.ErrMsg)
-	}
-	instIDS := []int64{}
-	for _, item := range rsp.Data {
-		asstVals, exists := cli.datas.Get(item.AsstName)
-		if !exists {
-			continue
-		}
-
-		switch targetAssts := asstVals.(type) {
-		default:
-
-		case string:
-			tmpIDS := strings.Split(targetAssts, common.InstAsstIDSplit)
-			for _, asstID := range tmpIDS {
-				if 0 == len(strings.TrimSpace(asstID)) {
-					continue
-				}
-				id, err := strconv.ParseInt(asstID, 10, 64)
-				if nil != err {
-					blog.Errorf("[inst-asst] failed to parse the asst value, the object(%s) the field(%s) the value(%s), error info is %s", cli.target.GetID(), item.AsstName, asstID, err.Error())
-					return nil, err
-				}
-				instIDS = append(instIDS, id)
-			}
-
-		case []metatype.InstNameAsst:
-			for _, item := range targetAssts {
-				instIDS = append(instIDS, item.InstID)
-			}
-		}
-
-		break // should be only one object association
-	}
-
-	return instIDS, nil
-}
+// func (cli *inst) getAsstChildInstIDSByAsstField(asstObj model.Object) ([]int64, error) {
+//
+// 	cond := condition.CreateCondition()
+// 	cond.Field(common.BKObjIDField).Eq(cli.target.GetID())
+// 	cond.Field(common.BKAsstObjIDField).Eq(asstObj.GetID())
+// 	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), cli.params.Header, cond.ToMapStr())
+// 	if nil != err {
+// 		blog.Errorf("[inst-asst] failed to request controller server, error info is %s ", err.Error())
+// 		return nil, err
+// 	}
+// 	if !rsp.Result {
+// 		return nil, cli.params.Err.New(rsp.Code, rsp.ErrMsg)
+// 	}
+// 	instIDS := []int64{}
+// 	for _, item := range rsp.Data {
+// 		asstVals, exists := cli.datas.Get(item.AsstName)
+// 		if !exists {
+// 			continue
+// 		}
+//
+// 		switch targetAssts := asstVals.(type) {
+// 		default:
+//
+// 		case string:
+// 			tmpIDS := strings.Split(targetAssts, common.InstAsstIDSplit)
+// 			for _, asstID := range tmpIDS {
+// 				if 0 == len(strings.TrimSpace(asstID)) {
+// 					continue
+// 				}
+// 				id, err := strconv.ParseInt(asstID, 10, 64)
+// 				if nil != err {
+// 					blog.Errorf("[inst-asst] failed to parse the asst value, the object(%s) the field(%s) the value(%s), error info is %s", cli.target.GetID(), item.AsstName, asstID, err.Error())
+// 					return nil, err
+// 				}
+// 				instIDS = append(instIDS, id)
+// 			}
+//
+// 		case []metatype.InstNameAsst:
+// 			for _, item := range targetAssts {
+// 				instIDS = append(instIDS, item.InstID)
+// 			}
+// 		}
+//         // should be only one object association
+// 		break
+// 	}
+//
+// 	return instIDS, nil
+// }
 
 func (cli *inst) GetChildObjectWithInsts() ([]*ObjectWithInsts, error) {
 
@@ -437,11 +431,12 @@ func (cli *inst) GetChildObjectWithInsts() ([]*ObjectWithInsts, error) {
 			return result, err
 		}
 
-		childInstIDS, err := cli.getAsstChildInstIDSByAsstField(childObj)
-		if nil != err {
-			blog.Errorf("[inst-inst] failed to get the association, error info is %s", err.Error())
-			return result, err
-		}
+		// childInstIDS, err := cli.getAsstChildInstIDSByAsstField(childObj)
+		// if nil != err {
+		// 	blog.Errorf("[inst-inst] failed to get the association, error info is %s", err.Error())
+		// 	return result, err
+		// }
+		childInstIDS := make([]int64, 0)
 		for _, item := range asstItems {
 			childInstID, err := item.Int64(common.BKAsstInstIDField)
 			if nil != err {

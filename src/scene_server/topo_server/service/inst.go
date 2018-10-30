@@ -202,7 +202,6 @@ func (s *topoService) SearchInstAndAssociationDetail(params types.ContextParams,
 	}
 
 	// construct the query inst condition
-
 	queryCond := &paraparse.SearchParams{
 		Condition: mapstr.New(),
 	}
@@ -323,10 +322,11 @@ func (s *topoService) SearchInstByInstID(params types.ContextParams, pathParams,
 
 // SearchInstChildTopo search the child inst topo for a inst
 func (s *topoService) SearchInstChildTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	//fmt.Println("SearchInstChildTopo")
-	// /inst/search/topo/owner/{owner_id}/object/{object_id}/inst/{inst_id}
-
 	objID := pathParams("object_id")
+	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
+	if nil != err {
+		return nil, err
+	}
 
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
@@ -334,13 +334,7 @@ func (s *topoService) SearchInstChildTopo(params types.ContextParams, pathParams
 		return nil, err
 	}
 
-	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
-	if nil != err {
-		return nil, err
-	}
-
 	query := &metadata.QueryInput{}
-
 	cond := condition.CreateCondition()
 	cond.Field(obj.GetInstIDFieldName()).Eq(instID)
 	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
@@ -369,7 +363,6 @@ func (s *topoService) SearchInstTopo(params types.ContextParams, pathParams, que
 	}
 
 	query := &metadata.QueryInput{}
-
 	cond := condition.CreateCondition()
 	cond.Field(obj.GetInstIDFieldName()).Eq(instID)
 	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
