@@ -26,11 +26,11 @@ const (
 	// AssociationFieldSupplierAccount the association data field definition
 	AssociationFieldSupplierAccount = "bk_supplier_account"
 	// AssociationFieldAssociationForward the association data field definition
-	AssociationFieldAssociationForward = "bk_asst_forward"
+	// AssociationFieldAssociationForward = "bk_asst_forward"
 	// AssociationFieldAssociationObjectID the association data field definition
 	AssociationFieldAssociationObjectID = "bk_asst_obj_id"
 	// AssociationFieldAssociationName the association data field definition
-	AssociationFieldAssociationName = "bk_asst_name"
+	// AssociationFieldAssociationName = "bk_asst_name"
 	// AssociationFieldAssociationId auto incr id
 	AssociationFieldAssociationId = "id"
 )
@@ -233,7 +233,7 @@ type InstNameAsst struct {
 	ObjectName string `json:"bk_obj_name"`
 	InstName   string `json:"bk_inst_name"`
 	// AsstName   string                 `json:"bk_asst_name"`
-	AsstID   string                 `json:"bk_asst_id"`
+	// AsstID   string                 `json:"bk_asst_id"`
 	InstInfo map[string]interface{} `json:"inst_info,omitempty"`
 }
 

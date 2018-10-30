@@ -312,7 +312,7 @@ func (o *object) GetChildObjectByFieldID(fieldID string) ([]Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
 	cond.Field(meta.AssociationFieldObjectID).Eq(o.obj.ObjectID)
-	cond.Field(meta.AssociationFieldAssociationName).Eq(fieldID)
+	// cond.Field(meta.AssociationFieldAssociationName).Eq(fieldID)
 
 	return o.searchObjects(true, cond)
 }
@@ -321,7 +321,7 @@ func (o *object) GetParentObject() ([]Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
 	cond.Field(meta.AssociationFieldAssociationObjectID).Eq(o.obj.ObjectID)
-	cond.Field(meta.AssociationFieldAssociationName).NotEq(common.BKChildStr)
+	// cond.Field(meta.AssociationFieldAssociationName).NotEq(common.BKChildStr)
 
 	return o.searchObjects(false, cond)
 }
@@ -330,7 +330,7 @@ func (o *object) GetChildObject() ([]Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
 	cond.Field(meta.AssociationFieldObjectID).Eq(o.obj.ObjectID)
-	cond.Field(meta.AssociationFieldAssociationName).NotEq(common.BKChildStr)
+	// cond.Field(meta.AssociationFieldAssociationName).NotEq(common.BKChildStr)
 
 	return o.searchObjects(true, cond)
 }
@@ -341,7 +341,7 @@ func (o *object) SetMainlineParentObject(objID string) error {
 
 	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
 	cond.Field(meta.AssociationFieldObjectID).Eq(o.obj.ObjectID)
-	cond.Field(meta.AssociationFieldAssociationName).Eq(common.BKChildStr)
+	// cond.Field(meta.AssociationFieldAssociationName).Eq(common.BKChildStr)
 
 	rsp, err := o.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), o.params.Header, cond.ToMapStr())
 	if nil != err {
@@ -359,7 +359,7 @@ func (o *object) SetMainlineParentObject(objID string) error {
 
 		asst := &meta.Association{}
 		asst.OwnerID = o.params.SupplierAccount
-		asst.AsstName = common.BKChildStr
+		// asst.AsstName = common.BKChildStr
 		asst.ObjectID = o.obj.ObjectID
 		asst.AsstObjID = objID
 
@@ -382,7 +382,7 @@ func (o *object) SetMainlineParentObject(objID string) error {
 	for _, asst := range rsp.Data {
 
 		asst.AsstObjID = objID
-		asst.AsstName = common.BKChildStr
+		// asst.AsstName = common.BKChildStr
 
 		rsp, err := o.clientSet.ObjectController().Meta().UpdateObjectAssociation(context.Background(), asst.ID, o.params.Header, asst.ToMapStr())
 		if nil != err {
