@@ -13,13 +13,13 @@
 package service
 
 import (
-    "configcenter/src/common"
-    "strconv"
+	"strconv"
 
-    "configcenter/src/common/blog"
-    frtypes "configcenter/src/common/mapstr"
-    "configcenter/src/common/metadata"
-    "configcenter/src/scene_server/topo_server/core/types"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // CreateObjectAssociation create a new object association
@@ -54,17 +54,17 @@ func (s *topoService) SearchObjectAssociation(params types.ContextParams, pathPa
 // DeleteObjectAssociation delete object association
 func (s *topoService) DeleteObjectAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
-    id, err := strconv.ParseInt(pathParams("id"), 10, 64)
-    if err != nil {
-        blog.Errorf("delete object association failed, got a invalid objasst id[%v], err: %v", pathParams("id"), err)
-        return nil, params.Err.Error(common.CCErrTopoInvalidObjectAssociaitonID)
-    }
-    
-    if id <= 0 {
-        blog.Errorf("delete object association failed, got a invalid objasst id[%d]", id)
-        return nil, params.Err.Error(common.CCErrTopoInvalidObjectAssociaitonID)
-    }
-    
+	id, err := strconv.ParseInt(pathParams("id"), 10, 64)
+	if err != nil {
+		blog.Errorf("delete object association failed, got a invalid objasst id[%v], err: %v", pathParams("id"), err)
+		return nil, params.Err.Error(common.CCErrTopoInvalidObjectAssociaitonID)
+	}
+
+	if id <= 0 {
+		blog.Errorf("delete object association failed, got a invalid objasst id[%d]", id)
+		return nil, params.Err.Error(common.CCErrTopoInvalidObjectAssociaitonID)
+	}
+
 	return nil, s.core.AssociationOperation().DeleteAssociationWithPreCheck(params, id)
 }
 
@@ -72,9 +72,9 @@ func (s *topoService) DeleteObjectAssociation(params types.ContextParams, pathPa
 func (s *topoService) UpdateObjectAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	id, err := strconv.ParseInt(pathParams("id"), 10, 64)
 	if err != nil {
-	    blog.Errorf("update object association, but got invalid id[%v], err: %v", pathParams("id"), err)
-	    return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
-    }
+		blog.Errorf("update object association, but got invalid id[%v], err: %v", pathParams("id"), err)
+		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
+	}
 	err = s.core.AssociationOperation().UpdateAssociation(params, data, id)
 	return nil, err
 

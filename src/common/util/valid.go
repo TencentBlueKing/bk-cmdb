@@ -112,15 +112,6 @@ func ValidPropertyOption(propertyType string, option interface{}, errProxy error
 	return nil
 }
 
-// IsAssocateProperty  is Assocate property
-// func IsAssocateProperty(propertyType string) bool {
-// 	if common.FieldTypeSingleAsst == propertyType || common.FieldTypeMultiAsst == propertyType {
-// 		return true
-// 	}
-//
-// 	return false
-// }
-
 // IsStrProperty  is string property
 func IsStrProperty(propertyType string) bool {
 	if common.FieldTypeLongChar == propertyType || common.FieldTypeSingleChar == propertyType {
