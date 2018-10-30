@@ -850,7 +850,7 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 	for keyObjID, objs := range asstParamCond.Condition {
 		// Extract the ID of the instance according to the associated object.
 		cond := map[string]interface{}{}
-		if common.GetObjByType(keyObjID) == common.BKINnerObjIDObject {
+		if common.GetObjByType(keyObjID) == common.BKInnerObjIDObject {
 			cond[common.BKObjIDField] = keyObjID
 			cond[common.BKOwnerIDField] = params.SupplierAccount
 		}

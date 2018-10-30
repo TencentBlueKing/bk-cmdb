@@ -31,7 +31,7 @@ func TestObject(t *testing.T) {
 		t.Fail()
 	}
 
-	if attr.GetObjectType() != common.BKINnerObjIDObject {
+	if attr.GetObjectType() != common.BKInnerObjIDObject {
 		t.Fail()
 	}
 
