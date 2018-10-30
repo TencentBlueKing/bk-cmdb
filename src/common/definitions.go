@@ -89,8 +89,8 @@ const (
 	// BKInnerObjIDHost the inner object
 	BKInnerObjIDHost = "host"
 
-	// BKINnerObjIDObject the inner object
-	BKINnerObjIDObject = "object"
+	// BKInnerObjIDObject the inner object
+	BKInnerObjIDObject = "object"
 
 	// BKInnerObjIDProc the inner object
 	BKInnerObjIDProc = "process"
