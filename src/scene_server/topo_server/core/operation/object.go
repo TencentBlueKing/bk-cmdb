@@ -421,7 +421,7 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 		attrCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 		attrCond.Field(common.BKObjIDField).Eq(obj.GetID())
 
-		if err := o.attr.DeleteObjectAttribute(params, -1, attrCond); nil != err {
+		if err := o.attr.DeleteObjectAttribute(params, attrCond); nil != err {
 			blog.Errorf("[operation-obj] failed to delete the object(%d)'s attribute, error info is %s", id, err.Error())
 			return err
 		}
@@ -470,25 +470,48 @@ func (o *object) isFrom(params types.ContextParams, fromObjID, toObjID string) (
 }
 
 func (o *object) FindObjectTopo(params types.ContextParams, cond condition.Condition) ([]metadata.ObjectTopo, error) {
-
 	objs, err := o.FindObject(params, cond)
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to find object, error info is %s", err.Error())
 		return nil, err
 	}
 
-	results := []metadata.ObjectTopo{}
+	results := make([]metadata.ObjectTopo, 0)
 	for _, obj := range objs {
-
 		asstItems, err := o.asst.SearchObjectAssociation(params, obj.GetID())
 		if nil != err {
 			return nil, err
 		}
 
 		for _, asst := range asstItems {
+			var asstName string
+			if len(asst.ObjectAsstAliasName) == 0 {
+				// find association kind with association kind id.
+				typeCond := condition.CreateCondition()
+				typeCond.Field(common.AssociationKindIDField).Eq(asst.AsstKindID)
+				typeCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+				request := &metadata.SearchAssociationTypeRequest{
+					Condition: typeCond.ToMapStr(),
+				}
 
-			if asst.AsstName == common.BKChildStr {
-				continue
+				resp, err := o.asst.SearchType(context.Background(), params.Header, request)
+				if err != nil {
+					blog.Errorf("find object topo failed, because get association kind[%s] failed, err: %v", asst.AsstKindID, err)
+					return nil, params.Err.Errorf(common.CCErrTopoGetAssociationKindFailed, asst.AsstKindID)
+				}
+				if !resp.Result {
+					blog.Errorf("find object topo failed, because get association kind[%s] failed, err: %v", asst.AsstKindID, resp.ErrMsg)
+					return nil, params.Err.Errorf(common.CCErrTopoGetAssociationKindFailed, asst.AsstKindID)
+				}
+
+				// should only be one association kind.
+				if len(resp.Data.Info) == 0 {
+					blog.Errorf("find object topo failed, because get association kind[%s] failed, err: can not find this association kind.", asst.AsstKindID)
+					return nil, params.Err.Errorf(common.CCErrTopoGetAssociationKindFailed, asst.AsstKindID)
+				}
+				asstName = resp.Data.Info[0].AssociationKindName
+			} else {
+				asstName = asst.ObjectAsstAliasName
 			}
 
 			cond = condition.CreateCondition()
@@ -503,8 +526,8 @@ func (o *object) FindObjectTopo(params types.ContextParams, cond condition.Condi
 
 			for _, asstObj := range asstObjs {
 				tmp := metadata.ObjectTopo{}
-				tmp.Label = asst.AsstName
-				tmp.LabelName = asst.AsstName
+				tmp.Label = asstName
+				tmp.LabelName = asstName
 				tmp.From.ObjID = obj.GetID()
 				cls, err := obj.GetClassification()
 				if nil != err {

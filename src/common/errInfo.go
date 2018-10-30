@@ -261,6 +261,18 @@ const (
 	CCErrTopoObjectHasSomeInstsForbiddenToDelete = 1101037
 	// the associations %s->%s already exist
 	CCErrTopoAssociationAlreadyExist = 1101038
+	// the source association object does not exist
+	CCErrTopoAssociationSourceObjectNotExist = 1101039
+	// the destination association object does not exist
+	CCErrTopoAssociationDestinationObjectNotExist = 1101040
+	// invalid object association id, should be int64
+	CCErrTopoInvalidObjectAssociaitonID = 1101041
+	// got multiple object association with one association id
+	CCErrTopoGotMultipleAssociationInstance = 1101042
+	// association with a object has multiple instance, can not be deleted.
+	CCErrTopoAssociationHasAlreadyBeenInstantiated = 1101043
+	// get association kind with id failed.
+	CCErrTopoGetAssociationKindFailed = 1101044
 
 	CCErrTopoAppDeleteFailed                       = 1001031
 	CCErrTopoAppUpdateFailed                       = 1001032

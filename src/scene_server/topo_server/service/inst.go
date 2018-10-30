@@ -29,11 +29,7 @@ import (
 
 // CreateInst create a new inst
 func (s *topoService) CreateInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-
-	// /inst/{owner_id}/{obj_id}
-
 	objID := pathParams("obj_id")
-
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
 		blog.Errorf("failed to search the inst, %s", err.Error())
@@ -130,24 +126,21 @@ func (s *topoService) UpdateInsts(params types.ContextParams, pathParams, queryP
 // UpdateInst update the inst
 func (s *topoService) UpdateInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
-	// /inst/{owner_id}/{obj_id}/{inst_id}
-
 	if "batch" == pathParams("inst_id") {
 		return s.UpdateInsts(params, pathParams, queryParams, data)
 	}
 
 	objID := pathParams("obj_id")
+	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
+	if nil != err {
+		blog.Errorf("[api-inst]failed to parse the inst id, error info is %s", err.Error())
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "inst id")
+	}
 
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 		return nil, err
-	}
-
-	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
-	if nil != err {
-		blog.Errorf("[api-inst]failed to parse the inst id, error info is %s", err.Error())
-		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "inst id")
 	}
 
 	cond := condition.CreateCondition()
@@ -163,7 +156,6 @@ func (s *topoService) UpdateInst(params types.ContextParams, pathParams, queryPa
 
 // SearchInst search the inst
 func (s *topoService) SearchInsts(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-
 	objID := pathParams("obj_id")
 
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
@@ -202,11 +194,7 @@ func (s *topoService) SearchInsts(params types.ContextParams, pathParams, queryP
 
 // SearchInstAndAssociationDetail search the inst with association details
 func (s *topoService) SearchInstAndAssociationDetail(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	//fmt.Println("SearchInstAndAssociationDetail")
-	// /inst/search/owner/{owner_id}/object/{obj_id}/detail
-
 	objID := pathParams("obj_id")
-
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
@@ -214,7 +202,6 @@ func (s *topoService) SearchInstAndAssociationDetail(params types.ContextParams,
 	}
 
 	// construct the query inst condition
-
 	queryCond := &paraparse.SearchParams{
 		Condition: mapstr.New(),
 	}
@@ -244,8 +231,6 @@ func (s *topoService) SearchInstAndAssociationDetail(params types.ContextParams,
 
 // SearchInstByObject search the inst of the object
 func (s *topoService) SearchInstByObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-
-	// /inst/search/owner/{owner_id}/object/{obj_id}
 
 	objID := pathParams("obj_id")
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
@@ -277,15 +262,11 @@ func (s *topoService) SearchInstByObject(params types.ContextParams, pathParams,
 	result := frtypes.MapStr{}
 	result.Set("count", cnt)
 	result.Set("info", instItems)
-
 	return result, nil
-
 }
 
 // SearchInstByAssociation search inst by the association inst
 func (s *topoService) SearchInstByAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	// fmt.Println("SearchInstByAssociation")
-	// /inst/association/search/owner/{owner_id}/object/{obj_id}
 
 	objID := pathParams("obj_id")
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
@@ -308,9 +289,6 @@ func (s *topoService) SearchInstByAssociation(params types.ContextParams, pathPa
 
 // SearchInstByInstID search the inst by inst ID
 func (s *topoService) SearchInstByInstID(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-
-	// /inst/search/{owner_id}/{obj_id}/{inst_id}
-
 	objID := pathParams("obj_id")
 
 	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
@@ -344,10 +322,11 @@ func (s *topoService) SearchInstByInstID(params types.ContextParams, pathParams,
 
 // SearchInstChildTopo search the child inst topo for a inst
 func (s *topoService) SearchInstChildTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	//fmt.Println("SearchInstChildTopo")
-	// /inst/search/topo/owner/{owner_id}/object/{object_id}/inst/{inst_id}
-
 	objID := pathParams("object_id")
+	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
+	if nil != err {
+		return nil, err
+	}
 
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
@@ -355,13 +334,7 @@ func (s *topoService) SearchInstChildTopo(params types.ContextParams, pathParams
 		return nil, err
 	}
 
-	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
-	if nil != err {
-		return nil, err
-	}
-
 	query := &metadata.QueryInput{}
-
 	cond := condition.CreateCondition()
 	cond.Field(obj.GetInstIDFieldName()).Eq(instID)
 	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
@@ -376,10 +349,12 @@ func (s *topoService) SearchInstChildTopo(params types.ContextParams, pathParams
 
 // SearchInstTopo search the inst topo
 func (s *topoService) SearchInstTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	//fmt.Println("SearchInstTopo")
-	// /inst/association/topo/search/owner/{owner_id}/object/{object_id}/inst/{inst_id}
 
 	objID := pathParams("object_id")
+	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
+	if nil != err {
+		return nil, err
+	}
 
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
@@ -387,13 +362,7 @@ func (s *topoService) SearchInstTopo(params types.ContextParams, pathParams, que
 		return nil, err
 	}
 
-	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
-	if nil != err {
-		return nil, err
-	}
-
 	query := &metadata.QueryInput{}
-
 	cond := condition.CreateCondition()
 	cond.Field(obj.GetInstIDFieldName()).Eq(instID)
 	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
