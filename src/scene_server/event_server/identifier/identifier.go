@@ -19,7 +19,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/tidwall/gjson"
 	redis "gopkg.in/redis.v5"
 
 	"configcenter/src/common"
@@ -53,8 +52,6 @@ func (ih *IdentifierHandler) handleInst(e *metadata.EventInstCtx) {
 		ih.handleModuleTransfer(e)
 	} else if metadata.EventTypeRelation == e.EventType && "processmodule" == e.ObjType {
 		ih.handleBindProcess(e)
-	} else if metadata.EventTypeAssociation == e.EventType && common.BKInnerObjIDHost == e.ObjType {
-		ih.handleHostCloud(e)
 	}
 }
 
@@ -208,54 +205,6 @@ func (ih *IdentifierHandler) handleBindProcess(e *metadata.EventInstCtx) {
 
 		}
 	}()
-}
-
-func (ih *IdentifierHandler) handleHostCloud(e *metadata.EventInstCtx) {
-	blog.InfoJSON("identifier: handle inst %s", e)
-
-	hostIdentify := *e
-	hostIdentify.Data = nil
-	hostIdentify.EventType = metadata.EventTypeRelation
-	hostIdentify.ObjType = "hostidentifier"
-	hostIdentify.Action = metadata.EventActionUpdate
-
-	datas := []struct {
-		CurData metadata.InstAsst `json:"cur_data"`
-		PreData metadata.InstAsst `json:"pre_data"`
-	}{}
-	err := json.Unmarshal([]byte(gjson.Get(e.Raw, "data").Raw), &datas)
-	if err != nil {
-		blog.Errorf("identifier: unmarshal data error: %v, raw: %s ", err, e.Raw)
-		return
-	}
-
-	for index := range datas {
-		var asst metadata.InstAsst
-		if metadata.EventActionDelete == e.Action {
-			asst = datas[index].PreData
-		} else {
-			asst = datas[index].CurData
-		}
-		if asst.ObjectAsstID == common.AssociationCloudContainHost {
-			hostID, ok := asst.GetInstID(common.BKInnerObjIDHost)
-			if !ok {
-				continue
-			}
-
-			inst, err := getCache(ih.ctx, ih.cache, ih.db, common.BKInnerObjIDHost, hostID, true)
-			if err != nil {
-				blog.Errorf("identifier: getCache error %+v", err)
-				continue
-			}
-			if nil == inst {
-				continue
-			}
-
-			inst.saveCache(ih.cache)
-			d := metadata.EventData{CurData: inst.ident.fillIden(ih.ctx, ih.cache, ih.db)}
-			hostIdentify.Data = append(hostIdentify.Data, d)
-		}
-	}
 }
 
 func (ih *IdentifierHandler) handleRelatedInst(hostIdentify metadata.EventInst, objType string, instID int64, formdb bool) error {
@@ -501,20 +450,6 @@ func getCache(ctx context.Context, cache *redis.Client, db dal.RDB, objType stri
 				}
 			}
 			inst.data["associations"] = inst.ident.Module
-
-			// fill cloud id
-			instAsstCond := condition.CreateCondition()
-			instAsstCond.Field(common.BKAsstInstIDField).Eq(instID)
-			instAsstCond.Field(common.AssociationKeyField).Eq(common.AssociationCloudContainHost)
-			cloudAssts := []metadata.InstAsst{}
-			if err = db.Table(common.BKTableNameInstAsst).Find(instAsstCond.ToMapStr()).All(ctx, &cloudAssts); err != nil {
-				return nil, err
-			}
-			for _, asst := range cloudAssts {
-				// for the compatibility considerations we only use the last cloudID
-				inst.ident.CloudID = asst.AsstInstID
-				inst.data[common.BKCloudIDField] = asst.AsstInstID
-			}
 
 			// 2. fill process
 			hostprocess := []Process{}
