@@ -285,7 +285,7 @@ func (cli *inst) GetParentObjectWithInsts() ([]*ObjectWithInsts, error) {
 			}
 			parentInstIDS = append(parentInstIDS, parentInstID)
 		}
-		//fmt.Println("parent:", parentInstIDS)
+
 		innerCond := condition.CreateCondition()
 
 		innerCond.Field(metatype.ModelFieldOwnerID).Eq(cli.params.SupplierAccount)
@@ -408,7 +408,7 @@ func (cli *inst) getAsstChildInstIDSByAsstField(asstObj model.Object) ([]int64, 
 
 		break // should be only one object association
 	}
-	//fmt.Println("instids:", instIDS)
+
 	return instIDS, nil
 }
 
@@ -421,7 +421,7 @@ func (cli *inst) GetChildObjectWithInsts() ([]*ObjectWithInsts, error) {
 		blog.Errorf("[inst-inst] failed to get the object(%s)'s child, error info is %s", cli.target.GetID(), err.Error())
 		return result, err
 	}
-	//fmt.Println("objs:", cli.target.GetID(), childObjs)
+
 	currInstID, err := cli.GetInstID()
 	if nil != err {
 		blog.Errorf("[inst-inst] failed to get the inst id, error info is %s", err.Error())

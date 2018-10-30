@@ -132,7 +132,7 @@ func (cli *inst) Create() error {
 
 	id, exists := rsp.Data.Get(cli.target.GetInstIDFieldName())
 	if !exists {
-		blog.Warnf("the object controller return the creatation result is invalid, lost the inst id (%s) int the result data(%#v)", cli.target.GetInstIDFieldName(), rsp.Data)
+		blog.Warnf("the object controller returned invalid data, lost the instance id (%s) in response data(%#v)", cli.target.GetInstIDFieldName(), rsp.Data)
 	}
 
 	cli.datas.Set(cli.target.GetInstIDFieldName(), id)
