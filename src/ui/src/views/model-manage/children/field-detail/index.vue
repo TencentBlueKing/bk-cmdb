@@ -5,7 +5,14 @@
                 {{$t('ModelManagement["唯一标识"]')}}
                 <span class="color-danger">*</span>
             </span>
-            <input type="text" class="cmdb-form-input" v-model.trim="fieldInfo['bk_property_id']" :disabled="isEditField">
+            <div class="cmdb-form-item" :class="{'is-error': errors.has('fieldId')}">
+                <input type="text" class="cmdb-form-input"
+                name="fieldId"
+                v-model.trim="fieldInfo['bk_property_id']"
+                :disabled="isEditField"
+                v-validate="'required|fieldId'">
+                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('fieldId')"></i>
+            </div>
             <i class="bk-icon icon-info-circle"></i>
         </label>
         <label class="form-label">
@@ -13,7 +20,14 @@
                 {{$t('ModelManagement["名称"]')}}
                 <span class="color-danger">*</span>
             </span>
-            <input type="text" class="cmdb-form-input" v-model.trim="fieldInfo['bk_property_name']" :disabled="isReadOnly">
+            <div class="cmdb-form-item" :class="{'is-error': errors.has('fieldName')}">
+                <input type="text" class="cmdb-form-input"
+                name="fieldName"
+                v-model.trim="fieldInfo['bk_property_name']"
+                :disabled="isReadOnly"
+                v-validate="'required|enumName'">
+                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('fieldName')"></i>
+            </div>
             <i class="bk-icon icon-info-circle"></i>
         </label>
         <div class="form-label">
@@ -21,11 +35,13 @@
                 {{$t('ModelManagement["字段类型"]')}}
                 <span class="color-danger">*</span>
             </span>
-            <bk-selector
-                :disabled="isEditField"
-                :list="fieldTypeList"
-                :selected.sync="fieldInfo['bk_property_type']"
-            ></bk-selector>
+            <div class="cmdb-form-item">
+                <bk-selector
+                    :disabled="isEditField"
+                    :list="fieldTypeList"
+                    :selected.sync="fieldInfo['bk_property_type']"
+                ></bk-selector>
+            </div>
             <i class="bk-icon icon-info-circle"></i>
         </div>
         <div class="field-detail">
@@ -40,13 +56,16 @@
                 :isReadOnly="isReadOnly"
                 :is="`the-field-${fieldType}`"
                 v-model="fieldInfo.option"
+                ref="component"
             ></component>
         </div>
         <label class="form-label">
             <span class="label-text">
                 {{$t('ModelManagement["单位"]')}}
             </span>
-            <input type="text" class="cmdb-form-input" v-model.trim="fieldInfo['unit']" :isReadOnly="isReadOnly">
+            <div class="cmdb-form-item">
+                <input type="text" class="cmdb-form-input" v-model.trim="fieldInfo['unit']" :isReadOnly="isReadOnly">
+            </div>
             <i class="bk-icon icon-info-circle"></i>
         </label>
         <div class="form-label">
@@ -182,7 +201,21 @@
                     this.fieldInfo[key] = this.$tools.clone(this.field[key])
                 }
             },
+            async validateValue () {
+                if (!await this.$validator.validateAll()) {
+                    return false
+                }
+                if (this.$refs.component && this.$refs.component.hasOwnProperty('validate')) {
+                    if (!await this.$refs.component.validate()) {
+                        return false
+                    }
+                }
+                return true
+            },
             async saveField () {
+                if (!await this.validateValue()) {
+                    return
+                }
                 if (this.isEditField) {
                     await this.updateObjectAttribute({
                         id: this.field.id,

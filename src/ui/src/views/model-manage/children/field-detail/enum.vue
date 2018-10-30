@@ -2,30 +2,41 @@
     <ul class="form-enum-wrapper">
         <li class="form-item clearfix" v-for="(item, index) in enumList" :key="index">
             <div class="enum-default">
-                <input type="radio" :value="index" name="enum-radio" v-model="defaultIndex" @change="handleChange(defaultIndex)" :disabled="isReadOnly">
+                <input type="radio" 
+                :value="index" 
+                name="enum-radio" 
+                v-model="defaultIndex" 
+                v-tooltip="$t('ModelManagement[\'将设置为下拉选项默认选项\']')"
+                @change="handleChange(defaultIndex)" :disabled="isReadOnly">
             </div>
             <div class="enum-label">
                 {{$t('ModelManagement["枚举"]')}}{{index + 1}}
             </div>
             <div class="enum-id">
-                <input type="text"
-                    class="cmdb-form-input"
-                    :placeholder="$t('ModelManagement[\'请输入ID\']')"
-                    v-model.trim="item.id"
-                    v-validate="`required|enumId|repeat:${getOtherId(index)}`"
-                    @input="handleInput"
-                    :disabled="isReadOnly"
-                    :name="`id${index}`">
+                <div class="cmdb-form-item" :class="{'is-error': errors.has(`id${index}`)}">
+                    <input type="text"
+                        class="cmdb-form-input"
+                        :placeholder="$t('ModelManagement[\'请输入ID\']')"
+                        v-model.trim="item.id"
+                        v-validate="`required|enumId|repeat:${getOtherId(index)}`"
+                        @input="handleInput"
+                        :disabled="isReadOnly"
+                        :name="`id${index}`">
+                    <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first(`id${index}`)"></i>
+                </div>
             </div>
             <div class="enum-name">
-                <input type="text"
-                    class="cmdb-form-input"
-                    :placeholder="$t('ModelManagement[\'请输入名称英文数字\']')"
-                    v-model.trim="item.name"
-                    v-validate="`required|enumName|repeat:${getOtherName(index)}`"
-                    @input="handleInput"
-                    :disabled="isReadOnly"
-                    :name="`name${index}`">
+                <div class="cmdb-form-item" :class="{'is-error': errors.has(`name${index}`)}">
+                    <input type="text"
+                        class="cmdb-form-input"
+                        :placeholder="$t('ModelManagement[\'请输入名称英文数字\']')"
+                        v-model.trim="item.name"
+                        v-validate="`required|enumName|repeat:${getOtherName(index)}`"
+                        @input="handleInput"
+                        :disabled="isReadOnly"
+                        :name="`name${index}`">
+                    <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first(`name${index}`)"></i>
+                </div>
             </div>
             <button class="enum-btn" @click="deleteEnum(index)" :disabled="enumList.length === 1 || isReadOnly">
                 <i class="icon-cc-del"></i>

@@ -5,7 +5,9 @@
                 {{$t('ModelManagement["唯一标识"]')}}
                 <span class="color-danger">*</span>
             </span>
-            <input type="text" class="cmdb-form-input" v-model.trim="relationInfo['bk_obj_asst_id']">
+            <div class="cmdb-form-item">
+                <input type="text" class="cmdb-form-input" v-model.trim="objAsstId" disabled>
+            </div>
             <i class="bk-icon icon-info-circle"></i>
         </label>
         <label class="form-label">
@@ -13,53 +15,91 @@
                 {{$t('ModelManagement["别名"]')}}
                 <span class="color-danger">*</span>
             </span>
-            <input type="text" class="cmdb-form-input" v-model.trim="relationInfo['bk_obj_asst_name']">
+            <div class="cmdb-form-item" :class="{'is-error': errors.has('asstName')}">
+                <input type="text" class="cmdb-form-input"
+                name="asstName"
+                v-model.trim="relationInfo['bk_obj_asst_name']"
+                v-validate="'required|singlechar'">
+                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('asstName')"></i>
+            </div>
             <i class="bk-icon icon-info-circle"></i>
         </label>
-        <label class="form-label">
+        <div class="form-label">
             <span class="label-text">
                 {{$t('ModelManagement["模型源"]')}}
                 <span class="color-danger">*</span>
             </span>
-            <bk-selector
-                :list="modelList"
-                :selected.sync="relationInfo['bk_obj_id']"
-            ></bk-selector>
+            <div class="cmdb-form-item" :class="{'is-error': errors.has('objId')}">
+                <bk-selector
+                    :has-children="true"
+                    :list="asstList"
+                    :selected.sync="relationInfo['bk_obj_id']"
+                ></bk-selector>
+                <input type="text" hidden
+                name="objId"
+                v-model="relationInfo['bk_obj_id']"
+                v-validate="'required'">
+                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('objId')"></i>
+            </div>
             <i class="bk-icon icon-info-circle"></i>
-        </label>
-        <label class="form-label">
+        </div>
+        <div class="form-label">
             <span class="label-text">
                 {{$t('ModelManagement["目标模型"]')}}
                 <span class="color-danger">*</span>
             </span>
-            <bk-selector
-                :list="modelList"
-                :selected.sync="relationInfo['bk_asst_obj_id']"
-            ></bk-selector>
+            <div class="cmdb-form-item" :class="{'is-error': errors.has('asstObjId')}">
+                <bk-selector
+                    :has-children="true"
+                    :list="asstList"
+                    :selected.sync="relationInfo['bk_asst_obj_id']"
+                ></bk-selector>
+                <input type="text" hidden
+                name="asstObjId"
+                v-model="relationInfo['bk_asst_obj_id']"
+                v-validate="'required'">
+                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('asstObjId')"></i>
+            </div>
             <i class="bk-icon icon-info-circle"></i>
-        </label>
-        <label class="form-label">
+        </div>
+        <div class="form-label">
             <span class="label-text">
                 {{$t('ModelManagement["关系类型"]')}}
                 <span class="color-danger">*</span>
             </span>
-            <bk-selector
-                :list="modelList"
-                :selected.sync="relationInfo['bk_asst_id']"
-            ></bk-selector>
+            <div class="cmdb-form-item" :class="{'is-error': errors.has('asstId')}">
+                <bk-selector
+                    setting-key="bk_asst_id"
+                    display-key="bk_asst_name"
+                    :list="relationList"
+                    :selected.sync="relationInfo['bk_asst_id']"
+                ></bk-selector>
+                <input type="text" hidden
+                name="asstId"
+                v-model="relationInfo['bk_asst_id']"
+                v-validate="'required'">
+                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('asstId')"></i>
+            </div>
             <i class="bk-icon icon-info-circle"></i>
-        </label>
-        <label class="form-label">
+        </div>
+        <div class="form-label">
             <span class="label-text">
                 {{$t('ModelManagement["源-目标约束"]')}}
                 <span class="color-danger">*</span>
             </span>
-            <bk-selector
-                :list="mappingList"
-                :selected.sync="relationInfo.mapping"
-            ></bk-selector>
+            <div class="cmdb-form-item" :class="{'is-error': errors.has('mapping')}">
+                <bk-selector
+                    :list="mappingList"
+                    :selected.sync="relationInfo.mapping"
+                ></bk-selector>
+                <input type="text" hidden
+                name="mapping"
+                v-model="relationInfo.mapping"
+                v-validate="'required'">
+                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('mapping')"></i>
+            </div>
             <i class="bk-icon icon-info-circle"></i>
-        </label>
+        </div>
         <div class="radio-box">
             <label class="label-text">
                 {{$t('ModelManagement["联动删除"]')}}
@@ -85,7 +125,7 @@
 </template>
 
 <script>
-    import { mapActions } from 'vuex'
+    import { mapGetters, mapActions } from 'vuex'
     export default {
         props: {
             relation: {
@@ -128,13 +168,80 @@
                     'src_des': '属于',
                     'dest_des': '被属于',
                     'direction': 'none'
-                }],
-                modelList: [],
-                selected: ''
+                }]
+            }
+        },
+        computed: {
+            ...mapGetters('objectModelClassify', [
+                'classifications'
+            ]),
+            ...mapGetters('objectModel', [
+                'activeModel'
+            ]),
+            objAsstId () {
+                let {
+                    relationInfo
+                } = this
+                if (relationInfo['bk_obj_id'].length && relationInfo['bk_asst_id'].length && relationInfo['bk_asst_obj_id'].length) {
+                    return `${relationInfo['bk_obj_id']}_${relationInfo['bk_asst_id']}_${relationInfo['bk_asst_obj_id']}`
+                }
+                return ''
+            },
+            params () {
+                return {
+                    bk_obj_asst_id: this.objAsstId,
+                    bk_obj_asst_name: this.relationInfo['bk_obj_asst_name'],
+                    bk_obj_id: this.relationInfo['bk_obj_id'],
+                    bk_asst_obj_id: this.relationInfo['bk_asst_obj_id'],
+                    bk_asst_id: this.relationInfo['bk_asst_id'],
+                    mapping: this.relationInfo.mapping,
+                    on_delete: this.relationInfo['on_delete'].length ? this.relationInfo['on_delete'].join('') : 'none'
+                }
+            },
+            asstList () {
+                let asstList = []
+                this.classifications.map(classify => {
+                    if (classify['bk_objects'].length && classify['bk_classification_id'] !== 'bk_biz_topo') {
+                        let objects = []
+                        classify['bk_objects'].map(({bk_obj_id: objId, bk_obj_name: objName}) => {
+                            if (['plat', 'process'].indexOf(objId) === -1) {
+                                objects.push({
+                                    id: objId,
+                                    name: objName
+                                })
+                            }
+                        })
+                        if (objects.length) {
+                            asstList.push({
+                                name: classify['bk_classification_name'],
+                                children: objects
+                            })
+                        }
+                    }
+                })
+                return asstList
+            }
+        },
+        watch: {
+            'relationInfo.bk_obj_id' (val) {
+                if (val !== this.activeModel['bk_obj_id']) {
+                    this.relationInfo['bk_asst_obj_id'] = this.activeModel['bk_obj_id']
+                }
+            },
+            'relationInfo.bk_asst_obj_id' (val) {
+                if (val !== this.activeModel['bk_obj_id']) {
+                    this.relationInfo['bk_obj_id'] = this.activeModel['bk_obj_id']
+                }
+            },
+            'relationInfo.on_delete' (newVal, oldVal) {
+                if (newVal.length === 2) {
+                    this.relationInfo['on_delete'] = newVal.filter(val => !oldVal.includes(val))
+                }
             }
         },
         created () {
             this.initRelationList()
+            this.initData()
         },
         methods: {
             ...mapActions('objectAssociation', [
@@ -142,11 +249,43 @@
                 'updateObjectAssociation',
                 'searchAssociationType'
             ]),
+            initData () {
+                if (this.isEdit) {
+                    for (let key in this.relationInfo) {
+                        if (key === 'on_delete') {
+                            this.relationInfo[key] = this.relation[key] === 'none' ? [] : [this.relation[key]]
+                        } else {
+                            this.relationInfo[key] = this.$tools.clone(this.relation[key])
+                        }
+                    }
+                }
+            },
             async initRelationList () {
                 this.relationList = await this.searchAssociationType({})
             },
-            saveRelation () {
-
+            async saveRelation () {
+                if (!await this.$validator.validateAll()) {
+                    return
+                }
+                if (this.isEdit) {
+                    await this.updateObjectAssociation({
+                        params: this.params,
+                        config: {
+                            requestId: 'updateObjectAssociation'
+                        }
+                    })
+                } else {
+                    await this.createObjectAssociation({
+                        params: this.params,
+                        config: {
+                            requestId: 'createObjectAssociation'
+                        }
+                    })
+                }
+                this.$emit('saveRelation')
+            },
+            cancel () {
+                this.$emit('cancel')
             }
         }
     }
