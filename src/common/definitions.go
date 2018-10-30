@@ -836,8 +836,8 @@ const (
 
 // association
 const (
-	AssociationTypeContain = "contain"
-	AssociationTypeGroupby = "groupby"
+	AssociationTypeBelong  = "belong"
+	AssociationTypeGroupby = "group"
 	AssociationTypeRun     = "run"
 	AssociationTypeConnect = "connect"
 )
