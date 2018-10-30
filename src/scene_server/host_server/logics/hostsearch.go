@@ -142,7 +142,7 @@ func (sh *searchHost) ParseCondition() {
 		} else if object.ObjectID == common.BKInnerObjIDApp {
 			sh.conds.appCond = object
 			sh.topoShowSection.app = true
-		} else if object.ObjectID == common.BKINnerObjIDObject {
+		} else if object.ObjectID == common.BKInnerObjIDObject {
 			sh.conds.mainlineCond = object
 		} else if object.ObjectID == common.BKInnerObjIDPlat {
 			sh.conds.platCond = object
