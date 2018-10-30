@@ -842,11 +842,6 @@ const (
 	AssociationTypeConnect = "connect"
 )
 
-// object association
-const (
-	AssociationCloudContainHost = "plat_contain_host"
-)
-
 // association fields
 const (
 	AssociationKeyField = "bk_obj_asst_id"
