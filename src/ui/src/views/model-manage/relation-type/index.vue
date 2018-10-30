@@ -5,26 +5,59 @@
                 {{$t('ModelManagement["唯一标识"]')}}
                 <span class="color-danger">*</span>
             </span>
-            <input type="text" class="cmdb-form-input" v-model.trim="relationInfo['bk_asst_id']" :placeholder="$t('ModelManagement[\'请输入英文标识\']')">
+            <div class="cmdb-form-item" :class="{'is-error': errors.has('asstId')}">
+                <input type="text" class="cmdb-form-input"
+                name="asstId"
+                v-model.trim="relationInfo['bk_asst_id']"
+                v-validate="'required|singlechar'"
+                :placeholder="$t('ModelManagement[\'请输入英文标识\']')">
+                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('asstId')"></i>
+            </div>
         </label>
         <label class="form-label">
             <span class="label-text">
                 {{$t('Hosts["名称"]')}}
                 <span class="color-danger">*</span>
             </span>
-            <input type="text" class="cmdb-form-input" v-model.trim="relationInfo['bk_asst_name']" :placeholder="$t('ModelManagement[\'请输入名称\']')">
+            <div class="cmdb-form-item" :class="{'is-error': errors.has('asstName')}">
+                <input type="text"
+                class="cmdb-form-input"
+                name="asstName"
+                v-validate="'required|singlechar'"
+                v-model.trim="relationInfo['bk_asst_name']" 
+                :placeholder="$t('ModelManagement[\'请输入名称\']')">
+                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('asstName')"></i>
+            </div>
         </label>
         <label class="form-label">
             <span class="label-text">
                 {{$t('ModelManagement["源->目标描述"]')}}
                 <span class="color-danger">*</span>
             </span>
-            <input type="text" class="cmdb-form-input" v-model.trim="relationInfo['src_des']" :placeholder="$t('ModelManagement[\'请输入关系描述如：连接、运行\']')">
+            <div class="cmdb-form-item" :class="{'is-error': errors.has('srcDes')}">
+                <input type="text"
+                class="cmdb-form-input"
+                name="srcDes"
+                v-validate="'required|singlechar'"
+                v-model.trim="relationInfo['src_des']" 
+                :placeholder="$t('ModelManagement[\'请输入关系描述如：连接、运行\']')">
+                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('srcDes')"></i>
+            </div>
         </label>
         <label class="form-label">
-            <span class="label-text">{{$t('ModelManagement["目标描述->源"]')}}</span>
-            <span class="color-danger">*</span>
-            <input type="text" class="cmdb-form-input" v-model.trim="relationInfo['dest_des']" :placeholder="$t('ModelManagement[\'请输入关系描述如：属于、上联\']')">
+            <span class="label-text">
+                {{$t('ModelManagement["目标描述->源"]')}}
+                <span class="color-danger">*</span>
+            </span>
+            <div class="cmdb-form-item" :class="{'is-error': errors.has('destDes')}">
+                <input type="text"
+                class="cmdb-form-input"
+                name="destDes"
+                v-validate="'required|singlechar'"
+                v-model.trim="relationInfo['dest_des']" 
+                :placeholder="$t('ModelManagement[\'请输入关系描述如：属于、上联\']')">
+                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('destDes')"></i>
+            </div>
         </label>
         <div class="radio-box overflow">
             <label class="label-text">
@@ -90,6 +123,9 @@
                 'updateAssociationType'
             ]),
             async saveRelation () {
+                if (!await this.$validator.validateAll()) {
+                    return
+                }
                 if (this.isEdit) {
                     await this.updateAssociationType({
                         id: this.relation.id,

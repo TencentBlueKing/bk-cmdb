@@ -37,8 +37,8 @@
                 class="slider-content"
                 slot="content"
                 :isReadOnly="isReadOnly"
-                :isEditField="slider.isEditField"
-                :field="slider.curField"
+                :isEdit="slider.isEdit"
+                :relation="slider.relation"
                 @save="saveRelation"
                 @cancel="slider.isShow = false">
             </the-relation-detail>
@@ -90,7 +90,7 @@
                         'bk_obj_name': 'bk_switch',
                         'bk_asst_obj_id': 'bk_host',
                         'mapping': '1:n',
-                        'on_delete': 'none'
+                        'on_delete': 'delete_src'
                     }],
                     defaultSort: '-op_time',
                     sort: '-op_time'
@@ -162,6 +162,10 @@
                         requestId: `post_searchObjectAssociation_${this.activeModel['bk_obj_id']}`
                     }
                 })
+            },
+            saveRelation () {
+                this.slider.isShow = false
+                this.searchRelationList()
             },
             handleSortChange (sort) {
                 this.table.sort = sort
