@@ -150,7 +150,7 @@ func (eh *EventHandler) GetDistInst(e *metadata.EventInst) []metadata.DistInst {
 	distinst.ID = 0
 	var ds []metadata.DistInst
 	var m map[string]interface{}
-	if e.EventType == metadata.EventTypeInstData && e.ObjType == common.BKINnerObjIDObject {
+	if e.EventType == metadata.EventTypeInstData && e.ObjType == common.BKInnerObjIDObject {
 		var ok bool
 
 		if len(e.Data) <= 0 {

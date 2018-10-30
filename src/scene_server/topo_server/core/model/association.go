@@ -40,6 +40,15 @@ func (cli *association) GetType() AssociationType {
 func (cli *association) IsExists() (bool, error) {
 	return false, nil
 }
+
+func (cli *association) SetSupplierAccount(supplierAccount string) {
+	cli.asst.OwnerID = supplierAccount
+}
+
+func (cli *association) GetSupplierAccount() string {
+	return cli.asst.OwnerID
+}
+
 func (cli *association) Create() error {
 	return nil
 }

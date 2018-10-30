@@ -120,7 +120,7 @@ func (cli *Service) GetObjectByID(ctx context.Context, db dal.RDB, objType strin
 	tName := common.GetInstTableName(objType)
 	condition := make(map[string]interface{}, 1)
 	condition[common.GetInstIDField(objType)] = id
-	if tName == common.BKTableNameBaseInst && objType != common.BKINnerObjIDObject {
+	if tName == common.BKTableNameBaseInst && objType != common.BKInnerObjIDObject {
 		condition[common.BKObjIDField] = objType
 	}
 	err := db.Table(tName).Find(condition).Fields(fields...).One(ctx, result)

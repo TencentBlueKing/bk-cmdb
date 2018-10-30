@@ -70,6 +70,18 @@ type Attribute struct {
 	LastTime          *time.Time  `json:"last_time" bson:"last_time"`
 }
 
+// Attribute attribute metadata definition
+type AttributeGroup struct {
+	ID         int64  `field:"id" json:"id" bson:"id"`
+	OwnerID    string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	ObjectID   string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
+	IsDefault  bool   `field:"bk_isdefault" json:"bk_isdefault" bson:"bk_isdefault"`
+	IsPre      bool   `field:"ispre" json:"ispre" bson:"ispre"`
+	GroupID    string `field:"bk_group_id" json:"bk_group_id" bson:"bk_group_id"`
+	GroupName  string `field:"bk_group_name" json:"bk_group_name" bson:"bk_group_name"`
+	GroupIndex int64  `field:"bk_group_index" json:"bk_group_index" bson:"bk_group_index"`
+}
+
 // Parse load the data from mapstr attribute into attribute instance
 func (cli *Attribute) Parse(data types.MapStr) (*Attribute, error) {
 

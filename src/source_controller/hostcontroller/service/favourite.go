@@ -28,10 +28,6 @@ import (
 	"configcenter/src/common/util"
 )
 
-var (
-	mgo_on_not_found_error string = "not found"
-)
-
 func (s *Service) AddHostFavourite(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -250,8 +246,8 @@ func (s *Service) GetHostFavouriteByID(req *restful.Request, resp *restful.Respo
 	query := common.KvMap{"user": user, "id": ID}
 	query = util.SetModOwner(query, ownerID)
 	result := new(meta.FavouriteMeta)
-	err := s.Instance.Table(common.BKTableNameHostFavorite).Find(query).All(ctx, &result)
-	if err != nil && mgo_on_not_found_error != err.Error() {
+	err := s.Instance.Table(common.BKTableNameHostFavorite).Find(query).One(ctx, result)
+	if err != nil && !s.Instance.IsNotFoundError(err) {
 		blog.Errorf("get host favourite failed,input: %v error: %v", ID, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostFavouriteQueryFail)})
 		return
