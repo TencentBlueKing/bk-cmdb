@@ -1,0 +1,51 @@
+{
+    "event_type": "relation",
+    "action": "update",
+    "obj_type": "hostidentifier",
+    "data": [
+        {
+            "cur_data": {
+                "bk_host_id": 1,
+                "bk_host_name": "etcd-1",
+                "bk_supplier_id": 0,
+                "bk_supplier_account": "0",
+                "bk_cloud_id": 0,
+                "bk_cloud_name": "default area",
+                "bk_host_innerip": "192.168.1.2,192.168.1.3",
+                "bk_host_outerip": "10.0.0.1",
+                "bk_os_type": "1",
+                "bk_os_name": "linux centos",
+                "bk_mem": 64131,
+                "bk_cpu": 24,
+                "bk_disk": 271,
+                "associations": {
+                    "10": {
+                        "bk_biz_id": 10,
+                        "bk_biz_name": "biz10",
+                        "bk_set_id": 10,
+                        "bk_set_name": "set10",
+                        "bk_module_id": 10,
+                        "bk_module_name": "module10",
+                        "bk_service_status": "1",
+                        "bk_set_env": "1"
+                    }
+                },
+                "process": [
+                    {
+                        "bk_process_name": "job_java",
+                        "bind_ip": "3",
+                        "port": "8008,8443",
+                        "protocol": "1",
+                        "bk_func_id": "",
+                        "bk_func_name": "java",
+                        "bk_start_param_regex": "",
+                        "bind_modules": [
+                            10
+                        ]
+                    }
+                ]
+            },
+            "pre_data": null
+        }
+    ]
+}
