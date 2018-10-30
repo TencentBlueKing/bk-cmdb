@@ -56,7 +56,7 @@ func (cli *Service) SearchAssociationType(req *restful.Request, resp *restful.Re
 
 	cond := request.Condition
 	cond = util.SetModOwner(cond, ownerID)
-	result := []*meta.AssociationType{}
+	result := []*meta.AssociationKind{}
 
 	if selErr := db.Table(common.BKTableNameAsstDes).Find(cond).Limit(uint64(request.Limit)).Start(uint64(request.Start)).Sort(request.Sort).All(ctx, &result); nil != selErr && !db.IsNotFoundError(selErr) {
 		blog.Errorf("select data failed, error information is %s", selErr.Error())
@@ -86,7 +86,7 @@ func (cli *Service) CreateAssociationType(req *restful.Request, resp *restful.Re
 		return
 	}
 
-	request := &meta.AssociationType{}
+	request := &meta.AssociationKind{}
 	if jsErr := json.Unmarshal([]byte(value), request); nil != jsErr {
 		blog.Errorf("failed to unmarshal the data, data is %s, error info is %s ", string(value), jsErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, jsErr.Error())})
@@ -97,7 +97,7 @@ func (cli *Service) CreateAssociationType(req *restful.Request, resp *restful.Re
 	db := cli.Instance.Clone()
 
 	// check uniq bk_asst_id
-	cond := map[string]interface{}{"bk_asst_id": request.AsstID}
+	cond := map[string]interface{}{"bk_asst_id": request.AssociationKindID}
 	cond = util.SetModOwner(cond, ownerID)
 
 	cnt, err := db.Table(common.BKTableNameAsstDes).Find(cond).Count(ctx)
@@ -108,7 +108,7 @@ func (cli *Service) CreateAssociationType(req *restful.Request, resp *restful.Re
 	}
 
 	if cnt > 0 {
-		msg := fmt.Sprintf("failed to create association, bk_asst_id %s exist", request.AsstID)
+		msg := fmt.Sprintf("failed to create association, bk_asst_id %s exist", request.AssociationKindID)
 		blog.Errorf(msg)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBInsertFailed, msg)})
 		return

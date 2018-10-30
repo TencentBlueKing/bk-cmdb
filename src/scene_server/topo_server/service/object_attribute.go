@@ -77,7 +77,7 @@ func (s *topoService) DeleteObjectAttribute(params types.ContextParams, pathPara
 	cond.Field(metadata.AttributeFieldSupplierAccount).Eq(params.SupplierAccount)
 	cond.Field(metadata.AttributeFieldID).Eq(id)
 
-	err = s.core.AttributeOperation().DeleteObjectAttribute(params, id, cond)
+	err = s.core.AttributeOperation().DeleteObjectAttribute(params, cond)
 
 	return nil, err
 }

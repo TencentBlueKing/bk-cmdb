@@ -44,7 +44,7 @@ type SearchAssociationTypeResult struct {
 	BaseResp `json:",inline"`
 	Data     struct {
 		Count int                `json:"count"`
-		Info  []*AssociationType `json:"info"`
+		Info  []*AssociationKind `json:"info"`
 	} `json:"data"`
 }
 
@@ -129,14 +129,30 @@ type DeleteAssociationInstResult struct {
 }
 
 // 关联类型
-type AssociationType struct {
-	ID        int64  `field:"id" json:"id" bson:"id"`
-	AsstID    string `field:"bk_asst_id" json:"bk_asst_id" bson:"bk_asst_id"`
-	AsstName  string `field:"bk_asst_name" json:"bk_asst_name" bson:"bk_asst_name"`
-	OwnerID   string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
-	SrcDes    string `field:"src_des" json:"src_des" bson:"src_des"`
-	DestDes   string `field:"dest_des" json:"dest_des" bson:"dest_des"`
-	Direction string `field:"direction" json:"direction" bson:"direction"`
+type AssociationDirection string
+
+const (
+	NoneDirection       AssociationDirection = "none"
+	DestinationToSource AssociationDirection = "src_dest"
+	SourceToDestination AssociationDirection = "dest_src"
+)
+
+type AssociationKind struct {
+	ID int64 `field:"id" json:"id" bson:"id"`
+	// a unique association id created by user.
+	AssociationKindID string `field:"bk_asst_id" json:"bk_asst_id" bson:"bk_asst_id"`
+	// a memorable name for this association kind, could be a chinese name, a english name etc.
+	AssociationKindName string `field:"bk_asst_name" json:"bk_asst_name" bson:"bk_asst_name"`
+	// the owner that this association type belongs to.
+	OwnerID string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	// the describe for the relationship from source object to the target(destination) object, which will be displayed
+	// when the topology is constructed between objects.
+	SourceToDestinationNote string `field:"src_des" json:"src_des" bson:"src_des"`
+	// the describe for the relationship from the target(destination) object to source object, which will be displayed
+	// when the topology is constructed between objects.
+	DestinationToSourceNote string `field:"dest_des" json:"dest_des" bson:"dest_des"`
+	// the association direction between two objects.
+	Direction AssociationDirection `field:"direction" json:"direction" bson:"direction"`
 }
 
 type AssociationOnDeleteAction string
@@ -144,7 +160,7 @@ type AssociationMapping string
 
 const (
 	// this is a default action, which is do nothing when a association between object is deleted.
-	None AssociationOnDeleteAction = "none"
+	NoAction AssociationOnDeleteAction = "none"
 	// delete related source object instances when the association is deleted.
 	DeleteSource AssociationOnDeleteAction = "delete_src"
 	// delete related destination object instances when the association is deleted.
@@ -166,20 +182,15 @@ type Association struct {
 	// the unique id belongs to  this association, should be generated with rules as follows:
 	// "$ObjectID"_"$AsstID"_"$AsstObjID"
 	ObjectAsstID string `field:"bk_obj_asst_id" json:"bk_obj_asst_id" bson:"bk_obj_asst_id"`
-	// the name of this association
-	ObjectAsstName string `field:"bk_obj_asst_name" json:"bk_obj_asst_name" bson:"bk_obj_asst_name"`
+	// the alias name of this association, which is a substitute name in the association kind $AsstKindID
+	ObjectAsstAliasName string `field:"bk_obj_asst_name" json:"bk_obj_asst_name" bson:"bk_obj_asst_name"`
 
 	// describe which object this association is defined for.
 	ObjectID string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
 	// describe where the Object associate with.
 	AsstObjID string `field:"bk_asst_obj_id" json:"bk_asst_obj_id" bson:"bk_asst_obj_id"`
 	// the association kind used by this association.
-	AsstID string `field:"bk_asst_id" json:"bk_asst_id" bson:"bk_asst_id"`
-
-	// this field is deprecated now.
-	// AsstForward string `field:"bk_asst_forward" json:"bk_asst_forward" bson:"bk_asst_forward"`
-	// this filed is deprecated now.
-	// AsstName string `field:"bk_asst_name" json:"bk_asst_name" bson:"bk_asst_name"`
+	AsstKindID string `field:"bk_asst_id" json:"bk_asst_id" bson:"bk_asst_id"`
 
 	// defined which kind of association can be used between the source object and destination object.
 	Mapping AssociationMapping `field:"mapping" json:"mapping" bson:"mapping"`

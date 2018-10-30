@@ -111,10 +111,6 @@ func (a *attribute) Origin() metadata.Attribute {
 	return a.attr
 }
 
-func (a *attribute) IsAssociationType() bool {
-	return util.IsAssocateProperty(a.attr.PropertyType)
-}
-
 func (a *attribute) IsMainlineField() bool {
 	return a.attr.PropertyID == common.BKChildStr
 }

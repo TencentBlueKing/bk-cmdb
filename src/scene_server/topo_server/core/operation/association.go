@@ -47,7 +47,7 @@ type AssociationOperationInterface interface {
 
 	// 关联关系改造后的接口
 	SearchType(ctx context.Context, h http.Header, request *metadata.SearchAssociationTypeRequest) (resp *metadata.SearchAssociationTypeResult, err error)
-	CreateType(ctx context.Context, h http.Header, request *metadata.AssociationType) (resp *metadata.CreateAssociationTypeResult, err error)
+	CreateType(ctx context.Context, h http.Header, request *metadata.AssociationKind) (resp *metadata.CreateAssociationTypeResult, err error)
 	UpdateType(ctx context.Context, h http.Header, asstTypeID int, request *metadata.UpdateAssociationTypeRequest) (resp *metadata.UpdateAssociationTypeResult, err error)
 	DeleteType(ctx context.Context, h http.Header, asstTypeID int) (resp *metadata.DeleteAssociationTypeResult, err error)
 	SearchObject(ctx context.Context, h http.Header, request *metadata.SearchAssociationObjectRequest) (resp *metadata.SearchAssociationObjectResult, err error)
@@ -137,7 +137,7 @@ func (a *association) SearchInstAssociation(params types.ContextParams, query *m
 
 func (a *association) CreateCommonAssociation(params types.ContextParams, data *metadata.Association) error {
 
-	if len(data.AsstID) == 0 || len(data.AsstObjID) == 0 || len(data.ObjectID) == 0 {
+	if len(data.AsstKindID) == 0 || len(data.AsstObjID) == 0 || len(data.ObjectID) == 0 {
 		errmsg := fmt.Sprintf("[operation-asst] failed to create the association , association kind id is required")
 		blog.Error(errmsg)
 		return params.Err.New(common.CCErrCommParamsInvalid, errmsg)
@@ -436,7 +436,7 @@ func (a *association) CheckBeAssociation(params types.ContextParams, obj model.O
 func (a *association) SearchType(ctx context.Context, h http.Header, request *metadata.SearchAssociationTypeRequest) (resp *metadata.SearchAssociationTypeResult, err error) {
 	return a.clientSet.ObjectController().Asst().SearchType(ctx, h, request)
 }
-func (a *association) CreateType(ctx context.Context, h http.Header, request *metadata.AssociationType) (resp *metadata.CreateAssociationTypeResult, err error) {
+func (a *association) CreateType(ctx context.Context, h http.Header, request *metadata.AssociationKind) (resp *metadata.CreateAssociationTypeResult, err error) {
 	return a.clientSet.ObjectController().Asst().CreateType(ctx, h, request)
 }
 func (a *association) UpdateType(ctx context.Context, h http.Header, asstTypeID int, request *metadata.UpdateAssociationTypeRequest) (resp *metadata.UpdateAssociationTypeResult, err error) {
