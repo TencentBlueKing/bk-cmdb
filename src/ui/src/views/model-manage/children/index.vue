@@ -6,7 +6,7 @@
                     <i class="icon" :class="activeModel ? activeModel['bk_obj_icon'] : 'icon-cc-default'"></i>
                     <p class="hover-text">{{$t('ModelManagement["点击切换"]')}}</p>
                 </div>
-                <div class="choose-icon-box" v-if="isIconListShow">
+                <div class="choose-icon-box" v-if="isIconListShow" v-click-outside="hideChooseBox">
                     <the-choose-icon
                         :type="'update'"
                         v-model="modelInfo.objIcon"
@@ -24,7 +24,13 @@
                     <span class="text-content">{{activeModel ? activeModel['bk_obj_name'] : ''}}<i class="icon icon-cc-edit text-primary" v-if="!(isReadOnly || (activeModel && activeModel['ispre']))" @click="editModelName"></i></span>
                 </template>
                 <template v-else>
-                    <input type="text" class="cmdb-form-input" v-model.trim="modelInfo.objName">
+                    <div class="cmdb-form-item" :class="{'is-error': errors.has('modelName')}">
+                        <input type="text" class="cmdb-form-input"
+                        name="modelName"
+                        v-validate="'required|singlechar'"
+                        v-model.trim="modelInfo.objName">
+                        <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('modelName')"></i>
+                    </div>
                     <span class="text-primary" @click="saveModel">{{$t("Common['保存']")}}</span>
                     <span class="text-primary" @click="isEditName = false">{{$t("Common['取消']")}}</span>
                 </template>
@@ -37,7 +43,8 @@
                     </label>
                 </form>
                 <template v-if="!activeModel['ispre']">
-                    <label class="label-btn">
+                    <label class="label-btn"
+                    v-tooltip="$t('ModelManagement[\'保留模型和相应实例，隐藏关联关系\']')">
                         <i class="bk-icon icon-minus-circle-shape"></i>
                         <span v-if="activeModel['bk_ispaused']" @click="dialogConfirm('restart')">
                             {{$t('ModelManagement["启用"]')}}
@@ -152,6 +159,9 @@
             ...mapMutations('objectModel', [
                 'setActiveModel'
             ]),
+            hideChooseBox () {
+                this.isIconListShow = false
+            },
             chooseIcon () {
                 this.isIconListShow = false
                 this.saveModel()
@@ -161,6 +171,9 @@
                 this.isEditName = true
             },
             async saveModel () {
+                if (!await this.$validator.validateAll()) {
+                    return
+                }
                 await this.updateObject({
                     id: this.activeModel['id'],
                     params: this.modelParams
@@ -181,6 +194,13 @@
                     }
                 })
                 this.$store.commit('objectModel/setActiveModel', res[0])
+                this.initModelInfo()
+            },
+            initModelInfo () {
+                this.modelInfo = {
+                    objIcon: this.activeModel['bk_obj_icon'],
+                    objName: this.activeModel['bk_obj_name']
+                }
             },
             exportField () {
                 this.$refs.submitForm.submit()
@@ -266,13 +286,29 @@
             .choose-icon-box {
                 position: absolute;
                 left: 0;
-                top: 100px;
+                top: 95px;
                 width: 395px;
                 height: 262px;
                 background: #fff;
                 border: 1px solid #dde4e8;
                 box-shadow: 0px 3px 6px 0px rgba(51, 60, 72, 0.13);
                 z-index: 99;
+                &:before {
+                    position: absolute;
+                    top: -13px;
+                    left: 30px;
+                    content: '';
+                    border: 6px solid transparent;
+                    border-bottom-color: rgba(51, 60, 72, 0.23);
+                }
+                &:after {
+                    position: absolute;
+                    top: -12px;
+                    left: 30px;
+                    content: '';
+                    border: 6px solid transparent;
+                    border-bottom-color: #fff;
+                }
             }
         }
         .icon-box {
@@ -289,6 +325,7 @@
             text-align: center;
             font-size: 32px;
             color: $cmdbBorderFocusColor;
+            cursor: pointer;
             &:hover {
                 .hover-text {
                     background: rgba(0, 0, 0, .5);
@@ -331,7 +368,7 @@
                     margin: -4px 0 0 4px;
                 }
             }
-            .cmdb-form-input {
+            .cmdb-form-item {
                 display: inline-block;
                 width: 200px;
                 vertical-align: top;

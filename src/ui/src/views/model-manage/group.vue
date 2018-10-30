@@ -59,7 +59,13 @@
                             {{$t('ModelManagement["唯一标识"]')}}
                         </span>
                         <span class="color-danger">*</span>
-                        <input type="text" class="cmdb-form-input" v-model.trim="groupDialog.data['bk_classification_id']">
+                        <div class="cmdb-form-item" :class="{'is-error': errors.has('classifyId')}">
+                            <input type="text" class="cmdb-form-input"
+                            v-model.trim="groupDialog.data['bk_classification_id']"
+                            name="classifyId"
+                            v-validate="'required|classifyId'">
+                            <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('classifyId')"></i>
+                        </div>
                         <i class="bk-icon icon-info-circle"></i>
                     </label>
                     <label for="">
@@ -67,7 +73,13 @@
                             {{$t('ModelManagement["名称"]')}}
                         </span>
                         <span class="color-danger">*</span>
-                        <input type="text" class="cmdb-form-input" v-model.trim="groupDialog.data['bk_classification_name']">
+                        <div class="cmdb-form-item" :class="{'is-error': errors.has('classifyName')}">
+                            <input type="text" class="cmdb-form-input"
+                            v-model.trim="groupDialog.data['bk_classification_name']"
+                            name="classifyName"
+                            v-validate="'required|classifyName'">
+                            <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('classifyName')"></i>
+                        </div>
                         <i class="bk-icon icon-info-circle"></i>
                     </label>
                 </div>
@@ -97,25 +109,44 @@
                         <label for="">
                             <span class="label-title">{{$t('ModelManagement["所属分组"]')}}</span>
                             <span class="color-danger">*</span>
-                            <bk-selector
-                                class="selector-box"
-                                setting-key="bk_classification_id"
-                                display-key="bk_classification_name"
-                                :content-max-height="200"
-                                :selected.sync="modelDialog.data['bk_classification_id']"
-                                :list="modelDialog.classificationList"
-                            ></bk-selector>
+                            <div class="cmdb-form-item" :class="{'is-error': errors.has('modelGroup')}">
+                                <bk-selector
+                                    class="selector-box"
+                                    setting-key="bk_classification_id"
+                                    display-key="bk_classification_name"
+                                    :content-max-height="200"
+                                    :selected.sync="modelDialog.data['bk_classification_id']"
+                                    :list="modelDialog.classificationList"
+                                ></bk-selector>
+                                <input type="text" hidden
+                                name="modelGroup"
+                                v-model="modelDialog.data['bk_classification_id']"
+                                v-validate="'required'">
+                                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('modelGroup')"></i>
+                            </div>
                         </label>
                         <label for="">
                             <span class="label-title">{{$t('ModelManagement["唯一标识"]')}}</span>
                             <span class="color-danger">*</span>
-                            <input type="text" class="cmdb-form-input" v-model.trim="modelDialog.data['bk_obj_id']">
+                            <div class="cmdb-form-item" :class="{'is-error': errors.has('modelId')}">
+                                <input type="text" class="cmdb-form-input"
+                                name="modelId"
+                                v-model.trim="modelDialog.data['bk_obj_id']"
+                                v-validate="'required|modelId'">
+                                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('modelId')"></i>
+                            </div>
                             <i class="bk-icon icon-info-circle"></i>
                         </label>
                         <label for="">
                             <span class="label-title">{{$t('ModelManagement["名称"]')}}</span>
                             <span class="color-danger">*</span>
-                            <input type="text" class="cmdb-form-input" v-model.trim="modelDialog.data['bk_obj_name']">
+                            <div class="cmdb-form-item" :class="{'is-error': errors.has('modelName')}">
+                                <input type="text" class="cmdb-form-input"
+                                name="modelName"
+                                v-validate="'required|singlechar'"
+                                v-model.trim="modelDialog.data['bk_obj_name']">
+                                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('modelName')"></i>
+                            </div>
                             <i class="bk-icon icon-info-circle"></i>
                         </label>
                     </div>
@@ -158,6 +189,9 @@
                         bk_classification_name: '',
                         id: ''
                     }
+                },
+                model: {
+                    modelId: 'modelId'
                 },
                 modelDialog: {
                     isShow: false,
@@ -230,6 +264,13 @@
                 this.groupDialog.isShow = false
             },
             async saveGroup () {
+                const res = await Promise.all([
+                    this.$validator.validate('classifyId'),
+                    this.$validator.validate('classifyName')
+                ])
+                if (res.includes(false)) {
+                    return
+                }
                 let params = {
                     bk_supplier_account: this.supplierAccount,
                     bk_classification_id: this.groupDialog.data['bk_classification_id'],
@@ -272,6 +313,14 @@
                 this.modelDialog.isShow = false
             },
             async saveModel () {
+                const res = await Promise.all([
+                    this.$validator.validate('modelGroup'),
+                    this.$validator.validate('modelId'),
+                    this.$validator.validate('modelName')
+                ])
+                if (res.includes(false)) {
+                    return
+                }
                 let params = {
                     bk_supplier_account: this.supplierAccount,
                     bk_obj_name: this.modelDialog.data['bk_obj_name'],
@@ -415,8 +464,8 @@
             .icon-info-circle {
                 font-size: 18px;
                 color: $cmdbBorderColor;
-                line-height: 36px;
-                vertical-align: middle;
+                // line-height: 36px;
+                // vertical-align: middle;
             }
             .label-title {
                 display: inline-block;
@@ -427,8 +476,7 @@
                 vertical-align: middle;
                 @include ellipsis;
             }
-            .selector-box,
-            .cmdb-form-input {
+            .cmdb-form-item {
                 display: inline-block;
                 margin-right: 10px;
                 width: calc(100% - 130px);
