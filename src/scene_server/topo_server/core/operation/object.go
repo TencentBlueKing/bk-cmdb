@@ -421,7 +421,7 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 		attrCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 		attrCond.Field(common.BKObjIDField).Eq(obj.GetID())
 
-		if err := o.attr.DeleteObjectAttribute(params, -1, attrCond); nil != err {
+		if err := o.attr.DeleteObjectAttribute(params, attrCond); nil != err {
 			blog.Errorf("[operation-obj] failed to delete the object(%d)'s attribute, error info is %s", id, err.Error())
 			return err
 		}
@@ -470,16 +470,14 @@ func (o *object) isFrom(params types.ContextParams, fromObjID, toObjID string) (
 }
 
 func (o *object) FindObjectTopo(params types.ContextParams, cond condition.Condition) ([]metadata.ObjectTopo, error) {
-
 	objs, err := o.FindObject(params, cond)
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to find object, error info is %s", err.Error())
 		return nil, err
 	}
 
-	results := []metadata.ObjectTopo{}
+	results := make([]metadata.ObjectTopo, 0)
 	for _, obj := range objs {
-
 		asstItems, err := o.asst.SearchObjectAssociation(params, obj.GetID())
 		if nil != err {
 			return nil, err

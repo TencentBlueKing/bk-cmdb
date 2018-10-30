@@ -226,15 +226,15 @@ type InstAsst struct {
 }
 
 type InstNameAsst struct {
-	ID         string                 `json:"id"`
-	ObjID      string                 `json:"bk_obj_id"`
-	ObjIcon    string                 `json:"bk_obj_icon"`
-	InstID     int64                  `json:"bk_inst_id"`
-	ObjectName string                 `json:"bk_obj_name"`
-	InstName   string                 `json:"bk_inst_name"`
-	AsstName   string                 `json:"bk_asst_name"`
-	AsstID     string                 `json:"bk_asst_id"`
-	InstInfo   map[string]interface{} `json:"inst_info,omitempty"`
+	ID         string `json:"id"`
+	ObjID      string `json:"bk_obj_id"`
+	ObjIcon    string `json:"bk_obj_icon"`
+	InstID     int64  `json:"bk_inst_id"`
+	ObjectName string `json:"bk_obj_name"`
+	InstName   string `json:"bk_inst_name"`
+	// AsstName   string                 `json:"bk_asst_name"`
+	AsstID   string                 `json:"bk_asst_id"`
+	InstInfo map[string]interface{} `json:"inst_info,omitempty"`
 }
 
 // Parse load the data from mapstr attribute into attribute instance

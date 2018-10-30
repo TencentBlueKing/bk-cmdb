@@ -36,7 +36,7 @@ type Attribute interface {
 	Origin() metadata.Attribute
 
 	IsMainlineField() bool
-	IsAssociationType() bool
+	// IsAssociationType() bool
 
 	SetSupplierAccount(supplierAccount string)
 	GetSupplierAccount() string

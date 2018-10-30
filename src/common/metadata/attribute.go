@@ -89,8 +89,5 @@ func (cli *Attribute) ToMapStr() types.MapStr {
 // ObjAttDes 对象模型属性
 type ObjAttDes struct {
 	Attribute         `json:",inline"`
-	AssoType          int    `json:"bk_asst_type"`
-	AsstForward       string `json:"bk_asst_forward"`
-	AssociationID     string `json:"bk_asst_obj_id"`
 	PropertyGroupName string `json:"bk_property_group_name"`
 }

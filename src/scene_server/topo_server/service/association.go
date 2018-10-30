@@ -97,6 +97,7 @@ func (s *topoService) SearchMainLineChildInstTopo(params types.ContextParams, pa
 		return nil, params.Err.Errorf(common.CCErrCommParamsIsInvalid, "app_id")
 	}
 
+	// get the instance id of this object.
 	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
 	if nil != err {
 		return nil, params.Err.Errorf(common.CCErrCommParamsIsInvalid, "inst_id")
@@ -157,12 +158,12 @@ func (s *topoService) UpdateAssociationType(params types.ContextParams, pathPara
 	ret, err := s.core.AssociationOperation().UpdateType(context.Background(), params.Header, asstTypeID, request)
 	if err != nil {
 		return nil, err
-	} 
-	
+	}
+
 	if ret.Code != 0 {
 		return nil, params.Err.New(ret.Code, ret.ErrMsg)
-	} 
-	
+	}
+
 	return ret.Data, nil
 }
 
@@ -171,16 +172,16 @@ func (s *topoService) DeleteAssociationType(params types.ContextParams, pathPara
 	if err != nil {
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
-	
+
 	ret, err := s.core.AssociationOperation().DeleteType(context.Background(), params.Header, asstTypeID)
 	if err != nil {
 		return nil, err
-	} 
-	
+	}
+
 	if ret.Code != 0 {
 		return nil, params.Err.New(ret.Code, ret.ErrMsg)
-	} 
-	
+	}
+
 	return ret.Data, nil
 }
 
