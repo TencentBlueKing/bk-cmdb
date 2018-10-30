@@ -75,7 +75,7 @@ func GetOwnerIDAndUser(header http.Header) (string, string) {
 // SetActionOwerIDAndAccount set supplier id and account in head
 func SetActionOwerIDAndAccount(req *restful.Request) {
 	owner := req.Request.Header.Get(common.BKHTTPOwner)
-	if "" == owner {
+	if "" != owner {
 		req.Request.Header.Set(common.BKHTTPOwnerID, owner)
 	}
 
