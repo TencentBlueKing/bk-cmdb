@@ -20,7 +20,7 @@ import (
 	"configcenter/src/common"
 
 	"github.com/gin-gonic/gin"
-	"github.com/uriwang/contrib/sessions"
+	"github.com/holmeswang/contrib/sessions"
 )
 
 // Index html file

@@ -24,7 +24,7 @@ import (
 	"configcenter/src/web_server/middleware"
 
 	"github.com/gin-gonic/gin"
-	"github.com/uriwang/contrib/sessions"
+	"github.com/holmeswang/contrib/sessions"
 	redis "gopkg.in/redis.v5"
 )
 
