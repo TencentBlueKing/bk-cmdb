@@ -23,8 +23,8 @@ import (
 	"configcenter/src/web_server/logics"
 	"configcenter/src/web_server/middleware"
 
-	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/uriwang/contrib/sessions"
 	redis "gopkg.in/redis.v5"
 )
 
@@ -39,8 +39,8 @@ type Service struct {
 
 func (s *Service) WebService() *gin.Engine {
 	ws := gin.Default()
-
-	store, rediserr := sessions.NewRedisStore(10, "tcp", s.Config.Session.Host+":"+s.Config.Session.Port, s.Config.Session.Secret, []byte("secret"))
+	address := []string{s.Config.Session.Host + ":" + s.Config.Session.Port}
+	store, rediserr := sessions.NewRedisStoreWithSentinel(address, 10, "mymaster", "tcp", s.Config.Session.Secret, []byte("secret"))
 	if rediserr != nil {
 		panic(rediserr)
 	}
