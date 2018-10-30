@@ -406,15 +406,15 @@ func (o *object) generateObjectAssociatioinID(srcObjID, asstID, destObjID string
 func (o *object) CreateMainlineObjectAssociation(relateToObjID string) error {
 	objAsstID := o.generateObjectAssociatioinID(o.obj.ObjectID, common.DefaultMailineAssociationKindID, relateToObjID)
 	association := meta.Association{
-		OwnerID:        o.params.SupplierAccount,
-		ObjectAsstID:   objAsstID,
-		ObjectAsstName: objAsstID,
-		ObjectID:       o.obj.ObjectID,
+		OwnerID:             o.params.SupplierAccount,
+		ObjectAsstID:        objAsstID,
+		ObjectAsstAliasName: objAsstID,
+		ObjectID:            o.obj.ObjectID,
 		// related to it's parent object id
 		AsstObjID:    relateToObjID,
-		AsstID:       common.DefaultMailineAssociationKindID,
+		AsstKindID:   common.DefaultMailineAssociationKindID,
 		Mapping:      metadata.OneToOneMapping,
-		OnDelete:     metadata.None,
+		OnDelete:     metadata.NoAction,
 		IsPredefined: true,
 	}
 
@@ -448,69 +448,6 @@ func (o *object) UpdateMainlineObjectAssociationTo(relateToObjID string) error {
 
 	return nil
 }
-
-// func (o *object) SetMainlineChildObject(objID string) error {
-//
-// 	cond := condition.CreateCondition()
-// 	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
-// 	cond.Field(meta.AssociationFieldAssociationName).Eq(common.BKChildStr)
-// 	cond.Field(meta.AssociationFieldAssociationObjectID).Eq(o.obj.ObjectID)
-//
-// 	rsp, err := o.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), o.params.Header, cond.ToMapStr())
-// 	if nil != err {
-// 		blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
-// 		return err
-// 	}
-//
-// 	if common.CCSuccess != rsp.Code {
-// 		blog.Errorf("[model-obj] failed to set the main line association, error info is %s", rsp.ErrMsg)
-// 		return o.params.Err.Error(rsp.Code)
-// 	}
-//
-// 	// create
-// 	if 0 == len(rsp.Data) {
-//
-// 		asst := &meta.Association{}
-// 		asst.OwnerID = o.params.SupplierAccount
-// 		asst.AsstName = common.BKChildStr
-// 		asst.ObjectID = objID
-// 		asst.AsstObjID = o.obj.ObjectID
-//
-// 		rsp, err := o.clientSet.ObjectController().Meta().CreateObjectAssociation(context.Background(), o.params.Header, asst)
-//
-// 		if nil != err {
-// 			blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
-// 			return o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
-// 		}
-//
-// 		if common.CCSuccess != rsp.Code {
-// 			blog.Errorf("[model-obj] failed to set the main line association parent, error info is %s", rsp.ErrMsg)
-// 			return o.params.Err.Error(rsp.Code)
-// 		}
-//
-// 		return nil
-// 	}
-//
-// 	// update
-// 	for _, asst := range rsp.Data { // should be only one item
-//
-// 		asst.ObjectID = objID
-// 		asst.AsstName = common.BKChildStr
-//
-// 		rsp, err := o.clientSet.ObjectController().Meta().UpdateObjectAssociation(context.Background(), asst.ID, o.params.Header, asst.ToMapStr())
-// 		if nil != err {
-// 			blog.Errorf("[model-obj] failed to request object controller, error info is %s", err.Error())
-// 			return err
-// 		}
-//
-// 		if common.CCSuccess != rsp.Code {
-// 			blog.Errorf("[model-obj] failed to update the child association, error info is %s", rsp.ErrMsg)
-// 			return o.params.Err.Error(rsp.Code)
-// 		}
-// 	}
-//
-// 	return nil
-// }
 
 func (o *object) IsExists() (bool, error) {
 

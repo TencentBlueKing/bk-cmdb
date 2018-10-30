@@ -130,7 +130,7 @@ func (s *topoService) SearchAssociationType(params types.ContextParams, pathPara
 }
 
 func (s *topoService) CreateAssociationType(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	request := &metadata.AssociationType{}
+	request := &metadata.AssociationKind{}
 	if err := data.MarshalJSONInto(request); err != nil {
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}

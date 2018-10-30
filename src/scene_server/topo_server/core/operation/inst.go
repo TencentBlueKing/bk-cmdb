@@ -94,30 +94,12 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		return results, nil
 	}
 
-	assObjectInt := NewAsstObjectInst(params.Header, params.Engin, params.SupplierAccount, nil)
-	assObjectInt.SetMapFields(obj.GetID())
-	err := assObjectInt.GetObjAsstObjectPrimaryKey()
-	if nil != err {
-		blog.Error("failed to read the object att, error is %s ", err.Error())
-		return nil, params.Err.Errorf(common.CCErrCommSearchPropertyFailed, err.Error())
-	}
-	rowErr, err = assObjectInt.InitInstFromData(*batchInfo.BatchInfo)
-	if nil != err {
-		blog.Error("failed to read the object att, error is %s ", err.Error())
-		return nil, params.Err.Error(common.CCErrTopoInstSelectFailed)
-	}
-
 	for errIdx, err := range rowErr {
 		results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", errIdx, err.Error()))
 	}
 
 	for colIdx, colInput := range *batchInfo.BatchInfo {
 		delete(colInput, "import_from")
-
-		if err := assObjectInt.SetObjAsstPropertyVal(colInput); nil != err {
-			results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
-			continue
-		}
 
 		item := c.instFactory.CreateInst(params, obj)
 		item.SetValues(colInput)
@@ -138,7 +120,7 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 
 		} else {
 			// check create
-			if err = NewSupplementary().Validator(c).ValidatorCreate(params, obj, item.ToMapStr()); nil != err {
+			if err := NewSupplementary().Validator(c).ValidatorCreate(params, obj, item.ToMapStr()); nil != err {
 				switch tmpErr := err.(type) {
 				case errors.CCErrorCoder:
 					if tmpErr.GetCode() != common.CCErrCommDuplicateItem {
@@ -152,17 +134,14 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		}
 
 		// set data
-		err = item.Save(colInput)
+		err := item.Save(colInput)
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), err: %s", obj.GetID(), colInput, err.Error())
 			results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
 			continue
 		}
 		NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
-		// if err := c.setInstAsst(params, obj, item); nil != err {
-		// 	blog.Errorf("[operation-inst] failed to set the inst asst, err: %s", err.Error())
-		// 	return nil, err
-		// }
+
 	}
 
 	return results, nil
