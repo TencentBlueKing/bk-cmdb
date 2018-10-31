@@ -16,12 +16,14 @@ import (
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/types"
 	"configcenter/src/web_server/app/options"
 	"configcenter/src/web_server/logics"
 	"configcenter/src/web_server/middleware"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/holmeswang/contrib/sessions"
@@ -39,10 +41,23 @@ type Service struct {
 
 func (s *Service) WebService() *gin.Engine {
 	ws := gin.Default()
-	address := []string{s.Config.Session.Host + ":" + s.Config.Session.Port}
-	store, rediserr := sessions.NewRedisStoreWithSentinel(address, 10, "mymaster", "tcp", s.Config.Session.Secret, []byte("secret"))
-	if rediserr != nil {
-		panic(rediserr)
+
+	var store sessions.RedisStore
+	var redisErr error
+	if 0 == len(s.Config.Session.Address) {
+		address := s.Config.Session.Host + ":" + s.Config.Session.Port
+		store, redisErr = sessions.NewRedisStore(10, "tcp", address, s.Config.Session.Secret, []byte("secret"))
+		if redisErr != nil {
+			blog.Errorf("failed to new a redis store , error info is %s", redisErr.Error())
+			return ws
+		}
+	} else {
+		address := strings.Split(s.Config.Session.Address, ";")
+		store, redisErr = sessions.NewRedisStoreWithSentinel(address, 10, "mymaster", "tcp", s.Config.Session.Secret, []byte("secret"))
+		if redisErr != nil {
+			blog.Errorf("failed to new a redis store , error info is %s", redisErr.Error())
+			return ws
+		}
 	}
 
 	ws.Use(sessions.Sessions(s.Config.Session.Name, store))
