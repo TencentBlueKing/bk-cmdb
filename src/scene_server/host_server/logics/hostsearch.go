@@ -294,7 +294,7 @@ func (sh *searchHost) fetchHostCloudCacheInfo() (map[int64]*InstNameAsst, error)
 
 		cloudID, err := hostInfo.Int64(common.BKCloudIDField)
 		if err != nil {
-			blog.Warnf("hostSearch not found app name, hostInfo:%d, rid:%s", hostInfo, sh.ccRid)
+			blog.Warnf("hostSearch not found  cloud id in hsot, hostInfo:%d, rid:%s", hostInfo, sh.ccRid)
 			continue
 		}
 		cloudIDMap[cloudID] = true
