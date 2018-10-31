@@ -840,6 +840,7 @@ const (
 	AssociationTypeGroup   = "group"
 	AssociationTypeRun     = "run"
 	AssociationTypeConnect = "connect"
+	AssociationTypeDefault = "default"
 )
 
 // Association mapping
