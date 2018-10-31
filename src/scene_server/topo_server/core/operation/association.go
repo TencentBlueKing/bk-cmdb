@@ -35,11 +35,13 @@ type AssociationOperationInterface interface {
 	DeleteMainlineAssociaton(params types.ContextParams, objID string) error
 	SearchMainlineAssociationTopo(params types.ContextParams, targetObj model.Object) ([]*metadata.MainlineObjectTopo, error)
 	SearchMainlineAssociationInstTopo(params types.ContextParams, obj model.Object, instID int64) ([]*metadata.TopoInstRst, error)
+
 	CreateCommonAssociation(params types.ContextParams, data *metadata.Association) error
 	DeleteAssociationWithPreCheck(params types.ContextParams, associationID int64) error
-	DeleteAssociation(params types.ContextParams, cond condition.Condition) error
 	UpdateAssociation(params types.ContextParams, data frtypes.MapStr, assoID int64) error
 	SearchObjectAssociation(params types.ContextParams, objID string) ([]metadata.Association, error)
+
+	DeleteAssociation(params types.ContextParams, cond condition.Condition) error
 	SearchInstAssociation(params types.ContextParams, query *metadata.QueryInput) ([]metadata.InstAsst, error)
 	CheckBeAssociation(params types.ContextParams, obj model.Object, cond condition.Condition) error
 	CreateCommonInstAssociation(params types.ContextParams, data *metadata.InstAsst) error
@@ -50,10 +52,12 @@ type AssociationOperationInterface interface {
 	CreateType(ctx context.Context, h http.Header, request *metadata.AssociationKind) (resp *metadata.CreateAssociationTypeResult, err error)
 	UpdateType(ctx context.Context, h http.Header, asstTypeID int, request *metadata.UpdateAssociationTypeRequest) (resp *metadata.UpdateAssociationTypeResult, err error)
 	DeleteType(ctx context.Context, h http.Header, asstTypeID int) (resp *metadata.DeleteAssociationTypeResult, err error)
+
 	SearchObject(ctx context.Context, h http.Header, request *metadata.SearchAssociationObjectRequest) (resp *metadata.SearchAssociationObjectResult, err error)
 	CreateObject(ctx context.Context, h http.Header, request *metadata.Association) (resp *metadata.CreateAssociationObjectResult, err error)
 	UpdateObject(ctx context.Context, h http.Header, asstID int, request *metadata.UpdateAssociationObjectRequest) (resp *metadata.UpdateAssociationObjectResult, err error)
 	DeleteObject(ctx context.Context, h http.Header, asstID int) (resp *metadata.DeleteAssociationObjectResult, err error)
+
 	SearchInst(ctx context.Context, h http.Header, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error)
 	CreateInst(ctx context.Context, h http.Header, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error)
 	DeleteInst(ctx context.Context, h http.Header, request *metadata.DeleteAssociationInstRequest) (resp *metadata.DeleteAssociationInstResult, err error)
@@ -138,7 +142,7 @@ func (a *association) SearchInstAssociation(params types.ContextParams, query *m
 func (a *association) CreateCommonAssociation(params types.ContextParams, data *metadata.Association) error {
 
 	if len(data.AsstKindID) == 0 || len(data.AsstObjID) == 0 || len(data.ObjectID) == 0 {
-		errmsg := fmt.Sprintf("[operation-asst] failed to create the association , association kind id is required")
+		errmsg := fmt.Sprintf("[operation-asst] failed to create the association , association kind id associate/object id is required")
 		blog.Error(errmsg)
 		return params.Err.New(common.CCErrCommParamsInvalid, errmsg)
 	}
@@ -148,6 +152,7 @@ func (a *association) CreateCommonAssociation(params types.ContextParams, data *
 	cond.Field(common.AssociatedObjectIDField).Eq(data.AsstObjID)
 	cond.Field(common.BKObjIDField).Eq(data.ObjectID)
 	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+	cond.Field(common.AssociationKindIDField).Eq(data.AsstKindID)
 
 	rsp, err := a.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), params.Header, cond.ToMapStr())
 	if nil != err {
