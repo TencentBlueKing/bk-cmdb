@@ -162,19 +162,22 @@ type Association struct {
 	ID          int64  `field:"id" json:"id" bson:"id"`
 	ObjectID    string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
 	OwnerID     string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
-	AsstForward string `field:"bk_asst_forward" json:"bk_asst_forward" bson:"bk_asst_forward"`
+	AsstForward string `field:"bk_asst_forward" json:"bk_asst_forward" bson:"-"`
 	AsstObjID   string `field:"bk_asst_obj_id" json:"bk_asst_obj_id" bson:"bk_asst_obj_id"`
 	AsstName    string `field:"bk_asst_name" json:"bk_asst_name" bson:"bk_asst_name"`
 
-	ObjectAsstID string `field:"bk_obj_asst_id" json:"bk_obj_asst_id" bson:"bk_obj_asst_id"`
-	AsstID       string `field:"bk_asst_id" json:"bk_asst_id" bson:"bk_asst_id"`
-	Mapping      string `field:"mapping" json:"mapping" bson:"mappingo"`
-	OnDelete     string `field:"on_delete" json:"on_delete" bson:"on_delete"`
+	ObjectAsstID   string `field:"bk_obj_asst_id" json:"bk_obj_asst_id" bson:"bk_obj_asst_id"`
+	ObjectAsstName string `field:"bk_obj_asst_name" json:"bk_obj_asst_name" bson:"bk_obj_asst_name"`
+	AsstID         string `field:"bk_asst_id" json:"bk_asst_id" bson:"bk_asst_id"`
+	Mapping        string `field:"mapping" json:"mapping" bson:"mappingo"`
+	OnDelete       string `field:"on_delete" json:"on_delete" bson:"on_delete"`
 
-	//ObjectAttID      string `field:"bk_object_att_id" json:"bk_object_att_id" bson:"bk_object_att_id"`
+	ObjectAttID      string `field:"bk_object_att_id" json:"bk_object_att_id" bson:"bk_object_att_id"`
 	ClassificationID string `field:"bk_classification_id" bson:"-"`
 	ObjectIcon       string `field:"bk_obj_icon" bson:"-"`
 	ObjectName       string `field:"bk_obj_name" bson:"-"`
+
+	IsPre bool `field:"ispre" json:"ispre" bson:"ispre"`
 }
 
 // Parse load the data from mapstr attribute into attribute instance
@@ -195,15 +198,33 @@ func (cli *Association) ToMapStr() types.MapStr {
 
 // InstAsst an association definition between instances.
 type InstAsst struct {
-	ID           int64     `field:"id" json:"-"`
-	InstID       int64     `field:"bk_inst_id" json:"bk_inst_id" bson:"bk_inst_id"`
-	ObjectID     string    `field:"bk_obj_id" json:"bk_obj_id"`
-	AsstInstID   int64     `field:"bk_asst_inst_id" json:"bk_asst_inst_id"  bson:"bk_asst_inst_id"`
-	AsstObjectID string    `field:"bk_asst_obj_id" json:"bk_asst_obj_id"`
-	OwnerID      string    `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	// sequence ID
+	ID int64 `field:"id" json:"-"`
+	// inst id associate to ObjectID
+	InstID int64 `field:"bk_inst_id" json:"bk_inst_id" bson:"bk_inst_id"`
+	// assoctation source ObjectID
+	ObjectID string `field:"bk_obj_id" json:"bk_obj_id"`
+	// inst id associate to AsstObjectID
+	AsstInstID int64 `field:"bk_asst_inst_id" json:"bk_asst_inst_id"  bson:"bk_asst_inst_id"`
+	// assoctation target ObjectID
+	AsstObjectID string `field:"bk_asst_obj_id" json:"bk_asst_obj_id"`
+	// bk_supplier_account
+	OwnerID string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	// association id between two object
 	ObjectAsstID string    `field:"bk_obj_asst_id" json:"bk_obj_asst_id" bson:"bk_obj_asst_id"`
 	CreateTime   time.Time `field:"create_time" json:"create_time" bson:"create_time"`
 	LastTime     time.Time `field:"last_time" json:"last_time" bson:"last_time"`
+}
+
+func (asst InstAsst) GetInstID(objID string) (instID int64, ok bool) {
+	switch objID {
+	case asst.ObjectID:
+		return asst.InstID, true
+	case asst.AsstObjectID:
+		return asst.AsstInstID, true
+	default:
+		return 0, false
+	}
 }
 
 type InstNameAsst struct {
