@@ -134,6 +134,12 @@ func SetValueToStructByTags(target interface{}, values types.MapStr) error {
 			fieldValue.SetBool(tagVal.(bool))
 		case reflect.Int, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int8, reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint8:
 			switch t := tagVal.(type) {
+			default:
+				blog.Errorf("unsuport the type %s tagVal %v", structField.Name, reflect.TypeOf(tagVal).Kind())
+			case float32:
+				fieldValue.SetInt(int64(t))
+			case float64:
+				fieldValue.SetInt(int64(t))
 			case int:
 				fieldValue.SetInt(int64(t))
 			case int16:
@@ -161,6 +167,26 @@ func SetValueToStructByTags(target interface{}, values types.MapStr) error {
 			case float32:
 				fieldValue.SetFloat(float64(t))
 			case float64:
+				fieldValue.SetFloat(float64(t))
+			case int:
+				fieldValue.SetFloat(float64(t))
+			case int16:
+				fieldValue.SetFloat(float64(t))
+			case int32:
+				fieldValue.SetFloat(float64(t))
+			case int64:
+				fieldValue.SetFloat(float64(t))
+			case int8:
+				fieldValue.SetFloat(float64(t))
+			case uint:
+				fieldValue.SetFloat(float64(t))
+			case uint16:
+				fieldValue.SetFloat(float64(t))
+			case uint32:
+				fieldValue.SetFloat(float64(t))
+			case uint64:
+				fieldValue.SetFloat(float64(t))
+			case uint8:
 				fieldValue.SetFloat(float64(t))
 			}
 
