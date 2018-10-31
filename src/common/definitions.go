@@ -837,12 +837,26 @@ const (
 // association
 const (
 	AssociationTypeBelong  = "belong"
-	AssociationTypeGroupby = "group"
+	AssociationTypeGroup   = "group"
 	AssociationTypeRun     = "run"
 	AssociationTypeConnect = "connect"
 )
 
+// Association mapping
+const (
+	AssociationMappingOneToOne     = "1:1"
+	AssociationMappingOneToMulti   = "1:n"
+	AssociationMappingMultiToMulti = "n:n"
+)
+
+// Association ondelete
+const (
+	AssociationOnDeleteNone              = "none"
+	AssociationOnDeleteDeleteSource      = "delete_src"
+	AssociationOnDeleteDeleteDestination = "delete_dest"
+)
+
 // association fields
 const (
-	AssociationKeyField = "bk_obj_asst_id"
+	AssociationObjAsstIDField = "bk_obj_asst_id"
 )
