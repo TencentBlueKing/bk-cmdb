@@ -16,7 +16,6 @@ import (
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/types"
@@ -48,15 +47,13 @@ func (s *Service) WebService() *gin.Engine {
 		address := s.Config.Session.Host + ":" + s.Config.Session.Port
 		store, redisErr = sessions.NewRedisStore(10, "tcp", address, s.Config.Session.Secret, []byte("secret"))
 		if redisErr != nil {
-			blog.Errorf("failed to new a redis store , error info is %s", redisErr.Error())
-			return ws
+			panic(redisErr)
 		}
 	} else {
 		address := strings.Split(s.Config.Session.Address, ";")
-		store, redisErr = sessions.NewRedisStoreWithSentinel(address, 10, "mymaster", "tcp", s.Config.Session.Secret, []byte("secret"))
+		store, redisErr = sessions.NewRedisStoreWithSentinel(address, 10, s.Config.Session.MasterName, "tcp", s.Config.Session.Secret, []byte("secret"))
 		if redisErr != nil {
-			blog.Errorf("failed to new a redis store , error info is %s", redisErr.Error())
-			return ws
+			panic(redisErr)
 		}
 	}
 
