@@ -26,11 +26,11 @@ const (
 	// AssociationFieldSupplierAccount the association data field definition
 	AssociationFieldSupplierAccount = "bk_supplier_account"
 	// AssociationFieldAssociationForward the association data field definition
-	AssociationFieldAssociationForward = "bk_asst_forward"
+	// AssociationFieldAssociationForward = "bk_asst_forward"
 	// AssociationFieldAssociationObjectID the association data field definition
 	AssociationFieldAssociationObjectID = "bk_asst_obj_id"
 	// AssociationFieldAssociationName the association data field definition
-	AssociationFieldAssociationName = "bk_asst_name"
+	// AssociationFieldAssociationName = "bk_asst_name"
 	// AssociationFieldAssociationId auto incr id
 	AssociationFieldAssociationId = "id"
 )
@@ -44,7 +44,7 @@ type SearchAssociationTypeResult struct {
 	BaseResp `json:",inline"`
 	Data     struct {
 		Count int                `json:"count"`
-		Info  []*AssociationType `json:"info"`
+		Info  []*AssociationKind `json:"info"`
 	} `json:"data"`
 }
 
@@ -147,37 +147,117 @@ type DeleteAssociationInstResult struct {
 }
 
 // 关联类型
-type AssociationType struct {
-	ID        int64  `field:"id" json:"id" bson:"id"`
-	AsstID    string `field:"bk_asst_id" json:"bk_asst_id" bson:"bk_asst_id"`
-	AsstName  string `field:"bk_asst_name" json:"bk_asst_name" bson:"bk_asst_name"`
-	OwnerID   string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
-	SrcDes    string `field:"src_des" json:"src_des" bson:"src_des"`
-	DestDes   string `field:"dest_des" json:"dest_des" bson:"dest_des"`
-	Direction string `field:"direction" json:"direction" bson:"direction"`
+type AssociationDirection string
+
+
+const (
+	NoneDirection       AssociationDirection = "none"
+	DestinationToSource AssociationDirection = "src_dest"
+	SourceToDestination AssociationDirection = "dest_src"
+)
+
+type AssociationKind struct {
+	ID int64 `field:"id" json:"id" bson:"id"`
+	// a unique association id created by user.
+	AssociationKindID string `field:"bk_asst_id" json:"bk_asst_id" bson:"bk_asst_id"`
+	// a memorable name for this association kind, could be a chinese name, a english name etc.
+	AssociationKindName string `field:"bk_asst_name" json:"bk_asst_name" bson:"bk_asst_name"`
+	// the owner that this association type belongs to.
+	OwnerID string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	// the describe for the relationship from source object to the target(destination) object, which will be displayed
+	// when the topology is constructed between objects.
+	SourceToDestinationNote string `field:"src_des" json:"src_des" bson:"src_des"`
+	// the describe for the relationship from the target(destination) object to source object, which will be displayed
+	// when the topology is constructed between objects.
+	DestinationToSourceNote string `field:"dest_des" json:"dest_des" bson:"dest_des"`
+	// the association direction between two objects.
+	Direction AssociationDirection `field:"direction" json:"direction" bson:"direction"`
 }
 
-// Association define object association struct
+type AssociationOnDeleteAction string
+type AssociationMapping string
+
+const (
+	// this is a default action, which is do nothing when a association between object is deleted.
+	NoAction AssociationOnDeleteAction = "none"
+	// delete related source object instances when the association is deleted.
+	DeleteSource AssociationOnDeleteAction = "delete_src"
+	// delete related destination object instances when the association is deleted.
+	DeleteDestinatioin AssociationOnDeleteAction = "delete_dest"
+
+	// the source object can be related with only one destination object
+	OneToOneMapping AssociationMapping = "1:1"
+	// the source object can be related with multiple destination objects
+	OneToManyMapping AssociationMapping = "1:n"
+	// multiple source object can be related with multiple destination objects
+	ManyToManyMapping AssociationMapping = "n:n"
+)
+
+// Association defines the association between two objects.
 type Association struct {
-	ID          int64  `field:"id" json:"id" bson:"id"`
-	ObjectID    string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
-	OwnerID     string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
-	AsstForward string `field:"bk_asst_forward" json:"bk_asst_forward" bson:"-"`
-	AsstObjID   string `field:"bk_asst_obj_id" json:"bk_asst_obj_id" bson:"bk_asst_obj_id"`
-	AsstName    string `field:"bk_asst_name" json:"bk_asst_name" bson:"bk_asst_name"`
+	ID      int64  `field:"id" json:"id" bson:"id"`
+	OwnerID string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 
-	ObjectAsstID   string `field:"bk_obj_asst_id" json:"bk_obj_asst_id" bson:"bk_obj_asst_id"`
-	ObjectAsstName string `field:"bk_obj_asst_name" json:"bk_obj_asst_name" bson:"bk_obj_asst_name"`
-	AsstID         string `field:"bk_asst_id" json:"bk_asst_id" bson:"bk_asst_id"`
-	Mapping        string `field:"mapping" json:"mapping" bson:"mappingo"`
-	OnDelete       string `field:"on_delete" json:"on_delete" bson:"on_delete"`
+	// the unique id belongs to  this association, should be generated with rules as follows:
+	// "$ObjectID"_"$AsstID"_"$AsstObjID"
+	AssociationName string `field:"bk_obj_asst_id" json:"bk_obj_asst_id" bson:"bk_obj_asst_id"`
+	// the alias name of this association, which is a substitute name in the association kind $AsstKindID
+	AssociationAliasName string `field:"bk_obj_asst_name" json:"bk_obj_asst_name" bson:"bk_obj_asst_name"`
 
-	ObjectAttID      string `field:"bk_object_att_id" json:"bk_object_att_id" bson:"bk_object_att_id"`
+	// describe which object this association is defined for.
+	ObjectID string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
+	// describe where the Object associate with.
+	AsstObjID string `field:"bk_asst_obj_id" json:"bk_asst_obj_id" bson:"bk_asst_obj_id"`
+	// the association kind used by this association.
+	AsstKindID string `field:"bk_asst_id" json:"bk_asst_id" bson:"bk_asst_id"`
+
+	// defined which kind of association can be used between the source object and destination object.
+	Mapping AssociationMapping `field:"mapping" json:"mapping" bson:"mapping"`
+	// describe the action when this association is deleted.
+	OnDelete AssociationOnDeleteAction `field:"on_delete" json:"on_delete" bson:"on_delete"`
+	// describe whether this association is a pre-defined association or not,
+	// if true, it means this association is used by cmdb itself.
+	IsPredefined *bool `field:"is_pre" json:"is_pre" bson:"is_pre"`
+	
 	ClassificationID string `field:"bk_classification_id" bson:"-"`
 	ObjectIcon       string `field:"bk_obj_icon" bson:"-"`
 	ObjectName       string `field:"bk_obj_name" bson:"-"`
 
 	IsPre bool `field:"ispre" json:"ispre" bson:"ispre"`
+}
+
+// return field means which filed is set but is forbidden to update.
+func (a *Association) CanUpdate() (field string, can bool) {
+	if a.ID != 0 {
+		return "id", false
+	}
+
+	if len(a.OwnerID) != 0 {
+		return "bk_supplier_account", false
+	}
+
+	if len(a.AssociationName) != 0 {
+		return "bk_obj_asst_id", false
+	}
+
+	if len(a.ObjectID) != 0 {
+		return "bk_obj_id", false
+	}
+
+	if len(a.AsstObjID) != 0 {
+		return "bk_asst_obj_id", false
+	}
+
+	if len(a.Mapping) != 0 {
+		return "mapping", false
+	}
+
+	if a.IsPredefined != nil {
+		return "is_pre", false
+	}
+
+	// only on delete, association kind id, alias name can be update.
+	return "", true
 }
 
 // Parse load the data from mapstr attribute into attribute instance
@@ -228,15 +308,15 @@ func (asst InstAsst) GetInstID(objID string) (instID int64, ok bool) {
 }
 
 type InstNameAsst struct {
-	ID         string                 `json:"id"`
-	ObjID      string                 `json:"bk_obj_id"`
-	ObjIcon    string                 `json:"bk_obj_icon"`
-	InstID     int64                  `json:"bk_inst_id"`
-	ObjectName string                 `json:"bk_obj_name"`
-	InstName   string                 `json:"bk_inst_name"`
-	AsstName   string                 `json:"bk_asst_name"`
-	AsstID     string                 `json:"bk_asst_id"`
-	InstInfo   map[string]interface{} `json:"inst_info,omitempty"`
+	ID         string `json:"id"`
+	ObjID      string `json:"bk_obj_id"`
+	ObjIcon    string `json:"bk_obj_icon"`
+	InstID     int64  `json:"bk_inst_id"`
+	ObjectName string `json:"bk_obj_name"`
+	InstName   string `json:"bk_inst_name"`
+	// AsstName   string                 `json:"bk_asst_name"`
+	// AsstID   string                 `json:"bk_asst_id"`
+	InstInfo map[string]interface{} `json:"inst_info,omitempty"`
 }
 
 // Parse load the data from mapstr attribute into attribute instance
