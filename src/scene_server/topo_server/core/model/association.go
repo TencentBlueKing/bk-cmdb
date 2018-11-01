@@ -13,11 +13,12 @@
 package model
 
 import (
+	"encoding/json"
+
 	"configcenter/src/apimachinery"
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
-	"encoding/json"
 )
 
 var _ Association = (*association)(nil)

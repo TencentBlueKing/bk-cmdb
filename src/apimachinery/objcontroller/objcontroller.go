@@ -31,7 +31,7 @@ type ObjControllerClientInterface interface {
 	Identifier() identifier.IdentifierInterface
 	OpenAPI() openapi.OpenApiInterface
 	Privilege() privilege.PrivilegeInterface
-	Asst() association.AssociationInterface
+	Association() association.AssociationInterface
 }
 
 func NewObjectControllerInterface(c *util.Capability, version string) ObjControllerClientInterface {
@@ -65,6 +65,6 @@ func (o *objectctrl) Identifier() identifier.IdentifierInterface {
 	return identifier.NewIdentifierInterface(o.client)
 }
 
-func (o *objectctrl) Asst() association.AssociationInterface {
+func (o *objectctrl) Association() association.AssociationInterface {
 	return association.NewAssociationInterface(o.client)
 }

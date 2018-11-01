@@ -32,7 +32,7 @@ func (asst *Association) SearchType(ctx context.Context, h http.Header, request 
 	return
 }
 
-func (asst *Association) CreateType(ctx context.Context, h http.Header, request *metadata.AssociationType) (resp *metadata.CreateAssociationTypeResult, err error) {
+func (asst *Association) CreateType(ctx context.Context, h http.Header, request *metadata.AssociationKind) (resp *metadata.CreateAssociationTypeResult, err error) {
 	resp = new(metadata.CreateAssociationTypeResult)
 	subPath := fmt.Sprintf("/association/action/create")
 
