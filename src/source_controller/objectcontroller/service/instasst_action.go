@@ -24,6 +24,8 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/eventclient"
+	"configcenter/src/common/metadata"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -97,6 +99,21 @@ func (cli *Service) CreateInstAssociation(req *restful.Request, resp *restful.Re
 
 	result := &meta.CreateAssociationInstResult{BaseResp: meta.SuccessBaseResp}
 	result.Data.ID = data.ID
+
+	ec := eventclient.NewEventContextByReq(req.Request.Header, cli.Cache)
+	err = ec.InsertEvent(metadata.EventTypeAssociation, data.ObjectID, metadata.EventActionCreate, data, nil)
+	if err != nil {
+		blog.Errorf("create event error:%v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Data: result.Data, Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
+		return
+	}
+	err = ec.InsertEvent(metadata.EventTypeAssociation, data.AsstObjectID, metadata.EventActionCreate, data, nil)
+	if err != nil {
+		blog.Errorf("create event error:%v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Data: result.Data, Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
+		return
+	}
+
 	resp.WriteEntity(result)
 }
 
@@ -139,18 +156,12 @@ func (cli *Service) DeleteInstAssociation(req *restful.Request, resp *restful.Re
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	db := cli.Instance.Clone()
 
-	// check exist
-	cnt, err := db.Table(common.BKTableNameInstAsst).Find(cond).Count(ctx)
+	// take snapshot
+	assts := []meta.InstAsst{}
+	err = db.Table(common.BKTableNameInstAsst).Find(cond).All(ctx, &assts)
 	if err != nil {
 		blog.Errorf("failed to count inst association , error info is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommNotFound, err.Error())})
-		return
-	}
-
-	if cnt < 1 {
-		msg := fmt.Sprintf("failed to delete inst association, not found")
-		blog.Errorf(msg)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommNotFound, msg)})
 		return
 	}
 
@@ -159,6 +170,22 @@ func (cli *Service) DeleteInstAssociation(req *restful.Request, resp *restful.Re
 		blog.Errorf("delete inst association error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBDeleteFailed, err.Error())})
 		return
+	}
+
+	for _, asst := range assts {
+		ec := eventclient.NewEventContextByReq(req.Request.Header, cli.Cache)
+		err = ec.InsertEvent(metadata.EventTypeAssociation, asst.ObjectID, metadata.EventActionCreate, nil, asst)
+		if err != nil {
+			blog.Errorf("create event error:%v", err)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
+			return
+		}
+		err = ec.InsertEvent(metadata.EventTypeAssociation, asst.AsstObjectID, metadata.EventActionCreate, nil, asst)
+		if err != nil {
+			blog.Errorf("create event error:%v", err)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
+			return
+		}
 	}
 
 	result := &meta.DeleteAssociationInstResult{BaseResp: meta.SuccessBaseResp, Data: "success"}
