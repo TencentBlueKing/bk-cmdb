@@ -19,6 +19,8 @@ import (
 	"configcenter/src/storage/mongobyc"
 )
 
+var _ mongobyc.Session = (*session)(nil)
+
 type session struct {
 	*transaction
 	mongocli     *client

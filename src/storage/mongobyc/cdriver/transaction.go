@@ -25,6 +25,8 @@ func newSessionTransaction(clientSession *session) mongobyc.Transaction {
 	}
 }
 
+var _ mongobyc.Transaction = (*transaction)(nil)
+
 type transaction struct {
 	txnOpts        *C.mongoc_transaction_opt_t
 	clientSession  *session

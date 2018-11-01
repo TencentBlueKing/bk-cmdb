@@ -27,6 +27,8 @@ func NewClientPool(uri string) mongobyc.ClientPool {
 	return pool
 }
 
+var _ mongobyc.ClientPool = (*clientPool)(nil)
+
 type clientPool struct {
 	uri    string
 	dbName string
