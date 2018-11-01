@@ -32,6 +32,8 @@ func newSessionOperation(mongocli *client) mongobyc.SessionOperation {
 	}
 }
 
+var _ mongobyc.SessionOperation = (*sessionOperation)(nil)
+
 type sessionOperation struct {
 	txnOpts      *C.mongoc_transaction_opt_t
 	readConcern  *C.mongoc_read_concern_t

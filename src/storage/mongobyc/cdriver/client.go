@@ -41,6 +41,8 @@ func NewClient(uri string) mongobyc.CommonClient {
 	}
 }
 
+var _ (mongobyc.CommonClient) = (*client)(nil)
+
 type client struct {
 	createdByPool  bool
 	uri            string

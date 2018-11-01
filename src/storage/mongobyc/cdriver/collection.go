@@ -81,6 +81,8 @@ func newCollectionWithSession(innerClient *client, collectionName string, client
 	return coll
 }
 
+var _ mongobyc.CollectionInterface = (*collection)(nil)
+
 type collection struct {
 	name            string
 	mongocCli       *client
