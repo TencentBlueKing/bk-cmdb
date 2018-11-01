@@ -557,7 +557,7 @@ func (ih *IdentifierHandler) StartHandleInsts() error {
 		}
 	}()
 	go ih.handleInstLoop()
-	return nil
+	select {}
 }
 
 func (ih *IdentifierHandler) handleInstLoop() error {
