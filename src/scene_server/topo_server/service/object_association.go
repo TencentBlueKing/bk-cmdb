@@ -48,6 +48,10 @@ func (s *topoService) SearchObjectAssociation(params types.ContextParams, pathPa
 		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 	}
 
+	if len(objId) == 0 {
+		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
+	}
+
 	return s.core.AssociationOperation().SearchObjectAssociation(params, objId)
 }
 
@@ -56,7 +60,7 @@ func (s *topoService) DeleteObjectAssociation(params types.ContextParams, pathPa
 
 	id, err := strconv.ParseInt(pathParams("id"), 10, 64)
 	if err != nil {
-		blog.Errorf("delete object association failed, got a invalid objasst id[%v], err: %v", pathParams("id"), err)
+		blog.Errorf("delete object association failed, got a invalid object association id[%v], err: %v", pathParams("id"), err)
 		return nil, params.Err.Error(common.CCErrTopoInvalidObjectAssociaitonID)
 	}
 

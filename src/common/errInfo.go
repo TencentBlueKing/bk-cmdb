@@ -274,7 +274,11 @@ const (
 	// get association kind with id failed.
 	CCErrTopoGetAssociationKindFailed = 1101044
 	// create object association missing object kind id, src object id or destination object id.
-	CCErrorTopoAssociationMissingPrameters = 1101045
+	CCErrorTopoAssociationMissingParameters = 1101045
+	// the given association id does not exist.
+	CCErrorTopoObjectAssociationNotExist = 1101046
+	// update object association, but update fields that can not be updated.
+	CCErrorTopoObjectAssociationUpdateForbiddenFields = 1101047
 
 	CCErrTopoAppDeleteFailed                       = 1001031
 	CCErrTopoAppUpdateFailed                       = 1001032
