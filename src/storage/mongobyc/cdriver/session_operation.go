@@ -10,25 +10,19 @@
  * limitations under the License.
  */
 
-package mongobyc
+package cdriver
 
 // #include "mongo.h"
 import "C"
 
 import (
+	"configcenter/src/storage/mongobyc"
 	"fmt"
 	"time"
 	"unsafe"
 )
 
-// SessionOperation session operation methods
-type SessionOperation interface {
-	WithReadConcernLevel(level string) SessionOperation
-	WithWriteConcernMajority(timeout time.Duration) SessionOperation
-	Create() Session
-}
-
-func newSessionOperation(mongocli *client) SessionOperation {
+func newSessionOperation(mongocli *client) mongobyc.SessionOperation {
 	return &sessionOperation{
 		txnOpts:      C.mongoc_transaction_opts_new(),
 		readConcern:  C.mongoc_read_concern_new(),
@@ -48,7 +42,7 @@ type sessionOperation struct {
 }
 
 // WithReadConcernLevel set read concern level
-func (t *sessionOperation) WithReadConcernLevel(level string) SessionOperation {
+func (t *sessionOperation) WithReadConcernLevel(level string) mongobyc.SessionOperation {
 	cstrLevel := C.CString(level)
 	defer C.free(unsafe.Pointer(cstrLevel))
 	if !C.mongoc_read_concern_set_level(t.readConcern, cstrLevel) {
@@ -60,7 +54,7 @@ func (t *sessionOperation) WithReadConcernLevel(level string) SessionOperation {
 }
 
 // WithWriteConcernMajority set write concern majority
-func (t *sessionOperation) WithWriteConcernMajority(timeout time.Duration) SessionOperation {
+func (t *sessionOperation) WithWriteConcernMajority(timeout time.Duration) mongobyc.SessionOperation {
 
 	millSeconds := timeout.Nanoseconds() / 1e6
 
@@ -71,7 +65,7 @@ func (t *sessionOperation) WithWriteConcernMajority(timeout time.Duration) Sessi
 }
 
 // Create create a new transaction instance
-func (t *sessionOperation) Create() Session {
+func (t *sessionOperation) Create() mongobyc.Session {
 
 	// reset the default transaction options
 	C.mongoc_session_opts_set_default_transaction_opts(t.sessionOpts, t.txnOpts)

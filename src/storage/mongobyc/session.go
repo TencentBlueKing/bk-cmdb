@@ -12,8 +12,9 @@
 
 package mongobyc
 
-// #include "mongo.h"
-import "C"
+import (
+	"time"
+)
 
 // Session mongodb session operation methods
 type Session interface {
@@ -21,45 +22,8 @@ type Session interface {
 	Transaction
 }
 
-type session struct {
-	*transaction
-	mongocli     *client
-	innerSession *C.mongoc_client_session_t
-	sessionOpts  *C.mongoc_session_opt_t
-	txnOpts      *C.mongoc_transaction_opt_t
-}
-
-func (s *session) Open() error {
-
-	var err C.bson_error_t
-	s.innerSession = C.mongoc_client_start_session(s.mongocli.innerClient, s.sessionOpts, &err)
-	if nil == s.innerSession {
-		return TransformError(err)
-	}
-	s.transaction = &transaction{
-		txnOpts:        s.txnOpts,
-		clientSession:  s,
-		collectionMaps: map[collectionName]CollectionInterface{},
-	}
-	return nil
-}
-
-func (s *session) Close() error {
-	if nil != s.innerSession {
-		C.mongoc_client_session_destroy(s.innerSession)
-		s.innerSession = nil
-	}
-
-	if nil != s.txnOpts {
-		C.mongoc_transaction_opts_destroy(s.txnOpts)
-		s.txnOpts = nil
-	}
-
-	if nil != s.sessionOpts {
-		C.mongoc_session_opts_destroy(s.sessionOpts)
-		s.sessionOpts = nil
-	}
-
-	s.transaction.Close()
-	return nil
+type SessionOperation interface {
+	WithReadConcernLevel(level string) SessionOperation
+	WithWriteConcernMajority(timeout time.Duration) SessionOperation
+	Create() Session
 }
