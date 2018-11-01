@@ -10,24 +10,18 @@
  * limitations under the License.
  */
 
-package mongobyc
+package cdriver
 
 // #include "mongo.h"
 import "C"
 import (
+	"configcenter/src/storage/mongobyc"
 	"fmt"
 	"unsafe"
 )
 
-// ClientPool the mongo client pool
-type ClientPool interface {
-	OpenCloser
-	Pop() Client
-	Push(targetClient Client)
-}
-
 // NewClientPool create a mongoc client pool instance
-func NewClientPool(uri string) ClientPool {
+func NewClientPool(uri string) mongobyc.ClientPool {
 	pool := new(clientPool)
 	pool.uri = uri
 	return pool
@@ -65,13 +59,13 @@ func (c *clientPool) Close() error {
 	return nil
 }
 
-func (c *clientPool) Pop() Client {
+func (c *clientPool) Pop() mongobyc.Client {
 
 	mongocClient := C.mongoc_client_pool_pop(c.pool)
 
 	innerClient := new(client)
 	innerClient.innerDB = new(database)
-	innerClient.collectionMaps = map[collectionName]CollectionInterface{}
+	innerClient.collectionMaps = map[collectionName]mongobyc.CollectionInterface{}
 	innerClient.createdByPool = true
 	innerClient.innerClient = mongocClient
 	innerClient.innerDB.dbName = c.dbName
@@ -84,7 +78,7 @@ func (c *clientPool) Pop() Client {
 	return innerClient
 }
 
-func (c *clientPool) Push(targetClient Client) {
+func (c *clientPool) Push(targetClient mongobyc.Client) {
 
 	switch tmp := targetClient.(type) {
 	case *client:

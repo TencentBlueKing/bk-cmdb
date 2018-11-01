@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package mongobyc
+package cdriver
 
 // #cgo pkg-config: libbson-1.0
 // #cgo pkg-config: libmongoc-1.0
