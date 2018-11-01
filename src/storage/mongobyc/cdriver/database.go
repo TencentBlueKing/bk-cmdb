@@ -15,7 +15,12 @@ package cdriver
 // #include "mongo.h"
 import "C"
 
-import "unsafe"
+import (
+	"configcenter/src/storage/mongobyc"
+	"unsafe"
+)
+
+var _ mongobyc.Database = (*database)(nil)
 
 type database struct {
 	dbName string
