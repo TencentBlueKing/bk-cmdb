@@ -65,10 +65,10 @@ func Upgrade(db storage.DI, conf *Config) (err error) {
 	cmdbVision.Distro = ccversion.CCDistro
 	cmdbVision.DistroVersion = ccversion.CCDistroVersion
 
-	currentVision := cmdbVision.CurrentVersion
+	currentVision := remapVserion(cmdbVision.CurrentVersion)
 	lastVersion := ""
 	for _, v := range upgraderPool {
-		lastVersion = v.version
+		lastVersion = remapVserion(v.version)
 		if v.version <= currentVision {
 			blog.Infof(`currentVision is "%s" skip upgrade "%s"`, currentVision, v.version)
 			continue
@@ -92,6 +92,17 @@ func Upgrade(db storage.DI, conf *Config) (err error) {
 		saveVesion(db, cmdbVision)
 	}
 	return nil
+}
+
+func remapVserion(v string) string {
+	if correct, ok := wrongVersion[v]; ok {
+		return correct
+	}
+	return v
+}
+
+var wrongVersion = map[string]string{
+	"x18_10_10_01": "x18.10.10.01",
 }
 
 func getVersion(db storage.DI) (*Version, error) {
