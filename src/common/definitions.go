@@ -834,25 +834,23 @@ const (
 	RedisProcSrvQueryProcOPResultKey          = BKCacheKeyV3Prefix + "procsrv:query:opresult:set"
 )
 
-// defines const fields belongs to association kind
+// association fields
 const (
 	// the id of the association kind
-	AssociationKindIDField   = "bk_asst_id"
-	AssociationKindNameField = "bk_asst_name"
-
-	DefaultMailineAssociationKindID   = "bk_mainline_default_asst_kind"
-	DefaultMailineAssociationKindName = "蓝鲸主线模型默认关联类型"
-
-	AssociatedObjectIDField = "bk_asst_obj_id"
+	AssociationKindIDField    = "bk_asst_id"
+	AssociationKindNameField  = "bk_asst_name"
+	AssociationObjAsstIDField = "bk_obj_asst_id"
+	AssociatedObjectIDField   = "bk_asst_obj_id"
 )
 
 // association
 const (
-	AssociationTypeBelong  = "belong"
-	AssociationTypeGroup   = "group"
-	AssociationTypeRun     = "run"
-	AssociationTypeConnect = "connect"
-	AssociationTypeDefault = "default"
+	AssociationTypeMainline = "bk_mainline"
+	AssociationTypeBelong   = "belong"
+	AssociationTypeGroup    = "group"
+	AssociationTypeRun      = "run"
+	AssociationTypeConnect  = "connect"
+	AssociationTypeDefault  = "default"
 )
 
 // Association mapping
@@ -867,9 +865,4 @@ const (
 	AssociationOnDeleteNone              = "none"
 	AssociationOnDeleteDeleteSource      = "delete_src"
 	AssociationOnDeleteDeleteDestination = "delete_dest"
-)
-
-// association fields
-const (
-	AssociationObjAsstIDField = "bk_obj_asst_id"
 )
