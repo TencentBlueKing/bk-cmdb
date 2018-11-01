@@ -199,9 +199,9 @@ type Association struct {
 
 	// the unique id belongs to  this association, should be generated with rules as follows:
 	// "$ObjectID"_"$AsstID"_"$AsstObjID"
-	ObjectAsstID string `field:"bk_obj_asst_id" json:"bk_obj_asst_id" bson:"bk_obj_asst_id"`
+	AssociationName string `field:"bk_obj_asst_id" json:"bk_obj_asst_id" bson:"bk_obj_asst_id"`
 	// the alias name of this association, which is a substitute name in the association kind $AsstKindID
-	ObjectAsstAliasName string `field:"bk_obj_asst_name" json:"bk_obj_asst_name" bson:"bk_obj_asst_name"`
+	AssociationAliasName string `field:"bk_obj_asst_name" json:"bk_obj_asst_name" bson:"bk_obj_asst_name"`
 
 	// describe which object this association is defined for.
 	ObjectID string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
@@ -216,13 +216,45 @@ type Association struct {
 	OnDelete AssociationOnDeleteAction `field:"on_delete" json:"on_delete" bson:"on_delete"`
 	// describe whether this association is a pre-defined association or not,
 	// if true, it means this association is used by cmdb itself.
-	IsPredefined bool `field:"is_pre" json:"is_pre" bson:"is_pre"`
+	IsPredefined *bool `field:"is_pre" json:"is_pre" bson:"is_pre"`
 
-	// deprecated from now on.
-	// ObjectAttID      string `field:"bk_object_att_id" json:"bk_object_att_id" bson:"bk_object_att_id"`
 	ClassificationID string `field:"bk_classification_id" bson:"-"`
 	ObjectIcon       string `field:"bk_obj_icon" bson:"-"`
 	ObjectName       string `field:"bk_obj_name" bson:"-"`
+}
+
+// return field means which filed is set but is forbidden to update.
+func (a *Association) CanUpdate() (field string, can bool) {
+	if a.ID != 0 {
+		return "id", false
+	}
+
+	if len(a.OwnerID) != 0 {
+		return "bk_supplier_account", false
+	}
+
+	if len(a.AssociationName) != 0 {
+		return "bk_obj_asst_id", false
+	}
+
+	if len(a.ObjectID) != 0 {
+		return "bk_obj_id", false
+	}
+
+	if len(a.AsstObjID) != 0 {
+		return "bk_asst_obj_id", false
+	}
+
+	if len(a.Mapping) != 0 {
+		return "mapping", false
+	}
+
+	if a.IsPredefined != nil {
+		return "is_pre", false
+	}
+
+	// only on delete, association kind id, alias name can be update.
+	return "", true
 }
 
 // Parse load the data from mapstr attribute into attribute instance

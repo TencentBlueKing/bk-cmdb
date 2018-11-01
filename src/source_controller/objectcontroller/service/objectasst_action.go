@@ -54,7 +54,7 @@ func (cli *Service) CreateObjectAssociation(req *restful.Request, resp *restful.
 	request.OwnerID = ownerID
 
 	// check uniq bk_obj_asst_id
-	if request.ObjectAsstID == "" {
+	if request.AssociationName == "" {
 		msg := fmt.Sprintf("failed to create object association, bk_obj_asst_id must be set")
 		blog.Errorf(msg)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBInsertFailed, msg)})
@@ -65,7 +65,7 @@ func (cli *Service) CreateObjectAssociation(req *restful.Request, resp *restful.
 	db := cli.Instance.Clone()
 
 	// check uniq
-	cond := map[string]interface{}{"bk_obj_asst_id": request.ObjectAsstID}
+	cond := map[string]interface{}{"bk_obj_asst_id": request.AssociationName}
 	cond = util.SetModOwner(cond, ownerID)
 
 	cnt, err := db.Table(common.BKTableNameObjAsst).Find(cond).Count(ctx)
@@ -76,7 +76,7 @@ func (cli *Service) CreateObjectAssociation(req *restful.Request, resp *restful.
 	}
 
 	if cnt > 0 {
-		msg := fmt.Sprintf("failed to create object association, bk_obj_asst_id %s exist", request.ObjectAsstID)
+		msg := fmt.Sprintf("failed to create object association, bk_obj_asst_id %s exist", request.AssociationName)
 		blog.Errorf(msg)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBInsertFailed, msg)})
 		return

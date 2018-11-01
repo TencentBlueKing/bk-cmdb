@@ -405,17 +405,18 @@ func (o *object) generateObjectAssociatioinID(srcObjID, asstID, destObjID string
 
 func (o *object) CreateMainlineObjectAssociation(relateToObjID string) error {
 	objAsstID := o.generateObjectAssociatioinID(o.obj.ObjectID, common.DefaultMailineAssociationKindID, relateToObjID)
+	defined := true
 	association := meta.Association{
-		OwnerID:             o.params.SupplierAccount,
-		ObjectAsstID:        objAsstID,
-		ObjectAsstAliasName: objAsstID,
-		ObjectID:            o.obj.ObjectID,
+		OwnerID:              o.params.SupplierAccount,
+		AssociationName:      objAsstID,
+		AssociationAliasName: objAsstID,
+		ObjectID:             o.obj.ObjectID,
 		// related to it's parent object id
 		AsstObjID:    relateToObjID,
 		AsstKindID:   common.DefaultMailineAssociationKindID,
 		Mapping:      metadata.OneToOneMapping,
 		OnDelete:     metadata.NoAction,
-		IsPredefined: true,
+		IsPredefined: &defined,
 	}
 
 	result, err := o.clientSet.ObjectController().Meta().CreateObjectAssociation(context.Background(), o.params.Header, &association)
