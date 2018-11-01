@@ -177,7 +177,7 @@ func (w *WebServer) getConfig(regDiscover string) error {
 	w.Config.Version = config["api.version"]
 	w.Config.AgentAppUrl = config["app.agent_app_url"]
 	w.Config.LoginUrl = fmt.Sprintf(w.Config.Site.BkLoginUrl, w.Config.Site.AppCode, w.Config.Site.DomainUrl)
-
+	w.Config.ConfigMap = config
 	return nil
 }
 
@@ -207,6 +207,7 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	w.Config.Version = current.ConfigMap["api.version"]
 	w.Config.AgentAppUrl = current.ConfigMap["app.agent_app_url"]
 	w.Config.LoginUrl = fmt.Sprintf(w.Config.Site.BkLoginUrl, w.Config.Site.AppCode, w.Config.Site.DomainUrl)
+	w.Config.ConfigMap = current.ConfigMap
 
 }
 
