@@ -68,4 +68,5 @@ type Config struct {
 	AgentAppUrl  string
 	LoginUrl     string
 	LoginVersion string
+	ConfigMap    map[string]string
 }
