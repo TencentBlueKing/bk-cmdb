@@ -215,7 +215,6 @@ func (o *object) GetMainlineParentObject() (Object, error) {
 	cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(o.obj.ObjectID)
 	cond.Field(common.AssociationKindIDField).Eq(common.DefaultMailineAssociationKindID)
-	cond.Field(common.AssociationObjectIsPreField).Eq(true)
 
 	rsp, err := o.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), o.params.Header, cond.ToMapStr())
 	if nil != err {
@@ -252,7 +251,6 @@ func (o *object) GetMainlineChildObject() (Object, error) {
 	cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
 	cond.Field(common.BKAsstObjIDField).Eq(o.obj.ObjectID)
 	cond.Field(common.AssociationKindIDField).Eq(common.DefaultMailineAssociationKindID)
-	cond.Field(common.AssociationObjectIsPreField).Eq(true)
 
 	rsp, err := o.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), o.params.Header, cond.ToMapStr())
 	if nil != err {
