@@ -149,7 +149,6 @@ type DeleteAssociationInstResult struct {
 // 关联类型
 type AssociationDirection string
 
-
 const (
 	NoneDirection       AssociationDirection = "none"
 	DestinationToSource AssociationDirection = "src_dest"
@@ -217,13 +216,11 @@ type Association struct {
 	OnDelete AssociationOnDeleteAction `field:"on_delete" json:"on_delete" bson:"on_delete"`
 	// describe whether this association is a pre-defined association or not,
 	// if true, it means this association is used by cmdb itself.
-	IsPredefined *bool `field:"is_pre" json:"is_pre" bson:"is_pre"`
-	
+	IsPre bool `field:"ispre" json:"ispre" bson:"ispre"`
+
 	ClassificationID string `field:"bk_classification_id" bson:"-"`
 	ObjectIcon       string `field:"bk_obj_icon" bson:"-"`
 	ObjectName       string `field:"bk_obj_name" bson:"-"`
-
-	IsPre bool `field:"ispre" json:"ispre" bson:"ispre"`
 }
 
 // return field means which filed is set but is forbidden to update.
@@ -252,7 +249,7 @@ func (a *Association) CanUpdate() (field string, can bool) {
 		return "mapping", false
 	}
 
-	if a.IsPredefined != nil {
+	if a.IsPre == true {
 		return "is_pre", false
 	}
 
