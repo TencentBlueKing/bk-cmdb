@@ -18,15 +18,13 @@ import (
 	"fmt"
 	"io"
 
-	"configcenter/src/common/metadata"
-
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	meta "configcenter/src/common/metadata"
-
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -650,6 +648,10 @@ func (o *object) Save(data frtypes.MapStr) error {
 			return o.Update(data)
 		}
 		return o.Update(o.obj.ToMapStr())
+	}
+
+	if o.obj.ObjIcon == "" {
+		return o.params.Err.Errorf(common.CCErrCommParamsNeedSet, common.BKObjIconField)
 	}
 
 	return o.Create()
