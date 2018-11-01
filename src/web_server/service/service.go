@@ -62,6 +62,9 @@ func (s *Service) WebService() *gin.Engine {
 	ws.POST("/object/owner/:bk_supplier_account/object/:bk_obj_id/export", s.ExportObject)
 	ws.GET("/user/list", s.GetUserList)
 	ws.GET("/user/language/:language", s.UpdateUserLanguage)
+	ws.GET("/userinfo", s.UserInfo)
+	ws.PUT("/user/current/supplier/:id", s.UpdateSupplier)
+
 	ws.GET("/healthz", s.Healthz)
 	ws.GET("/", s.Index)
 	return ws
