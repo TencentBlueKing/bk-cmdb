@@ -120,7 +120,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 				asst.IsPre = true
 			}
 		} else {
-			asst.AsstID = common.AssociationTypeBelong // TODO
+			asst.AsstID = common.AssociationTypeDefault
 			asst.ObjectAsstID = buildObjAsstID(asst.AsstObjID, asst.ObjectAttID)
 			property := properyMap[buildObjPropertyMapKey(asst.ObjectID, asst.ObjectAttID)]
 			switch property.PropertyType {
