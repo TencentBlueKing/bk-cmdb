@@ -834,6 +834,7 @@ const (
 	RedisProcSrvQueryProcOPResultKey          = BKCacheKeyV3Prefix + "procsrv:query:opresult:set"
 )
 
+
 // defines const fields belongs to association kind
 const (
 	// the id of the association kind
@@ -845,4 +846,31 @@ const (
 
 	AssociatedObjectIDField     = "bk_asst_obj_id"
 	AssociationObjectIsPreField = "is_pre"
+)
+// association
+const (
+	AssociationTypeBelong  = "belong"
+	AssociationTypeGroup   = "group"
+	AssociationTypeRun     = "run"
+	AssociationTypeConnect = "connect"
+	AssociationTypeDefault = "default"
+)
+
+// Association mapping
+const (
+	AssociationMappingOneToOne     = "1:1"
+	AssociationMappingOneToMulti   = "1:n"
+	AssociationMappingMultiToMulti = "n:n"
+)
+
+// Association ondelete
+const (
+	AssociationOnDeleteNone              = "none"
+	AssociationOnDeleteDeleteSource      = "delete_src"
+	AssociationOnDeleteDeleteDestination = "delete_dest"
+)
+
+// association fields
+const (
+	AssociationObjAsstIDField = "bk_obj_asst_id"
 )
