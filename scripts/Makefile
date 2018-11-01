@@ -7,7 +7,7 @@ comma:=,
 ARCH?=$(shell uname -m)
 
 BUILDTIME?=$(shell date +%Y-%m-%dT%T%z)
-#GITHASH?=$(shell git rev-parse  HEAD)
+GITHASH?=$(shell git rev-parse  HEAD)
 #GITTAG?=$(shell git describe --always)
 #VERSION?=$(GITTAG)-$(shell date +%y.%m.%d)
 VERSION?=oc-$(shell date +%y.%m.%d)
