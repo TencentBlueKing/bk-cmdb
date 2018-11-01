@@ -144,7 +144,7 @@ func (a *association) CreateCommonAssociation(params types.ContextParams, data *
 	if len(data.AsstKindID) == 0 || len(data.AsstObjID) == 0 || len(data.ObjectID) == 0 {
 		errmsg := fmt.Sprintf("[operation-asst] failed to create the association , association kind id associate/object id is required")
 		blog.Error(errmsg)
-		return params.Err.New(common.CCErrCommParamsInvalid, errmsg)
+		return params.Err.Error(common.CCErrorTopoAssociationMissingPrameters)
 	}
 
 	//  check the association
