@@ -129,10 +129,7 @@ func (s *Service) ExportHost(c *gin.Context) {
 		return
 	}
 	var file *xlsx.File
-	var sheet *xlsx.Sheet
-
 	file = xlsx.NewFile()
-	sheet, err = file.AddSheet("host")
 
 	objID := common.BKInnerObjIDHost
 	fields, err := s.Logics.GetObjFieldIDs(objID, logics.GetFilterFields(objID), c.Request.Header)
@@ -142,9 +139,9 @@ func (s *Service) ExportHost(c *gin.Context) {
 		c.Writer.Write([]byte(reply))
 		return
 	}
-	err = logics.BuildHostExcelFromData(objID, fields, nil, hostInfo, sheet, defLang)
+	err = s.Logics.BuildHostExcelFromData(context.Background(), objID, fields, nil, hostInfo, file, pheader)
 	if nil != err {
-		blog.Errorf("ExportHost object:%s error:%s", objID, err.Error())
+		blog.Errorf("ExportHost object:%s error:%s, rid:%s", objID, err.Error(), util.GetHTTPCCRequestID(c.Request.Header))
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
 		c.Writer.Write([]byte(reply))
 		return
