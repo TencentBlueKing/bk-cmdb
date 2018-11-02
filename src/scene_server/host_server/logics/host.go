@@ -199,16 +199,6 @@ func (lgc *Logics) EnterIP(pheader http.Header, ownerID string, appID, moduleID 
 		if err != nil {
 			return errors.New(lang.Languagef("host_agent_add_host_fail", err.Error()))
 		}
-		hostAsstData := ExtractDataFromAssociationField(hostID, host, assResult.Data)
-		for _, item := range hostAsstData {
-			cResult, err := lgc.CoreAPI.ObjectController().Instance().CreateObject(context.Background(), common.BKTableNameInstAsst, pheader, item)
-			if err != nil {
-				return err
-			} else if err == nil && !cResult.Result {
-				return ccErr.New(cResult.Code, cResult.ErrMsg)
-			}
-		}
-
 	} else if false == isIncrement {
 		//Not an additional relationship model
 		return nil
