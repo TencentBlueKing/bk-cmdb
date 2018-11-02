@@ -17,7 +17,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"configcenter/src/common"
@@ -27,7 +26,6 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/framework/core/errors"
-	sceneUtil "configcenter/src/scene_server/common/util"
 	hutil "configcenter/src/scene_server/host_server/util"
 	"configcenter/src/scene_server/validator"
 )
@@ -174,22 +172,6 @@ func (lgc *Logics) getHostFields(ownerID string, pheader http.Header) (map[strin
 	for _, att := range result.Data {
 		attributesDesc = append(attributesDesc, metadata.ObjAttDes{Attribute: att})
 	}
-	for idx, a := range attributesDesc {
-		if !util.IsAssocateProperty(a.PropertyType) {
-			continue
-		}
-
-		cond := hutil.NewOperation().WithPropertyID(a.PropertyID).WithOwnerID(ownerID).WithObjID(a.ObjectID).Data()
-		assResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAssociations(context.Background(), pheader, cond)
-		if err != nil || (err == nil && !result.Result) {
-			return nil, fmt.Errorf("search host obj associations failed, err: %v, result err: %s", err, result.ErrMsg)
-		}
-
-		if 0 < len(assResult.Data) {
-			attributesDesc[idx].AssociationID = assResult.Data[0].AsstObjID // by the rules, only one id
-			attributesDesc[idx].AsstForward = assResult.Data[0].AsstForward // by the rules, only one id
-		}
-	}
 
 	fields := make(map[string]*metadata.ObjAttDes)
 	for index, f := range attributesDesc {
@@ -241,124 +223,6 @@ func (lgc *Logics) getAddHostIDMap(pheader http.Header, hostInfos map[int64]map[
 	}
 
 	return hostMap, nil
-}
-
-func (lgc *Logics) getObjAsstObjectPrimaryKey(ownerID string, defaultFields map[string]*metadata.ObjAttDes, pheader http.Header) (map[string][]metadata.ObjAttDes, error) {
-	asstPrimaryKey := make(map[string][]metadata.ObjAttDes)
-	for _, f := range defaultFields {
-		if util.IsAssocateProperty(f.PropertyType) {
-			page := metadata.BasePage{Start: 0, Limit: common.BKNoLimit, Sort: common.BKPropertyIDField}
-			query := hutil.NewOperation().WithOwnerID(ownerID).WithObjID(f.AssociationID).WithPage(page).Data()
-			result, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), pheader, query)
-			if err != nil || (err == nil && !result.Result) {
-				return nil, fmt.Errorf("%v, %v", err, result.ErrMsg)
-			}
-
-			attributesDesc := make([]metadata.ObjAttDes, 0)
-			for _, att := range result.Data {
-				attributesDesc = append(attributesDesc, metadata.ObjAttDes{Attribute: att})
-			}
-			for idx, a := range attributesDesc {
-				if !util.IsAssocateProperty(a.PropertyType) {
-					continue
-				}
-
-				cond := hutil.NewOperation().WithPropertyID(a.PropertyID).WithOwnerID(ownerID).WithObjID(a.ObjectID).Data()
-				assResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAssociations(context.Background(), pheader, cond)
-				if err != nil || (err == nil && !result.Result) {
-					return nil, fmt.Errorf("search host obj associations failed, err: %v, result err: %s", err, result.ErrMsg)
-				}
-
-				if 0 < len(assResult.Data) {
-					attributesDesc[idx].AssociationID = assResult.Data[0].AsstObjID // by the rules, only one id
-					attributesDesc[idx].AsstForward = assResult.Data[0].AsstForward // by the rules, only one id
-				}
-			}
-
-			primaryFields := make([]metadata.ObjAttDes, 0)
-			for _, f := range attributesDesc {
-				if f.IsOnly {
-					primaryFields = append(primaryFields, f)
-				}
-			}
-			asstPrimaryKey[f.AssociationID] = primaryFields
-		}
-	}
-
-	return asstPrimaryKey, nil
-}
-
-func (lgc *Logics) getAsstObjectConds(defaultFields map[string]*metadata.ObjAttDes, asstPrimaryKey map[string][]metadata.ObjAttDes, hostInfos map[int]map[string]interface{}) (map[string][]interface{}, map[int]error) {
-	errs := make(map[int]error, 0)
-	asstMap := make(map[string][]interface{}) //map[AssociationID][]condition
-
-	for rowIndex, info := range hostInfos {
-		for key, val := range info {
-			f, ok := defaultFields[key]
-			if false == ok {
-				continue
-			}
-			if util.IsAssocateProperty(f.PropertyType) {
-
-				asstFields, ok := asstPrimaryKey[f.AssociationID]
-				if false == ok {
-					errs[rowIndex] = errors.New(lgc.Language.Languagef("import_asst_property_str_not_found", key))
-					continue
-				}
-
-				strVal, ok := val.(string)
-				if false == ok {
-					errs[rowIndex] = errors.New(lgc.Language.Languagef("import_property_str_format_error", key))
-					continue
-				}
-
-				if common.ExcelDelAsstObjectRelation == strings.TrimSpace(strVal) {
-					continue
-				}
-				rows := strings.Split(strVal, common.ExcelAsstPrimaryKeyRowChar)
-
-				asstConds := make([]interface{}, 0)
-				for _, row := range rows {
-					if "" == row {
-						continue
-					}
-					primaryKeys := strings.Split(row, common.ExcelAsstPrimaryKeySplitChar)
-					if len(primaryKeys) != len(asstFields) {
-						errs[rowIndex] = errors.New(lgc.Language.Languagef("import_asst_property_str_primary_count_len", key))
-						continue
-					}
-					conds := common.KvMap{}
-					if false == util.IsInnerObject(f.AssociationID) {
-						conds[common.BKObjIDField] = f.AssociationID
-					}
-					for i, val := range primaryKeys {
-
-						asstf := asstFields[i]
-						var err error
-						conds[asstf.PropertyID], err = sceneUtil.ConvByPropertytype(&asstf, val)
-						if nil != err {
-							errs[rowIndex] = errors.New(lgc.Language.Languagef("import_asst_property_str_primary_count_len", key))
-							continue
-						}
-					}
-					asstConds = append(asstConds, conds)
-
-				}
-
-				_, ok = asstMap[f.AssociationID]
-				if ok {
-					asstMap[f.AssociationID] = append(asstMap[f.AssociationID], asstConds...)
-				} else {
-					asstMap[f.AssociationID] = asstConds
-				}
-
-			}
-
-		}
-
-	}
-
-	return asstMap, errs
 }
 
 type importInstance struct {
