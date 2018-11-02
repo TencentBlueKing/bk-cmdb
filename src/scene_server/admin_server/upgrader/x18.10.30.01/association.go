@@ -119,8 +119,8 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 		if asst.ObjectAttID == common.BKChildStr {
 			asst.AsstKindID = common.AssociationTypeGroup
 			asst.AssociationName = buildObjAsstID(asst.AsstObjID, asst.ObjectAttID)
-			asst.Mapping = common.AssociationMappingOneToOne
-			asst.OnDelete = common.AssociationOnDeleteNone
+			asst.Mapping = metadata.OneToOneMapping
+			asst.OnDelete = metadata.NoAction
 			switch asst.ObjectID {
 			case common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDHost:
 				asst.IsPre = true
@@ -131,13 +131,13 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 			property := properyMap[buildObjPropertyMapKey(asst.ObjectID, asst.ObjectAttID)]
 			switch property.PropertyType {
 			case common.FieldTypeSingleAsst:
-				asst.Mapping = common.AssociationMappingOneToOne
+				asst.Mapping = metadata.OneToOneMapping
 			case common.FieldTypeMultiAsst:
-				asst.Mapping = common.AssociationMappingOneToMulti
+				asst.Mapping = metadata.OneToManyMapping
 			default:
-				asst.Mapping = common.AssociationMappingOneToOne
+				asst.Mapping = metadata.OneToOneMapping
 			}
-			asst.OnDelete = common.AssociationOnDeleteNone
+			asst.OnDelete = metadata.NoAction
 		}
 		_, _, err := upgrader.Upsert(ctx, db, tablename, asst, "id", []string{"bk_object_id", "bk_asst_object_id"}, []string{"id"})
 		if err != nil {

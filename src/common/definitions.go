@@ -852,17 +852,3 @@ const (
 	AssociationTypeConnect  = "connect"
 	AssociationTypeDefault  = "default"
 )
-
-// Association mapping
-const (
-	AssociationMappingOneToOne     = "1:1"
-	AssociationMappingOneToMulti   = "1:n"
-	AssociationMappingMultiToMulti = "n:n"
-)
-
-// Association ondelete
-const (
-	AssociationOnDeleteNone              = "none"
-	AssociationOnDeleteDeleteSource      = "delete_src"
-	AssociationOnDeleteDeleteDestination = "delete_dest"
-)
