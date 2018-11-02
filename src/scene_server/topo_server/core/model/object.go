@@ -18,15 +18,13 @@ import (
 	"fmt"
 	"io"
 
-	"configcenter/src/common/metadata"
-
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	meta "configcenter/src/common/metadata"
-
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -214,7 +212,7 @@ func (o *object) GetMainlineParentObject() (Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(o.obj.ObjectID)
-	cond.Field(common.AssociationKindIDField).Eq(common.DefaultMailineAssociationKindID)
+	cond.Field(common.AssociationKindIDField).Eq(common.AssociationTypeMainline)
 
 	rsp, err := o.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), o.params.Header, cond.ToMapStr())
 	if nil != err {
@@ -250,7 +248,7 @@ func (o *object) GetMainlineChildObject() (Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
 	cond.Field(common.BKAsstObjIDField).Eq(o.obj.ObjectID)
-	cond.Field(common.AssociationKindIDField).Eq(common.DefaultMailineAssociationKindID)
+	cond.Field(common.AssociationKindIDField).Eq(common.AssociationTypeMainline)
 
 	rsp, err := o.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), o.params.Header, cond.ToMapStr())
 	if nil != err {
@@ -402,7 +400,7 @@ func (o *object) generateObjectAssociatioinID(srcObjID, asstID, destObjID string
 }
 
 func (o *object) CreateMainlineObjectAssociation(relateToObjID string) error {
-	objAsstID := o.generateObjectAssociatioinID(o.obj.ObjectID, common.DefaultMailineAssociationKindID, relateToObjID)
+	objAsstID := o.generateObjectAssociatioinID(o.obj.ObjectID, common.AssociationTypeMainline, relateToObjID)
 	defined := true
 	association := meta.Association{
 		OwnerID:              o.params.SupplierAccount,
@@ -410,11 +408,11 @@ func (o *object) CreateMainlineObjectAssociation(relateToObjID string) error {
 		AssociationAliasName: objAsstID,
 		ObjectID:             o.obj.ObjectID,
 		// related to it's parent object id
-		AsstObjID:    relateToObjID,
-		AsstKindID:   common.DefaultMailineAssociationKindID,
-		Mapping:      metadata.OneToOneMapping,
-		OnDelete:     metadata.NoAction,
-		IsPredefined: &defined,
+		AsstObjID:  relateToObjID,
+		AsstKindID: common.AssociationTypeMainline,
+		Mapping:    metadata.OneToOneMapping,
+		OnDelete:   metadata.NoAction,
+		IsPre:      &defined,
 	}
 
 	result, err := o.clientSet.ObjectController().Meta().CreateObjectAssociation(context.Background(), o.params.Header, &association)
