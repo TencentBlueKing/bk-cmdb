@@ -106,14 +106,14 @@ type DeleteAssociationObjectResult struct {
 }
 
 type SearchAssociationInstRequestCond struct {
-	ObjectAsstId string  `field:"bk_obj_asst_id" json:"bk_obj_asst_id"`
-	AsstID       string  `field:"bk_asst_id" json:"bk_asst_id"`
-	ObjectID     string  `field:"bk_object_id" json:"bk_object_id"`
-	AsstObjID    string  `field:"bk_asst_obj_id" json:"bk_asst_obj_id"`
-	InstID       []int64 `field:"bk_inst_id" json:"bk_inst_id"`
-	AsstInstID   []int64 `field:"bk_asst_inst_id" json:"bk_asst_inst_id"`
-	BothObjectID string  `field:"both_obj_id" json:"both_obj_id"`
-	BothInstID   []int64 `field:"both_inst_id" json:"both_inst_id"`
+	ObjectAsstId string  `field:"bk_obj_asst_id" json:"bk_obj_asst_id,omitempty" bson:"bk_obj_asst_id,omitempty"`
+	AsstID       string  `field:"bk_asst_id" json:"bk_asst_id,omitempty" bson:"bk_asst_id,omitempty"`
+	ObjectID     string  `field:"bk_obj_id" json:"bk_obj_id,omitempty" bson:"bk_obj_id,omitempty"`
+	AsstObjID    string  `field:"bk_asst_obj_id" json:"bk_asst_obj_id,omitempty" bson:"bk_asst_obj_id,omitempty"`
+	InstID       []int64 `field:"bk_inst_id" json:"bk_inst_id,omitempty" bson:"bk_inst_id,omitempty"`
+	AsstInstID   []int64 `field:"bk_asst_inst_id" json:"bk_asst_inst_id,omitempty" bson:"bk_asst_inst_id,omitempty"`
+	BothObjectID string  `field:"both_obj_id" json:"both_obj_id" bson:"both_obj_id"`
+	BothInstID   []int64 `field:"both_inst_id" json:"both_inst_id" bson:"both_inst_id"`
 }
 
 type SearchAssociationInstRequest struct {
@@ -126,9 +126,9 @@ type SearchAssociationInstResult struct {
 }
 
 type CreateAssociationInstRequest struct {
-	ObjectAsstId string `json:"bk_obj_asst_id"`
-	InstId       int64  `json:"bk_inst_id"`
-	AsstInstId   int64  `json:"bk_asst_inst_id"`
+	ObjectAsstId string `field:"bk_obj_asst_id" json:"bk_obj_asst_id,omitempty" bson:"bk_obj_asst_id,omitempty"`
+	InstId       int64  `field:"bk_inst_id" json:"bk_inst_id,omitempty" bson:"bk_inst_id,omitempty"`
+	AsstInstId   int64  `field:"bk_asst_inst_id" json:"bk_asst_inst_id,omitempty" bson:"bk_asst_inst_id,omitempty"`
 }
 type CreateAssociationInstResult struct {
 	BaseResp `json:",inline"`
@@ -136,9 +136,9 @@ type CreateAssociationInstResult struct {
 }
 
 type DeleteAssociationInstRequest struct {
-	ObjectAsstID string `field:"bk_obj_asst_id" json:"bk_obj_asst_id" bson:"bk_obj_asst_id"`
-	InstID       int64  `field:"bk_inst_id" json:"bk_inst_id"`
-	AsstInstID   int64  `field:"bk_asst_inst_id" json:"bk_asst_inst_id"`
+	ObjectAsstID string `field:"bk_obj_asst_id" json:"bk_obj_asst_id,omitempty" bson:"bk_obj_asst_id"`
+	InstID       int64  `field:"bk_inst_id" json:"bk_inst_id,omitempty" bson:"bk_inst_id,omitempty"`
+	AsstInstID   int64  `field:"bk_asst_inst_id" json:"bk_asst_inst_id,omitempty" bson:"bk_asst_inst_id,omitempty"`
 }
 
 type DeleteAssociationInstResult struct {
@@ -280,7 +280,7 @@ type InstAsst struct {
 	// inst id associate to ObjectID
 	InstID int64 `field:"bk_inst_id" json:"bk_inst_id" bson:"bk_inst_id"`
 	// assoctation source ObjectID
-	ObjectID string `field:"bk_obj_id" json:"bk_obj_id"`
+	ObjectID string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
 	// inst id associate to AsstObjectID
 	AsstInstID int64 `field:"bk_asst_inst_id" json:"bk_asst_inst_id"  bson:"bk_asst_inst_id"`
 	// assoctation target ObjectID
