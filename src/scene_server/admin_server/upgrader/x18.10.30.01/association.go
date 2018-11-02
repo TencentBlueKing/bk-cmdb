@@ -43,38 +43,38 @@ func createAssociationTable(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tablename := common.BKTableNameAsstDes
 
-	asstTypes := []metadata.AssociationType{
+	asstTypes := []metadata.AssociationKind{
 		{
-			AsstID:    "belong",
-			AsstName:  "",
-			OwnerID:   conf.OwnerID,
-			SrcDes:    "属于",
-			DestDes:   "包含",
-			Direction: "src_to_dest",
+			AssociationKindID:       "belong",
+			AssociationKindName:     "",
+			OwnerID:                 conf.OwnerID,
+			SourceToDestinationNote: "属于",
+			DestinationToSourceNote: "包含",
+			Direction:               metadata.DestinationToSource,
 		},
 		{
-			AsstID:    "group",
-			AsstName:  "",
-			OwnerID:   conf.OwnerID,
-			SrcDes:    "组成",
-			DestDes:   "组成于",
-			Direction: "src_to_dest",
+			AssociationKindID:       "group",
+			AssociationKindName:     "",
+			OwnerID:                 conf.OwnerID,
+			SourceToDestinationNote: "组成",
+			DestinationToSourceNote: "组成于",
+			Direction:               metadata.DestinationToSource,
 		},
 		{
-			AsstID:    "run",
-			AsstName:  "",
-			OwnerID:   conf.OwnerID,
-			SrcDes:    "运行于",
-			DestDes:   "运行",
-			Direction: "src_to_dest",
+			AssociationKindID:       "run",
+			AssociationKindName:     "",
+			OwnerID:                 conf.OwnerID,
+			SourceToDestinationNote: "运行于",
+			DestinationToSourceNote: "运行",
+			Direction:               metadata.DestinationToSource,
 		},
 		{
-			AsstID:    "belong",
-			AsstName:  "",
-			OwnerID:   conf.OwnerID,
-			SrcDes:    "上联",
-			DestDes:   "下联",
-			Direction: "src_to_dest",
+			AssociationKindID:       "belong",
+			AssociationKindName:     "",
+			OwnerID:                 conf.OwnerID,
+			SourceToDestinationNote: "上联",
+			DestinationToSourceNote: "下联",
+			Direction:               metadata.DestinationToSource,
 		},
 	}
 
@@ -89,7 +89,13 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Co
 
 func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tablename := common.BKTableNameObjAsst
-	assts := []metadata.Association{}
+
+	type Association struct {
+		metadata.Association
+		ObjectAttID string `json:"bk_object_att_id"`
+	}
+
+	assts := []Association{}
 	err := db.Table(tablename).Find(nil).All(ctx, &assts)
 	if err != nil {
 		return err
@@ -111,8 +117,8 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 
 	for _, asst := range assts {
 		if asst.ObjectAttID == common.BKChildStr {
-			asst.AsstID = common.AssociationTypeGroup
-			asst.ObjectAsstID = buildObjAsstID(asst.AsstObjID, asst.ObjectAttID)
+			asst.AsstKindID = common.AssociationTypeGroup
+			asst.AssociationName = buildObjAsstID(asst.AsstObjID, asst.ObjectAttID)
 			asst.Mapping = common.AssociationMappingOneToOne
 			asst.OnDelete = common.AssociationOnDeleteNone
 			switch asst.ObjectID {
@@ -120,8 +126,8 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 				asst.IsPre = true
 			}
 		} else {
-			asst.AsstID = common.AssociationTypeDefault
-			asst.ObjectAsstID = buildObjAsstID(asst.AsstObjID, asst.ObjectAttID)
+			asst.AsstKindID = common.AssociationTypeDefault
+			asst.AssociationName = buildObjAsstID(asst.AsstObjID, asst.ObjectAttID)
 			property := properyMap[buildObjPropertyMapKey(asst.ObjectID, asst.ObjectAttID)]
 			switch property.PropertyType {
 			case common.FieldTypeSingleAsst:
@@ -139,8 +145,8 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 		}
 
 		updateInst := mapstr.New()
-		updateInst.Set("bk_obj_asst_id", asst.ObjectAsstID)
-		updateInst.Set("bk_asst_id", asst.AsstID)
+		updateInst.Set("bk_obj_asst_id", asst.AssociationName)
+		updateInst.Set("bk_asst_id", asst.AsstKindID)
 		updateInst.Set("last_time", time.Now())
 
 		updateInstCond := condition.CreateCondition()
