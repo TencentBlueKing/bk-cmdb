@@ -118,6 +118,7 @@ func (s *Service) ImportObject(c *gin.Context) {
 	if nil != err {
 		msg := getReturnStr(common.CCErrCommHTTPDoRequestFailed, defErr.Errorf(common.CCErrCommHTTPDoRequestFailed, "").Error(), nil)
 		c.String(http.StatusOK, string(msg))
+		return
 	}
 	c.JSON(http.StatusOK, result)
 
