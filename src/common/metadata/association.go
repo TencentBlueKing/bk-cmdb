@@ -216,7 +216,7 @@ type Association struct {
 	OnDelete AssociationOnDeleteAction `field:"on_delete" json:"on_delete" bson:"on_delete"`
 	// describe whether this association is a pre-defined association or not,
 	// if true, it means this association is used by cmdb itself.
-	IsPre bool `field:"ispre" json:"ispre" bson:"ispre"`
+	IsPre *bool `field:"ispre" json:"ispre" bson:"ispre"`
 
 	ClassificationID string `field:"bk_classification_id" bson:"-"`
 	ObjectIcon       string `field:"bk_obj_icon" bson:"-"`
@@ -249,7 +249,7 @@ func (a *Association) CanUpdate() (field string, can bool) {
 		return "mapping", false
 	}
 
-	if a.IsPre == true {
+	if a.IsPre != nil {
 		return "is_pre", false
 	}
 

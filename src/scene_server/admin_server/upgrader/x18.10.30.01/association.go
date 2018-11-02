@@ -115,6 +115,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 		properyMap[buildObjPropertyMapKey(property.ObjectID, property.PropertyID)] = property
 	}
 
+	var pretrue bool
 	for _, asst := range assts {
 		if asst.ObjectAttID == common.BKChildStr {
 			asst.AsstKindID = common.AssociationTypeGroup
@@ -123,7 +124,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 			asst.OnDelete = metadata.NoAction
 			switch asst.ObjectID {
 			case common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDHost:
-				asst.IsPre = true
+				asst.IsPre = &pretrue
 			}
 		} else {
 			asst.AsstKindID = common.AssociationTypeDefault
