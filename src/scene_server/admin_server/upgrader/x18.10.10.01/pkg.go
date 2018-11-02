@@ -20,27 +20,27 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("x18_10_10_01", upgrade)
+	upgrader.RegistUpgrader("x18.10.10.01", upgrade)
 }
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	err = addProcOpTaskTable(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x18_10_10_01] addProcOpTaskTable error  %s", err.Error())
+		blog.Errorf("[upgrade x18.10.10.01] addProcOpTaskTable error  %s", err.Error())
 		return err
 	}
 	err = addProcInstanceModelTable(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x18_10_10_01] addProcInstanceModelTable error  %s", err.Error())
+		blog.Errorf("[upgrade x18.10.10.01] addProcInstanceModelTable error  %s", err.Error())
 		return err
 	}
 	err = addProcInstanceDetailTable(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x18_10_10_01] addProcInstanceDetailTable error  %s", err.Error())
+		blog.Errorf("[upgrade x18.10.10.01] addProcInstanceDetailTable error  %s", err.Error())
 		return err
 	}
 	err = addProcFreshInstance(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x18_10_10_01] addProcFreshInstance error  %s", err.Error())
+		blog.Errorf("[upgrade x18.10.10.01] addProcFreshInstance error  %s", err.Error())
 		return err
 	}
 	return
