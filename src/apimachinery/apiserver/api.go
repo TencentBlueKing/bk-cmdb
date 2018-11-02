@@ -19,6 +19,7 @@ import (
 
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 func (a *apiServer) AddDefaultApp(ctx context.Context, h http.Header, ownerID string, params mapstr.MapStr) (resp *metadata.Response, err error) {
@@ -51,7 +52,7 @@ func (a *apiServer) SearchDefaultApp(ctx context.Context, h http.Header, ownerID
 
 func (a *apiServer) GetRolePrivilege(ctx context.Context, h http.Header, ownerID, objID, role string) (resp *metadata.RolePriResult, err error) {
 	resp = new(metadata.RolePriResult)
-	subPath := fmt.Sprintf("/topo/privilege/%s/%s/%s", ownerID, objID, role)
+	subPath := fmt.Sprintf("/tmapstropo/privilege/%s/%s/%s", ownerID, objID, role)
 
 	err = a.client.Get().
 		WithContext(ctx).
@@ -236,5 +237,41 @@ func (a *apiServer) AddObjectBatch(ctx context.Context, h http.Header, ownerID, 
 		WithHeaders(h).
 		Do().
 		Into(resp)
+	return
+}
+
+func (a *apiServer) SearchAssociationInst(ctx context.Context, h http.Header, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error) {
+	resp = new(metadata.SearchAssociationInstResult)
+	subPath := "/inst/association/action/search"
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(request).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+func (a *apiServer) SearchInsts(ctx context.Context, h http.Header, objID string, condition mapstr.MapStr, page *metadata.BasePage, fields []string) (resp *metadata.ResponseInstData, err error) {
+	conds := mapstr.New()
+	if page != nil {
+		conds.Set(metadata.PageName, page)
+	}
+	if len(fields) != 0 {
+		conds.Set(metadata.DBFields, fields)
+	}
+	conds.Set(metadata.DBQueryCondition, condition)
+	subPath := fmt.Sprintf("/inst/search/owner/%s/object/%s", util.GetOwnerID(h), objID)
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(conds).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
 	return
 }
