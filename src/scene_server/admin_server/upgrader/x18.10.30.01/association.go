@@ -91,8 +91,8 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	tablename := common.BKTableNameObjAsst
 
 	type Association struct {
-		metadata.Association
-		ObjectAttID string `json:"bk_object_att_id"`
+		metadata.Association `bson:",inline"`
+		ObjectAttID          string `bson:"bk_object_att_id"`
 	}
 
 	assts := []Association{}
