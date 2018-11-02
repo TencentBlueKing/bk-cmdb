@@ -412,7 +412,7 @@ func (o *object) CreateMainlineObjectAssociation(relateToObjID string) error {
 		AsstKindID: common.AssociationTypeMainline,
 		Mapping:    metadata.OneToOneMapping,
 		OnDelete:   metadata.NoAction,
-		IsPre:      defined,
+		IsPre:      &defined,
 	}
 
 	result, err := o.clientSet.ObjectController().Meta().CreateObjectAssociation(context.Background(), o.params.Header, &association)
