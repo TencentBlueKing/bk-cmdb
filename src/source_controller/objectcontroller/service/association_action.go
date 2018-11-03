@@ -36,6 +36,8 @@ func (cli *Service) SearchAssociationType(req *restful.Request, resp *restful.Re
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
@@ -50,9 +52,6 @@ func (cli *Service) SearchAssociationType(req *restful.Request, resp *restful.Re
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, jsErr.Error())})
 		return
 	}
-
-	ctx := util.GetDBContext(context.Background(), req.Request.Header)
-	db := cli.Instance.Clone()
 
 	cond := request.Condition
 	cond = util.SetModOwner(cond, ownerID)
@@ -78,6 +77,8 @@ func (cli *Service) CreateAssociationType(req *restful.Request, resp *restful.Re
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
@@ -92,9 +93,6 @@ func (cli *Service) CreateAssociationType(req *restful.Request, resp *restful.Re
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, jsErr.Error())})
 		return
 	}
-
-	ctx := util.GetDBContext(context.Background(), req.Request.Header)
-	db := cli.Instance.Clone()
 
 	// check uniq bk_asst_id
 	cond := map[string]interface{}{"bk_asst_id": request.AssociationKindID}
@@ -145,6 +143,8 @@ func (cli *Service) UpdateAssociationType(req *restful.Request, resp *restful.Re
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
@@ -161,9 +161,6 @@ func (cli *Service) UpdateAssociationType(req *restful.Request, resp *restful.Re
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, jsErr.Error())})
 		return
 	}
-
-	ctx := util.GetDBContext(context.Background(), req.Request.Header)
-	db := cli.Instance.Clone()
 
 	cond := map[string]interface{}{"id": asstTypeID}
 	cond = util.SetModOwner(cond, ownerID)
@@ -202,14 +199,14 @@ func (cli *Service) DeleteAssociationType(req *restful.Request, resp *restful.Re
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
+
 	id := req.PathParameter("id")
 	asstTypeID, _ := strconv.Atoi(id)
 
 	cond := map[string]interface{}{"id": asstTypeID}
 	cond = util.SetModOwner(cond, ownerID)
-
-	ctx := util.GetDBContext(context.Background(), req.Request.Header)
-	db := cli.Instance.Clone()
 
 	cnt, err := db.Table(common.BKTableNameAsstDes).Find(cond).Count(ctx)
 	if err != nil {
