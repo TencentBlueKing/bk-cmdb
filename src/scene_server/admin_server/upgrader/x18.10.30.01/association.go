@@ -69,11 +69,19 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Co
 			Direction:               metadata.DestinationToSource,
 		},
 		{
-			AssociationKindID:       "belong",
+			AssociationKindID:       "connect",
 			AssociationKindName:     "",
 			OwnerID:                 conf.OwnerID,
 			SourceToDestinationNote: "上联",
 			DestinationToSourceNote: "下联",
+			Direction:               metadata.DestinationToSource,
+		},
+		{
+			AssociationKindID:       "default",
+			AssociationKindName:     "",
+			OwnerID:                 conf.OwnerID,
+			SourceToDestinationNote: "",
+			DestinationToSourceNote: "",
 			Direction:               metadata.DestinationToSource,
 		},
 	}
@@ -115,7 +123,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 		properyMap[buildObjPropertyMapKey(property.ObjectID, property.PropertyID)] = property
 	}
 
-	var pretrue bool
+	var pretrue = true
 	for _, asst := range assts {
 		if asst.ObjectAttID == common.BKChildStr {
 			asst.AsstKindID = common.AssociationTypeGroup
