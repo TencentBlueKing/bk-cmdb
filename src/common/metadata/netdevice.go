@@ -164,6 +164,7 @@ type NetcollectReportAttribute struct {
 }
 
 type NetcollectReportAssociation struct {
+	Action         string `json:"action" bson:"-"`
 	AsstInstID     int64  `json:"bk_asst_inst_id" bson:"bk_asst_inst_id"`
 	AsstInstName   string `json:"bk_asst_inst_name" bson:"bk_asst_inst_name"`
 	AsstPropertyID string `json:"bk_asst_property_id" bson:"bk_asst_property_id"`
