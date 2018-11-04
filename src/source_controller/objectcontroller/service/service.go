@@ -83,7 +83,7 @@ func (s *Service) WebService() *restful.WebService {
 	// association api
 	ws.Route(ws.POST("/association/action/search").To(s.SearchAssociationType))
 	ws.Route(ws.POST("/association/action/create").To(s.CreateAssociationType))
-	ws.Route(ws.POST("/association/{id}/action/update").To(s.UpdateAssociationType))
+	ws.Route(ws.PUT("/association/{id}/action/update").To(s.UpdateAssociationType))
 	ws.Route(ws.POST("/association/{id}/action/delete").To(s.DeleteAssociationType))
 
 	ws.Route(ws.POST("/object/association/action/search").To(s.SelectObjectAssociations))     // optimization: new api path
