@@ -13,9 +13,8 @@
 package metadata
 
 import (
+	"configcenter/src/common/mapstr"
 	"time"
-
-	types "configcenter/src/common/mapstr"
 )
 
 const (
@@ -117,7 +116,7 @@ type SearchAssociationInstRequestCond struct {
 }
 
 type SearchAssociationInstRequest struct {
-	Condition SearchAssociationInstRequestCond `json:"condition"`
+	Condition mapstr.MapStr `json:"condition"` // construct condition mapstr by condition.Condition
 }
 
 type SearchAssociationInstResult struct {
@@ -258,7 +257,7 @@ func (a *Association) CanUpdate() (field string, can bool) {
 }
 
 // Parse load the data from mapstr attribute into attribute instance
-func (cli *Association) Parse(data types.MapStr) (*Association, error) {
+func (cli *Association) Parse(data mapstr.MapStr) (*Association, error) {
 
 	err := SetValueToStructByTags(cli, data)
 	if nil != err {
@@ -269,7 +268,7 @@ func (cli *Association) Parse(data types.MapStr) (*Association, error) {
 }
 
 // ToMapStr to mapstr
-func (cli *Association) ToMapStr() types.MapStr {
+func (cli *Association) ToMapStr() mapstr.MapStr {
 	return SetValueToMapStrByTags(cli)
 }
 
@@ -317,7 +316,7 @@ type InstNameAsst struct {
 }
 
 // Parse load the data from mapstr attribute into attribute instance
-func (cli *InstAsst) Parse(data types.MapStr) (*InstAsst, error) {
+func (cli *InstAsst) Parse(data mapstr.MapStr) (*InstAsst, error) {
 
 	err := SetValueToStructByTags(cli, data)
 	if nil != err {
@@ -328,7 +327,7 @@ func (cli *InstAsst) Parse(data types.MapStr) (*InstAsst, error) {
 }
 
 // ToMapStr to mapstr
-func (cli *InstAsst) ToMapStr() types.MapStr {
+func (cli *InstAsst) ToMapStr() mapstr.MapStr {
 	return SetValueToMapStrByTags(cli)
 }
 
@@ -344,7 +343,7 @@ type MainlineObjectTopo struct {
 }
 
 // Parse load the data from mapstr attribute into attribute instance
-func (cli *MainlineObjectTopo) Parse(data types.MapStr) (*MainlineObjectTopo, error) {
+func (cli *MainlineObjectTopo) Parse(data mapstr.MapStr) (*MainlineObjectTopo, error) {
 
 	err := SetValueToStructByTags(cli, data)
 	if nil != err {
@@ -355,7 +354,7 @@ func (cli *MainlineObjectTopo) Parse(data types.MapStr) (*MainlineObjectTopo, er
 }
 
 // ToMapStr to mapstr
-func (cli *MainlineObjectTopo) ToMapStr() types.MapStr {
+func (cli *MainlineObjectTopo) ToMapStr() mapstr.MapStr {
 	return SetValueToMapStrByTags(cli)
 }
 

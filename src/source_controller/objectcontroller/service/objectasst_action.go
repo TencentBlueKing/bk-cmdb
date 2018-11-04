@@ -15,15 +15,17 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 
+	simplejson "github.com/bitly/go-simplejson"
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -36,71 +38,41 @@ func (cli *Service) CreateObjectAssociation(req *restful.Request, resp *restful.
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
-		blog.Errorf("read http request body failed, error:%s", err.Error())
+		blog.Error("read http request body failed, error information is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
 
-	request := &meta.Association{}
-	if jsErr := json.Unmarshal([]byte(value), request); nil != jsErr {
-		blog.Errorf("failed to unmarshal the data, data is %s, error info is %s ", string(value), jsErr.Error())
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, jsErr.Error())})
+	obj := &meta.Association{}
+	if err = json.Unmarshal([]byte(value), obj); nil != err {
+		blog.Error("fail to unmarshal json, error information is %s", err.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 		return
 	}
 
-	request.OwnerID = ownerID
-
-	// check uniq bk_obj_asst_id
-	if request.AssociationName == "" {
-		msg := fmt.Sprintf("failed to create object association, bk_obj_asst_id must be set")
-		blog.Errorf(msg)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBInsertFailed, msg)})
-		return
-	}
-
-	ctx := util.GetDBContext(context.Background(), req.Request.Header)
-	db := cli.Instance.Clone()
-
-	// check uniq
-	cond := map[string]interface{}{"bk_obj_asst_id": request.AssociationName}
-	cond = util.SetModOwner(cond, ownerID)
-
-	cnt, err := db.Table(common.BKTableNameObjAsst).Find(cond).Count(ctx)
-	if err != nil {
-		blog.Errorf("failed to count object association , error info is %s", err.Error())
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommNotFound, err.Error())})
-		return
-	}
-
-	if cnt > 0 {
-		msg := fmt.Sprintf("failed to create object association, bk_obj_asst_id %s exist", request.AssociationName)
-		blog.Errorf(msg)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBInsertFailed, msg)})
-		return
-	}
-
-	// get id
+	// save to the storage
 	id, err := db.NextSequence(ctx, common.BKTableNameObjAsst)
 	if err != nil {
-		blog.Errorf("failed to get id , error info is %s", err.Error())
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBInsertFailed, err.Error())})
+		blog.Error("failed to get id, error info is %s", err.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}
-	request.ID = int64(id)
 
-	err = db.Table(common.BKTableNameObjAsst).Insert(ctx, request)
+	obj.ID = int64(id)
+	obj.OwnerID = ownerID
+	err = db.Table(common.BKTableNameObjAsst).Insert(ctx, obj)
 	if nil != err {
-		blog.Errorf("search object association error :%v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBInsertFailed, err.Error())})
+		blog.Error("create objectasst failed, error:%s", err.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}
 
-	result := &meta.CreateAssociationObjectResult{BaseResp: meta.SuccessBaseResp}
-	result.Data.ID = request.ID
-	resp.WriteEntity(result)
+	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: []*meta.Association{obj}})
 }
 
 // DeleteObjectAssociation delete object association map
@@ -111,40 +83,58 @@ func (cli *Service) DeleteObjectAssociation(req *restful.Request, resp *restful.
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
-
-	id := req.PathParameter("id")
-	ID, _ := strconv.Atoi(id)
-
-	cond := map[string]interface{}{"id": ID}
-	cond = util.SetModOwner(cond, ownerID)
-
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	db := cli.Instance.Clone()
 
-	// check exist
-	cnt, err := db.Table(common.BKTableNameObjAsst).Find(cond).Count(ctx)
-	if err != nil {
-		blog.Errorf("failed to count object association , error info is %s", err.Error())
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommNotFound, err.Error())})
-		return
-	}
-
-	if cnt < 1 {
-		msg := fmt.Sprintf("failed to delete object association, id %d not found", ID)
-		blog.Errorf(msg)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommNotFound, msg)})
-		return
-	}
-
-	err = db.Table(common.BKTableNameObjAsst).Delete(ctx, cond)
+	pathParameters := req.PathParameters()
+	id, err := strconv.ParseInt(pathParameters["id"], 10, 64)
 	if nil != err {
-		blog.Errorf("delete object association error :%v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBDeleteFailed, err.Error())})
+		blog.Error("failed to get params, error info is %s ", err.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommParamsInvalid, err.Error())})
 		return
 	}
 
-	result := &meta.DeleteAssociationObjectResult{BaseResp: meta.SuccessBaseResp, Data: "success"}
-	resp.WriteEntity(result)
+	// delete object from storage
+	condition := map[string]interface{}{"id": id}
+	if 0 == id {
+		js, err := simplejson.NewFromReader(req.Request.Body)
+		if err != nil {
+			blog.Error("read http request body failed, error:%s", err.Error())
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
+			return
+
+		}
+		condition, err = js.Map()
+		if nil != err {
+			blog.Error("fail to unmarshal json, error information is %s", err.Error())
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
+			return
+		}
+	}
+
+	condition = util.SetModOwner(condition, ownerID)
+	cnt, cntErr := db.Table(common.BKTableNameObjAsst).Find(condition).Count(ctx)
+	if nil != cntErr {
+		blog.Error("failed to select objectasst by condition(%+v), error is %d", cntErr)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
+		return
+	}
+	if 0 == cnt {
+		// success
+		// success
+		resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp})
+		return
+	}
+
+	// execute delete command
+	delErr := db.Table(common.BKTableNameObjAsst).Delete(ctx, condition)
+	if nil != delErr {
+		blog.Error("fail to delete object by id , error information is %s", delErr.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
+		return
+	}
+	// success
+	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp})
 }
 
 // UpdateObjectAssociation update object association map
@@ -155,108 +145,97 @@ func (cli *Service) UpdateObjectAssociation(req *restful.Request, resp *restful.
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
-	value, err := ioutil.ReadAll(req.Request.Body)
+	js, err := simplejson.NewFromReader(req.Request.Body)
 	if err != nil {
-		blog.Errorf("read http request body failed, error:%s", err.Error())
+		blog.Error("read http request body failed, error:%s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
 
-	id := req.PathParameter("id")
-	ID, _ := strconv.Atoi(id)
+	pathParameters := req.PathParameters()
+	id, err := strconv.ParseInt(pathParameters["id"], 10, 64)
+	if nil != err {
+		blog.Error("failed to get params, error info is %s ", err.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommParamsInvalid, err.Error())})
+		return
+	}
 
-	request := &meta.UpdateAssociationObjectRequest{}
-	if jsErr := json.Unmarshal([]byte(value), request); nil != jsErr {
-		blog.Errorf("failed to unmarshal the data, data is %s, error info is %s ", string(value), jsErr.Error())
+	// decode json string
+	data, jsErr := js.Map()
+	if nil != jsErr {
+		blog.Error("unmarshal json failed, error information is %s", jsErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, jsErr.Error())})
 		return
 	}
-
-	cond := map[string]interface{}{"id": ID}
-	cond = util.SetModOwner(cond, ownerID)
-
-	ctx := util.GetDBContext(context.Background(), req.Request.Header)
-	db := cli.Instance.Clone()
-
-	// check exist
-	cnt, err := db.Table(common.BKTableNameObjAsst).Find(cond).Count(ctx)
-	if err != nil {
-		blog.Errorf("failed to count object association , error info is %s", err.Error())
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommNotFound, err.Error())})
+	condititon := map[string]interface{}{"id": id}
+	condititon = util.SetModOwner(condititon, ownerID)
+	// update object into storage
+	if updateErr := db.Table(common.BKTableNameObjAsst).Update(ctx, condititon, data); nil != updateErr {
+		blog.Error("fail update object by condition, error information is %s", updateErr.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, updateErr.Error())})
 		return
 	}
 
-	if cnt < 1 {
-		msg := fmt.Sprintf("failed to update object association, id %d not found", ID)
-		blog.Errorf(msg)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommNotFound, msg)})
-		return
-	}
-
-	err = db.Table(common.BKTableNameObjAsst).Update(ctx, cond, request)
-	if nil != err {
-		blog.Errorf("update object association error :%v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBUpdateFailed, err.Error())})
-		return
-	}
-
-	result := &meta.UpdateAssociationObjectResult{BaseResp: meta.SuccessBaseResp, Data: "success"}
-	resp.WriteEntity(result)
+	// success
+	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp})
 
 }
 
 // SelectObjectAssociations search all object association map
 func (cli *Service) SelectObjectAssociations(req *restful.Request, resp *restful.Response) {
 
+	// TODO: 输入参数有变化
+
 	// get the language
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
-	value, err := ioutil.ReadAll(req.Request.Body)
+	// decode json object
+	js, err := simplejson.NewFromReader(req.Request.Body)
 	if err != nil {
-		blog.Errorf("read http request body failed, error:%s", err.Error())
+		blog.Error("read request body failed, error information is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
 
-	request := &meta.SearchAssociationObjectRequest{}
-	if jsErr := json.Unmarshal([]byte(value), request); nil != jsErr {
-		blog.Errorf("failed to unmarshal the data, data is %s, error info is %s ", string(value), jsErr.Error())
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, jsErr.Error())})
-		return
-	}
-
-	cond := map[string]interface{}{
-		"bk_asst_id":     request.Condition.AsstID,
-		"bk_obj_id":      request.Condition.ObjectID,
-		"bk_asst_obj_id": request.Condition.AsstObjID,
-	}
-	cond = util.SetModOwner(cond, ownerID)
-
-	if request.Condition.BothObjectID != "" {
-		cond["$or"] = []map[string]interface{}{
-			{
-				"bk_object_id": request.Condition.ObjectID,
-			},
-			{
-				"bk_asst_object_id": request.Condition.AsstObjID,
-			},
+	page := metadata.BasePage{Limit: common.BKNoLimit}
+	if pageJS, ok := js.CheckGet("page"); ok {
+		tmpMap, _ := pageJS.Map()
+		page = meta.BasePage{}
+		tmp, err := mapstr.NewFromInterface(tmpMap)
+		if nil != err {
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
+			return
 		}
+		if err := tmp.MarshalJSONInto(&tmp); nil != err {
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
+			return
+		}
+		js.Del("page")
 	}
 
-	result := []*meta.Association{}
+	results := make([]meta.Association, 0)
+	selector, _ := js.Map()
 
-	ctx := util.GetDBContext(context.Background(), req.Request.Header)
-	db := cli.Instance.Clone()
-
-	if err := db.Table(common.BKTableNameObjAsst).Find(cond).All(ctx, &result); err != nil {
-		blog.Errorf("select data failed, error information is %s", err.Error())
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBSelectFailed, err.Error())})
+	// compatibility the new format. eg: {"condition":{"key":"val"}}
+	if _, existsCondition := selector["condition"]; existsCondition {
+		selector, _ = selector["condition"].(map[string]interface{})
+	}
+	selector = util.SetModOwner(selector, ownerID)
+	// select from storage
+	if selErr := db.Table(common.BKTableNameObjAsst).Find(selector).Limit(uint64(page.Limit)).Start(uint64(page.Start)).Sort(page.Sort).All(ctx, &results); nil != selErr && !db.IsNotFoundError(selErr) {
+		blog.Error("select data failed, error information is %s", selErr.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, selErr.Error())})
 		return
 	}
 
-	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: result})
+	// success
+	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: results})
 }
