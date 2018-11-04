@@ -15,7 +15,6 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -200,6 +199,8 @@ func (cli *Service) SearchInstAssociations(req *restful.Request, resp *restful.R
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
@@ -209,93 +210,14 @@ func (cli *Service) SearchInstAssociations(req *restful.Request, resp *restful.R
 	}
 
 	request := &meta.SearchAssociationInstRequest{}
-
 	if jsErr := json.Unmarshal([]byte(value), request); nil != jsErr {
 		blog.Errorf("failed to unmarshal the data, data is %s, error info is %s ", string(value), jsErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, jsErr.Error())})
 		return
 	}
 
-	cond := map[string]interface{}{}
-	cond = util.SetModOwner(cond, ownerID)
-
-	if request.Condition.ObjectAsstId != "" {
-		cond["bk_obj_asst_id"] = request.Condition.ObjectAsstId
-	}
-
-	if request.Condition.AsstID != "" {
-		cond["bk_asst_id"] = request.Condition.AsstID
-	}
-
-	if request.Condition.ObjectID != "" {
-		cond["bk_object_id"] = request.Condition.ObjectID
-	}
-
-	if request.Condition.AsstObjID != "" {
-		cond["bk_asst_obj_id"] = request.Condition.AsstObjID
-	}
-
-	if len(request.Condition.InstID) > 0 {
-		if request.Condition.ObjectAsstId == "" && request.Condition.ObjectID == "" {
-			msg := fmt.Sprintf("bk_obj_asst_id or bk_object_id must be set")
-			blog.Errorf(msg)
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommNotFound, msg)})
-			return
-		}
-	}
-
-	if len(request.Condition.AsstInstID) > 0 {
-		if request.Condition.ObjectAsstId == "" && request.Condition.AsstObjID == "" {
-			msg := fmt.Sprintf("bk_obj_asst_id or bk_object_id must be set")
-			blog.Errorf(msg)
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommNotFound, msg)})
-			return
-		}
-	}
-
-	if len(request.Condition.BothInstID) > 0 && request.Condition.BothObjectID == "" {
-		msg := fmt.Sprintf("both_obj_id must be set")
-		blog.Errorf(msg)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommNotFound, msg)})
-		return
-	}
-
-	if request.Condition.BothObjectID != "" {
-		cond["$or"] = []map[string]interface{}{
-			{
-				"bk_object_id": request.Condition.ObjectID,
-			},
-			{
-				"bk_asst_object_id": request.Condition.AsstObjID,
-				"bk_asst_inst_id": map[string]interface{}{
-					"$in": request.Condition.AsstInstID,
-				},
-			},
-		}
-
-		if len(request.Condition.BothInstID) > 0 {
-			cond["$or"] = []map[string]interface{}{
-				{
-					"bk_object_id": request.Condition.ObjectID,
-					"bk_inst_id": map[string]interface{}{
-						"$in": request.Condition.InstID,
-					},
-				},
-				{
-					"bk_asst_object_id": request.Condition.AsstObjID,
-					"bk_asst_inst_id": map[string]interface{}{
-						"$in": request.Condition.AsstInstID,
-					},
-				},
-			}
-		}
-	}
-
 	result := []*meta.InstAsst{}
-
-	ctx := util.GetDBContext(context.Background(), req.Request.Header)
-	db := cli.Instance.Clone()
-
+	cond := util.SetModOwner(request.Condition.ToMapInterface(), ownerID)
 	if err := db.Table(common.BKTableNameInstAsst).Find(cond).All(ctx, &result); err != nil {
 		blog.Errorf("select data failed, error information is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBSelectFailed, err.Error())})
