@@ -78,10 +78,10 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Co
 		},
 		{
 			AssociationKindID:       "default",
-			AssociationKindName:     "",
+			AssociationKindName:     "默认关联",
 			OwnerID:                 conf.OwnerID,
-			SourceToDestinationNote: "",
-			DestinationToSourceNote: "",
+			SourceToDestinationNote: "关联",
+			DestinationToSourceNote: "关联",
 			Direction:               metadata.DestinationToSource,
 		},
 	}
@@ -148,7 +148,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 			}
 			asst.OnDelete = metadata.NoAction
 		}
-		_, _, err := upgrader.Upsert(ctx, db, tablename, asst, "id", []string{"bk_object_id", "bk_asst_object_id"}, []string{"id"})
+		_, _, err := upgrader.Upsert(ctx, db, tablename, asst, "id", []string{"bk_obj_id", "bk_asst_obj_id"}, []string{"id"})
 		if err != nil {
 			return err
 		}
