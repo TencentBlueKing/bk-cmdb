@@ -91,6 +91,12 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 	//valid create request
 	if validType == common.ValidCreate {
 		FillLostedFieldValue(valData, valid.propertyslice, valid.requirefields)
+		for _, key := range valid.requirefields {
+			if _, ok := valData[key]; !ok {
+				blog.Errorf("params in need, valid %s, data: %+v", valid.objID, valData)
+				return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+			}
+		}
 	}
 
 	for key, val := range valData {
@@ -143,7 +149,6 @@ func (valid *ValidMap) validChar(val interface{}, key string) error {
 		if valid.require[key] {
 			blog.Error("params in need")
 			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
-
 		}
 		return nil
 	}

@@ -38,9 +38,7 @@ import (
 )
 
 type WebServer struct {
-	Core    *backbone.Engine
-	Config  options.Config
-	Service *websvc.Service
+	Config options.Config
 }
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -127,8 +125,6 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	service.Engine = engine
 	service.Logics = &logics.Logics{Engine: engine}
 	service.Config = webSvr.Config
-	webSvr.Core = engine
-	webSvr.Service = service
 	middleware.Engine = engine
 	middleware.CacheCli = cacheCli
 
@@ -181,7 +177,7 @@ func (w *WebServer) getConfig(regDiscover string) error {
 	w.Config.Version = config["api.version"]
 	w.Config.AgentAppUrl = config["app.agent_app_url"]
 	w.Config.LoginUrl = fmt.Sprintf(w.Config.Site.BkLoginUrl, w.Config.Site.AppCode, w.Config.Site.DomainUrl)
-
+	w.Config.ConfigMap = config
 	return nil
 }
 
@@ -211,6 +207,7 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	w.Config.Version = current.ConfigMap["api.version"]
 	w.Config.AgentAppUrl = current.ConfigMap["app.agent_app_url"]
 	w.Config.LoginUrl = fmt.Sprintf(w.Config.Site.BkLoginUrl, w.Config.Site.AppCode, w.Config.Site.DomainUrl)
+	w.Config.ConfigMap = current.ConfigMap
 
 }
 

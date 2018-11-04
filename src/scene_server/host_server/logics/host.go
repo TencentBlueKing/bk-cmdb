@@ -338,7 +338,7 @@ func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSear
 			moduleCond = object
 		} else if object.ObjectID == common.BKInnerObjIDApp {
 			appCond = object
-		} else if object.ObjectID == common.BKINnerObjIDObject {
+		} else if object.ObjectID == common.BKInnerObjIDObject {
 			mainlineCond = object
 		} else {
 			objectCondMap[object.ObjectID] = object.Condition
