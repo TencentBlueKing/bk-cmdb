@@ -116,7 +116,7 @@ type SearchAssociationInstRequestCond struct {
 }
 
 type SearchAssociationInstRequest struct {
-	Condition mapstr.MapStr `json:"condition"`
+	Condition mapstr.MapStr `json:"condition"` // construct condition mapstr by condition.Condition
 }
 
 type SearchAssociationInstResult struct {
