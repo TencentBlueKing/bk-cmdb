@@ -279,6 +279,8 @@ const (
 	CCErrorTopoObjectAssociationNotExist = 1101046
 	// update object association, but update fields that can not be updated.
 	CCErrorTopoObjectAssociationUpdateForbiddenFields = 1101047
+	// mainline object association do not exist
+	CCErrorTopoMainlineObjectAssociationNotExist = 1101048
 
 	CCErrTopoAppDeleteFailed                       = 1001031
 	CCErrTopoAppUpdateFailed                       = 1001032
