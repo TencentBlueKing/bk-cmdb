@@ -93,6 +93,7 @@
                         setting-key="bk_property_id"
                         display-key="bk_property_name"
                         :searchable="true"
+                        :content-max-height="200"
                         :list="propertyDialog.attrList"
                         :selected.sync="propertyDialog.data.bk_property_id"
                     ></bk-selector>
@@ -142,10 +143,10 @@
                     attrList: [],
                     actionList: [{
                         id: 'get',
-                        name: this.$t('NetworkDiscovery[\'获取单个\']')
+                        name: 'get'
                     }, {
-                        id: 'walk',
-                        name: this.$t('NetworkDiscovery[\'批量获取\']')
+                        id: 'getnext',
+                        name: 'getnext'
                     }],
                     data: {
                         oid: '',
