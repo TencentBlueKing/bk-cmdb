@@ -143,6 +143,10 @@ func (lgc *Logics) SearchReport(header http.Header, param metadata.ParamSearchNe
 	for _, report := range reports {
 		objIDs = append(objIDs, report.ObjectID)
 		cloudIDs = append(cloudIDs, report.CloudID)
+
+		for _, asst := range report.Associations {
+			objIDs = append(objIDs, asst.AsstObjectID)
+		}
 	}
 
 	cloudCond := condition.CreateCondition()
@@ -179,7 +183,7 @@ func (lgc *Logics) SearchReport(header http.Header, param metadata.ParamSearchNe
 		cond := condition.CreateCondition()
 		cond.Field(common.BKInstNameField).Eq(reports[index].InstKey)
 		objType := common.GetObjByType(reports[index].ObjectID)
-		if objType == common.BKINnerObjIDObject {
+		if objType == common.BKInnerObjIDObject {
 			cond.Field(common.BKObjIDField).Eq(reports[index].ObjectID)
 		}
 		insts, err := lgc.findInst(header, reports[index].ObjectID, &metadata.QueryInput{Condition: cond.ToMapStr()})
@@ -198,6 +202,14 @@ func (lgc *Logics) SearchReport(header http.Header, param metadata.ParamSearchNe
 				reports[index].Action = metadata.ReporctActionUpdate
 			} else {
 				reports[index].Action = metadata.ReporctActionCreate
+			}
+		}
+
+		for asstIndex := range reports[index].Associations {
+			asst := &reports[index].Associations[asstIndex]
+			asst.Action = metadata.ReporctActionCreate
+			if object, ok := objMap[asst.AsstObjectID]; ok {
+				asst.AsstObjectName = object.ObjectName
 			}
 		}
 
@@ -349,7 +361,7 @@ func (lgc *Logics) confirmAttributes(header http.Header, report *metadata.Netcol
 
 	objType := common.GetObjByType(report.ObjectID)
 	cond := condition.CreateCondition()
-	if objType == common.BKINnerObjIDObject {
+	if objType == common.BKInnerObjIDObject {
 		cond.Field(common.GetInstNameField(report.ObjectID)).Eq(report.InstKey)
 		cond.Field(common.BKObjIDField).Eq(report.ObjectID)
 	}
@@ -397,7 +409,7 @@ func (lgc *Logics) confirmAttributes(header http.Header, report *metadata.Netcol
 func (lgc *Logics) confirmAssociations(header http.Header, report *metadata.NetcollectReport) (successCount int, errs []error) {
 	objType := common.GetObjByType(report.ObjectID)
 	cond := condition.CreateCondition()
-	if objType == common.BKINnerObjIDObject {
+	if objType == common.BKInnerObjIDObject {
 		cond.Field(common.GetInstNameField(report.ObjectID)).Eq(report.InstKey)
 		cond.Field(common.BKObjIDField).Eq(report.ObjectID)
 	}
@@ -424,7 +436,7 @@ func (lgc *Logics) confirmAssociations(header http.Header, report *metadata.Netc
 	for _, asst := range report.Associations {
 		asstObjType := common.GetObjByType(asst.AsstObjectID)
 		asstCond := condition.CreateCondition()
-		if asstObjType == common.BKINnerObjIDObject {
+		if asstObjType == common.BKInnerObjIDObject {
 			asstCond.Field(common.GetInstNameField(asst.AsstObjectID)).Eq(asst.AsstInstName)
 			asstCond.Field(common.BKObjIDField).Eq(asst.AsstObjectID)
 		}
@@ -442,21 +454,13 @@ func (lgc *Logics) confirmAssociations(header http.Header, report *metadata.Netc
 		if len(asstInsts) > 0 {
 			asstInstID, err := asstInsts[0].Int64(common.GetInstIDField(asst.AsstObjectID))
 			if err != nil {
-				blog.Errorf("[NetDevice][ConfirmReport] propertyID %s not exist in %+v ", common.GetInstIDField(asst.AsstObjectID), asstInsts[0])
+				blog.Errorf("[NetDevice][ConfirmReport] propertyID %s not exist in %#v ", common.GetInstIDField(asst.AsstObjectID), asstInsts[0])
 				errs = append(errs, err)
 				continue
 			}
 
-			asstPropertyValue, ok := asstInsts[0][asst.AsstPropertyID].(string)
-			if !ok {
-				blog.Warnf("[NetDevice][ConfirmReport] propertyID %s not exist in %+v, we reset it here", asst.AsstPropertyID, asstInsts[0])
-				asstPropertyValue = fmt.Sprintf("%d", asstInstID)
-			} else {
-				asstPropertyValue = fmt.Sprintf("%s,%d", asstPropertyValue, asstInstID)
-			}
-
 			updateBody := map[string]interface{}{
-				common.GetInstIDField(asst.AsstObjectID): asstPropertyValue,
+				asst.AsstPropertyID: asstInstID,
 			}
 			resp, err := lgc.CoreAPI.TopoServer().Instance().UpdateInst(context.Background(), util.GetUser(header), report.ObjectID, instID, header, updateBody)
 			if err != nil {
