@@ -20,6 +20,8 @@ import (
 const (
 	// AssociationFieldObjectID the association data field definition
 	AssociationFieldObjectID = "bk_obj_id"
+	// AssociationFieldAsstID the association data field bk_obj_asst_id
+	AssociationFieldAsstID = "bk_obj_asst_id"
 	// AssociationFieldObjectAttributeID the association data field definition
 	//AssociationFieldObjectAttributeID = "bk_object_att_id"
 	// AssociationFieldSupplierAccount the association data field definition

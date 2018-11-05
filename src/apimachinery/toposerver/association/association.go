@@ -34,7 +34,7 @@ func (asst *Association) SearchType(ctx context.Context, h http.Header, request 
 	return
 }
 
-func (asst *Association) CreateType(ctx context.Context, h http.Header, request *metadata.AssociationType) (resp *metadata.CreateAssociationTypeResult, err error) {
+func (asst *Association) CreateType(ctx context.Context, h http.Header, request *metadata.AssociationKind) (resp *metadata.CreateAssociationTypeResult, err error) {
 	resp = new(metadata.CreateAssociationTypeResult)
 	subPath := "/topo/association/type/action/create"
 
@@ -168,7 +168,7 @@ func (asst *Association) DeleteInst(ctx context.Context, h http.Header, request 
 	resp = new(metadata.DeleteAssociationInstResult)
 	subPath := "/inst/association/action/delete"
 
-	err = asst.client.Post().
+	err = asst.client.Delete().
 		WithContext(ctx).
 		Body(request).
 		SubResource(subPath).
