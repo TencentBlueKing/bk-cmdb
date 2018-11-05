@@ -347,7 +347,7 @@ func (a *association) UpdateAssociation(params types.ContextParams, data frtypes
 		return err
 	}
 
-	rspAsst, err := a.clientSet.ObjectController().Meta().UpdateObjectAssociation(context.Background(), asst.ID, params.Header, data)
+	rspAsst, err := a.clientSet.ObjectController().Meta().UpdateObjectAssociation(context.Background(), assoID, params.Header, data)
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to request object controller, err: %s", err.Error())
 		return params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
