@@ -84,16 +84,16 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.POST("/association/action/search").To(s.SearchAssociationType))
 	ws.Route(ws.POST("/association/action/create").To(s.CreateAssociationType))
 	ws.Route(ws.PUT("/association/{id}/action/update").To(s.UpdateAssociationType))
-	ws.Route(ws.POST("/association/{id}/action/delete").To(s.DeleteAssociationType))
+	ws.Route(ws.DELETE("/association/{id}/action/delete").To(s.DeleteAssociationType))
 
-	ws.Route(ws.POST("/object/association/action/search").To(s.SelectObjectAssociations))     // optimization: new api path
-	ws.Route(ws.POST("/object/association/action/create").To(s.CreateObjectAssociation))      // optimization: new api path
-	ws.Route(ws.POST("/object/association/{id}/action/update").To(s.UpdateObjectAssociation)) // optimization: new api path
-	ws.Route(ws.POST("/object/association/{id}/action/delete").To(s.DeleteObjectAssociation)) // optimization: new api path
+	ws.Route(ws.POST("/object/association/action/search").To(s.SelectObjectAssociations))       // optimization: new api path
+	ws.Route(ws.POST("/object/association/action/create").To(s.CreateObjectAssociation))        // optimization: new api path
+	ws.Route(ws.PUT("/object/association/{id}/action/update").To(s.UpdateObjectAssociation))    // optimization: new api path
+	ws.Route(ws.DELETE("/object/association/{id}/action/delete").To(s.DeleteObjectAssociation)) // optimization: new api path
 
 	ws.Route(ws.POST("/inst/association/action/search").To(s.SearchInstAssociations))
 	ws.Route(ws.POST("/inst/association/action/create").To(s.CreateInstAssociation))
-	ws.Route(ws.POST("/inst/association/action/delete").To(s.DeleteInstAssociation))
+	ws.Route(ws.DELETE("/inst/association/action/delete").To(s.DeleteInstAssociation))
 
 	ws.Route(ws.POST("/topographics/search").To(s.SearchTopoGraphics))
 	ws.Route(ws.POST("/topographics/update").To(s.UpdateTopoGraphics))
