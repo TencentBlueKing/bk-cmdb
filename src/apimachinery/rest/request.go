@@ -305,7 +305,7 @@ func (r *Result) Into(obj interface{}) error {
 		err := json.Unmarshal(r.Body, obj)
 		if nil != err {
 			if http.StatusOK != r.StatusCode {
-				return fmt.Errorf("error info %s", string(r.Body))
+				return fmt.Errorf("http request err: %s", string(r.Body))
 			}
 			blog.Errorf("invalid response body, unmarshal json failed, reply:%s, error:%s", string(r.Body), err.Error())
 			return err
