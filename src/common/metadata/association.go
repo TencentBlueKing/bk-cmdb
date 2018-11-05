@@ -137,9 +137,7 @@ type CreateAssociationInstResult struct {
 }
 
 type DeleteAssociationInstRequest struct {
-	ObjectAsstID string `field:"bk_obj_asst_id" json:"bk_obj_asst_id,omitempty" bson:"bk_obj_asst_id"`
-	InstID       int64  `field:"bk_inst_id" json:"bk_inst_id,omitempty" bson:"bk_inst_id,omitempty"`
-	AsstInstID   int64  `field:"bk_asst_inst_id" json:"bk_asst_inst_id,omitempty" bson:"bk_asst_inst_id,omitempty"`
+	Condition mapstr.MapStr `json:"condition"`
 }
 
 type DeleteAssociationInstResult struct {

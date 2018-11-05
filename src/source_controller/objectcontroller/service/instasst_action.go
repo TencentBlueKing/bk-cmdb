@@ -138,18 +138,7 @@ func (cli *Service) DeleteInstAssociation(req *restful.Request, resp *restful.Re
 		return
 	}
 
-	if request.AsstInstID == 0 && request.InstID == 0 {
-		errMsg := "invalid instance delparams"
-		blog.Errorf(errMsg)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommFieldNotValid, errMsg)})
-		return
-	}
-	cond := map[string]interface{}{
-		"bk_obj_asst_id":  request.ObjectAsstID,
-		"bk_inst_id":      request.InstID,
-		"bk_asst_inst_id": request.AsstInstID,
-	}
-	cond = util.SetModOwner(cond, ownerID)
+	cond := util.SetModOwner(request.Condition.ToMapInterface(), ownerID)
 
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	db := cli.Instance.Clone()
