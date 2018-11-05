@@ -175,46 +175,14 @@ func (a *association) CreateCommonAssociation(params types.ContextParams, data *
 	}
 
 	// check source object exists
-	condObj := condition.CreateCondition()
-	condObj.Field(common.BKObjIDField).Eq(data.ObjectID)
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-
-	rspObj, err := a.clientSet.ObjectController().Meta().SelectObjects(context.Background(), params.Header, condObj.ToMapStr())
-	if nil != err {
-		blog.Errorf("[operation-asst] failed to request object controller, err: %s", err.Error())
-		return params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
-	}
-	if !rspObj.Result {
-		blog.Errorf("[operation-asst] create the association [%s->%s], but check source object[%s] failed, err: %s", data.ObjectID,
-			data.AsstObjID, data.ObjectID, rspObj.ErrMsg)
-		return params.Err.New(rspObj.Code, rspObj.ErrMsg)
+	if err := a.obj.IsValidObject(params, data.ObjectID); nil != err {
+		blog.Errorf("[operation-asst] the object(%s) is invalid, error infor is %s", data.ObjectID, err.Error())
+		return err
 	}
 
-	if len(rspObj.Data) != 1 {
-		blog.Error("[operation-asst] create the association [%s->%s], but object[%s] do not exist.", data.ObjectID,
-			data.AsstObjID, data.ObjectID, rspObj.ErrMsg)
-		return params.Err.Error(common.CCErrTopoAssociationSourceObjectNotExist)
-	}
-
-	asstCond := condition.CreateCondition()
-	asstCond.Field(common.BKObjIDField).Eq(data.AsstObjID)
-	asstCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-	rspObj, err = a.clientSet.ObjectController().Meta().SelectObjects(context.Background(), params.Header, asstCond.ToMapStr())
-	if nil != err {
-		blog.Errorf("[operation-asst] create association [%s->%s], but get object[%s] failed, err: %s", data.AsstObjID,
-			data.AsstObjID, data.AsstObjID, rspObj.ErrMsg)
-		return params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
-	}
-	if !rspObj.Result {
-		blog.Errorf("[operation-asst] create association [%s->%s], but check object[%s] failed, err: %s", data.AsstObjID,
-			data.AsstObjID, data.AsstObjID, rspObj.ErrMsg)
-		return params.Err.New(rspObj.Code, rspObj.ErrMsg)
-	}
-
-	if len(rspObj.Data) != 1 {
-		blog.Error("[operation-asst] create association [%s->%s], but object[%s] do not exist.", data.AsstObjID,
-			data.AsstObjID, data.AsstObjID)
-		return params.Err.Error(common.CCErrTopoAssociationDestinationObjectNotExist)
+	if err := a.obj.IsValidObject(params, data.AsstObjID); nil != err {
+		blog.Errorf("[operation-asst] the object(%s) is invalid, error infor is %s", data.AsstObjID, err.Error())
+		return err
 	}
 
 	// create a new
@@ -369,31 +337,14 @@ func (a *association) UpdateAssociation(params types.ContextParams, data frtypes
 	}
 
 	// check object exists
-	condObj := condition.CreateCondition()
-	condObj.Field(metadata.ModelFieldObjectID).Eq(rsp.Data[0].ObjectID)
-	condObj.Field(metadata.AssociationFieldSupplierAccount).Eq(params.SupplierAccount)
-
-	rspObj, err := a.clientSet.ObjectController().Meta().SelectObjects(context.Background(), params.Header, condObj.ToMapStr())
-	if nil != err {
-		blog.Errorf("[operation-asst] failed to request object controller, err: %s", err.Error())
-		return params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
-	}
-	if !rspObj.Result {
-		blog.Errorf("[operation-asst] failed to create the association (%#v) , err: %s", data, rspObj.ErrMsg)
-		return params.Err.New(rspObj.Code, rspObj.ErrMsg)
+	if err := a.obj.IsValidObject(params, rsp.Data[0].ObjectID); nil != err {
+		blog.Errorf("[operation-asst] the object(%s) is invalid, error infor is %s", rsp.Data[0].ObjectID, err.Error())
+		return err
 	}
 
-	condObjAsst := condition.CreateCondition()
-	condObjAsst.Field(metadata.ModelFieldObjectID).Eq(rsp.Data[0].AsstObjID)
-	condObjAsst.Field(metadata.AssociationFieldSupplierAccount).Eq(params.SupplierAccount)
-	rspObjAsst, err := a.clientSet.ObjectController().Meta().SelectObjects(context.Background(), params.Header, condObj.ToMapStr())
-	if nil != err {
-		blog.Errorf("[operation-asst] failed to request object controller, err: %s", err.Error())
-		return params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
-	}
-	if !rspObjAsst.Result {
-		blog.Errorf("[operation-asst] failed to create the association (%#v) , err: %s", data, rspObjAsst.ErrMsg)
-		return params.Err.New(rspObjAsst.Code, rspObjAsst.ErrMsg)
+	if err := a.obj.IsValidObject(params, rsp.Data[0].AsstObjID); nil != err {
+		blog.Errorf("[operation-asst] the object(%s) is invalid, error infor is %s", rsp.Data[0].AsstObjID, err.Error())
+		return err
 	}
 
 	rspAsst, err := a.clientSet.ObjectController().Meta().UpdateObjectAssociation(context.Background(), asst.ID, params.Header, data)
