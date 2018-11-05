@@ -43,6 +43,7 @@ func (s *topoService) CreateObjectAssociation(params types.ContextParams, pathPa
 func (s *topoService) SearchObjectAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	if data.Exists("condition") {
+		// ATTENTION:
 		// compatible with new query structures
 		// the new condition format:
 		// { "condition":{}}
