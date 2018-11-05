@@ -65,7 +65,7 @@ func (cli *Service) CreateInstAssociation(req *restful.Request, resp *restful.Re
 	err = db.Table(common.BKTableNameObjAsst).Find(objCond).One(ctx, &objResult)
 	if nil != err {
 		blog.Errorf("not found object association error :%v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommNotFound, err.Error())})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, request.ObjectAsstId)})
 		return
 	}
 
