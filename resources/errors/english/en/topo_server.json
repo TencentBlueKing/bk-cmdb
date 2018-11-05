@@ -66,5 +66,6 @@
     "1101042": "got multiple object association instance with one id",
     "1101043": "object associaton has already been instantiated, can not be deleted.",
     "1101044": "get association kind[%s] failed.",
+    "1101048": "mainline object association[%s->%s] does not exist.",
 	"": "" 
 }

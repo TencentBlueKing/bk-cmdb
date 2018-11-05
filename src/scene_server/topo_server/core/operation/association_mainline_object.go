@@ -208,7 +208,7 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 		return nil, err
 	}
 
-	if err = childObj.UpdateMainlineObjectAssociationTo(currentObj.GetID()); err != nil {
+	if err = childObj.UpdateMainlineObjectAssociationTo(parentObj.GetID(), currentObj.GetID()); err != nil {
 		blog.Errorf("[operation-asst] update mainline current object's[%s] child object[%s] association to current failed, err: %v",
 			currentObj.GetID(), childObj.GetID(), err)
 		return nil, err
