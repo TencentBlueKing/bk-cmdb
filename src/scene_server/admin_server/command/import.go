@@ -496,7 +496,14 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 			}
 			switch node.getChildObjID() {
 			case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule:
-				childCondition["default"] = map[string]interface{}{common.BKDBLTE: 0}
+				childCondition["$or"] = []map[string]interface{}{
+					{
+						"default": map[string]interface{}{common.BKDBLTE: 0},
+					},
+					{
+						"default": nil,
+					},
+				}
 			default:
 				childCondition[common.BKObjIDField] = node.getChildObjID()
 			}
