@@ -42,17 +42,29 @@ func (s *topoService) CreateObjectAssociation(params types.ContextParams, pathPa
 // SearchObjectAssociation search  object association by object id
 func (s *topoService) SearchObjectAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
-	objId, err := data.String(metadata.AssociationFieldObjectID)
+	if data.Exists("condition") {
+		// compatible with new query structures
+		// the new condition format:
+		// { "condition":{}}
+		var err error
+		data, err = data.MapStr("condition")
+		if nil != err {
+			blog.Errorf("search object association, failed to get the condition, error info is %s", err.Error())
+			return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
+		}
+	}
+
+	objID, err := data.String(metadata.AssociationFieldObjectID)
 	if err != nil {
 		blog.Errorf("search object association, but get object id failed from: %v, err: %v", data, err)
 		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 	}
 
-	if len(objId) == 0 {
+	if len(objID) == 0 {
 		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 	}
 
-	return s.core.AssociationOperation().SearchObjectAssociation(params, objId)
+	return s.core.AssociationOperation().SearchObjectAssociation(params, objID)
 }
 
 // DeleteObjectAssociation delete object association
