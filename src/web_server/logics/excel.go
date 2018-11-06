@@ -307,7 +307,43 @@ func GetRawExcelData(sheet *xlsx.Sheet, defFields common.KvMap, firstRow int, de
 
 }
 
+func GetAssociationExcelData(sheet *xlsx.Sheet, firstRow int) {
+
+	rowCnt := len(sheet.Rows)
+	index := headerRow
+	var asstInfoArr []metadata.ExecelAssocation
+	for ; index < rowCnt; index++ {
+		row := sheet.Rows[index]
+		op := row.Cells[associationOPColIndex].String()
+		if op == "" {
+			continue
+		}
+
+		asstObjID := row.Cells[assciationAsstObjIDIndex].String()
+		srcInst := row.Cells[assciationSrcInstIndex].String()
+		dstInst := row.Cells[assciationDstInstIndex].String()
+		asstInfoArr = append(asstInfoArr, metadata.ExecelAssocation{
+			ObjectAsstID: asstObjID,
+			Operate:      getAssociationExcelOperateFlag(op),
+			SrcPrimary:   srcInst,
+			DstPrimary:   dstInst,
+		})
+	}
+}
+
 //GetFilterFields 不需要展示字段
 func GetFilterFields(objID string) []string {
 	return getFilterFields(objID)
+}
+
+func getAssociationExcelOperateFlag(op string) metadata.ExecelAssocationOperate {
+	opFlag := metadata.ExecelAssocationOperateError
+	switch op {
+	case associationOPAdd:
+		opFlag = metadata.ExecelAssocationOperateAdd
+	case associationOPDelete:
+		opFlag = metadata.ExecelAssocationOperateDelete
+	}
+
+	return opFlag
 }

@@ -313,19 +313,33 @@ func productExcelHealer(fields map[string]Property, filter []string, sheet *xlsx
 // ProductExcelHealer Excel文件头部，
 func productExcelAssociationHealer(sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) {
 
-	cellAsstID := sheet.Cell(0, 0)
-	cellAsstID.SetString(defLang.Language("excel_assocation_object_id"))
+	cellAsstID := sheet.Cell(0, assciationAsstObjIDIndex)
+	cellAsstID.SetString(defLang.Language("excel_association_object_id"))
 	cellAsstID.SetStyle(getHeaderFirstRowCellStyle(false))
 
-	cellOpID := sheet.Cell(0, 1)
-	cellOpID.SetString(defLang.Language("excel_assocation_op"))
+	cellOpID := sheet.Cell(0, associationOPColIndex)
+	cellOpID.SetString(defLang.Language("excel_association_op"))
 	cellOpID.SetStyle(getHeaderFirstRowCellStyle(false))
+	dd := xlsx.NewXlsxCellDataValidation(true, true, true)
+	dd.SetDropList([]string{associationOPAdd, associationOPDelete})
+	sheet.Col(associationOPColIndex).SetDataValidationWithStart(dd, 1)
 
-	cellSrcID := sheet.Cell(0, 2)
-	cellSrcID.SetString(defLang.Language("excel_assocation_src_inst"))
+	cellSrcID := sheet.Cell(0, assciationSrcInstIndex)
+	cellSrcID.SetString(defLang.Language("excel_association_src_inst"))
 	cellSrcID.SetStyle(getHeaderFirstRowCellStyle(false))
 
-	cellDstID := sheet.Cell(0, 3)
-	cellDstID.SetString(defLang.Language("excel_assocation_dst_inst"))
+	cellDstID := sheet.Cell(0, assciationDstInstIndex)
+	cellDstID.SetString(defLang.Language("excel_association_dst_inst"))
 	cellDstID.SetStyle(getHeaderFirstRowCellStyle(false))
 }
+
+const (
+	associationOPColIndex    = 1
+	assciationAsstObjIDIndex = 0
+	assciationSrcInstIndex   = 2
+	assciationDstInstIndex   = 3
+
+	associationOPAdd = "add"
+	//associationOPUpdate = "update"
+	associationOPDelete = "delete"
+)
