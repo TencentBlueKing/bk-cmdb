@@ -281,6 +281,8 @@ const (
 	CCErrorTopoObjectAssociationUpdateForbiddenFields = 1101047
 	// mainline object association do not exist
 	CCErrorTopoMainlineObjectAssociationNotExist = 1101048
+	// CCErrorTopoImportAssociation  import association error
+	CCErrorTopoImportAssociation = 1101049
 
 	CCErrTopoAppDeleteFailed                       = 1001031
 	CCErrTopoAppUpdateFailed                       = 1001032

@@ -26,7 +26,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/logics"
@@ -44,7 +43,6 @@ func (s *Service) ImportHost(c *gin.Context) {
 	language := logics.GetLanguageByHTTPRequest(c)
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
-	pheader := c.Request.Header
 	file, err := c.FormFile("file")
 	if nil != err {
 		blog.Errorf("Import Host get file error:%s", err.Error())
@@ -75,38 +73,14 @@ func (s *Service) ImportHost(c *gin.Context) {
 		return
 	}
 
-	hosts, errMsg, err := s.Logics.GetImportHosts(f, c.Request.Header, defLang)
+	data, errCode, err := s.Logics.ImportHosts(context.Background(), f, c.Request.Header, defLang)
 
 	if nil != err {
-		blog.Errorf("ImportHost logID:%s, error:%s", util.GetHTTPCCRequestID(c.Request.Header), err.Error())
-		msg := getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail, err.Error()).Error(), nil)
-		c.String(http.StatusOK, string(msg))
-		return
-	}
-	if 0 != len(errMsg) {
-		msg := getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail, " file empty").Error(), common.KvMap{"err": errMsg})
-		c.String(http.StatusOK, string(msg))
-		return
-	}
-	if 0 == len(hosts) {
-		msg := getReturnStr(common.CCErrWebFileContentEmpty, defErr.Errorf(common.CCErrWebFileContentEmpty, "").Error(), nil)
-		c.String(http.StatusOK, string(msg))
-		return
-	}
-
-	params := mapstr.MapStr{}
-	params["host_info"] = hosts
-	params["bk_supplier_id"] = common.BKDefaultSupplierID
-	params["input_type"] = common.InputTypeExcel
-
-	result, err := s.CoreAPI.ApiServer().AddHost(context.Background(), pheader, params)
-
-	if nil != err {
-		msg := getReturnStr(common.CCErrCommHTTPDoRequestFailed, defErr.Errorf(common.CCErrCommHTTPDoRequestFailed, "").Error(), nil)
+		msg := getReturnStr(errCode, err.Error(), data)
 		c.String(http.StatusOK, string(msg))
 	}
 
-	c.JSON(http.StatusOK, result)
+	c.String(http.StatusOK, getReturnStr(0, "", nil))
 
 }
 
