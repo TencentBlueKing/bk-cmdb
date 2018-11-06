@@ -672,6 +672,10 @@ func (o *object) Save(data frtypes.MapStr) error {
 		return o.Update(o.obj.ToMapStr())
 	}
 
+	if o.obj.ObjIcon == "" {
+		return o.params.Err.Errorf(common.CCErrCommParamsNeedSet, common.BKObjIconField)
+	}
+
 	return o.Create()
 
 }

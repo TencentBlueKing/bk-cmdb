@@ -13,8 +13,9 @@
 package metadata
 
 import (
-	"configcenter/src/common/mapstr"
 	"time"
+
+	"configcenter/src/common/mapstr"
 )
 
 const (
@@ -71,15 +72,8 @@ type DeleteAssociationTypeResult struct {
 	Data     string `json:"data"`
 }
 
-type SearchAssociationObjectRequestCond struct {
-	AsstID       string `field:"bk_asst_id" json:"bk_asst_id"`
-	ObjectID     string `field:"bk_obj_id" json:"bk_obj_id"`
-	AsstObjID    string `field:"bk_asst_obj_id" json:"bk_asst_obj_id"`
-	BothObjectID string `field:"both_obj_id" json:"both_obj_id"`
-}
-
 type SearchAssociationObjectRequest struct {
-	Condition SearchAssociationObjectRequestCond `json:"condition"`
+	Condition mapstr.MapStr `json:"condition"`
 }
 
 type SearchAssociationObjectResult struct {
@@ -249,7 +243,7 @@ func (a *Association) CanUpdate() (field string, can bool) {
 	}
 
 	if a.IsPre != nil {
-		return "is_pre", false
+		return "ispre", false
 	}
 
 	// only on delete, association kind id, alias name can be update.
@@ -283,13 +277,15 @@ type InstAsst struct {
 	// inst id associate to AsstObjectID
 	AsstInstID int64 `field:"bk_asst_inst_id" json:"bk_asst_inst_id"  bson:"bk_asst_inst_id"`
 	// assoctation target ObjectID
-	AsstObjectID string `field:"bk_asst_obj_id" json:"bk_asst_obj_id"`
+	AsstObjectID string `field:"bk_asst_obj_id" json:"bk_asst_obj_id" bson:"bk_asst_obj_id"`
 	// bk_supplier_account
 	OwnerID string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 	// association id between two object
-	ObjectAsstID string    `field:"bk_obj_asst_id" json:"bk_obj_asst_id" bson:"bk_obj_asst_id"`
-	CreateTime   time.Time `field:"create_time" json:"create_time" bson:"create_time"`
-	LastTime     time.Time `field:"last_time" json:"last_time" bson:"last_time"`
+	ObjectAsstID string `field:"bk_obj_asst_id" json:"bk_obj_asst_id" bson:"bk_obj_asst_id"`
+	// association kind id
+	AssociationKindID string    `field:"bk_asst_id" json:"bk_asst_id" bson:"bk_asst_id"`
+	CreateTime        time.Time `field:"create_time" json:"create_time" bson:"create_time"`
+	LastTime          time.Time `field:"last_time" json:"last_time" bson:"last_time"`
 }
 
 func (asst InstAsst) GetInstID(objID string) (instID int64, ok bool) {
