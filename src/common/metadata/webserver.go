@@ -101,3 +101,20 @@ type LogoutResult struct {
 type LogoutRequestParams struct {
 	HTTPScheme string `json:"http_scheme"`
 }
+
+type ExecelAssocationOperate int
+
+const (
+	_ ExecelAssocationOperate = iota
+	ExecelAssocationOperateError
+	ExecelAssocationOperateAdd
+	//ExecelAssocationOperateUpdate
+	ExecelAssocationOperateDelete
+)
+
+type ExecelAssocation struct {
+	ObjectAsstID string                  `json:"bk_obj_asst_id"`
+	Operate      ExecelAssocationOperate `json:"operate"`
+	SrcPrimary   string                  `json:"src_primary_key"`
+	DstPrimary   string                  `json:"dst_primary_key"`
+}
