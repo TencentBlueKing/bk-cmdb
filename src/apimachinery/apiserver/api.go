@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -255,19 +256,16 @@ func (a *apiServer) SearchAssociationInst(ctx context.Context, h http.Header, re
 	return
 }
 
-func (a *apiServer) SearchInsts(ctx context.Context, h http.Header, objID string, condition mapstr.MapStr, page *metadata.BasePage, fields []string) (resp *metadata.ResponseInstData, err error) {
-	conds := mapstr.New()
-	if page != nil {
-		conds.Set(metadata.PageName, page)
+func (a *apiServer) SearchInsts(ctx context.Context, h http.Header, objID string, cond condition.Condition) (resp *metadata.ResponseInstData, err error) {
+	resp = new(metadata.ResponseInstData)
+	input := &metadata.SearchAssociationInstRequest{
+		Condition: cond.ToMapStr(),
 	}
-	if len(fields) != 0 {
-		conds.Set(metadata.DBFields, fields)
-	}
-	conds.Set(metadata.DBQueryCondition, condition)
 	subPath := fmt.Sprintf("/inst/search/owner/%s/object/%s", util.GetOwnerID(h), objID)
+
 	err = a.client.Post().
 		WithContext(ctx).
-		Body(conds).
+		Body(input).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
