@@ -493,7 +493,7 @@ func (o *object) FindObjectTopo(params types.ContextParams, cond condition.Condi
 				Condition: typeCond.ToMapStr(),
 			}
 
-			resp, err := o.asst.SearchType(context.Background(), params.Header, request)
+			resp, err := o.asst.SearchType(params, request)
 			if err != nil {
 				blog.Errorf("find object topo failed, because get association kind[%s] failed, err: %v", asst.AsstKindID, err)
 				return nil, params.Err.Errorf(common.CCErrTopoGetAssociationKindFailed, asst.AsstKindID)

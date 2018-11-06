@@ -47,12 +47,14 @@ func (s *topoService) SearchObjectAssociation(params types.ContextParams, pathPa
 		// compatible with new query structures
 		// the new condition format:
 		// { "condition":{}}
-		var err error
-		data, err = data.MapStr("condition")
+
+		cond, err := data.MapStr("condition")
 		if nil != err {
 			blog.Errorf("search object association, failed to get the condition, error info is %s", err.Error())
 			return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 		}
+
+		return s.core.AssociationOperation().SearchObject(params, &metadata.SearchAssociationObjectRequest{Condition: cond})
 	}
 
 	objID, err := data.String(metadata.AssociationFieldObjectID)
