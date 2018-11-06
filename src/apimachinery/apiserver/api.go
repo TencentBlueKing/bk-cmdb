@@ -229,7 +229,7 @@ func (a *apiServer) AddInst(ctx context.Context, h http.Header, ownerID, objID s
 func (a *apiServer) AddObjectBatch(ctx context.Context, h http.Header, ownerID, objID string, params mapstr.MapStr) (resp *metadata.Response, err error) {
 
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("object/batch", ownerID, objID)
+	subPath := "object/batch"
 
 	err = a.client.Post().
 		WithContext(ctx).

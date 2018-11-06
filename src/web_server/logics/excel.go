@@ -31,6 +31,7 @@ import (
 )
 
 // BuildExcelFromData product excel from data
+
 func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields map[string]Property, filter []string, data []interface{}, xlsxFile *xlsx.File, header http.Header) error {
 
 	ccLang := lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
@@ -42,6 +43,7 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 
 	}
 	addSystemField(fields, common.BKInnerObjIDObject, ccLang)
+
 	if 0 == len(filter) {
 		filter = getFilterFields(objID)
 	} else {
