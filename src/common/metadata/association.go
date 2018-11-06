@@ -13,8 +13,9 @@
 package metadata
 
 import (
-	"configcenter/src/common/mapstr"
 	"time"
+
+	"configcenter/src/common/mapstr"
 )
 
 const (
@@ -249,7 +250,7 @@ func (a *Association) CanUpdate() (field string, can bool) {
 	}
 
 	if a.IsPre != nil {
-		return "is_pre", false
+		return "ispre", false
 	}
 
 	// only on delete, association kind id, alias name can be update.
