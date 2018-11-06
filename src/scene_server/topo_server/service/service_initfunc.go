@@ -23,6 +23,8 @@ func (s *topoService) initHealth() {
 }
 
 func (s *topoService) initAssociation() {
+
+	// mainline topo methods
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/topo/model/mainline", HandlerFunc: s.CreateMainLineObject})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/topo/model/mainline/owners/{owner_id}/objectids/{obj_id}", HandlerFunc: s.DeleteMainLineObject})
 	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/model/{owner_id}", HandlerFunc: s.SearchMainLineObjectTopo})
@@ -30,19 +32,29 @@ func (s *topoService) initAssociation() {
 	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/inst/{owner_id}/{app_id}", HandlerFunc: s.SearchBusinessTopo})
 	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/inst/child/{owner_id}/{obj_id}/{app_id}/{inst_id}", HandlerFunc: s.SearchMainLineChildInstTopo})
 
+	// assoication type methods
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/topo/association/type/action/search", HandlerFunc: s.SearchAssociationType})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/topo/association/type/action/create", HandlerFunc: s.CreateAssociationType})
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/topo/association/type/{id}/action/update", HandlerFunc: s.UpdateAssociationType})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/topo/association/type/{id}/action/delete", HandlerFunc: s.DeleteAssociationType})
 
+	// object association methods
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/object/association/action/search", HandlerFunc: s.SearchObjectAssociation})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/object/association/action/create", HandlerFunc: s.CreateObjectAssociation})
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/object/association/{id}/action/update", HandlerFunc: s.UpdateObjectAssociation})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/object/association/{id}/action/delete", HandlerFunc: s.DeleteObjectAssociation})
 
+	// inst association methods
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/association/action/search", HandlerFunc: s.SearchAssociationInst})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/association/action/create", HandlerFunc: s.CreateAssociationInst})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/inst/association/action/delete", HandlerFunc: s.DeleteAssociationInst})
+
+	// topo search methods
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/association/search/owner/{owner_id}/object/{obj_id}", HandlerFunc: s.SearchInstByAssociation})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/association/topo/search/owner/{owner_id}/object/{object_id}/inst/{inst_id}", HandlerFunc: s.SearchInstTopo})
+
+	// ATTENTION: the following methods is not recommended
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/search/topo/owner/{owner_id}/object/{object_id}/inst/{inst_id}", HandlerFunc: s.SearchInstChildTopo})
 
 }
 
@@ -103,10 +115,8 @@ func (s *topoService) initInst() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/search/{owner_id}/{obj_id}", HandlerFunc: s.SearchInsts})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/search/owner/{owner_id}/object/{obj_id}/detail", HandlerFunc: s.SearchInstAndAssociationDetail})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/search/owner/{owner_id}/object/{obj_id}", HandlerFunc: s.SearchInstByObject})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/association/search/owner/{owner_id}/object/{obj_id}", HandlerFunc: s.SearchInstByAssociation})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/search/{owner_id}/{obj_id}/{inst_id}", HandlerFunc: s.SearchInstByInstID})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/search/topo/owner/{owner_id}/object/{object_id}/inst/{inst_id}", HandlerFunc: s.SearchInstChildTopo})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/association/topo/search/owner/{owner_id}/object/{object_id}/inst/{inst_id}", HandlerFunc: s.SearchInstTopo})
+
 }
 
 func (s *topoService) initObjectAttribute() {
