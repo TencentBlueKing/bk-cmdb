@@ -102,19 +102,19 @@ type LogoutRequestParams struct {
 	HTTPScheme string `json:"http_scheme"`
 }
 
-type ExecelAssocationOperate int
+type ExcelAssocationOperate int
 
 const (
-	_ ExecelAssocationOperate = iota
-	ExecelAssocationOperateError
-	ExecelAssocationOperateAdd
-	//ExecelAssocationOperateUpdate
-	ExecelAssocationOperateDelete
+	_ ExcelAssocationOperate = iota
+	ExcelAssocationOperateError
+	ExcelAssocationOperateAdd
+	//ExcelAssocationOperateUpdate
+	ExcelAssocationOperateDelete
 )
 
-type ExecelAssocation struct {
-	ObjectAsstID string                  `json:"bk_obj_asst_id"`
-	Operate      ExecelAssocationOperate `json:"operate"`
-	SrcPrimary   string                  `json:"src_primary_key"`
-	DstPrimary   string                  `json:"dst_primary_key"`
+type ExcelAssocation struct {
+	ObjectAsstID string                 `json:"bk_obj_asst_id"`
+	Operate      ExcelAssocationOperate `json:"operate"`
+	SrcPrimary   string                 `json:"src_primary_key"`
+	DstPrimary   string                 `json:"dst_primary_key"`
 }

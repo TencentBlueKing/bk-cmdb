@@ -28,6 +28,7 @@ type Field interface {
 	Lte(val interface{}) Condition
 	Gt(val interface{}) Condition
 	Gte(val interface{}) Condition
+	Or(val interface{}) Condition
 	ToMapStr() types.MapStr
 }
 
@@ -52,7 +53,7 @@ func (cli *field) ToMapStr() types.MapStr {
 	case BKDBEQ:
 		tmpResult.Merge(types.MapStr{cli.fieldName: cli.fieldValue})
 	case BKDBOR:
-		tmpResult.Merge(types.MapStr{cli.fieldName: cli.fieldValue})
+		tmpResult.Merge(types.MapStr{BKDBOR: cli.fieldValue})
 	default:
 		tmpResult.Merge(types.MapStr{
 			cli.fieldName: types.MapStr{
@@ -127,7 +128,7 @@ func (cli *field) Gte(val interface{}) Condition {
 	return cli.condition
 }
 
-func (cli *field) Or(val []interface{}) Condition {
+func (cli *field) Or(val interface{}) Condition {
 	cli.opeartor = BKDBOR
 	cli.fieldValue = val
 	return cli.condition
