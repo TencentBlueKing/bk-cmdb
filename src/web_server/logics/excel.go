@@ -29,7 +29,7 @@ import (
 )
 
 // BuildExcelFromData product excel from data
-func BuildExcelFromData(objID string, fields map[string]Property, filter []string, data []interface{}, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) error {
+func BuildExcelFromData(objID string, fields map[string]Property, filter []string, data []mapstr.MapStr, sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) error {
 	addSystemField(fields, common.BKInnerObjIDObject, defLang)
 	if 0 == len(filter) {
 		filter = getFilterFields(objID)
@@ -42,15 +42,7 @@ func BuildExcelFromData(objID string, fields map[string]Property, filter []strin
 
 	rowIndex := common.HostAddMethodExcelIndexOffset
 
-	for _, row := range data {
-		rowMap, ok := row.(map[string]interface{})
-
-		if false == ok {
-			msg := fmt.Sprintf("data format error:%v", row)
-			blog.Errorf(msg)
-			return errors.New(msg)
-		}
-
+	for _, rowMap := range data {
 		setExcelRowDataByIndex(rowMap, sheet, rowIndex, fields)
 		rowIndex++
 

@@ -56,7 +56,7 @@ func (s *Service) WebService() *gin.Engine {
 	ws.POST("/hosts/export", s.ExportHost)
 	ws.GET("/importtemplate/:bk_obj_id", s.BuildDownLoadExcelTemplate)
 	ws.POST("/insts/owner/:bk_supplier_account/object/:bk_obj_id/import", s.ImportInst)
-	ws.POST("/insts/owner/:bk_supplier_account/object/:bk_obj_id/export", s.LogOutUser)
+	ws.POST("/insts/owner/:bk_supplier_account/object/:bk_obj_id/export", s.ExportInst)
 	ws.POST("/logout", s.LogOutUser)
 	ws.POST("/object/owner/:bk_supplier_account/object/:bk_obj_id/import", s.ImportObject)
 	ws.POST("/object/owner/:bk_supplier_account/object/:bk_obj_id/export", s.ExportObject)
