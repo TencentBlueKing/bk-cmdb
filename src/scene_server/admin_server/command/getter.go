@@ -116,7 +116,11 @@ func getTree(ctx context.Context, db dal.RDB, root *Node, pcmap map[string]*meta
 
 	switch asst.ObjectID {
 	case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule:
-		condition["default"] = map[string]interface{}{common.BKDBEQ: 0}
+		condition[common.BKDefaultField] = map[string]interface{}{
+			common.BKDBNot: map[string]interface{}{
+				common.BKDBGT: 0,
+			},
+		}
 	default:
 		condition[common.BKObjIDField] = asst.ObjectID
 	}
