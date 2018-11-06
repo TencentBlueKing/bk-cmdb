@@ -20,9 +20,11 @@ import (
 )
 
 const (
-	PageName  = "page"
-	PageSort  = "sort"
-	PageStart = "start"
+	PageName         = "page"
+	PageSort         = "sort"
+	PageStart        = "start"
+	DBFields         = "fields"
+	DBQueryCondition = "condition"
 )
 
 // BasePage for paging query
