@@ -164,6 +164,9 @@ const (
 	// BKDBExists the db opeartor
 	BKDBExists = "$exists"
 
+	// BKDBNot the db opeartor
+	BKDBNot = "$not"
+
 	// BKDBSortFieldSep the db sort field split char
 	BKDBSortFieldSep = ","
 )

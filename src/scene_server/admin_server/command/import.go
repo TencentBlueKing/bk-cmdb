@@ -140,7 +140,6 @@ func importBKBiz(ctx context.Context, db dal.RDB, opt *option) error {
 								}
 							}
 
-							//
 							deleteconition := map[string]interface{}{
 								common.GetInstIDField(child.ObjID): childID,
 							}
@@ -404,6 +403,7 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 			node.Data[common.BKOwnerIDField] = ipt.ownerID
 			node.Data[common.BKAppIDField] = ipt.bizID
 			node.Data[common.BKInstParentStr] = ipt.parentID
+			node.Data[common.BKDefaultField] = 0
 			condition := getModifyCondition(node.Data, []string{common.BKSetNameField, common.BKInstParentStr})
 			set := map[string]interface{}{}
 			err := ipt.db.Table(common.GetInstTableName(node.ObjID)).Find(condition).One(ipt.ctx, &set)
@@ -434,6 +434,7 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 			node.Data[common.BKAppIDField] = ipt.bizID
 			node.Data[common.BKSetIDField] = ipt.setID
 			node.Data[common.BKInstParentStr] = ipt.parentID
+			node.Data[common.BKDefaultField] = 0
 			condition := getModifyCondition(node.Data, []string{common.BKModuleNameField, common.BKInstParentStr})
 			module := map[string]interface{}{}
 			err := ipt.db.Table(common.GetInstTableName(node.ObjID)).Find(condition).One(ipt.ctx, &module)
@@ -496,12 +497,9 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 			}
 			switch node.getChildObjID() {
 			case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule:
-				childCondition["$or"] = []map[string]interface{}{
-					{
-						"default": map[string]interface{}{common.BKDBLTE: 0},
-					},
-					{
-						"default": nil,
+				childCondition[common.BKDefaultField] = map[string]interface{}{
+					common.BKDBNot: map[string]interface{}{
+						common.BKDBGT: 0,
 					},
 				}
 			default:
