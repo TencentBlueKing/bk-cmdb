@@ -22,7 +22,7 @@ import (
 )
 
 func (s topoService) ParseOriginGraphicsUpdateInput(data []byte) (mapstr.MapStr, error) {
-	datas := []metadata.TopoGraphics{}
+	datas := make([]metadata.TopoGraphics, 0)
 	err := json.Unmarshal(data, &datas)
 	if nil != err {
 		return nil, err

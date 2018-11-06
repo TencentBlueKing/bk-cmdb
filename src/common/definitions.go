@@ -387,9 +387,6 @@ const (
 	// BKIsPre the ispre field
 	BKIsPre = "ispre"
 
-	// bkIsOnly the isonly field, is primary key
-	BKIsOnly = "isonly"
-
 	// BKIsIncrementField the isincrement field
 	BKIsIncrementField = "is_increment"
 
@@ -596,6 +593,9 @@ const (
 	// HostAddMethodExcelIndexOffset the height of the table header
 	HostAddMethodExcelIndexOffset = 3
 
+	// HostAddMethodExcelAssociationIndexOffset
+	HostAddMethodExcelAssociationIndexOffset = 1
+
 	/*EXCEL color AARRGGBB :
 	AA means Alpha
 	RRGGBB means Red, in hex.
@@ -617,7 +617,9 @@ const (
 	ExcelCellDefaultBorderColor = "FFD4D4D4"
 
 	// ExcelAsstPrimaryKeySplitChar split char
-	ExcelAsstPrimaryKeySplitChar = "##"
+	ExcelAsstPrimaryKeySplitChar = ","
+	// ExcelAsstPrimaryKeyJoinChar split char
+	ExcelAsstPrimaryKeyJoinChar = "="
 	// ExcelAsstPrimaryKeyRowChar split char
 	ExcelAsstPrimaryKeyRowChar = "\n"
 
@@ -834,4 +836,23 @@ const (
 	RedisProcSrvHostInstanceRefreshModuleKey  = BKCacheKeyV3Prefix + "prochostinstancerefresh:set"
 	RedisProcSrvHostInstanceAllRefreshLockKey = BKCacheKeyV3Prefix + "lock:prochostinstancerefresh"
 	RedisProcSrvQueryProcOPResultKey          = BKCacheKeyV3Prefix + "procsrv:query:opresult:set"
+)
+
+// association fields
+const (
+	// the id of the association kind
+	AssociationKindIDField    = "bk_asst_id"
+	AssociationKindNameField  = "bk_asst_name"
+	AssociationObjAsstIDField = "bk_obj_asst_id"
+	AssociatedObjectIDField   = "bk_asst_obj_id"
+)
+
+// association
+const (
+	AssociationKindMainline = "group"
+	AssociationTypeBelong   = "belong"
+	AssociationTypeGroup    = "group"
+	AssociationTypeRun      = "run"
+	AssociationTypeConnect  = "connect"
+	AssociationTypeDefault  = "default"
 )

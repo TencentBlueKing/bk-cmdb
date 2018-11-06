@@ -21,31 +21,37 @@ import (
 	"configcenter/src/common/blog"
 	lang "configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
 
 // Property object fields
 type Property struct {
-	ID                     string
-	Name                   string
-	PropertyType           string
-	Option                 interface{}
-	IsPre                  bool
-	IsRequire              bool
-	Group                  string
-	Index                  int
-	ExcelColIndex          int
-	NotObjPropery          bool //Not an attribute of the object, indicating that the field to be exported is needed for export,
-	AsstObjPrimaryProperty []Property
-	IsOnly                 bool
-	AsstObjID              string
+	ID            string
+	Name          string
+	PropertyType  string
+	Option        interface{}
+	IsPre         bool
+	IsRequire     bool
+	Group         string
+	Index         int64
+	ExcelColIndex int
+	NotObjPropery bool //Not an attribute of the object, indicating that the field to be exported is needed for export,
+	IsOnly        bool
+	AsstObjID     string
 }
 
 // PropertyGroup property group
 type PropertyGroup struct {
 	Name  string
-	Index int
+	Index int64
 	ID    string
+}
+
+type PropertyPrimaryVal struct {
+	ID     string
+	Name   string
+	StrVal string
 }
 
 // GetObjFieldIDs get object fields
@@ -69,17 +75,7 @@ func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, header ht
 				if util.InStrArr(filterFields, field.ID) {
 					continue
 				}
-				switch field.PropertyType {
-				case common.FieldTypeSingleAsst:
-					fallthrough
-				case common.FieldTypeMultiAsst:
 
-					field.AsstObjPrimaryProperty, err = lgc.getAsstObjectPrimaryFieldByObjID(field.AsstObjID, header)
-					if nil != err {
-						blog.Errorf("get associate object fields error: error:%s", err.Error())
-						return nil, fmt.Errorf("get associate object fields error: error:%s", err.Error())
-					}
-				}
 				field.ExcelColIndex = index
 				ret[field.ID] = field
 				index++
@@ -94,30 +90,30 @@ func (lgc *Logics) getObjectGroup(objID string, header http.Header) ([]PropertyG
 	condition := mapstr.MapStr{common.BKObjIDField: objID, common.BKOwnerIDField: common.BKDefaultOwnerID, "page": mapstr.MapStr{"start": 0, "limit": common.BKNoLimit, "sort": common.BKPropertyGroupIndexField}}
 	result, err := lgc.Engine.CoreAPI.ApiServer().GetObjectGroup(context.Background(), header, ownerID, objID, condition)
 	if nil != err {
-		blog.Errorf("get %s fields group return:%s, err:%s", objID, result, err.Error())
+		blog.Errorf("get %s fields group return:%s, err:%s, rid:%s", objID, result, err.Error(), util.GetHTTPCCRequestID(header))
+		return nil, err
+	}
+	if !result.Result {
+		blog.Errorf("get %s fields group  return:%s data not array, error code:%s, error message:%s, rid:%s", objID, result.Code, result.ErrMsg, util.GetHTTPCCRequestID(header))
 		return nil, err
 	}
 	fields := result.Data
-	if nil != err {
-		blog.Errorf("get %s fields group  return:%s data not array, err:%s", objID, result, err.Error())
-		return nil, err
-	}
 	ret := []PropertyGroup{}
 	for _, mapField := range fields {
 		propertyGroup := PropertyGroup{}
-		propertyGroup.Index = int(mapField.GroupIndex)
+		propertyGroup.Index = mapField.GroupIndex
 		propertyGroup.Name = mapField.GroupName
 		propertyGroup.ID = mapField.GroupID
 		ret = append(ret, propertyGroup)
 	}
-	blog.V(3).Infof("getObjectGroup count:%d", len(ret))
+	blog.V(5).Infof("getObjectGroup count:%d", len(ret))
 	return ret, nil
 
 }
 
-func (lgc *Logics) getAsstObjectPrimaryFieldByObjID(objID string, header http.Header) ([]Property, error) {
+func (lgc *Logics) getAsstObjectPrimaryFieldByObjID(objID string, header http.Header, conds mapstr.MapStr) ([]Property, error) {
 
-	fields, err := lgc.getObjFieldIDsBySort(objID, common.BKPropertyIDField, header)
+	fields, err := lgc.getObjFieldIDsBySort(objID, common.BKPropertyIDField, header, conds)
 	if nil != err {
 		return nil, err
 	}
@@ -133,26 +129,32 @@ func (lgc *Logics) getAsstObjectPrimaryFieldByObjID(objID string, header http.He
 
 func (lgc *Logics) getObjFieldIDs(objID string, header http.Header) ([]Property, error) {
 	sort := fmt.Sprintf("-%s,bk_property_index", common.BKIsRequiredField)
-	return lgc.getObjFieldIDsBySort(objID, sort, header)
+	return lgc.getObjFieldIDsBySort(objID, sort, header, nil)
 
 }
 
-func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header) ([]Property, error) {
+func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, conds mapstr.MapStr) ([]Property, error) {
 
 	condition := mapstr.MapStr{
 		common.BKObjIDField:   objID,
-		common.BKOwnerIDField: common.BKDefaultOwnerID,
-		"page": mapstr.MapStr{
+		common.BKOwnerIDField: util.GetOwnerID(header),
+		metadata.PageName: mapstr.MapStr{
 			"start": 0,
 			"limit": common.BKNoLimit,
 			"sort":  sort,
 		},
 	}
+	condition.Merge(conds)
 
 	result, err := lgc.Engine.CoreAPI.ApiServer().GetObjectAttr(context.Background(), header, condition)
 	if nil != err {
-		blog.Errorf("get %s fields  return:%s", objID, result)
-		return nil, err
+		blog.Errorf("getObjFieldIDsBySort get %s fields input:%s, error:%s ,rid:%s", objID, conds, err.Error(), util.GetHTTPCCRequestID(header))
+		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if !result.Result {
+		blog.Errorf("getObjFieldIDsBySort get %s fields input:%s,  http reply info,error code:%d, error msg:%s ,rid:%s", objID, conds, result.Code, result.ErrMsg, util.GetHTTPCCRequestID(header))
+		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(result.Code, result.ErrMsg)
 	}
 
 	ret := []Property{}
@@ -168,8 +170,6 @@ func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header) 
 		fieldIsPre := mapField.IsPre
 		fieldGroup := mapField.PropertyGroup
 		fieldIndex := mapField.PropertyIndex
-		fieldData := mapField.ToMapStr()
-		fieldAsstObjID, _ := fieldData[common.BKAsstObjIDField].(string)
 
 		ret = append(ret, Property{
 			ID:           fieldID,
@@ -179,12 +179,11 @@ func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header) 
 			IsPre:        fieldIsPre,
 			Option:       fieldIsOption,
 			Group:        fieldGroup,
-			Index:        int(fieldIndex),
+			Index:        fieldIndex,
 			IsOnly:       fieldIsOnly,
-			AsstObjID:    fieldAsstObjID,
 		})
 	}
-	blog.V(3).Infof("getObjFieldIDsBySort ret count:%d", len(ret))
+	blog.V(5).Infof("getObjFieldIDsBySort ret count:%d", len(ret))
 	return ret, nil
 }
 
