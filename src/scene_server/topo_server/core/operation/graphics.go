@@ -120,7 +120,7 @@ func (g *graphics) SelectObjectTopoGraphics(params types.ContextParams, scopeTyp
 					Condition: typeCond.ToMapStr(),
 				}
 
-				resp, err := g.asst.SearchType(context.Background(), params.Header, request)
+				resp, err := g.asst.SearchType(params, request)
 				if err != nil {
 					blog.Errorf("select object topo graph failed, because get association kind[%s] failed, err: %v", asst.AsstKindID, err)
 					return nil, params.Err.Errorf(common.CCErrTopoGetAssociationKindFailed, asst.AsstKindID)

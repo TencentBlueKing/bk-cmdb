@@ -14,7 +14,6 @@ package operation
 
 import (
 	"context"
-	"net/http"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
@@ -47,20 +46,19 @@ type AssociationOperationInterface interface {
 	DeleteInstAssociation(params types.ContextParams, cond condition.Condition) error
 
 	// 关联关系改造后的接口
-	SearchType(ctx context.Context, h http.Header, request *metadata.SearchAssociationTypeRequest) (resp *metadata.SearchAssociationTypeResult, err error)
-	CreateType(ctx context.Context, h http.Header, request *metadata.AssociationKind) (resp *metadata.CreateAssociationTypeResult, err error)
-	UpdateType(ctx context.Context, h http.Header, asstTypeID int, request *metadata.UpdateAssociationTypeRequest) (resp *metadata.UpdateAssociationTypeResult, err error)
-	DeleteType(ctx context.Context, h http.Header, asstTypeID int) (resp *metadata.DeleteAssociationTypeResult, err error)
+	SearchType(params types.ContextParams, request *metadata.SearchAssociationTypeRequest) (resp *metadata.SearchAssociationTypeResult, err error)
+	CreateType(cparams types.ContextParams, request *metadata.AssociationKind) (resp *metadata.CreateAssociationTypeResult, err error)
+	UpdateType(params types.ContextParams, asstTypeID int, request *metadata.UpdateAssociationTypeRequest) (resp *metadata.UpdateAssociationTypeResult, err error)
+	DeleteType(params types.ContextParams, asstTypeID int) (resp *metadata.DeleteAssociationTypeResult, err error)
 
-	// TODO: need to be deleted
-	// SearchObject(ctx context.Context, h http.Header, request *metadata.SearchAssociationObjectRequest) (resp *metadata.SearchAssociationObjectResult, err error)
-	// CreateObject(ctx context.Context, h http.Header, request *metadata.Association) (resp *metadata.CreateAssociationObjectResult, err error)
-	// UpdateObject(ctx context.Context, h http.Header, asstID int, request *metadata.UpdateAssociationObjectRequest) (resp *metadata.UpdateAssociationObjectResult, err error)
-	// DeleteObject(ctx context.Context, h http.Header, asstID int) (resp *metadata.DeleteAssociationObjectResult, err error)
+	SearchObject(params types.ContextParams, request *metadata.SearchAssociationObjectRequest) (resp *metadata.SearchAssociationObjectResult, err error)
+	CreateObject(params types.ContextParams, request *metadata.Association) (resp *metadata.CreateAssociationObjectResult, err error)
+	UpdateObject(params types.ContextParams, asstID int, request *metadata.UpdateAssociationObjectRequest) (resp *metadata.UpdateAssociationObjectResult, err error)
+	DeleteObject(params types.ContextParams, asstID int) (resp *metadata.DeleteAssociationObjectResult, err error)
 
-	SearchInst(ctx context.Context, h http.Header, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error)
-	CreateInst(ctx context.Context, h http.Header, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error)
-	DeleteInst(ctx context.Context, h http.Header, request *metadata.DeleteAssociationInstRequest) (resp *metadata.DeleteAssociationInstResult, err error)
+	SearchInst(params types.ContextParams, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error)
+	CreateInst(params types.ContextParams, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error)
+	DeleteInst(params types.ContextParams, request *metadata.DeleteAssociationInstRequest) (resp *metadata.DeleteAssociationInstResult, err error)
 
 	SetProxy(cls ClassificationOperationInterface, obj ObjectOperationInterface, grp GroupOperationInterface, attr AttributeOperationInterface, inst InstOperationInterface, targetModel model.Factory, targetInst inst.Factory)
 }
@@ -380,40 +378,38 @@ func (a *association) CheckBeAssociation(params types.ContextParams, obj model.O
 
 // 关联关系改造后的接口
 
-func (a *association) SearchType(ctx context.Context, h http.Header, request *metadata.SearchAssociationTypeRequest) (resp *metadata.SearchAssociationTypeResult, err error) {
-	return a.clientSet.ObjectController().Association().SearchType(ctx, h, request)
+func (a *association) SearchType(params types.ContextParams, request *metadata.SearchAssociationTypeRequest) (resp *metadata.SearchAssociationTypeResult, err error) {
+	return a.clientSet.ObjectController().Association().SearchType(context.TODO(), params.Header, request)
 }
-func (a *association) CreateType(ctx context.Context, h http.Header, request *metadata.AssociationKind) (resp *metadata.CreateAssociationTypeResult, err error) {
-	return a.clientSet.ObjectController().Association().CreateType(ctx, h, request)
+func (a *association) CreateType(params types.ContextParams, request *metadata.AssociationKind) (resp *metadata.CreateAssociationTypeResult, err error) {
+	return a.clientSet.ObjectController().Association().CreateType(context.TODO(), params.Header, request)
 }
-func (a *association) UpdateType(ctx context.Context, h http.Header, asstTypeID int, request *metadata.UpdateAssociationTypeRequest) (resp *metadata.UpdateAssociationTypeResult, err error) {
-	return a.clientSet.ObjectController().Association().UpdateType(ctx, h, asstTypeID, request)
+func (a *association) UpdateType(params types.ContextParams, asstTypeID int, request *metadata.UpdateAssociationTypeRequest) (resp *metadata.UpdateAssociationTypeResult, err error) {
+	return a.clientSet.ObjectController().Association().UpdateType(context.TODO(), params.Header, asstTypeID, request)
 }
-func (a *association) DeleteType(ctx context.Context, h http.Header, asstTypeID int) (resp *metadata.DeleteAssociationTypeResult, err error) {
-	return a.clientSet.ObjectController().Association().DeleteType(ctx, h, asstTypeID)
+func (a *association) DeleteType(params types.ContextParams, asstTypeID int) (resp *metadata.DeleteAssociationTypeResult, err error) {
+	return a.clientSet.ObjectController().Association().DeleteType(context.TODO(), params.Header, asstTypeID)
 }
 
-/*
-	TODO: need to be deleted
-	func (a *association) SearchObject(ctx context.Context, h http.Header, request *metadata.SearchAssociationObjectRequest) (resp *metadata.SearchAssociationObjectResult, err error) {
-		return a.clientSet.ObjectController().Association().SearchObject(ctx, h, request)
-	}
-	func (a *association) CreateObject(ctx context.Context, h http.Header, request *metadata.Association) (resp *metadata.CreateAssociationObjectResult, err error) {
-		return a.clientSet.ObjectController().Association().CreateObject(ctx, h, request)
-	}
-	func (a *association) UpdateObject(ctx context.Context, h http.Header, asstID int, request *metadata.UpdateAssociationObjectRequest) (resp *metadata.UpdateAssociationObjectResult, err error) {
-		return a.clientSet.ObjectController().Association().UpdateObject(ctx, h, asstID, request)
-	}
-	func (a *association) DeleteObject(ctx context.Context, h http.Header, asstID int) (resp *metadata.DeleteAssociationObjectResult, err error) {
-		return a.clientSet.ObjectController().Association().DeleteObject(ctx, h, asstID)
-	}
-*/
-func (a *association) SearchInst(ctx context.Context, h http.Header, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error) {
-	return a.clientSet.ObjectController().Association().SearchInst(ctx, h, request)
+func (a *association) SearchObject(params types.ContextParams, request *metadata.SearchAssociationObjectRequest) (resp *metadata.SearchAssociationObjectResult, err error) {
+	return a.clientSet.ObjectController().Association().SearchObject(context.TODO(), params.Header, request)
 }
-func (a *association) CreateInst(ctx context.Context, h http.Header, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error) {
-	return a.clientSet.ObjectController().Association().CreateInst(ctx, h, request)
+func (a *association) CreateObject(params types.ContextParams, request *metadata.Association) (resp *metadata.CreateAssociationObjectResult, err error) {
+	return a.clientSet.ObjectController().Association().CreateObject(context.TODO(), params.Header, request)
 }
-func (a *association) DeleteInst(ctx context.Context, h http.Header, request *metadata.DeleteAssociationInstRequest) (resp *metadata.DeleteAssociationInstResult, err error) {
-	return a.clientSet.ObjectController().Association().DeleteInst(ctx, h, request)
+func (a *association) UpdateObject(params types.ContextParams, asstID int, request *metadata.UpdateAssociationObjectRequest) (resp *metadata.UpdateAssociationObjectResult, err error) {
+	return a.clientSet.ObjectController().Association().UpdateObject(context.TODO(), params.Header, asstID, request)
+}
+func (a *association) DeleteObject(params types.ContextParams, asstID int) (resp *metadata.DeleteAssociationObjectResult, err error) {
+	return a.clientSet.ObjectController().Association().DeleteObject(context.TODO(), params.Header, asstID)
+}
+
+func (a *association) SearchInst(params types.ContextParams, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error) {
+	return a.clientSet.ObjectController().Association().SearchInst(context.TODO(), params.Header, request)
+}
+func (a *association) CreateInst(params types.ContextParams, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error) {
+	return a.clientSet.ObjectController().Association().CreateInst(context.TODO(), params.Header, request)
+}
+func (a *association) DeleteInst(params types.ContextParams, request *metadata.DeleteAssociationInstRequest) (resp *metadata.DeleteAssociationInstResult, err error) {
+	return a.clientSet.ObjectController().Association().DeleteInst(context.TODO(), params.Header, request)
 }
