@@ -43,9 +43,8 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 	if common.LoginSystemMultiSupplierTrue == multipleOwner {
 		isMultiOwner = true
 	}
-	config := make(map[string]string)
-	config["site.check_url"] = m.config.Site.CheckUrl
-	userInfo, loginSucc := user.LoginUser(c, config, isMultiOwner)
+
+	userInfo, loginSucc := user.LoginUser(c, m.config.ConfigMap, isMultiOwner)
 	if !loginSucc {
 		return false
 	}
@@ -97,9 +96,8 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 func (m *publicUser) GetUserList(c *gin.Context) (int, interface{}) {
 
 	user := plugins.CurrentPlugin(c, m.config.LoginVersion)
-	config := make(map[string]string)
-	config["site.bk_account_url"] = m.config.Site.AccountUrl
-	userList, err := user.GetUserList(c, config)
+	userList, err := user.GetUserList(c, m.config.ConfigMap)
+
 	rspBody := metadata.LonginSystemUserListResult{}
 	if nil != err {
 		rspBody.Code = common.CCErrCommHTTPDoRequestFailed
@@ -112,12 +110,7 @@ func (m *publicUser) GetUserList(c *gin.Context) (int, interface{}) {
 }
 
 func (m *publicUser) GetLoginUrl(c *gin.Context) string {
-	config := make(map[string]string)
-	config["site.bk_login_url"] = m.config.Site.BkLoginUrl
-	config["site.domain_url"] = m.config.Site.DomainUrl
-	config["site.app_code"] = m.config.Site.AppCode
-	config["site.https_domain_url"] = m.config.Site.DomainUrl
-	config["site.bk_https_login_url"] = m.config.Site.BkHttpsLoginUrl
+
 	params := new(metadata.LogoutRequestParams)
 	err := json.NewDecoder(c.Request.Body).Decode(params)
 	if nil != err || (common.LogoutHTTPSchemeHTTP != params.HTTPScheme && common.LogoutHTTPSchemeHTTPS != params.HTTPScheme) {
@@ -127,6 +120,7 @@ func (m *publicUser) GetLoginUrl(c *gin.Context) string {
 		}
 	}
 	user := plugins.CurrentPlugin(c, m.config.LoginVersion)
-	return user.GetLoginUrl(c, config, params)
+
+	return user.GetLoginUrl(c, m.config.ConfigMap, params)
 
 }
