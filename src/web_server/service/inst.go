@@ -122,20 +122,11 @@ func (s *Service) ExportInst(c *gin.Context) {
 	}
 
 	var file *xlsx.File
-	var sheet *xlsx.Sheet
 
 	file = xlsx.NewFile()
-	sheet, err = file.AddSheet("inst")
-	if err != nil {
-		blog.Error(err.Error())
-		msg := getReturnStr(common.CCErrWebCreateEXCELFail, defErr.Errorf(common.CCErrWebCreateEXCELFail, err.Error()).Error(), nil)
-		c.String(http.StatusInternalServerError, msg, nil)
-		return
-
-	}
 
 	fields, err := s.Logics.GetObjFieldIDs(objID, nil, pheader)
-	err = logics.BuildExcelFromData(objID, fields, nil, instInfo, sheet, defLang)
+	err = s.Logics.BuildExcelFromData(context.Background(), objID, fields, nil, instInfo, file, pheader)
 	if nil != err {
 		blog.Errorf("ExportHost object:%s error:%s", objID, err.Error())
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)

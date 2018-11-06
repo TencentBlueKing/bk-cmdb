@@ -48,9 +48,12 @@ func (cli *field) ToMapStr() types.MapStr {
 		tmpResult.Merge(item.ToMapStr())
 	}
 
-	if BKDBEQ == cli.opeartor {
+	switch cli.opeartor {
+	case BKDBEQ:
 		tmpResult.Merge(types.MapStr{cli.fieldName: cli.fieldValue})
-	} else {
+	case BKDBOR:
+		tmpResult.Merge(types.MapStr{cli.fieldName: cli.fieldValue})
+	default:
 		tmpResult.Merge(types.MapStr{
 			cli.fieldName: types.MapStr{
 				cli.opeartor: cli.fieldValue,
@@ -120,6 +123,12 @@ func (cli *field) Gt(val interface{}) Condition {
 // Gte greater or euqal than a value
 func (cli *field) Gte(val interface{}) Condition {
 	cli.opeartor = BKDBGTE
+	cli.fieldValue = val
+	return cli.condition
+}
+
+func (cli *field) Or(val []interface{}) Condition {
+	cli.opeartor = BKDBOR
 	cli.fieldValue = val
 	return cli.condition
 }

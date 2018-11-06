@@ -387,9 +387,6 @@ const (
 	// BKIsPre the ispre field
 	BKIsPre = "ispre"
 
-	// bkIsOnly the isonly field, is primary key
-	BKIsOnly = "isonly"
-
 	// BKIsIncrementField the isincrement field
 	BKIsIncrementField = "is_increment"
 
@@ -596,6 +593,9 @@ const (
 	// HostAddMethodExcelIndexOffset the height of the table header
 	HostAddMethodExcelIndexOffset = 3
 
+	// HostAddMethodExcelAssociationIndexOffset
+	HostAddMethodExcelAssociationIndexOffset = 1
+
 	/*EXCEL color AARRGGBB :
 	AA means Alpha
 	RRGGBB means Red, in hex.
@@ -617,7 +617,9 @@ const (
 	ExcelCellDefaultBorderColor = "FFD4D4D4"
 
 	// ExcelAsstPrimaryKeySplitChar split char
-	ExcelAsstPrimaryKeySplitChar = "##"
+	ExcelAsstPrimaryKeySplitChar = ","
+	// ExcelAsstPrimaryKeyJoinChar split char
+	ExcelAsstPrimaryKeyJoinChar = "="
 	// ExcelAsstPrimaryKeyRowChar split char
 	ExcelAsstPrimaryKeyRowChar = "\n"
 
