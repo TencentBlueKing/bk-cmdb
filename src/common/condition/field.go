@@ -27,6 +27,7 @@ type Field interface {
 	Lt(val interface{}) Condition
 	Lte(val interface{}) Condition
 	Gt(val interface{}) Condition
+	NotGt(val interface{}) Condition
 	Gte(val interface{}) Condition
 	ToMapStr() types.MapStr
 }
@@ -93,6 +94,15 @@ func (cli *field) In(val interface{}) Condition {
 func (cli *field) NotIn(val interface{}) Condition {
 	cli.opeartor = BKDBNIN
 	cli.fieldValue = val
+	return cli.condition
+}
+
+// NotIn not in a array
+func (cli *field) NotGt(val interface{}) Condition {
+	cli.opeartor = BKDBNot
+	cli.fieldValue = map[string]interface{}{
+		BKDBGT: val,
+	}
 	return cli.condition
 }
 
