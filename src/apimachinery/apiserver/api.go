@@ -53,7 +53,7 @@ func (a *apiServer) SearchDefaultApp(ctx context.Context, h http.Header, ownerID
 
 func (a *apiServer) GetRolePrivilege(ctx context.Context, h http.Header, ownerID, objID, role string) (resp *metadata.RolePriResult, err error) {
 	resp = new(metadata.RolePriResult)
-	subPath := fmt.Sprintf("/tmapstropo/privilege/%s/%s/%s", ownerID, objID, role)
+	subPath := fmt.Sprintf("/topo/privilege/%s/%s/%s", ownerID, objID, role)
 
 	err = a.client.Get().
 		WithContext(ctx).
