@@ -18,7 +18,6 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -35,12 +34,9 @@ import (
 func (s *Service) ImportInst(c *gin.Context) {
 	logics.SetProxyHeader(c)
 	objID := c.Param(common.BKObjIDField)
-	ownerID := c.Param("bk_supplier_account")
-
 	language := logics.GetLanguageByHTTPRequest(c)
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
-	pheader := c.Request.Header
 
 	file, err := c.FormFile("file")
 	if nil != err {
@@ -70,32 +66,14 @@ func (s *Service) ImportInst(c *gin.Context) {
 		return
 	}
 
-	insts, errMsg, err := s.Logics.GetImportInsts(f, objID, c.Request.Header, 0, true, defLang)
-	if 0 != len(errMsg) {
-		msg := getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail, strings.Join(errMsg, ",")).Error(), common.KvMap{"err": errMsg})
-		c.String(http.StatusOK, string(msg))
-		return
-	}
+	data, errCode, err := s.Logics.ImportInsts(context.Background(), f, objID, c.Request.Header, defLang)
+
 	if nil != err {
-		msg := getReturnStr(common.CCErrWebFileContentEmpty, defErr.Errorf(common.CCErrWebOpenFileFail, "").Error(), nil)
+		msg := getReturnStr(errCode, err.Error(), data)
 		c.String(http.StatusOK, string(msg))
-		return
-	}
-	if 0 == len(insts) {
-		msg := getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail, "").Error(), nil)
-		c.String(http.StatusOK, string(msg))
-		return
 	}
 
-	params := mapstr.MapStr{}
-	params["input_type"] = common.InputTypeExcel
-	params["BatchInfo"] = insts
-	result, err := s.CoreAPI.ApiServer().AddInst(context.Background(), pheader, ownerID, objID, params)
-	if nil != err {
-		msg := getReturnStr(common.CCErrCommHTTPDoRequestFailed, defErr.Errorf(common.CCErrCommHTTPDoRequestFailed, "").Error(), nil)
-		c.String(http.StatusOK, string(msg))
-	}
-	c.JSON(http.StatusOK, result)
+	c.String(http.StatusOK, getReturnStr(0, "", nil))
 }
 
 // ExportInst export inst

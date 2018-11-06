@@ -382,3 +382,16 @@ type AssociationParams struct {
 	Fields    map[string][]string        `json:"fields,omitempty"`
 	Condition map[string][]ConditionItem `json:"condition,omitempty"`
 }
+
+// ResponeImportAssociation  import association result
+type ResponeImportAssociation struct {
+	BaseResp `json:",inline"`
+	Data     struct {
+		ErrMsgMap map[int]string `json:"err_msg"`
+	} `json:"data"`
+}
+
+// ResponeImportAssociation  import association result
+type RequestImportAssociation struct {
+	AssociationInfoMap map[int]ExcelAssocation `json:"association_info"`
+}
