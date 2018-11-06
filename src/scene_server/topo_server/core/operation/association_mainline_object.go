@@ -28,7 +28,7 @@ func (a *association) DeleteMainlineAssociaton(params types.ContextParams, objID
 
 	targetObj, err := a.obj.FindSingleObject(params, objID)
 	if nil != err {
-		blog.Errorf("[opeartion-asst] failed to find the target object(%s), error info is %s", objID, err.Error())
+		blog.Errorf("[operation-asst] failed to find the target object(%s), error info is %s", objID, err.Error())
 		return err
 	}
 
@@ -72,15 +72,6 @@ func (a *association) DeleteMainlineAssociaton(params types.ContextParams, objID
 		blog.Errorf("[operation-asst] failed to delete the association, error info is %s", err.Error())
 		return err
 	}
-
-	// delete objects related with this object.
-	// cond = condition.CreateCondition()
-	// cond.Field(metadata.AssociationFieldAssociationObjectID).Eq(targetObj.GetID())
-	// cond.Field(common.BKOwnerIDField).Eq(targetObj.GetSupplierAccount())
-	// if err = a.DeleteAssociation(params, cond); nil != err {
-	// 	blog.Errorf("[operation-asst] failed to delete the association, error info is %s", err.Error())
-	// 	return err
-	// }
 
 	return nil
 }

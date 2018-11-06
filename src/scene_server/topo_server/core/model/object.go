@@ -224,7 +224,7 @@ func (o *object) GetMainlineParentObject() (Object, error) {
 
 		cond := condition.CreateCondition()
 		cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
-		cond.Field(common.BKObjIDField).Eq(asst.ObjectID)
+		cond.Field(common.BKObjIDField).Eq(asst.AsstObjID)
 
 		rspRst, err := o.search(cond)
 		if nil != err {
