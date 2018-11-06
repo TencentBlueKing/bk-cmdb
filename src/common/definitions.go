@@ -151,6 +151,10 @@ const (
 
 	// BKDBGTE the db opeartor
 	BKDBGTE = "$gte"
+
+	// BKDBNot the db opeartor
+	BKDBNot = "$not"
+
 	// BKDBSortFieldSep the db sort field split char
 	BKDBSortFieldSep = ","
 )
