@@ -171,6 +171,13 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	if err != nil {
 		return err
 	}
+
+	outdateColumns := []string{"bk_object_att_id", "bk_asst_forward"}
+	for _, column := range outdateColumns {
+		if err = db.Table(common.BKTableNameObjAttDes).DropColumn(ctx, column); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
