@@ -158,7 +158,6 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 	}
 	productExcelAssociationHealer(sheet, lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header)))
 
-	fmt.Println(instAsst)
 	rowIndex := common.HostAddMethodExcelAssociationIndexOffset
 	for _, inst := range instAsst {
 		sheet.Cell(rowIndex, 0).SetString(inst.ObjectAsstID)
@@ -171,11 +170,14 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 		dstInst, ok := asstData[inst.AsstObjectID][inst.AsstInstID]
 		if !ok {
 			blog.Errorf("BuildAssociationExcelFromData association inst:%+v, not inst id :%d, objID:%s, rid:%s", inst, inst.InstID, inst.AsstObjectID, util.GetHTTPCCRequestID(header))
-			return lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).Errorf(common.CCErrCommInstDataNil, fmt.Sprintf("%s %d", inst.AsstObjectID, inst.InstID))
+			return lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).Errorf(common.CCErrCommInstDataNil, fmt.Sprintf("%s %d", inst.AsstObjectID, inst.AsstInstID))
 		}
 		sheet.Cell(rowIndex, 2).SetString(buildEexcelPrimaryKey(srcInst))
-		sheet.Cell(rowIndex, 4).SetString(buildEexcelPrimaryKey(dstInst))
-
+		sheet.Cell(rowIndex, 3).SetString(buildEexcelPrimaryKey(dstInst))
+		style := sheet.Cell(rowIndex, 2).GetStyle()
+		style.Alignment.WrapText = true
+		style = sheet.Cell(rowIndex, 3).GetStyle()
+		style.Alignment.WrapText = true
 	}
 
 	return nil

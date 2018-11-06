@@ -15,7 +15,6 @@ package operation
 import (
 	"context"
 	"fmt"
-	"io"
 	"strconv"
 	"strings"
 
@@ -23,13 +22,16 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
-	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/topo_server/core/inst"
-	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
+
+/*func (a *association) CreateCommonInstAssociation(ctx context.Context, params types.ContextParams, metadata.ExecelAssocation) error {
+
+
+
+}*/
 
 type importAssociationInst struct {
 	instID int64
@@ -156,11 +158,11 @@ func (ia *importAssociation) getAssociationInfo() error {
 	cond := condition.CreateCondition()
 	cond.Field(common.AssociationObjAsstIDField).In(associationFlag)
 	cond.Field(common.BKObjIDField).Eq(ia.objID)
-	queryInput := &metadata.QueryInput{}
-	queryInput.Condition = cond.ToMapStr()
-	queryInput.Limit = common.BKNoLimit
+	queryInput := &metadata.SearchAssociationObjectRequest{
+		//Condition: cond.ToMapStr(),
+	}
 
-	rsp, err := ia.cli.clientSet.ObjectController().Association().SearchObject(context.Background(), ia.params.Header, queryInput)
+	rsp, err := ia.cli.clientSet.ObjectController().Association().SearchObject(ia.ctx, ia.params.Header, queryInput)
 	if nil != err {
 		blog.Errorf("[getAssociationInfo] failed to request the object controller , error info is %s, input:%+v, rid:%s", err.Error(), queryInput, ia.rid)
 		return ia.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -226,7 +228,7 @@ func (ia *importAssociation) parseImportDataPrimary() {
 		if err != nil {
 			ia.parseImportDataErr[idx] = err
 		}
-		dstCond, err := ia.parseImportDataPrimaryItem(ia.objID, info.DstPrimary)
+		dstCond, err := ia.parseImportDataPrimaryItem(associationInst.AsstObjID, info.DstPrimary)
 		if err != nil {
 			ia.parseImportDataErr[idx] = err
 		}
@@ -235,12 +237,11 @@ func (ia *importAssociation) parseImportDataPrimary() {
 			conds[ia.objID] = make([]mapstr.MapStr, 0)
 		}
 		conds[ia.objID] = append(conds[ia.objID], srcCond)
-		_, ok = conds[info.ObjectAsstID]
+		_, ok = conds[associationInst.AsstObjID]
 		if !ok {
-			conds[info.ObjectAsstID] = make([]mapstr.MapStr, 0)
-
+			conds[associationInst.AsstObjID] = make([]mapstr.MapStr, 0)
 		}
-		conds[info.ObjectAsstID] = append(conds[info.ObjectAsstID], dstCond)
+		conds[associationInst.AsstObjID] = append(conds[associationInst.AsstObjID], dstCond)
 
 	}
 
@@ -287,7 +288,6 @@ func (ia *importAssociation) getInstDataByConds() error {
 		if err != nil {
 			return err
 		}
-		errCnt := 0
 		for _, inst := range instArr {
 			ia.parseInstToImportAssociationInst(objID, instIDKey, inst)
 		}
@@ -340,7 +340,7 @@ func (ia *importAssociation) parseInstToImportAssociationInst(objID, instIDKey s
 		//inst info can not found
 		if err != nil {
 			isErr = true
-			blog.Warnf("parseInstToImportAssociationInst get %s field from %s model error,error:%s, rid:%d ", key, objID, err.Error(), ia.rid)
+			blog.Warnf("parseInstToImportAssociationInst get %s field from %s model error,error:%s, rid:%d ", attr.PropertyID, objID, err.Error(), ia.rid)
 			continue
 		}
 		attrNameValMap.attrNameVal[buildPrimaryStr(attr.PropertyName, val)] = true
@@ -366,7 +366,10 @@ func (ia *importAssociation) delSrcAssociation(idx int, cond condition.Condition
 	if ok {
 		return
 	}
-	rsp, err := ia.cli.clientSet.ObjectController().Association().DeleteInst(ia.ctx, ia.params.Header)
+	input := &metadata.DeleteAssociationInstRequest{
+		Condition: cond.ToMapStr(),
+	}
+	rsp, err := ia.cli.clientSet.ObjectController().Association().DeleteInst(ia.ctx, ia.params.Header, input)
 	if err != nil {
 		ia.parseImportDataErr[idx] = err
 	}
@@ -384,7 +387,7 @@ func (ia *importAssociation) addSrcAssociation(idx int, asstFlag string, instID,
 	inst.ObjectAsstId = asstFlag
 	inst.InstId = instID
 	inst.AsstInstId = instID
-	rsp, err := ia.cli.clientSet.ObjectController().Association().CreateInst(ia.ctx, ia.params.Header)
+	rsp, err := ia.cli.clientSet.ObjectController().Association().CreateInst(ia.ctx, ia.params.Header, inst)
 	if err != nil {
 		ia.parseImportDataErr[idx] = err
 	}
@@ -427,7 +430,6 @@ func buildPrimaryStr(name, val string) string {
 }
 
 func convStrToCCType(val string, attr metadata.Attribute) (interface{}, error) {
-	var ret interface{}
 	switch attr.PropertyType {
 	case common.FieldTypeBool:
 

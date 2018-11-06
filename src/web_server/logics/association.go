@@ -18,6 +18,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -37,12 +38,12 @@ func (lgc *Logics) getAssociationData(ctx context.Context, header http.Header, o
 
 	// map[objID]map[inst_id][]Property
 	retAsstObjIDInstInfoMap := make(map[string]map[int64][]PropertyPrimaryVal)
-	for objID, asstInstIDArr := range asstObjIDIDArr {
-		objPrimaryInfo, err := lgc.fetchInstAssocationData(ctx, header, objID, asstInstIDArr)
+	for itemObjID, asstInstIDArr := range asstObjIDIDArr {
+		objPrimaryInfo, err := lgc.fetchInstAssocationData(ctx, header, itemObjID, asstInstIDArr)
 		if err != nil {
 			return nil, err
 		}
-		retAsstObjIDInstInfoMap[objID] = objPrimaryInfo
+		retAsstObjIDInstInfoMap[itemObjID] = objPrimaryInfo
 	}
 
 	return retAsstObjIDInstInfoMap, nil
@@ -52,12 +53,12 @@ func (lgc *Logics) fetchAssocationData(ctx context.Context, header http.Header, 
 
 	ccErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	input := &metadata.SearchAssociationInstRequest{}
-	input.Condition.ObjectID = objID
-	input.Condition.InstID = instIDArr
+	cond := condition.CreateCondition()
+	cond.Field(common.BKObjIDField).Eq(objID)
+	cond.Field(common.BKInstIDField).In(instIDArr)
+	input.Condition = cond.ToMapStr()
 
-	blog.InfoJSON("%s", input.Condition)
 	result, err := lgc.CoreAPI.ApiServer().SearchAssociationInst(ctx, header, input)
-
 	if err != nil {
 		blog.Errorf("GetAssocationData fetch %s association  error:%s, input;%+v, rid:%s", objID, err.Error(), input, util.GetHTTPCCRequestID(header))
 		return nil, ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -88,15 +89,18 @@ func (lgc *Logics) fetchInstAssocationData(ctx context.Context, header http.Head
 
 	dbFields = append(dbFields, instIDKey)
 
-	instResult, err := lgc.CoreAPI.ApiServer().SearchInsts(ctx, header, objID, conds, nil, dbFields)
+	instAsstCond := condition.CreateCondition()
+	instAsstCond.Field(instIDKey).In(instIDArr)
+	instAsstCond.SetFields(dbFields)
 
+	instResult, err := lgc.CoreAPI.ApiServer().SearchInsts(ctx, header, objID, instAsstCond)
 	if err != nil {
-		blog.Errorf("GetAssocationData fetch %s association instance error:%s, input;%+v, rid:%s", objID, err.Error(), conds, util.GetHTTPCCRequestID(header))
+		blog.Errorf("GetAssocationData fetch %s association instance error:%s, input;%+v, rid:%s", objID, err.Error(), instAsstCond, util.GetHTTPCCRequestID(header))
 		return nil, ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !instResult.Result {
-		blog.Errorf("FetchInstAssocationData fetch %s association instance error code:%s, error msg:%s, input;%+v, rid:%s", objID, instResult.Code, instResult.ErrMsg, conds, util.GetHTTPCCRequestID(header))
+		blog.Errorf("FetchInstAssocationData fetch %s association instance error code:%s, error msg:%s, input;%+v, rid:%s", objID, instResult.Code, instResult.ErrMsg, instAsstCond, util.GetHTTPCCRequestID(header))
 		return nil, ccErr.New(instResult.Code, instResult.ErrMsg)
 	}
 

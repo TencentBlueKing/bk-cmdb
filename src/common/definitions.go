@@ -594,7 +594,7 @@ const (
 	HostAddMethodExcelIndexOffset = 3
 
 	// HostAddMethodExcelAssociationIndexOffset
-	HostAddMethodExcelAssociationIndexOffset = 2
+	HostAddMethodExcelAssociationIndexOffset = 1
 
 	/*EXCEL color AARRGGBB :
 	AA means Alpha

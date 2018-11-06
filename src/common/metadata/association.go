@@ -283,7 +283,7 @@ type InstAsst struct {
 	// inst id associate to AsstObjectID
 	AsstInstID int64 `field:"bk_asst_inst_id" json:"bk_asst_inst_id"  bson:"bk_asst_inst_id"`
 	// assoctation target ObjectID
-	AsstObjectID string `field:"bk_asst_obj_id" json:"bk_asst_obj_id"`
+	AsstObjectID string `field:"bk_asst_obj_id" json:"bk_asst_obj_id" bson:"bk_asst_obj_id"`
 	// bk_supplier_account
 	OwnerID string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 	// association id between two object
