@@ -326,11 +326,17 @@ func productExcelAssociationHealer(sheet *xlsx.Sheet, defLang lang.DefaultCCLang
 
 	cellSrcID := sheet.Cell(0, assciationSrcInstIndex)
 	cellSrcID.SetString(defLang.Language("excel_association_src_inst"))
-	cellSrcID.SetStyle(getHeaderFirstRowCellStyle(false))
+	style := getHeaderFirstRowCellStyle(false)
+	style.Alignment.WrapText = true
+	cellSrcID.SetStyle(style)
 
 	cellDstID := sheet.Cell(0, assciationDstInstIndex)
 	cellDstID.SetString(defLang.Language("excel_association_dst_inst"))
-	cellDstID.SetStyle(getHeaderFirstRowCellStyle(false))
+	style = getHeaderFirstRowCellStyle(false)
+	style.Alignment.WrapText = true
+	cellDstID.SetStyle(style)
+	sheet.Col(2).Width = 60
+	sheet.Col(3).Width = 60
 }
 
 const (
