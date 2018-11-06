@@ -31,8 +31,7 @@ import (
 )
 
 // BuildExcelFromData product excel from data
-
-func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields map[string]Property, filter []string, data []interface{}, xlsxFile *xlsx.File, header http.Header) error {
+func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields map[string]Property, filter []string, data []mapstr.MapStr, xlsxFile *xlsx.File, header http.Header) error {
 
 	ccLang := lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header))
 	ccErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
@@ -56,13 +55,7 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 
 	rowIndex := common.HostAddMethodExcelIndexOffset
 
-	for _, row := range data {
-		rowMap, err := mapstr.NewFromInterface(row)
-		if err != nil {
-			msg := fmt.Sprintf("data format error:%v", row)
-			blog.Errorf(msg)
-			return errors.New(msg)
-		}
+	for _, rowMap := range data {
 
 		instIDKey := metadata.GetInstIDFieldByObjID(objID)
 		instID, err := rowMap.Int64(instIDKey)
@@ -180,6 +173,7 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 		style.Alignment.WrapText = true
 		style = sheet.Cell(rowIndex, 3).GetStyle()
 		style.Alignment.WrapText = true
+		rowIndex++
 	}
 
 	return nil
@@ -311,11 +305,12 @@ func GetRawExcelData(sheet *xlsx.Sheet, defFields common.KvMap, firstRow int, de
 
 }
 
-func GetAssociationExcelData(sheet *xlsx.Sheet, firstRow int) {
+func GetAssociationExcelData(sheet *xlsx.Sheet, firstRow int) map[int]metadata.ExcelAssocation {
 
 	rowCnt := len(sheet.Rows)
-	index := headerRow
-	var asstInfoArr []metadata.ExecelAssocation
+	index := firstRow
+
+	asstInfoArr := make(map[int]metadata.ExcelAssocation, 0)
 	for ; index < rowCnt; index++ {
 		row := sheet.Rows[index]
 		op := row.Cells[associationOPColIndex].String()
@@ -326,13 +321,15 @@ func GetAssociationExcelData(sheet *xlsx.Sheet, firstRow int) {
 		asstObjID := row.Cells[assciationAsstObjIDIndex].String()
 		srcInst := row.Cells[assciationSrcInstIndex].String()
 		dstInst := row.Cells[assciationDstInstIndex].String()
-		asstInfoArr = append(asstInfoArr, metadata.ExecelAssocation{
+		asstInfoArr[index] = metadata.ExcelAssocation{
 			ObjectAsstID: asstObjID,
 			Operate:      getAssociationExcelOperateFlag(op),
 			SrcPrimary:   srcInst,
 			DstPrimary:   dstInst,
-		})
+		}
 	}
+
+	return asstInfoArr
 }
 
 //GetFilterFields 不需要展示字段
@@ -340,13 +337,13 @@ func GetFilterFields(objID string) []string {
 	return getFilterFields(objID)
 }
 
-func getAssociationExcelOperateFlag(op string) metadata.ExecelAssocationOperate {
-	opFlag := metadata.ExecelAssocationOperateError
+func getAssociationExcelOperateFlag(op string) metadata.ExcelAssocationOperate {
+	opFlag := metadata.ExcelAssocationOperateError
 	switch op {
 	case associationOPAdd:
-		opFlag = metadata.ExecelAssocationOperateAdd
+		opFlag = metadata.ExcelAssocationOperateAdd
 	case associationOPDelete:
-		opFlag = metadata.ExecelAssocationOperateDelete
+		opFlag = metadata.ExcelAssocationOperateDelete
 	}
 
 	return opFlag

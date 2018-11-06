@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"strconv"
 
 	"configcenter/src/common"
@@ -96,5 +97,18 @@ func (s *topoService) UpdateObjectAssociation(params types.ContextParams, pathPa
 	}
 	err = s.core.AssociationOperation().UpdateAssociation(params, data, id)
 	return nil, err
+
+}
+
+// ImportInstanceAssociation import instance  association
+func (s *topoService) ImportInstanceAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+	objID := pathParams("obj_id")
+	request := new(metadata.RequestImportAssociation)
+	if err := data.MarshalJSONInto(request); err != nil {
+		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
+	}
+
+	resp, err := s.core.AssociationOperation().ImportInstAssociation(context.Background(), params, objID, request.AssociationInfoMap)
+	return resp, err
 
 }
