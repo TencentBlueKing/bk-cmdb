@@ -51,9 +51,8 @@ func (lgc *Logics) GetImportInsts(f *xlsx.File, objID string, header http.Header
 }
 
 //GetInstData get inst data
-func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Header, kvMap mapstr.MapStr) ([]interface{}, error) {
+func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Header, kvMap mapstr.MapStr) ([]mapstr.MapStr, error) {
 
-	instInfo := make([]interface{}, 0)
 	instIDArr := strings.Split(instIDStr, ",")
 	searchCond := mapstr.MapStr{}
 
@@ -79,7 +78,7 @@ func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Hea
 	}
 
 	if 0 == result.Data.Count {
-		return instInfo, errors.New("no inst")
+		return nil, errors.New("no inst")
 	}
 
 	// read object attributes
@@ -91,15 +90,8 @@ func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Hea
 		blog.Errorf("get object attr error: %s", aErr.Error())
 		return nil, errors.New(result.ErrMsg)
 	}
-	for _, cell := range result.Data.Info {
-		key := cell[common.BKPropertyIDField].(string)
-		value, ok := cell[common.BKPropertyNameField].(string)
-		if ok {
-			kvMap[key] = value
-		} else {
-			kvMap[key] = ""
-		}
-
+	for _, cell := range attrResult.Data {
+		kvMap.Set(cell.PropertyID, cell.PropertyName)
 	}
-	return instInfo, nil
+	return result.Data.Info, nil
 }
