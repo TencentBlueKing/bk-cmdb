@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal"
 )
@@ -488,27 +489,24 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 		// fetch datas that should delete
 		if node.ObjID != common.BKInnerObjIDModule {
 			childtablename := common.GetInstTableName(node.getChildObjID())
-			instID, _ := node.getInstID()
-			childCondition := map[string]interface{}{
-				common.BKInstParentStr: instID,
-				node.getChilDInstNameField(): map[string]interface{}{
-					"$nin": node.getChilDInstNames(),
-				},
+			instID, err := node.getInstID()
+			if nil != err {
+				return fmt.Errorf("get instID faile, data: %+v, error: %v", node, err)
 			}
+
+			childCondition := condition.CreateCondition()
+			childCondition.Field(common.BKInstParentStr).Eq(instID)
+			childCondition.Field(node.getChilDInstNameField()).NotIn(node.getChilDInstNames())
 			switch node.getChildObjID() {
 			case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule:
-				childCondition[common.BKDefaultField] = map[string]interface{}{
-					common.BKDBNot: map[string]interface{}{
-						common.BKDBGT: 0,
-					},
-				}
+				childCondition.Field(common.BKDefaultField).NotGt(0)
 			default:
-				childCondition[common.BKObjIDField] = node.getChildObjID()
+				childCondition.Field(common.BKObjIDField).Eq(node.getChildObjID())
 			}
 			shouldDelete := []map[string]interface{}{}
-			err := ipt.db.Table(childtablename).Find(childCondition).All(ipt.ctx, &shouldDelete)
+			err = ipt.db.Table(childtablename).Find(childCondition.ToMapStr()).All(ipt.ctx, &shouldDelete)
 			if nil != err {
-				return fmt.Errorf("get child of %+v error: %s", childCondition, err.Error())
+				return fmt.Errorf("get child of %+v error: %s", childCondition.ToMapStr(), err.Error())
 			}
 			if len(shouldDelete) > 0 {
 				// fmt.Printf("found %d should delete %s by %+v\n, parent %+v \n", len(shouldDelete), node.getChildObjID(), childCondition, node.Data)
