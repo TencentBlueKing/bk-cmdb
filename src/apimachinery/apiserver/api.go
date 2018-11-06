@@ -17,8 +17,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 func (a *apiServer) AddDefaultApp(ctx context.Context, h http.Header, ownerID string, params mapstr.MapStr) (resp *metadata.Response, err error) {
@@ -236,5 +238,38 @@ func (a *apiServer) AddObjectBatch(ctx context.Context, h http.Header, ownerID, 
 		WithHeaders(h).
 		Do().
 		Into(resp)
+	return
+}
+
+func (a *apiServer) SearchAssociationInst(ctx context.Context, h http.Header, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error) {
+	resp = new(metadata.SearchAssociationInstResult)
+	subPath := "/inst/association/action/search"
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(request).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+func (a *apiServer) SearchInsts(ctx context.Context, h http.Header, objID string, cond condition.Condition) (resp *metadata.ResponseInstData, err error) {
+	resp = new(metadata.ResponseInstData)
+	input := &metadata.SearchAssociationInstRequest{
+		Condition: cond.ToMapStr(),
+	}
+	subPath := fmt.Sprintf("/inst/search/owner/%s/object/%s", util.GetOwnerID(h), objID)
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
 	return
 }

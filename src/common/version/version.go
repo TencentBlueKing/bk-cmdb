@@ -43,6 +43,11 @@ func ShowVersion() {
 
 // GetVersion return the version info
 func GetVersion() string {
-	version := fmt.Sprintf("Version  :%s\nTag      :%s\nBuildTime:  %s\nGitHash:    %s\nRunMode:    %s\n", CCVersion, CCTag, CCBuildTime, CCGitHash, CCRunMode)
+	version := fmt.Sprintf(`Version  : %s
+Tag      : %s
+BuildTime: %s
+GitHash  : %s
+RunMode  : %s
+`, CCVersion, CCTag, CCBuildTime, CCGitHash, CCRunMode)
 	return version
 }

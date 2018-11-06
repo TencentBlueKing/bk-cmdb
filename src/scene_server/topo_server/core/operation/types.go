@@ -42,6 +42,7 @@ type OpCondition struct {
 
 type InstBatchInfo struct {
 	// BatchInfo batch info
+	// map[rownumber]map[property_id][date]
 	BatchInfo *map[int64]map[string]interface{} `json:"BatchInfo"`
 	InputType string                            `json:"input_type"`
 }

@@ -61,12 +61,11 @@ func (cli *association) canReset(params types.ContextParams, currentInsts []inst
 }
 
 func (cli *association) ResetMainlineInstAssociatoin(params types.ContextParams, current model.Object) error {
-
-	defaultCond := &metadata.QueryInput{}
 	cond := condition.CreateCondition()
 	if current.IsCommon() {
 		cond.Field(common.BKObjIDField).Eq(current.GetID())
 	}
+	defaultCond := &metadata.QueryInput{}
 	defaultCond.Condition = cond.ToMapStr()
 
 	// fetch all parent inst
@@ -91,9 +90,9 @@ func (cli *association) ResetMainlineInstAssociatoin(params types.ContextParams,
 			continue
 		}
 
-		parent, err := currentInst.GetMainlineParentInst()
+		parentID, err := currentInst.GetParentID()
 		if nil != err {
-			blog.Errorf("[operation-asst] failed to get the object(%s) mainline parent inst, the current inst(%v), error info is %s", current.GetID(), currentInst.GetValues(), err.Error())
+			blog.Errorf("[operation-asst] failed to get the object(%s) mainline parent id, the current inst(%v), err: %s", current.GetID(), currentInst.GetValues(), err.Error())
 			continue
 		}
 
@@ -106,7 +105,7 @@ func (cli *association) ResetMainlineInstAssociatoin(params types.ContextParams,
 		for _, child := range childs {
 
 			// set the child's parent
-			if err = child.SetMainlineParentInst(parent); nil != err {
+			if err = child.SetMainlineParentInst(parentID); nil != err {
 				blog.Errorf("[operation-asst] failed to set the object(%s) mainline child inst, error info is %s", child.GetObject().GetID(), err.Error())
 				continue
 			}
@@ -132,14 +131,14 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 		cond.Field(common.BKObjIDField).Eq(parent.GetID())
 	}
 	defaultCond.Condition = cond.ToMapStr()
-	// fetch all parent inst
+	// fetch all parent instances.
 	_, parentInsts, err := cli.inst.FindInst(params, parent, defaultCond, false)
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to find parent object(%s) inst, error info is %s", parent.GetID(), err.Error())
 		return err
 	}
 
-	// reset the parent's inst
+	// create current object instance for each parent instance and insert the current instance to
 	for _, parent := range parentInsts {
 
 		id, err := parent.GetInstID()
@@ -148,20 +147,21 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 			return err
 		}
 
-		// create the default inst
-		defaultInst := cli.instFactory.CreateInst(params, current)
-		defaultInst.SetValue(common.BKOwnerIDField, params.SupplierAccount)
-		defaultInst.SetValue(current.GetInstNameFieldName(), current.GetName())
-		defaultInst.SetValue(common.BKDefaultField, 0)
-		defaultInst.SetValue(common.BKInstParentStr, id)
+		// we create the current object's instance for each parent instance belongs to the parent object.
+		currentInst := cli.instFactory.CreateInst(params, current)
+		currentInst.SetValue(common.BKOwnerIDField, params.SupplierAccount)
+		currentInst.SetValue(current.GetInstNameFieldName(), current.GetName())
+		currentInst.SetValue(common.BKDefaultField, 0)
+		// set current instance's parent id to parent instance's id, so that they can be chained.
+		currentInst.SetValue(common.BKInstParentStr, id)
 
-		// create the inst
-		if err = defaultInst.Create(); nil != err {
+		// create the instance now.
+		if err = currentInst.Create(); nil != err {
 			blog.Errorf("[operation-asst] failed to create object(%s) default inst, error info is %s", current.GetID(), err.Error())
 			return err
 		}
 
-		// reset the child's parent
+		// reset the child's parent instance's parent id to current instance's id.
 		childs, err := parent.GetMainlineChildInst()
 		if nil != err {
 			if io.EOF == err {
@@ -170,10 +170,15 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 			blog.Errorf("[operation-asst] failed to get the object(%s) mainline child inst, error info is %s", parent.GetObject().GetID(), err.Error())
 			return err
 		}
-		for _, child := range childs {
 
+		curInstID, err := currentInst.GetInstID()
+		if err != nil {
+			return err
+		}
+
+		for _, child := range childs {
 			// set the child's parent
-			if err = child.SetMainlineParentInst(defaultInst); nil != err {
+			if err = child.SetMainlineParentInst(curInstID); nil != err {
 				blog.Errorf("[operation-asst] failed to set the object(%s) mainline child inst, error info is %s", child.GetObject().GetID(), err.Error())
 				return err
 			}

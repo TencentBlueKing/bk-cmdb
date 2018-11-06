@@ -85,8 +85,6 @@ func (cli *Service) CreateObject(req *restful.Request, resp *restful.Response) {
 // DeleteObject 删除Object
 func (cli *Service) DeleteObject(req *restful.Request, resp *restful.Response) {
 
-	blog.Info("delete object")
-
 	// get the language
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetOwnerID(req.Request.Header)

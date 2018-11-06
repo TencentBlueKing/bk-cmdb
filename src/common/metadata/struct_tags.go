@@ -13,11 +13,11 @@
 package metadata
 
 import (
-	"reflect"
-	"strings"
+    "fmt"
+    "reflect"
+    "strings"
 
-	"configcenter/src/common/blog"
-	types "configcenter/src/common/mapstr"
+    types "configcenter/src/common/mapstr"
 )
 
 // GetTags parse a object and get the all tags
@@ -118,7 +118,7 @@ func SetValueToStructByTags(target interface{}, values types.MapStr) error {
 
 		switch structField.Type.Kind() {
 		default:
-			blog.Errorf("unsuport the type %s %v", structField.Name, structField.Type.Kind())
+			return fmt.Errorf("unsupport the type %s %v", structField.Name, structField.Type.Kind())
 		case reflect.Map:
 			fieldValue.Set(reflect.ValueOf(tagVal))
 		case reflect.Interface:
