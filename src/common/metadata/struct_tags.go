@@ -13,11 +13,12 @@
 package metadata
 
 import (
-    "fmt"
-    "reflect"
-    "strings"
+	"fmt"
+	"reflect"
+	"strings"
 
-    types "configcenter/src/common/mapstr"
+	"configcenter/src/common/blog"
+	types "configcenter/src/common/mapstr"
 )
 
 // GetTags parse a object and get the all tags

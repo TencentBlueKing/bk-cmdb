@@ -55,6 +55,7 @@ func (s *topoService) initAssociation() {
 
 	// ATTENTION: the following methods is not recommended
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/search/topo/owner/{owner_id}/object/{object_id}/inst/{inst_id}", HandlerFunc: s.SearchInstChildTopo})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/association/action/{obj_id}/import", HandlerFunc: s.ImportInstanceAssociation})
 
 }
 

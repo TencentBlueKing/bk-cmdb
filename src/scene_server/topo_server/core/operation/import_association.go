@@ -27,11 +27,22 @@ import (
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-/*func (a *association) CreateCommonInstAssociation(ctx context.Context, params types.ContextParams, metadata.ExecelAssocation) error {
+func (a *association) ImportInstAssociation(ctx context.Context, params types.ContextParams, objID string, importData map[int]metadata.ExcelAssocation) (resp map[int]string, err error) {
 
+	ia := NewImportAssociation(ctx, a, params, objID, importData)
 
+	err = ia.ParsePrimaryKey()
+	if err != nil {
+		return nil, err
+	}
 
-}*/
+	errIdxMsgMap := ia.ImportAssociation()
+	if len(errIdxMsgMap) > 0 {
+		err = params.Err.Error(common.CCErrorTopoImportAssociation)
+	}
+
+	return errIdxMsgMap, err
+}
 
 type importAssociationInst struct {
 	instID int64
@@ -42,7 +53,7 @@ type importAssociation struct {
 	objID      string
 	cli        *association
 	ctx        context.Context
-	importData map[int]metadata.ExecelAssocation
+	importData map[int]metadata.ExcelAssocation
 	params     types.ContextParams
 
 	// map[AssociationName]Association alias  map[association flag]Association
@@ -50,9 +61,9 @@ type importAssociation struct {
 	// asst obj info  map[objID]map[property name] attribute
 	asstObjIDProperty map[string]map[string]metadata.Attribute
 
-	parseImportDataErr map[int]error
+	parseImportDataErr map[int]string
 	//map[objID][]condition.Condition
-	queryInstConds map[string]condition.Condition
+	queryInstConds map[string][]mapstr.MapStr
 
 	// map[objID][instcnade id]strings.Joion([]string{property name, property value}, "=")[]importAssociationInst
 	instIDAttrKeyValMap map[string]map[string][]*importAssociationInst
@@ -61,29 +72,30 @@ type importAssociation struct {
 }
 
 type importAssociationInterface interface {
-	ImportAssociation() map[int]error
 	ParsePrimaryKey() error
+	ImportAssociation() map[int]string
 }
 
-func NewImportAssociation(ctx context.Context, cli *association, params types.ContextParams, objID string, importData map[int]metadata.ExecelAssocation) importAssociationInterface {
+func NewImportAssociation(ctx context.Context, cli *association, params types.ContextParams, objID string, importData map[int]metadata.ExcelAssocation) importAssociationInterface {
 
 	return &importAssociation{
 		objID:      objID,
 		cli:        cli,
 		ctx:        ctx,
 		importData: importData,
+		params:     params,
 
 		asstIDInfoMap:       make(map[string]*metadata.Association, 0),
 		asstObjIDProperty:   make(map[string]map[string]metadata.Attribute, 0),
-		parseImportDataErr:  make(map[int]error),
-		queryInstConds:      make(map[string]condition.Condition),
+		parseImportDataErr:  make(map[int]string),
+		queryInstConds:      make(map[string][]mapstr.MapStr),
 		instIDAttrKeyValMap: make(map[string]map[string][]*importAssociationInst),
 
 		rid: util.GetHTTPCCRequestID(params.Header),
 	}
 }
 
-func (ia *importAssociation) ImportAssociation() map[int]error {
+func (ia *importAssociation) ImportAssociation() map[int]string {
 	ia.importAssociation()
 
 	return ia.parseImportDataErr
@@ -99,8 +111,8 @@ func (ia *importAssociation) ParsePrimaryKey() error {
 	if err != nil {
 		return err
 	}
-	ia.parseImportDataPrimary()
 
+	ia.parseImportDataPrimary()
 	err = ia.getInstDataByConds()
 	if err != nil {
 		return err
@@ -115,14 +127,14 @@ func (ia *importAssociation) importAssociation() {
 		asstID := ia.asstIDInfoMap[asstInfo.ObjectAsstID]
 		srcInstID, err := ia.getInstIDByPrimaryKey(ia.objID, asstInfo.SrcPrimary)
 		if err != nil {
-			ia.parseImportDataErr[idx] = err
+			ia.parseImportDataErr[idx] = err.Error()
 		}
 		dstInstID, err := ia.getInstIDByPrimaryKey(asstID.AsstObjID, asstInfo.DstPrimary)
 		if err != nil {
-			ia.parseImportDataErr[idx] = err
+			ia.parseImportDataErr[idx] = err.Error()
 		}
 		switch asstInfo.Operate {
-		case metadata.ExecelAssocationOperateAdd:
+		case metadata.ExcelAssocationOperateAdd:
 
 			conds := condition.CreateCondition()
 			conds.Field(common.AssociationObjAsstIDField).Eq(asstInfo.ObjectAsstID)
@@ -135,7 +147,7 @@ func (ia *importAssociation) importAssociation() {
 
 			ia.delSrcAssociation(idx, conds)
 			ia.addSrcAssociation(idx, asstID.AssociationName, srcInstID, dstInstID)
-		case metadata.ExecelAssocationOperateDelete:
+		case metadata.ExcelAssocationOperateDelete:
 			conds := condition.CreateCondition()
 			conds.Field(common.AssociationObjAsstIDField).Eq(asstInfo.ObjectAsstID)
 			conds.Field(common.BKObjIDField).Eq(ia.objID)
@@ -159,7 +171,7 @@ func (ia *importAssociation) getAssociationInfo() error {
 	cond.Field(common.AssociationObjAsstIDField).In(associationFlag)
 	cond.Field(common.BKObjIDField).Eq(ia.objID)
 	queryInput := &metadata.SearchAssociationObjectRequest{
-		//Condition: cond.ToMapStr(),
+		Condition: cond.ToMapStr(),
 	}
 
 	rsp, err := ia.cli.clientSet.ObjectController().Association().SearchObject(ia.ctx, ia.params.Header, queryInput)
@@ -215,34 +227,36 @@ func (ia *importAssociation) getAssociationObjProperty() error {
 }
 
 func (ia *importAssociation) parseImportDataPrimary() {
-	conds := make(map[string][]mapstr.MapStr, 0)
 
 	for idx, info := range ia.importData {
 
 		associationInst, ok := ia.asstIDInfoMap[info.ObjectAsstID]
 		if !ok {
-			ia.parseImportDataErr[idx] = fmt.Errorf(ia.params.Lang.Languagef("import_asstid_not_foud", info.ObjectAsstID))
+			ia.parseImportDataErr[idx] = ia.params.Lang.Languagef("import_asstid_not_foud", info.ObjectAsstID)
 			continue
 		}
 		srcCond, err := ia.parseImportDataPrimaryItem(ia.objID, info.SrcPrimary)
 		if err != nil {
-			ia.parseImportDataErr[idx] = err
+			ia.parseImportDataErr[idx] = err.Error()
+		} else {
+			_, ok = ia.queryInstConds[ia.objID]
+			if !ok {
+				ia.queryInstConds[ia.objID] = make([]mapstr.MapStr, 0)
+			}
+			ia.queryInstConds[ia.objID] = append(ia.queryInstConds[ia.objID], srcCond)
+
 		}
 		dstCond, err := ia.parseImportDataPrimaryItem(associationInst.AsstObjID, info.DstPrimary)
 		if err != nil {
-			ia.parseImportDataErr[idx] = err
-		}
-		_, ok = conds[ia.objID]
-		if !ok {
-			conds[ia.objID] = make([]mapstr.MapStr, 0)
-		}
-		conds[ia.objID] = append(conds[ia.objID], srcCond)
-		_, ok = conds[associationInst.AsstObjID]
-		if !ok {
-			conds[associationInst.AsstObjID] = make([]mapstr.MapStr, 0)
-		}
-		conds[associationInst.AsstObjID] = append(conds[associationInst.AsstObjID], dstCond)
+			ia.parseImportDataErr[idx] = err.Error()
+		} else {
+			_, ok = ia.queryInstConds[associationInst.AsstObjID]
+			if !ok {
+				ia.queryInstConds[associationInst.AsstObjID] = make([]mapstr.MapStr, 0)
+			}
+			ia.queryInstConds[associationInst.AsstObjID] = append(ia.queryInstConds[associationInst.AsstObjID], dstCond)
 
+		}
 	}
 
 	return
@@ -257,12 +271,11 @@ func (ia *importAssociation) parseImportDataPrimaryItem(objID string, item strin
 	for _, primary := range primaryArr {
 		primary = strings.TrimSpace(primary)
 		keyValArr := strings.Split(primary, common.ExcelAsstPrimaryKeyJoinChar)
-		if len(keyValArr) == 2 {
-
+		if len(keyValArr) != 2 {
 			return nil, fmt.Errorf(ia.params.Lang.Languagef("import_asst_obj_property_str_primary_format_error", objID, item))
 		}
 		attr, ok := ia.asstObjIDProperty[objID][keyValArr[0]]
-		if ok {
+		if !ok {
 			return nil, fmt.Errorf(ia.params.Lang.Languagef("import_asst_obj_primary_property_str_not_found", objID, keyValArr[0]))
 		}
 		realVal, err := convStrToCCType(keyValArr[1], attr)
@@ -270,7 +283,7 @@ func (ia *importAssociation) parseImportDataPrimaryItem(objID string, item strin
 			return nil, fmt.Errorf(ia.params.Lang.Languagef("import_asst_obj_property_str_primary_type_error", objID, keyValArr[0]))
 		}
 
-		keyValMap[keyValArr[0]] = realVal
+		keyValMap[attr.PropertyID] = realVal
 	}
 	if len(keyValMap) != len(ia.asstObjIDProperty[objID]) {
 		return nil, fmt.Errorf(ia.params.Lang.Languagef("import_asst_obj_property_str_primary_count_len", objID, item))
@@ -280,9 +293,11 @@ func (ia *importAssociation) parseImportDataPrimaryItem(objID string, item strin
 }
 
 func (ia *importAssociation) getInstDataByConds() error {
-	for objID, conds := range ia.queryInstConds {
+	for objID, valArr := range ia.queryInstConds {
 
 		instIDKey := metadata.GetInstIDFieldByObjID(objID)
+		conds := condition.CreateCondition()
+		conds.Field("").Or(valArr)
 
 		instArr, err := ia.getInstDataByObjIDConds(objID, instIDKey, conds)
 		if err != nil {
@@ -306,7 +321,6 @@ func (ia *importAssociation) getInstDataByObjIDConds(objID, instIDKey string, co
 	fields = append(fields, instIDKey)
 	queryInput := &metadata.QueryInput{}
 	queryInput.Condition = conds.ToMapStr()
-
 	queryInput.Fields = strings.Join(fields, ",")
 
 	instSearchResult, err := ia.cli.clientSet.ObjectController().Instance().SearchObjects(ia.ctx, objID, ia.params.Header, queryInput)
@@ -371,10 +385,10 @@ func (ia *importAssociation) delSrcAssociation(idx int, cond condition.Condition
 	}
 	rsp, err := ia.cli.clientSet.ObjectController().Association().DeleteInst(ia.ctx, ia.params.Header, input)
 	if err != nil {
-		ia.parseImportDataErr[idx] = err
+		ia.parseImportDataErr[idx] = err.Error()
 	}
 	if !rsp.Result {
-		ia.parseImportDataErr[idx] = fmt.Errorf(rsp.ErrMsg)
+		ia.parseImportDataErr[idx] = rsp.ErrMsg
 	}
 }
 
@@ -389,10 +403,10 @@ func (ia *importAssociation) addSrcAssociation(idx int, asstFlag string, instID,
 	inst.AsstInstId = instID
 	rsp, err := ia.cli.clientSet.ObjectController().Association().CreateInst(ia.ctx, ia.params.Header, inst)
 	if err != nil {
-		ia.parseImportDataErr[idx] = err
+		ia.parseImportDataErr[idx] = err.Error()
 	}
 	if !rsp.Result {
-		ia.parseImportDataErr[idx] = fmt.Errorf(rsp.ErrMsg)
+		ia.parseImportDataErr[idx] = rsp.ErrMsg
 	}
 }
 

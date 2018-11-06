@@ -13,6 +13,7 @@
 package apiserver
 
 import (
+	"configcenter/src/common/blog"
 	"context"
 	"fmt"
 	"net/http"
@@ -196,9 +197,9 @@ func (a *apiServer) GetObjectGroup(ctx context.Context, h http.Header, ownerID, 
 	return
 }
 
-func (a *apiServer) AddHost(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.Response, err error) {
+func (a *apiServer) AddHost(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error) {
 
-	resp = new(metadata.Response)
+	resp = new(metadata.ResponseDataMapStr)
 	subPath := fmt.Sprintf("hosts/add")
 
 	err = a.client.Post().
@@ -211,9 +212,9 @@ func (a *apiServer) AddHost(ctx context.Context, h http.Header, params mapstr.Ma
 	return
 }
 
-func (a *apiServer) AddInst(ctx context.Context, h http.Header, ownerID, objID string, params mapstr.MapStr) (resp *metadata.Response, err error) {
+func (a *apiServer) AddInst(ctx context.Context, h http.Header, ownerID, objID string, params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error) {
 
-	resp = new(metadata.Response)
+	resp = new(metadata.ResponseDataMapStr)
 	subPath := fmt.Sprintf("inst/%s/%s", ownerID, objID)
 
 	err = a.client.Post().
@@ -262,6 +263,21 @@ func (a *apiServer) SearchInsts(ctx context.Context, h http.Header, objID string
 		Condition: cond.ToMapStr(),
 	}
 	subPath := fmt.Sprintf("/inst/search/owner/%s/object/%s", util.GetOwnerID(h), objID)
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+func (a *apiServer) ImportAssociation(ctx context.Context, h http.Header, objID string, input *metadata.RequestImportAssociation) (resp *metadata.ResponeImportAssociation, err error) {
+	resp = new(metadata.ResponeImportAssociation)
+	subPath := fmt.Sprintf("/inst/association/action/%s/import", objID)
 
 	err = a.client.Post().
 		WithContext(ctx).

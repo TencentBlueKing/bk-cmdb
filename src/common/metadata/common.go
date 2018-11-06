@@ -90,6 +90,11 @@ type ResponseInstData struct {
 	} `json:"data"`
 }
 
+type ResponseDataMapStr struct {
+	BaseResp `json:",inline"`
+	Data     mapstr.MapStr `json:"data"`
+}
+
 type QueryInput struct {
 	Condition interface{} `json:"condition"`
 	Fields    string      `json:"fields,omitempty"`
