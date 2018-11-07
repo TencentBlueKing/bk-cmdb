@@ -158,11 +158,13 @@ func (s *topoService) sendResponse(resp *restful.Response, errorCode int, dataMs
 
 func (s *topoService) sendCompleteResponse(resp *restful.Response, errorCode int, errMsg string, info interface{}) {
 	resp.Header().Set("Content-Type", "application/json")
-	if rsp, rspErr := s.createCompleteAPIRspStr(errorCode, errMsg, info); nil == rspErr {
+	rsp, rspErr := s.createCompleteAPIRspStr(errorCode, errMsg, info)
+	if nil == rspErr {
 		io.WriteString(resp, rsp)
-	} else {
-		blog.Errorf("failed to send response , error info is %s", rspErr.Error())
+		return
 	}
+	blog.Errorf("failed to send response , error info is %s", rspErr.Error())
+
 }
 
 // Actions return the all actions
