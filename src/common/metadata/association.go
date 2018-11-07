@@ -386,9 +386,16 @@ type AssociationParams struct {
 // ResponeImportAssociation  import association result
 type ResponeImportAssociation struct {
 	BaseResp `json:",inline"`
-	Data     struct {
-		ErrMsgMap map[int]string `json:"err_msg"`
-	} `json:"data"`
+	Data     ResponeImportAssociationData `json:"data"`
+}
+
+type RowMsgData struct {
+	Row int    `json:"row"`
+	Msg string `json:"message"`
+}
+
+type ResponeImportAssociationData struct {
+	ErrMsgMap []RowMsgData `json:"err_msg"`
 }
 
 // ResponeImportAssociation  import association result
