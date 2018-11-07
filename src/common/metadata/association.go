@@ -211,9 +211,9 @@ type Association struct {
 	// if true, it means this association is used by cmdb itself.
 	IsPre *bool `field:"ispre" json:"ispre" bson:"ispre"`
 
-	ClassificationID string `field:"bk_classification_id" bson:"-"`
-	ObjectIcon       string `field:"bk_obj_icon" bson:"-"`
-	ObjectName       string `field:"bk_obj_name" bson:"-"`
+	ClassificationID string `field:"bk_classification_id" json:"-" bson:"-"`
+	ObjectIcon       string `field:"bk_obj_icon" json:"-" bson:"-"`
+	ObjectName       string `field:"bk_obj_name" json:"-" bson:"-"`
 }
 
 // return field means which filed is set but is forbidden to update.
