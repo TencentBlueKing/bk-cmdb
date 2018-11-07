@@ -24,6 +24,7 @@ import (
 	"gopkg.in/mgo.v2"
 
 	"configcenter/src/common"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage"
 )
@@ -139,7 +140,6 @@ func importBKBiz(db storage.DI, opt *option) error {
 								}
 							}
 
-							//
 							deleteconition := map[string]interface{}{
 								common.GetInstIDField(child.ObjID): childID,
 							}
@@ -400,6 +400,7 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 			node.Data[common.BKOwnerIDField] = ipt.ownerID
 			node.Data[common.BKAppIDField] = ipt.bizID
 			node.Data[common.BKInstParentStr] = ipt.parentID
+			node.Data[common.BKDefaultField] = 0
 			condition := getModifyCondition(node.Data, []string{common.BKSetNameField, common.BKInstParentStr})
 			set := map[string]interface{}{}
 			err := ipt.db.GetOneByCondition(common.GetInstTableName(node.ObjID), nil, condition, &set)
@@ -430,6 +431,7 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 			node.Data[common.BKAppIDField] = ipt.bizID
 			node.Data[common.BKSetIDField] = ipt.setID
 			node.Data[common.BKInstParentStr] = ipt.parentID
+			node.Data[common.BKDefaultField] = 0
 			condition := getModifyCondition(node.Data, []string{common.BKModuleNameField, common.BKInstParentStr})
 			module := map[string]interface{}{}
 			err := ipt.db.GetOneByCondition(common.GetInstTableName(node.ObjID), nil, condition, &module)
@@ -483,23 +485,24 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 		// fetch datas that should delete
 		if node.ObjID != common.BKInnerObjIDModule {
 			childtablename := common.GetInstTableName(node.getChildObjID())
-			instID, _ := node.getInstID()
-			childCondition := map[string]interface{}{
-				common.BKInstParentStr: instID,
-				node.getChilDInstNameField(): map[string]interface{}{
-					"$nin": node.getChilDInstNames(),
-				},
+			instID, err := node.getInstID()
+			if nil != err {
+				return fmt.Errorf("get instID faile, data: %+v, error: %v", node, err)
 			}
+
+			childCondition := condition.CreateCondition()
+			childCondition.Field(common.BKInstParentStr).Eq(instID)
+			childCondition.Field(node.getChilDInstNameField()).NotIn(node.getChilDInstNames())
 			switch node.getChildObjID() {
 			case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule:
-				childCondition["default"] = map[string]interface{}{common.BKDBLTE: 0}
+				childCondition.Field(common.BKDefaultField).NotGt(0)
 			default:
-				childCondition[common.BKObjIDField] = node.getChildObjID()
+				childCondition.Field(common.BKObjIDField).Eq(node.getChildObjID())
 			}
 			shouldDelete := []map[string]interface{}{}
-			err := ipt.db.GetMutilByCondition(childtablename, nil, childCondition, &shouldDelete, "", 0, 0)
+			err = ipt.db.GetMutilByCondition(childtablename, nil, childCondition.ToMapStr(), &shouldDelete, "", 0, 0)
 			if nil != err {
-				return fmt.Errorf("get child of %+v error: %s", childCondition, err.Error())
+				return fmt.Errorf("get child of %+v error: %s", childCondition.ToMapStr(), err.Error())
 			}
 			if len(shouldDelete) > 0 {
 				// fmt.Printf("found %d should delete %s by %+v\n, parent %+v \n", len(shouldDelete), node.getChildObjID(), childCondition, node.Data)
