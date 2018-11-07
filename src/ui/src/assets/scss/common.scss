@@ -72,11 +72,6 @@ div.cmdb-form-item {
     &.is-error {
         input.cmdb-form-input {
             border-color: $cmdbDangerColor;
-            padding-right: 35px;
-        }
-        >.bk-icon.icon-exclamation-circle-shape {
-            display: block;
-            color: $cmdbDangerColor;
         }
         .bk-selector {
             input {
@@ -86,14 +81,16 @@ div.cmdb-form-item {
                 display: none;
             }
         }
+        .form-error {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            font-size: 12px;
+            line-height: 14px;
+            color: $cmdbDangerColor;
+        }
     }
-    >.bk-icon.icon-exclamation-circle-shape {
-        display: none;
-        position: absolute;
-        top: 9px;
-        right: 10px;
-        font-size: 18px;
-    }
+
 }
 input.cmdb-form-input {
     width: 100%;

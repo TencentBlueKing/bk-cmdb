@@ -11,7 +11,7 @@
                 v-model.trim="relationInfo['bk_asst_id']"
                 v-validate="'required|singlechar'"
                 :placeholder="$t('ModelManagement[\'请输入英文标识\']')">
-                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('asstId')"></i>
+                <p class="form-error">{{errors.first('asstId')}}</p>
             </div>
         </label>
         <label class="form-label">
@@ -26,7 +26,7 @@
                 v-validate="'required|singlechar'"
                 v-model.trim="relationInfo['bk_asst_name']" 
                 :placeholder="$t('ModelManagement[\'请输入名称\']')">
-                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('asstName')"></i>
+                <p class="form-error">{{errors.first('asstName')}}</p>
             </div>
         </label>
         <label class="form-label">
@@ -41,7 +41,7 @@
                 v-validate="'required|singlechar'"
                 v-model.trim="relationInfo['src_des']" 
                 :placeholder="$t('ModelManagement[\'请输入关系描述如：连接、运行\']')">
-                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('srcDes')"></i>
+                <p class="form-error">{{errors.first('srcDes')}}</p>
             </div>
         </label>
         <label class="form-label">
@@ -56,7 +56,7 @@
                 v-validate="'required|singlechar'"
                 v-model.trim="relationInfo['dest_des']" 
                 :placeholder="$t('ModelManagement[\'请输入关系描述如：属于、上联\']')">
-                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('destDes')"></i>
+                <p class="form-error">{{errors.first('destDes')}}</p>
             </div>
         </label>
         <div class="radio-box overflow">

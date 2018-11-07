@@ -20,7 +20,7 @@
                 name="asstName"
                 v-model.trim="relationInfo['bk_obj_asst_name']"
                 v-validate="'required|singlechar'">
-                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('asstName')"></i>
+                <p class="form-error">{{errors.first('asstName')}}</p>
             </div>
             <i class="bk-icon icon-info-circle"></i>
         </label>
@@ -39,7 +39,7 @@
                 name="objId"
                 v-model="relationInfo['bk_obj_id']"
                 v-validate="'required'">
-                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('objId')"></i>
+                <p class="form-error">{{errors.first('objId')}}</p>
             </div>
             <i class="bk-icon icon-info-circle"></i>
         </div>
@@ -58,7 +58,7 @@
                 name="asstObjId"
                 v-model="relationInfo['bk_asst_obj_id']"
                 v-validate="'required'">
-                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('asstObjId')"></i>
+                <p class="form-error">{{errors.first('asstObjId')}}</p>
             </div>
             <i class="bk-icon icon-info-circle"></i>
         </div>
@@ -78,7 +78,7 @@
                 name="asstId"
                 v-model="relationInfo['bk_asst_id']"
                 v-validate="'required'">
-                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('asstId')"></i>
+                <p class="form-error">{{errors.first('asstId')}}</p>
             </div>
             <i class="bk-icon icon-info-circle"></i>
         </div>
@@ -96,7 +96,7 @@
                 name="mapping"
                 v-model="relationInfo.mapping"
                 v-validate="'required'">
-                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('mapping')"></i>
+                <p class="form-error">{{errors.first('mapping')}}</p>
             </div>
             <i class="bk-icon icon-info-circle"></i>
         </div>
