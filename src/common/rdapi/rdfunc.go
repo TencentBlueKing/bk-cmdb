@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/util"
+
 	"github.com/rs/xid"
 )
 
@@ -150,6 +151,7 @@ func FilterRdAddrSrvs(typeSrvs ...string) func(req *restful.Request, resp *restf
 }
 
 func checkHTTPAuth(req *restful.Request, defErr errors.DefaultCCErrorIf) (int, string) {
+	util.SetActionOwerIDAndAccount(req)
 	ownerId, user := util.GetActionOnwerIDAndUser(req)
 	if "" == ownerId {
 		return common.CCErrCommNotAuthItem, defErr.Errorf(common.CCErrCommNotAuthItem, "owner_id").Error()
