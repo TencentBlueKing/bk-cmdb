@@ -159,13 +159,14 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 		sheet.Cell(rowIndex, 1).SetString("")
 		srcInst, ok := instPrimaryInfo[inst.InstID]
 		if !ok {
-			blog.Errorf("BuildAssociationExcelFromData association inst:%+v, not inst id :%d, objID:%s, rid:%s", inst, inst.InstID, objID, util.GetHTTPCCRequestID(header))
-			return lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).Errorf(common.CCErrCommInstDataNil, fmt.Sprintf("%s %d", objID, inst.InstID))
+			blog.Warnf("BuildAssociationExcelFromData association inst:%+v, not inst id :%d, objID:%s, rid:%s", inst, inst.InstID, objID, util.GetHTTPCCRequestID(header))
+			//return lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).Errorf(common.CCErrCommInstDataNil, fmt.Sprintf("%s %d", objID, inst.InstID))
+			continue
 		}
 		dstInst, ok := asstData[inst.AsstObjectID][inst.AsstInstID]
 		if !ok {
-			blog.Errorf("BuildAssociationExcelFromData association inst:%+v, not inst id :%d, objID:%s, rid:%s", inst, inst.InstID, inst.AsstObjectID, util.GetHTTPCCRequestID(header))
-			return lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).Errorf(common.CCErrCommInstDataNil, fmt.Sprintf("%s %d", inst.AsstObjectID, inst.AsstInstID))
+			blog.Warnf("BuildAssociationExcelFromData association inst:%+v, not inst id :%d, objID:%s, rid:%s", inst, inst.InstID, inst.AsstObjectID, util.GetHTTPCCRequestID(header))
+			continue
 		}
 		sheet.Cell(rowIndex, 2).SetString(buildEexcelPrimaryKey(srcInst))
 		sheet.Cell(rowIndex, 3).SetString(buildEexcelPrimaryKey(dstInst))
