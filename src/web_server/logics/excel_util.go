@@ -362,11 +362,6 @@ const (
 
 func getPrimaryKey(val interface{}) string {
 	switch realVal := val.(type) {
-	default:
-		if realVal == nil {
-			return ""
-		}
-		return fmt.Sprintf("%v", val)
 	case []interface{}:
 		if len(realVal) == 0 {
 			return ""
@@ -383,6 +378,11 @@ func getPrimaryKey(val interface{}) string {
 			return ""
 		}
 		return fmt.Sprintf("%v", iVal)
+	default:
+		if realVal == nil {
+			return ""
+		}
+		return fmt.Sprintf("%v", val)
 
 	}
 }
