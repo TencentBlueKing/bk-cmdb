@@ -61,7 +61,7 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Co
 			Direction:               metadata.DestinationToSource,
 		},
 		{
-			AssociationKindID:       "mainline",
+			AssociationKindID:       "bk_mainline",
 			AssociationKindName:     "",
 			OwnerID:                 conf.OwnerID,
 			SourceToDestinationNote: "组成",
