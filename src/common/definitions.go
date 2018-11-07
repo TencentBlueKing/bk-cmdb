@@ -850,7 +850,7 @@ const (
 
 // association
 const (
-	AssociationKindMainline = "group"
+	AssociationKindMainline = "mainline"
 	AssociationTypeBelong   = "belong"
 	AssociationTypeGroup    = "group"
 	AssociationTypeRun      = "run"
