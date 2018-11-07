@@ -54,8 +54,8 @@
                 type: String,
                 required: true
             },
-            instId: {
-                type: Number,
+            inst: {
+                type: Object,
                 required: true
             }
         },
@@ -64,7 +64,26 @@
                 hasRelation: false,
                 fullScreen: false,
                 activeComponent: 'cmdbRelationTopology',
-                previousComponent: 'cmdbRelationTopology'
+                previousComponent: 'cmdbRelationTopology',
+                idKeyMap: {
+                    host: 'bk_host_id',
+                    biz: 'bk_biz_id'
+                },
+                nameKeyMap: {
+                    host: 'bk_host_innerip',
+                    biz: 'bk_biz_name'
+                }
+            }
+        },
+        computed: {
+            formatedInst () {
+                const idKey = this.idKeyMap[this.objId] || 'bk_inst_id'
+                const nameKey = this.nameKeyMap[this.objId] || 'bk_inst_name'
+                return {
+                    ...this.inst,
+                    'bk_inst_id': this.inst[idKey],
+                    'bk_inst_name': this.inst[nameKey]
+                }
             }
         },
         methods: {

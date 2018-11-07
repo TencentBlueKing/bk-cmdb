@@ -109,7 +109,7 @@
                 return this.$parent.objId
             },
             instId () {
-                return this.$parent.instId
+                return this.$parent.formatedInst['bk_inst_id']
             },
             instanceIdKey () {
                 const specialObj = {

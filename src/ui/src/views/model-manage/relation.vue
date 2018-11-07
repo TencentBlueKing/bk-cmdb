@@ -36,7 +36,7 @@
                 class="slider-content"
                 :isEdit="slider.isEdit"
                 :relation="slider.relation"
-                @saveRelation="saveRelation"
+                @saved="saveRelation"
                 @cancel="slider.isShow = false"
             ></the-relation>
         </cmdb-slider>
@@ -135,6 +135,9 @@
                     config: {
                         requestId: 'searchAssociationType'
                     }
+                }).then(data => {
+                    this.table.list = data.info
+                    this.table.pagination.count = data.count
                 })
             },
             createRelation () {

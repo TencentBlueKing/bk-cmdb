@@ -9,8 +9,9 @@
             class="field-table"
             :loading="$loading('initFieldList')"
             :header="table.header"
+            :has-footer="false"
             :list="table.list"
-            :wrapperMinusHeight="220"
+            :wrapperMinusHeight="300"
             @handleSortChange="handleSortChange">
             <template v-for="(header, index) in table.header" :slot="header.id" slot-scope="{ item }">
                 <div :key="index" :class="{'disabled': item.ispre || isReadOnly}">

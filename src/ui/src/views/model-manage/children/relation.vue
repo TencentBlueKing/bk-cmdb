@@ -5,7 +5,8 @@
         </bk-button>
         <cmdb-table
             class="relation-table"
-            :loading="$loading('getOperationLog')"
+            :loading="$loading()"
+            :sortable="false"
             :header="table.header"
             :list="table.list"
             :pagination.sync="table.pagination"
@@ -81,17 +82,7 @@
                         name: this.$t('ModelManagement["操作"]'),
                         sortable: false
                     }],
-                    list: [{
-                        'id': 1,
-                        'bk_obj_asst_id': 'bk_switch_belong_bk_host',
-                        'bk_obj_asst_name': '',
-                        'bk_asst_id': 'belong',
-                        'bk_obj_id': 'bk_switch',
-                        'bk_obj_name': 'bk_switch',
-                        'bk_asst_obj_id': 'bk_host',
-                        'mapping': '1:n',
-                        'on_delete': 'delete_src'
-                    }],
+                    list: [],
                     defaultSort: '-op_time',
                     sort: '-op_time'
                 },
@@ -152,14 +143,25 @@
                 })
             },
             async searchRelationList () {
-                this.table.list = await this.searchObjectAssociation({
+                const [source, dest] = await Promise.all([this.searchAsSource(), this.searchAsDest()])
+                this.table.list = [...source.info, ...dest.info]
+                this.table.pagination.count = source.count + dest.count
+            },
+            searchAsSource () {
+                return this.searchObjectAssociation({
                     params: {
                         condition: {
-                            both_obj_id: this.activeModel['bk_obj_id']
+                            'bk_obj_id': this.activeModel['bk_obj_id']
                         }
-                    },
-                    config: {
-                        requestId: `post_searchObjectAssociation_${this.activeModel['bk_obj_id']}`
+                    }
+                })
+            },
+            searchAsDest () {
+                return this.searchObjectAssociation({
+                    params: {
+                        condition: {
+                            'bk_asst_obj_id': this.activeModel['bk_obj_id']
+                        }
                     }
                 })
             },

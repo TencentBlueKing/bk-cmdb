@@ -76,8 +76,7 @@
                         },
                         smooth: {
                             enabled: false
-                        },
-                        arrows: 'middle'
+                        }
                     },
                     nodes: {
                         shape: 'image',
@@ -111,11 +110,17 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount'])
+            ...mapGetters(['supplierAccount']),
+            inst () {
+                return this.$parent.formatedInst
+            },
+            objId () {
+                return this.$parent.objId
+            }
         },
         async mounted () {
             try {
-                const [rootData] = await this.getRelation(this.$parent.objId, this.$parent.formatedInst['bk_inst_id'])
+                const [rootData] = await this.getRelation(this.objId, this.inst['bk_inst_id'])
                 const validRelation = rootData.next.filter(next => !this.ignore.includes(next['bk_obj_id']))
                 if (validRelation.length) {
                     this.$emit('on-relation-loaded', validRelation)
@@ -125,6 +130,7 @@
             }
         },
         methods: {
+            ...mapActions('objectAssociation', ['searchInstAssociation']),
             ...mapActions('objectRelation', ['getInstRelation', 'updateInstRelation']),
             ...mapActions('objectModelProperty', ['searchObjectAttribute']),
             ...mapActions('objectModelFieldGroup', ['searchGroup']),
@@ -155,25 +161,35 @@
                 this.legends = node.legends
             },
             getRelation (objId, instId, node = null) {
-                this.getRelationRequestId = `get_getInstRelation_${objId}_${instId}`
-                return this.getInstRelation({
-                    objId,
-                    instId,
+                this.getRelationRequestId = `post_searchInstAssociation_${objId}_${instId}`
+                return this.searchInstAssociation({
+                    params: {
+                        condition: {
+                            'bk_inst_id': [instId],
+                            'bk_obj_id': objId
+                        }
+                    },
                     config: {
                         requestId: this.getRelationRequestId,
                         clearCache: true
                     }
                 }).then(async data => {
                     this.legends = []
-                    await this.updateNetwork(data[0], node)
+                    await this.updateNetwork(data, node)
                     this.resetNetwork(node)
                     return data
                 })
             },
-            async updateNetwork ({curr, next, prev}, node = null) {
-                node = node || await this.createRootNode(curr)
+            async updateNetwork (data, node = null) {
+                node = node || await this.createRootNode(data)
                 node.next = node.next || []
                 node.prev = node.prev || []
+                const prev = data.filter(relation => {
+                    const eqObj = relation['bk_asst_obj_id'] === node.data['bk_obj_id']
+                    const eqInst = relation['bk_asst_inst_id'] === node.data['bk_inst_id']
+                    return eqObj && eqInst
+                })
+                const next = data.filter(relation => !prev.includes(relation))
                 const [nextData, prevData] = await Promise.all([
                     this.createRelationData(next, node, 'next'),
                     this.createRelationData(prev, node, 'prev')
@@ -192,7 +208,14 @@
                 })
                 node.legends = uniqueLegends
             },
-            async createRootNode (root) {
+            async createRootNode () {
+                const rootModel = this.getObjModel(this.objId)
+                const root = {
+                    'bk_obj_id': rootModel['bk_obj_id'],
+                    'bk_obj_icon': rootModel['bk_obj_icon'],
+                    'bk_inst_id': this.inst['bk_inst_id'],
+                    'bk_inst_name': this.inst['bk_inst_name']
+                }
                 const node = {
                     id: `${root['bk_obj_id']}_${root['bk_inst_id']}_${NODE_ID++}`,
                     label: root['bk_inst_name'],
@@ -213,68 +236,76 @@
                 this.nodes.push(node)
                 return node
             },
-            async createRelationData (relation, currentNode, type) {
+            getObjModel (objId) {
+                return this.$allModels.find(obj => obj['bk_obj_id'] === objId)
+            },
+            async createRelationData (relations, currentNode, type) {
                 const relationNodes = []
                 const relationEdges = []
                 const relationLegends = []
-                for (let i = 0; i < relation.length; i++) {
-                    const obj = relation[i]
-                    if (this.ignore.includes(obj['bk_obj_id']) || !obj.count) continue
-                    const children = obj.children
-                    for (let j = 0; j < children.length; j++) {
-                        const inst = children[j]
-                        inst['bk_obj_id'] = obj['bk_obj_id']
-                        if (!this.exist(currentNode, inst, type)) {
-                            const node = {
-                                id: `${inst['bk_obj_id']}_${inst['bk_inst_id']}_${NODE_ID++}`,
-                                label: inst['bk_inst_name'],
-                                data: inst,
-                                loaded: false,
-                                level: this.getRelationNodeLevel(currentNode, type),
-                                children: [],
-                                [type === 'next' ? 'prev' : 'next']: [currentNode],
-                                [type]: [],
-                                legends: [],
-                                value: 15
-                            }
-                            inst['_id'] = node.id
-                            currentNode.children.push(node)
-                            const edge = {
-                                to: type === 'next' ? currentNode.id : node.id,
-                                from: type === 'next' ? node.id : currentNode.id,
-                                label: node.data['bk_asst_name']
-                            }
-                            const legend = relationLegends.find(legend => legend.id === obj['bk_obj_id'])
-                            if (legend) {
-                                legend.count++
-                            } else {
-                                relationLegends.push({
-                                    id: obj['bk_obj_id'],
-                                    name: obj['bk_obj_name'],
-                                    icon: obj['bk_obj_icon'],
-                                    node: currentNode,
-                                    active: true,
-                                    count: 1
-                                })
-                            }
-                            try {
-                                const instImages = await this.createNodeImages(inst)
-                                node.image = instImages
-                            } catch (e) {
-                                node.shape = 'dot'
-                            }
-                            relationNodes.push(node)
-                            relationEdges.push(edge)
+                const keyMap = {
+                    objId: type === 'prev' ? 'bk_asst_obj_id' : 'bk_obj_id',
+                    objName: type === 'prev' ? 'bk_asst_obj_name' : 'bk_obj_name',
+                    objIcon: type === 'prev' ? 'bk_asst_obj_icon' : 'bk_obj_icon',
+                    instId: type === 'prev' ? 'bk_asst_inst_id' : 'bk_inst_id',
+                    instName: type === 'prev' ? 'bk_asst_inst_name' : 'bk_inst_name'
+                }
+                for (let i = 0; i < relations.length; i++) {
+                    const relation = relations[i]
+                    if (this.ignore.includes(relation[keyMap.objId])) continue
+                    if (!this.isExistNode(currentNode, relation, type)) {
+                        const node = {
+                            id: `${relation[keyMap.objId]}_${relation[keyMap.instId]}_${NODE_ID++}`,
+                            label: relation[keyMap.instName],
+                            data: relation,
+                            loaded: false,
+                            level: this.getRelationNodeLevel(currentNode, type),
+                            children: [],
+                            [type === 'next' ? 'prev' : 'next']: [currentNode],
+                            [type]: [],
+                            legends: [],
+                            value: 15
                         }
+                        relation['_id'] = node.id
+                        currentNode.children.push(node)
+                        const edge = {
+                            from: type === 'next' ? currentNode.id : node.id,
+                            to: type === 'next' ? node.id : currentNode.id,
+                            label: relation['bk_obj_asst_name'],
+                            arrows: relation.direction === 'src_to_dest' ? 'middle' : undefined
+                        }
+                        const legend = relationLegends.find(legend => legend.id === relation[keyMap.objId])
+                        if (legend) {
+                            legend.count++
+                        } else {
+                            relationLegends.push({
+                                id: relation[keyMap.objId],
+                                name: relation[keyMap.objName],
+                                icon: relation[keyMap.objIcon],
+                                node: currentNode,
+                                active: true,
+                                count: 1
+                            })
+                        }
+                        try {
+                            const relationImage = await this.createNodeImages(relation[keyMap.objIcon])
+                            node.image = relationImage
+                        } catch (e) {
+                            node.shape = 'dot'
+                        }
+                        relationNodes.push(node)
+                        relationEdges.push(edge)
                     }
                 }
                 this.nodes = [...this.nodes, ...relationNodes]
                 this.edges = [...this.edges, ...relationEdges]
                 return {nodes: relationNodes, edges: relationEdges, legends: relationLegends}
             },
-            exist (currentNode, newInst, type) {
+            isExistNode (currentNode, newRelation, type) {
                 return currentNode[type].some(node => {
-                    return node.data['bk_obj_id'] === newInst['bk_obj_id'] && node.data['bk_inst_id'] === newInst['bk_inst_id']
+                    const eqObj = node.data['bk_obj_id'] === newRelation['bk_obj_id']
+                    const eqInst = node.data['bk_inst_id'] === newRelation['bk_inst_id']
+                    return eqObj && eqInst
                 })
             },
             getRelationNodeLevel (currentNode, type) {
@@ -286,15 +317,15 @@
                     return currentNode.level + 1
                 }
             },
-            async createNodeImages (data) {
-                const image = await this.loadNodeImage(data)
+            async createNodeImages (icon) {
+                const image = await this.loadNodeImage(icon)
                 const base64 = {
                     selected: this.createBase64Image(image, [60, 150, 255]),
                     unselected: this.createBase64Image(image, [98, 104, 127])
                 }
                 return Promise.resolve(base64)
             },
-            loadNodeImage (data) {
+            loadNodeImage (icon) {
                 return new Promise((resolve, reject) => {
                     let useDefaultWhenError = true
                     const image = new Image()
@@ -306,10 +337,10 @@
                             useDefaultWhenError = false
                             image.src = `./static/svg/cc-default.svg`
                         } else {
-                            reject(new Error(`Can not load object icon, object id: ${data['bk_obj_id']}, object icon: ${data['bk_obj_icon']}`))
+                            reject(new Error(`Can not load object icon: ${icon}`))
                         }
                     }
-                    image.src = `./static/svg/${data['bk_obj_icon'].substr(5)}.svg`
+                    image.src = `./static/svg/${icon.substr(5)}.svg`
                 })
             },
             createBase64Image (image, rgb) {
