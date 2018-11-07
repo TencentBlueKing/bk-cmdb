@@ -28,7 +28,6 @@ type Field interface {
 	Lte(val interface{}) Condition
 	Gt(val interface{}) Condition
 	Gte(val interface{}) Condition
-	Or(val interface{}) Condition
 	ToMapStr() types.MapStr
 }
 
@@ -124,12 +123,6 @@ func (cli *field) Gt(val interface{}) Condition {
 // Gte greater or euqal than a value
 func (cli *field) Gte(val interface{}) Condition {
 	cli.opeartor = BKDBGTE
-	cli.fieldValue = val
-	return cli.condition
-}
-
-func (cli *field) Or(val interface{}) Condition {
-	cli.opeartor = BKDBOR
 	cli.fieldValue = val
 	return cli.condition
 }
