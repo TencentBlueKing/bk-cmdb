@@ -97,7 +97,7 @@ func (cli *field) NotIn(val interface{}) Condition {
 	return cli.condition
 }
 
-// NotIn not in a array
+// NotGt not in a array
 func (cli *field) NotGt(val interface{}) Condition {
 	cli.opeartor = BKDBNot
 	cli.fieldValue = map[string]interface{}{
