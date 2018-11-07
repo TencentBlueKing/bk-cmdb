@@ -108,7 +108,7 @@
                     <cmdb-relation
                         v-if="tab.active === 'relevance'"
                         obj-id="host"
-                        :inst-id="tab.attribute.inst.details['bk_host_id']">
+                        :inst="tab.attribute.inst.details">
                     </cmdb-relation>
                 </bk-tabpanel>
                 <bk-tabpanel name="status" :title="$t('HostResourcePool[\'实时状态\']')" :show="['details', 'update'].includes(tab.attribute.type)">

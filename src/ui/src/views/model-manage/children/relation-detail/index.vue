@@ -261,7 +261,8 @@
                 }
             },
             async initRelationList () {
-                this.relationList = await this.searchAssociationType({})
+                const data = await this.searchAssociationType({})
+                this.relationList = data.info
             },
             async saveRelation () {
                 if (!await this.$validator.validateAll()) {

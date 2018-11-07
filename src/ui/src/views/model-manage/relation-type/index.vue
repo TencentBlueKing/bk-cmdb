@@ -102,12 +102,25 @@
         data () {
             return {
                 relationInfo: {
+                    id: null,
                     bk_asst_id: '',
                     bk_asst_name: '',
                     src_des: '',
                     dest_des: '',
                     direction: 'none' // none, src_to_dest
                 }
+            }
+        },
+        computed: {
+            createParams () {
+                const createParams = {...this.relationInfo}
+                delete createParams.id
+                return createParams
+            },
+            updateParams () {
+                const updateParams = {...this.relationInfo}
+                delete updateParams['bk_asst_id']
+                return updateParams
             }
         },
         created () {
@@ -123,24 +136,29 @@
                 'updateAssociationType'
             ]),
             async saveRelation () {
-                if (!await this.$validator.validateAll()) {
-                    return
-                }
-                if (this.isEdit) {
-                    await this.updateAssociationType({
-                        id: this.relation.id,
-                        params: this.relationInfo,
-                        config: {
-                            requestId: 'updateAssociationType'
-                        }
-                    })
-                } else {
-                    await this.createAssociationType({
-                        params: this.relationInfo,
-                        config: {
-                            requestId: 'createAssociationType'
-                        }
-                    })
+                try {
+                    if (!await this.$validator.validateAll()) {
+                        return
+                    }
+                    if (this.isEdit) {
+                        await this.updateAssociationType({
+                            id: this.relation.id,
+                            params: this.updateParams,
+                            config: {
+                                requestId: 'updateAssociationType'
+                            }
+                        })
+                    } else {
+                        await this.createAssociationType({
+                            params: this.createParams,
+                            config: {
+                                requestId: 'createAssociationType'
+                            }
+                        })
+                    }
+                    this.$emit('saved')
+                } catch (e) {
+                    console.error(e)
                 }
             },
             cancel () {
