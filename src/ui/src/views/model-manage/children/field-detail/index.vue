@@ -11,7 +11,7 @@
                 v-model.trim="fieldInfo['bk_property_id']"
                 :disabled="isEditField"
                 v-validate="'required|fieldId'">
-                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('fieldId')"></i>
+                <p class="form-error">{{errors.first('fieldId')}}</p>
             </div>
             <i class="bk-icon icon-info-circle"></i>
         </label>
@@ -26,7 +26,7 @@
                 v-model.trim="fieldInfo['bk_property_name']"
                 :disabled="isReadOnly"
                 v-validate="'required|enumName'">
-                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('fieldName')"></i>
+                <p class="form-error">{{errors.first('fieldName')}}</p>
             </div>
             <i class="bk-icon icon-info-circle"></i>
         </label>

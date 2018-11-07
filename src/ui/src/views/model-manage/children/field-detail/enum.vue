@@ -22,7 +22,7 @@
                         @input="handleInput"
                         :disabled="isReadOnly"
                         :name="`id${index}`">
-                    <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first(`id${index}`)"></i>
+                    <p class="form-error">{{errors.first(`id${index}`)}}</p>
                 </div>
             </div>
             <div class="enum-name">
@@ -35,7 +35,7 @@
                         @input="handleInput"
                         :disabled="isReadOnly"
                         :name="`name${index}`">
-                    <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first(`name${index}`)"></i>
+                    <p class="form-error">{{errors.first(`name${index}`)}}</p>
                 </div>
             </div>
             <button class="enum-btn" @click="deleteEnum(index)" :disabled="enumList.length === 1 || isReadOnly">
