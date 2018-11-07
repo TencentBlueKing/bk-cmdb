@@ -19,6 +19,9 @@ const (
 	// BKDBNIN the db oeprator
 	BKDBNIN = "$nin"
 
+	// BKDBNot the db opeartor
+	BKDBNot = "$not"
+
 	// BKDBLT the db operator
 	BKDBLT = "$lt"
 
