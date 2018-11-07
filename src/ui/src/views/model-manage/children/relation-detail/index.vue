@@ -18,6 +18,7 @@
             <div class="cmdb-form-item" :class="{'is-error': errors.has('asstName')}">
                 <input type="text" class="cmdb-form-input"
                 name="asstName"
+                :disabled="relationInfo.ispre"
                 v-model.trim="relationInfo['bk_obj_asst_name']"
                 v-validate="'required|singlechar'">
                 <p class="form-error">{{errors.first('asstName')}}</p>
@@ -31,9 +32,11 @@
             </span>
             <div class="cmdb-form-item" :class="{'is-error': errors.has('objId')}">
                 <bk-selector
+                    :disabled="relationInfo.ispre"
                     :has-children="true"
                     :list="asstList"
                     :selected.sync="relationInfo['bk_obj_id']"
+                    @item-selected="validateValue"
                 ></bk-selector>
                 <input type="text" hidden
                 name="objId"
@@ -50,9 +53,11 @@
             </span>
             <div class="cmdb-form-item" :class="{'is-error': errors.has('asstObjId')}">
                 <bk-selector
+                    :disabled="relationInfo.ispre"
                     :has-children="true"
                     :list="asstList"
                     :selected.sync="relationInfo['bk_asst_obj_id']"
+                    @item-selected="validateValue"
                 ></bk-selector>
                 <input type="text" hidden
                 name="asstObjId"
@@ -71,8 +76,10 @@
                 <bk-selector
                     setting-key="bk_asst_id"
                     display-key="bk_asst_name"
+                    :disabled="relationInfo.ispre"
                     :list="relationList"
                     :selected.sync="relationInfo['bk_asst_id']"
+                    @item-selected="validateValue"
                 ></bk-selector>
                 <input type="text" hidden
                 name="asstId"
@@ -89,8 +96,10 @@
             </span>
             <div class="cmdb-form-item" :class="{'is-error': errors.has('mapping')}">
                 <bk-selector
+                    :disabled="relationInfo.ispre"
                     :list="mappingList"
                     :selected.sync="relationInfo.mapping"
+                    @item-selected="validateValue"
                 ></bk-selector>
                 <input type="text" hidden
                 name="mapping"
@@ -105,11 +114,13 @@
                 {{$t('ModelManagement["联动删除"]')}}
             </label>
             <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                <input type="checkbox" id="delete_dest" value="delete_dest" v-model="relationInfo['on_delete']">
+                <input type="checkbox" id="delete_dest" value="delete_dest" v-model="relationInfo['on_delete']"
+                :disabled="relationInfo.ispre">
                 <span class="cmdb-checkbox-text">{{$t('ModelManagement["源不存在联动删除目标"]')}}</span>
             </label>
             <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                <input type="checkbox" id="delete_src" value="delete_src" v-model="relationInfo['on_delete']">
+                <input type="checkbox" id="delete_src" value="delete_src" v-model="relationInfo['on_delete']"
+                :disabled="relationInfo.ispre">
                 <span class="cmdb-checkbox-text">{{$t('ModelManagement["目标不存在联动删除源"]')}}</span>
             </label>
         </div>
@@ -153,6 +164,8 @@
                     name: 'N-N'
                 }],
                 relationInfo: {
+                    ispre: false,
+                    id: 0,
                     bk_obj_asst_id: '',
                     bk_obj_asst_name: '',
                     bk_obj_id: '',
@@ -200,11 +213,14 @@
             },
             asstList () {
                 let asstList = []
-                this.classifications.map(classify => {
-                    if (classify['bk_objects'].length && classify['bk_classification_id'] !== 'bk_biz_topo') {
+                this.classifications.forEach(classify => {
+                    if (classify['bk_objects'].length) {
+                        if (!this.relationInfo.ispre && classify['bk_classification_id'] === 'bk_biz_topo') {
+                            return
+                        }
                         let objects = []
                         classify['bk_objects'].map(({bk_obj_id: objId, bk_obj_name: objName}) => {
-                            if (['plat', 'process'].indexOf(objId) === -1) {
+                            if (this.relationInfo.ispre || ['plat', 'process'].indexOf(objId) === -1) {
                                 objects.push({
                                     id: objId,
                                     name: objName
@@ -249,6 +265,10 @@
                 'updateObjectAssociation',
                 'searchAssociationType'
             ]),
+            async validateValue () {
+                await this.$nextTick()
+                this.$validator.validateAll()
+            },
             initData () {
                 if (this.isEdit) {
                     for (let key in this.relationInfo) {
@@ -270,6 +290,7 @@
                 }
                 if (this.isEdit) {
                     await this.updateObjectAssociation({
+                        id: this.relationInfo.id,
                         params: this.params,
                         config: {
                             requestId: 'updateObjectAssociation'
@@ -283,7 +304,7 @@
                         }
                     })
                 }
-                this.$emit('saveRelation')
+                this.$emit('save')
             },
             cancel () {
                 this.$emit('cancel')
