@@ -39,6 +39,7 @@ type Property struct {
 	NotObjPropery bool //Not an attribute of the object, indicating that the field to be exported is needed for export,
 	IsOnly        bool
 	AsstObjID     string
+	NotExport     bool
 }
 
 // PropertyGroup property group
@@ -73,12 +74,13 @@ func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, header ht
 		for _, field := range fields {
 			if field.Group == group.ID {
 				if util.InStrArr(filterFields, field.ID) {
-					continue
+					field.NotExport = true
+				} else {
+					field.ExcelColIndex = index
+					index++
 				}
-
-				field.ExcelColIndex = index
 				ret[field.ID] = field
-				index++
+
 			}
 		}
 	}

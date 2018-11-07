@@ -143,11 +143,11 @@ func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, 
 				return nil, common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 			}
 			if len(asstResult.Data.ErrMsgMap) > 0 {
-				resultData.Set("asst_err", asstResult.Data.ErrMsgMap)
+				resultData.Set("asst_error", asstResult.Data.ErrMsgMap)
 			}
 			if result.Result && !asstResult.Result {
-				errCode = result.Code
-				err = defErr.New(result.Code, result.ErrMsg)
+				errCode = asstResult.Code
+				err = defErr.New(asstResult.Code, asstResult.ErrMsg)
 			}
 		}
 	}
