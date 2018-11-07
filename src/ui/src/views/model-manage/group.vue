@@ -369,7 +369,7 @@
         }
         .group-title {
             display: inline-block;
-            padding-left: 8px;
+            padding: 0 40px 0 8px;
             border-left: 4px solid $cmdbBorderFocusColor;
             line-height: 16px;
             color: #333948;

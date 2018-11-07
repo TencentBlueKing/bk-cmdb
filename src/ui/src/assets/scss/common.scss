@@ -73,14 +73,6 @@ div.cmdb-form-item {
         input.cmdb-form-input {
             border-color: $cmdbDangerColor;
         }
-        .bk-selector {
-            input {
-                border-color: $cmdbDangerColor;
-            }
-            .icon-angle-down {
-                display: none;
-            }
-        }
         .form-error {
             position: absolute;
             top: 100%;

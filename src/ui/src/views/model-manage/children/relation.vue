@@ -63,7 +63,7 @@
                 },
                 table: {
                     header: [{
-                        id: 'bk_asst_id',
+                        id: 'bk_obj_asst_id',
                         name: this.$t('ModelManagement["唯一标识"]')
                     }, {
                         id: 'bk_asst_name',
@@ -144,8 +144,7 @@
             },
             async searchRelationList () {
                 const [source, dest] = await Promise.all([this.searchAsSource(), this.searchAsDest()])
-                this.table.list = [...source.info, ...dest.info]
-                this.table.pagination.count = source.count + dest.count
+                this.table.list = [...source, ...dest]
             },
             searchAsSource () {
                 return this.searchObjectAssociation({
