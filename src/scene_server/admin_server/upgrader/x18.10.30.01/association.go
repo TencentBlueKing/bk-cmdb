@@ -61,6 +61,14 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Co
 			Direction:               metadata.DestinationToSource,
 		},
 		{
+			AssociationKindID:       "mainline",
+			AssociationKindName:     "",
+			OwnerID:                 conf.OwnerID,
+			SourceToDestinationNote: "组成",
+			DestinationToSourceNote: "组成于",
+			Direction:               metadata.DestinationToSource,
+		},
+		{
 			AssociationKindID:       "run",
 			AssociationKindName:     "",
 			OwnerID:                 conf.OwnerID,
@@ -126,7 +134,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	var pretrue = true
 	for _, asst := range assts {
 		if asst.ObjectAttID == common.BKChildStr {
-			asst.AsstKindID = common.AssociationTypeGroup
+			asst.AsstKindID = common.AssociationKindMainline
 			asst.AssociationName = buildObjAsstID(asst.AsstObjID, asst.ObjectAttID)
 			asst.Mapping = metadata.OneToOneMapping
 			asst.OnDelete = metadata.NoAction
