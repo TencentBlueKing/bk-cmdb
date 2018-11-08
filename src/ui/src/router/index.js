@@ -46,6 +46,8 @@ const router = new Router({
         path: '/model-manage/:modelId',
         component: modelDetail,
         meta: {
+            returnPath: '/model-manage',
+            relative: '/model-manage',
             ignoreAuthorize: true
         }
     }, {

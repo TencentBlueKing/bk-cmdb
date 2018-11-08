@@ -334,6 +334,9 @@
                 this.hideModelDialog()
             },
             modelClick (model) {
+                this.$store.commit('setHeaderStatus', {
+                    back: true
+                })
                 this.$router.push(`model-manage/${model['bk_obj_id']}`)
             }
         }
