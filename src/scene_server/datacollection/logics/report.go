@@ -383,6 +383,20 @@ func (lgc *Logics) confirmAttributes(header http.Header, report *metadata.Netcol
 			blog.Errorf("[NetDevice][ConfirmReport] find inst failed, instID not found from %+v", insts[0])
 			return 0, err
 		}
+
+		if objType == common.BKInnerObjIDHost {
+			hostdata := metadata.HostList{
+				InputType: metadata.CollectType,
+				HostInfo: map[int64]map[string]interface{}{
+					1: {
+						"": "",
+					},
+				},
+			}
+
+			lgc.CoreAPI.HostServer().AddHost(context.Background(), header, &hostdata)
+		}
+
 		resp, err := lgc.CoreAPI.TopoServer().Instance().UpdateInst(context.Background(), util.GetOwnerID(header), report.ObjectID, instID, header, data)
 		if err != nil {
 			blog.Errorf("[NetDevice][ConfirmReport] update inst error: %v, %+v", err, data)
