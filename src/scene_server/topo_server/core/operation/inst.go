@@ -1033,10 +1033,6 @@ func (c *commonInst) FindInst(params types.ContextParams, obj model.Object, cond
 
 func (c *commonInst) UpdateInst(params types.ContextParams, data frtypes.MapStr, obj model.Object, cond condition.Condition, instID int64) error {
 
-	if err := NewSupplementary().Validator(c).ValidatorUpdate(params, obj, data, instID, cond); nil != err {
-		return err
-	}
-
 	// update association
 	query := &metatype.QueryInput{}
 	query.Condition = cond.ToMapStr()
@@ -1049,6 +1045,13 @@ func (c *commonInst) UpdateInst(params types.ContextParams, data frtypes.MapStr,
 	_, insts, err := c.FindInst(params, obj, query, false)
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to search insts by the condition(%#v), error info is %s", cond.ToMapStr(), err.Error())
+		return err
+	}
+	if len(insts) <= 0 {
+		return nil
+	}
+
+	if err := NewSupplementary().Validator(c).ValidatorUpdate(params, obj, data, instID, cond); nil != err {
 		return err
 	}
 	for _, inst := range insts {
