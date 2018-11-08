@@ -5,8 +5,8 @@
                 {{$t('ModelManagement["新增关联类型"]')}}
             </bk-button>
             <label class="search-input">
-                <i class="bk-icon icon-search"></i>
-                <input type="text" class="cmdb-form-input" v-model.trim="searchText" :placeholder="$t('ModelManagement[\'请输入关联类型名称\']')">
+                <i class="bk-icon icon-search" @click="searchRelation"></i>
+                <input type="text" class="cmdb-form-input" v-model.trim="searchText" :placeholder="$t('ModelManagement[\'请输入关联类型名称\']')" @keyup.enter="searchRelation">
             </label>
         </p>
         <cmdb-table

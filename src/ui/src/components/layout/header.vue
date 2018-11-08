@@ -61,7 +61,6 @@
                     $classify
                 } = this
                 let title = $classify.i18n ? this.$t($classify.i18n) : $classify.name
-                console.log(title)
                 return this.$route.meta.title ? this.$route.meta.title : title
             }
         },
