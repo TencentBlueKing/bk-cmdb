@@ -55,7 +55,22 @@ func (s *topoService) SearchObjectAssociation(params types.ContextParams, pathPa
 			return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 		}
 
-		return s.core.AssociationOperation().SearchObject(params, &metadata.SearchAssociationObjectRequest{Condition: cond})
+		if len(cond) == 0 {
+			return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
+		}
+
+		resp, err := s.core.AssociationOperation().SearchObject(params, &metadata.SearchAssociationObjectRequest{Condition: cond})
+		if err != nil {
+			blog.Errorf("search object association with cond[%v] failed, err: %v", cond, err)
+			return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		}
+
+		if !resp.Result {
+			blog.Errorf("search object association with cond[%v] failed, err: %s", cond, resp.ErrMsg)
+			return nil, params.Err.Error(resp.Code)
+		}
+
+		return resp.Data, err
 	}
 
 	objID, err := data.String(metadata.AssociationFieldObjectID)

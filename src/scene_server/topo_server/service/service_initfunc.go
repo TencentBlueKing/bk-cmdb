@@ -32,7 +32,7 @@ func (s *topoService) initAssociation() {
 	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/inst/{owner_id}/{app_id}", HandlerFunc: s.SearchBusinessTopo})
 	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/inst/child/{owner_id}/{obj_id}/{app_id}/{inst_id}", HandlerFunc: s.SearchMainLineChildInstTopo})
 
-	// assoication type methods
+	// association type methods
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/topo/association/type/action/search", HandlerFunc: s.SearchAssociationType})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/topo/association/type/action/create", HandlerFunc: s.CreateAssociationType})
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/topo/association/type/{id}/action/update", HandlerFunc: s.UpdateAssociationType})
@@ -160,7 +160,7 @@ func (s *topoService) initPrivilegeGroup() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/topo/privilege/group/{bk_supplier_account}/search", HandlerFunc: s.SearchUserGroup})
 }
 
-func (s *topoService) initPrivigeRole() {
+func (s *topoService) initPrivilegeRole() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/topo/privilege/{bk_supplier_account}/{bk_obj_id}/{bk_property_id}", HandlerFunc: s.CreatePrivilege, HandlerParseOriginDataFunc: s.ParseCreateRolePrivilegeOriginData})
 	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/privilege/{bk_supplier_account}/{bk_obj_id}/{bk_property_id}", HandlerFunc: s.GetPrivilege})
 }
@@ -193,7 +193,7 @@ func (s *topoService) initService() {
 	s.initObjectClassification()
 	s.initObjectGroup()
 	s.initPrivilegeGroup()
-	s.initPrivigeRole()
+	s.initPrivilegeRole()
 	s.initPrivilege()
 	s.initGraphics()
 	s.initIdentifier()
