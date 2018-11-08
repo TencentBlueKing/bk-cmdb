@@ -131,8 +131,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    deleteInstAssociation ({ commit, state, dispatch }, { params, config }) {
-        return $http.post(`inst/association/action/delete`, params, config)
+    deleteInstAssociation ({ commit, state, dispatch }, { config }) {
+        return $http.delete(`inst/association/action/delete`, config)
     }
 }
 
