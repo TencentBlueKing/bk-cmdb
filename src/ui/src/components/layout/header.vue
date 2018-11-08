@@ -3,9 +3,9 @@
         :class="{'nav-sticked': navStick}">
         <div class="breadcrumbs fl">
             <i class="breadcrumbs-back bk-icon icon-arrows-left" href="javascript:void(0)"
-                v-if="showBack"
+                v-if="showBack || $route.meta.returnPath"
                 @click="back"></i>
-            <h2 class="breadcrumbs-current">{{$classify.i18n ? $t($classify.i18n) : $classify.name}}</h2>
+            <h2 class="breadcrumbs-current">{{title}}</h2>
             <i v-if="$classify.id === 'custom_query'" class="bk-icon icon-info-circle" v-tooltip="{content: $t('CustomQuery[\'保存后的查询可通过接口调用生效\']'), classes: 'custom-query-header-tooltip'}"></i>
         </div>
         <div class="header-options fr">
@@ -55,15 +55,27 @@
             ...mapGetters(['site', 'userName', 'admin', 'showBack', 'navStick']),
             userRole () {
                 return this.admin ? this.$t('Common["管理员"]') : this.$t('Common["普通用户"]')
+            },
+            title () {
+                let {
+                    $classify
+                } = this
+                let title = $classify.i18n ? this.$t($classify.i18n) : $classify.name
+                console.log(title)
+                return this.$route.meta.title ? this.$route.meta.title : title
             }
         },
         methods: {
             // 回退路由
             back () {
-                this.$store.commit('setHeaderStatus', {
-                    back: false
-                })
-                this.$router.back()
+                if (!this.showBack && this.$route.meta.returnPath) {
+                    this.$router.push(this.$route.meta.returnPath)
+                } else {
+                    this.$store.commit('setHeaderStatus', {
+                        back: false
+                    })
+                    this.$router.back()
+                }
             },
             // 退出登陆
             logOut () {

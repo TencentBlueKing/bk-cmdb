@@ -181,8 +181,22 @@
                 this.initFieldList()
             },
             handleSortChange (sort) {
-                this.sort = sort
-                this.refresh()
+                if (!sort.length) {
+                    sort = this.table.defaultSort
+                }
+                let key = sort
+                if (sort[0] === '-') {
+                    key = sort.substr(1, sort.length - 1)
+                }
+                this.table.list.sort((itemA, itemB) => {
+                    if (key === 'isrequired') {
+                        return itemA[key] > itemB[key]
+                    }
+                    return itemA[key].localeCompare(itemB[key])
+                })
+                if (sort[0] === '-') {
+                    this.table.list.reverse()
+                }
             }
         }
     }
