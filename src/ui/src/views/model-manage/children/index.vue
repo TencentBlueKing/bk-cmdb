@@ -190,6 +190,7 @@
                     }
                 })
                 this.$store.commit('objectModel/setActiveModel', res[0])
+                this.$route.meta.title = this.activeModel['bk_obj_name']
                 this.initModelInfo()
             },
             initModelInfo () {
