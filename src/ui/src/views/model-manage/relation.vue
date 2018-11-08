@@ -17,6 +17,9 @@
             @handlePageChange="handlePageChange"
             @handleSizeChange="handleSizeChange"
             @handleSortChange="handleSortChange">
+            <template slot="bk_asst_name" slot-scope="{ item }">
+                {{item['bk_asst_name'] || '--'}}
+            </template>
             <template slot="operation" slot-scope="{ item }">
                 <span class="text-primary mr10" @click.stop="editRelation(item)">
                     {{$t('Common["编辑"]')}}
@@ -138,6 +141,7 @@
                 }).then(data => {
                     this.table.list = data.info
                     this.table.pagination.count = data.count
+                    this.$http.cancel('post_searchAssociationType')
                 })
             },
             createRelation () {
