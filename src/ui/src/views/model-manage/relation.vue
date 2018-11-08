@@ -73,9 +73,9 @@
                         id: 'dest_des',
                         name: this.$t('ModelManagement["目标描述->源"]')
                     }, {
-                        id: 'name',
-                        name: this.$t('ModelManagement["使用数"]')
-                    }, {
+                    //     id: 'count',
+                    //     name: this.$t('ModelManagement["使用数"]')
+                    // }, {
                         id: 'operation',
                         name: this.$t('Common["操作"]'),
                         sortable: false
