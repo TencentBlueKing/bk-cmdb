@@ -141,7 +141,7 @@
                         }).then(() => {
                             this.$http.cancel(`post_searchObjectAssociation_${this.activeModel['bk_obj_id']}`)
                         })
-                        this.table.list.splice(index, 1)
+                        this.searchRelationList()
                     }
                 })
             },
