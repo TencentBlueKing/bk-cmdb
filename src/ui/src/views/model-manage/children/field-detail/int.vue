@@ -21,7 +21,7 @@
                     @input="handleInput"
                     :disabled="isReadOnly"
                     v-validate="`number|isBigger:${localValue.min}`">
-                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('max')"></i>
+                <p class="form-error">{{errors.first('max')}}</p>
             </div>
         </div>
     </div>

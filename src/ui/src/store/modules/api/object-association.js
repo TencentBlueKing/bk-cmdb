@@ -87,7 +87,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     updateObjectAssociation ({ commit, state, dispatch }, { id, params, config }) {
-        return $http.post(`object/association/${id}/action/update`, params, config)
+        return $http.put(`object/association/${id}/action/update`, params, config)
     },
     /**
      * 删除关联类型

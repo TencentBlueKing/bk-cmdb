@@ -17,6 +17,9 @@
                     <template v-if="header.id==='mapping'">
                         {{mappingMap[item.mapping]}}
                     </template>
+                    <template v-else-if="header.id==='bk_asst_name'">
+                        {{item['bk_asst_name'] && item['bk_asst_name'].length ? `${item['bk_asst_id']}(${item['bk_asst_name']})` : `${item['bk_asst_id']}`}}
+                    </template>
                     <template v-else-if="header.id==='operation'">
                         <span class="text-primary mr10" @click.stop="editRelation(item)">
                             {{$t('Common["编辑"]')}}
@@ -63,7 +66,7 @@
                 },
                 table: {
                     header: [{
-                        id: 'bk_asst_id',
+                        id: 'bk_obj_asst_id',
                         name: this.$t('ModelManagement["唯一标识"]')
                     }, {
                         id: 'bk_asst_name',
@@ -138,14 +141,13 @@
                         }).then(() => {
                             this.$http.cancel(`post_searchObjectAssociation_${this.activeModel['bk_obj_id']}`)
                         })
-                        this.table.list.splice(index, 1)
+                        this.searchRelationList()
                     }
                 })
             },
             async searchRelationList () {
                 const [source, dest] = await Promise.all([this.searchAsSource(), this.searchAsDest()])
-                this.table.list = [...source.info, ...dest.info]
-                this.table.pagination.count = source.count + dest.count
+                this.table.list = [...source, ...dest]
             },
             searchAsSource () {
                 return this.searchObjectAssociation({
