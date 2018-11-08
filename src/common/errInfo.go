@@ -49,10 +49,10 @@ const (
 	// CCErrCommParamsNeedString  the parameter must be of type string
 	CCErrCommParamsNeedString = 1199007
 
-	// CCErrCommParamsLostField the prameter not specified
+	// CCErrCommParamsLostField the parameter not specified
 	CCErrCommParamsLostField = 1199008
 
-	// CCErrCommParamsNeedInt the parameter must be of tyep int
+	// CCErrCommParamsNeedInt the parameter must be of type int
 	CCErrCommParamsNeedInt = 1199009
 
 	// CCErrCommParamsNeedSet the parameter unassigned
