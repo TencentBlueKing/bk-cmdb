@@ -31,17 +31,14 @@
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{'is-error': errors.has('objId')}">
-                <bk-selector
+                <form-selector
                     :disabled="relationInfo.ispre"
                     :has-children="true"
                     :list="asstList"
-                    :selected.sync="relationInfo['bk_obj_id']"
-                    @item-selected="validateValue"
-                ></bk-selector>
-                <input type="text" hidden
-                name="objId"
-                v-model="relationInfo['bk_obj_id']"
-                v-validate="'required'">
+                    v-validate="'required'"
+                    name="objId"
+                    v-model="relationInfo['bk_obj_id']"
+                ></form-selector>
                 <p class="form-error">{{errors.first('objId')}}</p>
             </div>
             <i class="bk-icon icon-info-circle"></i>
@@ -52,17 +49,14 @@
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{'is-error': errors.has('asstObjId')}">
-                <bk-selector
+                <form-selector
                     :disabled="relationInfo.ispre"
                     :has-children="true"
                     :list="asstList"
-                    :selected.sync="relationInfo['bk_asst_obj_id']"
-                    @item-selected="validateValue"
-                ></bk-selector>
-                <input type="text" hidden
-                name="asstObjId"
-                v-model="relationInfo['bk_asst_obj_id']"
-                v-validate="'required'">
+                    v-validate="'required'"
+                    name="asstObjId"
+                    v-model="relationInfo['bk_asst_obj_id']"
+                ></form-selector>
                 <p class="form-error">{{errors.first('asstObjId')}}</p>
             </div>
             <i class="bk-icon icon-info-circle"></i>
@@ -73,16 +67,13 @@
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{'is-error': errors.has('asstId')}">
-                <bk-selector
+                <form-selector
                     :disabled="relationInfo.ispre"
                     :list="relationList"
-                    :selected.sync="relationInfo['bk_asst_id']"
-                    @item-selected="validateValue"
-                ></bk-selector>
-                <input type="text" hidden
-                name="asstId"
-                v-model="relationInfo['bk_asst_id']"
-                v-validate="'required'">
+                    v-validate="'required'"
+                    name="asstId"
+                    v-model="relationInfo['bk_asst_id']"
+                ></form-selector>
                 <p class="form-error">{{errors.first('asstId')}}</p>
             </div>
             <i class="bk-icon icon-info-circle"></i>
@@ -93,16 +84,13 @@
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{'is-error': errors.has('mapping')}">
-                <bk-selector
+                <form-selector
                     :disabled="relationInfo.ispre"
                     :list="mappingList"
-                    :selected.sync="relationInfo.mapping"
-                    @item-selected="validateValue"
-                ></bk-selector>
-                <input type="text" hidden
-                name="mapping"
-                v-model="relationInfo.mapping"
-                v-validate="'required'">
+                    v-validate="'required'"
+                    name="mapping"
+                    v-model="relationInfo.mapping"
+                ></form-selector>
                 <p class="form-error">{{errors.first('mapping')}}</p>
             </div>
             <i class="bk-icon icon-info-circle"></i>
@@ -135,7 +123,11 @@
 
 <script>
     import { mapGetters, mapActions } from 'vuex'
+    import formSelector from './form-selector'
     export default {
+        components: {
+            formSelector
+        },
         props: {
             relation: {
                 type: Object
