@@ -61,7 +61,7 @@ const (
 	BKDefaultSupplierID = 0
 
 	// BKSuperOwnerID the super owner value
-	BKSuperOwnerID = "supperowner"
+	BKSuperOwnerID = "superadmin"
 
 	// BKDefaultDirSubArea the default dir subarea
 	BKDefaultDirSubArea = 0
