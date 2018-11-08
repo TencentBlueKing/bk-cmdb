@@ -17,6 +17,9 @@
                     <template v-if="header.id==='mapping'">
                         {{mappingMap[item.mapping]}}
                     </template>
+                    <template v-else-if="header.id==='bk_asst_name'">
+                        {{item['bk_asst_name'] && item['bk_asst_name'].length ? `${item['bk_asst_id']}(${item['bk_asst_name']})` : `${item['bk_asst_id']}`}}
+                    </template>
                     <template v-else-if="header.id==='operation'">
                         <span class="text-primary mr10" @click.stop="editRelation(item)">
                             {{$t('Common["编辑"]')}}

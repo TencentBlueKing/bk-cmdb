@@ -17,7 +17,6 @@
         <label class="form-label">
             <span class="label-text">
                 {{$t('Hosts["名称"]')}}
-                <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{'is-error': errors.has('asstName')}">
                 <input type="text"
@@ -65,11 +64,15 @@
             </label>
             <label class="cmdb-form-radio cmdb-radio-small">
                 <input type="radio" name="direction" value="src_to_dest" v-model="relationInfo.direction">
-                <span class="cmdb-radio-text">{{$t('ModelManagement["是，源指向目标"]')}}</span>
+                <span class="cmdb-radio-text">{{$t('ModelManagement["有，源指向目标"]')}}</span>
             </label>
             <label class="cmdb-form-radio cmdb-radio-small">
                 <input type="radio" name="direction" value="none" v-model="relationInfo.direction">
-                <span class="cmdb-radio-text">{{$t('ModelManagement["否"]')}}</span>
+                <span class="cmdb-radio-text">{{$t('ModelManagement["无方向"]')}}</span>
+            </label>
+            <label class="cmdb-form-radio cmdb-radio-small">
+                <input type="radio" name="direction" value="bidirectional" v-model="relationInfo.direction">
+                <span class="cmdb-radio-text">{{$t('ModelManagement["双向"]')}}</span>
             </label>
         </div>
         <div class="btn-group">
@@ -107,7 +110,7 @@
                     bk_asst_name: '',
                     src_des: '',
                     dest_des: '',
-                    direction: 'none' // none, src_to_dest
+                    direction: 'none' // none, src_to_dest, bidirectional
                 }
             }
         },
@@ -172,6 +175,13 @@
 <style lang="scss" scoped>
     .relation-type-content {
         .radio-box {
+            .cmdb-form-radio {
+                width: auto;
+                padding-right: 20px;
+                &:last-child {
+                    padding-right: 0;
+                }
+            }
             .label-text {
                 padding-right: 2px;
             }
