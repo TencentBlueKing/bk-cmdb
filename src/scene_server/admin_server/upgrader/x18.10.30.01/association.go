@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/validator"
 	"configcenter/src/storage/dal"
 )
 
@@ -175,11 +176,20 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 		}
 	}
 
+	// update bk_cloud_id to int
+	cloudIDUpdateCond := condition.CreateCondition()
+	cloudIDUpdateCond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDHost)
+	cloudIDUpdateCond.Field(common.BKObjAttIDField).Eq(common.BKCloudIDField)
+	cloudIDUpdateData := mapstr.New()
+	cloudIDUpdateData.Set(common.BKPropertyTypeField, common.FieldTypeInt)
+	cloudIDUpdateData.Set(common.BKOptionField, validator.IntOption{})
+	db.Table(common.BKTableNameObjAttDes).Update(ctx, cloudIDUpdateCond.ToMapStr(), cloudIDUpdateData)
 	err = db.Table(common.BKTableNameObjAttDes).Delete(ctx, propertyCond.ToMapStr())
 	if err != nil {
 		return err
 	}
 
+	// drop outdate column
 	outdateColumns := []string{"bk_object_att_id", "bk_asst_forward"}
 	for _, column := range outdateColumns {
 		if err = db.Table(common.BKTableNameObjAttDes).DropColumn(ctx, column); err != nil {
