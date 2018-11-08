@@ -36,7 +36,7 @@
                 </template>
             </div>
             <div class="btn-group">
-                <form class="export-form" ref="submitForm" :action="exportUrl" method="POST">
+                <form class="export-form" ref="submitForm" :action="exportUrl" method="POST" v-if="tab.active==='field'">
                     <label class="label-btn" @click="exportField">
                         <i class="icon-cc-derivation"></i>
                         <span>{{$t('ModelManagement["导出"]')}}</span>

@@ -74,8 +74,6 @@
             </span>
             <div class="cmdb-form-item" :class="{'is-error': errors.has('asstId')}">
                 <bk-selector
-                    setting-key="bk_asst_id"
-                    display-key="bk_asst_name"
                     :disabled="relationInfo.ispre"
                     :list="relationList"
                     :selected.sync="relationInfo['bk_asst_id']"
@@ -174,14 +172,7 @@
                     mapping: '',
                     on_delete: []
                 },
-                relationList: [{
-                    'id': 1,
-                    'bk_asst_id': 'belong',
-                    'bk_asst_name': '属于',
-                    'src_des': '属于',
-                    'dest_des': '被属于',
-                    'direction': 'none'
-                }]
+                relationList: []
             }
         },
         computed: {
@@ -282,7 +273,18 @@
             },
             async initRelationList () {
                 const data = await this.searchAssociationType({})
-                this.relationList = data.info
+                this.relationList = data.info.map(({bk_asst_id: asstId, bk_asst_name: asstName}) => {
+                    if (asstName.length) {
+                        return {
+                            id: asstId,
+                            name: `${asstId}(${asstName})`
+                        }
+                    }
+                    return {
+                        id: asstId,
+                        name: asstId
+                    }
+                })
             },
             async saveRelation () {
                 if (!await this.$validator.validateAll()) {
