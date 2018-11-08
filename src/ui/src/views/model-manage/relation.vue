@@ -61,11 +61,11 @@
                 searchText: '',
                 table: {
                     header: [{
-                        id: 'bk_asst_name',
-                        name: this.$t('Hosts["名称"]')
-                    }, {
                         id: 'bk_asst_id',
                         name: this.$t('ModelManagement["唯一标识"]')
+                    }, {
+                        id: 'bk_asst_name',
+                        name: this.$t('Hosts["名称"]')
                     }, {
                         id: 'src_des',
                         name: this.$t('ModelManagement["源->目标描述"]')

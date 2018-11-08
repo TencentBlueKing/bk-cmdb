@@ -54,7 +54,7 @@
             <div slot="content" class="dialog-content">
                 <p class="title">{{groupDialog.title}}</p>
                 <div class="content">
-                    <label for="">
+                    <label>
                         <span class="label-title">
                             {{$t('ModelManagement["唯一标识"]')}}
                         </span>
@@ -64,11 +64,11 @@
                             v-model.trim="groupDialog.data['bk_classification_id']"
                             name="classifyId"
                             v-validate="'required|classifyId'">
-                            <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('classifyId')"></i>
+                            <p class="form-error">{{errors.first('classifyId')}}</p>
                         </div>
-                        <i class="bk-icon icon-info-circle"></i>
+                        <i class="bk-icon icon-info-circle" v-tooltip="$t('ModelManagement[\'下划线，数字，英文小写的组合\']')"></i>
                     </label>
-                    <label for="">
+                    <label>
                         <span class="label-title">
                             {{$t('ModelManagement["名称"]')}}
                         </span>
@@ -78,9 +78,8 @@
                             v-model.trim="groupDialog.data['bk_classification_name']"
                             name="classifyName"
                             v-validate="'required|classifyName'">
-                            <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('classifyName')"></i>
+                            <p class="form-error">{{errors.first('classifyName')}}</p>
                         </div>
-                        <i class="bk-icon icon-info-circle"></i>
                     </label>
                 </div>
             </div>
@@ -106,7 +105,7 @@
                         <div class="text">{{$t('ModelManagement["点击切换"]')}}</div>
                     </div>
                     <div class="content-right">
-                        <label for="">
+                        <label>
                             <span class="label-title">{{$t('ModelManagement["所属分组"]')}}</span>
                             <span class="color-danger">*</span>
                             <div class="cmdb-form-item" :class="{'is-error': errors.has('modelGroup')}">
@@ -122,10 +121,10 @@
                                 name="modelGroup"
                                 v-model="modelDialog.data['bk_classification_id']"
                                 v-validate="'required'">
-                                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('modelGroup')"></i>
+                                <p class="form-error">{{errors.first('modelGroup')}}</p>
                             </div>
                         </label>
-                        <label for="">
+                        <label>
                             <span class="label-title">{{$t('ModelManagement["唯一标识"]')}}</span>
                             <span class="color-danger">*</span>
                             <div class="cmdb-form-item" :class="{'is-error': errors.has('modelId')}">
@@ -133,11 +132,11 @@
                                 name="modelId"
                                 v-model.trim="modelDialog.data['bk_obj_id']"
                                 v-validate="'required|modelId'">
-                                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('modelId')"></i>
+                                <p class="form-error">{{errors.first('modelId')}}</p>
                             </div>
-                            <i class="bk-icon icon-info-circle"></i>
+                            <i class="bk-icon icon-info-circle" v-tooltip="$t('ModelManagement[\'下划线，数字，英文小写的组合\']')"></i>
                         </label>
-                        <label for="">
+                        <label>
                             <span class="label-title">{{$t('ModelManagement["名称"]')}}</span>
                             <span class="color-danger">*</span>
                             <div class="cmdb-form-item" :class="{'is-error': errors.has('modelName')}">
@@ -145,9 +144,9 @@
                                 name="modelName"
                                 v-validate="'required|singlechar'"
                                 v-model.trim="modelDialog.data['bk_obj_name']">
-                                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('modelName')"></i>
+                                <p class="form-error">{{errors.first('modelName')}}</p>
                             </div>
-                            <i class="bk-icon icon-info-circle"></i>
+                            <i class="bk-icon icon-info-circle" v-tooltip="$t('ModelManagement[\'请填写模型名\']')"></i>
                         </label>
                     </div>
                 </div>
@@ -369,7 +368,7 @@
         }
         .group-title {
             display: inline-block;
-            padding-left: 8px;
+            padding: 0 40px 0 8px;
             border-left: 4px solid $cmdbBorderFocusColor;
             line-height: 16px;
             color: #333948;

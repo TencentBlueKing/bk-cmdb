@@ -18,9 +18,10 @@
             <div class="cmdb-form-item" :class="{'is-error': errors.has('asstName')}">
                 <input type="text" class="cmdb-form-input"
                 name="asstName"
+                :disabled="relationInfo.ispre"
                 v-model.trim="relationInfo['bk_obj_asst_name']"
                 v-validate="'required|singlechar'">
-                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('asstName')"></i>
+                <p class="form-error">{{errors.first('asstName')}}</p>
             </div>
             <i class="bk-icon icon-info-circle"></i>
         </label>
@@ -31,15 +32,17 @@
             </span>
             <div class="cmdb-form-item" :class="{'is-error': errors.has('objId')}">
                 <bk-selector
+                    :disabled="relationInfo.ispre"
                     :has-children="true"
                     :list="asstList"
                     :selected.sync="relationInfo['bk_obj_id']"
+                    @item-selected="validateValue"
                 ></bk-selector>
                 <input type="text" hidden
                 name="objId"
                 v-model="relationInfo['bk_obj_id']"
                 v-validate="'required'">
-                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('objId')"></i>
+                <p class="form-error">{{errors.first('objId')}}</p>
             </div>
             <i class="bk-icon icon-info-circle"></i>
         </div>
@@ -50,15 +53,17 @@
             </span>
             <div class="cmdb-form-item" :class="{'is-error': errors.has('asstObjId')}">
                 <bk-selector
+                    :disabled="relationInfo.ispre"
                     :has-children="true"
                     :list="asstList"
                     :selected.sync="relationInfo['bk_asst_obj_id']"
+                    @item-selected="validateValue"
                 ></bk-selector>
                 <input type="text" hidden
                 name="asstObjId"
                 v-model="relationInfo['bk_asst_obj_id']"
                 v-validate="'required'">
-                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('asstObjId')"></i>
+                <p class="form-error">{{errors.first('asstObjId')}}</p>
             </div>
             <i class="bk-icon icon-info-circle"></i>
         </div>
@@ -69,16 +74,16 @@
             </span>
             <div class="cmdb-form-item" :class="{'is-error': errors.has('asstId')}">
                 <bk-selector
-                    setting-key="bk_asst_id"
-                    display-key="bk_asst_name"
+                    :disabled="relationInfo.ispre"
                     :list="relationList"
                     :selected.sync="relationInfo['bk_asst_id']"
+                    @item-selected="validateValue"
                 ></bk-selector>
                 <input type="text" hidden
                 name="asstId"
                 v-model="relationInfo['bk_asst_id']"
                 v-validate="'required'">
-                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('asstId')"></i>
+                <p class="form-error">{{errors.first('asstId')}}</p>
             </div>
             <i class="bk-icon icon-info-circle"></i>
         </div>
@@ -89,14 +94,16 @@
             </span>
             <div class="cmdb-form-item" :class="{'is-error': errors.has('mapping')}">
                 <bk-selector
+                    :disabled="relationInfo.ispre"
                     :list="mappingList"
                     :selected.sync="relationInfo.mapping"
+                    @item-selected="validateValue"
                 ></bk-selector>
                 <input type="text" hidden
                 name="mapping"
                 v-model="relationInfo.mapping"
                 v-validate="'required'">
-                <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('mapping')"></i>
+                <p class="form-error">{{errors.first('mapping')}}</p>
             </div>
             <i class="bk-icon icon-info-circle"></i>
         </div>
@@ -105,11 +112,13 @@
                 {{$t('ModelManagement["联动删除"]')}}
             </label>
             <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                <input type="checkbox" id="delete_dest" value="delete_dest" v-model="relationInfo['on_delete']">
+                <input type="checkbox" id="delete_dest" value="delete_dest" v-model="relationInfo['on_delete']"
+                :disabled="relationInfo.ispre">
                 <span class="cmdb-checkbox-text">{{$t('ModelManagement["源不存在联动删除目标"]')}}</span>
             </label>
             <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                <input type="checkbox" id="delete_src" value="delete_src" v-model="relationInfo['on_delete']">
+                <input type="checkbox" id="delete_src" value="delete_src" v-model="relationInfo['on_delete']"
+                :disabled="relationInfo.ispre">
                 <span class="cmdb-checkbox-text">{{$t('ModelManagement["目标不存在联动删除源"]')}}</span>
             </label>
         </div>
@@ -153,6 +162,8 @@
                     name: 'N-N'
                 }],
                 relationInfo: {
+                    ispre: false,
+                    id: 0,
                     bk_obj_asst_id: '',
                     bk_obj_asst_name: '',
                     bk_obj_id: '',
@@ -161,14 +172,7 @@
                     mapping: '',
                     on_delete: []
                 },
-                relationList: [{
-                    'id': 1,
-                    'bk_asst_id': 'belong',
-                    'bk_asst_name': '属于',
-                    'src_des': '属于',
-                    'dest_des': '被属于',
-                    'direction': 'none'
-                }]
+                relationList: []
             }
         },
         computed: {
@@ -200,11 +204,14 @@
             },
             asstList () {
                 let asstList = []
-                this.classifications.map(classify => {
-                    if (classify['bk_objects'].length && classify['bk_classification_id'] !== 'bk_biz_topo') {
+                this.classifications.forEach(classify => {
+                    if (classify['bk_objects'].length) {
+                        if (!this.relationInfo.ispre && classify['bk_classification_id'] === 'bk_biz_topo') {
+                            return
+                        }
                         let objects = []
                         classify['bk_objects'].map(({bk_obj_id: objId, bk_obj_name: objName}) => {
-                            if (['plat', 'process'].indexOf(objId) === -1) {
+                            if (this.relationInfo.ispre || ['plat', 'process'].indexOf(objId) === -1) {
                                 objects.push({
                                     id: objId,
                                     name: objName
@@ -249,6 +256,10 @@
                 'updateObjectAssociation',
                 'searchAssociationType'
             ]),
+            async validateValue () {
+                await this.$nextTick()
+                this.$validator.validateAll()
+            },
             initData () {
                 if (this.isEdit) {
                     for (let key in this.relationInfo) {
@@ -262,7 +273,18 @@
             },
             async initRelationList () {
                 const data = await this.searchAssociationType({})
-                this.relationList = data.info
+                this.relationList = data.info.map(({bk_asst_id: asstId, bk_asst_name: asstName}) => {
+                    if (asstName.length) {
+                        return {
+                            id: asstId,
+                            name: `${asstId}(${asstName})`
+                        }
+                    }
+                    return {
+                        id: asstId,
+                        name: asstId
+                    }
+                })
             },
             async saveRelation () {
                 if (!await this.$validator.validateAll()) {
@@ -270,6 +292,7 @@
                 }
                 if (this.isEdit) {
                     await this.updateObjectAssociation({
+                        id: this.relationInfo.id,
                         params: this.params,
                         config: {
                             requestId: 'updateObjectAssociation'
@@ -283,7 +306,7 @@
                         }
                     })
                 }
-                this.$emit('saveRelation')
+                this.$emit('save')
             },
             cancel () {
                 this.$emit('cancel')
