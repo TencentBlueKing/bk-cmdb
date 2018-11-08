@@ -27,21 +27,26 @@ import (
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-func (a *association) ImportInstAssociation(ctx context.Context, params types.ContextParams, objID string, importData map[int]metadata.ExcelAssocation) (resp map[int]string, err error) {
+func (a *association) ImportInstAssociation(ctx context.Context, params types.ContextParams, objID string, importData map[int]metadata.ExcelAssocation) (resp metadata.ResponeImportAssociationData, err error) {
 
 	ia := NewImportAssociation(ctx, a, params, objID, importData)
-
 	err = ia.ParsePrimaryKey()
 	if err != nil {
-		return nil, err
+		return resp, err
 	}
 
 	errIdxMsgMap := ia.ImportAssociation()
 	if len(errIdxMsgMap) > 0 {
 		err = params.Err.Error(common.CCErrorTopoImportAssociation)
 	}
+	for row, msg := range errIdxMsgMap {
+		resp.ErrMsgMap = append(resp.ErrMsgMap, metadata.RowMsgData{
+			Row: row,
+			Msg: msg,
+		})
+	}
 
-	return errIdxMsgMap, err
+	return resp, err
 }
 
 type importAssociationInst struct {
@@ -297,7 +302,7 @@ func (ia *importAssociation) getInstDataByConds() error {
 
 		instIDKey := metadata.GetInstIDFieldByObjID(objID)
 		conds := condition.CreateCondition()
-		conds.Field("").Or(valArr)
+		conds.NewOR().MapStrArr(valArr)
 
 		instArr, err := ia.getInstDataByObjIDConds(objID, instIDKey, conds)
 		if err != nil {

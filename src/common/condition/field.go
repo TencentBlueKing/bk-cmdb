@@ -27,8 +27,8 @@ type Field interface {
 	Lt(val interface{}) Condition
 	Lte(val interface{}) Condition
 	Gt(val interface{}) Condition
+	NotGt(val interface{}) Condition
 	Gte(val interface{}) Condition
-	Or(val interface{}) Condition
 	ToMapStr() types.MapStr
 }
 
@@ -100,6 +100,15 @@ func (cli *field) NotIn(val interface{}) Condition {
 	return cli.condition
 }
 
+// NotGt not in a array
+func (cli *field) NotGt(val interface{}) Condition {
+	cli.opeartor = BKDBNot
+	cli.fieldValue = map[string]interface{}{
+		BKDBGT: val,
+	}
+	return cli.condition
+}
+
 // Lt lower than a  value
 func (cli *field) Lt(val interface{}) Condition {
 	cli.opeartor = BKDBLT
@@ -124,12 +133,6 @@ func (cli *field) Gt(val interface{}) Condition {
 // Gte greater or euqal than a value
 func (cli *field) Gte(val interface{}) Condition {
 	cli.opeartor = BKDBGTE
-	cli.fieldValue = val
-	return cli.condition
-}
-
-func (cli *field) Or(val interface{}) Condition {
-	cli.opeartor = BKDBOR
 	cli.fieldValue = val
 	return cli.condition
 }

@@ -14,6 +14,7 @@ package logics
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
@@ -86,6 +87,14 @@ func setExcelRowDataByIndex(rowMap mapstr.MapStr, sheet *xlsx.Sheet, rowIndex in
 		if false == ok {
 			continue
 		}
+		if property.NotExport && property.IsOnly {
+			primaryKeyArr = append(primaryKeyArr, PropertyPrimaryVal{
+				ID:     property.ID,
+				Name:   property.Name,
+				StrVal: getPrimaryKey(val),
+			})
+			continue
+		}
 
 		cell := sheet.Cell(rowIndex, property.ExcelColIndex)
 		//cell.NumFmt = "@"
@@ -129,14 +138,15 @@ func setExcelRowDataByIndex(rowMap mapstr.MapStr, sheet *xlsx.Sheet, rowIndex in
 				cell.SetValue(val)
 			}
 		}
+
 		if property.IsOnly {
 			primaryKeyArr = append(primaryKeyArr, PropertyPrimaryVal{
 				ID:     property.ID,
 				Name:   property.Name,
 				StrVal: cell.String(),
 			})
-
 		}
+
 	}
 
 	return primaryKeyArr
@@ -349,3 +359,30 @@ const (
 	//associationOPUpdate = "update"
 	associationOPDelete = "delete"
 )
+
+func getPrimaryKey(val interface{}) string {
+	switch realVal := val.(type) {
+	case []interface{}:
+		if len(realVal) == 0 {
+			return ""
+		}
+		valMap, ok := realVal[0].(map[string]interface{})
+		if !ok {
+			return ""
+		}
+		if valMap == nil {
+			return ""
+		}
+		iVal := valMap[common.BKInstIDField]
+		if iVal == nil {
+			return ""
+		}
+		return fmt.Sprintf("%v", iVal)
+	default:
+		if realVal == nil {
+			return ""
+		}
+		return fmt.Sprintf("%v", val)
+
+	}
+}
