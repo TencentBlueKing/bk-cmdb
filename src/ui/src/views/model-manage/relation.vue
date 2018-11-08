@@ -116,7 +116,7 @@
                     Object.assign(params, {
                         condition: {
                             bk_asst_name: {
-                                '$like': this.searchText
+                                '$regex': this.searchText
                             }
                         }
                     })
