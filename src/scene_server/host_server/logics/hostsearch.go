@@ -30,18 +30,23 @@ import (
 func (lgc *Logics) SearchHost(pheader http.Header, data *metadata.HostCommonSearch, isDetail bool) (*metadata.SearchHost, error) {
 	searchHostInst := NewSearchHost(lgc, pheader, data)
 	searchHostInst.ParseCondition()
+	retHostInfo := &metadata.SearchHost{
+		Info: make([]mapstr.MapStr, 0),
+	}
 	err := searchHostInst.SearchHostByConds()
 	if err != nil {
-		return nil, err
+		return retHostInfo, err
 	}
 	hostInfoArr, cnt, err := searchHostInst.FillTopologyData()
 	if err != nil {
-		return nil, err
+		return retHostInfo, err
 	}
-	return &metadata.SearchHost{
-		Info:  hostInfoArr,
-		Count: cnt,
-	}, nil
+
+	retHostInfo.Count = cnt
+	if cnt > 0 {
+		retHostInfo.Info = hostInfoArr
+	}
+	return retHostInfo, nil
 }
 
 type searchHostConds struct {
