@@ -17,6 +17,7 @@ import (
 	"fmt"
 
 	"configcenter/src/common"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
@@ -71,14 +72,14 @@ func getBKTopo(ctx context.Context, db dal.RDB, opt *option) (*Topo, error) {
 
 		if result.BizTopo != nil {
 			result.BizTopo.walk(func(node *Node) error {
-				node.Data = util.CopyMap(node.Data, keys[node.ObjID], []string{"bk_parent_id"})
+				node.Data = util.CopyMap(node.Data, keys[node.ObjID], []string{common.BKInstParentStr})
 				return nil
 			})
 		}
 
 		if result.ProcTopos != nil {
 			for _, proc := range result.ProcTopos.Procs {
-				proc.Data = util.CopyMap(proc.Data, append(keys[common.BKInnerObjIDProc], "bind_ip", "port", "protocol", "bk_func_name", "work_path"), []string{"bk_parent_id", "bk_biz_id", "bk_supplier_account"})
+				proc.Data = util.CopyMap(proc.Data, append(keys[common.BKInnerObjIDProc], "bind_ip", "port", "protocol", "bk_func_name", "work_path", "bk_start_param_regex"), []string{common.BKInstParentStr, common.BKAppIDField, common.BKOwnerIDField})
 			}
 		}
 	}
@@ -110,22 +111,22 @@ func getTree(ctx context.Context, db dal.RDB, root *Node, pcmap map[string]*meta
 	if nil != err {
 		return nil
 	}
-	condition := map[string]interface{}{
-		common.BKInstParentStr: instID,
-	}
+
+	childCondition := condition.CreateCondition()
+	childCondition.Field(common.BKInstParentStr).Eq(instID)
 
 	switch asst.ObjectID {
 	case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule:
-		condition["default"] = map[string]interface{}{common.BKDBEQ: 0}
+		childCondition.Field(common.BKDefaultField).NotGt(0)
 	default:
-		condition[common.BKObjIDField] = asst.ObjectID
+		childCondition.Field(common.BKObjIDField).Eq(asst.ObjectID)
 	}
 
 	// blog.InfoJSON("get childs for %s:%d", asst.ObjectID, instID)
 	childs := []map[string]interface{}{}
 	tablename := common.GetInstTableName(asst.ObjectID)
 
-	err = db.Table(tablename).Find(condition).All(ctx, &childs)
+	err = db.Table(tablename).Find(childCondition.ToMapStr()).All(ctx, &childs)
 	if nil != err {
 		return fmt.Errorf("get inst for %s error: %s", asst.ObjectID, err.Error())
 	}
@@ -193,7 +194,7 @@ func getAsst(ctx context.Context, db dal.RDB, opt *option) ([]*metadata.Associat
 		common.BKObjAttIDField: common.BKChildStr,
 	}
 
-	err := db.Table("cc_ObjAsst").Find(condition).All(ctx, &assts)
+	err := db.Table(common.BKTableNameObjAsst).Find(condition).All(ctx, &assts)
 	if nil != err {
 		return nil, fmt.Errorf("query cc_ObjAsst error: %s", err.Error())
 	}
@@ -227,7 +228,7 @@ func getProcessTopo(ctx context.Context, db dal.RDB, opt *option) ([]*Process, e
 		topo := Process{
 			Data: proc,
 		}
-		procID, err := getInt64(proc["bk_process_id"])
+		procID, err := getInt64(proc[common.BKProcessIDField])
 		if nil != err {
 			return nil, err
 		}

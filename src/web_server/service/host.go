@@ -78,6 +78,7 @@ func (s *Service) ImportHost(c *gin.Context) {
 	if nil != err {
 		msg := getReturnStr(errCode, err.Error(), data)
 		c.String(http.StatusOK, string(msg))
+		return
 	}
 
 	c.String(http.StatusOK, getReturnStr(0, "", nil))
