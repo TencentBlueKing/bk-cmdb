@@ -32,8 +32,7 @@
         <div class="relation-component">
             <component ref="dynamicComponent"
                 :is="activeComponent"
-                @on-relation-loaded="handleRelationLoaded"
-                @on-update="handleRelationUpdate">
+                @on-relation-loaded="handleRelationLoaded">
             </component>
         </div>
     </div>
@@ -100,9 +99,6 @@
             },
             handleRelationLoaded (relation) {
                 this.hasRelation = !!relation.length
-            },
-            handleRelationUpdate () {
-                this.$emit('on-update')
             }
         }
     }
