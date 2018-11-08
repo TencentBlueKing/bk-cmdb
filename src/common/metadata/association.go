@@ -146,6 +146,7 @@ const (
 	NoneDirection       AssociationDirection = "none"
 	DestinationToSource AssociationDirection = "src_to_dest"
 	SourceToDestination AssociationDirection = "dest_to_src"
+    Bidirectional AssociationDirection = "bidirectional"
 )
 
 type AssociationKind struct {
