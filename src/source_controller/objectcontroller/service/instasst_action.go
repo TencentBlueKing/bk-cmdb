@@ -78,14 +78,15 @@ func (cli *Service) CreateInstAssociation(req *restful.Request, resp *restful.Re
 	}
 
 	data := &meta.InstAsst{
-		ID:           int64(id),
-		ObjectID:     objResult.ObjectID,
-		AsstObjectID: objResult.AsstObjID,
-		ObjectAsstID: request.ObjectAsstId,
-		InstID:       request.InstId,
-		AsstInstID:   request.AsstInstId,
-		OwnerID:      ownerID,
-		CreateTime:   time.Now(),
+		ID:                int64(id),
+		ObjectID:          objResult.ObjectID,
+		AsstObjectID:      objResult.AsstObjID,
+		ObjectAsstID:      request.ObjectAsstId,
+		InstID:            request.InstId,
+		AsstInstID:        request.AsstInstId,
+		AssociationKindID: objResult.AsstKindID,
+		OwnerID:           ownerID,
+		CreateTime:        time.Now(),
 	}
 
 	err = db.Table(common.BKTableNameInstAsst).Insert(ctx, data)
