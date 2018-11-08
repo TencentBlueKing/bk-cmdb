@@ -129,7 +129,15 @@ func (ia *importAssociation) ParsePrimaryKey() error {
 
 func (ia *importAssociation) importAssociation() {
 	for idx, asstInfo := range ia.importData {
-		asstID := ia.asstIDInfoMap[asstInfo.ObjectAsstID]
+		_, ok := ia.parseImportDataErr[idx]
+		if ok {
+			continue
+		}
+		asstID, ok := ia.asstIDInfoMap[asstInfo.ObjectAsstID]
+		if !ok {
+			ia.parseImportDataErr[idx] = ia.params.Lang.Languagef("import_asstociation_id_not_foud", asstInfo.ObjectAsstID)
+			continue
+		}
 		srcInstID, err := ia.getInstIDByPrimaryKey(ia.objID, asstInfo.SrcPrimary)
 		if err != nil {
 			ia.parseImportDataErr[idx] = err.Error()
@@ -298,6 +306,7 @@ func (ia *importAssociation) parseImportDataPrimaryItem(objID string, item strin
 }
 
 func (ia *importAssociation) getInstDataByConds() error {
+
 	for objID, valArr := range ia.queryInstConds {
 
 		instIDKey := metadata.GetInstIDFieldByObjID(objID)
