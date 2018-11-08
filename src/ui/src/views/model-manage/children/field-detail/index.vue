@@ -8,12 +8,12 @@
             <div class="cmdb-form-item" :class="{'is-error': errors.has('fieldId')}">
                 <input type="text" class="cmdb-form-input"
                 name="fieldId"
+                :placeholder="$t('ModelManagement[\'下划线/数字/字母\']')"
                 v-model.trim="fieldInfo['bk_property_id']"
                 :disabled="isEditField"
                 v-validate="'required|fieldId'">
                 <p class="form-error">{{errors.first('fieldId')}}</p>
             </div>
-            <i class="bk-icon icon-info-circle"></i>
         </label>
         <label class="form-label">
             <span class="label-text">
@@ -23,12 +23,12 @@
             <div class="cmdb-form-item" :class="{'is-error': errors.has('fieldName')}">
                 <input type="text" class="cmdb-form-input"
                 name="fieldName"
+                :placeholder="$t('ModelManagement[\'请输入字段名称\']')"
                 v-model.trim="fieldInfo['bk_property_name']"
                 :disabled="isReadOnly"
                 v-validate="'required|enumName'">
                 <p class="form-error">{{errors.first('fieldName')}}</p>
             </div>
-            <i class="bk-icon icon-info-circle"></i>
         </label>
         <div class="form-label">
             <span class="label-text">
@@ -42,7 +42,6 @@
                     :selected.sync="fieldInfo['bk_property_type']"
                 ></bk-selector>
             </div>
-            <i class="bk-icon icon-info-circle"></i>
         </div>
         <div class="field-detail">
             <the-config
@@ -64,9 +63,11 @@
                 {{$t('ModelManagement["单位"]')}}
             </span>
             <div class="cmdb-form-item">
-                <input type="text" class="cmdb-form-input" v-model.trim="fieldInfo['unit']" :isReadOnly="isReadOnly">
+                <input type="text" class="cmdb-form-input"
+                v-model.trim="fieldInfo['unit']"
+                :isReadOnly="isReadOnly"
+                :placeholder="$t('ModelManagement[\'请输入单位\']')">
             </div>
-            <i class="bk-icon icon-info-circle"></i>
         </label>
         <div class="form-label">
             <span class="label-text">{{$t('ModelManagement["用户提示"]')}}</span>

@@ -66,7 +66,7 @@
                             v-validate="'required|classifyId'">
                             <p class="form-error">{{errors.first('classifyId')}}</p>
                         </div>
-                        <i class="bk-icon icon-info-circle"></i>
+                        <i class="bk-icon icon-info-circle" v-tooltip="$t('ModelManagement[\'下划线，数字，英文小写的组合\']')"></i>
                     </label>
                     <label>
                         <span class="label-title">
@@ -80,7 +80,6 @@
                             v-validate="'required|classifyName'">
                             <p class="form-error">{{errors.first('classifyName')}}</p>
                         </div>
-                        <i class="bk-icon icon-info-circle"></i>
                     </label>
                 </div>
             </div>
@@ -135,7 +134,7 @@
                                 v-validate="'required|modelId'">
                                 <p class="form-error">{{errors.first('modelId')}}</p>
                             </div>
-                            <i class="bk-icon icon-info-circle"></i>
+                            <i class="bk-icon icon-info-circle" v-tooltip="$t('ModelManagement[\'下划线，数字，英文小写的组合\']')"></i>
                         </label>
                         <label>
                             <span class="label-title">{{$t('ModelManagement["名称"]')}}</span>
@@ -147,7 +146,7 @@
                                 v-model.trim="modelDialog.data['bk_obj_name']">
                                 <p class="form-error">{{errors.first('modelName')}}</p>
                             </div>
-                            <i class="bk-icon icon-info-circle"></i>
+                            <i class="bk-icon icon-info-circle" v-tooltip="$t('ModelManagement[\'请填写模型名\']')"></i>
                         </label>
                     </div>
                 </div>
