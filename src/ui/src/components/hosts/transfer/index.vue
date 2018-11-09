@@ -150,8 +150,7 @@
             ]),
             getMainlineModel () {
                 return this.searchMainlineObject({
-                    requestId: 'get_searchMainlineObject',
-                    fromCache: true
+                    requestId: 'get_searchMainlineObject'
                 }).then(topoModel => {
                     this.topoModel = topoModel
                     return topoModel
@@ -162,15 +161,13 @@
                     this.getInstTopo({
                         bizId: this.businessId,
                         config: {
-                            requestId: `get_getInstTopo_${this.businessId}`,
-                            fromCache: true
+                            requestId: `get_getInstTopo_${this.businessId}`
                         }
                     }),
                     this.getInternalTopo({
                         bizId: this.businessId,
                         config: {
-                            requestId: `get_getInternalTopo_${this.businessId}`,
-                            fromCache: true
+                            requestId: `get_getInternalTopo_${this.businessId}`
                         }
                     })
                 ]).then(([instTopo, internalTopo]) => {
