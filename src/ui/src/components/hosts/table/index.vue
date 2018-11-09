@@ -427,9 +427,12 @@
                     return data
                 })
             },
-            search (business, condition) {
+            search (business, condition, resetPage = false) {
                 this.filter.business = business
                 this.filter.condition = condition
+                if (resetPage) {
+                    this.table.pagination.current = 1
+                }
                 this.getHostList()
             },
             handlePageChange (current) {
