@@ -122,7 +122,7 @@ type searchHostInterface interface {
 }
 
 func NewSearchHost(lgc *Logics, pheader http.Header, hostSearchParam *metadata.HostCommonSearch) searchHostInterface {
-	return &searchHost{
+	sh := &searchHost{
 		lgc:             lgc,
 		pheader:         pheader,
 		hostSearchParam: hostSearchParam,
@@ -131,6 +131,9 @@ func NewSearchHost(lgc *Logics, pheader http.Header, hostSearchParam *metadata.H
 		ccErr:           lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader)),
 	}
 
+	sh.conds.objectCondMap = make(map[string][]metadata.ConditionItem)
+
+	return sh
 }
 
 func (sh *searchHost) ParseCondition() {
