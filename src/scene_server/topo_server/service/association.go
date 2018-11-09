@@ -13,7 +13,6 @@
 package service
 
 import (
-	"context"
 	"strconv"
 
 	"configcenter/src/common"
@@ -117,7 +116,7 @@ func (s *topoService) SearchAssociationType(params types.ContextParams, pathPara
 	if err := data.MarshalJSONInto(request); err != nil {
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
-	ret, err := s.core.AssociationOperation().SearchType(context.Background(), params.Header, request)
+	ret, err := s.core.AssociationOperation().SearchType(params, request)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +133,7 @@ func (s *topoService) CreateAssociationType(params types.ContextParams, pathPara
 	if err := data.MarshalJSONInto(request); err != nil {
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
-	ret, err := s.core.AssociationOperation().CreateType(context.Background(), params.Header, request)
+	ret, err := s.core.AssociationOperation().CreateType(params, request)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +154,7 @@ func (s *topoService) UpdateAssociationType(params types.ContextParams, pathPara
 	if err != nil {
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
-	ret, err := s.core.AssociationOperation().UpdateType(context.Background(), params.Header, asstTypeID, request)
+	ret, err := s.core.AssociationOperation().UpdateType(params, asstTypeID, request)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +172,7 @@ func (s *topoService) DeleteAssociationType(params types.ContextParams, pathPara
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
 
-	ret, err := s.core.AssociationOperation().DeleteType(context.Background(), params.Header, asstTypeID)
+	ret, err := s.core.AssociationOperation().DeleteType(params, asstTypeID)
 	if err != nil {
 		return nil, err
 	}
@@ -190,7 +189,7 @@ func (s *topoService) SearchAssociationInst(params types.ContextParams, pathPara
 	if err := data.MarshalJSONInto(request); err != nil {
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
-	ret, err := s.core.AssociationOperation().SearchInst(context.Background(), params.Header, request)
+	ret, err := s.core.AssociationOperation().SearchInst(params, request)
 	if err != nil {
 		return nil, err
 	} else if ret.Code != 0 {
@@ -206,7 +205,7 @@ func (s *topoService) CreateAssociationInst(params types.ContextParams, pathPara
 	if err := data.MarshalJSONInto(request); err != nil {
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
-	ret, err := s.core.AssociationOperation().CreateInst(context.Background(), params.Header, request)
+	ret, err := s.core.AssociationOperation().CreateInst(params, request)
 	if err != nil {
 		return nil, err
 	} else if ret.Code != 0 {
@@ -221,7 +220,7 @@ func (s *topoService) DeleteAssociationInst(params types.ContextParams, pathPara
 	if err := data.MarshalJSONInto(request); err != nil {
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
-	ret, err := s.core.AssociationOperation().DeleteInst(context.Background(), params.Header, request)
+	ret, err := s.core.AssociationOperation().DeleteInst(params, request)
 	if err != nil {
 		return nil, err
 	} else if ret.Code != 0 {

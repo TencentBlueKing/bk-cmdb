@@ -61,8 +61,12 @@ func (o *Object) GetDefaultInstPropertyName() string {
 
 // GetInstIDFieldName get instid filed
 func (o *Object) GetInstIDFieldName() string {
+	return GetInstIDFieldByObjID(o.ObjectID)
 
-	switch o.ObjectID {
+}
+
+func GetInstIDFieldByObjID(objID string) string {
+	switch objID {
 	case common.BKInnerObjIDApp:
 		return common.BKAppIDField
 	case common.BKInnerObjIDSet:
