@@ -49,9 +49,12 @@ func (cli *field) ToMapStr() types.MapStr {
 		tmpResult.Merge(item.ToMapStr())
 	}
 
-	if BKDBEQ == cli.opeartor {
+	switch cli.opeartor {
+	case BKDBEQ:
 		tmpResult.Merge(types.MapStr{cli.fieldName: cli.fieldValue})
-	} else {
+	case BKDBOR:
+		tmpResult.Merge(types.MapStr{BKDBOR: cli.fieldValue})
+	default:
 		tmpResult.Merge(types.MapStr{
 			cli.fieldName: types.MapStr{
 				cli.opeartor: cli.fieldValue,

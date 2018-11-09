@@ -38,6 +38,9 @@ func (cli *Service) CreateInstAssociation(req *restful.Request, resp *restful.Re
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
+
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
 		blog.Errorf("read http request body failed, error:%s", err.Error())
@@ -52,16 +55,19 @@ func (cli *Service) CreateInstAssociation(req *restful.Request, resp *restful.Re
 		return
 	}
 
-	data := &meta.InstAsst{
-		ObjectAsstID: request.ObjectAsstId,
-		InstID:       request.InstId,
-		AsstInstID:   request.AsstInstId,
-		OwnerID:      ownerID,
-		CreateTime:   time.Now(),
+	// find object id
+	objCond := map[string]interface{}{
+		meta.AssociationFieldAsstID:          request.ObjectAsstId,
+		meta.AssociationFieldSupplierAccount: ownerID,
 	}
 
-	ctx := util.GetDBContext(context.Background(), req.Request.Header)
-	db := cli.Instance.Clone()
+	objResult := &meta.Association{}
+	err = db.Table(common.BKTableNameObjAsst).Find(objCond).One(ctx, &objResult)
+	if nil != err {
+		blog.Errorf("not found object association error :%v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, request.ObjectAsstId)})
+		return
+	}
 
 	// get insert id
 	id, err := db.NextSequence(ctx, common.BKTableNameInstAsst)
@@ -70,24 +76,18 @@ func (cli *Service) CreateInstAssociation(req *restful.Request, resp *restful.Re
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBInsertFailed, err.Error())})
 		return
 	}
-	data.ID = int64(id)
 
-	// find object id
-	objCond := map[string]interface{}{
-		"bk_obj_asst_id":      request.ObjectAsstId,
-		"bk_supplier_account": ownerID,
+	data := &meta.InstAsst{
+		ID:                int64(id),
+		ObjectID:          objResult.ObjectID,
+		AsstObjectID:      objResult.AsstObjID,
+		ObjectAsstID:      request.ObjectAsstId,
+		InstID:            request.InstId,
+		AsstInstID:        request.AsstInstId,
+		AssociationKindID: objResult.AsstKindID,
+		OwnerID:           ownerID,
+		CreateTime:        time.Now(),
 	}
-
-	objResult := &meta.Association{}
-	err = db.Table(common.BKTableNameObjAsst).Find(objCond).One(ctx, &objResult)
-	if nil != err {
-		blog.Errorf("not found object association error :%v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommNotFound, err.Error())})
-		return
-	}
-
-	data.ObjectID = objResult.ObjectID
-	data.AsstObjectID = objResult.AsstObjID
 
 	err = db.Table(common.BKTableNameInstAsst).Insert(ctx, data)
 	if nil != err {
@@ -139,18 +139,7 @@ func (cli *Service) DeleteInstAssociation(req *restful.Request, resp *restful.Re
 		return
 	}
 
-	if request.AsstInstID == 0 && request.InstID == 0 {
-		errMsg := "invalid instance delparams"
-		blog.Errorf(errMsg)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommFieldNotValid, errMsg)})
-		return
-	}
-	cond := map[string]interface{}{
-		"bk_obj_asst_id":  request.ObjectAsstID,
-		"bk_inst_id":      request.InstID,
-		"bk_asst_inst_id": request.AsstInstID,
-	}
-	cond = util.SetModOwner(cond, ownerID)
+	cond := util.SetModOwner(request.Condition.ToMapInterface(), ownerID)
 
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	db := cli.Instance.Clone()

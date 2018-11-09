@@ -21,6 +21,8 @@ import (
 const (
 	// AssociationFieldObjectID the association data field definition
 	AssociationFieldObjectID = "bk_obj_id"
+	// AssociationFieldAsstID the association data field bk_obj_asst_id
+	AssociationFieldAsstID = "bk_obj_asst_id"
 	// AssociationFieldObjectAttributeID the association data field definition
 	//AssociationFieldObjectAttributeID = "bk_object_att_id"
 	// AssociationFieldSupplierAccount the association data field definition
@@ -70,15 +72,8 @@ type DeleteAssociationTypeResult struct {
 	Data     string `json:"data"`
 }
 
-type SearchAssociationObjectRequestCond struct {
-	AsstID       string `field:"bk_asst_id" json:"bk_asst_id"`
-	ObjectID     string `field:"bk_obj_id" json:"bk_obj_id"`
-	AsstObjID    string `field:"bk_asst_obj_id" json:"bk_asst_obj_id"`
-	BothObjectID string `field:"both_obj_id" json:"both_obj_id"`
-}
-
 type SearchAssociationObjectRequest struct {
-	Condition SearchAssociationObjectRequestCond `json:"condition"`
+	Condition mapstr.MapStr `json:"condition"`
 }
 
 type SearchAssociationObjectResult struct {
@@ -136,9 +131,7 @@ type CreateAssociationInstResult struct {
 }
 
 type DeleteAssociationInstRequest struct {
-	ObjectAsstID string `field:"bk_obj_asst_id" json:"bk_obj_asst_id,omitempty" bson:"bk_obj_asst_id"`
-	InstID       int64  `field:"bk_inst_id" json:"bk_inst_id,omitempty" bson:"bk_inst_id,omitempty"`
-	AsstInstID   int64  `field:"bk_asst_inst_id" json:"bk_asst_inst_id,omitempty" bson:"bk_asst_inst_id,omitempty"`
+	Condition mapstr.MapStr `json:"condition"`
 }
 
 type DeleteAssociationInstResult struct {
@@ -153,6 +146,7 @@ const (
 	NoneDirection       AssociationDirection = "none"
 	DestinationToSource AssociationDirection = "src_to_dest"
 	SourceToDestination AssociationDirection = "dest_to_src"
+    Bidirectional AssociationDirection = "bidirectional"
 )
 
 type AssociationKind struct {
@@ -218,9 +212,9 @@ type Association struct {
 	// if true, it means this association is used by cmdb itself.
 	IsPre *bool `field:"ispre" json:"ispre" bson:"ispre"`
 
-	ClassificationID string `field:"bk_classification_id" bson:"-"`
-	ObjectIcon       string `field:"bk_obj_icon" bson:"-"`
-	ObjectName       string `field:"bk_obj_name" bson:"-"`
+	ClassificationID string `field:"bk_classification_id" json:"-" bson:"-"`
+	ObjectIcon       string `field:"bk_obj_icon" json:"-" bson:"-"`
+	ObjectName       string `field:"bk_obj_name" json:"-" bson:"-"`
 }
 
 // return field means which filed is set but is forbidden to update.
@@ -284,13 +278,15 @@ type InstAsst struct {
 	// inst id associate to AsstObjectID
 	AsstInstID int64 `field:"bk_asst_inst_id" json:"bk_asst_inst_id"  bson:"bk_asst_inst_id"`
 	// assoctation target ObjectID
-	AsstObjectID string `field:"bk_asst_obj_id" json:"bk_asst_obj_id"`
+	AsstObjectID string `field:"bk_asst_obj_id" json:"bk_asst_obj_id" bson:"bk_asst_obj_id"`
 	// bk_supplier_account
 	OwnerID string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 	// association id between two object
-	ObjectAsstID string    `field:"bk_obj_asst_id" json:"bk_obj_asst_id" bson:"bk_obj_asst_id"`
-	CreateTime   time.Time `field:"create_time" json:"create_time" bson:"create_time"`
-	LastTime     time.Time `field:"last_time" json:"last_time" bson:"last_time"`
+	ObjectAsstID string `field:"bk_obj_asst_id" json:"bk_obj_asst_id" bson:"bk_obj_asst_id"`
+	// association kind id
+	AssociationKindID string    `field:"bk_asst_id" json:"bk_asst_id" bson:"bk_asst_id"`
+	CreateTime        time.Time `field:"create_time" json:"create_time" bson:"create_time"`
+	LastTime          time.Time `field:"last_time" json:"last_time" bson:"last_time"`
 }
 
 func (asst InstAsst) GetInstID(objID string) (instID int64, ok bool) {
@@ -386,4 +382,24 @@ type AssociationParams struct {
 	Page      BasePage                   `json:"page,omitempty"`
 	Fields    map[string][]string        `json:"fields,omitempty"`
 	Condition map[string][]ConditionItem `json:"condition,omitempty"`
+}
+
+// ResponeImportAssociation  import association result
+type ResponeImportAssociation struct {
+	BaseResp `json:",inline"`
+	Data     ResponeImportAssociationData `json:"data"`
+}
+
+type RowMsgData struct {
+	Row int    `json:"row"`
+	Msg string `json:"message"`
+}
+
+type ResponeImportAssociationData struct {
+	ErrMsgMap []RowMsgData `json:"err_msg"`
+}
+
+// ResponeImportAssociation  import association result
+type RequestImportAssociation struct {
+	AssociationInfoMap map[int]ExcelAssocation `json:"association_info"`
 }

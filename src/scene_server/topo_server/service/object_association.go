@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"strconv"
 
 	"configcenter/src/common"
@@ -42,17 +43,47 @@ func (s *topoService) CreateObjectAssociation(params types.ContextParams, pathPa
 // SearchObjectAssociation search  object association by object id
 func (s *topoService) SearchObjectAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
-	objId, err := data.String(metadata.AssociationFieldObjectID)
+	if data.Exists("condition") {
+		// ATTENTION:
+		// compatible with new query structures
+		// the new condition format:
+		// { "condition":{}}
+
+		cond, err := data.MapStr("condition")
+		if nil != err {
+			blog.Errorf("search object association, failed to get the condition, error info is %s", err.Error())
+			return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
+		}
+
+		if len(cond) == 0 {
+			return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
+		}
+
+		resp, err := s.core.AssociationOperation().SearchObject(params, &metadata.SearchAssociationObjectRequest{Condition: cond})
+		if err != nil {
+			blog.Errorf("search object association with cond[%v] failed, err: %v", cond, err)
+			return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		}
+
+		if !resp.Result {
+			blog.Errorf("search object association with cond[%v] failed, err: %s", cond, resp.ErrMsg)
+			return nil, params.Err.Error(resp.Code)
+		}
+
+		return resp.Data, err
+	}
+
+	objID, err := data.String(metadata.AssociationFieldObjectID)
 	if err != nil {
 		blog.Errorf("search object association, but get object id failed from: %v, err: %v", data, err)
 		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 	}
 
-	if len(objId) == 0 {
+	if len(objID) == 0 {
 		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 	}
 
-	return s.core.AssociationOperation().SearchObjectAssociation(params, objId)
+	return s.core.AssociationOperation().SearchObjectAssociation(params, objID)
 }
 
 // DeleteObjectAssociation delete object association
@@ -81,5 +112,18 @@ func (s *topoService) UpdateObjectAssociation(params types.ContextParams, pathPa
 	}
 	err = s.core.AssociationOperation().UpdateAssociation(params, data, id)
 	return nil, err
+
+}
+
+// ImportInstanceAssociation import instance  association
+func (s *topoService) ImportInstanceAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+	objID := pathParams("obj_id")
+	request := new(metadata.RequestImportAssociation)
+	if err := data.MarshalJSONInto(request); err != nil {
+		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
+	}
+
+	resp, err := s.core.AssociationOperation().ImportInstAssociation(context.Background(), params, objID, request.AssociationInfoMap)
+	return resp, err
 
 }
