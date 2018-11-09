@@ -651,7 +651,7 @@
                     formData['bk_supplier_account'] = this.supplierAccount
                     promise = this.updateModule({
                         bizId: this.business,
-                        setId: value['bk_set_id'],
+                        setId: this.tree.selectedNodeInst['bk_set_id'],
                         moduleId: selectedNode['bk_inst_id'],
                         params: formData
                     })
