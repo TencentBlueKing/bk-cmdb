@@ -129,7 +129,15 @@ func (ia *importAssociation) ParsePrimaryKey() error {
 
 func (ia *importAssociation) importAssociation() {
 	for idx, asstInfo := range ia.importData {
-		asstID := ia.asstIDInfoMap[asstInfo.ObjectAsstID]
+		_, ok := ia.parseImportDataErr[idx]
+		if ok {
+			continue
+		}
+		asstID, ok := ia.asstIDInfoMap[asstInfo.ObjectAsstID]
+		if !ok {
+			ia.parseImportDataErr[idx] = ia.params.Lang.Languagef("import_association_id_not_found", asstInfo.ObjectAsstID)
+			continue
+		}
 		srcInstID, err := ia.getInstIDByPrimaryKey(ia.objID, asstInfo.SrcPrimary)
 		if err != nil {
 			ia.parseImportDataErr[idx] = err.Error()
@@ -159,8 +167,9 @@ func (ia *importAssociation) importAssociation() {
 			conds.Field(common.BKInstIDField).Eq(srcInstID)
 			conds.Field(common.AssociatedObjectIDField).Eq(asstID.AsstObjID)
 			conds.Field(common.BKAsstInstIDField).Eq(dstInstID)
-
 			ia.delSrcAssociation(idx, conds)
+		default:
+			ia.parseImportDataErr[idx] = ia.params.Lang.Language("import_association_operate_not_found")
 		}
 
 	}
@@ -298,6 +307,7 @@ func (ia *importAssociation) parseImportDataPrimaryItem(objID string, item strin
 }
 
 func (ia *importAssociation) getInstDataByConds() error {
+
 	for objID, valArr := range ia.queryInstConds {
 
 		instIDKey := metadata.GetInstIDFieldByObjID(objID)
@@ -311,8 +321,8 @@ func (ia *importAssociation) getInstDataByConds() error {
 		for _, inst := range instArr {
 			ia.parseInstToImportAssociationInst(objID, instIDKey, inst)
 		}
-
 	}
+
 	return nil
 }
 
@@ -405,7 +415,7 @@ func (ia *importAssociation) addSrcAssociation(idx int, asstFlag string, instID,
 	inst := &metadata.CreateAssociationInstRequest{}
 	inst.ObjectAsstId = asstFlag
 	inst.InstId = instID
-	inst.AsstInstId = instID
+	inst.AsstInstId = assInstID
 	rsp, err := ia.cli.clientSet.ObjectController().Association().CreateInst(ia.ctx, ia.params.Header, inst)
 	if err != nil {
 		ia.parseImportDataErr[idx] = err.Error()
@@ -427,6 +437,7 @@ func (ia *importAssociation) getInstIDByPrimaryKey(objID, primary string) (int64
 	}
 
 	for _, inst := range instArr {
+
 		isEq := true
 		for _, item := range primaryArr {
 			if _, ok := inst.attrNameVal[item]; !ok {
