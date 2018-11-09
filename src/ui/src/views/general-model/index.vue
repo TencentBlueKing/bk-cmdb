@@ -389,11 +389,12 @@
                 })
             },
             setAllHostList (list) {
-                if (this.table.allList.length === this.table.pagination.count) return
                 const newList = []
                 list.forEach(item => {
-                    const exist = this.table.allList.some(existItem => existItem['bk_inst_id'] === item['bk_inst_id'])
-                    if (!exist) {
+                    const existItem = this.table.allList.some(existItem => existItem['bk_inst_id'] === item['bk_inst_id'])
+                    if (existItem) {
+                        Object.assing(existItem, item)
+                    } else {
                         newList.push(item)
                     }
                 })

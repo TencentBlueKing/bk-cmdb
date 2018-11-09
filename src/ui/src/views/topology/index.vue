@@ -286,9 +286,7 @@
                         bk_supplier_account: this.supplierAccount
                     },
                     config: {
-                        requestId: `post_batchSearchObjectAttribute_${Object.keys(this.properties).join('_')}`,
-                        requestGroup: Object.keys(this.properties).map(id => `post_searchObjectAttribute_${id}`),
-                        fromCache: true
+                        requestId: `post_batchSearchObjectAttribute_${Object.keys(this.properties).join('_')}`
                     }
                 }).then(result => {
                     Object.keys(this.properties).forEach(objId => {
@@ -308,8 +306,7 @@
                         'bk_supplier_account': this.supplierAccount
                     },
                     config: {
-                        requestId: `post_searchObjectAttribute_${objId}`,
-                        fromCache: true
+                        requestId: `post_searchObjectAttribute_${objId}`
                     }
                 }).then(properties => {
                     this.$set(this.properties, objId, properties)
@@ -322,7 +319,6 @@
                 this.searchGroup({
                     objId,
                     config: {
-                        fromCache: true,
                         requestId: `post_searchGroup_${objId}`
                     }
                 }).then(groups => {
@@ -385,8 +381,7 @@
             },
             getMainlineModel () {
                 return this.searchMainlineObject({
-                    requestId: 'get_searchMainlineObject',
-                    fromCache: true
+                    requestId: 'get_searchMainlineObject'
                 }).then(topoModel => {
                     this.topoModel = topoModel
                     return topoModel
