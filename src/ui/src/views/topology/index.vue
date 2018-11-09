@@ -458,8 +458,8 @@
                 this.setSearchParams()
                 this.handleRefresh()
             },
-            handleRefresh () {
-                this.$refs.topoTable.search(this.business, this.table.params)
+            handleRefresh (resetPage = true) {
+                this.$refs.topoTable.search(this.business, this.table.params, true)
             },
             setSearchParams () {
                 const necessaryObj = Object.keys(this.properties)
