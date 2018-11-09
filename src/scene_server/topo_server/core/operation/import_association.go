@@ -169,7 +169,7 @@ func (ia *importAssociation) importAssociation() {
 			conds.Field(common.BKAsstInstIDField).Eq(dstInstID)
 			ia.delSrcAssociation(idx, conds)
 		default:
-			ia.parseImportDataErr[idx] = "operate not found"
+			ia.parseImportDataErr[idx] = ia.params.Lang.Language("import_association_operate_not_found")
 		}
 
 	}
