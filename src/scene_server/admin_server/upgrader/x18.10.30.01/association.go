@@ -179,11 +179,16 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	// update bk_cloud_id to int
 	cloudIDUpdateCond := condition.CreateCondition()
 	cloudIDUpdateCond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDHost)
-	cloudIDUpdateCond.Field(common.BKObjAttIDField).Eq(common.BKCloudIDField)
+	cloudIDUpdateCond.Field(common.BKPropertyIDField).Eq(common.BKCloudIDField)
 	cloudIDUpdateData := mapstr.New()
 	cloudIDUpdateData.Set(common.BKPropertyTypeField, common.FieldTypeInt)
 	cloudIDUpdateData.Set(common.BKOptionField, validator.IntOption{})
-	db.Table(common.BKTableNameObjAttDes).Update(ctx, cloudIDUpdateCond.ToMapStr(), cloudIDUpdateData)
+
+	err = db.Table(common.BKTableNameObjAttDes).Update(ctx, cloudIDUpdateCond.ToMapStr(), cloudIDUpdateData)
+	if err != nil {
+		return err
+	}
+
 	err = db.Table(common.BKTableNameObjAttDes).Delete(ctx, propertyCond.ToMapStr())
 	if err != nil {
 		return err
