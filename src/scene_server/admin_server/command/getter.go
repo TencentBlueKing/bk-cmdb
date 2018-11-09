@@ -189,12 +189,11 @@ func getMainline(root string, assts []*metadata.Association) ([]string, error) {
 
 func getAsst(ctx context.Context, db dal.RDB, opt *option) ([]*metadata.Association, error) {
 	assts := []*metadata.Association{}
-	condition := map[string]interface{}{
-		common.BKOwnerIDField:  opt.OwnerID,
-		common.BKObjAttIDField: common.BKChildStr,
-	}
 
-	err := db.Table(common.BKTableNameObjAsst).Find(condition).All(ctx, &assts)
+	cond := condition.CreateCondition()
+	cond.Field(common.AssociationKindIDField).Eq(common.AssociationKindMainline)
+
+	err := db.Table(common.BKTableNameObjAsst).Find(cond.ToMapStr()).All(ctx, &assts)
 	if nil != err {
 		return nil, fmt.Errorf("query cc_ObjAsst error: %s", err.Error())
 	}
