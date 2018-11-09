@@ -14,7 +14,8 @@
     "excel_association_op": "Operation",
     "excel_association_src_inst": "source instance",
     "excel_association_dst_inst": "target instance",
-    "import_asstociation_id_not_foud": "The association [%s]  does not exist",
+    "import_association_id_not_found": "The association [%s]  does not exist",
+    "import_association_operate_not_found":"operate not found",
 
     "": ""
 }

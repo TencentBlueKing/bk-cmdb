@@ -14,7 +14,8 @@
     "excel_association_op":"操作",
     "excel_association_src_inst":"源实例",
     "excel_association_dst_inst":"目标实例",
-    "import_asstociation_id_not_foud":"关联关系[%s]不存在",
+    "import_association_id_not_found":"关联关系[%s]不存在",
+    "import_association_operate_not_found":"操作类型不存在",
 
 
     "":""
