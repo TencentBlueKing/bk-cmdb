@@ -111,9 +111,8 @@
                 return this.selectedHosts.map(host => host['host']['bk_host_id'])
             },
             showIncrementOption () {
-                const isMoreThanOne = this.selectedHosts.length > 1
                 const hasSpecialModule = this.selectedModuleStates.some(({node}) => node['bk_inst_id'] === 'source' || [1, 2].includes(node.default))
-                return !!this.selectedModuleStates.length && isMoreThanOne && !hasSpecialModule
+                return !!this.selectedModuleStates.length && !hasSpecialModule
             },
             loading () {
                 const requestIds = [
