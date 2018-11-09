@@ -207,17 +207,12 @@
                 let asstList = []
                 this.classifications.forEach(classify => {
                     if (classify['bk_objects'].length) {
-                        if (!this.relationInfo.ispre && classify['bk_classification_id'] === 'bk_biz_topo') {
-                            return
-                        }
                         let objects = []
-                        classify['bk_objects'].map(({bk_obj_id: objId, bk_obj_name: objName}) => {
-                            if (this.relationInfo.ispre || ['plat', 'process'].indexOf(objId) === -1) {
-                                objects.push({
-                                    id: objId,
-                                    name: objName
-                                })
-                            }
+                        classify['bk_objects'].forEach(({bk_obj_id: objId, bk_obj_name: objName}) => {
+                            objects.push({
+                                id: objId,
+                                name: objName
+                            })
                         })
                         if (objects.length) {
                             asstList.push({
