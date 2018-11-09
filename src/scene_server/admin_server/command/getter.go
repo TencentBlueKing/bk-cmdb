@@ -41,7 +41,7 @@ func getBKTopo(ctx context.Context, db dal.RDB, opt *option) (*Topo, error) {
 			return nil, err
 		}
 		pcmap := getPCmap(assts)
-		// blog.InfoJSON("%s", pcmap)
+
 		err = getTree(ctx, db, root, pcmap)
 		if nil != err {
 			return nil, err
@@ -148,6 +148,7 @@ func getTree(ctx context.Context, db dal.RDB, root *Node, pcmap map[string]*meta
 	return nil
 }
 
+// get parent -> child mapping
 func getPCmap(assts []*metadata.Association) map[string]*metadata.Association {
 	m := map[string]*metadata.Association{}
 	for _, asst := range assts {

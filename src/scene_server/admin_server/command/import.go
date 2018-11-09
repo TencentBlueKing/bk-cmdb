@@ -32,7 +32,7 @@ func backup(ctx context.Context, db dal.RDB, opt *option) error {
 	dir := filepath.Dir(opt.position)
 	now := time.Now().Format("2006_01_02_15_04_05")
 	file := filepath.Join(dir, "backup_bk_biz_"+now+".json")
-	err := export(ctx, db, &option{position: file, OwnerID: opt.OwnerID})
+	err := export(ctx, db, &option{position: file, OwnerID: opt.OwnerID, mini: false, scope: "all"})
 	if nil != err {
 		return err
 	}
@@ -58,9 +58,11 @@ func importBKBiz(ctx context.Context, db dal.RDB, opt *option) error {
 		return fmt.Errorf("get src topo faile %s", err.Error())
 	}
 
-	err = backup(ctx, db, opt)
-	if err != nil {
-		return fmt.Errorf("backup faile %s", err)
+	if !opt.dryrun {
+		err = backup(ctx, db, opt)
+		if err != nil {
+			return fmt.Errorf("backup faile %s", err)
+		}
 	}
 
 	if tar.BizTopo != nil {
@@ -79,7 +81,6 @@ func importBKBiz(ctx context.Context, db dal.RDB, opt *option) error {
 			if node.mark == actionCreate {
 				fmt.Printf("--- \033[34m%s %s %+v\033[0m\n", node.mark, node.ObjID, node.Data)
 				if !opt.dryrun {
-
 					err := db.Table(common.GetInstTableName(node.ObjID)).Insert(ctx, node.Data)
 					if nil != err {
 						return fmt.Errorf("insert to %s, data:%+v, error: %s", node.ObjID, node.Data, err.Error())
@@ -87,7 +88,7 @@ func importBKBiz(ctx context.Context, db dal.RDB, opt *option) error {
 				}
 			}
 			if node.mark == actionUpdate {
-				// fmt.Printf("--- \033[36m%s %s %+v\033[0m\n", node.mark, node.ObjID, node.Data)
+				fmt.Printf("--- \033[36m%s %s %+v\033[0m\n", node.mark, node.ObjID, node.Data)
 				if !opt.dryrun {
 					instID, err := node.getInstID()
 					if nil != err {
@@ -399,7 +400,9 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 			ipt.bizID = bizID
 			ipt.parentID = bizID
 			ipt.ownerID = ownerID
-			node.mark = actionUpdate
+			if !containsMap(app, node.Data) {
+				node.mark = actionUpdate
+			}
 		case common.BKInnerObjIDSet:
 			node.Data[common.BKOwnerIDField] = ipt.ownerID
 			node.Data[common.BKAppIDField] = ipt.bizID
@@ -421,7 +424,9 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 				ipt.parentID = nid
 				ipt.setID = nid
 			} else {
-				node.mark = actionUpdate
+				if !containsMap(set, node.Data) {
+					node.mark = actionUpdate
+				}
 				setID, err := getInt64(set[common.BKSetIDField])
 				if nil != err {
 					return fmt.Errorf("get setID faile, data: %+v, error: %s", set, err.Error())
@@ -450,7 +455,9 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 				}
 				node.Data[common.BKModuleIDField] = nid
 			} else {
-				node.mark = actionUpdate
+				if !containsMap(module, node.Data) {
+					node.mark = actionUpdate
+				}
 				moduleID, err := getInt64(module[common.BKModuleIDField])
 				if nil != err {
 					return fmt.Errorf("get moduleID faile, data: %+v, error: %s", module, err.Error())
@@ -476,7 +483,9 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 				node.Data[common.GetInstIDField(node.ObjID)] = nid
 				ipt.parentID = nid
 			} else {
-				node.mark = actionUpdate
+				if !containsMap(inst, node.Data) {
+					node.mark = actionUpdate
+				}
 				instID, err := getInt64(inst[common.GetInstIDField(node.ObjID)])
 				if nil != err {
 					return fmt.Errorf("get instID faile, data: %+v, error: %s", inst, err.Error())
@@ -581,6 +590,32 @@ func inSlice(sub string, slice []string) bool {
 	for _, s := range slice {
 		if s == sub {
 			return true
+		}
+	}
+	return false
+}
+
+// compare tar to src, returns whether src contains sunb
+func containsMap(src, sub map[string]interface{}) bool {
+	for key := range sub {
+		if !equalIgnoreLength(src[key], sub[key]) {
+			fmt.Printf("diff: %s: %#v(%T)->%#v(%T)", key, src[key], src[key], sub[key], sub[key])
+			return false
+		}
+	}
+	return true
+}
+
+func equalIgnoreLength(src, tar interface{}) bool {
+	if src == tar {
+		return true
+	}
+
+	if srcInt, err := getInt64(src); err == nil {
+		if tarInt, err := getInt64(tar); err == nil {
+			if srcInt == tarInt {
+				return true
+			}
 		}
 	}
 	return false

@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"os"
 
+	"configcenter/src/common"
+	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 )
 
@@ -33,6 +35,25 @@ func export(ctx context.Context, db dal.RDB, opt *option) error {
 	if nil != err {
 		return err
 	}
+
+	topo.BizTopo.walk(func(node *Node) error {
+		node.Data = util.CopyMap(node.Data, nil,
+			[]string{
+				common.BKInstParentStr,
+				common.BKChildStr,
+				common.BKAppIDField,
+				common.BKSetIDField,
+				common.BKModuleIDField,
+				common.BKInstIDField,
+				common.BKOwnerIDField,
+				common.BKSupplierIDField,
+				common.CreateTimeField,
+				common.LastTimeField,
+				"_id",
+			},
+		)
+		return nil
+	})
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "    ")
 	err = encoder.Encode(topo)
