@@ -22,7 +22,8 @@
 
 ## 开发
 前文你已经注册了GitHub账户，可以在bk-cmdb的[主页](https://github.com/Tencent/bk-cmdb)将仓库中的源代码
-**Fork**到你自己的仓库中，也欢迎你给我们贡献star。如下图：
+**Fork**到你自己的仓库中，也欢迎你给我们star以示鼓励。如下图：
+
 ![Fork仓库](img/fork.png)
 
 Fork完成后，就可以在你自己的仓库中看到bk-cmdb的代码。在确定方案后，社区会确定该问题、需求所属的分支、或者tag。
@@ -34,15 +35,21 @@ Fork完成后，就可以在你自己的仓库中看到bk-cmdb的代码。在确
 在提交PR时要选择好你要合入的对应分支。具体如下：
 
 * 发起PR
+
 在你的仓库中，进入**Pull requests**页面，点击**New pull request**即可发起创建PR的操作。
+
 ![Create PR](img/pr-create.png)
 
 * 创建PR
+
 选择你本地的分支和要提交到主库的分支(确定方案后拿到对应的开发分支)。
+
 ![Submmit PR](img/pr-submmit.png)
 
 * 完成PR创建
+
 为了方便社区对你的PR进行review，需要你在在PR中填写相应的信息，具体包含的内容如下：
+
 ![Finish PR](img/pr-finish.png)
 
 在PR的标题中需要你简要的填写该PR主要的内容。具体的详细信息请在下面的描述框中填写，可以分别是新加、优化功能，或者
