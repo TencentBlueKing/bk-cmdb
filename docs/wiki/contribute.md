@@ -36,19 +36,19 @@ Fork完成后，就可以在你自己的仓库中看到bk-cmdb的代码。在确
 
 * 发起PR
 
-在你的仓库中，进入**Pull requests**页面，点击**New pull request**即可发起创建PR的操作。
+    在你的仓库中，进入**Pull requests**页面，点击**New pull request**即可发起创建PR的操作。
 
 ![Create PR](img/pr-create.png)
 
 * 创建PR
 
-选择你本地的分支和要提交到主库的分支(确定方案后拿到对应的开发分支)。
+    选择你本地的分支和要提交到主库的分支(确定方案后拿到对应的开发分支)。
 
 ![Submmit PR](img/pr-submmit.png)
 
 * 完成PR创建
 
-为了方便社区对你的PR进行review，需要你在在PR中填写相应的信息，具体包含的内容如下：
+    为了方便社区对你的PR进行review，需要你在在PR中填写相应的信息，具体包含的内容如下：
 
 ![Finish PR](img/pr-finish.png)
 
