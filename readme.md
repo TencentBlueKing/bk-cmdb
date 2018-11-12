@@ -41,7 +41,7 @@
 
 ## Experience
 
-[体验蓝鲸cmdb](docs/overview/experience.md)
+[体验极速容器部署蓝鲸cmdb](docs/overview/experience.md)
 
 ## Getting started
 * [下载与编译](docs/overview/source_compile.md)
