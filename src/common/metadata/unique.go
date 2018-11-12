@@ -43,6 +43,7 @@ type UpdateUniqueRequest struct {
 	ObjID     string       `json:"bk_obj_id" bson:"bk_obj_id"`
 	MustCheck bool         `json:"must_check" bson:"must_check"`
 	Keys      []UinqueKeys `json:"keys" bson:"keys"`
+	LastTime  Time         `json:"last_time" bson:"last_time"`
 }
 
 type UpdateUniqueResult struct {
