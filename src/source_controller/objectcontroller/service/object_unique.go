@@ -15,11 +15,13 @@ package service
 import (
 	"context"
 	"net/http"
+	"strconv"
 
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -65,4 +67,42 @@ func (cli *Service) CreateObjectUnique(req *restful.Request, resp *restful.Respo
 	}
 
 	resp.WriteEntity(metadata.CreateUniqueResult{BaseResp: metadata.SuccessBaseResp, Data: metadata.RspID{ID: int64(id)}})
+}
+
+// UpdateObjectUnique update object's unique
+func (cli *Service) UpdateObjectUnique(req *restful.Request, resp *restful.Response) {
+	language := util.GetActionLanguage(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
+	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
+
+	objID := req.PathParameter(common.BKObjIDField)
+	id, err := strconv.ParseUint(req.PathParameter("id"), 10, 64)
+	if err != nil {
+		blog.Errorf("[UpdateObjectUnique] path param error: %v", err)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, "id")})
+		return
+	}
+
+	var unique metadata.UpdateUniqueRequest
+	if body, err := util.DecodeJSON(req.Request.Body, &unique); err != nil {
+		blog.Errorf("[UpdateObjectUnique] DecodeJSON error: %v, %s", err, body)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	cond := condition.CreateCondition()
+	cond.Field("id").Eq(id)
+	cond.Field(common.BKObjIDField).Eq(objID)
+	cond.Field(common.BKOwnerIDField).Eq(ownerID)
+
+	err = db.Table(common.BKTableNameObjUnique).Update(ctx, cond.ToMapStr(), &unique)
+	if nil != err {
+		blog.Errorf("[UpdateObjectUnique] Update error: %s, raw: %#v", err, &unique)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrObjectDBOpErrno)})
+		return
+	}
+
+	resp.WriteEntity(metadata.UpdateUniqueResult{BaseResp: metadata.SuccessBaseResp})
 }
