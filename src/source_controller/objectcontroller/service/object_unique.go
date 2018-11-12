@@ -91,6 +91,7 @@ func (cli *Service) UpdateObjectUnique(req *restful.Request, resp *restful.Respo
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
+	unique.LastTime = metadata.Now()
 
 	cond := condition.CreateCondition()
 	cond.Field("id").Eq(id)
@@ -135,5 +136,37 @@ func (cli *Service) DeleteObjectUnique(req *restful.Request, resp *restful.Respo
 		return
 	}
 
-	resp.WriteEntity(metadata.UpdateUniqueResult{BaseResp: metadata.SuccessBaseResp})
+	resp.WriteEntity(metadata.DeleteUniqueResult{BaseResp: metadata.SuccessBaseResp})
+}
+
+// SearchObjectUnique delte object's unique
+func (cli *Service) SearchObjectUnique(req *restful.Request, resp *restful.Response) {
+	language := util.GetActionLanguage(req)
+	ownerID := util.GetOwnerID(req.Request.Header)
+	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
+
+	objID := req.PathParameter(common.BKObjIDField)
+	id, err := strconv.ParseUint(req.PathParameter("id"), 10, 64)
+	if err != nil {
+		blog.Errorf("[SearchObjectUnique] path param [id] error: %v", err)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, "id")})
+		return
+	}
+
+	cond := condition.CreateCondition()
+	cond.Field("id").Eq(id)
+	cond.Field(common.BKObjIDField).Eq(objID)
+	cond.Field(common.BKOwnerIDField).Eq(ownerID)
+
+	uniques := []metadata.ObjectUnique{}
+	err = db.Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).All(ctx, &uniques)
+	if nil != err {
+		blog.Errorf("[SearchObjectUnique] Delete error: %s, raw: %#v", err)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrObjectDBOpErrno)})
+		return
+	}
+
+	resp.WriteEntity(metadata.SearchUniqueResult{BaseResp: metadata.SuccessBaseResp, Data: uniques})
 }
