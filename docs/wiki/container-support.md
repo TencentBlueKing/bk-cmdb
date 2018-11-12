@@ -33,7 +33,7 @@
     当你有了docker的环境后，就可以在**终端**拉取bk-cmdb的体验镜像了。
 
     bk-cmdb用于体验的镜像存储于腾讯云的镜像公共镜像仓库。仓库地址在[这里](https://console.cloud.tencent.com/tke/registry/qcloud/default/detail/tag?rid=1&reponame=bk.io%252Fcmdb-standalone)
-    。大家可以在这里看到所有社区对外release的蓝鲸bk-cmdb版本。
+    。大家可以在这里看到社区对外release的蓝鲸bk-cmdb版本。
 
     镜像tag(版本)的命名和bk-cmdb的release版本号一致，如v3.1.0。此外，为了方便大家体验最新版本，在镜像
     仓库里会有一个tag为**latest**的镜像，代表目前最新的release版本。所以latest镜像本身是会随着社区release
