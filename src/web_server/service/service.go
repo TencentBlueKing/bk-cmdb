@@ -13,16 +13,18 @@
 package service
 
 import (
+	"strings"
+
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/types"
 	"configcenter/src/web_server/app/options"
 	"configcenter/src/web_server/logics"
 	"configcenter/src/web_server/middleware"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/holmeswang/contrib/sessions"
@@ -47,13 +49,13 @@ func (s *Service) WebService() *gin.Engine {
 		address := s.Config.Session.Host + ":" + s.Config.Session.Port
 		store, redisErr = sessions.NewRedisStore(10, "tcp", address, s.Config.Session.Secret, []byte("secret"))
 		if redisErr != nil {
-			panic(redisErr)
+			blog.Fatal("failed to create new redis store, error info is %v", redisErr)
 		}
 	} else {
 		address := strings.Split(s.Config.Session.Address, ";")
 		store, redisErr = sessions.NewRedisStoreWithSentinel(address, 10, s.Config.Session.MasterName, "tcp", s.Config.Session.Secret, []byte("secret"))
 		if redisErr != nil {
-			panic(redisErr)
+			blog.Fatal("failed to create new redis store, error info is %v", redisErr)
 		}
 	}
 
