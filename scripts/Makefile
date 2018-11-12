@@ -7,16 +7,17 @@ comma:=,
 ARCH?=$(shell uname -m)
 
 BUILDTIME?=$(shell date +%Y-%m-%dT%T%z)
-GITHASH?=$(shell git rev-parse  HEAD)
+GITHASH?=$(shell git rev-parse HEAD)
+BRANCH?=$(shell git rev-parse --abbrev-ref HEAD)
 #GITTAG?=$(shell git describe --always)
 #VERSION?=$(GITTAG)-$(shell date +%y.%m.%d)
 VERSION?=oc-$(shell date +%y.%m.%d)
 
 ISDEBUG?=false
 ifeq ($(ISDEBUG),true)
-	GOBUILD_FLAGS = -ldflags "-X configcenter/src/common/version.CCRunMode=dev -X configcenter/src/common/version.CCVersion=${VERSION} -X configcenter/src/common/version.CCBuildTime=${BUILDTIME} -X configcenter/src/common/version.CCGitHash=${GITHASH} -X configcenter/src/common/version.CCTag=${GITTAG}"
+	GOBUILD_FLAGS = -ldflags "-X configcenter/src/common/version.CCRunMode=dev -X configcenter/src/common/version.CCVersion=${VERSION} -X configcenter/src/common/version.CCBuildTime=${BUILDTIME} -X configcenter/src/common/version.CCGitHash=${GITHASH} -X configcenter/src/common/version.CCTag=${GITTAG} -X configcenter/src/common/version.CCBRANCH=${BRANCH}"
 else
-	GOBUILD_FLAGS = -ldflags "-X configcenter/src/common/version.CCVersion=${VERSION} -X configcenter/src/common/version.CCBuildTime=${BUILDTIME} -X configcenter/src/common/version.CCGitHash=${GITHASH} -X configcenter/src/common/version.CCTag=${GITTAG}"
+	GOBUILD_FLAGS = -ldflags "-X configcenter/src/common/version.CCVersion=${VERSION} -X configcenter/src/common/version.CCBuildTime=${BUILDTIME} -X configcenter/src/common/version.CCGitHash=${GITHASH} -X configcenter/src/common/version.CCTag=${GITTAG} -X configcenter/src/common/version.CCBRANCH=${BRANCH}"
 endif
 
 SCRIPT_DIR?=$(realpath $(firstword $(subst :, ,${GOPATH}))/src/configcenter/scripts)
