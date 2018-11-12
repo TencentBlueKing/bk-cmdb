@@ -1,12 +1,83 @@
 <template>
-    <div class="global-model" v-bkloading="{isLoading: loading}"></div>
+    <div class="topo-wrapper has-nav">
+        <div class="toolbar">
+            <bk-button class="edit-button" type="primary">
+                {{$t('ModelManagement["编辑拓扑"]')}}
+            </bk-button>
+            <div class="vis-button-group">
+                <bk-button class="vis-button vis-zoomExtends bk-icon icon-full-screen" @click="resizeFull" v-tooltip="$t('ModelManagement[\'还原\']')"></bk-button>
+                <bk-button class="vis-button vis-zoomIn bk-icon icon-plus" @click="zoomIn" v-tooltip="$t('ModelManagement[\'放大\']')"></bk-button>
+                <bk-button class="vis-button vis-zoomOut bk-icon icon-minus" @click="zoomOut" v-tooltip="$t('ModelManagement[\'缩小\']')"></bk-button>
+                <bk-button class="vis-button vis-setting icon-cc-setting" @click="showDisplaySlider" v-tooltip="$t('ModelManagement[\'拓扑显示设置\']')"></bk-button>
+                <bk-button class="vis-button vis-example" @click="toggleExample">
+                    <span class="vis-button-text">{{$t('ModelManagement["图例"]')}}</span>
+                    <i class="bk-icon icon-angle-down" :class="{'rotate': isShowExample}"></i>
+                </bk-button>
+                <cmdb-collapse-transition name="topo-example-list">
+                    <div class="topo-example" v-show="isShowExample">
+                        <p class="example-item">
+                            <i></i>
+                            <span>{{$t('ModelManagement["自定义模型"]')}}</span>
+                        </p>
+                        <p class="example-item">
+                            <i></i>
+                            <span>{{$t('ModelManagement["内置模型"]')}}</span>
+                        </p>
+                    </div>
+                </cmdb-collapse-transition>
+            </div>
+        </div>
+        <ul class="topo-nav">
+            <li class="group-item" v-for="(group, groupIndex) in classifications" :key="groupIndex">
+                <div class="group-info"
+                    :class="{'active': topoNav.activeGroup === group['bk_classification_id']}"
+                    @click="toggleGroup(group)">
+                    <span class="group-name">{{group['bk_classification_name']}}</span>
+                    <span class="model-count">{{group['bk_objects'].length}}</span>
+                    <i class="bk-icon icon-angle-down"></i>
+                </div>
+                <cmdb-collapse-transition name="model-box">
+                    <ul class="model-box" v-show="topoNav.activeGroup === group['bk_classification_id']">
+                        <li class="model-item" v-for="(model, modelIndex) in group['bk_objects']" :key="modelIndex">
+                            <i :class="model['bk_obj_icon']"></i>
+                            <div class="info">
+                                <p class="name">{{model['bk_obj_name']}}</p>
+                                <p class="id">{{model['bk_obj_id']}}</p>
+                            </div>
+                        </li>
+                    </ul>
+                </cmdb-collapse-transition>
+            </li>
+        </ul>
+        <cmdb-slider
+            :width="514"
+            :isShow.sync="displaySlider.isShow"
+            :title="displaySlider.title">
+            <theDisplay slot="content"></theDisplay>
+        </cmdb-slider>
+        <div class="global-model" ref="topo" v-bkloading="{isLoading: loading}"></div>
+    </div>
 </template>
+
 <script>
     import Vis from 'vis'
+    import theDisplay from './topo-detail/display'
     import { generateObjIcon as GET_OBJ_ICON } from '@/utils/util'
+    import { mapGetters } from 'vuex'
     export default {
+        components: {
+            theDisplay
+        },
         data () {
             return {
+                displaySlider: {
+                    isShow: false,
+                    title: this.$t('ModelManagement["模型关系显示设置"]')
+                },
+                topoNav: {
+                    activeGroup: ''
+                },
+                isShowExample: false,
                 loading: true,
                 networkInstance: null,
                 networkDataSet: {
@@ -58,6 +129,9 @@
             }
         },
         computed: {
+            ...mapGetters('objectModelClassify', [
+                'classifications'
+            ]),
             noPositionNodes () {
                 return this.network.nodes.filter(node => {
                     const position = node.data.position
@@ -69,11 +143,39 @@
             this.initNetwork()
         },
         methods: {
+            showDisplaySlider () {
+                this.displaySlider.isShow = true
+            },
+            toggleGroup (group) {
+                if (group['bk_classification_id'] !== this.topoNav.activeGroup) {
+                    this.topoNav.activeGroup = group['bk_classification_id']
+                } else {
+                    this.topoNav.activeGroup = ''
+                }
+            },
+            toggleExample () {
+                this.isShowExample = !this.isShowExample
+            },
+            resizeFull () {
+                this.networkInstance.moveTo({scale: 1})
+            },
+            zoomIn () {
+                let scale = this.networkInstance.getScale()
+                scale += 0.05
+                this.networkInstance.moveTo({scale: scale})
+            },
+            zoomOut () {
+                let scale = this.networkInstance.getScale()
+                if (scale > 0.05) {
+                    scale -= 0.05
+                }
+                this.networkInstance.moveTo({scale: scale})
+            },
             async initNetwork () {
                 const response = await this.$store.dispatch('globalModels/searchModelAction')
                 this.setNodes(response)
                 this.setEdges(response)
-                this.networkInstance = new Vis.Network(this.$el, {
+                this.networkInstance = new Vis.Network(this.$refs.topo, {
                     nodes: this.networkDataSet.nodes,
                     edges: this.networkDataSet.edges
                 }, this.network.options)
@@ -81,23 +183,27 @@
             },
             // 设置节点数据
             setNodes (data) {
-                this.network.nodes = data.map(nodeData => {
-                    const node = {
-                        id: nodeData['bk_obj_id'],
-                        image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON({
-                            name: nodeData['node_name'],
-                            backgroundColor: '#fff',
-                            fontColor: nodeData['ispre'] ? '#6894c8' : '#868b97'
-                        }))}`,
-                        data: nodeData
+                let nodes = []
+                data.forEach(nodeData => {
+                    if (nodeData.hasOwnProperty('assts')) {
+                        const node = {
+                            id: nodeData['bk_obj_id'],
+                            image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON({
+                                name: nodeData['node_name'],
+                                backgroundColor: '#fff',
+                                fontColor: nodeData['ispre'] ? '#6894c8' : '#868b97'
+                            }))}`,
+                            data: nodeData
+                        }
+                        if (nodeData['position']['x'] !== null && nodeData['position']['y'] !== null) {
+                            node.physics = false
+                            node.x = nodeData['position']['x']
+                            node.y = nodeData['position']['y']
+                        }
+                        nodes.push(node)
                     }
-                    if (nodeData['position']['x'] !== null && nodeData['position']['y'] !== null) {
-                        node.physics = false
-                        node.x = nodeData['position']['x']
-                        node.y = nodeData['position']['y']
-                    }
-                    return node
                 })
+                this.network.nodes = nodes
                 this.networkDataSet.nodes = new Vis.DataSet(this.network.nodes)
             },
             // 设置连线数据
@@ -222,8 +328,190 @@
 
     }
 </script>
+
 <style lang="scss" scoped>
-    .global-model{
+    .topo-wrapper {
+        position: relative;
+        margin: 0 -20px -20px;
+        width: calc(100% + 40px);
+        height: calc(100% + 20px);
+        &.has-nav {
+            .edit-button {
+                display: none;
+            }
+            .topo-nav {
+                display: block;
+            }
+            .global-model {
+                margin-left: 200px;
+                width: calc(100% - 200px);
+            }
+        }
+    }
+    .toolbar {
+        .edit-button {
+            position: absolute;
+            padding: 0 10px;
+            border-radius: 18px;
+            z-index: 1;
+            top: 10px;
+            left: 20px;
+        }
+        .vis-button-group {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            z-index: 1;
+            font-size: 0;
+        }
+        .vis-button {
+            margin-left: 10px;
+            width: 36px;
+            height: 36px;
+            line-height: 36px;
+            padding: 0;
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0px 1px 5px 0px rgba(12, 34, 59, 0.2);
+            border: none;
+            text-align: center;
+            z-index: 1;
+            &.vis-example {
+                width: auto;
+                padding: 0 15px;
+                border-radius: 18px;
+                font-size: 0;
+                .vis-button-text {
+                    font-size: 14px;
+                    vertical-align: middle;
+                }
+                .icon-angle-down {
+                    font-size: 12px;
+                    vertical-align: middle;
+                    transition: all .2s;
+                    &.rotate {
+                        transform: rotate(180deg);
+                    }
+                }
+            }
+        }
+        .topo-example {
+            position: absolute;
+            padding: 3px 10px;
+            top: 46px;
+            right: 0;
+            width: 100px;
+            height: 66px;
+            background: #fff;
+            box-shadow: 0px 2px 1px 0px rgba(185, 203, 222, 0.5);
+            font-size: 12px;
+            z-index: 1;
+            &:before {
+                position: absolute;
+                top: -10px;
+                right: 18px;
+                content: "";
+                border: 5px solid transparent;
+                border-bottom-color: #fff;
+            }
+            .example-item {
+                line-height: 30px;
+                font-size: 0;
+                &:first-child i{
+                    background: $cmdbBorderFocusColor;
+                }
+                &:last-child i{
+                    background: #868b97;
+                }
+                i {
+                    display: inline-block;
+                    margin-right: 6px;
+                    width: 12px;
+                    height: 12px;
+                    border-radius: 2px;
+                    vertical-align: middle;
+                }
+                span {
+                    font-size: 12px;
+                    vertical-align: middle;
+                }
+            }
+        }
+    }
+    .topo-nav {
+        display: none;
+        float: left;
+        border: 1px solid $cmdbTableBorderColor;
+        border-left: none;
+        width: 200px;
+        height: 100%;
+        overflow: auto;
+        @include scrollbar;
+        .group-info {
+            line-height: 42px;
+            padding: 0 20px 0 12px;
+            cursor: pointer;
+            &:hover,
+            &.active {
+                background: $cmdbBorderFocusColor;
+                color: #fff;
+                .model-count {
+                    background: #fff;
+                }
+                .icon-angle-down {
+                    color: #fff;
+                }
+            }
+            &.active {
+                opacity: .65;
+                .icon-angle-down {
+                    transform: rotate(180deg);
+                }
+            }
+            .model-count {
+                padding: 0 5px;
+                border-radius: 4px;
+                color: $cmdbBorderFocusColor;
+                background: #ebf4ff;
+            }
+            .icon-angle-down {
+                transition: all .2s;
+                float: right;
+                margin-top: 15px;
+                font-size: 12px;
+                color: $cmdbBorderColor;
+            }
+        }
+        .model-box {
+            padding: 5px 12px;
+        }
+        .model-item {
+            padding: 7px 0;
+            cursor: move;
+            i {
+                display: inline-block;
+                margin-right: 5px;
+                width: 36px;
+                height: 36px;
+                font-size: 24px;
+                line-height: 36px;
+                text-align: center;
+                vertical-align: middle;
+                color: $cmdbBorderFocusColor;
+                border: 1px solid $cmdbTableBorderColor;
+                border-radius: 50%;
+            }
+            >.info {
+                display: inline-block;
+                line-height: 18px;
+                vertical-align: middle;
+                .id {
+                    color: $cmdbBorderColor;
+                }
+            }
+        }
+    }
+    .global-model {
         width: 100%;
         height: 100%;
         background-color: #f4f5f8;
