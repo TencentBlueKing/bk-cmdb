@@ -302,7 +302,6 @@ func (a *association) DeleteAssociation(params types.ContextParams, cond conditi
 	return nil
 }
 
-// TODO: need to confirm which fields can be updated.
 func (a *association) UpdateAssociation(params types.ContextParams, data frtypes.MapStr, assoID int64) error {
 	asst := &metadata.Association{}
 	err := data.MarshalJSONInto(asst)
