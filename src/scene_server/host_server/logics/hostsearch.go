@@ -159,6 +159,8 @@ func (sh *searchHost) ParseCondition() {
 		}
 	}
 
+	sh.tryParseAppID()
+
 }
 
 func (sh *searchHost) SearchHostByConds() error {
@@ -554,7 +556,6 @@ func (sh *searchHost) searchByApp() error {
 	if sh.noData {
 		return nil
 	}
-	sh.tryParseAppID()
 	if len(sh.conds.appCond.Condition) > 0 {
 		appIDArr, err := sh.lgc.GetAppIDByCond(sh.pheader, sh.conds.appCond.Condition)
 		if err != nil {
@@ -565,7 +566,6 @@ func (sh *searchHost) searchByApp() error {
 			return nil
 		}
 		sh.idArr.moduleHostConfig.appIDArr = appIDArr
-
 	}
 	return nil
 }
@@ -664,6 +664,12 @@ func (sh *searchHost) searchByHostConds() error {
 	if sh.noData {
 		return nil
 	}
+
+	err := sh.appendHostTopoConds()
+	if err != nil {
+		return err
+	}
+
 	if 0 != len(sh.conds.hostCond.Fields) {
 		sh.conds.hostCond.Fields = append(sh.conds.hostCond.Fields, common.BKHostIDField)
 	}
@@ -703,6 +709,42 @@ func (sh *searchHost) searchByHostConds() error {
 		hostInfoMap[hostID] = host
 	}
 	sh.hostInfoMap = hostInfoMap
+	return nil
+}
+
+func (sh *searchHost) appendHostTopoConds() error {
+	moduleHostConfig := make(map[string][]int64)
+	isAddHostID := false
+	if len(sh.conds.appCond.Condition) > 0 {
+		moduleHostConfig[common.BKAppIDField] = sh.idArr.moduleHostConfig.appIDArr
+		isAddHostID = true
+	}
+	if len(sh.conds.setCond.Condition) > 0 {
+		moduleHostConfig[common.BKSetIDField] = sh.idArr.moduleHostConfig.setIDArr
+		isAddHostID = true
+	}
+	if len(sh.conds.moduleCond.Condition) > 0 {
+		moduleHostConfig[common.BKModuleIDField] = sh.idArr.moduleHostConfig.moduleIDArr
+		isAddHostID = true
+	}
+	if len(sh.conds.objectCondMap) > 0 {
+		moduleHostConfig[common.BKHostIDField] = sh.idArr.moduleHostConfig.asstHostIDArr
+		isAddHostID = true
+	}
+	if !isAddHostID {
+		return nil
+	}
+	hostIDArr, err := sh.lgc.GetHostIDByCond(sh.pheader, moduleHostConfig)
+	if err != nil {
+		blog.Errorf("GetHostIDByCond get hosts failed, err: %v", err)
+		return err
+	}
+	sh.conds.hostCond.Condition = append(sh.conds.hostCond.Condition, metadata.ConditionItem{
+		Field:    common.BKHostIDField,
+		Operator: common.BKDBIN,
+		Value:    hostIDArr,
+	})
+
 	return nil
 }
 
