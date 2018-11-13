@@ -46,6 +46,7 @@ type AssociationOperationInterface interface {
 	DeleteInstAssociation(params types.ContextParams, cond condition.Condition) error
 
 	// 关联关系改造后的接口
+	SearchObjectAssoWithAssoKindList(params types.ContextParams, asstKindIDs []string) (resp *metadata.AssociationList, err error)
 	SearchType(params types.ContextParams, request *metadata.SearchAssociationTypeRequest) (resp *metadata.SearchAssociationTypeResult, err error)
 	CreateType(cparams types.ContextParams, request *metadata.AssociationKind) (resp *metadata.CreateAssociationTypeResult, err error)
 	UpdateType(params types.ContextParams, asstTypeID int, request *metadata.UpdateAssociationTypeRequest) (resp *metadata.UpdateAssociationTypeResult, err error)
@@ -378,6 +379,33 @@ func (a *association) CheckBeAssociation(params types.ContextParams, obj model.O
 }
 
 // 关联关系改造后的接口
+func (a *association) SearchObjectAssoWithAssoKindList(params types.ContextParams, asstKindIDs []string) (resp *metadata.AssociationList, err error) {
+	if len(asstKindIDs) == 0 {
+		return &metadata.AssociationList{Associations: make([]metadata.AssociationDetail, 0)}, nil
+	}
+
+	asso := make([]metadata.AssociationDetail, 0)
+	for _, id := range asstKindIDs {
+		cond := condition.CreateCondition()
+		cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+		cond.Field(common.AssociationKindIDField).Eq(id)
+
+		r, err := a.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), params.Header, cond.ToMapStr())
+		if err != nil {
+			blog.Errorf("get object association list with association kind[%s] failed, err: %v", id, err)
+			return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		}
+
+		if !r.Result {
+			blog.Errorf("get object association list with association kind[%s] failed, err: %v", id, r.ErrMsg)
+			return nil, params.Err.Errorf(r.Code, r.ErrMsg)
+		}
+
+		asso = append(asso, metadata.AssociationDetail{AssociationKindID: id, Associations: r.Data})
+	}
+
+	return &metadata.AssociationList{Associations: asso}, nil
+}
 
 func (a *association) SearchType(params types.ContextParams, request *metadata.SearchAssociationTypeRequest) (resp *metadata.SearchAssociationTypeResult, err error) {
 	return a.clientSet.ObjectController().Association().SearchType(context.TODO(), params.Header, request)
