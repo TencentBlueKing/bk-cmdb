@@ -59,7 +59,6 @@
     export default {
         data () {
             return {
-                staticClassifyId: ['bk_index', 'bk_host_manage', 'bk_organization', 'bk_back_config'],
                 routerLinkHeight: 36,
                 openedClassify: 'bk_index',
                 timer: null
@@ -67,8 +66,11 @@
         },
         computed: {
             ...mapGetters(['navStick', 'navFold']),
-            ...mapGetters('objectModelClassify', ['classifications', 'authorizedNavigation']),
+            ...mapGetters('objectModelClassify', ['classifications', 'authorizedNavigation', 'staticClassifyId']),
             ...mapGetters('userCustom', ['usercustom', 'classifyNavigationKey']),
+            fixedClassifyId () {
+                return [...this.staticClassifyId, 'bk_organization']
+            },
             unfold () {
                 return this.navStick || !this.navFold
             },
@@ -89,10 +91,10 @@
             // 固定到前面的分类
             staticClassify () {
                 return this.authorizedNavigation.filter(classify => {
-                    if (classify.id === 'bk_index') {
+                    if (classify.authorized) {
                         return true
                     }
-                    return this.staticClassifyId.includes(classify.id) && classify.children.length
+                    return this.fixedClassifyId.includes(classify.id) && classify.children.length
                 })
             },
             // 用户自定义到导航的分类/模型
