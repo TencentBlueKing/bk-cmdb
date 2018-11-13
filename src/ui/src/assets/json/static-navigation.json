@@ -6,13 +6,17 @@
         "name": "首页",
         "path": "/index",
         "children": [],
-        "classificationId": "bk_index"
+        "classificationId": "bk_index",
+        "authorized": true,
+        "order": 1
     },
     "bk_host_manage": {
         "i18n": "Hosts['主机管理']",
         "icon": "icon-cc-host",
         "id": "bk_host_manage",
         "name": "主机管理",
+        "authorized": true,
+        "order": 2,
         "children": [{
             "i18n": "Hosts['主机']",
             "path": "/hosts",
@@ -55,6 +59,8 @@
         "icon": "icon-cc-setting",
         "id": "bk_back_config",
         "name": "后台配置",
+        "authorized": false,
+        "order": 4,
         "children": [{
             "i18n": "ModelManagement['模型管理']",
             "path": "/model/bk_host_manage",
