@@ -393,7 +393,7 @@
                 list.forEach(item => {
                     const existItem = this.table.allList.some(existItem => existItem['bk_inst_id'] === item['bk_inst_id'])
                     if (existItem) {
-                        Object.assing(existItem, item)
+                        Object.assign(existItem, item)
                     } else {
                         newList.push(item)
                     }
@@ -447,8 +447,8 @@
                             }
                             params.condition[asstObjId] = [{
                                 field: fieldMap.hasOwnProperty(asstObjId) ? fieldMap[asstObjId] : 'bk_inst_name',
-                                operator: '$regex',
-                                value: filterValue
+                                operator: '$in',
+                                value: filterValue.split(',')
                             }]
                         }
                     } else {
