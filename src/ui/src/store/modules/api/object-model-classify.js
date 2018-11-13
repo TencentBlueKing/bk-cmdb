@@ -17,11 +17,13 @@ const state = {
     interceptStaticModel: {
         'bk_host_manage': ['resource'],
         'bk_back_config': ['event', 'model', 'audit']
-    }
+    },
+    staticClassifyId: Object.keys(STATIC_NAVIGATION)
 }
 
 const getters = {
     classifications: state => state.classifications,
+    staticClassifyId: state => state.staticClassifyId,
     activeClassifications: state => {
         let classifications = state.classifications
         // 1.去掉停用模型
