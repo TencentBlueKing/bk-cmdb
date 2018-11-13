@@ -1,14 +1,14 @@
 <template>
-    <div class="topo-wrapper has-nav">
+    <div class="topo-wrapper" :class="{'has-nav': topoEdit.isEdit}">
         <div class="toolbar">
-            <bk-button class="edit-button" type="primary">
+            <bk-button class="edit-button" type="primary" @click="topoEdit.isEdit = true">
                 {{$t('ModelManagement["编辑拓扑"]')}}
             </bk-button>
             <div class="vis-button-group">
                 <bk-button class="vis-button vis-zoomExtends bk-icon icon-full-screen" @click="resizeFull" v-tooltip="$t('ModelManagement[\'还原\']')"></bk-button>
                 <bk-button class="vis-button vis-zoomIn bk-icon icon-plus" @click="zoomIn" v-tooltip="$t('ModelManagement[\'放大\']')"></bk-button>
                 <bk-button class="vis-button vis-zoomOut bk-icon icon-minus" @click="zoomOut" v-tooltip="$t('ModelManagement[\'缩小\']')"></bk-button>
-                <bk-button class="vis-button vis-setting icon-cc-setting" @click="showDisplaySlider" v-tooltip="$t('ModelManagement[\'拓扑显示设置\']')"></bk-button>
+                <bk-button class="vis-button vis-setting icon-cc-setting" @click="showslider('theDisplay')" v-tooltip="$t('ModelManagement[\'拓扑显示设置\']')"></bk-button>
                 <bk-button class="vis-button vis-example" @click="toggleExample">
                     <span class="vis-button-text">{{$t('ModelManagement["图例"]')}}</span>
                     <i class="bk-icon icon-angle-down" :class="{'rotate': isShowExample}"></i>
@@ -27,56 +27,90 @@
                 </cmdb-collapse-transition>
             </div>
         </div>
-        <ul class="topo-nav">
-            <li class="group-item" v-for="(group, groupIndex) in classifications" :key="groupIndex">
-                <div class="group-info"
-                    :class="{'active': topoNav.activeGroup === group['bk_classification_id']}"
-                    @click="toggleGroup(group)">
-                    <span class="group-name">{{group['bk_classification_name']}}</span>
-                    <span class="model-count">{{group['bk_objects'].length}}</span>
-                    <i class="bk-icon icon-angle-down"></i>
-                </div>
-                <cmdb-collapse-transition name="model-box">
-                    <ul class="model-box" v-show="topoNav.activeGroup === group['bk_classification_id']">
-                        <li class="model-item" v-for="(model, modelIndex) in group['bk_objects']" :key="modelIndex">
-                            <i :class="model['bk_obj_icon']"></i>
-                            <div class="info">
-                                <p class="name">{{model['bk_obj_name']}}</p>
-                                <p class="id">{{model['bk_obj_id']}}</p>
-                            </div>
-                        </li>
-                    </ul>
-                </cmdb-collapse-transition>
-            </li>
-        </ul>
+        <template v-if="topoEdit.isEdit">
+            <div class="topo-save-title">
+                <bk-button type="primary" @click="topoEdit.isEdit = false">
+                    {{$t('ModelManagement["保存并返回"]')}}
+                </bk-button>
+            </div>
+            <ul class="topo-nav">
+                <li class="group-item" v-for="(group, groupIndex) in classifications" :key="groupIndex">
+                    <div class="group-info"
+                        :class="{'active': topoNav.activeGroup === group['bk_classification_id']}"
+                        @click="toggleGroup(group)">
+                        <span class="group-name">{{group['bk_classification_name']}}</span>
+                        <span class="model-count">{{group['bk_objects'].length}}</span>
+                        <i class="bk-icon icon-angle-down"></i>
+                    </div>
+                    <cmdb-collapse-transition name="model-box">
+                        <ul class="model-box" v-show="topoNav.activeGroup === group['bk_classification_id']">
+                            <li class="model-item" draggable="true" v-for="(model, modelIndex) in group['bk_objects']" :key="modelIndex">
+                                <i :class="model['bk_obj_icon']"></i>
+                                <div class="info">
+                                    <p class="name">{{model['bk_obj_name']}}</p>
+                                    <p class="id">{{model['bk_obj_id']}}</p>
+                                </div>
+                            </li>
+                        </ul>
+                    </cmdb-collapse-transition>
+                </li>
+            </ul>
+        </template>
         <cmdb-slider
             :width="514"
-            :isShow.sync="displaySlider.isShow"
-            :title="displaySlider.title">
-            <theDisplay slot="content"></theDisplay>
+            :isShow.sync="slider.isShow"
+            :title="slider.title">
+            <component 
+                :is="slider.content"
+                slot="content"
+                :properties="slider.properties"
+            ></component>
         </cmdb-slider>
         <div class="global-model" ref="topo" v-bkloading="{isLoading: loading}"></div>
+        <ul class="topology-edge-tooltips" ref="edgeTooltips"
+            v-if="hoverEdge"
+            @mouseover="handleTooltipsOver"
+            @mouseleave="handleTooltipsLeave">
+            <li class="tooltips-option" @click="handleShowDetails">{{$t('Common["详情信息"]')}}</li>
+            <li class="tooltips-option" @click="handleShowDetails">{{$t('Common["详情信息"]')}}</li>
+            <li class="tooltips-option" @click="handleShowDetails">{{$t('Common["详情信息"]')}}</li>
+        </ul>
+        <div class="topology-node-tooltips" ref="nodeTooltips">
+            <i class="bk-icon icon-close"></i>
+        </div>
     </div>
 </template>
 
 <script>
     import Vis from 'vis'
     import theDisplay from './topo-detail/display'
+    import theRelation from './topo-detail/relation'
     import { generateObjIcon as GET_OBJ_ICON } from '@/utils/util'
-    import { mapGetters } from 'vuex'
+    import { mapGetters, mapActions } from 'vuex'
     export default {
         components: {
-            theDisplay
+            theDisplay,
+            theRelation
         },
         data () {
             return {
-                displaySlider: {
+                associationList: [],
+                slider: {
                     isShow: false,
+                    content: '',
+                    properties: {},
                     title: this.$t('ModelManagement["模型关系显示设置"]')
+                },
+                hoverNode: null,
+                hoverTimer: null,
+                hoverEdge: null,
+                topoEdit: {
+                    isEdit: false
                 },
                 topoNav: {
                     activeGroup: ''
                 },
+                topoModelList: [],
                 isShowExample: false,
                 loading: true,
                 networkInstance: null,
@@ -88,6 +122,44 @@
                     nodes: null,
                     edges: null,
                     options: {
+                        interaction: {
+                            hover: true
+                        },
+                        manipulation: {
+                            enabled: true,
+                            addNode: (data, callback) => {
+                                console.log(data)
+                                // filling in the popup DOM elements
+                                const node = {
+                                    id: 'bk_switch',
+                                    image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON({
+                                        name: '交换机',
+                                        backgroundColor: '#fff',
+                                        fontColor: '#6894c8'
+                                    }))}`,
+                                    data: {
+                                        bk_biz_id: 0,
+                                        bk_inst_id: 0,
+                                        bk_obj_icon: 'icon-cc-switch2',
+                                        bk_obj_id: 'bk_switch',
+                                        bk_supplier_account: '0',
+                                        ispre: false,
+                                        node_name: '交换机',
+                                        node_type: 'obj',
+                                        position: {
+                                            x: null,
+                                            y: null
+                                        },
+                                        scope_id: '0',
+                                        scope_type: 'global'
+                                    },
+                                    x: data.x,
+                                    y: data.y
+                                }
+                                callback(node)
+                                this.networkInstance.addEdgeMode()
+                            }
+                        },
                         nodes: {
                             shape: 'image',
                             widthConstraint: 55,
@@ -103,6 +175,9 @@
                             color: {
                                 color: '#c3cdd7',
                                 highlight: '#3c96ff'
+                            },
+                            font: {
+                                background: '#fff'
                             },
                             smooth: {
                                 type: 'curvedCW',
@@ -143,8 +218,80 @@
             this.initNetwork()
         },
         methods: {
-            showDisplaySlider () {
-                this.displaySlider.isShow = true
+            ...mapActions('objectAssociation', [
+                'searchAssociationType'
+            ]),
+            popupEdgeTooltips (data) {
+                const edgeId = data.edge
+                this.hoverEdge = this.network.edges.find(edge => edge.id === edgeId)
+                this.$nextTick(() => {
+                    const view = this.networkInstance.getViewPosition()
+                    const scale = this.networkInstance.getScale()
+                    const nodes = this.networkInstance.getConnectedNodes(edgeId)
+                    const nodePositions = this.networkInstance.getPositions(nodes)
+                    const edgeLeft = (nodePositions[nodes[0]].x + nodePositions[nodes[1]].x) / 2
+                    const edgeTop = (nodePositions[nodes[0]].y + nodePositions[nodes[1]].y) / 2
+                    const containerBox = this.$refs.topo.getBoundingClientRect()
+                    const left = containerBox.width / 2 + (edgeLeft - view.x) * scale + 18
+                    const top = containerBox.height / 2 + (edgeTop - view.y) * scale - 18
+                    this.$refs.edgeTooltips.style.left = left + 'px'
+                    this.$refs.edgeTooltips.style.top = top + 'px'
+                })
+            },
+            popupNodeTooltips (data) {
+                const nodeId = data.node
+                this.hoverNode = this.network.nodes.find(node => node.id === nodeId)
+                this.$nextTick(() => {
+                    const view = this.networkInstance.getViewPosition()
+                    const scale = this.networkInstance.getScale()
+                    const nodeBox = this.networkInstance.getBoundingBox(nodeId)
+                    const containerBox = this.$refs.topo.getBoundingClientRect()
+                    const left = containerBox.width / 2 + (nodeBox.right - view.x - 18) * scale
+                    const top = containerBox.height / 2 + (nodeBox.top - view.y) * scale
+                    this.$refs.nodeTooltips.style.left = left + 'px'
+                    this.$refs.nodeTooltips.style.top = top + 'px'
+                })
+            },
+            handleHoverEdge (data) {
+                this.popupEdgeTooltips(data)
+            },
+            handleHoverNode (data) {
+                this.popupNodeTooltips(data)
+            },
+            handleTooltipsOver () {
+
+            },
+            handleTooltipsLeave () {
+
+            },
+            handleShowDetails () {
+
+            },
+            getAssociationName (asstId) {
+                let asst = this.associationList.find(asst => asst.id === asstId)
+                if (asst) {
+                    if (asst['bk_asst_name'].length) {
+                        return asst['bk_asst_name']
+                    }
+                    return asst['bk_asst_id']
+                }
+            },
+            getAssociationType () {
+                return this.searchAssociationType({
+                    params: {},
+                    config: {
+                        requestId: 'searchAssociationType'
+                    }
+                }).then(res => {
+                    this.associationList = res.info
+                })
+            },
+            showslider (content) {
+                this.slider.content = content
+                this.slider.properties = {
+                    topoModelList: this.topoModelList
+                }
+                this.slider.isShow = true
             },
             toggleGroup (group) {
                 if (group['bk_classification_id'] !== this.topoNav.activeGroup) {
@@ -172,20 +319,31 @@
                 this.networkInstance.moveTo({scale: scale})
             },
             async initNetwork () {
+                await this.getAssociationType()
                 const response = await this.$store.dispatch('globalModels/searchModelAction')
+                this.topoModelList = response
                 this.setNodes(response)
                 this.setEdges(response)
                 this.networkInstance = new Vis.Network(this.$refs.topo, {
                     nodes: this.networkDataSet.nodes,
                     edges: this.networkDataSet.edges
                 }, this.network.options)
+                // this.networkInstance.addEdgeMode()
+                // this.networkInstance.addNodeMode()
+                
                 this.addListener()
             },
             // 设置节点数据
             setNodes (data) {
                 let nodes = []
+                let asstList = []
                 data.forEach(nodeData => {
                     if (nodeData.hasOwnProperty('assts')) {
+                        asstList = [...asstList, ...nodeData.assts]
+                    }
+                })
+                data.forEach(nodeData => {
+                    if (nodeData.hasOwnProperty('assts') || asstList.findIndex(({bk_obj_id: objId}) => objId === nodeData['bk_obj_id']) > -1) {
                         const node = {
                             id: nodeData['bk_obj_id'],
                             image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON({
@@ -215,13 +373,13 @@
                             const twoWayAsst = this.getTwoWayAsst(node, asst, edges)
                             if (twoWayAsst) { // 双向关联，将已存在的线改为双向
                                 twoWayAsst.arrows = 'to,from'
-                                twoWayAsst.label = [twoWayAsst.label, asst['bk_asst_name']].join(',\n')
+                                twoWayAsst.label = [twoWayAsst.label, this.getAssociationName(asst['bk_asst_inst_id'])].join(',\n')
                             } else {
                                 edges.push({
                                     from: node['bk_obj_id'],
                                     to: asst['bk_obj_id'],
                                     arrows: 'to',
-                                    label: asst['bk_asst_name']
+                                    label: this.getAssociationName(asst['bk_asst_inst_id'])
                                 })
                             }
                         })
@@ -323,6 +481,12 @@
                 if (!this.noPositionNodes.length) {
                     this.listenerCallback()
                 }
+                networkInstance.on('hoverEdge', data => {
+                    this.handleHoverEdge(data)
+                })
+                networkInstance.on('hoverNode', data => {
+                    this.handleHoverNode(data)
+                })
             }
         }
 
@@ -438,6 +602,15 @@
             }
         }
     }
+    .topo-save-title {
+        position: absolute;
+        padding: 11px;
+        top: -58px;
+        left: 0;
+        width: 100%;
+        height: 58px;
+        background: #fff;
+    }
     .topo-nav {
         display: none;
         float: left;
@@ -449,7 +622,7 @@
         @include scrollbar;
         .group-info {
             line-height: 42px;
-            padding: 0 20px 0 12px;
+            padding: 0 20px 0 15px;
             cursor: pointer;
             &:hover,
             &.active {
@@ -491,10 +664,11 @@
             i {
                 display: inline-block;
                 margin-right: 5px;
+                padding-top: 7px;
                 width: 36px;
                 height: 36px;
-                font-size: 24px;
-                line-height: 36px;
+                font-size: 20px;
+                line-height: 1;
                 text-align: center;
                 vertical-align: middle;
                 color: $cmdbBorderFocusColor;
@@ -517,5 +691,60 @@
         background-color: #f4f5f8;
         background-image: linear-gradient(#eef1f5 1px, transparent 0), linear-gradient(90deg, #eef1f5 1px, transparent 0);
         background-size: 10px 10px;
+    }
+    .topology-edge-tooltips {
+        position: absolute;
+        padding: 5px;
+        top: 0;
+        left: 0;
+        min-width: 100px;
+        font-size: 12px;
+        color: #868b97;
+        background: #fff;
+        box-shadow:0px 2px 4px 0px rgba(147,147,147,0.5);
+        border-radius:2px;
+        cursor: pointer;
+        :hover {
+            color: $cmdbBorderFocusColor;
+            background: #ebf4ff;
+        }
+        &:after {
+            position: absolute;
+            content: '';
+            border: 6px solid transparent;
+            border-right-color: #fff;
+            top: 16px;
+            left: -12px;
+            z-index: 1;
+        }
+        &:before {
+            position: absolute;
+            content: '';
+            border: 6px solid transparent;
+            border-right-color: $cmdbTableBorderColor;
+            top: 16px;
+            left: -13px;
+            z-index: 1;
+        }
+    }
+    .topology-node-tooltips {
+        position: absolute;
+        padding-top: 1px;
+        top: 0;
+        left: 0;
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        text-align: center;
+        border-radius: 50%;
+        font-size: 12px;
+        color: #fff;
+        background: $cmdbDangerColor;
+        .bk-icon {
+            transform: scale(.5);
+            font-weight: bold;
+            vertical-align: top;
+            cursor: pointer;
+        }
     }
 </style>

@@ -109,11 +109,13 @@ input.cmdb-form-input {
     line-height: 18px;
     display: inline-block;
     padding: 7px 0;
+    font-size: 0;
 
     .cmdb-checkbox-text {
         display: inline-block;
         font-style: normal;
         font-weight: normal;
+        font-size: 14px;
         cursor: pointer;
         vertical-align: middle;
         @include ellipsis;
