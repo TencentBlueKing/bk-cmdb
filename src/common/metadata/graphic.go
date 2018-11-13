@@ -20,13 +20,13 @@ type Position struct {
 
 // Asst the node association node
 type GraphAsst struct {
-	AsstType string            `json:"bk_asst_type"`
-	NodeType string            `json:"node_type"`
-	ObjID    string            `json:"bk_obj_id"`
-	InstID   int               `json:"bk_inst_id"`
-	ObjAtt   string            `json:"bk_object_att_id"`
-	AsstName string            `json:"bk_asst_name"`
-	Label    map[string]string `json:"label"`
+	AsstType              string            `json:"bk_asst_type"`
+	NodeType              string            `json:"node_type"`
+	ObjID                 string            `json:"bk_obj_id"`
+	InstID                int               `json:"bk_inst_id"`
+	AssociationKindInstID int64             `json:"bk_asst_inst_id"`
+	AsstName              string            `json:"bk_asst_name"`
+	Label                 map[string]string `json:"label"`
 }
 
 type TopoGraphics struct {
