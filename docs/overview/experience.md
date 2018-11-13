@@ -1,4 +1,4 @@
-# 体验蓝鲸配置平台
+# 了解蓝鲸配置平台和蓝鲸社区版
 
 ------
 
@@ -10,7 +10,7 @@
 
 ![bk-cmdb.png](../resource/img/bk.png) 
 
-## 如何快速体验蓝鲸配置平台？
+## 如何体验蓝鲸配置平台以及蓝鲸社区版？
 
 - （`推荐`）**单机部署**一套简易蓝鲸社区版（主要包含蓝鲸PaaS、蓝鲸配置平台，蓝鲸作业平台几个基础平台）
   - 自己准备资源部署体验：http://docs.bk.tencent.com/bkce_install_guide/install_on_single_host.html
