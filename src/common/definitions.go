@@ -61,7 +61,7 @@ const (
 	BKDefaultSupplierID = 0
 
 	// BKSuperOwnerID the super owner value
-	BKSuperOwnerID = "supperowner"
+	BKSuperOwnerID = "superadmin"
 
 	// BKDefaultDirSubArea the default dir subarea
 	BKDefaultDirSubArea = 0
@@ -89,8 +89,8 @@ const (
 	// BKInnerObjIDHost the inner object
 	BKInnerObjIDHost = "host"
 
-	// BKINnerObjIDObject the inner object
-	BKINnerObjIDObject = "object"
+	// BKInnerObjIDObject the inner object
+	BKInnerObjIDObject = "object"
 
 	// BKInnerObjIDProc the inner object
 	BKInnerObjIDProc = "process"
@@ -163,6 +163,9 @@ const (
 
 	// BKDBExists the db opeartor
 	BKDBExists = "$exists"
+
+	// BKDBNot the db opeartor
+	BKDBNot = "$not"
 
 	// BKDBSortFieldSep the db sort field split char
 	BKDBSortFieldSep = ","
@@ -699,6 +702,8 @@ const (
 	BKHTTPHeaderUser = "BK_User"
 	// BKHTTPLanguage the language key word
 	BKHTTPLanguage = "HTTP_BLUEKING_LANGUAGE"
+	// BKHTTPOwnerID the owner
+	BKHTTPOwner = "HTTP_BK_SUPPLIER_ACCOUNT"
 	// BKHTTPOwnerID the owner id
 	BKHTTPOwnerID = "HTTP_BLUEKING_SUPPLIER_ID"
 	//BKHTTPOwnerID = "HTTP_BLUEKING_OWNERID"
