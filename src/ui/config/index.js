@@ -20,7 +20,7 @@ module.exports = {
   dev: {
     // custom config
     config: Object.assign({}, config, {
-        'API_URL': '""',
+        'API_URL': '"http://{host}:{port}/proxy/"',
         'API_VERSION': '"v3"',
         'API_LOGIN': '""',
         'AGENT_URL': 'null',
@@ -32,8 +32,16 @@ module.exports = {
     // Paths
     assetsSubDirectory: '',
     assetsPublicPath: '/static/',
-    proxyTable: {},
-
+    proxyTable: {
+        '/proxy': {
+            logLevel: 'info',
+            changeOrigin: true,
+            target: 'http://{webserver地址}/',
+            pathRewrite: {
+                '^/proxy': ''
+            }
+        }
+    },
     // Various Dev Server settings
     host: 'localhost', // can be overwritten by process.env.HOST
     port: 9090, // can be overwritten by process.env.PORT, if port is in use, a free one will be determined
