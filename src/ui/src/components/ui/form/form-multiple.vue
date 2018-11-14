@@ -83,7 +83,11 @@
             changedValues () {
                 const changedValues = {}
                 for (let propertyId in this.values) {
-                    if (this.values[propertyId] !== this.refrenceValues[propertyId]) {
+                    const property = this.getProperty(propertyId)
+                    if (
+                        ['bool'].includes(property['bk_property_type']) ||
+                        this.values[propertyId] !== this.refrenceValues[propertyId]
+                    ) {
                         changedValues[propertyId] = this.values[propertyId]
                     }
                 }
@@ -154,6 +158,9 @@
                 let output = temp.innerText
                 temp = null
                 return output
+            },
+            getProperty (id) {
+                return this.properties.find(property => property['bk_property_id'] === id)
             },
             getValidateRules (property) {
                 const rules = {}
