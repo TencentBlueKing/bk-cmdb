@@ -2,7 +2,6 @@ language: go
 
 go:
   - "1.8.x"
-  - "1.10.x"
 
 # safelist
 branches:
@@ -33,6 +32,6 @@ script:
 notifications:
   email:
     recipients:
-      - gmaclinuxer@gmail.com
+      - lowenitt@sina.com
     on_success: always # default: change
     on_failure: always # default: always

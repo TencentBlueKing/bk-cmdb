@@ -69,7 +69,7 @@ func (zkRD *ZkRegDiscover) Write(path string, data []byte) error {
 }
 
 func (zkRD *ZkRegDiscover) Read(path string) (string, error) {
-    return zkRD.zkcli.Get(path)
+	return zkRD.zkcli.Get(path)
 }
 
 func (zkRD *ZkRegDiscover) Discover(key string) (<-chan *DiscoverEvent, error) {
@@ -101,7 +101,8 @@ func (zkRD *ZkRegDiscover) loopDiscover(path string, discvCtx context.Context, e
 
 			discvEnv.Err = err
 			env <- discvEnv
-			return
+			time.Sleep(5 * time.Second)
+			continue
 		}
 
 		discvEnv.Data = data

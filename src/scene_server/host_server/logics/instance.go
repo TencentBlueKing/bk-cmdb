@@ -189,7 +189,7 @@ func (lgc *Logics) getRawInstAsst(ownerID, objID string, IDs []string, pheader h
 			condition[common.BKInstIDField] = map[string]interface{}{"$in": tmpIDs}
 		}
 		query.Condition = condition
-		rtn, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKINnerObjIDObject, pheader, query)
+		rtn, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDObject, pheader, query)
 		if err != nil || (err == nil && !rtn.Result) {
 			return nil, 0, fmt.Errorf("get hosts failed, err, %v, %v", err, rtn.ErrMsg)
 		}

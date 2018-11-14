@@ -36,7 +36,7 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
 		}
 	}
 
-	if common.GetObjByType(valid.objID) == common.BKINnerObjIDObject {
+	if common.GetObjByType(valid.objID) == common.BKInnerObjIDObject {
 		searchCond[common.BKObjIDField] = valid.objID
 	}
 
@@ -90,7 +90,7 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 	// only search data not in diable status
 	searchCond[common.BKDataStatusField] = map[string]interface{}{common.BKDBNE: common.DataStatusDisabled}
 	if common.GetInstTableName(objID) == common.BKTableNameBaseInst {
-		objID = common.BKINnerObjIDObject
+		objID = common.BKInnerObjIDObject
 		searchCond[common.BKObjIDField] = valid.objID
 	}
 
@@ -116,7 +116,7 @@ func (valid *ValidMap) getInstDataByID(instID int64) (map[string]interface{}, er
 
 	searchCond[common.GetInstIDField(objID)] = instID
 	if common.GetInstTableName(objID) == common.BKTableNameBaseInst {
-		objID = common.BKINnerObjIDObject
+		objID = common.BKInnerObjIDObject
 		searchCond[common.BKObjIDField] = valid.objID
 	}
 

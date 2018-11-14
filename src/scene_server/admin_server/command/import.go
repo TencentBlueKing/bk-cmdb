@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal"
 )
@@ -140,7 +141,6 @@ func importBKBiz(ctx context.Context, db dal.RDB, opt *option) error {
 								}
 							}
 
-							//
 							deleteconition := map[string]interface{}{
 								common.GetInstIDField(child.ObjID): childID,
 							}
@@ -217,6 +217,7 @@ func importProcess(ctx context.Context, db dal.RDB, opt *option, cur, tar *Proce
 				procmod.ModuleName = modulename
 				procmod.BizID = bizID
 				procmod.ProcessID = procID
+				procmod.OwnerID = opt.OwnerID
 				fmt.Printf("--- \033[34minsert process module data: %+v\033[0m\n", procmod)
 				if !opt.dryrun {
 					err = db.Table(common.BKTableNameProcModule).Insert(ctx, &procmod)
@@ -261,6 +262,7 @@ func importProcess(ctx context.Context, db dal.RDB, opt *option, cur, tar *Proce
 				procmod.ModuleName = modulename
 				procmod.BizID = bizID
 				procmod.ProcessID = nid
+				procmod.OwnerID = opt.OwnerID
 				fmt.Printf("--- \033[34minsert process module data: %+v\033[0m\n", topo.Data)
 				if !opt.dryrun {
 					err = db.Table(common.BKTableNameProcModule).Insert(ctx, &procmod)
@@ -402,6 +404,7 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 			node.Data[common.BKOwnerIDField] = ipt.ownerID
 			node.Data[common.BKAppIDField] = ipt.bizID
 			node.Data[common.BKInstParentStr] = ipt.parentID
+			node.Data[common.BKDefaultField] = 0
 			condition := getModifyCondition(node.Data, []string{common.BKSetNameField, common.BKInstParentStr})
 			set := map[string]interface{}{}
 			err := ipt.db.Table(common.GetInstTableName(node.ObjID)).Find(condition).One(ipt.ctx, &set)
@@ -432,6 +435,7 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 			node.Data[common.BKAppIDField] = ipt.bizID
 			node.Data[common.BKSetIDField] = ipt.setID
 			node.Data[common.BKInstParentStr] = ipt.parentID
+			node.Data[common.BKDefaultField] = 0
 			condition := getModifyCondition(node.Data, []string{common.BKModuleNameField, common.BKInstParentStr})
 			module := map[string]interface{}{}
 			err := ipt.db.Table(common.GetInstTableName(node.ObjID)).Find(condition).One(ipt.ctx, &module)
@@ -485,23 +489,24 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 		// fetch datas that should delete
 		if node.ObjID != common.BKInnerObjIDModule {
 			childtablename := common.GetInstTableName(node.getChildObjID())
-			instID, _ := node.getInstID()
-			childCondition := map[string]interface{}{
-				common.BKInstParentStr: instID,
-				node.getChilDInstNameField(): map[string]interface{}{
-					"$nin": node.getChilDInstNames(),
-				},
+			instID, err := node.getInstID()
+			if nil != err {
+				return fmt.Errorf("get instID faile, data: %+v, error: %v", node, err)
 			}
+
+			childCondition := condition.CreateCondition()
+			childCondition.Field(common.BKInstParentStr).Eq(instID)
+			childCondition.Field(node.getChilDInstNameField()).NotIn(node.getChilDInstNames())
 			switch node.getChildObjID() {
 			case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule:
-				childCondition["default"] = map[string]interface{}{common.BKDBLTE: 0}
+				childCondition.Field(common.BKDefaultField).NotGt(0)
 			default:
-				childCondition[common.BKObjIDField] = node.getChildObjID()
+				childCondition.Field(common.BKObjIDField).Eq(node.getChildObjID())
 			}
 			shouldDelete := []map[string]interface{}{}
-			err := ipt.db.Table(childtablename).Find(childCondition).All(ipt.ctx, &shouldDelete)
+			err = ipt.db.Table(childtablename).Find(childCondition.ToMapStr()).All(ipt.ctx, &shouldDelete)
 			if nil != err {
-				return fmt.Errorf("get child of %+v error: %s", childCondition, err.Error())
+				return fmt.Errorf("get child of %+v error: %s", childCondition.ToMapStr(), err.Error())
 			}
 			if len(shouldDelete) > 0 {
 				// fmt.Printf("found %d should delete %s by %+v\n, parent %+v \n", len(shouldDelete), node.getChildObjID(), childCondition, node.Data)

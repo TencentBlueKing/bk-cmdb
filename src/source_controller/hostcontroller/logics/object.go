@@ -34,7 +34,7 @@ func (lgc *Logics) GetObjectByID(ctx context.Context, objType string, fields []s
 		condition[common.BKSetIDField] = id
 	case common.BKInnerObjIDModule:
 		condition[common.BKModuleIDField] = id
-	case common.BKINnerObjIDObject:
+	case common.BKInnerObjIDObject:
 		condition[common.BKInstIDField] = id
 	case common.BKInnerObjIDHost:
 		condition[common.BKHostIDField] = id
