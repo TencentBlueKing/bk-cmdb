@@ -5,7 +5,8 @@
         :searchable="privilegeBusiness.length > 5"
         :disabled="disabled"
         setting-key="bk_biz_id"
-        display-key="bk_biz_name">
+        display-key="bk_biz_name"
+        search-key="bk_biz_name">
     </bk-selector>
 </template>
 
