@@ -178,3 +178,18 @@ func (asst *Association) DeleteInst(ctx context.Context, h http.Header, request 
 
 	return
 }
+
+func (asst *Association) SearchObjectAssoWithAssoKindList(ctx context.Context, h http.Header, assoKindIDs metadata.AssociationKindIDs) (resp *metadata.ListAssociationsWithAssociationKindResult, err error) {
+	resp = new(metadata.ListAssociationsWithAssociationKindResult)
+	subPath := "/topo/association/type/action/search/batch"
+
+	err = asst.client.Post().
+		WithContext(ctx).
+		Body(assoKindIDs).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}

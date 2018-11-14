@@ -139,6 +139,26 @@ type DeleteAssociationInstResult struct {
 	Data     string `json:"data"`
 }
 
+type AssociationKindIDs struct {
+	// the association kind ids.
+	AsstIDs []string `json:"asst_ids"`
+}
+
+type ListAssociationsWithAssociationKindResult struct {
+	BaseResp `json:",inline"`
+	Data     AssociationList `json:"data"`
+}
+
+type AssociationList struct {
+	Associations []AssociationDetail `json:"associations"`
+}
+
+type AssociationDetail struct {
+	// the ID of the association kind.
+	AssociationKindID string        `json:"bk_asst_id"`
+	Associations      []Association `json:"assts"`
+}
+
 // 关联类型
 type AssociationDirection string
 
@@ -146,7 +166,7 @@ const (
 	NoneDirection       AssociationDirection = "none"
 	DestinationToSource AssociationDirection = "src_to_dest"
 	SourceToDestination AssociationDirection = "dest_to_src"
-    Bidirectional AssociationDirection = "bidirectional"
+	Bidirectional       AssociationDirection = "bidirectional"
 )
 
 type AssociationKind struct {

@@ -128,6 +128,16 @@ func (s *topoService) SearchAssociationType(params types.ContextParams, pathPara
 	return ret.Data, nil
 }
 
+func (s *topoService) SearchObjectAssoWithAssoKindList(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+
+	ids := new(metadata.AssociationKindIDs)
+	if err := data.MarshalJSONInto(ids); err != nil {
+		return nil, params.Err.Error(common.CCErrCommParamsInvalid)
+	}
+
+	return s.core.AssociationOperation().SearchObjectAssoWithAssoKindList(params, ids.AsstIDs)
+}
+
 func (s *topoService) CreateAssociationType(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	request := &metadata.AssociationKind{}
 	if err := data.MarshalJSONInto(request); err != nil {
