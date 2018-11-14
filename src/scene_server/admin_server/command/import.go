@@ -599,7 +599,6 @@ func inSlice(sub string, slice []string) bool {
 func containsMap(src, sub map[string]interface{}) bool {
 	for key := range sub {
 		if !equalIgnoreLength(src[key], sub[key]) {
-			fmt.Printf("diff: %s: %#v(%T)->%#v(%T)", key, src[key], src[key], sub[key], sub[key])
 			return false
 		}
 	}
