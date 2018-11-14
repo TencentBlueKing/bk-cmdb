@@ -2,11 +2,11 @@
     <div class="display-wrapper">
         <div class="display-setting">
             <label class="cmdb-form-checkbox">
-                <input type="checkbox">
+                <input type="checkbox" v-model="isShowModelName">
                 <span class="cmdb-checkbox-text">{{$t('ModelManagement["显示模型名称"]')}}</span>
             </label>
             <label class="cmdb-form-checkbox">
-                <input type="checkbox">
+                <input type="checkbox" v-model="isShowModelAsst">
                 <span class="cmdb-checkbox-text">{{$t('ModelManagement["显示关系名称"]')}}</span>
             </label>
         </div>
@@ -16,9 +16,9 @@
                 <ul class="clearfix">
                     <li class="model-item" v-for="(model, modelIndex) in group['bk_objects']" :key="modelIndex">
                         <label class="cmdb-form-checkbox">
-                            <input type="checkbox">
+                            <input type="checkbox" :checked="isChecked(model)" @click="checkAll(model)">
                             <span class="cmdb-checkbox-text">{{model['bk_obj_name']}}</span>
-                            <span class="count">({{group.asstObjects[model['bk_obj_id']].assts.length}})</span>
+                            <span class="count">({{model.asstInfo.assts.length}})</span>
                             <i class="bk-icon icon-angle-down"></i>
                         </label>
                         <div class="relation-detail">
@@ -28,24 +28,30 @@
                                     <span class="info">({{$t('ModelManagement["即视图中的连线"]')}})</span>
                                 </div>
                                 <label class="fr cmdb-form-checkbox">
-                                    <input type="checkbox">
+                                    <input type="checkbox" :checked="isChecked(model)" @click="checkAll(model)">
                                     <span class="cmdb-checkbox-text">{{$t('ModelManagement["全选"]')}}</span>
                                 </label>
                             </div>
                             <ul class="relation-list clearfix">
-                                <li class="fl" v-for="(asst, asstIndex) in group.asstObjects[model['bk_obj_id']].assts" :key="asstIndex">
-                                    <label class="cmdb-form-checkbox">
+                                <li class="fl" v-for="(asst, asstIndex) in findCurrentModelAsst(model)" :key="asstIndex">
+                                    <label class="cmdb-form-checkbox" :title="asstLabel(model, asst)">
                                         <input type="checkbox" v-model="asst.checked">
                                         <span class="cmdb-checkbox-text">{{asstLabel(model, asst)}}</span>
                                     </label>
                                 </li>
+                                <!-- <li class="fl" v-for="(asst, asstIndex) in model.asstInfo.assts" :key="asstIndex">
+                                    <label class="cmdb-form-checkbox" :title="asstLabel(model, asst)">
+                                        <input type="checkbox" v-model="asst.checked">
+                                        <span class="cmdb-checkbox-text">{{asstLabel(model, asst)}}</span>
+                                    </label>
+                                </li> -->
                             </ul>
                         </div>
                     </li>
                 </ul>
             </li>
         </ul>
-        <div class="btn-group">
+        <div class="button-group">
             <bk-button type="primary" :loading="$loading(['updateAssociationType', 'createAssociationType'])" @click="saveDisplay">
                 {{$t('ModelManagement["确定"]')}}
             </bk-button>
@@ -60,13 +66,28 @@
     import { mapGetters } from 'vuex'
     export default {
         props: {
+            associationList: {
+                type: Array
+            },
+            topoModelList: {
+                type: Array
+            },
             properties: {
-                type: Object
+                type: Object,
+                default () {
+                    return {
+                        topoModelList: [],
+                        associationList: []
+                    }
+                }
             }
         },
         data () {
             return {
-
+                localTopoModelList: this.initLocalTopoModelList(),
+                isShowModelName: true,
+                isShowModelAsst: true,
+                topoList: []
             }
         },
         computed: {
@@ -78,32 +99,50 @@
             this.initTopoList()
         },
         methods: {
+            initLocalTopoModelList () {
+                let topoModelList = this.$tools.clone(this.topoModelList)
+                topoModelList.forEach(obj => {
+                    if (obj.hasOwnProperty('assts') && obj.assts.length) {
+                        obj.assts.forEach(asst => {
+                            this.$set(asst, 'checked', true)
+                        })
+                    }
+                })
+                return topoModelList
+            },
+            findCurrentModelAsst (model) {
+                return this.localTopoModelList.find(obj => obj['bk_obj_id'] === model['bk_obj_id'] && obj.hasOwnProperty('assts') && obj.assts.length).assts
+            },
+            isChecked (model) {
+                let modelAsst = this.findCurrentModelAsst(model)
+                return !modelAsst.some(asst => !asst.checked)
+            },
+            checkAll (model) {
+                let modelAsst = this.findCurrentModelAsst(model)
+                modelAsst.forEach(asst => {
+                    asst.checked = event.target.checked
+                })
+                this.$forceUpdate()
+            },
             initTopoList () {
-                let {
-                    topoModelList
-                } = this.properties
                 let topoList = []
                 this.classifications.forEach(group => {
                     let objects = []
                     let asstObjects = {}
                     group['bk_objects'].forEach(model => {
-                        let asstInfo = topoModelList.find(obj => obj['bk_obj_id'] === model['bk_obj_id'] && obj.hasOwnProperty('assts') && obj.assts.length)
+                        let asstInfo = this.localTopoModelList.find(obj => obj['bk_obj_id'] === model['bk_obj_id'] && obj.hasOwnProperty('assts') && obj.assts.length)
                         if (asstInfo) {
-                            objects.push(model)
-                            asstObjects[model['bk_obj_id']] = {
-                                ...asstInfo,
-                                ...{
-                                    checked: false
-                                }
-                            }
+                            objects.push({
+                                ...model,
+                                ...{asstInfo}
+                            })
                         }
                     })
                     if (objects.length) {
                         topoList.push({
                             ...group,
                             ...{
-                                bk_objects: objects,
-                                asstObjects
+                                bk_objects: objects
                             }
                         })
                     }
@@ -115,11 +154,29 @@
                     return model['bk_obj_id'] === asst['bk_obj_id']
                 })
                 if (asstModel) {
-                    return `${model['bk_obj_name']}->${asstModel['bk_obj_name']}`
+                    let association = this.associationList.find(({id}) => id === asst['bk_asst_inst_id'])
+                    if (association) {
+                        if (association['bk_asst_name'].length) {
+                            return `${association['bk_asst_name']}->${asstModel['bk_obj_name']}`
+                        }
+                        return `${association['bk_asst_id']}->${asstModel['bk_obj_name']}`
+                    }
                 }
             },
             saveDisplay () {
-
+                let topoModelList = this.$tools.clone(this.localTopoModelList).map(obj => {
+                    if (obj.hasOwnProperty('assts') && obj.assts.length) {
+                        obj.assts = obj.assts.filter(asst => asst.checked)
+                    }
+                    return obj
+                })
+                let displayConfig = {
+                    isShowModelName: this.isShowModelName,
+                    isShowModelAsst: this.isShowModelAsst,
+                    topoModelList
+                }
+                this.$emit('save', displayConfig)
+                this.$emit('cancel')
             },
             cancel () {
                 
@@ -151,7 +208,7 @@
         }
         .model-item {
             float: left;
-            width: 140px;
+            width: 180px;
             &:hover {
                 .relation-detail {
                     display: block;
@@ -178,12 +235,12 @@
                 }
             }
             >.cmdb-form-checkbox {
-                margin-right: 5px;
-                width: 135px;
+                margin-right: 10px;
+                width: 170px;
                 font-size: 0;
                 cursor: pointer;
                 >.cmdb-checkbox-text {
-                    max-width: 65px;
+                    max-width: 100px;
                     font-size: 14px;
                     @include ellipsis;
                 }
@@ -199,7 +256,7 @@
                 position: absolute;
                 display: none;
                 left: 0;
-                width: 455px;
+                width: 100%;
                 padding: 5px 20px 10px;
                 background: #fff;
                 border: 1px solid $cmdbTableBorderColor;
@@ -229,9 +286,15 @@
                     }
                 }
                 .cmdb-form-checkbox {
-                    width: 130px;
-                    margin-right: 10px;
-                    @include ellipsis;
+                    width: 160px;
+                    margin-right: 9px;
+                    .cmdb-checkbox-text {
+                        max-width: 135px;
+                        @include ellipsis;
+                    }
+                    &:nth-child(3n) {
+                        margin: 0;
+                    }
                 }
             }
             .icon-angle-down {
@@ -241,8 +304,8 @@
             }
         }
     }
-    .btn-group {
-        margin-top: 20px;
+    .button-group {
+        margin: 20px 0 0;
         font-size: 0;
         .bk-button {
             margin-right: 10px;
