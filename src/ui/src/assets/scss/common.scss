@@ -299,6 +299,15 @@ input.cmdb-form-input {
     border-color: #0082ff;
     background: #fff;
 }
+button.bk-button.bk-danger {
+    background: #fff;
+    color: $cmdbDangerColor;
+    &:hover {
+        border-color: $cmdbDangerHoverColor;
+        color: $cmdbDangerHoverColor;
+        background: #fff;
+    }
+}
 
 .bk-selector .bk-selector-list-item .text {
     @include ellipsis;
