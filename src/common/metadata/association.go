@@ -387,7 +387,7 @@ type TopoInst struct {
 // TopoInstRst 拓扑实例
 type TopoInstRst struct {
 	TopoInst `json:",inline"`
-	Child    []TopoInstRst `json:"child"`
+	Child    []*TopoInstRst `json:"child"`
 }
 
 // ConditionItem subcondition
