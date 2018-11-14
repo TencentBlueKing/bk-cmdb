@@ -61,25 +61,6 @@
             :width="slider.width"
             :isShow.sync="slider.isShow"
             :title="slider.title">
-            <!-- <template v-if="slider.content==='theDisplay'">
-                <the-display
-                    class="slider-content"
-                    slot="content"
-                    :topoModelList="topoModelList"
-                    :associationList="associationList"
-                    @save="saveDisplay"
-                    @cancel="slider.isShow = false"
-                ></the-display>
-            </template>
-            <template>
-                <the-relation-detail
-                    class="slider-content"
-                    slot="content"
-                    v-bind="slider.properties"
-                    :objId="detailSlider.objId"
-                    :asstId="detailSlider.asstId"
-                ></the-relation-detail>
-            </template> -->
             <component 
                 class="slider-content"
                 slot="content"
@@ -195,7 +176,7 @@
                             addEdge: (data, callback) => {
                                 console.log(data)
                                 callback(data)
-                                this.handleEdgeCreate()
+                                this.handleEdgeCreate(data)
                             }
                         },
                         nodes: {
@@ -290,7 +271,11 @@
             handleSliderCancel () {
 
             },
-            handleEdgeCreate () {
+            handleEdgeCreate (data) {
+                this.slider.properties = {
+                    fromObjId: data.from,
+                    toObjId: data.to
+                }
                 this.showSlider('theRelation')
             },
             handleEdgeClick (edgeId) {
@@ -406,11 +391,6 @@
                         slider.width = 600
                         break
                     case 'theRelation':
-                        slider.properties = {
-                            topoModelList: this.topoModelList,
-                            associationList: this.associationList
-                        }
-                        break
                     case 'theRelationDetail':
                     default:
                         slider.width = 514
