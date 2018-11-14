@@ -155,7 +155,7 @@ type AssociationList struct {
 
 type AssociationDetail struct {
 	// the ID of the association kind.
-	AssociationKindID string        `json:"asst_id"`
+	AssociationKindID string        `json:"bk_asst_id"`
 	Associations      []Association `json:"assts"`
 }
 
