@@ -25,7 +25,7 @@
 
 1. 从 `master` 或者 `hotfix` fork 你自己的分支。
 2. 在修改了代码之后请修改对应的文档和注释。
-3. 在新建的文件中请加入licence 和copy right申明。
+3. 在新建的文件中请加入license 和copy right申明。
 4. 确保一致的代码风格。
 5. 做充分的测试。
 6. 然后，你可以提交你的代码到 `dev` 或者 `hotfix` 分支。
