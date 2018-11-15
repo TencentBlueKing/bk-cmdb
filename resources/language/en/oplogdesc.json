@@ -3,7 +3,7 @@
      "auditlog_create host": "Add host to resource pool",
      "auditlog_move host to resource pool": "Transfer host to resource pool",
      "auditlog_host module change": "Host module change",
-     "auditlog_distribution host to app": "Assign host to service",
+     "auditlog_assign host to app": "Assign host to service",
      "auditlog_host to idle module": "Transfer host to idle machine",
      "auditlog_host to fault module": "Transfer Host to fault machine",
      "auditlog_delete host": "Turn over the host",
