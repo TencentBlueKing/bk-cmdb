@@ -2,11 +2,11 @@
     <div class="display-wrapper">
         <div class="display-setting">
             <label class="cmdb-form-checkbox">
-                <input type="checkbox" v-model="isShowModelName">
+                <input type="checkbox" v-model="isShowName">
                 <span class="cmdb-checkbox-text">{{$t('ModelManagement["显示模型名称"]')}}</span>
             </label>
             <label class="cmdb-form-checkbox">
-                <input type="checkbox" v-model="isShowModelAsst">
+                <input type="checkbox" v-model="isShowAsst">
                 <span class="cmdb-checkbox-text">{{$t('ModelManagement["显示关系名称"]')}}</span>
             </label>
         </div>
@@ -39,12 +39,6 @@
                                         <span class="cmdb-checkbox-text">{{asstLabel(model, asst)}}</span>
                                     </label>
                                 </li>
-                                <!-- <li class="fl" v-for="(asst, asstIndex) in model.asstInfo.assts" :key="asstIndex">
-                                    <label class="cmdb-form-checkbox" :title="asstLabel(model, asst)">
-                                        <input type="checkbox" v-model="asst.checked">
-                                        <span class="cmdb-checkbox-text">{{asstLabel(model, asst)}}</span>
-                                    </label>
-                                </li> -->
                             </ul>
                         </div>
                     </li>
@@ -52,10 +46,10 @@
             </li>
         </ul>
         <div class="button-group">
-            <bk-button type="primary" :loading="$loading(['updateAssociationType', 'createAssociationType'])" @click="saveDisplay">
+            <bk-button type="primary" @click="saveDisplay">
                 {{$t('ModelManagement["确定"]')}}
             </bk-button>
-            <bk-button type="default" @click="cancel">
+            <bk-button type="default" @click="reset">
                 {{$t('ModelManagement["重置"]')}}
             </bk-button>
         </div>
@@ -72,21 +66,18 @@
             topoModelList: {
                 type: Array
             },
-            properties: {
-                type: Object,
-                default () {
-                    return {
-                        topoModelList: [],
-                        associationList: []
-                    }
-                }
+            isShowModelName: {
+                type: Boolean
+            },
+            isShowModelAsst: {
+                type: Boolean
             }
         },
         data () {
             return {
-                localTopoModelList: this.initLocalTopoModelList(),
-                isShowModelName: true,
-                isShowModelAsst: true,
+                localTopoModelList: [],
+                isShowName: this.isShowModelName,
+                isShowAsst: this.isShowModelAsst,
                 topoList: []
             }
         },
@@ -96,19 +87,12 @@
             ])
         },
         created () {
+            this.initLocalTopoModelList()
             this.initTopoList()
         },
         methods: {
             initLocalTopoModelList () {
-                let topoModelList = this.$tools.clone(this.topoModelList)
-                topoModelList.forEach(obj => {
-                    if (obj.hasOwnProperty('assts') && obj.assts.length) {
-                        obj.assts.forEach(asst => {
-                            this.$set(asst, 'checked', true)
-                        })
-                    }
-                })
-                return topoModelList
+                this.localTopoModelList = this.$tools.clone(this.topoModelList)
             },
             findCurrentModelAsst (model) {
                 return this.localTopoModelList.find(obj => obj['bk_obj_id'] === model['bk_obj_id'] && obj.hasOwnProperty('assts') && obj.assts.length).assts
@@ -164,22 +148,24 @@
                 }
             },
             saveDisplay () {
-                let topoModelList = this.$tools.clone(this.localTopoModelList).map(obj => {
-                    if (obj.hasOwnProperty('assts') && obj.assts.length) {
-                        obj.assts = obj.assts.filter(asst => asst.checked)
-                    }
-                    return obj
-                })
-                let displayConfig = {
-                    isShowModelName: this.isShowModelName,
-                    isShowModelAsst: this.isShowModelAsst,
-                    topoModelList
+                const displayConfig = {
+                    isShowModelName: this.isShowName,
+                    isShowModelAsst: this.isShowAsst,
+                    topoModelList: this.$tools.clone(this.localTopoModelList)
                 }
                 this.$emit('save', displayConfig)
                 this.$emit('cancel')
             },
-            cancel () {
-                
+            reset () {
+                this.isShowName = true
+                this.isShowAsst = true
+                this.localTopoModelList.forEach(model => {
+                    if (model.hasOwnProperty('assts') && model.assts.length) {
+                        model.assts.forEach(asst => {
+                            asst.checked = true
+                        })
+                    }
+                })
             }
         }
     }

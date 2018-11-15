@@ -6,7 +6,7 @@
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item">
-                <input type="text" class="cmdb-form-input" disabled :value="relationInfo['bk_obj_id']">
+                <input type="text" class="cmdb-form-input" disabled :value="getModelName(relationInfo['bk_obj_id'])">
             </div>
         </label>
         <label class="form-label">
@@ -15,7 +15,7 @@
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item">
-                <input type="text" class="cmdb-form-input" disabled :value="relationInfo['bk_obj_id']">
+                <input type="text" class="cmdb-form-input" disabled :value="getModelName(relationInfo['bk_asst_obj_id'])">
             </div>
         </label>
         <label class="form-label">
@@ -67,7 +67,10 @@
                 type: String
             },
             asstId: {
-                type: Number
+                required: true
+            },
+            asstInfo: {
+                type: Object
             }
         },
         data () {
@@ -100,9 +103,7 @@
         },
         methods: {
             ...mapActions('objectAssociation', [
-                'searchObjectAssociation',
-                'updateObjectAssociation',
-                'deleteObjectAssociation'
+                'searchObjectAssociation'
             ]),
             async initData () {
                 let asstList = await this.searchObjectAssociation({
@@ -112,16 +113,25 @@
                         }
                     }
                 })
-                this.relationInfo = asstList.find(asst => asst.id === this.asstId)
+                if (this.asstId !== '') {
+                    this.relationInfo = asstList.find(asst => asst.id === this.asstId)
+                } else {
+                    this.relationInfo = this.asstInfo
+                }
+            },
+            getModelName (objId) {
+                let model = this.$allModels.find(model => model['bk_obj_id'] === objId)
+                if (model) {
+                    return model['bk_obj_name']
+                }
+                return ''
             },
             async saveRelation () {
-                await this.updateObjectAssociation({
-                    id: this.asstId,
+                this.$emit('save', {
+                    type: 'update',
                     params: {
+                        id: this.asstId,
                         bk_obj_asst_name: this.relationInfo['bk_obj_asst_name']
-                    },
-                    config: {
-                        requestId: 'updateObjectAssociation'
                     }
                 })
                 this.$emit('cancel')
@@ -130,17 +140,15 @@
                 this.$bkInfo({
                     title: this.$tc('ModelManagement["确定删除关联关系？"]', this.relationInfo['bk_property_name'], {name: this.relationInfo['bk_property_name']}),
                     confirmFn: async () => {
-                        await this.deleteObjectAssociation({
-                            id: this.asstId,
-                            config: {
-                                requestId: 'deleteObjectAssociation'
+                        this.$emit('save', {
+                            type: 'delete',
+                            params: {
+                                id: this.asstId
                             }
-                        }).then(() => {
-                            this.$http.cancel(`post_searchObjectAssociation_${this.objId}`)
                         })
+                        this.$emit('cancel')
                     }
                 })
-                this.$emit('save')
             }
         }
     }
