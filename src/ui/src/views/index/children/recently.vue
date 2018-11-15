@@ -30,7 +30,7 @@
         },
         computed: {
             ...mapGetters('userCustom', ['usercustom', 'recentlyKey']),
-            ...mapGetters('objectModelClassify', ['authorizedNavigation']),
+            ...mapGetters('objectModelClassify', ['authorizedNavigation', 'staticClassifyId']),
             recently () {
                 return this.usercustom[this.recentlyKey] || []
             },
@@ -115,7 +115,7 @@
             updateRecently (path) {
                 const recently = this.recently.filter(oldPath => oldPath !== path)
                 const model = this.getRouteModel(path)
-                if (model && !['bk_host_manage', 'bk_back_config'].includes(model.classificationId)) {
+                if (model && !this.staticClassifyId.includes(model.classificationId)) {
                     this.$store.dispatch('userCustom/saveUsercustom', {
                         [this.recentlyKey]: [path, ...recently]
                     })

@@ -17,11 +17,13 @@ const state = {
     interceptStaticModel: {
         'bk_host_manage': ['resource'],
         'bk_back_config': ['event', 'model', 'audit']
-    }
+    },
+    staticClassifyId: Object.keys(STATIC_NAVIGATION)
 }
 
 const getters = {
     classifications: state => state.classifications,
+    staticClassifyId: state => state.staticClassifyId,
     activeClassifications: state => {
         let classifications = state.classifications
         // 1.去掉停用模型
@@ -67,6 +69,7 @@ const getters = {
                 'icon': classification['bk_classification_icon'],
                 'id': classification['bk_classification_id'],
                 'name': classification['bk_classification_name'],
+                'order': 3,
                 'children': classification['bk_objects'].map(model => {
                     return {
                         'path': model['bk_obj_id'] === 'biz' ? '/business' : `/general-model/${model['bk_obj_id']}`,
@@ -96,12 +99,8 @@ const getters = {
                 }
             }
         }
-        return [
-            staticNavigation['bk_index'],
-            staticNavigation['bk_host_manage'],
-            ...navigation,
-            staticNavigation['bk_back_config']
-        ]
+        const authorizedNavigation = Object.keys(staticNavigation).map(key => staticNavigation[key]).concat(navigation)
+        return authorizedNavigation.sort((A, B) => A.order - B.order)
     }
 }
 
