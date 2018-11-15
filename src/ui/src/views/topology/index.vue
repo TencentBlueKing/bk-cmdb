@@ -421,7 +421,7 @@
                         ...instTopo[0],
                         child: [...internalModule, ...instTopo[0].child]
                     }]
-                    this.setSimplifyAvailable()
+                    // this.setSimplifyAvailable()
                 })
             },
             setSimplifyAvailable () {
