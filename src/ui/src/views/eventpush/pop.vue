@@ -100,7 +100,10 @@
                         callback_url: this.callbackURL,
                         data: {}
                     },
-                    config: {requestId: 'testPing'}
+                    config: {
+                        requestId: 'testPing',
+                        originalResponse: true
+                    }
                 })
                 this.resultInfo = res
             },
@@ -111,7 +114,10 @@
                 this.isResultShow = true
                 const res = await this.testingConnection({
                     params: {callback_url: this.callbackURL},
-                    config: {requestId: 'testTelnet'}
+                    config: {
+                        requestId: 'testTelnet',
+                        originalResponse: true
+                    }
                 })
                 this.resultInfo = res
             },
