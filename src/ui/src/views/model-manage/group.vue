@@ -22,8 +22,7 @@
                     v-if="classification['bk_classification_type'] !== 'inner'"
                     @click="deleteGroup(classification)"></i>
                 </p>
-                <ul class="model-list clearfix" 
-                    :style="{height: calcHeight(classification)}">
+                <ul class="model-list clearfix" >
                     <li class="model-item"
                     v-for="(model, modelIndex) in classification['bk_objects']"
                     :key="modelIndex"
@@ -237,12 +236,6 @@
             toggleModelList (classification) {
                 classification.isModelShow = !classification.isModelShow
             },
-            calcHeight (classification) {
-                if (classification.isModelShow || classification['bk_objects'].length <= 8) {
-                    return Math.ceil(classification['bk_objects'].length / 4) * 80 + 'px'
-                }
-                return '160px'
-            },
             showGroupDialog (isEdit, group) {
                 if (isEdit) {
                     this.groupDialog.data.id = group.id
@@ -400,14 +393,11 @@
         .model-item {
             float: left;
             margin: 10px 10px 0 0;
-            width: calc((100% - 30px) / 4);
+            width: 260px;
             height: 70px;
             border: 1px solid $cmdbTableBorderColor;
             border-radius: 4px;
             cursor: pointer;
-            &:nth-child(4n) {
-                margin-right: 0;
-            }
             &:hover {
                 border-color: $cmdbBorderFocusColor;
                 background: #ebf4ff;
