@@ -9,6 +9,9 @@
         <bk-tabpanel name="relation" :title="$t('ModelManagement[\'关联类型\']')">
             <v-relation v-if="activeTabName === 'relation'"></v-relation>
         </bk-tabpanel>
+        <bk-tabpanel name="businessTopo" :title="$t('ModelManagement[\'业务层级\']')">
+            <v-business-topo v-if="activeTabName === 'businessTopo'"></v-business-topo>
+        </bk-tabpanel>
     </bk-tab>
 </template>
 
@@ -16,11 +19,13 @@
     import vGroup from './group'
     import vTopo from './topo'
     import vRelation from './relation'
+    import vBusinessTopo from './_business-topo'
     export default {
         components: {
             vGroup,
             vTopo,
-            vRelation
+            vRelation,
+            vBusinessTopo
         },
         data () {
             return {

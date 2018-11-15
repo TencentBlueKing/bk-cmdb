@@ -44,6 +44,7 @@
                 </form>
                 <template v-if="!activeModel['ispre']">
                     <label class="label-btn"
+                    v-if="!['bk_biz_topo'].includes(activeModel['bk_classification_id'])"
                     v-tooltip="$t('ModelManagement[\'保留模型和相应实例，隐藏关联关系\']')">
                         <i class="bk-icon icon-minus-circle-shape"></i>
                         <span v-if="activeModel['bk_ispaused']" @click="dialogConfirm('restart')">
