@@ -189,6 +189,7 @@
                     }
                 }
                 this.$emit('save', params)
+                this.$emit('cancel')
             },
             cancel () {
                 this.$emit('cancel')

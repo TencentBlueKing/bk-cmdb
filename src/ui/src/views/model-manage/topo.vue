@@ -29,7 +29,7 @@
         </div>
         <template v-if="topoEdit.isEdit">
             <div class="topo-save-title">
-                <bk-button type="primary" @click="topoEdit.isEdit = false">
+                <bk-button type="primary" @click="saveTopo">
                     {{$t('ModelManagement["保存并返回"]')}}
                 </bk-button>
             </div>
@@ -44,7 +44,7 @@
                     </div>
                     <cmdb-collapse-transition name="model-box">
                         <ul class="model-box" v-show="topoNav.activeGroup === group['bk_classification_id']">
-                            <li class="model-item" draggable="true" @dragstart="handleDragstart" @dragend="handleDragend" @drop="handleDrop" v-for="(model, modelIndex) in group['bk_objects']" :key="modelIndex">
+                            <li class="model-item" draggable="true" @dragstart="handleDragstart" @dragend="handleDragend(model)" v-for="(model, modelIndex) in group['bk_objects']" :key="modelIndex">
                                 <i :class="model['bk_obj_icon']"></i>
                                 <div class="info">
                                     <p class="name">{{model['bk_obj_name']}}</p>
@@ -60,7 +60,8 @@
         <cmdb-slider
             :width="slider.width"
             :isShow.sync="slider.isShow"
-            :title="slider.title">
+            :title="slider.title"
+            @close="handleSliderCancel">
             <component 
                 class="slider-content"
                 slot="content"
@@ -82,7 +83,12 @@
                 {{labelInfo.text}}
             </li>
         </ul>
-        <div class="topology-node-tooltips" ref="nodeTooltips" v-if="topoTooltip.hoverNode">
+        <div class="topology-node-tooltips"
+            ref="nodeTooltips"
+            v-if="topoTooltip.hoverNode"
+            @mouseover="handleNodeTooltipsOver"
+            @mouseleave="handleNodeTooltipsLeave"
+            @click="deleteNode">
             <i class="bk-icon icon-close"></i>
         </div>
     </div>
@@ -111,6 +117,10 @@
                     properties: {},
                     title: this.$t('ModelManagement["模型关系显示设置"]')
                 },
+                displayConfig: {
+                    isShowModelName: true,
+                    isShowModelAsst: true
+                },
                 topoTooltip: {
                     hoverNode: null,
                     hoverNodeTimer: null,
@@ -119,7 +129,10 @@
                     activeEdge: []
                 },
                 topoEdit: {
-                    isEdit: false
+                    isEdit: false,
+                    activeEdge: null,
+                    edges: [],
+                    nodes: []
                 },
                 topoNav: {
                     activeGroup: ''
@@ -141,40 +154,40 @@
                         },
                         manipulation: {
                             enabled: true,
-                            addNode: (data, callback) => {
-                                console.log(data)
-                                // filling in the popup DOM elements
-                                const node = {
-                                    id: 'bk_switch',
-                                    image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON({
-                                        name: '交换机',
-                                        backgroundColor: '#fff',
-                                        fontColor: '#6894c8'
-                                    }))}`,
-                                    data: {
-                                        bk_biz_id: 0,
-                                        bk_inst_id: 0,
-                                        bk_obj_icon: 'icon-cc-switch2',
-                                        bk_obj_id: 'bk_switch',
-                                        bk_supplier_account: '0',
-                                        ispre: false,
-                                        node_name: '交换机',
-                                        node_type: 'obj',
-                                        position: {
-                                            x: null,
-                                            y: null
-                                        },
-                                        scope_id: '0',
-                                        scope_type: 'global'
-                                    },
-                                    x: data.x,
-                                    y: data.y
-                                }
-                                callback(node)
-                                this.networkInstance.addEdgeMode()
-                            },
+                            // addNode: (data, callback) => {
+                            //     console.log(data)
+                            //     // filling in the popup DOM elements
+                            //     const node = {
+                            //         id: 'bk_switch',
+                            //         image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON({
+                            //             name: '交换机',
+                            //             backgroundColor: '#fff',
+                            //             fontColor: '#6894c8'
+                            //         }))}`,
+                            //         data: {
+                            //             bk_biz_id: 0,
+                            //             bk_inst_id: 0,
+                            //             bk_obj_icon: 'icon-cc-switch2',
+                            //             bk_obj_id: 'bk_switch',
+                            //             bk_supplier_account: '0',
+                            //             ispre: false,
+                            //             node_name: '交换机',
+                            //             node_type: 'obj',
+                            //             position: {
+                            //                 x: null,
+                            //                 y: null
+                            //             },
+                            //             scope_id: '0',
+                            //             scope_type: 'global'
+                            //         },
+                            //         x: data.x,
+                            //         y: data.y
+                            //     }
+                            //     callback(node)
+                            //     this.networkInstance.addEdgeMode()
+                            // },
                             addEdge: (data, callback) => {
-                                console.log(data)
+                                this.topoEdit.activeEdge = data
                                 callback(data)
                                 this.handleEdgeCreate(data)
                             }
@@ -238,38 +251,114 @@
         },
         methods: {
             ...mapActions('objectAssociation', [
-                'searchAssociationType'
+                'searchAssociationType',
+                'createObjectAssociation',
+                'deleteObjectAssociation'
             ]),
-            saveDisplay (displayConfig) {
-                this.updateEdges(displayConfig.topoModelList)
+            ...mapActions('objectModel', [
+                'deleteObject'
+            ]),
+            async saveTopo () {
+                this.topoEdit.isEdit = false
+            },
+            handleDisplaySave (displayConfig) {
+                this.displayConfig.isShowModelName = displayConfig.isShowModelName
+                this.displayConfig.isShowModelAsst = displayConfig.isShowModelAsst
+                this.topoModelList = displayConfig.topoModelList
+                this.updateNetwork()
+            },
+            handleRelationSave (params) {
+                this.topoEdit.edges.push({
+                    type: 'create',
+                    params
+                })
+                let fromNode = this.topoModelList.find(model => model['bk_obj_id'] === this.topoEdit.activeEdge.from)
+                if (!fromNode.hasOwnProperty('assts')) {
+                    Object.assign(fromNode, {assts: []})
+                }
+                fromNode.assts.push({
+                    bk_asst_inst_id: this.associationList.find(asst => asst['bk_asst_id'] === params['bk_asst_id']).id,
+                    bk_obj_id: params['bk_obj_id'],
+                    bk_inst_id: '',
+                    checked: true,
+                    labelList: [params]
+                })
+                this.updateNetwork()
+            },
+            handleRelationDetailSave (data) {
+                this.topoEdit.edges.push(data)
+                if (data.type === 'delete') {
+                    this.topoModelList.forEach(model => {
+                        if (model.hasOwnProperty('assts')) {
+                            let index = model.assts.findIndex(asst => asst['bk_inst_id'] === data.params.id)
+                            if (index > -1) {
+                                model.assts.splice(index, 1)
+                            }
+                        }
+                    })
+                }
+                this.updateNetwork()
             },
             editTopo () {
                 this.topoEdit.isEdit = true
                 this.networkInstance.addEdgeMode()
-                // this.networkInstance.addNodeMode()
+            },
+            deleteNode () {
+                let {
+                    hoverNode
+                } = this.topoTooltip
+                this.$bkInfo({
+                    title: this.$tc('ModelManagement["确定删除模型？"]', hoverNode.label, {name: hoverNode.label}),
+                    confirmFn: () => {
+                        this.topoModelList = this.topoModelList.filter(model => model['bk_obj_id'] !== hoverNode.id)
+                        this.topoEdit.nodes.push({
+                            type: 'delete',
+                            params: {
+                                objId: hoverNode.id
+                            }
+                        })
+                        this.topoEdit.edges = this.topoEdit.edges.filter(edge => edge.params['bk_obj_id'] !== hoverNode.id && edge.params['bk_asst_obj_id'] !== hoverNode.id)
+                        this.topoTooltip.hoverNode = null
+                        this.topoTooltip.hoverNodeTimer = null
+                        this.updateNetwork()
+                    }
+                })
             },
             handleDragstart (event) {
-                let img = new Image()
-                img.onload = () => {
-                    event.dataTransfer.setDragImage(img, 10, 10)
+                let image = new Image()
+                image.onload = () => {
+                    event.dataTransfer.setDragImage(image, 10, 10)
                 }
-                img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON({
+                image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON({
                     name: '交换机',
                     backgroundColor: '#fff',
                     fontColor: '#6894c8'
                 }))}`
             },
-            handleDragend () {
-                console.log('handleDragend')
+            handleDragend (model) {
+                let node = this.topoModelList.find(({bk_obj_id: objId}) => model['bk_obj_id'] === objId)
+                node.draged = true
+                this.updateNetwork()
             },
-            handleDrop () {
-                console.log('handleDrop')
-            },
-            handleSliderSave () {
-
+            handleSliderSave (params) {
+                switch (this.slider.content) {
+                    case 'theDisplay':
+                        this.handleDisplaySave(params)
+                        break
+                    case 'theRelation':
+                        this.handleRelationSave(params)
+                        break
+                    case 'theRelationDetail':
+                        this.handleRelationDetailSave(params)
+                        break
+                    default:
+                }
             },
             handleSliderCancel () {
-
+                if (this.slider.content === 'theRelation') {
+                    this.updateNetwork()
+                }
+                this.slider.isShow = false
             },
             handleEdgeCreate (data) {
                 this.slider.properties = {
@@ -299,7 +388,10 @@
                         const edgeLeft = (nodePositions[nodes[0]].x + nodePositions[nodes[1]].x) / 2
                         const edgeTop = (nodePositions[nodes[0]].y + nodePositions[nodes[1]].y) / 2
                         const containerBox = this.$refs.topo.getBoundingClientRect()
-                        const left = containerBox.width / 2 + (edgeLeft - view.x) * scale + 18 + 200
+                        let left = containerBox.width / 2 + (edgeLeft - view.x) * scale + 18
+                        if (this.topoEdit.isEdit) {
+                            left += 200
+                        }
                         const top = containerBox.height / 2 + (edgeTop - view.y) * scale - 18
                         this.$refs.edgeTooltips.style.left = left + 'px'
                         this.$refs.edgeTooltips.style.top = top + 'px'
@@ -350,13 +442,24 @@
                     this.topoTooltip.hoverEdgeTimer = null
                 }, 300)
             },
+            handleNodeTooltipsOver () {
+                clearTimeout(this.topoTooltip.hoverNodeTimer)
+            },
+            handleNodeTooltipsLeave () {
+                this.topoTooltip.hoverNodeTimer = setTimeout(() => {
+                    this.topoTooltip.hoverNodeTimer = null
+                }, 300)
+            },
             handleShowDetails (labelInfo) {
-                this.slider.title = labelInfo.text
-                this.slider.properties = {
-                    objId: labelInfo.objId,
-                    asstId: labelInfo.asst['bk_inst_id']
+                if (this.topoEdit.isEdit) {
+                    this.slider.title = labelInfo.text
+                    this.slider.properties = {
+                        objId: labelInfo.objId,
+                        asstId: labelInfo.asst['bk_inst_id'],
+                        asstInfo: labelInfo.asst.labelList[0]
+                    }
+                    this.showSlider('theRelationDetail')
                 }
-                this.showSlider('theRelationDetail')
             },
             getAssociationName (asstId) {
                 let asst = this.associationList.find(asst => asst.id === asstId)
@@ -386,7 +489,9 @@
                     case 'theDisplay':
                         slider.properties = {
                             topoModelList: this.topoModelList,
-                            associationList: this.associationList
+                            associationList: this.associationList,
+                            isShowModelName: this.displayConfig.isShowModelName,
+                            isShowModelAsst: this.displayConfig.isShowModelAsst
                         }
                         slider.width = 600
                         break
@@ -422,19 +527,30 @@
                 }
                 this.networkInstance.moveTo({scale: scale})
             },
-            updateEdges (edges) {
-                this.setEdges(edges)
+            updateNetwork (data) {
+                this.setNodes(this.topoModelList)
+                this.setEdges(this.topoModelList)
                 this.networkInstance = new Vis.Network(this.$refs.topo, {
                     nodes: this.networkDataSet.nodes,
                     edges: this.networkDataSet.edges
                 }, this.network.options)
+                this.addListener()
+                this.networkInstance.addEdgeMode()
             },
             async initNetwork () {
                 await this.getAssociationType()
                 const response = await this.$store.dispatch('globalModels/searchModelAction')
                 this.topoModelList = response
-                this.setNodes(response)
-                this.setEdges(response)
+                this.topoModelList.forEach(model => {
+                    this.$set(model, 'draged', false)
+                    if (model.hasOwnProperty('assts') && model.assts.length) {
+                        model.assts.forEach(asst => {
+                            this.$set(asst, 'checked', true)
+                        })
+                    }
+                })
+                this.setNodes(this.topoModelList)
+                this.setEdges(this.topoModelList)
                 this.networkInstance = new Vis.Network(this.$refs.topo, {
                     nodes: this.networkDataSet.nodes,
                     edges: this.networkDataSet.edges
@@ -452,7 +568,7 @@
                     }
                 })
                 data.forEach(nodeData => {
-                    if (nodeData.hasOwnProperty('assts') || asstList.findIndex(({bk_obj_id: objId}) => objId === nodeData['bk_obj_id']) > -1) {
+                    if ((nodeData.hasOwnProperty('assts') || asstList.findIndex(({bk_obj_id: objId}) => objId === nodeData['bk_obj_id']) > -1) || nodeData.draged) {
                         const node = {
                             id: nodeData['bk_obj_id'],
                             image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON({
@@ -461,6 +577,9 @@
                                 fontColor: nodeData['ispre'] ? '#6894c8' : '#868b97'
                             }))}`,
                             data: nodeData
+                        }
+                        if (this.displayConfig.isShowModelName) {
+                            Object.assign(node, {label: nodeData['node_name']})
                         }
                         if (nodeData['position']['x'] !== null && nodeData['position']['y'] !== null) {
                             node.physics = false
@@ -479,40 +598,41 @@
                 data.forEach(node => {
                     if (Array.isArray(node.assts) && node.assts.length) {
                         node.assts.forEach(asst => {
-                            const twoWayAsst = this.getTwoWayAsst(node, asst, edges)
-                            // 存在则不重复添加
-                            let edge = edges.find(edge => edge.to === asst['bk_obj_id'] && edge.from === node['bk_obj_id'])
-                            if (edge) {
-                                edge.labelList.push({
-                                    text: this.getAssociationName(asst['bk_asst_inst_id']),
-                                    arrows: 'to',
-                                    objId: node['bk_obj_id'],
-                                    asst
-                                })
-                                edge.label = String(edge.labelList.length)
-                            } else if (twoWayAsst) { // 双向关联，将已存在的线改为双向
-                                twoWayAsst.arrows = 'to,from'
-                                twoWayAsst.labelList.push({
-                                    text: this.getAssociationName(asst['bk_asst_inst_id']),
-                                    arrows: 'from',
-                                    objId: node['bk_obj_id'],
-                                    asst
-                                })
-                                twoWayAsst.label = String(twoWayAsst.labelList.length)
-                                // twoWayAsst.label = [twoWayAsst.label, this.getAssociationName(asst['bk_asst_inst_id'])].join(',\n')
-                            } else {
-                                edges.push({
-                                    from: node['bk_obj_id'],
-                                    to: asst['bk_obj_id'],
-                                    arrows: 'to',
-                                    label: this.getAssociationName(asst['bk_asst_inst_id']),
-                                    labelList: [{
+                            if (this.displayConfig.isShowModelAsst && asst.checked) {
+                                const twoWayAsst = this.getTwoWayAsst(node, asst, edges)
+                                // 存在则不重复添加
+                                let edge = edges.find(edge => edge.to === asst['bk_obj_id'] && edge.from === node['bk_obj_id'])
+                                if (edge) {
+                                    edge.labelList.push({
                                         text: this.getAssociationName(asst['bk_asst_inst_id']),
                                         arrows: 'to',
                                         objId: node['bk_obj_id'],
                                         asst
-                                    }]
-                                })
+                                    })
+                                    edge.label = String(edge.labelList.length)
+                                } else if (twoWayAsst) { // 双向关联，将已存在的线改为双向
+                                    twoWayAsst.arrows = 'to,from'
+                                    twoWayAsst.labelList.push({
+                                        text: this.getAssociationName(asst['bk_asst_inst_id']),
+                                        arrows: 'from',
+                                        objId: node['bk_obj_id'],
+                                        asst
+                                    })
+                                    twoWayAsst.label = String(twoWayAsst.labelList.length)
+                                } else {
+                                    edges.push({
+                                        from: node['bk_obj_id'],
+                                        to: asst['bk_obj_id'],
+                                        arrows: 'to',
+                                        label: this.getAssociationName(asst['bk_asst_inst_id']),
+                                        labelList: [{
+                                            text: this.getAssociationName(asst['bk_asst_inst_id']),
+                                            arrows: 'to',
+                                            objId: node['bk_obj_id'],
+                                            asst
+                                        }]
+                                    })
+                                }
                             }
                         })
                     }
@@ -617,13 +737,17 @@
                     this.handleHoverEdge(data)
                 })
                 networkInstance.on('hoverNode', data => {
-                    this.handleHoverNode(data)
+                    if (this.topoEdit.isEdit) {
+                        this.handleHoverNode(data)
+                    }
                 })
                 networkInstance.on('blurEdge', data => {
                     this.handleBlurEdge(data)
                 })
                 networkInstance.on('blurNode', data => {
-                    this.handleBlurNode(data)
+                    if (this.topoEdit.isEdit) {
+                        this.handleBlurNode(data)
+                    }
                 })
                 networkInstance.on('click', data => {
                     if (data['edges'].length === 1) {
@@ -635,7 +759,6 @@
                 })
             }
         }
-
     }
 </script>
 
