@@ -50,6 +50,7 @@
             :hasHeader="false"
             :width="600"
             :padding="0"
+            :quick-close="false"
             :is-show.sync="groupDialog.isShow">
             <div slot="content" class="dialog-content">
                 <p class="title">{{groupDialog.title}}</p>
@@ -94,6 +95,7 @@
             :hasHeader="false"
             :width="600"
             :padding="0"
+            :quick-close="false"
             :is-show.sync="modelDialog.isShow">
             <div slot="content" class="dialog-content">
                 <p class="title">{{$t('ModelManagement["新增模型"]')}}</p>
@@ -105,25 +107,24 @@
                         <div class="text">{{$t('ModelManagement["点击切换"]')}}</div>
                     </div>
                     <div class="content-right">
-                        <label>
+                        <div class="label-item">
                             <span class="label-title">{{$t('ModelManagement["所属分组"]')}}</span>
                             <span class="color-danger">*</span>
                             <div class="cmdb-form-item" :class="{'is-error': errors.has('modelGroup')}">
-                                <bk-selector
+                                <cmdb-selector
                                     class="selector-box"
+                                    name="modelGroup"
                                     setting-key="bk_classification_id"
                                     display-key="bk_classification_name"
                                     :content-max-height="200"
                                     :selected.sync="modelDialog.data['bk_classification_id']"
                                     :list="modelDialog.classificationList"
-                                ></bk-selector>
-                                <input type="text" hidden
-                                name="modelGroup"
-                                v-model="modelDialog.data['bk_classification_id']"
-                                v-validate="'required'">
+                                    v-validate="'required'"
+                                    v-model="modelDialog.data['bk_classification_id']"
+                                ></cmdb-selector>
                                 <p class="form-error">{{errors.first('modelGroup')}}</p>
                             </div>
-                        </label>
+                        </div>
                         <label>
                             <span class="label-title">{{$t('ModelManagement["唯一标识"]')}}</span>
                             <span class="color-danger">*</span>
@@ -306,6 +307,7 @@
                 this.modelDialog.data['bk_obj_id'] = ''
                 this.modelDialog.data['bk_obj_name'] = ''
                 this.modelDialog.data['bk_classification_id'] = ''
+                this.$validator.reset()
                 this.modelDialog.isShow = true
             },
             hideModelDialog () {
@@ -449,6 +451,7 @@
             color: #333948;
             line-height: 1;
         }
+        .label-item,
         label {
             display: block;
             margin-bottom: 20px;
