@@ -44,7 +44,7 @@
                 </form>
                 <template v-if="!activeModel['ispre']">
                     <label class="label-btn"
-                    v-if="!['bk_biz_topo'].includes(activeModel['bk_classification_id'])"
+                    v-if="!isMainLine"
                     v-tooltip="$t('ModelManagement[\'保留模型和相应实例，隐藏关联关系\']')">
                         <i class="bk-icon icon-minus-circle-shape"></i>
                         <span v-if="activeModel['bk_ispaused']" @click="dialogConfirm('restart')">
@@ -119,6 +119,9 @@
             ...mapGetters('objectModel', [
                 'activeModel'
             ]),
+            isMainLine () {
+                return this.activeModel['bk_classification_id'] === 'bk_biz_topo'
+            },
             modelParams () {
                 let {
                     objIcon,
@@ -153,9 +156,15 @@
                 'updateObject',
                 'deleteObject'
             ]),
+            ...mapActions('objectMainLineModule', [
+                'deleteMainlineObject'
+            ]),
             ...mapMutations('objectModel', [
                 'setActiveModel'
             ]),
+            checkModel () {
+                return this.$allModels.find(model => model['bk_obj_id'] === this.$route.params.modelId)
+            },
             hideChooseBox () {
                 this.isIconListShow = false
             },
@@ -190,9 +199,13 @@
                         requestId: 'searchObjects'
                     }
                 })
-                this.$store.commit('objectModel/setActiveModel', res[0])
-                this.$route.meta.title = this.activeModel['bk_obj_name']
-                this.initModelInfo()
+                if (res.length) {
+                    this.$store.commit('objectModel/setActiveModel', res[0])
+                    this.$route.meta.title = this.activeModel['bk_obj_name']
+                    this.initModelInfo()
+                } else {
+                    this.$router.replace('/status-404')
+                }
             },
             initModelInfo () {
                 this.modelInfo = {
@@ -262,8 +275,8 @@
                         }
                     })
                 }
-                this.$route.push('/model-manage')
                 this.$http.cancel('post_searchClassificationsObjects')
+                this.$router.replace('/model-manage')
             }
         }
     }
