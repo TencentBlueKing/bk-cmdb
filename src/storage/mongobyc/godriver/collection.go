@@ -14,6 +14,7 @@ package godriver
 
 import (
 	"context"
+	"log"
 
 	"configcenter/src/storage/mongobyc"
 	"configcenter/src/storage/mongobyc/deleteopt"
@@ -21,6 +22,9 @@ import (
 	"configcenter/src/storage/mongobyc/insertopt"
 	"configcenter/src/storage/mongobyc/replaceopt"
 	"configcenter/src/storage/mongobyc/updateopt"
+
+	"github.com/holmeswang/mongo-go-driver/bson"
+	mgo "github.com/mongodb/mongo-go-driver/mongo"
 )
 
 var _ mongobyc.CollectionInterface = (*collection)(nil)
@@ -30,23 +34,71 @@ type collection struct {
 	mongocCli *client
 	// innerCollection *C.mongoc_collection_t
 	// clientSession   *C.mongoc_client_session_t
+	innerCollection *mgo.Collection
+
 	err error
 }
 
 func (c *collection) Name() string {
-	return c.name
+	return c.innerCollection.Name()
 }
 func (c *collection) Drop(ctx context.Context) error {
-	return nil
+	return c.innerCollection.Drop(context.TODO())
 }
 func (c *collection) CreateIndex(index mongobyc.Index) error {
-	return nil
+
+	indexView := c.innerCollection.Indexes()
+
+	keys := bson.NewDocument()
+	for indexKey, indexValue := range index.Keys {
+		keys.Append(bson.EC.Interface(indexKey, indexValue))
+	}
+
+	options := bson.NewDocument()
+	options.Append(bson.EC.Interface("name", index.Name))
+	options.Append(bson.EC.Interface("unique", index.Unique))
+	options.Append(bson.EC.Interface("background", index.Backgroupd))
+
+	_, err := indexView.CreateOne(
+		context.TODO(),
+		mgo.IndexModel{
+			Keys:    keys,
+			Options: options,
+		},
+	)
+
+	return err
 }
 func (c *collection) DropIndex(indexName string) error {
-	return nil
+
+	indexView := c.innerCollection.Indexes()
+	_, err := indexView.DropIndex(context.TODO(), indexName)
+	return err
 }
 
 func (c *collection) GetIndexes() (*mongobyc.GetIndexResult, error) {
+
+	indexView := c.innerCollection.Indexes()
+	cursor, err := indexView.List(context.TODO())
+
+	if nil != err {
+		return nil, err
+	}
+
+	ctx := context.Background()
+	defer cur.Close(context.TODO())
+
+	for cursor.Next(context.TODO()) {
+		elem := bson.NewDocument()
+		if err := cur.Decode(elem); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	if err := cur.Err(); err != nil {
+		log.Fatal(err)
+	}
+
 	return nil, nil
 }
 
