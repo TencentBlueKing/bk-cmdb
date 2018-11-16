@@ -53,7 +53,7 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 	if sub.ConfirmMode == metadata.ConfirmmodeHttpstatus && sub.ConfirmPattern == "" {
 		sub.ConfirmPattern = "200"
 	}
-	sub.LastTime = &now
+	sub.LastTime = now
 	sub.OwnerID = ownerID
 
 	sub.SubscriptionForm = strings.Replace(sub.SubscriptionForm, " ", "", 0)
@@ -209,7 +209,7 @@ func (s *Service) rebook(id int64, ownerID string, sub *metadata.Subscription) e
 		sub.TimeOut = 10
 	}
 	now := metadata.Now()
-	sub.LastTime = &now
+	sub.LastTime = now
 	sub.OwnerID = ownerID
 
 	sub.SubscriptionForm = strings.Replace(sub.SubscriptionForm, " ", "", 0)
