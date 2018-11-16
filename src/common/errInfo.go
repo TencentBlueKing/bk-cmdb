@@ -319,6 +319,10 @@ const (
 	CCErrHostNotAllowedToMutiBiz                   = 1001050
 	CCErrTopoGraphicsSearchFailed                  = 1001051
 	CCErrTopoGraphicsUpdateFailed                  = 1001052
+	CCErrTopoObjectUniqueCreateFailed              = 1001053
+	CCErrTopoObjectUniqueUpdateFailed              = 1001054
+	CCErrTopoObjectUniqueDeleteFailed              = 1001055
+	CCErrTopoObjectUniqueSearchFailed              = 1001056
 
 	CCErrTopoMulueIDNotfoundFailed = 1101080
 	CCErrTopoBkAppNotAllowedDelete = 1101081

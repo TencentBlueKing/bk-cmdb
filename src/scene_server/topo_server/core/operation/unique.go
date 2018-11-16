@@ -12,55 +12,56 @@
 
 package operation
 
-// import (
-// 	"context"
+import (
+	"context"
 
-// 	"configcenter/src/apimachinery"
-// 	"configcenter/src/common/condition"
-// 	"configcenter/src/common/mapstr"
-// 	"configcenter/src/common/metadata"
-// 	"configcenter/src/scene_server/topo_server/core/inst"
-// 	"configcenter/src/scene_server/topo_server/core/model"
-// 	"configcenter/src/scene_server/topo_server/core/types"
-// )
+	"configcenter/src/apimachinery"
+	"configcenter/src/common"
+	"configcenter/src/common/condition"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/topo_server/core/inst"
+	"configcenter/src/scene_server/topo_server/core/model"
+	"configcenter/src/scene_server/topo_server/core/types"
+)
 
-// // UniqueOperationInterface group operation methods
-// type UniqueOperationInterface interface {
-// 	CreateObjectUnique(params types.ContextParams, data mapstr.MapStr) (model.Group, error)
-// 	DeleteObjectUnique(params types.ContextParams, groupID int64) error
-// 	FindObjectUnique(params types.ContextParams, cond condition.Condition) ([]model.Group, error)
-// 	UpdateObjectUnique(params types.ContextParams, cond *metadata.UpdateGroupCondition) error
-// 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, obj ObjectOperationInterface)
-// }
+// UniqueOperationInterface group operation methods
+type UniqueOperationInterface interface {
+	CreateObjectUnique(params types.ContextParams, data mapstr.MapStr) (model.Group, error)
+	DeleteObjectUnique(params types.ContextParams, groupID int64) error
+	FindObjectUnique(params types.ContextParams, cond condition.Condition) ([]model.Group, error)
+	UpdateObjectUnique(params types.ContextParams, cond *metadata.UpdateGroupCondition) error
+	SetProxy(modelFactory model.Factory, instFactory inst.Factory, obj ObjectOperationInterface)
+}
 
-// // NewUniqueOperation create a new group operation instance
-// func NewUniqueOperation(client apimachinery.ClientSetInterface) UniqueOperationInterface {
-// 	return &unique{
-// 		clientSet: client,
-// 	}
-// }
+// NewUniqueOperation create a new group operation instance
+func NewUniqueOperation(client apimachinery.ClientSetInterface) UniqueOperationInterface {
+	return &unique{
+		clientSet: client,
+	}
+}
 
-// type unique struct {
-// 	clientSet apimachinery.ClientSetInterface
-// }
+type unique struct {
+	clientSet apimachinery.ClientSetInterface
+}
 
-// func (a *unique) Search(params types.ContextParams, objectID string) (resp *metadata.SearchUniqueResult, err error) {
-// 	resp, err := a.clientSet.ObjectController().Unique().Search(context.Background(), params.Header, objectID)
-// 	if err != nil {
+func (a *unique) Search(params types.ContextParams, objectID string) (resp *metadata.SearchUniqueResult, err error) {
+	resp, err := a.clientSet.ObjectController().Unique().Search(context.Background(), params.Header, objectID)
+	if err != nil {
+		return nil, params.Err.New(errorCode, msg)
+	}
+	if !resp.Result {
+		return nil, params.Err.New(common.CCErrTopoObjectGroupCreateFailed, err.Error())
 
-// 	}
-// 	if !resp.Result {
-// 		return nil, params.Err.New(common.CCErrTopoObjectGroupCreateFailed, err.Error())
-
-// 	}
-// 	return
-// }
-// func (a *unique) Create(params types.ContextParams, objectID string, request *metadata.UniqueKind) (resp *metadata.CreateUniqueTypeResult, err error) {
-// 	return a.clientSet.ObjectController().Unique().Create(context.Background(), params.Header, request)
-// }
-// func (a *unique) Update(params types.ContextParams, objectID string, id int64, request *metadata.UpdateUniqueTypeRequest) (resp *metadata.UpdateUniqueTypeResult, err error) {
-// 	return a.clientSet.ObjectController().Unique().Update(context.Background(), params.Header, asstTypeID, request)
-// }
-// func (a *unique) Delete(params types.ContextParams, objectID string, id int64) (resp *metadata.DeleteUniqueTypeResult, err error) {
-// 	return a.clientSet.ObjectController().Unique().Delete(context.Background(), params.Header, asstTypeID)
-// }
+	}
+	return
+}
+func (a *unique) Create(params types.ContextParams, objectID string, request *metadata.UniqueKind) (resp *metadata.CreateUniqueTypeResult, err error) {
+	return a.clientSet.ObjectController().Unique().Create(context.Background(), params.Header, request)
+}
+func (a *unique) Update(params types.ContextParams, objectID string, id int64, request *metadata.UpdateUniqueTypeRequest) (resp *metadata.UpdateUniqueTypeResult, err error) {
+	return a.clientSet.ObjectController().Unique().Update(context.Background(), params.Header, asstTypeID, request)
+}
+func (a *unique) Delete(params types.ContextParams, objectID string, id int64) (resp *metadata.DeleteUniqueTypeResult, err error) {
+	return a.clientSet.ObjectController().Unique().Delete(context.Background(), params.Header, asstTypeID)
+}
