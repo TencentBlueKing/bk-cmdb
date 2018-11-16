@@ -571,8 +571,8 @@
             handleQuickSearchToggle () {
                 this.calcTableMinusHeight()
             },
-            handleQuickSearch (property, value) {
-                this.$emit('on-quick-search', property, value)
+            handleQuickSearch (property, value, operator) {
+                this.$emit('on-quick-search', property, value, operator)
             }
         }
     }
