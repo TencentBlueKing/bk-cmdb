@@ -29,6 +29,15 @@ func createConnection() mongobyc.CommonClient {
 	return godriver.NewClient("mongodb://cc:cc@localhost:27010,localhost:27011,localhost:27012,localhost:27013/cmdb")
 }
 
+func executeCommand(t *testing.T, callback func(dbclient mongobyc.CommonClient)) {
+	dbClient := createConnection()
+	require.NoError(t, dbClient.Open())
+
+	callback(dbClient)
+
+	require.NoError(t, dbClient.Close())
+}
+
 func TestConectMongo(t *testing.T) {
 
 	dbClient := createConnection()
@@ -41,48 +50,70 @@ func TestConectMongo(t *testing.T) {
 
 func TestInsertOne(t *testing.T) {
 
-	dbClient := createConnection()
-	err := dbClient.Open()
-	require.NoError(t, err)
-	coll := dbClient.Collection("cc_tmp")
-	want := bsonx.Elem{Key: "_id", Value: bsonx.ObjectID(objectid.New())}
-	doc := bsonx.Doc{want, {"x", bsonx.Int32(1)}}
-	err = coll.InsertOne(context.TODO(), doc, nil)
-	require.NoError(t, err)
-	err = dbClient.Close()
-	require.NoError(t, err)
+	executeCommand(t, func(dbClient mongobyc.CommonClient) {
+		coll := dbClient.Collection("cc_tmp")
+		want := bsonx.Elem{Key: "_id", Value: bsonx.ObjectID(objectid.New())}
+		doc := bsonx.Doc{want, {"x", bsonx.Int32(1)}}
+		err := coll.InsertOne(context.TODO(), doc, nil)
+		require.NoError(t, err)
+	})
+
 }
 
 func TestFind(t *testing.T) {
 
-	dbClient := createConnection()
-	err := dbClient.Open()
-	require.NoError(t, err)
+	executeCommand(t, func(dbClient mongobyc.CommonClient) {
 
-	coll := dbClient.Collection("cc_tmp")
-	result := []mapstr.MapStr{}
-	err = coll.Find(context.TODO(), `{"x":1}`, nil, &result)
-	require.NoError(t, err)
-	t.Log("result:", result)
-
-	err = dbClient.Close()
-	require.NoError(t, err)
+		coll := dbClient.Collection("cc_tmp")
+		result := []mapstr.MapStr{}
+		err := coll.Find(context.TODO(), `{"x":1}`, nil, &result)
+		require.NoError(t, err)
+		t.Log("result:", result)
+	})
 
 }
 
 func TestFindOne(t *testing.T) {
 
-	dbClient := createConnection()
-	err := dbClient.Open()
-	require.NoError(t, err)
+	executeCommand(t, func(dbClient mongobyc.CommonClient) {
+		coll := dbClient.Collection("cc_tmp")
+		result := mapstr.MapStr{}
+		err := coll.FindOne(context.TODO(), `{"x":1}`, nil, &result)
+		require.NoError(t, err)
+		t.Log("result:", result)
+	})
 
-	coll := dbClient.Collection("cc_tmp")
-	result := mapstr.MapStr{}
-	err = coll.FindOne(context.TODO(), `{"x":1}`, nil, &result)
-	require.NoError(t, err)
-	t.Log("result:", result)
+}
 
-	err = dbClient.Close()
-	require.NoError(t, err)
+func TestDatabaseName(t *testing.T) {
 
+	executeCommand(t, func(dbClient mongobyc.CommonClient) {
+		t.Log("database name:", dbClient.Database().Name())
+		require.Equal(t, "cmdb", dbClient.Database().Name())
+	})
+}
+
+func TestDatabaseHasCollection(t *testing.T) {
+
+	executeCommand(t, func(dbClient mongobyc.CommonClient) {
+		exists, err := dbClient.Database().HasCollection("cc_tmp")
+		require.Equal(t, true, exists)
+		require.NoError(t, err)
+	})
+}
+
+func TestDatabaseDropCollection(t *testing.T) {
+	executeCommand(t, func(dbClient mongobyc.CommonClient) {
+		require.NoError(t, dbClient.Database().DropCollection("cc_tmp"))
+	})
+}
+
+func TestDatabaseGetCollectionNames(t *testing.T) {
+	executeCommand(t, func(dbClient mongobyc.CommonClient) {
+		collNames, err := dbClient.Database().GetCollectionNames()
+		require.NoError(t, err)
+		for _, name := range collNames {
+			t.Log("colloction:", name)
+		}
+	})
 }

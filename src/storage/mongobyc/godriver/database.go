@@ -13,7 +13,11 @@
 package godriver
 
 import (
+	"configcenter/src/common/mapstr"
 	"context"
+	"fmt"
+
+	"github.com/mongodb/mongo-go-driver/x/bsonx"
 
 	"configcenter/src/storage/mongobyc"
 
@@ -40,17 +44,60 @@ func (d *database) Name() string {
 
 func (d *database) HasCollection(collName string) (bool, error) {
 
-	return false, nil
+	cursor, err := d.innerDatabase.ListCollections(context.TODO(),
+		bsonx.Doc{
+			bsonx.Elem{Key: "type", Value: bsonx.String("collection")},
+			bsonx.Elem{Key: "name", Value: bsonx.String(collName)},
+		},
+	)
+
+	if nil != err {
+		return false, err
+	}
+
+	for cursor.Next(context.TODO()) {
+		return true, nil
+	}
+
+	return false, fmt.Errorf("not found, %s", collName)
 }
 
 func (d *database) DropCollection(collName string) error {
-	return nil
+	return d.innerDatabase.Collection(collName).Drop(context.TODO())
 }
 
 func (d *database) CreateEmptyCollection(collName string) error {
+	// TODO: unused
 	return nil
 }
 
 func (d *database) GetCollectionNames() ([]string, error) {
-	return nil, nil
+
+	cursor, err := d.innerDatabase.ListCollections(context.TODO(),
+		bsonx.Doc{
+			bsonx.Elem{Key: "type", Value: bsonx.String("collection")},
+		},
+	)
+
+	if nil != err {
+		return nil, err
+	}
+
+	collNames := []string{}
+	for cursor.Next(context.TODO()) {
+
+		result := mapstr.New()
+		if err := cursor.Decode(&result); nil != err {
+			return nil, err
+		}
+
+		name, err := result.String("name")
+		if nil != err {
+			return nil, err
+		}
+
+		collNames = append(collNames, name)
+	}
+
+	return collNames, nil
 }
