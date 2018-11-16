@@ -105,7 +105,7 @@ func (cli *Service) DeleteObjectAttByID(req *restful.Request, resp *restful.Resp
 	db := cli.Instance.Clone()
 
 	pathParameters := req.PathParameters()
-	appID, err := strconv.ParseInt(pathParameters["id"], 10, 64)
+	id, err := strconv.ParseInt(pathParameters["id"], 10, 64)
 	if nil != err {
 		blog.Error("failed to parse id, error info is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommParamsInvalid, err.Error())})
@@ -113,8 +113,8 @@ func (cli *Service) DeleteObjectAttByID(req *restful.Request, resp *restful.Resp
 	}
 
 	// delete object from storage
-	condition := map[string]interface{}{"id": appID}
-	if 0 == appID {
+	condition := map[string]interface{}{"id": id}
+	if 0 == id {
 
 		js, err := simplejson.NewFromReader(req.Request.Body)
 		if err != nil {
@@ -130,19 +130,45 @@ func (cli *Service) DeleteObjectAttByID(req *restful.Request, resp *restful.Resp
 		}
 	}
 	condition = util.SetModOwner(condition, ownerID)
-	cnt, cntErr := db.Table(common.BKTableNameObjAttDes).Find(condition).Count(ctx)
+
+	// check whether propertys could delete
+	propertys := []meta.Attribute{}
+	cntErr := db.Table(common.BKTableNameObjAttDes).Find(condition).All(ctx, &propertys)
 	if nil != cntErr {
 		blog.Error("failed to select object by condition(%+v), error is %d", cntErr)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 
 	}
-	if 0 == cnt {
-
-		// success
+	if len(propertys) <= 0 {
 		resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp})
 		return
 	}
+
+	uniques, err := cli.searchObjectUnique(ctx, db, ownerID, propertys[0].ObjectID)
+	if nil != err {
+		blog.Errorf("failed to search object unique error: %s, params: %v %v", err, ownerID, propertys[0].ObjectID)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrObjectDBOpErrno)})
+		return
+	}
+
+	usedKeyID := map[int64]bool{}
+	for _, unique := range uniques {
+		for _, key := range unique.Keys {
+			if key.Kind == meta.UinqueKeyKindProperty {
+				usedKeyID[int64(key.ID)] = true
+			}
+		}
+	}
+
+	for index := range propertys {
+		if usedKeyID[propertys[index].ID] {
+			blog.Errorf("property %s has bee used by it's unique constrains, not allow delete", propertys[0].PropertyID)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrTopoObjectPropertyUsedByUnique, propertys[index].PropertyID)})
+		}
+	}
+
+	// delete propertys from db
 	delErr := db.Table(common.BKTableNameObjAttDes).Delete(ctx, condition)
 	if nil != delErr {
 		blog.Error("failed to delete, error info is %s", delErr.Error())
@@ -173,7 +199,7 @@ func (cli *Service) UpdateObjectAttByID(req *restful.Request, resp *restful.Resp
 	}
 
 	pathParameters := req.PathParameters()
-	appID, err := strconv.ParseInt(pathParameters["id"], 10, 64)
+	id, err := strconv.ParseInt(pathParameters["id"], 10, 64)
 	if nil != err {
 		blog.Error("failed to get id, error info is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommParamsInvalid, err.Error())})
@@ -190,7 +216,7 @@ func (cli *Service) UpdateObjectAttByID(req *restful.Request, resp *restful.Resp
 		return
 	}
 
-	condition := map[string]interface{}{"id": appID}
+	condition := map[string]interface{}{"id": id}
 	condition = util.SetModOwner(condition, ownerID)
 	// update object into storage
 	updateErr := db.Table(common.BKTableNameObjAttDes).Update(ctx, condition, data)
