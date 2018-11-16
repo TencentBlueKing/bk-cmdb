@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/dal"
 )
 
 // CreateObjectUnique create object's unique
@@ -169,13 +170,22 @@ func (cli *Service) SearchObjectUnique(req *restful.Request, resp *restful.Respo
 	cond.Field(common.BKObjIDField).Eq(objID)
 	cond.Field(common.BKOwnerIDField).Eq(ownerID)
 
-	uniques := []metadata.ObjectUnique{}
-	err := db.Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).All(ctx, &uniques)
+	uniques, err := cli.searchObjectUnique(ctx, db, ownerID, objID)
 	if nil != err {
-		blog.Errorf("[SearchObjectUnique] Delete error: %s, raw: %#v", err)
+		blog.Errorf("[SearchObjectUnique] Search error: %s, raw: %#v", err)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrObjectDBOpErrno)})
 		return
 	}
 
 	resp.WriteEntity(metadata.SearchUniqueResult{BaseResp: metadata.SuccessBaseResp, Data: uniques})
+}
+
+func (cli *Service) searchObjectUnique(ctx context.Context, db dal.RDB, ownerID, objID string) ([]metadata.ObjectUnique, error) {
+	cond := condition.CreateCondition()
+	cond.Field(common.BKObjIDField).Eq(objID)
+	cond.Field(common.BKOwnerIDField).Eq(ownerID)
+
+	uniques := []metadata.ObjectUnique{}
+	err := db.Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).All(ctx, &uniques)
+	return uniques, err
 }
