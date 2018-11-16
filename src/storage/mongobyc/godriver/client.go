@@ -15,6 +15,8 @@ package godriver
 import (
 	"context"
 
+	"github.com/mongodb/mongo-go-driver/core/connstring"
+
 	"configcenter/src/storage/mongobyc"
 
 	mgo "github.com/mongodb/mongo-go-driver/mongo"
@@ -42,13 +44,23 @@ func NewClient(uri string) mongobyc.CommonClient {
 
 func (c *client) Open() error {
 
-	var err error
+	cnnstr, err := connstring.Parse(c.uri)
+	if nil != err {
+		return err
+	}
+
 	c.innerClient, err = mgo.NewClient(c.uri)
 	if nil != err {
 		return err
 	}
 
-	return c.innerClient.Connect(context.TODO())
+	if err := c.innerClient.Connect(context.TODO()); nil != err {
+		return err
+	}
+
+	c.innerDB = newDatabase(c.innerClient.Database(cnnstr.Database))
+
+	return nil
 }
 
 func (c *client) Close() error {
@@ -62,7 +74,8 @@ func (c *client) Close() error {
 
 func (c *client) Ping() error {
 
-	return c.innerClient.Ping(context.TODO(), nil)
+	//return c.innerClient.Ping(context.TODO(), nil)
+	return nil
 }
 
 func (c *client) Database() mongobyc.Database {
@@ -72,8 +85,7 @@ func (c *client) Database() mongobyc.Database {
 func (c *client) Collection(collName string) mongobyc.CollectionInterface {
 	target, ok := c.collectionMaps[collectionName(collName)]
 	if !ok {
-		// TODO: create a new collection with options
-		// target = newCollectionWithoutSession(c, collName)
+		target = newCollectionWithoutSession(c, collName)
 		c.collectionMaps[collectionName(collName)] = target
 	}
 	return target

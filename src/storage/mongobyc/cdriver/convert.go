@@ -24,6 +24,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/storage/mongobyc"
 	"configcenter/src/storage/mongobyc/findopt"
 )
 
@@ -109,30 +110,5 @@ func TransformBsonIntoGoString(reply *C.bson_t) string {
 // TransformMapStrIntoResult transform data into result
 func TransformMapStrIntoResult(datas []mapstr.MapStr, result interface{}) {
 
-	resultv := reflect.ValueOf(result)
-	if resultv.Kind() != reflect.Ptr || resultv.Elem().Kind() != reflect.Slice {
-		panic("result argument must be a slice address")
-	}
-	slicev := resultv.Elem()
-	slicev = slicev.Slice(0, slicev.Cap())
-	elemt := slicev.Type().Elem()
-	idx := 0
-	for _, dataItem := range datas {
-		if slicev.Len() == idx {
-			elemp := reflect.New(elemt)
-			if err := dataItem.MarshalJSONInto(elemp.Interface()); nil != err {
-				panic(err)
-			}
-			slicev = reflect.Append(slicev, elemp.Elem())
-			slicev = slicev.Slice(0, slicev.Cap())
-			idx++
-			continue
-		}
-
-		if err := dataItem.MarshalJSONInto(slicev.Index(idx).Addr().Interface()); nil != err {
-			panic(err)
-		}
-		idx++
-	}
-	resultv.Elem().Set(slicev.Slice(0, idx))
+	mongobyc.TransformMapStrIntoResult(datas, result)
 }

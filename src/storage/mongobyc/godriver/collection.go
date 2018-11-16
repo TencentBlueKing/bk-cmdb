@@ -14,8 +14,12 @@ package godriver
 
 import (
 	"context"
+	"fmt"
 	"log"
 
+	"github.com/mongodb/mongo-go-driver/x/bsonx"
+
+	"configcenter/src/common/mapstr"
 	"configcenter/src/storage/mongobyc"
 	"configcenter/src/storage/mongobyc/deleteopt"
 	"configcenter/src/storage/mongobyc/findopt"
@@ -23,20 +27,25 @@ import (
 	"configcenter/src/storage/mongobyc/replaceopt"
 	"configcenter/src/storage/mongobyc/updateopt"
 
-	"github.com/holmeswang/mongo-go-driver/bson"
 	mgo "github.com/mongodb/mongo-go-driver/mongo"
 )
 
 var _ mongobyc.CollectionInterface = (*collection)(nil)
 
 type collection struct {
-	name      string
 	mongocCli *client
 	// innerCollection *C.mongoc_collection_t
 	// clientSession   *C.mongoc_client_session_t
 	innerCollection *mgo.Collection
+	err             error
+}
 
-	err error
+func newCollectionWithoutSession(innerClient *client, collectionName string) mongobyc.CollectionInterface {
+
+	return &collection{
+		mongocCli:       innerClient,
+		innerCollection: innerClient.innerDB.innerDatabase.Collection(collectionName),
+	}
 }
 
 func (c *collection) Name() string {
@@ -46,34 +55,36 @@ func (c *collection) Drop(ctx context.Context) error {
 	return c.innerCollection.Drop(context.TODO())
 }
 func (c *collection) CreateIndex(index mongobyc.Index) error {
+	/*
+		indexView := c.innerCollection.Indexes()
 
-	indexView := c.innerCollection.Indexes()
+		keys := bson.NewDocument()
+		for indexKey, indexValue := range index.Keys {
+			keys.Append(bson.EC.Interface(indexKey, indexValue))
+		}
 
-	keys := bson.NewDocument()
-	for indexKey, indexValue := range index.Keys {
-		keys.Append(bson.EC.Interface(indexKey, indexValue))
-	}
+		options := bson.NewDocument()
+		options.Append(bson.EC.Interface("name", index.Name))
+		options.Append(bson.EC.Interface("unique", index.Unique))
+		options.Append(bson.EC.Interface("background", index.Backgroupd))
 
-	options := bson.NewDocument()
-	options.Append(bson.EC.Interface("name", index.Name))
-	options.Append(bson.EC.Interface("unique", index.Unique))
-	options.Append(bson.EC.Interface("background", index.Backgroupd))
+		_, err := indexView.CreateOne(
+			context.TODO(),
+			mgo.IndexModel{
+				Keys:    keys,
+				Options: options,
+			},
+		)
 
-	_, err := indexView.CreateOne(
-		context.TODO(),
-		mgo.IndexModel{
-			Keys:    keys,
-			Options: options,
-		},
-	)
-
-	return err
+		return err
+	*/
+	return nil
 }
 func (c *collection) DropIndex(indexName string) error {
 
-	indexView := c.innerCollection.Indexes()
-	_, err := indexView.DropIndex(context.TODO(), indexName)
-	return err
+	//indexView := c.innerCollection.Indexes()
+	//_, err := indexView.DropIndex(context.TODO(), indexName)
+	return nil
 }
 
 func (c *collection) GetIndexes() (*mongobyc.GetIndexResult, error) {
@@ -85,17 +96,16 @@ func (c *collection) GetIndexes() (*mongobyc.GetIndexResult, error) {
 		return nil, err
 	}
 
-	ctx := context.Background()
-	defer cur.Close(context.TODO())
+	defer cursor.Close(context.TODO())
 
 	for cursor.Next(context.TODO()) {
-		elem := bson.NewDocument()
-		if err := cur.Decode(elem); err != nil {
+		elem := bsonx.Doc{}
+		if err := cursor.Decode(elem); err != nil {
 			log.Fatal(err)
 		}
 	}
 
-	if err := cur.Err(); err != nil {
+	if err := cursor.Err(); err != nil {
 		log.Fatal(err)
 	}
 
@@ -103,45 +113,123 @@ func (c *collection) GetIndexes() (*mongobyc.GetIndexResult, error) {
 }
 
 func (c *collection) Count(ctx context.Context, filter interface{}) (uint64, error) {
-	return 0, nil
+	cnt, err := c.innerCollection.Count(ctx, filter)
+	return uint64(cnt), err
 }
 
 func (c *collection) DeleteOne(ctx context.Context, filter interface{}, opts *deleteopt.One) (*mongobyc.DeleteResult, error) {
-	return nil, nil
+
+	delResult, err := c.innerCollection.DeleteOne(ctx, filter)
+	if nil != err {
+		return &mongobyc.DeleteResult{}, err
+	}
+
+	return &mongobyc.DeleteResult{DeletedCount: uint64(delResult.DeletedCount)}, nil
 }
 
 func (c *collection) DeleteMany(ctx context.Context, filter interface{}, opts *deleteopt.Many) (*mongobyc.DeleteResult, error) {
-	return nil, nil
+
+	delResult, err := c.innerCollection.DeleteMany(ctx, filter)
+	if nil != err {
+		return &mongobyc.DeleteResult{DeletedCount: 0}, err
+	}
+
+	return &mongobyc.DeleteResult{DeletedCount: uint64(delResult.DeletedCount)}, nil
 }
 
 func (c *collection) Find(ctx context.Context, filter interface{}, opts *findopt.Many, output interface{}) error {
+
+	switch tmp := filter.(type) {
+	case string, []byte:
+		condMap, err := mapstr.NewFromInterface(tmp)
+		if nil != err {
+			return err
+		}
+		filter = condMap
+	}
+
+	cursor, err := c.innerCollection.Find(ctx, filter)
+	if nil != err {
+		return err
+	}
+
+	datas := []mapstr.MapStr{}
+	for cursor.Next(ctx) {
+		result := mapstr.New()
+		if err := cursor.Decode(&result); nil != err {
+			fmt.Println("find err:", err)
+			return err
+		}
+		datas = append(datas, result)
+	}
+
+	mongobyc.TransformMapStrIntoResult(datas, output)
 	return nil
 }
 
 func (c *collection) FindOne(ctx context.Context, filter interface{}, opts *findopt.One, output interface{}) error {
-	return nil
+	switch tmp := filter.(type) {
+	case string, []byte:
+		condMap, err := mapstr.NewFromInterface(tmp)
+		if nil != err {
+			return err
+		}
+		filter = condMap
+	}
+	return c.innerCollection.FindOne(ctx, filter).Decode(output)
 }
 
 func (c *collection) FindAndModify(ctx context.Context, filter interface{}, update interface{}, opts *findopt.FindAndModify, output interface{}) error {
-	return nil
+	return c.innerCollection.FindOneAndUpdate(ctx, filter, update).Decode(nil)
 }
 
 func (c *collection) InsertOne(ctx context.Context, document interface{}, opts *insertopt.One) error {
-	return nil
+
+	_, err := c.innerCollection.InsertOne(ctx, document)
+	return err
 }
 
 func (c *collection) InsertMany(ctx context.Context, document []interface{}, opts *insertopt.Many) error {
-	return nil
+	_, err := c.innerCollection.InsertMany(ctx, document)
+	return err
 }
 
 func (c *collection) UpdateMany(ctx context.Context, filter interface{}, update interface{}, opts *updateopt.Many) (*mongobyc.UpdateResult, error) {
-	return nil, nil
+
+	updateResult, err := c.innerCollection.UpdateMany(ctx, filter, update)
+	if nil != err {
+		return &mongobyc.UpdateResult{}, err
+	}
+	return &mongobyc.UpdateResult{
+		MatchedCount:  uint64(updateResult.MatchedCount),
+		ModifiedCount: uint64(updateResult.ModifiedCount),
+	}, nil
 }
 
 func (c *collection) UpdateOne(ctx context.Context, filter interface{}, update interface{}, opts *updateopt.One) (*mongobyc.UpdateResult, error) {
-	return nil, nil
+
+	updateResult, err := c.innerCollection.UpdateOne(ctx, filter, update)
+	if nil != err {
+		return &mongobyc.UpdateResult{}, err
+	}
+
+	return &mongobyc.UpdateResult{
+		MatchedCount:  uint64(updateResult.MatchedCount),
+		ModifiedCount: uint64(updateResult.ModifiedCount),
+	}, nil
 }
 
 func (c *collection) ReplaceOne(ctx context.Context, filter interface{}, replacement interface{}, opts *replaceopt.One) (*mongobyc.ReplaceOneResult, error) {
-	return nil, nil
+
+	replaceResult, err := c.innerCollection.ReplaceOne(ctx, filter, replacement)
+	if nil != err {
+		return &mongobyc.ReplaceOneResult{}, err
+	}
+
+	return &mongobyc.ReplaceOneResult{
+		UpdateResult: mongobyc.UpdateResult{
+			MatchedCount:  uint64(replaceResult.MatchedCount),
+			ModifiedCount: uint64(replaceResult.ModifiedCount),
+		},
+	}, nil
 }
