@@ -292,7 +292,7 @@
                         sort: this.table.sort
                     }
                 }
-                if (this.filter.id && this.filter.value) {
+                if (this.filter.id && this.filter.value !== '') {
                     const filterType = this.filter.type
                     let filterValue = this.filter.value
                     if (filterType === 'bool') {
