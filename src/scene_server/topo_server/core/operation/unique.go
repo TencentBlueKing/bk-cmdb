@@ -17,21 +17,16 @@ import (
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
-	"configcenter/src/common/condition"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/inst"
-	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // UniqueOperationInterface group operation methods
 type UniqueOperationInterface interface {
-	CreateObjectUnique(params types.ContextParams, data mapstr.MapStr) (model.Group, error)
-	DeleteObjectUnique(params types.ContextParams, groupID int64) error
-	FindObjectUnique(params types.ContextParams, cond condition.Condition) ([]model.Group, error)
-	UpdateObjectUnique(params types.ContextParams, cond *metadata.UpdateGroupCondition) error
-	SetProxy(modelFactory model.Factory, instFactory inst.Factory, obj ObjectOperationInterface)
+	Search(params types.ContextParams, objectID string) (objectUniques []metadata.ObjectUnique, err error)
+	Create(params types.ContextParams, objectID string, request *metadata.CreateUniqueRequest) (uniqueID *metadata.RspID, err error)
+	Update(params types.ContextParams, objectID string, id uint64, request *metadata.UpdateUniqueRequest) (err error)
+	Delete(params types.ContextParams, objectID string, id uint64) (err error)
 }
 
 // NewUniqueOperation create a new group operation instance
@@ -45,23 +40,44 @@ type unique struct {
 	clientSet apimachinery.ClientSetInterface
 }
 
-func (a *unique) Search(params types.ContextParams, objectID string) (resp *metadata.SearchUniqueResult, err error) {
+func (a *unique) Search(params types.ContextParams, objectID string) (objectUniques []metadata.ObjectUnique, err error) {
 	resp, err := a.clientSet.ObjectController().Unique().Search(context.Background(), params.Header, objectID)
 	if err != nil {
-		return nil, params.Err.New(errorCode, msg)
+		return nil, params.Err.Error(common.CCErrTopoObjectUniqueCreateFailed)
 	}
 	if !resp.Result {
-		return nil, params.Err.New(common.CCErrTopoObjectGroupCreateFailed, err.Error())
-
+		return nil, params.Err.New(common.CCErrTopoObjectUniqueCreateFailed, resp.ErrMsg)
 	}
-	return
+	return resp.Data, nil
 }
-func (a *unique) Create(params types.ContextParams, objectID string, request *metadata.UniqueKind) (resp *metadata.CreateUniqueTypeResult, err error) {
-	return a.clientSet.ObjectController().Unique().Create(context.Background(), params.Header, request)
+func (a *unique) Create(params types.ContextParams, objectID string, request *metadata.CreateUniqueRequest) (uniqueID *metadata.RspID, err error) {
+	resp, err := a.clientSet.ObjectController().Unique().Create(context.Background(), params.Header, objectID, request)
+	if err != nil {
+		return nil, params.Err.Error(common.CCErrTopoObjectUniqueCreateFailed)
+	}
+	if !resp.Result {
+		return nil, params.Err.New(common.CCErrTopoObjectUniqueCreateFailed, resp.ErrMsg)
+	}
+	return &resp.Data, nil
+
 }
-func (a *unique) Update(params types.ContextParams, objectID string, id int64, request *metadata.UpdateUniqueTypeRequest) (resp *metadata.UpdateUniqueTypeResult, err error) {
-	return a.clientSet.ObjectController().Unique().Update(context.Background(), params.Header, asstTypeID, request)
+func (a *unique) Update(params types.ContextParams, objectID string, id uint64, request *metadata.UpdateUniqueRequest) (err error) {
+	resp, err := a.clientSet.ObjectController().Unique().Update(context.Background(), params.Header, objectID, id, request)
+	if err != nil {
+		return params.Err.Error(common.CCErrTopoObjectUniqueUpdateFailed)
+	}
+	if !resp.Result {
+		return params.Err.New(common.CCErrTopoObjectUniqueUpdateFailed, resp.ErrMsg)
+	}
+	return nil
 }
-func (a *unique) Delete(params types.ContextParams, objectID string, id int64) (resp *metadata.DeleteUniqueTypeResult, err error) {
-	return a.clientSet.ObjectController().Unique().Delete(context.Background(), params.Header, asstTypeID)
+func (a *unique) Delete(params types.ContextParams, objectID string, id uint64) (err error) {
+	resp, err := a.clientSet.ObjectController().Unique().Delete(context.Background(), params.Header, objectID, id)
+	if err != nil {
+		return params.Err.Error(common.CCErrTopoObjectUniqueCreateFailed)
+	}
+	if !resp.Result {
+		return params.Err.New(common.CCErrTopoObjectUniqueCreateFailed, resp.ErrMsg)
+	}
+	return nil
 }
