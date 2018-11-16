@@ -17,16 +17,17 @@ import (
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // UniqueOperationInterface group operation methods
 type UniqueOperationInterface interface {
-	Search(params types.ContextParams, objectID string) (objectUniques []metadata.ObjectUnique, err error)
 	Create(params types.ContextParams, objectID string, request *metadata.CreateUniqueRequest) (uniqueID *metadata.RspID, err error)
 	Update(params types.ContextParams, objectID string, id uint64, request *metadata.UpdateUniqueRequest) (err error)
 	Delete(params types.ContextParams, objectID string, id uint64) (err error)
+	Search(params types.ContextParams, objectID string) (objectUniques []metadata.ObjectUnique, err error)
 }
 
 // NewUniqueOperation create a new group operation instance
@@ -40,23 +41,14 @@ type unique struct {
 	clientSet apimachinery.ClientSetInterface
 }
 
-func (a *unique) Search(params types.ContextParams, objectID string) (objectUniques []metadata.ObjectUnique, err error) {
-	resp, err := a.clientSet.ObjectController().Unique().Search(context.Background(), params.Header, objectID)
-	if err != nil {
-		return nil, params.Err.Error(common.CCErrTopoObjectUniqueCreateFailed)
-	}
-	if !resp.Result {
-		return nil, params.Err.New(common.CCErrTopoObjectUniqueCreateFailed, resp.ErrMsg)
-	}
-	return resp.Data, nil
-}
 func (a *unique) Create(params types.ContextParams, objectID string, request *metadata.CreateUniqueRequest) (uniqueID *metadata.RspID, err error) {
 	resp, err := a.clientSet.ObjectController().Unique().Create(context.Background(), params.Header, objectID, request)
 	if err != nil {
+		blog.Errorf("[UniqueOperation] create for %s, %#v failed %v", objectID, request, err)
 		return nil, params.Err.Error(common.CCErrTopoObjectUniqueCreateFailed)
 	}
 	if !resp.Result {
-		return nil, params.Err.New(common.CCErrTopoObjectUniqueCreateFailed, resp.ErrMsg)
+		return nil, params.Err.New(resp.Code, resp.ErrMsg)
 	}
 	return &resp.Data, nil
 
@@ -64,20 +56,33 @@ func (a *unique) Create(params types.ContextParams, objectID string, request *me
 func (a *unique) Update(params types.ContextParams, objectID string, id uint64, request *metadata.UpdateUniqueRequest) (err error) {
 	resp, err := a.clientSet.ObjectController().Unique().Update(context.Background(), params.Header, objectID, id, request)
 	if err != nil {
+		blog.Errorf("[UniqueOperation] update for %s, %d, %#v failed %v", objectID, id, request, err)
 		return params.Err.Error(common.CCErrTopoObjectUniqueUpdateFailed)
 	}
 	if !resp.Result {
-		return params.Err.New(common.CCErrTopoObjectUniqueUpdateFailed, resp.ErrMsg)
+		return params.Err.New(resp.Code, resp.ErrMsg)
 	}
 	return nil
 }
 func (a *unique) Delete(params types.ContextParams, objectID string, id uint64) (err error) {
 	resp, err := a.clientSet.ObjectController().Unique().Delete(context.Background(), params.Header, objectID, id)
 	if err != nil {
-		return params.Err.Error(common.CCErrTopoObjectUniqueCreateFailed)
+		blog.Errorf("[UniqueOperation] delete for %s, %d failed %v", objectID, id, err)
+		return params.Err.Error(common.CCErrTopoObjectUniqueDeleteFailed)
 	}
 	if !resp.Result {
-		return params.Err.New(common.CCErrTopoObjectUniqueCreateFailed, resp.ErrMsg)
+		return params.Err.New(resp.Code, resp.ErrMsg)
 	}
 	return nil
+}
+func (a *unique) Search(params types.ContextParams, objectID string) (objectUniques []metadata.ObjectUnique, err error) {
+	resp, err := a.clientSet.ObjectController().Unique().Search(context.Background(), params.Header, objectID)
+	if err != nil {
+		blog.Errorf("[UniqueOperation] search for %s, %#v failed %v", objectID, err)
+		return nil, params.Err.Error(common.CCErrTopoObjectUniqueSearchFailed)
+	}
+	if !resp.Result {
+		return nil, params.Err.New(resp.Code, resp.ErrMsg)
+	}
+	return resp.Data, nil
 }

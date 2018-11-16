@@ -148,20 +148,13 @@ func (cli *Service) SearchObjectUnique(req *restful.Request, resp *restful.Respo
 	db := cli.Instance.Clone()
 
 	objID := req.PathParameter(common.BKObjIDField)
-	id, err := strconv.ParseUint(req.PathParameter("id"), 10, 64)
-	if err != nil {
-		blog.Errorf("[SearchObjectUnique] path param [id] error: %v", err)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, "id")})
-		return
-	}
 
 	cond := condition.CreateCondition()
-	cond.Field("id").Eq(id)
 	cond.Field(common.BKObjIDField).Eq(objID)
 	cond.Field(common.BKOwnerIDField).Eq(ownerID)
 
 	uniques := []metadata.ObjectUnique{}
-	err = db.Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).All(ctx, &uniques)
+	err := db.Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).All(ctx, &uniques)
 	if nil != err {
 		blog.Errorf("[SearchObjectUnique] Delete error: %s, raw: %#v", err)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrObjectDBOpErrno)})

@@ -44,7 +44,7 @@ func (unique *Unique) Search(ctx context.Context, h http.Header, objectID string
 
 func (unique *Unique) Create(ctx context.Context, h http.Header, objectID string, request *metadata.CreateUniqueRequest) (resp *metadata.CreateUniqueResult, err error) {
 	resp = new(metadata.CreateUniqueResult)
-	subPath := fmt.Sprintf("/object/%s/unique/action/search", objectID)
+	subPath := fmt.Sprintf("/object/%s/unique/action/create", objectID)
 
 	err = unique.client.Post().
 		WithContext(ctx).
@@ -57,9 +57,9 @@ func (unique *Unique) Create(ctx context.Context, h http.Header, objectID string
 }
 func (unique *Unique) Update(ctx context.Context, h http.Header, objectID string, id uint64, request *metadata.UpdateUniqueRequest) (resp *metadata.UpdateUniqueResult, err error) {
 	resp = new(metadata.UpdateUniqueResult)
-	subPath := fmt.Sprintf("/object/%s/unique/%d/action/search", objectID, id)
+	subPath := fmt.Sprintf("/object/%s/unique/%d/action/update", objectID, id)
 
-	err = unique.client.Post().
+	err = unique.client.Put().
 		WithContext(ctx).
 		Body(request).
 		SubResource(subPath).
@@ -70,9 +70,9 @@ func (unique *Unique) Update(ctx context.Context, h http.Header, objectID string
 }
 func (unique *Unique) Delete(ctx context.Context, h http.Header, objectID string, id uint64) (resp *metadata.DeleteUniqueResult, err error) {
 	resp = new(metadata.DeleteUniqueResult)
-	subPath := fmt.Sprintf("/object/%s/unique/%d/action/search", objectID, id)
+	subPath := fmt.Sprintf("/object/%s/unique/%d/action/delete", objectID, id)
 
-	err = unique.client.Post().
+	err = unique.client.Delete().
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
