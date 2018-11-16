@@ -13,23 +13,33 @@
 package godriver
 
 import (
+	"context"
+
 	"configcenter/src/storage/mongobyc"
+
+	mgo "github.com/mongodb/mongo-go-driver/mongo"
 )
 
 var _ mongobyc.Database = (*database)(nil)
 
 type database struct {
+	innerDatabase *mgo.Database
+}
+
+func newDatabase(db *mgo.Database) *database {
+	return &database{innerDatabase: db}
 }
 
 func (d *database) Drop() error {
-	return nil
+	return d.innerDatabase.Drop(context.TODO())
 }
 
 func (d *database) Name() string {
-	return ""
+	return d.innerDatabase.Name()
 }
 
 func (d *database) HasCollection(collName string) (bool, error) {
+
 	return false, nil
 }
 

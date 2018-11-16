@@ -7,6 +7,18 @@
 			"path": "github.com/go-playground/validator",
 			"revision": "61caf9d3038e1af346dbf5c2e16f6678e1548364",
 			"revisionTime": "2017-11-13T04:58:10Z"
+		},
+		{
+			"checksumSHA1": "hx8sfgUC5hUNta+yXRhNjtXNE9k=",
+			"path": "github.com/mongodb/mongo-go-driver/bson",
+			"revision": "18280a566540eca3a55b7a1ee43c9baae8273d22",
+			"revisionTime": "2018-11-13T22:53:17Z"
+		},
+		{
+			"checksumSHA1": "BgBUBR7lFiSBSu9FFsvv4Sukdq0=",
+			"path": "github.com/mongodb/mongo-go-driver/mongo",
+			"revision": "18280a566540eca3a55b7a1ee43c9baae8273d22",
+			"revisionTime": "2018-11-13T22:53:17Z"
 		}
 	],
 	"rootPath": "configcenter"
