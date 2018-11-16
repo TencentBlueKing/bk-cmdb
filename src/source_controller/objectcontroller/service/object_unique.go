@@ -42,6 +42,14 @@ func (cli *Service) CreateObjectUnique(req *restful.Request, resp *restful.Respo
 		return
 	}
 
+	for _, key := range dat.Keys {
+		switch key.Kind {
+		case metadata.UinqueKeyKindProperty:
+		default:
+			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrTopoObjectUniqueKeyKindInvalid, key.Kind)})
+		}
+	}
+
 	id, err := db.NextSequence(ctx, common.BKTableNameObjUnique)
 	if nil != err {
 		blog.Errorf("[CreateObjectUnique] NextSequence error: %s", err)
@@ -92,6 +100,14 @@ func (cli *Service) UpdateObjectUnique(req *restful.Request, resp *restful.Respo
 		return
 	}
 	unique.LastTime = metadata.Now()
+
+	for _, key := range unique.Keys {
+		switch key.Kind {
+		case metadata.UinqueKeyKindProperty:
+		default:
+			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrTopoObjectUniqueKeyKindInvalid, key.Kind)})
+		}
+	}
 
 	cond := condition.CreateCondition()
 	cond.Field("id").Eq(id)
