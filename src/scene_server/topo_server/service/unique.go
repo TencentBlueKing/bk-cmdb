@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -22,12 +23,11 @@ import (
 // CreateObjectUnique create a new object in the main line topo
 func (s *topoService) CreateObjectUnique(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	mainLineAssociation := &metadata.Association{}
+	request := &metadata.SearchUniqueRequest{}
 
-	_, err := mainLineAssociation.Parse(data)
-	if nil != err {
-		blog.Errorf("[api-asst] failed to parse the data(%#v), error info is %s", data, err.Error())
+	if err := data.MarshalJSONInto(request); err != nil {
+		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
 
-	return s.core.AssociationOperation().CreateMainlineAssociation(params, mainLineAssociation)
+	return s.core.UnqueOperation().CreateMainlineAssociation(params, mainLineAssociation)
 }
