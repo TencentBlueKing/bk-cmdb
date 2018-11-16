@@ -16,12 +16,16 @@
                 v-if="property['bk_property_type'] === 'enum'"
                 :options="property.option || []"
                 :allow-clear="true"
-                v-model="value">
+                v-model.trim="value">
             </cmdb-form-enum>
             <cmdb-form-int class="filter-value fl"
                 v-else-if="property['bk_property_type'] === 'int'"
                 v-model="value">
             </cmdb-form-int>
+            <cmdb-form-bool-input class="filter-value fl"
+                v-else-if="property['bk_property_type'] === 'bool'"
+                v-model.trim="value">
+            </cmdb-form-bool-input>
             <comonent class="filter-value"
                 v-else
                 :is="`cmdb-form-${property['bk_property_type']}`"
@@ -54,6 +58,23 @@
         computed: {
             filteredProperties () {
                 return this.properties.filter(property => !['singleasst', 'multiasst'].includes(property['bk_property_type']))
+            },
+            type () {
+                return this.property ? this.property['bk_property_type'] : ''
+            },
+            searchValue () {
+                if (['objuser'].includes(this.type)) {
+                    return this.value.split(',')
+                }
+                return this.value
+            },
+            operator () {
+                const map = {
+                    'objuser': '$in',
+                    'int': '$eq',
+                    'bool': '$eq'
+                }
+                return map[this.type] || '$regex'
             }
         },
         watch: {
@@ -91,7 +112,11 @@
                 this.value = ''
             },
             handleSearch () {
-                this.$emit('on-search', this.property, this.value)
+                if (String(this.searchValue).length) {
+                    this.$emit('on-search', this.property, this.searchValue, this.operator)
+                } else {
+                    this.$emit('on-search', null, '', '')
+                }
             }
         }
     }
