@@ -27,6 +27,11 @@ type UinqueKeys struct {
 	ID   uint64 `json:"key_id" bson:"key_id"`
 }
 
+const (
+	UinqueKeyKindProperty    = "property"
+	UinqueKeyKindAssociation = "association"
+)
+
 type CreateUniqueRequest struct {
 	ObjID     string       `json:"bk_obj_id" bson:"bk_obj_id"`
 	MustCheck bool         `json:"must_check" bson:"must_check"`
