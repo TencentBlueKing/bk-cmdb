@@ -79,5 +79,8 @@
 	"1001054":"update model unique constrains failed",
 	"1001055":"delete model unique constrains failed",
 	"1001056":"search model unique constrains failed",
+	"1001057":"model property [%s] has been removed",
+	"1001058":"model property [%s] has been used from unique constrains, delete failed",
+	"1001059":"unique constrains key kind [%s] invalid",
 	"": "" 
 }
