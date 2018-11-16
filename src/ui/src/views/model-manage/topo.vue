@@ -44,11 +44,25 @@
                     </div>
                     <cmdb-collapse-transition name="model-box">
                         <ul class="model-box" v-show="topoNav.activeGroup === group['bk_classification_id']">
-                            <li class="model-item" draggable="true" @dragstart="handleDragstart" @dragend="handleDragend(model)" v-for="(model, modelIndex) in group['bk_objects']" :key="modelIndex">
-                                <i :class="model['bk_obj_icon']"></i>
-                                <div class="info">
-                                    <p class="name">{{model['bk_obj_name']}}</p>
-                                    <p class="id">{{model['bk_obj_id']}}</p>
+                            <li class="model-item"
+                            v-for="(model, modelIndex) in group['bk_objects']"
+                            :key="modelIndex"
+                            :class="{'disabled': isModelInTopo(model)}"
+                            :draggable="!isModelInTopo(model)"
+                            @dragstart="handleDragstart(model, $event)">
+                                <div v-if="!isModelInTopo(model)">
+                                    <i :class="model['bk_obj_icon']"></i>
+                                    <div class="info">
+                                        <p class="name">{{model['bk_obj_name']}}</p>
+                                        <p class="id">{{model['bk_obj_id']}}</p>
+                                    </div>
+                                </div>
+                                <div v-else v-bktooltips.left="$t('ModelManagement[\'一个模型在画布中只能运用一次\']')">
+                                    <i :class="model['bk_obj_icon']"></i>
+                                    <div class="info">
+                                        <p class="name">{{model['bk_obj_name']}}</p>
+                                        <p class="id">{{model['bk_obj_id']}}</p>
+                                    </div>
                                 </div>
                             </li>
                         </ul>
@@ -71,7 +85,7 @@
                 @cancel="handleSliderCancel"
             ></component>
         </cmdb-slider>
-        <div class="global-model" ref="topo" v-bkloading="{isLoading: loading}"></div>
+        <div class="global-model" @dragover.prevent="" @drop="handleDrop" ref="topo" v-bkloading="{isLoading: loading}"></div>
         <ul class="topology-edge-tooltips" ref="edgeTooltips"
             @mouseover="handleEdgeTooltipsOver"
             @mouseleave="handleEdgeTooltipsLeave"
@@ -154,38 +168,6 @@
                         },
                         manipulation: {
                             enabled: true,
-                            // addNode: (data, callback) => {
-                            //     console.log(data)
-                            //     // filling in the popup DOM elements
-                            //     const node = {
-                            //         id: 'bk_switch',
-                            //         image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON({
-                            //             name: '交换机',
-                            //             backgroundColor: '#fff',
-                            //             fontColor: '#6894c8'
-                            //         }))}`,
-                            //         data: {
-                            //             bk_biz_id: 0,
-                            //             bk_inst_id: 0,
-                            //             bk_obj_icon: 'icon-cc-switch2',
-                            //             bk_obj_id: 'bk_switch',
-                            //             bk_supplier_account: '0',
-                            //             ispre: false,
-                            //             node_name: '交换机',
-                            //             node_type: 'obj',
-                            //             position: {
-                            //                 x: null,
-                            //                 y: null
-                            //             },
-                            //             scope_id: '0',
-                            //             scope_type: 'global'
-                            //         },
-                            //         x: data.x,
-                            //         y: data.y
-                            //     }
-                            //     callback(node)
-                            //     this.networkInstance.addEdgeMode()
-                            // },
                             addEdge: (data, callback) => {
                                 this.topoEdit.activeEdge = data
                                 callback(data)
@@ -253,12 +235,55 @@
             ...mapActions('objectAssociation', [
                 'searchAssociationType',
                 'createObjectAssociation',
+                'updateObjectAssociation',
                 'deleteObjectAssociation'
             ]),
             ...mapActions('objectModel', [
                 'deleteObject'
             ]),
+            isModelInTopo (model) {
+                return this.network.nodes.findIndex(node => node.id === model['bk_obj_id']) > -1
+            },
+            createAsst (params) {
+                return this.createObjectAssociation({
+                    params
+                })
+            },
+            updateAsst (params) {
+                return this.updateObjectAssociation({
+                    params: {
+                        id: params.id,
+                        bk_obj_asst_name: params['bk_obj_asst_name']
+                    }
+                })
+            },
+            deleteAsst (params) {
+                return this.deleteObjectAssociation({
+                    id: params.id
+                })
+            },
             async saveTopo () {
+                let createAsstArray = []
+                let updateAsstArray = []
+                let deleteAsstArray = []
+                let deleteObjectArray = []
+                this.topoEdit.edges.filter(({type}) => type === 'create').forEach(data => {
+                    createAsstArray.push(this.createAsst(data.params))
+                })
+                this.topoEdit.edges.filter(({type}) => type === 'update').forEach(data => {
+                    updateAsstArray.push(this.updateAsst(data.params))
+                })
+                this.topoEdit.edges.filter(({type}) => type === 'delete').forEach(data => {
+                    deleteAsstArray.push(this.deleteAsst(data.params))
+                })
+                this.topoEdit.nodes.filter(({type}) => type === 'delete').forEach(data => {
+                    let id = this.$allModels.find(model => model['bk_obj_id'] === data.params.objId).id
+                    deleteObjectArray.push(this.deleteObject({id}))
+                })
+                await Promise.all(createAsstArray)
+                await Promise.all(updateAsstArray)
+                await Promise.all(deleteAsstArray)
+                await Promise.all(deleteObjectArray)
                 this.topoEdit.isEdit = false
             },
             handleDisplaySave (displayConfig) {
@@ -281,7 +306,7 @@
                     bk_obj_id: params['bk_obj_id'],
                     bk_inst_id: '',
                     checked: true,
-                    labelList: [params]
+                    asstInfo: params
                 })
                 this.updateNetwork()
             },
@@ -324,7 +349,8 @@
                     }
                 })
             },
-            handleDragstart (event) {
+            handleDragstart (model, event) {
+                event.dataTransfer.setData('objId', model['bk_obj_id'])
                 let image = new Image()
                 image.onload = () => {
                     event.dataTransfer.setDragImage(image, 10, 10)
@@ -335,8 +361,13 @@
                     fontColor: '#6894c8'
                 }))}`
             },
-            handleDragend (model) {
-                let node = this.topoModelList.find(({bk_obj_id: objId}) => model['bk_obj_id'] === objId)
+            handleDrop (event) {
+                let objId = event.dataTransfer.getData('objId')
+                let node = this.topoModelList.find(model => model['bk_obj_id'] === objId)
+                let originPosition = this.networkInstance.getViewPosition()
+                let container = this.$refs.topo.getBoundingClientRect()
+                node.position.x = originPosition.x - ((container.left + container.right) / 2 - event.clientX)
+                node.position.y = originPosition.y - ((container.top + container.bottom) / 2 - event.clientY)
                 node.draged = true
                 this.updateNetwork()
             },
@@ -456,7 +487,7 @@
                     this.slider.properties = {
                         objId: labelInfo.objId,
                         asstId: labelInfo.asst['bk_inst_id'],
-                        asstInfo: labelInfo.asst.labelList[0]
+                        asstInfo: labelInfo.asst.asstInfo || {}
                     }
                     this.showSlider('theRelationDetail')
                 }
@@ -722,7 +753,7 @@
                     }
                     this.networkInstance.unselectAll()
                 })
-                this.setSingleNodePosition()
+                // this.setSingleNodePosition()
                 this.loadNodeImage()
                 this.networkInstance.fit()
                 this.loading = false
@@ -930,6 +961,10 @@
         .model-item {
             padding: 7px 0;
             cursor: move;
+            &.disabled {
+                cursor: default;
+                opacity: .6;
+            }
             i {
                 display: inline-block;
                 margin-right: 5px;
@@ -944,7 +979,7 @@
                 border: 1px solid $cmdbTableBorderColor;
                 border-radius: 50%;
             }
-            >.info {
+            .info {
                 display: inline-block;
                 line-height: 18px;
                 vertical-align: middle;

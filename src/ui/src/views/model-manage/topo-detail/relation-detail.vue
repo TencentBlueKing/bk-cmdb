@@ -130,8 +130,7 @@
                 this.$emit('save', {
                     type: 'update',
                     params: {
-                        id: this.asstId,
-                        bk_obj_asst_name: this.relationInfo['bk_obj_asst_name']
+                        ...this.relationInfo
                     }
                 })
                 this.$emit('cancel')
