@@ -182,7 +182,7 @@
                             }
                         },
                         nodes: {
-                            shape: 'image',
+                            shape: 'icon',
                             widthConstraint: 55,
                             shadow: {
                                 enabled: true,
@@ -662,15 +662,19 @@
                     if ((nodeData.hasOwnProperty('assts') || asstList.findIndex(({bk_obj_id: objId}) => objId === nodeData['bk_obj_id']) > -1) || nodeData.draged) {
                         const node = {
                             id: nodeData['bk_obj_id'],
-                            image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON({
-                                name: nodeData['node_name'],
-                                backgroundColor: '#fff',
-                                fontColor: nodeData['ispre'] ? '#6894c8' : '#868b97'
-                            }))}`,
+                            // image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON({
+                            //     name: nodeData['node_name'],
+                            //     backgroundColor: '#fff',
+                            //     fontColor: nodeData['ispre'] ? '#6894c8' : '#868b97'
+                            // }))}`,
+                            icon: {
+                                face: 'icomoon',
+                                code: '\ue900'
+                            },
                             data: nodeData
                         }
                         if (this.displayConfig.isShowModelName) {
-                            Object.assign(node, {label: nodeData['node_name']})
+                            node.label = nodeData['node_name']
                         }
                         if (nodeData['position']['x'] !== null && nodeData['position']['y'] !== null) {
                             node.physics = false
