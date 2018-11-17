@@ -32,7 +32,7 @@
             </span>
             <div class="cmdb-form-item" :class="{'is-error': errors.has('objId')}">
                 <form-selector
-                    :disabled="relationInfo.ispre"
+                    :disabled="relationInfo.ispre || isEdit"
                     :has-children="true"
                     :list="asstList"
                     v-validate="'required'"
@@ -50,7 +50,7 @@
             </span>
             <div class="cmdb-form-item" :class="{'is-error': errors.has('asstObjId')}">
                 <form-selector
-                    :disabled="relationInfo.ispre"
+                    :disabled="relationInfo.ispre || isEdit"
                     :has-children="true"
                     :list="asstList"
                     v-validate="'required'"
@@ -85,7 +85,7 @@
             </span>
             <div class="cmdb-form-item" :class="{'is-error': errors.has('mapping')}">
                 <form-selector
-                    :disabled="relationInfo.ispre"
+                    :disabled="relationInfo.ispre || isEdit"
                     :list="mappingList"
                     v-validate="'required'"
                     name="mapping"
@@ -139,6 +139,9 @@
             isEdit: {
                 type: Boolean,
                 default: false
+            },
+            relationList: {
+                type: Array
             }
         },
         data () {
@@ -163,8 +166,7 @@
                     bk_asst_id: '',
                     mapping: '',
                     on_delete: []
-                },
-                relationList: []
+                }
             }
         },
         computed: {
@@ -183,7 +185,7 @@
                 }
                 return ''
             },
-            params () {
+            createParams () {
                 return {
                     bk_obj_asst_id: this.objAsstId,
                     bk_obj_asst_name: this.relationInfo['bk_obj_asst_name'],
@@ -194,21 +196,23 @@
                     on_delete: this.relationInfo['on_delete'].length ? this.relationInfo['on_delete'].join('') : 'none'
                 }
             },
+            updateParams () {
+                return {
+                    bk_obj_asst_name: this.relationInfo['bk_obj_asst_name'],
+                    bk_asst_id: this.relationInfo['bk_asst_id'],
+                    on_delete: this.relationInfo['on_delete'].length ? this.relationInfo['on_delete'].join('') : 'none'
+                }
+            },
             asstList () {
                 let asstList = []
                 this.classifications.forEach(classify => {
                     if (classify['bk_objects'].length) {
-                        if (!this.relationInfo.ispre && classify['bk_classification_id'] === 'bk_biz_topo') {
-                            return
-                        }
                         let objects = []
-                        classify['bk_objects'].map(({bk_obj_id: objId, bk_obj_name: objName}) => {
-                            if (this.relationInfo.ispre || ['plat', 'process'].indexOf(objId) === -1) {
-                                objects.push({
-                                    id: objId,
-                                    name: objName
-                                })
-                            }
+                        classify['bk_objects'].forEach(({bk_obj_id: objId, bk_obj_name: objName}) => {
+                            objects.push({
+                                id: objId,
+                                name: objName
+                            })
                         })
                         if (objects.length) {
                             asstList.push({
@@ -239,14 +243,12 @@
             }
         },
         created () {
-            this.initRelationList()
             this.initData()
         },
         methods: {
             ...mapActions('objectAssociation', [
                 'createObjectAssociation',
-                'updateObjectAssociation',
-                'searchAssociationType'
+                'updateObjectAssociation'
             ]),
             async validateValue () {
                 await this.$nextTick()
@@ -263,21 +265,6 @@
                     }
                 }
             },
-            async initRelationList () {
-                const data = await this.searchAssociationType({})
-                this.relationList = data.info.map(({bk_asst_id: asstId, bk_asst_name: asstName}) => {
-                    if (asstName.length) {
-                        return {
-                            id: asstId,
-                            name: `${asstId}(${asstName})`
-                        }
-                    }
-                    return {
-                        id: asstId,
-                        name: asstId
-                    }
-                })
-            },
             async saveRelation () {
                 if (!await this.$validator.validateAll()) {
                     return
@@ -285,14 +272,14 @@
                 if (this.isEdit) {
                     await this.updateObjectAssociation({
                         id: this.relationInfo.id,
-                        params: this.params,
+                        params: this.updateParams,
                         config: {
                             requestId: 'updateObjectAssociation'
                         }
                     })
                 } else {
                     await this.createObjectAssociation({
-                        params: this.params,
+                        params: this.createParams,
                         config: {
                             requestId: 'createObjectAssociation'
                         }

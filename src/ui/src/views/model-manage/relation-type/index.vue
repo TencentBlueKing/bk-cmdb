@@ -8,6 +8,7 @@
             <div class="cmdb-form-item" :class="{'is-error': errors.has('asstId')}">
                 <input type="text" class="cmdb-form-input"
                 name="asstId"
+                :disabled="isEdit"
                 v-model.trim="relationInfo['bk_asst_id']"
                 v-validate="'required|singlechar'"
                 :placeholder="$t('ModelManagement[\'请输入英文标识\']')">
@@ -75,14 +76,16 @@
                 <span class="cmdb-radio-text">{{$t('ModelManagement["双向"]')}}</span>
             </label>
         </div>
-        <div class="btn-group">
-            <bk-button type="primary" :loading="$loading(['updateAssociationType', 'createAssociationType'])" @click="saveRelation">
-                {{$t('ModelManagement["确定"]')}}
-            </bk-button>
-            <bk-button type="default" @click="cancel">
-                {{$t('ModelManagement["取消"]')}}
-            </bk-button>
-        </div>
+        <slot name="operation">
+            <div class="btn-group">
+                <bk-button type="primary" :loading="$loading(['updateAssociationType', 'createAssociationType'])" @click="saveRelation">
+                    {{saveBtnText || $t('ModelManagement["确定"]')}}
+                </bk-button>
+                <bk-button type="default" @click="cancel">
+                    {{$t('ModelManagement["取消"]')}}
+                </bk-button>
+            </div>
+        </slot>
     </div>
 </template>
 
@@ -100,6 +103,9 @@
             isEdit: {
                 type: Boolean,
                 default: false
+            },
+            saveBtnText: {
+                type: String
             }
         },
         data () {
@@ -178,6 +184,7 @@
             .cmdb-form-radio {
                 width: auto;
                 padding-right: 20px;
+                vertical-align: middle;
                 &:last-child {
                     padding-right: 0;
                 }
