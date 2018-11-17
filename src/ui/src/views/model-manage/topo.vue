@@ -32,6 +32,12 @@
                 <bk-button type="primary" @click="saveTopo">
                     {{$t('ModelManagement["保存并返回"]')}}
                 </bk-button>
+                <bk-button type="primary" v-if="!topoEdit.isAddEdgeMode" @click="toggleAddEdgeMode">
+                    addEdge
+                </bk-button>
+                <bk-button type="default" v-else @click="toggleAddEdgeMode">
+                    cancel
+                </bk-button>
             </div>
             <ul class="topo-nav">
                 <li class="group-item" v-for="(group, groupIndex) in classifications" :key="groupIndex">
@@ -143,6 +149,7 @@
                     activeEdge: []
                 },
                 topoEdit: {
+                    isAddEdgeMode: false,
                     isEdit: false,
                     activeEdge: null,
                     edges: [],
@@ -241,6 +248,14 @@
             ...mapActions('objectModel', [
                 'deleteObject'
             ]),
+            toggleAddEdgeMode () {
+                this.topoEdit.isAddEdgeMode = !this.topoEdit.isAddEdgeMode
+                if (this.topoEdit.isAddEdgeMode) {
+                    this.networkInstance.addEdgeMode()
+                } else {
+                    this.networkInstance.disableEditMode()
+                }
+            },
             isModelInTopo (model) {
                 return this.network.nodes.findIndex(node => node.id === model['bk_obj_id']) > -1
             },
@@ -308,6 +323,7 @@
                     checked: true,
                     asstInfo: params
                 })
+                this.topoEdit.isAddEdgeMode = false
                 this.updateNetwork()
             },
             handleRelationDetailSave (data) {
@@ -362,7 +378,6 @@
             },
             editTopo () {
                 this.topoEdit.isEdit = true
-                this.networkInstance.addEdgeMode()
             },
             deleteNode () {
                 let {
@@ -402,10 +417,12 @@
                 let node = this.topoModelList.find(model => model['bk_obj_id'] === objId)
                 let originPosition = this.networkInstance.getViewPosition()
                 let container = this.$refs.topo.getBoundingClientRect()
-                node.position.x = originPosition.x - ((container.left + container.right) / 2 - event.clientX)
-                node.position.y = originPosition.y - ((container.top + container.bottom) / 2 - event.clientY)
+                let scale = this.networkInstance.getScale()
+                node.position.x = originPosition.x - ((container.left + container.right) / 2 - event.clientX) / scale
+                node.position.y = originPosition.y - ((container.top + container.bottom) / 2 - event.clientY) / scale
                 node.draged = true
                 this.updateNetwork()
+                // this.updateNodePosition(this.networkDataSet.nodes.get([objId]))
             },
             handleSliderSave (params) {
                 switch (this.slider.content) {
@@ -599,12 +616,17 @@
             updateNetwork (data) {
                 this.setNodes(this.topoModelList)
                 this.setEdges(this.topoModelList)
+                let scale = this.networkInstance.getScale()
+                let origin = this.networkInstance.getViewPosition()
                 this.networkInstance = new Vis.Network(this.$refs.topo, {
                     nodes: this.networkDataSet.nodes,
                     edges: this.networkDataSet.edges
                 }, this.network.options)
                 this.addListener()
-                this.networkInstance.addEdgeMode()
+                this.networkInstance.moveTo({
+                    position: origin,
+                    scale
+                })
             },
             async initNetwork () {
                 await this.getAssociationType()
@@ -757,7 +779,7 @@
                 })
             },
             // 批量更新节点位置信息
-            updateNodePosition (updateNodes) {
+            async updateNodePosition (updateNodes) {
                 if (!updateNodes.length) return
                 const nodePositions = this.networkInstance.getPositions(updateNodes.map(node => node.id))
                 const params = updateNodes.map(node => {
@@ -772,7 +794,12 @@
                         }
                     }
                 })
-                this.$store.dispatch('globalModels/updateModelAction', {params})
+                await this.$store.dispatch('globalModels/updateModelAction', {params})
+                updateNodes.forEach(node => {
+                    let model = this.topoModelList.find(({bk_obj_id: objId}) => objId === node.id)
+                    model.position.x = nodePositions[node.id]['x']
+                    model.position.y = nodePositions[node.id]['y']
+                })
             },
             // 拓扑稳定后执行事件
             // 1.取消物理模拟
@@ -802,6 +829,11 @@
                 if (!this.noPositionNodes.length) {
                     this.listenerCallback()
                 }
+                networkInstance.on('dragStart', data => {
+                    if (data.nodes) {
+                        this.topoTooltip.hoverNode = null
+                    }
+                })
                 networkInstance.on('hoverEdge', data => {
                     this.handleHoverEdge(data)
                 })
