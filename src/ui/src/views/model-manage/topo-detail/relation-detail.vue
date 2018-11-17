@@ -49,10 +49,10 @@
             </div>
         </label>
         <div class="btn-group">
-            <bk-button type="primary" :loading="$loading('updateObjectAssociation')" @click="saveRelation">
+            <bk-button type="primary" @click="saveRelation">
                 {{$t('ModelManagement["确定"]')}}
             </bk-button>
-            <bk-button type="danger" @click="deleteRelation" :disabled="$loading('deleteObjectAssociation')">
+            <bk-button type="danger" @click="deleteRelation" :disabled="relationInfo.ispre">
                 {{$t('ModelManagement["删除关系"]')}}
             </bk-button>
         </div>
@@ -116,7 +116,7 @@
                 if (this.asstId !== '') {
                     this.relationInfo = asstList.find(asst => asst.id === this.asstId)
                 } else {
-                    this.relationInfo = this.asstInfo
+                    this.relationInfo = this.$tools.clone(this.asstInfo)
                 }
             },
             getModelName (objId) {
@@ -142,6 +142,7 @@
                         this.$emit('save', {
                             type: 'delete',
                             params: {
+                                ...this.relationInfo,
                                 id: this.asstId
                             }
                         })

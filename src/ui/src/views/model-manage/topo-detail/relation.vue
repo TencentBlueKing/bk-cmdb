@@ -100,11 +100,18 @@
             },
             fromObjId: {
                 type: String
+            },
+            topoModelList: {
+                type: Array
+            },
+            edges: {
+                type: Array
             }
         },
         data () {
             return {
                 relationList: [],
+                modelRelationList: [],
                 mappingList: [{
                     id: '1:1',
                     name: '1-1'
@@ -117,8 +124,8 @@
                 }],
                 isCreateRelation: false,
                 relationInfo: {
-                    bk_obj_id: this.toObjId,
-                    bk_asst_obj_id: this.fromObjId,
+                    bk_obj_id: this.fromObjId,
+                    bk_asst_obj_id: this.toObjId,
                     bk_asst_id: '',
                     bk_obj_asst_name: '',
                     mapping: ''
@@ -137,11 +144,13 @@
             }
         },
         created () {
+            this.searchModelRelationList()
             this.initRelationList()
         },
         methods: {
             ...mapActions('objectAssociation', [
-                'searchAssociationType'
+                'searchAssociationType',
+                'searchObjectAssociation'
             ]),
             getModelName (objId) {
                 let model = this.$allModels.find(model => model['bk_obj_id'] === objId)
@@ -178,8 +187,49 @@
                 })
                 this.relationInfo['bk_asst_id'] = this.relationList[0].id
             },
+            async searchModelRelationList () {
+                const [source, dest] = await Promise.all([this.searchAsSource(), this.searchAsDest()])
+                this.modelRelationList = [...source, ...dest]
+            },
+            searchAsSource () {
+                return this.searchObjectAssociation({
+                    params: {
+                        condition: {
+                            'bk_obj_id': this.relationInfo['bk_obj_id']
+                        }
+                    }
+                })
+            },
+            searchAsDest () {
+                return this.searchObjectAssociation({
+                    params: {
+                        condition: {
+                            'bk_asst_obj_id': this.relationInfo['bk_obj_id']
+                        }
+                    }
+                })
+            },
+            isRelationExist () {
+                let {
+                    relationInfo
+                } = this
+
+                let isExist = this.edges.find(edge => {
+                    return edge.type === 'create' && edge.params['bk_asst_id'] === relationInfo['bk_asst_id'] && edge.params['bk_obj_id'] === relationInfo['bk_obj_id'] && edge.params['bk_asst_obj_id'] === relationInfo['bk_asst_obj_id']
+                })
+                if (isExist) {
+                    return true
+                }
+
+                isExist = this.modelRelationList.some(({bk_asst_id: asstId, bk_obj_id: objId, bk_asst_obj_id: asstObjId}) => asstId === relationInfo['bk_asst_id'] && objId === relationInfo['bk_obj_id'] && asstObjId === relationInfo['bk_asst_obj_id'])
+                return isExist
+            },
             async saveRelation () {
                 if (!await this.$validator.validateAll()) {
+                    return
+                }
+                if (this.isRelationExist()) {
+                    this.$error(this.$t('ModelManagement["关联关系重复"]'))
                     return
                 }
                 let params = {
