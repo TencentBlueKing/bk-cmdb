@@ -303,7 +303,7 @@
                 }
                 fromNode.assts.push({
                     bk_asst_inst_id: this.associationList.find(asst => asst['bk_asst_id'] === params['bk_asst_id']).id,
-                    bk_obj_id: params['bk_obj_id'],
+                    bk_obj_id: params['bk_asst_obj_id'],
                     bk_inst_id: '',
                     checked: true,
                     asstInfo: params
@@ -311,16 +311,52 @@
                 this.updateNetwork()
             },
             handleRelationDetailSave (data) {
-                this.topoEdit.edges.push(data)
                 if (data.type === 'delete') {
                     this.topoModelList.forEach(model => {
                         if (model.hasOwnProperty('assts')) {
-                            let index = model.assts.findIndex(asst => asst['bk_inst_id'] === data.params.id)
+                            let index = model.assts.findIndex(asst => {
+                                if (asst['bk_inst_id'] !== '') {
+                                    return asst['bk_inst_id'] === data.params.id
+                                } else {
+                                    return asst.asstInfo['bk_obj_id'] === data.params['bk_obj_id'] && asst.asstInfo['bk_asst_id'] === data.params['bk_asst_id'] && asst.asstInfo['bk_asst_obj_id'] === data.params['bk_asst_obj_id']
+                                }
+                            })
                             if (index > -1) {
                                 model.assts.splice(index, 1)
                             }
                         }
                     })
+                    if (data.params.id === '') {
+                        let edgeIndex = this.topoEdit.edges.findIndex(({params}) => {
+                            let isExist = true
+                            for (let key in params) {
+                                if (key !== 'bk_obj_asst_name' && params[key] !== data.params[key]) {
+                                    isExist = false
+                                }
+                            }
+                            return isExist
+                        })
+                        if (edgeIndex > -1) {
+                            this.topoEdit.edges.splice(edgeIndex, 1)
+                        }
+                    } else {
+                        this.topoEdit.edges.push(data)
+                    }
+                } else { // update
+                    let edge = this.topoEdit.edges.find(({params}) => {
+                        let isExist = true
+                        for (let key in params) {
+                            if (key !== 'bk_obj_asst_name' && params[key] !== data.params[key]) {
+                                isExist = false
+                            }
+                        }
+                        return isExist
+                    })
+                    if (edge) {
+                        edge.params['bk_obj_asst_name'] = data.params['bk_obj_asst_name']
+                    } else {
+                        this.topoEdit.edges.push(data)
+                    }
                 }
                 this.updateNetwork()
             },
@@ -394,7 +430,9 @@
             handleEdgeCreate (data) {
                 this.slider.properties = {
                     fromObjId: data.from,
-                    toObjId: data.to
+                    toObjId: data.to,
+                    topoModelList: this.topoModelList,
+                    edges: this.topoEdit.edges
                 }
                 this.showSlider('theRelation')
             },
