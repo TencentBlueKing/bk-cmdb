@@ -406,6 +406,7 @@
                 node.position.y = originPosition.y - ((container.top + container.bottom) / 2 - event.clientY)
                 node.draged = true
                 this.updateNetwork()
+                this.updateNodePosition(this.networkDataSet.nodes.get([objId]))
             },
             handleSliderSave (params) {
                 switch (this.slider.content) {
