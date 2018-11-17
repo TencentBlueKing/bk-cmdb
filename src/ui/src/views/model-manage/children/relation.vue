@@ -18,7 +18,13 @@
                         {{mappingMap[item.mapping]}}
                     </template>
                     <template v-else-if="header.id==='bk_asst_name'">
-                        {{item['bk_asst_name'] && item['bk_asst_name'].length ? `${item['bk_asst_id']}(${item['bk_asst_name']})` : `${item['bk_asst_id']}`}}
+                        {{getRelationName(item['bk_asst_id'])}}
+                    </template>
+                    <template v-else-if="header.id==='bk_obj_name'">
+                        {{getModelName(item['bk_obj_id'])}}
+                    </template>
+                    <template v-else-if="header.id==='bk_asst_obj_name'">
+                        {{getModelName(item['bk_asst_obj_id'])}}
                     </template>
                     <template v-else-if="header.id==='operation'">
                         <span class="text-primary mr10" @click.stop="editRelation(item)">
@@ -43,6 +49,7 @@
                 :isReadOnly="isReadOnly"
                 :isEdit="slider.isEdit"
                 :relation="slider.relation"
+                :relationList="relationList"
                 @save="saveRelation"
                 @cancel="slider.isShow = false">
             </the-relation-detail>
@@ -64,6 +71,7 @@
                     isEdit: false,
                     relation: {}
                 },
+                relationList: [],
                 table: {
                     header: [{
                         id: 'bk_obj_asst_id',
@@ -82,8 +90,7 @@
                         name: this.$t('ModelManagement["目标模型"]')
                     }, {
                         id: 'operation',
-                        name: this.$t('ModelManagement["操作"]'),
-                        sortable: false
+                        name: this.$t('ModelManagement["操作"]')
                     }],
                     list: [],
                     defaultSort: '-op_time',
@@ -109,12 +116,48 @@
         },
         created () {
             this.searchRelationList()
+            this.initRelationList()
         },
         methods: {
             ...mapActions('objectAssociation', [
                 'searchObjectAssociation',
-                'deleteObjectAssociation'
+                'deleteObjectAssociation',
+                'searchAssociationType'
             ]),
+            getRelationName (id) {
+                let relation = this.relationList.find(item => item.id === id)
+                if (relation) {
+                    return relation.name
+                }
+            },
+            async initRelationList () {
+                const data = await this.searchAssociationType({
+                    params: {},
+                    config: {
+                        requestId: 'post_searchAssociationType',
+                        fromCache: true
+                    }
+                })
+                this.relationList = data.info.map(({bk_asst_id: asstId, bk_asst_name: asstName}) => {
+                    if (asstName.length) {
+                        return {
+                            id: asstId,
+                            name: `${asstId}(${asstName})`
+                        }
+                    }
+                    return {
+                        id: asstId,
+                        name: asstId
+                    }
+                })
+            },
+            getModelName (objId) {
+                let model = this.$allModels.find(model => model['bk_obj_id'] === objId)
+                if (model) {
+                    return model['bk_obj_name']
+                }
+                return ''
+            },
             createRelation () {
                 this.slider.isEdit = false
                 this.slider.isReadOnly = false

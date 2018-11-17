@@ -17,6 +17,9 @@
             @handlePageChange="handlePageChange"
             @handleSizeChange="handleSizeChange"
             @handleSortChange="handleSortChange">
+            <template slot="bk_asst_name" slot-scope="{ item }">
+                {{item['bk_asst_name'] || '--'}}
+            </template>
             <template slot="operation" slot-scope="{ item }">
                 <span class="text-primary mr10" @click.stop="editRelation(item)">
                     {{$t('Common["编辑"]')}}
@@ -73,9 +76,9 @@
                         id: 'dest_des',
                         name: this.$t('ModelManagement["目标描述->源"]')
                     }, {
-                        id: 'name',
-                        name: this.$t('ModelManagement["使用数"]')
-                    }, {
+                    //     id: 'count',
+                    //     name: this.$t('ModelManagement["使用数"]')
+                    // }, {
                         id: 'operation',
                         name: this.$t('Common["操作"]'),
                         sortable: false
@@ -116,7 +119,7 @@
                     Object.assign(params, {
                         condition: {
                             bk_asst_name: {
-                                '$like': this.searchText
+                                '$regex': this.searchText
                             }
                         }
                     })
@@ -138,6 +141,7 @@
                 }).then(data => {
                     this.table.list = data.info
                     this.table.pagination.count = data.count
+                    this.$http.cancel('post_searchAssociationType')
                 })
             },
             createRelation () {
