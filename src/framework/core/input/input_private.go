@@ -13,9 +13,10 @@
 package input
 
 import (
-	"configcenter/src/framework/core/log"
-	"context"
-	"time"
+    "context"
+    "time"
+    
+    "configcenter/src/framework/core/log"
 )
 
 func (cli *manager) subExecuteInputer(inputer *wrapInputer) error {
@@ -49,11 +50,10 @@ func (cli *manager) executeInputer(ctx context.Context, inputer *wrapInputer) {
 
 	log.Infof("the Inputer(%s) is timing runing", inputer.Name())
 
-	cli.subExecuteInputer(inputer) // execute onece
+	cli.subExecuteInputer(inputer) // execute once
 	tick := time.NewTicker(inputer.frequency)
 
 	for {
-		//fmt.Println("tick:", tick)
 		select {
 		case <-ctx.Done():
 			inputer.SetStatus(StoppedStatus)

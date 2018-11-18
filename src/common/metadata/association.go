@@ -293,11 +293,11 @@ type InstAsst struct {
 	ID int64 `field:"id" json:"-"`
 	// inst id associate to ObjectID
 	InstID int64 `field:"bk_inst_id" json:"bk_inst_id" bson:"bk_inst_id"`
-	// assoctation source ObjectID
+	// association source ObjectID
 	ObjectID string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
 	// inst id associate to AsstObjectID
 	AsstInstID int64 `field:"bk_asst_inst_id" json:"bk_asst_inst_id"  bson:"bk_asst_inst_id"`
-	// assoctation target ObjectID
+	// association target ObjectID
 	AsstObjectID string `field:"bk_asst_obj_id" json:"bk_asst_obj_id" bson:"bk_asst_obj_id"`
 	// bk_supplier_account
 	OwnerID string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
