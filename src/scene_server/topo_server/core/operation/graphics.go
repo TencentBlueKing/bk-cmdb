@@ -140,7 +140,7 @@ func (g *graphics) SelectObjectTopoGraphics(params types.ContextParams, scopeTyp
 					AsstType: "",
 					NodeType: "obj",
 					ObjID:    asst.AsstObjID,
-					InstID:   0,
+					InstID:   asst.ID,
 					AssociationKindInstID:   resp.Data.Info[0].ID,
 					Label:    map[string]string{},
 				})
