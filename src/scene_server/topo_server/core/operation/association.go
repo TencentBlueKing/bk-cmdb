@@ -279,6 +279,7 @@ func (a *association) DeleteAssociationWithPreCheck(params types.ContextParams, 
 		return params.Err.Error(common.CCErrTopoAssociationHasAlreadyBeenInstantiated)
 	}
 
+	// TODO: check association on_delete action before really delete this association.
 	// all the pre check has finished, delete the association now.
 	cond = condition.CreateCondition()
 	cond.Field(metadata.AssociationFieldAssociationId).Eq(associationID)
