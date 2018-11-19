@@ -570,6 +570,9 @@ const (
 	// FieldTypeMultiAsst the multi association
 	FieldTypeMultiAsst string = "multiasst"
 
+	// FieldTypeForeignKey the multi association
+	FieldTypeForeignKey string = "foreignkey"
+
 	// FieldTypeTimeZone the timezone field type
 	FieldTypeTimeZone string = "timezone"
 
