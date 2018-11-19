@@ -26,7 +26,7 @@
             <div class="cmdb-form-item" :class="{'is-error': errors.has('asstName')}">
                 <input type="text" class="cmdb-form-input"
                 name="asstName"
-                :disabled="relationInfo.ispre"
+                :disabled="relationInfo.ispre || isEdit"
                 v-model.trim="relationInfo['bk_obj_asst_name']"
                 v-validate="'required|singlechar'">
                 <p class="form-error">{{errors.first('asstName')}}</p>
@@ -48,7 +48,7 @@
                 <p class="form-error">{{errors.first('asstId')}}</p>
             </div>
         </label>
-        <div class="btn-group">
+        <div class="btn-group" v-if="isEdit">
             <bk-button type="primary" @click="saveRelation">
                 {{$t('ModelManagement["确定"]')}}
             </bk-button>
@@ -71,6 +71,9 @@
             },
             asstInfo: {
                 type: Object
+            },
+            isEdit: {
+                type: Boolean
             }
         },
         data () {
