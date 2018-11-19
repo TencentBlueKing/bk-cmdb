@@ -13,6 +13,7 @@
 package metadata
 
 import (
+	"configcenter/src/common/mapstr"
 	"fmt"
 	"time"
 
@@ -77,7 +78,21 @@ type Response struct {
 
 type MapArrayResponse struct {
 	BaseResp `json:",inline"`
-	Data     []map[string]interface{} `json:"data"`
+	Data     []mapstr.MapStr `json:"data"`
+}
+
+// ResponseInstData
+type ResponseInstData struct {
+	BaseResp `json:",inline"`
+	Data     struct {
+		Count int             `json:"count"`
+		Info  []mapstr.MapStr `json:"info"`
+	} `json:"data"`
+}
+
+type ResponseDataMapStr struct {
+	BaseResp `json:",inline"`
+	Data     mapstr.MapStr `json:"data"`
 }
 
 type QueryInput struct {

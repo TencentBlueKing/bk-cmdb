@@ -31,7 +31,7 @@ type InstNameAsst struct {
 	ID         string                 `json:"id"`
 	ObjID      string                 `json:"bk_obj_id"`
 	ObjIcon    string                 `json:"bk_obj_icon"`
-	ObjectID   int                    `json:"bk_inst_id"`
+	ObjectID   int64                  `json:"bk_inst_id"`
 	ObjectName string                 `json:"bk_obj_name"`
 	Name       string                 `json:"bk_inst_name"`
 	InstInfo   map[string]interface{} `json:"inst_info,omitempty"`
@@ -227,7 +227,7 @@ func (lgc *Logics) getRawInstAsst(ownerID, objID string, IDs []string, pheader h
 					for idx, key := range IDs {
 						if key == strconv.FormatInt(itemInstID, 10) {
 							inst.ID = IDs[idx]
-							inst.ObjectID, _ = strconv.Atoi(IDs[idx])
+							inst.ObjectID, _ = util.GetInt64ByInterface(IDs[idx])
 							IDs = delarry(IDs, idx)
 							allInst = append(allInst, inst)
 							goto next
@@ -235,7 +235,7 @@ func (lgc *Logics) getRawInstAsst(ownerID, objID string, IDs []string, pheader h
 					}
 				} else {
 					inst.ID = strconv.FormatInt(itemInstID, 10)
-					inst.ObjectID = int(itemInstID)
+					inst.ObjectID = itemInstID
 					allInst = append(allInst, inst)
 				}
 

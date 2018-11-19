@@ -79,6 +79,11 @@ func (cli MapStr) Merge(second MapStr) {
 	}
 }
 
+// ToMapInterface convert to map[string]interface{}
+func (cli MapStr) ToMapInterface() map[string]interface{} {
+	return cli
+}
+
 // MarshalJSONInto convert to the input value
 func (cli MapStr) MarshalJSONInto(target interface{}) error {
 

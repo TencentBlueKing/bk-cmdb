@@ -68,6 +68,7 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 		return nil, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
 	}
 	if defaulFieldVal == int64(common.DefaultAppFlag) && params.SupplierAccount != common.BKDefaultOwnerID {
+		// this is a new supplier owner and prepare to create a new business.
 		asstQuery := map[string]interface{}{
 			common.BKOwnerIDField: common.BKDefaultOwnerID,
 		}
@@ -101,7 +102,7 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 			for _, existAsst := range existAssts {
 				if existAsst.ObjectID == asst.ObjectID &&
 					existAsst.AsstObjID == asst.AsstObjID &&
-					existAsst.ObjectAttID == asst.ObjectAttID {
+					existAsst.AsstKindID == asst.AsstKindID {
 					continue expectLoop
 				}
 			}
