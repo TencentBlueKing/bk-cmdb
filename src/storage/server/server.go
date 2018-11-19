@@ -34,7 +34,7 @@ func main() {
 
 	blog.InitLogs()
 	defer blog.CloseLogs()
-
+	
 	op := options.NewServerOption()
 	op.AddFlags(pflag.CommandLine)
 

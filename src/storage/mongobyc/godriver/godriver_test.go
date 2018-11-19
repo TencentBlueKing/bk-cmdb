@@ -12,15 +12,14 @@
 package godriver_test
 
 import (
-	"configcenter/src/common/mapstr"
 	"context"
 	"testing"
 
-	"github.com/mongodb/mongo-go-driver/bson/objectid"
-
+	"configcenter/src/common/mapstr"
 	"configcenter/src/storage/mongobyc"
 	"configcenter/src/storage/mongobyc/godriver"
 
+	"github.com/mongodb/mongo-go-driver/bson/objectid"
 	"github.com/mongodb/mongo-go-driver/x/bsonx"
 	"github.com/stretchr/testify/require"
 )

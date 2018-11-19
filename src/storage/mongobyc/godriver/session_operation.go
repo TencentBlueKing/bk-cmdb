@@ -20,14 +20,25 @@ import (
 
 var _ mongobyc.SessionOperation = (*sessionOperation)(nil)
 
-type sessionOperation struct{}
+type sessionOperation struct {
+	mongocli *client
+	err      error
+}
+
+func newSessionOperation(mongocli *client) mongobyc.SessionOperation {
+	return &sessionOperation{
+		mongocli: mongocli,
+	}
+}
 
 func (s *sessionOperation) WithReadConcernLevel(level string) mongobyc.SessionOperation {
-	return nil
+	return &sessionOperation{}
 }
+
 func (s *sessionOperation) WithWriteConcernMajority(timeout time.Duration) mongobyc.SessionOperation {
-	return nil
+	return &sessionOperation{}
 }
+
 func (s *sessionOperation) Create() mongobyc.Session {
-	return nil
+	return newSession(s.mongocli)
 }

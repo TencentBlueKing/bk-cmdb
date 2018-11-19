@@ -15,10 +15,9 @@ package godriver
 import (
 	"context"
 
-	"github.com/mongodb/mongo-go-driver/core/connstring"
-
 	"configcenter/src/storage/mongobyc"
 
+	"github.com/mongodb/mongo-go-driver/core/connstring"
 	mgo "github.com/mongodb/mongo-go-driver/mongo"
 )
 
@@ -74,8 +73,7 @@ func (c *client) Close() error {
 
 func (c *client) Ping() error {
 
-	//return c.innerClient.Ping(context.TODO(), nil)
-	return nil
+	return c.innerClient.Ping(context.TODO(), nil)
 }
 
 func (c *client) Database() mongobyc.Database {
@@ -85,12 +83,12 @@ func (c *client) Database() mongobyc.Database {
 func (c *client) Collection(collName string) mongobyc.CollectionInterface {
 	target, ok := c.collectionMaps[collectionName(collName)]
 	if !ok {
-		target = newCollectionWithoutSession(c, collName)
+		target = newCollection(c, collName)
 		c.collectionMaps[collectionName(collName)] = target
 	}
 	return target
 }
 
 func (c *client) Session() mongobyc.SessionOperation {
-	return nil
+	return newSessionOperation(c)
 }
