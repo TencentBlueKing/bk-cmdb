@@ -7,7 +7,7 @@
         <cmdb-selector class="filter-selector"
             setting-key="bk_property_id"
             display-key="bk_property_name"
-            :list="properties"
+            :list="filteredProperties"
             v-model="propertyId"
             @on-selected="handleSelect">
         </cmdb-selector>
@@ -16,23 +16,27 @@
                 v-if="property['bk_property_type'] === 'enum'"
                 :options="property.option || []"
                 :allow-clear="true"
-                v-model="value"
-                @on-selected="handleSearch">
+                v-model.trim="value">
             </cmdb-form-enum>
             <cmdb-form-int class="filter-value fl"
                 v-else-if="property['bk_property_type'] === 'int'"
-                v-model="value"
-                @keydown.enter="handleSearch">
+                v-model="value">
             </cmdb-form-int>
+            <cmdb-form-bool-input class="filter-value fl"
+                v-else-if="property['bk_property_type'] === 'bool'"
+                v-model.trim="value">
+            </cmdb-form-bool-input>
             <comonent class="filter-value"
+                v-else
                 :is="`cmdb-form-${property['bk_property_type']}`"
-                v-model.trim="value"
-                @keydown.native.enter="handleSearch">
+                v-model.trim="value">
             </comonent>
-            <i class="filter-search bk-icon icon-search"
-                v-show="!['enum', 'objuser'].includes(property['bk_property_type'])"
-                @click="handleSearch"></i>
         </div>
+        <bk-button type="primary"
+            :loading="$loading()"
+            @click="handleSearch">
+            {{$t('Common["搜索"]')}}
+        </bk-button>
     </div>
 </template>
 
@@ -51,8 +55,30 @@
                 property: null
             }
         },
+        computed: {
+            filteredProperties () {
+                return this.properties.filter(property => !['singleasst', 'multiasst'].includes(property['bk_property_type']))
+            },
+            type () {
+                return this.property ? this.property['bk_property_type'] : ''
+            },
+            searchValue () {
+                if (['objuser'].includes(this.type)) {
+                    return this.value.split(',')
+                }
+                return this.value
+            },
+            operator () {
+                const map = {
+                    'objuser': '$in',
+                    'int': '$eq',
+                    'bool': '$eq'
+                }
+                return map[this.type] || '$regex'
+            }
+        },
         watch: {
-            properties () {
+            filteredProperties () {
                 this.setDefaultSelected()
             }
         },
@@ -64,8 +90,8 @@
         },
         methods: {
             setDefaultSelected () {
-                if (this.properties.length) {
-                    this.selected = this.properties[0]['bk_property_id']
+                if (this.filteredProperties.length) {
+                    this.selected = this.filteredProperties[0]['bk_property_id']
                 } else {
                     this.selected = null
                 }
@@ -86,7 +112,11 @@
                 this.value = ''
             },
             handleSearch () {
-                this.$emit('on-search', this.property, this.value)
+                if (String(this.searchValue).length) {
+                    this.$emit('on-search', this.property, this.searchValue, this.operator)
+                } else {
+                    this.$emit('on-search', null, '', '')
+                }
             }
         }
     }

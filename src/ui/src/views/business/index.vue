@@ -228,12 +228,14 @@
                 })
             },
             setFilterOptions () {
-                this.filter.options = this.properties.map(property => {
-                    return {
-                        id: property['bk_property_id'],
-                        name: property['bk_property_name']
-                    }
-                })
+                this.filter.options = this.properties
+                    .filter(property => !['singleasst', 'multiasst'].includes(property['bk_property_type']))
+                    .map(property => {
+                        return {
+                            id: property['bk_property_id'],
+                            name: property['bk_property_name']
+                        }
+                    })
                 this.filter.id = this.filter.options.length ? this.filter.options[0]['id'] : ''
             },
             updateTableHeader (properties) {
@@ -290,7 +292,7 @@
                         sort: this.table.sort
                     }
                 }
-                if (this.filter.id && this.filter.value) {
+                if (this.filter.id && String(this.filter.value).length) {
                     const filterType = this.filter.type
                     let filterValue = this.filter.value
                     if (filterType === 'bool') {

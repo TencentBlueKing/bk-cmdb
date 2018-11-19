@@ -165,7 +165,8 @@
                     columnsConfigKey: 'topology_table_columns',
                     quickSearch: {
                         property: null,
-                        value: ''
+                        value: '',
+                        operator: ''
                     }
                 }
             }
@@ -286,9 +287,7 @@
                         bk_supplier_account: this.supplierAccount
                     },
                     config: {
-                        requestId: `post_batchSearchObjectAttribute_${Object.keys(this.properties).join('_')}`,
-                        requestGroup: Object.keys(this.properties).map(id => `post_searchObjectAttribute_${id}`),
-                        fromCache: true
+                        requestId: `post_batchSearchObjectAttribute_${Object.keys(this.properties).join('_')}`
                     }
                 }).then(result => {
                     Object.keys(this.properties).forEach(objId => {
@@ -308,8 +307,7 @@
                         'bk_supplier_account': this.supplierAccount
                     },
                     config: {
-                        requestId: `post_searchObjectAttribute_${objId}`,
-                        fromCache: true
+                        requestId: `post_searchObjectAttribute_${objId}`
                     }
                 }).then(properties => {
                     this.$set(this.properties, objId, properties)
@@ -322,7 +320,6 @@
                 this.searchGroup({
                     objId,
                     config: {
-                        fromCache: true,
                         requestId: `post_searchGroup_${objId}`
                     }
                 }).then(groups => {
@@ -385,8 +382,7 @@
             },
             getMainlineModel () {
                 return this.searchMainlineObject({
-                    requestId: 'get_searchMainlineObject',
-                    fromCache: true
+                    requestId: 'get_searchMainlineObject'
                 }).then(topoModel => {
                     this.topoModel = topoModel
                     return topoModel
@@ -426,7 +422,7 @@
                         ...instTopo[0],
                         child: [...internalModule, ...instTopo[0].child]
                     }]
-                    this.setSimplifyAvailable()
+                    // this.setSimplifyAvailable()
                 })
             },
             setSimplifyAvailable () {
@@ -452,14 +448,15 @@
                     this.handleRefresh()
                 }
             },
-            handleQuickSearch (property, value) {
+            handleQuickSearch (property, value, operator) {
                 this.table.quickSearch.property = property
                 this.table.quickSearch.value = value
+                this.table.quickSearch.operator = operator
                 this.setSearchParams()
                 this.handleRefresh()
             },
-            handleRefresh () {
-                this.$refs.topoTable.search(this.business, this.table.params)
+            handleRefresh (resetPage = true) {
+                this.$refs.topoTable.search(this.business, this.table.params, true)
             },
             setSearchParams () {
                 const necessaryObj = Object.keys(this.properties)
@@ -480,12 +477,13 @@
                 }
                 const quickSearch = this.table.quickSearch
                 if (quickSearch.property && quickSearch.value !== null) {
-                    if (['singleasst', 'multiasst'].includes(quickSearch.property['bk_property_type'])) {
+                    const quickSearchType = quickSearch.property['bk_property_type']
+                    if (['singleasst', 'multiasst'].includes(quickSearchType)) {
                         condition.push({
                             'bk_obj_id': quickSearch.property['bk_asst_obj_id'],
                             condition: [{
                                 field: 'bk_inst_name',
-                                operator: '$regex',
+                                operator: quickSearch.operator,
                                 value: quickSearch.value
                             }]
                         })
@@ -493,7 +491,7 @@
                         const hostCondition = condition.find(condition => condition['bk_obj_id'] === 'host')
                         hostCondition.condition.push({
                             field: quickSearch.property['bk_property_id'],
-                            operator: '$regex',
+                            operator: quickSearch.operator,
                             value: quickSearch.value
                         })
                     }
@@ -651,7 +649,7 @@
                     formData['bk_supplier_account'] = this.supplierAccount
                     promise = this.updateModule({
                         bizId: this.business,
-                        setId: value['bk_set_id'],
+                        setId: this.tree.selectedNodeInst['bk_set_id'],
                         moduleId: selectedNode['bk_inst_id'],
                         params: formData
                     })

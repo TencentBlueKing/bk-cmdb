@@ -363,11 +363,12 @@
                 })
             },
             setAllHostList (list) {
-                if (this.table.allList.length === this.table.pagination.count) return
                 const newList = []
                 list.forEach(item => {
-                    const exist = this.table.allList.some(existItem => existItem['host']['bk_host_id'] === item['host']['bk_host_id'])
-                    if (!exist) {
+                    const existItem = this.table.allList.find(existItem => existItem['host']['bk_host_id'] === item['host']['bk_host_id'])
+                    if (existItem) {
+                        Object.assign(existItem, item)
+                    } else {
                         newList.push(item)
                     }
                 })
@@ -427,9 +428,12 @@
                     return data
                 })
             },
-            search (business, condition) {
+            search (business, condition, resetPage = false) {
                 this.filter.business = business
                 this.filter.condition = condition
+                if (resetPage) {
+                    this.table.pagination.current = 1
+                }
                 this.getHostList()
             },
             handlePageChange (current) {
@@ -567,8 +571,8 @@
             handleQuickSearchToggle () {
                 this.calcTableMinusHeight()
             },
-            handleQuickSearch (property, value) {
-                this.$emit('on-quick-search', property, value)
+            handleQuickSearch (property, value, operator) {
+                this.$emit('on-quick-search', property, value, operator)
             }
         }
     }
