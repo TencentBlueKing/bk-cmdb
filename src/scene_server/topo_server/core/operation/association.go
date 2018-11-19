@@ -437,12 +437,12 @@ func (a *association) DeleteType(params types.ContextParams, asstTypeID int) (re
 	}
 
 	if len(result.Data.Info) > 1 {
-		blog.Error("delete association kind[%d], but get multiple instance")
+		blog.Errorf("delete association kind[%d], but get multiple instance", asstTypeID)
 		return nil, params.Err.Error(common.CCErrorTopoGetMultipleAssoKindInstWithOneID)
 	}
 
 	if len(result.Data.Info) == 0 {
-		return &metadata.DeleteAssociationTypeResult{BaseResp: metadata.SuccessBaseResp, Data: "success"}, nil
+		return &metadata.DeleteAssociationTypeResult{BaseResp: metadata.SuccessBaseResp, Data: common.CCSuccessStr}, nil
 	}
 
 	if result.Data.Info[0].IsPre != nil && *result.Data.Info[0].IsPre {
