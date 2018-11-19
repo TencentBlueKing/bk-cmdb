@@ -31,16 +31,22 @@ import (
 var _ mongobyc.CollectionInterface = (*collection)(nil)
 
 type collection struct {
-	mongocCli       *client
+	innerSession     mgo.Session
 	innerCollection *mgo.Collection
 	err             error
 }
 
-func newCollection(innerClient *client, collectionName string) mongobyc.CollectionInterface {
+func newCollection(db *mgo.Database, collectionName string) mongobyc.CollectionInterface {
 
 	return &collection{
-		mongocCli:       innerClient,
-		innerCollection: innerClient.innerDB.innerDatabase.Collection(collectionName),
+		innerCollection: db.Collection(collectionName),
+	}
+}
+
+func newCollectionWithSession(db *mgo.Database, innerSession mgo.Session, collectionName string)mongobyc.CollectionInterface{
+	return &collection{
+		innerSession: innerSession,
+		innerCollection: db.Collection(collectionName),
 	}
 }
 

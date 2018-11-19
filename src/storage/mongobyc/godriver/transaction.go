@@ -51,7 +51,7 @@ func (t *transaction) Collection(collName string) mongobyc.CollectionInterface {
 	target, ok := t.collectionMaps[collectionName(collName)]
 	if !ok {
 
-		target = newCollection(t.mongocli, collName)
+		target = newCollectionWithSession(t.mongocli.innerDB.innerDatabase, t.innerSession, collName)
 		t.collectionMaps[collectionName(collName)] = target
 	}
 
@@ -69,5 +69,7 @@ func (t *transaction) Close() error {
 		}
 	}
 	t.collectionMaps = map[collectionName]mongobyc.CollectionInterface{}
+
+	t.innerSession.EndSession(context.TODO())
 	return nil
 }
