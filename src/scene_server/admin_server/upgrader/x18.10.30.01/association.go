@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
-	"configcenter/src/scene_server/validator"
 	"configcenter/src/storage/dal"
 )
 
@@ -188,8 +187,8 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	cloudIDUpdateCond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDHost)
 	cloudIDUpdateCond.Field(common.BKPropertyIDField).Eq(common.BKCloudIDField)
 	cloudIDUpdateData := mapstr.New()
-	cloudIDUpdateData.Set(common.BKPropertyTypeField, common.FieldTypeInt)
-	cloudIDUpdateData.Set(common.BKOptionField, validator.IntOption{})
+	cloudIDUpdateData.Set(common.BKPropertyTypeField, common.FieldTypeForeignKey)
+	cloudIDUpdateData.Set(common.BKOptionField, nil)
 
 	err = db.Table(common.BKTableNameObjAttDes).Update(ctx, cloudIDUpdateCond.ToMapStr(), cloudIDUpdateData)
 	if err != nil {
