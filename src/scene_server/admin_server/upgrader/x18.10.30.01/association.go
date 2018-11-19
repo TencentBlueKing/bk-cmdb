@@ -44,6 +44,7 @@ func createAssociationTable(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tablename := common.BKTableNameAsstDes
 
+	var pretrue = true
 	asstTypes := []metadata.AssociationKind{
 		{
 			AssociationKindID:       "belong",
@@ -52,6 +53,7 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Co
 			SourceToDestinationNote: "属于",
 			DestinationToSourceNote: "包含",
 			Direction:               metadata.DestinationToSource,
+			IsPre:                   &pretrue,
 		},
 		{
 			AssociationKindID:       "group",
@@ -60,6 +62,7 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Co
 			SourceToDestinationNote: "组成",
 			DestinationToSourceNote: "组成于",
 			Direction:               metadata.DestinationToSource,
+			IsPre:                   &pretrue,
 		},
 		{
 			AssociationKindID:       "bk_mainline",
@@ -68,6 +71,7 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Co
 			SourceToDestinationNote: "组成",
 			DestinationToSourceNote: "组成于",
 			Direction:               metadata.DestinationToSource,
+			IsPre:                   &pretrue,
 		},
 		{
 			AssociationKindID:       "run",
@@ -76,6 +80,7 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Co
 			SourceToDestinationNote: "运行于",
 			DestinationToSourceNote: "运行",
 			Direction:               metadata.DestinationToSource,
+			IsPre:                   &pretrue,
 		},
 		{
 			AssociationKindID:       "connect",
@@ -84,6 +89,7 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Co
 			SourceToDestinationNote: "上联",
 			DestinationToSourceNote: "下联",
 			Direction:               metadata.DestinationToSource,
+			IsPre:                   &pretrue,
 		},
 		{
 			AssociationKindID:       "default",
@@ -92,6 +98,7 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Co
 			SourceToDestinationNote: "关联",
 			DestinationToSourceNote: "关联",
 			Direction:               metadata.DestinationToSource,
+			IsPre:                   &pretrue,
 		},
 	}
 
