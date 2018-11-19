@@ -283,7 +283,11 @@ const (
 	CCErrorTopoMainlineObjectAssociationNotExist = 1101048
 	// CCErrorTopoImportAssociation  import association error
 	CCErrorTopoImportAssociation = 1101049
-
+	// got multiple association kind with a id
+	CCErrorTopoGetMultipleAssoKindInstWithOneID = 1101050
+	// delete a pre-defined association kind.
+    CCErrorTopoDeletePredefinedAssociationKind = 1101051
+	
 	CCErrTopoAppDeleteFailed                       = 1001031
 	CCErrTopoAppUpdateFailed                       = 1001032
 	CCErrTopoAppSearchFailed                       = 1001033

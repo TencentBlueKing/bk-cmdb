@@ -418,6 +418,38 @@ func (a *association) UpdateType(params types.ContextParams, asstTypeID int, req
 	return a.clientSet.ObjectController().Association().UpdateType(context.TODO(), params.Header, asstTypeID, request)
 }
 func (a *association) DeleteType(params types.ContextParams, asstTypeID int) (resp *metadata.DeleteAssociationTypeResult, err error) {
+	cond := condition.CreateCondition()
+	cond.Field("id").Eq(asstTypeID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+	query := &metadata.SearchAssociationTypeRequest{
+		Condition: cond.ToMapStr(),
+	}
+
+	result, err := a.SearchType(params, query)
+	if err != nil {
+		blog.Errorf("delete association kind[%d], but get detailed info failed, err: %v", asstTypeID, err)
+		return nil, params.Err.Errorf(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if !result.Result {
+		blog.Errorf("delete association kind[%d], but get detailed info failed, err: %s", asstTypeID, result.ErrMsg)
+		return nil, params.Err.Errorf(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if len(result.Data.Info) > 1 {
+		blog.Errorf("delete association kind[%d], but get multiple instance", asstTypeID)
+		return nil, params.Err.Error(common.CCErrorTopoGetMultipleAssoKindInstWithOneID)
+	}
+
+	if len(result.Data.Info) == 0 {
+		return &metadata.DeleteAssociationTypeResult{BaseResp: metadata.SuccessBaseResp, Data: common.CCSuccessStr}, nil
+	}
+
+	if result.Data.Info[0].IsPre != nil && *result.Data.Info[0].IsPre {
+		blog.Errorf("delete association kind[%d], but this is a pre-defined association kind, can not be deleted.", asstTypeID)
+		return nil, params.Err.Error(common.CCErrorTopoDeletePredefinedAssociationKind)
+	}
+
 	return a.clientSet.ObjectController().Association().DeleteType(context.TODO(), params.Header, asstTypeID)
 }
 
