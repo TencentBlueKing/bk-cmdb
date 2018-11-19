@@ -29,7 +29,7 @@
                                 </div>
                                 <label class="fr cmdb-form-checkbox">
                                     <input type="checkbox" :checked="isChecked(model)" @click="checkAll(model)">
-                                    <span class="cmdb-checkbox-text">{{$t('ModelManagement["全选"]')}}</span>
+                                    <span class="cmdb-checkbox-text">{{$t('Common["全选"]')}}</span>
                                 </label>
                             </div>
                             <ul class="relation-list clearfix">
@@ -47,7 +47,7 @@
         </ul>
         <div class="button-group">
             <bk-button type="primary" @click="saveDisplay">
-                {{$t('ModelManagement["确定"]')}}
+                {{$t('Common["确定"]')}}
             </bk-button>
             <bk-button type="default" @click="reset">
                 {{$t('ModelManagement["重置"]')}}

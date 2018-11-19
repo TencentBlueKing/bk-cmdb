@@ -6,7 +6,7 @@
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item">
-                <input type="text" class="cmdb-form-input" v-model.trim="objAsstId" disabled>
+                <input type="text" class="cmdb-form-input" :placeholder="$t('ModelManagement[\'选择条件后自动生成\']')" v-model.trim="objAsstId" disabled>
             </div>
             <i class="bk-icon icon-info-circle"></i>
         </label>
@@ -18,6 +18,7 @@
             <div class="cmdb-form-item" :class="{'is-error': errors.has('asstName')}">
                 <input type="text" class="cmdb-form-input"
                 name="asstName"
+                :placeholder="$t('ModelManagement[\'请输入别名\']')"
                 :disabled="relationInfo.ispre"
                 v-model.trim="relationInfo['bk_obj_asst_name']"
                 v-validate="'required|singlechar'">
@@ -95,27 +96,12 @@
             </div>
             <i class="bk-icon icon-info-circle"></i>
         </div>
-        <div class="radio-box">
-            <label class="label-text">
-                {{$t('ModelManagement["联动删除"]')}}
-            </label>
-            <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                <input type="checkbox" id="delete_dest" value="delete_dest" v-model="relationInfo['on_delete']"
-                :disabled="relationInfo.ispre">
-                <span class="cmdb-checkbox-text">{{$t('ModelManagement["源不存在联动删除目标"]')}}</span>
-            </label>
-            <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                <input type="checkbox" id="delete_src" value="delete_src" v-model="relationInfo['on_delete']"
-                :disabled="relationInfo.ispre">
-                <span class="cmdb-checkbox-text">{{$t('ModelManagement["目标不存在联动删除源"]')}}</span>
-            </label>
-        </div>
         <div class="btn-group">
             <bk-button type="primary" :loading="$loading(['createObjectAssociation', 'updateObjectAssociation'])" @click="saveRelation">
-                {{$t('ModelManagement["确定"]')}}
+                {{$t('Common["确定"]')}}
             </bk-button>
             <bk-button type="default" @click="cancel">
-                {{$t('ModelManagement["取消"]')}}
+                {{$t('Common["取消"]')}}
             </bk-button>
         </div>
     </div>
@@ -164,8 +150,7 @@
                     bk_obj_id: '',
                     bk_asst_obj_id: '',
                     bk_asst_id: '',
-                    mapping: '',
-                    on_delete: []
+                    mapping: ''
                 }
             }
         },
@@ -192,15 +177,13 @@
                     bk_obj_id: this.relationInfo['bk_obj_id'],
                     bk_asst_obj_id: this.relationInfo['bk_asst_obj_id'],
                     bk_asst_id: this.relationInfo['bk_asst_id'],
-                    mapping: this.relationInfo.mapping,
-                    on_delete: this.relationInfo['on_delete'].length ? this.relationInfo['on_delete'].join('') : 'none'
+                    mapping: this.relationInfo.mapping
                 }
             },
             updateParams () {
                 return {
                     bk_obj_asst_name: this.relationInfo['bk_obj_asst_name'],
-                    bk_asst_id: this.relationInfo['bk_asst_id'],
-                    on_delete: this.relationInfo['on_delete'].length ? this.relationInfo['on_delete'].join('') : 'none'
+                    bk_asst_id: this.relationInfo['bk_asst_id']
                 }
             },
             asstList () {
@@ -235,11 +218,6 @@
                 if (val !== this.activeModel['bk_obj_id']) {
                     this.relationInfo['bk_obj_id'] = this.activeModel['bk_obj_id']
                 }
-            },
-            'relationInfo.on_delete' (newVal, oldVal) {
-                if (newVal.length === 2) {
-                    this.relationInfo['on_delete'] = newVal.filter(val => !oldVal.includes(val))
-                }
             }
         },
         created () {
@@ -257,11 +235,7 @@
             initData () {
                 if (this.isEdit) {
                     for (let key in this.relationInfo) {
-                        if (key === 'on_delete') {
-                            this.relationInfo[key] = this.relation[key] === 'none' ? [] : [this.relation[key]]
-                        } else {
-                            this.relationInfo[key] = this.$tools.clone(this.relation[key])
-                        }
+                        this.relationInfo[key] = this.$tools.clone(this.relation[key])
                     }
                 }
             },
