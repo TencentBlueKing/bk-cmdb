@@ -109,11 +109,24 @@ func (cli *Service) UpdateObjectUnique(req *restful.Request, resp *restful.Respo
 			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrTopoObjectUniqueKeyKindInvalid, key.Kind)})
 		}
 	}
-
 	cond := condition.CreateCondition()
 	cond.Field("id").Eq(id)
 	cond.Field(common.BKObjIDField).Eq(objID)
 	cond.Field(common.BKOwnerIDField).Eq(ownerID)
+
+	oldunique := metadata.ObjectUnique{}
+	err = db.Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).One(ctx, &oldunique)
+	if nil != err {
+		blog.Errorf("[UpdateObjectUnique] find error: %s, raw: %#v", err, cond.ToMapStr())
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrObjectDBOpErrno)})
+		return
+	}
+
+	if oldunique.Ispre {
+		blog.Errorf("[UpdateObjectUnique] could not update preset constrain: %s", err, oldunique)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrTopoObjectUniquePresetCouldNotDelOrEdit)})
+		return
+	}
 
 	err = db.Table(common.BKTableNameObjUnique).Update(ctx, cond.ToMapStr(), &unique)
 	if nil != err {
@@ -156,7 +169,7 @@ func (cli *Service) DeleteObjectUnique(req *restful.Request, resp *restful.Respo
 
 	if unique.Ispre {
 		blog.Errorf("[DeleteObjectUnique] could not delete preset constrain: %s", err, unique)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrObjectDBOpErrno)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrTopoObjectUniquePresetCouldNotDelOrEdit)})
 		return
 	}
 
