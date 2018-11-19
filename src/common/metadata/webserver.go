@@ -101,3 +101,20 @@ type LogoutResult struct {
 type LogoutRequestParams struct {
 	HTTPScheme string `json:"http_scheme"`
 }
+
+type ExcelAssocationOperate int
+
+const (
+	_ ExcelAssocationOperate = iota
+	ExcelAssocationOperateError
+	ExcelAssocationOperateAdd
+	//ExcelAssocationOperateUpdate
+	ExcelAssocationOperateDelete
+)
+
+type ExcelAssocation struct {
+	ObjectAsstID string                 `json:"bk_obj_asst_id"`
+	Operate      ExcelAssocationOperate `json:"operate"`
+	SrcPrimary   string                 `json:"src_primary_key"`
+	DstPrimary   string                 `json:"dst_primary_key"`
+}

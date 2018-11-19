@@ -124,6 +124,9 @@ func (e *EventInst) GetType() string {
 	if e.EventType == EventTypeRelation {
 		return e.ObjType
 	}
+	if e.EventType == EventTypeAssociation {
+		return e.ObjType + EventActionUpdate
+	}
 	return e.ObjType + e.Action
 }
 
@@ -157,6 +160,7 @@ type EventType string
 const (
 	EventTypeInstData           = "instdata"
 	EventTypeRelation           = "relation"
+	EventTypeAssociation        = "association"
 	EventTypeResourcePoolModule = "resource"
 )
 

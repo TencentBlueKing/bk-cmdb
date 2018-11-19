@@ -187,6 +187,8 @@ func (cli *Service) UpdateObjectAssociation(req *restful.Request, resp *restful.
 // SelectObjectAssociations search all object association map
 func (cli *Service) SelectObjectAssociations(req *restful.Request, resp *restful.Response) {
 
+	// TODO: 输入参数有变化
+
 	// get the language
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetOwnerID(req.Request.Header)
@@ -221,6 +223,11 @@ func (cli *Service) SelectObjectAssociations(req *restful.Request, resp *restful
 
 	results := make([]meta.Association, 0)
 	selector, _ := js.Map()
+
+	// compatibility the new format. eg: {"condition":{"key":"val"}}
+	if _, existsCondition := selector["condition"]; existsCondition {
+		selector, _ = selector["condition"].(map[string]interface{})
+	}
 	selector = util.SetModOwner(selector, ownerID)
 	// select from storage
 	if selErr := db.Table(common.BKTableNameObjAsst).Find(selector).Limit(uint64(page.Limit)).Start(uint64(page.Start)).Sort(page.Sort).All(ctx, &results); nil != selErr && !db.IsNotFoundError(selErr) {
