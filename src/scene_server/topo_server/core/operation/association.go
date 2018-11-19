@@ -445,7 +445,7 @@ func (a *association) DeleteType(params types.ContextParams, asstTypeID int) (re
 		return &metadata.DeleteAssociationTypeResult{BaseResp: metadata.SuccessBaseResp, Data: "success"}, nil
 	}
 
-	if *result.Data.Info[0].IsPre {
+	if result.Data.Info[0].IsPre != nil && *result.Data.Info[0].IsPre {
 		blog.Errorf("delete association kind[%d], but this is a pre-defined association kind, can not be deleted.", asstTypeID)
 		return nil, params.Err.Error(common.CCErrorTopoDeletePredefinedAssociationKind)
 	}
