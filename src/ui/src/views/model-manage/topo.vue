@@ -485,6 +485,7 @@
                     this.topoEdit.activeEdge.from = node
                 } else if (this.topoEdit.activeEdge.to === '') {
                     this.topoEdit.activeEdge.to = node
+                    this.updateNetwork()
                     this.slider.properties = {
                         fromObjId: this.topoEdit.activeEdge.from,
                         toObjId: this.topoEdit.activeEdge.to,
@@ -569,15 +570,14 @@
                 }, 300)
             },
             handleShowDetails (labelInfo) {
-                if (this.topoEdit.isEdit) {
-                    this.slider.title = labelInfo.text
-                    this.slider.properties = {
-                        objId: labelInfo.objId,
-                        asstId: labelInfo.asst['bk_inst_id'],
-                        asstInfo: labelInfo.asst.asstInfo || {}
-                    }
-                    this.showSlider('theRelationDetail')
+                this.slider.title = labelInfo.text
+                this.slider.properties = {
+                    objId: labelInfo.objId,
+                    isEdit: this.topoEdit.isEdit,
+                    asstId: labelInfo.asst['bk_inst_id'],
+                    asstInfo: labelInfo.asst.asstInfo || {}
                 }
+                this.showSlider('theRelationDetail')
             },
             getAssociationName (asstId) {
                 let asst = this.associationList.find(asst => asst.id === asstId)
@@ -762,6 +762,15 @@
                         })
                     }
                 })
+                let {
+                    activeEdge
+                } = this.topoEdit
+                if (activeEdge.from && activeEdge.to) {
+                    edges.push({
+                        from: activeEdge.from,
+                        to: activeEdge.to
+                    })
+                }
                 this.network.edges = edges
                 this.networkDataSet.edges = new Vis.DataSet(this.network.edges)
             },
