@@ -30,13 +30,10 @@
         <template v-if="topoEdit.isEdit">
             <div class="topo-save-title">
                 <bk-button type="primary" @click="saveTopo">
-                    {{$t('ModelManagement["保存并返回"]')}}
+                    {{$t('ModelManagement["保存"]')}}
                 </bk-button>
-                <bk-button type="primary" v-if="!topoEdit.isAddEdgeMode" @click="toggleAddEdgeMode">
-                    addEdge
-                </bk-button>
-                <bk-button type="default" v-else @click="toggleAddEdgeMode">
-                    cancel
+                <bk-button type="primary" @click="exitEdit">
+                    {{$t('ModelManagement["返回"]')}}
                 </bk-button>
             </div>
             <ul class="topo-nav">
@@ -121,6 +118,7 @@
     import theRelationDetail from './topo-detail/relation-detail'
     import { generateObjIcon as GET_OBJ_ICON } from '@/utils/util'
     import { mapGetters, mapActions } from 'vuex'
+    import ICON_HEX_MAP from '@/assets/json/icon-hex-map.json'
     export default {
         components: {
             theDisplay,
@@ -151,7 +149,10 @@
                 topoEdit: {
                     isAddEdgeMode: false,
                     isEdit: false,
-                    activeEdge: null,
+                    activeEdge: {
+                        from: '',
+                        to: ''
+                    },
                     edges: [],
                     nodes: []
                 },
@@ -159,6 +160,7 @@
                     activeGroup: ''
                 },
                 topoModelList: [],
+                localTopoModelList: [],
                 isShowExample: false,
                 loading: true,
                 networkInstance: null,
@@ -277,6 +279,22 @@
                     id: params.id
                 })
             },
+            clearEditData () {
+                this.topoEdit.isAddEdgeMode = false
+                this.topoEdit.isEdit = false
+                this.topoEdit.activeEdge = {
+                    from: '',
+                    to: ''
+                }
+                this.topoEdit.edges = []
+                this.topoEdit.nodes = []
+            },
+            exitEdit () {
+                this.localTopoModelList = this.$tools.clone(this.topoModelList)
+                this.clearEditData()
+                this.updateNetwork()
+                this.topoEdit.isEdit = false
+            },
             async saveTopo () {
                 let createAsstArray = []
                 let updateAsstArray = []
@@ -300,11 +318,12 @@
                 await Promise.all(deleteAsstArray)
                 await Promise.all(deleteObjectArray)
                 this.topoEdit.isEdit = false
+                this.topoModelList = this.$tools.clone(this.localMopoModelList)
             },
             handleDisplaySave (displayConfig) {
                 this.displayConfig.isShowModelName = displayConfig.isShowModelName
                 this.displayConfig.isShowModelAsst = displayConfig.isShowModelAsst
-                this.topoModelList = displayConfig.topoModelList
+                this.localTopoModelList = displayConfig.topoModelList
                 this.updateNetwork()
             },
             handleRelationSave (params) {
@@ -312,7 +331,7 @@
                     type: 'create',
                     params
                 })
-                let fromNode = this.topoModelList.find(model => model['bk_obj_id'] === this.topoEdit.activeEdge.from)
+                let fromNode = this.localTopoModelList.find(model => model['bk_obj_id'] === this.topoEdit.activeEdge.from)
                 if (!fromNode.hasOwnProperty('assts')) {
                     Object.assign(fromNode, {assts: []})
                 }
@@ -328,7 +347,7 @@
             },
             handleRelationDetailSave (data) {
                 if (data.type === 'delete') {
-                    this.topoModelList.forEach(model => {
+                    this.localTopoModelList.forEach(model => {
                         if (model.hasOwnProperty('assts')) {
                             let index = model.assts.findIndex(asst => {
                                 if (asst['bk_inst_id'] !== '') {
@@ -386,7 +405,7 @@
                 this.$bkInfo({
                     title: this.$tc('ModelManagement["确定删除模型？"]', hoverNode.label, {name: hoverNode.label}),
                     confirmFn: () => {
-                        this.topoModelList = this.topoModelList.filter(model => model['bk_obj_id'] !== hoverNode.id)
+                        this.localTopoModelList = this.localTopoModelList.filter(model => model['bk_obj_id'] !== hoverNode.id)
                         this.topoEdit.nodes.push({
                             type: 'delete',
                             params: {
@@ -402,19 +421,10 @@
             },
             handleDragstart (model, event) {
                 event.dataTransfer.setData('objId', model['bk_obj_id'])
-                let image = new Image()
-                image.onload = () => {
-                    event.dataTransfer.setDragImage(image, 10, 10)
-                }
-                image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON({
-                    name: '交换机',
-                    backgroundColor: '#fff',
-                    fontColor: '#6894c8'
-                }))}`
             },
             handleDrop (event) {
                 let objId = event.dataTransfer.getData('objId')
-                let node = this.topoModelList.find(model => model['bk_obj_id'] === objId)
+                let node = this.localTopoModelList.find(model => model['bk_obj_id'] === objId)
                 let originPosition = this.networkInstance.getViewPosition()
                 let container = this.$refs.topo.getBoundingClientRect()
                 let scale = this.networkInstance.getScale()
@@ -422,7 +432,12 @@
                 node.position.y = originPosition.y - ((container.top + container.bottom) / 2 - event.clientY) / scale
                 node.draged = true
                 this.updateNetwork()
-                // this.updateNodePosition(this.networkDataSet.nodes.get([objId]))
+            },
+            clearActiveEdge () {
+                this.topoEdit.activeEdge = {
+                    from: '',
+                    to: ''
+                }
             },
             handleSliderSave (params) {
                 switch (this.slider.content) {
@@ -431,6 +446,7 @@
                         break
                     case 'theRelation':
                         this.handleRelationSave(params)
+                        this.clearActiveEdge()
                         break
                     case 'theRelationDetail':
                         this.handleRelationDetailSave(params)
@@ -441,6 +457,7 @@
             handleSliderCancel () {
                 if (this.slider.content === 'theRelation') {
                     this.updateNetwork()
+                    this.clearActiveEdge()
                 }
                 this.slider.isShow = false
             },
@@ -448,7 +465,7 @@
                 this.slider.properties = {
                     fromObjId: data.from,
                     toObjId: data.to,
-                    topoModelList: this.topoModelList,
+                    topoModelList: this.localTopoModelList,
                     edges: this.topoEdit.edges
                 }
                 this.showSlider('theRelation')
@@ -460,7 +477,21 @@
                 }
             },
             handleNodeClick (node) {
-
+                if (!this.topoEdit.isEdit) {
+                    return
+                }
+                if (this.topoEdit.activeEdge.from === '') {
+                    this.topoEdit.activeEdge.from = node
+                } else if (this.topoEdit.activeEdge.to === '') {
+                    this.topoEdit.activeEdge.to = node
+                    this.slider.properties = {
+                        fromObjId: this.topoEdit.activeEdge.from,
+                        toObjId: this.topoEdit.activeEdge.to,
+                        topoModelList: this.localTopoModelList,
+                        edges: this.topoEdit.edges
+                    }
+                    this.showSlider('theRelation')
+                }
             },
             popupEdgeTooltips (data) {
                 const edgeId = data.edge
@@ -574,7 +605,7 @@
                 switch (content) {
                     case 'theDisplay':
                         slider.properties = {
-                            topoModelList: this.topoModelList,
+                            topoModelList: this.localTopoModelList,
                             associationList: this.associationList,
                             isShowModelName: this.displayConfig.isShowModelName,
                             isShowModelAsst: this.displayConfig.isShowModelAsst
@@ -600,6 +631,7 @@
             },
             resizeFull () {
                 this.networkInstance.moveTo({scale: 1})
+                this.networkInstance.fit()
             },
             zoomIn () {
                 let scale = this.networkInstance.getScale()
@@ -613,9 +645,9 @@
                 }
                 this.networkInstance.moveTo({scale: scale})
             },
-            updateNetwork (data) {
-                this.setNodes(this.topoModelList)
-                this.setEdges(this.topoModelList)
+            updateNetwork () {
+                this.setNodes(this.localTopoModelList)
+                this.setEdges(this.localTopoModelList)
                 let scale = this.networkInstance.getScale()
                 let origin = this.networkInstance.getViewPosition()
                 this.networkInstance = new Vis.Network(this.$refs.topo, {
@@ -631,8 +663,8 @@
             async initNetwork () {
                 await this.getAssociationType()
                 const response = await this.$store.dispatch('globalModels/searchModelAction')
-                this.topoModelList = response
-                this.topoModelList.forEach(model => {
+                this.localTopoModelList = response
+                this.localTopoModelList.forEach(model => {
                     this.$set(model, 'draged', false)
                     if (model.hasOwnProperty('assts') && model.assts.length) {
                         model.assts.forEach(asst => {
@@ -640,8 +672,9 @@
                         })
                     }
                 })
-                this.setNodes(this.topoModelList)
-                this.setEdges(this.topoModelList)
+                this.topoModelList = this.$tools.clone(response)
+                this.setNodes(this.localTopoModelList)
+                this.setEdges(this.localTopoModelList)
                 this.networkInstance = new Vis.Network(this.$refs.topo, {
                     nodes: this.networkDataSet.nodes,
                     edges: this.networkDataSet.edges
@@ -662,14 +695,10 @@
                     if ((nodeData.hasOwnProperty('assts') || asstList.findIndex(({bk_obj_id: objId}) => objId === nodeData['bk_obj_id']) > -1) || nodeData.draged) {
                         const node = {
                             id: nodeData['bk_obj_id'],
-                            // image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON({
-                            //     name: nodeData['node_name'],
-                            //     backgroundColor: '#fff',
-                            //     fontColor: nodeData['ispre'] ? '#6894c8' : '#868b97'
-                            // }))}`,
                             icon: {
                                 face: 'icomoon',
-                                code: '\ue900'
+                                code: String.fromCharCode(ICON_HEX_MAP[nodeData['bk_obj_icon']]),
+                                color: nodeData['ispre'] ? '#868b97' : '#3c96ff'
                             },
                             data: nodeData
                         }
@@ -800,7 +829,7 @@
                 })
                 await this.$store.dispatch('globalModels/updateModelAction', {params})
                 updateNodes.forEach(node => {
-                    let model = this.topoModelList.find(({bk_obj_id: objId}) => objId === node.id)
+                    let model = this.localTopoModelList.find(({bk_obj_id: objId}) => objId === node.id)
                     model.position.x = nodePositions[node.id]['x']
                     model.position.y = nodePositions[node.id]['y']
                 })
@@ -855,7 +884,7 @@
                     }
                 })
                 networkInstance.on('click', data => {
-                    if (data['edges'].length === 1) {
+                    if (data['edges'].length === 1 && data['nodes'].length === 0) {
                         this.handleEdgeClick(data['edges'][0])
                     }
                     if (data['nodes'].length === 1) {
@@ -984,6 +1013,10 @@
         width: 100%;
         height: 58px;
         background: #fff;
+        font-size: 0;
+        .bk-button {
+            margin-right: 10px;
+        }
     }
     .topo-nav {
         display: none;
@@ -1030,11 +1063,14 @@
             }
         }
         .model-box {
-            padding: 5px 12px;
+            padding: 5px 0;
         }
         .model-item {
-            padding: 7px 0;
+            padding: 7px 12px;
             cursor: move;
+            &:hover {
+                background: #ebf4ff;
+            }
             &.disabled {
                 cursor: default;
                 opacity: .6;
