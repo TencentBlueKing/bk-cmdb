@@ -1,6 +1,6 @@
 <template>
     <div class="form-associate-input">
-        <input class="cmdb-form-input" type="text" v-model="localValue">
+        <input class="cmdb-form-input" type="text" v-model.trim="localValue">
     </div>
 </template>
 
