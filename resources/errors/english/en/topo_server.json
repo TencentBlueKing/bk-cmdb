@@ -67,6 +67,8 @@
     "1101043": "object associaton has already been instantiated, can not be deleted.",
     "1101044": "get association kind[%s] failed.",
 	"1101048": "mainline object association[%s->%s] does not exist.",
-	"1101049":"Association import failed",
+	"1101049": "association import failed.",
+    "1101050": "association kind got multiple instance.",
+    "1101051": "can not delete a pre-defined association kind.",
 	"": "" 
 }
