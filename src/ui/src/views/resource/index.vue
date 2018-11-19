@@ -82,8 +82,8 @@
                     <cmdb-import v-if="importInst.show && importInst.active === 'import'"
                         :templateUrl="importInst.templateUrl"
                         :importUrl="importInst.importUrl"
-                        @success="getHostList()"
-                        @partialSuccess="getHostList()">
+                        @success="getHostList(true)"
+                        @partialSuccess="getHostList(true)">
                         <span slot="download-desc" style="display: inline-block;vertical-align: top;">
                             {{$t('HostResourcePool["说明：内网IP为必填列"]')}}
                         </span>
@@ -218,11 +218,11 @@
                 if (this.filter.paramsResolver) {
                     this.filter.paramsResolver()
                 } else {
-                    this.getHostList()
+                    this.getHostList(true)
                 }
             },
-            getHostList () {
-                this.$refs.resourceTable.search(this.filter.business, this.getScopedParams())
+            getHostList (resetPage = false) {
+                this.$refs.resourceTable.search(this.filter.business, this.getScopedParams(), resetPage)
             },
             getScopedParams () {
                 const params = this.$tools.clone(this.filter.params)

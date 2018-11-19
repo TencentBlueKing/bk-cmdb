@@ -25,7 +25,7 @@
             </div>
             <div class="filter-group"
                 v-for="(property, index) in customFieldProperties"
-                :key="index">
+                :key="property['bk_property_id']">
                 <label class="filter-label">{{getFilterLabel(property)}}</label>
                 <div class="filter-field clearfix">
                     <filter-field-operator class="filter-field-operator fl"
