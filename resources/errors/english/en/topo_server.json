@@ -82,5 +82,6 @@
 	"1001057":"model property [%s] has been removed",
 	"1001058":"model property [%s] has been used from unique constrains, delete failed",
 	"1001059":"unique constrains key kind [%s] invalid",
+	"1001060":"preset unique constrains could not be delete",
 	"": "" 
 }
