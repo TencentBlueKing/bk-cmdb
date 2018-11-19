@@ -21,8 +21,8 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/web_server/middleware/types"
 
-	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/holmeswang/contrib/sessions"
 )
 
 type publicAuth struct {
