@@ -30,10 +30,10 @@
         <template v-if="topoEdit.isEdit">
             <div class="topo-save-title">
                 <bk-button type="primary" @click="saveTopo">
-                    {{$t('ModelManagement["保存"]')}}
+                    {{$t('Common["保存"]')}}
                 </bk-button>
                 <bk-button type="primary" @click="exitEdit">
-                    {{$t('ModelManagement["返回"]')}}
+                    {{$t('Common["返回"]')}}
                 </bk-button>
             </div>
             <ul class="topo-nav">

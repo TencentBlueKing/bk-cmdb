@@ -90,7 +90,7 @@
                         name: this.$t('ModelManagement["目标模型"]')
                     }, {
                         id: 'operation',
-                        name: this.$t('ModelManagement["操作"]')
+                        name: this.$t('Common["操作"]')
                     }],
                     list: [],
                     defaultSort: '-op_time',

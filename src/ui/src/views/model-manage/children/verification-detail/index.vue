@@ -50,10 +50,10 @@
         </div>
         <div class="btn-group">
             <bk-button type="primary" :loading="$loading(['updateAssociationType', 'createAssociationType'])" @click="saveVerification">
-                {{$t('ModelManagement["确定"]')}}
+                {{$t('Common["确定"]')}}
             </bk-button>
             <bk-button type="default" @click="cancel">
-                {{$t('ModelManagement["取消"]')}}
+                {{$t('Common["取消"]')}}
             </bk-button>
         </div>
     </div>
