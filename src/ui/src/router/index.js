@@ -40,32 +40,16 @@ const router = new Router({
         path: '/business',
         component: business
     }, {
-        path: '/model-manage',
+        path: '/model',
         component: modelManage
     }, {
-        path: '/model-manage/:modelId',
+        path: '/model/:modelId',
         component: modelDetail,
         meta: {
-            returnPath: '/model-manage',
-            relative: '/model-manage',
+            returnPath: '/model',
+            relative: '/model',
             ignoreAuthorize: true
         }
-    }, {
-        path: '/model',
-        component: model,
-        children: [{
-            path: ':classifyId',
-            component: modelTopo,
-            meta: {
-                relative: '/model'
-            }
-        }, {
-            path: '',
-            component: modelTopo,
-            meta: {
-                relative: '/model'
-            }
-        }]
     }, {
         path: '/eventpush',
         component: eventpush

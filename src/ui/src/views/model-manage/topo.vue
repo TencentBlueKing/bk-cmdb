@@ -318,7 +318,7 @@
                 await Promise.all(deleteAsstArray)
                 await Promise.all(deleteObjectArray)
                 this.topoEdit.isEdit = false
-                this.topoModelList = this.$tools.clone(this.localMopoModelList)
+                this.topoModelList = this.$tools.clone(this.localTopoModelList)
             },
             handleDisplaySave (displayConfig) {
                 this.displayConfig.isShowModelName = displayConfig.isShowModelName
@@ -432,6 +432,7 @@
                 node.position.y = originPosition.y - ((container.top + container.bottom) / 2 - event.clientY) / scale
                 node.draged = true
                 this.updateNetwork()
+                this.updateNodePosition(this.networkDataSet.nodes.get([objId]))
             },
             clearActiveEdge () {
                 this.topoEdit.activeEdge = {
