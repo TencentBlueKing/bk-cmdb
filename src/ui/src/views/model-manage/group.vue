@@ -332,7 +332,7 @@
                 this.$store.commit('setHeaderStatus', {
                     back: true
                 })
-                this.$router.push(`model-manage/${model['bk_obj_id']}`)
+                this.$router.push(`model/${model['bk_obj_id']}`)
             }
         }
     }
