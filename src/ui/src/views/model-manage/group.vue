@@ -424,7 +424,7 @@
             }
             .model-id {
                 font-size: 12px;
-                color: $cmdbTableBorderColor;
+                color: $cmdbBorderColor;
             }
         }
     }
