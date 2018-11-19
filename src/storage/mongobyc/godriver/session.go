@@ -13,8 +13,6 @@
 package godriver
 
 import (
-	"context"
-
 	"configcenter/src/storage/mongobyc"
 )
 
@@ -22,31 +20,28 @@ var _ mongobyc.Session = (*session)(nil)
 
 type session struct {
 	*transaction
-	*client
+	mongocli *client
 }
 
 func newSession(mongocli *client) *session {
 	return &session{
-		client: mongocli,
+		mongocli: mongocli,
 	}
 }
 
 func (s *session) Open() error {
 
-	session, err := s.innerClient.StartSession()
+	session, err := s.mongocli.innerClient.StartSession()
 	if nil != err {
 		return err
 	}
 
-	s.innerSession = session
-	s.transaction = newSessionTransaction(s.client, session)
-
+	s.transaction = newSessionTransaction(s.mongocli, session)
 	return nil
 }
 
 func (s *session) Close() error {
-	s.innerSession.EndSession(context.TODO())
-	return nil
+	return s.transaction.Close()
 }
 
 func (s *session) Collection(collName string) mongobyc.CollectionInterface {

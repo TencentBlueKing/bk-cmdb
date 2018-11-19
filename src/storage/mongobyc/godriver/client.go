@@ -83,7 +83,7 @@ func (c *client) Database() mongobyc.Database {
 func (c *client) Collection(collName string) mongobyc.CollectionInterface {
 	target, ok := c.collectionMaps[collectionName(collName)]
 	if !ok {
-		target = newCollection(c, collName)
+		target = newCollection(c.innerDB.innerDatabase, collName)
 		c.collectionMaps[collectionName(collName)] = target
 	}
 	return target
