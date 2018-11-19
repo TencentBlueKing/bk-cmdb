@@ -28,13 +28,12 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
+	"configcenter/src/storage/dal/redis"
 	confCenter "configcenter/src/web_server/app/config"
 	"configcenter/src/web_server/app/options"
 	"configcenter/src/web_server/logics"
 	"configcenter/src/web_server/middleware"
 	websvc "configcenter/src/web_server/service"
-
-	redis "gopkg.in/redis.v5"
 )
 
 type WebServer struct {
@@ -114,13 +113,16 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		redisAddress = webSvr.Config.Session.Host + ":" + webSvr.Config.Session.Port
 	}
 
-	cacheCli := redis.NewClient(
-		&redis.Options{
-			Addr:     redisAddress,
-			PoolSize: 100,
-			Password: redisSecret,
-			DB:       0,
-		})
+	cacheCli, err := redis.NewFromConfig(redis.Config{
+		Address:    redisAddress,
+		Password:   redisSecret,
+		MasterName: webSvr.Config.Session.MasterName,
+		Database:   "0",
+	})
+
+	if nil != err {
+		return err
+	}
 
 	service.Engine = engine
 	service.Logics = &logics.Logics{Engine: engine}
@@ -167,9 +169,11 @@ func (w *WebServer) getConfig(regDiscover string) error {
 	w.Config.Session.Skip = config["session.skip"]
 	w.Config.Session.Host = config["session.host"]
 	w.Config.Session.Port = config["session.port"]
+	w.Config.Session.Address = config["session.address"]
 	w.Config.Session.Secret = strings.TrimSpace(config["session.secret"])
 	w.Config.Session.MultipleOwner = config["session.multiple_owner"]
 	w.Config.Session.DefaultLanguage = config["session.defaultlanguage"]
+	w.Config.Session.MasterName = config["session.mastername"]
 	w.Config.LoginVersion = config["login.version"]
 	if "" == w.Config.Session.DefaultLanguage {
 		w.Config.Session.DefaultLanguage = "zh-cn"
@@ -196,6 +200,8 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	w.Config.Session.Skip = current.ConfigMap["session.skip"]
 	w.Config.Session.Host = current.ConfigMap["session.host"]
 	w.Config.Session.Port = current.ConfigMap["session.port"]
+	w.Config.Session.Address = current.ConfigMap["session.address"]
+	w.Config.Session.MasterName = current.ConfigMap["session.mastername"]
 	w.Config.Session.Secret = strings.TrimSpace(current.ConfigMap["session.secret"])
 	w.Config.Session.MultipleOwner = current.ConfigMap["session.multiple_owner"]
 	w.Config.Session.DefaultLanguage = current.ConfigMap["session.defaultlanguage"]
