@@ -185,6 +185,8 @@ type AssociationKind struct {
 	DestinationToSourceNote string `field:"dest_des" json:"dest_des" bson:"dest_des"`
 	// the association direction between two objects.
 	Direction AssociationDirection `field:"direction" json:"direction" bson:"direction"`
+	// whether this is a pre-defined kind.
+	IsPre *bool `field:"ispre" json:"ispre" bson:"ispre"`
 }
 
 type AssociationOnDeleteAction string
