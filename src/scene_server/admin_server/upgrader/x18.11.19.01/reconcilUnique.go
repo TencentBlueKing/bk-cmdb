@@ -21,6 +21,22 @@ import (
 	"configcenter/src/storage/dal"
 )
 
+func createObjectUnitTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+	tablenames := []string{common.BKTableNameObjUnique}
+	for _, tablename := range tablenames {
+		exists, err := db.HasTable(tablename)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			if err = db.CreateTable(tablename); err != nil && !db.IsDuplicatedError(err) {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	type Attribute struct {
 		ID                int64       `json:"id" bson:"id"`
