@@ -13,33 +13,42 @@
 package godriver
 
 import (
+	"context"
+
 	"configcenter/src/storage/mongobyc"
 )
 
 var _ mongobyc.Session = (*session)(nil)
 
-type session struct{}
+type session struct {
+	*transaction
+	*client
+}
+
+func newSession(mongocli *client) *session {
+	return &session{
+		client: mongocli,
+	}
+}
 
 func (s *session) Open() error {
+
+	session, err := s.innerClient.StartSession()
+	if nil != err {
+		return err
+	}
+
+	s.innerSession = session
+	s.transaction = newSessionTransaction(s.client, session)
+
 	return nil
 }
 
 func (s *session) Close() error {
-	return nil
-}
-
-func (s *session) StartTransaction() error {
-	return nil
-}
-
-func (s *session) AbortTransaction() error {
-	return nil
-}
-
-func (s *session) CommitTransaction() error {
+	s.innerSession.EndSession(context.TODO())
 	return nil
 }
 
 func (s *session) Collection(collName string) mongobyc.CollectionInterface {
-	return nil
+	return s.transaction.Collection(collName)
 }

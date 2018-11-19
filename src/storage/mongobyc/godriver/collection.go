@@ -14,10 +14,7 @@ package godriver
 
 import (
 	"context"
-	"fmt"
 	"log"
-
-	"github.com/mongodb/mongo-go-driver/x/bsonx"
 
 	"configcenter/src/common/mapstr"
 	"configcenter/src/storage/mongobyc"
@@ -28,19 +25,18 @@ import (
 	"configcenter/src/storage/mongobyc/updateopt"
 
 	mgo "github.com/mongodb/mongo-go-driver/mongo"
+	"github.com/mongodb/mongo-go-driver/x/bsonx"
 )
 
 var _ mongobyc.CollectionInterface = (*collection)(nil)
 
 type collection struct {
-	mongocCli *client
-	// innerCollection *C.mongoc_collection_t
-	// clientSession   *C.mongoc_client_session_t
+	mongocCli       *client
 	innerCollection *mgo.Collection
 	err             error
 }
 
-func newCollectionWithoutSession(innerClient *client, collectionName string) mongobyc.CollectionInterface {
+func newCollection(innerClient *client, collectionName string) mongobyc.CollectionInterface {
 
 	return &collection{
 		mongocCli:       innerClient,
@@ -55,36 +51,35 @@ func (c *collection) Drop(ctx context.Context) error {
 	return c.innerCollection.Drop(context.TODO())
 }
 func (c *collection) CreateIndex(index mongobyc.Index) error {
-	/*
-		indexView := c.innerCollection.Indexes()
 
-		keys := bson.NewDocument()
-		for indexKey, indexValue := range index.Keys {
-			keys.Append(bson.EC.Interface(indexKey, indexValue))
-		}
+	indexView := c.innerCollection.Indexes()
 
-		options := bson.NewDocument()
-		options.Append(bson.EC.Interface("name", index.Name))
-		options.Append(bson.EC.Interface("unique", index.Unique))
-		options.Append(bson.EC.Interface("background", index.Backgroupd))
+	keys := bsonx.Doc{}
+	for indexKey := range index.Keys {
+		keys.Append(indexKey, bsonx.Int32(-1))
+	}
 
-		_, err := indexView.CreateOne(
-			context.TODO(),
-			mgo.IndexModel{
-				Keys:    keys,
-				Options: options,
-			},
-		)
+	options := bsonx.Doc{}
+	options.Append("name", bsonx.String(index.Name))
+	options.Append("unique", bsonx.Boolean(index.Unique))
+	options.Append("background", bsonx.Boolean(index.Backgroupd))
 
-		return err
-	*/
-	return nil
+	_, err := indexView.CreateOne(
+		context.TODO(),
+		mgo.IndexModel{
+			Keys:    keys,
+			Options: options,
+		},
+	)
+
+	return err
+
 }
 func (c *collection) DropIndex(indexName string) error {
 
-	//indexView := c.innerCollection.Indexes()
-	//_, err := indexView.DropIndex(context.TODO(), indexName)
-	return nil
+	indexView := c.innerCollection.Indexes()
+	_, err := indexView.DropOne(context.TODO(), indexName)
+	return err
 }
 
 func (c *collection) GetIndexes() (*mongobyc.GetIndexResult, error) {
@@ -157,7 +152,6 @@ func (c *collection) Find(ctx context.Context, filter interface{}, opts *findopt
 	for cursor.Next(ctx) {
 		result := mapstr.New()
 		if err := cursor.Decode(&result); nil != err {
-			fmt.Println("find err:", err)
 			return err
 		}
 		datas = append(datas, result)
@@ -232,4 +226,8 @@ func (c *collection) ReplaceOne(ctx context.Context, filter interface{}, replace
 			ModifiedCount: uint64(replaceResult.ModifiedCount),
 		},
 	}, nil
+}
+
+func (c *collection) Close() error {
+	return nil
 }
