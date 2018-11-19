@@ -146,9 +146,23 @@ func (cli *Service) DeleteObjectUnique(req *restful.Request, resp *restful.Respo
 	cond.Field(common.BKObjIDField).Eq(objID)
 	cond.Field(common.BKOwnerIDField).Eq(ownerID)
 
+	unique := metadata.ObjectUnique{}
+	err = db.Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).One(ctx, &unique)
+	if nil != err {
+		blog.Errorf("[DeleteObjectUnique] find error: %s, raw: %#v", err, cond.ToMapStr())
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrObjectDBOpErrno)})
+		return
+	}
+
+	if unique.Ispre {
+		blog.Errorf("[DeleteObjectUnique] could not delete preset constrain: %s", err, unique)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrObjectDBOpErrno)})
+		return
+	}
+
 	err = db.Table(common.BKTableNameObjUnique).Delete(ctx, cond.ToMapStr())
 	if nil != err {
-		blog.Errorf("[DeleteObjectUnique] Delete error: %s, raw: %#v", err)
+		blog.Errorf("[DeleteObjectUnique] Delete error: %s, raw: %#v", err, cond.ToMapStr())
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrObjectDBOpErrno)})
 		return
 	}
