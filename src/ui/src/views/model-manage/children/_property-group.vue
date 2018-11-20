@@ -587,11 +587,21 @@
             user-select: none;
             cursor: pointer;
             @include ellipsis;
-            &:hover,
+            &:hover {
+                &:before {
+                    display: inline-block;
+                }
+            }
             &.sortable-ghost {
-                background-color: #ebf4ff;
+                background: #fff;
+                color: #fff;
+                border: 1px dashed $cmdbBorderFocusColor;
+                &:before {
+                    display: none;
+                }
             }
             &:before {
+                display: none;
                 position: absolute;
                 left: 7px;
                 top: 16px;
