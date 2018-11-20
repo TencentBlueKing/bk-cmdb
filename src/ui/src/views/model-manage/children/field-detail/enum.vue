@@ -1,7 +1,7 @@
 <template>
     <ul class="form-enum-wrapper">
         <li class="form-item clearfix" v-for="(item, index) in enumList" :key="index">
-            <div class="enum-default">
+            <div class="enum-default cmdb-form-radio">
                 <input type="radio" 
                 :value="index" 
                 name="enum-radio" 
@@ -151,17 +151,17 @@
         >.form-item {
             font-size: 0;
             &:not(:first-child) {
-                margin-top: 10px;
+                margin-top: 15px;
             }
             .enum-default {
                 float: left;
+                margin: 0;
+                padding: 8px 5px 0 0;
                 width: 55px;
                 height: 36px;
-                padding-right: 5px;
                 font-size: 16px;
                 text-align: right;
                 line-height: 1;
-                padding-top: 8px;
             }
             .enum-label {
                 float: left;

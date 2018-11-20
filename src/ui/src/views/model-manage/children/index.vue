@@ -403,6 +403,9 @@
             .label-btn {
                 margin-left: 10px;
                 cursor: pointer;
+                &:hover {
+                    color: $cmdbBorderFocusColor;
+                }
             }
             i,
             span {
