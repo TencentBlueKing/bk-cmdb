@@ -76,9 +76,9 @@
                         id: 'dest_des',
                         name: this.$t('ModelManagement["目标描述->源"]')
                     }, {
-                    //     id: 'count',
-                    //     name: this.$t('ModelManagement["使用数"]')
-                    // }, {
+                        id: 'count',
+                        name: this.$t('ModelManagement["使用数"]')
+                    }, {
                         id: 'operation',
                         name: this.$t('Common["操作"]'),
                         sortable: false
@@ -130,7 +130,8 @@
         methods: {
             ...mapActions('objectAssociation', [
                 'searchAssociationType',
-                'deleteAssociationType'
+                'deleteAssociationType',
+                'searchAssociationListWithAssociationKindList'
             ]),
             searchRelation () {
                 this.searchAssociationType({
@@ -140,9 +141,26 @@
                     }
                 }).then(data => {
                     this.table.list = data.info
+                    this.searchUsageCount()
                     this.table.pagination.count = data.count
                     this.$http.cancel('post_searchAssociationType')
                 })
+            },
+            async searchUsageCount () {
+                let asstIds = []
+                this.table.list.forEach(({bk_asst_id: asstId}) => asstIds.push(asstId))
+                const res = await this.searchAssociationListWithAssociationKindList({
+                    params: {
+                        asst_ids: asstIds
+                    }
+                })
+                this.table.list.forEach(item => {
+                    let asst = res.associations.find(({bk_asst_id: asstId}) => asstId === item['bk_asst_id'])
+                    if (asst) {
+                        this.$set(item, 'count', asst.assts.length)
+                    }
+                })
+                this.table.list.splice()
             },
             createRelation () {
                 this.slider.title = this.$t('ModelManagement["新增关联类型"]')
