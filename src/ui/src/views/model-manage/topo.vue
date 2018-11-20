@@ -30,10 +30,10 @@
         <template v-if="topoEdit.isEdit">
             <div class="topo-save-title">
                 <bk-button type="primary" @click="saveTopo">
-                    {{$t('ModelManagement["保存"]')}}
+                    {{$t('Common["保存"]')}}
                 </bk-button>
                 <bk-button type="primary" @click="exitEdit">
-                    {{$t('ModelManagement["返回"]')}}
+                    {{$t('Common["返回"]')}}
                 </bk-button>
             </div>
             <ul class="topo-nav">
@@ -454,12 +454,14 @@
                         break
                     default:
                 }
+                this.clearHoverTooltip()
             },
             handleSliderCancel () {
                 if (this.slider.content === 'theRelation') {
-                    this.updateNetwork()
                     this.clearActiveEdge()
+                    this.updateNetwork()
                 }
+                this.clearHoverTooltip()
                 this.slider.isShow = false
             },
             handleEdgeCreate (data) {
@@ -530,6 +532,10 @@
                     this.$refs.nodeTooltips.style.left = left + 'px'
                     this.$refs.nodeTooltips.style.top = top + 'px'
                 })
+            },
+            clearHoverTooltip () {
+                this.topoTooltip.hoverNode = null
+                this.topoTooltip.hoverNodeTimer = null
             },
             handleHoverEdge (data) {
                 this.$refs.topo.style.cursor = 'pointer'
@@ -680,7 +686,7 @@
                     nodes: this.networkDataSet.nodes,
                     edges: this.networkDataSet.edges
                 }, this.network.options)
-                
+                this.initPosition()
                 this.addListener()
             },
             // 设置节点数据
@@ -821,6 +827,22 @@
                     image.src = `${window.location.origin}/static/svg/${node['data']['bk_obj_icon'].substr(5)}.svg`
                 })
             },
+            initPosition () {
+                let nodesId = []
+                this.topoModelList.forEach(model => {
+                    if (model.hasOwnProperty('assts') && model.assts.length) {
+                        model.assts.forEach(asst => {
+                            nodesId.push(asst['bk_obj_id'])
+                        })
+                    }
+                })
+                nodesId = nodesId.filter(id => {
+                    return this.topoModelList.some(({bk_obj_id: objId, position}) => objId === id && position.x === null && position.y === null)
+                })
+                if (nodesId.length) {
+                    this.updateNodePosition(this.networkDataSet.nodes.get([nodesId]))
+                }
+            },
             // 批量更新节点位置信息
             async updateNodePosition (updateNodes) {
                 if (!updateNodes.length) return
@@ -862,7 +884,7 @@
                     this.networkInstance.unselectAll()
                 })
                 // this.setSingleNodePosition()
-                this.loadNodeImage()
+                // this.loadNodeImage()
                 this.networkInstance.fit()
                 this.loading = false
             },
