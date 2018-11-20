@@ -165,7 +165,8 @@
                     columnsConfigKey: 'topology_table_columns',
                     quickSearch: {
                         property: null,
-                        value: ''
+                        value: '',
+                        operator: ''
                     }
                 }
             }
@@ -447,9 +448,10 @@
                     this.handleRefresh()
                 }
             },
-            handleQuickSearch (property, value) {
+            handleQuickSearch (property, value, operator) {
                 this.table.quickSearch.property = property
                 this.table.quickSearch.value = value
+                this.table.quickSearch.operator = operator
                 this.setSearchParams()
                 this.handleRefresh()
             },
@@ -475,12 +477,13 @@
                 }
                 const quickSearch = this.table.quickSearch
                 if (quickSearch.property && quickSearch.value !== null) {
-                    if (['singleasst', 'multiasst'].includes(quickSearch.property['bk_property_type'])) {
+                    const quickSearchType = quickSearch.property['bk_property_type']
+                    if (['singleasst', 'multiasst'].includes(quickSearchType)) {
                         condition.push({
                             'bk_obj_id': quickSearch.property['bk_asst_obj_id'],
                             condition: [{
                                 field: 'bk_inst_name',
-                                operator: '$regex',
+                                operator: quickSearch.operator,
                                 value: quickSearch.value
                             }]
                         })
@@ -488,7 +491,7 @@
                         const hostCondition = condition.find(condition => condition['bk_obj_id'] === 'host')
                         hostCondition.condition.push({
                             field: quickSearch.property['bk_property_id'],
-                            operator: '$regex',
+                            operator: quickSearch.operator,
                             value: quickSearch.value
                         })
                     }
