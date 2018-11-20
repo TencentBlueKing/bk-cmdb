@@ -14,7 +14,7 @@
             @handlePageChange="handlePageChange"
             @handleSizeChange="handleSizeChange">
             <template slot="options" slot-scope="{ item }">
-                <bk-button type="primary" size="mini" @click="handleRecovery(item)">{{$t('Inst["恢复业务"]')}}</bk-button>
+                <bk-button type="primary" size="mini" @click="handleRecovery(item)" :disabled="isInfoShow">{{$t('Inst["恢复业务"]')}}</bk-button>
             </template>
         </cmdb-table>
     </div>
@@ -32,7 +32,8 @@
                     current: 1,
                     size: 10,
                     count: 0
-                }
+                },
+                isInfoShow: false
             }
         },
         computed: {
@@ -113,11 +114,16 @@
                 }
             },
             handleRecovery (biz) {
+                this.isInfoShow = true
                 this.$bkInfo({
                     title: this.$t('Inst["是否确认恢复业务？"]'),
                     content: this.$t('Inst["恢复业务提示"]', {bizName: biz['bk_biz_name']}),
                     confirmFn: () => {
+                        this.isInfoShow = false
                         this.recoveryBiz(biz)
+                    },
+                    cancelFn: () => {
+                        this.isInfoShow = false
                     }
                 })
             },

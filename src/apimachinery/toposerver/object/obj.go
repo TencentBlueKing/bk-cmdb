@@ -52,7 +52,7 @@ func (t *object) CreateObject(ctx context.Context, h http.Header, obj metadata.O
 
 	err = t.client.Post().
 		WithContext(ctx).
-		Body(nil).
+		Body(obj).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().

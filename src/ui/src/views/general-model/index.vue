@@ -389,11 +389,12 @@
                 })
             },
             setAllHostList (list) {
-                if (this.table.allList.length === this.table.pagination.count) return
                 const newList = []
                 list.forEach(item => {
-                    const exist = this.table.allList.some(existItem => existItem['bk_inst_id'] === item['bk_inst_id'])
-                    if (!exist) {
+                    const existItem = this.table.allList.some(existItem => existItem['bk_inst_id'] === item['bk_inst_id'])
+                    if (existItem) {
+                        Object.assign(existItem, item)
+                    } else {
                         newList.push(item)
                     }
                 })
@@ -419,7 +420,7 @@
                         sort: this.table.sort
                     }
                 }
-                if (this.filter.id && this.filter.value) {
+                if (this.filter.id && String(this.filter.value).length) {
                     const filterType = this.filter.type
                     let filterValue = this.filter.value
                     if (filterType === 'bool') {
@@ -446,8 +447,8 @@
                             }
                             params.condition[asstObjId] = [{
                                 field: fieldMap.hasOwnProperty(asstObjId) ? fieldMap[asstObjId] : 'bk_inst_name',
-                                operator: '$regex',
-                                value: filterValue
+                                operator: '$in',
+                                value: filterValue.split(',')
                             }]
                         }
                     } else {

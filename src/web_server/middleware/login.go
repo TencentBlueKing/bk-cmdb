@@ -25,8 +25,8 @@ import (
 	"configcenter/src/web_server/middleware/auth"
 	"configcenter/src/web_server/middleware/user"
 
-	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/holmeswang/contrib/sessions"
 	redis "gopkg.in/redis.v5"
 )
 
