@@ -10,12 +10,12 @@
  * limitations under the License.
  */
 
-package service
+package v2
 
 import (
 	"github.com/emicklei/go-restful"
 
-	"configcenter/src/api_server/ccapi/logics/v2"
+	"configcenter/src/api_server/logics/v2"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/rdapi"
@@ -26,7 +26,7 @@ type Service struct {
 	*logics.Logics
 }
 
-func (s *Service) V2WebService() *restful.WebService {
+func (s *Service) WebService() *restful.WebService {
 	ws := new(restful.WebService)
 	getErrFun := func() errors.CCErrorIf {
 		return s.CCErr
@@ -114,4 +114,11 @@ func (s *Service) V2WebService() *restful.WebService {
 
 	return ws
 
+}
+
+func (s *Service) SetEngine(engine *backbone.Engine) {
+	s.Engine = engine
+	s.Logics = &logics.Logics{
+		Engine: engine,
+	}
 }
