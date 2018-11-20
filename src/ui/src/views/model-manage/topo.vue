@@ -1104,7 +1104,7 @@
                 background: #ebf4ff;
             }
             &.disabled {
-                cursor: default;
+                cursor: not-allowed;
                 opacity: .6;
             }
             i {
@@ -1127,6 +1127,7 @@
                 vertical-align: middle;
                 .id {
                     color: $cmdbBorderColor;
+                    font-size: 12px;
                 }
             }
         }
