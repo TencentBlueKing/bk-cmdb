@@ -10,13 +10,23 @@
         "authorized": true,
         "order": 1
     },
+    "bk_collection": {
+        "i18n": "Common['我的收藏']",
+        "icon": "icon-cc-default",
+        "id": "bk_collection",
+        "name": "我的收藏",
+        "children": [],
+        "classificationId": "bk_collection",
+        "authorized": true,
+        "order": 2
+    },
     "bk_host_manage": {
         "i18n": "Hosts['主机管理']",
         "icon": "icon-cc-host",
         "id": "bk_host_manage",
         "name": "主机管理",
         "authorized": true,
-        "order": 2,
+        "order": 3,
         "children": [{
             "i18n": "Hosts['主机']",
             "path": "/hosts",
