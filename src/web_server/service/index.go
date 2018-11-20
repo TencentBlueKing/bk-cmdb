@@ -17,10 +17,10 @@ import (
 	"strconv"
 	"strings"
 
-	"configcenter/src/common"
-
+	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/holmeswang/contrib/sessions"
+
+	"configcenter/src/common"
 )
 
 // Index html file

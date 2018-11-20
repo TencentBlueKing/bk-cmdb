@@ -16,13 +16,13 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/gin-gonic/contrib/sessions"
+	"github.com/gin-gonic/gin"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 	"configcenter/src/web_server/middleware/types"
-
-	"github.com/gin-gonic/gin"
-	"github.com/holmeswang/contrib/sessions"
 )
 
 type publicAuth struct {

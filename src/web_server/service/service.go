@@ -16,6 +16,10 @@ import (
 	"plugin"
 	"strings"
 
+	"github.com/gin-gonic/contrib/sessions"
+	"github.com/gin-gonic/gin"
+	redis "gopkg.in/redis.v5"
+
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -26,10 +30,6 @@ import (
 	"configcenter/src/web_server/app/options"
 	"configcenter/src/web_server/logics"
 	"configcenter/src/web_server/middleware"
-
-	"github.com/gin-gonic/gin"
-	"github.com/holmeswang/contrib/sessions"
-	redis "gopkg.in/redis.v5"
 )
 
 type Service struct {

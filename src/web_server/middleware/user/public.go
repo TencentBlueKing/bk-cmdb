@@ -16,6 +16,10 @@ import (
 	"encoding/json"
 	"plugin"
 
+	"github.com/gin-gonic/contrib/sessions"
+	"github.com/gin-gonic/gin"
+	redis "gopkg.in/redis.v5"
+
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -23,10 +27,6 @@ import (
 	"configcenter/src/web_server/app/options"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/middleware/user/plugins"
-
-	"github.com/gin-gonic/gin"
-	"github.com/holmeswang/contrib/sessions"
-	redis "gopkg.in/redis.v5"
 )
 
 type publicUser struct {

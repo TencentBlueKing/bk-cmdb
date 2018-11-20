@@ -13,7 +13,7 @@ require (
 	github.com/gin-gonic/gin v1.3.0
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/gorilla/sessions v1.1.3 // indirect
-	github.com/holmeswang/contrib v0.0.0-20181030132229-fd00c41a58ad
+	github.com/gin-gonic/contrib v0.0.0-20181030132229-fd00c41a58ad
 	github.com/joyt/godate v0.0.0-20150226210126-7151572574a7 // indirect
 	github.com/json-iterator/go v1.1.5 // indirect
 	github.com/juju/errors v0.0.0-20181118221551-089d3ea4e4d5 // indirect
@@ -43,6 +43,6 @@ require (
 )
 
 replace (
-	github.com/holmeswang/contrib => github.com/gin-gonic/contrib v0.0.0-20181101072842-54170a7b0b4b
+	github.com/gin-gonic/contrib => github.com/gin-gonic/contrib v0.0.0-20181101072842-54170a7b0b4b
 	github.com/holmeswang/redistore => github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 )
