@@ -9,16 +9,22 @@
 			"revisionTime": "2017-11-13T04:58:10Z"
 		},
 		{
-			"checksumSHA1": "hx8sfgUC5hUNta+yXRhNjtXNE9k=",
+			"checksumSHA1": "8Im3wi5F+hPCgbNsC2Ea0rVEm1Q=",
 			"path": "github.com/mongodb/mongo-go-driver/bson",
-			"revision": "18280a566540eca3a55b7a1ee43c9baae8273d22",
-			"revisionTime": "2018-11-13T22:53:17Z"
+			"revision": "dbffb1c211bf96fbd721b4bd6911331e5c1886ab",
+			"revisionTime": "2018-11-15T19:34:32Z"
 		},
 		{
-			"checksumSHA1": "BgBUBR7lFiSBSu9FFsvv4Sukdq0=",
+			"checksumSHA1": "iHTYFu+qtcbah4As9ZfjX+thVvg=",
 			"path": "github.com/mongodb/mongo-go-driver/mongo",
-			"revision": "18280a566540eca3a55b7a1ee43c9baae8273d22",
-			"revisionTime": "2018-11-13T22:53:17Z"
+			"revision": "dbffb1c211bf96fbd721b4bd6911331e5c1886ab",
+			"revisionTime": "2018-11-15T19:34:32Z"
+		},
+		{
+			"checksumSHA1": "XCeYNq3KQ+wA8bHgjD4kYw81tmY=",
+			"path": "github.com/mongodb/mongo-go-driver/x/bsonx",
+			"revision": "dbffb1c211bf96fbd721b4bd6911331e5c1886ab",
+			"revisionTime": "2018-11-15T19:34:32Z"
 		}
 	],
 	"rootPath": "configcenter"
