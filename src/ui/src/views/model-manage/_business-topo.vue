@@ -7,7 +7,7 @@
                     marginLeft: `${index * margin}px`
                 }"
                 :key="index">
-                <router-link :to="`/model-manage/${model['bk_obj_id']}`" class="node-circle" 
+                <router-link :to="`/model/${model['bk_obj_id']}`" class="node-circle" 
                     :class="{
                         'is-first': index === 0,
                         'is-last': index === (topo.length - 1),
@@ -31,23 +31,23 @@
             @confirm="handleCreateLevel"
             @cancel="handleCancelCreateLevel">
             <div class="add-level-wrapper" slot="content">
-                <h2 class="add-level-title">新建层级</h2>
+                <h2 class="add-level-title">{{$t('ModelManagement["新建层级"]')}}</h2>
                 <div class="add-level-form clearfix">
                     <a href="javascript:void(0)" class="add-level-icon fl" @click="addLevel.showIconSelector = true">
                         <i :class="['icon', addLevel.icon]"></i>
-                        <span class="text">点击切换</span>
+                        <span class="text">{{$t('ModelManagement["点击切换"]')}}</span>
                     </a>
                     <div class="add-level-info">
-                        <label class="label">唯一标识</label>
-                        <input type="text" class="input cmdb-form-input" placeholder="请输入英文标识"
+                        <label class="label">{{$t('ModelManagement["唯一标识"]')}}</label>
+                        <input type="text" class="input cmdb-form-input" :placeholder="$t('ModelManagement[\'请输入英文标识\']')"
                             name="enName"
                             v-model.trim="addLevel.enName"
                             v-validate="'required|modelId'" />
                         <span class="error">{{errors.first('enName')}}</span>
                     </div>
                     <div class="add-level-info" style="margin-top: 10px">
-                        <label class="label">名称</label>
-                        <input type="text" class="input cmdb-form-input" placeholder="请输入名称"
+                        <label class="label">{{$t('ModelManagement["名称"]')}}</label>
+                        <input type="text" class="input cmdb-form-input" :placeholder="$t('ModelManagement[\'请输入名称\']')"
                             name="name"
                             v-model.trim="addLevel.name"
                             v-validate="'required|singlechar'" />

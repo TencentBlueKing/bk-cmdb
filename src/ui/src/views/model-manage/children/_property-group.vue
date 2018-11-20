@@ -9,8 +9,8 @@
                         <input type="text" class="title-input cmdb-form-input"
                             ref="titleInput"
                             v-model.trim="groupNameInEditing">
-                        <a class="title-input-button" href="javascript:void(0)" @click="handleUpdateGroupName(group)">保存</a>
-                        <a class="title-input-button" href="javascript:void(0)" @click="handleCancelEditGroupName">取消</a>
+                        <a class="title-input-button" href="javascript:void(0)" @click="handleUpdateGroupName(group)">{{$t('Common["保存"]')}}</a>
+                        <a class="title-input-button" href="javascript:void(0)" @click="handleCancelEditGroupName">{{$t('Common["取消"]')}}</a>
                     </template>
                     <template v-else>
                         <span class="group-name">{{group.info['bk_group_name']}}</span>
@@ -23,21 +23,21 @@
                 </div>
                 <div class="header-options fr">
                     <i class="options-icon bk-icon icon-arrows-up"
-                        v-tooltip="'上移'"
+                        v-tooltip="$t('ModelManagement[\'上移\']')"
                         :class="{disabled: index === 0 || ['none'].includes(group.info['bk_group_id'])}"
                         @click="handleRiseGroup(index, group)">
                     </i>
                     <i class="options-icon bk-icon icon-arrows-down"
-                        v-tooltip="'下移'"
+                        v-tooltip="$t('ModelManagement[\'下移\']')"
                         :class="{disabled: index === (groupedProperties.length - 2) || ['none'].includes(group.info['bk_group_id'])}"
                         @click="handleDropGroup(index, group)">
                     </i>
                     <i class="options-icon bk-icon icon-plus-circle-shape"
-                        v-tooltip="'添加字段'"
+                        v-tooltip="$t('ModelManagement[\'添加字段\']')"
                         @click="handleAddProperty(group)">
                     </i>
                     <i class="options-icon bk-icon icon-delete"
-                        v-tooltip="'删除分组'"
+                        v-tooltip="$t('ModelManagement[\'删除分组\']')"
                         :class="{disabled: ['none', 'default'].includes(group.info['bk_group_id'])}"
                         @click="handleDeleteGroup(group, index)">
                     </i>
@@ -66,7 +66,7 @@
                 <a class="add-group-trigger" href="javascript:void(0)"
                     v-if="!showAddGroup"
                     @click="handleAddGroup">
-                    添加分组
+                    {{$t('ModelManagement["添加分组"]')}}
                     <i class="icon icon-cc-edit"></i>
                 </a>
                 <template v-else>
@@ -85,7 +85,7 @@
             :width="600"
             @cancel="handleCancelAddProperty"
             @confirm="handleConfirmAddProperty">
-            <div class="dialog-title" slot="tools">添加字段</div>
+            <div class="dialog-title" slot="tools">{{$t('ModelManagement["添加字段"]')}}</div>
             <div class="dialog-content" slot="content">
                 <div class="dialog-filter">
                     <input type="text" class="cmdb-form-input" v-model.trim="dialog.filter">
