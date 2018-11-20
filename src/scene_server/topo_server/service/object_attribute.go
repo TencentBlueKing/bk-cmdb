@@ -37,7 +37,7 @@ func (s *topoService) SearchObjectAttribute(params types.ContextParams, pathPara
 	cond := condition.CreateCondition()
 	data.Remove(metadata.PageName)
 	if err := cond.Parse(data); nil != err {
-		blog.Errorf("failed to parset the data into condition, error info is %s", err.Error())
+		blog.Errorf("search object attribute, but failed to parse the data into condition, err: %v", err)
 		return nil, err
 	}
 	cond.Field(metadata.AttributeFieldIsSystem).NotEq(true)
@@ -65,8 +65,6 @@ func (s *topoService) UpdateObjectAttribute(params types.ContextParams, pathPara
 // DeleteObjectAttribute delete the object attribute
 func (s *topoService) DeleteObjectAttribute(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
-	cond := condition.CreateCondition()
-
 	paramPath := frtypes.MapStr{}
 	paramPath.Set("id", pathParams("id"))
 	id, err := paramPath.Int64("id")
@@ -75,7 +73,11 @@ func (s *topoService) DeleteObjectAttribute(params types.ContextParams, pathPara
 		return nil, err
 	}
 
-	err = s.core.AttributeOperation().DeleteObjectAttribute(params, id, cond)
+	cond := condition.CreateCondition()
+	cond.Field(metadata.AttributeFieldSupplierAccount).Eq(params.SupplierAccount)
+	cond.Field(metadata.AttributeFieldID).Eq(id)
+
+	err = s.core.AttributeOperation().DeleteObjectAttribute(params, cond)
 
 	return nil, err
 }

@@ -100,6 +100,7 @@ func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Respons
 		hostIDs = append(hostIDs, host.HostID)
 		cloudIDs = append(cloudIDs, host.CloudID)
 	}
+
 	relations := []metadata.ModuleHost{}
 	cond := cccondition.CreateCondition().Field(common.BKHostIDField).In(hostIDs)
 	err = db.Table(common.BKTableNameModuleHostConfig).Find(cond.ToMapStr()).All(ctx, &relations)
