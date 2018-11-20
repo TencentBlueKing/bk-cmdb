@@ -25,4 +25,5 @@ import (
 	_ "configcenter/src/scene_server/admin_server/upgrader/x08.09.26.01"
 	_ "configcenter/src/scene_server/admin_server/upgrader/x18.09.30.01"
 	_ "configcenter/src/scene_server/admin_server/upgrader/x18.10.10.01"
+	_ "configcenter/src/scene_server/admin_server/upgrader/x18.10.30.01"
 )

@@ -23,6 +23,8 @@ import (
 	"configcenter/src/common/blog"
 	lang "configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 
 	"github.com/rentiansheng/xlsx"
 )
@@ -92,6 +94,64 @@ func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Hea
 	}
 	for _, cell := range attrResult.Data {
 		kvMap.Set(cell.PropertyID, cell.PropertyName)
+
 	}
 	return result.Data.Info, nil
+}
+
+// ImportHosts import host info
+func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, header http.Header, defLang lang.DefaultCCLanguageIf) (resultData mapstr.MapStr, errCode int, err error) {
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	resultData = mapstr.New()
+	insts, errMsg, err := lgc.GetImportInsts(f, objID, header, 0, true, defLang)
+	if nil != err {
+		blog.Errorf("ImportInsts  get %s inst info from excel error, error:%s logID:%s", objID, err.Error(), util.GetHTTPCCRequestID(header))
+		return
+	}
+	if 0 != len(errMsg) {
+		resultData.Set("err", errMsg)
+		return resultData, common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail, " file empty")
+	}
+	if 0 == len(insts) {
+		return nil, common.CCErrWebFileContentEmpty, defErr.Errorf(common.CCErrWebFileContentEmpty, "")
+	}
+
+	params := mapstr.MapStr{}
+	params["input_type"] = common.InputTypeExcel
+	params["BatchInfo"] = insts
+	result, resultErr := lgc.CoreAPI.ApiServer().AddInst(context.Background(), header, util.GetOwnerID(header), objID, params)
+	if nil != err {
+		blog.Errorf("ImportInsts add inst info  http request  error:%s, rid:%s", resultErr.Error(), util.GetHTTPCCRequestID(header))
+		return nil, common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if !result.Result {
+		errCode = result.Code
+		err = defErr.New(result.Code, result.ErrMsg)
+	}
+
+	if len(f.Sheets) > 2 {
+		asstInfoMap := GetAssociationExcelData(f.Sheets[1], common.HostAddMethodExcelAssociationIndexOffset)
+
+		if len(asstInfoMap) > 0 {
+			asstInfoMapInput := &metadata.RequestImportAssociation{
+				AssociationInfoMap: asstInfoMap,
+			}
+			asstResult, asstResultErr := lgc.CoreAPI.ApiServer().ImportAssociation(ctx, header, objID, asstInfoMapInput)
+			if nil != asstResultErr {
+				blog.Errorf("ImportHosts logics http request import %s association error:%s, rid:%s", objID, asstResultErr.Error(), util.GetHTTPCCRequestID(header))
+				return nil, common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
+			}
+			if len(asstResult.Data.ErrMsgMap) > 0 {
+				resultData.Set("asst_error", asstResult.Data.ErrMsgMap)
+			}
+			if result.Result && !asstResult.Result {
+				errCode = asstResult.Code
+				err = defErr.New(asstResult.Code, asstResult.ErrMsg)
+			}
+		}
+	}
+
+	return
+
 }

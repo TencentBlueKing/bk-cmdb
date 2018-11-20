@@ -33,14 +33,35 @@ type AssociationOperationInterface interface {
 	DeleteMainlineAssociaton(params types.ContextParams, objID string) error
 	SearchMainlineAssociationTopo(params types.ContextParams, targetObj model.Object) ([]*metadata.MainlineObjectTopo, error)
 	SearchMainlineAssociationInstTopo(params types.ContextParams, obj model.Object, instID int64) ([]*metadata.TopoInstRst, error)
+
 	CreateCommonAssociation(params types.ContextParams, data *metadata.Association) error
-	DeleteAssociation(params types.ContextParams, cond condition.Condition) error
-	UpdateAssociation(params types.ContextParams, data frtypes.MapStr, cond condition.Condition) error
+	DeleteAssociationWithPreCheck(params types.ContextParams, associationID int64) error
+	UpdateAssociation(params types.ContextParams, data frtypes.MapStr, assoID int64) error
 	SearchObjectAssociation(params types.ContextParams, objID string) ([]metadata.Association, error)
+
+	DeleteAssociation(params types.ContextParams, cond condition.Condition) error
 	SearchInstAssociation(params types.ContextParams, query *metadata.QueryInput) ([]metadata.InstAsst, error)
 	CheckBeAssociation(params types.ContextParams, obj model.Object, cond condition.Condition) error
 	CreateCommonInstAssociation(params types.ContextParams, data *metadata.InstAsst) error
 	DeleteInstAssociation(params types.ContextParams, cond condition.Condition) error
+
+	// 关联关系改造后的接口
+	SearchObjectAssoWithAssoKindList(params types.ContextParams, asstKindIDs []string) (resp *metadata.AssociationList, err error)
+	SearchType(params types.ContextParams, request *metadata.SearchAssociationTypeRequest) (resp *metadata.SearchAssociationTypeResult, err error)
+	CreateType(cparams types.ContextParams, request *metadata.AssociationKind) (resp *metadata.CreateAssociationTypeResult, err error)
+	UpdateType(params types.ContextParams, asstTypeID int, request *metadata.UpdateAssociationTypeRequest) (resp *metadata.UpdateAssociationTypeResult, err error)
+	DeleteType(params types.ContextParams, asstTypeID int) (resp *metadata.DeleteAssociationTypeResult, err error)
+
+	SearchObject(params types.ContextParams, request *metadata.SearchAssociationObjectRequest) (resp *metadata.SearchAssociationObjectResult, err error)
+	CreateObject(params types.ContextParams, request *metadata.Association) (resp *metadata.CreateAssociationObjectResult, err error)
+	UpdateObject(params types.ContextParams, asstID int, request *metadata.UpdateAssociationObjectRequest) (resp *metadata.UpdateAssociationObjectResult, err error)
+	DeleteObject(params types.ContextParams, asstID int) (resp *metadata.DeleteAssociationObjectResult, err error)
+
+	SearchInst(params types.ContextParams, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error)
+	CreateInst(params types.ContextParams, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error)
+	DeleteInst(params types.ContextParams, request *metadata.DeleteAssociationInstRequest) (resp *metadata.DeleteAssociationInstResult, err error)
+
+	ImportInstAssociation(ctx context.Context, params types.ContextParams, objID string, importData map[int]metadata.ExcelAssocation) (resp metadata.ResponeImportAssociationData, err error)
 
 	SetProxy(cls ClassificationOperationInterface, obj ObjectOperationInterface, grp GroupOperationInterface, attr AttributeOperationInterface, inst InstOperationInterface, targetModel model.Factory, targetInst inst.Factory)
 }
@@ -82,35 +103,13 @@ func (a *association) SearchObjectAssociation(params types.ContextParams, objID 
 	}
 	rsp, err := a.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), params.Header, cond.ToMapStr())
 	if nil != err {
-		blog.Errorf("[operation-asst] failed to request object controller, error info is %s", err.Error())
+		blog.Errorf("[operation-asst] failed to request object controller, err: %s", err.Error())
 		return nil, params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[operation-asst] failed to search the object(%s) association info , error info is %s", objID, rsp.ErrMsg)
+		blog.Errorf("[operation-asst] failed to search the object(%s) association info , err: %s", objID, rsp.ErrMsg)
 		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
-	}
-
-	// DELETE: query the property name as the associated name,the follow code need to be deleted after relationships refactoring
-	propertyIDS := make([]string, 0)
-	for _, asst := range rsp.Data {
-		propertyIDS = append(propertyIDS, asst.ObjectAttID)
-	}
-	attrCond := condition.CreateCondition()
-	attrCond.Field(metadata.AttributeFieldSupplierAccount).Eq(params.SupplierAccount)
-	attrCond.Field(metadata.AttributeFieldPropertyID).In(propertyIDS)
-	attributes, err := a.attr.FindObjectAttribute(params, attrCond)
-	if nil != err {
-		blog.Errorf("[operation-asst] failed to query attributes by the condition(%v), error info is %s", attrCond.ToMapStr(), err.Error())
-		return rsp.Data, nil // return the origin data
-	}
-
-	for asstIDX, asst := range rsp.Data {
-		for _, attr := range attributes {
-			if asst.ObjectAttID == attr.GetID() {
-				rsp.Data[asstIDX].AsstName = attr.GetName()
-			}
-		}
 	}
 
 	return rsp.Data, nil
@@ -120,12 +119,12 @@ func (a *association) SearchInstAssociation(params types.ContextParams, query *m
 
 	rsp, err := a.clientSet.ObjectController().Instance().SearchObjects(context.Background(), common.BKTableNameInstAsst, params.Header, query)
 	if nil != err {
-		blog.Errorf("[operation-asst] failed to request object controller, error info is %s", err.Error())
+		blog.Errorf("[operation-asst] failed to request object controller, err: %s", err.Error())
 		return nil, params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[operation-asst] failed to search the association info, query: %#v, error info is %s", query, rsp.ErrMsg)
+		blog.Errorf("[operation-asst] failed to search the association info, query: %#v, err: %s", query, rsp.ErrMsg)
 		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -143,36 +142,59 @@ func (a *association) SearchInstAssociation(params types.ContextParams, query *m
 
 func (a *association) CreateCommonAssociation(params types.ContextParams, data *metadata.Association) error {
 
+	if len(data.AsstKindID) == 0 || len(data.AsstObjID) == 0 || len(data.ObjectID) == 0 {
+		blog.Errorf("[operation-asst] failed to create the association , association kind id associate/object id is required")
+		return params.Err.Error(common.CCErrorTopoAssociationMissingParameters)
+	}
+
+	// if the on delete action is empty, set none as default.
+	if len(data.OnDelete) == 0 {
+		data.OnDelete = metadata.NoAction
+	}
+
 	//  check the association
 	cond := condition.CreateCondition()
-	cond.Field(metadata.AssociationFieldAssociationObjectID).Eq(data.AsstObjID)
-	cond.Field(metadata.AssociationFieldObjectID).Eq(data.ObjectID)
-	cond.Field(metadata.AssociationFieldSupplierAccount).Eq(params.SupplierAccount)
+	cond.Field(common.AssociatedObjectIDField).Eq(data.AsstObjID)
+	cond.Field(common.BKObjIDField).Eq(data.ObjectID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+	cond.Field(common.AssociationKindIDField).Eq(data.AsstKindID)
 
 	rsp, err := a.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), params.Header, cond.ToMapStr())
 	if nil != err {
-		blog.Errorf("[operation-asst] failed to request object controller, error info is %s", err.Error())
+		blog.Errorf("[operation-asst] failed to request object controller, err: %s", err.Error())
 		return params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[operation-asst] failed to create the association (%#v) , error info is %s", cond.ToMapStr(), rsp.ErrMsg)
+		blog.Errorf("[operation-asst] failed to create the association (%#v) , err: %s", cond.ToMapStr(), rsp.ErrMsg)
 		return params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 	if len(rsp.Data) > 0 {
-		blog.Errorf("[operation-asst] failed to create the association (%#v) , the associations %s->%s already exist ", cond.ToMapStr(), data.ObjectID, data.AsstObjID)
+		blog.Errorf("[operation-asst] failed to create the association (%#v) , the associations %s->%s already exist ",
+			cond.ToMapStr(), data.ObjectID, data.AsstObjID)
 		return params.Err.Errorf(common.CCErrTopoAssociationAlreadyExist, data.ObjectID, data.AsstObjID)
+	}
+
+	// check source object exists
+	if err := a.obj.IsValidObject(params, data.ObjectID); nil != err {
+		blog.Errorf("[operation-asst] the object(%s) is invalid, error infor is %s", data.ObjectID, err.Error())
+		return err
+	}
+
+	if err := a.obj.IsValidObject(params, data.AsstObjID); nil != err {
+		blog.Errorf("[operation-asst] the object(%s) is invalid, error infor is %s", data.AsstObjID, err.Error())
+		return err
 	}
 
 	// create a new
 	rspAsst, err := a.clientSet.ObjectController().Meta().CreateObjectAssociation(context.Background(), params.Header, data)
 	if nil != err {
-		blog.Errorf("[operation-asst] failed to request object controller, error info is %s", err.Error())
+		blog.Errorf("[operation-asst] failed to request object controller, err: %s", err.Error())
 		return params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
 	}
 
 	if !rspAsst.Result {
-		blog.Errorf("[operation-asst] failed to create the association (%#v) , error info is %s", data, rspAsst.ErrMsg)
+		blog.Errorf("[operation-asst] failed to create the association (%#v) , err: %s", data, rspAsst.ErrMsg)
 		return params.Err.New(rspAsst.Code, rspAsst.ErrMsg)
 	}
 
@@ -183,12 +205,12 @@ func (a *association) DeleteInstAssociation(params types.ContextParams, cond con
 
 	rsp, err := a.clientSet.ObjectController().Instance().DelObject(context.Background(), common.BKTableNameInstAsst, params.Header, cond.ToMapStr())
 	if nil != err {
-		blog.Errorf("[operation-asst] failed to request object controller, error info is %s", err.Error())
+		blog.Errorf("[operation-asst] failed to request object controller, err: %s", err.Error())
 		return params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[operation-asst] failed to delete the inst association info , error info is %s", rsp.ErrMsg)
+		blog.Errorf("[operation-asst] failed to delete the inst association info , err: %s", rsp.ErrMsg)
 		return params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -200,34 +222,143 @@ func (a *association) CreateCommonInstAssociation(params types.ContextParams, da
 
 	rspAsst, err := a.clientSet.ObjectController().Instance().CreateObject(context.Background(), common.BKTableNameInstAsst, params.Header, data)
 	if nil != err {
-		blog.Errorf("[operation-asst] failed to request object controller, error info is %s", err.Error())
+		blog.Errorf("[operation-asst] failed to request object controller, err: %s", err.Error())
 		return params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
 	}
 
 	if !rspAsst.Result {
-		blog.Errorf("[operation-asst] failed to create the association (%#v) , error info is %s", data, rspAsst.ErrMsg)
+		blog.Errorf("[operation-asst] failed to create the association (%#v) , err: %s", data, rspAsst.ErrMsg)
 		return params.Err.New(rspAsst.Code, rspAsst.ErrMsg)
 	}
 
 	return nil
 }
+
+func (a *association) DeleteAssociationWithPreCheck(params types.ContextParams, associationID int64) error {
+	// if this association has already been instantiated, then this association should not be deleted.
+	// get the association with id at first.
+	cond := condition.CreateCondition()
+	cond.Field(metadata.AssociationFieldAssociationId).Eq(associationID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+	result, err := a.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), params.Header, cond.ToMapStr())
+	if err != nil {
+		blog.Errorf("[operation-asst] delete association with id[%d], but get this association for pre check failed, err: %v", associationID, err)
+		return params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+
+	if !result.Result {
+		blog.Errorf("[operation-asst] delete association with id[%d], but get this association for pre check failed, err: %s", associationID, result.ErrMsg)
+		return params.Err.New(result.Code, result.ErrMsg)
+	}
+
+	if len(result.Data) == 0 {
+		blog.Errorf("[operation-asst] delete association with id[%d], but can not find this association, return now.", associationID)
+		return nil
+	}
+
+	if len(result.Data) > 1 {
+		blog.Errorf("[operation-asst] delete association with id[%d], but got multiple association", associationID)
+		return params.Err.Error(common.CCErrTopoGotMultipleAssociationInstance)
+	}
+
+	// find instance(s) belongs to this association
+	cond = condition.CreateCondition()
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+	cond.Field(common.BKObjIDField).Eq(result.Data[0].ObjectID)
+	cond.Field(common.AssociatedObjectIDField).Eq(result.Data[0].AsstObjID)
+	query := metadata.QueryInput{Condition: cond.ToMapStr()}
+	insts, err := a.SearchInstAssociation(params, &query)
+	if err != nil {
+		blog.Errorf("[operation-asst] delete association with id[%d], but association instance(s) failed, err: %v", associationID, err)
+		return params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+
+	if len(insts) != 0 {
+		// object association has already been instantiated, association can not be deleted.
+		blog.Errorf("[operation-asst] delete association with id[%d], but has multiple instances, can not be deleted.", associationID)
+		return params.Err.Error(common.CCErrTopoAssociationHasAlreadyBeenInstantiated)
+	}
+
+	// TODO: check association on_delete action before really delete this association.
+	// all the pre check has finished, delete the association now.
+	cond = condition.CreateCondition()
+	cond.Field(metadata.AssociationFieldAssociationId).Eq(associationID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+	return a.DeleteAssociation(params, cond)
+}
+
 func (a *association) DeleteAssociation(params types.ContextParams, cond condition.Condition) error {
 
 	// delete the object association
 	rsp, err := a.clientSet.ObjectController().Meta().DeleteObjectAssociation(context.Background(), 0, params.Header, cond.ToMapStr())
 	if nil != err {
-		blog.Errorf("[operation-asst] failed to request object controller, error info is %s", err.Error())
+		blog.Errorf("[operation-asst] failed to request object controller, err: %s", err.Error())
 		return params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[operation-asst] failed to create the association (%#v) , error info is %s", cond.ToMapStr(), rsp.ErrMsg)
+		blog.Errorf("[operation-asst] failed to create the association (%#v) , err: %s", cond.ToMapStr(), rsp.ErrMsg)
 		return params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	return nil
 }
-func (a *association) UpdateAssociation(params types.ContextParams, data frtypes.MapStr, cond condition.Condition) error {
+
+func (a *association) UpdateAssociation(params types.ContextParams, data frtypes.MapStr, assoID int64) error {
+	asst := &metadata.Association{}
+	err := data.MarshalJSONInto(asst)
+	if err != nil {
+		blog.Errorf("[operation-asst] update association with  %s", err.Error())
+		return params.Err.Error(common.CCErrCommJSONUnmarshalFailed)
+	}
+
+	if field, can := asst.CanUpdate(); !can {
+		blog.Warnf("update association[%d], but request to update a forbidden update field[%s].", assoID, field)
+		return params.Err.Error(common.CCErrorTopoObjectAssociationUpdateForbiddenFields)
+	}
+
+	cond := condition.CreateCondition()
+	cond.Field(metadata.AssociationFieldAssociationId).Eq(assoID)
+	cond.Field(metadata.AssociationFieldSupplierAccount).Eq(params.SupplierAccount)
+
+	rsp, err := a.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), params.Header, cond.ToMapStr())
+	if nil != err {
+		blog.Errorf("[operation-asst] failed to request object controller, err: %s", err.Error())
+		return params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+
+	if !rsp.Result {
+		blog.Errorf("[operation-asst] failed to update the association (%#v) , err: %s", cond.ToMapStr(), rsp.ErrMsg)
+		return params.Err.New(rsp.Code, rsp.ErrMsg)
+	}
+
+	if len(rsp.Data) < 1 {
+		blog.Errorf("[operation-asst] failed to update the object association , id %d not found", assoID)
+		return params.Err.Error(common.CCErrorTopoObjectAssociationNotExist)
+	}
+
+	// check object exists
+	if err := a.obj.IsValidObject(params, rsp.Data[0].ObjectID); nil != err {
+		blog.Errorf("[operation-asst] the object(%s) is invalid, error infor is %s", rsp.Data[0].ObjectID, err.Error())
+		return err
+	}
+
+	if err := a.obj.IsValidObject(params, rsp.Data[0].AsstObjID); nil != err {
+		blog.Errorf("[operation-asst] the object(%s) is invalid, error infor is %s", rsp.Data[0].AsstObjID, err.Error())
+		return err
+	}
+
+	rspAsst, err := a.clientSet.ObjectController().Meta().UpdateObjectAssociation(context.Background(), assoID, params.Header, data)
+	if nil != err {
+		blog.Errorf("[operation-asst] failed to request object controller, err: %s", err.Error())
+		return params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+
+	if !rspAsst.Result {
+		blog.Errorf("[operation-asst] failed to create the association (%#v) , err: %s", data, rspAsst.ErrMsg)
+		return params.Err.New(rspAsst.Code, rspAsst.ErrMsg)
+	}
+
 	return nil
 }
 
@@ -246,4 +377,101 @@ func (a *association) CheckBeAssociation(params types.ContextParams, obj model.O
 		return params.Err.Errorf(common.CCErrTopoInstHasBeenAssociation, beAsstObject)
 	}
 	return nil
+}
+
+// 关联关系改造后的接口
+func (a *association) SearchObjectAssoWithAssoKindList(params types.ContextParams, asstKindIDs []string) (resp *metadata.AssociationList, err error) {
+	if len(asstKindIDs) == 0 {
+		return &metadata.AssociationList{Associations: make([]metadata.AssociationDetail, 0)}, nil
+	}
+
+	asso := make([]metadata.AssociationDetail, 0)
+	for _, id := range asstKindIDs {
+		cond := condition.CreateCondition()
+		cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+		cond.Field(common.AssociationKindIDField).Eq(id)
+
+		r, err := a.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), params.Header, cond.ToMapStr())
+		if err != nil {
+			blog.Errorf("get object association list with association kind[%s] failed, err: %v", id, err)
+			return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		}
+
+		if !r.Result {
+			blog.Errorf("get object association list with association kind[%s] failed, err: %v", id, r.ErrMsg)
+			return nil, params.Err.Errorf(r.Code, r.ErrMsg)
+		}
+
+		asso = append(asso, metadata.AssociationDetail{AssociationKindID: id, Associations: r.Data})
+	}
+
+	return &metadata.AssociationList{Associations: asso}, nil
+}
+
+func (a *association) SearchType(params types.ContextParams, request *metadata.SearchAssociationTypeRequest) (resp *metadata.SearchAssociationTypeResult, err error) {
+	return a.clientSet.ObjectController().Association().SearchType(context.TODO(), params.Header, request)
+}
+func (a *association) CreateType(params types.ContextParams, request *metadata.AssociationKind) (resp *metadata.CreateAssociationTypeResult, err error) {
+	return a.clientSet.ObjectController().Association().CreateType(context.TODO(), params.Header, request)
+}
+func (a *association) UpdateType(params types.ContextParams, asstTypeID int, request *metadata.UpdateAssociationTypeRequest) (resp *metadata.UpdateAssociationTypeResult, err error) {
+	return a.clientSet.ObjectController().Association().UpdateType(context.TODO(), params.Header, asstTypeID, request)
+}
+func (a *association) DeleteType(params types.ContextParams, asstTypeID int) (resp *metadata.DeleteAssociationTypeResult, err error) {
+	cond := condition.CreateCondition()
+	cond.Field("id").Eq(asstTypeID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+	query := &metadata.SearchAssociationTypeRequest{
+		Condition: cond.ToMapStr(),
+	}
+
+	result, err := a.SearchType(params, query)
+	if err != nil {
+		blog.Errorf("delete association kind[%d], but get detailed info failed, err: %v", asstTypeID, err)
+		return nil, params.Err.Errorf(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if !result.Result {
+		blog.Errorf("delete association kind[%d], but get detailed info failed, err: %s", asstTypeID, result.ErrMsg)
+		return nil, params.Err.Errorf(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if len(result.Data.Info) > 1 {
+		blog.Errorf("delete association kind[%d], but get multiple instance", asstTypeID)
+		return nil, params.Err.Error(common.CCErrorTopoGetMultipleAssoKindInstWithOneID)
+	}
+
+	if len(result.Data.Info) == 0 {
+		return &metadata.DeleteAssociationTypeResult{BaseResp: metadata.SuccessBaseResp, Data: common.CCSuccessStr}, nil
+	}
+
+	if result.Data.Info[0].IsPre != nil && *result.Data.Info[0].IsPre {
+		blog.Errorf("delete association kind[%d], but this is a pre-defined association kind, can not be deleted.", asstTypeID)
+		return nil, params.Err.Error(common.CCErrorTopoDeletePredefinedAssociationKind)
+	}
+
+	return a.clientSet.ObjectController().Association().DeleteType(context.TODO(), params.Header, asstTypeID)
+}
+
+func (a *association) SearchObject(params types.ContextParams, request *metadata.SearchAssociationObjectRequest) (resp *metadata.SearchAssociationObjectResult, err error) {
+	return a.clientSet.ObjectController().Association().SearchObject(context.TODO(), params.Header, request)
+}
+func (a *association) CreateObject(params types.ContextParams, request *metadata.Association) (resp *metadata.CreateAssociationObjectResult, err error) {
+	return a.clientSet.ObjectController().Association().CreateObject(context.TODO(), params.Header, request)
+}
+func (a *association) UpdateObject(params types.ContextParams, asstID int, request *metadata.UpdateAssociationObjectRequest) (resp *metadata.UpdateAssociationObjectResult, err error) {
+	return a.clientSet.ObjectController().Association().UpdateObject(context.TODO(), params.Header, asstID, request)
+}
+func (a *association) DeleteObject(params types.ContextParams, asstID int) (resp *metadata.DeleteAssociationObjectResult, err error) {
+	return a.clientSet.ObjectController().Association().DeleteObject(context.TODO(), params.Header, asstID)
+}
+
+func (a *association) SearchInst(params types.ContextParams, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error) {
+	return a.clientSet.ObjectController().Association().SearchInst(context.TODO(), params.Header, request)
+}
+func (a *association) CreateInst(params types.ContextParams, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error) {
+	return a.clientSet.ObjectController().Association().CreateInst(context.TODO(), params.Header, request)
+}
+func (a *association) DeleteInst(params types.ContextParams, request *metadata.DeleteAssociationInstRequest) (resp *metadata.DeleteAssociationInstResult, err error) {
+	return a.clientSet.ObjectController().Association().DeleteInst(context.TODO(), params.Header, request)
 }

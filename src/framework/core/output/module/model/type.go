@@ -194,7 +194,7 @@ type Iterator interface {
 	ForEach(itemCallback func(item Model) error) error
 }
 
-// Model the interface declaration for model maintence
+// Model the interface declaration for model maintenance
 type Model interface {
 	IsExists() (bool, error)
 	Create() error
