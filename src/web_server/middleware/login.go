@@ -13,6 +13,7 @@
 package middleware
 
 import (
+	"plugin"
 	"strings"
 
 	"configcenter/src/apimachinery/discovery"
@@ -25,8 +26,8 @@ import (
 	"configcenter/src/web_server/middleware/auth"
 	"configcenter/src/web_server/middleware/user"
 
-	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/holmeswang/contrib/sessions"
 	redis "gopkg.in/redis.v5"
 )
 
@@ -35,6 +36,7 @@ var checkUrl string
 
 var Engine *backbone.Engine
 var CacheCli *redis.Client
+var LoginPlg *plugin.Plugin
 
 //ValidLogin   valid the user login status
 func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.HandlerFunc {
@@ -85,7 +87,7 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 				})
 				return
 			} else {
-				user := user.NewUser(config, Engine, CacheCli)
+				user := user.NewUser(config, Engine, CacheCli, LoginPlg)
 				url := user.GetLoginUrl(c)
 				c.Redirect(302, url)
 			}
@@ -124,7 +126,7 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 	}
 	session := sessions.Default(c)
 	cc_token := session.Get(common.HTTPCookieBKToken)
-	user := user.NewUser(config, Engine, CacheCli)
+	user := user.NewUser(config, Engine, CacheCli, LoginPlg)
 	if nil == cc_token {
 		return user.LoginUser(c)
 	}
@@ -138,7 +140,14 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 		return user.LoginUser(c)
 	}
 
-	bk_token, err := c.Cookie(common.HTTPCookieBKToken)
+	bkTokenName := common.HTTPCookieBKToken
+	if nil != LoginPlg {
+		bkPluginTokenName, err := LoginPlg.Lookup("BKTokenName")
+		if nil == err {
+			bkTokenName = *bkPluginTokenName.(*string)
+		}
+	}
+	bk_token, err := c.Cookie(bkTokenName)
 	blog.Infof("valid user login session token %s, cookie token %s", cc_token, bk_token)
 	if nil != err || bk_token != cc_token {
 		return user.LoginUser(c)
