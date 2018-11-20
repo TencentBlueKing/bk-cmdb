@@ -1,6 +1,7 @@
 module configcenter
 
 require (
+	github.com/FZambia/sentinel v1.0.0 // indirect
 	github.com/bitly/go-simplejson v0.5.0
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff // indirect
@@ -13,7 +14,6 @@ require (
 	github.com/gin-gonic/gin v1.3.0
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/gorilla/sessions v1.1.3 // indirect
-	github.com/holmeswang/contrib v0.0.0-20181120141929-e807a0e3aa34 // indirect
 	github.com/joyt/godate v0.0.0-20150226210126-7151572574a7 // indirect
 	github.com/json-iterator/go v1.1.5 // indirect
 	github.com/juju/errors v0.0.0-20181118221551-089d3ea4e4d5 // indirect
@@ -30,6 +30,7 @@ require (
 	github.com/samuel/go-zookeeper v0.0.0-20180130194729-c4fab1ac1bec
 	github.com/spf13/pflag v1.0.3
 	github.com/stretchr/testify v1.2.2
+	github.com/tealeg/xlsx v1.0.3
 	github.com/tidwall/gjson v1.1.3
 	github.com/tidwall/match v1.0.0 // indirect
 	github.com/ugorji/go/codec v0.0.0-20181119220752-0165389f8c91 // indirect
@@ -42,7 +43,7 @@ require (
 )
 
 replace (
-	github.com/holmeswang/contrib => github.com/gin-gonic/contrib v0.0.0-20181101072842-54170a7b0b4b
-	github.com/holmeswang/redistore => github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
-	github.com/rentiansheng/xlsx => github.com/tealeg/xlsx v1.0.3
+	github.com/boj/redistore => github.com/holmeswang/redistore v0.0.0-20181030115202-a3e76541222d
+	github.com/gin-gonic/contrib => github.com/holmeswang/contrib v0.0.0-20181120141929-e807a0e3aa34
+	github.com/tealeg/xlsx => github.com/rentiansheng/xlsx v1.0.4-0.20180919085812-52e1dd37ace1
 )

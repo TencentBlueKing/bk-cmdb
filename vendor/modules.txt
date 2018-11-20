@@ -1,0 +1,89 @@
+# github.com/FZambia/sentinel v1.0.0
+github.com/FZambia/sentinel
+# github.com/bitly/go-simplejson v0.5.0
+github.com/bitly/go-simplejson
+# github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff => github.com/holmeswang/redistore v0.0.0-20181030115202-a3e76541222d
+github.com/boj/redistore
+# github.com/coccyx/timeparser v0.0.0-20161029180942-5644122b3667
+github.com/coccyx/timeparser
+# github.com/davecgh/go-spew v1.1.1
+github.com/davecgh/go-spew/spew
+# github.com/emicklei/go-restful v2.8.0+incompatible
+github.com/emicklei/go-restful
+github.com/emicklei/go-restful/log
+# github.com/flosch/pongo2 v0.0.0-20180809100617-24195e6d38b0
+github.com/flosch/pongo2
+# github.com/gin-contrib/sse v0.0.0-20170109093832-22d885f9ecc7
+github.com/gin-contrib/sse
+# github.com/gin-gonic/contrib v0.0.0-20181101072842-54170a7b0b4b => github.com/holmeswang/contrib v0.0.0-20181120141929-e807a0e3aa34
+github.com/gin-gonic/contrib/sessions
+# github.com/gin-gonic/gin v1.3.0
+github.com/gin-gonic/gin/json
+github.com/gin-gonic/gin
+github.com/gin-gonic/gin/binding
+github.com/gin-gonic/gin/render
+# github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
+github.com/golang/glog
+# github.com/golang/protobuf v1.2.0
+github.com/golang/protobuf/proto
+# github.com/gomodule/redigo v2.0.0+incompatible
+github.com/gomodule/redigo/redis
+github.com/gomodule/redigo/internal
+# github.com/gorilla/context v1.1.1
+github.com/gorilla/context
+# github.com/gorilla/securecookie v1.1.1
+github.com/gorilla/securecookie
+# github.com/gorilla/sessions v1.1.3
+github.com/gorilla/sessions
+# github.com/joyt/godate v0.0.0-20150226210126-7151572574a7
+github.com/joyt/godate
+# github.com/json-iterator/go v1.1.5
+github.com/json-iterator/go
+# github.com/juju/errors v0.0.0-20181118221551-089d3ea4e4d5
+github.com/juju/errors
+# github.com/juju/ratelimit v1.0.1
+github.com/juju/ratelimit
+# github.com/mattn/go-isatty v0.0.4
+github.com/mattn/go-isatty
+# github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
+github.com/modern-go/concurrent
+# github.com/modern-go/reflect2 v1.0.1
+github.com/modern-go/reflect2
+# github.com/pmezard/go-difflib v1.0.0
+github.com/pmezard/go-difflib/difflib
+# github.com/rs/xid v1.2.1
+github.com/rs/xid
+# github.com/samuel/go-zookeeper v0.0.0-20180130194729-c4fab1ac1bec
+github.com/samuel/go-zookeeper/zk
+# github.com/spf13/pflag v1.0.3
+github.com/spf13/pflag
+# github.com/stretchr/testify v1.2.2
+github.com/stretchr/testify/assert
+github.com/stretchr/testify/require
+# github.com/tealeg/xlsx v1.0.3 => github.com/rentiansheng/xlsx v1.0.4-0.20180919085812-52e1dd37ace1
+github.com/tealeg/xlsx
+# github.com/tidwall/gjson v1.1.3
+github.com/tidwall/gjson
+# github.com/tidwall/match v1.0.0
+github.com/tidwall/match
+# github.com/ugorji/go/codec v0.0.0-20181119220752-0165389f8c91
+github.com/ugorji/go/codec
+# golang.org/x/sys v0.0.0-20180909124046-d0be0721c37e
+golang.org/x/sys/unix
+# gopkg.in/go-playground/validator.v8 v8.18.2
+gopkg.in/go-playground/validator.v8
+# gopkg.in/mgo.v2 v2.0.0-20180705113604-9856a29383ce
+gopkg.in/mgo.v2/bson
+gopkg.in/mgo.v2
+gopkg.in/mgo.v2/internal/json
+gopkg.in/mgo.v2/internal/sasl
+gopkg.in/mgo.v2/internal/scram
+# gopkg.in/redis.v5 v5.2.9
+gopkg.in/redis.v5
+gopkg.in/redis.v5/internal
+gopkg.in/redis.v5/internal/consistenthash
+gopkg.in/redis.v5/internal/hashtag
+gopkg.in/redis.v5/internal/pool
+gopkg.in/redis.v5/internal/proto
+# gopkg.in/yaml.v2 v2.2.1
+gopkg.in/yaml.v2
