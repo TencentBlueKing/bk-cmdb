@@ -35,6 +35,8 @@ github.com/gorilla/sessions v1.1.3 h1:uXoZdcdA5XdXF3QzuSlheVRUvjl+1rKY7zBXL68L9R
 github.com/gorilla/sessions v1.1.3/go.mod h1:8KCfur6+4Mqcc6S0FEfKuN15Vl5MgXW92AE8ovaJD0w=
 github.com/holmeswang/contrib v0.0.0-20181030132229-fd00c41a58ad h1:r+q88+hTU5jKGHQqXu//+ZR5Bk12WPIHAehqrLjAX3A=
 github.com/holmeswang/contrib v0.0.0-20181030132229-fd00c41a58ad/go.mod h1:nngT3eiKfoRaggTMv1Umhm6qa4AkmotbiaZrJbf/IdQ=
+github.com/holmeswang/contrib v0.0.0-20181120141929-e807a0e3aa34 h1:JenixR6IwVOhJGuY9S2T/S+NBaO3ARMj1Yncas5SLAU=
+github.com/holmeswang/contrib v0.0.0-20181120141929-e807a0e3aa34/go.mod h1:nngT3eiKfoRaggTMv1Umhm6qa4AkmotbiaZrJbf/IdQ=
 github.com/hpcloud/tail v1.0.0 h1:nfCOvKYfkgYP8hkirhJocXT2+zOD8yUNjXaWfTlyFKI=
 github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpOxQnU=
 github.com/joyt/godate v0.0.0-20150226210126-7151572574a7 h1:2wH5antjhmU3EuWyidm0lJ4B9hGMpl5lNRo+M9uGJ5A=

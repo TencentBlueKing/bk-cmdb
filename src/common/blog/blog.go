@@ -15,6 +15,7 @@ package blog
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -79,7 +80,7 @@ var (
 
 func Debug(args ...interface{}) {
 	if format, ok := (args[0]).(string); ok {
-		glog.InfoDepthf(1, format, args[1:]...)
+		glog.InfoDepth(1, fmt.Sprintf(format, args[1:]...))
 	} else {
 		glog.InfoDepth(1, args)
 	}
@@ -94,5 +95,5 @@ func InfoJSON(format string, args ...interface{}) {
 		}
 		params = append(params, out)
 	}
-	glog.InfoDepthf(1, format, params...)
+	glog.InfoDepth(1, fmt.Sprintf(format, params...))
 }
