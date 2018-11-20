@@ -16,8 +16,8 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/web_server/middleware/user"
 
-	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/holmeswang/contrib/sessions"
 )
 
 // LogOutUser log out user
