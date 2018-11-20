@@ -85,7 +85,7 @@ func (s *Service) GetHosts(req *restful.Request, resp *restful.Response) {
 	fieldArr := util.SplitStrField(dat.Fields, ",")
 	result, err := s.Logics.GetObjectByCondition(ctx, lang, common.BKInnerObjIDHost, fieldArr, condition, dat.Sort, dat.Start, dat.Limit)
 	if err != nil {
-		blog.Error("get object failed type:%s,input:%v error:%v", common.BKInnerObjIDHost, dat, err)
+		blog.Errorf("get object failed type:%s,input:%v error:%v", common.BKInnerObjIDHost, dat, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostSelectInst)})
 		return
 	}
