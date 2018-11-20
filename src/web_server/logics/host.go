@@ -25,6 +25,8 @@ import (
 	"configcenter/src/common/http/httpclient"
 	lang "configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 
 	"github.com/rentiansheng/xlsx"
 )
@@ -117,6 +119,67 @@ func (lgc *Logics) GetImportHosts(f *xlsx.File, header http.Header, defLang lang
 	}
 
 	return GetExcelData(sheet, fields, common.KvMap{"import_from": common.HostAddMethodExcel}, true, 0, defLang)
+}
+
+// ImportHosts import host info
+func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf) (resultData mapstr.MapStr, errCode int, err error) {
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	hosts, errMsg, err := lgc.GetImportHosts(f, header, defLang)
+	resultData = mapstr.New()
+
+	if nil != err {
+		blog.Errorf("ImportHost  get import hosts from excel err, error:%s, logID:%s", err.Error(), util.GetHTTPCCRequestID(header))
+	}
+	if 0 != len(errMsg) {
+		resultData.Set("err", errMsg)
+		return resultData, common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail, " file empty")
+	}
+	if 0 == len(hosts) {
+		return nil, common.CCErrWebFileContentEmpty, defErr.Errorf(common.CCErrWebFileContentEmpty, "")
+	}
+
+	params := mapstr.MapStr{}
+	params["host_info"] = hosts
+	params["bk_supplier_id"] = common.BKDefaultSupplierID
+	params["input_type"] = common.InputTypeExcel
+
+	result, resultErr := lgc.CoreAPI.ApiServer().AddHost(context.Background(), header, params)
+	if nil != resultErr {
+		blog.Errorf("ImportHosts add host info  http request  error:%s, rid:%s", resultErr.Error(), util.GetHTTPCCRequestID(header))
+		return nil, common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if !result.Result {
+		resultData.Merge(result.Data)
+		errCode = result.Code
+		err = defErr.New(result.Code, result.ErrMsg)
+	}
+
+	if len(f.Sheets) > 2 {
+		asstInfoMap := GetAssociationExcelData(f.Sheets[1], common.HostAddMethodExcelAssociationIndexOffset)
+		if len(asstInfoMap) > 0 {
+			asstInfoMapInput := &metadata.RequestImportAssociation{
+				AssociationInfoMap: asstInfoMap,
+			}
+			asstResult, asstResultErr := lgc.CoreAPI.ApiServer().ImportAssociation(ctx, header, common.BKInnerObjIDHost, asstInfoMapInput)
+			if nil != asstResultErr {
+				blog.Errorf("ImportHosts logics http request import association error:%s, rid:%s", asstResultErr.Error(), util.GetHTTPCCRequestID(header))
+				return nil, common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
+			}
+			if len(asstResult.Data.ErrMsgMap) > 0 {
+				resultData.Set("asst_error", asstResult.Data.ErrMsgMap)
+			}
+			if result.Result && !asstResult.Result {
+				errCode = asstResult.Code
+				err = defErr.New(asstResult.Code, asstResult.ErrMsg)
+			}
+
+		}
+
+	}
+
+	return
+
 }
 
 //httpRequest do http request
