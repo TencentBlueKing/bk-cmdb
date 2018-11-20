@@ -24,8 +24,8 @@ import (
 	"github.com/coccyx/timeparser"
 	"github.com/emicklei/go-restful"
 
-	"configcenter/src/api_server/ccapi/logics/v2/common/defs"
-	"configcenter/src/api_server/ccapi/logics/v2/common/utils"
+	"configcenter/src/api_server/logics/v2/common/defs"
+	"configcenter/src/api_server/logics/v2/common/utils"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/language"
