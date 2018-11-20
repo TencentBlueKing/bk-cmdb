@@ -28,7 +28,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
-	"github.com/rentiansheng/xlsx"
+	"github.com/tealeg/xlsx"
 )
 
 // GetHostData get host data from excel

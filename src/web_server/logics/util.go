@@ -18,7 +18,7 @@ import (
 
 	"configcenter/src/common"
 
-	"github.com/rentiansheng/xlsx"
+	"github.com/tealeg/xlsx"
 )
 
 const (

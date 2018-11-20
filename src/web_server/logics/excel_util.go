@@ -25,7 +25,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 
-	"github.com/rentiansheng/xlsx"
+	"github.com/tealeg/xlsx"
 )
 
 var (

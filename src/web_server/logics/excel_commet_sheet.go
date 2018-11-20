@@ -20,7 +20,7 @@ import (
 	"configcenter/src/common/blog"
 	lang "configcenter/src/common/language"
 
-	"github.com/rentiansheng/xlsx"
+	"github.com/tealeg/xlsx"
 )
 
 // ProductExcelHealer Excel comment sheet，

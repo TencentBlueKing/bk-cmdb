@@ -26,7 +26,6 @@ require (
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/onsi/gomega v1.4.2 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/rentiansheng/xlsx v1.0.3
 	github.com/rs/xid v1.2.1
 	github.com/samuel/go-zookeeper v0.0.0-20180130194729-c4fab1ac1bec
 	github.com/spf13/pflag v1.0.3
@@ -43,6 +42,7 @@ require (
 )
 
 replace (
-	github.com/gin-gonic/contrib => github.com/gin-gonic/contrib v0.0.0-20181101072842-54170a7b0b4b
+	github.com/holmeswang/contrib => github.com/gin-gonic/contrib v0.0.0-20181101072842-54170a7b0b4b
 	github.com/holmeswang/redistore => github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
+	github.com/rentiansheng/xlsx => github.com/tealeg/xlsx v1.0.3
 )

@@ -27,7 +27,7 @@ import (
 	"configcenter/src/common/util"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rentiansheng/xlsx"
+	"github.com/tealeg/xlsx"
 )
 
 // BuildExcelFromData product excel from data
