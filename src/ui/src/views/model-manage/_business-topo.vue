@@ -239,6 +239,7 @@
             top: 100%;
             left: 0;
             transform: translateX(-44px);
+            font-size: 14px;
             @include ellipsis;
         }
         .node-add {
