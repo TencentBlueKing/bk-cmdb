@@ -983,7 +983,6 @@
                 display: block;
             }
             .global-model {
-                // margin-left: 200px;
                 float: left;
                 width: calc(100% - 200px);
             }
