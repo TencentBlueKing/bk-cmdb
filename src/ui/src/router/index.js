@@ -5,10 +5,8 @@ import preload from '@/setup/preload'
 import $http from '@/api'
 
 const index = () => import(/* webpackChunkName: index */ '@/views/index')
-const model = () => import(/* webpackChunkName: model */ '@/views/model')
 const modelManage = () => import(/* webpackChunkName: model */ '@/views/model-manage')
 const modelDetail = () => import(/* webpackChunkName: model */ '@/views/model-manage/children')
-const modelTopo = () => import(/* webpackChunkName: model */ '@/views/model/model-topo')
 const business = () => import(/* webpackChunkName: business */ '@/views/business')
 const businessArchived = () => import(/* webpackChunkName: businessArchived */ '@/views/business/archived')
 const generalModel = () => import(/* webpackChunkName: generalModel */ '@/views/general-model')
