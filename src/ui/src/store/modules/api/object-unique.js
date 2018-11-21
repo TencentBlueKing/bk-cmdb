@@ -67,7 +67,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchObjectUniqueConstraints ({ commit, state, dispatch }, { objId, config }) {
-        return $http.delete(`object/${objId}/unique/action/search`, config)
+        return $http.get(`object/${objId}/unique/action/search`, config)
     }
 }
 
