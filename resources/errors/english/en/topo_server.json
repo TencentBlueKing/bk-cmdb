@@ -60,5 +60,15 @@
 	"1101036": "the instance has been associated by [%s], coule not be delete or archived",
 	"1101037": "the object [%s] has been instantiated and cannot be deleted",
 	"1101038": "the associations %s->%s already exist",
+    "1101039": "the source association object does not exist",
+    "1101040": "the target association object does not exist",
+    "1101041": "invalid object association id, should be a int64 value",
+    "1101042": "got multiple object association instance with one id",
+    "1101043": "object associaton has already been instantiated, can not be deleted.",
+    "1101044": "get association kind[%s] failed.",
+	"1101048": "mainline object association[%s->%s] does not exist.",
+	"1101049": "association import failed.",
+    "1101050": "association kind got multiple instance.",
+    "1101051": "can not delete a pre-defined association kind.",
 	"": "" 
 }

@@ -63,7 +63,7 @@
         "order": 4,
         "children": [{
             "i18n": "ModelManagement['模型管理']",
-            "path": "/model/bk_host_manage",
+            "path": "/model",
             "relative": "/model",
             "id": "model",
             "name": "模型管理",
