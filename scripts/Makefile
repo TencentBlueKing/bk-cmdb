@@ -19,9 +19,11 @@ else
 	GOBUILD_FLAGS = -ldflags "-X configcenter/src/common/version.CCVersion=${VERSION} -X configcenter/src/common/version.CCBuildTime=${BUILDTIME} -X configcenter/src/common/version.CCGitHash=${GITHASH} -X configcenter/src/common/version.CCTag=${GITTAG}"
 endif
 
-SCRIPT_DIR?=$(realpath $(firstword $(subst :, ,${GOPATH}))/src/configcenter/scripts)
-RESOURCE_DIR?=$(realpath $(firstword $(subst :, ,${GOPATH}))/src/configcenter/resources)
-SOURCE_ROOT?=$(realpath $(firstword $(subst :, ,${GOPATH}))/src/configcenter/src)
+PROJECTROOT=$(shell git rev-parse --show-toplevel)
+
+SCRIPT_DIR?=$(realpath $(PROJECTROOT)/scripts)
+RESOURCE_DIR?=$(realpath $(PROJECTROOT)/resources)
+SOURCE_ROOT?=$(realpath $(PROJECTROOT)/src)
 BUILD_DIR?=$(SOURCE_ROOT)/bin/build/$(VERSION)
 BIN_PATH?=$(BUILD_DIR)
 

@@ -1,3 +1,4 @@
 TARGET_NAME?=cmdb_hostcontroller
 TARGET_PORT?=50002
-include $(firstword $(subst :, ,${GOPATH}))/src/configcenter/scripts/Makefile
+PROJECTROOT=$(shell git rev-parse --show-toplevel)
+include $(PROJECTROOT)/scripts/Makefile

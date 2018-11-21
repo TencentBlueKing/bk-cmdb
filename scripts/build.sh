@@ -1,7 +1,8 @@
 #!/bin/bash
 set -e
 pushd $(pwd) > /dev/null
-    cd ${GOPATH}/src/configcenter/src
+    PROJECTROOT=$(git rev-parse --show-toplevel)
+    cd ${PROJECTROOT}/src
     DIRS=$(find * -maxdepth 0 -type d)
     for tmp in $DIRS;do
         FILES=$(find $tmp -name 'Makefile')
