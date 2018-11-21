@@ -122,7 +122,6 @@
     import { generateObjIcon as GET_OBJ_ICON } from '@/utils/util'
     import { mapGetters, mapActions } from 'vuex'
     import throttle from 'lodash.throttle'
-    import ICON_HEX_MAP from '@/assets/json/icon-hex-map.json'
     const NAV_WIDTH = 200
     export default {
         components: {
@@ -204,7 +203,7 @@
                             }
                         },
                         nodes: {
-                            shape: 'icon',
+                            shape: 'image',
                             widthConstraint: 55,
                             shadow: {
                                 enabled: true,
@@ -728,11 +727,11 @@
                     if ((nodeData.hasOwnProperty('assts') || asstList.findIndex(({bk_obj_id: objId}) => objId === nodeData['bk_obj_id']) > -1) || nodeData.draged) {
                         const node = {
                             id: nodeData['bk_obj_id'],
-                            icon: {
-                                face: 'icomoon',
-                                code: String.fromCharCode(ICON_HEX_MAP[nodeData['bk_obj_icon']]),
-                                color: nodeData['ispre'] ? '#868b97' : '#3c96ff'
-                            },
+                            image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON({
+                                name: nodeData['node_name'],
+                                backgroundColor: '#fff',
+                                fontColor: nodeData['ispre'] ? '#868b97' : '#3c96ff'
+                            }))}`,
                             data: nodeData
                         }
                         if (this.displayConfig.isShowModelName) {
@@ -901,7 +900,7 @@
                     this.networkInstance.unselectAll()
                 })
                 // this.setSingleNodePosition()
-                // this.loadNodeImage()
+                this.loadNodeImage()
                 this.networkInstance.fit()
                 this.loading = false
             },
