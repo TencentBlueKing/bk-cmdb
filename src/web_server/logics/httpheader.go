@@ -16,8 +16,8 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 
-	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/holmeswang/contrib/sessions"
 )
 
 func SetProxyHeader(c *gin.Context) {
