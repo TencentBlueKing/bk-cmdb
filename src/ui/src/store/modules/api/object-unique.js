@@ -30,6 +30,19 @@ const actions = {
      */
     createObjectUniqueConstraints ({ commit, state, dispatch }, { objId, params, config }) {
         return $http.post(`object/${objId}/unique/action/create`, params, config)
+    },
+    /**
+     * 编辑模型唯一约束
+     * @param {Function} commit store commit mutation hander
+     * @param {Object} state store state
+     * @param {String} dispatch store dispatch action hander
+     * @param {String} objId 模型英文id
+     * @param {Number} id 模型唯一约束的自增ID
+     * @param {Object} params 参数
+     * @return {promises} promises 对象
+     */
+    updateObjectUniqueConstraints ({ commit, state, dispatch }, { objId, id, params, config }) {
+        return $http.put(`object/${objId}/unique/${id}/action/update`, params, config)
     }
 }
 
