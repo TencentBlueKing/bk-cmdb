@@ -124,7 +124,7 @@
                 })
             },
             createVerification () {
-                this.slider.title = this.$t('ModelManagement["新增校验"]')
+                this.slider.title = this.$t('ModelManagement["新建校验"]')
                 this.slider.isEdit = false
                 this.slider.isShow = true
             },
