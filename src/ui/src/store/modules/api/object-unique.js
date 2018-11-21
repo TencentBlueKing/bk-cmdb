@@ -43,6 +43,31 @@ const actions = {
      */
     updateObjectUniqueConstraints ({ commit, state, dispatch }, { objId, id, params, config }) {
         return $http.put(`object/${objId}/unique/${id}/action/update`, params, config)
+    },
+    /**
+     * 删除模型唯一约束
+     * @param {Function} commit store commit mutation hander
+     * @param {Object} state store state
+     * @param {String} dispatch store dispatch action hander
+     * @param {String} objId 模型英文id
+     * @param {Number} id 模型唯一约束的自增ID
+     * @param {Object} params 参数
+     * @return {promises} promises 对象
+     */
+    deleteObjectUniqueConstraints ({ commit, state, dispatch }, { objId, id, config }) {
+        return $http.delete(`object/${objId}/unique/${id}/action/delete`, config)
+    },
+    /**
+     * 删除模型唯一约束
+     * @param {Function} commit store commit mutation hander
+     * @param {Object} state store state
+     * @param {String} dispatch store dispatch action hander
+     * @param {String} objId 模型英文id
+     * @param {Object} params 参数
+     * @return {promises} promises 对象
+     */
+    searchObjectUniqueConstraints ({ commit, state, dispatch }, { objId, config }) {
+        return $http.delete(`object/${objId}/unique/action/search`, config)
     }
 }
 
