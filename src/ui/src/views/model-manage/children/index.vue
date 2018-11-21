@@ -257,7 +257,7 @@
                 }).then(() => {
                     this.$http.cancel('post_searchClassificationsObjects')
                 })
-                this.$route.push('/model-manage')
+                this.$router.push('/model')
             },
             async deleteModel () {
                 if (this.isMainLine) {
@@ -276,7 +276,7 @@
                     })
                 }
                 this.$http.cancel('post_searchClassificationsObjects')
-                this.$router.replace('/model-manage')
+                this.$router.replace('/model')
             }
         }
     }
