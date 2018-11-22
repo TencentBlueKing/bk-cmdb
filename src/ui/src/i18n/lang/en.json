@@ -111,7 +111,31 @@
         "获取人员列表失败": "Failed to get user list",
         "其他筛选项": "Other filters",
         "清空": "Clear",
-        "帮助文档": "Help"
+        "帮助文档": "Help",
+        "开源社区": "Community"
+    },
+    "Nav": {
+        "首页": "Index",
+        "我的收藏": "My Collection",
+        "业务": "Business",
+        "资源": "Resource",
+        "业务资源": "Business Resource",
+        "业务拓扑": "Business Topology",
+        "进程管理": "Process Management",
+        "动态分组": "Dynamic Grouping",
+        "审计与分析": "Audit & Analysis",
+        "操作审计": "Operation Audit",
+        "权限控制": "Authority Control",
+        "业务权限管理": "Business Authority",
+        "系统权限管理": "System Authority",
+        "CI模型": "CI Model",
+        "模型拓扑": "Model Topology",
+        "业务模型": "Business Model",
+        "关联模型": "Association Model",
+        "事件推送": "Event Push",
+        "业务主机": "Business Host",
+        "模型": "Model",
+        "关联类型": "Association Type"
     },
     "Index": {
         "首页": "Index",

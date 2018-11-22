@@ -192,7 +192,7 @@
 
 <style lang="scss" scoped>
     .operation-box {
-        margin: 20px 0;
+        margin: 0 0 20px 0;
         font-size: 0;
         .search-input {
             position: relative;

@@ -14,7 +14,6 @@
 
 <script>
     import { mapGetters } from 'vuex'
-    import { bk_host_manage as bkHostManage } from '@/assets/json/static-navigation.json'
     import throttle from 'lodash.throttle'
     import vClassifyItem from './classify-item'
     export default {
@@ -22,29 +21,34 @@
             vClassifyItem
         },
         computed: {
-            ...mapGetters('objectModelClassify', ['authorizedClassifications', 'authorizedNavigation']),
+            ...mapGetters('objectModelClassify', [
+                'authorizedClassifications',
+                'authorizedNavigation']
+            ),
             hostManageClassification () {
                 const hostManageClassification = {
-                    'bk_classification_icon': bkHostManage.icon,
-                    'bk_classification_id': bkHostManage.id,
-                    'bk_classification_name': this.$t(bkHostManage.i18n),
-                    'bk_classification_type': 'inner'
+                    'bk_classification_icon': 'icon-cc-host',
+                    'bk_classification_id': 'bk_collection',
+                    'bk_classification_name': this.$t('Hosts["主机管理"]'),
+                    'bk_classification_type': 'inner',
+                    'bk_objects': [{
+                        'bk_obj_name': this.$t('Common["业务"]'),
+                        'bk_obj_id': 'biz',
+                        'bk_obj_icon': 'icon-cc-business',
+                        'path': '/business',
+                        'bk_classification_id': 'bk_collection'
+                    }, {
+                        'bk_obj_name': this.$t('Nav["资源"]'),
+                        'bk_obj_id': 'resource',
+                        'bk_obj_icon': 'icon-cc-host-free-pool',
+                        'path': '/resource',
+                        'bk_classification_id': 'bk_collection'
+                    }]
                 }
-                const hostNavigation = this.authorizedNavigation.find(({id}) => id === bkHostManage.id)
-                const authorizedHostModels = bkHostManage.children.filter(model => hostNavigation.children.some(nav => nav.id === model.id))
-                hostManageClassification['bk_objects'] = authorizedHostModels.map(model => {
-                    return {
-                        'bk_obj_name': this.$t(model.i18n),
-                        'bk_obj_id': model.id,
-                        'bk_obj_icon': model.icon,
-                        'path': model.path,
-                        'bk_classification_id': bkHostManage.id
-                    }
-                })
                 return hostManageClassification
             },
             classifyColumns () {
-                const classifies = [this.hostManageClassification, ...this.authorizedClassifications]
+                const classifies = [this.hostManageClassification, ...this.authorizedClassifications].filter(classification => classification['bk_classification_id'] !== 'bk_organization')
                 let colHeight = [0, 0, 0, 0]
                 let classifyColumns = [[], [], [], []]
                 classifies.forEach(classify => {
