@@ -122,7 +122,7 @@
                     bk_asst_name: '',
                     src_des: '',
                     dest_des: '',
-                    direction: 'none' // none, src_to_dest, bidirectional
+                    direction: 'src_to_dest' // none, src_to_dest, bidirectional
                 }
             }
         },
