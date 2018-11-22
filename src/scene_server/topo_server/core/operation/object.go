@@ -392,6 +392,30 @@ func (o *object) CanDelete(params types.ContextParams, targetObj model.Object) e
 		return params.Err.Errorf(common.CCErrTopoObjectHasSomeInstsForbiddenToDelete, targetObj.GetID())
 	}
 
+	or := make([]interface{}, 0)
+	or = append(or, frtypes.MapStr{common.BKObjIDField: targetObj.GetID()})
+	or = append(or, frtypes.MapStr{common.AssociatedObjectIDField: targetObj.GetID()})
+
+	cond = condition.CreateCondition()
+	cond.NewOR().Array(or)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+
+	assoResult, err := o.asst.SearchObject(params, &metadata.SearchAssociationObjectRequest{Condition: cond.ToMapStr()})
+	if err != nil {
+		blog.Errorf("check object[%s] can be deleted, but get object associate info failed, err: %v", err)
+		return params.Err.Error(common.CCErrTopoGetAssociationKindFailed)
+	}
+
+	if !assoResult.Result {
+		blog.Errorf("check if object[%s] can be deleted, but get object associate info failed, err: %v", err)
+		return params.Err.Error(assoResult.Code)
+	}
+
+	if len(assoResult.Data) != 0 {
+		blog.Errorf("check if object[%s] can be deleted, but object has already associate to another one.")
+		return params.Err.Error(common.CCErrorTopoAssociationMissingParameters)
+	}
+
 	return nil
 }
 func (o *object) DeleteObject(params types.ContextParams, id int64, cond condition.Condition, needCheckInst bool) error {
