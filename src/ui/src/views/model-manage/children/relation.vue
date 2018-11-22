@@ -42,6 +42,7 @@
         </cmdb-table>
         <cmdb-slider
             :width="514"
+            :title="slider.title"
             :isShow.sync="slider.isShow">
             <the-relation-detail
                 class="slider-content"
@@ -69,6 +70,7 @@
                 slider: {
                     isShow: false,
                     isEdit: false,
+                    title: this.$t('ModelManagement["新建关联关系"]'),
                     relation: {}
                 },
                 relationList: [],
@@ -90,7 +92,7 @@
                         name: this.$t('ModelManagement["目标模型"]')
                     }, {
                         id: 'operation',
-                        name: this.$t('ModelManagement["操作"]')
+                        name: this.$t('Common["操作"]')
                     }],
                     list: [],
                     defaultSort: '-op_time',

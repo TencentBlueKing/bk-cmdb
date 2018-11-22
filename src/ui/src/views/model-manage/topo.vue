@@ -30,10 +30,10 @@
         <template v-if="topoEdit.isEdit">
             <div class="topo-save-title">
                 <bk-button type="primary" @click="saveTopo">
-                    {{$t('ModelManagement["保存"]')}}
+                    {{$t('Common["保存"]')}}
                 </bk-button>
                 <bk-button type="primary" @click="exitEdit">
-                    {{$t('ModelManagement["返回"]')}}
+                    {{$t('Common["返回"]')}}
                 </bk-button>
             </div>
             <ul class="topo-nav">
@@ -88,7 +88,10 @@
                 @cancel="handleSliderCancel"
             ></component>
         </cmdb-slider>
-        <div class="global-model" @dragover.prevent="" @drop="handleDrop" ref="topo" v-bkloading="{isLoading: loading}"></div>
+        <div class="global-model" @dragover.prevent="" @drop="handleDrop" @mousemove="handleMouseMove" ref="topo" v-bkloading="{isLoading: loading}"></div>
+        <svg class="topo-line" v-if="topoEdit.line.x1 && topoEdit.line.x2">
+            <line :x1="topoEdit.line.x1" :y1="topoEdit.line.y1" :x2="topoEdit.line.x2" :y2="topoEdit.line.y2" stroke="#c3cdd7" stroke-width="1"></line>
+        </svg>
         <ul class="topology-edge-tooltips" ref="edgeTooltips"
             @mouseover="handleEdgeTooltipsOver"
             @mouseleave="handleEdgeTooltipsLeave"
@@ -118,7 +121,8 @@
     import theRelationDetail from './topo-detail/relation-detail'
     import { generateObjIcon as GET_OBJ_ICON } from '@/utils/util'
     import { mapGetters, mapActions } from 'vuex'
-    import ICON_HEX_MAP from '@/assets/json/icon-hex-map.json'
+    import throttle from 'lodash.throttle'
+    const NAV_WIDTH = 200
     export default {
         components: {
             theDisplay,
@@ -143,18 +147,32 @@
                     hoverNode: null,
                     hoverNodeTimer: null,
                     hoverEdge: null,
-                    hoverEdgeTimer: null,
-                    activeEdge: []
+                    hoverEdgeTimer: null
                 },
                 topoEdit: {
-                    isAddEdgeMode: false,
                     isEdit: false,
                     activeEdge: {
                         from: '',
                         to: ''
                     },
                     edges: [],
-                    nodes: []
+                    nodes: [],
+                    line: {
+                        center: {
+                            x: 0,
+                            y: 0
+                        },
+                        dragStart: {
+                            x1: 0,
+                            y1: 0,
+                            x2: 0,
+                            y2: 0
+                        },
+                        x1: 0,
+                        y1: 0,
+                        x2: 0,
+                        y2: 0
+                    }
                 },
                 topoNav: {
                     activeGroup: ''
@@ -168,6 +186,7 @@
                     nodes: null,
                     edges: null
                 },
+                handleMouseMove: Function,
                 network: {
                     nodes: null,
                     edges: null,
@@ -184,7 +203,7 @@
                             }
                         },
                         nodes: {
-                            shape: 'icon',
+                            shape: 'image',
                             widthConstraint: 55,
                             shadow: {
                                 enabled: true,
@@ -237,8 +256,17 @@
                 })
             }
         },
+        watch: {
+            'topoEdit.activeEdge.from' (objId) {
+                if (objId === '') {
+                    this.topoEdit.line.x1 = 0
+                    this.topoEdit.line.y1 = 0
+                }
+            }
+        },
         mounted () {
             this.initNetwork()
+            this.initMoveFunction()
         },
         methods: {
             ...mapActions('objectAssociation', [
@@ -250,14 +278,6 @@
             ...mapActions('objectModel', [
                 'deleteObject'
             ]),
-            toggleAddEdgeMode () {
-                this.topoEdit.isAddEdgeMode = !this.topoEdit.isAddEdgeMode
-                if (this.topoEdit.isAddEdgeMode) {
-                    this.networkInstance.addEdgeMode()
-                } else {
-                    this.networkInstance.disableEditMode()
-                }
-            },
             isModelInTopo (model) {
                 return this.network.nodes.findIndex(node => node.id === model['bk_obj_id']) > -1
             },
@@ -280,20 +300,18 @@
                 })
             },
             clearEditData () {
-                this.topoEdit.isAddEdgeMode = false
                 this.topoEdit.isEdit = false
-                this.topoEdit.activeEdge = {
-                    from: '',
-                    to: ''
-                }
+                this.topoEdit.activeEdge.from = ''
+                this.topoEdit.activeEdge.to = ''
                 this.topoEdit.edges = []
                 this.topoEdit.nodes = []
             },
-            exitEdit () {
+            async exitEdit () {
                 this.localTopoModelList = this.$tools.clone(this.topoModelList)
-                this.clearEditData()
-                this.updateNetwork()
                 this.topoEdit.isEdit = false
+                this.updateNetwork()
+                await this.$nextTick()
+                this.clearEditData()
             },
             async saveTopo () {
                 let createAsstArray = []
@@ -342,7 +360,6 @@
                     checked: true,
                     asstInfo: params
                 })
-                this.topoEdit.isAddEdgeMode = false
                 this.updateNetwork()
             },
             handleRelationDetailSave (data) {
@@ -454,12 +471,14 @@
                         break
                     default:
                 }
+                this.clearHoverTooltip()
             },
             handleSliderCancel () {
                 if (this.slider.content === 'theRelation') {
-                    this.updateNetwork()
                     this.clearActiveEdge()
+                    this.updateNetwork()
                 }
+                this.clearHoverTooltip()
                 this.slider.isShow = false
             },
             handleEdgeCreate (data) {
@@ -477,14 +496,22 @@
                     this.handleShowDetails(edge.labelList[0])
                 }
             },
-            handleNodeClick (node) {
+            initMoveFunction () {
+                this.handleMouseMove = throttle(event => {
+                    this.topoEdit.line.x2 = event.layerX
+                    this.topoEdit.line.y2 = event.layerY
+                }, 50)
+            },
+            handleNodeClick (data) {
                 if (!this.topoEdit.isEdit) {
                     return
                 }
                 if (this.topoEdit.activeEdge.from === '') {
-                    this.topoEdit.activeEdge.from = node
+                    this.topoEdit.activeEdge.from = data['nodes'][0]
+                    this.topoEdit.line.x1 = data.pointer.DOM.x
+                    this.topoEdit.line.y1 = data.pointer.DOM.y
                 } else if (this.topoEdit.activeEdge.to === '') {
-                    this.topoEdit.activeEdge.to = node
+                    this.topoEdit.activeEdge.to = data['nodes'][0]
                     this.updateNetwork()
                     this.slider.properties = {
                         fromObjId: this.topoEdit.activeEdge.from,
@@ -509,7 +536,7 @@
                         const containerBox = this.$refs.topo.getBoundingClientRect()
                         let left = containerBox.width / 2 + (edgeLeft - view.x) * scale + 18
                         if (this.topoEdit.isEdit) {
-                            left += 200
+                            left += NAV_WIDTH
                         }
                         const top = containerBox.height / 2 + (edgeTop - view.y) * scale - 18
                         this.$refs.edgeTooltips.style.left = left + 'px'
@@ -525,11 +552,15 @@
                     const scale = this.networkInstance.getScale()
                     const nodeBox = this.networkInstance.getBoundingBox(nodeId)
                     const containerBox = this.$refs.topo.getBoundingClientRect()
-                    const left = containerBox.width / 2 + (nodeBox.right - view.x - 18) * scale + 200
+                    const left = containerBox.width / 2 + (nodeBox.right - view.x - 18) * scale + NAV_WIDTH
                     const top = containerBox.height / 2 + (nodeBox.top - view.y) * scale
                     this.$refs.nodeTooltips.style.left = left + 'px'
                     this.$refs.nodeTooltips.style.top = top + 'px'
                 })
+            },
+            clearHoverTooltip () {
+                this.topoTooltip.hoverNode = null
+                this.topoTooltip.hoverNodeTimer = null
             },
             handleHoverEdge (data) {
                 this.$refs.topo.style.cursor = 'pointer'
@@ -680,7 +711,7 @@
                     nodes: this.networkDataSet.nodes,
                     edges: this.networkDataSet.edges
                 }, this.network.options)
-                
+                this.initPosition()
                 this.addListener()
             },
             // 设置节点数据
@@ -696,11 +727,11 @@
                     if ((nodeData.hasOwnProperty('assts') || asstList.findIndex(({bk_obj_id: objId}) => objId === nodeData['bk_obj_id']) > -1) || nodeData.draged) {
                         const node = {
                             id: nodeData['bk_obj_id'],
-                            icon: {
-                                face: 'icomoon',
-                                code: String.fromCharCode(ICON_HEX_MAP[nodeData['bk_obj_icon']]),
-                                color: nodeData['ispre'] ? '#868b97' : '#3c96ff'
-                            },
+                            image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON({
+                                name: nodeData['node_name'],
+                                backgroundColor: '#fff',
+                                fontColor: nodeData['ispre'] ? '#868b97' : '#3c96ff'
+                            }))}`,
                             data: nodeData
                         }
                         if (this.displayConfig.isShowModelName) {
@@ -762,15 +793,6 @@
                         })
                     }
                 })
-                let {
-                    activeEdge
-                } = this.topoEdit
-                if (activeEdge.from && activeEdge.to) {
-                    edges.push({
-                        from: activeEdge.from,
-                        to: activeEdge.to
-                    })
-                }
                 this.network.edges = edges
                 this.networkDataSet.edges = new Vis.DataSet(this.network.edges)
             },
@@ -820,6 +842,22 @@
                     }
                     image.src = `${window.location.origin}/static/svg/${node['data']['bk_obj_icon'].substr(5)}.svg`
                 })
+            },
+            initPosition () {
+                let nodesId = []
+                this.topoModelList.forEach(model => {
+                    if (model.hasOwnProperty('assts') && model.assts.length) {
+                        model.assts.forEach(asst => {
+                            nodesId.push(asst['bk_obj_id'])
+                        })
+                    }
+                })
+                nodesId = nodesId.filter(id => {
+                    return this.topoModelList.some(({bk_obj_id: objId, position}) => objId === id && position.x === null && position.y === null)
+                })
+                if (nodesId.length) {
+                    this.updateNodePosition(this.networkDataSet.nodes.get([nodesId]))
+                }
             },
             // 批量更新节点位置信息
             async updateNodePosition (updateNodes) {
@@ -873,9 +911,12 @@
                     this.listenerCallback()
                 }
                 networkInstance.on('dragStart', data => {
-                    if (data.nodes) {
-                        this.topoTooltip.hoverNode = null
-                    }
+                    this.topoTooltip.hoverNode = null
+                    this.topoEdit.line.center = data.event.center
+                    this.topoEdit.line.dragStart.x1 = this.topoEdit.line.x1
+                    this.topoEdit.line.dragStart.y1 = this.topoEdit.line.y1
+                    this.topoEdit.line.dragStart.x2 = this.topoEdit.line.x2
+                    this.topoEdit.line.dragStart.y2 = this.topoEdit.line.y2
                 })
                 networkInstance.on('hoverEdge', data => {
                     this.handleHoverEdge(data)
@@ -898,7 +939,28 @@
                         this.handleEdgeClick(data['edges'][0])
                     }
                     if (data['nodes'].length === 1) {
-                        this.handleNodeClick(data['nodes'][0])
+                        this.handleNodeClick(data)
+                    } else {
+                        this.topoEdit.activeEdge = {
+                            from: '',
+                            to: ''
+                        }
+                    }
+                })
+                networkInstance.on('zoom', data => {
+                    this.clearActiveEdge()
+                })
+                networkInstance.on('dragging', data => {
+                    if (this.topoEdit.activeEdge.from) {
+                        let {
+                            line
+                        } = this.topoEdit
+                        let offsetX = (line.center.x - data.event.center.x)
+                        let offsetY = (line.center.y - data.event.center.y)
+                        line.x1 = line.dragStart.x1 - offsetX
+                        line.y1 = line.dragStart.y1 - offsetY
+                        line.x2 = line.dragStart.x2 - offsetX
+                        line.y2 = line.dragStart.y2 - offsetY
                     }
                 })
             }
@@ -919,7 +981,7 @@
                 display: block;
             }
             .global-model {
-                margin-left: 200px;
+                float: left;
                 width: calc(100% - 200px);
             }
         }
@@ -1083,7 +1145,7 @@
                 background: #ebf4ff;
             }
             &.disabled {
-                cursor: default;
+                cursor: not-allowed;
                 opacity: .6;
             }
             i {
@@ -1106,6 +1168,7 @@
                 vertical-align: middle;
                 .id {
                     color: $cmdbBorderColor;
+                    font-size: 12px;
                 }
             }
         }
@@ -1116,6 +1179,15 @@
         background-color: #f4f5f8;
         background-image: linear-gradient(#eef1f5 1px, transparent 0), linear-gradient(90deg, #eef1f5 1px, transparent 0);
         background-size: 10px 10px;
+    }
+    .topo-line {
+        position: absolute;
+        top: 0;
+        left: 200px;
+        width: calc(100% - 200px);
+        height: 100%;
+        z-index: 9;
+        pointer-events: none;
     }
     .topology-edge-tooltips {
         position: absolute;

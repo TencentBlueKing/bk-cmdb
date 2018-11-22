@@ -55,6 +55,8 @@ func NewFromInterface(data interface{}) (MapStr, error) {
 		return nil, fmt.Errorf("not support the kind(%s)", reflect.TypeOf(data).Kind())
 	case nil:
 		return MapStr{}, nil
+	case MapStr:
+		return tmp, nil
 	case string:
 		result := New()
 		err := json.Unmarshal([]byte(tmp), &result)
@@ -288,6 +290,8 @@ func (cli MapStr) MapStrArray(key string) ([]MapStr, error) {
 
 	case nil:
 		return nil, fmt.Errorf("the key(%s) is invalid", key)
+	case []MapStr:
+		return t, nil
 	case []map[string]interface{}:
 		items := make([]MapStr, 0)
 		for _, item := range t {

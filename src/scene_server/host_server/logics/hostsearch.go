@@ -83,6 +83,11 @@ type searchHostInfoMapCache struct {
 	cloudAsstNameInfoMap map[int64]*InstNameAsst
 }
 
+type hostInfoStruct struct {
+	hostID   int64
+	hostInfo mapstr.MapStr
+}
+
 type searchHost struct {
 	lgc             *Logics
 	pheader         http.Header
@@ -94,7 +99,7 @@ type searchHost struct {
 	//search end, condition not dsetAppConfigata
 	noData       bool
 	idArr        searchHostIDArr
-	hostInfoMap  map[int64]mapstr.MapStr // int64 is hostID
+	hostInfoArr  []hostInfoStruct // int64 is hostID
 	cacheInfoMap searchHostInfoMapCache
 	totalHostCnt int
 
@@ -192,8 +197,8 @@ func (sh *searchHost) FillTopologyData() ([]mapstr.MapStr, int, error) {
 
 	hostIDArr := make([]int64, 0)
 	queryCond := make(map[string][]int64)
-	for hostID, _ := range sh.hostInfoMap {
-		hostIDArr = append(hostIDArr, hostID)
+	for _, hostInfoItem := range sh.hostInfoArr {
+		hostIDArr = append(hostIDArr, hostInfoItem.hostID)
 	}
 	queryCond[common.BKHostIDField] = hostIDArr
 	mhconfig, err := sh.lgc.GetConfigByCond(sh.pheader, queryCond)
@@ -261,16 +266,16 @@ func (sh *searchHost) FillTopologyData() ([]mapstr.MapStr, int, error) {
 	sh.cacheInfoMap.cloudAsstNameInfoMap = cloudAsstNameInfoMap
 
 	result := make([]mapstr.MapStr, 0)
-	for hostID, hostInfo := range sh.hostInfoMap {
+	for _, hostInfoItem := range sh.hostInfoArr {
 		searchHostItem := mapstr.New()
-		levelInfo, ok := hostAppSetModuleConfig[hostID]
+		levelInfo, ok := hostAppSetModuleConfig[hostInfoItem.hostID]
 		if !ok {
 			continue
 		}
 		searchHostItem = sh.fillHostAppInfo(levelInfo, searchHostItem)
 		searchHostItem = sh.fillHostSetInfo(levelInfo, searchHostItem)
 		searchHostItem = sh.fillHostModuleInfo(levelInfo, searchHostItem)
-		hostInfo = sh.fillHostCloudInfo(hostInfo, searchHostItem)
+		hostInfo := sh.fillHostCloudInfo(hostInfoItem.hostInfo, searchHostItem)
 		searchHostItem.Set(common.BKInnerObjIDHost, hostInfo)
 
 		result = append(result, searchHostItem)
@@ -300,11 +305,11 @@ func (sh *searchHost) fillHostCloudInfo(hostInfo, searchHostItem mapstr.MapStr) 
 
 func (sh *searchHost) fetchHostCloudCacheInfo() (map[int64]*InstNameAsst, error) {
 	cloudIDMap := make(map[int64]bool, 0)
-	for _, hostInfo := range sh.hostInfoMap {
+	for _, hostInfoItem := range sh.hostInfoArr {
 
-		cloudID, err := hostInfo.Int64(common.BKCloudIDField)
+		cloudID, err := hostInfoItem.hostInfo.Int64(common.BKCloudIDField)
 		if err != nil {
-			blog.Warnf("hostSearch not found  cloud id in hsot, hostInfo:%d, rid:%s", hostInfo, sh.ccRid)
+			blog.Warnf("hostSearch not found  cloud id in hsot, hostInfo:%d, rid:%s", hostInfoItem.hostInfo, sh.ccRid)
 			continue
 		}
 		cloudIDMap[cloudID] = true
@@ -700,15 +705,16 @@ func (sh *searchHost) searchByHostConds() error {
 	}
 
 	sh.totalHostCnt = gResult.Data.Count
-	hostInfoMap := make(map[int64]mapstr.MapStr, 0)
 	for _, host := range gResult.Data.Info {
 		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
 		if err != nil {
 			return err
 		}
-		hostInfoMap[hostID] = host
+		sh.hostInfoArr = append(sh.hostInfoArr, hostInfoStruct{
+			hostID:   hostID,
+			hostInfo: host,
+		})
 	}
-	sh.hostInfoMap = hostInfoMap
 	return nil
 }
 

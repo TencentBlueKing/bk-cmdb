@@ -62,7 +62,7 @@
                         name: this.$t('ModelManagement["是否显示为实例名称"]')
                     }, {
                         id: 'operation',
-                        name: this.$t('ModelManagement["操作"]'),
+                        name: this.$t('Common["操作"]'),
                         sortable: false
                     }],
                     list: [],

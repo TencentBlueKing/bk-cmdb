@@ -24,8 +24,8 @@ import (
 	"github.com/coccyx/timeparser"
 	"github.com/emicklei/go-restful"
 
-	"configcenter/src/api_server/ccapi/logics/v2/common/defs"
-	"configcenter/src/api_server/ccapi/logics/v2/common/utils"
+	"configcenter/src/api_server/logics/v2/common/defs"
+	"configcenter/src/api_server/logics/v2/common/utils"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/language"
@@ -766,8 +766,8 @@ func convHostHardInfo(hostID int64, innerIP string, host mapstr.MapStr) (hostHar
 
 func convMapInterface(data map[string]interface{}) map[string]interface{} {
 	mapItem := make(map[string]interface{})
-	for key, val := range data {
-		key = ConverterV3Fields(key, "")
+	for v3key, val := range data {
+		key := ConverterV3Fields(v3key, "")
 		if key == "CreateTime" || key == "LastTime" || key == common.CreateTimeField || key == common.LastTimeField {
 			ts, ok := val.(time.Time)
 			if ok {
@@ -807,8 +807,42 @@ func convMapInterface(data map[string]interface{}) map[string]interface{} {
 					mapItem[key] = realVal
 					mapItem["OSType"] = realVal
 				}
+			case nil:
+				mapItem[key] = ""
 			default:
 				mapItem[key] = realVal
+			}
+
+		} else if v3key == common.BKCloudIDField {
+			switch rawVal := val.(type) {
+			case []mapstr.MapStr:
+				if len(rawVal) == 0 {
+					mapItem[key] = ""
+				}
+				strVal, err := rawVal[0].String(common.BKInstIDField)
+				if err != nil {
+					mapItem[key] = ""
+				}
+				mapItem[key] = strVal
+			case []interface{}:
+				if len(rawVal) == 0 {
+					mapItem[key] = ""
+				}
+				cloudInfo, err := mapstr.NewFromInterface(rawVal[0])
+				if err != nil {
+					mapItem[key] = ""
+				}
+				strVal, err := cloudInfo.String(common.BKInstIDField)
+				if err != nil {
+					mapItem[key] = ""
+				}
+				mapItem[key] = strVal
+			default:
+				intVal, err := util.GetInt64ByInterface(rawVal)
+				if err != nil {
+					mapItem[key] = ""
+				}
+				mapItem[key] = strconv.FormatInt(intVal, 10)
 			}
 
 		} else {
