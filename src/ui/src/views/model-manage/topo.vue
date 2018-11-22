@@ -1102,6 +1102,7 @@
         .group-info {
             line-height: 42px;
             padding: 0 20px 0 15px;
+            font-size: 14px;
             cursor: pointer;
             &:hover,
             &.active {
@@ -1123,6 +1124,7 @@
             .model-count {
                 padding: 0 5px;
                 border-radius: 4px;
+                font-size: 12px;
                 color: $cmdbBorderFocusColor;
                 background: #ebf4ff;
             }
@@ -1165,9 +1167,9 @@
                 display: inline-block;
                 line-height: 18px;
                 vertical-align: middle;
+                font-size: 12px;
                 .id {
                     color: $cmdbBorderColor;
-                    font-size: 12px;
                 }
             }
         }
