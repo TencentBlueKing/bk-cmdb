@@ -35,40 +35,66 @@ const router = new Router({
         path: '/index',
         component: index,
         meta: {
-            ignoreAuthorize: true
+            ignoreAuthorize: true,
+            isModel: false
         }
     }, {
         path: '/business',
-        component: business
+        component: business,
+        meta: {
+            isModel: true
+        }
     }, {
         path: '/model',
-        component: modelManage
+        component: modelManage,
+        meta: {
+            isModel: false
+        }
     }, {
         path: '/model/details/:modelId',
         component: modelDetail,
         meta: {
             returnPath: '/model',
             relative: '/model',
-            ignoreAuthorize: true
+            ignoreAuthorize: true,
+            isModel: false
         }
     }, {
         path: '/model/topology',
-        component: modelTopology
+        component: modelTopology,
+        meta: {
+            isModel: false
+        }
     }, {
         path: '/model/business',
-        component: businessModel
+        component: businessModel,
+        meta: {
+            isModel: false
+        }
     }, {
         path: '/model/association',
-        component: modelAssociation
+        component: modelAssociation,
+        meta: {
+            isModel: false
+        }
     }, {
         path: '/eventpush',
-        component: eventpush
+        component: eventpush,
+        meta: {
+            isModel: false
+        }
     }, {
         path: '/authority/business',
-        component: businessAuthority
+        component: businessAuthority,
+        meta: {
+            isModel: false
+        }
     }, {
         path: '/authority/system',
-        component: systemAuthority
+        component: systemAuthority,
+        meta: {
+            isModel: false
+        }
     }, {
         path: '/history/biz',
         component: businessArchived,
@@ -77,39 +103,55 @@ const router = new Router({
         }
     }, {
         path: '/general-model/:objId',
-        component: generalModel
+        component: generalModel,
+        meta: {
+            isModel: true
+        }
     }, {
         path: '/history/:objId',
-        component: deleteHistory
+        component: deleteHistory,
+        meta: {
+            isModel: false
+        }
     }, {
         path: '/hosts',
         component: hosts,
         meta: {
-            requireBusiness: true
+            requireBusiness: true,
+            isModel: false
         }
     }, {
         path: '/resource',
-        component: resource
+        component: resource,
+        meta: {
+            isModel: false
+        }
     }, {
         path: '/auditing',
-        component: audit
+        component: audit,
+        meta: {
+            isModel: false
+        }
     }, {
         path: '/topology',
         component: topology,
         meta: {
-            requireBusiness: true
+            requireBusiness: true,
+            isModel: false
         }
     }, {
         path: '/process',
         component: process,
         meta: {
-            requireBusiness: true
+            requireBusiness: true,
+            isModel: false
         }
     }, {
         path: '/custom-query',
         component: customQuery,
         meta: {
-            requireBusiness: true
+            requireBusiness: true,
+            isModel: false
         }
     }, {
         path: '/status-require-business',
@@ -148,11 +190,20 @@ const cancelRequest = () => {
 }
 
 const hasAuthority = (to) => {
+    const $store = router.app.$store
+    if ($store.getters.admin) {
+        return true
+    }
     if (to.meta.ignoreAuthorize) {
         return true
     }
+    if (to.meta.isModel) {
+        const authority = $store.getters['userPrivilege/privilege']
+        const modelConfig = authority['model_config'] || {}
+        return Object.keys(modelConfig).some(classification => modelConfig[classification].hasOwnProperty(to.params.objId))
+    }
     const path = to.meta.relative || to.query.relative || to.path
-    const authorizedNavigation = router.app.$store.getters['objectModelClassify/authorizedNavigation']
+    const authorizedNavigation = $store.getters['objectModelClassify/authorizedNavigation']
     return authorizedNavigation.some(navigation => {
         if (navigation.hasOwnProperty('path')) {
             return navigation.path === path

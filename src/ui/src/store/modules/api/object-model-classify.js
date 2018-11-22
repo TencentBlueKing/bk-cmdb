@@ -14,7 +14,7 @@ import STATIC_NAVIGATION from '@/assets/json/static-navigation.json'
 const _getNavigationById = id => {
     let navigation
     for (let classificationId in STATIC_NAVIGATION) {
-        navigation = STATIC_NAVIGATION[classificationId].find(navigation => navigation.id === id)
+        navigation = STATIC_NAVIGATION[classificationId].children.find(navigation => navigation.id === id)
         if (navigation) break
     }
     return navigation
@@ -81,30 +81,38 @@ const getters = {
         }
         return authorizedClassifications.filter(({bk_objects: bkObjects}) => bkObjects.length)
     },
+    authorizedModels: (state, getters) => {
+        const models = []
+        getters.authorizedClassifications.forEach(classification => {
+            classification['bk_objects'].forEach(model => {
+                models.push(model)
+            })
+        })
+        return models
+    },
     authorizedNavigation: (state, getters, rootState, rootGetters) => {
+        const authority = rootGetters['userPrivilege/privilege']
         const collectionKey = 'bk_collection'
         const collection = []
         const specialCollecton = [{
             id: 'biz',
             path: '/business',
             icon: 'icon-cc-business',
-            i18n: 'Nav["业务"]'
+            i18n: 'Nav["业务"]',
+            authorized: (authority['model_config'] || {}).hasOwnProperty('bk_organization')
         }, {
             id: 'resource',
             path: '/resource',
             icon: 'icon-cc-host-free-pool',
-            i18n: 'Nav["资源"]'
+            i18n: 'Nav["资源"]',
+            authorized: (authority['sys_config']['global_busi'] || []).includes('resource')
         }]
-        specialCollecton.forEach(({id, path, i18n, icon}) => {
-            const isCollected = rootGetters['userCustom/usercustom'][`is_${id}_collected`]
+        specialCollecton.forEach(special => {
+            const isCollected = rootGetters['userCustom/usercustom'][`is_${special.id}_collected`]
             if (isCollected || isCollected === undefined) {
                 collection.push({
-                    id,
-                    i18n,
-                    path,
-                    icon,
-                    'authroized': true,
-                    'classificationId': collectionKey
+                    ...special,
+                    classificationId: collectionKey
                 })
             }
         })
@@ -117,12 +125,12 @@ const getters = {
             if (available) {
                 const model = getters.getModelById(modelId)
                 collection.push({
-                    'id': modelId,
-                    'name': model['bk_obj_name'],
-                    'icon': model['bk_obj_icon'],
-                    'path': `/general-model/${modelId}`,
-                    'authroized': true,
-                    'classificationId': collectionKey
+                    id: modelId,
+                    name: model['bk_obj_name'],
+                    icon: model['bk_obj_icon'],
+                    path: `/general-model/${modelId}`,
+                    authorized: true,
+                    classificationId: collectionKey
                 })
             }
         })
@@ -130,19 +138,19 @@ const getters = {
 
         if (!rootGetters.admin) {
             STATIC_NAVIGATION['bk_authority'].children.forEach(navigation => {
-                navigation.authroized = false
+                navigation.authorized = false
             })
-            STATIC_NAVIGATION['bk_bk_ci_model'].children.forEach(navigation => {
-                navigation.authroized = false
+            STATIC_NAVIGATION['bk_ci_model'].children.forEach(navigation => {
+                navigation.authorized = false
             })
 
-            const systemConfig = rootGetters['userPrivilege/privilege']['sys_config']
+            const systemConfig = authority['sys_config']
             const backConfig = systemConfig['back_config'] || []
             const globalConfig = systemConfig['global_busi'] || []
             const needsCheck = ['audit', 'event']
             needsCheck.forEach(id => {
                 const navigation = _getNavigationById(id)
-                navigation.authroized = backConfig.includes(id)
+                navigation.authorized = backConfig.includes(id)
             })
         }
         const navigation = Object.keys(STATIC_NAVIGATION).map(classificationId => STATIC_NAVIGATION[classificationId])
