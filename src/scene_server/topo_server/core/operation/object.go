@@ -403,7 +403,7 @@ func (o *object) CanDelete(params types.ContextParams, targetObj model.Object) e
 	assoResult, err := o.asst.SearchObject(params, &metadata.SearchAssociationObjectRequest{Condition: cond.ToMapStr()})
 	if err != nil {
 		blog.Errorf("check object[%s] can be deleted, but get object associate info failed, err: %v", err)
-		return params.Err.Error(common.CCErrTopoGetAssociationKindFailed)
+		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !assoResult.Result {
@@ -413,7 +413,7 @@ func (o *object) CanDelete(params types.ContextParams, targetObj model.Object) e
 
 	if len(assoResult.Data) != 0 {
 		blog.Errorf("check if object[%s] can be deleted, but object has already associate to another one.")
-		return params.Err.Error(common.CCErrorTopoAssociationMissingParameters)
+		return params.Err.Error(common.CCErrorTopoObjectHasAlreadyAssociated)
 	}
 
 	return nil
