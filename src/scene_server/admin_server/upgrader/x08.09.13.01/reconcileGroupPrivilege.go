@@ -16,43 +16,12 @@ import (
 	"context"
 
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
 
-func addOperationLogIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	indexs, err := db.Table(common.BKTableNameOperationLog).Indexes(ctx)
-	if err != nil {
-		return err
-	}
-
-	for _, index := range indexs {
-		blog.V(3).Infof("droping index %s", index.Name)
-		if index.Name == "_id_" {
-			continue
-		}
-		if err = db.Table(common.BKTableNameOperationLog).DropIndex(ctx, index.Name); err != nil {
-			return err
-		}
-	}
-
-	idxs := []dal.Index{
-		{Name: "op_target_1_inst_id_1_op_time_-1", Keys: map[string]interface{}{"op_target": 1, "inst_id": 1, "op_time": -1}, Background: true},
-		{Name: "bk_supplier_account_1_op_time_-1", Keys: map[string]interface{}{"bk_supplier_account": 1, "op_time": -1}, Background: true},
-		{Name: "bk_biz_id_1_bk_supplier_account_1_op_time_-1", Keys: map[string]interface{}{"bk_biz_id": 1, "bk_supplier_account": 1, "op_time": -1}, Background: true},
-		{Name: "ext_key_1_bk_supplier_account_1_op_time_-1", Keys: map[string]interface{}{"ext_key": 1, "bk_supplier_account": 1, "op_time": -1}, Background: true},
-	}
-	for _, idx := range idxs {
-		if err = db.Table(common.BKTableNameOperationLog).CreateIndex(ctx, idx); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func reconcileOperationLog(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+func reconcileGroupPrivilege(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	all := []mapstr.MapStr{}
 
 	if err = db.Table(common.BKTableNameUserGroupPrivilege).Find(nil).All(ctx, &all); nil != err {
