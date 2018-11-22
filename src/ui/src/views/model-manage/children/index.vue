@@ -16,12 +16,14 @@
             </div>
             <div class="model-text">
                 <span>{{$t('ModelManagement["唯一标识"]')}}：</span>
-                <span class="text-content name">{{activeModel ? activeModel['bk_obj_id'] : ''}}</span>
+                <span class="text-content id">{{activeModel ? activeModel['bk_obj_id'] : ''}}</span>
             </div>
             <div class="model-text">
                 <span>{{$t('Hosts["名称"]')}}：</span>
                 <template v-if="!isEditName">
-                    <span class="text-content">{{activeModel ? activeModel['bk_obj_name'] : ''}}<i class="icon icon-cc-edit text-primary" v-if="!(isReadOnly || (activeModel && activeModel['ispre']))" @click="editModelName"></i></span>
+                    <span class="text-content">{{activeModel ? activeModel['bk_obj_name'] : ''}}
+                    </span>
+                    <i class="icon icon-cc-edit text-primary" v-if="!(isReadOnly || (activeModel && activeModel['ispre']))" @click="editModelName"></i>
                 </template>
                 <template v-else>
                     <div class="cmdb-form-item" :class="{'is-error': errors.has('modelName')}">
@@ -29,7 +31,6 @@
                         name="modelName"
                         v-validate="'required|singlechar'"
                         v-model.trim="modelInfo.objName">
-                        <i class="bk-icon icon-exclamation-circle-shape" v-tooltip="errors.first('modelName')"></i>
                     </div>
                     <span class="text-primary" @click="saveModel">{{$t("Common['保存']")}}</span>
                     <span class="text-primary" @click="isEditName = false">{{$t("Common['取消']")}}</span>
@@ -368,25 +369,32 @@
             float: left;
             margin: 32px 10px 32px 0;
             line-height: 36px;
+            font-size: 0;
             >span {
                 display: inline-block;
-                vertical-align: top;
+                vertical-align: middle;
+                height: 36px;
+                font-size: 14px;
             }
             .text-content {
-                max-width: 110px;
+                max-width: 200px;
+                vertical-align: middle;
                 @include ellipsis;
-                &.name {
+                &.id {
                     width: 110px;
                 }
-                .icon {
-                    margin-top: -4px;
-                    margin: -4px 0 0 4px;
-                }
+            }
+            .icon-cc-edit {
+                vertical-align: middle;
+                font-size: 14px;
             }
             .cmdb-form-item {
                 display: inline-block;
                 width: 200px;
                 vertical-align: top;
+                input {
+                    vertical-align: top;
+                }
             }
             .text-primary {
                 cursor: pointer;
