@@ -99,13 +99,13 @@ const getters = {
             path: '/business',
             icon: 'icon-cc-business',
             i18n: 'Nav["业务"]',
-            authorized: (authority['model_config'] || {}).hasOwnProperty('bk_organization')
+            authorized: rootGetters.admin || (authority['model_config'] || {}).hasOwnProperty('bk_organization')
         }, {
             id: 'resource',
             path: '/resource',
             icon: 'icon-cc-host-free-pool',
             i18n: 'Nav["资源"]',
-            authorized: (authority['sys_config']['global_busi'] || []).includes('resource')
+            authorized: rootGetters.admin || (authority['sys_config']['global_busi'] || []).includes('resource')
         }]
         specialCollecton.forEach(special => {
             const isCollected = rootGetters['userCustom/usercustom'][`is_${special.id}_collected`]
