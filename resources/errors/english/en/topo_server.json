@@ -70,5 +70,7 @@
 	"1101049": "association import failed.",
     "1101050": "association kind got multiple instance.",
     "1101051": "can not delete a pre-defined association kind.",
+    "1101052": "can not create multiple instance association for a 1:1 association.",
+    "1101053": "object has already been associated.",
 	"": "" 
 }
