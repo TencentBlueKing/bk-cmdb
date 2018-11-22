@@ -286,8 +286,10 @@ const (
 	// got multiple association kind with a id
 	CCErrorTopoGetMultipleAssoKindInstWithOneID = 1101050
 	// delete a pre-defined association kind.
-    CCErrorTopoDeletePredefinedAssociationKind = 1101051
-	
+	CCErrorTopoDeletePredefinedAssociationKind = 1101051
+	// create new instance for a new association, but association map is 1:1
+    CCErrorTopoCreateMultipleInstancesForOneToOneAssociation = 1101052
+
 	CCErrTopoAppDeleteFailed                       = 1001031
 	CCErrTopoAppUpdateFailed                       = 1001032
 	CCErrTopoAppSearchFailed                       = 1001033
