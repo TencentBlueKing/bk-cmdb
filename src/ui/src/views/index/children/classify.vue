@@ -22,33 +22,44 @@
         },
         computed: {
             ...mapGetters('objectModelClassify', [
-                'authorizedClassifications',
-                'authorizedNavigation']
-            ),
+                'authorizedClassifications'
+            ]),
+            ...mapGetters('userPrivilege', ['privilege']),
             hostManageClassification () {
                 const hostManageClassification = {
                     'bk_classification_icon': 'icon-cc-host',
                     'bk_classification_id': 'bk_collection',
                     'bk_classification_name': this.$t('Hosts["主机管理"]'),
                     'bk_classification_type': 'inner',
-                    'bk_objects': [{
+                    'bk_objects': []
+                }
+                if ((this.privilege['model_config'] || {}).hasOwnProperty('bk_organization')) {
+                    hostManageClassification['bk_objects'].push({
                         'bk_obj_name': this.$t('Common["业务"]'),
                         'bk_obj_id': 'biz',
                         'bk_obj_icon': 'icon-cc-business',
                         'path': '/business',
                         'bk_classification_id': 'bk_collection'
-                    }, {
+                    })
+                }
+                if ((this.privilege['sys_config']['global_busi'] || []).includes('resource')) {
+                    hostManageClassification['bk_objects'].push({
                         'bk_obj_name': this.$t('Nav["资源"]'),
                         'bk_obj_id': 'resource',
                         'bk_obj_icon': 'icon-cc-host-free-pool',
                         'path': '/resource',
                         'bk_classification_id': 'bk_collection'
-                    }]
+                    })
                 }
                 return hostManageClassification
             },
             classifyColumns () {
-                const classifies = [this.hostManageClassification, ...this.authorizedClassifications].filter(classification => classification['bk_classification_id'] !== 'bk_organization')
+                const classifies = [
+                    this.hostManageClassification,
+                    ...this.authorizedClassifications
+                ].filter(classification => {
+                    return classification['bk_classification_id'] !== 'bk_organization' && classification['bk_objects'].length
+                })
                 let colHeight = [0, 0, 0, 0]
                 let classifyColumns = [[], [], [], []]
                 classifies.forEach(classify => {

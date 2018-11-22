@@ -16,7 +16,7 @@
             <ul class="classify-list">
                 <li class="classify-item"
                     v-for="(classify, index) in authorizedNavigation"
-                    v-if="classify.hasOwnProperty('path') || classify.children.length"
+                    v-if="isAvailableClassify(classify)"
                     :class="{
                         active: isClassifyActive(classify),
                         opened: openedClassify === classify.id
@@ -36,6 +36,7 @@
                         :style="getClassifyModelsStyle(classify)">
                         <router-link class="model-link"
                             v-for="(model, modelIndex) in classify.children"
+                            v-if="model.authorized"
                             :class="{
                                 active: isRouterActive(model),
                                 collection: classify.id === 'bk_collection'
@@ -97,7 +98,7 @@ export default {
         openedClassifyHeight () {
             const openedClassify = this.authorizedNavigation.find(classify => classify.id === this.openedClassify)
             if (openedClassify) {
-                const modelsCount = openedClassify.children.length
+                const modelsCount = openedClassify.children.filter(model => model.authorized).length
                 return modelsCount * this.routerLinkHeight
             }
             return 0
@@ -119,6 +120,12 @@ export default {
                 return !this.unfold || this.openedClassify !== classify.id
             }
             return false
+        },
+        isAvailableClassify (classify) {
+            if (classify.hasOwnProperty('path')) {
+                return true
+            }
+            return classify.children.some(sub => sub.authorized)
         },
         handleMouseEnter () {
             if (this.timer) {

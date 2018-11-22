@@ -11,8 +11,8 @@
 import $http from '@/api'
 
 const state = {
-    classifyNavigationKey: 'index_v3_classify_navigation',
-    recentlyKey: 'index_v3_recently',
+    classifyNavigationKey: 'index_v4_classify_navigation',
+    recentlyKey: 'index_v4_recently',
     usercustom: {}
 }
 
