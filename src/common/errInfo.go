@@ -289,6 +289,8 @@ const (
 	CCErrorTopoDeletePredefinedAssociationKind = 1101051
 	// create new instance for a new association, but association map is 1:1
     CCErrorTopoCreateMultipleInstancesForOneToOneAssociation = 1101052
+    // the object has associate to another object, or has been associated by another one.
+    CCErrorTopoObjectHasAlreadyAssociated = 1101053
 
 	CCErrTopoAppDeleteFailed                       = 1001031
 	CCErrTopoAppUpdateFailed                       = 1001032
