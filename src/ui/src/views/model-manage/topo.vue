@@ -909,9 +909,8 @@
 <style lang="scss" scoped>
     .topo-wrapper {
         position: relative;
-        margin: 0 -20px -20px;
-        width: calc(100% + 40px);
-        height: calc(100% + 20px);
+        padding: 0;
+        height: 100%;
         &.has-nav {
             .edit-button {
                 display: none;
@@ -1018,12 +1017,13 @@
     .topo-save-title {
         position: absolute;
         padding: 11px;
-        top: -58px;
+        top: 0;
         left: 0;
         width: 100%;
         height: 58px;
         background: #fff;
         font-size: 0;
+        z-index: 1;
         .bk-button {
             margin-right: 10px;
         }
@@ -1034,7 +1034,8 @@
         border: 1px solid $cmdbTableBorderColor;
         border-left: none;
         width: 200px;
-        height: 100%;
+        height: calc(100% - 58px);
+        margin-top: 58px;
         overflow: auto;
         @include scrollbar;
         .group-info {

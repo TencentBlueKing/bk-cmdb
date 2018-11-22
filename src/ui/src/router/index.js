@@ -6,23 +6,25 @@ import $http from '@/api'
 
 const index = () => import(/* webpackChunkName: index */ '@/views/index')
 const model = () => import(/* webpackChunkName: model */ '@/views/model')
-const modelManage = () => import(/* webpackChunkName: model */ '@/views/model-manage')
+const modelManage = () => import(/* webpackChunkName: model */ '@/views/model-manage/group')
 const modelDetail = () => import(/* webpackChunkName: model */ '@/views/model-manage/children')
-const modelTopo = () => import(/* webpackChunkName: model */ '@/views/model/model-topo')
 const business = () => import(/* webpackChunkName: business */ '@/views/business')
 const businessArchived = () => import(/* webpackChunkName: businessArchived */ '@/views/business/archived')
 const generalModel = () => import(/* webpackChunkName: generalModel */ '@/views/general-model')
 const deleteHistory = () => import(/* webpackChunkName: deleteHistory */ '@/views/history')
 const hosts = () => import(/* webpackChunkName: hosts */ '@/views/hosts')
 const eventpush = () => import(/* webpackChunkName: hosts */ '@/views/eventpush')
-const permission = () => import(/* webpackChunkName: hosts */ '@/views/permission')
 const resource = () => import(/* webpackChunkName: resource */ '@/views/resource')
 const audit = () => import(/* webpackChunkName: hosts */ '@/views/audit')
 const topology = () => import(/* webpackChunkName: topology */ '@/views/topology')
 const process = () => import(/* webpackChunkName: process */ '@/views/process')
 const customQuery = () => import(/* webpackChunkName: process */ '@/views/custom-query')
 const error = () => import(/* webpackChunkName: error */ '@/views/status/error')
-
+const businessAuthority = () => import(/* webpackChunkName: businessAuthority */ '@/views/permission/role')
+const systemAuthority = () => import(/* webpackChunkName: systemAuthority */ '@/views/permission/business')
+const modelTopology = () => import(/* webpackChunkName: modelTopology */ '@/views/model-manage/topo')
+const businessModel = () => import(/* webpackChunkName: businessModel */ '@/views/model-manage/_business-topo')
+const modelAssociation = () => import(/* webpackChunkName: modelAssociation */ '@/views/model-manage/relation')
 Vue.use(Router)
 
 const router = new Router({
@@ -43,7 +45,7 @@ const router = new Router({
         path: '/model',
         component: modelManage
     }, {
-        path: '/model/:modelId',
+        path: '/model/details/:modelId',
         component: modelDetail,
         meta: {
             returnPath: '/model',
@@ -51,11 +53,23 @@ const router = new Router({
             ignoreAuthorize: true
         }
     }, {
+        path: '/model/topology',
+        component: modelTopology
+    }, {
+        path: '/model/business',
+        component: businessModel
+    }, {
+        path: '/model/association',
+        component: modelAssociation
+    }, {
         path: '/eventpush',
         component: eventpush
     }, {
-        path: '/permission',
-        component: permission
+        path: '/authority/business',
+        component: businessAuthority
+    }, {
+        path: '/authority/system',
+        component: systemAuthority
     }, {
         path: '/history/biz',
         component: businessArchived,

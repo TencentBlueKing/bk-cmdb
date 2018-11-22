@@ -104,7 +104,7 @@
         transition: padding .1s ease-in;
         z-index: 1000;
         &.nav-sticked{
-            padding-left: 240px;
+            padding-left: 260px;
         }
     }
     .breadcrumbs{
