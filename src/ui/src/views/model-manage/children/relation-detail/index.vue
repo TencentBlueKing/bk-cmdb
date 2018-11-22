@@ -28,7 +28,7 @@
         </label>
         <div class="form-label">
             <span class="label-text">
-                {{$t('ModelManagement["模型源"]')}}
+                {{$t('ModelManagement["源模型"]')}}
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{'is-error': errors.has('objId')}">

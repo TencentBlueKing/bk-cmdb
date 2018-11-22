@@ -48,7 +48,7 @@
         </label>
         <label class="form-label">
             <span class="label-text">
-                {{$t('ModelManagement["目标描述->源"]')}}
+                {{$t('ModelManagement["目标->源描述"]')}}
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{'is-error': errors.has('destDes')}">
