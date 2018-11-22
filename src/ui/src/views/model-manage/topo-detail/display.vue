@@ -1,50 +1,52 @@
 <template>
     <div class="display-wrapper">
-        <div class="display-setting">
-            <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                <input type="checkbox" v-model="isShowName">
-                <span class="cmdb-checkbox-text">{{$t('ModelManagement["显示模型名称"]')}}</span>
-            </label>
-            <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                <input type="checkbox" v-model="isShowAsst">
-                <span class="cmdb-checkbox-text">{{$t('ModelManagement["显示关系名称"]')}}</span>
-            </label>
-        </div>
-        <ul class="display-list">
-            <li class="group-item" v-for="(group, groupIndex) in topoList" :key="groupIndex">
-                <p class="group-name">{{group['bk_classification_name']}}</p>
-                <ul class="clearfix">
-                    <li class="model-item" v-for="(model, modelIndex) in group['bk_objects']" :key="modelIndex">
-                        <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                            <input type="checkbox" :checked="isChecked(model)" @click="checkAll(model)">
-                            <span class="cmdb-checkbox-text">{{model['bk_obj_name']}}</span>
-                            <span class="count">({{model.asstInfo.assts.length}})</span>
-                            <i class="bk-icon icon-angle-down"></i>
-                        </label>
-                        <div class="relation-detail">
-                            <div class="detail-title clearfix">
-                                <div class="fl">
-                                    <span class="title">{{$t('ModelManagement["模型关系"]')}}</span>
-                                    <span class="info">({{$t('ModelManagement["即视图中的连线"]')}})</span>
-                                </div>
-                                <label class="fr cmdb-form-checkbox cmdb-checkbox-small">
-                                    <input type="checkbox" :checked="isChecked(model)" @click="checkAll(model)">
-                                    <span class="cmdb-checkbox-text">{{$t('Common["全选"]')}}</span>
-                                </label>
-                            </div>
-                            <ul class="relation-list clearfix">
-                                <li class="fl" v-for="(asst, asstIndex) in findCurrentModelAsst(model)" :key="asstIndex">
-                                    <label class="cmdb-form-checkbox cmdb-checkbox-small" :title="asstLabel(model, asst)">
-                                        <input type="checkbox" v-model="asst.checked">
-                                        <span class="cmdb-checkbox-text">{{asstLabel(model, asst)}}</span>
+        <div class="display-box">
+            <div class="display-setting">
+                <label class="cmdb-form-checkbox cmdb-checkbox-small">
+                    <input type="checkbox" v-model="isShowName">
+                    <span class="cmdb-checkbox-text">{{$t('ModelManagement["显示模型名称"]')}}</span>
+                </label>
+                <label class="cmdb-form-checkbox cmdb-checkbox-small">
+                    <input type="checkbox" v-model="isShowAsst">
+                    <span class="cmdb-checkbox-text">{{$t('ModelManagement["显示关系名称"]')}}</span>
+                </label>
+            </div>
+            <ul class="display-list">
+                <li class="group-item" v-for="(group, groupIndex) in topoList" :key="groupIndex">
+                    <p class="group-name">{{group['bk_classification_name']}}</p>
+                    <ul class="clearfix">
+                        <li class="model-item" v-for="(model, modelIndex) in group['bk_objects']" :key="modelIndex">
+                            <label class="cmdb-form-checkbox cmdb-checkbox-small">
+                                <input type="checkbox" :checked="isChecked(model)" @click="checkAll(model)">
+                                <span class="cmdb-checkbox-text">{{model['bk_obj_name']}}</span>
+                                <span class="count">({{model.asstInfo.assts.length}})</span>
+                                <i class="bk-icon icon-angle-down"></i>
+                            </label>
+                            <div class="relation-detail">
+                                <div class="detail-title clearfix">
+                                    <div class="fl">
+                                        <span class="title">{{$t('ModelManagement["模型关系"]')}}</span>
+                                        <span class="info">({{$t('ModelManagement["即视图中的连线"]')}})</span>
+                                    </div>
+                                    <label class="fr cmdb-form-checkbox cmdb-checkbox-small">
+                                        <input type="checkbox" :checked="isChecked(model)" @click="checkAll(model)">
+                                        <span class="cmdb-checkbox-text">{{$t('Common["全选"]')}}</span>
                                     </label>
-                                </li>
-                            </ul>
-                        </div>
-                    </li>
-                </ul>
-            </li>
-        </ul>
+                                </div>
+                                <ul class="relation-list clearfix">
+                                    <li class="fl" v-for="(asst, asstIndex) in findCurrentModelAsst(model)" :key="asstIndex">
+                                        <label class="cmdb-form-checkbox cmdb-checkbox-small" :title="asstLabel(model, asst)">
+                                            <input type="checkbox" v-model="asst.checked">
+                                            <span class="cmdb-checkbox-text">{{asstLabel(model, asst)}}</span>
+                                        </label>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
         <div class="button-group">
             <bk-button type="primary" @click="saveDisplay">
                 {{$t('Common["确定"]')}}
@@ -76,6 +78,7 @@
         data () {
             return {
                 localTopoModelList: [],
+                activePop: '',
                 isShowName: this.isShowModelName,
                 isShowAsst: this.isShowModelAsst,
                 topoList: []
@@ -171,10 +174,13 @@
     }
 </script>
 
-
 <style lang="scss" scoped>
     .display-wrapper {
         padding: 20px 30px;
+        .display-box {
+            max-height: calc(100% - 56px);
+            @include scrollbar;
+        }
     }
     .display-setting {
         .cmdb-form-checkbox {
@@ -194,7 +200,7 @@
         }
         .model-item {
             float: left;
-            width: 180px;
+            width: 175px;
             &:hover {
                 .relation-detail {
                     display: block;
@@ -222,7 +228,7 @@
             }
             >.cmdb-form-checkbox {
                 margin-right: 10px;
-                width: 170px;
+                width: 165px;
                 font-size: 0;
                 cursor: pointer;
                 >.cmdb-checkbox-text {
