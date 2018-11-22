@@ -25,6 +25,7 @@
                 'authorizedClassifications'
             ]),
             ...mapGetters('userPrivilege', ['privilege']),
+            ...mapGetters(['admin']),
             hostManageClassification () {
                 const hostManageClassification = {
                     'bk_classification_icon': 'icon-cc-host',
@@ -33,7 +34,7 @@
                     'bk_classification_type': 'inner',
                     'bk_objects': []
                 }
-                if ((this.privilege['model_config'] || {}).hasOwnProperty('bk_organization')) {
+                if (this.admin || (this.privilege['model_config'] || {}).hasOwnProperty('bk_organization')) {
                     hostManageClassification['bk_objects'].push({
                         'bk_obj_name': this.$t('Common["业务"]'),
                         'bk_obj_id': 'biz',
@@ -42,7 +43,7 @@
                         'bk_classification_id': 'bk_collection'
                     })
                 }
-                if ((this.privilege['sys_config']['global_busi'] || []).includes('resource')) {
+                if (this.admin || (this.privilege['sys_config']['global_busi'] || []).includes('resource')) {
                     hostManageClassification['bk_objects'].push({
                         'bk_obj_name': this.$t('Nav["资源"]'),
                         'bk_obj_id': 'resource',
