@@ -216,7 +216,8 @@
                         edges: {
                             color: {
                                 color: '#c3cdd7',
-                                highlight: '#3c96ff'
+                                highlight: '#3c96ff',
+                                hover: '#3c96ff'
                             },
                             font: {
                                 background: '#fff'
@@ -729,8 +730,7 @@
                             id: nodeData['bk_obj_id'],
                             image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON({
                                 name: nodeData['node_name'],
-                                backgroundColor: '#fff',
-                                fontColor: nodeData['ispre'] ? '#868b97' : '#3c96ff'
+                                backgroundColor: '#fff'
                             }))}`,
                             data: nodeData
                         }
@@ -834,8 +834,7 @@
                             id: node.id,
                             image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON(image, {
                                 name: node.data['node_name'],
-                                fontColor: node.data.ispre ? '#6894c8' : '#868b97',
-                                iconColor: node.data.ispre ? '#6894c8' : '#868b97',
+                                iconColor: node.data.ispre ? '#868b97' : '#3c96ff',
                                 backgroundColor: '#fff'
                             }))}`
                         })
