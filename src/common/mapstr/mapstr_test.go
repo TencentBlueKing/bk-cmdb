@@ -101,3 +101,23 @@ func TestMapStrInto(t *testing.T) {
 	target1.Reset()
 
 }
+
+func TestMapStrToMapstr(t *testing.T) {
+
+	testData := MapStr{"aa": "bb"}
+
+	_, err := NewFromInterface(testData)
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+
+	testData2 := MapStr{"aa": []MapStr{
+		MapStr{"aa": "bb"},
+	}}
+	_, err = testData2.MapStrArray("aa")
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+}
