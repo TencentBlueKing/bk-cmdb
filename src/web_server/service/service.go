@@ -13,6 +13,7 @@
 package service
 
 import (
+	"plugin"
 	"strings"
 
 	"configcenter/src/apimachinery/discovery"
@@ -32,6 +33,7 @@ import (
 )
 
 type Service struct {
+	VersionPlg *plugin.Plugin
 	*options.ServerOption
 	Engine   *backbone.Engine
 	CacheCli *redis.Client

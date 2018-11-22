@@ -99,7 +99,7 @@
                         name: this.$t('ModelManagement["创建时间"]')
                     }, {
                         id: 'operation',
-                        name: this.$t('ModelManagement["操作"]'),
+                        name: this.$t('Common["操作"]'),
                         sortable: false
                     }],
                     list: [],

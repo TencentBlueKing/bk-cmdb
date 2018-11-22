@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
-	"configcenter/src/scene_server/validator"
 	"configcenter/src/storage/dal"
 )
 
@@ -44,7 +43,6 @@ func createAssociationTable(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	tablename := common.BKTableNameAsstDes
 
-	var pretrue = true
 	asstTypes := []metadata.AssociationKind{
 		{
 			AssociationKindID:       "belong",
@@ -53,7 +51,7 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Co
 			SourceToDestinationNote: "属于",
 			DestinationToSourceNote: "包含",
 			Direction:               metadata.DestinationToSource,
-			IsPre:                   &pretrue,
+			IsPre:                   ptrue(),
 		},
 		{
 			AssociationKindID:       "group",
@@ -62,7 +60,7 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Co
 			SourceToDestinationNote: "组成",
 			DestinationToSourceNote: "组成于",
 			Direction:               metadata.DestinationToSource,
-			IsPre:                   &pretrue,
+			IsPre:                   ptrue(),
 		},
 		{
 			AssociationKindID:       "bk_mainline",
@@ -71,7 +69,7 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Co
 			SourceToDestinationNote: "组成",
 			DestinationToSourceNote: "组成于",
 			Direction:               metadata.DestinationToSource,
-			IsPre:                   &pretrue,
+			IsPre:                   ptrue(),
 		},
 		{
 			AssociationKindID:       "run",
@@ -80,7 +78,7 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Co
 			SourceToDestinationNote: "运行于",
 			DestinationToSourceNote: "运行",
 			Direction:               metadata.DestinationToSource,
-			IsPre:                   &pretrue,
+			IsPre:                   ptrue(),
 		},
 		{
 			AssociationKindID:       "connect",
@@ -89,7 +87,7 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Co
 			SourceToDestinationNote: "上联",
 			DestinationToSourceNote: "下联",
 			Direction:               metadata.DestinationToSource,
-			IsPre:                   &pretrue,
+			IsPre:                   ptrue(),
 		},
 		{
 			AssociationKindID:       "default",
@@ -98,7 +96,7 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Co
 			SourceToDestinationNote: "关联",
 			DestinationToSourceNote: "关联",
 			Direction:               metadata.DestinationToSource,
-			IsPre:                   &pretrue,
+			IsPre:                   ptrue(),
 		},
 	}
 
@@ -112,7 +110,6 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Co
 }
 
 func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	tablename := common.BKTableNameObjAsst
 
 	type Association struct {
 		metadata.Association `bson:",inline"`
@@ -120,7 +117,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	}
 
 	assts := []Association{}
-	err := db.Table(tablename).Find(nil).All(ctx, &assts)
+	err := db.Table(common.BKTableNameObjAsst).Find(nil).All(ctx, &assts)
 	if err != nil {
 		return err
 	}
@@ -139,16 +136,17 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 		properyMap[buildObjPropertyMapKey(property.ObjectID, property.PropertyID)] = property
 	}
 
-	var pretrue = true
 	for _, asst := range assts {
 		if asst.ObjectAttID == common.BKChildStr {
 			asst.AsstKindID = common.AssociationKindMainline
 			asst.AssociationName = buildObjAsstID(asst.AsstObjID, asst.ObjectAttID)
 			asst.Mapping = metadata.OneToOneMapping
 			asst.OnDelete = metadata.NoAction
-			switch asst.ObjectID {
-			case common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDHost:
-				asst.IsPre = &pretrue
+			if (asst.ObjectID == common.BKInnerObjIDModule && asst.AsstObjID == common.BKInnerObjIDSet) ||
+				(asst.ObjectID == common.BKInnerObjIDHost && asst.AsstObjID == common.BKInnerObjIDModule) {
+				asst.IsPre = ptrue()
+			} else {
+				asst.IsPre = pfalse()
 			}
 		} else {
 			asst.AsstKindID = common.AssociationTypeDefault
@@ -163,8 +161,9 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 				asst.Mapping = metadata.OneToOneMapping
 			}
 			asst.OnDelete = metadata.NoAction
+			asst.IsPre = pfalse()
 		}
-		_, _, err := upgrader.Upsert(ctx, db, tablename, asst, "id", []string{"bk_obj_id", "bk_asst_obj_id"}, []string{"id"})
+		_, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAsst, asst, "id", []string{"bk_obj_id", "bk_asst_obj_id"}, []string{"id"})
 		if err != nil {
 			return err
 		}
@@ -188,23 +187,27 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	cloudIDUpdateCond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDHost)
 	cloudIDUpdateCond.Field(common.BKPropertyIDField).Eq(common.BKCloudIDField)
 	cloudIDUpdateData := mapstr.New()
-	cloudIDUpdateData.Set(common.BKPropertyTypeField, common.FieldTypeInt)
-	cloudIDUpdateData.Set(common.BKOptionField, validator.IntOption{})
-
+	cloudIDUpdateData.Set(common.BKPropertyTypeField, common.FieldTypeForeignKey)
+	cloudIDUpdateData.Set(common.BKOptionField, nil)
 	err = db.Table(common.BKTableNameObjAttDes).Update(ctx, cloudIDUpdateCond.ToMapStr(), cloudIDUpdateData)
 	if err != nil {
 		return err
 	}
+	deleteHostCloudAssociation := condition.CreateCondition()
+	deleteHostCloudAssociation.Field("bk_obj_id").Eq(common.BKInnerObjIDHost)
+	deleteHostCloudAssociation.Field("bk_asst_obj_id").Eq(common.BKInnerObjIDPlat)
+	err = db.Table(common.BKTableNameObjAsst).Delete(ctx, deleteHostCloudAssociation.ToMapStr())
 
+	// drop outdate propertys
 	err = db.Table(common.BKTableNameObjAttDes).Delete(ctx, propertyCond.ToMapStr())
 	if err != nil {
 		return err
 	}
 
 	// drop outdate column
-	outdateColumns := []string{"bk_object_att_id", "bk_asst_forward"}
+	outdateColumns := []string{"bk_object_att_id", "bk_asst_forward", "bk_asst_name"}
 	for _, column := range outdateColumns {
-		if err = db.Table(common.BKTableNameObjAttDes).DropColumn(ctx, column); err != nil {
+		if err = db.Table(common.BKTableNameObjAsst).DropColumn(ctx, column); err != nil {
 			return err
 		}
 	}
@@ -213,4 +216,13 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 
 func buildObjAsstID(srcObj string, propertyID string) string {
 	return fmt.Sprintf("%s_%s", srcObj, propertyID)
+}
+
+func ptrue() *bool {
+	tmp := true
+	return &tmp
+}
+func pfalse() *bool {
+	tmp := false
+	return &tmp
 }

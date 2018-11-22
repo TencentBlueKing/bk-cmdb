@@ -129,6 +129,8 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 			err = valid.validTimeZone(val, key)
 		case common.FieldTypeBool:
 			err = valid.validBool(val, key)
+		case common.FieldTypeForeignKey:
+			err = valid.validForeignKey(val, key)
 		default:
 			continue
 		}
@@ -276,6 +278,26 @@ func (valid *ValidMap) validInt(val interface{}, key string) error {
 		blog.Errorf("params %s:%#v not valid", key, val)
 		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
 	}
+	return nil
+}
+
+// validForeignKey valid foreign key
+func (valid *ValidMap) validForeignKey(val interface{}, key string) error {
+	if nil == val {
+		if valid.require[key] {
+			blog.Error("params can not be null")
+			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+
+		}
+		return nil
+	}
+
+	_, ok := util.GetTypeSensitiveUInt64(val)
+	if !ok {
+		blog.Errorf("params %s:%#v not int", key, val)
+		return valid.errif.Errorf(common.CCErrCommParamsNeedInt, key)
+	}
+
 	return nil
 }
 

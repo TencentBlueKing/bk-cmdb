@@ -50,7 +50,7 @@
         </label>
         <div class="btn-group" v-if="isEdit">
             <bk-button type="primary" @click="saveRelation">
-                {{$t('ModelManagement["确定"]')}}
+                {{$t('Common["确定"]')}}
             </bk-button>
             <bk-button type="danger" @click="deleteRelation" :disabled="relationInfo.ispre">
                 {{$t('ModelManagement["删除关系"]')}}

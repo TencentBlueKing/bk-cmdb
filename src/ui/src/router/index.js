@@ -5,7 +5,6 @@ import preload from '@/setup/preload'
 import $http from '@/api'
 
 const index = () => import(/* webpackChunkName: index */ '@/views/index')
-const model = () => import(/* webpackChunkName: model */ '@/views/model')
 const modelManage = () => import(/* webpackChunkName: model */ '@/views/model-manage/group')
 const modelDetail = () => import(/* webpackChunkName: model */ '@/views/model-manage/children')
 const business = () => import(/* webpackChunkName: business */ '@/views/business')
