@@ -13,7 +13,6 @@
         <label class="form-label">
             <span class="label-text">
                 {{$t('ModelManagement["别名"]')}}
-                <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{'is-error': errors.has('asstName')}">
                 <input type="text" class="cmdb-form-input"
@@ -21,7 +20,7 @@
                 :placeholder="$t('ModelManagement[\'请输入别名\']')"
                 :disabled="relationInfo.ispre"
                 v-model.trim="relationInfo['bk_obj_asst_name']"
-                v-validate="'required|singlechar'">
+                v-validate="'singlechar'">
                 <p class="form-error">{{errors.first('asstName')}}</p>
             </div>
             <i class="bk-icon icon-info-circle"></i>
