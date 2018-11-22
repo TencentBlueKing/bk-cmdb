@@ -470,6 +470,48 @@ func (a *association) SearchInst(params types.ContextParams, request *metadata.S
 	return a.clientSet.ObjectController().Association().SearchInst(context.TODO(), params.Header, request)
 }
 func (a *association) CreateInst(params types.ContextParams, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error) {
+	cond := condition.CreateCondition()
+	cond.Field(common.AssociationObjAsstIDField).Eq(request.ObjectAsstId)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+	result, err := a.SearchObject(params, &metadata.SearchAssociationObjectRequest{Condition: cond.ToMapStr()})
+	if err != nil {
+		blog.Errorf("create association instance, but search object association with cond[%v] failed, err: %v", cond, err)
+		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if !result.Result {
+		blog.Errorf("create association instance, but search object association with cond[%v] failed, err: %s", cond, resp.ErrMsg)
+		return nil, params.Err.Error(resp.Code)
+	}
+
+	if len(result.Data) == 0 {
+		blog.Errorf("create instance association, but can not find object association[%s]. ", request.ObjectAsstId)
+		return nil, params.Err.Error(common.CCErrorTopoObjectAssociationNotExist)
+	}
+
+	// search instances belongs to this association.
+	inst, err := a.SearchInst(params, &metatype.SearchAssociationInstRequest{Condition: cond.ToMapStr()})
+	if err != nil {
+		blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %v", cond, err)
+		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if !inst.Result {
+		blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %s", cond, resp.ErrMsg)
+		return nil, params.Err.Error(resp.Code)
+	}
+
+	instances := len(inst.Data)
+
+	switch result.Data[0].Mapping {
+	case metatype.OneToOneMapping:
+		if instances >= 1 {
+			return nil, params.Err.Error(common.CCErrorTopoCreateMultipleInstancesForOneToOneAssociation)
+		}
+	default:
+		// after all the check, new association instance can be created.
+	}
+
 	return a.clientSet.ObjectController().Association().CreateInst(context.TODO(), params.Header, request)
 }
 func (a *association) DeleteInst(params types.ContextParams, request *metadata.DeleteAssociationInstRequest) (resp *metadata.DeleteAssociationInstResult, err error) {
