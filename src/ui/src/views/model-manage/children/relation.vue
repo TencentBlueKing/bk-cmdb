@@ -1,7 +1,7 @@
 <template>
     <div class="model-relation-wrapper">
         <bk-button class="create-btn" type="primary" @click="createRelation">
-            {{$t('ModelManagement["新建关联关系"]')}}
+            {{$t('ModelManagement["新建关联"]')}}
         </bk-button>
         <cmdb-table
             class="relation-table"
@@ -70,7 +70,7 @@
                 slider: {
                     isShow: false,
                     isEdit: false,
-                    title: this.$t('ModelManagement["新建关联关系"]'),
+                    title: this.$t('ModelManagement["新建关联"]'),
                     relation: {}
                 },
                 relationList: [],
@@ -83,7 +83,7 @@
                         name: this.$t('ModelManagement["关联类型"]')
                     }, {
                         id: 'mapping',
-                        name: this.$t('ModelManagement["约束"]')
+                        name: this.$t('ModelManagement["源-目标约束"]')
                     }, {
                         id: 'bk_obj_name',
                         name: this.$t('ModelManagement["源模型"]')
@@ -164,14 +164,14 @@
                 this.slider.isEdit = false
                 this.slider.isReadOnly = false
                 this.slider.relation = {}
-                this.slider.title = this.$t('ModelManagement["新建关联关系"]')
+                this.slider.title = this.$t('ModelManagement["新建关联"]')
                 this.slider.isShow = true
             },
             editRelation (item) {
                 this.slider.isEdit = true
                 this.slider.isReadOnly = false
                 this.slider.relation = item
-                this.slider.title = this.$t('ModelManagement["编辑关联关系"]')
+                this.slider.title = this.$t('ModelManagement["编辑关联"]')
                 this.slider.isShow = true
             },
             deleteRelation (relation, index) {
