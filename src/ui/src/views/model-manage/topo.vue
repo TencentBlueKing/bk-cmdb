@@ -60,7 +60,7 @@
                                         <p class="id">{{model['bk_obj_id']}}</p>
                                     </div>
                                 </div>
-                                <div v-else v-bktooltips.left="$t('ModelManagement[\'一个模型在画布中只能运用一次\']')">
+                                <div v-else>
                                     <i :class="model['bk_obj_icon']"></i>
                                     <div class="info">
                                         <p class="name">{{model['bk_obj_name']}}</p>
@@ -137,7 +137,7 @@
                     isShow: false,
                     content: '',
                     properties: {},
-                    title: this.$t('ModelManagement["模型关系显示设置"]')
+                    title: this.$t('ModelManagement["拓扑显示设置"]')
                 },
                 displayConfig: {
                     isShowModelName: true,
@@ -216,7 +216,8 @@
                         edges: {
                             color: {
                                 color: '#c3cdd7',
-                                highlight: '#3c96ff'
+                                highlight: '#3c96ff',
+                                hover: '#3c96ff'
                             },
                             font: {
                                 background: '#fff'
@@ -313,6 +314,17 @@
                 await this.$nextTick()
                 this.clearEditData()
             },
+            updatePositions () {
+                const nodeIds = this.network.nodes.map(({id}) => id)
+                const positions = this.networkInstance.getPositions(nodeIds)
+                let nodes = []
+                this.network.nodes.forEach(({id, x, y}) => {
+                    if (positions[id].x !== x || positions[id].y !== y) {
+                        nodes.push(id)
+                    }
+                })
+                this.updateNodePosition(this.networkDataSet.nodes.get(nodes))
+            },
             async saveTopo () {
                 let createAsstArray = []
                 let updateAsstArray = []
@@ -331,6 +343,7 @@
                     let id = this.$allModels.find(model => model['bk_obj_id'] === data.params.objId).id
                     deleteObjectArray.push(this.deleteObject({id}))
                 })
+                this.updatePositions()
                 await Promise.all(createAsstArray)
                 await Promise.all(updateAsstArray)
                 await Promise.all(deleteAsstArray)
@@ -449,7 +462,6 @@
                 node.position.y = originPosition.y - ((container.top + container.bottom) / 2 - event.clientY) / scale
                 node.draged = true
                 this.updateNetwork()
-                this.updateNodePosition(this.networkDataSet.nodes.get([objId]))
             },
             clearActiveEdge () {
                 this.topoEdit.activeEdge = {
@@ -729,8 +741,7 @@
                             id: nodeData['bk_obj_id'],
                             image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON({
                                 name: nodeData['node_name'],
-                                backgroundColor: '#fff',
-                                fontColor: nodeData['ispre'] ? '#868b97' : '#3c96ff'
+                                backgroundColor: '#fff'
                             }))}`,
                             data: nodeData
                         }
@@ -834,8 +845,7 @@
                             id: node.id,
                             image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON(image, {
                                 name: node.data['node_name'],
-                                fontColor: node.data.ispre ? '#6894c8' : '#868b97',
-                                iconColor: node.data.ispre ? '#6894c8' : '#868b97',
+                                iconColor: node.data.ispre ? '#868b97' : '#3c96ff',
                                 backgroundColor: '#fff'
                             }))}`
                         })
@@ -856,7 +866,7 @@
                     return this.topoModelList.some(({bk_obj_id: objId, position}) => objId === id && position.x === null && position.y === null)
                 })
                 if (nodesId.length) {
-                    this.updateNodePosition(this.networkDataSet.nodes.get([nodesId]))
+                    this.updateNodePosition(this.networkDataSet.nodes.get(nodesId))
                 }
             },
             // 批量更新节点位置信息
@@ -894,9 +904,6 @@
                     }
                 })
                 this.networkInstance.on('dragEnd', (params) => {
-                    if (params.nodes.length) {
-                        this.updateNodePosition(this.networkDataSet.nodes.get(params.nodes))
-                    }
                     this.networkInstance.unselectAll()
                 })
                 // this.setSingleNodePosition()
@@ -1102,6 +1109,7 @@
         .group-info {
             line-height: 42px;
             padding: 0 20px 0 15px;
+            font-size: 14px;
             cursor: pointer;
             &:hover,
             &.active {
@@ -1123,6 +1131,7 @@
             .model-count {
                 padding: 0 5px;
                 border-radius: 4px;
+                font-size: 12px;
                 color: $cmdbBorderFocusColor;
                 background: #ebf4ff;
             }
@@ -1165,9 +1174,9 @@
                 display: inline-block;
                 line-height: 18px;
                 vertical-align: middle;
+                font-size: 12px;
                 .id {
                     color: $cmdbBorderColor;
-                    font-size: 12px;
                 }
             }
         }
