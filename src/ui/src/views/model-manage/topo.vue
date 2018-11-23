@@ -314,6 +314,17 @@
                 await this.$nextTick()
                 this.clearEditData()
             },
+            updatePositions () {
+                const nodeIds = this.network.nodes.map(({id}) => id)
+                const positions = this.networkInstance.getPositions(nodeIds)
+                let nodes = []
+                this.network.nodes.forEach(({id, x, y}) => {
+                    if (positions[id].x !== x || positions[id].y !== y) {
+                        nodes.push(id)
+                    }
+                })
+                this.updateNodePosition(this.networkDataSet.nodes.get(nodes))
+            },
             async saveTopo () {
                 let createAsstArray = []
                 let updateAsstArray = []
@@ -332,6 +343,7 @@
                     let id = this.$allModels.find(model => model['bk_obj_id'] === data.params.objId).id
                     deleteObjectArray.push(this.deleteObject({id}))
                 })
+                this.updatePositions()
                 await Promise.all(createAsstArray)
                 await Promise.all(updateAsstArray)
                 await Promise.all(deleteAsstArray)
@@ -450,7 +462,6 @@
                 node.position.y = originPosition.y - ((container.top + container.bottom) / 2 - event.clientY) / scale
                 node.draged = true
                 this.updateNetwork()
-                this.updateNodePosition(this.networkDataSet.nodes.get([objId]))
             },
             clearActiveEdge () {
                 this.topoEdit.activeEdge = {
@@ -855,7 +866,7 @@
                     return this.topoModelList.some(({bk_obj_id: objId, position}) => objId === id && position.x === null && position.y === null)
                 })
                 if (nodesId.length) {
-                    this.updateNodePosition(this.networkDataSet.nodes.get([nodesId]))
+                    this.updateNodePosition(this.networkDataSet.nodes.get(nodesId))
                 }
             },
             // 批量更新节点位置信息
@@ -893,9 +904,6 @@
                     }
                 })
                 this.networkInstance.on('dragEnd', (params) => {
-                    if (params.nodes.length) {
-                        this.updateNodePosition(this.networkDataSet.nodes.get(params.nodes))
-                    }
                     this.networkInstance.unselectAll()
                 })
                 // this.setSingleNodePosition()
