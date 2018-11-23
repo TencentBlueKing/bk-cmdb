@@ -177,6 +177,7 @@
 <style lang="scss" scoped>
     .display-wrapper {
         padding: 20px 30px;
+        height: 100%;
         .display-box {
             max-height: calc(100% - 56px);
             @include scrollbar;
