@@ -138,6 +138,7 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 		return err
 	}
 
+	expectParent2Childs := map[int64][]inst.Inst{}
 	// create current object instance for each parent instance and insert the current instance to
 	for _, parent := range parentInsts {
 
@@ -176,14 +177,17 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 			return err
 		}
 
+		expectParent2Childs[curInstID] = childs
+	}
+
+	for parentID, childs := range expectParent2Childs {
 		for _, child := range childs {
 			// set the child's parent
-			if err = child.SetMainlineParentInst(curInstID); nil != err {
+			if err = child.SetMainlineParentInst(parentID); nil != err {
 				blog.Errorf("[operation-asst] failed to set the object(%s) mainline child inst, error info is %s", child.GetObject().GetID(), err.Error())
 				return err
 			}
 		}
-
 	}
 
 	return nil
