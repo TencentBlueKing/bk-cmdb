@@ -52,7 +52,7 @@
             }
         },
         computed: {
-            ...mapGetters(['site', 'userName', 'admin', 'showBack', 'navStick']),
+            ...mapGetters(['site', 'userName', 'admin', 'showBack', 'navStick', 'headerTitle']),
             userRole () {
                 return this.admin ? this.$t('Common["管理员"]') : this.$t('Common["普通用户"]')
             },
@@ -61,7 +61,7 @@
                     $classify
                 } = this
                 let title = $classify.i18n ? this.$t($classify.i18n) : $classify.name
-                return this.$route.meta.title ? this.$route.meta.title : title
+                return this.$route.meta.customTitle ? this.headerTitle : title
             }
         },
         methods: {
@@ -104,7 +104,7 @@
         transition: padding .1s ease-in;
         z-index: 1000;
         &.nav-sticked{
-            padding-left: 240px;
+            padding-left: 260px;
         }
     }
     .breadcrumbs{
