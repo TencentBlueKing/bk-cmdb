@@ -135,7 +135,8 @@
         "事件推送": "Event Push",
         "业务主机": "Business Host",
         "模型": "Model",
-        "关联类型": "Association Type"
+        "关联类型": "Association Type",
+        "蓝鲸配置平台": "Configuration System"
     },
     "Index": {
         "首页": "Index",
