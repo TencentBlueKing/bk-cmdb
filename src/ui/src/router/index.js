@@ -5,7 +5,7 @@ import preload from '@/setup/preload'
 import $http from '@/api'
 
 const index = () => import(/* webpackChunkName: index */ '@/views/index')
-const modelManage = () => import(/* webpackChunkName: model */ '@/views/model-manage')
+const modelManage = () => import(/* webpackChunkName: model */ '@/views/model-manage/group')
 const modelDetail = () => import(/* webpackChunkName: model */ '@/views/model-manage/children')
 const business = () => import(/* webpackChunkName: business */ '@/views/business')
 const businessArchived = () => import(/* webpackChunkName: businessArchived */ '@/views/business/archived')
@@ -13,14 +13,17 @@ const generalModel = () => import(/* webpackChunkName: generalModel */ '@/views/
 const deleteHistory = () => import(/* webpackChunkName: deleteHistory */ '@/views/history')
 const hosts = () => import(/* webpackChunkName: hosts */ '@/views/hosts')
 const eventpush = () => import(/* webpackChunkName: hosts */ '@/views/eventpush')
-const permission = () => import(/* webpackChunkName: hosts */ '@/views/permission')
 const resource = () => import(/* webpackChunkName: resource */ '@/views/resource')
 const audit = () => import(/* webpackChunkName: hosts */ '@/views/audit')
 const topology = () => import(/* webpackChunkName: topology */ '@/views/topology')
 const process = () => import(/* webpackChunkName: process */ '@/views/process')
 const customQuery = () => import(/* webpackChunkName: process */ '@/views/custom-query')
 const error = () => import(/* webpackChunkName: error */ '@/views/status/error')
-
+const systemAuthority = () => import(/* webpackChunkName: systemAuthority */ '@/views/permission/role')
+const businessAuthority = () => import(/* webpackChunkName: businessAuthority */ '@/views/permission/business')
+const modelTopology = () => import(/* webpackChunkName: modelTopology */ '@/views/model-manage/topo')
+const businessModel = () => import(/* webpackChunkName: businessModel */ '@/views/model-manage/_business-topo')
+const modelAssociation = () => import(/* webpackChunkName: modelAssociation */ '@/views/model-manage/relation')
 Vue.use(Router)
 
 const router = new Router({
@@ -32,28 +35,67 @@ const router = new Router({
         path: '/index',
         component: index,
         meta: {
-            ignoreAuthorize: true
+            ignoreAuthorize: true,
+            isModel: false
         }
     }, {
         path: '/business',
-        component: business
+        component: business,
+        meta: {
+            isModel: true
+        }
     }, {
         path: '/model',
-        component: modelManage
+        component: modelManage,
+        meta: {
+            isModel: false
+        }
     }, {
-        path: '/model/:modelId',
+        path: '/model/details/:modelId',
         component: modelDetail,
         meta: {
+            customTitle: true,
             returnPath: '/model',
             relative: '/model',
-            ignoreAuthorize: true
+            ignoreAuthorize: true,
+            isModel: false
+        }
+    }, {
+        path: '/model/topology',
+        component: modelTopology,
+        meta: {
+            isModel: false
+        }
+    }, {
+        path: '/model/business',
+        component: businessModel,
+        meta: {
+            isModel: false
+        }
+    }, {
+        path: '/model/association',
+        component: modelAssociation,
+        meta: {
+            isModel: false
         }
     }, {
         path: '/eventpush',
-        component: eventpush
+        component: eventpush,
+        meta: {
+            isModel: false
+        }
     }, {
-        path: '/permission',
-        component: permission
+        path: '/authority/business',
+        component: businessAuthority,
+        meta: {
+            isModel: false
+        }
+    }, {
+        path: '/authority/system',
+        component: systemAuthority,
+        meta: {
+            isModel: false
+        }
     }, {
         path: '/history/biz',
         component: businessArchived,
@@ -62,39 +104,55 @@ const router = new Router({
         }
     }, {
         path: '/general-model/:objId',
-        component: generalModel
+        component: generalModel,
+        meta: {
+            isModel: true
+        }
     }, {
         path: '/history/:objId',
-        component: deleteHistory
+        component: deleteHistory,
+        meta: {
+            isModel: false
+        }
     }, {
         path: '/hosts',
         component: hosts,
         meta: {
-            requireBusiness: true
+            requireBusiness: true,
+            isModel: false
         }
     }, {
         path: '/resource',
-        component: resource
+        component: resource,
+        meta: {
+            isModel: false
+        }
     }, {
         path: '/auditing',
-        component: audit
+        component: audit,
+        meta: {
+            isModel: false
+        }
     }, {
         path: '/topology',
         component: topology,
         meta: {
-            requireBusiness: true
+            requireBusiness: true,
+            isModel: false
         }
     }, {
         path: '/process',
         component: process,
         meta: {
-            requireBusiness: true
+            requireBusiness: true,
+            isModel: false
         }
     }, {
         path: '/custom-query',
         component: customQuery,
         meta: {
-            requireBusiness: true
+            requireBusiness: true,
+            isModel: false
         }
     }, {
         path: '/status-require-business',
@@ -133,11 +191,20 @@ const cancelRequest = () => {
 }
 
 const hasAuthority = (to) => {
+    const $store = router.app.$store
+    if ($store.getters.admin) {
+        return true
+    }
     if (to.meta.ignoreAuthorize) {
         return true
     }
+    if (to.meta.isModel) {
+        const authority = $store.getters['userPrivilege/privilege']
+        const modelConfig = authority['model_config'] || {}
+        return Object.keys(modelConfig).some(classification => modelConfig[classification].hasOwnProperty(to.params.objId))
+    }
     const path = to.meta.relative || to.query.relative || to.path
-    const authorizedNavigation = router.app.$store.getters['objectModelClassify/authorizedNavigation']
+    const authorizedNavigation = $store.getters['objectModelClassify/authorizedNavigation']
     return authorizedNavigation.some(navigation => {
         if (navigation.hasOwnProperty('path')) {
             return navigation.path === path
