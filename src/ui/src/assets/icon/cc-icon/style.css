@@ -1,9 +1,9 @@
 @font-face {
   font-family: 'icomoon';
   src:
-    url('fonts/icomoon.ttf?2f7ovd') format('truetype'),
-    url('fonts/icomoon.woff?2f7ovd') format('woff'),
-    url('fonts/icomoon.svg?2f7ovd#icomoon') format('svg');
+    url('fonts/icomoon.ttf?t1jgf6') format('truetype'),
+    url('fonts/icomoon.woff?t1jgf6') format('woff'),
+    url('fonts/icomoon.svg?t1jgf6#icomoon') format('svg');
   font-weight: normal;
   font-style: normal;
 }
@@ -321,12 +321,15 @@
   content: "\e962";
 }
 .icon-cc-nav-model:before {
-  content: "\e964";
+  content: "\e963";
 }
 .icon-cc-nav-resource:before {
-  content: "\e965";
+  content: "\e964";
 }
 .icon-cc-nav-stick:before {
+  content: "\e965";
+}
+.icon-cc-nav-toggle:before {
   content: "\e966";
 }
 .icon-cc-net-port:before {
