@@ -5,13 +5,9 @@
         @mouseleave="handleMouseLeave">
         <div class="nav-wrapper"
             :class="{unfold: unfold, flexible: !navStick}">
-            <div class="logo">
-                <img src="@/assets/images/logo-cn.svg" alt="蓝鲸配置平台"
-                    v-if="$i18n.locale === 'zh_CN'"
-                    @click="$router.push('/index')">
-                <img src="@/assets/images/logo-en.svg" alt="Configuration System"
-                    v-else
-                    @click="$router.push('/index')">
+            <div class="logo" @click="$router.push('/index')">
+                <img src="@/assets/images/logo.svg">
+                {{$t('Nav["蓝鲸配置平台"]')}}
             </div>
             <ul class="classify-list">
                 <li class="classify-item"
@@ -19,7 +15,8 @@
                     v-if="isAvailableClassify(classify)"
                     :class="{
                         active: isClassifyActive(classify),
-                        opened: openedClassify === classify.id
+                        closed: isActiveClosed(classify),
+                        'is-link': classify.hasOwnProperty('path')
                     }">
                     <h3 class="classify-info clearfix"
                         :class="{'classify-link': classify.hasOwnProperty('path')}"
@@ -53,13 +50,6 @@
                     </div>
                 </li>
             </ul>
-            <transition name="fade">
-                <div class="copyright" v-show="unfold">
-                    Copyright 2012-{{(new Date()).getFullYear()}} Tencent BlueKing.
-                    <br v-pre>
-                    All Right Reserved
-                </div>
-            </transition>
             <div class="nav-option">
                 <i class="nav-stick bk-icon"
                     :class="[navStick ? 'icon-dedent': 'icon-indent']"
@@ -75,7 +65,7 @@ import { mapGetters } from 'vuex'
 export default {
     data () {
         return {
-            routerLinkHeight: 45,
+            routerLinkHeight: 42,
             openedClassify: null,
             timer: null
         }
@@ -110,16 +100,13 @@ export default {
         }
     },
     methods: {
-        // 为1级导航链接选中或者二级菜单被选中且折叠
         isClassifyActive (classify) {
             const path = this.$route.meta.relative || this.$route.query.relative || this.$route.path
-            if (classify.path === path) {
-                return true
-            }
-            if (this.activeClassifyId === classify.id) {
-                return !this.unfold || this.openedClassify !== classify.id
-            }
-            return false
+            return classify.path === path || this.activeClassifyId === classify.id
+        },
+        isActiveClosed (classify) {
+            return this.activeClassifyId === classify.id &&
+                (this.openedClassify === null || !this.unfold)
         },
         isAvailableClassify (classify) {
             if (classify.hasOwnProperty('path')) {
@@ -187,7 +174,7 @@ export default {
 <style lang="scss" scoped>
 $cubicBezier: cubic-bezier(0.4, 0, 0.2, 1);
 $duration: 0.2s;
-$color: #727e85;
+$color: #979ba5;
 
 .nav-layout {
     position: relative;
@@ -203,7 +190,7 @@ $color: #727e85;
         position: relative;
         width: 100%;
         height: 100%;
-        background: #192534;
+        background: #182132;
         transition: width $duration $cubicBezier;
 
         &.unfold {
@@ -223,19 +210,24 @@ $color: #727e85;
 
 .logo {
     height: 60px;
-    padding: 12px 0 12px 15px;
-    background-color: #4c84ff;
-    color: #fff;
+    border-bottom: 1px solid rgba(255, 255, 255, .05);
+    background-color: #182132;
+    line-height: 59px;
+    color: #a3acb9;
+    font-size: 18px;
     overflow: hidden;
     cursor: pointer;
 
     img {
+        display: inline-block;
+        margin: 0 12px 0 14px;
+        vertical-align: middle;
         height: 36px;
     }
 }
 
 .classify-list {
-    height: calc(100% - 200px);
+    height: calc(100% - 120px);
     overflow-y: auto;
     overflow-x: hidden;
     white-space: nowrap;
@@ -253,26 +245,25 @@ $color: #727e85;
 
     .classify-item {
         position: relative;
-
+        transition: background-color $duration $cubicBezier;
 
         &.active {
-            background-color: #303C4C !important;
+            background-color: #202a3c;
 
             .classify-icon,
             .classify-name {
                 color: #fff;
             }
         }
-
-        &:not(.opened):hover {
-            background-color: rgba(21, 30, 42, .75);
+        &.active.closed,
+        &.active.is-link {
+            background-color: #3a84ff;
         }
-
         .classify-info {
             margin: 0;
             padding: 0;
-            height: 45px;
-            line-height: 45px;
+            height: 42px;
+            line-height: 42px;
             white-space: nowrap;
             font-size: 0;
             font-weight: normal;
@@ -283,8 +274,9 @@ $color: #727e85;
         .classify-icon {
             display: inline-block;
             vertical-align: top;
-            margin: 15px 26px 14px 22px;
+            margin: 13px 26px 13px 22px;
             font-size: 16px;
+            color: rgba(255, 255, 255, .8);
         }
 
         .classify-name {
@@ -311,14 +303,14 @@ $color: #727e85;
 
 .classify-models {
     height: 0;
-    line-height: 45px;
+    line-height: 42px;
     font-size: 12px;
     overflow: hidden;
     transition: height $duration $cubicBezier;
     .model-link {
         position: relative;
         display: block;
-        padding: 0 0 0 92px;
+        padding: 0 0 0 64px;
         color: $color;
         @include ellipsis;
         &.collection {
@@ -348,24 +340,23 @@ $color: #727e85;
                 }
             }
         }
-        &:before {
-            content: "";
-            position: absolute;
-            left: 71px;
-            top: 22px;
-            width: 2px;
-            height: 2px;
-            border-radius: 50%;
-            background-color: currentColor;
-        }
-
         &:hover {
             color: #fff;
             background-color: #303c4c;
         }
-
         &.active {
             color: #fff;
+            background-color: #3a84ff;
+        }
+        &:before {
+            content: "";
+            position: absolute;
+            left: 29px;
+            top: 19px;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background-color: currentColor;
         }
     }
 }
@@ -387,7 +378,7 @@ $color: #727e85;
     width: 100%;
     height: 55px;
     line-height: 54px;
-    border-top: 1px solid #3a4156;
+    border-top: 1px solid rgba(255, 255, 255, .05);
     font-size: 0;
     &:before {
         content: "";
