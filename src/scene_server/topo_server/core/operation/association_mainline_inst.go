@@ -139,12 +139,22 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 		return err
 	}
 
+	expectParent2Childs := map[inst.Inst][]inst.Inst{}
 	// reset the parent's inst
 	for _, parent := range parentInsts {
 
 		id, err := parent.GetInstID()
 		if nil != err {
 			blog.Errorf("[operation-asst] failed to find the inst id, error info is %s", err.Error())
+			return err
+		}
+
+		childs, err := parent.GetMainlineChildInst()
+		if nil != err {
+			if io.EOF == err {
+				continue
+			}
+			blog.Errorf("[operation-asst] failed to get the object(%s) mainline child inst, error info is %s", parent.GetObject().GetID(), err.Error())
 			return err
 		}
 
@@ -161,24 +171,18 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 			return err
 		}
 
-		// reset the child's parent
-		childs, err := parent.GetMainlineChildInst()
-		if nil != err {
-			if io.EOF == err {
-				continue
-			}
-			blog.Errorf("[operation-asst] failed to get the object(%s) mainline child inst, error info is %s", parent.GetObject().GetID(), err.Error())
-			return err
-		}
-		for _, child := range childs {
+		expectParent2Childs[defaultInst] = childs
+	}
 
+	for parent, childs := range expectParent2Childs {
+		// reset the child's parent
+		for _, child := range childs {
 			// set the child's parent
-			if err = child.SetMainlineParentInst(defaultInst); nil != err {
+			if err = child.SetMainlineParentInst(parent); nil != err {
 				blog.Errorf("[operation-asst] failed to set the object(%s) mainline child inst, error info is %s", child.GetObject().GetID(), err.Error())
 				return err
 			}
 		}
-
 	}
 
 	return nil
