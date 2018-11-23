@@ -60,7 +60,7 @@
                                         <p class="id">{{model['bk_obj_id']}}</p>
                                     </div>
                                 </div>
-                                <div v-else v-bktooltips.left="$t('ModelManagement[\'一个模型在画布中只能运用一次\']')">
+                                <div v-else>
                                     <i :class="model['bk_obj_icon']"></i>
                                     <div class="info">
                                         <p class="name">{{model['bk_obj_name']}}</p>
