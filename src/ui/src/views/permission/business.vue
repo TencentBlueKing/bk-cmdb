@@ -128,7 +128,7 @@
 
 <style lang="scss" scoped>
     .business-wrapper{
-        padding: 50px 0 0 0;
+        padding: 30px 0 0 0;
         color: #737987;
         font-size: 14px;
     }

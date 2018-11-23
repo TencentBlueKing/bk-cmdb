@@ -11,6 +11,15 @@
 import $http from '@/api'
 import STATIC_NAVIGATION from '@/assets/json/static-navigation.json'
 
+const _getNavigationById = id => {
+    let navigation
+    for (let classificationId in STATIC_NAVIGATION) {
+        navigation = STATIC_NAVIGATION[classificationId].children.find(navigation => navigation.id === id)
+        if (navigation) break
+    }
+    return navigation
+}
+
 const state = {
     classifications: [],
     invisibleClassifications: ['bk_host_manage', 'bk_biz_topo'],
@@ -24,6 +33,18 @@ const state = {
 const getters = {
     classifications: state => state.classifications,
     staticClassifyId: state => state.staticClassifyId,
+    models: state => {
+        const models = []
+        state.classifications.forEach(classification => {
+            (classification['bk_objects'] || []).forEach(model => {
+                models.push(model)
+            })
+        })
+        return models
+    },
+    getModelById: (state, getters) => id => {
+        return getters.models.find(model => model['bk_obj_id'] === id)
+    },
     activeClassifications: state => {
         let classifications = state.classifications
         // 1.去掉停用模型
@@ -60,47 +81,80 @@ const getters = {
         }
         return authorizedClassifications.filter(({bk_objects: bkObjects}) => bkObjects.length)
     },
-    // 被授权的导航(包含主机管理、后台配置、通用模型)
+    authorizedModels: (state, getters) => {
+        const models = []
+        getters.authorizedClassifications.forEach(classification => {
+            classification['bk_objects'].forEach(model => {
+                models.push(model)
+            })
+        })
+        return models
+    },
     authorizedNavigation: (state, getters, rootState, rootGetters) => {
-        let authorizedClassifications = JSON.parse(JSON.stringify(getters.authorizedClassifications))
-        // 构造模型导航数据
-        let navigation = authorizedClassifications.map(classification => {
-            return {
-                'icon': classification['bk_classification_icon'],
-                'id': classification['bk_classification_id'],
-                'name': classification['bk_classification_name'],
-                'order': 3,
-                'children': classification['bk_objects'].map(model => {
-                    return {
-                        'path': model['bk_obj_id'] === 'biz' ? '/business' : `/general-model/${model['bk_obj_id']}`,
-                        'id': model['bk_obj_id'],
-                        'name': model['bk_obj_name'],
-                        'icon': model['bk_obj_icon'],
-                        'classificationId': model['bk_classification_id']
-                    }
+        const authority = rootGetters['userPrivilege/privilege']
+        const collectionKey = 'bk_collection'
+        const collection = []
+        const specialCollecton = [{
+            id: 'biz',
+            path: '/business',
+            icon: 'icon-cc-business',
+            i18n: 'Nav["业务"]',
+            authorized: rootGetters.admin || (authority['model_config'] || {}).hasOwnProperty('bk_organization')
+        }, {
+            id: 'resource',
+            path: '/resource',
+            icon: 'icon-cc-host-free-pool',
+            i18n: 'Nav["资源"]',
+            authorized: rootGetters.admin || (authority['sys_config']['global_busi'] || []).includes('resource')
+        }]
+        specialCollecton.forEach(special => {
+            const isCollected = rootGetters['userCustom/usercustom'][`is_${special.id}_collected`]
+            if (isCollected || isCollected === undefined) {
+                collection.push({
+                    ...special,
+                    classificationId: collectionKey
                 })
             }
         })
-        let staticNavigation = JSON.parse(JSON.stringify(STATIC_NAVIGATION))
-        // 检查主机管理、后台配置权限
+        const collectedModelKey = rootGetters['userCustom/classifyNavigationKey']
+        const collectedModelIds = rootGetters['userCustom/usercustom'][collectedModelKey] || []
+        collectedModelIds.forEach(modelId => {
+            const available = getters.authorizedClassifications.some(classification => {
+                return classification['bk_objects'].some(model => model['bk_obj_id'] === modelId)
+            })
+            if (available) {
+                const model = getters.getModelById(modelId)
+                collection.push({
+                    id: modelId,
+                    name: model['bk_obj_name'],
+                    icon: model['bk_obj_icon'],
+                    path: `/general-model/${modelId}`,
+                    authorized: true,
+                    classificationId: collectionKey
+                })
+            }
+        })
+        STATIC_NAVIGATION[collectionKey].children = collection
+
         if (!rootGetters.admin) {
-            let sysConfig = {
-                'bk_host_manage': rootGetters['userPrivilege/privilege']['sys_config']['global_busi'] || [],
-                'bk_back_config': rootGetters['userPrivilege/privilege']['sys_config']['back_config'] || []
-            }
-            for (let classificationId in staticNavigation) {
-                if (sysConfig.hasOwnProperty(classificationId)) {
-                    staticNavigation[classificationId].children = STATIC_NAVIGATION[classificationId].children.filter(({id}) => {
-                        if (state.interceptStaticModel[classificationId].includes(id)) {
-                            return sysConfig[classificationId].includes(id)
-                        }
-                        return !['permission', 'model'].includes(id) // 权限管理、模型管理仅管理员拥有且后台接口不返回其配置
-                    })
-                }
-            }
+            STATIC_NAVIGATION['bk_authority'].children.forEach(navigation => {
+                navigation.authorized = false
+            })
+            STATIC_NAVIGATION['bk_ci_model'].children.forEach(navigation => {
+                navigation.authorized = false
+            })
+
+            const systemConfig = authority['sys_config']
+            const backConfig = systemConfig['back_config'] || []
+            const globalConfig = systemConfig['global_busi'] || []
+            const needsCheck = ['audit', 'event']
+            needsCheck.forEach(id => {
+                const navigation = _getNavigationById(id)
+                navigation.authorized = backConfig.includes(id)
+            })
         }
-        const authorizedNavigation = Object.keys(staticNavigation).map(key => staticNavigation[key]).concat(navigation)
-        return authorizedNavigation.sort((A, B) => A.order - B.order)
+        const navigation = Object.keys(STATIC_NAVIGATION).map(classificationId => STATIC_NAVIGATION[classificationId])
+        return navigation.sort((A, B) => A.order - B.order)
     }
 }
 
