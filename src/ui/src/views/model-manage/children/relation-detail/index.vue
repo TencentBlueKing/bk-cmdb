@@ -1,23 +1,23 @@
 <template>
     <div>
-        <label class="form-label">
+        <label class="form-label" v-if="isEdit">
             <span class="label-text">
                 {{$t('ModelManagement["唯一标识"]')}}
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item">
-                <input type="text" class="cmdb-form-input" :placeholder="$t('ModelManagement[\'选择条件后自动生成\']')" v-model.trim="objAsstId" disabled>
+                <input type="text" class="cmdb-form-input" v-model.trim="objAsstId" disabled>
             </div>
             <i class="bk-icon icon-info-circle"></i>
         </label>
         <label class="form-label">
             <span class="label-text">
-                {{$t('ModelManagement["别名"]')}}
+                {{$t('ModelManagement["关联描述"]')}}
             </span>
             <div class="cmdb-form-item" :class="{'is-error': errors.has('asstName')}">
                 <input type="text" class="cmdb-form-input"
                 name="asstName"
-                :placeholder="$t('ModelManagement[\'请输入别名\']')"
+                :placeholder="$t('ModelManagement[\'请输入关联描述\']')"
                 :disabled="relationInfo.ispre"
                 v-model.trim="relationInfo['bk_obj_asst_name']"
                 v-validate="'singlechar'">
@@ -63,7 +63,7 @@
         </div>
         <div class="form-label">
             <span class="label-text">
-                {{$t('ModelManagement["关系类型"]')}}
+                {{$t('ModelManagement["关联类型"]')}}
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{'is-error': errors.has('asstId')}">

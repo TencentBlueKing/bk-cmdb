@@ -20,7 +20,7 @@
         </label>
         <label class="form-label">
             <span class="label-text">
-                {{$t('ModelManagement["关系描述"]')}}
+                {{$t('ModelManagement["关联描述"]')}}
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{'is-error': errors.has('asstName')}">
@@ -34,7 +34,7 @@
         </label>
         <label class="form-label">
             <span class="label-text">
-                {{$t('ModelManagement["关系约束"]')}}
+                {{$t('ModelManagement["源-目标约束"]')}}
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{'is-error': errors.has('asstId')}">
@@ -53,7 +53,7 @@
                 {{$t('Common["确定"]')}}
             </bk-button>
             <bk-button type="danger" @click="deleteRelation" :disabled="relationInfo.ispre">
-                {{$t('ModelManagement["删除关系"]')}}
+                {{$t('ModelManagement["删除关联"]')}}
             </bk-button>
         </div>
     </div>

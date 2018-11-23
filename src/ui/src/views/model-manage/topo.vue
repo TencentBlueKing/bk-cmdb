@@ -137,7 +137,7 @@
                     isShow: false,
                     content: '',
                     properties: {},
-                    title: this.$t('ModelManagement["模型关系显示设置"]')
+                    title: this.$t('ModelManagement["拓扑显示设置"]')
                 },
                 displayConfig: {
                     isShowModelName: true,

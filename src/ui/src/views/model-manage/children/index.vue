@@ -70,7 +70,7 @@
             <bk-tabpanel name="field" :title="$t('ModelManagement[\'模型字段\']')">
                 <the-field></the-field>
             </bk-tabpanel>
-            <bk-tabpanel name="relation" :title="$t('ModelManagement[\'模型关系\']')">
+            <bk-tabpanel name="relation" :title="$t('ModelManagement[\'模型关联\']')">
                 <the-relation v-if="tab.active === 'relation'"></the-relation>
             </bk-tabpanel>
             <bk-tabpanel name="propertyGroup" :title="$t('ModelManagement[\'字段分组\']')">
