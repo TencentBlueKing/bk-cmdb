@@ -26,7 +26,7 @@
             <div class="cmdb-form-item" :class="{'is-error': errors.has('asstName')}">
                 <input type="text" class="cmdb-form-input"
                 name="asstName"
-                :disabled="relationInfo.ispre || isEdit"
+                :disabled="relationInfo.ispre || !isEdit"
                 v-model.trim="relationInfo['bk_obj_asst_name']"
                 v-validate="'required|singlechar'">
                 <p class="form-error">{{errors.first('asstName')}}</p>
