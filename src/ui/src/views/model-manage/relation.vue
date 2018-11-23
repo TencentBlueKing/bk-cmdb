@@ -231,3 +231,7 @@
         }
     }
 </style>
+
+<style lang="scss">
+    @import '@/assets/scss/model-manage.scss';
+</style>
