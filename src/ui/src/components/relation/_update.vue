@@ -168,7 +168,7 @@
                 }
             },
             multiple () {
-                return this.currentOption.mapping === '1:1'
+                return this.currentOption.mapping !== '1:1'
             }
         },
         watch: {
@@ -449,7 +449,6 @@
                 return condition
             },
             setTableList (data, asstObjId) {
-                debugger
                 const properties = this.properties
                 this.table.pagination.count = data.count
                 if (asstObjId === 'host') {
