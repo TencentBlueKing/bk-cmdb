@@ -202,7 +202,7 @@
                 })
                 if (res.length) {
                     this.$store.commit('objectModel/setActiveModel', res[0])
-                    this.$route.meta.title = this.activeModel['bk_obj_name']
+                    this.$store.commit('setHeaderTitle', this.activeModel['bk_obj_name'])
                     this.initModelInfo()
                 } else {
                     this.$router.replace('/status-404')
