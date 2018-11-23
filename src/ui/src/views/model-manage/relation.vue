@@ -74,7 +74,7 @@
                         name: this.$t('ModelManagement["源->目标描述"]')
                     }, {
                         id: 'dest_des',
-                        name: this.$t('ModelManagement["目标描述->源"]')
+                        name: this.$t('ModelManagement["目标->源描述"]')
                     }, {
                         id: 'count',
                         name: this.$t('ModelManagement["使用数"]')
@@ -210,7 +210,7 @@
 
 <style lang="scss" scoped>
     .operation-box {
-        margin: 20px 0;
+        margin: 0 0 20px 0;
         font-size: 0;
         .search-input {
             position: relative;
@@ -230,4 +230,8 @@
             }
         }
     }
+</style>
+
+<style lang="scss">
+    @import '@/assets/scss/model-manage.scss';
 </style>

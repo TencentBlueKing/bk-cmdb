@@ -7,7 +7,7 @@
                     marginLeft: `${index * margin}px`
                 }"
                 :key="index">
-                <router-link :to="`/model/${model['bk_obj_id']}`" class="node-circle" 
+                <router-link :to="`/model/details/${model['bk_obj_id']}`" class="node-circle" 
                     :class="{
                         'is-first': index === 0,
                         'is-last': index === (topo.length - 1),

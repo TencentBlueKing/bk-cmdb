@@ -332,7 +332,7 @@
                 this.$store.commit('setHeaderStatus', {
                     back: true
                 })
-                this.$router.push(`model/${model['bk_obj_id']}`)
+                this.$router.push(`model/details/${model['bk_obj_id']}`)
             }
         }
     }
@@ -340,7 +340,7 @@
 
 <style lang="scss" scoped>
     .btn-group {
-        margin: 20px 0;
+        margin: 0 0 20px 0;
         font-size: 0;
         .bk-primary {
             margin-right: 10px;
