@@ -42,7 +42,7 @@
                 :disabled="isEdit && relation.ispre"
                 v-validate="'required|singlechar'"
                 v-model.trim="relationInfo['src_des']" 
-                :placeholder="$t('ModelManagement[\'请输入关系描述如：连接、运行\']')">
+                :placeholder="$t('ModelManagement[\'请输入关联描述如：连接、运行\']')">
                 <p class="form-error">{{errors.first('srcDes')}}</p>
             </div>
         </label>
@@ -58,7 +58,7 @@
                 :disabled="isEdit && relation.ispre"
                 v-validate="'required|singlechar'"
                 v-model.trim="relationInfo['dest_des']" 
-                :placeholder="$t('ModelManagement[\'请输入关系描述如：属于、上联\']')">
+                :placeholder="$t('ModelManagement[\'请输入关联描述如：属于、上联\']')">
                 <p class="form-error">{{errors.first('destDes')}}</p>
             </div>
         </label>

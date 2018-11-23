@@ -8,7 +8,7 @@
                 </label>
                 <label class="cmdb-form-checkbox cmdb-checkbox-small">
                     <input type="checkbox" v-model="isShowAsst">
-                    <span class="cmdb-checkbox-text">{{$t('ModelManagement["显示关系名称"]')}}</span>
+                    <span class="cmdb-checkbox-text">{{$t('ModelManagement["显示关联名称"]')}}</span>
                 </label>
             </div>
             <ul class="display-list">
@@ -25,7 +25,7 @@
                             <div class="relation-detail">
                                 <div class="detail-title clearfix">
                                     <div class="fl">
-                                        <span class="title">{{$t('ModelManagement["模型关系"]')}}</span>
+                                        <span class="title">{{$t('ModelManagement["模型关联"]')}}</span>
                                         <span class="info">({{$t('ModelManagement["即视图中的连线"]')}})</span>
                                     </div>
                                     <label class="fr cmdb-form-checkbox cmdb-checkbox-small">

@@ -24,7 +24,7 @@
             </label>
             <label class="form-label">
                 <span class="label-text">
-                    {{$t('ModelManagement["关系类型"]')}}
+                    {{$t('ModelManagement["关联类型"]')}}
                     <span class="color-danger">*</span>
                 </span>
                 <ul class="relation-label cmdb-form-item clearfix" :class="{'is-error': errors.has('asstId')}">
@@ -34,12 +34,12 @@
                         @click="relationInfo['bk_asst_id'] = relation.id">
                         {{relation.name}}
                     </li>
-                    <li @click="isCreateRelation = true">{{$t('ModelManagement["自定义关系"]')}}</li>
+                    <li @click="isCreateRelation = true">{{$t('ModelManagement["自定义关联"]')}}</li>
                 </ul>
             </label>
             <label class="form-label">
                 <span class="label-text">
-                    {{$t('ModelManagement["关系描述"]')}}
+                    {{$t('ModelManagement["关联描述"]')}}
                     <span class="color-danger">*</span>
                 </span>
                 <div class="cmdb-form-item" :class="{'is-error': errors.has('asstName')}">
@@ -47,13 +47,13 @@
                     name="asstName"
                     v-validate="'required|singlechar'"
                     v-model.trim="relationInfo['bk_obj_asst_name']"
-                    :placeholder="$t('ModelManagement[\'请输入关系描述\']')">
+                    :placeholder="$t('ModelManagement[\'请输入关联描述\']')">
                     <p class="form-error">{{errors.first('asstName')}}</p>
                 </div>
             </label>
             <div class="form-label">
                 <span class="label-text">
-                    {{$t('ModelManagement["关系约束"]')}}
+                    {{$t('ModelManagement["源-目标约束"]')}}
                     <span class="color-danger">*</span>
                 </span>
                 <div class="cmdb-form-item" :class="{'is-error': errors.has('mapping')}">
