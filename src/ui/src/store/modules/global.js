@@ -14,7 +14,8 @@ const state = {
     header: {
         back: false
     },
-    userList: []
+    userList: [],
+    headerTitle: ''
 }
 
 const getters = {
@@ -29,7 +30,8 @@ const getters = {
     navStick: state => state.nav.stick,
     navFold: state => state.nav.fold,
     showBack: state => state.header.back,
-    userList: state => state.userList
+    userList: state => state.userList,
+    headerTitle: state => state.headerTitle
 }
 
 const actions = {
@@ -57,6 +59,9 @@ const mutations = {
     },
     setUserList (state, list) {
         state.userList = list
+    },
+    setHeaderTitle (state, headerTitle) {
+        state.headerTitle = headerTitle
     }
 }
 
