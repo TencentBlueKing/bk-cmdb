@@ -74,7 +74,7 @@
                         name: this.$t('ModelManagement["源->目标描述"]')
                     }, {
                         id: 'dest_des',
-                        name: this.$t('ModelManagement["目标描述->源"]')
+                        name: this.$t('ModelManagement["目标->源描述"]')
                     }, {
                         id: 'count',
                         name: this.$t('ModelManagement["使用数"]')

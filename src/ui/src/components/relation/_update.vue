@@ -168,7 +168,7 @@
                 }
             },
             multiple () {
-                return this.currentOption.mapping === '1:1'
+                return this.currentOption.mapping !== '1:1'
             }
         },
         watch: {
@@ -448,11 +448,14 @@
                 }
                 return condition
             },
-            setTableList (data, objId) {
+            setTableList (data, asstObjId) {
                 const properties = this.properties
                 this.table.pagination.count = data.count
-                if (objId === 'host') {
+                if (asstObjId === 'host') {
                     data.info = data.info.map(item => item['host'])
+                }
+                if (asstObjId === this.objId) {
+                    data.info = data.info.filter(item => item[this.instanceIdKey] !== this.instId)
                 }
                 this.table.list = data.info.map(item => this.$tools.flatternItem(this.properties, item))
             },
