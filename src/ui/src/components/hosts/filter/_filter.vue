@@ -277,7 +277,7 @@
                     }
                 }).then(result => {
                     Object.keys(this.properties).forEach(objId => {
-                        this.properties[objId] = result[objId]
+                        this.properties[objId] = result[objId].filter(property => property['bk_property_type'] !== 'foreignkey')
                     })
                     return result
                 })
