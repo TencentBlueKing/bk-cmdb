@@ -1,99 +1,84 @@
 <template>
     <div>
-        <template v-if="!isCreateRelation">
-            <label class="form-label exchange-icon-wrapper">
-                <span class="label-text">
-                    {{$t('ModelManagement["源模型"]')}}
-                    <span class="color-danger">*</span>
-                </span>
-                <div class="cmdb-form-item">
-                    <input type="text" class="cmdb-form-input" disabled :value="getModelName(relationInfo['bk_obj_id'])">
-                </div>
-                <span class="exchange-icon" @click="exchangeObjAsst">
-                    <i class="bk-icon icon-sort"></i>
-                </span>
-            </label>
-            <label class="form-label">
-                <span class="label-text">
-                    {{$t('ModelManagement["目标模型"]')}}
-                    <span class="color-danger">*</span>
-                </span>
-                <div class="cmdb-form-item">
-                    <input type="text" class="cmdb-form-input" disabled :value="getModelName(relationInfo['bk_asst_obj_id'])">
-                </div>
-            </label>
-            <label class="form-label">
-                <span class="label-text">
-                    {{$t('ModelManagement["关系类型"]')}}
-                    <span class="color-danger">*</span>
-                </span>
-                <ul class="relation-label cmdb-form-item clearfix" :class="{'is-error': errors.has('asstId')}">
-                    <li :class="{'active': relationInfo['bk_asst_id'] === relation.id}"
-                        v-for="(relation, relationIndex) in relationList"
-                        :key="relationIndex"
-                        @click="relationInfo['bk_asst_id'] = relation.id">
-                        {{relation.name}}
-                    </li>
-                    <li @click="isCreateRelation = true">{{$t('ModelManagement["自定义关系"]')}}</li>
-                </ul>
-            </label>
-            <label class="form-label">
-                <span class="label-text">
-                    {{$t('ModelManagement["关系描述"]')}}
-                    <span class="color-danger">*</span>
-                </span>
-                <div class="cmdb-form-item" :class="{'is-error': errors.has('asstName')}">
-                    <input type="text" class="cmdb-form-input"
-                    name="asstName"
-                    v-validate="'required|singlechar'"
-                    v-model.trim="relationInfo['bk_obj_asst_name']"
-                    :placeholder="$t('ModelManagement[\'请输入关系描述\']')">
-                    <p class="form-error">{{errors.first('asstName')}}</p>
-                </div>
-            </label>
-            <div class="form-label">
-                <span class="label-text">
-                    {{$t('ModelManagement["关系约束"]')}}
-                    <span class="color-danger">*</span>
-                </span>
-                <div class="cmdb-form-item" :class="{'is-error': errors.has('mapping')}">
-                    <cmdb-selector
-                        :list="mappingList"
-                        v-validate="'required'"
-                        name="mapping"
-                        v-model="relationInfo.mapping"
-                    ></cmdb-selector>
-                    <p class="form-error">{{errors.first('mapping')}}</p>
-                </div>
-                <i class="bk-icon icon-info-circle"></i>
+        <label class="form-label exchange-icon-wrapper">
+            <span class="label-text">
+                {{$t('ModelManagement["源模型"]')}}
+                <span class="color-danger">*</span>
+            </span>
+            <div class="cmdb-form-item">
+                <input type="text" class="cmdb-form-input" disabled :value="getModelName(relationInfo['bk_obj_id'])">
             </div>
-            <div class="btn-group">
-                <bk-button type="primary" :loading="$loading(['updateAssociationType', 'createAssociationType'])" @click="saveRelation">
-                    {{$t('Common["确定"]')}}
-                </bk-button>
-                <bk-button type="default" @click="cancel">
-                    {{$t('Common["取消"]')}}
-                </bk-button>
+            <span class="exchange-icon" @click="exchangeObjAsst">
+                <i class="bk-icon icon-sort"></i>
+            </span>
+        </label>
+        <label class="form-label">
+            <span class="label-text">
+                {{$t('ModelManagement["目标模型"]')}}
+                <span class="color-danger">*</span>
+            </span>
+            <div class="cmdb-form-item">
+                <input type="text" class="cmdb-form-input" disabled :value="getModelName(relationInfo['bk_asst_obj_id'])">
             </div>
-        </template>
-        <template v-else>
-            <the-relation-type
-                :saveBtnText="$t('ModelManagement[\'确定并返回\']')"
-                @saved="saveRelationType"
-                @cancel="isCreateRelation = false"
-            >
-            </the-relation-type>
-        </template>
+        </label>
+        <label class="form-label">
+            <span class="label-text">
+                {{$t('ModelManagement["关联类型"]')}}
+                <span class="color-danger">*</span>
+            </span>
+            <ul class="relation-label cmdb-form-item clearfix" :class="{'is-error': errors.has('asstId')}">
+                <li :class="{'active': relationInfo['bk_asst_id'] === relation.id}"
+                    v-for="(relation, relationIndex) in relationList"
+                    :key="relationIndex"
+                    @click="relationInfo['bk_asst_id'] = relation.id">
+                    {{relation.name}}
+                </li>
+            </ul>
+        </label>
+        <label class="form-label">
+            <span class="label-text">
+                {{$t('ModelManagement["关联描述"]')}}
+                <span class="color-danger">*</span>
+            </span>
+            <div class="cmdb-form-item" :class="{'is-error': errors.has('asstName')}">
+                <input type="text" class="cmdb-form-input"
+                name="asstName"
+                v-validate="'required|singlechar'"
+                v-model.trim="relationInfo['bk_obj_asst_name']"
+                :placeholder="$t('ModelManagement[\'请输入关联描述\']')">
+                <p class="form-error">{{errors.first('asstName')}}</p>
+            </div>
+        </label>
+        <div class="form-label">
+            <span class="label-text">
+                {{$t('ModelManagement["源-目标约束"]')}}
+                <span class="color-danger">*</span>
+            </span>
+            <div class="cmdb-form-item" :class="{'is-error': errors.has('mapping')}">
+                <cmdb-selector
+                    :list="mappingList"
+                    v-validate="'required'"
+                    name="mapping"
+                    v-model="relationInfo.mapping"
+                ></cmdb-selector>
+                <p class="form-error">{{errors.first('mapping')}}</p>
+            </div>
+            <i class="bk-icon icon-info-circle"></i>
+        </div>
+        <div class="btn-group">
+            <bk-button type="primary" @click="saveRelation">
+                {{$t('Common["确定"]')}}
+            </bk-button>
+            <bk-button type="default" @click="cancel">
+                {{$t('Common["取消"]')}}
+            </bk-button>
+        </div>
     </div>
 </template>
 
 <script>
-    import theRelationType from '../relation-type'
     import { mapActions } from 'vuex'
     export default {
-        components: {
-            theRelationType
-        },
         props: {
             toObjId: {
                 type: String
@@ -122,7 +107,6 @@
                     id: 'n:n',
                     name: 'N-N'
                 }],
-                isCreateRelation: false,
                 relationInfo: {
                     bk_obj_id: this.fromObjId,
                     bk_asst_obj_id: this.toObjId,
@@ -243,11 +227,6 @@
             },
             cancel () {
                 this.$emit('cancel')
-            },
-            saveRelationType () {
-                this.$http.cancel('post_searchAssociationType')
-                this.initRelationList()
-                this.isCreateRelation = false
             }
         }
     }
@@ -299,13 +278,6 @@
                 color: #fff;
                 background: $cmdbBorderFocusColor;
                 border-color: $cmdbBorderFocusColor;
-            }
-            &:last-child {
-                margin-right: 0;
-                padding: 0;
-                border: none;
-                color: $cmdbBorderFocusColor;
-                background: #fff;
             }
         }
     }
