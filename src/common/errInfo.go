@@ -291,6 +291,12 @@ const (
     CCErrorTopoCreateMultipleInstancesForOneToOneAssociation = 1101052
     // the object has associate to another object, or has been associated by another one.
     CCErrorTopoObjectHasAlreadyAssociated = 1101053
+    // update a pre-defined association, it's forbidden.
+    CCErrorTopoUpdatePredefinedAssociation = 1101054
+    // can not delete a pre-defined association.
+    CCErrorTopoDeletePredefinedAssociation = 1101055
+    // association do not exist.
+    CCErrorTopoAssociationDoNotExist = 1101056
 
 	CCErrTopoAppDeleteFailed                       = 1001031
 	CCErrTopoAppUpdateFailed                       = 1001032
