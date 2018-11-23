@@ -34,7 +34,7 @@
                     <div class="classify-models" 
                         v-if="classify.children && classify.children.length"
                         :style="getClassifyModelsStyle(classify)">
-                        <router-link class="model-link"
+                        <router-link class="model-link" exact
                             v-for="(model, modelIndex) in classify.children"
                             v-if="model.authorized"
                             :class="{
