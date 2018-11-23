@@ -33,7 +33,7 @@
                         @click="handleDropGroup(index, group)">
                     </i>
                     <i class="options-icon bk-icon icon-plus-circle-shape"
-                        v-tooltip="$t('ModelManagement[\'添加字段\']')"
+                        v-tooltip="$t('ModelManagement[\'新建字段\']')"
                         @click="handleAddProperty(group)">
                     </i>
                     <i class="options-icon bk-icon icon-delete"
@@ -66,7 +66,7 @@
                 <a class="add-group-trigger" href="javascript:void(0)"
                     v-if="!showAddGroup"
                     @click="handleAddGroup">
-                    {{$t('ModelManagement["添加分组"]')}}
+                    {{$t('ModelManagement["新建分组"]')}}
                     <i class="icon icon-cc-edit"></i>
                 </a>
                 <template v-else>
@@ -85,7 +85,7 @@
             :width="600"
             @cancel="handleCancelAddProperty"
             @confirm="handleConfirmAddProperty">
-            <div class="dialog-title" slot="tools">{{$t('ModelManagement["添加字段"]')}}</div>
+            <div class="dialog-title" slot="tools">{{$t('ModelManagement["新建字段"]')}}</div>
             <div class="dialog-content" slot="content">
                 <div class="dialog-filter">
                     <input type="text" class="cmdb-form-input" v-model.trim="dialog.filter">
@@ -587,11 +587,21 @@
             user-select: none;
             cursor: pointer;
             @include ellipsis;
-            &:hover,
+            &:hover {
+                &:before {
+                    display: inline-block;
+                }
+            }
             &.sortable-ghost {
-                background-color: #ebf4ff;
+                background: #fff;
+                color: #fff;
+                border: 1px dashed $cmdbBorderFocusColor;
+                &:before {
+                    display: none;
+                }
             }
             &:before {
+                display: none;
                 position: absolute;
                 left: 7px;
                 top: 16px;

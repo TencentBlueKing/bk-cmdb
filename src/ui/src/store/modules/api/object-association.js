@@ -90,7 +90,7 @@ const actions = {
         return $http.put(`object/association/${id}/action/update`, params, config)
     },
     /**
-     * 删除关联类型
+     * 删除模型关联
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
@@ -100,6 +100,17 @@ const actions = {
      */
     deleteObjectAssociation ({ commit, state, dispatch }, { id, params, config }) {
         return $http.delete(`object/association/${id}/action/delete`, params, config)
+    },
+    /**
+     * 根据关联类型查询使用这些关联类型的关联关系列表
+     * @param {Function} commit store commit mutation hander
+     * @param {Object} state store state
+     * @param {String} dispatch store dispatch action hander
+     * @param {Object} params 参数
+     * @return {promises} promises 对象
+     */
+    searchAssociationListWithAssociationKindList ({ commit, state, dispatch }, { params, config }) {
+        return $http.post(`topo/association/type/action/search/batch`, params, config)
     },
     /**
      * 查询实例关联
