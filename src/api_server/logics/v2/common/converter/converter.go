@@ -28,6 +28,7 @@ import (
 	"configcenter/src/api_server/logics/v2/common/utils"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	ccError "configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -63,6 +64,20 @@ func RespSuccessV2(data interface{}, resp *restful.Response) {
 	}
 
 	blog.Debug("RespSuccessV2 data:%s", string(s))
+	io.WriteString(resp, string(s))
+}
+
+// RespFailV2Error convert the result of the failed data to V2
+func RespFailV2Error(err ccError.CCError, resp *restful.Response) {
+	res_v2 := make(map[string]interface{})
+
+	if ccErr, ok := err.(ccError.CCErrorCoder); ok {
+		res_v2["code"] = ccErr.GetCode()
+	}
+	res_v2["result"] = false
+	res_v2["msg"] = err.Error()
+	res_v2["extmsg"] = nil
+	s, _ := json.Marshal(res_v2)
 	io.WriteString(resp, string(s))
 }
 
