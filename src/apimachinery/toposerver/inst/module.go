@@ -67,7 +67,7 @@ func (t *instanceClient) SearchModule(ctx context.Context, ownerID string, appID
 	resp = new(metadata.SearchInstResult)
 	subPath := fmt.Sprintf("/module/search/%s/%s/%s", ownerID, appID, setID)
 
-	err = t.client.Put().
+	err = t.client.Post().
 		WithContext(ctx).
 		Body(s).
 		SubResource(subPath).
