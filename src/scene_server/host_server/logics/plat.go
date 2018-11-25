@@ -13,26 +13,35 @@
 package logics
 
 import (
+	"context"
 	"net/http"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
-	"context"
-	"fmt"
+	"configcenter/src/common/util"
 )
 
-func (lgc *Logics) IsPlatExist(pheader http.Header, cond interface{}) (bool, error) {
+func (lgc *Logics) IsPlatExist(header http.Header, cond interface{}) (bool, error) {
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	rid := util.GetHTTPCCRequestID(header)
+
 	query := &metadata.QueryInput{
 		Condition: cond,
 		Start:     0,
 		Limit:     1,
-		Sort:      common.BKAppIDField,
-		Fields:    common.BKAppIDField,
+		Sort:      common.BKCloudIDField,
+		Fields:    common.BKCloudIDField,
 	}
 
-	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDPlat, pheader, query)
-	if err != nil || (err == nil && !result.Result) {
-		return false, fmt.Errorf("%v, %v", err, result.ErrMsg)
+	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDPlat, header, query)
+	if err != nil {
+		blog.Errorf("IsPlatExist http do error, err:%s, cond:%+v,rid:%s", err.Error(), cond, rid)
+		return false, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.Errorf("IsPlatExist http response error, err:%s, cond:%+v,rid:%s", err.Error(), cond, rid)
+		return false, defErr.New(result.Code, result.ErrMsg)
 	}
 
 	if 1 == result.Data.Count {
