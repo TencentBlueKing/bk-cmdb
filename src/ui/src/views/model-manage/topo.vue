@@ -90,7 +90,16 @@
         </cmdb-slider>
         <div class="global-model" @dragover.prevent="" @drop="handleDrop" @mousemove="handleMouseMove" ref="topo" v-bkloading="{isLoading: loading}"></div>
         <svg class="topo-line" v-if="topoEdit.line.x1 && topoEdit.line.x2">
-            <line :x1="topoEdit.line.x1" :y1="topoEdit.line.y1" :x2="topoEdit.line.x2" :y2="topoEdit.line.y2" stroke="#c3cdd7" stroke-width="1"></line>
+            <defs>
+                <marker id="arrow" viewBox="0 0 10 10"
+                    refX="1" refY="5" 
+                    markerUnits="strokeWidth"
+                    markerWidth="10" markerHeight="10"
+                    orient="auto">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#ffb23a"/>
+                </marker>
+            </defs>
+            <line :x1="topoEdit.line.x1" :y1="topoEdit.line.y1" :x2="topoEdit.line.x2" :y2="topoEdit.line.y2" stroke="#ffb23a" stroke-width="1" marker-end="url(#arrow)" stroke-dasharray="5,2"></line>
         </svg>
         <ul class="topology-edge-tooltips" ref="edgeTooltips"
             @mouseover="handleEdgeTooltipsOver"
@@ -765,7 +774,7 @@
                 data.forEach(node => {
                     if (Array.isArray(node.assts) && node.assts.length) {
                         node.assts.forEach(asst => {
-                            if (this.displayConfig.isShowModelAsst && asst.checked) {
+                            if (asst.checked) {
                                 const twoWayAsst = this.getTwoWayAsst(node, asst, edges)
                                 // 存在则不重复添加
                                 let edge = edges.find(edge => edge.to === asst['bk_obj_id'] && edge.from === node['bk_obj_id'])
@@ -776,7 +785,9 @@
                                         objId: node['bk_obj_id'],
                                         asst
                                     })
-                                    edge.label = String(edge.labelList.length)
+                                    if (this.displayConfig.isShowModelAsst) {
+                                        edge.label = String(edge.labelList.length)
+                                    }
                                 } else if (twoWayAsst) { // 双向关联，将已存在的线改为双向
                                     twoWayAsst.arrows = 'to,from'
                                     twoWayAsst.labelList.push({
@@ -785,20 +796,25 @@
                                         objId: node['bk_obj_id'],
                                         asst
                                     })
-                                    twoWayAsst.label = String(twoWayAsst.labelList.length)
+                                    if (this.displayConfig.isShowModelAsst) {
+                                        twoWayAsst.label = String(twoWayAsst.labelList.length)
+                                    }
                                 } else {
-                                    edges.push({
+                                    let edge = {
                                         from: node['bk_obj_id'],
                                         to: asst['bk_obj_id'],
                                         arrows: 'to',
-                                        label: this.getAssociationName(asst['bk_asst_inst_id']),
                                         labelList: [{
                                             text: this.getAssociationName(asst['bk_asst_inst_id']),
                                             arrows: 'to',
                                             objId: node['bk_obj_id'],
                                             asst
                                         }]
-                                    })
+                                    }
+                                    if (this.displayConfig.isShowModelAsst) {
+                                        edge.label = this.getAssociationName(asst['bk_asst_inst_id'])
+                                    }
+                                    edges.push(edge)
                                 }
                             }
                         })
