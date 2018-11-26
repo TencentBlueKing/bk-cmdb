@@ -6,7 +6,7 @@
         <div class="nav-wrapper"
             :class="{unfold: unfold, flexible: !navStick}">
             <div class="logo" @click="$router.push('/index')">
-                {{$t('Nav["蓝鲸配置平台"]')}}
+                {{$t('Nav["配置平台"]')}}
             </div>
             <ul class="classify-list">
                 <li class="classify-item"
