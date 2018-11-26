@@ -239,6 +239,7 @@ func (s *Service) addModule(req *restful.Request, resp *restful.Response) {
 	reqParam[common.BKSetIDField] = setId
 	reqParam[common.BKOperatorField] = Operator
 	reqParam[common.BKBakOperatorField] = BakOperator
+	reqParam[common.BKInstParentStr] = setId
 
 	result, err := s.CoreAPI.TopoServer().OpenAPI().AddMultiModule(context.Background(), pheader, reqParam)
 	if err != nil {
