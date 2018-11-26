@@ -59,6 +59,7 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 				c.JSON(403, gin.H{
 					"status": "access forbidden",
 				})
+				c.Abort()
 				return
 			}
 			//http request header add user
@@ -77,6 +78,7 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 				}
 				url := servers[0]
 				httpclient.ProxyHttp(c, url)
+
 			} else {
 				c.Next()
 			}
@@ -85,11 +87,13 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 				c.JSON(401, gin.H{
 					"status": "log out",
 				})
+				c.Abort()
 				return
 			} else {
 				user := user.NewUser(config, Engine, CacheCli, LoginPlg)
 				url := user.GetLoginUrl(c)
 				c.Redirect(302, url)
+				c.Abort()
 			}
 
 		}
