@@ -94,12 +94,12 @@
                 <marker id="arrow" viewBox="0 0 10 10"
                     refX="1" refY="5" 
                     markerUnits="strokeWidth"
-                    markerWidth="10" markerHeight="10"
+                    markerWidth="5" markerHeight="5"
                     orient="auto">
                     <path d="M 0 0 L 10 5 L 0 10 z" fill="#ffb23a"/>
                 </marker>
             </defs>
-            <line :x1="topoEdit.line.x1" :y1="topoEdit.line.y1" :x2="topoEdit.line.x2" :y2="topoEdit.line.y2" stroke="#ffb23a" stroke-width="1" marker-end="url(#arrow)" stroke-dasharray="5,2"></line>
+            <line :x1="topoEdit.line.x1" :y1="topoEdit.line.y1" :x2="topoEdit.line.x2" :y2="topoEdit.line.y2" stroke="#ffb23a" stroke-width="2" marker-end="url(#arrow)" stroke-dasharray="5,2"></line>
         </svg>
         <ul class="topology-edge-tooltips" ref="edgeTooltips"
             @mouseover="handleEdgeTooltipsOver"
