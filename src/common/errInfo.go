@@ -288,15 +288,15 @@ const (
 	// delete a pre-defined association kind.
 	CCErrorTopoDeletePredefinedAssociationKind = 1101051
 	// create new instance for a new association, but association map is 1:1
-    CCErrorTopoCreateMultipleInstancesForOneToOneAssociation = 1101052
-    // the object has associate to another object, or has been associated by another one.
-    CCErrorTopoObjectHasAlreadyAssociated = 1101053
-    // update a pre-defined association, it's forbidden.
-    CCErrorTopoUpdatePredefinedAssociation = 1101054
-    // can not delete a pre-defined association.
-    CCErrorTopoDeletePredefinedAssociation = 1101055
-    // association do not exist.
-    CCErrorTopoAssociationDoNotExist = 1101056
+	CCErrorTopoCreateMultipleInstancesForOneToOneAssociation = 1101052
+	// the object has associate to another object, or has been associated by another one.
+	CCErrorTopoObjectHasAlreadyAssociated = 1101053
+	// update a pre-defined association, it's forbidden.
+	CCErrorTopoUpdatePredefinedAssociation = 1101054
+	// can not delete a pre-defined association.
+	CCErrorTopoDeletePredefinedAssociation = 1101055
+	// association do not exist.
+	CCErrorTopoAssociationDoNotExist = 1101056
 
 	CCErrTopoAppDeleteFailed                       = 1001031
 	CCErrTopoAppUpdateFailed                       = 1001032
@@ -319,14 +319,14 @@ const (
 	CCErrHostNotAllowedToMutiBiz                   = 1001050
 	CCErrTopoGraphicsSearchFailed                  = 1001051
 	CCErrTopoGraphicsUpdateFailed                  = 1001052
-	CCErrTopoObjectUniqueCreateFailed              = 1001053
-	CCErrTopoObjectUniqueUpdateFailed              = 1001054
-	CCErrTopoObjectUniqueDeleteFailed              = 1001055
-	CCErrTopoObjectUniqueSearchFailed              = 1001056
-	CCErrTopoObjectPropertyNotFound                = 1001057
-	CCErrTopoObjectPropertyUsedByUnique            = 1001058
-	CCErrTopoObjectUniqueKeyKindInvalid            = 1001059
-	CCErrTopoObjectUniquePresetCouldNotDelOrEdit   = 1001059
+	CCErrTopoObjectUniqueCreateFailed              = 1001060
+	CCErrTopoObjectUniqueUpdateFailed              = 1001061
+	CCErrTopoObjectUniqueDeleteFailed              = 1001062
+	CCErrTopoObjectUniqueSearchFailed              = 1001063
+	CCErrTopoObjectPropertyNotFound                = 1001064
+	CCErrTopoObjectPropertyUsedByUnique            = 1001065
+	CCErrTopoObjectUniqueKeyKindInvalid            = 1001066
+	CCErrTopoObjectUniquePresetCouldNotDelOrEdit   = 1001067
 
 	CCErrTopoMulueIDNotfoundFailed = 1101080
 	CCErrTopoBkAppNotAllowedDelete = 1101081
