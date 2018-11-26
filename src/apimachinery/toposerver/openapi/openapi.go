@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"net/http"
 
-    "configcenter/src/common/metadata"
+	"configcenter/src/common/metadata"
 )
 
 func (t *openapi) SearchAllApp(ctx context.Context, h http.Header) (resp *metadata.Response, err error) {
@@ -48,8 +48,8 @@ func (t *openapi) UpdateMultiModule(ctx context.Context, appID string, h http.He
 	return
 }
 
-func (t *openapi) SearchModuleByApp(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (t *openapi) SearchModuleByApp(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *metadata.QueryInstResult, err error) {
+	resp = new(metadata.QueryInstResult)
 	subPath := fmt.Sprintf("/openapi/module/searchByApp/%s", appID)
 
 	err = t.client.Post().
@@ -62,8 +62,8 @@ func (t *openapi) SearchModuleByApp(ctx context.Context, appID string, h http.He
 	return
 }
 
-func (t *openapi) SearchModuleByProperty(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (t *openapi) SearchModuleByProperty(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *metadata.QueryInstResult, err error) {
+	resp = new(metadata.QueryInstResult)
 	subPath := fmt.Sprintf("/openapi/module/searchByProperty/%s", appID)
 
 	err = t.client.Post().

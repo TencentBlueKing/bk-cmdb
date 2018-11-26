@@ -23,6 +23,9 @@ import (
 func SetQueryOwner(condition interface{}, ownerID string) map[string]interface{} {
 	switch cond := condition.(type) {
 	case map[string]interface{}:
+		if ownerID == common.BKSuperOwnerID {
+			return cond
+		}
 		if nil == cond {
 			return map[string]interface{}{
 				common.BKOwnerIDField: map[string]interface{}{common.BKDBIN: []string{common.BKDefaultOwnerID, ownerID}},
@@ -31,10 +34,26 @@ func SetQueryOwner(condition interface{}, ownerID string) map[string]interface{}
 		cond[common.BKOwnerIDField] = map[string]interface{}{common.BKDBIN: []string{common.BKDefaultOwnerID, ownerID}}
 		return cond
 	case nil:
+		if ownerID == common.BKSuperOwnerID {
+			return map[string]interface{}{}
+		}
 		return map[string]interface{}{
 			common.BKOwnerIDField: map[string]interface{}{common.BKDBIN: []string{common.BKDefaultOwnerID, ownerID}},
 		}
 	default:
+		out, err := bson.Marshal(condition)
+		if err != nil {
+			blog.Fatalf("SetModOwner faile condition %#v, error %s", condition, err.Error())
+		}
+		val := map[string]interface{}{}
+		err = bson.Unmarshal(out, val)
+		if err != nil {
+			blog.Fatalf("SetModOwner faile condition %#v, error %s", condition, err.Error())
+		}
+		if ownerID == common.BKSuperOwnerID {
+			return val
+		}
+		val[common.BKOwnerIDField] = ownerID
 		return map[string]interface{}{
 			common.BKOwnerIDField: map[string]interface{}{common.BKDBIN: []string{common.BKDefaultOwnerID, ownerID}},
 		}
