@@ -221,7 +221,7 @@ func (cli *Service) SearchInstObjects(req *restful.Request, resp *restful.Respon
 	//dat.ConvTime()
 	fields := dat.Fields
 	condition := dat.Condition
-	condition = util.SetModOwner(condition, ownerID)
+	condition = util.SetQueryOwner(condition, ownerID)
 
 	skip := dat.Start
 	limit := dat.Limit
