@@ -14,7 +14,6 @@ package v2
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"strings"
 
@@ -22,6 +21,7 @@ import (
 	"configcenter/src/api_server/logics/v2/common/utils"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	ccError "configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 
@@ -34,6 +34,7 @@ func (s *Service) getProcessPortByApplicationID(req *restful.Request, resp *rest
 	user := util.GetUser(pheader)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	defLang := s.Language.CreateDefaultCCLanguageIf(util.GetLanguage(pheader))
+	rid := util.GetHTTPCCRequestID(pheader)
 
 	err := req.Request.ParseForm()
 	if err != nil {
@@ -61,14 +62,13 @@ func (s *Service) getProcessPortByApplicationID(req *restful.Request, resp *rest
 		return
 	}
 
-	modules, err := s.getModulesByAppId(appID, user, pheader)
-	blog.V(3).Infof("modules data:%v", modules)
+	modulesMap, err := s.getModulesByAppId(appID, user, pheader)
+	blog.V(3).Infof("modules data:%v,input:%+v,rid:%s", modulesMap, formData, rid)
 	if nil != err {
-		blog.Errorf("getProcessPortByApplicationID error:%v", err)
-		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, err.Error()).Error(), resp)
+		blog.Errorf("getProcessPortByApplicationID error:%v,input:%+v,rid:%s", err, formData, rid)
+		converter.RespFailV2Error(err, resp)
 		return
 	}
-	modulesMap := modules.([]map[string]interface{})
 
 	result, err := s.CoreAPI.ProcServer().OpenAPI().GetProcessPortByApplicationID(context.Background(), appID, pheader, modulesMap)
 	if err != nil {
@@ -78,9 +78,8 @@ func (s *Service) getProcessPortByApplicationID(req *restful.Request, resp *rest
 	}
 
 	if !result.Result {
-		code, _ := util.GetIntByInterface(result.Code)
-		blog.Errorf("getProcessPortByApplicationID error:%s", result.ErrMsg)
-		converter.RespFailV2(code, result.ErrMsg, resp)
+		blog.Errorf("getProcessPortByApplicationID error:%s, input:%+v,rid:%s", result.ErrMsg, formData, rid)
+		converter.RespFailV2(result.Code, result.ErrMsg, resp)
 		return
 	}
 	if nil == result.Data {
@@ -143,7 +142,9 @@ func (s *Service) getProcessPortByIP(req *restful.Request, resp *restful.Respons
 	converter.RespSuccessV2(converter.ResV2ToForProcList(result.Data, defLang), resp)
 }
 
-func (s *Service) getModulesByAppId(appID string, user string, pheader http.Header) (interface{}, error) {
+func (s *Service) getModulesByAppId(appID string, user string, pheader http.Header) ([]mapstr.MapStr, ccError.CCError) {
+	rid := util.GetHTTPCCRequestID(pheader)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	searchParams := mapstr.MapStr{
 		"condition": mapstr.MapStr{},
@@ -156,19 +157,18 @@ func (s *Service) getModulesByAppId(appID string, user string, pheader http.Head
 	}
 	result, err := s.CoreAPI.TopoServer().OpenAPI().SearchModuleByApp(context.Background(), appID, pheader, searchParams)
 	if nil != err {
-		blog.Errorf("getModulesByAppId error:%v", err)
-		return nil, err
+		blog.Errorf("getModulesByAppId error:%v", err.Error(), rid)
+		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	resData := make([]map[string]interface{}, 0)
+	resData := make([]mapstr.MapStr, 0)
 	if result.Result {
-		modules := (result.Data.(map[string]interface{}))["info"]
-		for _, module := range modules.([]interface{}) {
-			resData = append(resData, module.(map[string]interface{}))
+		for _, module := range result.Data.Info {
+			resData = append(resData, module)
 		}
 		return resData, nil
 	} else {
-		return nil, errors.New(result.ErrMsg)
+		return nil, defErr.New(result.Code, result.ErrMsg)
 	}
 
 	return nil, nil

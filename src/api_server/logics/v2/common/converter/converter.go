@@ -28,6 +28,7 @@ import (
 	"configcenter/src/api_server/logics/v2/common/utils"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	ccError "configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -63,6 +64,20 @@ func RespSuccessV2(data interface{}, resp *restful.Response) {
 	}
 
 	blog.Debug("RespSuccessV2 data:%s", string(s))
+	io.WriteString(resp, string(s))
+}
+
+// RespFailV2Error convert the result of the failed data to V2
+func RespFailV2Error(err ccError.CCError, resp *restful.Response) {
+	res_v2 := make(map[string]interface{})
+
+	if ccErr, ok := err.(ccError.CCErrorCoder); ok {
+		res_v2["code"] = ccErr.GetCode()
+	}
+	res_v2["result"] = false
+	res_v2["msg"] = err.Error()
+	res_v2["extmsg"] = nil
+	s, _ := json.Marshal(res_v2)
 	io.WriteString(resp, string(s))
 }
 
@@ -677,7 +692,7 @@ func GeneralV2Data(data interface{}) interface{} {
 		return ""
 	}
 
-	return fmt.Sprintf("%v", data)
+	return convToV2ValStr(data) //fmt.Sprintf("%v", data)
 
 }
 
@@ -1018,7 +1033,7 @@ func convertFieldsNilToString(itemMap map[string]interface{}, fields []string) m
 		if !ok || nil == val {
 			itemMap[field] = ""
 		} else {
-			itemMap[field] = fmt.Sprintf("%v", val)
+			itemMap[field] = convToV2ValStr(val) //fmt.Sprintf("%v", val)
 		}
 	}
 
@@ -1154,11 +1169,11 @@ func convertToString(itemMap map[string]interface{}) map[string]interface{} {
 	tempMap := make(map[string]interface{})
 	blog.Debug(" itemMap: %v", itemMap)
 	for key, val := range itemMap {
-		filedInt, err := util.GetIntByInterface(val)
+		filedInt, err := util.GetInt64ByInterface(val)
 		if nil != err {
 			blog.Errorf("convert field %s to number fail!value:%v", key, val)
 		}
-		tempMap[key] = strconv.Itoa(filedInt)
+		tempMap[key] = strconv.FormatInt(filedInt, 10)
 	}
 
 	return tempMap
@@ -1183,12 +1198,12 @@ func convertFieldsIntToStr(itemMap map[string]interface{}, fields []string) (map
 		case string:
 		case nil:
 		default:
-			filedInt, err := util.GetIntByInterface(item)
+			filedInt, err := util.GetInt64ByInterface(item)
 			if nil != err {
 				blog.Debug("convert field %s to number fail!", field)
 				return nil, err
 			}
-			tempMap[field] = strconv.Itoa(filedInt)
+			tempMap[field] = strconv.FormatInt(filedInt, 10)
 		}
 
 	}
@@ -1244,10 +1259,50 @@ func getV2KeyVal(key string, val interface{}) (string, string) {
 			} else {
 				v2Val = ""
 			}
+		} else {
+			return v2Key, convToV2ValStr(val)
 		}
 	}
 
 	return v2Key, v2Val
+}
+
+func convToV2ValStr(val interface{}) string {
+	switch realVal := val.(type) {
+	case int:
+		return strconv.FormatInt(int64(realVal), 10)
+	case int8:
+		return strconv.FormatInt(int64(realVal), 10)
+	case int16:
+		return strconv.FormatInt(int64(realVal), 10)
+	case int32:
+		return strconv.FormatInt(int64(realVal), 10)
+	case int64:
+		return strconv.FormatInt(realVal, 10)
+	case uint:
+		return strconv.FormatInt(int64(realVal), 10)
+	case uint8:
+		return strconv.FormatInt(int64(realVal), 10)
+	case uint16:
+		return strconv.FormatInt(int64(realVal), 10)
+	case uint32:
+		return strconv.FormatInt(int64(realVal), 10)
+	case uint64:
+		return strconv.FormatInt(int64(realVal), 10)
+	case float32:
+		return strconv.FormatInt(int64(realVal), 10)
+	case float64:
+		return strconv.FormatInt(int64(realVal), 10)
+	case json.Number:
+		jsVal, err := realVal.Int64()
+		if err != nil {
+			return realVal.String()
+		}
+		return strconv.FormatInt(jsVal, 10)
+	case string:
+		return realVal
+	}
+	return fmt.Sprintf("%v", val)
 }
 
 func getFieldsMap(objType string) map[string]string {

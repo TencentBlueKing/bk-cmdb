@@ -14,27 +14,29 @@ package v2
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/emicklei/go-restful"
 
 	"configcenter/src/api_server/logics/v2/common/converter"
 	"configcenter/src/api_server/logics/v2/common/defs"
 	"configcenter/src/api_server/logics/v2/common/utils"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-
-	"github.com/emicklei/go-restful"
 )
 
-func (s *Service) getModuleInfoByApp(condition map[string]interface{}, pheader http.Header) (map[int]interface{}, error) {
+func (s *Service) getModuleInfoByApp(appID int64, pheader http.Header) (map[int64]mapstr.MapStr, ccErr.CCError) {
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	rid := util.GetHTTPCCRequestID(pheader)
 
-	moduleMap := make(map[int]interface{})
-	appID, _ := condition[common.BKAppIDField].(string)
+	moduleMap := make(map[int64]mapstr.MapStr)
 
 	//set empty to get all fields
 	param := mapstr.MapStr{
@@ -46,25 +48,22 @@ func (s *Service) getModuleInfoByApp(condition map[string]interface{}, pheader h
 		},
 	}
 
-	result, err := s.CoreAPI.TopoServer().OpenAPI().SearchModuleByApp(context.Background(), appID, pheader, param)
+	result, err := s.CoreAPI.TopoServer().OpenAPI().SearchModuleByApp(context.Background(), strconv.FormatInt(appID, 10), pheader, param)
 	if err != nil {
-		blog.Error("convert module res to v2  error:%v", err)
+		blog.Error("convert module res to v2  error:%v, query:%+v,rid:%s", err, param, rid)
 		return nil, err
 	}
 
 	if false == result.Result {
-		return nil, errors.New(result.ErrMsg)
+		return nil, defErr.New(result.Code, result.ErrMsg)
 	}
-	moduleData := result.Data
-	moduleResult := moduleData.(map[string]interface{})
-	moduleInfo := moduleResult["info"].([]interface{})
-	for _, i := range moduleInfo {
-		module := i.(map[string]interface{})
-		moduleId, err := util.GetInt64ByInterface(module[common.BKModuleIDField])
+
+	for _, module := range result.Data.Info {
+		moduleId, err := module.Int64(common.BKModuleIDField)
 		if nil != err {
 			continue
 		}
-		moduleMap[int(moduleId)] = i
+		moduleMap[moduleId] = module
 	}
 	return moduleMap, nil
 }
@@ -124,10 +123,11 @@ func (s *Service) getIPAndProxyByCompany(req *restful.Request, resp *restful.Res
 func (s *Service) getHostListByIP(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	rid := util.GetHTTPCCRequestID(pheader)
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Errorf("getHostListByIP error:%v", err)
+		blog.Errorf("getHostListByIP error:%v,rid:%s", err, rid)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
@@ -143,40 +143,49 @@ func (s *Service) getHostListByIP(req *restful.Request, resp *restful.Response) 
 	ipArr := strings.Split(formData["IP"][0], ",")
 
 	//build v3 params
-	param := map[string]interface{}{
-		common.BKIPListField: ipArr,
+	param := &metadata.HostSearchByIPParams{
+		IpList: ipArr,
 	}
+	// param := map[string]interface{}{
+	// 	common.BKIPListField: ipArr,
+	// }
 	if len(formData["ApplicationID"]) > 0 {
 		appIDStrArr := strings.Split(formData["ApplicationID"][0], ",")
 		appIDArr, sliceErr := utils.SliceStrToInt(appIDStrArr)
 		if nil != sliceErr {
-			blog.Errorf("getHostListByIP error: %v", sliceErr)
+			blog.Errorf("getHostListByIP error: %v,input:%+v,rid:%s", sliceErr, formData, rid)
 			converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "ApplicationID").Error(), resp)
 			return
 		}
-		param[common.BKAppIDField] = appIDArr
+		param.AppID = appIDArr
 	}
 
 	if len(formData["platID"]) > 0 {
 		platIDStr := formData["platID"][0]
-		platID, err := strconv.Atoi(platIDStr)
+		platID, err := util.GetInt64ByInterface(platIDStr)
 		if nil != err {
-			param[common.BKCloudIDField] = 0
-		} else {
-			param[common.BKCloudIDField] = platID
+			blog.Errorf("getHostListByIP error: %v, input:%+v,rid:%s", err, formData, rid)
+			converter.RespFailV2Error(defErr.Errorf(common.CCErrCommParamsNeedInt, "platID"), resp)
+			return
 		}
+		param.CloudID = &platID
 
 	}
 
 	result, err := s.CoreAPI.HostServer().HostSearchByIP(context.Background(), pheader, param)
 	if err != nil {
-		blog.Errorf("getHostListByIP  error:%v", err)
-		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
+		blog.Errorf("getHostListByIP  error:%v,input:%+v,rid:%s", err, formData, rid)
+		converter.RespFailV2Error(defErr.Error(common.CCErrCommHTTPDoRequestFailed), resp)
+		return
+	}
+	if !result.Result {
+		blog.Errorf("getHostListByIP http response error. err code:%d,err msg:%s ,input:%+v,rid:%s", result.Code, result.ErrMsg, formData, rid)
+		converter.RespFailV2(result.Code, result.ErrMsg, resp)
 		return
 	}
 	resDataV2, err := converter.ResToV2ForHostList(result.Result, result.ErrMsg, result.Data)
 	if err != nil {
-		blog.Error("convert host res to v2 error:%v", err)
+		blog.Error("convert host res to v2 error:%v,input:%+v,rid:%s", err, formData, rid)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}
