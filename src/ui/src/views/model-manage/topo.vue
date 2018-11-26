@@ -32,7 +32,7 @@
                 <bk-button type="primary" @click="saveTopo">
                     {{$t('Common["保存"]')}}
                 </bk-button>
-                <bk-button type="primary" @click="exitEdit">
+                <bk-button type="default" @click="exitEdit">
                     {{$t('Common["返回"]')}}
                 </bk-button>
             </div>
