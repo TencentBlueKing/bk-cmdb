@@ -141,10 +141,12 @@ func (ia *importAssociation) importAssociation() {
 		srcInstID, err := ia.getInstIDByPrimaryKey(ia.objID, asstInfo.SrcPrimary)
 		if err != nil {
 			ia.parseImportDataErr[idx] = err.Error()
+			continue
 		}
 		dstInstID, err := ia.getInstIDByPrimaryKey(asstID.AsstObjID, asstInfo.DstPrimary)
 		if err != nil {
 			ia.parseImportDataErr[idx] = err.Error()
+			continue
 		}
 		switch asstInfo.Operate {
 		case metadata.ExcelAssocationOperateAdd:
@@ -154,11 +156,15 @@ func (ia *importAssociation) importAssociation() {
 			conds.Field(common.BKObjIDField).Eq(ia.objID)
 			conds.Field(common.BKInstIDField).Eq(srcInstID)
 			conds.Field(common.AssociatedObjectIDField).Eq(asstID.AsstObjID)
-			if asstID.Mapping != metadata.OneToOneMapping {
-				conds.Field(common.BKAsstInstIDField).Eq(dstInstID)
+			isExist, err := ia.isExistInstAsst(idx, conds, dstInstID, asstID.Mapping)
+			if err != nil {
+				ia.parseImportDataErr[idx] = err.Error()
+				continue
+			}
+			if isExist {
+				continue
 			}
 
-			ia.delSrcAssociation(idx, conds)
 			ia.addSrcAssociation(idx, asstID.AssociationName, srcInstID, dstInstID)
 		case metadata.ExcelAssocationOperateDelete:
 			conds := condition.CreateCondition()
@@ -423,6 +429,37 @@ func (ia *importAssociation) addSrcAssociation(idx int, asstFlag string, instID,
 	if !rsp.Result {
 		ia.parseImportDataErr[idx] = rsp.ErrMsg
 	}
+}
+
+func (ia *importAssociation) isExistInstAsst(idx int, cond condition.Condition, dstInstID int64, asstMapping metadata.AssociationMapping) (isExit bool, err error) {
+	_, ok := ia.parseImportDataErr[idx]
+	if ok {
+		return
+	}
+	if asstMapping != metadata.OneToOneMapping {
+		cond.Field(common.BKAsstInstIDField).Eq(dstInstID)
+	}
+	input := &metadata.SearchAssociationInstRequest{
+		Condition: cond.ToMapStr(),
+	}
+	rsp, err := ia.cli.clientSet.ObjectController().Association().SearchInst(ia.ctx, ia.params.Header, input)
+	if err != nil {
+		return false, err
+	}
+	if !rsp.Result {
+		ia.parseImportDataErr[idx] = rsp.ErrMsg
+		return false, ia.params.Err.New(rsp.Code, rsp.ErrMsg)
+	}
+
+	if len(rsp.Data) == 0 {
+		return false, nil
+	}
+	if rsp.Data[0].AsstInstID != dstInstID &&
+		asstMapping == metadata.OneToOneMapping {
+		return false, ia.params.Err.Errorf(common.CCErrCommDuplicateItem)
+	}
+
+	return true, nil
 }
 
 func (ia *importAssociation) getInstIDByPrimaryKey(objID, primary string) (int64, error) {
