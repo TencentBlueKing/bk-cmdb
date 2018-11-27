@@ -1,41 +1,37 @@
 <template>
     <div class="topo-wrapper" :class="{'has-nav': topoEdit.isEdit}">
         <div class="toolbar">
-            <bk-button class="edit-button" type="primary" @click="editTopo">
-                {{$t('ModelManagement["编辑拓扑"]')}}
-            </bk-button>
-            <div class="vis-button-group">
-                <bk-button class="vis-button vis-zoomExtends bk-icon icon-full-screen" @click="resizeFull" v-tooltip="$t('ModelManagement[\'还原\']')"></bk-button>
-                <bk-button class="vis-button vis-zoomIn bk-icon icon-plus" @click="zoomIn" v-tooltip="$t('ModelManagement[\'放大\']')"></bk-button>
-                <bk-button class="vis-button vis-zoomOut bk-icon icon-minus" @click="zoomOut" v-tooltip="$t('ModelManagement[\'缩小\']')"></bk-button>
-                <bk-button class="vis-button vis-setting icon-cc-setting" @click="showSlider('theDisplay')" v-tooltip="$t('ModelManagement[\'拓扑显示设置\']')"></bk-button>
-                <bk-button class="vis-button vis-example" @click="toggleExample">
-                    <span class="vis-button-text">{{$t('ModelManagement["图例"]')}}</span>
-                    <i class="bk-icon icon-angle-down" :class="{'rotate': isShowExample}"></i>
+            <template v-if="!topoEdit.isEdit">
+                <bk-button class="edit-button" type="primary" @click="editTopo">
+                    {{$t('ModelManagement["编辑拓扑"]')}}
                 </bk-button>
-                <cmdb-collapse-transition name="topo-example-list">
-                    <div class="topo-example" v-show="isShowExample">
-                        <p class="example-item">
-                            <i></i>
-                            <span>{{$t('ModelManagement["自定义模型"]')}}</span>
-                        </p>
-                        <p class="example-item">
-                            <i></i>
-                            <span>{{$t('ModelManagement["内置模型"]')}}</span>
-                        </p>
-                    </div>
-                </cmdb-collapse-transition>
-            </div>
-        </div>
-        <template v-if="topoEdit.isEdit">
-            <div class="topo-save-title">
+            </template>
+            <template v-else>
                 <bk-button type="primary" @click="saveTopo">
-                    {{$t('Common["保存"]')}}
+                        {{$t('Common["保存"]')}}
                 </bk-button>
                 <bk-button type="default" @click="exitEdit">
                     {{$t('Common["返回"]')}}
                 </bk-button>
+            </template>
+            <div class="vis-button-group">
+                <i class="bk-icon icon-full-screen" @click="resizeFull" v-tooltip="$t('ModelManagement[\'还原\']')"></i>
+                <i class="bk-icon icon-plus" @click="zoomIn" v-tooltip="$t('ModelManagement[\'放大\']')"></i>
+                <i class="bk-icon icon-minus" @click="zoomOut" v-tooltip="$t('ModelManagement[\'缩小\']')"></i>
+                <i class="icon-cc-setting" @click="showSlider('theDisplay')" v-tooltip="$t('ModelManagement[\'拓扑显示设置\']')"></i>
+                <div class="topo-example">
+                    <p class="example-item">
+                        <i></i>
+                        <span>{{$t('ModelManagement["自定义模型"]')}}</span>
+                    </p>
+                    <p class="example-item">
+                        <i></i>
+                        <span>{{$t('ModelManagement["内置模型"]')}}</span>
+                    </p>
+                </div>
             </div>
+        </div>
+        <template v-if="topoEdit.isEdit">
             <ul class="topo-nav">
                 <li class="group-item" v-for="(group, groupIndex) in classifications" :key="groupIndex">
                     <div class="group-info"
@@ -94,7 +90,8 @@
                 <marker id="arrow" viewBox="0 0 10 10"
                     refX="1" refY="5" 
                     markerUnits="strokeWidth"
-                    markerWidth="5" markerHeight="5"
+                    markerWidth="5"
+                    markerHeight="5"
                     orient="auto">
                     <path d="M 0 0 L 10 5 L 0 10 z" fill="#ffb23a"/>
                 </marker>
@@ -136,6 +133,7 @@
     import { mapGetters, mapActions } from 'vuex'
     import throttle from 'lodash.throttle'
     const NAV_WIDTH = 200
+    const TOOLBAR_HEIHGT = 50
     export default {
         components: {
             theDisplay,
@@ -289,9 +287,6 @@
                 'updateObjectAssociation',
                 'deleteObjectAssociation'
             ]),
-            ...mapActions('objectModel', [
-                'deleteObject'
-            ]),
             addEdge () {
                 if (this.topoEdit.activeEdge.from === '') {
                     const nodeId = this.topoTooltip.hoverNode.id
@@ -301,7 +296,7 @@
                     const scale = this.networkInstance.getScale()
                     this.topoEdit.activeEdge.from = nodeId
                     this.topoEdit.line.x1 = (containerBox.left + containerBox.right) / 2 - (view.x - positions[nodeId].x) * scale - containerBox.x
-                    this.topoEdit.line.y1 = (containerBox.top + containerBox.bottom) / 2 - (view.y - positions[nodeId].y) * scale - containerBox.y
+                    this.topoEdit.line.y1 = (containerBox.top + containerBox.bottom) / 2 - (view.y - positions[nodeId].y) * scale - containerBox.y + TOOLBAR_HEIHGT
                 }
             },
             isModelInTopo (model) {
@@ -350,11 +345,44 @@
                 })
                 this.updateNodePosition(this.networkDataSet.nodes.get(nodes))
             },
+            getDeleteEdge () {
+                const deleteAsstArray = []
+                this.topoModelList.forEach(model => {
+                    const localModel = this.localTopoModelList.find(({bk_obj_id: objId}) => model['bk_obj_id'] === objId)
+                    if (localModel) {
+                        if (model.hasOwnProperty('assts') && model.assts.length) {
+                            model.assts.forEach(asst => {
+                                const localAsst = localModel.assts.find(({bk_inst_id: instId}) => asst['bk_inst_id'] === instId)
+                                if (!localAsst) {
+                                    deleteAsstArray.push({
+                                        type: 'delete',
+                                        params: {
+                                            id: asst['bk_inst_id']
+                                        }
+                                    })
+                                }
+                            })
+                        }
+                    } else {
+                        if (model.hasOwnProperty('assts') && model.assts.length) {
+                            model.assts.forEach(asst => {
+                                deleteAsstArray.push({
+                                    type: 'delete',
+                                    params: {
+                                        id: asst['bk_inst_id']
+                                    }
+                                })
+                            })
+                        }
+                    }
+                })
+                this.topoEdit.edges = this.topoEdit.edges.concat(deleteAsstArray)
+            },
             async saveTopo () {
                 let createAsstArray = []
                 let updateAsstArray = []
                 let deleteAsstArray = []
-                let deleteObjectArray = []
+                this.getDeleteEdge()
                 this.topoEdit.edges.filter(({type}) => type === 'create').forEach(data => {
                     createAsstArray.push(this.createAsst(data.params))
                 })
@@ -364,17 +392,12 @@
                 this.topoEdit.edges.filter(({type}) => type === 'delete').forEach(data => {
                     deleteAsstArray.push(this.deleteAsst(data.params))
                 })
-                this.topoEdit.nodes.filter(({type}) => type === 'delete').forEach(data => {
-                    let id = this.$allModels.find(model => model['bk_obj_id'] === data.params.objId).id
-                    deleteObjectArray.push(this.deleteObject({id}))
-                })
                 this.updatePositions()
                 await Promise.all(createAsstArray)
                 await Promise.all(updateAsstArray)
                 await Promise.all(deleteAsstArray)
-                await Promise.all(deleteObjectArray)
                 this.topoEdit.isEdit = false
-                this.topoModelList = this.$tools.clone(this.localTopoModelList)
+                this.initNetwork()
             },
             handleDisplaySave (displayConfig) {
                 this.displayConfig.isShowModelName = displayConfig.isShowModelName
@@ -458,15 +481,19 @@
                     hoverNode
                 } = this.topoTooltip
                 this.$bkInfo({
-                    title: this.$tc('ModelManagement["确定删除模型？"]', hoverNode.label, {name: hoverNode.label}),
+                    title: this.$t('ModelManagement["确定移除模型？"]'),
+                    content: this.$t('ModelManagement["移除的模型将放置于左侧模型组里，拓扑视图中将不再显示"]'),
                     confirmFn: () => {
-                        this.localTopoModelList = this.localTopoModelList.filter(model => model['bk_obj_id'] !== hoverNode.id)
-                        this.topoEdit.nodes.push({
-                            type: 'delete',
-                            params: {
-                                objId: hoverNode.id
+                        let node = this.localTopoModelList.find(model => model['bk_obj_id'] === hoverNode.id)
+                        node.assts = []
+                        node.draged = false
+                        // 删除当前节点关联
+                        this.localTopoModelList.forEach(model => {
+                            if (model.hasOwnProperty('assts') && model.assts.length) {
+                                model.assts = model.assts.filter(asst => asst['bk_obj_id'] !== node['bk_obj_id'])
                             }
                         })
+                        
                         this.topoEdit.edges = this.topoEdit.edges.filter(edge => edge.params['bk_obj_id'] !== hoverNode.id && edge.params['bk_asst_obj_id'] !== hoverNode.id)
                         this.topoTooltip.hoverNode = null
                         this.topoTooltip.hoverNodeTimer = null
@@ -536,7 +563,7 @@
             initMoveFunction () {
                 this.handleMouseMove = throttle(event => {
                     this.topoEdit.line.x2 = event.layerX
-                    this.topoEdit.line.y2 = event.layerY
+                    this.topoEdit.line.y2 = event.layerY + TOOLBAR_HEIHGT
                 }, 50)
             },
             handleNodeClick (data) {
@@ -571,7 +598,7 @@
                         if (this.topoEdit.isEdit) {
                             left += NAV_WIDTH
                         }
-                        const top = containerBox.height / 2 + (edgeTop - view.y) * scale - 18
+                        const top = containerBox.height / 2 + (edgeTop - view.y) * scale - 18 + TOOLBAR_HEIHGT
                         this.$refs.edgeTooltips.style.left = left + 'px'
                         this.$refs.edgeTooltips.style.top = top + 'px'
                     })
@@ -586,7 +613,7 @@
                     const nodeBox = this.networkInstance.getBoundingBox(nodeId)
                     const containerBox = this.$refs.topo.getBoundingClientRect()
                     const left = containerBox.width / 2 + (nodeBox.right - view.x) * scale + NAV_WIDTH - 8
-                    const top = containerBox.height / 2 + (nodeBox.top - view.y) * scale - 8
+                    const top = containerBox.height / 2 + (nodeBox.top - view.y) * scale - 8 + TOOLBAR_HEIHGT
                     this.$refs.nodeTooltips.style.left = left + 'px'
                     this.$refs.nodeTooltips.style.top = top + 'px'
                 })
@@ -732,8 +759,11 @@
                 this.localTopoModelList.forEach(model => {
                     this.$set(model, 'draged', false)
                     if (model.hasOwnProperty('assts') && model.assts.length) {
+                        model.draged = true
                         model.assts.forEach(asst => {
                             this.$set(asst, 'checked', true)
+                            const curModel = this.localTopoModelList.find(({bk_obj_id: objId}) => objId === asst['bk_obj_id'])
+                            curModel.draged = true
                         })
                     }
                 })
@@ -757,7 +787,7 @@
                     }
                 })
                 data.forEach(nodeData => {
-                    if ((nodeData.hasOwnProperty('assts') || asstList.findIndex(({bk_obj_id: objId}) => objId === nodeData['bk_obj_id']) > -1) || nodeData.draged) {
+                    if (((nodeData.hasOwnProperty('assts') && nodeData.assts.length) || asstList.findIndex(({bk_obj_id: objId}) => objId === nodeData['bk_obj_id']) > -1) || nodeData.draged) {
                         const node = {
                             id: nodeData['bk_obj_id'],
                             image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON({
@@ -1010,9 +1040,6 @@
         padding: 0;
         height: 100%;
         &.has-nav {
-            .edit-button {
-                display: none;
-            }
             .topo-nav {
                 display: block;
             }
@@ -1023,71 +1050,40 @@
         }
     }
     .toolbar {
-        .edit-button {
-            position: absolute;
-            padding: 0 10px;
-            border-radius: 18px;
-            z-index: 1;
-            top: 10px;
-            left: 20px;
+        padding: 7px 20px;
+        width: 100%;
+        height: 50px;
+        background: #fff;
+        font-size: 0;
+        .bk-button {
+            margin-right: 10px;
+        }
+        i {
+            font-size: 14px;
         }
         .vis-button-group {
-            position: absolute;
-            top: 10px;
-            right: 20px;
-            z-index: 1;
-            font-size: 0;
-        }
-        .vis-button {
-            margin-left: 10px;
-            width: 36px;
-            height: 36px;
-            line-height: 36px;
-            padding: 0;
-            cursor: pointer;
-            border-radius: 50%;
-            box-shadow: 0px 1px 5px 0px rgba(12, 34, 59, 0.2);
-            border: none;
-            text-align: center;
-            z-index: 1;
-            &.vis-example {
-                width: auto;
-                padding: 0 15px;
-                border-radius: 18px;
-                font-size: 0;
-                .vis-button-text {
-                    font-size: 14px;
-                    vertical-align: middle;
-                }
-                .icon-angle-down {
-                    font-size: 12px;
-                    vertical-align: middle;
-                    transition: all .2s;
-                    &.rotate {
-                        transform: rotate(180deg);
-                    }
+            float: right;
+            padding-top: 11px;
+            >i {
+                margin-left: 32px;
+                font-size: 14px;
+                font-weight: bold;
+                cursor: pointer;
+                &:hover {
+                    color: $cmdbBorderFocusColor;
                 }
             }
         }
         .topo-example {
             position: absolute;
             padding: 3px 10px;
-            top: 46px;
-            right: 0;
+            top: 57px;
+            right: 8px;
             width: 100px;
-            height: 66px;
             background: #fff;
             box-shadow: 0px 2px 1px 0px rgba(185, 203, 222, 0.5);
             font-size: 12px;
             z-index: 1;
-            &:before {
-                position: absolute;
-                top: -10px;
-                right: 18px;
-                content: "";
-                border: 5px solid transparent;
-                border-bottom-color: #fff;
-            }
             .example-item {
                 line-height: 30px;
                 font-size: 0;
@@ -1112,28 +1108,13 @@
             }
         }
     }
-    .topo-save-title {
-        position: absolute;
-        padding: 11px;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 58px;
-        background: #fff;
-        font-size: 0;
-        z-index: 1;
-        .bk-button {
-            margin-right: 10px;
-        }
-    }
     .topo-nav {
         display: none;
         float: left;
         border: 1px solid $cmdbTableBorderColor;
         border-left: none;
         width: 200px;
-        height: calc(100% - 58px);
-        margin-top: 58px;
+        height: calc(100% - 50px);
         overflow: auto;
         @include scrollbar;
         .group-info {
@@ -1213,7 +1194,7 @@
     }
     .global-model {
         width: 100%;
-        height: 100%;
+        height: calc(100% - 50px);
         background-color: #f4f5f8;
         background-image: linear-gradient(#eef1f5 1px, transparent 0), linear-gradient(90deg, #eef1f5 1px, transparent 0);
         background-size: 10px 10px;
