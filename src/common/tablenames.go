@@ -79,6 +79,11 @@ const (
 	BKTableNameNetcollectProperty = "cc_Netcollect_Property"
 
 	BKTableNameHostLock = "cc_HostLock"
+
+	//Cloud sync tables
+	BKTableNameCloudTask         = "cc_CloudTask"
+	BKTableNameCloudResourceSync = "cc_CloudResourceSync"
+	BKTableNameCloudHistory      = "cc_CloudHistory"
 )
 
 // AllTables alltables

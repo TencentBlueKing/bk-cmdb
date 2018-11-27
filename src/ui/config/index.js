@@ -20,19 +20,28 @@ module.exports = {
   dev: {
     // custom config
     config: Object.assign({}, config, {
-        'API_URL': '""',
-        'API_VERSION': '"v3"',
-        'API_LOGIN': '""',
-        'AGENT_URL': 'null',
-        'BUILD_VERSION': 'dev',
-        'USER_ROLE': '"1"',
-        'USER_NAME': '"admin"'
+      'API_URL': '"http://localhost:9090/pathForProxy"',
+      'API_VERSION': '"v3"',
+      'API_LOGIN': '""',
+      'AGENT_URL': 'null',
+      'BUILD_VERSION': 'dev',
+      'USER_ROLE': '"1"',
+      'USER_NAME': '"admin"'
     }),
 
     // Paths
     assetsSubDirectory: '',
     assetsPublicPath: '/static/',
-    proxyTable: {},
+    proxyTable: {
+      '/pathForProxy': {
+        logLevel: 'info',
+        changeOrigin: true,
+        target: 'http://localhost:8083/',
+        pathRewrite: {
+          '^/pathForProxy': ''
+        }
+      }
+    },
 
     // Various Dev Server settings
     host: 'localhost', // can be overwritten by process.env.HOST
