@@ -94,9 +94,6 @@
                 }
             }
         },
-        created () {
-            this.searchRelation()
-        },
         computed: {
             ...mapGetters('objectModel', [
                 'activeModel'
@@ -126,6 +123,10 @@
                 }
                 return params
             }
+        },
+        created () {
+            this.$store.commit('setHeaderTitle', this.$t('Nav["关联类型"]'))
+            this.searchRelation()
         },
         methods: {
             ...mapActions('objectAssociation', [
