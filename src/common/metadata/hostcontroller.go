@@ -204,3 +204,8 @@ type AddConfigQuery struct {
 	Name       string `json:"name,omitempty"`
 	CreateUser string `json:"create_user,omitempty"`
 }
+
+type CloudSearch struct {
+	BaseResp `json:",inline"`
+	Data     []map[string]interface{} `json:"data"`
+}

@@ -136,3 +136,70 @@ type CloneHostPropertyParams struct {
 	DstIP   string `json:"bk_dst_ip"`
 	CloudID int64  `json:"bk_cloud_id"`
 }
+
+type CloudTaskList struct {
+	TaskName        string   `json:"bk_task_name"`
+	TaskID          int64    `json:"bk_task_id"`
+	AccountType     string   `json:"bk_account_type"`
+	AccountAdmin    []string `json:"bk_account_admin"`
+	PeriodType      string   `json:"bk_period_type"`
+	Period          string   `json:"bk_period"`
+	LastSyncTime    string   `json:"bk_last_sync_time"`
+	ObjID           string   `json:"bk_obj_id"`
+	Status          bool     `json:"bk_status"`
+	ResourceConfirm bool     `json:"bk_confirm"`
+	AttrConfirm     bool     `json:"bk_attr_confirm"`
+	SecretID        string   `json:"bk_secret_id"`
+	SecretKey       string   `json:"bk_secret_key"`
+}
+
+type ResourceConfirm struct {
+	ObjID        string          `json:"bk_obj_id"`
+	ResourceName []mapstr.MapStr `json:"bk_resource_name"`
+	SourceType   string          `json:"bk_source_type"`
+	SourceName   string          `json:"bk_source_name"`
+	CreateTime   string          `json:"bk_create_time"`
+	TaskID       string          `json:"bk_task_id"`
+	ResourceID   int64           `json:"bk_resource_id"`
+	ConfirmType  string          `json:"bk_confirm_type`
+}
+
+type CloudHistory struct {
+	ObjID       string `json:"bk_obj_id"`
+	Status      int64  `json:"bk_status"`
+	TimeConsume int64  `json:"bk_time_consume"`
+	SyncDetail  string `json:"bk_sync_detail"`
+	StartTime   int64  `json:"bk_start_time"`
+	TaskID      int64  `json:"bk_task_id"`
+	HistoryID   int64  `json:"bk_history_id"`
+}
+
+type DeleteCloudTask struct {
+	TaskID int64 `json:"bk_task_id"`
+}
+
+type RegionResponse struct {
+	Response RegionSet `json:"Response"`
+}
+
+type RegionSet struct {
+	Data []Region `json:"RegionSet"`
+}
+
+type Region struct {
+	Region string `json:"Region"`
+}
+
+type HostResponse struct {
+	HostResponse InstanceSet `json:"Response"`
+}
+
+type InstanceSet struct {
+	InstanceSet []CloudHostInfo `json:"InstanceSet"`
+}
+
+type CloudHostInfo struct {
+	PrivateIpAddresses []string `json:"PrivateIpAddresses"`
+	PublicIpAddresses  []string `json:"PublicIpAddresses"`
+	OsName             string   `json:"OsName"`
+}
