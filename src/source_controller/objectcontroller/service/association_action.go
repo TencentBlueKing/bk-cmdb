@@ -20,12 +20,12 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	"github.com/emicklei/go-restful"
 )
 
 // SearchAssociationType Search Association Type
@@ -54,7 +54,7 @@ func (cli *Service) SearchAssociationType(req *restful.Request, resp *restful.Re
 	}
 
 	cond := request.Condition
-	cond = util.SetModOwner(cond, ownerID)
+	cond = util.SetQueryOwner(cond, ownerID)
 	result := []*meta.AssociationKind{}
 
 	if selErr := db.Table(common.BKTableNameAsstDes).Find(cond).Limit(uint64(request.Limit)).Start(uint64(request.Start)).Sort(request.Sort).All(ctx, &result); nil != selErr && !db.IsNotFoundError(selErr) {
