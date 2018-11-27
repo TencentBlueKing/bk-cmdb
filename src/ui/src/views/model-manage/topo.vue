@@ -116,9 +116,13 @@
             ref="nodeTooltips"
             v-if="topoTooltip.hoverNode"
             @mouseover="handleNodeTooltipsOver"
-            @mouseleave="handleNodeTooltipsLeave"
-            @click="deleteNode">
-            <i class="bk-icon icon-close"></i>
+            @mouseleave="handleNodeTooltipsLeave">
+            <span class="icon-box is-line" @click="addEdge">
+                <i class="icon-cc-line"></i>
+            </span>
+            <span class="icon-box is-del" @click="deleteNode">
+                <i class="icon-cc-del"></i>
+            </span>
         </div>
     </div>
 </template>
@@ -288,6 +292,18 @@
             ...mapActions('objectModel', [
                 'deleteObject'
             ]),
+            addEdge () {
+                if (this.topoEdit.activeEdge.from === '') {
+                    const nodeId = this.topoTooltip.hoverNode.id
+                    const view = this.networkInstance.getViewPosition()
+                    const positions = this.networkInstance.getPositions([nodeId])
+                    const containerBox = this.$refs.topo.getBoundingClientRect()
+                    const scale = this.networkInstance.getScale()
+                    this.topoEdit.activeEdge.from = nodeId
+                    this.topoEdit.line.x1 = (containerBox.left + containerBox.right) / 2 - (view.x - positions[nodeId].x) * scale - containerBox.x
+                    this.topoEdit.line.y1 = (containerBox.top + containerBox.bottom) / 2 - (view.y - positions[nodeId].y) * scale - containerBox.y
+                }
+            },
             isModelInTopo (model) {
                 return this.network.nodes.findIndex(node => node.id === model['bk_obj_id']) > -1
             },
@@ -527,11 +543,7 @@
                 if (!this.topoEdit.isEdit) {
                     return
                 }
-                if (this.topoEdit.activeEdge.from === '') {
-                    this.topoEdit.activeEdge.from = data['nodes'][0]
-                    this.topoEdit.line.x1 = data.pointer.DOM.x
-                    this.topoEdit.line.y1 = data.pointer.DOM.y
-                } else if (this.topoEdit.activeEdge.to === '') {
+                if (this.topoEdit.activeEdge.from && this.topoEdit.activeEdge.to === '') {
                     this.topoEdit.activeEdge.to = data['nodes'][0]
                     this.updateNetwork()
                     this.slider.properties = {
@@ -573,8 +585,8 @@
                     const scale = this.networkInstance.getScale()
                     const nodeBox = this.networkInstance.getBoundingBox(nodeId)
                     const containerBox = this.$refs.topo.getBoundingClientRect()
-                    const left = containerBox.width / 2 + (nodeBox.right - view.x - 18) * scale + NAV_WIDTH
-                    const top = containerBox.height / 2 + (nodeBox.top - view.y) * scale
+                    const left = containerBox.width / 2 + (nodeBox.right - view.x) * scale + NAV_WIDTH - 8
+                    const top = containerBox.height / 2 + (nodeBox.top - view.y) * scale - 8
                     this.$refs.nodeTooltips.style.left = left + 'px'
                     this.$refs.nodeTooltips.style.top = top + 'px'
                 })
@@ -919,7 +931,7 @@
                         enabled: false
                     }
                 })
-                this.networkInstance.on('dragEnd', (params) => {
+                this.networkInstance.on('dragEnd', data => {
                     this.networkInstance.unselectAll()
                 })
                 // this.setSingleNodePosition()
@@ -972,6 +984,7 @@
                 })
                 networkInstance.on('zoom', data => {
                     this.clearActiveEdge()
+                    this.clearHoverTooltip()
                 })
                 networkInstance.on('dragging', data => {
                     if (this.topoEdit.activeEdge.from) {
@@ -1251,17 +1264,27 @@
     }
     .topology-node-tooltips {
         position: absolute;
-        padding-top: 1px;
         top: 0;
         left: 0;
-        display: inline-block;
-        width: 14px;
-        height: 14px;
-        text-align: center;
-        border-radius: 50%;
         font-size: 12px;
         color: #fff;
-        background: $cmdbDangerColor;
+        .icon-box {
+            position: absolute;
+            display: inline-block;
+            padding-top: 3px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #181818;
+            text-align: center;
+            visibility: top;
+            line-height: 1;
+            transform: scale(.8);
+            &.is-del {
+                top: 18px;
+                left: 8px;
+            }
+        }
         .bk-icon {
             transform: scale(.5);
             font-weight: bold;
