@@ -106,15 +106,54 @@ func (s *Service) StartCloudSync(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
-	taskList := new(meta.CloudTaskList)
-	if err := json.NewDecoder(req.Request.Body).Decode(taskList); err != nil {
+	opt := make(map[string]interface{}, 0)
+	if err := json.NewDecoder(req.Request.Body).Decode(&opt); err != nil {
 		blog.Errorf("update cloud task failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
-	blog.Info("start cloud sync")
-	s.Logics.CloudTaskSync(taskList, pheader)
+	/*
+	* 这个函数可以是ESB接口，接收json:{"bk_task_name": "test", "bk_status": true}开启一个同步
+	* 也可以是前端发回一个json:{"bk_task_name": "test", "bk_status": true}，控制一个同步任务的开和关
+	 */
+
+	isRequired := make([]string, 0)
+	status, ok := opt["bk_status"]
+	if ok {
+		delete(opt, "bk_status")
+	} else {
+		isRequired = append(isRequired, "bk_status is required.")
+	}
+
+	if _, oK := opt["bk_task_name"]; !oK {
+		isRequired = append(isRequired, "bk_task_name is required.")
+	}
+
+	if len(isRequired) > 0 {
+		blog.Errorf("%v", isRequired)
+		resp.WriteEntity(meta.NewSuccessResp(isRequired))
+	}
+
+	response, err := s.CoreAPI.HostController().Cloud().SearchCloudTask(context.Background(), pheader, opt)
+	if err != nil {
+		blog.Errorf("search %v failed, err: %v", opt["bk_task_name"], err)
+		resp.WriteEntity(meta.NewSuccessResp(err))
+	}
+
+	taskList, errMap := mapstr.NewFromInterface(response.Data[0])
+	if errMap != nil {
+		blog.Errorf("interface convert to Mapstr failed.")
+		resp.WriteEntity(meta.NewSuccessResp(errMap))
+	}
+
+	taskList["bk_status"] = status
+
+	errSync := s.Logics.CloudTaskSync(taskList, pheader)
+	if errSync != nil {
+		blog.Errorf("execute CloudTaskSync failed. err: %v", errSync)
+		resp.WriteEntity(meta.NewSuccessResp(errSync))
+	}
 
 	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
@@ -230,4 +269,17 @@ func (s *Service) SearchAccount(req *restful.Request, resp *restful.Response) {
 	result["Key"] = secretKeyOrigin
 
 	resp.WriteEntity(meta.NewSuccessResp(result))
+}
+
+func (s *Service) CloudSyncHistory(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+
+	response, err := s.CoreAPI.HostController().Cloud().SearchHistory(context.Background(), pheader)
+	if err != nil {
+		blog.Errorf("search cloud sync history failed, err: %v", err)
+		resp.WriteEntity(meta.NewSuccessResp(err))
+		return
+	}
+
+	resp.WriteEntity(meta.NewSuccessResp(response))
 }

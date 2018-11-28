@@ -46,47 +46,38 @@ func (lgc *Logics) AddCloudTask(taskList *meta.CloudTaskList, pheader http.Heade
 	return "", nil
 }
 
-//func (lgc *Logics) CloudTaskSync(taskList *meta.CloudTaskList, pheader http.Header) {
-//	//period sync
-//	timer := cron.New()
-//	switch taskList.PeriodType {
-//	case "day":
-//		spec := "0 " + taskList.Period[3:] + " " + taskList.Period[:2] + " * * ?"
-//		timer.AddFunc(spec, func() {
-//			lgc.ExecSync(taskList, pheader)
-//		})
-//		timer.Run()
-//	case "hour":
-//		spec := "0 " + taskList.Period[3:] + " * * * ?"
-//		timer.AddFunc(spec, func() {
-//			lgc.ExecSync(taskList, pheader)
-//		})
-//		timer.Run()
-//	case "minute":
-//		spec := "0 */5 * * * ?"
-//		timer.AddFunc(spec, func() {
-//			lgc.ExecSync(taskList, pheader)
-//		})
-//		timer.Run()
-//	}
-//
-//	//select {}
-//
-//}
-
-func (lgc *Logics) CloudTaskSync(taskList *meta.CloudTaskList, pheader http.Header) {
+func (lgc *Logics) CloudTaskSync(taskList mapstr.MapStr, pheader http.Header) error {
 	tickerStart := make(chan bool)
 	ticker := time.NewTicker(5 * time.Minute)
 	var nextTrigger int64
-	if taskList.PeriodType != "minute" {
-		nextTrigger = lgc.UnixSubtract(taskList.PeriodType, taskList.Period)
+
+	PeriodType, errType := taskList.String("bk_period_type")
+	if errType != nil {
+		blog.Errorf("mapstr interface convert to string failed.")
+		return errType
+	}
+	Period, errP := taskList.String("bk_period")
+	if errP != nil {
+		blog.Errorf("mapstr interface convert to string failed.")
+		return errP
 	}
 
-	blog.Debug("taskList.Status: %v", taskList.Status)
-	blog.Debug("nextTrigger: %v", nextTrigger)
+	if PeriodType != "minute" {
+		nextTrigger = lgc.UnixSubtract(PeriodType, Period)
+	}
 
-	if taskList.Status {
-		switch taskList.PeriodType {
+	status, errStatus := taskList.Bool("bk_status")
+	if errStatus != nil {
+		blog.Errorf("mapstr interface convert to bool failed.")
+		return errP
+	}
+
+	blog.Debug("taskList.Status: %v", status)
+	blog.Debug("nextTrigger: %v", nextTrigger)
+	blog.Debug("PeriodType: %v", PeriodType)
+
+	if status {
+		switch PeriodType {
 		case "day":
 			timer := time.NewTimer(time.Duration(nextTrigger) * time.Second)
 			go func() {
@@ -152,13 +143,26 @@ func (lgc *Logics) CloudTaskSync(taskList *meta.CloudTaskList, pheader http.Head
 		ticker.Stop()
 		blog.Info("bk_status: false, stop cloud sync")
 	}
-
+	return nil
 }
 
-func (lgc *Logics) ExecSync(taskList *meta.CloudTaskList, pheader http.Header) {
+func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 	cloudHistory := new(meta.CloudHistory)
-	cloudHistory.ObjID = taskList.ObjID
-	cloudHistory.TaskID = taskList.TaskID
+
+	taskObjID, errObj := taskList.String("bk_obj_id")
+	if errObj != nil {
+		blog.Errorf("mapstr key-value convert to string failed.")
+		return errObj
+	}
+
+	taskID, errTaskID := taskList.Int64("bk_task_id")
+	if errTaskID != nil {
+		blog.Errorf("mapstr key-value convert to int64 failed.")
+		return errTaskID
+	}
+
+	cloudHistory.ObjID = taskObjID
+	cloudHistory.TaskID = taskID
 	cloudHistory.StartTime = time.Now().Unix()
 
 	defer lgc.CloudHistory(cloudHistory, pheader)
@@ -169,7 +173,7 @@ func (lgc *Logics) ExecSync(taskList *meta.CloudTaskList, pheader http.Header) {
 	if err != nil {
 		blog.Errorf("search host failed, err: %v", err)
 		cloudHistory.Status = 0
-		return
+		return err
 	}
 
 	existHostList := make([]string, 0)
@@ -178,25 +182,43 @@ func (lgc *Logics) ExecSync(taskList *meta.CloudTaskList, pheader http.Header) {
 		if err != nil {
 			blog.Errorf("get hostInfo failed with err: %v", err)
 			cloudHistory.Status = 0
-			return
+			return err
 		}
 
-		ip, ok := hostInfo.String(common.BKHostInnerIPField)
-		if ok != nil {
-			blog.Errorf("get hostIp failed with err: %v", ok)
+		ip, errH := hostInfo.String(common.BKHostInnerIPField)
+		if errH != nil {
+			blog.Errorf("get hostIp failed with err: %v")
 			cloudHistory.Status = 0
-			return
+			return errH
 		}
 
 		existHostList = append(existHostList, ip)
 	}
 
+	secretID, errSID := taskList.String("bk_secret_id")
+	if errSID != nil {
+		blog.Errorf("mapstr convert to string failed.")
+		return errSID
+	}
+	secretKeyEncrypted, errKey := taskList.String("bk_secret_key")
+	if errKey != nil {
+		blog.Errorf("mapstr convert to string failed.")
+		return errKey
+	}
+
+	decodeBytes, errDecode := base64.StdEncoding.DecodeString(secretKeyEncrypted)
+	if errDecode != nil {
+		blog.Errorf("Base64 decode secretKey failed.")
+		return errDecode
+	}
+	secretKey := string(decodeBytes)
+
 	//ObtainCloudHosts obtain cloud hosts
-	cloudHostInfo, err := lgc.ObtainCloudHosts(taskList.SecretID, taskList.SecretKey)
+	cloudHostInfo, err := lgc.ObtainCloudHosts(secretID, secretKey)
 	if err != nil {
 		blog.Errorf("obtain cloud hosts failed with err: %v", err)
 		cloudHistory.Status = 0
-		return
+		return err
 	}
 
 	//pick out the new add cloud hosts
@@ -207,7 +229,6 @@ func (lgc *Logics) ExecSync(taskList *meta.CloudTaskList, pheader http.Header) {
 		if !ok {
 			blog.Errorf("interface convert to string failed, err: %v", err)
 			cloudHistory.Status = 0
-			return
 		}
 		if !util.InStrArr(existHostList, newHostInnerip) {
 			newAddHost = append(newAddHost, newHostInnerip)
@@ -215,12 +236,17 @@ func (lgc *Logics) ExecSync(taskList *meta.CloudTaskList, pheader http.Header) {
 		}
 	}
 
-	if taskList.ResourceConfirm {
+	resourceConfirm, errR := taskList.Bool("bk_confirm")
+	if errR != nil {
+		blog.Errorf("mapstr convert to string failed.")
+		return errR
+	}
+	if resourceConfirm {
 		err := lgc.NewAddConfirm(taskList, pheader, newAddHost, newCloudHost)
 		if err != nil {
 			blog.Errorf("newly add cloud resource confirm failed, err: %v", err)
 			cloudHistory.Status = 0
-			return
+			return err
 		}
 		cloudHistory.Status = 2
 	}
@@ -232,13 +258,13 @@ func (lgc *Logics) ExecSync(taskList *meta.CloudTaskList, pheader http.Header) {
 		if !ok {
 			blog.Errorf("interface convert to string failed, err: %v", err)
 			cloudHistory.Status = 0
-			return
+			break
 		}
 		newHostOuterip, oK := hostInfo[common.BKHostOuterIPField].(string)
 		if !oK {
 			blog.Errorf("interface convert to string failed, err: %v", err)
 			cloudHistory.Status = 0
-			return
+			break
 		}
 		newHostOsname, _ := hostInfo[common.BKOSNameField].(string)
 
@@ -247,34 +273,34 @@ func (lgc *Logics) ExecSync(taskList *meta.CloudTaskList, pheader http.Header) {
 			if err != nil {
 				blog.Errorf("get hostInfo failed with err: %v", err)
 				cloudHistory.Status = 0
-				return
+				return err
 			}
 
 			existHostIp, ok := existHostInfo.String(common.BKHostInnerIPField)
 			if ok != nil {
 				blog.Errorf("get hostIp failed with err: %v", ok)
 				cloudHistory.Status = 0
-				return
+				break
 			}
 			existHostOsname, osOk := existHostInfo.String(common.BKOSNameField)
 			if osOk != nil {
 				blog.Errorf("get os name failed with err: %v", ok)
 				cloudHistory.Status = 0
-				return
+				break
 			}
 
 			existHostOuterip, ipOk := existHostInfo.String(common.BKHostOuterIPField)
 			if ipOk != nil {
 				blog.Errorf("get outerip failed with err: %v", ok)
 				cloudHistory.Status = 0
-				return
+				break
 			}
 
 			existHostID, idOk := existHostInfo.String(common.BKHostIDField)
 			if idOk != nil {
 				blog.Errorf("get hostID failed with err: %v", ok)
 				cloudHistory.Status = 0
-				return
+				break
 			}
 
 			if existHostIp == newHostInnerip {
@@ -288,13 +314,19 @@ func (lgc *Logics) ExecSync(taskList *meta.CloudTaskList, pheader http.Header) {
 
 	cloudHistory.SyncDetail = fmt.Sprintf("%d/%d", len(newAddHost), len(cloudHostAttr))
 
-	if !taskList.ResourceConfirm && !taskList.AttrConfirm {
+	attrConfirm, errAttr := taskList.Bool("bk_attr_confirm")
+	if errAttr != nil {
+		blog.Errorf("mapstr convert to bool failed.")
+		return errAttr
+	}
+
+	if resourceConfirm && attrConfirm {
 		if len(newAddHost) > 0 {
 			err := lgc.AddCloudHosts(pheader, newCloudHost)
 			if err != nil {
 				blog.Errorf("add cloud hosts failed, err: %v", err)
 				cloudHistory.Status = 0
-				return
+				return err
 			}
 		}
 		if len(cloudHostAttr) > 0 {
@@ -302,24 +334,25 @@ func (lgc *Logics) ExecSync(taskList *meta.CloudTaskList, pheader http.Header) {
 			if err != nil {
 				blog.Errorf("update cloud hosts failed, err: %v", err)
 				cloudHistory.Status = 0
-				return
+				return err
 			}
 		}
 	}
 
-	if taskList.AttrConfirm && len(cloudHostAttr) > 0 {
+	if attrConfirm && len(cloudHostAttr) > 0 {
 		resourceConfirm := new(meta.ResourceConfirm)
 		resourceConfirm.ResourceName = cloudHostAttr
 		_, err := lgc.CoreAPI.HostController().Cloud().ResourceConfirm(context.Background(), pheader, resourceConfirm)
 		if err != nil {
 			blog.Errorf("add resource confirm failed with err: %v", err)
 			cloudHistory.Status = 0
-			return
+			return err
 		}
 		cloudHistory.Status = 2
 	}
 
 	cloudHistory.Status = 1
+	return nil
 }
 
 func (lgc *Logics) AddCloudHosts(pheader http.Header, newCloudHost []mapstr.MapStr) error {
@@ -391,7 +424,7 @@ func (lgc *Logics) UpdateCloudHosts(pheader http.Header, cloudHostAttr []mapstr.
 	return nil
 }
 
-func (lgc *Logics) NewAddConfirm(taskList *meta.CloudTaskList, pheader http.Header, newAddHost []string, newCloudHost []mapstr.MapStr) error {
+func (lgc *Logics) NewAddConfirm(taskList mapstr.MapStr, pheader http.Header, newAddHost []string, newCloudHost []mapstr.MapStr) error {
 	//Check whether the host is already exist in resource confirm.
 	opt := make(map[string]interface{})
 	confirmHosts, ok := lgc.CoreAPI.HostController().Cloud().SearchConfirm(context.Background(), pheader, opt)
@@ -489,6 +522,9 @@ func (lgc *Logics) UnixSubtract(periodType string, period string) int64 {
 func (lgc *Logics) CloudHistory(cloudHistory *meta.CloudHistory, pheader http.Header) error {
 	finishTime := time.Now().Unix()
 	cloudHistory.TimeConsume = finishTime - cloudHistory.StartTime
+
+	blog.V(3).Info(cloudHistory.TimeConsume)
+
 	_, err := lgc.CoreAPI.HostController().Cloud().CloudHistory(context.Background(), pheader, cloudHistory)
 	if err != nil {
 		blog.Errorf("add cloud history table failed, err: %v", err)

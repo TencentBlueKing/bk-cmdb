@@ -69,6 +69,8 @@ func NewFromInterface(data interface{}) (MapStr, error) {
 		return result, nil
 	case map[string]interface{}:
 		return MapStr(tmp), nil
+	case MapStr:
+		return tmp, nil
 	}
 }
 

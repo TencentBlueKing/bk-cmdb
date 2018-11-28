@@ -279,3 +279,29 @@ func (s *Service) CloudHistory(req *restful.Request, resp *restful.Response) {
 		Data:     result,
 	})
 }
+
+func (s *Service) SearchSyncHistory(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+
+	condition := make(map[string]interface{})
+	if err := json.NewDecoder(req.Request.Body).Decode(&condition); err != nil {
+		blog.Errorf("add cloud sync task failed with decode body err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	result := make([]map[string]interface{}, 0)
+	err := s.Instance.Table(common.BKTableNameCloudHistory).Find(condition).All(ctx, &result)
+	if err != nil {
+		blog.Error("get failed, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
+		return
+	}
+
+	resp.WriteEntity(meta.CloudSearch{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     result,
+	})
+}

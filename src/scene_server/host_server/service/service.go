@@ -111,6 +111,7 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.POST("/hosts/cloud/startSync").To(s.StartCloudSync))
 	ws.Route(ws.POST("/hosts/cloud/resourceConfirm").To(s.ResourceConfirm))
 	ws.Route(ws.POST("/hosts/cloud/accountSearch").To(s.SearchAccount))
+	ws.Route(ws.POST("/hosts/cloud/syncHistory").To(s.CloudSyncHistory))
 
 	return ws
 }
