@@ -350,7 +350,12 @@
         "编辑关联": "modify association",
         "确定删除关联类型？": "confirm delete this association type",
         "确定删除字段？": "confirm delete field",
-        "使用数": "amount used"
+        "使用数": "amount used",
+        "确定删除关联关系?": "confirm delete this association?",
+        "确定移除模型?": "confirm remove this model?",
+        "移除模型提示": "The removed model is placed in the left model group and is no longer displayed in the topology view",
+        "移除失败": "remove failed",
+        "移除失败提示": "There are {asstNum} associations in the model. To remove the model, all associations under the model must be deleted."
     },
     "HostResourcePool": {
         "资源池": "Resource Pool",
