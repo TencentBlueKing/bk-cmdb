@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="import-wrapper">
         <div class="up-file upload-file" v-bkloading="{isLoading: isLoading}">
             <img src="../../assets/images/up_file.png">
             <input ref="fileInput" type="file" class="fullARea" @change.prevent="handleFile"/>
@@ -16,7 +16,7 @@
                 <i :class="['bk-icon ',{'icon-check-circle-shape':uploaded,'icon-close-circle-shape':failed}]"></i>
             </div>
         </div>
-        <div class="upload-details" v-if="(uploadResult.success && uploadResult.success.length) || (uploadResult.error && uploadResult.error.length) || (uploadResult.update_error && uploadResult.update_error.length)">
+        <div class="upload-details" v-if="hasUploadError()">
             <div class="upload-details-success" v-if="uploadResult.success && uploadResult.success.length">
                 <i class="bk-icon icon-check-circle-shape"></i>
                 <span>{{$t("Inst['成功上传N条数据']", {N: uploadResult.success.length})}}</span>
@@ -38,6 +38,15 @@
                 </div>
                 <ul ref="failList" class="upload-details-fail-list">
                     <li v-for="(errorMsg, index) in uploadResult.update_error" :title="errorMsg">{{errorMsg}}</li>
+                </ul>
+            </div>
+            <div class="upload-details-fail" v-if="uploadResult.asst_error && uploadResult.asst_error.length">
+                <div class="upload-details-fail-title">
+                    <i class="bk-icon icon-close-circle-shape"></i>
+                    <span>关联关系导入失败列表({{uploadResult.asst_error.length}})</span>
+                </div>
+                <ul ref="failList" class="upload-details-fail-list">
+                    <li v-for="(errorMsg, index) in uploadResult.asst_error" :title="errorMsg">{{errorMsg}}</li>
                 </ul>
             </div>
         </div>
@@ -86,7 +95,8 @@
                 uploadResult: {
                     success: null,
                     error: null,
-                    update_error: null
+                    update_error: null,
+                    asst_error: null
                 }
             }
         },
@@ -115,7 +125,13 @@
                     formData.append('file', files[0])
                     this.isLoading = true
                     this.$http.post(this.importUrl, formData, {originalResponse: true, globalError: false}).then(res => {
-                        this.uploadResult = Object.assign(this.uploadResult, res.data || {success: null, error: null, update_error: null})
+                        const defaultResult = {
+                            success: null,
+                            error: null,
+                            update_error: null,
+                            asst_error: null
+                        }
+                        this.uploadResult = Object.assign(this.uploadResult, res.data || defaultResult)
                         if (res.result) {
                             this.uploaded = true
                             this.fileInfo.status = this.$t("Inst['成功']")
@@ -131,9 +147,6 @@
                             this.$emit('error', res)
                         }
                         this.$refs.fileInput.value = ''
-                        this.$nextTick(() => {
-                            this.calcFailListHeight()
-                        })
                         this.isLoading = false
                     }).catch(error => {
                         this.reset()
@@ -142,19 +155,12 @@
                     })
                 }
             },
-            calcFailListHeight () {
-                const failListOffsetHeight = 550
-                const maxHeight = document.body.getBoundingClientRect().height - failListOffsetHeight
-                let failList = this.$refs.failList
-                if (failList) {
-                    if (Array.isArray(failList)) {
-                        failList.map(list => {
-                            list.style.maxHeight = `${maxHeight / failList.length}px`
-                        })
-                    } else {
-                        failList.style.maxHeight = `${maxHeight}px`
-                    }
-                }
+            hasUploadError () {
+                const uploadResult = this.uploadResult
+                return (uploadResult.success && uploadResult.success.length) ||
+                    (uploadResult.error && uploadResult.error.length) ||
+                    (uploadResult.update_error && uploadResult.update_error.length) ||
+                    (uploadResult.asst_error && uploadResult.asst_error.length)
             },
             reset () {
                 this.uploaded = false
@@ -167,7 +173,8 @@
                 this.uploadResult = {
                     success: null,
                     error: null,
-                    update_error: null
+                    update_error: null,
+                    asst_error: null
                 }
             }
         }
@@ -175,6 +182,10 @@
 </script>
 
 <style media="screen" lang="scss" scoped>
+    .import-wrapper {
+        height: 100%;
+        @include scrollbar-y;
+    }
     .up-file{
         .up-file-text{
             p{
@@ -370,13 +381,6 @@
                 font-size: 12px;
                 white-space: nowrap;
                 overflow: auto;
-                &::-webkit-scrollbar{
-                    width: 6px;
-                }
-                &::-webkit-scrollbar-thumb{
-                    border-radius: 3px;
-                    background: #c7cee3;
-                }
                 li{
                     padding: 0 43px;
                     overflow: hidden;
