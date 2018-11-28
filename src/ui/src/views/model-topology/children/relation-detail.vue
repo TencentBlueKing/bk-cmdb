@@ -140,7 +140,7 @@
             },
             deleteRelation () {
                 this.$bkInfo({
-                    title: this.$t('ModelManagement["确定删除关联关系？"]'),
+                    title: this.$t('ModelManagement["确定删除关联关系?"]'),
                     confirmFn: async () => {
                         this.$emit('save', {
                             type: 'delete',
