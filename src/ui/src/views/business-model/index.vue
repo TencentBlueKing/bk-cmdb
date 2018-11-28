@@ -71,7 +71,7 @@
 
 <script>
     import { mapGetters, mapActions } from 'vuex'
-    import theChooseIcon from './_choose-icon.vue'
+    import theChooseIcon from '@/components/model-manage/_choose-icon'
 
     const NODE_MARGIN = 62
 
