@@ -351,7 +351,16 @@
                         nodes.push(id)
                     }
                 })
-                this.updateNodePosition(this.networkDataSet.nodes.get(nodes))
+                const removeNodes = []
+                this.localTopoModelList.forEach(model => {
+                    if (model.position.x === null && model.position.y === null) {
+                        const curModel = this.topoModelList.find(({bk_obj_id: objId}) => model['bk_obj_id'] === objId)
+                        if (curModel.position.x !== null && curModel.position.y !== null) {
+                            removeNodes.push(model)
+                        }
+                    }
+                })
+                this.updateNodePosition(this.networkDataSet.nodes.get(nodes), removeNodes)
             },
             getDeleteEdge () {
                 const deleteAsstArray = []
@@ -484,23 +493,42 @@
             editTopo () {
                 this.topoEdit.isEdit = true
             },
+            checkNodeAsst (node) {
+                let asstNum = 0
+                this.localTopoModelList.forEach(model => {
+                    if (model.hasOwnProperty('assts') && model.assts.length) {
+                        if (model['bk_obj_id'] === node.id) {
+                            asstNum += model.assts.length
+                        } else {
+                            model.assts.forEach(asst => {
+                                if (asst['bk_obj_id'] === node.id) {
+                                    asstNum++
+                                }
+                            })
+                        }
+                    }
+                })
+                if (asstNum) {
+                    this.$bkInfo({
+                        title: this.$t('ModelManagement["移除失败"]'),
+                        content: this.$tc('ModelManagement["移除失败提示"]', asstNum, {asstNum})
+                    })
+                }
+                return !!asstNum
+            },
             deleteNode () {
                 let {
                     hoverNode
                 } = this.topoTooltip
+                if (this.checkNodeAsst(hoverNode)) {
+                    return
+                }
                 this.$bkInfo({
                     title: this.$t('ModelManagement["确定移除模型?"]'),
                     content: this.$t('ModelManagement["移除模型提示"]'),
                     confirmFn: () => {
                         let node = this.localTopoModelList.find(model => model['bk_obj_id'] === hoverNode.id)
-                        node.assts = []
-                        node.draged = false
-                        // 删除当前节点关联
-                        this.localTopoModelList.forEach(model => {
-                            if (model.hasOwnProperty('assts') && model.assts.length) {
-                                model.assts = model.assts.filter(asst => asst['bk_obj_id'] !== node['bk_obj_id'])
-                            }
-                        })
+                        node.position = {x: null, y: null}
                         
                         this.topoEdit.edges = this.topoEdit.edges.filter(edge => edge.params['bk_obj_id'] !== hoverNode.id && edge.params['bk_asst_obj_id'] !== hoverNode.id)
                         this.topoTooltip.hoverNode = null
@@ -524,7 +552,6 @@
                 let scale = this.networkInstance.getScale()
                 node.position.x = originPosition.x - ((container.left + container.right) / 2 - event.clientX) / scale
                 node.position.y = originPosition.y - ((container.top + container.bottom) / 2 - event.clientY) / scale
-                node.draged = true
                 this.updateNetwork()
             },
             clearActiveEdge () {
@@ -769,13 +796,9 @@
                 const response = await this.$store.dispatch('globalModels/searchModelAction')
                 this.localTopoModelList = response
                 this.localTopoModelList.forEach(model => {
-                    this.$set(model, 'draged', false)
                     if (model.hasOwnProperty('assts') && model.assts.length) {
-                        model.draged = true
                         model.assts.forEach(asst => {
                             this.$set(asst, 'checked', true)
-                            const curModel = this.localTopoModelList.find(({bk_obj_id: objId}) => objId === asst['bk_obj_id'])
-                            curModel.draged = true
                         })
                     }
                 })
@@ -799,7 +822,7 @@
                     }
                 })
                 data.forEach(nodeData => {
-                    if (((nodeData.hasOwnProperty('assts') && nodeData.assts.length) || asstList.findIndex(({bk_obj_id: objId}) => objId === nodeData['bk_obj_id']) > -1) || nodeData.draged) {
+                    if (((nodeData.hasOwnProperty('assts') && nodeData.assts.length) || asstList.findIndex(({bk_obj_id: objId}) => objId === nodeData['bk_obj_id']) > -1) || (nodeData.position.x !== null && nodeData.position.y !== null)) {
                         const node = {
                             id: nodeData['bk_obj_id'],
                             image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON({
@@ -940,21 +963,39 @@
                 }
             },
             // 批量更新节点位置信息
-            async updateNodePosition (updateNodes) {
-                if (!updateNodes.length) return
-                const nodePositions = this.networkInstance.getPositions(updateNodes.map(node => node.id))
-                const params = updateNodes.map(node => {
-                    const nodeData = node.data
-                    return {
-                        'bk_obj_id': node.id,
-                        'bk_inst_id': nodeData['bk_inst_id'],
-                        'node_type': nodeData['node_type'],
-                        'position': {
-                            x: nodePositions[node.id]['x'],
-                            y: nodePositions[node.id]['y']
+            async updateNodePosition (updateNodes, removeNodes) {
+                if (!updateNodes.length && !removeNodes.length) return
+                let nodePositions = []
+                let params = []
+                if (updateNodes.length) {
+                    nodePositions = this.networkInstance.getPositions(updateNodes.map(node => node.id))
+                    params = updateNodes.map(node => {
+                        const nodeData = node.data
+                        return {
+                            'bk_obj_id': node.id,
+                            'bk_inst_id': nodeData['bk_inst_id'],
+                            'node_type': nodeData['node_type'],
+                            'position': {
+                                x: nodePositions[node.id]['x'],
+                                y: nodePositions[node.id]['y']
+                            }
                         }
-                    }
-                })
+                    })
+                }
+                if (removeNodes.length) {
+                    removeNodes.forEach(node => {
+                        params.push({
+                            'bk_obj_id': node['bk_obj_id'],
+                            'bk_inst_id': node['bk_inst_id'],
+                            'node_type': node['node_type'],
+                            'position': {
+                                x: null,
+                                y: null
+                            }
+                        })
+                    })
+                }
+
                 await this.$store.dispatch('globalModels/updateModelAction', {params})
                 updateNodes.forEach(node => {
                     let model = this.localTopoModelList.find(({bk_obj_id: objId}) => objId === node.id)
@@ -1276,6 +1317,7 @@
             visibility: top;
             line-height: 1;
             transform: scale(.8);
+            cursor: pointer;
             &.is-del {
                 top: 18px;
                 left: 8px;
