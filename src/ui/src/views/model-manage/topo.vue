@@ -33,7 +33,7 @@
         </div>
         <template v-if="topoEdit.isEdit">
             <ul class="topo-nav">
-                <li class="group-item" v-for="(group, groupIndex) in classifications" :key="groupIndex">
+                <li class="group-item" v-for="(group, groupIndex) in localClassifications" :key="groupIndex">
                     <div class="group-info"
                         :class="{'active': topoNav.activeGroup === group['bk_classification_id']}"
                         @click="toggleGroup(group)">
@@ -265,6 +265,14 @@
                 return this.network.nodes.filter(node => {
                     const position = node.data.position
                     return position.x === null && position.y === null
+                })
+            },
+            localClassifications () {
+                return this.$tools.clone(this.classifications).map(classify => {
+                    classify['bk_objects'] = classify['bk_objects'].filter(model => {
+                        return !this.isModelInTopo(model)
+                    })
+                    return classify
                 })
             }
         },
@@ -1154,12 +1162,15 @@
                 color: $cmdbBorderColor;
             }
         }
-        .model-box {
-            padding: 5px 0;
-        }
         .model-item {
             padding: 7px 12px;
             cursor: move;
+            &:first-child {
+                padding-top: 12px;
+            }
+            &:last-child {
+                padding-bottom: 12px;
+            }
             &:hover {
                 background: #ebf4ff;
             }
