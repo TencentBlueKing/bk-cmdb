@@ -489,8 +489,8 @@
                     hoverNode
                 } = this.topoTooltip
                 this.$bkInfo({
-                    title: this.$t('ModelManagement["确定移除模型？"]'),
-                    content: this.$t('ModelManagement["移除的模型将放置于左侧模型组里，拓扑视图中将不再显示"]'),
+                    title: this.$t('ModelManagement["确定移除模型?"]'),
+                    content: this.$t('ModelManagement["移除模型提示"]'),
                     confirmFn: () => {
                         let node = this.localTopoModelList.find(model => model['bk_obj_id'] === hoverNode.id)
                         node.assts = []
@@ -506,6 +506,10 @@
                         this.topoTooltip.hoverNode = null
                         this.topoTooltip.hoverNodeTimer = null
                         this.updateNetwork()
+                    },
+                    cancelFn: () => {
+                        this.topoTooltip.hoverNode = null
+                        this.topoTooltip.hoverNodeTimer = null
                     }
                 })
             },
