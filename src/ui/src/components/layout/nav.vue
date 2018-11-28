@@ -6,8 +6,7 @@
         <div class="nav-wrapper"
             :class="{unfold: unfold, flexible: !navStick}">
             <div class="logo" @click="$router.push('/index')">
-                <img src="@/assets/images/logo.svg">
-                {{$t('Nav["蓝鲸配置平台"]')}}
+                {{$t('Nav["配置平台"]')}}
             </div>
             <ul class="classify-list">
                 <li class="classify-item"
@@ -15,7 +14,7 @@
                     v-if="isAvailableClassify(classify)"
                     :class="{
                         active: isClassifyActive(classify),
-                        closed: isActiveClosed(classify),
+                        'is-open': openedClassify === classify.id,
                         'is-link': classify.hasOwnProperty('path')
                     }">
                     <h3 class="classify-info clearfix"
@@ -51,8 +50,10 @@
                 </li>
             </ul>
             <div class="nav-option">
-                <i class="nav-stick bk-icon"
-                    :class="[navStick ? 'icon-dedent': 'icon-indent']"
+                <i class="nav-stick icon icon-cc-nav-toggle"
+                    :class="{
+                        sticked: navStick
+                    }"
                     :title="navStick ? $t('Index[\'收起导航\']') : $t('Index[\'固定导航\']')"
                     @click="toggleNavStick">
                 </i>
@@ -210,20 +211,17 @@ $color: #979ba5;
 
 .logo {
     height: 60px;
+    padding: 0 0 0 64px;
     border-bottom: 1px solid rgba(255, 255, 255, .05);
     background-color: #182132;
     line-height: 59px;
     color: #a3acb9;
     font-size: 18px;
+    font-weight: bold;
     overflow: hidden;
     cursor: pointer;
-
-    img {
-        display: inline-block;
-        margin: 0 12px 0 14px;
-        vertical-align: middle;
-        height: 36px;
-    }
+    background: url('../../assets/images/logo.svg') no-repeat;
+    background-position: 16px 14px;
 }
 
 .classify-list {
@@ -247,17 +245,15 @@ $color: #979ba5;
         position: relative;
         transition: background-color $duration $cubicBezier;
 
-        &.active {
+        &.is-open {
             background-color: #202a3c;
-
+        }
+        &.active.is-link {
+            background-color: #3a84ff;
             .classify-icon,
             .classify-name {
                 color: #fff;
             }
-        }
-        &.active.closed,
-        &.active.is-link {
-            background-color: #3a84ff;
         }
         .classify-info {
             margin: 0;
@@ -304,7 +300,7 @@ $color: #979ba5;
 .classify-models {
     height: 0;
     line-height: 42px;
-    font-size: 12px;
+    font-size: 14px;
     overflow: hidden;
     transition: height $duration $cubicBezier;
     .model-link {
@@ -397,8 +393,12 @@ $color: #979ba5;
         text-align: center;
         font-size: 14px;
         cursor: pointer;
+        transition: transform $duration $cubicBezier;
         &:hover {
             color: #fff;
+        }
+        &.sticked {
+            transform: rotate(180deg);
         }
     }
 }

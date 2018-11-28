@@ -175,6 +175,7 @@
             }
         },
         async created () {
+            this.$store.commit('setHeaderTitle', this.$t('Nav["业务"]'))
             try {
                 this.properties = await this.searchObjectAttribute({
                     params: {
