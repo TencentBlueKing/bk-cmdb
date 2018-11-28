@@ -126,9 +126,9 @@
 
 <script>
     import Vis from 'vis'
-    import theDisplay from './topo-detail/display'
-    import theRelation from './topo-detail/relation'
-    import theRelationDetail from './topo-detail/relation-detail'
+    import theDisplay from './children/display-config'
+    import theRelation from './children/create-relation'
+    import theRelationDetail from './children/relation-detail'
     import { generateObjIcon as GET_OBJ_ICON } from '@/utils/util'
     import { mapGetters, mapActions } from 'vuex'
     import throttle from 'lodash.throttle'
