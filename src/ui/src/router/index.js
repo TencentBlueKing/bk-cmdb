@@ -5,7 +5,7 @@ import preload from '@/setup/preload'
 import $http from '@/api'
 
 const index = () => import(/* webpackChunkName: index */ '@/views/index')
-const modelManage = () => import(/* webpackChunkName: model */ '@/views/model-manage/group')
+const modelManage = () => import(/* webpackChunkName: model */ '@/views/model-manage')
 const modelDetail = () => import(/* webpackChunkName: model */ '@/views/model-manage/children')
 const business = () => import(/* webpackChunkName: business */ '@/views/business')
 const businessArchived = () => import(/* webpackChunkName: businessArchived */ '@/views/business/archived')
@@ -21,9 +21,9 @@ const customQuery = () => import(/* webpackChunkName: process */ '@/views/custom
 const error = () => import(/* webpackChunkName: error */ '@/views/status/error')
 const systemAuthority = () => import(/* webpackChunkName: systemAuthority */ '@/views/permission/role')
 const businessAuthority = () => import(/* webpackChunkName: businessAuthority */ '@/views/permission/business')
-const modelTopology = () => import(/* webpackChunkName: modelTopology */ '@/views/model-manage/topo')
-const businessModel = () => import(/* webpackChunkName: businessModel */ '@/views/model-manage/_business-topo')
-const modelAssociation = () => import(/* webpackChunkName: modelAssociation */ '@/views/model-manage/relation')
+const modelTopology = () => import(/* webpackChunkName: modelTopology */ '@/views/model-topology')
+const businessModel = () => import(/* webpackChunkName: businessModel */ '@/views/business-model')
+const modelAssociation = () => import(/* webpackChunkName: modelAssociation */ '@/views/model-association')
 Vue.use(Router)
 
 const router = new Router({

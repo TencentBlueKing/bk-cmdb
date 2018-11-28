@@ -47,7 +47,7 @@
 </template>
 
 <script>
-    import theRelation from './relation-type'
+    import theRelation from './_detail'
     import { mapGetters, mapActions } from 'vuex'
     export default {
         components: {
