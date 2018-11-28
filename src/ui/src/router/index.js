@@ -42,7 +42,8 @@ const router = new Router({
         path: '/business',
         component: business,
         meta: {
-            isModel: true
+            isModel: true,
+            objId: 'biz'
         }
     }, {
         path: '/model',

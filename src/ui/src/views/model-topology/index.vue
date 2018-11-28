@@ -276,6 +276,9 @@
                 }
             }
         },
+        created () {
+            this.$store.commit('setHeaderTitle', this.$t('Nav["模型拓扑"]'))
+        },
         mounted () {
             this.initNetwork()
             this.initMoveFunction()

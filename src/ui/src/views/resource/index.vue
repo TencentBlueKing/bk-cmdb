@@ -165,6 +165,7 @@
             }
         },
         async created () {
+            this.$store.commit('setHeaderTitle', this.$t('Nav["资源"]'))
             try {
                 this.setQueryParams()
                 await Promise.all([
