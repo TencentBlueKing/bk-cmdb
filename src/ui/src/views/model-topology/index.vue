@@ -205,14 +205,6 @@
                         interaction: {
                             hover: true
                         },
-                        manipulation: {
-                            enabled: true,
-                            addEdge: (data, callback) => {
-                                this.topoEdit.activeEdge = data
-                                callback(data)
-                                this.handleEdgeCreate(data)
-                            }
-                        },
                         nodes: {
                             shape: 'image',
                             widthConstraint: 55,
@@ -584,15 +576,6 @@
                 this.clearHoverTooltip()
                 this.slider.isShow = false
             },
-            handleEdgeCreate (data) {
-                this.slider.properties = {
-                    fromObjId: data.from,
-                    toObjId: data.to,
-                    topoModelList: this.localTopoModelList,
-                    edges: this.topoEdit.edges
-                }
-                this.showSlider('theRelation')
-            },
             handleEdgeClick (edgeId) {
                 let edge = this.network.edges.find(({id}) => id === edgeId)
                 if (edge.labelList.length === 1) {
@@ -618,6 +601,7 @@
                         topoModelList: this.localTopoModelList,
                         edges: this.topoEdit.edges
                     }
+                    this.slider.title = this.$t('ModelManagement["新建关联"]')
                     this.showSlider('theRelation')
                 }
             },
@@ -741,6 +725,7 @@
                             isShowModelName: this.displayConfig.isShowModelName,
                             isShowModelAsst: this.displayConfig.isShowModelAsst
                         }
+                        this.slider.title = this.$t('ModelManagement["拓扑显示设置"]')
                         slider.width = 600
                         break
                     case 'theRelation':
