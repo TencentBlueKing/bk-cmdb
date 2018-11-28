@@ -176,7 +176,7 @@
             },
             deleteRelation (relation, index) {
                 this.$bkInfo({
-                    title: this.$t('ModelManagement["确定删除关联关系？"]'),
+                    title: this.$t('ModelManagement["确定删除关联关系?"]'),
                     confirmFn: async () => {
                         await this.deleteObjectAssociation({
                             id: relation.id,
