@@ -144,3 +144,17 @@ func (c *cloud) CloudHistory(ctx context.Context, h http.Header, data interface{
 		Into(resp)
 	return
 }
+
+func (c *cloud) SearchHistory(ctx context.Context, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/hosts/cloud/searchHistory"
+
+	err = c.client.Post().
+		WithContext(ctx).
+		Body(nil).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
