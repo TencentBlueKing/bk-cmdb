@@ -75,5 +75,13 @@
     "1101054": "can not update a predefined association.",
     "1101055": "can not delete a predefined association.",
     "1101056": "object association do not exist.",
+	"1001060":"create model unique constrains failed",
+	"1001061":"update model unique constrains failed",
+	"1001062":"delete model unique constrains failed",
+	"1001063":"search model unique constrains failed",
+	"1001064":"model property [%s] has been removed",
+	"1001065":"model property [%s] has been used from unique constrains, delete failed",
+	"1001066":"unique constrains key kind [%s] invalid",
+	"1001067":"preset unique constrains could not be delete",
 	"": "" 
 }
