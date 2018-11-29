@@ -24,6 +24,7 @@
                 </p>
                 <ul class="model-list clearfix" >
                     <li class="model-item"
+                    :class="{'ispaused': model['bk_ispaused']}"
                     v-for="(model, modelIndex) in classification['bk_objects']"
                     :key="modelIndex"
                     @click="modelClick(model)">
@@ -400,6 +401,10 @@
             border: 1px solid $cmdbTableBorderColor;
             border-radius: 4px;
             cursor: pointer;
+            &.ispaused {
+                background: #fafbfd;
+                opacity: .6;
+            }
             &:hover {
                 border-color: $cmdbBorderFocusColor;
                 background: #ebf4ff;
