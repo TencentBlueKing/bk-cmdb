@@ -83,7 +83,7 @@
             },
             // 删除最近浏览的模型
             deleteRecently (model) {
-                const deletedRecently = this.recentlyModelsPath.filter(id => id !== model['bk_obj_id'])
+                const deletedRecently = this.recently.filter(id => id !== model['bk_obj_id'])
                 this.$store.dispatch('userCustom/saveUsercustom', {
                     [this.recentlyKey]: deletedRecently
                 })
