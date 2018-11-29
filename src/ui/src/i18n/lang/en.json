@@ -337,6 +337,7 @@
         "下移": "down",
         "删除分组": "delete group",
         "停用": "disable",
+        "启用": "enable",
         "编辑拓扑": "modify topo",
         "拓扑显示设置": "view settings",
         "图例": "legend",
