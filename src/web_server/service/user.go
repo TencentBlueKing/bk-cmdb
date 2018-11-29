@@ -176,6 +176,7 @@ func (s *Service) UpdateSupplier(c *gin.Context) {
 	}
 	session.Set(common.WEBSessionOwnerUinKey, supplier.OwnerID)
 	session.Set(common.WEBSessionRoleKey, strconv.FormatInt(supplier.Role, 10))
+	session.Set(common.WEBSessionSupplierID, strconv.FormatInt(supplier.SupplierID, 10))
 	session.Save()
 	ret := metadata.LoginChangeSupplierResult{}
 	ret.Result = true
