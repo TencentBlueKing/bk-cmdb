@@ -24,6 +24,7 @@
                 </p>
                 <ul class="model-list clearfix" >
                     <li class="model-item"
+                    :class="{'ispaused': model['bk_ispaused']}"
                     v-for="(model, modelIndex) in classification['bk_objects']"
                     :key="modelIndex"
                     @click="modelClick(model)">
@@ -34,6 +35,9 @@
                             <p class="model-name">{{model['bk_obj_name']}}</p>
                             <p class="model-id">{{model['bk_obj_id']}}</p>
                         </div>
+                        <span class="paused-info" v-if="model['bk_ispaused']">
+                            {{$t('ModelManagement["已停用"]')}}
+                        </span>
                     </li>
                 </ul>
                 <i class="bk-icon icon-angle-double-down"
@@ -393,6 +397,7 @@
         overflow: hidden;
         transition: height .2s;
         .model-item {
+            position: relative;
             float: left;
             margin: 10px 10px 0 0;
             width: 260px;
@@ -400,6 +405,29 @@
             border: 1px solid $cmdbTableBorderColor;
             border-radius: 4px;
             cursor: pointer;
+            &.ispaused {
+                background: #fafbfd;
+                opacity: .6;
+                &:after {
+                    content: '';
+                    display: inline-block;
+                    position: absolute;
+                    top: -33px;
+                    right: -33px;
+                    border: 32px solid transparent;
+                    border-bottom-color: $cmdbDangerColor;
+                    transform: rotate(45deg);
+                }
+                .paused-info {
+                    position: absolute;
+                    right: -2px;
+                    top: 7px;
+                    font-size: 12px;
+                    z-index: 1;
+                    color: #fff;
+                    transform: rotate(45deg) scale(.8);
+                }
+            }
             &:hover {
                 border-color: $cmdbBorderFocusColor;
                 background: #ebf4ff;
