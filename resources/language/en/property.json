@@ -11,6 +11,7 @@
     "biz_property_operator": "operator",
     "biz_property_time_zone": "time_zone",
     "biz_property_language": "language",
+    "biz_property_bk_supplier_id":"supplier id",
 
     "set_property_bk_biz_id": "business id",
     "set_property_bk_set_name": "set name",
