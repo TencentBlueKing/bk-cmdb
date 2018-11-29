@@ -12,17 +12,32 @@
 
 package metadata
 
+import (
+	"fmt"
+	"sort"
+	"strings"
+)
+
 type ObjectUnique struct {
-	ID        uint64       `json:"id" bson:"id"`
-	ObjID     string       `json:"bk_obj_id" bson:"bk_obj_id"`
-	MustCheck bool         `json:"must_check" bson:"must_check"`
-	Keys      []UinqueKeys `json:"keys" bson:"keys"`
-	Ispre     bool         `json:"ispre" bson:"ispre"`
-	OwnerID   string       `json:"bk_supplier_account" bson:"bk_supplier_account"`
-	LastTime  Time         `json:"last_time" bson:"last_time"`
+	ID        uint64      `json:"id" bson:"id"`
+	ObjID     string      `json:"bk_obj_id" bson:"bk_obj_id"`
+	MustCheck bool        `json:"must_check" bson:"must_check"`
+	Keys      []UinqueKey `json:"keys" bson:"keys"`
+	Ispre     bool        `json:"ispre" bson:"ispre"`
+	OwnerID   string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	LastTime  Time        `json:"last_time" bson:"last_time"`
 }
 
-type UinqueKeys struct {
+func (u ObjectUnique) KeysHash() string {
+	keys := []string{}
+	for _, key := range u.Keys {
+		keys = append(keys, fmt.Sprintf("%s:%d", key.Kind, key.ID))
+	}
+	sort.Strings(keys)
+	return strings.Join(keys, "#")
+}
+
+type UinqueKey struct {
 	Kind string `json:"key_kind" bson:"key_kind"`
 	ID   uint64 `json:"key_id" bson:"key_id"`
 }
@@ -33,9 +48,9 @@ const (
 )
 
 type CreateUniqueRequest struct {
-	ObjID     string       `json:"bk_obj_id" bson:"bk_obj_id"`
-	MustCheck bool         `json:"must_check" bson:"must_check"`
-	Keys      []UinqueKeys `json:"keys" bson:"keys"`
+	ObjID     string      `json:"bk_obj_id" bson:"bk_obj_id"`
+	MustCheck bool        `json:"must_check" bson:"must_check"`
+	Keys      []UinqueKey `json:"keys" bson:"keys"`
 }
 
 type CreateUniqueResult struct {
@@ -44,9 +59,9 @@ type CreateUniqueResult struct {
 }
 
 type UpdateUniqueRequest struct {
-	MustCheck bool         `json:"must_check" bson:"must_check"`
-	Keys      []UinqueKeys `json:"keys" bson:"keys"`
-	LastTime  Time         `json:"last_time" bson:"last_time"`
+	MustCheck bool        `json:"must_check" bson:"must_check"`
+	Keys      []UinqueKey `json:"keys" bson:"keys"`
+	LastTime  Time        `json:"last_time" bson:"last_time"`
 }
 
 type UpdateUniqueResult struct {
