@@ -268,6 +268,8 @@
         "请填写模型名": "Please fill in the model name",
         "下划线，数字，英文小写的组合": "Underline, number, combination of English lowercase",
         "导出": "Export",
+        "导入": "Import",
+        "导入成功": "Import success",
         "下划线/数字/字母": "Underline/ number/English lowercase",
         "单位": "Unit",
         "请输入单位": "Enter unit",
