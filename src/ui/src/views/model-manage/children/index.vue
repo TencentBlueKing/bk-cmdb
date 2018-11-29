@@ -78,6 +78,9 @@
             <bk-tabpanel name="relation" :title="$t('ModelManagement[\'模型关联\']')">
                 <the-relation v-if="tab.active === 'relation'"></the-relation>
             </bk-tabpanel>
+            <bk-tabpanel name="verification" :title="$t('ModelManagement[\'唯一校验\']')">
+                <the-verification v-if="tab.active === 'verification'"></the-verification>
+            </bk-tabpanel>
             <bk-tabpanel name="propertyGroup" :title="$t('ModelManagement[\'字段分组\']')">
                 <the-property-group v-if="tab.active === 'propertyGroup'"></the-property-group>
             </bk-tabpanel>
@@ -90,12 +93,14 @@
     import theField from './field'
     import theRelation from './relation'
     import theChooseIcon from '@/components/model-manage/_choose-icon'
+    import theVerification from './verification'
     import { mapActions, mapGetters, mapMutations } from 'vuex'
     export default {
         components: {
             thePropertyGroup,
             theField,
             theRelation,
+            theVerification,
             theChooseIcon
         },
         data () {
