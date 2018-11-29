@@ -1,11 +1,11 @@
 <template>
     <div class="group-wrapper">
         <p class="btn-group">
-            <bk-button type="primary" @click="showGroupDialog(false)">
-                {{$t('ModelManagement["新建分组"]')}}
-            </bk-button>
             <bk-button type="default" @click="showModelDialog(false)">
                 {{$t('ModelManagement["新增模型"]')}}
+            </bk-button>
+            <bk-button type="primary" @click="showGroupDialog(false)">
+                {{$t('ModelManagement["新建分组"]')}}
             </bk-button>
         </p>
         <ul class="group-list">
@@ -347,7 +347,7 @@
         margin: 0 0 20px 0;
         font-size: 0;
         .bk-primary {
-            margin-right: 10px;
+            margin-left: 10px;
         }
     }
     .group-list {
@@ -371,8 +371,8 @@
         .group-title {
             display: inline-block;
             padding: 0 40px 0 8px;
-            border-left: 4px solid $cmdbBorderFocusColor;
-            line-height: 16px;
+            border-left: 4px solid $cmdbBorderColor;
+            line-height: 14px;
             color: #333948;
             >span {
                 display: inline-block;
