@@ -714,6 +714,7 @@ const (
 	//BKHTTPOwnerID = "HTTP_BLUEKING_OWNERID"
 	BKHTTPCookieLanugageKey = "blueking_language"
 	BKSessionLanugageKey    = "language"
+	BKHTTPSupplierID        = "bk_supplier_id"
 
 	BKHTTPCCRequestID     = "cc_request_id"
 	BKHTTPCCTransactionID = "cc_txn_id"
@@ -800,6 +801,7 @@ const (
 	WEBSessionAvatarUrlKey     = "avatar_url"
 	WEBSessionMultiSupplierKey = "multisupplier"
 	WEBSessionLanguageKey      = "language"
+	WEBSessionSupplierID       = "supplier_id"
 
 	LoginSystemMultiSupplierTrue  = "1"
 	LoginSystemMultiSupplierFalse = "0"
