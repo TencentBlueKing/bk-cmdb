@@ -1,7 +1,7 @@
 <template>
     <div class="model-field-wrapper">
         <div>
-            <bk-button class="create-btn" type="primary" @click="createField">
+            <bk-button class="create-btn" type="primary" :disabled="isReadOnly" @click="createField">
                 {{$t('ModelManagement["新建字段"]')}}
             </bk-button>
         </div>
