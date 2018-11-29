@@ -453,10 +453,10 @@
                 position: relative;
                 input[type="file"] {
                     position: absolute;
-                    left: -70px;
+                    left: 0;
                     top: 0;
                     opacity: 0;
-                    width: calc(100% + 70px);
+                    width: 100%;
                     height: 100%;
                     cursor: pointer;
                 }
