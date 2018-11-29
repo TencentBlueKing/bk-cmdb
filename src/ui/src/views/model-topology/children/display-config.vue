@@ -195,8 +195,8 @@
             .group-name {
                 margin-bottom: 15px;
                 padding-left: 8px;
-                border-left: 4px solid $cmdbBorderFocusColor;
-                line-height: 16px;
+                border-left: 4px solid $cmdbBorderColor;
+                line-height: 14px;
             }
         }
         .model-item {

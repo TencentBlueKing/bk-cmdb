@@ -23,7 +23,7 @@
                         <span class="text-primary mr10" @click.stop="editVerification(item)">
                             {{$t('Common["编辑"]')}}
                         </span>
-                        <span class="text-primary" v-if="!isReadOnly" @click.stop="deleteVerification(item)">
+                        <span class="text-primary" v-if="!isReadOnly && !item.ispre" @click.stop="deleteVerification(item)">
                             {{$t('Common["删除"]')}}
                         </span>
                     </template>
