@@ -18,7 +18,7 @@
                 <input type="text" class="cmdb-form-input"
                 name="asstName"
                 :placeholder="$t('ModelManagement[\'请输入关联描述\']')"
-                :disabled="relationInfo.ispre"
+                :disabled="relationInfo.ispre || isReadOnly"
                 v-model.trim="relationInfo['bk_obj_asst_name']"
                 v-validate="'singlechar'">
                 <p class="form-error">{{errors.first('asstName')}}</p>
@@ -68,7 +68,7 @@
             </span>
             <div class="cmdb-form-item" :class="{'is-error': errors.has('asstId')}">
                 <form-selector
-                    :disabled="relationInfo.ispre"
+                    :disabled="relationInfo.ispre || isReadOnly"
                     :list="relationList"
                     v-validate="'required'"
                     name="asstId"

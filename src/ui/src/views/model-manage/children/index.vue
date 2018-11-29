@@ -37,7 +37,7 @@
                 </template>
             </div>
             <div class="btn-group">
-                <label class="label-btn" v-if="tab.active==='field'">
+                <label class="label-btn" v-if="tab.active==='field'" :class="{'disabled': isReadOnly}">
                     <i class="icon-cc-import"></i>
                     <span>{{$t('ModelManagement["导入"]')}}</span>
                     <input v-if="!isReadOnly" ref="fileInput" type="file" @change.prevent="handleFile">
@@ -302,7 +302,7 @@
                 }).then(() => {
                     this.$http.cancel('post_searchClassificationsObjects')
                 })
-                this.$router.push('/model')
+                this.initObject()
             },
             async deleteModel () {
                 if (this.isMainLine) {
@@ -451,6 +451,9 @@
             line-height: 100px;
             .label-btn {
                 position: relative;
+                &.disabled {
+                    cursor: not-allowed;
+                }
                 input[type="file"] {
                     position: absolute;
                     left: 0;
