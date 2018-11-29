@@ -96,6 +96,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("Configuration item not found")
 	}
 
+	coreService.Logics.Engine = coreService.Core
 	select {
 	case <-ctx.Done():
 		break
