@@ -15,6 +15,7 @@ package user
 import (
 	"encoding/json"
 	"plugin"
+	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -94,6 +95,7 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 	session.Set(common.WEBSessionOwnerUinKey, userInfo.OnwerUin)
 	session.Set(common.WEBSessionAvatarUrlKey, userInfo.AvatarUrl)
 	session.Set(common.WEBSessionOwnerUinListeKey, string(strOwnerUinlist))
+	session.Set(common.WEBSessionSupplierID, strconv.FormatInt(userInfo.SupplierID, 10))
 	if userInfo.MultiSupplier {
 		session.Set(common.WEBSessionMultiSupplierKey, common.LoginSystemMultiSupplierTrue)
 	} else {
