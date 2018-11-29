@@ -157,6 +157,7 @@ func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadat
 	getURL := fmt.Sprintf(accountURL, token)
 	httpClient := httpclient.NewHttpClient()
 
+	httpClient.SetTlsNoVerity()
 	reply, err := httpClient.GET(getURL, nil, nil)
 
 	if nil != err {
