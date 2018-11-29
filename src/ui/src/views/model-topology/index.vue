@@ -951,7 +951,7 @@
                 }
             },
             // 批量更新节点位置信息
-            async updateNodePosition (updateNodes, removeNodes) {
+            async updateNodePosition (updateNodes, removeNodes = []) {
                 if (!updateNodes.length && !removeNodes.length) return
                 let nodePositions = []
                 let params = []
