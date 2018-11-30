@@ -338,14 +338,11 @@
                 this.clearEditData()
             },
             updatePositions () {
-                const nodeIds = this.network.nodes.map(({id}) => id)
-                const positions = this.networkInstance.getPositions(nodeIds)
-                let nodes = []
-                this.network.nodes.forEach(({id, x, y}) => {
-                    if (positions[id].x !== x || positions[id].y !== y) {
-                        nodes.push(id)
-                    }
-                })
+                const nodes = this.localTopoModelList.filter(({bk_obj_id: objId, position}) => {
+                    const curModel = this.topoModelList.find(model => model['bk_obj_id'] === objId)
+                    return curModel.position.x !== position.x || curModel.position.y !== position.y
+                }).map(({bk_obj_id: objId}) => objId)
+
                 const removeNodes = []
                 this.localTopoModelList.forEach(model => {
                     if (model.position.x === null && model.position.y === null) {
@@ -357,44 +354,10 @@
                 })
                 this.updateNodePosition(this.networkDataSet.nodes.get(nodes), removeNodes)
             },
-            getDeleteEdge () {
-                const deleteAsstArray = []
-                this.topoModelList.forEach(model => {
-                    const localModel = this.localTopoModelList.find(({bk_obj_id: objId}) => model['bk_obj_id'] === objId)
-                    if (localModel) {
-                        if (model.hasOwnProperty('assts') && model.assts.length) {
-                            model.assts.forEach(asst => {
-                                const localAsst = localModel.assts.find(({bk_inst_id: instId}) => asst['bk_inst_id'] === instId)
-                                if (!localAsst) {
-                                    deleteAsstArray.push({
-                                        type: 'delete',
-                                        params: {
-                                            id: asst['bk_inst_id']
-                                        }
-                                    })
-                                }
-                            })
-                        }
-                    } else {
-                        if (model.hasOwnProperty('assts') && model.assts.length) {
-                            model.assts.forEach(asst => {
-                                deleteAsstArray.push({
-                                    type: 'delete',
-                                    params: {
-                                        id: asst['bk_inst_id']
-                                    }
-                                })
-                            })
-                        }
-                    }
-                })
-                this.topoEdit.edges = this.topoEdit.edges.concat(deleteAsstArray)
-            },
             async saveTopo () {
                 let createAsstArray = []
                 let updateAsstArray = []
                 let deleteAsstArray = []
-                this.getDeleteEdge()
                 this.topoEdit.edges.filter(({type}) => type === 'create').forEach(data => {
                     createAsstArray.push(this.createAsst(data.params))
                 })
@@ -410,6 +373,7 @@
                 await Promise.all(deleteAsstArray)
                 this.topoEdit.isEdit = false
                 this.initNetwork()
+                this.clearEditData()
             },
             handleDisplaySave (displayConfig) {
                 this.displayConfig.isShowModelName = displayConfig.isShowModelName
@@ -597,7 +561,7 @@
                 }
                 if (this.topoEdit.activeEdge.from && this.topoEdit.activeEdge.to === '') {
                     this.topoEdit.activeEdge.to = data['nodes'][0]
-                    this.updateNetwork()
+                    // this.updateNetwork()
                     this.slider.properties = {
                         fromObjId: this.topoEdit.activeEdge.from,
                         toObjId: this.topoEdit.activeEdge.to,
@@ -1005,9 +969,15 @@
                     }
                 })
                 this.networkInstance.on('dragEnd', data => {
+                    if (data.nodes.length === 1) {
+                        const nodeId = data.nodes[0]
+                        const position = this.networkInstance.getPositions([nodeId])
+                        const model = this.localTopoModelList.find(({bk_obj_id: objId}) => objId === nodeId)
+                        model.position.x = position[nodeId].x
+                        model.position.y = position[nodeId].y
+                    }
                     this.networkInstance.unselectAll()
                 })
-                // this.setSingleNodePosition()
                 this.loadNodeImage()
                 this.networkInstance.fit()
                 this.loading = false
