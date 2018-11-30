@@ -224,6 +224,9 @@
                 return localClassifications
             }
         },
+        created () {
+            this.$store.commit('setHeaderTitle', this.$t('Nav["模型"]'))
+        },
         methods: {
             ...mapMutations('objectModelClassify', [
                 'updateClassify',
