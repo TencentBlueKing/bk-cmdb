@@ -312,8 +312,8 @@
             },
             updateAsst (params) {
                 return this.updateObjectAssociation({
+                    id: params.id,
                     params: {
-                        id: params.id,
                         bk_obj_asst_name: params['bk_obj_asst_name']
                     }
                 })
