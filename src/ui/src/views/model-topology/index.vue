@@ -561,7 +561,6 @@
                 }
                 if (this.topoEdit.activeEdge.from && this.topoEdit.activeEdge.to === '') {
                     this.topoEdit.activeEdge.to = data['nodes'][0]
-                    // this.updateNetwork()
                     this.slider.properties = {
                         fromObjId: this.topoEdit.activeEdge.from,
                         toObjId: this.topoEdit.activeEdge.to,
