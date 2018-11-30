@@ -647,6 +647,8 @@
             clearHoverTooltip () {
                 this.topoTooltip.hoverNode = null
                 this.topoTooltip.hoverNodeTimer = null
+                this.topoTooltip.hoverEdge = null
+                this.topoTooltip.hoverEdgeTimer = null
             },
             handleHoverEdge (data) {
                 this.$refs.topo.style.cursor = 'pointer'
