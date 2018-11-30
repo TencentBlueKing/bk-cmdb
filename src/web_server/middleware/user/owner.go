@@ -48,6 +48,10 @@ func NewOwnerManager(userName, ownerID, language string) *OwnerManager {
 	return ownerManager
 }
 
+func (m *OwnerManager) SetHttpHeader(key, val string) {
+	m.header.Set(key, val)
+}
+
 func (m *OwnerManager) InitOwner() error {
 	blog.Infof("init owner %s", m.OwnerID)
 
