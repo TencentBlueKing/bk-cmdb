@@ -142,6 +142,7 @@
         },
         data () {
             return {
+                specialModel: ['process', 'plat'],
                 associationList: [],
                 slider: {
                     width: 514,
@@ -262,7 +263,7 @@
             localClassifications () {
                 return this.$tools.clone(this.classifications).map(classify => {
                     classify['bk_objects'] = classify['bk_objects'].filter(model => {
-                        return !this.isModelInTopo(model)
+                        return !this.isModelInTopo(model) && !this.specialModel.includes(model['bk_obj_id'])
                     })
                     return classify
                 })
@@ -999,7 +1000,7 @@
                     this.handleHoverEdge(data)
                 })
                 networkInstance.on('hoverNode', data => {
-                    if (this.topoEdit.isEdit) {
+                    if (this.topoEdit.isEdit && !this.specialModel.includes(data.node)) {
                         this.handleHoverNode(data)
                     }
                 })
@@ -1015,7 +1016,7 @@
                     if (data['edges'].length === 1 && data['nodes'].length === 0) {
                         this.handleEdgeClick(data['edges'][0])
                     }
-                    if (data['nodes'].length === 1) {
+                    if (data['nodes'].length === 1 && !this.specialModel.includes(data['nodes'][0])) {
                         this.handleNodeClick(data)
                     } else {
                         this.topoEdit.activeEdge = {

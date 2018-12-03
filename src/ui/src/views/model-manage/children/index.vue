@@ -75,7 +75,7 @@
             <bk-tabpanel name="field" :title="$t('ModelManagement[\'模型字段\']')">
                 <the-field ref="field"></the-field>
             </bk-tabpanel>
-            <bk-tabpanel name="relation" :title="$t('ModelManagement[\'模型关联\']')">
+            <bk-tabpanel name="relation" :title="$t('ModelManagement[\'模型关联\']')" :show="activeModel && !specialModel.includes(activeModel['bk_obj_id'])">
                 <the-relation v-if="tab.active === 'relation'"></the-relation>
             </bk-tabpanel>
             <bk-tabpanel name="verification" :title="$t('ModelManagement[\'唯一校验\']')">
@@ -113,7 +113,8 @@
                     objIcon: ''
                 },
                 isIconListShow: false,
-                isEditName: false
+                isEditName: false,
+                specialModel: ['process', 'plat']
             }
         },
         computed: {
