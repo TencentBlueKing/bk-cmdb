@@ -92,6 +92,10 @@
                 }
             }
         },
+        created () {
+            this.$store.commit('setHeaderTitle', this.$t('Nav["事件推送"]'))
+            this.getTableData()
+        },
         methods: {
             ...mapActions('eventSub', [
                 'searchSubscription',
@@ -177,9 +181,6 @@
                 this.table.pagination.current = page
                 this.getTableData()
             }
-        },
-        created () {
-            this.getTableData()
         },
         components: {
             vPushDetail

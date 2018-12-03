@@ -1,7 +1,7 @@
 <template>
     <div class="model-field-wrapper">
         <div>
-            <bk-button class="create-btn" type="primary" @click="createField">
+            <bk-button class="create-btn" type="primary" :disabled="isReadOnly" @click="createField">
                 {{$t('ModelManagement["新建字段"]')}}
             </bk-button>
         </div>
@@ -149,7 +149,7 @@
                 this.slider.curField = item
                 this.slider.isShow = true
             },
-            deleteField (field, index) {
+            deleteField (field) {
                 this.$bkInfo({
                     title: this.$tc('ModelManagement["确定删除字段？"]', field['bk_property_name'], {name: field['bk_property_name']}),
                     confirmFn: async () => {
@@ -161,7 +161,7 @@
                         }).then(() => {
                             this.$http.cancel(`post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`)
                         })
-                        this.table.list.splice(index, 1)
+                        this.initFieldList()
                     }
                 })
             },

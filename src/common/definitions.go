@@ -179,7 +179,7 @@ const (
 )
 
 const (
-	// BKFIeldID the id definition
+	// BKFieldID the id definition
 	BKFieldID = "id"
 
 	// BKDefaultField the default field
@@ -194,8 +194,11 @@ const (
 	// BKAppIDField the appid field
 	BKAppIDField = "bk_biz_id"
 
-	// BKIPAddr the ip address
+	// BKIPArr the ip address
 	BKIPArr = "ipArr"
+
+	// BKAssetIDField  the asset id field
+	BKAssetIDField = "bk_asset_id"
 
 	// BKHostInnerIPField the host innerip field
 	BKHostInnerIPField = "bk_host_innerip"

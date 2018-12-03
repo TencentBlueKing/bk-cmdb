@@ -98,6 +98,7 @@
             ...mapGetters(['supplierAccount', 'userName'])
         },
         created () {
+            this.$store.commit('setHeaderTitle', this.$t('Nav["业务模型"]'))
             this.getMainLineModel()
         },
         methods: {

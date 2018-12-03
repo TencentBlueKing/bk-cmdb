@@ -54,7 +54,7 @@
                         name: 'Permission["拓扑编辑"]'
                     }, {
                         id: 'customapi',
-                        name: 'Permission["自定义查询"]'
+                        name: 'Permission["动态分组"]'
                     }, {
                         id: 'proconfig',
                         name: 'Permission["进程管理"]'
@@ -79,6 +79,10 @@
             selectedBusinessRole () {
                 this.getBusinessRoleAuthorities()
             }
+        },
+        created () {
+            this.$store.commit('setHeaderTitle', this.$t('Nav["业务权限管理"]'))
+            this.getBusinessRoles()
         },
         methods: {
             ...mapActions('userPrivilege', [
@@ -119,9 +123,6 @@
                 await this.bindRolePrivilege({bkObjId: 'biz', bkPropertyId: this.selectedBusinessRole, params: this.authorities.selected, config: {requestId: 'updateAuthorities'}})
                 this.$success(this.$t('Common[\'保存成功\']'))
             }
-        },
-        created () {
-            this.getBusinessRoles()
         }
     }
 </script>
