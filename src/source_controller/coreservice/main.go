@@ -10,10 +10,38 @@
  * limitations under the License.
  */
 
-package mongo
+package main
 
-import "configcenter/src/common/universalsql"
+import (
+	"context"
+	"fmt"
+	"os"
+	"runtime"
 
-type DeleteStatement interface {
-	Where(cond universalsql.Condition) universalsql.Result
+	"github.com/spf13/pflag"
+
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/types"
+	"configcenter/src/common/util"
+	"configcenter/src/source_controller/coreservice/app"
+	"configcenter/src/source_controller/coreservice/app/options"
+)
+
+func main() {
+	common.SetIdentification(types.CC_MODULE_CORESERVICE)
+	runtime.GOMAXPROCS(runtime.NumCPU())
+
+	blog.InitLogs()
+	defer blog.CloseLogs()
+
+	op := options.NewServerOption()
+	op.AddFlags(pflag.CommandLine)
+
+	util.InitFlags()
+
+	if err := app.Run(context.Background(), op); err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		blog.Fatal(err)
+	}
 }

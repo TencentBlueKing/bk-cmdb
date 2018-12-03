@@ -12,13 +12,5 @@
 
 package mongo
 
-import (
-	"configcenter/src/common/universalsql"
-)
-
-
-
-
-type statement struct{
-
+type statement struct {
 }

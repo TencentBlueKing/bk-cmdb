@@ -13,6 +13,7 @@
 package mongo
 
 import (
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/universalsql"
 )
 
@@ -21,26 +22,26 @@ var _ universalsql.Condition = (*condition)(nil)
 type condition struct {
 }
 
-func(cond *condition)ToSQL() string{
+func (cond *condition) ToSQL() string {
 	return ""
 }
 
-func(cond *condition)ToMapStr() mapstr.MapStr{
+func (cond *condition) ToMapStr() mapstr.MapStr {
 	return nil
 }
 
-func(cond *condition)Element(element ConditionElement) universalsql.Condition{
+func (cond *condition) Element(element universalsql.ConditionElement) universalsql.Condition {
 	return nil
 }
 
-func(cond *condition)And(elements ...ConditionElement) universalsql.Condition{
+func (cond *condition) And(elements ...universalsql.ConditionElement) universalsql.Condition {
 	return nil
 }
 
-func(cond *condition)Or(elements ...ConditionElement) universalsql.Condition{
+func (cond *condition) Or(elements ...universalsql.ConditionElement) universalsql.Condition {
 	return nil
 }
 
-func(cond *condition)Embed(embedName string) universalsql.Condition{
+func (cond *condition) Embed(embedName string) universalsql.Condition {
 	return nil
 }

@@ -10,10 +10,14 @@
  * limitations under the License.
  */
 
-package mongo
+package service
 
-import "configcenter/src/common/universalsql"
+import (
+	"configcenter/src/common/mapstr"
+	"configcenter/src/source_controller/coreservice/core"
+)
 
-type DeleteStatement interface {
-	Where(cond universalsql.Condition) universalsql.Result
+func (s *coreService) Health(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	//return s.core.HealthOperation().Health(params)
+	return nil, nil
 }
