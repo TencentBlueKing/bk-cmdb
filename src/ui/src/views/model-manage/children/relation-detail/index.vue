@@ -150,7 +150,8 @@
                     bk_asst_obj_id: '',
                     bk_asst_id: '',
                     mapping: ''
-                }
+                },
+                specialModel: ['process', 'plat']
             }
         },
         computed: {
@@ -191,10 +192,12 @@
                     if (classify['bk_objects'].length) {
                         let objects = []
                         classify['bk_objects'].forEach(({bk_obj_id: objId, bk_obj_name: objName}) => {
-                            objects.push({
-                                id: objId,
-                                name: objName
-                            })
+                            if (!this.specialModel.includes(objId)) {
+                                objects.push({
+                                    id: objId,
+                                    name: objName
+                                })
+                            }
                         })
                         if (objects.length) {
                             asstList.push({

@@ -55,7 +55,6 @@ const router = new Router({
         path: '/model/details/:modelId',
         component: modelDetail,
         meta: {
-            customTitle: true,
             returnPath: '/model',
             relative: '/model',
             ignoreAuthorize: true,
