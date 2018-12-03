@@ -31,17 +31,17 @@ func ConvLanguageToV3(language string) string {
 }
 
 // SliceStrToInt: 将字符串切片转换为整型切片
-func SliceStrToInt(sliceStr []string) ([]int, error) {
-	sliceInt := make([]int, 0)
+func SliceStrToInt(sliceStr []string) ([]int64, error) {
+	sliceInt := make([]int64, 0)
 	for _, idStr := range sliceStr {
 
 		if idStr == "" {
 			continue
 		}
 
-		id, err := strconv.Atoi(idStr)
+		id, err := strconv.ParseInt(idStr, 10, 64)
 		if err != nil {
-			return []int{}, err
+			return []int64{}, err
 		}
 		sliceInt = append(sliceInt, id)
 	}

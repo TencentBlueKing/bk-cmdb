@@ -297,7 +297,6 @@ func (o *object) FindObjectBatch(params types.ContextParams, data frtypes.MapStr
 func (o *object) FindSingleObject(params types.ContextParams, objectID string) (model.Object, error) {
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(objectID)
 
 	objs, err := o.FindObject(params, cond)
