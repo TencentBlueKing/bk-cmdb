@@ -10,10 +10,20 @@
  * limitations under the License.
  */
 
-package mongo
+package core
 
-import "configcenter/src/common/universalsql"
+import (
+	"net/http"
 
-type DeleteStatement interface {
-	Where(cond universalsql.Condition) universalsql.Result
+	"configcenter/src/common/errors"
+	"configcenter/src/common/language"
+)
+
+// ContextParams the logic function params
+type ContextParams struct {
+	Header          http.Header
+	SupplierAccount string
+	User            string
+	Err             errors.DefaultCCErrorIf
+	Lang            language.DefaultCCLanguageIf
 }
