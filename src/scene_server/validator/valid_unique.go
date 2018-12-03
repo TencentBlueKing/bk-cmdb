@@ -51,18 +51,18 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
 		}
 
 		cond := condition.CreateCondition()
+
 		allEmpty := true
-		for key, val := range valData {
-			if uniquekeys[key] {
-				cond.Field(key).Eq(val)
-				if isEmpty(val) {
-					allEmpty = false
-				}
+		for key := range uniquekeys {
+			val, ok := valData[key]
+			cond.Field(key).Eq(val)
+			if ok && !isEmpty(val) {
+				allEmpty = false
 			}
 		}
 
 		if allEmpty && !unique.MustCheck {
-			return nil
+			continue
 		}
 
 		// only search data not in diable status
@@ -97,7 +97,6 @@ func isEmpty(value interface{}) bool {
 func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID int64) error {
 
 	objID := valid.objID
-	searchCond := make(map[string]interface{})
 	mapData, err := valid.getInstDataByID(instID)
 	if nil != err {
 		return err
@@ -139,17 +138,16 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 
 		cond := condition.CreateCondition()
 		allEmpty := true
-		for key, val := range mapData {
-			if uniquekeys[key] {
-				cond.Field(key).Eq(val)
-				if isEmpty(val) {
-					allEmpty = false
-				}
+		for key := range uniquekeys {
+			val, ok := valData[key]
+			cond.Field(key).Eq(val)
+			if ok && !isEmpty(val) {
+				allEmpty = false
 			}
 		}
 
 		if allEmpty && !unique.MustCheck {
-			return nil
+			continue
 		}
 
 		// only search data not in diable status
@@ -159,7 +157,7 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 		}
 		cond.Field(common.GetInstIDField(objID)).NotEq(instID)
 
-		result, err := valid.CoreAPI.ObjectController().Instance().SearchObjects(valid.ctx, common.GetObjByType(valid.objID), valid.pheader, &metadata.QueryInput{Condition: searchCond})
+		result, err := valid.CoreAPI.ObjectController().Instance().SearchObjects(valid.ctx, common.GetObjByType(valid.objID), valid.pheader, &metadata.QueryInput{Condition: cond.ToMapStr()})
 		if nil != err {
 			return err
 		}
@@ -168,7 +166,7 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 		}
 
 		if 0 < result.Data.Count {
-			blog.Errorf("[validUpdateUnique] duplicate data condition: %#v, origin: %#v, unique keys: %v, objID: %s, instID %v count %d", searchCond, mapData, uniquekeys, valid.objID, instID, result.Data.Count)
+			blog.Errorf("[validUpdateUnique] duplicate data condition: %#v, origin: %#v, unique keys: %v, objID: %s, instID %v count %d", cond.ToMapStr(), mapData, uniquekeys, valid.objID, instID, result.Data.Count)
 			return valid.errif.Error(common.CCErrCommDuplicateItem)
 		}
 	}

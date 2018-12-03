@@ -85,7 +85,7 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 		{
 			ObjID:     common.BKInnerObjIDHost,
 			MustCheck: true,
-			Keys: []metadata.UinqueKeys{
+			Keys: []metadata.UinqueKey{
 				{
 					Kind: metadata.UinqueKeyKindProperty,
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDHost, common.BKAssetIDField)].ID),
@@ -98,7 +98,7 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 		{
 			ObjID:     common.BKInnerObjIDHost,
 			MustCheck: false,
-			Keys: []metadata.UinqueKeys{
+			Keys: []metadata.UinqueKey{
 				{
 					Kind: metadata.UinqueKeyKindProperty,
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDHost, common.BKCloudIDField)].ID),
@@ -116,7 +116,7 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 		{
 			ObjID:     common.BKInnerObjIDProc,
 			MustCheck: true,
-			Keys: []metadata.UinqueKeys{
+			Keys: []metadata.UinqueKey{
 				{
 					Kind: metadata.UinqueKeyKindProperty,
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDProc, common.BKAppIDField)].ID),
@@ -133,7 +133,7 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 		{
 			ObjID:     common.BKInnerObjIDProc,
 			MustCheck: false,
-			Keys: []metadata.UinqueKeys{
+			Keys: []metadata.UinqueKey{
 				{
 					Kind: metadata.UinqueKeyKindProperty,
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDProc, common.BKAppIDField)].ID),
@@ -151,7 +151,7 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 		{
 			ObjID:     common.BKInnerObjIDApp,
 			MustCheck: true,
-			Keys: []metadata.UinqueKeys{
+			Keys: []metadata.UinqueKey{
 				{
 					Kind: metadata.UinqueKeyKindProperty,
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDApp, common.BKAppNameField)].ID),
@@ -165,7 +165,7 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 		{
 			ObjID:     common.BKInnerObjIDSet,
 			MustCheck: true,
-			Keys: []metadata.UinqueKeys{
+			Keys: []metadata.UinqueKey{
 				{
 					Kind: metadata.UinqueKeyKindProperty,
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDSet, common.BKAppIDField)].ID),
@@ -183,7 +183,7 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 		{
 			ObjID:     common.BKInnerObjIDModule,
 			MustCheck: true,
-			Keys: []metadata.UinqueKeys{
+			Keys: []metadata.UinqueKey{
 				{
 					Kind: metadata.UinqueKeyKindProperty,
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDModule, common.BKAppIDField)].ID),
@@ -201,7 +201,7 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 		{
 			ObjID:     common.BKInnerObjIDPlat,
 			MustCheck: true,
-			Keys: []metadata.UinqueKeys{
+			Keys: []metadata.UinqueKey{
 				{
 					Kind: metadata.UinqueKeyKindProperty,
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDPlat, common.BKCloudNameField)].ID),
@@ -214,11 +214,11 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 	}
 
 	for objID, oldAttrs := range obj2IsOnlyProperty {
-		keys := []metadata.UinqueKeys{}
+		keys := []metadata.UinqueKey{}
 		ownerID := conf.OwnerID
 		allPreset := true
 		for _, oldAttr := range oldAttrs {
-			keys = append(keys, metadata.UinqueKeys{
+			keys = append(keys, metadata.UinqueKey{
 				Kind: metadata.UinqueKeyKindProperty,
 				ID:   uint64(oldAttr.ID),
 			})

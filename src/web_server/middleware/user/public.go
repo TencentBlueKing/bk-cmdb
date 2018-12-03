@@ -67,11 +67,11 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 	if !loginSucc {
 		return false
 	}
-
 	if true == isMultiOwner || true == userInfo.MultiSupplier {
 		ownerM := NewOwnerManager(userInfo.UserName, userInfo.OnwerUin, userInfo.Language)
 		ownerM.CacheCli = m.cacheCli
 		ownerM.Engine = m.engine
+		ownerM.SetHttpHeader(common.BKHTTPSupplierID, strconv.FormatInt(userInfo.SupplierID, 10))
 		err := ownerM.InitOwner()
 		if nil != err {
 			blog.Error("InitOwner error: %v", err)

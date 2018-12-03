@@ -60,6 +60,9 @@ type Object interface {
 	GetAttributes() ([]Attribute, error)
 	GetAttributesExceptInnerFields() ([]Attribute, error)
 
+	CreateUnique() Unique
+	GetUniques() ([]Unique, error)
+
 	SetClassification(class Classification)
 	GetClassification() (Classification, error)
 
@@ -690,6 +693,43 @@ func (o *object) CreateGroup() Group {
 			ObjectID: o.obj.ObjectID,
 		},
 	}
+}
+
+func (o *object) CreateUnique() Unique {
+	return &unique{
+		params:    o.params,
+		clientSet: o.clientSet,
+		data: meta.ObjectUnique{
+			OwnerID: o.obj.OwnerID,
+			ObjID:   o.obj.ObjectID,
+		},
+	}
+}
+
+func (o *object) GetUniques() ([]Unique, error) {
+	rsp, err := o.clientSet.ObjectController().Unique().Search(context.Background(), o.params.Header, o.obj.ObjectID)
+
+	if nil != err {
+		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
+		return nil, o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("failed to search the object(%s), error info is %s", o.obj.ObjectID, rsp.ErrMsg)
+		return nil, o.params.Err.Error(rsp.Code)
+	}
+
+	rstItems := make([]Unique, 0)
+	for _, item := range rsp.Data {
+		grp := &unique{
+			data:      item,
+			params:    o.params,
+			clientSet: o.clientSet,
+		}
+		rstItems = append(rstItems, grp)
+	}
+
+	return rstItems, nil
 }
 
 func (o *object) CreateAttribute() Attribute {

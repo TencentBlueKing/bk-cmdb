@@ -20,13 +20,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/bitly/go-simplejson"
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	"github.com/bitly/go-simplejson"
+	"github.com/emicklei/go-restful"
 )
 
 // CreateObjectAtt create object's attribute
@@ -165,6 +165,7 @@ func (cli *Service) DeleteObjectAttByID(req *restful.Request, resp *restful.Resp
 		if usedKeyID[propertys[index].ID] {
 			blog.Errorf("property %s has bee used by it's unique constrains, not allow delete", propertys[0].PropertyID)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrTopoObjectPropertyUsedByUnique, propertys[index].PropertyID)})
+			return
 		}
 	}
 
