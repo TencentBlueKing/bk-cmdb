@@ -17,14 +17,14 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
+
+	"github.com/emicklei/go-restful"
 )
 
 // CreateObjectUnique create object's unique
@@ -51,9 +51,26 @@ func (cli *Service) CreateObjectUnique(req *restful.Request, resp *restful.Respo
 		}
 	}
 
+	if dat.MustCheck {
+		cond := condition.CreateCondition()
+		cond.Field(common.BKObjIDField).Eq(objID)
+		cond.Field("must_check").Eq(true)
+		count, err := db.Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).Count(ctx)
+		if nil != err {
+			blog.Errorf("[CreateObjectUnique] check must check error: %v", err)
+			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrObjectDBOpErrno)})
+			return
+		}
+		if count > 0 {
+			blog.Errorf("[CreateObjectUnique] model could not have multiple must check unique")
+			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrTopoObjectUniqueCanNotHasMutiMustCheck)})
+			return
+		}
+	}
+
 	id, err := db.NextSequence(ctx, common.BKTableNameObjUnique)
 	if nil != err {
-		blog.Errorf("[CreateObjectUnique] NextSequence error: %s", err)
+		blog.Errorf("[CreateObjectUnique] NextSequence error: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrObjectDBOpErrno)})
 		return
 	}
@@ -70,7 +87,7 @@ func (cli *Service) CreateObjectUnique(req *restful.Request, resp *restful.Respo
 
 	err = db.Table(common.BKTableNameObjUnique).Insert(ctx, &unique)
 	if nil != err {
-		blog.Errorf("[CreateObjectUnique] Insert error: %s, raw: %#v", err, &unique)
+		blog.Errorf("[CreateObjectUnique] Insert error: %v, raw: %#v", err, &unique)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrObjectDBOpErrno)})
 		return
 	}
@@ -101,6 +118,23 @@ func (cli *Service) UpdateObjectUnique(req *restful.Request, resp *restful.Respo
 		return
 	}
 	unique.LastTime = metadata.Now()
+
+	if unique.MustCheck {
+		cond := condition.CreateCondition()
+		cond.Field(common.BKObjIDField).Eq(objID)
+		cond.Field("must_check").Eq(true)
+		count, err := db.Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).Count(ctx)
+		if nil != err {
+			blog.Errorf("[UpdateObjectUnique] check must check  error: %v", err)
+			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrObjectDBOpErrno)})
+			return
+		}
+		if count > 0 {
+			blog.Errorf("[UpdateObjectUnique] model could not have multiple must check unique")
+			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrTopoObjectUniqueCanNotHasMutiMustCheck)})
+			return
+		}
+	}
 
 	for _, key := range unique.Keys {
 		switch key.Kind {
