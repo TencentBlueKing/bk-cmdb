@@ -104,7 +104,7 @@ const getters = {
             id: 'resource',
             path: '/resource',
             icon: 'icon-cc-host-free-pool',
-            i18n: 'Nav["资源"]',
+            i18n: 'Nav["主机"]',
             authorized: rootGetters.admin || (authority['sys_config']['global_busi'] || []).includes('resource')
         }]
         specialCollecton.forEach(special => {

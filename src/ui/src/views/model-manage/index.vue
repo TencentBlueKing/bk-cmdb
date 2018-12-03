@@ -1,10 +1,10 @@
 <template>
     <div class="group-wrapper">
         <p class="btn-group">
-            <bk-button type="default" @click="showModelDialog(false)">
+            <bk-button type="primary" @click="showModelDialog(false)">
                 {{$t('ModelManagement["新增模型"]')}}
             </bk-button>
-            <bk-button type="primary" @click="showGroupDialog(false)">
+            <bk-button type="default" @click="showGroupDialog(false)">
                 {{$t('ModelManagement["新建分组"]')}}
             </bk-button>
         </p>
@@ -224,6 +224,9 @@
                 return localClassifications
             }
         },
+        created () {
+            this.$store.commit('setHeaderTitle', this.$t('Nav["模型"]'))
+        },
         methods: {
             ...mapMutations('objectModelClassify', [
                 'updateClassify',
@@ -347,7 +350,7 @@
         margin: 0 0 20px 0;
         font-size: 0;
         .bk-primary {
-            margin-left: 10px;
+            margin-right: 10px;
         }
     }
     .group-list {

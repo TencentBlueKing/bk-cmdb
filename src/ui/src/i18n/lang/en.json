@@ -118,7 +118,7 @@
         "首页": "Index",
         "我的收藏": "My Collection",
         "业务": "Business",
-        "资源": "Resource",
+        "主机": "Host",
         "业务资源": "Business Resource",
         "业务拓扑": "Business Topology",
         "进程管理": "Process Management",
@@ -136,7 +136,7 @@
         "业务主机": "Business Host",
         "模型": "Model",
         "关联类型": "Association Type",
-        "配置平台": "CMDB"
+        "蓝鲸配置平台": "BK CMDB"
     },
     "Index": {
         "首页": "Index",

@@ -142,6 +142,7 @@
         },
         data () {
             return {
+                specialModel: ['process', 'plat'],
                 associationList: [],
                 slider: {
                     width: 514,
@@ -262,7 +263,7 @@
             localClassifications () {
                 return this.$tools.clone(this.classifications).map(classify => {
                     classify['bk_objects'] = classify['bk_objects'].filter(model => {
-                        return !this.isModelInTopo(model)
+                        return !this.isModelInTopo(model) && !this.specialModel.includes(model['bk_obj_id'])
                     })
                     return classify
                 })
@@ -312,8 +313,8 @@
             },
             updateAsst (params) {
                 return this.updateObjectAssociation({
+                    id: params.id,
                     params: {
-                        id: params.id,
                         bk_obj_asst_name: params['bk_obj_asst_name']
                     }
                 })
@@ -338,14 +339,11 @@
                 this.clearEditData()
             },
             updatePositions () {
-                const nodeIds = this.network.nodes.map(({id}) => id)
-                const positions = this.networkInstance.getPositions(nodeIds)
-                let nodes = []
-                this.network.nodes.forEach(({id, x, y}) => {
-                    if (positions[id].x !== x || positions[id].y !== y) {
-                        nodes.push(id)
-                    }
-                })
+                const nodes = this.localTopoModelList.filter(({bk_obj_id: objId, position}) => {
+                    const curModel = this.topoModelList.find(model => model['bk_obj_id'] === objId)
+                    return curModel.position.x !== position.x || curModel.position.y !== position.y
+                }).map(({bk_obj_id: objId}) => objId)
+
                 const removeNodes = []
                 this.localTopoModelList.forEach(model => {
                     if (model.position.x === null && model.position.y === null) {
@@ -357,44 +355,10 @@
                 })
                 this.updateNodePosition(this.networkDataSet.nodes.get(nodes), removeNodes)
             },
-            getDeleteEdge () {
-                const deleteAsstArray = []
-                this.topoModelList.forEach(model => {
-                    const localModel = this.localTopoModelList.find(({bk_obj_id: objId}) => model['bk_obj_id'] === objId)
-                    if (localModel) {
-                        if (model.hasOwnProperty('assts') && model.assts.length) {
-                            model.assts.forEach(asst => {
-                                const localAsst = localModel.assts.find(({bk_inst_id: instId}) => asst['bk_inst_id'] === instId)
-                                if (!localAsst) {
-                                    deleteAsstArray.push({
-                                        type: 'delete',
-                                        params: {
-                                            id: asst['bk_inst_id']
-                                        }
-                                    })
-                                }
-                            })
-                        }
-                    } else {
-                        if (model.hasOwnProperty('assts') && model.assts.length) {
-                            model.assts.forEach(asst => {
-                                deleteAsstArray.push({
-                                    type: 'delete',
-                                    params: {
-                                        id: asst['bk_inst_id']
-                                    }
-                                })
-                            })
-                        }
-                    }
-                })
-                this.topoEdit.edges = this.topoEdit.edges.concat(deleteAsstArray)
-            },
             async saveTopo () {
                 let createAsstArray = []
                 let updateAsstArray = []
                 let deleteAsstArray = []
-                this.getDeleteEdge()
                 this.topoEdit.edges.filter(({type}) => type === 'create').forEach(data => {
                     createAsstArray.push(this.createAsst(data.params))
                 })
@@ -410,6 +374,7 @@
                 await Promise.all(deleteAsstArray)
                 this.topoEdit.isEdit = false
                 this.initNetwork()
+                this.clearEditData()
             },
             handleDisplaySave (displayConfig) {
                 this.displayConfig.isShowModelName = displayConfig.isShowModelName
@@ -597,7 +562,6 @@
                 }
                 if (this.topoEdit.activeEdge.from && this.topoEdit.activeEdge.to === '') {
                     this.topoEdit.activeEdge.to = data['nodes'][0]
-                    this.updateNetwork()
                     this.slider.properties = {
                         fromObjId: this.topoEdit.activeEdge.from,
                         toObjId: this.topoEdit.activeEdge.to,
@@ -647,6 +611,8 @@
             clearHoverTooltip () {
                 this.topoTooltip.hoverNode = null
                 this.topoTooltip.hoverNodeTimer = null
+                this.topoTooltip.hoverEdge = null
+                this.topoTooltip.hoverEdgeTimer = null
             },
             handleHoverEdge (data) {
                 this.$refs.topo.style.cursor = 'pointer'
@@ -1003,9 +969,15 @@
                     }
                 })
                 this.networkInstance.on('dragEnd', data => {
+                    if (data.nodes.length === 1) {
+                        const nodeId = data.nodes[0]
+                        const position = this.networkInstance.getPositions([nodeId])
+                        const model = this.localTopoModelList.find(({bk_obj_id: objId}) => objId === nodeId)
+                        model.position.x = position[nodeId].x
+                        model.position.y = position[nodeId].y
+                    }
                     this.networkInstance.unselectAll()
                 })
-                // this.setSingleNodePosition()
                 this.loadNodeImage()
                 this.networkInstance.fit()
                 this.loading = false
@@ -1028,7 +1000,7 @@
                     this.handleHoverEdge(data)
                 })
                 networkInstance.on('hoverNode', data => {
-                    if (this.topoEdit.isEdit) {
+                    if (this.topoEdit.isEdit && !this.specialModel.includes(data.node)) {
                         this.handleHoverNode(data)
                     }
                 })
@@ -1044,7 +1016,7 @@
                     if (data['edges'].length === 1 && data['nodes'].length === 0) {
                         this.handleEdgeClick(data['edges'][0])
                     }
-                    if (data['nodes'].length === 1) {
+                    if (data['nodes'].length === 1 && !this.specialModel.includes(data['nodes'][0])) {
                         this.handleNodeClick(data)
                     } else {
                         this.topoEdit.activeEdge = {
