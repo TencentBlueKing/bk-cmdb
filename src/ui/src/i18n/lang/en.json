@@ -118,7 +118,7 @@
         "首页": "Index",
         "我的收藏": "My Collection",
         "业务": "Business",
-        "资源": "Resource",
+        "主机": "Host",
         "业务资源": "Business Resource",
         "业务拓扑": "Business Topology",
         "进程管理": "Process Management",
@@ -136,7 +136,7 @@
         "业务主机": "Business Host",
         "模型": "Model",
         "关联类型": "Association Type",
-        "蓝鲸配置平台": "Configuration System"
+        "蓝鲸配置平台": "BK CMDB"
     },
     "Index": {
         "首页": "Index",
@@ -268,6 +268,8 @@
         "请填写模型名": "Please fill in the model name",
         "下划线，数字，英文小写的组合": "Underline, number, combination of English lowercase",
         "导出": "Export",
+        "导入": "Import",
+        "导入成功": "Import success",
         "下划线/数字/字母": "Underline/ number/English lowercase",
         "单位": "Unit",
         "请输入单位": "Enter unit",
@@ -335,6 +337,8 @@
         "下移": "down",
         "删除分组": "delete group",
         "停用": "disable",
+        "已停用": "disabled",
+        "启用": "enable",
         "编辑拓扑": "modify topo",
         "拓扑显示设置": "view settings",
         "图例": "legend",
@@ -355,7 +359,10 @@
         "确定移除模型?": "confirm remove this model?",
         "移除模型提示": "The removed model is placed in the left model group and is no longer displayed in the topology view",
         "移除失败": "remove failed",
-        "移除失败提示": "There are {asstNum} associations in the model. To remove the model, all associations under the model must be deleted."
+        "移除失败提示": "There are {asstNum} associations in the model. To remove the model, all associations under the model must be deleted.",
+        "确认要启用该模型？": "Are you sure you want to enable this model?",
+        "确认要停用该模型？": "Are you sure you want to disable this model?",
+        "确认要删除该模型？": "Are you sure you want to delete this model?"
     },
     "HostResourcePool": {
         "资源池": "Resource Pool",
