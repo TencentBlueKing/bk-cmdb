@@ -183,7 +183,7 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.He
 //httpRequest do http request
 func httpRequest(url string, body interface{}, header http.Header) (string, error) {
 	params, _ := json.Marshal(body)
-	blog.Info("input:%s", string(params))
+	blog.V(5).Info("input:%s", string(params))
 	httpClient := httpclient.NewHttpClient()
 	httpClient.SetHeader("Content-Type", "application/json")
 	httpClient.SetHeader("Accept", "application/json")
@@ -196,7 +196,7 @@ func httpRequest(url string, body interface{}, header http.Header) (string, erro
 //httpRequestGet do http get request
 func httpRequestGet(url string, body interface{}, header http.Header) (string, error) {
 	params, _ := json.Marshal(body)
-	blog.Info("input:%s", string(params))
+	blog.V(5).Info("input:%s", string(params))
 	httpClient := httpclient.NewHttpClient()
 	httpClient.SetHeader("Content-Type", "application/json")
 	httpClient.SetHeader("Accept", "application/json")

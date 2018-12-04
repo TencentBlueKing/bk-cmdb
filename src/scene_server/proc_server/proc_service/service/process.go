@@ -405,7 +405,7 @@ func (ps *ProcServer) SearchProcess(req *restful.Request, resp *restful.Response
 		reqParam[common.BKAppIDField] = appID
 		reqParam[common.BKModuleNameField] = moduleName
 
-		blog.Infof("get process arr by module(%s), reqParam: %+v", moduleName, reqParam)
+		blog.V(5).Infof("get process arr by module(%s), reqParam: %+v", moduleName, reqParam)
 		ret, err := ps.CoreAPI.ProcController().GetProc2Module(context.Background(), req.Request.Header, reqParam)
 		if err != nil || (err == nil && !ret.Result) {
 			blog.Errorf("query process by module failed. err: %s", err.Error())

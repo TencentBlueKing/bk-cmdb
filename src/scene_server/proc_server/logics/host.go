@@ -47,7 +47,7 @@ func (lgc *Logics) getHostByModuleID(ctx context.Context, header http.Header, mo
 		return nil, defErr.New(ret.Code, ret.ErrMsg)
 	}
 	if 0 == len(ret.Data) {
-		blog.V(3).Infof("getHostByModuleID moduleID %d supplierID %s GetModulesHostConfig len equal 0", moduleID, supplierID)
+		blog.V(5).Infof("getHostByModuleID moduleID %d supplierID %s GetModulesHostConfig len equal 0", moduleID, supplierID)
 		return nil, nil
 	}
 	var hostIDs []int64
