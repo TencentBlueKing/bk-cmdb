@@ -11,7 +11,3 @@
  */
 
 package mongo
-type UpdateStatement interface {
-	Set(fields ...Field) UpdateStatement
-	Where(cond Condition) Result
-}

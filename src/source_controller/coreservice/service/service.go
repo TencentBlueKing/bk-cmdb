@@ -13,6 +13,9 @@
 package service
 
 import (
+	"configcenter/src/source_controller/coreservice/core/association"
+	"configcenter/src/source_controller/coreservice/core/instances"
+	"configcenter/src/source_controller/coreservice/core/model"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -52,11 +55,14 @@ type coreService struct {
 	err      errors.CCErrorIf
 	actions  []action
 	cfg      options.Config
+	core     core.Core
 }
 
 func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err errors.CCErrorIf, language language.CCLanguageIf) {
 	s.cfg = cfg
 	s.engin = engin
+
+	s.core = core.New(model.New(s.engin.CoreAPI), instances.New(s.engin.CoreAPI), association.New(s.engin.CoreAPI))
 
 	if nil != err {
 		s.err = err
@@ -65,6 +71,7 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 	if nil != language {
 		s.language = language
 	}
+
 }
 
 // WebService the web service

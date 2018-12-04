@@ -17,31 +17,31 @@ import (
 	"configcenter/src/common/universalsql"
 )
 
-var _ universalsql.Condition = (*condition)(nil)
+var _ universalsql.Condition = (*mongoCondition)(nil)
 
-type condition struct {
+type mongoCondition struct {
 }
 
-func (cond *condition) ToSQL() string {
-	return ""
+func (m *mongoCondition) ToSQL() (string, error) {
+	return "", nil
 }
 
-func (cond *condition) ToMapStr() mapstr.MapStr {
+func (m *mongoCondition) ToMapStr() mapstr.MapStr {
 	return nil
 }
 
-func (cond *condition) Element(element universalsql.ConditionElement) universalsql.Condition {
+func (m *mongoCondition) Element(element universalsql.ConditionElement) universalsql.Condition {
 	return nil
 }
 
-func (cond *condition) And(elements ...universalsql.ConditionElement) universalsql.Condition {
+func (m *mongoCondition) And(elements ...universalsql.ConditionElement) universalsql.Condition {
 	return nil
 }
 
-func (cond *condition) Or(elements ...universalsql.ConditionElement) universalsql.Condition {
+func (m *mongoCondition) Or(elements ...universalsql.ConditionElement) universalsql.Condition {
 	return nil
 }
 
-func (cond *condition) Embed(embedName string) universalsql.Condition {
+func (m *mongoCondition) Embed(embedName string) universalsql.Condition {
 	return nil
 }

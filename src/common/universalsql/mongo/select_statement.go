@@ -12,8 +12,34 @@
 
 package mongo
 
-type SelectStatement interface {
-	Fields(fieldName ...string) SelectStatement
-	Count() SelectStatement
-	Where(cond Condition) Result
+import (
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/universalsql"
+)
+
+var _ universalsql.SelectStatement = (*selectStatement)(nil)
+var _ universalsql.Result = (*selectStatementResult)(nil)
+
+type selectStatementResult struct {
+}
+
+type selectStatement struct {
+	fieldNames []string
+	conds      []universalsql.Condition
+}
+
+func (m *selectStatementResult) ToSQL() (string, error) {
+	return "", nil
+}
+
+func (m *selectStatementResult) ToMapStr() mapstr.MapStr {
+	return nil
+}
+
+func (m *selectStatement) Fields(fieldName ...string) universalsql.SelectStatement {
+	return m
+}
+
+func (m *selectStatement) Where(cond ...universalsql.Condition) universalsql.Result {
+	return nil
 }
