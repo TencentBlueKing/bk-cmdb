@@ -13,13 +13,13 @@
 package model
 
 import (
-	"configcenter/src/apimachinery"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
+	"configcenter/src/storage/dal"
 )
 
 type modelClassification struct {
-	clientSet apimachinery.ClientSetInterface
+	dbProxy dal.RDB
 }
 
 func (m *modelClassification) CreateOneModelClassification(ctx core.ContextParams, inputParam metadata.CreateOneModelClassification) (*metadata.CreateOneDataResult, error) {

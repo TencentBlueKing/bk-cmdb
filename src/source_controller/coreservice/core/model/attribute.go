@@ -13,13 +13,13 @@
 package model
 
 import (
-	"configcenter/src/apimachinery"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
+	"configcenter/src/storage/dal"
 )
 
 type modelAttribute struct {
-	clientSet apimachinery.ClientSetInterface
+	dbProxy dal.RDB
 }
 
 func (m *modelAttribute) CreateModelAttributes(ctx core.ContextParams, objID string, inputParam metadata.CreateModelAttributes) (*metadata.CreateManyDataResult, error) {

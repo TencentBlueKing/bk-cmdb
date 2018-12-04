@@ -13,9 +13,9 @@
 package model
 
 import (
-	"configcenter/src/apimachinery"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
+	"configcenter/src/storage/dal"
 )
 
 var _ core.ModelOperation = (*modelManager)(nil)
@@ -23,18 +23,18 @@ var _ core.ModelOperation = (*modelManager)(nil)
 type modelManager struct {
 	*modelAttribute
 	*modelClassification
-	clientSet apimachinery.ClientSetInterface
+	dbProxy dal.RDB
 }
 
 // New create a new model manager instance
-func New(client apimachinery.ClientSetInterface) core.ModelOperation {
+func New(dbProxy dal.RDB) core.ModelOperation {
 	return &modelManager{
-		clientSet: client,
+		dbProxy: dbProxy,
 		modelAttribute: &modelAttribute{
-			clientSet: client,
+			dbProxy: dbProxy,
 		},
 		modelClassification: &modelClassification{
-			clientSet: client,
+			dbProxy: dbProxy,
 		},
 	}
 }
