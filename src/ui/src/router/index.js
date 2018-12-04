@@ -20,6 +20,8 @@ const topology = () => import(/* webpackChunkName: topology */ '@/views/topology
 const process = () => import(/* webpackChunkName: process */ '@/views/process')
 const customQuery = () => import(/* webpackChunkName: process */ '@/views/custom-query')
 const error = () => import(/* webpackChunkName: error */ '@/views/status/error')
+const cloudDiscover = () => import(/* webpackChunkName: hosts */ '@/views/cloud-discover')
+const cloudConfirm = () => import(/* webpackChunkName: hosts */ '@/views/cloud-confirm')
 
 Vue.use(Router)
 
@@ -128,6 +130,12 @@ const router = new Router({
     }, {
         path: '*',
         redirect: '/status-404'
+    }, {
+        path: '/resource-confirm',
+        component: cloudConfirm
+    }, {
+        path: '/cloud-discover',
+        component: cloudDiscover
     }]
 })
 

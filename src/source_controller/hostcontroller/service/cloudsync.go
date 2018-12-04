@@ -133,10 +133,18 @@ func (s *Service) SearchCloudTask(req *restful.Request, resp *restful.Response) 
 		return
 	}
 
+	num, err := s.Instance.Table(common.BKTableNameCloudTask).Find(condition).Count(ctx)
+	if err != nil {
+		blog.Error("get task name [%s] failed, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
+		return
+	}
+
+	//blog.Debug("num: %v", num)
 	//blog.Debug("result: %v", result)
-	resp.WriteEntity(meta.CloudSearch{
-		BaseResp: meta.SuccessBaseResp,
-		Data:     result,
+	resp.WriteEntity(meta.FavoriteResult{
+		Count: num,
+		Info:  result,
 	})
 
 }
@@ -205,12 +213,6 @@ func (s *Service) SearchConfirm(req *restful.Request, resp *restful.Response) {
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
 	condition := make(map[string]interface{})
-	if err := json.NewDecoder(req.Request.Body).Decode(&condition); err != nil {
-		blog.Errorf("add cloud sync task failed with decode body err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
-		return
-	}
-
 	result := make([]map[string]interface{}, 0)
 	err := s.Instance.Table(common.BKTableNameCloudResourceSync).Find(condition).All(ctx, &result)
 	if err != nil {
@@ -219,10 +221,17 @@ func (s *Service) SearchConfirm(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
+	num, errN := s.Instance.Table(common.BKTableNameCloudResourceSync).Find(condition).Count(ctx)
+	if errN != nil {
+		blog.Error("get task name [%s] failed, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
+		return
+	}
+
 	//blog.Debug("result: %v", result)
-	resp.WriteEntity(meta.CloudSearch{
-		BaseResp: meta.SuccessBaseResp,
-		Data:     result,
+	resp.WriteEntity(meta.FavoriteResult{
+		Count: num,
+		Info:  result,
 	})
 }
 
@@ -285,12 +294,17 @@ func (s *Service) SearchSyncHistory(req *restful.Request, resp *restful.Response
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
-	condition := make(map[string]interface{})
-	if err := json.NewDecoder(req.Request.Body).Decode(&condition); err != nil {
-		blog.Errorf("add cloud sync task failed with decode body err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+	taskID := req.PathParameter("taskID")
+	blog.Debug("taskID: %v", taskID)
+	intResourceID, errInt := strconv.ParseInt(taskID, 10, 64)
+	if errInt != nil {
+		blog.Errorf("string to int64 failed.")
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommParamsIsInvalid)})
 		return
 	}
+
+	condition := make(map[string]interface{})
+	condition["bk_task_id"] = intResourceID
 
 	result := make([]map[string]interface{}, 0)
 	err := s.Instance.Table(common.BKTableNameCloudHistory).Find(condition).All(ctx, &result)
@@ -300,8 +314,15 @@ func (s *Service) SearchSyncHistory(req *restful.Request, resp *restful.Response
 		return
 	}
 
-	resp.WriteEntity(meta.CloudSearch{
-		BaseResp: meta.SuccessBaseResp,
-		Data:     result,
+	num, errN := s.Instance.Table(common.BKTableNameCloudHistory).Find(condition).Count(ctx)
+	if errN != nil {
+		blog.Error("get task name [%s] failed, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
+		return
+	}
+
+	resp.WriteEntity(meta.FavoriteResult{
+		Count: num,
+		Info:  result,
 	})
 }

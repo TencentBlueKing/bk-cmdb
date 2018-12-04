@@ -138,19 +138,19 @@ type CloneHostPropertyParams struct {
 }
 
 type CloudTaskList struct {
-	TaskName        string   `json:"bk_task_name"`
-	TaskID          int64    `json:"bk_task_id"`
-	AccountType     string   `json:"bk_account_type"`
-	AccountAdmin    []string `json:"bk_account_admin"`
-	PeriodType      string   `json:"bk_period_type"`
-	Period          string   `json:"bk_period"`
-	LastSyncTime    string   `json:"bk_last_sync_time"`
-	ObjID           string   `json:"bk_obj_id"`
-	Status          bool     `json:"bk_status"`
-	ResourceConfirm bool     `json:"bk_confirm"`
-	AttrConfirm     bool     `json:"bk_attr_confirm"`
-	SecretID        string   `json:"bk_secret_id"`
-	SecretKey       string   `json:"bk_secret_key"`
+	TaskName        string `json:"bk_task_name"`
+	TaskID          int64  `json:"bk_task_id"`
+	AccountType     string `json:"bk_account_type"`
+	AccountAdmin    string `json:"bk_account_admin"`
+	PeriodType      string `json:"bk_period_type"`
+	Period          string `json:"bk_period"`
+	LastSyncTime    string `json:"bk_last_sync_time"`
+	ObjID           string `json:"bk_obj_id"`
+	Status          bool   `json:"bk_status"`
+	ResourceConfirm bool   `json:"bk_confirm"`
+	AttrConfirm     bool   `json:"bk_attr_confirm"`
+	SecretID        string `json:"bk_secret_id"`
+	SecretKey       string `json:"bk_secret_key"`
 }
 
 type ResourceConfirm struct {
@@ -162,14 +162,15 @@ type ResourceConfirm struct {
 	TaskID       string          `json:"bk_task_id"`
 	ResourceID   int64           `json:"bk_resource_id"`
 	ConfirmType  string          `json:"bk_confirm_type`
+	Incharge     string          `json:"bk_in_charge"`
 }
 
 type CloudHistory struct {
 	ObjID       string `json:"bk_obj_id"`
-	Status      int64  `json:"bk_status"`
-	TimeConsume int64  `json:"bk_time_consume"`
+	Status      string `json:"bk_status"`
+	TimeConsume string `json:"bk_time_consume"`
 	SyncDetail  string `json:"bk_sync_detail"`
-	StartTime   int64  `json:"bk_start_time"`
+	StartTime   string `json:"bk_start_time"`
 	TaskID      int64  `json:"bk_task_id"`
 	HistoryID   int64  `json:"bk_history_id"`
 }

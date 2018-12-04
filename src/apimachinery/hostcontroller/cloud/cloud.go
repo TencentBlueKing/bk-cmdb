@@ -23,13 +23,13 @@ type CloudInterface interface {
 	AddCloudTask(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
 	ResourceConfirm(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
 	TaskNameCheck(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
-	DeleteCloudTask(ctx context.Context, h http.Header, taskID int64) (resp *metadata.Response, err error)
-	SearchCloudTask(ctx context.Context, h http.Header, data interface{}) (resp *metadata.CloudSearch, err error)
+	DeleteCloudTask(ctx context.Context, h http.Header, taskID string) (resp *metadata.Response, err error)
+	SearchCloudTask(ctx context.Context, h http.Header, data interface{}) (resp *metadata.FavoriteResult, err error)
 	UpdateCloudTask(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
 	DeleteConfirm(ctx context.Context, h http.Header, ResourceID int64) (resp *metadata.Response, err error)
-	SearchConfirm(ctx context.Context, h http.Header, data interface{}) (resp *metadata.CloudSearch, err error)
+	SearchConfirm(ctx context.Context, h http.Header, data interface{}) (resp *metadata.FavoriteResult, err error)
 	CloudHistory(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
-	SearchHistory(ctx context.Context, h http.Header) (resp *metadata.Response, err error)
+	SearchHistory(ctx context.Context, h http.Header, taskID string) (resp *metadata.FavoriteResult, err error)
 }
 
 func NewCloudInterface(client rest.ClientInterface) CloudInterface {
