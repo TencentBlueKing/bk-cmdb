@@ -15,33 +15,83 @@ package mongo
 import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/universalsql"
+	"encoding/json"
 )
 
-var _ universalsql.Condition = (*condition)(nil)
+var _ universalsql.Condition = (*mongoCondition)(nil)
 
-type condition struct {
+type mongoCondition struct {
+	elements []universalsql.ConditionElement
+	and      []universalsql.ConditionElement
+	or       []universalsql.ConditionElement
+	embed    map[string]universalsql.Condition // key is the embed filed name
 }
 
-func (cond *condition) ToSQL() string {
-	return ""
+// NewCondition create a condition instance
+func NewCondition() universalsql.Condition {
+	return &mongoCondition{
+		embed: map[string]universalsql.Condition{},
+	}
 }
 
-func (cond *condition) ToMapStr() mapstr.MapStr {
-	return nil
+func (m *mongoCondition) ToSQL() (string, error) {
+	sql, err := json.Marshal(m.ToMapStr())
+	return string(sql), err
 }
 
-func (cond *condition) Element(element universalsql.ConditionElement) universalsql.Condition {
-	return nil
+func (m *mongoCondition) ToMapStr() mapstr.MapStr {
+
+	result := mapstr.New()
+
+	// merge elements, default
+	for _, ele := range m.elements {
+		result.Merge(ele.ToMapStr())
+	}
+
+	// merge and elements
+	andElements := []mapstr.MapStr{}
+	for _, ele := range m.and {
+		andElements = append(andElements, ele.ToMapStr())
+	}
+	if 0 != len(andElements) {
+		result.Set(universalsql.AND, andElements)
+	}
+
+	// merge or elements
+	orElements := []mapstr.MapStr{}
+	for _, ele := range m.or {
+		orElements = append(orElements, ele.ToMapStr())
+	}
+	if 0 != len(orElements) {
+		result.Set(universalsql.OR, orElements)
+	}
+
+	// merge embed elements
+	for embedName, embedCondition := range m.embed {
+		result.Set(embedName, embedCondition.ToMapStr())
+	}
+
+	return result
 }
 
-func (cond *condition) And(elements ...universalsql.ConditionElement) universalsql.Condition {
-	return nil
+func (m *mongoCondition) Element(elements ...universalsql.ConditionElement) universalsql.Condition {
+	m.elements = append(m.elements, elements...)
+	return m
 }
 
-func (cond *condition) Or(elements ...universalsql.ConditionElement) universalsql.Condition {
-	return nil
+func (m *mongoCondition) And(elements ...universalsql.ConditionElement) universalsql.Condition {
+	m.and = append(m.and, elements...)
+	return m
 }
 
-func (cond *condition) Embed(embedName string) universalsql.Condition {
-	return nil
+func (m *mongoCondition) Or(elements ...universalsql.ConditionElement) universalsql.Condition {
+	m.or = append(m.or, elements...)
+	return m
+}
+
+func (m *mongoCondition) Embed(embedName string) (origin, embed universalsql.Condition) {
+	origin = m
+	embed = NewCondition()
+	m.embed[embedName] = embed
+	return origin, embed
 }

@@ -21,6 +21,5 @@ type DeleteOption struct {
 
 // DeleteDataResult update method result
 type DeleteDataResult struct {
-	Count int64        `json:"count"`
-	Info  DeletedCount `json:"info"`
+	DeletedCount `json:",inline"`
 }

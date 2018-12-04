@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -32,6 +33,10 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/app/options"
 	"configcenter/src/source_controller/coreservice/core"
+	"configcenter/src/source_controller/coreservice/core/association"
+	"configcenter/src/source_controller/coreservice/core/instances"
+	"configcenter/src/source_controller/coreservice/core/model"
+	"configcenter/src/storage/dal/mongo"
 )
 
 // CoreServiceInterface the topo service methods used to init
@@ -52,9 +57,11 @@ type coreService struct {
 	err      errors.CCErrorIf
 	actions  []action
 	cfg      options.Config
+	core     core.Core
 }
 
 func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err errors.CCErrorIf, language language.CCLanguageIf) {
+
 	s.cfg = cfg
 	s.engin = engin
 
@@ -65,6 +72,15 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 	if nil != language {
 		s.language = language
 	}
+
+	// connect the remote mongodb
+	dbProxy, dbErr := mongo.NewMgo(cfg.Mongo.BuildURI())
+	if dbErr != nil {
+		blog.Errorf("failed to connect the remote server(%s), error info is %s", cfg.Mongo.BuildURI(), dbErr.Error())
+		return
+	}
+
+	s.core = core.New(model.New(dbProxy), instances.New(dbProxy), association.New(dbProxy))
 }
 
 // WebService the web service
@@ -204,6 +220,7 @@ func (s *coreService) Actions() []*httpserver.Action {
 				}
 
 				data, dataErr := act.HandlerFunc(core.ContextParams{
+					Context:         util.GetDBContext(context.Background(), req.Request.Header),
 					Err:             defErr,
 					Lang:            defLang,
 					Header:          req.Request.Header,

@@ -12,5 +12,41 @@
 
 package mongo
 
+import (
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/universalsql"
+	"encoding/json"
+)
+
+var _ universalsql.WhereStatement = (*statement)(nil)
+var _ universalsql.Result = (*statementResult)(nil)
+
+type statementResult struct {
+	conds []universalsql.Condition
+}
+
 type statement struct {
+}
+
+func (d *statementResult) ToSQL() (string, error) {
+	sql, err := json.Marshal(d.ToMapStr())
+	return string(sql), err
+}
+
+func (d *statementResult) ToMapStr() mapstr.MapStr {
+
+	condResult := mapstr.New()
+	for _, cond := range d.conds {
+		condResult.Merge(cond.ToMapStr())
+	}
+	return condResult
+}
+
+func (d *statement) Conditions(conds ...universalsql.Condition) universalsql.Result {
+
+	result := &statementResult{}
+	for _, cond := range conds {
+		result.conds = append(result.conds, cond)
+	}
+	return result
 }

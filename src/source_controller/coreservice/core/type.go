@@ -13,6 +13,7 @@
 package core
 
 import (
+	"context"
 	"net/http"
 
 	"configcenter/src/common/errors"
@@ -21,6 +22,7 @@ import (
 
 // ContextParams the logic function params
 type ContextParams struct {
+	context.Context
 	Header          http.Header
 	SupplierAccount string
 	User            string
