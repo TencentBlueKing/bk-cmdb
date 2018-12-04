@@ -24,7 +24,7 @@ func (cli *manager) GetModel(supplierAccount, classificationID, objID string) (m
 	if nil != err {
 		return nil, err
 	}
-	//fmt.Println("owner:", supplierAccount)
+
 	var targetModel model.Model
 	err = clsIter.ForEach(func(item model.Classification) error {
 
