@@ -19,10 +19,16 @@ import (
 type associationInstance struct {
 }
 
-func (m *associationInstance) CreateInstanceAssociation(ctx core.ContextParams, inputParam metadata.CreateInstanceAssociation) (*metadata.CreateOneDataResult, error) {
+func (m *associationInstance) CreateOneInstanceAssociation(ctx core.ContextParams, inputParam metadata.CreateOneInstanceAssociation) (*metadata.CreateOneDataResult, error) {
 	return nil, nil
 }
-func (m *associationInstance) SetInstanceAssociation(ctx core.ContextParams, inputParam metadata.SetInstanceAssociation) (*metadata.SetOneDataResult, error) {
+func (m *associationInstance) SetOneInstanceAssociation(ctx core.ContextParams, inputParam metadata.SetOneInstanceAssociation) (*metadata.SetOneDataResult, error) {
+	return nil, nil
+}
+func (m *associationInstance) CreateManyInstanceAssociation(ctx core.ContextParams, inputParam metadata.CreateManyInstanceAssociation) (*metadata.CreateManyDataResult, error) {
+	return nil, nil
+}
+func (m *associationInstance) SetManyInstanceAssociation(ctx core.ContextParams, inputParam metadata.SetManyInstanceAssociation) (*metadata.SetManyDataResult, error) {
 	return nil, nil
 }
 func (m *associationInstance) UpdateInstanceAssociation(ctx core.ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdateDataResult, error) {

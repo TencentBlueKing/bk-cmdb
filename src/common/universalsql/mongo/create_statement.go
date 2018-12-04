@@ -13,20 +13,36 @@
 package mongo
 
 import (
+	"configcenter/src/common/condition"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/universalsql"
+	"encoding/json"
 )
 
 var _ universalsql.CreateStatement = (*createStatement)(nil)
+var _ universalsql.Result = (*createStatementResult)(nil)
 
 type createStatementResult struct {
+	cond condition.Condition
 }
 
 type createStatement struct {
 }
 
 func (cs *createStatement) Fields(fields ...universalsql.Field) universalsql.Result {
-	for _, val := range fields {
 
+	cr := &createStatementResult{cond: condition.CreateCondition()}
+	for _, field := range fields {
+		cr.cond.Field(field.Key).Eq(field.Val)
 	}
-	return nil
+	return cr
+}
+
+func (cr *createStatementResult) ToSQL() (string, error) {
+	mapResult := cr.cond.ToMapStr()
+	sql, err := json.Marshal(mapResult)
+	return string(sql), err
+}
+func (cr *createStatementResult) ToMapStr() mapstr.MapStr {
+	return cr.cond.ToMapStr()
 }

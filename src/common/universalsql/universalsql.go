@@ -17,7 +17,7 @@ import (
 )
 
 type Result interface {
-	ToSQL() string
+	ToSQL() (string, error)
 	ToMapStr() mapstr.MapStr
 }
 
@@ -49,8 +49,7 @@ type DeleteStatement interface {
 
 type SelectStatement interface {
 	Fields(fieldName ...string) SelectStatement
-	Count() SelectStatement
-	Where(cond Condition) Result
+	Where(cond ...Condition) Result
 }
 
 type TableOperation interface {
@@ -58,24 +57,4 @@ type TableOperation interface {
 	Update() UpdateStatement
 	Delete() DeleteStatement
 	Select() SelectStatement
-}
-
-
-// From used to construct condition and set the table name
-func From(tableName string) TableOperation {
-	return nil
-}
-
-// Where used to construct condtion instance
-func Where() Condition {
-	return nil
-}
-
-// CreateConditionfromstruct construct a new condition instance by a struct.
-// It will be ignore, if the field of the struct is not be seted any value.
-// It will use the field name as the database collection field name, if the field tag is not seted
-// The array field will be convert in rules.
-// eg: struct { FieldName []string  `field`:"field_name"} will be converted to  {"field_name":{"$in":[]}}
-func CreateConditionFromStruct(targetStruct interface{}) Condition {
-	return nil
 }

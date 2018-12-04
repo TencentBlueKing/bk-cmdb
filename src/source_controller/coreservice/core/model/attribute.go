@@ -13,14 +13,16 @@
 package model
 
 import (
+	"configcenter/src/apimachinery"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
 type modelAttribute struct {
+	clientSet apimachinery.ClientSetInterface
 }
 
-func (m *modelAttribute) CreateModelAttributes(ctx core.ContextParams, objID string, inputParam metadata.CreateAttributes) (*metadata.CreateManyDataResult, error) {
+func (m *modelAttribute) CreateModelAttributes(ctx core.ContextParams, objID string, inputParam metadata.CreateModelAttributes) (*metadata.CreateManyDataResult, error) {
 	return nil, nil
 }
 

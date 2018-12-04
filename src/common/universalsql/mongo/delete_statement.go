@@ -12,8 +12,31 @@
 
 package mongo
 
-import "configcenter/src/common/universalsql"
+import (
+	"configcenter/src/common/condition"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/universalsql"
+)
 
-type DeleteStatement interface {
-	Where(cond universalsql.Condition) universalsql.Result
+var _ universalsql.Result = (*deleteStatementResult)(nil)
+var _ universalsql.DeleteStatement = (*deleteStatement)(nil)
+
+type deleteStatementResult struct {
+	cond condition.Condition
+}
+
+type deleteStatement struct {
+}
+
+func (d *deleteStatementResult) ToSQL() (string, error) {
+	return "", nil
+}
+
+func (d *deleteStatementResult) ToMapStr() mapstr.MapStr {
+	return nil
+}
+
+func (d *deleteStatement) Where(cond universalsql.Condition) universalsql.Result {
+
+	return nil
 }

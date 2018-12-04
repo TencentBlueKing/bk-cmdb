@@ -22,12 +22,13 @@ type table struct {
 	tableName string
 }
 
-func New() universalsql.TableOperation{
+// New create a mongodb table operation instance
+func New() universalsql.TableOperation {
 	return &table{}
 }
 
 func (sql *table) Create() universalsql.CreateStatement {
-	return nil
+	return &createStatement{}
 }
 
 func (sql *table) Select() universalsql.SelectStatement {

@@ -53,12 +53,12 @@ type CreateModel struct {
 // SetModel define SetMode method input params
 type SetModel CreateModel
 
-// CreateAttributes create model attributes
-type CreateAttributes struct {
+// CreateModelAttributes create model attributes
+type CreateModelAttributes struct {
 	Attributes []Attribute `json:"attributes"`
 }
 
-type SetModelAttributes CreateAttributes
+type SetModelAttributes CreateModelAttributes
 
 type CreateModelInstance struct {
 	Data mapstr.MapStr `json:"data"`
@@ -87,8 +87,12 @@ type CreateModelAssociation struct {
 
 type SetModelAssociation CreateModelAssociation
 
-type CreateInstanceAssociation struct {
+type CreateOneInstanceAssociation struct {
+	Datas InstAsst `json:"data"`
+}
+type CreateManyInstanceAssociation struct {
 	Datas InstAsst `json:"datas"`
 }
 
-type SetInstanceAssociation CreateInstanceAssociation
+type SetOneInstanceAssociation CreateOneInstanceAssociation
+type SetManyInstanceAssociation CreateManyInstanceAssociation

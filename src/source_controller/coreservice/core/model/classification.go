@@ -13,11 +13,13 @@
 package model
 
 import (
+	"configcenter/src/apimachinery"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
 type modelClassification struct {
+	clientSet apimachinery.ClientSetInterface
 }
 
 func (m *modelClassification) CreateOneModelClassification(ctx core.ContextParams, inputParam metadata.CreateOneModelClassification) (*metadata.CreateOneDataResult, error) {

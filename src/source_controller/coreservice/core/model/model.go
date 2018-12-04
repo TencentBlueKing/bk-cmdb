@@ -30,6 +30,12 @@ type modelManager struct {
 func New(client apimachinery.ClientSetInterface) core.ModelOperation {
 	return &modelManager{
 		clientSet: client,
+		modelAttribute: &modelAttribute{
+			clientSet: client,
+		},
+		modelClassification: &modelClassification{
+			clientSet: client,
+		},
 	}
 }
 

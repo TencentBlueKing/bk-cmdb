@@ -12,22 +12,14 @@
 package universalsql_test
 
 import (
-	"testing"
-
-	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/universalsql"
+	"configcenter/src/common/universalsql/mongo"
+	"testing"
 )
 
 func TestUniservalsqlCondition(t *testing.T) {
 
-	sql := universalsql.CreateMongoSQLHelper()
-
-
-	// {"$and":[{"field_name":{"$eq":"field_name_value"}}]}
-	sql.Where().And(&universalsql.Eq{Key: "field_name", Val: "field_name_val"}).ToSQL()
-
-
-	// {"field_name":"$in":["field_name_val"],"$or":[{"field_name1":{"$neq":"field_name1_val"}}]}
-	sql.Where().Element(&universalsql.In{Key: "field_name", Val: []string{"field_name_val"}}).Or(&universalsql.Neq{Key:"field_name1", Val:"field_name1_val"}).ToSQL()
-
+	mtable := mongo.New()
+	result := mtable.Create().Fields(universalsql.Field{Key: "test", Val: "helloworld"}).ToMapStr()
+	t.Logf("create result:%v", result)
 }

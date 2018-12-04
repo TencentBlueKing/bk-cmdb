@@ -13,18 +13,19 @@
 package mongo
 
 import (
-	"configcenter/src/common/universalsql"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/universalsql"
 )
 
 var _ universalsql.Result = (*result)(nil)
-type result struct{
+
+type result struct {
 }
 
-func(r *result)ToSQL() string{
-	return ""
+func (r *result) ToSQL() (string, error) {
+	return "", nil
 }
 
-func (r *result) ToMapStr() mapstr.MapStr{
+func (r *result) ToMapStr() mapstr.MapStr {
 	return mapstr.New()
 }

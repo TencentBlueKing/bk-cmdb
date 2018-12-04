@@ -30,7 +30,7 @@ type ModelClassification interface {
 
 // ModelAttribute model attribute methods definitions
 type ModelAttribute interface {
-	CreateModelAttributes(ctx ContextParams, objID string, inputParam metadata.CreateAttributes) (*metadata.CreateManyDataResult, error)
+	CreateModelAttributes(ctx ContextParams, objID string, inputParam metadata.CreateModelAttributes) (*metadata.CreateManyDataResult, error)
 	SetModelAttributes(ctx ContextParams, objID string, inputParam metadata.SetModelAttributes) (*metadata.SetManyDataResult, error)
 	UpdateModelAttributes(ctx ContextParams, objID string, inputParam metadata.UpdateOption) (*metadata.UpdateDataResult, error)
 	DeleteModelAttributes(ctx ContextParams, objID string, inputParam metadata.DeleteOption) (*metadata.DeleteDataResult, error)
@@ -86,8 +86,10 @@ type ModelAssociation interface {
 
 // InstanceAssociation manager instance association
 type InstanceAssociation interface {
-	CreateInstanceAssociation(ctx ContextParams, inputParam metadata.CreateInstanceAssociation) (*metadata.CreateOneDataResult, error)
-	SetInstanceAssociation(ctx ContextParams, inputParam metadata.SetInstanceAssociation) (*metadata.SetOneDataResult, error)
+	CreateOneInstanceAssociation(ctx ContextParams, inputParam metadata.CreateOneInstanceAssociation) (*metadata.CreateOneDataResult, error)
+	SetOneInstanceAssociation(ctx ContextParams, inputParam metadata.SetOneInstanceAssociation) (*metadata.SetOneDataResult, error)
+	CreateManyInstanceAssociation(ctx ContextParams, inputParam metadata.CreateManyInstanceAssociation) (*metadata.CreateManyDataResult, error)
+	SetManyInstanceAssociation(ctx ContextParams, inputParam metadata.SetManyInstanceAssociation) (*metadata.SetManyDataResult, error)
 	UpdateInstanceAssociation(ctx ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdateDataResult, error)
 	SearchInstanceAssociation(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error)
 	DeleteInstanceAssociation(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeleteDataResult, error)
@@ -98,4 +100,38 @@ type AssociationOperation interface {
 	AssociationKind
 	ModelAssociation
 	InstanceAssociation
+}
+
+// Core core itnerfaces methods
+type Core interface {
+	ModelOperation() ModelOperation
+	InstanceOperation() InstanceOperation
+	AssociationOperation() AssociationOperation
+}
+
+type core struct {
+	model        ModelOperation
+	instance     InstanceOperation
+	associaction AssociationOperation
+}
+
+// New create core
+func New(model ModelOperation, instance InstanceOperation, association AssociationOperation) Core {
+	return &core{
+		model:        model,
+		instance:     instance,
+		associaction: association,
+	}
+}
+
+func (m *core) ModelOperation() ModelOperation {
+	return m.model
+}
+
+func (m *core) InstanceOperation() InstanceOperation {
+	return m.instance
+}
+
+func (m *core) AssociationOperation() AssociationOperation {
+	return m.associaction
 }
