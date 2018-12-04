@@ -255,10 +255,11 @@ func (s *Service) getAppSetModuleTreeByAppId(req *restful.Request, resp *restful
 	pheader := req.Request.Header
 	user := util.GetUser(pheader)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	rid := util.GetHTTPCCRequestID(pheader)
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Errorf("getAppSetModuleTreeByAppId error:%v", err)
+		blog.Errorf("getAppSetModuleTreeByAppId error:%v, rid:%s", err, rid)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
@@ -279,19 +280,22 @@ func (s *Service) getAppSetModuleTreeByAppId(req *restful.Request, resp *restful
 	}
 
 	if nil != err {
-		blog.Errorf("getAppSetModuleTreeByAppId   appID:%v, error:%v", formData["ApplicationID"][0], err)
+		blog.Errorf("getAppSetModuleTreeByAppId   appID:%v, error:%v, input:%+v,rid:%s", formData["ApplicationID"][0], err, formData, rid)
 		converter.RespFailV2(common.CCErrCommParamsNeedInt, defErr.Errorf(common.CCErrCommParamsNeedInt, "ApplicationID").Error(), resp)
 		return
 	}
 
-	topo, errCode := s.Logics.GetAppTopo(user, pheader, intAppID, conds)
-	if 0 != errCode {
-		converter.RespFailV2(errCode, defErr.Error(errCode).Error(), resp)
+	topo, err := s.Logics.GetAppTopo(user, pheader, intAppID, conds)
+	if err != nil {
+		converter.RespFailV2Error(err, resp)
 		return
 	}
 
 	if nil != topo {
-		s.Logics.SetModuleHostCount([]map[string]interface{}{topo}, user, pheader)
+		s.Logics.SetModuleHostCount([]mapstr.MapStr{topo}, user, pheader)
+	} else {
+		converter.RespSuccessV2(make(map[string]interface{}), resp)
+		return
 	}
 	converter.RespSuccessV2(topo, resp)
 }

@@ -211,7 +211,7 @@ func (s *Service) getModulesByProperty(req *restful.Request, resp *restful.Respo
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
-	resDataV2, err := converter.ResToV2ForModuleMapList(result.Result, result.ErrMsg, result.Data)
+	resDataV2, err := converter.ResToV2ForModuleMapList(result.Data)
 	if err != nil {
 		blog.Errorf("convert module res to v2 error:%v", err)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
