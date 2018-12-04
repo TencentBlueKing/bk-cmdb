@@ -21,7 +21,7 @@ func (s *coreService) initHealth() {
 }
 
 func (s *coreService) initModelClassification() {
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "create/model/classfication", HandlerFunc: s.CreateOneModelClassification})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/model/classfication", HandlerFunc: s.CreateOneModelClassification})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/createmany/model/classfication", HandlerFunc: s.CreateManyModelClassification})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/setmany/model/classfication", HandlerFunc: s.SetManyModelClassificaiton})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/set/model/classfication", HandlerFunc: s.SetOneModelClassificaition})

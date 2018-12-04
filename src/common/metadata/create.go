@@ -14,7 +14,7 @@ package metadata
 
 // CreateManyResult create many model datas result
 type CreateManyResult struct {
-	BaseResp `json:","inline"`
+	BaseResp `json:",inline"`
 	Data     CreateManyDataResult `json:"data"`
 }
 
