@@ -30,7 +30,7 @@ import (
 
 // updateHostPlat 根据条件更新主机信息
 func (s *Service) UpdateHost(req *restful.Request, resp *restful.Response) {
-	blog.V(3).Infof("updateHost start!")
+	blog.V(5).Infof("updateHost start!")
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(req.Request.Header))
 
 	appID, err := util.GetInt64ByInterface(req.PathParameter(common.BKAppIDField))
@@ -61,7 +61,7 @@ func (s *Service) UpdateHost(req *restful.Request, resp *restful.Response) {
 }
 
 func (s *Service) UpdateHostByAppID(req *restful.Request, resp *restful.Response) {
-	blog.V(3).Infof("updateHostByAppID start!")
+	blog.V(5).Infof("updateHostByAppID start!")
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(req.Request.Header))
 	appID, err := util.GetInt64ByInterface(req.PathParameter("appid"))
 	if nil != err {
@@ -77,7 +77,7 @@ func (s *Service) UpdateHostByAppID(req *restful.Request, resp *restful.Response
 		return
 	}
 
-	blog.V(3).Infof("updateHostByAppID http body data: %v", input)
+	blog.V(5).Infof("updateHostByAppID http body data: %v", input)
 	result, httpCode, errMsg := s.Logics.UpdateHostByAppID(input, appID, req.Request.Header)
 	if nil != errMsg {
 		blog.Errorf("updateHostByAppID update host, appID:%d, input:%v, error:%s", appID, input, err)
@@ -367,14 +367,14 @@ func (s *Service) HostSearchByProperty(req *restful.Request, resp *restful.Respo
 		setCondition = append(setCondition, cond)
 	}
 
-	blog.V(3).Infof("HostSearchByProperty setCondition: %v\n", setCondition)
+	blog.V(5).Infof("HostSearchByProperty setCondition: %v\n", setCondition)
 	setIDArr, err := s.Logics.GetSetIDByCond(req.Request.Header, setCondition)
 	if nil != err {
 		blog.Errorf("HostSearchByProperty get host module config error:%s, input:%v", err.Error(), input)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostGetSetFaild, err.Error())})
 		return
 	}
-	blog.V(3).Infof("HostSearchByProperty ApplicationID: %s, SetID: %v\n", appID, setIDArr)
+	blog.V(5).Infof("HostSearchByProperty ApplicationID: %s, SetID: %v\n", appID, setIDArr)
 
 	condition := map[string][]int64{
 		common.BKAppIDField: []int64{appID},
@@ -503,7 +503,7 @@ func (s *Service) GetHostAppByCompanyId(req *restful.Request, resp *restful.Resp
 		return
 	}
 
-	blog.V(3).Infof("GetHostAppByCompanyId input:%v", input)
+	blog.V(5).Infof("GetHostAppByCompanyId input:%v", input)
 	platId, err := util.GetInt64ByInterface(input.CloudIDStr)
 	if nil != err {
 		blog.Errorf("GetHostAppByCompanyId cloud id not integer, input:%v", input)
@@ -526,7 +526,7 @@ func (s *Service) GetHostAppByCompanyId(req *restful.Request, resp *restful.Resp
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostGetFail)})
 		return
 	}
-	blog.V(3).Infof("GetHostAppByCompanyId hostArr:%v, input:%v", hostArr, input)
+	blog.V(5).Infof("GetHostAppByCompanyId hostArr:%v, input:%v", hostArr, input)
 	if len(hostIdArr) == 0 {
 		resp.WriteEntity(meta.Response{
 			BaseResp: meta.SuccessBaseResp,
@@ -544,7 +544,7 @@ func (s *Service) GetHostAppByCompanyId(req *restful.Request, resp *restful.Resp
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostGetFail)})
 		return
 	}
-	blog.V(3).Infof("GetHostAppByCompanyId configArr:%v, input:%v", configArr, input)
+	blog.V(5).Infof("GetHostAppByCompanyId configArr:%v, input:%v", configArr, input)
 	if len(configArr) == 0 {
 		resp.WriteEntity(meta.Response{
 			BaseResp: meta.SuccessBaseResp,
@@ -566,7 +566,7 @@ func (s *Service) GetHostAppByCompanyId(req *restful.Request, resp *restful.Resp
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostGetFail)})
 		return
 	}
-	blog.V(3).Infof("GetHostAppByCompanyId hostMap:%v, input:%v", hostMapArr, input)
+	blog.V(5).Infof("GetHostAppByCompanyId hostMap:%v, input:%v", hostMapArr, input)
 	hostDataArr := make([]interface{}, 0)
 	for _, h := range hostMapArr {
 		hostMap := h.(map[string]interface{})
@@ -587,7 +587,7 @@ func (s *Service) DelHostInApp(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-	blog.V(3).Infof("DelHostInApp input:%v", input)
+	blog.V(5).Infof("DelHostInApp input:%v", input)
 	appID, err := util.GetInt64ByInterface(input.AppID)
 	if nil != err {
 		blog.Errorf("GetHostAppByCompanyId cloud id not integer, input:%v", input)
@@ -632,7 +632,7 @@ func (s *Service) DelHostInApp(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostGetModuleFail, err.Error())})
 		return
 	}
-	blog.V(3).Infof("DelHostInApp moduleArr:%v, input:%v", moduleArr, input)
+	blog.V(5).Infof("DelHostInApp moduleArr:%v, input:%v", moduleArr, input)
 	if len(moduleArr) == 0 {
 		blog.Errorf("DelHostInApp GetModuleMapByCond   not find host in idle module input: %v", input)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostNotFound)})
@@ -751,7 +751,7 @@ func (s *Service) GetGitServerIp(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostModuleConfigFaild, err.Error())})
 		return
 	}
-	blog.V(3).Infof("GetGitServerIp configData:%v", configData)
+	blog.V(5).Infof("GetGitServerIp configData:%v", configData)
 	phpapi := s.Logics.NewPHPAPI(req.Request.Header)
 	hostArr, err := phpapi.GetHostDataByConfig(configData)
 	if nil != err {
@@ -759,7 +759,7 @@ func (s *Service) GetGitServerIp(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostGetFail)})
 		return
 	}
-	blog.V(3).Infof("GetGitServerIp hostArr:%v, input:%v", hostArr, input)
+	blog.V(5).Infof("GetGitServerIp hostArr:%v, input:%v", hostArr, input)
 
 	resp.WriteEntity(meta.Response{
 		BaseResp: meta.SuccessBaseResp,
