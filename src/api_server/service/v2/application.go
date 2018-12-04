@@ -96,7 +96,7 @@ func (s *Service) getAppByID(req *restful.Request, resp *restful.Response) {
 	for _, appID := range appIDsArr {
 		id, err := strconv.ParseInt(appID, 10, 64)
 		if err != nil {
-			blog.Error("convert str to int error")
+			blog.Errorf("convert str to int error")
 			converter.RespFailV2(common.CCErrCommParamsNeedInt, defErr.Errorf(common.CCErrCommParamsNeedInt, "ApplicationID").Error(), resp)
 			return
 		}
@@ -139,7 +139,7 @@ func (s *Service) getAppByUin(req *restful.Request, resp *restful.Response) {
 	blog.Infof("getAppByUin data:%v", formData)
 
 	if len(formData["userName"]) == 0 || formData["userName"][0] == "" {
-		blog.Error("get app by uin error: userName is empty!")
+		blog.Errorf("get app by uin error: userName is empty!")
 		converter.RespFailV2(common.CCErrCommParamsNeedInt, defErr.Errorf(common.CCErrCommParamsNeedSet, "userName").Error(), resp)
 		return
 	}
@@ -242,7 +242,7 @@ func (s *Service) getUserRoleApp(req *restful.Request, resp *restful.Response) {
 
 	resDataV2, err := converter.ResToV2ForRoleApp(result.Data, converter.DecorateUserName(userName), roleArr)
 	if err != nil {
-		blog.Error("convert res to v2 error:%v", err)
+		blog.Errorf("convert res to v2 error:%v", err)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}
@@ -544,7 +544,7 @@ func (s *Service) getHostAppByCompanyId(req *restful.Request, resp *restful.Resp
 
 	resDataV2, err := converter.ResToV2ForHostDataList(result.Result, result.ErrMsg, result.Data)
 	if err != nil {
-		blog.Error("convert res to v2 error:%v", err)
+		blog.Errorf("convert res to v2 error:%v", err)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}
