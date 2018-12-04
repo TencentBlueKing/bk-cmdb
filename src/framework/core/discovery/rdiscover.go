@@ -13,7 +13,7 @@
 package discovery
 
 import (
-	"configcenter/src/framework/core/log"
+	"context"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -26,8 +26,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
-
-	"context"
+	"configcenter/src/framework/core/log"
 )
 
 var _ DiscoverInterface = &RegDiscover{}

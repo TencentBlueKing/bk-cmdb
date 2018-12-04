@@ -13,12 +13,13 @@
 package api
 
 import (
-	"configcenter/src/framework/common"
-	"configcenter/src/framework/core/httpserver"
-	"configcenter/src/framework/core/input"
-	"configcenter/src/framework/core/manager"
-	"configcenter/src/framework/core/output"
-	"context"
+    "context"
+    
+    "configcenter/src/framework/common"
+    "configcenter/src/framework/core/httpserver"
+    "configcenter/src/framework/core/input"
+    "configcenter/src/framework/core/manager"
+    "configcenter/src/framework/core/output"
 )
 
 //  mgr the global variable for the manager
