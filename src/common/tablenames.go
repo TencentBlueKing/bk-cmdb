@@ -84,6 +84,10 @@ const (
 	BKTableNameNetcollectDevice   = "cc_Netcollect_Device"
 	BKTableNameNetcollectProperty = "cc_Netcollect_Property"
 
+	BKTableNameNetcollectConfig  = "cc_NetcollectConfig"
+	BKTableNameNetcollectReport  = "cc_NetcollectReport"
+	BKTableNameNetcollectHistory = "cc_NetcollectHistory"
+
 	BKTableNameHostLock = "cc_HostLock"
 )
 
@@ -120,6 +124,11 @@ var AllTables = []string{
 	BKTableNameIdentifier,
 	BKTableNameObjAsst,
 	BKTableNameTopoGraphics,
+	BKTableNameNetcollectConfig,
+	BKTableNameNetcollectDevice,
+	BKTableNameNetcollectProperty,
+	BKTableNameNetcollectReport,
+	BKTableNameNetcollectHistory,
 	BKTableNameTransaction,
 	BKTableNameIDgenerator,
 	BKTableNameHostLock,

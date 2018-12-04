@@ -12,12 +12,17 @@ const businessArchived = () => import(/* webpackChunkName: businessArchived */ '
 const generalModel = () => import(/* webpackChunkName: generalModel */ '@/views/general-model')
 const deleteHistory = () => import(/* webpackChunkName: deleteHistory */ '@/views/history')
 const hosts = () => import(/* webpackChunkName: hosts */ '@/views/hosts')
-const eventpush = () => import(/* webpackChunkName: hosts */ '@/views/eventpush')
+const eventpush = () => import(/* webpackChunkName: eventpush */ '@/views/eventpush')
+const permission = () => import(/* webpackChunkName: permission */ '@/views/permission')
 const resource = () => import(/* webpackChunkName: resource */ '@/views/resource')
-const audit = () => import(/* webpackChunkName: hosts */ '@/views/audit')
+const audit = () => import(/* webpackChunkName: audit */ '@/views/audit')
 const topology = () => import(/* webpackChunkName: topology */ '@/views/topology')
 const process = () => import(/* webpackChunkName: process */ '@/views/process')
-const customQuery = () => import(/* webpackChunkName: process */ '@/views/custom-query')
+const customQuery = () => import(/* webpackChunkName: customQuery */ '@/views/custom-query')
+const networkDiscoveryConfiguration = () => import(/* webpackChunkName: networkDiscovery */ '@/views/network-config')
+const networkDiscovery = () => import(/* webpackChunkName: networkDiscovery */ '@/views/network-discovery')
+const networkConfirm = () => import(/* webpackChunkName: networkConfirm */ '@/views/network-discovery/confirm')
+const networkHistory = () => import(/* webpackChunkName: networkConfirm */ '@/views/network-discovery/history')
 const error = () => import(/* webpackChunkName: error */ '@/views/status/error')
 const systemAuthority = () => import(/* webpackChunkName: systemAuthority */ '@/views/permission/role')
 const businessAuthority = () => import(/* webpackChunkName: businessAuthority */ '@/views/permission/business')
@@ -153,6 +158,33 @@ const router = new Router({
         meta: {
             requireBusiness: true,
             isModel: false
+        }
+    }, {
+        path: '/network-discovery',
+        component: networkDiscovery
+    }, {
+        path: '/network-discovery/config',
+        component: networkDiscoveryConfiguration,
+        meta: {
+            ignoreAuthorize: true,
+            returnPath: '/network-discovery',
+            relative: '/network-discovery'
+        }
+    }, {
+        path: '/network-discovery/:cloudId/confirm',
+        component: networkConfirm,
+        meta: {
+            ignoreAuthorize: true,
+            returnPath: '/network-discovery',
+            relative: '/network-discovery'
+        }
+    }, {
+        path: '/network-discovery/history',
+        component: networkHistory,
+        meta: {
+            ignoreAuthorize: true,
+            returnPath: '/network-discovery',
+            relative: '/network-discovery'
         }
     }, {
         path: '/status-require-business',
