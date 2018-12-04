@@ -82,7 +82,7 @@ func (s *Service) getModulesByApp(req *restful.Request, resp *restful.Response) 
 	}
 	resDataV2, err := converter.ResToV2ForModuleMapList(result.Data)
 	if err != nil {
-		blog.Error("convert module res to v2 error:%v, input:%+v,rid:%s", err, formData, rid)
+		blog.Errorf("convert module res to v2 error:%v, input:%+v,rid:%s", err, formData, rid)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}
