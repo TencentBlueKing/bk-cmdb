@@ -44,7 +44,7 @@ func (ps *ProctrlServer) DeleteProc2Template(req *restful.Request, resp *restful
 	}
 
 	// delete proc module config
-	blog.Infof("delete proc module config %v", input)
+	blog.V(5).Infof("delete proc module config %v", input)
 	if err := ps.Instance.Table(common.BKTableNameProcTemplate).Delete(ctx, input); err != nil {
 		blog.Errorf("delete proc module config error: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcDeleteProc2Module)})
@@ -76,7 +76,7 @@ func (ps *ProctrlServer) CreateProc2Template(req *restful.Request, resp *restful
 		return
 	}
 
-	blog.Infof("create proc module config: %v ", input)
+	blog.V(5).Infof("create proc module config: %v ", input)
 	ec := eventclient.NewEventContextByReq(req.Request.Header, ps.Cache)
 	for _, i := range input {
 		if err := ps.Instance.Table(common.BKTableNameProcTemplate).Insert(ctx, i); err != nil {
@@ -105,7 +105,7 @@ func (ps *ProctrlServer) GetProc2Template(req *restful.Request, resp *restful.Re
 		return
 	}
 
-	blog.Infof("get proc template condition: %v ", input)
+	blog.V(5).Infof("get proc template condition: %v ", input)
 	result := make([]map[string]interface{}, 0)
 	if err := ps.Instance.Table(common.BKTableNameProcTemplate).Find(input).All(ctx, &result); err != nil {
 		blog.Errorf("get process2template config failed. err: %v", err)
