@@ -195,7 +195,6 @@ func GetDefaultTopo(req *restful.Request, appID string, topoApi string) (map[str
 		defaultTopo["ObjID"] = "set"
 	}
 
-	blog.Debug("defaultTopo:%v", defaultTopo)
 	return defaultTopo, nil
 }
 
@@ -219,9 +218,7 @@ func AppendDefaultTopo(topo map[string]interface{}, defaultTopo map[string]inter
 
 // SetModuleHostCount get set host count
 func (lgc *Logics) SetModuleHostCount(data []mapstr.MapStr, user string, pheader http.Header) error {
-	blog.Debug("setModuleHostCount data: %+v", data)
 	for _, itemMap := range data {
-		blog.Debug("ObjID: %s", itemMap)
 
 		switch itemMap["ObjID"] {
 		case common.BKInnerObjIDModule:
@@ -236,12 +233,10 @@ func (lgc *Logics) SetModuleHostCount(data []mapstr.MapStr, user string, pheader
 				blog.Errorf("%v, %v", getErr, itemMap)
 				return getErr
 			}
-			blog.Debug("mouduleId: %v", mouduleId)
 			hostNum, getErr := lgc.GetModuleHostCount(appId, mouduleId, user, pheader)
 			if nil != getErr {
 				return getErr
 			}
-			blog.Debug("hostNum: %v", hostNum)
 			itemMap["HostNum"] = hostNum
 		}
 

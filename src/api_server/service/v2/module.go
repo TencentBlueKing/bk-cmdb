@@ -105,7 +105,7 @@ func (s *Service) updateModule(req *restful.Request, resp *restful.Response) {
 
 	formData := req.Request.Form
 
-	blog.Infof("updateModule data: %s", formData)
+	blog.V(5).Infof("updateModule data: %s", formData)
 
 	res, msg := utils.ValidateFormData(formData, []string{"ApplicationID", "ModuleID"})
 	if !res {
@@ -156,13 +156,13 @@ func (s *Service) updateModule(req *restful.Request, resp *restful.Response) {
 		reqData[common.BKModuleNameField] = moduleName
 	} else {
 		msg := defLang.Language("apiv2_module_edit_multi_module_name")
-		blog.Infof("updateModule error:%v", msg)
+		blog.V(5).Infof("updateModule error:%v", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
 	if len(moduleName) > 24 {
 		msg := defLang.Language("apiv2_module_name_lt_24")
-		blog.Infof("updateModule error:%v", msg)
+		blog.V(5).Infof("updateModule error:%v", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
@@ -194,7 +194,7 @@ func (s *Service) addModule(req *restful.Request, resp *restful.Response) {
 
 	formData := req.Request.Form
 
-	blog.Infof("addModule data: %v", formData)
+	blog.V(5).Infof("addModule data: %v", formData)
 
 	res, msg := utils.ValidateFormData(formData, []string{
 		"ApplicationID",
@@ -275,7 +275,7 @@ func (s *Service) deleteModule(req *restful.Request, resp *restful.Response) {
 
 	formData := req.Request.Form
 
-	blog.Infof("deleteModule data: %v", formData)
+	blog.V(5).Infof("deleteModule data: %v", formData)
 
 	res, msg := utils.ValidateFormData(formData, []string{"ApplicationID", "ModuleID"})
 	if !res {

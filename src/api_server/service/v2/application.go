@@ -82,7 +82,7 @@ func (s *Service) getAppByID(req *restful.Request, resp *restful.Response) {
 
 	formData := req.Request.Form
 
-	blog.Infof("getAppByID data:%v", formData)
+	blog.V(5).Infof("getAppByID data:%v", formData)
 
 	if len(formData["ApplicationID"]) == 0 {
 		blog.Errorf("getAppByID error: ApplicationID is empty!")
@@ -136,7 +136,7 @@ func (s *Service) getAppByUin(req *restful.Request, resp *restful.Response) {
 
 	formData := req.Request.Form
 
-	blog.Infof("getAppByUin data:%v", formData)
+	blog.V(5).Infof("getAppByUin data:%v", formData)
 
 	if len(formData["userName"]) == 0 || formData["userName"][0] == "" {
 		blog.Errorf("get app by uin error: userName is empty!")
@@ -314,7 +314,7 @@ func (s *Service) addApp(req *restful.Request, resp *restful.Response) {
 	}
 	formData := req.Request.Form
 
-	blog.Infof("AddApp formData:%v", formData)
+	blog.V(5).Infof("AddApp formData:%v", formData)
 	res, msg := utils.ValidateFormData(formData, []string{
 		"ApplicationName",
 		"Maintainers",
@@ -363,7 +363,7 @@ func (s *Service) addApp(req *restful.Request, resp *restful.Response) {
 	param[common.BKTesterField] = formData.Get("Tester")
 	param[common.BKOperatorField] = formData.Get("Operator")
 
-	blog.Infof("AddApp v3 param data1: %v", param)
+	blog.V(5).Infof("AddApp v3 param data1: %v", param)
 
 	param, err = s.Logics.AutoInputV3Field(param, common.BKInnerObjIDApp, user, pheader)
 
@@ -375,7 +375,7 @@ func (s *Service) addApp(req *restful.Request, resp *restful.Response) {
 
 	result, err := s.CoreAPI.TopoServer().Instance().CreateApp(context.Background(), user, pheader, param)
 
-	blog.Infof("AddApp  params:%v", param)
+	blog.V(5).Infof("AddApp  params:%v", param)
 	if nil != err {
 		blog.Errorf("AddApp  params:%v, error:%s", param, err.Error())
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
@@ -438,7 +438,7 @@ func (s *Service) editApp(req *restful.Request, resp *restful.Response) {
 		return
 	}
 	formData := req.Request.Form
-	blog.Infof("editApp formData:%v", formData)
+	blog.V(5).Infof("editApp formData:%v", formData)
 	res, msg := utils.ValidateFormData(formData, []string{
 		"ApplicationID",
 	})
@@ -519,7 +519,7 @@ func (s *Service) getHostAppByCompanyId(req *restful.Request, resp *restful.Resp
 		return
 	}
 	formData := req.Request.Form
-	blog.V(3).Infof("GetHostAppByCompanyId formData:%v", formData)
+	blog.V(5).Infof("GetHostAppByCompanyId formData:%v", formData)
 	res, msg := utils.ValidateFormData(formData, []string{
 		"companyId",
 		"ip",
@@ -548,7 +548,7 @@ func (s *Service) getHostAppByCompanyId(req *restful.Request, resp *restful.Resp
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}
-	blog.Infof("GetHostAppByCompanyId success, data length: %d", len(resDataV2))
+	blog.V(5).Infof("GetHostAppByCompanyId success, data length: %d", len(resDataV2))
 	converter.RespSuccessV2(resDataV2, resp)
 }
 
