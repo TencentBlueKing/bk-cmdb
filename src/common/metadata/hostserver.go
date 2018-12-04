@@ -44,7 +44,8 @@ type UserCustomQueryDetailResult struct {
 type HostInputType string
 
 const (
-	ExecelType HostInputType = "excel"
+	ExecelType  HostInputType = "excel"
+	CollectType HostInputType = "collect"
 )
 
 type HostList struct {

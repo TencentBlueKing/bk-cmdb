@@ -54,6 +54,13 @@
             ...mapGetters(['site', 'userName', 'admin', 'showBack', 'navStick', 'headerTitle']),
             userRole () {
                 return this.admin ? this.$t('Common["管理员"]') : this.$t('Common["普通用户"]')
+            },
+            title () {
+                let {
+                    $classify
+                } = this
+                let title = $classify.i18n ? this.$t($classify.i18n) : $classify.name
+                return this.$route.meta.title ? this.$route.meta.title : title
             }
         },
         methods: {
