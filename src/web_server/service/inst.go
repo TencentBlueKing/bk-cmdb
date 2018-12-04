@@ -74,7 +74,7 @@ func (s *Service) ImportInst(c *gin.Context) {
 		return
 	}
 
-	c.String(http.StatusOK, getReturnStr(0, "", nil))
+	c.String(http.StatusOK, getReturnStr(0, "", data))
 }
 
 // ExportInst export inst

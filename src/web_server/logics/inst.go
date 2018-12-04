@@ -125,6 +125,7 @@ func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, 
 		return nil, common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
+	resultData.Merge(result.Data)
 	if !result.Result {
 		errCode = result.Code
 		err = defErr.New(result.Code, result.ErrMsg)
@@ -142,9 +143,7 @@ func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, 
 				blog.Errorf("ImportHosts logics http request import %s association error:%s, rid:%s", objID, asstResultErr.Error(), util.GetHTTPCCRequestID(header))
 				return nil, common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 			}
-			if len(asstResult.Data.ErrMsgMap) > 0 {
-				resultData.Set("asst_error", asstResult.Data.ErrMsgMap)
-			}
+			resultData.Set("asst_error", asstResult.Data.ErrMsgMap)
 			if result.Result && !asstResult.Result {
 				errCode = asstResult.Code
 				err = defErr.New(asstResult.Code, asstResult.ErrMsg)
