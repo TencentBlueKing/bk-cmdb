@@ -74,6 +74,7 @@ type SearchPluginProcessInfoResult struct {
 //    "location": "http://127.0.0.1/download",
 //    "pkg_ctime": "2018-09-13 22:17:19",
 //    "pkg_path": "/data/bkee/miniweb/download",
+//    "os": "linux",
 //    "id": 1,
 //    "md5": "b17b48158fe73a4b58937b8ef096b94e"
 // }
@@ -87,6 +88,7 @@ type PluginPackage struct {
 	Location string `json:"location"`
 	PkgCtime string `json:"pkg_ctime"`
 	PkgPath  string `json:"pkg_path"`
+	OS       string `json:"os"`
 	ID       int    `json:"id"`
 	MD5      string `json:"md5"`
 }
