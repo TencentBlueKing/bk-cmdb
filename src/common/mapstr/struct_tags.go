@@ -10,19 +10,17 @@
  * limitations under the License.
  */
 
-package metadata
+package mapstr
 
 import (
+	"configcenter/src/common/blog"
 	"fmt"
 	"reflect"
 	"strings"
-
-	"configcenter/src/common/blog"
-	types "configcenter/src/common/mapstr"
 )
 
 // GetTags parse a object and get the all tags
-func GetTags(target interface{}) []string {
+func GetTags(target interface{}, tagName string) []string {
 
 	targetType := reflect.TypeOf(target)
 	switch targetType.Kind() {
@@ -45,10 +43,15 @@ func GetTags(target interface{}) []string {
 
 }
 
-// SetValueToMapStrByTags convert a struct to MapStr by tags
-func SetValueToMapStrByTags(source interface{}) types.MapStr {
+// SetValueToMapStrByTags  convert a struct to MapStr by tags default tag name is field
+func SetValueToMapStrByTags(source interface{}) MapStr {
+	return SetValueToMapStrByTagsWithTagName(source, "field")
+}
 
-	values := types.MapStr{}
+// SetValueToMapStrByTagsWithTagName convert a struct to MapStr by tags
+func SetValueToMapStrByTagsWithTagName(source interface{}, tagName string) MapStr {
+
+	values := MapStr{}
 
 	targetType := reflect.TypeOf(source)
 	targetValue := reflect.ValueOf(source)
@@ -61,7 +64,7 @@ func SetValueToMapStrByTags(source interface{}) types.MapStr {
 	numField := targetType.NumField()
 	for i := 0; i < numField; i++ {
 		structField := targetType.Field(i)
-		tag, ok := structField.Tag.Lookup("field")
+		tag, ok := structField.Tag.Lookup(tagName)
 		if !ok {
 			continue
 		}
@@ -78,8 +81,13 @@ func SetValueToMapStrByTags(source interface{}) types.MapStr {
 	return values
 }
 
-// SetValueToStructByTags set the struct object field value by tags
-func SetValueToStructByTags(target interface{}, values types.MapStr) error {
+// SetValueToStructByTags set the struct object field value by tags, default tag name is field
+func SetValueToStructByTags(target interface{}, values MapStr) error {
+	return SetValueToStructByTagsWithTagName(target, values, "field")
+}
+
+// SetValueToStructByTagsWithTagName set the struct object field value by tags
+func SetValueToStructByTagsWithTagName(target interface{}, values MapStr, tagName string) error {
 
 	targetType := reflect.TypeOf(target)
 	targetValue := reflect.ValueOf(target)
@@ -92,7 +100,7 @@ func SetValueToStructByTags(target interface{}, values types.MapStr) error {
 	numField := targetType.NumField()
 	for i := 0; i < numField; i++ {
 		structField := targetType.Field(i)
-		tag, ok := structField.Tag.Lookup("field")
+		tag, ok := structField.Tag.Lookup(tagName)
 		if !ok {
 			continue
 		}

@@ -13,6 +13,7 @@
 package model
 
 import (
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 	"context"
 	"encoding/json"
@@ -21,7 +22,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
-	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
@@ -29,7 +29,7 @@ import (
 // Attribute attribute opeartion interface declaration
 type Attribute interface {
 	Operation
-	Parse(data frtypes.MapStr) (*metadata.Attribute, error)
+	Parse(data mapstr.MapStr) (*metadata.Attribute, error)
 
 	Origin() metadata.Attribute
 
@@ -93,7 +93,7 @@ type Attribute interface {
 	SetCreator(attributeCreator string)
 	GetCreator() string
 
-	ToMapStr() (frtypes.MapStr, error)
+	ToMapStr() (mapstr.MapStr, error)
 }
 
 var _ Attribute = (*attribute)(nil)
@@ -143,7 +143,7 @@ func (a *attribute) MarshalJSON() ([]byte, error) {
 	return json.Marshal(a.attr)
 }
 
-func (a *attribute) Parse(data frtypes.MapStr) (*metadata.Attribute, error) {
+func (a *attribute) Parse(data mapstr.MapStr) (*metadata.Attribute, error) {
 	attr, err := a.attr.Parse(data)
 	if nil != err {
 		return attr, err
@@ -157,14 +157,14 @@ func (a *attribute) Parse(data frtypes.MapStr) (*metadata.Attribute, error) {
 	return nil, err
 }
 
-func (a *attribute) ToMapStr() (frtypes.MapStr, error) {
+func (a *attribute) ToMapStr() (mapstr.MapStr, error) {
 
-	rst := metadata.SetValueToMapStrByTags(&a.attr)
+	rst := mapstr.SetValueToMapStrByTags(&a.attr)
 	return rst, nil
 
 }
 
-func (a *attribute) IsValid(isUpdate bool, data frtypes.MapStr) error {
+func (a *attribute) IsValid(isUpdate bool, data mapstr.MapStr) error {
 
 	if a.attr.PropertyID == common.BKChildStr || a.attr.PropertyID == common.BKInstParentStr {
 		return nil
@@ -245,7 +245,7 @@ func (a *attribute) Create() error {
 	return nil
 }
 
-func (a *attribute) Update(data frtypes.MapStr) error {
+func (a *attribute) Update(data mapstr.MapStr) error {
 
 	data.Remove(metadata.AttributeFieldPropertyID)
 	data.Remove(metadata.AttributeFieldObjectID)
@@ -332,7 +332,7 @@ func (a *attribute) IsExists() (bool, error) {
 	return false, nil
 }
 
-func (a *attribute) Save(data frtypes.MapStr) error {
+func (a *attribute) Save(data mapstr.MapStr) error {
 
 	if nil != data {
 		if _, err := a.attr.Parse(data); nil != err {
