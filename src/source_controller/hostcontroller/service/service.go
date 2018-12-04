@@ -86,7 +86,7 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.POST("/hosts/cloud/confirm/delete/{resourceID}").To(s.DeleteConfirm))
 	ws.Route(ws.POST("/hosts/cloud/confirm/search").To(s.SearchConfirm))
 	ws.Route(ws.POST("/hosts/cloud/history").To(s.CloudHistory))
-	ws.Route(ws.POST("/hosts/cloud/searchHistory").To(s.SearchSyncHistory))
+	ws.Route(ws.POST("/hosts/cloud/searchHistory/{taskID}").To(s.SearchSyncHistory))
 
 	return ws
 }

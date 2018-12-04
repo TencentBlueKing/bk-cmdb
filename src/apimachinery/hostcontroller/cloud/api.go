@@ -61,7 +61,7 @@ func (c *cloud) TaskNameCheck(ctx context.Context, h http.Header, data interface
 	return
 }
 
-func (c *cloud) DeleteCloudTask(ctx context.Context, h http.Header, taskID int64) (resp *metadata.Response, err error) {
+func (c *cloud) DeleteCloudTask(ctx context.Context, h http.Header, taskID string) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/hosts/cloud/delete/%v", taskID)
 
@@ -75,8 +75,8 @@ func (c *cloud) DeleteCloudTask(ctx context.Context, h http.Header, taskID int64
 	return
 }
 
-func (c *cloud) SearchCloudTask(ctx context.Context, h http.Header, data interface{}) (resp *metadata.CloudSearch, err error) {
-	resp = new(metadata.CloudSearch)
+func (c *cloud) SearchCloudTask(ctx context.Context, h http.Header, data interface{}) (resp *metadata.FavoriteResult, err error) {
+	resp = new(metadata.FavoriteResult)
 	subPath := "/hosts/cloud/search"
 
 	err = c.client.Post().
@@ -117,8 +117,8 @@ func (c *cloud) DeleteConfirm(ctx context.Context, h http.Header, ResourceID int
 	return
 }
 
-func (c *cloud) SearchConfirm(ctx context.Context, h http.Header, data interface{}) (resp *metadata.CloudSearch, err error) {
-	resp = new(metadata.CloudSearch)
+func (c *cloud) SearchConfirm(ctx context.Context, h http.Header, data interface{}) (resp *metadata.FavoriteResult, err error) {
+	resp = new(metadata.FavoriteResult)
 	subPath := "/hosts/cloud/confirm/search"
 
 	err = c.client.Post().
@@ -145,9 +145,9 @@ func (c *cloud) CloudHistory(ctx context.Context, h http.Header, data interface{
 	return
 }
 
-func (c *cloud) SearchHistory(ctx context.Context, h http.Header) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
-	subPath := "/hosts/cloud/searchHistory"
+func (c *cloud) SearchHistory(ctx context.Context, h http.Header, taskID string) (resp *metadata.FavoriteResult, err error) {
+	resp = new(metadata.FavoriteResult)
+	subPath := fmt.Sprintf("/hosts/cloud/searchHistory/%v", taskID)
 
 	err = c.client.Post().
 		WithContext(ctx).

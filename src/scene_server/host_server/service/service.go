@@ -105,13 +105,14 @@ func (s *Service) WebService() *restful.WebService {
 
 	// cloud sync
 	ws.Route(ws.POST("/hosts/cloud/add").To(s.AddCloudTask))
-	ws.Route(ws.POST("/hosts/cloud/delete").To(s.DeleteCloudTask))
+	ws.Route(ws.POST("/hosts/cloud/delete/{taskID}").To(s.DeleteCloudTask))
 	ws.Route(ws.POST("/hosts/cloud/search").To(s.SearchCloudTask))
 	ws.Route(ws.POST("/hosts/cloud/update").To(s.UpdateCloudTask))
 	ws.Route(ws.POST("/hosts/cloud/startSync").To(s.StartCloudSync))
 	ws.Route(ws.POST("/hosts/cloud/resourceConfirm").To(s.ResourceConfirm))
+	ws.Route(ws.POST("/hosts/cloud/searchConfirm").To(s.SearchConfirm))
 	ws.Route(ws.POST("/hosts/cloud/accountSearch").To(s.SearchAccount))
-	ws.Route(ws.POST("/hosts/cloud/syncHistory").To(s.CloudSyncHistory))
+	ws.Route(ws.POST("/hosts/cloud/syncHistory/{taskID}").To(s.CloudSyncHistory))
 
 	return ws
 }

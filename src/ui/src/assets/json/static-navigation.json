@@ -48,6 +48,20 @@
             "icon": "icon-cc-host-free-pool",
             "name": "主机资源池",
             "classificationId": "bk_host_manage"
+        },{
+          "i18n": "ResourceConfirm['资源确认']",
+          "path": "/resource-confirm",
+          "id": "resource_confirm",
+          "icon": "icon-cc-host-free-pool",
+          "name": "资源确认",
+          "classificationId": "bk_host_manage"
+        },{
+          "i18n": "CloudHostDiscover['云资源发现']",
+          "path": "/cloud-discover",
+          "id": "cloud",
+          "icon": "icon-cc-host-free-pool",
+          "name": "云资源发现",
+          "classificationId": "bk_host_manage"
         }]
     },
     "bk_back_config": {

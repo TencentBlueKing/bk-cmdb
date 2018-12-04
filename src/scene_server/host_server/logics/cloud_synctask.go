@@ -1,3 +1,15 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package logics
 
 import (
@@ -149,6 +161,7 @@ func (lgc *Logics) CloudTaskSync(taskList mapstr.MapStr, pheader http.Header) er
 func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 	cloudHistory := new(meta.CloudHistory)
 
+	blog.V(3).Info("start sync")
 	taskObjID, errObj := taskList.String("bk_obj_id")
 	if errObj != nil {
 		blog.Errorf("mapstr key-value convert to string failed.")
@@ -163,16 +176,16 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 
 	cloudHistory.ObjID = taskObjID
 	cloudHistory.TaskID = taskID
-	cloudHistory.StartTime = time.Now().Unix()
+	startTime := time.Now().Unix()
 
-	defer lgc.CloudHistory(cloudHistory, pheader)
+	defer lgc.CloudHistory(taskID, startTime, cloudHistory, pheader)
 
 	//obtain the hosts from cc_HostBase
 	body := new(meta.HostCommonSearch)
 	host, err := lgc.SearchHost(pheader, body, false)
 	if err != nil {
 		blog.Errorf("search host failed, err: %v", err)
-		cloudHistory.Status = 0
+		cloudHistory.Status = "失败"
 		return err
 	}
 
@@ -181,24 +194,25 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 		hostInfo, err := mapstr.NewFromInterface(host.Info[i]["host"])
 		if err != nil {
 			blog.Errorf("get hostInfo failed with err: %v", err)
-			cloudHistory.Status = 0
+			cloudHistory.Status = "失败"
 			return err
 		}
 
 		ip, errH := hostInfo.String(common.BKHostInnerIPField)
 		if errH != nil {
 			blog.Errorf("get hostIp failed with err: %v")
-			cloudHistory.Status = 0
+			cloudHistory.Status = "失败"
 			return errH
 		}
 
 		existHostList = append(existHostList, ip)
 	}
 
-	secretID, errSID := taskList.String("bk_secret_id")
-	if errSID != nil {
+	//obtain hosts from TencentCloud needs secretID and secretKey
+	secretID, errS := taskList.String("bk_secret_id")
+	if errS != nil {
 		blog.Errorf("mapstr convert to string failed.")
-		return errSID
+		return errS
 	}
 	secretKeyEncrypted, errKey := taskList.String("bk_secret_key")
 	if errKey != nil {
@@ -217,7 +231,7 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 	cloudHostInfo, err := lgc.ObtainCloudHosts(secretID, secretKey)
 	if err != nil {
 		blog.Errorf("obtain cloud hosts failed with err: %v", err)
-		cloudHistory.Status = 0
+		cloudHistory.Status = "失败"
 		return err
 	}
 
@@ -228,7 +242,7 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 		newHostInnerip, ok := hostInfo[common.BKHostInnerIPField].(string)
 		if !ok {
 			blog.Errorf("interface convert to string failed, err: %v", err)
-			cloudHistory.Status = 0
+			cloudHistory.Status = "失败"
 		}
 		if !util.InStrArr(existHostList, newHostInnerip) {
 			newAddHost = append(newAddHost, newHostInnerip)
@@ -245,10 +259,10 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 		err := lgc.NewAddConfirm(taskList, pheader, newAddHost, newCloudHost)
 		if err != nil {
 			blog.Errorf("newly add cloud resource confirm failed, err: %v", err)
-			cloudHistory.Status = 0
+			cloudHistory.Status = "失败"
 			return err
 		}
-		cloudHistory.Status = 2
+		cloudHistory.Status = "队列中"
 	}
 
 	//pick out the hosts that has changed attributes
@@ -257,13 +271,13 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 		newHostInnerip, ok := hostInfo[common.BKHostInnerIPField].(string)
 		if !ok {
 			blog.Errorf("interface convert to string failed, err: %v", err)
-			cloudHistory.Status = 0
+			cloudHistory.Status = "失败"
 			break
 		}
 		newHostOuterip, oK := hostInfo[common.BKHostOuterIPField].(string)
 		if !oK {
 			blog.Errorf("interface convert to string failed, err: %v", err)
-			cloudHistory.Status = 0
+			cloudHistory.Status = "失败"
 			break
 		}
 		newHostOsname, _ := hostInfo[common.BKOSNameField].(string)
@@ -272,34 +286,34 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 			existHostInfo, err := mapstr.NewFromInterface(host.Info[i]["host"])
 			if err != nil {
 				blog.Errorf("get hostInfo failed with err: %v", err)
-				cloudHistory.Status = 0
+				cloudHistory.Status = "失败"
 				return err
 			}
 
 			existHostIp, ok := existHostInfo.String(common.BKHostInnerIPField)
 			if ok != nil {
 				blog.Errorf("get hostIp failed with err: %v", ok)
-				cloudHistory.Status = 0
+				cloudHistory.Status = "失败"
 				break
 			}
 			existHostOsname, osOk := existHostInfo.String(common.BKOSNameField)
 			if osOk != nil {
 				blog.Errorf("get os name failed with err: %v", ok)
-				cloudHistory.Status = 0
+				cloudHistory.Status = "失败"
 				break
 			}
 
 			existHostOuterip, ipOk := existHostInfo.String(common.BKHostOuterIPField)
 			if ipOk != nil {
 				blog.Errorf("get outerip failed with err: %v", ok)
-				cloudHistory.Status = 0
+				cloudHistory.Status = "失败"
 				break
 			}
 
 			existHostID, idOk := existHostInfo.String(common.BKHostIDField)
 			if idOk != nil {
 				blog.Errorf("get hostID failed with err: %v", ok)
-				cloudHistory.Status = 0
+				cloudHistory.Status = "失败"
 				break
 			}
 
@@ -320,12 +334,12 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 		return errAttr
 	}
 
-	if resourceConfirm && attrConfirm {
+	if !resourceConfirm && !attrConfirm {
 		if len(newAddHost) > 0 {
 			err := lgc.AddCloudHosts(pheader, newCloudHost)
 			if err != nil {
 				blog.Errorf("add cloud hosts failed, err: %v", err)
-				cloudHistory.Status = 0
+				cloudHistory.Status = "失败"
 				return err
 			}
 		}
@@ -333,25 +347,44 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 			err := lgc.UpdateCloudHosts(pheader, cloudHostAttr)
 			if err != nil {
 				blog.Errorf("update cloud hosts failed, err: %v", err)
-				cloudHistory.Status = 0
+				cloudHistory.Status = "失败"
 				return err
 			}
 		}
 	}
 
 	if attrConfirm && len(cloudHostAttr) > 0 {
-		resourceConfirm := new(meta.ResourceConfirm)
-		resourceConfirm.ResourceName = cloudHostAttr
-		_, err := lgc.CoreAPI.HostController().Cloud().ResourceConfirm(context.Background(), pheader, resourceConfirm)
-		if err != nil {
-			blog.Errorf("add resource confirm failed with err: %v", err)
-			cloudHistory.Status = 0
-			return err
+		blog.Debug("attr chang")
+		for _, host := range cloudHostAttr {
+			resourceConfirm := mapstr.MapStr{}
+			resourceConfirm["bk_obj_id"] = taskList["bk_obj_id"]
+			innerIp, errIp := host.String(common.BKHostInnerIPField)
+			if errIp != nil {
+				blog.Debug("mapstr.Map convert to string failed.")
+				cloudHistory.Status = "失败"
+				return errIp
+			}
+
+			resourceConfirm[common.BKHostInnerIPField] = innerIp
+			resourceConfirm["bk_resource"] = cloudHostAttr
+			resourceConfirm["bk_source_type"] = "云同步"
+			resourceConfirm["bk_task_id"] = taskList["bk_task_id"]
+			resourceConfirm["bk_attr_confirm"] = attrConfirm
+			resourceConfirm["bk_confirm"] = false
+
+			_, err := lgc.CoreAPI.HostController().Cloud().ResourceConfirm(context.Background(), pheader, resourceConfirm)
+			if err != nil {
+				blog.Errorf("add resource confirm failed with err: %v", err)
+				cloudHistory.Status = "失败"
+				return err
+			}
 		}
-		cloudHistory.Status = 2
+		cloudHistory.Status = "队列中"
+		return nil
 	}
 
-	cloudHistory.Status = 1
+	cloudHistory.Status = "成功"
+	blog.V(3).Info("finish sync")
 	return nil
 }
 
@@ -378,14 +411,22 @@ func (lgc *Logics) AddCloudHosts(pheader http.Header, newCloudHost []mapstr.MapS
 		return err
 	}
 
-	//blog.V(5).Info()
+	blog.V(3).Info("resource confirm add new hosts")
 	for index, hostInfo := range newCloudHost {
 		if _, ok := hostInfoMap[int64(index)]; !ok {
 			hostInfoMap[int64(index)] = make(map[string]interface{}, 0)
 		}
+
+		resource, ok := hostInfo["bk_resource"].([]mapstr.MapStr)
+		if !ok {
+			blog.Errorf("interface convert to []mapstr.MapStr failed")
+			break
+		}
+
 		hostInfoMap[int64(index)][common.BKHostInnerIPField] = hostInfo[common.BKHostInnerIPField]
-		hostInfoMap[int64(index)][common.BKHostOuterIPField] = hostInfo[common.BKHostOuterIPField]
-		hostInfoMap[int64(index)][common.BKOSNameField] = hostInfo[common.BKOSNameField]
+		hostInfoMap[int64(index)][common.BKHostOuterIPField] = resource[0][common.BKHostOuterIPField]
+		hostInfoMap[int64(index)][common.BKOSNameField] = resource[0][common.BKOSNameField]
+		//hostInfoMap[int64(index)]["bk_cloud_region"] = resource["bk_cloud_region"]
 		hostInfoMap[int64(index)]["import_from"] = "3"
 		hostInfoMap[int64(index)]["bk_cloud_id"] = 1
 	}
@@ -434,7 +475,7 @@ func (lgc *Logics) NewAddConfirm(taskList mapstr.MapStr, pheader http.Header, ne
 	}
 
 	confirmIpList := make([]string, 0)
-	for _, confirmInfo := range confirmHosts.Data {
+	for _, confirmInfo := range confirmHosts.Info {
 		for _, ip := range confirmInfo["bk_resource_name"].([]string) {
 			confirmIpList = append(confirmIpList, ip)
 		}
@@ -449,12 +490,21 @@ func (lgc *Logics) NewAddConfirm(taskList mapstr.MapStr, pheader http.Header, ne
 
 	//newly added cloud hosts confirm
 	if len(newHostIp) > 0 {
-		resourceConfirm := new(meta.ResourceConfirm)
-		resourceConfirm.ResourceName = newCloudHost
-		_, err := lgc.CoreAPI.HostController().Cloud().ResourceConfirm(context.Background(), pheader, resourceConfirm)
-		if err != nil {
-			blog.Errorf("add resource confirm failed with err: %v", err)
-			return err
+		for _, innerIp := range newHostIp {
+			resourceConfirm := mapstr.MapStr{}
+			resourceConfirm["bk_obj_id"] = taskList["bk_obj_id"]
+			resourceConfirm[common.BKHostInnerIPField] = innerIp
+			resourceConfirm["bk_source_type"] = "云同步"
+			resourceConfirm["bk_task_id"] = taskList["bk_task_id"]
+			resourceConfirm["bk_resource"] = newCloudHost
+			resourceConfirm["bk_confirm"] = true
+			resourceConfirm["bk_attr_confirm"] = false
+
+			_, err := lgc.CoreAPI.HostController().Cloud().ResourceConfirm(context.Background(), pheader, resourceConfirm)
+			if err != nil {
+				blog.Errorf("add resource confirm failed with err: %v", err)
+				return err
+			}
 		}
 	}
 	return nil
@@ -519,17 +569,38 @@ func (lgc *Logics) UnixSubtract(periodType string, period string) int64 {
 	return unixSubtract
 }
 
-func (lgc *Logics) CloudHistory(cloudHistory *meta.CloudHistory, pheader http.Header) error {
+func (lgc *Logics) CloudHistory(taskID int64, startTime int64, cloudHistory *meta.CloudHistory, pheader http.Header) error {
 	finishTime := time.Now().Unix()
-	cloudHistory.TimeConsume = finishTime - cloudHistory.StartTime
+	timeConsumed := finishTime - startTime
+	if timeConsumed > 60 {
+		minute := timeConsumed / 60
+		seconds := timeConsumed % 60
+		cloudHistory.TimeConsume = fmt.Sprintf("%dmin%ds", minute, seconds)
+	} else {
+		cloudHistory.TimeConsume = fmt.Sprintf("%ds", timeConsumed)
+	}
+
+	timeLayout := "2006-01-02 15:04:05" //transfer model
+	startTimeStr := time.Unix(startTime, 0).Format(timeLayout)
+	cloudHistory.StartTime = startTimeStr
 
 	blog.V(3).Info(cloudHistory.TimeConsume)
 
-	_, err := lgc.CoreAPI.HostController().Cloud().CloudHistory(context.Background(), pheader, cloudHistory)
-	if err != nil {
+	updateData := mapstr.MapStr{}
+	updateTime := time.Now()
+	updateData["bk_last_sync_time"] = updateTime
+	updateData["bk_task_id"] = taskID
+
+	if _, err := lgc.CoreAPI.HostController().Cloud().UpdateCloudTask(context.Background(), pheader, updateData); err != nil {
+		blog.Errorf("update task failed with decode body err: %v", err)
+		return err
+	}
+
+	if _, err := lgc.CoreAPI.HostController().Cloud().CloudHistory(context.Background(), pheader, cloudHistory); err != nil {
 		blog.Errorf("add cloud history table failed, err: %v", err)
 		return err
 	}
+
 	return nil
 }
 
