@@ -42,55 +42,52 @@ type DeletedCount struct {
 	Count int64 `json:"deleted_count"`
 }
 
-// Exception exception info
-type Exception struct {
+// ExceptionResult exception info
+type ExceptionResult struct {
 	Message string      `json:"message"`
 	Code    int64       `json:"code"`
 	Data    interface{} `json:"data"`
 }
 
+// CreatedDataResult common created result definition
+type CreatedDataResult struct {
+	ID int64 `json:"id"`
+}
+
+// UpdatedDataResult common update operation result
+type UpdatedDataResult struct {
+	ID int64 `json:"id"`
+}
+
+// DeletedDataResult common delete operation result
+type DeletedDataResult struct {
+	ID int64 `json:"id"`
+}
+
+// SetDataResult common set result definition
+type SetDataResult struct {
+	UpdatedCount `json:",inline"`
+	CreatedCount `json:",inline"`
+	Created      []CreatedDataResult `json:"created"`
+	Updated      []UpdatedDataResult `json:"updated"`
+	Exceptions   []ExceptionResult   `json:"exception"`
+}
+
 // CreateManyInfoResult create many function return this result struct
 type CreateManyInfoResult struct {
-	Created    []int64         `json:"created"`
-	Repeated   []mapstr.MapStr `json:"repeated"`
-	Exceptions []Exception     `json:"exception"`
+	Created    []CreatedDataResult `json:"created"`
+	Repeated   []mapstr.MapStr     `json:"repeated"`
+	Exceptions []ExceptionResult   `json:"exception"`
 }
 
 // CreateManyDataResult the data struct definition in create many function result
 type CreateManyDataResult struct {
-	Count int64                `json:"count"`
-	Info  CreateManyInfoResult `json:"info"`
+	CreateManyInfoResult `json:",inline"`
 }
 
 // CreateOneDataResult the data struct definition in create one function result
 type CreateOneDataResult struct {
-	Count int64        `json:"count"`
-	Info  CreatedCount `json:"info"`
-}
-
-// SetManyInfoResult set many function return this result struct
-type SetManyInfoResult struct {
-	Created    []int64         `json:"created"`
-	Updated    []mapstr.MapStr `json:"updated"`
-	Exceptions []Exception     `json:"exception"`
-}
-
-// SetManyDataResult the data struct definition in create many function result
-type SetManyDataResult struct {
-	Count int64             `json:"count"`
-	Info  SetManyInfoResult `json:"info"`
-}
-
-// SetOneInfoResult the info struct definition in create one function result's Info field
-type SetOneInfoResult struct {
-	CreatedCount `json:",inline"`
-	UpdatedCount `json:",inline"`
-}
-
-// SetOneDataResult the data struct definition in create one function result
-type SetOneDataResult struct {
-	Count int64        `json:"count"`
-	Info  CreatedCount `json:"info"`
+	CreatedDataResult `json:",inline"`
 }
 
 // SearchDataResult common search data result

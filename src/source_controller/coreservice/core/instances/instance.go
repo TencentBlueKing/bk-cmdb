@@ -37,10 +37,10 @@ func (m *instanceManager) CreateModelInstance(ctx core.ContextParams, objID stri
 func (m *instanceManager) CreateManyModelInstance(ctx core.ContextParams, objID string, inputParam metadata.CreateManyModelInstance) (*metadata.CreateManyDataResult, error) {
 	return nil, nil
 }
-func (m *instanceManager) SetModelInstance(ctx core.ContextParams, objID string, inputParam metadata.SetModelInstance) (*metadata.SetOneDataResult, error) {
+func (m *instanceManager) SetModelInstance(ctx core.ContextParams, objID string, inputParam metadata.SetModelInstance) (*metadata.SetDataResult, error) {
 	return nil, nil
 }
-func (m *instanceManager) SetManyModelInstance(ctx core.ContextParams, objID string, inputParam metadata.SetManyModelInstance) (*metadata.SetManyDataResult, error) {
+func (m *instanceManager) SetManyModelInstance(ctx core.ContextParams, objID string, inputParam metadata.SetManyModelInstance) (*metadata.SetDataResult, error) {
 	return nil, nil
 }
 func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID string, inputParam metadata.UpdateOption) (*metadata.UpdateDataResult, error) {

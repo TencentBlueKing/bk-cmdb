@@ -29,14 +29,8 @@ type CreateOneModelClassification struct {
 // SetManyModelClassification set many input params
 type SetManyModelClassification CreateManyModelClassifiaction
 
-// SetManyResult set many method return this results
-type SetManyResult CreateManyResult
-
 // SetOneModelClassification set one input params
 type SetOneModelClassification CreateOneModelClassification
-
-// SetOneResult set one method reutrn this result
-type SetOneResult CreateOneResult
 
 // DeleteModelClassificationResult delete the model classification result
 type DeleteModelClassificationResult struct {

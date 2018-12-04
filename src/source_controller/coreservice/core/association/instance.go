@@ -9,6 +9,7 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package association
 
 import (
@@ -24,13 +25,13 @@ type associationInstance struct {
 func (m *associationInstance) CreateOneInstanceAssociation(ctx core.ContextParams, inputParam metadata.CreateOneInstanceAssociation) (*metadata.CreateOneDataResult, error) {
 	return nil, nil
 }
-func (m *associationInstance) SetOneInstanceAssociation(ctx core.ContextParams, inputParam metadata.SetOneInstanceAssociation) (*metadata.SetOneDataResult, error) {
+func (m *associationInstance) SetOneInstanceAssociation(ctx core.ContextParams, inputParam metadata.SetOneInstanceAssociation) (*metadata.SetDataResult, error) {
 	return nil, nil
 }
 func (m *associationInstance) CreateManyInstanceAssociation(ctx core.ContextParams, inputParam metadata.CreateManyInstanceAssociation) (*metadata.CreateManyDataResult, error) {
 	return nil, nil
 }
-func (m *associationInstance) SetManyInstanceAssociation(ctx core.ContextParams, inputParam metadata.SetManyInstanceAssociation) (*metadata.SetManyDataResult, error) {
+func (m *associationInstance) SetManyInstanceAssociation(ctx core.ContextParams, inputParam metadata.SetManyInstanceAssociation) (*metadata.SetDataResult, error) {
 	return nil, nil
 }
 func (m *associationInstance) UpdateInstanceAssociation(ctx core.ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdateDataResult, error) {

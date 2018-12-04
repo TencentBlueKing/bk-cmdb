@@ -26,7 +26,7 @@ func (m *modelAttribute) CreateModelAttributes(ctx core.ContextParams, objID str
 	return nil, nil
 }
 
-func (m *modelAttribute) SetModelAttributes(ctx core.ContextParams, objID string, inputParam metadata.SetModelAttributes) (*metadata.SetManyDataResult, error) {
+func (m *modelAttribute) SetModelAttributes(ctx core.ContextParams, objID string, inputParam metadata.SetModelAttributes) (*metadata.SetDataResult, error) {
 	return nil, nil
 }
 func (m *modelAttribute) UpdateModelAttributes(ctx core.ContextParams, objID string, inputParam metadata.UpdateOption) (*metadata.UpdateDataResult, error) {
