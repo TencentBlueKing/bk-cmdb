@@ -360,6 +360,25 @@ func (lgc *Logics) confirmAttributes(header http.Header, report *metadata.Netcol
 	}
 
 	objType := common.GetObjByType(report.ObjectID)
+	if objType == common.BKInnerObjIDHost {
+		hostdata := metadata.HostList{
+			InputType: metadata.CollectType,
+			HostInfo: map[int64]map[string]interface{}{
+				1: data,
+			},
+		}
+
+		resp, err := lgc.CoreAPI.HostServer().AddHost(context.Background(), header, &hostdata)
+		if err != nil {
+			blog.Errorf("[NetDevice][ConfirmReport] update inst error: %v, %+v", err, data)
+			return attrCount, err
+		}
+		if !resp.Result {
+			blog.Errorf("[NetDevice][ConfirmReport] update inst error: %v, %+v", resp, data)
+			return attrCount, fmt.Errorf(resp.ErrMsg)
+		}
+	}
+
 	cond := condition.CreateCondition()
 	if objType == common.BKInnerObjIDObject {
 		cond.Field(common.GetInstNameField(report.ObjectID)).Eq(report.InstKey)
@@ -370,7 +389,6 @@ func (lgc *Logics) confirmAttributes(header http.Header, report *metadata.Netcol
 		cond.Field(common.BKCloudIDField).Eq(report.CloudID)
 		cond.Field(common.BKHostInnerIPField).Eq(report.InstKey)
 	}
-
 	insts, err := lgc.findInst(header, report.ObjectID, &metadata.QueryInput{Condition: cond.ToMapStr()})
 	if err != nil {
 		blog.Errorf("[NetDevice][ConfirmReport] find inst failed %v", err)
@@ -382,19 +400,6 @@ func (lgc *Logics) confirmAttributes(header http.Header, report *metadata.Netcol
 		if err != nil {
 			blog.Errorf("[NetDevice][ConfirmReport] find inst failed, instID not found from %+v", insts[0])
 			return 0, err
-		}
-
-		if objType == common.BKInnerObjIDHost {
-			hostdata := metadata.HostList{
-				InputType: metadata.CollectType,
-				HostInfo: map[int64]map[string]interface{}{
-					1: {
-						"": "",
-					},
-				},
-			}
-
-			lgc.CoreAPI.HostServer().AddHost(context.Background(), header, &hostdata)
 		}
 
 		resp, err := lgc.CoreAPI.TopoServer().Instance().UpdateInst(context.Background(), util.GetOwnerID(header), report.ObjectID, instID, header, data)
@@ -476,6 +481,7 @@ func (lgc *Logics) confirmAssociations(header http.Header, report *metadata.Netc
 			updateBody := map[string]interface{}{
 				asst.AsstPropertyID: asstInstID,
 			}
+
 			resp, err := lgc.CoreAPI.TopoServer().Instance().UpdateInst(context.Background(), util.GetUser(header), report.ObjectID, instID, header, updateBody)
 			if err != nil {
 				blog.Errorf("[NetDevice][ConfirmReport] update inst error: %v, %+v", err, updateBody)

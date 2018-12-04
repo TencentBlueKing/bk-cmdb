@@ -211,7 +211,7 @@ func (lgc *Logics) UpdateCollector(header http.Header, config metadata.Netcollec
 			blog.Errorf("[UpdateCollector] UpdateByCondition by %+v to %+v error: %v", cond.ToMapStr(), config, err)
 			return err
 		}
-		return nil
+		return lgc.DiscoverNetDevice(header, []metadata.Netcollector{config})
 	}
 
 	err = lgc.Instance.Table(common.BKTableNameNetcollectConfig).Insert(lgc.ctx, config)

@@ -81,8 +81,8 @@ const (
 	BKTableNameTransaction      = "cc_Transaction"
 	BKTableNameIDgenerator      = "cc_idgenerator"
 
-	BKTableNameNetcollectDevice   = "cc_Netcollect_Device"
-	BKTableNameNetcollectProperty = "cc_Netcollect_Property"
+	BKTableNameNetcollectDevice   = "cc_NetcollectDevice"
+	BKTableNameNetcollectProperty = "cc_NetcollectProperty"
 
 	BKTableNameNetcollectConfig  = "cc_NetcollectConfig"
 	BKTableNameNetcollectReport  = "cc_NetcollectReport"

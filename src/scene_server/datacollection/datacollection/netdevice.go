@@ -22,9 +22,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/rs/xid"
-	redis "gopkg.in/redis.v5"
-
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -32,6 +29,9 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal"
+
+	"github.com/rs/xid"
+	redis "gopkg.in/redis.v5"
 )
 
 type Netcollect struct {
@@ -180,7 +180,7 @@ func (h *Netcollect) Run() {
 				}
 				if atomic.LoadInt64(&routeCnt) < int64(h.maxconcurrent) {
 					atomic.AddInt64(&routeCnt, 1)
-					go h.handleMsg(msgs, h.resetHandle)
+					h.handleMsg(msgs, h.resetHandle)
 					break
 				}
 				waitCnt++
