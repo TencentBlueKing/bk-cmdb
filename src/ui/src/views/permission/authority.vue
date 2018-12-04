@@ -18,7 +18,7 @@
                                         :id="'systemAuth-' + authority.id" 
                                         :value="authority.id"
                                         v-model="config.selectedAuthorities">
-                                        <span class="cmdb-checkbox-text">{{$t(authority.name)}}</span>
+                                    <span class="cmdb-checkbox-text">{{$t(authority.name)}}</span>
                                 </label>
                             </li>
                         </ul>
@@ -46,7 +46,7 @@
                                                 :id="'model-all-'+model['bk_obj_id']" 
                                                 :checked="model.selectedAuthorities.length === 3"
                                                 @change="checkAllModelAuthorities(classifyIndex,modelIndex,$event)">
-                                                <span class="cmdb-checkbox-text">{{$t('Common["全选"]')}}</span>
+                                            <span class="cmdb-checkbox-text">{{$t('Common["全选"]')}}</span>
                                         </label>
                                     </span>
                                     <span class="model-authority-checkbox fl">
@@ -56,7 +56,7 @@
                                                 :id="'model-search-'+model['bk_obj_id']" 
                                                 v-model="model.selectedAuthorities"
                                                 @change="checkOtherAuthorities(classifyIndex,modelIndex,$event)">
-                                                <span class="cmdb-checkbox-text">{{$t('Common["查询"]')}}</span>
+                                            <span class="cmdb-checkbox-text">{{$t('Common["查询"]')}}</span>
                                         </label>
                                     </span>
                                     <span class="model-authority-checkbox fl">
@@ -67,7 +67,7 @@
                                                 :id="'model-update-'+model['bk_obj_id']"
                                                 :disabled="model.selectedAuthorities.indexOf('search') === -1"  
                                                 v-model="model.selectedAuthorities">
-                                                <span class="cmdb-checkbox-text">{{$t('Common["编辑"]')}}</span>
+                                            <span class="cmdb-checkbox-text">{{$t('Common["编辑"]')}}</span>
                                         </label>
                                     </span>
                                     <span class="model-authority-checkbox fl">
@@ -78,7 +78,7 @@
                                                 :id="'model-delete-'+model['bk_obj_id']"
                                                 :disabled="model.selectedAuthorities.indexOf('search') === -1" 
                                                 v-model="model.selectedAuthorities">
-                                                <span class="cmdb-checkbox-text">{{$t('Common["删除"]')}}</span>
+                                            <span class="cmdb-checkbox-text">{{$t('Common["删除"]')}}</span>
                                         </label>
                                     </span>
                                 </li>

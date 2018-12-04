@@ -111,8 +111,8 @@ func (t *meta) CreateObjectAssociation(ctx context.Context, h http.Header, dat *
 	return
 }
 
-func (t *meta) UpdateObjectAssociation(ctx context.Context, objID int64, h http.Header, dat map[string]interface{}) (resp *metatype.UpdateResult, err error) {
-	subPath := fmt.Sprintf("/meta/objectasst/%d", objID)
+func (t *meta) UpdateObjectAssociation(ctx context.Context, asstID int64, h http.Header, dat map[string]interface{}) (resp *metatype.UpdateResult, err error) {
+	subPath := fmt.Sprintf("/meta/objectasst/%d", asstID)
 	resp = new(metatype.UpdateResult)
 	err = t.client.Put().
 		WithContext(ctx).

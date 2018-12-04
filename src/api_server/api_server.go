@@ -18,15 +18,16 @@ import (
 	"os"
 	"runtime"
 
+	_ "net/http/pprof"
+
+	"github.com/spf13/pflag"
+
 	"configcenter/src/api_server/app"
 	"configcenter/src/api_server/app/options"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
-	_ "net/http/pprof"
-
-	"github.com/spf13/pflag"
 )
 
 func main() {
@@ -43,6 +44,7 @@ func main() {
 
 	if err := app.Run(context.Background(), op); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
+		blog.CloseLogs()
 		os.Exit(1)
 	}
 }

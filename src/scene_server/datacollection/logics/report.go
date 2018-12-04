@@ -117,13 +117,13 @@ func (lgc *Logics) buildSearchCond(header http.Header, param metadata.ParamSearc
 	return cond, nil
 }
 
-func (lgc *Logics) SearchReport(header http.Header, param metadata.ParamSearchNetcollectReport) (int64, []metadata.NetcollectReport, error) {
+func (lgc *Logics) SearchReport(header http.Header, param metadata.ParamSearchNetcollectReport) (uint64, []metadata.NetcollectReport, error) {
 	cond, err := lgc.buildSearchCond(header, param)
 	if err != nil {
 		blog.Errorf("[NetDevice][SearchReport] build SearchReport condition for %+v, failed: %v", param, err)
 		return 0, nil, err
 	}
-	count, err := lgc.Instance.GetCntByCondition(common.BKTableNameNetcollectReport, cond.ToMapStr())
+	count, err := lgc.Instance.Table(common.BKTableNameNetcollectReport).Find(cond.ToMapStr()).Count(lgc.ctx)
 	if err != nil {
 		blog.Errorf("[NetDevice][SearchReport] GetCntByCondition %+v failed: %v", cond.ToMapStr(), err)
 		return 0, nil, err
@@ -131,7 +131,7 @@ func (lgc *Logics) SearchReport(header http.Header, param metadata.ParamSearchNe
 
 	// search reports
 	reports := []metadata.NetcollectReport{}
-	err = lgc.Instance.GetMutilByCondition(common.BKTableNameNetcollectReport, nil, cond.ToMapStr(), &reports, param.Page.Sort, param.Page.Start, param.Page.Limit)
+	err = lgc.Instance.Table(common.BKTableNameNetcollectReport).Find(cond.ToMapStr()).Sort(param.Page.Sort).Start(uint64(param.Page.Start)).Limit(uint64(param.Page.Limit)).All(lgc.ctx, &reports)
 	if err != nil {
 		blog.Errorf("[NetDevice][SearchReport] GetMutilByCondition %+v failed: %v", cond.ToMapStr(), err)
 		return 0, nil, err
@@ -143,6 +143,10 @@ func (lgc *Logics) SearchReport(header http.Header, param metadata.ParamSearchNe
 	for _, report := range reports {
 		objIDs = append(objIDs, report.ObjectID)
 		cloudIDs = append(cloudIDs, report.CloudID)
+
+		for _, asst := range report.Associations {
+			objIDs = append(objIDs, asst.AsstObjectID)
+		}
 	}
 
 	cloudCond := condition.CreateCondition()
@@ -179,7 +183,7 @@ func (lgc *Logics) SearchReport(header http.Header, param metadata.ParamSearchNe
 		cond := condition.CreateCondition()
 		cond.Field(common.BKInstNameField).Eq(reports[index].InstKey)
 		objType := common.GetObjByType(reports[index].ObjectID)
-		if objType == common.BKINnerObjIDObject {
+		if objType == common.BKInnerObjIDObject {
 			cond.Field(common.BKObjIDField).Eq(reports[index].ObjectID)
 		}
 		insts, err := lgc.findInst(header, reports[index].ObjectID, &metadata.QueryInput{Condition: cond.ToMapStr()})
@@ -187,23 +191,35 @@ func (lgc *Logics) SearchReport(header http.Header, param metadata.ParamSearchNe
 			blog.Errorf("[NetDevice][SearchReport] find inst by %+v for %v failed %v", cond.ToMapStr(), reports[index].ObjectID, err)
 			return 0, nil, err
 		}
-		if len(insts) > 0 {
-			reports[index].Action = metadata.ReporctActionUpdate
-			inst := insts[0]
-			for _, attribute := range reports[index].Attributes {
-				attribute.PreValue = inst[attribute.PropertyID]
-				if property, ok := attrsMap[reports[index].ObjectID+":"+attribute.PropertyID]; ok {
-					attribute.PropertyName = property.PropertyName
-					attribute.IsRequired = property.IsRequired
-				}
+		for attrIndex := range reports[index].Attributes {
+			attribute := &reports[index].Attributes[attrIndex]
+			if property, ok := attrsMap[attrMapKey(reports[index].ObjectID, attribute.PropertyID)]; ok {
+				attribute.PropertyName = property.PropertyName
+				attribute.IsRequired = property.IsRequired
 			}
-		} else {
-			reports[index].Action = metadata.ReporctActionCreate
+			if len(insts) > 0 {
+				attribute.PreValue = insts[0][attribute.PropertyID]
+				reports[index].Action = metadata.ReporctActionUpdate
+			} else {
+				reports[index].Action = metadata.ReporctActionCreate
+			}
+		}
+
+		for asstIndex := range reports[index].Associations {
+			asst := &reports[index].Associations[asstIndex]
+			asst.Action = metadata.ReporctActionCreate
+			if object, ok := objMap[asst.AsstObjectID]; ok {
+				asst.AsstObjectName = object.ObjectName
+			}
 		}
 
 	}
 
-	return int64(count), reports, nil
+	return count, reports, nil
+}
+
+func attrMapKey(objectID string, propertyID string) string {
+	return objectID + ":" + propertyID
 }
 
 func (lgc *Logics) findAttrsMap(header http.Header, objIDs ...string) (map[string]metadata.Attribute, error) {
@@ -214,7 +230,7 @@ func (lgc *Logics) findAttrsMap(header http.Header, objIDs ...string) (map[strin
 
 	attrsMap := map[string]metadata.Attribute{}
 	for _, attr := range attrs {
-		attrsMap[attr.ObjectID+":"+attr.PropertyID] = attr
+		attrsMap[attrMapKey(attr.ObjectID, attr.PropertyID)] = attr
 	}
 	return attrsMap, nil
 }
@@ -345,7 +361,7 @@ func (lgc *Logics) confirmAttributes(header http.Header, report *metadata.Netcol
 
 	objType := common.GetObjByType(report.ObjectID)
 	cond := condition.CreateCondition()
-	if objType == common.BKINnerObjIDObject {
+	if objType == common.BKInnerObjIDObject {
 		cond.Field(common.GetInstNameField(report.ObjectID)).Eq(report.InstKey)
 		cond.Field(common.BKObjIDField).Eq(report.ObjectID)
 	}
@@ -367,6 +383,20 @@ func (lgc *Logics) confirmAttributes(header http.Header, report *metadata.Netcol
 			blog.Errorf("[NetDevice][ConfirmReport] find inst failed, instID not found from %+v", insts[0])
 			return 0, err
 		}
+
+		if objType == common.BKInnerObjIDHost {
+			hostdata := metadata.HostList{
+				InputType: metadata.CollectType,
+				HostInfo: map[int64]map[string]interface{}{
+					1: {
+						"": "",
+					},
+				},
+			}
+
+			lgc.CoreAPI.HostServer().AddHost(context.Background(), header, &hostdata)
+		}
+
 		resp, err := lgc.CoreAPI.TopoServer().Instance().UpdateInst(context.Background(), util.GetOwnerID(header), report.ObjectID, instID, header, data)
 		if err != nil {
 			blog.Errorf("[NetDevice][ConfirmReport] update inst error: %v, %+v", err, data)
@@ -393,7 +423,7 @@ func (lgc *Logics) confirmAttributes(header http.Header, report *metadata.Netcol
 func (lgc *Logics) confirmAssociations(header http.Header, report *metadata.NetcollectReport) (successCount int, errs []error) {
 	objType := common.GetObjByType(report.ObjectID)
 	cond := condition.CreateCondition()
-	if objType == common.BKINnerObjIDObject {
+	if objType == common.BKInnerObjIDObject {
 		cond.Field(common.GetInstNameField(report.ObjectID)).Eq(report.InstKey)
 		cond.Field(common.BKObjIDField).Eq(report.ObjectID)
 	}
@@ -420,7 +450,7 @@ func (lgc *Logics) confirmAssociations(header http.Header, report *metadata.Netc
 	for _, asst := range report.Associations {
 		asstObjType := common.GetObjByType(asst.AsstObjectID)
 		asstCond := condition.CreateCondition()
-		if asstObjType == common.BKINnerObjIDObject {
+		if asstObjType == common.BKInnerObjIDObject {
 			asstCond.Field(common.GetInstNameField(asst.AsstObjectID)).Eq(asst.AsstInstName)
 			asstCond.Field(common.BKObjIDField).Eq(asst.AsstObjectID)
 		}
@@ -438,21 +468,13 @@ func (lgc *Logics) confirmAssociations(header http.Header, report *metadata.Netc
 		if len(asstInsts) > 0 {
 			asstInstID, err := asstInsts[0].Int64(common.GetInstIDField(asst.AsstObjectID))
 			if err != nil {
-				blog.Errorf("[NetDevice][ConfirmReport] propertyID %s not exist in %+v ", common.GetInstIDField(asst.AsstObjectID), asstInsts[0])
+				blog.Errorf("[NetDevice][ConfirmReport] propertyID %s not exist in %#v ", common.GetInstIDField(asst.AsstObjectID), asstInsts[0])
 				errs = append(errs, err)
 				continue
 			}
 
-			asstPropertyValue, ok := asstInsts[0][asst.AsstPropertyID].(string)
-			if !ok {
-				blog.Warnf("[NetDevice][ConfirmReport] propertyID %s not exist in %+v, we reset it here", asst.AsstPropertyID, asstInsts[0])
-				asstPropertyValue = fmt.Sprintf("%d", asstInstID)
-			} else {
-				asstPropertyValue = fmt.Sprintf("%s,%d", asstPropertyValue, asstInstID)
-			}
-
 			updateBody := map[string]interface{}{
-				common.GetInstIDField(asst.AsstObjectID): asstPropertyValue,
+				asst.AsstPropertyID: asstInstID,
 			}
 			resp, err := lgc.CoreAPI.TopoServer().Instance().UpdateInst(context.Background(), util.GetUser(header), report.ObjectID, instID, header, updateBody)
 			if err != nil {
@@ -473,32 +495,32 @@ func (lgc *Logics) confirmAssociations(header http.Header, report *metadata.Netc
 
 func (lgc *Logics) saveHistory(report *metadata.NetcollectReport, success bool) error {
 	history := metadata.NetcollectHistory{NetcollectReport: *report, Success: success}
-	_, err := lgc.Instance.Insert(common.BKTableNameNetcollectHistory, history)
+	err := lgc.Instance.Table(common.BKTableNameNetcollectHistory).Insert(lgc.ctx, history)
 	if err != nil {
 		blog.Errorf("[NetDevice][ConfirmReport] save history %+v failed: %v", history, err)
 	}
 	return err
 }
 
-func (lgc *Logics) SearchHistory(header http.Header, param metadata.ParamSearchNetcollectReport) (int64, []metadata.NetcollectHistory, error) {
+func (lgc *Logics) SearchHistory(header http.Header, param metadata.ParamSearchNetcollectReport) (uint64, []metadata.NetcollectHistory, error) {
 	historys := []metadata.NetcollectHistory{}
 	cond, err := lgc.buildSearchCond(header, param)
 	if err != nil {
 		blog.Errorf("[NetDevice][SearchHistory] build SearchHistory condition for %+v failed: %v", param, err)
 		return 0, nil, err
 	}
-	count, err := lgc.Instance.GetCntByCondition(common.BKTableNameNetcollectHistory, cond.ToMapStr())
+	count, err := lgc.Instance.Table(common.BKTableNameNetcollectHistory).Find(cond.ToMapStr()).Count(lgc.ctx)
 	if err != nil {
 		blog.Errorf("[NetDevice][SearchHistory] GetCntByCondition for %+v failed: %v", cond.ToMapStr(), err)
 		return 0, nil, err
 	}
 
 	// search historys
-	err = lgc.Instance.GetMutilByCondition(common.BKTableNameNetcollectHistory, nil, cond.ToMapStr(), &historys, param.Page.Sort, param.Page.Start, param.Page.Limit)
+	err = lgc.Instance.Table(common.BKTableNameNetcollectHistory).Find(cond.ToMapStr()).Sort(param.Page.Sort).Start(uint64(param.Page.Start)).Limit(uint64(param.Page.Limit)).All(lgc.ctx, &historys)
 	if err != nil {
 		blog.Errorf("[NetDevice][SearchHistory] GetMutilByCondition for %+v failed: %v", cond.ToMapStr(), err)
 		return 0, nil, err
 	}
 
-	return int64(count), historys, nil
+	return count, historys, nil
 }

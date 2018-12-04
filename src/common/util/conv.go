@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 func GetStrByInterface(a interface{}) string {
@@ -83,6 +84,37 @@ func GetInt64ByInterface(a interface{}) (int64, error) {
 
 	}
 	return id, err
+}
+
+func GetTypeSensitiveUInt64(v interface{}) (uint64, bool) {
+	switch tv := v.(type) {
+	case int8:
+		return uint64(tv), true
+	case int16:
+		return uint64(tv), true
+	case int32:
+		return uint64(tv), true
+	case int64:
+		return uint64(tv), true
+	case int:
+		return uint64(tv), true
+	case uint8:
+		return uint64(tv), true
+	case uint16:
+		return uint64(tv), true
+	case uint32:
+		return uint64(tv), true
+	case uint64:
+		return uint64(tv), true
+	case uint:
+		return uint64(tv), true
+	case float32:
+		return uint64(tv), true
+	case float64:
+		return uint64(tv), true
+	default:
+		return 0, false
+	}
 }
 
 func GetMapInterfaceByInerface(data interface{}) ([]interface{}, error) {
@@ -187,4 +219,12 @@ func ConverToInterfaceSlice(value interface{}) []interface{} {
 	}
 
 	return result
+}
+
+// SplitStrField    split string field, remove empty string
+func SplitStrField(str, sep string) []string {
+	if "" == str {
+		return nil
+	}
+	return strings.Split(str, sep)
 }

@@ -71,6 +71,7 @@
             }
         },
         async created () {
+            this.$store.commit('setHeaderTitle', this.$t('Nav["业务主机"]'))
             try {
                 await Promise.all([
                     this.getBusiness(),
@@ -139,8 +140,8 @@
                     this.getHostList()
                 }
             },
-            getHostList () {
-                this.$refs.hostsTable.search(this.filter.business, this.filter.params)
+            getHostList (resetPage = true) {
+                this.$refs.hostsTable.search(this.filter.business, this.filter.params, resetPage)
             }
         }
     }

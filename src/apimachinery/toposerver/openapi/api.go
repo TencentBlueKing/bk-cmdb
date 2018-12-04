@@ -23,8 +23,8 @@ import (
 type OpenApiInterface interface {
 	SearchAllApp(ctx context.Context, h http.Header) (resp *metadata.Response, err error)
 	UpdateMultiModule(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
-	SearchModuleByApp(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
-	SearchModuleByProperty(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
+	SearchModuleByApp(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *metadata.QueryInstResult, err error)
+	SearchModuleByProperty(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *metadata.QueryInstResult, err error)
 	AddMultiModule(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
 	DeleteMultiModule(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
 	UpdateMultiSet(ctx context.Context, appID string, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)

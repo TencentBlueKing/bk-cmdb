@@ -30,7 +30,7 @@
                     <li class="table-item">{{$t('ModelManagement["类型"]')}}</li>
                     <li class="table-item">{{$t('ModelManagement["唯一"]')}}</li>
                     <li class="table-item">{{$t('ModelManagement["必填字段"]')}}</li>
-                    <li class="table-item">{{$t('ModelManagement["操作"]')}}</li>
+                    <li class="table-item">{{$t('Common["操作"]')}}</li>
                 </ul>
                 <ul class="table-content" v-bkloading="{isLoading: $loading(['initFieldList', 'deleteObjectAttribute'])}">
                     <li v-for="(field, index) in fieldList" :key="index">

@@ -5,8 +5,7 @@
             <i class="breadcrumbs-back bk-icon icon-arrows-left" href="javascript:void(0)"
                 v-if="showBack || $route.meta.returnPath"
                 @click="back"></i>
-            <h2 class="breadcrumbs-current">{{title}}</h2>
-            <i v-if="$classify.id === 'custom_query'" class="bk-icon icon-info-circle" v-tooltip="{content: $t('CustomQuery[\'保存后的查询可通过接口调用生效\']'), classes: 'custom-query-header-tooltip'}"></i>
+            <h2 class="breadcrumbs-current">{{headerTitle}}</h2>
         </div>
         <div class="header-options fr">
             <div class="user" v-click-outside="handleCloseUser">
@@ -52,7 +51,7 @@
             }
         },
         computed: {
-            ...mapGetters(['site', 'userName', 'admin', 'showBack', 'navStick']),
+            ...mapGetters(['site', 'userName', 'admin', 'showBack', 'navStick', 'headerTitle']),
             userRole () {
                 return this.admin ? this.$t('Common["管理员"]') : this.$t('Common["普通用户"]')
             },
@@ -104,7 +103,7 @@
         transition: padding .1s ease-in;
         z-index: 1000;
         &.nav-sticked{
-            padding-left: 240px;
+            padding-left: 260px;
         }
     }
     .breadcrumbs{

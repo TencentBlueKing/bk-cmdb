@@ -115,7 +115,7 @@
         },
         async mounted () {
             try {
-                const [rootData] = await this.getRelation(this.$parent.objId, this.$parent.instId)
+                const [rootData] = await this.getRelation(this.$parent.objId, this.$parent.formatedInst['bk_inst_id'])
                 const validRelation = rootData.next.filter(next => !this.ignore.includes(next['bk_obj_id']))
                 if (validRelation.length) {
                     this.$emit('on-relation-loaded', validRelation)
@@ -241,7 +241,8 @@
                             currentNode.children.push(node)
                             const edge = {
                                 to: type === 'next' ? currentNode.id : node.id,
-                                from: type === 'next' ? node.id : currentNode.id
+                                from: type === 'next' ? node.id : currentNode.id,
+                                label: node.data['bk_asst_name']
                             }
                             const legend = relationLegends.find(legend => legend.id === obj['bk_obj_id'])
                             if (legend) {

@@ -44,7 +44,7 @@ type Inst interface {
 	SetParentInst(targetInst Inst) error
 	SetChildInst(targetInst Inst) error
 
-	SetMainlineParentInst(targetInst Inst) error
+	SetMainlineParentInst(instID int64) error
 	SetMainlineChildInst(targetInst Inst) error
 
 	GetInstID() (int64, error)
@@ -107,7 +107,7 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 		return nil, cli.params.Err.Error(rsp.Code)
 	}
 
-	return CreateInst(cli.params, cli.clientSet, targetModel, mapstr.NewArrayFromInterface(rsp.Data.Info)), nil
+	return CreateInst(cli.params, cli.clientSet, targetModel, mapstr.NewArrayFromMapStr(rsp.Data.Info)), nil
 
 }
 
@@ -132,7 +132,7 @@ func (cli *inst) Create() error {
 
 	id, exists := rsp.Data.Get(cli.target.GetInstIDFieldName())
 	if !exists {
-		blog.Warnf("the object controller return the creatation result is invalid, lost the inst id (%s) int the result data(%#v)", cli.target.GetInstIDFieldName(), rsp.Data)
+		blog.Warnf("the object controller returned invalid data, lost the instance id (%s) in response data(%#v)", cli.target.GetInstIDFieldName(), rsp.Data)
 	}
 
 	cli.datas.Set(cli.target.GetInstIDFieldName(), id)

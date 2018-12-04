@@ -19,9 +19,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
-
-	"gopkg.in/yaml.v2"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -30,6 +27,8 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/thirdpartyclient/esbserver/nodeman"
+
+	"gopkg.in/yaml.v2"
 )
 
 // Netdevicebeat netdevicebeat collector name
@@ -184,7 +183,7 @@ func collectorMapKey(cloudID int64, ip string) string {
 
 func (lgc *Logics) findCollectorMap(cond interface{}) (map[string]metadata.Netcollector, error) {
 	collectors := []metadata.Netcollector{}
-	err := lgc.Instance.GetMutilByCondition(common.BKTableNameNetcollectConfig, nil, cond, &collectors, "", 0, 0)
+	err := lgc.Instance.Table(common.BKTableNameNetcollectConfig).Find(cond).All(lgc.ctx, &collectors)
 	if err != nil {
 		return nil, err
 	}
@@ -201,13 +200,13 @@ func (lgc *Logics) UpdateCollector(header http.Header, config metadata.Netcollec
 	cond.Field(common.BKCloudIDField).Eq(config.CloudID)
 	cond.Field(common.BKHostInnerIPField).Eq(config.InnerIP)
 
-	count, err := lgc.Instance.GetCntByCondition(common.BKTableNameNetcollectConfig, cond.ToMapStr())
+	count, err := lgc.Instance.Table(common.BKTableNameNetcollectConfig).Find(cond.ToMapStr()).Count(lgc.ctx)
 	if err != nil {
 		blog.Errorf("[UpdateCollector] count by %+v error: %v", cond.ToMapStr(), err)
 		return err
 	}
 	if count > 0 {
-		err = lgc.Instance.UpdateByCondition(common.BKTableNameNetcollectConfig, config, cond)
+		err = lgc.Instance.Table(common.BKTableNameNetcollectConfig).Update(lgc.ctx, cond, config)
 		if err != nil {
 			blog.Errorf("[UpdateCollector] UpdateByCondition by %+v to %+v error: %v", cond.ToMapStr(), config, err)
 			return err
@@ -215,7 +214,7 @@ func (lgc *Logics) UpdateCollector(header http.Header, config metadata.Netcollec
 		return nil
 	}
 
-	_, err = lgc.Instance.Insert(common.BKTableNameNetcollectConfig, config)
+	err = lgc.Instance.Table(common.BKTableNameNetcollectConfig).Insert(lgc.ctx, config)
 	if err != nil {
 		blog.Errorf("[UpdateCollector] Insert %+v error: %v", config, err)
 		return err
@@ -316,7 +315,7 @@ func (lgc *Logics) saveCollectTask(collector *metadata.Netcollector, taskID int6
 	cond.Field(common.BKCloudIDField).Eq(collector.CloudID)
 	cond.Field(common.BKHostInnerIPField).In(collector.InnerIP)
 
-	return lgc.Instance.UpdateByCondition(common.BKTableNameNetcollectConfig, data, cond.ToMapStr())
+	return lgc.Instance.Table(common.BKTableNameNetcollectConfig).Update(lgc.ctx, cond.ToMapStr(), data)
 }
 
 func (lgc *Logics) buildUpgradePluginRequest(collector *metadata.Netcollector, user string, pkg *nodeman.PluginPackage, proc *nodeman.PluginProcess, porcInfo *nodeman.PluginProcessInfo) (*nodeman.UpgradePluginRequest, error) {
@@ -369,7 +368,7 @@ func (lgc *Logics) buildNetdevicebeatConfigFile(collector *metadata.Netcollector
 			Port:      161,
 			Community: collector.Config.Community,
 			Version:   Version2c,
-			Timeout:   time.Duration(10) * time.Second,
+			Timeout:   10,
 			Retries:   3,
 			MaxOids:   10,
 		},
@@ -398,17 +397,17 @@ func (lgc *Logics) buildNetdevicebeatConfigFile(collector *metadata.Netcollector
 func (lgc *Logics) findCustom() ([]Custom, error) {
 	customs := []Custom{}
 	propertys := []metadata.NetcollectProperty{}
-	if err := lgc.Instance.GetMutilByCondition(common.BKTableNameNetcollectProperty, nil, nil, &propertys, "", 0, 0); err != nil {
+	if err := lgc.Instance.Table(common.BKTableNameNetcollectProperty).Find(nil).All(lgc.ctx, &propertys); err != nil {
 		blog.Errorf("[NetDevice] failed to query the propertys, error info %v", err)
 		return nil, err
 	}
 	devices := []metadata.NetcollectDevice{}
-	if err := lgc.Instance.GetMutilByCondition(common.BKTableNameNetcollectDevice, nil, nil, &devices, "", 0, 0); err != nil {
+	if err := lgc.Instance.Table(common.BKTableNameNetcollectDevice).Find(nil).All(lgc.ctx, &devices); err != nil {
 		blog.Errorf("[NetDevice] failed to query the devices, error info %v", err)
 		return nil, err
 	}
 
-	deviceMap := map[int64]metadata.NetcollectDevice{}
+	deviceMap := map[uint64]metadata.NetcollectDevice{}
 	for _, device := range devices {
 		deviceMap[device.DeviceID] = device
 	}
@@ -468,7 +467,7 @@ type SnmpConfig struct {
 	// Version is an SNMP Version
 	Version Version `yaml:"version,omitempty"`
 	// Timeout is the timeout for the SNMP Query
-	Timeout time.Duration `yaml:"timeout,omitempty"`
+	Timeout int `yaml:"timeout,omitempty"`
 	// Set the number of retries to attempt within timeout.
 	Retries int `yaml:"retries,omitempty"`
 	// MaxOids is the maximum number of oids allowed in a Get()

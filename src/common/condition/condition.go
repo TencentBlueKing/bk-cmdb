@@ -38,6 +38,7 @@ type Condition interface {
 	SetFields(fields []string)
 	GetFields() []string
 	Field(fieldName string) Field
+	NewOR() OR
 	Parse(data types.MapStr) error
 	ToMapStr() types.MapStr
 	AddContionItem(cond ConditionItem) error
@@ -50,6 +51,7 @@ type condition struct {
 	limit        int64
 	sort         string
 	fields       []Field
+	or           []OR
 	filterFields []string
 }
 
@@ -193,12 +195,28 @@ func (cli *condition) Field(fieldName string) Field {
 	return field
 }
 
+// CreateField create a field
+func (cli *condition) NewOR() OR {
+	field := &orField{
+		condition: cli,
+	}
+	cli.or = append(cli.or, field)
+	return field
+}
+
 // ToMapStr to MapStr object
 func (cli *condition) ToMapStr() types.MapStr {
 	tmpResult := types.MapStr{}
 	for _, item := range cli.fields {
 		tmpResult.Merge(item.ToMapStr())
 	}
+	//Note: Here ToMapStr is the query condition for conversion to mongodb.
+	//When there are multiple or, the last one will prevail.
+	//The reason why this field uses array is for future compatibility consideration.
+	for _, item := range cli.or {
+		tmpResult.Merge(item.ToMapStr())
+	}
+
 	return tmpResult
 }
 

@@ -13,9 +13,10 @@
 package logics
 
 import (
+	"configcenter/src/common/mapstr"
+	"context"
 	"errors"
 	"fmt"
-	"reflect"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -23,7 +24,7 @@ import (
 	"configcenter/src/common/util"
 )
 
-func (lgc *Logics) GetObjectByID(objType string, fields []string, id int64, result interface{}, sort string) error {
+func (lgc *Logics) GetObjectByID(ctx context.Context, objType string, fields []string, id int64, result interface{}, sort string) error {
 	tName := common.GetInstTableName(objType)
 	condition := make(map[string]interface{}, 1)
 	switch objType {
@@ -33,7 +34,7 @@ func (lgc *Logics) GetObjectByID(objType string, fields []string, id int64, resu
 		condition[common.BKSetIDField] = id
 	case common.BKInnerObjIDModule:
 		condition[common.BKModuleIDField] = id
-	case common.BKINnerObjIDObject:
+	case common.BKInnerObjIDObject:
 		condition[common.BKInstIDField] = id
 	case common.BKInnerObjIDHost:
 		condition[common.BKHostIDField] = id
@@ -44,24 +45,24 @@ func (lgc *Logics) GetObjectByID(objType string, fields []string, id int64, resu
 	default:
 		return errors.New("invalid object type")
 	}
-	err := lgc.Instance.GetOneByCondition(tName, fields, condition, result)
+	err := lgc.Instance.Table(tName).Find(condition).Fields(fields...).One(ctx, result)
 	return err
 }
 
-func (lgc *Logics) CreateObject(objType string, input interface{}, idName *string) (int64, error) {
+func (lgc *Logics) CreateObject(ctx context.Context, objType string, input interface{}, idName *string) (int64, error) {
 	tName := common.GetInstTableName(objType)
-	objID, err := lgc.Instance.GetIncID(tName)
+	objID, err := lgc.Instance.NextSequence(ctx, tName)
 	if err != nil {
 		return 0, err
 	}
 	inputc := input.(map[string]interface{})
 	*idName = common.GetInstIDField(objType)
 	inputc[*idName] = objID
-	_, err = lgc.Instance.Insert(tName, inputc)
+	err = lgc.Instance.Table(tName).Insert(ctx, inputc)
 	if err != nil {
 		return 0, err
 	}
-	return objID, nil
+	return int64(objID), nil
 }
 
 var defaultNameLanguagePkg = map[string]map[string][]string{
@@ -77,28 +78,28 @@ var defaultNameLanguagePkg = map[string]map[string][]string{
 	},
 }
 
-func (lgc *Logics) GetObjectByCondition(defLang language.DefaultCCLanguageIf, objType string, fields []string, condition, result interface{}, sort string, skip, limit int) error {
+func (lgc *Logics) GetObjectByCondition(ctx context.Context, defLang language.DefaultCCLanguageIf, objType string, fields []string, condition interface{}, sort string, skip, limit int) ([]mapstr.MapStr, error) {
+	results := make([]mapstr.MapStr, 0)
 	tName := common.GetInstTableName(objType)
-	if err := lgc.Instance.GetMutilByCondition(tName, fields, condition, result, sort, skip, limit); err != nil {
+
+	dbInst := lgc.Instance.Table(tName).Find(condition).Sort(sort).Start(uint64(skip)).Limit(uint64(limit))
+	if 0 < len(fields) {
+		dbInst.Fields(fields...)
+	}
+	if err := dbInst.All(ctx, &results); err != nil {
 		blog.Errorf("failed to query the inst , error info %s", err.Error())
-		return err
+		return nil, err
 	}
 
 	// translate language for default name
 	if m, ok := defaultNameLanguagePkg[objType]; nil != defLang && ok {
-		switch result.(type) {
-		case *[]map[string]interface{}:
-			results := *result.(*[]map[string]interface{})
-			for index := range results {
-				l := m[fmt.Sprint(results[index]["default"])]
-				if len(l) >= 3 {
-					results[index][l[1]] = util.FirstNotEmptyString(defLang.Language(l[0]), fmt.Sprint(results[index][l[1]]), fmt.Sprint(results[index][l[2]]))
-				}
+		for index, info := range results {
+			l := m[fmt.Sprint(info["default"])]
+			if len(l) >= 3 {
+				results[index][l[1]] = util.FirstNotEmptyString(defLang.Language(l[0]), fmt.Sprint(info[l[1]]), fmt.Sprint(info[l[2]]))
 			}
-		default:
-			blog.Infof("get object by condition translate error: %v", reflect.TypeOf(result))
 		}
 	}
 
-	return nil
+	return results, nil
 }
