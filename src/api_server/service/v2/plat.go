@@ -40,7 +40,7 @@ func (s *Service) updateHost(req *restful.Request, resp *restful.Response) {
 
 	formData := req.Request.Form
 
-	blog.Infof("updateHost data:%v", formData)
+	blog.V(5).Infof("updateHost data:%v", formData)
 
 	res, msg := utils.ValidateFormData(formData, []string{"appId", "orgPlatId", "ip", "dstPlatId"})
 	if !res {
@@ -117,7 +117,7 @@ func (s *Service) deletePlats(req *restful.Request, resp *restful.Response) {
 
 	formData := req.Request.Form
 
-	blog.Infof("deletePlats data:%v", formData)
+	blog.V(5).Infof("deletePlats data:%v", formData)
 
 	res, msg := utils.ValidateFormData(formData, []string{"platId"})
 	if !res {
@@ -153,7 +153,7 @@ func (s *Service) createPlats(req *restful.Request, resp *restful.Response) {
 
 	formData := req.Request.Form
 
-	blog.Infof("createPlats data:%v", formData)
+	blog.V(5).Infof("createPlats data:%v", formData)
 
 	res, msg := utils.ValidateFormData(formData, []string{"platName"})
 	if !res {

@@ -36,7 +36,6 @@ func (lgc *Logics) LockHost(ctx context.Context, header http.Header, input *meta
 	hostInfos := make([]mapstr.MapStr, 0)
 	err := lgc.Instance.Table(common.BKTableNameBaseHost).
 		Find(util.SetQueryOwner(condition, util.GetOwnerID(header))).Fields(fields...).Limit(uint64(len(input.IPS))).All(ctx, &hostInfos)
-	blog.InfoJSON("\n %s %s", util.SetQueryOwner(condition, util.GetOwnerID(header)), util.GetOwnerID(header))
 	if nil != err {
 		blog.Errorf("lcok host, query host from db error, error:%s ,logID:%s", err.Error(), util.GetHTTPCCRequestID(header))
 		return defErr.Errorf(common.CCErrCommDBSelectFailed)
