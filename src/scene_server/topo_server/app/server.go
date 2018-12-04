@@ -50,7 +50,7 @@ func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 	if err := cfg.MarshalJSONInto(&t.Config); nil != err {
 		blog.Errorf("failed to update config, error info is %s", err.Error())
 	}
-	blog.V(3).Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
+	blog.V(5).Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
 	t.Service.SetConfig(t.Config, t.Core)
 }
 
@@ -61,7 +61,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
-	blog.V(3).Infof("srv conf:", svrInfo)
+	blog.V(5).Infof("srv conf:", svrInfo)
 
 	c := &util.APIMachineryConfig{
 		ZkAddr:    op.ServConf.RegDiscover,
