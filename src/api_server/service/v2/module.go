@@ -41,10 +41,11 @@ func (s *Service) getModulesByApp(req *restful.Request, resp *restful.Response) 
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	rid := util.GetHTTPCCRequestID(pheader)
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Errorf("getModulesByApp error:%v", err)
+		blog.Errorf("getModulesByApp error:%v,rid:%s", err, rid)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
@@ -52,7 +53,7 @@ func (s *Service) getModulesByApp(req *restful.Request, resp *restful.Response) 
 	formData := req.Request.Form
 
 	if len(formData["ApplicationID"]) == 0 || formData["ApplicationID"][0] == "" {
-		blog.Errorf("getModulesByApp  error: ApplicationID is empty!")
+		blog.Errorf("getModulesByApp  error: ApplicationID is empty!, input:%+v,rid:%s", formData, rid)
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "ApplicationID").Error(), resp)
 		return
 	}
@@ -69,15 +70,19 @@ func (s *Service) getModulesByApp(req *restful.Request, resp *restful.Response) 
 	}
 
 	result, err := s.CoreAPI.TopoServer().OpenAPI().SearchModuleByApp(context.Background(), appID, pheader, params)
-
 	if err != nil {
-		blog.Errorf("getModulesByApp   error:%v", err)
+		blog.Errorf("getModulesByApp   error:%v, input:%+v,rid", err, formData, rid)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
-	resDataV2, err := converter.ResToV2ForModuleMapList(result.Result, result.ErrMsg, result.Data)
+	if !result.Result {
+		blog.Errorf("getModulesByApp  http response errror.  err code:%s, err msg:%s, input:%+v,rid", result.Code, result.ErrMsg, formData, rid)
+		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
+		return
+	}
+	resDataV2, err := converter.ResToV2ForModuleMapList(result.Data)
 	if err != nil {
-		blog.Error("convert module res to v2 error:%v", err)
+		blog.Errorf("convert module res to v2 error:%v, input:%+v,rid:%s", err, formData, rid)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}

@@ -79,17 +79,23 @@ func (s *Service) getPlats(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	rid := util.GetHTTPCCRequestID(pheader)
 
 	result, err := s.CoreAPI.HostServer().GetPlat(context.Background(), pheader)
 	if err != nil {
-		blog.Errorf("getPlats error:%v", err)
+		blog.Errorf("getPlats error:%v, rid:%s", err, rid)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
+	if !result.Result {
+		blog.Errorf("getPlats http response error, err code:%d, err msg:%s,rid:%s", result.Code, result.ErrMsg, rid)
+		converter.RespFailV2(result.Code, result.ErrMsg, resp)
+		return
+	}
 
-	resDataV2, err := converter.ResToV2ForPlatList(result.Result, result.ErrMsg, result.Data)
+	resDataV2, err := converter.ResToV2ForPlatList(result.Data)
 	if err != nil {
-		blog.Error("convert plat res to v2 error:%v", err)
+		blog.Errorf("convert plat res to v2 error:%v, rid:%s", err, rid)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}
@@ -115,7 +121,7 @@ func (s *Service) deletePlats(req *restful.Request, resp *restful.Response) {
 
 	res, msg := utils.ValidateFormData(formData, []string{"platId"})
 	if !res {
-		blog.Error("ValidateFormData error:%s", msg)
+		blog.Errorf("ValidateFormData error:%s", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
@@ -151,7 +157,7 @@ func (s *Service) createPlats(req *restful.Request, resp *restful.Response) {
 
 	res, msg := utils.ValidateFormData(formData, []string{"platName"})
 	if !res {
-		blog.Error("ValidateFormData error:%s", msg)
+		blog.Errorf("ValidateFormData error:%s", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
