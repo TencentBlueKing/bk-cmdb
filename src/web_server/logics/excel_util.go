@@ -87,12 +87,14 @@ func setExcelRowDataByIndex(rowMap mapstr.MapStr, sheet *xlsx.Sheet, rowIndex in
 		if false == ok {
 			continue
 		}
-		if property.NotExport && property.IsOnly {
-			primaryKeyArr = append(primaryKeyArr, PropertyPrimaryVal{
-				ID:     property.ID,
-				Name:   property.Name,
-				StrVal: getPrimaryKey(val),
-			})
+		if property.NotExport {
+			if property.IsOnly {
+				primaryKeyArr = append(primaryKeyArr, PropertyPrimaryVal{
+					ID:     property.ID,
+					Name:   property.Name,
+					StrVal: getPrimaryKey(val),
+				})
+			}
 			continue
 		}
 
@@ -264,7 +266,7 @@ func productExcelHealer(fields map[string]Property, filter []string, sheet *xlsx
 		index := field.ExcelColIndex
 		sheet.Col(index).Width = 18
 		fieldTypeName, skip := getPropertyTypeAliasName(field.PropertyType, defLang)
-		if true == skip {
+		if true == skip || field.NotExport {
 			//不需要用户输入的类型continue
 			continue
 		}
