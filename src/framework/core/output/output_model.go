@@ -48,7 +48,6 @@ func (cli *manager) GetModel(supplierAccount, classificationID, objID string) (m
 	if nil != err {
 		return nil, err
 	}
-	//fmt.Println("model:", targetModel)
 	return targetModel, err
 }
 

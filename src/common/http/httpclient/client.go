@@ -73,7 +73,7 @@ func (client *HttpClient) SetTlsVerity(caFile, certFile, keyFile, passwd string)
 	client.keyFile = keyFile
 
 	// load cert
-	tlsConf, err := ssl.ClientTslConfVerity(caFile, certFile, keyFile, passwd)
+	tlsConf, err := ssl.ClientTLSConfVerity(caFile, certFile, keyFile, passwd)
 	if err != nil {
 		return err
 	}

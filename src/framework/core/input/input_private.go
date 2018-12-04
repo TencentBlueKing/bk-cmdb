@@ -13,10 +13,10 @@
 package input
 
 import (
-    "context"
-    "time"
-    
-    "configcenter/src/framework/core/log"
+	"context"
+	"time"
+
+	"configcenter/src/framework/core/log"
 )
 
 func (cli *manager) subExecuteInputer(inputer *wrapInputer) error {
@@ -39,7 +39,7 @@ func (cli *manager) executeInputer(ctx context.Context, inputer *wrapInputer) {
 	// non timing inputer
 	if !inputer.isTiming {
 		if err := cli.subExecuteInputer(inputer); nil != err {
-			log.Fatalf("the inputer(%s) return some error and exit , %s", inputer.Name(), err.Error())
+			log.Errorf("the inputer(%s) return some error and exit , %s", inputer.Name(), err.Error())
 			inputer.SetStatus(ExceptionExitStatus)
 			return
 		}
@@ -63,7 +63,7 @@ func (cli *manager) executeInputer(ctx context.Context, inputer *wrapInputer) {
 			tick.Stop()
 			log.Infof("timing frequency(%s)", inputer.Name())
 			if err := cli.subExecuteInputer(inputer); nil != err {
-				log.Fatalf("the inputer(%s) return some error and exit , %s", inputer.Name(), err.Error())
+				log.Errorf("the inputer(%s) return some error and exit , %s", inputer.Name(), err.Error())
 				inputer.SetStatus(ExceptionExitStatus)
 				return
 			}
