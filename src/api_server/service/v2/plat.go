@@ -95,7 +95,7 @@ func (s *Service) getPlats(req *restful.Request, resp *restful.Response) {
 
 	resDataV2, err := converter.ResToV2ForPlatList(result.Data)
 	if err != nil {
-		blog.Error("convert plat res to v2 error:%v, rid:%s", err, rid)
+		blog.Errorf("convert plat res to v2 error:%v, rid:%s", err, rid)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}
@@ -121,7 +121,7 @@ func (s *Service) deletePlats(req *restful.Request, resp *restful.Response) {
 
 	res, msg := utils.ValidateFormData(formData, []string{"platId"})
 	if !res {
-		blog.Error("ValidateFormData error:%s", msg)
+		blog.Errorf("ValidateFormData error:%s", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
@@ -157,7 +157,7 @@ func (s *Service) createPlats(req *restful.Request, resp *restful.Response) {
 
 	res, msg := utils.ValidateFormData(formData, []string{"platName"})
 	if !res {
-		blog.Error("ValidateFormData error:%s", msg)
+		blog.Errorf("ValidateFormData error:%s", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
