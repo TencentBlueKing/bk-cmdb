@@ -14,9 +14,11 @@ package association
 import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
+	"configcenter/src/storage/dal"
 )
 
 type associationModel struct {
+	dbProxy dal.RDB
 }
 
 func (m *associationModel) CreateModelAssociation(ctx core.ContextParams, inputParam metadata.CreateModelAssociation) (*metadata.CreateOneDataResult, error) {

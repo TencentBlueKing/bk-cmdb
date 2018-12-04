@@ -13,21 +13,21 @@
 package instances
 
 import (
-	"configcenter/src/apimachinery"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
+	"configcenter/src/storage/dal"
 )
 
 var _ core.InstanceOperation = (*instanceManager)(nil)
 
 type instanceManager struct {
-	clientSet apimachinery.ClientSetInterface
+	dbProxy dal.RDB
 }
 
 // New create a new instance manager instance
-func New(client apimachinery.ClientSetInterface) core.InstanceOperation {
+func New(dbProxy dal.RDB) core.InstanceOperation {
 	return &instanceManager{
-		clientSet: client,
+		dbProxy: dbProxy,
 	}
 }
 
