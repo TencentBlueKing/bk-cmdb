@@ -20,8 +20,8 @@ import (
 type ModelClassification interface {
 	CreateOneModelClassification(ctx ContextParams, inputParam metadata.CreateOneModelClassification) (*metadata.CreateOneDataResult, error)
 	CreateManyModelClassification(ctx ContextParams, inputParam metadata.CreateManyModelClassifiaction) (*metadata.CreateManyDataResult, error)
-	SetManyModelClassification(ctx ContextParams, inputParam metadata.SetManyModelClassification) (*metadata.SetManyResult, error)
-	SetOneModelClassification(ctx ContextParams, inputParam metadata.SetOneModelClassification) (*metadata.SetOneResult, error)
+	SetManyModelClassification(ctx ContextParams, inputParam metadata.SetManyModelClassification) (*metadata.SetDataResult, error)
+	SetOneModelClassification(ctx ContextParams, inputParam metadata.SetOneModelClassification) (*metadata.SetDataResult, error)
 	UpdateModelClassification(ctx ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdateDataResult, error)
 	DeleteModelClassificaiton(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeleteDataResult, error)
 	CascadeDeleteModeClassification(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeleteDataResult, error)
@@ -31,7 +31,7 @@ type ModelClassification interface {
 // ModelAttribute model attribute methods definitions
 type ModelAttribute interface {
 	CreateModelAttributes(ctx ContextParams, objID string, inputParam metadata.CreateModelAttributes) (*metadata.CreateManyDataResult, error)
-	SetModelAttributes(ctx ContextParams, objID string, inputParam metadata.SetModelAttributes) (*metadata.SetManyDataResult, error)
+	SetModelAttributes(ctx ContextParams, objID string, inputParam metadata.SetModelAttributes) (*metadata.SetDataResult, error)
 	UpdateModelAttributes(ctx ContextParams, objID string, inputParam metadata.UpdateOption) (*metadata.UpdateDataResult, error)
 	DeleteModelAttributes(ctx ContextParams, objID string, inputParam metadata.DeleteOption) (*metadata.DeleteDataResult, error)
 	SearchModelAttributes(ctx ContextParams, objID string, inputParam metadata.QueryCondition) (*metadata.QueryResult, error)
@@ -43,7 +43,7 @@ type ModelOperation interface {
 	ModelAttribute
 
 	CreateModel(ctx ContextParams, inputParam metadata.CreateModel) (*metadata.CreateOneDataResult, error)
-	SetModel(ctx ContextParams, inputParam metadata.SetModel) (*metadata.SetOneDataResult, error)
+	SetModel(ctx ContextParams, inputParam metadata.SetModel) (*metadata.SetDataResult, error)
 	UpdateModel(ctx ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdateDataResult, error)
 	DeleteModel(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeleteDataResult, error)
 	CascadeDeleteModel(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeleteDataResult, error)
@@ -54,8 +54,8 @@ type ModelOperation interface {
 type InstanceOperation interface {
 	CreateModelInstance(ctx ContextParams, objID string, inputParam metadata.CreateModelInstance) (*metadata.CreateOneDataResult, error)
 	CreateManyModelInstance(ctx ContextParams, objID string, inputParam metadata.CreateManyModelInstance) (*metadata.CreateManyDataResult, error)
-	SetModelInstance(ctx ContextParams, objID string, inputParam metadata.SetModelInstance) (*metadata.SetOneDataResult, error)
-	SetManyModelInstance(ctx ContextParams, objID string, inputParam metadata.SetManyModelInstance) (*metadata.SetManyDataResult, error)
+	SetModelInstance(ctx ContextParams, objID string, inputParam metadata.SetModelInstance) (*metadata.SetDataResult, error)
+	SetManyModelInstance(ctx ContextParams, objID string, inputParam metadata.SetManyModelInstance) (*metadata.SetDataResult, error)
 	UpdateModelInstance(ctx ContextParams, objID string, inputParam metadata.UpdateOption) (*metadata.UpdateDataResult, error)
 	SearchModelInstance(ctx ContextParams, objID string, inputParam metadata.QueryCondition) (*metadata.QueryResult, error)
 	DeleteModelInstance(ctx ContextParams, objID string, inputParam metadata.DeleteOption) (*metadata.DeleteDataResult, error)
@@ -66,8 +66,8 @@ type InstanceOperation interface {
 type AssociationKind interface {
 	CreateAssociationKind(ctx ContextParams, inputParam metadata.CreateAssociationKind) (*metadata.CreateOneDataResult, error)
 	CreateManyAssociationKind(ctx ContextParams, inputParam metadata.CreateManyAssociationKind) (*metadata.CreateManyAssociationKind, error)
-	SetAssociationKind(ctx ContextParams, inputParam metadata.SetAssociationKind) (*metadata.SetOneDataResult, error)
-	SetManyAssociationKind(ctx ContextParams, inputParam metadata.SetManyAssociationKind) (*metadata.SetManyDataResult, error)
+	SetAssociationKind(ctx ContextParams, inputParam metadata.SetAssociationKind) (*metadata.SetDataResult, error)
+	SetManyAssociationKind(ctx ContextParams, inputParam metadata.SetManyAssociationKind) (*metadata.SetDataResult, error)
 	UpdateAssociationKind(ctx ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdateDataResult, error)
 	DeleteAssociationKind(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeleteDataResult, error)
 	CascadeDeleteAssociationKind(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeleteOption, error)
@@ -77,7 +77,7 @@ type AssociationKind interface {
 // ModelAssociation manager model association
 type ModelAssociation interface {
 	CreateModelAssociation(ctx ContextParams, inputParam metadata.CreateModelAssociation) (*metadata.CreateOneDataResult, error)
-	SetModelAssociation(ctx ContextParams, inputParam metadata.SetModelAssociation) (*metadata.SetOneDataResult, error)
+	SetModelAssociation(ctx ContextParams, inputParam metadata.SetModelAssociation) (*metadata.SetDataResult, error)
 	UpdateModelAssociation(ctx ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdateDataResult, error)
 	SearchModelAssociation(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error)
 	DeleteModelAssociation(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeleteDataResult, error)
@@ -87,9 +87,9 @@ type ModelAssociation interface {
 // InstanceAssociation manager instance association
 type InstanceAssociation interface {
 	CreateOneInstanceAssociation(ctx ContextParams, inputParam metadata.CreateOneInstanceAssociation) (*metadata.CreateOneDataResult, error)
-	SetOneInstanceAssociation(ctx ContextParams, inputParam metadata.SetOneInstanceAssociation) (*metadata.SetOneDataResult, error)
+	SetOneInstanceAssociation(ctx ContextParams, inputParam metadata.SetOneInstanceAssociation) (*metadata.SetDataResult, error)
 	CreateManyInstanceAssociation(ctx ContextParams, inputParam metadata.CreateManyInstanceAssociation) (*metadata.CreateManyDataResult, error)
-	SetManyInstanceAssociation(ctx ContextParams, inputParam metadata.SetManyInstanceAssociation) (*metadata.SetManyDataResult, error)
+	SetManyInstanceAssociation(ctx ContextParams, inputParam metadata.SetManyInstanceAssociation) (*metadata.SetDataResult, error)
 	UpdateInstanceAssociation(ctx ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdateDataResult, error)
 	SearchInstanceAssociation(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error)
 	DeleteInstanceAssociation(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeleteDataResult, error)
