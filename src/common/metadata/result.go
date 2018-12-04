@@ -87,7 +87,7 @@ type CreateManyDataResult struct {
 
 // CreateOneDataResult the data struct definition in create one function result
 type CreateOneDataResult struct {
-	CreatedDataResult `json:",inline"`
+	Created CreatedDataResult `json:"created"`
 }
 
 // SearchDataResult common search data result

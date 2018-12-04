@@ -31,14 +31,6 @@ func (sql *table) Create() universalsql.CreateStatement {
 	return &createStatement{}
 }
 
-func (sql *table) Select() universalsql.SelectStatement {
-	return nil
-}
-
-func (sql *table) Update() universalsql.UpdateStatement {
-	return nil
-}
-
-func (sql *table) Delete() universalsql.DeleteStatement {
-	return nil
+func (sql *table) Where() universalsql.WhereStatement {
+	return &statement{}
 }

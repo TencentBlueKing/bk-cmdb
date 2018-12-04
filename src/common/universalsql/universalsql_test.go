@@ -15,11 +15,24 @@ import (
 	"configcenter/src/common/universalsql"
 	"configcenter/src/common/universalsql/mongo"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
-func TestUniservalsqlCondition(t *testing.T) {
+func TestUniservalsqlStatements(t *testing.T) {
 
 	mtable := mongo.New()
-	result := mtable.Create().Fields(universalsql.Field{Key: "test", Val: "helloworld"}).ToMapStr()
-	t.Logf("create result:%v", result)
+
+	resultSql, err := mtable.Create().Fields(universalsql.Field{Key: "test", Val: "helloworld"}).ToSQL()
+	require.NoError(t, err)
+	t.Logf("create statement sql:%v", resultSql)
+
+	mcond := mongo.NewCondition()
+	_, embed := mcond.Element(&mongo.Eq{Key: "test", Val: "testval"}).And(&mongo.Lt{Key: "testand", Val: "testandval"}).Embed("testembedname")
+	embed.Or(&mongo.Gt{Key: "testgt", Val: "testgtval"})
+	embed.Element(&mongo.Lt{Key: "testeq", Val: "testeqval"})
+	resultSql, err = mtable.Where().Conditions(mcond).ToSQL()
+	require.NoError(t, err)
+	t.Logf("delete statement sql:%v", resultSql)
+
 }
