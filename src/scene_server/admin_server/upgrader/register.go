@@ -13,28 +13,28 @@
 package upgrader
 
 import (
+	"context"
 	"sort"
 	"sync"
-
-	"gopkg.in/mgo.v2"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	ccversion "configcenter/src/common/version"
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
 )
 
 // Config config for upgrader
 type Config struct {
-	OwnerID    string
-	SupplierID int
-	User       string
+	OwnerID      string
+	SupplierID   int
+	User         string
+	CCApiSrvAddr string // cmdb nginx address
 }
 
 // Upgrader define a version upgrader
 type Upgrader struct {
 	version string // v3.0.8-beta.11
-	do      func(storage.DI, *Config) error
+	do      func(context.Context, dal.RDB, *Config) error
 }
 
 var upgraderPool = []Upgrader{}
@@ -42,7 +42,7 @@ var upgraderPool = []Upgrader{}
 var registlock sync.Mutex
 
 // RegistUpgrader register upgrader
-func RegistUpgrader(version string, handlerFunc func(storage.DI, *Config) error) {
+func RegistUpgrader(version string, handlerFunc func(context.Context, dal.RDB, *Config) error) {
 	registlock.Lock()
 	defer registlock.Unlock()
 	v := Upgrader{version: version, do: handlerFunc}
@@ -53,33 +53,34 @@ func RegistUpgrader(version string, handlerFunc func(storage.DI, *Config) error)
 // Upgrade uprade the db datas to newest verison
 // we use date instead of version later since 2018.09.04, because the version wasn't manage by the developer
 // ps: when use date instead of version, the date should add x prefix cause x > v
-func Upgrade(db storage.DI, conf *Config) (err error) {
+func Upgrade(ctx context.Context, db dal.RDB, conf *Config) (err error) {
+
 	sort.Slice(upgraderPool, func(i, j int) bool {
 		return upgraderPool[i].version < upgraderPool[j].version
 	})
 
-	cmdbVision, err := getVersion(db)
+	cmdbVision, err := getVersion(ctx, db)
 	if err != nil {
 		return err
 	}
 	cmdbVision.Distro = ccversion.CCDistro
 	cmdbVision.DistroVersion = ccversion.CCDistroVersion
 
-	currentVision := cmdbVision.CurrentVersion
+	currentVision := remapVserion(cmdbVision.CurrentVersion)
 	lastVersion := ""
 	for _, v := range upgraderPool {
-		lastVersion = v.version
+		lastVersion = remapVserion(v.version)
 		if v.version <= currentVision {
 			blog.Infof(`currentVision is "%s" skip upgrade "%s"`, currentVision, v.version)
 			continue
 		}
-		err = v.do(db, conf)
+		err = v.do(ctx, db, conf)
 		if err != nil {
 			blog.Errorf("upgrade version %s error: %s", v.version, err.Error())
 			return err
 		}
 		cmdbVision.CurrentVersion = v.version
-		err = saveVesion(db, cmdbVision)
+		err = saveVesion(ctx, db, cmdbVision)
 		if err != nil {
 			blog.Errorf("save version %s error: %s", v.version, err.Error())
 			return err
@@ -89,21 +90,33 @@ func Upgrade(db storage.DI, conf *Config) (err error) {
 	if "" == cmdbVision.InitVersion {
 		cmdbVision.InitVersion = lastVersion
 		cmdbVision.InitDistroVersion = ccversion.CCDistroVersion
-		saveVesion(db, cmdbVision)
+		saveVesion(ctx, db, cmdbVision)
 	}
 	return nil
 }
 
-func getVersion(db storage.DI) (*Version, error) {
+func remapVserion(v string) string {
+	if correct, ok := wrongVersion[v]; ok {
+		return correct
+	}
+	return v
+}
+
+var wrongVersion = map[string]string{
+	"x18_10_10_01": "x18.10.10.01",
+}
+
+func getVersion(ctx context.Context, db dal.RDB) (*Version, error) {
 	data := new(Version)
 	condition := map[string]interface{}{
 		"type": SystemTypeVersion,
 	}
-	err := db.GetOneByCondition(common.BKTableNameSystem, nil, condition, &data)
-	if err == mgo.ErrNotFound {
+	err := db.Table(common.BKTableNameSystem).Find(condition).One(ctx, &data)
+	if db.IsNotFoundError(err) {
 		data = new(Version)
 		data.Type = SystemTypeVersion
-		_, err = db.Insert(common.BKTableNameSystem, data)
+
+		err = db.Table(common.BKTableNameSystem).Insert(ctx, data)
 		if err != nil {
 			return nil, err
 		}
@@ -117,11 +130,11 @@ func getVersion(db storage.DI) (*Version, error) {
 	return data, nil
 }
 
-func saveVesion(db storage.DI, version *Version) error {
+func saveVesion(ctx context.Context, db dal.RDB, version *Version) error {
 	condition := map[string]interface{}{
 		"type": SystemTypeVersion,
 	}
-	return db.UpdateByCondition(common.BKTableNameSystem, version, condition)
+	return db.Table(common.BKTableNameSystem).Update(ctx, condition, version)
 }
 
 type System struct {

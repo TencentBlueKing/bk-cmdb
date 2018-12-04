@@ -61,7 +61,7 @@ const (
 	BKDefaultSupplierID = 0
 
 	// BKSuperOwnerID the super owner value
-	BKSuperOwnerID = "supperowner"
+	BKSuperOwnerID = "superadmin"
 
 	// BKDefaultDirSubArea the default dir subarea
 	BKDefaultDirSubArea = 0
@@ -89,11 +89,17 @@ const (
 	// BKInnerObjIDHost the inner object
 	BKInnerObjIDHost = "host"
 
-	// BKINnerObjIDObject the inner object
-	BKINnerObjIDObject = "object"
+	// BKInnerObjIDObject the inner object
+	BKInnerObjIDObject = "object"
 
 	// BKInnerObjIDProc the inner object
 	BKInnerObjIDProc = "process"
+
+	// BKInnerObjIDConfigTemp the inner object
+	BKInnerObjIDConfigTemp = "config_template"
+
+	// BKInnerObjIDTempVerion the inner object
+	BKInnerObjIDTempVersion = "template_version"
 
 	// BKInnerObjIDPlat the inner object
 	BKInnerObjIDPlat = "plat"
@@ -128,6 +134,9 @@ const (
 	// BKDBOR the db operator
 	BKDBOR = "$or"
 
+	// BKDBOR the db operator
+	BKDBAND = "$and"
+
 	// BKDBLIKE the db operator
 	BKDBLIKE = "$regex"
 
@@ -151,6 +160,13 @@ const (
 
 	// BKDBGTE the db opeartor
 	BKDBGTE = "$gte"
+
+	// BKDBExists the db opeartor
+	BKDBExists = "$exists"
+
+	// BKDBNot the db opeartor
+	BKDBNot = "$not"
+
 	// BKDBSortFieldSep the db sort field split char
 	BKDBSortFieldSep = ","
 )
@@ -163,7 +179,7 @@ const (
 )
 
 const (
-	// BKFIeldID the id definition
+	// BKFieldID the id definition
 	BKFieldID = "id"
 
 	// BKDefaultField the default field
@@ -178,8 +194,11 @@ const (
 	// BKAppIDField the appid field
 	BKAppIDField = "bk_biz_id"
 
-	// BKIPAddr the ip address
+	// BKIPArr the ip address
 	BKIPArr = "ipArr"
+
+	// BKAssetIDField  the asset id field
+	BKAssetIDField = "bk_asset_id"
 
 	// BKHostInnerIPField the host innerip field
 	BKHostInnerIPField = "bk_host_innerip"
@@ -248,6 +267,18 @@ const (
 
 	// BKProcNameField the proc name field
 	BKProcNameField = "bk_process_name"
+
+	// BKTemlateIDField the process template id field
+	BKTemlateIDField = "template_id"
+
+	// BKVesionIDField the version id field
+	BKVersionIDField = "version_id"
+
+	// BKTemplateNameField the template name field
+	BKTemplateNameField = "template_name"
+
+	// BKFileNameField the file name field
+	BKFileNameField = "file_name"
 
 	// BKPropertyIDField the propety id field
 	BKPropertyIDField = "bk_property_id"
@@ -362,9 +393,6 @@ const (
 	// BKIsPre the ispre field
 	BKIsPre = "ispre"
 
-	// bkIsOnly the isonly field, is primary key
-	BKIsOnly = "isonly"
-
 	// BKIsIncrementField the isincrement field
 	BKIsIncrementField = "is_increment"
 
@@ -431,16 +459,19 @@ const (
 	// BKIsOnlyField the isonly name field
 	BKIsOnlyField = "isonly"
 	// BKGseTaskIdField the gse taskid
-	BKGseTaskIdField = "task_id"
-	// BKProcPidFile the process pid file
-	BKProcPidFile    = "pid_file"
-	BKProcStartCmd   = "start_cmd"
-	BKProcStopCmd    = "stop_cmd"
-	BKProcReloadCmd  = "reload_cmd"
-	BKProcRestartCmd = "restart_cmd"
-	BKProcTimeOut    = "timeout"
-	BKProcWorkPath   = "work_path"
-	BKProcInstNum    = "proc_num"
+	BKGseTaskIDField = "task_id"
+	// BKTaskIdField the gse taskid
+	BKTaskIDField = "task_id"
+	// BKGseOpTaskIDField the gse taskid
+	BKGseOpTaskIDField = "gse_task_id"
+	BKProcPidFile      = "pid_file"
+	BKProcStartCmd     = "start_cmd"
+	BKProcStopCmd      = "stop_cmd"
+	BKProcReloadCmd    = "reload_cmd"
+	BKProcRestartCmd   = "restart_cmd"
+	BKProcTimeOut      = "timeout"
+	BKProcWorkPath     = "work_path"
+	BKProcInstNum      = "proc_num"
 
 	// BKInstKeyField the inst key field for metric discover
 	BKInstKeyField = "bk_inst_key"
@@ -456,6 +487,15 @@ const (
 	BKOIDField                  = "oid"
 	BKPeriodField               = "period"
 	BKActionField               = "action"
+	BKProcinstanceID            = "proc_instance_id"
+
+	// BKGseOpProcTaskDetailField gse operate process return detail
+	BKGseOpProcTaskDetailField = "detail"
+)
+
+const (
+	BKRequestField = "bk_request_id"
+	BKTxnIDField   = "bk_txn_id"
 )
 
 // DefaultResSetName the inner module set
@@ -553,6 +593,9 @@ const (
 	// FieldTypeMultiAsst the multi association
 	FieldTypeMultiAsst string = "multiasst"
 
+	// FieldTypeForeignKey the multi association
+	FieldTypeForeignKey string = "foreignkey"
+
 	// FieldTypeTimeZone the timezone field type
 	FieldTypeTimeZone string = "timezone"
 
@@ -579,6 +622,9 @@ const (
 	// HostAddMethodExcelIndexOffset the height of the table header
 	HostAddMethodExcelIndexOffset = 3
 
+	// HostAddMethodExcelAssociationIndexOffset
+	HostAddMethodExcelAssociationIndexOffset = 1
+
 	/*EXCEL color AARRGGBB :
 	AA means Alpha
 	RRGGBB means Red, in hex.
@@ -600,7 +646,9 @@ const (
 	ExcelCellDefaultBorderColor = "FFD4D4D4"
 
 	// ExcelAsstPrimaryKeySplitChar split char
-	ExcelAsstPrimaryKeySplitChar = "##"
+	ExcelAsstPrimaryKeySplitChar = ","
+	// ExcelAsstPrimaryKeyJoinChar split char
+	ExcelAsstPrimaryKeyJoinChar = "="
 	// ExcelAsstPrimaryKeyRowChar split char
 	ExcelAsstPrimaryKeyRowChar = "\n"
 
@@ -658,9 +706,15 @@ const (
 
 // event cache keys
 const (
-	EventCacheEventIDKey    = BKCacheKeyV3Prefix + "event:inst_id"
-	EventCacheEventQueueKey = BKCacheKeyV3Prefix + "event:inst_queue"
-	RedisSnapKeyPrefix      = BKCacheKeyV3Prefix + "snapshot:"
+	EventCacheEventIDKey          = BKCacheKeyV3Prefix + "event:inst_id"
+	EventCacheEventQueueKey       = BKCacheKeyV3Prefix + "event:inst_queue"
+	EventCacheEventTxnQueuePrefix = BKCacheKeyV3Prefix + "event:inst_txn_queue:"
+	EventCacheEventTxnSet         = BKCacheKeyV3Prefix + "event:txn_set"
+	RedisSnapKeyPrefix            = BKCacheKeyV3Prefix + "snapshot:"
+)
+
+const (
+	BKSTRIDPrefix = "cc"
 )
 
 const (
@@ -676,13 +730,23 @@ const (
 	BKHTTPHeaderUser = "BK_User"
 	// BKHTTPLanguage the language key word
 	BKHTTPLanguage = "HTTP_BLUEKING_LANGUAGE"
+	// BKHTTPOwnerID the owner
+	BKHTTPOwner = "HTTP_BK_SUPPLIER_ACCOUNT"
 	// BKHTTPOwnerID the owner id
 	BKHTTPOwnerID = "HTTP_BLUEKING_SUPPLIER_ID"
 	//BKHTTPOwnerID = "HTTP_BLUEKING_OWNERID"
 	BKHTTPCookieLanugageKey = "blueking_language"
 	BKSessionLanugageKey    = "language"
+	BKHTTPSupplierID        = "bk_supplier_id"
 
-	BKHTTPCCRequestID = "rid"
+	BKHTTPCCRequestID     = "cc_request_id"
+	BKHTTPCCTransactionID = "cc_txn_id"
+)
+
+type CCContextKey string
+
+const (
+	CCContextKeyJoinOption = CCContextKey("cc_context_joinoption")
 )
 
 const (
@@ -771,6 +835,7 @@ const (
 	WEBSessionAvatarUrlKey     = "avatar_url"
 	WEBSessionMultiSupplierKey = "multisupplier"
 	WEBSessionLanguageKey      = "language"
+	WEBSessionSupplierID       = "supplier_id"
 
 	LoginSystemMultiSupplierTrue  = "1"
 	LoginSystemMultiSupplierFalse = "0"
@@ -783,4 +848,53 @@ const (
 const (
 	HostFieldDockerClientVersion = "docker_client_version"
 	HostFieldDockerServerVersion = "docker_server_version"
+)
+
+const TemplateStatusField = "status"
+const BKStatusField = "status"
+
+const (
+	TemplateStatusDraft   = "draft"
+	TemplateStatusOnline  = "online"
+	TemplateStatusHistory = "history"
+)
+
+const (
+	BKProcInstanceOpUser = "proc instance user"
+)
+
+const (
+	GSEProcOPStop           = 1
+	GSEProcOPQueryStatus    = 2
+	GSEProcOPRegister       = 3
+	GSEProcOPUnregister     = 4
+	GSEProcOPRegisterStart  = 5
+	GSEProcOPUnregisterStop = 6
+	GSEProcOPRestart        = 7
+	GSEProcOPReload         = 8
+	GSEProcOPKill           = 9
+)
+const (
+	RedisProcSrvHostInstanceRefreshModuleKey  = BKCacheKeyV3Prefix + "prochostinstancerefresh:set"
+	RedisProcSrvHostInstanceAllRefreshLockKey = BKCacheKeyV3Prefix + "lock:prochostinstancerefresh"
+	RedisProcSrvQueryProcOPResultKey          = BKCacheKeyV3Prefix + "procsrv:query:opresult:set"
+)
+
+// association fields
+const (
+	// the id of the association kind
+	AssociationKindIDField    = "bk_asst_id"
+	AssociationKindNameField  = "bk_asst_name"
+	AssociationObjAsstIDField = "bk_obj_asst_id"
+	AssociatedObjectIDField   = "bk_asst_obj_id"
+)
+
+// association
+const (
+	AssociationKindMainline = "bk_mainline"
+	AssociationTypeBelong   = "belong"
+	AssociationTypeGroup    = "group"
+	AssociationTypeRun      = "run"
+	AssociationTypeConnect  = "connect"
+	AssociationTypeDefault  = "default"
 )

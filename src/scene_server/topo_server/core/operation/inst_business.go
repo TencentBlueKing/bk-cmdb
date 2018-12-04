@@ -62,9 +62,72 @@ func (b *business) SetProxy(set SetOperationInterface, module ModuleOperationInt
 }
 func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, data mapstr.MapStr) (inst.Inst, error) {
 
-	data.Set(common.BKOwnerIDField, params.SupplierAccount)
-	data.Set(common.BKSupplierIDField, common.BKDefaultSupplierID)
+	defaulFieldVal, err := data.Int64(common.BKDefaultField)
+	if nil != err {
+		blog.Errorf("[operation-biz] failed to create business, error info is did not set the default field, %s", err.Error())
+		return nil, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
+	}
+	if defaulFieldVal == int64(common.DefaultAppFlag) && params.SupplierAccount != common.BKDefaultOwnerID {
+		// this is a new supplier owner and prepare to create a new business.
+		asstQuery := map[string]interface{}{
+			common.BKOwnerIDField: common.BKDefaultOwnerID,
+		}
+		defaultOwnerHeader := util.CopyHeader(params.Header)
+		defaultOwnerHeader.Set(common.BKHTTPOwnerID, common.BKDefaultOwnerID)
 
+		asstRsp, err := b.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), defaultOwnerHeader, asstQuery)
+		if nil != err {
+			blog.Errorf("[operation-biz] failed to get default assts, error info is %s", err.Error())
+			return nil, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
+		}
+		if !asstRsp.Result {
+			return nil, params.Err.Error(asstRsp.Code)
+		}
+		expectAssts := asstRsp.Data
+		blog.Infof("copy asst for %s, %+v", params.SupplierAccount, expectAssts)
+
+		existAsstRsp, err := b.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), params.Header, asstQuery)
+		if nil != err {
+			blog.Errorf("[operation-biz] failed to get default assts, error info is %s", err.Error())
+			return nil, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
+		}
+		if !existAsstRsp.Result {
+			return nil, params.Err.Error(existAsstRsp.Code)
+		}
+		existAssts := existAsstRsp.Data
+
+	expectLoop:
+		for _, asst := range expectAssts {
+			asst.OwnerID = params.SupplierAccount
+			for _, existAsst := range existAssts {
+				if existAsst.ObjectID == asst.ObjectID &&
+					existAsst.AsstObjID == asst.AsstObjID &&
+					existAsst.AsstKindID == asst.AsstKindID {
+					continue expectLoop
+				}
+			}
+
+			createAsstRsp, err := b.clientSet.ObjectController().Meta().CreateObjectAssociation(context.Background(), params.Header, &asst)
+			if nil != err {
+				blog.Errorf("[operation-biz] failed to copy default assts, error info is %s", err.Error())
+				return nil, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
+			}
+			if !createAsstRsp.Result {
+				return nil, params.Err.Error(createAsstRsp.Code)
+			}
+
+		}
+	}
+
+	data.Set(common.BKOwnerIDField, params.SupplierAccount)
+	//data.Set(common.BKSupplierIDField, common.BKDefaultSupplierID)
+	if util.IsExistSupplierID(params.Header) {
+		supplierID, err := util.GetSupplierID(params.Header)
+		if err != nil {
+			return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, common.BKSupplierIDField)
+		}
+		data[common.BKSupplierIDField] = supplierID
+	}
 	bizInst, err := b.inst.CreateInst(params, obj, data)
 	if nil != err {
 		blog.Errorf("[opeartion-biz] failed to create business, error info is %s", err.Error())
@@ -137,42 +200,6 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 	if nil != err {
 		blog.Errorf("[operation-biz] failed to create business, error info is %s", err.Error())
 		return bizInst, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
-	}
-
-	defaulFieldVal, err := data.Int64(common.BKDefaultField)
-	if nil != err {
-		blog.Errorf("[operation-biz] failed to create business, error info is did not set the default field, %s", err.Error())
-		return bizInst, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
-	}
-	if defaulFieldVal == int64(common.DefaultAppFlag) && params.SupplierAccount != common.BKDefaultOwnerID {
-		asstQuery := map[string]interface{}{
-			common.BKOwnerIDField: common.BKDefaultOwnerID,
-		}
-		defaultOwnerHeader := util.CopyHeader(params.Header)
-		defaultOwnerHeader.Set(common.BKHTTPOwnerID, common.BKDefaultOwnerID)
-
-		asstRsp, err := b.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), defaultOwnerHeader, asstQuery)
-		if nil != err {
-			blog.Errorf("[operation-biz] failed to get default assts, error info is %s", err.Error())
-			return bizInst, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
-		}
-		if !asstRsp.Result {
-			return bizInst, params.Err.Error(asstRsp.Code)
-		}
-		assts := asstRsp.Data
-		blog.Infof("copy asst for %s, %+v", params.SupplierAccount, assts)
-
-		for _, asst := range assts {
-			asst.OwnerID = params.SupplierAccount
-			b.clientSet.ObjectController().Meta().CreateObjectAssociation(context.Background(), params.Header, &asst)
-			if nil != err {
-				blog.Errorf("[operation-biz] failed to copy default assts, error info is %s", err.Error())
-				return bizInst, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
-			}
-			if !asstRsp.Result {
-				return bizInst, params.Err.Error(asstRsp.Code)
-			}
-		}
 	}
 
 	return bizInst, nil

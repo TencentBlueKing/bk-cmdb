@@ -40,11 +40,9 @@ var (
 
 func (eh *EventHandler) StartHandleInsts() (err error) {
 	defer func() {
-		if err == nil {
-			syserror := recover()
-			if syserror != nil {
-				err = fmt.Errorf("system error: %v", syserror)
-			}
+		syserror := recover()
+		if syserror != nil {
+			err = fmt.Errorf("system error: %v", syserror)
 		}
 		if err != nil {
 			blog.Info("event inst handle process stoped by %v", err)
@@ -152,7 +150,7 @@ func (eh *EventHandler) GetDistInst(e *metadata.EventInst) []metadata.DistInst {
 	distinst.ID = 0
 	var ds []metadata.DistInst
 	var m map[string]interface{}
-	if e.EventType == metadata.EventTypeInstData && e.ObjType == common.BKINnerObjIDObject {
+	if e.EventType == metadata.EventTypeInstData && e.ObjType == common.BKInnerObjIDObject {
 		var ok bool
 
 		if len(e.Data) <= 0 {

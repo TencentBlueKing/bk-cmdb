@@ -13,17 +13,18 @@
 package upgrader
 
 import (
+	"context"
 	"errors"
+	"fmt"
 
-	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
 	"configcenter/src/common/blog"
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
 )
 
 // Upsert inset row but updata it whitout ignores key if exists same value with keys
-func Upsert(db storage.DI, tablename string, row interface{}, idfieldname string, keys []string, ignores []string) (instID int64, preData map[string]interface{}, err error) {
+func Upsert(ctx context.Context, db dal.RDB, tablename string, row interface{}, idfieldname string, keys []string, ignores []string) (instID uint64, preData map[string]interface{}, err error) {
 	data := map[string]interface{}{}
 	switch value := row.(type) {
 	case map[string]interface{}:
@@ -31,10 +32,10 @@ func Upsert(db storage.DI, tablename string, row interface{}, idfieldname string
 	default:
 		out, err := bson.Marshal(row)
 		if err != nil {
-			return 0, nil, err
+			return 0, nil, fmt.Errorf("marshal error %v", err)
 		}
 		if err = bson.Unmarshal(out, data); err != nil {
-			return 0, nil, err
+			return 0, nil, fmt.Errorf("unmarshal error %v", err)
 		}
 	}
 
@@ -44,22 +45,25 @@ func Upsert(db storage.DI, tablename string, row interface{}, idfieldname string
 	}
 
 	existOne := map[string]interface{}{}
-	err = db.GetOneByCondition(tablename, nil, condition, &existOne)
+	err = db.Table(tablename).Find(condition).One(ctx, &existOne)
 
-	if mgo.ErrNotFound == err {
+	if db.IsNotFoundError(err) {
 		if "" != idfieldname {
-			instID, err = db.GetIncID(tablename)
+			instID, err = db.NextSequence(ctx, tablename)
 			if err != nil {
 				return 0, nil, err
 			}
 			data[idfieldname] = instID
 		}
 		// blog.Infof("%s insert %v", tablename, data)
-		_, err = db.Insert(tablename, data)
-		return instID, nil, err
+		err = db.Table(tablename).Insert(ctx, data)
+		if err != nil {
+			return instID, nil, fmt.Errorf("insert error %v", err)
+		}
+		return instID, nil, nil
 	}
 	if nil != err {
-		return 0, nil, err
+		return 0, nil, fmt.Errorf("Find error %v", err)
 	}
 
 	ignoreset := map[string]bool{idfieldname: true}
@@ -68,22 +72,22 @@ func Upsert(db storage.DI, tablename string, row interface{}, idfieldname string
 		case nil:
 			return 0, nil, errors.New("there is no " + idfieldname + " field in table " + tablename)
 		case int:
-			instID = int64(id)
+			instID = uint64(id)
 		case int16:
-			instID = int64(id)
+			instID = uint64(id)
 		case int32:
-			instID = int64(id)
+			instID = uint64(id)
 		case int64:
-			instID = int64(id)
+			instID = uint64(id)
 		case float32:
-			instID = int64(id)
+			instID = uint64(id)
 		case float64:
-			instID = int64(id)
+			instID = uint64(id)
 		}
 		if instID <= 0 {
-			instID, err = db.GetIncID(tablename)
+			instID, err = db.NextSequence(ctx, tablename)
 			if err != nil {
-				return 0, nil, err
+				return 0, nil, fmt.Errorf("get NextSequence error %v", err)
 			}
 			data[idfieldname] = instID
 			delete(ignoreset, idfieldname)
@@ -102,5 +106,9 @@ func Upsert(db storage.DI, tablename string, row interface{}, idfieldname string
 		newData[key] = value
 	}
 	// blog.Infof("%s update %v", tablename, newData)
-	return instID, existOne, db.UpdateByCondition(tablename, newData, condition)
+	err = db.Table(tablename).Update(ctx, condition, newData)
+	if err != nil {
+		return instID, existOne, fmt.Errorf("update error %v", err)
+	}
+	return instID, existOne, nil
 }

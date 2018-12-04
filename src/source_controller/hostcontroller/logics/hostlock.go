@@ -34,7 +34,9 @@ func (lgc *Logics) LockHost(ctx context.Context, header http.Header, input *meta
 	fields := []string{common.BKHostIDField, common.BKHostInnerIPField}
 	condition := mapstr.MapStr{common.BKCloudIDField: input.CloudID, common.BKHostInnerIPField: mapstr.MapStr{common.BKDBIN: input.IPS}}
 	hostInfos := make([]mapstr.MapStr, 0)
-	err := lgc.Instance.GetMutilByCondition(common.BKTableNameBaseHost, fields, condition, &hostInfos, "", 0, len(input.IPS))
+	err := lgc.Instance.Table(common.BKTableNameBaseHost).
+		Find(util.SetQueryOwner(condition, util.GetOwnerID(header))).Fields(fields...).Limit(uint64(len(input.IPS))).All(ctx, &hostInfos)
+	blog.InfoJSON("\n %s %s", util.SetQueryOwner(condition, util.GetOwnerID(header)), util.GetOwnerID(header))
 	if nil != err {
 		blog.Errorf("lcok host, query host from db error, error:%s ,logID:%s", err.Error(), util.GetHTTPCCRequestID(header))
 		return defErr.Errorf(common.CCErrCommDBSelectFailed)
@@ -50,7 +52,7 @@ func (lgc *Logics) LockHost(ctx context.Context, header http.Header, input *meta
 	ts := time.Now().UTC()
 	for _, ip := range input.IPS {
 		conds := mapstr.MapStr{common.BKHostInnerIPField: ip, common.BKCloudIDField: input.CloudID}
-		cnt, err := lgc.Instance.GetCntByCondition(common.BKTableNameHostLock, conds)
+		cnt, err := lgc.Instance.Table(common.BKTableNameHostLock).Find(util.SetQueryOwner(conds, util.GetOwnerID(header))).Count(ctx)
 		if nil != err {
 			blog.Errorf("lcok host, query host lock from db error, error:%s, logID:%s", err.Error(), util.GetHTTPCCRequestID(header))
 			return defErr.Errorf(common.CCErrCommDBSelectFailed)
@@ -61,12 +63,13 @@ func (lgc *Logics) LockHost(ctx context.Context, header http.Header, input *meta
 				IP:         ip,
 				CloudID:    input.CloudID,
 				CreateTime: ts,
+				OwnerID:    util.GetOwnerID(header),
 			})
 		}
 	}
 
 	if 0 < len(insertDataArr) {
-		err := lgc.Instance.InsertMuti(common.BKTableNameHostLock, insertDataArr...)
+		err := lgc.Instance.Table(common.BKTableNameHostLock).Insert(ctx, insertDataArr)
 		if nil != err {
 			blog.Errorf("lcok host, save host lock to db error, error:%s, logID:%s", err.Error(), util.GetHTTPCCRequestID(header))
 			return defErr.Errorf(common.CCErrCommDBInsertFailed)
@@ -80,7 +83,7 @@ func (lgc *Logics) UnlockHost(ctx context.Context, header http.Header, input *me
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 
 	conds := mapstr.MapStr{common.BKHostInnerIPField: mapstr.MapStr{common.BKDBIN: input.IPS}, common.BKCloudIDField: input.CloudID}
-	err := lgc.Instance.DelByCondition(common.BKTableNameHostLock, conds)
+	err := lgc.Instance.Table(common.BKTableNameHostLock).Delete(ctx, util.SetModOwner(conds, util.GetOwnerID(header)))
 
 	if nil != err {
 		blog.Errorf("unlock host, delete host lock from db error, error:%s,logID:%s", err.Error(), util.GetHTTPCCRequestID(header))
@@ -95,7 +98,7 @@ func (lgc *Logics) QueryHostLock(ctx context.Context, header http.Header, input 
 
 	hostLockInfoArr := make([]metadata.HostLockData, 0)
 	conds := mapstr.MapStr{common.BKHostInnerIPField: mapstr.MapStr{common.BKDBIN: input.IPS}, common.BKCloudIDField: input.CloudID}
-	err := lgc.Instance.GetMutilByCondition(common.BKTableNameHostLock, nil, conds, &hostLockInfoArr, "", 0, len(input.IPS))
+	err := lgc.Instance.Table(common.BKTableNameHostLock).Find(util.SetModOwner(conds, util.GetOwnerID(header))).Limit(uint64(len(input.IPS))).All(ctx, &hostLockInfoArr)
 	if nil != err {
 		blog.Errorf("query lcok host, query host lock from db error, error:%s, logID:%s", err.Error(), util.GetHTTPCCRequestID(header))
 		return nil, defErr.Errorf(common.CCErrCommDBSelectFailed)

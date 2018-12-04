@@ -32,6 +32,7 @@ import (
 
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/blog"
+	commonUtil "configcenter/src/common/util"
 )
 
 // map[url]responseDataString
@@ -285,6 +286,7 @@ func (r *Request) Do() *Result {
 				}
 				body = data
 			}
+			blog.V(4).Infof("http request uri:%s body:%s, rid:%s", r.subPath, string(body), commonUtil.GetHTTPCCRequestID(r.headers))
 			result.Body = body
 			result.StatusCode = resp.StatusCode
 			if r.peek {
@@ -328,9 +330,9 @@ func (r *Result) Into(obj interface{}) error {
 		err := json.Unmarshal(r.Body, obj)
 		if nil != err {
 			if http.StatusOK != r.StatusCode {
-				return fmt.Errorf("error info %s", string(r.Body))
+				return fmt.Errorf("http request err: %s", string(r.Body))
 			}
-			blog.Errorf("http reply not json, reply:%s, error:%s", string(r.Body), err.Error())
+			blog.Errorf("invalid response body, unmarshal json failed, reply:%s, error:%s", string(r.Body), err.Error())
 			return err
 		}
 	}

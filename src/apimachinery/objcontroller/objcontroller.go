@@ -15,11 +15,13 @@ package objcontroller
 import (
 	"fmt"
 
+	"configcenter/src/apimachinery/objcontroller/association"
 	"configcenter/src/apimachinery/objcontroller/identifier"
 	"configcenter/src/apimachinery/objcontroller/inst"
 	"configcenter/src/apimachinery/objcontroller/meta"
 	"configcenter/src/apimachinery/objcontroller/openapi"
 	"configcenter/src/apimachinery/objcontroller/privilege"
+	"configcenter/src/apimachinery/objcontroller/unique"
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
 )
@@ -30,6 +32,8 @@ type ObjControllerClientInterface interface {
 	Identifier() identifier.IdentifierInterface
 	OpenAPI() openapi.OpenApiInterface
 	Privilege() privilege.PrivilegeInterface
+	Association() association.AssociationInterface
+	Unique() unique.UniqueInterface
 }
 
 func NewObjectControllerInterface(c *util.Capability, version string) ObjControllerClientInterface {
@@ -61,4 +65,11 @@ func (o *objectctrl) Privilege() privilege.PrivilegeInterface {
 
 func (o *objectctrl) Identifier() identifier.IdentifierInterface {
 	return identifier.NewIdentifierInterface(o.client)
+}
+
+func (o *objectctrl) Association() association.AssociationInterface {
+	return association.NewAssociationInterface(o.client)
+}
+func (o *objectctrl) Unique() unique.UniqueInterface {
+	return unique.NewUniqueInterface(o.client)
 }

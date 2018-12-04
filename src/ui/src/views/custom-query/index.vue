@@ -123,6 +123,9 @@
                 this.getUserAPIList()
             }
         },
+        created () {
+            this.$store.commit('setHeaderTitle', this.$t('Nav["动态分组"]'))
+        },
         methods: {
             ...mapActions('hostCustomApi', [
                 'searchCustomQuery'

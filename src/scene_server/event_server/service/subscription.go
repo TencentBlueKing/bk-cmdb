@@ -28,7 +28,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
-	commontypes "configcenter/src/common/types"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/types"
 )
@@ -46,7 +45,7 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-	now := commontypes.Now()
+	now := metadata.Now()
 	sub.Operator = util.GetUser(req.Request.Header)
 	if sub.TimeOut <= 0 {
 		sub.TimeOut = 10
@@ -54,16 +53,17 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 	if sub.ConfirmMode == metadata.ConfirmmodeHttpstatus && sub.ConfirmPattern == "" {
 		sub.ConfirmPattern = "200"
 	}
-	sub.LastTime = &now
+	sub.LastTime = now
 	sub.OwnerID = ownerID
 
 	sub.SubscriptionForm = strings.Replace(sub.SubscriptionForm, " ", "", 0)
+
 	events := strings.Split(sub.SubscriptionForm, ",")
 	sort.Strings(events)
 	sub.SubscriptionForm = strings.Join(events, ",")
 
 	exists := []metadata.Subscription{}
-	err = s.db.GetMutilByCondition(common.BKTableNameSubscription, nil, map[string]interface{}{common.BKSubscriptionNameField: sub.SubscriptionName, common.BKOwnerIDField: ownerID}, &exists, "", 0, 0)
+	err = s.db.Table(common.BKTableNameSubscription).Find(map[string]interface{}{common.BKSubscriptionNameField: sub.SubscriptionName, common.BKOwnerIDField: ownerID}).All(s.ctx, &exists)
 	if err != nil {
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDuplicateItem)})
 		return
@@ -75,13 +75,14 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 			return
 		}
 	} else {
-		sub.SubscriptionID, err = s.db.GetIncID(common.BKTableNameSubscription)
+		nid, err := s.db.NextSequence(s.ctx, common.BKTableNameSubscription)
+		sub.SubscriptionID = int64(nid)
 		if nil != err {
 			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeInsertFailed)})
 			return
 		}
 		// save to the storage
-		if _, err := s.db.Insert(common.BKTableNameSubscription, sub); err != nil {
+		if err := s.db.Table(common.BKTableNameSubscription).Insert(s.ctx, sub); err != nil {
 			blog.Errorf("create subscription failed, error:%s", err.Error())
 			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeInsertFailed)})
 			return
@@ -126,13 +127,13 @@ func (s *Service) UnSubscribe(req *restful.Request, resp *restful.Response) {
 	// query old Subscription
 	sub := metadata.Subscription{}
 	condiction := util.NewMapBuilder(common.BKSubscriptionIDField, id, common.BKOwnerIDField, ownerID).Build()
-	if err := s.db.GetOneByCondition(common.BKTableNameSubscription, nil, condiction, &sub); err != nil {
+	if err := s.db.Table(common.BKTableNameSubscription).Find(condiction).One(s.ctx, &sub); err != nil {
 		blog.Errorf("fail to get subscription by id %v, error information is %v", id, err)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeDeleteFailed)})
 		return
 	}
 	// execute delete command
-	if delerr := s.db.DelByCondition(common.BKTableNameSubscription, condiction); nil != delerr {
+	if delerr := s.db.Table(common.BKTableNameSubscription).Delete(s.ctx, condiction); nil != delerr {
 		blog.Errorf("fail to delete subscription by id %v, error information is %v", id, delerr)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeDeleteFailed)})
 	}
@@ -187,12 +188,12 @@ func (s *Service) rebook(id int64, ownerID string, sub *metadata.Subscription) e
 	// query old Subscription
 	oldsub := metadata.Subscription{}
 	condiction := util.NewMapBuilder(common.BKSubscriptionIDField, id, common.BKOwnerIDField, ownerID).Build()
-	if err := s.db.GetOneByCondition(common.BKTableNameSubscription, nil, condiction, &oldsub); err != nil {
+	if err := s.db.Table(common.BKTableNameSubscription).Find(condiction).One(s.ctx, &oldsub); err != nil {
 		blog.Errorf("fail to get subscription by id %v, error information is %v", id, err)
 		return err
 	}
 	if oldsub.SubscriptionName != sub.SubscriptionName {
-		count, err := s.db.GetCntByCondition(common.BKTableNameSubscription, map[string]interface{}{common.BKSubscriptionNameField: sub.SubscriptionName, common.BKOwnerIDField: ownerID})
+		count, err := s.db.Table(common.BKTableNameSubscription).Find(map[string]interface{}{common.BKSubscriptionNameField: sub.SubscriptionName, common.BKOwnerIDField: ownerID}).Count(s.ctx)
 		if err != nil {
 			blog.Errorf("get subscription count error: %v", err)
 			return err
@@ -207,8 +208,8 @@ func (s *Service) rebook(id int64, ownerID string, sub *metadata.Subscription) e
 	if sub.TimeOut <= 0 {
 		sub.TimeOut = 10
 	}
-	now := commontypes.Now()
-	sub.LastTime = &now
+	now := metadata.Now()
+	sub.LastTime = now
 	sub.OwnerID = ownerID
 
 	sub.SubscriptionForm = strings.Replace(sub.SubscriptionForm, " ", "", 0)
@@ -216,7 +217,7 @@ func (s *Service) rebook(id int64, ownerID string, sub *metadata.Subscription) e
 	sort.Strings(events)
 	sub.SubscriptionForm = strings.Join(events, ",")
 
-	if updateerr := s.db.UpdateByCondition(common.BKTableNameSubscription, sub, util.NewMapBuilder(common.BKSubscriptionIDField, id, common.BKOwnerIDField, ownerID).Build()); nil != updateerr {
+	if updateerr := s.db.Table(common.BKTableNameSubscription).Update(s.ctx, util.NewMapBuilder(common.BKSubscriptionIDField, id, common.BKOwnerIDField, ownerID).Build(), sub); nil != updateerr {
 		blog.Errorf("fail update subscription by condition, error information is %s", updateerr.Error())
 		return updateerr
 	}
@@ -272,7 +273,7 @@ func (s *Service) Query(req *restful.Request, resp *restful.Response) {
 	}
 	sort := dat.Page.Sort
 
-	count, err := s.db.GetCntByCondition(common.BKTableNameSubscription, condition)
+	count, err := s.db.Table(common.BKTableNameSubscription).Find(condition).Count(s.ctx)
 	if err != nil {
 		blog.Errorf("get host count error, input:%+v error:%v", dat, err)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeSelectFailed)})
@@ -281,7 +282,8 @@ func (s *Service) Query(req *restful.Request, resp *restful.Response) {
 
 	results := []metadata.Subscription{}
 	blog.Debug("selector:%+v", condition)
-	if selerr := s.db.GetMutilByCondition(common.BKTableNameSubscription, fields, condition, &results, sort, skip, limit); nil != selerr {
+
+	if selerr := s.db.Table(common.BKTableNameSubscription).Find(condition).Fields(fields...).Sort(sort).Start(uint64(skip)).Limit(uint64(limit)).All(s.ctx, &results); nil != selerr {
 		blog.Errorf("select data failed, error information is %s, input:%v", selerr, dat)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrEventSubscribeSelectFailed)})
 		return

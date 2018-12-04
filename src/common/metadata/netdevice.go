@@ -14,12 +14,10 @@ package metadata
 
 import (
 	"time"
-
-	"configcenter/src/common/types"
 )
 
 type NetcollectDevice struct {
-	DeviceID    int64      `json:"device_id,omitempty" bson:"device_id,omitempty"`
+	DeviceID    uint64     `json:"device_id,omitempty" bson:"device_id,omitempty"`
 	DeviceName  string     `json:"device_name,omitempty" bson:"device_name,omitempty"`
 	DeviceModel string     `json:"device_model,omitempty" bson:"device_model,omitempty"`
 	ObjectID    string     `json:"bk_obj_id" bson:"bk_obj_id,omitempty"`
@@ -31,10 +29,10 @@ type NetcollectDevice struct {
 }
 
 type NetcollectProperty struct {
-	NetcollectPropertyID int64      `json:"netcollect_property_id,omitempty" bson:"netcollect_property_id,omitempty"`
+	NetcollectPropertyID uint64     `json:"netcollect_property_id,omitempty" bson:"netcollect_property_id,omitempty"`
 	PropertyID           string     `json:"bk_property_id" bson:"bk_property_id,omitempty"`
 	PropertyName         string     `json:"bk_property_name" bson:"-"`
-	DeviceID             int64      `json:"device_id" bson:"device_id,omitempty"`
+	DeviceID             uint64     `json:"device_id" bson:"device_id,omitempty"`
 	DeviceName           string     `json:"device_name" bson:"-"`
 	ObjectID             string     `json:"bk_obj_id,omitempty" bson:"-"`
 	ObjectName           string     `json:"bk_obj_name,omitempty" bson:"-"`
@@ -101,29 +99,29 @@ type NetcollectConfig struct {
 }
 
 type ParamSearchNetcollectReport struct {
-	Action    string       `json:"action"`
-	ObjectID  string       `json:"bk_object_id"`
-	Query     string       `json:"query"`
-	CloudName string       `json:"bk_cloud_name"`
-	CloudID   int64        `json:"bk_cloud_id"`
-	InnerIP   string       `json:"bk_host_innerip"`
-	LastTime  []types.Time `json:"last_time"`
-	Page      BasePage     `json:"page"`
+	Action    string   `json:"action"`
+	ObjectID  string   `json:"bk_object_id"`
+	Query     string   `json:"query"`
+	CloudName string   `json:"bk_cloud_name"`
+	CloudID   int64    `json:"bk_cloud_id"`
+	InnerIP   string   `json:"bk_host_innerip"`
+	LastTime  []Time   `json:"last_time"`
+	Page      BasePage `json:"page"`
 }
 
 type NetcollectReportSummary struct {
 	CloudID    int64          `json:"bk_cloud_id"`
 	CloudName  string         `json:"bk_cloud_name"`
-	LastTime   types.Time     `json:"last_time"`
+	LastTime   Time           `json:"last_time"`
 	Statistics map[string]int `json:"statistics"`
 }
 
 type RspNetcollectReport struct {
-	Count int64              `json:"count"`
+	Count uint64             `json:"count"`
 	Info  []NetcollectReport `json:"info"`
 }
 type RspNetcollectHistory struct {
-	Count int64               `json:"count"`
+	Count uint64              `json:"count"`
 	Info  []NetcollectHistory `json:"info"`
 }
 
@@ -142,7 +140,7 @@ type NetcollectReport struct {
 
 	InstID       int64                         `json:"bk_inst_id" bson:"bk_inst_id"`
 	InstKey      string                        `json:"bk_inst_key" bson:"bk_inst_key"`
-	LastTime     types.Time                    `json:"last_time" bson:"last_time"`
+	LastTime     Time                          `json:"last_time" bson:"last_time"`
 	Attributes   []NetcollectReportAttribute   `json:"attributes" bson:"attributes"`
 	Associations []NetcollectReportAssociation `json:"associations" bson:"associations"`
 }
@@ -166,7 +164,7 @@ type NetcollectReportAttribute struct {
 }
 
 type NetcollectReportAssociation struct {
-	AsstInstID     int64  `json:"bk_asst_inst_id" bson:"bk_asst_inst_id"`
+	Action         string `json:"action" bson:"-"`
 	AsstInstName   string `json:"bk_asst_inst_name" bson:"bk_asst_inst_name"`
 	AsstPropertyID string `json:"bk_asst_property_id" bson:"bk_asst_property_id"`
 	AsstObjectID   string `json:"bk_asst_obj_id" bson:"bk_asst_obj_id"`

@@ -157,7 +157,7 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action audit
 				blog.Errorf("[audit] failed to add audit log, error info is %s", rsp.ErrMsg)
 				return
 			}
-		case common.BKInnerObjIDApp, common.BKINnerObjIDObject:
+		case common.BKInnerObjIDApp, common.BKInnerObjIDObject:
 			rsp, err := a.client.AuditController().AddObjectLog(context.Background(), a.params.SupplierAccount, bizID, a.params.User, a.params.Header, data)
 			if nil != err {
 				blog.Errorf("[audit] failed to add audit log, error info is %s", err.Error())

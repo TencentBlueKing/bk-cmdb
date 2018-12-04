@@ -13,19 +13,21 @@
 package command
 
 import (
+	"context"
 	"fmt"
 
 	"configcenter/src/common"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
 )
 
-func getBKTopo(db storage.DI, opt *option) (*Topo, error) {
+func getBKTopo(ctx context.Context, db dal.RDB, opt *option) (*Topo, error) {
 	result := &Topo{}
 	objIds := []string{}
 	if opt.scope == "all" || opt.scope == common.BKInnerObjIDApp {
-		assts, err := getAsst(db, opt)
+		assts, err := getAsst(ctx, db, opt)
 		if nil != err {
 			return nil, err
 		}
@@ -34,13 +36,13 @@ func getBKTopo(db storage.DI, opt *option) (*Topo, error) {
 			return nil, err
 		}
 		objIds = append(objIds, topo...)
-		root, err := getBKAppNode(db, opt)
+		root, err := getBKAppNode(ctx, db, opt)
 		if nil != err {
 			return nil, err
 		}
 		pcmap := getPCmap(assts)
-		// blog.InfoJSON("%s", pcmap)
-		err = getTree(db, root, pcmap)
+
+		err = getTree(ctx, db, root, pcmap)
 		if nil != err {
 			return nil, err
 		}
@@ -50,7 +52,7 @@ func getBKTopo(db storage.DI, opt *option) (*Topo, error) {
 
 	if opt.scope == "all" || opt.scope == common.BKInnerObjIDProc {
 		objIds = append(objIds, common.BKInnerObjIDProc)
-		procmodules, err := getProcessTopo(db, opt)
+		procmodules, err := getProcessTopo(ctx, db, opt)
 		if nil != err {
 			return nil, err
 		}
@@ -63,21 +65,21 @@ func getBKTopo(db storage.DI, opt *option) (*Topo, error) {
 
 	if opt.mini {
 
-		_, keys, err := getModelAttributes(db, opt, objIds)
+		_, keys, err := getModelAttributes(ctx, db, opt, objIds)
 		if nil != err {
 			return nil, err
 		}
 
 		if result.BizTopo != nil {
 			result.BizTopo.walk(func(node *Node) error {
-				node.Data = util.CopyMap(node.Data, keys[node.ObjID], []string{"bk_parent_id"})
+				node.Data = util.CopyMap(node.Data, keys[node.ObjID], []string{common.BKInstParentStr})
 				return nil
 			})
 		}
 
 		if result.ProcTopos != nil {
 			for _, proc := range result.ProcTopos.Procs {
-				proc.Data = util.CopyMap(proc.Data, append(keys[common.BKInnerObjIDProc], "bind_ip", "port", "protocol", "bk_func_name", "work_path"), []string{"bk_parent_id", "bk_biz_id", "bk_supplier_account"})
+				proc.Data = util.CopyMap(proc.Data, append(keys[common.BKInnerObjIDProc], "bind_ip", "port", "protocol", "bk_func_name", "work_path", "bk_start_param_regex"), []string{common.BKInstParentStr, common.BKAppIDField, common.BKOwnerIDField})
 			}
 		}
 	}
@@ -85,20 +87,21 @@ func getBKTopo(db storage.DI, opt *option) (*Topo, error) {
 	return result, nil
 }
 
-func getBKAppNode(db storage.DI, opt *option) (*Node, error) {
+func getBKAppNode(ctx context.Context, db dal.RDB, opt *option) (*Node, error) {
 	bkapp := newNode(common.BKInnerObjIDApp)
 	condition := map[string]interface{}{
 		common.BKOwnerIDField: opt.OwnerID,
 		common.BKAppNameField: common.BKAppName,
 	}
-	err := db.GetOneByCondition(common.BKTableNameBaseApp, nil, condition, &bkapp.Data)
+
+	err := db.Table(common.BKTableNameBaseApp).Find(condition).One(ctx, &bkapp.Data)
 	if nil != err {
 		return nil, fmt.Errorf("getBKAppNode error: %s", err.Error())
 	}
 	return bkapp, nil
 }
 
-func getTree(db storage.DI, root *Node, pcmap map[string]*metadata.Association) error {
+func getTree(ctx context.Context, db dal.RDB, root *Node, pcmap map[string]*metadata.Association) error {
 	asst := pcmap[root.ObjID]
 	if asst == nil {
 		return nil
@@ -108,21 +111,22 @@ func getTree(db storage.DI, root *Node, pcmap map[string]*metadata.Association) 
 	if nil != err {
 		return nil
 	}
-	condition := map[string]interface{}{
-		common.BKInstParentStr: instID,
-	}
+
+	childCondition := condition.CreateCondition()
+	childCondition.Field(common.BKInstParentStr).Eq(instID)
 
 	switch asst.ObjectID {
 	case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule:
-		condition["default"] = map[string]interface{}{common.BKDBEQ: 0}
+		childCondition.Field(common.BKDefaultField).NotGt(0)
 	default:
-		condition[common.BKObjIDField] = asst.ObjectID
+		childCondition.Field(common.BKObjIDField).Eq(asst.ObjectID)
 	}
 
 	// blog.InfoJSON("get childs for %s:%d", asst.ObjectID, instID)
 	childs := []map[string]interface{}{}
 	tablename := common.GetInstTableName(asst.ObjectID)
-	err = db.GetMutilByCondition(tablename, nil, condition, &childs, "", 0, 0)
+
+	err = db.Table(tablename).Find(childCondition.ToMapStr()).All(ctx, &childs)
 	if nil != err {
 		return fmt.Errorf("get inst for %s error: %s", asst.ObjectID, err.Error())
 	}
@@ -136,7 +140,7 @@ func getTree(db storage.DI, root *Node, pcmap map[string]*metadata.Association) 
 		return nil
 	}
 	for _, child := range root.Childs {
-		err = getTree(db, child, pcmap)
+		err = getTree(ctx, db, child, pcmap)
 		if nil != err {
 			return err
 		}
@@ -144,6 +148,7 @@ func getTree(db storage.DI, root *Node, pcmap map[string]*metadata.Association) 
 	return nil
 }
 
+// get parent -> child mapping
 func getPCmap(assts []*metadata.Association) map[string]*metadata.Association {
 	m := map[string]*metadata.Association{}
 	for _, asst := range assts {
@@ -183,35 +188,37 @@ func getMainline(root string, assts []*metadata.Association) ([]string, error) {
 	return nil, fmt.Errorf("topo association broken: %+v", assts)
 }
 
-func getAsst(db storage.DI, opt *option) ([]*metadata.Association, error) {
+func getAsst(ctx context.Context, db dal.RDB, opt *option) ([]*metadata.Association, error) {
 	assts := []*metadata.Association{}
-	condition := map[string]interface{}{
-		common.BKOwnerIDField:  opt.OwnerID,
-		common.BKObjAttIDField: common.BKChildStr,
-	}
-	err := db.GetMutilByCondition("cc_ObjAsst", nil, condition, &assts, "", 0, 0)
+
+	cond := condition.CreateCondition()
+	cond.Field(common.AssociationKindIDField).Eq(common.AssociationKindMainline)
+
+	err := db.Table(common.BKTableNameObjAsst).Find(cond.ToMapStr()).All(ctx, &assts)
 	if nil != err {
 		return nil, fmt.Errorf("query cc_ObjAsst error: %s", err.Error())
 	}
 	return assts, nil
 }
 
-func getProcessTopo(db storage.DI, opt *option) ([]*Process, error) {
+func getProcessTopo(ctx context.Context, db dal.RDB, opt *option) ([]*Process, error) {
 	// fetch all process
 	procs := []map[string]interface{}{}
-	err := db.GetMutilByCondition(common.BKTableNameBaseProcess, nil, map[string]interface{}{}, &procs, "", 0, 0)
+
+	err := db.Table(common.BKTableNameBaseProcess).Find(map[string]interface{}{}).All(ctx, &procs)
 	if nil != err {
 		return nil, fmt.Errorf("get process faile %s", err.Error())
 	}
 
 	// fetch all process module
 	procmodules := []ProModule{}
-	err = db.GetMutilByCondition(common.BKTableNameProcModule, nil, map[string]interface{}{}, &procmodules, "", 0, 0)
+
+	err = db.Table(common.BKTableNameProcModule).Find(map[string]interface{}{}).All(ctx, &procmodules)
 	if nil != err {
 		return nil, fmt.Errorf("get process faile %s", err.Error())
 	}
 
-	procmodMap := map[int64][]string{} // processID -> modules
+	procmodMap := map[uint64][]string{} // processID -> modules
 	for _, pm := range procmodules {
 		procmodMap[pm.ProcessID] = append(procmodMap[pm.ProcessID], pm.ModuleName)
 	}
@@ -221,7 +228,7 @@ func getProcessTopo(db storage.DI, opt *option) ([]*Process, error) {
 		topo := Process{
 			Data: proc,
 		}
-		procID, err := getInt64(proc["bk_process_id"])
+		procID, err := getInt64(proc[common.BKProcessIDField])
 		if nil != err {
 			return nil, err
 		}

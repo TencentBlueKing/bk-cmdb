@@ -230,12 +230,12 @@ func (c *CC) syncProc() {
 
 	c.Lock()
 	if reflect.DeepEqual(conf, c.previousProc) {
-		blog.V(4).Infof("sync process config, but nothing is changed.")
+		blog.V(5).Infof("sync process config, but nothing is changed.")
 		c.Unlock()
 		return
 	}
-	blog.V(4).Infof("sync process[%s] config, before change is: %+#v", c.procName, *(c.previousProc))
-	blog.V(4).Infof("sync process[%s] config, after change is: %+#v", c.procName, *conf)
+	blog.V(5).Infof("sync process[%s] config, before change is: %+#v", c.procName, *(c.previousProc))
+	blog.V(5).Infof("sync process[%s] config, after change is: %+#v", c.procName, *conf)
 
 	event := &crd.DiscoverEvent{
 		Err:  nil,

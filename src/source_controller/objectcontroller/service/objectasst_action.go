@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -32,12 +33,13 @@ import (
 // CreateObjectAssociation create object association map
 func (cli *Service) CreateObjectAssociation(req *restful.Request, resp *restful.Response) {
 
-	blog.Info("create obj-association")
 	// get the language
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
@@ -54,16 +56,16 @@ func (cli *Service) CreateObjectAssociation(req *restful.Request, resp *restful.
 	}
 
 	// save to the storage
-	id, err := cli.Instance.GetIncID("cc_ObjAsst")
-	if err != nil && !cli.Instance.IsNotFoundErr(err) {
+	id, err := db.NextSequence(ctx, common.BKTableNameObjAsst)
+	if err != nil {
 		blog.Error("failed to get id, error info is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}
 
-	obj.ID = id
+	obj.ID = int64(id)
 	obj.OwnerID = ownerID
-	_, err = cli.Instance.Insert("cc_ObjAsst", obj)
+	err = db.Table(common.BKTableNameObjAsst).Insert(ctx, obj)
 	if nil != err {
 		blog.Error("create objectasst failed, error:%s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
@@ -76,13 +78,13 @@ func (cli *Service) CreateObjectAssociation(req *restful.Request, resp *restful.
 // DeleteObjectAssociation delete object association map
 func (cli *Service) DeleteObjectAssociation(req *restful.Request, resp *restful.Response) {
 
-	blog.Info("delete obj-association")
-
 	// get the language
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	pathParameters := req.PathParameters()
 	id, err := strconv.ParseInt(pathParameters["id"], 10, 64)
@@ -111,7 +113,7 @@ func (cli *Service) DeleteObjectAssociation(req *restful.Request, resp *restful.
 	}
 
 	condition = util.SetModOwner(condition, ownerID)
-	cnt, cntErr := cli.Instance.GetCntByCondition("cc_ObjAsst", condition)
+	cnt, cntErr := db.Table(common.BKTableNameObjAsst).Find(condition).Count(ctx)
 	if nil != cntErr {
 		blog.Error("failed to select objectasst by condition(%+v), error is %d", cntErr)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
@@ -125,8 +127,8 @@ func (cli *Service) DeleteObjectAssociation(req *restful.Request, resp *restful.
 	}
 
 	// execute delete command
-	delErr := cli.Instance.DelByCondition("cc_ObjAsst", condition)
-	if nil != delErr && !cli.Instance.IsNotFoundErr(err) {
+	delErr := db.Table(common.BKTableNameObjAsst).Delete(ctx, condition)
+	if nil != delErr {
 		blog.Error("fail to delete object by id , error information is %s", delErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
@@ -138,13 +140,13 @@ func (cli *Service) DeleteObjectAssociation(req *restful.Request, resp *restful.
 // UpdateObjectAssociation update object association map
 func (cli *Service) UpdateObjectAssociation(req *restful.Request, resp *restful.Response) {
 
-	blog.Info("update object association")
-
 	// get the language
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	js, err := simplejson.NewFromReader(req.Request.Body)
 	if err != nil {
@@ -171,7 +173,7 @@ func (cli *Service) UpdateObjectAssociation(req *restful.Request, resp *restful.
 	condititon := map[string]interface{}{"id": id}
 	condititon = util.SetModOwner(condititon, ownerID)
 	// update object into storage
-	if updateErr := cli.Instance.UpdateByCondition("cc_ObjAsst", data, condititon); nil != updateErr {
+	if updateErr := db.Table(common.BKTableNameObjAsst).Update(ctx, condititon, data); nil != updateErr {
 		blog.Error("fail update object by condition, error information is %s", updateErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, updateErr.Error())})
 		return
@@ -185,13 +187,15 @@ func (cli *Service) UpdateObjectAssociation(req *restful.Request, resp *restful.
 // SelectObjectAssociations search all object association map
 func (cli *Service) SelectObjectAssociations(req *restful.Request, resp *restful.Response) {
 
-	blog.Info("search object association")
+	// TODO: 输入参数有变化
 
 	// get the language
 	language := util.GetActionLanguage(req)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	db := cli.Instance.Clone()
 
 	// decode json object
 	js, err := simplejson.NewFromReader(req.Request.Body)
@@ -219,9 +223,14 @@ func (cli *Service) SelectObjectAssociations(req *restful.Request, resp *restful
 
 	results := make([]meta.Association, 0)
 	selector, _ := js.Map()
+
+	// compatibility the new format. eg: {"condition":{"key":"val"}}
+	if _, existsCondition := selector["condition"]; existsCondition {
+		selector, _ = selector["condition"].(map[string]interface{})
+	}
 	selector = util.SetModOwner(selector, ownerID)
 	// select from storage
-	if selErr := cli.Instance.GetMutilByCondition("cc_ObjAsst", nil, selector, &results, page.Sort, page.Start, page.Limit); nil != selErr && !cli.Instance.IsNotFoundErr(selErr) {
+	if selErr := db.Table(common.BKTableNameObjAsst).Find(selector).Limit(uint64(page.Limit)).Start(uint64(page.Start)).Sort(page.Sort).All(ctx, &results); nil != selErr && !db.IsNotFoundError(selErr) {
 		blog.Error("select data failed, error information is %s", selErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, selErr.Error())})
 		return

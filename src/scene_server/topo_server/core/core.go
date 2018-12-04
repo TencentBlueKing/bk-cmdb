@@ -36,6 +36,7 @@ type Core interface {
 	IdentifierOperation() operation.IdentifierOperationInterface
 	AuditOperation() operation.AuditOperationInterface
 	HealthOperation() operation.HealthOperationInterface
+	UniqueOperation() operation.UniqueOperationInterface
 }
 
 type core struct {
@@ -54,6 +55,7 @@ type core struct {
 	audit          operation.AuditOperationInterface
 	identifier     operation.IdentifierOperationInterface
 	health         operation.HealthOperationInterface
+	unique         operation.UniqueOperationInterface
 }
 
 // New create a core manager
@@ -77,12 +79,13 @@ func New(client apimachinery.ClientSetInterface) Core {
 	graphics := operation.NewGraphics(client)
 	identifier := operation.NewIdentifier(client)
 	audit := operation.NewAuditOperation(client)
+	unique := operation.NewUniqueOperation(client)
 
 	targetModel := model.New(client)
 	targetInst := inst.New(client)
 
 	// set the operation
-	objectOperation.SetProxy(targetModel, targetInst, classificationOperation, associationOperation, instOperation, attributeOperation, groupOperation)
+	objectOperation.SetProxy(targetModel, targetInst, classificationOperation, associationOperation, instOperation, attributeOperation, groupOperation, unique)
 	groupOperation.SetProxy(targetModel, targetInst, objectOperation)
 	attributeOperation.SetProxy(targetModel, targetInst, objectOperation, associationOperation, groupOperation)
 	classificationOperation.SetProxy(targetModel, targetInst, associationOperation, objectOperation)
@@ -111,6 +114,7 @@ func New(client apimachinery.ClientSetInterface) Core {
 		audit:          audit,
 		identifier:     identifier,
 		health:         healthOpeartion,
+		unique:         unique,
 	}
 }
 
@@ -161,4 +165,7 @@ func (c *core) IdentifierOperation() operation.IdentifierOperationInterface {
 }
 func (c *core) HealthOperation() operation.HealthOperationInterface {
 	return c.health
+}
+func (c *core) UniqueOperation() operation.UniqueOperationInterface {
+	return c.unique
 }

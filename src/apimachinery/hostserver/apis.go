@@ -383,7 +383,7 @@ func (hs *hostServer) GetHostListByAppidAndField(ctx context.Context, appID stri
 	return
 }
 
-func (hs *hostServer) HostSearchByIP(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+func (hs *hostServer) HostSearchByIP(ctx context.Context, h http.Header, dat *metadata.HostSearchByIPParams) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/gethostlistbyip"
 
@@ -551,8 +551,8 @@ func (hs *hostServer) GetGitServerIp(ctx context.Context, h http.Header, dat int
 	return
 }
 
-func (hs *hostServer) GetPlat(ctx context.Context, h http.Header) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (hs *hostServer) GetPlat(ctx context.Context, h http.Header) (resp *metadata.QueryInstResult, err error) {
+	resp = new(metadata.QueryInstResult)
 	subPath := "/plat"
 
 	err = hs.client.Get().
@@ -712,6 +712,21 @@ func (hs *hostServer) GetUserCustomQueryResult(ctx context.Context, businessID, 
 	err = hs.client.Get().
 		WithContext(ctx).
 		Body(nil).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (a *hostServer) HostSearch(ctx context.Context, h http.Header, params *metadata.HostCommonSearch) (resp *metadata.QueryInstResult, err error) {
+
+	resp = new(metadata.QueryInstResult)
+	subPath := fmt.Sprintf("hosts/search")
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(params).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().

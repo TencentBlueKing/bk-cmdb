@@ -19,9 +19,10 @@ import (
 )
 
 type LoginUserInfoOwnerUinList struct {
-	OwnerID   string `json:"id"`
-	OwnerName string `json:"name"`
-	Role      int64  `json:"role"`
+	OwnerID    string `json:"id"`
+	OwnerName  string `json:"name"`
+	SupplierID int64  `json:"supplier_id"`
+	Role       int64  `json:"role"`
 }
 
 type LoginUserInfo struct {
@@ -37,6 +38,7 @@ type LoginUserInfo struct {
 	Extra         map[string]interface{}      `json:"extra"`         //custom information
 	Language      string                      `json:"-"`
 	AvatarUrl     string                      `json:"avatar_url"`
+	SupplierID    int64                       `json:"supplier_id"`
 	MultiSupplier bool                        `json:"multi_supplier"`
 }
 
@@ -100,4 +102,21 @@ type LogoutResult struct {
 
 type LogoutRequestParams struct {
 	HTTPScheme string `json:"http_scheme"`
+}
+
+type ExcelAssocationOperate int
+
+const (
+	_ ExcelAssocationOperate = iota
+	ExcelAssocationOperateError
+	ExcelAssocationOperateAdd
+	//ExcelAssocationOperateUpdate
+	ExcelAssocationOperateDelete
+)
+
+type ExcelAssocation struct {
+	ObjectAsstID string                 `json:"bk_obj_asst_id"`
+	Operate      ExcelAssocationOperate `json:"operate"`
+	SrcPrimary   string                 `json:"src_primary_key"`
+	DstPrimary   string                 `json:"dst_primary_key"`
 }

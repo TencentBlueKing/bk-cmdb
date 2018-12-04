@@ -13,7 +13,7 @@
 package metadata
 
 type AddDeviceResult struct {
-	DeviceID int64 `json:"device_id"`
+	DeviceID uint64 `json:"device_id"`
 }
 
 type BatchAddDevice struct {
@@ -23,11 +23,11 @@ type BatchAddDevice struct {
 type BatchAddDeviceResult struct {
 	Result   bool   `json:"result"`
 	ErrMsg   string `json:"error_msg"`
-	DeviceID int64  `json:"device_id"`
+	DeviceID uint64 `json:"device_id"`
 }
 
 type SearchNetDevice struct {
-	Count int                `json:"count"`
+	Count uint64             `json:"count"`
 	Info  []NetcollectDevice `json:"info"`
 }
 
@@ -43,17 +43,17 @@ type NetCollSearchParams struct {
 }
 
 type DeleteNetDeviceBatchOpt struct {
-	DeviceIDs []int64 `json:"device_id"`
+	DeviceIDs []uint64 `json:"device_id"`
 }
 
 type AddNetPropertyResult struct {
-	NetcollectPropertyID int64 `json:"netcollect_property_id"`
+	NetcollectPropertyID uint64 `json:"netcollect_property_id"`
 }
 
 type BatchAddNetPropertyResult struct {
 	Result               bool   `json:"result"`
 	ErrMsg               string `json:"error_msg"`
-	NetcollectPropertyID int64  `json:"netcollect_property_id"`
+	NetcollectPropertyID uint64 `json:"netcollect_property_id"`
 }
 
 type BatchAddNetProperty struct {
@@ -61,7 +61,7 @@ type BatchAddNetProperty struct {
 }
 
 type SearchNetProperty struct {
-	Count int                  `json:"count"`
+	Count uint64               `json:"count"`
 	Info  []NetcollectProperty `json:"info"`
 }
 
@@ -71,5 +71,5 @@ type SearchNetPropertyResult struct {
 }
 
 type DeleteNetPropertyBatchOpt struct {
-	NetcollectPropertyIDs []int64 `json:"netcollect_property_id"`
+	NetcollectPropertyIDs []uint64 `json:"netcollect_property_id"`
 }

@@ -14,21 +14,21 @@ package service
 
 import (
 	"github.com/emicklei/go-restful"
-	redis "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
-
-	"configcenter/src/storage"
+	"configcenter/src/storage/dal"
 )
 
 type Service struct {
 	Core     *backbone.Engine
-	Instance storage.DI
+	Instance dal.RDB
 	Cache    *redis.Client
 }
 
@@ -37,7 +37,6 @@ func (s *Service) WebService() *restful.WebService {
 	getErrFun := func() errors.CCErrorIf {
 		return s.Core.CCErr
 	}
-
 	ws.Path("/object/{version}").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
 	//restful.DefaultRequestContentType(restful.MIME_JSON)
 	restful.DefaultResponseContentType(restful.MIME_JSON)
@@ -78,6 +77,26 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.DELETE("/meta/object/classification/{id}").To(s.DeleteClassification))
 	ws.Route(ws.POST("/meta/object/classification").To(s.CreateClassification))
 	ws.Route(ws.PUT("/meta/object/classification/{id}").To(s.UpdateClassification))
+
+	ws.Route(ws.POST("/object/{bk_obj_id}/unique/action/create").To(s.CreateObjectUnique))
+	ws.Route(ws.PUT("/object/{bk_obj_id}/unique/{id}/action/update").To(s.UpdateObjectUnique))
+	ws.Route(ws.DELETE("/object/{bk_obj_id}/unique/{id}/action/delete").To(s.DeleteObjectUnique))
+	ws.Route(ws.GET("/object/{bk_obj_id}/unique/action/search").To(s.SearchObjectUnique))
+
+	// association api
+	ws.Route(ws.POST("/association/action/search").To(s.SearchAssociationType))
+	ws.Route(ws.POST("/association/action/create").To(s.CreateAssociationType))
+	ws.Route(ws.PUT("/association/{id}/action/update").To(s.UpdateAssociationType))
+	ws.Route(ws.DELETE("/association/{id}/action/delete").To(s.DeleteAssociationType))
+
+	ws.Route(ws.POST("/object/association/action/search").To(s.SelectObjectAssociations))       // optimization: new api path
+	ws.Route(ws.POST("/object/association/action/create").To(s.CreateObjectAssociation))        // optimization: new api path
+	ws.Route(ws.PUT("/object/association/{id}/action/update").To(s.UpdateObjectAssociation))    // optimization: new api path
+	ws.Route(ws.DELETE("/object/association/{id}/action/delete").To(s.DeleteObjectAssociation)) // optimization: new api path
+
+	ws.Route(ws.POST("/inst/association/action/search").To(s.SearchInstAssociations))
+	ws.Route(ws.POST("/inst/association/action/create").To(s.CreateInstAssociation))
+	ws.Route(ws.DELETE("/inst/association/action/delete").To(s.DeleteInstAssociation))
 
 	ws.Route(ws.POST("/topographics/search").To(s.SearchTopoGraphics))
 	ws.Route(ws.POST("/topographics/update").To(s.UpdateTopoGraphics))
@@ -142,7 +161,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	info := metric.HealthInfo{
 		Module:     types.CC_MODULE_OBJECTCONTROLLER,
 		HealthMeta: meta,
-		AtTime:     types.Now(),
+		AtTime:     metadata.Now(),
 	}
 
 	answer := metric.HealthResponse{

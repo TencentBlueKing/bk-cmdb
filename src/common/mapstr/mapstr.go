@@ -38,6 +38,15 @@ func NewArrayFromInterface(datas []map[string]interface{}) []MapStr {
 	return results
 }
 
+// NewArrayFromMapStr create a new array from mapstr array
+func NewArrayFromMapStr(datas []MapStr) []MapStr {
+	results := []MapStr{}
+	for _, item := range datas {
+		results = append(results, item)
+	}
+	return results
+}
+
 // NewFromInterface create a mapstr instance from the interface
 func NewFromInterface(data interface{}) (MapStr, error) {
 
@@ -46,6 +55,12 @@ func NewFromInterface(data interface{}) (MapStr, error) {
 		return nil, fmt.Errorf("not support the kind(%s)", reflect.TypeOf(data).Kind())
 	case nil:
 		return MapStr{}, nil
+	case MapStr:
+		return tmp, nil
+	case string:
+		result := New()
+		err := json.Unmarshal([]byte(tmp), &result)
+		return result, err
 	case *map[string]interface{}:
 		return MapStr(*tmp), nil
 	case map[string]string:
@@ -64,6 +79,11 @@ func (cli MapStr) Merge(second MapStr) {
 	for key, val := range second {
 		cli[key] = val
 	}
+}
+
+// ToMapInterface convert to map[string]interface{}
+func (cli MapStr) ToMapInterface() map[string]interface{} {
+	return cli
 }
 
 // MarshalJSONInto convert to the input value
@@ -270,6 +290,8 @@ func (cli MapStr) MapStrArray(key string) ([]MapStr, error) {
 
 	case nil:
 		return nil, fmt.Errorf("the key(%s) is invalid", key)
+	case []MapStr:
+		return t, nil
 	case []map[string]interface{}:
 		items := make([]MapStr, 0)
 		for _, item := range t {

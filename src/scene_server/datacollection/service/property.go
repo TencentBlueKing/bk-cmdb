@@ -163,8 +163,8 @@ func (s *Service) DeleteProperty(req *restful.Request, resp *restful.Response) {
 	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
-func checkNetPropertyIDPathParam(defErr errors.DefaultCCErrorIf, ID string) (int64, error) {
-	netPropertyID, err := strconv.ParseInt(ID, 10, 64)
+func checkNetPropertyIDPathParam(defErr errors.DefaultCCErrorIf, ID string) (uint64, error) {
+	netPropertyID, err := strconv.ParseUint(ID, 10, 64)
 	if nil != err {
 		blog.Errorf("[NetProperty] update net property with id[%s] to parse the net property id, error: %v", ID, err)
 		return 0, defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKNetcollectPropertyIDField)
