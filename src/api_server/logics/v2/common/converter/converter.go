@@ -182,17 +182,9 @@ func ResToV2ForModuleList(result bool, message string, data interface{}) (interf
 }
 
 //ResToV2ForModuleList: convert cc v3 json data to cc v2 for module map list
-func ResToV2ForModuleMapList(result bool, message string, data interface{}) (interface{}, error) {
-	resDataV2 := make([]map[string]interface{}, 0)
-	resDataV3, err := getResDataV3(result, message, data)
-	if nil != err {
-		return nil, err
-	}
-
-	resDataInfoV3 := (resDataV3.(map[string]interface{}))["info"].([]interface{})
-
-	for _, item := range resDataInfoV3 {
-		itemMap := item.(map[string]interface{})
+func ResToV2ForModuleMapList(data metadata.InstResult) ([]mapstr.MapStr, error) {
+	resDataV2 := make([]mapstr.MapStr, 0)
+	for _, itemMap := range data.Info {
 		convMap, err := convertFieldsIntToStr(itemMap, []string{common.BKSetIDField, common.BKModuleIDField, common.BKAppIDField})
 		if nil != err {
 			return nil, err
@@ -209,7 +201,7 @@ func ResToV2ForModuleMapList(result bool, message string, data interface{}) (int
 		}
 		moduleType = fmt.Sprintf("%v", moduleType)
 
-		resDataV2 = append(resDataV2, map[string]interface{}{
+		resDataV2 = append(resDataV2, mapstr.MapStr{
 			"ModuleID":      convMap[common.BKModuleIDField],
 			"ApplicationID": convMap[common.BKAppIDField],
 			"ModuleName":    itemMap[common.BKModuleNameField],
@@ -256,19 +248,9 @@ func ResToV2ForSetList(result bool, message string, data metadata.InstResult) (i
 }
 
 //ResToV2ForPlatList: convert cc v3 json data to cc v2 for plat
-func ResToV2ForPlatList(result bool, message string, data interface{}) (interface{}, error) {
-	blog.Debug("ResToV2ForPlatList, input: %s", data)
-
+func ResToV2ForPlatList(data metadata.InstResult) (interface{}, error) {
 	resDataV2 := make([]map[string]interface{}, 0)
-
-	resDataV3, err := getResDataV3(result, message, data)
-	if nil != err {
-		return nil, err
-	}
-	resDataInfoV3 := (resDataV3.(map[string]interface{}))["info"].([]interface{})
-
-	for _, item := range resDataInfoV3 {
-		itemMap := item.(map[string]interface{})
+	for _, itemMap := range data.Info {
 		convMap, err := convertFieldsIntToStr(itemMap, []string{common.BKCloudIDField})
 		if nil != err {
 			return nil, err
