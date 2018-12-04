@@ -47,6 +47,9 @@ const (
 	// BKTableNameObjDes the table name of the object
 	BKTableNameObjDes = "cc_ObjDes"
 
+	// BKTableNameObjDes the table name of the object
+	BKTableNameObjUnique = "cc_ObjectUnique"
+
 	// BKTableNameObjAttDes the table name of the object attribute
 	BKTableNameObjAttDes = "cc_ObjAttDes"
 

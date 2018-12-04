@@ -17,8 +17,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/rs/xid"
-
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -28,6 +26,8 @@ import (
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
+
+	"github.com/rs/xid"
 )
 
 // ObjectOperationInterface object operation methods
@@ -42,7 +42,7 @@ type ObjectOperationInterface interface {
 	FindSingleObject(params types.ContextParams, objectID string) (model.Object, error)
 	UpdateObject(params types.ContextParams, data frtypes.MapStr, id int64, cond condition.Condition) error
 
-	SetProxy(modelFactory model.Factory, instFactory inst.Factory, cls ClassificationOperationInterface, asst AssociationOperationInterface, inst InstOperationInterface, attr AttributeOperationInterface, grp GroupOperationInterface)
+	SetProxy(modelFactory model.Factory, instFactory inst.Factory, cls ClassificationOperationInterface, asst AssociationOperationInterface, inst InstOperationInterface, attr AttributeOperationInterface, grp GroupOperationInterface, unique UniqueOperationInterface)
 	IsValidObject(params types.ContextParams, objID string) error
 }
 
@@ -59,18 +59,20 @@ type object struct {
 	instFactory  inst.Factory
 	cls          ClassificationOperationInterface
 	grp          GroupOperationInterface
+	unique       UniqueOperationInterface
 	asst         AssociationOperationInterface
 	inst         InstOperationInterface
 	attr         AttributeOperationInterface
 }
 
-func (o *object) SetProxy(modelFactory model.Factory, instFactory inst.Factory, cls ClassificationOperationInterface, asst AssociationOperationInterface, inst InstOperationInterface, attr AttributeOperationInterface, grp GroupOperationInterface) {
+func (o *object) SetProxy(modelFactory model.Factory, instFactory inst.Factory, cls ClassificationOperationInterface, asst AssociationOperationInterface, inst InstOperationInterface, attr AttributeOperationInterface, grp GroupOperationInterface, unique UniqueOperationInterface) {
 	o.modelFactory = modelFactory
 	o.instFactory = instFactory
 	o.asst = asst
 	o.inst = inst
 	o.attr = attr
 	o.grp = grp
+	o.unique = unique
 }
 
 func (o *object) IsValidObject(params types.ContextParams, objID string) error {
@@ -368,6 +370,15 @@ func (o *object) CreateObject(params types.ContextParams, data frtypes.MapStr) (
 		blog.Errorf("[operation-obj] failed to create the default inst name field, error info is %s", err.Error())
 	}
 
+	uni := obj.CreateUnique()
+	uni.SetKeys([]metadata.UinqueKey{{Kind: metadata.UinqueKeyKindProperty, ID: uint64(attr.GetRecordID())}})
+	uni.SetIsPre(false)
+	uni.SetMustCheck(true)
+	if err = uni.Save(nil); nil != err {
+		blog.Errorf("[operation-obj] failed to create the default inst name field, error info is %s", err.Error())
+		return nil, err
+	}
+
 	return obj, nil
 }
 
@@ -440,6 +451,18 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 		}
 
 		// delete object
+		if unis, err := obj.GetUniques(); err != nil {
+			blog.Errorf("[operation-asst] failed to get the object's uniques, error info is %s", err.Error())
+			return err
+		} else {
+			for _, uni := range unis {
+				if err = o.unique.Delete(params, obj.GetID(), uni.GetRecordID()); err != nil {
+					blog.Errorf("[operation-asst] failed to delete the object's uniques, error info is %s", err.Error())
+					return err
+				}
+			}
+		}
+
 		attrCond := condition.CreateCondition()
 		attrCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 		attrCond.Field(common.BKObjIDField).Eq(obj.GetID())

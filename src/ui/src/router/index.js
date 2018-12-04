@@ -42,7 +42,8 @@ const router = new Router({
         path: '/business',
         component: business,
         meta: {
-            isModel: true
+            isModel: true,
+            objId: 'biz'
         }
     }, {
         path: '/model',
@@ -54,7 +55,6 @@ const router = new Router({
         path: '/model/details/:modelId',
         component: modelDetail,
         meta: {
-            customTitle: true,
             returnPath: '/model',
             relative: '/model',
             ignoreAuthorize: true,

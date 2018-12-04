@@ -37,6 +37,11 @@
                 </template>
             </div>
             <div class="btn-group">
+                <label class="label-btn" v-if="tab.active==='field'" :class="{'disabled': isReadOnly}">
+                    <i class="icon-cc-import"></i>
+                    <span>{{$t('ModelManagement["导入"]')}}</span>
+                    <input v-if="!isReadOnly" ref="fileInput" type="file" @change.prevent="handleFile">
+                </label>
                 <form class="export-form" ref="submitForm" :action="exportUrl" method="POST" v-if="tab.active==='field'">
                     <label class="label-btn" @click="exportField">
                         <i class="icon-cc-derivation"></i>
@@ -68,10 +73,13 @@
         </div>
         <bk-tab class="model-details-tab" :active-name.sync="tab.active">
             <bk-tabpanel name="field" :title="$t('ModelManagement[\'模型字段\']')">
-                <the-field></the-field>
+                <the-field ref="field"></the-field>
             </bk-tabpanel>
-            <bk-tabpanel name="relation" :title="$t('ModelManagement[\'模型关联\']')">
+            <bk-tabpanel name="relation" :title="$t('ModelManagement[\'模型关联\']')" :show="activeModel && !specialModel.includes(activeModel['bk_obj_id'])">
                 <the-relation v-if="tab.active === 'relation'"></the-relation>
+            </bk-tabpanel>
+            <bk-tabpanel name="verification" :title="$t('ModelManagement[\'唯一校验\']')">
+                <the-verification v-if="tab.active === 'verification'"></the-verification>
             </bk-tabpanel>
             <bk-tabpanel name="propertyGroup" :title="$t('ModelManagement[\'字段分组\']')">
                 <the-property-group v-if="tab.active === 'propertyGroup'"></the-property-group>
@@ -85,19 +93,15 @@
     import theField from './field'
     import theRelation from './relation'
     import theChooseIcon from '@/components/model-manage/_choose-icon'
+    import theVerification from './verification'
     import { mapActions, mapGetters, mapMutations } from 'vuex'
     export default {
         components: {
             thePropertyGroup,
             theField,
             theRelation,
+            theVerification,
             theChooseIcon
-        },
-        props: {
-            isReadOnly: {
-                type: Boolean,
-                default: false
-            }
         },
         data () {
             return {
@@ -109,7 +113,8 @@
                     objIcon: ''
                 },
                 isIconListShow: false,
-                isEditName: false
+                isEditName: false,
+                specialModel: ['process', 'plat']
             }
         },
         computed: {
@@ -120,6 +125,12 @@
             ...mapGetters('objectModel', [
                 'activeModel'
             ]),
+            isReadOnly () {
+                if (this.activeModel) {
+                    return this.activeModel['bk_ispaused']
+                }
+                return false
+            },
             isMainLine () {
                 return this.activeModel['bk_classification_id'] === 'bk_biz_topo'
             },
@@ -157,12 +168,51 @@
                 'updateObject',
                 'deleteObject'
             ]),
+            ...mapActions('objectBatch', [
+                'importObjectAttribute'
+            ]),
             ...mapActions('objectMainLineModule', [
                 'deleteMainlineObject'
             ]),
             ...mapMutations('objectModel', [
                 'setActiveModel'
             ]),
+            async handleFile (e) {
+                let files = e.target.files
+                let formData = new FormData()
+                formData.append('file', files[0])
+                try {
+                    const res = await this.importObjectAttribute({
+                        params: formData,
+                        bkObjId: this.activeModel['bk_obj_id'],
+                        config: {
+                            requestId: 'importObjectAttribute',
+                            globalError: false,
+                            originalResponse: true
+                        }
+                    }).then(res => {
+                        this.$http.cancel(`post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`)
+                        return res
+                    })
+                    if (res.result) {
+                        let data = res.data[this.activeModel['bk_obj_id']]
+                        if (data.hasOwnProperty('insert_failed')) {
+                            this.$error(data['insert_failed'][0])
+                        } else if (data.hasOwnProperty('update_failed')) {
+                            this.$error(data['update_failed'][0])
+                        } else {
+                            this.$success(this.$t('ModelManagement["导入成功"]'))
+                            this.$refs.field.initFieldList()
+                        }
+                    } else {
+                        this.$error(res['bk_error_msg'])
+                    }
+                } catch (e) {
+                    this.$error(e.data['bk_error_msg'])
+                } finally {
+                    this.$refs.fileInput.value = ''
+                }
+            },
             checkModel () {
                 return this.$allModels.find(model => model['bk_obj_id'] === this.$route.params.modelId)
             },
@@ -258,7 +308,7 @@
                 }).then(() => {
                     this.$http.cancel('post_searchClassificationsObjects')
                 })
-                this.$router.push('/model')
+                this.initObject()
             },
             async deleteModel () {
                 if (this.isMainLine) {
@@ -405,6 +455,21 @@
             float: right;
             height: 100px;
             line-height: 100px;
+            .label-btn {
+                position: relative;
+                &.disabled {
+                    cursor: not-allowed;
+                }
+                input[type="file"] {
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    opacity: 0;
+                    width: 100%;
+                    height: 100%;
+                    cursor: pointer;
+                }
+            }
             .export-form {
                 display: inline-block;
             }

@@ -138,6 +138,7 @@
             }
         },
         created () {
+            this.$store.commit('setHeaderTitle', this.$t('Nav["进程管理"]'))
             this.reload()
         },
         methods: {

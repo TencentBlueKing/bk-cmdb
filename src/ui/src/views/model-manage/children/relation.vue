@@ -1,6 +1,6 @@
 <template>
     <div class="model-relation-wrapper">
-        <bk-button class="create-btn" type="primary" @click="createRelation">
+        <bk-button class="create-btn" type="primary" :disabled="isReadOnly" @click="createRelation">
             {{$t('ModelManagement["新建关联"]')}}
         </bk-button>
         <cmdb-table

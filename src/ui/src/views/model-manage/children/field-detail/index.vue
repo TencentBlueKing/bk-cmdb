@@ -65,13 +65,13 @@
             <div class="cmdb-form-item">
                 <input type="text" class="cmdb-form-input"
                 v-model.trim="fieldInfo['unit']"
-                :isReadOnly="isReadOnly"
+                :disabled="isReadOnly"
                 :placeholder="$t('ModelManagement[\'请输入单位\']')">
             </div>
         </label>
         <div class="form-label">
             <span class="label-text">{{$t('ModelManagement["用户提示"]')}}</span>
-            <textarea v-model.trim="fieldInfo['placeholder']" :isReadOnly="isReadOnly"></textarea>
+            <textarea v-model.trim="fieldInfo['placeholder']" :disabled="isReadOnly"></textarea>
         </div>
         <div class="btn-group">
             <bk-button type="primary" :loading="$loading(['updateObjectAttribute', 'createObjectAttribute'])" @click="saveField">
