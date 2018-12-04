@@ -34,7 +34,7 @@ func NewValidMap(ownerID, objID string, pheader http.Header, engine *backbone.En
 
 		propertys:    map[string]metadata.Attribute{},
 		require:      map[string]bool{},
-		isOnly:       map[string]bool{},
+		idToProperty: map[int64]metadata.Attribute{},
 		shouldIgnore: map[string]bool{},
 	}
 }
@@ -68,13 +68,11 @@ func (valid *ValidMap) Init() error {
 			continue
 		}
 		valid.propertys[attr.PropertyID] = attr
+		valid.idToProperty[attr.ID] = attr
 		valid.propertyslice = append(valid.propertyslice, attr)
 		if attr.IsRequired {
 			valid.require[attr.PropertyID] = true
 			valid.requirefields = append(valid.requirefields, attr.PropertyID)
-		}
-		if attr.IsOnly {
-			valid.isOnly[attr.PropertyID] = true
 		}
 	}
 	return nil

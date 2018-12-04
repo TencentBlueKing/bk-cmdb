@@ -13,8 +13,6 @@
 package model
 
 import (
-	"configcenter/src/common/mapstr"
-	"configcenter/src/common/util"
 	"context"
 	"encoding/json"
 
@@ -22,7 +20,9 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -92,6 +92,9 @@ type Attribute interface {
 
 	SetCreator(attributeCreator string)
 	GetCreator() string
+
+	SetRecordID(int64)
+	GetRecordID() int64
 
 	ToMapStr() (mapstr.MapStr, error)
 }
@@ -520,4 +523,11 @@ func (a *attribute) SetCreator(attributeCreator string) {
 
 func (a *attribute) GetCreator() string {
 	return a.attr.Creator
+}
+
+func (a *attribute) SetRecordID(id int64) {
+	a.attr.ID = id
+}
+func (a *attribute) GetRecordID() int64 {
+	return a.attr.ID
 }

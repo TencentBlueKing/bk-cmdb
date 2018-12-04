@@ -39,6 +39,7 @@
             next()
         },
         created () {
+            this.$store.commit('setHeaderTitle', this.$t('Index["首页"]'))
             const calcCopyrightPosition = ($scroller) => {
                 const scrollerRect = $scroller.getBoundingClientRect()
                 const scrollerHeight = scrollerRect.height
