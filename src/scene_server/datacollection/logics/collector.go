@@ -19,9 +19,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
-
-	"gopkg.in/yaml.v2"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -30,6 +27,8 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/thirdpartyclient/esbserver/nodeman"
+
+	"gopkg.in/yaml.v2"
 )
 
 // Netdevicebeat netdevicebeat collector name
@@ -369,7 +368,7 @@ func (lgc *Logics) buildNetdevicebeatConfigFile(collector *metadata.Netcollector
 			Port:      161,
 			Community: collector.Config.Community,
 			Version:   Version2c,
-			Timeout:   time.Duration(10) * time.Second,
+			Timeout:   10,
 			Retries:   3,
 			MaxOids:   10,
 		},
@@ -468,7 +467,7 @@ type SnmpConfig struct {
 	// Version is an SNMP Version
 	Version Version `yaml:"version,omitempty"`
 	// Timeout is the timeout for the SNMP Query
-	Timeout time.Duration `yaml:"timeout,omitempty"`
+	Timeout int `yaml:"timeout,omitempty"`
 	// Set the number of retries to attempt within timeout.
 	Retries int `yaml:"retries,omitempty"`
 	// MaxOids is the maximum number of oids allowed in a Get()
