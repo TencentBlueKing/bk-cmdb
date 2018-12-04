@@ -14,101 +14,178 @@ package service
 
 import (
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
 func (s *coreService) CreateManyModelClassification(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+	inputDatas := metadata.CreateManyModelClassifiaction{}
+	if err := data.MarshalJSONInto(&inputDatas); nil != err {
+		return nil, err
+	}
+	return s.core.ModelOperation().CreateManyModelClassification(params, inputDatas)
 }
 
 func (s *coreService) CreateOneModelClassification(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+	inputData := metadata.CreateOneModelClassification{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.ModelOperation().CreateOneModelClassification(params, inputData)
 }
 
 func (s *coreService) SetOneModelClassificaition(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.SetOneModelClassification{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+
+	return s.core.ModelOperation().SetOneModelClassification(params, inputData)
 }
 
 func (s *coreService) SetManyModelClassificaiton(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputDatas := metadata.SetManyModelClassification{}
+	if err := data.MarshalJSONInto(&inputDatas); nil != err {
+		return nil, err
+	}
+	return s.core.ModelOperation().SetManyModelClassification(params, inputDatas)
 }
 
 func (s *coreService) UpdateModelClassification(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.UpdateOption{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.ModelOperation().UpdateModelClassification(params, inputData)
 }
 
 func (s *coreService) DeleteModelClassification(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.DeleteOption{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.ModelOperation().DeleteModelClassificaiton(params, inputData)
 }
 
 func (s *coreService) CascadeDeleteModelClassification(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.DeleteOption{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.ModelOperation().CascadeDeleteModeClassification(params, inputData)
 }
 
 func (s *coreService) SearchModelClassification(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.QueryCondition{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.ModelOperation().SearchModelClassification(params, inputData)
 }
 
 func (s *coreService) CreateModel(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.CreateModel{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.ModelOperation().CreateModel(params, inputData)
 }
 
 func (s *coreService) SetModel(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.SetModel{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.ModelOperation().SetModel(params, inputData)
 }
 
 func (s *coreService) UpdateModel(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.UpdateOption{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.ModelOperation().UpdateModel(params, inputData)
 }
 
 func (s *coreService) DeleteModel(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.DeleteOption{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.ModelOperation().DeleteModel(params, inputData)
 }
 
 func (s *coreService) CascadeDeleteModel(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.DeleteOption{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.ModelOperation().CascadeDeleteModel(params, inputData)
 }
 
 func (s *coreService) SearchModel(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.QueryCondition{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.ModelOperation().SearchModel(params, inputData)
 }
 
 func (s *coreService) CreateModelAttributes(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.CreateModelAttributes{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.ModelOperation().CreateModelAttributes(params, pathParams("bk_obj_id"), inputData)
 }
 
 func (s *coreService) SetModelAttributes(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.SetModelAttributes{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.ModelOperation().SetModelAttributes(params, pathParams("bk_obj_id"), inputData)
 }
 
 func (s *coreService) UpdateModelAttributes(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.UpdateOption{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+
+	return s.core.ModelOperation().UpdateModelAttributes(params, pathParams("bk_obj_id"), inputData)
 }
 
 func (s *coreService) DeleteModelAttribute(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.DeleteOption{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.ModelOperation().DeleteModelAttributes(params, pathParams("bk_obj_id"), inputData)
 }
 func (s *coreService) SearchModelAttributes(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.QueryCondition{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.ModelOperation().SearchModelAttributes(params, pathParams("bk_obj_id"), inputData)
 }

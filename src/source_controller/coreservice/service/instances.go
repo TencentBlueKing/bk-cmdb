@@ -9,49 +9,83 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package service
 
 import (
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
 func (s *coreService) CreateOneModelInstance(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.CreateModelInstance{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.InstanceOperation().CreateModelInstance(params, pathParams("bk_obj_id"), inputData)
 }
 
 func (s *coreService) CreateManyModelInstances(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.CreateManyModelInstance{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.InstanceOperation().CreateManyModelInstance(params, pathParams("bk_obj_id"), inputData)
 }
 
 func (s *coreService) SetOneModelInstance(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.SetModelInstance{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.InstanceOperation().SetModelInstance(params, pathParams("bk_obj_id"), inputData)
 }
 
 func (s *coreService) SetManyModelInstances(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.SetManyModelInstance{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.InstanceOperation().SetManyModelInstance(params, pathParams("bk_obj_id"), inputData)
 }
 
 func (s *coreService) UpdateModelInstances(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.UpdateOption{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.InstanceOperation().UpdateModelInstance(params, pathParams("bk_obj_id"), inputData)
 }
 
 func (s *coreService) SearchModelInstances(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.QueryCondition{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.InstanceOperation().SearchModelInstance(params, pathParams("bk_obj_id"), inputData)
 }
 
 func (s *coreService) DeleteModelInstances(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.DeleteOption{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.InstanceOperation().DeleteModelInstance(params, pathParams("bk_obj_id"), inputData)
 }
 
 func (s *coreService) CascadeDeleteModelInstances(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.DeleteOption{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.InstanceOperation().CascadeDeleteModelInstance(params, pathParams("bk_obj_id"), inputData)
 }

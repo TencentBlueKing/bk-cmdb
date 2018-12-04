@@ -27,6 +27,5 @@ type UpdateOptionResult struct {
 
 // UpdateDataResult update method result
 type UpdateDataResult struct {
-	Count int64        `json:"count"`
-	Info  UpdatedCount `json:"info"`
+	UpdatedCount `json:",inline"`
 }

@@ -15,16 +15,18 @@ package model
 import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
+	"configcenter/src/storage/dal"
 )
 
 type modelAttribute struct {
+	dbProxy dal.RDB
 }
 
-func (m *modelAttribute) CreateModelAttributes(ctx core.ContextParams, objID string, inputParam metadata.CreateAttributes) (*metadata.CreateManyDataResult, error) {
+func (m *modelAttribute) CreateModelAttributes(ctx core.ContextParams, objID string, inputParam metadata.CreateModelAttributes) (*metadata.CreateManyDataResult, error) {
 	return nil, nil
 }
 
-func (m *modelAttribute) SetModelAttributes(ctx core.ContextParams, objID string, inputParam metadata.SetModelAttributes) (*metadata.SetManyDataResult, error) {
+func (m *modelAttribute) SetModelAttributes(ctx core.ContextParams, objID string, inputParam metadata.SetModelAttributes) (*metadata.SetDataResult, error) {
 	return nil, nil
 }
 func (m *modelAttribute) UpdateModelAttributes(ctx core.ContextParams, objID string, inputParam metadata.UpdateOption) (*metadata.UpdateDataResult, error) {
