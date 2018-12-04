@@ -15,7 +15,7 @@ cd $GOPATH/src
 git clone https://github.com/Tencent/bk-cmdb  configcenter
 ```
 
-**GOPATH 是使用go编写项目的根目录，配置GOPATH的示例如下:**
+**GOPATH 是使用Golang编写项目的根目录，配置GOPATH的示例如下:**
 
 ``` shell
 mkdir -p /data/abc #为GOPATH新建一个目录
