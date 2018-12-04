@@ -149,11 +149,9 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.He
 		return nil, common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !result.Result {
-		resultData.Merge(result.Data)
-		errCode = result.Code
-		err = defErr.New(result.Code, result.ErrMsg)
-	}
+	resultData.Merge(result.Data)
+	errCode = result.Code
+	err = defErr.New(result.Code, result.ErrMsg)
 
 	if len(f.Sheets) > 2 {
 		asstInfoMap := GetAssociationExcelData(f.Sheets[1], common.HostAddMethodExcelAssociationIndexOffset)
@@ -166,9 +164,9 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.He
 				blog.Errorf("ImportHosts logics http request import association error:%s, rid:%s", asstResultErr.Error(), util.GetHTTPCCRequestID(header))
 				return nil, common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 			}
-			if len(asstResult.Data.ErrMsgMap) > 0 {
-				resultData.Set("asst_error", asstResult.Data.ErrMsgMap)
-			}
+
+			resultData.Set("asst_error", asstResult.Data.ErrMsgMap)
+
 			if result.Result && !asstResult.Result {
 				errCode = asstResult.Code
 				err = defErr.New(asstResult.Code, asstResult.ErrMsg)
