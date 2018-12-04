@@ -92,7 +92,9 @@ func main() {
 		client.NewForConfig(config.Get(), nil)
 	}
 
+	// initial the background framework manager.
 	api.Init()
+
 	defer func() {
 		blog.CloseLogs()
 		api.UnInit()
