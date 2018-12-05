@@ -74,14 +74,14 @@ func NewFromInterface(data interface{}) (MapStr, error) {
 	}
 }
 
-// NewFromStruct convert the  struct into MapStr , the struct must be taged with 'tagName' .
-// eg:
-// type targetStruct struct{
-//    Name string `field:"testName"`
-// }
-// will be converted the follow map
-// {"testName":""}
-//
+/*NewFromStruct convert the  struct into MapStr , the struct must be taged with 'tagName' .
+eg:
+type targetStruct struct{
+Name string `field:"testName"`
+}
+will be converted the follow map
+{"testName":""}
+*/
 func NewFromStruct(targetStruct interface{}, tagName string) MapStr {
 	return SetValueToMapStrByTagsWithTagName(targetStruct, tagName)
 }
@@ -98,14 +98,15 @@ func (cli MapStr) ToMapInterface() map[string]interface{} {
 	return cli
 }
 
-// ToStructByTag convert self into a struct with 'tagName'
-// eg:
-// self := MapStr{"testName":"testvalue"}
-// targetStruct := struct{
-//    Name string `field:"testName"`
-// }
-// After call the function self.ToStructByTag(targetStruct, "field")
-// the targetStruct.Name value will be 'testvalue'
+/*ToStructByTag convert self into a struct with 'tagName'
+eg:
+self := MapStr{"testName":"testvalue"}
+targetStruct := struct{
+   Name string `field:"testName"`
+}
+After call the function self.ToStructByTag(targetStruct, "field")
+the targetStruct.Name value will be 'testvalue'
+*/
 func (cli MapStr) ToStructByTag(targetStruct interface{}, tagName string) error {
 	return SetValueToStructByTagsWithTagName(targetStruct, cli, tagName)
 }
