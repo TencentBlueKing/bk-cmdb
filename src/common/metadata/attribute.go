@@ -15,6 +15,7 @@ package metadata
 import (
 	"time"
 
+	"configcenter/src/common/mapstr"
 	types "configcenter/src/common/mapstr"
 )
 
@@ -85,7 +86,7 @@ type AttributeGroup struct {
 // Parse load the data from mapstr attribute into attribute instance
 func (cli *Attribute) Parse(data types.MapStr) (*Attribute, error) {
 
-	err := SetValueToStructByTags(cli, data)
+	err := mapstr.SetValueToStructByTags(cli, data)
 	if nil != err {
 		return nil, err
 	}
@@ -95,7 +96,7 @@ func (cli *Attribute) Parse(data types.MapStr) (*Attribute, error) {
 
 // ToMapStr to mapstr
 func (cli *Attribute) ToMapStr() types.MapStr {
-	return SetValueToMapStrByTags(cli)
+	return mapstr.SetValueToMapStrByTags(cli)
 }
 
 // ObjAttDes 对象模型属性
