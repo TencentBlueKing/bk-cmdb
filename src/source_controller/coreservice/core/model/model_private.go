@@ -10,11 +10,14 @@
  * limitations under the License.
  */
 
-package metadata
+package model
 
-import "configcenter/src/common/mapstr"
+import (
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
+	"configcenter/src/source_controller/coreservice/core"
+)
 
-// DeleteOption common delete condition options
-type DeleteOption struct {
-	Condition mapstr.MapStr `json:"condition"`
+func (m *modelManager) cascadeDeleteModel(ctx core.ContextParams, cond mapstr.MapStr) (*metadata.DeletedCount, error) {
+	return nil, nil
 }
