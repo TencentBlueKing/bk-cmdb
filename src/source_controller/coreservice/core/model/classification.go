@@ -13,7 +13,10 @@
 package model
 
 import (
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
 )
@@ -22,9 +25,43 @@ type modelClassification struct {
 	dbProxy dal.RDB
 }
 
-func (m *modelClassification) CreateOneModelClassification(ctx core.ContextParams, inputParam metadata.CreateOneModelClassification) (*metadata.CreateOneDataResult, error) {
-	return nil, nil
+func (m *modelClassification) IsExists(ctx core.ContextParams, classificationID string) (bool, error) {
+
+	cond := mongo.NewCondition()
+	cond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationID, Val: ctx.SupplierAccount}, &mongo.Eq{Key: metadata.ClassFieldClassificationID, Val: classificationID})
+	cnt, err := m.dbProxy.Table(common.BKTableNameObjClassifiction).Find(cond.ToMapStr()).Count(ctx)
+	return 0 != cnt, err
 }
+
+func (m *modelClassification) Save(ctx core.ContextParams, classification metadata.Classification) (id uint64, err error) {
+
+	id, err = m.dbProxy.NextSequence(ctx, common.BKTableNameObjClassifiction)
+	if err != nil {
+		return id, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
+	}
+
+	classification.ID = int64(id)
+	classification.OwnerID = ctx.SupplierAccount
+
+	err = m.dbProxy.Table(common.BKTableNameObjClassifiction).Insert(ctx, classification)
+	return id, err
+}
+
+func (m *modelClassification) CreateOneModelClassification(ctx core.ContextParams, inputParam metadata.CreateOneModelClassification) (*metadata.CreateOneDataResult, error) {
+
+	exists, err := m.IsExists(ctx, inputParam.Data.ClassificationID)
+	if nil != err {
+		return nil, err
+	}
+	if exists {
+		blog.Errorf("classification (%v)is duplicated", inputParam.Data)
+		return nil, ctx.Error.Error(common.CCErrCommDuplicateItem)
+	}
+
+	id, err := m.Save(ctx, inputParam.Data)
+	return &metadata.CreateOneDataResult{Created: metadata.CreatedDataResult{ID: id}}, err
+}
+
 func (m *modelClassification) CreateManyModelClassification(ctx core.ContextParams, inputParam metadata.CreateManyModelClassifiaction) (*metadata.CreateManyDataResult, error) {
 	return nil, nil
 }
