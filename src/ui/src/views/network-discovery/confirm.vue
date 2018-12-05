@@ -43,6 +43,7 @@
             :loading="$loading('searchNetcollectList')"
             :header="table.header"
             :list="tableList"
+            :wrapperMinusHeight="210"
             :defaultSort="table.defaultSort"
             :checked.sync="table.checked"
             @handleSortChange="handleSortChange"
