@@ -508,25 +508,40 @@ func (lgc *Logics) confirmAssociations(header http.Header, report *metadata.Netc
 				continue
 			}
 
-			updateBody := map[string]interface{}{
-				asst.AsstPropertyID: asstInstID,
-			}
-
-			resp, err := lgc.CoreAPI.TopoServer().Instance().UpdateInst(context.Background(), util.GetUser(header), report.ObjectID, instID, header, updateBody)
-			if err != nil {
-				blog.Errorf("[NetDevice][ConfirmReport] update inst error: %v, %+v", err, updateBody)
-				errs = append(errs, err)
-				continue
-			}
-			if !resp.Result {
-				blog.Errorf("[NetDevice][ConfirmReport] update inst error: %v, %+v", resp.ErrMsg, updateBody)
-				errs = append(errs, fmt.Errorf(resp.ErrMsg))
-				continue
+			if !isAssociationExists(instassts, report.ObjectID, instID, asst.AsstObjectID, asstInstID) {
+				req := metadata.CreateAssociationInstRequest{
+					ObjectAsstID: asst.ObjectAsstID,
+					InstID:       instID,
+					AsstInstID:   asstInstID,
+				}
+				resp, err := lgc.CoreAPI.TopoServer().Association().CreateInst(context.Background(), header, &req)
+				if err != nil {
+					blog.Errorf("[NetDevice][ConfirmReport] create inst association error: %v, %+v", err, req)
+					errs = append(errs, err)
+					continue
+				}
+				if !resp.Result {
+					blog.Errorf("[NetDevice][ConfirmReport] create inst association error: %v, %+v", resp.ErrMsg, req)
+					errs = append(errs, fmt.Errorf(resp.ErrMsg))
+					continue
+				}
 			}
 			successCount++
 		}
 	}
 	return successCount, errs
+}
+
+func isAssociationExists(assts []*metadata.InstAsst, objectID string, instID int64, asstObjectID string, asstInstID int64) bool {
+	for _, asst := range assts {
+		if asst.ObjectID == objectID &&
+			asst.InstID == instID &&
+			asst.AsstObjectID == asstObjectID &&
+			asst.AsstInstID == asstInstID {
+			return true
+		}
+	}
+	return false
 }
 
 func (lgc *Logics) saveHistory(report *metadata.NetcollectReport, success bool) error {
