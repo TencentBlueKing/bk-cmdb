@@ -22,10 +22,5 @@ type UpdateOption struct {
 // UpdateOptionResult common update result
 type UpdateOptionResult struct {
 	BaseResp `json:",inline"`
-	Data     UpdateDataResult `json:"data"`
-}
-
-// UpdateDataResult update method result
-type UpdateDataResult struct {
-	UpdatedCount `json:",inline"`
+	Data     UpdatedCount `json:"data"`
 }

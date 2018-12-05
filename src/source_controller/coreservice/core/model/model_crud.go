@@ -10,11 +10,4 @@
  * limitations under the License.
  */
 
-package metadata
-
-import "configcenter/src/common/mapstr"
-
-// DeleteOption common delete condition options
-type DeleteOption struct {
-	Condition mapstr.MapStr `json:"condition"`
-}
+package model

@@ -221,7 +221,7 @@ func (s *coreService) Actions() []*httpserver.Action {
 
 				data, dataErr := act.HandlerFunc(core.ContextParams{
 					Context:         util.GetDBContext(context.Background(), req.Request.Header),
-					Err:             defErr,
+					Error:           defErr,
 					Lang:            defLang,
 					Header:          req.Request.Header,
 					SupplierAccount: ownerID,
