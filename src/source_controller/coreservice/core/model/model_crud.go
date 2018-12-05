@@ -11,3 +11,20 @@
  */
 
 package model
+
+import (
+	"configcenter/src/common"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/universalsql/mongo"
+	"configcenter/src/source_controller/coreservice/core"
+)
+
+func (m *modelManager) hasAttributes(ctx core.ContextParams, objID string) (attrs []metadata.Attribute, exists bool, err error) {
+
+	cond := mongo.NewCondition()
+	cond.Element(&mongo.Eq{Key: metadata.ModelFieldOwnerID, Val: ctx.SupplierAccount})
+	cond.Element(&mongo.Eq{Key: metadata.AttributeFieldObjectID, Val: objID})
+	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).All(ctx, &attrs)
+	exists = (0 != len(attrs))
+	return attrs, exists, err
+}

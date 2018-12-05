@@ -225,6 +225,7 @@ func (s *coreService) Actions() []*httpserver.Action {
 					Lang:            defLang,
 					Header:          req.Request.Header,
 					SupplierAccount: ownerID,
+					ReqID:           util.GetHTTPCCRequestID(req.Request.Header),
 					User:            user,
 				},
 					req.PathParameter,
