@@ -79,7 +79,7 @@ func (ps *ProctrlServer) GetProcInstanceModel(req *restful.Request, resp *restfu
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcGetInstanceModel)})
 		return
 	}
-	blog.V().Infof("will get process instance model. condition: %v", reqParam)
+	blog.V(5).Infof("will get process instance model. condition: %v", reqParam)
 	data := make([]meta.ProcInstanceModel, 0)
 	err = ps.Instance.Table(common.BKTableNameProcInstanceModel).Find(reqParam.Condition).Fields(strings.Split(reqParam.Fields, ",")...).
 		Sort(reqParam.Sort).Start(uint64(reqParam.Start)).Limit(uint64(reqParam.Limit)).All(ctx, &data)
