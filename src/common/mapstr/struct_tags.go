@@ -13,10 +13,11 @@
 package mapstr
 
 import (
-	"configcenter/src/common/blog"
 	"fmt"
 	"reflect"
 	"strings"
+
+	"configcenter/src/common/blog"
 )
 
 // GetTags parse a object and get the all tags
