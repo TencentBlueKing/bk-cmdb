@@ -151,12 +151,11 @@ type NetcollectHistory struct {
 }
 
 type NetcollectReportAttribute struct {
-	PropertyID    string      `json:"bk_property_id" bson:"bk_property_id"`
-	PropertyName  string      `json:"bk_property_name" bson:"-"`
-	IsRequired    bool        `json:"isrequired" bson:"-"`
-	CurValue      interface{} `json:"value" bson:"value"`
-	PreValue      interface{} `json:"pre_value" bson:"-"`
-	Configuration string      `json:"configuration" bson:"configuration"`
+	PropertyID   string      `json:"bk_property_id" bson:"bk_property_id"`
+	PropertyName string      `json:"bk_property_name" bson:"-"`
+	IsRequired   bool        `json:"isrequired" bson:"-"`
+	CurValue     interface{} `json:"value" bson:"value"`
+	PreValue     interface{} `json:"pre_value" bson:"-"`
 
 	Method  string `json:"method,omitempty" bson:"-"`
 	Success bool   `json:"success,omitempty" bson:"-"`
@@ -169,6 +168,7 @@ type NetcollectReportAssociation struct {
 	AsstPropertyID string `json:"bk_asst_property_id" bson:"bk_asst_property_id"`
 	AsstObjectID   string `json:"bk_asst_obj_id" bson:"bk_asst_obj_id"`
 	AsstObjectName string `json:"bk_asst_obj_name" bson:"bk_asst_obj_name"`
+	Configuration  string `json:"configuration" bson:"configuration"`
 }
 
 type NetcollectReportAsstCond struct {

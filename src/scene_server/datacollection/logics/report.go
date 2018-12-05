@@ -312,6 +312,30 @@ func (lgc *Logics) findInst(header http.Header, objectID string, query *metadata
 	return resp.Data.Info, nil
 }
 
+func (lgc *Logics) findInstAssociation(header http.Header, objectID string, instID int64) ([]*metadata.InstAsst, error) {
+	cond := condition.CreateCondition()
+	or := cond.NewOR()
+	or.Item(mapstr.MapStr{
+		"bk_inst_id": instID,
+		"bk_obj_id":  objectID,
+	})
+	or.Item(mapstr.MapStr{
+		"bk_asst_inst_id": instID,
+		"bk_asst_obj_id":  objectID,
+	})
+
+	resp, err := lgc.CoreAPI.TopoServer().Association().SearchInst(context.Background(), header, &metadata.SearchAssociationInstRequest{cond.ToMapStr()})
+	if err != nil {
+		blog.Errorf("[NetDevice][findInstAssociation] by %+v error: %v", cond.ToMapStr(), err)
+		return nil, err
+	}
+	if !resp.Result {
+		blog.Errorf("[NetDevice][findInstAssociation] by %+v error: %+v", cond.ToMapStr(), resp)
+		return nil, err
+	}
+	return resp.Data, nil
+}
+
 func (lgc *Logics) ConfirmReport(header http.Header, reports []metadata.NetcollectReport) *metadata.RspNetcollectConfirm {
 	result := metadata.RspNetcollectConfirm{Errors: []string{}}
 	for index := range reports {
@@ -449,6 +473,12 @@ func (lgc *Logics) confirmAssociations(header http.Header, report *metadata.Netc
 	instID, err := insts[0].Int64(common.GetInstIDField(report.ObjectID))
 	if err != nil {
 		blog.Errorf("[NetDevice][ConfirmReport] find inst failed, instID not found from %+v", insts[0])
+		return 0, append(errs, fmt.Errorf("inst not found"))
+	}
+
+	instassts, err := lgc.findInstAssociation(header, report.ObjectID, instID)
+	if err != nil {
+		blog.Errorf("[NetDevice][ConfirmReport] find inst association failed, association not found from %+v", insts[0])
 		return 0, append(errs, fmt.Errorf("inst not found"))
 	}
 
