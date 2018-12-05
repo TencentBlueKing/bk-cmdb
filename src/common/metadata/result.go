@@ -51,17 +51,17 @@ type ExceptionResult struct {
 
 // CreatedDataResult common created result definition
 type CreatedDataResult struct {
-	ID int64 `json:"id"`
+	ID uint64 `json:"id"`
 }
 
 // UpdatedDataResult common update operation result
 type UpdatedDataResult struct {
-	ID int64 `json:"id"`
+	ID uint64 `json:"id"`
 }
 
 // DeletedDataResult common delete operation result
 type DeletedDataResult struct {
-	ID int64 `json:"id"`
+	ID uint64 `json:"id"`
 }
 
 // SetDataResult common set result definition
