@@ -163,12 +163,14 @@ type NetcollectReportAttribute struct {
 }
 
 type NetcollectReportAssociation struct {
-	Action         string `json:"action" bson:"-"`
-	AsstInstName   string `json:"bk_asst_inst_name" bson:"bk_asst_inst_name"`
-	AsstPropertyID string `json:"bk_asst_property_id" bson:"bk_asst_property_id"`
+	Action       string `json:"action" bson:"-"`
+	AsstInstName string `json:"bk_asst_inst_name" bson:"bk_asst_inst_name"`
+	// AsstPropertyID string `json:"bk_asst_property_id" bson:"bk_asst_property_id"`
 	AsstObjectID   string `json:"bk_asst_obj_id" bson:"bk_asst_obj_id"`
 	AsstObjectName string `json:"bk_asst_obj_name" bson:"bk_asst_obj_name"`
-	Configuration  string `json:"configuration" bson:"configuration"`
+
+	ObjectAsstID  string `json:"bk_obj_asst_id" bson:"bk_obj_asst_id"`
+	Configuration string `json:"configuration" bson:"configuration"`
 }
 
 type NetcollectReportAsstCond struct {

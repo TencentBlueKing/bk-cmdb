@@ -500,7 +500,7 @@ func (a *association) SearchInst(params types.ContextParams, request *metadata.S
 }
 func (a *association) CreateInst(params types.ContextParams, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error) {
 	cond := condition.CreateCondition()
-	cond.Field(common.AssociationObjAsstIDField).Eq(request.ObjectAsstId)
+	cond.Field(common.AssociationObjAsstIDField).Eq(request.ObjectAsstID)
 	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	result, err := a.SearchObject(params, &metadata.SearchAssociationObjectRequest{Condition: cond.ToMapStr()})
 	if err != nil {
@@ -514,7 +514,7 @@ func (a *association) CreateInst(params types.ContextParams, request *metadata.C
 	}
 
 	if len(result.Data) == 0 {
-		blog.Errorf("create instance association, but can not find object association[%s]. ", request.ObjectAsstId)
+		blog.Errorf("create instance association, but can not find object association[%s]. ", request.ObjectAsstID)
 		return nil, params.Err.Error(common.CCErrorTopoObjectAssociationNotExist)
 	}
 
