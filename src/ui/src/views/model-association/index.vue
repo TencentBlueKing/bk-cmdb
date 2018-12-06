@@ -1,7 +1,9 @@
 <template>
     <div class="relation-wrapper">
         <p class="operation-box">
-            <bk-button type="primary" @click="createRelation">
+            <bk-button type="primary"
+                :disabled="!authority.includes('update')"
+                @click="createRelation">
                 {{$t('ModelManagement["新增关联类型"]')}}
             </bk-button>
             <label class="search-input">
@@ -122,9 +124,15 @@
                     })
                 }
                 return params
+            },
+            authority () {
+                return this.$store.getters.admin ? ['search', 'update', 'delete'] : []
             }
         },
         created () {
+            if (!this.authority.includes('update')) {
+                this.table.header.pop()
+            }
             this.$store.commit('setHeaderTitle', this.$t('Nav["关联类型"]'))
             this.searchRelation()
         },
