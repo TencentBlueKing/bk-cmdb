@@ -230,6 +230,20 @@ func (m *model) CreateModelAttrs(ctx context.Context, h http.Header, objID strin
 	return
 }
 
+func (m *model) UpdateModelAttrs(ctx context.Context, h http.Header, objID string, input *metadata.UpdateOption) (resp *metadata.UpdatedOptionResult, err error) {
+	resp = new(metadata.UpdatedOptionResult)
+	subPath := fmt.Sprintf("/update/model/%s/attributes", objID)
+
+	err = m.client.Put().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
 func (m *model) SetModelAttrs(ctx context.Context, h http.Header, objID string, input *metadata.SetModelAttributes) (resp *metadata.CreateManyOptionResult, err error) {
 	resp = new(metadata.CreateManyOptionResult)
 	subPath := fmt.Sprintf("/set/model/%s/attributes", objID)
@@ -260,7 +274,7 @@ func (m *model) DeleteModelAttr(ctx context.Context, h http.Header, objID string
 
 func (m *model) ReadModelAttr(ctx context.Context, h http.Header, objID string, input *metadata.QueryCondition) (resp *metadata.QueryConditionResult, err error) {
 	resp = new(metadata.QueryConditionResult)
-	subPath := fmt.Sprintf("/post/model/%s/attributes", objID)
+	subPath := fmt.Sprintf("/read/model/%s/attributes", objID)
 
 	err = m.client.Delete().
 		WithContext(ctx).
