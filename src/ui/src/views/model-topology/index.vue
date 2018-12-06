@@ -2,7 +2,9 @@
     <div class="topo-wrapper" :class="{'has-nav': topoEdit.isEdit}">
         <div class="toolbar">
             <template v-if="!topoEdit.isEdit">
-                <bk-button class="edit-button" type="primary" @click="editTopo">
+                <bk-button class="edit-button" type="primary"
+                    :disabled="!authority.includes('update')"
+                    @click="editTopo">
                     {{$t('ModelManagement["编辑拓扑"]')}}
                 </bk-button>
             </template>
@@ -18,7 +20,11 @@
                 <i class="bk-icon icon-full-screen" @click="resizeFull" v-tooltip="$t('ModelManagement[\'还原\']')"></i>
                 <i class="bk-icon icon-plus" @click="zoomIn" v-tooltip="$t('ModelManagement[\'放大\']')"></i>
                 <i class="bk-icon icon-minus" @click="zoomOut" v-tooltip="$t('ModelManagement[\'缩小\']')"></i>
-                <i class="icon-cc-setting" @click="showSlider('theDisplay')" v-tooltip="$t('ModelManagement[\'拓扑显示设置\']')"></i>
+                <i class="icon-cc-setting"
+                    v-if="authority.includes('update')"
+                    v-tooltip="$t('ModelManagement[\'拓扑显示设置\']')"
+                    @click="showSlider('theDisplay')">
+                </i>
                 <div class="topo-example">
                     <p class="example-item">
                         <i></i>
@@ -267,6 +273,9 @@
                     })
                     return classify
                 })
+            },
+            authority () {
+                return this.$store.getters.admin ? ['search', 'update', 'delete'] : []
             }
         },
         watch: {
