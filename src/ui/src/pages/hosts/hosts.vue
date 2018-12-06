@@ -904,6 +904,8 @@
                         if (!this.sideslider.attribute.form.isMultipleUpdate) {
                             this.$refs.hostAttribute.displayType = 'list'
                             this.getHostDetails(bkHostID)
+                        } else {
+                            this.cancelSetField()
                         }
                     } else {
                         this.$alertMsg(res['bk_error_msg'])
