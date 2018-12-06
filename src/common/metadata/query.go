@@ -13,25 +13,26 @@
 package metadata
 
 import (
-	"configcenter/src/common/blog"
-	"fmt"
-	"reflect"
-
-	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 )
 
-// Page the common page definition
-type Page struct {
-	Start int64    `json:"start"`
-	Limit int64    `json:"limit"`
-	Sort  []string `json:"sort"`
+// SearchLimit sub condition
+type SearchLimit struct {
+	Offset int64 `json:"start"`
+	Limit  int64 `json:"limit"`
+}
+
+// SearchSort sub condition
+type SearchSort struct {
+	IsDsc bool   `json:"is_dsc"`
+	Field string `json:"field"`
 }
 
 // QueryCondition the common query condition definition
 type QueryCondition struct {
-	Fields    string        `json:"fields"`
-	SplitPage Page          `json:"page"`
+	Fields    []string      `json:"fields"`
+	Limit     SearchLimit   `json:"limit"`
+	SortArr   []SearchSort  `json:"sort"`
 	Condition mapstr.MapStr `json:"condition"`
 }
 
@@ -39,124 +40,4 @@ type QueryCondition struct {
 type QueryResult struct {
 	Count int64           `json:"count"`
 	Info  []mapstr.MapStr `json:"info"`
-}
-
-type SearchLimit struct {
-	Offset int64 `json:"start"`
-	Limit  int64 `json:"limit"`
-}
-
-type SearchSort struct {
-	IsDsc bool   `json:"is_dsc"`
-	Field string `json:"field"`
-}
-
-type SearchInput struct {
-	Fields    []string                   `json:"fields"`
-	Limit     *SearchLimit               `json:"limit"`
-	SortArr   []SearchSort               `json:"sort"`
-	Condition []SearchInputConditionItem `json:"condition"`
-}
-
-type SearchInputConditionItem struct {
-	Fields   string      `json:"field"`
-	Operator string      `json:"operator"`
-	Value    interface{} `json:"value"`
-}
-
-func (s *SearchInput) ToSearchCondition() *DBSearchCondition {
-	return s.toMongoSearchCondition()
-}
-
-func (s *SearchInput) toMongoSearchCondition() *DBSearchCondition {
-	sc := &DBSearchCondition{}
-	cond := mapstr.New()
-	for _, item := range s.Condition {
-		switch item.Fields {
-		case condition.BKDBEQ, condition.BKDBGT, condition.BKDBGTE,
-			condition.BKDBIN, condition.BKDBNIN, condition.BKDBLIKE,
-			condition.BKDBLT, condition.BKDBLTE, condition.BKDBNE, condition.BKDBOR:
-			cond.Set(item.Fields, getMongoCond(item.Value))
-		default:
-			cond.Set(item.Fields, mapstr.MapStr{item.Operator: getMongoCond(item.Value)})
-
-		}
-	}
-	sc.Condition = cond
-
-	for _, sort := range s.SortArr {
-		if sort.IsDsc {
-			sc.SortArr = append(sc.SortArr, fmt.Sprintf("%s:-1", sort.Field))
-		} else {
-			sc.SortArr = append(sc.SortArr, fmt.Sprintf("%s:1", sort.Field))
-		}
-	}
-
-	sc.Fields = s.Fields
-	sc.Limit = s.Limit
-	return sc
-}
-
-type DBSearchCondition struct {
-	Fields    []string      `json:"fields"`
-	Limit     *SearchLimit  `json:"sort"`
-	SortArr   []string      `json:"sort"`
-	Condition mapstr.MapStr `json:"condition"`
-}
-
-func getMongoCond(val interface{}) interface{} {
-
-	if nil == val {
-		return nil
-	}
-	var item SearchInputConditionItem
-	var ok bool
-
-	valType := reflect.TypeOf(val)
-
-	switch valType.Kind() {
-	default:
-
-		return val
-	case reflect.Struct:
-		item, ok = val.(SearchInputConditionItem)
-		if !ok {
-			return val
-		}
-
-	case reflect.Map:
-		tmpMap, err := mapstr.NewFromInterface(val)
-		if nil != err {
-			blog.Warnf("getMongoCond field error %s", err.Error())
-			return val
-		}
-
-		field, err := tmpMap.String("field")
-		if err != nil {
-			blog.Warnf("getMongoCond field error %s", err.Error())
-			return val
-		}
-		op, err := tmpMap.String("operator")
-		if err != nil {
-			blog.Warnf("getMongoCond operator error %s", err.Error())
-			return val
-		}
-		itemVal, _ := tmpMap.Get("value")
-		item.Fields = field
-		item.Operator = op
-		item.Value = itemVal
-
-	}
-	cond := mapstr.New()
-	switch item.Fields {
-	case condition.BKDBEQ, condition.BKDBGT, condition.BKDBGTE,
-		condition.BKDBIN, condition.BKDBNIN, condition.BKDBLIKE,
-		condition.BKDBLT, condition.BKDBLTE, condition.BKDBNE, condition.BKDBOR:
-		cond.Set(item.Fields, getMongoCond(item.Value))
-	default:
-		cond.Set(item.Fields, mapstr.MapStr{item.Operator: getMongoCond(item.Value)})
-
-	}
-	return cond
-
 }
