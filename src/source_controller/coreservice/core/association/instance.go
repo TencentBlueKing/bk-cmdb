@@ -35,12 +35,12 @@ func (m *associationInstance) CreateManyInstanceAssociation(ctx core.ContextPara
 func (m *associationInstance) SetManyInstanceAssociation(ctx core.ContextParams, inputParam metadata.SetManyInstanceAssociation) (*metadata.SetDataResult, error) {
 	return nil, nil
 }
-func (m *associationInstance) UpdateInstanceAssociation(ctx core.ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdateDataResult, error) {
+func (m *associationInstance) UpdateInstanceAssociation(ctx core.ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 	return nil, nil
 }
 func (m *associationInstance) SearchInstanceAssociation(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
 	return nil, nil
 }
-func (m *associationInstance) DeleteInstanceAssociation(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeleteDataResult, error) {
+func (m *associationInstance) DeleteInstanceAssociation(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 	return nil, nil
 }

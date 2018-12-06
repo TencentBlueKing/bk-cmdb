@@ -21,14 +21,14 @@ func (s *coreService) initHealth() {
 }
 
 func (s *coreService) initModelClassification() {
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/model/classfication", HandlerFunc: s.CreateOneModelClassification})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/createmany/model/classfication", HandlerFunc: s.CreateManyModelClassification})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/setmany/model/classfication", HandlerFunc: s.SetManyModelClassificaiton})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/set/model/classfication", HandlerFunc: s.SetOneModelClassificaition})
-	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/model/classfication", HandlerFunc: s.UpdateModelClassification})
-	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/model/classfication", HandlerFunc: s.DeleteModelClassification})
-	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/model/classfication/cascade", HandlerFunc: s.CascadeDeleteModelClassification})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/model/classfication", HandlerFunc: s.SearchModelClassification})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/model/classification", HandlerFunc: s.CreateOneModelClassification})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/createmany/model/classification", HandlerFunc: s.CreateManyModelClassification})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/setmany/model/classification", HandlerFunc: s.SetManyModelClassificaiton})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/set/model/classification", HandlerFunc: s.SetOneModelClassificaition})
+	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/model/classification", HandlerFunc: s.UpdateModelClassification})
+	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/model/classification", HandlerFunc: s.DeleteModelClassification})
+	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/model/classification/cascade", HandlerFunc: s.CascadeDeleteModelClassification})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/model/classification", HandlerFunc: s.SearchModelClassification})
 }
 
 func (s *coreService) initModel() {

@@ -10,34 +10,27 @@
  * limitations under the License.
  */
 
-package metadata
+package model
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
+	"configcenter/src/source_controller/coreservice/core"
 )
 
-// SearchLimit sub condition
-type SearchLimit struct {
-	Offset int64 `json:"start"`
-	Limit  int64 `json:"limit"`
+func (m *modelClassification) hasModel(ctx core.ContextParams, cond mapstr.MapStr) (cnt int64, exists bool, err error) {
+
+	innerCnt, err := m.dbProxy.Table(common.BKTableNameObjDes).Find(cond).Count(ctx)
+	cnt = int64(innerCnt)
+	exists = 0 != cnt
+	return cnt, exists, err
 }
 
-// SearchSort sub condition
-type SearchSort struct {
-	IsDsc bool   `json:"is_dsc"`
-	Field string `json:"field"`
-}
+func (m *modelClassification) searchClassification(ctx core.ContextParams, cond mapstr.MapStr) ([]metadata.Classification, error) {
 
-// QueryCondition the common query condition definition
-type QueryCondition struct {
-	Fields    []string      `json:"fields"`
-	Limit     SearchLimit   `json:"limit"`
-	SortArr   []SearchSort  `json:"sort"`
-	Condition mapstr.MapStr `json:"condition"`
-}
+	results := []metadata.Classification{}
+	err := m.dbProxy.Table(common.BKTableNameObjClassifiction).Find(cond).All(ctx, &results)
 
-// QueryResult common query result
-type QueryResult struct {
-	Count int64           `json:"count"`
-	Info  []mapstr.MapStr `json:"info"`
+	return results, err
 }

@@ -35,7 +35,7 @@ type SetOneModelClassification CreateOneModelClassification
 // DeleteModelClassificationResult delete the model classification result
 type DeleteModelClassificationResult struct {
 	BaseResp `json:",inline"`
-	Data     DeleteDataResult `json:"data"`
+	Data     DeletedCount `json:"data"`
 }
 
 // CreateModel create model params
