@@ -449,7 +449,7 @@
                     'text': '',
                     'bk_host_innerip': true,
                     'bk_host_outerip': true,
-                    'exact': 1
+                    'exact': 0
                 }
                 if (this.$refs.dateRangePicker && this.$refs.dateRangePicker.length) {
                     this.$refs.dateRangePicker.map(vDateRangePicker => {
