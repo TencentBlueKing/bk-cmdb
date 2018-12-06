@@ -30,7 +30,7 @@ func addswitchAssociation(ctx context.Context, db dal.RDB, conf *upgrader.Config
 		ObjectID:        "bk_switch",
 		AsstObjID:       "host",
 		AssociationName: "bk_switch_host",
-		Mapping:         metadata.OneToOneMapping,
+		Mapping:         metadata.OneToManyMapping,
 		OnDelete:        metadata.NoAction,
 		IsPre:           util.Pfalse(),
 	}
