@@ -34,6 +34,12 @@ func NewCondition() universalsql.Condition {
 	}
 }
 
+// NewConditionFromMapStr create a condition by MapStr
+func NewConditionFromMapStr(cond mapstr.MapStr) universalsql.Condition {
+
+	return nil
+}
+
 func (m *mongoCondition) ToSQL() (string, error) {
 	sql, err := json.Marshal(m.ToMapStr())
 	return string(sql), err
