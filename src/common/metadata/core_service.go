@@ -88,5 +88,9 @@ type CreateManyInstanceAssociation struct {
 	Datas InstAsst `json:"datas"`
 }
 
+type Dimension struct {
+	AppID int64 `json:"bk_biz_id"`
+}
+
 type SetOneInstanceAssociation CreateOneInstanceAssociation
 type SetManyInstanceAssociation CreateManyInstanceAssociation
