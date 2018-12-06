@@ -42,3 +42,28 @@ func addswitchAssociation(ctx context.Context, db dal.RDB, conf *upgrader.Config
 
 	return nil
 }
+
+func changeNetDeviceTableName(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+	err := db.DropTable("cc_Netcollect_Device")
+	if err != nil {
+		return err
+	}
+	err = db.DropTable("cc_Netcollect_Property")
+	if err != nil {
+		return err
+	}
+
+	tablenames := []string{"cc_NetcollectDevice", "cc_NetcollectProperty"}
+	for _, tablename := range tablenames {
+		exists, err := db.HasTable(tablename)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			if err = db.CreateTable(tablename); err != nil && !db.IsDuplicatedError(err) {
+				return err
+			}
+		}
+	}
+	return nil
+}

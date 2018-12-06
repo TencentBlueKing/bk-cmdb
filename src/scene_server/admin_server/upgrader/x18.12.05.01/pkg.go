@@ -25,7 +25,12 @@ func init() {
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	err = addswitchAssociation(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x18.12.09.01] createObjectUnitTable error  %s", err.Error())
+		blog.Errorf("[upgrade x18.12.09.01] addswitchAssociation error  %s", err.Error())
+		return err
+	}
+	err = changeNetDeviceTableName(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade x18.12.09.01] changeNetDeviceTableName error  %s", err.Error())
 		return err
 	}
 

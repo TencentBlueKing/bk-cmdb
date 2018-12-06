@@ -23,6 +23,8 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	"github.com/rs/xid"
 )
 
 func (lgc *Logics) SearchReportSummary(header http.Header, param metadata.ParamSearchNetcollectReport) ([]*metadata.NetcollectReportSummary, error) {
@@ -384,24 +386,6 @@ func (lgc *Logics) confirmAttributes(header http.Header, report *metadata.Netcol
 	}
 
 	objType := common.GetObjByType(report.ObjectID)
-	if objType == common.BKInnerObjIDHost {
-		hostdata := metadata.HostList{
-			InputType: metadata.CollectType,
-			HostInfo: map[int64]map[string]interface{}{
-				1: data,
-			},
-		}
-
-		resp, err := lgc.CoreAPI.HostServer().AddHost(context.Background(), header, &hostdata)
-		if err != nil {
-			blog.Errorf("[NetDevice][ConfirmReport] update inst error: %v, %+v", err, data)
-			return attrCount, err
-		}
-		if !resp.Result {
-			blog.Errorf("[NetDevice][ConfirmReport] update inst error: %v, %+v", resp, data)
-			return attrCount, fmt.Errorf(resp.ErrMsg)
-		}
-	}
 
 	cond := condition.CreateCondition()
 	if objType == common.BKInnerObjIDObject {
@@ -419,6 +403,38 @@ func (lgc *Logics) confirmAttributes(header http.Header, report *metadata.Netcol
 		return attrCount, err
 	}
 	blog.V(4).Infof("[NetDevice][ConfirmReport] find inst result: %#v, condition: %#v", insts, cond.ToMapStr())
+
+	if objType == common.BKInnerObjIDHost {
+		var assetID string
+		if len(insts) > 0 {
+			assetID, err = insts[0].String(common.BKAssetIDField)
+			if err != nil {
+				blog.Warnf("[NetDevice][ConfirmReport] find inst failed, bk_asset_id not found from %+v", insts[0])
+			}
+		}
+		if assetID == "" {
+			data.Set(common.BKAssetIDField, xid.New().String())
+		}
+
+		hostdata := metadata.HostList{
+			InputType: metadata.CollectType,
+			HostInfo: map[int64]map[string]interface{}{
+				1: data,
+			},
+		}
+
+		resp, err := lgc.CoreAPI.HostServer().AddHost(context.Background(), header, &hostdata)
+		if err != nil {
+			blog.Errorf("[NetDevice][ConfirmReport] add host error: %v, %+v", err, data)
+			return attrCount, err
+		}
+		if !resp.Result {
+			blog.Errorf("[NetDevice][ConfirmReport] add host error: %v, %+v", resp, data)
+			return attrCount, fmt.Errorf(resp.ErrMsg)
+		}
+		return attrCount, nil
+	}
+
 	if len(insts) > 0 {
 		instID, err := insts[0].Int64(common.GetInstIDField(report.ObjectID))
 		if err != nil {

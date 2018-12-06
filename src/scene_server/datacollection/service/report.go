@@ -16,12 +16,12 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	"github.com/emicklei/go-restful"
 )
 
 func (s *Service) SearchReportSummary(req *restful.Request, resp *restful.Response) {
@@ -39,7 +39,7 @@ func (s *Service) SearchReportSummary(req *restful.Request, resp *restful.Respon
 	result, err := s.Logics.SearchReportSummary(pheader, param)
 	if err != nil {
 		blog.Errorf("[NetDevice][SearchReportSummary] SearchReportSummary failed, err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCollectNetReportSearchFail)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCollectNetReportSearchFail)})
 		return
 	}
 
@@ -63,7 +63,7 @@ func (s *Service) SearchReport(req *restful.Request, resp *restful.Response) {
 	count, result, err := s.Logics.SearchReport(pheader, param)
 	if err != nil {
 		blog.Errorf("[NetDevice][SearchReportSummary] SearchReportSummary failed, err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCollectNetReportSearchFail)})
+		resp.WriteError(http.StatusOK, &metadata.RespError{Msg: defErr.Error(common.CCErrCollectNetReportSearchFail)})
 		return
 	}
 
@@ -88,7 +88,7 @@ func (s *Service) ConfirmReport(req *restful.Request, resp *restful.Response) {
 
 	result := s.Logics.ConfirmReport(pheader, param.Reports)
 	if len(result.Errors) > 0 {
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{
 			Msg:  defErr.Error(common.CCErrCollectNetReportConfirmFail),
 			Data: result,
 		})
@@ -115,7 +115,7 @@ func (s *Service) SearchHistory(req *restful.Request, resp *restful.Response) {
 	count, result, err := s.Logics.SearchHistory(pheader, param)
 	if err != nil {
 		blog.Errorf("[NetDevice][SearchReportSummary] SearchReportSummary failed, err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCollectNetHistorySearchFail)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCollectNetHistorySearchFail)})
 		return
 	}
 
