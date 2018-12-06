@@ -80,6 +80,7 @@
             <bk-tab :active-name.sync="tab.active" slot="content">
                 <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-details v-if="tab.attribute.type === 'details'"
+                        :authority="authority"
                         :properties="properties.host"
                         :propertyGroups="propertyGroups"
                         :inst="tab.attribute.inst.details"
@@ -89,6 +90,7 @@
                     </cmdb-details>
                     <cmdb-form v-else-if="tab.attribute.type === 'update'"
                         ref="form"
+                        :authority="authority"
                         :properties="properties.host"
                         :propertyGroups="propertyGroups"
                         :inst="tab.attribute.inst.edit"
@@ -98,6 +100,7 @@
                     </cmdb-form>
                     <cmdb-form-multiple v-else-if="tab.attribute.type === 'multiple'"
                         ref="multipleForm"
+                        :authority="authority"
                         :properties="properties.host"
                         :propertyGroups="propertyGroups"
                         @on-submit="handleMultipleSave"
@@ -108,6 +111,7 @@
                     <cmdb-relation
                         v-if="tab.active === 'relevance'"
                         obj-id="host"
+                        :authority="authority"
                         :inst="tab.attribute.inst.details">
                     </cmdb-relation>
                 </bk-tabpanel>
@@ -202,6 +206,12 @@
             quickSearch: {
                 type: Boolean,
                 default: false
+            },
+            authority: {
+                type: Array,
+                default () {
+                    return ['search', 'update', 'delete']
+                }
             }
         },
         data () {
