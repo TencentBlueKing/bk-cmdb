@@ -407,12 +407,12 @@
         "未配置Agent安装APP地址": "The Agent install APP address is not configured"
     },
     "CustomQuery": {
-        "自定义查询": "Custom Query",
-        "新增查询": "Add Query",
-        "编辑查询": "Update Query",
-        "预览查询": "Preview Query",
+        "自定义查询": "Dynamic Group",
+        "新增查询": "Add Group",
+        "编辑查询": "Update Group",
+        "预览查询": "Preview Group",
         "名称": "Name",
-        "查询内容": "Query Content",
+        "查询内容": "Group Content",
         "新增查询条件": "Add Filters",
         "预览": "Preview",
         "保存": "Save",
@@ -423,10 +423,10 @@
         "创建时间": "Creation Time",
         "修改人": "Modified Person",
         "修改时间": "Update Time",
-        "查询定义": "Query Definition",
+        "查询定义": "Group Definition",
         "确认要删除": "Confirm to delete {name}?",
-        "保存后的查询可通过接口调用生效": "The saved query can be validated through an interface call",
-        "当前业务并无自定义查询，可点击下方按钮新增": "The current business does not have a Custom Query, click the button below to add"
+        "保存后的查询可通过接口调用生效": "The saved group can be validated through an interface call",
+        "当前业务并无自定义查询，可点击下方按钮新增": "The current business does not have a Dynamic Group, click the button below to add"
     },
     "ProcessManagement": {
         "进程管理": "Process Manage",
