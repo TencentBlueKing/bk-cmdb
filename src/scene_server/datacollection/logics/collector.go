@@ -125,6 +125,8 @@ func (lgc *Logics) SearchCollector(header http.Header, cond metadata.ParamNetcol
 		}
 		collector.Config = existsOne.Config
 		collector.ReportTotal = existsOne.ReportTotal
+		collector.TaskID = existsOne.TaskID
+		collector.DeployTime = existsOne.DeployTime
 
 		if existsOne.Status.ConfigStatus == "" || existsOne.Status.ConfigStatus == metadata.CollectorConfigStatusPending {
 			var taskStatus string
