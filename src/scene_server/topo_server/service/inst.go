@@ -37,8 +37,25 @@ func (s *topoService) CreateInst(params types.ContextParams, pathParams, queryPa
 	}
 
 	if data.Exists("BatchInfo") {
+		/*
+		   BatchInfo data format:
+		    {
+		      "BatchInfo": {
+		        "4": { // excel line number
+		          "bk_inst_id": 1,
+		          "bk_inst_key": "a22",
+		          "bk_inst_name": "a11",
+		          "bk_version": "121",
+		          "import_from": "1"
+		        },
+		      "input_type": "excel"
+		    }
+		*/
 		batchInfo := new(operation.InstBatchInfo)
-		data.MarshalJSONInto(batchInfo)
+		if err := data.MarshalJSONInto(batchInfo); err != nil {
+			blog.Errorf("import object[%s] instance batch, but got invalid BatchInfo:[%v] ", objID, batchInfo)
+			return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
+		}
 		setInst, err := s.core.InstOperation().CreateInstBatch(params, obj, batchInfo)
 		if nil != err {
 			blog.Errorf("failed to create a new %s, %s", objID, err.Error())
