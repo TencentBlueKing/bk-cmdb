@@ -129,7 +129,6 @@ func (m *Model) SearchObjects(cond common.Condition) ([]types.MapStr, error) {
 	data := cond.ToMapStr()
 
 	targetURL := fmt.Sprintf("%s/api/v3/objects", m.cli.GetAddress())
-	//fmt.Println("dowenr:", m.cli.httpCli.GetHeader("HTTP_BLUEKING_SUPPLIER_ID"), " ", string(data.ToJSON()))
 
 	rst, err := m.cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
@@ -147,8 +146,6 @@ func (m *Model) SearchObjects(cond common.Condition) ([]types.MapStr, error) {
 	if 0 == len(dataStr) {
 		return nil, errors.New("data is empty")
 	}
-
-	//fmt.Println("data:", dataStr)
 
 	resultMap := make([]types.MapStr, 0)
 	err = json.Unmarshal([]byte(dataStr), &resultMap)
