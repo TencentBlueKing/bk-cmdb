@@ -27,6 +27,7 @@ type ContextParams struct {
 	Header          http.Header
 	SupplierAccount string
 	User            string
+	ReqID           string
 	Error           errors.DefaultCCErrorIf
 	Lang            language.DefaultCCLanguageIf
 }
