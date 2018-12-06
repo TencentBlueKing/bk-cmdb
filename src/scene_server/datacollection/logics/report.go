@@ -366,6 +366,14 @@ func (lgc *Logics) ConfirmReport(header http.Header, reports []metadata.Netcolle
 			}
 			lgc.saveHistory(report, true)
 		}
+		cond := condition.CreateCondition()
+		cond.Field(common.BKObjIDField).Eq(report.ObjectID)
+		cond.Field(common.BKInstKeyField).Eq(report.InstKey)
+
+		if err := lgc.Instance.Table(common.BKTableNameNetcollectReport).Delete(context.Background(), cond.ToMapStr()); err != nil {
+			result.Errors = append(result.Errors, err.Error())
+		}
+
 	}
 	return &result
 }
@@ -570,7 +578,7 @@ func (lgc *Logics) saveHistory(report *metadata.NetcollectReport, success bool) 
 }
 
 func (lgc *Logics) SearchHistory(header http.Header, param metadata.ParamSearchNetcollectReport) (uint64, []metadata.NetcollectHistory, error) {
-	historys := []metadata.NetcollectHistory{}
+	reports := []metadata.NetcollectHistory{}
 	cond, err := lgc.buildSearchCond(header, param)
 	if err != nil {
 		blog.Errorf("[NetDevice][SearchHistory] build SearchHistory condition for %+v failed: %v", param, err)
@@ -582,12 +590,51 @@ func (lgc *Logics) SearchHistory(header http.Header, param metadata.ParamSearchN
 		return 0, nil, err
 	}
 
-	// search historys
-	err = lgc.Instance.Table(common.BKTableNameNetcollectHistory).Find(cond.ToMapStr()).Sort(param.Page.Sort).Start(uint64(param.Page.Start)).Limit(uint64(param.Page.Limit)).All(lgc.ctx, &historys)
+	// search reports
+	err = lgc.Instance.Table(common.BKTableNameNetcollectHistory).Find(cond.ToMapStr()).Sort(param.Page.Sort).Start(uint64(param.Page.Start)).Limit(uint64(param.Page.Limit)).All(lgc.ctx, &reports)
 	if err != nil {
 		blog.Errorf("[NetDevice][SearchHistory] GetMutilByCondition for %+v failed: %v", cond.ToMapStr(), err)
 		return 0, nil, err
 	}
 
-	return count, historys, nil
+	// search details
+	objIDs := []string{}
+	cloudIDs := []int64{}
+	for _, report := range reports {
+		objIDs = append(objIDs, report.ObjectID)
+		cloudIDs = append(cloudIDs, report.CloudID)
+
+		for _, asst := range report.Associations {
+			objIDs = append(objIDs, asst.AsstObjectID)
+		}
+	}
+
+	cloudCond := condition.CreateCondition()
+	cloudCond.Field(common.BKCloudIDField).In(cloudIDs)
+	cloudMap, err := lgc.findInstMap(header, common.BKInnerObjIDPlat, &metadata.QueryInput{Condition: cloudCond.ToMapStr()})
+	if err != nil {
+		blog.Errorf("[NetDevice][SearchReport] find clouds by %+v failed: %v", cloudCond, err)
+		return 0, nil, err
+	}
+
+	objMap, err := lgc.findObjectMap(header, objIDs...)
+	if err != nil {
+		blog.Errorf("[NetDevice][SearchReport] findObjectMap by %+v failed: %v", objIDs, err)
+		return 0, nil, err
+	}
+
+	for index := range reports {
+		if object, ok := objMap[reports[index].ObjectID]; ok {
+			reports[index].ObjectName = object.ObjectName
+		}
+		if clodInst, ok := cloudMap[reports[index].CloudID]; ok {
+			cloudname, err := clodInst.String(common.BKCloudNameField)
+			if err != nil {
+				blog.Errorf("[NetDevice][SearchReport] bk_cloud_name field invalied: %v", err)
+			}
+			reports[index].CloudName = cloudname
+		}
+	}
+
+	return count, reports, nil
 }

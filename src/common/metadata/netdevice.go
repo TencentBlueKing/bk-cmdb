@@ -130,13 +130,14 @@ type ParamNetcollectComfirm struct {
 }
 
 type NetcollectReport struct {
-	Action        string `json:"action" bson:"-"`
+	Action        string `json:"action" bson:"action"`
 	CloudID       int64  `json:"bk_cloud_id" bson:"bk_cloud_id"`
 	CloudName     string `json:"bk_cloud_name" bson:"-"`
 	ObjectID      string `json:"bk_obj_id" bson:"bk_obj_id"`
 	ObjectName    string `json:"bk_obj_name" bson:"-"`
 	InnerIP       string `json:"bk_host_innerip" bson:"bk_host_innerip"`
 	Configuration string `json:"configuration" bson:"configuration"`
+	OwnerID       string `json:"bk_supplier_account" bson:"bk_supplier_account"`
 
 	InstID       int64                         `json:"bk_inst_id" bson:"bk_inst_id"`
 	InstKey      string                        `json:"bk_inst_key" bson:"bk_inst_key"`
