@@ -234,7 +234,7 @@
                 this.collectDataCollection({params, config: {requestId: 'collectDataCollection'}})
             },
             showConfig (item) {
-                this.configDialog.scan_range = item.config['scan_range'] === null ? '' : item.config['scan_range']
+                this.configDialog.scan_range = item.config['scan_range'] === null ? '' : item.config['scan_range'].join('\n')
                 this.configDialog.bk_host_innerip = item['bk_host_innerip']
                 this.configDialog.bk_cloud_id = item['bk_cloud_id']
                 this.configDialog.bk_biz_id = item['bk_biz_id']
