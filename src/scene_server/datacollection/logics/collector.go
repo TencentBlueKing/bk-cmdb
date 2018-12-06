@@ -425,6 +425,7 @@ func (lgc *Logics) findCustom() ([]Custom, error) {
 		custom.OID = property.OID
 		custom.Period = property.Period
 		custom.PropertyID = property.PropertyID
+		customs = append(customs, custom)
 	}
 
 	return customs, nil
@@ -433,6 +434,7 @@ func (lgc *Logics) findCustom() ([]Custom, error) {
 type NetDeviceConfig struct {
 	DataID      int64      `yaml:"dataid,omitempty"`
 	CloudID     int64      `yaml:"bk_cloud_id,omitempty"`
+	OwnerID     string     `yaml:"bk_supplier_account"`
 	ScanRange   []string   `yaml:"scan_range,omitempty"`
 	Snmp        SnmpConfig `yaml:"snmp,omitempty"`
 	PingTimeout int        `yaml:"ping_timeout,omitempty"`

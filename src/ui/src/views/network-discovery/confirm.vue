@@ -385,6 +385,10 @@
                             bk_cloud_id: item['bk_cloud_id'],
                             bk_obj_id: item['bk_obj_id'],
                             bk_inst_key: item['bk_inst_key'],
+                            action: item['action'],
+                            configuration: item['configuration'],
+                            bk_host_innerip: item['bk_host_innerip'],
+                            last_time: item['last_time'],
                             attributes: [],
                             associations: []
                         }

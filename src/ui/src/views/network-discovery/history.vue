@@ -39,7 +39,7 @@
                 {{$tools.formatTime(item['last_time'], 'YYYY-MM-DD')}}
             </template>
             <template slot="success" slot-scope="{ item }">
-                <span :class="item.success ? 'color-success' : 'color-danger'">{{item.status}}</span>
+                <span :class="item.success ? 'color-success' : 'color-danger'">{{item.success ? $t("Inst['成功']") : $t("EventPush['失败']")}}</span>
             </template>
         </cmdb-table>
     </div>
