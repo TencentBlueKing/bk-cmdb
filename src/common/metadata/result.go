@@ -44,24 +44,28 @@ type DeletedCount struct {
 
 // ExceptionResult exception info
 type ExceptionResult struct {
-	Message string      `json:"message"`
-	Code    int64       `json:"code"`
-	Data    interface{} `json:"data"`
+	Message     string      `json:"message"`
+	Code        int64       `json:"code"`
+	Data        interface{} `json:"data"`
+	OriginIndex int64       `json:"origin_index"`
 }
 
 // CreatedDataResult common created result definition
 type CreatedDataResult struct {
-	ID uint64 `json:"id"`
+	OriginIndex int64  `json:"origin_index"`
+	ID          uint64 `json:"id"`
+}
+
+// RepeatedDataResult repeated data
+type RepeatedDataResult struct {
+	OriginIndex int64         `json:"origin_index"`
+	Data        mapstr.MapStr `json:"data"`
 }
 
 // UpdatedDataResult common update operation result
 type UpdatedDataResult struct {
-	ID uint64 `json:"id"`
-}
-
-// DeletedDataResult common delete operation result
-type DeletedDataResult struct {
-	ID uint64 `json:"id"`
+	OriginIndex int64  `json:"origin_index"`
+	ID          uint64 `json:"id"`
 }
 
 // SetDataResult common set result definition
@@ -75,9 +79,9 @@ type SetDataResult struct {
 
 // CreateManyInfoResult create many function return this result struct
 type CreateManyInfoResult struct {
-	Created    []CreatedDataResult `json:"created"`
-	Repeated   []mapstr.MapStr     `json:"repeated"`
-	Exceptions []ExceptionResult   `json:"exception"`
+	Created    []CreatedDataResult  `json:"created"`
+	Repeated   []RepeatedDataResult `json:"repeated"`
+	Exceptions []ExceptionResult    `json:"exception"`
 }
 
 // CreateManyDataResult the data struct definition in create many function result
@@ -94,4 +98,28 @@ type CreateOneDataResult struct {
 type SearchDataResult struct {
 	Count int64           `json:"count"`
 	Info  []mapstr.MapStr `json:"info"`
+}
+
+// CreateManyResult create many api http response return this result struct
+type CreateManyResult struct {
+	BaseResp `json:",inline"`
+	Data     CreateManyDataResult `json:"data"`
+}
+
+// SetManyResult create many api http response return this result struct
+type SetManyResult struct {
+	BaseResp `json:",inline"`
+	Data     SetDataResult `json:"data"`
+}
+
+// UpdatedCountResult created  api http response return result struct
+type UpdatedCountResult struct {
+	BaseResp `json:",inline"`
+	Data     UpdatedCount `json:"data"`
+}
+
+// DeletedCountResult delete  api http response return result struct
+type DeletedCountResult struct {
+	BaseResp `json:",inline"`
+	Data     DeletedCount `json:"data"`
 }
