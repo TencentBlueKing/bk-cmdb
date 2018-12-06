@@ -276,7 +276,7 @@ func (h *Netcollect) upsertReport(report *metadata.NetcollectReport) error {
 		return err
 	}
 
-	return h.db.Table(common.BKTableNameNetcollectReport).Update(h.ctx, existCond, report)
+	return h.db.Table(common.BKTableNameNetcollectReport).Update(h.ctx, existCond.ToMapStr(), report)
 }
 
 func (h *Netcollect) findInst(objectID string, query *metadata.QueryInput) ([]mapstr.MapStr, error) {
