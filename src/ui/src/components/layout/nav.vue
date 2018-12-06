@@ -86,7 +86,7 @@ export default {
         navigations () {
             const navigations = this.$tools.clone(this.authorizedNavigation)
             if (this.admin) {
-                return this.navigations
+                return navigations
             }
             navigations.forEach(classify => {
                 classify.children = classify.children.filter(child => child.authorized)
