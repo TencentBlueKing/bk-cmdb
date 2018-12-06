@@ -100,26 +100,11 @@ type SearchDataResult struct {
 	Info  []mapstr.MapStr `json:"info"`
 }
 
-// CreateManyResult create many api http response return this result struct
-type CreateManyResult struct {
+//ReadModelClassifition  read model classifition api http response return result struct
+type ReadModelClassifition struct {
 	BaseResp `json:",inline"`
-	Data     CreateManyDataResult `json:"data"`
-}
-
-// SetManyResult create many api http response return this result struct
-type SetManyResult struct {
-	BaseResp `json:",inline"`
-	Data     SetDataResult `json:"data"`
-}
-
-// UpdatedCountResult created  api http response return result struct
-type UpdatedCountResult struct {
-	BaseResp `json:",inline"`
-	Data     UpdatedCount `json:"data"`
-}
-
-// DeletedCountResult delete  api http response return result struct
-type DeletedCountResult struct {
-	BaseResp `json:",inline"`
-	Data     DeletedCount `json:"data"`
+	Data     struct {
+		Count int              `json:"count"`
+		Info  []Classification `json:"info"`
+	} `json:"data"`
 }
