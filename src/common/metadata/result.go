@@ -95,3 +95,27 @@ type SearchDataResult struct {
 	Count int64           `json:"count"`
 	Info  []mapstr.MapStr `json:"info"`
 }
+
+// CreateManyResult create many api http response return this result struct
+type CreateManyResult struct {
+	BaseResp `json:",inline"`
+	Data     CreateManyDataResult `json:"data"`
+}
+
+// SetManyResult create many api http response return this result struct
+type SetManyResult struct {
+	BaseResp `json:",inline"`
+	Data     SetDataResult `json:"data"`
+}
+
+// UpdatedCountResult created  api http response return result struct
+type UpdatedCountResult struct {
+	BaseResp `json:",inline"`
+	Data     UpdatedCount `json:"data"`
+}
+
+// DeletedCountResult delete  api http response return result struct
+type DeletedCountResult struct {
+	BaseResp `json:",inline"`
+	Data     DeletedCount `json:"data"`
+}
