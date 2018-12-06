@@ -139,6 +139,7 @@ textarea {
     border: 1px solid #e6e6e6; // border: 1px solid #e7e9ef;
     +.bk-icon {
         color: #e7e9ef;
+        cursor: not-allowed;
     }
     &:hover {
         border-color: #e7e9ef;
