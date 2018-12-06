@@ -46,7 +46,7 @@ func (s *Service) getSets(req *restful.Request, resp *restful.Response) {
 
 	formData := req.Request.Form
 
-	blog.Infof("getSets data:%v", formData)
+	blog.V(5).Infof("getSets data:%v", formData)
 
 	if len(formData["ApplicationID"]) == 0 {
 		blog.Error("getSets error: ApplicationID is empty!")
@@ -174,7 +174,7 @@ func (s *Service) getModulesByProperty(req *restful.Request, resp *restful.Respo
 
 	formData := req.Request.Form
 
-	blog.Infof("getModulesByProperty data:%v", formData)
+	blog.V(5).Infof("getModulesByProperty data:%v", formData)
 
 	if len(formData["ApplicationID"]) == 0 {
 		blog.Error("getModulesByProperty error: ApplicationID is empty!")
@@ -211,7 +211,7 @@ func (s *Service) getModulesByProperty(req *restful.Request, resp *restful.Respo
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
-	resDataV2, err := converter.ResToV2ForModuleMapList(result.Result, result.ErrMsg, result.Data)
+	resDataV2, err := converter.ResToV2ForModuleMapList(result.Data)
 	if err != nil {
 		blog.Errorf("convert module res to v2 error:%v", err)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
@@ -238,7 +238,7 @@ func (s *Service) addSet(req *restful.Request, resp *restful.Response) {
 
 	formData := req.Request.Form
 
-	blog.Infof("addSet  data: %v", formData)
+	blog.V(5).Infof("addSet  data: %v", formData)
 
 	res, msg := utils.ValidateFormData(formData, []string{"ApplicationID", "SetName"})
 	if !res {
@@ -330,7 +330,7 @@ func (s *Service) addSet(req *restful.Request, resp *restful.Response) {
 	delete(reqParam, "ChnName")
 
 	reqParam, err = s.Logics.AutoInputV3Field(reqParam, common.BKInnerObjIDSet, user, pheader)
-	blog.Infof("addSet reqParam:%v", reqParam)
+	blog.V(5).Infof("addSet reqParam:%v", reqParam)
 
 	result, err := s.CoreAPI.TopoServer().Instance().CreateSet(context.Background(), appID, pheader, reqParam)
 	if nil != err {
@@ -345,7 +345,7 @@ func (s *Service) addSet(req *restful.Request, resp *restful.Response) {
 		return
 	}
 	rspDataV3Map := result.Data
-	blog.Infof("rsp_v3:%v", result.Data)
+	blog.V(5).Infof("rsp_v3:%v", result.Data)
 	converter.RespSuccessV2(rspDataV3Map, resp)
 }
 
@@ -420,7 +420,7 @@ func (s *Service) updateSet(req *restful.Request, resp *restful.Response) {
 
 	formData := req.Request.Form
 
-	blog.Infof("updateSet error data: %v", formData)
+	blog.V(5).Infof("updateSet error data: %v", formData)
 
 	res, msg := utils.ValidateFormData(formData, []string{"ApplicationID", "SetID"})
 	if !res {
@@ -509,7 +509,7 @@ func (s *Service) updateSetServiceStatus(req *restful.Request, resp *restful.Res
 
 	formData := req.Request.Form
 
-	blog.Infof("updateSetServiceStatus  data: %v", formData)
+	blog.V(5).Infof("updateSetServiceStatus  data: %v", formData)
 
 	res, msg := utils.ValidateFormData(formData, []string{"ApplicationID", "SetID", "Status"})
 	if !res {
@@ -569,7 +569,7 @@ func (s *Service) delSet(req *restful.Request, resp *restful.Response) {
 
 	formData := req.Request.Form
 
-	blog.Infof("delSet data: %v", formData)
+	blog.V(5).Infof("delSet data: %v", formData)
 
 	res, msg := utils.ValidateFormData(formData, []string{"ApplicationID", "SetID"})
 	if !res {
@@ -606,7 +606,7 @@ func (s *Service) delSetHost(req *restful.Request, resp *restful.Response) {
 
 	formData := req.Request.Form
 
-	blog.V(3).Infof("delSetHost data: %s", formData)
+	blog.V(5).Infof("delSetHost data: %s", formData)
 
 	res, msg := utils.ValidateFormData(formData, []string{"ApplicationID", "SetID"})
 	if !res {

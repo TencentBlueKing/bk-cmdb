@@ -67,7 +67,7 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 			userName, _ := session.Get(common.WEBSessionUinKey).(string)
 			language, _ := session.Get(common.WEBSessionLanguageKey).(string)
 			ownerID, _ := session.Get(common.WEBSessionOwnerUinKey).(string)
-			supplierID, _ := session.Get(common.WEBSessionOwnerUinKey).(string)
+			supplierID, _ := session.Get(common.WEBSessionSupplierID).(string)
 			c.Request.Header.Add(common.BKHTTPHeaderUser, userName)
 			c.Request.Header.Add(common.BKHTTPLanguage, language)
 			c.Request.Header.Add(common.BKHTTPOwnerID, ownerID)
@@ -122,7 +122,7 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 		} else if cookieOwnerID != session.Get(common.WEBSessionOwnerUinKey) {
 			session.Set(common.WEBSessionOwnerUinKey, cookieOwnerID)
 		}
-		session.Set(common.BKHTTPSupplierID, 0)
+		session.Set(common.WEBSessionSupplierID, 0)
 
 		blog.V(5).Infof("skip login, cookieLanuage: %s, cookieOwnerID: %s", cookieLanuage, cookieOwnerID)
 		session.Set(common.WEBSessionUinKey, "admin")

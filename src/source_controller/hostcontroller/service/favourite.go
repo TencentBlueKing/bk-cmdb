@@ -107,7 +107,7 @@ func (s *Service) UpdateHostFavouriteByID(req *restful.Request, resp *restful.Re
 	}
 
 	if 1 != rowCount {
-		blog.Info("update host favorites with id[%s], but favorites not exists, params:%v", id, query)
+		blog.V(5).Info("update host favorites with id[%s], but favorites not exists, params:%v", id, query)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostFavouriteUpdateFail)})
 		return
 	}
@@ -158,7 +158,7 @@ func (s *Service) DeleteHostFavouriteByID(req *restful.Request, resp *restful.Re
 	}
 
 	if 1 != rowCount {
-		blog.Info("delete host favorites with id[%s], but favorites not exists, params:%v", id, query)
+		blog.V(5).Info("delete host favorites with id[%s], but favorites not exists, params:%v", id, query)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostFavouriteDeleteFail)})
 		return
 	}
@@ -170,7 +170,7 @@ func (s *Service) DeleteHostFavouriteByID(req *restful.Request, resp *restful.Re
 		return
 	}
 	resp.WriteEntity(meta.NewSuccessResp(nil))
-	blog.Infof("delete host favorites with id[%s] success, info: %v", err, query)
+	blog.V(5).Infof("delete host favorites with id[%s] success, info: %v", err, query)
 }
 
 func (s *Service) GetHostFavourites(req *restful.Request, resp *restful.Response) {

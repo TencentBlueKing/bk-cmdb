@@ -187,7 +187,7 @@ func (s *Service) getCompanyIDByIps(req *restful.Request, resp *restful.Response
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
-	if result.Result {
+	if !result.Result {
 		blog.Errorf("getCompanyIDByIps  error:%v, input:%+v,rid:%s", err, formData, rid)
 		converter.RespFailV2(result.Code, result.ErrMsg, resp)
 		return
