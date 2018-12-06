@@ -34,7 +34,7 @@ func (lgc *Logics) GetObjFieldIDs(objID, user string, header http.Header) (commo
 		return nil, err
 	}
 
-	blog.Info("get %s fields return:%v", objID, result)
+	blog.V(5).Info("get %s fields return:%v", objID, result)
 	fields, _ := result.Data.([]interface{})
 	ret := common.KvMap{}
 
@@ -43,11 +43,9 @@ func (lgc *Logics) GetObjFieldIDs(objID, user string, header http.Header) (commo
 
 		fieldName, _ := mapField[common.BKPropertyNameField].(string)
 
-		blog.Debug("fieldName:%v", fieldName)
 		fieldId, _ := mapField[common.BKPropertyIDField].(string)
 		propertyType, _ := mapField[common.BKPropertyTypeField].(string)
 
-		blog.Debug("fieldId:%v", fieldId)
 		ret[fieldId] = common.KvMap{"name": fieldName, "type": propertyType, "require": mapField[common.BKIsRequiredField]}
 	}
 
@@ -83,7 +81,7 @@ func (lgc *Logics) AutoInputV3Field(params mapstr.MapStr, objId, user string, he
 // httpRequest http request
 func httpRequest(url string, body interface{}, header http.Header) (string, error) {
 	params, _ := json.Marshal(body)
-	blog.Info("input:%s", string(params))
+	blog.V(5).Info("input:%s", string(params))
 	httpClient := httpclient.NewHttpClient()
 	httpClient.SetHeader("Content-Type", "application/json")
 	httpClient.SetHeader("Accept", "application/json")
