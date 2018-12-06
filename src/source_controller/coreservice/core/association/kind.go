@@ -9,14 +9,17 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package association
 
 import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
+	"configcenter/src/storage/dal"
 )
 
 type associationKind struct {
+	dbProxy dal.RDB
 }
 
 func (m *associationKind) CreateAssociationKind(ctx core.ContextParams, inputParam metadata.CreateAssociationKind) (*metadata.CreateOneDataResult, error) {
@@ -25,19 +28,19 @@ func (m *associationKind) CreateAssociationKind(ctx core.ContextParams, inputPar
 func (m *associationKind) CreateManyAssociationKind(ctx core.ContextParams, inputParam metadata.CreateManyAssociationKind) (*metadata.CreateManyAssociationKind, error) {
 	return nil, nil
 }
-func (m *associationKind) SetAssociationKind(ctx core.ContextParams, inputParam metadata.SetAssociationKind) (*metadata.SetOneDataResult, error) {
+func (m *associationKind) SetAssociationKind(ctx core.ContextParams, inputParam metadata.SetAssociationKind) (*metadata.SetDataResult, error) {
 	return nil, nil
 }
-func (m *associationKind) SetManyAssociationKind(ctx core.ContextParams, inputParam metadata.SetManyAssociationKind) (*metadata.SetManyDataResult, error) {
+func (m *associationKind) SetManyAssociationKind(ctx core.ContextParams, inputParam metadata.SetManyAssociationKind) (*metadata.SetDataResult, error) {
 	return nil, nil
 }
-func (m *associationKind) UpdateAssociationKind(ctx core.ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdateDataResult, error) {
+func (m *associationKind) UpdateAssociationKind(ctx core.ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 	return nil, nil
 }
-func (m *associationKind) DeleteAssociationKind(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeleteDataResult, error) {
+func (m *associationKind) DeleteAssociationKind(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 	return nil, nil
 }
-func (m *associationKind) CascadeDeleteAssociationKind(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeleteOption, error) {
+func (m *associationKind) CascadeDeleteAssociationKind(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 	return nil, nil
 }
 func (m *associationKind) SearchAssociationKind(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {

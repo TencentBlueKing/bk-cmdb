@@ -276,7 +276,7 @@ func (a *Association) CanUpdate() (field string, can bool) {
 // Parse load the data from mapstr attribute into attribute instance
 func (cli *Association) Parse(data mapstr.MapStr) (*Association, error) {
 
-	err := SetValueToStructByTags(cli, data)
+	err := mapstr.SetValueToStructByTags(cli, data)
 	if nil != err {
 		return nil, err
 	}
@@ -286,7 +286,7 @@ func (cli *Association) Parse(data mapstr.MapStr) (*Association, error) {
 
 // ToMapStr to mapstr
 func (cli *Association) ToMapStr() mapstr.MapStr {
-	return SetValueToMapStrByTags(cli)
+	return mapstr.SetValueToMapStrByTags(cli)
 }
 
 // InstAsst an association definition between instances.
@@ -337,7 +337,7 @@ type InstNameAsst struct {
 // Parse load the data from mapstr attribute into attribute instance
 func (cli *InstAsst) Parse(data mapstr.MapStr) (*InstAsst, error) {
 
-	err := SetValueToStructByTags(cli, data)
+	err := mapstr.SetValueToStructByTags(cli, data)
 	if nil != err {
 		return nil, err
 	}
@@ -347,7 +347,7 @@ func (cli *InstAsst) Parse(data mapstr.MapStr) (*InstAsst, error) {
 
 // ToMapStr to mapstr
 func (cli *InstAsst) ToMapStr() mapstr.MapStr {
-	return SetValueToMapStrByTags(cli)
+	return mapstr.SetValueToMapStrByTags(cli)
 }
 
 // MainlineObjectTopo the mainline object topo
@@ -364,7 +364,7 @@ type MainlineObjectTopo struct {
 // Parse load the data from mapstr attribute into attribute instance
 func (cli *MainlineObjectTopo) Parse(data mapstr.MapStr) (*MainlineObjectTopo, error) {
 
-	err := SetValueToStructByTags(cli, data)
+	err := mapstr.SetValueToStructByTags(cli, data)
 	if nil != err {
 		return nil, err
 	}
@@ -374,7 +374,7 @@ func (cli *MainlineObjectTopo) Parse(data mapstr.MapStr) (*MainlineObjectTopo, e
 
 // ToMapStr to mapstr
 func (cli *MainlineObjectTopo) ToMapStr() mapstr.MapStr {
-	return SetValueToMapStrByTags(cli)
+	return mapstr.SetValueToMapStrByTags(cli)
 }
 
 // TopoInst 实例拓扑结构

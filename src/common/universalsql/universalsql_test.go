@@ -12,22 +12,27 @@
 package universalsql_test
 
 import (
+	"configcenter/src/common/universalsql"
+	"configcenter/src/common/universalsql/mongo"
 	"testing"
 
-	"configcenter/src/common/universalsql/mongo"
-	"configcenter/src/common/universalsql"
+	"github.com/stretchr/testify/require"
 )
 
-func TestUniservalsqlCondition(t *testing.T) {
+func TestUniservalsqlStatements(t *testing.T) {
 
-	sql := universalsql.CreateMongoSQLHelper()
+	mtable := mongo.New()
 
+	resultSql, err := mtable.Create().Fields(universalsql.Field{Key: "test", Val: "helloworld"}).ToSQL()
+	require.NoError(t, err)
+	t.Logf("create statement sql:%v", resultSql)
 
-	// {"$and":[{"field_name":{"$eq":"field_name_value"}}]}
-	sql.Where().And(&universalsql.Eq{Key: "field_name", Val: "field_name_val"}).ToSQL()
-
-
-	// {"field_name":"$in":["field_name_val"],"$or":[{"field_name1":{"$neq":"field_name1_val"}}]}
-	sql.Where().Element(&universalsql.In{Key: "field_name", Val: []string{"field_name_val"}}).Or(&universalsql.Neq{Key:"field_name1", Val:"field_name1_val"}).ToSQL()
+	mcond := mongo.NewCondition()
+	_, embed := mcond.Element(&mongo.Eq{Key: "test", Val: "testval"}).And(&mongo.Lt{Key: "testand", Val: "testandval"}).Embed("testembedname")
+	embed.Or(&mongo.Gt{Key: "testgt", Val: "testgtval"})
+	embed.Element(&mongo.Lt{Key: "testeq", Val: "testeqval"})
+	resultSql, err = mtable.Where().Conditions(mcond).ToSQL()
+	require.NoError(t, err)
+	t.Logf("delete statement sql:%v", resultSql)
 
 }

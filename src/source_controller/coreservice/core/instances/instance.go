@@ -13,21 +13,21 @@
 package instances
 
 import (
-	"configcenter/src/apimachinery"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
+	"configcenter/src/storage/dal"
 )
 
 var _ core.InstanceOperation = (*instanceManager)(nil)
 
 type instanceManager struct {
-	clientSet apimachinery.ClientSetInterface
+	dbProxy dal.RDB
 }
 
 // New create a new instance manager instance
-func New(client apimachinery.ClientSetInterface) core.InstanceOperation {
+func New(dbProxy dal.RDB) core.InstanceOperation {
 	return &instanceManager{
-		clientSet: client,
+		dbProxy: dbProxy,
 	}
 }
 
@@ -37,21 +37,21 @@ func (m *instanceManager) CreateModelInstance(ctx core.ContextParams, objID stri
 func (m *instanceManager) CreateManyModelInstance(ctx core.ContextParams, objID string, inputParam metadata.CreateManyModelInstance) (*metadata.CreateManyDataResult, error) {
 	return nil, nil
 }
-func (m *instanceManager) SetModelInstance(ctx core.ContextParams, objID string, inputParam metadata.SetModelInstance) (*metadata.SetOneDataResult, error) {
+func (m *instanceManager) SetModelInstance(ctx core.ContextParams, objID string, inputParam metadata.SetModelInstance) (*metadata.SetDataResult, error) {
 	return nil, nil
 }
-func (m *instanceManager) SetManyModelInstance(ctx core.ContextParams, objID string, inputParam metadata.SetManyModelInstance) (*metadata.SetManyDataResult, error) {
+func (m *instanceManager) SetManyModelInstance(ctx core.ContextParams, objID string, inputParam metadata.SetManyModelInstance) (*metadata.SetDataResult, error) {
 	return nil, nil
 }
-func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID string, inputParam metadata.UpdateOption) (*metadata.UpdateDataResult, error) {
+func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 	return nil, nil
 }
 func (m *instanceManager) SearchModelInstance(ctx core.ContextParams, objID string, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
 	return nil, nil
 }
-func (m *instanceManager) DeleteModelInstance(ctx core.ContextParams, objID string, inputParam metadata.DeleteOption) (*metadata.DeleteDataResult, error) {
+func (m *instanceManager) DeleteModelInstance(ctx core.ContextParams, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 	return nil, nil
 }
-func (m *instanceManager) CascadeDeleteModelInstance(ctx core.ContextParams, objID string, inputParam metadata.DeleteOption) (*metadata.DeleteDataResult, error) {
+func (m *instanceManager) CascadeDeleteModelInstance(ctx core.ContextParams, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 	return nil, nil
 }

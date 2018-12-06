@@ -128,7 +128,7 @@ func (s *Service) UpdateUserConfig(req *restful.Request, resp *restful.Response)
 		return
 	}
 	if 1 != rowCount {
-		blog.Info("update user api config not permissions or not exists, params:%v", params)
+		blog.V(5).Info("update user api config not permissions or not exists, params:%v", params)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommNotFound)})
 		return
 	}
@@ -143,7 +143,7 @@ func (s *Service) UpdateUserConfig(req *restful.Request, resp *restful.Response)
 			return
 		}
 		if 0 < rowCount {
-			blog.Info("host user api  name duplicate , params:%v", dupParams)
+			blog.V(5).Info("host user api  name duplicate , params:%v", dupParams)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDuplicateItem)})
 			return
 		}
@@ -186,7 +186,7 @@ func (s *Service) DeleteUserConfig(req *restful.Request, resp *restful.Response)
 		return
 	}
 	if 1 != rowCount {
-		blog.Info("host user api not permissions or not exists, params:%v", params)
+		blog.V(5).Info("host user api not permissions or not exists, params:%v", params)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommNotFound)})
 		return
 	}

@@ -13,9 +13,9 @@
 package model
 
 import (
-	"configcenter/src/apimachinery"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
+	"configcenter/src/storage/dal"
 )
 
 var _ core.ModelOperation = (*modelManager)(nil)
@@ -23,29 +23,35 @@ var _ core.ModelOperation = (*modelManager)(nil)
 type modelManager struct {
 	*modelAttribute
 	*modelClassification
-	clientSet apimachinery.ClientSetInterface
+	dbProxy dal.RDB
 }
 
 // New create a new model manager instance
-func New(client apimachinery.ClientSetInterface) core.ModelOperation {
+func New(dbProxy dal.RDB) core.ModelOperation {
 	return &modelManager{
-		clientSet: client,
+		dbProxy: dbProxy,
+		modelAttribute: &modelAttribute{
+			dbProxy: dbProxy,
+		},
+		modelClassification: &modelClassification{
+			dbProxy: dbProxy,
+		},
 	}
 }
 
 func (m *modelManager) CreateModel(ctx core.ContextParams, inputParam metadata.CreateModel) (*metadata.CreateOneDataResult, error) {
 	return nil, nil
 }
-func (m *modelManager) SetModel(ctx core.ContextParams, inputParam metadata.SetModel) (*metadata.SetOneDataResult, error) {
+func (m *modelManager) SetModel(ctx core.ContextParams, inputParam metadata.SetModel) (*metadata.SetDataResult, error) {
 	return nil, nil
 }
-func (m *modelManager) UpdateModel(ctx core.ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdateDataResult, error) {
+func (m *modelManager) UpdateModel(ctx core.ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 	return nil, nil
 }
-func (m *modelManager) DeleteModel(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeleteDataResult, error) {
+func (m *modelManager) DeleteModel(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 	return nil, nil
 }
-func (m *modelManager) CascadeDeleteModel(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeleteDataResult, error) {
+func (m *modelManager) CascadeDeleteModel(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 	return nil, nil
 }
 func (m *modelManager) SearchModel(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
