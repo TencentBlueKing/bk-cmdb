@@ -18,8 +18,8 @@ type CreateManyOptionResult struct {
 	Data     CreateManyDataResult `json:"data"`
 }
 
-// CreateOneOptionResult create One api http response return this result struct
-type CreateOneOptionResult struct {
+// CreatedOneOptionResult create One api http response return this result struct
+type CreatedOneOptionResult struct {
 	BaseResp `json:",inline"`
 	Data     CreateOneDataResult `json:"data"`
 }
