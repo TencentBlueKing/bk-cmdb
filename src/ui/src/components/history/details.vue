@@ -27,7 +27,7 @@
                     <div :class="['details-data', {'has-changed': hasChanged(item)}]" v-html="item['cur_data']"></div>
                 </template>
             </v-table>
-            <p class="field-btn" @click="toggleFields" v-if="this.details.op_type !== 1 && this.details.op_type !== 3">
+            <p class="field-btn" @click="toggleFields" v-if="isShowToggleFields">
                 {{isShowAllFields ? $t('EventPush["收起"]') : $t('EventPush["展开"]')}}
             </p>
         </template>
@@ -83,6 +83,9 @@
             ...mapGetters('object', ['attribute']),
             objId () {
                 return this.details ? this.details['op_target'] : null
+            },
+            isShowToggleFields () {
+                return this.details.op_type !== 1 && this.details.op_type !== 3 && this.details.content['pre_data']['bk_biz_id'] !== 1
             },
             options () {
                 let biz = {}
