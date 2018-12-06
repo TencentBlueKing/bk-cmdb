@@ -404,6 +404,7 @@
                                     bk_asst_inst_name: asst['bk_asst_inst_name'],
                                     bk_asst_obj_id: asst['bk_asst_obj_id'],
                                     bk_asst_obj_name: asst['bk_asst_obj_name'],
+                                    bk_obj_asst_id: asst['bk_obj_asst_id'],
                                     bk_asst_property_id: asst['bk_asst_property_id'],
                                     method: 'accept'
                                 })
@@ -412,7 +413,12 @@
                         params.reports.push(detail)
                     }
                 })
-                this.resultDialog.data = await this.confirmNetcollectChange({params, config: {requestId: 'confirmNetcollectChange'}})
+                try {
+                    const res = await this.confirmNetcollectChange({params, config: {globalError: false, requestId: 'confirmNetcollectChange', originalResponse: true}})
+                    this.resultDialog.data = res.data
+                } catch (e) {
+                    this.$error(e.data['bk_error_msg'])
+                }
                 this.resultDialog.isShow = true
                 this.getTableData()
             },
