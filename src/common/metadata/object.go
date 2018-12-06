@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/mapstr"
 	types "configcenter/src/common/mapstr"
 )
 
@@ -150,7 +151,7 @@ func (o *Object) IsCommon() bool {
 // Parse load the data from mapstr object into object instance
 func (o *Object) Parse(data types.MapStr) (*Object, error) {
 
-	err := SetValueToStructByTags(o, data)
+	err := mapstr.SetValueToStructByTags(o, data)
 	if nil != err {
 		return nil, err
 	}
@@ -160,7 +161,7 @@ func (o *Object) Parse(data types.MapStr) (*Object, error) {
 
 // ToMapStr to mapstr
 func (o *Object) ToMapStr() types.MapStr {
-	return SetValueToMapStrByTags(o)
+	return mapstr.SetValueToMapStrByTags(o)
 }
 
 // MainLineObject main line object definition

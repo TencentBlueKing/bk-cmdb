@@ -9,31 +9,34 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package association
 
 import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
+	"configcenter/src/storage/dal"
 )
 
 type associationModel struct {
+	dbProxy dal.RDB
 }
 
 func (m *associationModel) CreateModelAssociation(ctx core.ContextParams, inputParam metadata.CreateModelAssociation) (*metadata.CreateOneDataResult, error) {
 	return nil, nil
 }
-func (m *associationModel) SetModelAssociation(ctx core.ContextParams, inputParam metadata.SetModelAssociation) (*metadata.SetOneDataResult, error) {
+func (m *associationModel) SetModelAssociation(ctx core.ContextParams, inputParam metadata.SetModelAssociation) (*metadata.SetDataResult, error) {
 	return nil, nil
 }
-func (m *associationModel) UpdateModelAssociation(ctx core.ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdateDataResult, error) {
+func (m *associationModel) UpdateModelAssociation(ctx core.ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 	return nil, nil
 }
 func (m *associationModel) SearchModelAssociation(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
 	return nil, nil
 }
-func (m *associationModel) DeleteModelAssociation(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeleteDataResult, error) {
+func (m *associationModel) DeleteModelAssociation(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 	return nil, nil
 }
-func (m *associationModel) CascadeDeleteModelAssociation(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeleteDataResult, error) {
+func (m *associationModel) CascadeDeleteModelAssociation(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 	return nil, nil
 }

@@ -29,19 +29,13 @@ type CreateOneModelClassification struct {
 // SetManyModelClassification set many input params
 type SetManyModelClassification CreateManyModelClassifiaction
 
-// SetManyResult set many method return this results
-type SetManyResult CreateManyResult
-
 // SetOneModelClassification set one input params
 type SetOneModelClassification CreateOneModelClassification
-
-// SetOneResult set one method reutrn this result
-type SetOneResult CreateOneResult
 
 // DeleteModelClassificationResult delete the model classification result
 type DeleteModelClassificationResult struct {
 	BaseResp `json:",inline"`
-	Data     DeleteDataResult `json:"data"`
+	Data     DeletedCount `json:"data"`
 }
 
 // CreateModel create model params
@@ -53,12 +47,12 @@ type CreateModel struct {
 // SetModel define SetMode method input params
 type SetModel CreateModel
 
-// CreateAttributes create model attributes
-type CreateAttributes struct {
+// CreateModelAttributes create model attributes
+type CreateModelAttributes struct {
 	Attributes []Attribute `json:"attributes"`
 }
 
-type SetModelAttributes CreateAttributes
+type SetModelAttributes CreateModelAttributes
 
 type CreateModelInstance struct {
 	Data mapstr.MapStr `json:"data"`
@@ -87,8 +81,12 @@ type CreateModelAssociation struct {
 
 type SetModelAssociation CreateModelAssociation
 
-type CreateInstanceAssociation struct {
+type CreateOneInstanceAssociation struct {
+	Datas InstAsst `json:"data"`
+}
+type CreateManyInstanceAssociation struct {
 	Datas InstAsst `json:"datas"`
 }
 
-type SetInstanceAssociation CreateInstanceAssociation
+type SetOneInstanceAssociation CreateOneInstanceAssociation
+type SetManyInstanceAssociation CreateManyInstanceAssociation

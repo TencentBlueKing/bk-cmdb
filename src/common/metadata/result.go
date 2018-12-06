@@ -42,59 +42,69 @@ type DeletedCount struct {
 	Count int64 `json:"deleted_count"`
 }
 
-// Exception exception info
-type Exception struct {
-	Message string      `json:"message"`
-	Code    int64       `json:"code"`
-	Data    interface{} `json:"data"`
+// ExceptionResult exception info
+type ExceptionResult struct {
+	Message     string      `json:"message"`
+	Code        int64       `json:"code"`
+	Data        interface{} `json:"data"`
+	OriginIndex int64       `json:"origin_index"`
+}
+
+// CreatedDataResult common created result definition
+type CreatedDataResult struct {
+	OriginIndex int64  `json:"origin_index"`
+	ID          uint64 `json:"id"`
+}
+
+// RepeatedDataResult repeated data
+type RepeatedDataResult struct {
+	OriginIndex int64         `json:"origin_index"`
+	Data        mapstr.MapStr `json:"data"`
+}
+
+// UpdatedDataResult common update operation result
+type UpdatedDataResult struct {
+	OriginIndex int64  `json:"origin_index"`
+	ID          uint64 `json:"id"`
+}
+
+// SetDataResult common set result definition
+type SetDataResult struct {
+	UpdatedCount `json:",inline"`
+	CreatedCount `json:",inline"`
+	Created      []CreatedDataResult `json:"created"`
+	Updated      []UpdatedDataResult `json:"updated"`
+	Exceptions   []ExceptionResult   `json:"exception"`
 }
 
 // CreateManyInfoResult create many function return this result struct
 type CreateManyInfoResult struct {
-	Created    []int64         `json:"created"`
-	Repeated   []mapstr.MapStr `json:"repeated"`
-	Exceptions []Exception     `json:"exception"`
+	Created    []CreatedDataResult  `json:"created"`
+	Repeated   []RepeatedDataResult `json:"repeated"`
+	Exceptions []ExceptionResult    `json:"exception"`
 }
 
 // CreateManyDataResult the data struct definition in create many function result
 type CreateManyDataResult struct {
-	Count int64                `json:"count"`
-	Info  CreateManyInfoResult `json:"info"`
+	CreateManyInfoResult `json:",inline"`
 }
 
 // CreateOneDataResult the data struct definition in create one function result
 type CreateOneDataResult struct {
-	Count int64        `json:"count"`
-	Info  CreatedCount `json:"info"`
-}
-
-// SetManyInfoResult set many function return this result struct
-type SetManyInfoResult struct {
-	Created    []int64         `json:"created"`
-	Updated    []mapstr.MapStr `json:"updated"`
-	Exceptions []Exception     `json:"exception"`
-}
-
-// SetManyDataResult the data struct definition in create many function result
-type SetManyDataResult struct {
-	Count int64             `json:"count"`
-	Info  SetManyInfoResult `json:"info"`
-}
-
-// SetOneInfoResult the info struct definition in create one function result's Info field
-type SetOneInfoResult struct {
-	CreatedCount `json:",inline"`
-	UpdatedCount `json:",inline"`
-}
-
-// SetOneDataResult the data struct definition in create one function result
-type SetOneDataResult struct {
-	Count int64        `json:"count"`
-	Info  CreatedCount `json:"info"`
+	Created CreatedDataResult `json:"created"`
 }
 
 // SearchDataResult common search data result
 type SearchDataResult struct {
 	Count int64           `json:"count"`
 	Info  []mapstr.MapStr `json:"info"`
+}
+
+//ReadModelClassifition  read model classifition api http response return result struct
+type ReadModelClassifition struct {
+	BaseResp `json:",inline"`
+	Data     struct {
+		Count int              `json:"count"`
+		Info  []Classification `json:"info"`
+	} `json:"data"`
 }

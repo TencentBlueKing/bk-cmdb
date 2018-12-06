@@ -17,7 +17,7 @@ import (
 )
 
 type Result interface {
-	ToSQL() string
+	ToSQL() (string, error)
 	ToMapStr() mapstr.MapStr
 }
 
@@ -26,56 +26,27 @@ type ConditionElement interface {
 	ToMapStr() mapstr.MapStr
 }
 
+// Condition common condition methods
 type Condition interface {
 	Result
-	Element(element ConditionElement) Condition
+	Element(elements ...ConditionElement) Condition
 	And(elements ...ConditionElement) Condition
 	Or(elements ...ConditionElement) Condition
-	Embed(embedName string) Condition
+	Embed(embedName string) (origin, embed Condition)
 }
 
+// CreateStatement used to contruct create statement
 type CreateStatement interface {
 	Fields(fields ...Field) Result
 }
 
-type UpdateStatement interface {
-	Set(fields ...Field) UpdateStatement
-	Where(cond Condition) Result
+// WhereStatement used to construct condition statement
+type WhereStatement interface {
+	Conditions(cond ...Condition) Result
 }
 
-type DeleteStatement interface {
-	Where(cond Condition) Result
-}
-
-type SelectStatement interface {
-	Fields(fieldName ...string) SelectStatement
-	Count() SelectStatement
-	Where(cond Condition) Result
-}
-
+// TableOperation used to construct table record operations ( create\update\delete\select )methods
 type TableOperation interface {
+	Where() WhereStatement
 	Create() CreateStatement
-	Update() UpdateStatement
-	Delete() DeleteStatement
-	Select() SelectStatement
-}
-
-
-// From used to construct condition and set the table name
-func From(tableName string) TableOperation {
-	return nil
-}
-
-// Where used to construct condtion instance
-func Where() Condition {
-	return nil
-}
-
-// CreateConditionfromstruct construct a new condition instance by a struct.
-// It will be ignore, if the field of the struct is not be seted any value.
-// It will use the field name as the database collection field name, if the field tag is not seted
-// The array field will be convert in rules.
-// eg: struct { FieldName []string  `field`:"field_name"} will be converted to  {"field_name":{"$in":[]}}
-func CreateConditionFromStruct(targetStruct interface{}) Condition {
-	return nil
 }

@@ -10,17 +10,6 @@
  * limitations under the License.
  */
 
-package metadata
+package instances
 
-import "configcenter/src/common/mapstr"
-
-// DeleteOption common delete condition options
-type DeleteOption struct {
-	Condition mapstr.MapStr `json:"condition"`
-}
-
-// DeletedCountResult delete  api http response return result struct
-type DeletedOptionResult struct {
-	BaseResp `json:",inline"`
-	Data     DeletedCount `json:"data"`
-}
+// TODO: 依赖其他模块的方法，在此文件声明 interface， 上线后统一在进程启动流程里注入

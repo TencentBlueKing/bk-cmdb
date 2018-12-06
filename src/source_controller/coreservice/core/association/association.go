@@ -13,8 +13,8 @@
 package association
 
 import (
-	"configcenter/src/apimachinery"
 	"configcenter/src/source_controller/coreservice/core"
+	"configcenter/src/storage/dal"
 )
 
 var _ core.AssociationOperation = (*associationManager)(nil)
@@ -23,12 +23,21 @@ type associationManager struct {
 	*associationKind
 	*associationInstance
 	*associationModel
-	clientSet apimachinery.ClientSetInterface
+	dbProxy dal.RDB
 }
 
 // New create a new association manager instance
-func New(client apimachinery.ClientSetInterface) core.AssociationOperation {
+func New(dbProxy dal.RDB) core.AssociationOperation {
 	return &associationManager{
-		clientSet: client,
+		dbProxy: dbProxy,
+		associationKind: &associationKind{
+			dbProxy: dbProxy,
+		},
+		associationInstance: &associationInstance{
+			dbProxy: dbProxy,
+		},
+		associationModel: &associationModel{
+			dbProxy: dbProxy,
+		},
 	}
 }

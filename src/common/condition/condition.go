@@ -18,7 +18,6 @@ import (
 
 	"configcenter/src/common"
 	types "configcenter/src/common/mapstr"
-	// "configcenter/src/common/metadata"
 )
 
 // CreateCondition create a condition object

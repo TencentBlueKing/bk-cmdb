@@ -22,7 +22,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
-	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -32,7 +32,7 @@ import (
 type Object interface {
 	Operation
 
-	Parse(data frtypes.MapStr) (*meta.Object, error)
+	Parse(data mapstr.MapStr) (*meta.Object, error)
 
 	Origin() meta.Object
 	IsMainlineObject() (bool, error)
@@ -96,7 +96,7 @@ type Object interface {
 	SetModifier(modifier string)
 	GetModifier() string
 
-	ToMapStr() (frtypes.MapStr, error)
+	ToMapStr() (mapstr.MapStr, error)
 
 	GetInstIDFieldName() string
 	GetInstNameFieldName() string
@@ -462,7 +462,7 @@ func (o *object) UpdateMainlineObjectAssociationTo(prevObjID, relateToObjID stri
 		return o.params.Err.Error(common.CCErrTopoGotMultipleAssociationInstance)
 	}
 
-	fields := frtypes.New()
+	fields := mapstr.New()
 	fields.Set(common.AssociatedObjectIDField, relateToObjID)
 	result, err := o.clientSet.ObjectController().Meta().UpdateObjectAssociation(context.Background(), resp.Data[0].ID, o.params.Header, fields)
 	if err != nil {
@@ -512,7 +512,7 @@ func (o *object) IsExists() (bool, error) {
 
 	return false, nil
 }
-func (o *object) IsValid(isUpdate bool, data frtypes.MapStr) error {
+func (o *object) IsValid(isUpdate bool, data mapstr.MapStr) error {
 
 	if !isUpdate || data.Exists(metadata.ModelFieldObjectID) {
 		val, err := o.FieldValid.Valid(o.params, data, metadata.ModelFieldObjectID)
@@ -584,7 +584,7 @@ func (o *object) Create() error {
 	return nil
 }
 
-func (o *object) Update(data frtypes.MapStr) error {
+func (o *object) Update(data mapstr.MapStr) error {
 
 	data.Remove(metadata.ModelFieldObjectID)
 	data.Remove(metadata.ModelFieldID)
@@ -634,9 +634,9 @@ func (o *object) Update(data frtypes.MapStr) error {
 	return nil
 }
 
-func (o *object) Parse(data frtypes.MapStr) (*meta.Object, error) {
+func (o *object) Parse(data mapstr.MapStr) (*meta.Object, error) {
 
-	err := meta.SetValueToStructByTags(&o.obj, data)
+	err := mapstr.SetValueToStructByTags(&o.obj, data)
 	if nil != err {
 		return nil, err
 	}
@@ -653,12 +653,12 @@ func (o *object) Parse(data frtypes.MapStr) (*meta.Object, error) {
 	return nil, err
 }
 
-func (o *object) ToMapStr() (frtypes.MapStr, error) {
-	rst := meta.SetValueToMapStrByTags(&o.obj)
+func (o *object) ToMapStr() (mapstr.MapStr, error) {
+	rst := mapstr.SetValueToMapStrByTags(&o.obj)
 	return rst, nil
 }
 
-func (o *object) Save(data frtypes.MapStr) error {
+func (o *object) Save(data mapstr.MapStr) error {
 
 	if nil != data {
 		if _, err := o.obj.Parse(data); nil != err {

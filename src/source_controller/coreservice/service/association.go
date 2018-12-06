@@ -14,110 +14,195 @@ package service
 
 import (
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
 func (s *coreService) CreateOneAssociationKind(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.CreateAssociationKind{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.AssociationOperation().CreateAssociationKind(params, inputData)
 }
 
 func (s *coreService) CreateManyAssociationKind(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.CreateManyAssociationKind{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.AssociationOperation().CreateManyAssociationKind(params, inputData)
 }
 
 func (s *coreService) SetOneAssociationKind(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.SetAssociationKind{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.AssociationOperation().SetAssociationKind(params, inputData)
 }
 
 func (s *coreService) SetManyAssociationKind(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.SetManyAssociationKind{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.AssociationOperation().SetManyAssociationKind(params, inputData)
 }
 
 func (s *coreService) UpdateAssociationKind(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.UpdateOption{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.AssociationOperation().UpdateAssociationKind(params, inputData)
 }
 
 func (s *coreService) DeleteAssociationKind(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.DeleteOption{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.AssociationOperation().DeleteAssociationKind(params, inputData)
 }
 
 func (s *coreService) CascadeDeleteAssociationKind(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.DeleteOption{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.AssociationOperation().CascadeDeleteAssociationKind(params, inputData)
 }
 
 func (s *coreService) SearchAssociationKind(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.QueryCondition{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.AssociationOperation().SearchAssociationKind(params, inputData)
 }
 
 func (s *coreService) CreateModelAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.CreateModelAssociation{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.AssociationOperation().CreateModelAssociation(params, inputData)
 }
 
 func (s *coreService) SetModelAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.SetModelAssociation{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.AssociationOperation().SetModelAssociation(params, inputData)
 }
 
 func (s *coreService) UpdateModelAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.UpdateOption{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.AssociationOperation().UpdateModelAssociation(params, inputData)
 }
 
 func (s *coreService) SearchModelAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.QueryCondition{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.AssociationOperation().SearchModelAssociation(params, inputData)
 }
 
 func (s *coreService) DeleteModelAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.DeleteOption{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.AssociationOperation().DeleteModelAssociation(params, inputData)
 }
 
 func (s *coreService) CascadeDeleteModelAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.DeleteOption{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.AssociationOperation().DeleteModelAssociation(params, inputData)
 }
 
 func (s *coreService) CreateOneInstanceAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.CreateOneInstanceAssociation{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.AssociationOperation().CreateOneInstanceAssociation(params, inputData)
 }
 
 func (s *coreService) CreateManyInstanceAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.CreateManyInstanceAssociation{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.AssociationOperation().CreateManyInstanceAssociation(params, inputData)
 }
 
 func (s *coreService) SetOneInstanceAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.SetOneInstanceAssociation{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.AssociationOperation().SetOneInstanceAssociation(params, inputData)
 }
 
 func (s *coreService) SetManyInstanceAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.SetManyInstanceAssociation{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.AssociationOperation().SetManyInstanceAssociation(params, inputData)
 }
 
 func (s *coreService) UpdateInstanceAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.UpdateOption{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.AssociationOperation().UpdateInstanceAssociation(params, inputData)
 }
 
 func (s *coreService) SearchInstanceAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.QueryCondition{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.AssociationOperation().SearchInstanceAssociation(params, inputData)
 }
 
 func (s *coreService) DeleteInstanceAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	// TODO: 实现接口参数解析，并对参数做基础校验，通过校验的接口传递给逻辑代码
-	return nil, nil
+
+	inputData := metadata.DeleteOption{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.AssociationOperation().DeleteInstanceAssociation(params, inputData)
 }

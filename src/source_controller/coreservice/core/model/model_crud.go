@@ -10,17 +10,21 @@
  * limitations under the License.
  */
 
-package metadata
+package model
 
-import "configcenter/src/common/mapstr"
+import (
+	"configcenter/src/common"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/universalsql/mongo"
+	"configcenter/src/source_controller/coreservice/core"
+)
 
-// DeleteOption common delete condition options
-type DeleteOption struct {
-	Condition mapstr.MapStr `json:"condition"`
-}
+func (m *modelManager) hasAttributes(ctx core.ContextParams, objID string) (attrs []metadata.Attribute, exists bool, err error) {
 
-// DeletedCountResult delete  api http response return result struct
-type DeletedOptionResult struct {
-	BaseResp `json:",inline"`
-	Data     DeletedCount `json:"data"`
+	cond := mongo.NewCondition()
+	cond.Element(&mongo.Eq{Key: metadata.ModelFieldOwnerID, Val: ctx.SupplierAccount})
+	cond.Element(&mongo.Eq{Key: metadata.AttributeFieldObjectID, Val: objID})
+	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).All(ctx, &attrs)
+	exists = (0 != len(attrs))
+	return attrs, exists, err
 }

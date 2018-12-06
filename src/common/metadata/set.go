@@ -9,18 +9,10 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package metadata
 
-import "configcenter/src/common/mapstr"
-
-// DeleteOption common delete condition options
-type DeleteOption struct {
-	Condition mapstr.MapStr `json:"condition"`
-}
-
-// DeletedCountResult delete  api http response return result struct
-type DeletedOptionResult struct {
+// SetOptionResult set  api http response return this result struct
+type SetOptionResult struct {
 	BaseResp `json:",inline"`
-	Data     DeletedCount `json:"data"`
+	Data     SetDataResult `json:"data"`
 }

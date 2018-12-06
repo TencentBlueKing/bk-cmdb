@@ -12,14 +12,14 @@
 
 package metadata
 
-// CreateManyResult create many model datas result
-type CreateManyResult struct {
+// CreateManyOptionResult create many api http response return this result struct
+type CreateManyOptionResult struct {
 	BaseResp `json:",inline"`
 	Data     CreateManyDataResult `json:"data"`
 }
 
-// CreateOneResult create one data result
-type CreateOneResult struct {
+// CreateOneOptionResult create One api http response return this result struct
+type CreateOneOptionResult struct {
 	BaseResp `json:",inline"`
 	Data     CreateOneDataResult `json:"data"`
 }
