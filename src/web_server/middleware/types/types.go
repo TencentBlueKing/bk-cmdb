@@ -81,6 +81,8 @@ const BK_CC_USER_CUSTOM string = "usercustom"
 
 const BK_CC_HOST_FAVORITES string = "favorites"
 
+const BK_TOPO_ASSOCIATION_KIND_SEARCH = "/topo/association/type/action/search"
+
 //proc manage pattern
 const BK_PROC_S string = "proc"
 
