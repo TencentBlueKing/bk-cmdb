@@ -10,18 +10,38 @@
  * limitations under the License.
  */
 
-package business
+package types
 
-type Interface interface {
-	CreateBusiness() error
-	UpdateBusiness() error
-	DeleteBusiness() error
-	GetBusiness()
-	GetBusinessBatch()
+import (
+    "context"
+    "net/http"
+
+    "configcenter/src/framework/core/types"
+)
+
+type BusinessResponse struct {
+	BaseResp `json:",inline"`
+	Data     types.MapStr `json:"data"`
 }
 
-func NewBusinessClient() Interface {
-    
-    
-    
+type CreateBusinessInfo struct {
+    Ctx context.Context
+    Header http.Header
+    Tenancy string
+    BussinessInfo interface{}
+}
+
+type UpdateBusinessInfo struct {
+    Ctx context.Context
+    Header http.Header
+    Tenancy string
+    BusinessID int64
+    BussinessInfo interface{}
+}
+
+type DeleteBusinessInfo struct {
+    Ctx context.Context
+    Header http.Header
+    Tenancy string
+    BusinessID int64
 }

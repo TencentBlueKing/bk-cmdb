@@ -10,18 +10,16 @@
  * limitations under the License.
  */
 
-package business
+package types
 
-type Interface interface {
-	CreateBusiness() error
-	UpdateBusiness() error
-	DeleteBusiness() error
-	GetBusiness()
-	GetBusinessBatch()
+type BaseResp struct {
+	Result bool   `json:"result"`
+	Code   int    `json:"bk_error_code"`
+	ErrMsg string `json:"bk_error_msg"`
 }
 
-func NewBusinessClient() Interface {
-    
-    
-    
+type Response struct {
+	BaseResp `json:",inline"`
+	Data     interface{} `json:"data"`
 }
+
