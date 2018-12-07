@@ -99,8 +99,12 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 	}
 
 	for colIdx, colInput := range *batchInfo.BatchInfo {
-		delete(colInput, "import_from")
+		if colInput == nil {
+			// this is a empty excel line.
+			continue
+		}
 
+		delete(colInput, "import_from")
 		item := c.instFactory.CreateInst(params, obj)
 		item.SetValues(colInput)
 
@@ -128,6 +132,8 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 						results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
 						continue
 					}
+				default:
+
 				}
 
 			}
