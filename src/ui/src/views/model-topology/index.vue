@@ -1202,7 +1202,7 @@
                 float: right;
                 margin-top: 15px;
                 font-size: 12px;
-                color: $cmdbBorderColor;
+                color: #868b97;
             }
         }
         .model-item {
