@@ -653,12 +653,12 @@ const (
 	CC_Err_Comm_HOST_IN_PLAT_FAIL     = 11004
 	CC_Err_Comm_HOST_IN_PLAT_FAIL_STR = "plat has host data, can not delete plat"
 
-	//CCErrCloudHostsObtianFail cloud hosts obtain failed
+	// CCErrCloudHostsObtianFail cloud hosts obtain failed
 	CCErrCloudHostsObtianFail = 1199050
 
-	//CCErrCloudSyncCreateFail cloud hosts sync table create failed
+	// CCErrCloudSyncCreateFail cloud hosts sync table create failed
 	CCErrCloudSyncCreateFail = 1199051
 
-	//CCErrCloudHistoryCreateFail cloud sync history table create failed
+	// CCErrCloudHistoryCreateFail cloud sync history table create failed
 	CCErrCloudHistoryCreateFail = 1199052
 )

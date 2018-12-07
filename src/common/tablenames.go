@@ -80,10 +80,10 @@ const (
 
 	BKTableNameHostLock = "cc_HostLock"
 
-	//Cloud sync tables
-	BKTableNameCloudTask         = "cc_CloudTask"
-	BKTableNameCloudResourceSync = "cc_CloudResourceSync"
-	BKTableNameCloudHistory      = "cc_CloudHistory"
+	// Cloud sync tables
+	BKTableNameCloudTask         	= "cc_CloudTask"
+	BKTableNameCloudHistory      	= "cc_CloudHistory"
+	BKTableNameCloudResourceConfirm = "cc_CloudResourceConfirm"
 )
 
 // AllTables alltables
@@ -122,6 +122,9 @@ var AllTables = []string{
 	BKTableNameTransaction,
 	BKTableNameIDgenerator,
 	BKTableNameHostLock,
+	BKTableNameCloudTask,
+	BKTableNameCloudHistory,
+	BKTableNameCloudResourceConfirm,
 }
 
 // GetInstTableName returns inst data table name
