@@ -46,16 +46,21 @@ func (m *modelClassification) CreateOneModelClassification(ctx core.ContextParam
 func (m *modelClassification) CreateManyModelClassification(ctx core.ContextParams, inputParam metadata.CreateManyModelClassifiaction) (*metadata.CreateManyDataResult, error) {
 
 	dataResult := &metadata.CreateManyDataResult{}
+
+	addExceptionFunc := func(idx int64, err errors.CCErrorCoder, classification *metadata.Classification) {
+		dataResult.CreateManyInfoResult.Exceptions = append(dataResult.CreateManyInfoResult.Exceptions, metadata.ExceptionResult{
+			OriginIndex: idx,
+			Message:     err.Error(),
+			Code:        int64(err.GetCode()),
+			Data:        classification,
+		})
+	}
+
 	for itemIdx, item := range inputParam.Data {
 
 		_, exists, err := m.IsExists(ctx, item.ClassificationID)
 		if nil != err {
-			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
-				Message:     err.Error(),
-				Code:        int64(err.(errors.CCErrorCoder).GetCode()),
-				Data:        item,
-				OriginIndex: int64(itemIdx),
-			})
+			addExceptionFunc(int64(itemIdx), err.(errors.CCErrorCoder), &item)
 			continue
 		}
 
@@ -66,12 +71,7 @@ func (m *modelClassification) CreateManyModelClassification(ctx core.ContextPara
 
 		id, err := m.Save(ctx, item)
 		if nil != err {
-			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
-				Message:     err.Error(),
-				Code:        int64(err.(errors.CCErrorCoder).GetCode()),
-				Data:        item,
-				OriginIndex: int64(itemIdx),
-			})
+			addExceptionFunc(int64(itemIdx), err.(errors.CCErrorCoder), &item)
 			continue
 		}
 
@@ -86,16 +86,21 @@ func (m *modelClassification) CreateManyModelClassification(ctx core.ContextPara
 func (m *modelClassification) SetManyModelClassification(ctx core.ContextParams, inputParam metadata.SetManyModelClassification) (*metadata.SetDataResult, error) {
 
 	dataResult := &metadata.SetDataResult{}
+
+	addExceptionFunc := func(idx int64, err errors.CCErrorCoder, classification *metadata.Classification) {
+		dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
+			OriginIndex: idx,
+			Message:     err.Error(),
+			Code:        int64(err.GetCode()),
+			Data:        classification,
+		})
+	}
+
 	for itemIdx, item := range inputParam.Data {
 
 		origin, exists, err := m.IsExists(ctx, item.ClassificationID)
 		if nil != err {
-			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
-				Message:     err.Error(),
-				Code:        int64(err.(errors.CCErrorCoder).GetCode()),
-				Data:        item,
-				OriginIndex: int64(itemIdx),
-			})
+			addExceptionFunc(int64(itemIdx), err.(errors.CCErrorCoder), &item)
 			continue
 		}
 
@@ -103,12 +108,7 @@ func (m *modelClassification) SetManyModelClassification(ctx core.ContextParams,
 
 			cond := mongo.NewCondition()
 			if err := m.Update(ctx, mapstr.NewFromStruct(item, "field"), cond.Element(&mongo.Eq{Key: metadata.ClassificationFieldID, Val: origin.ID}).ToMapStr()); nil != err {
-				dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
-					Message:     err.Error(),
-					Code:        int64(err.(errors.CCErrorCoder).GetCode()),
-					Data:        item,
-					OriginIndex: int64(itemIdx),
-				})
+				addExceptionFunc(int64(itemIdx), err.(errors.CCErrorCoder), &item)
 				continue
 			}
 
@@ -118,13 +118,7 @@ func (m *modelClassification) SetManyModelClassification(ctx core.ContextParams,
 
 		id, err := m.Save(ctx, item)
 		if nil != err {
-
-			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
-				Message:     err.Error(),
-				Code:        int64(err.(errors.CCErrorCoder).GetCode()),
-				Data:        item,
-				OriginIndex: int64(itemIdx),
-			})
+			addExceptionFunc(int64(itemIdx), err.(errors.CCErrorCoder), &item)
 			continue
 		}
 
@@ -147,16 +141,19 @@ func (m *modelClassification) SetOneModelClassification(ctx core.ContextParams, 
 
 	dataResult := &metadata.SetDataResult{}
 
+	addExceptionFunc := func(idx int64, err errors.CCErrorCoder, classification *metadata.Classification) {
+		dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
+			OriginIndex: idx,
+			Message:     err.Error(),
+			Code:        int64(err.GetCode()),
+			Data:        classification,
+		})
+	}
 	if exists {
 
 		cond := mongo.NewCondition()
 		if err := m.Update(ctx, mapstr.NewFromStruct(inputParam.Data, "field"), cond.Element(&mongo.Eq{Key: metadata.ClassificationFieldID, Val: origin.ID}).ToMapStr()); nil != err {
-			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
-				Message:     err.Error(),
-				Code:        int64(err.(errors.CCErrorCoder).GetCode()),
-				Data:        inputParam.Data,
-				OriginIndex: 0,
-			})
+			addExceptionFunc(0, err.(errors.CCErrorCoder), &inputParam.Data)
 			return dataResult, nil
 		}
 		dataResult.Updated = append(dataResult.Updated, metadata.UpdatedDataResult{ID: uint64(origin.ID)})
@@ -165,12 +162,7 @@ func (m *modelClassification) SetOneModelClassification(ctx core.ContextParams, 
 
 	id, err := m.Save(ctx, inputParam.Data)
 	if nil != err {
-		dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
-			Message:     err.Error(),
-			Code:        int64(err.(errors.CCErrorCoder).GetCode()),
-			Data:        origin,
-			OriginIndex: 0,
-		})
+		addExceptionFunc(0, err.(errors.CCErrorCoder), origin)
 	}
 	dataResult.Created = append(dataResult.Created, metadata.CreatedDataResult{ID: id})
 	return dataResult, err
