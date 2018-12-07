@@ -314,7 +314,8 @@
                 if ([].concat(...positionsArray).length || edges.length || nodes.length) {
                     return new Promise((resolve, reject) => {
                         this.$bkInfo({
-                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                            title: this.$t('Common["确定离开页面？"]'),
+                            content: this.$t('Common["系统不会保存您所做的修改，确认要离开？"]'),
                             confirmFn: () => {
                                 resolve(true)
                             },
