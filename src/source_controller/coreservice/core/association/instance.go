@@ -13,7 +13,7 @@
 package association
 
 import (
-	"configcenter/src/common/mapstr"
+	//	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
@@ -23,9 +23,17 @@ type associationInstance struct {
 	dbProxy dal.RDB
 }
 
+func (m *associationKind) isExists(ctx core.ContextParams, instID, objID, asstInstID, asstObjID string) (origin *metadata.AssociationKind, exists bool, err error) {
+	cond := mongo.NewCondition()
+	cond.Element(&mongo.Eq{Key: metadata.Association, Val: associationKindID})
+	err = m.dbProxy.Table(common.BKTableNameAsstDes).Find(cond.ToMapStr()).One(ctx, origin)
+	return origin, !m.dbProxy.IsNotFoundError(err), err
+}
+
 func (m *associationInstance) CreateOneInstanceAssociation(ctx core.ContextParams, inputParam metadata.CreateOneInstanceAssociation) (*metadata.CreateOneDataResult, error) {
 	return nil, nil
 }
+
 func (m *associationInstance) SetOneInstanceAssociation(ctx core.ContextParams, inputParam metadata.SetOneInstanceAssociation) (*metadata.SetDataResult, error) {
 	return nil, nil
 }
