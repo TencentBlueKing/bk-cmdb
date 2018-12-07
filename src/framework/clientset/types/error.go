@@ -10,18 +10,27 @@
  * limitations under the License.
  */
 
-package business
+package types
 
-type Interface interface {
-	CreateBusiness() error
-	UpdateBusiness() error
-	DeleteBusiness() error
-	GetBusiness()
-	GetBusinessBatch()
+import "fmt"
+
+const (
+	// skip 0.
+	_ = iota
+	// start error code from 100000001
+	HttpRequestFailed = 100000000 + iota
+)
+
+
+type ErrorDetail struct {
+    _ struct{}
+	// error code.
+	Code int
+	// error message details.
+	Message string
 }
 
-func NewBusinessClient() Interface {
-    
-    
-    
+func (e *ErrorDetail) Error() string {
+	return fmt.Sprintf("error code: %d, error message: %s", e.Code, e.Message)
 }
+
