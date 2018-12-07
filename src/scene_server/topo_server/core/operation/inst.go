@@ -123,7 +123,11 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 			}
 
 		} else {
-			// check create
+			// check this instance with object unique field.
+			// otherwise, this instance is really a new one, need to be created.
+			// TODO: add a logic to handle if this instance is already exist or not with unique api.
+			// if already exist, then update, otherwise create.
+
 			if err := NewSupplementary().Validator(c).ValidatorCreate(params, obj, item.ToMapStr()); nil != err {
 				switch tmpErr := err.(type) {
 				case errors.CCErrorCoder:
@@ -147,7 +151,6 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 			continue
 		}
 		NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
-
 	}
 
 	return results, nil
