@@ -28,15 +28,13 @@ type modelManager struct {
 
 // New create a new model manager instance
 func New(dbProxy dal.RDB) core.ModelOperation {
-	return &modelManager{
-		dbProxy: dbProxy,
-		modelAttribute: &modelAttribute{
-			dbProxy: dbProxy,
-		},
-		modelClassification: &modelClassification{
-			dbProxy: dbProxy,
-		},
-	}
+
+	coreMgr := &modelManager{dbProxy: dbProxy}
+
+	coreMgr.modelAttribute = &modelAttribute{dbProxy: dbProxy, model: coreMgr}
+	coreMgr.modelClassification = &modelClassification{dbProxy: dbProxy, model: coreMgr}
+
+	return coreMgr
 }
 
 func (m *modelManager) CreateModel(ctx core.ContextParams, inputParam metadata.CreateModel) (*metadata.CreateOneDataResult, error) {

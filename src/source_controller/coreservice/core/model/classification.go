@@ -185,7 +185,7 @@ func (m *modelClassification) UpdateModelClassification(ctx core.ContextParams, 
 	if err := m.Update(ctx, inputParam.Data, inputParam.Condition); nil != err {
 		return &metadata.UpdatedCount{}, err
 	}
-	return &metadata.UpdatedCount{Count: int64(cnt)}, nil
+	return &metadata.UpdatedCount{Count: cnt}, nil
 }
 
 func (m *modelClassification) DeleteModelClassificaiton(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
@@ -217,7 +217,7 @@ func (m *modelClassification) CascadeDeleteModeClassification(ctx core.ContextPa
 		}
 	}
 
-	return &metadata.DeletedCount{Count: int64(len(classificationItems))}, nil
+	return &metadata.DeletedCount{Count: uint64(len(classificationItems))}, nil
 }
 
 func (m *modelClassification) SearchModelClassification(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
@@ -228,7 +228,7 @@ func (m *modelClassification) SearchModelClassification(ctx core.ContextParams, 
 	}
 
 	dataResult := &metadata.QueryResult{}
-	dataResult.Count = int64(len(classificationItems))
+	dataResult.Count = uint64(len(classificationItems))
 	for item := range classificationItems {
 		dataResult.Info = append(dataResult.Info, mapstr.NewFromStruct(item, "field"))
 	}

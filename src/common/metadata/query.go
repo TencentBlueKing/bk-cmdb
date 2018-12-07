@@ -38,6 +38,6 @@ type QueryCondition struct {
 
 // QueryResult common query result
 type QueryResult struct {
-	Count int64           `json:"count"`
+	Count uint64          `json:"count"`
 	Info  []mapstr.MapStr `json:"info"`
 }

@@ -25,7 +25,7 @@ func (m *modelClassification) IsExists(ctx core.ContextParams, classificationID 
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationID, Val: ctx.SupplierAccount}, &mongo.Eq{Key: metadata.ClassFieldClassificationID, Val: classificationID})
 	err = m.dbProxy.Table(common.BKTableNameObjClassifiction).Find(cond.ToMapStr()).One(ctx, origin)
-	return origin, !m.dbProxy.IsNotFoundError(err), err
+	return origin, m.dbProxy.IsNotFoundError(err), err
 }
 
 func (m *modelClassification) Save(ctx core.ContextParams, classification metadata.Classification) (id uint64, err error) {
