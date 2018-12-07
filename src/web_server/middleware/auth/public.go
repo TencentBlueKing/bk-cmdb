@@ -14,6 +14,7 @@ package auth
 
 import (
 	"encoding/json"
+	"net/http"
 	"strings"
 
 	"configcenter/src/common"
@@ -90,7 +91,13 @@ func (m *publicAuth) ValidResAccess(pathArr []string, c *gin.Context) bool {
 	}
 
 	// association kind search, but not batch
-	if strings.Contains(pathStr, types.BK_TOPO_ASSOCIATION_KIND_SEARCH) && !strings.Contains(pathStr, "batch") {
+	if strings.Contains(pathStr, types.BK_TOPO_ASSOCIATION_KIND_SEARCH) &&
+		!strings.Contains(pathStr, "batch") && method == http.MethodPost {
+		return true
+	}
+
+	// get object info
+	if pathStr == types.BK_TOPO_SEARCH_OBJECTS && method == http.MethodPost {
 		return true
 	}
 
