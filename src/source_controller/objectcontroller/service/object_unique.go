@@ -299,15 +299,31 @@ func recheckUniqueForExistsInsts(ctx context.Context, db dal.RDB, ownerID, objID
 	for _, property := range propertys {
 		keynames = append(keynames, property.PropertyID)
 	}
+	if len(keynames) <= 0 {
+		blog.Warnf("[ObjectUnique] recheckUniqueForExistsInsts keys empty for [%s] %+v", objID, keys)
+		return nil
+	}
 
 	pipeline := []interface{}{}
+
+	instcond := mapstr.MapStr{
+		common.BKObjIDField: objID,
+	}
+	if common.GetObjByType(objID) == common.BKInnerObjIDObject {
+		instcond.Set(common.BKObjIDField, objID)
+	}
+
 	if !mustCheck {
 		matchs := []mapstr.MapStr{}
 		for _, key := range keynames {
 			matchs = append(matchs, mapstr.MapStr{key: mapstr.MapStr{common.BKDBNE: nil}})
 		}
-		pipeline = append(pipeline, mapstr.MapStr{common.BKDBMatch: mapstr.MapStr{common.BKDBOR: matchs}})
+		if len(matchs) > 0 {
+			instcond.Set(common.BKDBOR, matchs)
+		}
 	}
+
+	pipeline = append(pipeline, mapstr.MapStr{common.BKDBMatch: instcond})
 
 	group := mapstr.MapStr{}
 	for _, key := range keynames {
