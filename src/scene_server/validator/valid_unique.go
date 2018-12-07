@@ -203,7 +203,7 @@ func (valid *ValidMap) getInstDataByID(instID int64) (map[string]interface{}, er
 		return nil, err
 	}
 	if !result.Result {
-		return nil, valid.errif.Error(result.Code)
+		return nil, valid.errif.New(result.Code, result.ErrMsg)
 	}
 	if len(result.Data.Info) == 0 {
 		return nil, valid.errif.Error(common.CCErrCommNotFound)
