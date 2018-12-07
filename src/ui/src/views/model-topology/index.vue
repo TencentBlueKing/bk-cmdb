@@ -293,6 +293,11 @@
             this.initNetwork()
             this.initMoveFunction()
         },
+        async beforeRouteLeave (to, from, next) {
+            if (await this.confirmLeave()) {
+                next()
+            }
+        },
         methods: {
             ...mapActions('objectAssociation', [
                 'searchAssociationType',
@@ -300,6 +305,27 @@
                 'updateObjectAssociation',
                 'deleteObjectAssociation'
             ]),
+            confirmLeave () {
+                const {
+                    edges,
+                    nodes
+                } = this.topoEdit
+                const positionsArray = this.getUpdatePositions()
+                if ([].concat(...positionsArray).length || edges.length || nodes.length) {
+                    return new Promise((resolve, reject) => {
+                        this.$bkInfo({
+                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                            confirmFn: () => {
+                                resolve(true)
+                            },
+                            cancelFn: () => {
+                                resolve(false)
+                            }
+                        })
+                    })
+                }
+                return true
+            },
             addEdge () {
                 if (this.topoEdit.activeEdge.from === '') {
                     const nodeId = this.topoTooltip.hoverNode.id
@@ -341,13 +367,15 @@
                 this.topoEdit.nodes = []
             },
             async exitEdit () {
-                this.localTopoModelList = this.$tools.clone(this.topoModelList)
-                this.topoEdit.isEdit = false
-                this.updateNetwork()
-                await this.$nextTick()
-                this.clearEditData()
+                if (await this.confirmLeave()) {
+                    this.localTopoModelList = this.$tools.clone(this.topoModelList)
+                    this.topoEdit.isEdit = false
+                    this.updateNetwork()
+                    await this.$nextTick()
+                    this.clearEditData()
+                }
             },
-            updatePositions () {
+            getUpdatePositions () {
                 const nodes = this.localTopoModelList.filter(({bk_obj_id: objId, position}) => {
                     const curModel = this.topoModelList.find(model => model['bk_obj_id'] === objId)
                     return curModel.position.x !== position.x || curModel.position.y !== position.y
@@ -362,12 +390,12 @@
                         }
                     }
                 })
-                this.updateNodePosition(this.networkDataSet.nodes.get(nodes), removeNodes)
+                return [this.networkDataSet.nodes.get(nodes), removeNodes]
             },
             async saveTopo () {
-                let createAsstArray = []
-                let updateAsstArray = []
-                let deleteAsstArray = []
+                const createAsstArray = []
+                const updateAsstArray = []
+                const deleteAsstArray = []
                 this.topoEdit.edges.filter(({type}) => type === 'create').forEach(data => {
                     createAsstArray.push(this.createAsst(data.params))
                 })
@@ -377,7 +405,8 @@
                 this.topoEdit.edges.filter(({type}) => type === 'delete').forEach(data => {
                     deleteAsstArray.push(this.deleteAsst(data.params))
                 })
-                this.updatePositions()
+                const positionsArray = this.getUpdatePositions()
+                this.updateNodePosition(...positionsArray)
                 await Promise.all(createAsstArray)
                 await Promise.all(updateAsstArray)
                 await Promise.all(deleteAsstArray)
