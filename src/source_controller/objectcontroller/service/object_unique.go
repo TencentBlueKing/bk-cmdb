@@ -14,12 +14,14 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
@@ -68,6 +70,13 @@ func (cli *Service) CreateObjectUnique(req *restful.Request, resp *restful.Respo
 			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrTopoObjectUniqueCanNotHasMutiMustCheck)})
 			return
 		}
+	}
+
+	err := recheckUniqueForExistsInsts(ctx, db, ownerID, objID, dat.Keys, dat.MustCheck)
+	if nil != err {
+		blog.Errorf("[CreateObjectUnique] recheckUniqueForExistsInsts for %s with %v error: %v", objID, dat, err)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDuplicateItem)})
+		return
 	}
 
 	id, err := db.NextSequence(ctx, common.BKTableNameObjUnique)
@@ -121,6 +130,16 @@ func (cli *Service) UpdateObjectUnique(req *restful.Request, resp *restful.Respo
 	}
 	unique.LastTime = metadata.Now()
 
+	for _, key := range unique.Keys {
+		switch key.Kind {
+		case metadata.UinqueKeyKindProperty:
+		default:
+			blog.Errorf("[UpdateObjectUnique] invalid key kind: %s", key.Kind)
+			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrTopoObjectUniqueKeyKindInvalid, key.Kind)})
+			return
+		}
+	}
+
 	if unique.MustCheck {
 		cond := condition.CreateCondition()
 		cond.Field(common.BKObjIDField).Eq(objID)
@@ -139,15 +158,13 @@ func (cli *Service) UpdateObjectUnique(req *restful.Request, resp *restful.Respo
 		}
 	}
 
-	for _, key := range unique.Keys {
-		switch key.Kind {
-		case metadata.UinqueKeyKindProperty:
-		default:
-			blog.Errorf("[UpdateObjectUnique] invalid key kind: %s", key.Kind)
-			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrTopoObjectUniqueKeyKindInvalid, key.Kind)})
-			return
-		}
+	err = recheckUniqueForExistsInsts(ctx, db, ownerID, objID, unique.Keys, unique.MustCheck)
+	if nil != err {
+		blog.Errorf("[UpdateObjectUnique] recheckUniqueForExistsInsts for %s with %v error: %v", objID, unique, err)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDuplicateItem)})
+		return
 	}
+
 	cond := condition.CreateCondition()
 	cond.Field("id").Eq(id)
 	cond.Field(common.BKObjIDField).Eq(objID)
@@ -254,4 +271,74 @@ func (cli *Service) searchObjectUnique(ctx context.Context, db dal.RDB, ownerID,
 	uniques := []metadata.ObjectUnique{}
 	err := db.Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).All(ctx, &uniques)
 	return uniques, err
+}
+
+func recheckUniqueForExistsInsts(ctx context.Context, db dal.RDB, ownerID, objID string, keys []metadata.UinqueKey, mustCheck bool) error {
+	propertyIDs := []uint64{}
+	for _, key := range keys {
+		switch key.Kind {
+		case metadata.UinqueKeyKindProperty:
+			propertyIDs = append(propertyIDs, key.ID)
+		default:
+			return fmt.Errorf("invalid key kind: %s", key.Kind)
+		}
+	}
+
+	propertys := []metadata.Attribute{}
+	cond := condition.CreateCondition()
+	cond.Field(common.BKObjIDField).Eq(objID)
+	cond.Field(common.BKOwnerIDField).Eq(ownerID)
+	cond.Field(common.BKFieldID).In(propertyIDs)
+	err := db.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).All(ctx, &propertys)
+	if err != nil {
+		blog.ErrorJSON("[ObjectUnique] recheckUniqueForExistsInsts find propertys for %s failed %s: %s", objID, err)
+		return err
+	}
+
+	keynames := []string{}
+	for _, property := range propertys {
+		keynames = append(keynames, property.PropertyID)
+	}
+
+	pipeline := []interface{}{}
+	if !mustCheck {
+		matchs := []mapstr.MapStr{}
+		for _, key := range keynames {
+			matchs = append(matchs, mapstr.MapStr{key: mapstr.MapStr{common.BKDBNE: nil}})
+		}
+		pipeline = append(pipeline, mapstr.MapStr{common.BKDBMatch: mapstr.MapStr{common.BKDBOR: matchs}})
+	}
+
+	group := mapstr.MapStr{}
+	for _, key := range keynames {
+		group.Set(key, "$"+key)
+	}
+	pipeline = append(pipeline, mapstr.MapStr{
+		common.BKDBGroup: mapstr.MapStr{
+			"_id":   group,
+			"total": mapstr.MapStr{common.BKDBSum: 1},
+		},
+	})
+
+	pipeline = append(pipeline, mapstr.MapStr{common.BKDBMatch: mapstr.MapStr{
+		"_id":   mapstr.MapStr{common.BKDBNE: nil},
+		"total": mapstr.MapStr{common.BKDBGT: 1},
+	}})
+
+	pipeline = append(pipeline, mapstr.MapStr{common.BKDBCount: "finded"})
+
+	result := struct {
+		Finded uint64 `bson:"finded"`
+	}{}
+	err = db.Table(common.GetInstTableName(objID)).AggregateOne(ctx, pipeline, &result)
+	if err != nil && !db.IsNotFoundError(err) {
+		blog.ErrorJSON("[ObjectUnique] recheckUniqueForExistsInsts failed %s, pipeline: %s", err, pipeline)
+		return err
+	}
+
+	if result.Finded > 0 {
+		return dal.ErrDuplicated
+	}
+
+	return nil
 }
