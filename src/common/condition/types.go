@@ -16,8 +16,11 @@ const (
 	// BKDBNE the db operator
 	BKDBNE = "$ne"
 
-	// BKDBNIN the db oeprator
+	// BKDBNIN the db operator
 	BKDBNIN = "$nin"
+
+	// BKDBNot the db operator
+	BKDBNot = "$not"
 
 	// BKDBLT the db operator
 	BKDBLT = "$lt"
@@ -28,6 +31,6 @@ const (
 	// BKDBGT the db operator
 	BKDBGT = "$gt"
 
-	// BKDBGTE the db opeartor
+	// BKDBGTE the db operator
 	BKDBGTE = "$gte"
 )

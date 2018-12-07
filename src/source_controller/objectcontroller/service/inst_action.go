@@ -214,14 +214,14 @@ func (cli *Service) SearchInstObjects(req *restful.Request, resp *restful.Respon
 	var dat meta.QueryInput
 	err = json.Unmarshal([]byte(value), &dat)
 	if err != nil {
-		blog.Error("get object type:%s,input:%v error:%v", string(objType), value, err)
+		blog.Errorf("get object type:%s,input:%v error:%v", string(objType), value, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 		return
 	}
 	//dat.ConvTime()
 	fields := dat.Fields
 	condition := dat.Condition
-	condition = util.SetModOwner(condition, ownerID)
+	condition = util.SetQueryOwner(condition, ownerID)
 
 	skip := dat.Start
 	limit := dat.Limit

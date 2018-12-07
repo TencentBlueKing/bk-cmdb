@@ -18,8 +18,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/holmeswang/contrib/sessions"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -53,7 +53,7 @@ var getUserFailData = userDataResult{
 
 // GetUserList get user list
 func (s *Service) GetUserList(c *gin.Context) {
-	user := user.NewUser(s.Config, s.Engine, s.CacheCli)
+	user := user.NewUser(s.Config, s.Engine, s.CacheCli, s.VersionPlg)
 	code, data := user.GetUserList(c)
 	c.JSON(code, data)
 	return
@@ -176,6 +176,7 @@ func (s *Service) UpdateSupplier(c *gin.Context) {
 	}
 	session.Set(common.WEBSessionOwnerUinKey, supplier.OwnerID)
 	session.Set(common.WEBSessionRoleKey, strconv.FormatInt(supplier.Role, 10))
+	session.Set(common.WEBSessionSupplierID, strconv.FormatInt(supplier.SupplierID, 10))
 	session.Save()
 	ret := metadata.LoginChangeSupplierResult{}
 	ret.Result = true

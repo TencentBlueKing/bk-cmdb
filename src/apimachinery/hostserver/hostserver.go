@@ -55,7 +55,7 @@ type HostServerClientInterface interface {
 	UpdateHost(ctx context.Context, appID string, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	UpdateHostByAppID(ctx context.Context, appID string, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	GetHostListByAppidAndField(ctx context.Context, appID string, field string, h http.Header) (resp *metadata.Response, err error)
-	HostSearchByIP(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
+	HostSearchByIP(ctx context.Context, h http.Header, dat *metadata.HostSearchByIPParams) (resp *metadata.Response, err error)
 	HostSearchByModuleID(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	HostSearchBySetID(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	HostSearchByAppID(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
@@ -67,7 +67,7 @@ type HostServerClientInterface interface {
 	GetHostAppByCompanyId(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
 	DelHostInApp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	GetGitServerIp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
-	GetPlat(ctx context.Context, h http.Header) (resp *metadata.Response, err error)
+	GetPlat(ctx context.Context, h http.Header) (resp *metadata.QueryInstResult, err error)
 	CreatePlat(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
 	DelPlat(ctx context.Context, cloudID string, h http.Header) (resp *metadata.Response, err error)
 	SearchHost(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.SearchHostResult, err error)
@@ -79,6 +79,7 @@ type HostServerClientInterface interface {
 	GetUserCustomQuery(ctx context.Context, businessID string, h http.Header, dat *metadata.QueryInput) (resp *metadata.Response, err error)
 	GetUserCustomQueryDetail(ctx context.Context, businessID string, id string, h http.Header) (resp *metadata.UserCustomQueryDetailResult, err error)
 	GetUserCustomQueryResult(ctx context.Context, businessID, id, start, limit string, h http.Header) (resp *metadata.Response, err error)
+	HostSearch(ctx context.Context, h http.Header, params *metadata.HostCommonSearch) (resp *metadata.QueryInstResult, err error)
 }
 
 func NewHostServerClientInterface(c *util.Capability, version string) HostServerClientInterface {

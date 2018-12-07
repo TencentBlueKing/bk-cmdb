@@ -25,7 +25,7 @@ import (
 	"net/http"
 )
 
-//CloudAddTask create cloud sync task
+// CloudAddTask create cloud sync task
 func (s *Service) AddCloudTask(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))

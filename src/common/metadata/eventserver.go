@@ -64,7 +64,7 @@ type Subscription struct {
 	SubscriptionForm string      `bson:"subscription_form" json:"subscription_form"` // json format
 	Operator         string      `bson:"operator" json:"operator"`
 	OwnerID          string      `bson:"bk_supplier_account" json:"bk_supplier_account"`
-	LastTime         *Time       `bson:"last_time" json:"last_time"`
+	LastTime         Time        `bson:"last_time" json:"last_time"`
 	Statistics       *Statistics `bson:"-" json:"statistics"`
 }
 
@@ -124,6 +124,9 @@ func (e *EventInst) GetType() string {
 	if e.EventType == EventTypeRelation {
 		return e.ObjType
 	}
+	if e.EventType == EventTypeAssociation {
+		return e.ObjType + EventActionUpdate
+	}
 	return e.ObjType + e.Action
 }
 
@@ -157,6 +160,7 @@ type EventType string
 const (
 	EventTypeInstData           = "instdata"
 	EventTypeRelation           = "relation"
+	EventTypeAssociation        = "association"
 	EventTypeResourcePoolModule = "resource"
 )
 

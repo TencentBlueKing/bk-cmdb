@@ -7,6 +7,7 @@
         :allow-clear="allowClear"
         :selected.sync="selected"
         :setting-key="settingKey"
+        :search-key="displayKey"
         :display-key="displayKey">
     </bk-selector>
 </template>

@@ -20,8 +20,8 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
-	frtypes "configcenter/src/common/mapstr"
-	metadata "configcenter/src/common/metadata"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -29,7 +29,7 @@ import (
 type Group interface {
 	Operation
 
-	Parse(data frtypes.MapStr) (*metadata.Group, error)
+	Parse(data mapstr.MapStr) (*metadata.Group, error)
 	CreateAttribute() Attribute
 
 	GetAttributes() ([]Attribute, error)
@@ -60,7 +60,7 @@ type Group interface {
 	SetRecordID(int64)
 	GetRecordID() int64
 
-	ToMapStr() (frtypes.MapStr, error)
+	ToMapStr() (mapstr.MapStr, error)
 }
 
 var _ Group = (*group)(nil)
@@ -88,7 +88,7 @@ func (g *group) GetObjectID() string {
 	return g.grp.ObjectID
 }
 
-func (g *group) IsValid(isUpdate bool, data frtypes.MapStr) error {
+func (g *group) IsValid(isUpdate bool, data mapstr.MapStr) error {
 
 	if !isUpdate || data.Exists(metadata.GroupFieldGroupID) {
 		if _, err := g.FieldValid.Valid(g.params, data, metadata.GroupFieldGroupID); nil != err {
@@ -138,7 +138,7 @@ func (g *group) Create() error {
 	return nil
 }
 
-func (g *group) Update(data frtypes.MapStr) error {
+func (g *group) Update(data mapstr.MapStr) error {
 
 	if err := g.IsValid(true, data); nil != err {
 		return err
@@ -215,14 +215,14 @@ func (g *group) IsExists() (bool, error) {
 	return false, nil
 }
 
-func (g *group) Parse(data frtypes.MapStr) (*metadata.Group, error) {
+func (g *group) Parse(data mapstr.MapStr) (*metadata.Group, error) {
 
-	err := metadata.SetValueToStructByTags(&g.grp, data)
+	err := mapstr.SetValueToStructByTags(&g.grp, data)
 	return &g.grp, err
 }
-func (g *group) ToMapStr() (frtypes.MapStr, error) {
+func (g *group) ToMapStr() (mapstr.MapStr, error) {
 
-	rst := metadata.SetValueToMapStrByTags(&g.grp)
+	rst := mapstr.SetValueToMapStrByTags(&g.grp)
 	return rst, nil
 }
 
@@ -273,7 +273,7 @@ func (g *group) search(cond condition.Condition) ([]metadata.Group, error) {
 
 	return rsp.Data, nil
 }
-func (g *group) Save(data frtypes.MapStr) error {
+func (g *group) Save(data mapstr.MapStr) error {
 
 	if nil != data {
 		if _, err := g.grp.Parse(data); nil != err {

@@ -44,7 +44,9 @@
         },
         watch: {
             value (value) {
-                this.selected = value
+                if (value !== null) {
+                    this.selected = value
+                }
             },
             selected (selected) {
                 this.$emit('input', selected)
@@ -60,6 +62,8 @@
                     const defaultOption = this.options.find(option => option['is_default'])
                     if (defaultOption) {
                         this.selected = defaultOption.id
+                    } else {
+                        this.$emit('input', null)
                     }
                 } else {
                     this.selected = this.value

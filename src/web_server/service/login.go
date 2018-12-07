@@ -16,8 +16,8 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/web_server/middleware/user"
 
-	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/holmeswang/contrib/sessions"
 )
 
 // LogOutUser log out user
@@ -25,7 +25,7 @@ func (s *Service) LogOutUser(c *gin.Context) {
 	session := sessions.Default(c)
 	session.Clear()
 	c.Request.URL.Path = ""
-	userManger := user.NewUser(s.Config, s.Engine, s.CacheCli)
+	userManger := user.NewUser(s.Config, s.Engine, s.CacheCli, s.VersionPlg)
 	loginURL := userManger.GetLoginUrl(c)
 	ret := metadata.LogoutResult{}
 	ret.BaseResp.Result = true

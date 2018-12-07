@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	lang "configcenter/src/common/language"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 
 	"github.com/rentiansheng/xlsx"
@@ -77,34 +78,30 @@ func checkExcelHealer(sheet *xlsx.Sheet, fields map[string]Property, isCheckHead
 // setExcelRowDataByIndex insert  map[string]interface{}  to excel row by index,
 // mapHeaderIndex:Correspondence between head and field
 // fields each field description,  field type, isrequire, validate role
-func setExcelRowDataByIndex(rowMap map[string]interface{}, sheet *xlsx.Sheet, rowIndex int, fields map[string]Property) {
+func setExcelRowDataByIndex(rowMap mapstr.MapStr, sheet *xlsx.Sheet, rowIndex int, fields map[string]Property) []PropertyPrimaryVal {
+
+	primaryKeyArr := make([]PropertyPrimaryVal, 0)
+
 	for id, val := range rowMap {
 		property, ok := fields[id]
 		if false == ok {
 			continue
 		}
+		if property.NotExport {
+			if property.IsOnly {
+				primaryKeyArr = append(primaryKeyArr, PropertyPrimaryVal{
+					ID:     property.ID,
+					Name:   property.Name,
+					StrVal: getPrimaryKey(val),
+				})
+			}
+			continue
+		}
+
 		cell := sheet.Cell(rowIndex, property.ExcelColIndex)
 		//cell.NumFmt = "@"
 
 		switch property.PropertyType {
-		case common.FieldTypeMultiAsst:
-			arrVal, ok := val.([]interface{})
-			if true == ok {
-				vals := getAssociatePrimaryKey(arrVal, property.AsstObjPrimaryProperty)
-				cell.SetString(strings.Join(vals, "\n"))
-				style := cell.GetStyle()
-				style.Alignment.WrapText = true
-			}
-
-		case common.FieldTypeSingleAsst:
-			arrVal, ok := val.([]interface{})
-			if true == ok {
-				vals := getAssociatePrimaryKey(arrVal, property.AsstObjPrimaryProperty)
-				cell.SetString(strings.Join(vals, "\n"))
-				style := cell.GetStyle()
-				style.Alignment.WrapText = true
-			}
-
 		case common.FieldTypeEnum:
 			var cellVal string
 			arrVal, ok := property.Option.([]interface{})
@@ -143,7 +140,18 @@ func setExcelRowDataByIndex(rowMap map[string]interface{}, sheet *xlsx.Sheet, ro
 				cell.SetValue(val)
 			}
 		}
+
+		if property.IsOnly {
+			primaryKeyArr = append(primaryKeyArr, PropertyPrimaryVal{
+				ID:     property.ID,
+				Name:   property.Name,
+				StrVal: cell.String(),
+			})
+		}
+
 	}
+
+	return primaryKeyArr
 
 }
 
@@ -258,7 +266,7 @@ func productExcelHealer(fields map[string]Property, filter []string, sheet *xlsx
 		index := field.ExcelColIndex
 		sheet.Col(index).Width = 18
 		fieldTypeName, skip := getPropertyTypeAliasName(field.PropertyType, defLang)
-		if true == skip {
+		if true == skip || field.NotExport {
 			//不需要用户输入的类型continue
 			continue
 		}
@@ -274,17 +282,8 @@ func productExcelHealer(fields map[string]Property, filter []string, sheet *xlsx
 		cellName.Value = field.Name + isRequire
 		cellName.SetStyle(getHeaderFirstRowCellStyle(field.IsRequire))
 
-		asstPrimaryKey := ""
-		if 0 < len(field.AsstObjPrimaryProperty) {
-			var primaryKeys []string
-			for _, f := range field.AsstObjPrimaryProperty {
-				primaryKeys = append(primaryKeys, f.Name)
-			}
-			asstPrimaryKey = fmt.Sprintf("(%s)", strings.Join(primaryKeys, common.ExcelAsstPrimaryKeySplitChar))
-		}
-
 		cellType := sheet.Cell(1, index)
-		cellType.Value = fieldTypeName + asstPrimaryKey
+		cellType.Value = fieldTypeName
 		cellType.SetStyle(styleCell)
 
 		cellEnName := sheet.Cell(2, index)
@@ -321,4 +320,71 @@ func productExcelHealer(fields map[string]Property, filter []string, sheet *xlsx
 
 	}
 
+}
+
+// ProductExcelHealer Excel文件头部，
+func productExcelAssociationHealer(sheet *xlsx.Sheet, defLang lang.DefaultCCLanguageIf) {
+
+	cellAsstID := sheet.Cell(0, assciationAsstObjIDIndex)
+	cellAsstID.SetString(defLang.Language("excel_association_object_id"))
+	cellAsstID.SetStyle(getHeaderFirstRowCellStyle(false))
+
+	cellOpID := sheet.Cell(0, associationOPColIndex)
+	cellOpID.SetString(defLang.Language("excel_association_op"))
+	cellOpID.SetStyle(getHeaderFirstRowCellStyle(false))
+	dd := xlsx.NewXlsxCellDataValidation(true, true, true)
+	dd.SetDropList([]string{associationOPAdd, associationOPDelete})
+	sheet.Col(associationOPColIndex).SetDataValidationWithStart(dd, 1)
+
+	cellSrcID := sheet.Cell(0, assciationSrcInstIndex)
+	cellSrcID.SetString(defLang.Language("excel_association_src_inst"))
+	style := getHeaderFirstRowCellStyle(false)
+	style.Alignment.WrapText = true
+	cellSrcID.SetStyle(style)
+
+	cellDstID := sheet.Cell(0, assciationDstInstIndex)
+	cellDstID.SetString(defLang.Language("excel_association_dst_inst"))
+	style = getHeaderFirstRowCellStyle(false)
+	style.Alignment.WrapText = true
+	cellDstID.SetStyle(style)
+	sheet.Col(2).Width = 60
+	sheet.Col(3).Width = 60
+}
+
+const (
+	associationOPColIndex    = 1
+	assciationAsstObjIDIndex = 0
+	assciationSrcInstIndex   = 2
+	assciationDstInstIndex   = 3
+
+	associationOPAdd = "add"
+	//associationOPUpdate = "update"
+	associationOPDelete = "delete"
+)
+
+func getPrimaryKey(val interface{}) string {
+	switch realVal := val.(type) {
+	case []interface{}:
+		if len(realVal) == 0 {
+			return ""
+		}
+		valMap, ok := realVal[0].(map[string]interface{})
+		if !ok {
+			return ""
+		}
+		if valMap == nil {
+			return ""
+		}
+		iVal := valMap[common.BKInstIDField]
+		if iVal == nil {
+			return ""
+		}
+		return fmt.Sprintf("%v", iVal)
+	default:
+		if realVal == nil {
+			return ""
+		}
+		return fmt.Sprintf("%v", val)
+
+	}
 }

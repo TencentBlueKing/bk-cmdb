@@ -16,8 +16,8 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 
-	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/holmeswang/contrib/sessions"
 )
 
 func SetProxyHeader(c *gin.Context) {
@@ -26,9 +26,11 @@ func SetProxyHeader(c *gin.Context) {
 	userName, _ := session.Get(common.WEBSessionUinKey).(string)
 	language, _ := session.Get(common.WEBSessionLanguageKey).(string)
 	ownerID, _ := session.Get(common.WEBSessionOwnerUinKey).(string)
+	supplierID, _ := session.Get(common.WEBSessionSupplierID).(string)
 	c.Request.Header.Add(common.BKHTTPHeaderUser, userName)
 	c.Request.Header.Add(common.BKHTTPLanguage, language)
 	c.Request.Header.Add(common.BKHTTPOwnerID, ownerID)
+	c.Request.Header.Add(common.BKHTTPSupplierID, supplierID)
 }
 
 func GetLanguageByHTTPRequest(c *gin.Context) string {

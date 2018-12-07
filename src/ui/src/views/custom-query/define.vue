@@ -416,7 +416,7 @@
                                     'propertyId': originalProperty['bk_property_id'],
                                     'asstObjId': originalProperty['bk_asst_obj_id'],
                                     'operator': property.operator,
-                                    'value': property.value
+                                    'value': this.getUserPropertyValue(property, originalProperty)
                                 })
                             }
                         }
@@ -433,6 +433,15 @@
                     userProperties: this.$tools.clone(properties),
                     attributeSelected: this.attribute.selected
                 }
+            },
+            getUserPropertyValue (property, originalProperty) {
+                if (
+                    property.operator === '$in' &&
+                    ['bk_module_name', 'bk_set_name'].includes(originalProperty['bk_property_id'])
+                ) {
+                    return property.value[property.value.length - 1]
+                }
+                return property.value
             },
             async previewUserAPI () {
                 if (!await this.$validator.validateAll()) {

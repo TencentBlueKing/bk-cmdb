@@ -17,8 +17,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/holmeswang/contrib/sessions"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -142,7 +142,7 @@ func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadat
 	skiplogin := session.Get(webCommon.IsSkipLogin)
 	skiplogins, ok := skiplogin.(string)
 	if ok && "1" == skiplogins {
-		blog.Info("use skip login flag: %v", skiplogin)
+		blog.V(5).Info("use skip login flag: %v", skiplogin)
 		adminData := []*metadata.LoginSystemUserInfo{
 			&metadata.LoginSystemUserInfo{
 				CnName: "admin",
@@ -157,13 +157,14 @@ func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadat
 	getURL := fmt.Sprintf(accountURL, token)
 	httpClient := httpclient.NewHttpClient()
 
+	httpClient.SetTlsNoVerity()
 	reply, err := httpClient.GET(getURL, nil, nil)
 
 	if nil != err {
 		blog.Errorf("get user list error：%v", err)
 		return nil, fmt.Errorf("http do error:%s", err.Error())
 	}
-	blog.Info("get user list url: %s, return：%s", getURL, reply)
+	blog.V(5).Info("get user list url: %s, return：%s", getURL, reply)
 	var result userListResult
 	err = json.Unmarshal([]byte(reply), &result)
 	if nil != err || false == result.Result {

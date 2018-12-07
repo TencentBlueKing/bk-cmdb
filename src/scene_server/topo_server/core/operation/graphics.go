@@ -112,14 +112,37 @@ func (g *graphics) SelectObjectTopoGraphics(params types.ContextParams, scopeTyp
 			}
 
 			for _, asst := range objAssts[obj.GetID()] {
+
+				typeCond := condition.CreateCondition()
+				typeCond.Field(common.AssociationKindIDField).Eq(asst.AsstKindID)
+				typeCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+				request := &metadata.SearchAssociationTypeRequest{
+					Condition: typeCond.ToMapStr(),
+				}
+
+				resp, err := g.asst.SearchType(params, request)
+				if err != nil {
+					blog.Errorf("select object topo graph failed, because get association kind[%s] failed, err: %v", asst.AsstKindID, err)
+					return nil, params.Err.Errorf(common.CCErrTopoGetAssociationKindFailed, asst.AsstKindID)
+				}
+				if !resp.Result {
+					blog.Errorf("select object topo graph failed, because get association kind[%s] failed, err: %v", asst.AsstKindID, resp.ErrMsg)
+					return nil, params.Err.Errorf(common.CCErrTopoGetAssociationKindFailed, asst.AsstKindID)
+				}
+
+				// should only be one association kind.
+				if len(resp.Data.Info) == 0 {
+					blog.Errorf("select object topo graph failed, because get association kind[%s] failed, err: can not find this association kind.", asst.AsstKindID)
+					return nil, params.Err.Errorf(common.CCErrTopoGetAssociationKindFailed, asst.AsstKindID)
+				}
+
 				node.Assts = append(node.Assts, metadata.GraphAsst{
-					AsstType: "",
-					NodeType: "obj",
-					ObjID:    asst.AsstObjID,
-					InstID:   0,
-					ObjAtt:   asst.ObjectAttID,
-					AsstName: asst.AsstName,
-					Label:    map[string]string{},
+					AsstType:              "",
+					NodeType:              "obj",
+					ObjID:                 asst.AsstObjID,
+					InstID:                asst.ID,
+					AssociationKindInstID: resp.Data.Info[0].ID,
+					Label:                 map[string]string{},
 				})
 			}
 			nodes = append(nodes, node)
