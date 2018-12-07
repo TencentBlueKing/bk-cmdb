@@ -81,7 +81,7 @@ func (s *Service) ImportHost(c *gin.Context) {
 		return
 	}
 
-	c.String(http.StatusOK, getReturnStr(0, "", nil))
+	c.String(http.StatusOK, getReturnStr(0, "", data))
 
 }
 
