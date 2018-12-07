@@ -24,6 +24,7 @@ import (
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/host_server/app/options"
+
 	"github.com/samuel/go-zookeeper/zk"
 	"gopkg.in/redis.v5"
 )
@@ -47,7 +48,7 @@ func (lgc *Logics) GetAgentStatus(appID int64, gseConfg *options.Gse, header htt
 	hosts, err := lgc.GetHostInfoByConds(header, nil)
 	blog.V(5).Infof("GetAgentStatus GetHostInfoByConds get agent status hosts:%v, input:%v", hosts, appID)
 	if nil != err {
-		blog.Error("GetAgentStatus error :%v", err)
+		blog.Errorf("GetAgentStatus error :%v", err)
 		return nil, defErr.Errorf(common.CCErrHostGetFail)
 	}
 
@@ -81,7 +82,7 @@ func (lgc *Logics) GetAgentStatus(appID int64, gseConfg *options.Gse, header htt
 	blog.V(5).Infof("get gse hostDataArr:%v", hostDataArr)
 	agentStatus, err := phpapi.getGseAgentStatus(hostDataArr, gseConfg)
 	if nil != err {
-		blog.Error("getGseAgentStatus error :%s, input:%d", err.Error(), appID)
+		blog.Errorf("getGseAgentStatus error :%s, input:%d", err.Error(), appID)
 		return nil, defErr.Errorf(common.CCErrHostAgentStatusFail, err.Error())
 	}
 	agentNorCnt := 0
@@ -255,7 +256,7 @@ func (phpapi *PHPAPI) getGseAgentStatus(hostDataArr []interface{}, gseConfg *opt
 	if err == redis.Nil {
 		return []int64{}, nil
 	} else if err != nil {
-		blog.Error("redis get bit error %s, hostData:%v", err.Error(), hostDataArr)
+		blog.Errorf("redis get bit error %s, hostData:%v", err.Error(), hostDataArr)
 		return []int64{}, err
 
 	} else {
@@ -272,7 +273,7 @@ func (phpapi *PHPAPI) getGseAgentStatus(hostDataArr []interface{}, gseConfg *opt
 
 			data[i], err = strconv.ParseInt(val, 10, 64)
 			if nil != err {
-				blog.Error("get bit error %s, re:%v", err, re)
+				blog.Errorf("get bit error %s, re:%v", err, re)
 				return nil, err
 			}
 		}

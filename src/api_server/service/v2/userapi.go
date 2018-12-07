@@ -36,7 +36,7 @@ func (s *Service) getCustomerGroupList(req *restful.Request, resp *restful.Respo
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Error("getCustomerGroupList error:%v", err)
+		blog.Errorf("getCustomerGroupList error:%v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
@@ -63,7 +63,7 @@ func (s *Service) getCustomerGroupList(req *restful.Request, resp *restful.Respo
 
 		result, err := s.CoreAPI.HostServer().GetUserCustomQuery(context.Background(), appID, pheader, &postInput)
 		if err != nil {
-			blog.Error("getCustomerGroupList error:%v", err)
+			blog.Errorf("getCustomerGroupList error:%v", err)
 			converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 			return
 		}
@@ -73,7 +73,7 @@ func (s *Service) getCustomerGroupList(req *restful.Request, resp *restful.Respo
 
 		//translate cmdb v3 to v2 api result error,
 		if err != nil {
-			blog.Error("getCustomerGroupList error:%s, reply:%v", err.Error(), result.Data)
+			blog.Errorf("getCustomerGroupList error:%s, reply:%v", err.Error(), result.Data)
 			converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 			return
 		}
@@ -94,7 +94,7 @@ func (s *Service) getContentByCustomerGroupID(req *restful.Request, resp *restfu
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Error("getContentByCustomerGroupID error:%v", err)
+		blog.Errorf("getContentByCustomerGroupID error:%v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
@@ -157,7 +157,7 @@ func (s *Service) getContentByCustomerGroupID(req *restful.Request, resp *restfu
 
 	//translate cmdb v3 to v2 api result error,
 	if err != nil {
-		blog.Error("getContentByCustomerGroupID  v%", result)
+		blog.Errorf("getContentByCustomerGroupID  v%", result)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}

@@ -47,7 +47,9 @@ func (cli *Service) CreateObjectUnique(req *restful.Request, resp *restful.Respo
 		switch key.Kind {
 		case metadata.UinqueKeyKindProperty:
 		default:
+			blog.Errorf("[CreateObjectUnique] invalid key kind: %s", key.Kind)
 			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrTopoObjectUniqueKeyKindInvalid, key.Kind)})
+			return
 		}
 	}
 
@@ -123,6 +125,7 @@ func (cli *Service) UpdateObjectUnique(req *restful.Request, resp *restful.Respo
 		cond := condition.CreateCondition()
 		cond.Field(common.BKObjIDField).Eq(objID)
 		cond.Field("must_check").Eq(true)
+		cond.Field("id").NotEq(id)
 		count, err := db.Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).Count(ctx)
 		if nil != err {
 			blog.Errorf("[UpdateObjectUnique] check must check  error: %v", err)
@@ -140,7 +143,9 @@ func (cli *Service) UpdateObjectUnique(req *restful.Request, resp *restful.Respo
 		switch key.Kind {
 		case metadata.UinqueKeyKindProperty:
 		default:
+			blog.Errorf("[UpdateObjectUnique] invalid key kind: %s", key.Kind)
 			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrTopoObjectUniqueKeyKindInvalid, key.Kind)})
+			return
 		}
 	}
 	cond := condition.CreateCondition()

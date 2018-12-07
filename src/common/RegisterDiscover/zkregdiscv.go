@@ -73,7 +73,7 @@ func (zkRD *ZkRegDiscv) Stop() error {
 
 //RegisterAndWatch create ephemeral node for the service and watch it. if it exit, register again
 func (zkRD *ZkRegDiscv) RegisterAndWatch(path string, data []byte) error {
-	blog.Info("register server and watch it. path(%s), data(%s)", path, string(data))
+	blog.Infof("register server and watch it. path(%s), data(%s)", path, string(data))
 	go func() {
 		newPath, err := zkRD.zkcli.CreateEphAndSeqEx(path, data)
 		if err != nil {
