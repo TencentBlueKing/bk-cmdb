@@ -390,7 +390,8 @@
                         }
                     }
                 })
-                return [this.networkDataSet.nodes.get(nodes), removeNodes]
+                const updateNodes = this.networkDataSet.nodes.get(nodes).filter(node => node !== null)
+                return [updateNodes, removeNodes]
             },
             async saveTopo () {
                 const createAsstArray = []
@@ -528,7 +529,6 @@
                         let node = this.localTopoModelList.find(model => model['bk_obj_id'] === hoverNode.id)
                         node.position = {x: null, y: null}
                         
-                        this.topoEdit.edges = this.topoEdit.edges.filter(edge => edge.params['bk_obj_id'] !== hoverNode.id && edge.params['bk_asst_obj_id'] !== hoverNode.id)
                         this.topoTooltip.hoverNode = null
                         this.topoTooltip.hoverNodeTimer = null
                         this.updateNetwork()
