@@ -426,7 +426,7 @@
                     type: 'create',
                     params
                 })
-                let fromNode = this.localTopoModelList.find(model => model['bk_obj_id'] === this.topoEdit.activeEdge.from)
+                let fromNode = this.localTopoModelList.find(model => model['bk_obj_id'] === params['bk_obj_id'])
                 if (!fromNode.hasOwnProperty('assts')) {
                     Object.assign(fromNode, {assts: []})
                 }
