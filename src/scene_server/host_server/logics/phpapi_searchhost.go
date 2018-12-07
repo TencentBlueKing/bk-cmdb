@@ -40,7 +40,7 @@ func (phpapi *PHPAPI) GetDefaultModules(appID int) (types.MapStr, error) {
 		return nil, err
 	}
 
-	blog.V(3).Infof("getDefaultModules complete, res: %v", resMap)
+	blog.V(5).Infof("getDefaultModules complete, res: %v", resMap)
 
 	if false == resMap.Result {
 		return nil, errors.New(resMap.ErrMsg)
@@ -74,13 +74,13 @@ func (phpapi *PHPAPI) GetHostByIPAndSource(innerIP string, platID int64) ([]type
 		return nil, errors.New(resMap.ErrMsg)
 	}
 
-	blog.V(3).Infof("getHostByIPAndSource res: %v", resMap)
+	blog.V(5).Infof("getHostByIPAndSource res: %v", resMap)
 
 	return resMap.Data.Info, nil
 }
 
 func (phpapi *PHPAPI) GetHostByCond(param *meta.QueryInput) ([]types.MapStr, error) {
-	blog.V(3).Infof("GetHostByCond param:%v", param)
+	blog.V(5).Infof("GetHostByCond param:%v", param)
 	resMap, err := phpapi.getObjByCondition(param, common.BKInnerObjIDHost)
 	if nil != err {
 		return nil, err
@@ -90,7 +90,7 @@ func (phpapi *PHPAPI) GetHostByCond(param *meta.QueryInput) ([]types.MapStr, err
 		return nil, errors.New(resMap.ErrMsg)
 	}
 
-	blog.V(3).Infof("getHostByIPArrAndSource res: %v", resMap)
+	blog.V(5).Infof("getHostByIPArrAndSource res: %v", resMap)
 	return resMap.Data.Info, nil
 }
 
@@ -111,7 +111,7 @@ func (phpapi *PHPAPI) GetHostMapByCond(condition map[string]interface{}) (map[in
 		return hostMap, hostIDArr, err
 	}
 
-	blog.V(3).Infof("appInfo:%v", res)
+	blog.V(5).Infof("appInfo:%v", res)
 
 	if false == res.Result {
 		return nil, nil, errors.New(res.ErrMsg)
@@ -158,7 +158,7 @@ func (phpapi *PHPAPI) GetHostDataByConfig(configData []map[string]int64) ([]inte
 
 func (phpapi *PHPAPI) GetCustomerPropertyByOwner(objType string) ([]meta.Attribute, error) {
 
-	blog.V(3).Infof("getCustomerPropertyByOwner start")
+	blog.V(5).Infof("getCustomerPropertyByOwner start")
 	searchBody := make(map[string]interface{})
 	searchBody[common.BKObjIDField] = common.BKInnerObjIDHost
 	searchBody[common.BKOwnerIDField] = util.GetOwnerID(phpapi.header)

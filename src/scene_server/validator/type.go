@@ -59,8 +59,8 @@ type ValidMap struct {
 
 	propertys     map[string]metadata.Attribute
 	propertyslice []metadata.Attribute
+	idToProperty  map[int64]metadata.Attribute
 	require       map[string]bool
 	requirefields []string
-	isOnly        map[string]bool
 	shouldIgnore  map[string]bool
 }

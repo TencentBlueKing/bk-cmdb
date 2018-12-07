@@ -34,14 +34,14 @@ func (lgc *Logics) CreateCloudTask(ctx context.Context, input interface{}) error
 }
 
 func (lgc *Logics) CreateResourceConfirm(ctx context.Context, input interface{}) error {
-	objID, err := lgc.Instance.NextSequence(ctx, common.BKTableNameCloudResourceSync)
+	objID, err := lgc.Instance.NextSequence(ctx, common.BKTableNameCloudResourceConfirm)
 	if err != nil {
 		return err
 	}
 
 	inputc := input.(map[string]interface{})
 	inputc["bk_resource_id"] = objID
-	if err := lgc.Instance.Table(common.BKTableNameCloudResourceSync).Insert(ctx, inputc); err != nil {
+	if err := lgc.Instance.Table(common.BKTableNameCloudResourceConfirm).Insert(ctx, inputc); err != nil {
 		return err
 	}
 

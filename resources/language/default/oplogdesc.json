@@ -2,7 +2,7 @@
     "auditlog_create host": "新加主机到资源池",
     "auditlog_move host to resource pool": "转移主机到资源池",
     "auditlog_host module change": "主机模块变化",
-    "auditlog_distribution host to app": "分配主机到业务",
+    "auditlog_assign host to app": "分配主机到业务",
     "auditlog_host to idle module": "转移主机到空闲机",
     "auditlog_host to fault module": "转移主机到故障机",
     "auditlog_delete host": "上交主机",

@@ -88,6 +88,13 @@ func (s *topoService) UpdateBusinessStatus(params types.ContextParams, pathParam
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
 	data = frtypes.New()
+	_, bizs, err := s.core.BusinessOperation().FindBusiness(params, obj, nil, condition.CreateCondition().Field(common.BKAppIDField).Eq(bizID))
+	if nil != err {
+		return nil, err
+	}
+	if len(bizs) <= 0 {
+		return nil, params.Err.Error(common.CCErrCommNotFound)
+	}
 	switch common.DataStatusFlag(pathParams("flag")) {
 	case common.DataStatusDisabled:
 		innerCond := condition.CreateCondition()
@@ -99,13 +106,6 @@ func (s *topoService) UpdateBusinessStatus(params types.ContextParams, pathParam
 		}
 		data.Set(common.BKDataStatusField, pathParams("flag"))
 	case common.DataStatusEnable:
-		_, bizs, err := s.core.BusinessOperation().FindBusiness(params, obj, nil, condition.CreateCondition().Field(common.BKAppIDField).Eq(bizID))
-		if nil != err {
-			return nil, err
-		}
-		if len(bizs) <= 0 {
-			return nil, params.Err.Error(common.CCErrCommNotFound)
-		}
 		name, err := bizs[0].GetInstName()
 		if nil != err {
 			return nil, params.Err.Error(common.CCErrCommNotFound)
@@ -159,7 +159,7 @@ func (s *topoService) SearchBusiness(params types.ContextParams, pathParams, que
 	}
 
 	innerCond.Field(common.BKDefaultField).Eq(0)
-//	innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+	//	innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	innerCond.SetPage(searchCond.Page)
 	innerCond.SetFields(searchCond.Fields)
 

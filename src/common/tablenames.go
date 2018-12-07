@@ -41,8 +41,14 @@ const (
 	// BKTableNamePropertyGroup the table name of the property group
 	BKTableNamePropertyGroup = "cc_PropertyGroup"
 
+	// BKTableNameObjDes the table name of the asst des
+	BKTableNameAsstDes = "cc_AsstDes"
+
 	// BKTableNameObjDes the table name of the object
 	BKTableNameObjDes = "cc_ObjDes"
+
+	// BKTableNameObjDes the table name of the object
+	BKTableNameObjUnique = "cc_ObjectUnique"
 
 	// BKTableNameObjAttDes the table name of the object attribute
 	BKTableNameObjAttDes = "cc_ObjAttDes"
@@ -81,8 +87,8 @@ const (
 	BKTableNameHostLock = "cc_HostLock"
 
 	// Cloud sync tables
-	BKTableNameCloudTask         	= "cc_CloudTask"
-	BKTableNameCloudHistory      	= "cc_CloudHistory"
+	BKTableNameCloudTask            = "cc_CloudTask"
+	BKTableNameCloudHistory         = "cc_CloudHistory"
 	BKTableNameCloudResourceConfirm = "cc_CloudResourceConfirm"
 )
 

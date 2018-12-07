@@ -13,6 +13,7 @@
 package metadata
 
 import (
+	"configcenter/src/common/mapstr"
 	"fmt"
 	"time"
 
@@ -24,14 +25,9 @@ import (
 	"configcenter/src/common/util"
 )
 
-type BaseResp struct {
-	Result bool   `json:"result"`
-	Code   int    `json:"bk_error_code"`
-	ErrMsg string `json:"bk_error_msg"`
-}
+const defaultError = "{\"result\": false, \"bk_error_code\": 1199000, \"bk_error_msg\": %s}"
 
-var SuccessBaseResp = BaseResp{Result: true, Code: common.CCSuccess, ErrMsg: common.CCSuccessStr}
-
+// RespError
 type RespError struct {
 	// error message
 	Msg error
@@ -39,8 +35,6 @@ type RespError struct {
 	ErrCode int
 	Data    interface{}
 }
-
-const defaultError = "{\"result\": false, \"bk_error_code\": 1199000, \"bk_error_msg\": %s}"
 
 func (r *RespError) Error() string {
 	br := new(Response)
@@ -77,7 +71,21 @@ type Response struct {
 
 type MapArrayResponse struct {
 	BaseResp `json:",inline"`
-	Data     []map[string]interface{} `json:"data"`
+	Data     []mapstr.MapStr `json:"data"`
+}
+
+// ResponseInstData
+type ResponseInstData struct {
+	BaseResp `json:",inline"`
+	Data     struct {
+		Count int             `json:"count"`
+		Info  []mapstr.MapStr `json:"info"`
+	} `json:"data"`
+}
+
+type ResponseDataMapStr struct {
+	BaseResp `json:",inline"`
+	Data     mapstr.MapStr `json:"data"`
 }
 
 type QueryInput struct {

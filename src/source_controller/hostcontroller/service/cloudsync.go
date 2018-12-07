@@ -214,14 +214,14 @@ func (s *Service) SearchConfirm(req *restful.Request, resp *restful.Response) {
 
 	condition := make(map[string]interface{})
 	result := make([]map[string]interface{}, 0)
-	err := s.Instance.Table(common.BKTableNameCloudResourceSync).Find(condition).All(ctx, &result)
+	err := s.Instance.Table(common.BKTableNameCloudResourceConfirm).Find(condition).All(ctx, &result)
 	if err != nil {
 		blog.Error("get failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return
 	}
 
-	num, errN := s.Instance.Table(common.BKTableNameCloudResourceSync).Find(condition).Count(ctx)
+	num, errN := s.Instance.Table(common.BKTableNameCloudResourceConfirm).Find(condition).Count(ctx)
 	if errN != nil {
 		blog.Error("get task name [%s] failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
@@ -249,9 +249,7 @@ func (s *Service) DeleteConfirm(req *restful.Request, resp *restful.Response) {
 	}
 
 	params := common.KvMap{"bk_resource_id": intResourceID}
-	//blog.Debug("params: %v", params)
-
-	if err := s.Instance.Table(common.BKTableNameCloudResourceSync).Delete(ctx, params); err != nil {
+	if err := s.Instance.Table(common.BKTableNameCloudResourceConfirm).Delete(ctx, params); err != nil {
 		blog.Errorf("delete failed err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBDeleteFailed)})
 		return

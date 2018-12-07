@@ -23,25 +23,24 @@ import (
 	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	hutil "configcenter/src/scene_server/host_server/util"
 	"configcenter/src/scene_server/validator"
 )
 
 // helpers
 func (phpapi *PHPAPI) UpdateHostMain(hostCondition, data map[string]interface{}, appID int64) (string, error) {
-	//blog.V(3).Infof("updateHostMain start")
-	blog.V(3).Infof("hostCondition:%v", hostCondition)
+	//blog.V(5).Infof("updateHostMain start")
+	blog.V(5).Infof("hostCondition:%v", hostCondition)
 
 	_, hostIDArr, err := phpapi.GetHostMapByCond(hostCondition)
 
-	blog.V(3).Infof("hostIDArr:%v", hostIDArr)
+	blog.V(5).Infof("hostIDArr:%v", hostIDArr)
 	if nil != err {
 		return "", fmt.Errorf("GetHostIDByCond error:%v", err)
 	}
 
 	lenOfHostIDArr := len(hostIDArr)
 	if lenOfHostIDArr != 1 {
-		blog.V(3).Infof("GetHostMapByCond condition: %v, host:%v", hostCondition, hostIDArr)
+		blog.V(5).Infof("GetHostMapByCond condition: %v, host:%v", hostCondition, hostIDArr)
 		return "", errors.New("not find host info ")
 	}
 
@@ -99,16 +98,12 @@ func (phpapi *PHPAPI) UpdateHostMain(hostCondition, data map[string]interface{},
 			phpapi.logic.CoreAPI.AuditController().AddHostLog(context.Background(), ownerID, strconv.FormatInt(appID, 10), user, phpapi.header, content)
 		}
 	}
-	err = phpapi.handleHostAssocation(hostID, data)
 
-	return "", err
+	return "", nil
 }
 
 func (phpapi *PHPAPI) AddHost(data map[string]interface{}) (int64, error) {
 	hostID, err := phpapi.addObj(data, common.BKInnerObjIDHost)
-	if nil == err {
-		err = phpapi.handleHostAssocation(hostID, data)
-	}
 	return hostID, err
 }
 
@@ -118,7 +113,7 @@ func (phpapi *PHPAPI) AddModuleHostConfig(hostID, appID int64, moduleIDs []int64
 		HostID:        hostID,
 		ModuleID:      moduleIDs,
 	}
-	blog.V(3).Infof("addModuleHostConfig start, data: %v", data)
+	blog.V(5).Infof("addModuleHostConfig start, data: %v", data)
 
 	res, err := phpapi.logic.CoreAPI.HostController().Module().AddModuleHostConfig(context.Background(), phpapi.header, data)
 	if nil != err {
@@ -129,7 +124,7 @@ func (phpapi *PHPAPI) AddModuleHostConfig(hostID, appID int64, moduleIDs []int64
 	if !res.Result {
 		return errors.New(res.ErrMsg)
 	}
-	blog.V(3).Infof("addModuleHostConfig success, res: %v", res)
+	blog.V(5).Infof("addModuleHostConfig success, res: %v", res)
 	return nil
 }
 
@@ -144,7 +139,7 @@ func (phpapi *PHPAPI) addObj(data map[string]interface{}, objType string) (int64
 		return 0, errors.New(resp.ErrMsg)
 	}
 
-	blog.V(3).Infof("add object result : %v", resMap)
+	blog.V(5).Infof("add object result : %v", resMap)
 
 	objID, err := resp.Data.Int64(common.GetInstIDField(objType))
 	if nil != err {
@@ -189,7 +184,7 @@ func (phpapi *PHPAPI) SetHostData(moduleHostConfig []map[string]int64, hostMap m
 		return hostData, err
 	}
 
-	blog.V(3).Infof("GetAppMapByCond , appIDArr:%v", appIDArr)
+	blog.V(5).Infof("GetAppMapByCond , appIDArr:%v", appIDArr)
 	appMap, err := phpapi.logic.GetAppMapByCond(phpapi.header, "", map[string]interface{}{
 		common.BKAppIDField: map[string]interface{}{
 			common.BKDBIN: appIDArr,
@@ -222,44 +217,9 @@ func (phpapi *PHPAPI) SetHostData(moduleHostConfig []map[string]int64, hostMap m
 		host[common.BKOwnerIDField] = app[common.BKOwnerIDField]
 		host[common.BKOperatorField] = module[common.BKOperatorField]
 		host[common.BKBakOperatorField] = module[common.BKBakOperatorField]
+		host[common.BKSupplierIDField] = app[common.BKSupplierIDField]
 
 		hostData = append(hostData, host)
 	}
 	return hostData, nil
-}
-
-func (phpapi *PHPAPI) handleHostAssocation(instID int64, input map[string]interface{}) error {
-	opt := hutil.NewOperation().WithOwnerID(util.GetOwnerID(phpapi.header)).WithObjID(common.BKInnerObjIDHost).Data()
-	result, err := phpapi.logic.CoreAPI.ObjectController().Meta().SelectObjectAssociations(context.Background(), phpapi.header, opt)
-	if err != nil || (err == nil && !result.Result) {
-		blog.Errorf("search host attribute failed, err: %v, result err: %s", err, result.ErrMsg)
-		return fmt.Errorf("search host attribute failed, err: %v, result err: %s", err, result.ErrMsg)
-	}
-	for _, asst := range result.Data {
-		if _, ok := input[asst.ObjectAttID]; ok {
-			opt := hutil.NewOperation().WithInstID(instID).WithObjID(common.BKInnerObjIDHost)
-			if "" != asst.ObjectAttID {
-				opt.WithAssoObjID(asst.AsstObjID)
-			}
-			result, err := phpapi.logic.CoreAPI.ObjectController().Instance().DelObject(context.Background(), common.BKTableNameInstAsst, phpapi.header, opt.Data())
-			if err != nil || (err == nil && !result.Result) {
-				blog.Errorf("search host attribute failed, err: %v, result err: %s", err, result.ErrMsg)
-				return fmt.Errorf("delete object [%v] failed, err: %v, result err: %s", instID, err, result.ErrMsg)
-			}
-
-		}
-	}
-
-	asstFieldVals := ExtractDataFromAssociationField(int64(instID), input, result.Data)
-	if 0 < len(asstFieldVals) {
-		for _, asstFieldVal := range asstFieldVals {
-			oResult, err := phpapi.logic.CoreAPI.ObjectController().Instance().CreateObject(context.Background(), common.BKTableNameInstAsst, phpapi.header, asstFieldVal)
-			if err != nil || (err == nil && !oResult.Result) {
-				blog.Errorf("create host attribute failed, err: %v, result err: %s", err, oResult.ErrMsg)
-				return fmt.Errorf("create host attribute failed, err: %v, result err: %s", err, oResult.ErrMsg)
-			}
-		}
-	}
-
-	return nil
 }

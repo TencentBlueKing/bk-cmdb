@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/mapstr"
 	types "configcenter/src/common/mapstr"
 )
 
@@ -61,8 +62,12 @@ func (o *Object) GetDefaultInstPropertyName() string {
 
 // GetInstIDFieldName get instid filed
 func (o *Object) GetInstIDFieldName() string {
+	return GetInstIDFieldByObjID(o.ObjectID)
 
-	switch o.ObjectID {
+}
+
+func GetInstIDFieldByObjID(objID string) string {
+	switch objID {
 	case common.BKInnerObjIDApp:
 		return common.BKAppIDField
 	case common.BKInnerObjIDSet:
@@ -146,7 +151,7 @@ func (o *Object) IsCommon() bool {
 // Parse load the data from mapstr object into object instance
 func (o *Object) Parse(data types.MapStr) (*Object, error) {
 
-	err := SetValueToStructByTags(o, data)
+	err := mapstr.SetValueToStructByTags(o, data)
 	if nil != err {
 		return nil, err
 	}
@@ -156,7 +161,7 @@ func (o *Object) Parse(data types.MapStr) (*Object, error) {
 
 // ToMapStr to mapstr
 func (o *Object) ToMapStr() types.MapStr {
-	return SetValueToMapStrByTags(o)
+	return mapstr.SetValueToMapStrByTags(o)
 }
 
 // MainLineObject main line object definition
@@ -166,20 +171,20 @@ type MainLineObject struct {
 }
 
 type ObjectDes struct {
-	ID          int        `bson:"id"                json:"id"`
+	ID          int        `bson:"id"                   json:"id"`
 	ObjCls      string     `bson:"bk_classification_id" json:"bk_classification_id"`
 	ObjIcon     string     `bson:"bk_obj_icon"          json:"bk_obj_icon"`
 	ObjectID    string     `bson:"bk_obj_id"            json:"bk_obj_id"`
 	ObjectName  string     `bson:"bk_obj_name"          json:"bk_obj_name"`
-	IsPre       bool       `bson:"ispre"             json:"ispre"`
+	IsPre       bool       `bson:"ispre"                json:"ispre"`
 	IsPaused    bool       `bson:"bk_ispaused"          json:"bk_ispaused"`
-	Position    string     `bson:"position"          json:"position"`
+	Position    string     `bson:"position"             json:"position"`
 	OwnerID     string     `bson:"bk_supplier_account"  json:"bk_supplier_account"`
-	Description string     `bson:"description"       json:"description"`
-	Creator     string     `bson:"creator"           json:"creator"`
-	Modifier    string     `bson:"modifier"          json:"modifier"`
-	CreateTime  *time.Time `bson:"create_time"       json:"create_time"`
-	LastTime    *time.Time `bson:"last_time"         json:"last_time"`
+	Description string     `bson:"description"          json:"description"`
+	Creator     string     `bson:"creator"              json:"creator"`
+	Modifier    string     `bson:"modifier"             json:"modifier"`
+	CreateTime  *time.Time `bson:"create_time"          json:"create_time"`
+	LastTime    *time.Time `bson:"last_time"            json:"last_time"`
 	Page        *BasePage  `bson:"-"                    json:"page,omitempty"`
 }
 

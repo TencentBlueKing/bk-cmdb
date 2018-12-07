@@ -27,6 +27,7 @@ type Field interface {
 	Lt(val interface{}) Condition
 	Lte(val interface{}) Condition
 	Gt(val interface{}) Condition
+	NotGt(val interface{}) Condition
 	Gte(val interface{}) Condition
 	ToMapStr() types.MapStr
 }
@@ -48,9 +49,12 @@ func (cli *field) ToMapStr() types.MapStr {
 		tmpResult.Merge(item.ToMapStr())
 	}
 
-	if BKDBEQ == cli.opeartor {
+	switch cli.opeartor {
+	case BKDBEQ:
 		tmpResult.Merge(types.MapStr{cli.fieldName: cli.fieldValue})
-	} else {
+	case BKDBOR:
+		tmpResult.Merge(types.MapStr{BKDBOR: cli.fieldValue})
+	default:
 		tmpResult.Merge(types.MapStr{
 			cli.fieldName: types.MapStr{
 				cli.opeartor: cli.fieldValue,
@@ -93,6 +97,15 @@ func (cli *field) In(val interface{}) Condition {
 func (cli *field) NotIn(val interface{}) Condition {
 	cli.opeartor = BKDBNIN
 	cli.fieldValue = val
+	return cli.condition
+}
+
+// NotGt not in a array
+func (cli *field) NotGt(val interface{}) Condition {
+	cli.opeartor = BKDBNot
+	cli.fieldValue = map[string]interface{}{
+		BKDBGT: val,
+	}
 	return cli.condition
 }
 

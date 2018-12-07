@@ -12,6 +12,7 @@ import hostRelation from './modules/api/host-relation.js'
 import hostSearchHistory from './modules/api/host-search-history.js'
 import hostSearch from './modules/api/host-search.js'
 import hostUpdate from './modules/api/host-update.js'
+import objectAssociation from './modules/api/object-association.js'
 import objectBatch from './modules/api/object-batch.js'
 import objectBiz from './modules/api/object-biz.js'
 import objectCommonInst from './modules/api/object-common-inst.js'
@@ -23,6 +24,7 @@ import objectModel from './modules/api/object-model.js'
 import objectModule from './modules/api/object-module.js'
 import objectRelation from './modules/api/object-relation.js'
 import objectSet from './modules/api/object-set.js'
+import objectUnique from './modules/api/object-unique.js'
 import operationAudit from './modules/api/operation-audit.js'
 import procConfig from './modules/api/proc-config.js'
 import userCustom from './modules/api/user-custom.js'
@@ -44,6 +46,7 @@ export default new Vuex.Store({
         hostSearchHistory,
         hostSearch,
         hostUpdate,
+        objectAssociation,
         objectBatch,
         objectBiz,
         objectCommonInst,
@@ -55,6 +58,7 @@ export default new Vuex.Store({
         objectModule,
         objectRelation,
         objectSet,
+        objectUnique,
         operationAudit,
         procConfig,
         userCustom,
