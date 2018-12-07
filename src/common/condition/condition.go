@@ -61,13 +61,6 @@ type ConditionItem struct {
 	Value    interface{} `json:"value,omitempty"`
 }
 
-// BasePage for paging query
-type BasePage struct {
-	Sort  string `json:"sort,omitempty"`
-	Limit int    `json:"limit,omitempty"`
-	Start int    `json:"start,omitempty"`
-}
-
 // SetPage set the page
 func (cli *condition) SetPage(page types.MapStr) error {
 
