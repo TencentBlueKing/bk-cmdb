@@ -23,14 +23,16 @@ import (
 func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
 	uniqueresp, err := valid.CoreAPI.ObjectController().Unique().Search(valid.ctx, valid.pheader, valid.objID)
 	if nil != err {
+		blog.Errorf("[validCreateUnique] search [%s] unique error %v", valid.objID, err)
 		return err
 	}
 	if !uniqueresp.Result {
+		blog.Errorf("[validCreateUnique] search [%s] unique error %v", valid.objID, uniqueresp.ErrMsg)
 		return valid.errif.New(uniqueresp.Code, uniqueresp.ErrMsg)
 	}
 
 	if 0 >= len(uniqueresp.Data) {
-		blog.V(3).Infof("is only array is zero for %s", valid.objID)
+		blog.Warnf("[validCreateUnique] there're not unique constraint for %s, return", valid.objID)
 		return nil
 	}
 
@@ -42,10 +44,12 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
 			case metadata.UinqueKeyKindProperty:
 				property, ok := valid.idToProperty[int64(key.ID)]
 				if !ok {
-					return valid.errif.Errorf(common.CCErrTopoObjectPropertyNotFound, property.ID)
+					blog.Errorf("[validCreateUnique] find [%s] property [%d] error %v", valid.objID, key.ID)
+					return valid.errif.Errorf(common.CCErrTopoObjectPropertyNotFound, key.ID)
 				}
 				uniquekeys[property.PropertyID] = true
 			default:
+				blog.Errorf("[validCreateUnique] find [%s] property [%d] unique kind invalid [%d]", valid.objID, key.ID, key.Kind)
 				return valid.errif.Errorf(common.CCErrTopoObjectUniqueKeyKindInvalid, key.Kind)
 			}
 		}
@@ -73,9 +77,11 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
 
 		result, err := valid.CoreAPI.ObjectController().Instance().SearchObjects(valid.ctx, common.GetObjByType(valid.objID), valid.pheader, &metadata.QueryInput{Condition: cond.ToMapStr()})
 		if nil != err {
+			blog.Errorf("[validCreateUnique] search [%s] inst error %v", valid.objID, err)
 			return err
 		}
 		if !result.Result {
+			blog.Errorf("[validCreateUnique] search [%s] inst error %v", valid.objID, result.ErrMsg)
 			return valid.errif.New(result.Code, result.ErrMsg)
 		}
 
@@ -99,6 +105,7 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 	objID := valid.objID
 	mapData, err := valid.getInstDataByID(instID)
 	if nil != err {
+		blog.Errorf("[validUpdateUnique] search [%s] inst error %v", valid.objID, err)
 		return err
 	}
 
@@ -109,14 +116,16 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 
 	uniqueresp, err := valid.CoreAPI.ObjectController().Unique().Search(valid.ctx, valid.pheader, valid.objID)
 	if nil != err {
+		blog.Errorf("[validUpdateUnique] search [%s] unique error %v", valid.objID, err)
 		return err
 	}
 	if !uniqueresp.Result {
+		blog.Errorf("[validUpdateUnique] search [%s] unique error %v", valid.objID, uniqueresp.ErrMsg)
 		return valid.errif.New(uniqueresp.Code, uniqueresp.ErrMsg)
 	}
 
 	if 0 >= len(uniqueresp.Data) {
-		blog.V(3).Infof("is only array is zero for %s", valid.objID)
+		blog.Warnf("[validUpdateUnique] there're not unique constraint for %s, return", valid.objID)
 		return nil
 	}
 
@@ -128,10 +137,12 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 			case metadata.UinqueKeyKindProperty:
 				property, ok := valid.idToProperty[int64(key.ID)]
 				if !ok {
+					blog.Errorf("[validUpdateUnique] find [%s] property [%d] error %v", valid.objID, key.ID)
 					return valid.errif.Errorf(common.CCErrTopoObjectPropertyNotFound, property.ID)
 				}
 				uniquekeys[property.PropertyID] = true
 			default:
+				blog.Errorf("[validUpdateUnique] find [%s] property [%d] unique kind invalid [%d]", valid.objID, key.ID, key.Kind)
 				return valid.errif.Errorf(common.CCErrTopoObjectUniqueKeyKindInvalid, key.Kind)
 			}
 		}
@@ -159,10 +170,12 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 
 		result, err := valid.CoreAPI.ObjectController().Instance().SearchObjects(valid.ctx, common.GetObjByType(valid.objID), valid.pheader, &metadata.QueryInput{Condition: cond.ToMapStr()})
 		if nil != err {
+			blog.Errorf("[validUpdateUnique] search [%s] inst error %v", valid.objID, err)
 			return err
 		}
 		if !result.Result {
-			return valid.errif.Error(result.Code)
+			blog.Errorf("[validUpdateUnique] search [%s] inst error %v", valid.objID, result.ErrMsg)
+			return valid.errif.New(result.Code, result.ErrMsg)
 		}
 
 		if 0 < result.Data.Count {
