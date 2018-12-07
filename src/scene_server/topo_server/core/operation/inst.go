@@ -14,7 +14,6 @@ package operation
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -146,7 +145,7 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 			results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
 			continue
 		}
-		results.Success = append(results.Success, fmt.Sprintf("import raw %d success.", colIdx))
+		results.Success = append(results.Success, strconv.FormatInt(colIdx, 10))
 		NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
 	}
 
