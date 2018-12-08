@@ -11,3 +11,23 @@
  */
 
 package host
+
+import (
+	"configcenter/src/framework/clientset/types"
+	"configcenter/src/framework/common/rest"
+	types2 "configcenter/src/framework/core/types"
+)
+
+type Interface interface {
+	ListHosts(ctx *types.ListHostsCtx) (*types.HostsInfo, error)
+	GetHostDetails(ctx *types.GetHostCtx) ([]types.HostAttribute, error)
+	GetHostSnapshot(ctx *types.GetHostSnapshotCtx) (types2.MapStr, error)
+	UpdateHostsAttributes(ctx *types.UpdateHostsAttributesCtx) error
+	DeleteHosts(ctx *types.DeleteHostsCtx) error
+}
+
+func NewHostCtrl(client rest.ClientInterface) Interface {
+	return &hostClient{
+		client: client,
+	}
+}

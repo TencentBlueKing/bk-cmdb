@@ -11,3 +11,21 @@
  */
 
 package model
+
+import (
+	"configcenter/src/framework/clientset/types"
+	"configcenter/src/framework/common/rest"
+)
+
+type Interface interface {
+	CreateModel(ctx *types.CreateModelCtx) (int64, error)
+	DeleteModel(ctx *types.DeleteModelCtx) error
+	UpdateModel(ctx *types.UpdateModelCtx) error
+	GetModels(ctx *types.GetModelsCtx) ([]types.ModelInfo, error)
+}
+
+func NewModelClient(client rest.ClientInterface) Interface {
+	return &modelClient{
+		client: client,
+	}
+}

@@ -10,29 +10,90 @@
  * limitations under the License.
  */
 
-package business
+package model
 
 import (
 	"fmt"
 
 	"configcenter/src/framework/clientset/types"
 	"configcenter/src/framework/common/rest"
-	"configcenter/src/framework/core/errors"
-	types2 "configcenter/src/framework/core/types"
 )
 
-type biz struct {
+type modelClient struct {
 	client rest.ClientInterface
 }
 
-func (b *biz) CreateBusiness(info *types.CreateBusinessCtx) (types2.MapStr, error) {
-	resp := new(types.BusinessResponse)
-	subPath := fmt.Sprintf("/biz/%s", info.Tenancy)
-	err := b.client.Post().
-		WithContext(info.Ctx).
-		Body(info.BusinessInfo).
+func (m *modelClient) CreateModel(ctx *types.CreateModelCtx) (int64, error) {
+	resp := new(types.CreateModelResponse)
+	subPath := "/object"
+	err := m.client.Post().
+		WithContext(ctx.Ctx).
+		Body(ctx.ModelInfo).
 		SubResource(subPath).
-		WithHeaders(info.Header).
+		WithHeaders(ctx.Header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return 0, &types.ErrorDetail{Code: types.HttpRequestFailed, Message: err.Error()}
+	}
+
+	if !resp.BaseResp.Result {
+		return 0, &types.ErrorDetail{Code: resp.Code, Message: resp.ErrMsg}
+	}
+	return resp.Data.ID, nil
+}
+
+func (m *modelClient) DeleteModel(ctx *types.DeleteModelCtx) error {
+	resp := new(types.Response)
+	subPath := fmt.Sprintf("/object/%d", ctx.ModelID)
+	err := m.client.Delete().
+		WithContext(ctx.Ctx).
+		Body(nil).
+		SubResource(subPath).
+		WithHeaders(ctx.Header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return &types.ErrorDetail{Code: types.HttpRequestFailed, Message: err.Error()}
+	}
+
+	if !resp.BaseResp.Result {
+		return &types.ErrorDetail{Code: resp.Code, Message: resp.ErrMsg}
+	}
+	return nil
+}
+
+func (m *modelClient) UpdateModel(ctx *types.UpdateModelCtx) error {
+	resp := new(types.Response)
+	subPath := fmt.Sprintf("/object/%d", ctx.ModelID)
+	err := m.client.Put().
+		WithContext(ctx.Ctx).
+		Body(ctx.ModelInfo).
+		SubResource(subPath).
+		WithHeaders(ctx.Header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return &types.ErrorDetail{Code: types.HttpRequestFailed, Message: err.Error()}
+	}
+
+	if !resp.BaseResp.Result {
+		return &types.ErrorDetail{Code: resp.Code, Message: resp.ErrMsg}
+	}
+	return nil
+}
+
+func (m *modelClient) GetModels(ctx *types.GetModelsCtx) ([]types.ModelInfo, error) {
+	resp := new(types.GetModelsResult)
+	subPath := "/objects"
+	err := m.client.Post().
+		WithContext(ctx.Ctx).
+		Body(ctx.Filters).
+		SubResource(subPath).
+		WithHeaders(ctx.Header).
 		Do().
 		Into(resp)
 
@@ -44,71 +105,4 @@ func (b *biz) CreateBusiness(info *types.CreateBusinessCtx) (types2.MapStr, erro
 		return nil, &types.ErrorDetail{Code: resp.Code, Message: resp.ErrMsg}
 	}
 	return resp.Data, nil
-}
-
-func (b *biz) UpdateBusiness(info *types.UpdateBusinessCtx) error {
-	resp := new(types.BusinessResponse)
-	subPath := fmt.Sprintf("/biz/%s/%d", info.Tenancy, info.BusinessID)
-	err := b.client.Put().
-		WithContext(info.Ctx).
-		Body(info.BusinessInfo).
-		SubResource(subPath).
-		WithHeaders(info.Header).
-		Do().
-		Into(resp)
-
-	if err != nil {
-		return &types.ErrorDetail{Code: types.HttpRequestFailed, Message: err.Error()}
-	}
-
-	if !resp.BaseResp.Result {
-		return &types.ErrorDetail{Code: resp.Code, Message: resp.ErrMsg}
-	}
-	return nil
-}
-
-func (b *biz) DeleteBusiness(info *types.DeleteBusinessCtx) error {
-	resp := new(types.BusinessResponse)
-	subPath := fmt.Sprintf("/biz/%s/%d", info.Tenancy, info.BusinessID)
-	err := b.client.Delete().
-		WithContext(info.Ctx).
-		Body(nil).
-		SubResource(subPath).
-		WithHeaders(info.Header).
-		Do().
-		Into(resp)
-
-	if err != nil {
-		return &types.ErrorDetail{Code: types.HttpRequestFailed, Message: err.Error()}
-	}
-
-	if !resp.BaseResp.Result {
-		return &types.ErrorDetail{Code: resp.Code, Message: resp.ErrMsg}
-	}
-	return nil
-}
-
-func (b *biz) ListBusiness(info *types.ListBusinessCtx) (*types.QueryResponse, error) {
-	if len(info.Tenancy) == 0 {
-		return nil, errors.New("business's tenancy can not be empty.")
-	}
-
-	resp := new(types.QueryResponse)
-	subPath := fmt.Sprintf("/biz/search/%s", info.Tenancy)
-	err := b.client.Post().
-		WithContext(info.Ctx).
-		Body(info.QueryInfo).
-		SubResource(subPath).
-		WithHeaders(info.Header).
-		Do().
-		Into(resp)
-
-	if err != nil {
-		return nil, &types.ErrorDetail{Code: types.HttpRequestFailed, Message: err.Error()}
-	}
-
-	if !resp.BaseResp.Result {
-		return nil, &types.ErrorDetail{Code: resp.Code, Message: resp.ErrMsg}
-	}
-	return resp, nil
 }
