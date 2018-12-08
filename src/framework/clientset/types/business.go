@@ -13,10 +13,10 @@
 package types
 
 import (
-    "context"
-    "net/http"
+	"context"
+	"net/http"
 
-    "configcenter/src/framework/core/types"
+	"configcenter/src/framework/core/types"
 )
 
 type BusinessResponse struct {
@@ -25,23 +25,25 @@ type BusinessResponse struct {
 }
 
 type CreateBusinessInfo struct {
-    Ctx context.Context
-    Header http.Header
-    Tenancy string
-    BussinessInfo interface{}
+	Ctx           context.Context
+	Header        http.Header
+	Tenancy       string
+	BussinessInfo interface{}
 }
 
 type UpdateBusinessInfo struct {
-    Ctx context.Context
-    Header http.Header
-    Tenancy string
-    BusinessID int64
-    BussinessInfo interface{}
+	Ctx           context.Context
+	Header        http.Header
+	Tenancy       string
+	BusinessID    int64
+	BussinessInfo interface{}
 }
 
-type DeleteBusinessInfo struct {
-    Ctx context.Context
-    Header http.Header
-    Tenancy string
-    BusinessID int64
+type GetBusinessInfo struct {
+	Ctx        context.Context
+	Header     http.Header
+	Tenancy    string
+	Query 
 }
+
+type 
