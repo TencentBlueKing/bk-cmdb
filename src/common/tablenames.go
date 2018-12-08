@@ -124,6 +124,7 @@ var AllTables = []string{
 	BKTableNameIDgenerator,
 	BKTableNameHostLock,
 	BKTableNameObjUnique,
+	BKTableNameAsstDes,
 }
 
 // GetInstTableName returns inst data table name
