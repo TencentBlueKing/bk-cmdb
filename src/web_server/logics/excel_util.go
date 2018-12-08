@@ -87,12 +87,14 @@ func setExcelRowDataByIndex(rowMap mapstr.MapStr, sheet *xlsx.Sheet, rowIndex in
 		if false == ok {
 			continue
 		}
-		if property.NotExport && property.IsOnly {
-			primaryKeyArr = append(primaryKeyArr, PropertyPrimaryVal{
-				ID:     property.ID,
-				Name:   property.Name,
-				StrVal: getPrimaryKey(val),
-			})
+		if property.NotExport {
+			if property.IsOnly {
+				primaryKeyArr = append(primaryKeyArr, PropertyPrimaryVal{
+					ID:     property.ID,
+					Name:   property.Name,
+					StrVal: getPrimaryKey(val),
+				})
+			}
 			continue
 		}
 
@@ -194,7 +196,7 @@ func getDataFromByExcelRow(row *xlsx.Row, rowIndex int, fields map[string]Proper
 			host[fieldName] = cellValue
 		default:
 			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, (celIDnex+1))) //fmt.Sprintf("%s第%d行%d列无法处理内容;", errMsg, (index + 1), (celIDnex + 1))
-			blog.Error("unknown the type, %v,   %v", reflect.TypeOf(cell), cell.Type())
+			blog.Errorf("unknown the type, %v,   %v", reflect.TypeOf(cell), cell.Type())
 			continue
 		}
 
@@ -264,7 +266,7 @@ func productExcelHealer(fields map[string]Property, filter []string, sheet *xlsx
 		index := field.ExcelColIndex
 		sheet.Col(index).Width = 18
 		fieldTypeName, skip := getPropertyTypeAliasName(field.PropertyType, defLang)
-		if true == skip {
+		if true == skip || field.NotExport {
 			//不需要用户输入的类型continue
 			continue
 		}

@@ -1,7 +1,9 @@
 <template>
     <div class="model-field-wrapper">
         <div>
-            <bk-button class="create-btn" type="primary" :disabled="isReadOnly" @click="createField">
+            <bk-button class="create-btn" type="primary"
+                :disabled="isReadOnly || !authority.includes('update')"
+                @click="createField">
                 {{$t('ModelManagement["新建字段"]')}}
             </bk-button>
         </div>
@@ -120,6 +122,9 @@
                     return this.activeModel['bk_ispaused']
                 }
                 return false
+            },
+            authority () {
+                return this.$store.getters.admin ? ['search', 'update', 'delete'] : []
             }
         },
         watch: {
@@ -129,6 +134,9 @@
         },
         created () {
             this.initFieldList()
+            if (!this.authority.includes('update')) {
+                this.table.header.pop()
+            }
         },
         methods: {
             ...mapActions('objectModelProperty', [

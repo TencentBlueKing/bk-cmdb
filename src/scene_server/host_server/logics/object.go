@@ -70,7 +70,7 @@ func (lgc *Logics) GetTopoIDByName(pheader http.Header, c *meta.HostToAppModule)
 		return 0, 0, 0, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader)).Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if 0 == len(setIDs) || 0 >= setIDs[0] {
-		blog.Info("getTopoIDByName get set info not found; applicationName: %s, setName: %s", c.AppName, c.SetName)
+		blog.V(5).Infof("getTopoIDByName get set info not found; applicationName: %s, setName: %s", c.AppName, c.SetName)
 		return 0, 0, 0, nil
 	}
 	setID := setIDs[0]
@@ -94,7 +94,7 @@ func (lgc *Logics) GetTopoIDByName(pheader http.Header, c *meta.HostToAppModule)
 		return 0, 0, 0, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader)).Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if 0 == len(moduleIDs) || 0 >= moduleIDs[0] {
-		blog.Info("getTopoIDByName get module info not found; applicationName: %s, setName: %s, moduleName: %s", c.AppName, c.SetName, c.ModuleName)
+		blog.V(5).Infof("getTopoIDByName get module info not found; applicationName: %s, setName: %s, moduleName: %s", c.AppName, c.SetName, c.ModuleName)
 		return 0, 0, 0, nil
 	}
 	moduleID := moduleIDs[0]

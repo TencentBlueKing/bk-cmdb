@@ -41,10 +41,11 @@ func (s *Service) getModulesByApp(req *restful.Request, resp *restful.Response) 
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	rid := util.GetHTTPCCRequestID(pheader)
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Errorf("getModulesByApp error:%v", err)
+		blog.Errorf("getModulesByApp error:%v,rid:%s", err, rid)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
@@ -52,7 +53,7 @@ func (s *Service) getModulesByApp(req *restful.Request, resp *restful.Response) 
 	formData := req.Request.Form
 
 	if len(formData["ApplicationID"]) == 0 || formData["ApplicationID"][0] == "" {
-		blog.Errorf("getModulesByApp  error: ApplicationID is empty!")
+		blog.Errorf("getModulesByApp  error: ApplicationID is empty!, input:%+v,rid:%s", formData, rid)
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "ApplicationID").Error(), resp)
 		return
 	}
@@ -69,15 +70,19 @@ func (s *Service) getModulesByApp(req *restful.Request, resp *restful.Response) 
 	}
 
 	result, err := s.CoreAPI.TopoServer().OpenAPI().SearchModuleByApp(context.Background(), appID, pheader, params)
-
 	if err != nil {
-		blog.Errorf("getModulesByApp   error:%v", err)
+		blog.Errorf("getModulesByApp   error:%v, input:%+v,rid", err, formData, rid)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
-	resDataV2, err := converter.ResToV2ForModuleMapList(result.Result, result.ErrMsg, result.Data)
+	if !result.Result {
+		blog.Errorf("getModulesByApp  http response errror.  err code:%s, err msg:%s, input:%+v,rid", result.Code, result.ErrMsg, formData, rid)
+		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
+		return
+	}
+	resDataV2, err := converter.ResToV2ForModuleMapList(result.Data)
 	if err != nil {
-		blog.Error("convert module res to v2 error:%v", err)
+		blog.Errorf("convert module res to v2 error:%v, input:%+v,rid:%s", err, formData, rid)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}
@@ -100,7 +105,7 @@ func (s *Service) updateModule(req *restful.Request, resp *restful.Response) {
 
 	formData := req.Request.Form
 
-	blog.Infof("updateModule data: %s", formData)
+	blog.V(5).Infof("updateModule data: %s", formData)
 
 	res, msg := utils.ValidateFormData(formData, []string{"ApplicationID", "ModuleID"})
 	if !res {
@@ -151,13 +156,13 @@ func (s *Service) updateModule(req *restful.Request, resp *restful.Response) {
 		reqData[common.BKModuleNameField] = moduleName
 	} else {
 		msg := defLang.Language("apiv2_module_edit_multi_module_name")
-		blog.Infof("updateModule error:%v", msg)
+		blog.V(5).Infof("updateModule error:%v", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
 	if len(moduleName) > 24 {
 		msg := defLang.Language("apiv2_module_name_lt_24")
-		blog.Infof("updateModule error:%v", msg)
+		blog.V(5).Infof("updateModule error:%v", msg)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
@@ -189,7 +194,7 @@ func (s *Service) addModule(req *restful.Request, resp *restful.Response) {
 
 	formData := req.Request.Form
 
-	blog.Infof("addModule data: %v", formData)
+	blog.V(5).Infof("addModule data: %v", formData)
 
 	res, msg := utils.ValidateFormData(formData, []string{
 		"ApplicationID",
@@ -270,7 +275,7 @@ func (s *Service) deleteModule(req *restful.Request, resp *restful.Response) {
 
 	formData := req.Request.Form
 
-	blog.Infof("deleteModule data: %v", formData)
+	blog.V(5).Infof("deleteModule data: %v", formData)
 
 	res, msg := utils.ValidateFormData(formData, []string{"ApplicationID", "ModuleID"})
 	if !res {

@@ -18,8 +18,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/api_server/logics/v2/common/converter"
 	"configcenter/src/api_server/logics/v2/common/utils"
 	"configcenter/src/common"
@@ -27,6 +25,8 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	"github.com/emicklei/go-restful"
 )
 
 func (s *Service) updateHostStatus(req *restful.Request, resp *restful.Response) {
@@ -187,7 +187,7 @@ func (s *Service) getCompanyIDByIps(req *restful.Request, resp *restful.Response
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
-	if result.Result {
+	if !result.Result {
 		blog.Errorf("getCompanyIDByIps  error:%v, input:%+v,rid:%s", err, formData, rid)
 		converter.RespFailV2(result.Code, result.ErrMsg, resp)
 		return
@@ -195,7 +195,7 @@ func (s *Service) getCompanyIDByIps(req *restful.Request, resp *restful.Response
 
 	resDataV2, err := converter.ResToV2ForCpyHost(result.Result, result.ErrMsg, result.Data)
 	if err != nil {
-		blog.Error("convert host res to v2 error:%v, input:%+v,rid:%s", err, formData, rid)
+		blog.Errorf("convert host res to v2 error:%v, input:%+v,rid:%s", err, formData, rid)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}
@@ -241,7 +241,7 @@ func (s *Service) getHostListByAppIDAndField(req *restful.Request, resp *restful
 
 	resDataV2, err := converter.ResToV2ForHostGroup(result.Result, result.ErrMsg, result.Data)
 	if err != nil {
-		blog.Error("convert host res to v2 error:%v", err)
+		blog.Errorf("convert host res to v2 error:%v", err)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}
@@ -309,13 +309,13 @@ func (s *Service) updateHostModule(req *restful.Request, resp *restful.Response)
 	}
 	appIDInt, err := util.GetInt64ByInterface(appID)
 	if err != nil {
-		blog.Error("updateHostModule error ApplicationID (%s) not integer. input:%+v,rid:%s", appID, formData, rid)
+		blog.Errorf("updateHostModule error ApplicationID (%s) not integer. input:%+v,rid:%s", appID, formData, rid)
 		converter.RespFailV2Error(defErr.Errorf(common.CCErrCommParamsNeedSet, "platID"), resp)
 		return
 	}
 	platIDInt, err := util.GetInt64ByInterface(platID)
 	if err != nil {
-		blog.Error("updateHostModule error platID(%s)  not integer. input:%+v,rid:%s", platID, formData, rid)
+		blog.Errorf("updateHostModule error platID(%s)  not integer. input:%+v,rid:%s", platID, formData, rid)
 		converter.RespFailV2Error(defErr.Errorf(common.CCErrCommParamsNeedSet, "platID"), resp)
 		return
 	}
@@ -589,7 +589,7 @@ func (s *Service) getGitServerIp(req *restful.Request, resp *restful.Response) {
 
 	resDataV2, err := converter.ResToV2ForHostList(result.Result, result.ErrMsg, result.Data)
 	if err != nil {
-		blog.Error("convert host res to v2 error:%v", err)
+		blog.Errorf("convert host res to v2 error:%v", err)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}

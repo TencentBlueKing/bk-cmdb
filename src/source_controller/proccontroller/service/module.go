@@ -48,7 +48,7 @@ func (ps *ProctrlServer) DeleteProc2Module(req *restful.Request, resp *restful.R
 	}
 
 	// delete proc module config
-	blog.Infof("delete proc module config %v", input)
+	blog.V(5).Infof("delete proc module config %v", input)
 	if err := ps.Instance.Table(common.BKTableNameProcModule).Delete(cxt, input); err != nil {
 		blog.Errorf("delete proc module config error: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcDeleteProc2Module)})
@@ -81,7 +81,7 @@ func (ps *ProctrlServer) CreateProc2Module(req *restful.Request, resp *restful.R
 		return
 	}
 
-	blog.Infof("create proc module config: %v ", input)
+	blog.V(5).Infof("create proc module config: %v ", input)
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	ec := eventclient.NewEventContextByReq(req.Request.Header, ps.Cache)
 	for _, i := range input {
@@ -114,7 +114,7 @@ func (ps *ProctrlServer) GetProc2Module(req *restful.Request, resp *restful.Resp
 		return
 	}
 
-	blog.Infof("get proc module config condition: %v ", input)
+	blog.V(5).Infof("get proc module config condition: %v ", input)
 	input = util.SetModOwner(input, util.GetOwnerID(req.Request.Header))
 	result := make([]interface{}, 0)
 
