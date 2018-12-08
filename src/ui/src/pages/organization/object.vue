@@ -46,13 +46,15 @@
                         </div>
                         <div class="btn-tooltip-wrapper" v-tooltip="$t('BusinessTopology[\'修改\']')">
                             <bk-button type="default" class="vice-btn"
-                                :disabled="!table.chooseId.length" 
+                                :disabled="!table.chooseId.length || unauthorized.update" 
                                 @click="multipleUpdate">
                                 <i class="icon-cc-edit"></i>
                             </bk-button>
                         </div>
                         <div class="btn-tooltip-wrapper" v-tooltip="$t('Common[\'删除\']')">
-                            <bk-button type="default" v-if="objId !== 'biz'" class="bk-button delete-button mr10" :disabled="!table.chooseId.length" @click="confirmBatchDel">
+                            <bk-button type="default" v-if="objId !== 'biz'" class="bk-button delete-button mr10"
+                                :disabled="!table.chooseId.length || unauthorized.delete"
+                                @click="confirmBatchDel">
                                 <i class="icon-cc-del"></i>
                             </bk-button>
                         </div>
