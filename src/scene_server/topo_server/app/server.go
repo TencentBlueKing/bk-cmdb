@@ -49,6 +49,7 @@ func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 	}
 	t.Config.BusinessTopoLevelMax = topoMax
 	blog.V(3).Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
+
 	t.Service.SetConfig(t.Config, t.Core)
 }
 
@@ -59,7 +60,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
-	blog.V(3).Infof("srv conf:", svrInfo)
+	blog.V(5).Infof("srv conf:", svrInfo)
 
 	c := &util.APIMachineryConfig{
 		ZkAddr:    op.ServConf.RegDiscover,
