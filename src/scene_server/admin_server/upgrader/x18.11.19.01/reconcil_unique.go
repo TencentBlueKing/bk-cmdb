@@ -92,7 +92,9 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 		keyfunc(common.BKInnerObjIDApp, common.BKAppNameField),
 		keyfunc(common.BKInnerObjIDSet, common.BKAppIDField),
 		keyfunc(common.BKInnerObjIDSet, common.BKSetNameField),
+		keyfunc(common.BKInnerObjIDSet, common.BKInstParentStr),
 		keyfunc(common.BKInnerObjIDModule, common.BKAppIDField),
+		keyfunc(common.BKInnerObjIDModule, common.BKSetIDField),
 		keyfunc(common.BKInnerObjIDModule, common.BKModuleNameField),
 	}
 
@@ -191,6 +193,10 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 				{
 					Kind: metadata.UinqueKeyKindProperty,
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDSet, common.BKSetNameField)].ID),
+				},
+				{
+					Kind: metadata.UinqueKeyKindProperty,
+					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDSet, common.BKInstParentStr)].ID),
 				},
 			},
 			Ispre:    true,
