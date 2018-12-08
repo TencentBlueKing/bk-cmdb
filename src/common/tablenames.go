@@ -123,6 +123,7 @@ var AllTables = []string{
 	BKTableNameTransaction,
 	BKTableNameIDgenerator,
 	BKTableNameHostLock,
+	BKTableNameObjUnique,
 }
 
 // GetInstTableName returns inst data table name
