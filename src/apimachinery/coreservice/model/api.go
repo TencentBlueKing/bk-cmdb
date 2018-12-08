@@ -20,8 +20,8 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-func (m *model) CreateManyModelClassification(ctx context.Context, h http.Header, input *metadata.CreateManyModelClassifiaction) (resp *metadata.CreateManyOptionResult, err error) {
-	resp = new(metadata.CreateManyOptionResult)
+func (m *model) CreateManyModelClassification(ctx context.Context, h http.Header, input *metadata.CreateManyModelClassifiaction) (resp *metadata.CreatedManyOptionResult, err error) {
+	resp = new(metadata.CreatedManyOptionResult)
 	subPath := "/createmany/model/classification"
 
 	err = m.client.Post().
@@ -66,7 +66,7 @@ func (m *model) SetModelClassification(ctx context.Context, h http.Header, input
 	resp = new(metadata.SetOptionResult)
 	subPath := "/set/model/classification"
 
-	err = m.client.Put().
+	err = m.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResource(subPath).
@@ -216,8 +216,8 @@ func (m *model) ReadModel(ctx context.Context, h http.Header, input *metadata.Qu
 	return
 }
 
-func (m *model) CreateModelAttrs(ctx context.Context, h http.Header, objID string, input *metadata.CreateModelAttributes) (resp *metadata.CreateManyOptionResult, err error) {
-	resp = new(metadata.CreateManyOptionResult)
+func (m *model) CreateModelAttrs(ctx context.Context, h http.Header, objID string, input *metadata.CreateModelAttributes) (resp *metadata.CreatedManyOptionResult, err error) {
+	resp = new(metadata.CreatedManyOptionResult)
 	subPath := fmt.Sprintf("/create/model/%s/attributes", objID)
 
 	err = m.client.Post().
@@ -244,8 +244,8 @@ func (m *model) UpdateModelAttrs(ctx context.Context, h http.Header, objID strin
 	return
 }
 
-func (m *model) SetModelAttrs(ctx context.Context, h http.Header, objID string, input *metadata.SetModelAttributes) (resp *metadata.CreateManyOptionResult, err error) {
-	resp = new(metadata.CreateManyOptionResult)
+func (m *model) SetModelAttrs(ctx context.Context, h http.Header, objID string, input *metadata.SetModelAttributes) (resp *metadata.SetOptionResult, err error) {
+	resp = new(metadata.SetOptionResult)
 	subPath := fmt.Sprintf("/set/model/%s/attributes", objID)
 
 	err = m.client.Post().
@@ -276,7 +276,7 @@ func (m *model) ReadModelAttr(ctx context.Context, h http.Header, objID string, 
 	resp = new(metadata.QueryConditionResult)
 	subPath := fmt.Sprintf("/read/model/%s/attributes", objID)
 
-	err = m.client.Delete().
+	err = m.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResource(subPath).
