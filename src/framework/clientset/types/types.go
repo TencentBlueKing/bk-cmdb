@@ -23,3 +23,9 @@ type Response struct {
 	Data     interface{} `json:"data"`
 }
 
+type Page struct {
+    Limit uint64 `json:"limit,omitempty"`
+    Start uint64 `json:"start,omitempty"`
+    Sort  string `json:"sort,omitempty"`
+}
+
