@@ -12,16 +12,21 @@
 
 package business
 
+import (
+	"configcenter/src/framework/clientset/types"
+	"configcenter/src/framework/common/rest"
+	types2 "configcenter/src/framework/core/types"
+)
+
 type Interface interface {
-	CreateBusiness() error
-	UpdateBusiness() error
-	DeleteBusiness() error
-	GetBusiness()
-	GetBusinessBatch()
+	CreateBusiness(info *types.CreateBusinessCtx) (types2.MapStr, error)
+	UpdateBusiness(info *types.UpdateBusinessCtx) error
+	DeleteBusiness(info *types.DeleteBusinessCtx) error
+	ListBusiness(info *types.ListBusinessCtx) (*types.QueryResponse, error)
 }
 
-func NewBusinessClient() Interface {
-    
-    
-    
+func NewBusinessClient(client rest.ClientInterface) Interface {
+	return &biz{
+		client: client,
+	}
 }

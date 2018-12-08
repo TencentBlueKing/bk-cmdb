@@ -12,6 +12,8 @@
 
 package types
 
+import "configcenter/src/framework/core/types"
+
 type BaseResp struct {
 	Result bool   `json:"result"`
 	Code   int    `json:"bk_error_code"`
@@ -23,9 +25,24 @@ type Response struct {
 	Data     interface{} `json:"data"`
 }
 
-type Page struct {
-    Limit uint64 `json:"limit,omitempty"`
-    Start uint64 `json:"start,omitempty"`
-    Sort  string `json:"sort,omitempty"`
+type Query struct {
+	Page      Page         `json:"page"`
+	Fields    []string     `json:"fields"`
+	Condition types.MapStr `json:"condition"`
 }
 
+type Page struct {
+	Limit uint64 `json:"limit,omitempty"`
+	Start uint64 `json:"start,omitempty"`
+	Sort  string `json:"sort,omitempty"`
+}
+
+type QueryResponse struct {
+	BaseResp `json:",inline"`
+	Data     ListInfo `json:"data"`
+}
+
+type ListInfo struct {
+	Count int64          `json:"count"`
+	Info  []types.MapStr `json:"info"`
+}

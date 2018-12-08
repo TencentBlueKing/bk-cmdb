@@ -24,26 +24,31 @@ type BusinessResponse struct {
 	Data     types.MapStr `json:"data"`
 }
 
-type CreateBusinessInfo struct {
-	Ctx           context.Context
-	Header        http.Header
-	Tenancy       string
-	BussinessInfo interface{}
+type CreateBusinessCtx struct {
+	Ctx          context.Context
+	Header       http.Header
+	Tenancy      string
+	BusinessInfo types.MapStr
 }
 
-type UpdateBusinessInfo struct {
-	Ctx           context.Context
-	Header        http.Header
-	Tenancy       string
-	BusinessID    int64
-	BussinessInfo interface{}
+type UpdateBusinessCtx struct {
+	Ctx          context.Context
+	Header       http.Header
+	Tenancy      string
+	BusinessID   int64
+	BusinessInfo types.MapStr
 }
 
-type GetBusinessInfo struct {
+type DeleteBusinessCtx struct {
 	Ctx        context.Context
 	Header     http.Header
 	Tenancy    string
-	Query 
+	BusinessID int64
 }
 
-type 
+type ListBusinessCtx struct {
+	Ctx       context.Context
+	Header    http.Header
+	Tenancy   string
+	QueryInfo Query
+}
