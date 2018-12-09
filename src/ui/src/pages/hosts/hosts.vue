@@ -718,7 +718,7 @@
                 })
             },
             setQueryColumnData (collect) {
-                let queryColumnData = {
+                const queryColumnData = {
                     condition: [{
                         'bk_obj_id': 'host',
                         fields: [],
@@ -737,7 +737,7 @@
                         condition: []
                     }]
                 }
-                let queryColumns = this.filter.queryColumns.slice(0)
+                const queryColumns = []
                 let info = JSON.parse(collect['info'])
                 let queryParams = JSON.parse(collect['query_params'])
                 queryColumnData['bk_biz_id'] = info['bk_biz_id']
@@ -759,7 +759,8 @@
                                     let collectQueryColumn = {
                                         'bk_property_id': collectQueryColumnProperty['bk_property_id'],
                                         'bk_property_name': collectQueryColumnProperty['bk_property_name'],
-                                        'bk_property_type': collectQueryColumnProperty['bk_property_type']
+                                        'bk_property_type': collectQueryColumnProperty['bk_property_type'],
+                                        'bk_obj_id': collectQueryColumnProperty['bk_obj_id']
                                     }
                                     if (collectQueryColumnProperty['option']) {
                                         collectQueryColumn['option'] = collectQueryColumnProperty['option']
