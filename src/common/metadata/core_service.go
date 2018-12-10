@@ -47,6 +47,12 @@ type CreateModel struct {
 // SetModel define SetMode method input params
 type SetModel CreateModel
 
+// SearchModelInfo search  model params
+type SearchModelInfo struct {
+	Spec       mapstr.MapStr   `json:"spec"`
+	Attributes []mapstr.MapStr `json:"attributes"`
+}
+
 // CreateModelAttributes create model attributes
 type CreateModelAttributes struct {
 	Attributes []Attribute `json:"attributes"`
