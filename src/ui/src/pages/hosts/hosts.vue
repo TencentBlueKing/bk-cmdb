@@ -97,7 +97,11 @@
                         <bk-button type="default" class="button-setting last" @click="setTableField" v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')">
                             <i class="icon-cc-setting"></i>
                         </bk-button>
-                        <bk-button type="primary" :loading="$loading('hostSearch')" v-show="isShowRefresh" @click="setTableCurrentPage(1, true)" class="fr mr0">
+                        <bk-button class="fr mr0" type="primary"
+                            v-show="isShowRefresh"
+                            :loading="$loading('hostSearch')"
+                            :disabled="!bkPrivBizList.length"
+                            @click="setTableCurrentPage(1, true)">
                             {{$t("HostResourcePool['刷新查询']")}}
                         </bk-button>
                     </div>
@@ -354,7 +358,8 @@
         computed: {
             ...mapGetters({
                 'bkSupplierAccount': 'bkSupplierAccount',
-                'hostSnapshot': 'getHostSnapshot'
+                'hostSnapshot': 'getHostSnapshot',
+                'bkPrivBizList': 'bkPrivBizList'
             }),
             ...mapGetters('object', ['topo']),
             allProperties () {
