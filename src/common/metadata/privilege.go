@@ -13,6 +13,7 @@
 package metadata
 
 import (
+	"configcenter/src/common/mapstr"
 	types "configcenter/src/common/mapstr"
 )
 
@@ -91,7 +92,7 @@ type UserGroup struct {
 // Parse load the data from mapstr object into object instance
 func (u *UserGroup) Parse(data types.MapStr) (*UserGroup, error) {
 
-	err := SetValueToStructByTags(u, data)
+	err := mapstr.SetValueToStructByTags(u, data)
 	if nil != err {
 		return nil, err
 	}
@@ -101,7 +102,7 @@ func (u *UserGroup) Parse(data types.MapStr) (*UserGroup, error) {
 
 // ToMapStr to mapstr
 func (u *UserGroup) ToMapStr() types.MapStr {
-	return SetValueToMapStrByTags(u)
+	return mapstr.SetValueToMapStrByTags(u)
 }
 
 // PrivilegeUserGroup the user group permission configure
@@ -115,7 +116,7 @@ type PrivilegeUserGroup struct {
 // Parse load the data from mapstr object into object instance
 func (p *PrivilegeUserGroup) Parse(data types.MapStr) (*PrivilegeUserGroup, error) {
 
-	err := SetValueToStructByTags(p, data)
+	err := mapstr.SetValueToStructByTags(p, data)
 	if nil != err {
 		return nil, err
 	}
@@ -125,5 +126,5 @@ func (p *PrivilegeUserGroup) Parse(data types.MapStr) (*PrivilegeUserGroup, erro
 
 // ToMapStr to mapstr
 func (p *PrivilegeUserGroup) ToMapStr() types.MapStr {
-	return SetValueToMapStrByTags(p)
+	return mapstr.SetValueToMapStrByTags(p)
 }

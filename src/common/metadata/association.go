@@ -276,7 +276,7 @@ func (a *Association) CanUpdate() (field string, can bool) {
 // Parse load the data from mapstr attribute into attribute instance
 func (cli *Association) Parse(data mapstr.MapStr) (*Association, error) {
 
-	err := SetValueToStructByTags(cli, data)
+	err := mapstr.SetValueToStructByTags(cli, data)
 	if nil != err {
 		return nil, err
 	}
@@ -286,7 +286,7 @@ func (cli *Association) Parse(data mapstr.MapStr) (*Association, error) {
 
 // ToMapStr to mapstr
 func (cli *Association) ToMapStr() mapstr.MapStr {
-	return SetValueToMapStrByTags(cli)
+	return mapstr.SetValueToMapStrByTags(cli)
 }
 
 // InstAsst an association definition between instances.
@@ -306,9 +306,13 @@ type InstAsst struct {
 	// association id between two object
 	ObjectAsstID string `field:"bk_obj_asst_id" json:"bk_obj_asst_id" bson:"bk_obj_asst_id"`
 	// association kind id
-	AssociationKindID string    `field:"bk_asst_id" json:"bk_asst_id" bson:"bk_asst_id"`
-	CreateTime        time.Time `field:"create_time" json:"create_time" bson:"create_time"`
-	LastTime          time.Time `field:"last_time" json:"last_time" bson:"last_time"`
+	AssociationKindID string `field:"bk_asst_id" json:"bk_asst_id" bson:"bk_asst_id"`
+
+	// inst dimension
+	InstDimension Dimension `field:"dimension" json:"dimension" bson:"dimension"`
+
+	CreateTime time.Time `field:"create_time" json:"create_time" bson:"create_time"`
+	LastTime   time.Time `field:"last_time" json:"last_time" bson:"last_time"`
 }
 
 func (asst InstAsst) GetInstID(objID string) (instID int64, ok bool) {
@@ -337,7 +341,7 @@ type InstNameAsst struct {
 // Parse load the data from mapstr attribute into attribute instance
 func (cli *InstAsst) Parse(data mapstr.MapStr) (*InstAsst, error) {
 
-	err := SetValueToStructByTags(cli, data)
+	err := mapstr.SetValueToStructByTags(cli, data)
 	if nil != err {
 		return nil, err
 	}
@@ -347,7 +351,7 @@ func (cli *InstAsst) Parse(data mapstr.MapStr) (*InstAsst, error) {
 
 // ToMapStr to mapstr
 func (cli *InstAsst) ToMapStr() mapstr.MapStr {
-	return SetValueToMapStrByTags(cli)
+	return mapstr.SetValueToMapStrByTags(cli)
 }
 
 // MainlineObjectTopo the mainline object topo
@@ -364,7 +368,7 @@ type MainlineObjectTopo struct {
 // Parse load the data from mapstr attribute into attribute instance
 func (cli *MainlineObjectTopo) Parse(data mapstr.MapStr) (*MainlineObjectTopo, error) {
 
-	err := SetValueToStructByTags(cli, data)
+	err := mapstr.SetValueToStructByTags(cli, data)
 	if nil != err {
 		return nil, err
 	}
@@ -374,7 +378,7 @@ func (cli *MainlineObjectTopo) Parse(data mapstr.MapStr) (*MainlineObjectTopo, e
 
 // ToMapStr to mapstr
 func (cli *MainlineObjectTopo) ToMapStr() mapstr.MapStr {
-	return SetValueToMapStrByTags(cli)
+	return mapstr.SetValueToMapStrByTags(cli)
 }
 
 // TopoInst 实例拓扑结构

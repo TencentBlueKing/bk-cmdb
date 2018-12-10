@@ -34,7 +34,8 @@ func (lgc *Logics) GetObjFieldIDs(objID, user string, header http.Header) (commo
 		return nil, err
 	}
 
-	blog.V(5).Infof("get %s fields return:%v", objID, result)
+	blog.V(5).Info("get %s fields return:%v", objID, result)
+
 	fields, _ := result.Data.([]interface{})
 	ret := common.KvMap{}
 
@@ -81,7 +82,8 @@ func (lgc *Logics) AutoInputV3Field(params mapstr.MapStr, objId, user string, he
 // httpRequest http request
 func httpRequest(url string, body interface{}, header http.Header) (string, error) {
 	params, _ := json.Marshal(body)
-	blog.V(5).Infof("input:%s", string(params))
+	blog.V(5).Info("input:%s", string(params))
+
 	httpClient := httpclient.NewHttpClient()
 	httpClient.SetHeader("Content-Type", "application/json")
 	httpClient.SetHeader("Accept", "application/json")
