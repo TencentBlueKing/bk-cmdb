@@ -18,8 +18,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
@@ -31,6 +29,8 @@ import (
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
 	toposvr "configcenter/src/scene_server/topo_server/service"
+
+	"github.com/emicklei/go-restful"
 )
 
 // TopoServer the topo server
@@ -41,17 +41,17 @@ type TopoServer struct {
 }
 
 func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
-	topoMax := 7
-	if len(current.ConfigMap["level.businessTopoMax"]) != 0 {
-		var err error
+	topoMax := common.BKTopoBusinessLevelDefault
+	var err error
+	if current.ConfigMap["level.businessTopoMax"] != "" {
 		topoMax, err = strconv.Atoi(current.ConfigMap["level.businessTopoMax"])
 		if err != nil {
 			blog.Errorf("invalid business topo max value, err: %v", err)
 			return
 		}
 	}
-
 	t.Config.BusinessTopoLevelMax = topoMax
+
 	blog.V(3).Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
 
 	t.Service.SetConfig(t.Config, t.Core)
