@@ -17,12 +17,12 @@ import (
 	"encoding/json"
 	"net/http"
 
-	restful "github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	restful "github.com/emicklei/go-restful"
 )
 
 // AddAppLog app操作日志
@@ -106,7 +106,7 @@ func (s *Service) AddSetLogs(req *restful.Request, resp *restful.Response) {
 
 	params := new(metadata.AuditSetsParams)
 	if err = json.NewDecoder(req.Request.Body).Decode(params); err != nil {
-		blog.Error("AddSetLogs json unmarshal failed,error:%s", err.Error())
+		blog.Errorf("AddSetLogs json unmarshal failed,error:%s", err.Error())
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
@@ -138,7 +138,7 @@ func (s *Service) AddModuleLog(req *restful.Request, resp *restful.Response) {
 
 	params := new(metadata.AuditModuleParams)
 	if err = json.NewDecoder(req.Request.Body).Decode(params); err != nil {
-		blog.Error("AddModuleLog json unmarshal failed, error:%s", err.Error())
+		blog.Errorf("AddModuleLog json unmarshal failed, error:%s", err.Error())
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
