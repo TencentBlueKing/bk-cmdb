@@ -66,6 +66,10 @@ func (d *MockDiscovery) GseProcServ() Interface {
 	return &mockServer{}
 }
 
+func (d *MockDiscovery) CoreService() Interface {
+	return &mockServer{}
+}
+
 type mockServer struct{}
 
 func (*mockServer) GetServers() ([]string, error) {

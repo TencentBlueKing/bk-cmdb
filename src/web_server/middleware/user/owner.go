@@ -92,6 +92,7 @@ func (m *OwnerManager) InitOwner() error {
 }
 
 func (m *OwnerManager) addDefaultApp() error {
+
 	blog.V(5).Infof("addDefaultApp %s", m.OwnerID)
 	params, err := m.getObjectFields(common.BKInnerObjIDApp)
 	if err != nil {

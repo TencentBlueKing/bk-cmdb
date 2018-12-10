@@ -47,9 +47,9 @@ func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 		blog.Errorf("invalid business topo max value, err: %v", err)
 		return
 	}
+
 	t.Config.BusinessTopoLevelMax = topoMax
 	blog.V(3).Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
-
 	t.Service.SetConfig(t.Config, t.Core)
 }
 

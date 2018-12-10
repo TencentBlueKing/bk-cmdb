@@ -52,7 +52,7 @@ func NewFromInterface(data interface{}) (MapStr, error) {
 
 	switch tmp := data.(type) {
 	default:
-		return nil, fmt.Errorf("not support the kind(%s)", reflect.TypeOf(data).Kind())
+		return nil, fmt.Errorf("no support the kind(%s)", reflect.TypeOf(data).Kind())
 	case nil:
 		return MapStr{}, nil
 	case MapStr:
@@ -74,6 +74,18 @@ func NewFromInterface(data interface{}) (MapStr, error) {
 	}
 }
 
+/*NewFromStruct convert the  struct into MapStr , the struct must be taged with 'tagName' .
+eg:
+type targetStruct struct{
+Name string `field:"testName"`
+}
+will be converted the follow map
+{"testName":""}
+*/
+func NewFromStruct(targetStruct interface{}, tagName string) MapStr {
+	return SetValueToMapStrByTagsWithTagName(targetStruct, tagName)
+}
+
 // Merge merge second into self,if the key is the same then the new value replaces the old value.
 func (cli MapStr) Merge(second MapStr) {
 	for key, val := range second {
@@ -84,6 +96,19 @@ func (cli MapStr) Merge(second MapStr) {
 // ToMapInterface convert to map[string]interface{}
 func (cli MapStr) ToMapInterface() map[string]interface{} {
 	return cli
+}
+
+/*ToStructByTag convert self into a struct with 'tagName'
+eg:
+self := MapStr{"testName":"testvalue"}
+targetStruct := struct{
+   Name string `field:"testName"`
+}
+After call the function self.ToStructByTag(targetStruct, "field")
+the targetStruct.Name value will be 'testvalue'
+*/
+func (cli MapStr) ToStructByTag(targetStruct interface{}, tagName string) error {
+	return SetValueToStructByTagsWithTagName(targetStruct, cli, tagName)
 }
 
 // MarshalJSONInto convert to the input value
@@ -258,12 +283,14 @@ func (cli MapStr) MapStr(key string) (MapStr, error) {
 
 	switch t := cli[key].(type) {
 	default:
-		return nil, errors.New("the data is not a map[string]interface{} type")
+		return nil, fmt.Errorf("the value of the key(%s) is not a map[string]interface{} type", key)
 	case nil:
 		if _, ok := cli[key]; ok {
 			return MapStr{}, nil
 		}
 		return nil, errors.New("the key is invalid")
+	case MapStr:
+		return t, nil
 	case map[string]interface{}:
 		return MapStr(t), nil
 	}
@@ -278,14 +305,14 @@ func (cli MapStr) MapStrArray(key string) ([]MapStr, error) {
 		val := reflect.ValueOf(cli[key])
 		switch val.Kind() {
 		default:
-			return nil, fmt.Errorf("the data is not a valid type,%s", val.Kind().String())
+			return nil, fmt.Errorf("the value of the key(%s) is not a valid type,%s", key, val.Kind().String())
 		case reflect.Slice:
 			tmpval, ok := val.Interface().([]MapStr)
 			if ok {
 				return tmpval, nil
 			}
 
-			return nil, fmt.Errorf("the data is not a valid type,%s", val.Kind().String())
+			return nil, fmt.Errorf("the value of the key(%s) is not a valid type,%s", key, val.Kind().String())
 		}
 
 	case nil:

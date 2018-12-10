@@ -13,6 +13,7 @@
 package metadata
 
 import (
+	"configcenter/src/common/mapstr"
 	types "configcenter/src/common/mapstr"
 )
 
@@ -55,7 +56,7 @@ type Group struct {
 // Parse load the data from mapstr group into group instance
 func (cli *Group) Parse(data types.MapStr) (*Group, error) {
 
-	err := SetValueToStructByTags(cli, data)
+	err := mapstr.SetValueToStructByTags(cli, data)
 	if nil != err {
 		return nil, err
 	}
@@ -65,5 +66,5 @@ func (cli *Group) Parse(data types.MapStr) (*Group, error) {
 
 // ToMapStr to mapstr
 func (cli *Group) ToMapStr() types.MapStr {
-	return SetValueToMapStrByTags(cli)
+	return mapstr.SetValueToMapStrByTags(cli)
 }

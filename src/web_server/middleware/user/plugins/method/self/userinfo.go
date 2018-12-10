@@ -164,6 +164,7 @@ func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadat
 		blog.Errorf("get user list error：%v", err)
 		return nil, fmt.Errorf("http do error:%s", err.Error())
 	}
+
 	blog.V(5).Infof("get user list url: %s, return：%s", getURL, reply)
 	var result userListResult
 	err = json.Unmarshal([]byte(reply), &result)

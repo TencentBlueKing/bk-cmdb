@@ -17,7 +17,6 @@ import (
 
 	"configcenter/src/common"
 	types "configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
 )
 
 // CreateCondition create a condition object
@@ -55,7 +54,7 @@ type condition struct {
 // SetPage set the page
 func (cli *condition) SetPage(page types.MapStr) error {
 
-	pageInfo := metadata.BasePage{}
+	pageInfo := BasePage{}
 	if err := page.MarshalJSONInto(&pageInfo); nil != err {
 		return err
 	}
