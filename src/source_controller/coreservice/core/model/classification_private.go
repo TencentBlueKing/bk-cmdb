@@ -19,10 +19,9 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (m *modelClassification) hasModel(ctx core.ContextParams, cond mapstr.MapStr) (cnt int64, exists bool, err error) {
+func (m *modelClassification) hasModel(ctx core.ContextParams, cond mapstr.MapStr) (cnt uint64, exists bool, err error) {
 
-	innerCnt, err := m.dbProxy.Table(common.BKTableNameObjDes).Find(cond).Count(ctx)
-	cnt = int64(innerCnt)
+	cnt, err = m.dbProxy.Table(common.BKTableNameObjDes).Find(cond).Count(ctx)
 	exists = 0 != cnt
 	return cnt, exists, err
 }
