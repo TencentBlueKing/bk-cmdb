@@ -20,7 +20,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (m *modelClassification) IsExists(ctx core.ContextParams, classificationID string) (origin *metadata.Classification, exists bool, err error) {
+func (m *modelClassification) isExists(ctx core.ContextParams, classificationID string) (origin *metadata.Classification, exists bool, err error) {
 
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationID, Val: ctx.SupplierAccount}, &mongo.Eq{Key: metadata.ClassFieldClassificationID, Val: classificationID})
@@ -28,7 +28,7 @@ func (m *modelClassification) IsExists(ctx core.ContextParams, classificationID 
 	return origin, m.dbProxy.IsNotFoundError(err), err
 }
 
-func (m *modelClassification) Save(ctx core.ContextParams, classification metadata.Classification) (id uint64, err error) {
+func (m *modelClassification) save(ctx core.ContextParams, classification metadata.Classification) (id uint64, err error) {
 
 	id, err = m.dbProxy.NextSequence(ctx, common.BKTableNameObjClassifiction)
 	if err != nil {
@@ -42,7 +42,7 @@ func (m *modelClassification) Save(ctx core.ContextParams, classification metada
 	return id, err
 }
 
-func (m *modelClassification) Update(ctx core.ContextParams, data mapstr.MapStr, cond mapstr.MapStr) error {
+func (m *modelClassification) update(ctx core.ContextParams, data mapstr.MapStr, cond mapstr.MapStr) error {
 
 	return m.dbProxy.Table(common.BKTableNameObjClassifiction).Update(ctx, cond, data)
 }

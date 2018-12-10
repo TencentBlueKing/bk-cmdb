@@ -47,7 +47,7 @@ func (m *modelManager) CreateModel(ctx core.ContextParams, inputParam metadata.C
 	condCheckModel.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: inputParam.Spec.ObjectID})
 	condCheckModel.Element(&mongo.Eq{Key: metadata.ModelFieldOwnerID, Val: ctx.SupplierAccount})
 
-	_, exists, err := m.IsExists(ctx, condCheckModel)
+	_, exists, err := m.isExists(ctx, condCheckModel)
 	if nil != err {
 		return &metadata.CreateOneDataResult{}, err
 	}
@@ -56,7 +56,7 @@ func (m *modelManager) CreateModel(ctx core.ContextParams, inputParam metadata.C
 		return &metadata.CreateOneDataResult{}, ctx.Error.Error(common.CCErrCommDuplicateItem)
 	}
 
-	id, err := m.Save(ctx, &inputParam.Spec)
+	id, err := m.save(ctx, &inputParam.Spec)
 	if nil != err {
 		return &metadata.CreateOneDataResult{}, err
 	}
@@ -74,7 +74,7 @@ func (m *modelManager) SetModel(ctx core.ContextParams, inputParam metadata.SetM
 	condCheckModel.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: inputParam.Spec.ObjectID})
 	condCheckModel.Element(&mongo.Eq{Key: metadata.ModelFieldOwnerID, Val: ctx.SupplierAccount})
 
-	existsModel, exists, err := m.IsExists(ctx, condCheckModel)
+	existsModel, exists, err := m.isExists(ctx, condCheckModel)
 	if nil != err {
 		return &metadata.SetDataResult{}, err
 	}
@@ -87,7 +87,7 @@ func (m *modelManager) SetModel(ctx core.ContextParams, inputParam metadata.SetM
 		updateCond.Element(&mongo.Eq{Key: metadata.ModelFieldOwnerID, Val: ctx.SupplierAccount})
 		updateCond.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: inputParam.Spec.ObjectID})
 
-		_, err := m.Update(ctx, mapstr.NewFromStruct(inputParam.Spec, "field"), updateCond)
+		_, err := m.update(ctx, mapstr.NewFromStruct(inputParam.Spec, "field"), updateCond)
 		if nil != err {
 			return dataResult, err
 		}
@@ -95,7 +95,7 @@ func (m *modelManager) SetModel(ctx core.ContextParams, inputParam metadata.SetM
 		dataResult.UpdatedCount.Count++
 		dataResult.Updated = append(dataResult.Updated, metadata.UpdatedDataResult{OriginIndex: 0, ID: uint64(existsModel.ID)})
 	} else {
-		id, err := m.Save(ctx, &inputParam.Spec)
+		id, err := m.save(ctx, &inputParam.Spec)
 		if nil != err {
 			return dataResult, err
 		}
@@ -127,7 +127,7 @@ func (m *modelManager) UpdateModel(ctx core.ContextParams, inputParam metadata.U
 		return &metadata.UpdatedCount{}, err
 	}
 
-	cnt, err := m.Update(ctx, inputParam.Data, updateCond)
+	cnt, err := m.update(ctx, inputParam.Data, updateCond)
 	return &metadata.UpdatedCount{Count: cnt}, err
 }
 
