@@ -41,3 +41,5 @@ type QueryResult struct {
 	Count uint64          `json:"count"`
 	Info  []mapstr.MapStr `json:"info"`
 }
+
+type QueryConditionResult ResponseInstData
