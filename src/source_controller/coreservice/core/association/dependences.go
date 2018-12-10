@@ -12,4 +12,8 @@
 
 package association
 
-// TODO: 依赖其他模块的方法，在此文件声明 interface， 上线后统一在进程启动流程里注入
+// ATTENTIONS: the dependent methods of the other module
+
+// OperationDependences methods definition
+type OperationDependences interface {
+}
