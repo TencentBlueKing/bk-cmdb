@@ -19,8 +19,8 @@ type UpdateOption struct {
 	Condition mapstr.MapStr `json:"condition"`
 }
 
-// UpdateOptionResult common update result
-type UpdateOptionResult struct {
+// UpdatedOptionResult common update result
+type UpdatedOptionResult struct {
 	BaseResp `json:",inline"`
 	Data     UpdatedCount `json:"data"`
 }
