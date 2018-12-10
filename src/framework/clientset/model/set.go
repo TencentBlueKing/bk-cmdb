@@ -19,23 +19,25 @@ import (
 	"configcenter/src/framework/common/rest"
 )
 
-type ModelInterface interface {
-	CreateModel(ctx *types.CreateModelCtx) (int64, error)
-	DeleteModel(ctx *types.DeleteModelCtx) error
-	UpdateModel(ctx *types.UpdateModelCtx) error
-	GetModels(ctx *types.GetModelsCtx) ([]types.ModelInfo, error)
+type SetInterface interface {
+	CreateSet(ctx *types.CreateSetCtx) (int64, error)
+	DeleteSet(ctx *types.DeleteSetCtx) error
+	UpdateSet(ctx *types.UpdateSetCtx) error
+	ListSet(ctx *types.ListSetCtx) (*types.ListInfo, error)
 }
 
-type modelClient struct {
+var _ SetInterface = &setClient{}
+
+type setClient struct {
 	client rest.ClientInterface
 }
 
-func (m *modelClient) CreateModel(ctx *types.CreateModelCtx) (int64, error) {
-	resp := new(types.CreateModelResponse)
-	subPath := "/object"
-	err := m.client.Post().
+func (s *setClient) CreateSet(ctx *types.CreateSetCtx) (int64, error) {
+	resp := new(types.CreateSetResult)
+	subPath := fmt.Sprintf("/set/%d", ctx.SetID)
+	err := s.client.Post().
 		WithContext(ctx.Ctx).
-		Body(ctx.ModelInfo).
+		Body(ctx.Set).
 		SubResource(subPath).
 		WithHeaders(ctx.Header).
 		Do().
@@ -51,10 +53,10 @@ func (m *modelClient) CreateModel(ctx *types.CreateModelCtx) (int64, error) {
 	return resp.Data.ID, nil
 }
 
-func (m *modelClient) DeleteModel(ctx *types.DeleteModelCtx) error {
+func (s *setClient) DeleteSet(ctx *types.DeleteSetCtx) error {
 	resp := new(types.Response)
-	subPath := fmt.Sprintf("/object/%d", ctx.ModelID)
-	err := m.client.Delete().
+	subPath := fmt.Sprintf("/set/%d/%d", ctx.BusinessID, ctx.SetID)
+	err := s.client.Delete().
 		WithContext(ctx.Ctx).
 		Body(nil).
 		SubResource(subPath).
@@ -72,12 +74,12 @@ func (m *modelClient) DeleteModel(ctx *types.DeleteModelCtx) error {
 	return nil
 }
 
-func (m *modelClient) UpdateModel(ctx *types.UpdateModelCtx) error {
+func (s *setClient) UpdateSet(ctx *types.UpdateSetCtx) error {
 	resp := new(types.Response)
-	subPath := fmt.Sprintf("/object/%d", ctx.ModelID)
-	err := m.client.Put().
+	subPath := fmt.Sprintf("/module/%d/%d/%d", ctx.BusinessID, ctx.SetID, ctx.ModuleID)
+	err := s.client.Put().
 		WithContext(ctx.Ctx).
-		Body(ctx.ModelInfo).
+		Body(ctx.Set).
 		SubResource(subPath).
 		WithHeaders(ctx.Header).
 		Do().
@@ -93,12 +95,12 @@ func (m *modelClient) UpdateModel(ctx *types.UpdateModelCtx) error {
 	return nil
 }
 
-func (m *modelClient) GetModels(ctx *types.GetModelsCtx) ([]types.ModelInfo, error) {
-	resp := new(types.GetModelsResult)
-	subPath := "/objects"
-	err := m.client.Post().
+func (s *setClient) ListSet(ctx *types.ListSetCtx) (*types.ListInfo, error) {
+	resp := new(types.ListSetResult)
+	subPath := fmt.Sprintf("/set/search/%s/%d", ctx.Tenancy, ctx.BusinessID)
+	err := s.client.Post().
 		WithContext(ctx.Ctx).
-		Body(ctx.Filters).
+		Body(ctx.Filter).
 		SubResource(subPath).
 		WithHeaders(ctx.Header).
 		Do().
@@ -111,5 +113,5 @@ func (m *modelClient) GetModels(ctx *types.GetModelsCtx) ([]types.ModelInfo, err
 	if !resp.BaseResp.Result {
 		return nil, &types.ErrorDetail{Code: resp.Code, Message: resp.ErrMsg}
 	}
-	return resp.Data, nil
+	return &resp.Data, nil
 }

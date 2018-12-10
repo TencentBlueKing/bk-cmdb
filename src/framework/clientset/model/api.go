@@ -13,19 +13,53 @@
 package model
 
 import (
-	"configcenter/src/framework/clientset/types"
 	"configcenter/src/framework/common/rest"
 )
 
 type Interface interface {
-	CreateModel(ctx *types.CreateModelCtx) (int64, error)
-	DeleteModel(ctx *types.DeleteModelCtx) error
-	UpdateModel(ctx *types.UpdateModelCtx) error
-	GetModels(ctx *types.GetModelsCtx) ([]types.ModelInfo, error)
+	Model() ModelInterface
+	Attribute() AttributeInterface
+	Module() ModuleInterface
+	Set() SetInterface
+	Instance() InstanceInterface
 }
 
 func NewModelClient(client rest.ClientInterface) Interface {
-	return &modelClient{
+	return &modelAPI{
 		client: client,
+	}
+}
+
+type modelAPI struct {
+	client rest.ClientInterface
+}
+
+func (m *modelAPI) Attribute() AttributeInterface {
+	return &attribute{
+		client: m.client,
+	}
+}
+
+func (m *modelAPI) Module() ModuleInterface {
+	return &module{
+		client: m.client,
+	}
+}
+
+func (m *modelAPI) Set() SetInterface {
+	return &setClient{
+		client: m.client,
+	}
+}
+
+func (m *modelAPI) Instance() InstanceInterface {
+	return &instClient{
+		client: m.client,
+	}
+}
+
+func (m *modelAPI) Model() ModelInterface {
+	return &modelClient{
+		client: m.client,
 	}
 }

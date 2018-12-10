@@ -13,15 +13,13 @@
 package types
 
 import (
-	"configcenter/src/framework/core/types"
-	"context"
-	"net/http"
 	"time"
+
+	"configcenter/src/framework/core/types"
 )
 
 type CreateModelCtx struct {
-	Ctx       context.Context
-	Header    http.Header
+	BaseCtx
 	ModelInfo CreateModelInfo
 }
 
@@ -47,14 +45,12 @@ type CreateModelResponse struct {
 }
 
 type DeleteModelCtx struct {
-	Ctx     context.Context
-	Header  http.Header
+	BaseCtx
 	ModelID int64
 }
 
 type UpdateModelCtx struct {
-	Ctx       context.Context
-	Header    http.Header
+	BaseCtx
 	ModelID   int64
 	ModelInfo UpdateModelInfo
 }
@@ -72,8 +68,7 @@ type UpdateModelInfo struct {
 }
 
 type GetModelsCtx struct {
-	Ctx     context.Context
-	Header  http.Header
+	BaseCtx
 	Filters types.MapStr
 }
 

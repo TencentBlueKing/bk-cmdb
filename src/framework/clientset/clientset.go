@@ -12,9 +12,59 @@
 
 package clientset
 
-type Interface interface {
-	V3() V3ClientSet
+import (
+	"fmt"
+
+	"configcenter/src/apimachinery/flowctrl"
+	"configcenter/src/framework/clientset/business"
+	"configcenter/src/framework/clientset/discovery"
+	"configcenter/src/framework/clientset/host"
+	"configcenter/src/framework/clientset/model"
+	"configcenter/src/framework/common/http"
+	"configcenter/src/framework/common/rest"
+)
+
+func NewV3Client(zkAddr string, cfg *http.TLSClientConfig) (V3ClientSet, error) {
+
+	disc, err := discovery.DiscoveryAPIServer(zkAddr)
+	if err != nil {
+		return nil, fmt.Errorf("service discovery api failed, err: %v", err)
+	}
+
+	cli, err := http.NewClient(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("new http client failed, err: %v", err)
+	}
+
+	c := &rest.Capability{
+		Discover: disc,
+		Client:   cli,
+		Throttle: flowctrl.NewRateLimiter(1000, 2000),
+	}
+
+	return &v3{
+		client: rest.NewRESTClient(c, "/api/v3"),
+	}, nil
 }
 
 type V3ClientSet interface {
+	Business() business.Interface
+	Host() host.Interface
+	Model() model.Interface
+}
+
+type v3 struct {
+	client rest.ClientInterface
+}
+
+func (v *v3) Business() business.Interface {
+	return business.NewBusinessClient(v.client)
+}
+
+func (v *v3) Host() host.Interface {
+	return host.NewHostCtrl(v.client)
+}
+
+func (v *v3) Model() model.Interface {
+	return model.NewModelClient(v.client)
 }
