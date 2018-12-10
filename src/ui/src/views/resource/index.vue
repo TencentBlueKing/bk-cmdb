@@ -16,6 +16,7 @@
             </div>
         </cmdb-hosts-filter>
         <cmdb-hosts-table class="resource-main" ref="resourceTable"
+            :authority="resourceAuthority"
             :columns-config-key="table.columnsConfigKey"
             :columns-config-properties="columnsConfigProperties"
             :columns-config-disabled-columns="['bk_host_innerip', 'bk_cloud_id', 'bk_biz_name', 'bk_module_name']"
@@ -24,12 +25,13 @@
             <div class="resource-options clearfix" slot="options">
                 <div class="fl">
                     <bk-button class="options-button" type="primary" style="margin-left: 0"
+                        :disabled="!resourceAuthority.includes('update')"
                         @click="importInst.show = true">
                         {{$t('HostResourcePool[\'导入主机\']')}}
                     </bk-button>
                     <cmdb-selector class="options-business-selector"
                         :placeholder="$t('HostResourcePool[\'分配到业务空闲机池\']')"
-                        :disabled="!table.checked.length"
+                        :disabled="!table.checked.length || !resourceAuthority.includes('update')"
                         :list="business"
                         :auto-select="false"
                         setting-key="bk_biz_id"
@@ -38,12 +40,12 @@
                         @on-selected="handleAssignHosts">
                     </cmdb-selector>
                     <bk-button class="options-button" type="default"
-                        :disabled="!table.checked.length"
+                        :disabled="!table.checked.length || !resourceAuthority.includes('update')"
                         @click="handleMultipleEdit">
                         {{$t('BusinessTopology[\'修改\']')}}
                     </bk-button>
                     <bk-button class="options-button options-button-delete" type="default"
-                        :disabled="!table.checked.length"
+                        :disabled="!table.checked.length || !resourceAuthority.includes('delete')"
                         @click="handleMultipleDelete">
                         {{$t('Common[\'删除\']')}}
                     </bk-button>
@@ -155,6 +157,9 @@
                 const businessProperties = this.properties.biz.filter(property => ['bk_biz_name'].includes(property['bk_property_id']))
                 const hostProperties = this.properties.host
                 return [...setProperties, ...moduleProperties, ...businessProperties, ...hostProperties]
+            },
+            resourceAuthority () {
+                return this.$store.getters['userPrivilege/globalBusiAuthority']('resource')
             }
         },
         watch: {

@@ -23,7 +23,10 @@
                 <template v-if="!isEditName">
                     <span class="text-content">{{activeModel ? activeModel['bk_obj_name'] : ''}}
                     </span>
-                    <i class="icon icon-cc-edit text-primary" v-if="!(isReadOnly || (activeModel && activeModel['ispre']))" @click="editModelName"></i>
+                    <i class="icon icon-cc-edit text-primary"
+                        v-if="!(isReadOnly || (activeModel && activeModel['ispre'])) && authority.includes('update')"
+                        @click="editModelName">
+                    </i>
                 </template>
                 <template v-else>
                     <div class="cmdb-form-item" :class="{'is-error': errors.has('modelName')}">
@@ -37,7 +40,9 @@
                 </template>
             </div>
             <div class="btn-group">
-                <label class="label-btn" v-if="tab.active==='field'" :class="{'disabled': isReadOnly}">
+                <label class="label-btn"
+                    v-if="tab.active==='field' && authority.includes('update')"
+                    :class="{'disabled': isReadOnly}">
                     <i class="icon-cc-import"></i>
                     <span>{{$t('ModelManagement["导入"]')}}</span>
                     <input v-if="!isReadOnly" ref="fileInput" type="file" @change.prevent="handleFile">
@@ -48,7 +53,7 @@
                         <span>{{$t('ModelManagement["导出"]')}}</span>
                     </label>
                 </form>
-                <template v-if="!activeModel['ispre']">
+                <template v-if="!activeModel['ispre'] && authority.includes('update')">
                     <label class="label-btn"
                     v-if="!isMainLine"
                     v-tooltip="$t('ModelManagement[\'保留模型和相应实例，隐藏关联关系\']')">
@@ -120,7 +125,8 @@
         computed: {
             ...mapGetters([
                 'supplierAccount',
-                'userName'
+                'userName',
+                'admin'
             ]),
             ...mapGetters('objectModel', [
                 'activeModel'
@@ -152,6 +158,9 @@
             },
             exportUrl () {
                 return `${window.API_HOST}object/owner/${this.supplierAccount}/object/${this.activeModel['bk_obj_id']}/export`
+            },
+            authority () {
+                return this.admin ? ['search', 'update', 'delete'] : []
             }
         },
         watch: {

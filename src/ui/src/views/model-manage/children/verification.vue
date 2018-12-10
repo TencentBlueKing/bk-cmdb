@@ -1,6 +1,8 @@
 <template>
     <div>
-        <bk-button class="create-btn" type="primary" :disabled="isReadOnly" @click="createVerification">
+        <bk-button class="create-btn" type="primary"
+            :disabled="isReadOnly || !authority.includes('update')"
+            @click="createVerification">
             {{$t('ModelManagement["新建校验"]')}}
         </bk-button>
         <cmdb-table
@@ -87,9 +89,15 @@
                     return this.activeModel['bk_ispaused']
                 }
                 return false
+            },
+            authority () {
+                return this.$store.getters.admin ? ['search', 'update', 'delete'] : []
             }
         },
         async created () {
+            if (!this.authority.includes('update')) {
+                this.table.header.pop()
+            }
             this.initAttrList()
             this.searchVerification()
         },
