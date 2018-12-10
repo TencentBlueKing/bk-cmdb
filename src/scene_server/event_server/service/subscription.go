@@ -23,13 +23,13 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/types"
-
-	"github.com/emicklei/go-restful"
 )
 
 // Subscribe  Subscribe events
@@ -168,7 +168,7 @@ func (s *Service) Rebook(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-	blog.Infof("update subscription %v", id)
+	blog.Info("update subscription %v", id)
 
 	sub := &metadata.Subscription{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&sub); err != nil {

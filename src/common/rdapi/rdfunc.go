@@ -19,13 +19,14 @@ import (
 	"net/http"
 	"strings"
 
+	restful "github.com/emicklei/go-restful"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/util"
 
-	restful "github.com/emicklei/go-restful"
 	"github.com/rs/xid"
 )
 
@@ -75,7 +76,7 @@ func FilterRdAddrSrv(typeSrv string) func(req *restful.Request, resp *restful.Re
 			resp.WriteHeader(http.StatusInternalServerError)
 			rsp, rsperr := createAPIRspStr(common.CCErrCommRelyOnServerAddressFailed, defErr.Errorf(common.CCErrCommRelyOnServerAddressFailed, typeSrv).Error())
 			if nil != rsperr {
-				blog.Errorf("create response failed, error information is %v", rsperr)
+				blog.Error("create response failed, error information is %v", rsperr)
 			} else {
 				// TODO: 暂时不设置 resp.WriteHeader(httpcode)
 				io.WriteString(resp, rsp)
@@ -87,7 +88,7 @@ func FilterRdAddrSrv(typeSrv string) func(req *restful.Request, resp *restful.Re
 			resp.WriteHeader(http.StatusInternalServerError)
 			rsp, rsperr := createAPIRspStr(common.CCErrCommRelyOnServerAddressFailed, defErr.Errorf(common.CCErrCommRelyOnServerAddressFailed, typeSrv).Error())
 			if nil != rsperr {
-				blog.Errorf("create response failed, error information is %v", rsperr)
+				blog.Error("create response failed, error information is %v", rsperr)
 			} else {
 				// TODO: 暂时不设置 resp.WriteHeader(httpcode)
 				io.WriteString(resp, rsp)
@@ -122,7 +123,7 @@ func FilterRdAddrSrvs(typeSrvs ...string) func(req *restful.Request, resp *restf
 				resp.WriteHeader(http.StatusInternalServerError)
 				rsp, rsperr := createAPIRspStr(common.CCErrCommRelyOnServerAddressFailed, defErr.Errorf(common.CCErrCommRelyOnServerAddressFailed, typeSrv).Error())
 				if nil != rsperr {
-					blog.Errorf("create response failed, error information is %v", rsperr)
+					blog.Error("create response failed, error information is %v", rsperr)
 				} else {
 					// TODO: 暂时不设置 resp.WriteHeader(httpcode)
 					io.WriteString(resp, rsp)
@@ -134,7 +135,7 @@ func FilterRdAddrSrvs(typeSrvs ...string) func(req *restful.Request, resp *restf
 				resp.WriteHeader(http.StatusInternalServerError)
 				rsp, rsperr := createAPIRspStr(common.CCErrCommRelyOnServerAddressFailed, defErr.Errorf(common.CCErrCommRelyOnServerAddressFailed, typeSrv).Error())
 				if nil != rsperr {
-					blog.Errorf("create response failed, error information is %v", rsperr)
+					blog.Error("create response failed, error information is %v", rsperr)
 				} else {
 					// TODO: 暂时不设置 resp.WriteHeader(httpcode)
 					io.WriteString(resp, rsp)
@@ -229,7 +230,7 @@ func GlobalFilter(typeSrvs ...string) func(req *restful.Request, resp *restful.R
 				resp.WriteHeader(http.StatusInternalServerError)
 				rsp, rsperr := createAPIRspStr(common.CCErrCommRelyOnServerAddressFailed, defErr.Errorf(common.CCErrCommRelyOnServerAddressFailed, typeSrv).Error())
 				if nil != rsperr {
-					blog.Errorf("create response failed, error information is %v", rsperr)
+					blog.Error("create response failed, error information is %v", rsperr)
 				} else {
 					// TODO: 暂时不设置 resp.WriteHeader(httpcode)
 					io.WriteString(resp, rsp)
@@ -241,7 +242,7 @@ func GlobalFilter(typeSrvs ...string) func(req *restful.Request, resp *restful.R
 				resp.WriteHeader(http.StatusInternalServerError)
 				rsp, rsperr := createAPIRspStr(common.CCErrCommRelyOnServerAddressFailed, defErr.Errorf(common.CCErrCommRelyOnServerAddressFailed, typeSrv).Error())
 				if nil != rsperr {
-					blog.Errorf("create response failed, error information is %v", rsperr)
+					blog.Error("create response failed, error information is %v", rsperr)
 				} else {
 					// TODO: 暂时不设置 resp.WriteHeader(httpcode)
 					io.WriteString(resp, rsp)

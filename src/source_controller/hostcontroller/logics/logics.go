@@ -17,6 +17,8 @@ import (
 	"errors"
 	"fmt"
 
+	"gopkg.in/mgo.v2/bson"
+
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -24,8 +26,6 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
-
-	"gopkg.in/mgo.v2/bson"
 )
 
 type Logics struct {
@@ -130,7 +130,7 @@ func (lgc *Logics) AddSingleHostModuleRelation(ctx context.Context, ec *eventcli
 	moduleHostConfig := common.KvMap{common.BKAppIDField: appID, common.BKHostIDField: hostID, common.BKModuleIDField: moduleID}
 	num, numError := lgc.Instance.Table(common.BKTableNameModuleHostConfig).Find(moduleHostConfig).Count(ctx)
 	if numError != nil {
-		blog.Errorf("add single host module relation, get module host relation error: %v", numError)
+		blog.Error("add single host module relation, get module host relation error: %v", numError)
 		return false, numError
 	}
 
@@ -190,7 +190,7 @@ func (lgc *Logics) GetModuleIDsByHostID(ctx context.Context, moduleCond interfac
 
 	err := lgc.Instance.Table(common.BKTableNameModuleHostConfig).Find(moduleCond).Fields(common.BKModuleIDField).All(ctx, &result)
 	if nil != err {
-		blog.Errorf("get moudle id by host id failed, error: %s", err.Error())
+		blog.Error("get moudle id by host id failed, error: %s", err.Error())
 		return ret, errors.New("can not find the module that host belongs to")
 	}
 	for _, r := range result {

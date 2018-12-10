@@ -17,7 +17,7 @@
                 </router-link>
                 <div class="node-name" :title="model['bk_obj_name']">{{model['bk_obj_name']}}</div>
                 <a href="javascript:void(0)" class="node-add"
-                    v-if="canAddLevel(model)"
+                    v-if="!['set', 'module', 'host'].includes(model['bk_obj_id'])"
                     @click="handleAddLevel(model)">
                 </a>
             </div>
@@ -95,10 +95,7 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'userName', 'admin']),
-            authority () {
-                return this.admin ? ['search', 'update', 'delete'] : []
-            }
+            ...mapGetters(['supplierAccount', 'userName'])
         },
         created () {
             this.$store.commit('setHeaderTitle', this.$t('Nav["业务模型"]'))
@@ -129,9 +126,6 @@
             getModelIcon (objId) {
                 const model = this.$allModels.find(model => model['bk_obj_id'] === objId)
                 return (model || {})['bk_obj_icon']
-            },
-            canAddLevel (model) {
-                return this.authority.includes('update') && !['set', 'module', 'host'].includes(model['bk_obj_id'])
             },
             handleAddLevel (model) {
                 this.addLevel.parent = model

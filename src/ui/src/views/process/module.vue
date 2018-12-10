@@ -7,11 +7,7 @@
             :wrapperMinusHeight="150"
             :sortable="false">
             <template slot="is_bind" slot-scope="{ item }">
-                <bk-button 
-                    :type="item['is_bind'] ? 'primary' : 'default'"
-                    :loading="$loading(`${item['bk_module_name']}Bind`)"
-                    :disabled="!authority.includes('update')"
-                    @click="changeBinding(item)">
+                <bk-button :type="item['is_bind'] ? 'primary' : 'default'" :loading="$loading(`${item['bk_module_name']}Bind`)" @click="changeBinding(item)">
                     {{item['is_bind'] ? $t("ProcessManagement['已绑定']") : $t("ProcessManagement['未绑定']")}}
                 </bk-button>
             </template>
@@ -28,12 +24,6 @@
             },
             bizId: {
                 required: true
-            },
-            authority: {
-                type: Array,
-                default () {
-                    return []
-                }
             }
         },
         data () {

@@ -89,7 +89,7 @@ func (g *unique) Create() error {
 
 	if common.CCSuccess != rsp.Code {
 		blog.Errorf("[model-unique] failed to create the unique(%#v), error info is is %s", g.data, rsp.ErrMsg)
-		return g.params.Err.New(rsp.Code, rsp.ErrMsg)
+		return g.params.Err.Error(common.CCErrTopoObjectUniqueCreateFailed)
 	}
 
 	g.data.ID = uint64(rsp.Data.ID)

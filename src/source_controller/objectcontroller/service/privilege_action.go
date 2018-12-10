@@ -17,13 +17,13 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	simplejson "github.com/bitly/go-simplejson"
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-
-	simplejson "github.com/bitly/go-simplejson"
-	"github.com/emicklei/go-restful"
 )
 
 //CreateUserGroupPrivi create group privi
@@ -40,19 +40,19 @@ func (cli *Service) CreateUserGroupPrivi(req *restful.Request, resp *restful.Res
 	groupID := pathParams["group_id"]
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
-		blog.Errorf("read json data error :%v", err)
+		blog.Error("read json data error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
 	js, err := simplejson.NewJson([]byte(value))
 	if err != nil {
-		blog.Errorf("insert user group privi failed, err msg : %v", err)
+		blog.Error("insert user group privi failed, err msg : %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 		return
 	}
 	info, err := js.Map()
 	if err != nil {
-		blog.Errorf("insert user group privi failed, err msg : %v", err)
+		blog.Error("insert user group privi failed, err msg : %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 		return
 	}
@@ -67,7 +67,7 @@ func (cli *Service) CreateUserGroupPrivi(req *restful.Request, resp *restful.Res
 	cond = util.SetModOwner(cond, ownerID)
 	cnt, err := db.Table(common.BKTableNameUserGroupPrivilege).Find(cond).Count(ctx)
 	if nil != err && !db.IsNotFoundError(err) {
-		blog.Errorf("get user group privi error :%v", err)
+		blog.Error("get user group privi error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}
@@ -75,7 +75,7 @@ func (cli *Service) CreateUserGroupPrivi(req *restful.Request, resp *restful.Res
 		blog.V(3).Infof("update user group privi: %+v, by condition %+v ", data, cond)
 		err = db.Table(common.BKTableNameUserGroupPrivilege).Update(ctx, cond, data)
 		if nil != err {
-			blog.Errorf("update user group privi error :%v", err)
+			blog.Error("update user group privi error :%v", err)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 			return
 		}
@@ -86,7 +86,7 @@ func (cli *Service) CreateUserGroupPrivi(req *restful.Request, resp *restful.Res
 	blog.V(3).Infof("create user group privi: %+v", data)
 	err = db.Table(common.BKTableNameUserGroupPrivilege).Insert(ctx, data)
 	if nil != err {
-		blog.Errorf("insert user group privi error :%v", err)
+		blog.Error("insert user group privi error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}
@@ -107,19 +107,19 @@ func (cli *Service) UpdateUserGroupPrivi(req *restful.Request, resp *restful.Res
 	groupID := pathParams["group_id"]
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
-		blog.Errorf("read json data error :%v", err)
+		blog.Error("read json data error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
 	js, err := simplejson.NewJson([]byte(value))
 	if err != nil {
-		blog.Errorf("update user group privi failed, err msg : %v", err)
+		blog.Error("update user group privi failed, err msg : %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 		return
 	}
 	info, err := js.Map()
 	if err != nil {
-		blog.Errorf("update user group privi failed, err msg : %v", err)
+		blog.Error("update user group privi failed, err msg : %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 		return
 	}
@@ -131,7 +131,7 @@ func (cli *Service) UpdateUserGroupPrivi(req *restful.Request, resp *restful.Res
 	blog.V(3).Infof("update user group privi: %+v, by condition %+v ", data, cond)
 	err = db.Table(common.BKTableNameUserGroupPrivilege).Update(ctx, cond, data)
 	if nil != err {
-		blog.Errorf("update user group privi error :%v", err)
+		blog.Error("update user group privi error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}
@@ -159,7 +159,7 @@ func (cli *Service) GetUserGroupPrivi(req *restful.Request, resp *restful.Respon
 	blog.V(3).Infof("get user group privi by condition %+v", cond)
 	cnt, err := db.Table(common.BKTableNameUserGroupPrivilege).Find(cond).Count(ctx)
 	if nil != err && !db.IsNotFoundError(err) {
-		blog.Errorf("get user group privi error :%v", err)
+		blog.Error("get user group privi error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}
@@ -176,7 +176,7 @@ func (cli *Service) GetUserGroupPrivi(req *restful.Request, resp *restful.Respon
 	var result interface{}
 	err = db.Table(common.BKTableNameUserGroupPrivilege).Find(cond).One(ctx, &result)
 	if nil != err {
-		blog.Errorf("get user group privi error :%v", err)
+		blog.Error("get user group privi error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}

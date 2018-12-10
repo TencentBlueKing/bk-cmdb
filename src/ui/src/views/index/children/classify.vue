@@ -22,8 +22,7 @@
         },
         computed: {
             ...mapGetters('objectModelClassify', [
-                'authorizedClassifications',
-                'activeClassifications'
+                'authorizedClassifications'
             ]),
             ...mapGetters('userPrivilege', ['privilege']),
             ...mapGetters(['admin']),
@@ -35,16 +34,15 @@
                     'bk_classification_type': 'inner',
                     'bk_objects': []
                 }
-                // 放开展示权限
-                // if (this.admin || (this.privilege['model_config'] || {}).hasOwnProperty('bk_organization')) {
-                hostManageClassification['bk_objects'].push({
-                    'bk_obj_name': this.$t('Common["业务"]'),
-                    'bk_obj_id': 'biz',
-                    'bk_obj_icon': 'icon-cc-business',
-                    'path': '/business',
-                    'bk_classification_id': 'bk_collection'
-                })
-                // }
+                if (this.admin || (this.privilege['model_config'] || {}).hasOwnProperty('bk_organization')) {
+                    hostManageClassification['bk_objects'].push({
+                        'bk_obj_name': this.$t('Common["业务"]'),
+                        'bk_obj_id': 'biz',
+                        'bk_obj_icon': 'icon-cc-business',
+                        'path': '/business',
+                        'bk_classification_id': 'bk_collection'
+                    })
+                }
                 if (this.admin || (this.privilege['sys_config']['global_busi'] || []).includes('resource')) {
                     hostManageClassification['bk_objects'].push({
                         'bk_obj_name': this.$t('Nav["主机"]'),
@@ -59,8 +57,7 @@
             classifyColumns () {
                 const classifies = [
                     this.hostManageClassification,
-                    // ...this.authorizedClassifications // 放开展示权限
-                    ...this.activeClassifications
+                    ...this.authorizedClassifications
                 ].filter(classification => {
                     return classification['bk_classification_id'] !== 'bk_organization' && classification['bk_objects'].length
                 })

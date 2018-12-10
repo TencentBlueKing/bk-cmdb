@@ -21,6 +21,8 @@ import (
 	"runtime"
 	"syscall"
 
+	"github.com/spf13/pflag"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
@@ -32,10 +34,7 @@ import (
 	"configcenter/src/framework/core/monitor/metric"
 	"configcenter/src/framework/core/option"
 	"configcenter/src/framework/core/output/module/client"
-	_ "configcenter/src/framework/plugins"
-
-	"github.com/spf13/pflag"
-	// load all plugins
+	_ "configcenter/src/framework/plugins" // load all plugins
 )
 
 // APPNAME the name of this application, will be use as identification mark for monitoring
@@ -53,13 +52,13 @@ func main() {
 
 	log.SetLoger(&log.Logger{
 		Info: func(args ...interface{}) {
-			blog.Infof("%v", args)
+			blog.Info("%v", args)
 		},
 		Infof:  blog.Infof,
 		Fatal:  blog.Fatal,
 		Fatalf: blog.Fatalf,
 		Error: func(args ...interface{}) {
-			blog.Errorf("%v", args)
+			blog.Error("%v", args)
 		},
 		Errorf: blog.Errorf,
 	})

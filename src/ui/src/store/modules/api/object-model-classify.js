@@ -99,7 +99,7 @@ const getters = {
             path: '/business',
             icon: 'icon-cc-business',
             i18n: 'Nav["业务"]',
-            authorized: true
+            authorized: rootGetters.admin || (authority['model_config'] || {}).hasOwnProperty('bk_organization')
         }, {
             id: 'resource',
             path: '/resource',
@@ -119,12 +119,11 @@ const getters = {
         const collectedModelKey = rootGetters['userCustom/classifyNavigationKey']
         const collectedModelIds = rootGetters['userCustom/usercustom'][collectedModelKey] || []
         collectedModelIds.forEach(modelId => {
-            // 放开展示权限
-            // const available = getters.authorizedClassifications.some(classification => {
-            //     return classification['bk_objects'].some(model => model['bk_obj_id'] === modelId)
-            // })
-            const model = getters.getModelById(modelId)
-            if (model) {
+            const available = getters.authorizedClassifications.some(classification => {
+                return classification['bk_objects'].some(model => model['bk_obj_id'] === modelId)
+            })
+            if (available) {
+                const model = getters.getModelById(modelId)
                 collection.push({
                     id: modelId,
                     name: model['bk_obj_name'],
@@ -139,6 +138,9 @@ const getters = {
 
         if (!rootGetters.admin) {
             STATIC_NAVIGATION['bk_authority'].children.forEach(navigation => {
+                navigation.authorized = false
+            })
+            STATIC_NAVIGATION['bk_ci_model'].children.forEach(navigation => {
                 navigation.authorized = false
             })
 
