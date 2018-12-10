@@ -55,12 +55,11 @@ func (m *associationKind) isPrPreAssociationKind(ctx core.ContextParams, cond me
 	return exists, err
 }
 
-func (m *associationKind) isApplyToObject(ctx core.ContextParams, cond metadata.DeleteOption) (cnt int64, exists bool, err error) {
+func (m *associationKind) isApplyToObject(ctx core.ContextParams, cond metadata.DeleteOption) (cnt uint64, exists bool, err error) {
 
 	innerCnt, err := m.dbProxy.Table(common.BKTableNameAsstDes).Find(cond).Count(ctx)
-	cnt = int64(innerCnt)
-	exists = 0 != cnt
-	return cnt, exists, err
+	exists = 0 != innerCnt
+	return innerCnt, exists, err
 }
 
 func (m *associationKind) save(ctx core.ContextParams, associationKind metadata.AssociationKind) (id uint64, err error) {
@@ -234,7 +233,7 @@ func (m *associationKind) UpdateAssociationKind(ctx core.ContextParams, inputPar
 	if err := m.update(ctx, inputParam.Data, inputParam.Condition); nil != err {
 		return &metadata.UpdatedCount{}, err
 	}
-	return &metadata.UpdatedCount{Count: int64(cnt)}, nil
+	return &metadata.UpdatedCount{Count: cnt}, nil
 }
 
 func (m *associationKind) DeleteAssociationKind(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
@@ -272,7 +271,7 @@ func (m *associationKind) CascadeDeleteAssociationKind(ctx core.ContextParams, i
 		}
 	}
 
-	return &metadata.DeletedCount{Count: int64(len(associationKindItems))}, nil
+	return &metadata.DeletedCount{Count: uint64(len(associationKindItems))}, nil
 }
 
 func (m *associationKind) SearchAssociationKind(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
@@ -282,7 +281,7 @@ func (m *associationKind) SearchAssociationKind(ctx core.ContextParams, inputPar
 	}
 
 	dataResult := &metadata.QueryResult{}
-	dataResult.Count = int64(len(associationKindItems))
+	dataResult.Count = uint64(len(associationKindItems))
 	for item := range associationKindItems {
 		dataResult.Info = append(dataResult.Info, mapstr.NewFromStruct(item, "field"))
 	}
