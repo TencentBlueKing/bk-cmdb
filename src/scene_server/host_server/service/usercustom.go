@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
 	"github.com/emicklei/go-restful"
 )
 
@@ -38,7 +39,7 @@ func (s *Service) SaveUserCustom(req *restful.Request, resp *restful.Response) {
 
 	result, err := s.CoreAPI.HostController().User().GetUserCustomByUser(context.Background(), user, pheader)
 	if err != nil || (err == nil && !result.Result) {
-		blog.Error("save user custom, but get user custom failed, err: %v, %v", err, result.ErrMsg)
+		blog.Errorf("save user custom, but get user custom failed, err: %v, %v", err, result.ErrMsg)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CC_Err_Comm_USER_CUSTOM_SAVE_FAIL)})
 		return
 	}
@@ -71,7 +72,7 @@ func (s *Service) GetUserCustom(req *restful.Request, resp *restful.Response) {
 	user := util.GetUser(pheader)
 	result, err := s.CoreAPI.HostController().User().GetUserCustomByUser(context.Background(), user, pheader)
 	if err != nil || (err == nil && !result.Result) {
-		blog.Error("get user custom, but get user custom failed, err: %v, %v", err, result.ErrMsg)
+		blog.Errorf("get user custom, but get user custom failed, err: %v, %v", err, result.ErrMsg)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CC_Err_Comm_USER_CUSTOM_SAVE_FAIL)})
 		return
 	}

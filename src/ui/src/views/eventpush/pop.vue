@@ -98,7 +98,7 @@
                 const res = await this.pingSubscription({
                     params: {
                         callback_url: this.callbackURL,
-                        data: {}
+                        data: JSON.stringify(this.example)
                     },
                     config: {
                         requestId: 'testPing',

@@ -145,7 +145,7 @@ func (s *Service) enterIP(req *restful.Request, resp *restful.Response) {
 
 	err = converter.ResToV2ForEnterIP(result.Result, result.ErrMsg, result.Data)
 	if err != nil {
-		blog.Error("convert enterip result to v2 error:%v, reply:%v", err.Error(), result.Data)
+		blog.Errorf("convert enterip result to v2 error:%v, reply:%v", err.Error(), result.Data)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}
