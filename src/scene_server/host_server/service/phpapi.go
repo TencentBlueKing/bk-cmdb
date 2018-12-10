@@ -65,7 +65,7 @@ func (s *Service) UpdateHostByAppID(req *restful.Request, resp *restful.Response
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(req.Request.Header))
 	appID, err := util.GetInt64ByInterface(req.PathParameter("appid"))
 	if nil != err {
-		blog.Error("convert appid to int error:%v", err)
+		blog.Errorf("convert appid to int error:%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsLostField, "ApplicationID")})
 		return
 	}
@@ -139,7 +139,7 @@ func (s *Service) HostSearchByIP(req *restful.Request, resp *restful.Response) {
 	}
 	hostData, err := phpapi.SetHostData(configData, hostMap)
 	if nil != err {
-		blog.Error("HostSearchByIP error : %v", err)
+		blog.Errorf("HostSearchByIP error : %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostModuleConfigFaild, err.Error())})
 		return
 	}
@@ -163,7 +163,7 @@ func (s *Service) HostSearchByConds(req *restful.Request, resp *restful.Response
 	phpapi := s.Logics.NewPHPAPI(req.Request.Header)
 	hostMap, hostIDArr, err := phpapi.GetHostMapByCond(input)
 	if err != nil {
-		blog.Error("HostSearchByConds error : %v, input:%s", err, input)
+		blog.Errorf("HostSearchByConds error : %v, input:%s", err, input)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrHostGetFail)})
 		return
 	}
@@ -173,14 +173,14 @@ func (s *Service) HostSearchByConds(req *restful.Request, resp *restful.Response
 	}
 	configData, err := s.Logics.GetConfigByCond(req.Request.Header, configCond)
 	if nil != err {
-		blog.Error("HostSearchByConds error : %v, input:%v", err, input)
+		blog.Errorf("HostSearchByConds error : %v, input:%v", err, input)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostModuleConfigFaild, err.Error())})
 		return
 	}
 
 	hostData, err := phpapi.SetHostData(configData, hostMap)
 	if nil != err {
-		blog.Error("HostSearchByConds error : %v, input:%v", err, input)
+		blog.Errorf("HostSearchByConds error : %v, input:%v", err, input)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrHostGetFail)})
 		return
 	}
@@ -419,14 +419,14 @@ func (s *Service) GetIPAndProxyByCompany(req *restful.Request, resp *restful.Res
 
 	appIDInt, err := util.GetInt64ByInterface(*input.AppIDStr)
 	if nil != err {
-		blog.Error("GetIPAndProxyByCompany input application id not integer, input:%v", input)
+		blog.Errorf("GetIPAndProxyByCompany input application id not integer, input:%v", input)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, "ApplicationID")})
 		return
 	}
 
 	platIDInt, err := util.GetInt64ByInterface(*input.CloudIDStr)
 	if nil != err {
-		blog.Error("GetIPAndProxyByCompany cloud id not integer, input:%v", input)
+		blog.Errorf("GetIPAndProxyByCompany cloud id not integer, input:%v", input)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, "PlatID")})
 		return
 	}
@@ -452,22 +452,22 @@ func (s *Service) UpdateCustomProperty(req *restful.Request, resp *restful.Respo
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-	blog.Error("UpdateCustomProperty  input:%v", input)
+	blog.Errorf("UpdateCustomProperty  input:%v", input)
 	appID, err := util.GetInt64ByInterface(input[common.BKAppIDField])
 	if nil != err {
-		blog.Error("UpdateCustomProperty input not found appID, input:%v", input)
+		blog.Errorf("UpdateCustomProperty input not found appID, input:%v", input)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, "ApplicationID")})
 		return
 	}
 	hostID, err := util.GetInt64ByInterface(input[common.BKHostIDField])
 	if nil != err {
-		blog.Error("UpdateCustomProperty input not found hostID, input:%v", input)
+		blog.Errorf("UpdateCustomProperty input not found hostID, input:%v", input)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, "HostID")})
 		return
 	}
 	propertyJson, ok := input["property"].(string)
 	if false == ok && "" == propertyJson {
-		blog.Error("UpdateCustomPropertyinput not found property, input:%v", input)
+		blog.Errorf("UpdateCustomPropertyinput not found property, input:%v", input)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, "property")})
 		return
 	}
@@ -475,14 +475,14 @@ func (s *Service) UpdateCustomProperty(req *restful.Request, resp *restful.Respo
 	propertyMap := make(map[string]interface{})
 	err = json.Unmarshal([]byte(propertyJson), &propertyMap)
 	if nil != err {
-		blog.Error("UpdateCustomPropertyinput not found property, input:%v", input)
+		blog.Errorf("UpdateCustomPropertyinput not found property, input:%v", input)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
 	res, err := s.Logics.UpdateCustomProperty(hostID, appID, propertyMap, req.Request.Header)
 	if nil != err {
-		blog.Error("UpdateCustomPropertyinput not found property, input:%v", input)
+		blog.Errorf("UpdateCustomPropertyinput not found property, input:%v", input)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}
@@ -755,7 +755,7 @@ func (s *Service) GetGitServerIp(req *restful.Request, resp *restful.Response) {
 	phpapi := s.Logics.NewPHPAPI(req.Request.Header)
 	hostArr, err := phpapi.GetHostDataByConfig(configData)
 	if nil != err {
-		blog.Error("GetGitServerIp getHostDataByConfig error:%s, input:%v", err.Error(), input)
+		blog.Errorf("GetGitServerIp getHostDataByConfig error:%s, input:%v", err.Error(), input)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostGetFail)})
 		return
 	}
@@ -773,12 +773,12 @@ func (s *Service) GetPlat(req *restful.Request, resp *restful.Response) {
 	params.Limit = 0
 	res, err := s.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDPlat, req.Request.Header, params)
 	if nil != err {
-		blog.Error("GetPlat error: %v", err)
+		blog.Errorf("GetPlat error: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrTopoGetCloudErrStrFaild, err.Error())})
 		return
 	}
 	if false == res.Result {
-		blog.Error("GetPlat error: %s", res.ErrMsg)
+		blog.Errorf("GetPlat error: %s", res.ErrMsg)
 		resp.WriteHeaderAndJson(http.StatusInternalServerError, res, common.BKHTTPMIMEJSON)
 
 	} else {
@@ -839,7 +839,7 @@ func (s *Service) DelPlat(req *restful.Request, resp *restful.Response) {
 
 	platID, convErr := util.GetInt64ByInterface(req.PathParameter(common.BKCloudIDField))
 	if nil != convErr || 0 == platID {
-		blog.Error("the platID is invalid, error info is %s, input:%s", convErr.Error(), platID)
+		blog.Errorf("the platID is invalid, error info is %s, input:%s", convErr.Error(), platID)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, convErr.Error())})
 		return
 	}
@@ -852,13 +852,13 @@ func (s *Service) DelPlat(req *restful.Request, resp *restful.Response) {
 
 	hostRes, err := s.CoreAPI.HostController().Host().GetHosts(context.Background(), req.Request.Header, params)
 	if nil != err {
-		blog.Error("DelPlat search host error: %s, input:%v", err.Error(), platID)
+		blog.Errorf("DelPlat search host error: %s, input:%v", err.Error(), platID)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostGetFail)})
 		return
 	}
 
 	if 0 < hostRes.Data.Count {
-		blog.Error("DelPlat plat [%d] has host data, can not delete", platID)
+		blog.Errorf("DelPlat plat [%d] has host data, can not delete", platID)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrTopoHasHostCheckFailed)})
 		return
 	}
@@ -867,7 +867,7 @@ func (s *Service) DelPlat(req *restful.Request, resp *restful.Response) {
 	param[common.BKCloudIDField] = platID
 	res, err := s.CoreAPI.ObjectController().Instance().DelObject(context.Background(), common.BKInnerObjIDPlat, req.Request.Header, param)
 	if nil != err {
-		blog.Error("DelPlat error: %v, input:%d", err, platID)
+		blog.Errorf("DelPlat error: %v, input:%d", err, platID)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrTopoInstDeleteFailed)})
 		return
 	}
@@ -898,7 +898,7 @@ func (s *Service) GetAgentStatus(req *restful.Request, resp *restful.Response) {
 
 	res, err := s.Logics.GetAgentStatus(appID, &s.Config.Gse, req.Request.Header)
 	if nil != err {
-		blog.Error("GetAgentStatus error :%v", err)
+		blog.Errorf("GetAgentStatus error :%v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, err.Error())})
 		return
 	}
@@ -948,12 +948,12 @@ func (s *Service) getHostListByAppidAndField(req *restful.Request, resp *restful
 	}
 	ret, err := s.Logics.CoreAPI.HostController().Host().GetHosts(context.Background(), req.Request.Header, query)
 	if nil != err {
-		blog.Error("getHostListByAppidAndField search host error: %s, input:%v", err.Error(), common.KvMap{"appid": appID, "field": field})
+		blog.Errorf("getHostListByAppidAndField search host error: %s, input:%v", err.Error(), common.KvMap{"appid": appID, "field": field})
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostGetFail)})
 		return
 	}
 	if !ret.Result {
-		blog.Error("getHostListByAppidAndField search host error: %s, input:%v", ret.ErrMsg, common.KvMap{"appid": appID, "field": field})
+		blog.Errorf("getHostListByAppidAndField search host error: %s, input:%v", ret.ErrMsg, common.KvMap{"appid": appID, "field": field})
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostGetFail)})
 		return
 	}

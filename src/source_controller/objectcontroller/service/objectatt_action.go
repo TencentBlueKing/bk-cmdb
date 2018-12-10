@@ -43,7 +43,7 @@ func (cli *Service) CreateObjectAtt(req *restful.Request, resp *restful.Response
 
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
-		blog.Error("read http request failed, error:%s", err.Error())
+		blog.Errorf("read http request failed, error:%s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
@@ -51,7 +51,7 @@ func (cli *Service) CreateObjectAtt(req *restful.Request, resp *restful.Response
 	obj := &meta.Attribute{}
 
 	if err = json.Unmarshal([]byte(value), obj); nil != err {
-		blog.Error("fail to unmarshal json, error information is %s", err.Error())
+		blog.Errorf("fail to unmarshal json, error information is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 		return
 	}
@@ -84,7 +84,7 @@ func (cli *Service) CreateObjectAtt(req *restful.Request, resp *restful.Response
 	obj.OwnerID = ownerID
 	err = db.Table(common.BKTableNameObjAttDes).Insert(ctx, obj)
 	if nil != err {
-		blog.Error("create objectatt failed, error:%s", err.Error())
+		blog.Errorf("create objectatt failed, error:%s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}
@@ -107,7 +107,7 @@ func (cli *Service) DeleteObjectAttByID(req *restful.Request, resp *restful.Resp
 	pathParameters := req.PathParameters()
 	id, err := strconv.ParseInt(pathParameters["id"], 10, 64)
 	if nil != err {
-		blog.Error("failed to parse id, error info is %s", err.Error())
+		blog.Errorf("failed to parse id, error info is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommParamsInvalid, err.Error())})
 		return
 	}
@@ -118,13 +118,13 @@ func (cli *Service) DeleteObjectAttByID(req *restful.Request, resp *restful.Resp
 
 		js, err := simplejson.NewFromReader(req.Request.Body)
 		if err != nil {
-			blog.Error("failed to read body,error info is %s", err.Error())
+			blog.Errorf("failed to read body,error info is %s", err.Error())
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 			return
 		}
 		condition, err = js.Map()
 		if nil != err {
-			blog.Error("fail to unmarshal json, error information is %s", err.Error())
+			blog.Errorf("fail to unmarshal json, error information is %s", err.Error())
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 			return
 		}
@@ -135,7 +135,7 @@ func (cli *Service) DeleteObjectAttByID(req *restful.Request, resp *restful.Resp
 	propertys := []meta.Attribute{}
 	cntErr := db.Table(common.BKTableNameObjAttDes).Find(condition).All(ctx, &propertys)
 	if nil != cntErr {
-		blog.Error("failed to select object by condition(%+v), error is %d", cntErr)
+		blog.Errorf("failed to select object by condition(%+v), error is %d", cntErr)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 
@@ -172,7 +172,7 @@ func (cli *Service) DeleteObjectAttByID(req *restful.Request, resp *restful.Resp
 	// delete propertys from db
 	delErr := db.Table(common.BKTableNameObjAttDes).Delete(ctx, condition)
 	if nil != delErr {
-		blog.Error("failed to delete, error info is %s", delErr.Error())
+		blog.Errorf("failed to delete, error info is %s", delErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}
@@ -194,7 +194,7 @@ func (cli *Service) UpdateObjectAttByID(req *restful.Request, resp *restful.Resp
 
 	js, err := simplejson.NewFromReader(req.Request.Body)
 	if err != nil {
-		blog.Error("read http request body failed, error:%s", err.Error())
+		blog.Errorf("read http request body failed, error:%s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
@@ -202,7 +202,7 @@ func (cli *Service) UpdateObjectAttByID(req *restful.Request, resp *restful.Resp
 	pathParameters := req.PathParameters()
 	id, err := strconv.ParseInt(pathParameters["id"], 10, 64)
 	if nil != err {
-		blog.Error("failed to get id, error info is %s", err.Error())
+		blog.Errorf("failed to get id, error info is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommParamsInvalid, err.Error())})
 		return
 	}
@@ -212,7 +212,7 @@ func (cli *Service) UpdateObjectAttByID(req *restful.Request, resp *restful.Resp
 	// decode json string
 	data, jsErr := js.Map()
 	if nil != jsErr {
-		blog.Error("unmarshal json failed, error information is %s", jsErr.Error())
+		blog.Errorf("unmarshal json failed, error information is %s", jsErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, jsErr.Error())})
 		return
 	}
@@ -222,7 +222,7 @@ func (cli *Service) UpdateObjectAttByID(req *restful.Request, resp *restful.Resp
 	// update object into storage
 	updateErr := db.Table(common.BKTableNameObjAttDes).Update(ctx, condition, data)
 	if nil != updateErr {
-		blog.Error("fail update object by condition, error information is %s", updateErr.Error())
+		blog.Errorf("fail update object by condition, error information is %s", updateErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, updateErr.Error())})
 		return
 	}
@@ -247,7 +247,7 @@ func (cli *Service) SelectObjectAttByID(req *restful.Request, resp *restful.Resp
 	pathParameters := req.PathParameters()
 	id, err := strconv.ParseInt(pathParameters["id"], 10, 64)
 	if nil != err {
-		blog.Error("failed to get id, error info is %s", err.Error())
+		blog.Errorf("failed to get id, error info is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommParamsInvalid, err.Error())})
 		return
 	}
@@ -257,7 +257,7 @@ func (cli *Service) SelectObjectAttByID(req *restful.Request, resp *restful.Resp
 	// select from storage
 	result := make([]meta.Attribute, 0)
 	if selErr := db.Table(common.BKTableNameObjAttDes).Find(condition).All(ctx, &result); nil != selErr && !db.IsNotFoundError(selErr) {
-		blog.Error("find object by selector failed, error:%s", selErr.Error())
+		blog.Errorf("find object by selector failed, error:%s", selErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}
@@ -289,7 +289,7 @@ func (cli *Service) SelectObjectAttWithParams(req *restful.Request, resp *restfu
 	// decode json object
 	js, err := simplejson.NewFromReader(req.Request.Body)
 	if err != nil {
-		blog.Error("read request body failed, error information is %s", err.Error())
+		blog.Errorf("read request body failed, error information is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
@@ -311,7 +311,7 @@ func (cli *Service) SelectObjectAttWithParams(req *restful.Request, resp *restfu
 	selector = util.SetQueryOwner(selector, ownerID)
 
 	if selErr := db.Table(common.BKTableNameObjAttDes).Find(selector).Start(uint64(page.Start)).Limit(uint64(page.Limit)).Sort(page.Sort).All(ctx, &results); nil != selErr && !db.IsNotFoundError(selErr) {
-		blog.Error("find object by selector failed, error information is %s", selErr.Error())
+		blog.Errorf("find object by selector failed, error information is %s", selErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, selErr.Error())})
 		return
 	}
