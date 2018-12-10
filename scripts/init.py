@@ -253,7 +253,7 @@ maxIDleConns=1000
 mechanism=SCRAM-SHA-1
 
 [level]
-businessTopoMax=6
+businessTopoMax=7
 '''
 
     template = FileTemplate(topo_file_template_str)
