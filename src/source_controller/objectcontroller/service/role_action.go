@@ -18,12 +18,12 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	"github.com/emicklei/go-restful"
 )
 
 // GetRolePri get role privilege
@@ -47,7 +47,7 @@ func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
 
 	cnt, err := db.Table(common.BKTableNamePrivilege).Find(cond).Count(ctx)
 	if nil != err {
-		blog.Error("get user group privi error :%v", err)
+		blog.Errorf("get user group privi error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}
@@ -60,7 +60,7 @@ func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
 
 	err = db.Table(common.BKTableNamePrivilege).Find(cond).One(ctx, &result)
 	if nil != err {
-		blog.Error("get role pri field error :%v", err)
+		blog.Errorf("get role pri field error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBSelectFailed, err.Error())})
 		return
 
@@ -90,14 +90,14 @@ func (cli *Service) CreateRolePri(req *restful.Request, resp *restful.Response) 
 	propertyID := pathParams["bk_property_id"]
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
-		blog.Error("read json data error :%v", err)
+		blog.Errorf("read json data error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
 	var roleJSON []string
 	err = json.Unmarshal([]byte(value), &roleJSON)
 	if err != nil {
-		blog.Error("read json data error :%v", err)
+		blog.Errorf("read json data error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 		return
 	}
@@ -110,7 +110,7 @@ func (cli *Service) CreateRolePri(req *restful.Request, resp *restful.Response) 
 
 	err = db.Table(common.BKTableNamePrivilege).Insert(ctx, input)
 	if nil != err {
-		blog.Error("create role privilege error :%v", err)
+		blog.Errorf("create role privilege error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}
@@ -132,14 +132,14 @@ func (cli *Service) UpdateRolePri(req *restful.Request, resp *restful.Response) 
 	propertyID := pathParams["bk_property_id"]
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
-		blog.Error("read json data error :%v", err)
+		blog.Errorf("read json data error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
 	var roleJSON []string
 	err = json.Unmarshal([]byte(value), &roleJSON)
 	if err != nil {
-		blog.Error("read json data error :%v", err)
+		blog.Errorf("read json data error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 		return
 	}
@@ -153,7 +153,7 @@ func (cli *Service) UpdateRolePri(req *restful.Request, resp *restful.Response) 
 
 	err = db.Table(common.BKTableNamePrivilege).Update(ctx, cond, input)
 	if nil != err {
-		blog.Error("update role privilege error :%v", err)
+		blog.Errorf("update role privilege error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}
