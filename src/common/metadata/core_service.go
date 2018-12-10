@@ -70,7 +70,7 @@ type CreateAssociationKind struct {
 }
 
 type CreateManyAssociationKind struct {
-	Data []AssociationKind `json:"datas"`
+	Datas []AssociationKind `json:"datas"`
 }
 type SetAssociationKind CreateAssociationKind
 type SetManyAssociationKind CreateManyAssociationKind
@@ -82,10 +82,10 @@ type CreateModelAssociation struct {
 type SetModelAssociation CreateModelAssociation
 
 type CreateOneInstanceAssociation struct {
-	Datas InstAsst `json:"data"`
+	Data InstAsst `json:"data"`
 }
 type CreateManyInstanceAssociation struct {
-	Datas InstAsst `json:"datas"`
+	Datas []InstAsst `json:"datas"`
 }
 
 type Dimension struct {
