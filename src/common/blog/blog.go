@@ -15,7 +15,6 @@ package blog
 import (
 	"encoding/json"
 	"flag"
-	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -95,14 +94,6 @@ func Debug(args ...interface{}) {
 func InfoJSON(format string, args ...interface{}) {
 	params := []interface{}{}
 	for _, arg := range args {
-		if f, ok := arg.(errorFunc); ok {
-			params = append(params, f.Error())
-			continue
-		}
-		if f, ok := arg.(stringFunc); ok {
-			params = append(params, f.String())
-			continue
-		}
 		out, err := json.Marshal(arg)
 		if err != nil {
 			params = append(params, err.Error())
@@ -110,31 +101,4 @@ func InfoJSON(format string, args ...interface{}) {
 		params = append(params, out)
 	}
 	glog.InfoDepthf(1, format, params...)
-}
-
-func ErrorJSON(format string, args ...interface{}) {
-	params := []interface{}{}
-	for _, arg := range args {
-		if f, ok := arg.(errorFunc); ok {
-			params = append(params, f.Error())
-			continue
-		}
-		if f, ok := arg.(stringFunc); ok {
-			params = append(params, f.String())
-			continue
-		}
-		out, err := json.Marshal(arg)
-		if err != nil {
-			params = append(params, err.Error())
-		}
-		params = append(params, out)
-	}
-	glog.ErrorDepth(1, fmt.Sprintf(format, params...))
-}
-
-type errorFunc interface {
-	Error() string
-}
-type stringFunc interface {
-	String() string
 }

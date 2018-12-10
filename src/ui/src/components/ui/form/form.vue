@@ -49,7 +49,7 @@
             :class="{sticky: scrollbar}">
             <slot name="form-options">
                 <bk-button class="button-save" type="primary"
-                    :disabled="!authority.includes('update') || !hasChange || $loading()"
+                    :disabled="!$authorized.update || !hasChange || $loading()"
                     @click="handleSave">
                     {{$t("Common['保存']")}}
                 </bk-button>
@@ -73,10 +73,6 @@
                     return {}
                 }
             },
-            objId: {
-                type: String,
-                default: ''
-            },
             type: {
                 default: 'create',
                 validator (val) {
@@ -86,12 +82,6 @@
             showOptions: {
                 type: Boolean,
                 default: true
-            },
-            authority: {
-                type: Array,
-                default () {
-                    return []
-                }
             }
         },
         data () {

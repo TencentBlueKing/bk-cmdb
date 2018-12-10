@@ -25,7 +25,7 @@ func init() {
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	err = createObjectUnitTable(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x18.11.19.01] createObjectUnitTable error  %s", err.Error())
+		blog.Errorf("[upgrade x18.10.30.01] createObjectUnitTable error  %s", err.Error())
 		return err
 	}
 

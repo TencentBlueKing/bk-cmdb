@@ -24,7 +24,6 @@
                 <input type="text" class="cmdb-form-input" 
                 v-model.trim="name"
                 :name="$t('CustomQuery[\'查询名称\']')"
-                :disabled="!authority.includes('update')"
                 v-validate="'required|max:15'">
                 <span v-show="errors.has($t('CustomQuery[\'查询名称\']'))" class="color-danger">{{ errors.first($t('CustomQuery[\'查询名称\']')) }}</span>
             </div>
@@ -33,12 +32,7 @@
                     {{$t("CustomQuery['查询内容']")}}<span class="color-danger"> * </span>
                 </label>
                 <div class="userapi-content-display">
-                    <div class="text-content"
-                        :class="{
-                            open: attribute.isShow,
-                            disabled: !authority.includes('update')
-                        }"
-                        @click="toggleContentSelector(true)">
+                    <div class="text-content" @click="toggleContentSelector(true)" :class="{'open': attribute.isShow}">
                         <span class="default-name">{{attribute.defaultName}}</span><span v-if="selectedName.length">,{{selectedName}}</span>
                         <i class="bk-icon icon-angle-down"></i>
                     </div>
@@ -53,8 +47,7 @@
                         setting-key="bk_property_id"
                         display-key="bk_property_name"
                         :selected.sync="attribute.selected"
-                        :multiSelect="true"
-                        :disabled="!authority.includes('update')">
+                        :multiSelect="true">
                     </bk-selector>
                 </div>
             </div>
@@ -63,49 +56,39 @@
                     <label class="filter-label">
                         {{property.objName}} - {{property.propertyName}}
                     </label>
-                    <div class="filter-content clearfix" :class="{disabled: !authority.includes('update')}">
-                        <filter-field-operator class="filter-field-operator fl"
-                            v-if="!['date', 'time'].includes(property.propertyType)"
-                            :type="getOperatorType(property)"
-                            :disabled="!authority.includes('update')"
-                            v-model="property.operator">
-                        </filter-field-operator>
-                        <cmdb-form-enum class="filter-field-value filter-field-enum fl"
-                            v-if="property.propertyType === 'enum'"
-                            :allow-clear="true"
-                            :options="getEnumOptions(property)"
-                            :disabled="!authority.includes('update')"
-                            v-model="property.value">
-                        </cmdb-form-enum>
-                        <cmdb-form-bool-input class="filter-field-value filter-field-bool-input fl"
-                            v-else-if="property.propertyType === 'bool'"
-                            v-model="property.value"
-                            :disabled="!authority.includes('update')">
-                        </cmdb-form-bool-input>
-                        <cmdb-form-associate-input class="filter-field-value filter-field-associate fl"
-                            v-else-if="['singleasst', 'multiasst'].includes(property.propertyType)"
-                            v-model="property.value"
-                            :disabled="!authority.includes('update')">
-                        </cmdb-form-associate-input>
-                        <component class="filter-field-value fl" :class="`filter-field-${property.propertyType}`"
-                            v-else
-                            :is="`cmdb-form-${property.propertyType}`"
-                            :disabled="!authority.includes('update')"
-                            v-model="property.value">
-                        </component>
-                        <i class="userapi-delete fr bk-icon icon-close"
-                            v-if="authority.includes('update')"
-                            @click="deleteUserProperty(property, index)">
-                        </i>
+                    <div class="filter-content clearfix">
+                        <div class="clearfix">
+                            <filter-field-operator class="filter-field-operator fl"
+                                v-if="!['date', 'time'].includes(property.propertyType)"
+                                :type="getOperatorType(property)"
+                                v-model="property.operator">
+                            </filter-field-operator>
+                            <cmdb-form-enum class="filter-field-value filter-field-enum fl"
+                                v-if="property.propertyType === 'enum'"
+                                :allow-clear="true"
+                                :options="getEnumOptions(property)"
+                                v-model="property.value">
+                            </cmdb-form-enum>
+                            <cmdb-form-bool-input class="filter-field-value filter-field-bool-input fl"
+                                v-else-if="property.propertyType === 'bool'"
+                                v-model="property.value">
+                            </cmdb-form-bool-input>
+                            <cmdb-form-associate-input class="filter-field-value filter-field-associate fl"
+                                v-else-if="['singleasst', 'multiasst'].includes(property.propertyType)"
+                                v-model="property.value">
+                            </cmdb-form-associate-input>
+                            <component class="filter-field-value fl" :class="`filter-field-${property.propertyType}`"
+                                v-else
+                                :is="`cmdb-form-${property.propertyType}`"
+                                v-model="property.value">
+                            </component>
+                            <i class="userapi-delete fr bk-icon icon-close" @click="deleteUserProperty(property, index)"></i>
+                        </div>
                     </div>
                 </li>
             </ul>
             <div class="userapi-new">
-                <button class="userapi-new-btn"
-                    :disabled="!authority.includes('update')"
-                    @click="toggleUserAPISelector(true)">
-                    {{$t("CustomQuery['新增查询条件']")}}
-                </button>
+                <button class="userapi-new-btn" @click="toggleUserAPISelector(true)">{{$t("CustomQuery['新增查询条件']")}}</button>
                 <div class="userapi-new-mask" v-if="filter.isShow"></div>
                 <bk-selector class="userapi-new-selector"
                     v-if="filter.isShow"
@@ -125,21 +108,13 @@
                 <bk-button type="primary" class="userapi-btn" :disabled="errors.any()" @click.stop="previewUserAPI">
                     {{$t("CustomQuery['预览']")}}
                 </bk-button>
-                <bk-button type="primary" class="userapi-btn"
-                    v-tooltip="$t('CustomQuery[\'保存后的查询可通过接口调用生效\']')"
-                    :loading="$loading(['createCustomQuery', 'updateCustomQuery'])"
-                    :disabled="errors.any() || !authority.includes('update')"
-                    @click="saveUserAPI">
+                <bk-button v-tooltip="$t('CustomQuery[\'保存后的查询可通过接口调用生效\']')" type="primary" :loading="$loading(['createCustomQuery', 'updateCustomQuery'])" class="userapi-btn" :disabled="errors.any()" @click="saveUserAPI">
                     {{$t("Common['保存']")}}
                 </bk-button>
                 <bk-button type="default" class="userapi-btn" @click="closeSlider">
                     {{$t("Common['取消']")}}
                 </bk-button>
-                <bk-button type="danger" class="userapi-btn button-delete"
-                    v-if="type === 'update'"
-                    :loading="$loading('deleteCustomQuery')"
-                    :disabled="!authority.includes('delete')"
-                    @click="deleteUserAPI">
+                <bk-button type="danger" :loading="$loading('deleteCustomQuery')" class="userapi-btn button-delete" @click="deleteUserAPI" v-if="type === 'update'">
                     {{$t("Common['删除']")}}
                 </bk-button>
             </div>
@@ -172,12 +147,6 @@
             },
             id: {
                 default: ''
-            },
-            authority: {
-                type: Array,
-                default () {
-                    return []
-                }
             }
         },
         data () {
@@ -673,10 +642,8 @@
                 })
             },
             toggleContentSelector (isShow) {
-                if (this.authority.includes('update')) {
-                    this.$refs.content.open = isShow
-                    this.attribute.isShow = isShow
-                }
+                this.$refs.content.open = isShow
+                this.attribute.isShow = isShow
             },
             toggleUserAPISelector (isPropertiesShow) {
                 this.filter.isShow = isPropertiesShow
@@ -728,11 +695,6 @@
                             transform: rotate(180deg);
                         }
                     }
-                    &.disabled {
-                        background-color: #fafafa;
-                        color: #aaa;
-                        cursor: not-allowed;
-                    }
                     .default-name {
                         color: $cmdbBorderColor;
                     }
@@ -765,11 +727,6 @@
             .filter-content {
                 margin-top: 10px;
                 width: 100%;
-                &.disabled {
-                    .filter-field-value {
-                        width: 273px;
-                    }
-                }
                 .content-right {
                     margin-left: 97px;
                 }
@@ -805,11 +762,6 @@
                 color: $cmdbBorderFocusColor;
                 &:hover{
                     box-shadow: 0px 3px 6px 0px rgba(51, 60, 72, 0.1);
-                }
-                &:disabled {
-                    background-color: #fafafa;
-                    color: #aaa;
-                    cursor: not-allowed;
                 }
             }
             .userapi-new-mask {

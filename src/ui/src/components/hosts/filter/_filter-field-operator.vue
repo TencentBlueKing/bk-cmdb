@@ -1,10 +1,10 @@
 <template>
-    <bk-selector :list="list" :selected.sync="localSelected" :disabled="disabled"></bk-selector>
+    <bk-selector :list="list" :selected.sync="localSelected"></bk-selector>
 </template>
 
 <script>
     export default {
-        props: ['value', 'type', 'disabled'],
+        props: ['value', 'type'],
         data () {
             return {
                 operatorMap: {

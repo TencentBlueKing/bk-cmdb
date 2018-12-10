@@ -17,15 +17,15 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gin-gonic/gin"
+	"github.com/holmeswang/contrib/sessions"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/httpclient"
 	"configcenter/src/common/metadata"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/middleware/user/plugins/manager"
-
-	"github.com/gin-gonic/gin"
-	"github.com/holmeswang/contrib/sessions"
 )
 
 func init() {
@@ -142,7 +142,7 @@ func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadat
 	skiplogin := session.Get(webCommon.IsSkipLogin)
 	skiplogins, ok := skiplogin.(string)
 	if ok && "1" == skiplogins {
-		blog.V(5).Infof("use skip login flag: %v", skiplogin)
+		blog.V(5).Info("use skip login flag: %v", skiplogin)
 		adminData := []*metadata.LoginSystemUserInfo{
 			&metadata.LoginSystemUserInfo{
 				CnName: "admin",
@@ -164,8 +164,7 @@ func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadat
 		blog.Errorf("get user list error：%v", err)
 		return nil, fmt.Errorf("http do error:%s", err.Error())
 	}
-
-	blog.V(5).Infof("get user list url: %s, return：%s", getURL, reply)
+	blog.V(5).Info("get user list url: %s, return：%s", getURL, reply)
 	var result userListResult
 	err = json.Unmarshal([]byte(reply), &result)
 	if nil != err || false == result.Result {

@@ -24,7 +24,6 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/hostcontroller/app"
 	"configcenter/src/source_controller/hostcontroller/app/options"
-
 	"github.com/spf13/pflag"
 )
 
@@ -41,7 +40,7 @@ func main() {
 	util.InitFlags()
 
 	if err := common.SavePid(); err != nil {
-		blog.Errorf("fail to save pid: err:%s", err.Error())
+		blog.Error("fail to save pid: err:%s", err.Error())
 	}
 
 	if err := app.Run(context.Background(), op); err != nil {

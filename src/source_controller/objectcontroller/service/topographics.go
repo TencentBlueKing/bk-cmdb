@@ -18,12 +18,12 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-
-	"github.com/emicklei/go-restful"
 )
 
 // CreateClassification create object's classification
@@ -37,7 +37,7 @@ func (cli *Service) SearchTopoGraphics(req *restful.Request, resp *restful.Respo
 
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
-		blog.Errorf("read http request body failed, error:%s", err.Error())
+		blog.Error("read http request body failed, error:%s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
@@ -46,7 +46,7 @@ func (cli *Service) SearchTopoGraphics(req *restful.Request, resp *restful.Respo
 
 	selector := meta.TopoGraphics{}
 	if jsErr := json.Unmarshal(value, &selector); nil != jsErr {
-		blog.Errorf("failed to unmarshal the data, data is %s, error info is %s ", value, jsErr.Error())
+		blog.Error("failed to unmarshal the data, data is %s, error info is %s ", value, jsErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 		return
 	}
@@ -54,7 +54,7 @@ func (cli *Service) SearchTopoGraphics(req *restful.Request, resp *restful.Respo
 	selector.SetSupplierAccount(ownerID)
 	results := []meta.TopoGraphics{}
 	if selErr := db.Table(common.BKTableNameTopoGraphics).Find(selector).All(ctx, &results); nil != selErr {
-		blog.Errorf("select data failed, error information is %s", selErr.Error())
+		blog.Error("select data failed, error information is %s", selErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBSelectFailed, err.Error())})
 		return
 	}
@@ -73,14 +73,14 @@ func (cli *Service) UpdateTopoGraphics(req *restful.Request, resp *restful.Respo
 	// execute
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
-		blog.Errorf("read http request body failed, error:%s", err.Error())
+		blog.Error("read http request body failed, error:%s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
 
 	datas := []meta.TopoGraphics{}
 	if jsErr := json.Unmarshal(value, &datas); nil != jsErr {
-		blog.Errorf("failed to unmarshal the data, data is %s, error info is %s ", value, jsErr.Error())
+		blog.Error("failed to unmarshal the data, data is %s, error info is %s ", value, jsErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 		return
 	}
@@ -97,12 +97,12 @@ func (cli *Service) UpdateTopoGraphics(req *restful.Request, resp *restful.Respo
 			condition.SetInstID(*datas[index].InstID)
 			condition.SetSupplierAccount(ownerID)
 			if err = cli.Instance.Table(common.BKTableNameTopoGraphics).Update(context.Background(), condition, datas[index]); err != nil {
-				blog.Errorf("update data failed, error information is %s", err.Error())
+				blog.Error("update data failed, error information is %s", err.Error())
 				resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBUpdateFailed, err.Error())})
 				return
 			}
 		} else if err != nil {
-			blog.Errorf("insert data failed, error information is %s", err.Error())
+			blog.Error("insert data failed, error information is %s", err.Error())
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBInsertFailed, err.Error())})
 			return
 		}

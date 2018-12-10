@@ -19,14 +19,14 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/emicklei/go-restful"
+	redis "gopkg.in/redis.v5"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/eventclient"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-
-	"github.com/emicklei/go-restful"
-	redis "gopkg.in/redis.v5"
 )
 
 const (
@@ -55,7 +55,7 @@ func (s *Service) GetHostByID(req *restful.Request, resp *restful.Response) {
 	condition = util.SetModOwner(condition, ownerID)
 	err = s.Instance.Table(common.BKTableNameBaseHost).Find(condition).One(ctx, &result)
 	if err != nil {
-		blog.Errorf("get host by id[%s] failed, err: %v", hostID, err)
+		blog.Error("get host by id[%s] failed, err: %v", hostID, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return
 	}
@@ -92,7 +92,7 @@ func (s *Service) GetHosts(req *restful.Request, resp *restful.Response) {
 
 	count, err := s.Instance.Table(common.BKTableNameBaseHost).Find(condition).Count(ctx)
 	if err != nil {
-		blog.Errorf("get object failed type:%s ,input: %v error: %v", common.BKInnerObjIDHost, dat, err)
+		blog.Error("get object failed type:%s ,input: %v error: %v", common.BKInnerObjIDHost, dat, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostSelectInst)})
 		return
 	}
@@ -132,12 +132,12 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 	// record event
 	originData := map[string]interface{}{}
 	if err := s.Logics.GetObjectByID(ctx, objType, nil, id, originData, ""); err != nil {
-		blog.Errorf("create event error:%v", err)
+		blog.Error("create event error:%v", err)
 	} else {
 		ec := eventclient.NewEventContextByReq(pheader, s.Cache)
 		err := ec.InsertEvent(meta.EventTypeInstData, "host", meta.EventActionCreate, originData, nil)
 		if err != nil {
-			blog.Errorf("add host, but create event error:%v", err)
+			blog.Error("add host, but create event error:%v", err)
 		}
 	}
 
@@ -155,7 +155,7 @@ func (s *Service) GetHostSnap(req *restful.Request, resp *restful.Response) {
 	key := common.RedisSnapKeyPrefix + hostID
 	result, err := s.Cache.Get(key).Result()
 	if nil != err && err != redis.Nil {
-		blog.Errorf("get host snapshot failed, hostid: %v, err: %v ", hostID, err)
+		blog.Error("get host snapshot failed, hostid: %v, err: %v ", hostID, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostGetSnapshot)})
 		return
 	}
@@ -176,7 +176,7 @@ func (s *Service) GetHostModulesIDs(req *restful.Request, resp *restful.Response
 
 	params := meta.ModuleHostConfigParams{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
-		blog.Errorf("get host module id failed, err: %v", err)
+		blog.Error("get host module id failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
@@ -311,14 +311,14 @@ func (s *Service) MoveHost2ResourcePool(req *restful.Request, resp *restful.Resp
 	}
 	idleModuleID, err := s.Logics.GetIDleModuleID(ctx, params.ApplicationID)
 	if nil != err {
-		blog.Errorf("get default module failed, error:%s", err.Error())
+		blog.Error("get default module failed, error:%s", err.Error())
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrGetModule)})
 		return
 	}
 
 	errHostIDs, faultHostIDs, err := s.Logics.CheckHostInIDle(ctx, params.ApplicationID, idleModuleID, params.HostID)
 	if nil != err {
-		blog.Errorf("get host relationship failed, err: %s", err.Error())
+		blog.Error("get host relationship failed, err: %s", err.Error())
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrGetModule)})
 		return
 	}
@@ -432,7 +432,7 @@ func (s *Service) GetModulesHostConfig(req *restful.Request, resp *restful.Respo
 	result := make([]meta.ModuleHost, 0)
 	err := s.Instance.Table(common.BKTableNameModuleHostConfig).Find(query).Limit(uint64(common.BKNoLimit)).All(ctx, &result)
 	if err != nil {
-		blog.Errorf("get module host config failed, err: %v", err)
+		blog.Error("get module host config failed, err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return
 	}

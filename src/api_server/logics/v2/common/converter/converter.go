@@ -21,6 +21,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/coccyx/timeparser"
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/api_server/logics/v2/common/defs"
 	"configcenter/src/api_server/logics/v2/common/utils"
 	"configcenter/src/common"
@@ -30,9 +33,6 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-
-	"github.com/coccyx/timeparser"
-	"github.com/emicklei/go-restful"
 )
 
 // RespCommonResV2 turn the result without data into version V2
@@ -477,27 +477,27 @@ func ResToV2ForCustomerGroupResult(result bool, message string, dataInfo interfa
 	for _, item := range resDataArrV3 {
 		itemMap, ok := item.(map[string]interface{})
 		if !ok {
-			blog.Errorf("ResToV2ForCustomerGroupResult data hostinfo item errors, %v", item)
+			blog.Error("ResToV2ForCustomerGroupResult data hostinfo item errors, %v", item)
 			return nil, 0, errors.New("data format errors")
 		}
 		host, ok := itemMap[common.BKInnerObjIDHost].(map[string]interface{})
 		if !ok {
-			blog.Errorf("ResToV2ForCustomerGroupResult data hostinfo  host item errors, %v", itemMap)
+			blog.Error("ResToV2ForCustomerGroupResult data hostinfo  host item errors, %v", itemMap)
 			return nil, 0, errors.New("data format errors")
 		}
 		modules, ok := itemMap[common.BKInnerObjIDModule].([]interface{})
 		if !ok {
-			blog.Errorf("ResToV2ForCustomerGroupResult data hostinfo  module item errors, %v", itemMap)
+			blog.Error("ResToV2ForCustomerGroupResult data hostinfo  module item errors, %v", itemMap)
 			return nil, 0, errors.New("data format errors")
 		}
 		sets, ok := itemMap[common.BKInnerObjIDSet].([]interface{})
 		if !ok {
-			blog.Errorf("ResToV2ForCustomerGroupResult data hostinfo set item errors, %v", itemMap)
+			blog.Error("ResToV2ForCustomerGroupResult data hostinfo set item errors, %v", itemMap)
 			return nil, 0, errors.New("data format errors")
 		}
 		innerIP, _ := host[common.BKHostInnerIPField]
 		if !ok {
-			blog.Errorf("ResToV2ForCustomerGroupResult data hostinfo host innerip item errors, %v", itemMap)
+			blog.Error("ResToV2ForCustomerGroupResult data hostinfo host innerip item errors, %v", itemMap)
 			return nil, 0, errors.New("data format errors")
 		}
 		hostName, _ := host[common.BKHostNameField]
@@ -507,7 +507,7 @@ func ResToV2ForCustomerGroupResult(result bool, message string, dataInfo interfa
 			for _, module := range modules {
 				moduleMap, ok := module.(map[string]interface{})
 				if false == ok {
-					blog.Errorf("ResToV2ForCustomerGroupResult data hostinfo  module item errors, %v", itemMap)
+					blog.Error("ResToV2ForCustomerGroupResult data hostinfo  module item errors, %v", itemMap)
 					return nil, 0, errors.New("data format errors")
 				}
 				moduleName, _ = moduleMap[common.BKModuleNameField].(string)
@@ -519,7 +519,7 @@ func ResToV2ForCustomerGroupResult(result bool, message string, dataInfo interfa
 			for _, set := range sets {
 				setMap, ok := set.(map[string]interface{})
 				if false == ok {
-					blog.Errorf("ResToV2ForCustomerGroupResult data hostinfo set item errors, %v", itemMap)
+					blog.Error("ResToV2ForCustomerGroupResult data hostinfo set item errors, %v", itemMap)
 					return nil, 0, errors.New("data format errors")
 				}
 				setName, _ = setMap[common.BKSetNameField].(string)
@@ -853,7 +853,7 @@ func getOneLevelData(data []interface{}, appID interface{}) []map[string]interfa
 	for _, item := range data {
 		itemMap, ok := item.(map[string]interface{})
 		if false == ok {
-			blog.Errorf("Assert error item is not map[string]interface{},item %v", item)
+			blog.Error("Assert error item is not map[string]interface{},item %v", item)
 			continue
 		}
 		dataTemp := make(map[string]interface{})

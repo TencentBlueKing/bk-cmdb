@@ -2,9 +2,7 @@
     <div class="topo-wrapper" :class="{'has-nav': topoEdit.isEdit}">
         <div class="toolbar">
             <template v-if="!topoEdit.isEdit">
-                <bk-button class="edit-button" type="primary"
-                    :disabled="!authority.includes('update')"
-                    @click="editTopo">
+                <bk-button class="edit-button" type="primary" @click="editTopo">
                     {{$t('ModelManagement["编辑拓扑"]')}}
                 </bk-button>
             </template>
@@ -20,11 +18,7 @@
                 <i class="bk-icon icon-full-screen" @click="resizeFull" v-tooltip="$t('ModelManagement[\'还原\']')"></i>
                 <i class="bk-icon icon-plus" @click="zoomIn" v-tooltip="$t('ModelManagement[\'放大\']')"></i>
                 <i class="bk-icon icon-minus" @click="zoomOut" v-tooltip="$t('ModelManagement[\'缩小\']')"></i>
-                <i class="icon-cc-setting"
-                    v-if="authority.includes('update')"
-                    v-tooltip="$t('ModelManagement[\'拓扑显示设置\']')"
-                    @click="showSlider('theDisplay')">
-                </i>
+                <i class="icon-cc-setting" @click="showSlider('theDisplay')" v-tooltip="$t('ModelManagement[\'拓扑显示设置\']')"></i>
                 <div class="topo-example">
                     <p class="example-item">
                         <i></i>
@@ -273,9 +267,6 @@
                     })
                     return classify
                 })
-            },
-            authority () {
-                return this.$store.getters.admin ? ['search', 'update', 'delete'] : []
             }
         },
         watch: {
@@ -293,11 +284,6 @@
             this.initNetwork()
             this.initMoveFunction()
         },
-        async beforeRouteLeave (to, from, next) {
-            if (await this.confirmLeave()) {
-                next()
-            }
-        },
         methods: {
             ...mapActions('objectAssociation', [
                 'searchAssociationType',
@@ -305,28 +291,6 @@
                 'updateObjectAssociation',
                 'deleteObjectAssociation'
             ]),
-            confirmLeave () {
-                const {
-                    edges,
-                    nodes
-                } = this.topoEdit
-                const positionsArray = this.getUpdatePositions()
-                if ([].concat(...positionsArray).length || edges.length || nodes.length) {
-                    return new Promise((resolve, reject) => {
-                        this.$bkInfo({
-                            title: this.$t('Common["确定离开页面？"]'),
-                            content: this.$t('Common["系统不会保存您所做的修改，确认要离开？"]'),
-                            confirmFn: () => {
-                                resolve(true)
-                            },
-                            cancelFn: () => {
-                                resolve(false)
-                            }
-                        })
-                    })
-                }
-                return true
-            },
             addEdge () {
                 if (this.topoEdit.activeEdge.from === '') {
                     const nodeId = this.topoTooltip.hoverNode.id
@@ -368,15 +332,13 @@
                 this.topoEdit.nodes = []
             },
             async exitEdit () {
-                if (await this.confirmLeave()) {
-                    this.localTopoModelList = this.$tools.clone(this.topoModelList)
-                    this.topoEdit.isEdit = false
-                    this.updateNetwork()
-                    await this.$nextTick()
-                    this.clearEditData()
-                }
+                this.localTopoModelList = this.$tools.clone(this.topoModelList)
+                this.topoEdit.isEdit = false
+                this.updateNetwork()
+                await this.$nextTick()
+                this.clearEditData()
             },
-            getUpdatePositions () {
+            updatePositions () {
                 const nodes = this.localTopoModelList.filter(({bk_obj_id: objId, position}) => {
                     const curModel = this.topoModelList.find(model => model['bk_obj_id'] === objId)
                     return curModel.position.x !== position.x || curModel.position.y !== position.y
@@ -391,13 +353,12 @@
                         }
                     }
                 })
-                const updateNodes = this.networkDataSet.nodes.get(nodes).filter(node => node !== null)
-                return [updateNodes, removeNodes]
+                this.updateNodePosition(this.networkDataSet.nodes.get(nodes), removeNodes)
             },
             async saveTopo () {
-                const createAsstArray = []
-                const updateAsstArray = []
-                const deleteAsstArray = []
+                let createAsstArray = []
+                let updateAsstArray = []
+                let deleteAsstArray = []
                 this.topoEdit.edges.filter(({type}) => type === 'create').forEach(data => {
                     createAsstArray.push(this.createAsst(data.params))
                 })
@@ -407,8 +368,7 @@
                 this.topoEdit.edges.filter(({type}) => type === 'delete').forEach(data => {
                     deleteAsstArray.push(this.deleteAsst(data.params))
                 })
-                const positionsArray = this.getUpdatePositions()
-                this.updateNodePosition(...positionsArray)
+                this.updatePositions()
                 await Promise.all(createAsstArray)
                 await Promise.all(updateAsstArray)
                 await Promise.all(deleteAsstArray)
@@ -427,7 +387,7 @@
                     type: 'create',
                     params
                 })
-                let fromNode = this.localTopoModelList.find(model => model['bk_obj_id'] === params['bk_obj_id'])
+                let fromNode = this.localTopoModelList.find(model => model['bk_obj_id'] === this.topoEdit.activeEdge.from)
                 if (!fromNode.hasOwnProperty('assts')) {
                     Object.assign(fromNode, {assts: []})
                 }
@@ -530,6 +490,7 @@
                         let node = this.localTopoModelList.find(model => model['bk_obj_id'] === hoverNode.id)
                         node.position = {x: null, y: null}
                         
+                        this.topoEdit.edges = this.topoEdit.edges.filter(edge => edge.params['bk_obj_id'] !== hoverNode.id && edge.params['bk_asst_obj_id'] !== hoverNode.id)
                         this.topoTooltip.hoverNode = null
                         this.topoTooltip.hoverNodeTimer = null
                         this.updateNetwork()
@@ -1203,7 +1164,7 @@
                 float: right;
                 margin-top: 15px;
                 font-size: 12px;
-                color: #868b97;
+                color: $cmdbBorderColor;
             }
         }
         .model-item {

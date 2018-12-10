@@ -74,7 +74,7 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 		ownerM.SetHttpHeader(common.BKHTTPSupplierID, strconv.FormatInt(userInfo.SupplierID, 10))
 		err := ownerM.InitOwner()
 		if nil != err {
-			blog.Errorf("InitOwner error: %v", err)
+			blog.Error("InitOwner error: %v", err)
 			return false
 		}
 	}

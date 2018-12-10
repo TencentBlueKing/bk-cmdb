@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-
 	"github.com/emicklei/go-restful"
 )
 
@@ -86,7 +85,7 @@ func (s *Service) UpdateHostFavouriteByID(req *restful.Request, resp *restful.Re
 	ID := req.PathParameter("id")
 
 	if "" == ID || "0" == ID {
-		blog.Errorf("update host favourite failed, with id  %id", ID)
+		blog.Error("update host favourite failed, with id  %id", ID)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
@@ -120,7 +119,7 @@ func (s *Service) DeleteHostFavouriteByID(req *restful.Request, resp *restful.Re
 	user := util.GetUser(pheader)
 	ID := req.PathParameter("id")
 	if "" == ID || "0" == ID {
-		blog.Errorf("delete host favourite failed, with id  %id", ID)
+		blog.Error("delete host favourite failed, with id  %id", ID)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
@@ -141,7 +140,7 @@ func (s *Service) IncrHostFavouritesCount(req *restful.Request, resp *restful.Re
 	user := util.GetUser(pheader)
 	ID := req.PathParameter("id")
 	if "" == ID || "0" == ID {
-		blog.Errorf("delete host favourite failed, with id  %id", ID)
+		blog.Error("delete host favourite failed, with id  %id", ID)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
