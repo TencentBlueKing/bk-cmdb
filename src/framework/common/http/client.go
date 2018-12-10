@@ -21,7 +21,7 @@ import (
 	"configcenter/src/common/ssl"
 )
 
-func NewClient(c *TLSClientConfig) (*http.Client, error) {
+func NewClient(c *TLSConfig) (*http.Client, error) {
 	tlsConf := new(tls.Config)
 	if (nil != c) && len(c.CAFile) != 0 && len(c.CertFile) != 0 && len(c.KeyFile) != 0 {
 		var err error

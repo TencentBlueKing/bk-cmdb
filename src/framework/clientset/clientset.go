@@ -24,26 +24,32 @@ import (
 	"configcenter/src/framework/common/rest"
 )
 
-func NewV3Client(zkAddr string, cfg *http.TLSClientConfig) (V3ClientSet, error) {
+type ClientConfig struct {
+	// comma separated.
+	ZkAddr string
+	TLS    http.TLSConfig
+}
 
-	disc, err := discovery.DiscoveryAPIServer(zkAddr)
+func NewV3Client(c ClientConfig) (V3ClientSet, error) {
+
+	disc, err := discovery.DiscoveryAPIServer(c.ZkAddr)
 	if err != nil {
 		return nil, fmt.Errorf("service discovery api failed, err: %v", err)
 	}
 
-	cli, err := http.NewClient(cfg)
+	cli, err := http.NewClient(&c.TLS)
 	if err != nil {
 		return nil, fmt.Errorf("new http client failed, err: %v", err)
 	}
 
-	c := &rest.Capability{
+	cap := &rest.Capability{
 		Discover: disc,
 		Client:   cli,
 		Throttle: flowctrl.NewRateLimiter(1000, 2000),
 	}
 
 	return &v3{
-		client: rest.NewRESTClient(c, "/api/v3"),
+		client: rest.NewRESTClient(cap, "/api/v3"),
 	}, nil
 }
 
