@@ -83,7 +83,6 @@
                     :show="showAttributePanel">
                     <cmdb-details class="topology-details"
                         v-if="isNodeDetailsActive"
-                        :authority="['search', 'update', 'delete']"
                         :showDelete="false"
                         :properties="tab.properties"
                         :property-groups="tab.propertyGroups"
@@ -91,7 +90,6 @@
                         @on-edit="handleEdit">
                     </cmdb-details>
                     <cmdb-form class="topology-details" v-else-if="['update', 'create'].includes(tab.type)"
-                        :authority="['search', 'update', 'delete']"
                         :properties="tab.properties"
                         :property-groups="tab.propertyGroups"
                         :inst="tree.selectedNodeInst"

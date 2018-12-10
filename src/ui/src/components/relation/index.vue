@@ -3,7 +3,7 @@
         <div class="relation-options clearfix">
             <div class="fl">
                 <bk-button class="options-button options-button-update" size="small" type="primary"
-                    :disabled="!hasRelation || !authority.includes('update')"
+                    :disabled="!hasRelation"
                     :class="{active: activeComponent === 'cmdbRelationUpdate'}"
                     @click="handleShowUpdate">
                     {{$t('Association["新增关联"]')}}
@@ -56,12 +56,6 @@
             inst: {
                 type: Object,
                 required: true
-            },
-            authority: {
-                type: Array,
-                default () {
-                    return []
-                }
             }
         },
         data () {

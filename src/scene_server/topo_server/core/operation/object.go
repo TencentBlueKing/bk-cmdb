@@ -105,7 +105,7 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapS
 	for objID, inputData := range inputData {
 		subResult := frtypes.New()
 		if err := o.IsValidObject(params, objID); nil != err {
-			blog.Errorf("not found the  objid: %s", objID)
+			blog.Error("not found the  objid: %s", objID)
 			subResult["errors"] = fmt.Sprintf("the object(%s) is invalid", objID)
 			result[objID] = subResult
 			continue
@@ -119,7 +119,7 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapS
 			targetAttr.OwnerID = params.SupplierAccount
 			targetAttr.ObjectID = objID
 			if nil != err {
-				blog.Errorf("not found the  objid: %s", objID)
+				blog.Error("not found the  objid: %s", objID)
 				subResult["errors"] = err.Error()
 				result[objID] = subResult
 				continue
@@ -139,7 +139,7 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapS
 			grpCond.Field(metadata.GroupFieldGroupName).Eq(targetAttr.PropertyGroupName)
 			grps, err := o.grp.FindObjectGroup(params, grpCond)
 			if nil != err {
-				blog.Errorf("not found the  objid: %s", objID)
+				blog.Error("not found the  objid: %s", objID)
 				errStr := params.Lang.Languagef("import_row_int_error_str", idx, err)
 				subResult["errors"] = errStr
 				result[objID] = subResult
@@ -212,6 +212,7 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapS
 
 			if 0 == len(attrs) {
 
+				//fmt.Println("targetattr:", targetAttr.ToMapStr())
 				newAttr := o.modelFactory.CreateAttribute(params)
 				if err = newAttr.Save(targetAttr.ToMapStr()); nil != err {
 					errStr := params.Lang.Languagef("import_row_int_error_str", idx, err.Error())
@@ -231,6 +232,7 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapS
 			}
 
 			for _, newAttr := range attrs {
+				//fmt.Println("id:", newAttr.Origin().ID, targetAttr.ToMapStr())
 				if err := newAttr.Update(targetAttr.ToMapStr()); nil != err {
 					errStr := params.Lang.Languagef("import_row_int_error_str", idx, err.Error())
 					if failed, ok := subResult["update_failed"]; ok {

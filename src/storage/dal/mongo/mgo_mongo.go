@@ -335,10 +335,3 @@ func (c *Collection) DropColumn(ctx context.Context, field string) error {
 	_, err := c.dbc.DB(c.dbname).C(c.collName).UpdateAll(types.Document{}, datac)
 	return err
 }
-
-func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, result interface{}) error {
-	return c.dbc.DB(c.dbname).C(c.collName).Pipe(pipeline).All(result)
-}
-func (c *Collection) AggregateOne(ctx context.Context, pipeline interface{}, result interface{}) error {
-	return c.dbc.DB(c.dbname).C(c.collName).Pipe(pipeline).One(result)
-}

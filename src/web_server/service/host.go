@@ -21,14 +21,14 @@ import (
 	"os"
 	"time"
 
+	"github.com/gin-gonic/gin"
+	"github.com/rentiansheng/xlsx"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/logics"
-
-	"github.com/gin-gonic/gin"
-	"github.com/rentiansheng/xlsx"
 )
 
 var (
@@ -133,7 +133,7 @@ func (s *Service) ExportHost(c *gin.Context) {
 	logics.ProductExcelCommentSheet(file, defLang)
 	err = file.Save(dirFileName)
 	if err != nil {
-		blog.Errorf("ExportHost save file error:%s", err.Error())
+		blog.Error("ExportHost save file error:%s", err.Error())
 		reply := getReturnStr(common.CCErrWebCreateEXCELFail, defErr.Errorf(common.CCErrCommExcelTemplateFailed, err.Error()).Error(), nil)
 		c.Writer.Write([]byte(reply))
 		return

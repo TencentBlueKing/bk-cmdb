@@ -25,7 +25,6 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	hutil "configcenter/src/scene_server/host_server/util"
-
 	"github.com/emicklei/go-restful"
 )
 
@@ -96,14 +95,14 @@ func (s *Service) AddHostMultiAppModuleRelation(req *restful.Request, resp *rest
 		//check if host in this module
 		hostID, err := util.GetInt64ByInterface(hostList[0][common.BKHostIDField])
 		if nil != err {
-			blog.Errorf("add host multiple app module relation, but get invalid host id[%v], err:%v", hostList[0][common.BKHostIDField], err.Error())
+			blog.Error("add host multiple app module relation, but get invalid host id[%v], err:%v", hostList[0][common.BKHostIDField], err.Error())
 			errMsg = append(errMsg, s.Language.Languagef("host_ip_not_exist", hostInfo.IP))
 			continue
 		}
 		moduleHostCond := map[string][]int64{common.BKHostIDField: []int64{hostID}}
 		confs, err := s.Logics.GetConfigByCond(pheader, moduleHostCond)
 		if err != nil {
-			blog.Errorf("add host multiple app module relation, but get host config failed, err:%v", err)
+			blog.Error("add host multiple app module relation, but get host config failed, err:%v", err)
 			errMsg = append(errMsg, s.Language.Languagef("host_ip_not_exist", hostInfo.IP))
 			continue
 		}
@@ -197,7 +196,7 @@ func (s *Service) HostModuleRelation(req *restful.Request, resp *restful.Respons
 	for _, hostID := range config.HostID {
 		exist, err := s.Logics.IsHostExistInApp(config.ApplicationID, hostID, pheader)
 		if err != nil {
-			blog.Errorf("check host is exist in app error, params:{appid:%d, hostid:%s}, error:%s", config.ApplicationID, hostID, err.Error())
+			blog.Error("check host is exist in app error, params:{appid:%d, hostid:%s}, error:%s", config.ApplicationID, hostID, err.Error())
 			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrHostNotINAPPFail)})
 			return
 		}
@@ -561,7 +560,7 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 	for _, hostID := range conf.HostID {
 		exist, err := s.Logics.IsHostExistInApp(conf.ApplicationID, hostID, pheader)
 		if err != nil {
-			blog.Errorf("check host is exist in app error, params:{appid:%d, hostid:%s}, error:%s", conf.ApplicationID, hostID, err.Error())
+			blog.Error("check host is exist in app error, params:{appid:%d, hostid:%s}, error:%s", conf.ApplicationID, hostID, err.Error())
 			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrHostNotINAPPFail)})
 			return
 		}

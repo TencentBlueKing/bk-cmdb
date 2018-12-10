@@ -134,7 +134,7 @@ const (
 	// BKDBOR the db operator
 	BKDBOR = "$or"
 
-	// BKDBAND the db operator
+	// BKDBOR the db operator
 	BKDBAND = "$and"
 
 	// BKDBLIKE the db operator
@@ -166,18 +166,6 @@ const (
 
 	// BKDBNot the db opeartor
 	BKDBNot = "$not"
-
-	// BKDBCount the db opeartor
-	BKDBCount = "$count"
-
-	// BKDBGroup the db opeartor
-	BKDBGroup = "$group"
-
-	// BKDBMatch the db opeartor
-	BKDBMatch = "$match"
-
-	// BKDBSum the db opeartor
-	BKDBSum = "$sum"
 
 	// BKDBSortFieldSep the db sort field split char
 	BKDBSortFieldSep = ","

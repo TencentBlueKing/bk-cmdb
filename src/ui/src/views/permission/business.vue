@@ -28,9 +28,7 @@
             </div>
         </div>
         <footer class="footer" v-if="!isMaintainers">
-            <bk-button type="primary"
-                :loading="$loading('updateAuthorities')"
-                @click="updateAuthorities">
+            <bk-button type="primary" @click="updateAuthorities" :loading="$loading('updateAuthorities')">
                 {{$t("Common['保存']")}}
             </bk-button>
         </footer>
@@ -196,8 +194,7 @@
             overflow: hidden;
             text-overflow: ellipsis;
             cursor: pointer;
-            &.disabled,
-            &.disabled input{
+            &.disabled{
                 cursor: not-allowed;
             }
             input{
@@ -209,9 +206,6 @@
                     border-color: transparent !important;
                 }
             }
-        }
-        .cmdb-checkbox-text {
-            cursor: inherit;
         }
     }
     .footer{

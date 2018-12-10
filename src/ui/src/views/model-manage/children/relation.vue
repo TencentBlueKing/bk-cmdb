@@ -1,8 +1,6 @@
 <template>
     <div class="model-relation-wrapper">
-        <bk-button class="create-btn" type="primary"
-            :disabled="isReadOnly || !authority.includes('update')"
-            @click="createRelation">
+        <bk-button class="create-btn" type="primary" :disabled="isReadOnly" @click="createRelation">
             {{$t('ModelManagement["新建关联"]')}}
         </bk-button>
         <cmdb-table
@@ -116,15 +114,9 @@
                     return this.activeModel['bk_ispaused']
                 }
                 return false
-            },
-            authority () {
-                return this.$store.getters.admin ? ['search', 'update', 'delete'] : []
             }
         },
         created () {
-            if (!this.authority.includes('update')) {
-                this.table.header.pop()
-            }
             this.searchRelationList()
             this.initRelationList()
         },

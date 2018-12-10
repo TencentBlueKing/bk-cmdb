@@ -70,7 +70,7 @@ func (s *Service) getObjProperty(req *restful.Request, resp *restful.Response) {
 
 	resDataV2, err := converter.ResToV2ForPropertyList(result.Result, result.ErrMsg, result.Data, idName, idDisplayName)
 	if err != nil {
-		blog.Errorf("convert property res to v2 error:%v", err)
+		blog.Error("convert property res to v2 error:%v", err)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}

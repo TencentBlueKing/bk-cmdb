@@ -196,7 +196,7 @@ func getDataFromByExcelRow(row *xlsx.Row, rowIndex int, fields map[string]Proper
 			host[fieldName] = cellValue
 		default:
 			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, (celIDnex+1))) //fmt.Sprintf("%s第%d行%d列无法处理内容;", errMsg, (index + 1), (celIDnex + 1))
-			blog.Errorf("unknown the type, %v,   %v", reflect.TypeOf(cell), cell.Type())
+			blog.Error("unknown the type, %v,   %v", reflect.TypeOf(cell), cell.Type())
 			continue
 		}
 

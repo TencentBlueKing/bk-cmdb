@@ -19,6 +19,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/api_server/logics/v2/common/converter"
 	"configcenter/src/api_server/logics/v2/common/defs"
 	"configcenter/src/api_server/logics/v2/common/utils"
@@ -28,8 +30,6 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-
-	"github.com/emicklei/go-restful"
 )
 
 func (s *Service) getModuleInfoByApp(appID int64, pheader http.Header) (map[int64]mapstr.MapStr, ccErr.CCError) {
@@ -50,7 +50,7 @@ func (s *Service) getModuleInfoByApp(appID int64, pheader http.Header) (map[int6
 
 	result, err := s.CoreAPI.TopoServer().OpenAPI().SearchModuleByApp(context.Background(), strconv.FormatInt(appID, 10), pheader, param)
 	if err != nil {
-		blog.Errorf("convert module res to v2  error:%v, query:%+v,rid:%s", err, param, rid)
+		blog.Error("convert module res to v2  error:%v, query:%+v,rid:%s", err, param, rid)
 		return nil, err
 	}
 
@@ -185,7 +185,7 @@ func (s *Service) getHostListByIP(req *restful.Request, resp *restful.Response) 
 	}
 	resDataV2, err := converter.ResToV2ForHostList(result.Result, result.ErrMsg, result.Data)
 	if err != nil {
-		blog.Errorf("convert host res to v2 error:%v,input:%+v,rid:%s", err, formData, rid)
+		blog.Error("convert host res to v2 error:%v,input:%+v,rid:%s", err, formData, rid)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}
@@ -243,7 +243,7 @@ func (s *Service) getSetHostList(req *restful.Request, resp *restful.Response) {
 
 	resDataV2, err := converter.ResToV2ForHostList(result.Result, result.ErrMsg, result.Data)
 	if err != nil {
-		blog.Errorf("convert host res to v2 error:%v", err)
+		blog.Error("convert host res to v2 error:%v", err)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}
@@ -258,7 +258,7 @@ func (s *Service) getModuleHostList(req *restful.Request, resp *restful.Response
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Errorf("getModuleHostList error:%v", err)
+		blog.Error("getModuleHostList error:%v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
@@ -302,7 +302,7 @@ func (s *Service) getModuleHostList(req *restful.Request, resp *restful.Response
 
 	resDataV2, err := converter.ResToV2ForHostList(result.Result, result.ErrMsg, result.Data)
 	if err != nil {
-		blog.Errorf("convert host res to v2 error:%v", err)
+		blog.Error("convert host res to v2 error:%v", err)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}
