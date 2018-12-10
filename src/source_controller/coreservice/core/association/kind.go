@@ -92,7 +92,7 @@ func (m *associationKind) CreateAssociationKind(ctx core.ContextParams, inputPar
 
 func (m *associationKind) CreateManyAssociationKind(ctx core.ContextParams, inputParam metadata.CreateManyAssociationKind) (*metadata.CreateManyDataResult, error) {
 	dataResult := &metadata.CreateManyDataResult{}
-	for itemIdx, item := range inputParam.Data {
+	for itemIdx, item := range inputParam.Datas {
 
 		_, exists, err := m.isExists(ctx, item.AssociationKindID)
 		if nil != err {
@@ -172,7 +172,7 @@ func (m *associationKind) SetAssociationKind(ctx core.ContextParams, inputParam 
 
 func (m *associationKind) SetManyAssociationKind(ctx core.ContextParams, inputParam metadata.SetManyAssociationKind) (*metadata.SetDataResult, error) {
 	dataResult := &metadata.SetDataResult{}
-	for itemIdx, item := range inputParam.Data {
+	for itemIdx, item := range inputParam.Datas {
 
 		origin, exists, err := m.isExists(ctx, item.AssociationKindID)
 		if nil != err {
