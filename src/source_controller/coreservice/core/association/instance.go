@@ -37,10 +37,9 @@ func (m *associationInstance) isExists(ctx core.ContextParams, instID, asstInstI
 	return origin, !m.dbProxy.IsNotFoundError(err), err
 }
 
-func (m *associationInstance) instCount(ctx core.ContextParams, cond mapstr.MapStr) (cnt int64, err error) {
+func (m *associationInstance) instCount(ctx core.ContextParams, cond mapstr.MapStr) (cnt uint64, err error) {
 	innerCnt, err := m.dbProxy.Table(common.BKTableNameInstAsst).Find(cond).Count(ctx)
-	cnt = int64(innerCnt)
-	return cnt, err
+	return innerCnt, err
 }
 
 func (m *associationInstance) searchInstanceAssociation(ctx core.ContextParams, cond mapstr.MapStr) ([]metadata.InstAsst, error) {
@@ -193,7 +192,7 @@ func (m *associationInstance) SearchInstanceAssociation(ctx core.ContextParams, 
 	}
 
 	dataResult := &metadata.QueryResult{}
-	dataResult.Count = int64(len(instAsstItems))
+	dataResult.Count = uint64(len(instAsstItems))
 	for item := range instAsstItems {
 		dataResult.Info = append(dataResult.Info, mapstr.NewFromStruct(item, "field"))
 	}
