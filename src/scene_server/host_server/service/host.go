@@ -19,8 +19,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
@@ -30,6 +28,8 @@ import (
 	"configcenter/src/scene_server/host_server/logics"
 	hutil "configcenter/src/scene_server/host_server/util"
 	"configcenter/src/scene_server/validator"
+
+	"github.com/emicklei/go-restful"
 )
 
 type AppResult struct {
@@ -91,7 +91,7 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 
 	appID, err := result.Data.Info[0].Int64(common.BKAppIDField)
 	if err != nil {
-		blog.Error("delete host batch, but got invalid app id, err: %v, appinfo:%v", err, result.Data.Info[0])
+		blog.Errorf("delete host batch, but got invalid app id, err: %v, appinfo:%v", err, result.Data.Info[0])
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
 		return
 	}
@@ -345,7 +345,7 @@ func (s *Service) AddHistory(req *restful.Request, resp *restful.Response) {
 	}
 	content, ok := data["content"].(string)
 	if !ok || "" == content {
-		blog.Error("add history, but content is empty. data: %v", data)
+		blog.Errorf("add history, but content is empty. data: %v", data)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 
@@ -720,7 +720,7 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 			moduleHostConfigParams = meta.ModuleHostConfigParams{HostID: hostID, ModuleID: []int64{moduleID}, ApplicationID: data.ApplicationID}
 			result, err = s.CoreAPI.HostController().Module().AddModuleHostConfig(context.Background(), pheader, &moduleHostConfigParams)
 			if nil != err || !result.Result {
-				blog.Error("add modulehostconfig error, params:%v, error:%v", moduleHostConfigParams, err)
+				blog.Errorf("add modulehostconfig error, params:%v, error:%v", moduleHostConfigParams, err)
 				resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
 				return
 			}

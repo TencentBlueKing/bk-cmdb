@@ -21,7 +21,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (m *modelManager) IsExists(ctx core.ContextParams, cond universalsql.Condition) (oneModel *metadata.ObjectDes, exists bool, err error) {
+func (m *modelManager) isExists(ctx core.ContextParams, cond universalsql.Condition) (oneModel *metadata.ObjectDes, exists bool, err error) {
 
 	oneModel = &metadata.ObjectDes{}
 	err = m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).One(ctx, oneModel)
@@ -32,7 +32,7 @@ func (m *modelManager) IsExists(ctx core.ContextParams, cond universalsql.Condit
 	return oneModel, exists, err
 }
 
-func (m *modelManager) Save(ctx core.ContextParams, model *metadata.ObjectDes) (id uint64, err error) {
+func (m *modelManager) save(ctx core.ContextParams, model *metadata.ObjectDes) (id uint64, err error) {
 
 	id, err = m.dbProxy.NextSequence(ctx, common.BKTableNameObjDes)
 	if err != nil {
@@ -43,7 +43,7 @@ func (m *modelManager) Save(ctx core.ContextParams, model *metadata.ObjectDes) (
 	return id, err
 }
 
-func (m *modelManager) IsValid(ctx core.ContextParams, objID string) (isValid bool, err error) {
+func (m *modelManager) isValid(ctx core.ContextParams, objID string) (isValid bool, err error) {
 
 	checkCond := mongo.NewCondition()
 	checkCond.Element(&mongo.Eq{Key: metadata.ModelFieldOwnerID, Val: ctx.SupplierAccount})
@@ -55,7 +55,7 @@ func (m *modelManager) IsValid(ctx core.ContextParams, objID string) (isValid bo
 	return isValid, err
 }
 
-func (m *modelManager) Update(ctx core.ContextParams, data mapstr.MapStr, cond universalsql.Condition) (cnt uint64, err error) {
+func (m *modelManager) update(ctx core.ContextParams, data mapstr.MapStr, cond universalsql.Condition) (cnt uint64, err error) {
 
 	cnt, err = m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).Count(ctx)
 	if nil != err {

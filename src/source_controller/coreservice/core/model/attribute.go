@@ -42,7 +42,7 @@ func (m *modelAttribute) CreateModelAttributes(ctx core.ContextParams, objID str
 
 	for attrIdx, attr := range inputParam.Attributes {
 
-		_, exists, err := m.IsExists(ctx, attr.PropertyID)
+		_, exists, err := m.isExists(ctx, attr.PropertyID)
 
 		if nil != err {
 			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
@@ -56,7 +56,7 @@ func (m *modelAttribute) CreateModelAttributes(ctx core.ContextParams, objID str
 			})
 			continue
 		}
-		id, err := m.Save(ctx, attr)
+		id, err := m.save(ctx, attr)
 		if nil != err {
 			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
 			continue
@@ -87,7 +87,7 @@ func (m *modelAttribute) SetModelAttributes(ctx core.ContextParams, objID string
 
 	for attrIdx, attr := range inputParam.Attributes {
 
-		existsAttr, exists, err := m.IsExists(ctx, attr.PropertyID)
+		existsAttr, exists, err := m.isExists(ctx, attr.PropertyID)
 
 		if nil != err {
 			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
@@ -99,7 +99,7 @@ func (m *modelAttribute) SetModelAttributes(ctx core.ContextParams, objID string
 			cond.Element(&mongo.Eq{Key: metadata.AttributeFieldSupplierAccount, Val: ctx.SupplierAccount})
 			cond.Element(&mongo.Eq{Key: metadata.AttributeFieldID, Val: existsAttr.ID})
 
-			_, err := m.Update(ctx, mapstr.NewFromStruct(attr, "field"), cond)
+			_, err := m.update(ctx, mapstr.NewFromStruct(attr, "field"), cond)
 			if nil != err {
 				addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
 				continue
@@ -110,7 +110,7 @@ func (m *modelAttribute) SetModelAttributes(ctx core.ContextParams, objID string
 			})
 			continue
 		}
-		id, err := m.Save(ctx, attr)
+		id, err := m.save(ctx, attr)
 		if nil != err {
 			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
 			continue
@@ -132,7 +132,7 @@ func (m *modelAttribute) UpdateModelAttributes(ctx core.ContextParams, objID str
 		return &metadata.UpdatedCount{}, err
 	}
 
-	cnt, err := m.Update(ctx, inputParam.Data, cond)
+	cnt, err := m.update(ctx, inputParam.Data, cond)
 	if nil != err {
 		return &metadata.UpdatedCount{}, err
 	}

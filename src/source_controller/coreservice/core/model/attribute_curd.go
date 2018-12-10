@@ -22,7 +22,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (m *modelAttribute) IsExists(ctx core.ContextParams, propertyID string) (oneAttribute *metadata.Attribute, exists bool, err error) {
+func (m *modelAttribute) isExists(ctx core.ContextParams, propertyID string) (oneAttribute *metadata.Attribute, exists bool, err error) {
 
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: metadata.AttributeFieldSupplierAccount, Val: propertyID})
@@ -36,7 +36,7 @@ func (m *modelAttribute) IsExists(ctx core.ContextParams, propertyID string) (on
 	return oneAttribute, m.dbProxy.IsNotFoundError(err), err
 }
 
-func (m *modelAttribute) Save(ctx core.ContextParams, attribute metadata.Attribute) (id uint64, err error) {
+func (m *modelAttribute) save(ctx core.ContextParams, attribute metadata.Attribute) (id uint64, err error) {
 
 	id, err = m.dbProxy.NextSequence(ctx, common.BKTableNameObjAttDes)
 	if err != nil {
@@ -49,7 +49,7 @@ func (m *modelAttribute) Save(ctx core.ContextParams, attribute metadata.Attribu
 	return id, err
 }
 
-func (m *modelAttribute) Update(ctx core.ContextParams, data mapstr.MapStr, cond universalsql.Condition) (cnt uint64, err error) {
+func (m *modelAttribute) update(ctx core.ContextParams, data mapstr.MapStr, cond universalsql.Condition) (cnt uint64, err error) {
 
 	cnt, err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).Count(ctx)
 	if nil != err {
@@ -61,7 +61,7 @@ func (m *modelAttribute) Update(ctx core.ContextParams, data mapstr.MapStr, cond
 	return cnt, err
 }
 
-func (m *modelAttribute) Search(ctx core.ContextParams, cond universalsql.Condition) (resultAttrs []metadata.Attribute, err error) {
+func (m *modelAttribute) search(ctx core.ContextParams, cond universalsql.Condition) (resultAttrs []metadata.Attribute, err error) {
 
 	resultAttrs = []metadata.Attribute{}
 	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).All(ctx, &resultAttrs)
