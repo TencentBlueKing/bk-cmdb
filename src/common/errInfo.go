@@ -329,6 +329,12 @@ const (
 	CCErrTopoObjectUniquePresetCouldNotDelOrEdit   = 1001067
 	CCErrTopoObjectUniqueCanNotHasMutiMustCheck    = 1001068
 
+	// association kind has been apply to object
+	CCErrorTopoAssKindHasApplyToObject = 1101069
+
+	// pre definition association kind can not be delete
+	CCErrorTopoPreAssKindCanNotBeDelete = 1101070
+
 	CCErrTopoMulueIDNotfoundFailed = 1101080
 	CCErrTopoBkAppNotAllowedDelete = 1101081
 
