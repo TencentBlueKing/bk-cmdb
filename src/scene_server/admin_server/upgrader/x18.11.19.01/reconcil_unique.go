@@ -37,32 +37,33 @@ func createObjectUnitTable(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 	return nil
 }
 
+type Attribute struct {
+	ID                int64       `json:"id" bson:"id"`
+	OwnerID           string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	ObjectID          string      `json:"bk_obj_id" bson:"bk_obj_id"`
+	PropertyID        string      `json:"bk_property_id" bson:"bk_property_id"`
+	PropertyName      string      `json:"bk_property_name" bson:"bk_property_name"`
+	PropertyGroup     string      `json:"bk_property_group" bson:"bk_property_group"`
+	PropertyGroupName string      `json:"bk_property_group_name" bson:"-"`
+	PropertyIndex     int64       `json:"bk_property_index" bson:"bk_property_index"`
+	Unit              string      `json:"unit" bson:"unit"`
+	Placeholder       string      `json:"placeholder" bson:"placeholder"`
+	IsEditable        bool        `json:"editable" bson:"editable"`
+	IsPre             bool        `json:"ispre" bson:"ispre"`
+	IsRequired        bool        `json:"isrequired" bson:"isrequired"`
+	IsReadOnly        bool        `json:"isreadonly" bson:"isreadonly"`
+	IsOnly            bool        `json:"isonly" bson:"isonly"`
+	IsSystem          bool        `json:"bk_issystem" bson:"bk_issystem"`
+	IsAPI             bool        `json:"bk_isapi" bson:"bk_isapi"`
+	PropertyType      string      `json:"bk_property_type" bson:"bk_property_type"`
+	Option            interface{} `json:"option" bson:"option"`
+	Description       string      `json:"description" bson:"description"`
+	Creator           string      `json:"creator" bson:"creator"`
+	CreateTime        *time.Time  `json:"create_time" bson:"creaet_time"`
+	LastTime          *time.Time  `json:"last_time" bson:"last_time"`
+}
+
 func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	type Attribute struct {
-		ID                int64       `json:"id" bson:"id"`
-		OwnerID           string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
-		ObjectID          string      `json:"bk_obj_id" bson:"bk_obj_id"`
-		PropertyID        string      `json:"bk_property_id" bson:"bk_property_id"`
-		PropertyName      string      `json:"bk_property_name" bson:"bk_property_name"`
-		PropertyGroup     string      `json:"bk_property_group" bson:"bk_property_group"`
-		PropertyGroupName string      `json:"bk_property_group_name" bson:"-"`
-		PropertyIndex     int64       `json:"bk_property_index" bson:"bk_property_index"`
-		Unit              string      `json:"unit" bson:"unit"`
-		Placeholder       string      `json:"placeholder" bson:"placeholder"`
-		IsEditable        bool        `json:"editable" bson:"editable"`
-		IsPre             bool        `json:"ispre" bson:"ispre"`
-		IsRequired        bool        `json:"isrequired" bson:"isrequired"`
-		IsReadOnly        bool        `json:"isreadonly" bson:"isreadonly"`
-		IsOnly            bool        `json:"isonly" bson:"isonly"`
-		IsSystem          bool        `json:"bk_issystem" bson:"bk_issystem"`
-		IsAPI             bool        `json:"bk_isapi" bson:"bk_isapi"`
-		PropertyType      string      `json:"bk_property_type" bson:"bk_property_type"`
-		Option            interface{} `json:"option" bson:"option"`
-		Description       string      `json:"description" bson:"description"`
-		Creator           string      `json:"creator" bson:"creator"`
-		CreateTime        *time.Time  `json:"create_time" bson:"creaet_time"`
-		LastTime          *time.Time  `json:"last_time" bson:"last_time"`
-	}
 
 	oldAttributes := []Attribute{}
 	err := db.Table(common.BKTableNameObjAttDes).Find(nil).All(ctx, &oldAttributes)
@@ -79,6 +80,22 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 		}
 		propertyIDToProperty[keyfunc(oldAttr.ObjectID, oldAttr.PropertyID)] = oldAttr
 	}
+
+	shouldCheck := []string{keyfunc(common.BKInnerObjIDHost, common.BKAssetIDField),
+		keyfunc(common.BKInnerObjIDHost, common.BKCloudIDField),
+		keyfunc(common.BKInnerObjIDHost, common.BKHostInnerIPField),
+		keyfunc(common.BKInnerObjIDProc, common.BKAppIDField),
+		keyfunc(common.BKInnerObjIDProc, common.BKProcNameField),
+		keyfunc(common.BKInnerObjIDProc, common.BKAppIDField),
+		keyfunc(common.BKInnerObjIDProc, common.BKFuncIDField),
+		keyfunc(common.BKInnerObjIDApp, common.BKAppNameField),
+		keyfunc(common.BKInnerObjIDSet, common.BKAppIDField),
+		keyfunc(common.BKInnerObjIDSet, common.BKSetNameField),
+		keyfunc(common.BKInnerObjIDModule, common.BKAppIDField),
+		keyfunc(common.BKInnerObjIDModule, common.BKModuleNameField),
+	}
+
+	checkKeysShouldExists(propertyIDToProperty, shouldCheck)
 
 	uniques := []metadata.ObjectUnique{
 		// host
@@ -258,4 +275,14 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 	}
 
 	return nil
+}
+
+func checkKeysShouldExists(m map[string]Attribute, shouldExistKeys []string) []string {
+	notValidKeys := []string{}
+	for _, k := range shouldExistKeys {
+		if _, ok := m[k]; !ok {
+			notValidKeys = append(notValidKeys, k)
+		}
+	}
+	return notValidKeys
 }

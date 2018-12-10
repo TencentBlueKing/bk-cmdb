@@ -13,8 +13,6 @@
 package instances
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"

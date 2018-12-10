@@ -510,3 +510,13 @@ func (c *RPCCollection) RenameColumn(ctx context.Context, oldName, newColumn str
 func (c *RPCCollection) DropColumn(ctx context.Context, field string) error {
 	return dal.ErrNotImplemented
 }
+
+// AggregateOne 聚合查询
+func (c *RPCCollection) AggregateOne(ctx context.Context, pipeline interface{}, result interface{}) error {
+	return dal.ErrNotImplemented
+}
+
+// AggregateAll 聚合查询
+func (c *RPCCollection) AggregateAll(ctx context.Context, pipeline interface{}, result interface{}) error {
+	return dal.ErrNotImplemented
+}
