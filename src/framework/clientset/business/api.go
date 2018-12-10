@@ -22,7 +22,7 @@ type Interface interface {
 	CreateBusiness(info *types.CreateBusinessCtx) (types2.MapStr, error)
 	UpdateBusiness(info *types.UpdateBusinessCtx) error
 	DeleteBusiness(info *types.DeleteBusinessCtx) error
-	ListBusiness(info *types.ListBusinessCtx) (*types.QueryResponse, error)
+	ListBusiness(info *types.ListBusinessCtx) ([]types2.MapStr, error)
 }
 
 func NewBusinessClient(client rest.ClientInterface) Interface {

@@ -16,39 +16,41 @@ import (
     "configcenter/src/framework/core/types"
 )
 
-type BusinessResponse struct {
-	BaseResp `json:",inline"`
-	Data     types.MapStr `json:"data"`
+type CreateSetCtx struct {
+	BaseCtx
+	SetID  int64
+	Set    types.MapStr
 }
 
-type CreateBusinessCtx struct {
-    BaseCtx
-	Tenancy      string
-	BusinessInfo types.MapStr
-}
-
-type UpdateBusinessCtx struct {
-    BaseCtx
-	Tenancy      string
-	BusinessID   int64
-	BusinessInfo types.MapStr
-}
-
-type DeleteBusinessCtx struct {
-    BaseCtx
-	Tenancy    string
-	BusinessID int64
-}
-
-type ListBusinessCtx struct {
-    BaseCtx
-	Tenancy   string
-	QueryInfo Query
-}
-
-type ListBusinessResult struct {
+type CreateSetResult struct {
     BaseResp `json:",inline"`
-    Data     ListInfo `json:"data"`
+    Data     struct {
+        ID int64 `json:"id"`
+    } `json:"data"`
 }
 
+type DeleteSetCtx struct {
+    BaseCtx
+    BusinessID int64
+    SetID      int64
+}
 
+type UpdateSetCtx struct {
+    BaseCtx
+    BusinessID int64
+    SetID      int64
+    Set types.MapStr
+}
+
+type ListSetCtx struct {
+    BaseCtx
+    Tenancy    string
+    BusinessID int64
+    SetID      int64
+    Filter     Query
+}
+
+type ListSetResult struct {
+    BaseResp `json:",inline"`
+    Data     ListInfo
+}

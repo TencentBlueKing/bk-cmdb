@@ -19,23 +19,25 @@ import (
 	"configcenter/src/framework/common/rest"
 )
 
-type ModelInterface interface {
-	CreateModel(ctx *types.CreateModelCtx) (int64, error)
-	DeleteModel(ctx *types.DeleteModelCtx) error
-	UpdateModel(ctx *types.UpdateModelCtx) error
-	GetModels(ctx *types.GetModelsCtx) ([]types.ModelInfo, error)
+type AttributeInterface interface {
+	CreateAttribute(ctx *types.CreateAttributeCtx) (int64, error)
+	DeleteAttribute(ctx *types.DeleteAttributeCtx) error
+	UpdateAttribute(ctx *types.UpdateAttributeCtx) error
+	GetAttribute(ctx *types.GetAttributeCtx) ([]types.Attribute, error)
 }
 
-type modelClient struct {
+var _ AttributeInterface = &attribute{}
+
+type attribute struct {
 	client rest.ClientInterface
 }
 
-func (m *modelClient) CreateModel(ctx *types.CreateModelCtx) (int64, error) {
-	resp := new(types.CreateModelResponse)
-	subPath := "/object"
-	err := m.client.Post().
+func (a *attribute) CreateAttribute(ctx *types.CreateAttributeCtx) (int64, error) {
+	resp := new(types.CreateAttributeResult)
+	subPath := "/object/attr"
+	err := a.client.Post().
 		WithContext(ctx.Ctx).
-		Body(ctx.ModelInfo).
+		Body(ctx.Attribute).
 		SubResource(subPath).
 		WithHeaders(ctx.Header).
 		Do().
@@ -51,10 +53,10 @@ func (m *modelClient) CreateModel(ctx *types.CreateModelCtx) (int64, error) {
 	return resp.Data.ID, nil
 }
 
-func (m *modelClient) DeleteModel(ctx *types.DeleteModelCtx) error {
+func (a *attribute) DeleteAttribute(ctx *types.DeleteAttributeCtx) error {
 	resp := new(types.Response)
-	subPath := fmt.Sprintf("/object/%d", ctx.ModelID)
-	err := m.client.Delete().
+	subPath := fmt.Sprintf("/object/attr/%d", ctx.AttributeID)
+	err := a.client.Delete().
 		WithContext(ctx.Ctx).
 		Body(nil).
 		SubResource(subPath).
@@ -72,12 +74,12 @@ func (m *modelClient) DeleteModel(ctx *types.DeleteModelCtx) error {
 	return nil
 }
 
-func (m *modelClient) UpdateModel(ctx *types.UpdateModelCtx) error {
+func (a *attribute) UpdateAttribute(ctx *types.UpdateAttributeCtx) error {
 	resp := new(types.Response)
-	subPath := fmt.Sprintf("/object/%d", ctx.ModelID)
-	err := m.client.Put().
+	subPath := fmt.Sprintf("/object/attr/%d", ctx.AttributeID)
+	err := a.client.Put().
 		WithContext(ctx.Ctx).
-		Body(ctx.ModelInfo).
+		Body(ctx.Attribute).
 		SubResource(subPath).
 		WithHeaders(ctx.Header).
 		Do().
@@ -93,12 +95,12 @@ func (m *modelClient) UpdateModel(ctx *types.UpdateModelCtx) error {
 	return nil
 }
 
-func (m *modelClient) GetModels(ctx *types.GetModelsCtx) ([]types.ModelInfo, error) {
-	resp := new(types.GetModelsResult)
-	subPath := "/objects"
-	err := m.client.Post().
+func (a *attribute) GetAttribute(ctx *types.GetAttributeCtx) ([]types.Attribute, error) {
+	resp := new(types.GetAttributeResult)
+	subPath := "/object/attr/search"
+	err := a.client.Post().
 		WithContext(ctx.Ctx).
-		Body(ctx.Filters).
+		Body(ctx.Filter).
 		SubResource(subPath).
 		WithHeaders(ctx.Header).
 		Do().

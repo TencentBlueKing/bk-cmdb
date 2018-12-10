@@ -20,8 +20,7 @@ import (
 )
 
 type ListHostsCtx struct {
-	Ctx    context.Context
-	Header http.Header
+    BaseCtx
 	Filter ListHostFilter
 }
 
@@ -100,8 +99,7 @@ type HostAttribute struct {
 }
 
 type GetHostSnapshotCtx struct {
-	Ctx    context.Context
-	Header http.Header
+    BaseCtx
 	HostID int64
 }
 
@@ -111,8 +109,7 @@ type GetHostSnapshotResult struct {
 }
 
 type UpdateHostsAttributesCtx struct {
-	Ctx        context.Context
-	Header     http.Header
+    BaseCtx
 	Attributes HostsAttributes
 }
 
@@ -124,8 +121,7 @@ type HostsAttributes struct {
 }
 
 type DeleteHostsCtx struct {
-	Ctx    context.Context
-	Header http.Header
+    BaseCtx
 	Hosts  DeletedHostsInfo
 }
 

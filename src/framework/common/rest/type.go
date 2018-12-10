@@ -15,8 +15,8 @@ package rest
 import (
 	"net/http"
 
-	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/flowctrl"
+	"configcenter/src/framework/clientset/discovery"
 	chttp "configcenter/src/framework/common/http"
 )
 

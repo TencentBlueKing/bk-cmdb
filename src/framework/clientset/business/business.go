@@ -88,12 +88,12 @@ func (b *biz) DeleteBusiness(info *types.DeleteBusinessCtx) error {
 	return nil
 }
 
-func (b *biz) ListBusiness(info *types.ListBusinessCtx) (*types.QueryResponse, error) {
+func (b *biz) ListBusiness(info *types.ListBusinessCtx) ([]types2.MapStr, error) {
 	if len(info.Tenancy) == 0 {
 		return nil, errors.New("business's tenancy can not be empty.")
 	}
 
-	resp := new(types.QueryResponse)
+	resp := new(types.ListBusinessResult)
 	subPath := fmt.Sprintf("/biz/search/%s", info.Tenancy)
 	err := b.client.Post().
 		WithContext(info.Ctx).
@@ -110,5 +110,5 @@ func (b *biz) ListBusiness(info *types.ListBusinessCtx) (*types.QueryResponse, e
 	if !resp.BaseResp.Result {
 		return nil, &types.ErrorDetail{Code: resp.Code, Message: resp.ErrMsg}
 	}
-	return resp, nil
+	return resp.Data.Info, nil
 }

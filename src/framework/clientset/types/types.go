@@ -12,7 +12,11 @@
 
 package types
 
-import "configcenter/src/framework/core/types"
+import (
+	"configcenter/src/framework/core/types"
+	"context"
+	"net/http"
+)
 
 type BaseResp struct {
 	Result bool   `json:"result"`
@@ -37,12 +41,25 @@ type Page struct {
 	Sort  string `json:"sort,omitempty"`
 }
 
-type QueryResponse struct {
-	BaseResp `json:",inline"`
-	Data     ListInfo `json:"data"`
-}
-
 type ListInfo struct {
 	Count int64          `json:"count"`
 	Info  []types.MapStr `json:"info"`
+}
+
+type BaseCtx struct {
+	Ctx    context.Context
+	Header http.Header
+}
+
+type OperatorKind string
+
+const (
+	Regex OperatorKind = "$regex"
+	Eq    OperatorKind = "$eq"
+)
+
+type QueryVerb struct {
+	Field    string `json:"field"`
+	Operator string `json:"operator"`
+	Value    string `json:"value"`
 }
