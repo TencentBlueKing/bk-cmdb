@@ -185,6 +185,7 @@
                 } else {
                     this.getTableList()
                 }
+                this.closeSlider()
             },
             /*
                 删除的确认弹窗
