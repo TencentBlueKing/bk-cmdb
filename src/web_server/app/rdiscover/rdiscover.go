@@ -63,7 +63,7 @@ func (r *RegDiscover) Start() error {
 
 	//start regdiscover
 	if err := r.rd.Start(); err != nil {
-		blog.Errorf("fail to start register and discover serv. err:%s", err.Error())
+		blog.Error("fail to start register and discover serv. err:%s", err.Error())
 		return err
 	}
 
@@ -150,7 +150,7 @@ func (r *RegDiscover) registerWebServer() error {
 
 	data, err := json.Marshal(webServInfo)
 	if err != nil {
-		blog.Errorf("fail to marshal web server info to json. err:%s", err.Error())
+		blog.Error("fail to marshal web server info to json. err:%s", err.Error())
 		return err
 	}
 

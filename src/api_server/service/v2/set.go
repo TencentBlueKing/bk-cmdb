@@ -167,7 +167,7 @@ func (s *Service) getModulesByProperty(req *restful.Request, resp *restful.Respo
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Errorf("getModulesByProperty error:%v", err)
+		blog.Error("getModulesByProperty error:%v", err)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
@@ -318,7 +318,7 @@ func (s *Service) addSet(req *restful.Request, resp *restful.Response) {
 	}
 	topoLevel, err := s.Logics.CheckAppTopoIsThreeLevel(user, pheader)
 	if err != nil {
-		blog.Errorf("AddSet CheckAppTopoIsThreeLevel error:%v", err)
+		blog.Error("AddSet CheckAppTopoIsThreeLevel error:%v", err)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, err.Error()).Error(), resp)
 		return
 	}
@@ -470,7 +470,7 @@ func (s *Service) updateSet(req *restful.Request, resp *restful.Response) {
 	if len(formData["Capacity"]) > 0 {
 		reqData[common.BKSetCapacityField], err = util.GetIntByInterface(formData["Capacity"][0])
 		if nil != err {
-			blog.Errorf("updateSet error:%v", err)
+			blog.Error("updateSet error:%v", err)
 			converter.RespFailV2(common.CCErrCommParamsNeedInt, defErr.Errorf(common.CCErrCommParamsNeedInt, "Capacity").Error(), resp)
 			return
 		}

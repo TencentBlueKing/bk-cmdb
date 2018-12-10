@@ -10,7 +10,8 @@
             </div>
             <ul class="classify-list">
                 <li class="classify-item"
-                    v-for="(classify, index) in navigations"
+                    v-for="(classify, index) in authorizedNavigation"
+                    v-if="isAvailableClassify(classify)"
                     :class="{
                         active: isClassifyActive(classify),
                         'is-open': openedClassify === classify.id,
@@ -31,6 +32,7 @@
                         :style="getClassifyModelsStyle(classify)">
                         <router-link class="model-link" exact
                             v-for="(model, modelIndex) in classify.children"
+                            v-if="model.authorized"
                             :class="{
                                 active: isRouterActive(model),
                                 collection: classify.id === 'bk_collection'
@@ -70,7 +72,7 @@ export default {
         }
     },
     computed: {
-        ...mapGetters(['navStick', 'navFold', 'admin']),
+        ...mapGetters(['navStick', 'navFold']),
         ...mapGetters('objectModelClassify', ['classifications', 'authorizedNavigation', 'staticClassifyId']),
         ...mapGetters('userCustom', ['usercustom', 'classifyNavigationKey']),
         fixedClassifyId () {
@@ -83,23 +85,11 @@ export default {
         activeClassifyId () {
             return this.$classify.classificationId
         },
-        navigations () {
-            const navigations = this.$tools.clone(this.authorizedNavigation)
-            if (this.admin) {
-                return navigations
-            }
-            navigations.forEach(classify => {
-                classify.children = classify.children.filter(child => child.authorized)
-            })
-            return navigations.filter(classify => {
-                return (classify.hasOwnProperty('path') && classify.authorized) || classify.children.length
-            })
-        },
         // 展开的分类子菜单高度
         openedClassifyHeight () {
-            const openedClassify = this.navigations.find(classify => classify.id === this.openedClassify)
+            const openedClassify = this.authorizedNavigation.find(classify => classify.id === this.openedClassify)
             if (openedClassify) {
-                const modelsCount = openedClassify.children.length
+                const modelsCount = openedClassify.children.filter(model => model.authorized).length
                 return modelsCount * this.routerLinkHeight
             }
             return 0

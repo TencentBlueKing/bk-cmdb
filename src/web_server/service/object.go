@@ -22,14 +22,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
+	"github.com/rentiansheng/xlsx"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	lang "configcenter/src/common/language"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/logics"
-
-	"github.com/gin-gonic/gin"
-	"github.com/rentiansheng/xlsx"
 )
 
 var sortFields = []string{
@@ -167,7 +167,7 @@ func setExcelRow(row *xlsx.Row, item interface{}) *xlsx.Row {
 		//cell.SetValue([]string{"v1", "v2"})
 		keyVal, ok := itemMap[key]
 		if !ok {
-			blog.Warnf("not fount the key(%s), skip it", key)
+			blog.Warn("not fount the key(%s), skip it", key)
 			continue
 		}
 		blog.Debug("key:%s value:%v", key, keyVal)
@@ -277,7 +277,7 @@ func (s *Service) ExportObject(c *gin.Context) {
 	dirFileName = fmt.Sprintf("%s/%s", dirFileName, fileName)
 	err = file.Save(dirFileName)
 	if err != nil {
-		blog.Errorf("ExportInst save file error:%s", err.Error())
+		blog.Error("ExportInst save file error:%s", err.Error())
 		fmt.Printf(err.Error())
 	}
 	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("inst_%s.xlsx", objID))

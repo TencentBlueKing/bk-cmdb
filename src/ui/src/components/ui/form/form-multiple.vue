@@ -55,7 +55,7 @@
         <div class="form-options" :class="{sticky: scrollbar}">
             <slot name="details-options">
                 <bk-button class="button-save" type="primary"
-                    :disabled="!authority.includes('update') || !hasChange || $loading()"
+                    :disabled="!$authorized.update || !hasChange || $loading()"
                     @click="handleSave">
                     {{$t("Common['保存']")}}
                 </bk-button>
@@ -71,14 +71,6 @@
     export default {
         name: 'cmdb-form-multiple',
         mixins: [formMixins],
-        props: {
-            authority: {
-                type: Array,
-                default () {
-                    return []
-                }
-            }
-        },
         data () {
             return {
                 values: {},

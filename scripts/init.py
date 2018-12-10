@@ -33,7 +33,6 @@ database = $db
 port = $mongo_port
 maxOpenConns = 3000
 maxIdleConns = 1000
-mechanism=SCRAM-SHA-1
 '''
     template = FileTemplate(auditcontroller_file_template_str)
     result = template.substitute(dict(db=db_name_v,mongo_user=mongo_user_v,mongo_host=mongo_ip_v,mongo_pass=mongo_pass_v,mongo_port=mongo_port_v))
@@ -49,7 +48,6 @@ database = $db
 port = $mongo_port
 maxOpenConns = 3000
 maxIdleConns = 1000
-mechanism=SCRAM-SHA-1
 
 [snap-redis]
 host = $redis_host
@@ -86,7 +84,6 @@ database=$db
 port=$mongo_port
 maxOpenConns=3000
 maxIDleConns=1000
-mechanism=SCRAM-SHA-1
 
 [redis]
 host=$redis_host
@@ -123,7 +120,6 @@ database=$db
 port=$mongo_port
 maxOpenConns=3000
 maxIDleConns=1000
-mechanism=SCRAM-SHA-1
 
 [redis]
 host=$redis_host
@@ -158,7 +154,6 @@ database = $db
 port = $mongo_port
 maxOpenConns = 3000
 maxIDleConns = 1000
-mechanism=SCRAM-SHA-1
 
 [confs]
 dir = $configures_dir
@@ -184,7 +179,6 @@ database=$db
 port=$mongo_port
 maxOpenConns=3000
 maxIDleConns=1000
-mechanism=SCRAM-SHA-1
 
 [redis]
 host=$redis_host
@@ -224,7 +218,6 @@ database=$db
 port=$mongo_port
 maxOpenConns=3000
 maxIDleConns=1000
-mechanism=SCRAM-SHA-1
 
 [redis]
 host=$redis_host
@@ -250,7 +243,6 @@ database=$db
 port=$mongo_port
 maxOpenConns=3000
 maxIDleConns=1000
-mechanism=SCRAM-SHA-1
 '''
 
     template = FileTemplate(topo_file_template_str)

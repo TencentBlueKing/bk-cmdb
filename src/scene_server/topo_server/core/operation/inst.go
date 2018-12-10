@@ -60,6 +60,11 @@ type RowIndex int
 type InputKey string
 type InstID int64
 
+type asstObjectAttribute struct {
+	obj   model.Object
+	attrs []model.Attribute
+}
+
 type BatchResult struct {
 	Errors       []string `json:"error"`
 	Success      []string `json:"success"`
@@ -94,12 +99,8 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 	}
 
 	for colIdx, colInput := range *batchInfo.BatchInfo {
-		if colInput == nil {
-			// this is a empty excel line.
-			continue
-		}
-
 		delete(colInput, "import_from")
+
 		item := c.instFactory.CreateInst(params, obj)
 		item.SetValues(colInput)
 
@@ -118,11 +119,7 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 			}
 
 		} else {
-			// check this instance with object unique field.
-			// otherwise, this instance is really a new one, need to be created.
-			// TODO: add a logic to handle if this instance is already exist or not with unique api.
-			// if already exist, then update, otherwise create.
-
+			// check create
 			if err := NewSupplementary().Validator(c).ValidatorCreate(params, obj, item.ToMapStr()); nil != err {
 				switch tmpErr := err.(type) {
 				case errors.CCErrorCoder:
@@ -131,8 +128,6 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 						results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
 						continue
 					}
-				default:
-
 				}
 
 			}
@@ -145,8 +140,8 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 			results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
 			continue
 		}
-		results.Success = append(results.Success, strconv.FormatInt(colIdx, 10))
 		NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
+
 	}
 
 	return results, nil

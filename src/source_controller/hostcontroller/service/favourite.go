@@ -18,14 +18,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/emicklei/go-restful"
+	"github.com/gin-gonic/gin/json"
+	"github.com/rs/xid"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-
-	"github.com/emicklei/go-restful"
-	"github.com/gin-gonic/gin/json"
-	"github.com/rs/xid"
 )
 
 func (s *Service) AddHostFavourite(req *restful.Request, resp *restful.Response) {
@@ -46,7 +46,7 @@ func (s *Service) AddHostFavourite(req *restful.Request, resp *restful.Response)
 	db := s.Instance.Clone()
 	rowCount, err := db.Table(common.BKTableNameHostFavorite).Find(query).Count(ctx)
 	if err != nil {
-		blog.Errorf("query host favorites fail, err: %v, params:%v", err, query)
+		blog.Error("query host favorites fail, err: %v, params:%v", err, query)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostFavouriteQueryFail)})
 		return
 	}
@@ -101,13 +101,13 @@ func (s *Service) UpdateHostFavouriteByID(req *restful.Request, resp *restful.Re
 	query = util.SetModOwner(query, ownerID)
 	rowCount, err := s.Instance.Table(common.BKTableNameHostFavorite).Find(query).Count(ctx)
 	if nil != err {
-		blog.Errorf("update host favorites with id[%s], but query failed, err: %v, params:%v", id, err, query)
+		blog.Error("update host favorites with id[%s], but query failed, err: %v, params:%v", id, err, query)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostFavouriteQueryFail)})
 		return
 	}
 
 	if 1 != rowCount {
-		blog.V(5).Infof("update host favorites with id[%s], but favorites not exists, params:%v", id, query)
+		blog.V(5).Info("update host favorites with id[%s], but favorites not exists, params:%v", id, query)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostFavouriteUpdateFail)})
 		return
 	}
@@ -120,7 +120,7 @@ func (s *Service) UpdateHostFavouriteByID(req *restful.Request, resp *restful.Re
 		dupParams = util.SetModOwner(dupParams, ownerID)
 		rowCount, err := s.Instance.Table(common.BKTableNameHostFavorite).Find(dupParams).Count(ctx)
 		if nil != err {
-			blog.Errorf("query user api validate name duplicate fail, err: %v, params:%v", err, dupParams)
+			blog.Error("query user api validate name duplicate fail, err: %v, params:%v", err, dupParams)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 			return
 		}
@@ -132,7 +132,7 @@ func (s *Service) UpdateHostFavouriteByID(req *restful.Request, resp *restful.Re
 	}
 	err = s.Instance.Table(common.BKTableNameHostFavorite).Update(ctx, query, fav)
 	if nil != err {
-		blog.Errorf("update host favorites fail, err: %v, params:%v", err, query)
+		blog.Error("update host favorites fail, err: %v, params:%v", err, query)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostFavouriteUpdateFail)})
 		return
 	}
@@ -152,20 +152,20 @@ func (s *Service) DeleteHostFavouriteByID(req *restful.Request, resp *restful.Re
 	query = util.SetModOwner(query, ownerID)
 	rowCount, err := s.Instance.Table(common.BKTableNameHostFavorite).Find(query).Count(ctx)
 	if nil != err {
-		blog.Errorf("delete host favorites with id[%s], but query failed, err: %v, params:%v", id, err, query)
+		blog.Error("delete host favorites with id[%s], but query failed, err: %v, params:%v", id, err, query)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostFavouriteDeleteFail)})
 		return
 	}
 
 	if 1 != rowCount {
-		blog.V(5).Infof("delete host favorites with id[%s], but favorites not exists, params:%v", id, query)
+		blog.V(5).Info("delete host favorites with id[%s], but favorites not exists, params:%v", id, query)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostFavouriteDeleteFail)})
 		return
 	}
 
 	err = s.Instance.Table(common.BKTableNameHostFavorite).Delete(ctx, query)
 	if nil != err {
-		blog.Errorf("delete host favorites with id[%s] failed, err: %v, params:%v", err, query)
+		blog.Error("delete host favorites with id[%s] failed, err: %v, params:%v", err, query)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostFavouriteDeleteFail)})
 		return
 	}
