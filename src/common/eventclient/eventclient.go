@@ -23,72 +23,12 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/framework/core/errors"
 
 	"gopkg.in/redis.v5"
 )
 
 type Client interface {
 	Push(...*metadata.EventInst) error
-}
-
-type EventContext struct {
-	RequestID   string
-	RequestTime metadata.Time
-	TxnID       string
-	ownerID     string
-	CacheCli    *redis.Client
-}
-
-func NewEventContextByReq(pheader http.Header, cacheCli *redis.Client) *EventContext {
-	return &EventContext{
-
-		CacheCli: cacheCli,
-	}
-}
-
-func (c *EventContext) InsertEvent(eventType, objType, action string, curData interface{}, preData interface{}) (err error) {
-	if c.CacheCli == nil {
-		return errors.New("invalid event context with nil cache client")
-	}
-	eventID, err := c.CacheCli.Incr(common.EventCacheEventIDKey).Result()
-	if err != nil {
-		return err
-	}
-	ei := &metadata.EventInst{
-		ID:         int64(eventID),
-		TxnID:      c.TxnID,
-		EventType:  eventType,
-		Action:     action,
-		ActionTime: metadata.Now(),
-		ObjType:    objType,
-		Data: []metadata.EventData{
-			{
-				CurData: curData,
-				PreData: preData,
-			},
-		},
-		OwnerID:     c.ownerID,
-		RequestID:   c.RequestID,
-		RequestTime: c.RequestTime,
-	}
-
-	value, err := json.Marshal(ei)
-	if err != nil {
-		return err
-	}
-
-	if c.TxnID != "" {
-		z := redis.Z{
-			Score:  float64(time.Now().UTC().Unix()),
-			Member: c.TxnID,
-		}
-		if err = c.CacheCli.ZAddNX(common.EventCacheEventTxnSet, z).Err(); err != nil {
-			return err
-		}
-		return c.CacheCli.LPush(common.EventCacheEventTxnQueuePrefix+c.TxnID, value).Err()
-	}
-	return c.CacheCli.LPush(common.EventCacheEventQueueKey, value).Err()
 }
 
 func NewEventWithHeader(header http.Header) *metadata.EventInst {
