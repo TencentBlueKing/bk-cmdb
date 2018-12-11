@@ -17,12 +17,12 @@ import (
 	"encoding/json"
 	"net/http"
 
-	restful "github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	restful "github.com/emicklei/go-restful"
 )
 
 //主机操作日志
@@ -77,7 +77,7 @@ func (s *Service) AddHostLogs(req *restful.Request, resp *restful.Response) {
 
 	params := new(metadata.AuditHostsLogParams)
 	if err = json.NewDecoder(req.Request.Body).Decode(params); err != nil {
-		blog.Error("AddHostLogs json unmarshal failed, error:%v", err)
+		blog.Errorf("AddHostLogs json unmarshal failed, error:%v", err)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}

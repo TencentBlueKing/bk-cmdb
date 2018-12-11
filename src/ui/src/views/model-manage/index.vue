@@ -1,10 +1,14 @@
 <template>
     <div class="group-wrapper">
         <p class="btn-group">
-            <bk-button type="primary" @click="showModelDialog(false)">
+            <bk-button type="primary"
+                :disabled="!authority.includes('update')"
+                @click="showModelDialog(false)">
                 {{$t('ModelManagement["新增模型"]')}}
             </bk-button>
-            <bk-button type="default" @click="showGroupDialog(false)">
+            <bk-button type="default"
+                :disabled="!authority.includes('update')"
+                @click="showGroupDialog(false)">
                 {{$t('ModelManagement["新建分组"]')}}
             </bk-button>
         </p>
@@ -211,7 +215,7 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'userName']),
+            ...mapGetters(['supplierAccount', 'userName', 'admin']),
             ...mapGetters('objectModelClassify', [
                 'classifications'
             ]),
@@ -222,6 +226,9 @@
                 })
                 this.modelDialog.classificationList = localClassifications.filter(({bk_classification_id: classificationId}) => !['bk_biz_topo', 'bk_host_manage', 'bk_organization'].includes(classificationId))
                 return localClassifications
+            },
+            authority () {
+                return this.admin ? ['search', 'update', 'delete'] : []
             }
         },
         created () {
