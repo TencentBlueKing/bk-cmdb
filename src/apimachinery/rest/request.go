@@ -333,7 +333,7 @@ func (r *Result) Into(obj interface{}) error {
 				return fmt.Errorf("http request err: %s", string(r.Body))
 			}
 			blog.Errorf("invalid response body, unmarshal json failed, reply:%s, error:%s", string(r.Body), err.Error())
-			return err
+			return fmt.Errorf("http response err: %v, raw data: %s", err, r.Body)
 		}
 	}
 	return nil

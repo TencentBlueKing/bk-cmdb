@@ -87,19 +87,25 @@ const router = new Router({
         path: '/eventpush',
         component: eventpush,
         meta: {
-            isModel: false
+            isModel: false,
+            authority: {
+                type: 'backConfig',
+                id: 'event'
+            }
         }
     }, {
         path: '/authority/business',
         component: businessAuthority,
         meta: {
-            isModel: false
+            isModel: false,
+            isAdminOnly: true
         }
     }, {
         path: '/authority/system',
         component: systemAuthority,
         meta: {
-            isModel: false
+            isModel: false,
+            isAdminOnly: true
         }
     }, {
         path: '/history/biz',
@@ -130,13 +136,21 @@ const router = new Router({
         path: '/resource',
         component: resource,
         meta: {
-            isModel: false
+            isModel: false,
+            authority: {
+                type: 'globalBusi',
+                id: 'resource'
+            }
         }
     }, {
         path: '/auditing',
         component: audit,
         meta: {
-            isModel: false
+            isModel: false,
+            authority: {
+                type: 'backConfig',
+                id: 'audit'
+            }
         }
     }, {
         path: '/topology',
@@ -222,32 +236,21 @@ const cancelRequest = () => {
     return $http.cancel(requestQueue.map(request => request.requestId))
 }
 
-const hasAuthority = (to) => {
-    const $store = router.app.$store
-    if ($store.getters.admin) {
-        return true
-    }
-    if (to.meta.ignoreAuthorize) {
-        return true
-    }
-    if (to.meta.isModel) {
-        const authority = $store.getters['userPrivilege/privilege']
-        const modelConfig = authority['model_config'] || {}
-        return Object.keys(modelConfig).some(classification => modelConfig[classification].hasOwnProperty(to.params.objId))
-    }
-    const path = to.meta.relative || to.query.relative || to.path
-    const authorizedNavigation = $store.getters['objectModelClassify/authorizedNavigation']
-    return authorizedNavigation.some(navigation => {
-        if (navigation.hasOwnProperty('path')) {
-            return navigation.path === path
-        }
-        return navigation.children.some(child => child.path === path || child.relative === path)
-    })
-}
-
 const hasPrivilegeBusiness = () => {
     const privilegeBusiness = router.app.$store.getters['objectBiz/privilegeBusiness']
     return !!privilegeBusiness.length
+}
+
+const hasAuthority = to => {
+    const privilege = router.app.$store.getters['objectBiz/privilegeBusiness']
+    const {type, id} = to.meta.authority
+    let authority = []
+    if (type === 'globalBusi') {
+        authority = router.app.$store.getters['userPrivilege/globalBusiAuthority'](id)
+    } else if (type === 'backConfig') {
+        authority = router.app.$store.getters['userPrivilege/backConfigAuthority'](id)
+    }
+    return authority.includes('search')
 }
 
 router.beforeEach(async (to, from, next) => {
@@ -258,24 +261,23 @@ router.beforeEach(async (to, from, next) => {
             await preload(router.app)
             if (to.meta.ignoreAuthorize) {
                 next()
-            } else if (hasAuthority(to)) {
-                if (to.meta.requireBusiness && !hasPrivilegeBusiness()) {
-                    next({
-                        path: '/status-require-business',
-                        query: {
-                            relative: to.path
-                        }
-                    })
-                } else {
+            } else if (to.meta.hasOwnProperty('authority')) {
+                if (hasAuthority(to)) {
                     next()
+                } else {
+                    next({
+                        path: '/status-403'
+                    })
                 }
-            } else {
+            } else if (to.meta.requireBusiness && !hasPrivilegeBusiness()) {
                 next({
-                    path: '/status-403',
+                    path: '/status-require-business',
                     query: {
                         relative: to.path
                     }
                 })
+            } else {
+                next()
             }
         } else {
             next()

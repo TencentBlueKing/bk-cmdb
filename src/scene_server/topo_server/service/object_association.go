@@ -31,12 +31,12 @@ func (s *topoService) CreateObjectAssociation(params types.ContextParams, pathPa
 		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 	}
 
-	err := s.core.AssociationOperation().CreateCommonAssociation(params, asso)
+	association, err := s.core.AssociationOperation().CreateCommonAssociation(params, asso)
 	if nil != err {
 		return nil, err
 	}
 
-	return asso.ToMapStr(), nil
+	return association, nil
 
 }
 

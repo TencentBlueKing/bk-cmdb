@@ -16,8 +16,7 @@ import (
 	"context"
 	"fmt"
 	"os"
-
-	restful "github.com/emicklei/go-restful"
+	"strconv"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
@@ -25,12 +24,13 @@ import (
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
 	toposvr "configcenter/src/scene_server/topo_server/service"
+
+	"github.com/emicklei/go-restful"
 )
 
 // TopoServer the topo server
@@ -41,16 +41,19 @@ type TopoServer struct {
 }
 
 func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
-
-	cfg, err := mapstr.NewFromInterface(current.ConfigMap)
-	if nil != err {
-		blog.Errorf("failed to update config, error info is %s", err.Error())
+	topoMax := common.BKTopoBusinessLevelDefault
+	var err error
+	if current.ConfigMap["level.businessTopoMax"] != "" {
+		topoMax, err = strconv.Atoi(current.ConfigMap["level.businessTopoMax"])
+		if err != nil {
+			blog.Errorf("invalid business topo max value, err: %v", err)
+			return
+		}
 	}
+	t.Config.BusinessTopoLevelMax = topoMax
 
-	if err := cfg.MarshalJSONInto(&t.Config); nil != err {
-		blog.Errorf("failed to update config, error info is %s", err.Error())
-	}
-	blog.V(5).Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
+	blog.V(3).Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
+
 	t.Service.SetConfig(t.Config, t.Core)
 }
 

@@ -13,12 +13,14 @@
 package operation
 
 import (
+	"context"
 	"io"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -131,13 +133,6 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 		return nil, params.Err.Error(common.CCErrTopoBizTopoLevelOverLimit)
 	}
 
-	// check and fetch the association object's classification
-	objCls, err := a.cls.FindSingleClassification(params, data.ClassificationID)
-	if nil != err {
-		blog.Errorf("[opration-asst] failed to find the single classification, error info is %s", err.Error())
-		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, data.ClassificationID)
-	}
-
 	// find the mainline parent object
 	parentObj, err := a.obj.FindSingleObject(params, data.AsstObjID)
 	switch t := err.(type) {
@@ -165,25 +160,14 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 		return nil, params.Err.Errorf(common.CCErrCommDuplicateItem, data.ObjectID)
 	}
 
-	currentObj := a.modelFactory.CreaetObject(params)
-	currentObj.SetID(data.ObjectID)
-	currentObj.SetName(data.ObjectName)
-	currentObj.SetIcon(data.ObjectIcon)
-	currentObj.SetClassification(objCls)
-
-	if err = currentObj.Save(nil); nil != err {
-		blog.Errorf("[operation-asst] failed to create the object(%s), error info is %s", currentObj.GetID(), err.Error())
-		return nil, err
+	objData := mapstr.MapStr{
+		common.BKObjIDField:            data.ObjectID,
+		common.BKObjNameField:          data.ObjectName,
+		common.BKObjIconField:          data.ObjectIcon,
+		common.BKClassificationIDField: data.ClassificationID,
 	}
-
-	// create the default group
-	grp := currentObj.CreateGroup()
-	grp.SetDefault(true)
-	grp.SetIndex(-1)
-	grp.SetName("Default")
-	grp.SetID("default")
-	if err = grp.Save(nil); nil != err {
-		blog.Errorf("[operation-obj] failed to create the default group, error info is %s", err.Error())
+	currentObj, err := a.obj.CreateObject(params, objData)
+	if err != nil {
 		return nil, err
 	}
 
@@ -202,6 +186,32 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 	if err = childObj.UpdateMainlineObjectAssociationTo(parentObj.GetID(), currentObj.GetID()); err != nil {
 		blog.Errorf("[operation-asst] update mainline current object's[%s] child object[%s] association to current failed, err: %v",
 			currentObj.GetID(), childObj.GetID(), err)
+		return nil, err
+	}
+
+	attr := &metadata.Attribute{
+		OwnerID:       params.SupplierAccount,
+		ObjectID:      currentObj.GetID(),
+		PropertyID:    common.BKInstNameField,
+		PropertyName:  "名称",
+		PropertyGroup: "default",
+		PropertyIndex: 0,
+		IsSystem:      false,
+		IsAPI:         false,
+		IsRequired:    true,
+		IsPre:         true,
+		PropertyType:  "singlechar",
+		Creator:       "cc_system",
+		IsEditable:    true,
+	}
+
+	rsp, err := a.clientSet.ObjectController().Meta().CreateObjectAtt(context.Background(), params.Header, attr)
+	if nil != err {
+		blog.Errorf("create mainline object, but create default attribute bk_inst_name failed, err: %v", err)
+		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if !rsp.Result {
 		return nil, err
 	}
 
