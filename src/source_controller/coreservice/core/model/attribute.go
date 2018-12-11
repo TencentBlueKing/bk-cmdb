@@ -13,7 +13,6 @@
 package model
 
 import (
-	"configcenter/src/common"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -28,6 +27,10 @@ type modelAttribute struct {
 }
 
 func (m *modelAttribute) CreateModelAttributes(ctx core.ContextParams, objID string, inputParam metadata.CreateModelAttributes) (dataResult *metadata.CreateManyDataResult, err error) {
+
+	if err := m.model.isValid(ctx, objID); nil != err {
+		return &metadata.CreateManyDataResult{}, err
+	}
 
 	dataResult = &metadata.CreateManyDataResult{}
 
@@ -73,6 +76,10 @@ func (m *modelAttribute) CreateModelAttributes(ctx core.ContextParams, objID str
 }
 
 func (m *modelAttribute) SetModelAttributes(ctx core.ContextParams, objID string, inputParam metadata.SetModelAttributes) (dataResult *metadata.SetDataResult, err error) {
+
+	if err := m.model.isValid(ctx, objID); nil != err {
+		return &metadata.SetDataResult{}, err
+	}
 
 	dataResult = &metadata.SetDataResult{}
 
@@ -127,6 +134,10 @@ func (m *modelAttribute) SetModelAttributes(ctx core.ContextParams, objID string
 }
 func (m *modelAttribute) UpdateModelAttributes(ctx core.ContextParams, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 
+	if err := m.model.isValid(ctx, objID); nil != err {
+		return &metadata.UpdatedCount{}, err
+	}
+
 	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
 		return &metadata.UpdatedCount{}, err
@@ -141,40 +152,37 @@ func (m *modelAttribute) UpdateModelAttributes(ctx core.ContextParams, objID str
 }
 func (m *modelAttribute) DeleteModelAttributes(ctx core.ContextParams, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
+	if err := m.model.isValid(ctx, objID); nil != err {
+		return &metadata.DeletedCount{}, err
+	}
+
 	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
 		return &metadata.DeletedCount{}, err
 	}
 
-	cnt, err := m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).Count(ctx)
-	if nil != err {
-		return &metadata.DeletedCount{}, err
-	}
-
-	if 0 == cnt {
-		return &metadata.DeletedCount{}, nil
-	}
-
-	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Delete(ctx, cond.ToMapStr())
+	cond.Element(&mongo.Eq{Key: metadata.AttributeFieldSupplierAccount, Val: ctx.SupplierAccount})
+	cnt, err := m.delete(ctx, cond)
 	return &metadata.DeletedCount{Count: cnt}, err
 }
 
 func (m *modelAttribute) SearchModelAttributes(ctx core.ContextParams, objID string, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
 
+	if err := m.model.isValid(ctx, objID); nil != err {
+		return &metadata.QueryResult{}, err
+	}
+
 	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
 		return &metadata.QueryResult{}, err
 	}
 
-	attrResult := []metadata.Attribute{}
-	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).All(ctx, &attrResult)
+	cond.Element(&mongo.Eq{Key: ctx.SupplierAccount, Val: ctx.SupplierAccount})
+	attrResult, err := m.searchReturnMapStr(ctx, cond)
 	if nil != err {
 		return &metadata.QueryResult{}, err
 	}
 
-	dataResult := &metadata.QueryResult{Count: uint64(len(attrResult))}
-	for _, attrItem := range attrResult {
-		dataResult.Info = append(dataResult.Info, mapstr.NewFromStruct(attrItem, "field"))
-	}
+	dataResult := &metadata.QueryResult{Count: uint64(len(attrResult)), Info: attrResult}
 	return dataResult, nil
 }
