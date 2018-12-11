@@ -107,7 +107,8 @@ func (m *modelClassification) SetManyModelClassification(ctx core.ContextParams,
 		if exists {
 
 			cond := mongo.NewCondition()
-			if err := m.update(ctx, mapstr.NewFromStruct(item, "field"), cond.Element(&mongo.Eq{Key: metadata.ClassificationFieldID, Val: origin.ID}).ToMapStr()); nil != err {
+			cond.Element(&mongo.Eq{Key: metadata.ClassificationFieldID, Val: origin.ID})
+			if _, err := m.update(ctx, mapstr.NewFromStruct(item, "field"), cond); nil != err {
 				addExceptionFunc(int64(itemIdx), err.(errors.CCErrorCoder), &item)
 				continue
 			}
@@ -152,7 +153,8 @@ func (m *modelClassification) SetOneModelClassification(ctx core.ContextParams, 
 	if exists {
 
 		cond := mongo.NewCondition()
-		if err := m.update(ctx, mapstr.NewFromStruct(inputParam.Data, "field"), cond.Element(&mongo.Eq{Key: metadata.ClassificationFieldID, Val: origin.ID}).ToMapStr()); nil != err {
+		cond.Element(&mongo.Eq{Key: metadata.ClassificationFieldID, Val: origin.ID})
+		if _, err := m.update(ctx, mapstr.NewFromStruct(inputParam.Data, "field"), cond); nil != err {
 			addExceptionFunc(0, err.(errors.CCErrorCoder), &inputParam.Data)
 			return dataResult, nil
 		}
@@ -170,11 +172,14 @@ func (m *modelClassification) SetOneModelClassification(ctx core.ContextParams, 
 
 func (m *modelClassification) UpdateModelClassification(ctx core.ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 
-	cnt, err := m.dbProxy.Table(common.BKTableNameObjClassifiction).Find(inputParam.Condition).Count(ctx)
+	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
 		return &metadata.UpdatedCount{}, err
 	}
-	if err := m.update(ctx, inputParam.Data, inputParam.Condition); nil != err {
+
+	cond.Element(&mongo.Eq{Key: metadata.AttributeFieldSupplierAccount, Val: ctx.SupplierAccount})
+	cnt, err := m.update(ctx, inputParam.Data, cond)
+	if nil != err {
 		return &metadata.UpdatedCount{}, err
 	}
 	return &metadata.UpdatedCount{Count: cnt}, nil
@@ -182,7 +187,13 @@ func (m *modelClassification) UpdateModelClassification(ctx core.ContextParams, 
 
 func (m *modelClassification) DeleteModelClassificaiton(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
-	cnt, exists, err := m.hasModel(ctx, inputParam.Condition)
+	deleteCond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
+	if nil != err {
+		return &metadata.DeletedCount{}, ctx.Error.New(common.CCErrCommHTTPInputInvalid, err.Error())
+	}
+
+	deleteCond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationSupplierAccount, Val: ctx.SupplierAccount})
+	cnt, exists, err := m.hasModel(ctx, deleteCond)
 	if nil != err {
 		return &metadata.DeletedCount{}, err
 	}
@@ -190,23 +201,38 @@ func (m *modelClassification) DeleteModelClassificaiton(ctx core.ContextParams, 
 		return &metadata.DeletedCount{}, ctx.Error.Error(common.CCErrTopoObjectClassificationHasObject)
 	}
 
-	m.dbProxy.Table(common.BKTableNameObjClassifiction).Delete(ctx, inputParam.Condition)
+	cnt, err = m.delete(ctx, deleteCond)
+	if nil != err {
+		return &metadata.DeletedCount{}, err
+	}
+
 	return &metadata.DeletedCount{Count: cnt}, nil
 }
 
 func (m *modelClassification) CascadeDeleteModeClassification(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
-	classificationItems, err := m.searchClassification(ctx, inputParam.Condition)
+	deleteCond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
+	if nil != err {
+		return &metadata.DeletedCount{}, err
+	}
+	deleteCond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationSupplierAccount, Val: ctx.SupplierAccount})
+
+	classificationItems, err := m.search(ctx, deleteCond)
 	if nil != err {
 		return &metadata.DeletedCount{}, err
 	}
 
+	classificationIDS := []string{}
 	for _, item := range classificationItems {
-		cond := mongo.NewCondition()
-		cond.Element(&mongo.Eq{Key: metadata.ModelFieldObjCls, Val: item.ClassificationID})
-		if _, err := m.model.cascadeDeleteModel(ctx, cond.ToMapStr()); nil != err {
-			return &metadata.DeletedCount{}, err
-		}
+		classificationIDS = append(classificationIDS, item.ClassificationID)
+	}
+
+	if _, err := m.cascadeDeleteModel(ctx, classificationIDS); nil != err {
+		return &metadata.DeletedCount{}, err
+	}
+
+	if _, err := m.delete(ctx, deleteCond); nil != err {
+		return &metadata.DeletedCount{}, err
 	}
 
 	return &metadata.DeletedCount{Count: uint64(len(classificationItems))}, nil
@@ -214,16 +240,16 @@ func (m *modelClassification) CascadeDeleteModeClassification(ctx core.ContextPa
 
 func (m *modelClassification) SearchModelClassification(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
 
-	classificationItems, err := m.searchClassification(ctx, inputParam.Condition)
+	searchCond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
 		return &metadata.QueryResult{}, err
 	}
 
-	dataResult := &metadata.QueryResult{}
-	dataResult.Count = uint64(len(classificationItems))
-	for item := range classificationItems {
-		dataResult.Info = append(dataResult.Info, mapstr.NewFromStruct(item, "field"))
+	searchCond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationSupplierAccount, Val: ctx.SupplierAccount})
+	classificationItems, err := m.searchReturnMapStr(ctx, searchCond)
+	if nil != err {
+		return &metadata.QueryResult{}, err
 	}
 
-	return dataResult, nil
+	return &metadata.QueryResult{Count: uint64(len(classificationItems)), Info: classificationItems}, nil
 }

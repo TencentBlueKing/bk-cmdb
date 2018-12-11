@@ -126,6 +126,7 @@ func (m *modelManager) UpdateModel(ctx core.ContextParams, inputParam metadata.U
 	if nil != err {
 		return &metadata.UpdatedCount{}, err
 	}
+	updateCond.Element(&mongo.Eq{Key: metadata.ModelFieldOwnerID, Val: ctx.SupplierAccount})
 
 	cnt, err := m.update(ctx, inputParam.Data, updateCond)
 	return &metadata.UpdatedCount{Count: cnt}, err
@@ -170,12 +171,13 @@ func (m *modelManager) DeleteModel(ctx core.ContextParams, inputParam metadata.D
 		return &metadata.DeletedCount{}, ctx.Error.Error(common.CCErrTopoForbiddenToDeleteModelFailed)
 	}
 
-	// delete the model self
-	if err := m.dbProxy.Table(common.BKTableNameObjDes).Delete(ctx, deleteCond.ToMapStr()); nil != err {
+	// delete model self
+	cnt, err := m.deleteModelAndAttributes(ctx, targetObjIDS)
+	if nil != err {
 		return &metadata.DeletedCount{}, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
-	return &metadata.DeletedCount{Count: uint64(len(modelItems))}, nil
+	return &metadata.DeletedCount{Count: cnt}, nil
 }
 
 func (m *modelManager) CascadeDeleteModel(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
@@ -185,34 +187,22 @@ func (m *modelManager) CascadeDeleteModel(ctx core.ContextParams, inputParam met
 	if nil != err {
 		return &metadata.DeletedCount{}, ctx.Error.New(common.CCErrCommParamsInvalid, err.Error())
 	}
+	deleteCond.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: ctx.SupplierAccount})
 
-	modelItems := []metadata.ObjectDes{}
-	err = m.dbProxy.Table(common.BKTableNameObjDes).Find(deleteCond.ToMapStr()).All(ctx, &modelItems)
-	if nil != err {
-		return &metadata.DeletedCount{}, err
-	}
-
-	targetObjIDS := []string{}
-	for _, modelItem := range modelItems {
-		targetObjIDS = append(targetObjIDS, modelItem.ObjectID)
-	}
-
-	// cascade delete the other resource
-	if err := m.dependent.CascadeDeleteAssociation(ctx, targetObjIDS); nil != err {
-		return &metadata.DeletedCount{}, err
-	}
-
-	// delete the model self
-	if err := m.dbProxy.Table(common.BKTableNameObjDes).Delete(ctx, deleteCond.ToMapStr()); nil != err {
-		return &metadata.DeletedCount{}, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
-	}
-
-	return &metadata.DeletedCount{Count: uint64(len(modelItems))}, nil
+	cnt, err := m.cascadeDelete(ctx, deleteCond)
+	return &metadata.DeletedCount{Count: cnt}, err
 }
 
 func (m *modelManager) SearchModel(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
 
-	modelItems := []mapstr.MapStr{}
-	err := m.dbProxy.Table(common.BKTableNameObjDes).Find(inputParam.Condition).All(ctx, &modelItems)
-	return &metadata.QueryResult{Count: uint64(len(modelItems)), Info: modelItems}, err
+	searchCond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
+	if nil != err {
+		return &metadata.QueryResult{}, err
+	}
+
+	dataResult, err := m.searchReturnMapStr(ctx, searchCond)
+	if nil != err {
+		return &metadata.QueryResult{}, err
+	}
+	return &metadata.QueryResult{Count: uint64(len(dataResult)), Info: dataResult}, nil
 }

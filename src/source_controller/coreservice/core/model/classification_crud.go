@@ -16,16 +16,14 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/universalsql/mongo"
+	"configcenter/src/common/universalsql"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (m *modelClassification) isExists(ctx core.ContextParams, classificationID string) (origin *metadata.Classification, exists bool, err error) {
+func (m *modelClassification) count(ctx core.ContextParams, cond universalsql.Condition) (cnt uint64, err error) {
 
-	cond := mongo.NewCondition()
-	cond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationID, Val: ctx.SupplierAccount}, &mongo.Eq{Key: metadata.ClassFieldClassificationID, Val: classificationID})
-	err = m.dbProxy.Table(common.BKTableNameObjClassifiction).Find(cond.ToMapStr()).One(ctx, origin)
-	return origin, m.dbProxy.IsNotFoundError(err), err
+	cnt, err = m.dbProxy.Table(common.BKTableNameObjClassifiction).Find(cond.ToMapStr()).Count(ctx)
+	return cnt, err
 }
 
 func (m *modelClassification) save(ctx core.ContextParams, classification metadata.Classification) (id uint64, err error) {
@@ -42,7 +40,55 @@ func (m *modelClassification) save(ctx core.ContextParams, classification metada
 	return id, err
 }
 
-func (m *modelClassification) update(ctx core.ContextParams, data mapstr.MapStr, cond mapstr.MapStr) error {
+func (m *modelClassification) update(ctx core.ContextParams, data mapstr.MapStr, cond universalsql.Condition) (cnt uint64, err error) {
 
-	return m.dbProxy.Table(common.BKTableNameObjClassifiction).Update(ctx, cond, data)
+	cnt, err = m.count(ctx, cond)
+	if nil != err {
+		return cnt, err
+	}
+
+	if 0 == cnt {
+		return cnt, nil
+	}
+
+	err = m.dbProxy.Table(common.BKTableNameObjClassifiction).Update(ctx, cond, data)
+	if nil != err {
+		return 0, err
+	}
+	return cnt, err
+}
+
+func (m *modelClassification) delete(ctx core.ContextParams, cond universalsql.Condition) (cnt uint64, err error) {
+
+	cnt, err = m.count(ctx, cond)
+	if nil != err {
+		return cnt, err
+	}
+
+	if 0 == cnt {
+		return 0, err
+	}
+
+	err = m.dbProxy.Table(common.BKTableNameObjClassifiction).Delete(ctx, cond.ToMapStr())
+	if nil != err {
+		return 0, err
+	}
+
+	return cnt, err
+}
+
+func (m *modelClassification) search(ctx core.ContextParams, cond universalsql.Condition) ([]metadata.Classification, error) {
+
+	results := []metadata.Classification{}
+	err := m.dbProxy.Table(common.BKTableNameObjClassifiction).Find(cond.ToMapStr()).All(ctx, &results)
+
+	return results, err
+}
+
+func (m *modelClassification) searchReturnMapStr(ctx core.ContextParams, cond universalsql.Condition) ([]mapstr.MapStr, error) {
+
+	results := []mapstr.MapStr{}
+	err := m.dbProxy.Table(common.BKTableNameObjClassifiction).Find(cond.ToMapStr()).All(ctx, &results)
+
+	return results, err
 }

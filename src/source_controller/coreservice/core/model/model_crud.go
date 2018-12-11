@@ -17,19 +17,17 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql"
-	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (m *modelManager) isExists(ctx core.ContextParams, cond universalsql.Condition) (oneModel *metadata.ObjectDes, exists bool, err error) {
+func (m *modelManager) count(ctx core.ContextParams, cond universalsql.Condition) (uint64, error) {
 
-	oneModel = &metadata.ObjectDes{}
-	err = m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).One(ctx, oneModel)
-	if nil != err && m.dbProxy.IsNotFoundError(err) {
-		return oneModel, exists, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
+	cnt, err := m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).Count(ctx)
+	if nil != err {
+		return 0, ctx.Error.Errorf(common.CCErrObjectDBOpErrno, err.Error())
 	}
-	exists = !m.dbProxy.IsNotFoundError(err)
-	return oneModel, exists, err
+
+	return cnt, err
 }
 
 func (m *modelManager) save(ctx core.ContextParams, model *metadata.ObjectDes) (id uint64, err error) {
@@ -43,25 +41,85 @@ func (m *modelManager) save(ctx core.ContextParams, model *metadata.ObjectDes) (
 	return id, err
 }
 
-func (m *modelManager) isValid(ctx core.ContextParams, objID string) (isValid bool, err error) {
-
-	checkCond := mongo.NewCondition()
-	checkCond.Element(&mongo.Eq{Key: metadata.ModelFieldOwnerID, Val: ctx.SupplierAccount})
-	checkCond.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: objID})
-
-	cnt, err := m.dbProxy.Table(common.BKTableNameObjDes).Find(checkCond.ToMapStr()).Count(ctx)
-	isValid = (0 != cnt)
-
-	return isValid, err
-}
-
 func (m *modelManager) update(ctx core.ContextParams, data mapstr.MapStr, cond universalsql.Condition) (cnt uint64, err error) {
 
-	cnt, err = m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).Count(ctx)
+	cnt, err = m.count(ctx, cond)
 	if nil != err {
-		return cnt, err
+		return 0, err
+	}
+
+	if 0 == cnt {
+		return 0, nil
 	}
 
 	err = m.dbProxy.Table(common.BKTableNameObjDes).Update(ctx, cond.ToMapStr(), data)
+	if nil != err {
+		return 0, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
+	}
+
 	return cnt, err
+}
+
+func (m *modelManager) search(ctx core.ContextParams, cond universalsql.Condition) ([]metadata.Object, error) {
+
+	dataResult := []metadata.Object{}
+	if err := m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).All(ctx, &dataResult); nil != err {
+		return dataResult, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
+	}
+
+	return dataResult, nil
+}
+
+func (m *modelManager) searchReturnMapStr(ctx core.ContextParams, cond universalsql.Condition) ([]mapstr.MapStr, error) {
+
+	dataResult := []mapstr.MapStr{}
+	if err := m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).All(ctx, &dataResult); nil != err {
+		return dataResult, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
+	}
+
+	return dataResult, nil
+}
+
+func (m *modelManager) delete(ctx core.ContextParams, cond universalsql.Condition) (uint64, error) {
+
+	cnt, err := m.count(ctx, cond)
+	if nil != err {
+		return 0, err
+	}
+
+	if 0 == cnt {
+		return 0, nil
+	}
+
+	if err = m.dbProxy.Table(common.BKTableNameObjDes).Delete(ctx, cond.ToMapStr()); nil != err {
+		return 0, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
+	}
+
+	return cnt, nil
+}
+
+func (m *modelManager) cascadeDelete(ctx core.ContextParams, cond universalsql.Condition) (uint64, error) {
+
+	modelItems, err := m.search(ctx, cond)
+	if nil != err {
+		return 0, err
+	}
+
+	targetObjIDS := []string{}
+	for _, modelItem := range modelItems {
+		targetObjIDS = append(targetObjIDS, modelItem.ObjectID)
+	}
+
+	// cascade delete the other resource
+	if err := m.dependent.CascadeDeleteAssociation(ctx, targetObjIDS); nil != err {
+		return 0, err
+	}
+
+	cnt, err := m.deleteModelAndAttributes(ctx, targetObjIDS)
+	if nil != err {
+		return 0, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
+	}
+
+	return cnt, nil
+
 }
