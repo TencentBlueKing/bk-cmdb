@@ -30,7 +30,7 @@ type modelClassification struct {
 
 func (m *modelClassification) CreateOneModelClassification(ctx core.ContextParams, inputParam metadata.CreateOneModelClassification) (*metadata.CreateOneDataResult, error) {
 
-	_, exists, err := m.IsExists(ctx, inputParam.Data.ClassificationID)
+	_, exists, err := m.isExists(ctx, inputParam.Data.ClassificationID)
 	if nil != err {
 		return nil, err
 	}
@@ -39,7 +39,7 @@ func (m *modelClassification) CreateOneModelClassification(ctx core.ContextParam
 		return nil, ctx.Error.Error(common.CCErrCommDuplicateItem)
 	}
 
-	id, err := m.Save(ctx, inputParam.Data)
+	id, err := m.save(ctx, inputParam.Data)
 	return &metadata.CreateOneDataResult{Created: metadata.CreatedDataResult{ID: id}}, err
 }
 
@@ -58,7 +58,7 @@ func (m *modelClassification) CreateManyModelClassification(ctx core.ContextPara
 
 	for itemIdx, item := range inputParam.Data {
 
-		_, exists, err := m.IsExists(ctx, item.ClassificationID)
+		_, exists, err := m.isExists(ctx, item.ClassificationID)
 		if nil != err {
 			addExceptionFunc(int64(itemIdx), err.(errors.CCErrorCoder), &item)
 			continue
@@ -69,7 +69,7 @@ func (m *modelClassification) CreateManyModelClassification(ctx core.ContextPara
 			continue
 		}
 
-		id, err := m.Save(ctx, item)
+		id, err := m.save(ctx, item)
 		if nil != err {
 			addExceptionFunc(int64(itemIdx), err.(errors.CCErrorCoder), &item)
 			continue
@@ -98,7 +98,7 @@ func (m *modelClassification) SetManyModelClassification(ctx core.ContextParams,
 
 	for itemIdx, item := range inputParam.Data {
 
-		origin, exists, err := m.IsExists(ctx, item.ClassificationID)
+		origin, exists, err := m.isExists(ctx, item.ClassificationID)
 		if nil != err {
 			addExceptionFunc(int64(itemIdx), err.(errors.CCErrorCoder), &item)
 			continue
@@ -107,7 +107,7 @@ func (m *modelClassification) SetManyModelClassification(ctx core.ContextParams,
 		if exists {
 
 			cond := mongo.NewCondition()
-			if err := m.Update(ctx, mapstr.NewFromStruct(item, "field"), cond.Element(&mongo.Eq{Key: metadata.ClassificationFieldID, Val: origin.ID}).ToMapStr()); nil != err {
+			if err := m.update(ctx, mapstr.NewFromStruct(item, "field"), cond.Element(&mongo.Eq{Key: metadata.ClassificationFieldID, Val: origin.ID}).ToMapStr()); nil != err {
 				addExceptionFunc(int64(itemIdx), err.(errors.CCErrorCoder), &item)
 				continue
 			}
@@ -116,7 +116,7 @@ func (m *modelClassification) SetManyModelClassification(ctx core.ContextParams,
 			continue
 		}
 
-		id, err := m.Save(ctx, item)
+		id, err := m.save(ctx, item)
 		if nil != err {
 			addExceptionFunc(int64(itemIdx), err.(errors.CCErrorCoder), &item)
 			continue
@@ -134,7 +134,7 @@ func (m *modelClassification) SetManyModelClassification(ctx core.ContextParams,
 
 func (m *modelClassification) SetOneModelClassification(ctx core.ContextParams, inputParam metadata.SetOneModelClassification) (*metadata.SetDataResult, error) {
 
-	origin, exists, err := m.IsExists(ctx, inputParam.Data.ClassificationID)
+	origin, exists, err := m.isExists(ctx, inputParam.Data.ClassificationID)
 	if nil != err {
 		return nil, err
 	}
@@ -152,7 +152,7 @@ func (m *modelClassification) SetOneModelClassification(ctx core.ContextParams, 
 	if exists {
 
 		cond := mongo.NewCondition()
-		if err := m.Update(ctx, mapstr.NewFromStruct(inputParam.Data, "field"), cond.Element(&mongo.Eq{Key: metadata.ClassificationFieldID, Val: origin.ID}).ToMapStr()); nil != err {
+		if err := m.update(ctx, mapstr.NewFromStruct(inputParam.Data, "field"), cond.Element(&mongo.Eq{Key: metadata.ClassificationFieldID, Val: origin.ID}).ToMapStr()); nil != err {
 			addExceptionFunc(0, err.(errors.CCErrorCoder), &inputParam.Data)
 			return dataResult, nil
 		}
@@ -160,7 +160,7 @@ func (m *modelClassification) SetOneModelClassification(ctx core.ContextParams, 
 		return dataResult, err
 	}
 
-	id, err := m.Save(ctx, inputParam.Data)
+	id, err := m.save(ctx, inputParam.Data)
 	if nil != err {
 		addExceptionFunc(0, err.(errors.CCErrorCoder), origin)
 	}
@@ -174,7 +174,7 @@ func (m *modelClassification) UpdateModelClassification(ctx core.ContextParams, 
 	if nil != err {
 		return &metadata.UpdatedCount{}, err
 	}
-	if err := m.Update(ctx, inputParam.Data, inputParam.Condition); nil != err {
+	if err := m.update(ctx, inputParam.Data, inputParam.Condition); nil != err {
 		return &metadata.UpdatedCount{}, err
 	}
 	return &metadata.UpdatedCount{Count: cnt}, nil

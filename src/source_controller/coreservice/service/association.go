@@ -180,14 +180,14 @@ func (s *coreService) SetManyInstanceAssociation(params core.ContextParams, path
 	return s.core.AssociationOperation().SetManyInstanceAssociation(params, inputData)
 }
 
-func (s *coreService) UpdateInstanceAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+// func (s *coreService) UpdateInstanceAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	inputData := metadata.UpdateOption{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
-	}
-	return s.core.AssociationOperation().UpdateInstanceAssociation(params, inputData)
-}
+// 	inputData := metadata.UpdateOption{}
+// 	if err := data.MarshalJSONInto(&inputData); nil != err {
+// 		return nil, err
+// 	}
+// 	return s.core.AssociationOperation().UpdateInstanceAssociation(params, inputData)
+// }
 
 func (s *coreService) SearchInstanceAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 

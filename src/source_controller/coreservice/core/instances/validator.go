@@ -12,14 +12,6 @@
 
 package instances
 
-import (
-	"configcenter/src/common"
-	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
-	"configcenter/src/source_controller/coreservice/core"
-	"configcenter/src/storage/dal"
-)
-
 func (m *instanceManager) validInstanceData(valData map[string]interface{}, validType string, instID int64) error {
-	return nil, nil
+	return nil
 }
