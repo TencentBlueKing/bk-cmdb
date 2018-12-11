@@ -66,7 +66,7 @@
             <i class="bk-icon icon-info-circle"></i>
         </div>
         <div class="btn-group">
-            <bk-button type="primary" @click="saveRelation">
+            <bk-button type="primary" :loading="$loading('createObjectAssociation')" @click="saveRelation">
                 {{$t('Common["确定"]')}}
             </bk-button>
             <bk-button type="default" @click="cancel">
@@ -133,6 +133,7 @@
         },
         methods: {
             ...mapActions('objectAssociation', [
+                'createObjectAssociation',
                 'searchAssociationType',
                 'searchObjectAssociation'
             ]),
@@ -193,27 +194,8 @@
                     }
                 })
             },
-            isRelationExist () {
-                let {
-                    relationInfo
-                } = this
-
-                let isExist = this.edges.find(edge => {
-                    return edge.type === 'create' && edge.params['bk_asst_id'] === relationInfo['bk_asst_id'] && edge.params['bk_obj_id'] === relationInfo['bk_obj_id'] && edge.params['bk_asst_obj_id'] === relationInfo['bk_asst_obj_id']
-                })
-                if (isExist) {
-                    return true
-                }
-
-                isExist = this.modelRelationList.some(({bk_asst_id: asstId, bk_obj_id: objId, bk_asst_obj_id: asstObjId}) => asstId === relationInfo['bk_asst_id'] && objId === relationInfo['bk_obj_id'] && asstObjId === relationInfo['bk_asst_obj_id'])
-                return isExist
-            },
             async saveRelation () {
                 if (!await this.$validator.validateAll()) {
-                    return
-                }
-                if (this.isRelationExist()) {
-                    this.$error(this.$t('ModelManagement["关联关系重复"]'))
                     return
                 }
                 let params = {
@@ -222,7 +204,13 @@
                         bk_obj_asst_id: this.objAsstId
                     }
                 }
-                this.$emit('save', params)
+                const res = await this.createObjectAssociation({
+                    params,
+                    config: {
+                        requestId: 'createObjectAssociation'
+                    }
+                })
+                this.$emit('save', res)
                 this.$emit('cancel')
             },
             cancel () {
