@@ -96,6 +96,7 @@ func (cli *Service) UpdateTopoGraphics(req *restful.Request, resp *restful.Respo
 			condition.SetObjID(datas[index].ObjID)
 			condition.SetInstID(datas[index].InstID)
 			condition.SetSupplierAccount(ownerID)
+			condition.SetPosition(datas[index].Position)
 			if err = cli.Instance.Table(common.BKTableNameTopoGraphics).Update(context.Background(), condition, datas[index]); err != nil {
 				blog.Errorf("update data failed, error information is %s", err.Error())
 				resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBUpdateFailed, err.Error())})
