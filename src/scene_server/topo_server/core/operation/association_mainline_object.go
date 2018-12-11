@@ -13,6 +13,7 @@
 package operation
 
 import (
+	"context"
 	"io"
 
 	"configcenter/src/common"
@@ -202,6 +203,32 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 	if err = childObj.UpdateMainlineObjectAssociationTo(parentObj.GetID(), currentObj.GetID()); err != nil {
 		blog.Errorf("[operation-asst] update mainline current object's[%s] child object[%s] association to current failed, err: %v",
 			currentObj.GetID(), childObj.GetID(), err)
+		return nil, err
+	}
+
+	attr := &metadata.Attribute{
+		OwnerID:       params.SupplierAccount,
+		ObjectID:      currentObj.GetID(),
+		PropertyID:    common.BKInstNameField,
+		PropertyName:  "名称",
+		PropertyGroup: "default",
+		PropertyIndex: 0,
+		IsSystem:      false,
+		IsAPI:         false,
+		IsRequired:    true,
+		IsPre:         true,
+		PropertyType:  "singlechar",
+		Creator:       "cc_system",
+		IsEditable:    true,
+	}
+
+	rsp, err := a.clientSet.ObjectController().Meta().CreateObjectAtt(context.Background(), params.Header, attr)
+	if nil != err {
+		blog.Errorf("create mainline object, but create default attribute bk_inst_name failed, err: %v", err)
+		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if !rsp.Result {
 		return nil, err
 	}
 
