@@ -93,6 +93,31 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", errIdx, err.Error()))
 	}
 
+	// all the instances's name should not be same,
+	// so we need to check first.
+	instNameMap := make(map[string]struct{})
+	for line, inst := range *batchInfo.BatchInfo {
+		iName, exist := inst[common.BKInstNameField]
+		if !exist {
+			blog.Errorf("create object[%s] instance batch failed, because missing bk_inst_name field.", obj.GetID())
+			return nil, params.Err.Errorf(common.CCErrorTopoObjectInstanceMissingInstanceNameField, line)
+		}
+
+		name, can := iName.(string)
+		if !can {
+			blog.Errorf("create object[%s] instance batch failed, because  bk_inst_name value type is not string.", obj.GetID())
+			return nil, params.Err.Errorf(common.CCErrorTopoInvalidObjectInstanceNameFieldValue, line)
+		}
+
+		// check if this instance name is already exist.
+		if _, ok := instNameMap[name]; ok {
+			blog.Errorf("create object[%s] instance batch, but bk_inst_name %s is duplicated.", obj.GetID(), name)
+			return nil, params.Err.Errorf(common.CCErrorTopoMutipleObjectInstanceName, name)
+		}
+
+		instNameMap[name] = struct{}{}
+	}
+
 	for colIdx, colInput := range *batchInfo.BatchInfo {
 		if colInput == nil {
 			// this is a empty excel line.
