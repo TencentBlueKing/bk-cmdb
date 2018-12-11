@@ -19,14 +19,14 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/eventclient"
 	"configcenter/src/common/metadata"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	"github.com/emicklei/go-restful"
 )
 
 // CreateInstAssociation create instance association map
@@ -57,7 +57,7 @@ func (cli *Service) CreateInstAssociation(req *restful.Request, resp *restful.Re
 
 	// find object id
 	objCond := map[string]interface{}{
-		meta.AssociationFieldAsstID:          request.ObjectAsstId,
+		meta.AssociationFieldAsstID:          request.ObjectAsstID,
 		meta.AssociationFieldSupplierAccount: ownerID,
 	}
 
@@ -65,7 +65,7 @@ func (cli *Service) CreateInstAssociation(req *restful.Request, resp *restful.Re
 	err = db.Table(common.BKTableNameObjAsst).Find(objCond).One(ctx, &objResult)
 	if nil != err {
 		blog.Errorf("not found object association error :%v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, request.ObjectAsstId)})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, request.ObjectAsstID)})
 		return
 	}
 
@@ -81,9 +81,9 @@ func (cli *Service) CreateInstAssociation(req *restful.Request, resp *restful.Re
 		ID:                int64(id),
 		ObjectID:          objResult.ObjectID,
 		AsstObjectID:      objResult.AsstObjID,
-		ObjectAsstID:      request.ObjectAsstId,
-		InstID:            request.InstId,
-		AsstInstID:        request.AsstInstId,
+		ObjectAsstID:      request.ObjectAsstID,
+		InstID:            request.InstID,
+		AsstInstID:        request.AsstInstID,
 		AssociationKindID: objResult.AsstKindID,
 		OwnerID:           ownerID,
 		CreateTime:        time.Now(),

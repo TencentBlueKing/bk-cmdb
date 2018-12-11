@@ -19,32 +19,32 @@ import (
 
 func TestTopoGraphics_FillBlank(t *testing.T) {
 	type fields struct {
-		ScopeType       *string
-		ScopeID         *string
-		NodeType        *string
-		ObjID           *string
-		IsPre           *bool
-		InstID          *int
-		NodeName        *string
-		Position        *Position
+		ScopeType       string
+		ScopeID         string
+		NodeType        string
+		ObjID           string
+		IsPre           bool
+		InstID          int
+		NodeName        string
+		Position        Position
 		Ext             map[string]interface{}
-		Icon            *string
-		BizID           *int
-		SupplierAccount *string
+		Icon            string
+		BizID           int
+		SupplierAccount string
 		Assts           []GraphAsst
 	}
 
 	bizid := 0
 	account := "0"
 	ext := map[string]interface{}{}
-	pos := &Position{}
+	pos := Position{}
 
 	tests := []struct {
 		name   string
 		fields fields
 		want   *TopoGraphics
 	}{
-		{"", fields{}, &TopoGraphics{BizID: &bizid, SupplierAccount: &account, Ext: ext, Position: pos}},
+		{"", fields{}, &TopoGraphics{BizID: bizid, SupplierAccount: account, Ext: ext, Position: pos}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -72,18 +72,18 @@ func TestTopoGraphics_FillBlank(t *testing.T) {
 
 func TestTopoGraphics_SetNodeType(t *testing.T) {
 	type fields struct {
-		ScopeType       *string
-		ScopeID         *string
-		NodeType        *string
-		ObjID           *string
-		IsPre           *bool
-		InstID          *int
-		NodeName        *string
-		Position        *Position
+		ScopeType       string
+		ScopeID         string
+		NodeType        string
+		ObjID           string
+		IsPre           bool
+		InstID          int
+		NodeName        string
+		Position        Position
 		Ext             map[string]interface{}
-		Icon            *string
-		BizID           *int
-		SupplierAccount *string
+		Icon            string
+		BizID           int
+		SupplierAccount string
 		Assts           []GraphAsst
 	}
 	type args struct {
@@ -95,7 +95,7 @@ func TestTopoGraphics_SetNodeType(t *testing.T) {
 		fields fields
 		args   args
 	}{
-		{"", fields{NodeType: &nodetype}, args{"nodetype"}},
+		{"", fields{NodeType: nodetype}, args{"nodetype"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -121,18 +121,18 @@ func TestTopoGraphics_SetNodeType(t *testing.T) {
 
 func TestTopoGraphics_SetObjID(t *testing.T) {
 	type fields struct {
-		ScopeType       *string
-		ScopeID         *string
-		NodeType        *string
-		ObjID           *string
-		IsPre           *bool
-		InstID          *int
-		NodeName        *string
-		Position        *Position
+		ScopeType       string
+		ScopeID         string
+		NodeType        string
+		ObjID           string
+		IsPre           bool
+		InstID          int
+		NodeName        string
+		Position        Position
 		Ext             map[string]interface{}
-		Icon            *string
-		BizID           *int
-		SupplierAccount *string
+		Icon            string
+		BizID           int
+		SupplierAccount string
 		Assts           []GraphAsst
 	}
 	type args struct {
@@ -144,7 +144,7 @@ func TestTopoGraphics_SetObjID(t *testing.T) {
 		fields fields
 		args   args
 	}{
-		{"", fields{ObjID: &objid}, args{"objid"}},
+		{"", fields{ObjID: objid}, args{"objid"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -170,18 +170,18 @@ func TestTopoGraphics_SetObjID(t *testing.T) {
 
 func TestTopoGraphics_SetInstID(t *testing.T) {
 	type fields struct {
-		ScopeType       *string
-		ScopeID         *string
-		NodeType        *string
-		ObjID           *string
-		IsPre           *bool
-		InstID          *int
-		NodeName        *string
-		Position        *Position
+		ScopeType       string
+		ScopeID         string
+		NodeType        string
+		ObjID           string
+		IsPre           bool
+		InstID          int
+		NodeName        string
+		Position        Position
 		Ext             map[string]interface{}
-		Icon            *string
-		BizID           *int
-		SupplierAccount *string
+		Icon            string
+		BizID           int
+		SupplierAccount string
 		Assts           []GraphAsst
 	}
 	type args struct {
@@ -193,7 +193,7 @@ func TestTopoGraphics_SetInstID(t *testing.T) {
 		fields fields
 		args   args
 	}{
-		{"", fields{InstID: &instid}, args{1}},
+		{"", fields{InstID: instid}, args{1}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -219,18 +219,18 @@ func TestTopoGraphics_SetInstID(t *testing.T) {
 
 func TestTopoGraphics_SetNodeName(t *testing.T) {
 	type fields struct {
-		ScopeType       *string
-		ScopeID         *string
-		NodeType        *string
-		ObjID           *string
-		IsPre           *bool
-		InstID          *int
-		NodeName        *string
-		Position        *Position
+		ScopeType       string
+		ScopeID         string
+		NodeType        string
+		ObjID           string
+		IsPre           bool
+		InstID          int
+		NodeName        string
+		Position        Position
 		Ext             map[string]interface{}
-		Icon            *string
-		BizID           *int
-		SupplierAccount *string
+		Icon            string
+		BizID           int
+		SupplierAccount string
 		Assts           []GraphAsst
 	}
 	type args struct {
@@ -242,7 +242,7 @@ func TestTopoGraphics_SetNodeName(t *testing.T) {
 		fields fields
 		args   args
 	}{
-		{"", fields{NodeName: &nodename}, args{"nodename"}},
+		{"", fields{NodeName: nodename}, args{"nodename"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -268,18 +268,18 @@ func TestTopoGraphics_SetNodeName(t *testing.T) {
 
 func TestTopoGraphics_SetIsPre(t *testing.T) {
 	type fields struct {
-		ScopeType       *string
-		ScopeID         *string
-		NodeType        *string
-		ObjID           *string
-		IsPre           *bool
-		InstID          *int
-		NodeName        *string
-		Position        *Position
+		ScopeType       string
+		ScopeID         string
+		NodeType        string
+		ObjID           string
+		IsPre           bool
+		InstID          int
+		NodeName        string
+		Position        Position
 		Ext             map[string]interface{}
-		Icon            *string
-		BizID           *int
-		SupplierAccount *string
+		Icon            string
+		BizID           int
+		SupplierAccount string
 		Assts           []GraphAsst
 	}
 	type args struct {
@@ -291,7 +291,7 @@ func TestTopoGraphics_SetIsPre(t *testing.T) {
 		fields fields
 		args   args
 	}{
-		{"", fields{IsPre: &ispre}, args{true}},
+		{"", fields{IsPre: ispre}, args{true}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -317,30 +317,30 @@ func TestTopoGraphics_SetIsPre(t *testing.T) {
 
 func TestTopoGraphics_SetPosition(t *testing.T) {
 	type fields struct {
-		ScopeType       *string
-		ScopeID         *string
-		NodeType        *string
-		ObjID           *string
-		IsPre           *bool
-		InstID          *int
-		NodeName        *string
-		Position        *Position
+		ScopeType       string
+		ScopeID         string
+		NodeType        string
+		ObjID           string
+		IsPre           bool
+		InstID          int
+		NodeName        string
+		Position        Position
 		Ext             map[string]interface{}
-		Icon            *string
-		BizID           *int
-		SupplierAccount *string
+		Icon            string
+		BizID           int
+		SupplierAccount string
 		Assts           []GraphAsst
 	}
 	type args struct {
-		val *Position
+		val Position
 	}
-	pos := &Position{}
+	pos := Position{}
 	tests := []struct {
 		name   string
 		fields fields
 		args   args
 	}{
-		{"", fields{Position: pos}, args{&Position{}}},
+		{"", fields{Position: pos}, args{Position{}}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -366,18 +366,18 @@ func TestTopoGraphics_SetPosition(t *testing.T) {
 
 func TestTopoGraphics_SetExt(t *testing.T) {
 	type fields struct {
-		ScopeType       *string
-		ScopeID         *string
-		NodeType        *string
-		ObjID           *string
-		IsPre           *bool
-		InstID          *int
-		NodeName        *string
-		Position        *Position
+		ScopeType       string
+		ScopeID         string
+		NodeType        string
+		ObjID           string
+		IsPre           bool
+		InstID          int
+		NodeName        string
+		Position        Position
 		Ext             map[string]interface{}
-		Icon            *string
-		BizID           *int
-		SupplierAccount *string
+		Icon            string
+		BizID           int
+		SupplierAccount string
 		Assts           []GraphAsst
 	}
 	type args struct {
@@ -414,18 +414,18 @@ func TestTopoGraphics_SetExt(t *testing.T) {
 
 func TestTopoGraphics_SetIcon(t *testing.T) {
 	type fields struct {
-		ScopeType       *string
-		ScopeID         *string
-		NodeType        *string
-		ObjID           *string
-		IsPre           *bool
-		InstID          *int
-		NodeName        *string
-		Position        *Position
+		ScopeType       string
+		ScopeID         string
+		NodeType        string
+		ObjID           string
+		IsPre           bool
+		InstID          int
+		NodeName        string
+		Position        Position
 		Ext             map[string]interface{}
-		Icon            *string
-		BizID           *int
-		SupplierAccount *string
+		Icon            string
+		BizID           int
+		SupplierAccount string
 		Assts           []GraphAsst
 	}
 	type args struct {
@@ -437,7 +437,7 @@ func TestTopoGraphics_SetIcon(t *testing.T) {
 		fields fields
 		args   args
 	}{
-		{"", fields{Icon: &icon}, args{"icon"}},
+		{"", fields{Icon: icon}, args{"icon"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -463,18 +463,18 @@ func TestTopoGraphics_SetIcon(t *testing.T) {
 
 func TestTopoGraphics_SetScopeType(t *testing.T) {
 	type fields struct {
-		ScopeType       *string
-		ScopeID         *string
-		NodeType        *string
-		ObjID           *string
-		IsPre           *bool
-		InstID          *int
-		NodeName        *string
-		Position        *Position
+		ScopeType       string
+		ScopeID         string
+		NodeType        string
+		ObjID           string
+		IsPre           bool
+		InstID          int
+		NodeName        string
+		Position        Position
 		Ext             map[string]interface{}
-		Icon            *string
-		BizID           *int
-		SupplierAccount *string
+		Icon            string
+		BizID           int
+		SupplierAccount string
 		Assts           []GraphAsst
 	}
 	type args struct {
@@ -486,7 +486,7 @@ func TestTopoGraphics_SetScopeType(t *testing.T) {
 		fields fields
 		args   args
 	}{
-		{"", fields{ScopeType: &ScopeType}, args{"ScopeType"}},
+		{"", fields{ScopeType: ScopeType}, args{"ScopeType"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -512,18 +512,18 @@ func TestTopoGraphics_SetScopeType(t *testing.T) {
 
 func TestTopoGraphics_SetScopeID(t *testing.T) {
 	type fields struct {
-		ScopeType       *string
-		ScopeID         *string
-		NodeType        *string
-		ObjID           *string
-		IsPre           *bool
-		InstID          *int
-		NodeName        *string
-		Position        *Position
+		ScopeType       string
+		ScopeID         string
+		NodeType        string
+		ObjID           string
+		IsPre           bool
+		InstID          int
+		NodeName        string
+		Position        Position
 		Ext             map[string]interface{}
-		Icon            *string
-		BizID           *int
-		SupplierAccount *string
+		Icon            string
+		BizID           int
+		SupplierAccount string
 		Assts           []GraphAsst
 	}
 	type args struct {
@@ -535,7 +535,7 @@ func TestTopoGraphics_SetScopeID(t *testing.T) {
 		fields fields
 		args   args
 	}{
-		{"", fields{ScopeID: &ScopeID}, args{"ScopeID"}},
+		{"", fields{ScopeID: ScopeID}, args{"ScopeID"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -561,18 +561,18 @@ func TestTopoGraphics_SetScopeID(t *testing.T) {
 
 func TestTopoGraphics_SetBizID(t *testing.T) {
 	type fields struct {
-		ScopeType       *string
-		ScopeID         *string
-		NodeType        *string
-		ObjID           *string
-		IsPre           *bool
-		InstID          *int
-		NodeName        *string
-		Position        *Position
+		ScopeType       string
+		ScopeID         string
+		NodeType        string
+		ObjID           string
+		IsPre           bool
+		InstID          int
+		NodeName        string
+		Position        Position
 		Ext             map[string]interface{}
-		Icon            *string
-		BizID           *int
-		SupplierAccount *string
+		Icon            string
+		BizID           int
+		SupplierAccount string
 		Assts           []GraphAsst
 	}
 	type args struct {
@@ -584,7 +584,7 @@ func TestTopoGraphics_SetBizID(t *testing.T) {
 		fields fields
 		args   args
 	}{
-		{"", fields{BizID: &BizID}, args{1}},
+		{"", fields{BizID: BizID}, args{1}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -610,18 +610,18 @@ func TestTopoGraphics_SetBizID(t *testing.T) {
 
 func TestTopoGraphics_SetSupplierAccount(t *testing.T) {
 	type fields struct {
-		ScopeType       *string
-		ScopeID         *string
-		NodeType        *string
-		ObjID           *string
-		IsPre           *bool
-		InstID          *int
-		NodeName        *string
-		Position        *Position
+		ScopeType       string
+		ScopeID         string
+		NodeType        string
+		ObjID           string
+		IsPre           bool
+		InstID          int
+		NodeName        string
+		Position        Position
 		Ext             map[string]interface{}
-		Icon            *string
-		BizID           *int
-		SupplierAccount *string
+		Icon            string
+		BizID           int
+		SupplierAccount string
 		Assts           []GraphAsst
 	}
 	type args struct {
@@ -633,7 +633,7 @@ func TestTopoGraphics_SetSupplierAccount(t *testing.T) {
 		fields fields
 		args   args
 	}{
-		{"", fields{SupplierAccount: &SupplierAccount}, args{"SupplierAccount"}},
+		{"", fields{SupplierAccount: SupplierAccount}, args{"SupplierAccount"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
