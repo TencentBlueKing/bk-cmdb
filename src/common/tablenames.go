@@ -81,8 +81,12 @@ const (
 	BKTableNameTransaction      = "cc_Transaction"
 	BKTableNameIDgenerator      = "cc_idgenerator"
 
-	BKTableNameNetcollectDevice   = "cc_Netcollect_Device"
-	BKTableNameNetcollectProperty = "cc_Netcollect_Property"
+	BKTableNameNetcollectDevice   = "cc_NetcollectDevice"
+	BKTableNameNetcollectProperty = "cc_NetcollectProperty"
+
+	BKTableNameNetcollectConfig  = "cc_NetcollectConfig"
+	BKTableNameNetcollectReport  = "cc_NetcollectReport"
+	BKTableNameNetcollectHistory = "cc_NetcollectHistory"
 
 	BKTableNameHostLock = "cc_HostLock"
 )
@@ -120,9 +124,16 @@ var AllTables = []string{
 	BKTableNameIdentifier,
 	BKTableNameObjAsst,
 	BKTableNameTopoGraphics,
+	BKTableNameNetcollectConfig,
+	BKTableNameNetcollectDevice,
+	BKTableNameNetcollectProperty,
+	BKTableNameNetcollectReport,
+	BKTableNameNetcollectHistory,
 	BKTableNameTransaction,
 	BKTableNameIDgenerator,
 	BKTableNameHostLock,
+	BKTableNameObjUnique,
+	BKTableNameAsstDes,
 }
 
 // GetInstTableName returns inst data table name

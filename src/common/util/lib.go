@@ -18,11 +18,11 @@ import (
 	"reflect"
 	"sync/atomic"
 
-	restful "github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal"
+
+	restful "github.com/emicklei/go-restful"
 )
 
 func InStrArr(arr []string, key string) bool {
@@ -181,3 +181,12 @@ type Int64Slice []int64
 func (p Int64Slice) Len() int           { return len(p) }
 func (p Int64Slice) Less(i, j int) bool { return p[i] < p[j] }
 func (p Int64Slice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+
+func Ptrue() *bool {
+	tmp := true
+	return &tmp
+}
+func Pfalse() *bool {
+	tmp := false
+	return &tmp
+}

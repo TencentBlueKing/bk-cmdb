@@ -496,6 +496,7 @@ func (s *Service) UpdateCustomProperty(req *restful.Request, resp *restful.Respo
 
 func (s *Service) GetHostAppByCompanyId(req *restful.Request, resp *restful.Response) {
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
+	rid := util.GetHTTPCCRequestID(req.Request.Header)
 	input := &meta.GetHostAppByCompanyIDParams{}
 	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
 		blog.Errorf("GetHostAppByCompanyId , but decode body failed, err: %v", err)
@@ -503,7 +504,7 @@ func (s *Service) GetHostAppByCompanyId(req *restful.Request, resp *restful.Resp
 		return
 	}
 
-	blog.V(5).Infof("GetHostAppByCompanyId input:%v", input)
+	blog.V(5).Infof("GetHostAppByCompanyId input:%+v,rid:%s", input, rid)
 	platId, err := util.GetInt64ByInterface(input.CloudIDStr)
 	if nil != err {
 		blog.Errorf("GetHostAppByCompanyId cloud id not integer, input:%v", input)
@@ -522,11 +523,11 @@ func (s *Service) GetHostAppByCompanyId(req *restful.Request, resp *restful.Resp
 	//根据i,platId获取主机
 	hostArr, hostIdArr, err := phpapi.GetHostMapByCond(hostCon) // phpapilogic.GetHostMapByCond(req, hostCon)
 	if nil != err {
-		blog.Errorf("GetHostAppByCompanyId getHostMapByCond:%s, input:%v", err.Error(), input)
+		blog.Errorf("GetHostAppByCompanyId getHostMapByCond:%s, input:%+v,rid:%s", err.Error(), input, rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostGetFail)})
 		return
 	}
-	blog.V(5).Infof("GetHostAppByCompanyId hostArr:%v, input:%v", hostArr, input)
+	blog.V(5).Infof("GetHostAppByCompanyId hostArr:%v, input:%+v,rid:%s", hostArr, input, rid)
 	if len(hostIdArr) == 0 {
 		resp.WriteEntity(meta.Response{
 			BaseResp: meta.SuccessBaseResp,
@@ -540,11 +541,11 @@ func (s *Service) GetHostAppByCompanyId(req *restful.Request, resp *restful.Resp
 	}
 	configArr, err := s.Logics.GetConfigByCond(req.Request.Header, configCon)
 	if nil != err {
-		blog.Errorf("GetHostAppByCompanyId getConfigByCond err:%s, input:%v", err.Error(), input)
+		blog.Errorf("GetHostAppByCompanyId getConfigByCond err:%s, input:%+v,rid", err.Error(), input, rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostGetFail)})
 		return
 	}
-	blog.V(5).Infof("GetHostAppByCompanyId configArr:%v, input:%v", configArr, input)
+	blog.V(5).Infof("GetHostAppByCompanyId configArr:%v, input:%+v,rid:%s", configArr, input, rid)
 	if len(configArr) == 0 {
 		resp.WriteEntity(meta.Response{
 			BaseResp: meta.SuccessBaseResp,
@@ -566,15 +567,10 @@ func (s *Service) GetHostAppByCompanyId(req *restful.Request, resp *restful.Resp
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostGetFail)})
 		return
 	}
-	blog.V(5).Infof("GetHostAppByCompanyId hostMap:%v, input:%v", hostMapArr, input)
-	hostDataArr := make([]interface{}, 0)
-	for _, h := range hostMapArr {
-		hostMap := h.(map[string]interface{})
-		hostDataArr = append(hostDataArr, hostMap)
-	}
+	blog.V(5).Infof("GetHostAppByCompanyId hostMap:%v, input:%+v,rid:%s", hostMapArr, input, rid)
 	resp.WriteEntity(meta.Response{
 		BaseResp: meta.SuccessBaseResp,
-		Data:     hostDataArr,
+		Data:     hostMapArr,
 	})
 }
 

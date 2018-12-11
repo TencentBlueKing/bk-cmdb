@@ -419,9 +419,9 @@ func (ia *importAssociation) addSrcAssociation(idx int, asstFlag string, instID,
 		return
 	}
 	inst := &metadata.CreateAssociationInstRequest{}
-	inst.ObjectAsstId = asstFlag
-	inst.InstId = instID
-	inst.AsstInstId = assInstID
+	inst.ObjectAsstID = asstFlag
+	inst.InstID = instID
+	inst.AsstInstID = assInstID
 	rsp, err := ia.cli.clientSet.ObjectController().Association().CreateInst(ia.ctx, ia.params.Header, inst)
 	if err != nil {
 		ia.parseImportDataErr[idx] = err.Error()
