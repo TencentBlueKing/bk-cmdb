@@ -94,7 +94,7 @@ func (cli *Service) DeleteInstObject(req *restful.Request, resp *restful.Respons
 					PreData: originData,
 				},
 			}
-			err = cli.ec.Push(srcevent)
+			err = cli.EventC.Push(srcevent)
 			if err != nil {
 				blog.Errorf("create event error:%v", err)
 				resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDeleteInstFailed, err.Error())})
@@ -199,7 +199,7 @@ func (cli *Service) UpdateInstObject(req *restful.Request, resp *restful.Respons
 						PreData: originData,
 					},
 				}
-				err = cli.ec.Push(srcevent)
+				err = cli.EventC.Push(srcevent)
 				if err != nil {
 					blog.Errorf("create event error:%v", err)
 					resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrEventPushEventFailed)})
@@ -320,7 +320,7 @@ func (cli *Service) CreateInstObject(req *restful.Request, resp *restful.Respons
 				CurData: origindata,
 			},
 		}
-		err = cli.ec.Push(srcevent)
+		err = cli.EventC.Push(srcevent)
 		if err != nil {
 			blog.Errorf("create event error:%v", err)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrEventPushEventFailed)})
