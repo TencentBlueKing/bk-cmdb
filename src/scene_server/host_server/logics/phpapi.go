@@ -21,6 +21,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -31,6 +32,8 @@ import (
 type PHPAPI struct {
 	logic  *Logics
 	header http.Header
+	rid    string
+	ccErr  errors.DefaultCCErrorIf
 }
 
 // NewPHPAPI return php api struct
@@ -38,6 +41,8 @@ func (lgc *Logics) NewPHPAPI(header http.Header) *PHPAPI {
 	return &PHPAPI{
 		logic:  lgc,
 		header: header,
+		rid:    util.GetHTTPCCRequestID(header),
+		ccErr:  lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)),
 	}
 }
 
