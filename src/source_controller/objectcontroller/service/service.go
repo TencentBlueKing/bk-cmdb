@@ -13,8 +13,7 @@
 package service
 
 import (
-	"github.com/emicklei/go-restful"
-	"gopkg.in/redis.v5"
+	"configcenter/src/common/eventclient"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -24,12 +23,15 @@ import (
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal"
+	"github.com/emicklei/go-restful"
+	"gopkg.in/redis.v5"
 )
 
 type Service struct {
 	Core     *backbone.Engine
 	Instance dal.RDB
 	Cache    *redis.Client
+	ec       eventclient.Client
 }
 
 func (s *Service) WebService() *restful.WebService {
