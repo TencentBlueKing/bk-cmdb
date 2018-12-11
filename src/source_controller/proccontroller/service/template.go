@@ -63,7 +63,7 @@ func (ps *ProctrlServer) DeleteProc2Template(req *restful.Request, resp *restful
 					PreData: i,
 				},
 			}
-			if err := ps.EventC.Push(srcevent); err != nil {
+			if err := ps.EventC.Push(ctx, srcevent); err != nil {
 				blog.Warnf("create event error:%s", err.Error())
 			}
 		}
@@ -101,7 +101,7 @@ func (ps *ProctrlServer) CreateProc2Template(req *restful.Request, resp *restful
 				CurData: i,
 			},
 		}
-		if err := ps.EventC.Push(srcevent); err != nil {
+		if err := ps.EventC.Push(ctx, srcevent); err != nil {
 			blog.Errorf("create event error: %v", err)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcCreateProc2Template)})
 			return

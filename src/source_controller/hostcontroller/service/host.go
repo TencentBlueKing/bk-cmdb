@@ -145,7 +145,7 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 				CurData: originData,
 			},
 		}
-		err = s.EventC.Push(srcevent)
+		err = s.EventC.Push(ctx, srcevent)
 		if err != nil {
 			blog.Errorf("add host, but create event error:%v", err)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostCreateInst)})

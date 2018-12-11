@@ -13,6 +13,7 @@
 package eventclient
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -23,12 +24,13 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/dal"
 
 	"gopkg.in/redis.v5"
 )
 
 type Client interface {
-	Push(...*metadata.EventInst) error
+	Push(context.Context, ...*metadata.EventInst) error
 }
 
 func NewEventWithHeader(header http.Header) *metadata.EventInst {
@@ -42,17 +44,19 @@ func NewEventWithHeader(header http.Header) *metadata.EventInst {
 }
 
 type ClientViaRedis struct {
+	rdb       dal.RDB
 	cache     *redis.Client
 	queue     chan *eventtmp
 	pending   *eventtmp
 	queueLock sync.Mutex
 }
 
-func NewClientViaRedis(cache *redis.Client) *ClientViaRedis {
+func NewClientViaRedis(cache *redis.Client, rdb dal.RDB) *ClientViaRedis {
 	// we limit the queue size to 4k*2500=10M， assume that 4k per event
 	const queuesize = 2500
 
 	ec := &ClientViaRedis{
+		rdb:   rdb,
 		cache: cache,
 		queue: make(chan *eventtmp, queuesize),
 	}
@@ -60,10 +64,18 @@ func NewClientViaRedis(cache *redis.Client) *ClientViaRedis {
 	return ec
 }
 
-func (c *ClientViaRedis) Push(events ...*metadata.EventInst) error {
+func (c *ClientViaRedis) Push(ctx context.Context, events ...*metadata.EventInst) error {
+	blog.Info("pushing event")
 	c.queueLock.Lock()
 	for i := range events {
 		if events[i] != nil {
+			eventID, err := c.rdb.NextSequence(ctx, common.EventCacheEventIDKey)
+			if err != nil {
+				c.queueLock.Unlock()
+				return fmt.Errorf("[event] generate eventID failed: %v", err)
+			}
+			events[i].ID = int64(eventID)
+
 			value, err := json.Marshal(events[i])
 			if err != nil {
 				c.queueLock.Unlock()
@@ -76,15 +88,18 @@ func (c *ClientViaRedis) Push(events ...*metadata.EventInst) error {
 				// channel fulled, so we drop 200 oldest events from queue
 				// TODO save to disk if possible
 				c.pending = nil
+				var ok bool
 				for i := 0; i < 200; i-- {
-					// since we lock the queueLock, the queue length could be trusted as more than 200,
-					// so it doesn't block here
-					<-c.queue
+					_, ok = <-c.queue
+					if !ok {
+						break
+					}
 				}
 				c.queue <- et
 			}
 
 		} else {
+			c.queueLock.Unlock()
 			return fmt.Errorf("[event] event could not be nil")
 		}
 	}
@@ -102,13 +117,13 @@ func (c *ClientViaRedis) runPusher() {
 	for {
 		// 1. get el
 		var event *eventtmp
-		c.queueLock.Lock()
 		if c.pending != nil {
+			c.queueLock.Lock()
 			event = c.pending
+			c.queueLock.Unlock()
 		} else {
 			event = <-c.queue
 		}
-		c.queueLock.Unlock()
 
 		// 2. ignore if el is nil
 		if event == nil {
@@ -128,7 +143,7 @@ func (c *ClientViaRedis) runPusher() {
 		// 4. clear pushed el
 		c.queueLock.Lock()
 		c.pending = nil
-		c.queueLock.Lock()
+		c.queueLock.Unlock()
 	}
 }
 
