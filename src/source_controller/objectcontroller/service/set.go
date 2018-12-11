@@ -115,7 +115,7 @@ func (cli *Service) delModuleConfigSet(ctx context.Context, db dal.RDB, input ma
 				PreData: oldContent,
 			},
 		}
-		err = cli.ec.Push(srcevent)
+		err = cli.EventC.Push(srcevent)
 		if err != nil {
 			blog.Errorf("create event error:%v", err)
 			return err
@@ -177,7 +177,7 @@ func (cli *Service) delModuleConfigSet(ctx context.Context, db dal.RDB, input ma
 					CurData: row,
 				},
 			}
-			err = cli.ec.Push(srcevent)
+			err = cli.EventC.Push(srcevent)
 			if err != nil {
 				blog.Errorf("create event error:%v", err)
 				return err
