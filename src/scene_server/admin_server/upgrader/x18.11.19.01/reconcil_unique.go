@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
@@ -91,7 +92,9 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 		keyfunc(common.BKInnerObjIDApp, common.BKAppNameField),
 		keyfunc(common.BKInnerObjIDSet, common.BKAppIDField),
 		keyfunc(common.BKInnerObjIDSet, common.BKSetNameField),
+		keyfunc(common.BKInnerObjIDSet, common.BKInstParentStr),
 		keyfunc(common.BKInnerObjIDModule, common.BKAppIDField),
+		keyfunc(common.BKInnerObjIDModule, common.BKSetIDField),
 		keyfunc(common.BKInnerObjIDModule, common.BKModuleNameField),
 	}
 
@@ -191,6 +194,10 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 					Kind: metadata.UinqueKeyKindProperty,
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDSet, common.BKSetNameField)].ID),
 				},
+				{
+					Kind: metadata.UinqueKeyKindProperty,
+					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDSet, common.BKInstParentStr)].ID),
+				},
 			},
 			Ispre:    true,
 			OwnerID:  conf.OwnerID,
@@ -204,6 +211,10 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 				{
 					Kind: metadata.UinqueKeyKindProperty,
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDModule, common.BKAppIDField)].ID),
+				},
+				{
+					Kind: metadata.UinqueKeyKindProperty,
+					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDModule, common.BKSetIDField)].ID),
 				},
 				{
 					Kind: metadata.UinqueKeyKindProperty,
@@ -260,6 +271,14 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 	}
 
 	for _, unique := range uniques {
+		exists, err := isUniqueExists(ctx, db, conf, unique)
+		if err != nil {
+			return err
+		}
+		if exists {
+			continue
+		}
+
 		uid, err := db.NextSequence(ctx, common.BKTableNameObjUnique)
 		if err != nil {
 			return err
@@ -285,4 +304,25 @@ func checkKeysShouldExists(m map[string]Attribute, shouldExistKeys []string) []s
 		}
 	}
 	return notValidKeys
+}
+
+func isUniqueExists(ctx context.Context, db dal.RDB, conf *upgrader.Config, unique metadata.ObjectUnique) (bool, error) {
+	keyhash := unique.KeysHash()
+	uniqueCond := condition.CreateCondition()
+	uniqueCond.Field(common.BKObjIDField).Eq(unique.ObjID)
+	uniqueCond.Field(common.BKOwnerIDField).Eq(conf.OwnerID)
+	existUniques := []metadata.ObjectUnique{}
+
+	err := db.Table(common.BKTableNameObjUnique).Find(uniqueCond.ToMapStr()).All(ctx, &existUniques)
+	if err != nil {
+		return false, err
+	}
+
+	for _, uni := range existUniques {
+		if uni.KeysHash() == keyhash {
+			return true, nil
+		}
+	}
+	return false, nil
+
 }
