@@ -84,11 +84,20 @@ func (cli *Service) DeleteInstObject(req *restful.Request, resp *restful.Respons
 
 	// send events
 	if len(originDatas) > 0 {
-		ec := eventclient.NewEventContextByReq(req.Request.Header, cli.Cache)
 		for _, originData := range originDatas {
-			err := ec.InsertEvent(metadata.EventTypeInstData, objType, metadata.EventActionDelete, nil, originData)
+			srcevent := eventclient.NewEventWithHeader(req.Request.Header)
+			srcevent.EventType = metadata.EventTypeInstData
+			srcevent.ObjType = objType
+			srcevent.Action = metadata.EventActionDelete
+			srcevent.Data = []metadata.EventData{
+				{
+					PreData: originData,
+				},
+			}
+			err = cli.ec.Push(srcevent)
 			if err != nil {
 				blog.Errorf("create event error:%v", err)
+				resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDeleteInstFailed, err.Error())})
 			}
 		}
 	}
@@ -157,7 +166,6 @@ func (cli *Service) UpdateInstObject(req *restful.Request, resp *restful.Respons
 
 	// record event
 	if len(originDatas) > 0 {
-		ec := eventclient.NewEventContextByReq(req.Request.Header, cli.Cache)
 		idname := common.GetInstIDField(objType)
 		for _, originData := range originDatas {
 			newData := map[string]interface{}{}
@@ -181,7 +189,17 @@ func (cli *Service) UpdateInstObject(req *restful.Request, resp *restful.Respons
 				blog.Errorf("create event error:%v", err)
 				resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrEventPushEventFailed)})
 			} else {
-				err := ec.InsertEvent(metadata.EventTypeInstData, objType, metadata.EventActionUpdate, newData, originData)
+				srcevent := eventclient.NewEventWithHeader(req.Request.Header)
+				srcevent.EventType = metadata.EventTypeInstData
+				srcevent.ObjType = objType
+				srcevent.Action = metadata.EventActionUpdate
+				srcevent.Data = []metadata.EventData{
+					{
+						CurData: newData,
+						PreData: originData,
+					},
+				}
+				err = cli.ec.Push(srcevent)
 				if err != nil {
 					blog.Errorf("create event error:%v", err)
 					resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrEventPushEventFailed)})
@@ -293,8 +311,16 @@ func (cli *Service) CreateInstObject(req *restful.Request, resp *restful.Respons
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrEventPushEventFailed)})
 		return
 	} else {
-		ec := eventclient.NewEventContextByReq(req.Request.Header, cli.Cache)
-		err := ec.InsertEvent(metadata.EventTypeInstData, objType, metadata.EventActionCreate, origindata, nil)
+		srcevent := eventclient.NewEventWithHeader(req.Request.Header)
+		srcevent.EventType = metadata.EventTypeInstData
+		srcevent.ObjType = objType
+		srcevent.Action = metadata.EventActionCreate
+		srcevent.Data = []metadata.EventData{
+			{
+				CurData: origindata,
+			},
+		}
+		err = cli.ec.Push(srcevent)
 		if err != nil {
 			blog.Errorf("create event error:%v", err)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrEventPushEventFailed)})
