@@ -32,10 +32,10 @@ type GraphAsst struct {
 type TopoGraphics struct {
 	ScopeType       string                 `json:"scope_type,omitempty" bson:"scope_type,omitempty"` // biz,user,global,classification
 	ScopeID         string                 `json:"scope_id,omitempty" bson:"scope_id,omitempty"`     // ID for ScopeType
-	NodeType        string                 `json:"node_type,omitempty" bson:"node_type,omitempty"`   // obj inst
-	ObjID           string                 `json:"bk_obj_id,omitempty" bson:"bk_obj_id,omitempty"`
-	IsPre           bool                   `json:"ispre,omitempty"             bson:"ispre,omitempty"`
-	InstID          int                    `json:"bk_inst_id,omitempty" bson:"bk_inst_id,omitempty"`
+	NodeType        string                 `json:"node_type" bson:"node_type"`                       // obj inst
+	ObjID           string                 `json:"bk_obj_id" bson:"bk_obj_id"`
+	IsPre           bool                   `json:"ispre,omitempty"             bson:"ispre"`
+	InstID          int                    `json:"bk_inst_id" bson:"bk_inst_id"`
 	NodeName        string                 `json:"node_name,omitempty" bson:"node_name,omitempty"`
 	Position        Position               `json:"position,omitempty" bson:"position,omitempty"`
 	Ext             map[string]interface{} `json:"ext,omitempty" bson:"ext,omitempty"`
