@@ -14,6 +14,7 @@ package model
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/source_controller/coreservice/core"
@@ -27,8 +28,9 @@ func (m *modelAttribute) isExists(ctx core.ContextParams, propertyID string) (on
 
 	oneAttribute = &metadata.Attribute{}
 	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).One(ctx, oneAttribute)
-	if nil != err && m.dbProxy.IsNotFoundError(err) {
-		return oneAttribute, exists, nil
+	if nil != err && !m.dbProxy.IsNotFoundError(err) {
+		blog.Errorf("request(%s): database findone operation is failed, error info is %s", err.Error())
+		return oneAttribute, false, err
 	}
-	return oneAttribute, m.dbProxy.IsNotFoundError(err), err
+	return oneAttribute, !m.dbProxy.IsNotFoundError(err), nil
 }

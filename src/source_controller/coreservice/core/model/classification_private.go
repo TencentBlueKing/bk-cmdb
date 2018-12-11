@@ -14,6 +14,7 @@ package model
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql"
 	"configcenter/src/common/universalsql/mongo"
@@ -31,6 +32,10 @@ func (m *modelClassification) isExists(ctx core.ContextParams, classificationID 
 func (m *modelClassification) hasModel(ctx core.ContextParams, cond universalsql.Condition) (cnt uint64, exists bool, err error) {
 
 	cnt, err = m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).Count(ctx)
+	if nil != err {
+		blog.Errorf("request(%s): it is failed to execute database count operation on the table(%s) by the condition(%v), error info is %s", ctx.ReqID, common.BKTableNameObjDes, cond.ToMapStr(), err.Error())
+		return 0, false, err
+	}
 	exists = 0 != cnt
 	return cnt, exists, err
 }

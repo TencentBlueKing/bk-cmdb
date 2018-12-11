@@ -32,6 +32,7 @@ func (m *modelClassification) CreateOneModelClassification(ctx core.ContextParam
 
 	_, exists, err := m.isExists(ctx, inputParam.Data.ClassificationID)
 	if nil != err {
+		blog.Errorf("request(%s): it is failed to check if the classification ID (%s)is exists, error info is %s", ctx.ReqID, inputParam.Data.ClassificationID, err.Error())
 		return nil, err
 	}
 	if exists {
@@ -40,6 +41,10 @@ func (m *modelClassification) CreateOneModelClassification(ctx core.ContextParam
 	}
 
 	id, err := m.save(ctx, inputParam.Data)
+	if nil != err {
+		blog.Errorf("request(%s): it is failed to save the classification(%v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
+		return &metadata.CreateOneDataResult{}, err
+	}
 	return &metadata.CreateOneDataResult{Created: metadata.CreatedDataResult{ID: id}}, err
 }
 
@@ -60,6 +65,7 @@ func (m *modelClassification) CreateManyModelClassification(ctx core.ContextPara
 
 		_, exists, err := m.isExists(ctx, item.ClassificationID)
 		if nil != err {
+			blog.Errorf("request(%s): it is failed to check the classification ID (%s) is exists, error info is %s", ctx.ReqID, item.ClassificationID, err.Error())
 			addExceptionFunc(int64(itemIdx), err.(errors.CCErrorCoder), &item)
 			continue
 		}
@@ -71,6 +77,7 @@ func (m *modelClassification) CreateManyModelClassification(ctx core.ContextPara
 
 		id, err := m.save(ctx, item)
 		if nil != err {
+			blog.Errorf("request(%s): it is failed to save the clasisfication(%v), error info is %s", ctx.ReqID, item, err.Error())
 			addExceptionFunc(int64(itemIdx), err.(errors.CCErrorCoder), &item)
 			continue
 		}
@@ -100,6 +107,7 @@ func (m *modelClassification) SetManyModelClassification(ctx core.ContextParams,
 
 		origin, exists, err := m.isExists(ctx, item.ClassificationID)
 		if nil != err {
+			blog.Errorf("request(%s): it is failed to check the classification ID (%s) is exists, error info is %s", ctx.ReqID, item.ClassificationID, err.Error())
 			addExceptionFunc(int64(itemIdx), err.(errors.CCErrorCoder), &item)
 			continue
 		}
@@ -109,6 +117,7 @@ func (m *modelClassification) SetManyModelClassification(ctx core.ContextParams,
 			cond := mongo.NewCondition()
 			cond.Element(&mongo.Eq{Key: metadata.ClassificationFieldID, Val: origin.ID})
 			if _, err := m.update(ctx, mapstr.NewFromStruct(item, "field"), cond); nil != err {
+				blog.Errorf("request(%s): it is failed to update some fields(%v) of the classification by the condition(%v), error info is %s", ctx.ReqID, item, cond.ToMapStr(), err.Error())
 				addExceptionFunc(int64(itemIdx), err.(errors.CCErrorCoder), &item)
 				continue
 			}
@@ -119,6 +128,7 @@ func (m *modelClassification) SetManyModelClassification(ctx core.ContextParams,
 
 		id, err := m.save(ctx, item)
 		if nil != err {
+			blog.Errorf("request(%s): it is failed to save the classification(%v), error info is %s", ctx.ReqID, item, err.Error())
 			addExceptionFunc(int64(itemIdx), err.(errors.CCErrorCoder), &item)
 			continue
 		}
@@ -137,6 +147,7 @@ func (m *modelClassification) SetOneModelClassification(ctx core.ContextParams, 
 
 	origin, exists, err := m.isExists(ctx, inputParam.Data.ClassificationID)
 	if nil != err {
+		blog.Errorf("request(%s): it is failed to check the classification ID (%s) is exists, error info is %s", ctx.ReqID, inputParam.Data.ClassificationID, err.Error())
 		return nil, err
 	}
 
@@ -155,6 +166,7 @@ func (m *modelClassification) SetOneModelClassification(ctx core.ContextParams, 
 		cond := mongo.NewCondition()
 		cond.Element(&mongo.Eq{Key: metadata.ClassificationFieldID, Val: origin.ID})
 		if _, err := m.update(ctx, mapstr.NewFromStruct(inputParam.Data, "field"), cond); nil != err {
+			blog.Errorf("request(%s): it is failed to update some fields(%v) for a classification by the condition(%v), error info is %s", ctx.ReqID, inputParam.Data, cond.ToMapStr(), err.Error())
 			addExceptionFunc(0, err.(errors.CCErrorCoder), &inputParam.Data)
 			return dataResult, nil
 		}
@@ -164,7 +176,9 @@ func (m *modelClassification) SetOneModelClassification(ctx core.ContextParams, 
 
 	id, err := m.save(ctx, inputParam.Data)
 	if nil != err {
+		blog.Errorf("request(%s): it is failed to save the classification(%v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
 		addExceptionFunc(0, err.(errors.CCErrorCoder), origin)
+		return dataResult, err
 	}
 	dataResult.Created = append(dataResult.Created, metadata.CreatedDataResult{ID: id})
 	return dataResult, err
@@ -174,12 +188,14 @@ func (m *modelClassification) UpdateModelClassification(ctx core.ContextParams, 
 
 	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
+		blog.Errorf("request(%s): it is failed to convert the condition(%v) from mapstr into condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.UpdatedCount{}, err
 	}
 
 	cond.Element(&mongo.Eq{Key: metadata.AttributeFieldSupplierAccount, Val: ctx.SupplierAccount})
 	cnt, err := m.update(ctx, inputParam.Data, cond)
 	if nil != err {
+		blog.Errorf("request(%s): it is failed to update some fields(%v) for some classifications by the condition(%v), error info is %s", ctx.ReqID, inputParam.Data, inputParam.Condition, err.Error())
 		return &metadata.UpdatedCount{}, err
 	}
 	return &metadata.UpdatedCount{Count: cnt}, nil
@@ -189,12 +205,14 @@ func (m *modelClassification) DeleteModelClassificaiton(ctx core.ContextParams, 
 
 	deleteCond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
+		blog.Errorf("request(%s): it is failed to convert the condition (%v) from mapstr into condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.DeletedCount{}, ctx.Error.New(common.CCErrCommHTTPInputInvalid, err.Error())
 	}
 
 	deleteCond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationSupplierAccount, Val: ctx.SupplierAccount})
 	cnt, exists, err := m.hasModel(ctx, deleteCond)
 	if nil != err {
+		blog.Errorf("request(%s): it is failed to check whether the classifications which are marked by the condition (%v) have some models, error info is %s", ctx.ReqID, deleteCond.ToMapStr(), err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 	if exists {
@@ -203,6 +221,7 @@ func (m *modelClassification) DeleteModelClassificaiton(ctx core.ContextParams, 
 
 	cnt, err = m.delete(ctx, deleteCond)
 	if nil != err {
+		blog.Errorf("request(%s): it is failed to delete the classification whci are marked by the condition(%v), error info is %s", ctx.ReqID, deleteCond.ToMapStr(), err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
@@ -213,12 +232,14 @@ func (m *modelClassification) CascadeDeleteModeClassification(ctx core.ContextPa
 
 	deleteCond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
+		blog.Errorf("request(%s): it is failed to convert the condition (%v) from mapstr into condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 	deleteCond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationSupplierAccount, Val: ctx.SupplierAccount})
 
 	classificationItems, err := m.search(ctx, deleteCond)
 	if nil != err {
+		blog.Errorf("request(%s): it is failed to search some classifications by the condition (%v) , error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
@@ -228,10 +249,12 @@ func (m *modelClassification) CascadeDeleteModeClassification(ctx core.ContextPa
 	}
 
 	if _, err := m.cascadeDeleteModel(ctx, classificationIDS); nil != err {
+		blog.Error("request(%s): it is failed to cascade delete some models by the classificationIDS (%v), error info is %s", ctx.ReqID, classificationIDS, err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
 	if _, err := m.delete(ctx, deleteCond); nil != err {
+		blog.Errorf("request(%s): it is failed to delete some classifications by the condition (%v), error info is %s", ctx.ReqID, deleteCond.ToMapStr(), err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
@@ -242,12 +265,14 @@ func (m *modelClassification) SearchModelClassification(ctx core.ContextParams, 
 
 	searchCond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
+		blog.Errorf("request(%s): it is failed to convert the condition (%v) from mapstr into condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.QueryResult{}, err
 	}
 
 	searchCond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationSupplierAccount, Val: ctx.SupplierAccount})
 	classificationItems, err := m.searchReturnMapStr(ctx, searchCond)
 	if nil != err {
+		blog.Errorf("request(%s): it is failed to search some classifications by the condition (%v), error info is %s", ctx.ReqID, searchCond.ToMapStr(), err.Error())
 		return &metadata.QueryResult{}, err
 	}
 
