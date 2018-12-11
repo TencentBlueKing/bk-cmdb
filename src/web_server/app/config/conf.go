@@ -139,7 +139,7 @@ func (cc *ConfCenter) GetConfigureCtx() []byte {
 }
 
 func (cc *ConfCenter) dealConfChangeEvent(data []byte) error {
-	blog.Info("%s configure has changed", types.CC_MODULE_WEBSERVER)
+	blog.Infof("%s configure has changed", types.CC_MODULE_WEBSERVER)
 
 	cc.ctxLock.Lock()
 	defer cc.ctxLock.Unlock()

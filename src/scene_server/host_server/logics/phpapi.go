@@ -17,8 +17,11 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/rs/xid"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -29,6 +32,8 @@ import (
 type PHPAPI struct {
 	logic  *Logics
 	header http.Header
+	rid    string
+	ccErr  errors.DefaultCCErrorIf
 }
 
 // NewPHPAPI return php api struct
@@ -36,6 +41,8 @@ func (lgc *Logics) NewPHPAPI(header http.Header) *PHPAPI {
 	return &PHPAPI{
 		logic:  lgc,
 		header: header,
+		rid:    util.GetHTTPCCRequestID(header),
+		ccErr:  lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)),
 	}
 }
 
@@ -477,6 +484,7 @@ func (lgc *Logics) CloneHostProperty(input *meta.CloneHostPropertyParams, appID,
 
 			updateHostData[common.BKHostInnerIPField] = dstIpV
 			delete(updateHostData, common.BKHostIDField)
+			delete(updateHostData, common.BKAssetIDField)
 			res, err := phpapi.UpdateHostMain(hostCondition, updateHostData, appID)
 			if nil != err {
 				blog.Errorf("CloneHostProperty  update dst host error, error:%s, currentIP:%s, input:%v", err.Error(), dstIpV, input)
@@ -499,6 +507,7 @@ func (lgc *Logics) CloneHostProperty(input *meta.CloneHostPropertyParams, appID,
 			hostMapData[common.BKHostInnerIPField] = dstIpV
 			addHostMapData := hostMapData
 			delete(addHostMapData, common.BKHostIDField)
+			addHostMapData[common.BKAssetIDField] = xid.New().String()
 			cloneHostId, err := phpapi.AddHost(addHostMapData)
 			if nil != err {
 				blog.Errorf("CloneHostProperty remove hosthostconfig error, addHostMapData:%v, error:%s, input:%v", addHostMapData, err.Error(), input)
