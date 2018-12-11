@@ -334,6 +334,9 @@ const (
 
 	// pre definition association kind can not be delete
 	CCErrorTopoPreAssKindCanNotBeDelete = 1101070
+	CCErrorTopoAsstKindIsNotExist       = 1101071
+	CCErrorAsstInstIsNotExist           = 1101072
+	CCErrorInstToAsstIsNotExist         = 1101073
 
 	CCErrTopoMulueIDNotfoundFailed = 1101080
 	CCErrTopoBkAppNotAllowedDelete = 1101081
