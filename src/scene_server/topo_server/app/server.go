@@ -41,12 +41,16 @@ type TopoServer struct {
 }
 
 func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
-
-	topoMax, err := strconv.Atoi(current.ConfigMap["level.businessTopoMax"])
-	if err != nil {
-		blog.Errorf("invalid business topo max value, err: %v", err)
-		return
+	topoMax := 7
+	if len(current.ConfigMap["level.businessTopoMax"]) != 0 {
+		var err error
+		topoMax, err = strconv.Atoi(current.ConfigMap["level.businessTopoMax"])
+		if err != nil {
+			blog.Errorf("invalid business topo max value, err: %v", err)
+			return
+		}
 	}
+
 	t.Config.BusinessTopoLevelMax = topoMax
 	blog.V(3).Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
 
