@@ -10,10 +10,8 @@
  * limitations under the License.
  */
 
-package association
+package instances
 
-// ATTENTIONS: the dependent methods of the other module
-
-// OperationDependences methods definition
-type OperationDependences interface {
+func (m *instanceManager) validInstanceData(valData map[string]interface{}, validType string, instID int64) error {
+	return nil
 }

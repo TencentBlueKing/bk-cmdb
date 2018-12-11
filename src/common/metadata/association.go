@@ -306,9 +306,13 @@ type InstAsst struct {
 	// association id between two object
 	ObjectAsstID string `field:"bk_obj_asst_id" json:"bk_obj_asst_id" bson:"bk_obj_asst_id"`
 	// association kind id
-	AssociationKindID string    `field:"bk_asst_id" json:"bk_asst_id" bson:"bk_asst_id"`
-	CreateTime        time.Time `field:"create_time" json:"create_time" bson:"create_time"`
-	LastTime          time.Time `field:"last_time" json:"last_time" bson:"last_time"`
+	AssociationKindID string `field:"bk_asst_id" json:"bk_asst_id" bson:"bk_asst_id"`
+
+	// inst dimension
+	InstDimension Dimension `field:"dimension" json:"dimension" bson:"dimension"`
+
+	CreateTime time.Time `field:"create_time" json:"create_time" bson:"create_time"`
+	LastTime   time.Time `field:"last_time" json:"last_time" bson:"last_time"`
 }
 
 func (asst InstAsst) GetInstID(objID string) (instID int64, ok bool) {
