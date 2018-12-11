@@ -52,7 +52,7 @@ func NewFromInterface(data interface{}) (MapStr, error) {
 
 	switch tmp := data.(type) {
 	default:
-		return nil, fmt.Errorf("not support the kind(%s)", reflect.TypeOf(data).Kind())
+		return nil, fmt.Errorf("no support the kind(%s)", reflect.TypeOf(data).Kind())
 	case nil:
 		return MapStr{}, nil
 	case MapStr:
@@ -283,12 +283,14 @@ func (cli MapStr) MapStr(key string) (MapStr, error) {
 
 	switch t := cli[key].(type) {
 	default:
-		return nil, errors.New("the data is not a map[string]interface{} type")
+		return nil, fmt.Errorf("the value of the key(%s) is not a map[string]interface{} type", key)
 	case nil:
 		if _, ok := cli[key]; ok {
 			return MapStr{}, nil
 		}
 		return nil, errors.New("the key is invalid")
+	case MapStr:
+		return t, nil
 	case map[string]interface{}:
 		return MapStr(t), nil
 	}
@@ -303,14 +305,14 @@ func (cli MapStr) MapStrArray(key string) ([]MapStr, error) {
 		val := reflect.ValueOf(cli[key])
 		switch val.Kind() {
 		default:
-			return nil, fmt.Errorf("the data is not a valid type,%s", val.Kind().String())
+			return nil, fmt.Errorf("the value of the key(%s) is not a valid type,%s", key, val.Kind().String())
 		case reflect.Slice:
 			tmpval, ok := val.Interface().([]MapStr)
 			if ok {
 				return tmpval, nil
 			}
 
-			return nil, fmt.Errorf("the data is not a valid type,%s", val.Kind().String())
+			return nil, fmt.Errorf("the value of the key(%s) is not a valid type,%s", key, val.Kind().String())
 		}
 
 	case nil:

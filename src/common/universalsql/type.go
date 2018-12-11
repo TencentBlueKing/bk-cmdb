@@ -23,6 +23,4 @@ const (
 	NEQ string = "$ne"
 	AND string = "$and"
 	OR  string = "$or"
-	NOT string = "$not"
-	NOR string = "$nor"
 )

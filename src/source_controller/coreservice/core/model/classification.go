@@ -30,7 +30,7 @@ type modelClassification struct {
 
 func (m *modelClassification) CreateOneModelClassification(ctx core.ContextParams, inputParam metadata.CreateOneModelClassification) (*metadata.CreateOneDataResult, error) {
 
-	_, exists, err := m.IsExists(ctx, inputParam.Data.ClassificationID)
+	_, exists, err := m.isExists(ctx, inputParam.Data.ClassificationID)
 	if nil != err {
 		return nil, err
 	}
@@ -39,23 +39,28 @@ func (m *modelClassification) CreateOneModelClassification(ctx core.ContextParam
 		return nil, ctx.Error.Error(common.CCErrCommDuplicateItem)
 	}
 
-	id, err := m.Save(ctx, inputParam.Data)
+	id, err := m.save(ctx, inputParam.Data)
 	return &metadata.CreateOneDataResult{Created: metadata.CreatedDataResult{ID: id}}, err
 }
 
 func (m *modelClassification) CreateManyModelClassification(ctx core.ContextParams, inputParam metadata.CreateManyModelClassifiaction) (*metadata.CreateManyDataResult, error) {
 
 	dataResult := &metadata.CreateManyDataResult{}
+
+	addExceptionFunc := func(idx int64, err errors.CCErrorCoder, classification *metadata.Classification) {
+		dataResult.CreateManyInfoResult.Exceptions = append(dataResult.CreateManyInfoResult.Exceptions, metadata.ExceptionResult{
+			OriginIndex: idx,
+			Message:     err.Error(),
+			Code:        int64(err.GetCode()),
+			Data:        classification,
+		})
+	}
+
 	for itemIdx, item := range inputParam.Data {
 
-		_, exists, err := m.IsExists(ctx, item.ClassificationID)
+		_, exists, err := m.isExists(ctx, item.ClassificationID)
 		if nil != err {
-			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
-				Message:     err.Error(),
-				Code:        int64(err.(errors.CCErrorCoder).GetCode()),
-				Data:        item,
-				OriginIndex: int64(itemIdx),
-			})
+			addExceptionFunc(int64(itemIdx), err.(errors.CCErrorCoder), &item)
 			continue
 		}
 
@@ -64,14 +69,9 @@ func (m *modelClassification) CreateManyModelClassification(ctx core.ContextPara
 			continue
 		}
 
-		id, err := m.Save(ctx, item)
+		id, err := m.save(ctx, item)
 		if nil != err {
-			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
-				Message:     err.Error(),
-				Code:        int64(err.(errors.CCErrorCoder).GetCode()),
-				Data:        item,
-				OriginIndex: int64(itemIdx),
-			})
+			addExceptionFunc(int64(itemIdx), err.(errors.CCErrorCoder), &item)
 			continue
 		}
 
@@ -86,29 +86,29 @@ func (m *modelClassification) CreateManyModelClassification(ctx core.ContextPara
 func (m *modelClassification) SetManyModelClassification(ctx core.ContextParams, inputParam metadata.SetManyModelClassification) (*metadata.SetDataResult, error) {
 
 	dataResult := &metadata.SetDataResult{}
+
+	addExceptionFunc := func(idx int64, err errors.CCErrorCoder, classification *metadata.Classification) {
+		dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
+			OriginIndex: idx,
+			Message:     err.Error(),
+			Code:        int64(err.GetCode()),
+			Data:        classification,
+		})
+	}
+
 	for itemIdx, item := range inputParam.Data {
 
-		origin, exists, err := m.IsExists(ctx, item.ClassificationID)
+		origin, exists, err := m.isExists(ctx, item.ClassificationID)
 		if nil != err {
-			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
-				Message:     err.Error(),
-				Code:        int64(err.(errors.CCErrorCoder).GetCode()),
-				Data:        item,
-				OriginIndex: int64(itemIdx),
-			})
+			addExceptionFunc(int64(itemIdx), err.(errors.CCErrorCoder), &item)
 			continue
 		}
 
 		if exists {
 
 			cond := mongo.NewCondition()
-			if err := m.Update(ctx, mapstr.NewFromStruct(item, "field"), cond.Element(&mongo.Eq{Key: metadata.ClassificationFieldID, Val: origin.ID}).ToMapStr()); nil != err {
-				dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
-					Message:     err.Error(),
-					Code:        int64(err.(errors.CCErrorCoder).GetCode()),
-					Data:        item,
-					OriginIndex: int64(itemIdx),
-				})
+			if err := m.update(ctx, mapstr.NewFromStruct(item, "field"), cond.Element(&mongo.Eq{Key: metadata.ClassificationFieldID, Val: origin.ID}).ToMapStr()); nil != err {
+				addExceptionFunc(int64(itemIdx), err.(errors.CCErrorCoder), &item)
 				continue
 			}
 
@@ -116,15 +116,9 @@ func (m *modelClassification) SetManyModelClassification(ctx core.ContextParams,
 			continue
 		}
 
-		id, err := m.Save(ctx, item)
+		id, err := m.save(ctx, item)
 		if nil != err {
-
-			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
-				Message:     err.Error(),
-				Code:        int64(err.(errors.CCErrorCoder).GetCode()),
-				Data:        item,
-				OriginIndex: int64(itemIdx),
-			})
+			addExceptionFunc(int64(itemIdx), err.(errors.CCErrorCoder), &item)
 			continue
 		}
 
@@ -140,37 +134,35 @@ func (m *modelClassification) SetManyModelClassification(ctx core.ContextParams,
 
 func (m *modelClassification) SetOneModelClassification(ctx core.ContextParams, inputParam metadata.SetOneModelClassification) (*metadata.SetDataResult, error) {
 
-	origin, exists, err := m.IsExists(ctx, inputParam.Data.ClassificationID)
+	origin, exists, err := m.isExists(ctx, inputParam.Data.ClassificationID)
 	if nil != err {
 		return nil, err
 	}
 
 	dataResult := &metadata.SetDataResult{}
 
+	addExceptionFunc := func(idx int64, err errors.CCErrorCoder, classification *metadata.Classification) {
+		dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
+			OriginIndex: idx,
+			Message:     err.Error(),
+			Code:        int64(err.GetCode()),
+			Data:        classification,
+		})
+	}
 	if exists {
 
 		cond := mongo.NewCondition()
-		if err := m.Update(ctx, mapstr.NewFromStruct(inputParam.Data, "field"), cond.Element(&mongo.Eq{Key: metadata.ClassificationFieldID, Val: origin.ID}).ToMapStr()); nil != err {
-			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
-				Message:     err.Error(),
-				Code:        int64(err.(errors.CCErrorCoder).GetCode()),
-				Data:        inputParam.Data,
-				OriginIndex: 0,
-			})
+		if err := m.update(ctx, mapstr.NewFromStruct(inputParam.Data, "field"), cond.Element(&mongo.Eq{Key: metadata.ClassificationFieldID, Val: origin.ID}).ToMapStr()); nil != err {
+			addExceptionFunc(0, err.(errors.CCErrorCoder), &inputParam.Data)
 			return dataResult, nil
 		}
 		dataResult.Updated = append(dataResult.Updated, metadata.UpdatedDataResult{ID: uint64(origin.ID)})
 		return dataResult, err
 	}
 
-	id, err := m.Save(ctx, inputParam.Data)
+	id, err := m.save(ctx, inputParam.Data)
 	if nil != err {
-		dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
-			Message:     err.Error(),
-			Code:        int64(err.(errors.CCErrorCoder).GetCode()),
-			Data:        origin,
-			OriginIndex: 0,
-		})
+		addExceptionFunc(0, err.(errors.CCErrorCoder), origin)
 	}
 	dataResult.Created = append(dataResult.Created, metadata.CreatedDataResult{ID: id})
 	return dataResult, err
@@ -182,10 +174,10 @@ func (m *modelClassification) UpdateModelClassification(ctx core.ContextParams, 
 	if nil != err {
 		return &metadata.UpdatedCount{}, err
 	}
-	if err := m.Update(ctx, inputParam.Data, inputParam.Condition); nil != err {
+	if err := m.update(ctx, inputParam.Data, inputParam.Condition); nil != err {
 		return &metadata.UpdatedCount{}, err
 	}
-	return &metadata.UpdatedCount{Count: int64(cnt)}, nil
+	return &metadata.UpdatedCount{Count: cnt}, nil
 }
 
 func (m *modelClassification) DeleteModelClassificaiton(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
@@ -217,7 +209,7 @@ func (m *modelClassification) CascadeDeleteModeClassification(ctx core.ContextPa
 		}
 	}
 
-	return &metadata.DeletedCount{Count: int64(len(classificationItems))}, nil
+	return &metadata.DeletedCount{Count: uint64(len(classificationItems))}, nil
 }
 
 func (m *modelClassification) SearchModelClassification(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
@@ -228,7 +220,7 @@ func (m *modelClassification) SearchModelClassification(ctx core.ContextParams, 
 	}
 
 	dataResult := &metadata.QueryResult{}
-	dataResult.Count = int64(len(classificationItems))
+	dataResult.Count = uint64(len(classificationItems))
 	for item := range classificationItems {
 		dataResult.Info = append(dataResult.Info, mapstr.NewFromStruct(item, "field"))
 	}

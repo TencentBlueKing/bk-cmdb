@@ -24,20 +24,24 @@ type mongoCondition struct {
 	elements []universalsql.ConditionElement
 	and      []universalsql.ConditionElement
 	or       []universalsql.ConditionElement
-	embed    map[string]universalsql.Condition // key is the embed filed name
+	embed    map[string]*mongoCondition // key is the embed filed name
+}
+
+func newCondition() *mongoCondition {
+	return &mongoCondition{
+		embed: map[string]*mongoCondition{},
+	}
 }
 
 // NewCondition create a condition instance
 func NewCondition() universalsql.Condition {
-	return &mongoCondition{
-		embed: map[string]universalsql.Condition{},
-	}
+	return newCondition()
 }
 
 // NewConditionFromMapStr create a condition by MapStr
-func NewConditionFromMapStr(cond mapstr.MapStr) universalsql.Condition {
+func NewConditionFromMapStr(inputCond mapstr.MapStr) (outputCond universalsql.Condition, err error) {
 
-	return nil
+	return parseConditionFromMapStr(newCondition(), "", inputCond)
 }
 
 func (m *mongoCondition) ToSQL() (string, error) {
@@ -96,8 +100,30 @@ func (m *mongoCondition) Or(elements ...universalsql.ConditionElement) universal
 }
 
 func (m *mongoCondition) Embed(embedName string) (origin, embed universalsql.Condition) {
+
+	tmp := newCondition()
+	m.embed[embedName] = tmp
 	origin = m
-	embed = NewCondition()
-	m.embed[embedName] = embed
+	embed = tmp
 	return origin, embed
+}
+
+func (m *mongoCondition) merge(sourceCond *mongoCondition) *mongoCondition {
+
+	m.and = append(m.and, sourceCond.and...)
+	m.or = append(m.or, sourceCond.or...)
+	m.elements = append(m.elements, sourceCond.elements...)
+
+	for sourceEmbedName, sourceCond := range sourceCond.embed {
+
+		targetEmbedCond, ok := m.embed[sourceEmbedName]
+		if !ok {
+			m.embed[sourceEmbedName] = sourceCond
+			continue
+		}
+
+		targetEmbedCond = targetEmbedCond.merge(sourceCond)
+	}
+
+	return m
 }
