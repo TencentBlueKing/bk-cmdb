@@ -127,7 +127,7 @@ func (h *HostController) onHostConfigUpdate(previous, current cc.ProcessConfig) 
 		blog.Errorf("new redis client failed, err: %v", err)
 		return
 	}
-	ec := eventclient.NewClientViaRedis(cache)
+	ec := eventclient.NewClientViaRedis(cache, instance)
 
 	h.Service.Instance = instance
 	h.Service.Logics.Instance = instance

@@ -99,7 +99,7 @@ func (lgc *Logics) DelSingleHostModuleRelation(ctx context.Context, header http.
 				PreData: origindata,
 			},
 		}
-		err := lgc.EventC.Push(srcevent)
+		err := lgc.EventC.Push(ctx, srcevent)
 		if err != nil {
 			blog.Errorf("delete single host relation failed, but create event error:%v", err)
 			return false, err
@@ -168,7 +168,7 @@ func (lgc *Logics) AddSingleHostModuleRelation(ctx context.Context, header http.
 			CurData: moduleHostConfig,
 		},
 	}
-	err = lgc.EventC.Push(srcevent)
+	err = lgc.EventC.Push(ctx, srcevent)
 	if err != nil {
 		blog.Errorf("add single host module relation, create event error:%v", err)
 		return false, err

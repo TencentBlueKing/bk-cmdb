@@ -125,7 +125,7 @@ func (h *ProcController) onProcConfigUpdate(previous, current cc.ProcessConfig) 
 	}
 	h.ProctrlServer.Cache = cache
 
-	ec := eventclient.NewClientViaRedis(cache)
+	ec := eventclient.NewClientViaRedis(cache, instance)
 	h.ProctrlServer.EventC = ec
 }
 

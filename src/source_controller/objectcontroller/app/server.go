@@ -123,7 +123,7 @@ func (h *ObjectController) onObjectConfigUpdate(previous, current cc.ProcessConf
 		return
 	}
 	h.Cache = cache
-	ec := eventclient.NewClientViaRedis(cache)
+	ec := eventclient.NewClientViaRedis(cache, instance)
 	h.EventC = ec
 }
 
