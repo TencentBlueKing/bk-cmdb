@@ -251,6 +251,9 @@ port=$mongo_port
 maxOpenConns=3000
 maxIDleConns=1000
 mechanism=SCRAM-SHA-1
+
+[level]
+businessTopoMax=7
 '''
 
     template = FileTemplate(topo_file_template_str)

@@ -58,7 +58,7 @@ func (s *topoService) CreateInst(params types.ContextParams, pathParams, queryPa
 		}
 		setInst, err := s.core.InstOperation().CreateInstBatch(params, obj, batchInfo)
 		if nil != err {
-			blog.Errorf("failed to create a new %s, %s", objID, err.Error())
+			blog.Errorf("failed to create new object %s, %s", objID, err.Error())
 			return nil, err
 		}
 		return setInst, nil
