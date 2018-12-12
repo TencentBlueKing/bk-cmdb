@@ -151,10 +151,10 @@ func (phpapi *PHPAPI) addObj(data map[string]interface{}, objType string) (int64
 
 //search host helpers
 
-func (phpapi *PHPAPI) SetHostData(moduleHostConfig []map[string]int64, hostMap map[int64]map[string]interface{}) ([]interface{}, error) {
+func (phpapi *PHPAPI) SetHostData(moduleHostConfig []map[string]int64, hostMap map[int64]map[string]interface{}) ([]mapstr.MapStr, error) {
 
 	//total data
-	hostData := make([]interface{}, 0)
+	hostData := make([]mapstr.MapStr, 0)
 
 	appIDArr := make([]int64, 0)
 	setIDArr := make([]int64, 0)
@@ -181,10 +181,11 @@ func (phpapi *PHPAPI) SetHostData(moduleHostConfig []map[string]int64, hostMap m
 		},
 	})
 	if err != nil {
+		blog.Errorf("hostMap GetSetMapByCond  error, err:%s,rid:%s", err.Error(), phpapi.rid)
 		return hostData, err
 	}
 
-	blog.V(5).Infof("GetAppMapByCond , appIDArr:%v", appIDArr)
+	blog.V(5).Infof("GetAppMapByCond , appIDArr:%v, rid:%s", appIDArr, phpapi.rid)
 	appMap, err := phpapi.logic.GetAppMapByCond(phpapi.header, "", map[string]interface{}{
 		common.BKAppIDField: map[string]interface{}{
 			common.BKDBIN: appIDArr,
@@ -192,12 +193,13 @@ func (phpapi *PHPAPI) SetHostData(moduleHostConfig []map[string]int64, hostMap m
 	})
 
 	if err != nil {
+		blog.Errorf("hostMap GetAppMapByCond  error, err:%s,rid:%s", err.Error(), phpapi.rid)
 		return hostData, err
 	}
 	for _, config := range moduleHostConfig {
 		hostItem, hasHost := hostMap[config[common.BKHostIDField]]
 		if !hasHost {
-			blog.Errorf("hostMap has not hostID: %d", config[common.BKHostIDField])
+			blog.Errorf("hostMap has not hostID: %d,rid:%s", config[common.BKHostIDField], phpapi.rid)
 			continue
 		}
 		host := mapstr.New()
