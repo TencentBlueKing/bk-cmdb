@@ -88,9 +88,6 @@
             },
             topoModelList: {
                 type: Array
-            },
-            edges: {
-                type: Array
             }
         },
         data () {
