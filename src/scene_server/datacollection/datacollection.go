@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"syscall"
 
 	"github.com/spf13/pflag"
 
@@ -32,16 +33,43 @@ func main() {
 	common.SetIdentification(types.CC_MODULE_DATACOLLECTION)
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	blog.InitLogs()
-	defer blog.CloseLogs()
+	var mock bool
+	pflag.CommandLine.BoolVar(&mock, "mock", false, "send mock message")
 
 	op := options.NewServerOption()
 	op.AddFlags(pflag.CommandLine)
-
 	util.InitFlags()
+
+	if mock {
+		if err := sigmock(); err != nil {
+			fmt.Printf("sigmock failed %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("sigmock success\n")
+		return
+	}
+
+	blog.InitLogs()
+	defer blog.CloseLogs()
+	if err := common.SavePid(); err != nil {
+		blog.Error("fail to save pid. err: %s", err.Error())
+	}
 
 	if err := app.Run(context.Background(), op); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
-		blog.Fatal(err)
+		blog.CloseLogs()
+		os.Exit(1)
 	}
+}
+
+func sigmock() error {
+	pid, err := common.ReadPid()
+	if err != nil {
+		return err
+	}
+	proc, err := os.FindProcess(pid)
+	if err != nil {
+		return err
+	}
+	return proc.Signal(syscall.SIGUSR1)
 }
