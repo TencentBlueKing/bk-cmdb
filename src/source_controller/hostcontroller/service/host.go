@@ -133,11 +133,23 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 	originData := map[string]interface{}{}
 	if err := s.Logics.GetObjectByID(ctx, objType, nil, id, originData, ""); err != nil {
 		blog.Errorf("create event error:%v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostCreateInst)})
+		return
 	} else {
-		ec := eventclient.NewEventContextByReq(pheader, s.Cache)
-		err := ec.InsertEvent(meta.EventTypeInstData, "host", meta.EventActionCreate, originData, nil)
+		srcevent := eventclient.NewEventWithHeader(pheader)
+		srcevent.EventType = meta.EventTypeInstData
+		srcevent.ObjType = common.BKInnerObjIDHost
+		srcevent.Action = meta.EventActionCreate
+		srcevent.Data = []meta.EventData{
+			{
+				CurData: originData,
+			},
+		}
+		err = s.EventC.Push(ctx, srcevent)
 		if err != nil {
 			blog.Errorf("add host, but create event error:%v", err)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostCreateInst)})
+			return
 		}
 	}
 
@@ -209,9 +221,8 @@ func (s *Service) AddModuleHostConfig(req *restful.Request, resp *restful.Respon
 		return
 	}
 
-	ec := eventclient.NewEventContextByReq(req.Request.Header, s.Cache)
 	for _, moduleID := range params.ModuleID {
-		_, err := s.Logics.AddSingleHostModuleRelation(ctx, ec, params.HostID, moduleID, params.ApplicationID, ownerID)
+		_, err := s.Logics.AddSingleHostModuleRelation(ctx, pheader, params.HostID, moduleID, params.ApplicationID, ownerID)
 		if nil != err {
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostTransferModule)})
 			return
@@ -250,9 +261,8 @@ func (s *Service) DelModuleHostConfig(req *restful.Request, resp *restful.Respon
 		moduleIDs = params.ModuleID
 	}
 
-	ec := eventclient.NewEventContextByReq(req.Request.Header, s.Cache)
 	for _, moduleID := range moduleIDs {
-		_, err := s.Logics.DelSingleHostModuleRelation(ctx, ec, params.HostID, moduleID, params.ApplicationID, ownerID)
+		_, err := s.Logics.DelSingleHostModuleRelation(ctx, pheader, params.HostID, moduleID, params.ApplicationID, ownerID)
 		if nil != err {
 			blog.Errorf("delete module host config, but delete module relation failed, err: %v", err)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrDelOriginHostModuelRelationship)})
@@ -283,9 +293,8 @@ func (s *Service) DelDefaultModuleHostConfig(req *restful.Request, resp *restful
 	}
 
 	//delete default host module relation
-	ec := eventclient.NewEventContextByReq(req.Request.Header, s.Cache)
 	for _, defaultModuleID := range defaultModuleIDs {
-		_, err := s.Logics.DelSingleHostModuleRelation(ctx, ec, params.HostID, defaultModuleID, params.ApplicationID, ownerID)
+		_, err := s.Logics.DelSingleHostModuleRelation(ctx, pheader, params.HostID, defaultModuleID, params.ApplicationID, ownerID)
 		if nil != err {
 			blog.Errorf("del default module host config failed, with relation, err:%v", err)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrDelDefaultModuleHostConfig)})
@@ -302,7 +311,6 @@ func (s *Service) MoveHost2ResourcePool(req *restful.Request, resp *restful.Resp
 	ownerID := util.GetOwnerID(pheader)
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
-	ec := eventclient.NewEventContextByReq(req.Request.Header, s.Cache)
 	params := new(meta.ParamData)
 	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
 		blog.Errorf("move host to resourece pool failed, err: %v", err)
@@ -333,7 +341,7 @@ func (s *Service) MoveHost2ResourcePool(req *restful.Request, resp *restful.Resp
 	for _, hostID := range params.HostID {
 		//host not belong to other biz, add new host
 		if !util.ContainsInt(faultHostIDs, hostID) {
-			_, err = s.Logics.AddSingleHostModuleRelation(ctx, ec, hostID, params.OwnerModuleID, params.OwnerAppplicationID, ownerID)
+			_, err = s.Logics.AddSingleHostModuleRelation(ctx, pheader, hostID, params.OwnerModuleID, params.OwnerAppplicationID, ownerID)
 			if nil != err {
 				addErr = append(addErr, hostID)
 				continue
@@ -341,7 +349,7 @@ func (s *Service) MoveHost2ResourcePool(req *restful.Request, resp *restful.Resp
 		}
 
 		//delete origin relation
-		_, err := s.Logics.DelSingleHostModuleRelation(ctx, ec, hostID, idleModuleID, params.ApplicationID, ownerID)
+		_, err := s.Logics.DelSingleHostModuleRelation(ctx, pheader, hostID, idleModuleID, params.ApplicationID, ownerID)
 		if nil != err {
 			delErr = append(delErr, hostID)
 			continue
@@ -365,7 +373,6 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 	ownerID := util.GetOwnerID(pheader)
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
-	ec := eventclient.NewEventContextByReq(req.Request.Header, s.Cache)
 	params := new(meta.AssignHostToAppParams)
 	if err := json.NewDecoder(req.Request.Body).Decode(params); err != nil {
 		blog.Errorf("assign host to app failed, err: %v", err)
@@ -376,7 +383,7 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 	getModuleParams := make(map[string]interface{})
 	for _, hostID := range params.HostID {
 		// delete relation in default app module
-		_, err := s.Logics.DelSingleHostModuleRelation(ctx, ec, hostID, params.OwnerModuleID, params.OwnerApplicationID, ownerID)
+		_, err := s.Logics.DelSingleHostModuleRelation(ctx, pheader, hostID, params.OwnerModuleID, params.OwnerApplicationID, ownerID)
 		if nil != err {
 			blog.Errorf("assign host to app, but delete host module relationship failed, err: %v")
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrTransferHostFromPool)})
@@ -398,7 +405,7 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 		}
 
 		// add new host
-		_, err = s.Logics.AddSingleHostModuleRelation(ctx, ec, hostID, params.ModuleID, params.ApplicationID, ownerID)
+		_, err = s.Logics.AddSingleHostModuleRelation(ctx, pheader, hostID, params.ModuleID, params.ApplicationID, ownerID)
 		if nil != err {
 			blog.Errorf("assign host to app, but add single host module relation failed, err: %v", err)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrTransferHostFromPool)})

@@ -75,7 +75,6 @@ const (
 	BKTableNameSubscription     = "cc_Subscription"
 	BKTableNameUserAPI          = "cc_UserAPI"
 	BKTableNameUserCustom       = "cc_UserCustom"
-	BKTableNameIdentifier       = "cc_idgenerator"
 	BKTableNameObjAsst          = "cc_ObjAsst"
 	BKTableNameTopoGraphics     = "cc_TopoGraphics"
 	BKTableNameTransaction      = "cc_Transaction"
@@ -121,7 +120,6 @@ var AllTables = []string{
 	BKTableNameSubscription,
 	BKTableNameUserAPI,
 	BKTableNameUserCustom,
-	BKTableNameIdentifier,
 	BKTableNameObjAsst,
 	BKTableNameTopoGraphics,
 	BKTableNameNetcollectConfig,
