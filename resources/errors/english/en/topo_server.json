@@ -92,5 +92,6 @@
 	"1001071":"the association kind is not exist",
 	"1001072":"the association inst is not exist",
 	"1001073":"the  inst to asst  is not exist",
+	"1101074":"the inst has association",
 	"": "" 
 }

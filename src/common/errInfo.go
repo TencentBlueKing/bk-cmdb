@@ -337,6 +337,7 @@ const (
 	CCErrorTopoAsstKindIsNotExist       = 1101071
 	CCErrorAsstInstIsNotExist           = 1101072
 	CCErrorInstToAsstIsNotExist         = 1101073
+	CCErrorInstHasAsst                  = 1101074
 
 	CCErrTopoMulueIDNotfoundFailed = 1101080
 	CCErrTopoBkAppNotAllowedDelete = 1101081

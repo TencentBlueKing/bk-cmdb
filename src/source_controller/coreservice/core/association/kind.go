@@ -35,17 +35,37 @@ func (m *associationKind) isExists(ctx core.ContextParams, associationKindID str
 	return origin, !m.dbProxy.IsNotFoundError(err), err
 }
 
+func (m *associationKind) hasModel(ctx core.ContextParams, cond mapstr.MapStr) (cnt uint64, exists bool, err error) {
+
+	cnt, err = m.dbProxy.Table(common.BKTableNameAsstDes).Find(cond).Count(ctx)
+	exists = 0 != cnt
+	return cnt, exists, err
+}
+
 func (m *associationKind) update(ctx core.ContextParams, data mapstr.MapStr, cond mapstr.MapStr) error {
 
 	return m.dbProxy.Table(common.BKTableNameAsstDes).Update(ctx, cond, data)
 }
 
-func (m *associationKind) searchAssociationKind(ctx core.ContextParams, cond mapstr.MapStr) ([]metadata.AssociationKind, error) {
+func (m *associationKind) searchAssociationKind(ctx core.ContextParams, inputParam metadata.QueryCondition) (results []metadata.AssociationKind, err error) {
 
-	results := []metadata.AssociationKind{}
-	err := m.dbProxy.Table(common.BKTableNameObjClassifiction).Find(cond).All(ctx, &results)
+	instHandler := m.dbProxy.Table(common.BKTableNameAsstDes).Find(inputParam.Condition)
+	for _, sort := range inputParam.SortArr {
+		fileld := sort.Field
+		if sort.IsDsc {
+			fileld = "-" + fileld
+		}
+		instHandler = instHandler.Sort(fileld)
+	}
+	instHandler.Start(uint64(inputParam.Limit.Offset)).Limit(uint64(inputParam.Limit.Limit)).All(ctx, &results)
 
 	return results, err
+}
+
+func (m *associationKind) countInstanceAssociation(ctx core.ContextParams, cond mapstr.MapStr) (count uint64, err error) {
+	count, err = m.dbProxy.Table(common.BKTableNameAsstDes).Find(cond).Count(ctx)
+
+	return count, err
 }
 
 func (m *associationKind) isPrPreAssociationKind(ctx core.ContextParams, cond metadata.DeleteOption) (exists bool, err error) {
@@ -253,12 +273,17 @@ func (m *associationKind) DeleteAssociationKind(ctx core.ContextParams, inputPar
 		return &metadata.DeletedCount{}, ctx.Error.Error(common.CCErrorTopoPreAssKindCanNotBeDelete)
 	}
 
+	cnt, _, err = m.hasModel(ctx, inputParam.Condition)
+	if nil != err {
+		return &metadata.DeletedCount{}, err
+	}
 	m.dbProxy.Table(common.BKTableNameAsstDes).Delete(ctx, inputParam.Condition)
 	return &metadata.DeletedCount{Count: cnt}, nil
 }
 
 func (m *associationKind) CascadeDeleteAssociationKind(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
-	associationKindItems, err := m.searchAssociationKind(ctx, inputParam.Condition)
+	condition := metadata.QueryCondition{Condition: inputParam.Condition}
+	associationKindItems, err := m.searchAssociationKind(ctx, condition)
 	if nil != err {
 		return &metadata.DeletedCount{}, err
 	}
@@ -275,13 +300,16 @@ func (m *associationKind) CascadeDeleteAssociationKind(ctx core.ContextParams, i
 }
 
 func (m *associationKind) SearchAssociationKind(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
-	associationKindItems, err := m.searchAssociationKind(ctx, inputParam.Condition)
+	associationKindItems, err := m.searchAssociationKind(ctx, inputParam)
 	if nil != err {
 		return &metadata.QueryResult{}, err
 	}
 
 	dataResult := &metadata.QueryResult{}
-	dataResult.Count = uint64(len(associationKindItems))
+	dataResult.Count, err = m.countInstanceAssociation(ctx, inputParam.Condition)
+	if nil != err {
+		return &metadata.QueryResult{}, err
+	}
 	for item := range associationKindItems {
 		dataResult.Info = append(dataResult.Info, mapstr.NewFromStruct(item, "field"))
 	}
