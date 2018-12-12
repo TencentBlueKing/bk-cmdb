@@ -171,8 +171,6 @@
                         from: '',
                         to: ''
                     },
-                    edges: [],
-                    nodes: [],
                     line: {
                         center: {
                             x: 0,
@@ -314,8 +312,6 @@
                 this.topoEdit.isEdit = false
                 this.topoEdit.activeEdge.from = ''
                 this.topoEdit.activeEdge.to = ''
-                this.topoEdit.edges = []
-                this.topoEdit.nodes = []
             },
             async exitEdit () {
                 this.topoEdit.isEdit = false
@@ -360,37 +356,6 @@
                             }
                         }
                     })
-                    if (data.params.id === '') {
-                        let edgeIndex = this.topoEdit.edges.findIndex(({params}) => {
-                            let isExist = true
-                            for (let key in params) {
-                                if (key !== 'bk_obj_asst_name' && params[key] !== data.params[key]) {
-                                    isExist = false
-                                }
-                            }
-                            return isExist
-                        })
-                        if (edgeIndex > -1) {
-                            this.topoEdit.edges.splice(edgeIndex, 1)
-                        }
-                    } else {
-                        this.topoEdit.edges.push(data)
-                    }
-                } else { // update
-                    let edge = this.topoEdit.edges.find(({params}) => {
-                        let isExist = true
-                        for (let key in params) {
-                            if (key !== 'bk_obj_asst_name' && params[key] !== data.params[key]) {
-                                isExist = false
-                            }
-                        }
-                        return isExist
-                    })
-                    if (edge) {
-                        edge.params['bk_obj_asst_name'] = data.params['bk_obj_asst_name']
-                    } else {
-                        this.topoEdit.edges.push(data)
-                    }
                 }
                 this.updateNetwork()
             },
@@ -530,8 +495,7 @@
                     this.slider.properties = {
                         fromObjId: this.topoEdit.activeEdge.from,
                         toObjId: this.topoEdit.activeEdge.to,
-                        topoModelList: this.localTopoModelList,
-                        edges: this.topoEdit.edges
+                        topoModelList: this.localTopoModelList
                     }
                     this.slider.title = this.$t('ModelManagement["新建关联"]')
                     this.showSlider('theRelation')
