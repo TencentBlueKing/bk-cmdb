@@ -293,9 +293,7 @@
         },
         methods: {
             ...mapActions('objectAssociation', [
-                'searchAssociationType',
-                'updateObjectAssociation',
-                'deleteObjectAssociation'
+                'searchAssociationType'
             ]),
             addEdge () {
                 if (this.topoEdit.activeEdge.from === '') {
