@@ -54,8 +54,6 @@ type ModelOperation interface {
 type InstanceOperation interface {
 	CreateModelInstance(ctx ContextParams, objID string, inputParam metadata.CreateModelInstance) (*metadata.CreateOneDataResult, error)
 	CreateManyModelInstance(ctx ContextParams, objID string, inputParam metadata.CreateManyModelInstance) (*metadata.CreateManyDataResult, error)
-	SetModelInstance(ctx ContextParams, objID string, inputParam metadata.SetModelInstance) (*metadata.SetDataResult, error)
-	SetManyModelInstance(ctx ContextParams, objID string, inputParam metadata.SetManyModelInstance) (*metadata.SetDataResult, error)
 	UpdateModelInstance(ctx ContextParams, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	SearchModelInstance(ctx ContextParams, objID string, inputParam metadata.QueryCondition) (*metadata.QueryResult, error)
 	DeleteModelInstance(ctx ContextParams, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)

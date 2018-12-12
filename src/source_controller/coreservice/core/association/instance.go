@@ -44,12 +44,25 @@ func (m *associationInstance) instCount(ctx core.ContextParams, cond mapstr.MapS
 	return innerCnt, err
 }
 
-func (m *associationInstance) searchInstanceAssociation(ctx core.ContextParams, cond mapstr.MapStr) ([]metadata.InstAsst, error) {
+func (m *associationInstance) searchInstanceAssociation(ctx core.ContextParams, inputParam metadata.QueryCondition) (results []metadata.InstAsst, err error) {
 
-	results := []metadata.InstAsst{}
-	err := m.dbProxy.Table(common.BKTableNameInstAsst).Find(cond).All(ctx, &results)
+	instHandler := m.dbProxy.Table(common.BKTableNameInstAsst).Find(inputParam.Condition)
+	for _, sort := range inputParam.SortArr {
+		fileld := sort.Field
+		if sort.IsDsc {
+			fileld = "-" + fileld
+		}
+		instHandler = instHandler.Sort(fileld)
+	}
+	instHandler.Start(uint64(inputParam.Limit.Offset)).Limit(uint64(inputParam.Limit.Limit)).All(ctx, &results)
 
 	return results, err
+}
+
+func (m *associationInstance) countInstanceAssociation(ctx core.ContextParams, cond mapstr.MapStr) (count uint64, err error) {
+	count, err = m.dbProxy.Table(common.BKTableNameInstAsst).Find(cond).Count(ctx)
+
+	return count, err
 }
 
 func (m *associationInstance) save(ctx core.ContextParams, asstInst metadata.InstAsst) (id uint64, err error) {
@@ -341,19 +354,23 @@ func (m *associationInstance) SetManyInstanceAssociation(ctx core.ContextParams,
 }
 
 func (m *associationInstance) SearchInstanceAssociation(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
-	instAsstItems, err := m.searchInstanceAssociation(ctx, inputParam.Condition)
+	instAsstItems, err := m.searchInstanceAssociation(ctx, inputParam)
 	if nil != err {
 		return &metadata.QueryResult{}, err
 	}
 
 	dataResult := &metadata.QueryResult{}
-	dataResult.Count = uint64(len(instAsstItems))
+	dataResult.Count, err = m.countInstanceAssociation(ctx, inputParam.Condition)
+	if nil != err {
+		return &metadata.QueryResult{}, err
+	}
 	for item := range instAsstItems {
 		dataResult.Info = append(dataResult.Info, mapstr.NewFromStruct(item, "field"))
 	}
 
 	return dataResult, nil
 }
+
 func (m *associationInstance) DeleteInstanceAssociation(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
 	cnt, err := m.instCount(ctx, inputParam.Condition)
