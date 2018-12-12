@@ -431,22 +431,26 @@
             getObjInstance (objId, config) {
                 return this.searchInst({
                     objId: objId,
-                    params: this.getObjCondition(),
+                    params: this.getObjParams(),
                     config
                 })
             },
-            getObjCondition () {
-                let condition = {}
+            getObjParams () {
+                const params = {
+                    page: this.page,
+                    fields: {},
+                    condition: {}
+                }
                 const property = this.getProperty(this.filter.id)
                 if (this.filter.value !== '' && property) {
                     const objId = this.currentAsstObj
-                    condition[objId] = [{
+                    params.condition[objId] = [{
                         'field': this.filter.id,
                         'operator': this.filter.operator,
                         'value': this.filter.value
                     }]
                 }
-                return condition
+                return params
             },
             setTableList (data, asstObjId) {
                 const properties = this.properties
