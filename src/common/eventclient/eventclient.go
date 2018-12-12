@@ -65,7 +65,6 @@ func NewClientViaRedis(cache *redis.Client, rdb dal.RDB) *ClientViaRedis {
 }
 
 func (c *ClientViaRedis) Push(ctx context.Context, events ...*metadata.EventInst) error {
-	blog.Info("pushing event")
 	c.queueLock.Lock()
 	for i := range events {
 		if events[i] != nil {
