@@ -99,14 +99,32 @@ func (cli *Service) CreateInstAssociation(req *restful.Request, resp *restful.Re
 	result := &meta.CreateAssociationInstResult{BaseResp: meta.SuccessBaseResp}
 	result.Data.ID = data.ID
 
-	ec := eventclient.NewEventContextByReq(req.Request.Header, cli.Cache)
-	err = ec.InsertEvent(metadata.EventTypeAssociation, data.ObjectID, metadata.EventActionCreate, data, nil)
+	srcevent := eventclient.NewEventWithHeader(req.Request.Header)
+	srcevent.EventType = metadata.EventTypeAssociation
+	srcevent.ObjType = data.ObjectID
+	srcevent.Action = metadata.EventActionCreate
+	srcevent.Data = []metadata.EventData{
+		{
+			CurData: data,
+		},
+	}
+	err = cli.EventC.Push(ctx, srcevent)
 	if err != nil {
 		blog.Errorf("create event error:%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Data: result.Data, Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
-	err = ec.InsertEvent(metadata.EventTypeAssociation, data.AsstObjectID, metadata.EventActionCreate, data, nil)
+
+	destevent := eventclient.NewEventWithHeader(req.Request.Header)
+	destevent.EventType = metadata.EventTypeAssociation
+	destevent.ObjType = data.AsstObjectID
+	destevent.Action = metadata.EventActionCreate
+	destevent.Data = []metadata.EventData{
+		{
+			CurData: data,
+		},
+	}
+	err = cli.EventC.Push(ctx, destevent)
 	if err != nil {
 		blog.Errorf("create event error:%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Data: result.Data, Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
@@ -161,19 +179,38 @@ func (cli *Service) DeleteInstAssociation(req *restful.Request, resp *restful.Re
 	}
 
 	for _, asst := range assts {
-		ec := eventclient.NewEventContextByReq(req.Request.Header, cli.Cache)
-		err = ec.InsertEvent(metadata.EventTypeAssociation, asst.ObjectID, metadata.EventActionCreate, nil, asst)
+		srcevent := eventclient.NewEventWithHeader(req.Request.Header)
+		srcevent.EventType = metadata.EventTypeAssociation
+		srcevent.ObjType = asst.ObjectID
+		srcevent.Action = metadata.EventActionDelete
+		srcevent.Data = []metadata.EventData{
+			{
+				PreData: asst,
+			},
+		}
+		err = cli.EventC.Push(ctx, srcevent)
 		if err != nil {
 			blog.Errorf("create event error:%v", err)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 			return
 		}
-		err = ec.InsertEvent(metadata.EventTypeAssociation, asst.AsstObjectID, metadata.EventActionCreate, nil, asst)
+
+		destevent := eventclient.NewEventWithHeader(req.Request.Header)
+		destevent.EventType = metadata.EventTypeAssociation
+		destevent.ObjType = asst.AsstObjectID
+		destevent.Action = metadata.EventActionDelete
+		destevent.Data = []metadata.EventData{
+			{
+				PreData: asst,
+			},
+		}
+		err = cli.EventC.Push(ctx, destevent)
 		if err != nil {
 			blog.Errorf("create event error:%v", err)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 			return
 		}
+
 	}
 
 	result := &meta.DeleteAssociationInstResult{BaseResp: meta.SuccessBaseResp, Data: "success"}

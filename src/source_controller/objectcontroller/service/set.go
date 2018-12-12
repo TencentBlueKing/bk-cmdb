@@ -105,11 +105,20 @@ func (cli *Service) delModuleConfigSet(ctx context.Context, db dal.RDB, input ma
 	}
 
 	//发送删除主机关系事件
-	ec := eventclient.NewEventContextByReq(req.Request.Header, cli.Cache)
 	for oldContent := range oldContents {
-		err = ec.InsertEvent(meta.EventTypeRelation, common.BKInnerObjIDHost, meta.EventActionDelete, oldContent, nil)
+		srcevent := eventclient.NewEventWithHeader(req.Request.Header)
+		srcevent.EventType = meta.EventTypeRelation
+		srcevent.ObjType = common.BKInnerObjIDHost
+		srcevent.Action = meta.EventActionDelete
+		srcevent.Data = []meta.EventData{
+			{
+				PreData: oldContent,
+			},
+		}
+		err = cli.EventC.Push(ctx, srcevent)
 		if err != nil {
 			blog.Errorf("create event error:%v", err)
+			return err
 		}
 	}
 
@@ -159,9 +168,19 @@ func (cli *Service) delModuleConfigSet(ctx context.Context, db dal.RDB, input ma
 		}
 		//推送新加到空闲机器的关系
 		for _, row := range addIdleModuleDatas {
-			err = ec.InsertEvent(meta.EventTypeRelation, common.BKInnerObjIDHost, meta.EventActionCreate, nil, row)
+			srcevent := eventclient.NewEventWithHeader(req.Request.Header)
+			srcevent.EventType = meta.EventTypeRelation
+			srcevent.ObjType = common.BKInnerObjIDHost
+			srcevent.Action = meta.EventActionCreate
+			srcevent.Data = []meta.EventData{
+				{
+					CurData: row,
+				},
+			}
+			err = cli.EventC.Push(ctx, srcevent)
 			if err != nil {
 				blog.Errorf("create event error:%v", err)
+				return err
 			}
 		}
 
