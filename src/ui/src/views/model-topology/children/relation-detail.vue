@@ -52,7 +52,7 @@
             <bk-button type="primary" :loading="$loading('updateObjectAssociation')" @click="saveRelation">
                 {{$t('Common["确定"]')}}
             </bk-button>
-            <bk-button type="danger" :loading="$loading('deleteObjectAssociation')" @click="deleteRelation" :disabled="relationInfo.ispre">
+            <bk-button type="danger" @click="deleteRelation" :disabled="relationInfo.ispre || $loading('deleteObjectAssociation')">
                 {{$t('ModelManagement["删除关联"]')}}
             </bk-button>
         </div>
