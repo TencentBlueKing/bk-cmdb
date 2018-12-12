@@ -14,8 +14,8 @@ package metadata
 
 // Position the node position in graph
 type Position struct {
-	X int64 `json:"x" bson:"x"`
-	Y int64 `json:"y" bson:"y"`
+	X *int64 `json:"x" bson:"x"`
+	Y *int64 `json:"y" bson:"y"`
 }
 
 // Asst the node association node
