@@ -501,14 +501,39 @@ const (
 	CCErrHostAgentStatusFail           = 1110050
 
 	//web  1111XXX
-	CCErrWebFileNoFound      = 1111001
-	CCErrWebFileSaveFail     = 1111002
-	CCErrWebOpenFileFail     = 1111003
-	CCErrWebFileContentEmpty = 1111004
-	CCErrWebFileContentFail  = 1111005
-	CCErrWebGetHostFail      = 1111006
-	CCErrWebCreateEXCELFail  = 1111007
-	CCErrWebGetObjectFail    = 1111008
+	CCErrWebFileNoFound                 = 1111001
+	CCErrWebFileSaveFail                = 1111002
+	CCErrWebOpenFileFail                = 1111003
+	CCErrWebFileContentEmpty            = 1111004
+	CCErrWebFileContentFail             = 1111005
+	CCErrWebGetHostFail                 = 1111006
+	CCErrWebCreateEXCELFail             = 1111007
+	CCErrWebGetObjectFail               = 1111008
+	CCErrWebGetAddNetDeviceResultFail   = 1111009
+	CCErrWebGetAddNetPropertyResultFail = 1111010
+	CCErrWebGetNetDeviceFail            = 1111011
+	CCErrWebGetNetPropertyFail          = 1111012
+
+	// datacollection 1112xxx
+	CCErrCollectNetDeviceCreateFail            = 1112000
+	CCErrCollectNetDeviceGetFail               = 1112001
+	CCErrCollectNetDeviceDeleteFail            = 1112002
+	CCErrCollectObjIDNotNetDevice              = 1112003
+	CCErrCollectNetPropertyCreateFail          = 1112004
+	CCErrCollectNetPropertyGetFail             = 1112005
+	CCErrCollectNetPropertyDeleteFail          = 1112006
+	CCErrCollectNetDeviceObjPropertyNotExist   = 1112007
+	CCErrCollectDeviceNotExist                 = 1112008
+	CCErrCollectPeriodFormatFail               = 1112009
+	CCErrCollectNetDeviceHasPropertyDeleteFail = 1112010
+	CCErrCollectNetCollectorSearchFail         = 1112011
+	CCErrCollectNetCollectorUpdateFail         = 1112012
+	CCErrCollectNetCollectorDiscoverFail       = 1112013
+	CCErrCollectNetReportSearchFail            = 1112014
+	CCErrCollectNetReportConfirmFail           = 1112015
+	CCErrCollectNetHistorySearchFail           = 1112016
+	CCErrCollectNetDeviceUpdateFail            = 1112017
+	CCErrCollectNetPropertyUpdateFail          = 1112018
 
 	// CCErrApiServerV2AppNameLenErr app name must be 1-32 len
 	CCErrAPIServerV2APPNameLenErr = 1170001

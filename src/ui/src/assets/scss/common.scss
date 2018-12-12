@@ -103,7 +103,7 @@ input.cmdb-form-input {
 }
 
 .cmdb-form-checkbox {
-    font-size: 14px;
+    font-size: 0;
     color: #737987;
     margin-right: 30px;
     line-height: 18px;
@@ -118,6 +118,7 @@ input.cmdb-form-input {
         font-size: 14px;
         cursor: pointer;
         vertical-align: middle;
+        font-size: 14px;
         @include ellipsis;
     }
 
@@ -262,6 +263,12 @@ input.cmdb-form-input {
 
 .color-danger {
     color: #ff5656;
+}
+.color-warning {
+    color: #ffb400;
+}
+.color-success {
+    color: #30d878;
 }
 
 .mask {
