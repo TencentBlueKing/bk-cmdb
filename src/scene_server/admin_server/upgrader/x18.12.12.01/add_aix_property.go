@@ -59,7 +59,7 @@ func addAIXProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 	ostypeProperty := Attribute{}
 	err := db.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).One(ctx, &ostypeProperty)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	enumOpts := validator.ParseEnumOption(ostypeProperty.Option)
@@ -77,7 +77,7 @@ func addAIXProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 	enumOpts = append(enumOpts, aixEnum)
 
 	data := mapstr.MapStr{
-		common.BKOptionField: aixEnum,
+		common.BKOptionField: enumOpts,
 	}
 
 	err = db.Table(common.BKTableNameObjAttDes).Update(ctx, cond.ToMapStr(), data)

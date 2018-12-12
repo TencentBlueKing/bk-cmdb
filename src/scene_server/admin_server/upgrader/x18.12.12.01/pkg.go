@@ -29,6 +29,11 @@ func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error)
 		blog.Errorf("[upgrade x18.12.12.01] addAIXProperty error  %s", err.Error())
 		return err
 	}
+	err = setTCPDefault(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade x18.12.12.01] setTCPDefault error  %s", err.Error())
+		return err
+	}
 
 	return
 }
