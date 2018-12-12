@@ -119,6 +119,9 @@
                     id: 'int',
                     name: this.$t('ModelManagement["数字"]')
                 }, {
+                    id: 'float',
+                    name: this.$t('ModelManagement["浮点"]')
+                }, {
                     id: 'enum',
                     name: this.$t('ModelManagement["枚举"]')
                 }, {
@@ -168,7 +171,7 @@
                 return type
             },
             isComponentShow () {
-                return ['singlechar', 'longchar', 'multichar', 'enum', 'int'].indexOf(this.fieldInfo['bk_property_type']) !== -1
+                return ['singlechar', 'longchar', 'multichar', 'enum', 'int', 'float'].indexOf(this.fieldInfo['bk_property_type']) !== -1
             }
         },
         watch: {

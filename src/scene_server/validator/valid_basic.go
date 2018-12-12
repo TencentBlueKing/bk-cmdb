@@ -129,6 +129,8 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 			err = valid.validBool(val, key)
 		case common.FieldTypeForeignKey:
 			err = valid.validForeignKey(val, key)
+		case common.FieldTypeFloat:
+			err = valid.validFloat(val, key)
 		default:
 			continue
 		}
@@ -340,6 +342,24 @@ func (valid *ValidMap) validBool(val interface{}, key string) error {
 	default:
 		blog.Error("params should be  bool")
 		return valid.errif.Errorf(common.CCErrCommParamsNeedBool, key)
+	}
+	return nil
+}
+
+//validFloat
+func (valid *ValidMap) validFloat(val interface{}, key string) error {
+	if nil == val {
+		if valid.require[key] {
+			blog.Error("params can not be null")
+			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+		}
+		return nil
+	}
+
+	_, err := util.GetFloat64ByInterface(val)
+	if nil != err {
+		blog.Error("params should be float")
+		return valid.errif.Errorf(common.CCErrCommParamsNeedFloat, key)
 	}
 	return nil
 }
