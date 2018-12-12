@@ -58,7 +58,8 @@
                     'multiasst',
                     'objuser',
                     'timezone',
-                    'bool'
+                    'bool',
+                    'float'
                 ],
                 isrequiredMap: [
                     'singlechar',
@@ -67,7 +68,8 @@
                     'time',
                     'longchar',
                     'objuser',
-                    'timezone'
+                    'timezone',
+                    'float'
                 ],
                 isonlyMap: [
                     'singlechar',
