@@ -34,6 +34,11 @@ func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error)
 		blog.Errorf("[upgrade x18.12.12.01] setTCPDefault error  %s", err.Error())
 		return err
 	}
+	err = reconcilUnique(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade x18.12.12.01] reconcilUnique error  %s", err.Error())
+		return err
+	}
 
 	return
 }
