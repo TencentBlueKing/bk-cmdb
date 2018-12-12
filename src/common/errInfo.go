@@ -145,6 +145,9 @@ const (
 	// CCErrCommUtilFail  handle %s error %s
 	CCErrCommUtilHandleFail = 1199041
 
+	// CCErrCommParamsNeedFloat the parameter must be float type
+	CCErrCommParamsNeedFloat = 1199042
+
 	// apiserver 1100XXX
 
 	// toposerver 1101XXX

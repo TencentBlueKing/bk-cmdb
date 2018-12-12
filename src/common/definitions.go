@@ -567,6 +567,9 @@ const (
 	// FieldTypeInt the int field type
 	FieldTypeInt string = "int"
 
+	// FieldTypeFloat the float field type
+	FieldTypeFloat string = "float"
+
 	// FieldTypeEnum the enum field type
 	FieldTypeEnum string = "enum"
 
