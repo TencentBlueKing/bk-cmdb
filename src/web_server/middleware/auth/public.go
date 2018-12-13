@@ -106,6 +106,11 @@ func (m *publicAuth) ValidResAccess(pathArr []string, c *gin.Context) bool {
 		return true
 	}
 
+	// get user api
+	if types.SearchUserAPI.MatchString(pathStr) && method == http.MethodPost {
+		return true
+	}
+
 	// get topo graph
 	if types.TopoGraphicsSearchRegexp.MatchString(pathStr) && method == http.MethodPost {
 		return true

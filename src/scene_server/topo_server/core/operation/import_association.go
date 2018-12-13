@@ -362,7 +362,6 @@ func (ia *importAssociation) parseInstToImportAssociationInst(objID, instIDKey s
 	if err != nil {
 		blog.Warnf("parseInstToImportAssociationInst get %s field from %s model error,error:%s, rid:%d ", instID, objID, err.Error(), ia.rid)
 		return
-		//return fmt.Errorf("%s model %s instIDKey  not fouud")
 	}
 
 	attrNameValMap := importAssociationInst{
