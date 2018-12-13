@@ -43,7 +43,7 @@ func parseConditionFromMapStr(inputCond *mongoCondition, inputKey string, inputC
 				return err
 			}
 
-		case universalsql.EQ, universalsql.NEQ, universalsql.GT, universalsql.GTE, universalsql.LTE, universalsql.LT, universalsql.IN, universalsql.NIN:
+		case universalsql.EQ, universalsql.NEQ, universalsql.GT, universalsql.GTE, universalsql.LTE, universalsql.LT, universalsql.IN, universalsql.NIN, universalsql.REGEX:
 			ele, err := convertToElement(inputKey, operatorKey, val, outputCond, inputCondMapStr)
 			if nil != err {
 				return err
@@ -102,6 +102,8 @@ func convertToElement(key, operator string, val interface{}, inputCond *mongoCon
 		return &In{Key: key, Val: val}, nil
 	case universalsql.NIN:
 		return &Nin{Key: key, Val: val}, nil
+	case universalsql.REGEX:
+		return &Regex{Key: key, Val: val}, nil
 	default:
 		// deal embed condition
 		return nil, fmt.Errorf("not support the operator '%s'", operator)
