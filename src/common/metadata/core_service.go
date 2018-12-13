@@ -40,7 +40,7 @@ type DeleteModelClassificationResult struct {
 
 // CreateModel create model params
 type CreateModel struct {
-	Spec       ObjectDes   `json:"spec"`
+	Spec       Object      `json:"spec"`
 	Attributes []Attribute `json:"attributes"`
 }
 

@@ -13,15 +13,14 @@
 package model_test
 
 import (
-	"configcenter/src/common/mapstr"
 	"testing"
 
 	"configcenter/src/common"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/rs/xid"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCreateOneClassification(t *testing.T) {

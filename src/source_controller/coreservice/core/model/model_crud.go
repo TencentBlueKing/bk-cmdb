@@ -32,7 +32,7 @@ func (m *modelManager) count(ctx core.ContextParams, cond universalsql.Condition
 	return cnt, err
 }
 
-func (m *modelManager) save(ctx core.ContextParams, model *metadata.ObjectDes) (id uint64, err error) {
+func (m *modelManager) save(ctx core.ContextParams, model *metadata.Object) (id uint64, err error) {
 
 	id, err = m.dbProxy.NextSequence(ctx, common.BKTableNameObjDes)
 	if err != nil {
