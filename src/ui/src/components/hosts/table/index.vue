@@ -366,7 +366,7 @@
                             id: property['bk_property_id'],
                             name: property['bk_property_name'],
                             objId: property['bk_obj_id'],
-                            sortable: property['bk_obj_id'] === 'host'
+                            sortable: property['bk_obj_id'] === 'host' && !['foreignkey'].includes(property['bk_property_type'])
                         }
                     }))
                     this.columnsConfig.selected = properties.map(property => property['bk_property_id'])
