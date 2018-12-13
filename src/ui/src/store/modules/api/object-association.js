@@ -98,8 +98,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    deleteObjectAssociation ({ commit, state, dispatch }, { id, params, config }) {
-        return $http.delete(`object/association/${id}/action/delete`, params, config)
+    deleteObjectAssociation ({ commit, state, dispatch }, { id, config }) {
+        return $http.delete(`object/association/${id}/action/delete`, config)
     },
     /**
      * 根据关联类型查询使用这些关联类型的关联关系列表
