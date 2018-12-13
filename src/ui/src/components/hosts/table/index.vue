@@ -492,7 +492,7 @@
             handleRowClick (item) {
                 const inst = this.$tools.flatternItem(this.properties['host'], item['host'])
                 this.slider.show = true
-                this.slider.title = `${this.$t("Common['编辑']")} ${inst['bk_host_innerip']}`
+                this.slider.title = inst['bk_host_innerip']
                 this.tab.attribute.inst.details = inst
                 this.tab.attribute.inst.original = item
                 this.tab.attribute.type = 'details'
