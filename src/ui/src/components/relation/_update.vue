@@ -329,12 +329,10 @@
             },
             deleteAssociation (instId) {
                 return this.deleteInstAssociation({
-                    config: {
-                        params: {
-                            'bk_obj_asst_id': this.currentOption['bk_obj_asst_id'],
-                            'bk_inst_id': this.instId,
-                            'bk_asst_inst_id': instId
-                        }
+                    params: {
+                        'bk_obj_asst_id': this.currentOption['bk_obj_asst_id'],
+                        'bk_inst_id': this.instId,
+                        'bk_asst_inst_id': instId
                     }
                 })
             },
