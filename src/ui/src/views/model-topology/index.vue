@@ -9,12 +9,10 @@
                 </bk-button>
             </template>
             <template v-else>
-                <bk-button type="primary" @click="saveTopo">
-                        {{$t('Common["保存"]')}}
-                </bk-button>
                 <bk-button type="default" @click="exitEdit">
                     {{$t('Common["返回"]')}}
                 </bk-button>
+                <p class="edit-cue">{{$t('ModelManagement["所有更改已自动保存"]')}}</p>
             </template>
             <div class="vis-button-group">
                 <i class="bk-icon icon-full-screen" @click="resizeFull" v-tooltip="$t('ModelManagement[\'还原\']')"></i>
@@ -173,8 +171,6 @@
                         from: '',
                         to: ''
                     },
-                    edges: [],
-                    nodes: [],
                     line: {
                         center: {
                             x: 0,
@@ -293,40 +289,10 @@
             this.initNetwork()
             this.initMoveFunction()
         },
-        async beforeRouteLeave (to, from, next) {
-            if (await this.confirmLeave()) {
-                next()
-            }
-        },
         methods: {
             ...mapActions('objectAssociation', [
-                'searchAssociationType',
-                'createObjectAssociation',
-                'updateObjectAssociation',
-                'deleteObjectAssociation'
+                'searchAssociationType'
             ]),
-            confirmLeave () {
-                const {
-                    edges,
-                    nodes
-                } = this.topoEdit
-                const positionsArray = this.getUpdatePositions()
-                if ([].concat(...positionsArray).length || edges.length || nodes.length) {
-                    return new Promise((resolve, reject) => {
-                        this.$bkInfo({
-                            title: this.$t('Common["确定离开页面？"]'),
-                            content: this.$t('Common["系统不会保存您所做的修改，确认要离开？"]'),
-                            confirmFn: () => {
-                                resolve(true)
-                            },
-                            cancelFn: () => {
-                                resolve(false)
-                            }
-                        })
-                    })
-                }
-                return true
-            },
             addEdge () {
                 if (this.topoEdit.activeEdge.from === '') {
                     const nodeId = this.topoTooltip.hoverNode.id
@@ -342,78 +308,16 @@
             isModelInTopo (model) {
                 return this.network.nodes.findIndex(node => node.id === model['bk_obj_id']) > -1
             },
-            createAsst (params) {
-                return this.createObjectAssociation({
-                    params
-                })
-            },
-            updateAsst (params) {
-                return this.updateObjectAssociation({
-                    id: params.id,
-                    params: {
-                        bk_obj_asst_name: params['bk_obj_asst_name']
-                    }
-                })
-            },
-            deleteAsst (params) {
-                return this.deleteObjectAssociation({
-                    id: params.id
-                })
-            },
             clearEditData () {
                 this.topoEdit.isEdit = false
                 this.topoEdit.activeEdge.from = ''
                 this.topoEdit.activeEdge.to = ''
-                this.topoEdit.edges = []
-                this.topoEdit.nodes = []
             },
             async exitEdit () {
-                if (await this.confirmLeave()) {
-                    this.localTopoModelList = this.$tools.clone(this.topoModelList)
-                    this.topoEdit.isEdit = false
-                    this.updateNetwork()
-                    await this.$nextTick()
-                    this.clearEditData()
-                }
-            },
-            getUpdatePositions () {
-                const nodes = this.localTopoModelList.filter(({bk_obj_id: objId, position}) => {
-                    const curModel = this.topoModelList.find(model => model['bk_obj_id'] === objId)
-                    return curModel.position.x !== position.x || curModel.position.y !== position.y
-                }).map(({bk_obj_id: objId}) => objId)
-
-                const removeNodes = []
-                this.localTopoModelList.forEach(model => {
-                    if (model.position.x === null && model.position.y === null) {
-                        const curModel = this.topoModelList.find(({bk_obj_id: objId}) => model['bk_obj_id'] === objId)
-                        if (curModel.position.x !== null && curModel.position.y !== null) {
-                            removeNodes.push(model)
-                        }
-                    }
-                })
-                const updateNodes = this.networkDataSet.nodes.get(nodes).filter(node => node !== null)
-                return [updateNodes, removeNodes]
-            },
-            async saveTopo () {
-                const createAsstArray = []
-                const updateAsstArray = []
-                const deleteAsstArray = []
-                this.topoEdit.edges.filter(({type}) => type === 'create').forEach(data => {
-                    createAsstArray.push(this.createAsst(data.params))
-                })
-                this.topoEdit.edges.filter(({type}) => type === 'update').forEach(data => {
-                    updateAsstArray.push(this.updateAsst(data.params))
-                })
-                this.topoEdit.edges.filter(({type}) => type === 'delete').forEach(data => {
-                    deleteAsstArray.push(this.deleteAsst(data.params))
-                })
-                const positionsArray = this.getUpdatePositions()
-                this.updateNodePosition(...positionsArray)
-                await Promise.all(createAsstArray)
-                await Promise.all(updateAsstArray)
-                await Promise.all(deleteAsstArray)
                 this.topoEdit.isEdit = false
-                this.initNetwork()
+                this.updateNetwork()
+                this.networkInstance.setOptions({nodes: {fixed: true}})
+                await this.$nextTick()
                 this.clearEditData()
             },
             handleDisplaySave (displayConfig) {
@@ -423,10 +327,6 @@
                 this.updateNetwork()
             },
             handleRelationSave (params) {
-                this.topoEdit.edges.push({
-                    type: 'create',
-                    params
-                })
                 let fromNode = this.localTopoModelList.find(model => model['bk_obj_id'] === params['bk_obj_id'])
                 if (!fromNode.hasOwnProperty('assts')) {
                     Object.assign(fromNode, {assts: []})
@@ -434,7 +334,7 @@
                 fromNode.assts.push({
                     bk_asst_inst_id: this.associationList.find(asst => asst['bk_asst_id'] === params['bk_asst_id']).id,
                     bk_obj_id: params['bk_asst_obj_id'],
-                    bk_inst_id: '',
+                    bk_inst_id: params.id,
                     checked: true,
                     asstInfo: params
                 })
@@ -456,41 +356,13 @@
                             }
                         }
                     })
-                    if (data.params.id === '') {
-                        let edgeIndex = this.topoEdit.edges.findIndex(({params}) => {
-                            let isExist = true
-                            for (let key in params) {
-                                if (key !== 'bk_obj_asst_name' && params[key] !== data.params[key]) {
-                                    isExist = false
-                                }
-                            }
-                            return isExist
-                        })
-                        if (edgeIndex > -1) {
-                            this.topoEdit.edges.splice(edgeIndex, 1)
-                        }
-                    } else {
-                        this.topoEdit.edges.push(data)
-                    }
-                } else { // update
-                    let edge = this.topoEdit.edges.find(({params}) => {
-                        let isExist = true
-                        for (let key in params) {
-                            if (key !== 'bk_obj_asst_name' && params[key] !== data.params[key]) {
-                                isExist = false
-                            }
-                        }
-                        return isExist
-                    })
-                    if (edge) {
-                        edge.params['bk_obj_asst_name'] = data.params['bk_obj_asst_name']
-                    } else {
-                        this.topoEdit.edges.push(data)
-                    }
                 }
                 this.updateNetwork()
             },
             editTopo () {
+                this.networkInstance.setOptions({
+                    nodes: {fixed: false}
+                })
                 this.topoEdit.isEdit = true
             },
             checkNodeAsst (node) {
@@ -529,6 +401,16 @@
                     confirmFn: () => {
                         let node = this.localTopoModelList.find(model => model['bk_obj_id'] === hoverNode.id)
                         node.position = {x: null, y: null}
+
+                        this.updateSingleNodePosition({
+                            bk_obj_id: node['bk_obj_id'],
+                            bk_inst_id: node['bk_inst_id'],
+                            node_type: node['node_type'],
+                            position: {
+                                x: node.position.x,
+                                y: node.position.y
+                            }
+                        })
                         
                         this.topoTooltip.hoverNode = null
                         this.topoTooltip.hoverNodeTimer = null
@@ -549,9 +431,18 @@
                 let originPosition = this.networkInstance.getViewPosition()
                 let container = this.$refs.topo.getBoundingClientRect()
                 let scale = this.networkInstance.getScale()
-                node.position.x = originPosition.x - ((container.left + container.right) / 2 - event.clientX) / scale
-                node.position.y = originPosition.y - ((container.top + container.bottom) / 2 - event.clientY) / scale
+                node.position.x = Math.floor(originPosition.x - ((container.left + container.right) / 2 - event.clientX) / scale)
+                node.position.y = Math.floor(originPosition.y - ((container.top + container.bottom) / 2 - event.clientY) / scale)
                 this.updateNetwork()
+                this.updateSingleNodePosition({
+                    bk_obj_id: node['bk_obj_id'],
+                    bk_inst_id: node['bk_inst_id'],
+                    node_type: node['node_type'],
+                    position: {
+                        x: node.position.x,
+                        y: node.position.y
+                    }
+                })
             },
             clearActiveEdge () {
                 this.topoEdit.activeEdge = {
@@ -604,8 +495,7 @@
                     this.slider.properties = {
                         fromObjId: this.topoEdit.activeEdge.from,
                         toObjId: this.topoEdit.activeEdge.to,
-                        topoModelList: this.localTopoModelList,
-                        edges: this.topoEdit.edges
+                        topoModelList: this.localTopoModelList
                     }
                     this.slider.title = this.$t('ModelManagement["新建关联"]')
                     this.showSlider('theRelation')
@@ -802,6 +692,7 @@
                     nodes: this.networkDataSet.nodes,
                     edges: this.networkDataSet.edges
                 }, this.network.options)
+                this.networkInstance.setOptions({nodes: {fixed: true}})
                 this.initPosition()
                 this.addListener()
             },
@@ -893,31 +784,6 @@
                 this.network.edges = edges
                 this.networkDataSet.edges = new Vis.DataSet(this.network.edges)
             },
-            // 设置单节点位置并更新其节点位置信息
-            setSingleNodePosition () {
-                const edges = this.network.edges
-                const noPositionSingleNode = this.network.nodes.filter(node => !edges.some(edge => edge.from === node.id || edge.to === node.id))
-                const fixedNodeY = this.getSingleNodePositionY()
-                const fixedDistance = 70
-                const compensateDistance = noPositionSingleNode.length % 2 === 0 ? fixedDistance / 2 : 0
-                const middleIndex = Math.floor(noPositionSingleNode.length / 2)
-                noPositionSingleNode.forEach((node, index) => {
-                    node.x = (index - middleIndex) * fixedDistance - compensateDistance
-                    node.y = fixedNodeY
-                })
-                if (noPositionSingleNode.length) {
-                    this.networkDataSet.nodes.update(noPositionSingleNode)
-                }
-            },
-            // 获取单节点摆放的初始化Y轴坐标
-            getSingleNodePositionY () {
-                const asstNodes = this.network.nodes.filter(node => this.network.edges.some(edge => edge.to === node.id || edge.from === node.id))
-                if (asstNodes.length) {
-                    const asstNodePositions = this.networkInstance.getPositions(asstNodes.map(node => node.id))
-                    return Math.min(...asstNodes.map(node => asstNodePositions[node.id]['y'])) - 70
-                }
-                return 0
-            },
             // 判断是否是双向关联A.to = B.from && A.from = B.to
             getTwoWayAsst (node, asst, edges) {
                 return edges.find(edge => edge.from === asst['bk_obj_id'] && edge.to === node['bk_obj_id'])
@@ -943,17 +809,22 @@
                 let nodesId = []
                 this.topoModelList.forEach(model => {
                     if (model.hasOwnProperty('assts') && model.assts.length) {
+                        nodesId.push(model['bk_obj_id'])
                         model.assts.forEach(asst => {
                             nodesId.push(asst['bk_obj_id'])
                         })
                     }
                 })
+                nodesId = [...new Set(nodesId)]
                 nodesId = nodesId.filter(id => {
                     return this.topoModelList.some(({bk_obj_id: objId, position}) => objId === id && position.x === null && position.y === null)
                 })
                 if (nodesId.length) {
                     this.updateNodePosition(this.networkDataSet.nodes.get(nodesId))
                 }
+            },
+            updateSingleNodePosition (node) {
+                this.$store.dispatch('globalModels/updateModelAction', {params: [node]})
             },
             // 批量更新节点位置信息
             async updateNodePosition (updateNodes, removeNodes = []) {
@@ -1008,12 +879,21 @@
                     }
                 })
                 this.networkInstance.on('dragEnd', data => {
-                    if (data.nodes.length === 1) {
+                    if (this.topoEdit.isEdit && data.nodes.length === 1) {
                         const nodeId = data.nodes[0]
                         const position = this.networkInstance.getPositions([nodeId])
                         const model = this.localTopoModelList.find(({bk_obj_id: objId}) => objId === nodeId)
                         model.position.x = position[nodeId].x
                         model.position.y = position[nodeId].y
+                        this.updateSingleNodePosition({
+                            bk_obj_id: model['bk_obj_id'],
+                            bk_inst_id: model['bk_inst_id'],
+                            node_type: model['node_type'],
+                            position: {
+                                x: model.position.x,
+                                y: model.position.y
+                            }
+                        })
                     }
                     this.networkInstance.unselectAll()
                 })
@@ -1109,6 +989,13 @@
         font-size: 0;
         .bk-button {
             margin-right: 10px;
+        }
+        .edit-cue {
+            display: inline-block;
+            font-size: 14px;
+            color: #a4aab3;
+            line-height: 36px;
+            vertical-align: middle;
         }
         i {
             font-size: 14px;
