@@ -91,6 +91,7 @@ const (
 	// proc search
 	procSearch         = `proc/search/[a-z0-9A-Z]+/[a-z0-9A-Z]+$`
 	topoGraphicsSearch = `objects/topographics/scope_type/[a-z0-9A-Z]+/scope_id/[a-z0-9A-Z]+/action/search$`
+	searchUserAPI      = `userapi/search/[0-9]+$`
 )
 
 //system config privilege regexp
@@ -99,6 +100,7 @@ var (
 	ObjectPatternRegexp      = regexp.MustCompile(objectPattern)
 	ProcSearchRegexp         = regexp.MustCompile(procSearch)
 	TopoGraphicsSearchRegexp = regexp.MustCompile(topoGraphicsSearch)
+	SearchUserAPI            = regexp.MustCompile(searchUserAPI)
 )
 
 //host update string
