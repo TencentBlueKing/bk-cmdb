@@ -28,10 +28,12 @@ type associationManager struct {
 
 // New create a new association manager instance
 func New(dbProxy dal.RDB) core.AssociationOperation {
+	asstModel := &associationModel{dbProxy: dbProxy}
 	return &associationManager{
 		dbProxy: dbProxy,
 		associationKind: &associationKind{
-			dbProxy: dbProxy,
+			dbProxy:          dbProxy,
+			associationModel: asstModel,
 		},
 		associationInstance: &associationInstance{
 			dbProxy: dbProxy,
