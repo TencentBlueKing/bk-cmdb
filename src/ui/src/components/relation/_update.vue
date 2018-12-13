@@ -305,18 +305,22 @@
                 return this.existInstAssociation.some(exist => exist['bk_asst_inst_id'] === inst[this.instanceIdKey])
             },
             async updateAssociation (instId, updateType = 'new') {
-                if (updateType === 'new') {
-                    await this.createAssociation(instId)
-                    this.$success(this.$t('Association["添加关联成功"]'))
-                } else if (updateType === 'remove') {
-                    await this.deleteAssociation(instId)
-                    this.$success(this.$t('Association["取消关联成功"]'))
-                } else if (updateType === 'update') {
-                    await this.deleteAssociation(this.existInstAssociation[0]['bk_asst_inst_id'])
-                    await this.createAssociation(instId)
-                    this.$success(this.$t('Association["添加关联成功"]'))
+                try {
+                    if (updateType === 'new') {
+                        await this.createAssociation(instId)
+                        this.$success(this.$t('Association["添加关联成功"]'))
+                    } else if (updateType === 'remove') {
+                        await this.deleteAssociation(instId)
+                        this.$success(this.$t('Association["取消关联成功"]'))
+                    } else if (updateType === 'update') {
+                        await this.deleteAssociation(this.existInstAssociation[0]['bk_asst_inst_id'])
+                        await this.createAssociation(instId)
+                        this.$success(this.$t('Association["添加关联成功"]'))
+                    }
+                    this.getExistInstAssociation()
+                } catch (e) {
+                    console.log(e)
                 }
-                this.getExistInstAssociation()
             },
             createAssociation (instId) {
                 return this.createInstAssociation({
@@ -328,12 +332,9 @@
                 })
             },
             deleteAssociation (instId) {
+                const instAssociation = this.existInstAssociation.find(exist => exist['bk_asst_inst_id'] === instId) || {}
                 return this.deleteInstAssociation({
-                    params: {
-                        'bk_obj_asst_id': this.currentOption['bk_obj_asst_id'],
-                        'bk_inst_id': this.instId,
-                        'bk_asst_inst_id': instId
-                    }
+                    id: instAssociation.id
                 })
             },
             beforeUpdate (event, instId, updateType = 'new') {
