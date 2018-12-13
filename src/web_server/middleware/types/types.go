@@ -65,45 +65,38 @@ const (
 )
 
 const (
-	BK_INST_SEARCH_OWNER string = "inst/search/owner"
-	BK_OBJECT_PLAT       string = "object/plat"
+	BK_INST_SEARCH_OWNER            string = "inst/search/owner"
+	BK_OBJECT_PLAT                  string = "object/plat"
+	BK_CC_CLASSIFIC                 string = "object/classifications"
+	BK_CC_OBJECT_ATTR               string = "object/attr/search"
+	BK_CC_PRIVI_PATTERN             string = "topo/privilege/user/detail"
+	BK_OBJECT_ATT_GROUP                    = "objectatt/group/property/owner"
+	BK_CC_USER_CUSTOM               string = "usercustom"
+	BK_CC_HOST_FAVORITES            string = "favorites"
+	BK_TOPO_ASSOCIATION_KIND_SEARCH        = "/topo/association/type/action/search"
+	BK_TOPO_SEARCH_OBJECTS                 = "api/v3/objects"
+	//proc manage pattern
+	BK_PROC_S string = "proc"
+	//user api pattern
+	BK_USER_API_S string = "userapi"
+	//host trans pattern
+	BK_HOST_TRANS                    = "hosts/modules"
+	BKTopoBatchSearchAssociationKind = "topo/association/type/action/search/batch"
 )
-
-const BK_CC_CLASSIFIC string = "object/classifications"
-
-const BK_CC_OBJECT_ATTR string = "object/attr/search"
-
-const BK_CC_PRIVI_PATTERN string = "topo/privilege/user/detail"
-
-const BK_OBJECT_ATT_GROUP = "objectatt/group/property/owner"
-
-const BK_CC_USER_CUSTOM string = "usercustom"
-
-const BK_CC_HOST_FAVORITES string = "favorites"
-
-const BK_TOPO_ASSOCIATION_KIND_SEARCH = "/topo/association/type/action/search"
-
-const BK_TOPO_SEARCH_OBJECTS = "api/v3/objects"
-
-//proc manage pattern
-const BK_PROC_S string = "proc"
-
-//user api pattern
-const BK_USER_API_S string = "userapi"
-
-//host trans pattern
-const BK_HOST_TRANS = "hosts/modules"
 
 //system config privilege pattern
 const (
 	resPattern    = `(hosts/import|export)|(hosts/modules/resource/idle)`
 	objectPattern = `object/classification/[a-z0-9A-Z]+/objects$`
+	// proc search
+	procSearch = `proc/search/./.$`
 )
 
 //system config privilege regexp
 var (
 	ResPatternRegexp    = regexp.MustCompile(resPattern)
 	ObjectPatternRegexp = regexp.MustCompile(objectPattern)
+	ProcSearchRegexp    = regexp.MustCompile(procSearch)
 )
 
 //host update string

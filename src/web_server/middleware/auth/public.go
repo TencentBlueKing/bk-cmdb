@@ -96,6 +96,16 @@ func (m *publicAuth) ValidResAccess(pathArr []string, c *gin.Context) bool {
 		return true
 	}
 
+	// batc search topo association kind
+	if strings.HasSuffix(pathStr, types.BKTopoBatchSearchAssociationKind) && method == http.MethodPost {
+		return true
+	}
+
+	// get processes
+	if types.ProcSearchRegexp.MatchString(pathStr) && method == http.MethodPost {
+		return true
+	}
+
 	// get object info
 	if pathStr == types.BK_TOPO_SEARCH_OBJECTS && method == http.MethodPost {
 		return true
