@@ -270,7 +270,7 @@ func (m *associationKind) SearchAssociationKind(ctx core.ContextParams, inputPar
 	if nil != err {
 		return &metadata.QueryResult{}, err
 	}
-	for item := range associationKindItems {
+	for _, item := range associationKindItems {
 		dataResult.Info = append(dataResult.Info, mapstr.NewFromStruct(item, "field"))
 	}
 

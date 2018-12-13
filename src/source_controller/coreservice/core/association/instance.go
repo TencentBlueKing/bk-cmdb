@@ -364,7 +364,7 @@ func (m *associationInstance) SearchInstanceAssociation(ctx core.ContextParams, 
 	if nil != err {
 		return &metadata.QueryResult{}, err
 	}
-	for item := range instAsstItems {
+	for _, item := range instAsstItems {
 		dataResult.Info = append(dataResult.Info, mapstr.NewFromStruct(item, "field"))
 	}
 
