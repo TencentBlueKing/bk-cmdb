@@ -138,24 +138,27 @@ func (m *instanceManager) DeleteModelInstance(ctx core.ContextParams, objID stri
 	instIDFieldName := common.GetInstIDField(objID)
 	origins, _, err := m.getInsts(ctx, objID, inputParam.Condition)
 	if nil != err {
-		return nil, err
+		return &metadata.DeletedCount{}, err
 	}
 
 	for _, origin := range origins {
 		instID, err := util.GetInt64ByInterface(origin[instIDFieldName])
 		if nil != err {
-			return &metadata.DeletedCount{}, err
+			return nil, err
 		}
 		exists, err := m.dependent.IsInstAsstExist(ctx, objID, uint64(instID))
 		if nil != err {
-			return &metadata.DeletedCount{}, err
+			return nil, err
 		}
 		if exists {
 			return &metadata.DeletedCount{}, ctx.Error.Error(common.CCErrorInstHasAsst)
 		}
 	}
 
-	m.dbProxy.Table(tableName).Delete(ctx, inputParam.Condition)
+	err = m.dbProxy.Table(tableName).Delete(ctx, inputParam.Condition)
+	if nil != err {
+		return &metadata.DeletedCount{}, err
+	}
 	return &metadata.DeletedCount{Count: uint64(len(origins))}, nil
 }
 
@@ -164,7 +167,7 @@ func (m *instanceManager) CascadeDeleteModelInstance(ctx core.ContextParams, obj
 	instIDFieldName := common.GetInstIDField(objID)
 	origins, _, err := m.getInsts(ctx, objID, inputParam.Condition)
 	if nil != err {
-		return nil, err
+		return &metadata.DeletedCount{}, err
 	}
 
 	for _, origin := range origins {
@@ -178,6 +181,9 @@ func (m *instanceManager) CascadeDeleteModelInstance(ctx core.ContextParams, obj
 		}
 	}
 
-	m.dbProxy.Table(tableName).Delete(ctx, inputParam.Condition)
+	err = m.dbProxy.Table(tableName).Delete(ctx, inputParam.Condition)
+	if nil != err {
+		return &metadata.DeletedCount{}, err
+	}
 	return &metadata.DeletedCount{Count: uint64(len(origins))}, nil
 }
