@@ -14,6 +14,7 @@ package association
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/source_controller/coreservice/core"
@@ -28,22 +29,30 @@ func (m *associationModel) CreateModelAssociation(ctx core.ContextParams, inputP
 
 	exists, err := m.isExistsAssociationID(ctx, inputParam.Spec.AssociationName)
 	if nil != err {
+		blog.Errorf("request(%s): it is failed to check whether the association ID (%s) is exists, error info is %s", ctx.ReqID, inputParam.Spec.AssociationName, err.Error())
 		return &metadata.CreateOneDataResult{}, err
 	}
 	if exists {
+		blog.Warnf("request(%s): it is failed create a new association, because of the association ID (%s) is exists", ctx.ReqID, inputParam.Spec.AsstKindID)
 		return &metadata.CreateOneDataResult{}, ctx.Error.Error(common.CCErrCommDuplicateItem)
 	}
 
 	exists, err = m.isExistsAssociationObjectWithAnotherObject(ctx, inputParam.Spec.ObjectID, inputParam.Spec.AsstObjID)
 	if nil != err {
+		blog.Errorf("request(%s): it is failed to create a new association, because of it is failed to check if the association (%s=>%s) is exists, error info is %s", ctx.ReqID, inputParam.Spec.ObjectID, inputParam.Spec.AsstObjID, err.Error())
 		return &metadata.CreateOneDataResult{}, err
 	}
 	if exists {
+		blog.Warnf("request(%s): it is failed to create a new association, because of it (%s=>%s) is exists", ctx.ReqID, inputParam.Spec.ObjectID, inputParam.Spec.AsstObjID)
 		return &metadata.CreateOneDataResult{}, ctx.Error.Errorf(common.CCErrTopoAssociationAlreadyExist, inputParam.Spec.ObjectID, inputParam.Spec.AsstObjID)
 	}
 
 	id, err := m.save(ctx, &inputParam.Spec)
-	return &metadata.CreateOneDataResult{Created: metadata.CreatedDataResult{ID: id}}, err
+	if nil != err {
+		blog.Errorf("request(%s): it is failed to create a new association (%s=>%s), error info is %s", ctx.ReqID, inputParam.Spec.ObjectID, inputParam.Spec.AsstObjID, err.Error())
+		return &metadata.CreateOneDataResult{}, err
+	}
+	return &metadata.CreateOneDataResult{Created: metadata.CreatedDataResult{ID: id}}, nil
 }
 
 func (m *associationModel) SetModelAssociation(ctx core.ContextParams, inputParam metadata.SetModelAssociation) (*metadata.SetDataResult, error) {
@@ -63,32 +72,36 @@ func (m *associationModel) UpdateModelAssociation(ctx core.ContextParams, inputP
 
 	updateCond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
+		blog.Errorf("request(%s): it is to failed to update the association by the condition (%v), error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.UpdatedCount{}, ctx.Error.New(common.CCErrCommPostInputParseError, err.Error())
 	}
 
 	updateCond.Element(&mongo.Eq{Key: metadata.AssociationFieldSupplierAccount, Val: ctx.SupplierAccount})
 	cnt, err := m.update(ctx, inputParam.Data, updateCond)
 	if nil != err {
+		blog.Errorf("request(%s): it is to update the association by the condition (%v), error info is %s", ctx.ReqID, updateCond.ToMapStr(), err.Error())
 		return &metadata.UpdatedCount{}, err
 	}
 
-	return &metadata.UpdatedCount{Count: cnt}, err
+	return &metadata.UpdatedCount{Count: cnt}, nil
 }
 
 func (m *associationModel) SearchModelAssociation(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
 
 	searchCond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
+		blog.Errorf("request(%s): it is to convert the condition (%v) from mapstr into condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.QueryResult{}, ctx.Error.New(common.CCErrCommPostInputParseError, err.Error())
 	}
 
 	searchCond.Element(&mongo.Eq{Key: metadata.AssociationFieldSupplierAccount, Val: ctx.SupplierAccount})
 	resultItems, err := m.searchReturnMapStr(ctx, searchCond)
 	if nil != err {
+		blog.Errorf("request(%s): it is to search all associations by the condition (%v), error info is %s", ctx.ReqID, searchCond.ToMapStr(), err.Error())
 		return &metadata.QueryResult{}, err
 	}
 
-	return &metadata.QueryResult{Count: uint64(len(resultItems)), Info: resultItems}, err
+	return &metadata.QueryResult{Count: uint64(len(resultItems)), Info: resultItems}, nil
 }
 
 func (m *associationModel) DeleteModelAssociation(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
@@ -96,12 +109,14 @@ func (m *associationModel) DeleteModelAssociation(ctx core.ContextParams, inputP
 	// read all model associations
 	deleteCond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
+		blog.Errorf("request(%s): it is to convert the condition (%s) from mapstr into condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.DeletedCount{}, ctx.Error.New(common.CCErrCommPostInputParseError, err.Error())
 	}
 	deleteCond.Element(&mongo.Eq{Key: metadata.AssociationFieldSupplierAccount, Val: ctx.SupplierAccount})
 
 	needDeleteAssocaitionItems, err := m.search(ctx, deleteCond)
 	if nil != err {
+		blog.Errorf("request(%s): it is failed to search all by the condition (%v), error info is %s", ctx.ReqID, deleteCond.ToMapStr(), err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
@@ -113,15 +128,21 @@ func (m *associationModel) DeleteModelAssociation(ctx core.ContextParams, inputP
 
 	exists, err := m.usedInSomeInstanceAssociation(ctx, associationIDS)
 	if nil != err {
+		blog.Errorf("request(%s): it is failed to check if the instances (%v) is in used, error info is %s", ctx.ReqID, associationIDS, err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 	if exists {
+		blog.Warnf("request(%s): it is forbbiden to delete the model association by the instances (%v)", ctx.ReqID, associationIDS)
 		return &metadata.DeletedCount{}, ctx.Error.Error(common.CCErrTopoAssociationHasAlreadyBeenInstantiated)
 	}
 
 	// deletion operation
 	cnt, err := m.delete(ctx, deleteCond)
-	return &metadata.DeletedCount{Count: cnt}, err
+	if nil != err {
+		blog.Errorf("request(%s): it is delete the instances by the condition (%v), error info is %s", ctx.ReqID, deleteCond.ToMapStr(), err.Error())
+		return &metadata.DeletedCount{}, err
+	}
+	return &metadata.DeletedCount{Count: cnt}, nil
 }
 
 func (m *associationModel) CascadeDeleteModelAssociation(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
@@ -129,12 +150,14 @@ func (m *associationModel) CascadeDeleteModelAssociation(ctx core.ContextParams,
 	// read all model associations
 	deleteCond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
+		blog.Errorf("request(%s): it is to convert the condition (%s) from mapstr into condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.DeletedCount{}, ctx.Error.New(common.CCErrCommPostInputParseError, err.Error())
 	}
 	deleteCond.Element(&mongo.Eq{Key: metadata.AssociationFieldSupplierAccount, Val: ctx.SupplierAccount})
 
 	needDeleteAssocaitionItems, err := m.search(ctx, deleteCond)
 	if nil != err {
+		blog.Errorf("request(%s): it is to search associations by the condition (%v), error info is %s", ctx.ReqID, deleteCond.ToMapStr(), err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
@@ -146,10 +169,15 @@ func (m *associationModel) CascadeDeleteModelAssociation(ctx core.ContextParams,
 
 	// cascade deletion operation
 	if err := m.cascadeInstanceAssociation(ctx, associationIDS); nil != err {
+		blog.Errorf("request(%s): it is failed to cascade delete the assocaitions of the instances (%v), error info is %s ", ctx.ReqID, associationIDS, err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
 	// deletion operation
 	cnt, err := m.delete(ctx, deleteCond)
-	return &metadata.DeletedCount{Count: cnt}, err
+	if nil != err {
+		blog.Errorf("request(%s): it is to delete some associations by the condition (%v), error info is %s", ctx.ReqID, deleteCond.ToMapStr(), err.Error())
+		return &metadata.DeletedCount{}, err
+	}
+	return &metadata.DeletedCount{Count: cnt}, nil
 }
