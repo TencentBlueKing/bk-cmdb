@@ -57,7 +57,7 @@ func (m *associationKind) searchAssociationKind(ctx core.ContextParams, inputPar
 		}
 		instHandler = instHandler.Sort(fileld)
 	}
-	instHandler.Start(uint64(inputParam.Limit.Offset)).Limit(uint64(inputParam.Limit.Limit)).All(ctx, &results)
+	err = instHandler.Start(uint64(inputParam.Limit.Offset)).Limit(uint64(inputParam.Limit.Limit)).All(ctx, &results)
 
 	return results, err
 }
@@ -277,7 +277,10 @@ func (m *associationKind) DeleteAssociationKind(ctx core.ContextParams, inputPar
 	if nil != err {
 		return &metadata.DeletedCount{}, err
 	}
-	m.dbProxy.Table(common.BKTableNameAsstDes).Delete(ctx, inputParam.Condition)
+	err = m.dbProxy.Table(common.BKTableNameAsstDes).Delete(ctx, inputParam.Condition)
+	if nil != err {
+		return &metadata.DeletedCount{}, err
+	}
 	return &metadata.DeletedCount{Count: cnt}, nil
 }
 

@@ -54,7 +54,7 @@ func (m *associationInstance) searchInstanceAssociation(ctx core.ContextParams, 
 		}
 		instHandler = instHandler.Sort(fileld)
 	}
-	instHandler.Start(uint64(inputParam.Limit.Offset)).Limit(uint64(inputParam.Limit.Limit)).All(ctx, &results)
+	err = instHandler.Start(uint64(inputParam.Limit.Offset)).Limit(uint64(inputParam.Limit.Limit)).All(ctx, &results)
 
 	return results, err
 }
@@ -378,6 +378,9 @@ func (m *associationInstance) DeleteInstanceAssociation(ctx core.ContextParams, 
 		return &metadata.DeletedCount{}, err
 	}
 
-	m.dbProxy.Table(common.BKTableNameInstAsst).Delete(ctx, inputParam.Condition)
+	err = m.dbProxy.Table(common.BKTableNameInstAsst).Delete(ctx, inputParam.Condition)
+	if nil != err {
+		return &metadata.DeletedCount{}, err
+	}
 	return &metadata.DeletedCount{Count: cnt}, nil
 }
