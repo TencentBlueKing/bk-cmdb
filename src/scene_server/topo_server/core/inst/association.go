@@ -270,6 +270,8 @@ func (cli *inst) GetParentObjectWithInsts() ([]*ObjectWithInsts, error) {
 			return result, err
 		}
 
+		relation := make(map[int64]int64)
+
 		parentInstIDS := []int64{}
 		for _, item := range asstItems {
 
@@ -278,6 +280,12 @@ func (cli *inst) GetParentObjectWithInsts() ([]*ObjectWithInsts, error) {
 				blog.Errorf("[inst-inst] failed to parse the asst inst id, error info is %s", err.Error())
 				return result, err
 			}
+			assoID, err := item.Int64("id")
+			if err != nil {
+				blog.Errorf("[inst-inst] failed to parse the association id , err: %s", err.Error())
+				return result, err
+			}
+			relation[parentInstID] = assoID
 			parentInstIDS = append(parentInstIDS, parentInstID)
 		}
 
@@ -293,6 +301,15 @@ func (cli *inst) GetParentObjectWithInsts() ([]*ObjectWithInsts, error) {
 		if nil != err {
 			blog.Errorf("[inst-inst] failed to search the insts by the condition(%#v), error info is %s", innerCond, err.Error())
 			return result, err
+		}
+
+		for _, item := range rspItems {
+			id, err := item.GetInstID()
+			if err != nil {
+				blog.Errorf("[inst-inst] failed to parse the instance id , err: %s", err.Error())
+				return result, err
+			}
+			item.SetAssoID(relation[id])
 		}
 
 		rstObj.Insts = rspItems
@@ -383,6 +400,8 @@ func (cli *inst) GetChildObjectWithInsts() ([]*ObjectWithInsts, error) {
 			return result, err
 		}
 
+		relations := make(map[int64]int64, 0)
+
 		childInstIDS := make([]int64, 0)
 		for _, item := range asstItems {
 			childInstID, err := item.Int64(common.BKAsstInstIDField)
@@ -390,7 +409,14 @@ func (cli *inst) GetChildObjectWithInsts() ([]*ObjectWithInsts, error) {
 				blog.Errorf("[inst-inst] failed to parse the asst inst id, error info is %s", err.Error())
 				return result, err
 			}
+
+			assoID, err := item.Int64("id")
+			if err != nil {
+				blog.Errorf("[inst-inst] failed to parse the association id , err: %s", err.Error())
+				return result, err
+			}
 			childInstIDS = append(childInstIDS, childInstID)
+			relations[childInstID] = assoID
 		}
 
 		innerCond := condition.CreateCondition()
@@ -404,6 +430,16 @@ func (cli *inst) GetChildObjectWithInsts() ([]*ObjectWithInsts, error) {
 		if nil != err {
 			blog.Errorf("[inst-inst] failed to search the insts by the condition(%#v), error info is %s", innerCond, err.Error())
 			return result, err
+		}
+
+		for _, item := range rspItems {
+			id, err := item.GetInstID()
+			if err != nil {
+				blog.Errorf("[inst-inst] failed to parse the association id , err: %s", err.Error())
+				return result, err
+			}
+
+			item.SetAssoID(relations[id])
 		}
 
 		rstObj.Insts = rspItems
