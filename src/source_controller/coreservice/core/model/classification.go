@@ -30,6 +30,11 @@ type modelClassification struct {
 
 func (m *modelClassification) CreateOneModelClassification(ctx core.ContextParams, inputParam metadata.CreateOneModelClassification) (*metadata.CreateOneDataResult, error) {
 
+	if 0 == len(inputParam.Data.ClassificationID) {
+		blog.Errorf("request(%s): it is failed to create the model classification, because of the classificationID (%v) is not set", ctx.ReqID, inputParam.Data)
+		return &metadata.CreateOneDataResult{}, ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.ClassFieldClassificationID)
+	}
+
 	_, exists, err := m.isExists(ctx, inputParam.Data.ClassificationID)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to check if the classification ID (%s)is exists, error info is %s", ctx.ReqID, inputParam.Data.ClassificationID, err.Error())
@@ -62,6 +67,12 @@ func (m *modelClassification) CreateManyModelClassification(ctx core.ContextPara
 	}
 
 	for itemIdx, item := range inputParam.Data {
+
+		if 0 == len(item.ClassificationID) {
+			blog.Errorf("request(%s): it is failed to create the model classification, because of the classificationID (%v) is not set", ctx.ReqID, item.ClassificationID)
+			addExceptionFunc(int64(itemIdx), ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.ClassFieldClassificationID).(errors.CCErrorCoder), &item)
+			continue
+		}
 
 		_, exists, err := m.isExists(ctx, item.ClassificationID)
 		if nil != err {
