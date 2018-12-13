@@ -401,15 +401,36 @@ func (ia *importAssociation) delSrcAssociation(idx int, cond condition.Condition
 	if ok {
 		return
 	}
-	input := &metadata.DeleteAssociationInstRequest{
+	input := &metadata.SearchAssociationInstRequest{
 		Condition: cond.ToMapStr(),
 	}
-	rsp, err := ia.cli.clientSet.ObjectController().Association().DeleteInst(ia.ctx, ia.params.Header, input)
+
+	result, err := ia.cli.clientSet.ObjectController().Association().SearchInst(ia.ctx, ia.params.Header, input)
 	if err != nil {
 		ia.parseImportDataErr[idx] = err.Error()
+		return
 	}
+
+	if result.Result {
+		ia.parseImportDataErr[idx] = result.ErrMsg
+		return
+	}
+
+	if len(result.Data) == 0 {
+		ia.parseImportDataErr[idx] = "can not find this association."
+		return
+	}
+
+	asso := *result.Data[0]
+	rsp, err := ia.cli.clientSet.ObjectController().Association().DeleteInst(ia.ctx, ia.params.Header, asso.ID)
+	if err != nil {
+		ia.parseImportDataErr[idx] = err.Error()
+		return
+	}
+
 	if !rsp.Result {
 		ia.parseImportDataErr[idx] = rsp.ErrMsg
+		return
 	}
 }
 

@@ -96,7 +96,7 @@ func (s *Service) WebService() *restful.WebService {
 
 	ws.Route(ws.POST("/inst/association/action/search").To(s.SearchInstAssociations))
 	ws.Route(ws.POST("/inst/association/action/create").To(s.CreateInstAssociation))
-	ws.Route(ws.DELETE("/inst/association/action/delete").To(s.DeleteInstAssociation))
+	ws.Route(ws.DELETE("/inst/association/{association_id}/action/delete").To(s.DeleteInstAssociation))
 
 	ws.Route(ws.POST("/topographics/search").To(s.SearchTopoGraphics))
 	ws.Route(ws.POST("/topographics/update").To(s.UpdateTopoGraphics))
