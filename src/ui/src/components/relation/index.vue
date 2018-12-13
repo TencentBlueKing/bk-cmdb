@@ -6,7 +6,7 @@
                     :disabled="!hasRelation || !authority.includes('update')"
                     :class="{active: activeComponent === 'cmdbRelationUpdate'}"
                     @click="handleShowUpdate">
-                    {{$t('Association["新增关联"]')}}
+                    {{$t('Association["关联管理"]')}}
                     <i class="bk-icon icon-angle-down"></i>
                 </bk-button>
             </div>
