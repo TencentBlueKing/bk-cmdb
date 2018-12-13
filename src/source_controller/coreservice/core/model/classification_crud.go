@@ -14,24 +14,28 @@ package model
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/universalsql/mongo"
+	"configcenter/src/common/universalsql"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (m *modelClassification) isExists(ctx core.ContextParams, classificationID string) (origin *metadata.Classification, exists bool, err error) {
+func (m *modelClassification) count(ctx core.ContextParams, cond universalsql.Condition) (cnt uint64, err error) {
 
-	cond := mongo.NewCondition()
-	cond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationID, Val: ctx.SupplierAccount}, &mongo.Eq{Key: metadata.ClassFieldClassificationID, Val: classificationID})
-	err = m.dbProxy.Table(common.BKTableNameObjClassifiction).Find(cond.ToMapStr()).One(ctx, origin)
-	return origin, m.dbProxy.IsNotFoundError(err), err
+	cnt, err = m.dbProxy.Table(common.BKTableNameObjClassifiction).Find(cond.ToMapStr()).Count(ctx)
+	if nil != err {
+		blog.Errorf("request(%s): it is failed to execute a database count operation on the table(%s) by the condition(%v), error info is %s", ctx.ReqID, common.BKTableNameObjClassifiction, cond.ToMapStr(), err.Error())
+		return 0, err
+	}
+	return cnt, err
 }
 
 func (m *modelClassification) save(ctx core.ContextParams, classification metadata.Classification) (id uint64, err error) {
 
 	id, err = m.dbProxy.NextSequence(ctx, common.BKTableNameObjClassifiction)
-	if err != nil {
+	if nil != err {
+		blog.Errorf("request(%s): it is failed to create a new sequence id on the table(%s) of the database, error info is %s", ctx.ReqID, common.BKTableNameObjClassifiction, err.Error())
 		return id, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
@@ -42,7 +46,55 @@ func (m *modelClassification) save(ctx core.ContextParams, classification metada
 	return id, err
 }
 
-func (m *modelClassification) update(ctx core.ContextParams, data mapstr.MapStr, cond mapstr.MapStr) error {
+func (m *modelClassification) update(ctx core.ContextParams, data mapstr.MapStr, cond universalsql.Condition) (cnt uint64, err error) {
 
-	return m.dbProxy.Table(common.BKTableNameObjClassifiction).Update(ctx, cond, data)
+	cnt, err = m.count(ctx, cond)
+	if nil != err {
+		return cnt, err
+	}
+
+	if 0 == cnt {
+		return cnt, nil
+	}
+
+	err = m.dbProxy.Table(common.BKTableNameObjClassifiction).Update(ctx, cond, data)
+	if nil != err {
+		blog.Errorf("request(%s): it is failed to execute a database update operation on the table(%s) by the condition(%v) , error info is %s", ctx.ReqID, common.BKTableNameObjClassifiction, cond.ToMapStr(), err.Error())
+		return 0, err
+	}
+	return cnt, err
+}
+
+func (m *modelClassification) delete(ctx core.ContextParams, cond universalsql.Condition) (cnt uint64, err error) {
+
+	cnt, err = m.count(ctx, cond)
+	if nil != err {
+		return cnt, err
+	}
+
+	if 0 == cnt {
+		return 0, err
+	}
+
+	err = m.dbProxy.Table(common.BKTableNameObjClassifiction).Delete(ctx, cond.ToMapStr())
+	if nil != err {
+		blog.Errorf("request(%s): it is failed to execute a database deletion operation on the table(%s) by the condition(%v), error info is %s", ctx.ReqID, common.BKTableNameObjClassifiction, cond.ToMapStr(), err.Error())
+		return 0, err
+	}
+
+	return cnt, err
+}
+
+func (m *modelClassification) search(ctx core.ContextParams, cond universalsql.Condition) ([]metadata.Classification, error) {
+
+	results := []metadata.Classification{}
+	err := m.dbProxy.Table(common.BKTableNameObjClassifiction).Find(cond.ToMapStr()).All(ctx, &results)
+	return results, err
+}
+
+func (m *modelClassification) searchReturnMapStr(ctx core.ContextParams, cond universalsql.Condition) ([]mapstr.MapStr, error) {
+
+	results := []mapstr.MapStr{}
+	err := m.dbProxy.Table(common.BKTableNameObjClassifiction).Find(cond.ToMapStr()).All(ctx, &results)
+	return results, err
 }
