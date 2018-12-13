@@ -51,6 +51,9 @@ type Inst interface {
 	GetParentID() (int64, error)
 	GetInstName() (string, error)
 
+	SetAssoID(id int64)
+	GetAssoID() int64
+
 	SetValue(key string, value interface{}) error
 
 	SetValues(values frtypes.MapStr)
@@ -69,10 +72,20 @@ type inst struct {
 	params    types.ContextParams
 	datas     frtypes.MapStr
 	target    model.Object
+	// this instance associate with object id, as is InstAsst table "id" filed.
+	assoID int64
 }
 
 func (cli *inst) MarshalJSON() ([]byte, error) {
 	return json.Marshal(cli.datas)
+}
+
+func (cli *inst) SetAssoID(id int64) {
+	cli.assoID = id
+}
+
+func (cli *inst) GetAssoID() int64 {
+	return cli.assoID
 }
 
 func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition) ([]Inst, error) {
