@@ -89,14 +89,16 @@ const (
 	resPattern    = `(hosts/import|export)|(hosts/modules/resource/idle)`
 	objectPattern = `object/classification/[a-z0-9A-Z]+/objects$`
 	// proc search
-	procSearch = `proc/search/./.$`
+	procSearch         = `proc/search/[a-z0-9A-Z]+/[a-z0-9A-Z]+$`
+	topoGraphicsSearch = `objects/topographics/scope_type/[a-z0-9A-Z]+/scope_id/[a-z0-9A-Z]+/action/search$`
 )
 
 //system config privilege regexp
 var (
-	ResPatternRegexp    = regexp.MustCompile(resPattern)
-	ObjectPatternRegexp = regexp.MustCompile(objectPattern)
-	ProcSearchRegexp    = regexp.MustCompile(procSearch)
+	ResPatternRegexp         = regexp.MustCompile(resPattern)
+	ObjectPatternRegexp      = regexp.MustCompile(objectPattern)
+	ProcSearchRegexp         = regexp.MustCompile(procSearch)
+	TopoGraphicsSearchRegexp = regexp.MustCompile(topoGraphicsSearch)
 )
 
 //host update string
