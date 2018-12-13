@@ -60,7 +60,7 @@ type AssociationOperationInterface interface {
 
 	SearchInst(params types.ContextParams, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error)
 	CreateInst(params types.ContextParams, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error)
-	DeleteInst(params types.ContextParams, request *metadata.DeleteAssociationInstRequest) (resp *metadata.DeleteAssociationInstResult, err error)
+	DeleteInst(params types.ContextParams, assoID int64) (resp *metadata.DeleteAssociationInstResult, err error)
 
 	ImportInstAssociation(ctx context.Context, params types.ContextParams, objID string, importData map[int]metadata.ExcelAssocation) (resp metadata.ResponeImportAssociationData, err error)
 
@@ -569,6 +569,7 @@ func (a *association) CreateInst(params types.ContextParams, request *metadata.C
 
 	return a.clientSet.ObjectController().Association().CreateInst(context.TODO(), params.Header, request)
 }
-func (a *association) DeleteInst(params types.ContextParams, request *metadata.DeleteAssociationInstRequest) (resp *metadata.DeleteAssociationInstResult, err error) {
-	return a.clientSet.ObjectController().Association().DeleteInst(context.TODO(), params.Header, request)
+
+func (a *association) DeleteInst(params types.ContextParams, assoID int64) (resp *metadata.DeleteAssociationInstResult, err error) {
+	return a.clientSet.ObjectController().Association().DeleteInst(context.TODO(), params.Header, assoID)
 }
