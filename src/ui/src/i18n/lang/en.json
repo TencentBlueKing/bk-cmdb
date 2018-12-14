@@ -149,7 +149,7 @@
         "取消导航成功": "Cancel navigation success",
         "模型数量": "Model: 1 item | Models: {count} items",
         "返回上级": "Return",
-        "开始查询": "Please enter at least 3 characters to start query host",
+        "开始查询": "Please enter IP address to start host query",
         "固定到导航": "Collections to navigation",
         "固定导航": "Fixed navigation",
         "收起导航": "retract navigation",
@@ -272,7 +272,7 @@
         "导出": "Export",
         "导入": "Import",
         "导入成功": "Import success",
-        "下划线/数字/字母": "Underline/ number/English lowercase",
+        "下划线/数字/字母": "Underline/Number/Lowercase Letter",
         "单位": "Unit",
         "请输入单位": "Enter unit",
         "可编辑": "Editable",
@@ -410,12 +410,12 @@
         "未配置Agent安装APP地址": "The Agent install APP address is not configured"
     },
     "CustomQuery": {
-        "自定义查询": "Custom Query",
-        "新增查询": "Add Query",
-        "编辑查询": "Update Query",
-        "预览查询": "Preview Query",
+        "自定义查询": "Dynamic Group",
+        "新增查询": "Add Group",
+        "编辑查询": "Update Group",
+        "预览查询": "Preview Group",
         "名称": "Name",
-        "查询内容": "Query Content",
+        "查询内容": "Group Content",
         "新增查询条件": "Add Filters",
         "预览": "Preview",
         "保存": "Save",
@@ -426,10 +426,10 @@
         "创建时间": "Creation Time",
         "修改人": "Modified Person",
         "修改时间": "Update Time",
-        "查询定义": "Query Definition",
+        "查询定义": "Group Definition",
         "确认要删除": "Confirm to delete {name}?",
-        "保存后的查询可通过接口调用生效": "The saved query can be validated through an interface call",
-        "当前业务并无自定义查询，可点击下方按钮新增": "The current business does not have a Custom Query, click the button below to add"
+        "保存后的查询可通过接口调用生效": "The saved group can be validated through an interface call",
+        "当前业务并无自定义查询，可点击下方按钮新增": "The current business does not have a Dynamic Group, click the button below to add"
     },
     "ProcessManagement": {
         "进程管理": "Process Manage",
@@ -544,7 +544,7 @@
     "Association": {
         "实例名": "Instance Name",
         "业务名": "Business Name",
-        "新增关联": "New Association",
+        "新增关联": "Association Management",
         "解除选中关联": "Remove Selected Association",
         "关联列表": "Model",
         "搜索": "Search",
