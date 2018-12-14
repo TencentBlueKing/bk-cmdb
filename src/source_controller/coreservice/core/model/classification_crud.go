@@ -57,6 +57,7 @@ func (m *modelClassification) update(ctx core.ContextParams, data mapstr.MapStr,
 		return cnt, nil
 	}
 
+	data.Remove(metadata.ClassFieldClassificationID)
 	err = m.dbProxy.Table(common.BKTableNameObjClassifiction).Update(ctx, cond, data)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to execute a database update operation on the table(%s) by the condition(%v) , error info is %s", ctx.ReqID, common.BKTableNameObjClassifiction, cond.ToMapStr(), err.Error())

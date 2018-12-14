@@ -30,6 +30,11 @@ type modelClassification struct {
 
 func (m *modelClassification) CreateOneModelClassification(ctx core.ContextParams, inputParam metadata.CreateOneModelClassification) (*metadata.CreateOneDataResult, error) {
 
+	if 0 == len(inputParam.Data.ClassificationID) {
+		blog.Errorf("request(%s): it is failed to create the model classification, because of the classificationID (%v) is not set", ctx.ReqID, inputParam.Data)
+		return &metadata.CreateOneDataResult{}, ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.ClassFieldClassificationID)
+	}
+
 	_, exists, err := m.isExists(ctx, inputParam.Data.ClassificationID)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to check if the classification ID (%s)is exists, error info is %s", ctx.ReqID, inputParam.Data.ClassificationID, err.Error())
@@ -62,6 +67,12 @@ func (m *modelClassification) CreateManyModelClassification(ctx core.ContextPara
 	}
 
 	for itemIdx, item := range inputParam.Data {
+
+		if 0 == len(item.ClassificationID) {
+			blog.Errorf("request(%s): it is failed to create the model classification, because of the classificationID (%v) is not set", ctx.ReqID, item.ClassificationID)
+			addExceptionFunc(int64(itemIdx), ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.ClassFieldClassificationID).(errors.CCErrorCoder), &item)
+			continue
+		}
 
 		_, exists, err := m.isExists(ctx, item.ClassificationID)
 		if nil != err {
@@ -105,6 +116,12 @@ func (m *modelClassification) SetManyModelClassification(ctx core.ContextParams,
 
 	for itemIdx, item := range inputParam.Data {
 
+		if 0 == len(item.ClassificationID) {
+			blog.Errorf("request(%s): it is failed to create the model classification, because of the classificationID (%v) is not set", ctx.ReqID, item.ClassificationID)
+			addExceptionFunc(int64(itemIdx), ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.ClassFieldClassificationID).(errors.CCErrorCoder), &item)
+			continue
+		}
+
 		origin, exists, err := m.isExists(ctx, item.ClassificationID)
 		if nil != err {
 			blog.Errorf("request(%s): it is failed to check the classification ID (%s) is exists, error info is %s", ctx.ReqID, item.ClassificationID, err.Error())
@@ -123,6 +140,10 @@ func (m *modelClassification) SetManyModelClassification(ctx core.ContextParams,
 			}
 
 			dataResult.UpdatedCount.Count++
+			dataResult.Updated = append(dataResult.Updated, metadata.UpdatedDataResult{
+				OriginIndex: int64(itemIdx),
+				ID:          uint64(origin.ID),
+			})
 			continue
 		}
 
@@ -145,10 +166,15 @@ func (m *modelClassification) SetManyModelClassification(ctx core.ContextParams,
 
 func (m *modelClassification) SetOneModelClassification(ctx core.ContextParams, inputParam metadata.SetOneModelClassification) (*metadata.SetDataResult, error) {
 
+	if 0 == len(inputParam.Data.ClassificationID) {
+		blog.Errorf("request(%s): it is failed to set the model classification, because of the classificationID (%v) is not set", ctx.ReqID, inputParam.Data)
+		return &metadata.SetDataResult{}, ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.ClassFieldClassificationID)
+	}
+
 	origin, exists, err := m.isExists(ctx, inputParam.Data.ClassificationID)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to check the classification ID (%s) is exists, error info is %s", ctx.ReqID, inputParam.Data.ClassificationID, err.Error())
-		return nil, err
+		return &metadata.SetDataResult{}, err
 	}
 
 	dataResult := &metadata.SetDataResult{}
@@ -170,6 +196,7 @@ func (m *modelClassification) SetOneModelClassification(ctx core.ContextParams, 
 			addExceptionFunc(0, err.(errors.CCErrorCoder), &inputParam.Data)
 			return dataResult, nil
 		}
+		dataResult.UpdatedCount.Count++
 		dataResult.Updated = append(dataResult.Updated, metadata.UpdatedDataResult{ID: uint64(origin.ID)})
 		return dataResult, err
 	}
@@ -180,6 +207,7 @@ func (m *modelClassification) SetOneModelClassification(ctx core.ContextParams, 
 		addExceptionFunc(0, err.(errors.CCErrorCoder), origin)
 		return dataResult, err
 	}
+	dataResult.CreatedCount.Count++
 	dataResult.Created = append(dataResult.Created, metadata.CreatedDataResult{ID: id})
 	return dataResult, err
 }
