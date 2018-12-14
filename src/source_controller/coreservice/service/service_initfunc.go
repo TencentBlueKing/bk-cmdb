@@ -86,8 +86,6 @@ func (s *coreService) initInstanceAssociation() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/createmany/instanceassociation", HandlerFunc: s.CreateManyInstanceAssociation})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/instanceassociation", HandlerFunc: s.SearchInstanceAssociation})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/instanceassociation", HandlerFunc: s.DeleteInstanceAssociation})
-	//s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/instanceassociation/cascade", HandlerFunc: s.CascadeDeleteInstanceAssociation})
-
 }
 
 func (s *coreService) initService() {
