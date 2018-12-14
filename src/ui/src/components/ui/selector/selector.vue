@@ -6,6 +6,7 @@
         :disabled="disabled"
         :allow-clear="allowClear"
         :selected.sync="selected"
+        :has-children="hasChildren"
         :setting-key="settingKey"
         :search-key="displayKey"
         :display-key="displayKey">
@@ -48,6 +49,10 @@
             placeholder: {
                 type: String,
                 default: ''
+            },
+            hasChildren: {
+                type: Boolean,
+                default: false
             }
         },
         data () {
