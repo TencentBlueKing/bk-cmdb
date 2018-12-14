@@ -14,6 +14,7 @@
             <div class="filter-group filter-group-property fl">
                 <cmdb-property-filter
                     :objId="currentAsstObj"
+                    :excludeType="['foreignkey']"
                     @on-property-selected="handlePropertySelected"
                     @on-operator-selected="handleOperatorSelected"
                     @on-value-change="handleValueChange">
