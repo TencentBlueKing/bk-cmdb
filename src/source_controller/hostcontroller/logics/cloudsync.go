@@ -50,14 +50,29 @@ func (lgc *Logics) CreateResourceConfirm(ctx context.Context, input interface{})
 }
 
 func (lgc *Logics) CreateCloudHistory(ctx context.Context, input interface{}) error {
-	objID, err := lgc.Instance.NextSequence(ctx, common.BKTableNameCloudHistory)
+	objID, err := lgc.Instance.NextSequence(ctx, common.BKTableNameCloudSyncHistory)
 	if err != nil {
 		return err
 	}
 
 	inputc := input.(map[string]interface{})
 	inputc["bk_history_id"] = objID
-	if err := lgc.Instance.Table(common.BKTableNameCloudHistory).Insert(ctx, inputc); err != nil {
+	if err := lgc.Instance.Table(common.BKTableNameCloudSyncHistory).Insert(ctx, inputc); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (lgc *Logics) CreateConfirmHistory(ctx context.Context, input interface{}) error {
+	objID, err := lgc.Instance.NextSequence(ctx, common.BKTableNameResourceConfirmHistory)
+	if err != nil {
+		return err
+	}
+
+	inputc := input.(map[string]interface{})
+	inputc["confirm_history_id"] = objID
+	if err := lgc.Instance.Table(common.BKTableNameResourceConfirmHistory).Insert(ctx, inputc); err != nil {
 		return err
 	}
 

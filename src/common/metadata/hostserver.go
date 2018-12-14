@@ -169,7 +169,8 @@ type CloudHistory struct {
 	ObjID       string `json:"bk_obj_id"`
 	Status      string `json:"bk_status"`
 	TimeConsume string `json:"bk_time_consume"`
-	SyncDetail  string `json:"bk_sync_detail"`
+	NewAdd      int    `json:"new_add"`
+	AttrChanged int    `json:"attr_changed"`
 	StartTime   string `json:"bk_start_time"`
 	TaskID      int64  `json:"bk_task_id"`
 	HistoryID   int64  `json:"bk_history_id"`

@@ -59,7 +59,7 @@
             "authorized": true,
             "classificationId": "bk_business_resource"
         }, {
-            "i18n": "ResourceConfirm['资源确认']",
+            "i18n": "Cloud['资源确认']",
             "path": "/resource-confirm",
             "id": "resource_confirm",
             "icon": "icon-cc-host-free-pool",
@@ -67,7 +67,7 @@
             "authorized": true,
             "classificationId": "bk_business_resource"
         },{
-            "i18n": "CloudHostDiscover['云资源发现']",
+            "i18n": "Cloud['云资源发现']",
             "path": "/cloud-discover",
             "id": "cloud",
             "icon": "icon-cc-host-free-pool",

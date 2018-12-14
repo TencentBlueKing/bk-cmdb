@@ -13,10 +13,11 @@
 package cloud
 
 import (
-	"configcenter/src/common/metadata"
 	"context"
 	"fmt"
 	"net/http"
+
+	"configcenter/src/common/metadata"
 )
 
 func (c *cloud) AddCloudTask(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error) {
@@ -145,13 +146,41 @@ func (c *cloud) CloudHistory(ctx context.Context, h http.Header, data interface{
 	return
 }
 
-func (c *cloud) SearchHistory(ctx context.Context, h http.Header, taskID string) (resp *metadata.FavoriteResult, err error) {
+func (c *cloud) SearchHistory(ctx context.Context, h http.Header, data interface{}) (resp *metadata.FavoriteResult, err error) {
 	resp = new(metadata.FavoriteResult)
-	subPath := fmt.Sprintf("/hosts/cloud/searchHistory/%v", taskID)
+	subPath := "/hosts/cloud/searchSyncHistory"
 
 	err = c.client.Post().
 		WithContext(ctx).
-		Body(nil).
+		Body(data).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (c *cloud) ConfirmHistory(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/hosts/cloud/confirmHistory"
+
+	err = c.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (c *cloud) SearchConfirmHistory(ctx context.Context, h http.Header, data interface{}) (resp *metadata.FavoriteResult, err error) {
+	resp = new(metadata.FavoriteResult)
+	subPath := "/hosts/cloud/confirmHistory/search"
+
+	err = c.client.Post().
+		WithContext(ctx).
+		Body(data).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().

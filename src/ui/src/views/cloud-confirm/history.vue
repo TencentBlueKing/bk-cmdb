@@ -3,19 +3,17 @@
         <div class="history-options clearfix">
             <label class="options-label">{{$t("HostResourcePool['时间范围']")}}</label>
             <cmdb-form-date-range class="options-filter" v-model="dateRange" style="width: 240px"></cmdb-form-date-range>
+            <bk-button class="fr" type="primary" @click="back">{{$t('Common["返回"]')}}</bk-button>
         </div>
         <cmdb-table class="audit-table" ref="table"
-            :loading="$loading('getSyncHistory')"
-            :header="table.header"
-            :list="table.list"
-            :pagination.sync="table.pagination"
-            :wrapperMinusHeight="220"
-            @handlePageChange="handlePageChange"
-            @handleSizeChange="handleSizeChange"
-            @handleSortChange="handleSortChange">
-                <template slot="details" slot-scope="{ item }">
-                    {{$t('Cloud[\'新增\']')}} ({{item.new_add}}) / {{$t('Cloud[\'变更\']')}} ({{item.attr_changed}})
-                </template>
+                    :loading="$loading('getConfirHistory')"
+                    :header="table.header"
+                    :list="table.list"
+                    :pagination.sync="table.pagination"
+                    :wrapperMinusHeight="220"
+                    @handlePageChange="handlePageChange"
+                    @handleSizeChange="handleSizeChange"
+                    @handleSortChange="handleSortChange">
         </cmdb-table>
     </div>
 </template>
@@ -26,11 +24,6 @@
     export default {
         props: {
             curPush: {
-                type: Object
-            },
-            type: {
-                type: String,
-                default: 'create'
             }
         },
         data () {
@@ -39,20 +32,30 @@
                 operator: '',
                 table: {
                     header: [ {
+                        id: 'bk_host_innerip',
+                        name: this.$t('Cloud["资源名称"]')
+                    }, {
+                        id: 'bk_resource_type',
+                        name: this.$t('Cloud["资源类型"]')
+                    }, {
                         id: 'bk_obj_id',
-                        name: this.$t('Nav["模型"]')
+                        name: this.$t('Cloud["模型"]')
                     }, {
-                        id: 'bk_status',
-                        name: this.$t('ProcessManagement["状态"]')
+                        id: 'bk_task_name',
+                        name: this.$t('Cloud["任务名称"]')
                     }, {
-                        id: 'bk_time_consume',
-                        name: this.$t('Cloud["处理耗时"]')
+                        id: 'bk_account_type',
+                        name: this.$t('Cloud["账号类型"]')
                     }, {
-                        id: 'details',
-                        name: this.$t('Cloud["详情"]')
+                        id: 'bk_account_admin',
+                        sortable: false,
+                        name: this.$t('Cloud["任务维护人"]')
                     }, {
-                        id: 'bk_start_time',
-                        name: this.$t('HostResourcePool["启动时间"]')
+                        id: 'create_time',
+                        name: this.$t('Cloud["发现时间"]')
+                    }, {
+                        id: 'confirm_time',
+                        name: this.$t('Cloud["确认时间"]')
                     }],
                     list: [],
                     allList: [],
@@ -62,8 +65,8 @@
                         size: 10
                     },
                     checked: [],
-                    defaultSort: '-bk_task_id',
-                    sort: '-bk_task_id'
+                    defaultSort: '-bk_resource_id',
+                    sort: '-bk_resource_id'
                 }
             }
         },
@@ -80,23 +83,23 @@
             this.getTableData()
         },
         methods: {
-            ...mapActions('cloudDiscover', ['searchCloudHistory']),
+            ...mapActions('cloudDiscover', ['searchConfirmHistory']),
             initDateRange () {
                 const start = this.$tools.formatTime(moment().subtract(14, 'days'), 'YYYY-MM-DD')
                 const end = this.$tools.formatTime(moment(), 'YYYY-MM-DD')
                 this.dateRange = [start, end]
             },
             async getTableData () {
-                let params = {}
-                let innerParams = {}
                 let pagination = this.table.pagination
-                innerParams['$gte'] = this.filterRange[0]
-                innerParams['$lte'] = this.filterRange[1]
-                params['bk_start_time'] = innerParams
-                params['bk_task_id'] = this.curPush.bk_task_id
-                let res = await this.searchCloudHistory({params, config: {requestID: 'getSyncHistory'}})
+                let params = {}
+                // let innerParams = {}
+                // innerParams['$gte'] = this.filterRange[0]
+                // innerParams['$lte'] = this.filterRange[1]
+                // params['confirm_time'] = innerParams
+                let res = await this.searchConfirmHistory({params, config: {requestID: 'getConfirHistory'}})
                 this.table.list = res.info.map(data => {
-                    data['bk_start_time'] = this.$tools.formatTime(data['bk_start_time'], 'YYYY-MM-DD HH:mm:ss')
+                    data['create_time'] = this.$tools.formatTime(data['create_time'], 'YYYY-MM-DD HH:mm:ss')
+                    data['confirm_time'] = this.$tools.formatTime(data['confirm_time'], 'YYYY-MM-DD HH:mm:ss')
                     data['bk_obj_id'] = this.$t('Hosts["主机"]')
                     return data
                 })
@@ -109,6 +112,9 @@
             handleSizeChange (size) {
                 this.pagination.size = size
                 this.handlePageChange(1)
+            },
+            back () {
+                this.$router.go(-1)
             },
             handleSortChange (sort) {
                 this.sort = sort

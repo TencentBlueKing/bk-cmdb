@@ -4,45 +4,28 @@
             <ul class="event-form" v-model="curPush">
                 <li class="form-item">
                     <label for="" class="label-name">
-                        任务名称<span class="color-danger">*</span>
+                        {{ $t('Cloud["任务名称"]')}}<span class="color-danger">*</span>
                     </label>
                     <div class="item-content">
                         <input type="text"
                                v-model="curPush.bk_task_name"
-                               class="cmdb-form-input"
-                               placeholder="请输入任务名称">
+                               class="cmdb-form-input">
                     </div>
                 </li>
                 <li class="form-item">
                     <label for="" class="label-name">
-                        账号类型<span class="color-danger">*</span>
+                        {{ $t('Cloud["账号类型"]')}}<span class="color-danger">*</span>
                     </label>
                     <div class="item-content">
-                        <select v-model="curPush.bk_account_type">
-                            <option value="腾讯云">腾讯云</option>
-                        </select>
+                        <bk-selector
+                            :list="cloudList"
+                            :selected.sync="curPush.bk_account_type"
+                        ></bk-selector>
                     </div>
                 </li>
                 <li class="form-item">
                     <label for="" class="label-name">
-                      同步周期
-                    </label>
-                    <div class="item-content length-short">
-                        <select name="period-type"
-                                v-model="curPush.bk_period_type"
-                                @change="getPeriodSelect">
-                            <option :value="period.id"
-                                    v-for="period in periodList">{{ period.name }}
-                            </option>
-                        </select>
-                        <input type="text"
-                               v-model="curPush.bk_period"
-                               class="cmdb-form-input"/>
-                    </div>
-                </li>
-                <li class="form-item">
-                    <label for="" class="label-name">
-                        ID<span class="color-danger">*</span>
+                        {{ $t('Cloud["ID"]')}}<span class="color-danger">*</span>
                     </label>
                     <div class="item-content">
                         <input type="text"
@@ -52,7 +35,7 @@
                 </li>
                 <li class="form-item">
                     <label for="" class="label-name">
-                        Key<span class="color-danger">*</span>
+                        {{ $t('Cloud["Key"]')}}<span class="color-danger">*</span>
                     </label>
                     <div class="item-content">
                         <input type="password"
@@ -60,34 +43,50 @@
                                class="cmdb-form-input"/>
                     </div>
                 </li>
-                <li class="form-item">
-                    <label for="" class="label-name">同步资源</label>
-                    <div class="item-content">
-                        <input type="checkbox"
-                               v-model="curPush.bk_obj_id"
-                               class="cmdb-checkbox-text"/>
-                        <label>主机</label>
-                        <input type="checkbox"
-                               class="cmdb-checkbox-text"
-                               style="margin-left: 30px"/>
-                        <label>交换机</label>
+                <li class="form-item-two">
+                    <label for="" class="label-name-two">{{ $t('Cloud["同步周期"]')}}</label>
+                    <div class="item-content-two length-short">
+                        <bk-selector class="selector"
+                            :list="periodList"
+                            :selected.sync="curPush.bk_period_type"
+                        ></bk-selector>
+                        <input type="text"
+                               v-model="curPush.bk_period"
+                               class="cmdb-form-input"
+                               :disabled = "disabled"
+                               :placeholder="placeholder"/>
                     </div>
                 </li>
                 <li class="form-item">
-                    <label for="" class="label-name">账号管理员</label>
+                    <label for="" class="label-name">{{ $t('Cloud["任务维护人"]')}}</label>
                     <div class="item-content">
                         <input type="text"
                                v-model="curPush.bk_account_admin"
                                class="cmdb-form-input"/>
                     </div>
                 </li>
-                <li class="form-item">
-                    <label for="" class="label-name">资源确认</label>
-                    <div class="item-content">
-                        <input type="checkbox" v-model="curPush.bk_confirm"/>
-                        <label>新增需要确认</label>
-                        <input type="checkbox" v-model="curPush.bk_attr_confirm" style="margin-left: 30px"/>
-                        <label>属性变化需要确认</label>
+                <li>
+                    <label>{{ $t('Cloud["同步资源"]')}}</label>
+                    <div>
+                        <label class="cmdb-form-checkbox">
+                            <input type="checkbox" value="host" v-model="curPush.bk_obj_id" disabled>
+                            <span class="cmdb-checkbox-text">{{ $t('Hosts["主机"]')}}</span>
+                        </label>
+                    </div>
+                </li>
+                <li>
+                    <label class="resource-confirm">{{ $t('Cloud["资源自动确认"]')}}
+                        <span class="span-text">{{ $t('Cloud["(不勾选，发现实例将不需要确认直接录入主机资源池)"]')}}</span>
+                    </label>
+                    <div>
+                        <label class="cmdb-form-checkbox">
+                            <input type="checkbox" v-model="curPush.bk_confirm">
+                            <span class="cmdb-checkbox-text">{{ $t('Cloud["新增需要确认"]')}}</span>
+                        </label>
+                        <label class="cmdb-form-checkbox">
+                            <input type="checkbox" v-model="curPush.bk_attr_confirm">
+                            <span class="cmdb-checkbox-text">{{ $t('Cloud["属性变化需要确认"]')}}</span>
+                        </label>
                     </div>
                 </li>
             </ul>
@@ -100,7 +99,7 @@
 </template>
 
 <script>
-    import { mapGetters, mapActions } from 'vuex'
+    import { mapActions } from 'vuex'
     export default {
         props: {
             curPush: {
@@ -113,214 +112,159 @@
         },
         data () {
             return {
+                disabled: false,
+                placeholder: '',
+                cloudList: [{
+                    id: 'tencent_cloud',
+                    name: this.$t('Cloud["腾讯云"]')
+                }],
                 periodList: [{
                     id: 'minute',
-                    name: '每5分钟'
+                    name: this.$t('Cloud["每五分钟"]')
                 }, {
                     id: 'hour',
-                    name: '每小时'
+                    name: this.$t('Cloud["每小时"]')
                 }, {
                     id: 'day',
-                    name: '每天'
+                    name: this.$t('Cloud["每天"]')
                 }]
-            }
-        },
-        computed: {
-            ...mapGetters([
-                'language'
-            ]),
-            params () {
-                let params = this.curPush
-                return params
             }
         },
         methods: {
             ...mapActions('cloudDiscover', ['updateCloudTask']),
-            getPeriodSelect () {
-
-            },
             async update () {
+                let params = this.curPush
                 let res = null
-                res = await this.updateCloudTask({params: this.params, config: {requestId: 'savePush'}})
+                res = await this.updateCloudTask({params: params, config: {requestId: 'savePush'}})
                 this.$emit('saveSuccess')
                 this.$success(this.$t('EventPush["修改成功"]'))
             },
             cancel () {
                 this.$emit('cancel')
+            },
+            isCloseConfirmShow () {
+                return true
+            }
+        },
+        watch: {
+            'curPush.bk_period_type' () {
+                if (this.curPush.bk_period_type === 'minute') {
+                    this.disabled = true
+                    this.placeholder = ''
+                } else if (this.curPush.bk_period_type === 'hour') {
+                    this.disabled = false
+                    this.placeholder = '例如: 30'
+                } else {
+                    this.disabled = false
+                    this.placeholder = '例如: 19:30'
+                }
             }
         }
     }
 </script>
 
 <style lang="scss" scoped>
-    .detail-wrapper{
+    .detail-wrapper {
         height: 100%;
-        .pop-master{
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            right: 0;
+        .detail-box {
+            padding: 17px 20px 0 21px;
         }
-        .detail-box{
-            padding: 20px 30px;
-            height: calc(100% - 63px);
-            overflow-y: auto;
-            @include scrollbar;
-        }
-        .event-form{
-            .form-item{
-                width: 100%;
-                margin-bottom: 20px;
-                &:after{
+        .event-form {
+            .form-item {
+                width: 300px;
+                height: 63px;
+                margin-bottom: 17px;
+                float: left;
+                &:after {
                     display: block;
                     content: "";
                     clear: both;
                 }
-            }
-            .label-name{
-                position: relative;
-                float: left;
-                width: 85px;
-                text-align: right;
-                line-height: 36px;
-                font-size: 14px;
-                .color-danger{
-                    position: absolute;
-                    top: 2px;
-                    right: -10px;
-                }
-            }
-            .item-content{
-                margin-left: 15px;
-                width: calc(100% - 100px);
-                float: left;
-                span {
-                    font-size: 14px;
-                }
-                &.length-short{
+                .label-name {
                     position: relative;
-                    input{
-                        width: 97px;
-                        margin-right: 10px;
-                    }
-                }
-            }
-        }
-        .info{
-            background: #fff3da;
-            border-radius: 2px;
-            width: 100%;
-            padding-left: 20px;
-            height: 42px;
-            line-height: 40px;
-            font-size: 0;
-            border: 1px solid #ffc947;
-            .bk-icon {
-                position: relative;
-                top: -1px;
-                margin-right: 10px;
-                color: #ffc947;
-                font-size: 20px;
-            }
-            span {
-                font-size: 14px;
-                vertical-align: middle;
-            }
-            .num{
-                font-weight: bold;
-            }
-        }
-        .event-wrapper{
-            .event-box{
-                padding: 13px 0;
-                border-bottom: 1px solid #eceef5;
-                .event-title{
-                    margin-right: 10px;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    white-space: nowrap;
-                    height: 32px;
-                    line-height: 32px;
-                    font-weight: bold;
-                    cursor: pointer;
-                }
-                .bk-icon{
-                    line-height: 32px;
-                    width: 32px;
-                    text-align: center;
-                    margin-right: -6px;
-                    font-size: 12px;
-                    font-weight: bold;
-                    transition: all .5s;
-                    &.up{
-                        transform: rotate(180deg);
-                    }
-                }
-                ul{
-                    width: 100%;
-                    float: left;
-                }
-            }
-            .event-item{
-                padding: 7px 0;
-                height: 32px;
-                line-height: 18px;
-                &:after{
-                    display: block;
-                    content: "";
-                    clear: both;
-                }
-                .label-name{
-                    float: left;
                     width: 85px;
                     text-align: right;
+                    line-height: 27px;
                     font-size: 14px;
-                    margin-right: 15px;
-                    font-weight: bold;
-                    white-space: nowrap;
-                    text-overflow: ellipsis;
-                    overflow: hidden;
+                    .color-danger {
+                        position: absolute;
+                        top: 2px;
+                        right: -10px;
+                    }
                 }
-                .options{
-                    font-size: 0;
-                    label{
-                        height: 18px;
-                        width: 85px;
-                        margin-right: 10px;
-                        &:nth-child(1) {
-                            width: 120px;
-                        }
-                        &:nth-child(4) {
-                            width: 76px;
-                            margin-right: 0;
-                        }
-                        &.cmdb-form-checkbox{
-                            padding: 0;
-                            cursor: pointer;
-                        }
-                        input[type="checkbox"]{
-                            margin-right: 6px;
-                        }
-                        .cmdb-checkbox-text{
-                            display: inline-block;
-                            width: calc(100% - 20px);
-                            overflow: hidden;
-                            text-overflow: ellipsis;
-                            white-space: nowrap;
+                .item-content {
+                    span {
+                        font-size: 14px;
+                    }
+                    &.length-short {
+                         position: relative;
+                        input {
+                            width: 97px;
+                            margin-right: 10px;
                         }
                     }
                 }
             }
+            .form-item:nth-child(even) {
+                margin-left: 35px;
+            }
+            .form-item-two {
+                position: relative;
+                width: 300px;
+                height: 63px;
+                margin-bottom: 17px;
+                float: left;
+                &:after {
+                     display: block;
+                     content: "";
+                     clear: both;
+                 }
+                .label-name-two {
+                        position: relative;
+                        width: 85px;
+                        text-align: right;
+                        line-height: 27px;
+                        font-size: 14px;
+                }
+                .item-content-two {
+                    span {
+                        font-size: 14px;
+                    }
+                    &.length-short {
+                         position: relative;
+                        .selector {
+                            position: absolute;
+                            width: 144px;
+                            left: 0;
+                            top: 0;
+                        }
+                        input {
+                            width: 150px;
+                            margin-left: 5px;
+                            position: absolute;
+                            right: 0;
+                            top: 0;
+                        }
+                    }
+                }
+            }
+            .resource-confirm {
+                width: 416px;
+                height: 19px;
+                margin-bottom: 11px;
+                .span-text {
+                    opacity:0.5;
+                }
+            }
         }
-        .footer{
+        .footer {
             height: 63px;
             line-height: 63px;
             background: #f9f9f9;
             font-size: 0;
-            padding-left: 130px;
-            .btn{
-                margin-right: 11px;
+            padding-left: 24px;
+            .btn {
+                margin-right: 10px;
             }
         }
     }

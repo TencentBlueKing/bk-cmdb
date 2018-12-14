@@ -29,7 +29,9 @@ type CloudInterface interface {
 	DeleteConfirm(ctx context.Context, h http.Header, ResourceID int64) (resp *metadata.Response, err error)
 	SearchConfirm(ctx context.Context, h http.Header, data interface{}) (resp *metadata.FavoriteResult, err error)
 	CloudHistory(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
-	SearchHistory(ctx context.Context, h http.Header, taskID string) (resp *metadata.FavoriteResult, err error)
+	SearchHistory(ctx context.Context, h http.Header, data interface{}) (resp *metadata.FavoriteResult, err error)
+	ConfirmHistory(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
+	SearchConfirmHistory(ctx context.Context, h http.Header, data interface{}) (resp *metadata.FavoriteResult, err error)
 }
 
 func NewCloudInterface(client rest.ClientInterface) CloudInterface {

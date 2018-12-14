@@ -400,6 +400,8 @@ const (
 	CCErrHostFavouriteDupFail            = 1106018
 	CCErrHostGetSnapshotChannelEmpty     = 1106019
 	CCErrHostGetSnapshotChannelClose     = 1106020
+	CCErrCloudCreateSyncTaskFail         = 1106021
+	CCErrCloudConfirmHistoryAddFail      = 1106022
 
 	// proccontroller 1107XXX
 	CCErrProcDeleteProc2Module   = 1107001
@@ -477,6 +479,17 @@ const (
 	CCErrAddHostToModule          = 1110029
 	CCErrAddHostToModuleFailStr   = 1110030
 
+	// CCErrCloudSyncCreateFail cloud hosts sync table create failed
+	CCErrCloudSyncCreateFail = 1110031
+
+	// CCErrCloudHistoryCreateFail cloud sync history table create failed
+	CCErrCloudHistoryCreateFail     = 1110032
+	CCErrCloudConfirmCreateFail     = 1110033
+	CCErrCloudGetConfirmFail        = 1110034
+	CCErrCloudAddConfirmHistoryFail = 1110035
+	CCErrCloudGetTaskFail           = 1110036
+	CCErrCloudGetConfirmHistoryFail = 1110037
+
 	// hostserver api machinery new error code
 	CCErrAddUserCustomQueryFaild       = 1110040
 	CCErrUpdateUserCustomQueryFaild    = 1110041
@@ -541,10 +554,4 @@ const (
 
 	Json_Marshal_ERR     = 9000
 	Json_Marshal_ERR_STR = "json marshal error"
-
-	// CCErrCloudSyncCreateFail cloud hosts sync table create failed
-	CCErrCloudSyncCreateFail = 1199051
-
-	// CCErrCloudHistoryCreateFail cloud sync history table create failed
-	CCErrCloudHistoryCreateFail = 1199052
 )

@@ -19,8 +19,9 @@ const topology = () => import(/* webpackChunkName: topology */ '@/views/topology
 const process = () => import(/* webpackChunkName: process */ '@/views/process')
 const customQuery = () => import(/* webpackChunkName: process */ '@/views/custom-query')
 const error = () => import(/* webpackChunkName: error */ '@/views/status/error')
-const cloudDiscover = () => import(/* webpackChunkName: hosts */ '@/views/cloud-discover')
-const cloudConfirm = () => import(/* webpackChunkName: hosts */ '@/views/cloud-confirm')
+const cloudDiscover = () => import(/* webpackChunkName: cloudDiscover */ '@/views/cloud-discover')
+const cloudConfirm = () => import(/* webpackChunkName: cloudConfirm */ '@/views/cloud-confirm')
+const confirmHistory = () => import(/* webpackChunkName: cloudConfirm */ '@/views/cloud-confirm/history')
 const systemAuthority = () => import(/* webpackChunkName: systemAuthority */ '@/views/permission/role')
 const businessAuthority = () => import(/* webpackChunkName: businessAuthority */ '@/views/permission/business')
 const modelTopology = () => import(/* webpackChunkName: modelTopology */ '@/views/model-topology')
@@ -188,8 +189,15 @@ const router = new Router({
         path: '/resource-confirm',
         component: cloudConfirm
     }, {
+        name: 'cloud',
         path: '/cloud-discover',
         component: cloudDiscover
+    }, {
+        path: '/confirm/history',
+        component: confirmHistory,
+        meta: {
+            relative: '/resource-confirm'
+        }
     }]
 })
 
