@@ -13,8 +13,8 @@
 package operation
 
 import (
-    "configcenter/src/framework/core/errors"
-    "context"
+	"configcenter/src/framework/core/errors"
+	"context"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
@@ -60,7 +60,7 @@ type AssociationOperationInterface interface {
 
 	SearchInst(params types.ContextParams, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error)
 	CreateInst(params types.ContextParams, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error)
-	DeleteInst(params types.ContextParams, request *metadata.DeleteAssociationInstRequest) (resp *metadata.DeleteAssociationInstResult, err error)
+	DeleteInst(params types.ContextParams, assoID int64) (resp *metadata.DeleteAssociationInstResult, err error)
 
 	ImportInstAssociation(ctx context.Context, params types.ContextParams, objID string, importData map[int]metadata.ExcelAssocation) (resp metadata.ResponeImportAssociationData, err error)
 
@@ -198,10 +198,10 @@ func (a *association) CreateCommonAssociation(params types.ContextParams, data *
 		blog.Errorf("[operation-asst] failed to create the association (%#v) , err: %s", data, rspAsst.ErrMsg)
 		return nil, params.Err.New(rspAsst.Code, rspAsst.ErrMsg)
 	}
-	
+
 	if len(rspAsst.Data) == 0 {
-	    return nil, errors.New("create association failed.")
-    }
+		return nil, errors.New("create association failed.")
+	}
 
 	return &rspAsst.Data[0], nil
 }
@@ -462,12 +462,12 @@ func (a *association) DeleteType(params types.ContextParams, asstTypeID int) (re
 	result, err := a.SearchType(params, query)
 	if err != nil {
 		blog.Errorf("delete association kind[%d], but get detailed info failed, err: %v", asstTypeID, err)
-		return nil, params.Err.Errorf(common.CCErrCommHTTPDoRequestFailed)
+		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !result.Result {
 		blog.Errorf("delete association kind[%d], but get detailed info failed, err: %s", asstTypeID, result.ErrMsg)
-		return nil, params.Err.Errorf(common.CCErrCommHTTPDoRequestFailed)
+		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if len(result.Data.Info) > 1 {
@@ -482,6 +482,27 @@ func (a *association) DeleteType(params types.ContextParams, asstTypeID int) (re
 	if result.Data.Info[0].IsPre != nil && *result.Data.Info[0].IsPre {
 		blog.Errorf("delete association kind[%d], but this is a pre-defined association kind, can not be deleted.", asstTypeID)
 		return nil, params.Err.Error(common.CCErrorTopoDeletePredefinedAssociationKind)
+	}
+
+	// a already used association kind can not be deleted.
+	cond = condition.CreateCondition()
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+	cond.Field(common.AssociationKindIDField).Eq(result.Data.Info[0].AssociationKindID)
+	filter := metadata.SearchAssociationObjectRequest{Condition: cond.ToMapStr()}
+	asso, err := a.clientSet.ObjectController().Association().SearchObject(context.TODO(), params.Header, &filter)
+	if err != nil {
+		blog.Errorf("delete association kind[%d], but get objects that used this asso kind failed, err: %v", asstTypeID, err)
+		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if !result.Result {
+		blog.Errorf("delete association kind[%d], but get objects that used this asso kind failed, err: %s", asstTypeID, result.ErrMsg)
+		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if len(asso.Data) != 0 {
+		blog.Warnf("delete association kind[%d], but it has already been used, can not be deleted.", asstTypeID)
+		return nil, params.Err.Error(common.CCErrorTopoAssociationKindHasBeenUsed)
 	}
 
 	return a.clientSet.ObjectController().Association().DeleteType(context.TODO(), params.Header, asstTypeID)
@@ -548,6 +569,7 @@ func (a *association) CreateInst(params types.ContextParams, request *metadata.C
 
 	return a.clientSet.ObjectController().Association().CreateInst(context.TODO(), params.Header, request)
 }
-func (a *association) DeleteInst(params types.ContextParams, request *metadata.DeleteAssociationInstRequest) (resp *metadata.DeleteAssociationInstResult, err error) {
-	return a.clientSet.ObjectController().Association().DeleteInst(context.TODO(), params.Header, request)
+
+func (a *association) DeleteInst(params types.ContextParams, assoID int64) (resp *metadata.DeleteAssociationInstResult, err error) {
+	return a.clientSet.ObjectController().Association().DeleteInst(context.TODO(), params.Header, assoID)
 }
