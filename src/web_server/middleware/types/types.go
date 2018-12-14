@@ -82,6 +82,9 @@ const (
 	//host trans pattern
 	BK_HOST_TRANS                    = "hosts/modules"
 	BKTopoBatchSearchAssociationKind = "topo/association/type/action/search/batch"
+	SearchObjectAssociation          = "/api/v3/object/association/action/search"
+	SearchObjects                    = "/api/v3/objects"
+	ExportHosts                      = "/hosts/export"
 )
 
 //system config privilege pattern

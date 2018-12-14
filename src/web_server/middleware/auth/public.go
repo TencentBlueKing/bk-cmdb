@@ -111,6 +111,21 @@ func (m *publicAuth) ValidResAccess(pathArr []string, c *gin.Context) bool {
 		return true
 	}
 
+	// get association kind between objects
+	if pathStr == types.SearchObjectAssociation && method == http.MethodPost {
+		return true
+	}
+
+	// get objects
+	if pathStr == types.SearchObjects && method == http.MethodPost {
+		return true
+	}
+
+	// export business hosts
+	if pathStr == types.ExportHosts && method == http.MethodPost {
+		return true
+	}
+
 	// get topo graph
 	if types.TopoGraphicsSearchRegexp.MatchString(pathStr) && method == http.MethodPost {
 		return true
