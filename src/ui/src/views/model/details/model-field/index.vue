@@ -173,7 +173,7 @@
                 'activeModel'
             ]),
             isComponentShow () {
-                return ['singlechar', 'longchar', 'multichar', 'singleasst', 'multiasst', 'enum', 'int', 'float'].indexOf(this.fieldInfo['bk_property_type']) !== -1
+                return ['singlechar', 'longchar', 'singleasst', 'multiasst', 'enum', 'int', 'float'].indexOf(this.fieldInfo['bk_property_type']) !== -1
             },
             fieldType () {
                 let {

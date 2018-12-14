@@ -173,7 +173,7 @@
                 return type
             },
             isComponentShow () {
-                return ['singlechar', 'longchar', 'multichar', 'enum', 'int', 'float'].indexOf(this.fieldInfo['bk_property_type']) !== -1
+                return ['singlechar', 'longchar', 'enum', 'int', 'float'].indexOf(this.fieldInfo['bk_property_type']) !== -1
             }
         },
         watch: {
