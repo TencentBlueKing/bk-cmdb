@@ -24,6 +24,7 @@ type RspID struct {
 // CreateResult create result
 type CreateResult struct {
 	BaseResp `json:",inline"`
+	Data []Association `json:"data"`
 }
 
 // UpdateResult update result
