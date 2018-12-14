@@ -37,9 +37,7 @@ type Inst interface {
 	GetMainlineChildInst() ([]Inst, error)
 
 	GetParentObjectWithInsts() ([]*ObjectWithInsts, error)
-	GetParentInst() ([]Inst, error)
 	GetChildObjectWithInsts() ([]*ObjectWithInsts, error)
-	GetChildInst() ([]Inst, error)
 
 	SetParentInst(targetInst Inst) error
 	SetChildInst(targetInst Inst) error
