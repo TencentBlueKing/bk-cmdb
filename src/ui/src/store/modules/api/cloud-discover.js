@@ -19,8 +19,8 @@ const getters = {
 }
 
 const actions = {
-    searchCloudTask ({ commit, state, dispatch }, { params }) {
-        return $http.post(`hosts/cloud/search`, params)
+    searchCloudTask ({ commit, state, dispatch }, { params, config }) {
+        return $http.post(`hosts/cloud/search`, params, config)
     },
 
     addCloudTask ({ commit, state, dispatch }, { params }) {
@@ -39,16 +39,24 @@ const actions = {
         return $http.post(`hosts/cloud/startSync`, params)
     },
 
-    searchCloudHistory ({ commit, state, dispatch }, { taskID }) {
-        return $http.post(`hosts/cloud/syncHistory/${taskID}`)
+    searchCloudHistory ({ commit, state, dispatch }, { params, config }) {
+        return $http.post(`hosts/cloud/syncHistory`, params, config)
     },
 
-    getResourceConfirm ({ commit, state, dispatch }, { params }) {
-        return $http.post(`hosts/cloud/searchConfirm`, params)
+    getResourceConfirm ({ commit, state, dispatch }, { params, config }) {
+        return $http.post(`hosts/cloud/searchConfirm`, params, config)
     },
 
     resourceConfirm ({ commit, state, dispatch }, { params }) {
         return $http.post(`hosts/cloud/resourceConfirm`, params)
+    },
+
+    addConfirmHistory ({ commit, state, dispatch }, { params }) {
+        return $http.post('hosts/cloud/confirmHistory', params)
+    },
+
+    searchConfirmHistory ({ commit, state, dispatch }, { params, config }) {
+        return $http.post('/hosts/cloud/confirmHistory/search', params, config)
     }
 }
 

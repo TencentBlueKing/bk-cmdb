@@ -13,8 +13,6 @@
 package logics
 
 import (
-	"configcenter/src/common/mapstr"
-	"configcenter/src/common/util"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -25,8 +23,11 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	hutil "configcenter/src/scene_server/host_server/util"
+
 	com "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
@@ -35,20 +36,19 @@ import (
 )
 
 func (lgc *Logics) AddCloudTask(taskList *meta.CloudTaskList, pheader http.Header) (string, error) {
-	//TaskName Uniqueness check
+	// TaskName Uniqueness check
 	resp, err := lgc.CoreAPI.HostController().Cloud().TaskNameCheck(context.Background(), pheader, taskList)
 	if err != nil {
 		return "", err
 	}
 
-	//blog.Debug("type of resp.Data: %v", reflect.TypeOf(resp.Data))
 	if resp.Data != 0.0 {
 		blog.Errorf("task name %s already exits.", taskList.TaskName)
 		errString := "task name " + taskList.TaskName + " already exits."
 		return errString, nil
 	}
 
-	//Encode secretKey
+	// Encode secretKey
 	taskList.SecretKey = base64.StdEncoding.EncodeToString([]byte(taskList.SecretKey))
 
 	if _, err := lgc.CoreAPI.HostController().Cloud().AddCloudTask(context.Background(), pheader, taskList); err != nil {
@@ -180,7 +180,7 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 
 	defer lgc.CloudHistory(taskID, startTime, cloudHistory, pheader)
 
-	//obtain the hosts from cc_HostBase
+	// obtain the hosts from cc_HostBase
 	body := new(meta.HostCommonSearch)
 	host, err := lgc.SearchHost(pheader, body, false)
 	if err != nil {
@@ -208,7 +208,7 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 		existHostList = append(existHostList, ip)
 	}
 
-	//obtain hosts from TencentCloud needs secretID and secretKey
+	// obtain hosts from TencentCloud needs secretID and secretKey
 	secretID, errS := taskList.String("bk_secret_id")
 	if errS != nil {
 		blog.Errorf("mapstr convert to string failed.")
@@ -227,7 +227,7 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 	}
 	secretKey := string(decodeBytes)
 
-	//ObtainCloudHosts obtain cloud hosts
+	// ObtainCloudHosts obtain cloud hosts
 	cloudHostInfo, err := lgc.ObtainCloudHosts(secretID, secretKey)
 	if err != nil {
 		blog.Errorf("obtain cloud hosts failed with err: %v", err)
@@ -235,7 +235,7 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 		return err
 	}
 
-	//pick out the new add cloud hosts
+	// pick out the new add cloud hosts
 	newAddHost := make([]string, 0)
 	newCloudHost := make([]mapstr.MapStr, 0)
 	for _, hostInfo := range cloudHostInfo {
@@ -250,22 +250,7 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 		}
 	}
 
-	resourceConfirm, errR := taskList.Bool("bk_confirm")
-	if errR != nil {
-		blog.Errorf("mapstr convert to string failed.")
-		return errR
-	}
-	if resourceConfirm {
-		err := lgc.NewAddConfirm(taskList, pheader, newAddHost, newCloudHost)
-		if err != nil {
-			blog.Errorf("newly add cloud resource confirm failed, err: %v", err)
-			cloudHistory.Status = "失败"
-			return err
-		}
-		cloudHistory.Status = "队列中"
-	}
-
-	//pick out the hosts that has changed attributes
+	// pick out the hosts that has changed attributes
 	cloudHostAttr := make([]mapstr.MapStr, 0)
 	for _, hostInfo := range cloudHostInfo {
 		newHostInnerip, ok := hostInfo[common.BKHostInnerIPField].(string)
@@ -326,12 +311,19 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 		}
 	}
 
-	cloudHistory.SyncDetail = fmt.Sprintf("%d/%d", len(newAddHost), len(cloudHostAttr))
+	cloudHistory.NewAdd = len(newAddHost)
+	cloudHistory.AttrChanged = len(cloudHostAttr)
 
 	attrConfirm, errAttr := taskList.Bool("bk_attr_confirm")
 	if errAttr != nil {
 		blog.Errorf("mapstr convert to bool failed.")
 		return errAttr
+	}
+
+	resourceConfirm, errR := taskList.Bool("bk_confirm")
+	if errR != nil {
+		blog.Errorf("mapstr convert to string failed.")
+		return errR
 	}
 
 	if !resourceConfirm && !attrConfirm {
@@ -353,6 +345,16 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 		}
 	}
 
+	if resourceConfirm {
+		err := lgc.NewAddConfirm(taskList, pheader, newAddHost, newCloudHost)
+		if err != nil {
+			blog.Errorf("newly add cloud resource confirm failed, err: %v", err)
+			cloudHistory.Status = "失败"
+			return err
+		}
+		cloudHistory.Status = "队列中"
+	}
+
 	if attrConfirm && len(cloudHostAttr) > 0 {
 		blog.Debug("attr chang")
 		for _, host := range cloudHostAttr {
@@ -371,6 +373,9 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 			resourceConfirm["bk_task_id"] = taskList["bk_task_id"]
 			resourceConfirm["bk_attr_confirm"] = attrConfirm
 			resourceConfirm["bk_confirm"] = false
+			resourceConfirm["bk_task_name"] = taskList["bk_task_name"]
+			resourceConfirm["bk_account_type"] = taskList["bk_account_type"]
+			resourceConfirm["bk_account_admin"] = taskList["bk_account_admin"]
 
 			_, err := lgc.CoreAPI.HostController().Cloud().ResourceConfirm(context.Background(), pheader, resourceConfirm)
 			if err != nil {
@@ -417,16 +422,15 @@ func (lgc *Logics) AddCloudHosts(pheader http.Header, newCloudHost []mapstr.MapS
 			hostInfoMap[int64(index)] = make(map[string]interface{}, 0)
 		}
 
-		resource, ok := hostInfo["bk_resource"].([]mapstr.MapStr)
-		if !ok {
-			blog.Errorf("interface convert to []mapstr.MapStr failed")
-			break
-		}
+		//resource, ok := hostInfo["bk_resource"].([]mapstr.MapStr)
+		//if !ok {
+		//	blog.Errorf("interface convert to []mapstr.MapStr failed")
+		//	break
+		//}
 
 		hostInfoMap[int64(index)][common.BKHostInnerIPField] = hostInfo[common.BKHostInnerIPField]
-		hostInfoMap[int64(index)][common.BKHostOuterIPField] = resource[0][common.BKHostOuterIPField]
-		hostInfoMap[int64(index)][common.BKOSNameField] = resource[0][common.BKOSNameField]
-		//hostInfoMap[int64(index)]["bk_cloud_region"] = resource["bk_cloud_region"]
+		//hostInfoMap[int64(index)][common.BKHostOuterIPField] = resource[0][common.BKHostOuterIPField]
+		//hostInfoMap[int64(index)][common.BKOSNameField] = resource[0][common.BKOSNameField]
 		hostInfoMap[int64(index)]["import_from"] = "3"
 		hostInfoMap[int64(index)]["bk_cloud_id"] = 1
 	}
@@ -443,7 +447,6 @@ func (lgc *Logics) AddCloudHosts(pheader http.Header, newCloudHost []mapstr.MapS
 func (lgc *Logics) UpdateCloudHosts(pheader http.Header, cloudHostAttr []mapstr.MapStr) error {
 	for _, hostInfo := range cloudHostAttr {
 		hostID, err := hostInfo.Int64(common.BKHostIDField)
-		blog.Debug("hostID: %v", hostInfo[common.BKHostIDField])
 		if err != nil {
 			blog.Errorf("hostID convert to string failed")
 			return err
@@ -454,8 +457,7 @@ func (lgc *Logics) UpdateCloudHosts(pheader http.Header, cloudHostAttr []mapstr.
 		delete(hostInfo, "bk_attr_confirm")
 		opt := mapstr.MapStr{"condition": mapstr.MapStr{common.BKHostIDField: hostID}, "data": hostInfo}
 
-		blog.Debug("opt: %v", opt)
-
+		blog.V(3).Info("opt: %v", opt)
 		result, err := lgc.CoreAPI.ObjectController().Instance().UpdateObject(context.Background(), common.BKInnerObjIDHost, pheader, opt)
 		if err != nil || (err == nil && !result.Result) {
 			blog.Errorf("update host batch failed, ids[%v], err: %v, %v", hostID, err, result.ErrMsg)
@@ -466,18 +468,20 @@ func (lgc *Logics) UpdateCloudHosts(pheader http.Header, cloudHostAttr []mapstr.
 }
 
 func (lgc *Logics) NewAddConfirm(taskList mapstr.MapStr, pheader http.Header, newAddHost []string, newCloudHost []mapstr.MapStr) error {
-	//Check whether the host is already exist in resource confirm.
+	// Check whether the host is already exist in resource confirm.
 	opt := make(map[string]interface{})
-	confirmHosts, ok := lgc.CoreAPI.HostController().Cloud().SearchConfirm(context.Background(), pheader, opt)
-	if ok != nil {
-		blog.Errorf("get confirm info failed with err: %v", ok)
-		return ok
+	confirmHosts, errS := lgc.CoreAPI.HostController().Cloud().SearchConfirm(context.Background(), pheader, opt)
+	if errS != nil {
+		blog.Errorf("get confirm info failed with err: %v", errS)
+		return errS
 	}
 
 	confirmIpList := make([]string, 0)
-	for _, confirmInfo := range confirmHosts.Info {
-		for _, ip := range confirmInfo["bk_resource_name"].([]string) {
-			confirmIpList = append(confirmIpList, ip)
+	if confirmHosts.Count > 0 {
+		for _, confirmInfo := range confirmHosts.Info {
+			for _, ip := range confirmInfo[common.BKHostInnerIPField].([]string) {
+				confirmIpList = append(confirmIpList, ip)
+			}
 		}
 	}
 
@@ -488,7 +492,7 @@ func (lgc *Logics) NewAddConfirm(taskList mapstr.MapStr, pheader http.Header, ne
 		}
 	}
 
-	//newly added cloud hosts confirm
+	// newly added cloud hosts confirm
 	if len(newHostIp) > 0 {
 		for _, innerIp := range newHostIp {
 			resourceConfirm := mapstr.MapStr{}
@@ -499,6 +503,9 @@ func (lgc *Logics) NewAddConfirm(taskList mapstr.MapStr, pheader http.Header, ne
 			resourceConfirm["bk_resource"] = newCloudHost
 			resourceConfirm["bk_confirm"] = true
 			resourceConfirm["bk_attr_confirm"] = false
+			resourceConfirm["bk_task_name"] = taskList["bk_task_name"]
+			resourceConfirm["bk_account_type"] = taskList["bk_account_type"]
+			resourceConfirm["bk_account_admin"] = taskList["bk_account_admin"]
 
 			_, err := lgc.CoreAPI.HostController().Cloud().ResourceConfirm(context.Background(), pheader, resourceConfirm)
 			if err != nil {
@@ -511,7 +518,7 @@ func (lgc *Logics) NewAddConfirm(taskList mapstr.MapStr, pheader http.Header, ne
 }
 
 func (lgc *Logics) UnixSubtract(periodType string, period string) int64 {
-	timeLayout := "2006-01-02 15:04:05" //transfer model
+	timeLayout := "2006-01-02 15:04:05" // transfer model
 	toBeCharge := period
 	var unixSubtract int64
 	nowStr := time.Unix(time.Now().Unix(), 0).Format(timeLayout)
@@ -580,7 +587,7 @@ func (lgc *Logics) CloudHistory(taskID int64, startTime int64, cloudHistory *met
 		cloudHistory.TimeConsume = fmt.Sprintf("%ds", timeConsumed)
 	}
 
-	timeLayout := "2006-01-02 15:04:05" //transfer model
+	timeLayout := "2006-01-02 15:04:05" // transfer model
 	startTimeStr := time.Unix(startTime, 0).Format(timeLayout)
 	cloudHistory.StartTime = startTimeStr
 
@@ -590,6 +597,9 @@ func (lgc *Logics) CloudHistory(taskID int64, startTime int64, cloudHistory *met
 	updateTime := time.Now()
 	updateData["bk_last_sync_time"] = updateTime
 	updateData["bk_task_id"] = taskID
+	updateData["bk_sync_status"] = cloudHistory.Status
+	updateData["new_add"] = cloudHistory.NewAdd
+	updateData["attr_changed"] = cloudHistory.AttrChanged
 
 	if _, err := lgc.CoreAPI.HostController().Cloud().UpdateCloudTask(context.Background(), pheader, updateData); err != nil {
 		blog.Errorf("update task failed with decode body err: %v", err)
@@ -616,10 +626,7 @@ func (lgc *Logics) ObtainCloudHosts(secretID string, secretKey string) ([]map[st
 	cpf.HttpProfile.Endpoint = "cvm.tencentcloudapi.com"
 	cpf.SignMethod = "HmacSHA1"
 
-	//根据region获取instance
 	ClientRegion, _ := cvm.NewClient(credential, regions.Guangzhou, cpf)
-
-	//region获取
 	regionRequest := cvm.NewDescribeRegionsRequest()
 	Response, err := ClientRegion.DescribeRegions(regionRequest)
 
@@ -635,7 +642,6 @@ func (lgc *Logics) ObtainCloudHosts(secretID string, secretKey string) ([]map[st
 	}
 
 	cloudHostInfo := make([]map[string]interface{}, 0)
-
 	for _, region := range regionResponse.Response.Data {
 		var inneripList string
 		var outeripList string
@@ -655,8 +661,6 @@ func (lgc *Logics) ObtainCloudHosts(secretID string, secretKey string) ([]map[st
 		}
 
 		data := response.ToJsonString()
-		//fmt.Println(data)
-
 		Hosts := meta.HostResponse{}
 		if err := json.Unmarshal([]byte(data), &Hosts); err != nil {
 			fmt.Printf("json unmarsha1 error :%v\n", err)

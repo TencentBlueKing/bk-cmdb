@@ -13,16 +13,18 @@
 package service
 
 import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"strconv"
+	"time"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"context"
-	"encoding/json"
+
 	"github.com/emicklei/go-restful"
-	"net/http"
-	"strconv"
-	"time"
 )
 
 func (s *Service) AddCloud(req *restful.Request, resp *restful.Response) {
@@ -44,7 +46,7 @@ func (s *Service) AddCloud(req *restful.Request, resp *restful.Response) {
 	err := s.Logics.CreateCloudTask(ctx, input)
 	if err != nil {
 		blog.Errorf("create cloud sync data: %v error: %v", input, err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCloudSyncCreateFail)})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCloudCreateSyncTaskFail)})
 		return
 	}
 
@@ -140,8 +142,6 @@ func (s *Service) SearchCloudTask(req *restful.Request, resp *restful.Response) 
 		return
 	}
 
-	//blog.Debug("num: %v", num)
-	//blog.Debug("result: %v", result)
 	resp.WriteEntity(meta.FavoriteResult{
 		Count: num,
 		Info:  result,
@@ -193,11 +193,9 @@ func (s *Service) ResourceConfirm(req *restful.Request, resp *restful.Response) 
 	err := s.Logics.CreateResourceConfirm(ctx, input)
 	if err != nil {
 		blog.Errorf("create cloud sync data: %v error: %v", input, err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCloudSyncCreateFail)})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCloudConfirmCreateFail)})
 		return
 	}
-
-	blog.Debug("input222: %v", input)
 
 	result := make(map[string]interface{})
 	resp.WriteEntity(meta.Response{
@@ -292,32 +290,94 @@ func (s *Service) SearchSyncHistory(req *restful.Request, resp *restful.Response
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
-	taskID := req.PathParameter("taskID")
-	blog.Debug("taskID: %v", taskID)
-	intResourceID, errInt := strconv.ParseInt(taskID, 10, 64)
-	if errInt != nil {
-		blog.Errorf("string to int64 failed.")
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommParamsIsInvalid)})
+	opt := make(map[string]interface{})
+	if err := json.NewDecoder(req.Request.Body).Decode(&opt); err != nil {
+		blog.Errorf("add cloud sync task failed with decode body err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
+	blog.Debug("SearchSyncHistory opt: %v", opt)
 
-	condition := make(map[string]interface{})
-	condition["bk_task_id"] = intResourceID
-
+	condition := util.ConvParamsTime(opt)
 	result := make([]map[string]interface{}, 0)
-	err := s.Instance.Table(common.BKTableNameCloudHistory).Find(condition).All(ctx, &result)
+	err := s.Instance.Table(common.BKTableNameCloudSyncHistory).Find(condition).All(ctx, &result)
 	if err != nil {
 		blog.Error("get failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return
 	}
 
-	num, errN := s.Instance.Table(common.BKTableNameCloudHistory).Find(condition).Count(ctx)
+	num, errN := s.Instance.Table(common.BKTableNameCloudSyncHistory).Find(condition).Count(ctx)
 	if errN != nil {
 		blog.Error("get task name [%s] failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return
 	}
+
+	resp.WriteEntity(meta.FavoriteResult{
+		Count: num,
+		Info:  result,
+	})
+}
+
+func (s *Service) ConfirmHistory(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+
+	input := make(map[string]interface{})
+	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
+		blog.Errorf("add confirm history failed with decode body err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	input["confirm_time"] = time.Now()
+	err := s.Logics.CreateConfirmHistory(ctx, input)
+	if err != nil {
+		blog.Errorf("create cloud history data: %v error: %v", input, err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCloudConfirmHistoryAddFail)})
+		return
+	}
+
+	result := make(map[string]interface{})
+	resp.WriteEntity(meta.Response{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     result,
+	})
+}
+
+func (s *Service) SearchConfirmHistory(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+
+	opt := make(map[string]interface{})
+	if err := json.NewDecoder(req.Request.Body).Decode(&opt); err != nil {
+		blog.Errorf("add cloud sync task failed with decode body err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	blog.Debug("SearchConfirmHistory opt: %v", opt)
+	condition := util.ConvParamsTime(opt)
+
+	result := make([]map[string]interface{}, 0)
+	errR := s.Instance.Table(common.BKTableNameResourceConfirmHistory).Find(condition).All(ctx, &result)
+	if errR != nil {
+		blog.Error("get failed, err: %v", errR)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
+		return
+	}
+
+	num, errN := s.Instance.Table(common.BKTableNameResourceConfirmHistory).Find(condition).Count(ctx)
+	if errN != nil {
+		blog.Error("get task name [%s] failed, err: %v", errN)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
+		return
+	}
+
+	blog.Debug("num: %v, result: %v", num, result)
 
 	resp.WriteEntity(meta.FavoriteResult{
 		Count: num,

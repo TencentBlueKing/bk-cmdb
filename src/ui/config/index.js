@@ -36,7 +36,7 @@ module.exports = {
             '/proxy': {
                 logLevel: 'info',
                 changeOrigin: true,
-                target: 'http://localhost:8083/',
+                target: 'http://localhost:80/',
                 pathRewrite: {
                     '^/proxy': ''
                 }
