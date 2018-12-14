@@ -21,12 +21,27 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (m *modelClassification) isExists(ctx core.ContextParams, classificationID string) (origin *metadata.Classification, exists bool, err error) {
+func (m *modelClassification) isValid(ctx core.ContextParams, classificationID string) (bool, error) {
 
 	cond := mongo.NewCondition()
-	cond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationID, Val: ctx.SupplierAccount}, &mongo.Eq{Key: metadata.ClassFieldClassificationID, Val: classificationID})
+	cond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationID, Val: classificationID})
+	cond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationSupplierAccount, Val: ctx.SupplierAccount})
+
+	cnt, err := m.count(ctx, cond)
+	return 0 != cnt, err
+}
+
+func (m *modelClassification) isExists(ctx core.ContextParams, classificationID string) (origin *metadata.Classification, exists bool, err error) {
+
+	origin = &metadata.Classification{}
+	cond := mongo.NewCondition()
+	cond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationID, Val: ctx.SupplierAccount})
+	cond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationID, Val: classificationID})
 	err = m.dbProxy.Table(common.BKTableNameObjClassifiction).Find(cond.ToMapStr()).One(ctx, origin)
-	return origin, m.dbProxy.IsNotFoundError(err), err
+	if nil != err && !m.dbProxy.IsNotFoundError(err) {
+		return origin, false, err
+	}
+	return origin, !m.dbProxy.IsNotFoundError(err), nil
 }
 
 func (m *modelClassification) hasModel(ctx core.ContextParams, cond universalsql.Condition) (cnt uint64, exists bool, err error) {

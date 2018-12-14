@@ -44,6 +44,25 @@ func New(dbProxy dal.RDB, dependent OperationDependences) core.ModelOperation {
 
 func (m *modelManager) CreateModel(ctx core.ContextParams, inputParam metadata.CreateModel) (*metadata.CreateOneDataResult, error) {
 
+	// check the model attributes value
+	if 0 == len(inputParam.Spec.ObjectID) {
+		blog.Errorf("request(%s): it is failed to create a new model, because of the modelID (%s) is not set", ctx.ReqID, inputParam.Spec.ObjectID)
+		return &metadata.CreateOneDataResult{}, ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.ModelFieldObjectID)
+	}
+
+	// check the input classification ID
+	isValid, err := m.modelClassification.isValid(ctx, inputParam.Spec.ObjCls)
+	if nil != err {
+		blog.Errorf("request(%s): it is failed to check whether the classificationID(%s) is invalid, error info is %s", ctx.ReqID, inputParam.Spec.ObjCls, err.Error())
+		return &metadata.CreateOneDataResult{}, err
+	}
+
+	if !isValid {
+		blog.Warnf("request(%s): it is failed to create a new model, because of the classificationID (%s) is invalid", ctx.ReqID, inputParam.Spec.ObjCls)
+		return &metadata.CreateOneDataResult{}, ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, metadata.ClassificationFieldID)
+	}
+
+	// check the model if it is exists
 	condCheckModel := mongo.NewCondition()
 	condCheckModel.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: inputParam.Spec.ObjectID})
 	condCheckModel.Element(&mongo.Eq{Key: metadata.ModelFieldOwnerID, Val: ctx.SupplierAccount})
@@ -55,9 +74,10 @@ func (m *modelManager) CreateModel(ctx core.ContextParams, inputParam metadata.C
 	}
 
 	if exists {
+		blog.Warnf("request(%s): it is failed to  create a new model , because of the model (%s) is already exists ", ctx.ReqID, inputParam.Spec.ObjectID)
 		return &metadata.CreateOneDataResult{}, ctx.Error.Error(common.CCErrCommDuplicateItem)
 	}
-
+	inputParam.Spec.OwnerID = ctx.SupplierAccount
 	id, err := m.save(ctx, &inputParam.Spec)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to save the model (%v), error info is %s", ctx.ReqID, inputParam.Spec, err.Error())

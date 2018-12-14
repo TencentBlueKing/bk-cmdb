@@ -25,12 +25,12 @@ func (m *modelManager) isExists(ctx core.ContextParams, cond universalsql.Condit
 
 	oneModel = &metadata.ObjectDes{}
 	err = m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).One(ctx, oneModel)
-	if nil != err && m.dbProxy.IsNotFoundError(err) {
+	if nil != err && !m.dbProxy.IsNotFoundError(err) {
 		blog.Errorf("request(%s): it is failed to execute database findone operation on the table (%v) by the condition (%v), error info is %s", ctx.ReqID, common.BKTableNameObjDes, cond.ToMapStr(), err.Error())
 		return oneModel, exists, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 	exists = !m.dbProxy.IsNotFoundError(err)
-	return oneModel, exists, err
+	return oneModel, exists, nil
 }
 
 func (m *modelManager) isValid(ctx core.ContextParams, objID string) error {
