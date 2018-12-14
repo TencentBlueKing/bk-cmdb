@@ -39,9 +39,9 @@ type InstOperationInterface interface {
 	FindOriginInst(params types.ContextParams, obj model.Object, cond *metatype.QueryInput) (*metatype.InstResult, error)
 	FindInst(params types.ContextParams, obj model.Object, cond *metatype.QueryInput, needAsstDetail bool) (count int, results []inst.Inst, err error)
 	FindInstByAssociationInst(params types.ContextParams, obj model.Object, data frtypes.MapStr) (cont int, results []inst.Inst, err error)
-	FindInstChildTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []interface{}, err error)
-	FindInstParentTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []interface{}, err error)
-	FindInstTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []commonInstTopoV2, err error)
+	FindInstChildTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []*CommonInstTopo, err error)
+	FindInstParentTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []*CommonInstTopo, err error)
+	FindInstTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []CommonInstTopoV2, err error)
 	UpdateInst(params types.ContextParams, data frtypes.MapStr, obj model.Object, cond condition.Condition, instID int64) error
 
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, asst AssociationOperationInterface, obj ObjectOperationInterface)
@@ -499,8 +499,8 @@ func (c *commonInst) searchAssociationInst(params types.ContextParams, objID str
 	return instIDS, nil
 }
 
-func (c *commonInst) FindInstChildTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []interface{}, err error) {
-	results = []interface{}{}
+func (c *commonInst) FindInstChildTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []*CommonInstTopo, err error) {
+	results = make([]*CommonInstTopo, 0)
 	if nil == query {
 		query = &metatype.QueryInput{}
 		cond := condition.CreateCondition()
@@ -514,7 +514,7 @@ func (c *commonInst) FindInstChildTopo(params types.ContextParams, obj model.Obj
 		return 0, nil, err
 	}
 
-	tmpResults := map[string]*commonInstTopo{}
+	tmpResults := map[string]*CommonInstTopo{}
 	for _, inst := range insts {
 
 		childs, err := inst.GetChildObjectWithInsts()
@@ -525,7 +525,7 @@ func (c *commonInst) FindInstChildTopo(params types.ContextParams, obj model.Obj
 		for _, child := range childs {
 			commonInst, exists := tmpResults[child.Object.GetID()]
 			if !exists {
-				commonInst = &commonInstTopo{}
+				commonInst = &CommonInstTopo{}
 				commonInst.ObjectName = child.Object.GetName()
 				commonInst.ObjIcon = child.Object.GetIcon()
 				commonInst.ObjID = child.Object.GetID()
@@ -554,6 +554,7 @@ func (c *commonInst) FindInstChildTopo(params types.ContextParams, obj model.Obj
 				instAsst.ObjectName = child.Object.GetName()
 				instAsst.ObjIcon = child.Object.GetIcon()
 				instAsst.ObjID = child.Object.GetID()
+				instAsst.AssoID = childInst.GetAssoID()
 
 				tmpResults[child.Object.GetID()].Children = append(tmpResults[child.Object.GetID()].Children, instAsst)
 			}
@@ -567,9 +568,9 @@ func (c *commonInst) FindInstChildTopo(params types.ContextParams, obj model.Obj
 	return len(results), results, nil
 }
 
-func (c *commonInst) FindInstParentTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []interface{}, err error) {
+func (c *commonInst) FindInstParentTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []*CommonInstTopo, err error) {
 
-	results = []interface{}{}
+	results = make([]*CommonInstTopo, 0)
 	if nil == query {
 		query = &metatype.QueryInput{}
 		cond := condition.CreateCondition()
@@ -583,7 +584,7 @@ func (c *commonInst) FindInstParentTopo(params types.ContextParams, obj model.Ob
 		return 0, nil, err
 	}
 
-	tmpResults := map[string]*commonInstTopo{}
+	tmpResults := map[string]*CommonInstTopo{}
 	for _, inst := range insts {
 
 		parents, err := inst.GetParentObjectWithInsts()
@@ -594,7 +595,7 @@ func (c *commonInst) FindInstParentTopo(params types.ContextParams, obj model.Ob
 		for _, parent := range parents {
 			commonInst, exists := tmpResults[parent.Object.GetID()]
 			if !exists {
-				commonInst = &commonInstTopo{}
+				commonInst = &CommonInstTopo{}
 				commonInst.ObjectName = parent.Object.GetName()
 				commonInst.ObjIcon = parent.Object.GetIcon()
 				commonInst.ObjID = parent.Object.GetID()
@@ -621,6 +622,7 @@ func (c *commonInst) FindInstParentTopo(params types.ContextParams, obj model.Ob
 				instAsst.ObjectName = parent.Object.GetName()
 				instAsst.ObjIcon = parent.Object.GetIcon()
 				instAsst.ObjID = parent.Object.GetID()
+				instAsst.AssoID = parentInst.GetAssoID()
 
 				tmpResults[parent.Object.GetID()].Children = append(tmpResults[parent.Object.GetID()].Children, instAsst)
 			}
@@ -634,7 +636,7 @@ func (c *commonInst) FindInstParentTopo(params types.ContextParams, obj model.Ob
 	return len(results), results, nil
 }
 
-func (c *commonInst) FindInstTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []commonInstTopoV2, err error) {
+func (c *commonInst) FindInstTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []CommonInstTopoV2, err error) {
 
 	if nil == query {
 		query = &metatype.QueryInput{}
@@ -663,7 +665,7 @@ func (c *commonInst) FindInstTopo(params types.ContextParams, obj model.Object, 
 			return 0, nil, err
 		}
 
-		commonInst := commonInstTopo{Children: []metatype.InstNameAsst{}}
+		commonInst := metatype.InstNameAsst{}
 		commonInst.ObjectName = inst.GetObject().GetName()
 		commonInst.ObjID = inst.GetObject().GetID()
 		commonInst.ObjIcon = inst.GetObject().GetIcon()
@@ -683,7 +685,7 @@ func (c *commonInst) FindInstTopo(params types.ContextParams, obj model.Object, 
 			return 0, nil, err
 		}
 
-		results = append(results, commonInstTopoV2{
+		results = append(results, CommonInstTopoV2{
 			Prev: parentInsts,
 			Next: childInsts,
 			Curr: commonInst,
