@@ -1,80 +1,80 @@
 <template>
     <div class="model-detail-wrapper">
-        <div class="model-info" v-if="activeModel">
-            <div class="choose-icon-wrapper">
-                <div class="icon-box" @click="isIconListShow = true">
-                    <i class="icon" :class="activeModel ? activeModel['bk_obj_icon'] : 'icon-cc-default'"></i>
-                    <p class="hover-text">{{$t('ModelManagement["点击切换"]')}}</p>
-                </div>
-                <div class="choose-icon-box" v-if="isIconListShow" v-click-outside="hideChooseBox">
-                    <the-choose-icon
-                        :type="'update'"
-                        v-model="modelInfo.objIcon"
-                        @chooseIcon="chooseIcon"
-                    ></the-choose-icon>
-                </div>
-            </div>
-            <div class="model-text">
-                <span>{{$t('ModelManagement["唯一标识"]')}}：</span>
-                <span class="text-content id">{{activeModel ? activeModel['bk_obj_id'] : ''}}</span>
-            </div>
-            <div class="model-text">
-                <span>{{$t('Hosts["名称"]')}}：</span>
-                <template v-if="!isEditName">
-                    <span class="text-content">{{activeModel ? activeModel['bk_obj_name'] : ''}}
-                    </span>
-                    <i class="icon icon-cc-edit text-primary"
-                        v-if="!(isReadOnly || (activeModel && activeModel['ispre'])) && authority.includes('update')"
-                        @click="editModelName">
-                    </i>
-                </template>
-                <template v-else>
-                    <div class="cmdb-form-item" :class="{'is-error': errors.has('modelName')}">
-                        <input type="text" class="cmdb-form-input"
-                        name="modelName"
-                        v-validate="'required|singlechar'"
-                        v-model.trim="modelInfo.objName">
+        <div class="model-info" v-bkloading="{isLoading: $loading('searchObjects')}">
+            <template v-if="activeModel !== null">
+                <div class="choose-icon-wrapper">
+                    <div class="icon-box" @click="isIconListShow = true">
+                        <i class="icon" :class="activeModel ? activeModel['bk_obj_icon'] : 'icon-cc-default'"></i>
+                        <p class="hover-text">{{$t('ModelManagement["点击切换"]')}}</p>
                     </div>
-                    <span class="text-primary" @click="saveModel">{{$t("Common['保存']")}}</span>
-                    <span class="text-primary" @click="isEditName = false">{{$t("Common['取消']")}}</span>
-                </template>
-            </div>
-            <div class="btn-group">
-                <label class="label-btn"
-                    v-if="tab.active==='field' && authority.includes('update')"
-                    :class="{'disabled': isReadOnly}">
-                    <i class="icon-cc-import"></i>
-                    <span>{{$t('ModelManagement["导入"]')}}</span>
-                    <input v-if="!isReadOnly" ref="fileInput" type="file" @change.prevent="handleFile">
-                </label>
-                <form class="export-form" ref="submitForm" :action="exportUrl" method="POST" v-if="tab.active==='field'">
-                    <label class="label-btn" @click="exportField">
-                        <i class="icon-cc-derivation"></i>
-                        <span>{{$t('ModelManagement["导出"]')}}</span>
-                    </label>
-                </form>
-                <template v-if="!activeModel['ispre'] && authority.includes('update')">
-                    <label class="label-btn"
-                    v-if="!isMainLine"
-                    v-tooltip="$t('ModelManagement[\'保留模型和相应实例，隐藏关联关系\']')">
-                        <i class="bk-icon icon-minus-circle-shape"></i>
-                        <span v-if="activeModel['bk_ispaused']" @click="dialogConfirm('restart')">
-                            {{$t('ModelManagement["启用"]')}}
+                    <div class="choose-icon-box" v-if="isIconListShow" v-click-outside="hideChooseBox">
+                        <the-choose-icon
+                            :type="'update'"
+                            v-model="modelInfo.objIcon"
+                            @chooseIcon="chooseIcon"
+                        ></the-choose-icon>
+                    </div>
+                </div>
+                <div class="model-text">
+                    <span>{{$t('ModelManagement["唯一标识"]')}}：</span>
+                    <span class="text-content id">{{activeModel ? activeModel['bk_obj_id'] : ''}}</span>
+                </div>
+                <div class="model-text">
+                    <span>{{$t('Hosts["名称"]')}}：</span>
+                    <template v-if="!isEditName">
+                        <span class="text-content">{{activeModel ? activeModel['bk_obj_name'] : ''}}
                         </span>
-                        <span v-else @click="dialogConfirm('stop')">
-                            {{$t('ModelManagement["停用"]')}}
-                        </span>
-                    </label>
+                        <i class="icon icon-cc-edit text-primary"
+                            v-if="!(isReadOnly || (activeModel && activeModel['ispre'])) && authority.includes('update')"
+                            @click="editModelName">
+                        </i>
+                    </template>
+                    <template v-else>
+                        <div class="cmdb-form-item" :class="{'is-error': errors.has('modelName')}">
+                            <input type="text" class="cmdb-form-input"
+                            name="modelName"
+                            v-validate="'required|singlechar'"
+                            v-model.trim="modelInfo.objName">
+                        </div>
+                        <span class="text-primary" @click="saveModel">{{$t("Common['保存']")}}</span>
+                        <span class="text-primary" @click="isEditName = false">{{$t("Common['取消']")}}</span>
+                    </template>
+                </div>
+                <div class="btn-group">
                     <label class="label-btn"
-                        v-tooltip="$t('ModelManagement[\'删除模型和其下所有实例，此动作不可逆，请谨慎操作\']')"
-                        @click="dialogConfirm('delete')">
-                        <i class="icon-cc-del"></i>
-                        <span>{{$t("Common['删除']")}}</span>
+                        v-if="tab.active==='field' && authority.includes('update')"
+                        :class="{'disabled': isReadOnly}">
+                        <i class="icon-cc-import"></i>
+                        <span>{{$t('ModelManagement["导入"]')}}</span>
+                        <input v-if="!isReadOnly" ref="fileInput" type="file" @change.prevent="handleFile">
                     </label>
-                </template>
-            </div>
-        </div>
-        <div class="model-info" v-bkloading="{isLoading: $loading('searchObjects')}" v-else>
+                    <form class="export-form" ref="submitForm" :action="exportUrl" method="POST" v-if="tab.active==='field'">
+                        <label class="label-btn" @click="exportField">
+                            <i class="icon-cc-derivation"></i>
+                            <span>{{$t('ModelManagement["导出"]')}}</span>
+                        </label>
+                    </form>
+                    <template v-if="!activeModel['ispre'] && authority.includes('update')">
+                        <label class="label-btn"
+                        v-if="!isMainLine"
+                        v-tooltip="$t('ModelManagement[\'保留模型和相应实例，隐藏关联关系\']')">
+                            <i class="bk-icon icon-minus-circle-shape"></i>
+                            <span v-if="activeModel['bk_ispaused']" @click="dialogConfirm('restart')">
+                                {{$t('ModelManagement["启用"]')}}
+                            </span>
+                            <span v-else @click="dialogConfirm('stop')">
+                                {{$t('ModelManagement["停用"]')}}
+                            </span>
+                        </label>
+                        <label class="label-btn"
+                            v-tooltip="$t('ModelManagement[\'删除模型和其下所有实例，此动作不可逆，请谨慎操作\']')"
+                            @click="dialogConfirm('delete')">
+                            <i class="icon-cc-del"></i>
+                            <span>{{$t("Common['删除']")}}</span>
+                        </label>
+                    </template>
+                </div>
+            </template>
         </div>
         <bk-tab class="model-details-tab" :active-name.sync="tab.active">
             <bk-tabpanel name="field" :title="$t('ModelManagement[\'模型字段\']')">
