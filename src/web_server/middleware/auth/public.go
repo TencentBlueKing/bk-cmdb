@@ -121,6 +121,11 @@ func (m *publicAuth) ValidResAccess(pathArr []string, c *gin.Context) bool {
 		return true
 	}
 
+	// export objects excel
+	if types.ExportObjectExcelRegexp.MatchString(pathStr) && method == http.MethodPost {
+		return true
+	}
+
 	// export business hosts
 	if pathStr == types.ExportHosts && method == http.MethodPost {
 		return true
