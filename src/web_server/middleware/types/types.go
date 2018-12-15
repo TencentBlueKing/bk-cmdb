@@ -82,25 +82,30 @@ const (
 	//host trans pattern
 	BK_HOST_TRANS                    = "hosts/modules"
 	BKTopoBatchSearchAssociationKind = "topo/association/type/action/search/batch"
+	SearchObjectAssociation          = "/api/v3/object/association/action/search"
+	SearchObjects                    = "/api/v3/objects"
+	ExportHosts                      = "/hosts/export"
 )
 
 //system config privilege pattern
 const (
 	resPattern    = `(hosts/import|export)|(hosts/modules/resource/idle)`
-	objectPattern = `object/classification/[a-z0-9A-Z]+/objects$`
+	objectPattern = `object/classification/[a-z0-9A-Z_]+/objects$`
 	// proc search
-	procSearch         = `proc/search/[a-z0-9A-Z]+/[a-z0-9A-Z]+$`
-	topoGraphicsSearch = `objects/topographics/scope_type/[a-z0-9A-Z]+/scope_id/[a-z0-9A-Z]+/action/search$`
+	procSearch         = `proc/search/[a-z0-9A-Z_]+/[a-z0-9A-Z_]+$`
+	topoGraphicsSearch = `objects/topographics/scope_type/[a-z0-9A-Z-_]+/scope_id/[a-z0-9A-Z-_]+/action/search$`
 	searchUserAPI      = `userapi/search/[0-9]+$`
+	searchUniquesInfo  = `/api/v3/object/[a-z0-9A-Z_]+/unique/action/search$`
 )
 
 //system config privilege regexp
 var (
-	ResPatternRegexp         = regexp.MustCompile(resPattern)
-	ObjectPatternRegexp      = regexp.MustCompile(objectPattern)
-	ProcSearchRegexp         = regexp.MustCompile(procSearch)
-	TopoGraphicsSearchRegexp = regexp.MustCompile(topoGraphicsSearch)
-	SearchUserAPI            = regexp.MustCompile(searchUserAPI)
+	ResPatternRegexp          = regexp.MustCompile(resPattern)
+	ObjectPatternRegexp       = regexp.MustCompile(objectPattern)
+	ProcSearchRegexp          = regexp.MustCompile(procSearch)
+	TopoGraphicsSearchRegexp  = regexp.MustCompile(topoGraphicsSearch)
+	SearchUserAPIRegexp       = regexp.MustCompile(searchUserAPI)
+	SearchObjectUniquesRegexp = regexp.MustCompile(searchUniquesInfo)
 )
 
 //host update string
