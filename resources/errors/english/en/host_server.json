@@ -29,7 +29,6 @@
 	"1110028": "Failed to modify host relationship",
 	"1110029": "Failed to add host to module",
 	"1110030": "Failed to add host to module, error:%s",
-	
 	"1110040": "Create custom query failed, error %s",
 	"1110041": "Modify custom query failed, error %s",
 	"1110042": "Delete custom query failed, error %s",
@@ -41,5 +40,9 @@
 	"1110048": "%v appliction not found",
 	"1110049": "Failed to get module information, error %s",
 	"1110050": "Get host agent status, error %s",
+	"1110051": "The resource pool was not found",
+	"1110052": "The host is already in the resource pool",
+	"1110053": "Failed to get resource pool information, error message: %s",
+	"1110054": "%s module not found",
 	"": ""
 }
