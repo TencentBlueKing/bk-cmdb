@@ -107,7 +107,27 @@ func (m *publicAuth) ValidResAccess(pathArr []string, c *gin.Context) bool {
 	}
 
 	// get user api
-	if types.SearchUserAPI.MatchString(pathStr) && method == http.MethodPost {
+	if types.SearchUserAPIRegexp.MatchString(pathStr) && method == http.MethodPost {
+		return true
+	}
+
+	// get association kind between objects
+	if pathStr == types.SearchObjectAssociation && method == http.MethodPost {
+		return true
+	}
+
+	// get objects
+	if pathStr == types.SearchObjects && method == http.MethodPost {
+		return true
+	}
+
+	// export business hosts
+	if pathStr == types.ExportHosts && method == http.MethodPost {
+		return true
+	}
+
+	// search uniques info for a object.
+	if types.SearchObjectUniquesRegexp.MatchString(pathStr) && method == http.MethodGet {
 		return true
 	}
 
