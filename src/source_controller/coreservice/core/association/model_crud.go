@@ -14,6 +14,7 @@ package association
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql"
@@ -23,6 +24,10 @@ import (
 func (m *associationModel) count(ctx core.ContextParams, cond universalsql.Condition) (cnt uint64, err error) {
 
 	cnt, err = m.dbProxy.Table(common.BKTableNameObjAsst).Find(cond.ToMapStr()).Count(ctx)
+	if nil != err {
+		blog.Errorf("request(%s): it is failed to execute database count operation on the table (%s) by the condition (%v), error info is %s", ctx.ReqID, common.BKTableNameObjAsst, cond.ToMapStr(), err.Error())
+		return 0, err
+	}
 	return cnt, err
 }
 
@@ -31,20 +36,26 @@ func (m *associationModel) isExists(ctx core.ContextParams, cond universalsql.Co
 	oneResult = &metadata.Association{}
 	err = m.dbProxy.Table(common.BKTableNameObjAsst).Find(cond.ToMapStr()).One(ctx, oneResult)
 	if nil != err && !m.dbProxy.IsNotFoundError(err) {
+		blog.Errorf("request(%s): it is faield to execute database findone operation on the table (%s) by the condition (%v), error info is %s", ctx.ReqID, common.BKTableNameObjAsst, cond.ToMapStr(), err.Error())
 		return oneResult, false, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
-	return oneResult, !m.dbProxy.IsNotFoundError(err), err
+	return oneResult, !m.dbProxy.IsNotFoundError(err), nil
 }
 
 func (m *associationModel) save(ctx core.ContextParams, assoParam *metadata.Association) (id uint64, err error) {
 
 	id, err = m.dbProxy.NextSequence(ctx, common.BKTableNameObjAsst)
 	if nil != err {
+		blog.Errorf("request(%s): it is failed to make a sequence ID on the table (%s), error info is %s", ctx.ReqID, common.BKTableNameObjAsst, err.Error())
 		return id, err
 	}
 
 	err = m.dbProxy.Table(common.BKTableNameObjAsst).Insert(ctx, assoParam)
+	if nil != err {
+		blog.Errorf("request(%s): it is failed to execute database insert operation on the table (%s), error info is %s", ctx.ReqID, common.BKTableNameObjAsst, err.Error())
+		return 0, err
+	}
 	return id, err
 }
 
@@ -61,6 +72,7 @@ func (m *associationModel) update(ctx core.ContextParams, data mapstr.MapStr, co
 
 	err = m.dbProxy.Table(common.BKTableNameObjAsst).Update(ctx, cond.ToMapStr(), data)
 	if nil != err {
+		blog.Errorf("request(%s): it is failed to execute database upate some data (%v) on the table (%s) by the condition (%v)", ctx.ReqID, data, common.BKTableNameObjAsst, cond.ToMapStr(), err.Error())
 		return 0, err
 	}
 	return cnt, err
@@ -78,6 +90,10 @@ func (m *associationModel) delete(ctx core.ContextParams, cond universalsql.Cond
 	}
 
 	err = m.dbProxy.Table(common.BKTableNameObjAsst).Delete(ctx, cond.ToMapStr())
+	if nil != err {
+		blog.Errorf("request(%s): it is to delete some data on the table (%s) by the condition (%v), error info is %s", ctx.ReqID, common.BKTableNameObjAsst, cond.ToMapStr(), err.Error())
+		return 0, err
+	}
 	return cnt, err
 }
 
@@ -85,11 +101,19 @@ func (m *associationModel) search(ctx core.ContextParams, cond universalsql.Cond
 
 	dataResult := []metadata.Association{}
 	err := m.dbProxy.Table(common.BKTableNameAsstDes).Find(cond.ToMapStr()).All(ctx, &dataResult)
+	if nil != err {
+		blog.Errorf("request(%s): it is to search some data on the table (%s) by the condition (%v), error info is %s", ctx.ReqID, common.BKTableNameAsstDes, cond.ToMapStr(), err.Error())
+		return dataResult, err
+	}
 	return dataResult, err
 }
 
 func (m *associationModel) searchReturnMapStr(ctx core.ContextParams, cond universalsql.Condition) ([]mapstr.MapStr, error) {
 	dataResult := []mapstr.MapStr{}
 	err := m.dbProxy.Table(common.BKTableNameAsstDes).Find(cond.ToMapStr()).All(ctx, &dataResult)
+	if nil != err {
+		blog.Errorf("request(%s): it is to search data on the table (%s) by the condition (%v), error info is %s", ctx.ReqID, common.BKTableNameAsstDes, cond.ToMapStr(), err.Error())
+		return dataResult, err
+	}
 	return dataResult, err
 }

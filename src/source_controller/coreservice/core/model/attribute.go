@@ -13,7 +13,7 @@
 package model
 
 import (
-	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -29,6 +29,11 @@ type modelAttribute struct {
 
 func (m *modelAttribute) CreateModelAttributes(ctx core.ContextParams, objID string, inputParam metadata.CreateModelAttributes) (dataResult *metadata.CreateManyDataResult, err error) {
 
+	if err := m.model.isValid(ctx, objID); nil != err {
+		blog.Errorf("request(%s): it is failed, to check the model(%s) if it is valid, error info is %s", ctx.ReqID, objID, err.Error())
+		return &metadata.CreateManyDataResult{}, err
+	}
+
 	dataResult = &metadata.CreateManyDataResult{}
 
 	addExceptionFunc := func(idx int64, err errors.CCErrorCoder, attr *metadata.Attribute) {
@@ -43,8 +48,8 @@ func (m *modelAttribute) CreateModelAttributes(ctx core.ContextParams, objID str
 	for attrIdx, attr := range inputParam.Attributes {
 
 		_, exists, err := m.isExists(ctx, attr.PropertyID)
-
 		if nil != err {
+			blog.Errorf("request(%s): it is failed, to check if the attribute's field propertyID(%s) is exists, error info is %s", ctx.ReqID, attr.PropertyID, err.Error())
 			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
 			continue
 		}
@@ -58,6 +63,7 @@ func (m *modelAttribute) CreateModelAttributes(ctx core.ContextParams, objID str
 		}
 		id, err := m.save(ctx, attr)
 		if nil != err {
+			blog.Errorf("request(%s): it is failed to save the attribute(%v), error info is %s", attr, err.Error())
 			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
 			continue
 		}
@@ -68,11 +74,15 @@ func (m *modelAttribute) CreateModelAttributes(ctx core.ContextParams, objID str
 		})
 
 	}
-	err = nil // unused ,reserved
-	return dataResult, err
+
+	return dataResult, nil
 }
 
 func (m *modelAttribute) SetModelAttributes(ctx core.ContextParams, objID string, inputParam metadata.SetModelAttributes) (dataResult *metadata.SetDataResult, err error) {
+
+	if err := m.model.isValid(ctx, objID); nil != err {
+		return &metadata.SetDataResult{}, err
+	}
 
 	dataResult = &metadata.SetDataResult{}
 
@@ -88,7 +98,6 @@ func (m *modelAttribute) SetModelAttributes(ctx core.ContextParams, objID string
 	for attrIdx, attr := range inputParam.Attributes {
 
 		existsAttr, exists, err := m.isExists(ctx, attr.PropertyID)
-
 		if nil != err {
 			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
 			continue
@@ -101,6 +110,7 @@ func (m *modelAttribute) SetModelAttributes(ctx core.ContextParams, objID string
 
 			_, err := m.update(ctx, mapstr.NewFromStruct(attr, "field"), cond)
 			if nil != err {
+				blog.Errorf("request(%s): it is failed to update the attribute(%v) by the condition(%v), error info is %s", ctx.ReqID, attr, cond.ToMapStr(), err.Error())
 				addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
 				continue
 			}
@@ -112,6 +122,7 @@ func (m *modelAttribute) SetModelAttributes(ctx core.ContextParams, objID string
 		}
 		id, err := m.save(ctx, attr)
 		if nil != err {
+			blog.Errorf("request(%s): it is failed to save the attribute(%v), error info is %s", ctx.ReqID, attr, err.Error())
 			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
 			continue
 		}
@@ -122,18 +133,25 @@ func (m *modelAttribute) SetModelAttributes(ctx core.ContextParams, objID string
 		})
 
 	}
-	err = nil // unused ,reserved
-	return dataResult, err
+
+	return dataResult, nil
 }
 func (m *modelAttribute) UpdateModelAttributes(ctx core.ContextParams, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 
+	if err := m.model.isValid(ctx, objID); nil != err {
+		blog.Errorf("request(%s): it is failed to check if the model(%s) is valid, error info is %s", ctx.ReqID, objID, err.Error())
+		return &metadata.UpdatedCount{}, err
+	}
+
 	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
+		blog.Errorf("request(%s): it is failed to convert from mapstr(%v) into a condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.UpdatedCount{}, err
 	}
 
 	cnt, err := m.update(ctx, inputParam.Data, cond)
 	if nil != err {
+		blog.Errorf("request(%s): it is failed to update some fields (%v)of the attribute of the model(%s) by the condition(%v), error info is %s", ctx.ReqID, inputParam.Data, objID, err.Error())
 		return &metadata.UpdatedCount{}, err
 	}
 
@@ -141,40 +159,42 @@ func (m *modelAttribute) UpdateModelAttributes(ctx core.ContextParams, objID str
 }
 func (m *modelAttribute) DeleteModelAttributes(ctx core.ContextParams, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
+	if err := m.model.isValid(ctx, objID); nil != err {
+		blog.Errorf("request(%s): it is failed to check if the model(%s) is valid, error info is %s", ctx.ReqID, objID, err.Error())
+		return &metadata.DeletedCount{}, err
+	}
+
 	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
+		blog.Errorf("request(%s): it is failed to convert from mapstr(%v) into a condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
-	cnt, err := m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).Count(ctx)
-	if nil != err {
-		return &metadata.DeletedCount{}, err
-	}
-
-	if 0 == cnt {
-		return &metadata.DeletedCount{}, nil
-	}
-
-	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Delete(ctx, cond.ToMapStr())
+	cond.Element(&mongo.Eq{Key: metadata.AttributeFieldSupplierAccount, Val: ctx.SupplierAccount})
+	cnt, err := m.delete(ctx, cond)
 	return &metadata.DeletedCount{Count: cnt}, err
 }
 
 func (m *modelAttribute) SearchModelAttributes(ctx core.ContextParams, objID string, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
 
+	if err := m.model.isValid(ctx, objID); nil != err {
+		blog.Errorf("request(%s): it is failed to check if the model(%s) is valid, error info is %s", ctx.ReqID, objID, err.Error())
+		return &metadata.QueryResult{}, err
+	}
+
 	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
+		blog.Errorf("request(%s): it is failed to convert from mapstr(%v) into a condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.QueryResult{}, err
 	}
 
-	attrResult := []metadata.Attribute{}
-	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).All(ctx, &attrResult)
+	cond.Element(&mongo.Eq{Key: ctx.SupplierAccount, Val: ctx.SupplierAccount})
+	attrResult, err := m.searchReturnMapStr(ctx, cond)
 	if nil != err {
+		blog.Errorf("request(%s): it is failed to search the attributes of the model(%s), error info is %s", ctx.ReqID, objID, err.Error())
 		return &metadata.QueryResult{}, err
 	}
 
-	dataResult := &metadata.QueryResult{Count: uint64(len(attrResult))}
-	for _, attrItem := range attrResult {
-		dataResult.Info = append(dataResult.Info, mapstr.NewFromStruct(attrItem, "field"))
-	}
+	dataResult := &metadata.QueryResult{Count: uint64(len(attrResult)), Info: attrResult}
 	return dataResult, nil
 }

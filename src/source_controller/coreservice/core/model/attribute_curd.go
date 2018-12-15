@@ -18,22 +18,12 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql"
-	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (m *modelAttribute) isExists(ctx core.ContextParams, propertyID string) (oneAttribute *metadata.Attribute, exists bool, err error) {
-
-	cond := mongo.NewCondition()
-	cond.Element(&mongo.Eq{Key: metadata.AttributeFieldSupplierAccount, Val: propertyID})
-	cond.Element(&mongo.Eq{Key: metadata.AttributeFieldPropertyID, Val: propertyID})
-
-	oneAttribute = &metadata.Attribute{}
-	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).One(ctx, oneAttribute)
-	if nil != err && m.dbProxy.IsNotFoundError(err) {
-		return oneAttribute, exists, nil
-	}
-	return oneAttribute, m.dbProxy.IsNotFoundError(err), err
+func (m *modelAttribute) count(ctx core.ContextParams, cond universalsql.Condition) (cnt uint64, err error) {
+	cnt, err = m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).Count(ctx)
+	return cnt, err
 }
 
 func (m *modelAttribute) save(ctx core.ContextParams, attribute metadata.Attribute) (id uint64, err error) {
@@ -51,13 +41,17 @@ func (m *modelAttribute) save(ctx core.ContextParams, attribute metadata.Attribu
 
 func (m *modelAttribute) update(ctx core.ContextParams, data mapstr.MapStr, cond universalsql.Condition) (cnt uint64, err error) {
 
-	cnt, err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).Count(ctx)
-	if nil != err {
-		blog.Errorf("failed to  count the attributes by the cond(%v), error info is %s", cond.ToMapStr(), err.Error())
-		return cnt, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
+	cnt, err = m.count(ctx, cond)
+	if 0 == cnt {
+		return cnt, nil
 	}
 
 	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Update(ctx, cond.ToMapStr(), data)
+	if nil != err {
+		blog.Errorf("request(%s): database operation is failed, error info is %s", ctx.ReqID, err.Error())
+		return 0, err
+	}
+
 	return cnt, err
 }
 
@@ -66,4 +60,32 @@ func (m *modelAttribute) search(ctx core.ContextParams, cond universalsql.Condit
 	resultAttrs = []metadata.Attribute{}
 	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).All(ctx, &resultAttrs)
 	return resultAttrs, err
+}
+
+func (m *modelAttribute) searchReturnMapStr(ctx core.ContextParams, cond universalsql.Condition) (resultAttrs []mapstr.MapStr, err error) {
+
+	resultAttrs = []mapstr.MapStr{}
+	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).All(ctx, &resultAttrs)
+	return resultAttrs, err
+}
+
+func (m *modelAttribute) delete(ctx core.ContextParams, cond universalsql.Condition) (cnt uint64, err error) {
+
+	cnt, err = m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).Count(ctx)
+	if nil != err {
+		blog.Errorf("request(%s): database count operation is failed, error info is %s", ctx.ReqID, err.Error())
+		return cnt, err
+	}
+
+	if 0 == cnt {
+		return cnt, nil
+	}
+
+	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Delete(ctx, cond.ToMapStr())
+	if nil != err {
+		blog.Errorf("request(%s): database deletion operation is failed, error info is %s", ctx.ReqID, err.Error())
+		return 0, err
+	}
+
+	return cnt, err
 }
