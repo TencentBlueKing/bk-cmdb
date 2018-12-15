@@ -13,6 +13,7 @@
 package association
 
 import (
+	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/source_controller/coreservice/core"
@@ -25,6 +26,10 @@ func (m *associationModel) isExistsAssociationID(ctx core.ContextParams, associa
 	existsCheckCond.Element(&mongo.Eq{Key: metadata.AssociationFieldSupplierAccount, Val: ctx.SupplierAccount})
 
 	cnt, err := m.count(ctx, existsCheckCond)
+	if nil != err {
+		blog.Errorf("request(%s): it is to failed to check whether the associationID (%s) is exists, error info is %s", ctx.ReqID, associationID, err.Error())
+		return false, err
+	}
 	return 0 != cnt, err
 }
 
@@ -36,6 +41,10 @@ func (m *associationModel) isExistsAssociationObjectWithAnotherObject(ctx core.C
 	existsCheckCond.Element(&mongo.Eq{Key: metadata.AssociationFieldAssociationObjectID, Val: anotherObjectID})
 
 	cnt, err := m.count(ctx, existsCheckCond)
+	if nil != err {
+		blog.Errorf("request(%s): it is to failed to check whether the association (%s=>%s) is exists by the condition (%v), error info is %s", ctx.ReqID, targetObjectID, anotherObjectID, existsCheckCond.ToMapStr(), err.Error())
+		return false, err
+	}
 	return 0 != cnt, err
 }
 

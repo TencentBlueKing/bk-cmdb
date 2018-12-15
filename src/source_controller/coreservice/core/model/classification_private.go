@@ -14,22 +14,51 @@ package model
 
 import (
 	"configcenter/src/common"
-	"configcenter/src/common/mapstr"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/universalsql"
+	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (m *modelClassification) hasModel(ctx core.ContextParams, cond mapstr.MapStr) (cnt uint64, exists bool, err error) {
+func (m *modelClassification) isValid(ctx core.ContextParams, classificationID string) (bool, error) {
 
-	cnt, err = m.dbProxy.Table(common.BKTableNameObjDes).Find(cond).Count(ctx)
+	cond := mongo.NewCondition()
+	cond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationID, Val: classificationID})
+	cond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationSupplierAccount, Val: ctx.SupplierAccount})
+
+	cnt, err := m.count(ctx, cond)
+	return 0 != cnt, err
+}
+
+func (m *modelClassification) isExists(ctx core.ContextParams, classificationID string) (origin *metadata.Classification, exists bool, err error) {
+
+	origin = &metadata.Classification{}
+	cond := mongo.NewCondition()
+	cond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationID, Val: ctx.SupplierAccount})
+	cond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationID, Val: classificationID})
+	err = m.dbProxy.Table(common.BKTableNameObjClassifiction).Find(cond.ToMapStr()).One(ctx, origin)
+	if nil != err && !m.dbProxy.IsNotFoundError(err) {
+		return origin, false, err
+	}
+	return origin, !m.dbProxy.IsNotFoundError(err), nil
+}
+
+func (m *modelClassification) hasModel(ctx core.ContextParams, cond universalsql.Condition) (cnt uint64, exists bool, err error) {
+
+	cnt, err = m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).Count(ctx)
+	if nil != err {
+		blog.Errorf("request(%s): it is failed to execute database count operation on the table(%s) by the condition(%v), error info is %s", ctx.ReqID, common.BKTableNameObjDes, cond.ToMapStr(), err.Error())
+		return 0, false, err
+	}
 	exists = 0 != cnt
 	return cnt, exists, err
 }
 
-func (m *modelClassification) searchClassification(ctx core.ContextParams, cond mapstr.MapStr) ([]metadata.Classification, error) {
+func (m *modelClassification) cascadeDeleteModel(ctx core.ContextParams, classificationIDS []string) (uint64, error) {
 
-	results := []metadata.Classification{}
-	err := m.dbProxy.Table(common.BKTableNameObjClassifiction).Find(cond).All(ctx, &results)
-
-	return results, err
+	deleteCond := mongo.NewCondition()
+	deleteCond.Element(&mongo.In{Key: metadata.ModelFieldObjCls, Val: classificationIDS})
+	deleteCond.Element(&mongo.Eq{Key: metadata.ModelFieldOwnerID, Val: ctx.SupplierAccount})
+	return m.model.cascadeDelete(ctx, deleteCond)
 }
