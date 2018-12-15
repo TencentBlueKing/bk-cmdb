@@ -96,6 +96,7 @@ const (
 	topoGraphicsSearch = `objects/topographics/scope_type/[a-z0-9A-Z-_]+/scope_id/[a-z0-9A-Z-_]+/action/search$`
 	searchUserAPI      = `userapi/search/[0-9]+$`
 	searchUniquesInfo  = `/api/v3/object/[a-z0-9A-Z_]+/unique/action/search$`
+	exportObjectExcel  = "/object/owner/[a-z0-9A-Z]+/object/[a-z0-9A-Z_]+/export$"
 )
 
 //system config privilege regexp
@@ -106,6 +107,7 @@ var (
 	TopoGraphicsSearchRegexp  = regexp.MustCompile(topoGraphicsSearch)
 	SearchUserAPIRegexp       = regexp.MustCompile(searchUserAPI)
 	SearchObjectUniquesRegexp = regexp.MustCompile(searchUniquesInfo)
+	ExportObjectExcelRegexp   = regexp.MustCompile(exportObjectExcel)
 )
 
 //host update string
