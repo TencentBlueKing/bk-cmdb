@@ -16,7 +16,7 @@
                         <span class="group-name">{{group.info['bk_group_name']}}</span>
                         <span class="group-count">({{group.properties.length}})</span>
                         <i class="title-icon icon icon-cc-edit"
-                            v-if="group.info['bk_group_id'] !== 'none'"
+                            v-if="authority.includes('update') && group.info['bk_group_id'] !== 'none'"
                             @click="handleEditGroupName(group)">
                         </i>
                     </template>

@@ -693,7 +693,9 @@
                     edges: this.networkDataSet.edges
                 }, this.network.options)
                 this.networkInstance.setOptions({nodes: {fixed: true}})
-                this.initPosition()
+                if (this.authority.includes('update')) {
+                    this.initPosition()
+                }
                 this.addListener()
             },
             // 设置节点数据
