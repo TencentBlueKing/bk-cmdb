@@ -151,6 +151,8 @@ function handleReject (error, config) {
             window.location.href = Site.login
         } else if (data && data['bk_error_msg']) {
             nextError.message = data['bk_error_msg']
+        } else if (status === 403) {
+            nextError.message = '无权限操作'
         } else if (status === 500) {
             nextError.message = '系统出现异常, 请记录下错误场景并与开发人员联系, 谢谢!'
         }
