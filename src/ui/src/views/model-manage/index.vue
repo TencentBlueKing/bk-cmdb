@@ -19,12 +19,14 @@
                 <p class="group-title">
                     <span>{{classification['bk_classification_name']}}</span>
                     <span class="number">({{classification['bk_objects'].length}})</span>
-                    <i class="icon-cc-edit text-primary"
-                    v-if="classification['bk_classification_type'] !== 'inner'"
-                    @click="showGroupDialog(true, classification)"></i>
-                    <i class="icon-cc-del text-primary"
-                    v-if="classification['bk_classification_type'] !== 'inner'"
-                    @click="deleteGroup(classification)"></i>
+                    <template v-if="authority.includes('update')">
+                        <i class="icon-cc-edit text-primary"
+                        v-if="classification['bk_classification_type'] !== 'inner'"
+                        @click="showGroupDialog(true, classification)"></i>
+                        <i class="icon-cc-del text-primary"
+                        v-if="classification['bk_classification_type'] !== 'inner'"
+                        @click="deleteGroup(classification)"></i>
+                    </template>
                 </p>
                 <ul class="model-list clearfix" >
                     <li class="model-item"
