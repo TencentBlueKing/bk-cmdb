@@ -25,11 +25,34 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type mockDependences struct {
+}
+
+// HasInstance used to check if the model has some instances
+func (s *mockDependences) HasInstance(ctx core.ContextParams, objIDS []string) (exists bool, err error) {
+	return false, nil
+}
+
+// HasAssociation used to check if the model has some associations
+func (s *mockDependences) HasAssociation(ctx core.ContextParams, objIDS []string) (exists bool, err error) {
+	return false, nil
+}
+
+// CascadeDeleteAssociation cascade delete all associated data (included instances, model association, instance association) associated with modelObjID
+func (s *mockDependences) CascadeDeleteAssociation(ctx core.ContextParams, objIDS []string) error {
+	return nil
+}
+
+// CascadeDeleteInstances cascade delete all instances(included instances, instance association) associated with modelObjID
+func (s *mockDependences) CascadeDeleteInstances(ctx core.ContextParams, objIDS []string) error {
+	return nil
+}
+
 func newModel(t *testing.T) core.ModelOperation {
 
 	db, err := mongo.NewMgo("mongodb://cc:cc@localhost:27010,localhost:27011,localhost:27012,localhost:27013/cmdb")
 	require.NoError(t, err)
-	return model.New(db, nil)
+	return model.New(db, &mockDependences{})
 }
 
 var defaultCtx = func() core.ContextParams {

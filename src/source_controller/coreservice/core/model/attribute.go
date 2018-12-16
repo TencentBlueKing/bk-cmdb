@@ -47,6 +47,7 @@ func (m *modelAttribute) CreateModelAttributes(ctx core.ContextParams, objID str
 
 	for attrIdx, attr := range inputParam.Attributes {
 
+		attr.OwnerID = ctx.SupplierAccount
 		_, exists, err := m.isExists(ctx, attr.PropertyID)
 		if nil != err {
 			blog.Errorf("request(%s): it is failed, to check if the attribute's field propertyID(%s) is exists, error info is %s", ctx.ReqID, attr.PropertyID, err.Error())
@@ -102,7 +103,7 @@ func (m *modelAttribute) SetModelAttributes(ctx core.ContextParams, objID string
 			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
 			continue
 		}
-
+		attr.OwnerID = ctx.SupplierAccount
 		if exists {
 			cond := mongo.NewCondition()
 			cond.Element(&mongo.Eq{Key: metadata.AttributeFieldSupplierAccount, Val: ctx.SupplierAccount})
