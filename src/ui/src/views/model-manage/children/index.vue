@@ -3,17 +3,24 @@
         <div class="model-info" v-bkloading="{isLoading: $loading('searchObjects')}">
             <template v-if="activeModel !== null">
                 <div class="choose-icon-wrapper">
-                    <div class="icon-box" @click="isIconListShow = true">
-                        <i class="icon" :class="activeModel ? activeModel['bk_obj_icon'] : 'icon-cc-default'"></i>
-                        <p class="hover-text">{{$t('ModelManagement["点击切换"]')}}</p>
-                    </div>
-                    <div class="choose-icon-box" v-if="isIconListShow" v-click-outside="hideChooseBox">
-                        <the-choose-icon
-                            :type="'update'"
-                            v-model="modelInfo.objIcon"
-                            @chooseIcon="chooseIcon"
-                        ></the-choose-icon>
-                    </div>
+                    <template v-if="authority.includes('update')">
+                        <div class="icon-box" @click="isIconListShow = true">
+                            <i class="icon" :class="activeModel ? activeModel['bk_obj_icon'] : 'icon-cc-default'"></i>
+                            <p class="hover-text">{{$t('ModelManagement["点击切换"]')}}</p>
+                        </div>
+                        <div class="choose-icon-box" v-if="isIconListShow" v-click-outside="hideChooseBox">
+                            <the-choose-icon
+                                :type="'update'"
+                                v-model="modelInfo.objIcon"
+                                @chooseIcon="chooseIcon"
+                            ></the-choose-icon>
+                        </div>
+                    </template>
+                    <template v-else>
+                        <div class="icon-box" style="cursor: default;">
+                            <i class="icon" :class="activeModel ? activeModel['bk_obj_icon'] : 'icon-cc-default'"></i>
+                        </div>
+                    </template>
                 </div>
                 <div class="model-text">
                     <span>{{$t('ModelManagement["唯一标识"]')}}：</span>

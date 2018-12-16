@@ -31,8 +31,7 @@
         </div>
         <div class="relation-component">
             <component ref="dynamicComponent"
-                :is="activeComponent"
-                @on-relation-loaded="handleRelationLoaded">
+                :is="activeComponent">
             </component>
         </div>
     </div>
@@ -91,7 +90,26 @@
                 }
             }
         },
+        created () {
+            this.getRelation()
+        },
         methods: {
+            async getRelation () {
+                try {
+                    const data = await this.$store.dispatch('objectAssociation/searchObjectAssociation', {
+                        params: {
+                            condition: {
+                                'bk_obj_id': this.objId
+                            }
+                        }
+                    })
+                    if (data.length) {
+                        this.hasRelation = true
+                    }
+                } catch (e) {
+                    this.hasRelation = false
+                }
+            },
             handleShowUpdate () {
                 if (this.activeComponent === 'cmdbRelationUpdate') {
                     this.activeComponent = this.previousComponent
@@ -102,9 +120,6 @@
             },
             handleFullScreen () {
                 this.$refs.dynamicComponent.toggleFullScreen(true)
-            },
-            handleRelationLoaded (relation) {
-                this.hasRelation = !!relation.length
             }
         }
     }
