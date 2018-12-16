@@ -85,6 +85,7 @@ const (
 	SearchObjectAssociation          = "/api/v3/object/association/action/search"
 	SearchObjects                    = "/api/v3/objects"
 	ExportHosts                      = "/hosts/export"
+	SearchInstAssociation            = "/api/v3/inst/association/action/search"
 )
 
 //system config privilege pattern
