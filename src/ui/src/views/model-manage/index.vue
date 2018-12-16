@@ -73,7 +73,8 @@
                             <input type="text" class="cmdb-form-input"
                             v-model.trim="groupDialog.data['bk_classification_id']"
                             name="classifyId"
-                            v-validate="'required|classifyId'">
+                            v-validate="'required|classifyId'"
+                            :disabled="groupDialog.isEdit">
                             <p class="form-error">{{errors.first('classifyId')}}</p>
                         </div>
                         <i class="bk-icon icon-info-circle" v-tooltip="$t('ModelManagement[\'下划线，数字，英文小写的组合\']')"></i>
