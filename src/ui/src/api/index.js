@@ -4,6 +4,7 @@ import md5 from 'md5'
 import CachedPromise from './_cached-promise'
 import RequestQueue from './_request-queue'
 import { $error, $warn } from '@/magicbox'
+import { language } from '@/i18n'
 
 const Site = window.Site
 window.API_HOST = Site.buildVersion.indexOf('dev') !== -1 ? Site.url : (window.location.origin + '/')
@@ -152,9 +153,9 @@ function handleReject (error, config) {
         } else if (data && data['bk_error_msg']) {
             nextError.message = data['bk_error_msg']
         } else if (status === 403) {
-            nextError.message = '无权限操作'
+            nextError.message = language === 'en' ? 'You don\'t have permission.' : '无权限操作'
         } else if (status === 500) {
-            nextError.message = '系统出现异常, 请记录下错误场景并与开发人员联系, 谢谢!'
+            nextError.message = language === 'en' ? 'System error, please contact developers.' : '系统出现异常, 请记录下错误场景并与开发人员联系, 谢谢!'
         }
         $error(nextError.message)
         return Promise.reject(nextError)
