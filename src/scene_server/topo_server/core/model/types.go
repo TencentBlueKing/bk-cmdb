@@ -64,3 +64,8 @@ type Factory interface {
 	CreateCommonAssociation(params types.ContextParams, obj Object, asstKey string, asstObj Object) Association
 	CreateMainLineAssociatin(params types.ContextParams, obj Object, asstKey string, asstObj Object) Association
 }
+
+type ObjectAssoPair struct {
+	Object      Object
+	Association metadata.Association
+}
