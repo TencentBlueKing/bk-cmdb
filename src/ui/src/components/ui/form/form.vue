@@ -116,7 +116,7 @@
             },
             groupedProperties () {
                 return this.$groupedProperties.map(properties => {
-                    return properties.filter(property => !['singleasst', 'multiasst'].includes(property['bk_property_type']))
+                    return properties.filter(property => !['singleasst', 'multiasst', 'foreignkey'].includes(property['bk_property_type']))
                 })
             }
         },

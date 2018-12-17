@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -131,13 +132,6 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 		return nil, params.Err.Error(common.CCErrTopoBizTopoLevelOverLimit)
 	}
 
-	// check and fetch the association object's classification
-	objCls, err := a.cls.FindSingleClassification(params, data.ClassificationID)
-	if nil != err {
-		blog.Errorf("[opration-asst] failed to find the single classification, error info is %s", err.Error())
-		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, data.ClassificationID)
-	}
-
 	// find the mainline parent object
 	parentObj, err := a.obj.FindSingleObject(params, data.AsstObjID)
 	switch t := err.(type) {
@@ -165,25 +159,14 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 		return nil, params.Err.Errorf(common.CCErrCommDuplicateItem, data.ObjectID)
 	}
 
-	currentObj := a.modelFactory.CreaetObject(params)
-	currentObj.SetID(data.ObjectID)
-	currentObj.SetName(data.ObjectName)
-	currentObj.SetIcon(data.ObjectIcon)
-	currentObj.SetClassification(objCls)
-
-	if err = currentObj.Save(nil); nil != err {
-		blog.Errorf("[operation-asst] failed to create the object(%s), error info is %s", currentObj.GetID(), err.Error())
-		return nil, err
+	objData := mapstr.MapStr{
+		common.BKObjIDField:            data.ObjectID,
+		common.BKObjNameField:          data.ObjectName,
+		common.BKObjIconField:          data.ObjectIcon,
+		common.BKClassificationIDField: data.ClassificationID,
 	}
-
-	// create the default group
-	grp := currentObj.CreateGroup()
-	grp.SetDefault(true)
-	grp.SetIndex(-1)
-	grp.SetName("Default")
-	grp.SetID("default")
-	if err = grp.Save(nil); nil != err {
-		blog.Errorf("[operation-obj] failed to create the default group, error info is %s", err.Error())
+	currentObj, err := a.obj.CreateObject(params, objData)
+	if err != nil {
 		return nil, err
 	}
 

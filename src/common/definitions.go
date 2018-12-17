@@ -181,6 +181,9 @@ const (
 	// BKDBSum the db opeartor
 	BKDBSum = "$sum"
 
+	// BKDBPush the db opeartor
+	BKDBPush = "$push"
+
 	// BKDBSortFieldSep the db sort field split char
 	BKDBSortFieldSep = ","
 )
