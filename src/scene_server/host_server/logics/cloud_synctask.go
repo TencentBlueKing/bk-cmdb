@@ -183,8 +183,9 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 
 	defer lgc.CloudSyncHistory(taskID, startTime, cloudHistory, pheader)
 
+	var errOrigin error
 	defer func() {
-		if r := recover(); r != nil {
+		if errOrigin != nil {
 			cloudHistory.Status = "fail"
 		}
 	}()
@@ -194,6 +195,7 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 	host, err := lgc.SearchHost(pheader, body, false)
 	if err != nil {
 		blog.Errorf("search host failed, err: %v", err)
+		errOrigin = err
 		return err
 	}
 
@@ -202,12 +204,14 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 		hostInfo, err := mapstr.NewFromInterface(host.Info[i]["host"])
 		if err != nil {
 			blog.Errorf("get hostInfo failed with err: %v", err)
+			errOrigin = err
 			return err
 		}
 
 		ip, errH := hostInfo.String(common.BKHostInnerIPField)
 		if errH != nil {
 			blog.Errorf("get hostIp failed with err: %v")
+			errOrigin = errH
 			return errH
 		}
 
@@ -218,17 +222,20 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 	secretID, errS := taskList.String("bk_secret_id")
 	if errS != nil {
 		blog.Errorf("mapstr convert to string failed.")
+		errOrigin = errS
 		return errS
 	}
 	secretKeyEncrypted, errKey := taskList.String("bk_secret_key")
 	if errKey != nil {
 		blog.Errorf("mapstr convert to string failed.")
+		errOrigin = errKey
 		return errKey
 	}
 
 	decodeBytes, errDecode := base64.StdEncoding.DecodeString(secretKeyEncrypted)
 	if errDecode != nil {
 		blog.Errorf("Base64 decode secretKey failed.")
+		errOrigin = errDecode
 		return errDecode
 	}
 	secretKey := string(decodeBytes)
@@ -237,6 +244,7 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 	cloudHostInfo, err := lgc.ObtainCloudHosts(secretID, secretKey)
 	if err != nil {
 		blog.Errorf("obtain cloud hosts failed with err: %v", err)
+		errOrigin = err
 		return err
 	}
 
@@ -246,7 +254,7 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 	for _, hostInfo := range cloudHostInfo {
 		newHostInnerip, ok := hostInfo[common.BKHostInnerIPField].(string)
 		if !ok {
-			blog.Errorf("interface convert to string failed, err: %v", err)
+			blog.Errorf("interface convert to string failed")
 		}
 		if !util.InStrArr(existHostList, newHostInnerip) {
 			newAddHost = append(newAddHost, newHostInnerip)
@@ -273,29 +281,34 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 			existHostInfo, err := mapstr.NewFromInterface(host.Info[i]["host"])
 			if err != nil {
 				blog.Errorf("get hostInfo failed with err: %v", err)
+				errOrigin = err
 				return err
 			}
 
 			existHostIp, ok := existHostInfo.String(common.BKHostInnerIPField)
 			if ok != nil {
 				blog.Errorf("get hostIp failed with err: %v", ok)
+				errOrigin = ok
 				break
 			}
 			existHostOsname, osOk := existHostInfo.String(common.BKOSNameField)
 			if osOk != nil {
 				blog.Errorf("get os name failed with err: %v", ok)
+				errOrigin = osOk
 				break
 			}
 
 			existHostOuterip, ipOk := existHostInfo.String(common.BKHostOuterIPField)
 			if ipOk != nil {
-				blog.Errorf("get outerip failed with err: %v", ok)
+				blog.Errorf("get outerip failed with")
+				errOrigin = ipOk
 				break
 			}
 
 			existHostID, idOk := existHostInfo.String(common.BKHostIDField)
 			if idOk != nil {
-				blog.Errorf("get hostID failed with err: %v", ok)
+				blog.Errorf("get hostID failed")
+				errOrigin = idOk
 				break
 			}
 
@@ -314,12 +327,14 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 	attrConfirm, errAttr := taskList.Bool("bk_attr_confirm")
 	if errAttr != nil {
 		blog.Errorf("mapstr convert to bool failed.")
+		errOrigin = errAttr
 		return errAttr
 	}
 
 	resourceConfirm, errR := taskList.Bool("bk_confirm")
 	if errR != nil {
 		blog.Errorf("mapstr convert to string failed.")
+		errOrigin = errR
 		return errR
 	}
 
@@ -328,6 +343,7 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 			err := lgc.AddCloudHosts(pheader, newCloudHost)
 			if err != nil {
 				blog.Errorf("add cloud hosts failed, err: %v", err)
+				errOrigin = err
 				return err
 			}
 		}
@@ -335,6 +351,7 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 			err := lgc.UpdateCloudHosts(pheader, cloudHostAttr)
 			if err != nil {
 				blog.Errorf("update cloud hosts failed, err: %v", err)
+				errOrigin = err
 				return err
 			}
 		}
@@ -344,6 +361,7 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 		err := lgc.NewAddConfirm(taskList, pheader, newCloudHost)
 		if err != nil {
 			blog.Errorf("newly add cloud resource confirm failed, err: %v", err)
+			errOrigin = err
 			return err
 		}
 		cloudHistory.Status = "waiting_confirm"
@@ -357,16 +375,19 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 			innerIp, errIp := host.String(common.BKHostInnerIPField)
 			if errIp != nil {
 				blog.Debug("mapstr.Map convert to string failed.")
+				errOrigin = errIp
 				return errIp
 			}
 			outerIp, errOut := host.String(common.BKHostOuterIPField)
 			if errOut != nil {
 				blog.Error("mapstr.Map convert to string failed")
+				errOrigin = errOut
 				return errOut
 			}
 			osName, errOs := host.String(common.BKOSNameField)
 			if errOs != nil {
 				blog.Error("mapstr.Map convert to string failed")
+				errOrigin = errOs
 				return errOs
 			}
 
@@ -385,6 +406,7 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 			_, err := lgc.CoreAPI.HostController().Cloud().ResourceConfirm(context.Background(), pheader, resourceConfirm)
 			if err != nil {
 				blog.Errorf("add resource confirm failed with err: %v", err)
+				errOrigin = err
 				return err
 			}
 		}
