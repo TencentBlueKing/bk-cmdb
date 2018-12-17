@@ -14,6 +14,7 @@ import date from './form/date.vue'
 import dateRange from './form/date-range.vue'
 import time from './form/time.vue'
 import int from './form/int.vue'
+import float from './form/float.vue'
 import longchar from './form/longchar.vue'
 import singlechar from './form/singlechar.vue'
 import timezone from './form/timezone.vue'
@@ -40,6 +41,7 @@ const install = (Vue, opts = {}) => {
         dateRange,
         time,
         int,
+        float,
         longchar,
         singlechar,
         timezone,
@@ -72,6 +74,7 @@ export default {
     dateRange,
     time,
     int,
+    float,
     longchar,
     singlechar,
     timezone,
