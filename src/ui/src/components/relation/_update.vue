@@ -14,6 +14,7 @@
             <div class="filter-group filter-group-property fl">
                 <cmdb-property-filter
                     :objId="currentAsstObj"
+                    :excludeType="['foreignkey']"
                     @on-property-selected="handlePropertySelected"
                     @on-operator-selected="handleOperatorSelected"
                     @on-value-change="handleValueChange">
@@ -305,18 +306,22 @@
                 return this.existInstAssociation.some(exist => exist['bk_asst_inst_id'] === inst[this.instanceIdKey])
             },
             async updateAssociation (instId, updateType = 'new') {
-                if (updateType === 'new') {
-                    await this.createAssociation(instId)
-                    this.$success(this.$t('Association["添加关联成功"]'))
-                } else if (updateType === 'remove') {
-                    await this.deleteAssociation(instId)
-                    this.$success(this.$t('Association["取消关联成功"]'))
-                } else if (updateType === 'update') {
-                    await this.deleteAssociation(this.existInstAssociation[0]['bk_asst_inst_id'])
-                    await this.createAssociation(instId)
-                    this.$success(this.$t('Association["添加关联成功"]'))
+                try {
+                    if (updateType === 'new') {
+                        await this.createAssociation(instId)
+                        this.$success(this.$t('Association["添加关联成功"]'))
+                    } else if (updateType === 'remove') {
+                        await this.deleteAssociation(instId)
+                        this.$success(this.$t('Association["取消关联成功"]'))
+                    } else if (updateType === 'update') {
+                        await this.deleteAssociation(this.existInstAssociation[0]['bk_asst_inst_id'])
+                        await this.createAssociation(instId)
+                        this.$success(this.$t('Association["添加关联成功"]'))
+                    }
+                    this.getExistInstAssociation()
+                } catch (e) {
+                    console.log(e)
                 }
-                this.getExistInstAssociation()
             },
             createAssociation (instId) {
                 return this.createInstAssociation({
@@ -328,14 +333,9 @@
                 })
             },
             deleteAssociation (instId) {
+                const instAssociation = this.existInstAssociation.find(exist => exist['bk_asst_inst_id'] === instId) || {}
                 return this.deleteInstAssociation({
-                    config: {
-                        params: {
-                            'bk_obj_asst_id': this.currentOption['bk_obj_asst_id'],
-                            'bk_inst_id': this.instId,
-                            'bk_asst_inst_id': instId
-                        }
-                    }
+                    id: instAssociation.id
                 })
             },
             beforeUpdate (event, instId, updateType = 'new') {
@@ -431,22 +431,26 @@
             getObjInstance (objId, config) {
                 return this.searchInst({
                     objId: objId,
-                    params: this.getObjCondition(),
+                    params: this.getObjParams(),
                     config
                 })
             },
-            getObjCondition () {
-                let condition = {}
+            getObjParams () {
+                const params = {
+                    page: this.page,
+                    fields: {},
+                    condition: {}
+                }
                 const property = this.getProperty(this.filter.id)
                 if (this.filter.value !== '' && property) {
                     const objId = this.currentAsstObj
-                    condition[objId] = [{
+                    params.condition[objId] = [{
                         'field': this.filter.id,
                         'operator': this.filter.operator,
                         'value': this.filter.value
                     }]
                 }
-                return condition
+                return params
             },
             setTableList (data, asstObjId) {
                 const properties = this.properties

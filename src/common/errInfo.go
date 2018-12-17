@@ -269,7 +269,7 @@ const (
 	// the destination association object does not exist
 	CCErrTopoAssociationDestinationObjectNotExist = 1101040
 	// invalid object association id, should be int64
-	CCErrTopoInvalidObjectAssociaitonID = 1101041
+	CCErrTopoInvalidObjectAssociationID = 1101041
 	// got multiple object association with one association id
 	CCErrTopoGotMultipleAssociationInstance = 1101042
 	// association with a object has multiple instance, can not be deleted.
@@ -300,6 +300,14 @@ const (
 	CCErrorTopoDeletePredefinedAssociation = 1101055
 	// association do not exist.
 	CCErrorTopoAssociationDoNotExist = 1101056
+	// create model's instance patch, but instance's data missing field bk_inst_name
+	CCErrorTopoObjectInstanceMissingInstanceNameField = 1101057
+	// object instance's bk_inst_name filed is not string
+	CCErrorTopoInvalidObjectInstanceNameFieldValue = 1101058
+	// create model's instance patch, but instance's name is duplicate.
+	CCErrorTopoMutipleObjectInstanceName = 1101059
+	// association kind has already been instantiated
+	CCErrorTopoAssociationKindHasBeenUsed = 1101060
 
 	CCErrTopoAppDeleteFailed                       = 1001031
 	CCErrTopoAppUpdateFailed                       = 1001032

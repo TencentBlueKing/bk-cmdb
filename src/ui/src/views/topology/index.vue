@@ -666,8 +666,14 @@
                 promise.then(() => {
                     const instNameKey = ['set', 'module'].includes(objId) ? `bk_${objId}_name` : 'bk_inst_name'
                     selectedNode['bk_inst_name'] = formData[instNameKey]
-                    this.tree.selectedNodeInst = value
-                    this.tree.flatternedSelectedNodeInst = this.$tools.flatternList(this.tab.properties, value)
+                    this.tree.selectedNodeInst = {
+                        ...this.tree.selectedNodeInst,
+                        ...value
+                    }
+                    this.tree.flatternedSelectedNodeInst = {
+                        ...this.tree.flatternedSelectedNodeInst,
+                        ...this.$tools.flatternItem(this.tab.properties, value)
+                    }
                     this.tab.type = 'details'
                     this.$success(this.$t('Common[\'修改成功\']'))
                 })

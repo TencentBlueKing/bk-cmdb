@@ -259,6 +259,7 @@
                 this.setTableHeader()
             },
             objId () {
+                this.$store.commit('setHeaderTitle', this.$model['bk_obj_name'])
                 this.reload()
             }
         },
@@ -368,7 +369,7 @@
             },
             handleRowClick (item) {
                 this.slider.show = true
-                this.slider.title = `${this.$t("Common['编辑']")} ${item['bk_inst_name']}`
+                this.slider.title = item['bk_inst_name']
                 this.attribute.inst.details = item
                 this.attribute.type = 'details'
             },
