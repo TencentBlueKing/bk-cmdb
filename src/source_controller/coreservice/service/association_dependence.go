@@ -18,25 +18,12 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
-	"configcenter/src/source_controller/coreservice/core/association"
-	"configcenter/src/source_controller/coreservice/core/instances"
-	"configcenter/src/storage/dal"
 )
 
-type associationDepend struct {
-	instanceOperation core.InstanceOperation
-}
-
-func NewAssociationDepend(dbProxy dal.RDB) association.OperationDependences {
-	asstDepend := &associationDepend{}
-	asstDepend.instanceOperation = instances.New(dbProxy, nil)
-	return asstDepend
-
-}
-func (m *associationDepend) IsInstanceExist(ctx core.ContextParams, objID string, instID uint64) (exists bool, err error) {
+func (s *coreService) IsInstanceExist(ctx core.ContextParams, objID string, instID uint64) (exists bool, err error) {
 	instIDFieldName := common.GetInstIDField(objID)
 	searchCond := metadata.QueryCondition{Condition: mapstr.MapStr{instIDFieldName: instID}}
-	result, err := m.instanceOperation.SearchModelInstance(ctx, objID, searchCond)
+	result, err := s.core.InstanceOperation().SearchModelInstance(ctx, objID, searchCond)
 	if nil != err {
 		blog.Errorf("search model instance error: %v", err)
 		return false, err

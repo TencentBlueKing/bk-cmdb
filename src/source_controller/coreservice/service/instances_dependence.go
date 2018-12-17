@@ -17,34 +17,15 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-
-	//	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/source_controller/coreservice/core"
-	"configcenter/src/source_controller/coreservice/core/association"
-	"configcenter/src/source_controller/coreservice/core/instances"
-	"configcenter/src/source_controller/coreservice/core/model"
-	"configcenter/src/storage/dal"
 )
 
-type instancesDepend struct {
-	modelOperation core.ModelOperation
-	asstOperation  core.AssociationOperation
-}
-
-func NewInstancesDepend(dbProxy dal.RDB) instances.OperationDependences {
-	instDepend := &instancesDepend{}
-	instDepend.modelOperation = model.New(dbProxy, nil)
-	instDepend.asstOperation = association.New(dbProxy, nil)
-	return instDepend
-
-}
-
 // IsInstanceExist used to check if the  instances  asst exist
-func (m *instancesDepend) IsInstAsstExist(ctx core.ContextParams, objID string, instID uint64) (exists bool, err error) {
+func (s *coreService) IsInstAsstExist(ctx core.ContextParams, objID string, instID uint64) (exists bool, err error) {
 	cond := mapstr.MapStr{common.BKObjIDField: objID,
 		common.BKInstIDField: instID}
 	queryCond := metadata.QueryCondition{Condition: cond}
-	objInsts, err := m.asstOperation.SearchInstanceAssociation(ctx, queryCond)
+	objInsts, err := s.core.AssociationOperation().SearchInstanceAssociation(ctx, queryCond)
 	if nil != err {
 		blog.Errorf("search instance association error %v", err)
 		return false, err
@@ -54,7 +35,7 @@ func (m *instancesDepend) IsInstAsstExist(ctx core.ContextParams, objID string, 
 		common.BKAsstInstIDField: instID,
 	}
 	queryCond = metadata.QueryCondition{Condition: cond}
-	objAsstInsts, err := m.asstOperation.SearchInstanceAssociation(ctx, queryCond)
+	objAsstInsts, err := s.core.AssociationOperation().SearchInstanceAssociation(ctx, queryCond)
 	if nil != err {
 		blog.Errorf("search instance to association error %v", err)
 		return false, err
@@ -67,11 +48,11 @@ func (m *instancesDepend) IsInstAsstExist(ctx core.ContextParams, objID string, 
 }
 
 // DeleteInstAsst used to delete inst asst
-func (m *instancesDepend) DeleteInstAsst(ctx core.ContextParams, objID string, instID uint64) error {
+func (s *coreService) DeleteInstAsst(ctx core.ContextParams, objID string, instID uint64) error {
 	cond := mapstr.MapStr{common.BKObjIDField: objID,
 		common.BKInstIDField: instID}
 	deleteCond := metadata.DeleteOption{Condition: cond}
-	_, err := m.asstOperation.DeleteInstanceAssociation(ctx, deleteCond)
+	_, err := s.core.AssociationOperation().DeleteInstanceAssociation(ctx, deleteCond)
 	if nil != err {
 		blog.Errorf("delete instance association error %v", err)
 		return err
@@ -81,7 +62,7 @@ func (m *instancesDepend) DeleteInstAsst(ctx core.ContextParams, objID string, i
 		common.BKAsstInstIDField: instID,
 	}
 	deleteCond = metadata.DeleteOption{Condition: cond}
-	_, err = m.asstOperation.DeleteInstanceAssociation(ctx, deleteCond)
+	_, err = s.core.AssociationOperation().DeleteInstanceAssociation(ctx, deleteCond)
 	if nil != err {
 		blog.Errorf("delete instance to association error %v", err)
 		return err
@@ -90,13 +71,13 @@ func (m *instancesDepend) DeleteInstAsst(ctx core.ContextParams, objID string, i
 }
 
 // SelectObjectAttWithParams select object att with params
-func (m *instancesDepend) SelectObjectAttWithParams(ctx core.ContextParams, objID string) (attributeArr []metadata.Attribute, err error) {
+func (s *coreService) SelectObjectAttWithParams(ctx core.ContextParams, objID string) (attributeArr []metadata.Attribute, err error) {
 	attributeArr = make([]metadata.Attribute, 0)
 	condition := mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBEQ: objID}}
 	queryCond := metadata.QueryCondition{
 		Condition: condition,
 	}
-	result, err := m.modelOperation.SearchModelAttributes(ctx, objID, queryCond)
+	result, err := s.core.ModelOperation().SearchModelAttributes(ctx, objID, queryCond)
 	for _, info := range result.Info {
 		attribute := metadata.Attribute{}
 		err := info.ToStructByTag(&attribute, "field")
@@ -109,6 +90,6 @@ func (m *instancesDepend) SelectObjectAttWithParams(ctx core.ContextParams, objI
 }
 
 // SearchUnique search unique attribute
-func (m *instancesDepend) SearchUnique(ctx core.ContextParams, objID string) (uniqueAttr []metadata.ObjectUnique, err error) {
+func (s *coreService) SearchUnique(ctx core.ContextParams, objID string) (uniqueAttr []metadata.ObjectUnique, err error) {
 	return uniqueAttr, nil
 }

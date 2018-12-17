@@ -94,6 +94,24 @@ func (m *modelManager) CreateModel(ctx core.ContextParams, inputParam metadata.C
 }
 func (m *modelManager) SetModel(ctx core.ContextParams, inputParam metadata.SetModel) (*metadata.SetDataResult, error) {
 
+	// check the model attributes value
+	if 0 == len(inputParam.Spec.ObjectID) {
+		blog.Errorf("request(%s): it is failed to create a new model, because of the modelID (%s) is not set", ctx.ReqID, inputParam.Spec.ObjectID)
+		return &metadata.SetDataResult{}, ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.ModelFieldObjectID)
+	}
+
+	// check the input classification ID
+	isValid, err := m.modelClassification.isValid(ctx, inputParam.Spec.ObjCls)
+	if nil != err {
+		blog.Errorf("request(%s): it is failed to check whether the classificationID(%s) is invalid, error info is %s", ctx.ReqID, inputParam.Spec.ObjCls, err.Error())
+		return &metadata.SetDataResult{}, err
+	}
+
+	if !isValid {
+		blog.Warnf("request(%s): it is failed to create a new model, because of the classificationID (%s) is invalid", ctx.ReqID, inputParam.Spec.ObjCls)
+		return &metadata.SetDataResult{}, ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, metadata.ClassificationFieldID)
+	}
+
 	condCheckModel := mongo.NewCondition()
 	condCheckModel.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: inputParam.Spec.ObjectID})
 	condCheckModel.Element(&mongo.Eq{Key: metadata.ModelFieldOwnerID, Val: ctx.SupplierAccount})
@@ -105,9 +123,9 @@ func (m *modelManager) SetModel(ctx core.ContextParams, inputParam metadata.SetM
 	}
 
 	dataResult := &metadata.SetDataResult{}
-
+	inputParam.Spec.OwnerID = ctx.SupplierAccount
 	// set model spec
-	if !exists {
+	if exists {
 		updateCond := mongo.NewCondition()
 		updateCond.Element(&mongo.Eq{Key: metadata.ModelFieldOwnerID, Val: ctx.SupplierAccount})
 		updateCond.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: inputParam.Spec.ObjectID})
@@ -136,15 +154,16 @@ func (m *modelManager) SetModel(ctx core.ContextParams, inputParam metadata.SetM
 		blog.Errorf("request(%s): it is failed to update the attributes (%v) for the model (%s), error info is %s", ctx.ReqID, inputParam.Attributes, inputParam.Spec.ObjectID, err.Error())
 		return dataResult, err
 	}
+	_ = setAttrResult // TODO: how to return this result ? let me think about it;
+	/*
+		// set attribute result, ignore model operation result
+		dataResult.CreatedCount = setAttrResult.CreatedCount
+		dataResult.UpdatedCount = setAttrResult.UpdatedCount
 
-	// set attribute result, ignore model operation result
-	dataResult.CreatedCount = setAttrResult.CreatedCount
-	dataResult.UpdatedCount = setAttrResult.UpdatedCount
-
-	dataResult.Created = append(dataResult.Created, setAttrResult.Created...)
-	dataResult.Updated = append(dataResult.Updated, setAttrResult.Updated...)
-	dataResult.Exceptions = append(dataResult.Exceptions, setAttrResult.Exceptions...)
-
+		dataResult.Created = append(dataResult.Created, setAttrResult.Created...)
+		dataResult.Updated = append(dataResult.Updated, setAttrResult.Updated...)
+		dataResult.Exceptions = append(dataResult.Exceptions, setAttrResult.Exceptions...)
+	*/
 	return dataResult, err
 }
 
@@ -170,8 +189,7 @@ func (m *modelManager) DeleteModel(ctx core.ContextParams, inputParam metadata.D
 		return &metadata.DeletedCount{}, ctx.Error.New(common.CCErrCommParamsInvalid, err.Error())
 	}
 
-	modelItems := []metadata.ObjectDes{}
-	err = m.dbProxy.Table(common.BKTableNameObjDes).Find(deleteCond.ToMapStr()).All(ctx, &modelItems)
+	modelItems, err := m.search(ctx, deleteCond)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to find the all models by the condition (%v), error info is %s", ctx.ReqID, deleteCond.ToMapStr(), err.Error())
 		return &metadata.DeletedCount{}, err
