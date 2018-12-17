@@ -13,18 +13,18 @@
 package service
 
 import (
-	"strconv"
-	"strings"
+    "strconv"
+    "strings"
 
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
-	"configcenter/src/common/mapstr"
-	frtypes "configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
-	paraparse "configcenter/src/common/paraparse"
-	"configcenter/src/scene_server/topo_server/core/operation"
-	"configcenter/src/scene_server/topo_server/core/types"
+    "configcenter/src/common"
+    "configcenter/src/common/blog"
+    "configcenter/src/common/condition"
+    "configcenter/src/common/mapstr"
+    frtypes "configcenter/src/common/mapstr"
+    "configcenter/src/common/metadata"
+    paraparse "configcenter/src/common/paraparse"
+    "configcenter/src/scene_server/topo_server/core/operation"
+    "configcenter/src/scene_server/topo_server/core/types"
 )
 
 // CreateInst create a new inst
@@ -58,7 +58,7 @@ func (s *topoService) CreateInst(params types.ContextParams, pathParams, queryPa
 		}
 		setInst, err := s.core.InstOperation().CreateInstBatch(params, obj, batchInfo)
 		if nil != err {
-			blog.Errorf("failed to create a new %s, %s", objID, err.Error())
+			blog.Errorf("failed to create new object %s, %s", objID, err.Error())
 			return nil, err
 		}
 		return setInst, nil
@@ -388,5 +388,6 @@ func (s *topoService) SearchInstTopo(params types.ContextParams, pathParams, que
 	query.Limit = common.BKNoLimit
 
 	_, instItems, err := s.core.InstOperation().FindInstTopo(params, obj, instID, query)
+
 	return instItems, err
 }

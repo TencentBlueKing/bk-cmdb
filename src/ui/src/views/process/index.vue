@@ -362,7 +362,7 @@
             handleRowClick (item) {
                 this.tab.active = 'attribute'
                 this.slider.show = true
-                this.slider.title = `${this.$t("Common['编辑']")} ${item['bk_process_name']}`
+                this.slider.title = item['bk_process_name']
                 this.attribute.inst.details = item
                 this.attribute.type = 'details'
             },
