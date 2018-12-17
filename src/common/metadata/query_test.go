@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestSearchSort(t *testing.T) {
+func TestSearchSortParseStr(t *testing.T) {
 	type testData struct {
 		input string
 		ss    []SearchSort
@@ -53,6 +53,53 @@ func TestSearchSort(t *testing.T) {
 				return
 			}
 		}
+	}
+
+}
+
+func TestSearchSortToMongo(t *testing.T) {
+	type testData struct {
+		input  []SearchSort
+		output string
+	}
+	testDataArr := []testData{
+		testData{
+			output: "aa:1,bb:1",
+			input: []SearchSort{
+				SearchSort{
+					Field: "aa",
+				},
+				SearchSort{
+					Field: "bb",
+				},
+			},
+		},
+		testData{
+			output: "aa:-1,bb:1,cc:1,dd:1",
+			input: []SearchSort{
+				SearchSort{
+					Field: "aa",
+					IsDsc: true,
+				},
+				SearchSort{
+					Field: "bb",
+				},
+				SearchSort{
+					Field: "cc",
+				},
+				SearchSort{
+					Field: "dd",
+				},
+			},
+		},
+	}
+	for _, testDataItem := range testDataArr {
+		orderBy := NewSearchSortParse().ToMongo(testDataItem.input)
+		if orderBy != testDataItem.output {
+			t.Errorf("%s != %s", orderBy, testDataItem.output)
+			return
+		}
+
 	}
 
 }
