@@ -7,7 +7,7 @@
                         {{ $t('Cloud["任务名称"]')}} :
                     </label>
                     <div class="item-content">
-                        <label>{{curPush.bk_task_name}}</label>
+                        <span>{{curPush.bk_task_name}}</span>
                     </div>
                 </li>
                 <li class="form-item">
@@ -15,7 +15,7 @@
                         {{ $t('Cloud["账号类型"]')}} :
                     </label>
                     <div class="item-content">
-                        <label>{{curPush.bk_account_type}}</label>
+                        <span>{{curPush.bk_account_type}}</span>
                     </div>
                 </li>
                 <li class="form-item">
@@ -37,20 +37,27 @@
                 <li class="form-item">
                     <label for="" class="label-name">{{ $t('Cloud["同步资源"]')}} : </label>
                     <div class="item-content">
-                        <label>{{curPush.bk_obj_id}}</label>
+                        <span>{{curPush.bk_obj_id}}</span>
                     </div>
                 </li>
                 <li class="form-item">
                     <label for="" class="label-name">{{ $t('Cloud["自动同步"]')}} : </label>
                     <div class="item-content">
-                        <label>{{curPush.bk_period_type}}</label>
-                        <label>{{curPush.bk_period}}</label>
+                        <span v-if="curPush.bk_period_type === 'minute'">
+                            {{$t('Cloud["每五分钟"]')}}
+                        </span>
+                        <span v-if="curPush.bk_period_type === 'hour'">
+                            {{this.$t('Cloud["每小时"]')}} {{curPush.bk_period}}
+                        </span>
+                        <span v-else>
+                            {{this.$t('Cloud["每天"]')}} {{curPush.bk_period}}
+                        </span>
                     </div>
                 </li>
                 <li class="form-item">
                     <label for="" class="label-name">{{ $t('Cloud["任务维护人"]')}} : </label>
                     <div class="item-content">
-                        <label>{{curPush.bk_account_admin}}</label>
+                        <span>{{curPush.bk_account_admin}}</span>
                     </div>
                 </li>
                 <li class="form-item">
@@ -84,20 +91,6 @@
                 default: 'create'
             }
         },
-        data () {
-            return {
-                periodList: [{
-                    id: 'minute',
-                    name: this.$t('Cloud["每五分钟"]')
-                }, {
-                    id: 'hour',
-                    name: this.$t('Cloud["每小时"]')
-                }, {
-                    id: 'day',
-                    name: this.$t('Cloud["每天"]')
-                }]
-            }
-        },
         methods: {
             ...mapActions('cloudDiscover', ['addCloudTask']),
             edit () {
@@ -116,8 +109,8 @@
         .cloud-form {
             .form-item {
                 width: 300px;
-                height: 63px;
-                margin-bottom: 17px;
+                height: 24px;
+                margin-bottom: 15px;
                 float: left;
                 &:after {
                     display: block;

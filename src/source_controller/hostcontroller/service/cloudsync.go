@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/common/mapstr"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -288,7 +289,7 @@ func (s *Service) SearchSyncHistory(req *restful.Request, resp *restful.Response
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
-	opt := make(map[string]interface{})
+	opt := mapstr.MapStr{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&opt); err != nil {
 		blog.Errorf("add cloud sync task failed with decode body err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
@@ -296,10 +297,37 @@ func (s *Service) SearchSyncHistory(req *restful.Request, resp *restful.Response
 	}
 	blog.Debug("SearchSyncHistory opt: %v", opt)
 
-	condition := util.ConvParamsTime(opt)
-	result := make([]map[string]interface{}, 0)
-	err := s.Instance.Table(common.BKTableNameCloudSyncHistory).Find(condition).All(ctx, &result)
+	condition := make(map[string]interface{})
+	condition["bk_start_time"] = util.ConvParamsTime(opt["bk_start_time"])
+	condition["bk_task_id"] = opt["bk_task_id"]
+	page, err := mapstr.NewFromInterface(opt["page"])
 	if err != nil {
+		blog.Error("interface convert to mapstr failed")
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCloudSyncHistorySearchFail)})
+		return
+	}
+
+	sort, errS := page.String("sort")
+	if errS != nil {
+		blog.Error("interface convert to string failed")
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCloudSyncHistorySearchFail)})
+		return
+	}
+	limit, errL := page.Int64("limit")
+	if errL != nil {
+		blog.Error("interface convert to string failed")
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCloudSyncHistorySearchFail)})
+		return
+	}
+	start, errStart := page.Int64("start")
+	if errStart != nil {
+		blog.Error("interface convert to string failed")
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCloudSyncHistorySearchFail)})
+		return
+	}
+
+	result := make([]map[string]interface{}, 0)
+	if err := s.Instance.Table(common.BKTableNameCloudSyncHistory).Find(condition).Sort(sort).Start(uint64(start)).Limit(uint64(limit)).All(ctx, &result); err != nil {
 		blog.Error("get failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return

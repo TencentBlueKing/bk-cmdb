@@ -1,10 +1,10 @@
 <template>
-    <div class="audit-history-layout">
-        <div class="history-options clearfix">
-            <label class="options-label">{{$t("HostResourcePool['时间范围']")}}</label>
-            <cmdb-form-date-range class="options-filter" v-model="dateRange" style="width: 240px"></cmdb-form-date-range>
+    <div class="sync-history-layout">
+        <div class="sync-history-options clearfix">
+            <label class="sync-options-label">{{$t("HostResourcePool['时间范围']")}}</label>
+            <cmdb-form-date-range class="sync-options-filter" v-model="dateRange"></cmdb-form-date-range>
         </div>
-        <cmdb-table class="audit-table" ref="table"
+        <cmdb-table ref="table"
             :loading="$loading('getSyncHistory')"
             :header="table.header"
             :list="table.list"
@@ -13,6 +13,14 @@
             @handlePageChange="handlePageChange"
             @handleSizeChange="handleSizeChange"
             @handleSortChange="handleSortChange">
+                <template slot="bk_status" slot-scope="{ item }">
+                    <span class="sync-success" v-if="item.bk_status === 'success'">
+                        {{$t('Inst["成功"]')}}
+                    </span>
+                    <span class="sync-fail" v-else-if="item.bk_status === 'fail'">
+                        {{$t('EventPush["失败"]')}}
+                    </span>
+                </template>
                 <template slot="details" slot-scope="{ item }">
                     {{$t('Cloud[\'新增\']')}} ({{item.new_add}}) / {{$t('Cloud[\'变更\']')}} ({{item.attr_changed}})
                 </template>
@@ -49,9 +57,11 @@
                         name: this.$t('Cloud["处理耗时"]')
                     }, {
                         id: 'details',
+                        width: 130,
                         name: this.$t('Cloud["详情"]')
                     }, {
                         id: 'bk_start_time',
+                        width: 180,
                         name: this.$t('HostResourcePool["启动时间"]')
                     }],
                     list: [],
@@ -90,36 +100,38 @@
                 let params = {}
                 let innerParams = {}
                 let pagination = this.table.pagination
+                let page = {
+                    start: (pagination.current - 1) * pagination.size,
+                    limit: pagination.size,
+                    sort: this.table.sort
+                }
                 innerParams['$gte'] = this.filterRange[0]
                 innerParams['$lte'] = this.filterRange[1]
                 params['bk_start_time'] = innerParams
                 params['bk_task_id'] = this.curPush.bk_task_id
+                params['page'] = page
                 let res = await this.searchCloudHistory({params, config: {requestID: 'getSyncHistory'}})
                 this.table.list = res.info.map(data => {
                     data['bk_start_time'] = this.$tools.formatTime(data['bk_start_time'], 'YYYY-MM-DD HH:mm:ss')
                     data['bk_obj_id'] = this.$t('Hosts["主机"]')
-                    if (data['bk_status'] === 'waiting_confirm') {
-                        data['bk_status'] = '等待确认'
-                    } else if (data['bk_status'] === 'success') {
-                        data['bk_status'] = '成功'
-                    } else {
-                        data['bk_status'] = '失败'
-                    }
                     return data
                 })
                 pagination.count = res.count
             },
-            handlePageChange (current) {
-                this.pagination.current = current
-                this.refresh()
+            handlePageChange (page) {
+                this.table.pagination.current = page
+                this.getTableData()
             },
             handleSizeChange (size) {
-                this.pagination.size = size
+                this.table.pagination.size = size
                 this.handlePageChange(1)
             },
             handleSortChange (sort) {
-                this.sort = sort
+                this.table.sort = sort
                 this.refresh()
+            },
+            refresh () {
+
             }
         },
         watch: {
@@ -131,12 +143,27 @@
 </script>
 
 <style lang="scss" scoped>
-    .audit-history-layout {
+    .sync-history-layout {
         position: relative;
         height: 100%;
         padding: 0 20px;
     }
-    .history-options {
+    .sync-history-options {
         padding: 20px 0;
+        .sync-options-label {
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .sync-options-filter {
+            display: inline-block;
+            vertical-align: middle;
+            width: 240px;
+        }
+    }
+    .sync-success {
+        color: #2cc545;
+    }
+    .sync-fail {
+        color: #fc2e2e;
     }
 </style>

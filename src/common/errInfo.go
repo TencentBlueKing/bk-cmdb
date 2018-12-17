@@ -402,6 +402,7 @@ const (
 	CCErrHostGetSnapshotChannelClose     = 1106020
 	CCErrCloudCreateSyncTaskFail         = 1106021
 	CCErrCloudConfirmHistoryAddFail      = 1106022
+	CCErrCloudSyncHistorySearchFail      = 1106023
 
 	// proccontroller 1107XXX
 	CCErrProcDeleteProc2Module   = 1107001
