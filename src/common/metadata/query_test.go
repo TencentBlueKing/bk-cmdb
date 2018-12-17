@@ -41,7 +41,7 @@ func TestSearchSortParseStr(t *testing.T) {
 		},
 	}
 	for _, testDataItem := range testDataArr {
-		testSSArr := NewSearchSortParse().Str(testDataItem.input)
+		testSSArr := NewSearchSortParse().String(testDataItem.input)
 		if len(testSSArr) != len(testDataItem.ss) {
 			t.Errorf("str parse to Search Sort error!")
 			return
