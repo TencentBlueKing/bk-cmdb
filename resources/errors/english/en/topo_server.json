@@ -89,5 +89,9 @@
 	"1001068":"model could not have multiple must check unique",
 	"1001069":"association kind has been apply to object",
 	"1001070":"pre definition association can not be delete",
+	"1001071":"the association kind is not exist",
+	"1001072":"the association inst is not exist",
+	"1001073":"the  inst to asst  is not exist",
+	"1101074":"the inst has association",
 	"": "" 
 }

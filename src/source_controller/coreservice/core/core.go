@@ -54,8 +54,6 @@ type ModelOperation interface {
 type InstanceOperation interface {
 	CreateModelInstance(ctx ContextParams, objID string, inputParam metadata.CreateModelInstance) (*metadata.CreateOneDataResult, error)
 	CreateManyModelInstance(ctx ContextParams, objID string, inputParam metadata.CreateManyModelInstance) (*metadata.CreateManyDataResult, error)
-	SetModelInstance(ctx ContextParams, objID string, inputParam metadata.SetModelInstance) (*metadata.SetDataResult, error)
-	SetManyModelInstance(ctx ContextParams, objID string, inputParam metadata.SetManyModelInstance) (*metadata.SetDataResult, error)
 	UpdateModelInstance(ctx ContextParams, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	SearchModelInstance(ctx ContextParams, objID string, inputParam metadata.QueryCondition) (*metadata.QueryResult, error)
 	DeleteModelInstance(ctx ContextParams, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
@@ -87,9 +85,7 @@ type ModelAssociation interface {
 // InstanceAssociation manager instance association
 type InstanceAssociation interface {
 	CreateOneInstanceAssociation(ctx ContextParams, inputParam metadata.CreateOneInstanceAssociation) (*metadata.CreateOneDataResult, error)
-	SetOneInstanceAssociation(ctx ContextParams, inputParam metadata.SetOneInstanceAssociation) (*metadata.SetDataResult, error)
 	CreateManyInstanceAssociation(ctx ContextParams, inputParam metadata.CreateManyInstanceAssociation) (*metadata.CreateManyDataResult, error)
-	SetManyInstanceAssociation(ctx ContextParams, inputParam metadata.SetManyInstanceAssociation) (*metadata.SetDataResult, error)
 	SearchInstanceAssociation(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error)
 	DeleteInstanceAssociation(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 }

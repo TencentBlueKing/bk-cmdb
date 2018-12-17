@@ -12,6 +12,49 @@
 
 package instances
 
-func (m *instanceManager) validInstanceData(valData map[string]interface{}, validType string, instID int64) error {
-	return nil
+import (
+	"configcenter/src/common"
+	"configcenter/src/common/errors"
+	"configcenter/src/common/metadata"
+	"configcenter/src/source_controller/coreservice/core"
+)
+
+type validator struct {
+	errif         errors.DefaultCCErrorIf
+	propertys     map[string]metadata.Attribute
+	idToProperty  map[int64]metadata.Attribute
+	propertyslice []metadata.Attribute
+	require       map[string]bool
+	requirefields []string
+	shouldIgnore  map[string]bool
+	dependent     OperationDependences
+	objID         string
+}
+
+// Init init
+func NewValidator(ctx core.ContextParams, objID string) (*validator, error) {
+	valid := &validator{}
+	valid.errif = ctx.Error
+	condition := map[string]interface{}{
+		common.BKObjIDField:   objID,
+		common.BKOwnerIDField: ctx.SupplierAccount,
+	}
+	result, err := valid.dependent.SelectObjectAttWithParams(ctx, condition)
+	if nil != err {
+		return valid, err
+	}
+	for _, attr := range result {
+		if attr.PropertyID == common.BKChildStr || attr.PropertyID == common.BKParentStr {
+			continue
+		}
+		valid.propertys[attr.PropertyID] = attr
+		valid.idToProperty[attr.ID] = attr
+		valid.propertyslice = append(valid.propertyslice, attr)
+		if attr.IsRequired {
+			valid.require[attr.PropertyID] = true
+			valid.requirefields = append(valid.requirefields, attr.PropertyID)
+		}
+	}
+	valid.objID = objID
+	return valid, nil
 }

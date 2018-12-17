@@ -81,7 +81,8 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 	}
 
 	// TODO: need to set model dependent methods collecctions
-	s.core = core.New(model.New(dbProxy, s), instances.New(dbProxy), association.New(dbProxy))
+	asstDepend := NewAssociationDepend(dbProxy)
+	s.core = core.New(model.New(dbProxy, s), instances.New(dbProxy), association.New(dbProxy, asstDepend))
 }
 
 // WebService the web service
