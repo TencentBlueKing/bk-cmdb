@@ -13,6 +13,8 @@
 package metadata
 
 import (
+	"strings"
+
 	"configcenter/src/common/mapstr"
 )
 
@@ -43,3 +45,37 @@ type QueryResult struct {
 }
 
 type QueryConditionResult ResponseInstData
+
+// SearchSortParse SearchSort parse interface
+type SearchSortParse interface {
+	Str(sort string) []SearchSort
+}
+
+// searchSortParse SearchSort parse struct
+type searchSortParse struct {
+}
+
+func NewSearchSortParse() SearchSortParse {
+	return &searchSortParse{}
+}
+
+//  str convert string srot to cc SearchSort struct array
+func (ss *searchSortParse) Str(sort string) []SearchSort {
+	if sort == "" {
+		return nil
+	}
+	sortArr := strings.Split(sort, ",")
+	var ssArr []SearchSort
+	for _, sortItem := range sortArr {
+		sortItemArr := strings.Split(sortItem, ":")
+		ssInst := SearchSort{
+			Field: sortItemArr[0],
+		}
+		if len(sortItemArr) > 1 && strings.TrimSpace(sortItemArr[1]) == "-1" {
+			ssInst.IsDsc = true
+
+		}
+		ssArr = append(ssArr, ssInst)
+	}
+	return ssArr
+}
