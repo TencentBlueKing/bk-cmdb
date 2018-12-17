@@ -18,7 +18,6 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
@@ -33,9 +32,10 @@ type instanceManager struct {
 }
 
 // New create a new instance manager instance
-func New(dbProxy dal.RDB) core.InstanceOperation {
+func New(dbProxy dal.RDB, dependent OperationDependences) core.InstanceOperation {
 	return &instanceManager{
-		dbProxy: dbProxy,
+		dbProxy:   dbProxy,
+		dependent: dependent,
 	}
 }
 
@@ -96,6 +96,7 @@ func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID stri
 	instIDFieldName := common.GetInstIDField(objID)
 	origins, _, err := m.getInsts(ctx, objID, inputParam.Condition)
 	if nil != err {
+		blog.Errorf("update module instance get inst error :%v ", err)
 		return nil, err
 	}
 
@@ -104,16 +105,17 @@ func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID stri
 		instID, _ := util.GetInt64ByInterface(instIDI)
 		err := m.validUpdateInstanceData(ctx, objID, inputParam.Data, uint64(instID))
 		if nil != err {
+			blog.Errorf("update module instance validate error :%v ", err)
 			return nil, err
 		}
 	}
 
-	updateCond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
+		blog.Errorf("update module instance validate error :%v ", err)
 		return &metadata.UpdatedCount{}, err
 	}
 
-	cnt, err := m.update(ctx, objID, inputParam.Data, updateCond)
+	cnt, err := m.update(ctx, objID, inputParam.Data, inputParam.Condition)
 	return &metadata.UpdatedCount{Count: cnt}, err
 }
 
@@ -166,7 +168,9 @@ func (m *instanceManager) CascadeDeleteModelInstance(ctx core.ContextParams, obj
 	tableName := common.GetInstTableName(objID)
 	instIDFieldName := common.GetInstIDField(objID)
 	origins, _, err := m.getInsts(ctx, objID, inputParam.Condition)
+	blog.Errorf("cascade delete model instance get inst error:%v", origins)
 	if nil != err {
+		blog.Errorf("cascade delete model instance get inst error:%v", err)
 		return &metadata.DeletedCount{}, err
 	}
 
@@ -175,7 +179,7 @@ func (m *instanceManager) CascadeDeleteModelInstance(ctx core.ContextParams, obj
 		if nil != err {
 			return &metadata.DeletedCount{}, err
 		}
-		_, err = m.dependent.DeleteInstAsst(ctx, objID, uint64(instID))
+		err = m.dependent.DeleteInstAsst(ctx, objID, uint64(instID))
 		if nil != err {
 			return &metadata.DeletedCount{}, err
 		}
