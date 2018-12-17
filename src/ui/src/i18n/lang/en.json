@@ -279,6 +279,7 @@
         "必填": "Required",
         "短字符": "Short Text",
         "数字": "Number",
+        "浮点": "Float",
         "枚举": "Enumeration",
         "日期": "Date",
         "时间": "Time",
@@ -562,6 +563,7 @@
         "请输入长字符": "Please input long char",
         "请输入短字符": "Please input single char",
         "请输入用户": "Please input user",
-        "请输入数字": "Please input integer"
+        "请输入数字": "Please input integer",
+        "请输入浮点数": "Please input float"
     }
 }
