@@ -272,8 +272,8 @@ func (m *model) DeleteModelAttr(ctx context.Context, h http.Header, objID string
 	return
 }
 
-func (m *model) ReadModelAttr(ctx context.Context, h http.Header, objID string, input *metadata.QueryCondition) (resp *metadata.QueryConditionResult, err error) {
-	resp = new(metadata.QueryConditionResult)
+func (m *model) ReadModelAttr(ctx context.Context, h http.Header, objID string, input *metadata.QueryCondition) (resp *metadata.ReadModelAttrResult, err error) {
+	resp = new(metadata.ReadModelAttrResult)
 	subPath := fmt.Sprintf("/read/model/%s/attributes", objID)
 
 	err = m.client.Post().

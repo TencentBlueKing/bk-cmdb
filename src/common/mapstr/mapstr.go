@@ -74,6 +74,10 @@ func NewFromInterface(data interface{}) (MapStr, error) {
 	}
 }
 
+func NewFromMap(data map[string]interface{}) MapStr {
+	return MapStr(data)
+}
+
 /*NewFromStruct convert the  struct into MapStr , the struct must be taged with 'tagName' .
 eg:
 type targetStruct struct{
