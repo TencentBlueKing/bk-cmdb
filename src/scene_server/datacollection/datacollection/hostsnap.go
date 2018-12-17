@@ -24,13 +24,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/rs/xid"
-	"github.com/tidwall/gjson"
-	redis "gopkg.in/redis.v5"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal"
+
+	"github.com/rs/xid"
+	"github.com/tidwall/gjson"
+	redis "gopkg.in/redis.v5"
 )
 
 var (
