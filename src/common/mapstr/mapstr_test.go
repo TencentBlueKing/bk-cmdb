@@ -121,3 +121,17 @@ func TestMapStrToMapstr(t *testing.T) {
 		return
 	}
 }
+
+func TestMapToMapStr(t *testing.T) {
+
+	newMapStr := NewFromMap(map[string]interface{}{"aa": "bb"})
+	val, err := newMapStr.String("aa")
+	if err != nil {
+		t.Errorf("get aa value error, err:%s", err.Error())
+		return
+	}
+	if val != "bb" {
+		t.Errorf("aa value not equal aa, val:%s", val)
+		return
+	}
+}
