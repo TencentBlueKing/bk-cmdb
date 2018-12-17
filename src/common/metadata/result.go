@@ -100,6 +100,18 @@ type SearchDataResult struct {
 	Info  []mapstr.MapStr `json:"info"`
 }
 
+// QueryModelAttributeResult search model attr data result
+type QueryModelAttributeDataResult struct {
+	Count int64       `json:"count"`
+	Info  []Attribute `json:"info"`
+}
+
+// ReadModelAttrResult  read model attribute api http response return result struct
+type ReadModelAttrResult struct {
+	BaseResp `json:",inline"`
+	Data     QueryModelAttributeDataResult `json:"data"`
+}
+
 //ReadModelClassifitionResult  read model classifition api http response return result struct
 type ReadModelClassifitionResult struct {
 	BaseResp `json:",inline"`
