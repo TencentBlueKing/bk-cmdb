@@ -6,7 +6,13 @@
         </div>
     </div>
 </template>
-
+<script>
+    export default {
+        created () {
+            this.$store.commit('setHeaderTitle', '')
+        }
+    }
+</script>
 <style lang="scss" scoped>
     .error-layout{
         height: 100%;
