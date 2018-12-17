@@ -10,35 +10,27 @@
  * limitations under the License.
  */
 
-package logics
+package backbone
 
 import (
-	"net/http"
-
-	"configcenter/src/common/backbone"
-	"configcenter/src/common/errors"
-	"configcenter/src/common/language"
-	"configcenter/src/common/util"
+	"context"
 )
 
-type Logics struct {
-	*backbone.Engine
-	header http.Header
-	rid    string
-	ccErr  errors.DefaultCCErrorIf
-	ccLang language.DefaultCCLanguageIf
-	user   string
+type ccContext struct {
+	ctx context.Context
 }
 
-// NewLogics get logic handle
-func NewLogics(b *backbone.Engine, header http.Header) *Logics {
-	lang := util.GetLanguage(header)
-	return &Logics{
-		Engine: b,
-		header: header,
-		rid:    util.GetHTTPCCRequestID(header),
-		ccErr:  b.CCErr.CreateDefaultCCErrorIf(lang),
-		ccLang: b.Language.CreateDefaultCCLanguageIf(lang),
-		user:   util.GetUser(header),
+type CCContextInterface interface {
+	WithCancel() (context.Context, context.CancelFunc)
+}
+
+func newCCContext() CCContextInterface {
+	return &ccContext{
+		ctx: context.Background(),
 	}
+}
+
+// WithCancel
+func (c *ccContext) WithCancel() (context.Context, context.CancelFunc) {
+	return context.WithCancel(c.ctx)
 }

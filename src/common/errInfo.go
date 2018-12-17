@@ -144,6 +144,8 @@ const (
 	CCErrCommInstFieldConvFail = 1199040
 	// CCErrCommUtilFail  handle %s error %s
 	CCErrCommUtilHandleFail = 1199041
+	// CCErrCommFieldNotValidFail  valid data error, %s
+	CCErrCommFieldNotValidFail = 1199043
 
 	// apiserver 1100XXX
 
@@ -486,7 +488,6 @@ const (
 	CCErrHostEditRelationPoolFail = 1110028
 	CCErrAddHostToModule          = 1110029
 	CCErrAddHostToModuleFailStr   = 1110030
-
 	// hostserver api machinery new error code
 	CCErrAddUserCustomQueryFaild       = 1110040
 	CCErrUpdateUserCustomQueryFaild    = 1110041
@@ -499,6 +500,14 @@ const (
 	CCErrHostAPPNotFoundFail           = 1110048
 	CCErrHostGetModuleFail             = 1110049
 	CCErrHostAgentStatusFail           = 1110050
+	// CCErrHostNotResourceFail The resource pool was not found"
+	CCErrHostNotResourceFail = 1110051
+	// CCErrHostBelongResourceFail The host is already in the resource pool
+	CCErrHostBelongResourceFail = 1110052
+	// CCErrHostGetResourceFail failed to get resource pool information, error message: %s
+	CCErrHostGetResourceFail = 1110053
+	// CCErrHostModuleNotExist get %s module not found
+	CCErrHostModuleNotExist = 1110054
 
 	//web  1111XXX
 	CCErrWebFileNoFound                 = 1111001

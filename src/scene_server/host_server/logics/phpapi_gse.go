@@ -13,43 +13,42 @@
 package logics
 
 import (
+	"context"
 	"fmt"
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/samuel/go-zookeeper/zk"
+	"gopkg.in/redis.v5"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/host_server/app/options"
-
-	"github.com/samuel/go-zookeeper/zk"
-	"gopkg.in/redis.v5"
 )
 
-func (lgc *Logics) GetAgentStatus(appID int64, gseConfg *options.Gse, header http.Header) (*meta.GetAgentStatusResult, error) {
-	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+func (lgc *Logics) GetAgentStatus(ctx context.Context, appID int64, gseConfg *options.Gse) (*meta.GetAgentStatusResult, error) {
 
 	configCon := map[string][]int64{
 		common.BKAppIDField: []int64{appID},
 	}
-	configData, err := lgc.GetConfigByCond(header, configCon)
+	configData, err := lgc.GetConfigByCond(ctx, configCon)
 	if nil != err {
 		blog.Errorf("GetAgentStatus  GetConfigByCond error : %s, input:%v", err.Error(), appID)
-		return nil, defErr.Errorf(common.CCErrHostModuleConfigFaild)
+		return nil, lgc.ccErr.Errorf(common.CCErrHostModuleConfigFaild)
 	}
 	hostIDArr := make([]int64, 0)
 	for _, config := range configData {
 		hostIDArr = append(hostIDArr, config[common.BKHostIDField])
 	}
 
-	hosts, err := lgc.GetHostInfoByConds(header, nil)
+	hosts, err := lgc.GetHostInfoByConds(ctx, nil)
 	blog.V(5).Infof("GetAgentStatus GetHostInfoByConds get agent status hosts:%v, input:%v", hosts, appID)
 	if nil != err {
 		blog.Errorf("GetAgentStatus error :%v", err)
-		return nil, defErr.Errorf(common.CCErrHostGetFail)
+		return nil, lgc.ccErr.Errorf(common.CCErrHostGetFail)
 	}
 
 	hostDataArr := make([]interface{}, 0)
@@ -59,14 +58,14 @@ func (lgc *Logics) GetAgentStatus(appID int64, gseConfg *options.Gse, header htt
 		subArea, err := util.GetInt64ByInterface(host[common.BKCloudIDField])
 		if nil != err {
 			blog.Errorf("GetAgentStatus get agent status hosts not find cloud id, rawHost:%v, input:%v", host, appID)
-			return nil, defErr.Errorf(common.CCErrHostGetFail)
+			return nil, lgc.ccErr.Errorf(common.CCErrHostGetFail)
 		}
 		platID := int(subArea)
 
 		ip, ok := host[common.BKHostInnerIPField].(string)
 		if !ok {
 			blog.Errorf("GetAgentStatus get agent status hosts not find innerip, rawHost:%v, input:%v", host, appID)
-			return nil, defErr.Errorf(common.CCErrHostGetFail)
+			return nil, lgc.ccErr.Errorf(common.CCErrHostGetFail)
 
 		}
 
@@ -78,12 +77,12 @@ func (lgc *Logics) GetAgentStatus(appID int64, gseConfg *options.Gse, header htt
 		hostDataArr = append(hostDataArr, cellData)
 	}
 
-	phpapi := lgc.NewPHPAPI(header)
+	phpapi := lgc.NewPHPAPI()
 	blog.V(5).Infof("get gse hostDataArr:%v", hostDataArr)
-	agentStatus, err := phpapi.getGseAgentStatus(hostDataArr, gseConfg)
+	agentStatus, err := phpapi.getGseAgentStatus(ctx, hostDataArr, gseConfg)
 	if nil != err {
 		blog.Errorf("getGseAgentStatus error :%s, input:%d", err.Error(), appID)
-		return nil, defErr.Errorf(common.CCErrHostAgentStatusFail, err.Error())
+		return nil, lgc.ccErr.Errorf(common.CCErrHostAgentStatusFail, err.Error())
 	}
 	agentNorCnt := 0
 	agentAbnorCnt := 0
@@ -98,7 +97,7 @@ func (lgc *Logics) GetAgentStatus(appID int64, gseConfg *options.Gse, header htt
 		platIdInt, err := util.GetIntByInterface(host[common.BKCloudIDField])
 		if nil != err {
 			blog.Errorf("GetAgentStatus get agent status hosts not find cloud id, rawHost:%v, input:%v", host, appID)
-			return nil, defErr.Errorf(common.CCErrHostGetFail)
+			return nil, lgc.ccErr.Errorf(common.CCErrHostGetFail)
 		}
 		platIdStr := strconv.Itoa(platIdInt)
 		hostMapTemp := map[string]interface{}{
@@ -159,8 +158,8 @@ var (
 )
 
 //getRedisSession
-func (phpapi *PHPAPI) getRedisSession(gseConfg *options.Gse) (*redis.Client, error) {
-	newIp, port, auth, err := phpapi.getRedisIP(gseConfg)
+func (phpapi *PHPAPI) getRedisSession(ctx context.Context, gseConfg *options.Gse) (*redis.Client, error) {
+	newIp, port, auth, err := phpapi.getRedisIP(ctx, gseConfg)
 	blog.V(5).Infof("newIp:%v port:%v err:%v", newIp, port, err)
 
 	if "" == redisIp && "" == newIp || "" == port {
@@ -187,7 +186,7 @@ func (phpapi *PHPAPI) getRedisSession(gseConfg *options.Gse) (*redis.Client, err
 }
 
 //getRedisIP
-func (phpapi *PHPAPI) getRedisIP(gseConfg *options.Gse) (string, string, string, error) {
+func (phpapi *PHPAPI) getRedisIP(ctx context.Context, gseConfg *options.Gse) (string, string, string, error) {
 
 	zkAddrArr := strings.Split(gseConfg.ZkAddress, ",")
 	// TODO: 放到配置文件
@@ -232,13 +231,13 @@ func (phpapi *PHPAPI) getRedisIP(gseConfg *options.Gse) (string, string, string,
 }
 
 //getGseAgentStatus
-func (phpapi *PHPAPI) getGseAgentStatus(hostDataArr []interface{}, gseConfg *options.Gse) ([]int64, error) {
+func (phpapi *PHPAPI) getGseAgentStatus(ctx context.Context, hostDataArr []interface{}, gseConfg *options.Gse) ([]int64, error) {
 	blog.V(5).Infof("getGseAgentStatus hostDataArr1:%v", hostDataArr)
 	if len(hostDataArr) == 0 {
 		return []int64{}, nil
 	}
 
-	rdClient, err := phpapi.getRedisSession(gseConfg)
+	rdClient, err := phpapi.getRedisSession(ctx, gseConfg)
 	if nil == rdClient {
 		blog.Errorf("getGseAgentStatus getRedisSession error:%v, hostDataArr:%v", err, hostDataArr)
 		return nil, err

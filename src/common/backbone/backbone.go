@@ -65,6 +65,7 @@ func New(c *Config, disc ServiceDiscoverInterface) (*Engine, error) {
 		SvcDisc:    disc,
 		Language:   language.NewFromCtx(language.EmptyLanguageSetting),
 		CCErr:      errors.NewFromCtx(errors.EmptyErrorsSetting),
+		CCCtx:      newCCContext(),
 	}, nil
 }
 
@@ -75,6 +76,7 @@ type Engine struct {
 	SvcDisc    ServiceDiscoverInterface
 	Language   language.CCLanguageIf
 	CCErr      errors.CCErrorIf
+	CCCtx      CCContextInterface
 }
 
 func (e *Engine) onLanguageUpdate(previous, current map[string]language.LanguageMap) {
