@@ -33,13 +33,6 @@ import (
 	"configcenter/src/storage/dal/redis"
 )
 
-type Analyzer interface {
-	Analyze(mesg []string) error
-}
-
-type Collector interface {
-	Subject() []string
-}
 type DataCollection struct {
 	Config *options.Config
 	*backbone.Engine

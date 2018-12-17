@@ -156,6 +156,10 @@ func NewBool(yes bool) *AtomicBool {
 	return &n
 }
 
+func (b *AtomicBool) SetIfNotSet() bool {
+	return atomic.CompareAndSwapInt32((*int32)(b), 0, 1)
+}
+
 func (b *AtomicBool) Set() {
 	atomic.StoreInt32((*int32)(b), 1)
 }
