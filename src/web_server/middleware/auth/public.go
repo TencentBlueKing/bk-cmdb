@@ -136,6 +136,10 @@ func (m *publicAuth) ValidResAccess(pathArr []string, c *gin.Context) bool {
 		return true
 	}
 
+	if types.DeleteInstAssociationRegex.MatchString(pathStr) && method == http.MethodDelete {
+		return true
+	}
+
 	// export business hosts
 	if pathStr == types.ExportHosts && method == http.MethodPost {
 		return true
