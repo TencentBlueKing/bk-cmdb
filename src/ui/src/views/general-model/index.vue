@@ -254,6 +254,7 @@
                 this.setTableHeader()
             },
             objId () {
+                this.$store.commit('setHeaderTitle', this.$model['bk_obj_name'])
                 this.reload()
             }
         },
