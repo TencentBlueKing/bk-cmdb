@@ -66,7 +66,7 @@ func (c *cloud) DeleteCloudTask(ctx context.Context, h http.Header, taskID strin
 	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/hosts/cloud/delete/%v", taskID)
 
-	err = c.client.Post().
+	err = c.client.Delete().
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
@@ -94,7 +94,7 @@ func (c *cloud) UpdateCloudTask(ctx context.Context, h http.Header, data interfa
 	resp = new(metadata.Response)
 	subPath := "/hosts/cloud/update"
 
-	err = c.client.Post().
+	err = c.client.Put().
 		WithContext(ctx).
 		Body(data).
 		SubResource(subPath).
@@ -108,7 +108,7 @@ func (c *cloud) DeleteConfirm(ctx context.Context, h http.Header, ResourceID int
 	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/hosts/cloud/confirm/delete/%v", ResourceID)
 
-	err = c.client.Post().
+	err = c.client.Delete().
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
@@ -132,9 +132,9 @@ func (c *cloud) SearchConfirm(ctx context.Context, h http.Header, data interface
 	return
 }
 
-func (c *cloud) CloudHistory(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error) {
+func (c *cloud) AddSyncHistory(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/hosts/cloud/history"
+	subPath := "/hosts/cloud/syncHistory/add"
 
 	err = c.client.Post().
 		WithContext(ctx).
@@ -146,9 +146,9 @@ func (c *cloud) CloudHistory(ctx context.Context, h http.Header, data interface{
 	return
 }
 
-func (c *cloud) SearchHistory(ctx context.Context, h http.Header, data interface{}) (resp *metadata.FavoriteResult, err error) {
+func (c *cloud) SearchSyncHistory(ctx context.Context, h http.Header, data interface{}) (resp *metadata.FavoriteResult, err error) {
 	resp = new(metadata.FavoriteResult)
-	subPath := "/hosts/cloud/searchSyncHistory"
+	subPath := "/hosts/cloud/syncHistory/search"
 
 	err = c.client.Post().
 		WithContext(ctx).
@@ -160,9 +160,9 @@ func (c *cloud) SearchHistory(ctx context.Context, h http.Header, data interface
 	return
 }
 
-func (c *cloud) ConfirmHistory(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error) {
+func (c *cloud) AddConfirmHistory(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/hosts/cloud/confirmHistory"
+	subPath := "/hosts/cloud/confirmHistory/add"
 
 	err = c.client.Post().
 		WithContext(ctx).

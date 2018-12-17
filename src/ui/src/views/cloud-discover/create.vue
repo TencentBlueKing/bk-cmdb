@@ -121,9 +121,9 @@
         data () {
             return {
                 disabled: false,
-                placeholder: '例如: 19:30',
+                placeholder: this.$t('Cloud["例如: 19:30"]'),
                 cloudList: [{
-                    id: '腾讯云',
+                    id: this.$t('Cloud["腾讯云"]'),
                     name: this.$t('Cloud["腾讯云"]')
                 }],
                 periodList: [{
@@ -138,7 +138,19 @@
                 }],
                 taskMap: {
                     bk_task_name: '',
-                    bk_account_type: '腾讯云',
+                    bk_account_type: this.$t('Cloud["腾讯云"]'),
+                    bk_period_type: 'day',
+                    bk_secret_id: '',
+                    bk_secret_key: '',
+                    bk_obj_id: 'host',
+                    bk_account_admin: '',
+                    bk_confirm: false,
+                    bk_attr_confirm: false,
+                    bk_period: ''
+                },
+                tempTaskMap: {
+                    bk_task_name: '',
+                    bk_account_type: this.$t('Cloud["腾讯云"]'),
                     bk_period_type: 'day',
                     bk_secret_id: '',
                     bk_secret_key: '',
@@ -163,7 +175,14 @@
                 this.$emit('cancel')
             },
             isCloseConfirmShow () {
-                return true
+                let tempTaskMap = this.tempTaskMap
+                let taskMap = this.taskMap
+                for (let key in taskMap) {
+                    if (taskMap[key] !== tempTaskMap[key]) {
+                        return true
+                    }
+                }
+                return false
             }
         },
         watch: {
@@ -173,10 +192,10 @@
                     this.placeholder = ''
                 } else if (this.taskMap.bk_period_type === 'hour') {
                     this.disabled = false
-                    this.placeholder = '例如: 30'
+                    this.placeholder = this.$t('Cloud["例如: 30"]')
                 } else {
                     this.disabled = false
-                    this.placeholder = '例如: 19:30'
+                    this.placeholder = this.$t('Cloud["例如: 19:30"]')
                 }
             }
         }

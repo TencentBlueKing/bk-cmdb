@@ -28,9 +28,9 @@ type CloudInterface interface {
 	UpdateCloudTask(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
 	DeleteConfirm(ctx context.Context, h http.Header, ResourceID int64) (resp *metadata.Response, err error)
 	SearchConfirm(ctx context.Context, h http.Header, data interface{}) (resp *metadata.FavoriteResult, err error)
-	CloudHistory(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
-	SearchHistory(ctx context.Context, h http.Header, data interface{}) (resp *metadata.FavoriteResult, err error)
-	ConfirmHistory(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
+	AddSyncHistory(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
+	SearchSyncHistory(ctx context.Context, h http.Header, data interface{}) (resp *metadata.FavoriteResult, err error)
+	AddConfirmHistory(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
 	SearchConfirmHistory(ctx context.Context, h http.Header, data interface{}) (resp *metadata.FavoriteResult, err error)
 }
 

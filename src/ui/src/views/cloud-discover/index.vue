@@ -10,12 +10,11 @@
             <div class="filter-text fr">
                 <bk-selector style="width: 100px;"
                     :list="list"
-                    :selected.sync="defaultDemo.selected"
-                    @item-selected="selected">
+                    :selected.sync="defaultDemo.selected">
                 </bk-selector>
             </div>
         </div>
-        <cmdb-table class="process-table" ref="table"
+        <cmdb-table class="cloud-discover-table" ref="table"
             :loading="$loading('searchCloudTask')"
             :checked.sync="table.checked"
             :header="table.header"
@@ -156,6 +155,7 @@
                         name: this.$t('ProcessManagement["状态"]')
                     }, {
                         id: 'status',
+                        sortable: false,
                         name: this.$t('Cloud["是否启用"]')
                     }, {
                         id: 'operation',
@@ -207,6 +207,13 @@
                         data['bk_period_type'] = this.$t('Cloud["每小时"]')
                     } else {
                         data['bk_period_type'] = this.$t('Cloud["每五分钟"]')
+                    }
+                    if (data['bk_sync_status'] === 'waiting_confirm') {
+                        data['bk_sync_status'] = '等待确认'
+                    } else if (data['bk_sync_status'] === 'success') {
+                        data['bk_sync_status'] = '成功'
+                    } else {
+                        data['bk_sync_status'] = '失败'
                     }
                     return data
                 })
@@ -268,8 +275,6 @@
                 }
                 this.startCloudSync({params})
             },
-            selected (id, data) {
-            },
             handleSliderBeforeClose () {
                 if (['create', 'update'].includes(this.attribute.type) && this.$refs.detail.isCloseConfirmShow()) {
                     return new Promise((resolve, reject) => {
@@ -319,13 +324,13 @@
                 cursor: pointer;
             }
         }
-        .process-table {
+        .cloud-discover-table {
             margin-top: 20px;
             span {
                 cursor:pointer;
             }
-            .text-create {
-                color: #4f55f3;
+            .sync-failed {
+                color: #fc2e2e
             }
         }
     }

@@ -168,6 +168,11 @@
                 this.table.list = res.info.map(data => {
                     data['create_time'] = this.$tools.formatTime(data['create_time'], 'YYYY-MM-DD HH:mm:ss')
                     data['bk_obj_id'] = this.$t('Hosts["主机"]')
+                    if (data['bk_resource_type'] === 'change') {
+                        data['bk_resource_type'] = '变更'
+                    } else {
+                        data['bk_resource_type'] = '新增'
+                    }
                     return data
                 })
                 pagination.count = res.count
@@ -213,8 +218,8 @@
             },
             handleConfirm (params) {
                 return Promise.all([
-                    this.resourceConfirm({params}),
-                    this.addConfirmHistory({params})
+                    this.addConfirmHistory({params}),
+                    this.resourceConfirm({params})
                 ])
             },
             selected (id) {
@@ -267,6 +272,12 @@
     margin-top: 20px;
     span {
         cursor:pointer;
+    }
+    .attr-changed {
+        color: #ffb23a;
+    }
+    .new-add {
+        color: #4f55f3;
     }
 }
 </style>

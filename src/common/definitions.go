@@ -507,6 +507,9 @@ const (
 	// CreateTimeField the create time field
 	CreateTimeField = "create_time"
 
+	// ConfirmTimeField the cloud resource confirm time filed
+	ConfirmTimeField = "confirm_time"
+
 	// ModifierField the modifier field
 	ModifierField = "modifier"
 
