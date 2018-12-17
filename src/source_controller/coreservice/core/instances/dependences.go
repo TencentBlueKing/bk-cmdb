@@ -13,7 +13,6 @@
 package instances
 
 import (
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
 )
@@ -27,10 +26,10 @@ type OperationDependences interface {
 	IsInstAsstExist(ctx core.ContextParams, objID string, instID uint64) (exists bool, err error)
 
 	// DeleteInstAsst used to delete inst asst
-	DeleteInstAsst(ctx core.ContextParams, objID string, instID uint64) (cnt uint64, err error)
+	DeleteInstAsst(ctx core.ContextParams, objID string, instID uint64) error
 
 	// SelectObjectAttWithParams select object att with params
-	SelectObjectAttWithParams(ctx core.ContextParams, condition mapstr.MapStr) (attribute []metadata.Attribute, err error)
+	SelectObjectAttWithParams(ctx core.ContextParams, objID string) (attribute []metadata.Attribute, err error)
 
 	// SearchUnique search unique attribute
 	SearchUnique(ctx core.ContextParams, objID string) (uniqueAttr []metadata.ObjectUnique, err error)

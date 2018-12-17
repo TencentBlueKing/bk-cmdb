@@ -13,6 +13,10 @@
 package service
 
 import (
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/source_controller/coreservice/core/association"
 	"configcenter/src/source_controller/coreservice/core/instances"
@@ -25,10 +29,20 @@ type associationDepend struct {
 
 func NewAssociationDepend(dbProxy dal.RDB) association.OperationDependences {
 	asstDepend := &associationDepend{}
-	asstDepend.instanceOperation = instances.New(dbProxy)
+	asstDepend.instanceOperation = instances.New(dbProxy, nil)
 	return asstDepend
 
 }
 func (m *associationDepend) IsInstanceExist(ctx core.ContextParams, objID string, instID uint64) (exists bool, err error) {
+	instIDFieldName := common.GetInstIDField(objID)
+	searchCond := metadata.QueryCondition{Condition: mapstr.MapStr{instIDFieldName: instID}}
+	result, err := m.instanceOperation.SearchModelInstance(ctx, objID, searchCond)
+	if nil != err {
+		blog.Errorf("search model instance error: %v", err)
+		return false, err
+	}
+	if 0 == result.Count {
+		return false, nil
+	}
 	return true, nil
 }
