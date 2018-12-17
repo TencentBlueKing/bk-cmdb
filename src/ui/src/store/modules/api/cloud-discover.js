@@ -28,11 +28,11 @@ const actions = {
     },
 
     updateCloudTask ({ commit, state, dispatch }, { params }) {
-        return $http.post(`hosts/cloud/update`, params)
+        return $http.put(`hosts/cloud/update`, params)
     },
 
     deleteCloudTask ({ commit, state, dispatch }, { taskID }) {
-        return $http.post(`hosts/cloud/delete/${taskID}`)
+        return $http.delete(`hosts/cloud/delete/${taskID}`)
     },
 
     startCloudSync ({ commit, state, dispatch }, { params }) {
@@ -52,7 +52,7 @@ const actions = {
     },
 
     addConfirmHistory ({ commit, state, dispatch }, { params }) {
-        return $http.post('hosts/cloud/confirmHistory', params)
+        return $http.post('hosts/cloud/confirmHistory/add', params)
     },
 
     searchConfirmHistory ({ commit, state, dispatch }, { params, config }) {

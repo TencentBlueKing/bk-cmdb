@@ -57,7 +57,6 @@ func (s *Service) DeleteCloudTask(req *restful.Request, resp *restful.Response) 
 	pheader := req.Request.Header
 
 	taskID := req.PathParameter("taskID")
-	blog.Debug("delete taskID: %v", taskID)
 	_, err := s.CoreAPI.HostController().Cloud().DeleteCloudTask(context.Background(), pheader, taskID)
 
 	retData := make(map[string]interface{})
@@ -122,12 +121,11 @@ func (s *Service) StartCloudSync(req *restful.Request, resp *restful.Response) {
 
 	_, errUpdateTask := s.CoreAPI.HostController().Cloud().UpdateCloudTask(context.Background(), pheader, opt)
 	if errUpdateTask != nil {
-		blog.Errorf("update task failed with decode body")
+		blog.Errorf("update task failed with decode body, %v", errUpdateTask)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBUpdateFailed)})
 		return
 	}
 
-	blog.Debug("startSync, opt: %v", opt)
 	/*
 	* 这个函数可以是ESB接口，接收json:{"bk_task_name": "test", "bk_status": true}开启一个同步
 	* 也可以是前端发回一个json:{"bk_task_name": "test", "bk_status": true}，控制一个同步任务的开和关
@@ -153,7 +151,7 @@ func (s *Service) StartCloudSync(req *restful.Request, resp *restful.Response) {
 	response, err := s.CoreAPI.HostController().Cloud().SearchCloudTask(context.Background(), pheader, opt)
 	if err != nil {
 		blog.Errorf("search %v failed, err: %v", opt["bk_task_name"], err)
-		resp.WriteEntity(meta.NewSuccessResp(err))
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCloudGetTaskFail)})
 	}
 
 	taskList, errMap := mapstr.NewFromInterface(response.Info[0])
@@ -164,10 +162,9 @@ func (s *Service) StartCloudSync(req *restful.Request, resp *restful.Response) {
 
 	taskList["bk_status"] = status
 
-	errSync := s.Logics.CloudTaskSync(taskList, pheader)
-	if errSync != nil {
-		blog.Errorf("execute CloudTaskSync failed. err: %v", errSync)
-		resp.WriteEntity(meta.NewSuccessResp(errSync))
+	if err := s.Logics.CloudTaskSync(taskList, pheader); err != nil {
+		blog.Errorf("execute CloudTaskSync failed. err: %v", err)
+		resp.WriteEntity(meta.NewSuccessResp(err))
 	}
 
 	resp.WriteEntity(meta.NewSuccessResp(nil))
@@ -237,7 +234,7 @@ func (s *Service) ResourceConfirm(req *restful.Request, resp *restful.Response) 
 		}
 	}
 
-	//After resource confirmation, delete the items from table cc_CloudResourceSync
+	// After resource confirmation, delete the items from table cc_CloudResourceSync
 	for _, id := range resourceIDs {
 		_, errD := s.Logics.CoreAPI.HostController().Cloud().DeleteConfirm(context.Background(), pheader, id)
 		if errD != nil {
@@ -320,7 +317,7 @@ func (s *Service) CloudSyncHistory(req *restful.Request, resp *restful.Response)
 		return
 	}
 
-	response, err := s.CoreAPI.HostController().Cloud().SearchHistory(context.Background(), pheader, opt)
+	response, err := s.CoreAPI.HostController().Cloud().SearchSyncHistory(context.Background(), pheader, opt)
 	if err != nil {
 		blog.Errorf("search cloud sync history failed, err: %v", err)
 		resp.WriteEntity(meta.NewSuccessResp(err))
@@ -330,7 +327,7 @@ func (s *Service) CloudSyncHistory(req *restful.Request, resp *restful.Response)
 	resp.WriteEntity(meta.NewSuccessResp(response))
 }
 
-func (s *Service) ConfirmHistory(req *restful.Request, resp *restful.Response) {
+func (s *Service) AddConfirmHistory(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
@@ -354,7 +351,7 @@ func (s *Service) ConfirmHistory(req *restful.Request, resp *restful.Response) {
 		}
 
 		opt := response.Info[0]
-		if _, err := s.CoreAPI.HostController().Cloud().ConfirmHistory(context.Background(), pheader, opt); err != nil {
+		if _, err := s.CoreAPI.HostController().Cloud().AddConfirmHistory(context.Background(), pheader, opt); err != nil {
 			blog.Errorf("add confirm history failed")
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCloudAddConfirmHistoryFail)})
 		}
@@ -380,8 +377,6 @@ func (s *Service) SearchConfirmHistory(req *restful.Request, resp *restful.Respo
 		blog.Errorf("search confirm history failed")
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCloudGetConfirmHistoryFail)})
 	}
-
-	blog.Debug("response: %v", response)
 
 	resp.WriteEntity(meta.NewSuccessResp(response))
 }

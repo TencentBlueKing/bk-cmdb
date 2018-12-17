@@ -162,8 +162,6 @@ func (s *Service) UpdateCloudTask(req *restful.Request, resp *restful.Response) 
 	}
 
 	params := common.KvMap{"bk_task_id": data["bk_task_id"]}
-	//num, err := s.Instance.Table(common.BKTableNameCloudTask).Find(params).Count(ctx)
-
 	err := s.Instance.Table(common.BKTableNameCloudTask).Update(ctx, params, data)
 	if nil != err {
 		blog.Error("update cloud task failed, error information is %s, params:%v", err.Error(), params)
@@ -259,7 +257,7 @@ func (s *Service) DeleteConfirm(req *restful.Request, resp *restful.Response) {
 	})
 }
 
-func (s *Service) CloudHistory(req *restful.Request, resp *restful.Response) {
+func (s *Service) AddSyncHistory(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
@@ -320,7 +318,7 @@ func (s *Service) SearchSyncHistory(req *restful.Request, resp *restful.Response
 	})
 }
 
-func (s *Service) ConfirmHistory(req *restful.Request, resp *restful.Response) {
+func (s *Service) AddConfirmHistory(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
@@ -359,7 +357,6 @@ func (s *Service) SearchConfirmHistory(req *restful.Request, resp *restful.Respo
 		return
 	}
 
-	blog.Debug("SearchConfirmHistory opt: %v", opt)
 	condition := util.ConvParamsTime(opt)
 
 	result := make([]map[string]interface{}, 0)

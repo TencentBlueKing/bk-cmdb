@@ -153,10 +153,10 @@
                     this.placeholder = ''
                 } else if (this.curPush.bk_period_type === 'hour') {
                     this.disabled = false
-                    this.placeholder = '例如: 30'
+                    this.placeholder = this.$t('Cloud["例如: 30"]')
                 } else {
                     this.disabled = false
-                    this.placeholder = '例如: 19:30'
+                    this.placeholder = this.$t('Cloud["例如: 19:30"]')
                 }
             }
         }

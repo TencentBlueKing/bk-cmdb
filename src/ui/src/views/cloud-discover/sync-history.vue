@@ -98,6 +98,13 @@
                 this.table.list = res.info.map(data => {
                     data['bk_start_time'] = this.$tools.formatTime(data['bk_start_time'], 'YYYY-MM-DD HH:mm:ss')
                     data['bk_obj_id'] = this.$t('Hosts["主机"]')
+                    if (data['bk_status'] === 'waiting_confirm') {
+                        data['bk_status'] = '等待确认'
+                    } else if (data['bk_status'] === 'success') {
+                        data['bk_status'] = '成功'
+                    } else {
+                        data['bk_status'] = '失败'
+                    }
                     return data
                 })
                 pagination.count = res.count

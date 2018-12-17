@@ -13,6 +13,7 @@
 package util
 
 import (
+	"configcenter/src/common/blog"
 	"time"
 
 	"github.com/coccyx/timeparser"
@@ -22,7 +23,7 @@ import (
 
 var (
 	//需要转换的时间的标志
-	convTimeFields []string = []string{common.CreateTimeField, common.LastTimeField}
+	convTimeFields []string = []string{common.CreateTimeField, common.LastTimeField, common.ConfirmTimeField}
 )
 
 func GetCurrentTimeStr() string {
@@ -33,6 +34,7 @@ func ConvParamsTime(data interface{}) interface{} {
 	conds, ok := data.(map[string]interface{})
 	if true != ok && nil != conds {
 		return data
+		blog.Debug("return origin data")
 	}
 	convItem, _ := convTimeItem(data)
 

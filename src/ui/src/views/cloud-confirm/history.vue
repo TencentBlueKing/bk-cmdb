@@ -92,15 +92,20 @@
             async getTableData () {
                 let pagination = this.table.pagination
                 let params = {}
-                // let innerParams = {}
-                // innerParams['$gte'] = this.filterRange[0]
-                // innerParams['$lte'] = this.filterRange[1]
-                // params['confirm_time'] = innerParams
+                let innerParams = {}
+                innerParams['$gte'] = this.filterRange[0]
+                innerParams['$lte'] = this.filterRange[1]
+                params['confirm_time'] = innerParams
                 let res = await this.searchConfirmHistory({params, config: {requestID: 'getConfirHistory'}})
                 this.table.list = res.info.map(data => {
                     data['create_time'] = this.$tools.formatTime(data['create_time'], 'YYYY-MM-DD HH:mm:ss')
                     data['confirm_time'] = this.$tools.formatTime(data['confirm_time'], 'YYYY-MM-DD HH:mm:ss')
                     data['bk_obj_id'] = this.$t('Hosts["主机"]')
+                    if (data['bk_resource_type'] === 'change') {
+                        data['bk_resource_type'] = '变更'
+                    } else {
+                        data['bk_resource_type'] = '新增'
+                    }
                     return data
                 })
                 pagination.count = res.count
