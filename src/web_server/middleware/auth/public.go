@@ -101,7 +101,7 @@ func (m *publicAuth) ValidResAccess(pathArr []string, c *gin.Context) bool {
 		return true
 	}
 
-	// batc search topo association kind
+	// batch search topo association kind
 	if strings.HasSuffix(pathStr, types.BKTopoBatchSearchAssociationKind) && method == http.MethodPost {
 		return true
 	}
@@ -118,6 +118,11 @@ func (m *publicAuth) ValidResAccess(pathArr []string, c *gin.Context) bool {
 
 	// get association kind between objects
 	if pathStr == types.SearchObjectAssociation && method == http.MethodPost {
+		return true
+	}
+
+	// get association kind between objects
+	if pathStr == types.CreateInstAssociation && method == http.MethodPost {
 		return true
 	}
 
