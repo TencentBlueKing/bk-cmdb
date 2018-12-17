@@ -36,24 +36,6 @@ func (s *coreService) CreateManyModelInstances(params core.ContextParams, pathPa
 	return s.core.InstanceOperation().CreateManyModelInstance(params, pathParams("bk_obj_id"), inputData)
 }
 
-func (s *coreService) SetOneModelInstance(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
-	inputData := metadata.SetModelInstance{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
-	}
-	return s.core.InstanceOperation().SetModelInstance(params, pathParams("bk_obj_id"), inputData)
-}
-
-func (s *coreService) SetManyModelInstances(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
-	inputData := metadata.SetManyModelInstance{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
-	}
-	return s.core.InstanceOperation().SetManyModelInstance(params, pathParams("bk_obj_id"), inputData)
-}
-
 func (s *coreService) UpdateModelInstances(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	inputData := metadata.UpdateOption{}

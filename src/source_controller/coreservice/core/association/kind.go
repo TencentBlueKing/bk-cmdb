@@ -28,56 +28,10 @@ type associationKind struct {
 	*associationModel
 }
 
-func (m *associationKind) isExists(ctx core.ContextParams, associationKindID string) (origin *metadata.AssociationKind, exists bool, err error) {
-	cond := mongo.NewCondition()
-	cond.Element(&mongo.Eq{Key: common.AssociationKindIDField, Val: associationKindID})
-	err = m.dbProxy.Table(common.BKTableNameAsstDes).Find(cond.ToMapStr()).One(ctx, origin)
-	return origin, !m.dbProxy.IsNotFoundError(err), err
-}
-
-func (m *associationKind) update(ctx core.ContextParams, data mapstr.MapStr, cond mapstr.MapStr) error {
-
-	return m.dbProxy.Table(common.BKTableNameAsstDes).Update(ctx, cond, data)
-}
-
-func (m *associationKind) searchAssociationKind(ctx core.ContextParams, cond mapstr.MapStr) ([]metadata.AssociationKind, error) {
-
-	results := []metadata.AssociationKind{}
-	err := m.dbProxy.Table(common.BKTableNameObjClassifiction).Find(cond).All(ctx, &results)
-
-	return results, err
-}
-
-func (m *associationKind) isPrPreAssociationKind(ctx core.ContextParams, cond metadata.DeleteOption) (exists bool, err error) {
-
-	innerCnt, err := m.dbProxy.Table(common.BKTableNameAsstDes).Find(cond).Count(ctx)
-	exists = 0 != innerCnt
-	return exists, err
-}
-
-func (m *associationKind) isApplyToObject(ctx core.ContextParams, cond metadata.DeleteOption) (cnt uint64, exists bool, err error) {
-
-	innerCnt, err := m.dbProxy.Table(common.BKTableNameAsstDes).Find(cond).Count(ctx)
-	exists = 0 != innerCnt
-	return innerCnt, exists, err
-}
-
-func (m *associationKind) save(ctx core.ContextParams, associationKind metadata.AssociationKind) (id uint64, err error) {
-
-	id, err = m.dbProxy.NextSequence(ctx, common.BKTableNameAsstDes)
-	if err != nil {
-		return id, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
-	}
-
-	associationKind.ID = int64(id)
-
-	err = m.dbProxy.Table(common.BKTableNameAsstDes).Insert(ctx, associationKind)
-	return id, err
-}
-
 func (m *associationKind) CreateAssociationKind(ctx core.ContextParams, inputParam metadata.CreateAssociationKind) (*metadata.CreateOneDataResult, error) {
 	_, exists, err := m.isExists(ctx, inputParam.Data.AssociationKindID)
 	if nil != err {
+		blog.Errorf("check association kind is exist error (%v)", err)
 		return nil, err
 	}
 	if exists {
@@ -121,7 +75,8 @@ func (m *associationKind) CreateManyAssociationKind(ctx core.ContextParams, inpu
 		}
 
 		dataResult.Created = append(dataResult.Created, metadata.CreatedDataResult{
-			ID: id,
+			OriginIndex: int64(itemIdx),
+			ID:          id,
 		})
 
 	}
@@ -132,18 +87,17 @@ func (m *associationKind) CreateManyAssociationKind(ctx core.ContextParams, inpu
 func (m *associationKind) SetAssociationKind(ctx core.ContextParams, inputParam metadata.SetAssociationKind) (*metadata.SetDataResult, error) {
 	origin, exists, err := m.isExists(ctx, inputParam.Data.AssociationKindID)
 	if nil != err {
+		blog.Errorf("check association kind is exist error (%v)", err)
 		return nil, err
 	}
-
 	dataResult := &metadata.SetDataResult{}
-
 	if exists {
-
 		cond := mongo.NewCondition()
 		data := mapstr.NewFromStruct(inputParam.Data, "field")
 		data.Remove(common.BKIsPre)
 		data.Remove(common.AssociationKindIDField)
-		if err := m.update(ctx, data, cond.Element(&mongo.Eq{Key: common.AssociationKindIDField, Val: origin.ID}).ToMapStr()); nil != err {
+		data.Remove(common.BKFieldID)
+		if err := m.update(ctx, data, cond.Element(&mongo.Eq{Key: common.AssociationKindIDField, Val: origin.AssociationKindID}).ToMapStr()); nil != err {
 			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
 				Message:     err.Error(),
 				Code:        int64(err.(errors.CCErrorCoder).GetCode()),
@@ -153,9 +107,9 @@ func (m *associationKind) SetAssociationKind(ctx core.ContextParams, inputParam 
 			return dataResult, nil
 		}
 		dataResult.Updated = append(dataResult.Updated, metadata.UpdatedDataResult{ID: uint64(origin.ID)})
+		dataResult.UpdatedCount.Count++
 		return dataResult, err
 	}
-
 	id, err := m.save(ctx, inputParam.Data)
 	if nil != err {
 		dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
@@ -166,6 +120,7 @@ func (m *associationKind) SetAssociationKind(ctx core.ContextParams, inputParam 
 		})
 	}
 	dataResult.Created = append(dataResult.Created, metadata.CreatedDataResult{ID: id})
+	dataResult.CreatedCount.Count++
 	return dataResult, err
 }
 
@@ -190,7 +145,8 @@ func (m *associationKind) SetManyAssociationKind(ctx core.ContextParams, inputPa
 			data := mapstr.NewFromStruct(item, "field")
 			data.Remove(common.BKIsPre)
 			data.Remove(common.AssociationKindIDField)
-			if err := m.update(ctx, data, cond.Element(&mongo.Eq{Key: common.AssociationKindIDField, Val: origin.ID}).ToMapStr()); nil != err {
+			data.Remove(common.BKFieldID)
+			if err := m.update(ctx, data, cond.Element(&mongo.Eq{Key: common.AssociationKindIDField, Val: origin.AssociationKindID}).ToMapStr()); nil != err {
 				dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
 					Message:     err.Error(),
 					Code:        int64(err.(errors.CCErrorCoder).GetCode()),
@@ -199,7 +155,7 @@ func (m *associationKind) SetManyAssociationKind(ctx core.ContextParams, inputPa
 				})
 				continue
 			}
-
+			dataResult.Updated = append(dataResult.Updated, metadata.UpdatedDataResult{ID: uint64(origin.ID), OriginIndex: int64(itemIdx)})
 			dataResult.UpdatedCount.Count++
 			continue
 		}
@@ -218,7 +174,8 @@ func (m *associationKind) SetManyAssociationKind(ctx core.ContextParams, inputPa
 
 		dataResult.CreatedCount.Count++
 		dataResult.Created = append(dataResult.Created, metadata.CreatedDataResult{
-			ID: id,
+			ID:          id,
+			OriginIndex: int64(itemIdx),
 		})
 
 	}
@@ -237,52 +194,83 @@ func (m *associationKind) UpdateAssociationKind(ctx core.ContextParams, inputPar
 }
 
 func (m *associationKind) DeleteAssociationKind(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
-	cnt, exists, err := m.isApplyToObject(ctx, inputParam)
+	queryCond := metadata.QueryCondition{Condition: inputParam.Condition}
+	origins, err := m.searchAssociationKind(ctx, queryCond)
 	if nil != err {
+		blog.Errorf("search association kind by condition error:%v", err)
 		return &metadata.DeletedCount{}, err
-	}
-	if exists {
-		return &metadata.DeletedCount{}, ctx.Error.Error(common.CCErrorTopoAssKindHasApplyToObject)
 	}
 
-	exists, err = m.isPrPreAssociationKind(ctx, inputParam)
+	for _, origin := range origins {
+		cond := mongo.NewCondition()
+		cond.Element(&mongo.Eq{Key: common.AssociationKindIDField, Val: origin.AssociationKindID})
+		origin, exist, err := m.associationModel.isExists(ctx, cond)
+		if nil != err {
+			blog.Errorf("get association kind apply error:%v", err)
+			//return &metadata.DeletedCount{}, err
+		}
+		if exist {
+			blog.Errorf("the association kind [%v] has been apply to model [%v]", inputParam.Condition, origin)
+			return &metadata.DeletedCount{}, ctx.Error.Error(common.CCErrorTopoAssKindHasApplyToObject)
+		}
+	}
+
+	exist, err := m.isPreAssociationKind(ctx, inputParam)
 	if nil != err {
+		blog.Errorf("search pre association kind by condition error:%v", err)
 		return &metadata.DeletedCount{}, err
 	}
-	if exists {
+	if exist {
+		blog.Errorf(" pre association can not be delete [%v]", inputParam.Condition)
 		return &metadata.DeletedCount{}, ctx.Error.Error(common.CCErrorTopoPreAssKindCanNotBeDelete)
 	}
-
-	m.dbProxy.Table(common.BKTableNameAsstDes).Delete(ctx, inputParam.Condition)
-	return &metadata.DeletedCount{Count: cnt}, nil
+	err = m.dbProxy.Table(common.BKTableNameAsstDes).Delete(ctx, inputParam.Condition)
+	if nil != err {
+		blog.Errorf("delete association kind by condition [%v],error:%v", inputParam.Condition, err)
+		return &metadata.DeletedCount{}, err
+	}
+	return &metadata.DeletedCount{Count: uint64(len(origins))}, nil
 }
 
 func (m *associationKind) CascadeDeleteAssociationKind(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
-	associationKindItems, err := m.searchAssociationKind(ctx, inputParam.Condition)
+	condition := metadata.QueryCondition{Condition: inputParam.Condition}
+	associationKindItems, err := m.searchAssociationKind(ctx, condition)
 	if nil != err {
+		blog.Errorf("search association kind by condition [%v],error:%v", inputParam.Condition, err)
 		return &metadata.DeletedCount{}, err
 	}
 
 	for _, item := range associationKindItems {
 		cond := mongo.NewCondition()
 		cond.Element(&mongo.Eq{Key: common.AssociationKindIDField, Val: item.AssociationKindID})
-		if _, err := m.associationModel.CascadeDeleteModelAssociation(ctx, inputParam); nil != err {
+		deleteModelAsstParam := metadata.DeleteOption{Condition: cond.ToMapStr()}
+		if _, err := m.associationModel.CascadeDeleteModelAssociation(ctx, deleteModelAsstParam); nil != err {
+			blog.Errorf("cascade delete association kind by condition [%v],error:%v", deleteModelAsstParam, err)
 			return &metadata.DeletedCount{}, err
 		}
+	}
+
+	err = m.dbProxy.Table(common.BKTableNameAsstDes).Delete(ctx, inputParam.Condition)
+	if nil != err {
+		blog.Errorf("delete association kind by condition [%v],error:%v", inputParam.Condition, err)
+		return &metadata.DeletedCount{}, err
 	}
 
 	return &metadata.DeletedCount{Count: uint64(len(associationKindItems))}, nil
 }
 
 func (m *associationKind) SearchAssociationKind(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
-	associationKindItems, err := m.searchAssociationKind(ctx, inputParam.Condition)
+	associationKindItems, err := m.searchAssociationKind(ctx, inputParam)
 	if nil != err {
 		return &metadata.QueryResult{}, err
 	}
 
 	dataResult := &metadata.QueryResult{}
-	dataResult.Count = uint64(len(associationKindItems))
-	for item := range associationKindItems {
+	dataResult.Count, err = m.countInstanceAssociation(ctx, inputParam.Condition)
+	if nil != err {
+		return &metadata.QueryResult{}, err
+	}
+	for _, item := range associationKindItems {
 		dataResult.Info = append(dataResult.Info, mapstr.NewFromStruct(item, "field"))
 	}
 
