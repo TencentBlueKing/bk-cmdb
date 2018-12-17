@@ -25,11 +25,25 @@
             @handleSizeChange="handleSizeChange"
             @handlePageChange="handlePageChange"
             @handleSortChange="handleSortChange">
-                <div class="empty-info" slot="data-empty">
-                    <p>{{$t("Common['暂时没有数据，请先']")}}
-                    <span class="text-primary" @click="handleCreate">{{ $t('Cloud["新建云同步任务"]')}}</span>
-                    </p>
-                </div>
+                <template slot="bk_sync_status" slot-scope="{ item }">
+                    <template v-if="item.bk_sync_status === 'success' && item.bk_status">
+                        <div class="bk-spin-loading bk-spin-loading-mini bk-spin-loading-primary">
+                            <div class="rotate rotate1"></div>
+                            <div class="rotate rotate2"></div>
+                            <div class="rotate rotate3"></div>
+                            <div class="rotate rotate4"></div>
+                            <div class="rotate rotate5"></div>
+                            <div class="rotate rotate6"></div>
+                            <div class="rotate rotate7"></div>
+                            <div class="rotate rotate8"></div>
+                        </div>
+                        <span>{{$t('Cloud["同步中"]')}}</span>
+                    </template>
+                    <span class="sync-fail" v-if="item.bk_sync_status === 'fail'">
+                        {{$t('EventPush["失败"]')}}
+                    </span>
+                    <span v-if="!item.bk_status">{{$t('Cloud["..."]')}}</span>
+                </template>
                 <template slot="status" slot-scope="{ item }">
                     <bk-switcher
                         @change="changeStatus(...arguments, item)"
@@ -39,6 +53,9 @@
                         :show-text="showText">
                     </bk-switcher>
                 </template>
+                <template slot="bk_account_type" slot-scope="{ item }">
+                    <span>{{$t('Cloud["腾讯云"]')}}</span>
+                </template>
                 <template slot="bk_last_sync_result" slot-scope="{ item }">
                     {{$t('Cloud[\'新增\']')}} ({{item.new_add}}) / {{$t('Cloud[\'变更\']')}} ({{item.attr_changed}})
                 </template>
@@ -46,6 +63,11 @@
                     <span class="text-primary mr20" @click.stop="detail(item)">{{$t('Cloud["详情"]')}}</span>
                     <span class="text-danger" @click.stop="deleteConfirm(item)">{{$t('Common["删除"]')}}</span>
                 </template>
+                <div class="empty-info" slot="data-empty">
+                    <p>{{$t("Common['暂时没有数据，请先']")}}
+                        <span class="text-primary" @click="handleCreate">{{ $t('Cloud["新建云同步任务"]')}}</span>
+                    </p>
+                </div>
         </cmdb-table>
         <cmdb-slider
             :isShow.sync="slider.show"
@@ -101,11 +123,11 @@
         data () {
             return {
                 list: [{
-                    id: 0,
+                    id: 'tencent_cloud',
                     name: this.$t('Cloud["腾讯云"]')
                 }],
                 defaultDemo: {
-                    selected: 0
+                    selected: 'tencent_cloud'
                 },
                 isSelected: false,
                 showText: true,
@@ -139,10 +161,12 @@
                         name: this.$t('Cloud["账号类型"]')
                     }, {
                         id: 'bk_last_sync_time',
+                        width: 160,
                         name: this.$t('Cloud["最近同步时间"]')
                     }, {
                         id: 'bk_last_sync_result',
                         sortable: false,
+                        width: 130,
                         name: this.$t('Cloud["最近同步结果"]')
 
                     }, {
@@ -192,29 +216,21 @@
                 let pagination = this.table.pagination
                 let params = {}
                 let attr = {}
+                // let page = {
+                //     start: (pagination.current - 1) * pagination.size,
+                //     limit: pagination.size,
+                //     sort: this.table.sort
+                // }
                 if (this.filter.text.length !== 0) {
                     attr['$regex'] = this.filter.text
                     attr['$options'] = '$i'
                     params['bk_task_name'] = attr
                 }
+                // params['page'] = page
                 let res = await this.searchCloudTask({params, config: {requestId: 'searchCloudTask'}})
                 this.table.list = res.info.map(data => {
                     data['bk_last_sync_time'] = this.$tools.formatTime(data['bk_last_sync_time'], 'YYYY-MM-DD HH:mm:ss')
                     data['bk_obj_id'] = this.$t('Hosts["主机"]')
-                    if (data['bk_period_type'] === 'day') {
-                        data['bk_period_type'] = this.$t('Cloud["每天"]')
-                    } else if (data['bk_period_type'] === 'hour') {
-                        data['bk_period_type'] = this.$t('Cloud["每小时"]')
-                    } else {
-                        data['bk_period_type'] = this.$t('Cloud["每五分钟"]')
-                    }
-                    if (data['bk_sync_status'] === 'waiting_confirm') {
-                        data['bk_sync_status'] = '等待确认'
-                    } else if (data['bk_sync_status'] === 'success') {
-                        data['bk_sync_status'] = '成功'
-                    } else {
-                        data['bk_sync_status'] = '失败'
-                    }
                     return data
                 })
                 pagination.count = res.count
@@ -274,6 +290,7 @@
                     this.$success(this.$t('Cloud["启用成功，约有五分钟延迟"]'))
                 }
                 this.startCloudSync({params})
+                this.getTableData()
             },
             handleSliderBeforeClose () {
                 if (['create', 'update'].includes(this.attribute.type) && this.$refs.detail.isCloseConfirmShow()) {
@@ -329,8 +346,8 @@
             span {
                 cursor:pointer;
             }
-            .sync-failed {
-                color: #fc2e2e
+            .sync-fail {
+                color: #fc2e2e;
             }
         }
     }

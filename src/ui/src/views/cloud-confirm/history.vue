@@ -1,11 +1,11 @@
 <template>
-    <div class="audit-history-layout">
-        <div class="history-options clearfix">
-            <label class="options-label">{{$t("HostResourcePool['时间范围']")}}</label>
-            <cmdb-form-date-range class="options-filter" v-model="dateRange" style="width: 240px"></cmdb-form-date-range>
+    <div class="confirm-history-layout">
+        <div class="confirm-history-options clearfix">
+            <label class="confirm-label">{{$t("HostResourcePool['时间范围']")}}</label>
+            <cmdb-form-date-range class="confirm-filter" v-model="dateRange" style="width: 240px"></cmdb-form-date-range>
             <bk-button class="fr" type="primary" @click="back">{{$t('Common["返回"]')}}</bk-button>
         </div>
-        <cmdb-table class="audit-table" ref="table"
+        <cmdb-table ref="table"
                     :loading="$loading('getConfirHistory')"
                     :header="table.header"
                     :list="table.list"
@@ -14,6 +14,17 @@
                     @handlePageChange="handlePageChange"
                     @handleSizeChange="handleSizeChange"
                     @handleSortChange="handleSortChange">
+                        <template slot="bk_resource_type" slot-scope="{ item }">
+                            <span class="change-span" v-if="item.bk_resource_type === 'change'">
+                                {{$t('Cloud["变更"]')}}
+                            </span>
+                            <span class="new-add-span" v-else>
+                                {{$t('Cloud["新增"]')}}
+                            </span>
+                        </template>
+                        <template slot="bk_account_type">
+                            <span>{{$t('Cloud["腾讯云"]')}}</span>
+                        </template>
         </cmdb-table>
     </div>
 </template>
@@ -52,9 +63,11 @@
                         name: this.$t('Cloud["任务维护人"]')
                     }, {
                         id: 'create_time',
+                        width: 180,
                         name: this.$t('Cloud["发现时间"]')
                     }, {
                         id: 'confirm_time',
+                        width: 180,
                         name: this.$t('Cloud["确认时间"]')
                     }],
                     list: [],
@@ -101,11 +114,6 @@
                     data['create_time'] = this.$tools.formatTime(data['create_time'], 'YYYY-MM-DD HH:mm:ss')
                     data['confirm_time'] = this.$tools.formatTime(data['confirm_time'], 'YYYY-MM-DD HH:mm:ss')
                     data['bk_obj_id'] = this.$t('Hosts["主机"]')
-                    if (data['bk_resource_type'] === 'change') {
-                        data['bk_resource_type'] = '变更'
-                    } else {
-                        data['bk_resource_type'] = '新增'
-                    }
                     return data
                 })
                 pagination.count = res.count
@@ -135,12 +143,27 @@
 </script>
 
 <style lang="scss" scoped>
-    .audit-history-layout {
+    .confirm-history-layout {
         position: relative;
         height: 100%;
         padding: 0 20px;
     }
-    .history-options {
+    .confirm-history-options {
         padding: 20px 0;
+        .confirm-label{
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .confirm-filter{
+            display: inline-block;
+            vertical-align: middle;
+            width: 240px;
+        }
+    }
+    .change-span {
+        color: #ffb23a;
+    }
+    .new-add-span {
+        color: #4f55f3;
     }
 </style>

@@ -43,14 +43,25 @@
                     :wrapperMinusHeight="157"
                     @handleSizeChange="handleSizeChange"
                     @handlePageChange="handlePageChange">
+                        <template slot="bk_resource_type" slot-scope="{ item }">
+                                        <span class="attr-changed" v-if="item.bk_resource_type === 'change'">
+                                            {{$t('Cloud["变更"]')}}
+                                        </span>
+                            <span class="new-add" v-else>
+                                            {{$t('Cloud["新增"]')}}
+                                        </span>
+                        </template>
+                        <template slot="bk_account_type">
+                            <span>{{$t('Cloud["腾讯云"]')}}</span>
+                        </template>
+                        <template slot="operation" slot-scope="{ item }">
+                            <span class="text-primary mr20" @click.stop="singleConfirm(item)">{{$t('Hosts["确认"]')}}</span>
+                        </template>
                         <div class="empty-info" slot="data-empty">
                             <p>{{$t("Cloud['暂时没有数据，请确保先添加云资源发现任务，']")}}
                                 <span class="text-primary" @click="handleAdd">{{ $t('Cloud["去添加"]')}}</span>
                             </p>
                         </div>
-                        <template slot="operation" slot-scope="{ item }">
-                            <span class="text-primary mr20" @click.stop="singleConfirm(item)">{{$t('Hosts["确认"]')}}</span>
-                        </template>
         </cmdb-table>
     </div>
 </template>
@@ -117,6 +128,7 @@
                         name: this.$t('Cloud["任务维护人"]')
                     }, {
                         id: 'create_time',
+                        width: 180,
                         name: this.$t('Cloud["发现时间"]')
                     }, {
                         id: 'operation',
@@ -168,11 +180,6 @@
                 this.table.list = res.info.map(data => {
                     data['create_time'] = this.$tools.formatTime(data['create_time'], 'YYYY-MM-DD HH:mm:ss')
                     data['bk_obj_id'] = this.$t('Hosts["主机"]')
-                    if (data['bk_resource_type'] === 'change') {
-                        data['bk_resource_type'] = '变更'
-                    } else {
-                        data['bk_resource_type'] = '新增'
-                    }
                     return data
                 })
                 pagination.count = res.count

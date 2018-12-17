@@ -20,5 +20,6 @@
 	"1106020": "couldn't connect to snapshot channel",
 	"1106021": "Failed to create cloud synchronization task",
 	"1106022": "Failed to add resource confirm history",
+	"1106023": "Failed to search synchronization history",
 	"": "" 
 }

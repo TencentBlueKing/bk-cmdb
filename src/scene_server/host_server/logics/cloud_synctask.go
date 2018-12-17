@@ -156,7 +156,7 @@ func (lgc *Logics) CloudTaskSync(taskList mapstr.MapStr, pheader http.Header) er
 		}
 	} else {
 		ticker.Stop()
-		blog.Info("bk_status: false, stop cloud sync")
+		blog.Info("bk_status: %v, stop cloud sync", taskList["bk_status"])
 	}
 	return nil
 }
@@ -358,13 +358,13 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 	}
 
 	if resourceConfirm {
-		err := lgc.NewAddConfirm(taskList, pheader, newCloudHost)
+		newAddNum, err := lgc.NewAddConfirm(taskList, pheader, newCloudHost)
+		cloudHistory.NewAdd = newAddNum
 		if err != nil {
 			blog.Errorf("newly add cloud resource confirm failed, err: %v", err)
 			errOrigin = err
 			return err
 		}
-		cloudHistory.Status = "waiting_confirm"
 	}
 
 	if attrConfirm && len(cloudHostAttr) > 0 {
@@ -410,14 +410,10 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 				return err
 			}
 		}
-		cloudHistory.Status = "waiting_confirm"
 		return nil
 	}
 
-	if cloudHistory.Status == "" {
-		cloudHistory.Status = "success"
-	}
-
+	cloudHistory.Status = "success"
 	blog.V(3).Info("finish sync")
 	return nil
 }
@@ -490,13 +486,13 @@ func (lgc *Logics) UpdateCloudHosts(pheader http.Header, cloudHostAttr []mapstr.
 	return nil
 }
 
-func (lgc *Logics) NewAddConfirm(taskList mapstr.MapStr, pheader http.Header, newCloudHost []mapstr.MapStr) error {
+func (lgc *Logics) NewAddConfirm(taskList mapstr.MapStr, pheader http.Header, newCloudHost []mapstr.MapStr) (int, error) {
 	// Check whether the host is already exist in resource confirm.
 	opt := make(map[string]interface{})
 	confirmHosts, errS := lgc.CoreAPI.HostController().Cloud().SearchConfirm(context.Background(), pheader, opt)
 	if errS != nil {
 		blog.Errorf("get confirm info failed with err: %v", errS)
-		return errS
+		return 0, errS
 	}
 
 	confirmIpList := make([]string, 0)
@@ -515,7 +511,7 @@ func (lgc *Logics) NewAddConfirm(taskList mapstr.MapStr, pheader http.Header, ne
 		innerIp, errIp := host.String(common.BKHostInnerIPField)
 		if errIp != nil {
 			blog.Debug("mapstr.Map convert to string failed.")
-			return errIp
+			return 0, errIp
 		}
 		if !util.InStrArr(confirmIpList, innerIp) {
 			newHostIp = append(newHostIp, innerIp)
@@ -528,17 +524,17 @@ func (lgc *Logics) NewAddConfirm(taskList mapstr.MapStr, pheader http.Header, ne
 			innerIp, errIp := host.String(common.BKHostInnerIPField)
 			if errIp != nil {
 				blog.Error("mapstr.Map convert to string failed")
-				return errIp
+				return 0, errIp
 			}
 			outerIp, errOut := host.String(common.BKHostOuterIPField)
 			if errOut != nil {
 				blog.Error("mapstr.Map convert to string failed")
-				return errOut
+				return 0, errOut
 			}
 			osName, errOs := host.String(common.BKOSNameField)
 			if errOs != nil {
 				blog.Error("mapstr.Map convert to string failed")
-				return errOs
+				return 0, errOs
 			}
 			resourceConfirm := mapstr.MapStr{}
 			resourceConfirm["bk_obj_id"] = taskList["bk_obj_id"]
@@ -557,11 +553,12 @@ func (lgc *Logics) NewAddConfirm(taskList mapstr.MapStr, pheader http.Header, ne
 			_, err := lgc.CoreAPI.HostController().Cloud().ResourceConfirm(context.Background(), pheader, resourceConfirm)
 			if err != nil {
 				blog.Errorf("add resource confirm failed with err: %v", err)
-				return err
+				return 0, err
 			}
 		}
 	}
-	return nil
+	num := len(newHostIp)
+	return num, nil
 }
 
 func (lgc *Logics) UnixSubtract(periodType string, period string) int64 {
