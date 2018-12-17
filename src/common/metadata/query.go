@@ -49,6 +49,7 @@ type QueryConditionResult ResponseInstData
 // SearchSortParse SearchSort parse interface
 type SearchSortParse interface {
 	Str(sort string) []SearchSort
+	ToMongo(ssArr []SearchSort) string
 }
 
 // searchSortParse SearchSort parse struct
@@ -78,4 +79,17 @@ func (ss *searchSortParse) Str(sort string) []SearchSort {
 		ssArr = append(ssArr, ssInst)
 	}
 	return ssArr
+}
+
+// searchSortParse cc SearchSort struct to mongodb sort filed
+func (ss *searchSortParse) ToMongo(ssArr []SearchSort) string {
+	var orderByArr []string
+	for _, item := range ssArr {
+		if item.IsDsc {
+			orderByArr = append(orderByArr, item.Field+":-1")
+		} else {
+			orderByArr = append(orderByArr, item.Field+":1")
+		}
+	}
+	return strings.Join(orderByArr, ",")
 }
