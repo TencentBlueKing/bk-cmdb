@@ -17,6 +17,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/backbone"
@@ -24,10 +26,7 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/host_server/app/options"
-	"configcenter/src/scene_server/host_server/logics"
 	hostsvc "configcenter/src/scene_server/host_server/service"
-
-	"github.com/emicklei/go-restful"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -74,11 +73,9 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
 	service.Engine = engine
-	service.Logics = &logics.Logics{Engine: engine}
 	service.Config = &hostSvr.Config
 	hostSvr.Core = engine
 	hostSvr.Service = service
-	hostSvr.Logic = service.Logics
 	select {}
 	return nil
 }
@@ -87,7 +84,6 @@ type HostServer struct {
 	Core    *backbone.Engine
 	Config  options.Config
 	Service *hostsvc.Service
-	Logic   *logics.Logics
 }
 
 func (h *HostServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
