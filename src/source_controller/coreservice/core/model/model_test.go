@@ -13,6 +13,7 @@
 package model_test
 
 import (
+	"configcenter/src/common/mapstr"
 	"testing"
 
 	"configcenter/src/common"
@@ -79,4 +80,139 @@ func TestCreateOneModel(t *testing.T) {
 	require.NotNil(t, dataResult)
 	require.NotEqual(t, uint64(0), dataResult.Created.ID)
 
+}
+
+func TestSetOneModel(t *testing.T) {
+
+	modelMgr := newModel(t)
+
+	inputModel := metadata.SetModel{}
+	// create a new empty
+	dataResult, err := modelMgr.SetModel(defaultCtx, inputModel)
+
+	require.NotNil(t, err)
+	require.NotNil(t, dataResult)
+	require.Equal(t, 0, len(dataResult.Created))
+	require.Equal(t, dataResult.CreatedCount.Count, uint64(len(dataResult.Created)))
+	require.Equal(t, dataResult.UpdatedCount.Count, uint64(len(dataResult.Updated)))
+	require.Equal(t, 0, len(dataResult.Exceptions))
+
+	tmpErr, ok := err.(errors.CCErrorCoder)
+	require.True(t, ok, "err must be the errors of the cmdb")
+	require.Equal(t, common.CCErrCommParamsNeedSet, tmpErr.GetCode())
+
+	// create a valid model with a invalid classificationID
+	inputModel.Spec = metadata.Object{
+		ObjectID: xid.New().String(),
+		ObjCls:   xid.New().String(),
+	}
+	inputModel.Attributes = []metadata.Attribute{}
+	dataResult, err = modelMgr.SetModel(defaultCtx, inputModel)
+
+	require.NotNil(t, err)
+	require.NotNil(t, dataResult)
+	tmpErr, ok = err.(errors.CCErrorCoder)
+	require.True(t, ok, "err must be the errors of the cmdb")
+	require.Equal(t, common.CCErrCommParamsIsInvalid, tmpErr.GetCode())
+
+	// create a valid model with a valid classificationID
+	classificationID := xid.New().String()
+	result, err := modelMgr.CreateOneModelClassification(defaultCtx, metadata.CreateOneModelClassification{
+		Data: metadata.Classification{
+			ClassificationID:   classificationID,
+			ClassificationName: "test_classification_name_to_test_create_model",
+		},
+	})
+	require.NoError(t, err)
+	require.NotEqual(t, uint64(0), result.Created.ID)
+
+	inputModel.Spec.ObjCls = classificationID
+	inputModel.Spec.ObjectName = "test_create_model"
+	inputModel.Spec.ObjectID = xid.New().String()
+	inputModel.Attributes = []metadata.Attribute{
+		metadata.Attribute{
+			ObjectID:     inputModel.Spec.ObjectID,
+			PropertyID:   xid.New().String(),
+			PropertyName: xid.New().String(),
+		},
+	}
+
+	dataResult, err = modelMgr.SetModel(defaultCtx, inputModel)
+	require.NoError(t, err)
+	require.NotNil(t, dataResult)
+	require.Equal(t, 1, len(dataResult.Created))
+	require.NotEqual(t, uint64(0), dataResult.Created[0].ID)
+	//require.NotEqual(t, uint64(0), dataResult.Created)
+
+}
+
+func TestSearchAndDeleteModel(t *testing.T) {
+
+	modelMgr := newModel(t)
+	inputModel := metadata.CreateModel{}
+	// create a valid model with a valid classificationID
+	classificationID := xid.New().String()
+	result, err := modelMgr.CreateOneModelClassification(defaultCtx, metadata.CreateOneModelClassification{
+		Data: metadata.Classification{
+			ClassificationID:   classificationID,
+			ClassificationName: "test_classification_name_to_test_create_model",
+		},
+	})
+	require.NoError(t, err)
+	require.NotEqual(t, uint64(0), result.Created.ID)
+
+	inputModel.Spec.ObjCls = classificationID
+	inputModel.Spec.ObjectName = "delete_create_model"
+	inputModel.Spec.ObjectID = xid.New().String()
+	inputModel.Attributes = []metadata.Attribute{
+		metadata.Attribute{
+			ObjectID:     inputModel.Spec.ObjectID,
+			PropertyID:   xid.New().String(),
+			PropertyName: xid.New().String(),
+		},
+	}
+
+	dataResult, err := modelMgr.CreateModel(defaultCtx, inputModel)
+	require.NoError(t, err)
+	require.NotNil(t, dataResult)
+	require.NotEqual(t, uint64(0), dataResult.Created.ID)
+
+	// search the created one
+	searchResult, err := modelMgr.SearchModel(defaultCtx, metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			metadata.ModelFieldObjectName: mapstr.MapStr{
+				"$regex": "delete_",
+			},
+		},
+	})
+	require.NoError(t, err)
+	require.NotNil(t, searchResult)
+	require.Equal(t, uint64(1), searchResult.Count)
+	require.Equal(t, searchResult.Count, uint64(len(searchResult.Info)))
+
+	// search delete the one
+	deleteResult, err := modelMgr.DeleteModel(defaultCtx, metadata.DeleteOption{
+		Condition: mapstr.MapStr{
+			metadata.ModelFieldObjectName: mapstr.MapStr{
+				"$regex": "delete_",
+			},
+		},
+	})
+
+	require.NoError(t, err)
+	require.NotNil(t, deleteResult)
+	require.Equal(t, uint64(1), deleteResult.Count)
+
+	// search the created one
+	searchResult, err = modelMgr.SearchModel(defaultCtx, metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			metadata.ModelFieldObjectName: mapstr.MapStr{
+				"$regex": "delete_",
+			},
+		},
+	})
+	require.NoError(t, err)
+	require.NotNil(t, searchResult)
+	require.Equal(t, uint64(0), searchResult.Count)
+	require.Equal(t, searchResult.Count, uint64(len(searchResult.Info)))
 }

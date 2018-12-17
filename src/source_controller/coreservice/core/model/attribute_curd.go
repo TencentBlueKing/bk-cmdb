@@ -46,6 +46,8 @@ func (m *modelAttribute) update(ctx core.ContextParams, data mapstr.MapStr, cond
 		return cnt, nil
 	}
 
+	data.Remove(metadata.AttributeFieldPropertyID)
+	data.Remove(metadata.AttributeFieldSupplierAccount)
 	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Update(ctx, cond.ToMapStr(), data)
 	if nil != err {
 		blog.Errorf("request(%s): database operation is failed, error info is %s", ctx.ReqID, err.Error())
