@@ -292,7 +292,7 @@ func (cli *Association) ToMapStr() mapstr.MapStr {
 // InstAsst an association definition between instances.
 type InstAsst struct {
 	// sequence ID
-	ID int64 `field:"id" json:"-"`
+	ID int64 `field:"id" json:"id"`
 	// inst id associate to ObjectID
 	InstID int64 `field:"bk_inst_id" json:"bk_inst_id" bson:"bk_inst_id"`
 	// association source ObjectID
@@ -333,6 +333,7 @@ type InstNameAsst struct {
 	InstID     int64  `json:"bk_inst_id"`
 	ObjectName string `json:"bk_obj_name"`
 	InstName   string `json:"bk_inst_name"`
+	AssoID     int64  `json:"asso_id"`
 	// AsstName   string                 `json:"bk_asst_name"`
 	// AsstID   string                 `json:"bk_asst_id"`
 	InstInfo map[string]interface{} `json:"inst_info,omitempty"`

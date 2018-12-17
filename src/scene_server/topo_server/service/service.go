@@ -176,7 +176,6 @@ func (s *topoService) Actions() []*httpserver.Action {
 		func(act action) {
 
 			httpactions = append(httpactions, &httpserver.Action{Verb: act.Method, Path: act.Path, Handler: func(req *restful.Request, resp *restful.Response) {
-
 				ownerID := util.GetActionOnwerID(req)
 				user := util.GetActionUser(req)
 
