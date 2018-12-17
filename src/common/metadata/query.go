@@ -48,7 +48,7 @@ type QueryConditionResult ResponseInstData
 
 // SearchSortParse SearchSort parse interface
 type SearchSortParse interface {
-	Str(sort string) []SearchSort
+	String(sort string) []SearchSort
 	ToMongo(ssArr []SearchSort) string
 }
 
@@ -61,7 +61,7 @@ func NewSearchSortParse() SearchSortParse {
 }
 
 //  str convert string srot to cc SearchSort struct array
-func (ss *searchSortParse) Str(sort string) []SearchSort {
+func (ss *searchSortParse) String(sort string) []SearchSort {
 	if sort == "" {
 		return nil
 	}
