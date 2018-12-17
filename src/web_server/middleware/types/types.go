@@ -99,6 +99,7 @@ const (
 	searchUserAPI      = `userapi/search/[0-9]+$`
 	searchUniquesInfo  = `/api/v3/object/[a-z0-9A-Z_]+/unique/action/search$`
 	exportObjectExcel  = "/object/owner/[a-z0-9A-Z]+/object/[a-z0-9A-Z_]+/export$"
+	deleteInstAssociation = "/api/v3/inst/association/[0-9]+/action/delete$"
 )
 
 //system config privilege regexp
@@ -110,6 +111,7 @@ var (
 	SearchUserAPIRegexp       = regexp.MustCompile(searchUserAPI)
 	SearchObjectUniquesRegexp = regexp.MustCompile(searchUniquesInfo)
 	ExportObjectExcelRegexp   = regexp.MustCompile(exportObjectExcel)
+	DeleteInstAssociationRegex = regexp.MustCompile(deleteInstAssociation)
 )
 
 //host update string
