@@ -10,40 +10,25 @@
  * limitations under the License.
  */
 
-package association
+package service
 
 import (
 	"configcenter/src/source_controller/coreservice/core"
+	"configcenter/src/source_controller/coreservice/core/association"
+	"configcenter/src/source_controller/coreservice/core/instances"
 	"configcenter/src/storage/dal"
 )
 
-var _ core.AssociationOperation = (*associationManager)(nil)
-
-type associationManager struct {
-	*associationKind
-	*associationInstance
-	*associationModel
-	dbProxy dal.RDB
+type associationDepend struct {
+	instanceOperation core.InstanceOperation
 }
 
-// New create a new association manager instance
-func New(dbProxy dal.RDB, dependent OperationDependences) core.AssociationOperation {
-	asstModel := &associationModel{dbProxy: dbProxy}
-	asstKind := &associationKind{
-		dbProxy:          dbProxy,
-		associationModel: asstModel,
-	}
-	return &associationManager{
-		dbProxy:         dbProxy,
-		associationKind: asstKind,
-		associationInstance: &associationInstance{
-			dbProxy:          dbProxy,
-			associationKind:  asstKind,
-			associationModel: asstModel,
-			dependent:        dependent,
-		},
-		associationModel: &associationModel{
-			dbProxy: dbProxy,
-		},
-	}
+func NewAssociationDepend(dbProxy dal.RDB) association.OperationDependences {
+	asstDepend := &associationDepend{}
+	asstDepend.instanceOperation = instances.New(dbProxy)
+	return asstDepend
+
+}
+func (m *associationDepend) IsInstanceExist(ctx core.ContextParams, objID string, instID uint64) (exists bool, err error) {
+	return true, nil
 }
