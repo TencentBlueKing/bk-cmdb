@@ -295,7 +295,8 @@
                             'bk_asst_id': option['bk_asst_id'],
                             'bk_obj_asst_id': option['bk_obj_asst_id'],
                             'bk_obj_id': this.objId,
-                            'bk_asst_obj_id': option['bk_asst_obj_id']
+                            'bk_asst_obj_id': option['bk_asst_obj_id'],
+                            'bk_inst_id': this.instId
                         }
                     }
                 }).then(data => {
