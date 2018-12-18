@@ -38,6 +38,10 @@
                 </div>
             </div>
         </div>
+        <div class="business-box fr">
+            <cmdb-business-selector class="business-selector">
+            </cmdb-business-selector>
+        </div>
     </header>
 </template>
 
@@ -140,6 +144,9 @@
     }
     .header-options {
         text-align: right;
+    }
+    .business-box {
+        margin-top: 11px;
     }
     .user{
         display: inline-block;

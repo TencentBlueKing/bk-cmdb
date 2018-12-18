@@ -66,9 +66,12 @@
             getPrivilegeBusiness () {
                 return this.$store.dispatch('objectBiz/searchBusiness', {
                     config: {
-                        requestId: 'post_searchBusiness',
+                        requestId: 'post_searchBusiness_$ne_disabled',
                         fromCache: true
                     }
+                }).then(business => {
+                    this.$store.commit('objectBiz/setBusiness', business.info)
+                    return business
                 })
             },
             setLocalSelected () {
@@ -79,6 +82,7 @@
                 } else if (this.privilegeBusiness.length) {
                     this.localSelected = this.privilegeBusiness[0]['bk_biz_id']
                 }
+                this.$store.commit('objectBiz/setSelectedBusiness', this.localSelected)
             }
         }
     }
