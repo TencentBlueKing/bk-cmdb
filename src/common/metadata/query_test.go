@@ -41,7 +41,7 @@ func TestSearchSortParseStr(t *testing.T) {
 		},
 	}
 	for _, testDataItem := range testDataArr {
-		testSSArr := NewSearchSortParse().String(testDataItem.input)
+		testSSArr := NewSearchSortParse().String(testDataItem.input).ToSearchSortArr()
 		if len(testSSArr) != len(testDataItem.ss) {
 			t.Errorf("str parse to Search Sort error!")
 			return
@@ -94,12 +94,66 @@ func TestSearchSortToMongo(t *testing.T) {
 		},
 	}
 	for _, testDataItem := range testDataArr {
-		orderBy := NewSearchSortParse().ToMongo(testDataItem.input)
+		orderBy := NewSearchSortParse().Set(testDataItem.input).ToMongo()
 		if orderBy != testDataItem.output {
 			t.Errorf("%s != %s", orderBy, testDataItem.output)
 			return
 		}
 
+	}
+
+}
+
+func TestSearchSortField(t *testing.T) {
+	type testData struct {
+		ss []SearchSort
+	}
+	testDataArr := []testData{
+		testData{
+			ss: []SearchSort{
+				SearchSort{
+					Field: "aa",
+				},
+				SearchSort{
+					Field: "bb",
+				},
+			},
+		},
+		testData{
+			ss: []SearchSort{
+				SearchSort{
+					Field: "aa",
+					IsDsc: true,
+				},
+				SearchSort{
+					Field: "bb",
+				},
+				SearchSort{
+					Field: "cc",
+				},
+				SearchSort{
+					Field: "dd",
+				},
+			},
+		},
+	}
+	for _, testDataItem := range testDataArr {
+		ssHandle := NewSearchSortParse()
+		for _, ssItem := range testDataItem.ss {
+			ssHandle.Field(ssItem.Field, ssItem.IsDsc)
+		}
+		testSSArr := ssHandle.ToSearchSortArr()
+		if len(testSSArr) != len(testDataItem.ss) {
+			t.Errorf("str parse to Search Sort error!")
+			return
+		}
+		for idx, ssItem := range testSSArr {
+			if ssItem.Field != testDataItem.ss[idx].Field ||
+				ssItem.IsDsc != testDataItem.ss[idx].IsDsc {
+				t.Errorf("%+v, %+v not equal", ssItem, testDataItem.ss[idx])
+				return
+			}
+		}
 	}
 
 }
