@@ -18,20 +18,21 @@ import (
 	"os"
 	"time"
 
-	restful "github.com/emicklei/go-restful"
-
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/eventclient"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/source_controller/proccontroller/app/options"
 	"configcenter/src/source_controller/proccontroller/service"
 	"configcenter/src/storage/dal/mongo"
 	dalredis "configcenter/src/storage/dal/redis"
+
+	restful "github.com/emicklei/go-restful"
 )
 
 //Run ccapi server
@@ -124,6 +125,8 @@ func (h *ProcController) onProcConfigUpdate(previous, current cc.ProcessConfig) 
 	}
 	h.ProctrlServer.Cache = cache
 
+	ec := eventclient.NewClientViaRedis(cache, instance)
+	h.ProctrlServer.EventC = ec
 }
 
 func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {

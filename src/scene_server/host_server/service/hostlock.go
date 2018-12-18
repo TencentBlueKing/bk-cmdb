@@ -13,7 +13,6 @@
 package service
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 
@@ -22,27 +21,26 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 )
 
 func (s *Service) LockHost(req *restful.Request, resp *restful.Response) {
 
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(req.Request.Header))
+	srvData := s.newSrvComm(req.Request.Header)
 	input := &metadata.HostLockRequest{}
 
 	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
-		blog.Errorf("lock host , but decode body failed, err: %s, logID:%s", err.Error(), util.GetHTTPCCRequestID(req.Request.Header))
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		blog.Errorf("lock host , but decode body failed, err: %s, rid:%s", err.Error(), srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 	if 0 == len(input.IPS) {
-		blog.Errorf("lock host, ip_list is empty, logID:%s", util.GetHTTPCCRequestID(req.Request.Header))
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, "ip_list")})
+		blog.Errorf("lock host, ip_list is empty,input:%+v, rid:%s", input, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedSet, "ip_list")})
 		return
 	}
-	err := s.Logics.LockHost(context.Background(), req.Request.Header, input)
+	err := srvData.lgc.LockHost(srvData.ctx, input)
 	if nil != err {
-		blog.Errorf("lock host, handle host lock error, error:%s, logID:%s", err.Error(), util.GetHTTPCCRequestID(req.Request.Header))
+		blog.Errorf("lock host, handle host lock error, error:%s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err})
 		return
 	}
@@ -51,22 +49,22 @@ func (s *Service) LockHost(req *restful.Request, resp *restful.Response) {
 
 func (s *Service) UnlockHost(req *restful.Request, resp *restful.Response) {
 
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(req.Request.Header))
+	srvData := s.newSrvComm(req.Request.Header)
 	input := &metadata.HostLockRequest{}
 
 	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
-		blog.Errorf("unlock host , but decode body failed, err: %s, logID:%s", err.Error(), util.GetHTTPCCRequestID(req.Request.Header))
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		blog.Errorf("unlock host , but decode body failed, err: %s, rid:%s", err.Error(), srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 	if 0 == len(input.IPS) {
-		blog.Errorf("unlock host, ip_list is empty, logID:%s", util.GetHTTPCCRequestID(req.Request.Header))
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, "ip_list")})
+		blog.Errorf("unlock host, ip_list is empty, input:%+v,rid:%s", input, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedSet, "ip_list")})
 		return
 	}
-	err := s.Logics.UnlockHost(context.Background(), req.Request.Header, input)
+	err := srvData.lgc.UnlockHost(srvData.ctx, input)
 	if nil != err {
-		blog.Errorf("unlock host, handle host unlock error, error:%s, logID:%s", err.Error(), util.GetHTTPCCRequestID(req.Request.Header))
+		blog.Errorf("unlock host, handle host unlock error, error:%s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err})
 		return
 	}
@@ -75,23 +73,23 @@ func (s *Service) UnlockHost(req *restful.Request, resp *restful.Response) {
 
 func (s *Service) QueryHostLock(req *restful.Request, resp *restful.Response) {
 
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(req.Request.Header))
+	srvData := s.newSrvComm(req.Request.Header)
 	input := &metadata.QueryHostLockRequest{}
 
 	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
-		blog.Errorf("query lock host , but decode body failed, err: %s, logID:%s", err.Error(), util.GetHTTPCCRequestID(req.Request.Header))
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		blog.Errorf("query lock host , but decode body failed, err: %s, rid:%s", err.Error(), srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 	if 0 == len(input.IPS) {
-		blog.Errorf("query lock host, ip_list is empty, logID:%s", util.GetHTTPCCRequestID(req.Request.Header))
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, "ip_list")})
+		blog.Errorf("query lock host, ip_list is empty, input:%+v,rid:%s", input, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedSet, "ip_list")})
 		return
 	}
 
-	hostLockInfos, err := s.Logics.QueryHostLock(context.Background(), req.Request.Header, input)
+	hostLockInfos, err := srvData.lgc.QueryHostLock(srvData.ctx, input)
 	if nil != err {
-		blog.Errorf("query lock host, handle query host lock error, error:%s, logID:%s", err.Error(), util.GetHTTPCCRequestID(req.Request.Header))
+		blog.Errorf("query lock host, handle query host lock error, error:%s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err})
 		return
 	}

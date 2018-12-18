@@ -144,6 +144,8 @@ const (
 	CCErrCommInstFieldConvFail = 1199040
 	// CCErrCommUtilFail  handle %s error %s
 	CCErrCommUtilHandleFail = 1199041
+	// CCErrCommFieldNotValidFail  valid data error, %s
+	CCErrCommFieldNotValidFail = 1199043
 
 	// apiserver 1100XXX
 
@@ -266,7 +268,7 @@ const (
 	// the destination association object does not exist
 	CCErrTopoAssociationDestinationObjectNotExist = 1101040
 	// invalid object association id, should be int64
-	CCErrTopoInvalidObjectAssociaitonID = 1101041
+	CCErrTopoInvalidObjectAssociationID = 1101041
 	// got multiple object association with one association id
 	CCErrTopoGotMultipleAssociationInstance = 1101042
 	// association with a object has multiple instance, can not be deleted.
@@ -297,6 +299,14 @@ const (
 	CCErrorTopoDeletePredefinedAssociation = 1101055
 	// association do not exist.
 	CCErrorTopoAssociationDoNotExist = 1101056
+	// create model's instance patch, but instance's data missing field bk_inst_name
+	CCErrorTopoObjectInstanceMissingInstanceNameField = 1101057
+	// object instance's bk_inst_name filed is not string
+	CCErrorTopoInvalidObjectInstanceNameFieldValue = 1101058
+	// create model's instance patch, but instance's name is duplicate.
+	CCErrorTopoMutipleObjectInstanceName = 1101059
+	// association kind has already been instantiated
+	CCErrorTopoAssociationKindHasBeenUsed = 1101060
 
 	CCErrTopoAppDeleteFailed                       = 1001031
 	CCErrTopoAppUpdateFailed                       = 1001032
@@ -328,6 +338,16 @@ const (
 	CCErrTopoObjectUniqueKeyKindInvalid            = 1001066
 	CCErrTopoObjectUniquePresetCouldNotDelOrEdit   = 1001067
 	CCErrTopoObjectUniqueCanNotHasMutiMustCheck    = 1001068
+
+	// association kind has been apply to object
+	CCErrorTopoAssKindHasApplyToObject = 1101069
+
+	// pre definition association kind can not be delete
+	CCErrorTopoPreAssKindCanNotBeDelete = 1101070
+	CCErrorTopoAsstKindIsNotExist       = 1101071
+	CCErrorAsstInstIsNotExist           = 1101072
+	CCErrorInstToAsstIsNotExist         = 1101073
+	CCErrorInstHasAsst                  = 1101074
 
 	CCErrTopoMulueIDNotfoundFailed = 1101080
 	CCErrTopoBkAppNotAllowedDelete = 1101081
@@ -503,16 +523,49 @@ const (
 	CCErrHostAPPNotFoundFail           = 1110048
 	CCErrHostGetModuleFail             = 1110049
 	CCErrHostAgentStatusFail           = 1110050
+	// CCErrHostNotResourceFail The resource pool was not found"
+	CCErrHostNotResourceFail = 1110051
+	// CCErrHostBelongResourceFail The host is already in the resource pool
+	CCErrHostBelongResourceFail = 1110052
+	// CCErrHostGetResourceFail failed to get resource pool information, error message: %s
+	CCErrHostGetResourceFail = 1110053
+	// CCErrHostModuleNotExist get %s module not found
+	CCErrHostModuleNotExist = 1110054
 
 	//web  1111XXX
-	CCErrWebFileNoFound      = 1111001
-	CCErrWebFileSaveFail     = 1111002
-	CCErrWebOpenFileFail     = 1111003
-	CCErrWebFileContentEmpty = 1111004
-	CCErrWebFileContentFail  = 1111005
-	CCErrWebGetHostFail      = 1111006
-	CCErrWebCreateEXCELFail  = 1111007
-	CCErrWebGetObjectFail    = 1111008
+	CCErrWebFileNoFound                 = 1111001
+	CCErrWebFileSaveFail                = 1111002
+	CCErrWebOpenFileFail                = 1111003
+	CCErrWebFileContentEmpty            = 1111004
+	CCErrWebFileContentFail             = 1111005
+	CCErrWebGetHostFail                 = 1111006
+	CCErrWebCreateEXCELFail             = 1111007
+	CCErrWebGetObjectFail               = 1111008
+	CCErrWebGetAddNetDeviceResultFail   = 1111009
+	CCErrWebGetAddNetPropertyResultFail = 1111010
+	CCErrWebGetNetDeviceFail            = 1111011
+	CCErrWebGetNetPropertyFail          = 1111012
+
+	// datacollection 1112xxx
+	CCErrCollectNetDeviceCreateFail            = 1112000
+	CCErrCollectNetDeviceGetFail               = 1112001
+	CCErrCollectNetDeviceDeleteFail            = 1112002
+	CCErrCollectObjIDNotNetDevice              = 1112003
+	CCErrCollectNetPropertyCreateFail          = 1112004
+	CCErrCollectNetPropertyGetFail             = 1112005
+	CCErrCollectNetPropertyDeleteFail          = 1112006
+	CCErrCollectNetDeviceObjPropertyNotExist   = 1112007
+	CCErrCollectDeviceNotExist                 = 1112008
+	CCErrCollectPeriodFormatFail               = 1112009
+	CCErrCollectNetDeviceHasPropertyDeleteFail = 1112010
+	CCErrCollectNetCollectorSearchFail         = 1112011
+	CCErrCollectNetCollectorUpdateFail         = 1112012
+	CCErrCollectNetCollectorDiscoverFail       = 1112013
+	CCErrCollectNetReportSearchFail            = 1112014
+	CCErrCollectNetReportConfirmFail           = 1112015
+	CCErrCollectNetHistorySearchFail           = 1112016
+	CCErrCollectNetDeviceUpdateFail            = 1112017
+	CCErrCollectNetPropertyUpdateFail          = 1112018
 
 	// CCErrApiServerV2AppNameLenErr app name must be 1-32 len
 	CCErrAPIServerV2APPNameLenErr = 1170001

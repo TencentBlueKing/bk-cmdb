@@ -13,10 +13,10 @@
 package logics
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"errors"
 
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	httpcli "configcenter/src/common/http/httpclient"
 
 	simplejson "github.com/bitly/go-simplejson"
@@ -35,7 +35,7 @@ func (cli *UserAPI) GetNameByID(req *restful.Request, detailURL string) (string,
 	respV3, err := httpcli.ReqHttp(req, detailURL, common.HTTPSelectGet, nil)
 	//http request error
 	if err != nil {
-		blog.Error("getCustomerGroupList error:%v", err)
+		blog.Errorf("getCustomerGroupList error:%v", err)
 		return "", nil, common.CCErrCommHTTPDoRequestFailed
 	}
 

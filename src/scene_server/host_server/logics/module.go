@@ -14,11 +14,10 @@ package logics
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"net/http"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	types "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -26,7 +25,7 @@ import (
 	hutil "configcenter/src/scene_server/host_server/util"
 )
 
-func (lgc *Logics) GetResoulePoolModuleID(pheader http.Header, condition interface{}) (int64, error) {
+func (lgc *Logics) GetResoulePoolModuleID(ctx context.Context, condition interface{}) (int64, errors.CCError) {
 	query := metadata.QueryInput{
 		Start:     0,
 		Limit:     1,
@@ -35,19 +34,25 @@ func (lgc *Logics) GetResoulePoolModuleID(pheader http.Header, condition interfa
 		Condition: condition,
 	}
 
-	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, pheader, &query)
-	if err != nil || (err == nil && !result.Result) {
-		return -1, fmt.Errorf("search host obj log failed, err: %v, result err: %s", err, result.ErrMsg)
+	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDModule, lgc.header, &query)
+	if err != nil {
+		blog.Errorf("GetResoulePoolModuleID http do error, err:%s,input:%+v,rid:%s", err.Error(), query, lgc.rid)
+		return -1, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.Errorf("GetResoulePoolModuleID http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, lgc.rid)
+		return -1, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
 	if len(result.Data.Info) == 0 {
-		return -1, errors.New("search resource pool, but get nil data")
+		blog.Errorf("GetResoulePoolModuleID http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, lgc.rid)
+		return -1, lgc.ccErr.Errorf(common.CCErrTopoGetAppFaild, lgc.ccLang.Languagef("host_resource_pool_not_exist"))
 	}
 
 	return result.Data.Info[0].Int64(common.BKModuleIDField)
 }
 
-func (lgc *Logics) GetModuleByModuleID(pheader http.Header, appID, moduleID int64) ([]mapstr.MapStr, error) {
+func (lgc *Logics) GetModuleByModuleID(ctx context.Context, appID, moduleID int64) ([]mapstr.MapStr, errors.CCError) {
 	query := &metadata.QueryInput{
 		Start:     0,
 		Limit:     1,
@@ -56,15 +61,20 @@ func (lgc *Logics) GetModuleByModuleID(pheader http.Header, appID, moduleID int6
 		Condition: hutil.NewOperation().WithAppID(appID).WithModuleID(moduleID).Data(),
 	}
 
-	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, pheader, query)
-	if err != nil || (err == nil && !result.Result) {
-		return nil, fmt.Errorf("get modules with id failed, err: %v, result err: %s", err, result.ErrMsg)
+	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDModule, lgc.header, query)
+	if err != nil {
+		blog.Errorf("GetModuleByModuleID http do error, err:%s,input:%+v,rid:%s", err.Error(), query, lgc.rid)
+		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.Errorf("GetModuleByModuleID http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, lgc.rid)
+		return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
 	return result.Data.Info, nil
 }
 
-func (lgc *Logics) GetModuleIDByCond(phader http.Header, cond []metadata.ConditionItem) ([]int64, error) {
+func (lgc *Logics) GetModuleIDByCond(ctx context.Context, cond []metadata.ConditionItem) ([]int64, errors.CCError) {
 	condc := make(map[string]interface{})
 	parse.ParseCommonParams(cond, condc)
 
@@ -76,23 +86,29 @@ func (lgc *Logics) GetModuleIDByCond(phader http.Header, cond []metadata.Conditi
 		Condition: condc,
 	}
 
-	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, phader, query)
-	if err != nil || (err == nil && !result.Result) {
-		return nil, fmt.Errorf("get module id failed, err: %v, %v", err, result.ErrMsg)
+	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDModule, lgc.header, query)
+	if err != nil {
+		blog.Errorf("GetModuleIDByCond http do error, err:%s,input:%+v,rid:%s", err.Error(), query, lgc.rid)
+		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.Errorf("GetModuleIDByCond http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, lgc.rid)
+		return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
 	moduleIDArr := make([]int64, 0)
 	for _, i := range result.Data.Info {
 		moduleID, err := i.Int64(common.BKModuleIDField)
 		if err != nil {
-			return nil, fmt.Errorf("invalid module id: %v", err)
+			blog.Errorf("GetModuleIDByCond convert  module id to int error, err:%s, module:%+v,input:%+v,rid:%s", err.Error(), i, query, lgc.rid)
+			return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDModule, common.BKModuleIDField, "int", err.Error())
 		}
 		moduleIDArr = append(moduleIDArr, moduleID)
 	}
 	return moduleIDArr, nil
 }
 
-func (lgc *Logics) GetModuleMapByCond(pheader http.Header, fields string, cond interface{}) (map[int64]types.MapStr, error) {
+func (lgc *Logics) GetModuleMapByCond(ctx context.Context, fields string, cond interface{}) (map[int64]types.MapStr, errors.CCError) {
 
 	query := &metadata.QueryInput{
 		Condition: cond,
@@ -102,16 +118,22 @@ func (lgc *Logics) GetModuleMapByCond(pheader http.Header, fields string, cond i
 		Fields:    fields,
 	}
 
-	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, pheader, query)
-	if err != nil || (err == nil && !result.Result) {
-		return nil, fmt.Errorf("%v, %v", err, result.ErrMsg)
+	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDModule, lgc.header, query)
+	if err != nil {
+		blog.Errorf("GetModuleMapByCond http do error, err:%s,input:%+v,rid:%s", err.Error(), query, lgc.rid)
+		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.Errorf("GetModuleMapByCond http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, lgc.rid)
+		return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
 	moduleMap := make(map[int64]types.MapStr)
 	for _, info := range result.Data.Info {
 		id, err := info.Int64(common.BKModuleIDField)
 		if err != nil {
-			return nil, err
+			blog.Errorf("GetModuleMapByCond convert  module id to int error, err:%s, module:%+v,input:%+v,rid:%s", err.Error(), info, query, lgc.rid)
+			return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDModule, common.BKModuleIDField, "int", err.Error())
 		}
 		moduleMap[id] = info
 	}

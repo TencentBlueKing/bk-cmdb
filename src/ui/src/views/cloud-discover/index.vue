@@ -64,7 +64,7 @@
                     <span class="text-danger" @click.stop="deleteConfirm(item)">{{$t('Common["删除"]')}}</span>
                 </template>
                 <div class="empty-info" slot="data-empty">
-                    <p>{{$t("Common['暂时没有数据，请先']")}}
+                    <p>{{$t("Cloud['暂时没有数据，请先']")}}
                         <span class="text-primary" @click="handleCreate">{{ $t('Cloud["新建云同步任务"]')}}</span>
                     </p>
                 </div>
@@ -216,17 +216,17 @@
                 let pagination = this.table.pagination
                 let params = {}
                 let attr = {}
-                // let page = {
-                //     start: (pagination.current - 1) * pagination.size,
-                //     limit: pagination.size,
-                //     sort: this.table.sort
-                // }
+                let page = {
+                    start: (pagination.current - 1) * pagination.size,
+                    limit: pagination.size,
+                    sort: this.table.sort
+                }
                 if (this.filter.text.length !== 0) {
                     attr['$regex'] = this.filter.text
                     attr['$options'] = '$i'
                     params['bk_task_name'] = attr
                 }
-                // params['page'] = page
+                params['page'] = page
                 let res = await this.searchCloudTask({params, config: {requestId: 'searchCloudTask'}})
                 this.table.list = res.info.map(data => {
                     data['bk_last_sync_time'] = this.$tools.formatTime(data['bk_last_sync_time'], 'YYYY-MM-DD HH:mm:ss')
@@ -234,14 +234,6 @@
                     return data
                 })
                 pagination.count = res.count
-            },
-            handleSizeChange (size) {
-                this.table.pagination.size = size
-                this.handlePageChange(1)
-            },
-            handleSortChange (sort) {
-                this.table.sort = sort
-                this.handlePageChange(1)
             },
             handleCreate () {
                 this.tab.active = 'details'
@@ -312,6 +304,14 @@
                 this.curPush = curPush
                 this.attribute.type = 'update'
                 this.slider.title = this.$t('Cloud["修改云同步任务"]')
+            },
+            handleSizeChange (size) {
+                this.table.pagination.size = size
+                this.handlePageChange(1)
+            },
+            handleSortChange (sort) {
+                this.table.sort = sort
+                this.handlePageChange(1)
             },
             handlePageChange (page) {
                 this.table.pagination.current = page

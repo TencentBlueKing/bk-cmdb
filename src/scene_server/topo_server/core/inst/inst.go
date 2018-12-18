@@ -37,9 +37,7 @@ type Inst interface {
 	GetMainlineChildInst() ([]Inst, error)
 
 	GetParentObjectWithInsts() ([]*ObjectWithInsts, error)
-	GetParentInst() ([]Inst, error)
 	GetChildObjectWithInsts() ([]*ObjectWithInsts, error)
-	GetChildInst() ([]Inst, error)
 
 	SetParentInst(targetInst Inst) error
 	SetChildInst(targetInst Inst) error
@@ -50,6 +48,9 @@ type Inst interface {
 	GetInstID() (int64, error)
 	GetParentID() (int64, error)
 	GetInstName() (string, error)
+
+	SetAssoID(id int64)
+	GetAssoID() int64
 
 	SetValue(key string, value interface{}) error
 
@@ -69,10 +70,20 @@ type inst struct {
 	params    types.ContextParams
 	datas     frtypes.MapStr
 	target    model.Object
+	// this instance associate with object id, as is InstAsst table "id" filed.
+	assoID int64
 }
 
 func (cli *inst) MarshalJSON() ([]byte, error) {
 	return json.Marshal(cli.datas)
+}
+
+func (cli *inst) SetAssoID(id int64) {
+	cli.assoID = id
+}
+
+func (cli *inst) GetAssoID() int64 {
+	return cli.assoID
 }
 
 func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition) ([]Inst, error) {
@@ -146,7 +157,6 @@ func (cli *inst) Update(data frtypes.MapStr) error {
 	instID, exists := cli.datas.Get(instIDName)
 
 	cond := condition.CreateCondition()
-
 	if cli.target.IsCommon() {
 		cond.Field(common.BKObjIDField).Eq(cli.target.GetID())
 	}
@@ -165,11 +175,11 @@ func (cli *inst) Update(data frtypes.MapStr) error {
 
 		for _, attrItem := range attrs {
 			// check the inst
-			if attrItem.GetIsOnly() {
+			if attrItem.GetIsOnly() || attrItem.GetID() == cli.target.GetInstNameFieldName() {
 
 				val, exists := cli.datas.Get(attrItem.GetID())
 				if !exists {
-					continue
+					return cli.params.Err.Errorf(common.CCErrCommParamsLostField, attrItem.GetID())
 				}
 				cond.Field(attrItem.GetID()).Eq(val)
 			}
@@ -215,33 +225,39 @@ func (cli *inst) IsExists() (bool, error) {
 	}
 
 	cond := condition.CreateCondition()
-	if cli.target.IsCommon() {
-		cond.Field(common.BKObjIDField).Eq(cli.target.GetID())
-	}
-	val, exists := cli.datas.Get(common.BKInstParentStr)
-	if exists {
-		cond.Field(common.BKInstParentStr).Eq(val)
-	}
-
-	for _, attrItem := range attrs {
-		//fmt.Println("attr:", attrItem.GetID())
-		// check the inst
-		if attrItem.GetIsOnly() || attrItem.GetID() == cli.target.GetInstNameFieldName() {
-
-			val, exists = cli.datas.Get(attrItem.GetID())
-			if !exists {
-				return false, cli.params.Err.Errorf(common.CCErrCommParamsLostField, attrItem.GetID())
-			}
-			cond.Field(attrItem.GetID()).Eq(val)
+	cond.Field(common.BKOwnerIDField).Eq(cli.target.GetSupplierAccount())
+	// if the inst id already exist, query it with id directly,
+	// otherwise, when import a object instance, the other field may be changed.
+	if id, exist := cli.datas[cli.target.GetInstIDFieldName()]; exist {
+		cond.Field(cli.target.GetInstIDFieldName()).Eq(id)
+	} else {
+		if cli.target.IsCommon() {
+			cond.Field(common.BKObjIDField).Eq(cli.target.GetID())
+		}
+		val, exists := cli.datas.Get(common.BKInstParentStr)
+		if exists {
+			cond.Field(common.BKInstParentStr).Eq(val)
 		}
 
+		for _, attrItem := range attrs {
+
+			// check the inst
+			if attrItem.GetIsOnly() || attrItem.GetID() == cli.target.GetInstNameFieldName() {
+
+				val, exists := cli.datas.Get(attrItem.GetID())
+				if !exists {
+					return false, cli.params.Err.Errorf(common.CCErrCommParamsLostField, attrItem.GetID())
+				}
+				cond.Field(attrItem.GetID()).Eq(val)
+			}
+
+		}
 	}
-	//fmt.Println("cond:", cond.ToMapStr())
+
 	queryCond := metatype.QueryInput{}
 	queryCond.Condition = cond.ToMapStr()
-	//fmt.Println("cond:", cond.ToMapStr())
-	rsp, err := cli.clientSet.ObjectController().Instance().SearchObjects(context.Background(), cli.target.GetObjectType(), cli.params.Header, &queryCond)
 
+	rsp, err := cli.clientSet.ObjectController().Instance().SearchObjects(context.Background(), cli.target.GetObjectType(), cli.params.Header, &queryCond)
 	if nil != err {
 		blog.Errorf("failed to search object(%s) instances  , error info is %s", cli.target.GetID(), err.Error())
 		return false, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)

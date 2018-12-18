@@ -13,13 +13,13 @@
 package operation
 
 import (
+	"configcenter/src/common/condition"
 	"context"
 	"strconv"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
@@ -66,7 +66,7 @@ func (g *graphics) SelectObjectTopoGraphics(params types.ContextParams, scopeTyp
 
 	graphnodes := map[string]*metadata.TopoGraphics{}
 	for index, node := range dbnodes {
-		graphnodes[*node.NodeType+*node.ObjID+strconv.Itoa(*node.InstID)] = &dbnodes[index]
+		graphnodes[node.NodeType+node.ObjID+strconv.Itoa(node.InstID)] = &dbnodes[index]
 	}
 
 	nodes := []metadata.TopoGraphics{}
@@ -102,12 +102,12 @@ func (g *graphics) SelectObjectTopoGraphics(params types.ContextParams, scopeTyp
 			node.SetIsPre(obj.GetIsPre())
 			node.SetIcon(obj.GetIcon())
 
-			oldnode := graphnodes[*node.NodeType+*node.ObjID+strconv.Itoa(*node.InstID)]
+			oldnode := graphnodes[node.NodeType+node.ObjID+strconv.Itoa(node.InstID)]
 			if oldnode != nil {
 				node.SetPosition(oldnode.Position)
 				node.SetExt(oldnode.Ext)
 			} else {
-				node.SetPosition(&metadata.Position{})
+				node.SetPosition(metadata.Position{})
 				node.SetExt(map[string]interface{}{})
 			}
 

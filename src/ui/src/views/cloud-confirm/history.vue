@@ -78,8 +78,8 @@
                         size: 10
                     },
                     checked: [],
-                    defaultSort: '-bk_resource_id',
-                    sort: '-bk_resource_id'
+                    defaultSort: '-confirm_history_id',
+                    sort: '-confirm_history_id'
                 }
             }
         },
@@ -106,9 +106,15 @@
                 let pagination = this.table.pagination
                 let params = {}
                 let innerParams = {}
+                let page = {
+                    start: (pagination.current - 1) * pagination.size,
+                    limit: pagination.size,
+                    sort: this.table.sort
+                }
                 innerParams['$gte'] = this.filterRange[0]
                 innerParams['$lte'] = this.filterRange[1]
                 params['confirm_time'] = innerParams
+                params['page'] = page
                 let res = await this.searchConfirmHistory({params, config: {requestID: 'getConfirHistory'}})
                 this.table.list = res.info.map(data => {
                     data['create_time'] = this.$tools.formatTime(data['create_time'], 'YYYY-MM-DD HH:mm:ss')
@@ -118,20 +124,20 @@
                 })
                 pagination.count = res.count
             },
-            handlePageChange (current) {
-                this.pagination.current = current
-                this.refresh()
+            handlePageChange (page) {
+                this.table.pagination.current = page
+                this.getTableData()
             },
             handleSizeChange (size) {
-                this.pagination.size = size
+                this.table.pagination.size = size
                 this.handlePageChange(1)
             },
             back () {
                 this.$router.go(-1)
             },
             handleSortChange (sort) {
-                this.sort = sort
-                this.refresh()
+                this.table.sort = sort
+                this.getTableData()
             }
         },
         watch: {

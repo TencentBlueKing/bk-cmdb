@@ -13,16 +13,21 @@
 package service
 
 import (
-	"configcenter/src/common/metadata"
+	"context"
+	"net/http"
+
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/language"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/host_server/app/options"
 	"configcenter/src/scene_server/host_server/logics"
 )
@@ -30,8 +35,35 @@ import (
 type Service struct {
 	*options.Config
 	*backbone.Engine
-	*logics.Logics
 	disc discovery.DiscoveryInterface
+}
+
+type srvComm struct {
+	header        http.Header
+	rid           string
+	ccErr         errors.DefaultCCErrorIf
+	ccLang        language.DefaultCCLanguageIf
+	ctx           context.Context
+	ctxCancelFunc context.CancelFunc
+	user          string
+	ownerID       string
+	lgc           *logics.Logics
+}
+
+func (s *Service) newSrvComm(header http.Header) *srvComm {
+	lang := util.GetLanguage(header)
+	ctx, cancel := s.Engine.CCCtx.WithCancel()
+	return &srvComm{
+		header:        header,
+		rid:           util.GetHTTPCCRequestID(header),
+		ccErr:         s.CCErr.CreateDefaultCCErrorIf(lang),
+		ccLang:        s.Language.CreateDefaultCCLanguageIf(lang),
+		ctx:           ctx,
+		ctxCancelFunc: cancel,
+		user:          util.GetUser(header),
+		ownerID:       util.GetOwnerID(header),
+		lgc:           logics.NewLogics(s.Engine, header),
+	}
 }
 
 func (s *Service) WebService() *restful.WebService {

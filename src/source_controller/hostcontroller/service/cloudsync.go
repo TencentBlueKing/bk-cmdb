@@ -20,12 +20,12 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-
-	"github.com/emicklei/go-restful"
 )
 
 func (s *Service) AddCloud(req *restful.Request, resp *restful.Response) {
@@ -121,26 +121,75 @@ func (s *Service) SearchCloudTask(req *restful.Request, resp *restful.Response) 
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
-	condition := make(map[string]interface{})
-	if err := json.NewDecoder(req.Request.Body).Decode(&condition); err != nil {
+	opt := mapstr.MapStr{}
+	if err := json.NewDecoder(req.Request.Body).Decode(&opt); err != nil {
 		blog.Errorf("add cloud sync task failed with decode body err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
+	blog.Debug("SearchCloudHost opt: %v", opt)
 
+	page := mapstr.MapStr{}
 	result := make([]map[string]interface{}, 0)
-	err := s.Instance.Table(common.BKTableNameCloudTask).Find(condition).All(ctx, &result)
-	if err != nil {
-		blog.Error("get failed, err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
-		return
-	}
+	var num uint64
+	if opt["page"] != nil {
+		pageM, err := mapstr.NewFromInterface(opt["page"])
+		delete(opt, "page")
+		if err != nil {
+			blog.Error("interface convert to mapstr failed")
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCloudSyncHistorySearchFail)})
+			return
+		}
+		page = pageM
 
-	num, err := s.Instance.Table(common.BKTableNameCloudTask).Find(condition).Count(ctx)
-	if err != nil {
-		blog.Error("get task name [%s] failed, err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
-		return
+		sort, errS := page.String("sort")
+		if errS != nil {
+			blog.Error("interface convert to string failed")
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCloudSyncHistorySearchFail)})
+			return
+		}
+		limit, errL := page.Int64("limit")
+		if errL != nil {
+			blog.Error("interface convert to int64 failed")
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCloudSyncHistorySearchFail)})
+			return
+		}
+		start, errStart := page.Int64("start")
+		if errStart != nil {
+			blog.Error("interface convert to string failed")
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCloudSyncHistorySearchFail)})
+			return
+		}
+
+		errR := s.Instance.Table(common.BKTableNameCloudTask).Find(opt).Sort(sort).Start(uint64(start)).Limit(uint64(limit)).All(ctx, &result)
+		if errR != nil {
+			blog.Error("get failed, err: %v", errR)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
+			return
+		}
+
+		number, errN := s.Instance.Table(common.BKTableNameCloudTask).Find(opt).Count(ctx)
+		if errN != nil {
+			blog.Error("get task name [%s] failed, err: %v", errN)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
+			return
+		}
+		num = number
+	} else {
+		errR := s.Instance.Table(common.BKTableNameCloudTask).Find(opt).All(ctx, &result)
+		if errR != nil {
+			blog.Error("get failed, err: %v", errR)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
+			return
+		}
+
+		number, errN := s.Instance.Table(common.BKTableNameCloudTask).Find(opt).Count(ctx)
+		if errN != nil {
+			blog.Error("get task name [%s] failed, err: %v", errN)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
+			return
+		}
+		num = number
 	}
 
 	resp.WriteEntity(meta.FavoriteResult{
@@ -289,13 +338,12 @@ func (s *Service) SearchSyncHistory(req *restful.Request, resp *restful.Response
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
-	opt := mapstr.MapStr{}
+	opt := make(map[string]interface{})
 	if err := json.NewDecoder(req.Request.Body).Decode(&opt); err != nil {
 		blog.Errorf("add cloud sync task failed with decode body err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-	blog.Debug("SearchSyncHistory opt: %v", opt)
 
 	condition := make(map[string]interface{})
 	condition["bk_start_time"] = util.ConvParamsTime(opt["bk_start_time"])
@@ -385,10 +433,36 @@ func (s *Service) SearchConfirmHistory(req *restful.Request, resp *restful.Respo
 		return
 	}
 
+	page, err := mapstr.NewFromInterface(opt["page"])
+	delete(opt, "page")
 	condition := util.ConvParamsTime(opt)
+	if err != nil {
+		blog.Error("interface convert to mapstr failed")
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCloudSyncHistorySearchFail)})
+		return
+	}
+
+	sort, errS := page.String("sort")
+	if errS != nil {
+		blog.Error("interface convert to string failed")
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCloudSyncHistorySearchFail)})
+		return
+	}
+	limit, errL := page.Int64("limit")
+	if errL != nil {
+		blog.Error("interface convert to string failed")
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCloudSyncHistorySearchFail)})
+		return
+	}
+	start, errStart := page.Int64("start")
+	if errStart != nil {
+		blog.Error("interface convert to string failed")
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCloudSyncHistorySearchFail)})
+		return
+	}
 
 	result := make([]map[string]interface{}, 0)
-	errR := s.Instance.Table(common.BKTableNameResourceConfirmHistory).Find(condition).All(ctx, &result)
+	errR := s.Instance.Table(common.BKTableNameResourceConfirmHistory).Find(condition).Sort(sort).Start(uint64(start)).Limit(uint64(limit)).All(ctx, &result)
 	if errR != nil {
 		blog.Error("get failed, err: %v", errR)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
@@ -401,8 +475,6 @@ func (s *Service) SearchConfirmHistory(req *restful.Request, resp *restful.Respo
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return
 	}
-
-	blog.Debug("num: %v, result: %v", num, result)
 
 	resp.WriteEntity(meta.FavoriteResult{
 		Count: num,

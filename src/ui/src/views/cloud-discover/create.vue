@@ -123,7 +123,7 @@
                 disabled: false,
                 placeholder: this.$t('Cloud["例如: 19:30"]'),
                 cloudList: [{
-                    id: this.$t('Cloud["腾讯云"]'),
+                    id: 'tencent_cloud',
                     name: this.$t('Cloud["腾讯云"]')
                 }],
                 periodList: [{

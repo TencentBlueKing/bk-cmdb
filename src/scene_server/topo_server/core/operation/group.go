@@ -89,7 +89,7 @@ func (g *group) DeleteObjectGroup(params types.ContextParams, groupID int64) err
 
 	rsp, err := g.clientSet.ObjectController().Meta().DeletePropertyGroup(context.Background(), strconv.FormatInt(groupID, 10), params.Header)
 	if nil != err {
-		blog.Error("[operation-grp]failed to request object controller, error info is %s", err.Error())
+		blog.Errorf("[operation-grp]failed to request object controller, error info is %s", err.Error())
 		return err
 	}
 

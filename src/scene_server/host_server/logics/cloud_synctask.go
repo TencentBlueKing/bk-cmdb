@@ -17,9 +17,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"strconv"
 	"time"
+
+	com "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
+	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"
+	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
+	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/regions"
+	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -27,19 +32,13 @@ import (
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	hutil "configcenter/src/scene_server/host_server/util"
-
-	com "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
-	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"
-	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
-	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/regions"
-	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
 )
 
-func (lgc *Logics) AddCloudTask(taskList *meta.CloudTaskList, pheader http.Header) (string, error) {
+func (lgc *Logics) AddCloudTask(ctx context.Context, taskList *meta.CloudTaskList) (string, error) {
 	// TaskName Uniqueness check
-	resp, err := lgc.CoreAPI.HostController().Cloud().TaskNameCheck(context.Background(), pheader, taskList)
+	resp, err := lgc.CoreAPI.HostController().Cloud().TaskNameCheck(ctx, lgc.header, taskList)
 	if err != nil {
-		return "", err
+		return "", err // lgc.ccErr.Error()
 	}
 
 	if resp.Data != 0.0 {
@@ -51,14 +50,14 @@ func (lgc *Logics) AddCloudTask(taskList *meta.CloudTaskList, pheader http.Heade
 	// Encode secretKey
 	taskList.SecretKey = base64.StdEncoding.EncodeToString([]byte(taskList.SecretKey))
 
-	if _, err := lgc.CoreAPI.HostController().Cloud().AddCloudTask(context.Background(), pheader, taskList); err != nil {
+	if _, err := lgc.CoreAPI.HostController().Cloud().AddCloudTask(context.Background(), lgc.header, taskList); err != nil {
 		return "", err
 	}
 
 	return "", nil
 }
 
-func (lgc *Logics) CloudTaskSync(taskList mapstr.MapStr, pheader http.Header) error {
+func (lgc *Logics) CloudTaskSync(ctx context.Context, taskList mapstr.MapStr) error {
 	tickerStart := make(chan bool)
 	ticker := time.NewTicker(5 * time.Minute)
 	var nextTrigger int64
@@ -90,7 +89,7 @@ func (lgc *Logics) CloudTaskSync(taskList mapstr.MapStr, pheader http.Header) er
 
 	if status {
 
-		lgc.ExecSync(taskList, pheader)
+		lgc.ExecSync(ctx, taskList)
 
 		switch PeriodType {
 		case "day":
@@ -101,23 +100,23 @@ func (lgc *Logics) CloudTaskSync(taskList mapstr.MapStr, pheader http.Header) er
 					case <-timer.C:
 						tickerStart <- true
 						blog.Info("case day")
-						lgc.ExecSync(taskList, pheader)
+						lgc.ExecSync(ctx, taskList)
 					}
 				}
 			}()
-			ticker = time.NewTicker(24 * time.Hour)
-			if <-tickerStart {
-				go func() {
+			go func() {
+				ticker = time.NewTicker(24 * time.Hour)
+				if <-tickerStart {
 					for {
 						select {
 						case <-ticker.C:
-							lgc.ExecSync(taskList, pheader)
+							lgc.ExecSync(ctx, taskList)
 							blog.Info("case day")
 						}
 
 					}
-				}()
-			}
+				}
+			}()
 		case "hour":
 			timer := time.NewTimer(time.Duration(nextTrigger) * time.Second)
 			go func() {
@@ -126,29 +125,28 @@ func (lgc *Logics) CloudTaskSync(taskList mapstr.MapStr, pheader http.Header) er
 					case <-timer.C:
 						tickerStart <- true
 						blog.Info("case hour")
-						lgc.ExecSync(taskList, pheader)
+						lgc.ExecSync(ctx, taskList)
 					}
 				}
 			}()
-			ticker = time.NewTicker(1 * time.Hour)
-			if <-tickerStart {
-				go func() {
+			go func() {
+				ticker = time.NewTicker(1 * time.Hour)
+				if <-tickerStart {
 					for {
 						select {
 						case <-ticker.C:
-							lgc.ExecSync(taskList, pheader)
+							lgc.ExecSync(ctx, taskList)
 							blog.Info("case hour, Ticker")
 						}
-
 					}
-				}()
-			}
+				}
+			}()
 		case "minute":
 			go func() {
 				for {
 					select {
 					case <-ticker.C:
-						lgc.ExecSync(taskList, pheader)
+						lgc.ExecSync(ctx, taskList)
 						blog.Info("case minute")
 					}
 				}
@@ -161,7 +159,7 @@ func (lgc *Logics) CloudTaskSync(taskList mapstr.MapStr, pheader http.Header) er
 	return nil
 }
 
-func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
+func (lgc *Logics) ExecSync(ctx context.Context, taskList mapstr.MapStr) error {
 	cloudHistory := new(meta.CloudHistory)
 
 	blog.V(3).Info("start sync")
@@ -181,7 +179,7 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 	cloudHistory.TaskID = taskID
 	startTime := time.Now().Unix()
 
-	defer lgc.CloudSyncHistory(taskID, startTime, cloudHistory, pheader)
+	defer lgc.CloudSyncHistory(ctx, taskID, startTime, cloudHistory)
 
 	var errOrigin error
 	defer func() {
@@ -192,7 +190,7 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 
 	// obtain the hosts from cc_HostBase
 	body := new(meta.HostCommonSearch)
-	host, err := lgc.SearchHost(pheader, body, false)
+	host, err := lgc.SearchHost(ctx, body, false)
 	if err != nil {
 		blog.Errorf("search host failed, err: %v", err)
 		errOrigin = err
@@ -340,7 +338,7 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 
 	if !resourceConfirm && !attrConfirm {
 		if len(newCloudHost) > 0 {
-			err := lgc.AddCloudHosts(pheader, newCloudHost)
+			err := lgc.AddCloudHosts(ctx, newCloudHost)
 			if err != nil {
 				blog.Errorf("add cloud hosts failed, err: %v", err)
 				errOrigin = err
@@ -348,7 +346,7 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 			}
 		}
 		if len(cloudHostAttr) > 0 {
-			err := lgc.UpdateCloudHosts(pheader, cloudHostAttr)
+			err := lgc.UpdateCloudHosts(ctx, cloudHostAttr)
 			if err != nil {
 				blog.Errorf("update cloud hosts failed, err: %v", err)
 				errOrigin = err
@@ -358,7 +356,7 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 	}
 
 	if resourceConfirm {
-		newAddNum, err := lgc.NewAddConfirm(taskList, pheader, newCloudHost)
+		newAddNum, err := lgc.NewAddConfirm(ctx, taskList, newCloudHost)
 		cloudHistory.NewAdd = newAddNum
 		if err != nil {
 			blog.Errorf("newly add cloud resource confirm failed, err: %v", err)
@@ -403,7 +401,7 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 			resourceConfirm["bk_account_admin"] = taskList["bk_account_admin"]
 			resourceConfirm["bk_resource_type"] = "change"
 
-			_, err := lgc.CoreAPI.HostController().Cloud().ResourceConfirm(context.Background(), pheader, resourceConfirm)
+			_, err := lgc.CoreAPI.HostController().Cloud().ResourceConfirm(ctx, lgc.header, resourceConfirm)
 			if err != nil {
 				blog.Errorf("add resource confirm failed with err: %v", err)
 				errOrigin = err
@@ -418,7 +416,7 @@ func (lgc *Logics) ExecSync(taskList mapstr.MapStr, pheader http.Header) error {
 	return nil
 }
 
-func (lgc *Logics) AddCloudHosts(pheader http.Header, newCloudHost []mapstr.MapStr) error {
+func (lgc *Logics) AddCloudHosts(ctx context.Context, newCloudHost []mapstr.MapStr) error {
 	hostList := new(meta.HostList)
 	hostInfoMap := make(map[int64]map[string]interface{}, 0)
 	appID := hostList.ApplicationID
@@ -426,7 +424,7 @@ func (lgc *Logics) AddCloudHosts(pheader http.Header, newCloudHost []mapstr.MapS
 	if appID == 0 {
 		// get default app id
 		var err error
-		appID, err = lgc.GetDefaultAppIDWithSupplier(pheader)
+		appID, err = lgc.GetDefaultAppIDWithSupplier(ctx)
 		if err != nil {
 			blog.Errorf("add host, but get default appid failed, err: %v", err)
 			return err
@@ -435,7 +433,7 @@ func (lgc *Logics) AddCloudHosts(pheader http.Header, newCloudHost []mapstr.MapS
 
 	cond := hutil.NewOperation().WithModuleName(common.DefaultResModuleName).WithAppID(appID).Data()
 	cond[common.BKDefaultField] = common.DefaultResModuleFlag
-	moduleID, err := lgc.GetResoulePoolModuleID(pheader, cond)
+	moduleID, err := lgc.GetResoulePoolModuleID(ctx, cond)
 	if err != nil {
 		blog.Errorf("add host, but get module id failed, err: %s", err.Error())
 		return err
@@ -454,7 +452,7 @@ func (lgc *Logics) AddCloudHosts(pheader http.Header, newCloudHost []mapstr.MapS
 		hostInfoMap[int64(index)]["bk_cloud_id"] = 1
 	}
 
-	succ, updateErrRow, errRow, ok := lgc.AddHost(appID, []int64{moduleID}, util.GetOwnerID(pheader), pheader, hostInfoMap, hostList.InputType)
+	succ, updateErrRow, errRow, ok := lgc.AddHost(ctx, appID, []int64{moduleID}, util.GetOwnerID(lgc.header), hostInfoMap, hostList.InputType)
 	if ok != nil {
 		blog.Errorf("add host failed, succ: %v, update: %v, err: %v, %v", succ, updateErrRow, ok, errRow)
 		return ok
@@ -463,7 +461,7 @@ func (lgc *Logics) AddCloudHosts(pheader http.Header, newCloudHost []mapstr.MapS
 	return nil
 }
 
-func (lgc *Logics) UpdateCloudHosts(pheader http.Header, cloudHostAttr []mapstr.MapStr) error {
+func (lgc *Logics) UpdateCloudHosts(ctx context.Context, cloudHostAttr []mapstr.MapStr) error {
 	for _, hostInfo := range cloudHostAttr {
 		hostID, err := hostInfo.Int64(common.BKHostIDField)
 		if err != nil {
@@ -477,7 +475,7 @@ func (lgc *Logics) UpdateCloudHosts(pheader http.Header, cloudHostAttr []mapstr.
 		opt := mapstr.MapStr{"condition": mapstr.MapStr{common.BKHostIDField: hostID}, "data": hostInfo}
 
 		blog.V(3).Info("opt: %v", opt)
-		result, err := lgc.CoreAPI.ObjectController().Instance().UpdateObject(context.Background(), common.BKInnerObjIDHost, pheader, opt)
+		result, err := lgc.CoreAPI.ObjectController().Instance().UpdateObject(ctx, common.BKInnerObjIDHost, lgc.header, opt)
 		if err != nil || (err == nil && !result.Result) {
 			blog.Errorf("update host batch failed, ids[%v], err: %v, %v", hostID, err, result.ErrMsg)
 			return err
@@ -486,10 +484,10 @@ func (lgc *Logics) UpdateCloudHosts(pheader http.Header, cloudHostAttr []mapstr.
 	return nil
 }
 
-func (lgc *Logics) NewAddConfirm(taskList mapstr.MapStr, pheader http.Header, newCloudHost []mapstr.MapStr) (int, error) {
+func (lgc *Logics) NewAddConfirm(ctx context.Context, taskList mapstr.MapStr, newCloudHost []mapstr.MapStr) (int, error) {
 	// Check whether the host is already exist in resource confirm.
 	opt := make(map[string]interface{})
-	confirmHosts, errS := lgc.CoreAPI.HostController().Cloud().SearchConfirm(context.Background(), pheader, opt)
+	confirmHosts, errS := lgc.CoreAPI.HostController().Cloud().SearchConfirm(ctx, lgc.header, opt)
 	if errS != nil {
 		blog.Errorf("get confirm info failed with err: %v", errS)
 		return 0, errS
@@ -550,7 +548,7 @@ func (lgc *Logics) NewAddConfirm(taskList mapstr.MapStr, pheader http.Header, ne
 			resourceConfirm["bk_account_admin"] = taskList["bk_account_admin"]
 			resourceConfirm["bk_resource_type"] = "new_add"
 
-			_, err := lgc.CoreAPI.HostController().Cloud().ResourceConfirm(context.Background(), pheader, resourceConfirm)
+			_, err := lgc.CoreAPI.HostController().Cloud().ResourceConfirm(ctx, lgc.header, resourceConfirm)
 			if err != nil {
 				blog.Errorf("add resource confirm failed with err: %v", err)
 				return 0, err
@@ -620,7 +618,7 @@ func (lgc *Logics) UnixSubtract(periodType string, period string) int64 {
 	return unixSubtract
 }
 
-func (lgc *Logics) CloudSyncHistory(taskID int64, startTime int64, cloudHistory *meta.CloudHistory, pheader http.Header) error {
+func (lgc *Logics) CloudSyncHistory(ctx context.Context, taskID int64, startTime int64, cloudHistory *meta.CloudHistory) error {
 	finishTime := time.Now().Unix()
 	timeConsumed := finishTime - startTime
 	if timeConsumed > 60 {
@@ -645,12 +643,12 @@ func (lgc *Logics) CloudSyncHistory(taskID int64, startTime int64, cloudHistory 
 	updateData["new_add"] = cloudHistory.NewAdd
 	updateData["attr_changed"] = cloudHistory.AttrChanged
 
-	if _, err := lgc.CoreAPI.HostController().Cloud().UpdateCloudTask(context.Background(), pheader, updateData); err != nil {
+	if _, err := lgc.CoreAPI.HostController().Cloud().UpdateCloudTask(ctx, lgc.header, updateData); err != nil {
 		blog.Errorf("update task failed with decode body err: %v", err)
 		return err
 	}
 
-	if _, err := lgc.CoreAPI.HostController().Cloud().AddSyncHistory(context.Background(), pheader, cloudHistory); err != nil {
+	if _, err := lgc.CoreAPI.HostController().Cloud().AddSyncHistory(ctx, lgc.header, cloudHistory); err != nil {
 		blog.Errorf("add cloud history table failed, err: %v", err)
 		return err
 	}

@@ -48,20 +48,24 @@
                 table: {
                     header: [ {
                         id: 'bk_obj_id',
+                        sortable: false,
+                        width: 80,
                         name: this.$t('Nav["模型"]')
                     }, {
                         id: 'bk_status',
                         name: this.$t('ProcessManagement["状态"]')
                     }, {
                         id: 'bk_time_consume',
+                        width: 115,
                         name: this.$t('Cloud["处理耗时"]')
                     }, {
                         id: 'details',
                         width: 130,
+                        sortable: false,
                         name: this.$t('Cloud["详情"]')
                     }, {
                         id: 'bk_start_time',
-                        width: 180,
+                        width: 155,
                         name: this.$t('HostResourcePool["启动时间"]')
                     }],
                     list: [],
@@ -128,10 +132,7 @@
             },
             handleSortChange (sort) {
                 this.table.sort = sort
-                this.refresh()
-            },
-            refresh () {
-
+                this.getTableData()
             }
         },
         watch: {
