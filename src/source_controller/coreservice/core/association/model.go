@@ -27,6 +27,10 @@ type associationModel struct {
 
 func (m *associationModel) CreateModelAssociation(ctx core.ContextParams, inputParam metadata.CreateModelAssociation) (*metadata.CreateOneDataResult, error) {
 
+	if err := m.isValid(ctx, inputParam); nil != err {
+		return &metadata.CreateOneDataResult{}, err
+	}
+
 	exists, err := m.isExistsAssociationID(ctx, inputParam.Spec.AssociationName)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to check whether the association ID (%s) is exists, error info is %s", ctx.ReqID, inputParam.Spec.AssociationName, err.Error())
