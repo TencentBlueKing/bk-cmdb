@@ -78,15 +78,7 @@ func (s *coreService) SelectObjectAttWithParams(ctx core.ContextParams, objID st
 		Condition: condition,
 	}
 	result, err := s.core.ModelOperation().SearchModelAttributes(ctx, objID, queryCond)
-	for _, info := range result.Info {
-		attribute := metadata.Attribute{}
-		err := info.ToStructByTag(&attribute, "field")
-		if nil != err {
-			continue
-		}
-		attributeArr = append(attributeArr, attribute)
-	}
-	return attributeArr, nil
+	return result.Info, err
 }
 
 // SearchUnique search unique attribute
