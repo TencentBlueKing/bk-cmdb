@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package datacollection
+package middleware
 
 import (
 	"encoding/json"
