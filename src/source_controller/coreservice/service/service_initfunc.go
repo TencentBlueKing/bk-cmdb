@@ -48,6 +48,11 @@ func (s *coreService) initModel() {
 
 }
 
+func (s *coreService) initAttrUnique() {
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/model/{bk_obj_id}/attributes/unique", HandlerFunc: s.SearchModelAttrUnique})
+
+}
+
 func (s *coreService) initModelInstances() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/model/{bk_obj_id}/instance", HandlerFunc: s.CreateOneModelInstance})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/createmany/model/{bk_obj_id}/instance", HandlerFunc: s.CreateManyModelInstances})

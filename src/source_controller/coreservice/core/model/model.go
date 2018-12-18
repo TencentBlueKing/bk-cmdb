@@ -27,6 +27,7 @@ var _ core.ModelOperation = (*modelManager)(nil)
 type modelManager struct {
 	*modelAttribute
 	*modelClassification
+	*modelAttrUnique
 	dbProxy   dal.RDB
 	dependent OperationDependences
 }
@@ -38,6 +39,7 @@ func New(dbProxy dal.RDB, dependent OperationDependences) core.ModelOperation {
 
 	coreMgr.modelAttribute = &modelAttribute{dbProxy: dbProxy, model: coreMgr}
 	coreMgr.modelClassification = &modelClassification{dbProxy: dbProxy, model: coreMgr}
+	coreMgr.modelAttrUnique = &modelAttrUnique{dbProxy: dbProxy}
 
 	return coreMgr
 }
