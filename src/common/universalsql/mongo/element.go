@@ -30,9 +30,7 @@ var _ universalsql.ConditionElement = (*Eq)(nil)
 // ToMapStr return map[string]interface{}
 func (e *Eq) ToMapStr() mapstr.MapStr {
 	return mapstr.MapStr{
-		e.Key: mapstr.MapStr{
-			universalsql.EQ: e.Val,
-		},
+		e.Key: e.Val,
 	}
 }
 
