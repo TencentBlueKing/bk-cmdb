@@ -222,11 +222,12 @@
         computed: {
             ...mapGetters(['supplierAccount']),
             ...mapGetters('userCustom', ['usercustom']),
+            ...mapGetters('objectBiz', ['bizId']),
             objId () {
                 return this.$route.params.objId
             },
             customColumns () {
-                return this.usercustom[`${this.objId}_table_columns`]
+                return this.usercustom[`${this.objId}_${this.bizId}_table_columns`]
             },
             url () {
                 const prefix = `${window.API_HOST}insts/owner/${this.supplierAccount}/object/${this.objId}/`
@@ -591,13 +592,13 @@
             },
             handleApplyColumnsConfig (properties) {
                 this.$store.dispatch('userCustom/saveUsercustom', {
-                    [`${this.objId}_table_columns`]: properties.map(property => property['bk_property_id'])
+                    [`${this.objId}_${this.bizId}_table_columns`]: properties.map(property => property['bk_property_id'])
                 })
                 this.columnsConfig.show = false
             },
             handleResetColumnsConfig () {
                 this.$store.dispatch('userCustom/saveUsercustom', {
-                    [`${this.objId}_table_columns`]: []
+                    [`${this.objId}_${this.bizId}_table_columns`]: []
                 })
             },
             routeToHistory () {
