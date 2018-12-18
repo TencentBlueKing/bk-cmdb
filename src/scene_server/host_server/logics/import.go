@@ -217,7 +217,8 @@ func (lgc *Logics) getAddHostIDMap(ctx context.Context, hostInfos map[int64]map[
 	hResult, err := lgc.CoreAPI.HostController().Host().GetHosts(ctx, lgc.header, query)
 	if err != nil {
 		return nil, errors.New(lgc.ccLang.Languagef("host_search_fail_with_errmsg", err.Error()))
-	} else if err == nil && !hResult.Result {
+	}
+	if !hResult.Result {
 		return nil, errors.New(lgc.ccLang.Languagef("host_search_fail_with_errmsg", hResult.ErrMsg))
 	}
 
@@ -281,7 +282,7 @@ func (h *importInstance) updateHostInstance(index int64, host map[string]interfa
 		blog.Errorf("updateHostInstance http do error,  err:%s,input:%+v,rid:%s", err.Error(), input, h.rid)
 		return fmt.Errorf(h.ccLang.Languagef("host_import_update_fail", index, ip, err.Error()))
 	}
-	if err == nil && !uResult.Result {
+	if uResult.Result {
 		ip, _ := host[common.BKHostInnerIPField].(string)
 		blog.Errorf("updateHostInstance http response error,  err code:$d, err msg:%s,input:%+v,rid:%s", uResult.Code, uResult.ErrMsg, input, h.rid)
 		return fmt.Errorf(h.ccLang.Languagef("host_import_update_fail", index, ip, uResult.ErrMsg))
@@ -305,11 +306,11 @@ func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleID [
 	}
 	host[common.CreateTimeField] = time.Now().UTC()
 	result, err := h.CoreAPI.HostController().Host().AddHost(h.ctx, h.pheader, host)
-	if err == nil {
+	if err != nil {
 		blog.Errorf("addHostInstance http do error,err:%s, input:%+v,rid:%s", err.Error(), host, h.rid)
-		return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip, result.ErrMsg))
+		return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip, err.Error()))
 	}
-	if err == nil {
+	if !result.Result {
 		blog.Errorf("addHostInstance http response error,err code:%d,err msg:%s, input:%+v,rid:%s", result.Code, result.ErrMsg, host, h.rid)
 		return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip, result.ErrMsg))
 	}
