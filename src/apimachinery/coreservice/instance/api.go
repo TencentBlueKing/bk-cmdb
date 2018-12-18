@@ -34,8 +34,8 @@ func (inst *instance) CreateInstance(ctx context.Context, h http.Header, objID s
 	return
 }
 
-func (inst *instance) CreateManyInstance(ctx context.Context, h http.Header, objID string, input *metadata.CreateManyModelInstance) (resp *metadata.CreateManyOptionResult, err error) {
-	resp = new(metadata.CreateManyOptionResult)
+func (inst *instance) CreateManyInstance(ctx context.Context, h http.Header, objID string, input *metadata.CreateManyModelInstance) (resp *metadata.CreatedManyOptionResult, err error) {
+	resp = new(metadata.CreatedManyOptionResult)
 	subPath := fmt.Sprintf("/createmany/model/%s/instance", objID)
 
 	err = inst.client.Post().
@@ -50,7 +50,7 @@ func (inst *instance) CreateManyInstance(ctx context.Context, h http.Header, obj
 
 func (inst *instance) SetManyInstance(ctx context.Context, h http.Header, objID string, input *metadata.SetManyModelInstance) (resp *metadata.SetOptionResult, err error) {
 	resp = new(metadata.SetOptionResult)
-	subPath := fmt.Sprintf("/setmany/model/%s/instance", objID)
+	subPath := fmt.Sprintf("/setmany/model/%s/instances", objID)
 
 	err = inst.client.Post().
 		WithContext(ctx).
@@ -94,7 +94,7 @@ func (inst *instance) DeleteInstance(ctx context.Context, h http.Header, objID s
 	resp = new(metadata.DeletedOptionResult)
 	subPath := fmt.Sprintf("/delete/model/%s/instance", objID)
 
-	err = inst.client.Post().
+	err = inst.client.Delete().
 		WithContext(ctx).
 		Body(input).
 		SubResource(subPath).
@@ -108,7 +108,7 @@ func (inst *instance) DeleteInstanceCascade(ctx context.Context, h http.Header, 
 	resp = new(metadata.DeletedOptionResult)
 	subPath := fmt.Sprintf("/delete/model/%s/instance/cascade", objID)
 
-	err = inst.client.Post().
+	err = inst.client.Delete().
 		WithContext(ctx).
 		Body(input).
 		SubResource(subPath).

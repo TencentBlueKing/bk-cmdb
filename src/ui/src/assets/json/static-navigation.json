@@ -157,6 +157,13 @@
             "name": "事件推送",
             "authorized": true,
             "classificationId": "bk_ci_model"
+        }, {
+            "i18n": "NetworkDiscovery['网络发现']",
+            "path": "/network-discovery",
+            "id": "network",
+            "name": "网络发现",
+            "classificationId": "bk_ci_model",
+            "authorized": true
         }]
     }
 }

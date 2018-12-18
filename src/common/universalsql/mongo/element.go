@@ -133,3 +133,17 @@ func (n *Nin) ToMapStr() mapstr.MapStr {
 		},
 	}
 }
+
+// Regex mongodb operator $regex
+type Regex element
+
+var _ universalsql.ConditionElement = (*Regex)(nil)
+
+// ToMapStr return the format result
+func (r *Regex) ToMapStr() mapstr.MapStr {
+	return mapstr.MapStr{
+		r.Key: mapstr.MapStr{
+			universalsql.REGEX: r.Val,
+		},
+	}
+}

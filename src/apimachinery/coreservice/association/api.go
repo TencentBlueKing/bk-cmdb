@@ -33,8 +33,8 @@ func (asst *association) CreateAssociation(ctx context.Context, h http.Header, i
 	return
 }
 
-func (asst *association) CreateManyAssociation(ctx context.Context, h http.Header, input *metadata.CreateManyAssociationKind) (resp *metadata.CreateManyOptionResult, err error) {
-	resp = new(metadata.CreateManyOptionResult)
+func (asst *association) CreateManyAssociation(ctx context.Context, h http.Header, input *metadata.CreateManyAssociationKind) (resp *metadata.CreatedManyOptionResult, err error) {
+	resp = new(metadata.CreatedManyOptionResult)
 	subPath := "/createmany/associationkind"
 
 	err = asst.client.Post().
@@ -261,7 +261,7 @@ func (asst *association) ReadInstAssociation(ctx context.Context, h http.Header,
 	resp = new(metadata.QueryConditionResult)
 	subPath := "/read/instanceassociation"
 
-	err = asst.client.Put().
+	err = asst.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResource(subPath).

@@ -36,7 +36,7 @@
 	"1110035": "Failed to add resource instance to confirm history",
 	"1110036": "Failed to obtain cloud task instance",
 	"1110037": "Failed to obtain resource confirm history",
-	
+
 	"1110040": "Create custom query failed, error %s",
 	"1110041": "Modify custom query failed, error %s",
 	"1110042": "Delete custom query failed, error %s",
@@ -48,5 +48,9 @@
 	"1110048": "%v appliction not found",
 	"1110049": "Failed to get module information, error %s",
 	"1110050": "Get host agent status, error %s",
+	"1110051": "The resource pool was not found",
+	"1110052": "The host is already in the resource pool",
+	"1110053": "Failed to get resource pool information, error message: %s",
+	"1110054": "%s module not found",
 	"": ""
 }

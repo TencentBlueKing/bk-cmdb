@@ -13,9 +13,8 @@
 package service
 
 import (
+	"configcenter/src/common/eventclient"
 	"configcenter/src/common/metadata"
-	"github.com/emicklei/go-restful"
-	redis "gopkg.in/redis.v5"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -25,11 +24,15 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/source_controller/hostcontroller/logics"
 	"configcenter/src/storage/dal"
+
+	"github.com/emicklei/go-restful"
+	redis "gopkg.in/redis.v5"
 )
 
 type Service struct {
 	Core     *backbone.Engine
 	Instance dal.RDB
+	EventC   eventclient.Client
 	Cache    *redis.Client
 	Logics   *logics.Logics
 }

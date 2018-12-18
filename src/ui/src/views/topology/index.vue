@@ -83,6 +83,7 @@
                     :show="showAttributePanel">
                     <cmdb-details class="topology-details"
                         v-if="isNodeDetailsActive"
+                        :authority="['search', 'update', 'delete']"
                         :showDelete="false"
                         :properties="tab.properties"
                         :property-groups="tab.propertyGroups"
@@ -90,6 +91,7 @@
                         @on-edit="handleEdit">
                     </cmdb-details>
                     <cmdb-form class="topology-details" v-else-if="['update', 'create'].includes(tab.type)"
+                        :authority="['search', 'update', 'delete']"
                         :properties="tab.properties"
                         :property-groups="tab.propertyGroups"
                         :inst="tree.selectedNodeInst"
@@ -664,8 +666,14 @@
                 promise.then(() => {
                     const instNameKey = ['set', 'module'].includes(objId) ? `bk_${objId}_name` : 'bk_inst_name'
                     selectedNode['bk_inst_name'] = formData[instNameKey]
-                    this.tree.selectedNodeInst = value
-                    this.tree.flatternedSelectedNodeInst = this.$tools.flatternList(this.tab.properties, value)
+                    this.tree.selectedNodeInst = {
+                        ...this.tree.selectedNodeInst,
+                        ...value
+                    }
+                    this.tree.flatternedSelectedNodeInst = {
+                        ...this.tree.flatternedSelectedNodeInst,
+                        ...this.$tools.flatternItem(this.tab.properties, value)
+                    }
                     this.tab.type = 'details'
                     this.$success(this.$t('Common[\'修改成功\']'))
                 })

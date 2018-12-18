@@ -51,8 +51,6 @@ func (s *coreService) initModel() {
 func (s *coreService) initModelInstances() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/model/{bk_obj_id}/instance", HandlerFunc: s.CreateOneModelInstance})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/createmany/model/{bk_obj_id}/instance", HandlerFunc: s.CreateManyModelInstances})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/set/model/{bk_obj_id}/instance", HandlerFunc: s.SetOneModelInstance})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/setmany/model/{bk_obj_id}/instances", HandlerFunc: s.SetManyModelInstances})
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/model/{bk_obj_id}/instance", HandlerFunc: s.UpdateModelInstances})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/model/object/{bk_obj_id}/instances", HandlerFunc: s.SearchModelInstances})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/model/{bk_obj_id}/instance", HandlerFunc: s.DeleteModelInstances})
@@ -86,9 +84,6 @@ func (s *coreService) initInstanceAssociation() {
 
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/instanceassociation", HandlerFunc: s.CreateOneInstanceAssociation})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/createmany/instanceassociation", HandlerFunc: s.CreateManyInstanceAssociation})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/set/instanceassociation", HandlerFunc: s.SetOneInstanceAssociation})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/setmany/instanceassociation", HandlerFunc: s.SetManyInstanceAssociation})
-	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/instanceassociation", HandlerFunc: s.UpdateInstanceAssociation})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/instanceassociation", HandlerFunc: s.SearchInstanceAssociation})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/instanceassociation", HandlerFunc: s.DeleteInstanceAssociation})
 }

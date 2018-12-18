@@ -12,4 +12,26 @@
 
 package instances
 
-// TODO: 依赖其他模块的方法，在此文件声明 interface， 上线后统一在进程启动流程里注入
+import (
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
+	"configcenter/src/source_controller/coreservice/core"
+)
+
+// ATTENTIONS: the dependent methods of the other module
+
+// OperationDependences methods definition
+type OperationDependences interface {
+
+	// IsInstanceExist used to check if the  instances  asst exist
+	IsInstAsstExist(ctx core.ContextParams, objID string, instID uint64) (exists bool, err error)
+
+	// DeleteInstAsst used to delete inst asst
+	DeleteInstAsst(ctx core.ContextParams, objID string, instID uint64) (cnt uint64, err error)
+
+	// SelectObjectAttWithParams select object att with params
+	SelectObjectAttWithParams(ctx core.ContextParams, condition mapstr.MapStr) (attribute []metadata.Attribute, err error)
+
+	// SearchUnique search unique attribute
+	SearchUnique(ctx core.ContextParams, objID string) (uniqueAttr []metadata.ObjectUnique, err error)
+}

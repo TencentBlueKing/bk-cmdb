@@ -35,6 +35,8 @@
             }
         },
         computed: {
+            ...mapGetters(['admin']),
+            ...mapGetters('userPrivilege', ['privilege']),
             ...mapGetters('userCustom', ['usercustom', 'classifyNavigationKey']),
             ...mapGetters('objectModelClassify', ['authorizedNavigation']),
             customNavigation () {
@@ -45,6 +47,21 @@
                     return this.authorizedNavigation.some(({children}) => children.some(navigation => navigation.id === customId))
                 })
                 return usefulNavigation
+            },
+            collectedCount () {
+                const specialModel = ['biz']
+                if (this.admin || (this.privilege['sys_config']['global_busi'] || []).includes('resource')) {
+                    specialModel.push('resource')
+                }
+                let specialCollectedCount = 0
+                specialModel.forEach(objId => {
+                    const collectedKey = `is_${objId}_collected`
+                    const isCollected = this.usercustom[collectedKey]
+                    if (isCollected || isCollected === undefined) {
+                        specialCollectedCount++
+                    }
+                })
+                return this.usefulNavigation.length + specialCollectedCount
             }
         },
         methods: {
@@ -76,9 +93,13 @@
                     const collectedKey = `is_${model['bk_obj_id']}_collected`
                     const isCollected = this.usercustom[collectedKey]
                     isAdd = !(isCollected || isCollected === undefined)
-                    promise = this.$store.dispatch('userCustom/saveUsercustom', {
-                        [collectedKey]: isAdd
-                    })
+                    if (isAdd && this.collectedCount >= this.maxCustomNavigationCount) {
+                        this.$warn(this.$t('Index["限制添加导航提示"]', {max: this.maxCustomNavigationCount}))
+                    } else {
+                        promise = this.$store.dispatch('userCustom/saveUsercustom', {
+                            [collectedKey]: isAdd
+                        })
+                    }
                 } else {
                     let newCustom
                     let oldCustom = this.customNavigation
@@ -88,7 +109,7 @@
                         isAdd = true
                         newCustom = [...oldCustom, model['bk_obj_id']]
                     }
-                    if (isAdd && this.usefulNavigation.length >= this.maxCustomNavigationCount) {
+                    if (isAdd && this.collectedCount >= this.maxCustomNavigationCount) {
                         this.$warn(this.$t('Index["限制添加导航提示"]', {max: this.maxCustomNavigationCount}))
                         return false
                     }

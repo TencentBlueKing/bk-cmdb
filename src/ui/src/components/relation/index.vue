@@ -3,10 +3,10 @@
         <div class="relation-options clearfix">
             <div class="fl">
                 <bk-button class="options-button options-button-update" size="small" type="primary"
-                    :disabled="!hasRelation"
+                    :disabled="!hasRelation || !authority.includes('update')"
                     :class="{active: activeComponent === 'cmdbRelationUpdate'}"
                     @click="handleShowUpdate">
-                    {{$t('Association["新增关联"]')}}
+                    {{$t('Association["关联管理"]')}}
                     <i class="bk-icon icon-angle-down"></i>
                 </bk-button>
             </div>
@@ -31,8 +31,7 @@
         </div>
         <div class="relation-component">
             <component ref="dynamicComponent"
-                :is="activeComponent"
-                @on-relation-loaded="handleRelationLoaded">
+                :is="activeComponent">
             </component>
         </div>
     </div>
@@ -56,6 +55,12 @@
             inst: {
                 type: Object,
                 required: true
+            },
+            authority: {
+                type: Array,
+                default () {
+                    return []
+                }
             }
         },
         data () {
@@ -85,7 +90,26 @@
                 }
             }
         },
+        created () {
+            this.getRelation()
+        },
         methods: {
+            async getRelation () {
+                try {
+                    const data = await this.$store.dispatch('objectAssociation/searchObjectAssociation', {
+                        params: {
+                            condition: {
+                                'bk_obj_id': this.objId
+                            }
+                        }
+                    })
+                    if (data.length) {
+                        this.hasRelation = true
+                    }
+                } catch (e) {
+                    this.hasRelation = false
+                }
+            },
             handleShowUpdate () {
                 if (this.activeComponent === 'cmdbRelationUpdate') {
                     this.activeComponent = this.previousComponent
@@ -96,9 +120,6 @@
             },
             handleFullScreen () {
                 this.$refs.dynamicComponent.toggleFullScreen(true)
-            },
-            handleRelationLoaded (relation) {
-                this.hasRelation = !!relation.length
             }
         }
     }
