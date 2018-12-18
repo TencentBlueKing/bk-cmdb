@@ -13,10 +13,12 @@
 package service
 
 import (
+	"configcenter/src/common/mapstr"
 	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"time"
 
 	"configcenter/src/common"
@@ -143,21 +145,16 @@ func (cli *Service) DeleteInstAssociation(req *restful.Request, resp *restful.Re
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 
-	value, err := ioutil.ReadAll(req.Request.Body)
+	id, err := strconv.ParseInt(req.PathParameter("association_id"), 10, 64)
 	if err != nil {
-		blog.Errorf("read http request body failed, error:%s", err.Error())
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
-		return
+		blog.Errorf("delete inst association, but failed to parse association_id, err: %s", err.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommParamsIsInvalid)})
 	}
 
-	request := &meta.DeleteAssociationInstRequest{}
-	if jsErr := json.Unmarshal([]byte(value), request); nil != jsErr {
-		blog.Errorf("failed to unmarshal the data, data is %s, error info is %s ", string(value), jsErr.Error())
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, jsErr.Error())})
-		return
+	cond := mapstr.MapStr{
+		common.BKOwnerIDField: ownerID,
+		"id":                  id,
 	}
-
-	cond := util.SetModOwner(request.Condition.ToMapInterface(), ownerID)
 
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	db := cli.Instance.Clone()

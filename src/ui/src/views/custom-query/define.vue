@@ -266,6 +266,9 @@
             },
             filterList () {
                 return this.filter.allList.filter(item => {
+                    if (['foreignkey'].includes(item['bk_property_type'])) {
+                        return false
+                    }
                     return !this.userProperties.some(property => {
                         return item['bk_obj_id'] === property.objId && item['bk_property_id'] === property.propertyId
                     })
