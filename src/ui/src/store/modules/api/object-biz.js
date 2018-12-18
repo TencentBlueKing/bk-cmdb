@@ -13,12 +13,12 @@ import jsCookie from 'js-cookie'
 
 const state = {
     business: [],
-    selectedBusiness: null
+    bizId: null
 }
 
 const getters = {
     business: state => state.business,
-    selectedBusiness: state => state.selectedBusiness,
+    bizId: state => state.bizId,
     privilegeBusiness: (state, getters, rootState, rootGetters) => {
         if (rootGetters.admin) return state.business
         const privilege = (jsCookie.get('bk_privi_biz_id') || '').split('-')
@@ -124,8 +124,8 @@ const mutations = {
     setBusiness (state, business) {
         state.business = business
     },
-    setSelectedBusiness (state, selectedBusiness) {
-        state.selectedBusiness = selectedBusiness
+    setBizId (state, bizId) {
+        state.bizId = bizId
     }
 }
 
