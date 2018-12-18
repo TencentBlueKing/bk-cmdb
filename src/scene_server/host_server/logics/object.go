@@ -13,6 +13,7 @@
 package logics
 
 import (
+	"configcenter/src/common/mapstr"
 	"context"
 
 	"configcenter/src/common"
@@ -45,7 +46,7 @@ func (lgc *Logics) GetTopoIDByName(ctx context.Context, c *meta.HostToAppModule)
 		return 0, 0, 0, nil
 	}
 
-	appInfo, appErr := lgc.GetSingleApp(ctx, common.KvMap{common.BKAppNameField: c.AppName, common.BKOwnerIDField: c.OwnerID})
+	appInfo, appErr := lgc.GetSingleApp(ctx, mapstr.MapStr{common.BKAppNameField: c.AppName, common.BKOwnerIDField: c.OwnerID})
 	if nil != appErr {
 		return 0, 0, 0, appErr
 	}

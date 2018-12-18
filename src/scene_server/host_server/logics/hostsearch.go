@@ -320,15 +320,13 @@ func (sh *searchHost) fetchHostCloudCacheInfo() (map[int64]*InstNameAsst, errors
 	for cloudID, _ := range cloudIDMap {
 		cloudIDArr = append(cloudIDArr, cloudID)
 	}
-	queryInput := &metadata.QueryInput{}
+	queryInput := &metadata.QueryCondition{}
 	queryInput.Condition = mapstr.MapStr{
 		common.BKCloudIDField: mapstr.MapStr{
 			common.BKDBIN: cloudIDArr,
 		},
 	}
-	result, err := sh.lgc.CoreAPI.ObjectController().Instance().SearchObjects(sh.ctx,
-		common.BKInnerObjIDPlat, sh.pheader, queryInput)
-
+	result, err := sh.lgc.CoreAPI.CoreService().Instance().ReadInstance(sh.ctx, sh.pheader, common.BKInnerObjIDPlat, queryInput)
 	if err != nil {
 		blog.Errorf("fetchHostCloudCacheInfo SearchObjects http do error, err:%s,input:%+v,rid:%s", err.Error(), queryInput, sh.ccRid)
 		return nil, sh.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -462,10 +460,10 @@ func (sh *searchHost) fetchTopoAppCacheInfo(appIDArr []int64) (map[int64]mapstr.
 		if 0 != len(sh.conds.appCond.Fields) && !exist {
 			sh.conds.appCond.Fields = append(sh.conds.appCond.Fields, common.BKAppIDField)
 		}
-		cond := make(map[string]interface{})
-		celld := make(map[string]interface{})
-		celld[common.BKDBIN] = appIDArr
-		cond[common.BKAppIDField] = celld
+		cond := mapstr.New()
+		celld := mapstr.New()
+		celld.Set(common.BKDBIN, appIDArr)
+		cond.Set(common.BKAppIDField, celld)
 		fields := strings.Join(sh.conds.appCond.Fields, ",")
 		return sh.lgc.GetAppMapByCond(sh.ctx, fields, cond)
 
