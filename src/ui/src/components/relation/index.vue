@@ -97,8 +97,8 @@
             async getRelation () {
                 try {
                     const [dataAsSource, dataAsTarget] = await Promise.all([
-                        this.getObjectAssociation({'bk_obj_id': this.objId}),
-                        this.getObjectAssociation({'bk_asst_obj_id': this.objId})
+                        this.getObjectAssociation({'bk_obj_id': this.objId}, {requestId: 'getSourceAssocaition'}),
+                        this.getObjectAssociation({'bk_asst_obj_id': this.objId}, {requestId: 'getTargetAssocaition'})
                     ])
                     if (dataAsSource.length || dataAsTarget.length) {
                         this.hasRelation = true
@@ -107,9 +107,10 @@
                     this.hasRelation = false
                 }
             },
-            getObjectAssociation (condition) {
+            getObjectAssociation (condition, config) {
                 return this.$store.dispatch('objectAssociation/searchObjectAssociation', {
-                    params: {condition}
+                    params: {condition},
+                    config
                 })
             },
             handleShowUpdate () {

@@ -260,6 +260,10 @@
                             condition: {
                                 'bk_obj_id': this.objId
                             }
+                        },
+                        config: {
+                            requestId: 'getSourceAssocaition',
+                            fromCache: true
                         }
                     }),
                     this.searchObjectAssociation({
@@ -267,6 +271,10 @@
                             condition: {
                                 'bk_asst_obj_id': this.objId
                             }
+                        },
+                        config: {
+                            requestId: 'getTargetAssocaition',
+                            fromCache: true
                         }
                     })
                 ]).then(([dataAsSource, dataAsTarget]) => {
