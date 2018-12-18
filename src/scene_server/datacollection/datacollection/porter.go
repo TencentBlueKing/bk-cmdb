@@ -308,11 +308,21 @@ func pushLoop(redisCli *redis.Client, name string, mesgC chan string, isMaster *
 
 	var mesg string
 	var err error
+	var llen int64
 	key := slavequeueKey(name)
 	for {
 		if !isMaster.IsSet() {
 			// 当不再是master时就不需要再推消息到slave处理队列了
 			return
+		}
+		llen, err = redisCli.LLen(key).Result()
+		if err != nil {
+			blog.Errorf("[datacollect][%s] count slavequeue length failed: %v", name, err)
+		}
+		if llen > 100 {
+			// 限制 slavequeue 的大小，防止单活情况下由于没有slave消费slavequeue而无限增长
+			time.Sleep(time.Minute)
+			continue
 		}
 		select {
 		case mesg = <-mesgC:
