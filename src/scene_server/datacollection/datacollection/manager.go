@@ -33,6 +33,7 @@ func NewManager() *Manager {
 		porters: map[string]Porter{},
 	}
 	go man.run()
+	go man.mockServer()
 	return man
 }
 
