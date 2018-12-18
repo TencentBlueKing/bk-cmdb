@@ -85,7 +85,7 @@
         </div>
         <bk-tab class="model-details-tab" :active-name.sync="tab.active">
             <bk-tabpanel name="field" :title="$t('ModelManagement[\'模型字段\']')">
-                <the-field ref="field"></the-field>
+                <the-field ref="field" v-if="tab.active === 'field'"></the-field>
             </bk-tabpanel>
             <bk-tabpanel name="relation" :title="$t('ModelManagement[\'模型关联\']')" :show="activeModel && !specialModel.includes(activeModel['bk_obj_id'])">
                 <the-relation v-if="tab.active === 'relation'"></the-relation>
