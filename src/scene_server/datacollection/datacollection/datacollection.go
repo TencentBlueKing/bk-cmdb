@@ -92,6 +92,7 @@ func (d *DataCollection) Run() error {
 	}
 
 	snapChanName := d.getSnapChanName(defaultAppID)
+	// BuildChanPorter("hostsnap", h, redisCli, snapCli)
 	hostSnap := NewHostSnap(d.ctx, snapChanName, MaxSnapSize, rediscli, snapcli, db)
 	hostSnap.Start()
 
