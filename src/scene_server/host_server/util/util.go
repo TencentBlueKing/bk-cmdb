@@ -14,6 +14,7 @@ package util
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
 
@@ -29,6 +30,10 @@ type operation struct {
 
 func (o *operation) Data() map[string]interface{} {
 	return o.op
+}
+
+func (o *operation) MapStr() mapstr.MapStr {
+	return mapstr.NewFromMap(o.op)
 }
 
 func (o *operation) WithHostID(hostID int64) *operation {
