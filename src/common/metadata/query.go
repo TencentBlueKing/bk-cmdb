@@ -13,6 +13,8 @@
 package metadata
 
 import (
+	"strings"
+
 	"configcenter/src/common/mapstr"
 )
 
@@ -43,3 +45,51 @@ type QueryResult struct {
 }
 
 type QueryConditionResult ResponseInstData
+
+// SearchSortParse SearchSort parse interface
+type SearchSortParse interface {
+	String(sort string) []SearchSort
+	ToMongo(ssArr []SearchSort) string
+}
+
+// searchSortParse SearchSort parse struct
+type searchSortParse struct {
+}
+
+func NewSearchSortParse() SearchSortParse {
+	return &searchSortParse{}
+}
+
+//  str convert string srot to cc SearchSort struct array
+func (ss *searchSortParse) String(sort string) []SearchSort {
+	if sort == "" {
+		return nil
+	}
+	sortArr := strings.Split(sort, ",")
+	var ssArr []SearchSort
+	for _, sortItem := range sortArr {
+		sortItemArr := strings.Split(sortItem, ":")
+		ssInst := SearchSort{
+			Field: sortItemArr[0],
+		}
+		if len(sortItemArr) > 1 && strings.TrimSpace(sortItemArr[1]) == "-1" {
+			ssInst.IsDsc = true
+
+		}
+		ssArr = append(ssArr, ssInst)
+	}
+	return ssArr
+}
+
+// searchSortParse cc SearchSort struct to mongodb sort filed
+func (ss *searchSortParse) ToMongo(ssArr []SearchSort) string {
+	var orderByArr []string
+	for _, item := range ssArr {
+		if item.IsDsc {
+			orderByArr = append(orderByArr, item.Field+":-1")
+		} else {
+			orderByArr = append(orderByArr, item.Field+":1")
+		}
+	}
+	return strings.Join(orderByArr, ",")
+}

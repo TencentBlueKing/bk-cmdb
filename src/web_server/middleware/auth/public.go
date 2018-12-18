@@ -96,6 +96,65 @@ func (m *publicAuth) ValidResAccess(pathArr []string, c *gin.Context) bool {
 		return true
 	}
 
+	// search inst association
+	if types.SearchInstAssociation == pathStr && method == http.MethodPost {
+		return true
+	}
+
+	// batch search topo association kind
+	if strings.HasSuffix(pathStr, types.BKTopoBatchSearchAssociationKind) && method == http.MethodPost {
+		return true
+	}
+
+	// get processes
+	if types.ProcSearchRegexp.MatchString(pathStr) && method == http.MethodPost {
+		return true
+	}
+
+	// get user api
+	if types.SearchUserAPIRegexp.MatchString(pathStr) && method == http.MethodPost {
+		return true
+	}
+
+	// get association kind between objects
+	if pathStr == types.SearchObjectAssociation && method == http.MethodPost {
+		return true
+	}
+
+	// get association kind between objects
+	if pathStr == types.CreateInstAssociation && method == http.MethodPost {
+		return true
+	}
+
+	// get objects
+	if pathStr == types.SearchObjects && method == http.MethodPost {
+		return true
+	}
+
+	// export objects excel
+	if types.ExportObjectExcelRegexp.MatchString(pathStr) && method == http.MethodPost {
+		return true
+	}
+
+	if types.DeleteInstAssociationRegex.MatchString(pathStr) && method == http.MethodDelete {
+		return true
+	}
+
+	// export business hosts
+	if pathStr == types.ExportHosts && method == http.MethodPost {
+		return true
+	}
+
+	// search uniques info for a object.
+	if types.SearchObjectUniquesRegexp.MatchString(pathStr) && method == http.MethodGet {
+		return true
+	}
+
+	// get topo graph
+	if types.TopoGraphicsSearchRegexp.MatchString(pathStr) && method == http.MethodPost {
+		return true
+	}
+
 	// get object info
 	if pathStr == types.BK_TOPO_SEARCH_OBJECTS && method == http.MethodPost {
 		return true

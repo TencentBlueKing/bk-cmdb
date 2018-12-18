@@ -19,12 +19,14 @@
                 <p class="group-title">
                     <span>{{classification['bk_classification_name']}}</span>
                     <span class="number">({{classification['bk_objects'].length}})</span>
-                    <i class="icon-cc-edit text-primary"
-                    v-if="classification['bk_classification_type'] !== 'inner'"
-                    @click="showGroupDialog(true, classification)"></i>
-                    <i class="icon-cc-del text-primary"
-                    v-if="classification['bk_classification_type'] !== 'inner'"
-                    @click="deleteGroup(classification)"></i>
+                    <template v-if="authority.includes('update')">
+                        <i class="icon-cc-edit text-primary"
+                        v-if="classification['bk_classification_type'] !== 'inner'"
+                        @click="showGroupDialog(true, classification)"></i>
+                        <i class="icon-cc-del text-primary"
+                        v-if="classification['bk_classification_type'] !== 'inner'"
+                        @click="deleteGroup(classification)"></i>
+                    </template>
                 </p>
                 <ul class="model-list clearfix" >
                     <li class="model-item"
@@ -71,7 +73,8 @@
                             <input type="text" class="cmdb-form-input"
                             v-model.trim="groupDialog.data['bk_classification_id']"
                             name="classifyId"
-                            v-validate="'required|classifyId'">
+                            v-validate="'required|classifyId'"
+                            :disabled="groupDialog.isEdit">
                             <p class="form-error">{{errors.first('classifyId')}}</p>
                         </div>
                         <i class="bk-icon icon-info-circle" v-tooltip="$t('ModelManagement[\'下划线，数字，英文小写的组合\']')"></i>

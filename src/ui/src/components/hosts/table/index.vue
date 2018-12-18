@@ -366,7 +366,7 @@
                             id: property['bk_property_id'],
                             name: property['bk_property_name'],
                             objId: property['bk_obj_id'],
-                            sortable: property['bk_obj_id'] === 'host'
+                            sortable: property['bk_obj_id'] === 'host' && !['foreignkey'].includes(property['bk_property_type'])
                         }
                     }))
                     this.columnsConfig.selected = properties.map(property => property['bk_property_id'])
@@ -492,7 +492,7 @@
             handleRowClick (item) {
                 const inst = this.$tools.flatternItem(this.properties['host'], item['host'])
                 this.slider.show = true
-                this.slider.title = `${this.$t("Common['编辑']")} ${inst['bk_host_innerip']}`
+                this.slider.title = inst['bk_host_innerip']
                 this.tab.attribute.inst.details = inst
                 this.tab.attribute.inst.original = item
                 this.tab.attribute.type = 'details'

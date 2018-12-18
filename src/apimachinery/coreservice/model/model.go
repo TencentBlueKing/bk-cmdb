@@ -39,7 +39,7 @@ type ModelClientInterface interface {
 	SetModelAttrs(ctx context.Context, h http.Header, objID string, input *metadata.SetModelAttributes) (resp *metadata.SetOptionResult, err error)
 	UpdateModelAttrs(ctx context.Context, h http.Header, objID string, input *metadata.UpdateOption) (resp *metadata.UpdatedOptionResult, err error)
 	DeleteModelAttr(ctx context.Context, h http.Header, objID string, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error)
-	ReadModelAttr(ctx context.Context, h http.Header, objID string, input *metadata.QueryCondition) (resp *metadata.QueryConditionResult, err error)
+	ReadModelAttr(ctx context.Context, h http.Header, objID string, input *metadata.QueryCondition) (resp *metadata.ReadModelAttrResult, err error)
 }
 
 func NewModelClientInterface(client rest.ClientInterface) ModelClientInterface {
