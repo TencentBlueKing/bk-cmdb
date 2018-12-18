@@ -82,7 +82,7 @@
                 } else if (this.privilegeBusiness.length) {
                     this.localSelected = this.privilegeBusiness[0]['bk_biz_id']
                 }
-                this.$store.commit('objectBiz/setSelectedBusiness', this.localSelected)
+                this.$store.commit('objectBiz/setBizId', this.localSelected)
             }
         }
     }
