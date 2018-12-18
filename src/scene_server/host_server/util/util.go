@@ -14,7 +14,7 @@ package util
 
 import (
 	"configcenter/src/common"
-	"configcenter/src/common/metadata"
+	"configcenter/src/common/mapstr"
 )
 
 func NewOperation() *operation {
@@ -29,6 +29,10 @@ type operation struct {
 
 func (o *operation) Data() map[string]interface{} {
 	return o.op
+}
+
+func (o *operation) MapStr() mapstr.MapStr {
+	return mapstr.NewFromMap(o.op)
 }
 
 func (o *operation) WithHostID(hostID int64) *operation {
@@ -83,10 +87,6 @@ func (o *operation) WithModuleIDs(id []int64) *operation {
 
 func (o *operation) WithModuleID(id int64) *operation {
 	o.op[common.BKModuleIDField] = id
-	return o
-}
-func (o *operation) WithPage(p metadata.BasePage) *operation {
-	o.op[metadata.PageName] = p
 	return o
 }
 

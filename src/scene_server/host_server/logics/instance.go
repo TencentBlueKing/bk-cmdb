@@ -24,7 +24,6 @@ import (
 	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	hutil "configcenter/src/scene_server/host_server/util"
 )
 
 type InstNameAsst struct {
@@ -37,38 +36,6 @@ type InstNameAsst struct {
 	InstInfo   map[string]interface{} `json:"inst_info,omitempty"`
 }
 
-func (lgc *Logics) GetObjectAsst(ctx context.Context, ownerID string) (map[string]string, errors.CCError) {
-	// get host attribute info
-	opt := hutil.NewOperation().WithOwnerID(ownerID).WithObjID(common.BKInnerObjIDHost).Data()
-	attResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(ctx, lgc.header, opt)
-	if err != nil || (err == nil && !attResult.Result) {
-		return nil, fmt.Errorf("get host association failed, err, %v, %v", err, attResult.ErrMsg)
-	}
-
-	// key 是关联字段，val 是字段关联的模型ID
-	attributes := make(map[string]string)
-	for _, item := range attResult.Data {
-		if item.PropertyType == common.FieldTypeSingleAsst || item.PropertyType == common.FieldTypeMultiAsst {
-			opt := hutil.NewOperation().WithObjID(item.ObjectID).WithOwnerID(item.OwnerID).WithPropertyID(item.PropertyID).Data()
-			res, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAssociations(ctx, lgc.header, opt)
-			if err != nil {
-				blog.Errorf("GetObjectAsst SelectObjectAssociations http do error, err:%s, input:%+v, rid:%s", err.Error(), opt, lgc.rid)
-				return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
-			}
-			if err != nil {
-				blog.Errorf("GetObjectAsst SelectObjectAssociations http reponse error, err code:%d, err msg:%s, input:%+v, rid:%s", res.Code, res.ErrMsg, opt, lgc.rid)
-				return nil, lgc.ccErr.New(res.Code, res.ErrMsg)
-			}
-
-			if len(res.Data) > 0 {
-				attributes[item.PropertyID] = res.Data[0].AsstObjID
-			}
-		}
-	}
-
-	return attributes, nil
-}
-
 func (lgc *Logics) getInstAsst(ctx context.Context, owerID, objID string, IDs []string, query *meta.QueryInput) ([]InstNameAsst, int, errors.CCError) {
 	return lgc.getRawInstAsst(ctx, owerID, objID, IDs, query, false)
 
@@ -79,8 +46,6 @@ func (lgc *Logics) getInstAsstDetail(ctx context.Context, owerID, objID string, 
 }
 
 func (lgc *Logics) getRawInstAsst(ctx context.Context, ownerID, objID string, IDs []string, query *meta.QueryInput, isDetail bool) ([]InstNameAsst, int, errors.CCError) {
-	var infos []mapstr.MapStr
-	var count int
 	var instName, instID string
 	tmpIDs := []int{}
 	for _, ID := range IDs {
@@ -106,103 +71,46 @@ func (lgc *Logics) getRawInstAsst(ctx context.Context, ownerID, objID string, ID
 		}
 		condition = newCondtion
 	}
+	input := &meta.QueryCondition{
+		Fields:  strings.Split(query.Fields, ","),
+		SortArr: meta.NewSearchSortParse().String(query.Sort).ToSearchSortArr(),
+		Limit:   meta.SearchLimit{Offset: int64(query.Start), Limit: int64(query.Limit)},
+	}
+	rawObjID := objID
 	switch objID {
 	case common.BKInnerObjIDHost:
 		instName = common.BKHostInnerIPField
 		instID = common.BKHostIDField
 		if 0 != len(tmpIDs) {
 			condition[common.BKHostIDField] = map[string]interface{}{"$in": tmpIDs}
-			query.Condition = condition
 		}
-		rtn, err := lgc.CoreAPI.HostController().Host().GetHosts(ctx, lgc.header, query)
-		if err != nil {
-			blog.Errorf("getRawInstAsst GetHosts http do error, err:%s,input:%+v,rid:%s", err.Error(), query, lgc.rid)
-			return nil, 0, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if !rtn.Result {
-			blog.Errorf("getRawInstAsst GetHosts http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", rtn.Code, rtn.ErrMsg, query, lgc.rid)
-			return nil, 0, lgc.ccErr.New(rtn.Code, rtn.ErrMsg)
-		}
-		infos = rtn.Data.Info
-		count = rtn.Data.Count
-
 	case common.BKInnerObjIDApp:
 		instName = common.BKAppNameField
 		instID = common.BKAppIDField
 		if 0 != len(tmpIDs) {
 			condition[common.BKAppIDField] = map[string]interface{}{"$in": tmpIDs}
-			query.Condition = condition
 		}
-		rtn, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDApp, lgc.header, query)
-		if err != nil {
-			blog.Errorf("getRawInstAsst SearchObjects http do error, err:%s,objID:%s,input:%+v,rid:%s", err.Error(), objID, query, lgc.rid)
-			return nil, 0, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if !rtn.Result {
-			blog.Errorf("getRawInstAsst SearchObjects http reponse error, err code:%d, err msg:%s,objID:%s,input:%+v,rid:%s", rtn.Code, rtn.ErrMsg, objID, query, lgc.rid)
-			return nil, 0, lgc.ccErr.New(rtn.Code, rtn.ErrMsg)
-		}
-		infos = rtn.Data.Info
-		count = rtn.Data.Count
-
 	case common.BKInnerObjIDSet:
 		instID = common.BKSetIDField
 		instName = common.BKSetNameField
 		query.Sort = common.BKSetIDField
 		if 0 != len(tmpIDs) {
 			condition[common.BKSetIDField] = map[string]interface{}{"$in": tmpIDs}
-			query.Condition = condition
 		}
-		rtn, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDSet, lgc.header, query)
-		if err != nil {
-			blog.Errorf("getRawInstAsst SearchObjects http do error, err:%s,objID:%s,input:%+v,rid:%s", err.Error(), objID, query, lgc.rid)
-			return nil, 0, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if !rtn.Result {
-			blog.Errorf("getRawInstAsst SearchObjects http reponse error, err code:%d, err msg:%s,objID:%s,input:%+v,rid:%s", rtn.Code, rtn.ErrMsg, objID, query, lgc.rid)
-			return nil, 0, lgc.ccErr.New(rtn.Code, rtn.ErrMsg)
-		}
-		infos = rtn.Data.Info
-		count = rtn.Data.Count
 	case common.BKInnerObjIDModule:
 		instID = common.BKModuleIDField
 		instName = common.BKModuleNameField
 		query.Sort = common.BKModuleIDField
 		if 0 != len(tmpIDs) {
 			condition[common.BKModuleIDField] = map[string]interface{}{"$in": tmpIDs}
-			query.Condition = condition
 		}
-		rtn, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKObjIDField, lgc.header, query)
-		if err != nil {
-			blog.Errorf("getRawInstAsst SearchObjects http do error, err:%s,objID:%s,input:%+v,rid:%s", err.Error(), objID, query, lgc.rid)
-			return nil, 0, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if !rtn.Result {
-			blog.Errorf("getRawInstAsst SearchObjects http reponse error, err code:%d, err msg:%s,objID:%s,input:%+v,rid:%s", rtn.Code, rtn.ErrMsg, objID, query, lgc.rid)
-			return nil, 0, lgc.ccErr.New(rtn.Code, rtn.ErrMsg)
-		}
-		infos = rtn.Data.Info
-		count = rtn.Data.Count
-
 	case common.BKInnerObjIDPlat:
 		instID = common.BKCloudIDField
 		instName = common.BKCloudNameField
 		query.Sort = common.BKCloudIDField
 		if 0 != len(tmpIDs) {
 			condition[common.BKCloudIDField] = map[string]interface{}{"$in": tmpIDs}
-			query.Condition = condition
 		}
-		rtn, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDPlat, lgc.header, query)
-		if err != nil {
-			blog.Errorf("getRawInstAsst SearchObjects http do error, err:%s,objID:%s,input:%+v,rid:%s", err.Error(), objID, query, lgc.rid)
-			return nil, 0, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if !rtn.Result {
-			blog.Errorf("getRawInstAsst SearchObjects http reponse error, err code:%d, err msg:%s,objID:%s,input:%+v,rid:%s", rtn.Code, rtn.ErrMsg, objID, query, lgc.rid)
-			return nil, 0, lgc.ccErr.New(rtn.Code, rtn.ErrMsg)
-		}
-		infos = rtn.Data.Info
-		count = rtn.Data.Count
 	default:
 		instName = common.BKInstNameField
 		instID = common.BKInstIDField
@@ -211,18 +119,17 @@ func (lgc *Logics) getRawInstAsst(ctx context.Context, ownerID, objID string, ID
 		if 0 != len(tmpIDs) {
 			condition[common.BKInstIDField] = map[string]interface{}{"$in": tmpIDs}
 		}
-		query.Condition = condition
-		rtn, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDObject, lgc.header, query)
-		if err != nil {
-			blog.Errorf("getRawInstAsst SearchObjects http do error, err:%s,objID:%s,input:%+v,rid:%s", err.Error(), objID, query, lgc.rid)
-			return nil, 0, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if !rtn.Result {
-			blog.Errorf("getRawInstAsst SearchObjects http reponse error, err code:%d, err msg:%s,objID:%s,input:%+v,rid:%s", rtn.Code, rtn.ErrMsg, objID, query, lgc.rid)
-			return nil, 0, lgc.ccErr.New(rtn.Code, rtn.ErrMsg)
-		}
-		infos = rtn.Data.Info
-		count = rtn.Data.Count
+		rawObjID = objID
+	}
+	input.Condition = condition
+	rtn, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, rawObjID, input)
+	if err != nil {
+		blog.Errorf("getRawInstAsst SearchObjects http do error, err:%s,objID:%s,input:%+v,rid:%s", err.Error(), objID, input, lgc.rid)
+		return nil, 0, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !rtn.Result {
+		blog.Errorf("getRawInstAsst SearchObjects http reponse error, err code:%d, err msg:%s,objID:%s,input:%+v,rid:%s", rtn.Code, rtn.ErrMsg, objID, input, lgc.rid)
+		return nil, 0, lgc.ccErr.New(rtn.Code, rtn.ErrMsg)
 	}
 
 	delarry := func(s []string, i int) []string {
@@ -231,7 +138,7 @@ func (lgc *Logics) getRawInstAsst(ctx context.Context, ownerID, objID string, ID
 	}
 
 	allInst := make([]InstNameAsst, 0)
-	for _, info := range infos {
+	for _, info := range rtn.Data.Info {
 		if val, exist := info[instName]; exist {
 			inst := InstNameAsst{}
 			if name, can := val.(string); can {
@@ -275,57 +182,5 @@ func (lgc *Logics) getRawInstAsst(ctx context.Context, ownerID, objID string, ID
 		allInst = append(allInst, InstNameAsst{ID: ID})
 	}
 
-	return allInst, count, nil
-}
-
-// get inst detail sub without association object detail
-func (lgc *Logics) GetInstDetailsSub(ctx context.Context, objID, ownerID string, input []mapstr.MapStr, page meta.BasePage) ([]mapstr.MapStr, errors.CCError) {
-	return lgc.getInstDetailsSub(ctx, objID, ownerID, input, page, false)
-}
-
-// get inst detail sub with association object detail
-func (lgc *Logics) GetInstAsstDetailsSub(ctx context.Context, objID, ownerID string, input []mapstr.MapStr, page meta.BasePage) ([]mapstr.MapStr, errors.CCError) {
-	return lgc.getInstDetailsSub(ctx, objID, ownerID, input, page, true)
-}
-
-func (lgc *Logics) getInstDetailsSub(ctx context.Context, objID, ownerID string, input []mapstr.MapStr, page meta.BasePage, isDetail bool) ([]mapstr.MapStr, errors.CCError) {
-	asso, err := lgc.GetObjectAsst(ctx, ownerID)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, dataItem := range input {
-		// key 是关联字段，val 是字段关联的模型ID
-		for key, objID := range asso {
-			if keyItem, exist := dataItem[key]; exist {
-				if nil == keyItem {
-					continue
-				}
-				keyItemStr := util.GetStrByInterface(keyItem)
-				var retData []InstNameAsst
-				var err error
-				query := &meta.QueryInput{
-					Start: page.Start,
-					Limit: page.Limit,
-					Sort:  page.Sort,
-				}
-				if "" == strings.TrimSpace(keyItemStr) {
-					dataItem[key] = make([]InstNameAsst, 0)
-					continue
-				}
-				if true == isDetail {
-					retData, _, err = lgc.getInstAsstDetail(ctx, ownerID, objID, strings.Split(keyItemStr, ","), query)
-				} else {
-					retData, _, err = lgc.getInstAsst(ctx, ownerID, objID, strings.Split(keyItemStr, ","), query)
-				}
-				if err != nil {
-					return nil, err
-				}
-				dataItem[key] = retData
-
-			}
-		}
-	}
-
-	return input, nil
+	return allInst, rtn.Data.Count, nil
 }
