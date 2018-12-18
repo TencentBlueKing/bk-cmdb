@@ -46,11 +46,6 @@
                         </span>
                     </li>
                 </ul>
-                <i class="bk-icon icon-angle-double-down"
-                    v-if="classification['bk_objects'].length > 8"
-                    :class="{'rotate': classification.isModelShow}"
-                    @click="toggleModelList(classification)"
-                ></i>
             </li>
         </ul>
         <bk-dialog
@@ -251,9 +246,6 @@
             ...mapActions('objectModel', [
                 'createObject'
             ]),
-            toggleModelList (classification) {
-                classification.isModelShow = !classification.isModelShow
-            },
             showGroupDialog (isEdit, group) {
                 if (isEdit) {
                     this.groupDialog.data.id = group.id
