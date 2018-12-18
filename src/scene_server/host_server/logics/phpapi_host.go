@@ -67,17 +67,18 @@ func (phpapi *PHPAPI) UpdateHostMain(ctx context.Context, hostCondition, data ma
 
 	hostID := configData[0][common.BKHostIDField]
 
-	condition := make(map[string]interface{})
-	condition[common.BKHostIDField] = hostID
+	condition := mapstr.New()
+	condition.Set(common.BKHostIDField, hostID)
 
-	param := make(map[string]interface{})
-	param["condition"] = condition
-	param["data"] = data
+	param := &meta.UpdateOption{
+		Condition: condition,
+		Data:      mapstr.NewFromMap(data),
+	}
 
 	strHostID := strconv.FormatInt(hostID, 10)
-	logContent := phpapi.logic.NewHostLog(ctx, util.GetActionOnwerIDByHTTPHeader(phpapi.header))
+	logContent := phpapi.logic.NewHostLog(ctx, util.GetOwnerID(phpapi.header))
 	logContent.WithPrevious(ctx, strHostID, nil)
-	res, err := phpapi.logic.Engine.CoreAPI.ObjectController().Instance().UpdateObject(ctx, common.BKInnerObjIDHost, phpapi.header, param)
+	res, err := phpapi.logic.Engine.CoreAPI.CoreService().Instance().UpdateInstance(ctx, phpapi.header, common.BKInnerObjIDHost, param)
 	if nil != err {
 		blog.Errorf("UpdateHostMain UpdateObject http do error, err:%s,param:%+v,rid:%s", err.Error(), param, phpapi.rid)
 		return "", phpapi.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -128,23 +129,22 @@ func (phpapi *PHPAPI) AddModuleHostConfig(ctx context.Context, hostID, appID int
 
 func (phpapi *PHPAPI) addObj(ctx context.Context, data map[string]interface{}, objType string) (int64, errors.CCError) {
 	resMap := make(map[string]interface{})
-	resp, err := phpapi.logic.CoreAPI.ObjectController().Instance().CreateObject(ctx, objType, phpapi.header, data)
+	input := &meta.CreateModelInstance{
+		Data: mapstr.NewFromMap(data),
+	}
+	resp, err := phpapi.logic.CoreAPI.CoreService().Instance().CreateInstance(ctx, phpapi.header, objType, input)
 	if nil != err {
 		blog.Errorf("addObj http do error.err:%s,param:%+v,rid:%s", err.Error(), data, phpapi.rid)
 		return 0, phpapi.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !resp.Result {
-		blog.Errorf("addObj http reponse error.err code:%s,err msg:%s,param:%+v,rid:%s", resp.Code, resp.ErrMsg, data, phpapi.rid)
+		blog.Errorf("addObj http reponse error.err code:%s,err msg:%s,param:%+v,rid:%s", resp.Code, resp.ErrMsg, input, phpapi.rid)
 		return 0, phpapi.ccErr.New(resp.Code, resp.ErrMsg)
 	}
 
 	blog.V(5).Infof("add object result : %+v,rid:%s", resMap, phpapi.rid)
-	objID, err := resp.Data.Int64(common.GetInstIDField(objType))
-	if nil != err {
-		blog.Errorf("addObj get id error, reply:%v, error:%s, response:%+v,rid:%s", resp, err.Error(), resp, phpapi.rid)
-		return 0, phpapi.ccErr.Errorf(common.CCErrCommInstFieldConvFail, objType, common.GetInstIDField(objType), "int", err.Error())
-	}
-	return objID, nil
+
+	return int64(resp.Data.Created.ID), nil
 }
 
 //search host helpers
@@ -164,7 +164,7 @@ func (phpapi *PHPAPI) SetHostData(ctx context.Context, moduleHostConfig []map[st
 		appIDArr = append(appIDArr, config[common.BKAppIDField])
 	}
 
-	moduleMap, err := phpapi.logic.GetModuleMapByCond(ctx, "", map[string]interface{}{
+	moduleMap, err := phpapi.logic.GetModuleMapByCond(ctx, nil, mapstr.MapStr{
 		common.BKModuleIDField: map[string]interface{}{
 			common.BKDBIN: moduleIDArr,
 		},
@@ -173,7 +173,7 @@ func (phpapi *PHPAPI) SetHostData(ctx context.Context, moduleHostConfig []map[st
 		return hostData, err
 	}
 
-	setMap, err := phpapi.logic.GetSetMapByCond(ctx, "", map[string]interface{}{
+	setMap, err := phpapi.logic.GetSetMapByCond(ctx, nil, map[string]interface{}{
 		common.BKSetIDField: map[string]interface{}{
 			common.BKDBIN: setIDArr,
 		},
@@ -184,7 +184,7 @@ func (phpapi *PHPAPI) SetHostData(ctx context.Context, moduleHostConfig []map[st
 	}
 
 	blog.V(5).Infof("GetAppMapByCond , appIDArr:%v, rid:%s", appIDArr, phpapi.rid)
-	appMap, err := phpapi.logic.GetAppMapByCond(ctx, "", mapstr.MapStr{
+	appMap, err := phpapi.logic.GetAppMapByCond(ctx, nil, mapstr.MapStr{
 		common.BKAppIDField: map[string]interface{}{
 			common.BKDBIN: appIDArr,
 		},

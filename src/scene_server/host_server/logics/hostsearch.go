@@ -16,7 +16,6 @@ import (
 	"context"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -464,8 +463,7 @@ func (sh *searchHost) fetchTopoAppCacheInfo(appIDArr []int64) (map[int64]mapstr.
 		celld := mapstr.New()
 		celld.Set(common.BKDBIN, appIDArr)
 		cond.Set(common.BKAppIDField, celld)
-		fields := strings.Join(sh.conds.appCond.Fields, ",")
-		return sh.lgc.GetAppMapByCond(sh.ctx, fields, cond)
+		return sh.lgc.GetAppMapByCond(sh.ctx, sh.conds.appCond.Fields, cond)
 
 	}
 	return nil, nil
@@ -478,12 +476,11 @@ func (sh *searchHost) fetchTopoSetCacheInfo(setIDArr []int64) (map[int64]mapstr.
 		if !exist && 0 != len(sh.conds.setCond.Fields) {
 			sh.conds.setCond.Fields = append(sh.conds.setCond.Fields, common.BKSetIDField)
 		}
-		cond := make(map[string]interface{})
-		celld := make(map[string]interface{})
-		celld[common.BKDBIN] = setIDArr
-		cond[common.BKSetIDField] = celld
-		fields := strings.Join(sh.conds.setCond.Fields, ",")
-		return sh.lgc.GetSetMapByCond(sh.ctx, fields, cond)
+		cond := mapstr.New()
+		celld := mapstr.New()
+		celld.Set(common.BKDBIN, setIDArr)
+		cond.Set(common.BKSetIDField, celld)
+		return sh.lgc.GetSetMapByCond(sh.ctx, sh.conds.setCond.Fields, cond)
 	}
 
 	return nil, nil
@@ -495,12 +492,11 @@ func (sh *searchHost) fetchTopoModuleCacheInfo(moduleIDArr []int64) (map[int64]m
 		if !exist && 0 != len(sh.conds.moduleCond.Fields) {
 			sh.conds.moduleCond.Fields = append(sh.conds.moduleCond.Fields, common.BKModuleIDField)
 		}
-		cond := make(map[string]interface{})
-		celld := make(map[string]interface{})
-		celld[common.BKDBIN] = moduleIDArr
-		cond[common.BKModuleIDField] = celld
-		fields := strings.Join(sh.conds.moduleCond.Fields, ",")
-		return sh.lgc.GetModuleMapByCond(sh.ctx, fields, cond)
+		cond := mapstr.New()
+		celld := mapstr.New()
+		celld.Set(common.BKDBIN, moduleIDArr)
+		cond.Set(common.BKModuleIDField, celld)
+		return sh.lgc.GetModuleMapByCond(sh.ctx, sh.conds.moduleCond.Fields, cond)
 
 	}
 
