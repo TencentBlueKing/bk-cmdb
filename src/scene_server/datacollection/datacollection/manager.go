@@ -30,6 +30,7 @@ type Manager struct {
 func NewManager() *Manager {
 	man := &Manager{
 		porterC: make(chan Porter, 1),
+		porters: map[string]Porter{},
 	}
 	go man.run()
 	return man
