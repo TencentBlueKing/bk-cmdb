@@ -184,7 +184,7 @@ func (phpapi *PHPAPI) SetHostData(ctx context.Context, moduleHostConfig []map[st
 	}
 
 	blog.V(5).Infof("GetAppMapByCond , appIDArr:%v, rid:%s", appIDArr, phpapi.rid)
-	appMap, err := phpapi.logic.GetAppMapByCond(ctx, "", map[string]interface{}{
+	appMap, err := phpapi.logic.GetAppMapByCond(ctx, "", mapstr.MapStr{
 		common.BKAppIDField: map[string]interface{}{
 			common.BKDBIN: appIDArr,
 		},

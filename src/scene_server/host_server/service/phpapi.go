@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/common/mapstr"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -668,7 +669,7 @@ func (s *Service) GetGitServerIp(req *restful.Request, resp *restful.Response) {
 	var appID, setID, moduleID int64
 
 	// 根据appName获取app
-	appCondition := map[string]interface{}{
+	appCondition := mapstr.MapStr{
 		common.BKAppNameField: input.AppName,
 	}
 	appMap, err := srvData.lgc.GetAppMapByCond(srvData.ctx, "", appCondition) //  logics.GetAppMapByCond(req, "", cli.CC.ObjCtrl(), appCondition)
