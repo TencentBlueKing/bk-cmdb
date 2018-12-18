@@ -38,8 +38,8 @@
                             <i class="icon" :class="model['bk_obj_icon']"></i>
                         </div>
                         <div class="model-details">
-                            <p class="model-name">{{model['bk_obj_name']}}</p>
-                            <p class="model-id">{{model['bk_obj_id']}}</p>
+                            <p class="model-name" :title="model['bk_obj_name']">{{model['bk_obj_name']}}</p>
+                            <p class="model-id" :title="model['bk_obj_id']">{{model['bk_obj_id']}}</p>
                         </div>
                         <span class="paused-info" v-if="model['bk_ispaused']">
                             {{$t('ModelManagement["已停用"]')}}
@@ -439,6 +439,7 @@
             }
             .icon-box {
                 float: left;
+                width: 50px;
                 .icon {
                     padding-left: 18px;
                     font-size: 32px;
@@ -448,16 +449,19 @@
             }
             .model-details {
                 float: left;
+                width: 208px;
                 line-height: 16px;
                 margin-top: 20px;
-                padding-left: 10px;
+                padding: 0 10px;
             }
             .model-name {
                 font-size: 14px;
+                @include ellipsis;
             }
             .model-id {
                 font-size: 12px;
                 color: $cmdbBorderColor;
+                @include ellipsis;
             }
         }
     }
