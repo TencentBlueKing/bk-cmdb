@@ -13,12 +13,12 @@
 package logics
 
 import (
-	"configcenter/src/common/mapstr"
 	"context"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	parse "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
@@ -27,18 +27,21 @@ import (
 
 // get the object attributes
 func (lgc *Logics) GetObjectAttributes(ctx context.Context, ownerID, objID string, page meta.BasePage) ([]meta.Attribute, errors.CCError) {
-	opt := hutil.NewOperation().WithOwnerID(ownerID).WithPage(page).WithObjID(objID).Data()
-	result, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(ctx, lgc.header, opt)
+	opt := hutil.NewOperation().WithOwnerID(ownerID).WithObjID(objID).MapStr()
+	query := &meta.QueryCondition{
+		Condition: opt,
+	}
+	result, err := lgc.CoreAPI.CoreService().Model().ReadModelAttr(ctx, lgc.header, objID, query)
 	if err != nil {
-		blog.Errorf("GetObjectAttributes http do error, err:%s,objID:%s,input:%+v,rid:%s", err.Error(), objID, opt, lgc.rid)
+		blog.Errorf("GetObjectAttributes http do error, err:%s,objID:%s,input:%+v,rid:%s", err.Error(), objID, query, lgc.rid)
 		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("GetObjectAttributes http reponse error, err code:%d, err msg:%s,objID:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, objID, opt, lgc.rid)
+		blog.Errorf("GetObjectAttributes http reponse error, err code:%d, err msg:%s,objID:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, objID, query, lgc.rid)
 		return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
-	return result.Data, nil
+	return result.Data.Info, nil
 }
 
 func (lgc *Logics) GetTopoIDByName(ctx context.Context, c *meta.HostToAppModule) (int64, int64, int64, errors.CCError) {
@@ -173,16 +176,14 @@ func (lgc *Logics) GetSetIDByObjectCond(ctx context.Context, appID int64, object
 
 func (lgc *Logics) getObjectByParentID(ctx context.Context, valArr []int64) ([]int64, errors.CCError) {
 	instIDArr := make([]int64, 0)
-	condCell, sCond := make(map[string]interface{}), make(map[string]interface{})
-	condCell[common.BKDBIN] = valArr
-	sCond[common.BKInstParentStr] = condCell
+	condCell, sCond := mapstr.New(), mapstr.New()
+	condCell.Set(common.BKDBIN, valArr)
+	sCond.Set(common.BKInstParentStr, condCell)
 
-	query := &meta.QueryInput{
+	query := &meta.QueryCondition{
 		Condition: sCond,
-		Start:     0,
-		Limit:     common.BKNoLimit,
 	}
-	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDObject, lgc.header, query)
+	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDModule, query)
 	if err != nil {
 		blog.Errorf("getObjectByParentID http do error, err:%s,objID:%s,input:%+v,rid:%s", err.Error(), common.BKInnerObjIDObject, query, lgc.rid)
 		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -223,13 +224,11 @@ func (lgc *Logics) GetObjectInstByCond(ctx context.Context, objID string, cond [
 		objType = common.BKInnerObjIDObject
 	}
 
-	query := &meta.QueryInput{
-		Condition: condc,
-		Start:     0,
-		Limit:     common.BKNoLimit,
-		Sort:      common.BKAppIDField,
+	query := &meta.QueryCondition{
+		Condition: mapstr.NewFromMap(condc),
+		SortArr:   meta.NewSearchSortParse().String(common.BKAppIDField).ToSearchSortArr(),
 	}
-	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, objType, lgc.header, query)
+	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, objType, query)
 	if err != nil {
 		blog.Errorf("GetObjectInstByCond http do error, err:%s,objID:%s,input:%+v,rid:%s", err.Error(), objID, query, lgc.rid)
 		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -258,12 +257,10 @@ func (lgc *Logics) GetHostIDByInstID(ctx context.Context, asstObjId string, inst
 	cond := hutil.NewOperation().WithObjID(common.BKInnerObjIDHost).
 		WithAssoObjID(asstObjId).WithAssoInstID(map[string]interface{}{common.BKDBIN: instIDArr}).Data()
 
-	query := &meta.QueryInput{
+	query := &meta.QueryCondition{
 		Condition: cond,
-		Start:     0,
-		Limit:     common.BKNoLimit,
 	}
-	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKTableNameInstAsst, lgc.header, query)
+	result, err := lgc.CoreAPI.CoreService().Association().ReadInstAssociation(ctx, lgc.header, query)
 	if err != nil {
 		blog.Errorf("GetHostIDByInstID http do error, err:%s,objID:%s,input:%+v,rid:%s", err.Error(), common.BKTableNameInstAsst, query, lgc.rid)
 		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)

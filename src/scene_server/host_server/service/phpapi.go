@@ -13,19 +13,19 @@
 package service
 
 import (
-	"configcenter/src/common/mapstr"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
 
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/validator"
-
-	"github.com/emicklei/go-restful"
 )
 
 // updateHostPlat 根据条件更新主机信息
@@ -616,13 +616,13 @@ func (s *Service) DelHostInApp(req *restful.Request, resp *restful.Response) {
 	for _, item := range configArr {
 		moduleIdArr = append(moduleIdArr, item[common.BKModuleIDField])
 	}
-	moduleCon := map[string]interface{}{
+	moduleCon := mapstr.MapStr{
 		common.BKModuleIDField: map[string]interface{}{
 			common.BKDBIN: moduleIdArr,
 		},
 		common.BKDefaultField: common.DefaultResModuleFlag,
 	}
-	moduleArr, err := srvData.lgc.GetModuleMapByCond(srvData.ctx, common.BKModuleIDField, moduleCon)
+	moduleArr, err := srvData.lgc.GetModuleMapByCond(srvData.ctx, []string{common.BKModuleIDField}, moduleCon)
 	if err != nil {
 		blog.Errorf("DelHostInApp GetConfigByCond err msg, error:%s, input:%s", err.Error(), input)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostGetModuleFail, err.Error())})
@@ -672,7 +672,7 @@ func (s *Service) GetGitServerIp(req *restful.Request, resp *restful.Response) {
 	appCondition := mapstr.MapStr{
 		common.BKAppNameField: input.AppName,
 	}
-	appMap, err := srvData.lgc.GetAppMapByCond(srvData.ctx, "", appCondition) //  logics.GetAppMapByCond(req, "", cli.CC.ObjCtrl(), appCondition)
+	appMap, err := srvData.lgc.GetAppMapByCond(srvData.ctx, nil, appCondition) //  logics.GetAppMapByCond(req, "", cli.CC.ObjCtrl(), appCondition)
 	if nil != err {
 		blog.Errorf("GetGitServerIp GetAppMapByCond error:%s, input:%s,param:%+v,rid:%s", err.Error(), input, appCondition, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostGetAPPFail, err.Error())})
@@ -695,7 +695,7 @@ func (s *Service) GetGitServerIp(req *restful.Request, resp *restful.Response) {
 		common.BKSetNameField: input.AppName,
 		common.BKAppIDField:   appID,
 	}
-	setMap, err := srvData.lgc.GetSetMapByCond(srvData.ctx, "", setCondition)
+	setMap, err := srvData.lgc.GetSetMapByCond(srvData.ctx, nil, setCondition)
 	if nil != err {
 		blog.Errorf("GetGitServerIp GetSetMapByCond error:%s, input:%s,param:%+v,rid:%s", err.Error(), input, setCondition, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostGetSetFaild, err.Error())})
@@ -713,11 +713,11 @@ func (s *Service) GetGitServerIp(req *restful.Request, resp *restful.Response) {
 	}
 
 	// 根据moduleName获取module信息
-	moduleCondition := map[string]interface{}{
+	moduleCondition := mapstr.MapStr{
 		common.BKModuleNameField: input.ModuleName,
 		common.BKAppIDField:      appID,
 	}
-	moduleMap, err := srvData.lgc.GetModuleMapByCond(srvData.ctx, "", moduleCondition)
+	moduleMap, err := srvData.lgc.GetModuleMapByCond(srvData.ctx, nil, moduleCondition)
 	if nil != err {
 		blog.Errorf("GetGitServerIp GetModuleMapByCond error:%s, input:%s,param:%s,rid:%s", err.Error(), input, moduleCondition, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostGetSetFaild, err.Error())})
@@ -765,9 +765,8 @@ func (s *Service) GetGitServerIp(req *restful.Request, resp *restful.Response) {
 
 func (s *Service) GetPlat(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
-	params := new(meta.QueryInput)
-	params.Limit = 0
-	res, err := s.CoreAPI.ObjectController().Instance().SearchObjects(srvData.ctx, common.BKInnerObjIDPlat, req.Request.Header, params)
+	params := new(meta.QueryCondition)
+	res, err := s.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDPlat, params)
 	if nil != err {
 		blog.Errorf("GetPlat error: %v,rid:%s", err, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrTopoGetCloudErrStrFaild, err.Error())})
@@ -811,7 +810,11 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	res, err := s.CoreAPI.ObjectController().Instance().CreateObject(srvData.ctx, common.BKInnerObjIDPlat, srvData.header, input)
+	instInfo := &meta.CreateModelInstance{
+		Data: mapstr.NewFromMap(input),
+	}
+
+	res, err := s.CoreAPI.CoreService().Instance().CreateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDPlat, instInfo)
 	if nil != err {
 		blog.Errorf("CreatePlat error: %s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrTopoInstCreateFailed)})
@@ -864,9 +867,11 @@ func (s *Service) DelPlat(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	param := make(map[string]interface{})
-	param[common.BKCloudIDField] = platID
-	res, err := s.CoreAPI.ObjectController().Instance().DelObject(srvData.ctx, common.BKInnerObjIDPlat, srvData.header, param)
+	delCond := &meta.DeleteOption{
+		Condition: mapstr.MapStr{common.BKCloudIDField: platID},
+	}
+
+	res, err := s.CoreAPI.CoreService().Instance().DeleteInstance(srvData.ctx, srvData.header, common.BKInnerObjIDPlat, delCond)
 	if nil != err {
 		blog.Errorf("DelPlat do error: %v, input:%d,rid:%s", err, platID, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrTopoInstDeleteFailed)})

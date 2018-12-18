@@ -62,7 +62,7 @@ func (lgc *Logics) GetAppDetails(ctx context.Context, fields string, condition m
 	input := &metadata.QueryCondition{
 		Condition: condition,
 		Limit:     metadata.SearchLimit{Offset: 0, Limit: 1},
-		SortArr:   metadata.NewSearchSortParse().String(common.BKAppIDField),
+		SortArr:   metadata.NewSearchSortParse().String(common.BKAppIDField).ToSearchSortArr(),
 		Fields:    strings.Split(fields, ","),
 	}
 	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDApp, input)
@@ -114,7 +114,7 @@ func (lgc *Logics) GetSingleApp(ctx context.Context, cond mapstr.MapStr) (mapstr
 	query := &metadata.QueryCondition{
 		Condition: cond,
 		Limit:     metadata.SearchLimit{Offset: 0, Limit: 1},
-		SortArr:   metadata.NewSearchSortParse().String(common.BKAppIDField),
+		SortArr:   metadata.NewSearchSortParse().String(common.BKAppIDField).ToSearchSortArr(),
 	}
 	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDApp, query)
 
@@ -139,7 +139,7 @@ func (lgc *Logics) GetAppIDByCond(ctx context.Context, cond []metadata.Condition
 	query := &metadata.QueryCondition{
 		Condition: mapstr.NewFromMap(condc),
 		Limit:     metadata.SearchLimit{Offset: 0, Limit: common.BKNoLimit},
-		SortArr:   metadata.NewSearchSortParse().String(common.BKAppIDField),
+		SortArr:   metadata.NewSearchSortParse().String(common.BKAppIDField).ToSearchSortArr(),
 		Fields:    []string{common.BKAppIDField},
 	}
 	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDApp, query)
@@ -165,13 +165,13 @@ func (lgc *Logics) GetAppIDByCond(ctx context.Context, cond []metadata.Condition
 	return appIDs, nil
 }
 
-func (lgc *Logics) GetAppMapByCond(ctx context.Context, fields string, cond mapstr.MapStr) (map[int64]types.MapStr, errors.CCError) {
+func (lgc *Logics) GetAppMapByCond(ctx context.Context, fields []string, cond mapstr.MapStr) (map[int64]types.MapStr, errors.CCError) {
 
 	query := &metadata.QueryCondition{
 		Condition: cond,
 		Limit:     metadata.SearchLimit{Offset: 0, Limit: common.BKNoLimit},
-		SortArr:   metadata.NewSearchSortParse().String(common.BKAppIDField),
-		Fields:    strings.Split(fields, ","),
+		SortArr:   metadata.NewSearchSortParse().String(common.BKAppIDField).ToSearchSortArr(),
+		Fields:    fields,
 	}
 
 	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDApp, query)

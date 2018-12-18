@@ -109,7 +109,7 @@ func (lgc *Logics) GetConfigByCond(ctx context.Context, cond map[string][]int64)
 // EnterIP 将机器导入到制定模块或者空闲机器， 已经存在机器，不操作
 func (lgc *Logics) EnterIP(ctx context.Context, ownerID string, appID, moduleID int64, ip string, cloudID int64, host map[string]interface{}, isIncrement bool) errors.CCError {
 
-	isExist, err := lgc.IsPlatExist(ctx, common.KvMap{common.BKCloudIDField: cloudID})
+	isExist, err := lgc.IsPlatExist(ctx, mapstr.MapStr{common.BKCloudIDField: cloudID})
 	if nil != err {
 		return err
 	}
