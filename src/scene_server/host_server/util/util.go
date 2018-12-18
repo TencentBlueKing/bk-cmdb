@@ -15,7 +15,6 @@ package util
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
 )
 
 func NewOperation() *operation {
@@ -88,10 +87,6 @@ func (o *operation) WithModuleIDs(id []int64) *operation {
 
 func (o *operation) WithModuleID(id int64) *operation {
 	o.op[common.BKModuleIDField] = id
-	return o
-}
-func (o *operation) WithPage(p metadata.BasePage) *operation {
-	o.op[metadata.PageName] = p
 	return o
 }
 
