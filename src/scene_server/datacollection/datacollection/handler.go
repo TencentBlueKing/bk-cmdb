@@ -18,13 +18,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tidwall/gjson"
-
 	"configcenter/src/common"
 	bkc "configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	"github.com/tidwall/gjson"
 )
 
 const (
@@ -246,12 +248,12 @@ func (d *Discover) GetAttrs(ownerID, objID, modelAttrKey string, attrs map[strin
 		blog.Infof("attr exist in redis, but not equal: %s", modelAttrKey)
 	}
 
-	cond := M{
+	cond := mapstr.MapStr{
 		bkc.BKObjIDField:   objID,
 		bkc.BKOwnerIDField: ownerID,
 	}
 
-	resp, err := d.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(d.ctx, d.pheader, cond)
+	resp, err := d.CoreAPI.CoreService().Model().ReadModelAttr(d.ctx, d.pheader, objID, &metadata.QueryCondition{Condition: cond})
 	if err != nil {
 		blog.Errorf("SelectObjectAttWithParams error %s", err.Error())
 		return nil, err
@@ -261,7 +263,16 @@ func (d *Discover) GetAttrs(ownerID, objID, modelAttrKey string, attrs map[strin
 		return nil, err
 	}
 
-	return resp.Data, nil
+	attrsReaded := []metadata.Attribute{}
+	for _, info := range resp.Data.Info {
+		attr := metadata.Attribute{}
+		if err := info.ToStructByTag(attr, "field"); err != nil {
+			blog.Errorf("SelectObjectAttWithParams info to struct error: %s, info: %s", err.Error(), info)
+			return nil, err
+		}
+		attrsReaded = append(attrsReaded, attr)
+	}
+	return attrsReaded, nil
 }
 
 func (d *Discover) UpdateOrAppendAttrs(msg string) error {
@@ -444,11 +455,11 @@ func (d *Discover) GetModel(model Model, ownerID string) (bool, error) {
 
 	blog.Infof("%s: get model from redis error: %s", modelKey, err)
 
-	cond := M{
+	cond := mapstr.MapStr{
 		bkc.BKObjIDField:   model.BkObjID,
 		bkc.BKOwnerIDField: ownerID,
 	}
-	resp, err := d.CoreAPI.TopoServer().Object().SelectObjectWithParams(d.ctx, d.pheader, cond)
+	resp, err := d.CoreAPI.CoreService().Model().ReadModel(d.ctx, d.pheader, &metadata.QueryCondition{Condition: cond})
 	if err != nil {
 		blog.Errorf("search model failed %s", err.Error())
 		return false, fmt.Errorf("search model failed: %s", err.Error())
@@ -459,8 +470,8 @@ func (d *Discover) GetModel(model Model, ownerID string) (bool, error) {
 	}
 	blog.Infof("search model result: %v", resp.Data)
 
-	if datas, ok := resp.Data.([]interface{}); ok && len(datas) > 0 {
-		val, err := json.Marshal(datas[0])
+	if len(resp.Data.Info) > 0 {
+		val, err := json.Marshal(resp.Data.Info[0])
 		if err != nil {
 			blog.Errorf("%s: flush to redis marshal failed: %s", modelKey, err)
 		}
@@ -499,7 +510,10 @@ func (d *Discover) TryCreateModel(msg string) error {
 	newObj.ObjIcon = defaultModelIcon
 	newObj.Creator = bkc.CCSystemCollectorUserName
 
-	resp, err := d.CoreAPI.TopoServer().Object().CreateObject(d.ctx, d.pheader, newObj)
+	input := metadata.CreateModel{
+		Spec: newObj,
+	}
+	resp, err := d.CoreAPI.CoreService().Model().CreateModel(d.ctx, d.pheader, &input)
 	if err != nil {
 		blog.Errorf("create model failed %s", err.Error())
 		return fmt.Errorf("create model failed: %s", err.Error())
@@ -522,13 +536,12 @@ func (d *Discover) GetInst(ownerID, objID string, keys []string, instKey string)
 		blog.Errorf("get inst from redis error: %s", err)
 	}
 
-	searchCond := &metadata.SearchParams{
-		Condition: M{
-			bkc.BKInstKeyField: instKey,
-			bkc.BKObjIDField:   objID,
-		},
+	cond := mapstr.MapStr{
+		bkc.BKInstKeyField: instKey,
+		bkc.BKObjIDField:   objID,
 	}
-	resp, err := d.CoreAPI.TopoServer().Instance().InstSearch(d.ctx, common.BKDefaultOwnerID, objID, d.pheader, searchCond)
+
+	resp, err := d.CoreAPI.CoreService().Instance().ReadInstance(d.ctx, d.pheader, objID, &metadata.QueryCondition{Condition: cond})
 	if err != nil {
 		blog.Errorf("search model failed %s", err.Error())
 		return nil, fmt.Errorf("search model failed: %s", err.Error())
@@ -582,7 +595,8 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 	blog.Infof("get inst result: %v", inst)
 
 	if len(inst) <= 0 {
-		resp, err := d.CoreAPI.TopoServer().Instance().CreateInst(d.ctx, common.BKDefaultOwnerID, objID, d.pheader, gjson.Get(msg, "data.data").Value())
+		data, err := mapstr.NewFromInterface(gjson.Get(msg, "data.data").Value())
+		resp, err := d.CoreAPI.CoreService().Instance().CreateInstance(d.ctx, d.pheader, objID, &metadata.CreateModelInstance{Data: data})
 		if err != nil {
 			blog.Errorf("search model failed %s", err.Error())
 			return fmt.Errorf("search model failed: %s", err.Error())
@@ -647,7 +661,11 @@ func (d *Discover) UpdateOrCreateInst(msg string) error {
 	delete(inst, bkc.LastTimeField)
 	delete(inst, bkc.CreateTimeField)
 
-	resp, err := d.CoreAPI.TopoServer().Instance().UpdateInst(d.ctx, ownerID, objID, instID, d.pheader, inst)
+	input := metadata.UpdateOption{
+		Data:      inst,
+		Condition: condition.CreateCondition().Field(common.BKInstIDField).Eq(instID).ToMapStr(),
+	}
+	resp, err := d.CoreAPI.CoreService().Instance().UpdateInstance(d.ctx, d.pheader, objID, &input)
 	if err != nil {
 		blog.Errorf("search model failed %s", err.Error())
 		return fmt.Errorf("search model failed: %s", err.Error())
