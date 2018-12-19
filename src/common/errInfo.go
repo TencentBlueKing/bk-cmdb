@@ -61,9 +61,6 @@ const (
 	// CCErrCommParamsIsInvalid the parameter is invalid or nonexistent
 	CCErrCommParamsIsInvalid = 1199011
 
-	// CCErrCommUniqueCheckFailed the uniqueness validation fails
-	CCErrCommUniqueCheckFailed = 1199012
-
 	// CCErrCommParseDataFailed failed to read data from data field
 	CCErrCommParseDataFailed = 1199013
 
@@ -339,6 +336,7 @@ const (
 	CCErrTopoObjectUniqueKeyKindInvalid            = 1001066
 	CCErrTopoObjectUniquePresetCouldNotDelOrEdit   = 1001067
 	CCErrTopoObjectUniqueCanNotHasMutiMustCheck    = 1001068
+	CCErrTopoObjectUniqueShouldHaveMoreThanOne     = 1001069
 
 	CCErrTopoMulueIDNotfoundFailed = 1101080
 	CCErrTopoBkAppNotAllowedDelete = 1101081
