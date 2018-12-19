@@ -135,7 +135,6 @@ func (p *chanPorter) analyze() {
 	var cnt int
 	var ts = time.Now()
 	for mesg = range p.analyzeC {
-		cnt++
 		if err = p.analyzer.Analyze(mesg); err != nil {
 			blog.Errorf("[datacollect][%s] analyze message failed: %v, raw mesg: %s", p.name, err, mesg)
 		}
@@ -314,6 +313,9 @@ func (p *chanPorter) pop() {
 	for {
 		mesg, err = p.redisCli.BRPop(time.Second*30, key).Result()
 		if err == redis.Nil {
+			continue
+		}
+		if err, ok := err.(net.Error); ok && err.Timeout() {
 			continue
 		}
 		if err != nil {
