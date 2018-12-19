@@ -96,19 +96,22 @@
         methods: {
             async getRelation () {
                 try {
-                    const data = await this.$store.dispatch('objectAssociation/searchObjectAssociation', {
-                        params: {
-                            condition: {
-                                'bk_obj_id': this.objId
-                            }
-                        }
-                    })
-                    if (data.length) {
+                    const [dataAsSource, dataAsTarget] = await Promise.all([
+                        this.getObjectAssociation({'bk_obj_id': this.objId}, {requestId: 'getSourceAssocaition'}),
+                        this.getObjectAssociation({'bk_asst_obj_id': this.objId}, {requestId: 'getTargetAssocaition'})
+                    ])
+                    if (dataAsSource.length || dataAsTarget.length) {
                         this.hasRelation = true
                     }
                 } catch (e) {
                     this.hasRelation = false
                 }
+            },
+            getObjectAssociation (condition, config) {
+                return this.$store.dispatch('objectAssociation/searchObjectAssociation', {
+                    params: {condition},
+                    config
+                })
             },
             handleShowUpdate () {
                 if (this.activeComponent === 'cmdbRelationUpdate') {
