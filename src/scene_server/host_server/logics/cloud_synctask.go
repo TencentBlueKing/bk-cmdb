@@ -34,27 +34,27 @@ import (
 	hutil "configcenter/src/scene_server/host_server/util"
 )
 
-func (lgc *Logics) AddCloudTask(ctx context.Context, taskList *meta.CloudTaskList) (string, error) {
+func (lgc *Logics) AddCloudTask(ctx context.Context, taskList *meta.CloudTaskList) error {
 	// TaskName Uniqueness check
 	resp, err := lgc.CoreAPI.HostController().Cloud().TaskNameCheck(ctx, lgc.header, taskList)
 	if err != nil {
-		return "", err // lgc.ccErr.Error()
+		return err
 	}
 
 	if resp.Data != 0.0 {
-		blog.Errorf("task name %s already exits.", taskList.TaskName)
-		errString := "task name " + taskList.TaskName + " already exits."
-		return errString, nil
+		blog.Errorf("add task failed, task name %s already exits.", taskList.TaskName)
+		return lgc.ccErr.Error(1110038)
 	}
 
 	// Encode secretKey
 	taskList.SecretKey = base64.StdEncoding.EncodeToString([]byte(taskList.SecretKey))
 
 	if _, err := lgc.CoreAPI.HostController().Cloud().AddCloudTask(context.Background(), lgc.header, taskList); err != nil {
-		return "", err
+		blog.Errorf("add cloud task failed, err: %v", err)
+		return err
 	}
 
-	return "", nil
+	return nil
 }
 
 func (lgc *Logics) CloudTaskSync(ctx context.Context, taskList mapstr.MapStr) error {
@@ -88,8 +88,6 @@ func (lgc *Logics) CloudTaskSync(ctx context.Context, taskList mapstr.MapStr) er
 	blog.Debug("PeriodType: %v", PeriodType)
 
 	if status {
-
-		lgc.ExecSync(ctx, taskList)
 
 		switch PeriodType {
 		case "day":
@@ -154,6 +152,7 @@ func (lgc *Logics) CloudTaskSync(ctx context.Context, taskList mapstr.MapStr) er
 		}
 	} else {
 		ticker.Stop()
+		close(tickerStart)
 		blog.Info("bk_status: %v, stop cloud sync", taskList["bk_status"])
 	}
 	return nil

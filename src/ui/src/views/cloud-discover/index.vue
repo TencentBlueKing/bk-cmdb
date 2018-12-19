@@ -1,17 +1,18 @@
 <template>
-    <div class="process-wrapper">
-        <div class="process-filter clearfix">
-            <bk-button class="process-btn" type="primary" @click="handleCreate">{{ $t('Cloud["新建云同步任务"]')}}</bk-button>
-            <div class="filter-text fr">
-                <input type="text" class="bk-form-input" :placeholder="$t('Cloud[\'任务名称搜索\']')"
-                    v-model.trim="filter.text" @keyup.enter="getTableData">
-                    <i class="bk-icon icon-search" @click="getTableData"></i>
-            </div>
-            <div class="filter-text fr">
-                <bk-selector style="width: 100px;"
-                    :list="list"
-                    :selected.sync="defaultDemo.selected">
+    <div class="cloud-wrapper">
+        <div class="cloud-filter clearfix">
+            <bk-button class="cloud-btn" type="primary" @click="handleCreate">{{ $t('Cloud["新建云同步任务"]')}}</bk-button>
+            <div class="cloud-option-filter clearfix fr">
+                <bk-selector class="cloud-filter-selector fl"
+                             :list="list"
+                             :selected.sync="defaultDemo.selected">
                 </bk-selector>
+                <input class="cloud-filter-value cmdb-form-input fl"
+                       type="text"
+                       :placeholder="$t('Cloud[\'任务名称搜索\']')"
+                       v-model.trim="filter.text"
+                       @keyup.enter="getTableData">
+                    <i class="cloud-filter-search bk-icon icon-search" @click="getTableData"></i>
             </div>
         </div>
         <cmdb-table class="cloud-discover-table" ref="table"
@@ -39,10 +40,10 @@
                         </div>
                         <span>{{$t('Cloud["同步中"]')}}</span>
                     </template>
-                    <span class="sync-fail" v-if="item.bk_sync_status === 'fail'">
+                    <span class="sync-fail" v-else-if="item.bk_sync_status === 'fail'">
                         {{$t('EventPush["失败"]')}}
                     </span>
-                    <span v-if="!item.bk_status">{{$t('Cloud["..."]')}}</span>
+                    <span v-else>--</span>
                 </template>
                 <template slot="status" slot-scope="{ item }">
                     <bk-switcher
@@ -57,7 +58,10 @@
                     <span>{{$t('Cloud["腾讯云"]')}}</span>
                 </template>
                 <template slot="bk_last_sync_result" slot-scope="{ item }">
-                    {{$t('Cloud[\'新增\']')}} ({{item.new_add}}) / {{$t('Cloud[\'变更\']')}} ({{item.attr_changed}})
+                    <span v-if="item.new_add + item.attr_changed > 0">
+                        {{$t('Cloud[\'新增\']')}} ({{item.new_add}}) / {{$t('Cloud[\'变更\']')}} ({{item.attr_changed}})
+                    </span>
+                    <span v-else>--</span>
                 </template>
                 <template slot="operation" slot-scope="{ item }">
                     <span class="text-primary mr20" @click.stop="detail(item)">{{$t('Cloud["详情"]')}}</span>
@@ -158,6 +162,7 @@
                         name: this.$t('Cloud["任务名称"]')
                     }, {
                         id: 'bk_account_type',
+                        width: 120,
                         name: this.$t('Cloud["账号类型"]')
                     }, {
                         id: 'bk_last_sync_time',
@@ -166,7 +171,7 @@
                     }, {
                         id: 'bk_last_sync_result',
                         sortable: false,
-                        width: 130,
+                        width: 160,
                         name: this.$t('Cloud["最近同步结果"]')
 
                     }, {
@@ -176,14 +181,17 @@
                     }, {
                         id: 'bk_sync_status',
                         sortable: false,
+                        width: 100,
                         name: this.$t('ProcessManagement["状态"]')
                     }, {
                         id: 'status',
                         sortable: false,
+                        width: 90,
                         name: this.$t('Cloud["是否启用"]')
                     }, {
                         id: 'operation',
                         sortable: false,
+                        width: 110,
                         name: this.$t('Common["操作"]')
                     }],
                     list: [],
@@ -200,6 +208,7 @@
             }
         },
         created () {
+            this.$store.commit('setHeaderTitle', this.$t('Cloud["云资源发现"]'))
             let urlType = this.$route.params.type
             if (urlType) {
                 this.handleCreate()
@@ -322,23 +331,30 @@
 </script>
 
 <style lang="scss" scoped>
-    .process-wrapper {
-        .process-filter {
-            .process-btn {
+    .cloud-wrapper {
+        .cloud-filter {
+            .cloud-btn {
                 float: left;
                 margin-right: 10px;
             }
-        }
-        .filter-text {
-            position: relative;
-            .bk-form-input {
-                width: 320px;
-            }
-            .icon-search {
-                position: absolute;
-                right: 10px;
-                top: 10px;
-                cursor: pointer;
+            .cloud-option-filter{
+                position: relative;
+                margin-right: 10px;
+                .cloud-filter-selector{
+                    width: 115px;
+                    border-radius: 2px 0 0 2px;
+                    margin-right: -1px;
+                }
+                .cloud-filter-value{
+                    width: 320px;
+                    border-radius: 0 2px 2px 0;
+                }
+                .cloud-filter-search{
+                    position: absolute;
+                    right: 10px;
+                    top: 11px;
+                    cursor: pointer;
+                }
             }
         }
         .cloud-discover-table {

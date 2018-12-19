@@ -1,42 +1,51 @@
 <template>
-    <div class="detail-wrapper">
-        <div class="detail-box">
-            <ul class="event-form" v-model="taskMap">
-                <li class="form-item">
+    <div class="create-wrapper">
+        <div class="create-box">
+            <ul class="create-form" v-model="taskMap">
+                <li class="create-form-item">
                     <label for="" class="label-name">
                         {{ $t('Cloud["任务名称"]')}}<span class="color-danger">*</span>
                     </label>
-                    <div class="item-content">
+                    <div class="create-item-content">
                         <input type="text"
                                v-model="taskMap.bk_task_name"
                                class="cmdb-form-input"
+                               name="taskName"
+                               v-validate="'required|singlechar'"
                                :placeholder="$t('Cloud[\'请输入任务名称\']')"/>
                     </div>
+                    <span v-show="errors.has('taskName')" class="error-info color-danger">{{ errors.first('taskName') }}</span>
                 </li>
-                <li class="form-item">
+                <li class="create-form-item">
                     <label for="" class="label-name">
                         {{ $t('Cloud["账号类型"]')}}<span class="color-danger">*</span>
                     </label>
-                    <div class="item-content">
-                        <bk-selector
+                    <div class="create-item-content">
+                        <cmdb-selector
                             :list="cloudList"
-                            :selected.sync="taskMap.bk_account_type"
+                            v-model="taskMap.bk_account_type"
+                            name="accountType"
+                            v-validate="'required'"
                             :placeholder="$t('Cloud[\'请选择账号类型\']')"
-                        ></bk-selector>
+                        ></cmdb-selector>
                     </div>
+                    <span v-show="errors.has('accountType')" class="error-info color-danger">{{ errors.first('accountType') }}</span>
                 </li>
-                <li class="form-item">
+                <li class="create-form-item">
                     <label for="" class="label-name">
                         {{ $t('Cloud["ID"]')}}<span class="color-danger">*</span>
                     </label>
-                    <div class="item-content">
+                    <div class="create-item-content">
                         <input type="text"
                                v-model="taskMap.bk_secret_id"
                                class="cmdb-form-input"
+                               name="ID"
+                               v-validate="'required|singlechar'"
                                :placeholder="$t('Cloud[\'请输入ID\']')"/>
                     </div>
+                    <span v-show="errors.has('ID')" class="error-info color-danger">{{ errors.first('ID') }}</span>
                 </li>
-                <li class="form-item">
+                <li class="create-form-item">
                     <label for="" class="label-name">
                         {{ $t('Cloud["Key"]')}}<span class="color-danger">*</span>
                         <a class="a-set"
@@ -44,12 +53,15 @@
                            target="_blank">{{ $t('Cloud["如何获取ID和Key?"]')}}
                         </a>
                     </label>
-                    <div class="item-content">
+                    <div class="create-item-content">
                         <input type="password"
                                v-model="taskMap.bk_secret_key"
                                class="cmdb-form-input"
+                               name="Key"
+                               v-validate="'required|singlechar'"
                                :placeholder="$t('Cloud[\'请输入key\']')"/>
                     </div>
+                    <span v-show="errors.has('Key')" class="error-info color-danger">{{ errors.first('Key') }}</span>
                 </li>
                 <li class="form-item-two">
                     <label for="" class="label-name-two">
@@ -62,19 +74,33 @@
                             :selected.sync="taskMap.bk_period_type">
                         </bk-selector>
                         <input type="text"
-                               v-model="taskMap.bk_period"
                                class="cmdb-form-input"
-                               :disabled = "disabled"
-                               :placeholder="placeholder"/>
+                               v-model="taskMap.bk_period"
+                               v-if="taskMap.bk_period_type === 'day'"
+                               name="day"
+                               v-validate="'required|dayFormat'"
+                               :placeholder="$t('Cloud[\'例如: 19:30\']')"/>
+                        <input type="text"
+                               class="cmdb-form-input"
+                               v-model="taskMap.bk_period"
+                               v-if="taskMap.bk_period_type === 'hour'"
+                               name="hour"
+                               v-validate="'required|hourFormat'"
+                               :placeholder="$t('Cloud[\'例如: 30\']')">
+                        <div v-show="errors.has('hour')" class="error-info-two color-danger">{{ errors.first('hour') }}</div>
+                        <div v-show="errors.has('day')" class="error-info-two color-danger">{{ errors.first('day') }}</div>
                     </div>
                 </li>
-                <li class="form-item">
+                <li class="create-form-item">
                     <label for="" class="label-name">{{ $t('Cloud["任务维护人"]')}}</label>
-                    <div class="item-content">
-                        <input type="text"
-                               v-model="taskMap.bk_account_admin"
-                               class="cmdb-form-input"/>
-                    </div>
+                    <cmdb-form-objuser
+                        class="fl maintain-selector"
+                        v-model="taskMap.bk_account_admin"
+                        :multiple="true"
+                        name="maintain"
+                        v-validate="'required|singlechar'">
+                    </cmdb-form-objuser>
+                    <div v-show="errors.has('maintain')" class="error-info color-danger">{{ errors.first('maintain') }}</div>
                 </li>
                 <li>
                     <label class="resource-lable">{{ $t('Cloud["同步资源"]')}}</label>
@@ -120,7 +146,7 @@
         },
         data () {
             return {
-                disabled: false,
+                timeShow: true,
                 placeholder: this.$t('Cloud["例如: 19:30"]'),
                 cloudList: [{
                     id: 'tencent_cloud',
@@ -165,6 +191,10 @@
         methods: {
             ...mapActions('cloudDiscover', ['addCloudTask']),
             async save () {
+                const isValidate = await this.$validator.validateAll()
+                if (!isValidate) {
+                    return
+                }
                 let params = this.taskMap
                 let res = null
                 res = await this.addCloudTask({params: params, config: {requestId: 'savePush'}})
@@ -184,32 +214,18 @@
                 }
                 return false
             }
-        },
-        watch: {
-            'taskMap.bk_period_type' () {
-                if (this.taskMap.bk_period_type === 'minute') {
-                    this.disabled = true
-                    this.placeholder = ''
-                } else if (this.taskMap.bk_period_type === 'hour') {
-                    this.disabled = false
-                    this.placeholder = this.$t('Cloud["例如: 30"]')
-                } else {
-                    this.disabled = false
-                    this.placeholder = this.$t('Cloud["例如: 19:30"]')
-                }
-            }
         }
     }
 </script>
 
 <style lang="scss" scoped>
-    .detail-wrapper {
+    .create-wrapper {
         height: 100%;
-        .detail-box {
+        .create-box {
             padding: 17px 20px 0 21px;
         }
-        .event-form {
-            .form-item {
+        .create-form {
+            .create-form-item {
                 width: 300px;
                 height: 63px;
                 margin-bottom: 17px;
@@ -218,6 +234,13 @@
                     display: block;
                     content: "";
                     clear: both;
+                }
+                .error-info {
+                    font-size: 12px;
+                }
+                .maintain-selector{
+                    width: 300px;
+                    line-height: initial;
                 }
                 .label-name {
                     position: relative;
@@ -236,7 +259,7 @@
                         color: dodgerblue;
                     }
                 }
-                .item-content {
+                .create-item-content {
                     span {
                         font-size: 14px;
                     }
@@ -249,7 +272,7 @@
                     }
                 }
             }
-            .form-item:nth-child(even) {
+            .create-form-item:nth-child(even) {
                 margin-left: 35px;
             }
             .form-item-two {
@@ -263,6 +286,12 @@
                      content: "";
                      clear: both;
                  }
+                .error-info-two {
+                    position:absolute;
+                    top:100%;
+                    font-size: 12px;
+                    padding-left: 150px;
+                 }
                 .label-name-two {
                         position: relative;
                         width: 85px;
@@ -271,6 +300,7 @@
                         font-size: 14px;
                 }
                 .item-content-two {
+                    height: 36px;
                     span {
                         font-size: 14px;
                     }

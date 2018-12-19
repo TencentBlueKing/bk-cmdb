@@ -53,6 +53,8 @@
                         name: this.$t('Nav["模型"]')
                     }, {
                         id: 'bk_status',
+                        width: 100,
+                        sortable: false,
                         name: this.$t('ProcessManagement["状态"]')
                     }, {
                         id: 'bk_time_consume',
@@ -60,12 +62,10 @@
                         name: this.$t('Cloud["处理耗时"]')
                     }, {
                         id: 'details',
-                        width: 130,
                         sortable: false,
                         name: this.$t('Cloud["详情"]')
                     }, {
                         id: 'bk_start_time',
-                        width: 155,
                         name: this.$t('HostResourcePool["启动时间"]')
                     }],
                     list: [],
@@ -76,8 +76,8 @@
                         size: 10
                     },
                     checked: [],
-                    defaultSort: '-bk_task_id',
-                    sort: '-bk_task_id'
+                    defaultSort: '-bk_start_time',
+                    sort: '-bk_start_time'
                 }
             }
         },
@@ -146,7 +146,7 @@
 <style lang="scss" scoped>
     .sync-history-layout {
         position: relative;
-        height: 100%;
+        height: 100px;
         padding: 0 20px;
     }
     .sync-history-options {

@@ -1,52 +1,54 @@
 <template>
-    <div class="detail-wrapper">
-        <div class="detail-box">
-            <ul class="cloud-form" v-model="curPush">
-                <li class="form-item">
+    <div class="task-detail-wrapper">
+        <div class="task-detail-box">
+            <ul class="cloud-form clearfix" v-model="curPush">
+                <li class="detail-form-item">
                     <label for="" class="label-name">
-                        {{ $t('Cloud["任务名称"]')}} :
+                        {{ $t('Cloud["任务名称"]')}} ：
                     </label>
-                    <div class="item-content">
+                    <div class="detail-item-content">
                         <span>{{curPush.bk_task_name}}</span>
                     </div>
                 </li>
-                <li class="form-item">
+                <li class="detail-form-item">
                     <label for="" class="label-name">
-                        {{ $t('Cloud["账号类型"]')}} :
+                        {{ $t('Cloud["账号类型"]')}} ：
                     </label>
-                    <div class="item-content">
-                        <span>{{curPush.bk_account_type}}</span>
+                    <div class="detail-item-content">
+                        <span v-if="curPush.bk_account_type === 'tencent_cloud'">
+                            {{$t('Cloud["腾讯云"]')}}
+                        </span>
                     </div>
                 </li>
-                <li class="form-item">
+                <li class="detail-form-item">
                     <label for="" class="label-name">
-                        {{ $t('Cloud["ID"]')}} :
+                        {{ $t('Cloud["ID"]')}} ：
                     </label>
-                    <div class="item-content">
+                    <div class="detail-item-content">
                         <span>{{curPush.bk_secret_id}}</span>
                     </div>
                 </li>
-                <li class="form-item">
+                <li class="detail-form-item">
                     <label for="" class="label-name">
-                        {{ $t('Cloud["Key"]')}} :
+                        {{ $t('Cloud["Key"]')}} ：
                     </label>
-                    <div class="item-content">
-                        <span>*************</span>
+                    <div class="detail-item-content">
+                        <span>{{curPush.bk_secret_key}}}</span>
                     </div>
                 </li>
-                <li class="form-item">
-                    <label for="" class="label-name">{{ $t('Cloud["同步资源"]')}} : </label>
-                    <div class="item-content">
+                <li class="detail-form-item">
+                    <label for="" class="label-name">{{ $t('Cloud["同步资源"]')}} ：</label>
+                    <div class="detail-item-content">
                         <span>{{curPush.bk_obj_id}}</span>
                     </div>
                 </li>
-                <li class="form-item">
-                    <label for="" class="label-name">{{ $t('Cloud["自动同步"]')}} : </label>
-                    <div class="item-content">
+                <li class="detail-form-item">
+                    <label for="" class="label-name">{{ $t('Cloud["自动同步"]')}} ：</label>
+                    <div class="detail-item-content">
                         <span v-if="curPush.bk_period_type === 'minute'">
                             {{$t('Cloud["每五分钟"]')}}
                         </span>
-                        <span v-if="curPush.bk_period_type === 'hour'">
+                        <span v-else-if="curPush.bk_period_type === 'hour'">
                             {{this.$t('Cloud["每小时"]')}} {{curPush.bk_period}}
                         </span>
                         <span v-else>
@@ -54,15 +56,15 @@
                         </span>
                     </div>
                 </li>
-                <li class="form-item">
-                    <label for="" class="label-name">{{ $t('Cloud["任务维护人"]')}} : </label>
-                    <div class="item-content">
+                <li class="detail-form-item">
+                    <label for="" class="label-name">{{ $t('Cloud["任务维护人"]')}} ：</label>
+                    <div class="detail-item-content">
                         <span>{{curPush.bk_account_admin}}</span>
                     </div>
                 </li>
-                <li class="form-item">
-                    <label for="" class="label-name">{{ $t('Cloud["资源确认"]')}} : </label>
-                    <div class="item-content">
+                <li class="detail-form-item">
+                    <label for="" class="label-name">{{ $t('Cloud["资源确认"]')}} ：</label>
+                    <div class="detail-item-content">
                         <span v-if="curPush.bk_confirm">
                             {{ $t('Cloud["新增需要确认"]')}}
                         </span>
@@ -73,9 +75,9 @@
                 </li>
             </ul>
         </div>
-        <footer class="footer">
+        <div class="task-detail-btn">
             <bk-button type="primary" :loading="$loading('savePush')" class="btn" @click="edit">{{$t('Common["编辑"]')}}</bk-button>
-        </footer>
+        </div>
     </div>
 </template>
 
@@ -101,13 +103,13 @@
 </script>
 
 <style lang="scss" scoped>
-    .detail-wrapper {
+    .task-detail-wrapper {
         height: 100%;
-        .detail-box {
+        .task-detail-box {
             padding: 17px 20px 0 21px;
         }
         .cloud-form {
-            .form-item {
+            .detail-form-item {
                 width: 300px;
                 height: 24px;
                 margin-bottom: 15px;
@@ -119,13 +121,13 @@
                 }
                 .label-name {
                     position: relative;
-                    width: 85px;
+                    width: 90px;
                     float: left;
                     text-align: right;
-                    line-height: 27px;
+                    line-height: 24px;
                     font-size: 14px;
                 }
-                .item-content {
+                .detail-item-content {
                     float: left;
                     line-height: 27px;
                     width: 200px;
@@ -138,16 +140,15 @@
                     }
                 }
             }
-            .form-item:nth-child(even) {
+            .detail-form-item:nth-child(even) {
                 margin-left: 35px;
             }
         }
-        .footer {
+        .task-detail-btn {
             height: 63px;
             line-height: 63px;
-            background: #f9f9f9;
             font-size: 0;
-            padding-left: 24px;
+            padding-left: 100px;
             .btn {
                 margin-right: 10px;
             }

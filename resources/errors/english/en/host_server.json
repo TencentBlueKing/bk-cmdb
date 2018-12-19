@@ -36,6 +36,7 @@
 	"1110035": "Failed to add resource instance to confirm history",
 	"1110036": "Failed to obtain cloud task instance",
 	"1110037": "Failed to obtain resource confirm history",
+	"1110038": "Task name already exits",
 
 	"1110040": "Create custom query failed, error %s",
 	"1110041": "Modify custom query failed, error %s",

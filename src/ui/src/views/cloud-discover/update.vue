@@ -1,43 +1,53 @@
 <template>
-    <div class="detail-wrapper">
-        <div class="detail-box">
-            <ul class="event-form" v-model="curPush">
-                <li class="form-item">
+    <div class="update-wrapper">
+        <div class="update-box">
+            <ul class="update-event-form" v-model="curPush">
+                <li class="update-form-item">
                     <label for="" class="label-name">
                         {{ $t('Cloud["任务名称"]')}}<span class="color-danger">*</span>
                     </label>
-                    <div class="item-content">
+                    <div class="update-item-content">
                         <input type="text"
                                v-model="curPush.bk_task_name"
+                               name="taskName"
+                               v-validate="'required|singlechar'"
                                class="cmdb-form-input">
                     </div>
+                    <span v-show="errors.has('taskName')" class="color-danger">{{ errors.first('taskName') }}</span>
                 </li>
-                <li class="form-item">
+                <li class="update-form-item">
                     <label for="" class="label-name">
                         {{ $t('Cloud["账号类型"]')}}<span class="color-danger">*</span>
                     </label>
-                    <div class="item-content">
-                        <bk-selector
+                    <div class="update-item-content">
+                        <cmdb-selector
                             :list="cloudList"
-                            :selected.sync="curPush.bk_account_type"
-                        ></bk-selector>
+                            v-model="curPush.bk_account_type"
+                            name="accountType"
+                            v-validate="'required'"
+                            :placeholder="$t('Cloud[\'请选择账号类型\']')"
+                        ></cmdb-selector>
                     </div>
+                    <span v-show="errors.has('accountType')" class="error-info color-danger">{{ errors.first('accountType') }}</span>
                 </li>
-                <li class="form-item">
+                <li class="update-form-item">
                     <label for="" class="label-name">
                         {{ $t('Cloud["ID"]')}}<span class="color-danger">*</span>
                     </label>
-                    <div class="item-content">
+                    <div class="update-item-content">
                         <input type="text"
                                v-model="curPush.bk_secret_id"
+                               name="ID"
+                               v-validate="'required|singlechar'"
                                class="cmdb-form-input"/>
                     </div>
+                    <span v-show="errors.has('ID')" class="color-danger">{{ errors.first('ID') }}</span>
                 </li>
-                <li class="form-item">
+                <li class="update-form-item">
                     <label for="" class="label-name">
                         {{ $t('Cloud["Key"]')}}<span class="color-danger">*</span>
                     </label>
-                    <div class="item-content">
+                    <div class="update-item-content">
                         <input type="password"
                                v-model="curPush.bk_secret_key"
                                class="cmdb-form-input"/>
@@ -51,19 +61,33 @@
                             :selected.sync="curPush.bk_period_type"
                         ></bk-selector>
                         <input type="text"
-                               v-model="curPush.bk_period"
                                class="cmdb-form-input"
-                               :disabled = "disabled"
-                               :placeholder="placeholder"/>
+                               v-model="curPush.bk_period"
+                               v-if="curPush.bk_period_type === 'day'"
+                               name="day"
+                               v-validate="'required|dayFormat'"
+                               :placeholder="$t('Cloud[\'例如: 19:30\']')"/>
+                        <input type="text"
+                               class="cmdb-form-input"
+                               v-model="curPush.bk_period"
+                               v-if="curPush.bk_period_type === 'hour'"
+                               name="hour"
+                               v-validate="'required|hourFormat'"
+                               :placeholder="$t('Cloud[\'例如: 30\']')">
+                        <div v-show="errors.has('day')" class="update-error-info color-danger">{{ errors.first('day') }}</div>
+                        <div v-show="errors.has('hour')" class="update-error-info color-danger">{{ errors.first('hour') }}</div>
                     </div>
                 </li>
-                <li class="form-item">
+                <li class="update-form-item">
                     <label for="" class="label-name">{{ $t('Cloud["任务维护人"]')}}</label>
-                    <div class="item-content">
-                        <input type="text"
-                               v-model="curPush.bk_account_admin"
-                               class="cmdb-form-input"/>
-                    </div>
+                    <cmdb-form-objuser
+                        class="fl maintain-selector"
+                        v-model="curPush.bk_account_admin"
+                        :multiple="true"
+                        name="maintain"
+                        v-validate="'required|singlechar'">
+                    </cmdb-form-objuser>
+                    <span v-show="errors.has('maintain')" class="color-danger">{{ errors.first('maintain') }}</span>
                 </li>
                 <li>
                     <label>{{ $t('Cloud["同步资源"]')}}</label>
@@ -112,7 +136,6 @@
         },
         data () {
             return {
-                disabled: false,
                 placeholder: '',
                 cloudList: [{
                     id: 'tencent_cloud',
@@ -133,6 +156,10 @@
         methods: {
             ...mapActions('cloudDiscover', ['updateCloudTask']),
             async update () {
+                const isValidate = await this.$validator.validateAll()
+                if (!isValidate) {
+                    return
+                }
                 let params = this.curPush
                 let res = null
                 res = await this.updateCloudTask({params: params, config: {requestId: 'savePush'}})
@@ -148,14 +175,9 @@
         },
         watch: {
             'curPush.bk_period_type' () {
-                if (this.curPush.bk_period_type === 'minute') {
-                    this.disabled = true
-                    this.placeholder = ''
-                } else if (this.curPush.bk_period_type === 'hour') {
-                    this.disabled = false
+                if (this.curPush.bk_period_type === 'hour') {
                     this.placeholder = this.$t('Cloud["例如: 30"]')
                 } else {
-                    this.disabled = false
                     this.placeholder = this.$t('Cloud["例如: 19:30"]')
                 }
             }
@@ -164,13 +186,13 @@
 </script>
 
 <style lang="scss" scoped>
-    .detail-wrapper {
+    .update-wrapper {
         height: 100%;
-        .detail-box {
+        .update-box {
             padding: 17px 20px 0 21px;
         }
-        .event-form {
-            .form-item {
+        .update-event-form {
+            .update-form-item {
                 width: 300px;
                 height: 63px;
                 margin-bottom: 17px;
@@ -179,6 +201,10 @@
                     display: block;
                     content: "";
                     clear: both;
+                }
+                .maintain-selector{
+                    width: 300px;
+                    line-height: initial;
                 }
                 .label-name {
                     position: relative;
@@ -192,7 +218,7 @@
                         right: -10px;
                     }
                 }
-                .item-content {
+                .update-item-content {
                     span {
                         font-size: 14px;
                     }
@@ -205,7 +231,7 @@
                     }
                 }
             }
-            .form-item:nth-child(even) {
+            .update-form-item:nth-child(even) {
                 margin-left: 35px;
             }
             .form-item-two {
@@ -219,6 +245,12 @@
                      content: "";
                      clear: both;
                  }
+                .update-error-info {
+                    position:absolute;
+                    top:100%;
+                    font-size: 12px;
+                    padding-left: 150px;
+                }
                 .label-name-two {
                         position: relative;
                         width: 85px;
@@ -227,6 +259,7 @@
                         font-size: 14px;
                 }
                 .item-content-two {
+                    height: 36px;
                     span {
                         font-size: 14px;
                     }
