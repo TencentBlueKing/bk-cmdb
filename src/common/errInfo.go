@@ -61,9 +61,6 @@ const (
 	// CCErrCommParamsIsInvalid the parameter is invalid or nonexistent
 	CCErrCommParamsIsInvalid = 1199011
 
-	// CCErrCommUniqueCheckFailed the uniqueness validation fails
-	CCErrCommUniqueCheckFailed = 1199012
-
 	// CCErrCommParseDataFailed failed to read data from data field
 	CCErrCommParseDataFailed = 1199013
 
