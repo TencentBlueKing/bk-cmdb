@@ -210,6 +210,23 @@ func (cli *Service) DeleteObjectUnique(req *restful.Request, resp *restful.Respo
 		return
 	}
 
+	countCond := condition.CreateCondition()
+	countCond.Field("id").NotEq(id)
+	countCond.Field(common.BKObjIDField).Eq(objID)
+	countCond.Field(common.BKOwnerIDField).Eq(ownerID)
+	count, err := db.Table(common.BKTableNameObjUnique).Find(countCond.ToMapStr()).Count(ctx)
+	if nil != err {
+		blog.Errorf("[DeleteObjectUnique] count error: %s, raw: %#v", err, countCond.ToMapStr())
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrObjectDBOpErrno)})
+		return
+	}
+
+	if count <= 0 {
+		blog.Errorf("[DeleteObjectUnique][%s] unique should have more than one", objID)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrTopoObjectUniqueShouldHaveMoreThanOne)})
+		return
+	}
+
 	cond := condition.CreateCondition()
 	cond.Field("id").Eq(id)
 	cond.Field(common.BKObjIDField).Eq(objID)
