@@ -13,8 +13,9 @@
 package mongo_test
 
 import (
-	"configcenter/src/common/universalsql/mongo"
 	"testing"
+
+	"configcenter/src/common/universalsql/mongo"
 
 	"github.com/stretchr/testify/require"
 )

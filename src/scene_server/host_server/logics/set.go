@@ -27,15 +27,14 @@ func (lgc *Logics) GetSetIDByCond(ctx context.Context, cond []metadata.Condition
 	condc := make(map[string]interface{})
 	parse.ParseCommonParams(cond, condc)
 
-	query := &metadata.QueryInput{
-		Condition: condc,
-		Fields:    common.BKSetIDField,
-		Start:     0,
-		Limit:     common.BKNoLimit,
-		Sort:      common.BKSetIDField,
+	query := &metadata.QueryCondition{
+		Condition: mapstr.NewFromMap(condc),
+		Fields:    []string{common.BKSetIDField},
+		Limit:     metadata.SearchLimit{Offset: 0, Limit: common.BKNoLimit},
+		SortArr:   metadata.NewSearchSortParse().String(common.BKSetIDField).ToSearchSortArr(),
 	}
 
-	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDSet, lgc.header, query)
+	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDSet, query)
 	if err != nil {
 		blog.Errorf("GetSetIDByCond http do error, err:%s,objID:%s,input:%+v,rid:%s", err.Error(), common.BKInnerObjIDSet, query, lgc.rid)
 		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -57,16 +56,14 @@ func (lgc *Logics) GetSetIDByCond(ctx context.Context, cond []metadata.Condition
 	return setIDArr, nil
 }
 
-func (lgc *Logics) GetSetMapByCond(ctx context.Context, fields string, cond interface{}) (map[int64]mapstr.MapStr, errors.CCError) {
-	query := &metadata.QueryInput{
+func (lgc *Logics) GetSetMapByCond(ctx context.Context, fields []string, cond mapstr.MapStr) (map[int64]mapstr.MapStr, errors.CCError) {
+	query := &metadata.QueryCondition{
 		Condition: cond,
 		Fields:    fields,
-		Start:     0,
-		Limit:     common.BKNoLimit,
-		Sort:      common.BKModuleIDField,
+		SortArr:   metadata.NewSearchSortParse().String(common.BKSetIDField).ToSearchSortArr(),
 	}
 
-	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDSet, lgc.header, query)
+	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDSet, query)
 	if err != nil {
 		blog.Errorf("GetSetMapByCond http do error, err:%s,objID:%s,input:%+v,rid:%s", err.Error(), common.BKInnerObjIDSet, query, lgc.rid)
 		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)

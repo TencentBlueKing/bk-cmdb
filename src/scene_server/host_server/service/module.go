@@ -18,13 +18,14 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	hutil "configcenter/src/scene_server/host_server/util"
-
-	"github.com/emicklei/go-restful"
 )
 
 func (s *Service) AddHostMultiAppModuleRelation(req *restful.Request, resp *restful.Response) {
@@ -317,7 +318,7 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 	}
 
 	conds := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithModuleName(common.DefaultResModuleName).WithAppID(ownerAppID)
-	moduleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, conds.Data())
+	moduleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, conds.MapStr())
 	if err != nil {
 		blog.Errorf("move host to resource pool, but get module id failed, err: %v, input:%+v,param:%+v,rid:%s", err, conf, conds.Data(), srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err})
@@ -404,22 +405,27 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 	}
 
 	conds := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithModuleName(common.DefaultResModuleName).WithAppID(appID)
-	ownerModuleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, conds.Data())
-	if err != nil || (err == nil && 0 == ownerModuleID) {
-		blog.Errorf("assign host to app, but get module id failed, err: %v,input:%+v,rid:%s", err, conf, srvData.rid)
+	ownerModuleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, conds.MapStr())
+	if err != nil {
+		blog.Errorf("assign host to app, but get module id failed, err: %v,input:%+v,rid:%s", err, conds.MapStr(), srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err})
+		return
+	}
+	if 0 == ownerModuleID {
+		blog.Errorf("assign host to app, but get module id failed, err: %v,input:%+v,rid:%s", err, conds.MapStr(), srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostModuleNotExist, common.DefaultResModuleName)})
 		return
 	}
 
 	mConds := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithModuleName(common.DefaultResModuleName).WithAppID(conf.ApplicationID)
-	moduleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, mConds.Data())
+	moduleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, mConds.MapStr())
 	if err != nil {
-		blog.Errorf("assign host to app, but get module id failed, err: %v,input:%+v,params:%+v,rid:%s", err, conf, conds.Data(), srvData.rid)
+		blog.Errorf("assign host to app, but get module id failed, err: %v,input:%+v,params:%+v,rid:%s", err, conf, mConds.MapStr(), srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrTopoMulueIDNotfoundFailed)})
 		return
 	}
 	if moduleID == 0 {
-		blog.Errorf("assign host to app, but get module id failed, %s not found: %v,input:%+v,params:%+v,rid:%s", common.DefaultResModuleName, conf, conds.Data(), srvData.rid)
+		blog.Errorf("assign host to app, but get module id failed, %s not found: %v,input:%+v,params:%+v,rid:%s", common.DefaultResModuleName, conf, mConds.MapStr(), srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostModuleNotExist, common.DefaultResModuleName)})
 		return
 	}
@@ -487,10 +493,10 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 		}
 
 		//get idle module
-		mConds := make(map[string]interface{})
-		mConds[common.BKDefaultField] = common.DefaultResModuleFlag
-		mConds[common.BKModuleNameField] = common.DefaultResModuleName
-		mConds[common.BKAppIDField] = ownerAppID
+		mConds := mapstr.New()
+		mConds.Set(common.BKDefaultField, common.DefaultResModuleFlag)
+		mConds.Set(common.BKModuleNameField, common.DefaultResModuleName)
+		mConds.Set(common.BKAppIDField, ownerAppID)
 		ownerModuleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, mConds)
 		if nil != err {
 			blog.Errorf("assign host to app module, but get unused host pool failed, ownerid[%v], err: %v,input:%+v,param:%+v,rid:%s", ownerModuleID, err, data, mConds, srvData.rid)
@@ -542,20 +548,20 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 		return
 	}
 
-	conds := make(map[string]interface{})
+	conds := mapstr.New()
 	moduleNameLogKey := "idle"
 	if common.DefaultResModuleName == moduleName {
 		//空闲机
 		moduleNameLogKey = "idle"
-		conds[common.BKDefaultField] = common.DefaultResModuleFlag
-		conds[common.BKModuleNameField] = common.DefaultResModuleName
+		conds.Set(common.BKDefaultField, common.DefaultResModuleFlag)
+		conds.Set(common.BKModuleNameField, common.DefaultResModuleName)
 	} else {
 		//故障机器
 		moduleNameLogKey = "fault"
-		conds[common.BKDefaultField] = common.DefaultFaultModuleFlag
-		conds[common.BKModuleNameField] = common.DefaultFaultModuleName
+		conds.Set(common.BKDefaultField, common.DefaultFaultModuleFlag)
+		conds.Set(common.BKModuleNameField, common.DefaultFaultModuleName)
 	}
-	conds[common.BKAppIDField] = conf.ApplicationID
+	conds.Set(common.BKAppIDField, conf.ApplicationID)
 	moduleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, conds)
 	if err != nil {
 		blog.Errorf("move host to module %s, get module id err: %v,input:%+v,rid:%s", moduleName, err, conf, srvData.rid)
