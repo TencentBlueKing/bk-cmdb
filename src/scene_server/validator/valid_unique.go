@@ -56,16 +56,16 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
 
 		cond := condition.CreateCondition()
 
-		allEmpty := true
+		anyEmpty := false
 		for key := range uniquekeys {
 			val, ok := valData[key]
-			cond.Field(key).Eq(val)
-			if ok && !isEmpty(val) {
-				allEmpty = false
+			if !ok || isEmpty(val) {
+				anyEmpty = true
 			}
+			cond.Field(key).Eq(val)
 		}
 
-		if allEmpty && !unique.MustCheck {
+		if anyEmpty && !unique.MustCheck {
 			continue
 		}
 
@@ -148,16 +148,16 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 		}
 
 		cond := condition.CreateCondition()
-		allEmpty := true
+		anyEmpty := false
 		for key := range uniquekeys {
 			val, ok := valData[key]
-			cond.Field(key).Eq(val)
-			if ok && !isEmpty(val) {
-				allEmpty = false
+			if !ok || isEmpty(val) {
+				anyEmpty = true
 			}
+			cond.Field(key).Eq(val)
 		}
 
-		if allEmpty && !unique.MustCheck {
+		if anyEmpty && !unique.MustCheck {
 			continue
 		}
 
