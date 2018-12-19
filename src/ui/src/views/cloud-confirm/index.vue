@@ -1,34 +1,33 @@
 <template>
-    <div class="business-layout">
-        <div class="business-options clearfix">
-            <bk-button class="fl"
-                       type="primary"
+    <div>
+        <div class="clearfix">
+            <bk-button type="primary"
                        @click="batchConfirm"
                        :disabled="!table.checked.length">
                 <span>{{$t("Cloud['批量确认']")}}</span>
             </bk-button>
-            <div class="options-button fr">
+            <div class="confirm-options-button fr">
                 <bk-button class="button-history" v-tooltip.bottom="$t('Cloud[\'查看确认记录\']')" @click="confirmHistory">
                     <i class="icon-cc-history"></i>
                 </bk-button>
             </div>
-            <div class="options-filter clearfix fr">
-                <bk-selector class="filter-selector fl"
+            <div class="confirm-options-filter clearfix fr">
+                <bk-selector class="confirm-filter-selector fl"
                              :list="selector.list"
                              :selected.sync="selector.defaultDemo.selected">
                 </bk-selector>
-                <cmdb-form-enum class="filter-value fl"
+                <cmdb-form-enum class="confirm-filter-value fl"
                                 v-if="filter.type === 'enum'"
                                 :options="$tools.getEnumOptions(properties, filter.id)"
                                 :allow-clear="true"
                                 v-model="filter.value"
                                 @on-selected="getTableData">
                 </cmdb-form-enum>
-                <input class="filter-value cmdb-form-input fl" type="text"
+                <input class="confirm-filter-value cmdb-form-input fl" type="text"
                        v-else
                        v-model.trim="filter.value"
                        @keydown.enter="getTableData">
-                <i class="filter-search bk-icon icon-search"
+                <i class="confirm-filter-search bk-icon icon-search"
                    v-show="filter.type !== 'enum'"
                    @click="getTableData"></i>
             </div>
@@ -156,6 +155,10 @@
                 return tips
             }
         },
+        created () {
+            this.$store.commit('setHeaderTitle', this.$t('Cloud["资源确认"]'))
+            this.getTableData()
+        },
         methods: {
             ...mapActions('cloudDiscover', [
                 'getResourceConfirm',
@@ -166,16 +169,20 @@
                 let pagination = this.table.pagination
                 let params = {}
                 let attr = {}
+                let page = {
+                    start: (pagination.current - 1) * pagination.size,
+                    limit: pagination.size,
+                    sort: this.table.sort
+                }
+                attr['$regex'] = this.filter.text
+                attr['$options'] = '$i'
                 if (this.selector.checked === 'bk_obj_id') {
-                    attr['$regex'] = this.filter.text
-                    attr['$options'] = '$i'
                     params['bk_obj_id'] = attr
                 }
                 if (this.selector.checked === 'bk_source_type') {
-                    attr['$regex'] = this.filter.text
-                    attr['$options'] = '$i'
                     params['bk_source_type'] = attr
                 }
+                params['page'] = page
                 let res = await this.getResourceConfirm({params, config: {requestID: 'post_searchConfirm_list'}})
                 this.table.list = res.info.map(data => {
                     data['create_time'] = this.$tools.formatTime(data['create_time'], 'YYYY-MM-DD HH:mm:ss')
@@ -242,49 +249,46 @@
             handleAdd () {
                 this.$router.push({name: 'cloud', params: { type: 'create' }})
             }
-        },
-        created () {
-            this.getTableData()
         }
     }
 </script>
 
 <style lang="scss" scoped>
-.options-filter{
-    position: relative;
-    margin-right: 10px;
-    .filter-selector{
-        width: 115px;
-        border-radius: 2px 0 0 2px;
-        margin-right: -1px;
+    .confirm-options-button{
+        font-size: 0;
+        .button-history{
+            border-radius: 2px 0 0 2px;
+        }
     }
-    .filter-value{
-        width: 320px;
-        border-radius: 0 2px 2px 0;
+    .confirm-options-filter{
+        position: relative;
+        margin-right: 10px;
+        .confirm-filter-selector{
+            width: 115px;
+            border-radius: 2px 0 0 2px;
+            margin-right: -1px;
+        }
+        .confirm-filter-value{
+            width: 320px;
+            border-radius: 0 2px 2px 0;
+        }
+        .confirm-filter-search{
+            position: absolute;
+            right: 10px;
+            top: 11px;
+            cursor: pointer;
+        }
     }
-    .filter-search{
-        position: absolute;
-        right: 10px;
-        top: 11px;
-        cursor: pointer;
+    .cloud-table{
+        margin-top: 20px;
+        span {
+            cursor:pointer;
+        }
+        .attr-changed {
+            color: #ffb23a;
+        }
+        .new-add {
+            color: #4f55f3;
+        }
     }
-}
-.options-button{
-    font-size: 0;
-    .button-history{
-        border-radius: 2px 0 0 2px;
-    }
-}
-.cloud-table{
-    margin-top: 20px;
-    span {
-        cursor:pointer;
-    }
-    .attr-changed {
-        color: #ffb23a;
-    }
-    .new-add {
-        color: #4f55f3;
-    }
-}
 </style>

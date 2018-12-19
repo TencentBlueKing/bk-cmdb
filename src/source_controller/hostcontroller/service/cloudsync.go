@@ -127,7 +127,6 @@ func (s *Service) SearchCloudTask(req *restful.Request, resp *restful.Response) 
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-	blog.Debug("SearchCloudHost opt: %v", opt)
 
 	page := mapstr.MapStr{}
 	result := make([]map[string]interface{}, 0)

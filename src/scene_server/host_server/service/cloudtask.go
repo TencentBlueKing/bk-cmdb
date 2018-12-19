@@ -37,18 +37,13 @@ func (s *Service) AddCloudTask(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	errString, err := srvData.lgc.AddCloudTask(srvData.ctx, taskList)
-	if err != nil {
-		blog.Errorf("add task failed with err: %v", err)
+	if err := srvData.lgc.AddCloudTask(srvData.ctx, taskList); err != nil {
+		blog.Errorf("add task failed with err: %v", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudSyncCreateFail)})
 		return
 	}
 
-	retData := make(map[string]interface{})
-	if errString != "" {
-		retData["info"] = errString
-	}
-	resp.WriteEntity(meta.NewSuccessResp(retData))
+	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
 func (s *Service) DeleteCloudTask(req *restful.Request, resp *restful.Response) {

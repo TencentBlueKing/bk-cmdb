@@ -73,6 +73,16 @@ const customRules = {
         validate: (value) => {
             return /^(\d+)?(\.\d+)+$/.test(value)
         }
+    },
+    hourFormat: {
+        validate: (value) => {
+            return /^[1-5]?[0-9]$/.test(value)
+        }
+    },
+    dayFormat: {
+        validate: (value) => {
+            return /^((20|21|22|23|[0-1]\d):[0-5][0-9])?$/.test(value)
+        }
     }
 }
 
@@ -93,7 +103,9 @@ const dictionary = {
             isBigger: () => '必须大于最小值',
             repeat: () => '重复的值',
             fieldId: () => '请输入正确的内容',
-            oid: () => '请输入正确的内容'
+            oid: () => '请输入正确的内容',
+            hourFormat: () => '请输入0-59之间的数字',
+            dayFormat: () => '请输入00:00-23:59之间的时间'
         },
         custom: {
             asst: {
@@ -117,7 +129,9 @@ const dictionary = {
             isBigger: () => 'Must be greater than the minimum',
             repeat: () => 'This value should not be repeated',
             fieldId: () => 'Please enter the correct content',
-            oid: () => 'Please enter the correct content'
+            oid: () => 'Please enter the correct content',
+            hourFormat: () => 'Please enter the number between 0-59',
+            dayFormat: () => 'Please enter the time between 00:00-23:59'
         },
         custom: {
             asst: {
