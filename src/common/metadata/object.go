@@ -49,6 +49,7 @@ type Object struct {
 	Position    string     `field:"position" json:"position" bson:"position"`
 	OwnerID     string     `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 	Description string     `field:"description" json:"description" bson:"description"`
+	Meta        MetaData   `field:"metadata" json:"metadata" bson:"metadata"`
 	Creator     string     `field:"creator" json:"creator" bson:"creator"`
 	Modifier    string     `field:"modifier" json:"modifier" bson:"modifier"`
 	CreateTime  *time.Time `field:"create_time" json:"create_time" bson:"create_time"`

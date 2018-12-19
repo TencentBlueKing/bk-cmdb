@@ -66,12 +66,13 @@ type Attribute struct {
 	PropertyType      string      `field:"bk_property_type" json:"bk_property_type" bson:"bk_property_type"`
 	Option            interface{} `field:"option" json:"option" bson:"option"`
 	Description       string      `field:"description" json:"description" bson:"description"`
+	Meta              MetaData    `field:"metadata" json:"metadata" bson:"metadata"`
 	Creator           string      `field:"creator" json:"creator" bson:"creator"`
 	CreateTime        *time.Time  `json:"create_time" bson:"creaet_time"`
 	LastTime          *time.Time  `json:"last_time" bson:"last_time"`
 }
 
-// Attribute attribute metadata definition
+// AttributeGroup attribute metadata definition
 type AttributeGroup struct {
 	ID         int64  `field:"id" json:"id" bson:"id"`
 	OwnerID    string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
