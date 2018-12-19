@@ -113,8 +113,9 @@ func (p *chanPorter) Run() error {
 		go p.popLoop()
 		go p.pushLoop()
 	}
+	var err error
 	for {
-		if err := p.collect(); err != nil {
+		if err = p.collect(); err != nil {
 			blog.Errorf("[datacollect][%s] collect message failed: %v, retry 3s later", p.name, err)
 		}
 		// 睡3秒， 防止空跑导致CPU占用高涨
@@ -153,7 +154,7 @@ func (p *chanPorter) analyzeCount() {
 	for i = range p.analyzeCounterC {
 		cnt += i
 		if time.Since(ts) > time.Minute*10 {
-			blog.Infof("[datacollect][%s] analyze rate: %d message in last %v", p.name, cnt, time.Now().Sub(ts))
+			blog.Infof("[datacollect][%s] analyze rate: %d message in last %v, analyzeC length: %d", p.name, cnt, time.Now().Sub(ts), len(p.analyzeC))
 			cnt = 0
 			ts = time.Now()
 		}
@@ -212,12 +213,16 @@ func (p *chanPorter) subscribeLoop() error {
 
 	ts := time.Now()
 	var cnt int64
+	var timeouterr net.Error
+	var ok bool
+	var received interface{}
+	var name = p.name + "[receive]"
 	for p.isMaster.IsSet() {
-		received, err := subChan.ReceiveTimeout(time.Second * 10)
+		received, err = subChan.ReceiveTimeout(time.Second * 10)
 		if err == redis.Nil || err == io.EOF {
 			continue
 		}
-		if err, ok := err.(net.Error); ok && err.Timeout() {
+		if timeouterr, ok = err.(net.Error); ok && timeouterr.Timeout() {
 			continue
 		}
 		if nil != err {
@@ -239,7 +244,7 @@ func (p *chanPorter) subscribeLoop() error {
 			select {
 			case p.slaveC <- msg.Payload:
 			default:
-				writeOrClearChan(p.analyzeC, p.name, msg.Payload)
+				writeOrClearChan(p.analyzeC, name, msg.Payload)
 			}
 		}
 
@@ -282,12 +287,13 @@ func (p *chanPorter) healthCheck() {
 	}()
 
 	var err error
-	for now := range ticker.C {
+	var now time.Time
+	for now = range ticker.C {
 		channelstatus := 0
-		if err := p.snapCli.Ping().Err(); err != nil {
+		if err = p.snapCli.Ping().Err(); err != nil {
 			channelstatus = common.CCErrHostGetSnapshotChannelClose
 			blog.Errorf("[datacollect][%s][healthCheck] snap redis server connection error: %s", p.name, err.Error())
-		} else if err := p.redisCli.Ping().Err(); err != nil {
+		} else if err = p.redisCli.Ping().Err(); err != nil {
 			channelstatus = common.CCErrHostGetSnapshotChannelClose
 			blog.Errorf("[datacollect][%s][healthCheck] cc redis server connection error: %s", p.name, err.Error())
 		} else if p.isMaster.IsSet() && now.Sub(p.lastMesgTs) > time.Minute {
@@ -303,6 +309,7 @@ func (p *chanPorter) healthCheck() {
 }
 
 // popLoop 从slave处理队列获取消息，从而协助master处理
+// 因为有可能单机部署，所以即使是master也要处理slavequeue
 func (p *chanPorter) popLoop() {
 	for {
 		p.pop()
@@ -322,13 +329,17 @@ func (p *chanPorter) pop() {
 	// 推消息到slave处理队列
 	var mesg []string
 	var err error
-	key := slavequeueKey(p.name)
+	var timeouterr net.Error
+	var ok bool
+	var llen int64
+	var key = slavequeueKey(p.name)
+	var name = p.name + "[pop]"
 	for {
 		mesg, err = p.redisCli.BRPop(time.Second*30, key).Result()
 		if err == redis.Nil {
 			continue
 		}
-		if err, ok := err.(net.Error); ok && err.Timeout() {
+		if timeouterr, ok = err.(net.Error); ok && timeouterr.Timeout() {
 			continue
 		}
 		if err != nil {
@@ -337,7 +348,24 @@ func (p *chanPorter) pop() {
 			time.Sleep(time.Second * 3)
 		}
 		if len(mesg) > 1 && mesg[1] != "nil" && mesg[1] != "" {
-			writeOrClearChan(p.analyzeC, p.name, mesg[1])
+			writeOrClearChan(p.analyzeC, name, mesg[1])
+		}
+		if p.isMaster.IsSet() {
+			llen, err = p.redisCli.LLen(key).Result()
+			if err != nil {
+				blog.Errorf("[datacollect][%s] llen failed: %v", p.name, err)
+				continue
+			}
+			if llen > 1000 {
+				// 清理超过处理能力的未处理消息
+				blog.Errorf("[datacollect][%s] slavequeue %v fulled, clear it", p.name, key)
+				if err = p.redisCli.Del(key).Err(); err != nil {
+					blog.Errorf("[datacollect][%s] llen failed: %v", p.name, err)
+					continue
+				}
+			}
+			// 是master时，sleep可以让slave pop更多的消息
+			time.Sleep(time.Second)
 		}
 	}
 }
@@ -376,8 +404,9 @@ func writeOrClearChan(mesgC chan string, name, mesg string) {
 	default:
 		// channel fulled, so we drop 200 oldest events from queue
 		blog.Infof("[datacollect][%s] msgChan full, len %d. drop 200 oldest from queue", name, len(mesgC))
+		defer blog.Infof("[datacollect][%s] msgChan full, len %d. droped 200 oldest from queue", name, len(mesgC))
 		var ok bool
-		for i := 0; i < 200; i-- {
+		for i := 0; i < 200; i++ {
 			_, ok = <-mesgC
 			if !ok {
 				break
