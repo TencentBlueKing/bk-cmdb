@@ -741,35 +741,33 @@
                                 const twoWayAsst = this.getTwoWayAsst(node, asst, edges)
                                 // 存在则不重复添加
                                 let edge = edges.find(edge => edge.to === asst['bk_obj_id'] && edge.from === node['bk_obj_id'])
-                                if (edge) {
+                                if (edge) { // 已存在主动关联
+                                    this.updateEdgeArrows(edge, this.getEdgeArrows(asst))
                                     edge.labelList.push({
                                         text: this.getAssociationName(asst['bk_asst_inst_id']),
-                                        arrows: 'to',
                                         objId: node['bk_obj_id'],
                                         asst
                                     })
                                     if (this.displayConfig.isShowModelAsst) {
                                         edge.label = String(edge.labelList.length)
                                     }
-                                } else if (twoWayAsst) { // 双向关联，将已存在的线改为双向
-                                    twoWayAsst.arrows = 'to,from'
+                                } else if (twoWayAsst) { // 被关联
+                                    this.updateEdgeArrows(twoWayAsst, this.getEdgeArrows(asst))
                                     twoWayAsst.labelList.push({
                                         text: this.getAssociationName(asst['bk_asst_inst_id']),
-                                        arrows: 'from',
                                         objId: node['bk_obj_id'],
                                         asst
                                     })
                                     if (this.displayConfig.isShowModelAsst) {
                                         twoWayAsst.label = String(twoWayAsst.labelList.length)
                                     }
-                                } else {
-                                    let edge = {
+                                } else { // 无关联关系
+                                    const edge = {
                                         from: node['bk_obj_id'],
                                         to: asst['bk_obj_id'],
-                                        arrows: 'to',
+                                        arrows: this.getEdgeArrows(asst),
                                         labelList: [{
                                             text: this.getAssociationName(asst['bk_asst_inst_id']),
-                                            arrows: 'to',
                                             objId: node['bk_obj_id'],
                                             asst
                                         }]
@@ -785,6 +783,29 @@
                 })
                 this.network.edges = edges
                 this.networkDataSet.edges = new Vis.DataSet(this.network.edges)
+            },
+            updateEdgeArrows (edge, arrows) {
+                if (edge.arrows === '') {
+                    edge.arrows = arrows
+                } else if (edge.arrows === 'to' && arrows === 'to,from') {
+                    edge.arrows = arrows
+                }
+            },
+            getEdgeArrows (asst) {
+                const asstType = this.associationList.find(({id}) => id === asst['bk_asst_inst_id'])['direction']
+                let arrows = ''
+                switch (asstType) {
+                    case 'bidirectional':
+                        arrows = 'to,from'
+                        break
+                    case 'src_to_dest':
+                        arrows = 'to'
+                        break
+                    case 'none':
+                    default:
+                        break
+                }
+                return arrows
             },
             // 判断是否是双向关联A.to = B.from && A.from = B.to
             getTwoWayAsst (node, asst, edges) {
