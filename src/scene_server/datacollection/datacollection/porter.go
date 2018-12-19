@@ -358,7 +358,10 @@ func writeOrClearChan(mesgC chan string, name, mesg string) {
 				break
 			}
 		}
-		mesgC <- mesg
+		select {
+		case mesgC <- mesg:
+		default:
+		}
 	}
 }
 
