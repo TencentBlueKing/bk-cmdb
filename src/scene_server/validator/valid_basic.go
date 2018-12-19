@@ -131,6 +131,8 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 			err = valid.validForeignKey(val, key)
 		case common.FieldTypeFloat:
 			err = valid.validFloat(val, key)
+		case common.FieldTypeUser:
+			err = valid.validUser(val, key)
 		default:
 			continue
 		}
@@ -322,6 +324,26 @@ func (valid *ValidMap) validTimeZone(val interface{}, key string) error {
 	default:
 		blog.Error("params should be  timezone")
 		return valid.errif.Errorf(common.CCErrCommParamsNeedTimeZone, key)
+	}
+	return nil
+}
+
+//valid char
+func (valid *ValidMap) validUser(val interface{}, key string) error {
+	if nil == val {
+		if valid.require[key] {
+			blog.Error("params can not be null")
+			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+
+		}
+		return nil
+	}
+
+	switch val.(type) {
+	case string:
+	default:
+		blog.Error("params should be string")
+		return valid.errif.Errorf(common.CCErrCommParamsNeedString, key)
 	}
 	return nil
 }
