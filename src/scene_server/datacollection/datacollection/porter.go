@@ -34,6 +34,9 @@ type chanCollector struct {
 	p Porter
 }
 
+// 14kB * 10000 = 140M
+const cacheSize = 10000
+
 func BuildChanPorter(name string, analyzer Analyzer, redisCli, snapCli *redis.Client, channels []string, mockmesg string) *chanPorter {
 	return &chanPorter{
 		analyzer:        analyzer,
@@ -43,8 +46,8 @@ func BuildChanPorter(name string, analyzer Analyzer, redisCli, snapCli *redis.Cl
 		redisCli:        redisCli,
 		snapCli:         snapCli,
 		channels:        channels,
-		analyzeC:        make(chan string, 1000),
-		slaveC:          make(chan string, 1000),
+		analyzeC:        make(chan string, cacheSize),
+		slaveC:          make(chan string, cacheSize),
 		analyzeCounterC: make(chan int, runtime.NumCPU()),
 		runed:           util.NewBool(false),
 	}
@@ -356,7 +359,7 @@ func (p *chanPorter) pop() {
 				blog.Errorf("[datacollect][%s] llen failed: %v", p.name, err)
 				continue
 			}
-			if llen > 1000 {
+			if llen > cacheSize {
 				// 清理超过处理能力的未处理消息
 				blog.Errorf("[datacollect][%s] slavequeue %v fulled, clear it", p.name, key)
 				if err = p.redisCli.Del(key).Err(); err != nil {
@@ -403,8 +406,8 @@ func writeOrClearChan(mesgC chan string, name, mesg string) {
 	case mesgC <- mesg:
 	default:
 		// channel fulled, so we drop 200 oldest events from queue
-		blog.Infof("[datacollect][%s] msgChan full, len %d. drop 200 oldest from queue", name, len(mesgC))
-		defer blog.Infof("[datacollect][%s] msgChan full, len %d. droped 200 oldest from queue", name, len(mesgC))
+		blog.Infof("[datacollect][%s] msgChan full, len %d. clear 200 oldest from queue", name, len(mesgC))
+		defer blog.Infof("[datacollect][%s] msgChan full, len %d. cleared 200 oldest from queue", name, len(mesgC))
 		var ok bool
 		for i := 0; i < 200; i++ {
 			_, ok = <-mesgC
