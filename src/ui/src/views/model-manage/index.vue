@@ -479,7 +479,7 @@
             }
             .model-id {
                 font-size: 12px;
-                color: $cmdbBorderColor;
+                color: #bfc7d2;
                 @include ellipsis;
             }
         }

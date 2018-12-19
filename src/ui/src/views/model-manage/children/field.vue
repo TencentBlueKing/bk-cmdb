@@ -217,7 +217,7 @@
     }
     .field-table {
         .disabled {
-            color: #ccc;
+            color: #bfc7d2;
         }
     }
 </style>
