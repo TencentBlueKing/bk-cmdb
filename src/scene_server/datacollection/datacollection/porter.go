@@ -139,10 +139,10 @@ func (p *chanPorter) analyze() {
 			blog.Errorf("[datacollect][%s] analyze message failed: %v, raw mesg: %s", p.name, err, mesg)
 		}
 		cnt++
-		ts = time.Now()
 		if time.Since(ts) > time.Minute*10 {
-			blog.Infof("[datacollect][%s] analyze rate: %d/sec", p.name, int(float64(cnt)/time.Now().Sub(ts).Seconds()))
+			blog.Infof("[datacollect][%s] analyze %d message in last %v", p.name, cnt, time.Now().Sub(ts))
 			cnt = 0
+			ts = time.Now()
 		}
 
 	}
@@ -198,7 +198,7 @@ func (p *chanPorter) subscribeLoop() error {
 	blog.Info("[datacollect][%s] subcribing channel %v from redis", p.name, p.channels)
 	defer blog.Info("[datacollect][%s] unsubcribe channel %v from redis", p.name, p.channels)
 
-	p.lastMesgTs = time.Now()
+	ts := time.Now()
 	var cnt int64
 	for p.isMaster.IsSet() {
 		received, err := subChan.ReceiveTimeout(time.Second * 10)
@@ -233,9 +233,10 @@ func (p *chanPorter) subscribeLoop() error {
 
 		cnt++
 		p.lastMesgTs = time.Now()
-		if time.Since(p.lastMesgTs) > time.Minute*10 {
-			blog.Infof("[datacollect][%s] receive rate: %d/sec", p.name, int(float64(cnt)/time.Now().Sub(p.lastMesgTs).Seconds()))
+		if time.Since(ts) > time.Minute*10 {
+			blog.Infof("[datacollect][%s] receive %d message in last %v", p.name, cnt, time.Now().Sub(ts))
 			cnt = 0
+			ts = time.Now()
 		}
 	}
 	return nil
