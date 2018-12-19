@@ -19,7 +19,7 @@ import (
 // Label define the Label type used to limit the scope of application of resources
 type Label mapstr.MapStr
 
-// MetaData  used to define the meta data for the resources
-type MetaData struct {
+// Metadata  used to define the metadata for the resources
+type Metadata struct {
 	Labels Label
 }
