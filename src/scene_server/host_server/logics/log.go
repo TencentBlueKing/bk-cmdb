@@ -303,14 +303,12 @@ func (h *HostModuleLog) getModules(ctx context.Context, moduleIds []int64) ([]ma
 	if moduleIds == nil {
 		return make([]mapstr.MapStr, 0), nil
 	}
-	query := &metadata.QueryInput{
-		Start:     0,
-		Limit:     common.BKNoLimit,
-		Condition: common.KvMap{common.BKModuleIDField: common.KvMap{common.BKDBIN: moduleIds}},
-		Fields:    fmt.Sprintf("%s,%s,%s,%s,%s", common.BKModuleIDField, common.BKSetIDField, common.BKModuleNameField, common.BKAppIDField, common.BKOwnerIDField),
+	query := &metadata.QueryCondition{
+		Limit:     metadata.SearchLimit{Offset: 0, Limit: common.BKNoLimit},
+		Condition: mapstr.MapStr{common.BKModuleIDField: common.KvMap{common.BKDBIN: moduleIds}},
+		Fields:    []string{common.BKModuleIDField, common.BKSetIDField, common.BKModuleNameField, common.BKAppIDField, common.BKOwnerIDField},
 	}
-
-	result, err := h.logic.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDModule, h.header, query)
+	result, err := h.logic.CoreAPI.CoreService().Instance().ReadInstance(ctx, h.header, common.BKInnerObjIDModule, query)
 	if err != nil {
 		blog.Errorf("getModules http do error, err:%s,input:%+v,rid:%s", err.Error(), query, h.logic.rid)
 		return nil, h.logic.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -327,14 +325,12 @@ func (h *HostModuleLog) getSets(ctx context.Context, setIDs []int64) ([]mapstr.M
 	if setIDs == nil {
 		return make([]mapstr.MapStr, 0), nil
 	}
-	query := &metadata.QueryInput{
-		Start:     0,
-		Limit:     common.BKNoLimit,
-		Condition: common.KvMap{common.BKSetIDField: common.KvMap{common.BKDBIN: setIDs}},
-		Fields:    fmt.Sprintf("%s,%s,%s", common.BKSetNameField, common.BKSetIDField, common.BKOwnerIDField),
+	query := &metadata.QueryCondition{
+		Limit:     metadata.SearchLimit{Offset: 0, Limit: common.BKNoLimit},
+		Condition: mapstr.MapStr{common.BKSetIDField: mapstr.MapStr{common.BKDBIN: setIDs}},
+		Fields:    []string{common.BKSetNameField, common.BKSetIDField, common.BKOwnerIDField},
 	}
-
-	result, err := h.logic.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDSet, h.header, query)
+	result, err := h.logic.CoreAPI.CoreService().Instance().ReadInstance(ctx, h.header, common.BKInnerObjIDSet, query)
 	if err != nil {
 		blog.Errorf("getSets http do error, err:%s,input:%+v,rid:%s", err.Error(), query, h.logic.rid)
 		return nil, h.logic.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)

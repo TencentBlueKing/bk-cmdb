@@ -12,8 +12,43 @@
 
 package association_test
 
-import "testing"
+import (
+	"testing"
 
-func TestModelAssociationMaintaince(t *testing.T) {
+	"configcenter/src/common"
+	"configcenter/src/common/errors"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/universalsql"
+
+	"github.com/rs/xid"
+	"github.com/stretchr/testify/require"
+)
+
+func searchModelAssociation(t *testing.T, cond universalsql.Condition) (*metadata.QueryResult, error) {
+	assoMgr := newAssociation(t)
+	return assoMgr.SearchModelAssociation(defaultCtx, metadata.QueryCondition{
+		Condition: cond.ToMapStr(),
+	})
+}
+
+func TestCreateModelAssociationMaintaince(t *testing.T) {
+
+	assoMgr := newAssociation(t)
+
+	// create a empty association
+	createModelAssoResult, err := assoMgr.CreateModelAssociation(defaultCtx, metadata.CreateModelAssociation{})
+	require.NotNil(t, err)
+	require.NotNil(t, createModelAssoResult)
+	require.Equal(t, common.CCErrCommParamsNeedSet, err.(errors.CCErrorCoder).GetCode())
+
+	// create
+	createModelAssoResult, err = assoMgr.CreateModelAssociation(defaultCtx, metadata.CreateModelAssociation{
+		Spec: metadata.Association{
+			AssociationName: xid.New().String(),
+		},
+	})
+	require.NotNil(t, err)
+	require.NotNil(t, createModelAssoResult)
+	require.Equal(t, common.CCErrCommParamsNeedSet, err.(errors.CCErrorCoder).GetCode())
 
 }

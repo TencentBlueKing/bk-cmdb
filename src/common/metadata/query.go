@@ -48,25 +48,28 @@ type QueryConditionResult ResponseInstData
 
 // SearchSortParse SearchSort parse interface
 type SearchSortParse interface {
-	String(sort string) []SearchSort
-	ToMongo(ssArr []SearchSort) string
+	String(sort string) *searchSortParse
+	Field(field string, isDesc bool) *searchSortParse
+	Set(ssArr []SearchSort) *searchSortParse
+	ToMongo() string
+	ToSearchSortArr() []SearchSort
 }
 
 // searchSortParse SearchSort parse struct
 type searchSortParse struct {
+	data []SearchSort
 }
 
 func NewSearchSortParse() SearchSortParse {
 	return &searchSortParse{}
 }
 
-//  str convert string srot to cc SearchSort struct array
-func (ss *searchSortParse) String(sort string) []SearchSort {
+//  String convert string sort to cc SearchSort struct array
+func (ss *searchSortParse) String(sort string) *searchSortParse {
 	if sort == "" {
 		return nil
 	}
 	sortArr := strings.Split(sort, ",")
-	var ssArr []SearchSort
 	for _, sortItem := range sortArr {
 		sortItemArr := strings.Split(sortItem, ":")
 		ssInst := SearchSort{
@@ -76,15 +79,36 @@ func (ss *searchSortParse) String(sort string) []SearchSort {
 			ssInst.IsDsc = true
 
 		}
-		ssArr = append(ssArr, ssInst)
+		ss.data = append(ss.data, ssInst)
 	}
-	return ssArr
+	return ss
+}
+
+//  Field   cc SearchSort struct array
+func (ss *searchSortParse) Field(field string, isDesc bool) *searchSortParse {
+
+	ssInst := SearchSort{
+		Field: field,
+		IsDsc: isDesc,
+	}
+	ss.data = append(ss.data, ssInst)
+	return ss
+}
+
+func (ss *searchSortParse) Set(ssArr []SearchSort) *searchSortParse {
+	ss.data = append(ss.data, ssArr...)
+	return ss
+}
+
+// ToSearchSortArr cc SearchSort struct to mongodb sort filed
+func (ss *searchSortParse) ToSearchSortArr() []SearchSort {
+	return ss.data
 }
 
 // searchSortParse cc SearchSort struct to mongodb sort filed
-func (ss *searchSortParse) ToMongo(ssArr []SearchSort) string {
+func (ss *searchSortParse) ToMongo() string {
 	var orderByArr []string
-	for _, item := range ssArr {
+	for _, item := range ss.data {
 		if item.IsDsc {
 			orderByArr = append(orderByArr, item.Field+":-1")
 		} else {
