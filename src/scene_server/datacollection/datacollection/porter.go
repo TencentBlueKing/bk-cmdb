@@ -36,16 +36,17 @@ type chanCollector struct {
 
 func BuildChanPorter(name string, analyzer Analyzer, redisCli, snapCli *redis.Client, channels []string, mockmesg string) *chanPorter {
 	return &chanPorter{
-		analyzer: analyzer,
-		name:     name,
-		pid:      xid.New().String(),
-		isMaster: util.NewBool(false),
-		redisCli: redisCli,
-		snapCli:  snapCli,
-		channels: channels,
-		analyzeC: make(chan string, 1000),
-		slaveC:   make(chan string, 1000),
-		runed:    util.NewBool(false),
+		analyzer:        analyzer,
+		name:            name,
+		pid:             xid.New().String(),
+		isMaster:        util.NewBool(false),
+		redisCli:        redisCli,
+		snapCli:         snapCli,
+		channels:        channels,
+		analyzeC:        make(chan string, 1000),
+		slaveC:          make(chan string, 1000),
+		analyzeCounterC: make(chan int, runtime.NumCPU()),
+		runed:           util.NewBool(false),
 	}
 }
 
@@ -82,6 +83,9 @@ type chanPorter struct {
 
 	// 最后一次收到消息的时间，用于健康检查
 	lastMesgTs time.Time
+
+	// 用于统计处理效率的
+	analyzeCounterC chan int
 }
 
 func (p *chanPorter) Name() string {
@@ -102,6 +106,7 @@ func (p *chanPorter) Run() error {
 	if p.runed.IsSet() {
 		// 防止被上层manager重复执行, healthCheckLoop, analyzeLoop只需要运行一个即可
 		go p.healthCheckLoop()
+		go p.analyzeCount()
 		for i := 0; i < runtime.NumCPU(); i++ {
 			go p.analyzeLoop()
 		}
@@ -132,19 +137,26 @@ func (p *chanPorter) analyze() {
 
 	var mesg string
 	var err error
-	var cnt int
-	var ts = time.Now()
+
 	for mesg = range p.analyzeC {
 		if err = p.analyzer.Analyze(mesg); err != nil {
 			blog.Errorf("[datacollect][%s] analyze message failed: %v, raw mesg: %s", p.name, err, mesg)
 		}
-		cnt++
+		p.analyzeCounterC <- 1
+	}
+}
+
+func (p *chanPorter) analyzeCount() {
+	var cnt int
+	var ts = time.Now()
+	var i int
+	for i = range p.analyzeCounterC {
+		cnt += i
 		if time.Since(ts) > time.Minute*10 {
-			blog.Infof("[datacollect][%s] analyze %d message in last %v", p.name, cnt, time.Now().Sub(ts))
+			blog.Infof("[datacollect][%s] analyze rate: %d message in last %v", p.name, cnt, time.Now().Sub(ts))
 			cnt = 0
 			ts = time.Now()
 		}
-
 	}
 }
 
@@ -234,7 +246,7 @@ func (p *chanPorter) subscribeLoop() error {
 		cnt++
 		p.lastMesgTs = time.Now()
 		if time.Since(ts) > time.Minute*10 {
-			blog.Infof("[datacollect][%s] receive %d message in last %v", p.name, cnt, time.Now().Sub(ts))
+			blog.Infof("[datacollect][%s] receive rate: %d message in last %v", p.name, cnt, time.Now().Sub(ts))
 			cnt = 0
 			ts = time.Now()
 		}
@@ -279,7 +291,7 @@ func (p *chanPorter) healthCheck() {
 			channelstatus = common.CCErrHostGetSnapshotChannelClose
 			blog.Errorf("[datacollect][%s][healthCheck] cc redis server connection error: %s", p.name, err.Error())
 		} else if p.isMaster.IsSet() && now.Sub(p.lastMesgTs) > time.Minute {
-			blog.Errorf("[datacollect][%s][healthCheck] snapchannel was empty in last 1 min", p.name)
+			blog.Warnf("[datacollect][%s][healthCheck] snapchannel was empty in last 1 min", p.name)
 			channelstatus = common.CCErrHostGetSnapshotChannelEmpty
 		} else {
 			channelstatus = common.CCSuccess
