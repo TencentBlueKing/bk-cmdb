@@ -18,8 +18,9 @@ import (
 
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
+	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
-	"configcenter/src/source_controller/coreservice/core/model"
+	"configcenter/src/source_controller/coreservice/core/instances"
 	"configcenter/src/storage/dal/mongo"
 
 	"github.com/stretchr/testify/require"
@@ -40,19 +41,19 @@ func (s *mockDependences) DeleteInstAsst(ctx core.ContextParams, objID string, i
 
 // SelectObjectAttWithParams select object att with params
 func (s *mockDependences) SelectObjectAttWithParams(ctx core.ContextParams, objID string) (attribute []metadata.Attribute, err error) {
-	return nil
+	return nil, nil
 }
 
 // SearchUnique search unique attribute
 func (s *mockDependences) SearchUnique(ctx core.ContextParams, objID string) (uniqueAttr []metadata.ObjectUnique, err error) {
-	return nil
+	return nil, nil
 }
 
 func newInstances(t *testing.T) core.InstanceOperation {
 
 	db, err := mongo.NewMgo("mongodb://cc:cc@localhost:27010,localhost:27011,localhost:27012,localhost:27013/cmdb")
 	require.NoError(t, err)
-	return model.New(db, &mockDependences{})
+	return instances.New(db, &mockDependences{})
 }
 
 var defaultCtx = func() core.ContextParams {
