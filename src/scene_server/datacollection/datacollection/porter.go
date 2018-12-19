@@ -132,10 +132,20 @@ func (p *chanPorter) analyze() {
 
 	var mesg string
 	var err error
+	var cnt int
+	var ts = time.Now()
 	for mesg = range p.analyzeC {
+		cnt++
 		if err = p.analyzer.Analyze(mesg); err != nil {
 			blog.Errorf("[datacollect][%s] analyze message failed: %v, raw mesg: %s", p.name, err, mesg)
 		}
+		cnt++
+		ts = time.Now()
+		if time.Since(ts) > time.Minute*10 {
+			blog.Infof("[datacollect][%s] analyze rate: %d/sec", p.name, int(float64(cnt)/time.Now().Sub(ts).Seconds()))
+			cnt = 0
+		}
+
 	}
 }
 
@@ -224,7 +234,7 @@ func (p *chanPorter) subscribeLoop() error {
 
 		cnt++
 		p.lastMesgTs = time.Now()
-		if time.Since(p.lastMesgTs) > time.Minute {
+		if time.Since(p.lastMesgTs) > time.Minute*10 {
 			blog.Infof("[datacollect][%s] receive rate: %d/sec", p.name, int(float64(cnt)/time.Now().Sub(p.lastMesgTs).Seconds()))
 			cnt = 0
 		}
