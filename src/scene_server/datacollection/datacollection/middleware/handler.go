@@ -263,16 +263,7 @@ func (d *Discover) GetAttrs(ownerID, objID, modelAttrKey string, attrs map[strin
 		return nil, err
 	}
 
-	attrsReaded := []metadata.Attribute{}
-	for _, info := range resp.Data.Info {
-		attr := metadata.Attribute{}
-		if err := info.ToStructByTag(attr, "field"); err != nil {
-			blog.Errorf("SelectObjectAttWithParams info to struct error: %s, info: %s", err.Error(), info)
-			return nil, err
-		}
-		attrsReaded = append(attrsReaded, attr)
-	}
-	return attrsReaded, nil
+	return resp.Data.Info, nil
 }
 
 func (d *Discover) UpdateOrAppendAttrs(msg string) error {
