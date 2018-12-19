@@ -103,9 +103,7 @@ func TestAttributeMaintainces(t *testing.T) {
 	require.Equal(t, uint64(1), searchResult.Count)
 
 	for _, attr := range searchResult.Info {
-		propertyName, err := attr.String(metadata.AttributeFieldPropertyName)
-		require.NoError(t, err)
-		require.Equal(t, "create_attribute_to_updated", propertyName)
+		require.Equal(t, "create_attribute_to_updated", attr.PropertyName)
 	}
 
 	// delete the attribues
