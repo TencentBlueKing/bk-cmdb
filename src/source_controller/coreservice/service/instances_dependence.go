@@ -15,26 +15,24 @@ package service
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
 // IsInstanceExist used to check if the  instances  asst exist
 func (s *coreService) IsInstAsstExist(ctx core.ContextParams, objID string, instID uint64) (exists bool, err error) {
-	cond := mapstr.MapStr{common.BKObjIDField: objID,
-		common.BKInstIDField: instID}
-	queryCond := metadata.QueryCondition{Condition: cond}
+	cond := mongo.NewCondition()
+	cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID}, &mongo.Eq{Key: common.BKInstIDField, Val: instID})
+	queryCond := metadata.QueryCondition{Condition: cond.ToMapStr()}
 	objInsts, err := s.core.AssociationOperation().SearchInstanceAssociation(ctx, queryCond)
 	if nil != err {
 		blog.Errorf("search instance association error %v", err)
 		return false, err
 	}
-	cond = mapstr.MapStr{
-		common.BKAsstObjIDField:  objID,
-		common.BKAsstInstIDField: instID,
-	}
-	queryCond = metadata.QueryCondition{Condition: cond}
+	cond = mongo.NewCondition()
+	cond.Element(&mongo.Eq{Key: common.BKAsstObjIDField, Val: objID}, &mongo.Eq{Key: common.BKAsstInstIDField, Val: instID})
+	queryCond = metadata.QueryCondition{Condition: cond.ToMapStr()}
 	objAsstInsts, err := s.core.AssociationOperation().SearchInstanceAssociation(ctx, queryCond)
 	if nil != err {
 		blog.Errorf("search instance to association error %v", err)
@@ -49,19 +47,17 @@ func (s *coreService) IsInstAsstExist(ctx core.ContextParams, objID string, inst
 
 // DeleteInstAsst used to delete inst asst
 func (s *coreService) DeleteInstAsst(ctx core.ContextParams, objID string, instID uint64) error {
-	cond := mapstr.MapStr{common.BKObjIDField: objID,
-		common.BKInstIDField: instID}
-	deleteCond := metadata.DeleteOption{Condition: cond}
+	cond := mongo.NewCondition()
+	cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID}, &mongo.Eq{Key: common.BKInstIDField, Val: instID})
+	deleteCond := metadata.DeleteOption{Condition: cond.ToMapStr()}
 	_, err := s.core.AssociationOperation().DeleteInstanceAssociation(ctx, deleteCond)
 	if nil != err {
 		blog.Errorf("delete instance association error %v", err)
 		return err
 	}
-	cond = mapstr.MapStr{
-		common.BKAsstObjIDField:  objID,
-		common.BKAsstInstIDField: instID,
-	}
-	deleteCond = metadata.DeleteOption{Condition: cond}
+	cond = mongo.NewCondition()
+	cond.Element(&mongo.Eq{Key: common.BKAsstObjIDField, Val: objID}, &mongo.Eq{Key: common.BKAsstInstIDField, Val: instID})
+	deleteCond = metadata.DeleteOption{Condition: cond.ToMapStr()}
 	_, err = s.core.AssociationOperation().DeleteInstanceAssociation(ctx, deleteCond)
 	if nil != err {
 		blog.Errorf("delete instance to association error %v", err)
@@ -73,9 +69,10 @@ func (s *coreService) DeleteInstAsst(ctx core.ContextParams, objID string, instI
 // SelectObjectAttWithParams select object att with params
 func (s *coreService) SelectObjectAttWithParams(ctx core.ContextParams, objID string) (attributeArr []metadata.Attribute, err error) {
 	attributeArr = make([]metadata.Attribute, 0)
-	condition := mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBEQ: objID}}
+	cond := mongo.NewCondition()
+	cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
 	queryCond := metadata.QueryCondition{
-		Condition: condition,
+		Condition: cond.ToMapStr(),
 	}
 	result, err := s.core.ModelOperation().SearchModelAttributes(ctx, objID, queryCond)
 	return result.Info, err

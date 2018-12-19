@@ -15,14 +15,16 @@ package service
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
 func (s *coreService) IsInstanceExist(ctx core.ContextParams, objID string, instID uint64) (exists bool, err error) {
 	instIDFieldName := common.GetInstIDField(objID)
-	searchCond := metadata.QueryCondition{Condition: mapstr.MapStr{instIDFieldName: instID}}
+	cond := mongo.NewCondition()
+	cond.Element(&mongo.Eq{Key: instIDFieldName, Val: instID})
+	searchCond := metadata.QueryCondition{Condition: cond.ToMapStr()}
 	result, err := s.core.InstanceOperation().SearchModelInstance(ctx, objID, searchCond)
 	if nil != err {
 		blog.Errorf("search model instance error: %v", err)
