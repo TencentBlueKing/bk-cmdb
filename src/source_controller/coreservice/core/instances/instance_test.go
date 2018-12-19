@@ -33,7 +33,6 @@ func TestCreateOneInstance(t *testing.T) {
 
 	// create a new bk_switch instance without bk_asset_id
 	dataResult, err := instMgr.CreateModelInstance(defaultCtx, objID, inputParams)
-
 	require.NotNil(t, err)
 	require.NotNil(t, dataResult)
 	require.Equal(t, uint64(0), dataResult.Created.ID)
@@ -45,8 +44,7 @@ func TestCreateOneInstance(t *testing.T) {
 	inputParams.Data.Set(common.BKAssetIDField, xid.New().String())
 	inputParams.Data.Set("bk_sn", "cmdb_sn")
 	dataResult, err = instMgr.CreateModelInstance(defaultCtx, objID, inputParams)
-
-	require.NoError(t, err)
+	require.Nil(t, err)
 	require.NotEqual(t, uint64(0), dataResult.Created.ID)
 
 }
@@ -79,7 +77,7 @@ func TestCreateManyInstance(t *testing.T) {
 	// create two new bk_switch instance without bk_asset_id
 	dataResult, err := instMgr.CreateManyModelInstance(defaultCtx, objID, inputParams)
 
-	require.NotNil(t, err)
+	require.Nil(t, err)
 	require.NotNil(t, dataResult)
 	require.NotEqual(t, 0, len(dataResult.Repeated))
 	require.NotEqual(t, 0, len(dataResult.Created))
