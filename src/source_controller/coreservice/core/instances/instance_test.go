@@ -13,11 +13,11 @@
 package instances_test
 
 import (
-	"configcenter/src/common/mapstr"
 	"testing"
 
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 
 	"github.com/rs/xid"
@@ -27,10 +27,12 @@ import (
 func TestCreateOneInstance(t *testing.T) {
 
 	instMgr := newInstances(t)
+	objID := "bk_switch"
+	inputParams := metadata.CreateModelInstance{}
+	inputParams.Data.Set(common.BKInstNameField, xid.New().String())
 
-	inputModel := metadata.CreateModel{}
-	// create a new empty
-	dataResult, err := instMgr.CreateModelInstance(defaultCtx, inputModel)
+	// create a new bk_switch instance without bk_asset_id
+	dataResult, err := instMgr.CreateModelInstance(defaultCtx, objID, inputParams)
 
 	require.NotNil(t, err)
 	require.NotNil(t, dataResult)
@@ -39,180 +41,128 @@ func TestCreateOneInstance(t *testing.T) {
 	require.True(t, ok, "err must be the errors of the cmdb")
 	require.Equal(t, common.CCErrCommParamsNeedSet, tmpErr.GetCode())
 
-	// create a valid model with a invalid classificationID
-	inputModel.Spec = metadata.Object{
-		ObjectID: xid.New().String(),
-		ObjCls:   xid.New().String(),
-	}
-	inputModel.Attributes = []metadata.Attribute{}
-	dataResult, err = modelMgr.CreateModel(defaultCtx, inputModel)
+	// create a valid model  instance with valid params
+	inputParams.Data.Set(common.BKAssetIDField, xid.New().String())
+	inputParams.Data.Set("bk_sn", "cmdb_sn")
+	dataResult, err = instMgr.CreateModelInstance(defaultCtx, objID, inputParams)
+
+	require.NoError(t, err)
+	require.NotEqual(t, uint64(0), dataResult.Created.ID)
+
+}
+
+func TestCreateManyInstance(t *testing.T) {
+
+	instMgr := newInstances(t)
+	objID := "bk_switch"
+	inputParams := metadata.CreateManyModelInstance{}
+	inputParams.Datas = append(inputParams.Datas, mapstr.MapStr{
+		common.BKInstNameField: xid.New().String(),
+		common.BKAssetIDField:  xid.New().String(),
+	})
+
+	inputParams.Datas = append(inputParams.Datas, mapstr.MapStr{
+		common.BKInstNameField: "test1",
+		common.BKAssetIDField:  "assetID1",
+	})
+
+	inputParams.Datas = append(inputParams.Datas, mapstr.MapStr{
+		common.BKInstNameField: "test1",
+		common.BKAssetIDField:  "assetID1",
+	})
+
+	inputParams.Datas = append(inputParams.Datas, mapstr.MapStr{
+		common.BKInstNameField: xid.New().String(),
+		common.BKAssetIDField:  xid.New().String(),
+	})
+
+	// create two new bk_switch instance without bk_asset_id
+	dataResult, err := instMgr.CreateManyModelInstance(defaultCtx, objID, inputParams)
 
 	require.NotNil(t, err)
 	require.NotNil(t, dataResult)
-	tmpErr, ok = err.(errors.CCErrorCoder)
-	require.True(t, ok, "err must be the errors of the cmdb")
-	require.Equal(t, common.CCErrCommParamsIsInvalid, tmpErr.GetCode())
-
-	// create a valid model with a valid classificationID
-	classificationID := xid.New().String()
-	result, err := modelMgr.CreateOneModelClassification(defaultCtx, metadata.CreateOneModelClassification{
-		Data: metadata.Classification{
-			ClassificationID:   classificationID,
-			ClassificationName: "test_classification_name_to_test_create_model",
-		},
-	})
-	require.NoError(t, err)
-	require.NotEqual(t, uint64(0), result.Created.ID)
-
-	inputModel.Spec.ObjCls = classificationID
-	inputModel.Spec.ObjectName = "test_create_model"
-	inputModel.Spec.ObjectID = xid.New().String()
-	inputModel.Attributes = []metadata.Attribute{
-		metadata.Attribute{
-			ObjectID:     inputModel.Spec.ObjectID,
-			PropertyID:   xid.New().String(),
-			PropertyName: xid.New().String(),
-		},
-	}
-
-	dataResult, err = modelMgr.CreateModel(defaultCtx, inputModel)
-	require.NoError(t, err)
-	require.NotNil(t, dataResult)
-	require.NotEqual(t, uint64(0), dataResult.Created.ID)
-
+	require.NotEqual(t, 0, len(dataResult.Repeated))
+	require.NotEqual(t, 0, len(dataResult.Created))
 }
 
 func TestUpdateOneInstance(t *testing.T) {
 
-	modelMgr := newModel(t)
+	instMgr := newInstances(t)
+	objID := "bk_switch"
 
-	inputModel := metadata.SetModel{}
-	// create a new empty
-	dataResult, err := modelMgr.SetModel(defaultCtx, inputModel)
-
-	require.NotNil(t, err)
+	//create one bk_switch instance data
+	inputParams := metadata.CreateModelInstance{}
+	inputParams.Data.Set(common.BKInstNameField, xid.New().String())
+	inputParams.Data.Set(common.BKAssetIDField, xid.New().String())
+	inputParams.Data.Set("bk_sn", "cmdb_sn")
+	dataResult, err := instMgr.CreateModelInstance(defaultCtx, objID, inputParams)
+	require.Nil(t, err)
 	require.NotNil(t, dataResult)
-	require.Equal(t, 0, len(dataResult.Created))
-	require.Equal(t, dataResult.CreatedCount.Count, uint64(len(dataResult.Created)))
-	require.Equal(t, dataResult.UpdatedCount.Count, uint64(len(dataResult.Updated)))
-	require.Equal(t, 0, len(dataResult.Exceptions))
+	require.Equal(t, uint64(0), dataResult.Created.ID)
 
-	tmpErr, ok := err.(errors.CCErrorCoder)
-	require.True(t, ok, "err must be the errors of the cmdb")
-	require.Equal(t, common.CCErrCommParamsNeedSet, tmpErr.GetCode())
+	//update one bk_switch instance by condition
+	updateParams := metadata.UpdateOption{}
+	updateParams.Condition = mapstr.MapStr{"bk_sn": "cmdb_sn"}
+	updateParams.Data = mapstr.MapStr{"bk_operator": "test"}
+	updateResult, err := instMgr.UpdateModelInstance(defaultCtx, objID, updateParams)
 
-	// create a valid model with a invalid classificationID
-	inputModel.Spec = metadata.Object{
-		ObjectID: xid.New().String(),
-		ObjCls:   xid.New().String(),
-	}
-	inputModel.Attributes = []metadata.Attribute{}
-	dataResult, err = modelMgr.SetModel(defaultCtx, inputModel)
-
-	require.NotNil(t, err)
-	require.NotNil(t, dataResult)
-	tmpErr, ok = err.(errors.CCErrorCoder)
-	require.True(t, ok, "err must be the errors of the cmdb")
-	require.Equal(t, common.CCErrCommParamsIsInvalid, tmpErr.GetCode())
-
-	// create a valid model with a valid classificationID
-	classificationID := xid.New().String()
-	result, err := modelMgr.CreateOneModelClassification(defaultCtx, metadata.CreateOneModelClassification{
-		Data: metadata.Classification{
-			ClassificationID:   classificationID,
-			ClassificationName: "test_classification_name_to_test_create_model",
-		},
-	})
-	require.NoError(t, err)
-	require.NotEqual(t, uint64(0), result.Created.ID)
-
-	inputModel.Spec.ObjCls = classificationID
-	inputModel.Spec.ObjectName = "test_create_model"
-	inputModel.Spec.ObjectID = xid.New().String()
-	inputModel.Attributes = []metadata.Attribute{
-		metadata.Attribute{
-			ObjectID:     inputModel.Spec.ObjectID,
-			PropertyID:   xid.New().String(),
-			PropertyName: xid.New().String(),
-		},
-	}
-
-	dataResult, err = modelMgr.SetModel(defaultCtx, inputModel)
-	require.NoError(t, err)
-	require.NotNil(t, dataResult)
-	require.Equal(t, 1, len(dataResult.Created))
-	require.NotEqual(t, uint64(0), dataResult.Created[0].ID)
-	//require.NotEqual(t, uint64(0), dataResult.Created)
+	require.Nil(t, err)
+	require.NotNil(t, updateResult)
+	require.NotEqual(t, uint64(0), updateResult.Count)
 
 }
 
 func TestSearchAndDeleteInstance(t *testing.T) {
+	instMgr := newInstances(t)
+	objID := "bk_switch"
 
-	modelMgr := newModel(t)
-	inputModel := metadata.CreateModel{}
-	// create a valid model with a valid classificationID
-	classificationID := xid.New().String()
-	result, err := modelMgr.CreateOneModelClassification(defaultCtx, metadata.CreateOneModelClassification{
-		Data: metadata.Classification{
-			ClassificationID:   classificationID,
-			ClassificationName: "test_classification_name_to_test_create_model",
-		},
-	})
-	require.NoError(t, err)
-	require.NotEqual(t, uint64(0), result.Created.ID)
-
-	inputModel.Spec.ObjCls = classificationID
-	inputModel.Spec.ObjectName = "delete_create_model"
-	inputModel.Spec.ObjectID = xid.New().String()
-	inputModel.Attributes = []metadata.Attribute{
-		metadata.Attribute{
-			ObjectID:     inputModel.Spec.ObjectID,
-			PropertyID:   xid.New().String(),
-			PropertyName: xid.New().String(),
-		},
-	}
-
-	dataResult, err := modelMgr.CreateModel(defaultCtx, inputModel)
-	require.NoError(t, err)
+	//create one bk_switch instance data
+	inputParams := metadata.CreateModelInstance{}
+	inputParams.Data.Set(common.BKInstNameField, "test_sw1")
+	inputParams.Data.Set(common.BKAssetIDField, "test_sw_001")
+	inputParams.Data.Set("bk_sn", "cmdb_sn")
+	dataResult, err := instMgr.CreateModelInstance(defaultCtx, objID, inputParams)
+	require.Nil(t, err)
 	require.NotNil(t, dataResult)
-	require.NotEqual(t, uint64(0), dataResult.Created.ID)
+	require.Equal(t, uint64(0), dataResult.Created.ID)
 
-	// search the created one
-	searchResult, err := modelMgr.SearchModel(defaultCtx, metadata.QueryCondition{
-		Condition: mapstr.MapStr{
-			metadata.ModelFieldObjectName: mapstr.MapStr{
-				"$regex": "delete_",
-			},
-		},
-	})
-	require.NoError(t, err)
+	//search  this instance
+	searchCond := metadata.QueryCondition{}
+	searchCond.Condition.Set("bk_sn", "cmdb_sn")
+	searchResult, err := instMgr.SearchModelInstance(defaultCtx, objID, searchCond)
+	require.Nil(t, err)
 	require.NotNil(t, searchResult)
-	require.Equal(t, uint64(1), searchResult.Count)
-	require.Equal(t, searchResult.Count, uint64(len(searchResult.Info)))
+	require.NotEqual(t, uint64(0), searchResult.Count)
+	require.NotEqual(t, uint64(0), len(searchResult.Info))
 
-	// search delete the one
-	deleteResult, err := modelMgr.DeleteModel(defaultCtx, metadata.DeleteOption{
-		Condition: mapstr.MapStr{
-			metadata.ModelFieldObjectName: mapstr.MapStr{
-				"$regex": "delete_",
-			},
-		},
-	})
-
-	require.NoError(t, err)
+	//delete   this instance
+	deleteCond := metadata.DeleteOption{}
+	deleteCond.Condition.Set("bk_sn", "cmdb_sn")
+	deleteResult, err := instMgr.DeleteModelInstance(defaultCtx, objID, deleteCond)
+	require.Nil(t, err)
 	require.NotNil(t, deleteResult)
-	require.Equal(t, uint64(1), deleteResult.Count)
+	require.NotEqual(t, uint64(0), deleteResult.Count)
+}
 
-	// search the created one
-	searchResult, err = modelMgr.SearchModel(defaultCtx, metadata.QueryCondition{
-		Condition: mapstr.MapStr{
-			metadata.ModelFieldObjectName: mapstr.MapStr{
-				"$regex": "delete_",
-			},
-		},
-	})
-	require.NoError(t, err)
-	require.NotNil(t, searchResult)
-	require.Equal(t, uint64(0), searchResult.Count)
-	require.Equal(t, searchResult.Count, uint64(len(searchResult.Info)))
+func TestCascadeDeleteInstance(t *testing.T) {
+	instMgr := newInstances(t)
+	objID := "bk_switch"
+
+	//create one bk_switch instance data
+	inputParams := metadata.CreateModelInstance{}
+	inputParams.Data.Set(common.BKInstNameField, xid.New().String())
+	inputParams.Data.Set(common.BKAssetIDField, xid.New().String())
+	inputParams.Data.Set("bk_sn", "cmdb_sn")
+	dataResult, err := instMgr.CreateModelInstance(defaultCtx, objID, inputParams)
+	require.Nil(t, err)
+	require.NotNil(t, dataResult)
+	require.Equal(t, uint64(0), dataResult.Created.ID)
+
+	//delete   this instance
+	deleteCond := metadata.DeleteOption{}
+	deleteCond.Condition.Set("bk_sn", "cmdb_sn")
+	deleteResult, err := instMgr.CascadeDeleteModelInstance(defaultCtx, objID, deleteCond)
+	require.Nil(t, err)
+	require.NotNil(t, deleteResult)
+	require.NotEqual(t, uint64(0), deleteResult.Count)
 }
