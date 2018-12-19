@@ -35,7 +35,7 @@
                     :key="modelIndex"
                     @click="modelClick(model)">
                         <div class="icon-box">
-                            <i class="icon" :class="model['bk_obj_icon']"></i>
+                            <i class="icon" :class="[model['bk_obj_icon'], {ispre: model['ispre']}]"></i>
                         </div>
                         <div class="model-details">
                             <p class="model-name" :title="model['bk_obj_name']">{{model['bk_obj_name']}}</p>
@@ -464,6 +464,9 @@
                     font-size: 32px;
                     line-height: 70px;
                     color: $cmdbBorderFocusColor;
+                    &.ispre {
+                        color: #868b97;
+                    }
                 }
             }
             .model-details {

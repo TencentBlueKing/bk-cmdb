@@ -9,7 +9,7 @@
                 </bk-button>
             </template>
             <template v-else>
-                <bk-button type="default" @click="exitEdit">
+                <bk-button type="primary" @click="exitEdit">
                     {{$t('Common["返回"]')}}
                 </bk-button>
                 <p class="edit-cue">{{$t('ModelManagement["所有更改已自动保存"]')}}</p>
@@ -315,9 +315,10 @@
             },
             async exitEdit () {
                 this.topoEdit.isEdit = false
-                this.updateNetwork()
+                // this.updateNetwork()
                 this.networkInstance.setOptions({nodes: {fixed: true}})
                 await this.$nextTick()
+                this.networkInstance.redraw()
                 this.clearEditData()
             },
             handleDisplaySave (displayConfig) {
@@ -364,6 +365,9 @@
                     nodes: {fixed: false}
                 })
                 this.topoEdit.isEdit = true
+                this.$nextTick(() => {
+                    this.networkInstance.redraw()
+                })
             },
             checkNodeAsst (node) {
                 let asstNum = 0
