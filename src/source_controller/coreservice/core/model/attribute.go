@@ -189,7 +189,7 @@ func (m *modelAttribute) SearchModelAttributes(ctx core.ContextParams, objID str
 		return &metadata.QueryModelAttributeDataResult{}, err
 	}
 
-	cond.Element(&mongo.Eq{Key: ctx.SupplierAccount, Val: ctx.SupplierAccount})
+	cond.Element(&mongo.Eq{Key: metadata.AttributeFieldSupplierAccount, Val: ctx.SupplierAccount})
 	attrResult, err := m.search(ctx, cond)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to search the attributes of the model(%s), error info is %s", ctx.ReqID, objID, err.Error())
