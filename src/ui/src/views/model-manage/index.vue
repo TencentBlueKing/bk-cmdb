@@ -370,7 +370,7 @@
             margin-right: 10px;
         }
         &.sticky {
-            box-shadow: 0 0 8px 1px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 0 8px 1px rgba(0, 0, 0, 0.03);
         }
     }
     .group-list {
