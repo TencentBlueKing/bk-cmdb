@@ -43,27 +43,45 @@ func BuildChanPorter(name string, analyzer Analyzer, redisCli, snapCli *redis.Cl
 		redisCli: redisCli,
 		snapCli:  snapCli,
 		channels: channels,
-		mesgC:    make(chan string, 1000),
+		analyzeC: make(chan string, 1000),
+		slaveC:   make(chan string, 1000),
 		runed:    util.NewBool(false),
 	}
 }
 
 type chanPorter struct {
+	// 分析器
 	analyzer Analyzer
-	name     string
-	pid      string
-	isMaster *util.AtomicBool
-	redisCli *redis.Client
-	snapCli  *redis.Client
-	channels []string
-	mesgC    chan string
-	runed    *util.AtomicBool
 
-	lastMesgTs      time.Time
-	healthCheckOnce sync.Once
-	analyzeLoopOnce sync.Once
-	popLock         sync.Mutex
-	poping          bool
+	// porter 名称，用于打印日志
+	name string
+
+	// porter 的ID，用于抢master锁
+	pid string
+
+	// 标识当前协程是否是master协程，master协程负责从redis channel 取数据并把处理不过来的数据推送到slavequeue
+	isMaster *util.AtomicBool
+
+	// cc自己的redis，用于抢master锁，缓存slavequeue
+	redisCli *redis.Client
+
+	// 数据来源的redis，master 从这个redis读channel
+	snapCli *redis.Client
+
+	// redis channel 名称
+	channels []string
+
+	// 待处理队列，analyzer只消费这个队列的消息
+	analyzeC chan string
+
+	// 待推送到redis的消息队列
+	slaveC chan string
+
+	// 标识本porter是否已经运行过
+	runed *util.AtomicBool
+
+	// 最后一次收到消息的时间，用于健康检查
+	lastMesgTs time.Time
 }
 
 func (p *chanPorter) Name() string {
@@ -72,7 +90,7 @@ func (p *chanPorter) Name() string {
 
 func (p *chanPorter) Mock(mesg string) error {
 	select {
-	case p.mesgC <- mesg:
+	case p.analyzeC <- mesg:
 	default:
 		return fmt.Errorf("message queue fulled")
 	}
@@ -87,6 +105,8 @@ func (p *chanPorter) Run() error {
 		for i := 0; i < runtime.NumCPU(); i++ {
 			go p.analyzeLoop()
 		}
+		go p.popLoop()
+		go p.pushLoop()
 	}
 	for {
 		if err := p.collect(); err != nil {
@@ -112,7 +132,7 @@ func (p *chanPorter) analyze() {
 
 	var mesg string
 	var err error
-	for mesg = range p.mesgC {
+	for mesg = range p.analyzeC {
 		if err = p.analyzer.Analyze(mesg); err != nil {
 			blog.Errorf("[datacollect][%s] analyze message failed: %v, raw mesg: %s", p.name, err, mesg)
 		}
@@ -124,15 +144,13 @@ func (p *chanPorter) collect() error {
 	// 抢master锁
 	err := loginMaster(p.redisCli, p.name, p.pid)
 	if err != nil {
-		// 抢失败，成为slave，开始从slave处理队列获取消息
-		go p.popLoop()
+		// 抢失败，成为slave
 		if strings.HasPrefix(err.Error(), "there is other master") {
 			blog.Infof("[datacollect][%s] %v", p.name, err)
 			return nil
 		}
 		blog.Errorf("[datacollect][%s] %v", p.name, err)
 		return err
-
 	}
 
 	// 抢成功，成为master，开始读redis channel，并推送处理不过来的消息到slave处理队列
@@ -143,9 +161,11 @@ func (p *chanPorter) collect() error {
 
 	var wg = &sync.WaitGroup{}
 	wg.Add(1)
-	go pushLoop(p.redisCli, p.name, p.mesgC, p.isMaster, wg)
+
+	// 续期master锁
 	go p.renewalMasterLoop()
 
+	// 开始订阅
 	err = p.subscribeLoop()
 	if err != nil {
 		return fmt.Errorf("subscribe channel return an error: %v", err)
@@ -191,7 +211,16 @@ func (p *chanPorter) subscribeLoop() error {
 			continue
 		}
 
-		writeOrClearChan(p.mesgC, p.name, msg.Payload)
+		// 当mesgC满时表明已达到本进程的处理速度上限，此时我们推送该消息到slavequeue让其他进程协助处理
+		select {
+		case p.analyzeC <- msg.Payload:
+		default:
+			select {
+			case p.slaveC <- msg.Payload:
+			default:
+				writeOrClearChan(p.analyzeC, p.name, msg.Payload)
+			}
+		}
 
 		cnt++
 		p.lastMesgTs = time.Now()
@@ -246,28 +275,26 @@ func (p *chanPorter) healthCheck() {
 			channelstatus = common.CCSuccess
 		}
 		if err = p.redisCli.Set(channelStatusKey(p.name), channelstatus, time.Minute*2).Err(); err != nil {
-			blog.Errorf("[datacollect][%s][healthCheck] set channelstatus failed: %v", err)
+			blog.Errorf("[datacollect][%s][healthCheck] set channelstatus failed: %v", p.name, err)
 		}
 	}
 }
 
 // popLoop 从slave处理队列获取消息，从而协助master处理
 func (p *chanPorter) popLoop() {
-	// 加锁是为了防止执行到下面的 ```if p.isMaster.IsSet() ``` 即将退出而新协程判断 p.poping == true 也退出掉
-	p.popLock.Lock()
-	if p.poping {
-		p.popLock.Unlock()
-		return
+	for {
+		p.pop()
 	}
-	p.poping = true
-	p.popLock.Unlock()
+}
+
+func (p *chanPorter) pop() {
 	blog.Info("[datacollect][%s] start popLoop from redis", p.name)
 	defer blog.Info("[datacollect][%s] stop popLoop from redis", p.name)
+
 	defer func() {
-		// 防止panic后poping标志未重置
-		p.popLock.Lock()
-		p.poping = false
-		p.popLock.Unlock()
+		if syserr := recover(); syserr != nil {
+			blog.Errorf("[datacollect][%s] panic by: %v, stack:\n %s", p.name, syserr, debug.Stack())
+		}
 	}()
 
 	// 推消息到slave处理队列
@@ -275,15 +302,6 @@ func (p *chanPorter) popLoop() {
 	var err error
 	key := slavequeueKey(p.name)
 	for {
-		p.popLock.Lock()
-		if p.isMaster.IsSet() {
-			// master 不需要从slave处理队列里取消息，所以退出
-			p.poping = false
-			p.popLock.Unlock()
-			return
-		}
-		p.popLock.Unlock()
-
 		mesg, err = p.redisCli.BRPop(time.Second*30, key).Result()
 		if err == redis.Nil {
 			continue
@@ -293,46 +311,35 @@ func (p *chanPorter) popLoop() {
 			// 睡3秒，防止空跑导致CPU占用高涨
 			time.Sleep(time.Second * 3)
 		}
-		if len(mesg) > 1 && mesg[1] != "nil" {
-			writeOrClearChan(p.mesgC, p.name, mesg[1])
+		if len(mesg) > 1 && mesg[1] != "nil" && mesg[1] != "" {
+			writeOrClearChan(p.analyzeC, p.name, mesg[1])
 		}
 	}
 }
 
-// pushLoop 把master处理不过来的消息推到slave处理队列，让slave协助处理
-func pushLoop(redisCli *redis.Client, name string, mesgC chan string, isMaster *util.AtomicBool, wg *sync.WaitGroup) {
-	defer wg.Done()
+func (p *chanPorter) pushLoop() {
+	for {
+		p.push()
+	}
+}
 
-	blog.Info("[datacollect][%s] start pushLoop to redis", name)
-	defer blog.Info("[datacollect][%s] stop pushLoop to redis", name)
+// push 把master处理不过来的消息推到slave处理队列，让slave协助处理
+func (p *chanPorter) push() {
+	blog.Info("[datacollect][%s] start pushLoop to redis", p.name)
+	defer blog.Info("[datacollect][%s] stop pushLoop to redis", p.name)
+
+	defer func() {
+		if syserr := recover(); syserr != nil {
+			blog.Errorf("[datacollect][%s] panic by: %v, stack:\n %s", p.name, syserr, debug.Stack())
+		}
+	}()
 
 	var mesg string
 	var err error
-	var llen int64
-	key := slavequeueKey(name)
-	for {
-		if !isMaster.IsSet() {
-			// 当不再是master时就不需要再推消息到slave处理队列了
-			return
-		}
-		llen, err = redisCli.LLen(key).Result()
-		if err != nil {
-			blog.Errorf("[datacollect][%s] count slavequeue length failed: %v", name, err)
-		}
-		if llen > 100 {
-			// 限制 slavequeue 的大小，防止单活情况下由于没有slave消费slavequeue而无限增长
-			time.Sleep(time.Minute)
-			continue
-		}
-		select {
-		case mesg = <-mesgC:
-			if err = redisCli.LPush(key, mesg).Err(); err != nil {
-				blog.Errorf("[datacollect][%s] push message to redis failed: %v", name, err)
-			}
-		default:
-			blog.V(5).Infof("[datacollect][%s] pushLoop idle in last 3s", name)
-			// 睡3秒，防止空跑导致CPU占用高涨
-			time.Sleep(time.Second * 3)
+	key := slavequeueKey(p.name)
+	for mesg = range p.slaveC {
+		if err = p.redisCli.LPush(key, mesg).Err(); err != nil {
+			blog.Errorf("[datacollect][%s] push message to redis failed: %v", p.name, err)
 		}
 	}
 }
