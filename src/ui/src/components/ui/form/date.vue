@@ -1,7 +1,7 @@
 <template>
     <div class="form-date">
         <bk-date-picker class="form-date-picker"
-            :init-date="initDate"
+            :init-date="initDate || ''"
             :start-date="startDate"
             :end-date="endDate"
             :disabled="disabled"

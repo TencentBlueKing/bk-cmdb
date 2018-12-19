@@ -1,6 +1,6 @@
 <template>
-    <div class="group-wrapper">
-        <p class="btn-group">
+    <div class="group-wrapper" @scroll="handleWrapperScroll">
+        <p class="btn-group" :class="{sticky: wrapperScroll}">
             <bk-button type="primary"
                 :disabled="!authority.includes('update')"
                 @click="showModelDialog(false)">
@@ -38,19 +38,14 @@
                             <i class="icon" :class="model['bk_obj_icon']"></i>
                         </div>
                         <div class="model-details">
-                            <p class="model-name">{{model['bk_obj_name']}}</p>
-                            <p class="model-id">{{model['bk_obj_id']}}</p>
+                            <p class="model-name" :title="model['bk_obj_name']">{{model['bk_obj_name']}}</p>
+                            <p class="model-id" :title="model['bk_obj_id']">{{model['bk_obj_id']}}</p>
                         </div>
                         <span class="paused-info" v-if="model['bk_ispaused']">
                             {{$t('ModelManagement["已停用"]')}}
                         </span>
                     </li>
                 </ul>
-                <i class="bk-icon icon-angle-double-down"
-                    v-if="classification['bk_objects'].length > 8"
-                    :class="{'rotate': classification.isModelShow}"
-                    @click="toggleModelList(classification)"
-                ></i>
             </li>
         </ul>
         <bk-dialog
@@ -190,6 +185,7 @@
         },
         data () {
             return {
+                wrapperScroll: 0,
                 groupDialog: {
                     isShow: false,
                     isEdit: false,
@@ -251,8 +247,8 @@
             ...mapActions('objectModel', [
                 'createObject'
             ]),
-            toggleModelList (classification) {
-                classification.isModelShow = !classification.isModelShow
+            handleWrapperScroll () {
+                this.wrapperScroll = this.$el.scrollTop
             },
             showGroupDialog (isEdit, group) {
                 if (isEdit) {
@@ -356,14 +352,29 @@
 </script>
 
 <style lang="scss" scoped>
+    .group-wrapper {
+        position: relative;
+        height: 100%;
+        padding: 0;
+        overflow-y: auto;
+    }
     .btn-group {
-        margin: 0 0 20px 0;
+        position: sticky;
+        top: 0;
+        left: 0;
+        padding: 20px;
         font-size: 0;
+        z-index: 2;
+        background-color: #fff;
         .bk-primary {
             margin-right: 10px;
         }
+        &.sticky {
+            box-shadow: 0 0 8px 1px rgba(0, 0, 0, 0.03);
+        }
     }
     .group-list {
+        padding: 0 20px 20px;
         .group-item {
             position: relative;
             padding: 10px 0 20px;
@@ -447,6 +458,7 @@
             }
             .icon-box {
                 float: left;
+                width: 50px;
                 .icon {
                     padding-left: 18px;
                     font-size: 32px;
@@ -456,16 +468,19 @@
             }
             .model-details {
                 float: left;
+                width: 208px;
                 line-height: 16px;
                 margin-top: 20px;
-                padding-left: 10px;
+                padding: 0 10px;
             }
             .model-name {
                 font-size: 14px;
+                @include ellipsis;
             }
             .model-id {
                 font-size: 12px;
-                color: $cmdbBorderColor;
+                color: #bfc7d2;
+                @include ellipsis;
             }
         }
     }
