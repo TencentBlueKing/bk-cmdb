@@ -276,9 +276,18 @@
                             requestId: 'getTargetAssocaition',
                             fromCache: true
                         }
-                    })
-                ]).then(([dataAsSource, dataAsTarget]) => {
+                    }),
+                    this.$store.dispatch('objectMainLineModule/searchMainlineObject', {requestId: 'getMainLineModels', fromCache: true})
+                ]).then(([dataAsSource, dataAsTarget, mainLineModels]) => {
+                    mainLineModels = mainLineModels.filter(model => !['biz', 'host'].includes(model['bk_obj_id']))
+                    dataAsSource = this.getAvailableAssociation(dataAsSource, mainLineModels)
+                    dataAsTarget = this.getAvailableAssociation(dataAsTarget, mainLineModels)
                     this.associationObject = [...dataAsSource, ...dataAsTarget]
+                })
+            },
+            getAvailableAssociation (data, mainLine) {
+                return data.filter(relation => {
+                    return !mainLine.some(model => [relation['bk_obj_id'], relation['bk_asst_obj_id']].includes(model['bk_obj_id']))
                 })
             },
             setAssociationOptions () {
