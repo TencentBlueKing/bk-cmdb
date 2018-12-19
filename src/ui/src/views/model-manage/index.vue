@@ -1,6 +1,6 @@
 <template>
-    <div class="group-wrapper">
-        <p class="btn-group">
+    <div class="group-wrapper" @scroll="handleWrapperScroll">
+        <p class="btn-group" :class="{sticky: wrapperScroll}">
             <bk-button type="primary"
                 :disabled="!authority.includes('update')"
                 @click="showModelDialog(false)">
@@ -185,6 +185,7 @@
         },
         data () {
             return {
+                wrapperScroll: 0,
                 groupDialog: {
                     isShow: false,
                     isEdit: false,
@@ -246,6 +247,9 @@
             ...mapActions('objectModel', [
                 'createObject'
             ]),
+            handleWrapperScroll () {
+                this.wrapperScroll = this.$el.scrollTop
+            },
             showGroupDialog (isEdit, group) {
                 if (isEdit) {
                     this.groupDialog.data.id = group.id
@@ -348,14 +352,29 @@
 </script>
 
 <style lang="scss" scoped>
+    .group-wrapper {
+        position: relative;
+        height: 100%;
+        padding: 0;
+        overflow-y: auto;
+    }
     .btn-group {
-        margin: 0 0 20px 0;
+        position: sticky;
+        top: 0;
+        left: 0;
+        padding: 20px;
         font-size: 0;
+        z-index: 2;
+        background-color: #fff;
         .bk-primary {
             margin-right: 10px;
         }
+        &.sticky {
+            box-shadow: 0 0 8px 1px rgba(0, 0, 0, 0.1);
+        }
     }
     .group-list {
+        padding: 0 20px 20px;
         .group-item {
             position: relative;
             padding: 10px 0 20px;
