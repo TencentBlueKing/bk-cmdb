@@ -60,7 +60,7 @@ func (d *DataCollection) Run() error {
 		return err
 	}
 
-	db, err := mongo.NewMgo(d.Config.MongoDB.BuildURI())
+	db, err := mongo.NewMgo(d.Config.MongoDB.BuildURI(), time.Minute)
 	if err != nil {
 		return fmt.Errorf("connect mongo server failed %s", err.Error())
 	}
