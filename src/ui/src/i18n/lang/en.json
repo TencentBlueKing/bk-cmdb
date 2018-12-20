@@ -114,7 +114,8 @@
         "帮助文档": "Help",
         "开源社区": "Community",
         "确定离开页面？": "Make sure to leave the page?",
-        "系统不会保存您所做的修改，确认要离开？": "Your changes will not be saved. Are you sure you want to leave?"
+        "系统不会保存您所做的修改，确认要离开？": "Your changes will not be saved. Are you sure you want to leave?",
+        "搜索": "Search"
     },
     "Nav": {
         "首页": "Index",
@@ -155,7 +156,8 @@
         "收起导航": "retract navigation",
         "置顶": "Top",
         "更多": "More",
-        "查看更多结果": "More"
+        "查看更多结果": "More",
+        "数量": "Amount"
     },
     "OperationAudit": {
         "操作审计": "Operation Audit",
@@ -247,7 +249,7 @@
         "主机编辑": "Host Modify",
         "主机转移": "Host Transfer",
         "拓扑编辑": "Topo Modify",
-        "自定义查询": "Custom Query",
+        "动态分组": "Dynamic Group",
         "进程管理": "Process Management",
         "角色": "Role",
         "权限": "Permission",
@@ -374,7 +376,9 @@
         "是": "Yes",
         "否": "No",
         "确定删除唯一校验": "Confirm delete rule",
-        "所有更改已自动保存": "All changes saved automatically"
+        "所有更改已自动保存": "All changes saved automatically",
+        "立即添加": "Add",
+        "暂无字段": "Empty"
     },
     "HostResourcePool": {
         "资源池": "Resource Pool",
@@ -441,6 +445,7 @@
         "当前业务并无自定义查询，可点击下方按钮新增": "The current business does not have a Dynamic Group, click the button below to add"
     },
     "ProcessManagement": {
+        "进程": "Process",
         "进程管理": "Process Manage",
         "新增进程": "New Process",
         "编辑进程": "Modify Process",
@@ -553,7 +558,7 @@
     "Association": {
         "实例名": "Instance Name",
         "业务名": "Business Name",
-        "新增关联": "Association Management",
+        "关联管理": "Association Management",
         "解除选中关联": "Remove Selected Association",
         "关联列表": "Model",
         "搜索": "Search",

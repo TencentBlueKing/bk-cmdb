@@ -1045,7 +1045,6 @@
             padding: 3px 10px;
             top: 57px;
             right: 8px;
-            width: 100px;
             background: #fff;
             box-shadow: 0px 2px 1px 0px rgba(185, 203, 222, 0.5);
             font-size: 12px;
