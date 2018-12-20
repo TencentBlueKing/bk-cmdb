@@ -279,8 +279,8 @@ func (h *Netcollect) upsertReport(report *metadata.NetcollectReport) error {
 	return h.db.Table(common.BKTableNameNetcollectReport).Update(h.ctx, existCond.ToMapStr(), report)
 }
 
-func (h *Netcollect) findInst(objectID string, query *metadata.QueryInput) ([]mapstr.MapStr, error) {
-	resp, err := h.CoreAPI.ObjectController().Instance().SearchObjects(h.ctx, objectID, h.pheader, query)
+func (h *Netcollect) findInst(objectID string, query *metadata.QueryCondition) ([]mapstr.MapStr, error) {
+	resp, err := h.CoreAPI.CoreService().Instance().ReadInstance(h.ctx, h.pheader, objectID, query)
 	if err != nil {
 		blog.Infof("[NetDevice] findInst error: %v", err)
 		return nil, err
