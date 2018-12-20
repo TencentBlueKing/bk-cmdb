@@ -108,7 +108,7 @@
                     <transition name="slide">
                         <ul v-if="!classify.isHidden" :style="eventHeight(classify.children.length)">
                             <li v-for="(item, idx) in classify.children" :key="idx" class="event-item">
-                                <template v-if="item.id === 'resource'">
+                                <template v-if="item.id === 'resource' && classify.classificationId === 'bk_host_manage'">
                                     <label for="" class="label-name" :title="item.name">{{item.name}}</label>
                                     <div class="options">
                                         <label for="resourceall" class="cmdb-form-checkbox cmdb-checkbox-small">
@@ -382,6 +382,7 @@
                         let event = {
                             name: classify['bk_classification_name'],
                             isHidden: false,
+                            classificationId: classify['bk_classification_id'],
                             children: []
                         }
                         if (classify['bk_classification_id'] === 'bk_biz_topo') {
@@ -411,6 +412,7 @@
                 eventPushList.unshift({
                     isDefault: true,
                     isHidden: false,
+                    classificationId: 'bk_host_manage',
                     name: this.$t('EventPush["主机业务"]'),
                     children: [{
                         id: 'resource',
