@@ -32,14 +32,16 @@ type validator struct {
 }
 
 // Init init
-func NewValidator(ctx core.ContextParams, objID string) (*validator, error) {
+func NewValidator(ctx core.ContextParams, dependent OperationDependences, objID string) (*validator, error) {
 	valid := &validator{}
+	valid.propertys = make(map[string]metadata.Attribute)
+	valid.idToProperty = make(map[int64]metadata.Attribute)
+	valid.propertyslice = make([]metadata.Attribute, 0)
+	valid.require = make(map[string]bool)
+	valid.requirefields = make([]string, 0)
+	valid.shouldIgnore = make(map[string]bool)
 	valid.errif = ctx.Error
-	condition := map[string]interface{}{
-		common.BKObjIDField:   objID,
-		common.BKOwnerIDField: ctx.SupplierAccount,
-	}
-	result, err := valid.dependent.SelectObjectAttWithParams(ctx, condition)
+	result, err := dependent.SelectObjectAttWithParams(ctx, objID)
 	if nil != err {
 		return valid, err
 	}

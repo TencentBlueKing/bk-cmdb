@@ -237,3 +237,12 @@ func (s *coreService) SearchModelAttributes(params core.ContextParams, pathParam
 	}
 	return s.core.ModelOperation().SearchModelAttributes(params, pathParams("bk_obj_id"), inputData)
 }
+
+func (s *coreService) SearchModelAttrUnique(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
+	inputData := metadata.QueryCondition{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.ModelOperation().SearchModelAttrUnique(params, inputData)
+}
