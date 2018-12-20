@@ -85,3 +85,8 @@ type SearchUniqueResult struct {
 	BaseResp
 	Data []ObjectUnique `json:"data"`
 }
+
+type QueryUniqueResult struct {
+	Count uint64         `json:"count"`
+	Info  []ObjectUnique `json:"info"`
+}

@@ -10,27 +10,35 @@
  * limitations under the License.
  */
 
-package instances
+package model
 
 import (
+	//	"configcenter/src/common/blog"
+	//	"configcenter/src/common/errors"
+	//	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	//	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/source_controller/coreservice/core"
+	"configcenter/src/storage/dal"
 )
 
-// ATTENTIONS: the dependent methods of the other module
+type modelAttrUnique struct {
+	dbProxy dal.RDB
+}
 
-// OperationDependences methods definition
-type OperationDependences interface {
+func (m *modelAttrUnique) SearchModelAttrUnique(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryUniqueResult, error) {
 
-	// IsInstanceExist used to check if the  instances  asst exist
-	IsInstAsstExist(ctx core.ContextParams, objID string, instID uint64) (exists bool, err error)
+	uniqueItems, err := m.searchModelAttrUnique(ctx, inputParam)
+	if nil != err {
+		return &metadata.QueryUniqueResult{}, err
+	}
 
-	// DeleteInstAsst used to delete inst asst
-	DeleteInstAsst(ctx core.ContextParams, objID string, instID uint64) error
+	dataResult := &metadata.QueryUniqueResult{}
+	dataResult.Count, err = m.countModelAttrUnique(ctx, inputParam.Condition)
+	if nil != err {
+		return &metadata.QueryUniqueResult{}, err
+	}
+	dataResult.Info = uniqueItems
 
-	// SelectObjectAttWithParams select object att with params
-	SelectObjectAttWithParams(ctx core.ContextParams, objID string) (attribute []metadata.Attribute, err error)
-
-	// SearchUnique search unique attribute
-	SearchUnique(ctx core.ContextParams, objID string) (uniqueAttr []metadata.ObjectUnique, err error)
+	return dataResult, nil
 }
