@@ -17,12 +17,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/spf13/pflag"
-
 	"configcenter/src/common"
 	"configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal/mongo"
+
+	"github.com/spf13/pflag"
 )
 
 const bkbizCmdName = "bkbiz"
@@ -65,7 +65,7 @@ func Parse(args []string) error {
 	}
 	config := mongo.ParseConfigFromKV("mongodb", pconfig.ConfigMap)
 	// connect to mongo db
-	db, err := mongo.NewMgo(config.BuildURI())
+	db, err := mongo.NewMgo(config.BuildURI(), 0)
 	if err != nil {
 		return fmt.Errorf("connect mongo server failed %s", err.Error())
 	}

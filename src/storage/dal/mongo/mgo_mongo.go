@@ -15,6 +15,7 @@ package mongo
 import (
 	"context"
 	"strings"
+	"time"
 
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
@@ -33,15 +34,17 @@ type Mongo struct {
 var _ dal.RDB = new(Mongo)
 
 // NewMgo returns new RDB
-func NewMgo(uri string) (*Mongo, error) {
+func NewMgo(uri string, timeout time.Duration) (*Mongo, error) {
 	cs, err := mgo.ParseURL(uri)
 	if err != nil {
 		return nil, err
 	}
-	client, err := mgo.DialWithInfo(cs)
+	client, err := mgo.DialWithTimeout(uri, time.Second*10)
 	if err != nil {
 		return nil, err
 	}
+	client.SetSyncTimeout(timeout)
+	client.SetSocketTimeout(timeout)
 	return &Mongo{
 		dbc:    client,
 		dbname: cs.Database,
@@ -56,8 +59,7 @@ func (c *Mongo) Close() error {
 
 // Ping replica client
 func (c *Mongo) Ping() error {
-	// TODO
-	return nil
+	return c.dbc.Ping()
 }
 
 // Clone return the new client
