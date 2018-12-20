@@ -249,7 +249,7 @@
         "主机编辑": "Host Modify",
         "主机转移": "Host Transfer",
         "拓扑编辑": "Topo Modify",
-        "自定义查询": "Custom Query",
+        "动态分组": "Dynamic Group",
         "进程管理": "Process Management",
         "角色": "Role",
         "权限": "Permission",
@@ -376,7 +376,9 @@
         "是": "Yes",
         "否": "No",
         "确定删除唯一校验": "Confirm delete rule",
-        "所有更改已自动保存": "All changes saved automatically"
+        "所有更改已自动保存": "All changes saved automatically",
+        "立即添加": "Add",
+        "暂无字段": "Empty"
     },
     "HostResourcePool": {
         "资源池": "Resource Pool",
