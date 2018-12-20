@@ -47,12 +47,12 @@ func (m *instanceManager) instCnt(ctx core.ContextParams, objID string, cond map
 }
 
 func (m *instanceManager) CreateModelInstance(ctx core.ContextParams, objID string, inputParam metadata.CreateModelInstance) (*metadata.CreateOneDataResult, error) {
+	inputParam.Data.Set(common.BKOwnerIDField, ctx.SupplierAccount)
 	err := m.validCreateInstanceData(ctx, objID, inputParam.Data)
 	if nil != err {
 		blog.Errorf("create inst valid error: %v", err)
 		return nil, err
 	}
-
 	id, err := m.save(ctx, objID, inputParam.Data)
 	return &metadata.CreateOneDataResult{Created: metadata.CreatedDataResult{ID: id}}, err
 }
@@ -60,7 +60,7 @@ func (m *instanceManager) CreateModelInstance(ctx core.ContextParams, objID stri
 func (m *instanceManager) CreateManyModelInstance(ctx core.ContextParams, objID string, inputParam metadata.CreateManyModelInstance) (*metadata.CreateManyDataResult, error) {
 	dataResult := &metadata.CreateManyDataResult{}
 	for itemIdx, item := range inputParam.Datas {
-
+		item.Set(common.BKOwnerIDField, ctx.SupplierAccount)
 		err := m.validCreateInstanceData(ctx, objID, item)
 		if nil != err {
 			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
@@ -71,7 +71,7 @@ func (m *instanceManager) CreateManyModelInstance(ctx core.ContextParams, objID 
 			})
 			continue
 		}
-
+		item.Set(common.BKOwnerIDField, ctx.SupplierAccount)
 		id, err := m.save(ctx, objID, item)
 		if nil != err {
 			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
@@ -94,6 +94,7 @@ func (m *instanceManager) CreateManyModelInstance(ctx core.ContextParams, objID 
 
 func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 	instIDFieldName := common.GetInstIDField(objID)
+	inputParam.Condition.Set(common.BKOwnerIDField, ctx.SupplierAccount)
 	origins, _, err := m.getInsts(ctx, objID, inputParam.Condition)
 	if nil != err {
 		blog.Errorf("update module instance get inst error :%v ", err)
@@ -114,7 +115,6 @@ func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID stri
 		blog.Errorf("update module instance validate error :%v ", err)
 		return &metadata.UpdatedCount{}, err
 	}
-
 	cnt, err := m.update(ctx, objID, inputParam.Data, inputParam.Condition)
 	return &metadata.UpdatedCount{Count: cnt}, err
 }
@@ -138,6 +138,7 @@ func (m *instanceManager) SearchModelInstance(ctx core.ContextParams, objID stri
 func (m *instanceManager) DeleteModelInstance(ctx core.ContextParams, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 	tableName := common.GetInstTableName(objID)
 	instIDFieldName := common.GetInstIDField(objID)
+	inputParam.Condition.Set(common.BKOwnerIDField, ctx.SupplierAccount)
 	origins, _, err := m.getInsts(ctx, objID, inputParam.Condition)
 	if nil != err {
 		return &metadata.DeletedCount{}, err
@@ -156,7 +157,6 @@ func (m *instanceManager) DeleteModelInstance(ctx core.ContextParams, objID stri
 			return &metadata.DeletedCount{}, ctx.Error.Error(common.CCErrorInstHasAsst)
 		}
 	}
-
 	err = m.dbProxy.Table(tableName).Delete(ctx, inputParam.Condition)
 	if nil != err {
 		return &metadata.DeletedCount{}, err
@@ -184,7 +184,7 @@ func (m *instanceManager) CascadeDeleteModelInstance(ctx core.ContextParams, obj
 			return &metadata.DeletedCount{}, err
 		}
 	}
-
+	inputParam.Condition.Set(common.BKOwnerIDField, ctx.SupplierAccount)
 	err = m.dbProxy.Table(tableName).Delete(ctx, inputParam.Condition)
 	if nil != err {
 		return &metadata.DeletedCount{}, err
