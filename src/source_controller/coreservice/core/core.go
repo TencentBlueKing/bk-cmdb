@@ -16,6 +16,15 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// ModelAttributeGroup model attribute group methods definitions
+type ModelAttributeGroup interface {
+	CreateModelAttributeGroup(ctx ContextParams, objID string, inputParam metadata.CreateModelAttributeGroup) (*metadata.CreateOneDataResult, error)
+	SetModelAttributeGroup(ctx ContextParams, objID string, inputParam metadata.SetModelAttributeGroup) (*metadata.SetDataResult, error)
+	UpdateModelAttributeGroup(ctx ContextParams, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
+	SearchModelAttributeGroup(ctx ContextParams, objID string, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeGroupDataResult, error)
+	DeleteModelAttributeGroup(ctx ContextParams, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
+}
+
 // ModelClassification model classification methods definitions
 type ModelClassification interface {
 	CreateOneModelClassification(ctx ContextParams, inputParam metadata.CreateOneModelClassification) (*metadata.CreateOneDataResult, error)
@@ -40,6 +49,7 @@ type ModelAttribute interface {
 // ModelOperation model methods
 type ModelOperation interface {
 	ModelClassification
+	ModelAttributeGroup
 	ModelAttribute
 
 	CreateModel(ctx ContextParams, inputParam metadata.CreateModel) (*metadata.CreateOneDataResult, error)

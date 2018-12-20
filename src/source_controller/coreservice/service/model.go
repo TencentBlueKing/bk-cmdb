@@ -145,6 +145,54 @@ func (s *coreService) SearchModel(params core.ContextParams, pathParams, queryPa
 	return s.core.ModelOperation().SearchModel(params, inputData)
 }
 
+func (s *coreService) CreateModelAttributeGroup(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
+	inputData := metadata.CreateModelAttributeGroup{}
+	if err := data.ToStructByTag(inputData.Data, "field"); nil != err {
+		return nil, err
+	}
+
+	return s.core.ModelOperation().CreateModelAttributeGroup(params, pathParams("bk_obj_id"), inputData)
+}
+
+func (s *coreService) SetModelAttributeGroup(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
+	inputData := metadata.SetModelAttributeGroup{}
+	if err := data.ToStructByTag(inputData.Data, "field"); nil != err {
+		return nil, err
+	}
+	return s.core.ModelOperation().SetModelAttributeGroup(params, pathParams("bk_obj_id"), inputData)
+}
+
+func (s *coreService) UpdateModelAttributeGroup(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
+	inputData := metadata.UpdateOption{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.ModelOperation().UpdateModelAttributeGroup(params, pathParams("bk_obj_id"), inputData)
+}
+
+func (s *coreService) SearchModelAttributeGroup(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
+	inputData := metadata.QueryCondition{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+
+	return s.core.ModelOperation().SearchModelAttributeGroup(params, pathParams("bk_obj_id"), inputData)
+}
+
+func (s *coreService) DeleteModelAttributeGroup(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
+	inputData := metadata.DeleteOption{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+
+	return s.core.ModelOperation().DeleteModelAttributeGroup(params, pathParams("bk_obj_id"), inputData)
+}
+
 func (s *coreService) CreateModelAttributes(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	inputData := metadata.CreateModelAttributes{}
