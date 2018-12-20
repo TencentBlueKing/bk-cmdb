@@ -10,28 +10,32 @@
  * limitations under the License.
  */
 
-package service
+package model
 
 import (
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (s *coreService) IsInstanceExist(ctx core.ContextParams, objID string, instID uint64) (exists bool, err error) {
-	instIDFieldName := common.GetInstIDField(objID)
-	cond := mongo.NewCondition()
-	cond.Element(&mongo.Eq{Key: instIDFieldName, Val: instID})
-	searchCond := metadata.QueryCondition{Condition: cond.ToMapStr()}
-	result, err := s.core.InstanceOperation().SearchModelInstance(ctx, objID, searchCond)
-	if nil != err {
-		blog.Errorf("search model instance error: %v", err)
-		return false, err
+func (m *modelAttrUnique) searchModelAttrUnique(ctx core.ContextParams, inputParam metadata.QueryCondition) (results []metadata.ObjectUnique, err error) {
+	instHandler := m.dbProxy.Table(common.BKTableNameObjUnique).Find(inputParam.Condition)
+	for _, sort := range inputParam.SortArr {
+		fileld := sort.Field
+		if sort.IsDsc {
+			fileld = "-" + fileld
+		}
+		instHandler = instHandler.Sort(fileld)
 	}
-	if 0 == result.Count {
-		return false, nil
-	}
-	return true, nil
+	err = instHandler.Start(uint64(inputParam.Limit.Offset)).Limit(uint64(inputParam.Limit.Limit)).All(ctx, &results)
+
+	return results, err
+}
+
+func (m *modelAttrUnique) countModelAttrUnique(ctx core.ContextParams, cond mapstr.MapStr) (count uint64, err error) {
+
+	count, err = m.dbProxy.Table(common.BKTableNameObjUnique).Find(cond).Count(ctx)
+
+	return count, err
 }
