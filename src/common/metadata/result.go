@@ -100,10 +100,16 @@ type SearchDataResult struct {
 	Info  []mapstr.MapStr `json:"info"`
 }
 
-// QueryModelAttributeResult search model attr data result
+// QueryModelAttributeDataResult search model attr data result
 type QueryModelAttributeDataResult struct {
 	Count int64       `json:"count"`
 	Info  []Attribute `json:"info"`
+}
+
+// QueryModelAttributeGroupDataResult query model attribute group result define
+type QueryModelAttributeGroupDataResult struct {
+	Count int64   `json:"count"`
+	Info  []Group `json:"info"`
 }
 
 // ReadModelAttrResult  read model attribute api http response return result struct

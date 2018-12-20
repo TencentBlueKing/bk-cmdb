@@ -25,6 +25,7 @@ import (
 var _ core.ModelOperation = (*modelManager)(nil)
 
 type modelManager struct {
+	*modelAttributeGroup
 	*modelAttribute
 	*modelClassification
 	dbProxy   dal.RDB
@@ -38,6 +39,7 @@ func New(dbProxy dal.RDB, dependent OperationDependences) core.ModelOperation {
 
 	coreMgr.modelAttribute = &modelAttribute{dbProxy: dbProxy, model: coreMgr}
 	coreMgr.modelClassification = &modelClassification{dbProxy: dbProxy, model: coreMgr}
+	coreMgr.modelAttributeGroup = &modelAttributeGroup{dbProxy: dbProxy, model: coreMgr}
 
 	return coreMgr
 }
