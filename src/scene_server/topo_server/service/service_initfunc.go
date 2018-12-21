@@ -30,6 +30,7 @@ func (s *topoService) initAssociation() {
 	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/model/{owner_id}", HandlerFunc: s.SearchMainLineObjectTopo})
 	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/model/{owner_id}/{cls_id}/{obj_id}", HandlerFunc: s.SearchObjectByClassificationID})
 	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/inst/{owner_id}/{app_id}", HandlerFunc: s.SearchBusinessTopo})
+	// TODO: delete this api, it's not used by front.
 	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/inst/child/{owner_id}/{obj_id}/{app_id}/{inst_id}", HandlerFunc: s.SearchMainLineChildInstTopo})
 
 	// association type methods
