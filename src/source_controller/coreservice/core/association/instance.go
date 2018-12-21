@@ -232,6 +232,14 @@ func (m *associationInstance) CreateManyInstanceAssociation(ctx core.ContextPara
 }
 
 func (m *associationInstance) SearchInstanceAssociation(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
+	condition, err := mongo.NewConditionFromMapStr(inputParam.Condition)
+	if nil != err {
+		blog.Errorf("parse conditon  error [%v]", err)
+		return &metadata.QueryResult{}, err
+	}
+	ownerIDArr := []string{ctx.SupplierAccount, common.BKDefaultOwnerID}
+	condition.Element(&mongo.In{Key: common.BKOwnerIDField, Val: ownerIDArr})
+	inputParam.Condition = condition.ToMapStr()
 	instAsstItems, err := m.searchInstanceAssociation(ctx, inputParam)
 	if nil != err {
 		blog.Errorf("search inst association array err [%v]", err)
