@@ -1,0 +1,22 @@
+.admin-view {
+    &.nav-layout {
+        .nav-wrapper {
+            background: #261a05 !important;
+        }
+        .classify-list {
+            .classify-item {
+                &.active.is-link {
+                    background-color: #e3a547;
+                }
+                &.is-open {
+                    background-color: #030200;
+                }
+            }
+            .model-link {
+                &.active {
+                    background: #e3a547;
+                }
+            }
+        }
+    }
+}

@@ -67,18 +67,18 @@ const getters = {
     authorizedClassifications: (state, getters, rootState, rootGetters) => {
         let modelAuthority = rootGetters['userPrivilege/privilege']['model_config'] || {}
         let authorizedClassifications = JSON.parse(JSON.stringify(getters.activeClassifications))
-        if (!rootGetters.admin) {
-            // 1.去除无权限分类
-            authorizedClassifications = authorizedClassifications.filter(classification => {
-                return modelAuthority.hasOwnProperty(classification['bk_classification_id'])
-            })
-            // 2.去除分类下无权限的模型
-            authorizedClassifications.forEach(classification => {
-                classification['bk_objects'] = classification['bk_objects'].filter(model => {
-                    return modelAuthority[classification['bk_classification_id']].hasOwnProperty(model['bk_obj_id'])
-                })
-            })
-        }
+        // if (!rootGetters.admin) {
+        //     // 1.去除无权限分类
+        //     authorizedClassifications = authorizedClassifications.filter(classification => {
+        //         return modelAuthority.hasOwnProperty(classification['bk_classification_id'])
+        //     })
+        //     // 2.去除分类下无权限的模型
+        //     authorizedClassifications.forEach(classification => {
+        //         classification['bk_objects'] = classification['bk_objects'].filter(model => {
+        //             return modelAuthority[classification['bk_classification_id']].hasOwnProperty(model['bk_obj_id'])
+        //         })
+        //     })
+        // }
         return authorizedClassifications.filter(({bk_objects: bkObjects}) => bkObjects.length)
     },
     authorizedModels: (state, getters) => {
@@ -100,39 +100,35 @@ const getters = {
             icon: 'icon-cc-business',
             i18n: 'Nav["业务"]',
             authorized: true
-        }, {
-            id: 'resource',
-            path: '/resource',
-            icon: 'icon-cc-host-free-pool',
-            i18n: 'Nav["主机"]',
-            authorized: rootGetters.admin || (authority['sys_config']['global_busi'] || []).includes('resource')
         }]
-        specialCollecton.forEach(special => {
-            const isCollected = rootGetters['userCustom/usercustom'][`is_${special.id}_collected`]
-            if (isCollected || isCollected === undefined) {
-                collection.push({
-                    ...special,
-                    classificationId: collectionKey
-                })
-            }
-        })
+        const hasResourcePrivilege = rootGetters.admin || (authority['sys_config']['global_busi'] || []).includes('resource')
+        if (hasResourcePrivilege) {
+            specialCollecton.push({
+                id: '$resource',
+                path: '/resource',
+                icon: 'icon-cc-host-free-pool',
+                i18n: 'Nav["主机"]',
+                authorized: hasResourcePrivilege
+            })
+        }
         const collectedModelKey = rootGetters['userCustom/classifyNavigationKey']
         const collectedModelIds = rootGetters['userCustom/usercustom'][collectedModelKey] || []
         collectedModelIds.forEach(modelId => {
-            // 放开展示权限
-            // const available = getters.authorizedClassifications.some(classification => {
-            //     return classification['bk_objects'].some(model => model['bk_obj_id'] === modelId)
-            // })
-            const model = getters.getModelById(modelId)
-            if (model) {
-                collection.push({
-                    id: modelId,
-                    name: model['bk_obj_name'],
-                    icon: model['bk_obj_icon'],
-                    path: `/general-model/${modelId}`,
-                    authorized: true,
-                    classificationId: collectionKey
-                })
+            const specialModel = specialCollecton.find(({id}) => id === modelId)
+            if (specialModel) {
+                collection.push(specialModel)
+            } else {
+                const model = getters.getModelById(modelId)
+                if (model) {
+                    collection.push({
+                        id: modelId,
+                        name: model['bk_obj_name'],
+                        icon: model['bk_obj_icon'],
+                        path: `/general-model/${modelId}`,
+                        authorized: true,
+                        classificationId: collectionKey
+                    })
+                }
             }
         })
         STATIC_NAVIGATION[collectionKey].children = collection

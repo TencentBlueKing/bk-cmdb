@@ -1,6 +1,6 @@
 <template>
-    <nav class="nav-layout"
-        :class="{'sticked': navStick}"
+    <nav class="nav-layout admin-view"
+        :class="{'sticked': navStick, 'admin-view': isAdminView}"
         @mouseenter="handleMouseEnter"
         @mouseleave="handleMouseLeave">
         <div class="nav-wrapper"
@@ -70,7 +70,7 @@ export default {
         }
     },
     computed: {
-        ...mapGetters(['navStick', 'navFold', 'admin']),
+        ...mapGetters(['navStick', 'navFold', 'admin', 'isAdminView']),
         ...mapGetters('objectModelClassify', ['classifications', 'authorizedNavigation', 'staticClassifyId']),
         ...mapGetters('userCustom', ['usercustom', 'classifyNavigationKey']),
         fixedClassifyId () {
@@ -412,5 +412,4 @@ $color: #979ba5;
         }
     }
 }
-
 </style>
