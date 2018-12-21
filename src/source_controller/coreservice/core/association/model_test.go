@@ -13,14 +13,14 @@
 package association_test
 
 import (
-	"configcenter/src/common/mapstr"
-	"configcenter/src/common/universalsql/mongo"
 	"testing"
 
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql"
+	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/source_controller/coreservice/core"
 
 	"github.com/rs/xid"
