@@ -256,18 +256,24 @@ func (m *modelManager) CascadeDeleteModel(ctx core.ContextParams, inputParam met
 	return &metadata.DeletedCount{Count: cnt}, err
 }
 
-func (m *modelManager) SearchModel(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
+func (m *modelManager) SearchModel(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryModelDataResult, error) {
 
 	searchCond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to convert the condition (%v) from mapstr into condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
-		return &metadata.QueryResult{}, err
+		return &metadata.QueryModelDataResult{}, err
 	}
 
-	dataResult, err := m.searchReturnMapStr(ctx, searchCond)
+	totalCount, err := m.count(ctx, searchCond)
+	if nil != err {
+		blog.Errorf("request(%s): it is failed to get the count by the condition (%v), error info is %s", ctx.ReqID, searchCond.ToMapStr(), err.Error())
+		return &metadata.QueryModelDataResult{}, err
+	}
+
+	dataResult, err := m.search(ctx, searchCond)
 	if nil != err {
 		blog.Errorf("request(%s): it is faield to search models by the condition (%v), error info is %s", ctx.ReqID, searchCond.ToMapStr(), err.Error())
-		return &metadata.QueryResult{}, err
+		return &metadata.QueryModelDataResult{}, err
 	}
-	return &metadata.QueryResult{Count: uint64(len(dataResult)), Info: dataResult}, nil
+	return &metadata.QueryModelDataResult{Count: int64(totalCount), Info: dataResult}, nil
 }
