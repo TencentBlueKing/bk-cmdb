@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
@@ -88,7 +89,18 @@ func (s *coreService) SearchModelClassification(params core.ContextParams, pathP
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
 	}
-	return s.core.ModelOperation().SearchModelClassification(params, inputData)
+
+	dataResult, err := s.core.ModelOperation().SearchModelClassification(params, inputData)
+	if nil != err {
+		return dataResult, err
+	}
+
+	// translate language
+	for index := range dataResult.Info {
+		dataResult.Info[index].ClassificationName = s.TranslateClassificationName(params.Lang, &dataResult.Info[index])
+	}
+
+	return dataResult, err
 }
 
 func (s *coreService) CreateModel(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -142,7 +154,18 @@ func (s *coreService) SearchModel(params core.ContextParams, pathParams, queryPa
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
 	}
-	return s.core.ModelOperation().SearchModel(params, inputData)
+
+	dataResult, err := s.core.ModelOperation().SearchModel(params, inputData)
+	if nil != err {
+		return dataResult, err
+	}
+
+	// translate
+	for index := range dataResult.Info {
+		dataResult.Info[index].ObjectName = s.TranslateObjectName(params.Lang, &dataResult.Info[index])
+	}
+
+	return dataResult, err
 }
 
 func (s *coreService) CreateModelAttributeGroup(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -235,7 +258,22 @@ func (s *coreService) SearchModelAttributes(params core.ContextParams, pathParam
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
 	}
-	return s.core.ModelOperation().SearchModelAttributes(params, pathParams("bk_obj_id"), inputData)
+
+	dataResult, err := s.core.ModelOperation().SearchModelAttributes(params, pathParams("bk_obj_id"), inputData)
+	if nil != err {
+		return dataResult, err
+	}
+
+	// translate
+	for index := range dataResult.Info {
+		dataResult.Info[index].PropertyName = s.TranslatePropertyName(params.Lang, &dataResult.Info[index])
+		dataResult.Info[index].Description = s.TranslateDescription(params.Lang, &dataResult.Info[index])
+		if dataResult.Info[index].PropertyType == common.FieldTypeEnum {
+			dataResult.Info[index].Option = s.TranslateEnumName(params.Lang, &dataResult.Info[index], dataResult.Info[index].Option)
+		}
+	}
+
+	return dataResult, err
 }
 
 func (s *coreService) SearchModelAttrUnique(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {

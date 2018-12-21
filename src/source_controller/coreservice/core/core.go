@@ -34,7 +34,7 @@ type ModelClassification interface {
 	UpdateModelClassification(ctx ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	DeleteModelClassificaiton(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 	CascadeDeleteModeClassification(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
-	SearchModelClassification(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error)
+	SearchModelClassification(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryModelClassificationDataResult, error)
 }
 
 // ModelAttribute model attribute methods definitions
@@ -63,7 +63,7 @@ type ModelOperation interface {
 	UpdateModel(ctx ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	DeleteModel(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 	CascadeDeleteModel(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
-	SearchModel(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error)
+	SearchModel(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryModelDataResult, error)
 }
 
 // InstanceOperation instance methods
