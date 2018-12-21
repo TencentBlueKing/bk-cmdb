@@ -202,7 +202,7 @@ func (s *coreService) SearchModelAttrUnique(params core.ContextParams, pathParam
 	return s.core.ModelOperation().SearchModelAttrUnique(params, inputData)
 }
 
-func (s *coreService) CreateObjectAttrUnique(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) CreateModelAttrUnique(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	inputDatas := metadata.CreateModelAttrUnique{}
 	if err := data.MarshalJSONInto(&inputDatas); nil != err {
 		return nil, err
@@ -211,7 +211,7 @@ func (s *coreService) CreateObjectAttrUnique(params core.ContextParams, pathPara
 	return s.core.ModelOperation().CreateModelAttrUnique(params, pathParams("bk_obj_id"), inputDatas)
 }
 
-func (s *coreService) UpdateObjectAttrUnique(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) UpdateModelAttrUnique(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	inputDatas := metadata.UpdateModelAttrUnique{}
 	if err := data.MarshalJSONInto(&inputDatas); nil != err {
 		return nil, err
@@ -223,7 +223,7 @@ func (s *coreService) UpdateObjectAttrUnique(params core.ContextParams, pathPara
 	return s.core.ModelOperation().UpdateModelAttrUnique(params, pathParams("bk_obj_id"), id, inputDatas)
 }
 
-func (s *coreService) DeleteObjectAttrUnique(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) DeleteModelAttrUnique(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	inputDatas := metadata.CreateManyModelClassifiaction{}
 	if err := data.MarshalJSONInto(&inputDatas); nil != err {
