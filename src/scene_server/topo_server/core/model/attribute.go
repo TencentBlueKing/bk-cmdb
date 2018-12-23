@@ -299,12 +299,13 @@ func (a *attribute) Save(data mapstr.MapStr) error {
 	return a.Update(data)
 }
 
-func (a *attribute) SetGroup(grp Group) {
-	a.attr.PropertyGroup = grp.GetID()
-	a.attr.PropertyGroupName = grp.GetName()
+func (a *attribute) SetGroup(grp GroupInterface) {
+	group := grp.Group()
+	a.attr.PropertyGroup = group.GroupID
+	a.attr.PropertyGroupName = group.GroupName
 }
 
-func (a *attribute) GetGroup() (Group, error) {
+func (a *attribute) GetGroup() (GroupInterface, error) {
 
 	cond := condition.CreateCondition()
 	cond.Field(metadata.GroupFieldGroupID).Eq(a.attr.PropertyGroup)

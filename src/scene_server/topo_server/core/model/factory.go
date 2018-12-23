@@ -56,8 +56,8 @@ func CreateObject(params types.ContextParams, clientSet apimachinery.ClientSetIn
 }
 
 // CreateGroup create group  objects
-func CreateGroup(params types.ContextParams, clientSet apimachinery.ClientSetInterface, groupItems []metadata.Group) []Group {
-	results := make([]Group, 0)
+func CreateGroup(params types.ContextParams, clientSet apimachinery.ClientSetInterface, groupItems []metadata.Group) []GroupInterface {
+	results := make([]GroupInterface, 0)
 	for _, grp := range groupItems {
 
 		results = append(results, &group{
@@ -116,13 +116,8 @@ func (cli *factory) CreateAttribute(params types.ContextParams) AttributeInterfa
 	return attr
 }
 
-func (cli *factory) CreateGroup(params types.ContextParams) Group {
-	grp := &group{
-		params:    params,
-		clientSet: cli.clientSet,
-	}
-	grp.SetSupplierAccount(params.SupplierAccount)
-	return grp
+func (cli *factory) CreateGroup(params types.ContextParams) GroupInterface {
+	return NewGroup(params, cli.clientSet)
 }
 
 func (cli *factory) CreateMainLineAssociatin(params types.ContextParams, obj Object, asstKey string, asstObj Object) Association {

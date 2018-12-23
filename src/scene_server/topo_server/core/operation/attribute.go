@@ -65,7 +65,7 @@ func (a *attribute) CreateObjectAttribute(params types.ContextParams, data frtyp
 
 	att := a.modelFactory.CreateAttribute(params)
 
-	 err := att.Parse(data)
+	err := att.Parse(data)
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to parse the attribute data (%#v), error info is %s", data, err.Error())
 		return nil, err
@@ -132,7 +132,7 @@ func (a *attribute) FindObjectAttributeWithDetail(params types.ContextParams, co
 
 		for _, grp := range grps {
 			// should be only one
-			result.PropertyGroupName = grp.GetName()
+			result.PropertyGroupName = grp.Group().GroupName
 		}
 
 		results = append(results, result)
