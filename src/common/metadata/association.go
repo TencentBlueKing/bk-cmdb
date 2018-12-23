@@ -187,6 +187,8 @@ type AssociationKind struct {
 	Direction AssociationDirection `field:"direction" json:"direction" bson:"direction"`
 	// whether this is a pre-defined kind.
 	IsPre *bool `field:"ispre" json:"ispre" bson:"ispre"`
+	//	define the metadata of assocication kind and not use it
+	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 }
 
 type AssociationOnDeleteAction string
@@ -308,8 +310,8 @@ type InstAsst struct {
 	// association kind id
 	AssociationKindID string `field:"bk_asst_id" json:"bk_asst_id" bson:"bk_asst_id"`
 
-	// inst dimension
-	InstDimension Dimension `field:"dimension" json:"dimension" bson:"dimension"`
+	//	define the metadata of assocication kind
+	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 
 	CreateTime time.Time `field:"create_time" json:"create_time" bson:"create_time"`
 	LastTime   time.Time `field:"last_time" json:"last_time" bson:"last_time"`
