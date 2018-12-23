@@ -817,8 +817,8 @@ const (
 type DataStatusFlag string
 
 const (
-	DataStatusDisabled DataStatusFlag = "disabled"
-	DataStatusEnable   DataStatusFlag = "enable"
+	DataStatusDisabled string = "disabled"
+	DataStatusEnable   string = "enable"
 )
 
 const (
