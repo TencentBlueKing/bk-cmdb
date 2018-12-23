@@ -13,6 +13,8 @@
 package datacollection
 
 import (
+	"time"
+
 	"configcenter/src/common"
 )
 
@@ -35,3 +37,17 @@ const (
 	DiscoverChan = "discover"
 	SnapShotChan = "snapshot"
 )
+
+var (
+	masterProcLockLiveTime = time.Second * 10
+)
+
+type Analyzer interface {
+	Analyze(mesg string) error
+}
+
+type Porter interface {
+	Name() string
+	Run() error
+	Mock(string) error
+}
