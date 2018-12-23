@@ -80,5 +80,13 @@ func (s *coreService) SelectObjectAttWithParams(ctx core.ContextParams, objID st
 
 // SearchUnique search unique attribute
 func (s *coreService) SearchUnique(ctx core.ContextParams, objID string) (uniqueAttr []metadata.ObjectUnique, err error) {
-	return uniqueAttr, nil
+	cond := mongo.NewCondition()
+	ownerIDArr := []string{ctx.SupplierAccount, common.BKDefaultOwnerID}
+	cond.Element(&mongo.In{Key: common.BKOwnerIDField, Val: ownerIDArr})
+	cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
+	queryCond := metadata.QueryCondition{
+		Condition: cond.ToMapStr(),
+	}
+	result, err := s.core.ModelOperation().SearchModelAttrUnique(ctx, queryCond)
+	return result.Info, err
 }

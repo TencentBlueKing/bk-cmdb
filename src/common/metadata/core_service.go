@@ -68,6 +68,14 @@ type CreateModelAttributes struct {
 
 type SetModelAttributes CreateModelAttributes
 
+type CreateModelAttrUnique struct {
+	Data ObjectUnique `json:"data"`
+}
+
+type UpdateModelAttrUnique struct {
+	Data UpdateUniqueRequest `json:"data"`
+}
+
 type CreateModelInstance struct {
 	Data mapstr.MapStr `json:"data"`
 }
