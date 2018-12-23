@@ -12,8 +12,7 @@
 
 package model
 
-import (
-	//	"configcenter/src/common/blog"
+import ( //	"configcenter/src/common/blog"
 	//	"configcenter/src/common/errors"
 	//	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -26,13 +25,36 @@ type modelAttrUnique struct {
 	dbProxy dal.RDB
 }
 
+func (m *modelAttrUnique) CreateModelAttrUnique(ctx core.ContextParams, objID string, data metadata.CreateModelAttrUnique) (*metadata.CreateOneDataResult, error) {
+	id, err := m.createModelAttrUnique(ctx, objID, data)
+	if err != nil {
+		return nil, err
+	}
+	return &metadata.CreateOneDataResult{Created: metadata.CreatedDataResult{ID: id}}, nil
+}
+
+func (m *modelAttrUnique) UpdateModelAttrUnique(ctx core.ContextParams, objID string, id uint64, data metadata.UpdateModelAttrUnique) (*metadata.UpdatedCount, error) {
+	err := m.updateModelAttrUnique(ctx, objID, id, data)
+	if err != nil {
+		return nil, err
+	}
+	return &metadata.UpdatedCount{Count: 1}, nil
+}
+
+func (m *modelAttrUnique) DeleteModelAttrUnique(ctx core.ContextParams, objID string, id uint64) (*metadata.DeletedCount, error) {
+	err := m.deleteModelAttrUnique(ctx, objID, id)
+	if err != nil {
+		return nil, err
+	}
+	return &metadata.DeletedCount{Count: 1}, nil
+}
+
 func (m *modelAttrUnique) SearchModelAttrUnique(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryUniqueResult, error) {
 
 	uniqueItems, err := m.searchModelAttrUnique(ctx, inputParam)
 	if nil != err {
 		return &metadata.QueryUniqueResult{}, err
 	}
-
 	dataResult := &metadata.QueryUniqueResult{}
 	dataResult.Count, err = m.countModelAttrUnique(ctx, inputParam.Condition)
 	if nil != err {
