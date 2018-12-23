@@ -71,8 +71,8 @@ func CreateGroup(params types.ContextParams, clientSet apimachinery.ClientSetInt
 }
 
 // CreateAttribute create attribute  objects
-func CreateAttribute(params types.ContextParams, clientSet apimachinery.ClientSetInterface, attrItems []metadata.Attribute) []Attribute {
-	results := make([]Attribute, 0)
+func CreateAttribute(params types.ContextParams, clientSet apimachinery.ClientSetInterface, attrItems []metadata.Attribute) []AttributeInterface {
+	results := make([]AttributeInterface, 0)
 	for _, attr := range attrItems {
 
 		results = append(results, &attribute{
@@ -107,7 +107,7 @@ func (cli *factory) CreaetClassification(params types.ContextParams) Classificat
 	return cls
 }
 
-func (cli *factory) CreateAttribute(params types.ContextParams) Attribute {
+func (cli *factory) CreateAttribute(params types.ContextParams) AttributeInterface {
 	attr := &attribute{
 		params:    params,
 		clientSet: cli.clientSet,

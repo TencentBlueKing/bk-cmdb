@@ -168,7 +168,7 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 				}
 
 				for _, obj := range asstObjs {
-					rsp.Data[idx].AsstObjects[objItem.ObjectID] = append(rsp.Data[idx].AsstObjects[objItem.ObjectID], obj.Origin())
+					rsp.Data[idx].AsstObjects[objItem.ObjectID] = append(rsp.Data[idx].AsstObjects[objItem.ObjectID], obj.Object())
 				}
 
 			}

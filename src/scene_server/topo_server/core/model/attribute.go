@@ -27,91 +27,35 @@ import (
 )
 
 // Attribute attribute opeartion interface declaration
-type Attribute interface {
+type AttributeInterface interface {
 	Operation
-	Parse(data mapstr.MapStr) (*metadata.Attribute, error)
+	Parse(data mapstr.MapStr) error
 
-	Origin() metadata.Attribute
-
+	Attribute() *metadata.Attribute
+	SetAttribute(attr metadata.Attribute)
 	IsMainlineField() bool
-	// IsAssociationType() bool
-
-	SetSupplierAccount(supplierAccount string)
-	GetSupplierAccount() string
-
-	SetObjectID(objectID string)
-	GetObjectID() string
-
-	SetID(attributeID string)
-	GetID() string
-
-	SetName(attributeName string)
-	GetName() string
-
-	SetGroup(grp Group)
-	GetGroup() (Group, error)
-
-	SetGroupIndex(attGroupIndex int64)
-	GetGroupIndex() int64
-
-	SetUnint(unit string)
-	GetUnint() string
-
-	SetPlaceholder(placeHolder string)
-	GetPlaceholder() string
-
-	SetIsEditable(isEditable bool)
-	GetIsEditable() bool
-
-	SetIsPre(isPre bool)
-	GetIsPre() bool
-
-	SetIsReadOnly(isReadOnly bool)
-	GetIsReadOnly() bool
-
-	SetIsOnly(isOnly bool)
-	GetIsOnly() bool
-
-	SetIsRequired(isRequired bool)
-	GetIsRequired() bool
-
-	SetIsSystem(isSystem bool)
-	GetIsSystem() bool
-
-	SetIsAPI(isAPI bool)
-	GetIsAPI() bool
-
-	SetType(attributeType string)
-	GetType() string
-
-	SetOption(attributeOption interface{})
-	GetOption() interface{}
-
-	SetDescription(attributeDescription string)
-	GetDescription() string
-
-	SetCreator(attributeCreator string)
-	GetCreator() string
-
-	SetRecordID(int64)
-	GetRecordID() int64
-
 	ToMapStr() (mapstr.MapStr, error)
 }
 
-var _ Attribute = (*attribute)(nil)
+var _ AttributeInterface = (*attribute)(nil)
 
 // attribute the metadata structure definition of the model attribute
 type attribute struct {
 	FieldValid
-	attr      metadata.Attribute
-	isNew     bool
-	params    types.ContextParams
-	clientSet apimachinery.ClientSetInterface
+	OwnerID, ObjectID string
+	attr              metadata.Attribute
+	isNew             bool
+	params            types.ContextParams
+	clientSet         apimachinery.ClientSetInterface
 }
 
-func (a *attribute) Origin() metadata.Attribute {
-	return a.attr
+func (a *attribute) Attribute() *metadata.Attribute {
+	return &a.attr
+}
+func (a *attribute) SetAttribute(attr metadata.Attribute) {
+	a.attr = attr
+	a.attr.OwnerID = a.OwnerID
+	a.attr.ObjectID = a.ObjectID
 }
 
 func (a *attribute) IsMainlineField() bool {
@@ -146,22 +90,25 @@ func (a *attribute) MarshalJSON() ([]byte, error) {
 	return json.Marshal(a.attr)
 }
 
-func (a *attribute) Parse(data mapstr.MapStr) (*metadata.Attribute, error) {
+func (a *attribute) Parse(data mapstr.MapStr) error {
 	attr, err := a.attr.Parse(data)
 	if nil != err {
-		return attr, err
+		return err
 	}
+
+	a.attr = *attr
 	if a.attr.IsOnly {
 		a.attr.IsRequired = true
 	}
+
 	if 0 == len(a.attr.PropertyGroup) {
 		a.attr.PropertyGroup = "default"
 	}
-	return nil, err
+
+	return err
 }
 
 func (a *attribute) ToMapStr() (mapstr.MapStr, error) {
-
 	rst := mapstr.SetValueToMapStrByTags(&a.attr)
 	return rst, nil
 
@@ -352,39 +299,6 @@ func (a *attribute) Save(data mapstr.MapStr) error {
 	return a.Update(data)
 }
 
-func (a *attribute) SetSupplierAccount(supplierAccount string) {
-
-	a.attr.OwnerID = supplierAccount
-}
-
-func (a *attribute) GetSupplierAccount() string {
-	return a.attr.OwnerID
-}
-
-func (a *attribute) SetObjectID(objectID string) {
-	a.attr.ObjectID = objectID
-}
-
-func (a *attribute) GetObjectID() string {
-	return a.attr.ObjectID
-}
-
-func (a *attribute) SetID(attributeID string) {
-	a.attr.PropertyID = attributeID
-}
-
-func (a *attribute) GetID() string {
-	return a.attr.PropertyID
-}
-
-func (a *attribute) SetName(attributeName string) {
-	a.attr.PropertyName = attributeName
-}
-
-func (a *attribute) GetName() string {
-	return a.attr.PropertyName
-}
-
 func (a *attribute) SetGroup(grp Group) {
 	a.attr.PropertyGroup = grp.GetID()
 	a.attr.PropertyGroupName = grp.GetName()
@@ -397,14 +311,14 @@ func (a *attribute) GetGroup() (Group, error) {
 	cond.Field(metadata.GroupFieldObjectID).Eq(a.attr.ObjectID)
 	cond.Field(metadata.GroupFieldSupplierAccount).Eq(a.attr.OwnerID)
 
-	rsp, err := a.clientSet.ObjectController().Meta().SelectPropertyGroupByObjectID(context.Background(), a.params.SupplierAccount, a.GetObjectID(), a.params.Header, cond.ToMapStr())
+	rsp, err := a.clientSet.ObjectController().Meta().SelectPropertyGroupByObjectID(context.Background(), a.params.SupplierAccount, a.attr.ObjectID, a.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[model-grp] failed to request the object controller, error info is %s", err.Error())
 		return nil, a.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("[model-grp] failed to search the group of the object(%s) by the condition (%#v), error info is %s", a.GetObjectID(), cond.ToMapStr(), rsp.ErrMsg)
+		blog.Errorf("[model-grp] failed to search the group of the object(%s) by the condition (%#v), error info is %s", a.attr.ObjectID, cond.ToMapStr(), rsp.ErrMsg)
 		return nil, a.params.Err.Error(rsp.Code)
 	}
 
@@ -415,119 +329,6 @@ func (a *attribute) GetGroup() (Group, error) {
 	return CreateGroup(a.params, a.clientSet, rsp.Data)[0], nil // should be one group
 }
 
-func (a *attribute) SetGroupIndex(attGroupIndex int64) {
-	a.attr.PropertyIndex = attGroupIndex
-}
-
-func (a *attribute) GetGroupIndex() int64 {
-	return a.attr.PropertyIndex
-}
-
-func (a *attribute) SetUnint(unit string) {
-	a.attr.Unit = unit
-}
-
-func (a *attribute) GetUnint() string {
-	return a.attr.Unit
-}
-
-func (a *attribute) SetPlaceholder(placeHolder string) {
-	a.attr.Placeholder = placeHolder
-}
-
-func (a *attribute) GetPlaceholder() string {
-	return a.attr.Placeholder
-}
-
-func (a *attribute) SetIsRequired(isRequired bool) {
-	a.attr.IsRequired = isRequired
-}
-func (a *attribute) GetIsRequired() bool {
-	return a.attr.IsRequired
-}
-func (a *attribute) SetIsEditable(isEditable bool) {
-	a.attr.IsEditable = isEditable
-}
-
-func (a *attribute) GetIsEditable() bool {
-	return a.attr.IsEditable
-}
-
-func (a *attribute) SetIsPre(isPre bool) {
-	a.attr.IsPre = isPre
-}
-
-func (a *attribute) GetIsPre() bool {
-	return a.attr.IsPre
-}
-
-func (a *attribute) SetIsReadOnly(isReadOnly bool) {
-	a.attr.IsReadOnly = isReadOnly
-}
-
-func (a *attribute) GetIsReadOnly() bool {
-	return a.attr.IsReadOnly
-}
-
-func (a *attribute) SetIsOnly(isOnly bool) {
-	a.attr.IsOnly = isOnly
-}
-
-func (a *attribute) GetIsOnly() bool {
-	return a.attr.IsOnly
-}
-
-func (a *attribute) SetIsSystem(isSystem bool) {
-	a.attr.IsSystem = isSystem
-}
-
-func (a *attribute) GetIsSystem() bool {
-	return a.attr.IsSystem
-}
-
-func (a *attribute) SetIsAPI(isAPI bool) {
-	a.attr.IsAPI = isAPI
-}
-
-func (a *attribute) GetIsAPI() bool {
-	return a.attr.IsAPI
-}
-
-func (a *attribute) SetType(attributeType string) {
-	a.attr.PropertyType = attributeType
-}
-
-func (a *attribute) GetType() string {
-	return a.attr.PropertyType
-}
-
-func (a *attribute) SetOption(attributeOption interface{}) {
-	a.attr.Option = attributeOption
-}
-
-func (a *attribute) GetOption() interface{} {
-	return a.attr.Option
-}
-
-func (a *attribute) SetDescription(attributeDescription string) {
-	a.attr.Description = attributeDescription
-}
-
-func (a *attribute) GetDescription() string {
-	return a.attr.Description
-}
-
-func (a *attribute) SetCreator(attributeCreator string) {
-	a.attr.Creator = attributeCreator
-}
-
-func (a *attribute) GetCreator() string {
-	return a.attr.Creator
-}
-
-func (a *attribute) SetRecordID(id int64) {
-	a.attr.ID = id
-}
-func (a *attribute) GetRecordID() int64 {
-	return a.attr.ID
+func (a *attribute) SetSupplierAccount(supplierAccount string) {
+	a.attr.OwnerID = supplierAccount
 }
