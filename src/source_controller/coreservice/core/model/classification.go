@@ -289,20 +289,26 @@ func (m *modelClassification) CascadeDeleteModeClassification(ctx core.ContextPa
 	return &metadata.DeletedCount{Count: uint64(len(classificationItems))}, nil
 }
 
-func (m *modelClassification) SearchModelClassification(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
+func (m *modelClassification) SearchModelClassification(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryModelClassificationDataResult, error) {
 
 	searchCond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to convert the condition (%v) from mapstr into condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
-		return &metadata.QueryResult{}, err
+		return &metadata.QueryModelClassificationDataResult{}, err
+	}
+
+	totalCount, err := m.count(ctx, searchCond)
+	if nil != err {
+		blog.Errorf("request(%s): it is failed to get the count by the condition (%v), error info is %s", ctx.ReqID, searchCond.ToMapStr(), err.Error())
+		return &metadata.QueryModelClassificationDataResult{}, err
 	}
 
 	searchCond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationSupplierAccount, Val: ctx.SupplierAccount})
-	classificationItems, err := m.searchReturnMapStr(ctx, searchCond)
+	classificationItems, err := m.search(ctx, searchCond)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to search some classifications by the condition (%v), error info is %s", ctx.ReqID, searchCond.ToMapStr(), err.Error())
-		return &metadata.QueryResult{}, err
+		return &metadata.QueryModelClassificationDataResult{}, err
 	}
 
-	return &metadata.QueryResult{Count: uint64(len(classificationItems)), Info: classificationItems}, nil
+	return &metadata.QueryModelClassificationDataResult{Count: int64(totalCount), Info: classificationItems}, nil
 }
