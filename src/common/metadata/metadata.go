@@ -48,6 +48,22 @@ const (
 // Label define the Label type used to limit the scope of application of resources
 type Label map[string]string
 
+func GetBusinessIDFromMeta(data interface{}) string {
+	tmp, ok := data.(map[string]interface{})
+	if !ok {
+		return ""
+	}
+	label, ok := tmp[BKLabel].(map[string]interface{})
+	if !ok {
+		return ""
+	}
+	bizID, ok := label[LabelBusinessID].(string)
+	if !ok {
+		return ""
+	}
+	return bizID
+}
+
 // Metadata  used to define the metadata for the resources
 type Metadata struct {
 	Label Label
