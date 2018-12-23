@@ -53,7 +53,7 @@ func parseConditionFromMapStr(inputCond *mongoCondition, inputKey string, inputC
 		default:
 
 			switch t := val.(type) {
-			case string, int, int8, int32, int64, float32, float64:
+			case string, int, int8, int32, int64, float32, float64, uint, uint8, uint16, uint32, uint64:
 				fmt.Println("val:", t)
 				// Compatible with older versions of mongodb equal syntax
 				if 0 != len(inputKey) && 0 != len(operatorKey) {
