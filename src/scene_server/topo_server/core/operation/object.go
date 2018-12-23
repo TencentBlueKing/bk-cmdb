@@ -26,8 +26,6 @@ import (
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
-
-	"github.com/rs/xid"
 )
 
 // ObjectOperationInterface object operation methods
@@ -149,14 +147,16 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapS
 			}
 
 			if 0 != len(grps) {
-				targetAttr.PropertyGroup = grps[0].GetID() // should be only one group
+				targetAttr.PropertyGroup = grps[0].Group().GroupID // should be only one group
 			} else {
 
 				newGrp := o.modelFactory.CreateGroup(params)
-				newGrp.SetName(targetAttr.PropertyGroupName)
-				newGrp.SetID(xid.New().String())
-				newGrp.SetSupplierAccount(params.SupplierAccount)
-				newGrp.SetObjectID(objID)
+				newGrp.SetGroup(metadata.Group{
+					GroupName: targetAttr.PropertyGroupName,
+					GroupID:   model.NewGroupID(false),
+					ObjectID:  objID,
+					OwnerID:   params.SupplierAccount,
+				})
 				err := newGrp.Save(nil)
 				if nil != err {
 					errStr := params.Lang.Languagef("import_row_int_error_str", idx, params.Err.Error(common.CCErrTopoObjectGroupCreateFailed))
@@ -173,7 +173,7 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapS
 					continue
 				}
 
-				targetAttr.PropertyGroup = newGrp.GetID()
+				targetAttr.PropertyGroup = newGrp.Group().GroupID
 			}
 
 			// create or update the attribute
@@ -345,16 +345,22 @@ func (o *object) CreateObject(params types.ContextParams, data frtypes.MapStr) (
 
 	// create the default group
 	grp := obj.CreateGroup()
-	grp.SetDefault(true)
-	grp.SetIndex(-1)
-	grp.SetName("Default")
-	grp.SetID("default")
+	grp.SetGroup(metadata.Group{
+		IsDefault:  true,
+		GroupIndex: -1,
+		GroupName:  "Default",
+		GroupID:    model.NewGroupID(true),
+		ObjectID:   obj.Object().ObjectID,
+		OwnerID:    obj.Object().OwnerID,
+	})
+
 	if err = grp.Save(nil); nil != err {
 		blog.Errorf("[operation-obj] failed to create the default group, error info is %s", err.Error())
 		return nil, err
 	}
 
 	// create the default inst name
+	group := grp.Group()
 	attr := obj.CreateAttribute()
 	attr.SetAttribute(metadata.Attribute{
 		IsOnly:            true,
@@ -362,8 +368,8 @@ func (o *object) CreateObject(params types.ContextParams, data frtypes.MapStr) (
 		Creator:           "user",
 		IsEditable:        true,
 		PropertyIndex:     -1,
-		PropertyGroup:     grp.GetID(),
-		PropertyGroupName: grp.GetName(),
+		PropertyGroup:     group.GroupID,
+		PropertyGroupName: group.GroupName,
 		IsRequired:        true,
 		PropertyType:      common.FieldTypeSingleChar,
 		PropertyID:        obj.GetInstNameFieldName(),
@@ -389,7 +395,7 @@ func (o *object) CreateObject(params types.ContextParams, data frtypes.MapStr) (
 
 func (o *object) CanDelete(params types.ContextParams, targetObj model.Object) error {
 
-    tObject := targetObj.Object()
+	tObject := targetObj.Object()
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	if targetObj.IsCommon() {
@@ -483,7 +489,7 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 			return err
 		} else {
 			for _, group := range groups {
-				if err = o.grp.DeleteObjectGroup(params, group.GetRecordID()); err != nil {
+				if err = o.grp.DeleteObjectGroup(params, group.Group().ID); err != nil {
 					blog.Errorf("[operation-asst] failed to delete the object's groups, error info is %s", err.Error())
 					return err
 				}
@@ -582,7 +588,7 @@ func (o *object) FindObjectTopo(params types.ContextParams, cond condition.Condi
 				if nil != err {
 					return nil, err
 				}
-				tmp.From.ClassificationID = cls.GetID()
+				tmp.From.ClassificationID = cls.Classify().ClassificationID
 				tmp.From.Position = object.Position
 				tmp.From.OwnerID = object.OwnerID
 				tmp.From.ObjName = object.ObjectName
@@ -593,7 +599,7 @@ func (o *object) FindObjectTopo(params types.ContextParams, cond condition.Condi
 				if nil != err {
 					return nil, err
 				}
-				tmp.To.ClassificationID = cls.GetID()
+				tmp.To.ClassificationID = cls.Classify().ClassificationID
 				tmp.To.Position = assoObject.Position
 				tmp.To.ObjName = assoObject.ObjectName
 				ok, err := o.isFrom(params, assoObject.ObjectID, object.ObjectID)
@@ -685,15 +691,21 @@ func (o *object) CreateOneObject(params types.ContextParams, data frtypes.MapStr
 
 	// create the default group
 	grp := obj.CreateGroup()
-	grp.SetDefault(true)
-	grp.SetIndex(-1)
-	grp.SetName("Default")
-	grp.SetID("default")
+	grp.SetGroup(metadata.Group{
+		IsDefault:  true,
+		GroupIndex: -1,
+		GroupName:  "Default",
+		GroupID:    model.NewGroupID(true),
+		ObjectID:   obj.Object().ObjectID,
+		OwnerID:    obj.Object().OwnerID,
+	})
+
 	if err = grp.Save(nil); nil != err {
 		blog.Errorf("[operation-obj] failed to create the default group, error info is %s", err.Error())
 		return nil, err
 	}
 
+	group := grp.Group()
 	// create the default inst name
 	attr := obj.CreateAttribute()
 	attr.SetAttribute(metadata.Attribute{
@@ -702,8 +714,8 @@ func (o *object) CreateOneObject(params types.ContextParams, data frtypes.MapStr
 		Creator:           "user",
 		IsEditable:        true,
 		PropertyIndex:     -1,
-		PropertyGroup:     grp.GetID(),
-		PropertyGroupName: grp.GetName(),
+		PropertyGroup:     group.GroupID,
+		PropertyGroupName: group.GroupName,
 		IsRequired:        true,
 		PropertyType:      common.FieldTypeSingleChar,
 		PropertyID:        obj.GetInstNameFieldName(),

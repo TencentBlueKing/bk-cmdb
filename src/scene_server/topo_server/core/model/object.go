@@ -50,10 +50,10 @@ type Object interface {
 	CreateMainlineObjectAssociation(relateToObjID string) error
 	UpdateMainlineObjectAssociationTo(preObjID, relateToObjID string) error
 
-	CreateGroup() Group
+	CreateGroup() GroupInterface
 	CreateAttribute() AttributeInterface
 
-	GetGroups() ([]Group, error)
+	GetGroups() ([]GroupInterface, error)
 	GetAttributes() ([]AttributeInterface, error)
 	GetAttributesExceptInnerFields() ([]AttributeInterface, error)
 
@@ -643,16 +643,8 @@ func (o *object) Save(data mapstr.MapStr) error {
 
 }
 
-func (o *object) CreateGroup() Group {
-	return &group{
-		params:    o.params,
-		clientSet: o.clientSet,
-		grp: meta.Group{
-
-			OwnerID:  o.obj.OwnerID,
-			ObjectID: o.obj.ObjectID,
-		},
-	}
+func (o *object) CreateGroup() GroupInterface {
+	return NewGroup(o.params, o.clientSet)
 }
 
 func (o *object) CreateUnique() Unique {
@@ -719,7 +711,7 @@ func (o *object) GetAttributes() ([]AttributeInterface, error) {
 	return o.searchAttributes(cond)
 }
 
-func (o *object) GetGroups() ([]Group, error) {
+func (o *object) GetGroups() ([]GroupInterface, error) {
 
 	cond := condition.CreateCondition()
 
@@ -736,13 +728,10 @@ func (o *object) GetGroups() ([]Group, error) {
 		return nil, o.params.Err.Error(rsp.Code)
 	}
 
-	rstItems := make([]Group, 0)
+	rstItems := make([]GroupInterface, 0)
 	for _, item := range rsp.Data {
-		grp := &group{
-			grp:       item,
-			params:    o.params,
-			clientSet: o.clientSet,
-		}
+		grp := NewGroup(o.params, o.clientSet)
+		grp.SetGroup(item)
 		rstItems = append(rstItems, grp)
 	}
 
@@ -750,7 +739,7 @@ func (o *object) GetGroups() ([]Group, error) {
 }
 
 func (o *object) SetClassification(class Classification) {
-	o.obj.ObjCls = class.GetID()
+	o.obj.ObjCls = class.Classify().ClassificationID
 }
 
 func (o *object) GetClassification() (Classification, error) {
