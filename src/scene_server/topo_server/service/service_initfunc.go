@@ -169,7 +169,7 @@ func (s *topoService) initObject() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/object", HandlerFunc: s.SearchObject})
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/object", HandlerFunc: s.UpdateObject})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/object", HandlerFunc: s.DeleteObject})
-	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/find/object-topology", HandlerFunc: s.DeleteObject})
+	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/find/object-topology", HandlerFunc: s.SearchObjectTopo})
 
 }
 func (s *topoService) initPrivilegeGroup() {
