@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package model_test
+package instances_test
 
 import (
 	"context"
@@ -18,8 +18,9 @@ import (
 
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
+	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
-	"configcenter/src/source_controller/coreservice/core/model"
+	"configcenter/src/source_controller/coreservice/core/instances"
 	"configcenter/src/storage/dal/mongo"
 
 	"github.com/stretchr/testify/require"
@@ -28,31 +29,31 @@ import (
 type mockDependences struct {
 }
 
-// HasInstance used to check if the model has some instances
-func (s *mockDependences) HasInstance(ctx core.ContextParams, objIDS []string) (exists bool, err error) {
+// IsInstanceExist used to check if the  instances  asst exist
+func (s *mockDependences) IsInstAsstExist(ctx core.ContextParams, objID string, instID uint64) (exists bool, err error) {
 	return false, nil
 }
 
-// HasAssociation used to check if the model has some associations
-func (s *mockDependences) HasAssociation(ctx core.ContextParams, objIDS []string) (exists bool, err error) {
-	return false, nil
-}
-
-// CascadeDeleteAssociation cascade delete all associated data (included instances, model association, instance association) associated with modelObjID
-func (s *mockDependences) CascadeDeleteAssociation(ctx core.ContextParams, objIDS []string) error {
+// DeleteInstAsst used to delete inst asst
+func (s *mockDependences) DeleteInstAsst(ctx core.ContextParams, objID string, instID uint64) error {
 	return nil
 }
 
-// CascadeDeleteInstances cascade delete all instances(included instances, instance association) associated with modelObjID
-func (s *mockDependences) CascadeDeleteInstances(ctx core.ContextParams, objIDS []string) error {
-	return nil
+// SelectObjectAttWithParams select object att with params
+func (s *mockDependences) SelectObjectAttWithParams(ctx core.ContextParams, objID string) (attribute []metadata.Attribute, err error) {
+	return nil, nil
 }
 
-func newModel(t *testing.T) core.ModelOperation {
+// SearchUnique search unique attribute
+func (s *mockDependences) SearchUnique(ctx core.ContextParams, objID string) (uniqueAttr []metadata.ObjectUnique, err error) {
+	return nil, nil
+}
+
+func newInstances(t *testing.T) core.InstanceOperation {
 
 	db, err := mongo.NewMgo("mongodb://cc:cc@localhost:27010,localhost:27011,localhost:27012,localhost:27013/cmdb")
 	require.NoError(t, err)
-	return model.New(db, &mockDependences{})
+	return instances.New(db, &mockDependences{})
 }
 
 var defaultCtx = func() core.ContextParams {
