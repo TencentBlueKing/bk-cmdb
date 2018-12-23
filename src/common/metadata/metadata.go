@@ -40,6 +40,11 @@ var (
 	LabelKeyNotExistError = errors.New("label key does not exist")
 )
 
+const (
+	BKMetadata string = "metadata"
+	BKLabel    string = "label"
+)
+
 // Label define the Label type used to limit the scope of application of resources
 type Label map[string]string
 

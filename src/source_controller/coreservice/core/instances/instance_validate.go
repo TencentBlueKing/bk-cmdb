@@ -25,7 +25,6 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 		blog.Errorf("init validator faile %s", err.Error())
 		return err
 	}
-
 	FillLostedFieldValue(instanceData, valid.propertyslice, valid.requirefields)
 	for _, key := range valid.requirefields {
 		if _, ok := instanceData[key]; !ok {
@@ -33,14 +32,12 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
 		}
 	}
-
 	for key, val := range instanceData {
 
 		if valid.shouldIgnore[key] {
 			// ignore the key field
 			continue
 		}
-
 		property, ok := valid.propertys[key]
 		if !ok {
 			blog.Errorf("params is not valid, the key is %s", key)
@@ -73,8 +70,7 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 			return err
 		}
 	}
-	return nil
-	//	return valid.validCreateUnique(ctx, instanceData, m)
+	return valid.validCreateUnique(ctx, instanceData, m)
 }
 
 func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID string, instanceData mapstr.MapStr, instID uint64) error {
