@@ -30,9 +30,9 @@ type Group interface {
 	Operation
 
 	Parse(data mapstr.MapStr) (*metadata.Group, error)
-	CreateAttribute() Attribute
+	CreateAttribute() AttributeInterface
 
-	GetAttributes() ([]Attribute, error)
+	GetAttributes() ([]AttributeInterface, error)
 
 	Origin() metadata.Group
 
@@ -226,7 +226,7 @@ func (g *group) ToMapStr() (mapstr.MapStr, error) {
 	return rst, nil
 }
 
-func (g *group) GetAttributes() ([]Attribute, error) {
+func (g *group) GetAttributes() ([]AttributeInterface, error) {
 	cond := condition.CreateCondition()
 	cond.Field(metadata.AttributeFieldObjectID).Eq(g.grp.ObjectID).
 		Field(metadata.AttributeFieldPropertyGroup).Eq(g.grp.GroupID).
@@ -243,7 +243,7 @@ func (g *group) GetAttributes() ([]Attribute, error) {
 		return nil, g.params.Err.Error(rsp.Code)
 	}
 
-	rstItems := make([]Attribute, 0)
+	rstItems := make([]AttributeInterface, 0)
 	for _, item := range rsp.Data {
 
 		attr := &attribute{
@@ -294,7 +294,7 @@ func (g *group) Save(data mapstr.MapStr) error {
 	return g.Update(g.grp.ToMapStr())
 }
 
-func (g *group) CreateAttribute() Attribute {
+func (g *group) CreateAttribute() AttributeInterface {
 	return &attribute{
 		params:    g.params,
 		clientSet: g.clientSet,

@@ -59,7 +59,7 @@ type Association interface {
 type Factory interface {
 	CreaetObject(params types.ContextParams) Object
 	CreaetClassification(params types.ContextParams) Classification
-	CreateAttribute(params types.ContextParams) Attribute
+	CreateAttribute(params types.ContextParams) AttributeInterface
 	CreateGroup(params types.ContextParams) Group
 	CreateCommonAssociation(params types.ContextParams, obj Object, asstKey string, asstObj Object) Association
 	CreateMainLineAssociatin(params types.ContextParams, obj Object, asstKey string, asstObj Object) Association

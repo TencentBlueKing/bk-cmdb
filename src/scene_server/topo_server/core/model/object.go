@@ -32,33 +32,30 @@ import (
 type Object interface {
 	Operation
 
-	Parse(data mapstr.MapStr) (*meta.Object, error)
+	Parse(data mapstr.MapStr) error
 
-	Origin() meta.Object
+	Object() meta.Object
 	IsMainlineObject() (bool, error)
 	IsCommon() bool
 
 	SetRecordID(id int64)
-	GetRecordID() int64
 	GetMainlineParentObject() (Object, error)
 	GetMainlineChildObject() (Object, error)
 
-	// GetChildObjectByFieldID(fieldID string) ([]Object, error)
 	GetParentObject() ([]ObjectAssoPair, error)
 	GetChildObject() ([]ObjectAssoPair, error)
 
 	SetMainlineParentObject(objID string) error
-	// SetMainlineChildObject(objID string) error
 
 	CreateMainlineObjectAssociation(relateToObjID string) error
 	UpdateMainlineObjectAssociationTo(preObjID, relateToObjID string) error
 
 	CreateGroup() Group
-	CreateAttribute() Attribute
+	CreateAttribute() AttributeInterface
 
 	GetGroups() ([]Group, error)
-	GetAttributes() ([]Attribute, error)
-	GetAttributesExceptInnerFields() ([]Attribute, error)
+	GetAttributes() ([]AttributeInterface, error)
+	GetAttributesExceptInnerFields() ([]AttributeInterface, error)
 
 	CreateUnique() Unique
 	GetUniques() ([]Unique, error)
@@ -66,35 +63,8 @@ type Object interface {
 	SetClassification(class Classification)
 	GetClassification() (Classification, error)
 
-	SetIcon(objectIcon string)
-	GetIcon() string
-
-	SetID(objectID string)
-	GetID() string
-
-	SetName(objectName string)
-	GetName() string
-
-	SetIsPre(isPre bool)
-	GetIsPre() bool
-
-	SetIsPaused(isPaused bool)
-	GetIsPaused() bool
-
-	SetPosition(position string)
-	GetPosition() string
-
 	SetSupplierAccount(supplierAccount string)
 	GetSupplierAccount() string
-
-	SetDescription(description string)
-	GetDescription() string
-
-	SetCreator(creator string)
-	GetCreator() string
-
-	SetModifier(modifier string)
-	GetModifier() string
 
 	ToMapStr() (mapstr.MapStr, error)
 
@@ -114,7 +84,7 @@ type object struct {
 	clientSet apimachinery.ClientSetInterface
 }
 
-func (o *object) Origin() meta.Object {
+func (o *object) Object() meta.Object {
 	return o.obj
 }
 
@@ -156,7 +126,7 @@ func (o *object) IsMainlineObject() (bool, error) {
 	return false, nil
 }
 
-func (o *object) searchAttributes(cond condition.Condition) ([]Attribute, error) {
+func (o *object) searchAttributes(cond condition.Condition) ([]AttributeInterface, error) {
 
 	rsp, err := o.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), o.params.Header, cond.ToMapStr())
 	if nil != err {
@@ -169,7 +139,7 @@ func (o *object) searchAttributes(cond condition.Condition) ([]Attribute, error)
 		return nil, o.params.Err.Error(rsp.Code)
 	}
 
-	rstItems := make([]Attribute, 0)
+	rstItems := make([]AttributeInterface, 0)
 	for _, item := range rsp.Data {
 
 		attr := &attribute{
@@ -316,14 +286,6 @@ func (o *object) searchAssoObjects(isNeedChild bool, cond condition.Condition) (
 	return pair, nil
 }
 
-// func (o *object) GetChildObjectByFieldID(fieldID string) ([]Object, error) {
-// 	cond := condition.CreateCondition()
-// 	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
-// 	cond.Field(meta.AssociationFieldObjectID).Eq(o.obj.ObjectID)
-// 	// cond.Field(meta.AssociationFieldAssociationName).Eq(fieldID)
-//
-// 	return o.searchObjects(true, cond)
-// }
 func (o *object) GetParentObject() ([]ObjectAssoPair, error) {
 
 	cond := condition.CreateCondition()
@@ -553,7 +515,7 @@ func (o *object) IsValid(isUpdate bool, data mapstr.MapStr) error {
 	}
 
 	if !isUpdate && !o.IsCommon() {
-		return o.params.Err.New(common.CCErrCommParamsIsInvalid, fmt.Sprintf("'%s' the built-in object id, please use a new one", o.GetID()))
+		return o.params.Err.New(common.CCErrCommParamsIsInvalid, fmt.Sprintf("'%s' the built-in object id, please use a new one", o.obj.ObjectID))
 	}
 
 	return nil
@@ -641,23 +603,14 @@ func (o *object) Update(data mapstr.MapStr) error {
 	return nil
 }
 
-func (o *object) Parse(data mapstr.MapStr) (*meta.Object, error) {
+func (o *object) Parse(data mapstr.MapStr) error {
 
 	err := mapstr.SetValueToStructByTags(&o.obj, data)
 	if nil != err {
-		return nil, err
+		return err
 	}
 
-	/*
-		if 0 == len(o.obj.ObjectID) {
-			return nil, o.params.Err.Errorf(common.CCErrCommParamsNeedSet, meta.ModelFieldObjectID)
-		}
-
-		if 0 == len(o.obj.ObjCls) {
-			return nil, o.params.Err.Errorf(common.CCErrCommParamsNeedSet, meta.ModelFieldObjCls)
-		}
-	*/
-	return nil, err
+	return nil
 }
 
 func (o *object) ToMapStr() (mapstr.MapStr, error) {
@@ -739,18 +692,17 @@ func (o *object) GetUniques() ([]Unique, error) {
 	return rstItems, nil
 }
 
-func (o *object) CreateAttribute() Attribute {
+func (o *object) CreateAttribute() AttributeInterface {
 	return &attribute{
 		params:    o.params,
 		clientSet: o.clientSet,
-		attr: meta.Attribute{
-			OwnerID:  o.obj.OwnerID,
-			ObjectID: o.obj.ObjectID,
-		},
+		attr:      meta.Attribute{},
+		OwnerID:   o.obj.OwnerID,
+		ObjectID:  o.obj.ObjectID,
 	}
 }
 
-func (o *object) GetAttributesExceptInnerFields() ([]Attribute, error) {
+func (o *object) GetAttributesExceptInnerFields() ([]AttributeInterface, error) {
 
 	cond := condition.CreateCondition()
 	cond.Field(meta.AttributeFieldObjectID).Eq(o.obj.ObjectID)
@@ -760,7 +712,7 @@ func (o *object) GetAttributesExceptInnerFields() ([]Attribute, error) {
 	return o.searchAttributes(cond)
 }
 
-func (o *object) GetAttributes() ([]Attribute, error) {
+func (o *object) GetAttributes() ([]AttributeInterface, error) {
 
 	cond := condition.CreateCondition()
 	cond.Field(meta.AttributeFieldObjectID).Eq(o.obj.ObjectID).Field(meta.AttributeFieldSupplierAccount).Eq(o.params.SupplierAccount)
@@ -831,57 +783,6 @@ func (o *object) GetClassification() (Classification, error) {
 func (o *object) SetRecordID(id int64) {
 	o.obj.ID = id
 }
-func (o *object) GetRecordID() int64 {
-	return o.obj.ID
-}
-
-func (o *object) SetIcon(objectIcon string) {
-	o.obj.ObjIcon = objectIcon
-}
-
-func (o *object) GetIcon() string {
-	return o.obj.ObjIcon
-}
-
-func (o *object) SetID(objectID string) {
-	o.obj.ObjectID = objectID
-}
-
-func (o *object) GetID() string {
-	return o.obj.ObjectID
-}
-
-func (o *object) SetName(objectName string) {
-	o.obj.ObjectName = objectName
-}
-
-func (o *object) GetName() string {
-	return o.obj.ObjectName
-}
-
-func (o *object) SetIsPre(isPre bool) {
-	o.obj.IsPre = isPre
-}
-
-func (o *object) GetIsPre() bool {
-	return o.obj.IsPre
-}
-
-func (o *object) SetIsPaused(isPaused bool) {
-	o.obj.IsPaused = isPaused
-}
-
-func (o *object) GetIsPaused() bool {
-	return o.obj.IsPaused
-}
-
-func (o *object) SetPosition(position string) {
-	o.obj.Position = position
-}
-
-func (o *object) GetPosition() string {
-	return o.obj.Position
-}
 
 func (o *object) SetSupplierAccount(supplierAccount string) {
 	o.obj.OwnerID = supplierAccount
@@ -889,28 +790,4 @@ func (o *object) SetSupplierAccount(supplierAccount string) {
 
 func (o *object) GetSupplierAccount() string {
 	return o.obj.OwnerID
-}
-
-func (o *object) SetDescription(description string) {
-	o.obj.Description = description
-}
-
-func (o *object) GetDescription() string {
-	return o.obj.Description
-}
-
-func (o *object) SetCreator(creator string) {
-	o.obj.Creator = creator
-}
-
-func (o *object) GetCreator() string {
-	return o.obj.Creator
-}
-
-func (o *object) SetModifier(modifier string) {
-	o.obj.Modifier = modifier
-}
-
-func (o *object) GetModifier() string {
-	return o.obj.Modifier
 }
