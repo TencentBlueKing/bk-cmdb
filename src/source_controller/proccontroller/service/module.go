@@ -15,14 +15,14 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/emicklei/go-restful"
-	"github.com/gin-gonic/gin/json"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/eventclient"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	"github.com/emicklei/go-restful"
+	"github.com/gin-gonic/gin/json"
 )
 
 // DeleteProc2Module delete proc module config
@@ -41,15 +41,15 @@ func (ps *ProctrlServer) DeleteProc2Module(req *restful.Request, resp *restful.R
 	// retrieve original data
 	var originals []interface{}
 
-	cxt := util.GetDBContext(context.Background(), req.Request.Header)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	//ps.Instance.//.GetMutilByCondition(common.BKTableNameProcModule, []string{}, input, &originals, "", 0, 0); err != nil
-	if err := ps.Instance.Table(common.BKTableNameProcModule).Find(input).Limit(0).Start(0).Sort("").All(cxt, &originals); err != nil {
+	if err := ps.Instance.Table(common.BKTableNameProcModule).Find(input).Limit(0).Start(0).Sort("").All(ctx, &originals); err != nil {
 		blog.Warnf("retrieve original error:%v", err)
 	}
 
 	// delete proc module config
-	blog.Infof("delete proc module config %v", input)
-	if err := ps.Instance.Table(common.BKTableNameProcModule).Delete(cxt, input); err != nil {
+	blog.V(5).Infof("delete proc module config %v", input)
+	if err := ps.Instance.Table(common.BKTableNameProcModule).Delete(ctx, input); err != nil {
 		blog.Errorf("delete proc module config error: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcDeleteProc2Module)})
 		return
@@ -57,10 +57,20 @@ func (ps *ProctrlServer) DeleteProc2Module(req *restful.Request, resp *restful.R
 
 	//send  event
 	if len(originals) > 0 {
-		ec := eventclient.NewEventContextByReq(req.Request.Header, ps.Cache)
 		for _, i := range originals {
-			if err := ec.InsertEvent(meta.EventTypeRelation, meta.EventObjTypeProcModule, meta.EventActionDelete, nil, i); err != nil {
+			srcevent := eventclient.NewEventWithHeader(req.Request.Header)
+			srcevent.EventType = meta.EventTypeRelation
+			srcevent.ObjType = meta.EventObjTypeProcModule
+			srcevent.Action = meta.EventActionDelete
+			srcevent.Data = []meta.EventData{
+				{
+					PreData: i,
+				},
+			}
+			if err := ps.EventC.Push(ctx, srcevent); err != nil {
 				blog.Warnf("create event error:%s", err.Error())
+				resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcDeleteProc2Module)})
+				return
 			}
 		}
 	}
@@ -81,11 +91,10 @@ func (ps *ProctrlServer) CreateProc2Module(req *restful.Request, resp *restful.R
 		return
 	}
 
-	blog.Infof("create proc module config: %v ", input)
+	blog.V(5).Infof("create proc module config: %v ", input)
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
-	ec := eventclient.NewEventContextByReq(req.Request.Header, ps.Cache)
 	for _, i := range input {
-		//if err := ps.Instance.Table(common.BKTableNameProcModule).Insert(cxt, i); err != nil {
+		//if err := ps.Instance.Table(common.BKTableNameProcModule).Insert(ctx, i); err != nil {
 		i := util.SetModOwner(i, util.GetOwnerID(req.Request.Header))
 		if err := ps.Instance.Table(common.BKTableNameProcModule).Insert(ctx, i); err != nil {
 			blog.Errorf("create proc module config error:%v", err)
@@ -93,8 +102,19 @@ func (ps *ProctrlServer) CreateProc2Module(req *restful.Request, resp *restful.R
 			return
 		}
 		//  record events
-		if err := ec.InsertEvent(meta.EventTypeRelation, meta.EventObjTypeProcModule, meta.EventActionCreate, i, nil); err != nil {
+		srcevent := eventclient.NewEventWithHeader(req.Request.Header)
+		srcevent.EventType = meta.EventTypeRelation
+		srcevent.ObjType = meta.EventObjTypeProcModule
+		srcevent.Action = meta.EventActionCreate
+		srcevent.Data = []meta.EventData{
+			{
+				CurData: i,
+			},
+		}
+		if err := ps.EventC.Push(ctx, srcevent); err != nil {
 			blog.Errorf("create event error: %v", err)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcCreateProc2Module)})
+			return
 		}
 	}
 
@@ -114,7 +134,7 @@ func (ps *ProctrlServer) GetProc2Module(req *restful.Request, resp *restful.Resp
 		return
 	}
 
-	blog.Infof("get proc module config condition: %v ", input)
+	blog.V(5).Infof("get proc module config condition: %v ", input)
 	input = util.SetModOwner(input, util.GetOwnerID(req.Request.Header))
 	result := make([]interface{}, 0)
 

@@ -12,8 +12,7 @@
                 <i :class="['model-icon','icon', model['bk_obj_icon']]"></i>
                 <span class="model-name">{{model['bk_obj_name']}}</span>
                 <i class="model-star bk-icon"
-                    v-if="!notCollectable.includes(classify['bk_classification_id'])"
-                    :class="[customNavigation.includes(model['bk_obj_id']) ? 'icon-star-shape' : 'icon-star']"
+                    :class="[isCollected(model) ? 'icon-star-shape' : 'icon-star']"
                     @click.prevent.stop="toggleCustomNavigation(model)">
                 </i>
             </div>
@@ -32,12 +31,12 @@
         },
         data () {
             return {
-                maxCustomNavigationCount: 8,
-                notCollectable: ['bk_host_manage', 'bk_organization'],
-                notModelClassify: ['bk_host_manage', 'bk_back_config']
+                maxCustomNavigationCount: 8
             }
         },
         computed: {
+            ...mapGetters(['admin']),
+            ...mapGetters('userPrivilege', ['privilege']),
             ...mapGetters('userCustom', ['usercustom', 'classifyNavigationKey']),
             ...mapGetters('objectModelClassify', ['authorizedNavigation']),
             customNavigation () {
@@ -48,6 +47,21 @@
                     return this.authorizedNavigation.some(({children}) => children.some(navigation => navigation.id === customId))
                 })
                 return usefulNavigation
+            },
+            collectedCount () {
+                const specialModel = ['biz']
+                if (this.admin || (this.privilege['sys_config']['global_busi'] || []).includes('resource')) {
+                    specialModel.push('resource')
+                }
+                let specialCollectedCount = 0
+                specialModel.forEach(objId => {
+                    const collectedKey = `is_${objId}_collected`
+                    const isCollected = this.usercustom[collectedKey]
+                    if (isCollected || isCollected === undefined) {
+                        specialCollectedCount++
+                    }
+                })
+                return this.usefulNavigation.length + specialCollectedCount
             }
         },
         methods: {
@@ -59,28 +73,51 @@
                 this.$router.push(path)
             },
             getModelLink (model) {
-                if (this.notModelClassify.includes(model['bk_classification_id'])) {
+                if (model.hasOwnProperty('path')) {
                     return model.path
                 }
-                return model['bk_obj_id'] === 'biz' ? '/business' : `/general-model/${model['bk_obj_id']}`
+                return `/general-model/${model['bk_obj_id']}`
+            },
+            isCollected (model) {
+                if (['biz', 'resource'].includes(model['bk_obj_id'])) {
+                    const collectedKey = `is_${model['bk_obj_id']}_collected`
+                    const isCollected = this.usercustom[collectedKey]
+                    return isCollected || isCollected === undefined
+                }
+                return this.customNavigation.includes(model['bk_obj_id'])
             },
             toggleCustomNavigation (model) {
-                let newCustom
-                let oldCustom = this.customNavigation
                 let isAdd = false
-                if (oldCustom.includes(model['bk_obj_id'])) {
-                    newCustom = oldCustom.filter(id => id !== model['bk_obj_id'])
+                let promise
+                if (['biz', 'resource'].includes(model['bk_obj_id'])) {
+                    const collectedKey = `is_${model['bk_obj_id']}_collected`
+                    const isCollected = this.usercustom[collectedKey]
+                    isAdd = !(isCollected || isCollected === undefined)
+                    if (isAdd && this.collectedCount >= this.maxCustomNavigationCount) {
+                        this.$warn(this.$t('Index["限制添加导航提示"]', {max: this.maxCustomNavigationCount}))
+                    } else {
+                        promise = this.$store.dispatch('userCustom/saveUsercustom', {
+                            [collectedKey]: isAdd
+                        })
+                    }
                 } else {
-                    isAdd = true
-                    newCustom = [...oldCustom, model['bk_obj_id']]
+                    let newCustom
+                    let oldCustom = this.customNavigation
+                    if (oldCustom.includes(model['bk_obj_id'])) {
+                        newCustom = oldCustom.filter(id => id !== model['bk_obj_id'])
+                    } else {
+                        isAdd = true
+                        newCustom = [...oldCustom, model['bk_obj_id']]
+                    }
+                    if (isAdd && this.collectedCount >= this.maxCustomNavigationCount) {
+                        this.$warn(this.$t('Index["限制添加导航提示"]', {max: this.maxCustomNavigationCount}))
+                        return false
+                    }
+                    promise = this.$store.dispatch('userCustom/saveUsercustom', {
+                        [this.classifyNavigationKey]: newCustom
+                    })
                 }
-                if (isAdd && this.usefulNavigation.length >= this.maxCustomNavigationCount) {
-                    this.$warn(this.$t('Index["限制添加导航提示"]', {max: this.maxCustomNavigationCount}))
-                    return false
-                }
-                this.$store.dispatch('userCustom/saveUsercustom', {
-                    [this.classifyNavigationKey]: newCustom
-                }).then(() => {
+                promise.then(() => {
                     this.$http.cancel('post_searchUsercustom')
                     this.$success(isAdd ? this.$t('Index["添加导航成功"]') : this.$t('Index["取消导航成功"]'))
                 })

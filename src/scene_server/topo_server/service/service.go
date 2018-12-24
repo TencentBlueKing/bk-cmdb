@@ -128,6 +128,25 @@ func (s *topoService) createAPIRspStr(errcode int, info interface{}) (string, er
 	return string(data), err
 }
 
+func (s *topoService) createCompleteAPIRspStr(errcode int, errmsg string, info interface{}) (string, error) {
+
+	rsp := meta.Response{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     nil,
+	}
+
+	if common.CCSuccess != errcode {
+		rsp.Code = errcode
+		rsp.Result = false
+		rsp.ErrMsg = errmsg
+	} else {
+		rsp.ErrMsg = common.CCSuccessStr
+	}
+	rsp.Data = info
+	data, err := json.Marshal(rsp)
+	return string(data), err
+}
+
 func (s *topoService) sendResponse(resp *restful.Response, errorCode int, dataMsg interface{}) {
 	resp.Header().Set("Content-Type", "application/json")
 	if rsp, rspErr := s.createAPIRspStr(errorCode, dataMsg); nil == rspErr {
@@ -135,6 +154,17 @@ func (s *topoService) sendResponse(resp *restful.Response, errorCode int, dataMs
 	} else {
 		blog.Errorf("failed to send response , error info is %s", rspErr.Error())
 	}
+}
+
+func (s *topoService) sendCompleteResponse(resp *restful.Response, errorCode int, errMsg string, info interface{}) {
+	resp.Header().Set("Content-Type", "application/json")
+	rsp, rspErr := s.createCompleteAPIRspStr(errorCode, errMsg, info)
+	if nil == rspErr {
+		io.WriteString(resp, rsp)
+		return
+	}
+	blog.Errorf("failed to send response , error info is %s", rspErr.Error())
+
 }
 
 // Actions return the all actions
@@ -146,7 +176,6 @@ func (s *topoService) Actions() []*httpserver.Action {
 		func(act action) {
 
 			httpactions = append(httpactions, &httpserver.Action{Verb: act.Method, Path: act.Path, Handler: func(req *restful.Request, resp *restful.Response) {
-
 				ownerID := util.GetActionOnwerID(req)
 				user := util.GetActionUser(req)
 
@@ -200,9 +229,9 @@ func (s *topoService) Actions() []*httpserver.Action {
 				if nil != dataErr {
 					switch e := dataErr.(type) {
 					default:
-						s.sendResponse(resp, common.CCSystemBusy, dataErr.Error())
+						s.sendCompleteResponse(resp, common.CCSystemBusy, dataErr.Error(), data)
 					case errors.CCErrorCoder:
-						s.sendResponse(resp, e.GetCode(), dataErr.Error())
+						s.sendCompleteResponse(resp, e.GetCode(), dataErr.Error(), data)
 					}
 					return
 				}

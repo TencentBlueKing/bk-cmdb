@@ -28,10 +28,10 @@ import (
 
 // AttributeOperationInterface attribute operation methods
 type AttributeOperationInterface interface {
-	CreateObjectAttribute(params types.ContextParams, data frtypes.MapStr) (model.Attribute, error)
-	DeleteObjectAttribute(params types.ContextParams, id int64, cond condition.Condition) error
+	CreateObjectAttribute(params types.ContextParams, data frtypes.MapStr) (model.AttributeInterface, error)
+	DeleteObjectAttribute(params types.ContextParams, cond condition.Condition) error
 	FindObjectAttributeWithDetail(params types.ContextParams, cond condition.Condition) ([]*metadata.ObjAttDes, error)
-	FindObjectAttribute(params types.ContextParams, cond condition.Condition) ([]model.Attribute, error)
+	FindObjectAttribute(params types.ContextParams, cond condition.Condition) ([]model.AttributeInterface, error)
 	UpdateObjectAttribute(params types.ContextParams, data frtypes.MapStr, attID int64, cond condition.Condition) error
 
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, obj ObjectOperationInterface, asst AssociationOperationInterface, grp GroupOperationInterface)
@@ -61,46 +61,20 @@ func (a *attribute) SetProxy(modelFactory model.Factory, instFactory inst.Factor
 	a.grp = grp
 }
 
-func (a *attribute) CreateObjectAttribute(params types.ContextParams, data frtypes.MapStr) (model.Attribute, error) {
+func (a *attribute) CreateObjectAttribute(params types.ContextParams, data frtypes.MapStr) (model.AttributeInterface, error) {
 
 	att := a.modelFactory.CreateAttribute(params)
 
-	_, err := att.Parse(data)
+	err := att.Parse(data)
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to parse the attribute data (%#v), error info is %s", data, err.Error())
 		return nil, err
 	}
 
-	if att.GetID() == common.BKChildStr || att.GetID() == common.BKInstParentStr {
-		return nil, params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, "could not create bk_childid or bk_parent_id")
-	}
-
 	// check the object id
-	err = a.obj.IsValidObject(params, att.GetObjectID())
+	err = a.obj.IsValidObject(params, att.Attribute().ObjectID)
 	if nil != err {
 		return nil, params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
-	}
-
-	// create association
-	attrMeta := &metadata.Association{}
-	if err = data.MarshalJSONInto(attrMeta); nil != err {
-		blog.Errorf("[operation-attr] failed to parse the association data, error info is %s", err.Error())
-		return nil, params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
-	}
-
-	if 0 != len(attrMeta.AsstObjID) {
-
-		// check the object id
-		err = a.obj.IsValidObject(params, attrMeta.AsstObjID)
-		if nil != err {
-			return nil, params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
-		}
-
-		attrMeta.ObjectAttID = att.GetID() // the structural difference
-		if err := a.asst.CreateCommonAssociation(params, attrMeta); nil != err {
-			blog.Errorf("[operation-attr] failed to create the association(%v), error info is %s", attrMeta, err.Error())
-			return nil, params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
-		}
 	}
 
 	// create a new one
@@ -113,44 +87,24 @@ func (a *attribute) CreateObjectAttribute(params types.ContextParams, data frtyp
 	return att, nil
 }
 
-func (a *attribute) DeleteObjectAttribute(params types.ContextParams, id int64, cond condition.Condition) error {
+func (a *attribute) DeleteObjectAttribute(params types.ContextParams, cond condition.Condition) error {
 
-	attrCond := condition.CreateCondition()
-	if id < 0 {
-		attrCond = cond
-	} else {
-		attrCond.Field(metadata.AttributeFieldSupplierAccount).Eq(params.SupplierAccount)
-		attrCond.Field(metadata.AttributeFieldID).Eq(id)
-	}
-
-	attrItems, err := a.FindObjectAttribute(params, attrCond)
+	attrItems, err := a.FindObjectAttribute(params, cond)
 	if nil != err {
-		blog.Errorf("[operation-attr] failed to find the attributes by the id(%d), error info is %s", id, err.Error())
+		blog.Errorf("[operation-attr] failed to find the attributes by the cond(%v), err: %v", cond.ToMapStr(), err)
 		return params.Err.New(common.CCErrTopoObjectAttributeDeleteFailed, err.Error())
 	}
 
 	for _, attrItem := range attrItems {
-		// delete the association
-		//fmt.Println("attr:", attrItem)
-		asstCond := condition.CreateCondition()
-		asstCond.Field(metadata.AssociationFieldObjectID).Eq(attrItem.GetObjectID())
-		asstCond.Field(metadata.AssociationFieldSupplierAccount).Eq(attrItem.GetSupplierAccount())
-		asstCond.Field(metadata.AssociationFieldObjectAttributeID).Eq(attrItem.GetID())
-		if err = a.asst.DeleteAssociation(params, asstCond); nil != err {
-			blog.Errorf("[operation-attr] failed to delete the attribute association(%v), error info is %s", asstCond.ToMapStr(), err.Error())
-			return params.Err.New(common.CCErrTopoObjectAttributeDeleteFailed, err.Error())
-		}
-
 		// delete the attribute
-		rsp, err := a.clientSet.ObjectController().Meta().DeleteObjectAttByID(context.Background(), attrItem.Origin().ID, params.Header, cond.ToMapStr())
-
+		rsp, err := a.clientSet.ObjectController().Meta().DeleteObjectAttByID(context.Background(), attrItem.Attribute().ID, params.Header, cond.ToMapStr())
 		if nil != err {
-			blog.Errorf("[operation-attr] failed to request object controller, error info is %s", err.Error())
+			blog.Errorf("[operation-attr] delete object attribute failed, request object controller with err: %v", err)
 			return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
 		if common.CCSuccess != rsp.Code {
-			blog.Errorf("[operation-attr] failed to delete the attribute by the id(%d) or the condition(%#v), error info is %s", id, cond.ToMapStr(), rsp.ErrMsg)
+			blog.Errorf("[operation-attr] failed to delete the attribute by condition(%v), err: %s", cond.ToMapStr(), rsp.ErrMsg)
 			return params.Err.Error(rsp.Code)
 		}
 	}
@@ -162,33 +116,23 @@ func (a *attribute) FindObjectAttributeWithDetail(params types.ContextParams, co
 	if nil != err {
 		return nil, err
 	}
-	results := []*metadata.ObjAttDes{}
+	results := make([]*metadata.ObjAttDes, 0)
 	for _, attr := range attrs {
-		result := &metadata.ObjAttDes{Attribute: attr.Origin()}
+		result := &metadata.ObjAttDes{Attribute: *attr.Attribute()}
 
+		attribute := attr.Attribute()
 		grpCond := condition.CreateCondition()
-		grpCond.Field(metadata.GroupFieldGroupID).Eq(attr.Origin().PropertyGroup)
-		grpCond.Field(metadata.GroupFieldSupplierAccount).Eq(attr.GetSupplierAccount())
-		grpCond.Field(metadata.GroupFieldObjectID).Eq(attr.GetObjectID())
+		grpCond.Field(metadata.GroupFieldGroupID).Eq(attribute.PropertyGroup)
+		grpCond.Field(metadata.GroupFieldSupplierAccount).Eq(attribute.OwnerID)
+		grpCond.Field(metadata.GroupFieldObjectID).Eq(attribute.ObjectID)
 		grps, err := a.grp.FindObjectGroup(params, grpCond)
 		if nil != err {
 			return nil, err
 		}
 
-		for _, grp := range grps { // should be only one
-			result.PropertyGroupName = grp.GetName()
-		}
-
-		assts, err := a.asst.SearchObjectAssociation(params, attr.GetObjectID())
-		if nil != err {
-			return nil, err
-		}
-
-		for _, asst := range assts {
-			if asst.ObjectAttID == attr.GetID() { // should be only one
-				result.AssociationID = asst.AsstObjID
-				result.AsstForward = asst.AsstForward
-			}
+		for _, grp := range grps {
+			// should be only one
+			result.PropertyGroupName = grp.Group().GroupName
 		}
 
 		results = append(results, result)
@@ -196,10 +140,9 @@ func (a *attribute) FindObjectAttributeWithDetail(params types.ContextParams, co
 
 	return results, nil
 }
-func (a *attribute) FindObjectAttribute(params types.ContextParams, cond condition.Condition) ([]model.Attribute, error) {
+func (a *attribute) FindObjectAttribute(params types.ContextParams, cond condition.Condition) ([]model.AttributeInterface, error) {
 
 	rsp, err := a.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), params.Header, cond.ToMapStr())
-
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to request object controller, error info is %s", err.Error())
 		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)

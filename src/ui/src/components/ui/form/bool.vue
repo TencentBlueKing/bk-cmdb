@@ -8,7 +8,7 @@
             :true-value="trueValue"
             :false-value="falseValue"
             v-model="localChecked"
-            @click.stop>
+            @click.prevent>
         <slot></slot>
     </div>
 </template>

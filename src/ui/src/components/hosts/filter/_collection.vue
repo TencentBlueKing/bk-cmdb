@@ -95,7 +95,7 @@
         methods: {
             ...mapActions('hostFavorites', [
                 'searchFavorites',
-                'udpateFavorites',
+                'updateFavorites',
                 'deleteFavorites'
             ]),
             setFilterSort (option, order) {
@@ -150,7 +150,7 @@
                 this.$set(collection, 'edit', false)
                 const originalCollection = this.list.find(original => original.id === collection.id)
                 if (originalCollection.name !== collection.name) {
-                    this.udpateFavorites({
+                    this.updateFavorites({
                         id: collection.id,
                         params: {
                             ...originalCollection,

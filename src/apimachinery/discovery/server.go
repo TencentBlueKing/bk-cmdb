@@ -121,12 +121,12 @@ func (s *server) updateServer(svrs []string) {
 		host := fmt.Sprintf("%s://%s:%d", scheme, server.IP, server.Port)
 		newSvr = append(newSvr, host)
 	}
-	
+
 	s.Lock()
 	defer s.Unlock()
 
 	if len(newSvr) != 0 {
 		s.servers = newSvr
-		blog.V(3).Infof("update component with new server instance[%s] about path: %s", strings.Join(newSvr, "; "), s.path)
+		blog.V(5).Infof("update component with new server instance[%s] about path: %s", strings.Join(newSvr, "; "), s.path)
 	}
 }

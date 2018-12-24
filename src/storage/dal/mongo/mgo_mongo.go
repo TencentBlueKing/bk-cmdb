@@ -16,12 +16,12 @@ import (
 	"context"
 	"strings"
 
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
-
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/types"
+
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 )
 
 // Mongo implement client.DALRDB interface
@@ -324,14 +324,21 @@ func (c *Collection) AddColumn(ctx context.Context, column string, value interfa
 func (c *Collection) RenameColumn(ctx context.Context, oldName, newColumn string) error {
 	c.dbc.Refresh()
 	datac := types.Document{"$rename": types.Document{oldName: newColumn}}
-	_, err := c.dbc.DB(c.dbname).C(c.collName).UpdateAll(nil, datac)
+	_, err := c.dbc.DB(c.dbname).C(c.collName).UpdateAll(types.Document{}, datac)
 	return err
 }
 
 // DropColumn 移除字段
 func (c *Collection) DropColumn(ctx context.Context, field string) error {
 	c.dbc.Refresh()
-	datac := types.Document{"$unset": types.Document{field: "1"}}
-	_, err := c.dbc.DB(c.dbname).C(c.collName).UpdateAll(nil, datac)
+	datac := types.Document{"$unset": types.Document{field: ""}}
+	_, err := c.dbc.DB(c.dbname).C(c.collName).UpdateAll(types.Document{}, datac)
 	return err
+}
+
+func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, result interface{}) error {
+	return c.dbc.DB(c.dbname).C(c.collName).Pipe(pipeline).All(result)
+}
+func (c *Collection) AggregateOne(ctx context.Context, pipeline interface{}, result interface{}) error {
+	return c.dbc.DB(c.dbname).C(c.collName).Pipe(pipeline).One(result)
 }

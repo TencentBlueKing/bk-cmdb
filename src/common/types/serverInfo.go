@@ -34,9 +34,9 @@ const (
 	CC_MODULE_APISERVER        = "apiserver"
 	CC_MODULE_WEBSERVER        = "webserver"
 	CC_MODULE_EVENTSERVER      = "eventserver"
-
-	GSE_MODULE_PROCSERVER = "gseprocserver"
-	CC_MODULE_TXC         = "txc"
+	CC_MODULE_CORESERVICE      = "coreservice"
+	GSE_MODULE_PROCSERVER      = "gseprocserver"
+	CC_MODULE_TXC              = "txc"
 )
 
 // AllModule all cc module

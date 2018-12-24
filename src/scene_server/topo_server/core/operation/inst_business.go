@@ -68,6 +68,7 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 		return nil, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
 	}
 	if defaulFieldVal == int64(common.DefaultAppFlag) && params.SupplierAccount != common.BKDefaultOwnerID {
+		// this is a new supplier owner and prepare to create a new business.
 		asstQuery := map[string]interface{}{
 			common.BKOwnerIDField: common.BKDefaultOwnerID,
 		}
@@ -101,7 +102,7 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 			for _, existAsst := range existAssts {
 				if existAsst.ObjectID == asst.ObjectID &&
 					existAsst.AsstObjID == asst.AsstObjID &&
-					existAsst.ObjectAttID == asst.ObjectAttID {
+					existAsst.AsstKindID == asst.AsstKindID {
 					continue expectLoop
 				}
 			}
@@ -119,8 +120,14 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 	}
 
 	data.Set(common.BKOwnerIDField, params.SupplierAccount)
-	data.Set(common.BKSupplierIDField, common.BKDefaultSupplierID)
-
+	//data.Set(common.BKSupplierIDField, common.BKDefaultSupplierID)
+	if util.IsExistSupplierID(params.Header) {
+		supplierID, err := util.GetSupplierID(params.Header)
+		if err != nil {
+			return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, common.BKSupplierIDField)
+		}
+		data[common.BKSupplierIDField] = supplierID
+	}
 	bizInst, err := b.inst.CreateInst(params, obj, data)
 	if nil != err {
 		blog.Errorf("[opeartion-biz] failed to create business, error info is %s", err.Error())

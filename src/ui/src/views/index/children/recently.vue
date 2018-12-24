@@ -7,9 +7,9 @@
                 :class="{'recently-browse-model': !!recentlyModels[index - 1]}"
                 @click="gotoRecently(recentlyModels[index - 1])">
                 <template v-if="recentlyModels[index - 1]">
-                    <i :class="['recently-icon', recentlyModels[index - 1].icon]"></i>
+                    <i :class="['recently-icon', recentlyModels[index - 1]['bk_obj_icon']]"></i>
                     <div class="recently-info">
-                        <strong class="recently-name">{{getRecentlyName(recentlyModels[index - 1])}}</strong>
+                        <strong class="recently-name">{{recentlyModels[index - 1]['bk_obj_name']}}</strong>
                         <span class="recently-inst">数量：{{getRecentlyCount(recentlyModels[index - 1])}}</span>
                     </div>
                     <i class="recently-delete bk-icon icon-close" @click.stop="deleteRecently(recentlyModels[index - 1])"></i>
@@ -30,24 +30,17 @@
         },
         computed: {
             ...mapGetters('userCustom', ['usercustom', 'recentlyKey']),
-            ...mapGetters('objectModelClassify', ['authorizedNavigation', 'staticClassifyId']),
+            ...mapGetters('objectModelClassify', ['authorizedNavigation', 'authorizedModels']),
             recently () {
                 return this.usercustom[this.recentlyKey] || []
             },
             // 最近浏览的所有通用模型
             recentlyModels () {
-                let models = []
-                this.recently.forEach(path => {
-                    const model = this.getRouteModel(path)
-                    if (model) {
-                        models.push(model)
-                    }
-                })
-                return models
+                return this.authorizedModels.filter(model => this.recently.includes(model['bk_obj_id']))
             },
             // 最近浏览的所有通用模型路由
             recentlyModelsPath () {
-                return this.recentlyModels.map(model => model.path)
+                return this.recentlyModels.map(model => `/general-model/${model['bk_obj_id']}`)
             },
             // 展示前8个最近浏览
             visibleRecentlyModels () {
@@ -62,8 +55,8 @@
             // 最近浏览变更时，重新加载最近浏览模型的实例数量
             visibleRecentlyModels (models) {
                 models.forEach(model => {
-                    if (!this.modelInstCount.hasOwnProperty(model.id)) {
-                        this.loadInst(model.id)
+                    if (!this.modelInstCount.hasOwnProperty(model['bk_obj_id'])) {
+                        this.loadInst(model['bk_obj_id'])
                     }
                 })
             }
@@ -71,55 +64,40 @@
         created () {
             // 首次加载最近浏览模型实例数量
             this.visibleRecentlyModels.forEach(model => {
-                if (!this.modelInstCount.hasOwnProperty(model.id)) {
-                    this.loadInst(model.id)
+                if (!this.modelInstCount.hasOwnProperty(model['bk_obj_id'])) {
+                    this.loadInst(model['bk_obj_id'])
                 }
             })
         },
         methods: {
-            // 获取路由对应的模型
-            getRouteModel (path) {
-                let model
-                for (let i = 0; i < this.authorizedNavigation.length; i++) {
-                    const models = this.authorizedNavigation[i]['children'] || []
-                    model = models.find(model => model.path === path)
-                    if (model) break
-                }
-                return model
-            },
-            // 最近浏览模型的名称
-            getRecentlyName (model) {
-                return model.i18n ? this.$t(model.i18n) : model.name
-            },
             // 最近浏览模型的实例数量
             getRecentlyCount (model) {
-                return this.modelInstCount.hasOwnProperty(model.id) ? this.modelInstCount[model.id] : '--'
+                return this.modelInstCount.hasOwnProperty(model['bk_obj_id']) ? this.modelInstCount[model['bk_obj_id']] : '--'
             },
             // 导航至最近浏览的模型
             gotoRecently (model) {
-                if (model) {
-                    this.$store.commit('setHeaderStatus', {
-                        back: true
-                    })
-                    this.$router.push(model.path)
-                }
+                this.$store.commit('setHeaderStatus', {
+                    back: true
+                })
+                this.$router.push(`/general-model/${model['bk_obj_id']}`)
             },
             // 删除最近浏览的模型
             deleteRecently (model) {
-                const deletedRecently = this.recentlyModelsPath.filter(path => path !== model.path)
+                const deletedRecently = this.recently.filter(id => id !== model['bk_obj_id'])
                 this.$store.dispatch('userCustom/saveUsercustom', {
                     [this.recentlyKey]: deletedRecently
                 })
             },
             // 更新最近浏览记录
-            updateRecently (path) {
-                const recently = this.recently.filter(oldPath => oldPath !== path)
-                const model = this.getRouteModel(path)
-                if (model && !this.staticClassifyId.includes(model.classificationId)) {
-                    this.$store.dispatch('userCustom/saveUsercustom', {
-                        [this.recentlyKey]: [path, ...recently]
-                    })
+            updateRecently (to) {
+                if (!to.meta.isModel) {
+                    return false
                 }
+                const objId = to.params.objId
+                const recently = this.recently.filter(oldId => oldId !== objId)
+                this.$store.dispatch('userCustom/saveUsercustom', {
+                    [this.recentlyKey]: [objId, ...recently]
+                })
             },
             // 加载最近浏览模型的实例数量
             loadInst (id) {

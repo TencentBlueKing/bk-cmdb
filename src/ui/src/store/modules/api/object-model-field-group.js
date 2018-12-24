@@ -64,8 +64,8 @@ const actions = {
      * @param {Number} id 分组记录标识
      * @return {promises} promises 对象
      */
-    deleteGroup ({ commit, state, dispatch }, { id }) {
-        return $http.delete(`objectatt/group/groupid/${id}`)
+    deleteGroup ({ commit, state, dispatch }, { id, config }) {
+        return $http.delete(`objectatt/group/groupid/${id}`, config)
     },
 
     /**

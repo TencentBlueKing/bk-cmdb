@@ -20,16 +20,15 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"configcenter/src/storage/dal"
-
-	"github.com/emicklei/go-restful"
-	"gopkg.in/mgo.v2/bson"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/eventclient"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/dal"
+
+	"github.com/emicklei/go-restful"
+	"gopkg.in/mgo.v2/bson"
 )
 
 func (cli *Service) DeleteSetHost(req *restful.Request, resp *restful.Response) {
@@ -42,7 +41,7 @@ func (cli *Service) DeleteSetHost(req *restful.Request, resp *restful.Response) 
 
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if nil != err {
-		blog.Error("read request body failed, error:%v", err)
+		blog.Errorf("read request body failed, error:%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
@@ -51,7 +50,7 @@ func (cli *Service) DeleteSetHost(req *restful.Request, resp *restful.Response) 
 	input := make(map[string]interface{})
 	err = json.Unmarshal(value, &input)
 	if nil != err {
-		blog.Error("unmarshal json error:%v", err)
+		blog.Errorf("unmarshal json error:%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 		return
 	}
@@ -59,7 +58,7 @@ func (cli *Service) DeleteSetHost(req *restful.Request, resp *restful.Response) 
 	input = util.SetModOwner(input, ownerID)
 	err = cli.delModuleConfigSet(ctx, db, input, req)
 	if err != nil {
-		blog.Error("fail to delSetConfigHost: %v", err)
+		blog.Errorf("fail to delSetConfigHost: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommParamsInvalid, err.Error())})
 		return
 	}
@@ -72,7 +71,7 @@ func (cli *Service) getModuleConfigCount(ctx context.Context, db dal.RDB, con ma
 
 	count, err := db.Table(common.BKTableNameModuleHostConfig).Find(con).Count(ctx)
 	if err != nil {
-		blog.Error("fail getModuleConfigCount error:%v", err)
+		blog.Errorf("fail getModuleConfigCount error:%v", err)
 		return 0, err
 	}
 	return count, err
@@ -101,16 +100,25 @@ func (cli *Service) delModuleConfigSet(ctx context.Context, db dal.RDB, input ma
 
 	err := db.Table(common.BKTableNameModuleHostConfig).Delete(ctx, input)
 	if err != nil {
-		blog.Error("fail to delSetConfigHost: %v", err)
+		blog.Errorf("fail to delSetConfigHost: %v", err)
 		return err
 	}
 
 	//发送删除主机关系事件
-	ec := eventclient.NewEventContextByReq(req.Request.Header, cli.Cache)
 	for oldContent := range oldContents {
-		err = ec.InsertEvent(meta.EventTypeRelation, common.BKInnerObjIDHost, meta.EventActionDelete, oldContent, nil)
+		srcevent := eventclient.NewEventWithHeader(req.Request.Header)
+		srcevent.EventType = meta.EventTypeRelation
+		srcevent.ObjType = common.BKInnerObjIDHost
+		srcevent.Action = meta.EventActionDelete
+		srcevent.Data = []meta.EventData{
+			{
+				PreData: oldContent,
+			},
+		}
+		err = cli.EventC.Push(ctx, srcevent)
 		if err != nil {
-			blog.Error("create event error:%v", err)
+			blog.Errorf("create event error:%v", err)
+			return err
 		}
 	}
 
@@ -128,7 +136,7 @@ func (cli *Service) delModuleConfigSet(ctx context.Context, db dal.RDB, input ma
 	var hostRelations []interface{}
 	getErr = db.Table(common.BKTableNameModuleHostConfig).Find(params).Limit(common.BKNoLimit).All(ctx, &hostRelations)
 	if getErr != nil {
-		blog.Error("fail to exist relation host error: %v", getErr)
+		blog.Errorf("fail to exist relation host error: %v", getErr)
 		return getErr
 	}
 
@@ -155,14 +163,24 @@ func (cli *Service) delModuleConfigSet(ctx context.Context, db dal.RDB, input ma
 	if 0 < len(addIdleModuleDatas) {
 		err := db.Table(common.BKTableNameModuleHostConfig).Insert(ctx, addIdleModuleDatas)
 		if err != nil {
-			blog.Error("fail to exist relation host error: %v", err)
+			blog.Errorf("fail to exist relation host error: %v", err)
 			return err
 		}
 		//推送新加到空闲机器的关系
 		for _, row := range addIdleModuleDatas {
-			err = ec.InsertEvent(meta.EventTypeRelation, common.BKInnerObjIDHost, meta.EventActionCreate, nil, row)
+			srcevent := eventclient.NewEventWithHeader(req.Request.Header)
+			srcevent.EventType = meta.EventTypeRelation
+			srcevent.ObjType = common.BKInnerObjIDHost
+			srcevent.Action = meta.EventActionCreate
+			srcevent.Data = []meta.EventData{
+				{
+					CurData: row,
+				},
+			}
+			err = cli.EventC.Push(ctx, srcevent)
 			if err != nil {
-				blog.Error("create event error:%v", err)
+				blog.Errorf("create event error:%v", err)
+				return err
 			}
 		}
 

@@ -117,7 +117,7 @@ func (c *classification) DeleteClassification(params types.ContextParams, id int
 		}
 
 		if 0 != len(objs) {
-			blog.Errorf("[operation-cls] the classification(%s) has some obejcts, forbidden to delete", cls.GetID())
+			blog.Errorf("[operation-cls] the classification(%s) has some obejcts, forbidden to delete", cls.Classify().ClassificationID)
 			return params.Err.Error(common.CCErrTopoObjectClassificationHasObject)
 		}
 	}
@@ -145,10 +145,10 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("[operation-cls] failed to search the clssificaiton by the condition(%#v), error info is %s", cond.ToMapStr(), rsp.ErrMsg)
+		blog.Errorf("[operation-cls] failed to search the classification by the condition(%#v), error info is %s", cond.ToMapStr(), rsp.ErrMsg)
 		return nil, params.Err.Error(rsp.Code)
 	}
-	//fmt.Println("rsp.data:", rsp.Data)
+
 	for idx, clsItem := range rsp.Data {
 		rsp.Data[idx].AsstObjects = make(map[string][]metadata.Object)
 		for _, objItem := range clsItem.Objects {
@@ -158,9 +158,6 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 			}
 
 			for _, asstItem := range asstItems {
-				if common.BKChildStr == asstItem.ObjectAttID {
-					continue
-				}
 
 				searchObjCond := condition.CreateCondition()
 				searchObjCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
@@ -171,7 +168,7 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 				}
 
 				for _, obj := range asstObjs {
-					rsp.Data[idx].AsstObjects[objItem.ObjectID] = append(rsp.Data[idx].AsstObjects[objItem.ObjectID], obj.Origin())
+					rsp.Data[idx].AsstObjects[objItem.ObjectID] = append(rsp.Data[idx].AsstObjects[objItem.ObjectID], obj.Object())
 				}
 
 			}
@@ -202,8 +199,12 @@ func (c *classification) FindClassification(params types.ContextParams, cond con
 func (c *classification) UpdateClassification(params types.ContextParams, data frtypes.MapStr, id int64, cond condition.Condition) error {
 
 	cls := c.modelFactory.CreaetClassification(params)
+	if _, err := cls.Parse(data); err != nil {
+		blog.Errorf("update classification, but parse classification failed, err：%v", err)
+		return err
+	}
+
 	data.Set("id", id)
-	cls.Parse(data)
 
 	err := cls.Update(data)
 	if nil != err {

@@ -61,6 +61,9 @@ type RDB interface {
 type Table interface {
 	// Find 查询多个并反序列化到 Result
 	Find(filter Filter) Find
+	// Aggregate 聚合查询
+	AggregateOne(ctx context.Context, pipeline interface{}, result interface{}) error
+	AggregateAll(ctx context.Context, pipeline interface{}, result interface{}) error
 	// Insert 插入数据, docs 可以为 单个数据 或者 多个数据
 	Insert(ctx context.Context, docs interface{}) error
 	// Update 更新数据

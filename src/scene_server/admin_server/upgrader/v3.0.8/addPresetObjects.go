@@ -168,17 +168,31 @@ func getObjectDesData(ownerID string) []*metadata.ObjectDes {
 	return dataRows
 }
 
-func getAddAsstData(ownerID string) []*metadata.Association {
-	dataRows := []*metadata.Association{
-		&metadata.Association{OwnerID: ownerID, ObjectID: common.BKInnerObjIDSet, ObjectAttID: common.BKChildStr, AsstObjID: common.BKInnerObjIDApp},
-		&metadata.Association{OwnerID: ownerID, ObjectID: common.BKInnerObjIDModule, ObjectAttID: common.BKChildStr, AsstObjID: common.BKInnerObjIDSet},
-		&metadata.Association{OwnerID: ownerID, ObjectID: common.BKInnerObjIDHost, ObjectAttID: common.BKChildStr, AsstObjID: common.BKInnerObjIDModule},
-		&metadata.Association{OwnerID: ownerID, ObjectID: common.BKInnerObjIDHost, ObjectAttID: common.BKCloudIDField, AsstObjID: common.BKInnerObjIDPlat},
+// Association for purpose of this structure not change by other, copy here
+type Association struct {
+	ID               int64  `field:"id" json:"id" bson:"id"`
+	ObjectID         string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
+	OwnerID          string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	AsstForward      string `field:"bk_asst_forward" json:"bk_asst_forward" bson:"bk_asst_forward"`
+	AsstObjID        string `field:"bk_asst_obj_id" json:"bk_asst_obj_id" bson:"bk_asst_obj_id"`
+	AsstName         string `field:"bk_asst_name" json:"bk_asst_name" bson:"bk_asst_name"`
+	ObjectAttID      string `field:"bk_object_att_id" json:"bk_object_att_id" bson:"bk_object_att_id"`
+	ClassificationID string `field:"bk_classification_id" bson:"-"`
+	ObjectIcon       string `field:"bk_obj_icon" bson:"-"`
+	ObjectName       string `field:"bk_obj_name" bson:"-"`
+}
+
+func getAddAsstData(ownerID string) []Association {
+	dataRows := []Association{
+		{OwnerID: ownerID, ObjectID: common.BKInnerObjIDSet, ObjectAttID: common.BKChildStr, AsstObjID: common.BKInnerObjIDApp},
+		{OwnerID: ownerID, ObjectID: common.BKInnerObjIDModule, ObjectAttID: common.BKChildStr, AsstObjID: common.BKInnerObjIDSet},
+		{OwnerID: ownerID, ObjectID: common.BKInnerObjIDHost, ObjectAttID: common.BKChildStr, AsstObjID: common.BKInnerObjIDModule},
+		{OwnerID: ownerID, ObjectID: common.BKInnerObjIDHost, ObjectAttID: common.BKCloudIDField, AsstObjID: common.BKInnerObjIDPlat},
 	}
 	return dataRows
 }
 
-func getObjAttDescData(ownerID string) []*metadata.Attribute {
+func getObjAttDescData(ownerID string) []*Attribute {
 
 	predataRows := AppRow()
 	predataRows = append(predataRows, SetRow()...)

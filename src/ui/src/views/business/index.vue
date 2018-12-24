@@ -1,7 +1,11 @@
 <template>
     <div class="business-layout">
         <div class="business-options clearfix">
-            <bk-button class="fl" type="primary" @click="handleCreate">{{$t("Inst['立即创建']")}}</bk-button>
+            <bk-button class="fl" type="primary"
+                :disabled="!authority.includes('update')"
+                @click="handleCreate">
+                {{$t("Inst['立即创建']")}}
+            </bk-button>
             <div class="options-button fr">
                 <bk-button class="button-history" v-tooltip.bottom="$t('Common[\'查看删除历史\']')" @click="routeToHistory">
                     <i class="icon-cc-history2"></i>
@@ -54,6 +58,7 @@
             <bk-tab :active-name.sync="tab.active" slot="content">
                 <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-details v-if="attribute.type === 'details'"
+                        :authority="authority"
                         :properties="properties"
                         :propertyGroups="propertyGroups"
                         :inst="attribute.inst.details"
@@ -64,6 +69,7 @@
                     </cmdb-details>
                     <cmdb-form v-else-if="['update', 'create'].includes(attribute.type)"
                         ref="form"
+                        :authority="authority"
                         :properties="properties"
                         :propertyGroups="propertyGroups"
                         :inst="attribute.inst.edit"
@@ -76,7 +82,8 @@
                     <cmdb-relation
                         v-if="tab.active === 'relevance'"
                         obj-id="biz"
-                        :inst-id="attribute.inst.details['bk_biz_id']">
+                        :authority="authority"
+                        :inst="attribute.inst.details">
                     </cmdb-relation>
                 </bk-tabpanel>
                 <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')" :show="attribute.type !== 'create'">
@@ -158,6 +165,9 @@
             ...mapGetters('userCustom', ['usercustom']),
             customBusinessColumns () {
                 return this.usercustom['biz_table_columns'] || []
+            },
+            authority () {
+                return this.$store.getters['userPrivilege/modelAuthority']('biz')
             }
         },
         watch: {
@@ -175,6 +185,7 @@
             }
         },
         async created () {
+            this.$store.commit('setHeaderTitle', this.$t('Nav["业务"]'))
             try {
                 this.properties = await this.searchObjectAttribute({
                     params: {
@@ -251,7 +262,7 @@
             },
             handleRowClick (item) {
                 this.slider.show = true
-                this.slider.title = `${this.$t("Common['编辑']")} ${item['bk_biz_name']}`
+                this.slider.title = item['bk_biz_name']
                 this.attribute.inst.details = item
                 this.attribute.type = 'details'
             },

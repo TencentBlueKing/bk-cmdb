@@ -14,7 +14,12 @@
     import vRecently from './children/recently'
     import vClassify from './children/classify'
     import getScrollbarWidth from '@/utils/scrollbar-width.js'
-    import { addMainScrollListener, removeMainScrollListener, addMainResizeListener, removeMainResizeListener } from '@/utils/main-scroller'
+    import {
+        addMainScrollListener,
+        removeMainScrollListener,
+        addMainResizeListener,
+        removeMainResizeListener
+    } from '@/utils/main-scroller'
     export default {
         components: {
             vSearch,
@@ -30,10 +35,11 @@
             }
         },
         beforeRouteLeave (to, from, next) {
-            this.$refs.recently.updateRecently(to.path)
+            this.$refs.recently.updateRecently(to)
             next()
         },
         created () {
+            this.$store.commit('setHeaderTitle', this.$t('Index["首页"]'))
             const calcCopyrightPosition = ($scroller) => {
                 const scrollerRect = $scroller.getBoundingClientRect()
                 const scrollerHeight = scrollerRect.height
