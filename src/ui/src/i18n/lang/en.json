@@ -365,7 +365,9 @@
         "确认要启用该模型？": "Are you sure you want to enable this model?",
         "确认要停用该模型？": "Are you sure you want to disable this model?",
         "确认要删除该模型？": "Are you sure you want to delete this model?",
-        "所有更改已自动保存": "All changes saved automatically"
+        "所有更改已自动保存": "All changes saved automatically",
+        "启用模型": "Enable Models",
+        "停用模型": "Disabled Models"
     },
     "HostResourcePool": {
         "资源池": "Resource Pool",
