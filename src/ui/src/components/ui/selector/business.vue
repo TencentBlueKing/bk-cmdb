@@ -36,6 +36,7 @@
                 window.localStorage.setItem('selectedBusiness', localSelected)
                 if (prevSelected !== '') {
                     window.location.reload()
+                    return
                 }
                 if (this.$route.meta.requireBusiness) {
                     this.$http.setHeader('bk_biz_id', localSelected)
