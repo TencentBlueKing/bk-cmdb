@@ -10,7 +10,7 @@
                     <i :class="['recently-icon', recentlyModels[index - 1]['bk_obj_icon']]"></i>
                     <div class="recently-info">
                         <strong class="recently-name">{{recentlyModels[index - 1]['bk_obj_name']}}</strong>
-                        <span class="recently-inst">数量：{{getRecentlyCount(recentlyModels[index - 1])}}</span>
+                        <span class="recently-inst">{{$t('Index["数量"]')}}：{{getRecentlyCount(recentlyModels[index - 1])}}</span>
                     </div>
                     <i class="recently-delete bk-icon icon-close" @click.stop="deleteRecently(recentlyModels[index - 1])"></i>
                 </template>

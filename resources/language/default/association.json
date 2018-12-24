@@ -1,0 +1,31 @@
+{
+    "unique_kind_name_run": "运行",
+    "unique_kind_src_to_dest_run": "运行于",
+    "unique_kind_dest_to_src_run": "运行",
+    
+    "unique_kind_name_group": "组成",
+    "unique_kind_src_to_dest_group": "组成",
+    "unique_kind_dest_to_src_group": "组成于",
+
+    "unique_kind_name_default": "默认关联",
+    "unique_kind_src_to_dest_default": "关联",
+    "unique_kind_dest_to_src_default": "关联",
+
+    "unique_kind_name_cover": "覆盖",
+    "unique_kind_src_to_dest_cover": "覆盖",
+    "unique_kind_dest_to_src_cover": "被覆盖",
+
+    "unique_kind_name_connect": "上联",
+    "unique_kind_src_to_dest_connect": "上联",
+    "unique_kind_dest_to_src_connect": "下联",
+
+    "unique_kind_name_bk_mainline": "拓扑组成",
+    "unique_kind_src_to_dest_bk_mainline": "组成",
+    "unique_kind_dest_to_src_bk_mainline": "组成于",
+
+    "unique_kind_name_belong": "属于",
+    "unique_kind_src_to_dest_belong": "属于",
+    "unique_kind_dest_to_src_belong": "包含",
+    
+    "": ""
+}
