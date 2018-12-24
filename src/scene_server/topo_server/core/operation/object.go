@@ -295,7 +295,6 @@ func (o *object) FindObjectBatch(params types.ContextParams, data frtypes.MapStr
 func (o *object) FindSingleObject(params types.ContextParams, objectID string) (model.Object, error) {
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(objectID)
 
 	objs, err := o.FindObject(params, cond)
@@ -390,6 +389,30 @@ func (o *object) CanDelete(params types.ContextParams, targetObj model.Object) e
 	if 0 != findInstResponse.Count {
 		blog.Errorf("the object [%s] has been instantiated and cannot be deleted", targetObj.GetID())
 		return params.Err.Errorf(common.CCErrTopoObjectHasSomeInstsForbiddenToDelete, targetObj.GetID())
+	}
+
+	or := make([]interface{}, 0)
+	or = append(or, frtypes.MapStr{common.BKObjIDField: targetObj.GetID()})
+	or = append(or, frtypes.MapStr{common.AssociatedObjectIDField: targetObj.GetID()})
+
+	cond = condition.CreateCondition()
+	cond.NewOR().Array(or)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+
+	assoResult, err := o.asst.SearchObject(params, &metadata.SearchAssociationObjectRequest{Condition: cond.ToMapStr()})
+	if err != nil {
+		blog.Errorf("check object[%s] can be deleted, but get object associate info failed, err: %v", targetObj.GetID(), err)
+		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if !assoResult.Result {
+		blog.Errorf("check if object[%s] can be deleted, but get object associate info failed, err: %v", targetObj.GetID(), err)
+		return params.Err.Error(assoResult.Code)
+	}
+
+	if len(assoResult.Data) != 0 {
+		blog.Errorf("check if object[%s] can be deleted, but object has already associate to another one.", targetObj.GetID())
+		return params.Err.Error(common.CCErrorTopoObjectHasAlreadyAssociated)
 	}
 
 	return nil

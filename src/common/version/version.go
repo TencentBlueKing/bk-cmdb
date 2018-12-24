@@ -22,6 +22,7 @@ import (
 var (
 	CCVersion       = "17.03.28"
 	CCTag           = "2017-03-28 Release"
+	CCBRANCH        = ""
 	CCBuildTime     = "2017-03-28 19:50:00"
 	CCGitHash       = "unknown"
 	CCRunMode       = "product" // product, test, dev
@@ -45,9 +46,10 @@ func ShowVersion() {
 func GetVersion() string {
 	version := fmt.Sprintf(`Version  : %s
 Tag      : %s
+Branch   : %s
 BuildTime: %s
 GitHash  : %s
 RunMode  : %s
-`, CCVersion, CCTag, CCBuildTime, CCGitHash, CCRunMode)
+`, CCVersion, CCTag, CCBRANCH, CCBuildTime, CCGitHash, CCRunMode)
 	return version
 }

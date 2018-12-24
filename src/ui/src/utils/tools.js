@@ -64,6 +64,8 @@ export function getPropertyText (property, item) {
         propertyValue = formatTime(propertyValue, propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
     } else if (propertyType === 'objuser') {
         propertyValue = getFullName(propertyValue)
+    } else if (propertyType === 'foreignkey') {
+        propertyValue = (propertyValue || []).map(inst => inst['bk_inst_name']).join(',')
     }
     return propertyValue || '--'
 }
