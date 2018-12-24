@@ -170,6 +170,9 @@
             },
             multiple () {
                 return this.currentOption.mapping !== '1:1'
+            },
+            isSource () {
+                return this.currentOption['bk_obj_id'] === this.objId
             }
         },
         watch: {
@@ -203,8 +206,7 @@
                         'bk_supplier_account': this.supplierAccount
                     },
                     config: {
-                        requestId: `post_searchObjectAttribute_${this.currentAsstObj}`,
-                        fromCache: true
+                        requestId: `post_searchObjectAttribute_${this.currentAsstObj}`
                     }
                 }).then(properties => {
                     this.properties = properties
@@ -252,31 +254,63 @@
                 })
             },
             getObjAssociation () {
-                return this.searchObjectAssociation({
-                    params: {
-                        condition: {
-                            'bk_obj_id': this.objId
+                return Promise.all([
+                    this.searchObjectAssociation({
+                        params: {
+                            condition: {
+                                'bk_obj_id': this.objId
+                            }
+                        },
+                        config: {
+                            requestId: 'getSourceAssocaition',
+                            fromCache: true
                         }
-                    }
-                }).then(data => {
-                    this.associationObject = data
-                    return data
+                    }),
+                    this.searchObjectAssociation({
+                        params: {
+                            condition: {
+                                'bk_asst_obj_id': this.objId
+                            }
+                        },
+                        config: {
+                            requestId: 'getTargetAssocaition',
+                            fromCache: true
+                        }
+                    }),
+                    this.$store.dispatch('objectMainLineModule/searchMainlineObject', {requestId: 'getMainLineModels', fromCache: true})
+                ]).then(([dataAsSource, dataAsTarget, mainLineModels]) => {
+                    mainLineModels = mainLineModels.filter(model => !['biz', 'host'].includes(model['bk_obj_id']))
+                    dataAsSource = this.getAvailableAssociation(dataAsSource, mainLineModels)
+                    dataAsTarget = this.getAvailableAssociation(dataAsTarget, mainLineModels)
+                    this.associationObject = [...dataAsSource, ...dataAsTarget]
+                })
+            },
+            getAvailableAssociation (data, mainLine) {
+                return data.filter(relation => {
+                    return !mainLine.some(model => [relation['bk_obj_id'], relation['bk_asst_obj_id']].includes(model['bk_obj_id']))
                 })
             },
             setAssociationOptions () {
                 const options = this.associationObject.map(option => {
+                    const isSource = option['bk_obj_id'] === this.objId
                     const type = this.associationType.find(type => type['bk_asst_id'] === option['bk_asst_id'])
-                    const model = this.$allModels.find(model => model['bk_obj_id'] === option['bk_asst_obj_id'])
+                    const model = this.$allModels.find(model => {
+                        if (isSource) {
+                            return model['bk_obj_id'] === option['bk_asst_obj_id']
+                        } else {
+                            return model['bk_obj_id'] === option['bk_obj_id']
+                        }
+                    })
                     return {
                         ...option,
-                        '_label': `${type['src_des']}-${model['bk_obj_name']}`
+                        '_label': `${isSource ? type['src_des'] : type['dest_des']}-${model['bk_obj_name']}`
                     }
                 })
                 this.options = options
             },
             async handleSelectObj (asstId, option) {
                 this.currentOption = option
-                this.currentAsstObj = option['bk_asst_obj_id']
+                this.currentAsstObj = option['bk_obj_id'] === this.objId ? option['bk_asst_obj_id'] : option['bk_obj_id']
                 this.table.pagination.current = 1
                 this.table.pagination.count = 0
                 this.table.list = []
@@ -289,13 +323,15 @@
             },
             getExistInstAssociation () {
                 const option = this.currentOption
+                const isSource = this.isSource
                 return this.searchInstAssociation({
                     params: {
                         condition: {
                             'bk_asst_id': option['bk_asst_id'],
                             'bk_obj_asst_id': option['bk_obj_asst_id'],
-                            'bk_obj_id': this.objId,
-                            'bk_asst_obj_id': option['bk_asst_obj_id']
+                            'bk_obj_id': isSource ? this.objId : option['bk_obj_id'],
+                            'bk_asst_obj_id': isSource ? option['bk_asst_obj_id'] : this.objId,
+                            [`${isSource ? 'bk_inst_id' : 'bk_asst_inst_id'}`]: this.instId
                         }
                     }
                 }).then(data => {
@@ -303,7 +339,12 @@
                 })
             },
             isAssociated (inst) {
-                return this.existInstAssociation.some(exist => exist['bk_asst_inst_id'] === inst[this.instanceIdKey])
+                return this.existInstAssociation.some(exist => {
+                    if (this.isSource) {
+                        return exist['bk_asst_inst_id'] === inst[this.instanceIdKey]
+                    }
+                    return exist['bk_inst_id'] === inst[this.instanceIdKey]
+                })
             },
             async updateAssociation (instId, updateType = 'new') {
                 try {
@@ -327,15 +368,20 @@
                 return this.createInstAssociation({
                     params: {
                         'bk_obj_asst_id': this.currentOption['bk_obj_asst_id'],
-                        'bk_inst_id': this.instId,
-                        'bk_asst_inst_id': instId
+                        'bk_inst_id': this.isSource ? this.instId : instId,
+                        'bk_asst_inst_id': this.isSource ? instId : this.instId
                     }
                 })
             },
             deleteAssociation (instId) {
-                const instAssociation = this.existInstAssociation.find(exist => exist['bk_asst_inst_id'] === instId) || {}
+                const instAssociation = this.existInstAssociation.find(exist => {
+                    if (this.isSource) {
+                        return exist['bk_asst_inst_id'] === instId
+                    }
+                    return exist['bk_inst_id'] === instId
+                })
                 return this.deleteInstAssociation({
-                    id: instAssociation.id
+                    id: (instAssociation || {}).id
                 })
             },
             beforeUpdate (event, instId, updateType = 'new') {
