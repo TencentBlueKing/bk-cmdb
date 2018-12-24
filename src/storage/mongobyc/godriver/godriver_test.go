@@ -19,7 +19,6 @@ import (
 	"configcenter/src/storage/mongobyc"
 	"configcenter/src/storage/mongobyc/godriver"
 
-	"github.com/mongodb/mongo-go-driver/bson/objectid"
 	"github.com/mongodb/mongo-go-driver/x/bsonx"
 	"github.com/stretchr/testify/require"
 )

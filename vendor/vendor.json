@@ -2,6 +2,7 @@
 	"comment": "",
 	"ignore": "test",
 	"package": [
+		
 		{
 			"checksumSHA1": "cFz6PdLyqjSwv7wWrgkhZa4UM08=",
 			"path": "github.com/go-playground/validator",
@@ -20,7 +21,6 @@
 			"revision": "2e65f85255dbc3072edf28d6b5b8efc472979f5a",
 			"revisionTime": "2018-05-18T05:39:59Z"
 		},
-
 		{
 			"checksumSHA1": "uE78U34xjlJ815TX/bhLROkjmeI=",
 			"path": "github.com/xdg/scram",
@@ -36,20 +36,26 @@
 		{
 			"checksumSHA1": "1MGpGDQqnUoRpv7VEcQrXOBydXE=",
 			"path": "golang.org/x/crypto/pbkdf2",
-			"revision": "3d3f9f413869b949e48070b5bc593aa22cc2b8f2",
-			"revisionTime": "2018-11-10T06:03:37Z"
+			"revision": "505ab145d0a99da450461ae2c1a9f6cd10d1f447",
+			"revisionTime": "2018-09-26T22:07:39Z"
 		},
 		{
-			"checksumSHA1": "2VvivdoAS3QzvAqHCOXDMPBlIDk=",
+			"checksumSHA1": "tI1YsCNEjyDW/aGNtunZDyjN9MA=",
 			"path": "golang.org/x/sync/semaphore",
-			"revision": "42b317875d0fa942474b76e1b46a6060d720ae6e",
-			"revisionTime": "2018-11-08T00:20:06Z"
+			"revision": "37e7f081c4d4c64e13b10787722085407fe5d15f",
+			"revisionTime": "2018-09-24T18:15:43Z"
 		},
 		{
-			"checksumSHA1": "lBB8oUHgIK0RUuDchkQVfMXJQh0=",
+			"checksumSHA1": "o3YChxWLvyCmkAn/ZNBj9HC9zKw=",
+			"path": "golang.org/x/text/transform",
+			"revision": "17bcc049122f272a32787ba38073ee47433023e9",
+			"revisionTime": "2018-12-10T23:38:19Z"
+		},
+		{
+			"checksumSHA1": "vAScJLvb0ucuuclyN9vmJUyWTBA=",
 			"path": "golang.org/x/text/unicode/norm",
-			"revision": "6f44c5a2ea40ee3593d98cdcc905cc1fdaa660e2",
-			"revisionTime": "2018-10-29T18:00:05Z"
+			"revision": "17bcc049122f272a32787ba38073ee47433023e9",
+			"revisionTime": "2018-12-10T23:38:19Z"
 		}
 	],
 	"rootPath": "configcenter"
