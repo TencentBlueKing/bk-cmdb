@@ -27,7 +27,7 @@ import (
 
 // get the object attributes
 func (lgc *Logics) GetObjectAttributes(ctx context.Context, ownerID, objID string, page meta.BasePage) ([]meta.Attribute, errors.CCError) {
-	opt := hutil.NewOperation().WithOwnerID(ownerID).WithObjID(objID).MapStr()
+	opt := hutil.NewOperation().WithOwnerID(lgc.ownerID).WithObjID(objID).WithAttrComm().MapStr()
 	query := &meta.QueryCondition{
 		Condition: opt,
 	}
