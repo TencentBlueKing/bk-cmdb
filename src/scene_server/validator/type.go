@@ -21,8 +21,8 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-// IntOption integer option
-type IntOption struct {
+// MinMaxOption option for number
+type MinMaxOption struct {
 	Min string `bson:"min" json:"min"`
 	Max string `bson:"max" json:"max"`
 }
