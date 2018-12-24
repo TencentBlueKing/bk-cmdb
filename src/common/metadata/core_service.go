@@ -16,6 +16,14 @@ import (
 	"configcenter/src/common/mapstr"
 )
 
+// CreateModelAttributeGroup used to create a new group for some attributes
+type CreateModelAttributeGroup struct {
+	Data Group `json:"data"`
+}
+
+// SetModelAttributeGroup used to create a new group for  some attributes, if it is exists, then update it
+type SetModelAttributeGroup CreateModelAttributeGroup
+
 // CreateManyModelClassifiaction create many input params
 type CreateManyModelClassifiaction struct {
 	Data []Classification `json:"datas"`
