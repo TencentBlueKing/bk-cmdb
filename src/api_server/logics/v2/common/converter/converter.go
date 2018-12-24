@@ -21,17 +21,18 @@ import (
 	"strings"
 	"time"
 
-	"github.com/coccyx/timeparser"
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/api_server/logics/v2/common/defs"
 	"configcenter/src/api_server/logics/v2/common/utils"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	ccError "configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	"github.com/coccyx/timeparser"
+	"github.com/emicklei/go-restful"
 )
 
 // RespCommonResV2 turn the result without data into version V2
@@ -62,7 +63,20 @@ func RespSuccessV2(data interface{}, resp *restful.Response) {
 		RespFailV2(common.Json_Marshal_ERR, common.Json_Marshal_ERR_STR, resp)
 	}
 
-	blog.Debug("RespSuccessV2 data:%s", string(s))
+	io.WriteString(resp, string(s))
+}
+
+// RespFailV2Error convert the result of the failed data to V2
+func RespFailV2Error(err ccError.CCError, resp *restful.Response) {
+	res_v2 := make(map[string]interface{})
+
+	if ccErr, ok := err.(ccError.CCErrorCoder); ok {
+		res_v2["code"] = ccErr.GetCode()
+	}
+	res_v2["result"] = false
+	res_v2["msg"] = err.Error()
+	res_v2["extmsg"] = nil
+	s, _ := json.Marshal(res_v2)
 	io.WriteString(resp, string(s))
 }
 
@@ -149,7 +163,6 @@ func ResToV2ForRoleApp(resDataV3 metadata.InstResult, uin string, roleArr []stri
 //ResToV2ForModuleList: convert cc v3 json data to cc v2 for module
 func ResToV2ForModuleList(result bool, message string, data interface{}) (interface{}, error) {
 
-	blog.Debug("respV3:%v", data)
 	resDataV2 := make([]string, 0)
 	resDataV3, err := getResDataV3(result, message, data)
 	if nil != err {
@@ -167,17 +180,9 @@ func ResToV2ForModuleList(result bool, message string, data interface{}) (interf
 }
 
 //ResToV2ForModuleList: convert cc v3 json data to cc v2 for module map list
-func ResToV2ForModuleMapList(result bool, message string, data interface{}) (interface{}, error) {
-	resDataV2 := make([]map[string]interface{}, 0)
-	resDataV3, err := getResDataV3(result, message, data)
-	if nil != err {
-		return nil, err
-	}
-
-	resDataInfoV3 := (resDataV3.(map[string]interface{}))["info"].([]interface{})
-
-	for _, item := range resDataInfoV3 {
-		itemMap := item.(map[string]interface{})
+func ResToV2ForModuleMapList(data metadata.InstResult) ([]mapstr.MapStr, error) {
+	resDataV2 := make([]mapstr.MapStr, 0)
+	for _, itemMap := range data.Info {
 		convMap, err := convertFieldsIntToStr(itemMap, []string{common.BKSetIDField, common.BKModuleIDField, common.BKAppIDField})
 		if nil != err {
 			return nil, err
@@ -194,7 +199,7 @@ func ResToV2ForModuleMapList(result bool, message string, data interface{}) (int
 		}
 		moduleType = fmt.Sprintf("%v", moduleType)
 
-		resDataV2 = append(resDataV2, map[string]interface{}{
+		resDataV2 = append(resDataV2, mapstr.MapStr{
 			"ModuleID":      convMap[common.BKModuleIDField],
 			"ApplicationID": convMap[common.BKAppIDField],
 			"ModuleName":    itemMap[common.BKModuleNameField],
@@ -241,19 +246,9 @@ func ResToV2ForSetList(result bool, message string, data metadata.InstResult) (i
 }
 
 //ResToV2ForPlatList: convert cc v3 json data to cc v2 for plat
-func ResToV2ForPlatList(result bool, message string, data interface{}) (interface{}, error) {
-	blog.Debug("ResToV2ForPlatList, input: %s", data)
-
+func ResToV2ForPlatList(data metadata.InstResult) (interface{}, error) {
 	resDataV2 := make([]map[string]interface{}, 0)
-
-	resDataV3, err := getResDataV3(result, message, data)
-	if nil != err {
-		return nil, err
-	}
-	resDataInfoV3 := (resDataV3.(map[string]interface{}))["info"].([]interface{})
-
-	for _, item := range resDataInfoV3 {
-		itemMap := item.(map[string]interface{})
+	for _, itemMap := range data.Info {
 		convMap, err := convertFieldsIntToStr(itemMap, []string{common.BKCloudIDField})
 		if nil != err {
 			return nil, err
@@ -482,27 +477,27 @@ func ResToV2ForCustomerGroupResult(result bool, message string, dataInfo interfa
 	for _, item := range resDataArrV3 {
 		itemMap, ok := item.(map[string]interface{})
 		if !ok {
-			blog.Error("ResToV2ForCustomerGroupResult data hostinfo item errors, %v", item)
+			blog.Errorf("ResToV2ForCustomerGroupResult data hostinfo item errors, %v", item)
 			return nil, 0, errors.New("data format errors")
 		}
 		host, ok := itemMap[common.BKInnerObjIDHost].(map[string]interface{})
 		if !ok {
-			blog.Error("ResToV2ForCustomerGroupResult data hostinfo  host item errors, %v", itemMap)
+			blog.Errorf("ResToV2ForCustomerGroupResult data hostinfo  host item errors, %v", itemMap)
 			return nil, 0, errors.New("data format errors")
 		}
 		modules, ok := itemMap[common.BKInnerObjIDModule].([]interface{})
 		if !ok {
-			blog.Error("ResToV2ForCustomerGroupResult data hostinfo  module item errors, %v", itemMap)
+			blog.Errorf("ResToV2ForCustomerGroupResult data hostinfo  module item errors, %v", itemMap)
 			return nil, 0, errors.New("data format errors")
 		}
 		sets, ok := itemMap[common.BKInnerObjIDSet].([]interface{})
 		if !ok {
-			blog.Error("ResToV2ForCustomerGroupResult data hostinfo set item errors, %v", itemMap)
+			blog.Errorf("ResToV2ForCustomerGroupResult data hostinfo set item errors, %v", itemMap)
 			return nil, 0, errors.New("data format errors")
 		}
 		innerIP, _ := host[common.BKHostInnerIPField]
 		if !ok {
-			blog.Error("ResToV2ForCustomerGroupResult data hostinfo host innerip item errors, %v", itemMap)
+			blog.Errorf("ResToV2ForCustomerGroupResult data hostinfo host innerip item errors, %v", itemMap)
 			return nil, 0, errors.New("data format errors")
 		}
 		hostName, _ := host[common.BKHostNameField]
@@ -512,7 +507,7 @@ func ResToV2ForCustomerGroupResult(result bool, message string, dataInfo interfa
 			for _, module := range modules {
 				moduleMap, ok := module.(map[string]interface{})
 				if false == ok {
-					blog.Error("ResToV2ForCustomerGroupResult data hostinfo  module item errors, %v", itemMap)
+					blog.Errorf("ResToV2ForCustomerGroupResult data hostinfo  module item errors, %v", itemMap)
 					return nil, 0, errors.New("data format errors")
 				}
 				moduleName, _ = moduleMap[common.BKModuleNameField].(string)
@@ -524,7 +519,7 @@ func ResToV2ForCustomerGroupResult(result bool, message string, dataInfo interfa
 			for _, set := range sets {
 				setMap, ok := set.(map[string]interface{})
 				if false == ok {
-					blog.Error("ResToV2ForCustomerGroupResult data hostinfo set item errors, %v", itemMap)
+					blog.Errorf("ResToV2ForCustomerGroupResult data hostinfo set item errors, %v", itemMap)
 					return nil, 0, errors.New("data format errors")
 				}
 				setName, _ = setMap[common.BKSetNameField].(string)
@@ -556,7 +551,6 @@ func ResToV2ForCustomerGroupResult(result bool, message string, dataInfo interfa
 
 func ResToV2ForHostDataList(result bool, message string, data interface{}) (common.KvMap, error) {
 	resDataV3, err := getResDataV3(result, message, data)
-	blog.Debug("resDataV3:%v", resDataV3)
 	if nil != err {
 		return nil, err
 	}
@@ -677,7 +671,7 @@ func GeneralV2Data(data interface{}) interface{} {
 		return ""
 	}
 
-	return fmt.Sprintf("%v", data)
+	return convToV2ValStr(data) //fmt.Sprintf("%v", data)
 
 }
 
@@ -766,8 +760,8 @@ func convHostHardInfo(hostID int64, innerIP string, host mapstr.MapStr) (hostHar
 
 func convMapInterface(data map[string]interface{}) map[string]interface{} {
 	mapItem := make(map[string]interface{})
-	for key, val := range data {
-		key = ConverterV3Fields(key, "")
+	for v3key, val := range data {
+		key := ConverterV3Fields(v3key, "")
 		if key == "CreateTime" || key == "LastTime" || key == common.CreateTimeField || key == common.LastTimeField {
 			ts, ok := val.(time.Time)
 			if ok {
@@ -807,8 +801,42 @@ func convMapInterface(data map[string]interface{}) map[string]interface{} {
 					mapItem[key] = realVal
 					mapItem["OSType"] = realVal
 				}
+			case nil:
+				mapItem[key] = ""
 			default:
 				mapItem[key] = realVal
+			}
+
+		} else if v3key == common.BKCloudIDField {
+			switch rawVal := val.(type) {
+			case []mapstr.MapStr:
+				if len(rawVal) == 0 {
+					mapItem[key] = ""
+				}
+				strVal, err := rawVal[0].String(common.BKInstIDField)
+				if err != nil {
+					mapItem[key] = ""
+				}
+				mapItem[key] = strVal
+			case []interface{}:
+				if len(rawVal) == 0 {
+					mapItem[key] = ""
+				}
+				cloudInfo, err := mapstr.NewFromInterface(rawVal[0])
+				if err != nil {
+					mapItem[key] = ""
+				}
+				strVal, err := cloudInfo.String(common.BKInstIDField)
+				if err != nil {
+					mapItem[key] = ""
+				}
+				mapItem[key] = strVal
+			default:
+				intVal, err := util.GetInt64ByInterface(rawVal)
+				if err != nil {
+					mapItem[key] = ""
+				}
+				mapItem[key] = strconv.FormatInt(intVal, 10)
 			}
 
 		} else {
@@ -825,7 +853,7 @@ func getOneLevelData(data []interface{}, appID interface{}) []map[string]interfa
 	for _, item := range data {
 		itemMap, ok := item.(map[string]interface{})
 		if false == ok {
-			blog.Error("Assert error item is not map[string]interface{},item %v", item)
+			blog.Errorf("Assert error item is not map[string]interface{},item %v", item)
 			continue
 		}
 		dataTemp := make(map[string]interface{})
@@ -977,14 +1005,13 @@ func getOneProcData(data interface{}, defLang language.DefaultCCLanguageIf) inte
 //convertFieldsNilToString  convertor nil to empty string in map field
 func convertFieldsNilToString(itemMap map[string]interface{}, fields []string) map[string]interface{} {
 
-	blog.Debug("fields %v , itemMap: %v", fields, itemMap)
 	for _, field := range fields {
 
 		val, ok := itemMap[field]
 		if !ok || nil == val {
 			itemMap[field] = ""
 		} else {
-			itemMap[field] = fmt.Sprintf("%v", val)
+			itemMap[field] = convToV2ValStr(val) //fmt.Sprintf("%v", val)
 		}
 	}
 
@@ -1118,13 +1145,12 @@ func convertToV2Time(val interface{}) string {
 //  convertToString interface{} to string
 func convertToString(itemMap map[string]interface{}) map[string]interface{} {
 	tempMap := make(map[string]interface{})
-	blog.Debug(" itemMap: %v", itemMap)
 	for key, val := range itemMap {
-		filedInt, err := util.GetIntByInterface(val)
+		filedInt, err := util.GetInt64ByInterface(val)
 		if nil != err {
 			blog.Errorf("convert field %s to number fail!value:%v", key, val)
 		}
-		tempMap[key] = strconv.Itoa(filedInt)
+		tempMap[key] = strconv.FormatInt(filedInt, 10)
 	}
 
 	return tempMap
@@ -1134,7 +1160,6 @@ func convertToString(itemMap map[string]interface{}) map[string]interface{} {
 func convertFieldsIntToStr(itemMap map[string]interface{}, fields []string) (map[string]interface{}, error) {
 
 	tempMap := make(map[string]interface{})
-	blog.Debug("fields %v , itemMap: %v", fields, itemMap)
 	for _, field := range fields {
 		item, ok := itemMap[field]
 		if !ok {
@@ -1149,12 +1174,12 @@ func convertFieldsIntToStr(itemMap map[string]interface{}, fields []string) (map
 		case string:
 		case nil:
 		default:
-			filedInt, err := util.GetIntByInterface(item)
+			filedInt, err := util.GetInt64ByInterface(item)
 			if nil != err {
-				blog.Debug("convert field %s to number fail!", field)
+				blog.Warnf("convert field %s to number fail!", field)
 				return nil, err
 			}
-			tempMap[field] = strconv.Itoa(filedInt)
+			tempMap[field] = strconv.FormatInt(filedInt, 10)
 		}
 
 	}
@@ -1210,10 +1235,50 @@ func getV2KeyVal(key string, val interface{}) (string, string) {
 			} else {
 				v2Val = ""
 			}
+		} else {
+			return v2Key, convToV2ValStr(val)
 		}
 	}
 
 	return v2Key, v2Val
+}
+
+func convToV2ValStr(val interface{}) string {
+	switch realVal := val.(type) {
+	case int:
+		return strconv.FormatInt(int64(realVal), 10)
+	case int8:
+		return strconv.FormatInt(int64(realVal), 10)
+	case int16:
+		return strconv.FormatInt(int64(realVal), 10)
+	case int32:
+		return strconv.FormatInt(int64(realVal), 10)
+	case int64:
+		return strconv.FormatInt(realVal, 10)
+	case uint:
+		return strconv.FormatInt(int64(realVal), 10)
+	case uint8:
+		return strconv.FormatInt(int64(realVal), 10)
+	case uint16:
+		return strconv.FormatInt(int64(realVal), 10)
+	case uint32:
+		return strconv.FormatInt(int64(realVal), 10)
+	case uint64:
+		return strconv.FormatInt(int64(realVal), 10)
+	case float32:
+		return strconv.FormatInt(int64(realVal), 10)
+	case float64:
+		return strconv.FormatInt(int64(realVal), 10)
+	case json.Number:
+		jsVal, err := realVal.Int64()
+		if err != nil {
+			return realVal.String()
+		}
+		return strconv.FormatInt(jsVal, 10)
+	case string:
+		return realVal
+	}
+	return fmt.Sprintf("%v", val)
 }
 
 func getFieldsMap(objType string) map[string]string {

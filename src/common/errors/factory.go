@@ -23,7 +23,7 @@ func New(dir string) (CCErrorIf, error) {
 
 	errcode, err := LoadErrorResourceFromDir(dir)
 	if nil != err {
-		//blog.Error("failed to load the error resource, error info is %s", err.Error())
+		//blog.Errorf("failed to load the error resource, error info is %s", err.Error())
 		return nil, err
 	}
 	tmp.Load(errcode)

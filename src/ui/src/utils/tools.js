@@ -64,6 +64,8 @@ export function getPropertyText (property, item) {
         propertyValue = formatTime(propertyValue, propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
     } else if (propertyType === 'objuser') {
         propertyValue = getFullName(propertyValue)
+    } else if (propertyType === 'foreignkey') {
+        propertyValue = (propertyValue || []).map(inst => inst['bk_inst_name']).join(',')
     }
     return propertyValue || '--'
 }
@@ -113,7 +115,7 @@ export function getInstFormValues (properties, inst = {}) {
     properties.forEach(property => {
         const propertyId = property['bk_property_id']
         const propertyType = property['bk_property_type']
-        if (['singleasst', 'multiasst'].includes(propertyType)) {
+        if (['singleasst', 'multiasst', 'foreignkey'].includes(propertyType)) {
             // const validAsst = (inst[propertyId] || []).filter(asstInst => asstInst.id !== '')
             // values[propertyId] = validAsst.map(asstInst => asstInst['bk_inst_id']).join(',')
         } else if (['date', 'time'].includes(propertyType)) {

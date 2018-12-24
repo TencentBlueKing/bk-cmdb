@@ -13,26 +13,31 @@
 package logics
 
 import (
-	"net/http"
+	"context"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"context"
-	"fmt"
 )
 
-func (lgc *Logics) IsPlatExist(pheader http.Header, cond interface{}) (bool, error) {
-	query := &metadata.QueryInput{
+func (lgc *Logics) IsPlatExist(ctx context.Context, cond mapstr.MapStr) (bool, errors.CCError) {
+
+	query := &metadata.QueryCondition{
 		Condition: cond,
-		Start:     0,
-		Limit:     1,
-		Sort:      common.BKAppIDField,
-		Fields:    common.BKAppIDField,
+		Limit:     metadata.SearchLimit{Offset: 0, Limit: 1},
+		Fields:    []string{common.BKCloudIDField},
 	}
 
-	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDPlat, pheader, query)
-	if err != nil || (err == nil && !result.Result) {
-		return false, fmt.Errorf("%v, %v", err, result.ErrMsg)
+	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDPlat, query)
+	if err != nil {
+		blog.Errorf("IsPlatExist http do error, err:%s, cond:%+v,rid:%s", err.Error(), cond, lgc.rid)
+		return false, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.Errorf("IsPlatExist http response error, err:%s, cond:%+v,rid:%s", err.Error(), cond, lgc.rid)
+		return false, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
 	if 1 == result.Data.Count {

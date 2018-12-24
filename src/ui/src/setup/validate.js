@@ -6,14 +6,14 @@ const customRules = {
     singlechar: {
         validate: value => {
             /* eslint-disable */
-            return /^([a-zA-Z0-9]|[\u4e00-\u9fa5]|[\(\)\+\-《》_,，；:;“”‘’。\."'\\\/\s])*$/.test(value)
+            return /^([a-zA-Z0-9]|[\u4e00-\u9fa5]|[\(\)\+\-《》_,，；:;“”‘’。@#\."'\\\/\s]){0,256}$/.test(value)
             /* eslint-enable */
         }
     },
     longchar: {
         validate: value => {
             /* eslint-disable */
-            return /^([a-zA-Z0-9]|[\u4e00-\u9fa5]|[\(\)\+\-《》_,，；:;“”‘’。\."'\\\/\s])*$/.test(value)
+            return /^([a-zA-Z0-9]|[\u4e00-\u9fa5]|[\(\)\+\-《》_,，；:;“”‘’。@#\."'\\\/\s]){0,2000}$/.test(value)
             /* eslint-enable */
         }
     },
@@ -66,7 +66,12 @@ const customRules = {
     },
     fieldId: {
         validate: (value) => {
-            return /^[a-zA-Z0-9_]{1,20}$/.test(value)
+            return /^[a-z0-9_]{1,20}$/.test(value)
+        }
+    },
+    oid: {
+        validate: (value) => {
+            return /^(\d+)?(\.\d+)+$/.test(value)
         }
     }
 }
@@ -87,7 +92,8 @@ const dictionary = {
             number: () => '请输入正确的内容',
             isBigger: () => '必须大于最小值',
             repeat: () => '重复的值',
-            fieldId: () => '请输入正确的内容'
+            fieldId: () => '请输入正确的内容',
+            oid: () => '请输入正确的内容'
         },
         custom: {
             asst: {
@@ -110,7 +116,8 @@ const dictionary = {
             number: () => 'Please enter the correct content',
             isBigger: () => 'Must be greater than the minimum',
             repeat: () => 'This value should not be repeated',
-            fieldId: () => 'Please enter the correct content'
+            fieldId: () => 'Please enter the correct content',
+            oid: () => 'Please enter the correct content'
         },
         custom: {
             asst: {

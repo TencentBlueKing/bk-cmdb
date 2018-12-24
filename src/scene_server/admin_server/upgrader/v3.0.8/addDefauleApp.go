@@ -18,7 +18,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/scene_server/validator"
 	"configcenter/src/storage/dal"
@@ -96,7 +95,7 @@ func addDefaultBiz(ctx context.Context, db dal.RDB, conf *upgrader.Config) error
 	return nil
 }
 
-func fillEmptyFields(data map[string]interface{}, rows []*metadata.Attribute) []string {
+func fillEmptyFields(data map[string]interface{}, rows []*Attribute) []string {
 	filled := []string{}
 	for _, field := range rows {
 		fieldName := field.PropertyID

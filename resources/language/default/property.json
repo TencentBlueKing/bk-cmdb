@@ -11,6 +11,8 @@
     "biz_property_operator": "操作人员",
     "biz_property_time_zone": "时区",
     "biz_property_language": "语言",
+    "biz_property_bk_supplier_id":"供应商ID",
+
     "set_property_bk_biz_id": "业务ID",
     "set_property_bk_set_name": "集群名字",
     "set_property_bk_set_desc": "集群描述",

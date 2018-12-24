@@ -14,20 +14,28 @@ package distribution
 
 import (
 	"context"
+	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
-	redis "gopkg.in/redis.v5"
-
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/identifier"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/rpc"
+
+	redis "gopkg.in/redis.v5"
 )
 
 func Start(ctx context.Context, cache *redis.Client, db dal.RDB, rc *rpc.Client) error {
 	chErr := make(chan error)
+	err := migrateIDToMongo(ctx, cache, db)
+	if err != nil {
+		return fmt.Errorf("migrateIDToMongo failed: %v", err)
+	}
 
 	eh := &EventHandler{cache: cache}
 	go func() {
@@ -55,6 +63,36 @@ func Start(ctx context.Context, cache *redis.Client, db dal.RDB, rc *rpc.Client)
 	}()
 
 	return <-chErr
+}
+
+func migrateIDToMongo(ctx context.Context, cache *redis.Client, db dal.RDB) error {
+	sid, err := cache.Get(common.EventCacheEventIDKey).Result()
+	if redis.Nil == err {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if sid == "" {
+		return nil
+	}
+
+	id, err := strconv.ParseUint(sid, 10, 64)
+	if err != nil {
+		return err
+	}
+
+	docs := mapstr.MapStr{
+		"_id":        common.EventCacheEventIDKey,
+		"SequenceID": id,
+	}
+
+	err = db.Table(common.BKTableNameIDgenerator).Insert(ctx, docs)
+	if err != nil {
+		return err
+	}
+
+	return cache.Del(common.EventCacheEventIDKey).Err()
 }
 
 type EventHandler struct{ cache *redis.Client }

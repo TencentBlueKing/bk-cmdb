@@ -5,7 +5,9 @@
                 class="business-selector"
                 v-model="filter.bizId"
             ></cmdb-business-selector>
-            <bk-button type="primary" class="api-btn" @click="showUserAPISlider('create')">
+            <bk-button type="primary" class="api-btn"
+                :disabled="!authority.includes('update')"
+                @click="showUserAPISlider('create')">
                 {{$t("CustomQuery['新增查询']")}}
             </bk-button>
             <div class="api-input fr">
@@ -43,6 +45,7 @@
             :beforeClose="handleSliderBeforeClose">
             <v-define slot="content"
                 ref="define"
+                :authority="authority"
                 :id="slider.id"
                 :bizId="filter.bizId"
                 :type="slider.type"
@@ -103,7 +106,8 @@
                     type: 'create',
                     id: null,
                     title: this.$t("CustomQuery['新增查询']")
-                }
+                },
+                authority: ['search', 'update', 'delete']
             }
         },
         computed: {
@@ -122,6 +126,9 @@
             'filter.bizId' () {
                 this.getUserAPIList()
             }
+        },
+        created () {
+            this.$store.commit('setHeaderTitle', this.$t('Nav["动态分组"]'))
         },
         methods: {
             ...mapActions('hostCustomApi', [

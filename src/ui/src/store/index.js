@@ -12,6 +12,7 @@ import hostRelation from './modules/api/host-relation.js'
 import hostSearchHistory from './modules/api/host-search-history.js'
 import hostSearch from './modules/api/host-search.js'
 import hostUpdate from './modules/api/host-update.js'
+import objectAssociation from './modules/api/object-association.js'
 import objectBatch from './modules/api/object-batch.js'
 import objectBiz from './modules/api/object-biz.js'
 import objectCommonInst from './modules/api/object-common-inst.js'
@@ -23,11 +24,16 @@ import objectModel from './modules/api/object-model.js'
 import objectModule from './modules/api/object-module.js'
 import objectRelation from './modules/api/object-relation.js'
 import objectSet from './modules/api/object-set.js'
+import objectUnique from './modules/api/object-unique.js'
 import operationAudit from './modules/api/operation-audit.js'
 import procConfig from './modules/api/proc-config.js'
 import userCustom from './modules/api/user-custom.js'
 import userPrivilege from './modules/api/user-privilege.js'
 import globalModels from './modules/api/global-models.js'
+import netCollectDevice from './modules/api/net-collect-device.js'
+import netCollectProperty from './modules/api/net-collect-property.js'
+import netDataCollection from './modules/api/net-data-collection.js'
+import netDiscovery from './modules/api/net-discovery.js'
 
 Vue.use(Vuex)
 
@@ -43,6 +49,7 @@ export default new Vuex.Store({
         hostSearchHistory,
         hostSearch,
         hostUpdate,
+        objectAssociation,
         objectBatch,
         objectBiz,
         objectCommonInst,
@@ -54,10 +61,15 @@ export default new Vuex.Store({
         objectModule,
         objectRelation,
         objectSet,
+        objectUnique,
         operationAudit,
         procConfig,
         userCustom,
         userPrivilege,
-        globalModels
+        globalModels,
+        netCollectDevice,
+        netCollectProperty,
+        netDataCollection,
+        netDiscovery
     }
 })

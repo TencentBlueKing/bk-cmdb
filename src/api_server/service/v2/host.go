@@ -18,8 +18,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/api_server/logics/v2/common/converter"
 	"configcenter/src/api_server/logics/v2/common/utils"
 	"configcenter/src/common"
@@ -27,6 +25,8 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	"github.com/emicklei/go-restful"
 )
 
 func (s *Service) updateHostStatus(req *restful.Request, resp *restful.Response) {
@@ -154,16 +154,17 @@ func (s *Service) getCompanyIDByIps(req *restful.Request, resp *restful.Response
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	rid := util.GetHTTPCCRequestID(pheader)
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Errorf("getCompanyIDByIps error:%v", err)
+		blog.Errorf("getCompanyIDByIps error:%v", err, rid)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
 
 	formData := req.Request.Form
-	blog.Infof("getCompanyIDByIps data: %v", formData)
+	blog.V(5).Infof("getCompanyIDByIps data: %+v,rid:%s", formData, rid)
 
 	if len(formData["Ips"]) == 0 {
 		blog.Errorf("getCompanyIDByIps error: param ips is empty!")
@@ -173,20 +174,28 @@ func (s *Service) getCompanyIDByIps(req *restful.Request, resp *restful.Response
 
 	ipArr := strings.Split(formData["Ips"][0], ",")
 	//build v3 params
-	param := map[string]interface{}{
-		common.BKIPListField: ipArr,
+	param := &metadata.HostSearchByIPParams{
+		IpList: ipArr,
 	}
+	// param := map[string]interface{}{
+	// 	common.BKIPListField: ipArr,
+	// }
 
 	result, err := s.CoreAPI.HostServer().HostSearchByIP(context.Background(), pheader, param)
 	if err != nil {
-		blog.Errorf("getCompanyIDByIps  error:%v", err)
+		blog.Errorf("getCompanyIDByIps  error:%v, input:%+v,rid:%s", err, formData, rid)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
+		return
+	}
+	if !result.Result {
+		blog.Errorf("getCompanyIDByIps  error:%v, input:%+v,rid:%s", err, formData, rid)
+		converter.RespFailV2(result.Code, result.ErrMsg, resp)
 		return
 	}
 
 	resDataV2, err := converter.ResToV2ForCpyHost(result.Result, result.ErrMsg, result.Data)
 	if err != nil {
-		blog.Error("convert host res to v2 error:%v", err)
+		blog.Errorf("convert host res to v2 error:%v, input:%+v,rid:%s", err, formData, rid)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}
@@ -232,7 +241,7 @@ func (s *Service) getHostListByAppIDAndField(req *restful.Request, resp *restful
 
 	resDataV2, err := converter.ResToV2ForHostGroup(result.Result, result.ErrMsg, result.Data)
 	if err != nil {
-		blog.Error("convert host res to v2 error:%v", err)
+		blog.Errorf("convert host res to v2 error:%v", err)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}
@@ -244,6 +253,7 @@ func (s *Service) updateHostModule(req *restful.Request, resp *restful.Response)
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	rid := util.GetHTTPCCRequestID(pheader)
 
 	const (
 		NormalTrans = "nomal"
@@ -257,13 +267,13 @@ func (s *Service) updateHostModule(req *restful.Request, resp *restful.Response)
 
 	err = req.Request.ParseForm()
 	if err != nil {
-		blog.Errorf("updateHostModule error %v", err)
+		blog.Errorf("updateHostModule error %v,rid:%s", err, rid)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
 	formData := req.Request.Form
 
-	blog.Infof("updateHostModule data:%v", formData)
+	blog.V(5).Infof("updateHostModule data:%v,rid:%s", formData, rid)
 
 	appID := formData.Get("ApplicationID")
 	platID := formData.Get("platId")
@@ -271,47 +281,62 @@ func (s *Service) updateHostModule(req *restful.Request, resp *restful.Response)
 	ips := formData.Get("ip")
 
 	if "" == appID {
-		blog.Error("updateHostModule error ApplicationID empty")
+		blog.Errorf("updateHostModule error ApplicationID empty, input:%+v,rid:%s", formData, rid)
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "ApplicationID").Error(), resp)
 		return
 	}
 	if "" == platID {
-		blog.Error("updateHostModule error platID empty")
+		blog.Errorf("updateHostModule error platID empty, input:%+v,rid:%s", formData, rid)
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "platID").Error(), resp)
 		return
 	}
 	if "" == moduleID {
-		blog.Error("updateHostModule error moduleID empty")
+		blog.Errorf("updateHostModule error moduleID empty, input:%+v,rid:%s", formData, rid)
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "dstModuleID").Error(), resp)
 		return
 	}
 	if "" == ips {
-		blog.Error("updateHostModule error ips empty")
+		blog.Errorf("updateHostModule error ips empty, input:%+v,rid:%s", formData, rid)
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "ips").Error(), resp)
 		return
 	}
 	ipArr := strings.Split(ips, ",")
 	moduleIDArr, err := utils.SliceStrToInt(strings.Split(moduleID, ","))
 	if nil != err {
-		blog.Errorf("updateHostModule error: %v", err)
+		blog.Errorf("updateHostModule error: %v, input:%+v,rid:%s", err, formData, rid)
 		converter.RespFailV2(common.CCErrAPIServerV2MultiModuleIDErr, defErr.Error(common.CCErrAPIServerV2MultiModuleIDErr).Error(), resp)
 		return
 	}
-	appIDArr := make([]int, 0)
-	appIDInt, _ := strconv.Atoi(appID)
-	appIDArr = append(appIDArr, appIDInt)
-	platIDInt, _ := strconv.Atoi(platID)
-	param := map[string]interface{}{
-		common.BKIPListField:  ipArr,
-		common.BKAppIDField:   appIDArr,
-		common.BKSubAreaField: platIDInt,
+	appIDInt, err := util.GetInt64ByInterface(appID)
+	if err != nil {
+		blog.Errorf("updateHostModule error ApplicationID (%s) not integer. input:%+v,rid:%s", appID, formData, rid)
+		converter.RespFailV2Error(defErr.Errorf(common.CCErrCommParamsNeedSet, "platID"), resp)
+		return
 	}
+	platIDInt, err := util.GetInt64ByInterface(platID)
+	if err != nil {
+		blog.Errorf("updateHostModule error platID(%s)  not integer. input:%+v,rid:%s", platID, formData, rid)
+		converter.RespFailV2Error(defErr.Errorf(common.CCErrCommParamsNeedSet, "platID"), resp)
+		return
+	}
+	appIDArr := make([]int64, 0)
+	appIDArr = append(appIDArr, appIDInt)
+	param := &metadata.HostSearchByIPParams{
+		IpList:  ipArr,
+		AppID:   appIDArr,
+		CloudID: &platIDInt,
+	}
+	// param := map[string]interface{}{
+	// 	common.BKIPListField:  ipArr,
+	// 	common.BKAppIDField:   appIDArr,
+	// 	common.BKSubAreaField: platIDInt,
+	// }
 
 	result, err = s.CoreAPI.HostServer().HostSearchByIP(context.Background(), pheader, param)
 
 	hostsMap, ok := result.Data.([]interface{})
 	if false == ok {
-		blog.Errorf("updateHostModule error js.Map error, data:%v", result.Data)
+		blog.Errorf("updateHostModule error js.Map error, data:%+v, input:%+v,rid:%s", result.Data, formData, rid)
 		converter.RespFailV2(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), resp)
 		return
 	}
@@ -327,15 +352,13 @@ func (s *Service) updateHostModule(req *restful.Request, resp *restful.Response)
 
 	}
 
-	blog.Infof("HostIDArr:%v", HostIDArr)
+	blog.V(5).Infof("HostIDArr:%+v,rid:%s", HostIDArr, rid)
 
 	// host translate module
-	inputparam := map[string]interface{}{
-		common.BKAppIDField: appID}
-	moduleMap, err := s.getModuleInfoByApp(inputparam, pheader)
+	moduleMap, err := s.getModuleInfoByApp(appIDInt, pheader)
 
 	if nil != err {
-		blog.Errorf("updateHostModule error: %v", err)
+		blog.Errorf("updateHostModule error: %v. appID:%v,input:%+v,rid:%s", err, appIDInt, formData, rid)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Errorf(common.CCErrCommReplyDataFormatError, err.Error()).Error(), resp)
 		return
 	}
@@ -347,7 +370,7 @@ func (s *Service) updateHostModule(req *restful.Request, resp *restful.Response)
 	hostModuleParam.HostID = HostID64Arr
 	if len(moduleIDArr) > 1 {
 		for _, moduleID := range moduleIDArr {
-			moduleInfo, ok := moduleMap[moduleID].(map[string]interface{})
+			moduleInfo, ok := moduleMap[moduleID]
 			if !ok {
 				continue
 			}
@@ -366,10 +389,16 @@ func (s *Service) updateHostModule(req *restful.Request, resp *restful.Response)
 		input[common.BKModuleIDField] = moduleIDArr
 		input[common.BKIsIncrementField] = false
 	} else {
-		if moduleMap[moduleIDArr[0]].(map[string]interface{})[common.BKModuleNameField].(string) == common.DefaultFaultModuleName {
+		moduleName, err := moduleMap[moduleIDArr[0]].String(common.BKModuleNameField)
+		if err != nil {
+			blog.Errorf("convert res to v2  key:%s, error:%v, moduleInfo:%+v,input:%+v,rid:%s", moduleMap, formData, "ModuleName", err, rid)
+			converter.RespFailV2Error(defErr.Errorf(common.CCErrCommInstFieldConvFail, "module", "ModuleName", "int", err.Error()), resp)
+			return
+		}
+		if moduleName == common.DefaultFaultModuleName {
 			hostTransType = FaultTrans
 		}
-		if moduleMap[moduleIDArr[0]].(map[string]interface{})[common.BKModuleNameField].(string) == common.DefaultResModuleName {
+		if moduleName == common.DefaultResModuleName {
 			hostTransType = EmptyTrans
 		} else {
 			hostTransType = NormalTrans
@@ -560,7 +589,7 @@ func (s *Service) getGitServerIp(req *restful.Request, resp *restful.Response) {
 
 	resDataV2, err := converter.ResToV2ForHostList(result.Result, result.ErrMsg, result.Data)
 	if err != nil {
-		blog.Error("convert host res to v2 error:%v", err)
+		blog.Errorf("convert host res to v2 error:%v", err)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}

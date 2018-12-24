@@ -27,17 +27,17 @@ func init() {
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	err = addOperationLogIndex(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x08.09.13.01] updateSystemProperty error  %s", err.Error())
+		blog.Errorf("[upgrade x08.09.13.01] addOperationLogIndex error  %s", err.Error())
 		return err
 	}
-	err = reconcileOperationLog(ctx, db, conf)
+	err = reconcileGroupPrivilege(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x08.09.13.01] reconcileOperationLog error  %s", err.Error())
+		blog.Errorf("[upgrade x08.09.13.01] reconcileGroupPrivilege error  %s", err.Error())
 		return err
 	}
-	err = reconcileOperationLog(ctx, db, conf)
+	err = reconcileGroupPrivilege(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x08.09.13.01] reconcileOperationLog error  %s", err.Error())
+		blog.Errorf("[upgrade x08.09.13.01] reconcileGroupPrivilege error  %s", err.Error())
 		return err
 	}
 	return

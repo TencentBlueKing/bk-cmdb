@@ -29,10 +29,10 @@ import (
 
 // GroupOperationInterface group operation methods
 type GroupOperationInterface interface {
-	CreateObjectGroup(params types.ContextParams, data frtypes.MapStr) (model.Group, error)
+	CreateObjectGroup(params types.ContextParams, data frtypes.MapStr) (model.GroupInterface, error)
 	DeleteObjectGroup(params types.ContextParams, groupID int64) error
-	FindObjectGroup(params types.ContextParams, cond condition.Condition) ([]model.Group, error)
-	FindGroupByObject(params types.ContextParams, objID string, cond condition.Condition) ([]model.Group, error)
+	FindObjectGroup(params types.ContextParams, cond condition.Condition) ([]model.GroupInterface, error)
+	FindGroupByObject(params types.ContextParams, objID string, cond condition.Condition) ([]model.GroupInterface, error)
 	UpdateObjectGroup(params types.ContextParams, cond *metadata.UpdateGroupCondition) error
 	UpdateObjectAttributeGroup(params types.ContextParams, cond []metadata.PropertyGroupObjectAtt) error
 	DeleteObjectAttributeGroup(params types.ContextParams, objID, propertyID, groupID string) error
@@ -59,7 +59,7 @@ func (g *group) SetProxy(modelFactory model.Factory, instFactory inst.Factory, o
 	g.obj = obj
 }
 
-func (g *group) CreateObjectGroup(params types.ContextParams, data frtypes.MapStr) (model.Group, error) {
+func (g *group) CreateObjectGroup(params types.ContextParams, data frtypes.MapStr) (model.GroupInterface, error) {
 
 	grp := g.modelFactory.CreateGroup(params)
 
@@ -70,7 +70,7 @@ func (g *group) CreateObjectGroup(params types.ContextParams, data frtypes.MapSt
 	}
 
 	//  check the object
-	if err = g.obj.IsValidObject(params, grp.Origin().ObjectID); nil != err {
+	if err = g.obj.IsValidObject(params, grp.Group().ObjectID); nil != err {
 		blog.Errorf("[operation-grp] the group (%#v) is in valid", data)
 		return nil, params.Err.New(common.CCErrTopoObjectGroupCreateFailed, err.Error())
 	}
@@ -89,7 +89,7 @@ func (g *group) DeleteObjectGroup(params types.ContextParams, groupID int64) err
 
 	rsp, err := g.clientSet.ObjectController().Meta().DeletePropertyGroup(context.Background(), strconv.FormatInt(groupID, 10), params.Header)
 	if nil != err {
-		blog.Error("[operation-grp]failed to request object controller, error info is %s", err.Error())
+		blog.Errorf("[operation-grp]failed to request object controller, error info is %s", err.Error())
 		return err
 	}
 
@@ -101,7 +101,7 @@ func (g *group) DeleteObjectGroup(params types.ContextParams, groupID int64) err
 	return nil
 }
 
-func (g *group) FindObjectGroup(params types.ContextParams, cond condition.Condition) ([]model.Group, error) {
+func (g *group) FindObjectGroup(params types.ContextParams, cond condition.Condition) ([]model.GroupInterface, error) {
 
 	rsp, err := g.clientSet.ObjectController().Meta().SelectGroup(context.Background(), params.Header, cond.ToMapStr())
 
@@ -118,7 +118,7 @@ func (g *group) FindObjectGroup(params types.ContextParams, cond condition.Condi
 	return model.CreateGroup(params, g.clientSet, rsp.Data), nil
 }
 
-func (g *group) FindGroupByObject(params types.ContextParams, objID string, cond condition.Condition) ([]model.Group, error) {
+func (g *group) FindGroupByObject(params types.ContextParams, objID string, cond condition.Condition) ([]model.GroupInterface, error) {
 
 	rsp, err := g.clientSet.ObjectController().Meta().SelectPropertyGroupByObjectID(context.Background(), params.SupplierAccount, objID, params.Header, cond.ToMapStr())
 	if nil != err {

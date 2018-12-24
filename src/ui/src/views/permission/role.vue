@@ -114,6 +114,7 @@
             }
         },
         created () {
+            this.$store.commit('setHeaderTitle', this.$t('Nav["系统权限管理"]'))
             this.getRoleList()
         },
         methods: {
@@ -180,7 +181,7 @@
 
 <style lang="scss" scoped>
     .role-options{
-        padding: 20px 0;
+        padding: 0 0 20px 0;
         .role-options-search{
             position: relative;
             height: 36px;
@@ -207,6 +208,7 @@
             top: 11px;
             cursor: pointer;
             font-size: 14px;
+            z-index: 3;
         }
         label{
             padding: 0 9px 0 0;
