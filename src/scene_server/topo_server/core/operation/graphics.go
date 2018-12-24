@@ -90,17 +90,18 @@ func (g *graphics) SelectObjectTopoGraphics(params types.ContextParams, scopeTyp
 		}
 
 		for _, obj := range objs {
+			object := obj.Object()
 			node := metadata.TopoGraphics{}
 			node.SetNodeType("obj")
-			node.SetObjID(obj.GetID())
+			node.SetObjID(object.ObjectID)
 			node.SetInstID(0)
-			node.SetNodeName(obj.GetName())
+			node.SetNodeName(object.ObjectName)
 			node.SetScopeType("global")
 			node.SetScopeID("0")
 			node.SetBizID(0)
 			node.SetSupplierAccount("0")
-			node.SetIsPre(obj.GetIsPre())
-			node.SetIcon(obj.GetIcon())
+			node.SetIsPre(object.IsPre)
+			node.SetIcon(object.ObjIcon)
 
 			oldnode := graphnodes[node.NodeType+node.ObjID+strconv.Itoa(node.InstID)]
 			if oldnode != nil {
@@ -111,7 +112,7 @@ func (g *graphics) SelectObjectTopoGraphics(params types.ContextParams, scopeTyp
 				node.SetExt(map[string]interface{}{})
 			}
 
-			for _, asst := range objAssts[obj.GetID()] {
+			for _, asst := range objAssts[object.ObjectID] {
 
 				typeCond := condition.CreateCondition()
 				typeCond.Field(common.AssociationKindIDField).Eq(asst.AsstKindID)
