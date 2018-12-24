@@ -4,10 +4,6 @@
             :filter-config-key="filter.filterConfigKey"
             :collection-content="{business: filter.business}"
             @on-refresh="handleRefresh">
-            <div class="filter-group" slot="business">
-                <label class="filter-label">{{$t('Hosts[\'选择业务\']')}}</label>
-                <cmdb-business-selector class="filter-field" v-model="filter.business"></cmdb-business-selector>
-            </div>
         </cmdb-hosts-filter>
         <cmdb-hosts-table class="hosts-main" ref="hostsTable"
             :columns-config-key="table.columnsConfigKey"
@@ -48,6 +44,7 @@
         computed: {
             ...mapGetters(['supplierAccount']),
             ...mapGetters('hostFavorites', ['applyingInfo']),
+            ...mapGetters('objectBiz', ['bizId']),
             columnsConfigProperties () {
                 const setProperties = this.properties.set.filter(property => ['bk_set_name'].includes(property['bk_property_id']))
                 const moduleProperties = this.properties.module.filter(property => ['bk_module_name'].includes(property['bk_property_id']))
@@ -56,13 +53,9 @@
             }
         },
         watch: {
-            'filter.business' (business) {
-                if (this.filter.businessResolver) {
-                    this.filter.businessResolver()
-                } else {
-                    this.table.checked = []
-                    this.getHostList()
-                }
+            bizId () {
+                this.table.checked = []
+                this.getHostList()
             },
             applyingInfo (info) {
                 if (info) {
@@ -73,7 +66,7 @@
         async created () {
             this.$store.commit('setHeaderTitle', this.$t('Nav["业务主机"]'))
             try {
-                await Promise.all([
+                const res = await Promise.all([
                     this.getBusiness(),
                     this.getParams(),
                     this.getProperties()
@@ -96,15 +89,10 @@
             getBusiness () {
                 const query = this.$route.query
                 if (query.hasOwnProperty('business')) {
-                    this.filter.business = parseInt(query.business)
+                    this.$store.commit('objectBiz/setBizId', parseInt(query.business))
                     return Promise.resolve()
                 }
-                return new Promise((resolve, reject) => {
-                    this.filter.businessResolver = () => {
-                        this.filter.businessResolver = null
-                        resolve()
-                    }
-                })
+                return Promise.resolve()
             },
             getParams () {
                 return new Promise((resolve, reject) => {
@@ -141,7 +129,7 @@
                 }
             },
             getHostList (resetPage = true) {
-                this.$refs.hostsTable.search(this.filter.business, this.filter.params, resetPage)
+                this.$refs.hostsTable.search(this.bizId, this.filter.params, resetPage)
             }
         }
     }
