@@ -96,19 +96,31 @@
         methods: {
             async getRelation () {
                 try {
-                    const data = await this.$store.dispatch('objectAssociation/searchObjectAssociation', {
-                        params: {
-                            condition: {
-                                'bk_obj_id': this.objId
-                            }
-                        }
-                    })
-                    if (data.length) {
+                    let [dataAsSource, dataAsTarget, mainLineModels] = await Promise.all([
+                        this.getObjectAssociation({'bk_obj_id': this.objId}, {requestId: 'getSourceAssocaition'}),
+                        this.getObjectAssociation({'bk_asst_obj_id': this.objId}, {requestId: 'getTargetAssocaition'}),
+                        this.$store.dispatch('objectMainLineModule/searchMainlineObject', {requestId: 'getMainLineModels'})
+                    ])
+                    mainLineModels = mainLineModels.filter(model => !['biz', 'host'].includes(model['bk_obj_id']))
+                    dataAsSource = this.getAvailableRelation(dataAsSource, mainLineModels)
+                    dataAsTarget = this.getAvailableRelation(dataAsTarget, mainLineModels)
+                    if (dataAsSource.length || dataAsTarget.length) {
                         this.hasRelation = true
                     }
                 } catch (e) {
                     this.hasRelation = false
                 }
+            },
+            getAvailableRelation (data, mainLine) {
+                return data.filter(relation => {
+                    return !mainLine.some(model => [relation['bk_obj_id'], relation['bk_asst_obj_id']].includes(model['bk_obj_id']))
+                })
+            },
+            getObjectAssociation (condition, config) {
+                return this.$store.dispatch('objectAssociation/searchObjectAssociation', {
+                    params: {condition},
+                    config
+                })
             },
             handleShowUpdate () {
                 if (this.activeComponent === 'cmdbRelationUpdate') {

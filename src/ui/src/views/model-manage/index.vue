@@ -53,7 +53,7 @@
                     :key="modelIndex"
                     @click="modelClick(model)">
                         <div class="icon-box">
-                            <i class="icon" :class="model['bk_obj_icon']"></i>
+                            <i class="icon" :class="[model['bk_obj_icon'], {ispre: model['ispre']}]"></i>
                         </div>
                         <div class="model-details">
                             <p class="model-name" :title="model['bk_obj_name']">{{model['bk_obj_name']}}</p>
@@ -439,6 +439,9 @@
         .bk-primary {
             margin-right: 10px;
         }
+        &.sticky {
+            box-shadow: 0 0 8px 1px rgba(0, 0, 0, 0.03);
+        }
     }
     .model-type-options {
         margin: 20px 0 -30px 0;
@@ -464,6 +467,7 @@
         }
     }
     .group-list {
+        padding: 0 20px 20px;
         .group-item {
             position: relative;
             padding: 10px 0 20px;
