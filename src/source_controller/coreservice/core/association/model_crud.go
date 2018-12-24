@@ -100,7 +100,7 @@ func (m *associationModel) delete(ctx core.ContextParams, cond universalsql.Cond
 func (m *associationModel) search(ctx core.ContextParams, cond universalsql.Condition) ([]metadata.Association, error) {
 
 	dataResult := []metadata.Association{}
-	err := m.dbProxy.Table(common.BKTableNameAsstDes).Find(cond.ToMapStr()).All(ctx, &dataResult)
+	err := m.dbProxy.Table(common.BKTableNameObjAsst).Find(cond.ToMapStr()).All(ctx, &dataResult)
 	if nil != err {
 		blog.Errorf("request(%s): it is to search some data on the table (%s) by the condition (%v), error info is %s", ctx.ReqID, common.BKTableNameAsstDes, cond.ToMapStr(), err.Error())
 		return dataResult, err
@@ -110,7 +110,7 @@ func (m *associationModel) search(ctx core.ContextParams, cond universalsql.Cond
 
 func (m *associationModel) searchReturnMapStr(ctx core.ContextParams, cond universalsql.Condition) ([]mapstr.MapStr, error) {
 	dataResult := []mapstr.MapStr{}
-	err := m.dbProxy.Table(common.BKTableNameAsstDes).Find(cond.ToMapStr()).All(ctx, &dataResult)
+	err := m.dbProxy.Table(common.BKTableNameObjAsst).Find(cond.ToMapStr()).All(ctx, &dataResult)
 	if nil != err {
 		blog.Errorf("request(%s): it is to search data on the table (%s) by the condition (%v), error info is %s", ctx.ReqID, common.BKTableNameAsstDes, cond.ToMapStr(), err.Error())
 		return dataResult, err

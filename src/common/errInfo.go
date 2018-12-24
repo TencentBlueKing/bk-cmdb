@@ -553,6 +553,11 @@ const (
 	CCErrCollectNetDeviceUpdateFail            = 1112017
 	CCErrCollectNetPropertyUpdateFail          = 1112018
 
+	// coreservice 1113xxx
+
+	// CCErrorModelAttributeGroupHasSomeAttributes the group has some attributes
+	CCErrCoreServiceModelAttributeGroupHasSomeAttributes = 1113001
+
 	// CCErrApiServerV2AppNameLenErr app name must be 1-32 len
 	CCErrAPIServerV2APPNameLenErr = 1170001
 
