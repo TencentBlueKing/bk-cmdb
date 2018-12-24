@@ -17,8 +17,8 @@ import (
 
 	"configcenter/src/storage/mongobyc"
 
-	"github.com/mongodb/mongo-go-driver/core/connstring"
 	mgo "github.com/mongodb/mongo-go-driver/mongo"
+	"github.com/mongodb/mongo-go-driver/x/network/connstring"
 )
 
 var _ mongobyc.CommonClient = (*client)(nil)
