@@ -72,6 +72,16 @@ func (s *topoService) DeleteObjectUnique(params types.ContextParams, pathParams,
 		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, "id")
 	}
 
+	uniques, err := s.core.UniqueOperation().Search(params, objectID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(uniques) <= 1 {
+		blog.Errorf("[DeleteObjectUnique][%s] unique should have more than one", objectID)
+		return nil, params.Err.Error(common.CCErrTopoObjectUniqueShouldHaveMoreThanOne)
+	}
+
 	err = s.core.UniqueOperation().Delete(params, objectID, id)
 	if err != nil {
 		blog.Errorf("[DeleteObjectUnique] delete [%s](%d) failed: %v", objectID, id, err)

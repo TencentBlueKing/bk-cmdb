@@ -199,6 +199,9 @@
                 if (propertyType === 'int') {
                     rules['numeric'] = true
                 }
+                if (propertyType === 'float') {
+                    rules['float'] = true
+                }
                 return rules
             },
             handleSave () {
