@@ -102,22 +102,23 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 
 	uniques := []metadata.ObjectUnique{
 		// host
+		// 产品调整，回撤
+		// {
+		// 	ObjID:     common.BKInnerObjIDHost,
+		// 	MustCheck: true,
+		// 	Keys: []metadata.UinqueKey{
+		// 		{
+		// 			Kind: metadata.UinqueKeyKindProperty,
+		// 			ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDHost, common.BKAssetIDField)].ID),
+		// 		},
+		// 	},
+		// 	Ispre:    true,
+		// 	OwnerID:  conf.OwnerID,
+		// 	LastTime: metadata.Now(),
+		// },
 		{
 			ObjID:     common.BKInnerObjIDHost,
 			MustCheck: true,
-			Keys: []metadata.UinqueKey{
-				{
-					Kind: metadata.UinqueKeyKindProperty,
-					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDHost, common.BKAssetIDField)].ID),
-				},
-			},
-			Ispre:    true,
-			OwnerID:  conf.OwnerID,
-			LastTime: metadata.Now(),
-		},
-		{
-			ObjID:     common.BKInnerObjIDHost,
-			MustCheck: false,
 			Keys: []metadata.UinqueKey{
 				{
 					Kind: metadata.UinqueKeyKindProperty,

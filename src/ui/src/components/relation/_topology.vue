@@ -382,7 +382,8 @@
             handleToggleNodeVisibility (legend) {
                 ['prev', 'next'].forEach(type => {
                     legend.node[type].forEach(node => {
-                        const level = legend.node.level === 0 ? [-1, 1] : [legend.node.level]
+                        const nodeLevel = legend.node.level
+                        const level = nodeLevel === 0 ? [-1, 1] : [nodeLevel > 0 ? (nodeLevel + 1) : (nodeLevel - 1)]
                         if (level.includes(node.level) && node.data['bk_obj_id'] === legend.id) {
                             node.hidden = legend.active
                         }
