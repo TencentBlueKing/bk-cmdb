@@ -29,11 +29,14 @@
             }
         },
         computed: {
-            ...mapGetters('objectBiz', ['privilegeBusiness'])
+            ...mapGetters('objectBiz', ['privilegeBusiness', 'bizId'])
         },
         watch: {
-            localSelected (localSelected) {
+            localSelected (localSelected, prevSelected) {
                 window.localStorage.setItem('selectedBusiness', localSelected)
+                if (prevSelected !== '') {
+                    window.location.reload()
+                }
                 if (this.$route.meta.requireBusiness) {
                     this.$http.setHeader('bk_biz_id', localSelected)
                 } else {
@@ -41,11 +44,15 @@
                 }
                 this.$emit('input', localSelected)
                 this.$emit('on-select', localSelected)
+                this.setLocalSelected()
             },
             value (value) {
                 if (value !== this.localSelected) {
                     this.setLocalSelected()
                 }
+            },
+            bizId (value) {
+                this.localSelected = value
             }
         },
         beforeCreate () {
