@@ -48,10 +48,6 @@ func (s *mockDependences) CascadeDeleteInstances(ctx core.ContextParams, objIDS 
 	return nil
 }
 
-func NewModelTest(t *testing.T) core.ModelOperation {
-	return newModel(t)
-}
-
 func newModel(t *testing.T) core.ModelOperation {
 
 	db, err := mongo.NewMgo("mongodb://cc:cc@localhost:27010,localhost:27011,localhost:27012,localhost:27013/cmdb")

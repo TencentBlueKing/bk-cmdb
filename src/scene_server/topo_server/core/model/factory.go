@@ -56,8 +56,8 @@ func CreateObject(params types.ContextParams, clientSet apimachinery.ClientSetIn
 }
 
 // CreateGroup create group  objects
-func CreateGroup(params types.ContextParams, clientSet apimachinery.ClientSetInterface, groupItems []metadata.Group) []Group {
-	results := make([]Group, 0)
+func CreateGroup(params types.ContextParams, clientSet apimachinery.ClientSetInterface, groupItems []metadata.Group) []GroupInterface {
+	results := make([]GroupInterface, 0)
 	for _, grp := range groupItems {
 
 		results = append(results, &group{
@@ -71,8 +71,8 @@ func CreateGroup(params types.ContextParams, clientSet apimachinery.ClientSetInt
 }
 
 // CreateAttribute create attribute  objects
-func CreateAttribute(params types.ContextParams, clientSet apimachinery.ClientSetInterface, attrItems []metadata.Attribute) []Attribute {
-	results := make([]Attribute, 0)
+func CreateAttribute(params types.ContextParams, clientSet apimachinery.ClientSetInterface, attrItems []metadata.Attribute) []AttributeInterface {
+	results := make([]AttributeInterface, 0)
 	for _, attr := range attrItems {
 
 		results = append(results, &attribute{
@@ -107,7 +107,7 @@ func (cli *factory) CreaetClassification(params types.ContextParams) Classificat
 	return cls
 }
 
-func (cli *factory) CreateAttribute(params types.ContextParams) Attribute {
+func (cli *factory) CreateAttribute(params types.ContextParams) AttributeInterface {
 	attr := &attribute{
 		params:    params,
 		clientSet: cli.clientSet,
@@ -116,13 +116,8 @@ func (cli *factory) CreateAttribute(params types.ContextParams) Attribute {
 	return attr
 }
 
-func (cli *factory) CreateGroup(params types.ContextParams) Group {
-	grp := &group{
-		params:    params,
-		clientSet: cli.clientSet,
-	}
-	grp.SetSupplierAccount(params.SupplierAccount)
-	return grp
+func (cli *factory) CreateGroup(params types.ContextParams) GroupInterface {
+	return NewGroup(params, cli.clientSet)
 }
 
 func (cli *factory) CreateMainLineAssociatin(params types.ContextParams, obj Object, asstKey string, asstObj Object) Association {
