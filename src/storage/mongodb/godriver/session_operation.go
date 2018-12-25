@@ -15,30 +15,30 @@ package godriver
 import (
 	"time"
 
-	"configcenter/src/storage/mongobyc"
+	"configcenter/src/storage/mongodb"
 )
 
-var _ mongobyc.SessionOperation = (*sessionOperation)(nil)
+var _ mongodb.SessionOperation = (*sessionOperation)(nil)
 
 type sessionOperation struct {
 	mongocli *client
 	err      error
 }
 
-func newSessionOperation(mongocli *client) mongobyc.SessionOperation {
+func newSessionOperation(mongocli *client) mongodb.SessionOperation {
 	return &sessionOperation{
 		mongocli: mongocli,
 	}
 }
 
-func (s *sessionOperation) WithReadConcernLevel(level string) mongobyc.SessionOperation {
+func (s *sessionOperation) WithReadConcernLevel(level string) mongodb.SessionOperation {
 	return &sessionOperation{}
 }
 
-func (s *sessionOperation) WithWriteConcernMajority(timeout time.Duration) mongobyc.SessionOperation {
+func (s *sessionOperation) WithWriteConcernMajority(timeout time.Duration) mongodb.SessionOperation {
 	return &sessionOperation{}
 }
 
-func (s *sessionOperation) Create() mongobyc.Session {
+func (s *sessionOperation) Create() mongodb.Session {
 	return newSession(s.mongocli)
 }

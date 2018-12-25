@@ -10,14 +10,4 @@
  * limitations under the License.
  */
 
-package mongobyc
-
-// Database methods
-type Database interface {
-	Drop() error
-	Name() string
-	HasCollection(collName string) (bool, error)
-	DropCollection(collName string) error
-	CreateEmptyCollection(collName string) error
-	GetCollectionNames() ([]string, error)
-}
+package mongodb

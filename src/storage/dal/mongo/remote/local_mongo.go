@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package mongoc
+package remote
 
 import (
 	"context"
@@ -24,8 +24,8 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
-	"configcenter/src/storage/mongobyc"
-	"configcenter/src/storage/mongobyc/findopt"
+	"configcenter/src/storage/mongodb"
+	"configcenter/src/storage/mongodb/findopt"
 	"configcenter/src/storage/types"
 )
 
@@ -34,9 +34,9 @@ var ErrSessionMissing = errors.New("session missing")
 
 // Client implement client.DALRDB interface
 type Client struct {
-	txc     mongobyc.Client
-	session mongobyc.Session
-	pool    mongobyc.ClientPool
+	txc     mongodb.Client
+	session mongodb.Session
+	pool    mongodb.ClientPool
 }
 
 var _ dal.RDB = new(Client)
@@ -45,16 +45,17 @@ var initMongoc sync.Once
 
 // NewClient returns new RDB
 func NewClient(uri string) (*Client, error) {
-	initMongoc.Do(mongobyc.InitMongoc)
-
-	pool := mongobyc.NewClientPool(uri)
-	err := pool.Open()
-	if err != nil {
-		return nil, err
-	}
-	return &Client{
-		pool: pool,
-	}, nil
+	/*
+		pool := mongodb.NewClientPool(uri)
+		err := pool.Open()
+		if err != nil {
+			return nil, err
+		}
+		return &Client{
+			pool: pool,
+		}, nil
+	*/
+	return nil, nil
 }
 
 // Close replica client
@@ -100,6 +101,16 @@ func (c *Client) Table(collName string) dal.Table {
 type Collection struct {
 	collName string // 集合名
 	*Client
+}
+
+// AggregateOne TODO: need to implement
+func (c *Collection) AggregateOne(ctx context.Context, pipeline interface{}, result interface{}) error {
+	return nil
+}
+
+// AggregateAll TODO: need to implement
+func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, result interface{}) error {
+	return nil
 }
 
 // Indexes 查询索引
@@ -317,7 +328,7 @@ func (c *Client) CreateTable(collName string) error {
 
 // CreateIndex 创建索引
 func (c *Collection) CreateIndex(ctx context.Context, index dal.Index) error {
-	i := mongobyc.Index{
+	i := mongodb.Index{
 		Keys:       mapstr.MapStr(index.Keys),
 		Name:       index.Name,
 		Unique:     index.Unique,
@@ -369,12 +380,12 @@ func (c *Collection) DropColumn(ctx context.Context, field string) error {
 }
 
 type pusher struct {
-	pool mongobyc.ClientPool
-	dbc  mongobyc.Client
+	pool mongodb.ClientPool
+	dbc  mongodb.Client
 }
 
-func (c *Client) getCollection(collName string) (*pusher, mongobyc.CollectionInterface) {
-	var table mongobyc.CollectionInterface
+func (c *Client) getCollection(collName string) (*pusher, mongodb.CollectionInterface) {
+	var table mongodb.CollectionInterface
 	var p = new(pusher)
 	if c.session == nil {
 		p.dbc = c.pool.Pop()

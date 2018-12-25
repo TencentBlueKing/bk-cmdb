@@ -10,10 +10,25 @@
  * limitations under the License.
  */
 
-package cdriver
+package mongodb
 
-// #cgo pkg-config: libbson-1.0
-// #cgo pkg-config: libmongoc-1.0
-// #include <stdlib.h>
-// #include "mongo.h"
-import "C"
+// Client client for mongo
+type Client interface {
+	Ping() error
+	Database() Database
+	Collection(collName string) CollectionInterface
+	Session() SessionOperation
+}
+
+// ClientPool the mongo client pool
+type ClientPool interface {
+	OpenCloser
+	Pop() Client
+	Push(targetClient Client)
+}
+
+// CommonClient single client instance
+type CommonClient interface {
+	OpenCloser
+	Client
+}

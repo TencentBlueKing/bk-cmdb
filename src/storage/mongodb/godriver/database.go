@@ -16,21 +16,20 @@ import (
 	"context"
 	"fmt"
 
-
-	"configcenter/src/storage/mongobyc"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/storage/mongodb"
 
+	"github.com/mongodb/mongo-go-driver/mongo"
 	"github.com/mongodb/mongo-go-driver/x/bsonx"
-	mgo "github.com/mongodb/mongo-go-driver/mongo"
 )
 
-var _ mongobyc.Database = (*database)(nil)
+var _ mongodb.Database = (*database)(nil)
 
 type database struct {
-	innerDatabase *mgo.Database
+	innerDatabase *mongo.Database
 }
 
-func newDatabase(db *mgo.Database) *database {
+func newDatabase(db *mongo.Database) *database {
 	return &database{innerDatabase: db}
 }
 

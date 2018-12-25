@@ -10,25 +10,14 @@
  * limitations under the License.
  */
 
-package mongobyc
+package mongodb
 
-// Client client for mongo
-type Client interface {
-	Ping() error
-	Database() Database
-	Collection(collName string) CollectionInterface
-	Session() SessionOperation
-}
-
-// ClientPool the mongo client pool
-type ClientPool interface {
-	OpenCloser
-	Pop() Client
-	Push(targetClient Client)
-}
-
-// CommonClient single client instance
-type CommonClient interface {
-	OpenCloser
-	Client
+// Database methods
+type Database interface {
+	Drop() error
+	Name() string
+	HasCollection(collName string) (bool, error)
+	DropCollection(collName string) error
+	CreateEmptyCollection(collName string) error
+	GetCollectionNames() ([]string, error)
 }

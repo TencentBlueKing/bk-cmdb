@@ -15,24 +15,24 @@ package godriver
 import (
 	"context"
 
-	"configcenter/src/storage/mongobyc"
+	"configcenter/src/storage/mongodb"
 
 	"github.com/mongodb/mongo-go-driver/mongo"
 )
 
-var _ mongobyc.Transaction = (*transaction)(nil)
+var _ mongodb.Transaction = (*transaction)(nil)
 
 type transaction struct {
 	mongocli       *client
 	innerSession   mongo.Session
-	collectionMaps map[collectionName]mongobyc.CollectionInterface
+	collectionMaps map[collectionName]mongodb.CollectionInterface
 }
 
 func newSessionTransaction(mongocli *client, clientSession mongo.Session) *transaction {
 	return &transaction{
 		mongocli:       mongocli,
 		innerSession:   clientSession,
-		collectionMaps: map[collectionName]mongobyc.CollectionInterface{},
+		collectionMaps: map[collectionName]mongodb.CollectionInterface{},
 	}
 }
 
@@ -46,7 +46,7 @@ func (t *transaction) CommitTransaction() error {
 	return t.innerSession.CommitTransaction(context.TODO())
 }
 
-func (t *transaction) Collection(collName string) mongobyc.CollectionInterface {
+func (t *transaction) Collection(collName string) mongodb.CollectionInterface {
 
 	target, ok := t.collectionMaps[collectionName(collName)]
 	if !ok {
@@ -68,8 +68,8 @@ func (t *transaction) Close() error {
 			}
 		}
 	}
-	t.collectionMaps = map[collectionName]mongobyc.CollectionInterface{}
 
+	t.collectionMaps = map[collectionName]mongodb.CollectionInterface{}
 	t.innerSession.EndSession(context.TODO())
 	return nil
 }
