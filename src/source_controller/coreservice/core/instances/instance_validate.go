@@ -37,7 +37,10 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 	instMedataData.Label = make(metadata.Label)
 	for key, val := range instanceData {
 		if metadata.BKMetadata == key {
-			instMedataData.Label.Set(metadata.LabelBusinessID, metadata.GetBusinessIDFromMeta(val))
+			bizID := metadata.GetBusinessIDFromMeta(val)
+			if "" != bizID {
+				instMedataData.Label.Set(metadata.LabelBusinessID, metadata.GetBusinessIDFromMeta(val))
+			}
 			continue
 		}
 		if valid.shouldIgnore[key] {
@@ -91,7 +94,10 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 
 	for key, val := range instanceData {
 		if metadata.BKMetadata == key {
-			instMedataData.Label.Set(metadata.LabelBusinessID, metadata.GetBusinessIDFromMeta(val))
+			bizID := metadata.GetBusinessIDFromMeta(val)
+			if "" != bizID {
+				instMedataData.Label.Set(metadata.LabelBusinessID, metadata.GetBusinessIDFromMeta(val))
+			}
 			continue
 		}
 
