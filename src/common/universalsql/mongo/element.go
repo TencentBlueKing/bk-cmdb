@@ -22,6 +22,8 @@ type element struct {
 	Val interface{}
 }
 
+// Comparison Operator Start
+
 // Eq mongodb operator $eq
 type Eq element
 
@@ -145,3 +147,19 @@ func (r *Regex) ToMapStr() mapstr.MapStr {
 		},
 	}
 }
+
+// Comparison Operator End
+
+// Elements Operator Start
+type Exists element
+
+var _ universalsql.ConditionElement = (*Exists)(nil)
+
+// Exists mongodb operator $exists
+func (e *Exists) ToMapStr() mapstr.MapStr {
+	return mapstr.MapStr{
+		e.Key: e.Val,
+	}
+}
+
+// Elements Operator End
