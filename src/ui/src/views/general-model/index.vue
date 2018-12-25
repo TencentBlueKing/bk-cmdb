@@ -220,14 +220,14 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'userName']),
+            ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
             ...mapGetters('userCustom', ['usercustom']),
             ...mapGetters('objectBiz', ['bizId']),
             objId () {
                 return this.$route.params.objId
             },
             customConfigKey () {
-                return `${this.userName}_${this.objId}_${this.bizId}_table_columns`
+                return `${this.userName}_${this.objId}_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
             },
             customColumns () {
                 return this.usercustom[this.customConfigKey]
