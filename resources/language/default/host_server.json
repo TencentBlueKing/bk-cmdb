@@ -26,5 +26,6 @@
     "host_str_asst_str_query_data_format_error": "获取%s关联对象%s数据格式",
     "plat_id_not_exist": "云区域id不存在",
     "plat_get_str_err": "查询云区域失败",
+    "host_module_config_not_found":"主机与模块关系不存在",
     "": ""
 }

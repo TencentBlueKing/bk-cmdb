@@ -10,25 +10,27 @@
  * limitations under the License.
  */
 
-package datacollection
+package backbone
 
 import (
-	"configcenter/src/common"
+	"context"
 )
 
-const (
-	RedisDisKeyPrefix         = common.BKCacheKeyV3Prefix + "discover:"
-	MasterProcLockKey         = common.BKCacheKeyV3Prefix + "snapshot:masterlock"
-	MasterDisLockKey          = common.BKCacheKeyV3Prefix + "discover:masterlock"
-	RedisSnapKeyChannelStatus = common.BKCacheKeyV3Prefix + "snapshot:channelstatus"
-)
+type ccContext struct {
+	ctx context.Context
+}
 
-const (
-	MaxSnapSize     = 2000
-	MaxDiscoverSize = 1000
-)
+type CCContextInterface interface {
+	WithCancel() (context.Context, context.CancelFunc)
+}
 
-const (
-	DiscoverChan = "discover"
-	SnapShotChan = "snapshot"
-)
+func newCCContext() CCContextInterface {
+	return &ccContext{
+		ctx: context.Background(),
+	}
+}
+
+// WithCancel
+func (c *ccContext) WithCancel() (context.Context, context.CancelFunc) {
+	return context.WithCancel(c.ctx)
+}

@@ -15,14 +15,14 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/emicklei/go-restful"
-	"github.com/gin-gonic/gin/json"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/eventclient"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	"github.com/emicklei/go-restful"
+	"github.com/gin-gonic/gin/json"
 )
 
 func (ps *ProctrlServer) DeleteProc2Template(req *restful.Request, resp *restful.Response) {
@@ -53,9 +53,17 @@ func (ps *ProctrlServer) DeleteProc2Template(req *restful.Request, resp *restful
 
 	//send  event
 	if len(originals) > 0 {
-		ec := eventclient.NewEventContextByReq(req.Request.Header, ps.Cache)
 		for _, i := range originals {
-			if err := ec.InsertEvent(meta.EventTypeRelation, "processtemplate", meta.EventActionDelete, nil, i); err != nil {
+			srcevent := eventclient.NewEventWithHeader(req.Request.Header)
+			srcevent.EventType = meta.EventTypeRelation
+			srcevent.ObjType = "processtemplate"
+			srcevent.Action = meta.EventActionDelete
+			srcevent.Data = []meta.EventData{
+				{
+					PreData: i,
+				},
+			}
+			if err := ps.EventC.Push(ctx, srcevent); err != nil {
 				blog.Warnf("create event error:%s", err.Error())
 			}
 		}
@@ -77,7 +85,6 @@ func (ps *ProctrlServer) CreateProc2Template(req *restful.Request, resp *restful
 	}
 
 	blog.V(5).Infof("create proc module config: %v ", input)
-	ec := eventclient.NewEventContextByReq(req.Request.Header, ps.Cache)
 	for _, i := range input {
 		if err := ps.Instance.Table(common.BKTableNameProcTemplate).Insert(ctx, i); err != nil {
 			blog.Errorf("create proc module config error:%v", err)
@@ -85,8 +92,19 @@ func (ps *ProctrlServer) CreateProc2Template(req *restful.Request, resp *restful
 			return
 		}
 		//  record events
-		if err := ec.InsertEvent(meta.EventTypeRelation, "processtemplate", meta.EventActionCreate, i, nil); err != nil {
+		srcevent := eventclient.NewEventWithHeader(req.Request.Header)
+		srcevent.EventType = meta.EventTypeRelation
+		srcevent.ObjType = "processtemplate"
+		srcevent.Action = meta.EventActionCreate
+		srcevent.Data = []meta.EventData{
+			{
+				CurData: i,
+			},
+		}
+		if err := ps.EventC.Push(ctx, srcevent); err != nil {
 			blog.Errorf("create event error: %v", err)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcCreateProc2Template)})
+			return
 		}
 	}
 

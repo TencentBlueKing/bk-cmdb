@@ -42,6 +42,7 @@ type TopoGraphics struct {
 	Icon            string                 `json:"bk_obj_icon,omitempty" bson:"bk_obj_icon,omitempty"`
 	BizID           int                    `json:"bk_biz_id,omitempty" bson:"bk_biz_id,omitempty"`
 	SupplierAccount string                 `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account,omitempty"` // bk_supplier_account
+	Labels          Label                  `json:"labels" bson:"labels"`
 	Assts           []GraphAsst            `json:"assts,omitempty"`
 }
 

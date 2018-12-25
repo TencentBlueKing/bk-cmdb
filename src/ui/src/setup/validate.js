@@ -73,6 +73,11 @@ const customRules = {
         validate: (value) => {
             return /^[+-]?([0-9]*[.]?[0-9]+|[0-9]+[.]?[0-9]*)([eE][+-]?[0-9]+)?$/.test(value)
         }
+    },
+    oid: {
+        validate: (value) => {
+            return /^(\d+)?(\.\d+)+$/.test(value)
+        }
     }
 }
 
@@ -93,7 +98,8 @@ const dictionary = {
             float: () => '请输入正确的内容',
             isBigger: () => '必须大于最小值',
             repeat: () => '重复的值',
-            fieldId: () => '请输入正确的内容'
+            fieldId: () => '请输入正确的内容',
+            oid: () => '请输入正确的内容'
         },
         custom: {
             asst: {
@@ -117,7 +123,8 @@ const dictionary = {
             float: () => 'Please enter the correct content',
             isBigger: () => 'Must be greater than the minimum',
             repeat: () => 'This value should not be repeated',
-            fieldId: () => 'Please enter the correct content'
+            fieldId: () => 'Please enter the correct content',
+            oid: () => 'Please enter the correct content'
         },
         custom: {
             asst: {

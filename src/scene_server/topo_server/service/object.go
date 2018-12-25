@@ -48,7 +48,6 @@ func (s *topoService) CreateObject(params types.ContextParams, pathParams, query
 func (s *topoService) SearchObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
-
 	if err := cond.Parse(data); nil != err {
 		return nil, err
 	}
@@ -97,4 +96,14 @@ func (s *topoService) DeleteObject(params types.ContextParams, pathParams, query
 
 	err = s.core.ObjectOperation().DeleteObject(params, id, cond, true)
 	return nil, err
+}
+
+func (s *topoService) CreateOneObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+
+	rsp, err := s.core.ObjectOperation().CreateOneObject(params, data)
+	if nil != err {
+		return nil, err
+	}
+
+	return rsp.ToMapStr()
 }
