@@ -381,7 +381,8 @@
         "确定删除唯一校验": "Confirm delete rule",
         "所有更改已自动保存": "All changes saved automatically",
         "立即添加": "Add",
-        "暂无字段": "Empty"
+        "暂无字段": "Empty",
+        "内置": "Built-in"
     },
     "HostResourcePool": {
         "资源池": "Resource Pool",
