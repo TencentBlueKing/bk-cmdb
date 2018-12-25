@@ -70,7 +70,7 @@
                         {{$t("HostResourcePool['刷新查询']")}}
                     </bk-button>
                     <cmdb-hosts-table class="topo-table" ref="topoTable"
-                        :columns-config-key="table.columnsConfigKey"
+                        :columns-config-key="columnsConfigKey"
                         :columns-config-properties="columnsConfigProperties"
                         :quick-search="true"
                         @on-quick-search="handleQuickSearch">
@@ -162,7 +162,6 @@
                 },
                 table: {
                     params: null,
-                    columnsConfigKey: 'topology_table_columns',
                     quickSearch: {
                         property: null,
                         value: '',
@@ -174,6 +173,9 @@
         computed: {
             ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
             ...mapGetters('objectBiz', ['bizId']),
+            columnsConfigKey () {
+                return `${this.userName}_$topology_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
+            },
             columnsConfigProperties () {
                 const setProperties = this.properties.set.filter(property => ['bk_set_name'].includes(property['bk_property_id']))
                 const moduleProperties = this.properties.module.filter(property => ['bk_module_name'].includes(property['bk_property_id']))
