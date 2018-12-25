@@ -161,10 +161,14 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount']),
+            ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
             ...mapGetters('userCustom', ['usercustom']),
+            ...mapGetters('objectBiz', ['bizId']),
+            columnsConfigKey () {
+                return `${this.userName}_biz_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
+            },
             customBusinessColumns () {
-                return this.usercustom['biz_table_columns'] || []
+                return this.usercustom[this.columnsConfigKey] || []
             },
             authority () {
                 return this.$store.getters['userPrivilege/modelAuthority']('biz')
@@ -377,13 +381,13 @@
             },
             handleApplayColumnsConfig (properties) {
                 this.$store.dispatch('userCustom/saveUsercustom', {
-                    'biz_table_columns': properties.map(property => property['bk_property_id'])
+                    [this.columnsConfigKey]: properties.map(property => property['bk_property_id'])
                 })
                 this.columnsConfig.show = false
             },
             handleResetColumnsConfig () {
                 this.$store.dispatch('userCustom/saveUsercustom', {
-                    'biz_table_columns': []
+                    [this.columnsConfigKey]: []
                 })
             },
             routeToHistory () {
