@@ -14,9 +14,12 @@ package util
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"reflect"
+	"runtime/debug"
 	"sync/atomic"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -156,6 +159,10 @@ func NewBool(yes bool) *AtomicBool {
 	return &n
 }
 
+func (b *AtomicBool) SetIfNotSet() bool {
+	return atomic.CompareAndSwapInt32((*int32)(b), 0, 1)
+}
+
 func (b *AtomicBool) Set() {
 	atomic.StoreInt32((*int32)(b), 1)
 }
@@ -189,4 +196,28 @@ func Ptrue() *bool {
 func Pfalse() *bool {
 	tmp := false
 	return &tmp
+}
+
+// RunForever will run the function forever and rerun the f function if any panic happened
+func RunForever(name string, f func() error) {
+	for {
+		if err := runNoPanic(f); err != nil {
+			blog.Errorf("[%s] return %v, retry 3s later", err)
+			time.Sleep(time.Second * 3)
+		}
+	}
+}
+
+func runNoPanic(f func() error) (err error) {
+	defer func() {
+		if err != nil {
+			return
+		}
+		if syserr := recover(); err != nil {
+			err = fmt.Errorf("panic with error: %v, stack: \n%s", syserr, debug.Stack())
+		}
+	}()
+
+	err = f()
+	return err
 }

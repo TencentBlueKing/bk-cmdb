@@ -39,10 +39,16 @@ func (s *coreService) initModel() {
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/model/cascade", HandlerFunc: s.CascadeDeleteModel})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/model}", HandlerFunc: s.SearchModel})
 
+	// init model attribute groups methods
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/model/{bk_obj_id/group", HandlerFunc: s.CreateModelAttributeGroup})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/set/model/{bk_obj_id}/group", HandlerFunc: s.SetModelAttributeGroup})
+	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/model/{bk_obj_id}/group", HandlerFunc: s.UpdateModelAttributeGroup})
+	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/model/{bk_obj_id}/group", HandlerFunc: s.DeleteModelAttributeGroup})
+
 	// init attributes methods
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/model/{bk_obj_id}/attributes", HandlerFunc: s.CreateModelAttributes})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/set/model/{bk_obj_id}/attributes", HandlerFunc: s.SetModelAttributes})
-	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/set/model/{bk_obj_id}/attributes", HandlerFunc: s.UpdateModelAttributes})
+	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/model/{bk_obj_id}/attributes", HandlerFunc: s.UpdateModelAttributes})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/model/{bk_obj_id}/attributes", HandlerFunc: s.DeleteModelAttribute})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/model/{bk_obj_id}/attributes", HandlerFunc: s.SearchModelAttributes})
 
@@ -50,7 +56,9 @@ func (s *coreService) initModel() {
 
 func (s *coreService) initAttrUnique() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/model/{bk_obj_id}/attributes/unique", HandlerFunc: s.SearchModelAttrUnique})
-
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/model/{bk_obj_id}/attributes/unique", HandlerFunc: s.CreateModelAttrUnique})
+	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/model/{bk_obj_id}/attributes/unique/{id}", HandlerFunc: s.UpdateModelAttrUnique})
+	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/model/{bk_obj_id}/attributes/unique/id", HandlerFunc: s.DeleteModelAttrUnique})
 }
 
 func (s *coreService) initModelInstances() {
