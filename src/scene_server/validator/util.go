@@ -137,21 +137,21 @@ func ParseEnumOption(val interface{}) EnumOption {
 	return enumOptions
 }
 
-//parseIntOption  parse int data in option
-func parseIntOption(val interface{}) IntOption {
-	intOption := IntOption{}
+//parseMinMaxOption  parse int data in option
+func parseMinMaxOption(val interface{}) MinMaxOption {
+	minMaxOption := MinMaxOption{}
 	if nil == val || "" == val {
-		return intOption
+		return minMaxOption
 	}
 	switch option := val.(type) {
 	case string:
 
-		intOption.Min = gjson.Get(option, "min").Raw
-		intOption.Max = gjson.Get(option, "max").Raw
+		minMaxOption.Min = gjson.Get(option, "min").Raw
+		minMaxOption.Max = gjson.Get(option, "max").Raw
 
 	case map[string]interface{}:
-		intOption.Min = getString(option["min"])
-		intOption.Max = getString(option["max"])
+		minMaxOption.Min = getString(option["min"])
+		minMaxOption.Max = getString(option["max"])
 	}
-	return intOption
+	return minMaxOption
 }

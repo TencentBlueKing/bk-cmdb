@@ -76,7 +76,7 @@ func fixesProcess(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err e
 		common.BKPropertyIDField: map[string]interface{}{"$in": []string{"priority", "proc_num", "auto_time_gap", "timeout"}},
 	}
 	data := map[string]interface{}{
-		"option": validator.IntOption{Min: "1", Max: "10000"},
+		"option": validator.MinMaxOption{Min: "1", Max: "10000"},
 	}
 	err = db.Table(common.BKTableNameObjAttDes).Update(ctx, condition, data)
 	if nil != err {

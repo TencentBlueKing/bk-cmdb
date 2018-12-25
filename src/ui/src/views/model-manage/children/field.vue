@@ -21,7 +21,7 @@
                         {{fieldTypeMap[item['bk_property_type']]}}
                     </template>
                     <template v-else-if="header.id==='isrequired'">
-                        <i class="bk-icon icon-check-1"></i>
+                        <i class="bk-icon icon-check-1" v-if="item.isrequired"></i>
                     </template>
                     <template v-else-if="header.id==='create_time'">
                         {{$tools.formatTime(item['create_time'])}}
@@ -75,6 +75,7 @@
                 fieldTypeMap: {
                     'singlechar': this.$t('ModelManagement["短字符"]'),
                     'int': this.$t('ModelManagement["数字"]'),
+                    'float': this.$t('ModelManagement["浮点"]'),
                     'enum': this.$t('ModelManagement["枚举"]'),
                     'date': this.$t('ModelManagement["日期"]'),
                     'time': this.$t('ModelManagement["时间"]'),
@@ -216,7 +217,7 @@
     }
     .field-table {
         .disabled {
-            color: #ccc;
+            color: #bfc7d2;
         }
     }
 </style>
