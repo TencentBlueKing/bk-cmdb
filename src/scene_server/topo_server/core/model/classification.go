@@ -29,24 +29,8 @@ import (
 type Classification interface {
 	Operation
 	Parse(data mapstr.MapStr) (*metadata.Classification, error)
-
 	GetObjects() ([]Object, error)
-
-	SetID(classificationID string)
-	GetID() string
-
-	SetName(classificationName string)
-	GetName() string
-
-	SetType(classificationType string)
-	GetType() string
-
-	SetSupplierAccount(supplierAccount string)
-	GetSupplierAccount() string
-
-	SetIcon(classificationIcon string)
-	GetIcon() string
-
+	Classify() metadata.Classification
 	ToMapStr() (mapstr.MapStr, error)
 }
 
@@ -58,6 +42,10 @@ type classification struct {
 	cls       metadata.Classification
 	params    types.ContextParams
 	clientSet apimachinery.ClientSetInterface
+}
+
+func (cli *classification) Classify() metadata.Classification {
+	return cli.cls
 }
 
 func (cli *classification) MarshalJSON() ([]byte, error) {
@@ -144,7 +132,7 @@ func (cli *classification) Create() error {
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("faield to create classification(%s), error info is %s", cli.cls.ClassificationID, rsp.ErrMsg)
+		blog.Errorf("failed to create classification(%s), error info is %s", cli.cls.ClassificationID, rsp.ErrMsg)
 		return cli.params.Err.Error(rsp.Code)
 	}
 

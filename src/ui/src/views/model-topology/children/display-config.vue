@@ -195,7 +195,7 @@
     }
     .display-setting {
         .cmdb-form-checkbox {
-            width: 154px;
+            min-width: 154px;
         }
     }
     .display-list {

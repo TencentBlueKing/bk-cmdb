@@ -13,16 +13,16 @@
 package metadata
 
 import (
-	"configcenter/src/common/mapstr"
 	"fmt"
 	"time"
 
-	"github.com/coccyx/timeparser"
-	"github.com/gin-gonic/gin/json"
-
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
+
+	"github.com/coccyx/timeparser"
+	"github.com/gin-gonic/gin/json"
 )
 
 const defaultError = "{\"result\": false, \"bk_error_code\": 1199000, \"bk_error_msg\": %s}"
@@ -96,7 +96,7 @@ type QueryInput struct {
 	Sort      string      `json:"sort,omitempty"`
 }
 
-//ConvTime ??????????cc_type key ??????time.Time
+//ConvTime cc_type key
 func (o *QueryInput) ConvTime() error {
 	conds, ok := o.Condition.(map[string]interface{})
 	if true != ok && nil != conds {
@@ -113,7 +113,7 @@ func (o *QueryInput) ConvTime() error {
 	return nil
 }
 
-//convTimeItem ????????,??????????cc_time_type
+//convTimeItem cc_time_type
 func (o *QueryInput) convTimeItem(item interface{}) (interface{}, error) {
 
 	switch item.(type) {

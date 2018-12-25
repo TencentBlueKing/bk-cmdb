@@ -36,7 +36,7 @@ func (m *modelManager) isExists(ctx core.ContextParams, cond universalsql.Condit
 func (m *modelManager) isValid(ctx core.ContextParams, objID string) error {
 
 	checkCond := mongo.NewCondition()
-	checkCond.Element(&mongo.Eq{Key: metadata.ModelFieldOwnerID, Val: ctx.SupplierAccount})
+	//	checkCond.Element(&mongo.Eq{Key: metadata.ModelFieldOwnerID, Val: ctx.SupplierAccount})
 	checkCond.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: objID})
 
 	cnt, err := m.dbProxy.Table(common.BKTableNameObjDes).Find(checkCond.ToMapStr()).Count(ctx)

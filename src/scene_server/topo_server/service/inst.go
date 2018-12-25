@@ -132,7 +132,7 @@ func (s *topoService) UpdateInsts(params types.ContextParams, pathParams, queryP
 		cond.Field(obj.GetInstIDFieldName()).Eq(item.InstID)
 		err = s.core.InstOperation().UpdateInst(params, item.InstInfo, obj, cond, item.InstID)
 		if nil != err {
-			blog.Errorf("[api-inst] failed to update the object(%s) inst (%d),the data (%#v), error info is %s", obj.GetID(), item.InstID, data, err.Error())
+			blog.Errorf("[api-inst] failed to update the object(%s) inst (%d),the data (%#v), error info is %s", obj.Object().ObjectID, item.InstID, data, err.Error())
 			return nil, err
 		}
 	}
@@ -164,7 +164,7 @@ func (s *topoService) UpdateInst(params types.ContextParams, pathParams, queryPa
 	cond.Field(obj.GetInstIDFieldName()).Eq(instID)
 	err = s.core.InstOperation().UpdateInst(params, data, obj, cond, instID)
 	if nil != err {
-		blog.Errorf("[api-inst] failed to update the object(%s) inst (%s),the data (%#v), error info is %s", obj.GetID(), pathParams("inst_id"), data, err.Error())
+		blog.Errorf("[api-inst] failed to update the object(%s) inst (%s),the data (%#v), error info is %s", obj.Object().ObjectID, pathParams("inst_id"), data, err.Error())
 		return nil, err
 	}
 
