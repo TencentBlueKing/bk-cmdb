@@ -13,9 +13,9 @@
 package deleteopt
 
 // One delete  one option
-type One interface {
+type One struct {
 }
 
 // Many delete  many option
-type Many interface {
+type Many struct {
 }

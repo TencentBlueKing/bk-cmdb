@@ -14,7 +14,10 @@ package godriver
 
 import (
 	"context"
-	"log"
+
+	"github.com/mongodb/mongo-go-driver/mongo"
+	"github.com/mongodb/mongo-go-driver/mongo/options"
+	"github.com/mongodb/mongo-go-driver/x/bsonx"
 
 	"configcenter/src/common/mapstr"
 	"configcenter/src/storage/mongodb"
@@ -23,9 +26,6 @@ import (
 	"configcenter/src/storage/mongodb/insertopt"
 	"configcenter/src/storage/mongodb/replaceopt"
 	"configcenter/src/storage/mongodb/updateopt"
-
-	"github.com/mongodb/mongo-go-driver/mongo"
-	"github.com/mongodb/mongo-go-driver/x/bsonx"
 )
 
 var _ mongodb.CollectionInterface = (*collection)(nil)
@@ -54,7 +54,7 @@ func (c *collection) Name() string {
 	return c.innerCollection.Name()
 }
 func (c *collection) Drop(ctx context.Context) error {
-	return c.innerCollection.Drop(context.TODO())
+	return c.innerCollection.Drop(ctx)
 }
 func (c *collection) CreateIndex(index mongodb.Index) error {
 
@@ -94,7 +94,7 @@ func (c *collection) GetIndexes() (*mongodb.GetIndexResult, error) {
 	cursor, err := indexView.List(context.TODO())
 
 	if nil != err {
-		return nil, err
+		return &mongodb.GetIndexResult{}, err
 	}
 
 	defer cursor.Close(context.TODO())
@@ -102,12 +102,12 @@ func (c *collection) GetIndexes() (*mongodb.GetIndexResult, error) {
 	for cursor.Next(context.TODO()) {
 		elem := bsonx.Doc{}
 		if err := cursor.Decode(elem); err != nil {
-			log.Fatal(err)
+			return &mongodb.GetIndexResult{}, err
 		}
 	}
 
 	if err := cursor.Err(); err != nil {
-		log.Fatal(err)
+		return &mongodb.GetIndexResult{}, err
 	}
 
 	return nil, nil
@@ -120,7 +120,11 @@ func (c *collection) Count(ctx context.Context, filter interface{}) (uint64, err
 
 func (c *collection) DeleteOne(ctx context.Context, filter interface{}, opts *deleteopt.One) (*mongodb.DeleteResult, error) {
 
-	delResult, err := c.innerCollection.DeleteOne(ctx, filter)
+	deleteOption := &options.DeleteOptions{}
+	if nil != opts {
+		deleteOption = opts.ConvertToMongoOptions()
+	}
+	delResult, err := c.innerCollection.DeleteOne(ctx, filter, deleteOption)
 	if nil != err {
 		return &mongodb.DeleteResult{}, err
 	}
@@ -130,7 +134,12 @@ func (c *collection) DeleteOne(ctx context.Context, filter interface{}, opts *de
 
 func (c *collection) DeleteMany(ctx context.Context, filter interface{}, opts *deleteopt.Many) (*mongodb.DeleteResult, error) {
 
-	delResult, err := c.innerCollection.DeleteMany(ctx, filter)
+	deleteOption := &options.DeleteOptions{}
+	if nil != opts {
+		deleteOption = opts.ConvertToMongoOptions()
+	}
+
+	delResult, err := c.innerCollection.DeleteMany(ctx, filter, deleteOption)
 	if nil != err {
 		return &mongodb.DeleteResult{DeletedCount: 0}, err
 	}
@@ -140,16 +149,12 @@ func (c *collection) DeleteMany(ctx context.Context, filter interface{}, opts *d
 
 func (c *collection) Find(ctx context.Context, filter interface{}, opts *findopt.Many, output interface{}) error {
 
-	switch tmp := filter.(type) {
-	case string, []byte:
-		condMap, err := mapstr.NewFromInterface(tmp)
-		if nil != err {
-			return err
-		}
-		filter = condMap
+	findOptions := &options.FindOptions{}
+	if nil != opts {
+		findOptions = opts.ConvertToMongoOptions()
 	}
 
-	cursor, err := c.innerCollection.Find(ctx, filter)
+	cursor, err := c.innerCollection.Find(ctx, filter, findOptions)
 	if nil != err {
 		return err
 	}
@@ -168,35 +173,52 @@ func (c *collection) Find(ctx context.Context, filter interface{}, opts *findopt
 }
 
 func (c *collection) FindOne(ctx context.Context, filter interface{}, opts *findopt.One, output interface{}) error {
-	switch tmp := filter.(type) {
-	case string, []byte:
-		condMap, err := mapstr.NewFromInterface(tmp)
-		if nil != err {
-			return err
-		}
-		filter = condMap
+
+	findOptions := &options.FindOneOptions{}
+	if nil != opts {
+		findOptions = opts.ConvertToMongoOptions()
 	}
-	return c.innerCollection.FindOne(ctx, filter).Decode(output)
+
+	return c.innerCollection.FindOne(ctx, filter, findOptions).Decode(output)
 }
 
-func (c *collection) FindAndModify(ctx context.Context, filter interface{}, update interface{}, opts *findopt.FindAndModify, output interface{}) error {
-	return c.innerCollection.FindOneAndUpdate(ctx, filter, update).Decode(nil)
+func (c *collection) FindOneAndModify(ctx context.Context, filter interface{}, update interface{}, opts *findopt.FindAndModify, output interface{}) error {
+
+	findOneAndModify := &options.FindOneAndUpdateOptions{}
+	if nil != opts {
+		findOneAndModify = opts.ConvertToMongoOptions()
+	}
+	return c.innerCollection.FindOneAndUpdate(ctx, filter, update, findOneAndModify).Decode(output)
 }
 
 func (c *collection) InsertOne(ctx context.Context, document interface{}, opts *insertopt.One) error {
 
-	_, err := c.innerCollection.InsertOne(ctx, document)
+	insertOption := &options.InsertOneOptions{}
+	if nil != opts {
+		insertOption = opts.ConvertToMongoOptions()
+	}
+	_, err := c.innerCollection.InsertOne(ctx, document, insertOption)
 	return err
 }
 
 func (c *collection) InsertMany(ctx context.Context, document []interface{}, opts *insertopt.Many) error {
-	_, err := c.innerCollection.InsertMany(ctx, document)
+
+	insertOption := &options.InsertManyOptions{}
+	if nil != opts {
+		insertOption = opts.ConvertToMongoOptions()
+	}
+	_, err := c.innerCollection.InsertMany(ctx, document, insertOption)
 	return err
 }
 
 func (c *collection) UpdateMany(ctx context.Context, filter interface{}, update interface{}, opts *updateopt.Many) (*mongodb.UpdateResult, error) {
 
-	updateResult, err := c.innerCollection.UpdateMany(ctx, filter, update)
+	updateOption := &options.UpdateOptions{}
+	if nil != opts {
+		updateOption = opts.ConvertToMongoOptions()
+	}
+
+	updateResult, err := c.innerCollection.UpdateMany(ctx, filter, update, updateOption)
 	if nil != err {
 		return &mongodb.UpdateResult{}, err
 	}

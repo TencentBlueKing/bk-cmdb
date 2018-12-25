@@ -13,13 +13,18 @@ package godriver_test
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/storage/mongodb"
+	"configcenter/src/storage/mongodb/findopt"
 	"configcenter/src/storage/mongodb/godriver"
 
 	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/x/bsonx"
+	"github.com/rs/xid"
 	"github.com/stretchr/testify/require"
 )
 
@@ -35,48 +40,74 @@ func executeCommand(t *testing.T, callback func(dbclient mongodb.CommonClient)) 
 
 	require.NoError(t, dbClient.Close())
 }
-
-func TestConectMongo(t *testing.T) {
-
-	dbClient := createConnection()
-	err := dbClient.Open()
-	require.NoError(t, err)
-	err = dbClient.Close()
-	require.NoError(t, err)
-
-}
-
-func TestInsertOne(t *testing.T) {
-
-	executeCommand(t, func(dbClient mongodb.CommonClient) {
-		coll := dbClient.Collection("cc_tmp")
-		err := coll.InsertOne(context.TODO(), bson.M{"key": "value"}, nil)
-		require.NoError(t, err)
-	})
-
-}
-
-func TestFind(t *testing.T) {
+func TestCRUD(t *testing.T) {
 
 	executeCommand(t, func(dbClient mongodb.CommonClient) {
 
+		// insert
 		coll := dbClient.Collection("cc_tmp")
-		result := []mapstr.MapStr{}
-		err := coll.Find(context.TODO(), `{"x":1}`, nil, &result)
+		val := xid.New().String()
+		err := coll.InsertOne(context.TODO(), bson.M{"key": "value_" + val}, nil)
 		require.NoError(t, err)
-		t.Log("result:", result)
-	})
 
-}
+		// find
+		cond := mongo.NewCondition()
+		cond.Element(&mongo.Regex{Key: "key", Val: "value"})
+		dataResult := []mapstr.MapStr{}
+		err = coll.Find(context.TODO(),
+			cond.ToMapStr(),
+			&findopt.Many{
+				Opts: findopt.Opts{
+					Fields: []findopt.FieldItem{
+						findopt.FieldItem{
+							Name: "_id",
+							Hide: true,
+						},
+						findopt.FieldItem{
+							Name: "key",
+						},
+					},
+					Limit: 3,
+					Sort: []findopt.SortItem{
+						findopt.SortItem{
+							Name:       "key",
+							Descending: true,
+						},
+					},
+				},
+			},
+			&dataResult)
 
-func TestFindOne(t *testing.T) {
-
-	executeCommand(t, func(dbClient mongodb.CommonClient) {
-		coll := dbClient.Collection("cc_tmp")
-		result := mapstr.MapStr{}
-		err := coll.FindOne(context.TODO(), `{"x":1}`, nil, &result)
 		require.NoError(t, err)
-		t.Log("result:", result)
+		sql, err := cond.ToSQL()
+		require.NoError(t, err)
+		resultStr, err := json.Marshal(dataResult)
+		require.NoError(t, err)
+		t.Logf("find data result:%s by the condition:%s", resultStr, sql)
+		require.NotEqual(t, 0, len(dataResult))
+
+		// find one
+		dataResultOne := mapstr.MapStr{}
+		err = coll.FindOne(context.TODO(), cond.ToMapStr(), nil, &dataResultOne)
+		require.NoError(t, err)
+		resultStr, err = json.Marshal(dataResultOne)
+		require.NoError(t, err)
+		t.Logf("data result one: %s by the condition:%s", resultStr, sql)
+
+		// find and modify
+		dataResultFindUpdate := mapstr.MapStr{}
+		update := bsonx.Doc{
+			{"$set", bsonx.Document(bsonx.Doc{{"key", bsonx.String("value_test")}})},
+		}
+		err = coll.FindOneAndModify(context.TODO(), cond.ToMapStr(), update, nil, &dataResultFindUpdate)
+		require.NoError(t, err)
+		resultStr, err = json.Marshal(dataResultFindUpdate)
+		require.NoError(t, err)
+		t.Logf("data result find and update:%s", resultStr)
+
+		// delete
+		//coll.DeleteOne(context.TODO(),cond.ToMapStr())
+
 	})
 
 }
