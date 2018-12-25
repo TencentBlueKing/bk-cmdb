@@ -1,12 +1,12 @@
 <template>
     <div class="hosts-layout clearfix">
         <cmdb-hosts-filter class="hosts-filter fr"
-            :filter-config-key="filter.filterConfigKey"
+            :filter-config-key="filterConfigKey"
             :collection-content="{business: filter.business}"
             @on-refresh="handleRefresh">
         </cmdb-hosts-filter>
         <cmdb-hosts-table class="hosts-main" ref="hostsTable"
-            :columns-config-key="table.columnsConfigKey"
+            :columns-config-key="columnsConfigKey"
             :columns-config-properties="columnsConfigProperties">
         </cmdb-hosts-table>
     </div>
@@ -29,11 +29,7 @@
                     set: [],
                     module: []
                 },
-                table: {
-                    columnsConfigKey: 'hosts_table_columns'
-                },
                 filter: {
-                    filterConfigKey: 'hosts_filter_fields',
                     business: null,
                     businessResolver: null,
                     params: null,
@@ -42,9 +38,15 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount']),
+            ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
             ...mapGetters('hostFavorites', ['applyingInfo']),
             ...mapGetters('objectBiz', ['bizId']),
+            columnsConfigKey () {
+                return `${this.userName}_hosts_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
+            },
+            filterConfigKey () {
+                return `${this.userName}_hosts_${this.isAdminView ? 'adminView' : this.bizId}_filter_fields`
+            },
             columnsConfigProperties () {
                 const setProperties = this.properties.set.filter(property => ['bk_set_name'].includes(property['bk_property_id']))
                 const moduleProperties = this.properties.module.filter(property => ['bk_module_name'].includes(property['bk_property_id']))
