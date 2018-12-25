@@ -47,12 +47,13 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount']),
+            ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
             ...mapGetters('userCustom', ['usercustom']),
+            ...mapGetters('objectBiz', ['bizId']),
             customColumns () {
                 const customKeyMap = {
-                    [this.objId]: `${this.objId}_table_columns`,
-                    'host': 'resource_table_columns'
+                    [this.objId]: `${this.userName}_${this.objId}_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`,
+                    'host': `${this.userName}_resource_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
                 }
                 return this.usercustom[customKeyMap[this.objId]] || []
             },
