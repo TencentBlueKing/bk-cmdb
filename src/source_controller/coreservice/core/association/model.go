@@ -27,6 +27,7 @@ type associationModel struct {
 
 func (m *associationModel) CreateModelAssociation(ctx core.ContextParams, inputParam metadata.CreateModelAssociation) (*metadata.CreateOneDataResult, error) {
 
+	inputParam.Spec.OwnerID = ctx.SupplierAccount
 	if err := m.isValid(ctx, inputParam); nil != err {
 		return &metadata.CreateOneDataResult{}, err
 	}

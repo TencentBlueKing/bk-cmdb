@@ -22,6 +22,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/source_controller/coreservice/core/association"
 	"configcenter/src/source_controller/coreservice/core/instances"
+	"configcenter/src/source_controller/coreservice/core/model"
 	"configcenter/src/storage/dal/mongo"
 
 	"github.com/stretchr/testify/require"
@@ -50,11 +51,37 @@ func (s *instDependences) SearchUnique(ctx core.ContextParams, objID string) (un
 	return nil, nil
 }
 
-type mockDependences struct {
+type mockDependences struct{}
+
+// HasInstance used to check if the model has some instances
+func (s *mockDependences) HasInstance(ctx core.ContextParams, objIDS []string) (exists bool, err error) {
+	return false, nil
+}
+
+// HasAssociation used to check if the model has some associations
+func (s *mockDependences) HasAssociation(ctx core.ContextParams, objIDS []string) (exists bool, err error) {
+	return false, nil
+}
+
+// CascadeDeleteAssociation cascade delete all associated data (included instances, model association, instance association) associated with modelObjID
+func (s *mockDependences) CascadeDeleteAssociation(ctx core.ContextParams, objIDS []string) error {
+	return nil
+}
+
+// CascadeDeleteInstances cascade delete all instances(included instances, instance association) associated with modelObjID
+func (s *mockDependences) CascadeDeleteInstances(ctx core.ContextParams, objIDS []string) error {
+	return nil
 }
 
 func (m *mockDependences) IsInstanceExist(ctx core.ContextParams, objID string, instID uint64) (exists bool, err error) {
 	return false, nil
+}
+
+func newModel(t *testing.T) core.ModelOperation {
+
+	db, err := mongo.NewMgo("mongodb://cc:cc@localhost:27010,localhost:27011,localhost:27012,localhost:27013/cmdb")
+	require.NoError(t, err)
+	return model.New(db, &mockDependences{})
 }
 
 func newAssociation(t *testing.T) core.AssociationOperation {

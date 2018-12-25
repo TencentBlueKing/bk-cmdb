@@ -80,7 +80,6 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 		return
 	}
 
-	// TODO: need to set model dependent methods collecctions
 	s.core = core.New(model.New(dbProxy, s), instances.New(dbProxy, s), association.New(dbProxy, s))
 }
 
