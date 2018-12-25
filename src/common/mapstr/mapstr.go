@@ -29,6 +29,10 @@ func New() MapStr {
 	return MapStr{}
 }
 
+func NewArray() []MapStr {
+	return []MapStr{}
+}
+
 // NewArrayFromInterface create a new array from interface
 func NewArrayFromInterface(datas []map[string]interface{}) []MapStr {
 	results := []MapStr{}

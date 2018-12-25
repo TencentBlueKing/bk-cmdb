@@ -43,3 +43,42 @@ func TestNewConditionFromMapStr(t *testing.T) {
 	sql, _ = recoverSql.ToSQL()
 	t.Logf("recover sql:%s", sql)
 }
+
+func TestMgCondition(t *testing.T) {
+	target := mongo.NewCondition()
+	target.Element(
+		Field("name.first").Nin([]string{"sam", "jack"}).In([]string{"jim", "jerry"}),
+		Field("age").Lte(75).Gte(15),
+		Field("name.last").Eq("yang"),
+	)
+	sql, _ := target.ToSQL()
+	t.Logf("%s", sql)
+
+	target.And(
+		Field("").Lt(75).Gte(15),
+		Field("color").In([]string{"red", "green"}),
+	)
+	sql, _ = target.ToSQL()
+	t.Logf("%s", sql)
+
+	target.Or(
+		Field("age").All(5),
+		Field("age").Size(3).All([]int{6, 7, 8}),
+	)
+	sql, _ = target.ToSQL()
+	t.Logf("%s", sql)
+
+	target.Nor(
+		Field("age").Lt(75).Gte(15),
+		Field("family").In([]string{"roger", "yang"}),
+	)
+	sql, _ = target.ToSQL()
+	t.Logf("%s", sql)
+
+	target.Not(
+		Field("age").Lt(75).Gte(15),
+		Field("family").In([]string{"roger", "yang"}),
+	)
+	sql, _ = target.ToSQL()
+	t.Logf("%s", sql)
+}
