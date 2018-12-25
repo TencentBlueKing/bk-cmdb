@@ -47,37 +47,37 @@ func TestNewConditionFromMapStr(t *testing.T) {
 func TestMgCondition(t *testing.T) {
 	target := mongo.NewCondition()
 	target.Element(
-		Field("name.first").Nin([]string{"sam", "jack"}).In([]string{"jim", "jerry"}),
-		Field("age").Lte(75).Gte(15),
-		Field("name.last").Eq("yang"),
+		mongo.Field("name.first").Nin([]string{"test1", "test2"}).In([]string{"test3", "test4"}),
+		mongo.Field("age").Lte(75).Gte(15),
+		mongo.Field("name.last").Eq("yang"),
 	)
 	sql, _ := target.ToSQL()
 	t.Logf("%s", sql)
 
 	target.And(
-		Field("").Lt(75).Gte(15),
-		Field("color").In([]string{"red", "green"}),
+		mongo.Field("").Lt(75).Gte(15),
+		mongo.Field("").In([]string{"red", "green"}),
 	)
 	sql, _ = target.ToSQL()
 	t.Logf("%s", sql)
 
 	target.Or(
-		Field("age").All(5),
-		Field("age").Size(3).All([]int{6, 7, 8}),
+		mongo.Field("").All(5),
+		mongo.Field("age").Size(3).All([]int{6, 7, 8}),
 	)
 	sql, _ = target.ToSQL()
 	t.Logf("%s", sql)
 
 	target.Nor(
-		Field("age").Lt(75).Gte(15),
-		Field("family").In([]string{"roger", "yang"}),
+		mongo.Field("age").Lt(75).Gte(15),
+		mongo.Field("family").In([]string{"wang", "yang"}),
 	)
 	sql, _ = target.ToSQL()
 	t.Logf("%s", sql)
 
 	target.Not(
-		Field("age").Lt(75).Gte(15),
-		Field("family").In([]string{"roger", "yang"}),
+		mongo.Field("age").Lt(75).Gte(15),
+		mongo.Field("family").In([]string{"li", "yang"}),
 	)
 	sql, _ = target.ToSQL()
 	t.Logf("%s", sql)
