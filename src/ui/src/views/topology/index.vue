@@ -6,8 +6,6 @@
             :handler-offset="3"
             :min="200"
             :max="480">
-            <cmdb-business-selector class="business-selector" v-model="business">
-            </cmdb-business-selector>
             <div class="tree-simplify" v-if="false && tree.simplifyAvailable">
                 <cmdb-form-bool class="tree-simplify-checkbox"
                     :size="16"
@@ -108,7 +106,7 @@
                     :show="showProcessPanel">
                     <cmdb-topo-node-process
                         v-if="tab.active === 'process'"
-                        :business="business"
+                        :business="bizId"
                         :module="tree.selectedNode">
                     </cmdb-topo-node-process>
                 </bk-tabpanel>
@@ -174,7 +172,8 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount']),
+            ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
+            ...mapGetters('objectBiz', ['bizId']),
             columnsConfigProperties () {
                 const setProperties = this.properties.set.filter(property => ['bk_set_name'].includes(property['bk_property_id']))
                 const moduleProperties = this.properties.module.filter(property => ['bk_module_name'].includes(property['bk_property_id']))
@@ -237,7 +236,7 @@
             this.$store.commit('setHeaderTitle', this.$t('Nav["业务拓扑"]'))
             try {
                 await Promise.all([
-                    this.getBusiness(),
+                    // this.getBusiness(),
                     this.getProperties()
                 ])
                 await this.getMainlineModel()
@@ -352,7 +351,7 @@
                 if (objId === 'set') {
                     requestParams.condition['bk_set_id'] = instId
                     promise = this.searchSet({
-                        bizId: this.business,
+                        bizId: this.bizId,
                         params: requestParams,
                         config: requestConfig
                     })
@@ -360,7 +359,7 @@
                     requestParams.condition['bk_module_id'] = instId
                     requestParams.condition['bk_supplier_account'] = this.supplierAccount
                     promise = this.searchModule({
-                        bizId: this.business,
+                        bizId: this.bizId,
                         setId: this.tree.selectedNodeState.parent.node['bk_inst_id'],
                         params: requestParams,
                         config: requestConfig
@@ -394,16 +393,16 @@
             getBusinessTopo () {
                 return Promise.all([
                     this.getInstTopo({
-                        bizId: this.business,
+                        bizId: this.bizId,
                         config: {
-                            requestId: `get_getInstTopo_${this.business}`,
+                            requestId: `get_getInstTopo_${this.bizId}`,
                             cancelPrevious: true
                         }
                     }),
                     this.getInternalTopo({
-                        bizId: this.business,
+                        bizId: this.bizId,
                         config: {
-                            requestId: `get_getInternalTopo_${this.business}`,
+                            requestId: `get_getInternalTopo_${this.bizId}`,
                             cancelPrevious: true
                         }
                     })
@@ -459,7 +458,7 @@
                 this.handleRefresh()
             },
             handleRefresh (resetPage = true) {
-                this.$refs.topoTable.search(this.business, this.table.params, true)
+                this.$refs.topoTable.search(this.bizId, this.table.params, true)
             },
             setSearchParams () {
                 const necessaryObj = Object.keys(this.properties)
@@ -582,7 +581,7 @@
                 const nextObjId = selectedNodeModel['bk_next_obj']
                 const formData = {
                     ...value,
-                    'bk_biz_id': this.business,
+                    'bk_biz_id': this.bizId,
                     'bk_parent_id': selectedNode['bk_inst_id']
                 }
                 let promise
@@ -593,7 +592,7 @@
                     instIdKey = 'bk_set_id'
                     instNameKey = 'bk_set_name'
                     promise = this.createSet({
-                        bizId: this.business,
+                        bizId: this.bizId,
                         params: formData
                     })
                 } else if (nextObjId === 'module') {
@@ -601,7 +600,7 @@
                     instIdKey = 'bk_module_id'
                     instNameKey = 'bk_module_name'
                     promise = this.createModule({
-                        bizId: this.business,
+                        bizId: this.bizId,
                         setId: selectedNode['bk_inst_id'],
                         params: formData
                     })
@@ -644,14 +643,14 @@
                 if (objId === 'set') {
                     formData['bk_supplier_account'] = this.supplierAccount
                     promise = this.updateSet({
-                        bizId: this.business,
+                        bizId: this.bizId,
                         setId: selectedNode['bk_inst_id'],
                         params: formData
                     })
                 } else if (objId === 'module') {
                     formData['bk_supplier_account'] = this.supplierAccount
                     promise = this.updateModule({
-                        bizId: this.business,
+                        bizId: this.bizId,
                         setId: this.tree.selectedNodeInst['bk_set_id'],
                         moduleId: selectedNode['bk_inst_id'],
                         params: formData
@@ -701,13 +700,13 @@
                         let promise
                         if (objId === 'set') {
                             promise = this.deleteSet({
-                                bizId: this.business,
+                                bizId: this.bizId,
                                 setId: selectedNode['bk_inst_id'],
                                 config
                             })
                         } else if (objId === 'module') {
                             promise = this.deleteModule({
-                                bizId: this.business,
+                                bizId: this.bizId,
                                 setId: parentNode['bk_inst_id'],
                                 moduleId: selectedNode['bk_inst_id'],
                                 config
