@@ -13,37 +13,26 @@
 package godriver
 
 import (
-	"configcenter/src/storage/mongobyc"
+	"configcenter/src/storage/mongodb"
 )
 
-var _ mongobyc.Session = (*session)(nil)
+var _ mongodb.ClientPool = (*clientPool)(nil)
 
-type session struct {
-	*transaction
-	mongocli *client
+type clientPool struct {
 }
 
-func newSession(mongocli *client) *session {
-	return &session{
-		mongocli: mongocli,
-	}
-}
-
-func (s *session) Open() error {
-
-	session, err := s.mongocli.innerClient.StartSession()
-	if nil != err {
-		return err
-	}
-
-	s.transaction = newSessionTransaction(s.mongocli, session)
+func (c *clientPool) Open() error {
 	return nil
 }
 
-func (s *session) Close() error {
-	return s.transaction.Close()
+func (c *clientPool) Close() error {
+	return nil
 }
 
-func (s *session) Collection(collName string) mongobyc.CollectionInterface {
-	return s.transaction.Collection(collName)
+func (c *clientPool) Pop() mongodb.Client {
+	return nil
+}
+
+func (c *clientPool) Push(targetClient mongodb.Client) {
+
 }

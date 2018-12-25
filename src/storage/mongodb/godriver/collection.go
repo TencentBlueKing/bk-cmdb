@@ -17,35 +17,35 @@ import (
 	"log"
 
 	"configcenter/src/common/mapstr"
-	"configcenter/src/storage/mongobyc"
-	"configcenter/src/storage/mongobyc/deleteopt"
-	"configcenter/src/storage/mongobyc/findopt"
-	"configcenter/src/storage/mongobyc/insertopt"
-	"configcenter/src/storage/mongobyc/replaceopt"
-	"configcenter/src/storage/mongobyc/updateopt"
+	"configcenter/src/storage/mongodb"
+	"configcenter/src/storage/mongodb/deleteopt"
+	"configcenter/src/storage/mongodb/findopt"
+	"configcenter/src/storage/mongodb/insertopt"
+	"configcenter/src/storage/mongodb/replaceopt"
+	"configcenter/src/storage/mongodb/updateopt"
 
-	mgo "github.com/mongodb/mongo-go-driver/mongo"
+	"github.com/mongodb/mongo-go-driver/mongo"
 	"github.com/mongodb/mongo-go-driver/x/bsonx"
 )
 
-var _ mongobyc.CollectionInterface = (*collection)(nil)
+var _ mongodb.CollectionInterface = (*collection)(nil)
 
 type collection struct {
-	innerSession     mgo.Session
-	innerCollection *mgo.Collection
+	innerSession    mongo.Session
+	innerCollection *mongo.Collection
 	err             error
 }
 
-func newCollection(db *mgo.Database, collectionName string) mongobyc.CollectionInterface {
+func newCollection(db *mongo.Database, collectionName string) mongodb.CollectionInterface {
 
 	return &collection{
 		innerCollection: db.Collection(collectionName),
 	}
 }
 
-func newCollectionWithSession(db *mgo.Database, innerSession mgo.Session, collectionName string)mongobyc.CollectionInterface{
+func newCollectionWithSession(db *mongo.Database, innerSession mongo.Session, collectionName string) mongodb.CollectionInterface {
 	return &collection{
-		innerSession: innerSession,
+		innerSession:    innerSession,
 		innerCollection: db.Collection(collectionName),
 	}
 }
@@ -56,7 +56,7 @@ func (c *collection) Name() string {
 func (c *collection) Drop(ctx context.Context) error {
 	return c.innerCollection.Drop(context.TODO())
 }
-func (c *collection) CreateIndex(index mongobyc.Index) error {
+func (c *collection) CreateIndex(index mongodb.Index) error {
 
 	indexView := c.innerCollection.Indexes()
 
@@ -72,7 +72,7 @@ func (c *collection) CreateIndex(index mongobyc.Index) error {
 
 	_, err := indexView.CreateOne(
 		context.TODO(),
-		mgo.IndexModel{
+		mongo.IndexModel{
 			Keys:    keys,
 			Options: options,
 		},
@@ -88,7 +88,7 @@ func (c *collection) DropIndex(indexName string) error {
 	return err
 }
 
-func (c *collection) GetIndexes() (*mongobyc.GetIndexResult, error) {
+func (c *collection) GetIndexes() (*mongodb.GetIndexResult, error) {
 
 	indexView := c.innerCollection.Indexes()
 	cursor, err := indexView.List(context.TODO())
@@ -118,24 +118,24 @@ func (c *collection) Count(ctx context.Context, filter interface{}) (uint64, err
 	return uint64(cnt), err
 }
 
-func (c *collection) DeleteOne(ctx context.Context, filter interface{}, opts *deleteopt.One) (*mongobyc.DeleteResult, error) {
+func (c *collection) DeleteOne(ctx context.Context, filter interface{}, opts *deleteopt.One) (*mongodb.DeleteResult, error) {
 
 	delResult, err := c.innerCollection.DeleteOne(ctx, filter)
 	if nil != err {
-		return &mongobyc.DeleteResult{}, err
+		return &mongodb.DeleteResult{}, err
 	}
 
-	return &mongobyc.DeleteResult{DeletedCount: uint64(delResult.DeletedCount)}, nil
+	return &mongodb.DeleteResult{DeletedCount: uint64(delResult.DeletedCount)}, nil
 }
 
-func (c *collection) DeleteMany(ctx context.Context, filter interface{}, opts *deleteopt.Many) (*mongobyc.DeleteResult, error) {
+func (c *collection) DeleteMany(ctx context.Context, filter interface{}, opts *deleteopt.Many) (*mongodb.DeleteResult, error) {
 
 	delResult, err := c.innerCollection.DeleteMany(ctx, filter)
 	if nil != err {
-		return &mongobyc.DeleteResult{DeletedCount: 0}, err
+		return &mongodb.DeleteResult{DeletedCount: 0}, err
 	}
 
-	return &mongobyc.DeleteResult{DeletedCount: uint64(delResult.DeletedCount)}, nil
+	return &mongodb.DeleteResult{DeletedCount: uint64(delResult.DeletedCount)}, nil
 }
 
 func (c *collection) Find(ctx context.Context, filter interface{}, opts *findopt.Many, output interface{}) error {
@@ -163,7 +163,7 @@ func (c *collection) Find(ctx context.Context, filter interface{}, opts *findopt
 		datas = append(datas, result)
 	}
 
-	mongobyc.TransformMapStrIntoResult(datas, output)
+	mongodb.TransformMapStrIntoResult(datas, output)
 	return nil
 }
 
@@ -194,40 +194,40 @@ func (c *collection) InsertMany(ctx context.Context, document []interface{}, opt
 	return err
 }
 
-func (c *collection) UpdateMany(ctx context.Context, filter interface{}, update interface{}, opts *updateopt.Many) (*mongobyc.UpdateResult, error) {
+func (c *collection) UpdateMany(ctx context.Context, filter interface{}, update interface{}, opts *updateopt.Many) (*mongodb.UpdateResult, error) {
 
 	updateResult, err := c.innerCollection.UpdateMany(ctx, filter, update)
 	if nil != err {
-		return &mongobyc.UpdateResult{}, err
+		return &mongodb.UpdateResult{}, err
 	}
-	return &mongobyc.UpdateResult{
+	return &mongodb.UpdateResult{
 		MatchedCount:  uint64(updateResult.MatchedCount),
 		ModifiedCount: uint64(updateResult.ModifiedCount),
 	}, nil
 }
 
-func (c *collection) UpdateOne(ctx context.Context, filter interface{}, update interface{}, opts *updateopt.One) (*mongobyc.UpdateResult, error) {
+func (c *collection) UpdateOne(ctx context.Context, filter interface{}, update interface{}, opts *updateopt.One) (*mongodb.UpdateResult, error) {
 
 	updateResult, err := c.innerCollection.UpdateOne(ctx, filter, update)
 	if nil != err {
-		return &mongobyc.UpdateResult{}, err
+		return &mongodb.UpdateResult{}, err
 	}
 
-	return &mongobyc.UpdateResult{
+	return &mongodb.UpdateResult{
 		MatchedCount:  uint64(updateResult.MatchedCount),
 		ModifiedCount: uint64(updateResult.ModifiedCount),
 	}, nil
 }
 
-func (c *collection) ReplaceOne(ctx context.Context, filter interface{}, replacement interface{}, opts *replaceopt.One) (*mongobyc.ReplaceOneResult, error) {
+func (c *collection) ReplaceOne(ctx context.Context, filter interface{}, replacement interface{}, opts *replaceopt.One) (*mongodb.ReplaceOneResult, error) {
 
 	replaceResult, err := c.innerCollection.ReplaceOne(ctx, filter, replacement)
 	if nil != err {
-		return &mongobyc.ReplaceOneResult{}, err
+		return &mongodb.ReplaceOneResult{}, err
 	}
 
-	return &mongobyc.ReplaceOneResult{
-		UpdateResult: mongobyc.UpdateResult{
+	return &mongodb.ReplaceOneResult{
+		UpdateResult: mongodb.UpdateResult{
 			MatchedCount:  uint64(replaceResult.MatchedCount),
 			ModifiedCount: uint64(replaceResult.ModifiedCount),
 		},

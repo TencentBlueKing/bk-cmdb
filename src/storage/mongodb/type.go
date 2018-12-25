@@ -10,12 +10,32 @@
  * limitations under the License.
  */
 
-package mongobyc
+package mongodb
 
-// Transaction transaction operation methods
-type Transaction interface {
-	StartTransaction() error
-	AbortTransaction() error
-	CommitTransaction() error
-	Collection(collName string) CollectionInterface
+import (
+	"configcenter/src/common/mapstr"
+)
+
+// Opener open method
+type Opener interface {
+	Open() error
+}
+
+// Closer close method
+type Closer interface {
+	Close() error
+}
+
+// OpenCloser open and close methods
+type OpenCloser interface {
+	Opener
+	Closer
+}
+
+// Index the collection index definition
+type Index struct {
+	Keys       mapstr.MapStr `json:"key"`
+	Name       string        `json:"name"`
+	Unique     bool          `json:"unique"`
+	Backgroupd bool          `json:"background"`
 }

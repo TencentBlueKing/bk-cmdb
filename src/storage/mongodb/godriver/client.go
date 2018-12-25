@@ -15,29 +15,29 @@ package godriver
 import (
 	"context"
 
-	"configcenter/src/storage/mongobyc"
+	"configcenter/src/storage/mongodb"
 
-	mgo "github.com/mongodb/mongo-go-driver/mongo"
+	"github.com/mongodb/mongo-go-driver/mongo"
 	"github.com/mongodb/mongo-go-driver/x/network/connstring"
 )
 
-var _ mongobyc.CommonClient = (*client)(nil)
+var _ mongodb.CommonClient = (*client)(nil)
 
 type collectionName string
 
 type client struct {
 	createdByPool  bool
 	uri            string
-	collectionMaps map[collectionName]mongobyc.CollectionInterface
+	collectionMaps map[collectionName]mongodb.CollectionInterface
 	innerDB        *database
-	innerClient    *mgo.Client
+	innerClient    *mongo.Client
 }
 
 // NewClient create a mongoc client instance
-func NewClient(uri string) mongobyc.CommonClient {
+func NewClient(uri string) mongodb.CommonClient {
 	return &client{
 		uri:            uri,
-		collectionMaps: map[collectionName]mongobyc.CollectionInterface{},
+		collectionMaps: map[collectionName]mongodb.CollectionInterface{},
 	}
 }
 
@@ -48,7 +48,7 @@ func (c *client) Open() error {
 		return err
 	}
 
-	c.innerClient, err = mgo.NewClient(c.uri)
+	c.innerClient, err = mongo.NewClient(c.uri)
 	if nil != err {
 		return err
 	}
@@ -76,11 +76,11 @@ func (c *client) Ping() error {
 	return c.innerClient.Ping(context.TODO(), nil)
 }
 
-func (c *client) Database() mongobyc.Database {
+func (c *client) Database() mongodb.Database {
 	return c.innerDB
 }
 
-func (c *client) Collection(collName string) mongobyc.CollectionInterface {
+func (c *client) Collection(collName string) mongodb.CollectionInterface {
 	target, ok := c.collectionMaps[collectionName(collName)]
 	if !ok {
 		target = newCollection(c.innerDB.innerDatabase, collName)
@@ -89,6 +89,6 @@ func (c *client) Collection(collName string) mongobyc.CollectionInterface {
 	return target
 }
 
-func (c *client) Session() mongobyc.SessionOperation {
+func (c *client) Session() mongodb.SessionOperation {
 	return newSessionOperation(c)
 }

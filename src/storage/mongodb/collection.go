@@ -10,16 +10,16 @@
  * limitations under the License.
  */
 
-package mongobyc
+package mongodb
 
 import (
 	"context"
 
-	"configcenter/src/storage/mongobyc/deleteopt"
-	"configcenter/src/storage/mongobyc/findopt"
-	"configcenter/src/storage/mongobyc/insertopt"
-	"configcenter/src/storage/mongobyc/replaceopt"
-	"configcenter/src/storage/mongobyc/updateopt"
+	"configcenter/src/storage/mongodb/deleteopt"
+	"configcenter/src/storage/mongodb/findopt"
+	"configcenter/src/storage/mongodb/insertopt"
+	"configcenter/src/storage/mongodb/replaceopt"
+	"configcenter/src/storage/mongodb/updateopt"
 )
 
 // CollectionInterface collection operation methods

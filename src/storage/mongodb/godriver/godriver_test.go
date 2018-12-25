@@ -1,6 +1,6 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.,
- * Copyright (C) 2017,-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  * Licensed under the MIT License (the ",License",); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
@@ -15,20 +15,19 @@ import (
 	"context"
 	"testing"
 
-	"github.com/mongodb/mongo-go-driver/bson"
-
 	"configcenter/src/common/mapstr"
-	"configcenter/src/storage/mongobyc"
-	"configcenter/src/storage/mongobyc/godriver"
+	"configcenter/src/storage/mongodb"
+	"configcenter/src/storage/mongodb/godriver"
 
+	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/stretchr/testify/require"
 )
 
-func createConnection() mongobyc.CommonClient {
+func createConnection() mongodb.CommonClient {
 	return godriver.NewClient("mongodb://cc:cc@localhost:27010,localhost:27011,localhost:27012,localhost:27013/cmdb")
 }
 
-func executeCommand(t *testing.T, callback func(dbclient mongobyc.CommonClient)) {
+func executeCommand(t *testing.T, callback func(dbclient mongodb.CommonClient)) {
 	dbClient := createConnection()
 	require.NoError(t, dbClient.Open())
 
@@ -49,7 +48,7 @@ func TestConectMongo(t *testing.T) {
 
 func TestInsertOne(t *testing.T) {
 
-	executeCommand(t, func(dbClient mongobyc.CommonClient) {
+	executeCommand(t, func(dbClient mongodb.CommonClient) {
 		coll := dbClient.Collection("cc_tmp")
 		err := coll.InsertOne(context.TODO(), bson.M{"key": "value"}, nil)
 		require.NoError(t, err)
@@ -59,7 +58,7 @@ func TestInsertOne(t *testing.T) {
 
 func TestFind(t *testing.T) {
 
-	executeCommand(t, func(dbClient mongobyc.CommonClient) {
+	executeCommand(t, func(dbClient mongodb.CommonClient) {
 
 		coll := dbClient.Collection("cc_tmp")
 		result := []mapstr.MapStr{}
@@ -72,7 +71,7 @@ func TestFind(t *testing.T) {
 
 func TestFindOne(t *testing.T) {
 
-	executeCommand(t, func(dbClient mongobyc.CommonClient) {
+	executeCommand(t, func(dbClient mongodb.CommonClient) {
 		coll := dbClient.Collection("cc_tmp")
 		result := mapstr.MapStr{}
 		err := coll.FindOne(context.TODO(), `{"x":1}`, nil, &result)
@@ -84,7 +83,7 @@ func TestFindOne(t *testing.T) {
 
 func TestDatabaseName(t *testing.T) {
 
-	executeCommand(t, func(dbClient mongobyc.CommonClient) {
+	executeCommand(t, func(dbClient mongodb.CommonClient) {
 		t.Log("database name:", dbClient.Database().Name())
 		require.Equal(t, "cmdb", dbClient.Database().Name())
 	})
@@ -92,7 +91,7 @@ func TestDatabaseName(t *testing.T) {
 
 func TestDatabaseHasCollection(t *testing.T) {
 
-	executeCommand(t, func(dbClient mongobyc.CommonClient) {
+	executeCommand(t, func(dbClient mongodb.CommonClient) {
 		exists, err := dbClient.Database().HasCollection("cc_tmp")
 		require.Equal(t, true, exists)
 		require.NoError(t, err)
@@ -100,13 +99,13 @@ func TestDatabaseHasCollection(t *testing.T) {
 }
 
 func TestDatabaseDropCollection(t *testing.T) {
-	executeCommand(t, func(dbClient mongobyc.CommonClient) {
+	executeCommand(t, func(dbClient mongodb.CommonClient) {
 		require.NoError(t, dbClient.Database().DropCollection("cc_tmp"))
 	})
 }
 
 func TestDatabaseGetCollectionNames(t *testing.T) {
-	executeCommand(t, func(dbClient mongobyc.CommonClient) {
+	executeCommand(t, func(dbClient mongodb.CommonClient) {
 		collNames, err := dbClient.Database().GetCollectionNames()
 		require.NoError(t, err)
 		for _, name := range collNames {
