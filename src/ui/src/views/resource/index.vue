@@ -17,7 +17,7 @@
         </cmdb-hosts-filter>
         <cmdb-hosts-table class="resource-main" ref="resourceTable"
             :authority="resourceAuthority"
-            :columns-config-key="table.columnsConfigKey"
+            :columns-config-key="columnsConfigKey"
             :columns-config-properties="columnsConfigProperties"
             :columns-config-disabled-columns="['bk_host_innerip', 'bk_cloud_id', 'bk_biz_name', 'bk_module_name']"
             @on-checked="handleChecked"
@@ -147,7 +147,11 @@
             }
         },
         computed: {
-            ...mapGetters('objectBiz', ['business']),
+            ...mapGetters(['userName', 'isAdminView']),
+            ...mapGetters('objectBiz', ['business', 'bizId']),
+            columnsConfigKey () {
+                return `${this.userName}_$resource_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
+            },
             clipboardList () {
                 return this.table.header.filter(header => header.type !== 'checkbox')
             },
