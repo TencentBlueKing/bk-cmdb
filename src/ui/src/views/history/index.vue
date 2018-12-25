@@ -53,7 +53,7 @@
             customColumns () {
                 const customKeyMap = {
                     [this.objId]: `${this.userName}_${this.objId}_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`,
-                    'host': `${this.userName}_resource_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
+                    'host': `${this.userName}_$resource_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
                 }
                 return this.usercustom[customKeyMap[this.objId]] || []
             },
