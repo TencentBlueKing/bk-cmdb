@@ -2,7 +2,6 @@
 	"comment": "",
 	"ignore": "test",
 	"package": [
-		
 		{
 			"checksumSHA1": "cFz6PdLyqjSwv7wWrgkhZa4UM08=",
 			"path": "github.com/go-playground/validator",
@@ -20,6 +19,13 @@
 			"path": "github.com/golang/snappy",
 			"revision": "2e65f85255dbc3072edf28d6b5b8efc472979f5a",
 			"revisionTime": "2018-05-18T05:39:59Z"
+		},
+		{
+			"checksumSHA1": "BdfX7mOcH3aOUAmfN5ZjTTKH4vI=",
+			"path": "github.com/mongodb/mongo-go-driver",
+			"revision": "29905d4bda472574c8b499e2f93b5b2747d8fbd7",
+			"revisionTime": "2018-12-06T20:13:04Z",
+			"tree": true
 		},
 		{
 			"checksumSHA1": "uE78U34xjlJ815TX/bhLROkjmeI=",

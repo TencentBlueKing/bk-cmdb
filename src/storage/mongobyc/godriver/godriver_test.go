@@ -15,11 +15,12 @@ import (
 	"context"
 	"testing"
 
+	"github.com/mongodb/mongo-go-driver/bson"
+
 	"configcenter/src/common/mapstr"
 	"configcenter/src/storage/mongobyc"
 	"configcenter/src/storage/mongobyc/godriver"
 
-	"github.com/mongodb/mongo-go-driver/x/bsonx"
 	"github.com/stretchr/testify/require"
 )
 
@@ -50,9 +51,7 @@ func TestInsertOne(t *testing.T) {
 
 	executeCommand(t, func(dbClient mongobyc.CommonClient) {
 		coll := dbClient.Collection("cc_tmp")
-		want := bsonx.Elem{Key: "_id", Value: bsonx.ObjectID(objectid.New())}
-		doc := bsonx.Doc{want, {"x", bsonx.Int32(1)}}
-		err := coll.InsertOne(context.TODO(), doc, nil)
+		err := coll.InsertOne(context.TODO(), bson.M{"key": "value"}, nil)
 		require.NoError(t, err)
 	})
 
