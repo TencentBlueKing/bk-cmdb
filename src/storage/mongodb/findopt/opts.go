@@ -14,16 +14,26 @@ package findopt
 
 import (
 	"configcenter/src/common"
-	"configcenter/src/common/mapstr"
 )
+
+// SortItem used to define the sort condition
+type SortItem struct {
+	Name       string
+	Descending bool
+}
+
+// FieldItem used to define the field codnition
+type FieldItem struct {
+	Name string
+	Hide bool
+}
 
 // Opts options used to find and modify
 type Opts struct {
-	Fields     mapstr.MapStr
-	Sort       string
-	Descending bool
-	Limit      int64
-	Skip       int64
+	Fields []FieldItem
+	Sort   []SortItem
+	Limit  int64
+	Skip   int64
 }
 
 // One find one options

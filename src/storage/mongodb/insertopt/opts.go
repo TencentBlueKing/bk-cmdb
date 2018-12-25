@@ -13,9 +13,9 @@
 package insertopt
 
 // One insert opts one
-type One interface {
+type One struct {
 }
 
 // Many insert opts many
-type Many interface {
+type Many struct {
 }
