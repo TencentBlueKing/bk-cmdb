@@ -30,23 +30,9 @@ type ConditionElement interface {
 type Condition interface {
 	Result
 	Element(elements ...ConditionElement) Condition
+	Not(elements ...ConditionElement) Condition
+	Nor(elements ...ConditionElement) Condition
 	And(elements ...ConditionElement) Condition
 	Or(elements ...ConditionElement) Condition
 	Embed(embedName string) (origin, embed Condition)
-}
-
-// CreateStatement used to contruct create statement
-type CreateStatement interface {
-	Fields(fields ...Field) Result
-}
-
-// WhereStatement used to construct condition statement
-type WhereStatement interface {
-	Conditions(cond ...Condition) Result
-}
-
-// TableOperation used to construct table record operations ( create\update\delete\select )methods
-type TableOperation interface {
-	Where() WhereStatement
-	Create() CreateStatement
 }
