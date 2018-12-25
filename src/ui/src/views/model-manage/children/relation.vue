@@ -14,32 +14,33 @@
             :pagination.sync="table.pagination"
             :wrapperMinusHeight="220"
             @handleSortChange="handleSortChange">
-            <template v-for="(header, index) in table.header" :slot="header.id" slot-scope="{ item }">
-                <div :key="index" :class="{'disabled': isReadOnly}">
-                    <template v-if="header.id==='mapping'">
-                        {{mappingMap[item.mapping]}}
-                    </template>
-                    <template v-else-if="header.id==='bk_asst_name'">
-                        {{getRelationName(item['bk_asst_id'])}}
-                    </template>
-                    <template v-else-if="header.id==='bk_obj_name'">
-                        {{getModelName(item['bk_obj_id'])}}
-                    </template>
-                    <template v-else-if="header.id==='bk_asst_obj_name'">
-                        {{getModelName(item['bk_asst_obj_id'])}}
-                    </template>
-                    <template v-else-if="header.id==='operation'">
-                        <span class="text-primary mr10" @click.stop="editRelation(item)">
-                            {{$t('Common["编辑"]')}}
-                        </span>
-                        <span class="text-primary" v-if="!item.ispre && !isReadOnly" @click.stop="deleteRelation(item, index)">
-                            {{$t('Common["删除"]')}}
-                        </span>
-                    </template>
-                    <template v-else>
-                        {{item[header.id]}}
-                    </template>
-                </div>
+            <template slot="bk_obj_asst_id" slot-scope="{ item }">
+                <span
+                    v-if="item.ispre"
+                    :class="['relation-pre', $i18n.locale]">
+                    {{$t('ModelManagement["内置"]')}}
+                </span>
+                <span class="relation-id">{{item['bk_obj_asst_id']}}</span>
+            </template>
+            <template slot="bk_asst_name" slot-scope="{ item }">
+                {{getRelationName(item['bk_asst_id'])}}
+            </template>
+            <template slot="mapping" slot-scope="{ item }">
+                {{mappingMap[item.mapping]}}
+            </template>
+            <template slot="bk_obj_name" slot-scope="{ item }">
+                {{getModelName(item['bk_obj_id'])}}
+            </template>
+            <template slot="bk_asst_obj_name" slot-scope="{ item }">
+                {{getModelName(item['bk_asst_obj_id'])}}
+            </template>
+            <template slot="operation" slot-scope="{ item }">
+                <span class="text-primary mr10" @click.stop="editRelation(item)">
+                    {{$t('Common["编辑"]')}}
+                </span>
+                <span class="text-primary" v-if="!item.ispre && !isReadOnly" @click.stop="deleteRelation(item, index)">
+                    {{$t('Common["删除"]')}}
+                </span>
             </template>
         </cmdb-table>
         <cmdb-slider
@@ -234,5 +235,29 @@
 <style lang="scss" scoped>
     .create-btn {
         margin: 10px 0;
+    }
+    .relation-pre {
+        display: inline-block;
+        margin-right: -26px;
+        padding: 0 6px;
+        vertical-align: middle;
+        line-height: 32px;
+        border-radius: 4px;
+        background-color: #a4aab3;
+        color: #fff;
+        font-size: 20px;
+        transform: scale(0.5);
+        transform-origin: left center;
+        opacity: 0.4;
+        &.en {
+            margin-right: -40px;
+        }
+    }
+    .relation-id {
+        display: inline-block;
+        vertical-align: middle;
+    }
+    .text-primary {
+        cursor: pointer;
     }
 </style>
