@@ -34,10 +34,11 @@ func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error)
 		blog.Errorf("[upgrade x18.11.19.01] reconcilUnique error  %s", err.Error())
 		return err
 	}
-	err = reconcilAsstID(ctx, db, conf)
-	if err != nil {
-		blog.Errorf("[upgrade x18.11.19.01] reconcilAsstID error  %s", err.Error())
-		return err
-	}
+	// 产品调整，回撤
+	// err = reconcilAsstID(ctx, db, conf)
+	// if err != nil {
+	// 	blog.Errorf("[upgrade x18.11.19.01] reconcilAsstID error  %s", err.Error())
+	// 	return err
+	// }
 	return
 }

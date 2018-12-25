@@ -90,12 +90,13 @@
 	"1001065":"model property [%s] has been used from unique constrains, delete failed",
 	"1001066":"unique constrains key kind [%s] invalid",
 	"1001067":"preset unique constrains could not be delete",
-	"1001068":"model could not have multiple must check unique",
-	"1001069":"association kind has been apply to object",
-	"1001070":"pre definition association can not be delete",
-	"1001071":"the association kind is not exist",
-	"1001072":"the association inst is not exist",
-	"1001073":"the  inst to asst  is not exist",
-	"1101074":"the inst has association",
-	"": "" 
+    "1001068":"model could not have multiple must check unique",
+    "1101069":"association kind has been apply to object",
+    "1101069":"model unique constrains should have more than one",
+    "1101070":"pre definition association can not be delete",
+    "1101071":"the association kind is not exist",
+    "1101072":"the association inst is not exist",
+    "1101073":"the  inst to asst  is not exist",
+    "1101074":"the inst has association",
+  "": "" 
 }

@@ -13,7 +13,6 @@
 package backbone
 
 import (
-	"configcenter/src/common/types"
 	"context"
 	"fmt"
 	"sync"
@@ -23,6 +22,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
+	"configcenter/src/common/types"
 )
 
 func NewBackbone(ctx context.Context, zkAddr string, procName string, confPath string, procHandler cc.ProcHandlerFunc, c *Config) (*Engine, error) {

@@ -13,11 +13,11 @@
 package model_test
 
 import (
-	"configcenter/src/common/mapstr"
 	"testing"
 
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 
 	"github.com/rs/xid"
