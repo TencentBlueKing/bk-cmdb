@@ -42,10 +42,10 @@
             ...mapGetters('hostFavorites', ['applyingInfo']),
             ...mapGetters('objectBiz', ['bizId']),
             columnsConfigKey () {
-                return `${this.userName}_hosts_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
+                return `${this.userName}_host_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
             },
             filterConfigKey () {
-                return `${this.userName}_hosts_${this.isAdminView ? 'adminView' : this.bizId}_filter_fields`
+                return `${this.userName}_host_${this.isAdminView ? 'adminView' : this.bizId}_filter_fields`
             },
             columnsConfigProperties () {
                 const setProperties = this.properties.set.filter(property => ['bk_set_name'].includes(property['bk_property_id']))
