@@ -68,7 +68,7 @@ func (c *classification) FindSingleClassification(params types.ContextParams, cl
 
 	objs, err := c.FindClassification(params, cond)
 	if nil != err {
-		blog.Errorf("[operation-cls] failed to find the supplier account(%s) classification(%s), error info is %s", params.SupplierAccount, classificationID, err.Error())
+		blog.Errorf("[operation-cls] failed to find the supplier account(%s) classification(%s), err: %s", params.SupplierAccount, classificationID, err.Error())
 		return nil, err
 	}
 	for _, item := range objs {
@@ -79,17 +79,17 @@ func (c *classification) FindSingleClassification(params types.ContextParams, cl
 
 func (c *classification) CreateClassification(params types.ContextParams, data frtypes.MapStr) (model.Classification, error) {
 
-	cls := c.modelFactory.CreaetClassification(params)
+	cls := c.modelFactory.CreateClassification(params)
 
 	_, err := cls.Parse(data)
 	if nil != err {
-		blog.Errorf("[operation-cls]failed to parse the params, error info is %s", err.Error())
+		blog.Errorf("[operation-cls]failed to parse the params, err: %s", err.Error())
 		return nil, err
 	}
 
 	err = cls.Create()
 	if nil != err {
-		blog.Errorf("[operation-cls]failed to save the classification(%#v), error info is %s", cls, err.Error())
+		blog.Errorf("[operation-cls]failed to save the classification(%#v), err: %s", cls, err.Error())
 		return nil, err
 	}
 
@@ -124,12 +124,12 @@ func (c *classification) DeleteClassification(params types.ContextParams, id int
 
 	rsp, err := c.clientSet.ObjectController().Meta().DeleteClassification(context.Background(), id, params.Header, cond.ToMapStr())
 	if nil != err {
-		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s", err.Error())
+		blog.Errorf("[operation-cls]failed to request the object controller, err: %s", err.Error())
 		return err
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to delete the classification, error info is %s", rsp.ErrMsg)
+		blog.Errorf("failed to delete the classification, err: %s", rsp.ErrMsg)
 		return params.Err.Error(rsp.Code)
 	}
 
@@ -140,12 +140,12 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 
 	rsp, err := c.clientSet.ObjectController().Meta().SelectClassificationWithObject(context.Background(), params.SupplierAccount, params.Header, cond.ToMapStr())
 	if nil != err {
-		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s", err.Error())
+		blog.Errorf("[operation-cls]failed to request the object controller, err: %s", err.Error())
 		return nil, err
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("[operation-cls] failed to search the classification by the condition(%#v), error info is %s", cond.ToMapStr(), rsp.ErrMsg)
+		blog.Errorf("[operation-cls] failed to search the classification by the condition(%#v), err: %s", cond.ToMapStr(), rsp.ErrMsg)
 		return nil, params.Err.Error(rsp.Code)
 	}
 
@@ -183,12 +183,12 @@ func (c *classification) FindClassification(params types.ContextParams, cond con
 
 	rsp, err := c.clientSet.ObjectController().Meta().SelectClassifications(context.Background(), params.Header, cond.ToMapStr())
 	if nil != err {
-		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s", err.Error())
+		blog.Errorf("[operation-cls]failed to request the object controller, err: %s", err.Error())
 		return nil, err
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("[operation-cls] failed to search the clssificaiton by the condition(%#v), error info is %s", cond.ToMapStr(), rsp.ErrMsg)
+		blog.Errorf("[operation-cls] failed to search the clssificaiton by the condition(%#v), err: %s", cond.ToMapStr(), rsp.ErrMsg)
 		return nil, params.Err.Error(rsp.Code)
 	}
 
@@ -198,7 +198,7 @@ func (c *classification) FindClassification(params types.ContextParams, cond con
 
 func (c *classification) UpdateClassification(params types.ContextParams, data frtypes.MapStr, id int64, cond condition.Condition) error {
 
-	cls := c.modelFactory.CreaetClassification(params)
+	cls := c.modelFactory.CreateClassification(params)
 	if _, err := cls.Parse(data); err != nil {
 		blog.Errorf("update classification, but parse classification failed, err：%v", err)
 		return err
@@ -208,7 +208,7 @@ func (c *classification) UpdateClassification(params types.ContextParams, data f
 
 	err := cls.Update(data)
 	if nil != err {
-		blog.Errorf("[operation-cls]failed to update the classification(%#v), error info is %s", cls, err.Error())
+		blog.Errorf("[operation-cls]failed to update the classification(%#v), err: %s", cls, err.Error())
 		return err
 	}
 
