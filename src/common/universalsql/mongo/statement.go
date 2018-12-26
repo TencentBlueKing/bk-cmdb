@@ -18,7 +18,7 @@ import (
 	"encoding/json"
 )
 
-var _ universalsql.WhereStatement = (*statement)(nil)
+//var _ universalsql.WhereStatement = (*statement)(nil)
 var _ universalsql.Result = (*statementResult)(nil)
 
 type statementResult struct {
