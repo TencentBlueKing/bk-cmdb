@@ -249,7 +249,12 @@ func (c *collection) UpdateOne(ctx context.Context, filter interface{}, update i
 
 func (c *collection) ReplaceOne(ctx context.Context, filter interface{}, replacement interface{}, opts *replaceopt.One) (*mongodb.ReplaceOneResult, error) {
 
-	replaceResult, err := c.innerCollection.ReplaceOne(ctx, filter, replacement)
+	replaceOption := &options.ReplaceOptions{}
+	if nil != opts {
+		replaceOption = opts.ConvertToMongoOptions()
+	}
+
+	replaceResult, err := c.innerCollection.ReplaceOne(ctx, filter, replacement, replaceOption)
 	if nil != err {
 		return &mongodb.ReplaceOneResult{}, err
 	}
