@@ -15,10 +15,6 @@ package godriver
 import (
 	"context"
 
-	"github.com/mongodb/mongo-go-driver/mongo"
-	"github.com/mongodb/mongo-go-driver/mongo/options"
-	"github.com/mongodb/mongo-go-driver/x/bsonx"
-
 	"configcenter/src/common/mapstr"
 	"configcenter/src/storage/mongodb"
 	"configcenter/src/storage/mongodb/deleteopt"
@@ -26,6 +22,11 @@ import (
 	"configcenter/src/storage/mongodb/insertopt"
 	"configcenter/src/storage/mongodb/replaceopt"
 	"configcenter/src/storage/mongodb/updateopt"
+
+	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/mongo"
+	"github.com/mongodb/mongo-go-driver/mongo/options"
+	"github.com/mongodb/mongo-go-driver/x/bsonx"
 )
 
 var _ mongodb.CollectionInterface = (*collection)(nil)
@@ -218,7 +219,7 @@ func (c *collection) UpdateMany(ctx context.Context, filter interface{}, update 
 		updateOption = opts.ConvertToMongoOptions()
 	}
 
-	updateResult, err := c.innerCollection.UpdateMany(ctx, filter, update, updateOption)
+	updateResult, err := c.innerCollection.UpdateMany(ctx, filter, bson.M{"$set": update}, updateOption)
 	if nil != err {
 		return &mongodb.UpdateResult{}, err
 	}
@@ -230,7 +231,12 @@ func (c *collection) UpdateMany(ctx context.Context, filter interface{}, update 
 
 func (c *collection) UpdateOne(ctx context.Context, filter interface{}, update interface{}, opts *updateopt.One) (*mongodb.UpdateResult, error) {
 
-	updateResult, err := c.innerCollection.UpdateOne(ctx, filter, update)
+	updateOption := &options.UpdateOptions{}
+	if nil != opts {
+		updateOption = opts.ConvertToMongoOptions()
+	}
+
+	updateResult, err := c.innerCollection.UpdateOne(ctx, filter, bson.M{"$set": update}, updateOption)
 	if nil != err {
 		return &mongodb.UpdateResult{}, err
 	}
