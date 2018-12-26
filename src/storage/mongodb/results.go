@@ -37,7 +37,7 @@ type IndexResult struct {
 	Key       []string `json:"key"`
 }
 
-// GetIndexResult get the indexex result
-type GetIndexResult struct {
+// QueryIndexResult get the indexex result
+type QueryIndexResult struct {
 	Indexes []IndexResult
 }
