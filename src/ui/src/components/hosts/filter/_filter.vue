@@ -29,7 +29,7 @@
                 <label class="filter-label">{{getFilterLabel(property)}}</label>
                 <div class="filter-field clearfix">
                     <filter-field-operator class="filter-field-operator fl"
-                        v-if="!['date', 'time'].includes(property['bk_property_type'])"
+                        v-show="!['date', 'time'].includes(property['bk_property_type'])"
                         :type="getOperatorType(property)"
                         v-model="condition[property['bk_obj_id']][property['bk_property_id']]['operator']">
                     </filter-field-operator>
@@ -398,7 +398,6 @@
                 }
                 for (let objId in this.condition) {
                     for (let propertyId in this.condition[objId]) {
-                        this.condition[objId][propertyId].operator = ''
                         this.condition[objId][propertyId].value = ''
                     }
                 }
