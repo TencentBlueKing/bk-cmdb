@@ -13,6 +13,7 @@ import bkDropdownMenu from './components/dropdown-menu'
 import bkSideslider from './components/sideslider'
 import bkSwitcher from './components/switcher'
 import bkTagInput from './components/tag-input'
+import bkMemberSelector from './components/member-selector'
 import bkDialog from './components/dialog'
 import bkIconButton from './components/icon-button'
 import bkLoading from './components/loading'
@@ -37,6 +38,7 @@ import bkUpload from './components/upload'
 import bkTimeline from './components/timeline'
 import bkProcess from './components/process'
 import bkCombox from './components/combox'
+import bkPagination from './components/pagination'
 
 import bkException from './components/exception'
 import locale from './locale'
@@ -76,12 +78,14 @@ const components = {
     bkTab,
     bkTabpanel,
     bkTagInput,
+    bkMemberSelector,
     bkTimeline,
     bkTooltip,
     bkTransfer,
     bkTree,
     bkUpload,
-    bkException
+    bkException,
+    bkPagination
 }
 
 export function install (Vue, opts = {}) {
@@ -154,6 +158,7 @@ export {
     bkTab,
     bkTabpanel,
     bkTagInput,
+    bkMemberSelector,
     bkTimeline,
     bkTooltip,
     bkTransfer,
@@ -166,7 +171,8 @@ export {
     locale,
     bkException,
     langPkg,
-    localeMixin
+    localeMixin,
+    bkPagination
 }
 
 // export default Object.assign(bkMagic, {install})
