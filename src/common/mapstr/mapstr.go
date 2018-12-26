@@ -24,74 +24,6 @@ import (
 // MapStr the common event data definition
 type MapStr map[string]interface{}
 
-// New create a new MapStr instance
-func New() MapStr {
-	return MapStr{}
-}
-
-// NewArrayFromInterface create a new array from interface
-func NewArrayFromInterface(datas []map[string]interface{}) []MapStr {
-	results := []MapStr{}
-	for _, item := range datas {
-		results = append(results, item)
-	}
-	return results
-}
-
-// NewArrayFromMapStr create a new array from mapstr array
-func NewArrayFromMapStr(datas []MapStr) []MapStr {
-	results := []MapStr{}
-	for _, item := range datas {
-		results = append(results, item)
-	}
-	return results
-}
-
-// NewFromInterface create a mapstr instance from the interface
-func NewFromInterface(data interface{}) (MapStr, error) {
-
-	switch tmp := data.(type) {
-	default:
-		return nil, fmt.Errorf("no support the kind(%s)", reflect.TypeOf(data).Kind())
-	case nil:
-		return MapStr{}, nil
-	case MapStr:
-		return tmp, nil
-	case string:
-		result := New()
-		err := json.Unmarshal([]byte(tmp), &result)
-		return result, err
-	case *map[string]interface{}:
-		return MapStr(*tmp), nil
-	case map[string]string:
-		result := New()
-		for key, val := range tmp {
-			result.Set(key, val)
-		}
-		return result, nil
-	case map[string]interface{}:
-		return MapStr(tmp), nil
-	}
-}
-
-// NewFromMap create a new MapStr from map[string]interface{} type
-func NewFromMap(data map[string]interface{}) MapStr {
-	return MapStr(data)
-}
-
-/*NewFromStruct convert the  struct into MapStr , the struct must be taged with 'tagName' .
-
-  eg:
-  type targetStruct struct{
-  Name string `field:"testName"`
-  }
-  will be converted the follow map
-  {"testName":""}
-*/
-func NewFromStruct(targetStruct interface{}, tagName string) MapStr {
-	return SetValueToMapStrByTagsWithTagName(targetStruct, tagName)
-}
-
 // Merge merge second into self,if the key is the same then the new value replaces the old value.
 func (cli MapStr) Merge(second MapStr) {
 	for key, val := range second {
@@ -105,13 +37,14 @@ func (cli MapStr) ToMapInterface() map[string]interface{} {
 }
 
 /*ToStructByTag convert self into a struct with 'tagName'
-eg:
-self := MapStr{"testName":"testvalue"}
-targetStruct := struct{
-   Name string `field:"testName"`
-}
-After call the function self.ToStructByTag(targetStruct, "field")
-the targetStruct.Name value will be 'testvalue'
+
+  eg:
+  self := MapStr{"testName":"testvalue"}
+  targetStruct := struct{
+      Name string `field:"testName"`
+  }
+  After call the function self.ToStructByTag(targetStruct, "field")
+  the targetStruct.Name value will be 'testvalue'
 */
 func (cli MapStr) ToStructByTag(targetStruct interface{}, tagName string) error {
 	return SetValueToStructByTagsWithTagName(targetStruct, cli, tagName)

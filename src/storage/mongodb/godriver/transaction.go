@@ -60,15 +60,6 @@ func (t *transaction) Collection(collName string) mongodb.CollectionInterface {
 
 func (t *transaction) Close() error {
 
-	for _, coll := range t.collectionMaps {
-		switch target := coll.(type) {
-		case *collection:
-			if err := target.Close(); nil != err {
-				return err
-			}
-		}
-	}
-
 	t.collectionMaps = map[collectionName]mongodb.CollectionInterface{}
 	t.innerSession.EndSession(context.TODO())
 	return nil

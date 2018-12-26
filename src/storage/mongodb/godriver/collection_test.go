@@ -130,3 +130,44 @@ func TestCRUD(t *testing.T) {
 	})
 
 }
+
+func TestIndexCRUD(t *testing.T) {
+	executeCommand(t, func(dbClient mongodb.CommonClient) {
+		coll := dbClient.Collection("cc_index")
+
+		// construct some datas
+		val := xid.New().String()
+		err := coll.InsertMany(context.TODO(), []interface{}{bson.M{"key": "value-index_" + val}, bson.M{"key": "value-index_" + xid.New().String()}}, nil)
+		require.NoError(t, err)
+
+		cond := mongo.NewCondition()
+		cond.Element(&mongo.Regex{Key: "key", Val: "value-index"})
+		cnt, err := coll.Count(context.TODO(), cond.ToMapStr())
+		require.NoError(t, err)
+		require.NotEqual(t, uint64(0), cnt)
+		t.Logf("cc_index items count:%d", cnt)
+
+		// create a new index
+		err = coll.CreateIndex(mongodb.Index{
+			Keys: []string{"key"},
+			Name: "test_index_name_key",
+		})
+		require.NoError(t, err)
+
+		// get indexes
+		indexs, err := coll.GetIndexes()
+		require.NoError(t, err)
+		require.NotNil(t, indexs)
+		t.Logf("get cc_index indexs:%#v", indexs)
+
+		// delete index
+		err = coll.DropIndex("test_index_name_key")
+		require.NoError(t, err)
+
+		// get indexes
+		indexs, err = coll.GetIndexes()
+		require.NoError(t, err)
+		require.NotNil(t, indexs)
+		t.Logf("get cc_index indexs:%#v", indexs)
+	})
+}

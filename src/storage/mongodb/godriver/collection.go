@@ -54,7 +54,17 @@ func newCollectionWithSession(db *mongo.Database, innerSession mongo.Session, co
 func (c *collection) Name() string {
 	return c.innerCollection.Name()
 }
+
 func (c *collection) Drop(ctx context.Context) error {
+
+	// in a session
+	if nil != c.innerSession {
+		return mongo.WithSession(ctx, c.innerSession, func(mctx mongo.SessionContext) error {
+			return c.innerCollection.Drop(mctx)
+		})
+	}
+
+	// no session
 	return c.innerCollection.Drop(ctx)
 }
 func (c *collection) CreateIndex(index mongodb.Index) error {
@@ -62,20 +72,32 @@ func (c *collection) CreateIndex(index mongodb.Index) error {
 	indexView := c.innerCollection.Indexes()
 
 	keys := bsonx.Doc{}
-	for indexKey := range index.Keys {
-		keys.Append(indexKey, bsonx.Int32(-1))
+	for _, key := range index.Keys {
+		keys = keys.Append(key, bsonx.Int32(-1))
 	}
 
-	options := bsonx.Doc{}
-	options.Append("name", bsonx.String(index.Name))
-	options.Append("unique", bsonx.Boolean(index.Unique))
-	options.Append("background", bsonx.Boolean(index.Backgroupd))
+	indexOpts := mongo.NewIndexOptionsBuilder().Name(index.Name).Background(index.Backgroupd).Unique(index.Unique).Build()
 
+	// in a session
+	if nil != c.innerSession {
+		return mongo.WithSession(context.TODO(), c.innerSession, func(mctx mongo.SessionContext) error {
+			_, err := indexView.CreateOne(
+				mctx,
+				mongo.IndexModel{
+					Keys:    keys,
+					Options: indexOpts,
+				},
+			)
+			return err
+		})
+	}
+
+	// no session
 	_, err := indexView.CreateOne(
 		context.TODO(),
 		mongo.IndexModel{
 			Keys:    keys,
-			Options: options,
+			Options: indexOpts,
 		},
 	)
 
@@ -85,36 +107,98 @@ func (c *collection) CreateIndex(index mongodb.Index) error {
 func (c *collection) DropIndex(indexName string) error {
 
 	indexView := c.innerCollection.Indexes()
+
+	// in a session
+	if nil != c.innerSession {
+		return mongo.WithSession(context.TODO(), c.innerSession, func(mctx mongo.SessionContext) error {
+			_, err := indexView.DropOne(mctx, indexName)
+			return err
+		})
+	}
+
+	// no session
 	_, err := indexView.DropOne(context.TODO(), indexName)
 	return err
 }
+func (c *collection) parseIndexResult(ctx context.Context, cursor mongo.Cursor) (*mongodb.GetIndexResult, error) {
 
+	// this struct from mongodb go driver about index
+	type index struct {
+		Key  map[string]int
+		NS   string
+		Name string
+	}
+
+	returnIndexResult := &mongodb.GetIndexResult{}
+
+	for cursor.Next(ctx) {
+		elem := index{}
+		if err := cursor.Decode(&elem); err != nil {
+			return returnIndexResult, err
+		}
+		idxResult := mongodb.IndexResult{Name: elem.Name, Namespace: elem.NS}
+		for name := range elem.Key {
+			idxResult.Key = append(idxResult.Key, name)
+		}
+		returnIndexResult.Indexes = append(returnIndexResult.Indexes, idxResult)
+	}
+
+	if err := cursor.Err(); err != nil {
+		return returnIndexResult, err
+	}
+
+	return returnIndexResult, nil
+}
 func (c *collection) GetIndexes() (*mongodb.GetIndexResult, error) {
 
 	indexView := c.innerCollection.Indexes()
-	cursor, err := indexView.List(context.TODO())
 
+	// in a session
+	if nil != c.innerSession {
+		returnIndexResult := &mongodb.GetIndexResult{}
+		err := mongo.WithSession(context.TODO(), c.innerSession, func(mctx mongo.SessionContext) error {
+
+			cursor, err := indexView.List(mctx)
+			if nil != err {
+				return err
+			}
+
+			defer cursor.Close(mctx)
+			returnIndexResult, err = c.parseIndexResult(mctx, cursor)
+			return err
+		})
+
+		if nil != err {
+			return returnIndexResult, err
+		}
+
+		return returnIndexResult, nil
+	}
+
+	// no session
+	cursor, err := indexView.List(context.TODO())
 	if nil != err {
 		return &mongodb.GetIndexResult{}, err
 	}
 
 	defer cursor.Close(context.TODO())
-
-	for cursor.Next(context.TODO()) {
-		elem := bsonx.Doc{}
-		if err := cursor.Decode(elem); err != nil {
-			return &mongodb.GetIndexResult{}, err
-		}
-	}
-
-	if err := cursor.Err(); err != nil {
-		return &mongodb.GetIndexResult{}, err
-	}
-
-	return nil, nil
+	return c.parseIndexResult(context.TODO(), cursor)
 }
 
 func (c *collection) Count(ctx context.Context, filter interface{}) (uint64, error) {
+
+	// in a session
+	if nil != c.innerSession {
+		var innerCnt uint64
+		err := mongo.WithSession(ctx, c.innerSession, func(mctx mongo.SessionContext) error {
+			cnt, err := c.innerCollection.Count(ctx, filter)
+			innerCnt = uint64(cnt)
+			return err
+		})
+		return innerCnt, err
+	}
+
+	// no session
 	cnt, err := c.innerCollection.Count(ctx, filter)
 	return uint64(cnt), err
 }
@@ -125,12 +209,30 @@ func (c *collection) DeleteOne(ctx context.Context, filter interface{}, opts *de
 	if nil != opts {
 		deleteOption = opts.ConvertToMongoOptions()
 	}
-	delResult, err := c.innerCollection.DeleteOne(ctx, filter, deleteOption)
-	if nil != err {
-		return &mongodb.DeleteResult{}, err
+
+	returnResult := &mongodb.DeleteResult{}
+
+	// in a session
+	if nil != c.innerSession {
+		err := mongo.WithSession(ctx, c.innerSession, func(mtcx mongo.SessionContext) error {
+			delResult, err := c.innerCollection.DeleteOne(mtcx, filter, deleteOption)
+			if nil != err {
+				return err
+			}
+			returnResult.DeletedCount = uint64(delResult.DeletedCount)
+			return nil
+		})
+		return returnResult, err
 	}
 
-	return &mongodb.DeleteResult{DeletedCount: uint64(delResult.DeletedCount)}, nil
+	// no session
+	delResult, err := c.innerCollection.DeleteOne(ctx, filter, deleteOption)
+	if nil != err {
+		return returnResult, err
+	}
+
+	returnResult.DeletedCount = uint64(delResult.DeletedCount)
+	return returnResult, nil
 }
 
 func (c *collection) DeleteMany(ctx context.Context, filter interface{}, opts *deleteopt.Many) (*mongodb.DeleteResult, error) {
@@ -140,12 +242,28 @@ func (c *collection) DeleteMany(ctx context.Context, filter interface{}, opts *d
 		deleteOption = opts.ConvertToMongoOptions()
 	}
 
+	returnResult := &mongodb.DeleteResult{}
+
+	// in a session
+	if nil != c.innerSession {
+		err := mongo.WithSession(ctx, c.innerSession, func(mtcx mongo.SessionContext) error {
+			delResult, err := c.innerCollection.DeleteMany(ctx, filter, deleteOption)
+			if nil != err {
+				return err
+			}
+			returnResult.DeletedCount = uint64(delResult.DeletedCount)
+			return nil
+		})
+		return returnResult, err
+	}
+
+	// no session
 	delResult, err := c.innerCollection.DeleteMany(ctx, filter, deleteOption)
 	if nil != err {
 		return &mongodb.DeleteResult{DeletedCount: 0}, err
 	}
-
-	return &mongodb.DeleteResult{DeletedCount: uint64(delResult.DeletedCount)}, nil
+	returnResult.DeletedCount = uint64(delResult.DeletedCount)
+	return returnResult, nil
 }
 
 func (c *collection) Find(ctx context.Context, filter interface{}, opts *findopt.Many, output interface{}) error {
@@ -155,12 +273,44 @@ func (c *collection) Find(ctx context.Context, filter interface{}, opts *findopt
 		findOptions = opts.ConvertToMongoOptions()
 	}
 
+	datas := []mapstr.MapStr{}
+
+	// in a session
+	if nil != c.innerSession {
+
+		return mongo.WithSession(ctx, c.innerSession, func(mctx mongo.SessionContext) error {
+
+			cursor, err := c.innerCollection.Find(mctx, filter, findOptions)
+
+			if nil != err {
+				return err
+			}
+
+			defer cursor.Close(mctx)
+			datas := []mapstr.MapStr{}
+			for cursor.Next(mctx) {
+				result := mapstr.New()
+				if err := cursor.Decode(&result); nil != err {
+					return err
+				}
+				datas = append(datas, result)
+			}
+
+			if err := cursor.Err(); err != nil {
+				return err
+			}
+
+			return mapstr.ConvertArrayMapStrInto(datas, output)
+		})
+	}
+
+	// no session
 	cursor, err := c.innerCollection.Find(ctx, filter, findOptions)
 	if nil != err {
 		return err
 	}
+	defer cursor.Close(ctx)
 
-	datas := []mapstr.MapStr{}
 	for cursor.Next(ctx) {
 		result := mapstr.New()
 		if err := cursor.Decode(&result); nil != err {
@@ -169,8 +319,12 @@ func (c *collection) Find(ctx context.Context, filter interface{}, opts *findopt
 		datas = append(datas, result)
 	}
 
-	mongodb.TransformMapStrIntoResult(datas, output)
-	return nil
+	if err := cursor.Err(); err != nil {
+		return err
+	}
+
+	// package result
+	return mapstr.ConvertArrayMapStrInto(datas, output)
 }
 
 func (c *collection) FindOne(ctx context.Context, filter interface{}, opts *findopt.One, output interface{}) error {
@@ -180,6 +334,14 @@ func (c *collection) FindOne(ctx context.Context, filter interface{}, opts *find
 		findOptions = opts.ConvertToMongoOptions()
 	}
 
+	// in a session
+	if nil != c.innerSession {
+		return mongo.WithSession(ctx, c.innerSession, func(mctx mongo.SessionContext) error {
+			return c.innerCollection.FindOne(mctx, filter, findOptions).Decode(output)
+		})
+	}
+
+	// no session
 	return c.innerCollection.FindOne(ctx, filter, findOptions).Decode(output)
 }
 
@@ -189,6 +351,15 @@ func (c *collection) FindOneAndModify(ctx context.Context, filter interface{}, u
 	if nil != opts {
 		findOneAndModify = opts.ConvertToMongoOptions()
 	}
+
+	// in a session
+	if nil != c.innerSession {
+		return mongo.WithSession(ctx, c.innerSession, func(mctx mongo.SessionContext) error {
+			return c.innerCollection.FindOneAndUpdate(mctx, filter, update, findOneAndModify).Decode(output)
+		})
+	}
+
+	// no session
 	return c.innerCollection.FindOneAndUpdate(ctx, filter, update, findOneAndModify).Decode(output)
 }
 
@@ -198,6 +369,16 @@ func (c *collection) InsertOne(ctx context.Context, document interface{}, opts *
 	if nil != opts {
 		insertOption = opts.ConvertToMongoOptions()
 	}
+
+	// in a session
+	if nil != c.innerSession {
+		return mongo.WithSession(ctx, c.innerSession, func(mctx mongo.SessionContext) error {
+			_, err := c.innerCollection.InsertOne(mctx, document, insertOption)
+			return err
+		})
+	}
+
+	// no session
 	_, err := c.innerCollection.InsertOne(ctx, document, insertOption)
 	return err
 }
@@ -208,6 +389,16 @@ func (c *collection) InsertMany(ctx context.Context, document []interface{}, opt
 	if nil != opts {
 		insertOption = opts.ConvertToMongoOptions()
 	}
+
+	// in a session
+	if nil != c.innerSession {
+		return mongo.WithSession(ctx, c.innerSession, func(mctx mongo.SessionContext) error {
+			_, err := c.innerCollection.InsertMany(mctx, document, insertOption)
+			return err
+		})
+	}
+
+	// no session
 	_, err := c.innerCollection.InsertMany(ctx, document, insertOption)
 	return err
 }
@@ -219,6 +410,27 @@ func (c *collection) UpdateMany(ctx context.Context, filter interface{}, update 
 		updateOption = opts.ConvertToMongoOptions()
 	}
 
+	// in a session
+	if nil != c.innerSession {
+		returnResult := &mongodb.UpdateResult{}
+		err := mongo.WithSession(ctx, c.innerSession, func(mctx mongo.SessionContext) error {
+			updateResult, err := c.innerCollection.UpdateMany(mctx, filter, bson.M{"$set": update}, updateOption)
+			if nil != err {
+				return err
+			}
+			returnResult = &mongodb.UpdateResult{
+				MatchedCount:  uint64(updateResult.MatchedCount),
+				ModifiedCount: uint64(updateResult.ModifiedCount),
+			}
+
+			return nil
+		})
+
+		return returnResult, err
+
+	}
+
+	// no session
 	updateResult, err := c.innerCollection.UpdateMany(ctx, filter, bson.M{"$set": update}, updateOption)
 	if nil != err {
 		return &mongodb.UpdateResult{}, err
@@ -236,6 +448,28 @@ func (c *collection) UpdateOne(ctx context.Context, filter interface{}, update i
 		updateOption = opts.ConvertToMongoOptions()
 	}
 
+	// in a session
+	if nil != c.innerSession {
+
+		returnResult := &mongodb.UpdateResult{}
+		err := mongo.WithSession(ctx, c.innerSession, func(mctx mongo.SessionContext) error {
+			updateResult, err := c.innerCollection.UpdateOne(mctx, filter, bson.M{"$set": update}, updateOption)
+			if nil != err {
+				return err
+			}
+
+			returnResult = &mongodb.UpdateResult{
+				MatchedCount:  uint64(updateResult.MatchedCount),
+				ModifiedCount: uint64(updateResult.ModifiedCount),
+			}
+
+			return nil
+		})
+
+		return returnResult, err
+	}
+
+	// no session
 	updateResult, err := c.innerCollection.UpdateOne(ctx, filter, bson.M{"$set": update}, updateOption)
 	if nil != err {
 		return &mongodb.UpdateResult{}, err
@@ -254,6 +488,30 @@ func (c *collection) ReplaceOne(ctx context.Context, filter interface{}, replace
 		replaceOption = opts.ConvertToMongoOptions()
 	}
 
+	// in a session
+	if nil != c.innerSession {
+
+		returnResult := &mongodb.ReplaceOneResult{}
+		err := mongo.WithSession(ctx, c.innerSession, func(mctx mongo.SessionContext) error {
+
+			replaceResult, err := c.innerCollection.ReplaceOne(mctx, filter, replacement, replaceOption)
+			if nil != err {
+				return err
+			}
+
+			returnResult = &mongodb.ReplaceOneResult{
+				UpdateResult: mongodb.UpdateResult{
+					MatchedCount:  uint64(replaceResult.MatchedCount),
+					ModifiedCount: uint64(replaceResult.ModifiedCount),
+				},
+			}
+			return nil
+		})
+
+		return returnResult, err
+	}
+
+	// no session
 	replaceResult, err := c.innerCollection.ReplaceOne(ctx, filter, replacement, replaceOption)
 	if nil != err {
 		return &mongodb.ReplaceOneResult{}, err
@@ -265,8 +523,4 @@ func (c *collection) ReplaceOne(ctx context.Context, filter interface{}, replace
 			ModifiedCount: uint64(replaceResult.ModifiedCount),
 		},
 	}, nil
-}
-
-func (c *collection) Close() error {
-	return nil
 }
