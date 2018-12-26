@@ -9,7 +9,7 @@
         </div>
         <cmdb-table
             class="field-table"
-            :loading="$loading('initFieldList')"
+            :loading="$loading(`post_searchObjectAttribute_${objId}`)"
             :header="table.header"
             :has-footer="false"
             :list="table.list"
