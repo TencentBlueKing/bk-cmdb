@@ -12,10 +12,6 @@
 
 package mongodb
 
-import (
-	"configcenter/src/common/mapstr"
-)
-
 // DeleteResult is a result of an DeleteOne operat
 type DeleteResult struct {
 	// The number of documents that were deleted.
@@ -36,9 +32,9 @@ type ReplaceOneResult struct {
 
 // IndexResult get collection index result
 type IndexResult struct {
-	Namespace string        `json:"ns"`
-	Name      string        `json:"name"`
-	Key       mapstr.MapStr `json:"key"`
+	Namespace string   `json:"ns"`
+	Name      string   `json:"name"`
+	Key       []string `json:"key"`
 }
 
 // GetIndexResult get the indexex result

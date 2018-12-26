@@ -41,7 +41,11 @@ func (s *session) Open() error {
 }
 
 func (s *session) Close() error {
-	return s.transaction.Close()
+
+	if nil != s.transaction {
+		return s.transaction.Close()
+	}
+	return nil
 }
 
 func (s *session) Collection(collName string) mongodb.CollectionInterface {

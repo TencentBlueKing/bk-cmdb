@@ -12,10 +12,6 @@
 
 package mongodb
 
-import (
-	"configcenter/src/common/mapstr"
-)
-
 // Opener open method
 type Opener interface {
 	Open() error
@@ -34,8 +30,8 @@ type OpenCloser interface {
 
 // Index the collection index definition
 type Index struct {
-	Keys       mapstr.MapStr `json:"key"`
-	Name       string        `json:"name"`
-	Unique     bool          `json:"unique"`
-	Backgroupd bool          `json:"background"`
+	Keys       []string `json:"keys"`
+	Name       string   `json:"name"`
+	Unique     bool     `json:"unique"`
+	Backgroupd bool     `json:"background"`
 }
