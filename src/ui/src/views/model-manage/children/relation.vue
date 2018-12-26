@@ -29,12 +29,22 @@
                         {{getModelName(item['bk_asst_obj_id'])}}
                     </template>
                     <template v-else-if="header.id==='operation'">
-                        <span class="text-primary mr10" @click.stop="editRelation(item)">
+                        <template v-if="item.ispre">
+                            <span class="text-primary mr10 disabled">
                             {{$t('Common["编辑"]')}}
-                        </span>
-                        <span class="text-primary" v-if="!item.ispre && !isReadOnly" @click.stop="deleteRelation(item, index)">
-                            {{$t('Common["删除"]')}}
-                        </span>
+                            </span>
+                            <span class="text-primary disabled">
+                                {{$t('Common["删除"]')}}
+                            </span>
+                        </template>
+                        <template v-else>
+                            <span class="text-primary mr10" @click.stop="editRelation(item)">
+                                {{$t('Common["编辑"]')}}
+                            </span>
+                            <span class="text-primary" @click.stop="deleteRelation(item, index)">
+                                {{$t('Common["删除"]')}}
+                            </span>
+                        </template>
                     </template>
                     <template v-else>
                         {{item[header.id]}}

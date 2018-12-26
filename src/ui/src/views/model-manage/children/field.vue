@@ -33,6 +33,9 @@
                         <span class="text-primary" v-if="!item.ispre && !isReadOnly" @click.stop="deleteField(item)">
                             {{$t('Common["删除"]')}}
                         </span>
+                        <span class="text-primary disabled" style="color: #3c96ff;" v-else>
+                            {{$t('Common["删除"]')}}
+                        </span>
                     </template>
                     <template v-else>
                         {{item[header.id]}}
