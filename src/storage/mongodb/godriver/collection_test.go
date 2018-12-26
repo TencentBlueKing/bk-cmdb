@@ -9,6 +9,7 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package godriver_test
 
 import (
@@ -107,6 +108,12 @@ func TestCRUD(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, updateResult)
 		t.Logf("update many result:%#v", updateResult)
+
+		// replace one
+		replaceResult, err := coll.ReplaceOne(context.TODO(), cond.ToMapStr(), mapstr.MapStr{"key": "value-replace_update"}, nil)
+		require.NoError(t, err)
+		require.NotNil(t, replaceResult)
+		t.Logf("replace one result:%#v", replaceResult)
 
 		// delete one
 		deleteResult, err := coll.DeleteOne(context.TODO(), cond.ToMapStr(), nil)
