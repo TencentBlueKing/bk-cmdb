@@ -14,6 +14,7 @@ package x18_12_05_01
 
 import (
 	"context"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
@@ -45,11 +46,11 @@ func addswitchAssociation(ctx context.Context, db dal.RDB, conf *upgrader.Config
 
 func changeNetDeviceTableName(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	err := db.DropTable("cc_Netcollect_Device")
-	if err != nil {
+	if err != nil && !strings.Contains(err.Error(), "ns not found") {
 		return err
 	}
 	err = db.DropTable("cc_Netcollect_Property")
-	if err != nil {
+	if err != nil && !strings.Contains(err.Error(), "ns not found") {
 		return err
 	}
 
