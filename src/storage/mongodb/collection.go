@@ -28,7 +28,7 @@ type CollectionInterface interface {
 	Drop(ctx context.Context) error
 	CreateIndex(index Index) error
 	DropIndex(indexName string) error
-	GetIndexes() (*GetIndexResult, error)
+	GetIndexes() (*QueryIndexResult, error)
 	Count(ctx context.Context, filter interface{}) (uint64, error)
 
 	DeleteOne(ctx context.Context, filter interface{}, opts *deleteopt.One) (*DeleteResult, error)

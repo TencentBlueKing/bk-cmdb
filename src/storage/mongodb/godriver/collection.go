@@ -120,42 +120,14 @@ func (c *collection) DropIndex(indexName string) error {
 	_, err := indexView.DropOne(context.TODO(), indexName)
 	return err
 }
-func (c *collection) parseIndexResult(ctx context.Context, cursor mongo.Cursor) (*mongodb.GetIndexResult, error) {
 
-	// this struct from mongodb go driver about index
-	type index struct {
-		Key  map[string]int
-		NS   string
-		Name string
-	}
-
-	returnIndexResult := &mongodb.GetIndexResult{}
-
-	for cursor.Next(ctx) {
-		elem := index{}
-		if err := cursor.Decode(&elem); err != nil {
-			return returnIndexResult, err
-		}
-		idxResult := mongodb.IndexResult{Name: elem.Name, Namespace: elem.NS}
-		for name := range elem.Key {
-			idxResult.Key = append(idxResult.Key, name)
-		}
-		returnIndexResult.Indexes = append(returnIndexResult.Indexes, idxResult)
-	}
-
-	if err := cursor.Err(); err != nil {
-		return returnIndexResult, err
-	}
-
-	return returnIndexResult, nil
-}
-func (c *collection) GetIndexes() (*mongodb.GetIndexResult, error) {
+func (c *collection) GetIndexes() (*mongodb.QueryIndexResult, error) {
 
 	indexView := c.innerCollection.Indexes()
 
 	// in a session
 	if nil != c.innerSession {
-		returnIndexResult := &mongodb.GetIndexResult{}
+		returnIndexResult := &mongodb.QueryIndexResult{}
 		err := mongo.WithSession(context.TODO(), c.innerSession, func(mctx mongo.SessionContext) error {
 
 			cursor, err := indexView.List(mctx)
@@ -178,7 +150,7 @@ func (c *collection) GetIndexes() (*mongodb.GetIndexResult, error) {
 	// no session
 	cursor, err := indexView.List(context.TODO())
 	if nil != err {
-		return &mongodb.GetIndexResult{}, err
+		return &mongodb.QueryIndexResult{}, err
 	}
 
 	defer cursor.Close(context.TODO())
