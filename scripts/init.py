@@ -367,7 +367,7 @@ def main(argv):
     server_ports={"cmdb_adminserver":60004,"cmdb_apiserver":8080,\
     "cmdb_auditcontroller":50005,"cmdb_datacollection":60005,\
     "cmdb_eventserver":60009,"cmdb_hostcontroller":50002,\
-    "cmdb_hostserver":60001,"cmdb_objectcontroller":50001,\
+    "cmdb_hostserver":60001,"cmdb_objectcontroller":50001,"cmdb_coreservice":50009,\
     "cmdb_proccontroller":50003,"cmdb_procserver":60003,\
     "cmdb_toposerver":60002,"cmdb_webserver":8083}
     try:
