@@ -76,8 +76,8 @@ func (c *cloud) DeleteCloudTask(ctx context.Context, h http.Header, taskID strin
 	return
 }
 
-func (c *cloud) SearchCloudTask(ctx context.Context, h http.Header, data interface{}) (resp *metadata.FavoriteResult, err error) {
-	resp = new(metadata.FavoriteResult)
+func (c *cloud) SearchCloudTask(ctx context.Context, h http.Header, data interface{}) (resp *metadata.CloudTaskSearch, err error) {
+	resp = new(metadata.CloudTaskSearch)
 	subPath := "/hosts/cloud/search"
 
 	err = c.client.Post().

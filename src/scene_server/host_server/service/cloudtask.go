@@ -14,7 +14,6 @@ package service
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"net/http"
 
@@ -109,52 +108,32 @@ func (s *Service) StartCloudSync(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	_, errUpdateTask := s.CoreAPI.HostController().Cloud().UpdateCloudTask(srvData.ctx, srvData.header, opt)
-	if errUpdateTask != nil {
-		blog.Errorf("update task failed with decode body, %v", errUpdateTask)
+	if _, err := s.CoreAPI.HostController().Cloud().UpdateCloudTask(srvData.ctx, srvData.header, opt); err != nil {
+		blog.Errorf("update task failed with decode body, %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommDBUpdateFailed)})
 		return
 	}
 
-	/*
-	* 这个函数可以是ESB接口，接收json:{"bk_task_name": "test", "bk_status": true}开启一个同步
-	* 也可以是前端发回一个json:{"bk_task_name": "test", "bk_status": true}，控制一个同步任务的开和关
-	 */
-
 	isRequired := make([]string, 0)
-	status, ok := opt["bk_status"]
-	if ok {
+	if _, ok := opt["bk_status"]; ok {
 		delete(opt, "bk_status")
 	} else {
 		isRequired = append(isRequired, "bk_status is required.")
 	}
 
-	if _, oK := opt["bk_task_name"]; !oK {
+	if _, ok := opt["bk_task_name"]; !ok {
 		isRequired = append(isRequired, "bk_task_name is required.")
 	}
 
 	if len(isRequired) > 0 {
 		blog.Errorf("%v", isRequired)
 		resp.WriteEntity(meta.NewSuccessResp(isRequired))
+		return
 	}
 
-	response, err := s.CoreAPI.HostController().Cloud().SearchCloudTask(srvData.ctx, srvData.header, opt)
-	if err != nil {
-		blog.Errorf("search %v failed, err: %v", opt["bk_task_name"], err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudGetTaskFail)})
-	}
-
-	taskList, errMap := mapstr.NewFromInterface(response.Info[0])
-	if errMap != nil {
-		blog.Errorf("interface convert to Mapstr failed.")
-		resp.WriteEntity(meta.NewSuccessResp(errMap))
-	}
-
-	taskList["bk_status"] = status
-
-	if err := srvData.lgc.CloudTaskSync(srvData.ctx, taskList); err != nil {
-		blog.Errorf("execute CloudTaskSync failed. err: %v", err)
-		resp.WriteEntity(meta.NewSuccessResp(err))
+	if err := srvData.lgc.FrontEndSyncSwitch(srvData.ctx, opt); err != nil {
+		blog.Errorf("start cloud sync fail, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudSyncStartFail)})
 	}
 
 	resp.WriteEntity(meta.NewSuccessResp(nil))
@@ -271,26 +250,26 @@ func (s *Service) SearchAccount(req *restful.Request, resp *restful.Response) {
 		resp.WriteEntity(meta.NewSuccessResp(err))
 	}
 
-	secretID := response.Info[0]["bk_secret_id"]
-	secretKey := response.Info[0]["bk_secret_key"]
-	secretKeyStr, ok := secretKey.(string)
-	if !ok {
-		blog.Errorf("interface convert to string failed.")
-		resp.WriteEntity(meta.NewSuccessResp(ok))
-	}
-	// decode secretKey
-	decodeBytes, errDecode := base64.StdEncoding.DecodeString(secretKeyStr)
-	if errDecode != nil {
-		blog.Errorf("Base64 decode secretKey failed.")
-		resp.WriteEntity(meta.NewSuccessResp(errDecode))
-	}
-	secretKeyOrigin := string(decodeBytes)
+	//secretID := response.Info[0]["bk_secret_id"]
+	//secretKey := response.Info[0]["bk_secret_key"]
+	//secretKeyStr, ok := secretKey.(string)
+	//if !ok {
+	//	blog.Errorf("interface convert to string failed.")
+	//	resp.WriteEntity(meta.NewSuccessResp(ok))
+	//}
+	//// decode secretKey
+	//decodeBytes, errDecode := base64.StdEncoding.DecodeString(secretKeyStr)
+	//if errDecode != nil {
+	//	blog.Errorf("Base64 decode secretKey failed.")
+	//	resp.WriteEntity(meta.NewSuccessResp(errDecode))
+	//}
+	//secretKeyOrigin := string(decodeBytes)
+	//
+	//result := make(map[string]interface{}, 0)
+	//result["ID"] = secretID
+	//result["Key"] = secretKeyOrigin
 
-	result := make(map[string]interface{}, 0)
-	result["ID"] = secretID
-	result["Key"] = secretKeyOrigin
-
-	resp.WriteEntity(meta.NewSuccessResp(result))
+	resp.WriteEntity(meta.NewSuccessResp(response))
 }
 
 func (s *Service) CloudSyncHistory(req *restful.Request, resp *restful.Response) {
@@ -355,7 +334,6 @@ func (s *Service) SearchConfirmHistory(req *restful.Request, resp *restful.Respo
 		return
 	}
 
-	blog.Debug("search confirm history opt: %v", opt)
 	response, err := s.CoreAPI.HostController().Cloud().SearchConfirmHistory(context.Background(), srvData.header, opt)
 	if err != nil {
 		blog.Errorf("search confirm history failed")

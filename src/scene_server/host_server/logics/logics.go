@@ -13,6 +13,7 @@
 package logics
 
 import (
+	"gopkg.in/redis.v5"
 	"net/http"
 
 	"configcenter/src/common/backbone"
@@ -28,10 +29,11 @@ type Logics struct {
 	ccErr  errors.DefaultCCErrorIf
 	ccLang language.DefaultCCLanguageIf
 	user   string
+	cache  *redis.Client
 }
 
 // NewLogics get logic handle
-func NewLogics(b *backbone.Engine, header http.Header) *Logics {
+func NewLogics(b *backbone.Engine, header http.Header, cache *redis.Client) *Logics {
 	lang := util.GetLanguage(header)
 	return &Logics{
 		Engine: b,
@@ -40,5 +42,6 @@ func NewLogics(b *backbone.Engine, header http.Header) *Logics {
 		ccErr:  b.CCErr.CreateDefaultCCErrorIf(lang),
 		ccLang: b.Language.CreateDefaultCCLanguageIf(lang),
 		user:   util.GetUser(header),
+		cache:  cache,
 	}
 }

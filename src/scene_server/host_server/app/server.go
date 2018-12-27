@@ -13,9 +13,13 @@
 package app
 
 import (
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/storage/dal/redis"
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/emicklei/go-restful"
 
@@ -26,6 +30,7 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/host_server/app/options"
+	"configcenter/src/scene_server/host_server/logics"
 	hostsvc "configcenter/src/scene_server/host_server/service"
 )
 
@@ -72,15 +77,36 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
+	configReady := false
+	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
+		if "" == hostSvr.Config.Redis.Address {
+			time.Sleep(time.Second)
+		} else {
+			configReady = true
+			break
+		}
+	}
+	if false == configReady {
+		return fmt.Errorf("Configuration item not found")
+	}
+	cacheDB, err := redis.NewFromConfig(hostSvr.Config.Redis)
+	if err != nil {
+		blog.Errorf("new redis client failed, err: %s", err.Error())
+	}
+
 	service.Engine = engine
 	service.Config = &hostSvr.Config
+	service.CacheDB = cacheDB
 	hostSvr.Core = engine
 	hostSvr.Service = service
+
+	go hostSvr.Logics.InitFunc()
 	select {}
 	return nil
 }
 
 type HostServer struct {
+	*logics.Logics
 	Core    *backbone.Engine
 	Config  options.Config
 	Service *hostsvc.Service
@@ -92,6 +118,12 @@ func (h *HostServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 	h.Config.Gse.ZkPassword = current.ConfigMap["gse.pwd"]
 	h.Config.Gse.RedisPort = current.ConfigMap["gse.port"]
 	h.Config.Gse.RedisPassword = current.ConfigMap["gse.redis_pwd"]
+
+	h.Config.Redis.Address = current.ConfigMap["redis.host"]
+	h.Config.Redis.Database = current.ConfigMap["redis.database"]
+	h.Config.Redis.Password = current.ConfigMap["redis.pwd"]
+	h.Config.Redis.Port = current.ConfigMap["redis.port"]
+	h.Config.Redis.MasterName = current.ConfigMap["redis.user"]
 }
 
 func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
