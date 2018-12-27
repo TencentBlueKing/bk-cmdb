@@ -66,7 +66,7 @@
             }
         },
         async created () {
-            this.$store.commit('setHeaderTitle', this.$t('Nav["业务主机"]'))
+            this.$store.commit('setHeaderTitle', this.$t('Nav["主机查询"]'))
             try {
                 const res = await Promise.all([
                     this.getBusiness(),
