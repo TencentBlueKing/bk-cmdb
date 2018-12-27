@@ -10,18 +10,18 @@
 * limitations under the License.
  */
 
-package godriver
+package driver
 
 import (
 	"context"
 
 	"configcenter/src/common/mapstr"
 	"configcenter/src/storage/mongodb"
-	"configcenter/src/storage/mongodb/deleteopt"
-	"configcenter/src/storage/mongodb/findopt"
-	"configcenter/src/storage/mongodb/insertopt"
-	"configcenter/src/storage/mongodb/replaceopt"
-	"configcenter/src/storage/mongodb/updateopt"
+	"configcenter/src/storage/mongodb/options/deleteopt"
+	"configcenter/src/storage/mongodb/options/findopt"
+	"configcenter/src/storage/mongodb/options/insertopt"
+	"configcenter/src/storage/mongodb/options/replaceopt"
+	"configcenter/src/storage/mongodb/options/updateopt"
 
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/mongo"
@@ -72,11 +72,11 @@ func (c *collection) CreateIndex(index mongodb.Index) error {
 	indexView := c.innerCollection.Indexes()
 
 	keys := bsonx.Doc{}
-	for _, key := range index.Keys {
-		keys = keys.Append(key, bsonx.Int32(-1))
+	for key, val := range index.Keys {
+		keys = keys.Append(key, bsonx.Int32(val))
 	}
 
-	indexOpts := mongo.NewIndexOptionsBuilder().Name(index.Name).Background(index.Backgroupd).Unique(index.Unique).Build()
+	indexOpts := mongo.NewIndexOptionsBuilder().Name(index.Name).Background(index.Background).Unique(index.Unique).Build()
 
 	// in a session
 	if nil != c.innerSession {

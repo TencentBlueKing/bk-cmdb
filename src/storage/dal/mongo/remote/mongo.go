@@ -34,9 +34,8 @@ var ErrSessionMissing = errors.New("session missing")
 
 // Client implement client.DALRDB interface
 type Client struct {
-	txc     mongodb.Client
+	dbProxy mongodb.Client
 	session mongodb.Session
-	pool    mongodb.ClientPool
 }
 
 var _ dal.RDB = new(Client)
@@ -55,6 +54,7 @@ func NewClient(uri string) (*Client, error) {
 			pool: pool,
 		}, nil
 	*/
+
 	return nil, nil
 }
 
@@ -72,7 +72,7 @@ func (c *Client) Ping() error {
 }
 
 // Clone return the new client
-func (c *Client) Clone() dal.RDB {
+func (c *Client) Clone() dal.DB {
 	nc := Client{
 		pool: c.pool,
 	}
