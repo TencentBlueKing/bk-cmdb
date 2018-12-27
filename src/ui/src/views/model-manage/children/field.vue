@@ -128,6 +128,10 @@
                 return false
             },
             authority () {
+                const cantEdit = ['process', 'plat']
+                if (cantEdit.includes(this.objId)) {
+                    return []
+                }
                 return this.$store.getters.admin ? ['search', 'update', 'delete'] : []
             }
         },
