@@ -10,7 +10,7 @@
 * limitations under the License.
  */
 
-package godriver
+package driver
 
 import (
 	"context"

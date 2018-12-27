@@ -16,6 +16,8 @@ import (
 	"context"
 	"errors"
 
+	"configcenter/src/storage/mongodb"
+
 	"configcenter/src/storage/types"
 )
 
@@ -28,13 +30,17 @@ var (
 	ErrDuplicated          = errors.New("duplicated")
 )
 
-// RDB db operation interface
-type RDB interface {
-	Clone() RDB
+// RDB rename the RDB into DB
+// Compatible stock code
+type RDB DB
+
+// DB db operation interface
+type DB interface {
+	Clone() DB
 	// Table collection 操作
 	Table(collection string) Table
 	// StartTransaction 开启新事务
-	StartTransaction(ctx context.Context) (RDB, error)
+	StartTransaction(ctx context.Context) (DB, error)
 	// Commit 提交事务
 	Commit(context.Context) error
 	// Abort 取消事务
@@ -111,9 +117,5 @@ type Find interface {
 	Count(ctx context.Context) (uint64, error)
 }
 
-type Index struct {
-	Keys       map[string]interface{}
-	Name       string
-	Unique     bool
-	Background bool
-}
+// Index define the DB index struct
+type Index mongodb.Index

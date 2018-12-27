@@ -15,11 +15,11 @@ package mongodb
 import (
 	"context"
 
-	"configcenter/src/storage/mongodb/deleteopt"
-	"configcenter/src/storage/mongodb/findopt"
-	"configcenter/src/storage/mongodb/insertopt"
-	"configcenter/src/storage/mongodb/replaceopt"
-	"configcenter/src/storage/mongodb/updateopt"
+	"configcenter/src/storage/mongodb/options/deleteopt"
+	"configcenter/src/storage/mongodb/options/findopt"
+	"configcenter/src/storage/mongodb/options/insertopt"
+	"configcenter/src/storage/mongodb/options/replaceopt"
+	"configcenter/src/storage/mongodb/options/updateopt"
 )
 
 // CollectionInterface collection operation methods

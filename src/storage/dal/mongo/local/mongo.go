@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package mongo
+package local
 
 import (
 	"context"
@@ -30,9 +30,9 @@ type Mongo struct {
 	dbname string
 }
 
-var _ dal.RDB = new(Mongo)
+var _ dal.DB = new(Mongo)
 
-// NewMgo returns new RDB
+// NewMgo returns new DB
 func NewMgo(uri string) (*Mongo, error) {
 	cs, err := mgo.ParseURL(uri)
 	if err != nil {
@@ -61,7 +61,7 @@ func (c *Mongo) Ping() error {
 }
 
 // Clone return the new client
-func (c *Mongo) Clone() dal.RDB {
+func (c *Mongo) Clone() dal.DB {
 	nc := Mongo{
 		dbc:    c.dbc,
 		dbname: c.dbname,
@@ -69,9 +69,12 @@ func (c *Mongo) Clone() dal.RDB {
 	return &nc
 }
 
+// IsDuplicatedError check duplicated error
 func (c *Mongo) IsDuplicatedError(err error) bool {
 	return err == dal.ErrDuplicated || mgo.IsDup(err)
 }
+
+// IsNotFoundError check the not found error
 func (c *Mongo) IsNotFoundError(err error) bool {
 	return err == dal.ErrDocumentNotFound || err == mgo.ErrNotFound
 }
@@ -210,7 +213,7 @@ type Idgen struct {
 }
 
 // StartTransaction 开启新事务
-func (c *Mongo) StartTransaction(ctx context.Context) (dal.RDB, error) {
+func (c *Mongo) StartTransaction(ctx context.Context) (dal.DB, error) {
 	return c, nil
 }
 
@@ -274,13 +277,13 @@ func (c *Collection) CreateIndex(ctx context.Context, index dal.Index) error {
 	return c.dbc.DB(c.dbname).C(c.collName).EnsureIndex(i)
 }
 
-// DropIndex 移除索引
+// DropIndex remove index by name
 func (c *Collection) DropIndex(ctx context.Context, indexName string) error {
 	c.dbc.Refresh()
 	return c.dbc.DB(c.dbname).C(c.collName).DropIndexName(indexName)
 }
 
-// Indexes 查询索引
+// Indexes get all indexes for the collection
 func (c *Collection) Indexes(ctx context.Context) ([]dal.Index, error) {
 	c.dbc.Refresh()
 	dbindexs, err := c.dbc.DB(c.dbname).C(c.collName).Indexes()
@@ -290,7 +293,7 @@ func (c *Collection) Indexes(ctx context.Context) ([]dal.Index, error) {
 
 	indexs := []dal.Index{}
 	for _, dbindex := range dbindexs {
-		keys := map[string]interface{}{}
+		keys := map[string]int32{}
 		for _, key := range dbindex.Key {
 			if strings.HasPrefix(key, "-") {
 				key = strings.TrimLeft(key, "-")
@@ -310,7 +313,7 @@ func (c *Collection) Indexes(ctx context.Context) ([]dal.Index, error) {
 	return indexs, nil
 }
 
-// AddColumn 添加字段
+// AddColumn add a new column for the collection
 func (c *Collection) AddColumn(ctx context.Context, column string, value interface{}) error {
 	c.dbc.Refresh()
 	selector := types.Document{column: types.Document{"$exists": false}}
@@ -320,7 +323,7 @@ func (c *Collection) AddColumn(ctx context.Context, column string, value interfa
 	return err
 }
 
-// RenameColumn 重命名字段
+// RenameColumn rename a column for the collection
 func (c *Collection) RenameColumn(ctx context.Context, oldName, newColumn string) error {
 	c.dbc.Refresh()
 	datac := types.Document{"$rename": types.Document{oldName: newColumn}}
@@ -328,7 +331,7 @@ func (c *Collection) RenameColumn(ctx context.Context, oldName, newColumn string
 	return err
 }
 
-// DropColumn 移除字段
+// DropColumn remove a column by the name
 func (c *Collection) DropColumn(ctx context.Context, field string) error {
 	c.dbc.Refresh()
 	datac := types.Document{"$unset": types.Document{field: ""}}
@@ -336,9 +339,12 @@ func (c *Collection) DropColumn(ctx context.Context, field string) error {
 	return err
 }
 
+// AggregateAll aggregate all operation
 func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, result interface{}) error {
 	return c.dbc.DB(c.dbname).C(c.collName).Pipe(pipeline).All(result)
 }
+
+// AggregateOne aggregate one operation
 func (c *Collection) AggregateOne(ctx context.Context, pipeline interface{}, result interface{}) error {
 	return c.dbc.DB(c.dbname).C(c.collName).Pipe(pipeline).One(result)
 }

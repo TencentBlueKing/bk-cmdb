@@ -17,388 +17,506 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"sync"
 
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
-	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
-	"configcenter/src/storage/mongodb"
-	"configcenter/src/storage/mongodb/findopt"
+	"configcenter/src/storage/rpc"
 	"configcenter/src/storage/types"
 )
 
-// ErrSessionMissing session missing
-var ErrSessionMissing = errors.New("session missing")
+// RPC implement client.DALRDB interface
+type RPC struct {
+	RequestID string // 请求ID,可选项
+	TxnID     string // 事务ID,uuid
+	rpc       *rpc.Client
+	getServer types.GetServerFunc
 
-// Client implement client.DALRDB interface
-type Client struct {
-	txc     mongodb.Client
-	session mongodb.Session
-	pool    mongodb.ClientPool
+	parent *RPC
 }
 
-var _ dal.RDB = new(Client)
+var _ dal.RDB = new(RPC)
 
-var initMongoc sync.Once
+// NewRPCWithDiscover returns new RDB
+func NewRPCWithDiscover(getServer types.GetServerFunc) (*RPC, error) {
+	servers, err := getServer()
+	if err != nil {
+		return nil, err
+	}
 
-// NewClient returns new RDB
-func NewClient(uri string) (*Client, error) {
-	/*
-		pool := mongodb.NewClientPool(uri)
-		err := pool.Open()
-		if err != nil {
-			return nil, err
-		}
-		return &Client{
-			pool: pool,
-		}, nil
-	*/
-	return nil, nil
+	rpccli, err := rpc.DialHTTPPath("tcp", servers[0], "/txn/v3/rpc")
+	if err != nil {
+		return nil, err
+	}
+	return &RPC{
+		rpc:       rpccli,
+		getServer: getServer,
+	}, nil
+}
+
+// NewRPC returns new RDB
+func NewRPC(uri string) (*RPC, error) {
+	rpccli, err := rpc.DialHTTPPath("tcp", uri, "/txn/v3/rpc")
+	if err != nil {
+		return nil, err
+	}
+	return &RPC{
+		rpc: rpccli,
+	}, nil
 }
 
 // Close replica client
-func (c *Client) Close() error {
-	return c.pool.Close()
+func (c *RPC) Close() error {
+	return c.rpc.Close()
 }
 
 // Ping replica client
-func (c *Client) Ping() error {
-	dbc := c.pool.Pop()
-	err := dbc.Ping()
-	c.pool.Push(dbc)
-	return err
+func (c *RPC) Ping() error {
+	return c.rpc.Ping()
 }
 
-// Clone return the new client
-func (c *Client) Clone() dal.RDB {
-	nc := Client{
-		pool: c.pool,
+func (c *RPC) Clone() dal.RDB {
+	nc := RPC{
+		TxnID:     c.TxnID,
+		RequestID: c.RequestID,
+		rpc:       c.rpc,
+		parent:    c,
 	}
 	return &nc
 }
 
-// IsDuplicatedError interface compatibility
-func (c *Client) IsDuplicatedError(err error) bool {
+func (c *RPC) IsDuplicatedError(error) bool {
 	return false
 }
-
-// IsNotFoundError interface compatibility
-func (c *Client) IsNotFoundError(err error) bool {
+func (c *RPC) IsNotFoundError(error) bool {
 	return false
 }
 
 // Table collection operation
-func (c *Client) Table(collName string) dal.Table {
-	col := Collection{}
-	col.collName = collName
-	col.Client = c
+func (c *RPC) Table(collection string) dal.Table {
+	col := RPCCollection{
+		RequestID: c.RequestID,
+		TxnID:     c.TxnID,
+	}
+	col.collection = collection
+	col.rpc = c.rpc
+
 	return &col
 }
 
-// Collection implement client.Collection interface
-type Collection struct {
-	collName string // 集合名
-	*Client
-}
-
-// AggregateOne TODO: need to implement
-func (c *Collection) AggregateOne(ctx context.Context, pipeline interface{}, result interface{}) error {
-	return nil
-}
-
-// AggregateAll TODO: need to implement
-func (c *Collection) AggregateAll(ctx context.Context, pipeline interface{}, result interface{}) error {
-	return nil
-}
-
-// Indexes 查询索引
-func (c *Collection) Indexes(ctx context.Context) ([]dal.Index, error) {
-	return nil, errors.New("not implement")
+// RPCCollection implement client.Collection interface
+type RPCCollection struct {
+	RequestID  string // 请求ID,可选项
+	Processor  string // 处理进程号，结构为"IP:PORT-PID"用于识别事务session被存于那个TM多活实例
+	TxnID      string // 事务ID,uuid
+	collection string // 集合名
+	rpc        *rpc.Client
 }
 
 // Find 查询多个并反序列化到 Result
-func (c *Collection) Find(filter dal.Filter) dal.Find {
-	return &Find{Collection: c, filter: filter}
+func (c *RPCCollection) Find(filter dal.Filter) dal.Find {
+	// build msg
+	msg := types.OPFIND{}
+	msg.OPCode = types.OPFind
+	msg.Collection = c.collection
+	msg.Selector.Encode(filter)
+
+	find := RPCFind{RPCCollection: c, msg: &msg}
+	find.RequestID = c.RequestID
+	find.Processor = c.Processor
+	find.TxnID = c.TxnID
+	return &find
 }
 
-// Find define a find operation
-type Find struct {
-	*Collection
-	projection types.Document
-	filter     dal.Filter
-	start      uint64
-	limit      uint64
-	sort       string
+// RPCFind define a find operation
+type RPCFind struct {
+	*RPCCollection
+	msg *types.OPFIND
 }
 
 // Fields 查询字段
-func (f *Find) Fields(fields ...string) dal.Find {
+func (f *RPCFind) Fields(fields ...string) dal.Find {
 	projection := types.Document{}
 	for _, field := range fields {
 		projection[field] = true
 	}
-	f.projection = projection
+	f.msg.Projection = projection
 	return f
 }
 
 // Sort 查询排序
-func (f *Find) Sort(sort string) dal.Find {
-	f.sort = sort
+func (f *RPCFind) Sort(sort string) dal.Find {
+	f.msg.Sort = sort
 	return f
 }
 
 // Start 查询上标
-func (f *Find) Start(start uint64) dal.Find {
-	f.start = start
+func (f *RPCFind) Start(start uint64) dal.Find {
+	f.msg.Start = start
 	return f
 }
 
 // Limit 查询限制
-func (f *Find) Limit(limit uint64) dal.Find {
-	f.limit = limit
+func (f *RPCFind) Limit(limit uint64) dal.Find {
+	f.msg.Limit = limit
 	return f
 }
 
 // All 查询多个
-func (f *Find) All(ctx context.Context, result interface{}) error {
-	opt := findopt.Many{}
-	opt.Skip = int64(f.start)
-	opt.Limit = int64(f.limit)
-	opt.Fields = mapstr.MapStr(f.projection)
+func (f *RPCFind) All(ctx context.Context, result interface{}) error {
+	// set txn
+	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
+	if ok {
+		f.msg.RequestID = opt.RequestID
+		f.msg.TxnID = opt.TxnID
+	}
+	if f.TxnID != "" {
+		f.msg.TxnID = f.TxnID
+	}
 
-	p, table := f.getCollection(f.collName)
-	err := table.Find(ctx, f.filter, &opt, result)
-	p.push()
-	return err
+	// call
+	reply := types.OPREPLY{}
+	err := f.rpc.Call(types.CommandRDBOperation, f.msg, &reply)
+	if err != nil {
+		return err
+	}
+	if !reply.Success {
+		return errors.New(reply.Message)
+	}
+	return reply.Docs.Decode(result)
 }
 
 // One 查询一个
-func (f *Find) One(ctx context.Context, result interface{}) error {
-	opt := findopt.One{}
-	opt.Skip = int64(f.start)
-	opt.Limit = int64(f.limit)
-	opt.Fields = mapstr.MapStr(f.projection)
+func (f *RPCFind) One(ctx context.Context, result interface{}) error {
+	// set txn
+	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
+	if ok {
+		f.msg.RequestID = opt.RequestID
+		f.msg.TxnID = opt.TxnID
+	}
+	if f.TxnID != "" {
+		f.msg.TxnID = f.TxnID
+	}
 
-	p, table := f.getCollection(f.collName)
-	err := table.FindOne(ctx, f.filter, &opt, result)
-	p.push()
-	return err
+	// call
+	reply := types.OPREPLY{}
+	err := f.rpc.Call(types.CommandRDBOperation, f.msg, &reply)
+	if err != nil {
+		return err
+	}
+	if !reply.Success {
+		return errors.New(reply.Message)
+	}
+
+	if len(reply.Docs) <= 0 {
+		return dal.ErrDocumentNotFound
+	}
+	return reply.Docs[0].Decode(result)
 }
 
 // Count 统计数量(非事务)
-func (f *Find) Count(ctx context.Context) (uint64, error) {
-	dbc := f.pool.Pop()
-	count, err := dbc.Collection(f.collName).Count(ctx, f.filter)
-	f.pool.Push(dbc)
-	return count, err
+func (f *RPCFind) Count(ctx context.Context) (uint64, error) {
+	// build msg
+	f.msg.OPCode = types.OPCount
+
+	// set txn
+	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
+	if ok {
+		f.msg.RequestID = opt.RequestID
+	}
+
+	// call
+	reply := types.OPREPLY{}
+	err := f.rpc.Call(types.CommandRDBOperation, f.msg, &reply)
+	if err != nil {
+		return 0, err
+	}
+	if !reply.Success {
+		return 0, errors.New(reply.Message)
+	}
+	return reply.Count, nil
 }
 
 // Insert 插入数据, docs 可以为 单个数据 或者 多个数据
-func (c *Collection) Insert(ctx context.Context, docs interface{}) error {
-	p, table := c.getCollection(c.collName)
-	err := table.InsertMany(ctx, util.ConverToInterfaceSlice(docs), nil)
-	p.push()
-	return err
+func (c *RPCCollection) Insert(ctx context.Context, docs interface{}) error {
+	// build msg
+	msg := types.OPINSERT{}
+	msg.OPCode = types.OPInsert
+	msg.Collection = c.collection
+	if err := msg.DOCS.Encode(docs); err != nil {
+		return err
+	}
+
+	// set txn
+	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
+	if ok {
+		msg.RequestID = opt.RequestID
+		msg.TxnID = opt.TxnID
+	}
+	if c.TxnID != "" {
+		msg.TxnID = c.TxnID
+	}
+
+	// call
+	reply := types.OPREPLY{}
+	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
+	if err != nil {
+		return err
+	}
+	if !reply.Success {
+		return errors.New(reply.Message)
+	}
+	return nil
 }
 
 // Update 更新数据
-func (c *Collection) Update(ctx context.Context, filter dal.Filter, doc interface{}) error {
-	p, table := c.getCollection(c.collName)
-	_, err := table.UpdateMany(ctx, filter, doc, nil)
-	p.push()
-	return err
+func (c *RPCCollection) Update(ctx context.Context, filter dal.Filter, doc interface{}) error {
+	// build msg
+	msg := types.OPUPDATE{}
+	msg.OPCode = types.OPUpdate
+	msg.Collection = c.collection
+	if err := msg.DOC.Encode(types.Document{
+		"$set": doc,
+	}); err != nil {
+		return err
+	}
+	if err := msg.Selector.Encode(filter); err != nil {
+		return err
+	}
+
+	// set txn
+	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
+	if ok {
+		msg.RequestID = opt.RequestID
+		msg.TxnID = opt.TxnID
+	}
+	if c.TxnID != "" {
+		msg.TxnID = c.TxnID
+	}
+
+	// call
+	reply := types.OPREPLY{}
+	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
+	if err != nil {
+		return err
+	}
+	if !reply.Success {
+		return errors.New(reply.Message)
+	}
+	return nil
 }
 
 // Delete 删除数据
-func (c *Collection) Delete(ctx context.Context, filter dal.Filter) error {
-	p, table := c.getCollection(c.collName)
-	_, err := table.DeleteMany(ctx, filter, nil)
-	p.push()
-	return err
+func (c *RPCCollection) Delete(ctx context.Context, filter dal.Filter) error {
+	// build msg
+	msg := types.OPDELETE{}
+	msg.OPCode = types.OPDelete
+	msg.Collection = c.collection
+	if err := msg.Selector.Encode(filter); err != nil {
+		return err
+	}
+	if c.TxnID != "" {
+		msg.TxnID = c.TxnID
+	}
+
+	// set txn
+	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
+	if ok {
+		msg.RequestID = opt.RequestID
+		msg.TxnID = opt.TxnID
+	}
+	if c.TxnID != "" {
+		msg.TxnID = c.TxnID
+	}
+
+	// call
+	reply := types.OPREPLY{}
+	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
+	if err != nil {
+		return err
+	}
+	if !reply.Success {
+		return errors.New(reply.Message)
+	}
+	return nil
 }
 
 // NextSequence 获取新序列号(非事务)
-func (c *Client) NextSequence(ctx context.Context, sequenceName string) (uint64, error) {
-	data := types.Document{
+func (c *RPC) NextSequence(ctx context.Context, sequenceName string) (uint64, error) {
+	// build msg
+	msg := types.OPFINDANDMODIFY{}
+	msg.OPCode = types.OPFindAndModify
+	msg.Collection = common.BKTableNameIDgenerator
+	if err := msg.DOC.Encode(types.Document{
 		"$inc": types.Document{"SequenceID": 1},
-	}
-	filter := types.Document{
-		"_id": sequenceName,
-	}
-
-	opt := findopt.FindAndModify{}
-	opt.Upsert = true
-	opt.New = true
-
-	results := types.Documents{}
-	dbc := c.pool.Pop()
-	err := dbc.Collection(common.BKTableNameIDgenerator).FindAndModify(ctx, filter, data, &opt, &results)
-	c.pool.Push(dbc)
-	if nil != err {
+	}); err != nil {
 		return 0, err
 	}
+	if err := msg.Selector.Encode(types.Document{
+		"_id": sequenceName,
+	}); err != nil {
+		return 0, err
+	}
+	msg.Upsert = true
+	msg.ReturnNew = true
 
-	if len(results) <= 0 {
+	// set txn
+	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
+	if ok {
+		msg.RequestID = opt.RequestID
+		// msg.TxnID = opt.TxnID // because NextSequence was not supported for transaction in mongo
+	}
+
+	// call
+	reply := types.OPREPLY{}
+	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
+	if err != nil {
+		return 0, err
+	}
+	if !reply.Success {
+		return 0, errors.New(reply.Message)
+	}
+
+	if len(reply.Docs) <= 0 {
 		return 0, dal.ErrDocumentNotFound
 	}
 
-	return strconv.ParseUint(fmt.Sprint(results[0]["SequenceID"]), 10, 64)
+	return strconv.ParseUint(fmt.Sprint(reply.Docs[0]["SequenceID"]), 10, 64)
 }
 
 // StartTransaction 开启新事务
-func (c *Client) StartTransaction(ctx context.Context) (dal.RDB, error) {
-	txc := c.pool.Pop()
-	c.txc = txc
-	session := txc.Session().Create()
-	if err := session.Open(); err != nil {
-		session.Close()
+func (c *RPC) StartTransaction(ctx context.Context) (dal.RDB, error) {
+	if c.TxnID != "" {
+		return nil, dal.ErrTransactionStated
+	}
+	// build msg
+	msg := types.OPSTARTTTRANSATION{}
+	msg.OPCode = types.OPStartTransaction
+
+	// set txn
+	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
+	if ok {
+		msg.RequestID = opt.RequestID
+	}
+
+	// call
+	reply := types.OPREPLY{}
+	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
+	if err != nil {
 		return nil, err
 	}
-	c.session = session
-	err := session.StartTransaction()
-	if err != nil {
-		session.Close()
+	if !reply.Success {
+		return nil, errors.New(reply.Message)
 	}
-	return c, nil
+
+	clone := c.Clone().(*RPC)
+	clone.TxnID = reply.TxnID
+	clone.RequestID = reply.RequestID
+	return clone, nil
 }
 
 // Commit 提交事务
-func (c *Client) Commit(context.Context) error {
-	if c.session == nil {
-		return ErrSessionMissing
+func (c *RPC) Commit(ctx context.Context) error {
+	if c.TxnID == "" {
+		return dal.ErrTransactionNotFound
 	}
-	commitErr := c.session.CommitTransaction()
-	if commitErr == nil {
-		closeErr := c.session.Close()
-		c.pool.Push(c.txc)
-		if closeErr != nil {
-			blog.Warnf("[mongoc dal] session close faile: %v", closeErr)
-		}
-		c.session = nil
-		return nil
+	msg := types.OPCOMMIT{}
+	msg.OPCode = types.OPCommit
+	msg.RequestID = c.RequestID
+	msg.TxnID = c.TxnID
+
+	reply := types.OPREPLY{}
+	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
+	c.TxnID = "" // clear TxnID
+	if err != nil {
+		return err
 	}
-	return commitErr
+	if !reply.Success {
+		return errors.New(reply.Message)
+	}
+	return nil
 }
 
 // Abort 取消事务
-func (c *Client) Abort(context.Context) error {
-	if c.session == nil {
-		return ErrSessionMissing
+func (c *RPC) Abort(ctx context.Context) error {
+	if c.TxnID == "" {
+		return dal.ErrTransactionNotFound
 	}
-	abortErr := c.session.AbortTransaction()
-	closeErr := c.session.Close()
-	c.pool.Push(c.txc)
-	if closeErr != nil {
-		blog.Warnf("[mongoc dal] session close faile: %v", closeErr)
+	msg := types.OPABORT{}
+	msg.OPCode = types.OPAbort
+	msg.RequestID = c.RequestID
+	msg.TxnID = c.TxnID
+
+	reply := types.OPREPLY{}
+	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
+	c.TxnID = "" // clear TxnID
+	if err != nil {
+		return err
 	}
-	c.session = nil
-	return abortErr
+	if !reply.Success {
+		return errors.New(reply.Message)
+	}
+	return nil
 }
 
 // TxnInfo 当前事务信息，用于事务发起者往下传递
-func (c *Client) TxnInfo() *types.Transaction {
-	return &types.Transaction{}
+func (c *RPC) TxnInfo() *types.Transaction {
+	return &types.Transaction{
+		RequestID: c.RequestID,
+		TxnID:     c.TxnID,
+	}
 }
 
 // HasTable 判断是否存在集合
-func (c *Client) HasTable(collName string) (bool, error) {
-	dbc := c.pool.Pop()
-	exists, err := dbc.Database().HasCollection(collName)
-	c.pool.Push(dbc)
-	return exists, err
+func (c *RPC) HasTable(tablename string) (bool, error) {
+	return false, dal.ErrNotImplemented
 }
 
 // DropTable 移除集合
-func (c *Client) DropTable(collName string) error {
-	dbc := c.pool.Pop()
-	err := dbc.Database().DropCollection(collName)
-	c.pool.Push(dbc)
-	return err
+func (c *RPC) DropTable(tablename string) error {
+	return dal.ErrNotImplemented
 }
 
 // CreateTable 创建集合
-func (c *Client) CreateTable(collName string) error {
-	dbc := c.pool.Pop()
-	err := dbc.Database().CreateEmptyCollection(collName)
-	c.pool.Push(dbc)
-	return err
+func (c *RPC) CreateTable(tablename string) error {
+	return dal.ErrNotImplemented
 }
 
 // CreateIndex 创建索引
-func (c *Collection) CreateIndex(ctx context.Context, index dal.Index) error {
-	i := mongodb.Index{
-		Keys:       mapstr.MapStr(index.Keys),
-		Name:       index.Name,
-		Unique:     index.Unique,
-		Backgroupd: index.Background,
-	}
-
-	dbc := c.pool.Pop()
-	err := dbc.Collection(c.collName).CreateIndex(i)
-	c.pool.Push(dbc)
-	return err
+func (c *RPCCollection) CreateIndex(ctx context.Context, index dal.Index) error {
+	return dal.ErrNotImplemented
 }
 
 // DropIndex 移除索引
-func (c *Collection) DropIndex(ctx context.Context, indexName string) error {
-	dbc := c.pool.Pop()
-	err := dbc.Collection(c.collName).DropIndex(indexName)
-	c.pool.Push(dbc)
-	return err
+func (c *RPCCollection) DropIndex(ctx context.Context, indexName string) error {
+	return dal.ErrNotImplemented
+}
+
+// Indexes 查询索引
+func (c *RPCCollection) Indexes(ctx context.Context) ([]dal.Index, error) {
+	return nil, dal.ErrNotImplemented
 }
 
 // AddColumn 添加字段
-func (c *Collection) AddColumn(ctx context.Context, column string, value interface{}) error {
-	selector := types.Document{column: types.Document{"$exists": false}}
-	datac := types.Document{"$set": types.Document{column: value}}
-
-	dbc := c.pool.Pop()
-	_, err := dbc.Collection(c.collName).UpdateMany(ctx, selector, datac, nil)
-	c.pool.Push(dbc)
-	return err
+func (c *RPCCollection) AddColumn(ctx context.Context, column string, value interface{}) error {
+	return dal.ErrNotImplemented
 }
 
 // RenameColumn 重命名字段
-func (c *Collection) RenameColumn(ctx context.Context, oldName, newColumn string) error {
-	datac := types.Document{"$rename": types.Document{oldName: newColumn}}
-
-	dbc := c.pool.Pop()
-	_, err := dbc.Collection(c.collName).UpdateMany(ctx, nil, datac, nil)
-	c.pool.Push(dbc)
-	return err
+func (c *RPCCollection) RenameColumn(ctx context.Context, oldName, newColumn string) error {
+	return dal.ErrNotImplemented
 }
 
 // DropColumn 移除字段
-func (c *Collection) DropColumn(ctx context.Context, field string) error {
-	datac := types.Document{"$unset": types.Document{field: "1"}}
-	dbc := c.pool.Pop()
-	_, err := dbc.Collection(c.collName).UpdateMany(ctx, nil, datac, nil)
-	c.pool.Push(dbc)
-	return err
+func (c *RPCCollection) DropColumn(ctx context.Context, field string) error {
+	return dal.ErrNotImplemented
 }
 
-type pusher struct {
-	pool mongodb.ClientPool
-	dbc  mongodb.Client
+// AggregateOne 聚合查询
+func (c *RPCCollection) AggregateOne(ctx context.Context, pipeline interface{}, result interface{}) error {
+	return dal.ErrNotImplemented
 }
 
-func (c *Client) getCollection(collName string) (*pusher, mongodb.CollectionInterface) {
-	var table mongodb.CollectionInterface
-	var p = new(pusher)
-	if c.session == nil {
-		p.dbc = c.pool.Pop()
-		p.pool = c.pool
-		table = p.dbc.Collection(collName)
-	} else {
-		table = c.session.Collection(collName)
-	}
-	return p, table
-}
-
-func (p *pusher) push() {
-	if p.dbc != nil {
-		p.pool.Push(p.dbc)
-	}
+// AggregateAll 聚合查询
+func (c *RPCCollection) AggregateAll(ctx context.Context, pipeline interface{}, result interface{}) error {
+	return dal.ErrNotImplemented
 }
