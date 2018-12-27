@@ -9,19 +9,19 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package godriver_test
+package driver_test
 
 import (
 	"testing"
 
 	"configcenter/src/storage/mongodb"
-	"configcenter/src/storage/mongodb/godriver"
+	"configcenter/src/storage/mongodb/driver"
 
 	"github.com/stretchr/testify/require"
 )
 
 func createConnection() mongodb.CommonClient {
-	return godriver.NewClient("mongodb://cc:cc@localhost:27010,localhost:27011,localhost:27012,localhost:27013/cmdb")
+	return driver.NewClient("mongodb://cc:cc@localhost:27010,localhost:27011,localhost:27012,localhost:27013/cmdb")
 }
 
 func executeCommand(t *testing.T, callback func(dbclient mongodb.CommonClient)) {

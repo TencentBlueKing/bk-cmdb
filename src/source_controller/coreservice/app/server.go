@@ -17,8 +17,6 @@ import (
 	"fmt"
 	"os"
 
-	restful "github.com/emicklei/go-restful"
-
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/backbone"
@@ -30,6 +28,8 @@ import (
 	coresvr "configcenter/src/source_controller/coreservice/service"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
+
+	restful "github.com/emicklei/go-restful"
 )
 
 // CoreServer the core server
