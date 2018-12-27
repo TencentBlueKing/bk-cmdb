@@ -13,8 +13,6 @@
 package godriver
 
 import (
-	"time"
-
 	"configcenter/src/storage/mongodb"
 )
 
@@ -30,13 +28,9 @@ func newSessionOperation(mongocli *client) mongodb.SessionOperation {
 		mongocli: mongocli,
 	}
 }
-
-func (s *sessionOperation) WithReadConcernLevel(level string) mongodb.SessionOperation {
-	return &sessionOperation{}
-}
-
-func (s *sessionOperation) WithWriteConcernMajority(timeout time.Duration) mongodb.SessionOperation {
-	return &sessionOperation{}
+func (s *sessionOperation) Options() mongodb.SessionOptions {
+	// TODO: need to be implemented
+	panic("no supported")
 }
 
 func (s *sessionOperation) Create() mongodb.Session {

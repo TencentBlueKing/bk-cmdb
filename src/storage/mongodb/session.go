@@ -12,18 +12,18 @@
 
 package mongodb
 
-import (
-	"time"
-)
-
 // Session mongodb session operation methods
 type Session interface {
 	OpenCloser
 	Transaction
 }
 
+// SessionOptions define the SessionOptions maintaince methods
+type SessionOptions interface {
+}
+
+// SessionOperation defines some methods to create a new session
 type SessionOperation interface {
-	WithReadConcernLevel(level string) SessionOperation
-	WithWriteConcernMajority(timeout time.Duration) SessionOperation
+	Options() SessionOptions
 	Create() Session
 }

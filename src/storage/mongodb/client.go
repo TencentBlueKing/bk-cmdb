@@ -20,13 +20,6 @@ type Client interface {
 	Session() SessionOperation
 }
 
-// ClientPool the mongo client pool
-type ClientPool interface {
-	OpenCloser
-	Pop() Client
-	Push(targetClient Client)
-}
-
 // CommonClient single client instance
 type CommonClient interface {
 	OpenCloser
