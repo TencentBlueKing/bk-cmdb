@@ -308,7 +308,7 @@ func (o *object) FindSingleObject(params types.ContextParams, objectID string) (
 	return nil, params.Err.New(common.CCErrTopoObjectSelectFailed, params.Err.Errorf(common.CCErrCommParamsIsInvalid, objectID).Error())
 }
 func (o *object) CreateObject(params types.ContextParams, data frtypes.MapStr) (model.Object, error) {
-	obj := o.modelFactory.CreaetObject(params)
+	obj := o.modelFactory.CreateObject(params)
 
 	_, err := obj.Parse(data)
 	if nil != err {
@@ -624,7 +624,7 @@ func (o *object) FindObject(params types.ContextParams, cond condition.Condition
 
 func (o *object) UpdateObject(params types.ContextParams, data frtypes.MapStr, id int64, cond condition.Condition) error {
 
-	obj := o.modelFactory.CreaetObject(params)
+	obj := o.modelFactory.CreateObject(params)
 	obj.SetRecordID(id)
 	_, err := obj.Parse(data)
 	if nil != err {
