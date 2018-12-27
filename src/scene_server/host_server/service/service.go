@@ -14,6 +14,7 @@ package service
 
 import (
 	"context"
+	"gopkg.in/redis.v5"
 	"net/http"
 
 	"github.com/emicklei/go-restful"
@@ -35,7 +36,8 @@ import (
 type Service struct {
 	*options.Config
 	*backbone.Engine
-	disc discovery.DiscoveryInterface
+	disc    discovery.DiscoveryInterface
+	CacheDB *redis.Client
 }
 
 type srvComm struct {
@@ -62,7 +64,7 @@ func (s *Service) newSrvComm(header http.Header) *srvComm {
 		ctxCancelFunc: cancel,
 		user:          util.GetUser(header),
 		ownerID:       util.GetOwnerID(header),
-		lgc:           logics.NewLogics(s.Engine, header),
+		lgc:           logics.NewLogics(s.Engine, header, s.CacheDB),
 	}
 }
 

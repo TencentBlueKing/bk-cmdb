@@ -14,10 +14,10 @@ package logics
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"sync"
 	"time"
 
 	com "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
@@ -34,6 +34,10 @@ import (
 	hutil "configcenter/src/scene_server/host_server/util"
 )
 
+var (
+	taskInfoMap = make(map[int64]meta.TaskInfo, 0)
+)
+
 func (lgc *Logics) AddCloudTask(ctx context.Context, taskList *meta.CloudTaskList) error {
 	// TaskName Uniqueness check
 	resp, err := lgc.CoreAPI.HostController().Cloud().TaskNameCheck(ctx, lgc.header, taskList)
@@ -47,7 +51,7 @@ func (lgc *Logics) AddCloudTask(ctx context.Context, taskList *meta.CloudTaskLis
 	}
 
 	// Encode secretKey
-	taskList.SecretKey = base64.StdEncoding.EncodeToString([]byte(taskList.SecretKey))
+	// taskList.SecretKey = base64.StdEncoding.EncodeToString([]byte(taskList.SecretKey))
 
 	if _, err := lgc.CoreAPI.HostController().Cloud().AddCloudTask(context.Background(), lgc.header, taskList); err != nil {
 		blog.Errorf("add cloud task failed, err: %v", err)
@@ -57,128 +61,119 @@ func (lgc *Logics) AddCloudTask(ctx context.Context, taskList *meta.CloudTaskLis
 	return nil
 }
 
-func (lgc *Logics) CloudTaskSync(ctx context.Context, taskList mapstr.MapStr) error {
-	tickerStart := make(chan bool)
-	ticker := time.NewTicker(5 * time.Minute)
-	var nextTrigger int64
-
-	PeriodType, errType := taskList.String("bk_period_type")
-	if errType != nil {
-		blog.Errorf("mapstr interface convert to string failed.")
-		return errType
-	}
-	Period, errP := taskList.String("bk_period")
-	if errP != nil {
-		blog.Errorf("mapstr interface convert to string failed.")
-		return errP
-	}
-
-	if PeriodType != "minute" {
-		nextTrigger = lgc.UnixSubtract(PeriodType, Period)
-	}
-
-	status, errStatus := taskList.Bool("bk_status")
-	if errStatus != nil {
-		blog.Errorf("mapstr interface convert to bool failed.")
-		return errP
-	}
-
-	blog.Debug("taskList.Status: %v", status)
-	blog.Debug("nextTrigger: %v", nextTrigger)
-	blog.Debug("PeriodType: %v", PeriodType)
-
-	if status {
-
-		switch PeriodType {
-		case "day":
-			timer := time.NewTimer(time.Duration(nextTrigger) * time.Second)
-			go func() {
-				for {
-					select {
-					case <-timer.C:
-						tickerStart <- true
-						blog.Info("case day")
-						lgc.ExecSync(ctx, taskList)
-					}
-				}
-			}()
-			go func() {
-				ticker = time.NewTicker(24 * time.Hour)
-				if <-tickerStart {
-					for {
-						select {
-						case <-ticker.C:
-							lgc.ExecSync(ctx, taskList)
-							blog.Info("case day")
-						}
-
-					}
-				}
-			}()
-		case "hour":
-			timer := time.NewTimer(time.Duration(nextTrigger) * time.Second)
-			go func() {
-				for {
-					select {
-					case <-timer.C:
-						tickerStart <- true
-						blog.Info("case hour")
-						lgc.ExecSync(ctx, taskList)
-					}
-				}
-			}()
-			go func() {
-				ticker = time.NewTicker(1 * time.Hour)
-				if <-tickerStart {
-					for {
-						select {
-						case <-ticker.C:
-							lgc.ExecSync(ctx, taskList)
-							blog.Info("case hour, Ticker")
-						}
-					}
-				}
-			}()
-		case "minute":
-			go func() {
-				for {
-					select {
-					case <-ticker.C:
-						lgc.ExecSync(ctx, taskList)
-						blog.Info("case minute")
-					}
-				}
-			}()
-		}
-	} else {
-		ticker.Stop()
-		close(tickerStart)
-		blog.Info("bk_status: %v, stop cloud sync", taskList["bk_status"])
-	}
-	return nil
+func (lgc *Logics) InitFunc() {
+	lgc.TimerTriggerCheckStatus()
 }
 
-func (lgc *Logics) ExecSync(ctx context.Context, taskList mapstr.MapStr) error {
+func (lgc *Logics) TimerTriggerCheckStatus() {
+	timer := time.NewTicker(5 * time.Minute)
+	for range timer.C {
+		go lgc.SyncTaskDBManager(context.Background())
+		go lgc.SyncTaskRedisManager(context.Background())
+	}
+}
+
+func (lgc *Logics) SyncTaskDBManager(ctx context.Context) error {
+	var mutex = &sync.Mutex{}
+	taskInfoRedisArr := make([]interface{}, 0)
+
+	opt := make(map[string]interface{})
+	resp, err := lgc.CoreAPI.HostController().Cloud().SearchCloudTask(ctx, lgc.header, opt)
+	if err != nil {
+		blog.Errorf("get cloud sync task instance failed, %v", err)
+		return lgc.ccErr.Error(1110036)
+	}
+
+	for _, taskInfo := range resp.Info {
+		taskID := taskInfo.TaskID
+		if _, ok := taskInfoMap[taskID]; ok {
+			continue
+		}
+		nextTrigger := lgc.NextTrigger(ctx, taskInfo.PeriodType, taskInfo.Period)
+		taskInfoItem := meta.TaskInfo{
+			Method:      taskInfo.PeriodType,
+			NextTrigger: nextTrigger,
+			Args:        taskInfo,
+		}
+
+		mutex.Lock()
+		taskInfoMap[taskID] = taskInfoItem
+		mutex.Unlock()
+
+		lgc.CloudSyncSwitch(ctx, taskInfoItem)
+		info := meta.CloudSyncRedisStart{TaskID: taskInfo.TaskID, Admin: taskInfo.AccountAdmin, StartTime: time.Now()}
+		startedTaskInfo, err := json.Marshal(info)
+		if err != nil {
+			blog.Errorf("add redis failed taskID: %v, accountAdmin: %v", taskInfo.TaskID, taskInfo.AccountAdmin)
+			continue
+		}
+		taskInfoRedisArr = append(taskInfoRedisArr, startedTaskInfo)
+	}
+
+	if err := lgc.cache.SAdd(common.RedisCloudSyncInstanceStarted, taskInfoRedisArr...).Err(); err != nil {
+		blog.Errorf("add cloud task item to redis fail, err: %v", err)
+	}
+
+	return err
+}
+
+func (lgc *Logics) SyncTaskRedisManager(ctx context.Context) {
+	for {
+		stop, err := lgc.cache.SPop(common.RedisCloudSyncInstancePendingStop).Result()
+		if err != nil {
+			blog.Errorf("get stop item from redis fail, err: v%", err.Error())
+		}
+
+		item := &meta.CloudSyncRedisStop{}
+		err = json.Unmarshal([]byte(stop), item)
+		if nil != err {
+			blog.Warnf("get task stop item from redis fail, error:%s", err.Error())
+			continue
+		}
+
+		ownerID := util.GetOwnerID(lgc.header)
+		if ownerID == item.OwnerID {
+			taskInfoItem, ok := taskInfoMap[item.TaskID]
+			if !ok {
+				return
+			}
+			taskInfoItem.ManagerChn <- true
+			delete(taskInfoMap, item.TaskID)
+			lgc.CloudSyncSwitch(context.Background(), taskInfoItem)
+		}
+
+		lgc.cache.SDiffStore(common.RedisCloudSyncInstanceStarted, common.RedisCloudSyncInstanceStarted, common.RedisCloudSyncInstancePendingStop)
+	}
+}
+
+func (lgc *Logics) CloudSyncSwitch(ctx context.Context, taskInfoItem meta.TaskInfo) {
+	for {
+		ticker := time.NewTicker(time.Duration(taskInfoItem.NextTrigger) * time.Minute)
+		select {
+		case <-ticker.C:
+			lgc.ExecSync(ctx, taskInfoItem.Args)
+			switch taskInfoItem.Method {
+			case "day":
+				taskInfoItem.NextTrigger = 1440
+			case "hour":
+				taskInfoItem.NextTrigger = 60
+			case "minute":
+				taskInfoItem.NextTrigger = 5
+			}
+		case <-taskInfoItem.ManagerChn:
+			blog.Info("stop cloud sync")
+			return
+		}
+	}
+}
+
+func (lgc *Logics) ExecSync(ctx context.Context, taskInfo meta.CloudTaskInfo) error {
 	cloudHistory := new(meta.CloudHistory)
-
-	blog.V(3).Info("start sync")
-	taskObjID, errObj := taskList.String("bk_obj_id")
-	if errObj != nil {
-		blog.Errorf("mapstr key-value convert to string failed.")
-		return errObj
-	}
-
-	taskID, errTaskID := taskList.Int64("bk_task_id")
-	if errTaskID != nil {
-		blog.Errorf("mapstr key-value convert to int64 failed.")
-		return errTaskID
-	}
-
-	cloudHistory.ObjID = taskObjID
-	cloudHistory.TaskID = taskID
+	cloudHistory.ObjID = taskInfo.ObjID
+	cloudHistory.TaskID = taskInfo.TaskID
 	startTime := time.Now().Unix()
 
-	defer lgc.CloudSyncHistory(ctx, taskID, startTime, cloudHistory)
+	defer lgc.CloudSyncHistory(ctx, taskInfo.TaskID, startTime, cloudHistory)
 
 	var errOrigin error
 	defer func() {
@@ -215,30 +210,33 @@ func (lgc *Logics) ExecSync(ctx context.Context, taskList mapstr.MapStr) error {
 		existHostList = append(existHostList, ip)
 	}
 
-	// obtain hosts from TencentCloud needs secretID and secretKey
-	secretID, errS := taskList.String("bk_secret_id")
-	if errS != nil {
-		blog.Errorf("mapstr convert to string failed.")
-		errOrigin = errS
-		return errS
-	}
-	secretKeyEncrypted, errKey := taskList.String("bk_secret_key")
-	if errKey != nil {
-		blog.Errorf("mapstr convert to string failed.")
-		errOrigin = errKey
-		return errKey
-	}
+	/*
+		// obtain hosts from TencentCloud needs secretID and secretKey
+		secretID, errS := taskList.String("bk_secret_id")
+		if errS != nil {
+			blog.Errorf("mapstr convert to string failed.")
+			errOrigin = errS
+			return errS
+		}
+		secretKeyEncrypted, errKey := taskList.String("bk_secret_key")
+		if errKey != nil {
+			blog.Errorf("mapstr convert to string failed.")
+			errOrigin = errKey
+			return errKey
+		}
 
-	decodeBytes, errDecode := base64.StdEncoding.DecodeString(secretKeyEncrypted)
-	if errDecode != nil {
-		blog.Errorf("Base64 decode secretKey failed.")
-		errOrigin = errDecode
-		return errDecode
-	}
-	secretKey := string(decodeBytes)
+		decodeBytes, errDecode := base64.StdEncoding.DecodeString(taskInfo.SecretKey)
+		if errDecode != nil {
+			blog.Errorf("Base64 decode secretKey failed.")
+			errOrigin = errDecode
+			return errDecode
+		}
+		secretKey := string(decodeBytes)
+
+	*/
 
 	// ObtainCloudHosts obtain cloud hosts
-	cloudHostInfo, err := lgc.ObtainCloudHosts(secretID, secretKey)
+	cloudHostInfo, err := lgc.ObtainCloudHosts(taskInfo.SecretID, taskInfo.SecretKey)
 	if err != nil {
 		blog.Errorf("obtain cloud hosts failed with err: %v", err)
 		errOrigin = err
@@ -265,14 +263,18 @@ func (lgc *Logics) ExecSync(ctx context.Context, taskList mapstr.MapStr) error {
 		newHostInnerip, ok := hostInfo[common.BKHostInnerIPField].(string)
 		if !ok {
 			blog.Errorf("interface convert to string failed, err: %v", err)
-			break
+			continue
 		}
-		newHostOuterip, oK := hostInfo[common.BKHostOuterIPField].(string)
-		if !oK {
+		newHostOuterip, ok := hostInfo[common.BKHostOuterIPField].(string)
+		if !ok {
 			blog.Errorf("interface convert to string failed, err: %v", err)
-			break
+			continue
 		}
-		newHostOsname, _ := hostInfo[common.BKOSNameField].(string)
+		newHostOsname, ok := hostInfo[common.BKOSNameField].(string)
+		if !ok {
+			blog.Errorf("interface convert to string failed, err: %v", err)
+			continue
+		}
 
 		for i := 0; i < host.Count; i++ {
 			existHostInfo, err := mapstr.NewFromInterface(host.Info[i]["host"])
@@ -321,19 +323,8 @@ func (lgc *Logics) ExecSync(ctx context.Context, taskList mapstr.MapStr) error {
 	cloudHistory.NewAdd = len(newAddHost)
 	cloudHistory.AttrChanged = len(cloudHostAttr)
 
-	attrConfirm, errAttr := taskList.Bool("bk_attr_confirm")
-	if errAttr != nil {
-		blog.Errorf("mapstr convert to bool failed.")
-		errOrigin = errAttr
-		return errAttr
-	}
-
-	resourceConfirm, errR := taskList.Bool("bk_confirm")
-	if errR != nil {
-		blog.Errorf("mapstr convert to string failed.")
-		errOrigin = errR
-		return errR
-	}
+	attrConfirm := taskInfo.AttrConfirm
+	resourceConfirm := taskInfo.ResourceConfirm
 
 	if !resourceConfirm && !attrConfirm {
 		if len(newCloudHost) > 0 {
@@ -355,7 +346,7 @@ func (lgc *Logics) ExecSync(ctx context.Context, taskList mapstr.MapStr) error {
 	}
 
 	if resourceConfirm {
-		newAddNum, err := lgc.NewAddConfirm(ctx, taskList, newCloudHost)
+		newAddNum, err := lgc.NewAddConfirm(ctx, taskInfo, newCloudHost)
 		cloudHistory.NewAdd = newAddNum
 		if err != nil {
 			blog.Errorf("newly add cloud resource confirm failed, err: %v", err)
@@ -368,7 +359,7 @@ func (lgc *Logics) ExecSync(ctx context.Context, taskList mapstr.MapStr) error {
 		blog.Debug("attr chang")
 		for _, host := range cloudHostAttr {
 			resourceConfirm := mapstr.MapStr{}
-			resourceConfirm["bk_obj_id"] = taskList["bk_obj_id"]
+			resourceConfirm["bk_obj_id"] = taskInfo.ObjID
 			innerIp, errIp := host.String(common.BKHostInnerIPField)
 			if errIp != nil {
 				blog.Debug("mapstr.Map convert to string failed.")
@@ -381,27 +372,26 @@ func (lgc *Logics) ExecSync(ctx context.Context, taskList mapstr.MapStr) error {
 				errOrigin = errOut
 				return errOut
 			}
-			osName, errOs := host.String(common.BKOSNameField)
-			if errOs != nil {
+			osName, err := host.String(common.BKOSNameField)
+			if err != nil {
 				blog.Error("mapstr.Map convert to string failed")
-				errOrigin = errOs
-				return errOs
+				errOrigin = err
+				return err
 			}
 
 			resourceConfirm[common.BKHostInnerIPField] = innerIp
 			resourceConfirm[common.BKHostOuterIPField] = outerIp
 			resourceConfirm[common.BKOSNameField] = osName
-			resourceConfirm["bk_source_type"] = "云同步"
-			resourceConfirm["bk_task_id"] = taskList["bk_task_id"]
+			resourceConfirm["bk_source_type"] = "cloud_sync"
+			resourceConfirm["bk_task_id"] = taskInfo.TaskID
 			resourceConfirm["bk_attr_confirm"] = attrConfirm
 			resourceConfirm["bk_confirm"] = false
-			resourceConfirm["bk_task_name"] = taskList["bk_task_name"]
-			resourceConfirm["bk_account_type"] = taskList["bk_account_type"]
-			resourceConfirm["bk_account_admin"] = taskList["bk_account_admin"]
+			resourceConfirm["bk_task_name"] = taskInfo.TaskName
+			resourceConfirm["bk_account_type"] = taskInfo.AccountType
+			resourceConfirm["bk_account_admin"] = taskInfo.AccountAdmin
 			resourceConfirm["bk_resource_type"] = "change"
 
-			_, err := lgc.CoreAPI.HostController().Cloud().ResourceConfirm(ctx, lgc.header, resourceConfirm)
-			if err != nil {
+			if _, err := lgc.CoreAPI.HostController().Cloud().ResourceConfirm(ctx, lgc.header, resourceConfirm); err != nil {
 				blog.Errorf("add resource confirm failed with err: %v", err)
 				errOrigin = err
 				return err
@@ -483,7 +473,7 @@ func (lgc *Logics) UpdateCloudHosts(ctx context.Context, cloudHostAttr []mapstr.
 	return nil
 }
 
-func (lgc *Logics) NewAddConfirm(ctx context.Context, taskList mapstr.MapStr, newCloudHost []mapstr.MapStr) (int, error) {
+func (lgc *Logics) NewAddConfirm(ctx context.Context, taskInfo meta.CloudTaskInfo, newCloudHost []mapstr.MapStr) (int, error) {
 	// Check whether the host is already exist in resource confirm.
 	opt := make(map[string]interface{})
 	confirmHosts, errS := lgc.CoreAPI.HostController().Cloud().SearchConfirm(ctx, lgc.header, opt)
@@ -534,17 +524,17 @@ func (lgc *Logics) NewAddConfirm(ctx context.Context, taskList mapstr.MapStr, ne
 				return 0, errOs
 			}
 			resourceConfirm := mapstr.MapStr{}
-			resourceConfirm["bk_obj_id"] = taskList["bk_obj_id"]
+			resourceConfirm["bk_obj_id"] = taskInfo.ObjID
 			resourceConfirm[common.BKHostInnerIPField] = innerIp
 			resourceConfirm["bk_source_type"] = "云同步"
-			resourceConfirm["bk_task_id"] = taskList["bk_task_id"]
+			resourceConfirm["bk_task_id"] = taskInfo.TaskID
 			resourceConfirm[common.BKOSNameField] = osName
 			resourceConfirm[common.BKHostOuterIPField] = outerIp
 			resourceConfirm["bk_confirm"] = true
 			resourceConfirm["bk_attr_confirm"] = false
-			resourceConfirm["bk_task_name"] = taskList["bk_task_name"]
-			resourceConfirm["bk_account_type"] = taskList["bk_account_type"]
-			resourceConfirm["bk_account_admin"] = taskList["bk_account_admin"]
+			resourceConfirm["bk_task_name"] = taskInfo.TaskName
+			resourceConfirm["bk_account_type"] = taskInfo.AccountType
+			resourceConfirm["bk_account_admin"] = taskInfo.AccountAdmin
 			resourceConfirm["bk_resource_type"] = "new_add"
 
 			_, err := lgc.CoreAPI.HostController().Cloud().ResourceConfirm(ctx, lgc.header, resourceConfirm)
@@ -558,7 +548,7 @@ func (lgc *Logics) NewAddConfirm(ctx context.Context, taskList mapstr.MapStr, ne
 	return num, nil
 }
 
-func (lgc *Logics) UnixSubtract(periodType string, period string) int64 {
+func (lgc *Logics) NextTrigger(ctx context.Context, periodType string, period string) int64 {
 	timeLayout := "2006-01-02 15:04:05" // transfer model
 	toBeCharge := period
 	var unixSubtract int64
@@ -614,7 +604,72 @@ func (lgc *Logics) UnixSubtract(periodType string, period string) int64 {
 		unixSubtract = sr - time.Now().Unix()
 	}
 
-	return unixSubtract
+	if periodType == "minute" {
+		unixSubtract = 300
+	}
+
+	minuteNextTrigger := unixSubtract / 60
+	return minuteNextTrigger
+}
+
+func (lgc *Logics) FrontEndSyncSwitch(ctx context.Context, opt map[string]interface{}) error {
+	response, err := lgc.CoreAPI.HostController().Cloud().SearchCloudTask(ctx, lgc.header, opt)
+	if err != nil {
+		blog.Errorf("search cloud task instance failed, err: %v", err)
+		return lgc.ccErr.Error(1110036)
+	}
+
+	taskInfoRedisArr := make([]interface{}, 0)
+	taskRedisPendingStop := make([]interface{}, 0)
+	var mutex = &sync.Mutex{}
+
+	if response.Count > 0 {
+		taskInfo := response.Info[0]
+		status := taskInfo.Status
+		taskID := taskInfo.TaskID
+		if _, ok := taskInfoMap[taskID]; ok {
+			return nil
+		}
+
+		if status {
+			nextTrigger := lgc.NextTrigger(ctx, taskInfo.PeriodType, taskInfo.Period)
+			taskInfoItem := meta.TaskInfo{
+				Method:      taskInfo.PeriodType,
+				NextTrigger: nextTrigger,
+				Args:        taskInfo,
+			}
+
+			mutex.Lock()
+			taskInfoMap[taskID] = taskInfoItem
+			mutex.Unlock()
+
+			ownerID := util.GetOwnerID(lgc.header)
+			info := meta.CloudSyncRedisStart{TaskID: taskInfo.TaskID, Admin: taskInfo.AccountAdmin, StartTime: time.Now(), OwnerID: ownerID}
+			startedTaskInfo, err := json.Marshal(info)
+			if err != nil {
+				blog.Errorf("add redis failed taskID: %v, accountAdmin: %v", taskInfo.TaskID, taskInfo.AccountAdmin)
+			}
+			taskInfoRedisArr = append(taskInfoRedisArr, startedTaskInfo)
+			if err := lgc.cache.SAdd(common.RedisCloudSyncInstanceStarted, taskInfoRedisArr...).Err(); err != nil {
+				blog.Errorf("add cloud task redis item fail, err: %v", err)
+			}
+
+			lgc.CloudSyncSwitch(ctx, taskInfoItem)
+		} else {
+			ownerID := util.GetOwnerID(lgc.header)
+			info := meta.CloudSyncRedisStop{TaskID: taskInfo.TaskID, OwnerID: ownerID}
+			stopTaskInfo, err := json.Marshal(info)
+			if err != nil {
+				blog.Errorf("stop task add redis failed taskID: %v, accountAdmin: %v", taskInfo.TaskID, taskInfo.AccountAdmin)
+			}
+			taskRedisPendingStop = append(taskRedisPendingStop, stopTaskInfo)
+			if err := lgc.cache.SAdd(common.RedisCloudSyncInstancePendingStop, taskRedisPendingStop...).Err(); err != nil {
+				blog.Errorf("add cloud task redis item fail, err: %v", err)
+			}
+		}
+	}
+
+	return nil
 }
 
 func (lgc *Logics) CloudSyncHistory(ctx context.Context, taskID int64, startTime int64, cloudHistory *meta.CloudHistory) error {

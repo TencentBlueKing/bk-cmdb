@@ -80,8 +80,6 @@ func (s *Service) TaskNameCheck(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	//blog.Info("task name uniqueness check")
-	//blog.Debug("num = %v", num)
 	resp.WriteEntity(meta.Response{
 		BaseResp: meta.SuccessBaseResp,
 		Data:     num,
@@ -102,7 +100,6 @@ func (s *Service) DeleteCloudTask(req *restful.Request, resp *restful.Response) 
 	}
 
 	params := common.KvMap{"bk_task_id": intTaskID}
-	blog.Debug("params: %v", params)
 
 	if err := s.Instance.Table(common.BKTableNameCloudTask).Delete(ctx, params); err != nil {
 		blog.Errorf("delete failed err: %v", err)
@@ -129,7 +126,7 @@ func (s *Service) SearchCloudTask(req *restful.Request, resp *restful.Response) 
 	}
 
 	page := mapstr.MapStr{}
-	result := make([]map[string]interface{}, 0)
+	result := make([]meta.CloudTaskInfo, 0)
 	var num uint64
 	if opt["page"] != nil {
 		pageM, err := mapstr.NewFromInterface(opt["page"])
@@ -175,27 +172,27 @@ func (s *Service) SearchCloudTask(req *restful.Request, resp *restful.Response) 
 		}
 		num = number
 	} else {
-		errR := s.Instance.Table(common.BKTableNameCloudTask).Find(opt).All(ctx, &result)
-		if errR != nil {
-			blog.Error("get failed, err: %v", errR)
+		if err := s.Instance.Table(common.BKTableNameCloudTask).Find(opt).All(ctx, &result); err != nil {
+			blog.Error("get failed, err: %v", err)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 			return
 		}
 
-		number, errN := s.Instance.Table(common.BKTableNameCloudTask).Find(opt).Count(ctx)
-		if errN != nil {
-			blog.Error("get task name [%s] failed, err: %v", errN)
+		number, err := s.Instance.Table(common.BKTableNameCloudTask).Find(opt).Count(ctx)
+		if err != nil {
+			blog.Error("get task name [%s] failed, err: %v", err)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 			return
 		}
 		num = number
 	}
 
-	resp.WriteEntity(meta.FavoriteResult{
+	blog.Debug("search cloud task result: %v", result)
+
+	resp.WriteEntity(meta.CloudTaskSearch{
 		Count: num,
 		Info:  result,
 	})
-
 }
 
 func (s *Service) UpdateCloudTask(req *restful.Request, resp *restful.Response) {
@@ -273,7 +270,6 @@ func (s *Service) SearchConfirm(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	//blog.Debug("result: %v", result)
 	resp.WriteEntity(meta.FavoriteResult{
 		Count: num,
 		Info:  result,

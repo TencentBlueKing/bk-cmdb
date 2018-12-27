@@ -24,7 +24,7 @@ type CloudInterface interface {
 	ResourceConfirm(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
 	TaskNameCheck(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
 	DeleteCloudTask(ctx context.Context, h http.Header, taskID string) (resp *metadata.Response, err error)
-	SearchCloudTask(ctx context.Context, h http.Header, data interface{}) (resp *metadata.FavoriteResult, err error)
+	SearchCloudTask(ctx context.Context, h http.Header, data interface{}) (resp *metadata.CloudTaskSearch, err error)
 	UpdateCloudTask(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
 	DeleteConfirm(ctx context.Context, h http.Header, ResourceID int64) (resp *metadata.Response, err error)
 	SearchConfirm(ctx context.Context, h http.Header, data interface{}) (resp *metadata.FavoriteResult, err error)

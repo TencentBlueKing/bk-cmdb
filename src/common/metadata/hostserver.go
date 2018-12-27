@@ -14,6 +14,7 @@ package metadata
 
 import (
 	"configcenter/src/common/mapstr"
+	"time"
 )
 
 type DeleteHostBatchOpt struct {
@@ -205,4 +206,24 @@ type CloudHostInfo struct {
 	PrivateIpAddresses []string `json:"PrivateIpAddresses"`
 	PublicIpAddresses  []string `json:"PublicIpAddresses"`
 	OsName             string   `json:"OsName"`
+}
+
+type TaskInfo struct {
+	Args        CloudTaskInfo
+	Method      string
+	NextTrigger int64
+	ManagerChn  chan bool
+}
+
+type CloudSyncRedisStart struct {
+	TaskID    int64     `json:"bk_task_id"'`
+	Admin     string    `json:"bk_account_admin"`
+	StartTime time.Time `json:"start_time"`
+	OwnerID   string    `json:"owner_id"`
+}
+
+type CloudSyncRedisStop struct {
+	TaskID   int64     `json:"bk_task_id"`
+	StopTime time.Time `json:"stop_time"`
+	OwnerID  string    `json:"owner_id"`
 }
