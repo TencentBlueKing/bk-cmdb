@@ -30,8 +30,8 @@ type OpenCloser interface {
 
 // Index the collection index definition
 type Index struct {
-	Keys       []string `json:"keys"`
-	Name       string   `json:"name"`
-	Unique     bool     `json:"unique"`
-	Backgroupd bool     `json:"background"`
+	Keys       map[string]int32 `json:"keys"`
+	Name       string           `json:"name"`
+	Unique     bool             `json:"unique"`
+	Background bool             `json:"background"`
 }

@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package godriver_test
+package driver_test
 
 import (
 	"context"
@@ -20,7 +20,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/storage/mongodb"
-	"configcenter/src/storage/mongodb/findopt"
+	"configcenter/src/storage/mongodb/options/findopt"
 
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/x/bsonx"
@@ -149,7 +149,7 @@ func TestIndexCRUD(t *testing.T) {
 
 		// create a new index
 		err = coll.CreateIndex(mongodb.Index{
-			Keys: []string{"key"},
+			Keys: map[string]int32{"key": -1},
 			Name: "test_index_name_key",
 		})
 		require.NoError(t, err)

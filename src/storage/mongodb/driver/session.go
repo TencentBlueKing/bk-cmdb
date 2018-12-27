@@ -10,29 +10,44 @@
 * limitations under the License.
  */
 
-package godriver
+package driver
 
 import (
 	"configcenter/src/storage/mongodb"
 )
 
-var _ mongodb.SessionOperation = (*sessionOperation)(nil)
+var _ mongodb.Session = (*session)(nil)
 
-type sessionOperation struct {
+type session struct {
+	*transaction
 	mongocli *client
-	err      error
 }
 
-func newSessionOperation(mongocli *client) mongodb.SessionOperation {
-	return &sessionOperation{
+func newSession(mongocli *client) *session {
+	return &session{
 		mongocli: mongocli,
 	}
 }
-func (s *sessionOperation) Options() mongodb.SessionOptions {
-	// TODO: need to be implemented
-	panic("no supported")
+
+func (s *session) Open() error {
+
+	session, err := s.mongocli.innerClient.StartSession()
+	if nil != err {
+		return err
+	}
+
+	s.transaction = newSessionTransaction(s.mongocli, session)
+	return nil
 }
 
-func (s *sessionOperation) Create() mongodb.Session {
-	return newSession(s.mongocli)
+func (s *session) Close() error {
+
+	if nil != s.transaction {
+		return s.transaction.Close()
+	}
+	return nil
+}
+
+func (s *session) Collection(collName string) mongodb.CollectionInterface {
+	return s.transaction.Collection(collName)
 }

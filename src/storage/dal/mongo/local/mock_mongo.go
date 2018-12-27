@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package mongo
+package local
 
 import (
 	"context"
@@ -30,9 +30,9 @@ type Mock struct {
 	cache  map[string]*MockResult
 }
 
-var _ dal.RDB = new(Mock)
+var _ dal.DB = new(Mock)
 
-// NewMock returns new RDB
+// NewMock returns new DB
 func NewMock() *Mock {
 	return &Mock{
 		cache: map[string]*MockResult{},
@@ -51,13 +51,14 @@ func (c *Mock) Ping() error {
 }
 
 // Clone return the new client
-func (c *Mock) Clone() dal.RDB {
+func (c *Mock) Clone() dal.DB {
 	nc := Mock{
 		cache: c.cache,
 	}
 	return &nc
 }
 
+// MockResult the result mock
 type MockResult struct {
 	Err        error
 	OK         bool
@@ -68,6 +69,7 @@ type MockResult struct {
 	Indexs     []dal.Index
 }
 
+// Mock mock method
 func (c *Mock) Mock(retval MockResult) *Mock {
 	if len(c.cache) <= 0 {
 		c.cache = map[string]*MockResult{}
@@ -288,7 +290,7 @@ func (c *Mock) NextSequence(ctx context.Context, sequenceName string) (uint64, e
 }
 
 // StartTransaction 开启新事务
-func (c *Mock) StartTransaction(ctx context.Context) (dal.RDB, error) {
+func (c *Mock) StartTransaction(ctx context.Context) (dal.DB, error) {
 	key := "StartTransaction"
 	if retval, ok := c.cache[key]; ok {
 		return c, retval.Err
