@@ -82,6 +82,7 @@
 <script>
     import modelFieldChar from './char'
     import modelFieldInt from './int'
+    import modelFieldFloat from './float'
     import modelFieldEnum from './enum'
     import modelFieldAsst from './asst'
     import vConfig from './config'
@@ -90,6 +91,7 @@
         components: {
             modelFieldChar,
             modelFieldInt,
+            modelFieldFloat,
             modelFieldEnum,
             modelFieldAsst,
             vConfig
@@ -115,6 +117,9 @@
                 }, {
                     id: 'int',
                     name: this.$t('ModelManagement["数字"]')
+                }, {
+                    id: 'float',
+                    name: this.$t('ModelManagement["浮点"]')
                 }, {
                     id: 'enum',
                     name: this.$t('ModelManagement["枚举"]')
@@ -168,7 +173,7 @@
                 'activeModel'
             ]),
             isComponentShow () {
-                return ['singlechar', 'longchar', 'multichar', 'singleasst', 'multiasst', 'enum', 'int'].indexOf(this.fieldInfo['bk_property_type']) !== -1
+                return ['singlechar', 'longchar', 'singleasst', 'multiasst', 'enum', 'int', 'float'].indexOf(this.fieldInfo['bk_property_type']) !== -1
             },
             fieldType () {
                 let {
@@ -187,6 +192,7 @@
                 if (!this.isEditField) {
                     switch (type) {
                         case 'int':
+                        case 'float':
                             this.fieldInfo.option = {
                                 min: '',
                                 max: ''

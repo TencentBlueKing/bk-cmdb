@@ -20,7 +20,7 @@ import (
 )
 
 func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID string, instanceData mapstr.MapStr) error {
-	valid, err := NewValidator(ctx, objID)
+	valid, err := NewValidator(ctx, m.dependent, objID)
 	if nil != err {
 		blog.Errorf("init validator faile %s", err.Error())
 		return err
@@ -73,23 +73,15 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 			return err
 		}
 	}
-
-	return valid.validCreateUnique(ctx, instanceData, m)
+	return nil
+	//	return valid.validCreateUnique(ctx, instanceData, m)
 }
 
 func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID string, instanceData mapstr.MapStr, instID uint64) error {
-	valid, err := NewValidator(ctx, objID)
+	valid, err := NewValidator(ctx, m.dependent, objID)
 	if nil != err {
 		blog.Errorf("init validator faile %s", err.Error())
 		return err
-	}
-
-	FillLostedFieldValue(instanceData, valid.propertyslice, valid.requirefields)
-	for _, key := range valid.requirefields {
-		if _, ok := instanceData[key]; !ok {
-			blog.Errorf("params in need, valid %s, data: %+v", objID, instanceData)
-			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
-		}
 	}
 
 	for key, val := range instanceData {
@@ -131,6 +123,6 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 			return err
 		}
 	}
-
-	return valid.validUpdateUnique(ctx, instanceData, instID, m)
+	return nil
+	//	return valid.validUpdateUnique(ctx, instanceData, instID, m)
 }

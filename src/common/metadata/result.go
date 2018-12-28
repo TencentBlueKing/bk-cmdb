@@ -100,6 +100,36 @@ type SearchDataResult struct {
 	Info  []mapstr.MapStr `json:"info"`
 }
 
+// QueryModelDataResult used to define the model query
+type QueryModelDataResult struct {
+	Count int64    `json:"count"`
+	Info  []Object `json:"info"`
+}
+
+// QueryModelAttributeDataResult search model attr data result
+type QueryModelAttributeDataResult struct {
+	Count int64       `json:"count"`
+	Info  []Attribute `json:"info"`
+}
+
+// QueryModelAttributeGroupDataResult query model attribute group result definition
+type QueryModelAttributeGroupDataResult struct {
+	Count int64   `json:"count"`
+	Info  []Group `json:"info"`
+}
+
+// QueryModelClassificationDataResult query model classification result definition
+type QueryModelClassificationDataResult struct {
+	Count int64            `json:"count"`
+	Info  []Classification `json:"info"`
+}
+
+// ReadModelAttrResult  read model attribute api http response return result struct
+type ReadModelAttrResult struct {
+	BaseResp `json:",inline"`
+	Data     QueryModelAttributeDataResult `json:"data"`
+}
+
 //ReadModelClassifitionResult  read model classifition api http response return result struct
 type ReadModelClassifitionResult struct {
 	BaseResp `json:",inline"`

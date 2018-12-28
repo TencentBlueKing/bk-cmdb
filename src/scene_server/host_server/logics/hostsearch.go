@@ -16,7 +16,6 @@ import (
 	"context"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -320,15 +319,13 @@ func (sh *searchHost) fetchHostCloudCacheInfo() (map[int64]*InstNameAsst, errors
 	for cloudID, _ := range cloudIDMap {
 		cloudIDArr = append(cloudIDArr, cloudID)
 	}
-	queryInput := &metadata.QueryInput{}
+	queryInput := &metadata.QueryCondition{}
 	queryInput.Condition = mapstr.MapStr{
 		common.BKCloudIDField: mapstr.MapStr{
 			common.BKDBIN: cloudIDArr,
 		},
 	}
-	result, err := sh.lgc.CoreAPI.ObjectController().Instance().SearchObjects(sh.ctx,
-		common.BKInnerObjIDPlat, sh.pheader, queryInput)
-
+	result, err := sh.lgc.CoreAPI.CoreService().Instance().ReadInstance(sh.ctx, sh.pheader, common.BKInnerObjIDPlat, queryInput)
 	if err != nil {
 		blog.Errorf("fetchHostCloudCacheInfo SearchObjects http do error, err:%s,input:%+v,rid:%s", err.Error(), queryInput, sh.ccRid)
 		return nil, sh.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -462,12 +459,11 @@ func (sh *searchHost) fetchTopoAppCacheInfo(appIDArr []int64) (map[int64]mapstr.
 		if 0 != len(sh.conds.appCond.Fields) && !exist {
 			sh.conds.appCond.Fields = append(sh.conds.appCond.Fields, common.BKAppIDField)
 		}
-		cond := make(map[string]interface{})
-		celld := make(map[string]interface{})
-		celld[common.BKDBIN] = appIDArr
-		cond[common.BKAppIDField] = celld
-		fields := strings.Join(sh.conds.appCond.Fields, ",")
-		return sh.lgc.GetAppMapByCond(sh.ctx, fields, cond)
+		cond := mapstr.New()
+		celld := mapstr.New()
+		celld.Set(common.BKDBIN, appIDArr)
+		cond.Set(common.BKAppIDField, celld)
+		return sh.lgc.GetAppMapByCond(sh.ctx, sh.conds.appCond.Fields, cond)
 
 	}
 	return nil, nil
@@ -480,12 +476,11 @@ func (sh *searchHost) fetchTopoSetCacheInfo(setIDArr []int64) (map[int64]mapstr.
 		if !exist && 0 != len(sh.conds.setCond.Fields) {
 			sh.conds.setCond.Fields = append(sh.conds.setCond.Fields, common.BKSetIDField)
 		}
-		cond := make(map[string]interface{})
-		celld := make(map[string]interface{})
-		celld[common.BKDBIN] = setIDArr
-		cond[common.BKSetIDField] = celld
-		fields := strings.Join(sh.conds.setCond.Fields, ",")
-		return sh.lgc.GetSetMapByCond(sh.ctx, fields, cond)
+		cond := mapstr.New()
+		celld := mapstr.New()
+		celld.Set(common.BKDBIN, setIDArr)
+		cond.Set(common.BKSetIDField, celld)
+		return sh.lgc.GetSetMapByCond(sh.ctx, sh.conds.setCond.Fields, cond)
 	}
 
 	return nil, nil
@@ -497,12 +492,11 @@ func (sh *searchHost) fetchTopoModuleCacheInfo(moduleIDArr []int64) (map[int64]m
 		if !exist && 0 != len(sh.conds.moduleCond.Fields) {
 			sh.conds.moduleCond.Fields = append(sh.conds.moduleCond.Fields, common.BKModuleIDField)
 		}
-		cond := make(map[string]interface{})
-		celld := make(map[string]interface{})
-		celld[common.BKDBIN] = moduleIDArr
-		cond[common.BKModuleIDField] = celld
-		fields := strings.Join(sh.conds.moduleCond.Fields, ",")
-		return sh.lgc.GetModuleMapByCond(sh.ctx, fields, cond)
+		cond := mapstr.New()
+		celld := mapstr.New()
+		celld.Set(common.BKDBIN, moduleIDArr)
+		cond.Set(common.BKModuleIDField, celld)
+		return sh.lgc.GetModuleMapByCond(sh.ctx, sh.conds.moduleCond.Fields, cond)
 
 	}
 

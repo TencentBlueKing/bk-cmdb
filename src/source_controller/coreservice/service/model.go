@@ -13,6 +13,9 @@
 package service
 
 import (
+	"strconv"
+
+	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
@@ -88,7 +91,18 @@ func (s *coreService) SearchModelClassification(params core.ContextParams, pathP
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
 	}
-	return s.core.ModelOperation().SearchModelClassification(params, inputData)
+
+	dataResult, err := s.core.ModelOperation().SearchModelClassification(params, inputData)
+	if nil != err {
+		return dataResult, err
+	}
+
+	// translate language
+	for index := range dataResult.Info {
+		dataResult.Info[index].ClassificationName = s.TranslateClassificationName(params.Lang, &dataResult.Info[index])
+	}
+
+	return dataResult, err
 }
 
 func (s *coreService) CreateModel(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -142,7 +156,66 @@ func (s *coreService) SearchModel(params core.ContextParams, pathParams, queryPa
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
 	}
-	return s.core.ModelOperation().SearchModel(params, inputData)
+
+	dataResult, err := s.core.ModelOperation().SearchModel(params, inputData)
+	if nil != err {
+		return dataResult, err
+	}
+
+	// translate
+	for index := range dataResult.Info {
+		dataResult.Info[index].ObjectName = s.TranslateObjectName(params.Lang, &dataResult.Info[index])
+	}
+
+	return dataResult, err
+}
+
+func (s *coreService) CreateModelAttributeGroup(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
+	inputData := metadata.CreateModelAttributeGroup{}
+	if err := data.ToStructByTag(inputData.Data, "field"); nil != err {
+		return nil, err
+	}
+
+	return s.core.ModelOperation().CreateModelAttributeGroup(params, pathParams("bk_obj_id"), inputData)
+}
+
+func (s *coreService) SetModelAttributeGroup(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
+	inputData := metadata.SetModelAttributeGroup{}
+	if err := data.ToStructByTag(inputData.Data, "field"); nil != err {
+		return nil, err
+	}
+	return s.core.ModelOperation().SetModelAttributeGroup(params, pathParams("bk_obj_id"), inputData)
+}
+
+func (s *coreService) UpdateModelAttributeGroup(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
+	inputData := metadata.UpdateOption{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.ModelOperation().UpdateModelAttributeGroup(params, pathParams("bk_obj_id"), inputData)
+}
+
+func (s *coreService) SearchModelAttributeGroup(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
+	inputData := metadata.QueryCondition{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+
+	return s.core.ModelOperation().SearchModelAttributeGroup(params, pathParams("bk_obj_id"), inputData)
+}
+
+func (s *coreService) DeleteModelAttributeGroup(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
+	inputData := metadata.DeleteOption{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+
+	return s.core.ModelOperation().DeleteModelAttributeGroup(params, pathParams("bk_obj_id"), inputData)
 }
 
 func (s *coreService) CreateModelAttributes(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -187,5 +260,65 @@ func (s *coreService) SearchModelAttributes(params core.ContextParams, pathParam
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
 	}
-	return s.core.ModelOperation().SearchModelAttributes(params, pathParams("bk_obj_id"), inputData)
+
+	dataResult, err := s.core.ModelOperation().SearchModelAttributes(params, pathParams("bk_obj_id"), inputData)
+	if nil != err {
+		return dataResult, err
+	}
+
+	// translate
+	for index := range dataResult.Info {
+		dataResult.Info[index].PropertyName = s.TranslatePropertyName(params.Lang, &dataResult.Info[index])
+		dataResult.Info[index].Description = s.TranslateDescription(params.Lang, &dataResult.Info[index])
+		if dataResult.Info[index].PropertyType == common.FieldTypeEnum {
+			dataResult.Info[index].Option = s.TranslateEnumName(params.Lang, &dataResult.Info[index], dataResult.Info[index].Option)
+		}
+	}
+
+	return dataResult, err
+}
+
+func (s *coreService) SearchModelAttrUnique(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
+	inputData := metadata.QueryCondition{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.ModelOperation().SearchModelAttrUnique(params, inputData)
+}
+
+func (s *coreService) CreateModelAttrUnique(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	inputDatas := metadata.CreateModelAttrUnique{}
+	if err := data.MarshalJSONInto(&inputDatas); nil != err {
+		return nil, err
+	}
+
+	return s.core.ModelOperation().CreateModelAttrUnique(params, pathParams("bk_obj_id"), inputDatas)
+}
+
+func (s *coreService) UpdateModelAttrUnique(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	inputDatas := metadata.UpdateModelAttrUnique{}
+	if err := data.MarshalJSONInto(&inputDatas); nil != err {
+		return nil, err
+	}
+	id, err := strconv.ParseUint(pathParams("id"), 10, 64)
+	if err != nil {
+		return nil, params.Error.Errorf(common.CCErrCommParamsNeedInt, "id")
+	}
+	return s.core.ModelOperation().UpdateModelAttrUnique(params, pathParams("bk_obj_id"), id, inputDatas)
+}
+
+func (s *coreService) DeleteModelAttrUnique(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
+	inputDatas := metadata.CreateManyModelClassifiaction{}
+	if err := data.MarshalJSONInto(&inputDatas); nil != err {
+		return nil, err
+	}
+
+	id, err := strconv.ParseUint(pathParams("id"), 10, 64)
+	if err != nil {
+		return nil, params.Error.Errorf(common.CCErrCommParamsNeedInt, "id")
+	}
+
+	return s.core.ModelOperation().DeleteModelAttrUnique(params, pathParams("bk_obj_id"), id)
 }

@@ -12,6 +12,8 @@
 
 package common
 
+import "math"
+
 const (
 	// HTTPCreate create method
 	HTTPCreate = "POST"
@@ -590,6 +592,9 @@ const (
 	// FieldTypeInt the int field type
 	FieldTypeInt string = "int"
 
+	// FieldTypeFloat the float field type
+	FieldTypeFloat string = "float"
+
 	// FieldTypeEnum the enum field type
 	FieldTypeEnum string = "enum"
 
@@ -791,6 +796,8 @@ const (
 	MinUint   = 0
 	MaxInt    = int(MaxUint >> 1)
 	MinInt    = -MaxInt - 1
+	MaxFloat64 = math.MaxFloat64
+	MinFloat64 = -math.MaxFloat64
 )
 
 //flag
@@ -913,4 +920,9 @@ const (
 	AssociationTypeRun      = "run"
 	AssociationTypeConnect  = "connect"
 	AssociationTypeDefault  = "default"
+)
+
+const (
+	// MetadataField data business key
+	MetadataField = "metadata"
 )
