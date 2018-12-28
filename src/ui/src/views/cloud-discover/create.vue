@@ -112,9 +112,9 @@
                     </div>
                 </li>
                 <li>
-                    <label class="resource-confirm">{{ $t('Cloud["资源自动确认"]')}}
+                    <div class="resource-confirm">{{ $t('Cloud["资源自动确认"]')}}
                     <span class="span-text">{{ $t('Cloud["(不勾选，发现实例将不需要确认直接录入主机资源池)"]')}}</span>
-                    </label>
+                    </div>
                     <div>
                         <label class="cmdb-form-checkbox">
                             <input type="checkbox" v-model="taskMap.bk_confirm">
@@ -327,10 +327,8 @@
                 width: 56px;
             }
             .resource-confirm {
-                width: 416px;
                 height: 19px;
-                margin-bottom: 11px;
-                margin-top: 23px;
+                margin-top: 20px;
                 .span-text {
                     opacity:0.5;
                 }
@@ -339,7 +337,6 @@
         .footer {
             height: 63px;
             line-height: 63px;
-            background: #f9f9f9;
             font-size: 0;
             padding-left: 24px;
             .btn {

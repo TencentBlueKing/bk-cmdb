@@ -1,9 +1,8 @@
 <template>
     <div class="confirm-history-layout">
         <div class="confirm-history-options clearfix">
-            <label class="confirm-label">{{$t("HostResourcePool['时间范围']")}}</label>
-            <cmdb-form-date-range class="confirm-filter" v-model="dateRange" style="width: 240px"></cmdb-form-date-range>
-            <bk-button class="fr" type="primary" @click="back">{{$t('Common["返回"]')}}</bk-button>
+            <bk-button class="fl" type="primary" @click="back">{{$t('Common["返回"]')}}</bk-button>
+            <cmdb-form-date-range class="confirm-filter" v-model="dateRange" position="left"></cmdb-form-date-range>
         </div>
         <cmdb-table ref="table"
                     :loading="$loading('getConfirHistory')"
@@ -22,7 +21,7 @@
                                 {{$t('Cloud["新增"]')}}
                             </span>
                         </template>
-                        <template slot="bk_account_type">
+                        <template slot="bk_account_type" slot-scope="{ item }">
                             <span>{{$t('Cloud["腾讯云"]')}}</span>
                         </template>
         </cmdb-table>
@@ -92,6 +91,7 @@
             }
         },
         created () {
+            this.$store.commit('setHeaderTitle', this.$t('Cloud["确认记录"]'))
             this.initDateRange()
             this.getTableData()
         },
@@ -156,11 +156,8 @@
     }
     .confirm-history-options {
         padding: 20px 0;
-        .confirm-label{
-            display: inline-block;
-            vertical-align: middle;
-        }
         .confirm-filter{
+            float: right;
             display: inline-block;
             vertical-align: middle;
             width: 240px;
