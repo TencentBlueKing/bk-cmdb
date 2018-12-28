@@ -66,12 +66,10 @@ func (a *attribute) searchObjects(objID string) ([]metadata.Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(a.params.SupplierAccount).Field(common.BKObjIDField).Eq(objID)
 
-	condStr, err := cond.ToMapStr().ToJSON()
-	if nil != err {
-		return nil, err
+	input := metadata.QueryCondition{
+		Condition: cond.ToMapStr(),
 	}
-	rsp, err := a.clientSet.ObjectController().Meta().SelectObjects(context.Background(), a.params.Header, condStr)
-
+	rsp, err := a.clientSet.CoreService().Model().ReadModel(context.Background(), a.params.Header, &input)
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
 		return nil, a.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -82,7 +80,15 @@ func (a *attribute) searchObjects(objID string) ([]metadata.Object, error) {
 		return nil, a.params.Err.Error(rsp.Code)
 	}
 
-	return rsp.Data, nil
+	models := []metadata.Object{}
+	for index := range rsp.Data.Info {
+		model := metadata.Object{}
+		if err := rsp.Data.Info[index].Spec.ToStructByTag(&model, "field"); err != nil {
+			return nil, a.params.Err.Error(common.CCErrCommJSONUnmarshalFailed)
+		}
+		models = append(models, model)
+	}
+	return models, nil
 
 }
 
@@ -179,8 +185,8 @@ func (a *attribute) Create() error {
 	}
 
 	// create a new record
-	rsp, err := a.clientSet.ObjectController().Meta().CreateObjectAtt(context.Background(), a.params.Header, &a.attr)
-
+	input := metadata.CreateModelAttributes{Attributes: []metadata.Attribute{a.attr}}
+	rsp, err := a.clientSet.CoreService().Model().CreateModelAttrs(context.Background(), a.params.Header, a.ObjectID, &input)
 	if nil != err {
 		blog.Errorf("faield to request the object controller, the error info is %s", err.Error())
 		return err
@@ -190,7 +196,9 @@ func (a *attribute) Create() error {
 		return err
 	}
 
-	a.attr.ID = rsp.Data.ID
+	for _, id := range rsp.Data.Created {
+		a.attr.ID = int64(id.ID)
+	}
 
 	return nil
 }
@@ -215,8 +223,11 @@ func (a *attribute) Update(data mapstr.MapStr) error {
 		return a.params.Err.Error(common.CCErrCommDuplicateItem)
 	}
 
-	rsp, err := a.clientSet.ObjectController().Meta().UpdateObjectAttByID(context.Background(), a.attr.ID, a.params.Header, data)
-
+	input := metadata.UpdateOption{
+		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(a.attr.ID).ToMapStr(),
+		Data:      data,
+	}
+	rsp, err := a.clientSet.CoreService().Model().UpdateModelAttrs(context.Background(), a.params.Header, a.ObjectID, &input)
 	if nil != err {
 		blog.Errorf("failed to request object controller, error info is %s", err.Error())
 		return err
@@ -231,8 +242,7 @@ func (a *attribute) Update(data mapstr.MapStr) error {
 }
 func (a *attribute) search(cond condition.Condition) ([]metadata.Attribute, error) {
 
-	rsp, err := a.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), a.params.Header, cond.ToMapStr())
-
+	rsp, err := a.clientSet.CoreService().Model().ReadModelAttr(context.Background(), a.params.Header, a.ObjectID, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request to object controller, error info is %s", err.Error())
 		return nil, err
@@ -243,7 +253,7 @@ func (a *attribute) search(cond condition.Condition) ([]metadata.Attribute, erro
 		return nil, a.params.Err.Error(common.CCErrTopoObjectAttributeSelectFailed)
 	}
 
-	return rsp.Data, nil
+	return rsp.Data.Info, nil
 }
 func (a *attribute) IsExists() (bool, error) {
 
@@ -312,6 +322,8 @@ func (a *attribute) GetGroup() (GroupInterface, error) {
 	cond.Field(metadata.GroupFieldObjectID).Eq(a.attr.ObjectID)
 	cond.Field(metadata.GroupFieldSupplierAccount).Eq(a.attr.OwnerID)
 
+	input := metadata.QueryCondition{}
+	a.clientSet.CoreService().Model().ReadAttributeGroup(context.Background(), a.params.Header, a.attr.ObjectID, cond.ToMapStr())
 	rsp, err := a.clientSet.ObjectController().Meta().SelectPropertyGroupByObjectID(context.Background(), a.params.SupplierAccount, a.attr.ObjectID, a.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[model-grp] failed to request the object controller, error info is %s", err.Error())

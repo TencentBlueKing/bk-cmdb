@@ -16,12 +16,11 @@ import (
 	"context"
 	"encoding/json"
 
-	"configcenter/src/common/mapstr"
-
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/mapstr"
 	frtypes "configcenter/src/common/mapstr"
 	metatype "configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/model"
@@ -38,9 +37,6 @@ type Inst interface {
 
 	GetParentObjectWithInsts() ([]*ObjectWithInsts, error)
 	GetChildObjectWithInsts() ([]*ObjectWithInsts, error)
-
-	SetParentInst(targetInst Inst) error
-	SetChildInst(targetInst Inst) error
 
 	SetMainlineParentInst(instID int64) error
 	SetMainlineChildInst(targetInst Inst) error
@@ -156,12 +152,12 @@ func (cli *inst) Update(data frtypes.MapStr) error {
 	instIDName := cli.target.GetInstIDFieldName()
 	instID, exists := cli.datas.Get(instIDName)
 
-    tObj := cli.target.Object()
-    cond := condition.CreateCondition()
-    if cli.target.IsCommon() {
-        cond.Field(common.BKObjIDField).Eq(tObj.ObjectID)
-    }
-	
+	tObj := cli.target.Object()
+	cond := condition.CreateCondition()
+	if cli.target.IsCommon() {
+		cond.Field(common.BKObjIDField).Eq(tObj.ObjectID)
+	}
+
 	if exists {
 		// construct the update condition by the instid
 		cond.Field(instIDName).Eq(instID)
@@ -219,7 +215,7 @@ func (cli *inst) Update(data frtypes.MapStr) error {
 
 func (cli *inst) IsExists() (bool, error) {
 
-    tObj := cli.target.Object()
+	tObj := cli.target.Object()
 	attrs, err := cli.target.GetAttributesExceptInnerFields()
 	if nil != err {
 		blog.Errorf("failed to get attributes for the object(%s), error info is is %s", tObj.ObjectID, err.Error())

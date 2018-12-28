@@ -38,13 +38,13 @@ func (cli *inst) updateMainlineAssociation(child Inst, parentID int64) error {
 		cond.Field(metatype.ModelFieldObjectID).Eq(object.ObjectID)
 	}
 
-	data := frtypes.MapStr{}
-	data.Set("data", frtypes.MapStr{
-		common.BKInstParentStr: parentID,
-	})
-	data.Set("condition", cond.ToMapStr())
-
-	rsp, err := cli.clientSet.ObjectController().Instance().UpdateObject(context.Background(), object.GetObjectType(), cli.params.Header, data)
+	input := metatype.UpdateOption{
+		Data: frtypes.MapStr{
+			common.BKInstParentStr: parentID,
+		},
+		Condition: cond.ToMapStr(),
+	}
+	rsp, err := cli.clientSet.CoreService().Instance().UpdateInstance(context.Background(), cli.params.Header, object.GetObjectType(), &input)
 	if nil != err {
 		blog.Errorf("[inst-inst] failed to request object controller, error info %s", err.Error())
 		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -53,86 +53,6 @@ func (cli *inst) updateMainlineAssociation(child Inst, parentID int64) error {
 	if common.CCSuccess != rsp.Code {
 		blog.Errorf("[inst-inst] failed to update the association, err: %s", rsp.ErrMsg)
 		return cli.params.Err.Error(rsp.Code)
-	}
-
-	return nil
-}
-
-func (cli *inst) setCommonInstAssociation(child Inst, parent Inst) error {
-
-	parentID, err := parent.GetInstID()
-	if nil != err {
-		return err
-	}
-
-	childID, err := child.GetInstID()
-	if nil != err {
-		return err
-	}
-
-	object := child.GetObject().Object()
-
-	cond := condition.CreateCondition()
-	cond.Field(common.BKInstIDField).Eq(childID)
-	cond.Field(common.BKAsstInstIDField).Eq(parentID)
-	cond.Field(common.BKObjIDField).Eq(object.ObjectID)
-	cond.Field(common.BKAsstObjIDField).Eq(parent.GetObject().Object().ObjectID)
-
-	asstItems, err := cli.searchInstAssociation(cond)
-	if nil != err {
-		return err
-	}
-
-	// construct the association
-	asst := metatype.InstAsst{}
-	asst.AsstInstID = parentID
-	asst.InstID = childID
-	asst.ObjectID = object.ObjectID
-	asst.AsstObjectID = parent.GetObject().Object().ObjectID
-
-	// create a new association
-	if 0 != len(asstItems) {
-
-		rsp, err := cli.clientSet.ObjectController().Instance().CreateObject(context.Background(), common.BKTableNameInstAsst, cli.params.Header, asst.ToMapStr())
-		if nil != err {
-			blog.Errorf("[inst-asst] failed to request the object controller,err: %s", err.Error())
-			return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
-		}
-
-		if common.CCSuccess != rsp.Code {
-			blog.Errorf("[inst-asst] failed to create the common inst association, err: %s", rsp.ErrMsg)
-			return cli.params.Err.Error(rsp.Code)
-		}
-
-		return nil
-	}
-
-	// update the association
-	for _, item := range asstItems {
-
-		originAsst := metatype.InstAsst{}
-		if _, err = originAsst.Parse(item); nil != err {
-			blog.Errorf("[inst-asst] failed to parse the inst asst data(%#v), err: %s", item, err.Error())
-			return err
-		}
-
-		cond := condition.CreateCondition()
-		cond.Field("id").Eq(originAsst.ID)
-
-		data := frtypes.MapStr{}
-		data.Set("data", asst.ToMapStr())
-		data.Set("condition", cond.ToMapStr())
-
-		rsp, err := cli.clientSet.ObjectController().Instance().UpdateObject(context.Background(), common.BKTableNameInstAsst, cli.params.Header, data)
-		if nil != err {
-			blog.Errorf("[inst-asst] failed to request object controller, error info %s", err.Error())
-			return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
-		}
-
-		if common.CCSuccess != rsp.Code {
-			blog.Errorf("[inst-asst] failed to update the association, err: %s", rsp.ErrMsg)
-			return cli.params.Err.Error(rsp.Code)
-		}
 	}
 
 	return nil
@@ -451,11 +371,4 @@ func (cli *inst) SetMainlineChildInst(targetInst Inst) error {
 	}
 
 	return nil
-}
-
-func (cli *inst) SetParentInst(targetInst Inst) error {
-	return cli.setCommonInstAssociation(cli, targetInst)
-}
-func (cli *inst) SetChildInst(targetInst Inst) error {
-	return cli.setCommonInstAssociation(targetInst, cli)
 }

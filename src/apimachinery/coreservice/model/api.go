@@ -285,3 +285,68 @@ func (m *model) ReadModelAttr(ctx context.Context, h http.Header, objID string, 
 		Into(resp)
 	return
 }
+
+func (m *model) ReadAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.QueryCondition) (resp metadata.QueryModelAttributeGroupDataResult, err error) {
+	subPath := fmt.Sprintf("/read/model/%s/group", objID)
+
+	err = m.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(&resp)
+	return
+}
+
+func (m *model) CreateAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.CreateModelAttributes) (resp metadata.CreateOneDataResult, err error) {
+	subPath := fmt.Sprintf("/create/model/{bk_obj_id/group", objID)
+
+	err = m.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(&resp)
+	return
+}
+
+func (m *model) UpdateAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.UpdateOption) (resp metadata.UpdatedCount, err error) {
+	subPath := fmt.Sprintf("/update/model/%s/group", objID)
+
+	err = m.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(&resp)
+	return
+}
+
+func (m *model) SetAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.SetModelAttributes) (resp metadata.UpdatedCount, err error) {
+	subPath := fmt.Sprintf("/set/model/%s/group", objID)
+
+	err = m.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(&resp)
+	return
+}
+
+func (m *model) DeleteAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.DeleteOption) (resp metadata.DeletedCount, err error) {
+	subPath := fmt.Sprintf("/delete/model/%s/group", objID)
+
+	err = m.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(&resp)
+	return
+}
