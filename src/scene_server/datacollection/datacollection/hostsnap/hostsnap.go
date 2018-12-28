@@ -264,6 +264,9 @@ func (h *HostSnap) getHostByVal(val *gjson.Result) *HostInst {
 }
 
 func getIPS(val *gjson.Result) (ips []string) {
+	if !strings.HasPrefix(val.Get("ip").String(), "127.0.0.") {
+		ips = append(ips, val.Get("ip").String())
+	}
 	interfaces := val.Get("data.net.interface.#.addrs.#.addr").Array()
 	for _, addrs := range interfaces {
 		for _, addr := range addrs.Array() {
@@ -273,9 +276,6 @@ func getIPS(val *gjson.Result) (ips []string) {
 			}
 			ips = append(ips, ip)
 		}
-	}
-	if !strings.HasPrefix(val.Get("ip").String(), "127.0.0.") {
-		ips = append(ips, val.Get("ip").String())
 	}
 	return ips
 }
