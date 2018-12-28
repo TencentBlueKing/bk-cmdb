@@ -28,7 +28,7 @@ import (
 )
 
 func (lgc *Logics) GetHostAttributes(ctx context.Context, ownerID string) ([]metadata.Header, error) {
-	searchOp := hutil.NewOperation().WithObjID(common.BKInnerObjIDHost).WithOwnerID(ownerID).MapStr()
+	searchOp := hutil.NewOperation().WithObjID(common.BKInnerObjIDHost).WithOwnerID(lgc.ownerID).WithAttrComm().MapStr()
 	query := &metadata.QueryCondition{
 		Condition: searchOp,
 	}
