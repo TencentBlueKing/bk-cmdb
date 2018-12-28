@@ -25,16 +25,14 @@ import (
 	hutil "configcenter/src/scene_server/host_server/util"
 )
 
-func (lgc *Logics) GetResoulePoolModuleID(ctx context.Context, condition interface{}) (int64, errors.CCError) {
-	query := metadata.QueryInput{
-		Start:     0,
-		Limit:     1,
-		Sort:      common.BKModuleIDField,
-		Fields:    common.BKModuleIDField,
+func (lgc *Logics) GetResoulePoolModuleID(ctx context.Context, condition mapstr.MapStr) (int64, errors.CCError) {
+	query := &metadata.QueryCondition{
+		Limit:     metadata.SearchLimit{Offset: 0, Limit: 1},
+		SortArr:   metadata.NewSearchSortParse().String(common.BKModuleIDField).ToSearchSortArr(),
+		Fields:    []string{common.BKModuleIDField},
 		Condition: condition,
 	}
-
-	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDModule, lgc.header, &query)
+	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDModule, query)
 	if err != nil {
 		blog.Errorf("GetResoulePoolModuleID http do error, err:%s,input:%+v,rid:%s", err.Error(), query, lgc.rid)
 		return -1, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -53,15 +51,14 @@ func (lgc *Logics) GetResoulePoolModuleID(ctx context.Context, condition interfa
 }
 
 func (lgc *Logics) GetModuleByModuleID(ctx context.Context, appID, moduleID int64) ([]mapstr.MapStr, errors.CCError) {
-	query := &metadata.QueryInput{
-		Start:     0,
-		Limit:     1,
-		Sort:      common.BKModuleIDField,
-		Fields:    common.BKModuleIDField,
+	query := &metadata.QueryCondition{
+		Limit:     metadata.SearchLimit{Offset: 0, Limit: 1},
+		SortArr:   metadata.NewSearchSortParse().String(common.BKModuleIDField).ToSearchSortArr(),
+		Fields:    []string{common.BKModuleIDField},
 		Condition: hutil.NewOperation().WithAppID(appID).WithModuleID(moduleID).Data(),
 	}
 
-	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDModule, lgc.header, query)
+	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDModule, query)
 	if err != nil {
 		blog.Errorf("GetModuleByModuleID http do error, err:%s,input:%+v,rid:%s", err.Error(), query, lgc.rid)
 		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -78,15 +75,14 @@ func (lgc *Logics) GetModuleIDByCond(ctx context.Context, cond []metadata.Condit
 	condc := make(map[string]interface{})
 	parse.ParseCommonParams(cond, condc)
 
-	query := &metadata.QueryInput{
-		Start:     0,
-		Limit:     common.BKNoLimit,
-		Sort:      common.BKModuleIDField,
-		Fields:    common.BKModuleIDField,
-		Condition: condc,
+	query := &metadata.QueryCondition{
+		Limit:     metadata.SearchLimit{Offset: 0, Limit: common.BKNoLimit},
+		SortArr:   metadata.NewSearchSortParse().String(common.BKModuleIDField).ToSearchSortArr(),
+		Fields:    []string{common.BKModuleIDField},
+		Condition: mapstr.NewFromMap(condc),
 	}
 
-	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDModule, lgc.header, query)
+	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDModule, query)
 	if err != nil {
 		blog.Errorf("GetModuleIDByCond http do error, err:%s,input:%+v,rid:%s", err.Error(), query, lgc.rid)
 		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -108,17 +104,16 @@ func (lgc *Logics) GetModuleIDByCond(ctx context.Context, cond []metadata.Condit
 	return moduleIDArr, nil
 }
 
-func (lgc *Logics) GetModuleMapByCond(ctx context.Context, fields string, cond interface{}) (map[int64]types.MapStr, errors.CCError) {
+func (lgc *Logics) GetModuleMapByCond(ctx context.Context, fields []string, cond mapstr.MapStr) (map[int64]types.MapStr, errors.CCError) {
 
-	query := &metadata.QueryInput{
+	query := &metadata.QueryCondition{
 		Condition: cond,
-		Start:     0,
-		Limit:     common.BKNoLimit,
-		Sort:      common.BKModuleIDField,
+		Limit:     metadata.SearchLimit{Offset: 0, Limit: common.BKNoLimit},
+		SortArr:   metadata.NewSearchSortParse().String(common.BKModuleIDField).ToSearchSortArr(),
 		Fields:    fields,
 	}
 
-	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDModule, lgc.header, query)
+	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDModule, query)
 	if err != nil {
 		blog.Errorf("GetModuleMapByCond http do error, err:%s,input:%+v,rid:%s", err.Error(), query, lgc.rid)
 		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)

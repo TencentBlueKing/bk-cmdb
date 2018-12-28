@@ -176,26 +176,26 @@ func (m *modelAttribute) DeleteModelAttributes(ctx core.ContextParams, objID str
 	return &metadata.DeletedCount{Count: cnt}, err
 }
 
-func (m *modelAttribute) SearchModelAttributes(ctx core.ContextParams, objID string, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
+func (m *modelAttribute) SearchModelAttributes(ctx core.ContextParams, objID string, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeDataResult, error) {
 
 	if err := m.model.isValid(ctx, objID); nil != err {
 		blog.Errorf("request(%s): it is failed to check if the model(%s) is valid, error info is %s", ctx.ReqID, objID, err.Error())
-		return &metadata.QueryResult{}, err
+		return &metadata.QueryModelAttributeDataResult{}, err
 	}
 
 	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to convert from mapstr(%v) into a condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
-		return &metadata.QueryResult{}, err
+		return &metadata.QueryModelAttributeDataResult{}, err
 	}
 
-	cond.Element(&mongo.Eq{Key: ctx.SupplierAccount, Val: ctx.SupplierAccount})
-	attrResult, err := m.searchReturnMapStr(ctx, cond)
+	cond.Element(&mongo.Eq{Key: metadata.AttributeFieldSupplierAccount, Val: ctx.SupplierAccount})
+	attrResult, err := m.search(ctx, cond)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to search the attributes of the model(%s), error info is %s", ctx.ReqID, objID, err.Error())
-		return &metadata.QueryResult{}, err
+		return &metadata.QueryModelAttributeDataResult{}, err
 	}
 
-	dataResult := &metadata.QueryResult{Count: uint64(len(attrResult)), Info: attrResult}
+	dataResult := &metadata.QueryModelAttributeDataResult{Count: int64(len(attrResult)), Info: attrResult}
 	return dataResult, nil
 }

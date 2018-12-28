@@ -140,7 +140,7 @@ func (lgc *Logics) UpdateHostByAppID(ctx context.Context, input *meta.UpdateHost
 		if len(hostData) == 0 {
 			platID, ok := proMap[common.BKCloudIDField]
 			if ok {
-				platConds := common.KvMap{
+				platConds := mapstr.MapStr{
 					common.BKCloudIDField: platID,
 				}
 
@@ -199,12 +199,12 @@ func (lgc *Logics) UpdateHostByAppID(ctx context.Context, input *meta.UpdateHost
 
 func (lgc *Logics) GetIPAndProxyByCompany(ctx context.Context, ipArr []string, cloudID, appID int64) (interface{}, error) {
 	// 获取不合法的IP列表
-	param := &meta.QueryInput{
-		Condition: map[string]interface{}{
-			common.BKHostInnerIPField: map[string]interface{}{common.BKDBIN: ipArr},
+	param := &meta.QueryCondition{
+		Condition: mapstr.MapStr{
+			common.BKHostInnerIPField: mapstr.MapStr{common.BKDBIN: ipArr},
 			common.BKCloudIDField:     cloudID,
 		},
-		Fields: fmt.Sprintf("%s,%s", common.BKHostIDField, common.BKHostInnerIPField),
+		Fields: []string{common.BKHostIDField, common.BKHostInnerIPField},
 	}
 	phpapi := lgc.NewPHPAPI()
 	hosts, err := phpapi.GetHostByCond(ctx, param)
@@ -236,7 +236,7 @@ func (lgc *Logics) GetIPAndProxyByCompany(ctx context.Context, ipArr []string, c
 	blog.V(5).Infof("vaildIPArr:%v,rid:%s", muduleHostConfigs, lgc.rid)
 
 	validIpArr := make([]interface{}, 0)
-	appMap, err := lgc.GetAppMapByCond(ctx, "", nil)
+	appMap, err := lgc.GetAppMapByCond(ctx, nil, nil)
 	if nil != err {
 		return nil, err
 	}
@@ -273,12 +273,12 @@ func (lgc *Logics) GetIPAndProxyByCompany(ctx context.Context, ipArr []string, c
 	}
 
 	// 获取所有的proxy ip列表
-	paramProxy := &meta.QueryInput{
-		Condition: map[string]interface{}{
+	paramProxy := &meta.QueryCondition{
+		Condition: mapstr.MapStr{
 			common.BKGseProxyField: 1,
 			common.BKCloudIDField:  cloudID,
 		},
-		Fields: fmt.Sprintf("%s,%s", common.BKHostIDField, common.BKHostInnerIPField),
+		Fields: []string{common.BKHostIDField, common.BKHostInnerIPField},
 	}
 	hostProxys, err := phpapi.GetHostByCond(ctx, paramProxy)
 	if nil != err {

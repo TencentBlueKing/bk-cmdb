@@ -67,6 +67,11 @@
                     :placeholder="$t('Common[\'快速查询\']')"
                     @keydown.enter="getTableData">
                 <input class="filter-value cmdb-form-input fl" type="text"
+                    v-else-if="filter.type === 'float'"
+                    v-model.number="filter.value"
+                    :placeholder="$t('Common[\'快速查询\']')"
+                    @keydown.enter="getTableData">
+                <input class="filter-value cmdb-form-input fl" type="text"
                     v-else
                     v-model.trim="filter.value"
                     :placeholder="$t('Common[\'快速查询\']')"
@@ -447,8 +452,10 @@
                         filterValue = convertValue === undefined ? filterValue : convertValue
                     } else if (filterType === 'int') {
                         filterValue = isNaN(parseInt(filterValue)) ? filterValue : parseInt(filterValue)
+                    } else if (filterType === 'float') {
+                        filterValue = isNaN(parseFloat(filterValue)) ? filterValue : parseFloat(filterValue)
                     }
-                    if (['bool', 'int', 'enum'].includes(filterType)) {
+                    if (['bool', 'int', 'enum', 'float'].includes(filterType)) {
                         params.condition[this.objId].push({
                             field: this.filter.id,
                             operator: '$eq',

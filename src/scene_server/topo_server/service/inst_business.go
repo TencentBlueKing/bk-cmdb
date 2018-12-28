@@ -98,7 +98,7 @@ func (s *topoService) UpdateBusinessStatus(params types.ContextParams, pathParam
 	switch common.DataStatusFlag(pathParams("flag")) {
 	case common.DataStatusDisabled:
 		innerCond := condition.CreateCondition()
-		innerCond.Field(common.BKAsstObjIDField).Eq(obj.GetID())
+		innerCond.Field(common.BKAsstObjIDField).Eq(obj.Object().ObjectID)
 		innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 		innerCond.Field(common.BKAsstInstIDField).Eq(bizID)
 		if err := s.core.AssociationOperation().CheckBeAssociation(params, obj, innerCond); nil != err {

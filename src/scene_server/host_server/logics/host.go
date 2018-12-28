@@ -28,19 +28,22 @@ import (
 )
 
 func (lgc *Logics) GetHostAttributes(ctx context.Context, ownerID string) ([]metadata.Header, error) {
-	searchOp := hutil.NewOperation().WithObjID(common.BKInnerObjIDHost).WithOwnerID(ownerID).Data()
-	result, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(ctx, lgc.header, searchOp)
+	searchOp := hutil.NewOperation().WithObjID(common.BKInnerObjIDHost).WithOwnerID(lgc.ownerID).WithAttrComm().MapStr()
+	query := &metadata.QueryCondition{
+		Condition: searchOp,
+	}
+	result, err := lgc.CoreAPI.CoreService().Model().ReadModelAttr(ctx, lgc.header, common.BKInnerObjIDHost, query)
 	if err != nil {
-		blog.Errorf("GetHostAttributes http do error, err:%s, input:%+v, rid:%s", err.Error(), searchOp, lgc.rid)
+		blog.Errorf("GetHostAttributes http do error, err:%s, input:%+v, rid:%s", err.Error(), query, lgc.rid)
 		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("GetHostAttributes http response error, err code:%d, err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, searchOp, lgc.rid)
+		blog.Errorf("GetHostAttributes http response error, err code:%d, err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, query, lgc.rid)
 		return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
 	headers := make([]metadata.Header, 0)
-	for _, p := range result.Data {
+	for _, p := range result.Data.Info {
 		if p.PropertyID == common.BKChildStr {
 			continue
 		}
@@ -106,7 +109,7 @@ func (lgc *Logics) GetConfigByCond(ctx context.Context, cond map[string][]int64)
 // EnterIP 将机器导入到制定模块或者空闲机器， 已经存在机器，不操作
 func (lgc *Logics) EnterIP(ctx context.Context, ownerID string, appID, moduleID int64, ip string, cloudID int64, host map[string]interface{}, isIncrement bool) errors.CCError {
 
-	isExist, err := lgc.IsPlatExist(ctx, common.KvMap{common.BKCloudIDField: cloudID})
+	isExist, err := lgc.IsPlatExist(ctx, mapstr.MapStr{common.BKCloudIDField: cloudID})
 	if nil != err {
 		return err
 	}
@@ -149,17 +152,6 @@ func (lgc *Logics) EnterIP(ctx context.Context, ownerID string, appID, moduleID 
 		if nil != hasErr {
 			blog.Errorf("EnterIP valid error, input:%+v, err:%s, rid:%s", host, err.Error(), lgc.rid)
 			return lgc.ccErr.Errorf(common.CCErrCommFieldNotValidFail, hasErr.Error())
-		}
-
-		cond := hutil.NewOperation().WithOwnerID(ownerID).WithObjID(common.BKInnerObjIDHost).Data()
-		assResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAssociations(ctx, lgc.header, cond)
-		if err != nil {
-			blog.Errorf("EnterIP SelectObjectAssociations http do error, err:%s, input:%+v, rid:%s", err.Error(), host, lgc.rid)
-			return lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
-		}
-		if !assResult.Result {
-			blog.Errorf("EnterIP SelectObjectAssociations http response error, err code:%d, err msg:%s, input:%+v, rid:%s", assResult.Code, assResult.ErrMsg, host, lgc.rid)
-			return lgc.ccErr.New(assResult.Code, assResult.ErrMsg)
 		}
 
 		result, err := lgc.CoreAPI.HostController().Host().AddHost(ctx, lgc.header, host)

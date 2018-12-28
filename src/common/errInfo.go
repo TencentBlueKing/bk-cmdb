@@ -61,9 +61,6 @@ const (
 	// CCErrCommParamsIsInvalid the parameter is invalid or nonexistent
 	CCErrCommParamsIsInvalid = 1199011
 
-	// CCErrCommUniqueCheckFailed the uniqueness validation fails
-	CCErrCommUniqueCheckFailed = 1199012
-
 	// CCErrCommParseDataFailed failed to read data from data field
 	CCErrCommParseDataFailed = 1199013
 
@@ -146,6 +143,9 @@ const (
 	CCErrCommUtilHandleFail = 1199041
 	// CCErrCommFieldNotValidFail  valid data error, %s
 	CCErrCommFieldNotValidFail = 1199043
+
+	// CCErrCommParamsNeedFloat the parameter must be float type
+	CCErrCommParamsNeedFloat = 1199042
 
 	// apiserver 1100XXX
 
@@ -338,6 +338,7 @@ const (
 	CCErrTopoObjectUniqueKeyKindInvalid            = 1001066
 	CCErrTopoObjectUniquePresetCouldNotDelOrEdit   = 1001067
 	CCErrTopoObjectUniqueCanNotHasMutiMustCheck    = 1001068
+	CCErrTopoObjectUniqueShouldHaveMoreThanOne     = 1001069
 
 	// association kind has been apply to object
 	CCErrorTopoAssKindHasApplyToObject = 1101069
@@ -551,6 +552,11 @@ const (
 	CCErrCollectNetHistorySearchFail           = 1112016
 	CCErrCollectNetDeviceUpdateFail            = 1112017
 	CCErrCollectNetPropertyUpdateFail          = 1112018
+
+	// coreservice 1113xxx
+
+	// CCErrorModelAttributeGroupHasSomeAttributes the group has some attributes
+	CCErrCoreServiceModelAttributeGroupHasSomeAttributes = 1113001
 
 	// CCErrApiServerV2AppNameLenErr app name must be 1-32 len
 	CCErrAPIServerV2APPNameLenErr = 1170001
