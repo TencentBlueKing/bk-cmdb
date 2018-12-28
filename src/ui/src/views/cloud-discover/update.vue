@@ -46,11 +46,13 @@
                 <li class="update-form-item">
                     <label for="" class="label-name">
                         {{ $t('Cloud["Key"]')}}<span class="color-danger">*</span>
+                        <a class="set"
+                           href="https://cloud.tencent.com/document/api/213/15692"
+                           target="_blank">{{ $t('Cloud["如何获取ID和Key?"]')}}
+                        </a>
                     </label>
                     <div class="update-item-content">
-                        <input type="password"
-                               v-model="curPush.bk_secret_key"
-                               class="cmdb-form-input"/>
+                        <input v-model="curPush.bk_secret_key" class="cmdb-form-input"/>
                     </div>
                 </li>
                 <li class="form-item-two">
@@ -99,9 +101,9 @@
                     </div>
                 </li>
                 <li>
-                    <label class="resource-confirm">{{ $t('Cloud["资源自动确认"]')}}
+                    <div class="u-resource-confirm">{{ $t('Cloud["资源自动确认"]')}}
                         <span class="span-text">{{ $t('Cloud["(不勾选，发现实例将不需要确认直接录入主机资源池)"]')}}</span>
-                    </label>
+                    </div>
                     <div>
                         <label class="cmdb-form-checkbox">
                             <input type="checkbox" v-model="curPush.bk_confirm">
@@ -136,6 +138,7 @@
         },
         data () {
             return {
+                tips: false,
                 placeholder: '',
                 cloudList: [{
                     id: 'tencent_cloud',
@@ -170,7 +173,10 @@
                 this.$emit('cancel')
             },
             isCloseConfirmShow () {
-                return true
+                if (this.tips) {
+                    return true
+                }
+                return false
             }
         },
         watch: {
@@ -180,6 +186,12 @@
                 } else {
                     this.placeholder = this.$t('Cloud["例如: 19:30"]')
                 }
+            },
+            'curPush': {
+                handler () {
+                    this.tips = true
+                },
+                deep: true
             }
         }
     }
@@ -216,6 +228,11 @@
                         position: absolute;
                         top: 2px;
                         right: -10px;
+                    }
+                    .set {
+                        font-size: 8px;
+                        float: right;
+                        color: dodgerblue;
                     }
                 }
                 .update-item-content {
@@ -281,10 +298,9 @@
                     }
                 }
             }
-            .resource-confirm {
-                width: 416px;
+            .u-resource-confirm {
                 height: 19px;
-                margin-bottom: 11px;
+                margin-top: 20px;
                 .span-text {
                     opacity:0.5;
                 }
@@ -293,7 +309,6 @@
         .footer {
             height: 63px;
             line-height: 63px;
-            background: #f9f9f9;
             font-size: 0;
             padding-left: 24px;
             .btn {

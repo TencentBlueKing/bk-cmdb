@@ -27,7 +27,7 @@
             @handlePageChange="handlePageChange"
             @handleSortChange="handleSortChange">
                 <template slot="bk_sync_status" slot-scope="{ item }">
-                    <template v-if="item.bk_sync_status === 'success' && item.bk_status">
+                    <template v-if="item.bk_status">
                         <div class="bk-spin-loading bk-spin-loading-mini bk-spin-loading-primary">
                             <div class="rotate rotate1"></div>
                             <div class="rotate rotate2"></div>
@@ -47,6 +47,7 @@
                 </template>
                 <template slot="status" slot-scope="{ item }">
                     <bk-switcher
+                        :key="item.bk_task_id"
                         @change="changeStatus(...arguments, item)"
                         :selected="item.bk_status"
                         :is-Outline="isOutline"
@@ -57,11 +58,18 @@
                 <template slot="bk_account_type" slot-scope="{ item }">
                     <span>{{$t('Cloud["腾讯云"]')}}</span>
                 </template>
+                <template slot="bk_obj_id" slot-scope="{ item }">
+                    {{ $t('Hosts["主机"]')}}
+                </template>
+                <template slot="bk_last_sync_time" slot-scope="{ item }">
+                    <span v-if="item.bk_last_sync_time === ''">--</span>
+                    <span v-else>{{ item.bk_last_sync_time }}</span>
+                </template>
                 <template slot="bk_last_sync_result" slot-scope="{ item }">
-                    <span v-if="item.new_add + item.attr_changed > 0">
+                    <span v-if="item.bk_last_sync_time === ''">--</span>
+                    <span v-else>
                         {{$t('Cloud[\'新增\']')}} ({{item.new_add}}) / {{$t('Cloud[\'变更\']')}} ({{item.attr_changed}})
                     </span>
-                    <span v-else>--</span>
                 </template>
                 <template slot="operation" slot-scope="{ item }">
                     <span class="text-primary mr20" @click.stop="detail(item)">{{$t('Cloud["详情"]')}}</span>
@@ -78,22 +86,23 @@
             :title="slider.title"
             :beforeClose="handleSliderBeforeClose"
             :width="680">
-            <bk-tab :active-name.sync="tab.active" slot="content">
+            <v-create v-if="attribute.type === 'create'"
+                      slot="content"
+                      ref="detail"
+                      :type="attribute.type"
+                      @saveSuccess="saveSuccess"
+                      @cancel="closeSlider">
+            </v-create>
+            <bk-tab :active-name.sync="tab.active" slot="content" v-else>
                 <bk-tabpanel name="details" :title="$t('Cloud[\'任务详情\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
-                    <v-create v-if="attribute.type === 'create'"
-                        ref="detail"
-                        :type="attribute.type"
-                        @saveSuccess="saveSuccess"
-                        @cancel="closeSlider">
-                    </v-create>
-                    <v-update v-else-if="attribute.type === 'update'"
+                    <v-update v-if="attribute.type === 'update'"
                         ref="detail"
                         :type="attribute.type"
                         :curPush="curPush"
                         @saveSuccess="saveSuccess"
                         @cancel="closeSlider">   
                     </v-update>
-                    <v-task-details v-else-if="attribute.type === 'detail'"
+                    <v-task-details v-else-if="attribute.type === 'details'"
                         ref="detail"
                         :type="attribute.type"
                         :curPush="curPush"
@@ -101,7 +110,7 @@
                         @cancel="closeSlider">
                     </v-task-details>
                 </bk-tabpanel>
-                <bk-tabpanel name="history" :title="$t('Cloud[\'同步历史\']')" :show="attribute.type === 'detail'">
+                <bk-tabpanel name="history" :title="$t('Cloud[\'同步历史\']')" :show="['update', 'details'].includes(attribute.type)">
                     <v-sync-history
                     :curPush="curPush">
                     </v-sync-history>
@@ -162,16 +171,13 @@
                         name: this.$t('Cloud["任务名称"]')
                     }, {
                         id: 'bk_account_type',
-                        width: 120,
                         name: this.$t('Cloud["账号类型"]')
                     }, {
                         id: 'bk_last_sync_time',
-                        width: 160,
                         name: this.$t('Cloud["最近同步时间"]')
                     }, {
                         id: 'bk_last_sync_result',
                         sortable: false,
-                        width: 160,
                         name: this.$t('Cloud["最近同步结果"]')
 
                     }, {
@@ -239,7 +245,6 @@
                 let res = await this.searchCloudTask({params, config: {requestId: 'searchCloudTask'}})
                 this.table.list = res.info.map(data => {
                     data['bk_last_sync_time'] = this.$tools.formatTime(data['bk_last_sync_time'], 'YYYY-MM-DD HH:mm:ss')
-                    data['bk_obj_id'] = this.$t('Hosts["主机"]')
                     return data
                 })
                 pagination.count = res.count
@@ -266,23 +271,23 @@
                 this.tab.active = 'details'
                 this.curPush = {...item}
                 this.slider.show = true
-                this.attribute.type = 'detail'
-                this.slider.title = this.$t('Cloud["查看同步任务详情"]')
+                this.attribute.type = 'details'
+                this.slider.title = item['bk_task_name']
             },
             deleteConfirm (item) {
                 this.$bkInfo({
                     title: this.$tc('Cloud["确认删除该任务?"]'),
                     confirmFn: () => {
-                        this.deletePush(item['bk_task_id'])
+                        this.deleteTask(item['bk_task_id'])
                     }
                 })
             },
-            async deletePush (taskID) {
+            async deleteTask (taskID) {
                 await this.deleteCloudTask({ taskID })
                 this.$success(this.$t('Cloud["删除任务成功"]'))
                 this.getTableData()
             },
-            changeStatus (status, item) {
+            async changeStatus (status, item) {
                 let params = {}
                 params['bk_task_name'] = item['bk_task_name']
                 params['bk_status'] = status
@@ -290,7 +295,7 @@
                 if (status) {
                     this.$success(this.$t('Cloud["启用成功，约有五分钟延迟"]'))
                 }
-                this.startCloudSync({params})
+                await this.startCloudSync({params})
                 this.getTableData()
             },
             handleSliderBeforeClose () {
@@ -312,7 +317,7 @@
             handleEdit (curPush) {
                 this.curPush = curPush
                 this.attribute.type = 'update'
-                this.slider.title = this.$t('Cloud["修改云同步任务"]')
+                this.slider.title = this.$t('Cloud["编辑"]') + curPush.bk_task_name
             },
             handleSizeChange (size) {
                 this.table.pagination.size = size

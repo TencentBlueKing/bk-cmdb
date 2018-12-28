@@ -25,15 +25,13 @@
                 </cmdb-form-enum>
                 <input class="confirm-filter-value cmdb-form-input fl" type="text"
                        v-else
-                       v-model.trim="filter.value"
+                       v-model.trim="filter.text"
                        @keydown.enter="getTableData">
-                <i class="confirm-filter-search bk-icon icon-search"
-                   v-show="filter.type !== 'enum'"
-                   @click="getTableData"></i>
+                <i class="confirm-filter-search bk-icon icon-search" @click="getTableData"></i>
             </div>
         </div>
         <cmdb-table class="cloud-table" ref="table"
-                    :loading="$loading('post_searchConfirm_list')"
+                    :loading="$loading('searchConfirm')"
                     :header="table.header"
                     :checked.sync="table.checked"
                     :list="table.list"
@@ -50,8 +48,11 @@
                                             {{$t('Cloud["新增"]')}}
                                         </span>
                         </template>
-                        <template slot="bk_account_type">
+                        <template slot="bk_account_type" slot-scope="{ item }">
                             <span>{{$t('Cloud["腾讯云"]')}}</span>
+                        </template>
+                        <template slot="bk_obj_id" slot-scope="{ item }">
+                            {{ $t('Hosts["主机"]')}}
                         </template>
                         <template slot="operation" slot-scope="{ item }">
                             <span class="text-primary mr20" @click.stop="singleConfirm(item)">{{$t('Hosts["确认"]')}}</span>
@@ -74,10 +75,10 @@
             return {
                 selector: {
                     list: [{
-                        id: 1,
+                        id: 0,
                         name: this.$t('Cloud["模型"]')
                     }, {
-                        id: 2,
+                        id: 1,
                         name: this.$t('Cloud["账号类型"]')
                     }],
                     defaultDemo: {
@@ -127,11 +128,12 @@
                         name: this.$t('Cloud["任务维护人"]')
                     }, {
                         id: 'create_time',
-                        width: 180,
+                        width: 160,
                         name: this.$t('Cloud["发现时间"]')
                     }, {
                         id: 'operation',
                         sortable: false,
+                        width: 100,
                         name: this.$t('Common["操作"]')
                     }],
                     list: [],
@@ -174,19 +176,20 @@
                     limit: pagination.size,
                     sort: this.table.sort
                 }
-                attr['$regex'] = this.filter.text
-                attr['$options'] = '$i'
-                if (this.selector.checked === 'bk_obj_id') {
-                    params['bk_obj_id'] = attr
-                }
-                if (this.selector.checked === 'bk_source_type') {
-                    params['bk_source_type'] = attr
+                if (this.filter.text !== '') {
+                    attr['$regex'] = this.filter.text
+                    attr['$options'] = '$i'
+                    if (this.selector.defaultDemo.selected === 0) {
+                        params['bk_obj_id'] = 'host'
+                    }
+                    if (this.selector.defaultDemo.selected === 1) {
+                        params['bk_account_type'] = 'tencent_cloud'
+                    }
                 }
                 params['page'] = page
-                let res = await this.getResourceConfirm({params, config: {requestID: 'post_searchConfirm_list'}})
+                let res = await this.getResourceConfirm({params, config: {requestID: 'searchConfirm'}})
                 this.table.list = res.info.map(data => {
                     data['create_time'] = this.$tools.formatTime(data['create_time'], 'YYYY-MM-DD HH:mm:ss')
-                    data['bk_obj_id'] = this.$t('Hosts["主机"]')
                     return data
                 })
                 pagination.count = res.count
@@ -235,13 +238,6 @@
                     this.addConfirmHistory({params}),
                     this.resourceConfirm({params})
                 ])
-            },
-            selected (id) {
-                if (id === 1) {
-                    this.selector.checked = 'bk_obj_id'
-                } else {
-                    this.selector.checked = 'bk_account_type'
-                }
             },
             handleCheckAll () {
                 this.table.checked = this.table.list.map(inst => inst['bk_resource_id'])

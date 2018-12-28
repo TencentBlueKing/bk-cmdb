@@ -65,11 +65,17 @@
                 <li class="detail-form-item">
                     <label for="" class="label-name">{{ $t('Cloud["资源确认"]')}} ：</label>
                     <div class="detail-item-content">
-                        <span v-if="curPush.bk_confirm">
+                        <span v-if="curPush.bk_attr_confirm && curPush.bk_confirm">
+                            {{ $t('Cloud["新增需要确认、属性变化需要确认"]')}}
+                        </span>
+                        <span v-else-if="curPush.bk_confirm">
                             {{ $t('Cloud["新增需要确认"]')}}
                         </span>
-                        <span v-if="curPush.bk_attr_confirm">
+                        <span v-else-if="curPush.bk_attr_confirm">
                             {{ $t('Cloud["属性变化需要确认"]')}}
+                        </span>
+                        <span class="text-opacity" v-else>
+                            {{ $t('Cloud["直接入库，不需要确认"]')}}
                         </span>
                     </div>
                 </li>
@@ -135,6 +141,9 @@
                     white-space: nowrap;
                     overflow: hidden;
                     word-break: break-all;
+                    .text-opacity {
+                        opacity:0.5;
+                    }
                     span {
                         font-size: 14px;
                     }

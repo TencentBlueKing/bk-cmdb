@@ -1,7 +1,6 @@
 <template>
     <div class="sync-history-layout">
         <div class="sync-history-options clearfix">
-            <label class="sync-options-label">{{$t("HostResourcePool['时间范围']")}}</label>
             <cmdb-form-date-range class="sync-options-filter" v-model="dateRange"></cmdb-form-date-range>
         </div>
         <cmdb-table ref="table"
@@ -22,7 +21,12 @@
                     </span>
                 </template>
                 <template slot="details" slot-scope="{ item }">
-                    {{$t('Cloud[\'新增\']')}} ({{item.new_add}}) / {{$t('Cloud[\'变更\']')}} ({{item.attr_changed}})
+                    <span v-if="item.fail_reason">
+                        {{ item.fail_reason }}
+                    </span>
+                    <span v-else>
+                        {{$t('Cloud[\'新增\']')}} ({{item.new_add}}) / {{$t('Cloud[\'变更\']')}} ({{item.attr_changed}})
+                    </span>
                 </template>
         </cmdb-table>
     </div>
@@ -53,7 +57,7 @@
                         name: this.$t('Nav["模型"]')
                     }, {
                         id: 'bk_status',
-                        width: 100,
+                        width: 80,
                         sortable: false,
                         name: this.$t('ProcessManagement["状态"]')
                     }, {
@@ -116,7 +120,7 @@
                 params['page'] = page
                 let res = await this.searchCloudHistory({params, config: {requestID: 'getSyncHistory'}})
                 this.table.list = res.info.map(data => {
-                    data['bk_start_time'] = this.$tools.formatTime(data['bk_start_time'], 'YYYY-MM-DD HH:mm:ss')
+                    data['start_time'] = this.$tools.formatTime(data['start_time'], 'YYYY-MM-DD HH:mm:ss')
                     data['bk_obj_id'] = this.$t('Hosts["主机"]')
                     return data
                 })
