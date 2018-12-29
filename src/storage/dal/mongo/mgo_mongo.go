@@ -72,6 +72,14 @@ func (c *Mongo) Clone() dal.RDB {
 }
 
 func (c *Mongo) IsDuplicatedError(err error) bool {
+	if err != nil {
+		if strings.Contains(err.Error(), "The existing index") {
+			return true
+		}
+		if strings.Contains(err.Error(), "There's already an index with name") {
+			return true
+		}
+	}
 	return err == dal.ErrDuplicated || mgo.IsDup(err)
 }
 func (c *Mongo) IsNotFoundError(err error) bool {
