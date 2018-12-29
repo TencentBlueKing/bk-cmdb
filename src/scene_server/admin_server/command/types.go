@@ -26,6 +26,7 @@ type option struct {
 	dryrun   bool
 	mini     bool
 	scope    string
+	bizName  string
 }
 
 // Node topo node define
