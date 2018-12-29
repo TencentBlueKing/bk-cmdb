@@ -18,14 +18,14 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/spf13/pflag"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
-	"configcenter/src/storage/server/app"
-	"configcenter/src/storage/server/app/options"
+	"configcenter/src/storage/tmserver/app"
+	"configcenter/src/storage/tmserver/app/options"
+
+	"github.com/spf13/pflag"
 )
 
 func main() {
@@ -34,7 +34,7 @@ func main() {
 
 	blog.InitLogs()
 	defer blog.CloseLogs()
-	
+
 	op := options.NewServerOption()
 	op.AddFlags(pflag.CommandLine)
 
