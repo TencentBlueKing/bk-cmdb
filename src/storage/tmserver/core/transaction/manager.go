@@ -18,14 +18,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rs/xid"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal"
-	"configcenter/src/storage/mongobyc"
-	"configcenter/src/storage/server/app/options"
+	"configcenter/src/storage/mongodb"
+	"configcenter/src/storage/tmserver/app/options"
 	"configcenter/src/storage/types"
+
+	"github.com/rs/xid"
 )
 
 type TxnManager struct {
@@ -33,7 +33,7 @@ type TxnManager struct {
 	processor    string
 	txnLifeLimit time.Duration // second
 	cache        map[string]*Session
-	db           mongobyc.Client
+	db           mongodb.Client
 
 	eventChan   chan *types.Transaction
 	subscribers map[chan<- *types.Transaction]bool
@@ -43,14 +43,9 @@ type TxnManager struct {
 	pubsubMutex  sync.Mutex
 }
 
-type Session struct {
-	Txninst *types.Transaction
-	mongobyc.Session
-}
-
-func New(ctx context.Context, opt options.TransactionConfig, db mongobyc.Client, listen string) *TxnManager {
+func New(ctx context.Context, opt options.TransactionConfig, db mongodb.Client, listen string) *TxnManager {
 	tm := &TxnManager{
-		enable:       opt.ShouldEnable(),
+		enable:       opt.IsTransactionEnable(),
 		processor:    listen,
 		txnLifeLimit: time.Second * time.Duration(float64(opt.GetTransactionLifetimeSecond())*1.5),
 		cache:        map[string]*Session{},

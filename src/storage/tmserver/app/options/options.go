@@ -15,11 +15,11 @@ package options
 import (
 	"strconv"
 
-	"github.com/spf13/pflag"
-
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
+
+	"github.com/spf13/pflag"
 )
 
 //ServerOption define option of server in flags
@@ -43,18 +43,21 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.ServConf.ExConfig, "config", "", "The config path. e.g conf/api.conf")
 }
 
+// Config transaction server config structure
 type Config struct {
 	MongoDB     mongo.Config
 	Redis       redis.Config
 	Transaction TransactionConfig
 }
 
+// TransactionConfig transaction config structure
 type TransactionConfig struct {
 	Enable                    string
 	TransactionLifetimeSecond string
 }
 
-func (c TransactionConfig) ShouldEnable() bool {
+// IsTransactionEnable check it the transaction is enable
+func (c TransactionConfig) IsTransactionEnable() bool {
 	switch c.Enable {
 	case "1", "true", "":
 		return true
@@ -63,6 +66,7 @@ func (c TransactionConfig) ShouldEnable() bool {
 	}
 }
 
+// GetTransactionLifetimeSecond return the lifecycle of the transaction
 func (c TransactionConfig) GetTransactionLifetimeSecond() int {
 	sec, _ := strconv.Atoi(c.TransactionLifetimeSecond)
 	if sec == 0 {

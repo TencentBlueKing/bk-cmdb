@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package service
+package command
 
 import (
 	"context"
@@ -18,15 +18,15 @@ import (
 
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
-	"configcenter/src/storage/mongobyc"
-	"configcenter/src/storage/mongobyc/findopt"
+	"configcenter/src/storage/mongodb"
+	"configcenter/src/storage/mongodb/options/findopt"
 	"configcenter/src/storage/rpc"
 	"configcenter/src/storage/types"
 )
 
 var ErrNoSupported = errors.New("not supported")
 
-type CollectionFunc func(collName string) mongobyc.CollectionInterface
+type CollectionFunc func(collName string) mongodb.CollectionInterface
 
 // ExecuteCollection execute collection operation to db
 func ExecuteCollection(ctx context.Context, collFunc CollectionFunc, opcode types.OPCode, decoder rpc.Request, reply *types.OPREPLY) (*types.OPREPLY, error) {
