@@ -153,7 +153,8 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, o
 }
 
 func (lgc *Logics) getHostFields(ctx context.Context, ownerID string) (map[string]*metadata.ObjAttDes, error) {
-	opt := hutil.NewOperation().WithObjID(common.BKInnerObjIDHost).WithOwnerID(ownerID).MapStr()
+	opt := hutil.NewOperation().WithObjID(common.BKInnerObjIDHost).WithOwnerID(lgc.ownerID).WithAttrComm().MapStr()
+
 	input := &metadata.QueryCondition{
 		Condition: opt,
 	}

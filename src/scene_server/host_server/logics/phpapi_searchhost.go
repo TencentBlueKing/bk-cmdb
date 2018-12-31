@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/mapstr"
 	types "configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
+	hutil "configcenter/src/scene_server/host_server/util"
 )
 
 func (phpapi *PHPAPI) GetDefaultModules(ctx context.Context, appID int) (types.MapStr, errors.CCError) {
@@ -145,7 +146,10 @@ func (phpapi *PHPAPI) GetHostDataByConfig(ctx context.Context, configData []map[
 func (phpapi *PHPAPI) GetCustomerPropertyByOwner(ctx context.Context, objType string) ([]meta.Attribute, errors.CCError) {
 
 	blog.V(5).Infof("getCustomerPropertyByOwner start,objType:%s,rid:%s", objType, phpapi.rid)
-	searchBody := &meta.QueryCondition{}
+	opt := hutil.NewOperation().WithOwnerID(phpapi.logic.ownerID).WithObjID(common.BKInnerObjIDHost).WithAttrComm().MapStr()
+	searchBody := &meta.QueryCondition{
+		Condition: opt,
+	}
 	res, err := phpapi.logic.CoreAPI.CoreService().Model().ReadModelAttr(ctx, phpapi.header, common.BKInnerObjIDHost, searchBody)
 	if nil != err {
 		blog.Errorf("GetCustomerPropertyByOwner  http do  error, err:%s,param:%+v,objType:%s", err.Error(), searchBody, objType, phpapi.rid)

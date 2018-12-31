@@ -24,6 +24,8 @@ type mongoCondition struct {
 	elements []universalsql.ConditionElement
 	and      []universalsql.ConditionElement
 	or       []universalsql.ConditionElement
+	not      []universalsql.ConditionElement
+	nor      []universalsql.ConditionElement
 	embed    map[string]*mongoCondition // key is the embed filed name
 }
 
@@ -55,25 +57,58 @@ func (m *mongoCondition) ToMapStr() mapstr.MapStr {
 
 	// merge elements, default
 	for _, ele := range m.elements {
-		result.Merge(ele.ToMapStr())
+		tmp := ele.ToMapStr()
+		if 0 != len(tmp) {
+			result.Merge(tmp)
+		}
 	}
 
 	// merge and elements
-	andElements := []mapstr.MapStr{}
+	andElements := mapstr.NewArray()
 	for _, ele := range m.and {
-		andElements = append(andElements, ele.ToMapStr())
+		tmp := ele.ToMapStr()
+		if 0 != len(tmp) {
+			andElements = append(andElements, tmp)
+		}
 	}
 	if 0 != len(andElements) {
 		result.Set(universalsql.AND, andElements)
 	}
 
 	// merge or elements
-	orElements := []mapstr.MapStr{}
+	orElements := mapstr.NewArray()
 	for _, ele := range m.or {
-		orElements = append(orElements, ele.ToMapStr())
+		tmp := ele.ToMapStr()
+		if 0 != len(tmp) {
+			orElements = append(orElements, tmp)
+		}
 	}
 	if 0 != len(orElements) {
 		result.Set(universalsql.OR, orElements)
+	}
+
+	//merge not elements
+	notElements := mapstr.NewArray()
+	for _, ele := range m.not {
+		tmp := ele.ToMapStr()
+		if 0 != len(tmp) {
+			notElements = append(notElements, tmp)
+		}
+	}
+	if 0 != len(notElements) {
+		result.Set(universalsql.NOT, notElements)
+	}
+
+	//merge nor elements
+	norElements := mapstr.NewArray()
+	for _, ele := range m.nor {
+		tmp := ele.ToMapStr()
+		if 0 != len(tmp) {
+			norElements = append(norElements, tmp)
+		}
+	}
+	if 0 != len(norElements) {
+		result.Set(universalsql.NOR, norElements)
 	}
 
 	// merge embed elements
@@ -96,6 +131,16 @@ func (m *mongoCondition) And(elements ...universalsql.ConditionElement) universa
 
 func (m *mongoCondition) Or(elements ...universalsql.ConditionElement) universalsql.Condition {
 	m.or = append(m.or, elements...)
+	return m
+}
+
+func (m *mongoCondition) Not(elements ...universalsql.ConditionElement) universalsql.Condition {
+	m.not = append(m.or, elements...)
+	return m
+}
+
+func (m *mongoCondition) Nor(elements ...universalsql.ConditionElement) universalsql.Condition {
+	m.nor = append(m.or, elements...)
 	return m
 }
 
