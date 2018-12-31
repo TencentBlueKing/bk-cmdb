@@ -41,6 +41,7 @@ func Parse(args []string) error {
 		dryrunflag     bool
 		filepath       string
 		configposition string
+		bizName        string
 		scope          string
 	)
 
@@ -51,8 +52,9 @@ func Parse(args []string) error {
 	bkbizfs.BoolVar(&miniflag, "mini", false, "mini flag, only export required fields")
 	bkbizfs.BoolVar(&importflag, "import", false, "import flag")
 	bkbizfs.StringVar(&scope, "scope", "all", "export scope, could be [biz] or [process], default all")
-	bkbizfs.StringVar(&filepath, "file", "", "export or import filepath")
+	bkbizfs.StringVar(&filepath, "file", "", "export/import filepath")
 	bkbizfs.StringVar(&configposition, "config", "conf/api.conf", "The config path. e.g conf/api.conf")
+	bkbizfs.StringVar(&bizName, "biz_name", "蓝鲸", "export/import the specified business topo")
 	err := bkbizfs.Parse(args[1:])
 	if err != nil {
 		return err
@@ -75,6 +77,7 @@ func Parse(args []string) error {
 		dryrun:   dryrunflag,
 		mini:     miniflag,
 		scope:    scope,
+		bizName:  bizName,
 	}
 
 	if exportflag {
@@ -85,14 +88,18 @@ func Parse(args []string) error {
 			mode = "verbose"
 
 		}
-		fmt.Printf("exporting blueking business to %s in \033[34m%s\033[0m mode\n", filepath, mode)
+		fmt.Printf("exporting %s business to %s in \033[34m%s\033[0m mode\n", bizName, filepath, mode)
 		if err := export(ctx, db, opt); err != nil {
 			blog.Errorf("export error: %s", err.Error())
 			os.Exit(2)
 		}
-		fmt.Printf("blueking business has been export to %s\n", filepath)
+		fmt.Printf("blueking %s has been export to %s\n", bizName, filepath)
 	} else if importflag {
-		fmt.Printf("importing blueking business from %s\n", filepath)
+		if dryrunflag {
+			fmt.Printf("dryrun import %s business from %s\n", bizName, filepath)
+		} else {
+			fmt.Printf("importing %s business from %s\n", bizName, filepath)
+		}
 		opt.mini = false
 		opt.scope = "all"
 		if err := importBKBiz(ctx, db, opt); err != nil {
@@ -100,7 +107,7 @@ func Parse(args []string) error {
 			os.Exit(2)
 		}
 		if !dryrunflag {
-			fmt.Printf("blueking business has been import from %s\n", filepath)
+			fmt.Printf("%s business has been import from %s\n", bizName, filepath)
 		}
 	} else {
 		blog.Errorf("invalide argument")
