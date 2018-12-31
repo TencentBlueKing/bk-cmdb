@@ -13,12 +13,11 @@
 package service
 
 import (
-	"encoding/json"
-
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
+	"encoding/json"
 )
 
 func (s topoService) ParseOriginGraphicsUpdateInput(data []byte) (mapstr.MapStr, error) {
