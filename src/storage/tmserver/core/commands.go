@@ -13,8 +13,7 @@
 package core
 
 import (
-	"net/rpc"
-
+	"configcenter/src/storage/rpc"
 	"configcenter/src/storage/types"
 )
 
@@ -25,7 +24,7 @@ var (
 
 // Command db operation definition
 type Command interface {
-	Execute(ctx ContextParams, opCode types.OPCode, decoder rpc.Request) (*types.OPREPLY, error)
+	Execute(ctx ContextParams, decoder rpc.Request) (*types.OPReply, error)
 }
 
 type commands struct {

@@ -49,7 +49,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("new api machinery failed, err: %v", err)
 	}
 
-	coreService := service.New()
+	coreService := service.New(svrInfo.IP, svrInfo.Port)
 	server := backbone.Server{
 		ListenAddr: svrInfo.IP,
 		ListenPort: svrInfo.Port,
@@ -97,7 +97,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		}
 
 		// set core service
-		coreService.SetConfig(engine, db)
+		coreService.SetConfig(engine, db, tmServer.config.Transaction)
 
 		break
 	}

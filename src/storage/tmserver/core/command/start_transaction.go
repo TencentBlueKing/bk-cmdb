@@ -13,34 +13,36 @@
 package command
 
 import (
-	"configcenter/src/storage/mongodb"
 	"configcenter/src/storage/rpc"
 	"configcenter/src/storage/tmserver/core"
+	"configcenter/src/storage/tmserver/core/transaction"
 	"configcenter/src/storage/types"
 )
 
 func init() {
-	core.GCommands.SetCommand(types.OPUpdateCode, &update{})
+	core.GCommands.SetCommand(types.OPStartTransactionCode, &startTransaction{})
 }
 
-var _ core.SetDBProxy = (*update)(nil)
-
-type update struct {
-	dbProxy mongodb.Client
+type startTransaction struct {
+	txn *transaction.Manager
 }
 
-func (d *update) SetDBProxy(db mongodb.Client) {
-	d.dbProxy = db
+var _ core.SetTransaction = (*startTransaction)(nil)
+
+func (d *startTransaction) SetTxn(txn *transaction.Manager) {
+	d.txn = txn
 }
 
-func (d *update) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPReply, error) {
+func (d *startTransaction) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPReply, error) {
 
-	msg := types.OPUpdateOperation{}
 	reply := &types.OPReply{}
-	if err := decoder.Decode(&msg); nil != err {
+	sess, err := d.txn.CreateTransaction(ctx.Header.RequestID)
+	if nil != err {
+		reply.Message = err.Error()
 		return reply, err
 	}
-
-	_, err := d.dbProxy.Collection(msg.Collection).UpdateMany(ctx, msg.Selector, msg.DOC, nil)
-	return reply, err
+	reply.Success = true
+	reply.TxnID = sess.Txninst.TxnID
+	reply.Processor = sess.Txninst.Processor
+	return reply, nil
 }

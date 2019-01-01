@@ -13,9 +13,13 @@
 package service
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
+
+	"configcenter/src/storage/tmserver/app/options"
+	"configcenter/src/storage/tmserver/core/transaction"
 
 	"configcenter/src/common/backbone"
 	"configcenter/src/storage/mongodb"
@@ -29,23 +33,28 @@ import (
 // Service service methods
 type Service interface {
 	WebService() *restful.WebService
-	SetConfig(engin *backbone.Engine, db mongodb.Client)
+	SetConfig(engin *backbone.Engine, db mongodb.Client, txnCfg options.TransactionConfig)
 }
 
 // New create a new service instance
-func New() Service {
+func New(ip string, port uint) Service {
 
-	return &coreService{}
+	return &coreService{
+		listenIP:   ip,
+		listenPort: port,
+	}
 }
 
 type coreService struct {
-	engine  *backbone.Engine
-	rpc     *rpc.Server
-	dbProxy mongodb.Client
-	core    core.Core
+	engine     *backbone.Engine
+	rpc        *rpc.Server
+	dbProxy    mongodb.Client
+	core       core.Core
+	listenIP   string
+	listenPort uint
 }
 
-func (s *coreService) SetConfig(engin *backbone.Engine, db mongodb.Client) {
+func (s *coreService) SetConfig(engin *backbone.Engine, db mongodb.Client, txnCfg options.TransactionConfig) {
 
 	// set config
 	s.engine = engin
@@ -55,6 +64,16 @@ func (s *coreService) SetConfig(engin *backbone.Engine, db mongodb.Client) {
 	// init all handlers
 	s.rpc.Handle(types.CommandRDBOperation, s.DBOperation)
 	s.rpc.HandleStream(types.CommandWatchTransactionOperation, s.WatchTransaction)
+
+	// create a new core instance
+	txn := transaction.New(
+		core.ContextParams{
+			Context:  context.Background(),
+			ListenIP: s.listenIP,
+		}, txnCfg, db, s.listenIP)
+
+	s.core = core.New(txn, db)
+
 }
 
 func (s *coreService) WebService() *restful.WebService {

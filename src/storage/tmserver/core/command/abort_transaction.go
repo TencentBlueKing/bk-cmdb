@@ -1,6 +1,6 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.,
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2017-2019 THL A29 Limited, a Tencent company. All rights reserved.
  * Licensed under the MIT License (the ",License",); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
@@ -13,34 +13,35 @@
 package command
 
 import (
-	"configcenter/src/storage/mongodb"
 	"configcenter/src/storage/rpc"
 	"configcenter/src/storage/tmserver/core"
+	"configcenter/src/storage/tmserver/core/transaction"
 	"configcenter/src/storage/types"
 )
 
 func init() {
-	core.GCommands.SetCommand(types.OPUpdateCode, &update{})
+	core.GCommands.SetCommand(types.OPAbortCode, &abortTransaction{})
 }
 
-var _ core.SetDBProxy = (*update)(nil)
+var _ core.SetTransaction = (*abortTransaction)(nil)
 
-type update struct {
-	dbProxy mongodb.Client
+type abortTransaction struct {
+	txn *transaction.Manager
 }
 
-func (d *update) SetDBProxy(db mongodb.Client) {
-	d.dbProxy = db
+func (d *abortTransaction) SetTxn(txn *transaction.Manager) {
+	d.txn = txn
 }
 
-func (d *update) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPReply, error) {
+func (d *abortTransaction) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPReply, error) {
 
-	msg := types.OPUpdateOperation{}
 	reply := &types.OPReply{}
-	if err := decoder.Decode(&msg); nil != err {
+	err := d.txn.Abort(ctx.Header.TxnID)
+	if nil != err {
+		reply.Message = err.Error()
 		return reply, err
 	}
+	reply.Success = true
+	return reply, nil
 
-	_, err := d.dbProxy.Collection(msg.Collection).UpdateMany(ctx, msg.Selector, msg.DOC, nil)
-	return reply, err
 }
