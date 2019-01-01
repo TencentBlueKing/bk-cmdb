@@ -11,3 +11,35 @@
  */
 
 package command
+
+import (
+	"configcenter/src/storage/mongodb"
+	"configcenter/src/storage/rpc"
+	"configcenter/src/storage/tmserver/core"
+	"configcenter/src/storage/types"
+)
+
+func init() {
+	core.GCommands.SetCommand(types.OPDeleteCode, &delete{})
+}
+
+var _ core.SetDBProxy = (*delete)(nil)
+
+type delete struct {
+	dbProxy mongodb.Client
+}
+
+func (d *delete) SetDBProxy(db mongodb.Client) {
+	d.dbProxy = db
+}
+
+func (d *delete) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPReply, error) {
+
+	msg := types.OPDeleteOperation{}
+	reply := &types.OPReply{}
+	if err := decoder.Decode(&msg); nil != err {
+		return nil, err
+	}
+	_, err := d.dbProxy.Collection(msg.Collection).DeleteMany(ctx, msg.Selector, nil)
+	return reply, err
+}

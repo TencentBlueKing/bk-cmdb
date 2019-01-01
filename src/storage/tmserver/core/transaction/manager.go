@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package manager
+package transaction
 
 import (
 	"context"
@@ -28,7 +28,7 @@ import (
 	"github.com/rs/xid"
 )
 
-type TxnManager struct {
+type Manager struct {
 	enable       bool
 	processor    string
 	txnLifeLimit time.Duration // second
@@ -43,8 +43,8 @@ type TxnManager struct {
 	pubsubMutex  sync.Mutex
 }
 
-func New(ctx context.Context, opt options.TransactionConfig, db mongodb.Client, listen string) *TxnManager {
-	tm := &TxnManager{
+func New(ctx context.Context, opt options.TransactionConfig, db mongodb.Client, listen string) *Manager {
+	tm := &Manager{
 		enable:       opt.IsTransactionEnable(),
 		processor:    listen,
 		txnLifeLimit: time.Second * time.Duration(float64(opt.GetTransactionLifetimeSecond())*1.5),
@@ -59,19 +59,19 @@ func New(ctx context.Context, opt options.TransactionConfig, db mongodb.Client, 
 	return tm
 }
 
-func (tm *TxnManager) Subscribe(ch chan<- *types.Transaction) {
+func (tm *Manager) Subscribe(ch chan<- *types.Transaction) {
 	tm.pubsubMutex.Lock()
 	tm.subscribers[ch] = true
 	tm.pubsubMutex.Unlock()
 }
 
-func (tm *TxnManager) UnSubscribe(ch chan<- *types.Transaction) {
+func (tm *Manager) UnSubscribe(ch chan<- *types.Transaction) {
 	tm.pubsubMutex.Lock()
 	delete(tm.subscribers, ch)
 	tm.pubsubMutex.Unlock()
 }
 
-func (tm *TxnManager) Publish() {
+func (tm *Manager) Publish() {
 	for {
 		event := <-tm.eventChan
 		tm.pubsubMutex.Lock()
@@ -85,7 +85,7 @@ func (tm *TxnManager) Publish() {
 	}
 }
 
-func (tm *TxnManager) Run() error {
+func (tm *Manager) Run() error {
 	if tm.enable {
 		go tm.reconcileCache()
 		go tm.reconcilePersistence()
@@ -95,7 +95,7 @@ func (tm *TxnManager) Run() error {
 	return nil
 }
 
-func (tm *TxnManager) reconcileCache() {
+func (tm *Manager) reconcileCache() {
 	ticker := time.NewTicker(tm.txnLifeLimit)
 	for {
 		select {
@@ -115,7 +115,7 @@ func (tm *TxnManager) reconcileCache() {
 	}
 }
 
-func (tm *TxnManager) reconcilePersistence() {
+func (tm *Manager) reconcilePersistence() {
 	ticker := time.NewTicker(tm.txnLifeLimit * 2)
 	for {
 		select {
@@ -150,26 +150,26 @@ func (tm *TxnManager) reconcilePersistence() {
 	}
 }
 
-func (tm *TxnManager) GetSession(txnID string) *Session {
+func (tm *Manager) GetSession(txnID string) *Session {
 	tm.sessionMutex.Lock()
 	session := tm.cache[txnID]
 	tm.sessionMutex.Unlock()
 	return session
 }
 
-func (tm *TxnManager) storeSession(txnID string, session *Session) {
+func (tm *Manager) storeSession(txnID string, session *Session) {
 	tm.sessionMutex.Lock()
 	tm.cache[txnID] = session
 	tm.sessionMutex.Unlock()
 }
 
-func (tm *TxnManager) removeSession(txnID string) {
+func (tm *Manager) removeSession(txnID string) {
 	tm.sessionMutex.Lock()
 	delete(tm.cache, txnID)
 	tm.sessionMutex.Unlock()
 }
 
-func (tm *TxnManager) CreateTransaction(requestID string) (*Session, error) {
+func (tm *Manager) CreateTransaction(requestID string) (*Session, error) {
 	txn := types.Transaction{
 		RequestID:  requestID,
 		Processor:  tm.processor,
@@ -216,11 +216,11 @@ func (tm *TxnManager) CreateTransaction(requestID string) (*Session, error) {
 	return inst, nil
 }
 
-func (tm *TxnManager) newTxnID() string {
+func (tm *Manager) newTxnID() string {
 	return tm.processor + "-" + xid.New().String()
 }
 
-func (tm *TxnManager) Commit(txnID string) error {
+func (tm *Manager) Commit(txnID string) error {
 	session := tm.GetSession(txnID)
 	if session == nil {
 		return errors.New("session not found")
@@ -252,7 +252,7 @@ func (tm *TxnManager) Commit(txnID string) error {
 	return nil
 }
 
-func (tm *TxnManager) Abort(txnID string) error {
+func (tm *Manager) Abort(txnID string) error {
 	session := tm.GetSession(txnID)
 	if session == nil {
 		return errors.New("session not found")

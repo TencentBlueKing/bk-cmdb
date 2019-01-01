@@ -11,3 +11,38 @@
  */
 
 package command
+
+import (
+	"configcenter/src/common/util"
+	"configcenter/src/storage/mongodb"
+	"configcenter/src/storage/rpc"
+	"configcenter/src/storage/tmserver/core"
+	"configcenter/src/storage/types"
+)
+
+func init() {
+	core.GCommands.SetCommand(types.OPInsertCode, &insert{})
+}
+
+var _ core.SetDBProxy = (*insert)(nil)
+
+type insert struct {
+	dbProxy mongodb.Client
+}
+
+func (d *insert) SetDBProxy(db mongodb.Client) {
+	d.dbProxy = db
+}
+
+func (d *insert) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPReply, error) {
+
+	msg := types.OPInsertOperation{}
+	reply := &types.OPReply{}
+	if err := decoder.Decode(&msg); nil != err {
+		return reply, err
+	}
+
+	slice := util.ConverToInterfaceSlice(msg.DOCS)
+	err := d.dbProxy.Collection(msg.Collection).InsertMany(ctx, slice, nil)
+	return reply, err
+}

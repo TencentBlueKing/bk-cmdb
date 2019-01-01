@@ -14,78 +14,23 @@ package service
 
 import (
 	"configcenter/src/storage/rpc"
+	"configcenter/src/storage/tmserver/core"
+	"configcenter/src/storage/types"
 )
 
 func (s *coreService) DBOperation(input rpc.Request) (interface{}, error) {
 
-	s.core.ExecuteCommand()
+	ctx := core.ContextParams{ListenIP: s.listenIP}
 
-	/*
-		reply := types.OPREPLY{}
+	reply := types.OPReply{}
+	err := input.Decode(&ctx.Header)
+	if nil != err {
+		reply.Message = err.Error()
+		return &reply, nil
+	}
 
-		header := types.MsgHeader{}
-		err := input.Decode(&header)
-		if nil != err {
-			reply.Message = err.Error()
-			return &reply, nil
-		}
-		reply.RequestID = header.RequestID
-		reply.TxnID = header.TxnID
-		reply.Processor = t.listen
+	return s.core.ExecuteCommand(ctx, input)
 
-		blog.V(3).Infof("RDBOperation %+v", header)
-
-		var transaction mongodb.Session
-		if header.TxnID != "" {
-			session := t.man.GetSession(header.TxnID)
-			if nil == session {
-				reply.Message = "session not found"
-				return &reply, nil
-			}
-			transaction = session.Session
-		}
-
-		switch header.OPCode {
-		case types.OPStartTransaction:
-			session, err := t.man.CreateTransaction(header.RequestID)
-			if nil != err {
-				reply.Message = err.Error()
-				return &reply, nil
-			}
-			reply.Success = true
-			reply.TxnID = session.Txninst.TxnID
-			reply.Processor = session.Txninst.Processor
-			return &reply, nil
-		case types.OPCommit:
-			err := t.man.Commit(header.TxnID)
-			if nil != err {
-				reply.Message = err.Error()
-				return &reply, nil
-			}
-			reply.Success = true
-			return &reply, nil
-		case types.OPAbort:
-			err := t.man.Abort(header.TxnID)
-			if nil != err {
-				reply.Message = err.Error()
-				return &reply, nil
-			}
-			reply.Success = true
-			return &reply, nil
-		case types.OPInsert, types.OPUpdate, types.OPDelete, types.OPFind, types.OPFindAndModify, types.OPCount:
-			var collectionFunc = t.db.Collection
-			if transaction != nil {
-				collectionFunc = transaction.Collection
-			}
-			return ExecuteCollection(t.ctx, collectionFunc, header.OPCode, input, &reply)
-		default:
-			reply.Message = "unknow operation"
-			return &reply, nil
-		}
-
-	*/
-
-	return nil, nil
 }
 
 func (s *coreService) WatchTransaction(input rpc.Request, stream rpc.ServerStream) (err error) {

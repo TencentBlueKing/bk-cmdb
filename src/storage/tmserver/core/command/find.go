@@ -11,3 +11,68 @@
  */
 
 package command
+
+import (
+	"configcenter/src/storage/mongodb"
+	"configcenter/src/storage/mongodb/options/findopt"
+	"configcenter/src/storage/rpc"
+	"configcenter/src/storage/tmserver/core"
+	"configcenter/src/storage/types"
+)
+
+func init() {
+	core.GCommands.SetCommand(types.OPFindCode, &find{})
+	core.GCommands.SetCommand(types.OPFindAndModifyCode, &findAndModify{})
+}
+
+var _ core.SetDBProxy = (*find)(nil)
+
+type find struct {
+	dbProxy mongodb.Client
+}
+
+func (d *find) SetDBProxy(db mongodb.Client) {
+	d.dbProxy = db
+}
+func (d *find) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPReply, error) {
+
+	msg := types.OPFindOperation{}
+	reply := &types.OPReply{}
+	if err := decoder.Decode(&msg); nil != err {
+		return reply, err
+	}
+
+	opt := findopt.Many{}
+	opt.Skip = int64(msg.Start)
+	opt.Limit = int64(msg.Limit)
+	//opt.Sort = msg.Sort
+
+	err := d.dbProxy.Collection(msg.Collection).Find(ctx, msg.Selector, &opt, &reply.Docs)
+	return reply, err
+}
+
+var _ core.SetDBProxy = (*findAndModify)(nil)
+
+type findAndModify struct {
+	dbProxy mongodb.Client
+}
+
+func (d *findAndModify) SetDBProxy(db mongodb.Client) {
+	d.dbProxy = db
+}
+
+func (d *findAndModify) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPReply, error) {
+
+	msg := types.OPFindAndModifyOperation{}
+	reply := &types.OPReply{}
+	if err := decoder.Decode(&msg); nil != err {
+		return reply, err
+	}
+
+	opt := findopt.FindAndModify{}
+	opt.Upsert = msg.Upsert
+	opt.Remove = msg.Remove
+	opt.New = msg.ReturnNew
+	err := d.dbProxy.Collection(msg.Collection).FindOneAndModify(ctx, msg.Selector, msg.DOC, nil, &reply.Docs)
+	return reply, err
+}

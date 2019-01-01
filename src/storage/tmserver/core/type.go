@@ -14,22 +14,18 @@ package core
 
 import (
 	"context"
-	"net/http"
 	"time"
 
-	"configcenter/src/common/errors"
-	"configcenter/src/common/language"
+	"configcenter/src/storage/mongodb"
+	"configcenter/src/storage/types"
 )
 
 // ContextParams the logic function params
 type ContextParams struct {
 	context.Context
-	Header          http.Header
-	SupplierAccount string
-	User            string
-	ReqID           string
-	Error           errors.DefaultCCErrorIf
-	Lang            language.DefaultCCLanguageIf
+	Session  mongodb.Session
+	ListenIP string
+	Header   types.MsgHeader
 }
 
 // Deadline overwrite Context Deadline methods
