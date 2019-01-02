@@ -8,6 +8,10 @@
             <h2 class="breadcrumbs-current">{{headerTitle}}</h2>
         </div>
         <div class="header-options fr">
+            <div class="business-box fl">
+                <cmdb-business-selector class="business-selector">
+                </cmdb-business-selector>
+            </div>
             <div class="user" v-click-outside="handleCloseUser">
                 <p class="user-name" @click="isShowUserDropdown = !isShowUserDropdown">
                     {{userName}}({{userRole}})
@@ -37,6 +41,9 @@
                     </a>
                 </div>
             </div>
+            <div class="admin" v-if="admin">
+                {{isAdminView ? $t('Common["管理员后台"]') : $t('Common["返回业务管理"]')}}
+            </div>
         </div>
     </header>
 </template>
@@ -51,7 +58,7 @@
             }
         },
         computed: {
-            ...mapGetters(['site', 'userName', 'admin', 'showBack', 'navStick', 'headerTitle']),
+            ...mapGetters(['site', 'userName', 'admin', 'showBack', 'navStick', 'headerTitle', 'isAdminView']),
             userRole () {
                 return this.admin ? this.$t('Common["管理员"]') : this.$t('Common["普通用户"]')
             },
@@ -140,6 +147,10 @@
     }
     .header-options {
         text-align: right;
+        font-size: 0;
+    }
+    .business-box {
+        margin-top: 11px;
     }
     .user{
         display: inline-block;
@@ -190,11 +201,10 @@
     .helper {
         position: relative;
         display: inline-block;
-        width: 60px;
+        width: 50px;
         text-align: center;
         vertical-align: top;
         line-height: 60px;
-        border-left: 1px solid #ebf0f5;
         .helper-icon {
             font-size: 20px;
             cursor: pointer;
@@ -222,6 +232,17 @@
                 }
             }
         }
+    }
+    .admin {
+        display: inline-block;
+        width: 120px;
+        line-height: 60px;
+        font-size: 14px;
+        color: #3a84ff;
+        border-left: 1px solid #ebf0f5;
+        cursor: pointer;
+        text-align: center;
+        vertical-align: top;
     }
 </style>
 
