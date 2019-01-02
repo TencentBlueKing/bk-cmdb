@@ -18,9 +18,10 @@ import (
 	"sync"
 	"time"
 
+	"configcenter/src/common/universalsql/mongo"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/storage/dal"
 	"configcenter/src/storage/mongodb"
 	"configcenter/src/storage/tmserver/app/options"
 	"configcenter/src/storage/types"
@@ -132,7 +133,9 @@ func (tm *Manager) reconcilePersistence() {
 
 			for _, txn := range txns {
 				if time.Since(txn.LastTime) > tm.txnLifeLimit {
-					filter := dal.NewFilterBuilder().Eq(common.BKTxnIDField, txn.TxnID).Build()
+					tranCond := mongo.NewCondition()
+					tranCond.Element(&mongo.Eq{Key: common.BKTxnIDField, Val: txn.TxnID})
+					filter := tranCond.ToMapStr()
 					update := types.Document{
 						"status":             types.TxStatusException,
 						common.LastTimeField: time.Now(),
@@ -239,7 +242,9 @@ func (tm *Manager) Commit(txnID string) error {
 	}
 	tm.eventChan <- session.Txninst
 
-	filter := dal.NewFilterBuilder().Eq(common.BKTxnIDField, txnID).Build()
+	tranCond := mongo.NewCondition()
+	tranCond.Element(&mongo.Eq{Key: common.BKTxnIDField, Val: txnID})
+	filter := tranCond.ToMapStr()
 	update := types.Document{
 		"status":             session.Txninst.Status,
 		common.LastTimeField: time.Now(),
@@ -268,8 +273,9 @@ func (tm *Manager) Abort(txnID string) error {
 		session.Txninst.Status = types.TxStatusAborted
 	}
 	tm.eventChan <- session.Txninst
-
-	filter := dal.NewFilterBuilder().Eq(common.BKTxnIDField, txnID).Build()
+	tranCond := mongo.NewCondition()
+	tranCond.Element(&mongo.Eq{Key: common.BKTxnIDField, Val: txnID})
+	filter := tranCond.ToMapStr()
 	update := types.Document{
 		"status":             session.Txninst.Status,
 		common.LastTimeField: time.Now(),
