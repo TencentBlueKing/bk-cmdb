@@ -20,7 +20,7 @@ func TestComparisionField(t *testing.T) {
 	sql, _ := Field("name").Eq("sam").Neq("uri").In([]string{"jim", "berg"}).ToSQL()
 	t.Logf("%s", sql)
 
-	sql, _ = Field("age").Lt(100).Gte(10).In([]int{22, 35}).Nin([]int{44, 54, 64}).ToSQL()
+	sql, _ = Field("age").Lt(100).Gte(10).In([]int{22, 35}).Nin([]int{44, 54, 64}).Regex("jim").ToSQL()
 	t.Logf("%s", sql)
 }
 
