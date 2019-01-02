@@ -13,7 +13,6 @@
 package findopt
 
 import (
-	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/bson/primitive"
 	"github.com/mongodb/mongo-go-driver/mongo/options"
 )
@@ -29,7 +28,7 @@ func (m *Many) ConvertToMongoOptions() *options.FindOptions {
 
 	option.Skip = &m.Skip
 
-	sortD := bson.D{}
+	sortD := primitive.D{}
 	for _, sortItem := range m.Sort {
 
 		if sortItem.Descending {
@@ -44,7 +43,7 @@ func (m *Many) ConvertToMongoOptions() *options.FindOptions {
 		option.Sort = sortD
 	}
 
-	fieldD := bson.D{}
+	fieldD := primitive.D{}
 	for _, fieldItem := range m.Fields {
 		if fieldItem.Hide {
 			fieldD = append(fieldD, primitive.E{Key: fieldItem.Name, Value: 0})
