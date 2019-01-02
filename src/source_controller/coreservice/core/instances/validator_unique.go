@@ -15,14 +15,14 @@ package instances
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
 // validCreateUnique  valid create inst data unique
-func (valid *validator) validCreateUnique(ctx core.ContextParams, instanceData mapstr.MapStr, instanceManager *instanceManager) error {
+func (valid *validator) validCreateUnique(ctx core.ContextParams, instanceData mapstr.MapStr, instMedataData metadata.Metadata, instanceManager *instanceManager) error {
 	uniqueAttr, err := valid.dependent.SearchUnique(ctx, valid.objID)
 	if nil != err {
 		blog.Errorf("[validCreateUnique] search [%s] unique error %v", valid.objID, err)
@@ -52,12 +52,12 @@ func (valid *validator) validCreateUnique(ctx core.ContextParams, instanceData m
 			}
 		}
 
-		cond := condition.CreateCondition()
+		cond := mongo.NewCondition()
 
 		allEmpty := true
 		for key := range uniquekeys {
 			val, ok := instanceData[key]
-			cond.Field(key).Eq(val)
+			cond.Element(&mongo.Eq{Key: key, Val: val})
 			if ok && !isEmpty(val) {
 				allEmpty = false
 			}
@@ -68,9 +68,16 @@ func (valid *validator) validCreateUnique(ctx core.ContextParams, instanceData m
 		}
 
 		// only search data not in diable status
-		cond.Field(common.BKDataStatusField).NotEq(common.DataStatusDisabled)
+		cond.Element(&mongo.Neq{Key: common.BKDataStatusField, Val: common.DataStatusDisabled})
 		if common.GetObjByType(valid.objID) == common.BKInnerObjIDObject {
-			cond.Field(common.BKObjIDField).Eq(valid.objID)
+			cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: valid.objID})
+		}
+
+		isExsit, bizID := instMedataData.Label.Get(common.BKAppIDField)
+		if isExsit {
+			_, metaCond := cond.Embed(metadata.BKMetadata)
+			_, lableCond := metaCond.Embed(metadata.BKLabel)
+			lableCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
 		}
 
 		searchCond := metadata.QueryCondition{Condition: cond.ToMapStr()}
@@ -81,7 +88,7 @@ func (valid *validator) validCreateUnique(ctx core.ContextParams, instanceData m
 		}
 
 		if 0 < result.Count {
-			blog.Errorf("[validUpdateUnique] duplicate data condition: %#v, unique keys: %#v, objID %s", cond.ToMapStr(), uniquekeys, valid.objID)
+			blog.Errorf("[validCreateUnique] duplicate data condition: %#v, unique keys: %#v, objID %s", cond.ToMapStr(), uniquekeys, valid.objID)
 			return valid.errif.Error(common.CCErrCommDuplicateItem)
 		}
 
@@ -91,7 +98,7 @@ func (valid *validator) validCreateUnique(ctx core.ContextParams, instanceData m
 }
 
 // validUpdateUnique valid update unique
-func (valid *validator) validUpdateUnique(ctx core.ContextParams, instanceData mapstr.MapStr, instID uint64, instanceManager *instanceManager) error {
+func (valid *validator) validUpdateUnique(ctx core.ContextParams, instanceData mapstr.MapStr, instMedataData metadata.Metadata, instID uint64, instanceManager *instanceManager) error {
 	mapData, err := instanceManager.getInstDataByID(ctx, valid.objID, instID, instanceManager)
 	if nil != err {
 		blog.Errorf("[validUpdateUnique] search [%s] inst error %v", valid.objID, err)
@@ -132,11 +139,11 @@ func (valid *validator) validUpdateUnique(ctx core.ContextParams, instanceData m
 			}
 		}
 
-		cond := condition.CreateCondition()
+		cond := mongo.NewCondition()
 		allEmpty := true
 		for key := range uniquekeys {
 			val, ok := instanceData[key]
-			cond.Field(key).Eq(val)
+			cond.Element(&mongo.Eq{Key: key, Val: val})
 			if ok && !isEmpty(val) {
 				allEmpty = false
 			}
@@ -147,11 +154,17 @@ func (valid *validator) validUpdateUnique(ctx core.ContextParams, instanceData m
 		}
 
 		// only search data not in diable status
-		cond.Field(common.BKDataStatusField).NotEq(common.DataStatusDisabled)
+		cond.Element(&mongo.Neq{Key: common.BKDataStatusField, Val: common.DataStatusDisabled})
 		if common.GetObjByType(valid.objID) == common.BKInnerObjIDObject {
-			cond.Field(common.BKObjIDField).Eq(valid.objID)
+			cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: valid.objID})
 		}
-		cond.Field(common.GetInstIDField(valid.objID)).NotEq(instID)
+		cond.Element(&mongo.Neq{Key: common.GetInstIDField(valid.objID), Val: instID})
+		isExsit, bizID := instMedataData.Label.Get(common.BKAppIDField)
+		if isExsit {
+			_, metaCond := cond.Embed(metadata.BKMetadata)
+			_, lableCond := metaCond.Embed(metadata.BKLabel)
+			lableCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
+		}
 
 		searchCond := metadata.QueryCondition{Condition: cond.ToMapStr()}
 		result, err := instanceManager.SearchModelInstance(ctx, valid.objID, searchCond)

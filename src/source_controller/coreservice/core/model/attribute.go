@@ -13,6 +13,7 @@
 package model
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
@@ -188,8 +189,8 @@ func (m *modelAttribute) SearchModelAttributes(ctx core.ContextParams, objID str
 		blog.Errorf("request(%s): it is failed to convert from mapstr(%v) into a condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.QueryModelAttributeDataResult{}, err
 	}
-
-	cond.Element(&mongo.Eq{Key: metadata.AttributeFieldSupplierAccount, Val: ctx.SupplierAccount})
+	attrArr := []string{ctx.SupplierAccount, common.BKDefaultOwnerID}
+	cond.Element(&mongo.In{Key: metadata.AttributeFieldSupplierAccount, Val: attrArr})
 	attrResult, err := m.search(ctx, cond)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to search the attributes of the model(%s), error info is %s", ctx.ReqID, objID, err.Error())
