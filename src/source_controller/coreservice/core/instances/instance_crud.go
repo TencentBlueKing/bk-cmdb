@@ -33,6 +33,7 @@ func (m *instanceManager) save(ctx core.ContextParams, objID string, inputParam 
 	if !util.IsInnerObject(objID) {
 		inputParam[common.BKObjIDField] = objID
 	}
+	inputParam.Set(common.BKOwnerIDField, ctx.SupplierAccount)
 	err = m.dbProxy.Table(tableName).Insert(ctx, inputParam)
 	return id, err
 }

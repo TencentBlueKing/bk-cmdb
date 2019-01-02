@@ -58,5 +58,6 @@ func NewValidator(ctx core.ContextParams, dependent OperationDependences, objID 
 		}
 	}
 	valid.objID = objID
+	valid.dependent = dependent
 	return valid, nil
 }
