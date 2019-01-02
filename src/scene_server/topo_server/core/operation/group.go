@@ -93,7 +93,7 @@ func (g *group) DeleteObjectGroup(params types.ContextParams, groupID int64) err
 		return err
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("[operation-grp]failed to delte the group(%s), error info is %s", groupID, rsp.ErrMsg)
 		return params.Err.Error(common.CCErrTopoObjectGroupDeleteFailed)
 	}
@@ -110,9 +110,9 @@ func (g *group) FindObjectGroup(params types.ContextParams, cond condition.Condi
 		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("[opeartion-grp] failed to search the group by the condition(%#v), error info is %s", cond.ToMapStr(), rsp.ErrMsg)
-		return nil, params.Err.Error(rsp.Code)
+		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	return model.CreateGroup(params, g.clientSet, rsp.Data), nil
@@ -126,9 +126,9 @@ func (g *group) FindGroupByObject(params types.ContextParams, objID string, cond
 		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("[operation-grp] failed to search the group of the object(%s) by the condition (%#v), error info is %s", objID, cond.ToMapStr(), rsp.ErrMsg)
-		return nil, params.Err.Error(rsp.Code)
+		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	return model.CreateGroup(params, g.clientSet, rsp.Data), nil
@@ -143,9 +143,9 @@ func (g *group) UpdateObjectAttributeGroup(params types.ContextParams, cond []me
 		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("[operation-grp] failed to set the group  by the condition (%#v), error info is %s ", cond, rsp.ErrMsg)
-		return params.Err.Error(rsp.Code)
+		return params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	return nil
@@ -160,9 +160,9 @@ func (g *group) DeleteObjectAttributeGroup(params types.ContextParams, objID, pr
 		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("[operation-grp] failed to set the group , error info is %s ", rsp.ErrMsg)
-		return params.Err.Error(rsp.Code)
+		return params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	return nil
@@ -179,9 +179,9 @@ func (g *group) UpdateObjectGroup(params types.ContextParams, cond *metadata.Upd
 		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("[operation-grp] failed to set the group to the new data (%#v) by the condition (%#v), error info is %s ", cond.Data, cond.Condition, rsp.ErrMsg)
-		return params.Err.Error(rsp.Code)
+		return params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	return nil

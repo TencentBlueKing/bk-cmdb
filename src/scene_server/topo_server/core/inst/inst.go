@@ -94,9 +94,9 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 			return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
-		if common.CCSuccess != rsp.Code {
+		if !rsp.Result {
 			blog.Errorf("[inst-inst] failed to search the inst, error info is %s", rsp.ErrMsg)
-			return nil, cli.params.Err.Error(rsp.Code)
+			return nil, cli.params.Err.New(rsp.Code, rsp.ErrMsg)
 		}
 
 		return CreateInst(cli.params, cli.clientSet, targetModel, rsp.Data.Info), nil
@@ -109,9 +109,9 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("[inst-inst] failed to search the inst, error info is %s", rsp.ErrMsg)
-		return nil, cli.params.Err.Error(rsp.Code)
+		return nil, cli.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	return CreateInst(cli.params, cli.clientSet, targetModel, mapstr.NewArrayFromMapStr(rsp.Data.Info)), nil
@@ -132,7 +132,7 @@ func (cli *inst) Create() error {
 		return err
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("failed to create object instance ,error info is %v", rsp.ErrMsg)
 		return cli.params.Err.Error(common.CCErrTopoInstCreateFailed)
 	}
@@ -194,7 +194,7 @@ func (cli *inst) Update(data frtypes.MapStr) error {
 		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("failed to update the object(%s) instances, error info is %s", tObj.ObjectID, rsp.ErrMsg)
 		return cli.params.Err.Error(common.CCErrTopoInstUpdateFailed)
 	}
@@ -262,7 +262,7 @@ func (cli *inst) IsExists() (bool, error) {
 		return false, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("failed to search the object (%s) instances, error info is %s", tObj.ObjectID, rsp.ErrMsg)
 		return false, cli.params.Err.Error(common.CCErrTopoInstSelectFailed)
 	}

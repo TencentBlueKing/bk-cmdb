@@ -67,7 +67,7 @@ func (s *topoService) SearchObjectAssociation(params types.ContextParams, pathPa
 
 		if !resp.Result {
 			blog.Errorf("search object association with cond[%v] failed, err: %s", cond, resp.ErrMsg)
-			return nil, params.Err.Error(resp.Code)
+			return nil, params.Err.New(resp.Code, resp.ErrMsg)
 		}
 
 		return resp.Data, err

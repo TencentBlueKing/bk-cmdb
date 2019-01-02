@@ -196,7 +196,7 @@ func (c *commonInst) isValidInstID(params types.ContextParams, obj metatype.Obje
 		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("[operation-inst] faild to delete the object(%s) inst by the condition(%#v), err: %s", obj.ObjectID, cond, rsp.ErrMsg)
 		return params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
@@ -291,7 +291,7 @@ func (c *commonInst) hasHost(params types.ContextParams, targetInst inst.Inst, c
 
 func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Object, instID []int64, needCheckHost bool) error {
 
-    object := obj.Object()
+	object := obj.Object()
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(obj.GetInstIDFieldName()).In(instID)
@@ -359,9 +359,9 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 			return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
-		if common.CCSuccess != rsp.Code {
+		if !rsp.Result {
 			blog.Errorf("[operation-inst] failed to delete the object(%s) inst by the condition(%#v), err: %s", object.ObjectID, delCond.ToMapStr(), rsp.ErrMsg)
-			return params.Err.Error(rsp.Code)
+			return params.Err.New(rsp.Code, rsp.ErrMsg)
 		}
 
 		NewSupplementary().Audit(params, c.clientSet, obj, c).CommitDeleteLog(preAudit, nil, nil)
@@ -435,9 +435,9 @@ func (c *commonInst) convertInstIDIntoStruct(params types.ContextParams, asstObj
 		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("[operation-inst] faild to delete the object(%s) inst by the condition(%#v), err: %s", object.ObjectID, cond, rsp.ErrMsg)
-		return nil, params.Err.Error(rsp.Code)
+		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	instAsstNames := []metatype.InstNameAsst{}
@@ -710,7 +710,7 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 		blog.Errorf("[operation-inst] find inst by association inst , err: %s", err.Error())
 		return 0, nil, params.Err.Errorf(common.CCErrTopoInstSelectFailed, err.Error())
 	}
-	
+
 	object := obj.Object()
 
 	instCond := map[string]interface{}{}
@@ -835,7 +835,7 @@ func (c *commonInst) FindOriginInst(params types.ContextParams, obj model.Object
 			return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
-		if common.CCSuccess != rsp.Code {
+		if !rsp.Result {
 
 			blog.Errorf("[operation-inst] faild to delete the object(%s) inst by the condition(%#v), err: %s", obj.Object().ObjectID, cond, rsp.ErrMsg)
 			return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
@@ -851,7 +851,7 @@ func (c *commonInst) FindOriginInst(params types.ContextParams, obj model.Object
 			return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
-		if common.CCSuccess != rsp.Code {
+		if !rsp.Result {
 			blog.Errorf("[operation-inst] failed to delete the object(%s) inst by the condition(%#v), err: %s", obj.Object().ObjectID, cond, rsp.ErrMsg)
 			return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 		}
@@ -897,7 +897,7 @@ func (c *commonInst) UpdateInst(params types.ContextParams, data frtypes.MapStr,
 		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("[operation-inst] faild to set the object(%s) inst by the condition(%#v), err: %s", obj.Object().ObjectID, cond.ToMapStr(), rsp.ErrMsg)
 		return params.Err.New(rsp.Code, rsp.ErrMsg)
 	}

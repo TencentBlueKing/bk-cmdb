@@ -15,13 +15,12 @@ package operation
 import (
 	"context"
 
-	"configcenter/src/common"
-	"configcenter/src/common/metadata"
-
 	"configcenter/src/apimachinery"
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -128,9 +127,9 @@ func (c *classification) DeleteClassification(params types.ContextParams, id int
 		return err
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("failed to delete the classification, error info is %s", rsp.ErrMsg)
-		return params.Err.Error(rsp.Code)
+		return params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	return nil
@@ -144,9 +143,9 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 		return nil, err
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("[operation-cls] failed to search the classification by the condition(%#v), error info is %s", cond.ToMapStr(), rsp.ErrMsg)
-		return nil, params.Err.Error(rsp.Code)
+		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	for idx, clsItem := range rsp.Data {
@@ -187,9 +186,9 @@ func (c *classification) FindClassification(params types.ContextParams, cond con
 		return nil, err
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("[operation-cls] failed to search the clssificaiton by the condition(%#v), error info is %s", cond.ToMapStr(), rsp.ErrMsg)
-		return nil, params.Err.Error(rsp.Code)
+		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	clsItems := model.CreateClassification(params, c.clientSet, rsp.Data)

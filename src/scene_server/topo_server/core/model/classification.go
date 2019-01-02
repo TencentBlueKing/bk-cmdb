@@ -72,7 +72,7 @@ func (cli *classification) GetObjects() ([]Object, error) {
 		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("failed to search the classification(%s) object, error info is %s", cli.cls.ClassificationID, rsp.ErrMsg)
 		return nil, cli.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
@@ -131,9 +131,9 @@ func (cli *classification) Create() error {
 		return err
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("failed to create classification(%s), error info is %s", cli.cls.ClassificationID, rsp.ErrMsg)
-		return cli.params.Err.Error(rsp.Code)
+		return cli.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	cli.cls.ID = int64(rsp.Data.Created.ID)
@@ -181,7 +181,7 @@ func (cli *classification) Update(data mapstr.MapStr) error {
 			return err
 		}
 
-		if common.CCSuccess != rsp.Code {
+		if !rsp.Result {
 			blog.Errorf("faile to update the classificaiotn(%s), error info is %s", cli.cls.ClassificationID, rsp.ErrMsg)
 			return cli.params.Err.New(rsp.Code, rsp.ErrMsg)
 		}
@@ -199,7 +199,7 @@ func (cli *classification) search(cond condition.Condition) ([]metadata.Classifi
 		return nil, err
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("failed to search the classificaiont, error info is %s", rsp.ErrMsg)
 		return nil, cli.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}

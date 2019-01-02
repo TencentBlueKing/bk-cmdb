@@ -87,7 +87,7 @@ func (g *unique) Create() error {
 		return g.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("[model-unique] failed to create the unique(%#v), error info is is %s", g.data, rsp.ErrMsg)
 		return g.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
@@ -108,7 +108,7 @@ func (g *unique) Update(data frtypes.MapStr) error {
 		return err
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("[model-unique]failed to update the object %s(%d) to  %v, error info is %s", g.data.ObjID, g.data.ID, updateReq, err.Error())
 		return g.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
