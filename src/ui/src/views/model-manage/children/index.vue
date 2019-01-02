@@ -48,19 +48,21 @@
                     </template>
                 </div>
                 <div class="btn-group">
-                    <label class="label-btn"
-                        v-if="tab.active==='field' && authority.includes('update')"
-                        :class="{'disabled': isReadOnly}">
-                        <i class="icon-cc-import"></i>
-                        <span>{{$t('ModelManagement["导入"]')}}</span>
-                        <input v-if="!isReadOnly" ref="fileInput" type="file" @change.prevent="handleFile">
-                    </label>
-                    <form class="export-form" ref="submitForm" :action="exportUrl" method="POST" v-if="tab.active==='field'">
-                        <label class="label-btn" @click="exportField">
-                            <i class="icon-cc-derivation"></i>
-                            <span>{{$t('ModelManagement["导出"]')}}</span>
+                    <template v-if="canBeImport">
+                        <label class="label-btn"
+                            v-if="tab.active==='field' && authority.includes('update')"
+                            :class="{'disabled': isReadOnly}">
+                            <i class="icon-cc-import"></i>
+                            <span>{{$t('ModelManagement["导入"]')}}</span>
+                            <input v-if="!isReadOnly" ref="fileInput" type="file" @change.prevent="handleFile">
                         </label>
-                    </form>
+                        <form class="export-form" ref="submitForm" :action="exportUrl" method="POST" v-if="tab.active==='field'">
+                            <label class="label-btn" @click="exportField">
+                                <i class="icon-cc-derivation"></i>
+                                <span>{{$t('ModelManagement["导出"]')}}</span>
+                            </label>
+                        </form>
+                    </template>
                     <template v-if="!activeModel['ispre'] && authority.includes('update')">
                         <label class="label-btn"
                         v-if="!isMainLine"
@@ -168,6 +170,10 @@
             },
             authority () {
                 return this.admin ? ['search', 'update', 'delete'] : []
+            },
+            canBeImport () {
+                const cantImport = ['host', 'biz', 'process', 'plat']
+                return this.authority.includes('update') && !this.isMainLine && !cantImport.includes(this.$route.params.modelId)
             }
         },
         watch: {

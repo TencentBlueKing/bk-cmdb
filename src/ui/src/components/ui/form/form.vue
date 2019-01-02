@@ -249,6 +249,8 @@
                 display: block;
                 margin: 6px 0 9px;
                 color: $cmdbTextColor;
+                line-height: 16px;
+                font-size: 0;
             }
             .property-name-text{
                 position: relative;
@@ -256,6 +258,7 @@
                 max-width: calc(100% - 20px);
                 padding: 0 10px 0 0;
                 vertical-align: middle;
+                font-size: 12px;
                 @include ellipsis;
                 &.required:after{
                     position: absolute;
