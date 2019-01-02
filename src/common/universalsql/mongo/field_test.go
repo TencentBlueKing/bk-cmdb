@@ -10,9 +10,26 @@
  * limitations under the License.
  */
 
-package universalsql
+package mongo
 
-type Field struct {
-	Key string
-	Val interface{}
+import (
+	"testing"
+)
+
+func TestComparisionField(t *testing.T) {
+	sql, _ := Field("name").Eq("sam").Neq("uri").In([]string{"jim", "berg"}).ToSQL()
+	t.Logf("%s", sql)
+
+	sql, _ = Field("age").Lt(100).Gte(10).In([]int{22, 35}).Nin([]int{44, 54, 64}).ToSQL()
+	t.Logf("%s", sql)
+}
+
+func TestElementField(t *testing.T) {
+	sql, _ := Field("school").Exists(true).ToSQL()
+	t.Logf("%s", sql)
+}
+
+func TestArrayField(t *testing.T) {
+	sql, _ := Field("school").Size(2).All([]string{"qinghua", "beida"}).ToSQL()
+	t.Logf("%s", sql)
 }

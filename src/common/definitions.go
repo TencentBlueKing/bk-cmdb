@@ -921,3 +921,8 @@ const (
 	AssociationTypeConnect  = "connect"
 	AssociationTypeDefault  = "default"
 )
+
+const (
+	// MetadataField data business key
+	MetadataField = "metadata"
+)
