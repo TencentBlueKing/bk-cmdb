@@ -510,14 +510,6 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 
 	logLastConents := make([]auditoplog.AuditLogExt, 0)
 	for _, hostID := range hostIDs {
-		inst := logics.NewImportInstance(common.BKDefaultOwnerID, pheader, s.Engine)
-		err := inst.UpdateInstAssociation(pheader, hostID, common.BKDefaultOwnerID, common.BKInnerObjIDHost, data)
-		if err != nil {
-			blog.Errorf("update host batch, but update inst association failed, id[%v], err: %v", hostID, err)
-			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrHostUpdateFail)})
-			return
-		}
-
 		if err := audit.WithPrevious(strconv.FormatInt(hostID, 10), hostFields); err != nil {
 			blog.Errorf("update host batch, but get host[%s] pre data for audit failed, err: %v", hostID, err)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrHostDetailFail)})

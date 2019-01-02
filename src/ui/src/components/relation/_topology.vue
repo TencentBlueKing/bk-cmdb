@@ -115,7 +115,7 @@
         },
         async mounted () {
             try {
-                const [rootData] = await this.getRelation(this.$parent.objId, this.$parent.instId)
+                const [rootData] = await this.getRelation(this.$parent.objId, this.$parent.formatedInst['bk_inst_id'])
                 const validRelation = rootData.next.filter(next => !this.ignore.includes(next['bk_obj_id']))
                 if (validRelation.length) {
                     this.$emit('on-relation-loaded', validRelation)

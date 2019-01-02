@@ -75,15 +75,31 @@ func (n *Node) getInstNameField() string {
 }
 
 func getInt64(v interface{}) (uint64, error) {
-	switch id := v.(type) {
-	case int:
-		return uint64(id), nil
+	switch tv := v.(type) {
+	case int8:
+		return uint64(tv), nil
+	case int16:
+		return uint64(tv), nil
+	case int32:
+		return uint64(tv), nil
 	case int64:
-		return uint64(id), nil
+		return uint64(tv), nil
+	case int:
+		return uint64(tv), nil
+	case uint8:
+		return uint64(tv), nil
+	case uint16:
+		return uint64(tv), nil
+	case uint32:
+		return uint64(tv), nil
+	case uint64:
+		return uint64(tv), nil
+	case uint:
+		return uint64(tv), nil
 	case float32:
-		return uint64(id), nil
+		return uint64(tv), nil
 	case float64:
-		return uint64(id), nil
+		return uint64(tv), nil
 	default:
 		return 0, fmt.Errorf("v is not number : %+v", v)
 	}
