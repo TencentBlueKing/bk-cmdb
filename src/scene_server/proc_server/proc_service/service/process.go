@@ -158,19 +158,21 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
 	user := util.GetUser(req.Request.Header)
+	rid := util.GetHTTPCCRequestID(req.Request.Header)
+	defLang := ps.Language.CreateDefaultCCLanguageIf(language)
 
 	ownerID := req.PathParameter(common.BKOwnerIDField)
 	appIDStr := req.PathParameter(common.BKAppIDField)
 	appID, err := strconv.Atoi(appIDStr)
 	if err != nil {
-		blog.Errorf("convert appid from string to int failed!, err: %s", err.Error())
+		blog.Errorf("convert appid from string to int failed!, err: %s,rid:%s", err.Error(), rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
 
 	procData := make(map[string]interface{})
 	if err := json.NewDecoder(req.Request.Body).Decode(&procData); err != nil {
-		blog.Errorf("create process failed! decode request body err: %v", err)
+		blog.Errorf("create process failed! decode request body err: %v,rid:%s", err, rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
@@ -188,15 +190,9 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 	procData[common.BKAppIDField] = appID
 	delete(procData, common.BKProcessIDField)
 
-	// forbidden edit process name and func id
-	delete(procData, common.BKProcessNameField)
-	delete(procData, common.BKFuncIDField)
-
 	// parse process id and valid
 	var iProcIDArr []int
 	auditContentArr := make([]meta.Content, len(procIDArr))
-
-	valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDProc, req.Request.Header, ps.Engine)
 
 	for index, procIDStr := range procIDArr {
 		procID, err := strconv.Atoi(procIDStr)
@@ -204,21 +200,14 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 			return
 		}
-
-		if err := valid.ValidMap(procData, common.ValidUpdate, int64(procID)); err != nil {
-			blog.Errorf("fail to valid proc parameters. err:%s", err.Error())
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommFieldNotValid)})
-			return
-		}
 		details, err := ps.getProcDetail(req, ownerID, appID, procID)
 		if err != nil {
-			blog.Errorf("get inst detail error: %v", err)
+			blog.Errorf("get inst detail error: %v, input:%+v,rid:%s", err, procData, rid)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrAuditSaveLogFaile)})
 			return
 		}
 		// save change log
 		headers := []meta.Header{}
-
 		curData := map[string]interface{}{}
 		for _, detail := range details {
 			curData[detail[common.BKPropertyIDField].(string)] = detail[common.BKPropertyValueField]
@@ -229,7 +218,14 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 				})
 		}
 
-		curData["bk_process_id"] = procID
+		valid := validator.NewValidMap(util.GetOwnerID(req.Request.Header), common.BKInnerObjIDProc, req.Request.Header, ps.Engine)
+		if err := valid.ValidMap(procData, common.ValidUpdate, int64(procID)); err != nil {
+			blog.Errorf("fail to valid proc parameters. err:%s", err.Error())
+			appName, _ := curData[common.BKProcNameField]
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommUtilHandleFail, defLang.Languagef("proc_valid_check_fail", appName), err.Error())})
+			return
+		}
+		curData[common.BKProcIDField] = procID
 
 		// save proc info before modify
 		auditContentArr[index] = meta.Content{
@@ -238,24 +234,23 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 			Headers: headers,
 		}
 		iProcIDArr = append(iProcIDArr, procID)
-	}
+		// update processes
+		input := make(map[string]interface{})
+		condition := make(map[string]interface{})
+		condition[common.BKOwnerIDField] = ownerID
+		condition[common.BKAppIDField] = appID
+		condition[common.BKProcessIDField] = map[string]interface{}{
+			common.BKDBIN: iProcIDArr,
+		}
 
-	// update processes
-	input := make(map[string]interface{})
-	condition := make(map[string]interface{})
-	condition[common.BKOwnerIDField] = ownerID
-	condition[common.BKAppIDField] = appID
-	condition[common.BKProcessIDField] = map[string]interface{}{
-		common.BKDBIN: iProcIDArr,
-	}
-
-	input["condition"] = condition
-	input["data"] = procData
-	ret, err := ps.CoreAPI.ObjectController().Instance().UpdateObject(context.Background(), common.BKInnerObjIDProc, req.Request.Header, input)
-	if err != nil || (err == nil && !ret.Result) {
-		blog.Errorf("update process failed . err: %s", err.Error())
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcUpdateProcessFaile)})
-		return
+		input["condition"] = condition
+		input["data"] = procData
+		ret, err := ps.CoreAPI.ObjectController().Instance().UpdateObject(context.Background(), common.BKInnerObjIDProc, req.Request.Header, input)
+		if err != nil || (err == nil && !ret.Result) {
+			blog.Errorf("update process failed . err: %s", err.Error())
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcUpdateProcessFaile)})
+			return
+		}
 	}
 
 	logscontent := make([]auditoplog.AuditLogContext, 0)
