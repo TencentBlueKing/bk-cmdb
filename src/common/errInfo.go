@@ -49,10 +49,10 @@ const (
 	// CCErrCommParamsNeedString  the parameter must be of type string
 	CCErrCommParamsNeedString = 1199007
 
-	// CCErrCommParamsLostField the prameter not specified
+	// CCErrCommParamsLostField the parameter not specified
 	CCErrCommParamsLostField = 1199008
 
-	// CCErrCommParamsNeedInt the parameter must be of tyep int
+	// CCErrCommParamsNeedInt the parameter must be of type int
 	CCErrCommParamsNeedInt = 1199009
 
 	// CCErrCommParamsNeedSet the parameter unassigned
@@ -261,6 +261,42 @@ const (
 	CCErrTopoObjectHasSomeInstsForbiddenToDelete = 1101037
 	// the associations %s->%s already exist
 	CCErrTopoAssociationAlreadyExist = 1101038
+	// the source association object does not exist
+	CCErrTopoAssociationSourceObjectNotExist = 1101039
+	// the destination association object does not exist
+	CCErrTopoAssociationDestinationObjectNotExist = 1101040
+	// invalid object association id, should be int64
+	CCErrTopoInvalidObjectAssociaitonID = 1101041
+	// got multiple object association with one association id
+	CCErrTopoGotMultipleAssociationInstance = 1101042
+	// association with a object has multiple instance, can not be deleted.
+	CCErrTopoAssociationHasAlreadyBeenInstantiated = 1101043
+	// get association kind with id failed.
+	CCErrTopoGetAssociationKindFailed = 1101044
+	// create object association missing object kind id, src object id or destination object id.
+	CCErrorTopoAssociationMissingParameters = 1101045
+	// the given association id does not exist.
+	CCErrorTopoObjectAssociationNotExist = 1101046
+	// update object association, but update fields that can not be updated.
+	CCErrorTopoObjectAssociationUpdateForbiddenFields = 1101047
+	// mainline object association do not exist
+	CCErrorTopoMainlineObjectAssociationNotExist = 1101048
+	// CCErrorTopoImportAssociation  import association error
+	CCErrorTopoImportAssociation = 1101049
+	// got multiple association kind with a id
+	CCErrorTopoGetMultipleAssoKindInstWithOneID = 1101050
+	// delete a pre-defined association kind.
+	CCErrorTopoDeletePredefinedAssociationKind = 1101051
+	// create new instance for a new association, but association map is 1:1
+    CCErrorTopoCreateMultipleInstancesForOneToOneAssociation = 1101052
+    // the object has associate to another object, or has been associated by another one.
+    CCErrorTopoObjectHasAlreadyAssociated = 1101053
+    // update a pre-defined association, it's forbidden.
+    CCErrorTopoUpdatePredefinedAssociation = 1101054
+    // can not delete a pre-defined association.
+    CCErrorTopoDeletePredefinedAssociation = 1101055
+    // association do not exist.
+    CCErrorTopoAssociationDoNotExist = 1101056
 
 	CCErrTopoAppDeleteFailed                       = 1001031
 	CCErrTopoAppUpdateFailed                       = 1001032
@@ -455,26 +491,6 @@ const (
 	CCErrWebCreateEXCELFail  = 1111007
 	CCErrWebGetObjectFail    = 1111008
 
-	CC_Err_Comm_HOST_CREATE_FAIL          = 4300
-	CC_Err_Comm_HOST_CREATE_FAIL_STR      = "create host fail"
-	CC_Err_Comm_HOST_MODIFY_FAIL          = 4301
-	CC_Err_Comm_HOST_MODIFY_FAIL_STR      = "modify host fail"
-	CC_Err_Comm_HOST_Field_VALID_FAIL     = 4302
-	CC_Err_Comm_HOST_Field_VALID_FAIL_STR = "host field valid fail"
-
-	CC_Err_Comm_Host_Get_FAIL             = 4303
-	CC_Err_Comm_Host_Get_FAIL_STR         = "get host fail"
-	CC_Err_Comm_Host_Update_Field_ERR     = 4304
-	CC_Err_Comm_Host_Update_Field_ERR_STR = "update host field err"
-	CC_Err_Comm_Host_Update_FAIL_ERR      = 4305
-	CC_Err_Comm_Host_Update_FAIL_ERR_STR  = "update host fail err"
-	CC_Err_Comm_Host_Not_Founded_ERR      = 4306
-	CC_Err_Comm_Host_Not_Founded_ERR_STR  = "find no host by condition"
-	CC_Err_Comm_Host_Length_ERR           = 4307
-	CC_Err_Comm_Host_Length_ERR_STR       = "not expected host length"
-
-	// api server v2 error 1170xxx, follow-up will be deleted
-
 	// CCErrApiServerV2AppNameLenErr app name must be 1-32 len
 	CCErrAPIServerV2APPNameLenErr = 1170001
 
@@ -498,158 +514,22 @@ const (
 
 	/** TODO: 以下错误码需要改造 **/
 
-	// db
-	CC_ERR_Comm_DB_OP_ERRNO = 1000
-
-	CC_ERR_Comm_DB_OP_ERRNO_STR  = "database return some exception"
-	CC_Err_Comm_DB_Insert_Failed = "insert data failed"
-	CC_Err_Comm_DB_Delete_Failed = "delete data failed"
-	CC_Err_Comm_DB_Update_Failed = "update data failed"
-	CC_Err_Comm_DB_Select_Failed = "select data failed"
-
 	//http
-	CC_Err_Comm_http_DO               = 2000
-	CC_Err_Comm_http_DO_STR           = "do http request failed!"
-	CC_Err_Comm_http_Input_Params     = 2001
-	CC_Err_Comm_http_Input_Params_STR = "input params error!"
-	CC_Err_Comm_http_ReadReqBody      = 2002
-	CC_Err_Comm_http_ReadReqBody_STR  = "read http request body failed!"
+	CC_Err_Comm_http_DO              = 2000
+	CC_Err_Comm_http_DO_STR          = "do http request failed!"
+	CC_Err_Comm_http_ReadReqBody     = 2002
+	CC_Err_Comm_http_ReadReqBody_STR = "read http request body failed!"
 
 	//json
 	CC_ERR_Comm_JSON_DECODE     = 3001
 	CC_ERR_Comm_JSON_DECODE_STR = "json decode failed!"
 	CC_ERR_Comm_JSON_ENCODE     = 3002
 	CC_ERR_Comm_JSON_ENCODE_STR = "json encode failed!"
-	CC_ERR_Comm_JSON_GET        = 3003
-	cc_ERR_Comm_JSON_GET_STR    = "get data from json failed!"
 
-	//app
-	CC_Err_Comm_APP_ID_ERR               = 4001
-	CC_Err_Comm_APP_ID_ERR_STR           = "app id error"
-	CC_Err_Comm_APP_DEL_FAIL             = 4002
-	CC_Err_Comm_APP_DEL_FAIL_STR         = "delete app fail"
-	CC_Err_Comm_APP_Create_FAIL          = 4003
-	CC_Err_Comm_APP_Create_FAIL_STR      = "create app fail"
-	CC_Err_Comm_APP_Create_Field_ERR     = 4004
-	CC_Err_Comm_APP_Create_Field_ERR_STR = "create app lack field"
-	CC_Err_Comm_APP_Create_Name_DUP      = 4005
-	CC_Err_Comm_APP_Create_Name_DUP_STR  = "duplicate application name"
-	CC_Err_Comm_APP_Update_FAIL          = 4006
-	CC_Err_Comm_APP_Update_FAIL_STR      = "update application fail"
-	CC_Err_Comm_APP_Field_VALID_FAIL     = 4007
-	CC_Err_Comm_APP_Field_VALID_FAIL_STR = "app field valid fail"
-	CC_Err_Comm_APP_QUERY_FAIL           = 4008
-	CC_Err_Comm_APP_QUERY_FAIL_STR       = "query app fail"
-	CC_Err_Comm_APP_CHECK_HOST_FAIL      = 4009
-	CC_Err_Comm_APP_CHECK_HOST_FAIL_STR  = "failed to check host for app"
-	CC_Err_Comm_APP_HAS_HOST_FAIL        = 4010
-	CC_Err_Comm_APP_HAS_HOST_FAIL_STR    = "failed to delete app, because of it has some hosts"
-	//set
-	CC_Err_Comm_Set_QUERY_FAIL      = 4100
-	CC_Err_Comm_Set_QUERY_FAIL_STR  = "get set fail"
-	CC_Err_Comm_Set_CREATE_FAIL     = 4101
-	CC_Err_Comm_Set_CREATE_FAIL_STR = "create set fail"
-	CC_Err_Comm_Set_Update_FAIL     = 4102
-	CC_Err_Comm_Set_Update_FAIL_STR = "update set fail"
-	CC_Err_Comm_Set_Delete_FAIL     = 4103
-	CC_Err_Comm_Set_Delete_FAIL_STR = "delete set fail"
-	//module
-	CC_Err_Comm_Module_QUERY_FAIL      = 4200
-	CC_Err_Comm_Module_QUERY_FAIL_STR  = "get module fail"
-	CC_Err_Comm_Module_Update_FAIL     = 4201
-	CC_Err_Comm_Module_Update_FAIL_STR = "update module error"
-
-	CC_Err_Comm_Host_SNAPSHOT_GET_FAIL_ERR     = 4306
-	CC_Err_Comm_Host_SNAPSHOT_GET_FAIL_ERR_STR = "get host snapshot fail err"
-	//process
-	CC_Err_Comm_PROC_Create_FAIL            = 4400
-	CC_Err_Comm_PROC_Create_FAIL_STR        = "create process fail"
-	CC_Err_Comm_PROC_Create_Field_ERR       = 4401
-	CC_Err_Comm_PROC_Create_Field_ERR_STR   = "create process lack field"
-	CC_Err_Comm_PROC_Field_VALID_FAIL       = 4402
-	CC_Err_Comm_PROC_Field_VALID_FAIL_STR   = "process field valid fail"
-	CC_Err_Comm_PROC_DELETE_FAIL            = 4403
-	CC_Err_Comm_PROC_DELETE_FAIL_STR        = "delete process  fail"
-	CC_Err_Comm_PROC_SEARCH_FAIL            = 4404
-	CC_Err_Comm_PROC_SEARCH_FAIL_STR        = "search process  fail"
-	CC_Err_Comm_CREATE_PROC_MODULE_FAIL     = 4405
-	CC_Err_Comm_CREATE_PROC_MODULE_FAIL_STR = "create process module config  fail"
-	CC_Err_Comm_GET_PROC_FAIL               = 4406
-	CC_Err_Comm_GET_PROC_FAIL_STR           = "get process fail"
-	CC_Err_Comm_GET_PROC_MODULE_FAIL        = 4407
-	CC_Err_Comm_GET_PROC_MODULE_FAIL_STR    = "get process module config  fail"
-	CC_Err_Comm_BIND_PROC_MODULE_FAIL       = 4408
-	CC_Err_Comm_BIND_PROC_MODULE_FAIL_STR   = "bind process module config  fail"
-	CC_Err_Comm_PROC_UPDATE_FAIL            = 4409
-	CC_Err_Comm_PROC_UPDATE_FAIL_STR        = "update process  fail"
-	CC_Err_Comm_DELETE_PROC_MODULE_FAIL     = 4410
-	CC_Err_Comm_DELETE_PROC_MODULE_FAIL_STR = "delete process  fail"
-	//主机历史
-	CC_Err_Comm_HOST_HISTORY_Create_FAIL     = 4400
-	CC_Err_Comm_HOST_HISTORY_Create_FAIL_STR = "create app fail"
-
-	//collect
-	CC_Err_Comm_HOST_FAVOURITE_CREATE_FAIL     = 4401
-	CC_Err_Comm_HOST_FAVOURITE_CREATE_FAIL_STR = "create host favourite fail"
-	CC_Err_Comm_HOST_FAVOURITE_QUERY_FAIL      = 4402
-	CC_Err_Comm_HOST_FAVOURITE_QUERY_FAIL_STR  = "query host favourite fail"
-	CC_Err_Comm_HOST_FAVOURITE_EDIT_FAIL       = 4403
-	CC_Err_Comm_HOST_FAVOURITE_EDIT_FAIL_STR   = "modify host favourite fail"
-
+	CC_Err_Comm_APP_QUERY_FAIL = 4008
 	//user custom
-	CC_Err_Comm_USER_CUSTOM_SAVE_FAIL      = 5000
-	CC_Err_Comm_USER_CUSTOM_SAVE_FAIL_STR  = "save user custom fail"
-	CC_Err_Comm_USER_CUSTOM_QUERY_FAIL     = 5001
-	CC_Err_Comm_USER_CUSTOM_QUERY_FAIL_STR = "query user custom fail"
-	CC_Err_Comm_USER_CUSTOM_EDIT_FAIL      = 5002
-	CC_Err_Comm_USER_CUSTOM_EDIT_FAIL_STR  = "modify user custom fail"
-
-	//privilege
-	CC_Err_Comm_CREATE_ROLE_PRI_FAIL             = 7000
-	CC_Err_Comm_CREATE_ROLE_PRI_FAIL_STR         = "create role privilege error"
-	CC_Err_Comm_GET_ROLE_PRI_FAIL                = 7001
-	CC_Err_Comm_GET_ROLE_PRI_FAIL_STR            = "get role privilege error"
-	CC_Err_Comm_ROLE_PRI_EXIST                   = 7002
-	CC_Err_Comm_ROLE_PRI_EXIST_STR               = "role privilege exist"
-	CC_Err_Comm_UPDATE_ROLE_PRI_FAIL             = 7003
-	CC_Err_Comm_UPDATE_ROLE_PRI_FAIL_STR         = "create role privilege error"
-	CC_Err_Comm_CREATE_USER_GROUP_FAIL           = 7004
-	CC_Err_Comm_CREATE_USER_GROUP_FAIL_STR       = "create user group error"
-	CC_Err_Comm_UPDATE_USER_GROUP_FAIL           = 7005
-	CC_Err_Comm_UPDATE_USER_GROUP_FAIL_STR       = "update user group error"
-	CC_Err_Comm_SEARCH_USER_GROUP_FAIL           = 7006
-	CC_Err_Comm_SEARCH_USER_GROUP_FAIL_STR       = "search user group error"
-	CC_Err_Comm_DELETE_USER_GROUP_FAIL           = 7007
-	CC_Err_Comm_DELETE_USER_GROUP_FAIL_STR       = "delete user group error"
-	CC_Err_Comm_INSERT_USER_GROUP_PRIVI_FAIL     = 7008
-	CC_Err_Comm_INSERT_USER_GROUP_PRIVI_FAIL_STR = "insert user group privilege error"
-	CC_Err_Comm_UPDATE_USER_GROUP_PRIVI_FAIL     = 7009
-	CC_Err_Comm_UPDATE_USER_GROUP_PRIVI_FAIL_STR = "update user group privilege error"
-	CC_Err_Comm_GET_USER_GROUP_PRIVI_FAIL        = 7010
-	CC_Err_Comm_GET_USER_GROUP_PRIVI_FAIL_STR    = "get user group privilege error"
-	CC_Err_Comm_DUP_GROUP_NAME_ERR               = 7011
-	CC_Err_Comm_DUP_GROUP_NAME_ERR_STR           = "duplicate group name"
-	CC_Err_Comm_DUP_GROUP_PRIVI_ERR              = 7012
-	CC_Err_Comm_DUP_GROUP_PRIVI_ERR_STR          = "duplicate group privilege"
-	CC_Err_Comm_GET_USER_PRIVI_ERR               = 7013
-	CC_Err_Comm_GET_USER_PRIVI_ERR_STR           = "get user privilege error"
-	// object
-	CC_Err_Comm_Object_Valid_Failed = 8000
+	CC_Err_Comm_USER_CUSTOM_SAVE_FAIL = 5000
 
 	Json_Marshal_ERR     = 9000
 	Json_Marshal_ERR_STR = "json marshal error"
-
-	// property
-	CC_Err_Comm_GET_PROPERTY_PRI_FAIL     = 10001
-	CC_Err_Comm_GET_PROPERTY_PRI_FAIL_STR = "get property error"
-
-	// plat
-	CC_Err_Comm_GET_PLAT_FAIL         = 11001
-	CC_Err_Comm_GET_PLAT_FAIL_STR     = "get plat error"
-	CC_Err_Comm_DELETE_PLAT_FAIL      = 11002
-	CC_Err_Comm_DELETE_PLAT_FAIL_STR  = "delete plat error"
-	CC_Err_Comm_CREATE_PLAT_FAIL      = 11003
-	CC_Err_Comm_CREATE_PLAT_FAIL_STR  = "create plat error"
-	CC_Err_Comm_HOST_IN_PLAT_FAIL     = 11004
-	CC_Err_Comm_HOST_IN_PLAT_FAIL_STR = "plat has host data, can not delete plat"
 )

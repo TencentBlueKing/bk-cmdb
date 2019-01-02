@@ -108,7 +108,7 @@
                     <cmdb-relation
                         v-if="tab.active === 'relevance'"
                         obj-id="host"
-                        :inst-id="tab.attribute.inst.details['bk_host_id']">
+                        :inst="tab.attribute.inst.details">
                     </cmdb-relation>
                 </bk-tabpanel>
                 <bk-tabpanel name="status" :title="$t('HostResourcePool[\'实时状态\']')" :show="['details', 'update'].includes(tab.attribute.type)">
@@ -571,8 +571,8 @@
             handleQuickSearchToggle () {
                 this.calcTableMinusHeight()
             },
-            handleQuickSearch (property, value) {
-                this.$emit('on-quick-search', property, value)
+            handleQuickSearch (property, value, operator) {
+                this.$emit('on-quick-search', property, value, operator)
             }
         }
     }

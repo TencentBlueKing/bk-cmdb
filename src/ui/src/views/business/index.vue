@@ -76,7 +76,7 @@
                     <cmdb-relation
                         v-if="tab.active === 'relevance'"
                         obj-id="biz"
-                        :inst-id="attribute.inst.details['bk_biz_id']">
+                        :inst="attribute.inst.details">
                     </cmdb-relation>
                 </bk-tabpanel>
                 <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')" :show="attribute.type !== 'create'">
@@ -292,7 +292,7 @@
                         sort: this.table.sort
                     }
                 }
-                if (this.filter.id && this.filter.value) {
+                if (this.filter.id && String(this.filter.value).length) {
                     const filterType = this.filter.type
                     let filterValue = this.filter.value
                     if (filterType === 'bool') {

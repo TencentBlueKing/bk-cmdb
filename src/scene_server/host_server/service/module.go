@@ -254,9 +254,10 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	defLang := s.Language.CreateDefaultCCLanguageIf(util.GetLanguage(pheader))
+	rid := util.GetHTTPCCRequestID(pheader)
 	conf := new(metadata.DefaultModuleHostConfigParams)
 	if err := json.NewDecoder(req.Request.Body).Decode(&conf); err != nil {
-		blog.Errorf("move host to resource pool failed with decode body err: %v", err)
+		blog.Errorf("move host to resource pool failed with decode body err: %v, input:%+v,rid:%s", err, conf, rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
@@ -269,32 +270,32 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 	cond := hutil.NewOperation().WithAppID(conf.ApplicationID).Data()
 	appInfo, err := s.Logics.GetAppDetails(common.BKOwnerIDField, cond, pheader)
 	if err != nil {
-		blog.Errorf("move host to resource pool, but get app detail failed, err: %v", err)
+		blog.Errorf("move host to resource pool, but get app detail failed, err: %v, input:%+v,rid:%s", err, conf, rid)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrHostMoveResourcePoolFail, fmt.Sprintf("%v", conf.HostID))})
 		return
 	}
 	if 0 == len(appInfo) {
-		blog.Errorf("assign host to app error, not foud app appID: %d", conf.ApplicationID)
+		blog.Errorf("assign host to app error, not foud app appID: %d, input:%+v,rid:%s", conf.ApplicationID)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommNotFound)})
 		return
 	}
 
 	ownerID, err := appInfo.String(common.BKOwnerIDField)
 	if nil != err {
-		blog.Errorf("move host to resource pool , but get app detail failed, err: %v", err)
+		blog.Errorf("move host to resource pool , but get app detail failed, err: %v, input:%+v,rid:%s", err, conf, rid)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, "OwnerID")})
 		return
 	}
 
 	if "" == ownerID {
-		blog.Errorf("move host to resource pool, but get app detail failed, err: %v", err)
+		blog.Errorf("move host to resource pool, but get app detail failed, err: %v, input:%+v,rid:%s", err, conf, rid)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: errors.New(defLang.Language("host_resource_pool_not_exist"))})
 		return
 	}
 
 	ownerAppID, err := s.Logics.GetDefaultAppID(ownerID, pheader)
 	if err != nil {
-		blog.Errorf("move host to resource pool, but get default appid failed, err: %v", err)
+		blog.Errorf("move host to resource pool, but get default appid failed, err: %v, input:%+v,rid:%s", err, conf, rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: errors.New(defLang.Language("host_resource_pool_get_fail"))})
 		return
 	}
@@ -310,7 +311,7 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 	conds := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithModuleName(common.DefaultResModuleName).WithAppID(ownerAppID)
 	moduleID, err := s.Logics.GetResoulePoolModuleID(pheader, conds.Data())
 	if err != nil {
-		blog.Errorf("move host to resource pool, but get module id failed, err: %v", err)
+		blog.Errorf("move host to resource pool, but get module id failed, err: %v, input:%+v,rid:%s", err, conf, rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: errors.New(defLang.Languagef("host_resource_module_get_fail", err.Error()))})
 		return
 	}
@@ -324,20 +325,25 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 
 	audit := s.Logics.NewHostModuleLog(pheader, conf.HostID)
 	if err := audit.WithPrevious(); err != nil {
-		blog.Errorf("move host to resource pool, but get prev module host config failed, err: %v", err)
+		blog.Errorf("move host to resource pool, but get prev module host config failed, err: %v, input:%+v,rid:%s", err, conf, rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")})
 		return
 	}
 	result, err := s.CoreAPI.HostController().Module().MoveHost2ResourcePool(context.Background(), pheader, param)
-	if err != nil || (err == nil && !result.Result) {
-		blog.Errorf("move host to resource pool, but update host module failed, err: %v, %v", err, result.ErrMsg)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrHostEditRelationPoolFail)})
+	if err != nil {
+		blog.Errorf("move host to resource pool, but update host module http do error, err: %v, input:%+v,query:%+v,rid:%v", err, conf, param, rid)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+		return
+	}
+	if !result.Result {
+		blog.Errorf("move host to resource pool, but update host module http response error, err code:%d, err messge:%s, input:%+v,query:%+v,rid:%v", result.Code, result.ErrMsg, conf, param, rid)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.New(result.Code, result.ErrMsg)})
 		return
 	}
 
 	user := util.GetUser(pheader)
 	if err := audit.SaveAudit(strconv.FormatInt(conf.ApplicationID, 10), user, "move host to resource pool"); err != nil {
-		blog.Errorf("move host to resource pool, but save audit log failed, err: %v", err)
+		blog.Errorf("move host to resource pool, but save audit log failed, err: %v, input:%+v,rid:%s", err, conf, rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")})
 		return
 	}
