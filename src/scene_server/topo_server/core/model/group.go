@@ -15,7 +15,6 @@ package model
 import (
 	"context"
 	"encoding/json"
-	"github.com/rs/xid"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
@@ -24,6 +23,8 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
+
+	"github.com/rs/xid"
 )
 
 // Group group opeartion interface declaration
@@ -118,8 +119,7 @@ func (g *group) Create() error {
 		return g.params.Err.Error(common.CCErrCommDuplicateItem)
 	}
 
-	rsp, err := g.clientSet.ObjectController().Meta().CreatePropertyGroup(context.Background(), g.params.Header, &g.grp)
-
+	rsp, err := g.clientSet.CoreService().Model().CreateAttributeGroup(context.Background(), g.params.Header, g.GetObjectID(), metadata.CreateModelAttributeGroup{Data: g.grp})
 	if nil != err {
 		blog.Errorf("[model-grp] failed to request object controller, err: %s", err.Error())
 		return g.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -130,7 +130,7 @@ func (g *group) Create() error {
 		return g.params.Err.Error(common.CCErrTopoObjectGroupCreateFailed)
 	}
 
-	g.grp.ID = rsp.Data.ID
+	g.grp.ID = int64(rsp.Data.Created.ID)
 
 	return nil
 }
@@ -164,6 +164,9 @@ func (g *group) Update(data mapstr.MapStr) error {
 		cond.Data.Index = g.grp.GroupIndex
 		cond.Data.Name = g.grp.GroupName
 
+		input := metadata.UpdateOption{}
+
+		g.clientSet.CoreService().Model().UpdateAttributeGroup(context.Background(), g.params.Header, g.GetObjectID())
 		rsp, err := g.clientSet.ObjectController().Meta().UpdatePropertyGroup(context.Background(), g.params.Header, cond)
 		if nil != err {
 			blog.Errorf("[model-grp]failed to request object controller, err: %s", err.Error())

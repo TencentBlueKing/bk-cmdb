@@ -286,7 +286,7 @@ func (m *model) ReadModelAttr(ctx context.Context, h http.Header, objID string, 
 	return
 }
 
-func (m *model) ReadAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.QueryCondition) (resp metadata.QueryModelAttributeGroupDataResult, err error) {
+func (m *model) ReadAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.QueryCondition) (resp metadata.ReadModelAttributeGroupResult, err error) {
 	subPath := fmt.Sprintf("/read/model/%s/group", objID)
 
 	err = m.client.Post().
@@ -299,8 +299,8 @@ func (m *model) ReadAttributeGroup(ctx context.Context, h http.Header, objID str
 	return
 }
 
-func (m *model) CreateAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.CreateModelAttributes) (resp metadata.CreateOneDataResult, err error) {
-	subPath := fmt.Sprintf("/create/model/{bk_obj_id/group", objID)
+func (m *model) CreateAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.CreateModelAttributeGroup) (resp metadata.CreatedOneOptionResult, err error) {
+	subPath := fmt.Sprintf("/create/model/%s/group", objID)
 
 	err = m.client.Post().
 		WithContext(ctx).
@@ -312,7 +312,7 @@ func (m *model) CreateAttributeGroup(ctx context.Context, h http.Header, objID s
 	return
 }
 
-func (m *model) UpdateAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.UpdateOption) (resp metadata.UpdatedCount, err error) {
+func (m *model) UpdateAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.UpdateOption) (resp metadata.UpdatedOptionResult, err error) {
 	subPath := fmt.Sprintf("/update/model/%s/group", objID)
 
 	err = m.client.Post().
@@ -325,7 +325,7 @@ func (m *model) UpdateAttributeGroup(ctx context.Context, h http.Header, objID s
 	return
 }
 
-func (m *model) SetAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.SetModelAttributes) (resp metadata.UpdatedCount, err error) {
+func (m *model) SetAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.SetModelAttributes) (resp metadata.SetOptionResult, err error) {
 	subPath := fmt.Sprintf("/set/model/%s/group", objID)
 
 	err = m.client.Post().
@@ -338,7 +338,7 @@ func (m *model) SetAttributeGroup(ctx context.Context, h http.Header, objID stri
 	return
 }
 
-func (m *model) DeleteAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.DeleteOption) (resp metadata.DeletedCount, err error) {
+func (m *model) DeleteAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.DeleteOption) (resp metadata.DeletedOptionResult, err error) {
 	subPath := fmt.Sprintf("/delete/model/%s/group", objID)
 
 	err = m.client.Post().
