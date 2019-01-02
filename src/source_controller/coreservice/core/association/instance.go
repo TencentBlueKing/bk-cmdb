@@ -30,13 +30,20 @@ type associationInstance struct {
 	dependent OperationDependences
 }
 
-func (m *associationInstance) isExists(ctx core.ContextParams, instID, asstInstID int64, objAsstID string) (origin *metadata.InstAsst, exists bool, err error) {
+func (m *associationInstance) isExists(ctx core.ContextParams, instID, asstInstID int64, objAsstID string, meta metadata.Metadata) (origin *metadata.InstAsst, exists bool, err error) {
 	cond := mongo.NewCondition()
 	origin = &metadata.InstAsst{}
 	cond.Element(
 		&mongo.Eq{Key: common.BKInstIDField, Val: instID},
 		&mongo.Eq{Key: common.BKAsstInstIDField, Val: asstInstID},
 		&mongo.Eq{Key: common.AssociationObjAsstIDField, Val: objAsstID})
+	isExsit, bizID := meta.Label.Get(common.BKAppIDField)
+	if isExsit {
+		_, metaCond := cond.Embed(metadata.BKMetadata)
+		_, lableCond := metaCond.Embed(metadata.BKLabel)
+		lableCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
+	}
+
 	err = m.dbProxy.Table(common.BKTableNameInstAsst).Find(cond.ToMapStr()).One(ctx, origin)
 	if m.dbProxy.IsNotFoundError(err) {
 		return origin, !m.dbProxy.IsNotFoundError(err), nil
@@ -83,7 +90,7 @@ func (m *associationInstance) save(ctx core.ContextParams, asstInst metadata.Ins
 
 func (m *associationInstance) CreateOneInstanceAssociation(ctx core.ContextParams, inputParam metadata.CreateOneInstanceAssociation) (*metadata.CreateOneDataResult, error) {
 	inputParam.Data.OwnerID = ctx.SupplierAccount
-	_, exists, err := m.isExists(ctx, inputParam.Data.InstID, inputParam.Data.AsstInstID, inputParam.Data.ObjectAsstID)
+	_, exists, err := m.isExists(ctx, inputParam.Data.InstID, inputParam.Data.AsstInstID, inputParam.Data.ObjectAsstID, inputParam.Data.Metadata)
 	if nil != err {
 		blog.Errorf("check instance (%v)is duplicated error", inputParam.Data)
 		return nil, err
@@ -133,7 +140,7 @@ func (m *associationInstance) CreateManyInstanceAssociation(ctx core.ContextPara
 	for itemIdx, item := range inputParam.Datas {
 		item.OwnerID = ctx.SupplierAccount
 		//check is exist
-		_, exists, err := m.isExists(ctx, item.InstID, item.AsstInstID, item.ObjectAsstID)
+		_, exists, err := m.isExists(ctx, item.InstID, item.AsstInstID, item.ObjectAsstID, item.Metadata)
 		if nil != err {
 			dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
 				Message:     err.Error(),
