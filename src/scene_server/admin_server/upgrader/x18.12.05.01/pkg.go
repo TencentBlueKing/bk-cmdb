@@ -9,6 +9,7 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package x18_12_05_01
 
 import (
@@ -20,17 +21,17 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("x18.12.09.01", upgrade)
+	upgrader.RegistUpgrader("x18.12.05.01", upgrade)
 }
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	err = addswitchAssociation(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x18.12.09.01] addswitchAssociation error  %s", err.Error())
+		blog.Errorf("[upgrade x18.12.05.01] addswitchAssociation error  %s", err.Error())
 		return err
 	}
 	err = changeNetDeviceTableName(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x18.12.09.01] changeNetDeviceTableName error  %s", err.Error())
+		blog.Errorf("[upgrade x18.12.05.01] changeNetDeviceTableName error  %s", err.Error())
 		return err
 	}
 
