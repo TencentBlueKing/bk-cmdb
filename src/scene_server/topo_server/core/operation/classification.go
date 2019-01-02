@@ -79,7 +79,7 @@ func (c *classification) FindSingleClassification(params types.ContextParams, cl
 
 func (c *classification) CreateClassification(params types.ContextParams, data frtypes.MapStr) (model.Classification, error) {
 
-	cls := c.modelFactory.CreaetClassification(params)
+	cls := c.modelFactory.CreateClassification(params)
 
 	_, err := cls.Parse(data)
 	if nil != err {
@@ -198,7 +198,7 @@ func (c *classification) FindClassification(params types.ContextParams, cond con
 
 func (c *classification) UpdateClassification(params types.ContextParams, data frtypes.MapStr, id int64, cond condition.Condition) error {
 
-	cls := c.modelFactory.CreaetClassification(params)
+	cls := c.modelFactory.CreateClassification(params)
 	data.Set("id", id)
 	cls.Parse(data)
 
