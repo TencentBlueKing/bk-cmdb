@@ -89,7 +89,7 @@ type factory struct {
 	clientSet apimachinery.ClientSetInterface
 }
 
-func (cli *factory) CreaetObject(params types.ContextParams) Object {
+func (cli *factory) CreateObject(params types.ContextParams) Object {
 	obj := &object{
 		params:    params,
 		clientSet: cli.clientSet,
@@ -98,7 +98,7 @@ func (cli *factory) CreaetObject(params types.ContextParams) Object {
 	return obj
 }
 
-func (cli *factory) CreaetClassification(params types.ContextParams) Classification {
+func (cli *factory) CreateClassification(params types.ContextParams) Classification {
 	cls := &classification{
 		params:    params,
 		clientSet: cli.clientSet,
@@ -125,7 +125,7 @@ func (cli *factory) CreateGroup(params types.ContextParams) Group {
 	return grp
 }
 
-func (cli *factory) CreateMainLineAssociatin(params types.ContextParams, obj Object, asstKey string, asstObj Object) Association {
+func (cli *factory) CreateMainLineAssociation(params types.ContextParams, obj Object, asstKey string, asstObj Object) Association {
 	asst := &association{
 		isMainLine: true,
 		params:     params,

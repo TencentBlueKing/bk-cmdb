@@ -1,7 +1,7 @@
 <template>
     <div class="collection-layout">
         <div class="collection-options clearfix">
-            <label for="searchCollection" class="options-search fl">
+            <label for="searchCollection" class="options-search fl" :class="$i18n.locale">
                 <i class="bk-icon icon-search"></i>
                 <input id="searchCollection" class="search-input cmdb-form-input" type="text"
                     :placeholder="`${$t('Common[\'快速查询\']')}...`"
@@ -206,6 +206,9 @@
         .options-search {
             position: relative;
             width: 165px;
+            &.en {
+                width: 125px;
+            }
             .search-input {
                 padding: 0 28px 0 12px;
                 height: 30px;
