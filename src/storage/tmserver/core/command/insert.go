@@ -39,10 +39,23 @@ func (d *insert) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OP
 	msg := types.OPInsertOperation{}
 	reply := &types.OPReply{}
 	if err := decoder.Decode(&msg); nil != err {
+		reply.Message = err.Error()
 		return reply, err
 	}
 
+	var targetCol mongodb.CollectionInterface
+	if nil != ctx.Session {
+		targetCol = ctx.Session.Collection(msg.Collection)
+	} else {
+		targetCol = d.dbProxy.Collection(msg.Collection)
+	}
+
 	slice := util.ConverToInterfaceSlice(msg.DOCS)
-	err := d.dbProxy.Collection(msg.Collection).InsertMany(ctx, slice, nil)
+	err := targetCol.InsertMany(ctx, slice, nil)
+	if nil == err {
+		reply.Success = true
+	} else {
+		reply.Message = err.Error()
+	}
 	return reply, err
 }

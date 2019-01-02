@@ -20,7 +20,7 @@ import (
 )
 
 func init() {
-	core.GCommands.SetCommand(types.OPAbortCode, &count{})
+	core.GCommands.SetCommand(types.OPCountCode, &count{})
 }
 
 var _ core.SetDBProxy = (*count)(nil)
@@ -38,9 +38,24 @@ func (d *count) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPR
 	msg := types.OPDeleteOperation{}
 	reply := &types.OPReply{}
 	if err := decoder.Decode(&msg); nil != err {
+		reply.Message = err.Error()
 		return reply, err
 	}
-	cnt, err := d.dbProxy.Collection(msg.Collection).Count(ctx, msg.Selector)
+
+	var targetCol mongodb.CollectionInterface
+	if nil != ctx.Session {
+		targetCol = ctx.Session.Collection(msg.Collection)
+	} else {
+		targetCol = d.dbProxy.Collection(msg.Collection)
+	}
+
+	cnt, err := targetCol.Count(ctx, msg.Selector)
 	reply.Count = cnt
+	if nil == err {
+		reply.Success = true
+	} else {
+		reply.Message = err.Error()
+	}
+
 	return reply, err
 }

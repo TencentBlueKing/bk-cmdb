@@ -13,39 +13,40 @@
 package service_test
 
 import (
-	"encoding/json"
+	"context"
 	"testing"
-
-	"configcenter/src/common/http/httpclient"
-	"configcenter/src/common/metadata"
 
 	"github.com/rs/xid"
 	"github.com/stretchr/testify/require"
+
+	"configcenter/src/common/mapstr"
+	"configcenter/src/storage/dal/mongo/remote"
 )
 
-func TestCreateClassification(t *testing.T) {
+func TestTransaction(t *testing.T) {
 
-	startCoreService(t, "127.0.0.1", 3308)
+	startCoreService(t, "127.0.0.1", 8899)
 
-	client := httpclient.NewHttpClient()
-
-	inputParams := []byte(`
-		{  
-		  "metadata":{"business_object":"biz"},
-		  "datas":[
-			{
-				"bk_classification_id" : "` + xid.New().String() + `",
-				"bk_classification_name" : ""
-			}]
-		}`)
-
-	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/createmany/model/classification", defaultHeader, inputParams)
+	dbDal, err := remote.New("127.0.0.1:8899")
 	require.NoError(t, err)
-	require.NotNil(t, dataResult)
+	require.NotNil(t, dbDal)
+	doc := mapstr.MapStr{
+		"field": "value_" + xid.New().String(),
+	}
 
-	clsResult := metadata.CreatedManyOptionResult{}
-	err = json.Unmarshal(dataResult, &clsResult)
+	tran, err := dbDal.StartTransaction(context.TODO())
 	require.NoError(t, err)
-	t.Logf("data result:%v", clsResult.Data.Created)
+	require.NotNil(t, tran)
+	t.Logf("trans:%v", tran)
+
+	col := tran.Table("cc_rpcCRUD")
+	require.NotNil(t, col)
+
+	// insert
+	err = col.Insert(context.TODO(), doc)
+	require.NoError(t, err)
+
+	err = tran.Commit(context.TODO())
+	require.NoError(t, err)
 
 }

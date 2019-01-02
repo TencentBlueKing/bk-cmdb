@@ -13,6 +13,8 @@
 package core
 
 import (
+	"fmt"
+
 	"configcenter/src/storage/mongodb"
 	"configcenter/src/storage/rpc"
 	"configcenter/src/storage/tmserver/core/transaction"
@@ -58,11 +60,11 @@ func (c *core) ExecuteCommand(ctx ContextParams, input rpc.Request) (*types.OPRe
 	cmd, ok := GCommands.cmds[ctx.Header.OPCode]
 	if !ok {
 		reply := types.OPReply{}
-		reply.Message = "unknow operation"
+		reply.Message = fmt.Sprintf("unknow operation, invalid code: %d", ctx.Header.OPCode)
 		return &reply, nil
 	}
 
-	if ctx.Header.TxnID != "" {
+	if 0 != len(ctx.Header.TxnID) {
 		session := c.txn.GetSession(ctx.Header.TxnID)
 		if nil == session {
 			reply := &types.OPReply{}
@@ -73,49 +75,6 @@ func (c *core) ExecuteCommand(ctx ContextParams, input rpc.Request) (*types.OPRe
 	}
 
 	reply, err := cmd.Execute(ctx, input)
-	reply.RequestID = ctx.Header.RequestID
-	reply.TxnID = ctx.Header.TxnID
-	reply.Processor = ctx.ListenIP
 	return reply, err
 
-	/*
-
-		switch header.OPCode {
-		case types.OPStartTransaction:
-			session, err := t.man.CreateTransaction(header.RequestID)
-			if nil != err {
-				reply.Message = err.Error()
-				return &reply, nil
-			}
-			reply.Success = true
-			reply.TxnID = session.Txninst.TxnID
-			reply.Processor = session.Txninst.Processor
-			return &reply, nil
-		case types.OPCommit:
-			err := t.man.Commit(header.TxnID)
-			if nil != err {
-				reply.Message = err.Error()
-				return &reply, nil
-			}
-			reply.Success = true
-			return &reply, nil
-		case types.OPAbort:
-			err := t.man.Abort(header.TxnID)
-			if nil != err {
-				reply.Message = err.Error()
-				return &reply, nil
-			}
-			reply.Success = true
-			return &reply, nil
-		case types.OPInsert, types.OPUpdate, types.OPDelete, types.OPFind, types.OPFindAndModify, types.OPCount:
-			var collectionFunc = t.db.Collection
-			if transaction != nil {
-				collectionFunc = transaction.Collection
-			}
-			return ExecuteCollection(t.ctx, collectionFunc, header.OPCode, input, &reply)
-		default:
-			reply.Message = "unknow operation"
-			return &reply, nil
-		}
-	*/
 }
