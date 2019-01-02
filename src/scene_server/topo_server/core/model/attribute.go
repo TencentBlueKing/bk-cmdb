@@ -75,9 +75,9 @@ func (a *attribute) searchObjects(objID string) ([]metadata.Object, error) {
 		return nil, a.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("failed to search the object(%s), error info is %s", objID, rsp.ErrMsg)
-		return nil, a.params.Err.Error(rsp.Code)
+		return nil, a.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	models := []metadata.Object{}
@@ -192,7 +192,7 @@ func (a *attribute) Create() error {
 		return err
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		return err
 	}
 
@@ -233,7 +233,7 @@ func (a *attribute) Update(data mapstr.MapStr) error {
 		return err
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("failed to update the object attribute(%s), error info is %s", a.attr.PropertyID, rsp.ErrMsg)
 		return a.params.Err.Error(common.CCErrTopoObjectAttributeUpdateFailed)
 	}
@@ -248,7 +248,7 @@ func (a *attribute) search(cond condition.Condition) ([]metadata.Attribute, erro
 		return nil, err
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("failed to query the object controller, error info is %s", err.Error())
 		return nil, a.params.Err.Error(common.CCErrTopoObjectAttributeSelectFailed)
 	}
@@ -327,7 +327,7 @@ func (a *attribute) GetGroup() (GroupInterface, error) {
 		return nil, a.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("[model-grp] failed to search the group of the object(%s) by the condition (%#v), error info is %s", a.attr.ObjectID, cond.ToMapStr(), rsp.ErrMsg)
 		return nil, a.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}

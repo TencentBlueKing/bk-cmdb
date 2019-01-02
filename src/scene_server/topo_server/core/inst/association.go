@@ -50,9 +50,9 @@ func (cli *inst) updateMainlineAssociation(child Inst, parentID int64) error {
 		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("[inst-inst] failed to update the association, err: %s", rsp.ErrMsg)
-		return cli.params.Err.Error(rsp.Code)
+		return cli.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	return nil
@@ -69,9 +69,9 @@ func (cli *inst) searchInstAssociation(cond condition.Condition) ([]frtypes.MapS
 		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("[inst-inst] failed to search the inst association, err: %s", rsp.ErrMsg)
-		return nil, cli.params.Err.Error(rsp.Code)
+		return nil, cli.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	return rsp.Data.Info, nil
@@ -93,9 +93,9 @@ func (cli *inst) deleteInstAssociation(instID, asstInstID int64, objID, asstObjI
 		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("[inst-inst] failed to delete the inst association, err: %s", rsp.ErrMsg)
-		return cli.params.Err.Error(rsp.Code)
+		return cli.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	return nil

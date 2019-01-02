@@ -350,3 +350,52 @@ func (m *model) DeleteAttributeGroup(ctx context.Context, h http.Header, objID s
 		Into(&resp)
 	return
 }
+
+func (m *model) CreateModelAttrUnique(ctx context.Context, h http.Header, objID string, data metadata.CreateModelAttrUnique) (resp *metadata.CreatedOneOptionResult, err error) {
+	subPath := fmt.Sprintf("/create/model/%s/attributes/unique", objID)
+	err = m.client.Post().
+		WithContext(ctx).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(&resp)
+	return
+}
+
+func (m *model) UpdateModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64, data metadata.DeletedOptionResult) (resp *metadata.UpdatedOptionResult, err error) {
+	subPath := fmt.Sprintf("/update/model/%s/attributes/unique/%d", objID, id)
+
+	err = m.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(&resp)
+	return
+}
+
+func (m *model) DeleteModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64) (resp *metadata.DeletedCount, err error) {
+	subPath := fmt.Sprintf("/delete/model/%s/attributes/unique/%d", objID, id)
+
+	err = m.client.Post().
+		WithContext(ctx).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(&resp)
+	return
+}
+
+func (m *model) ReadModelAttrUnique(ctx context.Context, h http.Header, inputParam metadata.QueryCondition) (resp *metadata.QueryUniqueResult, err error) {
+	subPath := fmt.Sprintf("/read/model/attributes/unique")
+
+	err = m.client.Post().
+		WithContext(ctx).
+		SubResource(subPath).
+		WithHeaders(h).
+		Body(inputParam).
+		Do().
+		Into(&resp)
+	return
+}

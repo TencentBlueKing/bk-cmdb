@@ -152,3 +152,8 @@ type ReadModelAttributeGroupResult struct {
 	BaseResp `json:",inline"`
 	Data     QueryModelAttributeGroupDataResult `json:"data"`
 }
+
+type ReadModelUniqueResult struct {
+	BaseResp `json:",inline"`
+	Data     QueryUniqueResult `json:"data"`
+}

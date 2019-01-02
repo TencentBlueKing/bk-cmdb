@@ -382,39 +382,39 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 		return nil, err
 	}
 
-    keys = append(keys, metadata.UinqueKey{Kind: metadata.UinqueKeyKindProperty, ID: uint64(attr.Attribute().ID)})
+	keys = append(keys, metadata.UinqueKey{Kind: metadata.UinqueKeyKindProperty, ID: uint64(attr.Attribute().ID)})
 
-    if isMainline {
-        pAttr := obj.CreateAttribute()
-        pAttr.SetAttribute(metadata.Attribute{
-            IsOnly:            true,
-            IsPre:             true,
-            Creator:           "user",
-            IsEditable:        true,
-            PropertyIndex:     -1,
-            PropertyGroup:     group.GroupID,
-            PropertyGroupName: group.GroupName,
-            IsRequired:        true,
-            PropertyType:      common.FieldTypeInt,
-            PropertyID:        common.BKInstParentStr,
-            PropertyName:      obj.GetDefaultInstPropertyName(),
-        })
-        
-        if err = pAttr.Create(); nil != err {
-            blog.Errorf("[operation-obj] failed to create the default inst name field, err: %s", err.Error())
-            return nil, params.Err.Error(common.CCErrTopoObjectAttributeCreateFailed)
-        }
-        keys = append(keys, metadata.UinqueKey{Kind: metadata.UinqueKeyKindProperty, ID: uint64(pAttr.Attribute().ID)})
-    }
+	if isMainline {
+		pAttr := obj.CreateAttribute()
+		pAttr.SetAttribute(metadata.Attribute{
+			IsOnly:            true,
+			IsPre:             true,
+			Creator:           "user",
+			IsEditable:        true,
+			PropertyIndex:     -1,
+			PropertyGroup:     group.GroupID,
+			PropertyGroupName: group.GroupName,
+			IsRequired:        true,
+			PropertyType:      common.FieldTypeInt,
+			PropertyID:        common.BKInstParentStr,
+			PropertyName:      obj.GetDefaultInstPropertyName(),
+		})
 
-    uni := obj.CreateUnique()
-    uni.SetKeys(keys)
-    uni.SetIsPre(false)
-    uni.SetMustCheck(true)
-    if err = uni.Save(nil); nil != err {
-        blog.Errorf("[operation-obj] failed to create the default inst name field, err: %s", err.Error())
-        return nil, err
-    }
+		if err = pAttr.Create(); nil != err {
+			blog.Errorf("[operation-obj] failed to create the default inst name field, err: %s", err.Error())
+			return nil, params.Err.Error(common.CCErrTopoObjectAttributeCreateFailed)
+		}
+		keys = append(keys, metadata.UinqueKey{Kind: metadata.UinqueKeyKindProperty, ID: uint64(pAttr.Attribute().ID)})
+	}
+
+	uni := obj.CreateUnique()
+	uni.SetKeys(keys)
+	uni.SetIsPre(false)
+	uni.SetMustCheck(true)
+	if err = uni.Save(nil); nil != err {
+		blog.Errorf("[operation-obj] failed to create the default inst name field, err: %s", err.Error())
+		return nil, err
+	}
 
 	return obj, nil
 }
@@ -528,9 +528,9 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 			blog.Errorf("[operation-obj] failed to request the object controller, err: %s", err.Error())
 			return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
-		if common.CCSuccess != rsp.Code {
+		if !rsp.Result {
 			blog.Errorf("[opration-obj] failed to delete the object by the condition(%#v) or the id(%d)", cond.ToMapStr(), id)
-			return params.Err.Error(rsp.Code)
+			return params.Err.New(rsp.Code, rsp.ErrMsg)
 		}
 
 	}
@@ -656,9 +656,9 @@ func (o *object) FindObject(params types.ContextParams, cond condition.Condition
 		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
-		blog.Errorf("[operation-obj] failed to search the objects by the condition(%#v) , err: %s", cond.ToMapStr(), rsp.ErrMsg)
-		return nil, params.Err.Error(rsp.Code)
+	if !rsp.Result {
+		blog.Errorf("[operation-obj] failed to search the objects by the condition(%#v) , error info is %s", cond.ToMapStr(), rsp.ErrMsg)
+		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	return model.CreateObject(params, o.clientSet, rsp.Data), nil

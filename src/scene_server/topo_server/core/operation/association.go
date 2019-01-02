@@ -13,7 +13,6 @@
 package operation
 
 import (
-	"configcenter/src/framework/core/errors"
 	"context"
 
 	"configcenter/src/apimachinery"
@@ -23,6 +22,7 @@ import (
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	metatype "configcenter/src/common/metadata"
+	"configcenter/src/framework/core/errors"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -302,7 +302,7 @@ func (a *association) DeleteAssociation(params types.ContextParams, cond conditi
 
 	if !rsp.Result {
 		blog.Errorf("delete object association, but get association with cond[%v] failed, err: %s", cond.ToMapStr(), rsp.ErrMsg)
-		return params.Err.Error(rsp.Code)
+		return params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	if len(rsp.Data) < 1 {
@@ -357,7 +357,7 @@ func (a *association) UpdateAssociation(params types.ContextParams, data frtypes
 
 	if !rsp.Result {
 		blog.Errorf("[operation-asst] failed to update the association (%#v) , err: %s", cond.ToMapStr(), rsp.ErrMsg)
-		return params.Err.Error(rsp.Code)
+		return params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	if len(rsp.Data) < 1 {
@@ -536,7 +536,7 @@ func (a *association) CreateInst(params types.ContextParams, request *metadata.C
 
 	if !result.Result {
 		blog.Errorf("create association instance, but search object association with cond[%v] failed, err: %s", cond, resp.ErrMsg)
-		return nil, params.Err.Error(resp.Code)
+		return nil, params.Err.New(resp.Code, resp.ErrMsg)
 	}
 
 	if len(result.Data) == 0 {
@@ -553,7 +553,7 @@ func (a *association) CreateInst(params types.ContextParams, request *metadata.C
 
 	if !inst.Result {
 		blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %s", cond, resp.ErrMsg)
-		return nil, params.Err.Error(resp.Code)
+		return nil, params.Err.New(resp.Code, resp.ErrMsg)
 	}
 
 	instances := len(inst.Data)

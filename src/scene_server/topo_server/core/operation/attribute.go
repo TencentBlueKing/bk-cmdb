@@ -103,9 +103,9 @@ func (a *attribute) DeleteObjectAttribute(params types.ContextParams, cond condi
 			return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
-		if common.CCSuccess != rsp.Code {
+		if !rsp.Result {
 			blog.Errorf("[operation-attr] failed to delete the attribute by condition(%v), err: %s", cond.ToMapStr(), rsp.ErrMsg)
-			return params.Err.Error(rsp.Code)
+			return params.Err.New(rsp.Code, rsp.ErrMsg)
 		}
 	}
 
@@ -148,9 +148,9 @@ func (a *attribute) FindObjectAttribute(params types.ContextParams, cond conditi
 		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("[operation-attr] failed to search attribute by the condition(%#v), error info is %s", cond.ToMapStr(), rsp.ErrMsg)
-		return nil, params.Err.Error(rsp.Code)
+		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	return model.CreateAttribute(params, a.clientSet, rsp.Data), nil
@@ -165,9 +165,9 @@ func (a *attribute) UpdateObjectAttribute(params types.ContextParams, data frtyp
 		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("[operation-attr] failed to update the attribute by the condition(%#v) or the attr-id(%d), error info is %s", cond.ToMapStr(), attID, rsp.ErrMsg)
-		return params.Err.Error(rsp.Code)
+		return params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	return nil
