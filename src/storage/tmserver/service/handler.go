@@ -13,6 +13,8 @@
 package service
 
 import (
+	"context"
+
 	"configcenter/src/storage/rpc"
 	"configcenter/src/storage/tmserver/core"
 	"configcenter/src/storage/types"
@@ -20,7 +22,7 @@ import (
 
 func (s *coreService) DBOperation(input rpc.Request) (interface{}, error) {
 
-	ctx := core.ContextParams{ListenIP: s.listenIP}
+	ctx := core.ContextParams{Context: context.Background(), ListenIP: s.listenIP}
 
 	reply := types.OPReply{}
 	err := input.Decode(&ctx.Header)

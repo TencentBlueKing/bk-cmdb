@@ -38,8 +38,22 @@ func (d *delete) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OP
 	msg := types.OPDeleteOperation{}
 	reply := &types.OPReply{}
 	if err := decoder.Decode(&msg); nil != err {
-		return nil, err
+		reply.Message = err.Error()
+		return reply, err
 	}
-	_, err := d.dbProxy.Collection(msg.Collection).DeleteMany(ctx, msg.Selector, nil)
+
+	var targetCol mongodb.CollectionInterface
+	if nil != ctx.Session {
+		targetCol = ctx.Session.Collection(msg.Collection)
+	} else {
+		targetCol = d.dbProxy.Collection(msg.Collection)
+	}
+
+	_, err := targetCol.DeleteMany(ctx, msg.Selector, nil)
+	if nil == err {
+		reply.Success = true
+	} else {
+		reply.Message = err.Error()
+	}
 	return reply, err
 }

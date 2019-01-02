@@ -35,5 +35,6 @@ func (c *commands) SetCommand(opCode types.OPCode, cmd Command) {
 	if nil == c.cmds {
 		c.cmds = make(map[types.OPCode]Command)
 	}
+
 	c.cmds[opCode] = cmd
 }

@@ -38,9 +38,22 @@ func (d *update) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OP
 	msg := types.OPUpdateOperation{}
 	reply := &types.OPReply{}
 	if err := decoder.Decode(&msg); nil != err {
+		reply.Message = err.Error()
 		return reply, err
 	}
 
-	_, err := d.dbProxy.Collection(msg.Collection).UpdateMany(ctx, msg.Selector, msg.DOC, nil)
+	var targetCol mongodb.CollectionInterface
+	if nil != ctx.Session {
+		targetCol = ctx.Session.Collection(msg.Collection)
+	} else {
+		targetCol = d.dbProxy.Collection(msg.Collection)
+	}
+
+	_, err := targetCol.UpdateMany(ctx, msg.Selector, msg.DOC, nil)
+	if nil == err {
+		reply.Success = true
+	} else {
+		reply.Message = err.Error()
+	}
 	return reply, err
 }

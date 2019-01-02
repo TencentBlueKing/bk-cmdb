@@ -25,6 +25,8 @@ import (
 	"configcenter/src/storage/tmserver/app"
 	"configcenter/src/storage/tmserver/app/options"
 
+	_ "configcenter/src/storage/tmserver/core/command" // init all cmds
+
 	"github.com/spf13/pflag"
 )
 

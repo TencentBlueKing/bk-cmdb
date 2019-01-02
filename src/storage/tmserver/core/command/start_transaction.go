@@ -44,5 +44,6 @@ func (d *startTransaction) Execute(ctx core.ContextParams, decoder rpc.Request) 
 	reply.Success = true
 	reply.TxnID = sess.Txninst.TxnID
 	reply.Processor = sess.Txninst.Processor
+
 	return reply, nil
 }
