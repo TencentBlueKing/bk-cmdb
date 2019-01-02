@@ -20,13 +20,13 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("x18.12.12.01", upgrade)
+	upgrader.RegistUpgrader("x18.12.12.02", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	err = fixModuleNamePropertyGroup(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("[upgrade x18.12.12.01] addAIXProperty error  %s", err.Error())
+		blog.Errorf("[upgrade x18.12.12.02] addAIXProperty error  %s", err.Error())
 		return err
 	}
 	return
