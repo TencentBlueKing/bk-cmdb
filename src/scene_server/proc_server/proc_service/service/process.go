@@ -191,7 +191,6 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 	delete(procData, common.BKProcessIDField)
 
 	// parse process id and valid
-	var iProcIDArr []int
 	auditContentArr := make([]meta.Content, len(procIDArr))
 
 	for index, procIDStr := range procIDArr {
@@ -233,15 +232,12 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 			PreData: curData,
 			Headers: headers,
 		}
-		iProcIDArr = append(iProcIDArr, procID)
 		// update processes
 		input := make(map[string]interface{})
 		condition := make(map[string]interface{})
 		condition[common.BKOwnerIDField] = ownerID
 		condition[common.BKAppIDField] = appID
-		condition[common.BKProcessIDField] = map[string]interface{}{
-			common.BKDBIN: iProcIDArr,
-		}
+		condition[common.BKProcessIDField] = procID
 
 		input["condition"] = condition
 		input["data"] = procData
