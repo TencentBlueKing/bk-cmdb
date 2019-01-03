@@ -18,10 +18,11 @@ import (
 	"strconv"
 	"time"
 
+	"configcenter/src/common/universalsql/mongo"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
-	"configcenter/src/storage/dal"
 	ccredis "configcenter/src/storage/dal/redis"
 	daltypes "configcenter/src/storage/types"
 
@@ -115,7 +116,9 @@ func (th *TxnHandler) fetchTimeout() {
 		}
 
 		txns := []daltypes.Transaction{} //Transaction
-		if err := th.db.Table(common.BKTableNameTransaction).Find(dal.NewFilterBuilder().In(common.BKTxnIDField, txnIDs)).All(th.ctx, &txns); err != nil {
+		tranCond := mongo.NewCondition()
+		tranCond.Element(&mongo.In{Key: common.BKTxnIDField, Val: txnIDs})
+		if err := th.db.Table(common.BKTableNameTransaction).Find(tranCond.ToMapStr()).All(th.ctx, &txns); err != nil {
 			blog.Warnf("fetch transaction from mongo failed: %v, we will try again later", err)
 			continue
 		}
