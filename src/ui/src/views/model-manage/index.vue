@@ -28,7 +28,7 @@
                         @click="deleteGroup(classification)"></i>
                     </template>
                 </p>
-                <ul class="model-list clearfix" >
+                <ul class="model-list clearfix">
                     <li class="model-item"
                     :class="{'ispaused': model['bk_ispaused']}"
                     v-for="(model, modelIndex) in classification['bk_objects']"
@@ -221,7 +221,13 @@
             localClassifications () {
                 let localClassifications = []
                 this.classifications.forEach(classification => {
-                    localClassifications.push({...classification, ...{isModelShow: false}})
+                    if (classification['bk_classification_id'] === 'bk_host_manage') {
+                        const currentClassification = this.$tools.clone(classification)
+                        currentClassification['bk_objects'] = classification['bk_objects'].filter(({bk_obj_id: objId}) => !['process', 'plat'].includes(objId))
+                        localClassifications.push({...currentClassification, ...{isModelShow: false}})
+                    } else {
+                        localClassifications.push({...classification, ...{isModelShow: false}})
+                    }
                 })
                 this.modelDialog.classificationList = localClassifications.filter(({bk_classification_id: classificationId}) => !['bk_biz_topo', 'bk_host_manage', 'bk_organization'].includes(classificationId))
                 return localClassifications
