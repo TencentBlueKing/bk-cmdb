@@ -20,11 +20,20 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (m *modelAttribute) isExists(ctx core.ContextParams, propertyID string) (oneAttribute *metadata.Attribute, exists bool, err error) {
+func (m *modelAttribute) isExists(ctx core.ContextParams, propertyID string, meta metadata.Metadata) (oneAttribute *metadata.Attribute, exists bool, err error) {
 
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: metadata.AttributeFieldSupplierAccount, Val: propertyID})
 	cond.Element(&mongo.Eq{Key: metadata.AttributeFieldPropertyID, Val: propertyID})
+
+	// ATTETION: Currently only business dimension isolation is done,
+	//           and there may be isolation requirements for other dimensions in the future.
+	isExsit, bizID := meta.Label.Get(common.BKAppIDField)
+	if isExsit {
+		_, metaCond := cond.Embed(metadata.BKMetadata)
+		_, lableCond := metaCond.Embed(metadata.BKLabel)
+		lableCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
+	}
 
 	oneAttribute = &metadata.Attribute{}
 	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).One(ctx, oneAttribute)
