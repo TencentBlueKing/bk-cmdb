@@ -48,9 +48,9 @@ type ModelClientInterface interface {
 	DeleteAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.DeleteOption) (resp metadata.DeletedOptionResult, err error)
 
 	CreateModelAttrUnique(ctx context.Context, h http.Header, objID string, data metadata.CreateModelAttrUnique) (*metadata.CreatedOneOptionResult, error)
-	UpdateModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64, data metadata.DeletedOptionResult) (*metadata.UpdatedOptionResult, error)
+	UpdateModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64, data metadata.UpdateModelAttrUnique) (*metadata.UpdatedOptionResult, error)
 	DeleteModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64) (*metadata.DeletedCount, error)
-	ReadModelAttrUnique(ctx context.Context, h http.Header, inputParam metadata.QueryCondition) (*metadata.QueryUniqueResult, error)
+	ReadModelAttrUnique(ctx context.Context, h http.Header, inputParam metadata.QueryCondition) (*metadata.ReadModelUniqueResult, error)
 }
 
 func NewModelClientInterface(client rest.ClientInterface) ModelClientInterface {

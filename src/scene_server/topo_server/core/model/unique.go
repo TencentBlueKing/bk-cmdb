@@ -19,6 +19,7 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
 	metadata "configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -75,13 +76,13 @@ func (g *unique) GetObjectID() string {
 }
 
 func (g *unique) Create() error {
-	data := metadata.CreateUniqueRequest{
+	data := metadata.ObjectUnique{
 		ObjID:     g.data.ObjID,
 		MustCheck: g.data.MustCheck,
 		Keys:      g.data.Keys,
 	}
-	rsp, err := g.clientSet.ObjectController().Unique().Create(context.Background(), g.params.Header, g.data.ObjID, &data)
 
+	rsp, err := g.clientSet.CoreService().Model().CreateModelAttrUnique(context.Background(), g.params.Header, g.data.ObjID, metadata.CreateModelAttrUnique{Data: data})
 	if nil != err {
 		blog.Errorf("[model-unique] failed to request object controller, error info is %s", err.Error())
 		return g.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -92,7 +93,7 @@ func (g *unique) Create() error {
 		return g.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	g.data.ID = uint64(rsp.Data.ID)
+	g.data.ID = uint64(rsp.Data.Created.ID)
 	return nil
 }
 
@@ -101,8 +102,8 @@ func (g *unique) Update(data frtypes.MapStr) error {
 		MustCheck: g.data.MustCheck,
 		Keys:      g.data.Keys,
 	}
-	rsp, err := g.clientSet.ObjectController().Unique().Update(context.Background(), g.params.Header, g.data.ObjID, g.data.ID, &updateReq)
 
+	rsp, err := g.clientSet.CoreService().Model().UpdateModelAttrUnique(context.Background(), g.params.Header, g.data.ObjID, g.data.ID, metadata.UpdateModelAttrUnique{Data: updateReq})
 	if nil != err {
 		blog.Errorf("[model-unique]failed to request object controller, error info is %s", err.Error())
 		return err
@@ -116,7 +117,8 @@ func (g *unique) Update(data frtypes.MapStr) error {
 }
 
 func (g *unique) Save(data frtypes.MapStr) error {
-	searchResp, err := g.clientSet.ObjectController().Unique().Search(context.Background(), g.params.Header, g.data.ObjID)
+	cond := condition.CreateCondition().Field(common.BKObjIDField).Eq(g.data.ObjID)
+	searchResp, err := g.clientSet.CoreService().Model().ReadModelAttrUnique(context.Background(), g.params.Header, metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[model-unique]failed to request object controller, error info is %s", err.Error())
 		return err
@@ -129,7 +131,7 @@ func (g *unique) Save(data frtypes.MapStr) error {
 
 	keyhash := g.data.KeysHash()
 	var exists *metadata.ObjectUnique
-	for _, uni := range searchResp.Data {
+	for _, uni := range searchResp.Data.Info {
 		if uni.KeysHash() == keyhash {
 			exists = &uni
 			break
