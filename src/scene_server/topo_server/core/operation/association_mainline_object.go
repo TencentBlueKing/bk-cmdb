@@ -165,7 +165,7 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 		common.BKObjIconField:          data.ObjectIcon,
 		common.BKClassificationIDField: data.ClassificationID,
 	}
-	currentObj, err := a.obj.CreateObject(params, objData)
+	currentObj, err := a.obj.CreateObject(params, true, objData)
 	if err != nil {
 		return nil, err
 	}
