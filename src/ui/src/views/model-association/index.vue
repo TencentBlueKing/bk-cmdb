@@ -43,7 +43,7 @@
         </cmdb-table>
         <cmdb-slider
             class="relation-slider"
-            :width="514"
+            :width="410"
             :title="slider.title"
             :isShow.sync="slider.isShow">
             <the-relation
