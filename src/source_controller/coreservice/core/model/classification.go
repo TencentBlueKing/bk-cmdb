@@ -35,7 +35,7 @@ func (m *modelClassification) CreateOneModelClassification(ctx core.ContextParam
 		return &metadata.CreateOneDataResult{}, ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.ClassFieldClassificationID)
 	}
 
-	_, exists, err := m.isExists(ctx, inputParam.Data.ClassificationID)
+	_, exists, err := m.isExists(ctx, inputParam.Data.ClassificationID, inputParam.Data.Metadata)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to check if the classification ID (%s)is exists, error info is %s", ctx.ReqID, inputParam.Data.ClassificationID, err.Error())
 		return nil, err
@@ -74,7 +74,7 @@ func (m *modelClassification) CreateManyModelClassification(ctx core.ContextPara
 			continue
 		}
 
-		_, exists, err := m.isExists(ctx, item.ClassificationID)
+		_, exists, err := m.isExists(ctx, item.ClassificationID, item.Metadata)
 		if nil != err {
 			blog.Errorf("request(%s): it is failed to check the classification ID (%s) is exists, error info is %s", ctx.ReqID, item.ClassificationID, err.Error())
 			addExceptionFunc(int64(itemIdx), err.(errors.CCErrorCoder), &item)
@@ -122,7 +122,7 @@ func (m *modelClassification) SetManyModelClassification(ctx core.ContextParams,
 			continue
 		}
 
-		origin, exists, err := m.isExists(ctx, item.ClassificationID)
+		origin, exists, err := m.isExists(ctx, item.ClassificationID, item.Metadata)
 		if nil != err {
 			blog.Errorf("request(%s): it is failed to check the classification ID (%s) is exists, error info is %s", ctx.ReqID, item.ClassificationID, err.Error())
 			addExceptionFunc(int64(itemIdx), err.(errors.CCErrorCoder), &item)
@@ -171,7 +171,7 @@ func (m *modelClassification) SetOneModelClassification(ctx core.ContextParams, 
 		return &metadata.SetDataResult{}, ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.ClassFieldClassificationID)
 	}
 
-	origin, exists, err := m.isExists(ctx, inputParam.Data.ClassificationID)
+	origin, exists, err := m.isExists(ctx, inputParam.Data.ClassificationID, inputParam.Data.Metadata)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to check the classification ID (%s) is exists, error info is %s", ctx.ReqID, inputParam.Data.ClassificationID, err.Error())
 		return &metadata.SetDataResult{}, err
