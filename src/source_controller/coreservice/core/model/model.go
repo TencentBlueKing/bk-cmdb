@@ -71,6 +71,15 @@ func (m *modelManager) CreateModel(ctx core.ContextParams, inputParam metadata.C
 	condCheckModel.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: inputParam.Spec.ObjectID})
 	condCheckModel.Element(&mongo.Eq{Key: metadata.ModelFieldOwnerID, Val: ctx.SupplierAccount})
 
+	// ATTETION: Currently only business dimension isolation is done,
+	//           and there may be isolation requirements for other dimensions in the future.
+	isExsit, bizID := inputParam.Spec.Metadata.Label.Get(common.BKAppIDField)
+	if isExsit {
+		_, metaCond := condCheckModel.Embed(metadata.BKMetadata)
+		_, lableCond := metaCond.Embed(metadata.BKLabel)
+		lableCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
+	}
+
 	_, exists, err := m.isExists(ctx, condCheckModel)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to check whether the model (%s) is exists, error info is %s ", ctx.ReqID, inputParam.Spec.ObjectID, err.Error())

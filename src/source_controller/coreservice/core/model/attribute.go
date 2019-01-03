@@ -49,7 +49,7 @@ func (m *modelAttribute) CreateModelAttributes(ctx core.ContextParams, objID str
 	for attrIdx, attr := range inputParam.Attributes {
 
 		attr.OwnerID = ctx.SupplierAccount
-		_, exists, err := m.isExists(ctx, attr.PropertyID)
+		_, exists, err := m.isExists(ctx, attr.PropertyID, attr.Metadata)
 		if nil != err {
 			blog.Errorf("request(%s): it is failed, to check if the attribute's field propertyID(%s) is exists, error info is %s", ctx.ReqID, attr.PropertyID, err.Error())
 			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
@@ -99,7 +99,7 @@ func (m *modelAttribute) SetModelAttributes(ctx core.ContextParams, objID string
 
 	for attrIdx, attr := range inputParam.Attributes {
 
-		existsAttr, exists, err := m.isExists(ctx, attr.PropertyID)
+		existsAttr, exists, err := m.isExists(ctx, attr.PropertyID, attr.Metadata)
 		if nil != err {
 			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
 			continue
