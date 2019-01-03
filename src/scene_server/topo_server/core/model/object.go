@@ -667,7 +667,8 @@ func (o *object) CreateUnique() Unique {
 }
 
 func (o *object) GetUniques() ([]Unique, error) {
-	rsp, err := o.clientSet.CoreService().Model().ReadModelAttrUnique(context.Background(), o.params.Header, o.obj.ObjectID)
+	cond := condition.CreateCondition().Field(common.BKObjIDField).Eq(o.obj.ObjectID)
+	rsp, err := o.clientSet.CoreService().Model().ReadModelAttrUnique(context.Background(), o.params.Header, metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
 		return nil, o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -679,7 +680,7 @@ func (o *object) GetUniques() ([]Unique, error) {
 	}
 
 	rstItems := make([]Unique, 0)
-	for _, item := range rsp.Data {
+	for _, item := range rsp.Data.Info {
 		grp := &unique{
 			data:      item,
 			params:    o.params,
@@ -723,8 +724,7 @@ func (o *object) GetGroups() ([]GroupInterface, error) {
 	cond := condition.CreateCondition()
 
 	cond.Field(meta.GroupFieldObjectID).Eq(o.obj.ObjectID).Field(meta.GroupFieldSupplierAccount).Eq(o.params.SupplierAccount)
-	rsp, err := o.clientSet.ObjectController().Meta().SelectGroup(context.Background(), o.params.Header, cond.ToMapStr())
-
+	rsp, err := o.clientSet.CoreService().Model().ReadAttributeGroup(context.Background(), o.params.Header, o.obj.ObjectID, metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
 		return nil, o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -736,7 +736,7 @@ func (o *object) GetGroups() ([]GroupInterface, error) {
 	}
 
 	rstItems := make([]GroupInterface, 0)
-	for _, item := range rsp.Data {
+	for _, item := range rsp.Data.Info {
 		grp := NewGroup(o.params, o.clientSet)
 		grp.SetGroup(item)
 		rstItems = append(rstItems, grp)
@@ -754,7 +754,7 @@ func (o *object) GetClassification() (Classification, error) {
 	cond := condition.CreateCondition()
 	cond.Field(meta.ClassFieldClassificationID).Eq(o.obj.ObjCls)
 
-	rsp, err := o.clientSet.ObjectController().Meta().SelectClassifications(context.Background(), o.params.Header, cond.ToMapStr())
+	rsp, err := o.clientSet.CoreService().Model().ReadModelClassification(context.Background(), o.params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
 		return nil, o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -765,7 +765,7 @@ func (o *object) GetClassification() (Classification, error) {
 		return nil, o.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	for _, item := range rsp.Data {
+	for _, item := range rsp.Data.Info {
 
 		return &classification{
 			cls:       item,

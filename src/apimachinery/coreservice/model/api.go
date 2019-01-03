@@ -362,7 +362,7 @@ func (m *model) CreateModelAttrUnique(ctx context.Context, h http.Header, objID 
 	return
 }
 
-func (m *model) UpdateModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64, data metadata.DeletedOptionResult) (resp *metadata.UpdatedOptionResult, err error) {
+func (m *model) UpdateModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64, data metadata.UpdateModelAttrUnique) (resp *metadata.UpdatedOptionResult, err error) {
 	subPath := fmt.Sprintf("/update/model/%s/attributes/unique/%d", objID, id)
 
 	err = m.client.Post().
@@ -387,7 +387,7 @@ func (m *model) DeleteModelAttrUnique(ctx context.Context, h http.Header, objID 
 	return
 }
 
-func (m *model) ReadModelAttrUnique(ctx context.Context, h http.Header, inputParam metadata.QueryCondition) (resp *metadata.QueryUniqueResult, err error) {
+func (m *model) ReadModelAttrUnique(ctx context.Context, h http.Header, inputParam metadata.QueryCondition) (resp *metadata.ReadModelUniqueResult, err error) {
 	subPath := fmt.Sprintf("/read/model/attributes/unique")
 
 	err = m.client.Post().
