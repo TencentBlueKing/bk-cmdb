@@ -506,6 +506,7 @@ func (o *object) IsExists() (bool, error) {
 	cond = condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(o.obj.ObjectName)
+	cond.Field(o.GetInstIDFieldName()).Eq(o.obj.ObjectName)
 	cond.Field(metadata.ModelFieldID).NotIn([]int64{o.obj.ID})
 
 	items, err = o.search(cond)

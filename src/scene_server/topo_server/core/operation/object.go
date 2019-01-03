@@ -34,7 +34,7 @@ import (
 type ObjectOperationInterface interface {
 	CreateObjectBatch(params types.ContextParams, data frtypes.MapStr) (frtypes.MapStr, error)
 	FindObjectBatch(params types.ContextParams, data frtypes.MapStr) (frtypes.MapStr, error)
-	CreateObject(params types.ContextParams, data frtypes.MapStr) (model.Object, error)
+	CreateObject(params types.ContextParams, isMainline bool, data frtypes.MapStr) (model.Object, error)
 	CanDelete(params types.ContextParams, targetObj model.Object) error
 	DeleteObject(params types.ContextParams, id int64, cond condition.Condition, needCheckInst bool) error
 	FindObject(params types.ContextParams, cond condition.Condition) ([]model.Object, error)
@@ -83,7 +83,7 @@ func (o *object) IsValidObject(params types.ContextParams, objID string) error {
 
 	objItems, err := o.FindObject(params, checkObjCond)
 	if nil != err {
-		blog.Errorf("[opeartion-attr] failed to check the object repeated, error info is %s", err.Error())
+		blog.Errorf("[opeartion-attr] failed to check the object repeated, err: %s", err.Error())
 		return params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
@@ -299,7 +299,7 @@ func (o *object) FindSingleObject(params types.ContextParams, objectID string) (
 
 	objs, err := o.FindObject(params, cond)
 	if nil != err {
-		blog.Errorf("[api-inst] failed to find the supplier account(%s) objects(%s), error info is %s", params.SupplierAccount, objectID, err.Error())
+		blog.Errorf("[api-inst] failed to find the supplier account(%s) objects(%s), err: %s", params.SupplierAccount, objectID, err.Error())
 		return nil, err
 	}
 	for _, item := range objs {
@@ -307,26 +307,26 @@ func (o *object) FindSingleObject(params types.ContextParams, objectID string) (
 	}
 	return nil, params.Err.New(common.CCErrTopoObjectSelectFailed, params.Err.Errorf(common.CCErrCommParamsIsInvalid, objectID).Error())
 }
-func (o *object) CreateObject(params types.ContextParams, data frtypes.MapStr) (model.Object, error) {
+func (o *object) CreateObject(params types.ContextParams, isMainline bool, data frtypes.MapStr) (model.Object, error) {
 	obj := o.modelFactory.CreateObject(params)
 
 	_, err := obj.Parse(data)
 	if nil != err {
-		blog.Errorf("[operation-obj] failed to parse the data(%#v), error info is %s", data, err.Error())
+		blog.Errorf("[operation-obj] failed to parse the data(%#v), err: %s", data, err.Error())
 		return nil, err
 	}
 
 	// check the classification
 	_, err = obj.GetClassification()
 	if nil != err {
-		blog.Errorf("[operation-obj] failed to create the object, error info is %s", err.Error())
+		blog.Errorf("[operation-obj] failed to create the object, err: %s", err.Error())
 		return nil, params.Err.New(common.CCErrTopoObjectCreateFailed, err.Error())
 	}
 
 	// check repeated
 	exists, err := obj.IsExists()
 	if nil != err {
-		blog.Errorf("[operation-obj] failed to create the object(%#v), error info is %s", data, err.Error())
+		blog.Errorf("[operation-obj] failed to create the object(%#v), err: %s", data, err.Error())
 		return nil, params.Err.New(common.CCErrTopoObjectCreateFailed, err.Error())
 	}
 
@@ -337,7 +337,7 @@ func (o *object) CreateObject(params types.ContextParams, data frtypes.MapStr) (
 
 	err = obj.Create()
 	if nil != err {
-		blog.Errorf("[operation-obj] failed to save the data(%#v), error info is %s", data, err.Error())
+		blog.Errorf("[operation-obj] failed to save the data(%#v), err: %s", data, err.Error())
 		return nil, err
 	}
 
@@ -348,9 +348,11 @@ func (o *object) CreateObject(params types.ContextParams, data frtypes.MapStr) (
 	grp.SetName("Default")
 	grp.SetID("default")
 	if err = grp.Save(nil); nil != err {
-		blog.Errorf("[operation-obj] failed to create the default group, error info is %s", err.Error())
+		blog.Errorf("[operation-obj] failed to create the default group, err: %s", err.Error())
+		return nil, params.Err.Error(common.CCErrTopoObjectGroupCreateFailed)
 	}
 
+	keys := make([]metadata.UinqueKey, 0)
 	// create the default inst name
 	attr := obj.CreateAttribute()
 	attr.SetIsOnly(true)
@@ -363,17 +365,38 @@ func (o *object) CreateObject(params types.ContextParams, data frtypes.MapStr) (
 	attr.SetType(common.FieldTypeSingleChar)
 	attr.SetID(obj.GetInstNameFieldName())
 	attr.SetName(obj.GetDefaultInstPropertyName())
-
 	if err = attr.Create(); nil != err {
-		blog.Errorf("[operation-obj] failed to create the default inst name field, error info is %s", err.Error())
+		blog.Errorf("[operation-obj] failed to create the default inst name field, err: %s", err.Error())
+		return nil, params.Err.Error(common.CCErrTopoObjectAttributeCreateFailed)
+	}
+	keys = append(keys, metadata.UinqueKey{Kind: metadata.UinqueKeyKindProperty, ID: uint64(attr.GetRecordID())})
+
+	if isMainline {
+		pAttr := obj.CreateAttribute()
+		pAttr.SetIsOnly(true)
+		pAttr.SetIsPre(true)
+		pAttr.SetCreator("user")
+		pAttr.SetIsEditable(true)
+		pAttr.SetGroupIndex(-1)
+		pAttr.SetGroup(grp)
+		pAttr.SetIsRequired(true)
+		pAttr.SetIsSystem(true)
+		pAttr.SetType(common.FieldTypeInt)
+		pAttr.SetID(common.BKInstParentStr)
+		pAttr.SetName(obj.GetDefaultInstPropertyName())
+		if err = pAttr.Create(); nil != err {
+			blog.Errorf("[operation-obj] failed to create the default inst name field, err: %s", err.Error())
+			return nil, params.Err.Error(common.CCErrTopoObjectAttributeCreateFailed)
+		}
+		keys = append(keys, metadata.UinqueKey{Kind: metadata.UinqueKeyKindProperty, ID: uint64(pAttr.GetRecordID())})
 	}
 
 	uni := obj.CreateUnique()
-	uni.SetKeys([]metadata.UinqueKey{{Kind: metadata.UinqueKeyKindProperty, ID: uint64(attr.GetRecordID())}})
+	uni.SetKeys(keys)
 	uni.SetIsPre(false)
 	uni.SetMustCheck(true)
 	if err = uni.Save(nil); nil != err {
-		blog.Errorf("[operation-obj] failed to create the default inst name field, error info is %s", err.Error())
+		blog.Errorf("[operation-obj] failed to create the default inst name field, err: %s", err.Error())
 		return nil, err
 	}
 
@@ -392,7 +415,7 @@ func (o *object) CanDelete(params types.ContextParams, targetObj model.Object) e
 	query.Condition = cond.ToMapStr()
 	findInstResponse, err := o.inst.FindOriginInst(params, targetObj, query)
 	if nil != err {
-		blog.Errorf("[operation-obj] failed to check if it (%s) has some insts, error info is %s", targetObj.GetID(), err.Error())
+		blog.Errorf("[operation-obj] failed to check if it (%s) has some insts, err: %s", targetObj.GetID(), err.Error())
 		return err
 	}
 	if 0 != findInstResponse.Count {
@@ -435,7 +458,7 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 
 	objs, err := o.FindObject(params, cond)
 	if nil != err {
-		blog.Errorf("[operation-obj] failed to find objects, the condition is (%v) error info is %s", cond, err.Error())
+		blog.Errorf("[operation-obj] failed to find objects, the condition is (%v) err: %s", cond, err.Error())
 		return err
 	}
 
@@ -450,12 +473,12 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 
 		// delete object
 		if unis, err := obj.GetUniques(); err != nil {
-			blog.Errorf("[operation-asst] failed to get the object's uniques, error info is %s", err.Error())
+			blog.Errorf("[operation-asst] failed to get the object's uniques, err: %s", err.Error())
 			return err
 		} else {
 			for _, uni := range unis {
 				if err = o.unique.Delete(params, obj.GetID(), uni.GetRecordID()); err != nil {
-					blog.Errorf("[operation-asst] failed to delete the object's uniques, error info is %s", err.Error())
+					blog.Errorf("[operation-asst] failed to delete the object's uniques, err: %s", err.Error())
 					return err
 				}
 			}
@@ -466,17 +489,17 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 		attrCond.Field(common.BKObjIDField).Eq(obj.GetID())
 
 		if err := o.attr.DeleteObjectAttribute(params, attrCond); nil != err {
-			blog.Errorf("[operation-obj] failed to delete the object(%d)'s attribute, error info is %s", id, err.Error())
+			blog.Errorf("[operation-obj] failed to delete the object(%d)'s attribute, err: %s", id, err.Error())
 			return err
 		}
 
 		if groups, err := obj.GetGroups(); err != nil {
-			blog.Errorf("[operation-asst] failed to get the object's groups, error info is %s", err.Error())
+			blog.Errorf("[operation-asst] failed to get the object's groups, err: %s", err.Error())
 			return err
 		} else {
 			for _, group := range groups {
 				if err = o.grp.DeleteObjectGroup(params, group.GetRecordID()); err != nil {
-					blog.Errorf("[operation-asst] failed to delete the object's groups, error info is %s", err.Error())
+					blog.Errorf("[operation-asst] failed to delete the object's groups, err: %s", err.Error())
 					return err
 				}
 			}
@@ -485,7 +508,7 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 		rsp, err := o.clientSet.ObjectController().Meta().DeleteObject(context.Background(), obj.GetRecordID(), params.Header, cond.ToMapStr())
 
 		if nil != err {
-			blog.Errorf("[operation-obj] failed to request the object controller, error info is %s", err.Error())
+			blog.Errorf("[operation-obj] failed to request the object controller, err: %s", err.Error())
 			return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 		if common.CCSuccess != rsp.Code {
@@ -516,7 +539,7 @@ func (o *object) isFrom(params types.ContextParams, fromObjID, toObjID string) (
 func (o *object) FindObjectTopo(params types.ContextParams, cond condition.Condition) ([]metadata.ObjectTopo, error) {
 	objs, err := o.FindObject(params, cond)
 	if nil != err {
-		blog.Errorf("[operation-obj] failed to find object, error info is %s", err.Error())
+		blog.Errorf("[operation-obj] failed to find object, err: %s", err.Error())
 		return nil, err
 	}
 
@@ -559,7 +582,7 @@ func (o *object) FindObjectTopo(params types.ContextParams, cond condition.Condi
 
 			asstObjs, err := o.FindObject(params, cond)
 			if nil != err {
-				blog.Errorf("[operation-obj] failed to find object, error info is %s", err.Error())
+				blog.Errorf("[operation-obj] failed to find object, err: %s", err.Error())
 				return nil, err
 			}
 
@@ -610,12 +633,12 @@ func (o *object) FindObject(params types.ContextParams, cond condition.Condition
 
 	rsp, err := o.clientSet.ObjectController().Meta().SelectObjects(context.Background(), params.Header, cond.ToMapStr())
 	if nil != err {
-		blog.Errorf("[operation-obj] failed to request the object controller, error info is %s", err.Error())
+		blog.Errorf("[operation-obj] failed to request the object controller, err: %s", err.Error())
 		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("[operation-obj] failed to search the objects by the condition(%#v) , error info is %s", cond.ToMapStr(), rsp.ErrMsg)
+		blog.Errorf("[operation-obj] failed to search the objects by the condition(%#v) , err: %s", cond.ToMapStr(), rsp.ErrMsg)
 		return nil, params.Err.Error(rsp.Code)
 	}
 
@@ -628,14 +651,14 @@ func (o *object) UpdateObject(params types.ContextParams, data frtypes.MapStr, i
 	obj.SetRecordID(id)
 	_, err := obj.Parse(data)
 	if nil != err {
-		blog.Errorf("[operation-obj] failed to parse the data(%#v), error info is %s", data, err.Error())
+		blog.Errorf("[operation-obj] failed to parse the data(%#v), err: %s", data, err.Error())
 		return err
 	}
 
 	// check repeated
 	exists, err := obj.IsExists()
 	if nil != err {
-		blog.Errorf("[operation-obj] failed to update the object(%#v), error info is %s", data, err.Error())
+		blog.Errorf("[operation-obj] failed to update the object(%#v), err: %s", data, err.Error())
 		return params.Err.New(common.CCErrTopoObjectCreateFailed, err.Error())
 	}
 
@@ -644,7 +667,7 @@ func (o *object) UpdateObject(params types.ContextParams, data frtypes.MapStr, i
 		return params.Err.Error(common.CCErrCommDuplicateItem)
 	}
 	if err = obj.Update(data); nil != err {
-		blog.Errorf("[operation-obj] failed to update the object(%d), the new data(%#v), error info is %s", id, data, err.Error())
+		blog.Errorf("[operation-obj] failed to update the object(%d), the new data(%#v), err: %s", id, data, err.Error())
 		return params.Err.New(common.CCErrTopoObjectUpdateFailed, err.Error())
 	}
 
