@@ -322,7 +322,7 @@ func (h *HostSnap) fetch() *HostCache {
 			innerip := fmt.Sprint(result[index][common.BKHostInnerIPField])
 			hostcache.data[cloudid+"::"+innerip] = &HostInst{data: result[index]}
 		}
-		if uint64(len(result)) <= limit {
+		if uint64(len(result)) < limit {
 			break
 		}
 		start += limit
