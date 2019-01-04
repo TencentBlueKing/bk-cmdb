@@ -27,10 +27,10 @@ import (
 )
 
 func (ps *ProcServer) BindModuleProcess(req *restful.Request, resp *restful.Response) {
-	user := util.GetUser(req.Request.Header)
-	ownerID := util.GetOwnerID(req.Request.Header)
-	language := util.GetLanguage(req.Request.Header)
-	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
+	srvData := ps.newSrvComm(req.Request.Header)
+
+	ownerID := srvData.ownerID
+	defErr := srvData.ccErr
 
 	pathParams := req.PathParameters()
 	appIDStr := pathParams[common.BKAppIDField]
@@ -43,7 +43,7 @@ func (ps *ProcServer) BindModuleProcess(req *restful.Request, resp *restful.Resp
 	cell[common.BKAppIDField] = appID
 	cell[common.BKProcessIDField] = procID
 	cell[common.BKModuleNameField] = moduleName
-	cell[common.BKOwnerIDField] = util.GetOwnerID(req.Request.Header)
+	cell[common.BKOwnerIDField] = ownerID
 	params = append(params, cell)
 
 	// TODO use change use chan, process model trigger point
@@ -53,25 +53,28 @@ func (ps *ProcServer) BindModuleProcess(req *restful.Request, resp *restful.Resp
 	//     return
 	// }
 
-	ret, err := ps.CoreAPI.ProcController().CreateProc2Module(context.Background(), req.Request.Header, params)
-	if err != nil || (err == nil && !ret.Result) {
-		blog.Errorf("fail to BindModuleProcess. err: %v, errcode:%d, errmsg: %s", err.Error(), ret.Code, ret.ErrMsg)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcBindToMoudleFaile)})
+	ret, err := ps.CoreAPI.ProcController().CreateProc2Module(srvData.ctx, srvData.header, params)
+	if nil != err {
+		blog.Errorf("BindModuleProcess CreateProc2Module http do  error.  err:%s, input:%+v,rid:%s", err.Error(), params, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+		return
+	}
+	if !ret.Result {
+		blog.Errorf("BindModuleProcess CreateProc2Module http reply  error. err code:%d err msg:%s, input:%+v,rid:%s", ret.Code, ret.Result, params, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.New(ret.Code, ret.ErrMsg)})
 		return
 	}
 
 	// save operation log
 	log := common.KvMap{common.BKOpDescField: fmt.Sprintf("bind module [%s]", moduleName), common.BKOpTypeField: auditoplog.AuditOpTypeAdd, "inst_id": procID, common.BKContentField: meta.Content{}}
-	ps.CoreAPI.AuditController().AddProcLog(context.Background(), ownerID, appIDStr, user, req.Request.Header, log)
+	ps.CoreAPI.AuditController().AddProcLog(srvData.ctx, ownerID, appIDStr, srvData.user, srvData.header, log)
 
 	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
 func (ps *ProcServer) DeleteModuleProcessBind(req *restful.Request, resp *restful.Response) {
-	user := util.GetUser(req.Request.Header)
-	ownerID := util.GetOwnerID(req.Request.Header)
-	language := util.GetLanguage(req.Request.Header)
-	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
+	srvData := ps.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
 
 	pathParams := req.PathParameters()
 	appIDStr := pathParams[common.BKAppIDField]
@@ -84,29 +87,34 @@ func (ps *ProcServer) DeleteModuleProcessBind(req *restful.Request, resp *restfu
 	cell[common.BKProcessIDField] = procID
 	cell[common.BKModuleNameField] = moduleName
 
-	if err := ps.deleteProcInstanceModel(appIDStr, procIDStr, moduleName, req.Request.Header); err != nil {
-		blog.Errorf("%v", err)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcUnBindToMoudleFaile)})
+	if err := srvData.lgc.DeleteProcInstanceModel(srvData.ctx, appIDStr, procIDStr, moduleName); err != nil {
+		blog.Errorf("DeleteModuleProcessBind DeleteProcInstanceModel %v,input:%+v,rid:%s", err, cell, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}
 
-	ret, err := ps.CoreAPI.ProcController().DeleteProc2Module(context.Background(), req.Request.Header, cell)
-	if err != nil || (err == nil && !ret.Result) {
-		blog.Errorf("fail to delete module process bind. err: %v, errcode:%s, errmsg: %s", err, ret.Code, ret.ErrMsg)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcUnBindToMoudleFaile)})
+	ret, err := ps.CoreAPI.ProcController().DeleteProc2Module(srvData.ctx, srvData.header, cell)
+	if nil != err {
+		blog.Errorf("DeleteModuleProcessBind DeleteProc2Module http do error.  err:%s, input:%+v,rid:%s", err.Error(), cell, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+		return
+	}
+	if !ret.Result {
+		blog.Errorf("DeleteModuleProcessBind DeleteProc2Module http reply  error. err code:%d err msg:%s, input:%+v,rid:%s", ret.Code, ret.Result, cell, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.New(ret.Code, ret.ErrMsg)})
 		return
 	}
 
 	// save operation log
 	log := common.KvMap{common.BKOpDescField: fmt.Sprintf("unbind module [%s]", moduleName), common.BKOpTypeField: auditoplog.AuditOpTypeAdd, "inst_id": procID, common.BKContentField: meta.Content{}}
-	ps.CoreAPI.AuditController().AddProcLog(context.Background(), ownerID, appIDStr, user, req.Request.Header, log)
+	ps.CoreAPI.AuditController().AddProcLog(srvData.ctx, srvData.ownerID, appIDStr, srvData.user, srvData.header, log)
 
 	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
 func (ps *ProcServer) GetProcessBindModule(req *restful.Request, resp *restful.Response) {
-	language := util.GetLanguage(req.Request.Header)
-	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
+	srvData := ps.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
 
 	pathParams := req.PathParameters()
 	appIDStr := pathParams[common.BKAppIDField]
@@ -115,12 +123,12 @@ func (ps *ProcServer) GetProcessBindModule(req *restful.Request, resp *restful.R
 	procID, errProcID := strconv.Atoi(procIDStr)
 
 	if nil != errAppID {
-		blog.Errorf("GetProcessBindModule application id %s not integer", appIDStr)
+		blog.Errorf("GetProcessBindModule application id %s not integer,rid:%s", appIDStr, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
 		return
 	}
 	if nil != errProcID {
-		blog.Errorf("GetProcessBindModule process id %s not integer", procIDStr)
+		blog.Errorf("GetProcessBindModule process id %s not integer,rid:%s", procIDStr, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKProcessIDField)})
 		return
 	}
@@ -130,19 +138,29 @@ func (ps *ProcServer) GetProcessBindModule(req *restful.Request, resp *restful.R
 	input := new(meta.QueryInput)
 	input.Condition = condition
 
-	objRet, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, req.Request.Header, input)
-	if err != nil || (err == nil && !objRet.Result) {
-		blog.Errorf("fail to GetProcessBindModule when do searchobject. err:%v, errcode:%d, errmsg:%s", err, objRet.Code, objRet.ErrMsg)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrObjectSelectInstFailed)})
+	objRet, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(srvData.ctx, common.BKInnerObjIDModule, srvData.header, input)
+	if nil != err {
+		blog.Errorf("GetProcessBindModule SearchObjects http do error.  err:%s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+		return
+	}
+	if !objRet.Result {
+		blog.Errorf("GetProcessBindModule SearchObjects http reply  error. err code:%d err msg:%s, input:%+v,rid:%s", objRet.Code, objRet.Result, input, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.New(objRet.Code, objRet.ErrMsg)})
 		return
 	}
 
 	condition[common.BKProcessIDField] = procID
 	// get process by module
 	p2mRet, err := ps.CoreAPI.ProcController().GetProc2Module(context.Background(), req.Request.Header, condition)
-	if err != nil || (err == nil && !p2mRet.Result) {
-		blog.Errorf("fail to GetProcessBindModule when do GetProc2Module. err:%v, errcode:%d, errmsg:%s", err, p2mRet.Code, p2mRet.ErrMsg)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcSelectBindToMoudleFaile)})
+	if nil != err {
+		blog.Errorf("GetProcessBindModule GetProc2Module http do error.  err:%s, input:%+v,rid:%s", err.Error(), condition, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+		return
+	}
+	if !objRet.Result {
+		blog.Errorf("GetProcessBindModule GetProc2Module http reply  error. err code:%d err msg:%s, input:%+v,rid:%s", p2mRet.Code, objRet.Result, condition, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.New(p2mRet.Code, p2mRet.ErrMsg)})
 		return
 	}
 
@@ -156,7 +174,7 @@ func (ps *ProcServer) GetProcessBindModule(req *restful.Request, resp *restful.R
 			if moduleInfo.Exists(common.BKDefaultField) {
 				isDefault64, err := moduleInfo.Int64(common.BKDefaultField)
 				if nil != err {
-					blog.Warnf("get module default error:%s", err.Error())
+					blog.Warnf("get module default error:%s,input:%+v,rid:%s", err.Error(), input, srvData.rid)
 				} else {
 					if 0 != isDefault64 {
 						continue
@@ -164,7 +182,7 @@ func (ps *ProcServer) GetProcessBindModule(req *restful.Request, resp *restful.R
 				}
 				disModuleNameArr = append(disModuleNameArr, moduleName)
 			} else {
-				blog.Errorf("ApplicationID %d  module name %s not found default field", appID, moduleName)
+				blog.Errorf("ApplicationID %d  module name %s not found default field,rid:%s", appID, moduleName, srvData.rid)
 			}
 
 		}
