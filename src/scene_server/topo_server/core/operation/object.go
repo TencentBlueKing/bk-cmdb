@@ -30,15 +30,15 @@ import (
 
 // ObjectOperationInterface object operation methods
 type ObjectOperationInterface interface {
-	CreateObjectBatch(params types.ContextParams, data frtypes.MapStr) (frtypes.MapStr, error)
-	FindObjectBatch(params types.ContextParams, data frtypes.MapStr) (frtypes.MapStr, error)
+	CreateObjectBatch(params types.ContextParams, data frtypes.MapStr, meta metadata.Metadata) (frtypes.MapStr, error)
+	FindObjectBatch(params types.ContextParams, data frtypes.MapStr, meta metadata.Metadata) (frtypes.MapStr, error)
 	CreateObject(params types.ContextParams, data frtypes.MapStr) (model.Object, error)
 	CanDelete(params types.ContextParams, targetObj model.Object) error
-	DeleteObject(params types.ContextParams, id int64, cond condition.Condition, needCheckInst bool) error
+	DeleteObject(params types.ContextParams, id int64, cond condition.Condition, needCheckInst bool, meta metadata.Metadata) error
 	FindObject(params types.ContextParams, cond condition.Condition) ([]model.Object, error)
 	FindObjectTopo(params types.ContextParams, cond condition.Condition) ([]metadata.ObjectTopo, error)
 	FindSingleObject(params types.ContextParams, objectID string) (model.Object, error)
-	UpdateObject(params types.ContextParams, data frtypes.MapStr, id int64, cond condition.Condition) error
+	UpdateObject(params types.ContextParams, data frtypes.MapStr, id int64, cond condition.Condition, meta metadata.Metadata) error
 
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, cls ClassificationOperationInterface, asst AssociationOperationInterface, inst InstOperationInterface, attr AttributeOperationInterface, grp GroupOperationInterface, unique UniqueOperationInterface)
 	IsValidObject(params types.ContextParams, objID string) error
@@ -94,7 +94,7 @@ func (o *object) IsValidObject(params types.ContextParams, objID string) error {
 	return nil
 }
 
-func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapStr, meta metadata.Metadata) (frtypes.MapStr, error) {
 
 	inputData := map[string]ImportObjectData{}
 	if err := data.MarshalJSONInto(&inputData); nil != err {
@@ -266,7 +266,7 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapS
 
 	return result, nil
 }
-func (o *object) FindObjectBatch(params types.ContextParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (o *object) FindObjectBatch(params types.ContextParams, data frtypes.MapStr, meta metadata.Metadata) (frtypes.MapStr, error) {
 
 	cond := &ExportObjectCondition{}
 	if err := data.MarshalJSONInto(cond); nil != err {
@@ -440,13 +440,12 @@ func (o *object) CanDelete(params types.ContextParams, targetObj model.Object) e
 
 	return nil
 }
-func (o *object) DeleteObject(params types.ContextParams, id int64, cond condition.Condition, needCheckInst bool) error {
+func (o *object) DeleteObject(params types.ContextParams, id int64, cond condition.Condition, needCheckInst bool, meta metadata.Metadata) error {
 
 	if 0 < id {
 		cond = condition.CreateCondition()
 		cond.Field(metadata.ModelFieldID).Eq(id)
 	}
-
 	objs, err := o.FindObject(params, cond)
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to find objects, the condition is (%v) error info is %s", cond, err.Error())
@@ -638,7 +637,7 @@ func (o *object) FindObject(params types.ContextParams, cond condition.Condition
 	return model.CreateObject(params, o.clientSet, rsp.Data), nil
 }
 
-func (o *object) UpdateObject(params types.ContextParams, data frtypes.MapStr, id int64, cond condition.Condition) error {
+func (o *object) UpdateObject(params types.ContextParams, data frtypes.MapStr, id int64, cond condition.Condition, meta metadata.Metadata) error {
 
 	obj := o.modelFactory.CreaetObject(params)
 	obj.SetRecordID(id)

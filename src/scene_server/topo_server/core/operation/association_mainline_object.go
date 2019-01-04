@@ -25,7 +25,7 @@ import (
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-func (a *association) DeleteMainlineAssociaton(params types.ContextParams, objID string) error {
+func (a *association) DeleteMainlineAssociaton(params types.ContextParams, objID string, meta metadata.Metadata) error {
 
 	targetObj, err := a.obj.FindSingleObject(params, objID)
 	if nil != err {
@@ -61,7 +61,7 @@ func (a *association) DeleteMainlineAssociaton(params types.ContextParams, objID
 
 	}
 	// delete objects
-	if err = a.obj.DeleteObject(params, tObject.ID, nil, false); nil != err && io.EOF != err {
+	if err = a.obj.DeleteObject(params, tObject.ID, nil, false, meta); nil != err && io.EOF != err {
 		blog.Errorf("[operation-asst] failed to delete the object(%s), error info is %s", tObject.ID, err.Error())
 		return err
 	}

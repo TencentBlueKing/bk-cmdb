@@ -101,10 +101,22 @@ func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID stri
 		return nil, err
 	}
 
+	var instMedataData metadata.Metadata
+	instMedataData.Label = make(metadata.Label)
+	for key, val := range inputParam.Condition {
+		if metadata.BKMetadata == key {
+			bizID := metadata.GetBusinessIDFromMeta(val)
+			if "" != bizID {
+				instMedataData.Label.Set(metadata.LabelBusinessID, metadata.GetBusinessIDFromMeta(val))
+			}
+			continue
+		}
+	}
+
 	for _, origin := range origins {
 		instIDI := origin[instIDFieldName]
 		instID, _ := util.GetInt64ByInterface(instIDI)
-		err := m.validUpdateInstanceData(ctx, objID, inputParam.Data, uint64(instID))
+		err := m.validUpdateInstanceData(ctx, objID, inputParam.Data, instMedataData, uint64(instID))
 		if nil != err {
 			blog.Errorf("update module instance validate error :%v ", err)
 			return nil, err

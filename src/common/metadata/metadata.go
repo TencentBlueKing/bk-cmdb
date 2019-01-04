@@ -48,6 +48,13 @@ const (
 // Label define the Label type used to limit the scope of application of resources
 type Label map[string]string
 
+func NewMetaDataFromBusinessID(value string) Metadata {
+	label := make(Label)
+	label[LabelBusinessID] = value
+	meta := Metadata{Label: label}
+	return meta
+}
+
 func GetBusinessIDFromMeta(data interface{}) string {
 	if nil == data {
 		return ""
@@ -69,7 +76,7 @@ func GetBusinessIDFromMeta(data interface{}) string {
 
 // Metadata  used to define the metadata for the resources
 type Metadata struct {
-	Label Label
+	Label Label `field:"label" json:"label" bson:"label"`
 }
 
 func (label Label) Set(key, value string) {
