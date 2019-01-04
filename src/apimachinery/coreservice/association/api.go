@@ -117,8 +117,8 @@ func (asst *association) DeleteAssociationCascade(ctx context.Context, h http.He
 	return
 }
 
-func (asst *association) ReadAssociation(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.QueryConditionResult, err error) {
-	resp = new(metadata.QueryConditionResult)
+func (asst *association) ReadAssociation(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.SearchAssociationTypeResult, err error) {
+	resp = new(metadata.SearchAssociationTypeResult)
 	subPath := "/read/associationkind"
 
 	err = asst.client.Post().
