@@ -28,7 +28,7 @@ type AssociationClientInterface interface {
 	UpdateAssociation(ctx context.Context, h http.Header, input *metadata.UpdateOption) (resp *metadata.UpdatedOptionResult, err error)
 	DeleteAssociation(ctx context.Context, h http.Header, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error)
 	DeleteAssociationCascade(ctx context.Context, h http.Header, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error)
-	ReadAssociation(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.QueryConditionResult, err error)
+	ReadAssociation(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.SearchAssociationTypeResult, err error)
 	CreateModelAssociation(ctx context.Context, h http.Header, input *metadata.CreateModelAssociation) (resp *metadata.CreatedOneOptionResult, err error)
 	SetModelAssociation(ctx context.Context, h http.Header, input *metadata.SetModelAssociation) (resp *metadata.SetOptionResult, err error)
 	UpdateModelAssociation(ctx context.Context, h http.Header, input *metadata.UpdateOption) (resp *metadata.UpdatedOptionResult, err error)
