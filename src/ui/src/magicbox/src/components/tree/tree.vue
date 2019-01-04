@@ -4,12 +4,12 @@
             @drop="drop(item, $event)"
             @dragover="dragover($event)"
             :key="item[nodeKey] ? item[nodeKey] : item.name"
-            :class="{leaf: isLeaf(item), 
+            :class="{'leaf': isLeaf(item),
             'tree-first-node': !parent && index === 0, 
             'tree-only-node': !parent && data.length === 1, 
             'tree-second-node': !parent && index === 1,
             'single': !multiple}"
-            v-show="item.hasOwnProperty('visible') ? item.visible : true">
+            v-if="item.hasOwnProperty('visible') ? item.visible : true">
             <div :class="['tree-drag-node', !multiple ? 'tree-singe' : '']"
                  :draggable="draggable" @dragstart="drag(item, $event)">
                 <span 
@@ -17,7 +17,7 @@
                     v-if="!item.parent ||item.children && item.children.length || item.async" 
                     :class="['bk-icon', 'tree-expanded-icon', item.expanded ? 'icon-down-shape' : 'icon-right-shape']">
                 </span>
-                <label :class="[item.halfcheck ? 'bk-form-half-checked' : 'bk-form-checkbox','bk-checkbox-small', 'mr5',!item.parent ||item.children && item.children.length ? 'parent-node-left' : '']" v-if="multiple && !item.nocheck">
+                <label :class="[item.halfcheck ? 'bk-form-half-checked' : 'bk-form-checkbox','bk-checkbox-small', 'mr5']" v-if="multiple && !item.nocheck">
                     <input type="checkbox"
                         v-if='multiple'
                         :disabled="item.disabled"
@@ -59,6 +59,7 @@
                 </bk-tree>
             </collapse-transition>
         </li>
+        <p class="search-no-data" v-else>{{emptyText}}</p>
     </ul>
 </template>
 <script>
@@ -98,6 +99,10 @@ export default {
         isDeleteRoot: {
             type: Boolean,
             default: false
+        },
+        emptyText: {
+            type: String,
+            default: '暂无数据'
         },
         tpl: Function
     },
@@ -254,7 +259,6 @@ export default {
             ev.preventDefault()
             ev.stopPropagation()
             let gid = ev.dataTransfer.getData('gid')
-            console.log(gid)
             let drag = this.getDragNode(gid)
             // if drag node's parent is enter node or root node
             if (drag.parent === node || drag.parent === null || drag === node) return false
@@ -358,7 +362,7 @@ export default {
         * @param {Object} node 当前节点
         */
         isLeaf (node) {
-            return !(node.children && node.children.length) && node.parent
+            return !(node.children && node.children.length) && node.parent && !node.async
         },
 
         /**

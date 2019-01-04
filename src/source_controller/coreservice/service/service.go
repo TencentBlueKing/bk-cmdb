@@ -19,8 +19,9 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+    "time"
 
-	"github.com/emicklei/go-restful"
+    "github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -74,7 +75,7 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 	}
 
 	// connect the remote mongodb
-	dbProxy, dbErr := mongo.NewMgo(cfg.Mongo.BuildURI())
+	dbProxy, dbErr := mongo.NewMgo(cfg.Mongo.BuildURI(), time.Minute)
 	if dbErr != nil {
 		blog.Errorf("failed to connect the remote server(%s), error info is %s", cfg.Mongo.BuildURI(), dbErr.Error())
 		return

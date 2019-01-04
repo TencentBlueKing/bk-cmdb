@@ -33,7 +33,7 @@
                     <label for="" class="label-name">
                         URL<span class="color-danger">*</span>
                     </label>
-                    <div class="item-content url" :class="{'en': language !== 'zh_CN'}">
+                    <div class="item-content url">
                         <div class="url-box">
                             <input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'请输入URL\']')"
                                 v-model.trim="tempEventData['callback_url']"
@@ -251,9 +251,6 @@
             }
         },
         computed: {
-            ...mapGetters([
-                'language'
-            ]),
             selectNum () {
                 let num = 0
                 let {
@@ -534,6 +531,7 @@
                 text-align: right;
                 line-height: 36px;
                 font-size: 14px;
+                @include ellipsis;
                 .color-danger{
                     position: absolute;
                     top: 2px;
@@ -554,14 +552,6 @@
                         vertical-align: top;
                         margin-left: 10px;
                         width: 96px;
-                    }
-                    &.en {
-                        .cmdb-form-input {
-                            width: calc(100% - 135px);
-                        }
-                        .test-btn {
-                            width: 125px;
-                        }
                     }
                 }
                 span {
