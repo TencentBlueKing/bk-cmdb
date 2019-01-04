@@ -17,9 +17,9 @@ import (
 	"testing"
 	"time"
 
-	"configcenter/src/common/mapstr"
-
 	"github.com/stretchr/testify/require"
+
+	"configcenter/src/common/mapstr"
 )
 
 func TestMapStrInto(t *testing.T) {
@@ -244,4 +244,55 @@ func TestConvertToMapStrFromStructEmbed(t *testing.T) {
 	err := targetMapStr.ToStructByTag(&resultTmp, "field")
 	require.NoError(t, err)
 	t.Logf("result struct :%v", resultTmp)
+}
+
+func TestConvertToMapStrFromInterface(t *testing.T) {
+
+	// construct the test data
+	testData := map[string]interface{}{
+		"nil": nil,
+		"map-int": map[string]int{
+			"int-key": 1024,
+		},
+		"map-int-embed": map[string]interface{}{
+			"embed-key": map[string]int{
+				"embed-key-int": 1024,
+			},
+		},
+		"struct": struct {
+			TestStr     string
+			TestInt     int
+			EmbedStruct interface{}
+		}{
+			TestStr: "test-str",
+			TestInt: 1024,
+			EmbedStruct: struct {
+				EmbedTestStr string
+				EmbedTestInt int
+			}{
+				EmbedTestInt: 1024,
+				EmbedTestStr: "embed-test-struct-str",
+			},
+		},
+		"[]byte": []byte(`{"byte-array":"byte-array-valu"}`),
+	}
+
+	// execute the test
+	for caseName, testItem := range testData {
+		result, err := mapstr.NewFromInterface(testItem)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		json, err := result.ToJSON()
+		require.NoError(t, err)
+		t.Logf("case:%s, the result:%s", caseName, string(json))
+		if "struct" == caseName {
+			subResult, err := result.MapStr("EmbedStruct")
+			require.NoError(t, err)
+			require.NotNil(t, subResult)
+			subJson, err := subResult.ToJSON()
+			require.NoError(t, err)
+			t.Logf("case:%s embed struct:%s", caseName, subJson)
+		}
+	}
+
 }
