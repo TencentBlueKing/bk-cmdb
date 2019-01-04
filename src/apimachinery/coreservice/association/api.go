@@ -173,8 +173,8 @@ func (asst *association) UpdateModelAssociation(ctx context.Context, h http.Head
 	return
 }
 
-func (asst *association) ReadModelAssociation(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.QueryConditionResult, err error) {
-	resp = new(metadata.QueryConditionResult)
+func (asst *association) ReadModelAssociation(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.ReadModelAssociationResult, err error) {
+	resp = new(metadata.ReadModelAssociationResult)
 	subPath := "/read/modelassociation"
 
 	err = asst.client.Post().
@@ -257,8 +257,8 @@ func (asst *association) UpdateInstAssociation(ctx context.Context, h http.Heade
 	return
 }
 
-func (asst *association) ReadInstAssociation(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.QueryConditionResult, err error) {
-	resp = new(metadata.QueryConditionResult)
+func (asst *association) ReadInstAssociation(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.ReadInstAssociationResult, err error) {
+	resp = new(metadata.ReadInstAssociationResult)
 	subPath := "/read/instanceassociation"
 
 	err = asst.client.Post().

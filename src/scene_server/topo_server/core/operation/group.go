@@ -14,13 +14,12 @@ package operation
 
 import (
 	"context"
-	"strconv"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
-	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
@@ -29,7 +28,7 @@ import (
 
 // GroupOperationInterface group operation methods
 type GroupOperationInterface interface {
-	CreateObjectGroup(params types.ContextParams, data frtypes.MapStr) (model.GroupInterface, error)
+	CreateObjectGroup(params types.ContextParams, data mapstr.MapStr) (model.GroupInterface, error)
 	DeleteObjectGroup(params types.ContextParams, groupID int64) error
 	FindObjectGroup(params types.ContextParams, cond condition.Condition) ([]model.GroupInterface, error)
 	FindGroupByObject(params types.ContextParams, objID string, cond condition.Condition) ([]model.GroupInterface, error)
@@ -59,7 +58,7 @@ func (g *group) SetProxy(modelFactory model.Factory, instFactory inst.Factory, o
 	g.obj = obj
 }
 
-func (g *group) CreateObjectGroup(params types.ContextParams, data frtypes.MapStr) (model.GroupInterface, error) {
+func (g *group) CreateObjectGroup(params types.ContextParams, data mapstr.MapStr) (model.GroupInterface, error) {
 
 	grp := g.modelFactory.CreateGroup(params)
 
@@ -86,8 +85,8 @@ func (g *group) CreateObjectGroup(params types.ContextParams, data frtypes.MapSt
 }
 
 func (g *group) DeleteObjectGroup(params types.ContextParams, groupID int64) error {
-
-	rsp, err := g.clientSet.ObjectController().Meta().DeletePropertyGroup(context.Background(), strconv.FormatInt(groupID, 10), params.Header)
+	cond := condition.CreateCondition().Field(common.BKFieldID).Eq(groupID)
+	rsp, err := g.clientSet.CoreService().Model().DeleteAttributeGroupByCondition(context.Background(), params.Header, metadata.DeleteOption{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[operation-grp]failed to request object controller, error info is %s", err.Error())
 		return err
@@ -119,8 +118,7 @@ func (g *group) FindObjectGroup(params types.ContextParams, cond condition.Condi
 }
 
 func (g *group) FindGroupByObject(params types.ContextParams, objID string, cond condition.Condition) ([]model.GroupInterface, error) {
-
-	rsp, err := g.clientSet.ObjectController().Meta().SelectPropertyGroupByObjectID(context.Background(), params.SupplierAccount, objID, params.Header, cond.ToMapStr())
+	rsp, err := g.clientSet.CoreService().Model().ReadAttributeGroup(context.Background(), params.Header, objID, metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[operation-grp] failed to request the object controller, error info is %s", err.Error())
 		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -131,30 +129,44 @@ func (g *group) FindGroupByObject(params types.ContextParams, objID string, cond
 		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	return model.CreateGroup(params, g.clientSet, rsp.Data), nil
+	return model.CreateGroup(params, g.clientSet, rsp.Data.Info), nil
 }
 
-func (g *group) UpdateObjectAttributeGroup(params types.ContextParams, cond []metadata.PropertyGroupObjectAtt) error {
+func (g *group) UpdateObjectAttributeGroup(params types.ContextParams, conds []metadata.PropertyGroupObjectAtt) error {
+	for _, cond := range conds {
+		input := metadata.UpdateOption{
+			Condition: mapstr.NewFromStruct(cond.Condition, "json"),
+			Data:      mapstr.NewFromStruct(cond.Data, "json"),
+		}
 
-	rsp, err := g.clientSet.ObjectController().Meta().UpdatePropertyGroupObjectAtt(context.Background(), params.Header, cond)
+		rsp, err := g.clientSet.CoreService().Model().UpdateAttributeGroupByCondition(context.Background(), params.Header, input)
+		if nil != err {
+			blog.Errorf("[operation-grp] failed to set the group  by the condition (%#v), error info is %s ", cond, err.Error())
+			return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		}
 
-	if nil != err {
-		blog.Errorf("[operation-grp] failed to set the group  by the condition (%#v), error info is %s ", cond, err.Error())
-		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if !rsp.Result {
-		blog.Errorf("[operation-grp] failed to set the group  by the condition (%#v), error info is %s ", cond, rsp.ErrMsg)
-		return params.Err.New(rsp.Code, rsp.ErrMsg)
+		if !rsp.Result {
+			blog.Errorf("[operation-grp] failed to set the group  by the condition (%#v), error info is %s ", cond, rsp.ErrMsg)
+			return params.Err.New(rsp.Code, rsp.ErrMsg)
+		}
 	}
 
 	return nil
 }
 
 func (g *group) DeleteObjectAttributeGroup(params types.ContextParams, objID, propertyID, groupID string) error {
+	input := metadata.UpdateOption{
+		Condition: condition.CreateCondition().
+			Field(common.BKObjIDField).Eq(objID).
+			Field(common.BKPropertyIDField).Eq(propertyID).
+			Field(common.BKPropertyGroupField).Eq(groupID).ToMapStr(),
+		Data: mapstr.MapStr{
+			"bk_property_index":         -1,
+			common.BKPropertyGroupField: "default",
+		},
+	}
 
-	rsp, err := g.clientSet.ObjectController().Meta().DeletePropertyGroupObjectAtt(context.Background(), params.SupplierAccount, objID, propertyID, groupID, params.Header)
-
+	rsp, err := g.clientSet.CoreService().Model().UpdateAttributeGroup(context.Background(), params.Header, objID, input)
 	if nil != err {
 		blog.Errorf("[operation-grp] failed to set the group , error info is %s ", err.Error())
 		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -170,8 +182,11 @@ func (g *group) DeleteObjectAttributeGroup(params types.ContextParams, objID, pr
 
 func (g *group) UpdateObjectGroup(params types.ContextParams, cond *metadata.UpdateGroupCondition) error {
 
-	//fmt.Printf("\ncond:%#v\n", cond)
-
+	input := metadata.UpdateOption{
+		Condition: mapstr.NewFromStruct(cond.Condition, "json"),
+		Data:      mapstr.NewFromStruct(cond.Data, "json"),
+	}
+	g.clientSet.CoreService().Model().UpdateAttributeGroupByCondition(context.Background(), params.Header, input)
 	rsp, err := g.clientSet.ObjectController().Meta().UpdatePropertyGroup(context.Background(), params.Header, cond)
 
 	if nil != err {

@@ -21,8 +21,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
-	frtypes "configcenter/src/common/mapstr"
-	metatype "configcenter/src/common/metadata"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
@@ -50,11 +49,11 @@ type Inst interface {
 
 	SetValue(key string, value interface{}) error
 
-	SetValues(values frtypes.MapStr)
+	SetValues(values mapstr.MapStr)
 
-	GetValues() frtypes.MapStr
+	GetValues() mapstr.MapStr
 
-	ToMapStr() frtypes.MapStr
+	ToMapStr() mapstr.MapStr
 
 	IsDefault() bool
 }
@@ -64,7 +63,7 @@ var _ Inst = (*inst)(nil)
 type inst struct {
 	clientSet apimachinery.ClientSetInterface
 	params    types.ContextParams
-	datas     frtypes.MapStr
+	datas     mapstr.MapStr
 	target    model.Object
 	// this instance associate with object id, as is InstAsst table "id" filed.
 	assoID int64
@@ -84,7 +83,7 @@ func (cli *inst) GetAssoID() int64 {
 
 func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition) ([]Inst, error) {
 
-	queryInput := &metatype.QueryInput{}
+	queryInput := &metadata.QueryInput{}
 	queryInput.Condition = cond.ToMapStr()
 
 	if targetModel.Object().ObjectID != common.BKInnerObjIDHost {
@@ -147,7 +146,7 @@ func (cli *inst) Create() error {
 	return nil
 }
 
-func (cli *inst) Update(data frtypes.MapStr) error {
+func (cli *inst) Update(data mapstr.MapStr) error {
 
 	instIDName := cli.target.GetInstIDFieldName()
 	instID, exists := cli.datas.Get(instIDName)
@@ -185,7 +184,7 @@ func (cli *inst) Update(data frtypes.MapStr) error {
 	}
 
 	// execute update action
-	updateCond := frtypes.MapStr{}
+	updateCond := mapstr.MapStr{}
 	updateCond.Set("data", data)
 	updateCond.Set("condition", cond.ToMapStr())
 	rsp, err := cli.clientSet.ObjectController().Instance().UpdateObject(context.Background(), cli.target.GetObjectType(), cli.params.Header, updateCond)
@@ -253,7 +252,7 @@ func (cli *inst) IsExists() (bool, error) {
 		}
 	}
 
-	queryCond := metatype.QueryInput{}
+	queryCond := metadata.QueryInput{}
 	queryCond.Condition = cond.ToMapStr()
 
 	rsp, err := cli.clientSet.ObjectController().Instance().SearchObjects(context.Background(), cli.target.GetObjectType(), cli.params.Header, &queryCond)
@@ -269,7 +268,7 @@ func (cli *inst) IsExists() (bool, error) {
 
 	return 0 != rsp.Data.Count, nil
 }
-func (cli *inst) Save(data frtypes.MapStr) error {
+func (cli *inst) Save(data mapstr.MapStr) error {
 
 	if nil != data {
 		cli.SetValues(data)
@@ -302,21 +301,23 @@ func (cli *inst) GetInstName() (string, error) {
 	return cli.datas.String(cli.target.GetInstNameFieldName())
 }
 
-func (cli *inst) ToMapStr() frtypes.MapStr {
+func (cli *inst) ToMapStr() mapstr.MapStr {
 	return cli.datas
 }
+
 func (cli *inst) SetValue(key string, value interface{}) error {
 	cli.datas.Set(key, value)
 	return nil
 }
 
-func (cli *inst) SetValues(values frtypes.MapStr) {
+func (cli *inst) SetValues(values mapstr.MapStr) {
 	cli.datas.Merge(values)
 }
 
-func (cli *inst) GetValues() frtypes.MapStr {
+func (cli *inst) GetValues() mapstr.MapStr {
 	return cli.datas
 }
+
 func (cli *inst) IsDefault() bool {
 	if cli.datas.Exists(common.BKDefaultField) {
 		defaultVal, err := cli.datas.Int64(common.BKDefaultField)

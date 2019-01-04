@@ -20,7 +20,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
-	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstr"
 	metadata "configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
@@ -97,7 +97,7 @@ func (g *unique) Create() error {
 	return nil
 }
 
-func (g *unique) Update(data frtypes.MapStr) error {
+func (g *unique) Update(data mapstr.MapStr) error {
 	updateReq := metadata.UpdateUniqueRequest{
 		MustCheck: g.data.MustCheck,
 		Keys:      g.data.Keys,
@@ -116,7 +116,7 @@ func (g *unique) Update(data frtypes.MapStr) error {
 	return nil
 }
 
-func (g *unique) Save(data frtypes.MapStr) error {
+func (g *unique) Save(data mapstr.MapStr) error {
 	cond := condition.CreateCondition().Field(common.BKObjIDField).Eq(g.data.ObjID)
 	searchResp, err := g.clientSet.CoreService().Model().ReadModelAttrUnique(context.Background(), g.params.Header, metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
@@ -146,7 +146,8 @@ func (g *unique) Save(data frtypes.MapStr) error {
 }
 
 func (g *unique) IsExists() (bool, error) {
-	searchResp, err := g.clientSet.ObjectController().Unique().Search(context.Background(), g.params.Header, g.data.ObjID)
+	cond := condition.CreateCondition().Field(common.BKObjIDField).Eq(g.data.ObjID)
+	searchResp, err := g.clientSet.CoreService().Model().ReadModelAttrUnique(context.Background(), g.params.Header, metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[model-unique]failed to request object controller, error info is %s", err.Error())
 		return false, err
@@ -158,7 +159,7 @@ func (g *unique) IsExists() (bool, error) {
 	}
 
 	keyhash := g.data.KeysHash()
-	for _, uni := range searchResp.Data {
+	for _, uni := range searchResp.Data.Info {
 		if uni.KeysHash() == keyhash {
 			return true, nil
 		}

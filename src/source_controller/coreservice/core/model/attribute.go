@@ -169,6 +169,24 @@ func (m *modelAttribute) UpdateModelAttributes(ctx core.ContextParams, objID str
 
 	return &metadata.UpdatedCount{Count: cnt}, nil
 }
+
+func (m *modelAttribute) UpdateModelAttributesByCondition(ctx core.ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
+
+	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
+	if nil != err {
+		blog.Errorf("request(%s): it is failed to convert from mapstr(%v) into a condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
+		return &metadata.UpdatedCount{}, err
+	}
+
+	cnt, err := m.update(ctx, inputParam.Data, cond)
+	if nil != err {
+		blog.Errorf("request(%s): it is failed to update some fields (%v)of the attribute by the condition(%v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
+		return &metadata.UpdatedCount{}, err
+	}
+
+	return &metadata.UpdatedCount{Count: cnt}, nil
+}
+
 func (m *modelAttribute) DeleteModelAttributes(ctx core.ContextParams, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
 	if err := m.model.isValid(ctx, objID); nil != err {
