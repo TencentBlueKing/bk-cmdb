@@ -77,6 +77,12 @@ func (k *FieldItem) Gt(val interface{}) *FieldItem {
 	return k
 }
 
+// Regex add an element like { <field>: {$regex:<val>} } for the field
+func (k *FieldItem) Regex(val interface{}) *FieldItem {
+	k.Val[universalsql.REGEX] = val
+	return k
+}
+
 //Gte add an element like { <field>: { $gte: <val> } } for the field
 func (k *FieldItem) Gte(val interface{}) *FieldItem {
 	k.Val[universalsql.GTE] = val

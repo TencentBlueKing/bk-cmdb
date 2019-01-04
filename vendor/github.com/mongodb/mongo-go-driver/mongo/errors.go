@@ -12,13 +12,26 @@ import (
 	"fmt"
 
 	"github.com/mongodb/mongo-go-driver/bson"
-	"github.com/mongodb/mongo-go-driver/core/command"
-	"github.com/mongodb/mongo-go-driver/core/result"
+	"github.com/mongodb/mongo-go-driver/x/mongo/driver"
+	"github.com/mongodb/mongo-go-driver/x/mongo/driver/topology"
+	"github.com/mongodb/mongo-go-driver/x/network/command"
+	"github.com/mongodb/mongo-go-driver/x/network/result"
 )
 
 // ErrUnacknowledgedWrite is returned from functions that have an unacknowledged
 // write concern.
 var ErrUnacknowledgedWrite = errors.New("unacknowledged write")
+
+// ErrClientDisconnected is returned when a user attempts to call a method on a
+// disconnected client
+var ErrClientDisconnected = errors.New("client is disconnected")
+
+func replaceTopologyErr(err error) error {
+	if err == topology.ErrTopologyClosed {
+		return ErrClientDisconnected
+	}
+	return err
+}
 
 // WriteError is a non-write concern failure that occurred as a result of a write
 // operation.
@@ -60,10 +73,26 @@ func writeErrorsFromResult(rwes []result.WriteError) WriteErrors {
 type WriteConcernError struct {
 	Code    int
 	Message string
-	Details bson.Reader
+	Details bson.Raw
 }
 
 func (wce WriteConcernError) Error() string { return wce.Message }
+
+func convertBulkWriteErrors(errors []driver.BulkWriteError) []BulkWriteError {
+	bwErrors := make([]BulkWriteError, 0, len(errors))
+	for _, err := range errors {
+		bwErrors = append(bwErrors, BulkWriteError{
+			WriteError{
+				Index:   err.Index,
+				Code:    err.Code,
+				Message: err.ErrMsg,
+			},
+			dispatchToMongoModel(err.Model),
+		})
+	}
+
+	return bwErrors
+}
 
 func convertWriteConcernError(wce *result.WriteConcernError) *WriteConcernError {
 	if wce == nil {
@@ -73,13 +102,25 @@ func convertWriteConcernError(wce *result.WriteConcernError) *WriteConcernError 
 	return &WriteConcernError{Code: wce.Code, Message: wce.ErrMsg, Details: wce.ErrInfo}
 }
 
-// BulkWriteError is an error returned from a bulk write operation.
+// BulkWriteError is an error for one operation in a bulk write.
 type BulkWriteError struct {
-	WriteErrors       WriteErrors
-	WriteConcernError *WriteConcernError
+	WriteError
+	Request WriteModel
 }
 
 func (bwe BulkWriteError) Error() string {
+	var buf bytes.Buffer
+	fmt.Fprintf(&buf, "{%s}", bwe.WriteError)
+	return buf.String()
+}
+
+// BulkWriteException is an error for a bulk write operation.
+type BulkWriteException struct {
+	WriteConcernError *WriteConcernError
+	WriteErrors       []BulkWriteError
+}
+
+func (bwe BulkWriteException) Error() string {
 	var buf bytes.Buffer
 	fmt.Fprint(&buf, "bulk write error: [")
 	fmt.Fprintf(&buf, "{%s}, ", bwe.WriteErrors)
@@ -111,7 +152,7 @@ func processWriteError(wce *result.WriteConcernError, wes []result.WriteError, e
 	case err == command.ErrUnacknowledgedWrite:
 		return rrAll, ErrUnacknowledgedWrite
 	case err != nil:
-		return rrNone, err
+		return rrNone, replaceTopologyErr(err)
 	case wce != nil:
 		return rrMany, WriteConcernError{Code: wce.Code, Message: wce.ErrMsg}
 	case len(wes) > 0:
