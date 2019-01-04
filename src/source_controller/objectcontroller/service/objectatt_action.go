@@ -155,7 +155,7 @@ func (cli *Service) DeleteObjectAttByID(req *restful.Request, resp *restful.Resp
 	usedKeyID := map[int64]bool{}
 	for _, unique := range uniques {
 		for _, key := range unique.Keys {
-			if key.Kind == meta.UinqueKeyKindProperty {
+			if key.Kind == meta.UniqueKeyKindProperty {
 				usedKeyID[int64(key.ID)] = true
 			}
 		}
