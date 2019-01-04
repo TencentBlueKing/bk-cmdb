@@ -38,7 +38,7 @@ func (s *topoService) CreateMainLineObject(params types.ContextParams, pathParam
 // DeleteMainLineObject delete a object int the main line topo
 func (s *topoService) DeleteMainLineObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
-	objID := pathParams("obj_id")
+	objID := pathParams("bk_obj_id")
 	err := s.core.AssociationOperation().DeleteMainlineAssociaton(params, objID)
 	return nil, err
 }
@@ -71,7 +71,7 @@ func (s *topoService) SearchObjectByClassificationID(params types.ContextParams,
 func (s *topoService) SearchBusinessTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	paramPath := frtypes.MapStr{}
-	paramPath.Set("id", pathParams("app_id"))
+	paramPath.Set("id", pathParams("bk_biz_id"))
 	id, err := paramPath.Int64("id")
 	if nil != err {
 		blog.Errorf("[api-asst] failed to parse the path params id(%s), error info is %s ", pathParams("app_id"), err.Error())
@@ -226,11 +226,11 @@ func (s *topoService) CreateAssociationInst(params types.ContextParams, pathPara
 }
 
 func (s *topoService) DeleteAssociationInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	
+
 	id, err := strconv.ParseInt(pathParams("association_id"), 10, 64)
 	if err != nil {
-	    return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
-    }
+		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
+	}
 	ret, err := s.core.AssociationOperation().DeleteInst(params, id)
 	if err != nil {
 		return nil, err

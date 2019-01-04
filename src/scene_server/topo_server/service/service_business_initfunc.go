@@ -12,91 +12,89 @@
 
 package service
 
-//import (
-//	"net/http"
+import (
+	"net/http"
+)
 
-//	"configcenter/src/common"
-//)
+func (s *topoService) initBusinessObject() {
 
-//func (s *topoService) initBusinessObject() {
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/createmany/object", HandlerFunc: s.CreateObjectBatch})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/findmany/object", HandlerFunc: s.SearchObjectBatch})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/object", HandlerFunc: s.CreateOneObject})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/object", HandlerFunc: s.SearchObject})
+	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/object/{id}", HandlerFunc: s.UpdateObject})
+	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/object/{id}", HandlerFunc: s.DeleteObject})
+	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/find/objecttopology", HandlerFunc: s.SearchObjectTopo})
 
-//	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/createmany/object", HandlerFunc: s.CreateObjectBatch})
-//	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/findmany/object", HandlerFunc: s.SearchObjectBatch})
-//	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/object", HandlerFunc: s.CreateOneObject})
-//	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/object", HandlerFunc: s.SearchObject})
-//	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/object", HandlerFunc: s.UpdateObject})
-//	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/object", HandlerFunc: s.DeleteObject})
-//	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/find/object-topology", HandlerFunc: s.SearchObjectTopo})
+}
 
-//}
+func (s *topoService) initBusinessClassification() {
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/objectclassification", HandlerFunc: s.CreateClassification})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/classificationobject", HandlerFunc: s.SearchClassificationWithObjects})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/objectclassification", HandlerFunc: s.SearchClassification})
+	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/object/classification/{id}", HandlerFunc: s.UpdateClassification})
+	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/object/classification/{id}", HandlerFunc: s.DeleteClassification})
 
-//func (s *topoService) initBusinessClassification() {
-//	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/object/classification", HandlerFunc: s.CreateClassification})
-//	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/object/classification/{owner_id}/objects", HandlerFunc: s.SearchClassificationWithObjects})
-//	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/object/classifications", HandlerFunc: s.SearchClassification})
-//	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/object/classification/{id}", HandlerFunc: s.UpdateClassification})
-//	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/object/classification/{id}", HandlerFunc: s.DeleteClassification})
+}
 
-//}
+func (s *topoService) initBusinessObjectAttribute() {
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/objectattr", HandlerFunc: s.CreateObjectAttribute})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/objectattr", HandlerFunc: s.SearchObjectAttribute})
+	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/objectattr/{id}", HandlerFunc: s.UpdateObjectAttribute})
+	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/objectattr/{id}", HandlerFunc: s.DeleteObjectAttribute})
+}
 
-//func (s *topoService) initBusinessObjectAttribute() {
-//	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/objectattr", HandlerFunc: s.CreateObjectAttribute})
-//	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/objectattr/search", HandlerFunc: s.SearchObjectAttribute})
-//	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/objectattr/{id}", HandlerFunc: s.UpdateObjectAttribute})
-//	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/objectattr/{id}", HandlerFunc: s.DeleteObjectAttribute})
-//}
+func (s *topoService) initBusinessObjectUnique() {
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/objectunique/object/{bk_obj_id}", HandlerFunc: s.CreateObjectUnique})
+	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/objectunique/object/{bk_obj_id}/unique/{id}", HandlerFunc: s.UpdateObjectUnique})
+	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/objectunique/object/{bk_obj_id}/unique/{id}", HandlerFunc: s.DeleteObjectUnique})
+	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/find/objectunique/object/{bk_obj_id", HandlerFunc: s.SearchObjectUnique})
+}
 
-//func (s *topoService) initBusinessObjectUnique() {
-//	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/object/{bk_obj_id}/unique/action/create", HandlerFunc: s.CreateObjectUnique})
-//	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/object/{bk_obj_id}/unique/{id}/action/update", HandlerFunc: s.UpdateObjectUnique})
-//	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/object/{bk_obj_id}/unique/{id}/action/delete", HandlerFunc: s.DeleteObjectUnique})
-//	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/object/{bk_obj_id}/unique/action/search", HandlerFunc: s.SearchObjectUnique})
-//}
+func (s *topoService) initBusinessObjectAttrGroup() {
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/objectattgroup", HandlerFunc: s.CreateObjectGroup})
+	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/objectattgroup", HandlerFunc: s.UpdateObjectGroup})
+	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/objectattgroup/{id}", HandlerFunc: s.DeleteObjectGroup})
+	//	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/objectatt/group/property", HandlerFunc: s.UpdateObjectAttributeGroup, HandlerParseOriginDataFunc: s.ParseUpdateObjectAttributeGroupInput})
+	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/objectattgroupasst/object/{bk_obj_id}/property/{property_id}/group/{group_id}", HandlerFunc: s.DeleteObjectAttributeGroup})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/objectattgroup/object/{bk_obj_id}", HandlerFunc: s.SearchGroupByObject})
+}
 
-//func (s *topoService) initBusinessObjectAttrGroup() {
-//	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/objectatt/group/new", HandlerFunc: s.CreateObjectGroup})
-//	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/objectatt/group/update", HandlerFunc: s.UpdateObjectGroup})
-//	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/objectatt/group/groupid/{id}", HandlerFunc: s.DeleteObjectGroup})
-//	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/objectatt/group/property", HandlerFunc: s.UpdateObjectAttributeGroup, HandlerParseOriginDataFunc: s.ParseUpdateObjectAttributeGroupInput})
-//	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/objectatt/group/owner/{owner_id}/object/{object_id}/propertyids/{property_id}/groupids/{group_id}", HandlerFunc: s.DeleteObjectAttributeGroup})
-//	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/objectatt/group/property/owner/{owner_id}/object/{object_id}", HandlerFunc: s.SearchGroupByObject})
-//}
+func (s *topoService) initBusinessAssociation() {
 
-//func (s *topoService) initBusinessAssociation() {
+	// mainline topo methods
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/topomodelmainline", HandlerFunc: s.CreateMainLineObject})
+	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/topomodelmainline/object/{bk_obj_id}", HandlerFunc: s.DeleteMainLineObject})
+	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/find/topomodelmainline", HandlerFunc: s.SearchMainLineObjectTopo})
+	//	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/model/{owner_id}/{cls_id}/{obj_id}", HandlerFunc: s.SearchObjectByClassificationID})
+	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/find/topoinst/biz/{bk_biz_id}", HandlerFunc: s.SearchBusinessTopo})
+	// TODO: delete this api, it's not used by front.
+	//	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/inst/child/{owner_id}/{obj_id}/{app_id}/{inst_id}", HandlerFunc: s.SearchMainLineChildInstTopo})
 
-//	// mainline topo methods
-//	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/topo/model/mainline", HandlerFunc: s.CreateMainLineObject})
-//	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/topo/model/mainline/owners/{owner_id}/objectids/{obj_id}", HandlerFunc: s.DeleteMainLineObject})
-//	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/model/{owner_id}", HandlerFunc: s.SearchMainLineObjectTopo})
-//	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/model/{owner_id}/{cls_id}/{obj_id}", HandlerFunc: s.SearchObjectByClassificationID})
-//	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/inst/{owner_id}/{app_id}", HandlerFunc: s.SearchBusinessTopo})
-//	// TODO: delete this api, it's not used by front.
-//	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/inst/child/{owner_id}/{obj_id}/{app_id}/{inst_id}", HandlerFunc: s.SearchMainLineChildInstTopo})
+	// association type methods
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/topoassociationtype", HandlerFunc: s.SearchObjectAssoWithAssoKindList})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/associationtype", HandlerFunc: s.SearchAssociationType})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/associationtype", HandlerFunc: s.CreateAssociationType})
+	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/associationtype/{id}", HandlerFunc: s.UpdateAssociationType})
+	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/associationtype/{id}", HandlerFunc: s.DeleteAssociationType})
 
-//	// association type methods
-//	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/topo/association/type/action/search/batch", HandlerFunc: s.SearchObjectAssoWithAssoKindList})
-//	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/topo/association/type/action/search", HandlerFunc: s.SearchAssociationType})
-//	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/topo/association/type/action/create", HandlerFunc: s.CreateAssociationType})
-//	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/topo/association/type/{id}/action/update", HandlerFunc: s.UpdateAssociationType})
-//	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/topo/association/type/{id}/action/delete", HandlerFunc: s.DeleteAssociationType})
+	// object association methods
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/objectassociation", HandlerFunc: s.SearchObjectAssociation})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/objectassociation", HandlerFunc: s.CreateObjectAssociation})
+	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/object/association/{id}", HandlerFunc: s.UpdateObjectAssociation})
+	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/associationtype/{id}", HandlerFunc: s.DeleteObjectAssociation})
 
-//	// object association methods
-//	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/object/association/action/search", HandlerFunc: s.SearchObjectAssociation})
-//	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/object/association/action/create", HandlerFunc: s.CreateObjectAssociation})
-//	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/object/association/{id}/action/update", HandlerFunc: s.UpdateObjectAssociation})
-//	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/object/association/{id}/action/delete", HandlerFunc: s.DeleteObjectAssociation})
+	// inst association methods
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/instassociation", HandlerFunc: s.SearchAssociationInst})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/instassociation", HandlerFunc: s.CreateAssociationInst})
+	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/instassociation/{association_id}", HandlerFunc: s.DeleteAssociationInst})
 
-//	// inst association methods
-//	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/association/action/search", HandlerFunc: s.SearchAssociationInst})
-//	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/association/action/create", HandlerFunc: s.CreateAssociationInst})
-//	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/inst/association/{association_id}/action/delete", HandlerFunc: s.DeleteAssociationInst})
+	// topo search methods
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/instassociation/object/{bk_obj_id}", HandlerFunc: s.SearchInstByAssociation})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/instassttopo/object/{bk_obj_id}/inst/{inst_id}", HandlerFunc: s.SearchInstTopo})
 
-//	// topo search methods
-//	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/association/search/owner/{owner_id}/object/{obj_id}", HandlerFunc: s.SearchInstByAssociation})
-//	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/association/topo/search/owner/{owner_id}/object/{object_id}/inst/{inst_id}", HandlerFunc: s.SearchInstTopo})
+	// ATTENTION: the following methods is not recommended
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/insttopo/object/{bk_obj_id}/inst/{inst_id}", HandlerFunc: s.SearchInstChildTopo})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/import/instassociation/{bk_obj_id}", HandlerFunc: s.ImportInstanceAssociation})
 
-//	// ATTENTION: the following methods is not recommended
-//	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/search/topo/owner/{owner_id}/object/{object_id}/inst/{inst_id}", HandlerFunc: s.SearchInstChildTopo})
-//	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/association/action/{obj_id}/import", HandlerFunc: s.ImportInstanceAssociation})
-
-//}
+}

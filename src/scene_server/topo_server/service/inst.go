@@ -339,7 +339,7 @@ func (s *topoService) SearchInstByInstID(params types.ContextParams, pathParams,
 
 // SearchInstChildTopo search the child inst topo for a inst
 func (s *topoService) SearchInstChildTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	objID := pathParams("object_id")
+	objID := pathParams("bk_object_id")
 	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
 	if nil != err {
 		return nil, err
@@ -367,7 +367,7 @@ func (s *topoService) SearchInstChildTopo(params types.ContextParams, pathParams
 // SearchInstTopo search the inst topo
 func (s *topoService) SearchInstTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
-	objID := pathParams("object_id")
+	objID := pathParams("bk_object_id")
 	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
 	if nil != err {
 		return nil, err

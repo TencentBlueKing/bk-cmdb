@@ -49,6 +49,9 @@ const (
 type Label map[string]string
 
 func GetBusinessIDFromMeta(data interface{}) string {
+	if nil == data {
+		return ""
+	}
 	tmp, ok := data.(map[string]interface{})
 	if !ok {
 		return ""
