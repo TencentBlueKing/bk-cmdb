@@ -359,7 +359,7 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 		return nil, params.Err.Error(common.CCErrTopoObjectGroupCreateFailed)
 	}
 
-	keys := make([]metadata.UinqueKey, 0)
+	keys := make([]metadata.UniqueKey, 0)
 	// create the default inst name
 	group := grp.Group()
 	attr := obj.CreateAttribute()
@@ -382,7 +382,7 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 		return nil, err
 	}
 
-	keys = append(keys, metadata.UinqueKey{Kind: metadata.UinqueKeyKindProperty, ID: uint64(attr.Attribute().ID)})
+	keys = append(keys, metadata.UniqueKey{Kind: metadata.UniqueKeyKindProperty, ID: uint64(attr.Attribute().ID)})
 
 	if isMainline {
 		pAttr := obj.CreateAttribute()
@@ -404,7 +404,7 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 			blog.Errorf("[operation-obj] failed to create the default inst name field, err: %s", err.Error())
 			return nil, params.Err.Error(common.CCErrTopoObjectAttributeCreateFailed)
 		}
-		keys = append(keys, metadata.UinqueKey{Kind: metadata.UinqueKeyKindProperty, ID: uint64(pAttr.Attribute().ID)})
+		keys = append(keys, metadata.UniqueKey{Kind: metadata.UniqueKeyKindProperty, ID: uint64(pAttr.Attribute().ID)})
 	}
 
 	uni := obj.CreateUnique()
@@ -754,7 +754,7 @@ func (o *object) CreateOneObject(params types.ContextParams, data mapstr.MapStr)
 	}
 
 	uni := obj.CreateUnique()
-	uni.SetKeys([]metadata.UinqueKey{{Kind: metadata.UinqueKeyKindProperty, ID: uint64(attr.Attribute().ID)}})
+	uni.SetKeys([]metadata.UniqueKey{{Kind: metadata.UniqueKeyKindProperty, ID: uint64(attr.Attribute().ID)}})
 	uni.SetIsPre(false)
 	uni.SetMustCheck(true)
 	if err = uni.Save(nil); nil != err {

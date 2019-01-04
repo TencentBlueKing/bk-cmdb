@@ -31,8 +31,8 @@ type Unique interface {
 
 	Origin() metadata.ObjectUnique
 
-	SetKeys([]metadata.UinqueKey)
-	GetKeys() []metadata.UinqueKey
+	SetKeys([]metadata.UniqueKey)
+	GetKeys() []metadata.UniqueKey
 
 	SetMustCheck(bool)
 	GetMustCheck() bool
@@ -192,10 +192,10 @@ func (g *unique) GetIsPre() bool {
 	return g.data.Ispre
 }
 
-func (g *unique) SetKeys(keys []metadata.UinqueKey) {
+func (g *unique) SetKeys(keys []metadata.UniqueKey) {
 	g.data.Keys = keys
 }
-func (g *unique) GetKeys() []metadata.UinqueKey {
+func (g *unique) GetKeys() []metadata.UniqueKey {
 	return g.data.Keys
 }
 func (g *unique) SetMustCheck(mustcheck bool) {
