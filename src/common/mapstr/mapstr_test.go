@@ -261,11 +261,11 @@ func TestConvertToMapStrFromInterface(t *testing.T) {
 		},
 		"struct": struct {
 			TestStr     string
-			TestInt     int
+			testInt     int
 			EmbedStruct interface{}
 		}{
 			TestStr: "test-str",
-			TestInt: 1024,
+			testInt: 1024,
 			EmbedStruct: struct {
 				EmbedTestStr string
 				EmbedTestInt int
