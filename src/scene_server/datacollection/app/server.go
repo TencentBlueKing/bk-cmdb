@@ -93,7 +93,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			continue
 		}
 
-		instance, err := mongo.NewMgo(process.Config.MongoDB.BuildURI())
+		instance, err := mongo.NewMgo(process.Config.MongoDB.BuildURI(), time.Minute)
 		if err != nil {
 			return fmt.Errorf("new mongo client failed, err: %s", err.Error())
 		}

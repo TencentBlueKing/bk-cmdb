@@ -144,6 +144,11 @@
                     this.table.checked = []
                     this.handlePageChange(1)
                 }
+            },
+            'slider.show' (show) {
+                if (!show) {
+                    this.tab.active = 'attribute'
+                }
             }
         },
         created () {
