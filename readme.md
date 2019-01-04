@@ -61,7 +61,8 @@
 ![qq](docs/resource/img/qq.png)
 
 ## Contributing
-关于 bk-cmdb 分支管理、issue 以及 pr 规范，请阅读 [bk-cmdb Contributing Guide](docs/CONTRIBUTING.md)。
+关于 bk-cmdb 分支管理、issue 以及 pr 规范，请阅读 [bk-cmdb Contributing Guide](docs/CONTRIBUTING.md)。 
+腾讯开源激励计划(https://opensource.tencent.com/contribution) 鼓励开发者的参与和贡献，期待你的加入。
 
 ## FAQ
 
