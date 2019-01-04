@@ -21,7 +21,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
-	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
@@ -30,20 +30,20 @@ import (
 
 // ObjectOperationInterface object operation methods
 type ObjectOperationInterface interface {
-	CreateObjectBatch(params types.ContextParams, data frtypes.MapStr) (frtypes.MapStr, error)
-	FindObjectBatch(params types.ContextParams, data frtypes.MapStr) (frtypes.MapStr, error)
-	CreateObject(params types.ContextParams, isMainline bool, data frtypes.MapStr) (model.Object, error)
+	CreateObjectBatch(params types.ContextParams, data mapstr.MapStr) (mapstr.MapStr, error)
+	FindObjectBatch(params types.ContextParams, data mapstr.MapStr) (mapstr.MapStr, error)
+	CreateObject(params types.ContextParams, isMainline bool, data mapstr.MapStr) (model.Object, error)
 	CanDelete(params types.ContextParams, targetObj model.Object) error
 	DeleteObject(params types.ContextParams, id int64, cond condition.Condition, needCheckInst bool) error
 	FindObject(params types.ContextParams, cond condition.Condition) ([]model.Object, error)
 	FindObjectTopo(params types.ContextParams, cond condition.Condition) ([]metadata.ObjectTopo, error)
 	FindSingleObject(params types.ContextParams, objectID string) (model.Object, error)
-	UpdateObject(params types.ContextParams, data frtypes.MapStr, id int64, cond condition.Condition) error
+	UpdateObject(params types.ContextParams, data mapstr.MapStr, id int64, cond condition.Condition) error
 
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, cls ClassificationOperationInterface, asst AssociationOperationInterface, inst InstOperationInterface, attr AttributeOperationInterface, grp GroupOperationInterface, unique UniqueOperationInterface)
 	IsValidObject(params types.ContextParams, objID string) error
 
-	CreateOneObject(params types.ContextParams, data frtypes.MapStr) (model.Object, error)
+	CreateOneObject(params types.ContextParams, data mapstr.MapStr) (model.Object, error)
 }
 
 // NewObjectOperation create a new object operation instance
@@ -94,16 +94,16 @@ func (o *object) IsValidObject(params types.ContextParams, objID string) error {
 	return nil
 }
 
-func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapStr) (mapstr.MapStr, error) {
 
 	inputData := map[string]ImportObjectData{}
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
 	}
 
-	result := frtypes.New()
+	result := mapstr.New()
 	for objID, inputData := range inputData {
-		subResult := frtypes.New()
+		subResult := mapstr.New()
 		if err := o.IsValidObject(params, objID); nil != err {
 			blog.Errorf("not found the  objid: %s", objID)
 			subResult["errors"] = fmt.Sprintf("the object(%s) is invalid", objID)
@@ -266,14 +266,14 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapS
 
 	return result, nil
 }
-func (o *object) FindObjectBatch(params types.ContextParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (o *object) FindObjectBatch(params types.ContextParams, data mapstr.MapStr) (mapstr.MapStr, error) {
 
 	cond := &ExportObjectCondition{}
 	if err := data.MarshalJSONInto(cond); nil != err {
 		return nil, err
 	}
 
-	result := frtypes.New()
+	result := mapstr.New()
 
 	for _, objID := range cond.ObjIDS {
 		obj, err := o.FindSingleObject(params, objID)
@@ -286,7 +286,7 @@ func (o *object) FindObjectBatch(params types.ContextParams, data frtypes.MapStr
 			return nil, err
 		}
 
-		result.Set(objID, frtypes.MapStr{
+		result.Set(objID, mapstr.MapStr{
 			"attr": attrs,
 		})
 	}
@@ -309,7 +309,7 @@ func (o *object) FindSingleObject(params types.ContextParams, objectID string) (
 	}
 	return nil, params.Err.New(common.CCErrTopoObjectSelectFailed, params.Err.Errorf(common.CCErrCommParamsIsInvalid, objectID).Error())
 }
-func (o *object) CreateObject(params types.ContextParams, isMainline bool, data frtypes.MapStr) (model.Object, error) {
+func (o *object) CreateObject(params types.ContextParams, isMainline bool, data mapstr.MapStr) (model.Object, error) {
 	obj := o.modelFactory.CreateObject(params)
 
 	err := obj.Parse(data)
@@ -441,8 +441,8 @@ func (o *object) CanDelete(params types.ContextParams, targetObj model.Object) e
 	}
 
 	or := make([]interface{}, 0)
-	or = append(or, frtypes.MapStr{common.BKObjIDField: tObject.ObjectID})
-	or = append(or, frtypes.MapStr{common.AssociatedObjectIDField: tObject.ObjectID})
+	or = append(or, mapstr.MapStr{common.BKObjIDField: tObject.ObjectID})
+	or = append(or, mapstr.MapStr{common.AssociatedObjectIDField: tObject.ObjectID})
 
 	cond = condition.CreateCondition()
 	cond.NewOR().Array(or)
@@ -664,7 +664,7 @@ func (o *object) FindObject(params types.ContextParams, cond condition.Condition
 	return model.CreateObject(params, o.clientSet, rsp.Data), nil
 }
 
-func (o *object) UpdateObject(params types.ContextParams, data frtypes.MapStr, id int64, cond condition.Condition) error {
+func (o *object) UpdateObject(params types.ContextParams, data mapstr.MapStr, id int64, cond condition.Condition) error {
 
 	obj := o.modelFactory.CreateObject(params)
 	obj.SetRecordID(id)
@@ -693,7 +693,7 @@ func (o *object) UpdateObject(params types.ContextParams, data frtypes.MapStr, i
 	return nil
 }
 
-func (o *object) CreateOneObject(params types.ContextParams, data frtypes.MapStr) (model.Object, error) {
+func (o *object) CreateOneObject(params types.ContextParams, data mapstr.MapStr) (model.Object, error) {
 	obj := o.modelFactory.CreateObject(params)
 
 	err := obj.Parse(data)

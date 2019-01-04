@@ -157,3 +157,19 @@ type ReadModelUniqueResult struct {
 	BaseResp `json:",inline"`
 	Data     QueryUniqueResult `json:"data"`
 }
+
+type ReadModelAssociationResult struct {
+	BaseResp
+	Data struct {
+		Count uint64        `json:"count"`
+		Info  []Association `json:"info"`
+	}
+}
+
+type ReadInstAssociationResult struct {
+	BaseResp
+	Data struct {
+		Count uint64     `json:"count"`
+		Info  []InstAsst `json:"info"`
+	}
+}

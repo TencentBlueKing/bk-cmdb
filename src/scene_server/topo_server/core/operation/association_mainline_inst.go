@@ -19,7 +19,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
-	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
@@ -197,7 +197,7 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 func (cli *association) SearchMainlineAssociationInstTopo(params types.ContextParams, obj model.Object, instID int64) ([]*metadata.TopoInstRst, error) {
 
 	cond := &metadata.QueryInput{}
-	cond.Condition = frtypes.MapStr{
+	cond.Condition = mapstr.MapStr{
 		obj.GetInstIDFieldName(): instID,
 	}
 
