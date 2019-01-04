@@ -117,7 +117,7 @@ func (s *topoService) UpdateObjectAssociation(params types.ContextParams, pathPa
 
 // ImportInstanceAssociation import instance  association
 func (s *topoService) ImportInstanceAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	objID := pathParams("obj_id")
+	objID := pathParams("bk_obj_id")
 	request := new(metadata.RequestImportAssociation)
 	if err := data.MarshalJSONInto(request); err != nil {
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())

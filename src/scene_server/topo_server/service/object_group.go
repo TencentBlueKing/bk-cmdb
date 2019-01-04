@@ -101,7 +101,7 @@ func (s *topoService) UpdateObjectAttributeGroup(params types.ContextParams, pat
 // DeleteObjectAttributeGroup delete the object attribute belongs to group information
 func (s *topoService) DeleteObjectAttributeGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
-	err := s.core.GroupOperation().DeleteObjectAttributeGroup(params, pathParams("object_id"), pathParams("property_id"), pathParams("group_id"))
+	err := s.core.GroupOperation().DeleteObjectAttributeGroup(params, pathParams("bk_object_id"), pathParams("property_id"), pathParams("group_id"))
 	if nil != err {
 		return nil, err
 	}
@@ -113,5 +113,5 @@ func (s *topoService) DeleteObjectAttributeGroup(params types.ContextParams, pat
 func (s *topoService) SearchGroupByObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
-	return s.core.GroupOperation().FindGroupByObject(params, pathParams("object_id"), cond)
+	return s.core.GroupOperation().FindGroupByObject(params, pathParams("bk_object_id"), cond)
 }
