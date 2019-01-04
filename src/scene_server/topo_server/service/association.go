@@ -39,7 +39,15 @@ func (s *topoService) CreateMainLineObject(params types.ContextParams, pathParam
 func (s *topoService) DeleteMainLineObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	objID := pathParams("bk_obj_id")
-	err := s.core.AssociationOperation().DeleteMainlineAssociaton(params, objID)
+
+	//biz id in create object
+	bizID := metadata.GetBusinessIDFromMeta(data[metadata.BKMetadata])
+	if "" == bizID {
+		data.Remove(metadata.BKMetadata)
+	}
+	meta := metadata.NewMetaDataFromBusinessID(bizID)
+
+	err := s.core.AssociationOperation().DeleteMainlineAssociaton(params, objID, meta)
 	return nil, err
 }
 

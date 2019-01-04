@@ -27,17 +27,20 @@ import (
 func (s *topoService) CreateObjectBatch(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	//biz id in create object
 	bizID := metadata.GetBusinessIDFromMeta(data[metadata.BKMetadata])
-	if "" == bizID {
-		data.Remove(metadata.BKMetadata)
-	}
-
-	return s.core.ObjectOperation().CreateObjectBatch(params, data)
+	data.Remove(metadata.BKMetadata)
+	meta := metadata.NewMetaDataFromBusinessID(bizID)
+	//	meta :=  New()
+	return s.core.ObjectOperation().CreateObjectBatch(params, data, meta)
 }
 
 // SearchObjectBatch batch to search some objects
 func (s *topoService) SearchObjectBatch(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
-	return s.core.ObjectOperation().FindObjectBatch(params, data)
+	//biz id in search object
+	bizID := metadata.GetBusinessIDFromMeta(data[metadata.BKMetadata])
+	data.Remove(metadata.BKMetadata)
+	meta := metadata.NewMetaDataFromBusinessID(bizID)
+	return s.core.ObjectOperation().FindObjectBatch(params, data, meta)
 }
 
 // CreateObject create a new object
@@ -88,12 +91,19 @@ func (s *topoService) SearchObjectTopo(params types.ContextParams, pathParams, q
 func (s *topoService) UpdateObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	cond := condition.CreateCondition()
 	id, err := strconv.ParseInt(pathParams("id"), 10, 64)
+
+	//biz id in create object
+	bizID := metadata.GetBusinessIDFromMeta(data[metadata.BKMetadata])
+	if "" == bizID {
+		data.Remove(metadata.BKMetadata)
+	}
+	meta := metadata.NewMetaDataFromBusinessID(bizID)
 	if nil != err {
 		blog.Errorf("[api-obj] failed to parse the path params id(%s), error info is %s ", pathParams("id"), err.Error())
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "object id")
 	}
 
-	err = s.core.ObjectOperation().UpdateObject(params, data, id, cond)
+	err = s.core.ObjectOperation().UpdateObject(params, data, id, cond, meta)
 	return nil, err
 }
 
@@ -101,6 +111,12 @@ func (s *topoService) UpdateObject(params types.ContextParams, pathParams, query
 func (s *topoService) DeleteObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
+	//biz id in create object
+	bizID := metadata.GetBusinessIDFromMeta(data[metadata.BKMetadata])
+	if "" == bizID {
+		data.Remove(metadata.BKMetadata)
+	}
+	meta := metadata.NewMetaDataFromBusinessID(bizID)
 
 	paramPath := frtypes.MapStr{}
 	paramPath.Set("id", pathParams("id"))
@@ -110,7 +126,7 @@ func (s *topoService) DeleteObject(params types.ContextParams, pathParams, query
 		return nil, err
 	}
 
-	err = s.core.ObjectOperation().DeleteObject(params, id, cond, true)
+	err = s.core.ObjectOperation().DeleteObject(params, id, cond, true, meta)
 	return nil, err
 }
 
