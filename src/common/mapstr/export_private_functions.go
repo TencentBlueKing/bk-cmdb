@@ -61,7 +61,9 @@ func dealStruct(kind reflect.Type, value reflect.Value) (MapStr, error) {
 
 		switch fieldValue.Kind() {
 		default:
-			mapResult.Set(fieldType.Name, fieldValue.Interface())
+			if fieldValue.CanInterface() {
+				mapResult.Set(fieldType.Name, fieldValue.Interface())
+			}
 		case reflect.Interface:
 			subMapResult, err := convertInterfaceIntoMapStrByReflection(fieldValue.Interface())
 			if nil != err {
