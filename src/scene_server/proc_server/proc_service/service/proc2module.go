@@ -12,7 +12,6 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -152,7 +151,7 @@ func (ps *ProcServer) GetProcessBindModule(req *restful.Request, resp *restful.R
 
 	condition[common.BKProcessIDField] = procID
 	// get process by module
-	p2mRet, err := ps.CoreAPI.ProcController().GetProc2Module(context.Background(), req.Request.Header, condition)
+	p2mRet, err := ps.CoreAPI.ProcController().GetProc2Module(srvData.ctx, req.Request.Header, condition)
 	if nil != err {
 		blog.Errorf("GetProcessBindModule GetProc2Module http do error.  err:%s, input:%+v,rid:%s", err.Error(), condition, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
