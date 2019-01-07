@@ -48,7 +48,7 @@ func (lgc *Logics) getModuleNameByID(ctx context.Context, ID int64) (name string
 	byteModule, _ := json.Marshal(ret.Data.Info[0])
 	name, err = ret.Data.Info[0].String(common.BKModuleNameField)
 	if nil != err {
-		blog.Errorf("getModuleNameByID moduleID %v supplierID %s  get module name error:%s, raw:%s,query:%+v,rid:%s", ID, supplierID, err.Error(), string(byteModule), dat, lgc.rid)
+		blog.Warnf("getModuleNameByID moduleID %v supplierID %s  get module name error:%s, raw:%s,query:%+v,rid:%s", ID, supplierID, err.Error(), string(byteModule), dat, lgc.rid)
 		return
 	}
 	appID, err = ret.Data.Info[0].Int64(common.BKAppIDField)
