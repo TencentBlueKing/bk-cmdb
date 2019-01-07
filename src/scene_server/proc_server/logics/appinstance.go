@@ -24,13 +24,24 @@ import (
 	"configcenter/src/common/util"
 )
 
+func copyHeader(header http.Header) http.Header {
+	newHeader := make(http.Header, 0)
+	for key, values := range header {
+		for _, v := range values {
+			newHeader.Add(key, v)
+		}
+	}
+
+	return newHeader
+}
+
 func (lgc *Logics) RefreshHostInstanceByApp(ctx context.Context, appID int64, appInfo mapstr.MapStr) error {
 	ownerID, err := appInfo.String(common.BKOwnerIDField)
 	if nil != err {
 		blog.Errorf("RefreshHostInstanceByApp error  appID:%d, appInfo:%+v, error:%s", appID, appInfo, err.Error())
 		return err
 	}
-	header := lgc.header
+	header := copyHeader(lgc.header)
 	if nil == header {
 		header = make(http.Header, 0)
 	}
@@ -50,7 +61,7 @@ func (lgc *Logics) RefreshHostInstanceByApp(ctx context.Context, appID int64, ap
 }
 
 func (lgc *Logics) RefreshAllHostInstance(ctx context.Context) error {
-	header := lgc.header
+	header := copyHeader(lgc.header)
 	if nil == header {
 		header = make(http.Header, 0)
 	}
@@ -76,8 +87,9 @@ func (lgc *Logics) RefreshAllHostInstance(ctx context.Context) error {
 			blog.Warnf("RefreshAllHostInstance get supplier accout by app Info:%+v error:%s,rid:%s", appInfo, err.Error(), newLgc.rid)
 			continue
 		}
+		newHeader := copyHeader(lgc.header)
 		header.Set(common.BKHTTPOwnerID, ownerID)
-		newLgc := lgc.NewFromHeader(header)
+		newLgc := lgc.NewFromHeader(newHeader)
 		err = newLgc.RefreshHostInstanceByApp(ctx, appID, appInfo)
 		if nil != err {
 			blog.Warnf("RefreshAllHostInstance RefreshHostInstanceByApp by app Info:%+v error:%s,rid:%s", appInfo, err.Error(), newLgc.rid)

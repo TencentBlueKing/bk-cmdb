@@ -33,7 +33,7 @@ func (lgc *Logics) GetProcbyProcIDArr(ctx context.Context, procID []int64) ([]ma
 	ret, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDProc, lgc.header, reqParam)
 	if err != nil {
 		blog.Errorf("GetProcbyProcIDArr SearchObjects http do error. get process by procID(%+v) failed. err: %v,input:%+v,rid:%s", procID, err, reqParam, lgc.rid)
-		return nil, lgc.ccErr.Errorf(common.CCErrCommHTTPDoRequestFailed)
+		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !ret.Result {
 		blog.Errorf("GetProcbyProcIDArr SearchObjects http reply error. get process by procID(%+v) failed. err code:%d,err msg:%s,input:%+v,rid:%s", procID, ret.Code, ret.ErrMsg, reqParam, lgc.rid)

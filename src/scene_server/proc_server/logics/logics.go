@@ -71,6 +71,7 @@ func (lgc *Logics) NewFromHeader(header http.Header) *Logics {
 		header.Set(common.BKHTTPCCRequestID, rid)
 	}
 	newLgc := &Logics{
+		header:       header,
 		Engine:       lgc.Engine,
 		rid:          rid,
 		cache:        lgc.cache,
