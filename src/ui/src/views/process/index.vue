@@ -133,6 +133,21 @@
             ...mapGetters(['supplierAccount']),
             ...mapGetters('objectBiz', ['bizId'])
         },
+        watch: {
+            'filter.bizId' () {
+                if (this.filter.businessResolver) {
+                    this.filter.businessResolver()
+                } else {
+                    this.table.checked = []
+                    this.handlePageChange(1)
+                }
+            },
+            'slider.show' (show) {
+                if (!show) {
+                    this.tab.active = 'attribute'
+                }
+            }
+        },
         created () {
             this.$store.commit('setHeaderTitle', this.$t('Nav["进程管理"]'))
             this.reload()

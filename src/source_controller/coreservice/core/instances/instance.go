@@ -1,6 +1,6 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.,
- * Copyright (C) 2017,-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  * Licensed under the MIT License (the ",License",); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
@@ -48,7 +48,6 @@ func (m *instanceManager) instCnt(ctx core.ContextParams, objID string, cond map
 }
 
 func (m *instanceManager) CreateModelInstance(ctx core.ContextParams, objID string, inputParam metadata.CreateModelInstance) (*metadata.CreateOneDataResult, error) {
-	inputParam.Data.Set(common.BKOwnerIDField, ctx.SupplierAccount)
 	err := m.validCreateInstanceData(ctx, objID, inputParam.Data)
 	if nil != err {
 		blog.Errorf("create inst valid error: %v", err)
@@ -123,7 +122,7 @@ func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID stri
 func (m *instanceManager) SearchModelInstance(ctx core.ContextParams, objID string, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
 	condition, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
-		blog.Errorf("parse conditon  error [%v]", err)
+		blog.Errorf("parse conditon  error %v, [%v]", err)
 		return &metadata.QueryResult{}, err
 	}
 	ownerIDArr := []string{ctx.SupplierAccount, common.BKDefaultOwnerID}
@@ -132,12 +131,14 @@ func (m *instanceManager) SearchModelInstance(ctx core.ContextParams, objID stri
 
 	instItems, err := m.searchInstance(ctx, objID, inputParam)
 	if nil != err {
+		blog.Errorf("parse conditon  error [%v]", err)
 		return &metadata.QueryResult{}, err
 	}
 
 	dataResult := &metadata.QueryResult{}
 	dataResult.Count, err = m.countInstance(ctx, objID, inputParam.Condition)
 	if nil != err {
+		blog.Errorf("parse conditon  error [%v]", err)
 		return &metadata.QueryResult{}, err
 	}
 	dataResult.Info = instItems

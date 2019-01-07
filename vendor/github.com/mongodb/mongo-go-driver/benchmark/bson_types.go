@@ -1,9 +1,15 @@
+// Copyright (C) MongoDB, Inc. 2017-present.
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you may
+// not use this file except in compliance with the License. You may obtain
+// a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+
 package benchmark
 
-import "github.com/mongodb/mongo-go-driver/bson/objectid"
+import "github.com/mongodb/mongo-go-driver/bson/primitive"
 
 type flatBSONTags struct {
-	ID objectid.ObjectID `bson:"_id"`
+	ID primitive.ObjectID `bson:"_id"`
 
 	AA  int64  `bson:"AAgSNVyBb"`
 	AI  bool   `bson:"aicoMxZq"`
@@ -227,7 +233,7 @@ type flatBSON struct {
 	XxvXmHiQ  int
 	YDHWnEXV  string
 	ZmtEJFSO  string
-	ID        objectid.ObjectID `bson:"_id"`
+	ID        primitive.ObjectID `bson:"_id"`
 	AhFCBmqT  int64
 	AicoMxZq  bool
 	BkuaZWRT  int64

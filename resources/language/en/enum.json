@@ -332,6 +332,9 @@
 	"host_property_bk_province_name_enum_710000" : "Taiwan",
 	"host_property_bk_province_name_enum_810000" : "Hong Kong",
 	"host_property_bk_province_name_enum_820000" : "Macau",
-
+  "host_property_bk_isp_name_enum_0": "Others",
+  "host_property_bk_isp_name_enum_1": "China Telecom",
+  "host_property_bk_isp_name_enum_2": "China Unicom",
+  "host_property_bk_isp_name_enum_3": "China Mobile",
     "":""
 }

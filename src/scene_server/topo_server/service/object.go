@@ -36,7 +36,7 @@ func (s *topoService) SearchObjectBatch(params types.ContextParams, pathParams, 
 // CreateObject create a new object
 func (s *topoService) CreateObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
-	rsp, err := s.core.ObjectOperation().CreateObject(params, data)
+	rsp, err := s.core.ObjectOperation().CreateObject(params, false, data)
 	if nil != err {
 		return nil, err
 	}
