@@ -22,7 +22,11 @@ import (
 
 // CreateClassification create a new object classification
 func (s *topoService) CreateClassification(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-
+	//biz id in create object
+	bizID := metadata.GetBusinessIDFromMeta(data[metadata.BKMetadata])
+	if "" == bizID {
+		data.Remove(metadata.BKMetadata)
+	}
 	cls, err := s.core.ClassificationOperation().CreateClassification(params, data)
 	if nil != err {
 		return nil, err
