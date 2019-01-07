@@ -1,10 +1,16 @@
+// Copyright (C) MongoDB, Inc. 2017-present.
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you may
+// not use this file except in compliance with the License. You may obtain
+// a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+
 package benchmark
 
 import (
 	"context"
 	"errors"
 
-	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/x/bsonx"
 )
 
 func bsonDocumentEncoding(ctx context.Context, tm TimerManager, iters int, source string) error {
@@ -42,11 +48,11 @@ func bsonDocumentDecodingLazy(ctx context.Context, tm TimerManager, iters int, s
 	tm.ResetTimer()
 
 	for i := 0; i < iters; i++ {
-		out, err := bson.ReadDocument(raw)
+		out, err := bsonx.ReadDoc(raw)
 		if err != nil {
 			return err
 		}
-		if out.Len() == 0 {
+		if len(out) == 0 {
 			return errors.New("marshaling error")
 		}
 	}
@@ -67,16 +73,12 @@ func bsonDocumentDecoding(ctx context.Context, tm TimerManager, iters, numKeys i
 	tm.ResetTimer()
 
 	for i := 0; i < iters; i++ {
-		out, err := bson.ReadDocument(raw)
+		out, err := bsonx.ReadDoc(raw)
 		if err != nil {
 			return err
 		}
 
-		keys, err := out.Keys(true)
-		if err != nil {
-			return err
-		}
-		if len(keys) != numKeys {
+		if len(out) != numKeys {
 			return errors.New("document parsing error")
 		}
 	}

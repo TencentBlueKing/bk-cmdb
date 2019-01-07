@@ -18,8 +18,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
@@ -32,6 +30,8 @@ import (
 	"configcenter/src/source_controller/auditcontroller/logics"
 	"configcenter/src/source_controller/auditcontroller/service"
 	"configcenter/src/storage/dal/mongo"
+
+	"github.com/emicklei/go-restful"
 )
 
 //Run ccapi server
@@ -114,7 +114,7 @@ func (h *AuditController) onAduitConfigUpdate(previous, current cc.ProcessConfig
 		Mongo: mongo.ParseConfigFromKV("mongodb", current.ConfigMap),
 	}
 
-	instance, err := mongo.NewMgo(h.Config.Mongo.BuildURI())
+	instance, err := mongo.NewMgo(h.Config.Mongo.BuildURI(), time.Minute)
 	if err != nil {
 		blog.Errorf("new mongo client failed, err: %s", err.Error())
 		return

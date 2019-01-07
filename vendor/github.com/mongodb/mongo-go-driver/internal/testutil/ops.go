@@ -12,31 +12,42 @@ import (
 	"testing"
 
 	"github.com/mongodb/mongo-go-driver/bson"
-	"github.com/mongodb/mongo-go-driver/core/command"
-	"github.com/mongodb/mongo-go-driver/core/description"
-	"github.com/mongodb/mongo-go-driver/core/dispatch"
-	"github.com/mongodb/mongo-go-driver/core/topology"
-	"github.com/mongodb/mongo-go-driver/core/writeconcern"
 	"github.com/mongodb/mongo-go-driver/internal/testutil/helpers"
+	"github.com/mongodb/mongo-go-driver/mongo/writeconcern"
+	"github.com/mongodb/mongo-go-driver/x/bsonx"
+	"github.com/mongodb/mongo-go-driver/x/mongo/driver"
+	"github.com/mongodb/mongo-go-driver/x/mongo/driver/session"
+	"github.com/mongodb/mongo-go-driver/x/mongo/driver/topology"
+	"github.com/mongodb/mongo-go-driver/x/mongo/driver/uuid"
+	"github.com/mongodb/mongo-go-driver/x/network/command"
+	"github.com/mongodb/mongo-go-driver/x/network/description"
 	"github.com/stretchr/testify/require"
 )
 
 // AutoCreateIndexes creates an index in the test cluster.
 func AutoCreateIndexes(t *testing.T, keys []string) {
-	indexes := bson.NewDocument()
+	indexes := bsonx.Doc{}
 	for _, k := range keys {
-		indexes.Append(bson.EC.Int32(k, 1))
+		indexes = append(indexes, bsonx.Elem{k, bsonx.Int32(1)})
 	}
 	name := strings.Join(keys, "_")
-	indexes = bson.NewDocument(
-		bson.EC.SubDocument("key", indexes),
-		bson.EC.String("name", name),
-	)
+	indexes = bsonx.Doc{
+		{"key", bsonx.Document(indexes)},
+		{"name", bsonx.String(name)},
+	}
 	cmd := command.CreateIndexes{
 		NS:      command.NewNamespace(DBName(t), ColName(t)),
-		Indexes: bson.NewArray(bson.VC.Document(indexes)),
+		Indexes: bsonx.Arr{bsonx.Document(indexes)},
 	}
-	_, err := dispatch.CreateIndexes(context.Background(), cmd, Topology(t), description.WriteSelector())
+	id, _ := uuid.New()
+	_, err := driver.CreateIndexes(
+		context.Background(),
+		cmd,
+		Topology(t),
+		description.WriteSelector(),
+		id,
+		&session.Pool{},
+	)
 	require.NoError(t, err)
 }
 
@@ -47,30 +58,55 @@ func AutoDropCollection(t *testing.T) {
 
 // DropCollection drops the collection in the test cluster.
 func DropCollection(t *testing.T, dbname, colname string) {
-	cmd := command.Write{DB: dbname, Command: bson.NewDocument(bson.EC.String("drop", colname))}
-	_, err := dispatch.Write(context.Background(), cmd, Topology(t), description.WriteSelector())
+	cmd := command.Write{DB: dbname, Command: bsonx.Doc{{"drop", bsonx.String(colname)}}}
+	id, _ := uuid.New()
+	_, err := driver.Write(
+		context.Background(),
+		cmd,
+		Topology(t),
+		description.WriteSelector(),
+		id,
+		&session.Pool{},
+	)
 	if err != nil && !command.IsNotFound(err) {
 		require.NoError(t, err)
 	}
 }
 
 func autoDropDB(t *testing.T, topo *topology.Topology) {
-	cmd := command.Write{DB: DBName(t), Command: bson.NewDocument(bson.EC.Int32("dropDatabase", 1))}
-	_, err := dispatch.Write(context.Background(), cmd, topo, description.WriteSelector())
+	cmd := command.Write{DB: DBName(t), Command: bsonx.Doc{{"dropDatabase", bsonx.Int32(1)}}}
+	id, _ := uuid.New()
+	_, err := driver.Write(
+		context.Background(),
+		cmd,
+		topo,
+		description.WriteSelector(),
+		id,
+		&session.Pool{},
+	)
 	require.NoError(t, err)
 }
 
 // AutoInsertDocs inserts the docs into the test cluster.
-func AutoInsertDocs(t *testing.T, writeConcern *writeconcern.WriteConcern, docs ...*bson.Document) {
+func AutoInsertDocs(t *testing.T, writeConcern *writeconcern.WriteConcern, docs ...bsonx.Doc) {
 	InsertDocs(t, DBName(t), ColName(t), writeConcern, docs...)
 }
 
 // InsertDocs inserts the docs into the test cluster.
-func InsertDocs(t *testing.T, dbname, colname string, writeConcern *writeconcern.WriteConcern, docs ...*bson.Document) {
+func InsertDocs(t *testing.T, dbname, colname string, writeConcern *writeconcern.WriteConcern, docs ...bsonx.Doc) {
 	cmd := command.Insert{NS: command.NewNamespace(dbname, colname), Docs: docs}
 
 	topo := Topology(t)
-	_, err := dispatch.Insert(context.Background(), cmd, topo, description.WriteSelector())
+	id, _ := uuid.New()
+	_, err := driver.Insert(
+		context.Background(),
+		cmd,
+		topo,
+		description.WriteSelector(),
+		id,
+		&session.Pool{},
+		false,
+	)
 	require.NoError(t, err)
 }
 
@@ -78,10 +114,10 @@ func InsertDocs(t *testing.T, dbname, colname string, writeConcern *writeconcern
 func EnableMaxTimeFailPoint(t *testing.T, s *topology.Server) error {
 	cmd := command.Write{
 		DB: "admin",
-		Command: bson.NewDocument(
-			bson.EC.String("configureFailPoint", "maxTimeAlwaysTimeOut"),
-			bson.EC.String("mode", "alwaysOn"),
-		),
+		Command: bsonx.Doc{
+			{"configureFailPoint", bsonx.String("maxTimeAlwaysTimeOut")},
+			{"mode", bsonx.String("alwaysOn")},
+		},
 	}
 	conn, err := s.Connection(context.Background())
 	require.NoError(t, err)
@@ -94,14 +130,28 @@ func EnableMaxTimeFailPoint(t *testing.T, s *topology.Server) error {
 func DisableMaxTimeFailPoint(t *testing.T, s *topology.Server) {
 	cmd := command.Write{
 		DB: "admin",
-		Command: bson.NewDocument(
-			bson.EC.String("configureFailPoint", "maxTimeAlwaysTimeOut"),
-			bson.EC.String("mode", "off"),
-		),
+		Command: bsonx.Doc{
+			{"configureFailPoint", bsonx.String("maxTimeAlwaysTimeOut")},
+			{"mode", bsonx.String("off")},
+		},
 	}
 	conn, err := s.Connection(context.Background())
 	require.NoError(t, err)
 	defer testhelpers.RequireNoErrorOnClose(t, conn)
 	_, err = cmd.RoundTrip(context.Background(), s.SelectedDescription(), conn)
 	require.NoError(t, err)
+}
+
+// RunCommand runs an arbitrary command on a given database of target server
+func RunCommand(t *testing.T, s *topology.Server, db string, b bsonx.Doc) (bson.Raw, error) {
+	conn, err := s.Connection(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	defer testhelpers.RequireNoErrorOnClose(t, conn)
+	cmd := command.Read{
+		DB:      db,
+		Command: b,
+	}
+	return cmd.RoundTrip(context.Background(), s.SelectedDescription(), conn)
 }

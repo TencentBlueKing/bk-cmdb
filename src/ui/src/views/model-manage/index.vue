@@ -371,7 +371,7 @@
             },
             deleteGroup (group) {
                 this.$bkInfo({
-                    title: this.$t('ModelManagement["确认要删除此分组？"]'),
+                    title: this.$t('ModelManagement["确认要删除此分组"]'),
                     confirmFn: async () => {
                         await this.deleteClassification({
                             id: group.id

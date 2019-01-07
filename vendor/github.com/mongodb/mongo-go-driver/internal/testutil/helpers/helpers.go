@@ -18,9 +18,10 @@ import (
 
 	"io"
 
-	"github.com/mongodb/mongo-go-driver/core/connstring"
-	"github.com/stretchr/testify/require"
 	"reflect"
+
+	"github.com/mongodb/mongo-go-driver/x/network/connstring"
+	"github.com/stretchr/testify/require"
 )
 
 // Test helpers
@@ -45,14 +46,15 @@ func IsNil(object interface{}) bool {
 // RequireNotNil throws an error if var is nil
 func RequireNotNil(t *testing.T, variable interface{}, msgFormat string, msgVars ...interface{}) {
 	if IsNil(variable) {
-		t.Errorf(msgFormat, msgVars...)
+		t.Fatalf(msgFormat, msgVars...)
 	}
 }
 
 // RequireNil throws an error if var is not nil
 func RequireNil(t *testing.T, variable interface{}, msgFormat string, msgVars ...interface{}) {
+	t.Helper()
 	if !IsNil(variable) {
-		t.Errorf(msgFormat, msgVars...)
+		t.Fatalf(msgFormat, msgVars...)
 	}
 }
 
@@ -106,14 +108,9 @@ func VerifyConnStringOptions(t *testing.T, cs connstring.ConnString, options map
 			require.Equal(t, value, cs.J)
 		case "maxidletimems":
 			require.Equal(t, value, cs.MaxConnIdleTime)
-		case "maxconnlifetimems":
-			require.Equal(t, value, cs.MaxConnLifeTime)
-		case "maxconnsperhost":
-			require.True(t, cs.MaxIdleConnsPerHostSet)
-			require.Equal(t, value, cs.MaxIdleConnsPerHost)
-		case "maxidleconnsperhost":
-			require.True(t, cs.MaxIdleConnsPerHostSet)
-			require.Equal(t, value, cs.MaxIdleConnsPerHost)
+		case "maxpoolsize":
+			require.True(t, cs.MaxPoolSizeSet)
+			require.Equal(t, value, cs.MaxPoolSize)
 		case "readpreference":
 			require.Equal(t, value, cs.ReadPreference)
 		case "readpreferencetags":

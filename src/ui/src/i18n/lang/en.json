@@ -115,7 +115,8 @@
         "开源社区": "Community",
         "确定离开页面？": "Make sure to leave the page?",
         "系统不会保存您所做的修改，确认要离开？": "Your changes will not be saved. Are you sure you want to leave?",
-        "搜索": "Search"
+        "搜索": "Search",
+        "确定删除选中的实例": "Confirm to delete selected instance(s)?"
     },
     "Nav": {
         "首页": "Index",
@@ -157,7 +158,8 @@
         "置顶": "Top",
         "更多": "More",
         "查看更多结果": "More",
-        "数量": "Amount"
+        "数量": "Amount",
+        "暂无使用记录": "No record"
     },
     "OperationAudit": {
         "操作审计": "Operation Audit",
@@ -200,8 +202,8 @@
         "请输入正则验证": "Please enter regex",
         "超时时间": "Timeout",
         "单位：秒": "Unit(second)",
-        "测试推送": "Push Testing",
-        "推送测试": "Push Testing",
+        "测试推送": "Test",
+        "推送测试": "Test",
         "配置平台以POST方法推送以下示例数据到您配置的URL": "Push the following sample data to your configured URL in the Post method",
         "只测试连通性": "Connectivity",
         "推送成功": "Success",
@@ -375,14 +377,16 @@
         "校验规则": "Regex",
         "是否为必须校验": "Is required",
         "新建校验": "New rule",
-        "编辑校验": "Edit rule",
+        "编辑校验": "Modify rule",
         "是": "Yes",
         "否": "No",
         "确定删除唯一校验": "Confirm delete rule",
         "所有更改已自动保存": "All changes saved automatically",
         "立即添加": "Add",
         "暂无字段": "Empty",
-        "内置": "Built-in"
+        "内置": "Built-in",
+        "确认要删除此分组": "Confirm to delete this group",
+        "编辑分组": "Modify group"
     },
     "HostResourcePool": {
         "资源池": "Resource Pool",

@@ -1,6 +1,6 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.,
- * Copyright (C) 2017,-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  * Licensed under the MIT License (the ",License",); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
@@ -16,6 +16,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
@@ -25,7 +26,6 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 		blog.Errorf("init validator faile %s", err.Error())
 		return err
 	}
-
 	FillLostedFieldValue(instanceData, valid.propertyslice, valid.requirefields)
 	for _, key := range valid.requirefields {
 		if _, ok := instanceData[key]; !ok {
@@ -33,14 +33,20 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
 		}
 	}
-
+	var instMedataData metadata.Metadata
+	instMedataData.Label = make(metadata.Label)
 	for key, val := range instanceData {
-
+		if metadata.BKMetadata == key {
+			bizID := metadata.GetBusinessIDFromMeta(val)
+			if "" != bizID {
+				instMedataData.Label.Set(metadata.LabelBusinessID, metadata.GetBusinessIDFromMeta(val))
+			}
+			continue
+		}
 		if valid.shouldIgnore[key] {
 			// ignore the key field
 			continue
 		}
-
 		property, ok := valid.propertys[key]
 		if !ok {
 			blog.Errorf("params is not valid, the key is %s", key)
@@ -73,8 +79,7 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 			return err
 		}
 	}
-	return nil
-	//	return valid.validCreateUnique(ctx, instanceData, m)
+	return valid.validCreateUnique(ctx, instanceData, instMedataData, m)
 }
 
 func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID string, instanceData mapstr.MapStr, instID uint64) error {
@@ -84,7 +89,17 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 		return err
 	}
 
+	var instMedataData metadata.Metadata
+	instMedataData.Label = make(metadata.Label)
+
 	for key, val := range instanceData {
+		if metadata.BKMetadata == key {
+			bizID := metadata.GetBusinessIDFromMeta(val)
+			if "" != bizID {
+				instMedataData.Label.Set(metadata.LabelBusinessID, metadata.GetBusinessIDFromMeta(val))
+			}
+			continue
+		}
 
 		if valid.shouldIgnore[key] {
 			// ignore the key field
@@ -123,6 +138,5 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 			return err
 		}
 	}
-	return nil
-	//	return valid.validUpdateUnique(ctx, instanceData, instID, m)
+	return valid.validUpdateUnique(ctx, instanceData, instMedataData, instID, m)
 }
