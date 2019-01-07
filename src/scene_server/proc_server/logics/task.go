@@ -40,7 +40,7 @@ func (lgc *Logics) ModifyTaskInfo(ctx context.Context, cond mapstr.MapStr, data 
 	rsp, err := lgc.CoreAPI.ProcController().UpdateOperateTaskInfo(ctx, lgc.header, dat)
 	if nil != err {
 		blog.Errorf("ModifyTaskInfo http error:%s, input:%+v,rid:%s", err.Error(), dat, lgc.rid)
-		return lgc.ccErr.Errorf(common.CCErrCommHTTPDoRequestFailed)
+		return lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !rsp.Result {
 		blog.Errorf("ModifyTaskInfo http reply error:%s, input:%+v,rid:%s", rsp.ErrMsg, dat, lgc.rid)
@@ -62,7 +62,7 @@ func (lgc *Logics) FilterGseTaskIDWaitResultByTaskID(ctx context.Context, taskID
 	rsp, err := lgc.CoreAPI.ProcController().SearchOperateTaskInfo(ctx, lgc.header, dat)
 	if nil != err {
 		blog.Errorf("FilterGseTaskWaitResult http error:%s, input:%+v,rid:%s", err.Error(), dat, lgc.rid)
-		return nil, lgc.ccErr.Errorf(common.CCErrCommHTTPDoRequestFailed)
+		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !rsp.Result {
 		blog.Errorf("ModifyTaskStatus http reply error:%s,input:%+v, rid:%s", rsp.ErrMsg, dat, lgc.rid)
@@ -196,11 +196,11 @@ func (lgc *Logics) timedTriggerTaskInfoToRedis(ctx context.Context) {
 			dat.Condition = mapstr.MapStr{common.BKStatusField: mapstr.MapStr{common.BKDBIN: needOpGseProcResultStatus}}
 			rsp, err := newLgc.CoreAPI.ProcController().SearchOperateTaskInfo(ctx, newLgc.header, dat)
 			if nil != err {
-				blog.Warnf("timedTriggerTaskInfoToRedis http do error:%s,rid:%s", err.Error(), newLgc.rid)
+				blog.V(5).Infof("timedTriggerTaskInfoToRedis http do error:%s,rid:%s", err.Error(), newLgc.rid)
 				continue
 			}
 			if !rsp.Result {
-				blog.Warnf("timedTriggerTaskInfoToRedis http reply error:%s,rid:%s", rsp.ErrMsg, newLgc.rid)
+				blog.V(5).Infof("timedTriggerTaskInfoToRedis http reply error:%s,rid:%s", rsp.ErrMsg, newLgc.rid)
 				continue
 			}
 			if 0 == rsp.Data.Count {
