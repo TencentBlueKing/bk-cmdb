@@ -1,4 +1,3 @@
-import Vue from 'vue'
 import Axios from 'axios'
 import md5 from 'md5'
 import CachedPromise from './_cached-promise'
@@ -44,7 +43,8 @@ const $http = {
     },
     deleteHeader: key => {
         delete axiosInstance.defaults.headers[key]
-    }
+    },
+    beforeRequest: null
 }
 
 const methodsWithoutData = ['delete', 'get', 'head', 'options']
@@ -68,6 +68,9 @@ allMethods.forEach(method => {
 function getRequest (method) {
     if (methodsWithData.includes(method)) {
         return (url, data, config) => {
+            if (typeof $http.beforeRequest === 'function') {
+                $http.beforeRequest(method, url, data, config)
+            }
             return getPromise(method, url, data, config)
         }
     }
@@ -212,7 +215,5 @@ function getCancelToken () {
         cancelExcutor
     }
 }
-
-Vue.prototype.$http = $http
 
 export default $http
