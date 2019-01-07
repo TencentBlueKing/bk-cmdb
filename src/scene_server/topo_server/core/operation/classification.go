@@ -121,7 +121,7 @@ func (c *classification) DeleteClassification(params types.ContextParams, id int
 		}
 	}
 
-	rsp, err := c.clientSet.ObjectController().Meta().DeleteClassification(context.Background(), id, params.Header, cond.ToMapStr())
+	rsp, err := c.clientSet.CoreService().Model().DeleteModelClassification(context.Background(), params.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s", err.Error())
 		return err
@@ -136,8 +136,6 @@ func (c *classification) DeleteClassification(params types.ContextParams, id int
 }
 
 func (c *classification) FindClassificationWithObjects(params types.ContextParams, cond condition.Condition) ([]metadata.ClassificationWithObject, error) {
-
-	// rsp, err := c.clientSet.ObjectController().Meta().SelectClassificationWithObject(context.Background(), params.SupplierAccount, params.Header, cond.ToMapStr())
 	rsp, err := c.clientSet.CoreService().Model().ReadModelClassification(context.Background(), params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s", err.Error())

@@ -75,7 +75,7 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 		defaultOwnerHeader := util.CopyHeader(params.Header)
 		defaultOwnerHeader.Set(common.BKHTTPOwnerID, common.BKDefaultOwnerID)
 
-		asstRsp, err := b.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), defaultOwnerHeader, asstQuery)
+		asstRsp, err := b.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), defaultOwnerHeader, &metadata.QueryCondition{Condition: asstQuery})
 		if nil != err {
 			blog.Errorf("[operation-biz] failed to get default assts, error info is %s", err.Error())
 			return nil, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
@@ -83,10 +83,10 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 		if !asstRsp.Result {
 			return nil, params.Err.Error(asstRsp.Code)
 		}
-		expectAssts := asstRsp.Data
+		expectAssts := asstRsp.Data.Info
 		blog.Infof("copy asst for %s, %+v", params.SupplierAccount, expectAssts)
 
-		existAsstRsp, err := b.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), params.Header, asstQuery)
+		existAsstRsp, err := b.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), params.Header, &metadata.QueryCondition{Condition: asstQuery})
 		if nil != err {
 			blog.Errorf("[operation-biz] failed to get default assts, error info is %s", err.Error())
 			return nil, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
@@ -94,7 +94,7 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 		if !existAsstRsp.Result {
 			return nil, params.Err.Error(existAsstRsp.Code)
 		}
-		existAssts := existAsstRsp.Data
+		existAssts := existAsstRsp.Data.Info
 
 	expectLoop:
 		for _, asst := range expectAssts {
@@ -107,7 +107,7 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 				}
 			}
 
-			createAsstRsp, err := b.clientSet.ObjectController().Meta().CreateObjectAssociation(context.Background(), params.Header, &asst)
+			createAsstRsp, err := b.clientSet.CoreService().Association().CreateModelAssociation(context.Background(), params.Header, &metadata.CreateModelAssociation{Spec: asst})
 			if nil != err {
 				blog.Errorf("[operation-biz] failed to copy default assts, error info is %s", err.Error())
 				return nil, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())

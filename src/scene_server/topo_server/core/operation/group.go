@@ -101,9 +101,7 @@ func (g *group) DeleteObjectGroup(params types.ContextParams, groupID int64) err
 }
 
 func (g *group) FindObjectGroup(params types.ContextParams, cond condition.Condition) ([]model.GroupInterface, error) {
-
-	rsp, err := g.clientSet.ObjectController().Meta().SelectGroup(context.Background(), params.Header, cond.ToMapStr())
-
+	rsp, err := g.clientSet.CoreService().Model().ReadAttributeGroupByCondition(context.Background(), params.Header, metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[operation-grp] failed to request the object controller, error info is %s", err.Error())
 		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -114,7 +112,7 @@ func (g *group) FindObjectGroup(params types.ContextParams, cond condition.Condi
 		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	return model.CreateGroup(params, g.clientSet, rsp.Data), nil
+	return model.CreateGroup(params, g.clientSet, rsp.Data.Info), nil
 }
 
 func (g *group) FindGroupByObject(params types.ContextParams, objID string, cond condition.Condition) ([]model.GroupInterface, error) {
@@ -186,9 +184,7 @@ func (g *group) UpdateObjectGroup(params types.ContextParams, cond *metadata.Upd
 		Condition: mapstr.NewFromStruct(cond.Condition, "json"),
 		Data:      mapstr.NewFromStruct(cond.Data, "json"),
 	}
-	g.clientSet.CoreService().Model().UpdateAttributeGroupByCondition(context.Background(), params.Header, input)
-	rsp, err := g.clientSet.ObjectController().Meta().UpdatePropertyGroup(context.Background(), params.Header, cond)
-
+	rsp, err := g.clientSet.CoreService().Model().UpdateAttributeGroupByCondition(context.Background(), params.Header, input)
 	if nil != err {
 		blog.Errorf("[operation-grp] failed to set the group to the new data (%#v) by the condition (%#v), error info is %s ", cond.Data, cond.Condition, err.Error())
 		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)

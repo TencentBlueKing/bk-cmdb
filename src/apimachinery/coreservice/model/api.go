@@ -327,6 +327,19 @@ func (m *model) ReadAttributeGroup(ctx context.Context, h http.Header, objID str
 	return
 }
 
+func (m *model) ReadAttributeGroupByCondition(ctx context.Context, h http.Header, input metadata.QueryCondition) (resp metadata.ReadModelAttributeGroupResult, err error) {
+	subPath := fmt.Sprintf("/read/model/group")
+
+	err = m.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(&resp)
+	return
+}
+
 func (m *model) CreateAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.CreateModelAttributeGroup) (resp metadata.CreatedOneOptionResult, err error) {
 	subPath := fmt.Sprintf("/create/model/%s/group", objID)
 
@@ -429,7 +442,7 @@ func (m *model) UpdateModelAttrUnique(ctx context.Context, h http.Header, objID 
 	return
 }
 
-func (m *model) DeleteModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64) (resp *metadata.DeletedCount, err error) {
+func (m *model) DeleteModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64) (resp *metadata.DeletedOptionResult, err error) {
 	subPath := fmt.Sprintf("/delete/model/%s/attributes/unique/%d", objID, id)
 
 	err = m.client.Post().

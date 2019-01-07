@@ -193,14 +193,13 @@ func (o *object) GetMainlineParentObject() (Object, error) {
 	cond.Field(common.BKObjIDField).Eq(o.obj.ObjectID)
 	cond.Field(common.AssociationKindIDField).Eq(common.AssociationKindMainline)
 
-	rsp, err := o.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), o.params.Header, cond.ToMapStr())
+	rsp, err := o.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), o.params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
 		return nil, err
 	}
 
-	for _, asst := range rsp.Data {
-
+	for _, asst := range rsp.Data.Info {
 		cond := condition.CreateCondition()
 		cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
 		cond.Field(common.BKObjIDField).Eq(asst.AsstObjID)
@@ -229,13 +228,13 @@ func (o *object) GetMainlineChildObject() (Object, error) {
 	cond.Field(common.BKAsstObjIDField).Eq(o.obj.ObjectID)
 	cond.Field(common.AssociationKindIDField).Eq(common.AssociationKindMainline)
 
-	rsp, err := o.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), o.params.Header, cond.ToMapStr())
+	rsp, err := o.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), o.params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
 		return nil, err
 	}
 
-	for _, asst := range rsp.Data {
+	for _, asst := range rsp.Data.Info {
 		cond := condition.CreateCondition()
 		cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
 		cond.Field(common.BKObjIDField).Eq(asst.ObjectID)
@@ -256,14 +255,14 @@ func (o *object) GetMainlineChildObject() (Object, error) {
 }
 
 func (o *object) searchAssoObjects(isNeedChild bool, cond condition.Condition) ([]ObjectAssoPair, error) {
-	rsp, err := o.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), o.params.Header, cond.ToMapStr())
+	rsp, err := o.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), o.params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
 		return nil, err
 	}
 
 	pair := make([]ObjectAssoPair, 0)
-	for _, asst := range rsp.Data {
+	for _, asst := range rsp.Data.Info {
 		cond := condition.CreateCondition()
 		cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
 		if isNeedChild {
@@ -317,7 +316,7 @@ func (o *object) SetMainlineParentObject(objID string) error {
 	cond.Field(meta.AssociationFieldObjectID).Eq(o.obj.ObjectID)
 	// cond.Field(meta.AssociationFieldAssociationName).Eq(common.BKChildStr)
 
-	rsp, err := o.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), o.params.Header, cond.ToMapStr())
+	rsp, err := o.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), o.params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
 		return o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -329,7 +328,7 @@ func (o *object) SetMainlineParentObject(objID string) error {
 	}
 
 	// create
-	if 0 == len(rsp.Data) {
+	if 0 == len(rsp.Data.Info) {
 
 		asst := &meta.Association{}
 		asst.OwnerID = o.params.SupplierAccount
@@ -337,8 +336,10 @@ func (o *object) SetMainlineParentObject(objID string) error {
 		asst.ObjectID = o.obj.ObjectID
 		asst.AsstObjID = objID
 
-		rsp, err := o.clientSet.ObjectController().Meta().CreateObjectAssociation(context.Background(), o.params.Header, asst)
-
+		data := metadata.CreateModelAssociation{
+			Spec: *asst,
+		}
+		rsp, err := o.clientSet.CoreService().Association().CreateModelAssociation(context.Background(), o.params.Header, &data)
 		if nil != err {
 			blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
 			return o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -353,12 +354,15 @@ func (o *object) SetMainlineParentObject(objID string) error {
 	}
 
 	// update
-	for _, asst := range rsp.Data {
+	for _, asst := range rsp.Data.Info {
 
 		asst.AsstObjID = objID
 		// asst.AsstName = common.BKChildStr
 
-		rsp, err := o.clientSet.ObjectController().Meta().UpdateObjectAssociation(context.Background(), asst.ID, o.params.Header, asst.ToMapStr())
+		update := metadata.UpdateOption{
+			Condition: cond.ToMapStr(),
+		}
+		rsp, err := o.clientSet.CoreService().Association().UpdateModelAssociation(context.Background(), o.params.Header, &update)
 		if nil != err {
 			blog.Errorf("[model-obj] failed to request object controller, error info is %s", err.Error())
 			return err
@@ -393,7 +397,7 @@ func (o *object) CreateMainlineObjectAssociation(relateToObjID string) error {
 		IsPre:      &defined,
 	}
 
-	result, err := o.clientSet.ObjectController().Meta().CreateObjectAssociation(context.Background(), o.params.Header, &association)
+	result, err := o.clientSet.CoreService().Association().CreateModelAssociation(context.Background(), o.params.Header, &metadata.CreateModelAssociation{Spec: association})
 	if err != nil {
 		blog.Errorf("[model-obj] create mainline object association failed, err: %v", err)
 		return err
@@ -414,7 +418,7 @@ func (o *object) UpdateMainlineObjectAssociationTo(prevObjID, relateToObjID stri
 	cond.Field(common.AssociatedObjectIDField).Eq(prevObjID)
 	cond.Field(common.AssociationKindIDField).Eq(common.AssociationKindMainline)
 
-	resp, err := o.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), o.params.Header, cond.ToMapStr())
+	resp, err := o.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), o.params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if err != nil {
 		blog.Errorf("update mainline object[%S] association to %s, search object association failed, err: %v",
 			o.obj.ObjectID, relateToObjID, err)
@@ -427,19 +431,23 @@ func (o *object) UpdateMainlineObjectAssociationTo(prevObjID, relateToObjID stri
 		return o.params.Err.Errorf(resp.Code, resp.ErrMsg)
 	}
 
-	if len(resp.Data) == 0 {
+	if len(resp.Data.Info) == 0 {
 		blog.Errorf("update mainline object[%S] association to %s, but can not find this association.", o.obj.ObjectID, relateToObjID)
 		return o.params.Err.Errorf(common.CCErrorTopoMainlineObjectAssociationNotExist, o.obj.ObjectID, prevObjID)
 	}
 
-	if len(resp.Data) > 1 {
+	if len(resp.Data.Info) > 1 {
 		blog.Errorf("update mainline object[%S] association to %s, but get multiple association.", o.obj.ObjectID, relateToObjID)
 		return o.params.Err.Error(common.CCErrTopoGotMultipleAssociationInstance)
 	}
 
 	fields := mapstr.New()
 	fields.Set(common.AssociatedObjectIDField, relateToObjID)
-	result, err := o.clientSet.ObjectController().Meta().UpdateObjectAssociation(context.Background(), resp.Data[0].ID, o.params.Header, fields)
+	update := metadata.UpdateOption{
+		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(resp.Data.Info[0].ID).ToMapStr(),
+		Data:      fields,
+	}
+	result, err := o.clientSet.CoreService().Association().UpdateModelAssociation(context.Background(), o.params.Header, &update)
 	if err != nil {
 		blog.Errorf("[model-obj] update mainline object's[%d] association to object[%s] failed, err: %v", o.obj.ID, relateToObjID, err)
 		return err

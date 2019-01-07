@@ -190,7 +190,7 @@ func (c *commonInst) isValidInstID(params types.ContextParams, obj metadata.Obje
 	query.Condition = cond.ToMapStr()
 	query.Limit = common.BKNoLimit
 
-	rsp, err := c.clientSet.ObjectController().Instance().SearchObjects(context.Background(), obj.GetObjectType(), params.Header, query)
+	rsp, err := c.clientSet.CoreService().Instance().ReadInstance(context.Background(), params.Header, obj.GetObjectType(), &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to request object controller, err: %s", err.Error())
 		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -352,8 +352,7 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 			delCond.Field(common.BKObjIDField).Eq(object.ObjectID)
 		}
 		// clear association
-		rsp, err := c.clientSet.ObjectController().Instance().DelObject(context.Background(), obj.GetObjectType(), params.Header, delCond.ToMapStr())
-
+		rsp, err := c.clientSet.CoreService().Instance().DeleteInstance(context.Background(), params.Header, obj.GetObjectType(), &metadata.DeleteOption{Condition: delCond.ToMapStr()})
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to request object controller, err: %s", err.Error())
 			return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -425,10 +424,9 @@ func (c *commonInst) convertInstIDIntoStruct(params types.ContextParams, asstObj
 	cond := condition.CreateCondition()
 	cond.Field(obj.GetInstIDFieldName()).In(ids)
 
-	query := &metadata.QueryInput{}
+	query := &metadata.QueryCondition{}
 	query.Condition = cond.ToMapStr()
-	query.Limit = common.BKNoLimit
-	rsp, err := c.clientSet.ObjectController().Instance().SearchObjects(context.Background(), obj.GetObjectType(), params.Header, query)
+	rsp, err := c.clientSet.CoreService().Instance().ReadInstance(context.Background(), params.Header, obj.GetObjectType(), query)
 
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to request object controller, err: %s", err.Error())
@@ -826,7 +824,6 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 }
 
 func (c *commonInst) FindOriginInst(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (*metadata.InstResult, error) {
-
 	switch obj.Object().ObjectID {
 	case common.BKInnerObjIDHost:
 		rsp, err := c.clientSet.HostController().Host().GetHosts(context.Background(), params.Header, cond)
@@ -844,8 +841,9 @@ func (c *commonInst) FindOriginInst(params types.ContextParams, obj model.Object
 		return &metadata.InstResult{Count: rsp.Data.Count, Info: mapstr.NewArrayFromMapStr(rsp.Data.Info)}, nil
 
 	default:
-
-		rsp, err := c.clientSet.ObjectController().Instance().SearchObjects(context.Background(), obj.GetObjectType(), params.Header, cond)
+		queryCond, err := mapstr.NewFromInterface(cond.Condition)
+		input := &metadata.QueryCondition{Condition: queryCond}
+		rsp, err := c.clientSet.CoreService().Instance().ReadInstance(context.Background(), params.Header, obj.GetObjectType(), input)
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to request object controller, err: %s", err.Error())
 			return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -855,10 +853,10 @@ func (c *commonInst) FindOriginInst(params types.ContextParams, obj model.Object
 			blog.Errorf("[operation-inst] failed to delete the object(%s) inst by the condition(%#v), err: %s", obj.Object().ObjectID, cond, rsp.ErrMsg)
 			return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 		}
-		return &rsp.Data, nil
+		return &metadata.InstResult{Info: rsp.Data.Info, Count: rsp.Data.Count}, nil
 	}
-
 }
+
 func (c *commonInst) FindInst(params types.ContextParams, obj model.Object, cond *metadata.QueryInput, needAsstDetail bool) (count int, results []inst.Inst, err error) {
 	rsp, err := c.FindOriginInst(params, obj, cond)
 	if nil != err {
@@ -890,8 +888,7 @@ func (c *commonInst) UpdateInst(params types.ContextParams, data mapstr.MapStr, 
 	inputParams.Set("data", data)
 	inputParams.Set("condition", cond.ToMapStr())
 	preAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, cond.ToMapStr())
-	rsp, err := c.clientSet.ObjectController().Instance().UpdateObject(context.Background(), obj.GetObjectType(), params.Header, inputParams)
-
+	rsp, err := c.clientSet.CoreService().Instance().ReadInstance(context.Background(), params.Header, obj.GetObjectType(), &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to request object controller, err: %s", err.Error())
 		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)

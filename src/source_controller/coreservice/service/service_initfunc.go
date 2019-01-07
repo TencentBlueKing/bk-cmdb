@@ -47,6 +47,7 @@ func (s *coreService) initModel() {
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/model/{bk_obj_id}/group", HandlerFunc: s.DeleteModelAttributeGroup})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/model/group", HandlerFunc: s.DeleteModelAttributeGroupByCondition})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/model/{bk_obj_id}/group", HandlerFunc: s.SearchModelAttributeGroup})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/model/group", HandlerFunc: s.SearchModelAttributeGroupByCondition})
 
 	// init attributes methods
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/model/{bk_obj_id}/attributes", HandlerFunc: s.CreateModelAttributes})

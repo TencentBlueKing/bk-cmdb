@@ -527,19 +527,36 @@ func (a *association) DeleteType(params types.ContextParams, asstTypeID int) (re
 		return nil, params.Err.Error(common.CCErrorTopoAssociationKindHasBeenUsed)
 	}
 
-	return a.clientSet.CoreService().Association().DeleteAssociation(
+	rsp, err := a.clientSet.CoreService().Association().DeleteAssociation(
 		context.Background(), params.Header, &metadata.DeleteOption{
 			Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(asstTypeID).ToMapStr(),
 		},
 	)
+
+	return &metadata.DeleteAssociationTypeResult{BaseResp: rsp.BaseResp}, err
 }
 
 func (a *association) SearchObject(params types.ContextParams, request *metadata.SearchAssociationObjectRequest) (resp *metadata.SearchAssociationObjectResult, err error) {
-	return a.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), params.Header, &metadata.QueryCondition{Condition: request.Condition})
+	rsp, err := a.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), params.Header, &metadata.QueryCondition{Condition: request.Condition})
+
+	resp = &metadata.SearchAssociationObjectResult{BaseResp: rsp.BaseResp}
+	for index := range rsp.Data.Info {
+		resp.Data = append(resp.Data, &rsp.Data.Info[index])
+	}
+
+	return resp, err
 }
+
 func (a *association) CreateObject(params types.ContextParams, request *metadata.Association) (resp *metadata.CreateAssociationObjectResult, err error) {
-	return a.clientSet.CoreService().Association().CreateModelAssociation(context.Background(), params.Header, &metadata.CreateModelAssociation{Spec: *request})
+	rsp, err := a.clientSet.CoreService().Association().CreateModelAssociation(context.Background(), params.Header, &metadata.CreateModelAssociation{Spec: *request})
+
+	resp = &metadata.CreateAssociationObjectResult{
+		BaseResp: rsp.BaseResp,
+	}
+	resp.Data.ID = int64(rsp.Data.Created.ID)
+	return resp, err
 }
+
 func (a *association) UpdateObject(params types.ContextParams, asstID int, request *metadata.UpdateAssociationObjectRequest) (resp *metadata.UpdateAssociationObjectResult, err error) {
 	input := metadata.UpdateOption{
 		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(asstID).ToMapStr(),
@@ -554,12 +571,26 @@ func (a *association) UpdateObject(params types.ContextParams, asstID int, reque
 }
 
 func (a *association) DeleteObject(params types.ContextParams, asstID int) (resp *metadata.DeleteAssociationObjectResult, err error) {
-	return a.clientSet.ObjectController().Association().DeleteObject(context.TODO(), params.Header, asstID)
+
+	input := metadata.DeleteOption{
+		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(asstID).ToMapStr(),
+	}
+	rsp, err := a.clientSet.CoreService().Association().DeleteModelAssociation(context.Background(), params.Header, &input)
+	return &metadata.DeleteAssociationObjectResult{BaseResp: rsp.BaseResp}, err
+
 }
 
 func (a *association) SearchInst(params types.ContextParams, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error) {
-	return a.clientSet.ObjectController().Association().SearchInst(context.TODO(), params.Header, request)
+	rsp, err := a.clientSet.CoreService().Association().ReadInstAssociation(context.Background(), params.Header, &metadata.QueryCondition{Condition: request.Condition})
+
+	resp = &metadata.SearchAssociationInstResult{BaseResp: rsp.BaseResp}
+	for index := range rsp.Data.Info {
+		resp.Data = append(resp.Data, &rsp.Data.Info[index])
+	}
+
+	return resp, err
 }
+
 func (a *association) CreateInst(params types.ContextParams, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error) {
 	cond := condition.CreateCondition()
 	cond.Field(common.AssociationObjAsstIDField).Eq(request.ObjectAsstID)
@@ -603,9 +634,28 @@ func (a *association) CreateInst(params types.ContextParams, request *metadata.C
 		// after all the check, new association instance can be created.
 	}
 
-	return a.clientSet.ObjectController().Association().CreateInst(context.TODO(), params.Header, request)
+	input := metadata.CreateOneInstanceAssociation{
+		Data: metadata.InstAsst{
+			ObjectAsstID: request.ObjectAsstID,
+			InstID:       request.InstID,
+			AsstInstID:   request.AsstInstID,
+		},
+	}
+	rsp, err := a.clientSet.CoreService().Association().CreateInstAssociation(context.Background(), params.Header, &input)
+
+	resp = &metadata.CreateAssociationInstResult{BaseResp: rsp.BaseResp}
+	resp.Data.ID = int64(rsp.Data.Created.ID)
+	return resp, err
 }
 
 func (a *association) DeleteInst(params types.ContextParams, assoID int64) (resp *metadata.DeleteAssociationInstResult, err error) {
-	return a.clientSet.ObjectController().Association().DeleteInst(context.TODO(), params.Header, assoID)
+	input := metadata.DeleteOption{
+		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(assoID).ToMapStr(),
+	}
+	rsp, err := a.clientSet.CoreService().Association().DeleteInstAssociation(context.Background(), params.Header, &input)
+	resp = &metadata.DeleteAssociationInstResult{
+		BaseResp: rsp.BaseResp,
+	}
+
+	return resp, err
 }
