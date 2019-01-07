@@ -40,14 +40,21 @@
         },
         created () {
             this.$store.commit('setHeaderTitle', this.$t('Index["首页"]'))
+            const systemScrollbarWidth = getScrollbarWidth()
+            let isInit = true
             const calcCopyrightPosition = ($scroller) => {
                 const scrollerRect = $scroller.getBoundingClientRect()
                 const scrollerHeight = scrollerRect.height
                 const scrollerWidth = scrollerRect.width
                 const scrollerTop = $scroller.scrollTop
                 const copyrightHeight = this.$refs.copyright.getBoundingClientRect().height
-                const scrollbarWidth = scrollerWidth === ($scroller.scrollWidth + getScrollbarWidth()) ? 0 : getScrollbarWidth()
+                const scrollbarWidth = isInit
+                    ? 0
+                    : scrollerWidth === ($scroller.scrollWidth + systemScrollbarWidth)
+                        ? 0
+                        : systemScrollbarWidth
                 this.$refs.copyright.style.top = scrollerTop + scrollerHeight - copyrightHeight - scrollbarWidth + 'px'
+                isInit = false
             }
             this.scrollHandler = event => {
                 calcCopyrightPosition(event.target)
