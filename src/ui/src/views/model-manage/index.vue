@@ -1,22 +1,37 @@
 <template>
-    <div class="group-wrapper" @scroll="handleWrapperScroll">
-        <p class="btn-group" :class="{sticky: wrapperScroll}">
+    <div class="group-wrapper">
+        <div class="btn-group" ref="btnGroup">
             <bk-button type="primary"
-                :disabled="!authority.includes('update')"
+                :disabled="!authority.includes('update') || modelType === 'disabled'"
                 @click="showModelDialog(false)">
                 {{$t('ModelManagement["新增模型"]')}}
             </bk-button>
             <bk-button type="default"
-                :disabled="!authority.includes('update')"
+                :disabled="!authority.includes('update') || modelType === 'disabled'"
                 @click="showGroupDialog(false)">
                 {{$t('ModelManagement["新建分组"]')}}
             </bk-button>
-        </p>
+        </div>
+        <div class="model-type-options">
+            <bk-button class="model-type-button enable"
+                size="mini"
+                :type="modelType === 'enable' ? 'primary' : 'default'"
+                @click="modelType = 'enable'">
+                {{$t('ModelManagement["启用模型"]')}}
+            </bk-button>
+            <bk-button class="model-type-button disabled"
+                size="mini"
+                :disabled="!disabledClassifications.length"
+                :type="modelType === 'disabled' ? 'primary' : 'default'"
+                @click="modelType = 'disabled'">
+                {{$t('ModelManagement["停用模型"]')}}
+            </bk-button>
+        </div>
         <ul class="group-list">
             <li class="group-item clearfix"
-                v-for="(classification, classIndex) in localClassifications"
+                v-for="(classification, classIndex) in currentClassifications"
                 :key="classIndex">
-                <p class="group-title">
+                <div class="group-title">
                     <span>{{classification['bk_classification_name']}}</span>
                     <span class="number">({{classification['bk_objects'].length}})</span>
                     <template v-if="authority.includes('update')">
@@ -27,10 +42,13 @@
                         v-if="classification['bk_classification_type'] !== 'inner'"
                         @click="deleteGroup(classification)"></i>
                     </template>
-                </p>
+                </div>
                 <ul class="model-list clearfix" >
                     <li class="model-item"
-                    :class="{'ispaused': model['bk_ispaused']}"
+                    :class="{
+                        'ispaused': model['bk_ispaused'],
+                        'ispre': model['ispre']
+                    }"
                     v-for="(model, modelIndex) in classification['bk_objects']"
                     :key="modelIndex"
                     @click="modelClick(model)">
@@ -41,9 +59,6 @@
                             <p class="model-name" :title="model['bk_obj_name']">{{model['bk_obj_name']}}</p>
                             <p class="model-id" :title="model['bk_obj_id']">{{model['bk_obj_id']}}</p>
                         </div>
-                        <span class="paused-info" v-if="model['bk_ispaused']">
-                            {{$t('ModelManagement["已停用"]')}}
-                        </span>
                     </li>
                 </ul>
             </li>
@@ -178,6 +193,12 @@
     import theChooseIcon from '@/components/model-manage/_choose-icon'
     import theModel from './children'
     import { mapGetters, mapMutations, mapActions } from 'vuex'
+    import {
+        addMainScrollListener,
+        removeMainScrollListener,
+        addMainResizeListener,
+        removeMainResizeListener
+    } from '@/utils/main-scroller'
     export default {
         components: {
             theChooseIcon,
@@ -185,7 +206,9 @@
         },
         data () {
             return {
-                wrapperScroll: 0,
+                scrollHandler: null,
+                resizeHandler: null,
+                scrollTop: 0,
                 groupDialog: {
                     isShow: false,
                     isEdit: false,
@@ -210,7 +233,8 @@
                         bk_obj_id: '',
                         bk_obj_name: ''
                     }
-                }
+                },
+                modelType: 'enable'
             }
         },
         computed: {
@@ -218,20 +242,55 @@
             ...mapGetters('objectModelClassify', [
                 'classifications'
             ]),
+            enableClassifications () {
+                const enableClassifications = []
+                this.classifications.forEach(classification => {
+                    enableClassifications.push({
+                        ...classification,
+                        'bk_objects': classification['bk_objects'].filter(model => !model['bk_ispaused'])
+                    })
+                })
+                return enableClassifications
+            },
+            disabledClassifications () {
+                const disabledClassifications = []
+                this.classifications.forEach(classification => {
+                    const disabledModels = classification['bk_objects'].filter(model => model['bk_ispaused'])
+                    if (disabledModels.length) {
+                        disabledClassifications.push({
+                            ...classification,
+                            'bk_objects': disabledModels
+                        })
+                    }
+                })
+                return disabledClassifications
+            },
+            currentClassifications () {
+                return this.modelType === 'enable' ? this.enableClassifications : this.disabledClassifications
+            },
             localClassifications () {
                 let localClassifications = []
                 this.classifications.forEach(classification => {
                     localClassifications.push({...classification, ...{isModelShow: false}})
                 })
-                this.modelDialog.classificationList = localClassifications.filter(({bk_classification_id: classificationId}) => !['bk_biz_topo', 'bk_host_manage', 'bk_organization'].includes(classificationId))
                 return localClassifications
             },
             authority () {
                 return this.admin ? ['search', 'update', 'delete'] : []
             }
         },
+        watch: {
+            localClassifications () {
+                this.modelDialog.classificationList = this.localClassifications.filter(({bk_classification_id: classificationId}) => !['bk_biz_topo', 'bk_host_manage', 'bk_organization'].includes(classificationId))
+            }
+        },
         created () {
             this.$store.commit('setHeaderTitle', this.$t('Nav["模型"]'))
+            this.setScroller()
+        },
+        beforeDestroy () {
+            removeMainScrollListener(this.scrollHandler)
+            removeMainResizeListener(this.resizeHandler)
         },
         methods: {
             ...mapMutations('objectModelClassify', [
@@ -247,8 +306,21 @@
             ...mapActions('objectModel', [
                 'createObject'
             ]),
-            handleWrapperScroll () {
-                this.wrapperScroll = this.$el.scrollTop
+            setScroller () {
+                const checkMainScroller = ($scroller) => {
+                    const top = $scroller.scrollTop
+                    const btnGroup = this.$refs.btnGroup
+                    btnGroup.style.top = top + 'px'
+                    btnGroup.style.boxShadow = top ? '0 0 8px 1px rgba(0,0,0,.03)' : 'unset'
+                }
+                this.scrollHandler = event => {
+                    checkMainScroller(event.target)
+                }
+                this.resizeHandler = () => {
+                    checkMainScroller(document.querySelector('.main-scroller'))
+                }
+                addMainScrollListener(this.scrollHandler)
+                addMainResizeListener(this.resizeHandler)
             },
             showGroupDialog (isEdit, group) {
                 if (isEdit) {
@@ -353,24 +425,45 @@
 
 <style lang="scss" scoped>
     .group-wrapper {
-        position: relative;
-        height: 100%;
-        padding: 0;
-        overflow-y: auto;
+        padding-top: 56px;
     }
     .btn-group {
-        position: sticky;
+        position: absolute;
         top: 0;
         left: 0;
+        width: 100%;
         padding: 20px;
         font-size: 0;
-        z-index: 2;
         background-color: #fff;
+        z-index: 100;
         .bk-primary {
             margin-right: 10px;
         }
         &.sticky {
             box-shadow: 0 0 8px 1px rgba(0, 0, 0, 0.03);
+        }
+    }
+    .model-type-options {
+        margin: 20px 0 -30px 0;
+        font-size: 0;
+        text-align: right;
+        position: relative;
+        z-index: 1;
+        .model-type-button {
+            position: relative;
+            font-size: 12px;
+            &.enable {
+                border-radius: 2px 0 0 2px;
+                z-index: 2;
+            }
+            &.disabled {
+                border-radius: 0 2px 2px 0;
+                margin-left: -1px;
+                z-index: 1;
+            }
+            &:hover {
+                z-index: 2;
+            }
         }
     }
     .group-list {
@@ -394,19 +487,28 @@
         }
         .group-title {
             display: inline-block;
-            padding: 0 40px 0 8px;
-            border-left: 4px solid $cmdbBorderColor;
-            line-height: 14px;
+            padding: 0 40px 0 0;
+            line-height: 21px;
             color: #333948;
+            &:before {
+                content: "";
+                display: inline-block;
+                width:4px;
+                height:14px;
+                margin: 0 10px 0 0;
+                vertical-align: middle;
+                background: $cmdbBorderColor;
+            }
             >span {
                 display: inline-block;
+                vertical-align: middle;
             }
             .number {
                 color: $cmdbBorderColor;
             }
             >.text-primary {
                 display: none;
-                vertical-align: top;
+                vertical-align: middle;
                 cursor: pointer;
             }
             &:hover {
@@ -424,32 +526,27 @@
             position: relative;
             float: left;
             margin: 10px 10px 0 0;
-            width: 260px;
+            width: calc((100% - 10px * 4) / 5);
             height: 70px;
             border: 1px solid $cmdbTableBorderColor;
             border-radius: 4px;
             cursor: pointer;
+            &:nth-child(5n) {
+                margin-right: 0;
+            }
             &.ispaused {
-                background: #fafbfd;
-                opacity: .6;
-                &:after {
-                    content: '';
-                    display: inline-block;
-                    position: absolute;
-                    top: -33px;
-                    right: -33px;
-                    border: 32px solid transparent;
-                    border-bottom-color: $cmdbDangerColor;
-                    transform: rotate(45deg);
+                background: #fcfdfe;
+                border-color: #dde4eb;
+                .icon-box {
+                    color: #96c2f7;
                 }
-                .paused-info {
-                    position: absolute;
-                    right: -2px;
-                    top: 7px;
-                    font-size: 12px;
-                    z-index: 1;
-                    color: #fff;
-                    transform: rotate(45deg) scale(.8);
+                .model-name {
+                    color: #bfc7d2;
+                }
+            }
+            &.ispre {
+                .icon-box {
+                    color: #798aad;
                 }
             }
             &:hover {
@@ -458,29 +555,26 @@
             }
             .icon-box {
                 float: left;
-                width: 50px;
+                width: 66px;
+                text-align: center;
+                font-size: 32px;
+                color: $cmdbBorderFocusColor;
                 .icon {
-                    padding-left: 18px;
-                    font-size: 32px;
-                    line-height: 70px;
-                    color: $cmdbBorderFocusColor;
-                    &.ispre {
-                        color: #868b97;
-                    }
+                    line-height: 68px;
                 }
             }
             .model-details {
-                float: left;
-                width: 208px;
-                line-height: 16px;
-                margin-top: 20px;
-                padding: 0 10px;
+                padding: 0 10px 0 0;
+                overflow: hidden;
             }
             .model-name {
+                margin-top: 16px;
+                line-height: 19px;
                 font-size: 14px;
                 @include ellipsis;
             }
             .model-id {
+                line-height: 16px;
                 font-size: 12px;
                 color: #bfc7d2;
                 @include ellipsis;

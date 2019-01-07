@@ -3,6 +3,7 @@
         <div class="model-info" v-bkloading="{isLoading: $loading('searchObjects')}">
             <template v-if="activeModel !== null">
                 <div class="choose-icon-wrapper">
+                    <span class="model-type">公共</span>
                     <template v-if="authority.includes('update')">
                         <div class="icon-box" @click="isIconListShow = true">
                             <i class="icon" :class="activeModel ? activeModel['bk_obj_icon'] : 'icon-cc-default'"></i>
@@ -10,10 +11,10 @@
                         </div>
                         <div class="choose-icon-box" v-if="isIconListShow" v-click-outside="hideChooseBox">
                             <the-choose-icon
-                                :type="'update'"
                                 v-model="modelInfo.objIcon"
-                                @chooseIcon="chooseIcon"
-                            ></the-choose-icon>
+                                type="update"
+                                @chooseIcon="chooseIcon">
+                            </the-choose-icon>
                         </div>
                     </template>
                     <template v-else>
@@ -371,10 +372,37 @@
         .choose-icon-wrapper {
             position: relative;
             float: left;
+            margin: 14px 30px 0 0;
+            .model-type {
+                position: absolute;
+                left: 58px;
+                top: -8px;
+                padding: 0 6px;
+                border-radius: 4px;
+                background-color: #ffb23a;
+                font-size: 20px;
+                line-height: 32px;
+                color: #fff;
+                white-space: nowrap;
+                transform: scale(.5);
+                transform-origin: left center;
+                &:after {
+                    content: "";
+                    position: absolute;
+                    top: 100%;
+                    left: 10px;
+                    width: 0;
+                    height: 0;
+                    border-top: 8px solid #ffb23a;
+                    border-right: 10px solid transparent;
+                    transform: skew(-15deg);
+                    transform-origin: left top;
+                }
+            }
             .choose-icon-box {
                 position: absolute;
                 left: 0;
-                top: 95px;
+                top: 80px;
                 width: 395px;
                 height: 262px;
                 background: #fff;
@@ -400,10 +428,6 @@
             }
         }
         .icon-box {
-            position: relative;
-            float: left;
-            margin-top: 14px;
-            margin: 14px 30px 0 0;
             padding-top: 20px;
             width: 72px;
             height: 72px;
