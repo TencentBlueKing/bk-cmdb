@@ -23,21 +23,83 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCreateClassification(t *testing.T) {
+func setManyClassification(t *testing.T, client *httpclient.HttpClient, classificationID string) {
+	// set many
+	classItems := metadata.SetManyModelClassification{
+		Data: []metadata.Classification{
+			metadata.Classification{
+				Metadata: metadata.Metadata{
+					Label: metadata.Label{metadata.LabelBusinessID: "test_biz"},
+				},
+				ClassificationID: classificationID,
+			},
+		},
+	}
 
-	startCoreService(t, "127.0.0.1", 3308)
+	inputParams, err := json.Marshal(classItems)
+	require.NoError(t, err)
+	require.NotNil(t, inputParams)
+	t.Logf("set many classificaiton:%s", inputParams)
 
-	client := httpclient.NewHttpClient()
+	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/setmany/model/classification", defaultHeader, inputParams)
+	require.NoError(t, err)
+	require.NotNil(t, dataResult)
 
-	inputParams := []byte(`
-		{  
-		  "metadata":{"business_object":"biz"},
-		  "datas":[
-			{
-				"bk_classification_id" : "` + xid.New().String() + `",
-				"bk_classification_name" : ""
-			}]
-		}`)
+	clsResult := metadata.SetOptionResult{}
+	err = json.Unmarshal(dataResult, &clsResult)
+	require.NoError(t, err)
+	resultStr, err := json.Marshal(clsResult)
+	require.NoError(t, err)
+	t.Logf("set many data result:%s", resultStr)
+}
+
+func setOneClassification(t *testing.T, client *httpclient.HttpClient, classificationID string) {
+
+	// create one
+	classItems := metadata.SetOneModelClassification{
+		Data: metadata.Classification{
+			Metadata: metadata.Metadata{
+				Label: metadata.Label{metadata.LabelBusinessID: "test_biz"},
+			},
+			ClassificationID: classificationID,
+		},
+	}
+
+	inputParams, err := json.Marshal(classItems)
+	require.NoError(t, err)
+	require.NotNil(t, inputParams)
+	t.Logf("set one classificaiton:%s", inputParams)
+
+	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/set/model/classification", defaultHeader, inputParams)
+	require.NoError(t, err)
+	require.NotNil(t, dataResult)
+
+	clsResult := metadata.SetOptionResult{}
+	err = json.Unmarshal(dataResult, &clsResult)
+	require.NoError(t, err)
+	resultStr, err := json.Marshal(clsResult)
+	require.NoError(t, err)
+	t.Logf("set one data result:%s", resultStr)
+}
+
+func createManyClassification(t *testing.T, client *httpclient.HttpClient, classificationID string) {
+
+	// create many
+	classItems := metadata.CreateManyModelClassifiaction{
+		Data: []metadata.Classification{
+			metadata.Classification{
+				Metadata: metadata.Metadata{
+					Label: metadata.Label{metadata.LabelBusinessID: "test_biz"},
+				},
+				ClassificationID: classificationID,
+			},
+		},
+	}
+
+	inputParams, err := json.Marshal(classItems)
+	require.NoError(t, err)
+	require.NotNil(t, inputParams)
+	t.Logf("create many classificaiton:%s", inputParams)
 
 	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/createmany/model/classification", defaultHeader, inputParams)
 	require.NoError(t, err)
@@ -46,6 +108,63 @@ func TestCreateClassification(t *testing.T) {
 	clsResult := metadata.CreatedManyOptionResult{}
 	err = json.Unmarshal(dataResult, &clsResult)
 	require.NoError(t, err)
-	t.Logf("data result:%v", clsResult.Data.Created)
+	resultStr, err := json.Marshal(clsResult)
+	require.NoError(t, err)
+	t.Logf("create many data result:%s", resultStr)
 
+}
+
+func createOneClassification(t *testing.T, client *httpclient.HttpClient, classificationID string) {
+
+	// create one
+	classItems := metadata.CreateOneModelClassification{
+		Data: metadata.Classification{
+			Metadata: metadata.Metadata{
+				Label: metadata.Label{metadata.LabelBusinessID: "test_biz"},
+			},
+			ClassificationID: classificationID,
+		},
+	}
+
+	inputParams, err := json.Marshal(classItems)
+	require.NoError(t, err)
+	require.NotNil(t, inputParams)
+	t.Logf("create one classificaiton:%s", inputParams)
+
+	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/create/model/classification", defaultHeader, inputParams)
+	require.NoError(t, err)
+	require.NotNil(t, dataResult)
+
+	clsResult := metadata.CreatedOneOptionResult{}
+	err = json.Unmarshal(dataResult, &clsResult)
+	require.NoError(t, err)
+	resultStr, err := json.Marshal(clsResult)
+	require.NoError(t, err)
+	t.Logf("create one data result:%s", resultStr)
+}
+
+func queryClassification(t *testing.T, client *httpclient.HttpClient, classificationID string) {
+
+}
+
+func TestClassificationCRUD(t *testing.T) {
+
+	// base
+	startCoreService(t, "127.0.0.1", 3308)
+	client := httpclient.NewHttpClient()
+	classID := xid.New().String()
+	t.Logf("create many:%s", classID)
+	createManyClassification(t, client, classID)
+
+	classID = xid.New().String()
+	t.Logf("create one:%s", classID)
+	createOneClassification(t, client, classID)
+
+	classID = xid.New().String()
+	t.Logf("set many:%s", classID)
+	setManyClassification(t, client, classID)
+
+	classID = xid.New().String()
+	t.Logf("set one:%s", classID)
+	setOneClassification(t, client, classID)
 }
