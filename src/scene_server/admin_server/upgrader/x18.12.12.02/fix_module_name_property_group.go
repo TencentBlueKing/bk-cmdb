@@ -9,16 +9,32 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package mongo
+package x18_12_12_02
 
 import (
+	"context"
+
+	"configcenter/src/common"
+	"configcenter/src/common/condition"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
-	mgo "configcenter/src/storage/dal/mongo/local"
-    "time"
 )
 
-// NewMgo returns new RDB
-func NewMgo(uri string, timeout time.Duration) (dal.DB, error) {
-	return mgo.NewMgo(uri, timeout)
+func fixModuleNamePropertyGroup(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+
+	cond := condition.CreateCondition()
+	cond.Field(common.BKOwnerIDField).Eq(common.BKDefaultOwnerID)
+	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDModule)
+	cond.Field(common.BKPropertyIDField).Eq(common.BKModuleNameField)
+
+	data := mapstr.MapStr{
+		common.BKPropertyGroupField: "default",
+	}
+
+	err := db.Table(common.BKTableNameObjAttDes).Update(ctx, cond.ToMapStr(), data)
+	if err != nil {
+		return err
+	}
+	return nil
 }

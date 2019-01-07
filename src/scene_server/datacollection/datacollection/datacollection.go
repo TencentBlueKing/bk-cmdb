@@ -53,7 +53,7 @@ func (d *DataCollection) Run() error {
 	}
 	blog.Infof("[datacollect][RUN]connected to cc redis %+v", d.Config.CCRedis)
 
-	db, err := mongo.NewMgo(d.Config.MongoDB.BuildURI())
+	db, err := mongo.NewMgo(d.Config.MongoDB.BuildURI(), time.Minute)
 	if err != nil {
 		blog.Errorf("[datacollection][RUN] connect mongo failed: %v", err)
 		return fmt.Errorf("connect mongo server failed %s", err.Error())

@@ -85,7 +85,6 @@ func (lgc *Logics) timedTriggerRefreshHostInstance() {
 	go func() {
 		triggerChn := time.NewTicker(timedTriggerTime)
 		for range triggerChn.C {
-			lgc.cache.Del(common.RedisProcSrvHostInstanceAllRefreshLockKey)
 			locked, err := lgc.cache.SetNX(common.RedisProcSrvHostInstanceAllRefreshLockKey, "", timedTriggerLockExpire).Result()
 			if nil != err {
 				blog.Errorf("locked refresh  error:%s", err.Error())

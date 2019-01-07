@@ -122,7 +122,7 @@ func (cli *classification) Create() error {
 	}
 
 	if exists {
-		return cli.params.Err.Error(common.CCErrCommDuplicateItem)
+		return cli.params.Err.Errorf(common.CCErrCommDuplicateItem, cli.GetID()+"/"+cli.GetName())
 	}
 
 	rsp, err := cli.clientSet.ObjectController().Meta().CreateClassification(context.Background(), cli.params.Header, &cli.cls)
@@ -211,6 +211,7 @@ func (cli *classification) IsExists() (bool, error) {
 	cond := condition.CreateCondition()
 	cond.Field(metadata.ClassFieldClassificationID).Eq(cli.cls.ClassificationID)
 	cond.Field(metadata.ClassificationFieldID).NotIn([]int64{cli.cls.ID})
+	cond.Field(common.BKOwnerIDField).Eq(cli.params.SupplierAccount)
 	items, err := cli.search(cond)
 	if nil != err {
 		return false, err
@@ -221,8 +222,9 @@ func (cli *classification) IsExists() (bool, error) {
 
 	// check name
 	cond = condition.CreateCondition()
-	cond.Field(metadata.ClassFieldClassificationID).Eq(cli.cls.ClassificationName)
+	cond.Field(metadata.ClassFieldClassificationName).Eq(cli.cls.ClassificationName)
 	cond.Field(metadata.ClassificationFieldID).NotIn([]int64{cli.cls.ID})
+	cond.Field(common.BKOwnerIDField).Eq(cli.params.SupplierAccount)
 	items, err = cli.search(cond)
 	if nil != err {
 		return false, err

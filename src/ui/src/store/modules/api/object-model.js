@@ -11,7 +11,7 @@
 import $http from '@/api'
 
 const state = {
-    activeModel: null
+    activeModel: {}
 }
 
 const getters = {
