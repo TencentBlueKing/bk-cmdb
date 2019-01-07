@@ -272,12 +272,7 @@ func (lgc *Logics) GetHostIDByInstID(ctx context.Context, asstObjId string, inst
 
 	hostIDs := make([]int64, 0)
 	for _, val := range result.Data.Info {
-		id, err := val.Int64(common.BKInstIDField)
-		if err != nil {
-			blog.Errorf("GetHostIDByInstID convert %s %s to integer error, inst info:%+v, input:%+v,rid:%s", common.BKTableNameInstAsst, common.BKInstIDField, val, query, lgc.rid)
-			return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKTableNameInstAsst, common.BKInstIDField, "int", err.Error())
-		}
-		hostIDs = append(hostIDs, id)
+		hostIDs = append(hostIDs, val.InstID)
 	}
 
 	return hostIDs, nil

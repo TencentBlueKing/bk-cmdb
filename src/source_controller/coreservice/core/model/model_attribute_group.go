@@ -219,6 +219,30 @@ func (g *modelAttributeGroup) SearchModelAttributeGroup(ctx core.ContextParams, 
 
 }
 
+func (g *modelAttributeGroup) SearchModelAttributeGroupByCondition(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeGroupDataResult, error) {
+
+	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
+	if nil != err {
+		blog.Errorf("request(%s): it is failed to convert the condition (%v) from mapstr to condition, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
+		return &metadata.QueryModelAttributeGroupDataResult{}, err
+	}
+
+	totalCount, err := g.count(ctx, cond)
+	if nil != err {
+		blog.Errorf("request(%s): it is failed to count by the condition (%v), error info is %s ", ctx.ReqID, cond.ToMapStr(), err.Error())
+		return &metadata.QueryModelAttributeGroupDataResult{}, err
+	}
+
+	grps, err := g.search(ctx, cond)
+	if nil != err {
+		blog.Errorf("request(%s): it is failed to query a model by the condition(%v), error info is %s", ctx.ReqID, cond.ToMapStr(), err.Error())
+		return &metadata.QueryModelAttributeGroupDataResult{}, err
+	}
+
+	return &metadata.QueryModelAttributeGroupDataResult{Count: totalCount, Info: grps}, nil
+
+}
+
 // desperated only for old api
 func (g *modelAttributeGroup) DeleteModelAttributeGroupByCondition(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 

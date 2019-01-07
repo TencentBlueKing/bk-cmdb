@@ -522,8 +522,7 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 			}
 		}
 
-		rsp, err := o.clientSet.ObjectController().Meta().DeleteObject(context.Background(), object.ID, params.Header, cond.ToMapStr())
-
+		rsp, err := o.clientSet.CoreService().Model().DeleteModel(context.Background(), params.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
 		if nil != err {
 			blog.Errorf("[operation-obj] failed to request the object controller, err: %s", err.Error())
 			return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -649,8 +648,7 @@ func (o *object) FindObjectTopo(params types.ContextParams, cond condition.Condi
 }
 
 func (o *object) FindObject(params types.ContextParams, cond condition.Condition) ([]model.Object, error) {
-
-	rsp, err := o.clientSet.ObjectController().Meta().SelectObjects(context.Background(), params.Header, cond.ToMapStr())
+	rsp, err := o.clientSet.CoreService().Model().ReadModel(context.Background(), params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to request the object controller, err: %s", err.Error())
 		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -661,7 +659,16 @@ func (o *object) FindObject(params types.ContextParams, cond condition.Condition
 		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	return model.CreateObject(params, o.clientSet, rsp.Data), nil
+	models := []metadata.Object{}
+	for index := range rsp.Data.Info {
+		model := metadata.Object{}
+		if err = rsp.Data.Info[index].Spec.ToStructByTag(&model, "field"); err != nil {
+			blog.Errorf("[operation-obj] failed to search the objects by the condition(%#v) , ToStructByTag error info is %v", cond.ToMapStr(), err)
+			return nil, err
+		}
+
+	}
+	return model.CreateObject(params, o.clientSet, models), nil
 }
 
 func (o *object) UpdateObject(params types.ContextParams, data mapstr.MapStr, id int64, cond condition.Condition) error {
