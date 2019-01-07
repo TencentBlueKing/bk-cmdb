@@ -37,6 +37,9 @@
                 <span class="text-primary" v-if="!item.ispre && !isReadOnly" @click.stop="deleteField(item)">
                     {{$t('Common["删除"]')}}
                 </span>
+                <span class="text-primary disabled" v-else>
+                    {{$t('Common["删除"]')}}
+                </span>
             </template>
         </cmdb-table>
         <cmdb-slider
@@ -125,6 +128,10 @@
                 return false
             },
             authority () {
+                const cantEdit = ['process', 'plat']
+                if (cantEdit.includes(this.objId)) {
+                    return []
+                }
                 return this.$store.getters.admin ? ['search', 'update', 'delete'] : []
             }
         },
@@ -214,11 +221,6 @@
 <style lang="scss" scoped>
     .create-btn {
         margin: 10px 0;
-    }
-    .field-table {
-        .disabled {
-            color: #bfc7d2;
-        }
     }
     .field-pre {
         display: inline-block;

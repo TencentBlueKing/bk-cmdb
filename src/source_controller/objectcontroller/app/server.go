@@ -110,7 +110,7 @@ func (h *ObjectController) onObjectConfigUpdate(previous, current cc.ProcessConf
 		Redis: dalredis.ParseConfigFromKV("redis", current.ConfigMap),
 	}
 
-	instance, err := mongo.NewMgo(h.Config.Mongo.BuildURI())
+	instance, err := mongo.NewMgo(h.Config.Mongo.BuildURI(), time.Minute)
 	if err != nil {
 		blog.Errorf("new mongo client failed, err: %v", err)
 		return

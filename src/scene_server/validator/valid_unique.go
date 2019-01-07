@@ -40,7 +40,7 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
 	}
 
 	for _, unique := range uniqueresp.Data {
-		// retrive unique value
+		// retrieve unique value
 		uniquekeys := map[string]bool{}
 		for _, key := range unique.Keys {
 			switch key.Kind {
@@ -72,7 +72,7 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
 			continue
 		}
 
-		// only search data not in diable status
+		// only search data not in disable status
 		cond.Field(common.BKDataStatusField).NotEq(common.DataStatusDisabled)
 		if common.GetObjByType(valid.objID) == common.BKInnerObjIDObject {
 			cond.Field(common.BKObjIDField).Eq(valid.objID)
