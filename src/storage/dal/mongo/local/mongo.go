@@ -15,6 +15,7 @@ package local
 import (
 	"context"
 	"strings"
+	"time"
 
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
@@ -32,16 +33,18 @@ type Mongo struct {
 
 var _ dal.DB = new(Mongo)
 
-// NewMgo returns new DB
-func NewMgo(uri string) (*Mongo, error) {
+// NewMgo returns new RDB
+func NewMgo(uri string, timeout time.Duration) (*Mongo, error) {
 	cs, err := mgo.ParseURL(uri)
 	if err != nil {
 		return nil, err
 	}
-	client, err := mgo.DialWithInfo(cs)
+	client, err := mgo.DialWithTimeout(uri, time.Second*10)
 	if err != nil {
 		return nil, err
 	}
+	client.SetSyncTimeout(timeout)
+	client.SetSocketTimeout(timeout)
 	return &Mongo{
 		dbc:    client,
 		dbname: cs.Database,
@@ -56,8 +59,7 @@ func (c *Mongo) Close() error {
 
 // Ping replica client
 func (c *Mongo) Ping() error {
-	// TODO
-	return nil
+	return c.dbc.Ping()
 }
 
 // Clone return the new client
@@ -71,6 +73,14 @@ func (c *Mongo) Clone() dal.DB {
 
 // IsDuplicatedError check duplicated error
 func (c *Mongo) IsDuplicatedError(err error) bool {
+	if err != nil {
+		if strings.Contains(err.Error(), "The existing index") {
+			return true
+		}
+		if strings.Contains(err.Error(), "There's already an index with name") {
+			return true
+		}
+	}
 	return err == dal.ErrDuplicated || mgo.IsDup(err)
 }
 

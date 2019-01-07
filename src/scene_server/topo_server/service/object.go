@@ -51,7 +51,7 @@ func (s *topoService) CreateObject(params types.ContextParams, pathParams, query
 	if "" == bizID {
 		data.Remove(metadata.BKMetadata)
 	}
-	rsp, err := s.core.ObjectOperation().CreateObject(params, data)
+	rsp, err := s.core.ObjectOperation().CreateObject(params, false, data)
 	if nil != err {
 		return nil, err
 	}
