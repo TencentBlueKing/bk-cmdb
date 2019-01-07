@@ -75,16 +75,16 @@
                 <p class="title">{{groupDialog.title}}</p>
                 <div class="content">
                     <label>
-                        <span class="label-title">
-                            {{$t('ModelManagement["唯一标识"]')}}
-                        </span>
-                        <span class="color-danger">*</span>
+                        <div class="label-title">
+                            {{$t('ModelManagement["唯一标识"]')}}<span class="color-danger">*</span>
+                        </div>
                         <div class="cmdb-form-item" :class="{'is-error': errors.has('classifyId')}">
                             <input type="text" class="cmdb-form-input"
-                            v-model.trim="groupDialog.data['bk_classification_id']"
                             name="classifyId"
-                            v-validate="'required|classifyId'"
-                            :disabled="groupDialog.isEdit">
+                            :placeholder="$t('ModelManagement[\'请输入唯一标识\']')"
+                            :disabled="groupDialog.isEdit"
+                            v-model.trim="groupDialog.data['bk_classification_id']"
+                            v-validate="'required|classifyId'">
                             <p class="form-error">{{errors.first('classifyId')}}</p>
                         </div>
                         <i class="bk-icon icon-info-circle" v-tooltip="$t('ModelManagement[\'下划线，数字，英文小写的组合\']')"></i>
@@ -95,9 +95,11 @@
                         </span>
                         <span class="color-danger">*</span>
                         <div class="cmdb-form-item" :class="{'is-error': errors.has('classifyName')}">
-                            <input type="text" class="cmdb-form-input"
-                            v-model.trim="groupDialog.data['bk_classification_name']"
+                            <input type="text" 
+                            class="cmdb-form-input"
                             name="classifyName"
+                            :placeholder="$t('ModelManagement[\'请输入名称\']')"
+                            v-model.trim="groupDialog.data['bk_classification_name']"
                             v-validate="'required|classifyName'">
                             <p class="form-error">{{errors.first('classifyName')}}</p>
                         </div>
@@ -109,88 +111,16 @@
                 <bk-button type="default" @click="hideGroupDialog">{{$t("Common['取消']")}}</bk-button>
             </div>
         </bk-dialog>
-        <bk-dialog
-            class="model-dialog dialog"
-            :close-icon="false"
-            :hasHeader="false"
-            :width="600"
-            :padding="0"
-            :quick-close="false"
-            :is-show.sync="modelDialog.isShow">
-            <div slot="content" class="dialog-content">
-                <p class="title">{{$t('ModelManagement["新增模型"]')}}</p>
-                <div class="content clearfix">
-                    <div class="content-left" @click="modelDialog.isIconListShow = true">
-                        <div class="icon-wrapper">
-                            <i :class="modelDialog.data['bk_obj_icon']"></i>
-                        </div>
-                        <div class="text">{{$t('ModelManagement["点击切换"]')}}</div>
-                    </div>
-                    <div class="content-right">
-                        <div class="label-item">
-                            <span class="label-title">{{$t('ModelManagement["所属分组"]')}}</span>
-                            <span class="color-danger">*</span>
-                            <div class="cmdb-form-item" :class="{'is-error': errors.has('modelGroup')}">
-                                <cmdb-selector
-                                    class="selector-box"
-                                    name="modelGroup"
-                                    setting-key="bk_classification_id"
-                                    display-key="bk_classification_name"
-                                    :content-max-height="200"
-                                    :selected.sync="modelDialog.data['bk_classification_id']"
-                                    :list="modelDialog.classificationList"
-                                    v-validate="'required'"
-                                    v-model="modelDialog.data['bk_classification_id']"
-                                ></cmdb-selector>
-                                <p class="form-error">{{errors.first('modelGroup')}}</p>
-                            </div>
-                        </div>
-                        <label>
-                            <span class="label-title">{{$t('ModelManagement["唯一标识"]')}}</span>
-                            <span class="color-danger">*</span>
-                            <div class="cmdb-form-item" :class="{'is-error': errors.has('modelId')}">
-                                <input type="text" class="cmdb-form-input"
-                                name="modelId"
-                                v-model.trim="modelDialog.data['bk_obj_id']"
-                                v-validate="'required|modelId'">
-                                <p class="form-error">{{errors.first('modelId')}}</p>
-                            </div>
-                            <i class="bk-icon icon-info-circle" v-tooltip="$t('ModelManagement[\'下划线，数字，英文小写的组合\']')"></i>
-                        </label>
-                        <label>
-                            <span class="label-title">{{$t('ModelManagement["名称"]')}}</span>
-                            <span class="color-danger">*</span>
-                            <div class="cmdb-form-item" :class="{'is-error': errors.has('modelName')}">
-                                <input type="text" class="cmdb-form-input"
-                                name="modelName"
-                                v-validate="'required|singlechar'"
-                                v-model.trim="modelDialog.data['bk_obj_name']">
-                                <p class="form-error">{{errors.first('modelName')}}</p>
-                            </div>
-                            <i class="bk-icon icon-info-circle" v-tooltip="$t('ModelManagement[\'请填写模型名\']')"></i>
-                        </label>
-                    </div>
-                </div>
-                <div class="model-icon-wrapper" v-if="modelDialog.isIconListShow">
-                    <span class="back" @click="modelDialog.isIconListShow = false">
-                        <i class="bk-icon icon-back2"></i>
-                    </span>
-                    <the-choose-icon
-                        v-model="modelDialog.data['bk_obj_icon']"
-                        @chooseIcon="modelDialog.isIconListShow = false"
-                    ></the-choose-icon>
-                </div>
-            </div>
-            <div slot="footer" class="footer">
-                <bk-button type="primary" @click="saveModel">{{$t("Common['保存']")}}</bk-button>
-                <bk-button type="default" @click="hideModelDialog">{{$t("Common['取消']")}}</bk-button>
-            </div>
-        </bk-dialog>
+        <the-create-model
+            :is-show.sync="modelDialog.isShow"
+            :title="$t('ModelManagement[\'新增模型\']')"
+            @confirm="saveModel"
+        ></the-create-model>
     </div>
 </template>
 
 <script>
-    import theChooseIcon from '@/components/model-manage/_choose-icon'
+    import theCreateModel from '@/components/model-manage/_create-model'
     import theModel from './children'
     import { mapGetters, mapMutations, mapActions } from 'vuex'
     import {
@@ -201,8 +131,8 @@
     } from '@/utils/main-scroller'
     export default {
         components: {
-            theChooseIcon,
-            theModel
+            theModel,
+            theCreateModel
         },
         data () {
             return {
@@ -223,16 +153,7 @@
                     modelId: 'modelId'
                 },
                 modelDialog: {
-                    isShow: false,
-                    isEdit: false,
-                    isIconListShow: false,
-                    classificationList: [],
-                    data: {
-                        bk_classification_id: '',
-                        bk_obj_icon: 'icon-cc-default',
-                        bk_obj_id: '',
-                        bk_obj_name: ''
-                    }
+                    isShow: false
                 },
                 modelType: 'enable'
             }
@@ -268,20 +189,8 @@
             currentClassifications () {
                 return this.modelType === 'enable' ? this.enableClassifications : this.disabledClassifications
             },
-            localClassifications () {
-                let localClassifications = []
-                this.classifications.forEach(classification => {
-                    localClassifications.push({...classification, ...{isModelShow: false}})
-                })
-                return localClassifications
-            },
             authority () {
                 return this.admin ? ['search', 'update', 'delete'] : []
-            }
-        },
-        watch: {
-            localClassifications () {
-                this.modelDialog.classificationList = this.localClassifications.filter(({bk_classification_id: classificationId}) => !['bk_biz_topo', 'bk_host_manage', 'bk_organization'].includes(classificationId))
             }
         },
         created () {
@@ -340,6 +249,7 @@
             },
             hideGroupDialog () {
                 this.groupDialog.isShow = false
+                this.$validator.reset()
             },
             async saveGroup () {
                 const res = await Promise.all([
@@ -381,37 +291,20 @@
                 })
             },
             showModelDialog () {
-                this.modelDialog.data['bk_obj_icon'] = 'icon-cc-default'
-                this.modelDialog.data['bk_obj_id'] = ''
-                this.modelDialog.data['bk_obj_name'] = ''
-                this.modelDialog.data['bk_classification_id'] = ''
-                this.$validator.reset()
                 this.modelDialog.isShow = true
             },
-            hideModelDialog () {
-                this.modelDialog.isShow = false
-            },
-            async saveModel () {
-                const res = await Promise.all([
-                    this.$validator.validate('modelGroup'),
-                    this.$validator.validate('modelId'),
-                    this.$validator.validate('modelName')
-                ])
-                if (res.includes(false)) {
-                    return
-                }
+            async saveModel (data) {
                 let params = {
                     bk_supplier_account: this.supplierAccount,
-                    bk_obj_name: this.modelDialog.data['bk_obj_name'],
-                    bk_obj_icon: this.modelDialog.data['bk_obj_icon'],
-                    bk_classification_id: this.modelDialog.data['bk_classification_id'],
-                    bk_obj_id: this.modelDialog.data['bk_obj_id'],
+                    bk_obj_name: data['bk_obj_name'],
+                    bk_obj_icon: data['bk_obj_icon'],
+                    bk_classification_id: data['bk_classification_id'],
+                    bk_obj_id: data['bk_obj_id'],
                     userName: this.userName
                 }
                 await this.createObject({params, config: {requestId: 'createModel'}})
                 this.$http.cancel('post_searchClassificationsObjects')
                 this.searchClassificationsObjects({})
-                this.hideModelDialog()
             },
             modelClick (model) {
                 this.$store.commit('setHeaderStatus', {
@@ -583,13 +476,9 @@
     }
     .dialog {
         .dialog-content {
-            padding: 20px 10px;
-            .content {
-                padding: 0 10px;
-            }
+            padding: 20px 15px 20px 28px;
         }
         .title {
-            margin-bottom: 30px;
             font-size: 20px;
             color: #333948;
             line-height: 1;
@@ -597,7 +486,7 @@
         .label-item,
         label {
             display: block;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             font-size: 0;
             &:last-child {
                 margin: 0;
@@ -612,13 +501,8 @@
             .icon-info-circle {
                 font-size: 18px;
                 color: $cmdbBorderColor;
-                // line-height: 36px;
-                // vertical-align: middle;
             }
             .label-title {
-                display: inline-block;
-                width: 85px;
-                text-align: right;
                 font-size: 16px;
                 line-height: 36px;
                 vertical-align: middle;
@@ -627,7 +511,7 @@
             .cmdb-form-item {
                 display: inline-block;
                 margin-right: 10px;
-                width: calc(100% - 130px);
+                width: 519px;
                 vertical-align: middle;
             }
         }
@@ -637,69 +521,6 @@
             text-align: right;
             .bk-primary {
                 margin-right: 10px;
-            }
-        }
-    }
-    .group-dialog {
-        .dialog-content {
-            .content {
-                padding: 30px 10px 40px;
-            }
-        }
-    }
-    .model-dialog {
-        .dialog-content {
-            position: relative;
-        }
-        .content-left {
-            float: left;
-            width: 93px;
-            height: 100px;
-            border: 1px solid #dde4eb;
-            border-radius: 4px 4px 0 0;
-            cursor: pointer;
-            .icon-wrapper {
-                width: 100%;
-                height: 68px;
-                font-size: 38px;
-                text-align: center;
-                i {
-                    vertical-align: top;
-                    line-height: 68px;
-                    color: $cmdbBorderFocusColor;
-                }
-            }
-            .text {
-                height: 30px;
-                border-top: 1px solid #dde4eb;
-                text-align: center;
-                line-height: 30px;
-                background: #ebf4ff;
-            }
-        }
-        .content-right {
-            float: right;
-            width: 460px;
-        }
-        .model-icon-wrapper {
-            position: absolute;
-            left: 0;
-            top:0;
-            width: 100%;
-            height: calc(100% + 60px);
-            background: #fff;
-            .back {
-                position: absolute;
-                right: -47px;
-                top: 0;
-                width: 44px;
-                height: 44px;
-                padding: 7px;
-                cursor: pointer;
-                font-size: 18px;
-                text-align: center;
-                background: #2f2f2f;
-                color: #fff;
             }
         }
     }
