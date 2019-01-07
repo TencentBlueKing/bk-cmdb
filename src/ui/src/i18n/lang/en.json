@@ -309,6 +309,7 @@
         "下划线": "Underline",
         "名称": "Name",
         "点击切换": "Modify",
+        "选择图标": "Choose Icon",
         "所属分组": "Direction",
         "新增关联类型": "New association type",
         "编辑关联类型": "Modify association type",
@@ -381,12 +382,12 @@
         "是": "Yes",
         "否": "No",
         "确定删除唯一校验": "Confirm delete rule",
-        "所有更改已自动保存": "All changes saved automatically",
         "立即添加": "Add",
         "暂无字段": "Empty",
         "内置": "Built-in",
         "确认要删除此分组": "Confirm to delete this group",
-        "编辑分组": "Modify group"
+        "编辑分组": "Modify group",
+        "请输入唯一标识": "Enter ID"
     },
     "HostResourcePool": {
         "资源池": "Resource Pool",
