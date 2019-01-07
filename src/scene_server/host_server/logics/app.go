@@ -27,8 +27,12 @@ import (
 	hutil "configcenter/src/scene_server/host_server/util"
 )
 
+
 func (lgc *Logics) GetDefaultAppIDWithSupplier(ctx context.Context) (int64, errors.CCError) {
 	cond := hutil.NewOperation().WithDefaultField(int64(common.DefaultAppFlag)).WithOwnerID(util.GetOwnerID(lgc.header)).Data()
+    cond[common.BKDBAND] = []mapstr.MapStr{
+        mapstr.MapStr{common.BKOwnerIDField: util.GetOwnerID(lgc.header)},
+    }
 	appDetails, err := lgc.GetAppDetails(ctx, common.BKAppIDField, cond)
 	if err != nil {
 		return -1, err
@@ -44,12 +48,15 @@ func (lgc *Logics) GetDefaultAppIDWithSupplier(ctx context.Context) (int64, erro
 
 func (lgc *Logics) GetDefaultAppID(ctx context.Context, ownerID string) (int64, errors.CCError) {
 	cond := hutil.NewOperation().WithOwnerID(ownerID).WithDefaultField(int64(common.DefaultAppFlag)).Data()
-	appDetails, err := lgc.GetAppDetails(ctx, common.BKAppIDField, cond)
+    cond[common.BKDBAND] = []mapstr.MapStr{
+        mapstr.MapStr{common.BKOwnerIDField: util.GetOwnerID(lgc.header)},
+    }
+    appDetails, err := lgc.GetAppDetails(ctx, common.BKAppIDField, cond)
 	if err != nil {
 		return -1, err
 	}
 
-	id, err := appDetails.Int64(common.BKAppIDField) //[common.BKAppIDField]
+	id, err := appDetails.Int64(common.BKAppIDField) 
 	if nil != err {
 		blog.Errorf("GetDefaultAppID http response format error,convert bk_biz_id to int error, err:%s, inst:%+v, rid:%s", err.Error(), appDetails, lgc.rid)
 		return -1, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())

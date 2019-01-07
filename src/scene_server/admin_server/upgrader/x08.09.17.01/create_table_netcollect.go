@@ -42,13 +42,13 @@ func createTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err er
 
 var tables = map[string][]dal.Index{
 	common.BKTableNameNetcollectDevice: []dal.Index{
-		{Keys: map[string]interface{}{"device_id": 1}, Background: true},
-		{Keys: map[string]interface{}{"device_name": 1}, Background: true},
-		{Keys: map[string]interface{}{"bk_supplier_account": 1}, Background: true},
+		{Keys: map[string]int32{"device_id": 1}, Background: true},
+		{Keys: map[string]int32{"device_name": 1}, Background: true},
+		{Keys: map[string]int32{"bk_supplier_account": 1}, Background: true},
 	},
 
 	common.BKTableNameNetcollectProperty: []dal.Index{
-		{Keys: map[string]interface{}{"netcollect_property_id": 1}, Background: true},
-		{Keys: map[string]interface{}{"bk_supplier_account": 1}, Background: true},
+		{Keys: map[string]int32{"netcollect_property_id": 1}, Background: true},
+		{Keys: map[string]int32{"bk_supplier_account": 1}, Background: true},
 	},
 }

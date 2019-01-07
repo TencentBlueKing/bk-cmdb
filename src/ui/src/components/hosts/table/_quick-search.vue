@@ -57,7 +57,7 @@
         },
         computed: {
             filteredProperties () {
-                return this.properties.filter(property => !['singleasst', 'multiasst'].includes(property['bk_property_type']))
+                return this.properties.filter(property => !['singleasst', 'multiasst', 'foreignkey'].includes(property['bk_property_type']))
             },
             type () {
                 return this.property ? this.property['bk_property_type'] : ''
