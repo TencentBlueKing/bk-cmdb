@@ -7,11 +7,8 @@
                 @click="back"></i>
             <h2 class="breadcrumbs-current">{{headerTitle}}</h2>
         </div>
-        <div class="header-options fr">
-            <div class="business-box fl">
-                <cmdb-business-selector class="business-selector">
-                </cmdb-business-selector>
-            </div>
+        <div class="header-options">
+            <cmdb-business-selector class="business-selector"></cmdb-business-selector>
             <div class="user" v-click-outside="handleCloseUser">
                 <p class="user-name" @click="isShowUserDropdown = !isShowUserDropdown">
                     {{userName}}({{userRole}})
@@ -146,11 +143,15 @@
         }
     }
     .header-options {
+        white-space: nowrap;
         text-align: right;
         font-size: 0;
     }
-    .business-box {
-        margin-top: 11px;
+    .business-selector {
+        display: inline-block;
+        width: 200px;
+        margin: 12px 0 0 20px;
+        vertical-align: top;
     }
     .user{
         display: inline-block;
@@ -159,8 +160,7 @@
         line-height: 60px;
         position: relative;
         .user-name{
-            padding: 0 20px;
-            margin: 0;
+            margin: 0 5px 0 20px;
             font-size: 14px;
             font-weight: bold;
             color: rgba(115,121,135,1);
