@@ -97,7 +97,6 @@ func (g *graphics) SelectObjectTopoGraphics(params types.ContextParams, scopeTyp
 			node.SetNodeName(obj.GetName())
 			node.SetScopeType("global")
 			node.SetScopeID("0")
-			node.SetBizID(0)
 			node.SetSupplierAccount("0")
 			node.SetIsPre(obj.GetIsPre())
 			node.SetIcon(obj.GetIcon())
