@@ -15,6 +15,7 @@ package model
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/rs/xid"
 
 	"configcenter/src/apimachinery"
@@ -256,7 +257,9 @@ func (g *group) GetAttributes() ([]AttributeInterface, error) {
 }
 
 func (g *group) search(cond condition.Condition) ([]metadata.Group, error) {
-
+	if nil != g.params.MetaData {
+		cond.Field(metadata.BKMetadata).Eq(*g.params.MetaData)
+	}
 	rsp, err := g.clientSet.ObjectController().Meta().SelectGroup(context.Background(), g.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("failed to request the object controller, err: %s", err.Error())

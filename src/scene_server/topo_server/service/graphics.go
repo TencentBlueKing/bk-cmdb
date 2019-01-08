@@ -32,16 +32,10 @@ func (s topoService) ParseOriginGraphicsUpdateInput(data []byte) (mapstr.MapStr,
 }
 func (s *topoService) SelectObjectTopoGraphics(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
-	data.Remove(metadata.BKMetadata)
-
 	return s.core.GraphicsOperation().SelectObjectTopoGraphics(params, pathParams("scope_type"), pathParams("scope_id"))
 }
 
 func (s *topoService) UpdateObjectTopoGraphics(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
-	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
-	data.Remove(metadata.BKMetadata)
 
 	datas := make([]metadata.TopoGraphics, 0)
 	val, exists := data.Get("origin")

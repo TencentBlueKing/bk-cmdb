@@ -287,9 +287,6 @@ func (s *topoService) SearchInstByAssociation(params types.ContextParams, pathPa
 
 	objID := pathParams("obj_id")
 
-	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
-	data.Remove(metadata.BKMetadata)
-
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
@@ -349,9 +346,6 @@ func (s *topoService) SearchInstChildTopo(params types.ContextParams, pathParams
 		return nil, err
 	}
 
-	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
-	data.Remove(metadata.BKMetadata)
-
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
@@ -379,9 +373,6 @@ func (s *topoService) SearchInstTopo(params types.ContextParams, pathParams, que
 	if nil != err {
 		return nil, err
 	}
-
-	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
-	data.Remove(metadata.BKMetadata)
 
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {

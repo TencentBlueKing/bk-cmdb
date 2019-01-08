@@ -23,7 +23,6 @@ import (
 // CreateObjectAttribute create a new object attribute
 func (s *topoService) CreateObjectAttribute(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
-	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
 	data.Remove(metadata.BKMetadata)
 
 	attr, err := s.core.AttributeOperation().CreateObjectAttribute(params, data)
@@ -60,7 +59,6 @@ func (s *topoService) UpdateObjectAttribute(params types.ContextParams, pathPara
 		return nil, err
 	}
 
-	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
 	data.Remove(metadata.BKMetadata)
 
 	err = s.core.AttributeOperation().UpdateObjectAttribute(params, data, id, cond)
@@ -83,7 +81,6 @@ func (s *topoService) DeleteObjectAttribute(params types.ContextParams, pathPara
 	cond.Field(metadata.AttributeFieldSupplierAccount).Eq(params.SupplierAccount)
 	cond.Field(metadata.AttributeFieldID).Eq(id)
 
-	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
 	data.Remove(metadata.BKMetadata)
 
 	err = s.core.AttributeOperation().DeleteObjectAttribute(params, cond)

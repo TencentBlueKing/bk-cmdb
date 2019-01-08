@@ -25,7 +25,6 @@ import (
 
 // CreateObjectBatch batch to create some objects
 func (s *topoService) CreateObjectBatch(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
 	data.Remove(metadata.BKMetadata)
 	return s.core.ObjectOperation().CreateObjectBatch(params, data)
 }
@@ -33,16 +32,12 @@ func (s *topoService) CreateObjectBatch(params types.ContextParams, pathParams, 
 // SearchObjectBatch batch to search some objects
 func (s *topoService) SearchObjectBatch(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
-	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
 	data.Remove(metadata.BKMetadata)
 	return s.core.ObjectOperation().FindObjectBatch(params, data)
 }
 
 // CreateObject create a new object
 func (s *topoService) CreateObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-
-	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
-	data.Remove(metadata.BKMetadata)
 	rsp, err := s.core.ObjectOperation().CreateObject(params, false, data)
 	if nil != err {
 		return nil, err
@@ -53,10 +48,6 @@ func (s *topoService) CreateObject(params types.ContextParams, pathParams, query
 
 // SearchObject search some objects by condition
 func (s *topoService) SearchObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-
-	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
-	data.Remove(metadata.BKMetadata)
-
 	cond := condition.CreateCondition()
 	if err := cond.Parse(data); nil != err {
 		return nil, err
@@ -70,9 +61,6 @@ func (s *topoService) SearchObjectTopo(params types.ContextParams, pathParams, q
 	cond := condition.CreateCondition()
 	err := cond.Parse(data)
 
-	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
-	data.Remove(metadata.BKMetadata)
-
 	if nil != err {
 		return nil, params.Err.New(common.CCErrTopoObjectSelectFailed, err.Error())
 	}
@@ -84,9 +72,6 @@ func (s *topoService) SearchObjectTopo(params types.ContextParams, pathParams, q
 func (s *topoService) UpdateObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 	cond := condition.CreateCondition()
 	id, err := strconv.ParseInt(pathParams("id"), 10, 64)
-
-	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
-	data.Remove(metadata.BKMetadata)
 
 	if nil != err {
 		blog.Errorf("[api-obj] failed to parse the path params id(%s), error info is %s ", pathParams("id"), err.Error())
@@ -102,9 +87,6 @@ func (s *topoService) DeleteObject(params types.ContextParams, pathParams, query
 
 	cond := condition.CreateCondition()
 
-	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
-	data.Remove(metadata.BKMetadata)
-
 	paramPath := frtypes.MapStr{}
 	paramPath.Set("id", pathParams("id"))
 	id, err := paramPath.Int64("id")
@@ -118,9 +100,6 @@ func (s *topoService) DeleteObject(params types.ContextParams, pathParams, query
 }
 
 func (s *topoService) CreateOneObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
-	data.Remove(metadata.BKMetadata)
-
 	rsp, err := s.core.ObjectOperation().CreateOneObject(params, data)
 	if nil != err {
 		return nil, err
