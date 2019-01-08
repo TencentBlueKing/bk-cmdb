@@ -28,9 +28,9 @@ func (lgc *Logics) GetProcbyProcIDArr(ctx context.Context, procID []int64) ([]ma
 		common.BKProcessIDField: mapstr.MapStr{common.BKDBIN: procID},
 	}
 
-	reqParam := new(metadata.QueryInput)
+	reqParam := new(metadata.QueryCondition)
 	reqParam.Condition = condition
-	ret, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDProc, lgc.header, reqParam)
+	ret, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDProc, reqParam)
 	if err != nil {
 		blog.Errorf("GetProcbyProcIDArr SearchObjects http do error. get process by procID(%+v) failed. err: %v,input:%+v,rid:%s", procID, err, reqParam, lgc.rid)
 		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -55,10 +55,10 @@ func (lgc *Logics) getProcInfoByID(ctx context.Context, procID []int64) (map[int
 		return nil, nil
 	}
 	gseProc := make(map[int64]*metadata.InlineProcInfo, 0)
-	dat := new(metadata.QueryInput)
+	dat := new(metadata.QueryCondition)
 	dat.Condition = mapstr.MapStr{common.BKProcessIDField: mapstr.MapStr{common.BKDBIN: procID}}
-	dat.Limit = common.BKNoLimit
-	ret, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDProc, lgc.header, dat)
+	dat.Limit.Limit = common.BKNoLimit
+	ret, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDProc, dat)
 	if nil != err {
 		blog.Errorf("getProcInfoByID procID %v supplierID %s  http do error:%s, logID::%s", procID, ownerID, err.Error(), lgc.rid)
 		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -115,9 +115,9 @@ func (lgc *Logics) GetProcessbyProcID(ctx context.Context, procID string) (map[s
 		common.BKProcessIDField: procID,
 	}
 
-	reqParam := new(metadata.QueryInput)
+	reqParam := new(metadata.QueryCondition)
 	reqParam.Condition = condition
-	ret, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDProc, lgc.header, reqParam)
+	ret, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDProc, reqParam)
 	if nil != err {
 		blog.Errorf("getProcInfoByID procID %v supplierID %s  http do error:%s, logID::%s", procID, lgc.ownerID, err.Error(), lgc.rid)
 		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
