@@ -182,13 +182,7 @@ func (o *object) search(cond condition.Condition) ([]meta.Object, error) {
 
 	models := []meta.Object{}
 	for _, info := range rsp.Data.Info {
-		model := meta.Object{}
-
-		err := info.Spec.ToStructByTag(&model, "field")
-		if err != nil {
-			return nil, o.params.Err.Error(common.CCErrTopoObjectSelectFailed)
-		}
-		models = append(models, model)
+		models = append(models, info.Spec)
 	}
 
 	return models, nil

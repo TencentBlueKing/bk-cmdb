@@ -56,6 +56,7 @@ func (s *coreService) initModel() {
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/model/attributes", HandlerFunc: s.UpdateModelAttributesByCondition})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/model/{bk_obj_id}/attributes", HandlerFunc: s.DeleteModelAttribute})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/model/{bk_obj_id}/attributes", HandlerFunc: s.SearchModelAttributes})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/model/attributes", HandlerFunc: s.SearchModelAttributesByCondition})
 
 }
 
@@ -70,7 +71,7 @@ func (s *coreService) initModelInstances() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/model/{bk_obj_id}/instance", HandlerFunc: s.CreateOneModelInstance})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/createmany/model/{bk_obj_id}/instance", HandlerFunc: s.CreateManyModelInstances})
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/model/{bk_obj_id}/instance", HandlerFunc: s.UpdateModelInstances})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/model/object/{bk_obj_id}/instances", HandlerFunc: s.SearchModelInstances})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/model/{bk_obj_id}/instances", HandlerFunc: s.SearchModelInstances})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/model/{bk_obj_id}/instance", HandlerFunc: s.DeleteModelInstances})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/model/{bk_obj_id}/instance/cascade", HandlerFunc: s.CascadeDeleteModelInstances})
 }
