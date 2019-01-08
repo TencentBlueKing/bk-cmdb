@@ -47,7 +47,7 @@ func (cli *Service) CreateObjectUnique(req *restful.Request, resp *restful.Respo
 
 	for _, key := range dat.Keys {
 		switch key.Kind {
-		case metadata.UinqueKeyKindProperty:
+		case metadata.UniqueKeyKindProperty:
 		default:
 			blog.Errorf("[CreateObjectUnique] invalid key kind: %s", key.Kind)
 			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrTopoObjectUniqueKeyKindInvalid, key.Kind)})
@@ -132,7 +132,7 @@ func (cli *Service) UpdateObjectUnique(req *restful.Request, resp *restful.Respo
 
 	for _, key := range unique.Keys {
 		switch key.Kind {
-		case metadata.UinqueKeyKindProperty:
+		case metadata.UniqueKeyKindProperty:
 		default:
 			blog.Errorf("[UpdateObjectUnique] invalid key kind: %s", key.Kind)
 			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrTopoObjectUniqueKeyKindInvalid, key.Kind)})
@@ -273,11 +273,11 @@ func (cli *Service) searchObjectUnique(ctx context.Context, db dal.RDB, ownerID,
 	return uniques, err
 }
 
-func recheckUniqueForExistsInsts(ctx context.Context, db dal.RDB, ownerID, objID string, keys []metadata.UinqueKey, mustCheck bool) error {
+func recheckUniqueForExistsInsts(ctx context.Context, db dal.RDB, ownerID, objID string, keys []metadata.UniqueKey, mustCheck bool) error {
 	propertyIDs := []uint64{}
 	for _, key := range keys {
 		switch key.Kind {
-		case metadata.UinqueKeyKindProperty:
+		case metadata.UniqueKeyKindProperty:
 			propertyIDs = append(propertyIDs, key.ID)
 		default:
 			return fmt.Errorf("invalid key kind: %s", key.Kind)
