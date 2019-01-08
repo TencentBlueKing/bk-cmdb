@@ -18,6 +18,7 @@ import (
 
 	"configcenter/src/common"
 	types "configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 )
 
 // CreateCondition create a condition object
@@ -134,12 +135,17 @@ func (cli *condition) Parse(data types.MapStr) error {
 		tmpField.condition = cli
 		tmpField.fieldName = key
 		tmpField.opeartor = BKDBEQ
+		//	support parse meta data
+		if key == metadata.BKMetadata {
+			tmpField.fieldValue = val
+			cli.fields = append(cli.fields, tmpField)
+			return nil
+		}
 		if err := fieldFunc(tmpField, val); nil != err {
 			return err
 		}
 		cli.fields = append(cli.fields, tmpField)
 
-		//TODO: support parse meta data
 		return nil
 	})
 

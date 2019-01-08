@@ -39,17 +39,12 @@ func (s *topoService) CreateMainLineObject(params types.ContextParams, pathParam
 func (s *topoService) DeleteMainLineObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	objID := pathParams("bk_obj_id")
-
-	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
-
 	err := s.core.AssociationOperation().DeleteMainlineAssociaton(params, objID)
 	return nil, err
 }
 
 // SearchMainLineOBjectTopo search the main line topo
 func (s *topoService) SearchMainLineObjectTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-
-	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
 
 	bizObj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
@@ -69,8 +64,6 @@ func (s *topoService) SearchObjectByClassificationID(params types.ContextParams,
 		return nil, err
 	}
 
-	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
-
 	return s.core.AssociationOperation().SearchMainlineAssociationTopo(params, bizObj)
 }
 
@@ -89,9 +82,6 @@ func (s *topoService) SearchBusinessTopo(params types.ContextParams, pathParams,
 	if nil != err {
 		return nil, err
 	}
-
-	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
-	data.Remove(metadata.BKMetadata)
 
 	return s.core.AssociationOperation().SearchMainlineAssociationInstTopo(params, bizObj, id)
 }
@@ -210,9 +200,6 @@ func (s *topoService) SearchAssociationInst(params types.ContextParams, pathPara
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
 
-	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
-	data.Remove(metadata.BKMetadata)
-
 	ret, err := s.core.AssociationOperation().SearchInst(params, request)
 	if err != nil {
 		return nil, err
@@ -230,8 +217,6 @@ func (s *topoService) CreateAssociationInst(params types.ContextParams, pathPara
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
 
-	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
-
 	ret, err := s.core.AssociationOperation().CreateInst(params, request)
 	if err != nil {
 		return nil, err
@@ -248,10 +233,6 @@ func (s *topoService) DeleteAssociationInst(params types.ContextParams, pathPara
 	if err != nil {
 		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 	}
-
-	//biz id in delete object association
-	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
-	data.Remove(metadata.BKMetadata)
 
 	ret, err := s.core.AssociationOperation().DeleteInst(params, id)
 	if err != nil {

@@ -172,6 +172,7 @@ func (cli *classification) Update(data mapstr.MapStr) error {
 
 	for _, item := range updateItems { // only one item
 
+		//TODO : if update with params cli.params.MetaData
 		rsp, err := cli.clientSet.ObjectController().Meta().UpdateClassification(context.Background(), item.ID, cli.params.Header, data)
 		if nil != err {
 			blog.Errorf("failed to resuest object controller, error info is %s", err.Error())
@@ -190,6 +191,9 @@ func (cli *classification) Update(data mapstr.MapStr) error {
 }
 
 func (cli *classification) search(cond condition.Condition) ([]metadata.Classification, error) {
+	if nil != cli.params.MetaData {
+		cond.Field(metadata.BKMetadata).Eq(*cli.params.MetaData)
+	}
 
 	rsp, err := cli.clientSet.ObjectController().Meta().SelectClassifications(context.Background(), cli.params.Header, cond.ToMapStr())
 	if nil != err {

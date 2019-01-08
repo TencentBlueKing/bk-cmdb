@@ -16,6 +16,8 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+
+	"configcenter/src/common/mapstr"
 )
 
 type ModelKind string
@@ -74,10 +76,12 @@ func GetBusinessIDFromMeta(data interface{}) string {
 	return bizID
 }
 
-func NewMetaDataFromInterface(data interface{}) *Metadata {
-	if nil == data {
+func NewMetaDataFromMap(mapData mapstr.MapStr) *Metadata {
+	data, exsit := mapData.Get(BKMetadata)
+	if !exsit {
 		return nil
 	}
+
 	tmp, ok := data.(map[string]interface{})
 	if !ok {
 		return nil
@@ -90,6 +94,7 @@ func NewMetaDataFromInterface(data interface{}) *Metadata {
 	if !ok {
 		return nil
 	}
+
 	return &Metadata{Label: Label{LabelBusinessID: bizID}}
 }
 
