@@ -3,35 +3,28 @@
         <v-search class="index-search"></v-search>
         <v-recently ref="recently"></v-recently>
         <v-classify></v-classify>
-        <p class="copyright" ref="copyright">
+        <cmdb-main-inject class="copyright">
             Copyright © 2012-{{year}} Tencent BlueKing. All Rights Reserved. 腾讯蓝鲸 版权所有
-        </p>
+        </cmdb-main-inject>
     </div>
 </template>
 
 <script>
+    import cmdbMainInject from '@/components/layout/main-inject'
     import vSearch from './children/search'
     import vRecently from './children/recently'
     import vClassify from './children/classify'
-    import getScrollbarWidth from '@/utils/scrollbar-width.js'
-    import {
-        addMainScrollListener,
-        removeMainScrollListener,
-        addMainResizeListener,
-        removeMainResizeListener
-    } from '@/utils/main-scroller'
     export default {
         components: {
             vSearch,
             vRecently,
-            vClassify
+            vClassify,
+            cmdbMainInject
         },
         data () {
             const year = (new Date()).getFullYear()
             return {
-                year,
-                scrollHandler: null,
-                resizeHandler: null
+                year
             }
         },
         beforeRouteLeave (to, from, next) {
@@ -40,37 +33,6 @@
         },
         created () {
             this.$store.commit('setHeaderTitle', this.$t('Index["首页"]'))
-            const systemScrollbarWidth = getScrollbarWidth()
-            let isInit = true
-            const calcCopyrightPosition = ($scroller) => {
-                const scrollerRect = $scroller.getBoundingClientRect()
-                const scrollerHeight = scrollerRect.height
-                const scrollerWidth = scrollerRect.width
-                const scrollerTop = $scroller.scrollTop
-                const copyrightHeight = this.$refs.copyright.getBoundingClientRect().height
-                const scrollbarWidth = isInit
-                    ? 0
-                    : scrollerWidth === ($scroller.scrollWidth + systemScrollbarWidth)
-                        ? 0
-                        : systemScrollbarWidth
-                this.$refs.copyright.style.top = scrollerTop + scrollerHeight - copyrightHeight - scrollbarWidth + 'px'
-                isInit = false
-            }
-            this.scrollHandler = event => {
-                calcCopyrightPosition(event.target)
-            }
-            this.resizeHandler = () => {
-                calcCopyrightPosition(document.querySelector('.main-scroller'))
-            }
-            addMainScrollListener(this.scrollHandler)
-            addMainResizeListener(this.resizeHandler)
-        },
-        mounted () {
-            this.resizeHandler()
-        },
-        beforeDestroy () {
-            removeMainScrollListener(this.scrollHandler)
-            removeMainResizeListener(this.resizeHandler)
         }
     }
 </script>
