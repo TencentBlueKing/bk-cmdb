@@ -72,6 +72,7 @@ type Object interface {
 	GetInstNameFieldName() string
 	GetDefaultInstPropertyName() string
 	GetObjectType() string
+	GetObjectID() string
 }
 
 var _ Object = (*object)(nil)
@@ -107,6 +108,11 @@ func (o *object) GetObjectType() string {
 	return o.obj.GetObjectType()
 
 }
+
+func (o *object) GetObjectID() string {
+	return o.obj.GetObjectID()
+}
+
 func (o *object) IsCommon() bool {
 	return o.obj.IsCommon()
 }
@@ -127,20 +133,19 @@ func (o *object) IsMainlineObject() (bool, error) {
 }
 
 func (o *object) searchAttributes(cond condition.Condition) ([]AttributeInterface, error) {
-
-	rsp, err := o.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), o.params.Header, cond.ToMapStr())
+	rsp, err := o.clientSet.CoreService().Model().ReadModelAttr(context.Background(), o.params.Header, o.obj.ObjectID, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
 		return nil, o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("failed to search the object(%s), error info is %s", o.obj.ObjectID, rsp.ErrMsg)
-		return nil, o.params.Err.Error(rsp.Code)
+		return nil, o.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	rstItems := make([]AttributeInterface, 0)
-	for _, item := range rsp.Data {
+	for _, item := range rsp.Data.Info {
 
 		attr := &attribute{
 			attr:      item,
@@ -164,39 +169,38 @@ func (o *object) searchAttributes(cond condition.Condition) ([]AttributeInterfac
 }
 
 func (o *object) search(cond condition.Condition) ([]meta.Object, error) {
-
-	rsp, err := o.clientSet.ObjectController().Meta().SelectObjects(context.Background(), o.params.Header, cond.ToMapStr())
-
+	rsp, err := o.clientSet.CoreService().Model().ReadModel(context.Background(), o.params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
 		return nil, o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("failed to search the object(%s), error info is %s", o.obj.ObjectID, rsp.ErrMsg)
-		return nil, o.params.Err.Error(rsp.Code)
+		return nil, o.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	return rsp.Data, nil
+	models := []meta.Object{}
+	for _, info := range rsp.Data.Info {
+		models = append(models, info.Spec)
+	}
 
+	return models, nil
 }
 
 func (o *object) GetMainlineParentObject() (Object, error) {
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(o.obj.ObjectID)
 	cond.Field(common.AssociationKindIDField).Eq(common.AssociationKindMainline)
 
-	rsp, err := o.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), o.params.Header, cond.ToMapStr())
+	rsp, err := o.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), o.params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
 		return nil, err
 	}
 
-	for _, asst := range rsp.Data {
-
+	for _, asst := range rsp.Data.Info {
 		cond := condition.CreateCondition()
-		cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
 		cond.Field(common.BKObjIDField).Eq(asst.AsstObjID)
 
 		rspRst, err := o.search(cond)
@@ -219,19 +223,17 @@ func (o *object) GetMainlineParentObject() (Object, error) {
 func (o *object) GetMainlineChildObject() (Object, error) {
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
 	cond.Field(common.BKAsstObjIDField).Eq(o.obj.ObjectID)
 	cond.Field(common.AssociationKindIDField).Eq(common.AssociationKindMainline)
 
-	rsp, err := o.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), o.params.Header, cond.ToMapStr())
+	rsp, err := o.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), o.params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
 		return nil, err
 	}
 
-	for _, asst := range rsp.Data {
+	for _, asst := range rsp.Data.Info {
 		cond := condition.CreateCondition()
-		cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
 		cond.Field(common.BKObjIDField).Eq(asst.ObjectID)
 		rspRst, err := o.search(cond)
 		if nil != err {
@@ -250,16 +252,15 @@ func (o *object) GetMainlineChildObject() (Object, error) {
 }
 
 func (o *object) searchAssoObjects(isNeedChild bool, cond condition.Condition) ([]ObjectAssoPair, error) {
-	rsp, err := o.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), o.params.Header, cond.ToMapStr())
+	rsp, err := o.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), o.params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
 		return nil, err
 	}
 
 	pair := make([]ObjectAssoPair, 0)
-	for _, asst := range rsp.Data {
+	for _, asst := range rsp.Data.Info {
 		cond := condition.CreateCondition()
-		cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
 		if isNeedChild {
 			cond.Field(metadata.ModelFieldObjectID).Eq(asst.AsstObjID)
 		} else {
@@ -311,19 +312,19 @@ func (o *object) SetMainlineParentObject(objID string) error {
 	cond.Field(meta.AssociationFieldObjectID).Eq(o.obj.ObjectID)
 	// cond.Field(meta.AssociationFieldAssociationName).Eq(common.BKChildStr)
 
-	rsp, err := o.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), o.params.Header, cond.ToMapStr())
+	rsp, err := o.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), o.params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
 		return o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("[model-obj] failed to search the main line association, error info is %s", rsp.ErrMsg)
-		return o.params.Err.Error(rsp.Code)
+		return o.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	// create
-	if 0 == len(rsp.Data) {
+	if 0 == len(rsp.Data.Info) {
 
 		asst := &meta.Association{}
 		asst.OwnerID = o.params.SupplierAccount
@@ -331,36 +332,41 @@ func (o *object) SetMainlineParentObject(objID string) error {
 		asst.ObjectID = o.obj.ObjectID
 		asst.AsstObjID = objID
 
-		rsp, err := o.clientSet.ObjectController().Meta().CreateObjectAssociation(context.Background(), o.params.Header, asst)
-
+		data := metadata.CreateModelAssociation{
+			Spec: *asst,
+		}
+		rsp, err := o.clientSet.CoreService().Association().CreateModelAssociation(context.Background(), o.params.Header, &data)
 		if nil != err {
 			blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
 			return o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
-		if common.CCSuccess != rsp.Code {
+		if !rsp.Result {
 			blog.Errorf("[model-obj] failed to set the main line association parent, error info is %s", rsp.ErrMsg)
-			return o.params.Err.Error(rsp.Code)
+			return o.params.Err.New(rsp.Code, rsp.ErrMsg)
 		}
 
 		return nil
 	}
 
 	// update
-	for _, asst := range rsp.Data {
+	for _, asst := range rsp.Data.Info {
 
 		asst.AsstObjID = objID
 		// asst.AsstName = common.BKChildStr
 
-		rsp, err := o.clientSet.ObjectController().Meta().UpdateObjectAssociation(context.Background(), asst.ID, o.params.Header, asst.ToMapStr())
+		update := metadata.UpdateOption{
+			Condition: cond.ToMapStr(),
+		}
+		rsp, err := o.clientSet.CoreService().Association().UpdateModelAssociation(context.Background(), o.params.Header, &update)
 		if nil != err {
 			blog.Errorf("[model-obj] failed to request object controller, error info is %s", err.Error())
 			return err
 		}
 
-		if common.CCSuccess != rsp.Code {
+		if !rsp.Result {
 			blog.Errorf("[model-obj] failed to update the parent association, error info is %s", rsp.ErrMsg)
-			return o.params.Err.Error(rsp.Code)
+			return o.params.Err.New(rsp.Code, rsp.ErrMsg)
 		}
 	}
 
@@ -387,7 +393,7 @@ func (o *object) CreateMainlineObjectAssociation(relateToObjID string) error {
 		IsPre:      &defined,
 	}
 
-	result, err := o.clientSet.ObjectController().Meta().CreateObjectAssociation(context.Background(), o.params.Header, &association)
+	result, err := o.clientSet.CoreService().Association().CreateModelAssociation(context.Background(), o.params.Header, &metadata.CreateModelAssociation{Spec: association})
 	if err != nil {
 		blog.Errorf("[model-obj] create mainline object association failed, err: %v", err)
 		return err
@@ -403,12 +409,11 @@ func (o *object) CreateMainlineObjectAssociation(relateToObjID string) error {
 
 func (o *object) UpdateMainlineObjectAssociationTo(prevObjID, relateToObjID string) error {
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(o.obj.ObjectID)
 	cond.Field(common.AssociatedObjectIDField).Eq(prevObjID)
 	cond.Field(common.AssociationKindIDField).Eq(common.AssociationKindMainline)
 
-	resp, err := o.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), o.params.Header, cond.ToMapStr())
+	resp, err := o.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), o.params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if err != nil {
 		blog.Errorf("update mainline object[%S] association to %s, search object association failed, err: %v",
 			o.obj.ObjectID, relateToObjID, err)
@@ -421,19 +426,23 @@ func (o *object) UpdateMainlineObjectAssociationTo(prevObjID, relateToObjID stri
 		return o.params.Err.Errorf(resp.Code, resp.ErrMsg)
 	}
 
-	if len(resp.Data) == 0 {
+	if len(resp.Data.Info) == 0 {
 		blog.Errorf("update mainline object[%S] association to %s, but can not find this association.", o.obj.ObjectID, relateToObjID)
 		return o.params.Err.Errorf(common.CCErrorTopoMainlineObjectAssociationNotExist, o.obj.ObjectID, prevObjID)
 	}
 
-	if len(resp.Data) > 1 {
+	if len(resp.Data.Info) > 1 {
 		blog.Errorf("update mainline object[%S] association to %s, but get multiple association.", o.obj.ObjectID, relateToObjID)
 		return o.params.Err.Error(common.CCErrTopoGotMultipleAssociationInstance)
 	}
 
 	fields := mapstr.New()
 	fields.Set(common.AssociatedObjectIDField, relateToObjID)
-	result, err := o.clientSet.ObjectController().Meta().UpdateObjectAssociation(context.Background(), resp.Data[0].ID, o.params.Header, fields)
+	update := metadata.UpdateOption{
+		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(resp.Data.Info[0].ID).ToMapStr(),
+		Data:      fields,
+	}
+	result, err := o.clientSet.CoreService().Association().UpdateModelAssociation(context.Background(), o.params.Header, &update)
 	if err != nil {
 		blog.Errorf("[model-obj] update mainline object's[%d] association to object[%s] failed, err: %v", o.obj.ID, relateToObjID, err)
 		return err
@@ -451,7 +460,6 @@ func (o *object) IsExists() (bool, error) {
 
 	// check id
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(o.obj.ObjectID)
 	cond.Field(metadata.ModelFieldID).NotIn([]int64{o.obj.ID})
 
@@ -466,7 +474,6 @@ func (o *object) IsExists() (bool, error) {
 
 	// check name
 	cond = condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(o.obj.ObjectName)
 	cond.Field(o.GetInstIDFieldName()).Eq(o.obj.ObjectName)
 	cond.Field(metadata.ModelFieldID).NotIn([]int64{o.obj.ID})
@@ -537,19 +544,18 @@ func (o *object) Create() error {
 		return o.params.Err.Error(common.CCErrCommDuplicateItem)
 	}
 
-	rsp, err := o.clientSet.ObjectController().Meta().CreateObject(context.Background(), o.params.Header, &o.obj)
-
+	rsp, err := o.clientSet.CoreService().Model().CreateModel(context.Background(), o.params.Header, &metadata.CreateModel{Spec: o.obj})
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
 		return o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("failed to search the object(%s), error info is %s", o.obj.ObjectID, rsp.ErrMsg)
-		return o.params.Err.Error(rsp.Code)
+		return o.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	o.obj.ID = rsp.Data.ID
+	o.obj.ID = int64(rsp.Data.Created.ID)
 
 	return nil
 }
@@ -575,7 +581,6 @@ func (o *object) Update(data mapstr.MapStr) error {
 
 	// update action
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
 	if 0 != len(o.obj.ObjectID) {
 		cond.Field(common.BKObjIDField).Eq(o.obj.ObjectID)
 	} else {
@@ -588,17 +593,19 @@ func (o *object) Update(data mapstr.MapStr) error {
 	}
 
 	for _, item := range items {
-
-		rsp, err := o.clientSet.ObjectController().Meta().UpdateObject(context.Background(), item.ID, o.params.Header, data)
-
+		input := metadata.UpdateOption{
+			Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(item.ID).ToMapStr(),
+			Data:      data,
+		}
+		rsp, err := o.clientSet.CoreService().Model().UpdateModel(context.Background(), o.params.Header, &input)
 		if nil != err {
 			blog.Errorf("failed to request the object controller, error info is %s", err.Error())
 			return o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
-		if common.CCSuccess != rsp.Code {
+		if !rsp.Result {
 			blog.Errorf("failed to search the object(%s), error info is %s", o.obj.ObjectID, rsp.ErrMsg)
-			return o.params.Err.Error(rsp.Code)
+			return o.params.Err.New(rsp.Code, rsp.ErrMsg)
 		}
 	}
 	return nil
@@ -660,20 +667,20 @@ func (o *object) CreateUnique() Unique {
 }
 
 func (o *object) GetUniques() ([]Unique, error) {
-	rsp, err := o.clientSet.ObjectController().Unique().Search(context.Background(), o.params.Header, o.obj.ObjectID)
-
+	cond := condition.CreateCondition().Field(common.BKObjIDField).Eq(o.obj.ObjectID)
+	rsp, err := o.clientSet.CoreService().Model().ReadModelAttrUnique(context.Background(), o.params.Header, metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
 		return nil, o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("failed to search the object(%s), error info is %s", o.obj.ObjectID, rsp.ErrMsg)
-		return nil, o.params.Err.Error(rsp.Code)
+		return nil, o.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	rstItems := make([]Unique, 0)
-	for _, item := range rsp.Data {
+	for _, item := range rsp.Data.Info {
 		grp := &unique{
 			data:      item,
 			params:    o.params,
@@ -717,20 +724,19 @@ func (o *object) GetGroups() ([]GroupInterface, error) {
 	cond := condition.CreateCondition()
 
 	cond.Field(meta.GroupFieldObjectID).Eq(o.obj.ObjectID).Field(meta.GroupFieldSupplierAccount).Eq(o.params.SupplierAccount)
-	rsp, err := o.clientSet.ObjectController().Meta().SelectGroup(context.Background(), o.params.Header, cond.ToMapStr())
-
+	rsp, err := o.clientSet.CoreService().Model().ReadAttributeGroup(context.Background(), o.params.Header, o.obj.ObjectID, metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
 		return nil, o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("failed to search the object(%s), error info is %s", o.obj.ObjectID, rsp.ErrMsg)
-		return nil, o.params.Err.Error(rsp.Code)
+		return nil, o.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	rstItems := make([]GroupInterface, 0)
-	for _, item := range rsp.Data {
+	for _, item := range rsp.Data.Info {
 		grp := NewGroup(o.params, o.clientSet)
 		grp.SetGroup(item)
 		rstItems = append(rstItems, grp)
@@ -748,18 +754,18 @@ func (o *object) GetClassification() (Classification, error) {
 	cond := condition.CreateCondition()
 	cond.Field(meta.ClassFieldClassificationID).Eq(o.obj.ObjCls)
 
-	rsp, err := o.clientSet.ObjectController().Meta().SelectClassifications(context.Background(), o.params.Header, cond.ToMapStr())
+	rsp, err := o.clientSet.CoreService().Model().ReadModelClassification(context.Background(), o.params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
 		return nil, o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("failed to search the object(%s), error info is %s", o.obj.ObjectID, rsp.ErrMsg)
-		return nil, o.params.Err.Error(rsp.Code)
+		return nil, o.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	for _, item := range rsp.Data {
+	for _, item := range rsp.Data.Info {
 
 		return &classification{
 			cls:       item,

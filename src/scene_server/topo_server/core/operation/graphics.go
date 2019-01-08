@@ -13,13 +13,13 @@
 package operation
 
 import (
-	"configcenter/src/common/condition"
 	"context"
 	"strconv"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
@@ -116,7 +116,6 @@ func (g *graphics) SelectObjectTopoGraphics(params types.ContextParams, scopeTyp
 
 				typeCond := condition.CreateCondition()
 				typeCond.Field(common.AssociationKindIDField).Eq(asst.AsstKindID)
-				typeCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 				request := &metadata.SearchAssociationTypeRequest{
 					Condition: typeCond.ToMapStr(),
 				}
