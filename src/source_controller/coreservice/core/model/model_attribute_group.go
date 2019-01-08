@@ -31,63 +31,71 @@ type modelAttributeGroup struct {
 
 func (g *modelAttributeGroup) CreateModelAttributeGroup(ctx core.ContextParams, objID string, inputParam metadata.CreateModelAttributeGroup) (*metadata.CreateOneDataResult, error) {
 
+	dataResult := &metadata.CreateOneDataResult{}
+
 	if err := g.model.isValid(ctx, objID); nil != err {
 		blog.Errorf("request(%s): it is failed to create a model attribute group (%v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
-		return &metadata.CreateOneDataResult{}, err
+		return dataResult, err
 	}
 	inputParam.Data.ObjectID = objID
 
 	_, isExists, err := g.groupIDIsExists(ctx, objID, inputParam.Data.GroupID)
 	if nil != err {
 		blog.Errorf("request(%s): it is to failed to check the group ID (%s) if it is exists, error info is %s", ctx.ReqID, inputParam.Data.GroupID, err.Error())
-		return &metadata.CreateOneDataResult{}, err
+		return dataResult, err
 	}
 	if isExists {
 		blog.Warnf("request(%s): it is to failed to create a new group (%v), because of the groupID (%s) is exists", ctx.ReqID, inputParam.Data, inputParam.Data.GroupID)
-		return &metadata.CreateOneDataResult{}, ctx.Error.Errorf(common.CCErrCommDuplicateItem, inputParam.Data.GroupID)
+		return dataResult, ctx.Error.Errorf(common.CCErrCommDuplicateItem, inputParam.Data.GroupID)
 	}
 
 	_, isExists, err = g.groupNameIsExists(ctx, objID, inputParam.Data.GroupName)
 	if nil != err {
 		blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, error info is %s", ctx.ReqID, inputParam.Data.GroupName, err.Error())
-		return &metadata.CreateOneDataResult{}, err
+		return dataResult, err
 	}
 	if isExists {
-		return &metadata.CreateOneDataResult{}, ctx.Error.Errorf(common.CCErrCommDuplicateItem, inputParam.Data.GroupName)
+		return dataResult, ctx.Error.Errorf(common.CCErrCommDuplicateItem, inputParam.Data.GroupName)
 	}
 
 	id, err := g.save(ctx, inputParam.Data)
 	if nil != err {
 		blog.Errorf("request(%s): it is to failed to create a new model attribtue group (%v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
-		return &metadata.CreateOneDataResult{}, err
+		return dataResult, err
 	}
-	return &metadata.CreateOneDataResult{Created: metadata.CreatedDataResult{ID: id}}, err
+	dataResult.Created.ID = id
+	return dataResult, err
 }
 
 func (g *modelAttributeGroup) SetModelAttributeGroup(ctx core.ContextParams, objID string, inputParam metadata.SetModelAttributeGroup) (*metadata.SetDataResult, error) {
 
+	dataResult := &metadata.SetDataResult{
+		Created:    []metadata.CreatedDataResult{},
+		Updated:    []metadata.UpdatedDataResult{},
+		Exceptions: []metadata.ExceptionResult{},
+	}
+
 	if err := g.model.isValid(ctx, objID); nil != err {
 		blog.Errorf("request(%s): it is failed to set a model attribute group (%v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
-		return &metadata.SetDataResult{}, err
+		return dataResult, err
 	}
 	inputParam.Data.ObjectID = objID
 
 	_, isExists, err := g.groupNameIsExists(ctx, objID, inputParam.Data.GroupName)
 	if nil != err {
 		blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, error info is %s", ctx.ReqID, inputParam.Data.GroupName, err.Error())
-		return &metadata.SetDataResult{}, err
+		return dataResult, err
 	}
 	if isExists {
-		return &metadata.SetDataResult{}, ctx.Error.Errorf(common.CCErrCommDuplicateItem, inputParam.Data.GroupName)
+		return dataResult, ctx.Error.Errorf(common.CCErrCommDuplicateItem, inputParam.Data.GroupName)
 	}
 
 	existsGroup, isExists, err := g.groupIDIsExists(ctx, objID, inputParam.Data.GroupID)
 	if nil != err {
 		blog.Errorf("request(%s): it is to failed to check the group ID (%s) if it is exists, error info is %s", ctx.ReqID, inputParam.Data.GroupID, err.Error())
-		return &metadata.SetDataResult{}, err
+		return dataResult, err
 	}
 
-	dataResult := &metadata.SetDataResult{}
 	if !isExists {
 
 		id, err := g.save(ctx, inputParam.Data)
@@ -121,7 +129,7 @@ func (g *modelAttributeGroup) SetModelAttributeGroup(ctx core.ContextParams, obj
 			ID: uint64(existsGroup.ID),
 		},
 	}
-	return nil, err
+	return dataResult, nil
 }
 
 func (g *modelAttributeGroup) UpdateModelAttributeGroup(ctx core.ContextParams, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
@@ -154,32 +162,38 @@ func (g *modelAttributeGroup) UpdateModelAttributeGroup(ctx core.ContextParams, 
 
 func (g *modelAttributeGroup) SearchModelAttributeGroup(ctx core.ContextParams, objID string, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeGroupDataResult, error) {
 
+	dataResult := &metadata.QueryModelAttributeGroupDataResult{
+		Info: []metadata.Group{},
+	}
+
 	// TODO: Paging queries needs to be implemented
 	if err := g.model.isValid(ctx, objID); nil != err {
 		blog.Errorf("request(%s): it is failed to query a model by the condition(%v), error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
-		return &metadata.QueryModelAttributeGroupDataResult{}, err
+		return dataResult, err
 	}
 
 	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to convert the condition (%v) from mapstr to condition, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
-		return &metadata.QueryModelAttributeGroupDataResult{}, err
+		return dataResult, err
 	}
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldObjectID, Val: objID})
 
 	totalCount, err := g.count(ctx, cond)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to count by the condition (%v), error info is %s ", ctx.ReqID, cond.ToMapStr(), err.Error())
-		return &metadata.QueryModelAttributeGroupDataResult{}, err
+		return dataResult, err
 	}
 
 	grps, err := g.search(ctx, cond)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to query a model by the condition(%v), error info is %s", ctx.ReqID, cond.ToMapStr(), err.Error())
-		return &metadata.QueryModelAttributeGroupDataResult{}, err
+		return dataResult, err
 	}
 
-	return &metadata.QueryModelAttributeGroupDataResult{Count: totalCount, Info: grps}, nil
+	dataResult.Count = totalCount
+	dataResult.Info = grps
+	return dataResult, nil
 
 }
 
