@@ -18,6 +18,45 @@ import (
 	"strings"
 )
 
+func getZeroFieldValue(valueType reflect.Type) interface{} {
+
+	switch valueType.Kind() {
+	case reflect.Ptr:
+		return getZeroFieldValue(valueType.Elem())
+	case reflect.String:
+		return ""
+	case reflect.Int, reflect.Int16, reflect.Int8, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint8:
+		return 0
+	}
+
+	return nil
+}
+
+func dealPointer(value reflect.Value, tag, tagName string) interface{} {
+
+	if value.IsNil() {
+		return getZeroFieldValue(value.Type())
+	}
+
+	value = value.Elem()
+
+	switch value.Kind() {
+	case reflect.Struct:
+		if value.CanInterface() {
+			innerMapStr := SetValueToMapStrByTagsWithTagName(value.Interface(), tagName)
+			return MapStr{tag: innerMapStr}
+		}
+	case reflect.Ptr:
+		return dealPointer(value.Elem(), tag, tagName)
+	}
+
+	if value.CanInterface() {
+		return value.Interface()
+	}
+
+	return nil
+}
+
 func convertToInt(fieldName string, tagVal interface{}, fieldValue *reflect.Value) error {
 	switch t := tagVal.(type) {
 	default:
