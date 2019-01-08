@@ -17,11 +17,11 @@
             }
         },
         mounted () {
-            const $scroller = document.querySelector('.main-layout')
+            const $mainLayout = document.querySelector('.main-layout')
             if (this.injectType === 'append') {
-                $scroller.append(this.$el)
+                $mainLayout.append(this.$el)
             } else {
-                this.$el.insertBefore($scroller.firstChild)
+                $mainLayout.insertBefore(this.$el, $mainLayout.firstChild)
             }
         },
         beforeDestroy () {
