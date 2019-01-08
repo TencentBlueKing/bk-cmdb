@@ -759,9 +759,9 @@ const (
 	BKSessionLanugageKey    = "language"
 	BKHTTPSupplierID        = "bk_supplier_id"
 
-	BKHTTPCCRequestID     = "cc_request_id"
-	BKHTTPCCRequestTime   = "cc_request_time"
-	BKHTTPCCTransactionID = "cc_txn_id"
+	BKHTTPCCRequestID     = "CC_REQUEST_ID"
+	BKHTTPCCRequestTime   = "CC_REQUEST_TIME"
+	BKHTTPCCTransactionID = "CC_TXN_ID"
 )
 
 type CCContextKey string

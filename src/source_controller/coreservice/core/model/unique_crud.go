@@ -46,7 +46,7 @@ func (m *modelAttrUnique) countModelAttrUnique(ctx core.ContextParams, cond maps
 func (m *modelAttrUnique) createModelAttrUnique(ctx core.ContextParams, objID string, inputParam metadata.CreateModelAttrUnique) (uint64, error) {
 	for _, key := range inputParam.Data.Keys {
 		switch key.Kind {
-		case metadata.UinqueKeyKindProperty:
+		case metadata.UniqueKeyKindProperty:
 		default:
 			blog.Errorf("[CreateObjectUnique] invalid key kind: %s", key.Kind)
 			return 0, ctx.Error.Errorf(common.CCErrTopoObjectUniqueKeyKindInvalid, key.Kind)
@@ -106,7 +106,7 @@ func (m *modelAttrUnique) updateModelAttrUnique(ctx core.ContextParams, objID st
 
 	for _, key := range unique.Keys {
 		switch key.Kind {
-		case metadata.UinqueKeyKindProperty:
+		case metadata.UniqueKeyKindProperty:
 		default:
 			blog.Errorf("[UpdateObjectUnique] invalid key kind: %s", key.Kind)
 			return ctx.Error.Errorf(common.CCErrTopoObjectUniqueKeyKindInvalid, key.Kind)
@@ -187,11 +187,11 @@ func (m *modelAttrUnique) deleteModelAttrUnique(ctx core.ContextParams, objID st
 	return nil
 }
 
-func (m *modelAttrUnique) recheckUniqueForExistsInsts(ctx core.ContextParams, objID string, keys []metadata.UinqueKey, mustCheck bool) error {
+func (m *modelAttrUnique) recheckUniqueForExistsInsts(ctx core.ContextParams, objID string, keys []metadata.UniqueKey, mustCheck bool) error {
 	propertyIDs := []uint64{}
 	for _, key := range keys {
 		switch key.Kind {
-		case metadata.UinqueKeyKindProperty:
+		case metadata.UniqueKeyKindProperty:
 			propertyIDs = append(propertyIDs, key.ID)
 		default:
 			return ctx.Error.Errorf(common.CCErrTopoObjectUniqueKeyKindInvalid, key.Kind)

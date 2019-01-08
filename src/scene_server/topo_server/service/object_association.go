@@ -18,13 +18,13 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // CreateObjectAssociation create a new object association
-func (s *topoService) CreateObjectAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) CreateObjectAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	asso := &metadata.Association{}
 	if err := data.MarshalJSONInto(asso); err != nil {
@@ -41,7 +41,7 @@ func (s *topoService) CreateObjectAssociation(params types.ContextParams, pathPa
 }
 
 // SearchObjectAssociation search  object association by object id
-func (s *topoService) SearchObjectAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchObjectAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	if data.Exists("condition") {
 		// ATTENTION:
@@ -67,7 +67,7 @@ func (s *topoService) SearchObjectAssociation(params types.ContextParams, pathPa
 
 		if !resp.Result {
 			blog.Errorf("search object association with cond[%v] failed, err: %s", cond, resp.ErrMsg)
-			return nil, params.Err.Error(resp.Code)
+			return nil, params.Err.New(resp.Code, resp.ErrMsg)
 		}
 
 		return resp.Data, err
@@ -87,7 +87,7 @@ func (s *topoService) SearchObjectAssociation(params types.ContextParams, pathPa
 }
 
 // DeleteObjectAssociation delete object association
-func (s *topoService) DeleteObjectAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) DeleteObjectAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	id, err := strconv.ParseInt(pathParams("id"), 10, 64)
 	if err != nil {
@@ -104,7 +104,7 @@ func (s *topoService) DeleteObjectAssociation(params types.ContextParams, pathPa
 }
 
 // UpdateObjectAssociation update object association
-func (s *topoService) UpdateObjectAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) UpdateObjectAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	id, err := strconv.ParseInt(pathParams("id"), 10, 64)
 	if err != nil {
 		blog.Errorf("update object association, but got invalid id[%v], err: %v", pathParams("id"), err)
@@ -116,7 +116,7 @@ func (s *topoService) UpdateObjectAssociation(params types.ContextParams, pathPa
 }
 
 // ImportInstanceAssociation import instance  association
-func (s *topoService) ImportInstanceAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) ImportInstanceAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	objID := pathParams("obj_id")
 	request := new(metadata.RequestImportAssociation)
 	if err := data.MarshalJSONInto(request); err != nil {

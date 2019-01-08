@@ -22,8 +22,8 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
-	frtypes "configcenter/src/common/mapstr"
-	metatype "configcenter/src/common/metadata"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	gparams "configcenter/src/common/paraparse"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
@@ -32,17 +32,17 @@ import (
 
 // InstOperationInterface inst operation methods
 type InstOperationInterface interface {
-	CreateInst(params types.ContextParams, obj model.Object, data frtypes.MapStr) (inst.Inst, error)
+	CreateInst(params types.ContextParams, obj model.Object, data mapstr.MapStr) (inst.Inst, error)
 	CreateInstBatch(params types.ContextParams, obj model.Object, batchInfo *InstBatchInfo) (*BatchResult, error)
 	DeleteInst(params types.ContextParams, obj model.Object, cond condition.Condition, needCheckHost bool) error
 	DeleteInstByInstID(params types.ContextParams, obj model.Object, instID []int64, needCheckHost bool) error
-	FindOriginInst(params types.ContextParams, obj model.Object, cond *metatype.QueryInput) (*metatype.InstResult, error)
-	FindInst(params types.ContextParams, obj model.Object, cond *metatype.QueryInput, needAsstDetail bool) (count int, results []inst.Inst, err error)
-	FindInstByAssociationInst(params types.ContextParams, obj model.Object, data frtypes.MapStr) (cont int, results []inst.Inst, err error)
-	FindInstChildTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []*CommonInstTopo, err error)
-	FindInstParentTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []*CommonInstTopo, err error)
-	FindInstTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []CommonInstTopoV2, err error)
-	UpdateInst(params types.ContextParams, data frtypes.MapStr, obj model.Object, cond condition.Condition, instID int64) error
+	FindOriginInst(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (*metadata.InstResult, error)
+	FindInst(params types.ContextParams, obj model.Object, cond *metadata.QueryInput, needAsstDetail bool) (count int, results []inst.Inst, err error)
+	FindInstByAssociationInst(params types.ContextParams, obj model.Object, data mapstr.MapStr) (cont int, results []inst.Inst, err error)
+	FindInstChildTopo(params types.ContextParams, obj model.Object, instID int64, query *metadata.QueryInput) (count int, results []*CommonInstTopo, err error)
+	FindInstParentTopo(params types.ContextParams, obj model.Object, instID int64, query *metadata.QueryInput) (count int, results []*CommonInstTopo, err error)
+	FindInstTopo(params types.ContextParams, obj model.Object, instID int64, query *metadata.QueryInput) (count int, results []CommonInstTopoV2, err error)
+	UpdateInst(params types.ContextParams, data mapstr.MapStr, obj model.Object, cond condition.Condition, instID int64) error
 
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, asst AssociationOperationInterface, obj ObjectOperationInterface)
 }
@@ -178,7 +178,7 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 	return results, nil
 }
 
-func (c *commonInst) isValidInstID(params types.ContextParams, obj metatype.Object, instID int64) error {
+func (c *commonInst) isValidInstID(params types.ContextParams, obj metadata.Object, instID int64) error {
 
 	cond := condition.CreateCondition()
 	cond.Field(obj.GetInstIDFieldName()).Eq(instID)
@@ -186,17 +186,17 @@ func (c *commonInst) isValidInstID(params types.ContextParams, obj metatype.Obje
 		cond.Field(common.BKObjIDField).Eq(obj.ObjectID)
 	}
 
-	query := &metatype.QueryInput{}
+	query := &metadata.QueryInput{}
 	query.Condition = cond.ToMapStr()
 	query.Limit = common.BKNoLimit
 
-	rsp, err := c.clientSet.ObjectController().Instance().SearchObjects(context.Background(), obj.GetObjectType(), params.Header, query)
+	rsp, err := c.clientSet.CoreService().Instance().ReadInstance(context.Background(), params.Header, obj.GetObjectID(), &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to request object controller, err: %s", err.Error())
 		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("[operation-inst] faild to delete the object(%s) inst by the condition(%#v), err: %s", obj.ObjectID, cond, rsp.ErrMsg)
 		return params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
@@ -208,7 +208,7 @@ func (c *commonInst) isValidInstID(params types.ContextParams, obj metatype.Obje
 	return params.Err.Error(common.CCErrTopoInstSelectFailed)
 }
 
-func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, data frtypes.MapStr) (inst.Inst, error) {
+func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, data mapstr.MapStr) (inst.Inst, error) {
 
 	// create new insts
 	item := c.instFactory.CreateInst(params, obj)
@@ -291,15 +291,14 @@ func (c *commonInst) hasHost(params types.ContextParams, targetInst inst.Inst, c
 
 func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Object, instID []int64, needCheckHost bool) error {
 
-    object := obj.Object()
+	object := obj.Object()
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(obj.GetInstIDFieldName()).In(instID)
 	if obj.IsCommon() {
 		cond.Field(common.BKObjIDField).Eq(object.ObjectID)
 	}
 
-	query := &metatype.QueryInput{}
+	query := &metadata.QueryInput{}
 	query.Condition = cond.ToMapStr()
 
 	_, insts, err := c.FindInst(params, obj, query, false)
@@ -326,7 +325,6 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 		// if this instance has been bind to a instance by the association, then this instance should not be deleted.
 		innerCond := condition.CreateCondition()
 		innerCond.Field(common.BKAsstObjIDField).Eq(object.ObjectID)
-		innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 		innerCond.Field(common.BKAsstInstIDField).Eq(delInst.instID)
 		err := c.asst.CheckBeAssociation(params, obj, innerCond)
 		if nil != err {
@@ -337,7 +335,6 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 		// by the association with other instances.
 		innerCond = condition.CreateCondition()
 		innerCond.Field(common.BKObjIDField).Eq(object.ObjectID)
-		innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 		innerCond.Field(common.BKInstIDField).Eq(delInst)
 		if err := c.asst.DeleteInstAssociation(params, innerCond); nil != err {
 			blog.Errorf("[operation-inst] failed to delete the inst asst, err: %s", err.Error())
@@ -346,22 +343,20 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 
 		// delete this instance now.
 		delCond := condition.CreateCondition()
-		delCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 		delCond.Field(obj.GetInstIDFieldName()).In(delInst.instID)
 		if obj.IsCommon() {
 			delCond.Field(common.BKObjIDField).Eq(object.ObjectID)
 		}
 		// clear association
-		rsp, err := c.clientSet.ObjectController().Instance().DelObject(context.Background(), obj.GetObjectType(), params.Header, delCond.ToMapStr())
-
+		rsp, err := c.clientSet.CoreService().Instance().DeleteInstance(context.Background(), params.Header, obj.GetObjectID(), &metadata.DeleteOption{Condition: delCond.ToMapStr()})
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to request object controller, err: %s", err.Error())
 			return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
-		if common.CCSuccess != rsp.Code {
+		if !rsp.Result {
 			blog.Errorf("[operation-inst] failed to delete the object(%s) inst by the condition(%#v), err: %s", object.ObjectID, delCond.ToMapStr(), rsp.ErrMsg)
-			return params.Err.Error(rsp.Code)
+			return params.Err.New(rsp.Code, rsp.ErrMsg)
 		}
 
 		NewSupplementary().Audit(params, c.clientSet, obj, c).CommitDeleteLog(preAudit, nil, nil)
@@ -372,7 +367,7 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 func (c *commonInst) DeleteInst(params types.ContextParams, obj model.Object, cond condition.Condition, needCheckHost bool) error {
 
 	// clear inst associations
-	query := &metatype.QueryInput{}
+	query := &metadata.QueryInput{}
 	query.Limit = common.BKNoLimit
 	query.Condition = cond.ToMapStr()
 
@@ -401,7 +396,7 @@ func (c *commonInst) DeleteInst(params types.ContextParams, obj model.Object, co
 
 	return nil
 }
-func (c *commonInst) convertInstIDIntoStruct(params types.ContextParams, asstObj metatype.Association, instIDS []string, needAsstDetail bool) ([]metatype.InstNameAsst, error) {
+func (c *commonInst) convertInstIDIntoStruct(params types.ContextParams, asstObj metadata.Association, instIDS []string, needAsstDetail bool) ([]metadata.InstNameAsst, error) {
 
 	obj, err := c.obj.FindSingleObject(params, asstObj.AsstObjID)
 	if nil != err {
@@ -425,22 +420,21 @@ func (c *commonInst) convertInstIDIntoStruct(params types.ContextParams, asstObj
 	cond := condition.CreateCondition()
 	cond.Field(obj.GetInstIDFieldName()).In(ids)
 
-	query := &metatype.QueryInput{}
+	query := &metadata.QueryCondition{}
 	query.Condition = cond.ToMapStr()
-	query.Limit = common.BKNoLimit
-	rsp, err := c.clientSet.ObjectController().Instance().SearchObjects(context.Background(), obj.GetObjectType(), params.Header, query)
+	rsp, err := c.clientSet.CoreService().Instance().ReadInstance(context.Background(), params.Header, obj.GetObjectID(), query)
 
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to request object controller, err: %s", err.Error())
 		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("[operation-inst] faild to delete the object(%s) inst by the condition(%#v), err: %s", object.ObjectID, cond, rsp.ErrMsg)
-		return nil, params.Err.Error(rsp.Code)
+		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	instAsstNames := []metatype.InstNameAsst{}
+	instAsstNames := []metadata.InstNameAsst{}
 	for _, instInfo := range rsp.Data.Info {
 		instName, err := instInfo.String(obj.GetInstNameFieldName())
 		if nil != err {
@@ -452,7 +446,7 @@ func (c *commonInst) convertInstIDIntoStruct(params types.ContextParams, asstObj
 		}
 
 		if needAsstDetail {
-			instAsstNames = append(instAsstNames, metatype.InstNameAsst{
+			instAsstNames = append(instAsstNames, metadata.InstNameAsst{
 				ID:         strconv.Itoa(int(instID)),
 				ObjID:      object.ObjectID,
 				ObjectName: object.ObjectName,
@@ -464,7 +458,7 @@ func (c *commonInst) convertInstIDIntoStruct(params types.ContextParams, asstObj
 			continue
 		}
 
-		instAsstNames = append(instAsstNames, metatype.InstNameAsst{
+		instAsstNames = append(instAsstNames, metadata.InstNameAsst{
 			ID:         strconv.Itoa(int(instID)),
 			ObjID:      object.ObjectID,
 			ObjectName: object.ObjectName,
@@ -478,7 +472,7 @@ func (c *commonInst) convertInstIDIntoStruct(params types.ContextParams, asstObj
 	return instAsstNames, nil
 }
 
-func (c *commonInst) searchAssociationInst(params types.ContextParams, objID string, query *metatype.QueryInput) ([]int64, error) {
+func (c *commonInst) searchAssociationInst(params types.ContextParams, objID string, query *metadata.QueryInput) ([]int64, error) {
 
 	obj, err := c.obj.FindSingleObject(params, objID)
 	if nil != err {
@@ -502,13 +496,12 @@ func (c *commonInst) searchAssociationInst(params types.ContextParams, objID str
 	return instIDS, nil
 }
 
-func (c *commonInst) FindInstChildTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []*CommonInstTopo, err error) {
+func (c *commonInst) FindInstChildTopo(params types.ContextParams, obj model.Object, instID int64, query *metadata.QueryInput) (count int, results []*CommonInstTopo, err error) {
 	results = make([]*CommonInstTopo, 0)
 	if nil == query {
-		query = &metatype.QueryInput{}
+		query = &metadata.QueryInput{}
 		cond := condition.CreateCondition()
 		cond.Field(obj.GetInstIDFieldName()).Eq(instID)
-		cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 		query.Condition = cond.ToMapStr()
 	}
 
@@ -533,7 +526,7 @@ func (c *commonInst) FindInstChildTopo(params types.ContextParams, obj model.Obj
 				commonInst.ObjectName = object.ObjectName
 				commonInst.ObjIcon = object.ObjIcon
 				commonInst.ObjID = object.ObjectID
-				commonInst.Children = []metatype.InstNameAsst{}
+				commonInst.Children = []metadata.InstNameAsst{}
 				tmpResults[object.ObjectID] = commonInst
 			}
 
@@ -541,7 +534,7 @@ func (c *commonInst) FindInstChildTopo(params types.ContextParams, obj model.Obj
 
 			for _, childInst := range child.Insts {
 
-				instAsst := metatype.InstNameAsst{}
+				instAsst := metadata.InstNameAsst{}
 				id, err := childInst.GetInstID()
 				if nil != err {
 					return 0, nil, err
@@ -572,14 +565,13 @@ func (c *commonInst) FindInstChildTopo(params types.ContextParams, obj model.Obj
 	return len(results), results, nil
 }
 
-func (c *commonInst) FindInstParentTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []*CommonInstTopo, err error) {
+func (c *commonInst) FindInstParentTopo(params types.ContextParams, obj model.Object, instID int64, query *metadata.QueryInput) (count int, results []*CommonInstTopo, err error) {
 
 	results = make([]*CommonInstTopo, 0)
 	if nil == query {
-		query = &metatype.QueryInput{}
+		query = &metadata.QueryInput{}
 		cond := condition.CreateCondition()
 		cond.Field(obj.GetInstIDFieldName()).Eq(instID)
-		cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 		query.Condition = cond.ToMapStr()
 	}
 
@@ -604,14 +596,14 @@ func (c *commonInst) FindInstParentTopo(params types.ContextParams, obj model.Ob
 				commonInst.ObjectName = object.ObjectName
 				commonInst.ObjIcon = object.ObjIcon
 				commonInst.ObjID = object.ObjectID
-				commonInst.Children = []metatype.InstNameAsst{}
+				commonInst.Children = []metadata.InstNameAsst{}
 				tmpResults[object.ObjectID] = commonInst
 			}
 
 			commonInst.Count = commonInst.Count + len(parent.Insts)
 
 			for _, parentInst := range parent.Insts {
-				instAsst := metatype.InstNameAsst{}
+				instAsst := metadata.InstNameAsst{}
 				id, err := parentInst.GetInstID()
 				if nil != err {
 					return 0, nil, err
@@ -641,13 +633,12 @@ func (c *commonInst) FindInstParentTopo(params types.ContextParams, obj model.Ob
 	return len(results), results, nil
 }
 
-func (c *commonInst) FindInstTopo(params types.ContextParams, obj model.Object, instID int64, query *metatype.QueryInput) (count int, results []CommonInstTopoV2, err error) {
+func (c *commonInst) FindInstTopo(params types.ContextParams, obj model.Object, instID int64, query *metadata.QueryInput) (count int, results []CommonInstTopoV2, err error) {
 
 	if nil == query {
-		query = &metatype.QueryInput{}
+		query = &metadata.QueryInput{}
 		cond := condition.CreateCondition()
 		cond.Field(obj.GetInstIDFieldName()).Eq(instID)
-		cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 		query.Condition = cond.ToMapStr()
 	}
 
@@ -672,7 +663,7 @@ func (c *commonInst) FindInstTopo(params types.ContextParams, obj model.Object, 
 
 		object := inst.GetObject().Object()
 
-		commonInst := metatype.InstNameAsst{}
+		commonInst := metadata.InstNameAsst{}
 		commonInst.ObjectName = object.ObjectName
 		commonInst.ObjID = object.ObjectID
 		commonInst.ObjIcon = object.ObjIcon
@@ -703,18 +694,17 @@ func (c *commonInst) FindInstTopo(params types.ContextParams, obj model.Object, 
 	return len(results), results, nil
 }
 
-func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj model.Object, data frtypes.MapStr) (cont int, results []inst.Inst, err error) {
+func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj model.Object, data mapstr.MapStr) (cont int, results []inst.Inst, err error) {
 
 	asstParamCond := &AssociationParams{}
 	if err := data.MarshalJSONInto(asstParamCond); nil != err {
 		blog.Errorf("[operation-inst] find inst by association inst , err: %s", err.Error())
 		return 0, nil, params.Err.Errorf(common.CCErrTopoInstSelectFailed, err.Error())
 	}
-	
+
 	object := obj.Object()
 
 	instCond := map[string]interface{}{}
-	instCond[common.BKOwnerIDField] = params.SupplierAccount
 	if obj.IsCommon() {
 		instCond[common.BKObjIDField] = object.ObjectID
 	}
@@ -725,7 +715,6 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 		cond := map[string]interface{}{}
 		if common.GetObjByType(keyObjID) == common.BKInnerObjIDObject {
 			cond[common.BKObjIDField] = keyObjID
-			cond[common.BKOwnerIDField] = params.SupplierAccount
 		}
 
 		for _, objCondition := range objs {
@@ -766,7 +755,7 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 			continue
 		}
 
-		innerCond := new(metatype.QueryInput)
+		innerCond := new(metadata.QueryInput)
 		if fields, ok := asstParamCond.Fields[keyObjID]; ok {
 			innerCond.Fields = strings.Join(fields, ",")
 		}
@@ -779,7 +768,7 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 		}
 		blog.V(4).Infof("[FindInstByAssociationInst] search association insts, keyObjID %s, condition: %v, results: %v", keyObjID, innerCond, asstInstIDS)
 
-		query := &metatype.QueryInput{}
+		query := &metadata.QueryInput{}
 		query.Condition = map[string]interface{}{
 			"bk_asst_inst_id": map[string]interface{}{
 				common.BKDBIN: asstInstIDS,
@@ -813,7 +802,7 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 		}
 	}
 
-	query := &metatype.QueryInput{}
+	query := &metadata.QueryInput{}
 	query.Condition = instCond
 	if fields, ok := asstParamCond.Fields[object.ObjectID]; ok {
 		query.Fields = strings.Join(fields, ",")
@@ -825,8 +814,7 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 	return c.FindInst(params, obj, query, false)
 }
 
-func (c *commonInst) FindOriginInst(params types.ContextParams, obj model.Object, cond *metatype.QueryInput) (*metatype.InstResult, error) {
-
+func (c *commonInst) FindOriginInst(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (*metadata.InstResult, error) {
 	switch obj.Object().ObjectID {
 	case common.BKInnerObjIDHost:
 		rsp, err := c.clientSet.HostController().Host().GetHosts(context.Background(), params.Header, cond)
@@ -835,31 +823,32 @@ func (c *commonInst) FindOriginInst(params types.ContextParams, obj model.Object
 			return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
-		if common.CCSuccess != rsp.Code {
+		if !rsp.Result {
 
 			blog.Errorf("[operation-inst] faild to delete the object(%s) inst by the condition(%#v), err: %s", obj.Object().ObjectID, cond, rsp.ErrMsg)
 			return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 		}
 
-		return &metatype.InstResult{Count: rsp.Data.Count, Info: frtypes.NewArrayFromMapStr(rsp.Data.Info)}, nil
+		return &metadata.InstResult{Count: rsp.Data.Count, Info: mapstr.NewArrayFromMapStr(rsp.Data.Info)}, nil
 
 	default:
-
-		rsp, err := c.clientSet.ObjectController().Instance().SearchObjects(context.Background(), obj.GetObjectType(), params.Header, cond)
+		queryCond, err := mapstr.NewFromInterface(cond.Condition)
+		input := &metadata.QueryCondition{Condition: queryCond}
+		rsp, err := c.clientSet.CoreService().Instance().ReadInstance(context.Background(), params.Header, obj.GetObjectID(), input)
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to request object controller, err: %s", err.Error())
 			return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
-		if common.CCSuccess != rsp.Code {
+		if !rsp.Result {
 			blog.Errorf("[operation-inst] failed to delete the object(%s) inst by the condition(%#v), err: %s", obj.Object().ObjectID, cond, rsp.ErrMsg)
 			return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 		}
-		return &rsp.Data, nil
+		return &metadata.InstResult{Info: rsp.Data.Info, Count: rsp.Data.Count}, nil
 	}
-
 }
-func (c *commonInst) FindInst(params types.ContextParams, obj model.Object, cond *metatype.QueryInput, needAsstDetail bool) (count int, results []inst.Inst, err error) {
+
+func (c *commonInst) FindInst(params types.ContextParams, obj model.Object, cond *metadata.QueryInput, needAsstDetail bool) (count int, results []inst.Inst, err error) {
 	rsp, err := c.FindOriginInst(params, obj, cond)
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to find origin inst , err: %s", err.Error())
@@ -869,14 +858,14 @@ func (c *commonInst) FindInst(params types.ContextParams, obj model.Object, cond
 	return rsp.Count, inst.CreateInst(params, c.clientSet, obj, rsp.Info), nil
 }
 
-func (c *commonInst) UpdateInst(params types.ContextParams, data frtypes.MapStr, obj model.Object, cond condition.Condition, instID int64) error {
+func (c *commonInst) UpdateInst(params types.ContextParams, data mapstr.MapStr, obj model.Object, cond condition.Condition, instID int64) error {
 
 	if err := NewSupplementary().Validator(c).ValidatorUpdate(params, obj, data, instID, cond); nil != err {
 		return err
 	}
 
 	// update association
-	query := &metatype.QueryInput{}
+	query := &metadata.QueryInput{}
 	query.Condition = cond.ToMapStr()
 	query.Limit = common.BKNoLimit
 	if 0 < instID {
@@ -886,18 +875,14 @@ func (c *commonInst) UpdateInst(params types.ContextParams, data frtypes.MapStr,
 	}
 
 	// update insts
-	inputParams := frtypes.New()
-	inputParams.Set("data", data)
-	inputParams.Set("condition", cond.ToMapStr())
 	preAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, cond.ToMapStr())
-	rsp, err := c.clientSet.ObjectController().Instance().UpdateObject(context.Background(), obj.GetObjectType(), params.Header, inputParams)
-
+	rsp, err := c.clientSet.CoreService().Instance().ReadInstance(context.Background(), params.Header, obj.GetObjectID(), &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to request object controller, err: %s", err.Error())
 		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("[operation-inst] faild to set the object(%s) inst by the condition(%#v), err: %s", obj.Object().ObjectID, cond.ToMapStr(), rsp.ErrMsg)
 		return params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
