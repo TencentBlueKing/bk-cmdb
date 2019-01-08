@@ -30,7 +30,7 @@ func (s *topoService) CreateObjectAssociation(params types.ContextParams, pathPa
 	if err := data.MarshalJSONInto(asso); err != nil {
 		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 	}
-
+	params.MetaData = &asso.Metadata
 	association, err := s.core.AssociationOperation().CreateCommonAssociation(params, asso)
 	if nil != err {
 		return nil, err
@@ -83,6 +83,9 @@ func (s *topoService) SearchObjectAssociation(params types.ContextParams, pathPa
 		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 	}
 
+	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
+	data.Remove(metadata.BKMetadata)
+
 	return s.core.AssociationOperation().SearchObjectAssociation(params, objID)
 }
 
@@ -100,6 +103,8 @@ func (s *topoService) DeleteObjectAssociation(params types.ContextParams, pathPa
 		return nil, params.Err.Error(common.CCErrTopoInvalidObjectAssociationID)
 	}
 
+	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
+	data.Remove(metadata.BKMetadata)
 	return nil, s.core.AssociationOperation().DeleteAssociationWithPreCheck(params, id)
 }
 
@@ -110,6 +115,10 @@ func (s *topoService) UpdateObjectAssociation(params types.ContextParams, pathPa
 		blog.Errorf("update object association, but got invalid id[%v], err: %v", pathParams("id"), err)
 		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 	}
+
+	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
+	data.Remove(metadata.BKMetadata)
+
 	err = s.core.AssociationOperation().UpdateAssociation(params, data, id)
 	return nil, err
 
@@ -122,6 +131,8 @@ func (s *topoService) ImportInstanceAssociation(params types.ContextParams, path
 	if err := data.MarshalJSONInto(request); err != nil {
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
+	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
+	data.Remove(metadata.BKMetadata)
 
 	resp, err := s.core.AssociationOperation().ImportInstAssociation(context.Background(), params, objID, request.AssociationInfoMap)
 	return resp, err

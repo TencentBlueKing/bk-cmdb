@@ -74,6 +74,25 @@ func GetBusinessIDFromMeta(data interface{}) string {
 	return bizID
 }
 
+func NewMetaDataFromInterface(data interface{}) *Metadata {
+	if nil == data {
+		return nil
+	}
+	tmp, ok := data.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	label, ok := tmp[BKLabel].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	bizID, ok := label[LabelBusinessID].(string)
+	if !ok {
+		return nil
+	}
+	return &Metadata{Label: Label{LabelBusinessID: bizID}}
+}
+
 // Metadata  used to define the metadata for the resources
 type Metadata struct {
 	Label Label `field:"label" json:"label" bson:"label"`

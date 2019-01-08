@@ -60,6 +60,11 @@ func (s *topoService) initBusinessObjectAttrGroup() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/objectattgroup/object/{bk_obj_id}", HandlerFunc: s.SearchGroupByObject})
 }
 
+func (s *topoService) initBusinessGraphics() {
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/objecttopo/scope_type/{scope_type}/scope_id/{scope_id}", HandlerFunc: s.SelectObjectTopoGraphics})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/update/objecttopo/scope_type/{scope_type}/scope_id/{scope_id}", HandlerFunc: s.UpdateObjectTopoGraphics, HandlerParseOriginDataFunc: s.ParseOriginGraphicsUpdateInput})
+}
+
 func (s *topoService) initBusinessAssociation() {
 
 	// mainline topo methods
@@ -71,7 +76,7 @@ func (s *topoService) initBusinessAssociation() {
 	// TODO: delete this api, it's not used by front.
 	//	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/inst/child/{owner_id}/{obj_id}/{app_id}/{inst_id}", HandlerFunc: s.SearchMainLineChildInstTopo})
 
-	// association type methods
+	// association type methods ,NOT SUPPORT BUSSINESS
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/topoassociationtype", HandlerFunc: s.SearchObjectAssoWithAssoKindList})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/associationtype", HandlerFunc: s.SearchAssociationType})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/associationtype", HandlerFunc: s.CreateAssociationType})

@@ -31,7 +31,7 @@ func (s *topoService) CreateMainLineObject(params types.ContextParams, pathParam
 	if nil != err {
 		blog.Errorf("[api-asst] failed to parse the data(%#v), error info is %s", data, err.Error())
 	}
-
+	params.MetaData = &mainLineAssociation.Metadata
 	return s.core.AssociationOperation().CreateMainlineAssociation(params, mainLineAssociation)
 }
 
@@ -40,19 +40,16 @@ func (s *topoService) DeleteMainLineObject(params types.ContextParams, pathParam
 
 	objID := pathParams("bk_obj_id")
 
-	//biz id in create object
-	bizID := metadata.GetBusinessIDFromMeta(data[metadata.BKMetadata])
-	if "" == bizID {
-		data.Remove(metadata.BKMetadata)
-	}
-	meta := metadata.NewMetaDataFromBusinessID(bizID)
+	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
 
-	err := s.core.AssociationOperation().DeleteMainlineAssociaton(params, objID, meta)
+	err := s.core.AssociationOperation().DeleteMainlineAssociaton(params, objID)
 	return nil, err
 }
 
 // SearchMainLineOBjectTopo search the main line topo
 func (s *topoService) SearchMainLineObjectTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+
+	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
 
 	bizObj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
@@ -66,11 +63,13 @@ func (s *topoService) SearchMainLineObjectTopo(params types.ContextParams, pathP
 // SearchObjectByClassificationID search the object by classification ID
 func (s *topoService) SearchObjectByClassificationID(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
-	bizObj, err := s.core.ObjectOperation().FindSingleObject(params, pathParams("obj_id"))
+	bizObj, err := s.core.ObjectOperation().FindSingleObject(params, pathParams("bk_obj_id"))
 	if nil != err {
 		blog.Errorf("[api-asst] failed to find the biz object, error info is %s", err.Error())
 		return nil, err
 	}
+
+	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
 
 	return s.core.AssociationOperation().SearchMainlineAssociationTopo(params, bizObj)
 }
@@ -90,6 +89,9 @@ func (s *topoService) SearchBusinessTopo(params types.ContextParams, pathParams,
 	if nil != err {
 		return nil, err
 	}
+
+	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
+	data.Remove(metadata.BKMetadata)
 
 	return s.core.AssociationOperation().SearchMainlineAssociationInstTopo(params, bizObj, id)
 }
@@ -207,6 +209,10 @@ func (s *topoService) SearchAssociationInst(params types.ContextParams, pathPara
 	if err := data.MarshalJSONInto(request); err != nil {
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
+
+	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
+	data.Remove(metadata.BKMetadata)
+
 	ret, err := s.core.AssociationOperation().SearchInst(params, request)
 	if err != nil {
 		return nil, err
@@ -223,6 +229,9 @@ func (s *topoService) CreateAssociationInst(params types.ContextParams, pathPara
 	if err := data.MarshalJSONInto(request); err != nil {
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
+
+	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
+
 	ret, err := s.core.AssociationOperation().CreateInst(params, request)
 	if err != nil {
 		return nil, err
@@ -239,6 +248,11 @@ func (s *topoService) DeleteAssociationInst(params types.ContextParams, pathPara
 	if err != nil {
 		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 	}
+
+	//biz id in delete object association
+	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
+	data.Remove(metadata.BKMetadata)
+
 	ret, err := s.core.AssociationOperation().DeleteInst(params, id)
 	if err != nil {
 		return nil, err

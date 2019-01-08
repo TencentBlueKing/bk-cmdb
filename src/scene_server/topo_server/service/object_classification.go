@@ -22,11 +22,8 @@ import (
 
 // CreateClassification create a new object classification
 func (s *topoService) CreateClassification(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	//biz id in create object
-	bizID := metadata.GetBusinessIDFromMeta(data[metadata.BKMetadata])
-	if "" == bizID {
-		data.Remove(metadata.BKMetadata)
-	}
+	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
+	data.Remove(metadata.BKMetadata)
 	cls, err := s.core.ClassificationOperation().CreateClassification(params, data)
 	if nil != err {
 		return nil, err
@@ -58,6 +55,9 @@ func (s *topoService) SearchClassificationWithObjects(params types.ContextParams
 		blog.Errorf("failed to parse the condition, error info is %s", err.Error())
 		return nil, err
 	}
+
+	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
+	data.Remove(metadata.BKMetadata)
 
 	return s.core.ClassificationOperation().FindClassificationWithObjects(params, cond)
 }
@@ -98,6 +98,9 @@ func (s *topoService) UpdateClassification(params types.ContextParams, pathParam
 		return nil, err
 	}
 
+	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
+	data.Remove(metadata.BKMetadata)
+
 	err = s.core.ClassificationOperation().UpdateClassification(params, data, id, cond)
 	return nil, err
 }
@@ -113,6 +116,9 @@ func (s *topoService) DeleteClassification(params types.ContextParams, pathParam
 		blog.Errorf("[api-cls] failed to parse the path params id(%s), error info is %s ", pathParams("id"), err.Error())
 		return nil, err
 	}
+
+	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
+	data.Remove(metadata.BKMetadata)
 
 	err = s.core.ClassificationOperation().DeleteClassification(params, id, data, cond)
 	return nil, err

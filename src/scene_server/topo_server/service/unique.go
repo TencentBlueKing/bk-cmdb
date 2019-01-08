@@ -56,6 +56,9 @@ func (s *topoService) UpdateObjectUnique(params types.ContextParams, pathParams,
 		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, "id")
 	}
 
+	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
+	data.Remove(metadata.BKMetadata)
+
 	err = s.core.UniqueOperation().Update(params, objectID, id, request)
 	if err != nil {
 		blog.Errorf("[UpdateObjectUnique] update for [%s](%d) failed: %v, raw: %#v", objectID, id, err, data)
@@ -71,6 +74,8 @@ func (s *topoService) DeleteObjectUnique(params types.ContextParams, pathParams,
 	if err != nil {
 		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, "id")
 	}
+	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
+	data.Remove(metadata.BKMetadata)
 
 	uniques, err := s.core.UniqueOperation().Search(params, objectID)
 	if err != nil {
@@ -93,6 +98,10 @@ func (s *topoService) DeleteObjectUnique(params types.ContextParams, pathParams,
 // SearchObjectUnique search object uniques
 func (s *topoService) SearchObjectUnique(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	objectID := pathParams(common.BKObjIDField)
+
+	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
+	data.Remove(metadata.BKMetadata)
+
 	uniques, err := s.core.UniqueOperation().Search(params, objectID)
 	if err != nil {
 		blog.Errorf("[SearchObjectUnique] search for [%s] failed: %v", objectID, err)

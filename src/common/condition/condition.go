@@ -139,6 +139,7 @@ func (cli *condition) Parse(data types.MapStr) error {
 		}
 		cli.fields = append(cli.fields, tmpField)
 
+		//TODO: support parse meta data
 		return nil
 	})
 
