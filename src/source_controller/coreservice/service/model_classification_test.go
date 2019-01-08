@@ -16,6 +16,10 @@ import (
 	"encoding/json"
 	"testing"
 
+	"configcenter/src/common/mapstr"
+
+	"configcenter/src/common/universalsql/mongo"
+
 	"configcenter/src/common/http/httpclient"
 	"configcenter/src/common/metadata"
 
@@ -145,6 +149,86 @@ func createOneClassification(t *testing.T, client *httpclient.HttpClient, classi
 
 func queryClassification(t *testing.T, client *httpclient.HttpClient, classificationID string) {
 
+	cond := mongo.NewCondition()
+	cond.Element(mongo.Field(metadata.ClassFieldClassificationID).Eq(classificationID))
+	queryCond := metadata.QueryCondition{
+		Fields: []string{},
+		SortArr: []metadata.SearchSort{
+			metadata.SearchSort{
+				IsDsc: true,
+				Field: metadata.ClassFieldClassificationID,
+			},
+		},
+		Condition: cond.ToMapStr(),
+	}
+
+	inputParams, err := json.Marshal(queryCond)
+	require.NoError(t, err)
+	require.NotNil(t, inputParams)
+	t.Logf("query classificaiton:%s", inputParams)
+
+	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/read/model/classification", defaultHeader, inputParams)
+	require.NoError(t, err)
+	require.NotNil(t, dataResult)
+
+	clsResult := metadata.ReadModelClassifitionResult{}
+	err = json.Unmarshal(dataResult, &clsResult)
+	require.NoError(t, err)
+	resultStr, err := json.Marshal(clsResult)
+	require.NoError(t, err)
+	t.Logf("query data result:%s", resultStr)
+}
+
+func updateClassification(t *testing.T, client *httpclient.HttpClient, classificationID string) {
+
+	cond := mongo.NewCondition()
+	cond.Element(mongo.Field(metadata.ClassFieldClassificationID).Eq(classificationID))
+	queryCond := metadata.UpdateOption{
+		Data: mapstr.MapStr{
+			metadata.ClassFieldClassificationName: "update_" + classificationID,
+		},
+		Condition: cond.ToMapStr(),
+	}
+
+	inputParams, err := json.Marshal(queryCond)
+	require.NoError(t, err)
+	require.NotNil(t, inputParams)
+	t.Logf("update classificaiton:%s", inputParams)
+
+	dataResult, err := client.PUT("http://127.0.0.1:3308/api/v3/update/model/classification", defaultHeader, inputParams)
+	require.NoError(t, err)
+	require.NotNil(t, dataResult)
+
+	clsResult := metadata.UpdatedOptionResult{}
+	err = json.Unmarshal(dataResult, &clsResult)
+	require.NoError(t, err)
+	resultStr, err := json.Marshal(clsResult)
+	require.NoError(t, err)
+	t.Logf("update data result:%s", resultStr)
+}
+
+func deleteClassification(t *testing.T, client *httpclient.HttpClient, classificationID string) {
+	cond := mongo.NewCondition()
+	cond.Element(mongo.Field(metadata.ClassFieldClassificationID).Eq(classificationID))
+	queryCond := metadata.DeleteOption{
+		Condition: cond.ToMapStr(),
+	}
+
+	inputParams, err := json.Marshal(queryCond)
+	require.NoError(t, err)
+	require.NotNil(t, inputParams)
+	t.Logf("delete classificaiton:%s", inputParams)
+
+	dataResult, err := client.DELETE("http://127.0.0.1:3308/api/v3/delete/model/classification", defaultHeader, inputParams)
+	require.NoError(t, err)
+	require.NotNil(t, dataResult)
+
+	clsResult := metadata.DeletedOptionResult{}
+	err = json.Unmarshal(dataResult, &clsResult)
+	require.NoError(t, err)
+	resultStr, err := json.Marshal(clsResult)
+	require.NoError(t, err)
+	t.Logf("delete data result:%s", resultStr)
 }
 
 func TestClassificationCRUD(t *testing.T) {
@@ -155,16 +239,36 @@ func TestClassificationCRUD(t *testing.T) {
 	classID := xid.New().String()
 	t.Logf("create many:%s", classID)
 	createManyClassification(t, client, classID)
+	queryClassification(t, client, classID)
+	updateClassification(t, client, classID)
+	queryClassification(t, client, classID)
+	deleteClassification(t, client, classID)
+	queryClassification(t, client, classID)
 
 	classID = xid.New().String()
 	t.Logf("create one:%s", classID)
 	createOneClassification(t, client, classID)
+	queryClassification(t, client, classID)
+	updateClassification(t, client, classID)
+	queryClassification(t, client, classID)
+	deleteClassification(t, client, classID)
+	queryClassification(t, client, classID)
 
 	classID = xid.New().String()
 	t.Logf("set many:%s", classID)
 	setManyClassification(t, client, classID)
+	queryClassification(t, client, classID)
+	updateClassification(t, client, classID)
+	queryClassification(t, client, classID)
+	deleteClassification(t, client, classID)
+	queryClassification(t, client, classID)
 
 	classID = xid.New().String()
 	t.Logf("set one:%s", classID)
 	setOneClassification(t, client, classID)
+	queryClassification(t, client, classID)
+	updateClassification(t, client, classID)
+	queryClassification(t, client, classID)
+	deleteClassification(t, client, classID)
+	queryClassification(t, client, classID)
 }
