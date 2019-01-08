@@ -22,7 +22,7 @@ import (
 )
 
 func (m *modelAttribute) count(ctx core.ContextParams, cond universalsql.Condition) (cnt uint64, err error) {
-	cnt, err = m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).Count(ctx)
+	cnt, err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).Count(ctx)
 	return cnt, err
 }
 
@@ -43,6 +43,7 @@ func (m *modelAttribute) update(ctx core.ContextParams, data mapstr.MapStr, cond
 
 	cnt, err = m.count(ctx, cond)
 	if 0 == cnt {
+		blog.Errorf("request(%s): find nothing by the condition(%v)", ctx.ReqID, cond.ToMapStr())
 		return cnt, nil
 	}
 
@@ -73,7 +74,7 @@ func (m *modelAttribute) searchReturnMapStr(ctx core.ContextParams, cond univers
 
 func (m *modelAttribute) delete(ctx core.ContextParams, cond universalsql.Condition) (cnt uint64, err error) {
 
-	cnt, err = m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).Count(ctx)
+	cnt, err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).Count(ctx)
 	if nil != err {
 		blog.Errorf("request(%s): database count operation is failed, error info is %s", ctx.ReqID, err.Error())
 		return cnt, err
