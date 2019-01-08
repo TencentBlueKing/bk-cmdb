@@ -15,7 +15,6 @@ package model
 import (
 	"context"
 	"encoding/json"
-	"github.com/rs/xid"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
@@ -24,6 +23,8 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
+
+	"github.com/rs/xid"
 )
 
 // Group group opeartion interface declaration
@@ -118,19 +119,18 @@ func (g *group) Create() error {
 		return g.params.Err.Error(common.CCErrCommDuplicateItem)
 	}
 
-	rsp, err := g.clientSet.ObjectController().Meta().CreatePropertyGroup(context.Background(), g.params.Header, &g.grp)
-
+	rsp, err := g.clientSet.CoreService().Model().CreateAttributeGroup(context.Background(), g.params.Header, g.GetObjectID(), metadata.CreateModelAttributeGroup{Data: g.grp})
 	if nil != err {
 		blog.Errorf("[model-grp] failed to request object controller, err: %s", err.Error())
 		return g.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("[model-grp] failed to create the group(%s), err: is %s", g.grp.GroupID, rsp.ErrMsg)
 		return g.params.Err.Error(common.CCErrTopoObjectGroupCreateFailed)
 	}
 
-	g.grp.ID = rsp.Data.ID
+	g.grp.ID = int64(rsp.Data.Created.ID)
 
 	return nil
 }
@@ -159,18 +159,21 @@ func (g *group) Update(data mapstr.MapStr) error {
 
 	for _, grpItem := range grps { // only one item
 
-		cond := &metadata.UpdateGroupCondition{}
-		cond.Condition.GroupID = grpItem.GroupID
-		cond.Data.Index = g.grp.GroupIndex
-		cond.Data.Name = g.grp.GroupName
+		input := metadata.UpdateOption{
+			Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(grpItem.GroupID).ToMapStr(),
+			Data: mapstr.MapStr{
+				common.BKPropertyGroupIndexField: g.grp.GroupIndex,
+				common.BKPropertyGroupNameField:  g.grp.GroupName,
+			},
+		}
 
-		rsp, err := g.clientSet.ObjectController().Meta().UpdatePropertyGroup(context.Background(), g.params.Header, cond)
+		rsp, err := g.clientSet.CoreService().Model().UpdateAttributeGroup(context.Background(), g.params.Header, g.GetObjectID(), input)
 		if nil != err {
 			blog.Errorf("[model-grp]failed to request object controller, err: %s", err.Error())
 			return err
 		}
 
-		if common.CCSuccess != rsp.Code {
+		if !rsp.Result {
 			blog.Errorf("[model-grp]failed to update the group(%s), err: %s", grpItem.GroupID, err.Error())
 			return g.params.Err.Error(common.CCErrTopoObjectAttributeUpdateFailed)
 		}
@@ -229,19 +232,19 @@ func (g *group) GetAttributes() ([]AttributeInterface, error) {
 		Field(metadata.AttributeFieldPropertyGroup).Eq(g.grp.GroupID).
 		Field(metadata.AttributeFieldSupplierAccount).Eq(g.params.SupplierAccount)
 
-	rsp, err := g.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), g.params.Header, cond.ToMapStr())
+	rsp, err := g.clientSet.CoreService().Model().ReadModelAttr(context.Background(), g.params.Header, g.GetObjectID(), &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request the object controller, err: %s", err.Error())
 		return nil, g.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("failed to search the object(%s), err: %s", g.grp.ObjectID, rsp.ErrMsg)
-		return nil, g.params.Err.Error(rsp.Code)
+		return nil, g.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	rstItems := make([]AttributeInterface, 0)
-	for _, item := range rsp.Data {
+	for _, item := range rsp.Data.Info {
 
 		attr := &attribute{
 			attr:      item,
@@ -256,20 +259,20 @@ func (g *group) GetAttributes() ([]AttributeInterface, error) {
 }
 
 func (g *group) search(cond condition.Condition) ([]metadata.Group, error) {
-
-	rsp, err := g.clientSet.ObjectController().Meta().SelectGroup(context.Background(), g.params.Header, cond.ToMapStr())
+	rsp, err := g.clientSet.CoreService().Model().ReadAttributeGroup(context.Background(), g.params.Header, g.GetObjectID(), metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request the object controller, err: %s", err.Error())
 		return nil, err
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("failed to search the classification, err: %s", rsp.ErrMsg)
-		return nil, g.params.Err.Error(rsp.Code)
+		return nil, g.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	return rsp.Data, nil
+	return rsp.Data.Info, nil
 }
+
 func (g *group) Save(data mapstr.MapStr) error {
 
 	if nil != data {
