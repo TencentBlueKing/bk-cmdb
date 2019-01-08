@@ -170,7 +170,7 @@ func (s *coreService) SearchModel(params core.ContextParams, pathParams, queryPa
 			dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyName = s.TranslatePropertyName(params.Lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
 			dataResult.Info[modelIdx].Attributes[attributeIdx].Description = s.TranslateDescription(params.Lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
 			if dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyType == common.FieldTypeEnum {
-				dataResult.Info[modelIdx].Attributes[attributeIdx].Option = s.TranslateEnumName(params.Lang, &dataResult.Info[modelIdx].Attributes[attributeIdx], dataResult.Info[attributeIdx].Attributes[attributeIdx])
+				dataResult.Info[modelIdx].Attributes[attributeIdx].Option = s.TranslateEnumName(params.Lang, &dataResult.Info[modelIdx].Attributes[attributeIdx], dataResult.Info[modelIdx].Attributes[attributeIdx])
 			}
 		}
 	}
@@ -206,6 +206,15 @@ func (s *coreService) UpdateModelAttributeGroup(params core.ContextParams, pathP
 	return s.core.ModelOperation().UpdateModelAttributeGroup(params, pathParams("bk_obj_id"), inputData)
 }
 
+func (s *coreService) UpdateModelAttributeGroupByCondition(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
+	inputData := metadata.UpdateOption{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+	return s.core.ModelOperation().UpdateModelAttributeGroupByCondition(params, inputData)
+}
+
 func (s *coreService) SearchModelAttributeGroup(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	inputData := metadata.QueryCondition{}
@@ -216,6 +225,16 @@ func (s *coreService) SearchModelAttributeGroup(params core.ContextParams, pathP
 	return s.core.ModelOperation().SearchModelAttributeGroup(params, pathParams("bk_obj_id"), inputData)
 }
 
+func (s *coreService) SearchModelAttributeGroupByCondition(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
+	inputData := metadata.QueryCondition{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+
+	return s.core.ModelOperation().SearchModelAttributeGroupByCondition(params, inputData)
+}
+
 func (s *coreService) DeleteModelAttributeGroup(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	inputData := metadata.DeleteOption{}
@@ -224,6 +243,16 @@ func (s *coreService) DeleteModelAttributeGroup(params core.ContextParams, pathP
 	}
 
 	return s.core.ModelOperation().DeleteModelAttributeGroup(params, pathParams("bk_obj_id"), inputData)
+}
+
+func (s *coreService) DeleteModelAttributeGroupByCondition(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
+	inputData := metadata.DeleteOption{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+
+	return s.core.ModelOperation().DeleteModelAttributeGroupByCondition(params, inputData)
 }
 
 func (s *coreService) CreateModelAttributes(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -254,6 +283,16 @@ func (s *coreService) UpdateModelAttributes(params core.ContextParams, pathParam
 	return s.core.ModelOperation().UpdateModelAttributes(params, pathParams("bk_obj_id"), inputData)
 }
 
+func (s *coreService) UpdateModelAttributesByCondition(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
+	inputData := metadata.UpdateOption{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+
+	return s.core.ModelOperation().UpdateModelAttributesByCondition(params, inputData)
+}
+
 func (s *coreService) DeleteModelAttribute(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	inputData := metadata.DeleteOption{}
@@ -262,6 +301,31 @@ func (s *coreService) DeleteModelAttribute(params core.ContextParams, pathParams
 	}
 	return s.core.ModelOperation().DeleteModelAttributes(params, pathParams("bk_obj_id"), inputData)
 }
+
+func (s *coreService) SearchModelAttributesByCondition(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
+	inputData := metadata.QueryCondition{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		return nil, err
+	}
+
+	dataResult, err := s.core.ModelOperation().SearchModelAttributesByCondition(params, inputData)
+	if nil != err {
+		return dataResult, err
+	}
+
+	// translate
+	for index := range dataResult.Info {
+		dataResult.Info[index].PropertyName = s.TranslatePropertyName(params.Lang, &dataResult.Info[index])
+		dataResult.Info[index].Description = s.TranslateDescription(params.Lang, &dataResult.Info[index])
+		if dataResult.Info[index].PropertyType == common.FieldTypeEnum {
+			dataResult.Info[index].Option = s.TranslateEnumName(params.Lang, &dataResult.Info[index], dataResult.Info[index].Option)
+		}
+	}
+
+	return dataResult, err
+}
+
 func (s *coreService) SearchModelAttributes(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	inputData := metadata.QueryCondition{}
