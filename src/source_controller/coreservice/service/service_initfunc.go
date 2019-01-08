@@ -111,6 +111,8 @@ func (s *coreService) initService() {
 	s.initModelClassification()
 	s.initModel()
 	s.initAssociationKind()
+	s.initAttrUnique()
+	s.initModelAssociation()
 	s.initModelInstances()
 	s.initInstanceAssociation()
 }

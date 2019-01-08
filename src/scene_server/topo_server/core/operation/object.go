@@ -666,7 +666,7 @@ func (o *object) FindObject(params types.ContextParams, cond condition.Condition
 			blog.Errorf("[operation-obj] failed to search the objects by the condition(%#v) , ToStructByTag error info is %v", cond.ToMapStr(), err)
 			return nil, err
 		}
-
+		models = append(models, model)
 	}
 	return model.CreateObject(params, o.clientSet, models), nil
 }
