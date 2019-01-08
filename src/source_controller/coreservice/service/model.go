@@ -157,14 +157,22 @@ func (s *coreService) SearchModel(params core.ContextParams, pathParams, queryPa
 		return nil, err
 	}
 
-	dataResult, err := s.core.ModelOperation().SearchModel(params, inputData)
+	dataResult, err := s.core.ModelOperation().SearchModelWithAttribute(params, inputData)
 	if nil != err {
 		return dataResult, err
 	}
 
 	// translate
-	for index := range dataResult.Info {
-		dataResult.Info[index].ObjectName = s.TranslateObjectName(params.Lang, &dataResult.Info[index])
+	for modelIdx := range dataResult.Info {
+		dataResult.Info[modelIdx].Spec.ObjectName = s.TranslateObjectName(params.Lang, &dataResult.Info[modelIdx].Spec)
+
+		for attributeIdx := range dataResult.Info[modelIdx].Attributes {
+			dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyName = s.TranslatePropertyName(params.Lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
+			dataResult.Info[modelIdx].Attributes[attributeIdx].Description = s.TranslateDescription(params.Lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
+			if dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyType == common.FieldTypeEnum {
+				dataResult.Info[modelIdx].Attributes[attributeIdx].Option = s.TranslateEnumName(params.Lang, &dataResult.Info[modelIdx].Attributes[attributeIdx], dataResult.Info[attributeIdx].Attributes[attributeIdx])
+			}
+		}
 	}
 
 	return dataResult, err

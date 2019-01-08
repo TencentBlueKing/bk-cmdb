@@ -299,3 +299,42 @@ func (m *modelManager) SearchModel(ctx core.ContextParams, inputParam metadata.Q
 	dataResult.Info = modelItems
 	return dataResult, nil
 }
+
+func (m *modelManager) SearchModelWithAttribute(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryModelWithAttributeDataResult, error) {
+
+	dataResult := &metadata.QueryModelWithAttributeDataResult{}
+
+	searchCond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
+	if nil != err {
+		blog.Errorf("request(%s): it is failed to convert the condition (%v) from mapstr into condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
+		return dataResult, err
+	}
+
+	totalCount, err := m.count(ctx, searchCond)
+	if nil != err {
+		blog.Errorf("request(%s): it is failed to get the count by the condition (%v), error info is %s", ctx.ReqID, searchCond.ToMapStr(), err.Error())
+		return dataResult, err
+	}
+
+	dataResult.Count = int64(totalCount)
+	modelItems, err := m.search(ctx, searchCond)
+	if nil != err {
+		blog.Errorf("request(%s): it is faield to search models by the condition (%v), error info is %s", ctx.ReqID, searchCond.ToMapStr(), err.Error())
+		return dataResult, err
+	}
+
+	for _, modelItem := range modelItems {
+
+		queryAttributeCond := mongo.NewCondition()
+		queryAttributeCond.Element(mongo.Field(metadata.AttributeFieldObjectID).Eq(modelItem.ObjectID))
+		queryAttributeCond.Element(mongo.Field(metadata.AttributeFieldSupplierAccount).Eq(modelItem.OwnerID))
+		attributeItems, err := m.modelAttribute.search(ctx, queryAttributeCond)
+		if nil != err {
+			blog.Errorf("request(%s):it is failed to search the object(%s)'s attributes, error info is %s", modelItem.ObjectID, err.Error())
+			return dataResult, err
+		}
+		dataResult.Info = append(dataResult.Info, metadata.SearchModelInfo{Spec: modelItem, Attributes: attributeItems})
+	}
+
+	return dataResult, nil
+}

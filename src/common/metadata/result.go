@@ -106,6 +106,12 @@ type QueryModelDataResult struct {
 	Info  []Object `json:"info"`
 }
 
+// QueryModelWithAttributeDataResult used to define the model with attribute query
+type QueryModelWithAttributeDataResult struct {
+	Count int64             `json:"count"`
+	Info  []SearchModelInfo `json:"info"`
+}
+
 // QueryModelAttributeDataResult search model attr data result
 type QueryModelAttributeDataResult struct {
 	Count int64       `json:"count"`
@@ -133,17 +139,11 @@ type ReadModelAttrResult struct {
 //ReadModelClassifitionResult  read model classifition api http response return result struct
 type ReadModelClassifitionResult struct {
 	BaseResp `json:",inline"`
-	Data     struct {
-		Count int              `json:"count"`
-		Info  []Classification `json:"info"`
-	} `json:"data"`
+	Data     QueryModelClassificationDataResult `json:"data"`
 }
 
 //ReadModelResult  read model classifition api http response return result struct
 type ReadModelResult struct {
 	BaseResp `json:",inline"`
-	Data     struct {
-		Count int               `json:"count"`
-		Info  []SearchModelInfo `json:"info"`
-	} `json:"data"`
+	Data     QueryModelWithAttributeDataResult `json:"data"`
 }
