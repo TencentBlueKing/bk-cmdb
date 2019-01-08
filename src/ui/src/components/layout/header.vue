@@ -38,8 +38,8 @@
                     </a>
                 </div>
             </div>
-            <div class="admin" v-if="admin">
-                {{isAdminView ? $t('Common["管理员后台"]') : $t('Common["返回业务管理"]')}}
+            <div class="admin" v-if="admin" @click="toggleAdminView">
+                {{isAdminView ? $t('Common["返回业务管理"]') : $t('Common["管理员后台"]')}}
             </div>
         </div>
     </header>
@@ -68,6 +68,9 @@
             }
         },
         methods: {
+            toggleAdminView () {
+                this.$store.commit('setAdminView', !this.isAdminView)
+            },
             // 回退路由
             back () {
                 if (!this.showBack && this.$route.meta.returnPath) {

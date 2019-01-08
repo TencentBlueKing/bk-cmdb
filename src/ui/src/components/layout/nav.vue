@@ -1,5 +1,5 @@
 <template>
-    <nav class="nav-layout admin-view"
+    <nav class="nav-layout"
         :class="{'sticked': navStick, 'admin-view': isAdminView}"
         @mouseenter="handleMouseEnter"
         @mouseleave="handleMouseLeave">
