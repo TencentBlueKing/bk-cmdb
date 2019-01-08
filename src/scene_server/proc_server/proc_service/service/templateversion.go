@@ -13,7 +13,6 @@
 package service
 
 import (
-	"context"
 	"net/http"
 	"strconv"
 	"time"
@@ -22,7 +21,6 @@ import (
 	"configcenter/src/common/blog"
 	types "configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/scene_server/validator"
 
 	"github.com/emicklei/go-restful"
@@ -30,14 +28,14 @@ import (
 )
 
 func (ps *ProcServer) SearchTemplateVersion(req *restful.Request, resp *restful.Response) {
-	language := util.GetLanguage(req.Request.Header)
-	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
+	srvData := ps.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
 
 	ownerID := req.PathParameter(common.BKOwnerIDField)
 	appIDStr := req.PathParameter(common.BKAppIDField)
 	appID, err := strconv.ParseInt(appIDStr, 10, 64)
 	if nil != err {
-		blog.Errorf("search template version failed! derr: %v", err)
+		blog.Errorf("search template version failed! derr: %v,rid:%s", err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
@@ -45,7 +43,7 @@ func (ps *ProcServer) SearchTemplateVersion(req *restful.Request, resp *restful.
 	templateIDStr := req.PathParameter(common.BKTemlateIDField)
 	templateID, err := strconv.ParseInt(templateIDStr, 10, 64)
 	if nil != err {
-		blog.Errorf("search template version failed! derr: %v", err)
+		blog.Errorf("search template version failed! derr: %v,rid:%s", err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
@@ -53,7 +51,7 @@ func (ps *ProcServer) SearchTemplateVersion(req *restful.Request, resp *restful.
 	params := types.MapStr{}
 	conditon := types.MapStr{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
-		blog.Errorf("decode request body err: %v", err)
+		blog.Errorf("decode request body err: %v,rid:%s", err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
@@ -71,10 +69,14 @@ func (ps *ProcServer) SearchTemplateVersion(req *restful.Request, resp *restful.
 	input.Limit = common.BKNoLimit
 	input.Sort = ""
 
-	ret, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDTempVersion, req.Request.Header, &input)
-	if err != nil || !ret.Result {
-		blog.Errorf("query config template failed by processcontroll. err: %v, errcode: %d, errmsg: %s", err, ret.Code, ret.ErrMsg)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+	ret, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(srvData.ctx, common.BKInnerObjIDTempVersion, srvData.header, &input)
+	if err != nil {
+		blog.Errorf("SearchTemplateVersion SearchObjects http do error,err:%s,input:%+v,query:%+v,rid:%s", err.Error(), params, input, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+	}
+	if !ret.Result {
+		blog.Errorf("SearchTemplateVersion  SearchObjects http response error,err code:%d,err msg:%s,input:%+v,query:%+v,rid:%s", ret.Code, ret.ErrMsg, params, input, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(ret.Code, ret.ErrMsg)})
 		return
 	}
 
@@ -82,15 +84,17 @@ func (ps *ProcServer) SearchTemplateVersion(req *restful.Request, resp *restful.
 }
 
 func (ps *ProcServer) CreateTemplateVersion(req *restful.Request, resp *restful.Response) {
-	language := util.GetLanguage(req.Request.Header)
-	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
-	pHeader := req.Request.Header
-	user := util.GetUser(pHeader)
+	srvData := ps.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
+
+	header := srvData.header
+	user := srvData.user
+
 	ownerID := req.PathParameter(common.BKOwnerIDField)
 	appIDStr := req.PathParameter(common.BKAppIDField)
 	appID, err := strconv.ParseInt(appIDStr, 10, 64)
 	if nil != err {
-		blog.Errorf("create config template failed! derr: %v", err)
+		blog.Errorf("create config template failed! derr: %v,rid:%s", err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
@@ -98,7 +102,7 @@ func (ps *ProcServer) CreateTemplateVersion(req *restful.Request, resp *restful.
 	templateIDStr := req.PathParameter(common.BKTemlateIDField)
 	templateID, err := strconv.ParseInt(templateIDStr, 10, 64)
 	if nil != err {
-		blog.Errorf("create config template failed! derr: %v", err)
+		blog.Errorf("create config template failed! derr: %v,rid:%s", err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
@@ -106,7 +110,7 @@ func (ps *ProcServer) CreateTemplateVersion(req *restful.Request, resp *restful.
 	var params meta.TemplateVersion
 
 	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
-		blog.Errorf("create config version failed! decode request body err: %v", err)
+		blog.Errorf("create config version failed! decode request body err: %v,rid:%s", err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
@@ -117,19 +121,23 @@ func (ps *ProcServer) CreateTemplateVersion(req *restful.Request, resp *restful.
 		common.BKContentField:     params.Content,
 		common.BKStatusField:      params.Status,
 		common.BKDescriptionField: params.Description}
-	valid := validator.NewValidMap(ownerID, common.BKInnerObjIDTempVersion, pHeader, ps.Engine)
+	valid := validator.NewValidMap(ownerID, common.BKInnerObjIDTempVersion, srvData.header, ps.Engine)
 	if err := valid.ValidMap(input, common.ValidCreate, 0); err != nil {
-		blog.Errorf("fail to valid input parameters. err:%s", err.Error())
+		blog.Errorf("fail to valid input parameters. err:%s,input:%+v,params:%+v,rid:%s", err.Error(), params, input, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommFieldNotValid)})
 		return
 	}
 
 	input[common.CreateTimeField] = time.Now().UTC()
 
-	ret, err := ps.CoreAPI.ObjectController().Instance().CreateObject(context.Background(), common.BKInnerObjIDTempVersion, pHeader, input)
-	if nil != err || !ret.Result {
-		blog.Errorf("create template version failed by  input :%v, return:%v, err: %v", input, ret, err)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcCreateTemplateFail)})
+	ret, err := ps.CoreAPI.ObjectController().Instance().CreateObject(srvData.ctx, common.BKInnerObjIDTempVersion, header, input)
+	if err != nil {
+		blog.Errorf("CreateTemplateVersion CreateObject http do error,err:%s,input:%+v,query:%+v,rid:%s", err.Error(), params, input, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+	}
+	if !ret.Result {
+		blog.Errorf("CreateTemplateVersion  CreateObject http response error,err code:%d,err msg:%s,input:%+v,query:%+v,rid:%s", ret.Code, ret.ErrMsg, params, input, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(ret.Code, ret.ErrMsg)})
 		return
 	}
 
@@ -148,10 +156,14 @@ func (ps *ProcServer) CreateTemplateVersion(req *restful.Request, resp *restful.
 			common.BKOwnerIDField:   ownerID,
 			common.BKStatusField:    common.TemplateStatusOnline}
 		input := types.MapStr{"condition": condition, "data": data}
-		ret, err := ps.CoreAPI.ObjectController().Instance().UpdateObject(context.Background(), common.BKInnerObjIDTempVersion, pHeader, input)
-		if nil != err || !ret.Result {
-			blog.Errorf("create config template failed by  input :%v, return:%v, err: %v", input, ret, err)
-			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcCreateTemplateFail)})
+		ret, err := ps.CoreAPI.ObjectController().Instance().UpdateObject(srvData.ctx, common.BKInnerObjIDTempVersion, header, input)
+		if err != nil {
+			blog.Errorf("CreateTemplateVersion UpdateObject http do error,err:%s,input:%+v,query:%+v,rid:%s", err.Error(), params, input, srvData.rid)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+		}
+		if !ret.Result {
+			blog.Errorf("CreateTemplateVersion  UpdateObject http response error,err code:%d,err msg:%s,input:%+v,query:%+v,rid:%s", ret.Code, ret.ErrMsg, params, input, srvData.rid)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(ret.Code, ret.ErrMsg)})
 			return
 		}
 	}
@@ -160,15 +172,16 @@ func (ps *ProcServer) CreateTemplateVersion(req *restful.Request, resp *restful.
 }
 
 func (ps *ProcServer) UpdateTemplateVersion(req *restful.Request, resp *restful.Response) {
-	language := util.GetLanguage(req.Request.Header)
-	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
-	pHeader := req.Request.Header
-	ownerID := req.PathParameter(common.BKOwnerIDField)
+	srvData := ps.newSrvComm(req.Request.Header)
+
+	defErr := srvData.ccErr
+	header := srvData.header
+	ownerID := srvData.ownerID
 
 	appIDStr := req.PathParameter(common.BKAppIDField)
 	appID, err := strconv.ParseInt(appIDStr, 10, 64)
 	if nil != err {
-		blog.Errorf("update config template failed! derr: %v", err)
+		blog.Errorf("update config template failed! derr: %v,rid:%s", err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
@@ -176,7 +189,7 @@ func (ps *ProcServer) UpdateTemplateVersion(req *restful.Request, resp *restful.
 	templateIDStr := req.PathParameter(common.BKTemlateIDField)
 	templateID, err := strconv.ParseInt(templateIDStr, 10, 64)
 	if nil != err {
-		blog.Errorf("update config template failed! derr: %v", err)
+		blog.Errorf("update config template failed! derr: %v,appIDStr:%s,rid:%s", appIDStr, err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
@@ -184,14 +197,14 @@ func (ps *ProcServer) UpdateTemplateVersion(req *restful.Request, resp *restful.
 
 	versionID, err := strconv.ParseInt(versionIDStr, 10, 64)
 	if nil != err {
-		blog.Errorf("update config template failed! derr: %v", err)
+		blog.Errorf("update config template failed! derr: %v,versionIDStr:%s,rid:%s", err, versionIDStr, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
 	var params meta.TemplateVersion
 
 	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
-		blog.Errorf("create config version failed! decode request body err: %v", err)
+		blog.Errorf("create config version failed! decode request body err: %v,rid:%s", err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
@@ -202,10 +215,14 @@ func (ps *ProcServer) UpdateTemplateVersion(req *restful.Request, resp *restful.
 		common.BKVersionIDField: versionID}
 	input := types.MapStr{"condition": condition, "data": params}
 
-	ret, err := ps.CoreAPI.ObjectController().Instance().UpdateObject(context.Background(), common.BKInnerObjIDTempVersion, pHeader, input)
-	if nil != err || !ret.Result {
-		blog.Errorf("create config template failed by  input :%v, return:%v, err: %v", input, ret, err)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcCreateTemplateFail)})
+	ret, err := ps.CoreAPI.ObjectController().Instance().UpdateObject(srvData.ctx, common.BKInnerObjIDTempVersion, header, input)
+	if err != nil {
+		blog.Errorf("UpdateTemplateVersion UpdateObject http do error,err:%s,input:%+v,query:%+v,rid:%s", err.Error(), params, input, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+	}
+	if !ret.Result {
+		blog.Errorf("UpdateTemplateVersion  UpdateObject http response error,err code:%d,err msg:%s,input:%+v,query:%+v,rid:%s", ret.Code, ret.ErrMsg, params, input, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(ret.Code, ret.ErrMsg)})
 		return
 	}
 
@@ -219,10 +236,14 @@ func (ps *ProcServer) UpdateTemplateVersion(req *restful.Request, resp *restful.
 			common.BKStatusField:    common.TemplateStatusOnline}
 
 		input := types.MapStr{"condition": condition, "data": data}
-		ret, err := ps.CoreAPI.ObjectController().Instance().UpdateObject(context.Background(), common.BKInnerObjIDTempVersion, pHeader, input)
-		if nil != err || !ret.Result {
-			blog.Errorf("update template version failed by  input :%v, return:%v, err: %v", input, ret, err)
-			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcCreateTemplateFail)})
+		ret, err := ps.CoreAPI.ObjectController().Instance().UpdateObject(srvData.ctx, common.BKInnerObjIDTempVersion, srvData.header, input)
+		if err != nil {
+			blog.Errorf("UpdateTemplateVersion UpdateObject http do error,err:%s,input:%+v,query:%+v,rid:%s", err.Error(), params, input, srvData.rid)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+		}
+		if !ret.Result {
+			blog.Errorf("UpdateTemplateVersion  UpdateObject http response error,err code:%d,err msg:%s,input:%+v,query:%+v,rid:%s", ret.Code, ret.ErrMsg, params, input, srvData.rid)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(ret.Code, ret.ErrMsg)})
 			return
 		}
 	}

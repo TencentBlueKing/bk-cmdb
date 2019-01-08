@@ -14,7 +14,6 @@ package rdapi
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -26,7 +25,6 @@ import (
 	"configcenter/src/common/util"
 
 	restful "github.com/emicklei/go-restful"
-	"github.com/rs/xid"
 )
 
 var (
@@ -284,18 +282,11 @@ func createAPIRspStr(errcode int, info interface{}) (string, error) {
 }
 
 func generateHttpHeaderRID(req *restful.Request, resp *restful.Response) {
-	unused := "0000"
 	cid := util.GetHTTPCCRequestID(req.Request.Header)
 	if "" == cid {
-		cid = generateRID(unused)
-		req.Request.Header.Set(common.BKHTTPCCRequestID, cid)
+		cid = util.GenerateRID()
 	}
 	// todo support esb request id
 
 	resp.Header().Set(common.BKHTTPCCRequestID, cid)
-}
-
-func generateRID(unused string) string {
-	id := xid.New()
-	return fmt.Sprintf("cc%s%s", unused, id.String())
 }
