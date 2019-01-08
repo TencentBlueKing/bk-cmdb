@@ -289,7 +289,7 @@ func (r *Request) Do() *Result {
 				}
 				body = data
 			}
-			blog.V(4).Infof("http request uri:%s body:%s, rid:%s", r.subPath, string(body), commonUtil.GetHTTPCCRequestID(r.headers))
+			blog.V(4).Infof("http %s %s body:%s, rid:%s", string(r.verb), r.subPath, string(body), commonUtil.GetHTTPCCRequestID(r.headers))
 			result.Body = body
 			result.StatusCode = resp.StatusCode
 			if r.peek {

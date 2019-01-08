@@ -118,11 +118,6 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 }
 
 func (cli *inst) Create() error {
-
-	if cli.target.IsCommon() {
-		cli.datas.Set(common.BKObjIDField, cli.target.Object().ObjectID)
-	}
-
 	rsp, err := cli.clientSet.CoreService().Instance().CreateInstance(context.Background(), cli.params.Header, cli.target.GetObjectID(), &metadata.CreateModelInstance{Data: cli.datas})
 	if nil != err {
 		blog.Errorf("failed to create object instance, error info is %s", err.Error())
