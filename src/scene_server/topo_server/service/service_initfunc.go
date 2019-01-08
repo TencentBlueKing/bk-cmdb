@@ -28,7 +28,7 @@ func (s *topoService) initAssociation() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/topo/model/mainline", HandlerFunc: s.CreateMainLineObject})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/topo/model/mainline/owners/{owner_id}/objectids/{bk_obj_id}", HandlerFunc: s.DeleteMainLineObject})
 	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/model/{owner_id}", HandlerFunc: s.SearchMainLineObjectTopo})
-	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/model/{owner_id}/{cls_id}/{obj_id}", HandlerFunc: s.SearchObjectByClassificationID})
+	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/model/{owner_id}/{cls_id}/{bk_obj_id}", HandlerFunc: s.SearchObjectByClassificationID})
 	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/inst/{owner_id}/{bk_biz_id}", HandlerFunc: s.SearchBusinessTopo})
 	// TODO: delete this api, it's not used by front.
 	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/inst/child/{owner_id}/{obj_id}/{app_id}/{inst_id}", HandlerFunc: s.SearchMainLineChildInstTopo})
@@ -224,5 +224,6 @@ func (s *topoService) initService() {
 	s.initBusinessObjectUnique()
 	s.initBusinessObjectAttrGroup()
 	s.initBusinessAssociation()
+	s.initBusinessGraphics()
 
 }

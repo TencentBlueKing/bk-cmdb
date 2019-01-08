@@ -13,18 +13,18 @@
 package service
 
 import (
-    "strconv"
-    "strings"
+	"strconv"
+	"strings"
 
-    "configcenter/src/common"
-    "configcenter/src/common/blog"
-    "configcenter/src/common/condition"
-    "configcenter/src/common/mapstr"
-    frtypes "configcenter/src/common/mapstr"
-    "configcenter/src/common/metadata"
-    paraparse "configcenter/src/common/paraparse"
-    "configcenter/src/scene_server/topo_server/core/operation"
-    "configcenter/src/scene_server/topo_server/core/types"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
+	"configcenter/src/common/mapstr"
+	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
+	paraparse "configcenter/src/common/paraparse"
+	"configcenter/src/scene_server/topo_server/core/operation"
+	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // CreateInst create a new inst
@@ -286,6 +286,10 @@ func (s *topoService) SearchInstByObject(params types.ContextParams, pathParams,
 func (s *topoService) SearchInstByAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	objID := pathParams("obj_id")
+
+	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
+	data.Remove(metadata.BKMetadata)
+
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
@@ -345,6 +349,9 @@ func (s *topoService) SearchInstChildTopo(params types.ContextParams, pathParams
 		return nil, err
 	}
 
+	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
+	data.Remove(metadata.BKMetadata)
+
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
@@ -372,6 +379,9 @@ func (s *topoService) SearchInstTopo(params types.ContextParams, pathParams, que
 	if nil != err {
 		return nil, err
 	}
+
+	params.MetaData = metadata.NewMetaDataFromInterface(data[metadata.BKMetadata])
+	data.Remove(metadata.BKMetadata)
 
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
