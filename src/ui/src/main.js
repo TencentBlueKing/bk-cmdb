@@ -23,17 +23,6 @@ Vue.use(clipboard)
 Vue.mixin(cmdbRequestMixin)
 Vue.mixin(cmdbClassifyMixin)
 Vue.mixin(cmdbAuthorityMixin)
-api.beforeRequest = function (method, url, data, config) {
-    if (config.injectMetadata) {
-        Object.assign(data, {
-            metadata: {
-                label: {
-                    'bk_biz_id': parseInt(window.localStorage.getItem('selectedBusiness'))
-                }
-            }
-        })
-    }
-}
 Vue.prototype.$http = api
 Vue.prototype.$tools = tools
 /* eslint-disable no-new */
