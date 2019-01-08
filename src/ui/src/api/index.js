@@ -69,7 +69,7 @@ function getRequest (method) {
     if (methodsWithData.includes(method)) {
         return (url, data, config) => {
             if (typeof $http.beforeRequest === 'function') {
-                $http.beforeRequest(method, url, data, config)
+                $http.beforeRequest(method, url, data, config || {})
             }
             return getPromise(method, url, data, config)
         }
