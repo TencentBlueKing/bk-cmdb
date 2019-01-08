@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
 	restful "github.com/emicklei/go-restful"
@@ -289,4 +290,15 @@ func generateHttpHeaderRID(req *restful.Request, resp *restful.Response) {
 	// todo support esb request id
 
 	resp.Header().Set(common.BKHTTPCCRequestID, cid)
+}
+
+func ServiceErrorHandler(err restful.ServiceError, req *restful.Request, resp *restful.Response) {
+	blog.Errorf("HTTP ERROR: %v, HTTP MESSAGE: %v, RequestURI: %s %s", err.Code, err.Message, req.Request.Method, req.Request.RequestURI)
+	ret := metadata.BaseResp{
+		Result: false,
+		Code:   -1,
+		ErrMsg: fmt.Sprintf("HTTP ERROR: %v, HTTP MESSAGE: %v, RequestURI: %s %s", err.Code, err.Message, req.Request.Method, req.Request.RequestURI),
+	}
+
+	resp.WriteHeaderAndJson(err.Code, ret, "application/json")
 }

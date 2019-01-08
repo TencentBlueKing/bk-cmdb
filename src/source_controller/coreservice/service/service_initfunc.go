@@ -37,7 +37,7 @@ func (s *coreService) initModel() {
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/model", HandlerFunc: s.UpdateModel})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/model", HandlerFunc: s.DeleteModel})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/model/cascade", HandlerFunc: s.CascadeDeleteModel})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/model}", HandlerFunc: s.SearchModel})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/model", HandlerFunc: s.SearchModel})
 
 	// init model attribute groups methods
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/model/{bk_obj_id/group", HandlerFunc: s.CreateModelAttributeGroup})

@@ -218,7 +218,7 @@ func (c *CC) syncProc() {
 	procPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, c.procName)
 	data, err := c.disc.Read(procPath)
 	if err != nil {
-		blog.Errorf("sync process config failed, err: %v", err)
+		blog.Errorf("sync process config failed, node: %s, err: %v", procPath, err)
 		return
 	}
 
@@ -251,7 +251,7 @@ func (c *CC) syncLang() {
 	blog.V(5).Infof("start sync lang config from config center.")
 	data, err := c.disc.Read(types.CC_SERVLANG_BASEPATH)
 	if err != nil {
-		blog.Errorf("sync process config failed, err: %v", err)
+		blog.Errorf("sync process config failed, node: %s, err: %v", types.CC_SERVLANG_BASEPATH, err)
 		return
 	}
 
@@ -284,7 +284,7 @@ func (c *CC) syncErr() {
 	blog.V(5).Infof("start sync error config from config center.")
 	data, err := c.disc.Read(types.CC_SERVERROR_BASEPATH)
 	if err != nil {
-		blog.Errorf("sync process config failed, err: %v", err)
+		blog.Errorf("sync process config failed, node: %s, err: %v", types.CC_SERVERROR_BASEPATH, err)
 		return
 	}
 
