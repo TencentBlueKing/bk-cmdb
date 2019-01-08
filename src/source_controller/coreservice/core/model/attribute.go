@@ -30,12 +30,18 @@ type modelAttribute struct {
 
 func (m *modelAttribute) CreateModelAttributes(ctx core.ContextParams, objID string, inputParam metadata.CreateModelAttributes) (dataResult *metadata.CreateManyDataResult, err error) {
 
-	if err := m.model.isValid(ctx, objID); nil != err {
-		blog.Errorf("request(%s): it is failed, to check the model(%s) if it is valid, error info is %s", ctx.ReqID, objID, err.Error())
-		return &metadata.CreateManyDataResult{}, err
+	dataResult = &metadata.CreateManyDataResult{
+		CreateManyInfoResult: metadata.CreateManyInfoResult{
+			Created:    []metadata.CreatedDataResult{},
+			Repeated:   []metadata.RepeatedDataResult{},
+			Exceptions: []metadata.ExceptionResult{},
+		},
 	}
 
-	dataResult = &metadata.CreateManyDataResult{}
+	if err := m.model.isValid(ctx, objID); nil != err {
+		blog.Errorf("request(%s): it is failed, to check the model(%s) if it is valid, error info is %s", ctx.ReqID, objID, err.Error())
+		return dataResult, err
+	}
 
 	addExceptionFunc := func(idx int64, err errors.CCErrorCoder, attr *metadata.Attribute) {
 		dataResult.CreateManyInfoResult.Exceptions = append(dataResult.CreateManyInfoResult.Exceptions, metadata.ExceptionResult{
@@ -82,11 +88,15 @@ func (m *modelAttribute) CreateModelAttributes(ctx core.ContextParams, objID str
 
 func (m *modelAttribute) SetModelAttributes(ctx core.ContextParams, objID string, inputParam metadata.SetModelAttributes) (dataResult *metadata.SetDataResult, err error) {
 
-	if err := m.model.isValid(ctx, objID); nil != err {
-		return &metadata.SetDataResult{}, err
+	dataResult = &metadata.SetDataResult{
+		Created:    []metadata.CreatedDataResult{},
+		Updated:    []metadata.UpdatedDataResult{},
+		Exceptions: []metadata.ExceptionResult{},
 	}
 
-	dataResult = &metadata.SetDataResult{}
+	if err := m.model.isValid(ctx, objID); nil != err {
+		return dataResult, err
+	}
 
 	addExceptionFunc := func(idx int64, err errors.CCErrorCoder, attr *metadata.Attribute) {
 		dataResult.Exceptions = append(dataResult.Exceptions, metadata.ExceptionResult{
@@ -179,6 +189,10 @@ func (m *modelAttribute) DeleteModelAttributes(ctx core.ContextParams, objID str
 
 func (m *modelAttribute) SearchModelAttributes(ctx core.ContextParams, objID string, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeDataResult, error) {
 
+	dataResult := &metadata.QueryModelAttributeDataResult{
+		Info: []metadata.Attribute{},
+	}
+
 	if err := m.model.isValid(ctx, objID); nil != err {
 		blog.Errorf("request(%s): it is failed to check if the model(%s) is valid, error info is %s", ctx.ReqID, objID, err.Error())
 		return &metadata.QueryModelAttributeDataResult{}, err
@@ -197,6 +211,7 @@ func (m *modelAttribute) SearchModelAttributes(ctx core.ContextParams, objID str
 		return &metadata.QueryModelAttributeDataResult{}, err
 	}
 
-	dataResult := &metadata.QueryModelAttributeDataResult{Count: int64(len(attrResult)), Info: attrResult}
+	dataResult.Count = int64(len(attrResult))
+	dataResult.Info = attrResult
 	return dataResult, nil
 }
