@@ -81,9 +81,8 @@ func (a *association) DeleteMainlineAssociaton(params types.ContextParams, objID
 func (a *association) SearchMainlineAssociationTopo(params types.ContextParams, targetObj model.Object) ([]*metadata.MainlineObjectTopo, error) {
 
 	results := make([]*metadata.MainlineObjectTopo, 0)
-	tObject := targetObj.Object()
 	for {
-
+		tObject := targetObj.Object()
 		tmpRst := &metadata.MainlineObjectTopo{}
 		tmpRst.ObjID = tObject.ObjectID
 		tmpRst.ObjName = tObject.ObjectName
