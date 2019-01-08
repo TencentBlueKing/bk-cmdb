@@ -19,6 +19,7 @@ import (
 	"runtime/debug"
 
 	"configcenter/src/common/blog"
+	"configcenter/src/common/version"
 )
 
 // Manager manage the porter goroutine
@@ -33,7 +34,9 @@ func NewManager() *Manager {
 		porters: map[string]Porter{},
 	}
 	go man.run()
-	go man.mockServer()
+	if version.CCRunMode != version.CCRunModeProduct {
+		go man.mockServer()
+	}
 	return man
 }
 

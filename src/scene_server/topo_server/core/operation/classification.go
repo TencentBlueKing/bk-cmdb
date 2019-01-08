@@ -15,13 +15,12 @@ package operation
 import (
 	"context"
 
-	"configcenter/src/common"
-	"configcenter/src/common/metadata"
-
 	"configcenter/src/apimachinery"
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
-	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -32,11 +31,11 @@ type ClassificationOperationInterface interface {
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, asst AssociationOperationInterface, obj ObjectOperationInterface)
 
 	FindSingleClassification(params types.ContextParams, classificationID string) (model.Classification, error)
-	CreateClassification(params types.ContextParams, data frtypes.MapStr) (model.Classification, error)
-	DeleteClassification(params types.ContextParams, id int64, data frtypes.MapStr, cond condition.Condition) error
+	CreateClassification(params types.ContextParams, data mapstr.MapStr) (model.Classification, error)
+	DeleteClassification(params types.ContextParams, id int64, data mapstr.MapStr, cond condition.Condition) error
 	FindClassification(params types.ContextParams, cond condition.Condition) ([]model.Classification, error)
 	FindClassificationWithObjects(params types.ContextParams, cond condition.Condition) ([]metadata.ClassificationWithObject, error)
-	UpdateClassification(params types.ContextParams, data frtypes.MapStr, id int64, cond condition.Condition) error
+	UpdateClassification(params types.ContextParams, data mapstr.MapStr, id int64, cond condition.Condition) error
 }
 
 // NewClassificationOperation create a new classification operation instance
@@ -77,7 +76,7 @@ func (c *classification) FindSingleClassification(params types.ContextParams, cl
 	return nil, params.Err.Error(common.CCErrTopoObjectClassificationSelectFailed)
 }
 
-func (c *classification) CreateClassification(params types.ContextParams, data frtypes.MapStr) (model.Classification, error) {
+func (c *classification) CreateClassification(params types.ContextParams, data mapstr.MapStr) (model.Classification, error) {
 
 	cls := c.modelFactory.CreateClassification(params)
 
@@ -96,7 +95,7 @@ func (c *classification) CreateClassification(params types.ContextParams, data f
 	return cls, nil
 }
 
-func (c *classification) DeleteClassification(params types.ContextParams, id int64, data frtypes.MapStr, cond condition.Condition) error {
+func (c *classification) DeleteClassification(params types.ContextParams, id int64, data mapstr.MapStr, cond condition.Condition) error {
 
 	if 0 < id {
 		if nil == cond {
@@ -126,35 +125,58 @@ func (c *classification) DeleteClassification(params types.ContextParams, id int
 		}
 	}
 
-	rsp, err := c.clientSet.ObjectController().Meta().DeleteClassification(context.Background(), id, params.Header, cond.ToMapStr())
+	rsp, err := c.clientSet.CoreService().Model().DeleteModelClassification(context.Background(), params.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s", err.Error())
 		return err
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("failed to delete the classification, error info is %s", rsp.ErrMsg)
-		return params.Err.Error(rsp.Code)
+		return params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	return nil
 }
 
 func (c *classification) FindClassificationWithObjects(params types.ContextParams, cond condition.Condition) ([]metadata.ClassificationWithObject, error) {
-
-	rsp, err := c.clientSet.ObjectController().Meta().SelectClassificationWithObject(context.Background(), params.SupplierAccount, params.Header, cond.ToMapStr())
+	rsp, err := c.clientSet.CoreService().Model().ReadModelClassification(context.Background(), params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s", err.Error())
 		return nil, err
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("[operation-cls] failed to search the classification by the condition(%#v), error info is %s", cond.ToMapStr(), rsp.ErrMsg)
-		return nil, params.Err.Error(rsp.Code)
+		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	for idx, clsItem := range rsp.Data {
-		rsp.Data[idx].AsstObjects = make(map[string][]metadata.Object)
+	datas := []metadata.ClassificationWithObject{}
+	for _, cls := range rsp.Data.Info {
+		clsItem := metadata.ClassificationWithObject{
+			Classification: cls,
+		}
+		queryObjectCond := condition.CreateCondition().Field(common.BKClassificationIDField).Eq(cls.ClassificationID)
+		queryObjectResp, err := c.clientSet.CoreService().Model().ReadModel(context.Background(), params.Header, &metadata.QueryCondition{Condition: queryObjectCond.ToMapStr()})
+		if nil != err {
+			blog.Errorf("[operation-cls]failed to request the object controller, error info is %s", err.Error())
+			return nil, err
+		}
+
+		if !queryObjectResp.Result {
+			blog.Errorf("[operation-cls] failed to search the classification by the condition(%#v), error info is %s", cond.ToMapStr(), queryObjectResp.ErrMsg)
+			return nil, params.Err.New(queryObjectResp.Code, queryObjectResp.ErrMsg)
+		}
+
+		for _, info := range queryObjectResp.Data.Info {
+			clsItem.Objects = append(clsItem.Objects, info.Spec)
+		}
+
+		datas = append(datas, clsItem)
+	}
+
+	for idx, clsItem := range datas {
+		datas[idx].AsstObjects = make(map[string][]metadata.Object)
 		for _, objItem := range clsItem.Objects {
 			asstItems, err := c.asst.SearchObjectAssociation(params, objItem.ObjectID)
 			if nil != err {
@@ -164,7 +186,6 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 			for _, asstItem := range asstItems {
 
 				searchObjCond := condition.CreateCondition()
-				searchObjCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 				searchObjCond.Field(common.BKObjIDField).Eq(asstItem.AsstObjID)
 				asstObjs, err := c.obj.FindObject(params, searchObjCond)
 				if nil != err {
@@ -172,7 +193,7 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 				}
 
 				for _, obj := range asstObjs {
-					rsp.Data[idx].AsstObjects[objItem.ObjectID] = append(rsp.Data[idx].AsstObjects[objItem.ObjectID], obj.Object())
+					datas[idx].AsstObjects[objItem.ObjectID] = append(datas[idx].AsstObjects[objItem.ObjectID], obj.Object())
 				}
 
 			}
@@ -180,27 +201,26 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 
 	}
 
-	return rsp.Data, nil
+	return datas, nil
 }
 
 func (c *classification) FindClassification(params types.ContextParams, cond condition.Condition) ([]model.Classification, error) {
-
-	rsp, err := c.clientSet.ObjectController().Meta().SelectClassifications(context.Background(), params.Header, cond.ToMapStr())
+	rsp, err := c.clientSet.CoreService().Model().ReadModelClassification(context.Background(), params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s", err.Error())
 		return nil, err
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("[operation-cls] failed to search the clssificaiton by the condition(%#v), error info is %s", cond.ToMapStr(), rsp.ErrMsg)
-		return nil, params.Err.Error(rsp.Code)
+		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	clsItems := model.CreateClassification(params, c.clientSet, rsp.Data)
+	clsItems := model.CreateClassification(params, c.clientSet, rsp.Data.Info)
 	return clsItems, nil
 }
 
-func (c *classification) UpdateClassification(params types.ContextParams, data frtypes.MapStr, id int64, cond condition.Condition) error {
+func (c *classification) UpdateClassification(params types.ContextParams, data mapstr.MapStr, id int64, cond condition.Condition) error {
 
 	cls := c.modelFactory.CreateClassification(params)
 	if _, err := cls.Parse(data); err != nil {

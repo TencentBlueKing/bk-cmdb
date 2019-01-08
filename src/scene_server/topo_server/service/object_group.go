@@ -18,13 +18,14 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/condition"
-	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // CreateObjectGroup create a new object group
-func (s *topoService) CreateObjectGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+
+func (s *topoService) CreateObjectGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	data.Remove(metadata.BKMetadata)
 	rsp, err := s.core.GroupOperation().CreateObjectGroup(params, data)
 	if nil != err {
@@ -35,7 +36,7 @@ func (s *topoService) CreateObjectGroup(params types.ContextParams, pathParams, 
 }
 
 // UpdateObjectGroup update the object group information
-func (s *topoService) UpdateObjectGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) UpdateObjectGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	cond := &metadata.UpdateGroupCondition{}
 
@@ -54,7 +55,7 @@ func (s *topoService) UpdateObjectGroup(params types.ContextParams, pathParams, 
 }
 
 // DeleteObjectGroup delete the object group
-func (s *topoService) DeleteObjectGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) DeleteObjectGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	gid, err := strconv.ParseInt(pathParams("id"), 10, 64)
 	if nil != err {
 		return nil, err
@@ -70,20 +71,20 @@ func (s *topoService) DeleteObjectGroup(params types.ContextParams, pathParams, 
 	return nil, nil
 }
 
-func (s *topoService) ParseUpdateObjectAttributeGroupInput(data []byte) (frtypes.MapStr, error) {
+func (s *topoService) ParseUpdateObjectAttributeGroupInput(data []byte) (mapstr.MapStr, error) {
 
 	datas := []metadata.PropertyGroupObjectAtt{}
 	err := json.Unmarshal(data, &datas)
 	if nil != err {
 		return nil, err
 	}
-	result := frtypes.MapStr{}
+	result := mapstr.MapStr{}
 	result.Set("origin", datas)
 	return result, nil
 }
 
 // UpdateObjectAttributeGroup update the object attribute belongs to group information
-func (s *topoService) UpdateObjectAttributeGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) UpdateObjectAttributeGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	datas := make([]metadata.PropertyGroupObjectAtt, 0)
 	val, exists := data.Get("origin")
@@ -102,9 +103,9 @@ func (s *topoService) UpdateObjectAttributeGroup(params types.ContextParams, pat
 }
 
 // DeleteObjectAttributeGroup delete the object attribute belongs to group information
-func (s *topoService) DeleteObjectAttributeGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	data.Remove(metadata.BKMetadata)
 
+func (s *topoService) DeleteObjectAttributeGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	data.Remove(metadata.BKMetadata)
 	err := s.core.GroupOperation().DeleteObjectAttributeGroup(params, pathParams("bk_object_id"), pathParams("property_id"), pathParams("group_id"))
 	if nil != err {
 		return nil, err
@@ -114,7 +115,7 @@ func (s *topoService) DeleteObjectAttributeGroup(params types.ContextParams, pat
 }
 
 // SearchGroupByObject search the groups by the object
-func (s *topoService) SearchGroupByObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchGroupByObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 

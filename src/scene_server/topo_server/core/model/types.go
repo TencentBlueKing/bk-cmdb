@@ -13,7 +13,7 @@
 package model
 
 import (
-	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstr"
 	metadata "configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
@@ -33,8 +33,8 @@ const (
 type Operation interface {
 	IsExists() (bool, error)
 	Create() error
-	Update(data frtypes.MapStr) error
-	Save(data frtypes.MapStr) error
+	Update(data mapstr.MapStr) error
+	Save(data mapstr.MapStr) error
 }
 
 // Topo the object topo interface
@@ -47,12 +47,12 @@ type Topo interface {
 // Association association operation interface declaration
 type Association interface {
 	Operation
-	Parse(data frtypes.MapStr) (*metadata.Association, error)
+	Parse(data mapstr.MapStr) (*metadata.Association, error)
 
 	GetType() AssociationType
 	SetTopo(parent, child Object) error
 	GetTopo(obj Object) (Topo, error)
-	ToMapStr() (frtypes.MapStr, error)
+	ToMapStr() (mapstr.MapStr, error)
 }
 
 // Factory used to create object  classification attribute etd.

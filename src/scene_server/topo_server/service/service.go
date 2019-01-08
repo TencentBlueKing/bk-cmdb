@@ -19,20 +19,20 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/httpserver"
 	"configcenter/src/common/language"
-	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
 	"configcenter/src/scene_server/topo_server/core/types"
+
+	"github.com/emicklei/go-restful"
 )
 
 // TopoServiceInterface the topo service methods used to init
@@ -195,7 +195,7 @@ func (s *topoService) Actions() []*httpserver.Action {
 					return
 				}
 
-				mData := frtypes.MapStr{}
+				mData := mapstr.MapStr{}
 				if nil == act.HandlerParseOriginDataFunc {
 					if err := json.Unmarshal(value, &mData); nil != err && 0 != len(value) {
 						blog.Errorf("failed to unmarshal the data, error %s", err.Error())
