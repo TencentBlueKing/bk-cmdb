@@ -248,7 +248,6 @@ func (m *module) AddMultiModule(bizID, setID int64, moduleNames []string, data m
 		data.Set(common.BKModuleNameField, moduleName)
 		data.Set(common.BKAppIDField, bizID)
 		data.Set(common.BKDefaultField, 0)
-		//data.Set(common.BKOwnerIDField, common.BKDefaultOwnerID)
 		data.Set(common.BKInstParentStr, setID)
 
 		rsp, err := m.client.ObjectController().Instance().CreateObject(context.Background(), common.BKInnerObjIDModule, m.params.Header, data)

@@ -353,7 +353,6 @@ func (s *topoService) SearchInstChildTopo(params types.ContextParams, pathParams
 	query := &metadata.QueryInput{}
 	cond := condition.CreateCondition()
 	cond.Field(obj.GetInstIDFieldName()).Eq(instID)
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 
 	query.Condition = cond.ToMapStr()
 	query.Limit = common.BKNoLimit
@@ -381,7 +380,6 @@ func (s *topoService) SearchInstTopo(params types.ContextParams, pathParams, que
 	query := &metadata.QueryInput{}
 	cond := condition.CreateCondition()
 	cond.Field(obj.GetInstIDFieldName()).Eq(instID)
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 
 	query.Condition = cond.ToMapStr()
 	query.Limit = common.BKNoLimit

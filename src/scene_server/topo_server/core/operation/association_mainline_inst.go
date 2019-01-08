@@ -151,7 +151,6 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 
 		// we create the current object's instance for each parent instance belongs to the parent object.
 		currentInst := cli.instFactory.CreateInst(params, current)
-		currentInst.SetValue(common.BKOwnerIDField, params.SupplierAccount)
 		currentInst.SetValue(current.GetInstNameFieldName(), current.Object().ObjectName)
 		currentInst.SetValue(common.BKDefaultField, 0)
 		// set current instance's parent id to parent instance's id, so that they can be chained.

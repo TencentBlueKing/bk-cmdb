@@ -190,7 +190,6 @@ func (o *object) search(cond condition.Condition) ([]meta.Object, error) {
 
 func (o *object) GetMainlineParentObject() (Object, error) {
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(o.obj.ObjectID)
 	cond.Field(common.AssociationKindIDField).Eq(common.AssociationKindMainline)
 
@@ -202,7 +201,6 @@ func (o *object) GetMainlineParentObject() (Object, error) {
 
 	for _, asst := range rsp.Data.Info {
 		cond := condition.CreateCondition()
-		cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
 		cond.Field(common.BKObjIDField).Eq(asst.AsstObjID)
 
 		rspRst, err := o.search(cond)
@@ -225,7 +223,6 @@ func (o *object) GetMainlineParentObject() (Object, error) {
 func (o *object) GetMainlineChildObject() (Object, error) {
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
 	cond.Field(common.BKAsstObjIDField).Eq(o.obj.ObjectID)
 	cond.Field(common.AssociationKindIDField).Eq(common.AssociationKindMainline)
 
@@ -237,7 +234,6 @@ func (o *object) GetMainlineChildObject() (Object, error) {
 
 	for _, asst := range rsp.Data.Info {
 		cond := condition.CreateCondition()
-		cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
 		cond.Field(common.BKObjIDField).Eq(asst.ObjectID)
 		rspRst, err := o.search(cond)
 		if nil != err {
@@ -265,7 +261,6 @@ func (o *object) searchAssoObjects(isNeedChild bool, cond condition.Condition) (
 	pair := make([]ObjectAssoPair, 0)
 	for _, asst := range rsp.Data.Info {
 		cond := condition.CreateCondition()
-		cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
 		if isNeedChild {
 			cond.Field(metadata.ModelFieldObjectID).Eq(asst.AsstObjID)
 		} else {
@@ -414,7 +409,6 @@ func (o *object) CreateMainlineObjectAssociation(relateToObjID string) error {
 
 func (o *object) UpdateMainlineObjectAssociationTo(prevObjID, relateToObjID string) error {
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(o.obj.ObjectID)
 	cond.Field(common.AssociatedObjectIDField).Eq(prevObjID)
 	cond.Field(common.AssociationKindIDField).Eq(common.AssociationKindMainline)
@@ -466,7 +460,6 @@ func (o *object) IsExists() (bool, error) {
 
 	// check id
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(o.obj.ObjectID)
 	cond.Field(metadata.ModelFieldID).NotIn([]int64{o.obj.ID})
 
@@ -481,7 +474,6 @@ func (o *object) IsExists() (bool, error) {
 
 	// check name
 	cond = condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(o.obj.ObjectName)
 	cond.Field(o.GetInstIDFieldName()).Eq(o.obj.ObjectName)
 	cond.Field(metadata.ModelFieldID).NotIn([]int64{o.obj.ID})
@@ -589,7 +581,6 @@ func (o *object) Update(data mapstr.MapStr) error {
 
 	// update action
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(o.params.SupplierAccount)
 	if 0 != len(o.obj.ObjectID) {
 		cond.Field(common.BKObjIDField).Eq(o.obj.ObjectID)
 	} else {

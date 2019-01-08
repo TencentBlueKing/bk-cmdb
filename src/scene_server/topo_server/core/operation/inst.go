@@ -293,7 +293,6 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 
 	object := obj.Object()
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(obj.GetInstIDFieldName()).In(instID)
 	if obj.IsCommon() {
 		cond.Field(common.BKObjIDField).Eq(object.ObjectID)
@@ -326,7 +325,6 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 		// if this instance has been bind to a instance by the association, then this instance should not be deleted.
 		innerCond := condition.CreateCondition()
 		innerCond.Field(common.BKAsstObjIDField).Eq(object.ObjectID)
-		innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 		innerCond.Field(common.BKAsstInstIDField).Eq(delInst.instID)
 		err := c.asst.CheckBeAssociation(params, obj, innerCond)
 		if nil != err {
@@ -337,7 +335,6 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 		// by the association with other instances.
 		innerCond = condition.CreateCondition()
 		innerCond.Field(common.BKObjIDField).Eq(object.ObjectID)
-		innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 		innerCond.Field(common.BKInstIDField).Eq(delInst)
 		if err := c.asst.DeleteInstAssociation(params, innerCond); nil != err {
 			blog.Errorf("[operation-inst] failed to delete the inst asst, err: %s", err.Error())
@@ -346,7 +343,6 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 
 		// delete this instance now.
 		delCond := condition.CreateCondition()
-		delCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 		delCond.Field(obj.GetInstIDFieldName()).In(delInst.instID)
 		if obj.IsCommon() {
 			delCond.Field(common.BKObjIDField).Eq(object.ObjectID)
@@ -506,7 +502,6 @@ func (c *commonInst) FindInstChildTopo(params types.ContextParams, obj model.Obj
 		query = &metadata.QueryInput{}
 		cond := condition.CreateCondition()
 		cond.Field(obj.GetInstIDFieldName()).Eq(instID)
-		cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 		query.Condition = cond.ToMapStr()
 	}
 
@@ -577,7 +572,6 @@ func (c *commonInst) FindInstParentTopo(params types.ContextParams, obj model.Ob
 		query = &metadata.QueryInput{}
 		cond := condition.CreateCondition()
 		cond.Field(obj.GetInstIDFieldName()).Eq(instID)
-		cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 		query.Condition = cond.ToMapStr()
 	}
 
@@ -645,7 +639,6 @@ func (c *commonInst) FindInstTopo(params types.ContextParams, obj model.Object, 
 		query = &metadata.QueryInput{}
 		cond := condition.CreateCondition()
 		cond.Field(obj.GetInstIDFieldName()).Eq(instID)
-		cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 		query.Condition = cond.ToMapStr()
 	}
 
@@ -712,7 +705,6 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 	object := obj.Object()
 
 	instCond := map[string]interface{}{}
-	instCond[common.BKOwnerIDField] = params.SupplierAccount
 	if obj.IsCommon() {
 		instCond[common.BKObjIDField] = object.ObjectID
 	}
@@ -723,7 +715,6 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 		cond := map[string]interface{}{}
 		if common.GetObjByType(keyObjID) == common.BKInnerObjIDObject {
 			cond[common.BKObjIDField] = keyObjID
-			cond[common.BKOwnerIDField] = params.SupplierAccount
 		}
 
 		for _, objCondition := range objs {

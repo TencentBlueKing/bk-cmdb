@@ -423,7 +423,6 @@ func (o *object) CanDelete(params types.ContextParams, targetObj model.Object) e
 
 	tObject := targetObj.Object()
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	if targetObj.IsCommon() {
 		cond.Field(common.BKObjIDField).Eq(tObject.ObjectID)
 	}
@@ -446,7 +445,6 @@ func (o *object) CanDelete(params types.ContextParams, targetObj model.Object) e
 
 	cond = condition.CreateCondition()
 	cond.NewOR().Array(or)
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 
 	assoResult, err := o.asst.SearchObject(params, &metadata.SearchAssociationObjectRequest{Condition: cond.ToMapStr()})
 	if err != nil {
@@ -502,7 +500,6 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 		}
 
 		attrCond := condition.CreateCondition()
-		attrCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 		attrCond.Field(common.BKObjIDField).Eq(object.ObjectID)
 
 		if err := o.attr.DeleteObjectAttribute(params, attrCond); nil != err {
@@ -572,7 +569,6 @@ func (o *object) FindObjectTopo(params types.ContextParams, cond condition.Condi
 			// find association kind with association kind id.
 			typeCond := condition.CreateCondition()
 			typeCond.Field(common.AssociationKindIDField).Eq(asst.AsstKindID)
-			typeCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 			request := &metadata.SearchAssociationTypeRequest{
 				Condition: typeCond.ToMapStr(),
 			}
@@ -595,7 +591,6 @@ func (o *object) FindObjectTopo(params types.ContextParams, cond condition.Condi
 
 			cond = condition.CreateCondition()
 			cond.Field(common.BKObjIDField).Eq(asst.AsstObjID)
-			cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 
 			asstObjs, err := o.FindObject(params, cond)
 			if nil != err {
