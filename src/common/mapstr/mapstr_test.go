@@ -171,25 +171,30 @@ func TestConvertToMapStrFromStructInnerPointer(t *testing.T) {
 	type targetTest struct {
 		Field1   string        `field:"field_one"`
 		Field2   int           `field:"field_two"`
+		Field3   *string       `field:"field_three"`
 		Labels   Label         `field:"field_mapstr"`
 		TargetIn *TargetInline `field:"field_inline"`
 	}
+	tmpStr := "field3-str"
 
 	targetMapStr := mapstr.NewFromStruct(&targetTest{
 		Field1: "field1",
 		Field2: 2,
+		Field3: &tmpStr,
 		Labels: Label{"key": "value"},
 		TargetIn: &TargetInline{
 			Field1Inline: "field_in_line",
 			Field2Inline: 2,
 		},
 	}, "field")
-	t.Logf("target mapstr %v", targetMapStr)
+	targteJson, err := targetMapStr.ToJSON()
+	require.NoError(t, err)
+	t.Logf("target mapstr %s", targteJson)
 
 	resultTmp := targetTest{}
-	err := targetMapStr.ToStructByTag(&resultTmp, "field")
+	err = targetMapStr.ToStructByTag(&resultTmp, "field")
 	require.NoError(t, err)
-	t.Logf("result struct :%v", resultTmp)
+	t.Logf("result struct:%v %s", resultTmp, *resultTmp.Field3)
 }
 
 func TestConvertToMapStrFromStructInnerEmbedPointer(t *testing.T) {

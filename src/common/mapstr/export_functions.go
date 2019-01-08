@@ -62,10 +62,16 @@ func NewFromInterface(data interface{}) (MapStr, error) {
 		return tmp, nil
 	case []byte:
 		result := New()
+		if 0 == len(tmp) {
+			return result, nil
+		}
 		err := json.Unmarshal(tmp, &result)
 		return result, err
 	case string:
 		result := New()
+		if 0 == len(tmp) {
+			return result, nil
+		}
 		err := json.Unmarshal([]byte(tmp), &result)
 		return result, err
 	case *map[string]interface{}:
