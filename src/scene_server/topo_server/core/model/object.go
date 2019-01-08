@@ -72,6 +72,7 @@ type Object interface {
 	GetInstNameFieldName() string
 	GetDefaultInstPropertyName() string
 	GetObjectType() string
+	GetObjectID() string
 }
 
 var _ Object = (*object)(nil)
@@ -107,6 +108,11 @@ func (o *object) GetObjectType() string {
 	return o.obj.GetObjectType()
 
 }
+
+func (o *object) GetObjectID() string {
+	return o.obj.GetObjectID()
+}
+
 func (o *object) IsCommon() bool {
 	return o.obj.IsCommon()
 }
@@ -182,6 +188,7 @@ func (o *object) search(cond condition.Condition) ([]meta.Object, error) {
 		if err != nil {
 			return nil, o.params.Err.Error(common.CCErrTopoObjectSelectFailed)
 		}
+		models = append(models, model)
 	}
 
 	return models, nil
