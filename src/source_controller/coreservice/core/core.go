@@ -21,8 +21,11 @@ type ModelAttributeGroup interface {
 	CreateModelAttributeGroup(ctx ContextParams, objID string, inputParam metadata.CreateModelAttributeGroup) (*metadata.CreateOneDataResult, error)
 	SetModelAttributeGroup(ctx ContextParams, objID string, inputParam metadata.SetModelAttributeGroup) (*metadata.SetDataResult, error)
 	UpdateModelAttributeGroup(ctx ContextParams, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
+	UpdateModelAttributeGroupByCondition(ctx ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	SearchModelAttributeGroup(ctx ContextParams, objID string, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeGroupDataResult, error)
+	SearchModelAttributeGroupByCondition(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeGroupDataResult, error)
 	DeleteModelAttributeGroup(ctx ContextParams, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
+	DeleteModelAttributeGroupByCondition(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 }
 
 // ModelClassification model classification methods definitions
@@ -42,8 +45,10 @@ type ModelAttribute interface {
 	CreateModelAttributes(ctx ContextParams, objID string, inputParam metadata.CreateModelAttributes) (*metadata.CreateManyDataResult, error)
 	SetModelAttributes(ctx ContextParams, objID string, inputParam metadata.SetModelAttributes) (*metadata.SetDataResult, error)
 	UpdateModelAttributes(ctx ContextParams, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
+	UpdateModelAttributesByCondition(ctx ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	DeleteModelAttributes(ctx ContextParams, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 	SearchModelAttributes(ctx ContextParams, objID string, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeDataResult, error)
+	SearchModelAttributesByCondition(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeDataResult, error)
 }
 
 // ModelAttrUnique model attribute  unique methods definitions

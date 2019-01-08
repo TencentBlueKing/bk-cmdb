@@ -264,6 +264,9 @@ func (h *HostSnap) getHostByVal(val *gjson.Result) *HostInst {
 }
 
 func getIPS(val *gjson.Result) (ips []string) {
+	if !strings.HasPrefix(val.Get("ip").String(), "127.0.0.") {
+		ips = append(ips, val.Get("ip").String())
+	}
 	interfaces := val.Get("data.net.interface.#.addrs.#.addr").Array()
 	for _, addrs := range interfaces {
 		for _, addr := range addrs.Array() {
@@ -273,9 +276,6 @@ func getIPS(val *gjson.Result) (ips []string) {
 			}
 			ips = append(ips, ip)
 		}
-	}
-	if !strings.HasPrefix(val.Get("ip").String(), "127.0.0.") {
-		ips = append(ips, val.Get("ip").String())
 	}
 	return ips
 }
@@ -307,18 +307,27 @@ func (h *HostSnap) fetchDBLoop() {
 }
 
 func (h *HostSnap) fetch() *HostCache {
-	result := []map[string]interface{}{}
-	err := h.db.Table(common.BKTableNameBaseHost).Find(nil).All(h.ctx, &result)
-	if err != nil {
-		blog.Errorf("[datacollect][hostsnap] fetch db error %v", err)
-	}
 	hostcache := &HostCache{data: map[string]*HostInst{}}
-	for index := range result {
-		cloudid := fmt.Sprint(result[index][common.BKCloudIDField])
-		innerip := fmt.Sprint(result[index][common.BKHostInnerIPField])
-		hostcache.data[cloudid+"::"+innerip] = &HostInst{data: result[index]}
+
+	const limit = uint64(1000)
+	var start = uint64(0)
+	for {
+		result := []map[string]interface{}{}
+		err := h.db.Table(common.BKTableNameBaseHost).Find(nil).Start(start).Limit(limit).All(h.ctx, &result)
+		if err != nil {
+			blog.Errorf("[datacollect][hostsnap] fetch db error %v", err)
+		}
+		for index := range result {
+			cloudid := fmt.Sprint(result[index][common.BKCloudIDField])
+			innerip := fmt.Sprint(result[index][common.BKHostInnerIPField])
+			hostcache.data[cloudid+"::"+innerip] = &HostInst{data: result[index]}
+		}
+		if uint64(len(result)) < limit {
+			break
+		}
+		start += limit
 	}
-	blog.Infof("[datacollect][hostsnap] success fetch %d collections to cache", len(result))
+	blog.Infof("[datacollect][hostsnap] success fetch %d collections to cache", len(hostcache.data))
 	return hostcache
 }
 
