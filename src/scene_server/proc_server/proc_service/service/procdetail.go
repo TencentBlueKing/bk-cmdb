@@ -13,10 +13,8 @@ package service
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -63,9 +61,9 @@ func (ps *ProcServer) getProcDetail(req *restful.Request, ownerID string, appID,
 	procCondition[common.BKOwnerIDField] = ownerID
 	procCondition[common.BKAppIDField] = appID
 	procCondition[common.BKProcessIDField] = procID
-	searchParams := new(meta.QueryInput)
+	searchParams := new(meta.QueryCondition)
 	searchParams.Condition = procCondition
-	retObj, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(srvData.ctx, common.BKInnerObjIDProc, req.Request.Header, searchParams)
+	retObj, err := ps.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDProc, searchParams)
 	if err != nil {
 		blog.Errorf("getProcDetail http do error.err:%s,input:%+v,rid:%s", err.Error(), searchParams, srvData.rid)
 		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -86,7 +84,9 @@ func (ps *ProcServer) getProcDetail(req *restful.Request, ownerID string, appID,
 	objattCondition := make(map[string]interface{})
 	objattCondition[common.BKObjIDField] = common.BKInnerObjIDProc
 	objattCondition[common.BKOwnerIDField] = ownerID
-	retObjAtt, err := ps.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(srvData.ctx, req.Request.Header, objattCondition)
+	attrQueryInput := new(meta.QueryCondition)
+	attrQueryInput.Condition = objattCondition
+	retObjAtt, err := ps.CoreAPI.CoreService().Model().ReadModelAttr(srvData.ctx, srvData.header, common.BKInnerObjIDProc, attrQueryInput)
 	if err != nil {
 		blog.Errorf("getProcDetail SelectObjectAttWithParams http do error.err:%s,input:%+v,rid:%s", err.Error(), searchParams, srvData.rid)
 		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -96,14 +96,8 @@ func (ps *ProcServer) getProcDetail(req *restful.Request, ownerID string, appID,
 		return nil, defErr.New(retObjAtt.Code, retObjAtt.ErrMsg)
 	}
 
-	forward := req.Request.Header
-	rstmap, errno := ps.getObjectAsst(forward, common.BKInnerObjIDProc, ownerID)
-	if common.CCSuccess != errno {
-		return nil, fmt.Errorf("get object asst faile")
-	}
-
 	reResult := make([]map[string]interface{}, 0)
-	for _, item := range retObjAtt.Data {
+	for _, item := range retObjAtt.Data.Info {
 		data := make(map[string]interface{})
 		propertyID := item.PropertyID
 		if propertyID == common.BKChildStr {
@@ -113,56 +107,10 @@ func (ps *ProcServer) getProcDetail(req *restful.Request, ownerID string, appID,
 		data[common.BKPropertyIDField] = propertyID
 		data[common.BKPropertyNameField] = item.PropertyName
 		data[common.BKPropertyValueField] = proc[propertyID]
-		// key is the association object filed，val is association object id
-		if val, ok := rstmap[propertyID]; ok {
-			keyItemStr := fmt.Sprintf("%v", proc[propertyID])
-			blog.V(5).Infof("keyitemstr:%s,rid:%s", keyItemStr, srvData.rid)
-			retData, _, retErr := ps.getInstAsst(forward, ownerID, val, strings.Split(keyItemStr, ","), nil)
-			if common.CCSuccess != retErr {
-				blog.Error("failed to get inst details,rid:%s", srvData.rid)
-			}
-			data[common.BKPropertyValueField] = retData
-		}
-
 		reResult = append(reResult, data)
 	}
 
 	return reResult, nil
-}
-
-func (ps *ProcServer) getObjectAsst(forward http.Header, objID, ownerID string) (map[string]string, int) {
-	srvData := ps.newSrvComm(forward)
-
-	rstmap := make(map[string]string)
-
-	objattCondition := make(map[string]interface{})
-	objattCondition[common.BKObjIDField] = objID
-	objattCondition[common.BKOwnerIDField] = ownerID
-	objattRet, err := ps.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(srvData.ctx, forward, objattCondition)
-	if err != nil || (err == nil && !objattRet.Result) {
-		blog.Errorf("getObjectAsst failed when SelectObjectAttWithParams . err: %s,rid:%s", err.Error(), srvData.rid)
-		return nil, common.CCErrObjectSelectInstFailed
-	}
-
-	// 组织模型名和对应的字段
-	for _, item := range objattRet.Data {
-		asst := make(map[string]interface{})
-		asst[common.BKObjAttIDField] = item.PropertyID
-		asst[common.BKOwnerIDField] = item.OwnerID
-		asst[common.BKObjIDField] = item.ObjectID
-		ret, err := ps.CoreAPI.ObjectController().Meta().SelectObjectAssociations(srvData.ctx, forward, asst)
-		if err != nil || (err == nil && !ret.Result) {
-			blog.Errorf("failed to read the object asst, err:%v, errcode:%d, errmsg:%s,rid:%s", err, ret.BaseResp.Code, ret.ErrMsg, srvData.rid)
-			return nil, common.CCErrObjectSelectInstFailed
-		}
-
-		if len(ret.Data) > 0 { // only one association map
-			rstmap[item.PropertyID] = ret.Data[0].AsstObjID
-		}
-	}
-
-	// rstmap: key is the bk_property_id  value is the association object id
-	return rstmap, common.CCSuccess
 }
 
 type instNameAsst struct {
@@ -261,7 +209,7 @@ func (ps *ProcServer) getInstAsst(forward http.Header, ownerID, objID string, id
 	cnt := 0
 	switch objID {
 	case common.BKInnerObjIDHost:
-		hostRet, err := ps.CoreAPI.HostController().Host().GetHosts(srvData.ctx, forward, input)
+		hostRet, err := ps.CoreAPI.HostController().Host().GetHosts(srvData.ctx, srvData.header, input)
 		if err != nil || (err == nil && !hostRet.Result) {
 			blog.Errorf("search inst detail failed when GetHosts, err: %v,input:%+v,rid:%s", err, input, srvData.rid)
 			return nil, 0, common.CCErrHostSelectInst
@@ -269,14 +217,17 @@ func (ps *ProcServer) getInstAsst(forward http.Header, ownerID, objID string, id
 		dataInfo = hostRet.Data.Info
 		cnt = hostRet.Data.Count
 	default:
-		objRet, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(srvData.ctx, targetOBJ, forward, input)
+		queryCondtion := &meta.QueryCondition{
+			Condition: condition,
+		}
+		objRet, err := ps.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, targetOBJ, queryCondtion)
 		if err != nil || (err == nil && !objRet.Result) {
 			blog.Errorf("search inst detail failed when SearchObjects, err: %v,input:%+v,rid:%s", err, input, srvData.rid)
 			return nil, 0, common.CCErrObjectSelectInstFailed
 		}
 		cnt = objRet.Data.Count
 		for _, val := range objRet.Data.Info {
-			dataInfo = append(dataInfo, map[string]interface{}(val))
+			dataInfo = append(dataInfo, val)
 		}
 	}
 

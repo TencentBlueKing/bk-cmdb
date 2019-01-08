@@ -52,7 +52,7 @@ func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response
 	}
 
 	input[common.BKAppIDField] = appID
-	valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDProc, req.Request.Header, ps.Engine)
+	valid := validator.NewValidMap(srvData.ownerID, common.BKInnerObjIDProc, req.Request.Header, ps.Engine)
 	if err := valid.ValidMap(input, common.ValidCreate, 0); err != nil {
 		blog.Errorf("fail to valid input parameters. err:%s,input:%+v,rid:%s", err.Error(), input, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommFieldNotValid)})
@@ -60,7 +60,7 @@ func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response
 	}
 
 	input[common.BKOwnerIDField] = ownerID
-	ret, err := ps.CoreAPI.ObjectController().Instance().CreateObject(srvData.ctx, common.BKInnerObjIDProc, srvData.header, input)
+	ret, err := ps.CoreAPI.CoreService().Instance().CreateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDProc, &meta.CreateModelInstance{Data: input})
 	if err != nil {
 		blog.Errorf("CreateProcess http do error. err:%s,input:%+v,rid:%s", err.Error(), input, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
@@ -73,15 +73,12 @@ func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response
 	}
 
 	//save change log
-	instID, err := ret.Data.Int64(common.BKProcessIDField)
-	if nil == err {
-
-		curDetail, err := ps.getProcDetail(req, ownerID, appID, int(instID))
-		if err != nil {
-			blog.Errorf("get process instance detail failed. err:%s,input:%+v,rid:%s", err.Error(), input, srvData.rid)
-		} else {
-			ps.addProcLog(srvData.ctx, srvData.ownerID, appIDStr, srvData.user, nil, curDetail, auditoplog.AuditOpTypeAdd, int(instID), srvData.header)
-		}
+	instID := ret.Data.Created.ID
+	curDetail, err := ps.getProcDetail(req, ownerID, appID, int(instID))
+	if err != nil {
+		blog.Errorf("get process instance detail failed. err:%s,input:%+v,rid:%s", err.Error(), input, srvData.rid)
+	} else {
+		ps.addProcLog(srvData.ctx, srvData.ownerID, appIDStr, srvData.user, nil, curDetail, auditoplog.AuditOpTypeAdd, int(instID), srvData.header)
 	}
 
 	// return success
@@ -131,14 +128,14 @@ func (ps *ProcServer) UpdateProcess(req *restful.Request, resp *restful.Response
 		blog.Errorf("get process instance detail failed. err:%s", err.Error())
 	}
 
-	input := make(map[string]interface{})
+	input := new(meta.UpdateOption)
 	condition := make(map[string]interface{})
 	condition[common.BKOwnerIDField] = ownerID
 	condition[common.BKAppIDField] = appID
 	condition[common.BKProcessIDField] = procID
-	input["condition"] = condition
-	input["data"] = procData
-	ret, err := ps.CoreAPI.ObjectController().Instance().UpdateObject(srvData.ctx, common.BKInnerObjIDProc, srvData.header, input)
+	input.Condition = condition
+	input.Data = procData
+	ret, err := ps.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDProc, input)
 	if err != nil {
 		blog.Errorf("UpdateProcess http do error. err:%s,input:%+v,rid:%s", err.Error(), input, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
@@ -240,15 +237,15 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 		}
 		iProcIDArr = append(iProcIDArr, procID)
 		// update processes
-		input := make(map[string]interface{})
+		input := new(meta.UpdateOption)
 		condition := make(map[string]interface{})
 		condition[common.BKOwnerIDField] = ownerID
 		condition[common.BKAppIDField] = appID
 		condition[common.BKProcessIDField] = procID
 
-		input["condition"] = condition
-		input["data"] = procData
-		ret, err := ps.CoreAPI.ObjectController().Instance().UpdateObject(srvData.ctx, common.BKInnerObjIDProc, srvData.header, input)
+		input.Condition = condition
+		input.Data = procData
+		ret, err := ps.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDProc, input)
 		if err != nil {
 			blog.Errorf("BatchUpdateProcess http do error.err:%s,input:%+v,rid:%s", err.Error(), input, srvData.rid)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
@@ -340,7 +337,7 @@ func (ps *ProcServer) DeleteProcess(req *restful.Request, resp *restful.Response
 	conditon[common.BKAppIDField] = appID
 	conditon[common.BKProcessIDField] = procID
 	conditon[common.BKOwnerIDField] = ownerID
-	ret, err := ps.CoreAPI.ObjectController().Instance().DelObject(srvData.ctx, common.BKInnerObjIDProc, srvData.header, conditon)
+	ret, err := ps.CoreAPI.CoreService().Instance().DeleteInstance(srvData.ctx, srvData.header, common.BKInnerObjIDProc, &meta.DeleteOption{Condition: conditon})
 	if err != nil {
 		blog.Errorf("DeleteProcess DelObject http do error.err:%s,input:%+v,rid:%s", err.Error(), conditon, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
@@ -393,22 +390,23 @@ func (ps *ProcServer) SearchProcess(req *restful.Request, resp *restful.Response
 		}
 	}
 	page := srchparam.Page
-	searchParams := new(meta.QueryInput)
+	searchParams := new(meta.QueryCondition)
 	searchParams.Condition = condition
-	searchParams.Fields = strings.Join(srchparam.Fields, ",")
-	searchParams.Start, err = util.GetIntByInterface(page["start"])
+	searchParams.Fields = srchparam.Fields
+	searchParams.Limit.Offset, err = util.GetInt64ByInterface(page["start"])
 	if nil != err {
-		searchParams.Start = 0
+		searchParams.Limit.Offset = 0
 	}
-	searchParams.Limit, err = util.GetIntByInterface(page["limit"])
+	searchParams.Limit.Limit, err = util.GetInt64ByInterface(page["limit"])
 	if nil != err {
-		searchParams.Limit = common.BKNoLimit
+		searchParams.Limit.Limit = common.BKNoLimit
 	}
 	if sort, ok := page["sort"].(string); !ok {
-		searchParams.Sort = ""
+		searchParams.SortArr = nil
 	} else {
-		searchParams.Sort = sort
+		searchParams.SortArr = meta.NewSearchSortParse().String(sort).ToSearchSortArr()
 	}
+
 	// query process by module name
 	if moduleName, ok := condition[common.BKModuleNameField]; ok {
 		reqParam := make(map[string]interface{})
@@ -443,7 +441,7 @@ func (ps *ProcServer) SearchProcess(req *restful.Request, resp *restful.Response
 	}
 
 	// search process
-	ret, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(srvData.ctx, common.BKInnerObjIDProc, srvData.header, searchParams)
+	ret, err := ps.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDProc, searchParams)
 	if err != nil {
 		blog.Errorf("SearchProcess SearchObjects http do error.err:%s,input:%+v,rid:%s", err.Error(), searchParams, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
