@@ -39,7 +39,7 @@ func (valid *validator) validCreateUnique(ctx core.ContextParams, instanceData m
 		uniquekeys := map[string]bool{}
 		for _, key := range unique.Keys {
 			switch key.Kind {
-			case metadata.UinqueKeyKindProperty:
+			case metadata.UniqueKeyKindProperty:
 				property, ok := valid.idToProperty[int64(key.ID)]
 				if !ok {
 					blog.Errorf("[validCreateUnique] find [%s] property [%d] error %v", valid.objID, key.ID)
@@ -126,7 +126,7 @@ func (valid *validator) validUpdateUnique(ctx core.ContextParams, instanceData m
 		uniquekeys := map[string]bool{}
 		for _, key := range unique.Keys {
 			switch key.Kind {
-			case metadata.UinqueKeyKindProperty:
+			case metadata.UniqueKeyKindProperty:
 				property, ok := valid.idToProperty[int64(key.ID)]
 				if !ok {
 					blog.Errorf("[validUpdateUnique] find [%s] property [%d] error %v", valid.objID, key.ID)

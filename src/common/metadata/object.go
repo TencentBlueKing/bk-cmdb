@@ -129,6 +129,11 @@ func (o *Object) GetObjectType() string {
 	}
 }
 
+// GetObjectID get the object type
+func (o *Object) GetObjectID() string {
+	return o.ObjectID
+}
+
 // IsCommon is common object
 func (o *Object) IsCommon() bool {
 	switch o.ObjectID {

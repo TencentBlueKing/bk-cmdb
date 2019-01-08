@@ -53,6 +53,8 @@ var AllModule = map[string]bool{
 	CC_MODULE_APISERVER:        true,
 	CC_MODULE_WEBSERVER:        true,
 	CC_MODULE_EVENTSERVER:      true,
+	CC_MODULE_TXC:              true,
+	CC_MODULE_CORESERVICE:      true,
 }
 
 // cc functionality define

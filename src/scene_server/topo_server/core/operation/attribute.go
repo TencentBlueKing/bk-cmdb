@@ -19,7 +19,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
-	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
@@ -28,11 +28,11 @@ import (
 
 // AttributeOperationInterface attribute operation methods
 type AttributeOperationInterface interface {
-	CreateObjectAttribute(params types.ContextParams, data frtypes.MapStr) (model.AttributeInterface, error)
+	CreateObjectAttribute(params types.ContextParams, data mapstr.MapStr) (model.AttributeInterface, error)
 	DeleteObjectAttribute(params types.ContextParams, cond condition.Condition) error
 	FindObjectAttributeWithDetail(params types.ContextParams, cond condition.Condition) ([]*metadata.ObjAttDes, error)
 	FindObjectAttribute(params types.ContextParams, cond condition.Condition) ([]model.AttributeInterface, error)
-	UpdateObjectAttribute(params types.ContextParams, data frtypes.MapStr, attID int64, cond condition.Condition) error
+	UpdateObjectAttribute(params types.ContextParams, data mapstr.MapStr, attID int64) error
 
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, obj ObjectOperationInterface, asst AssociationOperationInterface, grp GroupOperationInterface)
 }
@@ -61,7 +61,7 @@ func (a *attribute) SetProxy(modelFactory model.Factory, instFactory inst.Factor
 	a.grp = grp
 }
 
-func (a *attribute) CreateObjectAttribute(params types.ContextParams, data frtypes.MapStr) (model.AttributeInterface, error) {
+func (a *attribute) CreateObjectAttribute(params types.ContextParams, data mapstr.MapStr) (model.AttributeInterface, error) {
 
 	att := a.modelFactory.CreateAttribute(params)
 
@@ -97,15 +97,15 @@ func (a *attribute) DeleteObjectAttribute(params types.ContextParams, cond condi
 
 	for _, attrItem := range attrItems {
 		// delete the attribute
-		rsp, err := a.clientSet.ObjectController().Meta().DeleteObjectAttByID(context.Background(), attrItem.Attribute().ID, params.Header, cond.ToMapStr())
+		rsp, err := a.clientSet.CoreService().Model().DeleteModelAttr(context.Background(), params.Header, attrItem.Attribute().ObjectID, &metadata.DeleteOption{Condition: cond.ToMapStr()})
 		if nil != err {
 			blog.Errorf("[operation-attr] delete object attribute failed, request object controller with err: %v", err)
 			return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
-		if common.CCSuccess != rsp.Code {
+		if !rsp.Result {
 			blog.Errorf("[operation-attr] failed to delete the attribute by condition(%v), err: %s", cond.ToMapStr(), rsp.ErrMsg)
-			return params.Err.Error(rsp.Code)
+			return params.Err.New(rsp.Code, rsp.ErrMsg)
 		}
 	}
 
@@ -141,33 +141,35 @@ func (a *attribute) FindObjectAttributeWithDetail(params types.ContextParams, co
 	return results, nil
 }
 func (a *attribute) FindObjectAttribute(params types.ContextParams, cond condition.Condition) ([]model.AttributeInterface, error) {
-
-	rsp, err := a.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), params.Header, cond.ToMapStr())
+	rsp, err := a.clientSet.CoreService().Model().ReadModelAttrByCondition(context.Background(), params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to request object controller, error info is %s", err.Error())
 		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		blog.Errorf("[operation-attr] failed to search attribute by the condition(%#v), error info is %s", cond.ToMapStr(), rsp.ErrMsg)
-		return nil, params.Err.Error(rsp.Code)
+		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	return model.CreateAttribute(params, a.clientSet, rsp.Data), nil
+	return model.CreateAttribute(params, a.clientSet, rsp.Data.Info), nil
 }
 
-func (a *attribute) UpdateObjectAttribute(params types.ContextParams, data frtypes.MapStr, attID int64, cond condition.Condition) error {
+func (a *attribute) UpdateObjectAttribute(params types.ContextParams, data mapstr.MapStr, attID int64) error {
+	input := metadata.UpdateOption{
+		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(attID).ToMapStr(),
+		Data:      data,
+	}
 
-	rsp, err := a.clientSet.ObjectController().Meta().UpdateObjectAttByID(context.Background(), attID, params.Header, data)
-
+	rsp, err := a.clientSet.CoreService().Model().UpdateModelAttrsByCondition(context.Background(), params.Header, &input)
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to request object controller, error info is %s", err.Error())
 		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
-		blog.Errorf("[operation-attr] failed to update the attribute by the condition(%#v) or the attr-id(%d), error info is %s", cond.ToMapStr(), attID, rsp.ErrMsg)
-		return params.Err.Error(rsp.Code)
+	if !rsp.Result {
+		blog.Errorf("[operation-attr] failed to update the attribute by the attr-id(%d), error info is %s", attID, rsp.ErrMsg)
+		return params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	return nil

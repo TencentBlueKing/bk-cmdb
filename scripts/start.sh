@@ -21,7 +21,7 @@ done
 
 ps -ef| grep [c]mdb_ || true
 cnt=$(pgrep cmdb_ | wc -l)
-echo "process count should be: 12 , now: $cnt"
+echo "process count should be: 14 , now: $cnt"
 
 for tmp_dir in $DIRS;do
     num=`ps -efww | grep $tmp_dir | grep -v grep | wc -l`
