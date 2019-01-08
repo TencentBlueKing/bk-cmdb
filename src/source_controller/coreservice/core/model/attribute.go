@@ -233,3 +233,27 @@ func (m *modelAttribute) SearchModelAttributes(ctx core.ContextParams, objID str
 	dataResult.Info = attrResult
 	return dataResult, nil
 }
+
+func (m *modelAttribute) SearchModelAttributesByCondition(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeDataResult, error) {
+
+	dataResult := &metadata.QueryModelAttributeDataResult{
+		Info: []metadata.Attribute{},
+	}
+
+	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
+	if nil != err {
+		blog.Errorf("request(%s): it is failed to convert from mapstr(%v) into a condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
+		return &metadata.QueryModelAttributeDataResult{}, err
+	}
+	attrArr := []string{ctx.SupplierAccount, common.BKDefaultOwnerID}
+	cond.Element(&mongo.In{Key: metadata.AttributeFieldSupplierAccount, Val: attrArr})
+	attrResult, err := m.search(ctx, cond)
+	if nil != err {
+		blog.Errorf("request(%s): it is failed to search the attributes of the model(%s), error info is %s", ctx.ReqID, err.Error())
+		return &metadata.QueryModelAttributeDataResult{}, err
+	}
+
+	dataResult.Count = int64(len(attrResult))
+	dataResult.Info = attrResult
+	return dataResult, nil
+}

@@ -441,6 +441,9 @@ func (a *association) SearchType(params types.ContextParams, request *metadata.S
 
 	for _, key := range strings.Split(request.Sort, ",") {
 		key = strings.TrimSpace(key)
+		if key == "" {
+			continue
+		}
 		var isDesc bool
 		switch key[0] {
 		case '-':

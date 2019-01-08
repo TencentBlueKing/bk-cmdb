@@ -661,12 +661,7 @@ func (o *object) FindObject(params types.ContextParams, cond condition.Condition
 
 	models := []metadata.Object{}
 	for index := range rsp.Data.Info {
-		model := metadata.Object{}
-		if err = rsp.Data.Info[index].Spec.ToStructByTag(&model, "field"); err != nil {
-			blog.Errorf("[operation-obj] failed to search the objects by the condition(%#v) , ToStructByTag error info is %v", cond.ToMapStr(), err)
-			return nil, err
-		}
-		models = append(models, model)
+		models = append(models, rsp.Data.Info[index].Spec)
 	}
 	return model.CreateObject(params, o.clientSet, models), nil
 }

@@ -165,12 +165,7 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 		}
 
 		for _, info := range queryObjectResp.Data.Info {
-			model := metadata.Object{}
-			err := info.Spec.ToStructByTag(&model, "field")
-			if err != nil {
-				return nil, err
-			}
-			clsItem.Objects = append(clsItem.Objects, model)
+			clsItem.Objects = append(clsItem.Objects, info.Spec)
 		}
 
 		datas = append(datas, clsItem)

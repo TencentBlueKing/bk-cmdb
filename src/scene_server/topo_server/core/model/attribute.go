@@ -82,11 +82,7 @@ func (a *attribute) searchObjects(objID string) ([]metadata.Object, error) {
 
 	models := []metadata.Object{}
 	for index := range rsp.Data.Info {
-		model := metadata.Object{}
-		if err := rsp.Data.Info[index].Spec.ToStructByTag(&model, "field"); err != nil {
-			return nil, a.params.Err.Error(common.CCErrCommJSONUnmarshalFailed)
-		}
-		models = append(models, model)
+		models = append(models, rsp.Data.Info[index].Spec)
 	}
 	return models, nil
 
