@@ -64,7 +64,6 @@ func (a *attribute) IsMainlineField() bool {
 
 func (a *attribute) searchObjects(objID string) ([]metadata.Object, error) {
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(a.params.SupplierAccount).Field(common.BKObjIDField).Eq(objID)
 
 	input := metadata.QueryCondition{
 		Condition: cond.ToMapStr(),
@@ -255,7 +254,6 @@ func (a *attribute) IsExists() (bool, error) {
 
 	// check id
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(a.params.SupplierAccount)
 	cond.Field(metadata.AttributeFieldObjectID).Eq(a.attr.ObjectID)
 	cond.Field(metadata.AttributeFieldPropertyID).Eq(a.attr.PropertyID)
 	cond.Field(metadata.AttributeFieldID).NotIn([]int64{a.attr.ID})
@@ -271,7 +269,6 @@ func (a *attribute) IsExists() (bool, error) {
 
 	// ceck nam
 	cond = condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(a.params.SupplierAccount)
 	cond.Field(metadata.AttributeFieldObjectID).Eq(a.attr.ObjectID)
 	cond.Field(metadata.AttributeFieldPropertyName).Eq(a.attr.PropertyName)
 	cond.Field(metadata.AttributeFieldID).NotIn([]int64{a.attr.ID})

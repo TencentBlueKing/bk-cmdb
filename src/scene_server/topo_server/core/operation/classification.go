@@ -182,7 +182,6 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 			for _, asstItem := range asstItems {
 
 				searchObjCond := condition.CreateCondition()
-				searchObjCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 				searchObjCond.Field(common.BKObjIDField).Eq(asstItem.AsstObjID)
 				asstObjs, err := c.obj.FindObject(params, searchObjCond)
 				if nil != err {

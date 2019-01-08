@@ -142,7 +142,6 @@ func (s *topoService) SearchSet(params types.ContextParams, pathParams, queryPar
 	}
 
 	paramsCond.Condition[common.BKAppIDField] = bizID
-	paramsCond.Condition[common.BKOwnerIDField] = params.SupplierAccount
 
 	queryCond := &metadata.QueryInput{}
 	queryCond.Condition = paramsCond.Condition

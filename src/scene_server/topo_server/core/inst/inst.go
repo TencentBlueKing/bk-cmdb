@@ -123,8 +123,6 @@ func (cli *inst) Create() error {
 		cli.datas.Set(common.BKObjIDField, cli.target.Object().ObjectID)
 	}
 
-	cli.datas.Set(common.BKOwnerIDField, cli.params.SupplierAccount)
-
 	rsp, err := cli.clientSet.CoreService().Instance().CreateInstance(context.Background(), cli.params.Header, cli.target.GetObjectID(), &metadata.CreateModelInstance{Data: cli.datas})
 	if nil != err {
 		blog.Errorf("failed to create object instance, error info is %s", err.Error())
@@ -217,7 +215,6 @@ func (cli *inst) IsExists() (bool, error) {
 	}
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(cli.target.GetSupplierAccount())
 	// if the inst id already exist, query it with id directly,
 	// otherwise, when import a object instance, the other field may be changed.
 	if id, exist := cli.datas[cli.target.GetInstIDFieldName()]; exist {

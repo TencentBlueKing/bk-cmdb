@@ -119,8 +119,6 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 		}
 	}
 
-	data.Set(common.BKOwnerIDField, params.SupplierAccount)
-	//data.Set(common.BKSupplierIDField, common.BKDefaultSupplierID)
 	if util.IsExistSupplierID(params.Header) {
 		supplierID, err := util.GetSupplierID(params.Header)
 		if err != nil {
@@ -152,7 +150,6 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 	setData.Set(common.BKInstParentStr, bizID)
 	setData.Set(common.BKSetNameField, common.DefaultResSetName)
 	setData.Set(common.BKDefaultField, common.DefaultResSetFlag)
-	setData.Set(common.BKOwnerIDField, params.SupplierAccount)
 
 	setInst, err := b.set.CreateSet(params, objSet, bizID, setData)
 	if nil != err {
@@ -179,7 +176,6 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 	moduleData.Set(common.BKAppIDField, bizID)
 	moduleData.Set(common.BKModuleNameField, common.DefaultResModuleName)
 	moduleData.Set(common.BKDefaultField, common.DefaultResModuleFlag)
-	moduleData.Set(common.BKOwnerIDField, params.SupplierAccount)
 
 	_, err = b.module.CreateModule(params, objModule, bizID, setID, moduleData)
 	if nil != err {
@@ -194,7 +190,6 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 	faultModuleData.Set(common.BKAppIDField, bizID)
 	faultModuleData.Set(common.BKModuleNameField, common.DefaultFaultModuleName)
 	faultModuleData.Set(common.BKDefaultField, common.DefaultFaultModuleFlag)
-	faultModuleData.Set(common.BKOwnerIDField, params.SupplierAccount)
 
 	_, err = b.module.CreateModule(params, objModule, bizID, setID, faultModuleData)
 	if nil != err {
@@ -225,7 +220,6 @@ func (b *business) DeleteBusiness(params types.ContextParams, obj model.Object, 
 	}
 
 	innerCond := condition.CreateCondition()
-	innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	innerCond.Field(common.BKAppIDField).Eq(bizID)
 
 	return b.inst.DeleteInst(params, bizObj, innerCond, true)
@@ -320,7 +314,6 @@ func (b *business) UpdateBusiness(params types.ContextParams, data mapstr.MapStr
 
 	innerCond := condition.CreateCondition()
 
-	innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	innerCond.Field(common.BKAppIDField).Eq(bizID)
 
 	return b.inst.UpdateInst(params, data, obj, innerCond, bizID)

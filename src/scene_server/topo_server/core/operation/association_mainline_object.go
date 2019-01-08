@@ -69,7 +69,6 @@ func (a *association) DeleteMainlineAssociaton(params types.ContextParams, objID
 	// delete this object related association.
 	cond := condition.CreateCondition()
 	cond.Field(metadata.AssociationFieldObjectID).Eq(tObject.ID)
-	cond.Field(common.BKOwnerIDField).Eq(tObject.OwnerID)
 	if err = a.DeleteAssociation(params, cond); nil != err {
 		blog.Errorf("[operation-asst] failed to delete the association, error info is %s", err.Error())
 		return err

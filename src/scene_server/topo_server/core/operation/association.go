@@ -97,7 +97,6 @@ func (a *association) SetProxy(cls ClassificationOperationInterface, obj ObjectO
 func (a *association) SearchObjectAssociation(params types.ContextParams, objID string) ([]metadata.Association, error) {
 
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	if 0 != len(objID) {
 		cond.Field(common.BKObjIDField).Eq(objID)
 	}
@@ -148,7 +147,6 @@ func (a *association) CreateCommonAssociation(params types.ContextParams, data *
 	cond := condition.CreateCondition()
 	cond.Field(common.AssociatedObjectIDField).Eq(data.AsstObjID)
 	cond.Field(common.BKObjIDField).Eq(data.ObjectID)
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.AssociationKindIDField).Eq(data.AsstKindID)
 
 	rsp, err := a.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
@@ -232,7 +230,6 @@ func (a *association) DeleteAssociationWithPreCheck(params types.ContextParams, 
 	// get the association with id at first.
 	cond := condition.CreateCondition()
 	cond.Field(metadata.AssociationFieldAssociationId).Eq(associationID)
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	result, err := a.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if err != nil {
 		blog.Errorf("[operation-asst] delete association with id[%d], but get this association for pre check failed, err: %v", associationID, err)
@@ -256,7 +253,6 @@ func (a *association) DeleteAssociationWithPreCheck(params types.ContextParams, 
 
 	// find instance(s) belongs to this association
 	cond = condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.BKObjIDField).Eq(result.Data.Info[0].ObjectID)
 	cond.Field(common.AssociatedObjectIDField).Eq(result.Data.Info[0].AsstObjID)
 	query := metadata.QueryInput{Condition: cond.ToMapStr()}
@@ -276,7 +272,6 @@ func (a *association) DeleteAssociationWithPreCheck(params types.ContextParams, 
 	// all the pre check has finished, delete the association now.
 	cond = condition.CreateCondition()
 	cond.Field(metadata.AssociationFieldAssociationId).Eq(associationID)
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	return a.DeleteAssociation(params, cond)
 }
 
@@ -413,7 +408,6 @@ func (a *association) SearchObjectAssoWithAssoKindList(params types.ContextParam
 	asso := make([]metadata.AssociationDetail, 0)
 	for _, id := range asstKindIDs {
 		cond := condition.CreateCondition()
-		cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 		cond.Field(common.AssociationKindIDField).Eq(id)
 
 		r, err := a.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
@@ -480,7 +474,6 @@ func (a *association) UpdateType(params types.ContextParams, asstTypeID int, req
 func (a *association) DeleteType(params types.ContextParams, asstTypeID int) (resp *metadata.DeleteAssociationTypeResult, err error) {
 	cond := condition.CreateCondition()
 	cond.Field("id").Eq(asstTypeID)
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	query := &metadata.SearchAssociationTypeRequest{
 		Condition: cond.ToMapStr(),
 	}
@@ -512,7 +505,6 @@ func (a *association) DeleteType(params types.ContextParams, asstTypeID int) (re
 
 	// a already used association kind can not be deleted.
 	cond = condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.AssociationKindIDField).Eq(result.Data.Info[0].AssociationKindID)
 	asso, err := a.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if err != nil {
@@ -597,7 +589,6 @@ func (a *association) SearchInst(params types.ContextParams, request *metadata.S
 func (a *association) CreateInst(params types.ContextParams, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error) {
 	cond := condition.CreateCondition()
 	cond.Field(common.AssociationObjAsstIDField).Eq(request.ObjectAsstID)
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	result, err := a.SearchObject(params, &metadata.SearchAssociationObjectRequest{Condition: cond.ToMapStr()})
 	if err != nil {
 		blog.Errorf("create association instance, but search object association with cond[%v] failed, err: %v", cond, err)
