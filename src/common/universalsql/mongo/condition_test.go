@@ -15,11 +15,27 @@ package mongo_test
 import (
 	"testing"
 
+	"configcenter/src/common"
 	"configcenter/src/common/universalsql/mongo"
 
 	"github.com/stretchr/testify/require"
 )
 
+func TestNewConditionFromMapStrWithCustomType(t *testing.T) {
+
+	target := mongo.NewCondition()
+	target.Element(&mongo.Eq{Key: "custom_type", Val: common.DataStatusDisabled})
+
+	sql, err := target.ToSQL()
+	require.NoError(t, err)
+	t.Logf("target sql:%s", sql)
+
+	recoverSql, err := mongo.NewConditionFromMapStr(target.ToMapStr())
+	require.NoError(t, err)
+	sql, err = recoverSql.ToSQL()
+	require.NoError(t, err)
+	t.Logf("recover sql:%s", sql)
+}
 func TestNewConditionFromMapStr(t *testing.T) {
 
 	target := mongo.NewCondition()

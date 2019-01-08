@@ -234,7 +234,7 @@ func TestDeleteSearchModelClassification(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
-	require.Equal(t, uint64(3), queryResult.Count)
+	require.Equal(t, int64(3), queryResult.Count)
 	t.Log("search:", queryResult.Info)
 
 	// delete all classification
@@ -289,13 +289,11 @@ func TestUpdateModelClassification(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(queryResult.Info))
-	require.Equal(t, queryResult.Count, uint64(len(queryResult.Info)))
+	require.Equal(t, queryResult.Count, int64(len(queryResult.Info)))
 
 	for _, item := range queryResult.Info {
-		tmp := metadata.Classification{}
-		err := item.ToStructByTag(&tmp, "field")
-		require.NoError(t, err)
-		require.Equal(t, tmp.ClassificationID, classificationID)
-		require.Equal(t, tmp.ClassificationName, "update_classification_name")
+
+		require.Equal(t, item.ClassificationID, classificationID)
+		require.Equal(t, item.ClassificationName, "update_classification_name")
 	}
 }
