@@ -87,7 +87,7 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 	queryInput.Condition = cond.ToMapStr()
 
 	if targetModel.Object().ObjectID != common.BKInnerObjIDHost {
-		rsp, err := cli.clientSet.CoreService().Instance().ReadInstance(context.Background(), cli.params.Header, targetModel.GetObjectType(), &metadata.QueryCondition{Condition: cond.ToMapStr()})
+		rsp, err := cli.clientSet.CoreService().Instance().ReadInstance(context.Background(), cli.params.Header, targetModel.GetObjectID(), &metadata.QueryCondition{Condition: cond.ToMapStr()})
 		if nil != err {
 			blog.Errorf("[inst-inst] failed to request the object controller , error info is %s", err.Error())
 			return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -125,7 +125,7 @@ func (cli *inst) Create() error {
 
 	cli.datas.Set(common.BKOwnerIDField, cli.params.SupplierAccount)
 
-	rsp, err := cli.clientSet.CoreService().Instance().CreateInstance(context.Background(), cli.params.Header, cli.target.GetObjectType(), &metadata.CreateModelInstance{Data: cli.datas})
+	rsp, err := cli.clientSet.CoreService().Instance().CreateInstance(context.Background(), cli.params.Header, cli.target.GetObjectID(), &metadata.CreateModelInstance{Data: cli.datas})
 	if nil != err {
 		blog.Errorf("failed to create object instance, error info is %s", err.Error())
 		return err
@@ -182,7 +182,7 @@ func (cli *inst) Update(data mapstr.MapStr) error {
 	updateCond := metadata.UpdateOption{}
 	updateCond.Data = data
 	updateCond.Condition = cond.ToMapStr()
-	rsp, err := cli.clientSet.CoreService().Instance().UpdateInstance(context.Background(), cli.params.Header, cli.target.GetObjectType(), &updateCond)
+	rsp, err := cli.clientSet.CoreService().Instance().UpdateInstance(context.Background(), cli.params.Header, cli.target.GetObjectID(), &updateCond)
 	if nil != err {
 		blog.Errorf("failed to update the object(%s) instances, error info is %s", tObj.ObjectID, err.Error())
 		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -251,7 +251,7 @@ func (cli *inst) IsExists() (bool, error) {
 	queryCond.Condition = cond.ToMapStr()
 
 	rsp, err := cli.clientSet.CoreService().Instance().ReadInstance(
-		context.Background(), cli.params.Header, cli.target.GetObjectType(), &metadata.QueryCondition{Condition: cond.ToMapStr()},
+		context.Background(), cli.params.Header, cli.target.GetObjectID(), &metadata.QueryCondition{Condition: cond.ToMapStr()},
 	)
 	if nil != err {
 		blog.Errorf("failed to search object(%s) instances  , error info is %s", tObj.ObjectID, err.Error())
