@@ -135,6 +135,7 @@
     .main-scroller{
         height: 100%;
         overflow: auto;
+        @include scrollbar;
     }
     .views-layout{
         min-height: 100%;
