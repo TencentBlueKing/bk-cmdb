@@ -121,7 +121,7 @@
             getInstDetails () {
                 return this.searchInst({
                     objId: this.objId,
-                    params: {
+                    params: this.$injectMetadata({
                         condition: {
                             [this.objId]: [{
                                 field: 'bk_inst_id',
@@ -131,7 +131,7 @@
                         },
                         fields: {},
                         page: {start: 0, limit: 1}
-                    }
+                    })
                 }).then(({info}) => info[0])
             },
             handleHideDetails () {

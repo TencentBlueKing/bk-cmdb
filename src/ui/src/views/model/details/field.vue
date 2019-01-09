@@ -227,7 +227,7 @@
                 formData.append('file', files[0])
                 try {
                     const res = await this.importObjectAttribute({
-                        params: formData,
+                        params: this.$injectMetadata(formData),
                         bkObjId: this.activeModel['bk_obj_id'],
                         config: {
                             requestId: 'importObjectAttribute',

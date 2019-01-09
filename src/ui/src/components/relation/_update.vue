@@ -256,22 +256,22 @@
             getObjAssociation () {
                 return Promise.all([
                     this.searchObjectAssociation({
-                        params: {
+                        params: this.$injectMetadata({
                             condition: {
                                 'bk_obj_id': this.objId
                             }
-                        },
+                        }),
                         config: {
                             requestId: 'getSourceAssocaition',
                             fromCache: true
                         }
                     }),
                     this.searchObjectAssociation({
-                        params: {
+                        params: this.$injectMetadata({
                             condition: {
                                 'bk_asst_obj_id': this.objId
                             }
-                        },
+                        }),
                         config: {
                             requestId: 'getTargetAssocaition',
                             fromCache: true
@@ -477,7 +477,7 @@
             getObjInstance (objId, config) {
                 return this.searchInst({
                     objId: objId,
-                    params: this.getObjParams(),
+                    params: this.$injectMetadata(this.getObjParams()),
                     config
                 })
             },
