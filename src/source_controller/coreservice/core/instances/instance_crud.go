@@ -72,7 +72,7 @@ func (m *instanceManager) getInstDataByID(ctx core.ContextParams, objID string, 
 	if common.GetInstTableName(objID) == common.BKTableNameBaseInst {
 		cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
 	}
-	err = m.dbProxy.Table(tableName).Find(cond.ToMapStr()).One(ctx, origin)
+	err = m.dbProxy.Table(tableName).Find(cond.ToMapStr()).One(ctx, &origin)
 	if nil != err {
 		return nil, err
 	}
