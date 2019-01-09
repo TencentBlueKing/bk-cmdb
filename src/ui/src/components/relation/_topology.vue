@@ -125,7 +125,6 @@
             ...mapActions('objectRelation', ['getInstRelation', 'updateInstRelation']),
             ...mapActions('objectModelProperty', ['searchObjectAttribute']),
             ...mapActions('objectModelFieldGroup', ['searchGroup']),
-            ...mapActions('objectCommonInst', ['searchInst']),
             ...mapActions('objectBiz', ['searchBusiness']),
             ...mapActions('hostSearch', ['getHostBaseInfo']),
             resetNetwork (node = null) {

@@ -130,14 +130,14 @@
             // 加载通用模型实例数量
             loadCommonInst (id) {
                 return this.$store.dispatch('objectCommonInst/searchInst', {
-                    params: {
+                    params: this.$injectMetadata({
                         condition: {},
                         fields: {},
                         page: {
                             start: 0,
                             limit: 1
                         }
-                    },
+                    }),
                     objId: id
                 })
             }

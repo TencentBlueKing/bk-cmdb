@@ -175,20 +175,20 @@
             },
             searchAsSource () {
                 return this.searchObjectAssociation({
-                    params: {
+                    params: this.$injectMetadata({
                         condition: {
                             'bk_obj_id': this.relationInfo['bk_obj_id']
                         }
-                    }
+                    })
                 })
             },
             searchAsDest () {
                 return this.searchObjectAssociation({
-                    params: {
+                    params: this.$injectMetadata({
                         condition: {
                             'bk_asst_obj_id': this.relationInfo['bk_obj_id']
                         }
-                    }
+                    })
                 })
             },
             async saveRelation () {

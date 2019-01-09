@@ -118,7 +118,7 @@
             },
             getObjectAssociation (condition, config) {
                 return this.$store.dispatch('objectAssociation/searchObjectAssociation', {
-                    params: {condition},
+                    params: this.$injectMetadata({condition}),
                     config
                 })
             },

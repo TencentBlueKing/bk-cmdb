@@ -376,7 +376,7 @@
                     }]
                     promise = this.searchInst({
                         objId,
-                        params: requestParams,
+                        params: this.$injectMetadata(requestParams),
                         config: requestConfig
                     })
                 }
@@ -612,7 +612,7 @@
                     instNameKey = 'bk_inst_name'
                     promise = this.createInst({
                         objId: nextObjId,
-                        params: formData
+                        params: this.$injectMetadata(formData)
                     })
                 }
                 promise.then(inst => {
@@ -662,7 +662,7 @@
                     promise = this.updateInst({
                         objId: objId,
                         instId: selectedNode['bk_inst_id'],
-                        params: formData
+                        params: this.$injectMetadata(formData)
                     })
                 }
                 promise.then(() => {
@@ -718,7 +718,10 @@
                             promise = this.deleteInst({
                                 objId,
                                 instId: selectedNode['bk_inst_id'],
-                                config
+                                config: {
+                                    ...config,
+                                    data: this.$injectMetadata({})
+                                }
                             })
                         }
                         promise.then(() => {

@@ -393,17 +393,17 @@
             getInstList (config = {cancelPrevious: true}) {
                 return this.searchInst({
                     objId: this.objId,
-                    params: this.getSearchParams(),
+                    params: this.$injectMetadata(this.getSearchParams()),
                     config: Object.assign({requestId: `post_searchInst_${this.objId}`}, config)
                 })
             },
             getAllInstList () {
                 return this.searchInst({
                     objId: this.objId,
-                    params: {
+                    params: this.$injectMetadata({
                         ...this.getSearchParams(),
                         page: {}
-                    },
+                    }),
                     config: {
                         requestId: `${this.objId}AllList`,
                         cancelPrevious: true
@@ -506,7 +506,8 @@
                     confirmFn: () => {
                         this.deleteInst({
                             objId: this.objId,
-                            instId: inst['bk_inst_id']
+                            instId: inst['bk_inst_id'],
+                            data: this.$injectMetadata({})
                         }).then(() => {
                             this.slider.show = false
                             this.$success(this.$t('Common["删除成功"]'))
@@ -520,12 +521,13 @@
                     this.updateInst({
                         objId: this.objId,
                         instId: originalValues['bk_inst_id'],
-                        params: values
+                        params: this.$injectMetadata(values)
                     }).then(() => {
                         this.getTableData()
                         this.searchInstById({
                             objId: this.objId,
-                            instId: originalValues['bk_inst_id']
+                            instId: originalValues['bk_inst_id'],
+                            params: this.$injectMetadata({})
                         }).then(item => {
                             this.attribute.inst.details = this.$tools.flatternItem(this.properties, item)
                         })
@@ -534,7 +536,7 @@
                     })
                 } else {
                     this.createInst({
-                        params: values,
+                        params: this.$injectMetadata(values),
                         objId: this.objId
                     }).then(() => {
                         this.handlePageChange(1)
@@ -558,14 +560,14 @@
             handleMultipleSave (values) {
                 this.batchUpdateInst({
                     objId: this.objId,
-                    params: {
+                    params: this.$injectMetadata({
                         update: this.table.checked.map(instId => {
                             return {
                                 'datas': values,
                                 'inst_id': instId
                             }
                         })
-                    },
+                    }),
                     config: {
                         requestId: `${this.objId}BatchUpdate`
                     }
@@ -589,11 +591,11 @@
                 this.batchDeleteInst({
                     objId: this.objId,
                     config: {
-                        data: {
+                        data: this.$injectMetadata({
                             'delete': {
                                 'inst_ids': this.table.checked
                             }
-                        }
+                        })
                     }
                 }).then(() => {
                     this.$success(this.$t('Common["删除成功"]'))
