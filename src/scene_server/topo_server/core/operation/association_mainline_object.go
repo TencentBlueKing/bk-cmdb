@@ -120,7 +120,7 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 		blog.Errorf("[operation-asst] failed to check the mainline topo level, error info is %s", err.Error())
 		return nil, err
 	}
-
+	params.MetaData = &data.Metadata
 	items, err := a.SearchMainlineAssociationTopo(params, bizObj)
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to check the mainline topo level, error info is %s", err.Error())

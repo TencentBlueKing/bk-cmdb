@@ -26,10 +26,10 @@ func (s *topoService) initAssociation() {
 
 	// mainline topo methods
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/topo/model/mainline", HandlerFunc: s.CreateMainLineObject})
-	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/topo/model/mainline/owners/{owner_id}/objectids/{obj_id}", HandlerFunc: s.DeleteMainLineObject})
+	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/topo/model/mainline/owners/{owner_id}/objectids/{bk_obj_id}", HandlerFunc: s.DeleteMainLineObject})
 	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/model/{owner_id}", HandlerFunc: s.SearchMainLineObjectTopo})
-	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/model/{owner_id}/{cls_id}/{obj_id}", HandlerFunc: s.SearchObjectByClassificationID})
-	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/inst/{owner_id}/{app_id}", HandlerFunc: s.SearchBusinessTopo})
+	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/model/{owner_id}/{cls_id}/{bk_obj_id}", HandlerFunc: s.SearchObjectByClassificationID})
+	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/inst/{owner_id}/{bk_biz_id}", HandlerFunc: s.SearchBusinessTopo})
 	// TODO: delete this api, it's not used by front.
 	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/inst/child/{owner_id}/{obj_id}/{app_id}/{inst_id}", HandlerFunc: s.SearchMainLineChildInstTopo})
 
@@ -53,11 +53,11 @@ func (s *topoService) initAssociation() {
 
 	// topo search methods
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/association/search/owner/{owner_id}/object/{obj_id}", HandlerFunc: s.SearchInstByAssociation})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/association/topo/search/owner/{owner_id}/object/{object_id}/inst/{inst_id}", HandlerFunc: s.SearchInstTopo})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/association/topo/search/owner/{owner_id}/object/{bk_object_id}/inst/{inst_id}", HandlerFunc: s.SearchInstTopo})
 
 	// ATTENTION: the following methods is not recommended
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/search/topo/owner/{owner_id}/object/{object_id}/inst/{inst_id}", HandlerFunc: s.SearchInstChildTopo})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/association/action/{obj_id}/import", HandlerFunc: s.ImportInstanceAssociation})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/search/topo/owner/{owner_id}/object/{bk_object_id}/inst/{inst_id}", HandlerFunc: s.SearchInstChildTopo})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/association/action/{bk_obj_id}/import", HandlerFunc: s.ImportInstanceAssociation})
 
 }
 
@@ -149,8 +149,8 @@ func (s *topoService) initObjectGroup() {
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/objectatt/group/update", HandlerFunc: s.UpdateObjectGroup})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/objectatt/group/groupid/{id}", HandlerFunc: s.DeleteObjectGroup})
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/objectatt/group/property", HandlerFunc: s.UpdateObjectAttributeGroup, HandlerParseOriginDataFunc: s.ParseUpdateObjectAttributeGroupInput})
-	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/objectatt/group/owner/{owner_id}/object/{object_id}/propertyids/{property_id}/groupids/{group_id}", HandlerFunc: s.DeleteObjectAttributeGroup})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/objectatt/group/property/owner/{owner_id}/object/{object_id}", HandlerFunc: s.SearchGroupByObject})
+	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/objectatt/group/owner/{owner_id}/object/{bk_object_id}/propertyids/{property_id}/groupids/{group_id}", HandlerFunc: s.DeleteObjectAttributeGroup})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/objectatt/group/property/owner/{owner_id}/object/{bk_object_id}", HandlerFunc: s.SearchGroupByObject})
 }
 
 func (s *topoService) initObject() {
@@ -217,4 +217,13 @@ func (s *topoService) initService() {
 	s.initGraphics()
 	s.initIdentifier()
 	s.initObjectObjectUnique()
+
+	s.initBusinessObject()
+	s.initBusinessClassification()
+	s.initBusinessObjectAttribute()
+	s.initBusinessObjectUnique()
+	s.initBusinessObjectAttrGroup()
+	s.initBusinessAssociation()
+	s.initBusinessGraphics()
+
 }
