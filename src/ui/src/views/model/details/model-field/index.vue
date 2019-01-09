@@ -247,7 +247,7 @@
                 if (this.isEditField) {
                     await this.updateObjectAttribute({
                         id: this.field.id,
-                        params: this.fieldInfo,
+                        params: this.$injectMetadata(this.fieldInfo, true),
                         config: {
                             requestId: 'updateObjectAttribute'
                         }
@@ -262,7 +262,7 @@
                         bk_supplier_account: this.supplierAccount
                     }
                     await this.createObjectAttribute({
-                        params: {...this.fieldInfo, ...otherParams},
+                        params: this.$injectMetadata({...this.fieldInfo, ...otherParams}),
                         config: {
                             requestId: 'createObjectAttribute'
                         }

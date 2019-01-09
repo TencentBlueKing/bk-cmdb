@@ -201,10 +201,10 @@
             ...mapActions('hostSearch', ['searchHost']),
             getAsstObjProperties () {
                 return this.searchObjectAttribute({
-                    params: {
+                    params: this.$injectMetadata({
                         'bk_obj_id': this.currentAsstObj,
                         'bk_supplier_account': this.supplierAccount
-                    },
+                    }),
                     config: {
                         requestId: `post_searchObjectAttribute_${this.currentAsstObj}`
                     }

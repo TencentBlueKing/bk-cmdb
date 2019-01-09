@@ -137,9 +137,9 @@
             },
             async initAttrList () {
                 this.attributeList = await this.searchObjectAttribute({
-                    params: {
+                    params: this.$injectMetadata({
                         bk_obj_id: this.activeModel['bk_obj_id']
-                    },
+                    }),
                     config: {
                         requestId: `post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`
                     }
@@ -178,7 +178,10 @@
             async searchVerification () {
                 const res = await this.searchObjectUniqueConstraints({
                     objId: this.activeModel['bk_obj_id'],
-                    requestId: 'searchObjectUniqueConstraints'
+                    config: {
+                        requestId: 'searchObjectUniqueConstraints',
+                        data: this.$injectMetadata()
+                    }
                 })
                 this.table.list = res
             }

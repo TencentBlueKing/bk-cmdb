@@ -251,14 +251,17 @@
                 if (this.groupDialog.isEdit) {
                     const res = await this.updateClassification({
                         id: this.groupDialog.data.id,
-                        params,
+                        params: this.$injectMetadata(params, true),
                         config: {
                             requestId: 'updateClassification'
                         }
                     })
                     this.updateClassify({...params, ...{id: this.groupDialog.data.id}})
                 } else {
-                    const res = await this.createClassification({params, config: {requestId: 'createClassification'}})
+                    const res = await this.createClassification({
+                        params: this.$injectMetadata(params, true),
+                        config: {requestId: 'createClassification'}
+                    })
                     this.updateClassify({...params, ...{id: res.id}})
                 }
                 this.hideGroupDialog()
@@ -278,17 +281,19 @@
                 this.modelDialog.isShow = true
             },
             async saveModel (data) {
-                let params = {
+                const params = this.$injectMetadata({
                     bk_supplier_account: this.supplierAccount,
                     bk_obj_name: data['bk_obj_name'],
                     bk_obj_icon: data['bk_obj_icon'],
                     bk_classification_id: data['bk_classification_id'],
                     bk_obj_id: data['bk_obj_id'],
                     userName: this.userName
-                }
+                })
                 await this.createObject({params, config: {requestId: 'createModel'}})
                 this.$http.cancel('post_searchClassificationsObjects')
-                this.searchClassificationsObjects({})
+                this.searchClassificationsObjects({
+                    params: this.injectMetadata()
+                })
             },
             modelClick (model) {
                 this.$store.commit('setHeaderStatus', {
