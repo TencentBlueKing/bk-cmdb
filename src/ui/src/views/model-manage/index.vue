@@ -1,6 +1,8 @@
 <template>
     <div class="group-wrapper">
-        <div class="btn-group" ref="btnGroup">
+        <cmdb-main-inject
+            inject-type="prepend"
+            :class="['btn-group', {sticky: !!scrollTop}]">
             <bk-button type="primary"
                 :disabled="!authority.includes('update') || modelType === 'disabled'"
                 @click="showModelDialog(false)">
@@ -11,7 +13,7 @@
                 @click="showGroupDialog(false)">
                 {{$t('ModelManagement["新建分组"]')}}
             </bk-button>
-        </div>
+        </cmdb-main-inject>
         <div class="model-type-options">
             <bk-button class="model-type-button enable"
                 size="mini"
@@ -120,24 +122,20 @@
 </template>
 
 <script>
+    import cmdbMainInject from '@/components/layout/main-inject'
     import theCreateModel from '@/components/model-manage/_create-model'
     import theModel from './children'
     import { mapGetters, mapMutations, mapActions } from 'vuex'
-    import {
-        addMainScrollListener,
-        removeMainScrollListener,
-        addMainResizeListener,
-        removeMainResizeListener
-    } from '@/utils/main-scroller'
+    import {addMainScrollListener, removeMainScrollListener} from '@/utils/main-scroller'
     export default {
         components: {
             theModel,
-            theCreateModel
+            theCreateModel,
+            cmdbMainInject
         },
         data () {
             return {
                 scrollHandler: null,
-                resizeHandler: null,
                 scrollTop: 0,
                 groupDialog: {
                     isShow: false,
@@ -195,11 +193,13 @@
         },
         created () {
             this.$store.commit('setHeaderTitle', this.$t('Nav["模型"]'))
-            this.setScroller()
+            this.scrollHandler = event => {
+                this.scrollTop = event.target.scrollTop
+            }
+            addMainScrollListener(this.scrollHandler)
         },
         beforeDestroy () {
             removeMainScrollListener(this.scrollHandler)
-            removeMainResizeListener(this.resizeHandler)
         },
         methods: {
             ...mapMutations('objectModelClassify', [
@@ -215,22 +215,6 @@
             ...mapActions('objectModel', [
                 'createObject'
             ]),
-            setScroller () {
-                const checkMainScroller = ($scroller) => {
-                    const top = $scroller.scrollTop
-                    const btnGroup = this.$refs.btnGroup
-                    btnGroup.style.top = top + 'px'
-                    btnGroup.style.boxShadow = top ? '0 0 8px 1px rgba(0,0,0,.03)' : 'unset'
-                }
-                this.scrollHandler = event => {
-                    checkMainScroller(event.target)
-                }
-                this.resizeHandler = () => {
-                    checkMainScroller(document.querySelector('.main-scroller'))
-                }
-                addMainScrollListener(this.scrollHandler)
-                addMainResizeListener(this.resizeHandler)
-            },
             showGroupDialog (isEdit, group) {
                 if (isEdit) {
                     this.groupDialog.data.id = group.id
@@ -324,7 +308,7 @@
         position: absolute;
         top: 0;
         left: 0;
-        width: 100%;
+        width: calc(100% - 8px);
         padding: 20px;
         font-size: 0;
         background-color: #fff;
