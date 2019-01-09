@@ -13,6 +13,7 @@
 package mapstr
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -55,6 +56,68 @@ func dealPointer(value reflect.Value, tag, tagName string) interface{} {
 	}
 
 	return nil
+}
+func getValue(inputVal interface{}) interface{} {
+	switch t := inputVal.(type) {
+	case string, int, int8, int16, int32, int64, uint, uint16, uint32, uint64, uint8:
+		return t
+	case json.Number:
+		if val, err := t.Int64(); nil == err {
+			return val
+		}
+		if val, err := t.Float64(); nil == err {
+			return val
+		}
+		return t.String()
+	default:
+		return t
+	}
+}
+func setMapToReflectValue(returnVal, inputVal reflect.Value) reflect.Value {
+
+	mapKeys := inputVal.MapKeys()
+	for _, key := range mapKeys {
+
+		value := inputVal.MapIndex(key)
+		if !value.CanInterface() {
+			continue
+		}
+
+		switch returnVal.Type().Elem().Kind() {
+		default:
+			panic("not support:" + returnVal.Type().Elem().Kind().String() + fmt.Sprintf(" value: %v", value.Interface()))
+		case reflect.Interface:
+			returnVal.Set(reflect.ValueOf(map[string]interface{}{key.String(): value.Interface()}))
+		case reflect.String:
+			returnVal.Set(reflect.ValueOf(map[string]string{key.String(): fmt.Sprintf("%v", value.Interface())}))
+		case reflect.Int:
+			returnVal.Set(reflect.ValueOf(map[string]int{key.String(): toInt(value.Interface())}))
+		case reflect.Int8:
+			returnVal.Set(reflect.ValueOf(map[string]int8{key.String(): int8(toInt(value.Interface()))}))
+		case reflect.Int16:
+			returnVal.Set(reflect.ValueOf(map[string]int16{key.String(): int16(toInt(value.Interface()))}))
+		case reflect.Int32:
+			returnVal.Set(reflect.ValueOf(map[string]int32{key.String(): int32(toInt(value.Interface()))}))
+		case reflect.Int64:
+			returnVal.Set(reflect.ValueOf(map[string]int64{key.String(): int64(toInt(value.Interface()))}))
+		case reflect.Uint:
+			returnVal.Set(reflect.ValueOf(map[string]uint{key.String(): uint(toInt(value.Interface()))}))
+		case reflect.Uint16:
+			returnVal.Set(reflect.ValueOf(map[string]uint16{key.String(): uint16(toInt(value.Interface()))}))
+		case reflect.Uint32:
+			returnVal.Set(reflect.ValueOf(map[string]uint32{key.String(): uint32(toInt(value.Interface()))}))
+		case reflect.Uint64:
+			returnVal.Set(reflect.ValueOf(map[string]uint64{key.String(): uint64(toInt(value.Interface()))}))
+		case reflect.Uint8:
+			returnVal.Set(reflect.ValueOf(map[string]uint8{key.String(): uint8(toInt(value.Interface()))}))
+		case reflect.Float32:
+			returnVal.Set(reflect.ValueOf(map[string]float32{key.String(): float32(toFloat(value.Interface()))}))
+		case reflect.Float64:
+			returnVal.Set(reflect.ValueOf(map[string]float64{key.String(): toFloat(value.Interface())}))
+		}
+	}
+
+	return returnVal
 }
 
 func convertToInt(fieldName string, tagVal interface{}, fieldValue *reflect.Value) error {
@@ -141,7 +204,7 @@ func parseStruct(targetType reflect.Type, targetValue reflect.Value, values MapS
 			return fmt.Errorf("unsupport the type %s %v", structField.Name, structField.Type.Kind())
 
 		case reflect.Map:
-			fieldValue.Set(reflect.ValueOf(tagVal))
+			setMapToReflectValue(fieldValue, reflect.ValueOf(tagVal))
 
 		case reflect.Interface:
 			tmpVal := reflect.ValueOf(tagVal)
