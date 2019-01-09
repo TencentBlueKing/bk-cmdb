@@ -28,6 +28,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     createGroup ({ commit, state, dispatch }, { params, config }) {
+        // return $http.post('create/objectattgroup', params, config)
         return $http.post(`objectatt/group/new`, params, config)
     },
 
@@ -40,7 +41,8 @@ const actions = {
      * @param {String} bkObjId 模型id
      * @return {promises} promises 对象
      */
-    searchGroup ({ commit, state, dispatch, rootGetters }, {objId, config}) {
+    searchGroup ({ commit, state, dispatch, rootGetters }, {objId, params, config}) {
+        // return $http.post(`find/objectattgroup/object/${objId}`, params, config)
         return $http.post(`objectatt/group/property/owner/${rootGetters.supplierAccount}/object/${objId}`, {}, config)
     },
 
@@ -53,6 +55,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     updateGroup ({ commit, state, dispatch }, { params, config }) {
+        // return $http.put('update/objectattgroup', params, config)
         return $http.put(`objectatt/group/update`, params, config)
     },
 
@@ -65,19 +68,8 @@ const actions = {
      * @return {promises} promises 对象
      */
     deleteGroup ({ commit, state, dispatch }, { id, config }) {
+        // return $http.delete(`delete/objectattgroup/${id}`, config)
         return $http.delete(`objectatt/group/groupid/${id}`, config)
-    },
-
-    /**
-     * 更新模型属性分组
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
-    updatePropertyGroup ({ commit, state, dispatch }, { params, config }) {
-        return $http.put(`objectatt/group/property`, params, config)
     },
 
     /**
@@ -91,8 +83,8 @@ const actions = {
      * @param {String} bkGroupId 分组id
      * @return {promises} promises 对象
      */
-    deleteObjectPropertyGroup ({ commit, state, dispatch }, { bkSupplierAccount, bkObjId, bkPropertyId, bkGroupId }) {
-        return $http.delete(`objectatt/group/owner/${bkSupplierAccount}/object/${bkObjId}/propertyids/${bkPropertyId}/groupids/${bkGroupId}`)
+    deleteObjectPropertyGroup ({ commit, state, dispatch }, { objId, propertyId, groupId }) {
+        return $http.delete(`delete/objectattgroupasst/object/${objId}/property/${propertyId}/group/${groupId}`)
     }
 }
 

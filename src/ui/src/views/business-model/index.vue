@@ -109,6 +109,7 @@
                         }
                     })
                     await this.searchClassificationsObjects({
+                        params: this.$injectMetadata({}),
                         config: {
                             clearCache: true,
                             requestId: 'post_searchClassificationsObjects'

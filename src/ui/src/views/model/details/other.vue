@@ -103,9 +103,9 @@
             async updateModel (ispaused) {
                 await this.updateObject({
                     id: this.activeModel['id'],
-                    params: {
+                    params: this.$injectMetadata({
                         bk_ispaused: ispaused
-                    },
+                    }),
                     config: {
                         requestId: 'updateModel'
                     }

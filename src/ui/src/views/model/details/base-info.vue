@@ -186,7 +186,7 @@
                     }
                     await this.updateObject({
                         id: this.activeModel['id'],
-                        params: {...params, ...{modifier: this.userName}}
+                        params: this.$injectMetadata({...params, ...{modifier: this.userName}})
                     }).then(() => {
                         this.$http.cancel('post_searchClassificationsObjects')
                     })
@@ -205,7 +205,7 @@
                         })
                     } else {
                         res = await this.createObject({
-                            params: {...params, ...{creator: this.userName}},
+                            params: this.$injectMetadata({...params, ...{creator: this.userName}}),
                             config: {
                                 requestId: 'createModel'
                             }
@@ -222,9 +222,9 @@
             },
             async getObjInfo () {
                 const res = await this.searchObjects({
-                    params: {
+                    params: this.$injectMetadata({
                         bk_obj_id: this.activeModel['bk_obj_id']
-                    }
+                    })
                 })
                 this.baseInfo = res[0]
                 this.baseInfoCopy = this.$tools.clone(res[0])

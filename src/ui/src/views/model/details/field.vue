@@ -197,9 +197,9 @@
             },
             async initFieldList () {
                 const res = await this.searchObjectAttribute({
-                    params: {
+                    params: this.$injectMetadata({
                         bk_obj_id: this.activeModel['bk_obj_id']
-                    },
+                    }),
                     config: {
                         requestId: 'initFieldList'
                     }

@@ -20,7 +20,7 @@ const getters = {
 
 const actions = {
     /**
-     * 创建分组基本信息
+     * 创建对象模型属性
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
@@ -28,6 +28,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     createObjectAttribute ({ commit, state, dispatch }, { params, config }) {
+        // return $http.post('create/objectattr', params, config)
         return $http.post(`object/attr`, params, config)
     },
 
@@ -40,6 +41,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     deleteObjectAttribute ({ commit, state, dispatch }, { id, config }) {
+        // return $http.delete(`delete/objectattr/${id}`)
         return $http.delete(`object/attr/${id}`, config)
     },
 
@@ -53,6 +55,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     updateObjectAttribute ({ commit, state, dispatch }, { id, params, config }) {
+        // return $http.put(`update/objectattr/${id}`, params, config)
         return $http.put(`object/attr/${id}`, params, config)
     },
 
@@ -65,6 +68,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchObjectAttribute ({ commit, state, dispatch }, { params, config }) {
+        // return $http.post('find/objectattr', params, config)
         return $http.post(`object/attr/search`, params, config)
     },
 
@@ -77,6 +81,16 @@ const actions = {
      * @return {promises} promises 对象
      */
     batchSearchObjectAttribute ({ commit, state, dispatch }, { params, config }) {
+        // return $http.post(`find/objectattr`, params, config).then(properties => {
+        //     const result = {}
+        //     params['bk_obj_id']['$in'].forEach(objId => {
+        //         result[objId] = []
+        //     })
+        //     properties.forEach(property => {
+        //         result[property['bk_obj_id']].push(property)
+        //     })
+        //     return result
+        // })
         return $http.post(`object/attr/search`, params, config).then(properties => {
             const result = {}
             params['bk_obj_id']['$in'].forEach(objId => {
