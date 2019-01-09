@@ -168,7 +168,7 @@
             .verification-selector {
                 position: relative;
                 display: inline-block;
-                width: calc(100% - 145px);
+                width: 100%;
                 .bk-selector {
                     width: 100%;
                 }
