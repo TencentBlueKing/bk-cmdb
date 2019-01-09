@@ -86,6 +86,8 @@ func setMapToReflectValue(returnVal, inputVal reflect.Value) reflect.Value {
 		switch returnVal.Type().Elem().Kind() {
 		default:
 			panic("not support:" + returnVal.Type().Elem().Kind().String() + fmt.Sprintf(" value: %v", value.Interface()))
+		case reflect.Interface:
+			returnVal.Set(reflect.ValueOf(map[string]interface{}{key.String(): value.Interface()}))
 		case reflect.String:
 			returnVal.Set(reflect.ValueOf(map[string]string{key.String(): fmt.Sprintf("%v", value.Interface())}))
 		case reflect.Int:
