@@ -28,6 +28,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     createMainlineObject ({ commit, state, dispatch }, { params }) {
+        // return $http.post(`create/topomodelmainline`, params)
         return $http.post(`topo/model/mainline`, params)
     },
 
@@ -41,6 +42,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     deleteMainlineObject ({ commit, state, dispatch, rootGetters }, { bkObjId, config }) {
+        // return $http.delete(`delete/topomodelmainline/object/${bkObjId}`, config)
         return $http.delete(`topo/model/mainline/owners/${rootGetters.supplierAccount}/objectids/${bkObjId}`, config)
     },
 
@@ -52,6 +54,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchMainlineObject ({ commit, state, dispatch, rootGetters }, config) {
+        // return $http.get(`find/topomodelmainline`, config)
         return $http.get(`topo/model/${rootGetters.supplierAccount}`, config)
     },
 
@@ -64,6 +67,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     getInstTopo ({ commit, state, dispatch, rootGetters }, { bizId, config }) {
+        // return $http.get(`find/topoinst/biz/${bizId}?level=-1`, config)
         return $http.get(`topo/inst/${rootGetters.supplierAccount}/${bizId}?level=-1`, config)
     },
 
@@ -79,6 +83,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchInstTopo ({ commit, state, dispatch }, { bkSupplierAccount, bkObjId, bkBizId, bkInstId }) {
+        // return $http.get(`topoinstchild/object/${bkObjId}/biz/${bkBizId}/inst/${bkInstId}`)
         return $http.get(`topo/inst/child/${bkSupplierAccount}/${bkObjId}/${bkBizId}/${bkInstId}`)
     },
 
@@ -92,6 +97,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     getInternalTopo ({ commit, state, dispatch, rootGetters }, { bizId, config }) {
+        // return $http.get(`find/topointernal/biz/${bizId}`, config)
         return $http.get(`topo/internal/${rootGetters.supplierAccount}/${bizId}`, config)
     }
 }
