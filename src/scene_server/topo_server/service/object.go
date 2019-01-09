@@ -18,23 +18,23 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
-	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // CreateObjectBatch batch to create some objects
-func (s *topoService) CreateObjectBatch(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) CreateObjectBatch(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	return s.core.ObjectOperation().CreateObjectBatch(params, data)
 }
 
 // SearchObjectBatch batch to search some objects
-func (s *topoService) SearchObjectBatch(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchObjectBatch(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	return s.core.ObjectOperation().FindObjectBatch(params, data)
 }
 
 // CreateObject create a new object
-func (s *topoService) CreateObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) CreateObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	rsp, err := s.core.ObjectOperation().CreateObject(params, false, data)
 	if nil != err {
@@ -45,7 +45,7 @@ func (s *topoService) CreateObject(params types.ContextParams, pathParams, query
 }
 
 // SearchObject search some objects by condition
-func (s *topoService) SearchObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 	if err := cond.Parse(data); nil != err {
@@ -56,7 +56,7 @@ func (s *topoService) SearchObject(params types.ContextParams, pathParams, query
 }
 
 // SearchObjectTopo search the object topo
-func (s *topoService) SearchObjectTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchObjectTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	cond := condition.CreateCondition()
 	err := cond.Parse(data)
 	if nil != err {
@@ -67,7 +67,7 @@ func (s *topoService) SearchObjectTopo(params types.ContextParams, pathParams, q
 }
 
 // UpdateObject update the object
-func (s *topoService) UpdateObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) UpdateObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 
@@ -82,11 +82,11 @@ func (s *topoService) UpdateObject(params types.ContextParams, pathParams, query
 }
 
 // DeleteObject delete the object
-func (s *topoService) DeleteObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) DeleteObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 
-	paramPath := frtypes.MapStr{}
+	paramPath := mapstr.MapStr{}
 	paramPath.Set("id", pathParams("id"))
 	id, err := paramPath.Int64("id")
 	if nil != err {
@@ -98,7 +98,7 @@ func (s *topoService) DeleteObject(params types.ContextParams, pathParams, query
 	return nil, err
 }
 
-func (s *topoService) CreateOneObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) CreateOneObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	rsp, err := s.core.ObjectOperation().CreateOneObject(params, data)
 	if nil != err {

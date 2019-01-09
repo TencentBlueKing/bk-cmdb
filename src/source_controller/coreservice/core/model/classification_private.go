@@ -31,12 +31,22 @@ func (m *modelClassification) isValid(ctx core.ContextParams, classificationID s
 	return 0 != cnt, err
 }
 
-func (m *modelClassification) isExists(ctx core.ContextParams, classificationID string) (origin *metadata.Classification, exists bool, err error) {
+func (m *modelClassification) isExists(ctx core.ContextParams, classificationID string, meta metadata.Metadata) (origin *metadata.Classification, exists bool, err error) {
 
 	origin = &metadata.Classification{}
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationID, Val: ctx.SupplierAccount})
 	cond.Element(&mongo.Eq{Key: metadata.ClassFieldClassificationID, Val: classificationID})
+
+	// ATTETION: Currently only business dimension isolation is done,
+	//           and there may be isolation requirements for other dimensions in the future.
+	isExsit, bizID := meta.Label.Get(common.BKAppIDField)
+	if isExsit {
+		_, metaCond := cond.Embed(metadata.BKMetadata)
+		_, lableCond := metaCond.Embed(metadata.BKLabel)
+		lableCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
+	}
+
 	err = m.dbProxy.Table(common.BKTableNameObjClassifiction).Find(cond.ToMapStr()).One(ctx, origin)
 	if nil != err && !m.dbProxy.IsNotFoundError(err) {
 		return origin, false, err
