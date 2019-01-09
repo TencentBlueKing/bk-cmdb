@@ -50,6 +50,9 @@ func SetValueToMapStrByTags(source interface{}) MapStr {
 func SetValueToMapStrByTagsWithTagName(source interface{}, tagName string) MapStr {
 
 	values := MapStr{}
+	if nil == source {
+		return values
+	}
 
 	targetType := reflect.TypeOf(source)
 	targetValue := reflect.ValueOf(source)
@@ -57,6 +60,11 @@ func SetValueToMapStrByTagsWithTagName(source interface{}, tagName string) MapSt
 	case reflect.Ptr:
 		targetType = targetType.Elem()
 		targetValue = targetValue.Elem()
+
+		if targetType.Kind() == reflect.Ptr {
+			return SetValueToMapStrByTagsWithTagName(targetValue.Interface(), tagName)
+		}
+
 	}
 
 	numField := targetType.NumField()
@@ -83,9 +91,15 @@ func SetValueToMapStrByTagsWithTagName(source interface{}, tagName string) MapSt
 		switch structField.Type.Kind() {
 		case reflect.String, reflect.Int, reflect.Int16, reflect.Int8, reflect.Int32, reflect.Int64, reflect.Map:
 			values.Set(tags[0], fieldValue.Interface())
-		case reflect.Struct, reflect.Ptr:
+		case reflect.Struct:
 			innerMapStr := SetValueToMapStrByTagsWithTagName(fieldValue.Interface(), tagName)
 			values.Set(tags[0], innerMapStr)
+
+		case reflect.Ptr:
+
+			innerValue := dealPointer(fieldValue, tags[0], tagName)
+			values.Set(tags[0], innerValue)
+
 		}
 
 	}

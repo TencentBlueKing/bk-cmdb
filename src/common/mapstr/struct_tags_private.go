@@ -18,6 +18,45 @@ import (
 	"strings"
 )
 
+func getZeroFieldValue(valueType reflect.Type) interface{} {
+
+	switch valueType.Kind() {
+	case reflect.Ptr:
+		return getZeroFieldValue(valueType.Elem())
+	case reflect.String:
+		return ""
+	case reflect.Int, reflect.Int16, reflect.Int8, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint8:
+		return 0
+	}
+
+	return nil
+}
+
+func dealPointer(value reflect.Value, tag, tagName string) interface{} {
+
+	if value.IsNil() {
+		return getZeroFieldValue(value.Type())
+	}
+
+	value = value.Elem()
+
+	switch value.Kind() {
+	case reflect.Struct:
+		if value.CanInterface() {
+			innerMapStr := SetValueToMapStrByTagsWithTagName(value.Interface(), tagName)
+			return MapStr{tag: innerMapStr}
+		}
+	case reflect.Ptr:
+		return dealPointer(value.Elem(), tag, tagName)
+	}
+
+	if value.CanInterface() {
+		return value.Interface()
+	}
+
+	return nil
+}
+
 func convertToInt(fieldName string, tagVal interface{}, fieldValue *reflect.Value) error {
 	switch t := tagVal.(type) {
 	default:
@@ -63,6 +102,7 @@ func getValueElem(targetValue reflect.Value) reflect.Value {
 	}
 	return targetValue
 }
+
 func parseStruct(targetType reflect.Type, targetValue reflect.Value, values MapStr, tagName string) error {
 
 	targetType = getTypeElem(targetType)
@@ -99,8 +139,10 @@ func parseStruct(targetType reflect.Type, targetValue reflect.Value, values MapS
 		switch structField.Type.Kind() {
 		default:
 			return fmt.Errorf("unsupport the type %s %v", structField.Name, structField.Type.Kind())
+
 		case reflect.Map:
 			fieldValue.Set(reflect.ValueOf(tagVal))
+
 		case reflect.Interface:
 			tmpVal := reflect.ValueOf(tagVal)
 			switch tmpVal.Kind() {
@@ -120,19 +162,29 @@ func parseStruct(targetType reflect.Type, targetValue reflect.Value, values MapS
 				return err
 			}
 			fieldValue.Set(targetResult.Elem())
+
 		case reflect.Ptr:
-			valMapStr, err := NewFromInterface(tagVal)
-			if nil != err {
-				return err
-			}
+
 			targetResult := reflect.New(structField.Type.Elem())
-			if err := parseStruct(structField.Type, targetResult, valMapStr, tagName); nil != err {
-				return err
+			switch t := tagVal.(type) {
+			default:
+				valMapStr, err := NewFromInterface(tagVal)
+				if nil != err {
+					return err
+				}
+				if err := parseStruct(structField.Type, targetResult, valMapStr, tagName); nil != err {
+					return err
+				}
+				fieldValue.Set(targetResult)
+			case string:
+				targetResult = getValueElem(targetResult)
+				targetResult.SetString(t)
+				fieldValue.Set(targetResult.Addr())
 			}
-			fieldValue.Set(targetResult)
 
 		case reflect.Bool:
 			fieldValue.SetBool(tagVal.(bool))
+
 		case reflect.Int, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int8, reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint8:
 			if err := convertToInt(structField.Name, tagVal, &fieldValue); nil != err {
 				return err
