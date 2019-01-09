@@ -14,8 +14,8 @@ package mongo
 
 import (
 	"fmt"
+	"reflect"
 
-	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/universalsql"
 )
@@ -53,14 +53,16 @@ func parseConditionFromMapStr(inputCond *mongoCondition, inputKey string, inputC
 			outputCond.Element(ele)
 		default:
 
-			switch t := val.(type) {
-			case string, int, int8, int32, int64, float32, float64, uint, uint8, uint16, uint32, uint64, common.DataStatusFlag:
-				// TODO : support custom type
+			switch reflect.TypeOf(val).Kind() {
+			case reflect.String,
+				reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+				reflect.Float32, reflect.Float64,
+				reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 				// Compatible with older versions of mongodb equal syntax
 				if 0 != len(inputKey) && 0 != len(operatorKey) {
-					outputCond.Element(&Eq{Key: inputKey, Val: (&Eq{Key: operatorKey, Val: t}).ToMapStr()})
+					outputCond.Element(&Eq{Key: inputKey, Val: (&Eq{Key: operatorKey, Val: val}).ToMapStr()})
 				} else {
-					outputCond.Element(&Eq{Key: operatorKey, Val: t})
+					outputCond.Element(&Eq{Key: operatorKey, Val: val})
 				}
 
 			default:

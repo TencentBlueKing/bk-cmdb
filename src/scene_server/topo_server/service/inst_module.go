@@ -18,14 +18,14 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	gparams "configcenter/src/common/paraparse"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // CreateModule create a new module
-func (s *topoService) CreateModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) CreateModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDModule)
 	if nil != err {
@@ -50,7 +50,7 @@ func (s *topoService) CreateModule(params types.ContextParams, pathParams, query
 }
 
 // DeleteModule delete the module
-func (s *topoService) DeleteModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) DeleteModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDModule)
 	if nil != err {
@@ -81,7 +81,7 @@ func (s *topoService) DeleteModule(params types.ContextParams, pathParams, query
 }
 
 // UpdateModule update the module
-func (s *topoService) UpdateModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) UpdateModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDModule)
 	if nil != err {
@@ -111,7 +111,7 @@ func (s *topoService) UpdateModule(params types.ContextParams, pathParams, query
 }
 
 // SearchModule search the modules
-func (s *topoService) SearchModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDModule)
 	if nil != err {
@@ -132,7 +132,7 @@ func (s *topoService) SearchModule(params types.ContextParams, pathParams, query
 	}
 
 	paramsCond := &gparams.SearchParams{
-		Condition: frtypes.New(),
+		Condition: mapstr.New(),
 	}
 	if err = data.MarshalJSONInto(paramsCond); nil != err {
 		return nil, err
@@ -155,7 +155,7 @@ func (s *topoService) SearchModule(params types.ContextParams, pathParams, query
 		return nil, err
 	}
 
-	result := frtypes.MapStr{}
+	result := mapstr.MapStr{}
 	result.Set("count", cnt)
 	result.Set("info", instItems)
 

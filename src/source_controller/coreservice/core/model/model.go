@@ -48,22 +48,24 @@ func New(dbProxy dal.RDB, dependent OperationDependences) core.ModelOperation {
 
 func (m *modelManager) CreateModel(ctx core.ContextParams, inputParam metadata.CreateModel) (*metadata.CreateOneDataResult, error) {
 
+	dataResult := &metadata.CreateOneDataResult{}
+
 	// check the model attributes value
 	if 0 == len(inputParam.Spec.ObjectID) {
 		blog.Errorf("request(%s): it is failed to create a new model, because of the modelID (%s) is not set", ctx.ReqID, inputParam.Spec.ObjectID)
-		return &metadata.CreateOneDataResult{}, ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.ModelFieldObjectID)
+		return dataResult, ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.ModelFieldObjectID)
 	}
 
 	// check the input classification ID
 	isValid, err := m.modelClassification.isValid(ctx, inputParam.Spec.ObjCls)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to check whether the classificationID(%s) is invalid, error info is %s", ctx.ReqID, inputParam.Spec.ObjCls, err.Error())
-		return &metadata.CreateOneDataResult{}, err
+		return dataResult, err
 	}
 
 	if !isValid {
 		blog.Warnf("request(%s): it is failed to create a new model, because of the classificationID (%s) is invalid", ctx.ReqID, inputParam.Spec.ObjCls)
-		return &metadata.CreateOneDataResult{}, ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, metadata.ClassificationFieldID)
+		return dataResult, ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, metadata.ClassificationFieldID)
 	}
 
 	// check the model if it is exists
@@ -71,49 +73,65 @@ func (m *modelManager) CreateModel(ctx core.ContextParams, inputParam metadata.C
 	condCheckModel.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: inputParam.Spec.ObjectID})
 	condCheckModel.Element(&mongo.Eq{Key: metadata.ModelFieldOwnerID, Val: ctx.SupplierAccount})
 
+	// ATTETION: Currently only business dimension isolation is done,
+	//           and there may be isolation requirements for other dimensions in the future.
+	isExsit, bizID := inputParam.Spec.Metadata.Label.Get(common.BKAppIDField)
+	if isExsit {
+		_, metaCond := condCheckModel.Embed(metadata.BKMetadata)
+		_, lableCond := metaCond.Embed(metadata.BKLabel)
+		lableCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
+	}
+
 	_, exists, err := m.isExists(ctx, condCheckModel)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to check whether the model (%s) is exists, error info is %s ", ctx.ReqID, inputParam.Spec.ObjectID, err.Error())
-		return &metadata.CreateOneDataResult{}, err
+		return dataResult, err
 	}
 
 	if exists {
 		blog.Warnf("request(%s): it is failed to  create a new model , because of the model (%s) is already exists ", ctx.ReqID, inputParam.Spec.ObjectID)
-		return &metadata.CreateOneDataResult{}, ctx.Error.Error(common.CCErrCommDuplicateItem)
+		return dataResult, ctx.Error.Error(common.CCErrCommDuplicateItem)
 	}
 	inputParam.Spec.OwnerID = ctx.SupplierAccount
 	id, err := m.save(ctx, &inputParam.Spec)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to save the model (%v), error info is %s", ctx.ReqID, inputParam.Spec, err.Error())
-		return &metadata.CreateOneDataResult{}, err
+		return dataResult, err
 	}
 
 	_, err = m.modelAttribute.CreateModelAttributes(ctx, inputParam.Spec.ObjectID, metadata.CreateModelAttributes{Attributes: inputParam.Attributes})
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to create some attributes (%v) for the model (%s), error info is %s", ctx.ReqID, inputParam.Attributes, inputParam.Spec.ObjectID)
-		return &metadata.CreateOneDataResult{Created: metadata.CreatedDataResult{ID: id}}, err
-	}
 
-	return &metadata.CreateOneDataResult{Created: metadata.CreatedDataResult{ID: id}}, nil
+		return dataResult, err
+	}
+	dataResult.Created.ID = id
+	return dataResult, nil
 }
 func (m *modelManager) SetModel(ctx core.ContextParams, inputParam metadata.SetModel) (*metadata.SetDataResult, error) {
+
+	dataResult := &metadata.SetDataResult{
+		Created:    []metadata.CreatedDataResult{},
+		Updated:    []metadata.UpdatedDataResult{},
+		Exceptions: []metadata.ExceptionResult{},
+	}
 
 	// check the model attributes value
 	if 0 == len(inputParam.Spec.ObjectID) {
 		blog.Errorf("request(%s): it is failed to create a new model, because of the modelID (%s) is not set", ctx.ReqID, inputParam.Spec.ObjectID)
-		return &metadata.SetDataResult{}, ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.ModelFieldObjectID)
+		return dataResult, ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.ModelFieldObjectID)
 	}
 
 	// check the input classification ID
 	isValid, err := m.modelClassification.isValid(ctx, inputParam.Spec.ObjCls)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to check whether the classificationID(%s) is invalid, error info is %s", ctx.ReqID, inputParam.Spec.ObjCls, err.Error())
-		return &metadata.SetDataResult{}, err
+		return dataResult, err
 	}
 
 	if !isValid {
 		blog.Warnf("request(%s): it is failed to create a new model, because of the classificationID (%s) is invalid", ctx.ReqID, inputParam.Spec.ObjCls)
-		return &metadata.SetDataResult{}, ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, metadata.ClassificationFieldID)
+		return dataResult, ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, metadata.ClassificationFieldID)
 	}
 
 	condCheckModel := mongo.NewCondition()
@@ -126,7 +144,6 @@ func (m *modelManager) SetModel(ctx core.ContextParams, inputParam metadata.SetM
 		return &metadata.SetDataResult{}, err
 	}
 
-	dataResult := &metadata.SetDataResult{}
 	inputParam.Spec.OwnerID = ctx.SupplierAccount
 	// set model spec
 	if exists {
@@ -258,22 +275,66 @@ func (m *modelManager) CascadeDeleteModel(ctx core.ContextParams, inputParam met
 
 func (m *modelManager) SearchModel(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryModelDataResult, error) {
 
+	dataResult := &metadata.QueryModelDataResult{}
+
 	searchCond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to convert the condition (%v) from mapstr into condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
-		return &metadata.QueryModelDataResult{}, err
+		return dataResult, err
 	}
 
 	totalCount, err := m.count(ctx, searchCond)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to get the count by the condition (%v), error info is %s", ctx.ReqID, searchCond.ToMapStr(), err.Error())
-		return &metadata.QueryModelDataResult{}, err
+		return dataResult, err
 	}
 
-	dataResult, err := m.search(ctx, searchCond)
+	modelItems, err := m.search(ctx, searchCond)
 	if nil != err {
 		blog.Errorf("request(%s): it is faield to search models by the condition (%v), error info is %s", ctx.ReqID, searchCond.ToMapStr(), err.Error())
-		return &metadata.QueryModelDataResult{}, err
+		return dataResult, err
 	}
-	return &metadata.QueryModelDataResult{Count: int64(totalCount), Info: dataResult}, nil
+
+	dataResult.Count = int64(totalCount)
+	dataResult.Info = modelItems
+	return dataResult, nil
+}
+
+func (m *modelManager) SearchModelWithAttribute(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryModelWithAttributeDataResult, error) {
+
+	dataResult := &metadata.QueryModelWithAttributeDataResult{}
+
+	searchCond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
+	if nil != err {
+		blog.Errorf("request(%s): it is failed to convert the condition (%v) from mapstr into condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
+		return dataResult, err
+	}
+
+	totalCount, err := m.count(ctx, searchCond)
+	if nil != err {
+		blog.Errorf("request(%s): it is failed to get the count by the condition (%v), error info is %s", ctx.ReqID, searchCond.ToMapStr(), err.Error())
+		return dataResult, err
+	}
+
+	dataResult.Count = int64(totalCount)
+	modelItems, err := m.search(ctx, searchCond)
+	if nil != err {
+		blog.Errorf("request(%s): it is faield to search models by the condition (%v), error info is %s", ctx.ReqID, searchCond.ToMapStr(), err.Error())
+		return dataResult, err
+	}
+
+	for _, modelItem := range modelItems {
+
+		queryAttributeCond := mongo.NewCondition()
+		queryAttributeCond.Element(mongo.Field(metadata.AttributeFieldObjectID).Eq(modelItem.ObjectID))
+		queryAttributeCond.Element(mongo.Field(metadata.AttributeFieldSupplierAccount).Eq(modelItem.OwnerID))
+		attributeItems, err := m.modelAttribute.search(ctx, queryAttributeCond)
+		if nil != err {
+			blog.Errorf("request(%s):it is failed to search the object(%s)'s attributes, error info is %s", modelItem.ObjectID, err.Error())
+			return dataResult, err
+		}
+		dataResult.Info = append(dataResult.Info, metadata.SearchModelInfo{Spec: modelItem, Attributes: attributeItems})
+	}
+
+	return dataResult, nil
 }

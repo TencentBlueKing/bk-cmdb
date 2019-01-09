@@ -16,23 +16,23 @@ import (
 	"encoding/json"
 
 	"configcenter/src/common"
-	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-func (s *topoService) ParseCreateRolePrivilegeOriginData(data []byte) (frtypes.MapStr, error) {
+func (s *topoService) ParseCreateRolePrivilegeOriginData(data []byte) (mapstr.MapStr, error) {
 	rst := []string{}
 	err := json.Unmarshal(data, &rst)
 	if nil != err {
 		return nil, err
 	}
-	result := frtypes.MapStr{}
+	result := mapstr.MapStr{}
 	result.Set("origin", rst)
 	return result, nil
 }
 
 // CreatePrivilege search user goup
-func (s *topoService) CreatePrivilege(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) CreatePrivilege(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	datas := make([]string, 0)
 	val, exists := data.Get("origin")
@@ -46,6 +46,6 @@ func (s *topoService) CreatePrivilege(params types.ContextParams, pathParams, qu
 }
 
 // GetPrivilege search user goup
-func (s *topoService) GetPrivilege(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) GetPrivilege(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	return s.core.PermissionOperation().Role(params).GetPermission(params.SupplierAccount, pathParams("bk_obj_id"), pathParams("bk_property_id"))
 }

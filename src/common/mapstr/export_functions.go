@@ -15,7 +15,6 @@ package mapstr
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"reflect"
 )
 
@@ -48,15 +47,23 @@ func NewArrayFromMapStr(datas []MapStr) []MapStr {
 }
 
 // NewFromInterface create a mapstr instance from the interface
+// Support Input Type: []byte, string, base-type map, struct.
+// If the input value type is []byte or string, then the value must be a valid json.
+// Like: map[string]int will be converted into MapStr
+// Like: struct { TestStr string TestInt int } will be converted into  MapStr{"TestStr":"", "TestInt":0}
 func NewFromInterface(data interface{}) (MapStr, error) {
 
 	switch tmp := data.(type) {
 	default:
-		return nil, fmt.Errorf("no support the kind(%s)", reflect.TypeOf(data).Kind())
+		return convertInterfaceIntoMapStrByReflection(data)
 	case nil:
 		return MapStr{}, nil
 	case MapStr:
 		return tmp, nil
+	case []byte:
+		result := New()
+		err := json.Unmarshal(tmp, &result)
+		return result, err
 	case string:
 		result := New()
 		err := json.Unmarshal([]byte(tmp), &result)
