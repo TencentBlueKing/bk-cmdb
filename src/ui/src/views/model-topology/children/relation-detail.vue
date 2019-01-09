@@ -132,9 +132,9 @@
             async saveRelation () {
                 await this.updateObjectAssociation({
                     id: this.relationInfo.id,
-                    params: {
+                    params: this.$injectMetadata({
                         bk_obj_asst_name: this.relationInfo['bk_obj_asst_name']
-                    },
+                    }),
                     config: {
                         requestId: 'updateObjectAssociation'
                     }

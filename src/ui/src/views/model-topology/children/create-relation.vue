@@ -202,7 +202,7 @@
                     }
                 }
                 const res = await this.createObjectAssociation({
-                    params,
+                    params: this.$injectMetadata(params),
                     config: {
                         requestId: 'createObjectAssociation'
                     }

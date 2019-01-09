@@ -170,9 +170,9 @@
                 let asstIds = []
                 this.table.list.forEach(({bk_asst_id: asstId}) => asstIds.push(asstId))
                 const res = await this.searchAssociationListWithAssociationKindList({
-                    params: {
+                    params: this.$injectMetadata({
                         asst_ids: asstIds
-                    }
+                    })
                 })
                 this.table.list.forEach(item => {
                     let asst = res.associations.find(({bk_asst_id: asstId}) => asstId === item['bk_asst_id'])

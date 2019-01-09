@@ -325,7 +325,7 @@
                 const option = this.currentOption
                 const isSource = this.isSource
                 return this.searchInstAssociation({
-                    params: {
+                    params: this.$injectMetadata({
                         condition: {
                             'bk_asst_id': option['bk_asst_id'],
                             'bk_obj_asst_id': option['bk_obj_asst_id'],
@@ -333,7 +333,7 @@
                             'bk_asst_obj_id': isSource ? option['bk_asst_obj_id'] : this.objId,
                             [`${isSource ? 'bk_inst_id' : 'bk_asst_inst_id'}`]: this.instId
                         }
-                    }
+                    })
                 }).then(data => {
                     this.existInstAssociation = data
                 })
@@ -366,11 +366,11 @@
             },
             createAssociation (instId) {
                 return this.createInstAssociation({
-                    params: {
+                    params: this.$injectMetadata({
                         'bk_obj_asst_id': this.currentOption['bk_obj_asst_id'],
                         'bk_inst_id': this.isSource ? this.instId : instId,
                         'bk_asst_inst_id': this.isSource ? instId : this.instId
-                    }
+                    })
                 })
             },
             deleteAssociation (instId) {
