@@ -6,7 +6,7 @@
         <div class="nav-wrapper"
             :class="{unfold: unfold, flexible: !navStick}">
             <div class="logo" @click="$router.push('/index')">
-                {{$t('Nav["蓝鲸配置平台"]')}}
+                {{$t('Nav["蓝鲸配置平台"]')}}<span v-if="isAdminView">{{$t('Nav["后台管理"]')}}</span>
             </div>
             <ul class="classify-list">
                 <li class="classify-item"
@@ -232,6 +232,17 @@ $color: #979ba5;
     cursor: pointer;
     background: url('../../assets/images/logo.svg') no-repeat;
     background-position: 16px 14px;
+    >span {
+        display: inline-block;
+        padding: 1px;
+        border-radius: 2px;
+        color: #fff;
+        font-size: 12px;
+        font-weight: normal;
+        line-height: 16px;
+        background: #e3a547;
+        transform: scale(calc(10 / 12));
+    }
 }
 
 .classify-list {
