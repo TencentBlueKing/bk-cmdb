@@ -103,3 +103,15 @@ func (s *topoService) initBusinessAssociation() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/import/instassociation/{bk_obj_id}", HandlerFunc: s.ImportInstanceAssociation})
 
 }
+
+func (s *topoService) initBusinessInst() {
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/inst/object/{bk_obj_id}", HandlerFunc: s.CreateInst})
+	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/inst/object/{bk_obj_id}/inst/{bk_inst_id}", HandlerFunc: s.DeleteInst})
+	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/deletemany/inst/object/{bk_obj_id}", HandlerFunc: s.DeleteInsts})
+	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/inst/object/{bk_obj_id}/inst/{inst_id}", HandlerFunc: s.UpdateInst})
+	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/updatemany/inst/object/{bk_obj_id}", HandlerFunc: s.UpdateInsts})
+	//	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/inst/object/{bk_obj_id}", HandlerFunc: s.SearchInsts})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/instassociationdetail/object/{bk_obj_id}", HandlerFunc: s.SearchInstAndAssociationDetail})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/instdetail/object/{bk_obj_id}/inst/{inst_id}", HandlerFunc: s.SearchInstByInstID})
+
+}

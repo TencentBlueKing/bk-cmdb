@@ -86,6 +86,9 @@ func (c *classification) CreateClassification(params types.ContextParams, data m
 		return nil, err
 	}
 
+	//	if nil != params.MetaData {
+	//		data.Set(metadata.BKMetadata, *params.MetaData)
+	//	}
 	err = cls.Create()
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to save the classification(%#v), error info is %s", cls, err.Error())
