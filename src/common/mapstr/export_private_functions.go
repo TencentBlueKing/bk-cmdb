@@ -76,6 +76,7 @@ func dealStruct(kind reflect.Type, value reflect.Value) (MapStr, error) {
 				return nil, err
 			}
 			mapResult.Set(fieldType.Name, subMapResult)
+
 		case reflect.Map:
 			subMapResult, err := dealMap(fieldValue)
 			if nil != err {
