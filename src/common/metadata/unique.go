@@ -51,6 +51,7 @@ type CreateUniqueRequest struct {
 	ObjID     string      `json:"bk_obj_id" bson:"bk_obj_id"`
 	MustCheck bool        `json:"must_check" bson:"must_check"`
 	Keys      []UniqueKey `json:"keys" bson:"keys"`
+	Metadata  `field:"metadata" json:"metadata" bson:"metadata"`
 }
 
 type CreateUniqueResult struct {

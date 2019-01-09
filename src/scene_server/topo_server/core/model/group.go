@@ -259,6 +259,9 @@ func (g *group) GetAttributes() ([]AttributeInterface, error) {
 }
 
 func (g *group) search(cond condition.Condition) ([]metadata.Group, error) {
+	if nil != g.params.MetaData {
+		cond.Field(metadata.BKMetadata).Eq(*g.params.MetaData)
+	}
 	rsp, err := g.clientSet.CoreService().Model().ReadAttributeGroup(context.Background(), g.params.Header, g.GetObjectID(), metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request the object controller, err: %s", err.Error())
