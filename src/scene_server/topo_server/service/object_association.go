@@ -30,7 +30,7 @@ func (s *topoService) CreateObjectAssociation(params types.ContextParams, pathPa
 	if err := data.MarshalJSONInto(asso); err != nil {
 		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 	}
-
+	params.MetaData = &asso.Metadata
 	association, err := s.core.AssociationOperation().CreateCommonAssociation(params, asso)
 	if nil != err {
 		return nil, err
@@ -100,6 +100,7 @@ func (s *topoService) DeleteObjectAssociation(params types.ContextParams, pathPa
 		return nil, params.Err.Error(common.CCErrTopoInvalidObjectAssociationID)
 	}
 
+	data.Remove(metadata.BKMetadata)
 	return nil, s.core.AssociationOperation().DeleteAssociationWithPreCheck(params, id)
 }
 
@@ -110,6 +111,7 @@ func (s *topoService) UpdateObjectAssociation(params types.ContextParams, pathPa
 		blog.Errorf("update object association, but got invalid id[%v], err: %v", pathParams("id"), err)
 		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 	}
+
 	err = s.core.AssociationOperation().UpdateAssociation(params, data, id)
 	return nil, err
 
@@ -117,7 +119,7 @@ func (s *topoService) UpdateObjectAssociation(params types.ContextParams, pathPa
 
 // ImportInstanceAssociation import instance  association
 func (s *topoService) ImportInstanceAssociation(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	objID := pathParams("obj_id")
+	objID := pathParams("bk_obj_id")
 	request := new(metadata.RequestImportAssociation)
 	if err := data.MarshalJSONInto(request); err != nil {
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())

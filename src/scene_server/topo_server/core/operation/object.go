@@ -470,7 +470,6 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 		cond = condition.CreateCondition()
 		cond.Field(metadata.ModelFieldID).Eq(id)
 	}
-
 	objs, err := o.FindObject(params, cond)
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to find objects, the condition is (%v) err: %s", cond, err.Error())

@@ -212,7 +212,7 @@ func (s *topoService) Actions() []*httpserver.Action {
 						return
 					}
 				}
-
+				metadata := meta.NewMetaDataFromMap(mData)
 				data, dataErr := act.HandlerFunc(types.ContextParams{
 					Err:             defErr,
 					Lang:            defLang,
@@ -221,6 +221,7 @@ func (s *topoService) Actions() []*httpserver.Action {
 					SupplierAccount: ownerID,
 					User:            user,
 					Engin:           s.engin,
+					MetaData:        metadata,
 				},
 					req.PathParameter,
 					req.QueryParameter,
