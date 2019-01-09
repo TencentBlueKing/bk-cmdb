@@ -187,7 +187,7 @@ type AssociationKind struct {
 	Direction AssociationDirection `field:"direction" json:"direction" bson:"direction"`
 	// whether this is a pre-defined kind.
 	IsPre *bool `field:"ispre" json:"ispre" bson:"ispre"`
-	//	define the metadata of assocication kind and not use it
+	//	define the metadata of assocication kind
 	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 }
 
@@ -239,6 +239,9 @@ type Association struct {
 	ClassificationID string `field:"bk_classification_id" json:"-" bson:"-"`
 	ObjectIcon       string `field:"bk_obj_icon" json:"-" bson:"-"`
 	ObjectName       string `field:"bk_obj_name" json:"-" bson:"-"`
+
+	//	define the metadata of assocication
+	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 }
 
 // return field means which filed is set but is forbidden to update.
@@ -277,7 +280,7 @@ func (a *Association) CanUpdate() (field string, can bool) {
 
 // Parse load the data from mapstr attribute into attribute instance
 func (cli *Association) Parse(data mapstr.MapStr) (*Association, error) {
-
+	//TODO support parse metadata params
 	err := mapstr.SetValueToStructByTags(cli, data)
 	if nil != err {
 		return nil, err
