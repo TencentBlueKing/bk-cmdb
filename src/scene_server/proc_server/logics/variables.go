@@ -43,8 +43,8 @@ func (v *Variables) GetAppVariables(ctx context.Context) types.MapStr {
 	data := types.MapStr{}
 	cond := types.MapStr{common.BKAppIDField: v.appID}
 
-	input := metadata.QueryInput{Condition: cond}
-	result, err := v.logic.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDApp, v.header, &input)
+	input := metadata.QueryCondition{Condition: cond}
+	result, err := v.logic.CoreAPI.CoreService().Instance().ReadInstance(ctx, v.header, common.BKInnerObjIDApp, &input)
 	if err != nil {
 		blog.Errorf("GetAppVariables SearchObjects http do error,err:%s,query:%+v,rid:%s", err.Error(), input, v.logic.rid)
 		return data
@@ -62,8 +62,8 @@ func (v *Variables) GetSetVariables(ctx context.Context, setName string) (int64,
 	cond := types.MapStr{common.BKAppIDField: v.appID,
 		common.BKSetNameField: setName}
 
-	input := metadata.QueryInput{Condition: cond}
-	result, err := v.logic.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDSet, v.header, &input)
+	input := metadata.QueryCondition{Condition: cond}
+	result, err := v.logic.CoreAPI.CoreService().Instance().ReadInstance(ctx, v.header, common.BKInnerObjIDSet, &input)
 	if err != nil {
 		blog.Errorf("GetSetVariables SearchObjects http do error,err:%s,query:%+v,rid:%s", err.Error(), input, v.logic.rid)
 		return 0, data
@@ -87,8 +87,8 @@ func (v *Variables) GetModuleVariables(ctx context.Context, setID int64, moduleN
 		common.BKSetIDField:   setID,
 		common.BKSetNameField: moduleName}
 
-	input := metadata.QueryInput{Condition: cond}
-	result, err := v.logic.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDModule, v.header, &input)
+	input := metadata.QueryCondition{Condition: cond}
+	result, err := v.logic.CoreAPI.CoreService().Instance().ReadInstance(ctx, v.header, common.BKInnerObjIDModule, &input)
 	if err != nil {
 		blog.Errorf("GetModuleVariables SearchObjects http do error,err:%s,query:%+v,rid:%s", err.Error(), input, v.logic.rid)
 		return 0, data
@@ -128,8 +128,8 @@ func (v *Variables) GetProcessVariables(ctx context.Context, funcID int64) types
 	data := types.MapStr{}
 	cond := types.MapStr{common.BKAppIDField: v.appID, common.BKFuncIDField: funcID}
 
-	input := metadata.QueryInput{Condition: cond}
-	result, err := v.logic.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDProc, v.header, &input)
+	input := metadata.QueryCondition{Condition: cond}
+	result, err := v.logic.CoreAPI.CoreService().Instance().ReadInstance(ctx, v.header, common.BKInnerObjIDApp, &input)
 	if err != nil {
 		blog.Errorf("GetProcessVariables SearchObjects http do error,err:%s,query:%+v,rid:%s", err.Error(), input, v.logic.rid)
 		return data
