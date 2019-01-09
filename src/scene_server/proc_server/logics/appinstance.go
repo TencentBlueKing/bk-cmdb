@@ -14,7 +14,6 @@ package logics
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -70,7 +69,7 @@ func (lgc *Logics) RefreshAllHostInstance(ctx context.Context) error {
 		header.Set(common.BKHTTPHeaderUser, common.BKProcInstanceOpUser)
 	}
 	newLgc := lgc.NewFromHeader(header)
-	fields := fmt.Sprintf("%s,%s", common.BKAppIDField, common.BKOwnerIDField)
+	fields := []string{common.BKAppIDField, common.BKOwnerIDField}
 	appInfoArr, err := newLgc.GetAppList(ctx, fields)
 	if nil != err {
 		blog.Errorf("RefreshAllHostInstance error:%s,rid:%s", err.Error(), newLgc.rid)

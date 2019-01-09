@@ -134,10 +134,10 @@ func (ps *ProcServer) GetProcessBindModule(req *restful.Request, resp *restful.R
 	// search object instance
 	condition := make(map[string]interface{})
 	condition[common.BKAppIDField] = appID
-	input := new(meta.QueryInput)
+	input := new(meta.QueryCondition)
 	input.Condition = condition
 
-	objRet, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(srvData.ctx, common.BKInnerObjIDModule, srvData.header, input)
+	objRet, err := ps.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDModule, input)
 	if nil != err {
 		blog.Errorf("GetProcessBindModule SearchObjects http do error.  err:%s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
