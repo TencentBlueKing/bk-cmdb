@@ -17,12 +17,12 @@ import (
 	"encoding/json"
 	"net/http"
 
-	restful "github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	restful "github.com/emicklei/go-restful"
 )
 
 func (s *Service) Get(req *restful.Request, resp *restful.Response) {
@@ -32,14 +32,14 @@ func (s *Service) Get(req *restful.Request, resp *restful.Response) {
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	dat := new(metadata.ObjQueryInput)
 	if err := json.NewDecoder(req.Request.Body).Decode(dat); err != nil {
-		blog.Error("Get json unmarshal failed,  error:%v", err)
+		blog.Errorf("Get json unmarshal failed,  error:%v", err)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 	dat.Condition = util.SetModOwner(dat.Condition, ownerID)
 	rows, cnt, err := s.Logics.Search(ctx, dat)
 	if nil != err {
-		blog.Error("get data from data  error:%s", err.Error())
+		blog.Errorf("get data from data  error:%s", err.Error())
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return
 	}

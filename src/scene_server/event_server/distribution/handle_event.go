@@ -19,12 +19,12 @@ import (
 	"strconv"
 	"time"
 
-	"gopkg.in/redis.v5"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/event_server/types"
+
+	"gopkg.in/redis.v5"
 )
 
 var (
@@ -45,7 +45,7 @@ func (eh *EventHandler) StartHandleInsts() (err error) {
 			err = fmt.Errorf("system error: %v", syserror)
 		}
 		if err != nil {
-			blog.Info("event inst handle process stoped by %v", err)
+			blog.Infof("event inst handle process stoped by %v", err)
 			blog.Errorf("%s", debug.Stack())
 		}
 	}()
@@ -65,8 +65,8 @@ func (eh *EventHandler) StartHandleInsts() (err error) {
 }
 
 func (eh *EventHandler) handleInst(event *metadata.EventInstCtx) (err error) {
-	blog.Info("handling event inst : %v", event.Raw)
-	defer blog.Info("done event inst : %v", event.ID)
+	blog.Infof("handling event inst : %v", event.Raw)
+	defer blog.Infof("done event inst : %v", event.ID)
 	if err = saveRunning(eh.cache, types.EventCacheEventRunningPrefix+fmt.Sprint(event.ID), timeout); err != nil {
 		if ErrProcessExists == err {
 			blog.Infof("%v process exist, continue", event.ID)

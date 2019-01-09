@@ -16,6 +16,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/eventclient"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
@@ -28,6 +29,7 @@ import (
 
 type ProctrlServer struct {
 	Core     *backbone.Engine
+	EventC   eventclient.Client
 	Instance dal.RDB
 	Cache    *redis.Client
 }

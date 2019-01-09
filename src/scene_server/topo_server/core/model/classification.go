@@ -20,7 +20,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
-	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstr"
 	metadata "configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
@@ -28,26 +28,10 @@ import (
 // Classification classification operation interface declaration
 type Classification interface {
 	Operation
-	Parse(data frtypes.MapStr) (*metadata.Classification, error)
-
+	Parse(data mapstr.MapStr) (*metadata.Classification, error)
 	GetObjects() ([]Object, error)
-
-	SetID(classificationID string)
-	GetID() string
-
-	SetName(classificationName string)
-	GetName() string
-
-	SetType(classificationType string)
-	GetType() string
-
-	SetSupplierAccount(supplierAccount string)
-	GetSupplierAccount() string
-
-	SetIcon(classificationIcon string)
-	GetIcon() string
-
-	ToMapStr() (frtypes.MapStr, error)
+	Classify() metadata.Classification
+	ToMapStr() (mapstr.MapStr, error)
 }
 
 var _ Classification = (*classification)(nil)
@@ -60,16 +44,20 @@ type classification struct {
 	clientSet apimachinery.ClientSetInterface
 }
 
+func (cli *classification) Classify() metadata.Classification {
+	return cli.cls
+}
+
 func (cli *classification) MarshalJSON() ([]byte, error) {
 	return json.Marshal(cli.cls)
 }
 
-func (cli *classification) Parse(data frtypes.MapStr) (*metadata.Classification, error) {
+func (cli *classification) Parse(data mapstr.MapStr) (*metadata.Classification, error) {
 	return cli.cls.Parse(data)
 }
 
-func (cli *classification) ToMapStr() (frtypes.MapStr, error) {
-	rst := metadata.SetValueToMapStrByTags(&cli.cls)
+func (cli *classification) ToMapStr() (mapstr.MapStr, error) {
+	rst := mapstr.SetValueToMapStrByTags(&cli.cls)
 	return rst, nil
 }
 
@@ -97,7 +85,7 @@ func (cli *classification) GetObjects() ([]Object, error) {
 			isNew: false,
 		}
 
-		err := metadata.SetValueToStructByTags(tmpObj.obj, item.ToMapStr())
+		err := mapstr.SetValueToStructByTags(tmpObj.obj, item.ToMapStr())
 		if nil != err {
 			return nil, err
 		}
@@ -108,7 +96,7 @@ func (cli *classification) GetObjects() ([]Object, error) {
 	return rstItems, nil
 }
 
-func (cli *classification) IsValid(isUpdate bool, data frtypes.MapStr) error {
+func (cli *classification) IsValid(isUpdate bool, data mapstr.MapStr) error {
 
 	if !isUpdate || data.Exists(metadata.ClassFieldClassificationID) {
 		if _, err := cli.FieldValid.Valid(cli.params, data, metadata.ClassFieldClassificationID); nil != err {
@@ -134,7 +122,7 @@ func (cli *classification) Create() error {
 	}
 
 	if exists {
-		return cli.params.Err.Error(common.CCErrCommDuplicateItem)
+		return cli.params.Err.Errorf(common.CCErrCommDuplicateItem, cli.GetID()+"/"+cli.GetName())
 	}
 
 	rsp, err := cli.clientSet.ObjectController().Meta().CreateClassification(context.Background(), cli.params.Header, &cli.cls)
@@ -144,7 +132,7 @@ func (cli *classification) Create() error {
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("faield to create classification(%s), error info is %s", cli.cls.ClassificationID, rsp.ErrMsg)
+		blog.Errorf("failed to create classification(%s), error info is %s", cli.cls.ClassificationID, rsp.ErrMsg)
 		return cli.params.Err.Error(rsp.Code)
 	}
 
@@ -152,7 +140,7 @@ func (cli *classification) Create() error {
 	return nil
 }
 
-func (cli *classification) Update(data frtypes.MapStr) error {
+func (cli *classification) Update(data mapstr.MapStr) error {
 
 	data.Remove(metadata.ClassFieldClassificationID)
 	data.Remove(metadata.ClassificationFieldID)
@@ -223,6 +211,7 @@ func (cli *classification) IsExists() (bool, error) {
 	cond := condition.CreateCondition()
 	cond.Field(metadata.ClassFieldClassificationID).Eq(cli.cls.ClassificationID)
 	cond.Field(metadata.ClassificationFieldID).NotIn([]int64{cli.cls.ID})
+	cond.Field(common.BKOwnerIDField).Eq(cli.params.SupplierAccount)
 	items, err := cli.search(cond)
 	if nil != err {
 		return false, err
@@ -233,8 +222,9 @@ func (cli *classification) IsExists() (bool, error) {
 
 	// check name
 	cond = condition.CreateCondition()
-	cond.Field(metadata.ClassFieldClassificationID).Eq(cli.cls.ClassificationName)
+	cond.Field(metadata.ClassFieldClassificationName).Eq(cli.cls.ClassificationName)
 	cond.Field(metadata.ClassificationFieldID).NotIn([]int64{cli.cls.ID})
+	cond.Field(common.BKOwnerIDField).Eq(cli.params.SupplierAccount)
 	items, err = cli.search(cond)
 	if nil != err {
 		return false, err
@@ -246,7 +236,7 @@ func (cli *classification) IsExists() (bool, error) {
 	return false, nil
 }
 
-func (cli *classification) Save(data frtypes.MapStr) error {
+func (cli *classification) Save(data mapstr.MapStr) error {
 
 	if nil != data {
 		if _, err := cli.cls.Parse(data); nil != err {

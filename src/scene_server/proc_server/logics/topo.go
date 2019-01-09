@@ -131,7 +131,7 @@ func (lgc *Logics) GetModueleIDByAppID(ctx context.Context, header http.Header, 
 
 	}
 	if 0 == ret.Data.Count {
-		blog.Infof("GetModueleIDByAppID appID %v supplierID %s  not found module info", appID, supplierID)
+		blog.V(5).Infof("GetModueleIDByAppID appID %v supplierID %s  not found module info", appID, supplierID)
 		return make([]int64, 0), nil
 	}
 	moduleIDs := make([]int64, 0)
@@ -166,7 +166,7 @@ func (lgc *Logics) GetAppList(ctx context.Context, header http.Header, fields st
 
 	}
 	if 0 == ret.Data.Count {
-		blog.Infof("GetAppList  not found app info")
+		blog.V(5).Infof("GetAppList  not found app info")
 		return make([]mapstr.MapStr, 0), nil
 	}
 

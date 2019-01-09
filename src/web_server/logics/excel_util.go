@@ -87,12 +87,14 @@ func setExcelRowDataByIndex(rowMap mapstr.MapStr, sheet *xlsx.Sheet, rowIndex in
 		if false == ok {
 			continue
 		}
-		if property.NotExport && property.IsOnly {
-			primaryKeyArr = append(primaryKeyArr, PropertyPrimaryVal{
-				ID:     property.ID,
-				Name:   property.Name,
-				StrVal: getPrimaryKey(val),
-			})
+		if property.NotExport {
+			if property.IsOnly {
+				primaryKeyArr = append(primaryKeyArr, PropertyPrimaryVal{
+					ID:     property.ID,
+					Name:   property.Name,
+					StrVal: getPrimaryKey(val),
+				})
+			}
 			continue
 		}
 
@@ -126,6 +128,12 @@ func setExcelRowDataByIndex(rowMap mapstr.MapStr, sheet *xlsx.Sheet, rowIndex in
 				cell.SetInt64(intVal)
 			}
 
+		case common.FieldTypeFloat:
+			floatVal, err := util.GetFloat64ByInterface(val)
+			if nil == err {
+				cell.SetFloat(floatVal)
+			}
+
 		default:
 			switch val.(type) {
 			case string:
@@ -156,8 +164,8 @@ func setExcelRowDataByIndex(rowMap mapstr.MapStr, sheet *xlsx.Sheet, rowIndex in
 func getDataFromByExcelRow(row *xlsx.Row, rowIndex int, fields map[string]Property, defFields common.KvMap, nameIndexMap map[int]string, defLang lang.DefaultCCLanguageIf) (host map[string]interface{}, errMsg []string) {
 	host = make(map[string]interface{})
 	//errMsg := make([]string, 0)
-	for celIDnex, cell := range row.Cells {
-		fieldName, ok := nameIndexMap[celIDnex]
+	for cellIndex, cell := range row.Cells {
+		fieldName, ok := nameIndexMap[cellIndex]
 		if false == ok {
 			continue
 		}
@@ -174,9 +182,9 @@ func getDataFromByExcelRow(row *xlsx.Row, rowIndex int, fields map[string]Proper
 		case xlsx.CellTypeStringFormula:
 			host[fieldName] = cell.String()
 		case xlsx.CellTypeNumeric:
-			cellValue, err := cell.Int64()
+			cellValue, err := cell.Float()
 			if nil != err {
-				errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, (celIDnex+1))) //fmt.Sprintf("%s第%d行%d列无法处理内容;", errMsg, (index + 1), (celIDnex + 1))
+				errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, (cellIndex+1))) //fmt.Sprintf("%s第%d行%d列无法处理内容;", errMsg, (index + 1), (cellIndex + 1))
 				blog.Errorf("%d row %s column get content error:%s", rowIndex+1, fieldName, err.Error())
 				continue
 			}
@@ -187,14 +195,14 @@ func getDataFromByExcelRow(row *xlsx.Row, rowIndex int, fields map[string]Proper
 		case xlsx.CellTypeDate:
 			cellValue, err := cell.GetTime(true)
 			if nil != err {
-				errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", errMsg, fieldName, (celIDnex+1))) //fmt.Sprintf("%s第%d行%d列无法处理内容;", errMsg, (index + 1), (celIDnex + 1))
+				errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", errMsg, fieldName, (cellIndex+1))) //fmt.Sprintf("%s第%d行%d列无法处理内容;", errMsg, (index + 1), (cellIndex + 1))
 				blog.Errorf("%d row %s column get content error:%s", rowIndex+1, fieldName, err.Error())
 				continue
 			}
 			host[fieldName] = cellValue
 		default:
-			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, (celIDnex+1))) //fmt.Sprintf("%s第%d行%d列无法处理内容;", errMsg, (index + 1), (celIDnex + 1))
-			blog.Error("unknown the type, %v,   %v", reflect.TypeOf(cell), cell.Type())
+			errMsg = append(errMsg, defLang.Languagef("web_excel_row_handle_error", fieldName, (cellIndex+1))) //fmt.Sprintf("%s第%d行%d列无法处理内容;", errMsg, (index + 1), (cellIndex + 1))
+			blog.Errorf("unknown the type, %v,   %v", reflect.TypeOf(cell), cell.Type())
 			continue
 		}
 
@@ -224,6 +232,13 @@ func getDataFromByExcelRow(row *xlsx.Row, rowIndex int, fields map[string]Proper
 			//convertor int not err , set field value to correct type
 			if nil == err {
 				host[fieldName] = intVal
+			} else {
+				blog.Debug("get excel cell value error, field:%s, value:%s, error:%s", fieldName, host[fieldName], err.Error())
+			}
+		case common.FieldTypeFloat:
+			floatVal, err := util.GetFloat64ByInterface(host[fieldName])
+			if nil == err {
+				host[fieldName] = floatVal
 			} else {
 				blog.Debug("get excel cell value error, field:%s, value:%s, error:%s", fieldName, host[fieldName], err.Error())
 			}
@@ -264,7 +279,7 @@ func productExcelHealer(fields map[string]Property, filter []string, sheet *xlsx
 		index := field.ExcelColIndex
 		sheet.Col(index).Width = 18
 		fieldTypeName, skip := getPropertyTypeAliasName(field.PropertyType, defLang)
-		if true == skip {
+		if true == skip || field.NotExport {
 			//不需要用户输入的类型continue
 			continue
 		}
@@ -290,6 +305,8 @@ func productExcelHealer(fields map[string]Property, filter []string, sheet *xlsx
 
 		switch field.PropertyType {
 		case common.FieldTypeInt:
+			sheet.Col(index).SetType(xlsx.CellTypeNumeric)
+		case common.FieldTypeFloat:
 			sheet.Col(index).SetType(xlsx.CellTypeNumeric)
 		case common.FieldTypeEnum:
 			option := field.Option

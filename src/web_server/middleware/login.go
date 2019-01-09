@@ -67,9 +67,11 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 			userName, _ := session.Get(common.WEBSessionUinKey).(string)
 			language, _ := session.Get(common.WEBSessionLanguageKey).(string)
 			ownerID, _ := session.Get(common.WEBSessionOwnerUinKey).(string)
+			supplierID, _ := session.Get(common.WEBSessionSupplierID).(string)
 			c.Request.Header.Add(common.BKHTTPHeaderUser, userName)
 			c.Request.Header.Add(common.BKHTTPLanguage, language)
 			c.Request.Header.Add(common.BKHTTPOwnerID, ownerID)
+			c.Request.Header.Add(common.BKHTTPSupplierID, supplierID)
 
 			if path1 == "api" {
 				servers, err := disc.ApiServer().GetServers()
@@ -120,6 +122,7 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 		} else if cookieOwnerID != session.Get(common.WEBSessionOwnerUinKey) {
 			session.Set(common.WEBSessionOwnerUinKey, cookieOwnerID)
 		}
+		session.Set(common.WEBSessionSupplierID, 0)
 
 		blog.V(5).Infof("skip login, cookieLanuage: %s, cookieOwnerID: %s", cookieLanuage, cookieOwnerID)
 		session.Set(common.WEBSessionUinKey, "admin")
@@ -141,6 +144,10 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 	}
 	ownerID, ok := session.Get(common.WEBSessionOwnerUinKey).(string)
 	if !ok || "" == ownerID {
+		return user.LoginUser(c)
+	}
+	supplierID, ok := session.Get(common.WEBSessionSupplierID).(string)
+	if !ok || "" == supplierID {
 		return user.LoginUser(c)
 	}
 

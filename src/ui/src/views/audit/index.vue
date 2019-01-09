@@ -222,6 +222,9 @@
                 return operateTypeMap
             }
         },
+        created () {
+            this.$store.commit('setHeaderTitle', this.$t('Nav["操作审计"]'))
+        },
         methods: {
             ...mapActions('operationAudit', ['getOperationLog']),
             setParams (obj, key, value) {

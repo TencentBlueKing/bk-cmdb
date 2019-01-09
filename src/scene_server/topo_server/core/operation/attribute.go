@@ -28,10 +28,10 @@ import (
 
 // AttributeOperationInterface attribute operation methods
 type AttributeOperationInterface interface {
-	CreateObjectAttribute(params types.ContextParams, data frtypes.MapStr) (model.Attribute, error)
+	CreateObjectAttribute(params types.ContextParams, data frtypes.MapStr) (model.AttributeInterface, error)
 	DeleteObjectAttribute(params types.ContextParams, cond condition.Condition) error
 	FindObjectAttributeWithDetail(params types.ContextParams, cond condition.Condition) ([]*metadata.ObjAttDes, error)
-	FindObjectAttribute(params types.ContextParams, cond condition.Condition) ([]model.Attribute, error)
+	FindObjectAttribute(params types.ContextParams, cond condition.Condition) ([]model.AttributeInterface, error)
 	UpdateObjectAttribute(params types.ContextParams, data frtypes.MapStr, attID int64, cond condition.Condition) error
 
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, obj ObjectOperationInterface, asst AssociationOperationInterface, grp GroupOperationInterface)
@@ -61,18 +61,18 @@ func (a *attribute) SetProxy(modelFactory model.Factory, instFactory inst.Factor
 	a.grp = grp
 }
 
-func (a *attribute) CreateObjectAttribute(params types.ContextParams, data frtypes.MapStr) (model.Attribute, error) {
+func (a *attribute) CreateObjectAttribute(params types.ContextParams, data frtypes.MapStr) (model.AttributeInterface, error) {
 
 	att := a.modelFactory.CreateAttribute(params)
 
-	_, err := att.Parse(data)
+	err := att.Parse(data)
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to parse the attribute data (%#v), error info is %s", data, err.Error())
 		return nil, err
 	}
 
 	// check the object id
-	err = a.obj.IsValidObject(params, att.GetObjectID())
+	err = a.obj.IsValidObject(params, att.Attribute().ObjectID)
 	if nil != err {
 		return nil, params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
 	}
@@ -97,7 +97,7 @@ func (a *attribute) DeleteObjectAttribute(params types.ContextParams, cond condi
 
 	for _, attrItem := range attrItems {
 		// delete the attribute
-		rsp, err := a.clientSet.ObjectController().Meta().DeleteObjectAttByID(context.Background(), attrItem.Origin().ID, params.Header, cond.ToMapStr())
+		rsp, err := a.clientSet.ObjectController().Meta().DeleteObjectAttByID(context.Background(), attrItem.Attribute().ID, params.Header, cond.ToMapStr())
 		if nil != err {
 			blog.Errorf("[operation-attr] delete object attribute failed, request object controller with err: %v", err)
 			return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -118,12 +118,13 @@ func (a *attribute) FindObjectAttributeWithDetail(params types.ContextParams, co
 	}
 	results := make([]*metadata.ObjAttDes, 0)
 	for _, attr := range attrs {
-		result := &metadata.ObjAttDes{Attribute: attr.Origin()}
+		result := &metadata.ObjAttDes{Attribute: *attr.Attribute()}
 
+		attribute := attr.Attribute()
 		grpCond := condition.CreateCondition()
-		grpCond.Field(metadata.GroupFieldGroupID).Eq(attr.Origin().PropertyGroup)
-		grpCond.Field(metadata.GroupFieldSupplierAccount).Eq(attr.GetSupplierAccount())
-		grpCond.Field(metadata.GroupFieldObjectID).Eq(attr.GetObjectID())
+		grpCond.Field(metadata.GroupFieldGroupID).Eq(attribute.PropertyGroup)
+		grpCond.Field(metadata.GroupFieldSupplierAccount).Eq(attribute.OwnerID)
+		grpCond.Field(metadata.GroupFieldObjectID).Eq(attribute.ObjectID)
 		grps, err := a.grp.FindObjectGroup(params, grpCond)
 		if nil != err {
 			return nil, err
@@ -131,7 +132,7 @@ func (a *attribute) FindObjectAttributeWithDetail(params types.ContextParams, co
 
 		for _, grp := range grps {
 			// should be only one
-			result.PropertyGroupName = grp.GetName()
+			result.PropertyGroupName = grp.Group().GroupName
 		}
 
 		results = append(results, result)
@@ -139,7 +140,7 @@ func (a *attribute) FindObjectAttributeWithDetail(params types.ContextParams, co
 
 	return results, nil
 }
-func (a *attribute) FindObjectAttribute(params types.ContextParams, cond condition.Condition) ([]model.Attribute, error) {
+func (a *attribute) FindObjectAttribute(params types.ContextParams, cond condition.Condition) ([]model.AttributeInterface, error) {
 
 	rsp, err := a.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), params.Header, cond.ToMapStr())
 	if nil != err {

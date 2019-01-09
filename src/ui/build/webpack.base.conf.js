@@ -1,7 +1,5 @@
 'use strict'
 
-require('./create-icon-map')
-
 const path = require('path')
 const utils = require('./utils')
 const config = require('../config')
