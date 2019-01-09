@@ -15,9 +15,9 @@ package mapstr_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"configcenter/src/common/mapstr"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestSetValueToMapStrByTagsWithTagName(t *testing.T) {

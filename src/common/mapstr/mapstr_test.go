@@ -22,6 +22,57 @@ import (
 	"configcenter/src/common/mapstr"
 )
 
+func TestConvertToMapStrFromInterface(t *testing.T) {
+
+	// construct the test data
+	testData := map[string]interface{}{
+		"nil": nil,
+		"map-int": map[string]int{
+			"int-key": 1024,
+		},
+		"map-int-embed": map[string]interface{}{
+			"embed-key": map[string]int{
+				"embed-key-int": 1024,
+			},
+		},
+		"struct": struct {
+			TestStr     string
+			testInt     int
+			EmbedStruct interface{}
+		}{
+			TestStr: "test-str",
+			testInt: 1024,
+			EmbedStruct: struct {
+				EmbedTestStr string
+				EmbedTestInt int
+			}{
+				EmbedTestInt: 1024,
+				EmbedTestStr: "embed-test-struct-str",
+			},
+		},
+		"[]byte": []byte(`{"byte-array":"byte-array-valu"}`),
+	}
+
+	// execute the test
+	for caseName, testItem := range testData {
+		result, err := mapstr.NewFromInterface(testItem)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		json, err := result.ToJSON()
+		require.NoError(t, err)
+		t.Logf("case:%s, the result:%s", caseName, string(json))
+		if "struct" == caseName {
+			subResult, err := result.MapStr("EmbedStruct")
+			require.NoError(t, err)
+			require.NotNil(t, subResult)
+			subJson, err := subResult.ToJSON()
+			require.NoError(t, err)
+			t.Logf("case:%s embed struct:%s", caseName, subJson)
+		}
+	}
+
+}
+
 func TestMapStrInto(t *testing.T) {
 	type testData struct {
 		Ignor int
@@ -145,7 +196,7 @@ type TargetInline struct {
 }
 type Label mapstr.MapStr
 
-func TestConvertToMapStrFromStruct(t *testing.T) {
+func TestNewFromStruct(t *testing.T) {
 
 	type targetTest struct {
 		Field1   string       `field:"field_one"`
@@ -200,15 +251,17 @@ func TestConvertToMapStrFromStructInnerPointer(t *testing.T) {
 func TestConvertToMapStrFromStructInnerEmbedPointer(t *testing.T) {
 
 	type targetTest struct {
-		Field1        string `field:"field_one"`
-		Field2        int    `field:"field_two"`
-		Labels        Label  `field:"field_mapstr"`
+		Field1        string  `field:"field_one"`
+		Field2        int     `field:"field_two"`
+		Field3        float64 `field:"field_float"`
+		Labels        Label   `field:"field_mapstr"`
 		*TargetInline `field:"field_inline_target"`
 	}
 
 	targetMapStr := mapstr.NewFromStruct(&targetTest{
 		Field1: "field1",
 		Field2: 2,
+		Field3: 3.3,
 		Labels: Label{"key": "value"},
 		TargetInline: &TargetInline{
 			Field1Inline: "field_in_line",
@@ -221,7 +274,7 @@ func TestConvertToMapStrFromStructInnerEmbedPointer(t *testing.T) {
 	resultTmp := targetTest{}
 	err := targetMapStr.ToStructByTag(&resultTmp, "field")
 	require.NoError(t, err)
-	t.Logf("result struct :%v", resultTmp.TargetInline)
+	t.Logf("result struct :%#v", resultTmp)
 }
 
 func TestConvertToMapStrFromStructEmbed(t *testing.T) {
@@ -249,57 +302,6 @@ func TestConvertToMapStrFromStructEmbed(t *testing.T) {
 	err := targetMapStr.ToStructByTag(&resultTmp, "field")
 	require.NoError(t, err)
 	t.Logf("result struct :%v", resultTmp)
-}
-
-func TestConvertToMapStrFromInterface(t *testing.T) {
-
-	// construct the test data
-	testData := map[string]interface{}{
-		"nil": nil,
-		"map-int": map[string]int{
-			"int-key": 1024,
-		},
-		"map-int-embed": map[string]interface{}{
-			"embed-key": map[string]int{
-				"embed-key-int": 1024,
-			},
-		},
-		"struct": struct {
-			TestStr     string
-			testInt     int
-			EmbedStruct interface{}
-		}{
-			TestStr: "test-str",
-			testInt: 1024,
-			EmbedStruct: struct {
-				EmbedTestStr string
-				EmbedTestInt int
-			}{
-				EmbedTestInt: 1024,
-				EmbedTestStr: "embed-test-struct-str",
-			},
-		},
-		"[]byte": []byte(`{"byte-array":"byte-array-valu"}`),
-	}
-
-	// execute the test
-	for caseName, testItem := range testData {
-		result, err := mapstr.NewFromInterface(testItem)
-		require.NoError(t, err)
-		require.NotNil(t, result)
-		json, err := result.ToJSON()
-		require.NoError(t, err)
-		t.Logf("case:%s, the result:%s", caseName, string(json))
-		if "struct" == caseName {
-			subResult, err := result.MapStr("EmbedStruct")
-			require.NoError(t, err)
-			require.NotNil(t, subResult)
-			subJson, err := subResult.ToJSON()
-			require.NoError(t, err)
-			t.Logf("case:%s embed struct:%s", caseName, subJson)
-		}
-	}
-
 }
 
 func TestEmbedMap(t *testing.T) {
