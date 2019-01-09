@@ -357,10 +357,10 @@ func (lgc *Logics) GetHostForGse(ctx context.Context, appID int64, hostIDArr []i
 	// get bk_supplier_id from applicationbase
 	condition := make(map[string]interface{})
 	condition[common.BKAppIDField] = appID
-	reqParam := new(metadata.QueryInput)
+	reqParam := new(metadata.QueryCondition)
 	reqParam.Condition = condition
 	defErr := lgc.ccErr
-	appRet, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDApp, lgc.header, reqParam)
+	appRet, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDApp, reqParam)
 	if err != nil {
 		blog.Errorf("GetHostForGse SearchObjects http do error.get application failed. condition: %+v, err: %v,,rid:%s", reqParam, err, lgc.rid)
 		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)

@@ -86,14 +86,12 @@ func (ps *ProcServer) GetProcessPortByApplicationID(req *restful.Request, resp *
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcGetByApplicationIDFail)})
 		return
 	}
-	appInfTemp, ok := appInfoMap[appID]
+	appInfo, ok := appInfoMap[appID]
 	if !ok {
 		blog.Errorf("GetProcessPortByApplicationID error : can not find app by id: %d,rid:%s", appID, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcGetByApplicationIDFail)})
 		return
 	}
-
-	appInfo := appInfTemp.(mapstr.MapStr)
 
 	hostMap, err := ps.getHostMapByAppID(srvData.header, moduleHostConfigs)
 	if err != nil {
@@ -192,7 +190,7 @@ func (ps *ProcServer) GetProcessPortByIP(req *restful.Request, resp *restful.Res
 			return
 		}
 		//模块
-		moduleData, err := ps.getModuleMapByCond(srvData.header, "", map[string]interface{}{
+		moduleData, err := ps.getModuleMapByCond(srvData.header, nil, map[string]interface{}{
 			common.BKModuleIDField: moduleId,
 			common.BKAppIDField:    appId,
 		})
@@ -201,18 +199,18 @@ func (ps *ProcServer) GetProcessPortByIP(req *restful.Request, resp *restful.Res
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcGetByIP)})
 			return
 		}
-		moduleName, err := moduleData[moduleId].(mapstr.MapStr).String(common.BKModuleNameField)
+		moduleName, err := moduleData[moduleId].String(common.BKModuleNameField)
 		if nil != err {
 			blog.Errorf("fail to getModuleMap in GetProcessPortByIP not found moduleName. err: %s,rid:%s", err.Error(), srvData.rid)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcGetByIP)})
 			return
 		}
-		blog.V(5).Infof("moduleData:%v", moduleData)
+		blog.V(5).Infof("moduleData:%+v,rid:%s", moduleData, srvData.rid)
 
 		//进程
 		procData, err := ps.getProcessMapByAppID(appId, srvData.header)
 		if err != nil {
-			blog.Errorf("fail to getProcessMapByAppID. err: %s", err.Error())
+			blog.Errorf("fail to getProcessMapByAppID. err: %s,rid:%s", err.Error(), srvData.rid)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcGetByIP)})
 			return
 		}
@@ -236,7 +234,7 @@ func (ps *ProcServer) GetProcessPortByIP(req *restful.Request, resp *restful.Res
 				itemMap, _ := procMod.(map[string]interface{})[common.BKModuleNameField].(string)
 				blog.V(5).Infof("process module, %+v,rid:%s", itemMap, srvData.rid)
 				if itemMap == moduleName {
-					result[common.BKAppNameField], err = appData[appId].(mapstr.MapStr).String(common.BKAppNameField)
+					result[common.BKAppNameField], err = appData[appId].String(common.BKAppNameField)
 					if nil != err {
 						blog.Warnf("not foud app name,err:%s,rid:%s", err, srvData.rid)
 						continue
@@ -322,26 +320,27 @@ func (ps *ProcServer) getConfigByCond(forward http.Header, cond map[string][]int
 	return configArr, nil
 }
 
-func (ps *ProcServer) getAppInfoByID(appID int64, forward http.Header) (map[int64]interface{}, error) {
-	return ps.getAppMapByCond(forward, "", map[string]interface{}{
+func (ps *ProcServer) getAppInfoByID(appID int64, forward http.Header) (map[int64]mapstr.MapStr, error) {
+	return ps.getAppMapByCond(forward, nil, map[string]interface{}{
 		common.BKAppIDField: map[string]interface{}{
 			"$in": []int64{appID},
 		},
 	})
 }
 
-func (ps *ProcServer) getAppMapByCond(forward http.Header, fields string, cond interface{}) (map[int64]interface{}, error) {
+func (ps *ProcServer) getAppMapByCond(forward http.Header, fields []string, cond mapstr.MapStr) (map[int64]mapstr.MapStr, error) {
 	srvData := ps.newSrvComm(forward)
 	defErr := srvData.ccErr
 
-	appMap := make(map[int64]interface{})
-	input := new(meta.QueryInput)
+	appMap := make(map[int64]mapstr.MapStr, 0)
+	input := new(meta.QueryCondition)
 	input.Condition = cond
 	input.Fields = fields
-	input.Sort = common.BKAppIDField
-	input.Start = 0
-	input.Limit = 0
-	ret, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(srvData.ctx, common.BKInnerObjIDApp, forward, input)
+	input.SortArr = []meta.SearchSort{meta.SearchSort{Field: common.BKAppIDField}}
+	input.Limit.Offset = 0
+	input.Limit.Limit = common.BKNoLimit
+
+	ret, err := ps.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDApp, input)
 	if nil != err {
 		blog.Errorf("getAppMapByCond http do error.  err:%s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
 		return appMap, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -437,17 +436,16 @@ func (ps *ProcServer) getHostMapByCond(forward http.Header, condition map[string
 	return hostMap, hostIdArr, nil
 }
 
-func (ps *ProcServer) getModuleMapByCond(forward http.Header, field string, cond interface{}) (map[int64]interface{}, error) {
+func (ps *ProcServer) getModuleMapByCond(forward http.Header, field []string, cond mapstr.MapStr) (map[int64]mapstr.MapStr, error) {
 	srvData := ps.newSrvComm(forward)
 	defErr := srvData.ccErr
-	moduleMap := make(map[int64]interface{})
-	input := new(meta.QueryInput)
+	moduleMap := make(map[int64]mapstr.MapStr)
+	input := new(meta.QueryCondition)
 	input.Fields = field
-	input.Sort = common.BKModuleIDField
-	input.Start = 0
-	input.Limit = 0
+	input.SortArr = []meta.SearchSort{meta.SearchSort{Field: common.BKModuleIDField}}
+	input.Limit.Limit = common.BKNoLimit
 	input.Condition = cond
-	ret, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(srvData.ctx, common.BKInnerObjIDModule, forward, input)
+	ret, err := ps.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDModule, input)
 	if err != nil {
 		blog.Errorf("getModuleMapByCond http do error.  err:%s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
 		return moduleMap, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -478,10 +476,9 @@ func (ps *ProcServer) getProcessMapByAppID(appID int64, forward http.Header) (ma
 		common.BKAppIDField: appID,
 	}
 
-	input := new(meta.QueryInput)
+	input := new(meta.QueryCondition)
 	input.Condition = condition
-	input.Fields = ""
-	ret, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(srvData.ctx, common.BKInnerObjIDProc, forward, input)
+	ret, err := ps.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDProc, input)
 	if err != nil {
 		blog.Errorf("getProcessMapByAppID http do error.  err:%s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
 		return procMap, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -510,11 +507,17 @@ func (ps *ProcServer) getProcessBindModule(appId, procId int64, forward http.Hea
 
 	condition := make(map[string]interface{})
 	condition[common.BKAppIDField] = appId
-	input := new(meta.QueryInput)
+	input := new(meta.QueryCondition)
 	input.Condition = condition
-	objModRet, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(srvData.ctx, common.BKInnerObjIDModule, forward, input)
-	if err != nil || (err == nil && !objModRet.Result) {
-		return nil, fmt.Errorf("fail to get module by appid(%d). err: %v, errcode: %d, errmsg: %s", err, objModRet.Code, objModRet.ErrMsg)
+	objModRet, err := ps.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDModule, input)
+	if err != nil {
+		blog.Errorf("getProcessMapByAppID  ReadInstance http do error.  err:%s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
+		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
+
+	}
+	if !objModRet.Result {
+		blog.Errorf("getProcessMapByAppID ReadInstance http reply  error. err code:%d err msg:%s, input:%+v,rid:%s", objModRet.Code, objModRet.Result, input, srvData.rid)
+		return nil, defErr.New(objModRet.Code, objModRet.ErrMsg)
 	}
 
 	moduleArr := objModRet.Data.Info
