@@ -286,10 +286,10 @@
             },
             getProperties () {
                 return this.batchSearchObjectAttribute({
-                    params: {
+                    params: this.$injectMetadata({
                         bk_obj_id: {'$in': Object.keys(this.properties)},
                         bk_supplier_account: this.supplierAccount
-                    },
+                    }),
                     config: {
                         requestId: `post_batchSearchObjectAttribute_${Object.keys(this.properties).join('_')}`
                     }
@@ -306,10 +306,10 @@
                     return Promise.resolve(this.properties[objId])
                 }
                 return this.searchObjectAttribute({
-                    params: {
+                    params: this.$injectMetadata({
                         'bk_obj_id': objId,
                         'bk_supplier_account': this.supplierAccount
-                    },
+                    }),
                     config: {
                         requestId: `post_searchObjectAttribute_${objId}`
                     }
@@ -323,6 +323,7 @@
                 this.tab.propertyGroups = []
                 this.searchGroup({
                     objId,
+                    params: this.$injectMetadata(),
                     config: {
                         requestId: `post_searchGroup_${objId}`
                     }

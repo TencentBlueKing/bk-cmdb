@@ -98,7 +98,9 @@
                 return true
             },
             async updateTopo (isShow) {
-                await this.searchClassificationsObjects({})
+                await this.searchClassificationsObjects({
+                    params: this.$injectMetadata()
+                })
                 this.slider.isShow = isShow
                 this.$refs.topo.initTopo()
             }

@@ -256,7 +256,7 @@
                 }
                 await this.updateObject({
                     id: this.activeModel['id'],
-                    params: this.modelParams
+                    params: this.$injectMetadata(this.modelParams, true)
                 }).then(() => {
                     this.$http.cancel('post_searchClassificationsObjects')
                 })
@@ -265,10 +265,10 @@
             },
             async initObject () {
                 const res = await this.searchObjects({
-                    params: {
+                    params: this.$injectMetadata({
                         bk_obj_id: this.$route.params.modelId,
                         bk_supplier_account: this.supplierAccount
-                    },
+                    }),
                     config: {
                         requestId: 'searchObjects'
                     }
@@ -322,9 +322,9 @@
             async updateModelObject (ispaused) {
                 await this.updateObject({
                     id: this.activeModel['id'],
-                    params: {
+                    params: this.$injectMetadata({
                         bk_ispaused: ispaused
-                    },
+                    }),
                     config: {
                         requestId: 'updateModel'
                     }

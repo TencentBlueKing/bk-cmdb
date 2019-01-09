@@ -48,10 +48,10 @@
             this.$store.commit('setHeaderTitle', this.$t('Nav["业务"]'))
             try {
                 this.properties = await this.searchObjectAttribute({
-                    params: {
+                    params: this.$injectMetadata({
                         bk_obj_id: 'biz',
                         bk_supplier_account: this.supplierAccount
-                    },
+                    }),
                     config: {
                         requestId: 'post_searchObjectAttribute_biz',
                         fromCache: true

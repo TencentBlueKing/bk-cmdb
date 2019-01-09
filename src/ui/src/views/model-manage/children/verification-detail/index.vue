@@ -135,7 +135,7 @@
                     await this.updateObjectUniqueConstraints({
                         id: this.verification.id,
                         objId: this.activeModel['bk_obj_id'],
-                        params: this.params,
+                        params: this.$injectMetadata(this.params, true),
                         config: {
                             requestId: 'updateObjectUniqueConstraints'
                         }
@@ -144,7 +144,7 @@
                 } else {
                     await this.createObjectUniqueConstraints({
                         objId: this.activeModel['bk_obj_id'],
-                        params: this.params,
+                        params: this.$injectMetadata(this.params, true),
                         config: {
                             requestId: 'createObjectUniqueConstraints'
                         }

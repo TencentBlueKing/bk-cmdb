@@ -1,6 +1,6 @@
 export default {
     methods: {
-        $injectMetadata (params, shouldClone = true) {
+        $injectMetadata (params = {}, shouldClone = false) {
             let injectedParams
             if (shouldClone) {
                 injectedParams = this.$tools.clone(params)
@@ -10,7 +10,9 @@ export default {
             if (!this.$store.getters.isAdminView) {
                 Object.assign(injectedParams, {
                     metadata: {
-                        label: this.$store.getters['objectBiz/bizId']
+                        label: {
+                            bk_biz_id: this.$store.getters['objectBiz/bizId']
+                        }
                     }
                 })
             }

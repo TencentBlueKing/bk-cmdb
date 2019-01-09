@@ -29,6 +29,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     createObjectUniqueConstraints ({ commit, state, dispatch }, { objId, params, config }) {
+        // return $http.post(`create/objectunique/object/${objId}`, params, config)
         return $http.post(`object/${objId}/unique/action/create`, params, config)
     },
     /**
@@ -42,6 +43,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     updateObjectUniqueConstraints ({ commit, state, dispatch }, { objId, id, params, config }) {
+        // return $http.put(`update/objectunique/object/${objId}/unique/${id}`, params, config)
         return $http.put(`object/${objId}/unique/${id}/action/update`, params, config)
     },
     /**
@@ -55,6 +57,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     deleteObjectUniqueConstraints ({ commit, state, dispatch }, { objId, id, config }) {
+        // return $http.delete(`delete/objectunique/object/${objId}/unique/${id}`, config)
         return $http.delete(`object/${objId}/unique/${id}/action/delete`, config)
     },
     /**
@@ -67,6 +70,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchObjectUniqueConstraints ({ commit, state, dispatch }, { objId, config }) {
+        // return $http.get(`find/objectunique/object/${objId}`, config)
         return $http.get(`object/${objId}/unique/action/search`, config)
     }
 }
