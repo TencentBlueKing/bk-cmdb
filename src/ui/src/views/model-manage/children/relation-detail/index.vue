@@ -248,14 +248,14 @@
                 if (this.isEdit) {
                     await this.updateObjectAssociation({
                         id: this.relationInfo.id,
-                        params: this.updateParams,
+                        params: this.$injectMetadata(this.updateParams),
                         config: {
                             requestId: 'updateObjectAssociation'
                         }
                     })
                 } else {
                     await this.createObjectAssociation({
-                        params: this.createParams,
+                        params: this.$injectMetadata(this.createParams),
                         config: {
                             requestId: 'createObjectAssociation'
                         }
