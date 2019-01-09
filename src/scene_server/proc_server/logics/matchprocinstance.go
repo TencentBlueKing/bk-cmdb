@@ -61,8 +61,8 @@ func (lgc *Logics) matchName(ctx context.Context, match, objID, instIDKey, instN
 		blog.Errorf("matchName  parse set regex %s error %s,rid:%s", match, err.Error(), lgc.rid)
 		return nil, nil, defErr.Errorf(common.CCErrCommUtilHandleFail, fmt.Sprintf("parse math %s", match), err.Error())
 	}
-	query := new(metadata.QueryInput)
-	query.Limit = common.BKNoLimit
+	query := new(metadata.QueryCondition)
+	query.Limit.Limit = common.BKNoLimit
 	if nil != parseConds {
 		if nil == conds {
 			conds = make(mapstr.MapStr, 0)
@@ -70,7 +70,7 @@ func (lgc *Logics) matchName(ctx context.Context, match, objID, instIDKey, instN
 		conds[instNameKey] = parseConds
 	}
 	query.Condition = conds
-	ret, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, objID, lgc.header, query)
+	ret, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, objID, query)
 	if nil != err {
 		blog.Errorf(" get %s instance error:%s,input:%+v,rid:%s", objID, err.Error(), query, lgc.rid)
 		return nil, nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
