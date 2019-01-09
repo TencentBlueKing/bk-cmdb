@@ -324,10 +324,10 @@
             },
             getProperties () {
                 return this.batchSearchObjectAttribute({
-                    params: {
+                    params: this.$injectMetadata({
                         bk_obj_id: {'$in': Object.keys(this.properties)},
                         bk_supplier_account: this.supplierAccount
-                    },
+                    }),
                     config: {
                         requestId: `post_batchSearchObjectAttribute_${Object.keys(this.properties).join('_')}`,
                         requestGroup: Object.keys(this.properties).map(id => `post_searchObjectAttribute_${id}`),
@@ -343,6 +343,7 @@
             getHostPropertyGroups () {
                 return this.searchGroup({
                     objId: 'host',
+                    params: this.$injectMetadata(),
                     config: {
                         fromCache: true,
                         requestId: 'post_searchGroup_host'

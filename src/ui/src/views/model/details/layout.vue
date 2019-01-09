@@ -167,15 +167,16 @@
                 const res = await Promise.all([
                     this.searchGroup({
                         objId: this.activeModel['bk_obj_id'],
+                        params: this.$injectMetadata(),
                         config: {
                             requestId: 'searchGroup'
                         }
                     }),
                     this.searchObjectAttribute({
-                        params: {
+                        params: this.$injectMetadata({
                             bk_supplier_account: this.supplierAccount,
                             bk_obj_id: this.activeModel['bk_obj_id']
-                        },
+                        }),
                         config: {
                             requestId: 'searchObjectAttribute'
                         }
@@ -226,14 +227,14 @@
                 if (!this.checkGroupParams(group)) {
                     return
                 }
-                let params = {
+                let params = this.$injectMetadata({
                     condition: {
                         id: group.id
                     },
                     data: {
                         bk_group_name: group['bk_group_name']
                     }
-                }
+                })
                 await this.updateGroup({
                     params
                 }).then(() => {
@@ -259,24 +260,24 @@
             updateGroupIndex (fromGroup, toGroup) {
                 return Promise.all([
                     this.updateGroup({
-                        params: {
+                        params: this.$injectMetadata({
                             condition: {
                                 id: fromGroup.id
                             },
                             data: {
                                 bk_group_id: toGroup['bk_group_index']
                             }
-                        }
+                        })
                     }),
                     this.updateGroup({
-                        params: {
+                        params: this.$injectMetadata({
                             condition: {
                                 id: toGroup.id
                             },
                             data: {
                                 bk_group_id: fromGroup['bk_group_index']
                             }
-                        }
+                        })
                     })
                 ])
             },
@@ -338,13 +339,13 @@
                 groupIndex++
 
                 const res = await this.createGroup({
-                    params: {
+                    params: this.$injectMetadata({
                         bk_group_id: groupId.toString(),
                         bk_group_name: this.$t('ModelManagement["未命名"]'),
                         bk_group_index: groupIndex,
                         bk_obj_id: this.activeModel['bk_obj_id'],
                         bk_supplier_account: this.supplierAccount
-                    }
+                    })
                 })
                 this.groupFieldList.push({
                     bk_group_id: groupId.toString(),

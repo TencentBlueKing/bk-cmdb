@@ -143,7 +143,7 @@
                     bk_classification_id: this.localValue['bk_classification_id'],
                     bk_classification_name: this.localValue['bk_classification_name']
                 }
-                const res = await this.createClassification({params}).then(res => {
+                const res = await this.createClassification({params: this.$injectMetadata(params, true)}).then(res => {
                     this.$http.cancel('post_searchClassificationsObjects')
                     return res
                 })
@@ -159,7 +159,7 @@
                 }
                 await this.updateClassification({
                     id: this.activeClassify['id'],
-                    params
+                    params: this.$injectMetadata(params, true)
                 }).then(() => {
                     this.$http.cancel('post_searchClassificationsObjects')
                 })

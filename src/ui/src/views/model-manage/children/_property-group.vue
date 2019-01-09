@@ -205,6 +205,7 @@
             getPropertyGroups () {
                 return this.searchGroup({
                     objId: this.objId,
+                    params: this.$injectMetadata(),
                     config: {
                         requestId: `get_searchGroup_${this.objId}`,
                         cancelPrevious: true
@@ -213,10 +214,10 @@
             },
             getProperties () {
                 return this.searchObjectAttribute({
-                    params: {
+                    params: this.$injectMetadata({
                         'bk_obj_id': this.objId,
                         'bk_supplier_account': this.supplierAccount
-                    },
+                    }),
                     config: {
                         requestId: `post_searchObjectAttribute_${this.objId}`,
                         cancelPrevious: true
@@ -254,14 +255,14 @@
                     return
                 }
                 this.updateGroup({
-                    params: {
+                    params: this.$injectMetadata({
                         condition: {
                             id: this.groupInEditing.info.id
                         },
                         data: {
                             'bk_group_name': this.groupNameInEditing
                         }
-                    },
+                    }),
                     config: {
                         requestId: `put_updateGroup_name_${this.groupInEditing.info.id}`,
                         cancelPrevious: true
@@ -390,14 +391,14 @@
                 const groupToUpdate = this.groupedProperties.filter((group, index) => group.info['bk_group_index'] !== index && group.info['bk_group_id'] !== 'none')
                 groupToUpdate.forEach(group => {
                     this.updateGroup({
-                        params: {
+                        params: this.$injectMetadata({
                             condition: {
                                 id: group.info.id
                             },
                             data: {
                                 'bk_group_index': group.info['bk_group_index']
                             }
-                        },
+                        }),
                         config: {
                             requestId: `put_updateGroup_index_${group.info.id}`,
                             cancelWhenRouteChange: false,
@@ -470,13 +471,13 @@
                 }
                 const groupId = Date.now().toString()
                 this.createGroup({
-                    params: {
+                    params: this.$injectMetadata({
                         'bk_group_id': groupId,
                         'bk_group_index': groupedProperties.length - 1,
                         'bk_group_name': this.newGroupName,
                         'bk_obj_id': this.objId,
                         'bk_supplier_account': this.supplierAccount
-                    },
+                    }),
                     config: {
                         requestId: `post_createGroup_${groupId}`
                     }
