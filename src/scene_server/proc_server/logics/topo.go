@@ -15,8 +15,6 @@ package logics
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -27,11 +25,11 @@ import (
 func (lgc *Logics) getModuleNameByID(ctx context.Context, ID int64) (name string, appID int64, setID int64, err error) {
 	supplierID := lgc.ownerID
 	defErr := lgc.ccErr
-	dat := new(metadata.QueryInput)
+	dat := new(metadata.QueryCondition)
 	dat.Condition = mapstr.MapStr{common.BKModuleIDField: ID}
-	dat.Fields = fmt.Sprintf("%s,%s,%s", common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField)
-	dat.Limit = common.BKNoLimit
-	ret, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDModule, lgc.header, dat)
+	dat.Fields = []string{common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField}
+	dat.Limit.Limit = common.BKNoLimit
+	ret, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDModule, dat)
 	if nil != err {
 		blog.Errorf("getModuleNameByID moduleID %v supplierID %s  http do error:%s,query:%+v,rid:%s", ID, supplierID, err.Error(), dat, lgc.rid)
 		return "", 0, 0, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -114,11 +112,11 @@ func (lgc *Logics) GetModuleIDByHostID(ctx context.Context, hostID int64) ([]met
 func (lgc *Logics) GetModueleIDByAppID(ctx context.Context, appID int64) ([]int64, error) {
 	supplierID := lgc.ownerID
 	defErr := lgc.ccErr
-	dat := new(metadata.QueryInput)
+	dat := new(metadata.QueryCondition)
 	dat.Condition = mapstr.MapStr{common.BKAppIDField: appID}
-	dat.Fields = fmt.Sprintf("%s,%s,%s,%s", common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField, common.BKModuleIDField)
-	dat.Limit = common.BKNoLimit
-	ret, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDModule, lgc.header, dat)
+	dat.Fields = []string{common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField, common.BKModuleIDField}
+	dat.Limit.Limit = common.BKNoLimit
+	ret, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDModule, dat)
 	if nil != err {
 		blog.Errorf("GetModueleIDByAppID appID %v supplierID %s  http do error:%s,query:%+v,rid:%s", appID, supplierID, err.Error(), dat, lgc.rid)
 		return make([]int64, 0), defErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -146,14 +144,12 @@ func (lgc *Logics) GetModueleIDByAppID(ctx context.Context, appID int64) ([]int6
 	return moduleIDs, nil
 }
 
-func (lgc *Logics) GetAppList(ctx context.Context, fields string) ([]mapstr.MapStr, error) {
+func (lgc *Logics) GetAppList(ctx context.Context, fields []string) ([]mapstr.MapStr, error) {
 	defErr := lgc.ccErr
-	dat := new(metadata.QueryInput)
-	if "" != strings.TrimSpace(fields) {
-		dat.Fields = fields
-	}
-	dat.Limit = common.BKNoLimit
-	ret, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDApp, lgc.header, dat)
+	dat := new(metadata.QueryCondition)
+	dat.Fields = fields
+	dat.Limit.Limit = common.BKNoLimit
+	ret, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDApp, dat)
 	if nil != err {
 		blog.Errorf("GetAppList  http do error:%s,query:%+v,rid:%s", err.Error(), dat, lgc.rid)
 		return make([]mapstr.MapStr, 0), defErr.Error(common.CCErrCommHTTPDoRequestFailed)

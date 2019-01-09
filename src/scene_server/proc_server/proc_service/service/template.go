@@ -15,7 +15,6 @@ package service
 import (
 	"net/http"
 	"strconv"
-	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
@@ -62,7 +61,7 @@ func (ps *ProcServer) CreateTemplate(req *restful.Request, resp *restful.Respons
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcCreateTemplateFail)})
 		return
 	}
-	ret, err := ps.CoreAPI.ObjectController().Instance().CreateObject(srvData.ctx, common.BKInnerObjIDConfigTemp, srvData.header, input)
+	ret, err := ps.CoreAPI.CoreService().Instance().CreateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDConfigTemp, &meta.CreateModelInstance{Data: input})
 	if nil != err {
 		blog.Errorf("CreateTemplate CreateObject http do error.  err:%s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
@@ -74,11 +73,9 @@ func (ps *ProcServer) CreateTemplate(req *restful.Request, resp *restful.Respons
 		return
 	}
 
-	templateID, err := ret.Data.Int64(common.BKTemlateIDField)
-	if nil != err {
-		blog.Errorf("create config template failed by  err: %v,appID:%v,inst info:%+v,rid:%s", err, appID, ret.Data, srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcCreateTemplateFail)})
-	}
+	templateID := int64(ret.Data.Created.ID)
+	blog.Errorf("create config template failed by  err: %v,appID:%v,inst info:%+v,rid:%s", err, appID, ret.Data, srvData.rid)
+	resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcCreateTemplateFail)})
 
 	curData, err := srvData.lgc.GetTemplateInstanceDetails(srvData.ctx, templateID)
 	if nil != err {
@@ -144,12 +141,13 @@ func (ps *ProcServer) DeleteTemplate(req *restful.Request, resp *restful.Respons
 		return
 	}
 
-	input := types.MapStr{
+	input := &meta.DeleteOption{Condition: types.MapStr{
 		common.BKOwnerIDField:   ownerID,
 		common.BKAppIDField:     appID,
-		common.BKTemlateIDField: templateID}
+		common.BKTemlateIDField: templateID},
+	}
 
-	ret, err := ps.CoreAPI.ObjectController().Instance().DelObject(srvData.ctx, common.BKInnerObjIDConfigTemp, srvData.header, input)
+	ret, err := ps.CoreAPI.CoreService().Instance().DeleteInstance(srvData.ctx, srvData.header, common.BKInnerObjIDConfigTemp, input)
 	if nil != err {
 		blog.Errorf("DeleteTemplate DelObject http do error.  err:%s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
@@ -224,15 +222,15 @@ func (ps *ProcServer) UpdateTemplate(req *restful.Request, resp *restful.Respons
 		return
 	}
 
-	data := types.MapStr{
-		"data": input,
-		"condition": map[string]interface{}{
+	data := &meta.UpdateOption{
+		Data: input,
+		Condition: map[string]interface{}{
 			common.BKTemlateIDField: templateID,
 			common.BKAppIDField:     appID,
 			common.BKOwnerIDField:   ownerID,
 		},
 	}
-	ret, err := ps.CoreAPI.ObjectController().Instance().UpdateObject(srvData.ctx, common.BKInnerObjIDConfigTemp, srvData.header, data)
+	ret, err := ps.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDConfigTemp, data)
 	if nil != err {
 		blog.Errorf("DeleteTemplate DelObject http do error.  err:%s, input:%+v,rid:%s", err.Error(), data, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
@@ -267,7 +265,7 @@ func (ps *ProcServer) SearchTemplate(req *restful.Request, resp *restful.Respons
 	defErr := srvData.ccErr
 
 	var params meta.SearchParams
-	var input meta.QueryInput
+	input := new(meta.QueryCondition)
 	var err error
 	var ok bool
 	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
@@ -277,25 +275,27 @@ func (ps *ProcServer) SearchTemplate(req *restful.Request, resp *restful.Respons
 	}
 
 	input.Condition = params.Condition
-	input.Fields = strings.Join(params.Fields, ",")
-	input.Start, err = util.GetIntByInterface(params.Page["start"])
+	input.Fields = params.Fields
+	input.Limit.Offset, err = util.GetInt64ByInterface(params.Page["start"])
 	if nil != err {
 		blog.Errorf("request body query condition format error start not integer, input:%+v,rid:%s", params.Page["start"], srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, "start")})
 		return
 	}
-	input.Limit, err = util.GetIntByInterface(params.Page["limit"])
+	input.Limit.Limit, err = util.GetInt64ByInterface(params.Page["limit"])
 	if nil != err {
 		blog.Errorf("request body query condition format error limit not integer, input:%+v,rid:%s", params.Page["limit"], srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, "limit")})
 		return
 	}
-	input.Sort, ok = params.Page["sort"].(string)
+	sort, ok := params.Page["sort"].(string)
 	if false == ok {
-		input.Sort = ""
+		input.SortArr = nil
+	} else {
+		input.SortArr = meta.NewSearchSortParse().String(sort).ToSearchSortArr()
 	}
 
-	ret, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(srvData.ctx, common.BKInnerObjIDConfigTemp, srvData.header, &input)
+	ret, err := ps.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDConfigTemp, input)
 	if nil != err {
 		blog.Errorf("SearchTemplate SearchObjects http do error.  err:%s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
