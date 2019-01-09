@@ -22,7 +22,6 @@ import (
 
 // CreateClassification create a new object classification
 func (s *topoService) CreateClassification(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
 	cls, err := s.core.ClassificationOperation().CreateClassification(params, data)
 	if nil != err {
 		return nil, err
@@ -93,6 +92,7 @@ func (s *topoService) UpdateClassification(params types.ContextParams, pathParam
 		blog.Errorf("[api-cls] failed to parse the path params id(%s), error info is %s ", pathParams("id"), err.Error())
 		return nil, err
 	}
+	data.Remove(metadata.BKMetadata)
 
 	err = s.core.ClassificationOperation().UpdateClassification(params, data, id, cond)
 	return nil, err
@@ -109,6 +109,8 @@ func (s *topoService) DeleteClassification(params types.ContextParams, pathParam
 		blog.Errorf("[api-cls] failed to parse the path params id(%s), error info is %s ", pathParams("id"), err.Error())
 		return nil, err
 	}
+
+	data.Remove(metadata.BKMetadata)
 
 	err = s.core.ClassificationOperation().DeleteClassification(params, id, data, cond)
 	return nil, err

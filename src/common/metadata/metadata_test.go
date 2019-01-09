@@ -10,25 +10,28 @@
  * limitations under the License.
  */
 
-package types
+package metadata
 
 import (
-	"net/http"
+	"encoding/json"
+	"testing"
 
-	"configcenter/src/common/backbone"
-	"configcenter/src/common/errors"
-	"configcenter/src/common/language"
-	"configcenter/src/common/metadata"
+	"configcenter/src/common/condition"
+	"configcenter/src/common/mapstr"
 )
 
-// ContextParams the logic function params
-type ContextParams struct {
-	Engin           *backbone.Engine
-	Header          http.Header
-	MaxTopoLevel    int
-	SupplierAccount string
-	User            string
-	Err             errors.DefaultCCErrorIf
-	Lang            language.DefaultCCLanguageIf
-	MetaData        *metadata.Metadata
+func TestMetaData(t *testing.T) {
+
+	aa := `{"AA":"BB","metadata":{"label":{"bk_biz_id":"123"}}}`
+	bb := mapstr.MapStr{}
+	json.Unmarshal([]byte(aa), &bb)
+	meta := NewMetaDataFromMap(bb)
+	if meta.Label["bk_biz_id"] != "123" {
+		t.Fail()
+	}
+
+	meta2 := &Metadata{Label: Label{"abc": "def"}}
+	cond := condition.CreateCondition()
+	cond.Field(BKMetadata).Eq(*meta2)
+	t.Logf("output condition %v", cond.ToMapStr())
 }

@@ -104,6 +104,10 @@ func (c *classification) DeleteClassification(params types.ContextParams, id int
 		cond.Field(metadata.ClassificationFieldID).Eq(id)
 	}
 
+	if nil != params.MetaData {
+		cond.Field(metadata.BKMetadata).Eq(*params.MetaData)
+	}
+
 	clsItems, err := c.FindClassification(params, cond)
 	if nil != err {
 		return err
