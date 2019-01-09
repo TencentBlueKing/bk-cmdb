@@ -18,6 +18,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchAssociationType ({ commit, state, dispatch }, { params, config }) {
+        // return $http.post(`find/associationtype`, params, config)
         return $http.post(`topo/association/type/action/search`, params, config)
     },
     /**
@@ -29,6 +30,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     createAssociationType ({ commit, state, dispatch }, { params, config }) {
+        // return $http.post(`create/associationtype`, params, config)
         return $http.post(`topo/association/type/action/create`, params, config)
     },
     /**
@@ -41,6 +43,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     updateAssociationType ({ commit, state, dispatch }, { id, params, config }) {
+        // return $http.put(`update/associationtype/${id}`, params, config)
         return $http.put(`topo/association/type/${id}/action/update`, params, config)
     },
     /**
@@ -53,6 +56,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     deleteAssociationType ({ commit, state, dispatch }, { id, config }) {
+        // return $http.delete(`delete/associationtype/${id}`, config)
         return $http.delete(`topo/association/type/${id}/action/delete`, config)
     },
     /**
@@ -64,6 +68,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchObjectAssociation ({ commit, state, dispatch }, { params, config }) {
+        // return $http.post(`find/objectassociation`, params, config)
         return $http.post(`object/association/action/search`, params, config)
     },
     /**
@@ -75,6 +80,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     createObjectAssociation ({ commit, state, dispatch }, { params, config }) {
+        // return $http.post(`create/objectassociation`, params, config)
         return $http.post(`object/association/action/create`, params, config)
     },
     /**
@@ -87,6 +93,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     updateObjectAssociation ({ commit, state, dispatch }, { id, params, config }) {
+        // return $http.put(`update/object/association/${id}`, params, config)
         return $http.put(`object/association/${id}/action/update`, params, config)
     },
     /**
@@ -99,6 +106,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     deleteObjectAssociation ({ commit, state, dispatch }, { id, config }) {
+        // return $http.delete(`delete/objectassociation/${id}`, config)
         return $http.delete(`object/association/${id}/action/delete`, config)
     },
     /**
@@ -110,6 +118,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchAssociationListWithAssociationKindList ({ commit, state, dispatch }, { params, config }) {
+        // return $http.post(`find/topoassociationtype`, params, config)
         return $http.post(`topo/association/type/action/search/batch`, params, config)
     },
     /**
@@ -121,6 +130,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchInstAssociation ({ commit, state, dispatch }, { params, config }) {
+        // return $http.post(`find/instassociation`, params, config)
         return $http.post(`inst/association/action/search`, params, config)
     },
     /**
@@ -132,6 +142,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     createInstAssociation ({ commit, state, dispatch }, { params, config }) {
+        // return $http.post(`create/instassociation`, params, config)
         return $http.post(`inst/association/action/create`, params, config)
     },
     /**
@@ -143,6 +154,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     deleteInstAssociation ({ commit, state, dispatch }, { id, config }) {
+        // return $http.delete(`delete/instassociation/${id}`, config)
         return $http.delete(`inst/association/${id}/action/delete`, config)
     }
 }
