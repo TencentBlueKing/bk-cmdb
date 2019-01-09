@@ -56,7 +56,7 @@ func (ps *ProcServer) SearchTemplateVersion(req *restful.Request, resp *restful.
 		return
 	}
 
-	var input meta.QueryInput
+	input := new(meta.QueryCondition)
 
 	conditon = types.MapStr{common.BKOwnerIDField: ownerID, common.BKAppIDField: appID, common.BKTemlateIDField: templateID}
 	status, ok := params[common.BKStatusField]
@@ -64,12 +64,9 @@ func (ps *ProcServer) SearchTemplateVersion(req *restful.Request, resp *restful.
 		conditon[common.BKStatusField] = status
 	}
 	input.Condition = conditon
-	input.Fields = ""
-	input.Start = 0
-	input.Limit = common.BKNoLimit
-	input.Sort = ""
+	input.Limit.Limit = common.BKNoLimit
 
-	ret, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(srvData.ctx, common.BKInnerObjIDTempVersion, srvData.header, &input)
+	ret, err := ps.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDTempVersion, input)
 	if err != nil {
 		blog.Errorf("SearchTemplateVersion SearchObjects http do error,err:%s,input:%+v,query:%+v,rid:%s", err.Error(), params, input, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
@@ -86,8 +83,6 @@ func (ps *ProcServer) SearchTemplateVersion(req *restful.Request, resp *restful.
 func (ps *ProcServer) CreateTemplateVersion(req *restful.Request, resp *restful.Response) {
 	srvData := ps.newSrvComm(req.Request.Header)
 	defErr := srvData.ccErr
-
-	header := srvData.header
 	user := srvData.user
 
 	ownerID := req.PathParameter(common.BKOwnerIDField)
@@ -130,7 +125,7 @@ func (ps *ProcServer) CreateTemplateVersion(req *restful.Request, resp *restful.
 
 	input[common.CreateTimeField] = time.Now().UTC()
 
-	ret, err := ps.CoreAPI.ObjectController().Instance().CreateObject(srvData.ctx, common.BKInnerObjIDTempVersion, header, input)
+	ret, err := ps.CoreAPI.CoreService().Instance().CreateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDTempVersion, &meta.CreateModelInstance{Data: input})
 	if err != nil {
 		blog.Errorf("CreateTemplateVersion CreateObject http do error,err:%s,input:%+v,query:%+v,rid:%s", err.Error(), params, input, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
@@ -141,12 +136,7 @@ func (ps *ProcServer) CreateTemplateVersion(req *restful.Request, resp *restful.
 		return
 	}
 
-	versionID, err := ret.Data.Int64(common.BKVersionIDField)
-	if nil != err {
-		blog.Errorf("create template version failed by  input :%v, return:%v, err: %v", input, ret, err)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcCreateTemplateFail)})
-		return
-	}
+	versionID := ret.Data.Created.ID
 
 	//only one online status
 	if params.Status == common.TemplateStatusOnline {
@@ -155,8 +145,8 @@ func (ps *ProcServer) CreateTemplateVersion(req *restful.Request, resp *restful.
 			common.BKTemlateIDField: types.MapStr{common.BKDBEQ: versionID},
 			common.BKOwnerIDField:   ownerID,
 			common.BKStatusField:    common.TemplateStatusOnline}
-		input := types.MapStr{"condition": condition, "data": data}
-		ret, err := ps.CoreAPI.ObjectController().Instance().UpdateObject(srvData.ctx, common.BKInnerObjIDTempVersion, header, input)
+		input := &meta.UpdateOption{Condition: condition, Data: data}
+		ret, err := ps.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDTempVersion, input)
 		if err != nil {
 			blog.Errorf("CreateTemplateVersion UpdateObject http do error,err:%s,input:%+v,query:%+v,rid:%s", err.Error(), params, input, srvData.rid)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
@@ -175,7 +165,6 @@ func (ps *ProcServer) UpdateTemplateVersion(req *restful.Request, resp *restful.
 	srvData := ps.newSrvComm(req.Request.Header)
 
 	defErr := srvData.ccErr
-	header := srvData.header
 	ownerID := srvData.ownerID
 
 	appIDStr := req.PathParameter(common.BKAppIDField)
@@ -202,7 +191,6 @@ func (ps *ProcServer) UpdateTemplateVersion(req *restful.Request, resp *restful.
 		return
 	}
 	var params meta.TemplateVersion
-
 	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
 		blog.Errorf("create config version failed! decode request body err: %v,rid:%s", err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
@@ -213,9 +201,11 @@ func (ps *ProcServer) UpdateTemplateVersion(req *restful.Request, resp *restful.
 		common.BKAppIDField:     appID,
 		common.BKTemlateIDField: templateID,
 		common.BKVersionIDField: versionID}
-	input := types.MapStr{"condition": condition, "data": params}
+	data := types.NewFromStruct(params, "field")
 
-	ret, err := ps.CoreAPI.ObjectController().Instance().UpdateObject(srvData.ctx, common.BKInnerObjIDTempVersion, header, input)
+	input := &meta.UpdateOption{Condition: condition, Data: data}
+
+	ret, err := ps.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDTempVersion, input)
 	if err != nil {
 		blog.Errorf("UpdateTemplateVersion UpdateObject http do error,err:%s,input:%+v,query:%+v,rid:%s", err.Error(), params, input, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
@@ -235,8 +225,8 @@ func (ps *ProcServer) UpdateTemplateVersion(req *restful.Request, resp *restful.
 			common.BKOwnerIDField:   ownerID,
 			common.BKStatusField:    common.TemplateStatusOnline}
 
-		input := types.MapStr{"condition": condition, "data": data}
-		ret, err := ps.CoreAPI.ObjectController().Instance().UpdateObject(srvData.ctx, common.BKInnerObjIDTempVersion, srvData.header, input)
+		input := &meta.UpdateOption{Condition: condition, Data: data}
+		ret, err := ps.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDTempVersion, input)
 		if err != nil {
 			blog.Errorf("UpdateTemplateVersion UpdateObject http do error,err:%s,input:%+v,query:%+v,rid:%s", err.Error(), params, input, srvData.rid)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
