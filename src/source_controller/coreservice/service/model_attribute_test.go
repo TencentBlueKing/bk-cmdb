@@ -25,14 +25,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func createModel(t *testing.T, client *httpclient.HttpClient, modelID, classID string) {
+func createModelAttributes(t *testing.T, client *httpclient.HttpClient, modelID, modelAttributeID string) {
 
-	modelItems := metadata.CreateModel{
-		Spec: metadata.Object{
-			ObjectID:   modelID,
-			ObjCls:     classID,
-			ObjectName: "name_" + modelID,
-		},
+	modelAttributeItems := metadata.CreateModelAttributes{
 		Attributes: []metadata.Attribute{
 			metadata.Attribute{
 				PropertyID:   xid.New().String(),
@@ -42,34 +37,29 @@ func createModel(t *testing.T, client *httpclient.HttpClient, modelID, classID s
 		},
 	}
 
-	inputParams, err := json.Marshal(modelItems)
+	inputParams, err := json.Marshal(modelAttributeItems)
 	require.NoError(t, err)
 	require.NotNil(t, inputParams)
-	t.Logf("create one model:%s", inputParams)
+	t.Logf("create one model attribute:%s", inputParams)
 
-	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/create/model", defaultHeader, inputParams)
+	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/create/model/"+modelID+"/attributes", defaultHeader, inputParams)
 	require.NoError(t, err)
 	require.NotNil(t, dataResult)
 
-	modelResult := &metadata.CreatedOneOptionResult{}
+	modelResult := &metadata.CreatedManyOptionResult{}
 	err = json.Unmarshal(dataResult, modelResult)
 	require.NoError(t, err)
 
 	resultStr, err := json.Marshal(modelResult)
 	require.NoError(t, err)
 
-	t.Logf("create one model result:%s", resultStr)
+	t.Logf("create one model attribute result:%s", resultStr)
 
 }
 
-func setModel(t *testing.T, client *httpclient.HttpClient, modelID, classID string) {
+func setModelAttributes(t *testing.T, client *httpclient.HttpClient, modelID, modelAttributeID string) {
 
-	modelItems := metadata.SetModel{
-		Spec: metadata.Object{
-			ObjectID:   modelID,
-			ObjCls:     classID,
-			ObjectName: "name_" + modelID,
-		},
+	modelItems := metadata.SetModelAttributes{
 		Attributes: []metadata.Attribute{
 			metadata.Attribute{
 				PropertyID:   xid.New().String(),
@@ -82,9 +72,9 @@ func setModel(t *testing.T, client *httpclient.HttpClient, modelID, classID stri
 	inputParams, err := json.Marshal(modelItems)
 	require.NoError(t, err)
 	require.NotNil(t, inputParams)
-	t.Logf("set one model:%s", inputParams)
+	t.Logf("set one model attributes:%s", inputParams)
 
-	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/set/model", defaultHeader, inputParams)
+	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/set/model/"+modelID+"/attributes", defaultHeader, inputParams)
 	require.NoError(t, err)
 	require.NotNil(t, dataResult)
 
@@ -98,11 +88,11 @@ func setModel(t *testing.T, client *httpclient.HttpClient, modelID, classID stri
 	t.Logf("set one model result:%s", resultStr)
 }
 
-func queryModel(t *testing.T, client *httpclient.HttpClient, modelID, classID string) {
+func queryModelAttributes(t *testing.T, client *httpclient.HttpClient, modelID, modelAttributeID string) {
 
 	cond := mongo.NewCondition()
-	cond.Element(mongo.Field(metadata.ModelFieldObjectID).Eq(modelID))
-	cond.Element(mongo.Field(metadata.ModelFieldObjCls).Eq(classID))
+	cond.Element(mongo.Field(metadata.AttributeFieldObjectID).Eq(modelID))
+	cond.Element(mongo.Field(metadata.AttributeFieldPropertyID).Eq(modelAttributeID))
 	modelItems := metadata.QueryCondition{
 		Condition: cond.ToMapStr(),
 	}
@@ -110,9 +100,9 @@ func queryModel(t *testing.T, client *httpclient.HttpClient, modelID, classID st
 	inputParams, err := json.Marshal(modelItems)
 	require.NoError(t, err)
 	require.NotNil(t, inputParams)
-	t.Logf("read some models:%s", inputParams)
+	t.Logf("read some model attributes:%s", inputParams)
 
-	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/read/model", defaultHeader, inputParams)
+	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/read/model/"+modelID+"/attributes", defaultHeader, inputParams)
 	require.NoError(t, err)
 	require.NotNil(t, dataResult)
 
@@ -123,17 +113,17 @@ func queryModel(t *testing.T, client *httpclient.HttpClient, modelID, classID st
 	resultStr, err := json.Marshal(modelResult)
 	require.NoError(t, err)
 
-	t.Logf("read some models result:%s", resultStr)
+	t.Logf("read some model attributes result:%s", resultStr)
 }
 
-func updateModel(t *testing.T, client *httpclient.HttpClient, modelID, classID string) {
+func updateModelAttributes(t *testing.T, client *httpclient.HttpClient, modelID, modelAttributeID string) {
 
 	cond := mongo.NewCondition()
-	cond.Element(mongo.Field(metadata.ModelFieldObjectID).Eq(modelID))
-	cond.Element(mongo.Field(metadata.ModelFieldObjCls).Eq(classID))
+	cond.Element(mongo.Field(metadata.AttributeFieldObjectID).Eq(modelID))
+	cond.Element(mongo.Field(metadata.AttributeFieldPropertyID).Eq(modelAttributeID))
 	modelItems := metadata.UpdateOption{
 		Data: mapstr.MapStr{
-			metadata.ModelFieldObjectName: "update_" + modelID,
+			metadata.AttributeFieldPropertyName: "update_" + modelID,
 		},
 		Condition: cond.ToMapStr(),
 	}
@@ -141,9 +131,9 @@ func updateModel(t *testing.T, client *httpclient.HttpClient, modelID, classID s
 	inputParams, err := json.Marshal(modelItems)
 	require.NoError(t, err)
 	require.NotNil(t, inputParams)
-	t.Logf("update some models:%s", inputParams)
+	t.Logf("update some model attributes:%s", inputParams)
 
-	dataResult, err := client.PUT("http://127.0.0.1:3308/api/v3/update/model", defaultHeader, inputParams)
+	dataResult, err := client.PUT("http://127.0.0.1:3308/api/v3/update/model/"+modelID+"/attributes", defaultHeader, inputParams)
 	require.NoError(t, err)
 	require.NotNil(t, dataResult)
 
@@ -154,14 +144,14 @@ func updateModel(t *testing.T, client *httpclient.HttpClient, modelID, classID s
 	resultStr, err := json.Marshal(modelResult)
 	require.NoError(t, err)
 
-	t.Logf("update some models result:%s", resultStr)
+	t.Logf("update some model attributes result:%s", resultStr)
 }
 
-func deleteModel(t *testing.T, client *httpclient.HttpClient, modelID, classID string) {
+func deleteModelAttributes(t *testing.T, client *httpclient.HttpClient, modelID, modelAttributeID string) {
 
 	cond := mongo.NewCondition()
-	cond.Element(mongo.Field(metadata.ModelFieldObjectID).Eq(modelID))
-	cond.Element(mongo.Field(metadata.ModelFieldObjCls).Eq(classID))
+	cond.Element(mongo.Field(metadata.AttributeFieldObjectID).Eq(modelID))
+	cond.Element(mongo.Field(metadata.AttributeFieldPropertyID).Eq(modelAttributeID))
 	modelItems := metadata.DeleteOption{
 		Condition: cond.ToMapStr(),
 	}
@@ -169,9 +159,9 @@ func deleteModel(t *testing.T, client *httpclient.HttpClient, modelID, classID s
 	inputParams, err := json.Marshal(modelItems)
 	require.NoError(t, err)
 	require.NotNil(t, inputParams)
-	t.Logf("delete some models:%s", inputParams)
+	t.Logf("delete some model attributes:%s", inputParams)
 
-	dataResult, err := client.DELETE("http://127.0.0.1:3308/api/v3/delete/model", defaultHeader, inputParams)
+	dataResult, err := client.DELETE("http://127.0.0.1:3308/api/v3/delete/model/"+modelID+"/attributes", defaultHeader, inputParams)
 	require.NoError(t, err)
 	require.NotNil(t, dataResult)
 
@@ -182,14 +172,14 @@ func deleteModel(t *testing.T, client *httpclient.HttpClient, modelID, classID s
 	resultStr, err := json.Marshal(modelResult)
 	require.NoError(t, err)
 
-	t.Logf("delete some models result:%s", resultStr)
+	t.Logf("delete some model attributes result:%s", resultStr)
 }
 
-func deleteCascadeModel(t *testing.T, client *httpclient.HttpClient, modelID, classID string) {
+func deleteCascadeModelAttributes(t *testing.T, client *httpclient.HttpClient, modelID, modelAttributeID string) {
 	// TODO
 }
 
-func TestModelCRUD(t *testing.T) {
+func TestModelAttributeCRUD(t *testing.T) {
 
 	// base
 	startCoreService(t, "127.0.0.1", 3308)
@@ -198,24 +188,28 @@ func TestModelCRUD(t *testing.T) {
 	classID := xid.New().String()
 	createOneClassification(t, client, classID)
 
-	// create many
 	modelID := xid.New().String()
 	createModel(t, client, modelID, classID)
-	queryModel(t, client, modelID, classID)
-	updateModel(t, client, modelID, classID)
-	queryModel(t, client, modelID, classID)
-	deleteModel(t, client, modelID, classID)
-	queryModel(t, client, modelID, classID)
+
+	// create many
+	modelAttributeID := xid.New().String()
+	createModelAttributes(t, client, modelID, modelAttributeID)
+	queryModelAttributes(t, client, modelID, modelAttributeID)
+	updateModelAttributes(t, client, modelID, modelAttributeID)
+	queryModelAttributes(t, client, modelID, modelAttributeID)
+	deleteModelAttributes(t, client, modelID, modelAttributeID)
+	queryModelAttributes(t, client, modelID, modelAttributeID)
 
 	// create one
-	modelID = xid.New().String()
-	createModel(t, client, modelID, classID)
-	queryModel(t, client, modelID, classID)
-	updateModel(t, client, modelID, classID)
-	queryModel(t, client, modelID, classID)
-	deleteModel(t, client, modelID, classID)
-	queryModel(t, client, modelID, classID)
+	modelAttributeID = xid.New().String()
+	createModelAttributes(t, client, modelID, modelAttributeID)
+	queryModelAttributes(t, client, modelID, modelAttributeID)
+	updateModelAttributes(t, client, modelID, modelAttributeID)
+	queryModelAttributes(t, client, modelID, modelAttributeID)
+	deleteModelAttributes(t, client, modelID, modelAttributeID)
+	queryModelAttributes(t, client, modelID, modelAttributeID)
 
+	deleteModel(t, client, modelID, classID)
 	deleteClassification(t, client, classID)
 
 }
