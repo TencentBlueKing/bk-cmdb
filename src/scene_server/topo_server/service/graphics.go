@@ -31,6 +31,7 @@ func (s topoService) ParseOriginGraphicsUpdateInput(data []byte) (mapstr.MapStr,
 	return result, nil
 }
 func (s *topoService) SelectObjectTopoGraphics(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
 	return s.core.GraphicsOperation().SelectObjectTopoGraphics(params, pathParams("scope_type"), pathParams("scope_id"))
 }
 

@@ -24,8 +24,9 @@ import (
 )
 
 // CreateObjectGroup create a new object group
-func (s *topoService) CreateObjectGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
+func (s *topoService) CreateObjectGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	data.Remove(metadata.BKMetadata)
 	rsp, err := s.core.GroupOperation().CreateObjectGroup(params, data)
 	if nil != err {
 		return nil, err
@@ -43,6 +44,7 @@ func (s *topoService) UpdateObjectGroup(params types.ContextParams, pathParams, 
 	if nil != err {
 		return nil, err
 	}
+	data.Remove(metadata.BKMetadata)
 
 	err = s.core.GroupOperation().UpdateObjectGroup(params, cond)
 	if nil != err {
@@ -58,6 +60,8 @@ func (s *topoService) DeleteObjectGroup(params types.ContextParams, pathParams, 
 	if nil != err {
 		return nil, err
 	}
+
+	data.Remove(metadata.BKMetadata)
 
 	err = s.core.GroupOperation().DeleteObjectGroup(params, gid)
 	if nil != err {
@@ -99,9 +103,10 @@ func (s *topoService) UpdateObjectAttributeGroup(params types.ContextParams, pat
 }
 
 // DeleteObjectAttributeGroup delete the object attribute belongs to group information
-func (s *topoService) DeleteObjectAttributeGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	err := s.core.GroupOperation().DeleteObjectAttributeGroup(params, pathParams("object_id"), pathParams("property_id"), pathParams("group_id"))
+func (s *topoService) DeleteObjectAttributeGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	data.Remove(metadata.BKMetadata)
+	err := s.core.GroupOperation().DeleteObjectAttributeGroup(params, pathParams("bk_object_id"), pathParams("property_id"), pathParams("group_id"))
 	if nil != err {
 		return nil, err
 	}
@@ -113,5 +118,6 @@ func (s *topoService) DeleteObjectAttributeGroup(params types.ContextParams, pat
 func (s *topoService) SearchGroupByObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
-	return s.core.GroupOperation().FindGroupByObject(params, pathParams("object_id"), cond)
+
+	return s.core.GroupOperation().FindGroupByObject(params, pathParams("bk_object_id"), cond)
 }
