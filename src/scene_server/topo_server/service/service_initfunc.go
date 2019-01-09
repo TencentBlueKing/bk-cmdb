@@ -52,7 +52,7 @@ func (s *topoService) initAssociation() {
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/inst/association/{association_id}/action/delete", HandlerFunc: s.DeleteAssociationInst})
 
 	// topo search methods
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/association/search/owner/{owner_id}/object/{obj_id}", HandlerFunc: s.SearchInstByAssociation})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/association/search/owner/{owner_id}/object/{bk_obj_id}", HandlerFunc: s.SearchInstByAssociation})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/association/topo/search/owner/{owner_id}/object/{bk_object_id}/inst/{inst_id}", HandlerFunc: s.SearchInstTopo})
 
 	// ATTENTION: the following methods is not recommended
@@ -110,15 +110,15 @@ func (s *topoService) initSet() {
 }
 
 func (s *topoService) initInst() {
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/{owner_id}/{obj_id}", HandlerFunc: s.CreateInst})
-	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/inst/{owner_id}/{obj_id}/{inst_id}", HandlerFunc: s.DeleteInst})
-	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/inst/{owner_id}/{obj_id}/batch", HandlerFunc: s.DeleteInsts})
-	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/inst/{owner_id}/{obj_id}/{inst_id}", HandlerFunc: s.UpdateInst})
-	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/inst/{owner_id}/{obj_id}/batch/update", HandlerFunc: s.UpdateInsts})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/search/{owner_id}/{obj_id}", HandlerFunc: s.SearchInsts})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/search/owner/{owner_id}/object/{obj_id}/detail", HandlerFunc: s.SearchInstAndAssociationDetail})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/search/owner/{owner_id}/object/{obj_id}", HandlerFunc: s.SearchInstByObject})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/search/{owner_id}/{obj_id}/{inst_id}", HandlerFunc: s.SearchInstByInstID})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/{owner_id}/{bk_obj_id}", HandlerFunc: s.CreateInst})
+	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/inst/{owner_id}/{bk_obj_id}/{inst_id}", HandlerFunc: s.DeleteInst})
+	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/inst/{owner_id}/{bk_obj_id}/batch", HandlerFunc: s.DeleteInsts})
+	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/inst/{owner_id}/{bk_obj_id}/{inst_id}", HandlerFunc: s.UpdateInst})
+	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/inst/{owner_id}/{bk_obj_id}/batch/update", HandlerFunc: s.UpdateInsts})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/search/{owner_id}/{bk_obj_id}", HandlerFunc: s.SearchInsts})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/search/owner/{owner_id}/object/{bk_obj_id}/detail", HandlerFunc: s.SearchInstAndAssociationDetail})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/search/owner/{owner_id}/object/{bk_obj_id}", HandlerFunc: s.SearchInstByObject})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/search/{owner_id}/{bk_obj_id}/{inst_id}", HandlerFunc: s.SearchInstByInstID})
 
 }
 
@@ -225,5 +225,6 @@ func (s *topoService) initService() {
 	s.initBusinessObjectAttrGroup()
 	s.initBusinessAssociation()
 	s.initBusinessGraphics()
+	s.initBusinessInst()
 
 }
