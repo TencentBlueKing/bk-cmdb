@@ -23,7 +23,7 @@
                         </div>
                         <div class="bk-dialog-header" v-if="hasHeader">
                             <slot name="header">
-                                <h3 class="bk-dialog-title">{{defaultTitle}}</h3>
+                                <h3 class="bk-dialog-title">{{title || defaultTitle}}</h3>
                             </slot>
                         </div>
                         <div class="bk-dialog-body"

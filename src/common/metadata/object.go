@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/mapstr"
 	types "configcenter/src/common/mapstr"
 )
 
@@ -38,6 +39,7 @@ const (
 
 // Object object metadata definition
 type Object struct {
+	Metadata    `field:"metadata" json:"metadata" bson:"metadata"`
 	ID          int64      `field:"id" json:"id" bson:"id"`
 	ObjCls      string     `field:"bk_classification_id" json:"bk_classification_id" bson:"bk_classification_id"`
 	ObjIcon     string     `field:"bk_obj_icon" json:"bk_obj_icon" bson:"bk_obj_icon"`
@@ -150,7 +152,7 @@ func (o *Object) IsCommon() bool {
 // Parse load the data from mapstr object into object instance
 func (o *Object) Parse(data types.MapStr) (*Object, error) {
 
-	err := SetValueToStructByTags(o, data)
+	err := mapstr.SetValueToStructByTags(o, data)
 	if nil != err {
 		return nil, err
 	}
@@ -160,7 +162,7 @@ func (o *Object) Parse(data types.MapStr) (*Object, error) {
 
 // ToMapStr to mapstr
 func (o *Object) ToMapStr() types.MapStr {
-	return SetValueToMapStrByTags(o)
+	return mapstr.SetValueToMapStrByTags(o)
 }
 
 // MainLineObject main line object definition

@@ -362,7 +362,6 @@ func (ia *importAssociation) parseInstToImportAssociationInst(objID, instIDKey s
 	if err != nil {
 		blog.Warnf("parseInstToImportAssociationInst get %s field from %s model error,error:%s, rid:%d ", instID, objID, err.Error(), ia.rid)
 		return
-		//return fmt.Errorf("%s model %s instIDKey  not fouud")
 	}
 
 	attrNameValMap := importAssociationInst{
@@ -401,15 +400,36 @@ func (ia *importAssociation) delSrcAssociation(idx int, cond condition.Condition
 	if ok {
 		return
 	}
-	input := &metadata.DeleteAssociationInstRequest{
+	input := &metadata.SearchAssociationInstRequest{
 		Condition: cond.ToMapStr(),
 	}
-	rsp, err := ia.cli.clientSet.ObjectController().Association().DeleteInst(ia.ctx, ia.params.Header, input)
+
+	result, err := ia.cli.clientSet.ObjectController().Association().SearchInst(ia.ctx, ia.params.Header, input)
 	if err != nil {
 		ia.parseImportDataErr[idx] = err.Error()
+		return
 	}
+
+	if result.Result {
+		ia.parseImportDataErr[idx] = result.ErrMsg
+		return
+	}
+
+	if len(result.Data) == 0 {
+		ia.parseImportDataErr[idx] = "can not find this association."
+		return
+	}
+
+	asso := *result.Data[0]
+	rsp, err := ia.cli.clientSet.ObjectController().Association().DeleteInst(ia.ctx, ia.params.Header, asso.ID)
+	if err != nil {
+		ia.parseImportDataErr[idx] = err.Error()
+		return
+	}
+
 	if !rsp.Result {
 		ia.parseImportDataErr[idx] = rsp.ErrMsg
+		return
 	}
 }
 
@@ -419,9 +439,9 @@ func (ia *importAssociation) addSrcAssociation(idx int, asstFlag string, instID,
 		return
 	}
 	inst := &metadata.CreateAssociationInstRequest{}
-	inst.ObjectAsstId = asstFlag
-	inst.InstId = instID
-	inst.AsstInstId = assInstID
+	inst.ObjectAsstID = asstFlag
+	inst.InstID = instID
+	inst.AsstInstID = assInstID
 	rsp, err := ia.cli.clientSet.ObjectController().Association().CreateInst(ia.ctx, ia.params.Header, inst)
 	if err != nil {
 		ia.parseImportDataErr[idx] = err.Error()
@@ -509,6 +529,8 @@ func convStrToCCType(val string, attr metadata.Attribute) (interface{}, error) {
 		return getEnumIDByName(val, option), nil
 	case common.FieldTypeInt:
 		return util.GetInt64ByInterface(val)
+	case common.FieldTypeFloat:
+		return util.GetFloat64ByInterface(val)
 	default:
 		return val, nil
 	}

@@ -12,6 +12,8 @@
 
 package common
 
+import "math"
+
 const (
 	// HTTPCreate create method
 	HTTPCreate = "POST"
@@ -134,7 +136,7 @@ const (
 	// BKDBOR the db operator
 	BKDBOR = "$or"
 
-	// BKDBOR the db operator
+	// BKDBAND the db operator
 	BKDBAND = "$and"
 
 	// BKDBLIKE the db operator
@@ -167,6 +169,21 @@ const (
 	// BKDBNot the db opeartor
 	BKDBNot = "$not"
 
+	// BKDBCount the db opeartor
+	BKDBCount = "$count"
+
+	// BKDBGroup the db opeartor
+	BKDBGroup = "$group"
+
+	// BKDBMatch the db opeartor
+	BKDBMatch = "$match"
+
+	// BKDBSum the db opeartor
+	BKDBSum = "$sum"
+
+	// BKDBPush the db opeartor
+	BKDBPush = "$push"
+
 	// BKDBSortFieldSep the db sort field split char
 	BKDBSortFieldSep = ","
 )
@@ -179,7 +196,7 @@ const (
 )
 
 const (
-	// BKFIeldID the id definition
+	// BKFieldID the id definition
 	BKFieldID = "id"
 
 	// BKDefaultField the default field
@@ -194,8 +211,11 @@ const (
 	// BKAppIDField the appid field
 	BKAppIDField = "bk_biz_id"
 
-	// BKIPAddr the ip address
+	// BKIPArr the ip address
 	BKIPArr = "ipArr"
+
+	// BKAssetIDField  the asset id field
+	BKAssetIDField = "bk_asset_id"
 
 	// BKHostInnerIPField the host innerip field
 	BKHostInnerIPField = "bk_host_innerip"
@@ -473,7 +493,18 @@ const (
 	// BKInstKeyField the inst key field for metric discover
 	BKInstKeyField = "bk_inst_key"
 
-	BKProcinstanceID = "proc_instance_id"
+	// for net collect device
+	BKDeviceIDField    = "device_id"
+	BKDeviceNameField  = "device_name"
+	BKDeviceModelField = "device_model"
+	BKVendorField      = "bk_vendor"
+
+	// for net collect property of device
+	BKNetcollectPropertyIDField = "netcollect_property_id"
+	BKOIDField                  = "oid"
+	BKPeriodField               = "period"
+	BKActionField               = "action"
+	BKProcinstanceID            = "proc_instance_id"
 
 	// BKGseOpProcTaskDetailField gse operate process return detail
 	BKGseOpProcTaskDetailField = "detail"
@@ -535,6 +566,15 @@ const BKAppName string = "蓝鲸"
 
 const BKMainLine = "mainline"
 
+// bk_classification_id value
+const BKNetwork = "bk_network"
+
+const (
+	SNMPActionGet = "get"
+
+	SNMPActionGetNext = "getnext"
+)
+
 const (
 	// DefaultResModuleFlag the default resource module flag
 	DefaultResModuleFlag int = 1
@@ -551,6 +591,9 @@ const (
 
 	// FieldTypeInt the int field type
 	FieldTypeInt string = "int"
+
+	// FieldTypeFloat the float field type
+	FieldTypeFloat string = "float"
 
 	// FieldTypeEnum the enum field type
 	FieldTypeEnum string = "enum"
@@ -714,8 +757,10 @@ const (
 	//BKHTTPOwnerID = "HTTP_BLUEKING_OWNERID"
 	BKHTTPCookieLanugageKey = "blueking_language"
 	BKSessionLanugageKey    = "language"
+	BKHTTPSupplierID        = "bk_supplier_id"
 
 	BKHTTPCCRequestID     = "cc_request_id"
+	BKHTTPCCRequestTime   = "cc_request_time"
 	BKHTTPCCTransactionID = "cc_txn_id"
 )
 
@@ -743,14 +788,16 @@ const (
 
 // integer const
 const (
-	MaxUint64 = ^uint64(0)
-	MinUint64 = 0
-	MaxInt64  = int64(MaxUint64 >> 1)
-	MinInt64  = -MaxInt64 - 1
-	MaxUint   = ^uint(0)
-	MinUint   = 0
-	MaxInt    = int(MaxUint >> 1)
-	MinInt    = -MaxInt - 1
+	MaxUint64  = ^uint64(0)
+	MinUint64  = 0
+	MaxInt64   = int64(MaxUint64 >> 1)
+	MinInt64   = -MaxInt64 - 1
+	MaxUint    = ^uint(0)
+	MinUint    = 0
+	MaxInt     = int(MaxUint >> 1)
+	MinInt     = -MaxInt - 1
+	MaxFloat64 = math.MaxFloat64
+	MinFloat64 = -math.MaxFloat64
 )
 
 //flag
@@ -787,6 +834,17 @@ const (
 )
 
 const (
+	// period default value
+	Infinite = "∞"
+)
+
+// netcollect
+const (
+	BKNetDevice   = "net_device"
+	BKNetProperty = "net_property"
+)
+
+const (
 	BKDefaultLoginUserPluginVersion = "self"
 	HTTPCookieBKToken               = "bk_token"
 
@@ -800,6 +858,7 @@ const (
 	WEBSessionAvatarUrlKey     = "avatar_url"
 	WEBSessionMultiSupplierKey = "multisupplier"
 	WEBSessionLanguageKey      = "language"
+	WEBSessionSupplierID       = "supplier_id"
 
 	LoginSystemMultiSupplierTrue  = "1"
 	LoginSystemMultiSupplierFalse = "0"
@@ -861,4 +920,9 @@ const (
 	AssociationTypeRun      = "run"
 	AssociationTypeConnect  = "connect"
 	AssociationTypeDefault  = "default"
+)
+
+const (
+	// MetadataField data business key
+	MetadataField = "metadata"
 )

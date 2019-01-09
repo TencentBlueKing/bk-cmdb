@@ -5,12 +5,16 @@
             </cmdb-business-selector>
             <bk-button class="process-btn"
                 type="default"
-                :disabled="!table.checked.length" 
+                :disabled="!table.checked.length || !authority.includes('update')" 
                 @click="handleMultipleEdit">
                 <i class="icon-cc-edit"></i>
                 <span>{{$t("BusinessTopology['修改']")}}</span>
             </bk-button>
-            <bk-button class="process-btn" type="primary" @click="handleCreate">{{$t("ProcessManagement['新增进程']")}}</bk-button>
+            <bk-button class="process-btn" type="primary"
+                :disabled="!authority.includes('update')"
+                @click="handleCreate">
+                {{$t("ProcessManagement['新增进程']")}}
+            </bk-button>
             <div class="filter-text fr">
                 <input type="text" class="bk-form-input" :placeholder="$t('ProcessManagement[\'进程名称搜索\']')" 
                     v-model.trim="filter.text" @keyup.enter="handlePageChange(1)">
@@ -40,6 +44,7 @@
             <bk-tab :active-name.sync="tab.active" slot="content">
                 <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-details v-if="attribute.type === 'details'"
+                        :authority="authority"
                         :properties="properties"
                         :propertyGroups="propertyGroups"
                         :inst="attribute.inst.details"
@@ -47,6 +52,7 @@
                         @on-delete="handleDelete">
                     </cmdb-details>
                     <cmdb-form v-else-if="['update', 'create'].includes(attribute.type)"
+                        :authority="authority"
                         :properties="properties"
                         :propertyGroups="propertyGroups"
                         :inst="attribute.inst.edit"
@@ -55,6 +61,7 @@
                         @on-cancel="handleCancel">
                     </cmdb-form>
                     <cmdb-form-multiple v-else-if="attribute.type === 'multiple'"
+                        :authority="authority"
                         :properties="properties"
                         :propertyGroups="propertyGroups"
                         @on-submit="handleMultipleSave"
@@ -63,6 +70,7 @@
                 </bk-tabpanel>
                 <bk-tabpanel name="moduleBind" :title="$t('ProcessManagement[\'模块绑定\']')" :show="attribute.type === 'details'">
                     <v-module v-if="tab.active === 'moduleBind'"
+                        :authority="authority"
                         :processId="attribute.inst.details['bk_process_id']"
                         :bizId="filter.bizId"
                     ></v-module>
@@ -121,7 +129,8 @@
                     checked: [],
                     defaultSort: '-bk_process_id',
                     sort: '-bk_process_id'
-                }
+                },
+                authority: ['search', 'update', 'delete']
             }
         },
         computed: {
@@ -135,9 +144,15 @@
                     this.table.checked = []
                     this.handlePageChange(1)
                 }
+            },
+            'slider.show' (show) {
+                if (!show) {
+                    this.tab.active = 'attribute'
+                }
             }
         },
         created () {
+            this.$store.commit('setHeaderTitle', this.$t('Nav["进程管理"]'))
             this.reload()
         },
         methods: {
@@ -245,7 +260,7 @@
                 this.attribute.type = 'create'
                 this.attribute.inst.edit = {}
                 this.slider.show = true
-                this.slider.title = `${this.$t("Common['创建']")} ${this.$model['bk_obj_name']}`
+                this.slider.title = `${this.$t("Common['创建']")} ${this.$t('ProcessManagement["进程"]')}`
             },
             handleDelete (process) {
                 this.$bkInfo({
@@ -352,7 +367,7 @@
             handleRowClick (item) {
                 this.tab.active = 'attribute'
                 this.slider.show = true
-                this.slider.title = `${this.$t("Common['编辑']")} ${item['bk_process_name']}`
+                this.slider.title = item['bk_process_name']
                 this.attribute.inst.details = item
                 this.attribute.type = 'details'
             },

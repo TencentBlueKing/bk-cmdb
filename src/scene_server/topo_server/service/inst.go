@@ -13,18 +13,18 @@
 package service
 
 import (
-	"strconv"
-	"strings"
+    "strconv"
+    "strings"
 
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
-	"configcenter/src/common/mapstr"
-	frtypes "configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
-	paraparse "configcenter/src/common/paraparse"
-	"configcenter/src/scene_server/topo_server/core/operation"
-	"configcenter/src/scene_server/topo_server/core/types"
+    "configcenter/src/common"
+    "configcenter/src/common/blog"
+    "configcenter/src/common/condition"
+    "configcenter/src/common/mapstr"
+    frtypes "configcenter/src/common/mapstr"
+    "configcenter/src/common/metadata"
+    paraparse "configcenter/src/common/paraparse"
+    "configcenter/src/scene_server/topo_server/core/operation"
+    "configcenter/src/scene_server/topo_server/core/types"
 )
 
 // CreateInst create a new inst
@@ -37,11 +37,28 @@ func (s *topoService) CreateInst(params types.ContextParams, pathParams, queryPa
 	}
 
 	if data.Exists("BatchInfo") {
+		/*
+		   BatchInfo data format:
+		    {
+		      "BatchInfo": {
+		        "4": { // excel line number
+		          "bk_inst_id": 1,
+		          "bk_inst_key": "a22",
+		          "bk_inst_name": "a11",
+		          "bk_version": "121",
+		          "import_from": "1"
+		        },
+		      "input_type": "excel"
+		    }
+		*/
 		batchInfo := new(operation.InstBatchInfo)
-		data.MarshalJSONInto(batchInfo)
+		if err := data.MarshalJSONInto(batchInfo); err != nil {
+			blog.Errorf("import object[%s] instance batch, but got invalid BatchInfo:[%v] ", objID, batchInfo)
+			return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
+		}
 		setInst, err := s.core.InstOperation().CreateInstBatch(params, obj, batchInfo)
 		if nil != err {
-			blog.Errorf("failed to create a new %s, %s", objID, err.Error())
+			blog.Errorf("failed to create new object %s, %s", objID, err.Error())
 			return nil, err
 		}
 		return setInst, nil
@@ -115,7 +132,7 @@ func (s *topoService) UpdateInsts(params types.ContextParams, pathParams, queryP
 		cond.Field(obj.GetInstIDFieldName()).Eq(item.InstID)
 		err = s.core.InstOperation().UpdateInst(params, item.InstInfo, obj, cond, item.InstID)
 		if nil != err {
-			blog.Errorf("[api-inst] failed to update the object(%s) inst (%d),the data (%#v), error info is %s", obj.GetID(), item.InstID, data, err.Error())
+			blog.Errorf("[api-inst] failed to update the object(%s) inst (%d),the data (%#v), error info is %s", obj.Object().ObjectID, item.InstID, data, err.Error())
 			return nil, err
 		}
 	}
@@ -147,7 +164,7 @@ func (s *topoService) UpdateInst(params types.ContextParams, pathParams, queryPa
 	cond.Field(obj.GetInstIDFieldName()).Eq(instID)
 	err = s.core.InstOperation().UpdateInst(params, data, obj, cond, instID)
 	if nil != err {
-		blog.Errorf("[api-inst] failed to update the object(%s) inst (%s),the data (%#v), error info is %s", obj.GetID(), pathParams("inst_id"), data, err.Error())
+		blog.Errorf("[api-inst] failed to update the object(%s) inst (%s),the data (%#v), error info is %s", obj.Object().ObjectID, pathParams("inst_id"), data, err.Error())
 		return nil, err
 	}
 
@@ -371,5 +388,6 @@ func (s *topoService) SearchInstTopo(params types.ContextParams, pathParams, que
 	query.Limit = common.BKNoLimit
 
 	_, instItems, err := s.core.InstOperation().FindInstTopo(params, obj, instID, query)
+
 	return instItems, err
 }

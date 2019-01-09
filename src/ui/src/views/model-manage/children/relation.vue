@@ -1,6 +1,8 @@
 <template>
     <div class="model-relation-wrapper">
-        <bk-button class="create-btn" type="primary" @click="createRelation">
+        <bk-button class="create-btn" type="primary"
+            :disabled="isReadOnly || !authority.includes('update')"
+            @click="createRelation">
             {{$t('ModelManagement["新建关联"]')}}
         </bk-button>
         <cmdb-table
@@ -27,12 +29,22 @@
                         {{getModelName(item['bk_asst_obj_id'])}}
                     </template>
                     <template v-else-if="header.id==='operation'">
-                        <span class="text-primary mr10" @click.stop="editRelation(item)">
+                        <template v-if="item.ispre">
+                            <span class="text-primary mr10 disabled">
                             {{$t('Common["编辑"]')}}
-                        </span>
-                        <span class="text-primary" v-if="!item.ispre && !isReadOnly" @click.stop="deleteRelation(item, index)">
-                            {{$t('Common["删除"]')}}
-                        </span>
+                            </span>
+                            <span class="text-primary disabled">
+                                {{$t('Common["删除"]')}}
+                            </span>
+                        </template>
+                        <template v-else>
+                            <span class="text-primary mr10" @click.stop="editRelation(item)">
+                                {{$t('Common["编辑"]')}}
+                            </span>
+                            <span class="text-primary" @click.stop="deleteRelation(item, index)">
+                                {{$t('Common["删除"]')}}
+                            </span>
+                        </template>
                     </template>
                     <template v-else>
                         {{item[header.id]}}
@@ -114,9 +126,19 @@
                     return this.activeModel['bk_ispaused']
                 }
                 return false
+            },
+            authority () {
+                const cantEdit = ['process', 'plat']
+                if (cantEdit.includes(this.$route.params.modelId)) {
+                    return []
+                }
+                return this.$store.getters.admin ? ['search', 'update', 'delete'] : []
             }
         },
         created () {
+            if (!this.authority.includes('update')) {
+                this.table.header.pop()
+            }
             this.searchRelationList()
             this.initRelationList()
         },
@@ -176,7 +198,7 @@
             },
             deleteRelation (relation, index) {
                 this.$bkInfo({
-                    title: this.$tc('ModelManagement["确定删除关联关系？"]', relation['bk_property_name'], {name: relation['bk_property_name']}),
+                    title: this.$t('ModelManagement["确定删除关联关系?"]'),
                     confirmFn: async () => {
                         await this.deleteObjectAssociation({
                             id: relation.id,

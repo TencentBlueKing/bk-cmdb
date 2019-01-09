@@ -18,20 +18,21 @@ import (
 	"os"
 	"time"
 
-	restful "github.com/emicklei/go-restful"
-
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/eventclient"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/source_controller/objectcontroller/app/options"
 	"configcenter/src/source_controller/objectcontroller/service"
 	"configcenter/src/storage/dal/mongo"
 	dalredis "configcenter/src/storage/dal/redis"
+
+	restful "github.com/emicklei/go-restful"
 )
 
 //Run ccapi server
@@ -109,7 +110,7 @@ func (h *ObjectController) onObjectConfigUpdate(previous, current cc.ProcessConf
 		Redis: dalredis.ParseConfigFromKV("redis", current.ConfigMap),
 	}
 
-	instance, err := mongo.NewMgo(h.Config.Mongo.BuildURI())
+	instance, err := mongo.NewMgo(h.Config.Mongo.BuildURI(), time.Minute)
 	if err != nil {
 		blog.Errorf("new mongo client failed, err: %v", err)
 		return
@@ -122,6 +123,8 @@ func (h *ObjectController) onObjectConfigUpdate(previous, current cc.ProcessConf
 		return
 	}
 	h.Cache = cache
+	ec := eventclient.NewClientViaRedis(cache, instance)
+	h.EventC = ec
 }
 
 func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {

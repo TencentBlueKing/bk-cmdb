@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 )
 
@@ -23,6 +24,18 @@ func TestCondition(t *testing.T) {
 
 	cond := CreateCondition()
 	cond.Field("test_field").Eq(1024).Field("test_field2").In([]int{0, 1, 2, 3}).Field("test").Lt(3)
+
+	conditionItem := condition.ConditionItem{Field: "test_field3", Operator: "$lt", Value: 123}
+	if err := cond.AddContionItem(conditionItem); nil != err {
+		t.Errorf("AddContionItem error")
+		t.Fail()
+	}
+
+	if !cond.IsFieldExist("test_field") {
+		t.Errorf("IsFieldExist error")
+		t.Fail()
+	}
+
 	cond.SetPage(mapstr.New())
 
 	cond.SetLimit(1)
@@ -52,6 +65,7 @@ func TestCondition(t *testing.T) {
 	err := newCond.Parse(result)
 	if nil != err {
 		t.Logf("failed to parse condition, error info is %s", err.Error())
+		t.Fail()
 		return
 	}
 

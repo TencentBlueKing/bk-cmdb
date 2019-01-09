@@ -24,56 +24,6 @@ import (
 // MapStr the common event data definition
 type MapStr map[string]interface{}
 
-// New create a new MapStr instance
-func New() MapStr {
-	return MapStr{}
-}
-
-// NewArrayFromInterface create a new array from interface
-func NewArrayFromInterface(datas []map[string]interface{}) []MapStr {
-	results := []MapStr{}
-	for _, item := range datas {
-		results = append(results, item)
-	}
-	return results
-}
-
-// NewArrayFromMapStr create a new array from mapstr array
-func NewArrayFromMapStr(datas []MapStr) []MapStr {
-	results := []MapStr{}
-	for _, item := range datas {
-		results = append(results, item)
-	}
-	return results
-}
-
-// NewFromInterface create a mapstr instance from the interface
-func NewFromInterface(data interface{}) (MapStr, error) {
-
-	switch tmp := data.(type) {
-	default:
-		return nil, fmt.Errorf("not support the kind(%s)", reflect.TypeOf(data).Kind())
-	case nil:
-		return MapStr{}, nil
-	case MapStr:
-		return tmp, nil
-	case string:
-		result := New()
-		err := json.Unmarshal([]byte(tmp), &result)
-		return result, err
-	case *map[string]interface{}:
-		return MapStr(*tmp), nil
-	case map[string]string:
-		result := New()
-		for key, val := range tmp {
-			result.Set(key, val)
-		}
-		return result, nil
-	case map[string]interface{}:
-		return MapStr(tmp), nil
-	}
-}
-
 // Merge merge second into self,if the key is the same then the new value replaces the old value.
 func (cli MapStr) Merge(second MapStr) {
 	for key, val := range second {
@@ -84,6 +34,20 @@ func (cli MapStr) Merge(second MapStr) {
 // ToMapInterface convert to map[string]interface{}
 func (cli MapStr) ToMapInterface() map[string]interface{} {
 	return cli
+}
+
+/*ToStructByTag convert self into a struct with 'tagName'
+
+  eg:
+  self := MapStr{"testName":"testvalue"}
+  targetStruct := struct{
+      Name string `field:"testName"`
+  }
+  After call the function self.ToStructByTag(targetStruct, "field")
+  the targetStruct.Name value will be 'testvalue'
+*/
+func (cli MapStr) ToStructByTag(targetStruct interface{}, tagName string) error {
+	return SetValueToStructByTagsWithTagName(targetStruct, cli, tagName)
 }
 
 // MarshalJSONInto convert to the input value
@@ -258,12 +222,14 @@ func (cli MapStr) MapStr(key string) (MapStr, error) {
 
 	switch t := cli[key].(type) {
 	default:
-		return nil, errors.New("the data is not a map[string]interface{} type")
+		return nil, fmt.Errorf("the value of the key(%s) is not a map[string]interface{} type", key)
 	case nil:
 		if _, ok := cli[key]; ok {
 			return MapStr{}, nil
 		}
 		return nil, errors.New("the key is invalid")
+	case MapStr:
+		return t, nil
 	case map[string]interface{}:
 		return MapStr(t), nil
 	}
@@ -278,14 +244,14 @@ func (cli MapStr) MapStrArray(key string) ([]MapStr, error) {
 		val := reflect.ValueOf(cli[key])
 		switch val.Kind() {
 		default:
-			return nil, fmt.Errorf("the data is not a valid type,%s", val.Kind().String())
+			return nil, fmt.Errorf("the value of the key(%s) is not a valid type,%s", key, val.Kind().String())
 		case reflect.Slice:
 			tmpval, ok := val.Interface().([]MapStr)
 			if ok {
 				return tmpval, nil
 			}
 
-			return nil, fmt.Errorf("the data is not a valid type,%s", val.Kind().String())
+			return nil, fmt.Errorf("the value of the key(%s) is not a valid type,%s", key, val.Kind().String())
 		}
 
 	case nil:

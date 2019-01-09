@@ -18,14 +18,15 @@ import (
 	"strconv"
 	"time"
 
-	"gopkg.in/redis.v5"
+	"configcenter/src/common/universalsql/mongo"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
-	"configcenter/src/storage/dal"
 	ccredis "configcenter/src/storage/dal/redis"
 	daltypes "configcenter/src/storage/types"
+
+	"gopkg.in/redis.v5"
 )
 
 func (th *TxnHandler) Run() (err error) {
@@ -37,7 +38,7 @@ func (th *TxnHandler) Run() (err error) {
 			err = fmt.Errorf("system error: %v", syserror)
 		}
 		if err != nil {
-			blog.Info("event inst handle process stoped by %v", err)
+			blog.Infof("event inst handle process stoped by %v", err)
 			blog.Errorf("%s", debug.Stack())
 		}
 		th.wg.Wait()
@@ -115,7 +116,9 @@ func (th *TxnHandler) fetchTimeout() {
 		}
 
 		txns := []daltypes.Transaction{} //Transaction
-		if err := th.db.Table(common.BKTableNameTransaction).Find(dal.NewFilterBuilder().In(common.BKTxnIDField, txnIDs)).All(th.ctx, &txns); err != nil {
+		tranCond := mongo.NewCondition()
+		tranCond.Element(&mongo.In{Key: common.BKTxnIDField, Val: txnIDs})
+		if err := th.db.Table(common.BKTableNameTransaction).Find(tranCond.ToMapStr()).All(th.ctx, &txns); err != nil {
 			blog.Warnf("fetch transaction from mongo failed: %v, we will try again later", err)
 			continue
 		}
