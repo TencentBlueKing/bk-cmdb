@@ -301,3 +301,42 @@ func TestConvertToMapStrFromInterface(t *testing.T) {
 	}
 
 }
+
+func TestEmbedMap(t *testing.T) {
+
+	type Label map[string]string
+
+	type Metadata struct {
+		Label Label `field:"label" json:"label" bson:"label"`
+	}
+
+	type classification struct {
+		Metadata           Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+		ID                 int64    `field:"id" json:"id" bson:"id"`
+		ClassificationID   string   `field:"bk_classification_id"  json:"bk_classification_id" bson:"bk_classification_id"`
+		ClassificationName string   `field:"bk_classification_name" json:"bk_classification_name" bson:"bk_classification_name"`
+		ClassificationType string   `field:"bk_classification_type" json:"bk_classification_type" bson:"bk_classification_type"`
+		ClassificationIcon string   `field:"bk_classification_icon" json:"bk_classification_icon" bson:"bk_classification_icon"`
+		OwnerID            string   `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"  `
+	}
+
+	testData := `{
+		"bk_supplier_account": "0",
+		"bk_classification_id": "test",
+		"bk_classification_name": "test",
+		"metadata": {
+			"label": {
+				"bk_biz_id": "1"
+			}
+		}
+	}`
+
+	data, err := mapstr.NewFromInterface(testData)
+	require.NoError(t, err)
+
+	out := &classification{}
+	err = mapstr.SetValueToStructByTags(out, data)
+	require.NoError(t, err)
+	t.Logf("output:%#v", out)
+
+}
