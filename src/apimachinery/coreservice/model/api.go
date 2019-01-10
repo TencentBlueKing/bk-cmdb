@@ -422,6 +422,7 @@ func (m *model) CreateModelAttrUnique(ctx context.Context, h http.Header, objID 
 	subPath := fmt.Sprintf("/create/model/%s/attributes/unique", objID)
 	err = m.client.Post().
 		WithContext(ctx).
+		Body(data).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
