@@ -33,10 +33,11 @@ func (g *modelAttributeGroup) CreateModelAttributeGroup(ctx core.ContextParams, 
 
 	dataResult := &metadata.CreateOneDataResult{}
 
-	if err := g.model.isValid(ctx, objID); nil != err {
-		blog.Errorf("request(%s): it is failed to create a model attribute group (%#v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
-		return dataResult, err
-	}
+	// NOW: Temporarily blocked
+	// if err := g.model.isValid(ctx, objID); nil != err {
+	// 	blog.Errorf("request(%s): it is failed to create a model attribute group (%#v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
+	// 	return dataResult, err
+	// }
 	inputParam.Data.ObjectID = objID
 
 	_, isExists, err := g.groupIDIsExists(ctx, objID, inputParam.Data.GroupID)
