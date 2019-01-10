@@ -30,7 +30,7 @@ func createModelAttributes(t *testing.T, client *httpclient.HttpClient, modelID,
 	modelAttributeItems := metadata.CreateModelAttributes{
 		Attributes: []metadata.Attribute{
 			metadata.Attribute{
-				PropertyID:   xid.New().String(),
+				PropertyID:   modelAttributeID,
 				PropertyName: xid.New().String(),
 				ObjectID:     modelID,
 			},
@@ -62,7 +62,7 @@ func setModelAttributes(t *testing.T, client *httpclient.HttpClient, modelID, mo
 	modelItems := metadata.SetModelAttributes{
 		Attributes: []metadata.Attribute{
 			metadata.Attribute{
-				PropertyID:   xid.New().String(),
+				PropertyID:   modelAttributeID,
 				PropertyName: xid.New().String(),
 				ObjectID:     modelID,
 			},
@@ -106,7 +106,7 @@ func queryModelAttributes(t *testing.T, client *httpclient.HttpClient, modelID, 
 	require.NoError(t, err)
 	require.NotNil(t, dataResult)
 
-	modelResult := &metadata.ReadModelResult{}
+	modelResult := &metadata.ReadModelAttrResult{}
 	err = json.Unmarshal(dataResult, modelResult)
 	require.NoError(t, err)
 
