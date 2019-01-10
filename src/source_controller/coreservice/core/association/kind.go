@@ -31,11 +31,11 @@ type associationKind struct {
 func (m *associationKind) CreateAssociationKind(ctx core.ContextParams, inputParam metadata.CreateAssociationKind) (*metadata.CreateOneDataResult, error) {
 	_, exists, err := m.isExists(ctx, inputParam.Data.AssociationKindID)
 	if nil != err {
-		blog.Errorf("check association kind is exist error (%v)", err)
+		blog.Errorf("check association kind is exist error (%#v)", err)
 		return nil, err
 	}
 	if exists {
-		blog.Errorf("association kind (%v)is duplicated", inputParam.Data)
+		blog.Errorf("association kind (%#v)is duplicated", inputParam.Data)
 		return nil, ctx.Error.Error(common.CCErrCommDuplicateItem)
 	}
 
@@ -87,7 +87,7 @@ func (m *associationKind) CreateManyAssociationKind(ctx core.ContextParams, inpu
 func (m *associationKind) SetAssociationKind(ctx core.ContextParams, inputParam metadata.SetAssociationKind) (*metadata.SetDataResult, error) {
 	origin, exists, err := m.isExists(ctx, inputParam.Data.AssociationKindID)
 	if nil != err {
-		blog.Errorf("check association kind is exist error (%v)", err)
+		blog.Errorf("check association kind is exist error (%#v)", err)
 		return nil, err
 	}
 	dataResult := &metadata.SetDataResult{}
@@ -197,7 +197,7 @@ func (m *associationKind) DeleteAssociationKind(ctx core.ContextParams, inputPar
 	queryCond := metadata.QueryCondition{Condition: inputParam.Condition}
 	origins, err := m.searchAssociationKind(ctx, queryCond)
 	if nil != err {
-		blog.Errorf("search association kind by condition error:%v", err)
+		blog.Errorf("search association kind by condition error:%s", err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
@@ -206,27 +206,27 @@ func (m *associationKind) DeleteAssociationKind(ctx core.ContextParams, inputPar
 		cond.Element(&mongo.Eq{Key: common.AssociationKindIDField, Val: origin.AssociationKindID})
 		origin, exist, err := m.associationModel.isExists(ctx, cond)
 		if nil != err {
-			blog.Errorf("get association kind apply error:%v", err)
+			blog.Errorf("get association kind apply error:%s", err.Error())
 			//return &metadata.DeletedCount{}, err
 		}
 		if exist {
-			blog.Errorf("the association kind [%v] has been apply to model [%v]", inputParam.Condition, origin)
+			blog.Errorf("the association kind [%#v] has been apply to model [%#v]", inputParam.Condition, origin)
 			return &metadata.DeletedCount{}, ctx.Error.Error(common.CCErrorTopoAssKindHasApplyToObject)
 		}
 	}
 
 	exist, err := m.isPreAssociationKind(ctx, inputParam)
 	if nil != err {
-		blog.Errorf("search pre association kind by condition error:%v", err)
+		blog.Errorf("search pre association kind by condition error:%s", err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 	if exist {
-		blog.Errorf(" pre association can not be delete [%v]", inputParam.Condition)
+		blog.Errorf(" pre association can not be delete [%#v]", inputParam.Condition)
 		return &metadata.DeletedCount{}, ctx.Error.Error(common.CCErrorTopoPreAssKindCanNotBeDelete)
 	}
 	err = m.dbProxy.Table(common.BKTableNameAsstDes).Delete(ctx, inputParam.Condition)
 	if nil != err {
-		blog.Errorf("delete association kind by condition [%v],error:%v", inputParam.Condition, err)
+		blog.Errorf("delete association kind by condition [%#v],error:%s", inputParam.Condition, err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 	return &metadata.DeletedCount{Count: uint64(len(origins))}, nil
@@ -236,7 +236,7 @@ func (m *associationKind) CascadeDeleteAssociationKind(ctx core.ContextParams, i
 	condition := metadata.QueryCondition{Condition: inputParam.Condition}
 	associationKindItems, err := m.searchAssociationKind(ctx, condition)
 	if nil != err {
-		blog.Errorf("search association kind by condition [%v],error:%v", inputParam.Condition, err)
+		blog.Errorf("search association kind by condition [%#v],error:%s", inputParam.Condition, err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
@@ -245,14 +245,14 @@ func (m *associationKind) CascadeDeleteAssociationKind(ctx core.ContextParams, i
 		cond.Element(&mongo.Eq{Key: common.AssociationKindIDField, Val: item.AssociationKindID})
 		deleteModelAsstParam := metadata.DeleteOption{Condition: cond.ToMapStr()}
 		if _, err := m.associationModel.CascadeDeleteModelAssociation(ctx, deleteModelAsstParam); nil != err {
-			blog.Errorf("cascade delete association kind by condition [%v],error:%v", deleteModelAsstParam, err)
+			blog.Errorf("cascade delete association kind by condition [%#v],error:%s", deleteModelAsstParam, err.Error())
 			return &metadata.DeletedCount{}, err
 		}
 	}
 
 	err = m.dbProxy.Table(common.BKTableNameAsstDes).Delete(ctx, inputParam.Condition)
 	if nil != err {
-		blog.Errorf("delete association kind by condition [%v],error:%v", inputParam.Condition, err)
+		blog.Errorf("delete association kind by condition [%#v],error:%s", inputParam.Condition, err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
