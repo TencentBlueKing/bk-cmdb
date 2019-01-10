@@ -12,6 +12,8 @@
 
 package common
 
+import "math"
+
 const (
 	// HTTPCreate create method
 	HTTPCreate = "POST"
@@ -596,6 +598,9 @@ const (
 	// FieldTypeInt the int field type
 	FieldTypeInt string = "int"
 
+	// FieldTypeFloat the float field type
+	FieldTypeFloat string = "float"
+
 	// FieldTypeEnum the enum field type
 	FieldTypeEnum string = "enum"
 
@@ -760,9 +765,9 @@ const (
 	BKSessionLanugageKey    = "language"
 	BKHTTPSupplierID        = "bk_supplier_id"
 
-	BKHTTPCCRequestID     = "cc_request_id"
-	BKHTTPCCRequestTime   = "cc_request_time"
-	BKHTTPCCTransactionID = "cc_txn_id"
+	BKHTTPCCRequestID     = "CC_REQUEST_ID"
+	BKHTTPCCRequestTime   = "CC_REQUEST_TIME"
+	BKHTTPCCTransactionID = "CC_TXN_ID"
 )
 
 type CCContextKey string
@@ -789,14 +794,16 @@ const (
 
 // integer const
 const (
-	MaxUint64 = ^uint64(0)
-	MinUint64 = 0
-	MaxInt64  = int64(MaxUint64 >> 1)
-	MinInt64  = -MaxInt64 - 1
-	MaxUint   = ^uint(0)
-	MinUint   = 0
-	MaxInt    = int(MaxUint >> 1)
-	MinInt    = -MaxInt - 1
+	MaxUint64  = ^uint64(0)
+	MinUint64  = 0
+	MaxInt64   = int64(MaxUint64 >> 1)
+	MinInt64   = -MaxInt64 - 1
+	MaxUint    = ^uint(0)
+	MinUint    = 0
+	MaxInt     = int(MaxUint >> 1)
+	MinInt     = -MaxInt - 1
+	MaxFloat64 = math.MaxFloat64
+	MinFloat64 = -math.MaxFloat64
 )
 
 //flag
@@ -923,4 +930,9 @@ const (
 	AssociationTypeRun      = "run"
 	AssociationTypeConnect  = "connect"
 	AssociationTypeDefault  = "default"
+)
+
+const (
+	// MetadataField data business key
+	MetadataField = "metadata"
 )

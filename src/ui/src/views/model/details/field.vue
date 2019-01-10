@@ -96,6 +96,7 @@
                 fieldTypeMap: {
                     'singlechar': this.$t('ModelManagement["短字符"]'),
                     'int': this.$t('ModelManagement["数字"]'),
+                    'float': this.$t('ModelManagement["浮点"]'),
                     'enum': this.$t('ModelManagement["枚举"]'),
                     'date': this.$t('ModelManagement["日期"]'),
                     'time': this.$t('ModelManagement["时间"]'),

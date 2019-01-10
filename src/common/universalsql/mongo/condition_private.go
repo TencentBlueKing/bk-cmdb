@@ -13,9 +13,11 @@
 package mongo
 
 import (
+	"fmt"
+	"reflect"
+
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/universalsql"
-	"fmt"
 )
 
 func parseConditionFromMapStr(inputCond *mongoCondition, inputKey string, inputCondMapStr mapstr.MapStr) (outputCond *mongoCondition, err error) {
@@ -51,28 +53,42 @@ func parseConditionFromMapStr(inputCond *mongoCondition, inputKey string, inputC
 			outputCond.Element(ele)
 		default:
 
-			operatorVal, err := inputCondMapStr.MapStr(operatorKey)
-			if nil != err {
-				return err
-			}
+			switch reflect.TypeOf(val).Kind() {
+			case reflect.String,
+				reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+				reflect.Float32, reflect.Float64,
+				reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+				// Compatible with older versions of mongodb equal syntax
+				if 0 != len(inputKey) && 0 != len(operatorKey) {
+					outputCond.Element(&Eq{Key: inputKey, Val: (&Eq{Key: operatorKey, Val: val}).ToMapStr()})
+				} else {
+					outputCond.Element(&Eq{Key: operatorKey, Val: val})
+				}
 
-			tmpCond := newCondition()
-			tmpCond, err = parseConditionFromMapStr(tmpCond, operatorKey, operatorVal)
-			if nil != err {
-				return err
-			}
-			if 0 != len(inputKey) {
-				// ATTENTION: check embed condition, maybe is not a good way
-				tmp, ok := outputCond.embed[inputKey]
-				if !ok {
-					outputCond.embed[inputKey] = tmpCond
+			default:
+				operatorVal, err := inputCondMapStr.MapStr(operatorKey)
+				if nil != err {
+					return err
+				}
+
+				tmpCond := newCondition()
+				tmpCond, err = parseConditionFromMapStr(tmpCond, operatorKey, operatorVal)
+				if nil != err {
+					return err
+				}
+				if 0 != len(inputKey) {
+					// ATTENTION: check embed condition, maybe is not a good way
+					tmp, ok := outputCond.embed[inputKey]
+					if !ok {
+						outputCond.embed[inputKey] = tmpCond
+						return nil
+					}
+					tmp.merge(tmpCond)
 					return nil
 				}
-				tmp.merge(tmpCond)
-				return nil
-			}
 
-			outputCond.merge(tmpCond)
+				outputCond.merge(tmpCond)
+			}
 
 		}
 

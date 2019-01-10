@@ -1,6 +1,6 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.,
- * Copyright (C) 2017,-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  * Licensed under the MIT License (the ",License",); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
@@ -16,8 +16,8 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/universalsql"
 	"configcenter/src/common/universalsql/mongo"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
@@ -30,30 +30,39 @@ func (m *instanceManager) save(ctx core.ContextParams, objID string, inputParam 
 	}
 	instIDFieldName := common.GetInstIDField(objID)
 	inputParam[instIDFieldName] = id
+	if !util.IsInnerObject(objID) {
+		inputParam[common.BKObjIDField] = objID
+	}
+	inputParam.Set(common.BKOwnerIDField, ctx.SupplierAccount)
 	err = m.dbProxy.Table(tableName).Insert(ctx, inputParam)
 	return id, err
 }
 
-func (m *instanceManager) update(ctx core.ContextParams, objID string, data mapstr.MapStr, cond universalsql.Condition) (cnt uint64, err error) {
+func (m *instanceManager) update(ctx core.ContextParams, objID string, data mapstr.MapStr, cond mapstr.MapStr) (cnt uint64, err error) {
 	tableName := common.GetInstTableName(objID)
-
-	cnt, err = m.dbProxy.Table(tableName).Find(cond.ToMapStr()).Count(ctx)
+	if !util.IsInnerObject(objID) {
+		cond.Set(common.BKObjIDField, objID)
+	}
+	cnt, err = m.dbProxy.Table(tableName).Find(cond).Count(ctx)
 	if nil != err {
 		return cnt, err
 	}
-
-	err = m.dbProxy.Table(tableName).Update(ctx, cond.ToMapStr(), data)
+	data.Remove(common.BKObjIDField)
+	err = m.dbProxy.Table(tableName).Update(ctx, cond, data)
 	return cnt, err
 }
 
-func (m *instanceManager) getInsts(ctx core.ContextParams, objID string, cond mapstr.MapStr) (origin []mapstr.MapStr, exists bool, err error) {
+func (m *instanceManager) getInsts(ctx core.ContextParams, objID string, cond mapstr.MapStr) (origins []mapstr.MapStr, exists bool, err error) {
+	origins = make([]mapstr.MapStr, 0)
 	tableName := common.GetInstTableName(objID)
-	condition, err := mongo.NewConditionFromMapStr(cond)
-	if nil != err {
-		return origin, false, err
+	if !util.IsInnerObject(objID) {
+		cond.Set(common.BKObjIDField, objID)
 	}
-	err = m.dbProxy.Table(tableName).Find(condition.ToMapStr()).All(ctx, origin)
-	return origin, !m.dbProxy.IsNotFoundError(err), err
+	if nil != err {
+		return origins, false, err
+	}
+	err = m.dbProxy.Table(tableName).Find(cond).All(ctx, &origins)
+	return origins, !m.dbProxy.IsNotFoundError(err), err
 }
 
 func (m *instanceManager) getInstDataByID(ctx core.ContextParams, objID string, instID uint64, instanceManager *instanceManager) (origin mapstr.MapStr, err error) {
@@ -72,7 +81,12 @@ func (m *instanceManager) getInstDataByID(ctx core.ContextParams, objID string, 
 
 func (m *instanceManager) searchInstance(ctx core.ContextParams, objID string, inputParam metadata.QueryCondition) (results []mapstr.MapStr, err error) {
 	tableName := common.GetInstTableName(objID)
-	instHandler := m.dbProxy.Table(tableName).Find(inputParam.Condition)
+	condition, err := mongo.NewConditionFromMapStr(inputParam.Condition)
+	if nil != err {
+		return results, err
+	}
+	condition.And(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
+	instHandler := m.dbProxy.Table(tableName).Find(condition.ToMapStr())
 	for _, sort := range inputParam.SortArr {
 		fileld := sort.Field
 		if sort.IsDsc {
@@ -87,8 +101,12 @@ func (m *instanceManager) searchInstance(ctx core.ContextParams, objID string, i
 
 func (m *instanceManager) countInstance(ctx core.ContextParams, objID string, cond mapstr.MapStr) (count uint64, err error) {
 	tableName := common.GetInstTableName(objID)
-
-	count, err = m.dbProxy.Table(tableName).Find(cond).Count(ctx)
+	condition, err := mongo.NewConditionFromMapStr(cond)
+	if nil != err {
+		return 0, err
+	}
+	condition.And(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
+	count, err = m.dbProxy.Table(tableName).Find(condition.ToMapStr()).Count(ctx)
 
 	return count, err
 }

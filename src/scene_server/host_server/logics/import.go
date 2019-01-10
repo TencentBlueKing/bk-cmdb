@@ -35,19 +35,11 @@ import (
 func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, ownerID string, hostInfos map[int64]map[string]interface{}, importType metadata.HostInputType) ([]string, []string, []string, error) {
 
 	instance := NewImportInstance(ctx, ownerID, lgc)
-
 	var err error
 	instance.defaultFields, err = lgc.getHostFields(ctx, ownerID)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("get host fields failed, err: %v", err)
 	}
-
-	cond := hutil.NewOperation().WithOwnerID(ownerID).WithObjID(common.BKInnerObjIDHost).Data()
-	assResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAssociations(ctx, lgc.header, cond)
-	if err != nil || (err == nil && !assResult.Result) {
-		return nil, nil, nil, fmt.Errorf("search host assosications failed, err: %v, result err: %s", err, assResult.ErrMsg)
-	}
-	instance.asstDes = assResult.Data
 
 	hostMap, err := lgc.getAddHostIDMap(ctx, hostInfos)
 	if err != nil {
@@ -161,20 +153,24 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, o
 }
 
 func (lgc *Logics) getHostFields(ctx context.Context, ownerID string) (map[string]*metadata.ObjAttDes, error) {
-	page := metadata.BasePage{Start: 0, Limit: common.BKNoLimit}
-	opt := hutil.NewOperation().WithObjID(common.BKInnerObjIDHost).WithOwnerID(ownerID).WithPage(page).Data()
-	result, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(ctx, lgc.header, opt)
+	opt := hutil.NewOperation().WithObjID(common.BKInnerObjIDHost).WithOwnerID(lgc.ownerID).WithAttrComm().MapStr()
+
+	input := &metadata.QueryCondition{
+		Condition: opt,
+	}
+	result, err := lgc.CoreAPI.CoreService().Model().
+		ReadModelAttr(ctx, lgc.header, common.BKInnerObjIDHost, input)
 	if err != nil {
-		blog.Errorf("getHostFields http do error, err:%s, input:%+v, rid:%s", err.Error(), opt, lgc.rid)
+		blog.Errorf("getHostFields http do error, err:%s, input:%+v, rid:%s", err.Error(), input, lgc.rid)
 		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("getHostFields http response error, err code:%d, err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, opt, lgc.rid)
+		blog.Errorf("getHostFields http response error, err code:%d, err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, input, lgc.rid)
 		return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
 	attributesDesc := make([]metadata.ObjAttDes, 0)
-	for _, att := range result.Data {
+	for _, att := range result.Data.Info {
 		attributesDesc = append(attributesDesc, metadata.ObjAttDes{Attribute: att})
 	}
 
@@ -239,7 +235,6 @@ type importInstance struct {
 	// cloudID       int64
 	// hostInfos     map[int64]map[string]interface{}
 	defaultFields map[string]*metadata.ObjAttDes
-	asstDes       []metadata.Association
 	rowErr        map[int64]error
 	ctx           context.Context
 	ccErr         ccErr.DefaultCCErrorIf
@@ -272,11 +267,10 @@ func (h *importInstance) updateHostInstance(index int64, host map[string]interfa
 		return fmt.Errorf(h.ccLang.Languagef("import_row_int_error_str", index, err.Error()))
 	}
 
-	input := make(map[string]interface{}, 2) //更新主机数据
-	input["condition"] = map[string]interface{}{common.BKHostIDField: hostID}
-	input["data"] = host
-
-	uResult, err := h.CoreAPI.ObjectController().Instance().UpdateObject(h.ctx, common.BKInnerObjIDHost, h.pheader, input)
+	input := &metadata.UpdateOption{} //更新主机数据
+	input.Condition = map[string]interface{}{common.BKHostIDField: hostID}
+	input.Data = host
+	uResult, err := h.CoreAPI.CoreService().Instance().UpdateInstance(h.ctx, h.pheader, common.BKInnerObjIDHost, input)
 	if err != nil {
 		ip, _ := host[common.BKHostInnerIPField].(string)
 		blog.Errorf("updateHostInstance http do error,  err:%s,input:%+v,rid:%s", err.Error(), input, h.rid)

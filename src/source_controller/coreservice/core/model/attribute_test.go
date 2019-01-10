@@ -1,6 +1,6 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.,
- * Copyright (C) 2017,-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  * Licensed under the MIT License (the ",License",); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
@@ -61,7 +61,7 @@ func TestAttributeMaintainces(t *testing.T) {
 	createAttrResult, err := modelMgr.CreateModelAttributes(defaultCtx, objectID, metadata.CreateModelAttributes{
 		Attributes: []metadata.Attribute{
 			metadata.Attribute{
-				PropertyID:   xid.New().String(),
+				PropertyID:   propertyID,
 				PropertyName: "create_attribute",
 			},
 		},
@@ -87,7 +87,7 @@ func TestAttributeMaintainces(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.NotNil(t, updateResult)
-	require.Equal(t, uint64(1), updateResult.Count)
+	require.Equal(t, uint64(1), updateResult.Count, propertyID)
 
 	// search attribute
 	searchResult, err := modelMgr.SearchModelAttributes(defaultCtx, objectID, metadata.QueryCondition{
@@ -100,12 +100,10 @@ func TestAttributeMaintainces(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, searchResult)
 	require.Equal(t, uint64(1), uint64(len(searchResult.Info)))
-	require.Equal(t, uint64(1), searchResult.Count)
+	require.Equal(t, int64(1), searchResult.Count)
 
 	for _, attr := range searchResult.Info {
-		propertyName, err := attr.String(metadata.AttributeFieldPropertyName)
-		require.NoError(t, err)
-		require.Equal(t, "create_attribute_to_updated", propertyName)
+		require.Equal(t, "create_attribute_to_updated", attr.PropertyName)
 	}
 
 	// delete the attribues
@@ -118,6 +116,6 @@ func TestAttributeMaintainces(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.NotNil(t, deleteResult)
-	require.Equal(t, uint64(1), deleteResult.Count)
+	require.Equal(t, uint64(1), deleteResult.Count, propertyID)
 
 }

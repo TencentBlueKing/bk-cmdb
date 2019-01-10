@@ -13,9 +13,11 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
-	"github.com/spf13/pflag"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"runtime"
 
@@ -25,6 +27,8 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/datacollection/app"
 	"configcenter/src/scene_server/datacollection/app/options"
+
+	"github.com/spf13/pflag"
 )
 
 func main() {
@@ -32,14 +36,16 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	var mock bool
+	var collector string
 	pflag.CommandLine.BoolVar(&mock, "mock", false, "send mock message")
+	pflag.CommandLine.StringVar(&collector, "collector", "", "collector name that send mock message send to")
 
 	op := options.NewServerOption()
 	op.AddFlags(pflag.CommandLine)
 	util.InitFlags()
 
 	if mock {
-		if err := sigmock(); err != nil {
+		if err := sigmock(collector); err != nil {
 			fmt.Printf("sigmock failed %v\n", err)
 			os.Exit(1)
 		}
@@ -60,14 +66,18 @@ func main() {
 	}
 }
 
-func sigmock() error {
-	pid, err := common.ReadPid()
+func sigmock(collector string) error {
+	body := bytes.NewBufferString(`{"name":"` + collector + `"}`)
+	resp, err := http.Post("127.0.0.1:12140", "application/json", body)
 	if err != nil {
 		return err
 	}
-	proc, err := os.FindProcess(pid)
-	if err != nil {
-		return err
+	if resp.StatusCode >= 400 {
+		respbody, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("%s", respbody)
 	}
-	return proc.Signal(syscall.SIGUSR1)
+	return nil
 }

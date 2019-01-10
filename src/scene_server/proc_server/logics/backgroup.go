@@ -23,7 +23,7 @@ import (
 	"configcenter/src/common/blog"
 )
 
-func (lgc *Logics) reshReshInitChan(config *ProcHostInstConfig) {
+func (lgc *Logics) reshReshInitChan(ctx context.Context, config *ProcHostInstConfig) {
 	if nil == config {
 		config = &ProcHostInstConfig{
 			MaxEventCount:         0,
@@ -41,7 +41,7 @@ func (lgc *Logics) reshReshInitChan(config *ProcHostInstConfig) {
 	refreshHostInstModuleIDChan = make(chan *refreshHostInstModuleID, maxRefreshModuleData)
 	// get appID,moduleID from redis
 	go lgc.getEventRefreshModuleItemFromRedis(config.GetModuleIDInterval)
-	go lgc.backgroudHandleOpGseProcTaskResult(config.FetchGseOPProcResultInterval)
+	go lgc.backgroudHandleOpGseProcTaskResult(ctx, config.FetchGseOPProcResultInterval)
 }
 
 // getEventRefreshModuleItemFromRedis Run once at startup
@@ -56,13 +56,13 @@ func (lgc *Logics) getEventRefreshModuleItemFromRedis(interval time.Duration) {
 			continue
 		}
 		if nil != err {
-			blog.Warnf("getEventRefreshModuleItemFromRedis error:%s", err.Error())
+			blog.Warnf("getEventRefreshModuleItemFromRedis error:%s,rid:%s", err.Error(), lgc.rid)
 			continue
 		}
 		item := &refreshHostInstModuleID{}
 		err = json.Unmarshal([]byte(val), item)
 		if nil != err {
-			blog.Warnf("getEventRefreshModuleItemFromRedis  error:%s", err.Error())
+			blog.Warnf("getEventRefreshModuleItemFromRedis  error:%s,rid:%s", err.Error(), lgc.rid)
 			continue
 		}
 		refreshHostInstModuleIDChan <- item
@@ -71,23 +71,24 @@ func (lgc *Logics) getEventRefreshModuleItemFromRedis(interval time.Duration) {
 
 }
 
-func (lgc *Logics) backgroudHandleOpGseProcTaskResult(interval time.Duration) {
+func (lgc *Logics) backgroudHandleOpGseProcTaskResult(ctx context.Context, interval time.Duration) {
 	go lgc.getGseOPProcTaskIDFromRedis(interval)
-	go lgc.timedTriggerTaskInfoToRedis(context.Background())
+	go lgc.timedTriggerTaskInfoToRedis(ctx)
 	for {
 		select {
 		case taskInfo := <-gseOPProcTaskChan:
-			waitExecArr, _, requestErr := lgc.handleOPProcTask(context.Background(), taskInfo.Header, taskInfo.TaskID)
+			newLgc := lgc.NewFromHeader(taskInfo.Header)
+			waitExecArr, _, requestErr := newLgc.handleOPProcTask(ctx, taskInfo.TaskID)
 			if nil != requestErr || 0 < len(waitExecArr) {
 				taskInfoByte, err := json.Marshal(taskInfo)
 				if nil != err {
-					blog.Warnf("backgroudHandleOpGseProcTaskResult json marshal error, raw data:%+v error:%s", taskInfo, err.Error())
+					blog.Warnf("backgroudHandleOpGseProcTaskResult json marshal error, raw data:%+v error:%s,rid:%s", taskInfo, err.Error(), newLgc.rid)
 					continue
 				}
 
-				_, err = lgc.cache.SAdd(common.RedisProcSrvQueryProcOPResultKey, string(taskInfoByte)).Result()
+				_, err = newLgc.cache.SAdd(common.RedisProcSrvQueryProcOPResultKey, string(taskInfoByte)).Result()
 				if nil != err {
-					blog.Warnf("backgroudHandleOpGseProcTaskResult cache task info  error, task info:%s error:%s", string(taskInfoByte), err.Error())
+					blog.Warnf("backgroudHandleOpGseProcTaskResult cache task info  error, task info:%s error:%s,rid:%s", string(taskInfoByte), err.Error(), newLgc.rid)
 				}
 			}
 		}

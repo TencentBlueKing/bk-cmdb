@@ -1,6 +1,6 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.,
- * Copyright (C) 2017,-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  * Licensed under the MIT License (the ",License",); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
@@ -13,11 +13,12 @@
 package model_test
 
 import (
-	"configcenter/src/common/mapstr"
+	"encoding/json"
 	"testing"
 
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 
 	"github.com/rs/xid"
@@ -178,23 +179,25 @@ func TestSearchAndDeleteModel(t *testing.T) {
 	require.NotEqual(t, uint64(0), dataResult.Created.ID)
 
 	// search the created one
-	searchResult, err := modelMgr.SearchModel(defaultCtx, metadata.QueryCondition{
+	searchResult, err := modelMgr.SearchModelWithAttribute(defaultCtx, metadata.QueryCondition{
 		Condition: mapstr.MapStr{
-			metadata.ModelFieldObjectName: mapstr.MapStr{
-				"$regex": "delete_",
+			metadata.ModelFieldObjectID: mapstr.MapStr{
+				"$regex": inputModel.Spec.ObjectID,
 			},
 		},
 	})
 	require.NoError(t, err)
 	require.NotNil(t, searchResult)
-	require.Equal(t, uint64(1), searchResult.Count)
-	require.Equal(t, searchResult.Count, uint64(len(searchResult.Info)))
+	require.Equal(t, int64(1), searchResult.Count)
+	require.Equal(t, searchResult.Count, int64(len(searchResult.Info)))
+	resultStr, _ := json.Marshal(searchResult)
+	t.Logf("the query result:%s", resultStr)
 
 	// search delete the one
 	deleteResult, err := modelMgr.DeleteModel(defaultCtx, metadata.DeleteOption{
 		Condition: mapstr.MapStr{
-			metadata.ModelFieldObjectName: mapstr.MapStr{
-				"$regex": "delete_",
+			metadata.ModelFieldObjectID: mapstr.MapStr{
+				"$regex": inputModel.Spec.ObjectID,
 			},
 		},
 	})
@@ -204,15 +207,15 @@ func TestSearchAndDeleteModel(t *testing.T) {
 	require.Equal(t, uint64(1), deleteResult.Count)
 
 	// search the created one
-	searchResult, err = modelMgr.SearchModel(defaultCtx, metadata.QueryCondition{
+	searchResult, err = modelMgr.SearchModelWithAttribute(defaultCtx, metadata.QueryCondition{
 		Condition: mapstr.MapStr{
-			metadata.ModelFieldObjectName: mapstr.MapStr{
-				"$regex": "delete_",
+			metadata.ModelFieldObjectID: mapstr.MapStr{
+				"$regex": inputModel.Spec.ObjectID,
 			},
 		},
 	})
 	require.NoError(t, err)
 	require.NotNil(t, searchResult)
-	require.Equal(t, uint64(0), searchResult.Count)
-	require.Equal(t, searchResult.Count, uint64(len(searchResult.Info)))
+	require.Equal(t, int64(0), searchResult.Count)
+	require.Equal(t, searchResult.Count, int64(len(searchResult.Info)))
 }

@@ -25,24 +25,26 @@ import (
 
 type Logics struct {
 	*backbone.Engine
-	header http.Header
-	rid    string
-	ccErr  errors.DefaultCCErrorIf
-	ccLang language.DefaultCCLanguageIf
-	user   string
-	cache  *redis.Client
+	header  http.Header
+	rid     string
+	ccErr   errors.DefaultCCErrorIf
+	ccLang  language.DefaultCCLanguageIf
+	user    string
+	ownerID string
+	cache   *redis.Client
 }
 
 // NewLogics get logic handle
 func NewLogics(b *backbone.Engine, header http.Header, cache *redis.Client) *Logics {
 	lang := util.GetLanguage(header)
 	return &Logics{
-		Engine: b,
-		header: header,
-		rid:    util.GetHTTPCCRequestID(header),
-		ccErr:  b.CCErr.CreateDefaultCCErrorIf(lang),
-		ccLang: b.Language.CreateDefaultCCLanguageIf(lang),
-		user:   util.GetUser(header),
-		cache:  cache,
+		Engine:  b,
+		header:  header,
+		rid:     util.GetHTTPCCRequestID(header),
+		ccErr:   b.CCErr.CreateDefaultCCErrorIf(lang),
+		ccLang:  b.Language.CreateDefaultCCLanguageIf(lang),
+		user:    util.GetUser(header),
+		ownerID: util.GetOwnerID(header),
+		cache:   cache,
 	}
 }

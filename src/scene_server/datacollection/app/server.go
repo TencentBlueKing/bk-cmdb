@@ -20,8 +20,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/backbone"
@@ -37,6 +35,8 @@ import (
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/esbserver"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
+
+	"github.com/emicklei/go-restful"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -93,7 +93,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			continue
 		}
 
-		instance, err := mongo.NewMgo(process.Config.MongoDB.BuildURI())
+		instance, err := mongo.NewMgo(process.Config.MongoDB.BuildURI(), time.Minute)
 		if err != nil {
 			return fmt.Errorf("new mongo client failed, err: %s", err.Error())
 		}
@@ -150,15 +150,18 @@ func (h *DCServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 
 		snapPrefix := "snap-redis"
 		snapredisConf := redis.ParseConfigFromKV(snapPrefix, current.ConfigMap)
-		h.Config.SnapRedis = snapredisConf
+		h.Config.SnapRedis.Config = snapredisConf
+		h.Config.SnapRedis.Enable = current.ConfigMap[snapPrefix+".enable"]
 
 		discoverPrefix := "discover-redis"
 		discoverRedisConf := redis.ParseConfigFromKV(discoverPrefix, current.ConfigMap)
-		h.Config.DiscoverRedis = discoverRedisConf
+		h.Config.DiscoverRedis.Config = discoverRedisConf
+		h.Config.SnapRedis.Enable = current.ConfigMap[discoverPrefix+".enable"]
 
 		netcollectPrefix := "netcollect-redis"
 		netcollectRedisConf := redis.ParseConfigFromKV(netcollectPrefix, current.ConfigMap)
-		h.Config.NetcollectRedis = netcollectRedisConf
+		h.Config.NetcollectRedis.Config = netcollectRedisConf
+		h.Config.SnapRedis.Enable = current.ConfigMap[netcollectPrefix+".enable"]
 
 		esbPrefix := "esb"
 		h.Config.Esb.Addrs = current.ConfigMap[esbPrefix+".addr"]

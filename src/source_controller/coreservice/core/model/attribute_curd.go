@@ -1,6 +1,6 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.,
- * Copyright (C) 2017,-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  * Licensed under the MIT License (the ",License",); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
@@ -22,7 +22,7 @@ import (
 )
 
 func (m *modelAttribute) count(ctx core.ContextParams, cond universalsql.Condition) (cnt uint64, err error) {
-	cnt, err = m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).Count(ctx)
+	cnt, err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).Count(ctx)
 	return cnt, err
 }
 
@@ -43,6 +43,7 @@ func (m *modelAttribute) update(ctx core.ContextParams, data mapstr.MapStr, cond
 
 	cnt, err = m.count(ctx, cond)
 	if 0 == cnt {
+		blog.Errorf("request(%s): find nothing by the condition(%v)", ctx.ReqID, cond.ToMapStr())
 		return cnt, nil
 	}
 
@@ -73,7 +74,7 @@ func (m *modelAttribute) searchReturnMapStr(ctx core.ContextParams, cond univers
 
 func (m *modelAttribute) delete(ctx core.ContextParams, cond universalsql.Condition) (cnt uint64, err error) {
 
-	cnt, err = m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).Count(ctx)
+	cnt, err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).Count(ctx)
 	if nil != err {
 		blog.Errorf("request(%s): database count operation is failed, error info is %s", ctx.ReqID, err.Error())
 		return cnt, err

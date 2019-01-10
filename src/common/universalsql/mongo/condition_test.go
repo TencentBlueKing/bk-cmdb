@@ -13,12 +13,29 @@
 package mongo_test
 
 import (
-	"configcenter/src/common/universalsql/mongo"
 	"testing"
+
+	"configcenter/src/common"
+	"configcenter/src/common/universalsql/mongo"
 
 	"github.com/stretchr/testify/require"
 )
 
+func TestNewConditionFromMapStrWithCustomType(t *testing.T) {
+
+	target := mongo.NewCondition()
+	target.Element(&mongo.Eq{Key: "custom_type", Val: common.DataStatusDisabled})
+
+	sql, err := target.ToSQL()
+	require.NoError(t, err)
+	t.Logf("target sql:%s", sql)
+
+	recoverSql, err := mongo.NewConditionFromMapStr(target.ToMapStr())
+	require.NoError(t, err)
+	sql, err = recoverSql.ToSQL()
+	require.NoError(t, err)
+	t.Logf("recover sql:%s", sql)
+}
 func TestNewConditionFromMapStr(t *testing.T) {
 
 	target := mongo.NewCondition()
@@ -41,4 +58,43 @@ func TestNewConditionFromMapStr(t *testing.T) {
 	require.NoError(t, err)
 	sql, _ = recoverSql.ToSQL()
 	t.Logf("recover sql:%s", sql)
+}
+
+func TestMgCondition(t *testing.T) {
+	target := mongo.NewCondition()
+	target.Element(
+		mongo.Field("name.first").Nin([]string{"test1", "test2"}).In([]string{"test3", "test4"}),
+		mongo.Field("age").Lte(75).Gte(15),
+		mongo.Field("name.last").Eq("yang"),
+	)
+	sql, _ := target.ToSQL()
+	t.Logf("%s", sql)
+
+	target.And(
+		mongo.Field("").Lt(75).Gte(15),
+		mongo.Field("").In([]string{"red", "green"}),
+	)
+	sql, _ = target.ToSQL()
+	t.Logf("%s", sql)
+
+	target.Or(
+		mongo.Field("").All(5),
+		mongo.Field("age").Size(3).All([]int{6, 7, 8}),
+	)
+	sql, _ = target.ToSQL()
+	t.Logf("%s", sql)
+
+	target.Nor(
+		mongo.Field("age").Lt(75).Gte(15),
+		mongo.Field("family").In([]string{"wang", "yang"}),
+	)
+	sql, _ = target.ToSQL()
+	t.Logf("%s", sql)
+
+	target.Not(
+		mongo.Field("age").Lt(75).Gte(15),
+		mongo.Field("family").In([]string{"li", "yang"}),
+	)
+	sql, _ = target.ToSQL()
+	t.Logf("%s", sql)
 }
