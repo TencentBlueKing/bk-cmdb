@@ -30,7 +30,6 @@ const actions = {
      */
     createInst ({ commit, state, dispatch, rootGetters }, { objId, params, config }) {
         return $http.post(`create/inst/object/${objId}`, params, config)
-        // return $http.post(`inst/${rootGetters.supplierAccount}/${objId}`, params, config)
     },
 
     /**
@@ -43,8 +42,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     updateInst ({ commit, state, dispatch, rootGetters }, { objId, instId, params, config }) {
-        // return $http.put(`update/inst/object/${objId}/inst/${instId}`, params, config)
-        return $http.put(`inst/${rootGetters.supplierAccount}/${objId}/${instId}`, params, config)
+        return $http.put(`update/inst/object/${objId}/inst/${instId}`, params, config)
     },
 
     /**
