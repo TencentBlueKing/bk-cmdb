@@ -181,6 +181,32 @@
                     'bk-selector-selected': i === this.focusList
                 }
             },
+            // 更新数据 通过 this.$refs.XXX.updateData(newList) 调用
+            updateData (newList = []) {
+                this.localTagList.splice(0, this.localTagList.length, ...[])
+                this.curInputValue = ''
+                this.initData = [...this.list]
+                if (newList.length) {
+                    newList.map(tag => {
+                        this.initData.filter(val => {
+                            if (tag === val[this.saveKey]) {
+                                this.localTagList.push(val)
+                                this.tagList.push(val[this.saveKey])
+                            } else if (this.allowCreate && !tag.includes(tag)) {
+                                let temp = {}
+                                
+                                temp[this.saveKey] = tag
+                                temp[this.displayKey] = tag
+                                this.localTagList.push(temp)
+                                this.tagList.push(tag)
+                            }
+                        })
+                    })
+                    newList.forEach(tag => {
+                        this.initData = this.initData.filter(val => !tag.includes(val[this.saveKey]))
+                    })
+                }
+            },
             // 获取元素位置
             getSiteInfo () {
                 let res = {

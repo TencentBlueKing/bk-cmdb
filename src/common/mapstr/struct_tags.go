@@ -13,11 +13,8 @@
 package mapstr
 
 import (
-	"fmt"
 	"reflect"
 	"strings"
-
-	"configcenter/src/common/blog"
 )
 
 // GetTags parse a object and get the all tags
@@ -53,6 +50,9 @@ func SetValueToMapStrByTags(source interface{}) MapStr {
 func SetValueToMapStrByTagsWithTagName(source interface{}, tagName string) MapStr {
 
 	values := MapStr{}
+	if nil == source {
+		return values
+	}
 
 	targetType := reflect.TypeOf(source)
 	targetValue := reflect.ValueOf(source)
@@ -60,23 +60,48 @@ func SetValueToMapStrByTagsWithTagName(source interface{}, tagName string) MapSt
 	case reflect.Ptr:
 		targetType = targetType.Elem()
 		targetValue = targetValue.Elem()
+
+		if targetType.Kind() == reflect.Ptr {
+			return SetValueToMapStrByTagsWithTagName(targetValue.Interface(), tagName)
+		}
+
 	}
 
 	numField := targetType.NumField()
 	for i := 0; i < numField; i++ {
 		structField := targetType.Field(i)
 		tag, ok := structField.Tag.Lookup(tagName)
-		if !ok {
+		if !ok && !structField.Anonymous {
 			continue
 		}
 
-		if 0 == len(tag) || strings.Contains(tag, "ignoretomap") {
+		if (0 == len(tag) || strings.Contains(tag, "ignoretomap")) && !structField.Anonymous {
 			continue
 		}
 		tags := strings.Split(tag, ",")
+		if 0 == len(tag) {
+			tags = []string{structField.Name}
+		}
 
 		fieldValue := targetValue.FieldByName(structField.Name)
-		values.Set(tags[0], fieldValue.Interface())
+		if !fieldValue.CanInterface() {
+			continue
+		}
+
+		switch structField.Type.Kind() {
+		case reflect.String, reflect.Int, reflect.Int16, reflect.Int8, reflect.Int32, reflect.Int64, reflect.Map:
+			values.Set(tags[0], fieldValue.Interface())
+		case reflect.Struct:
+			innerMapStr := SetValueToMapStrByTagsWithTagName(fieldValue.Interface(), tagName)
+			values.Set(tags[0], innerMapStr)
+
+		case reflect.Ptr:
+
+			innerValue := dealPointer(fieldValue, tags[0], tagName)
+			values.Set(tags[0], innerValue)
+
+		}
+
 	}
 
 	return values
@@ -92,123 +117,6 @@ func SetValueToStructByTagsWithTagName(target interface{}, values MapStr, tagNam
 
 	targetType := reflect.TypeOf(target)
 	targetValue := reflect.ValueOf(target)
-	switch targetType.Kind() {
-	case reflect.Ptr:
-		targetType = targetType.Elem()
-		targetValue = targetValue.Elem()
-	}
 
-	numField := targetType.NumField()
-	for i := 0; i < numField; i++ {
-		structField := targetType.Field(i)
-		tag, ok := structField.Tag.Lookup(tagName)
-		if !ok {
-			continue
-		}
-
-		if 0 == len(tag) || strings.Contains(tag, "ignoretostruct") {
-			continue
-		}
-
-		tags := strings.Split(tag, ",")
-
-		tagVal, ok := values[tags[0]]
-		if !ok {
-			continue
-		}
-
-		if nil == tagVal {
-			continue
-		}
-
-		fieldValue := targetValue.FieldByName(structField.Name)
-		if !fieldValue.CanSet() {
-			continue
-		}
-
-		switch structField.Type.Kind() {
-		default:
-			return fmt.Errorf("unsupport the type %s %v", structField.Name, structField.Type.Kind())
-		case reflect.Map:
-			fieldValue.Set(reflect.ValueOf(tagVal))
-		case reflect.Interface:
-			tmpVal := reflect.ValueOf(tagVal)
-			switch tmpVal.Kind() {
-			case reflect.Ptr:
-				fieldValue.Set(tmpVal.Elem())
-			default:
-				fieldValue.Set(tmpVal)
-			}
-
-		case reflect.Bool:
-			fieldValue.SetBool(tagVal.(bool))
-		case reflect.Int, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int8, reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint8:
-			switch t := tagVal.(type) {
-			default:
-				blog.Errorf("unsuport the type %s tagVal %v", structField.Name, reflect.TypeOf(tagVal).Kind())
-			case float32:
-				fieldValue.SetInt(int64(t))
-			case float64:
-				fieldValue.SetInt(int64(t))
-			case int:
-				fieldValue.SetInt(int64(t))
-			case int16:
-				fieldValue.SetInt(int64(t))
-			case int32:
-				fieldValue.SetInt(int64(t))
-			case int64:
-				fieldValue.SetInt(int64(t))
-			case int8:
-				fieldValue.SetInt(int64(t))
-			case uint:
-				fieldValue.SetInt(int64(t))
-			case uint16:
-				fieldValue.SetInt(int64(t))
-			case uint32:
-				fieldValue.SetInt(int64(t))
-			case uint64:
-				fieldValue.SetInt(int64(t))
-			case uint8:
-				fieldValue.SetInt(int64(t))
-			}
-
-		case reflect.Float32, reflect.Float64:
-			switch t := tagVal.(type) {
-			case float32:
-				fieldValue.SetFloat(float64(t))
-			case float64:
-				fieldValue.SetFloat(float64(t))
-			case int:
-				fieldValue.SetFloat(float64(t))
-			case int16:
-				fieldValue.SetFloat(float64(t))
-			case int32:
-				fieldValue.SetFloat(float64(t))
-			case int64:
-				fieldValue.SetFloat(float64(t))
-			case int8:
-				fieldValue.SetFloat(float64(t))
-			case uint:
-				fieldValue.SetFloat(float64(t))
-			case uint16:
-				fieldValue.SetFloat(float64(t))
-			case uint32:
-				fieldValue.SetFloat(float64(t))
-			case uint64:
-				fieldValue.SetFloat(float64(t))
-			case uint8:
-				fieldValue.SetFloat(float64(t))
-			}
-
-		case reflect.String:
-			switch t := tagVal.(type) {
-			case string:
-				fieldValue.SetString(t)
-			}
-
-		}
-
-	}
-
-	return nil
+	return parseStruct(targetType, targetValue, values, tagName)
 }

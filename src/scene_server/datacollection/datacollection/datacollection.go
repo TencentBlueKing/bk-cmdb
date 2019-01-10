@@ -13,12 +13,8 @@
 package datacollection
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"os"
-	"os/signal"
 	"reflect"
 	"strconv"
 	"time"
@@ -27,18 +23,14 @@ import (
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/datacollection/app/options"
+	"configcenter/src/scene_server/datacollection/datacollection/hostsnap"
+	"configcenter/src/scene_server/datacollection/datacollection/middleware"
+	"configcenter/src/scene_server/datacollection/datacollection/netcollect"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
 )
 
-type Analyzer interface {
-	Analyze(mesg []string) error
-}
-
-type Collector interface {
-	Subject() []string
-}
 type DataCollection struct {
 	Config *options.Config
 	*backbone.Engine
@@ -51,36 +43,17 @@ func NewDataCollection(ctx context.Context, config *options.Config, backbone *ba
 }
 
 func (d *DataCollection) Run() error {
-
 	blog.Infof("datacollection start...")
 
-	var err error
-
-	discli, err := redis.NewFromConfig(d.Config.DiscoverRedis)
-	if nil != err {
-		blog.Errorf("[datacollection][RUN] connect discover redis failed: %v", err)
-		return err
-	}
-
-	netcli, err := redis.NewFromConfig(d.Config.NetcollectRedis)
-	if nil != err {
-		blog.Errorf("[datacollection][RUN] connect netcollect redis failed: %v", err)
-		return err
-	}
-
-	snapcli, err := redis.NewFromConfig(d.Config.SnapRedis)
-	if nil != err {
-		blog.Errorf("[datacollection][RUN] connect snap redis failed: %v", err)
-		return err
-	}
-
+	blog.Infof("[datacollect][RUN]connecting to cc redis %+v", d.Config.CCRedis)
 	rediscli, err := redis.NewFromConfig(d.Config.CCRedis)
 	if nil != err {
 		blog.Errorf("[datacollection][RUN] connect cc redis failed: %v", err)
 		return err
 	}
+	blog.Infof("[datacollect][RUN]connected to cc redis %+v", d.Config.CCRedis)
 
-	db, err := mongo.NewMgo(d.Config.MongoDB.BuildURI())
+	db, err := mongo.NewMgo(d.Config.MongoDB.BuildURI(), time.Minute)
 	if err != nil {
 		blog.Errorf("[datacollection][RUN] connect mongo failed: %v", err)
 		return fmt.Errorf("connect mongo server failed %s", err.Error())
@@ -97,19 +70,49 @@ func (d *DataCollection) Run() error {
 		time.Sleep(time.Second * 10)
 	}
 
-	snapChanName := d.getSnapChanName(defaultAppID)
-	hostSnap := NewHostSnap(d.ctx, snapChanName, MaxSnapSize, rediscli, snapcli, db)
-	hostSnap.Start()
+	man := NewManager()
 
-	discoverChanName := d.getDiscoverChanName(defaultAppID)
-	discover := NewDiscover(d.ctx, discoverChanName, MaxDiscoverSize, rediscli, discli, d.Engine)
-	discover.Start()
+	if d.Config.SnapRedis.Enable != "false" {
+		blog.Infof("[datacollect][RUN]connecting to snap-redis %+v", d.Config.SnapRedis.Config)
+		snapcli, err := redis.NewFromConfig(d.Config.SnapRedis.Config)
+		if nil != err {
+			blog.Errorf("[datacollection][RUN] connect snap-redis failed: %v", err)
+			return err
+		}
+		blog.Infof("[datacollect][RUN]connected to snap-redis %+v", d.Config.SnapRedis.Config)
+		snapChanName := d.getSnapChanName(defaultAppID)
+		hostsnapCollector := hostsnap.NewHostSnap(d.ctx, rediscli, db)
+		snapPorter := BuildChanPorter("hostsnap", hostsnapCollector, rediscli, snapcli, snapChanName, hostsnap.MockMessage)
+		man.AddPorter(snapPorter)
+	}
 
-	netdevChanName := d.getNetcollectChanName(defaultAppID)
-	netcollect := NewNetcollect(d.ctx, netdevChanName, MaxNetcollectSize, rediscli, netcli, db, d.Engine)
-	netcollect.Start()
+	if d.Config.DiscoverRedis.Enable != "false" {
+		blog.Infof("[datacollect][RUN]connecting to discover-redis %+v", d.Config.DiscoverRedis.Config)
+		discli, err := redis.NewFromConfig(d.Config.DiscoverRedis.Config)
+		if nil != err {
+			blog.Errorf("[datacollection][RUN] connect discover-redis failed: %v", err)
+			return err
+		}
+		blog.Infof("[datacollect][RUN]connected to discover-redis %+v", d.Config.DiscoverRedis.Config)
+		discoverChanName := d.getDiscoverChanName(defaultAppID)
+		middlewareCollector := middleware.NewDiscover(d.ctx, rediscli, d.Engine)
+		middlewarePorter := BuildChanPorter("middleware", middlewareCollector, rediscli, discli, discoverChanName, middleware.MockMessage)
+		man.AddPorter(middlewarePorter)
+	}
 
-	go d.mock(netdevChanName[0])
+	if d.Config.NetcollectRedis.Enable != "false" {
+		blog.Infof("[datacollect][RUN]connecting to netcollect-redis %+v", d.Config.NetcollectRedis.Config)
+		netcli, err := redis.NewFromConfig(d.Config.NetcollectRedis.Config)
+		if nil != err {
+			blog.Errorf("[datacollection][RUN] connect netcollect-redis failed: %v", err)
+			return err
+		}
+		blog.Infof("[datacollect][RUN]connected to netcollect-redis %+v", d.Config.NetcollectRedis.Config)
+		netdevChanName := d.getNetcollectChanName(defaultAppID)
+		netcollector := netcollect.NewNetcollect(d.ctx, db)
+		netcollectPorter := BuildChanPorter("netcollect", netcollector, rediscli, netcli, netdevChanName, netcollect.MockMessage)
+		man.AddPorter(netcollectPorter)
+	}
 
 	blog.Infof("datacollection started")
 	return nil
@@ -119,12 +122,17 @@ func (d *DataCollection) getNetcollectChanName(defaultAppID string) []string {
 	return []string{"netdevice2"}
 }
 
-func (d *DataCollection) getDiscoverChanName(defaultAppID string) string {
-	return "discover" + defaultAppID
+func (d *DataCollection) getDiscoverChanName(defaultAppID string) []string {
+	return []string{"discover" + defaultAppID}
 }
 
 func (d *DataCollection) getSnapChanName(defaultAppID string) []string {
-	return []string{"snapshot" + defaultAppID, defaultAppID + "_snapshot"}
+	return []string{
+		// 瘦身后的通道名
+		"snapshot" + defaultAppID,
+		// 瘦身前的通道名，为增加向前兼容的而订阅这个老通道
+		defaultAppID + "_snapshot",
+	}
 }
 
 func (d *DataCollection) getDefaultAppID(ctx context.Context) (defaultAppID string, err error) {

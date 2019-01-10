@@ -1,6 +1,6 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.,
- * Copyright (C) 2017,-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  * Licensed under the MIT License (the ",License",); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
@@ -13,22 +13,25 @@
 package service
 
 import (
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/source_controller/coreservice/core"
-	"configcenter/src/source_controller/coreservice/core/association"
-	"configcenter/src/source_controller/coreservice/core/instances"
-	"configcenter/src/storage/dal"
 )
 
-type associationDepend struct {
-	instanceOperation core.InstanceOperation
-}
-
-func NewAssociationDepend(dbProxy dal.RDB) association.OperationDependences {
-	asstDepend := &associationDepend{}
-	asstDepend.instanceOperation = instances.New(dbProxy)
-	return asstDepend
-
-}
-func (m *associationDepend) IsInstanceExist(ctx core.ContextParams, objID string, instID uint64) (exists bool, err error) {
+func (s *coreService) IsInstanceExist(ctx core.ContextParams, objID string, instID uint64) (exists bool, err error) {
+	instIDFieldName := common.GetInstIDField(objID)
+	cond := mongo.NewCondition()
+	cond.Element(&mongo.Eq{Key: instIDFieldName, Val: instID})
+	searchCond := metadata.QueryCondition{Condition: cond.ToMapStr()}
+	result, err := s.core.InstanceOperation().SearchModelInstance(ctx, objID, searchCond)
+	if nil != err {
+		blog.Errorf("search model instance error: %v", err)
+		return false, err
+	}
+	if 0 == result.Count {
+		return false, nil
+	}
 	return true, nil
 }

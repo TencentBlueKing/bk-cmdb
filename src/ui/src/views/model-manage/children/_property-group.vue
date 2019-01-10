@@ -62,8 +62,8 @@
                     {{property['bk_property_name']}}
                 </li>
                 <template v-if="!group.properties.length">
-                    <li class="property-empty" v-if="authority.includes('update')" @click="handleAddProperty(group)">立即添加</li>
-                    <li class="property-empty disabled" v-else>暂无字段</li>
+                    <li class="property-empty" v-if="authority.includes('update')" @click="handleAddProperty(group)">{{$t('ModelManagement["立即添加"]')}}</li>
+                    <li class="property-empty disabled" v-else>{{$t('ModelManagement["暂无字段"]')}}</li>
                 </template>
             </vue-draggable>
             <template v-if="authority.includes('update')">
@@ -78,8 +78,8 @@
                         <input type="text" class="add-group-input cmdb-form-input"
                             ref="addGroupInput"
                             v-model.trim="newGroupName">
-                        <a class="add-group-button" href="javascript:void(0)" @click="handleCreateGroup">保存</a>
-                        <a class="add-group-button" href="javascript:void(0)" @click="handleCancelCreateGroup">取消</a>
+                        <a class="add-group-button" href="javascript:void(0)" @click="handleCreateGroup">{{$t('Common["保存"]')}}</a>
+                        <a class="add-group-button" href="javascript:void(0)" @click="handleCancelCreateGroup">{{$t('Common["取消"]')}}</a>
                     </template>
                 </div>
             </template>
@@ -165,6 +165,10 @@
                 return count
             },
             authority () {
+                const cantEdit = ['process', 'plat']
+                if (cantEdit.includes(this.objId)) {
+                    return []
+                }
                 return this.$store.getters.admin ? ['search', 'update', 'delete'] : []
             }
         },

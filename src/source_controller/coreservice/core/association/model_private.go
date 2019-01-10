@@ -1,6 +1,6 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.,
- * Copyright (C) 2017,-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  * Licensed under the MIT License (the ",License",); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
@@ -13,11 +13,37 @@
 package association
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/source_controller/coreservice/core"
 )
+
+func (m *associationModel) isValid(ctx core.ContextParams, inputParam metadata.CreateModelAssociation) error {
+
+	if 0 == len(inputParam.Spec.AssociationName) {
+		blog.Errorf("request(%s): it is failed to create a new model association, because of the associationID (%s) is not set", ctx.ReqID, metadata.AssociationFieldAsstID)
+		return ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.AssociationFieldAsstID)
+	}
+
+	if 0 == len(inputParam.Spec.ObjectID) {
+		blog.Errorf("request(%s): it is failed to create a new model association, because of the objectID (%s) is not set", ctx.ReqID, metadata.AssociationFieldObjectID)
+		return ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.AssociationFieldObjectID)
+	}
+
+	if 0 == len(inputParam.Spec.AsstObjID) {
+		blog.Errorf("request(%s): it is failed to create a new model association, because of the AssoObjectID (%s) is not set", ctx.ReqID, metadata.AssociationFieldAssociationObjectID)
+		return ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.AssociationFieldAssociationObjectID)
+	}
+
+	if 0 == len(inputParam.Spec.AsstKindID) {
+		blog.Errorf("request(%s): it is failed to create a new model association, because of the AssoObjectID (%s) is not set", ctx.ReqID, metadata.AssociationFieldAssociationObjectID)
+		return ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.AssociationFieldAssociationObjectID)
+	}
+
+	return nil
+}
 
 func (m *associationModel) isExistsAssociationID(ctx core.ContextParams, associationID string) (bool, error) {
 

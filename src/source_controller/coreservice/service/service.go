@@ -19,6 +19,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"github.com/emicklei/go-restful"
 
@@ -74,15 +75,13 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 	}
 
 	// connect the remote mongodb
-	dbProxy, dbErr := mongo.NewMgo(cfg.Mongo.BuildURI())
+	dbProxy, dbErr := mongo.NewMgo(cfg.Mongo.BuildURI(), time.Minute)
 	if dbErr != nil {
 		blog.Errorf("failed to connect the remote server(%s), error info is %s", cfg.Mongo.BuildURI(), dbErr.Error())
 		return
 	}
 
-	// TODO: need to set model dependent methods collecctions
-	asstDepend := NewAssociationDepend(dbProxy)
-	s.core = core.New(model.New(dbProxy, s), instances.New(dbProxy), association.New(dbProxy, asstDepend))
+	s.core = core.New(model.New(dbProxy, s), instances.New(dbProxy, s), association.New(dbProxy, s))
 }
 
 // WebService the web service

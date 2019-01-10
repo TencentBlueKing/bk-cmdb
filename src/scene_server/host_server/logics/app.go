@@ -14,6 +14,7 @@ package logics
 
 import (
 	"context"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -28,6 +29,9 @@ import (
 
 func (lgc *Logics) GetDefaultAppIDWithSupplier(ctx context.Context) (int64, errors.CCError) {
 	cond := hutil.NewOperation().WithDefaultField(int64(common.DefaultAppFlag)).WithOwnerID(util.GetOwnerID(lgc.header)).Data()
+	cond[common.BKDBAND] = []mapstr.MapStr{
+		mapstr.MapStr{common.BKOwnerIDField: util.GetOwnerID(lgc.header)},
+	}
 	appDetails, err := lgc.GetAppDetails(ctx, common.BKAppIDField, cond)
 	if err != nil {
 		return -1, err
@@ -43,12 +47,15 @@ func (lgc *Logics) GetDefaultAppIDWithSupplier(ctx context.Context) (int64, erro
 
 func (lgc *Logics) GetDefaultAppID(ctx context.Context, ownerID string) (int64, errors.CCError) {
 	cond := hutil.NewOperation().WithOwnerID(ownerID).WithDefaultField(int64(common.DefaultAppFlag)).Data()
+	cond[common.BKDBAND] = []mapstr.MapStr{
+		mapstr.MapStr{common.BKOwnerIDField: util.GetOwnerID(lgc.header)},
+	}
 	appDetails, err := lgc.GetAppDetails(ctx, common.BKAppIDField, cond)
 	if err != nil {
 		return -1, err
 	}
 
-	id, err := appDetails.Int64(common.BKAppIDField) //[common.BKAppIDField]
+	id, err := appDetails.Int64(common.BKAppIDField)
 	if nil != err {
 		blog.Errorf("GetDefaultAppID http response format error,convert bk_biz_id to int error, err:%s, inst:%+v, rid:%s", err.Error(), appDetails, lgc.rid)
 		return -1, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
@@ -57,15 +64,14 @@ func (lgc *Logics) GetDefaultAppID(ctx context.Context, ownerID string) (int64, 
 }
 
 func (lgc *Logics) GetAppDetails(ctx context.Context, fields string, condition map[string]interface{}) (types.MapStr, errors.CCError) {
-	query := metadata.QueryInput{
-		Condition: condition,
-		Start:     0,
-		Limit:     1,
-		Fields:    fields,
-		Sort:      common.BKAppIDField,
-	}
 
-	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDApp, lgc.header, &query)
+	input := &metadata.QueryCondition{
+		Condition: condition,
+		Limit:     metadata.SearchLimit{Offset: 0, Limit: 1},
+		SortArr:   metadata.NewSearchSortParse().String(common.BKAppIDField).ToSearchSortArr(),
+		Fields:    strings.Split(fields, ","),
+	}
+	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDApp, input)
 	if err != nil {
 		blog.Errorf("GetAppDetail http do error, err:%s, input:%+v, rid:%s", err.Error(), condition, lgc.rid)
 		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -109,15 +115,15 @@ func (lgc *Logics) IsHostExistInApp(ctx context.Context, appID, hostID int64) (b
 	return true, nil
 }
 
-func (lgc *Logics) GetSingleApp(ctx context.Context, cond interface{}) (mapstr.MapStr, errors.CCError) {
-	query := &metadata.QueryInput{
-		Condition: cond,
-		Start:     0,
-		Limit:     1,
-		Sort:      common.BKAppIDField,
-	}
+func (lgc *Logics) GetSingleApp(ctx context.Context, cond mapstr.MapStr) (mapstr.MapStr, errors.CCError) {
 
-	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDApp, lgc.header, query)
+	query := &metadata.QueryCondition{
+		Condition: cond,
+		Limit:     metadata.SearchLimit{Offset: 0, Limit: 1},
+		SortArr:   metadata.NewSearchSortParse().String(common.BKAppIDField).ToSearchSortArr(),
+	}
+	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDApp, query)
+
 	if err != nil {
 		blog.Errorf("GetSingleApp http do error, err:%s, input:%+v, rid:%s", err.Error(), query, lgc.rid)
 		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -136,15 +142,13 @@ func (lgc *Logics) GetSingleApp(ctx context.Context, cond interface{}) (mapstr.M
 func (lgc *Logics) GetAppIDByCond(ctx context.Context, cond []metadata.ConditionItem) ([]int64, errors.CCError) {
 	condc := make(map[string]interface{})
 	params.ParseCommonParams(cond, condc)
-	query := &metadata.QueryInput{
-		Condition: condc,
-		Start:     0,
-		Limit:     common.BKNoLimit,
-		Sort:      common.BKHostIDField,
-		Fields:    common.BKAppIDField,
+	query := &metadata.QueryCondition{
+		Condition: mapstr.NewFromMap(condc),
+		Limit:     metadata.SearchLimit{Offset: 0, Limit: common.BKNoLimit},
+		SortArr:   metadata.NewSearchSortParse().String(common.BKAppIDField).ToSearchSortArr(),
+		Fields:    []string{common.BKAppIDField},
 	}
-
-	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDApp, lgc.header, query)
+	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDApp, query)
 	if err != nil {
 		blog.Errorf("GetAppIDByCond http do error, err:%s, input:%+v, rid:%s", err.Error(), query, lgc.rid)
 		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -167,17 +171,16 @@ func (lgc *Logics) GetAppIDByCond(ctx context.Context, cond []metadata.Condition
 	return appIDs, nil
 }
 
-func (lgc *Logics) GetAppMapByCond(ctx context.Context, fields string, cond interface{}) (map[int64]types.MapStr, errors.CCError) {
+func (lgc *Logics) GetAppMapByCond(ctx context.Context, fields []string, cond mapstr.MapStr) (map[int64]types.MapStr, errors.CCError) {
 
-	query := &metadata.QueryInput{
+	query := &metadata.QueryCondition{
 		Condition: cond,
-		Start:     0,
-		Limit:     common.BKNoLimit,
-		Sort:      common.BKAppIDField,
+		Limit:     metadata.SearchLimit{Offset: 0, Limit: common.BKNoLimit},
+		SortArr:   metadata.NewSearchSortParse().String(common.BKAppIDField).ToSearchSortArr(),
 		Fields:    fields,
 	}
 
-	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDApp, lgc.header, query)
+	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDApp, query)
 	if err != nil {
 		blog.Errorf("GetAppMapByCond http do error, err:%s, input:%+v, rid:%s", err.Error(), query, lgc.rid)
 		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)

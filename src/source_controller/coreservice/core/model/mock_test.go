@@ -1,6 +1,6 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.,
- * Copyright (C) 2017,-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  * Licensed under the MIT License (the ",License",); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
@@ -15,6 +15,7 @@ package model_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
@@ -50,7 +51,7 @@ func (s *mockDependences) CascadeDeleteInstances(ctx core.ContextParams, objIDS 
 
 func newModel(t *testing.T) core.ModelOperation {
 
-	db, err := mongo.NewMgo("mongodb://cc:cc@localhost:27010,localhost:27011,localhost:27012,localhost:27013/cmdb")
+	db, err := mongo.NewMgo("mongodb://cc:cc@localhost:27010,localhost:27011,localhost:27012,localhost:27013/cmdb", time.Minute)
 	require.NoError(t, err)
 	return model.New(db, &mockDependences{})
 }

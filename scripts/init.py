@@ -205,6 +205,32 @@ maxIDleConns=1000
     with open( output + "objectcontroller.conf",'w') as tmp_file:
         tmp_file.write(result)
 
+    # coreservice.conf
+    coreservice_file_template_str='''[mongodb]
+host=$mongo_host
+usr=$mongo_user
+pwd=$mongo_pass
+database=$db
+port=$mongo_port
+maxOpenConns=3000
+maxIDleConns=1000
+mechanism=SCRAM-SHA-1
+
+[redis]
+host=$redis_host
+usr=$redis_user
+pwd=$redis_pass
+database=0
+port=$redis_port
+maxOpenConns=3000
+maxIDleConns=1000
+'''
+
+    template = FileTemplate(coreservice_file_template_str)
+    result = template.substitute(dict(db=db_name_v,redis_host=redis_ip_v,redis_port=redis_port_v,redis_user=redis_user_v,redis_pass=redis_pass_v, mongo_user=mongo_user_v,mongo_host=mongo_ip_v,mongo_pass=mongo_pass_v,mongo_port=mongo_port_v))
+    with open( output + "coreservice.conf",'w') as tmp_file:
+        tmp_file.write(result)
+
     # proc.conf
     proc_file_template_str='''
 [redis]
@@ -367,8 +393,8 @@ def main(argv):
     server_ports={"cmdb_adminserver":60004,"cmdb_apiserver":8080,\
     "cmdb_auditcontroller":50005,"cmdb_datacollection":60005,\
     "cmdb_eventserver":60009,"cmdb_hostcontroller":50002,\
-    "cmdb_hostserver":60001,"cmdb_objectcontroller":50001,\
-    "cmdb_proccontroller":50003,"cmdb_procserver":60003,\
+    "cmdb_hostserver":60001,"cmdb_objectcontroller":50001,"cmdb_coreservice":50009,\
+    "cmdb_proccontroller":50003,"cmdb_procserver":60003,"cmdb_tmserver":60008,\
     "cmdb_toposerver":60002,"cmdb_webserver":8083}
     try:
         opts, _ = getopt.getopt(argv,"hd:D:r:p:x:s:m:P:X:S:u:U:a:l:"\

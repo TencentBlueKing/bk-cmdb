@@ -6,80 +6,86 @@
 
 package bson
 
-// These constants uniquely refer to each BSON type.
-const (
-	TypeDouble           Type = 0x01
-	TypeString           Type = 0x02
-	TypeEmbeddedDocument Type = 0x03
-	TypeArray            Type = 0x04
-	TypeBinary           Type = 0x05
-	TypeUndefined        Type = 0x06
-	TypeObjectID         Type = 0x07
-	TypeBoolean          Type = 0x08
-	TypeDateTime         Type = 0x09
-	TypeNull             Type = 0x0A
-	TypeRegex            Type = 0x0B
-	TypeDBPointer        Type = 0x0C
-	TypeJavaScript       Type = 0x0D
-	TypeSymbol           Type = 0x0E
-	TypeCodeWithScope    Type = 0x0F
-	TypeInt32            Type = 0x10
-	TypeTimestamp        Type = 0x11
-	TypeInt64            Type = 0x12
-	TypeDecimal128       Type = 0x13
-	TypeMinKey           Type = 0xFF
-	TypeMaxKey           Type = 0x7F
+import (
+	"reflect"
+	"time"
+
+	"github.com/mongodb/mongo-go-driver/bson/bsontype"
+	"github.com/mongodb/mongo-go-driver/bson/primitive"
+	"github.com/mongodb/mongo-go-driver/x/bsonx"
 )
 
-// Type represents a BSON type.
-type Type byte
+// These constants uniquely refer to each BSON type.
+const (
+	TypeDouble           = bsontype.Double
+	TypeString           = bsontype.String
+	TypeEmbeddedDocument = bsontype.EmbeddedDocument
+	TypeArray            = bsontype.Array
+	TypeBinary           = bsontype.Binary
+	TypeUndefined        = bsontype.Undefined
+	TypeObjectID         = bsontype.ObjectID
+	TypeBoolean          = bsontype.Boolean
+	TypeDateTime         = bsontype.DateTime
+	TypeNull             = bsontype.Null
+	TypeRegex            = bsontype.Regex
+	TypeDBPointer        = bsontype.DBPointer
+	TypeJavaScript       = bsontype.JavaScript
+	TypeSymbol           = bsontype.Symbol
+	TypeCodeWithScope    = bsontype.CodeWithScope
+	TypeInt32            = bsontype.Int32
+	TypeTimestamp        = bsontype.Timestamp
+	TypeInt64            = bsontype.Int64
+	TypeDecimal128       = bsontype.Decimal128
+	TypeMinKey           = bsontype.MinKey
+	TypeMaxKey           = bsontype.MaxKey
+)
 
-// String returns the string representation of the BSON type's name.
-func (bt Type) String() string {
-	switch bt {
-	case '\x01':
-		return "double"
-	case '\x02':
-		return "string"
-	case '\x03':
-		return "embedded document"
-	case '\x04':
-		return "array"
-	case '\x05':
-		return "binary"
-	case '\x06':
-		return "undefined"
-	case '\x07':
-		return "objectID"
-	case '\x08':
-		return "boolean"
-	case '\x09':
-		return "UTC datetime"
-	case '\x0A':
-		return "null"
-	case '\x0B':
-		return "regex"
-	case '\x0C':
-		return "dbPointer"
-	case '\x0D':
-		return "javascript"
-	case '\x0E':
-		return "symbol"
-	case '\x0F':
-		return "code with scope"
-	case '\x10':
-		return "32-bit integer"
-	case '\x11':
-		return "timestamp"
-	case '\x12':
-		return "64-bit integer"
-	case '\x13':
-		return "128-bit decimal"
-	case '\xFF':
-		return "min key"
-	case '\x7F':
-		return "max key"
-	default:
-		return "invalid"
-	}
-}
+var tBinary = reflect.TypeOf(primitive.Binary{})
+var tBool = reflect.TypeOf(false)
+var tCodeWithScope = reflect.TypeOf(primitive.CodeWithScope{})
+var tDBPointer = reflect.TypeOf(primitive.DBPointer{})
+var tDecimal = reflect.TypeOf(primitive.Decimal128{})
+var tDocument = reflect.TypeOf((bsonx.Doc)(nil))
+var tMDoc = reflect.TypeOf((bsonx.MDoc)(nil))
+var tD = reflect.TypeOf(D{})
+var tA = reflect.TypeOf(A{})
+var tElementSlice = reflect.TypeOf(([]bsonx.Elem)(nil))
+var tDateTime = reflect.TypeOf(primitive.DateTime(0))
+var tUndefined = reflect.TypeOf(primitive.Undefined{})
+var tNull = reflect.TypeOf(primitive.Null{})
+var tArray = reflect.TypeOf((bsonx.Arr)(nil))
+var tValue = reflect.TypeOf(bsonx.Val{})
+var tRawValue = reflect.TypeOf(RawValue{})
+var tFloat32 = reflect.TypeOf(float32(0))
+var tFloat64 = reflect.TypeOf(float64(0))
+var tInt = reflect.TypeOf(int(0))
+var tInt8 = reflect.TypeOf(int8(0))
+var tInt16 = reflect.TypeOf(int16(0))
+var tInt32 = reflect.TypeOf(int32(0))
+var tInt64 = reflect.TypeOf(int64(0))
+var tJavaScript = reflect.TypeOf(primitive.JavaScript(""))
+var tOID = reflect.TypeOf(primitive.ObjectID{})
+var tRaw = reflect.TypeOf(Raw(nil))
+var tRegex = reflect.TypeOf(primitive.Regex{})
+var tString = reflect.TypeOf("")
+var tSymbol = reflect.TypeOf(primitive.Symbol(""))
+var tTime = reflect.TypeOf(time.Time{})
+var tTimestamp = reflect.TypeOf(primitive.Timestamp{})
+var tUint = reflect.TypeOf(uint(0))
+var tUint8 = reflect.TypeOf(uint8(0))
+var tUint16 = reflect.TypeOf(uint16(0))
+var tUint32 = reflect.TypeOf(uint32(0))
+var tUint64 = reflect.TypeOf(uint64(0))
+var tMinKey = reflect.TypeOf(primitive.MinKey{})
+var tMaxKey = reflect.TypeOf(primitive.MaxKey{})
+
+var tEmpty = reflect.TypeOf((*interface{})(nil)).Elem()
+var tEmptySlice = reflect.TypeOf([]interface{}(nil))
+
+var zeroVal reflect.Value
+
+// this references the quantity of milliseconds between zero time and
+// the unix epoch. useful for making sure that we convert time.Time
+// objects correctly to match the legacy bson library's handling of
+// time.Time values.
+const zeroEpochMs = int64(62135596800000)

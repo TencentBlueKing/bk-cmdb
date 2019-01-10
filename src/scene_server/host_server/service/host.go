@@ -65,10 +65,11 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 	}
 
 	condition := make(map[string]interface{})
-	condition = hutil.NewOperation().WithDefaultField(int64(common.DefaultAppFlag)).WithOwnerID(srvData.ownerID).Data()
-	query := meta.QueryInput{Condition: condition}
-	query.Limit = 1
-	result, err := s.CoreAPI.ObjectController().Instance().SearchObjects(srvData.ctx, common.BKInnerObjIDApp, srvData.header, &query)
+	condition = hutil.NewOperation().WithDefaultField(int64(common.DefaultAppFlag)).WithOwnerID(srvData.ownerID).MapStr()
+	query := meta.QueryCondition{Condition: condition}
+	query.Limit.Limit = 1
+	query.Limit.Offset = 0
+	result, err := s.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDApp, &query)
 	if err != nil {
 		blog.Errorf("delete host batch  SearchObjects http do error, err: %v,input:+v,rid:%s", err, opt, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
@@ -125,33 +126,18 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 			return
 		}
 
-		delOp := hutil.NewOperation().WithInstID(hostID).WithObjID(common.BKInnerObjIDHost).Data()
-		delResult, err := s.CoreAPI.ObjectController().Instance().DelObject(srvData.ctx, common.BKTableNameInstAsst, srvData.header, delOp)
-		if err != nil {
-			blog.Errorf("delete host batch  DelModuleHostConfig http do error, err: %v,input:+v,params:%s,rid:%s", err, opt, delOp, srvData.rid)
-			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
-			return
-		}
-		if !delResult.Result {
-			blog.Errorf("delete host batch  DelModuleHostConfig http response error, err code:%s,err msg:%s,input:+v,params:%s,rid:%s", delResult.Code, delResult.ErrMsg, opt, delOp, srvData.rid)
-			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(delResult.Code, delResult.ErrMsg)})
-			return
-		}
-
-		if err := logger.WithCurrent(srvData.ctx, strconv.FormatInt(hostID, 10)); err != nil {
-			blog.Errorf("delet host batch, but get current host data failed, err: %v,rid:%s", err, srvData.rid)
-			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostGetFail)})
-			return
-		}
-
 		logConents = append(logConents, *logger.AuditLog(srvData.ctx, hostID))
 	}
 
-	hostCond := make(map[string]interface{})
-	condInput := make(map[string]interface{})
-	hostCond[common.BKDBIN] = iHostIDArr
-	condInput[common.BKHostIDField] = hostCond
-	delResult, err := s.CoreAPI.ObjectController().Instance().DelObject(srvData.ctx, common.BKInnerObjIDHost, req.Request.Header, condInput)
+	hostCond := mapstr.MapStr{
+		common.BKDBIN: iHostIDArr,
+	}
+	condInput := &meta.DeleteOption{
+		Condition: mapstr.MapStr{
+			common.BKHostIDField: hostCond,
+		},
+	}
+	delResult, err := s.CoreAPI.CoreService().Instance().DeleteInstanceCascade(srvData.ctx, srvData.header, common.BKInnerObjIDHost, condInput)
 	if err != nil || (err == nil && !delResult.Result) {
 		blog.Errorf("delete host in batch, but delete host failed, err: %v, result err: %v,rid:%s", err, delResult.ErrMsg, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDeleteFail)})
@@ -263,8 +249,8 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 		}
 	}
 
-	cond := hutil.NewOperation().WithModuleName(common.DefaultResModuleName).WithAppID(appID).Data()
-	cond[common.BKDefaultField] = common.DefaultResModuleFlag
+	cond := hutil.NewOperation().WithModuleName(common.DefaultResModuleName).WithAppID(appID).MapStr()
+	cond.Set(common.BKDefaultField, common.DefaultResModuleFlag)
 	moduleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, cond)
 	if err != nil {
 		blog.Errorf("add host, but get module id failed, err: %s,input:%+v,rid:%s", err.Error(), hostList, srvData.rid)
@@ -317,7 +303,7 @@ func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response)
 	}
 
 	opt := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithModuleName(common.DefaultResModuleName).WithAppID(appID)
-	moduleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, opt.Data())
+	moduleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, opt.MapStr())
 	if err != nil {
 		blog.Errorf("add host from agent , but get module id failed, err: %v,ownerID:%s,input:%+v,rid:%s", err, srvData.ownerID, agents, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
@@ -505,8 +491,11 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 		logPreConents[hostID] = *audit.AuditLog(srvData.ctx, hostID)
 	}
 
-	opt := common.KvMap{"condition": common.KvMap{common.BKHostIDField: common.KvMap{common.BKDBIN: hostIDs}}, "data": data}
-	result, err := s.CoreAPI.ObjectController().Instance().UpdateObject(srvData.ctx, common.BKInnerObjIDHost, srvData.header, opt)
+	opt := &meta.UpdateOption{
+		Condition: mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: hostIDs}},
+		Data:      mapstr.NewFromMap(data),
+	}
+	result, err := s.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDHost, opt)
 	if err != nil {
 		blog.Errorf("UpdateHostBatch UpdateObject http do error, err: %v,input:%+v,param:%+v,rid:%s", err, data, opt, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})

@@ -1,71 +1,159 @@
 package metadata
 
 import (
-	"encoding/json"
 	"testing"
-
-	"configcenter/src/common/condition"
 )
 
-func TestSeachInputConvSearchConds(t *testing.T) {
-
-	s := &SearchInput{
-		Fields: []string{"bk_host_id"},
-		SortArr: []SearchSort{
-			SearchSort{
-				Field: "bk_host_id",
-				IsDsc: true,
+func TestSearchSortParseStr(t *testing.T) {
+	type testData struct {
+		input string
+		ss    []SearchSort
+	}
+	testDataArr := []testData{
+		testData{
+			input: "aa,bb",
+			ss: []SearchSort{
+				SearchSort{
+					Field: "aa",
+				},
+				SearchSort{
+					Field: "bb",
+				},
 			},
 		},
-		Limit: &SearchLimit{
-			Offset: 0,
-			Limit:  100,
-		},
-		Condition: []SearchInputConditionItem{
-
-			SearchInputConditionItem{
-				Fields:   "bk_host_id",
-				Operator: condition.BKDBGT,
-				Value:    0,
-			},
-			SearchInputConditionItem{
-				Fields:   "$OR",
-				Operator: condition.BKDBGT,
-				Value: SearchInputConditionItem{
-					Fields:   "bk_host_id",
-					Operator: condition.BKDBGT,
-					Value:    0,
+		testData{
+			input: "aa:-1,bb:1,cc,dd:abc",
+			ss: []SearchSort{
+				SearchSort{
+					Field: "aa",
+					IsDsc: true,
+				},
+				SearchSort{
+					Field: "bb",
+				},
+				SearchSort{
+					Field: "cc",
+				},
+				SearchSort{
+					Field: "dd",
 				},
 			},
 		},
 	}
-
-	searchConds := s.ToSearchCondition()
-	sBytes, _ := json.Marshal(searchConds)
-	result := `{"fields":["bk_host_id"],"condition":{"$OR":{"$gt":{"bk_host_id":{"$gt":0}}},"bk_host_id":{"$gt":0}}}`
-
-	if result != string(sBytes) {
-		t.Errorf("result equal")
-		return
+	for _, testDataItem := range testDataArr {
+		testSSArr := NewSearchSortParse().String(testDataItem.input).ToSearchSortArr()
+		if len(testSSArr) != len(testDataItem.ss) {
+			t.Errorf("str parse to Search Sort error!")
+			return
+		}
+		for idx, ssItem := range testSSArr {
+			if ssItem.Field != testDataItem.ss[idx].Field ||
+				ssItem.IsDsc != testDataItem.ss[idx].IsDsc {
+				t.Errorf("%+v, %+v not equal", ssItem, testDataItem.ss[idx])
+				return
+			}
+		}
 	}
+
 }
 
-func TestSearchInputJSONConvSearchConds(t *testing.T) {
-
-	str := `{"fields":["bk_host_id"],"limit":{"start":0,"limit":100},"sort":[{"is_dsc":true,"field":"bk_host_id"}],"condition":[{"field":"bk_host_id","operator":"$gt","value":0},{"field":"$OR","operator":"$gt","value":{"field":"bk_host_id","operator":"$gt","value":0}}]}`
-	s := &SearchInput{}
-	err := json.Unmarshal([]byte(str), s)
-	if err != nil {
-		t.Errorf(err.Error())
-		return
+func TestSearchSortToMongo(t *testing.T) {
+	type testData struct {
+		input  []SearchSort
+		output string
 	}
-	searchConds := s.ToSearchCondition()
-	sBytes, _ := json.Marshal(searchConds)
-	result := `{"fields":["bk_host_id"],"condition":{"$OR":{"$gt":{"bk_host_id":{"$gt":0}}},"bk_host_id":{"$gt":0}}}`
+	testDataArr := []testData{
+		testData{
+			output: "aa:1,bb:1",
+			input: []SearchSort{
+				SearchSort{
+					Field: "aa",
+				},
+				SearchSort{
+					Field: "bb",
+				},
+			},
+		},
+		testData{
+			output: "aa:-1,bb:1,cc:1,dd:1",
+			input: []SearchSort{
+				SearchSort{
+					Field: "aa",
+					IsDsc: true,
+				},
+				SearchSort{
+					Field: "bb",
+				},
+				SearchSort{
+					Field: "cc",
+				},
+				SearchSort{
+					Field: "dd",
+				},
+			},
+		},
+	}
+	for _, testDataItem := range testDataArr {
+		orderBy := NewSearchSortParse().Set(testDataItem.input).ToMongo()
+		if orderBy != testDataItem.output {
+			t.Errorf("%s != %s", orderBy, testDataItem.output)
+			return
+		}
 
-	if result != string(sBytes) {
-		t.Errorf("result equal")
-		return
+	}
+
+}
+
+func TestSearchSortField(t *testing.T) {
+	type testData struct {
+		ss []SearchSort
+	}
+	testDataArr := []testData{
+		testData{
+			ss: []SearchSort{
+				SearchSort{
+					Field: "aa",
+				},
+				SearchSort{
+					Field: "bb",
+				},
+			},
+		},
+		testData{
+			ss: []SearchSort{
+				SearchSort{
+					Field: "aa",
+					IsDsc: true,
+				},
+				SearchSort{
+					Field: "bb",
+				},
+				SearchSort{
+					Field: "cc",
+				},
+				SearchSort{
+					Field: "dd",
+				},
+			},
+		},
+	}
+	for _, testDataItem := range testDataArr {
+		ssHandle := NewSearchSortParse()
+		for _, ssItem := range testDataItem.ss {
+			ssHandle.Field(ssItem.Field, ssItem.IsDsc)
+		}
+		testSSArr := ssHandle.ToSearchSortArr()
+		if len(testSSArr) != len(testDataItem.ss) {
+			t.Errorf("str parse to Search Sort error!")
+			return
+		}
+		for idx, ssItem := range testSSArr {
+			if ssItem.Field != testDataItem.ss[idx].Field ||
+				ssItem.IsDsc != testDataItem.ss[idx].IsDsc {
+				t.Errorf("%+v, %+v not equal", ssItem, testDataItem.ss[idx])
+				return
+			}
+		}
 	}
 
 }

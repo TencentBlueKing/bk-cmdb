@@ -1,6 +1,6 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.,
- * Copyright (C) 2017,-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  * Licensed under the MIT License (the ",License",); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
@@ -26,6 +26,11 @@ type associationModel struct {
 }
 
 func (m *associationModel) CreateModelAssociation(ctx core.ContextParams, inputParam metadata.CreateModelAssociation) (*metadata.CreateOneDataResult, error) {
+
+	inputParam.Spec.OwnerID = ctx.SupplierAccount
+	if err := m.isValid(ctx, inputParam); nil != err {
+		return &metadata.CreateOneDataResult{}, err
+	}
 
 	exists, err := m.isExistsAssociationID(ctx, inputParam.Spec.AssociationName)
 	if nil != err {
