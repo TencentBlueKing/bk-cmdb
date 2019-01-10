@@ -14,8 +14,10 @@ package logics
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strconv"
 	"sync"
 	"time"
@@ -35,7 +37,7 @@ import (
 )
 
 var (
-	taskInfoMap = make(map[int64]meta.TaskInfo, 0)
+	taskInfoMap = make(map[int64]*meta.TaskInfo, 0)
 )
 
 func (lgc *Logics) AddCloudTask(ctx context.Context, taskList *meta.CloudTaskList) error {
@@ -51,7 +53,7 @@ func (lgc *Logics) AddCloudTask(ctx context.Context, taskList *meta.CloudTaskLis
 	}
 
 	// Encode secretKey
-	// taskList.SecretKey = base64.StdEncoding.EncodeToString([]byte(taskList.SecretKey))
+	taskList.SecretKey = base64.StdEncoding.EncodeToString([]byte(taskList.SecretKey))
 
 	if _, err := lgc.CoreAPI.HostController().Cloud().AddCloudTask(context.Background(), lgc.header, taskList); err != nil {
 		blog.Errorf("add cloud task failed, err: %v", err)
@@ -61,23 +63,23 @@ func (lgc *Logics) AddCloudTask(ctx context.Context, taskList *meta.CloudTaskLis
 	return nil
 }
 
-func (lgc *Logics) InitFunc() {
-	lgc.TimerTriggerCheckStatus()
-}
-
-func (lgc *Logics) TimerTriggerCheckStatus() {
-	timer := time.NewTicker(5 * time.Minute)
-	for range timer.C {
-		go lgc.SyncTaskDBManager(context.Background())
-		go lgc.SyncTaskRedisManager(context.Background())
-	}
+func (lgc *Logics) TimerTriggerCheckStatus(ctx context.Context) {
+	go func() {
+		timer := time.NewTicker(5 * time.Minute)
+		for range timer.C {
+			lgc.SyncTaskRedisStopManager(ctx)
+			lgc.SyncTaskRedisStartManager(ctx)
+			if err := lgc.SyncTaskDBManager(ctx); err != nil {
+				blog.Errorf("check cloud sync task from db fail, error: %v", err)
+			}
+		}
+	}()
 }
 
 func (lgc *Logics) SyncTaskDBManager(ctx context.Context) error {
 	var mutex = &sync.Mutex{}
-	taskInfoRedisArr := make([]interface{}, 0)
 
-	opt := make(map[string]interface{})
+	opt := make(map[string]interface{}, 0)
 	resp, err := lgc.CoreAPI.HostController().Cloud().SearchCloudTask(ctx, lgc.header, opt)
 	if err != nil {
 		blog.Errorf("get cloud sync task instance failed, %v", err)
@@ -85,86 +87,286 @@ func (lgc *Logics) SyncTaskDBManager(ctx context.Context) error {
 	}
 
 	for _, taskInfo := range resp.Info {
-		taskID := taskInfo.TaskID
-		if _, ok := taskInfoMap[taskID]; ok {
-			continue
-		}
-		nextTrigger := lgc.NextTrigger(ctx, taskInfo.PeriodType, taskInfo.Period)
-		taskInfoItem := meta.TaskInfo{
-			Method:      taskInfo.PeriodType,
-			NextTrigger: nextTrigger,
-			Args:        taskInfo,
-		}
+		if taskInfo.Status {
+			newHeader := make(http.Header, 0)
+			ownerID := taskInfo.OwnerID
+			newHeader.Set(common.BKHTTPOwnerID, ownerID)
+			newHeader.Set(common.BKHTTPHeaderUser, taskInfo.User)
 
-		mutex.Lock()
-		taskInfoMap[taskID] = taskInfoItem
-		mutex.Unlock()
+			taskID := taskInfo.TaskID
+			if _, ok := taskInfoMap[taskID]; ok {
+				continue
+			}
+			nextTrigger := lgc.NextTrigger(ctx, taskInfo.PeriodType, taskInfo.Period)
+			taskInfoItem := &meta.TaskInfo{
+				Method:      taskInfo.PeriodType,
+				NextTrigger: nextTrigger,
+				Args:        taskInfo,
+				ManagerChn:  make(chan bool, 0),
+			}
 
-		lgc.CloudSyncSwitch(ctx, taskInfoItem)
-		info := meta.CloudSyncRedisStart{TaskID: taskInfo.TaskID, Admin: taskInfo.AccountAdmin, StartTime: time.Now()}
-		startedTaskInfo, err := json.Marshal(info)
-		if err != nil {
-			blog.Errorf("add redis failed taskID: %v, accountAdmin: %v", taskInfo.TaskID, taskInfo.AccountAdmin)
-			continue
+			mutex.Lock()
+			taskInfoMap[taskID] = taskInfoItem
+			mutex.Unlock()
+
+			info := meta.CloudSyncRedisPendingStart{TaskID: taskID, TaskItemInfo: *taskInfoItem, OwnerID: ownerID}
+			pendingStartTaskInfo, err := json.Marshal(info)
+			if err != nil {
+				blog.Errorf("add redis failed taskID: %v, accountAdmin: %v", taskInfo.TaskID, taskInfo.AccountAdmin)
+				continue
+			}
+
+			if err := lgc.cache.RPush(common.RedisCloudSyncInstancePendingStart, pendingStartTaskInfo).Err(); err != nil {
+				blog.Errorf("add cloud task item to redis fail, err: %v", err)
+				return err
+			}
+
+			lgc.CloudSyncSwitch(ctx, taskInfoItem)
 		}
-		taskInfoRedisArr = append(taskInfoRedisArr, startedTaskInfo)
 	}
 
-	if err := lgc.cache.SAdd(common.RedisCloudSyncInstanceStarted, taskInfoRedisArr...).Err(); err != nil {
-		blog.Errorf("add cloud task item to redis fail, err: %v", err)
-	}
-
-	return err
+	return nil
 }
 
-func (lgc *Logics) SyncTaskRedisManager(ctx context.Context) {
-	for {
-		stop, err := lgc.cache.SPop(common.RedisCloudSyncInstancePendingStop).Result()
-		if err != nil {
-			blog.Errorf("get stop item from redis fail, err: v%", err.Error())
-		}
+func (lgc *Logics) FrontEndSyncSwitch(ctx context.Context, opt map[string]interface{}) error {
+	response, err := lgc.CoreAPI.HostController().Cloud().SearchCloudTask(ctx, lgc.header, opt)
+	if err != nil {
+		blog.Errorf("search cloud task instance failed, err: %v", err)
+		return lgc.ccErr.Error(1110036)
+	}
 
-		item := &meta.CloudSyncRedisStop{}
-		err = json.Unmarshal([]byte(stop), item)
-		if nil != err {
+	var mutex = &sync.Mutex{}
+	if response.Count > 0 {
+		taskInfo := response.Info[0]
+		status := taskInfo.Status
+		taskID := taskInfo.TaskID
+
+		if status {
+			if _, ok := taskInfoMap[taskID]; ok {
+				return nil
+			}
+
+			nextTrigger := lgc.NextTrigger(ctx, taskInfo.PeriodType, taskInfo.Period)
+			taskInfoItem := meta.TaskInfo{
+				Method:      taskInfo.PeriodType,
+				NextTrigger: nextTrigger,
+				Args:        taskInfo,
+				ManagerChn:  make(chan bool, 0),
+			}
+
+			mutex.Lock()
+			taskInfoMap[taskID] = &taskInfoItem
+			mutex.Unlock()
+
+			ownerID := util.GetOwnerID(lgc.header)
+			info := meta.CloudSyncRedisPendingStart{TaskID: taskID, TaskItemInfo: taskInfoItem, OwnerID: ownerID}
+
+			pendingStartTaskInfo, err := json.Marshal(info)
+			if err != nil {
+				blog.Errorf("add redis failed taskID: %v, accountAdmin: %v", taskInfo.TaskID, taskInfo.AccountAdmin)
+			}
+			if err := lgc.cache.RPush(common.RedisCloudSyncInstancePendingStart, pendingStartTaskInfo).Err(); err != nil {
+				blog.Errorf("add cloud task redis item fail, err: %v", err)
+			}
+
+			lgc.CloudSyncSwitch(ctx, &taskInfoItem)
+		} else {
+			ownerID := util.GetOwnerID(lgc.header)
+			info := meta.CloudSyncRedisPendingStop{TaskID: taskInfo.TaskID, OwnerID: ownerID}
+			stopTaskInfo, err := json.Marshal(info)
+			if err != nil {
+				blog.Errorf("stop task add redis failed taskID: %v, accountAdmin: %v", taskInfo.TaskID, taskInfo.AccountAdmin)
+			}
+			if err := lgc.cache.RPush(common.RedisCloudSyncInstancePendingStop, stopTaskInfo).Err(); err != nil {
+				blog.Errorf("add cloud task redis item fail, err: %v", err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (lgc *Logics) SyncTaskRedisStartManager(ctx context.Context) {
+	locked, err := lgc.cache.SetNX(common.RedisCloudSyncStartLockKey, "", time.Duration(5*time.Minute)).Result()
+	if err != nil {
+		blog.Errorf("redis lock generate fail, error: %v", err)
+		return
+	}
+
+	if locked {
+		for {
+			item := lgc.cache.BLPop(0, common.RedisCloudSyncInstancePendingStart).String()
+			pengdigStartItem := &meta.CloudSyncRedisPendingStart{}
+			if err := json.Unmarshal([]byte(item), pengdigStartItem); err != nil {
+				blog.Warnf("get task pending start item from redis fail, error:%s", err.Error())
+				continue
+			}
+
+			// todo
+			taskInfoItem := pengdigStartItem.TaskItemInfo
+			taskID := pengdigStartItem.TaskID
+			ownerID := util.GetOwnerID(lgc.header)
+
+			info := meta.CloudSyncRedisAlreadyStarted{TaskID: taskID, TaskItemInfo: taskInfoItem, OwnerID: ownerID}
+			pendingStartTaskInfo, err := json.Marshal(info)
+			if err != nil {
+				blog.Errorf("add redis failed, err: %v", err)
+				continue
+			}
+
+			if err := lgc.cache.RPush(common.RedisCloudSyncInstancePendingStart, pendingStartTaskInfo).Err(); err != nil {
+				blog.Errorf("add cloud task item to redis fail, err: %v", err)
+				continue
+			}
+
+			// todo
+			lgc.CloudSyncSwitch(ctx, &taskInfoItem)
+		}
+	}
+
+}
+
+func (lgc *Logics) SyncTaskRedisStopManager(ctx context.Context) {
+	redisTaskItems, err := lgc.cache.LRange(common.RedisCloudSyncInstancePendingStop, 0, -1).Result()
+	if err != nil {
+		blog.Errorf("get task item from redis fail, error: %v", err)
+	}
+
+	if len(redisTaskItems) == 0 {
+		return
+	}
+
+	for _, item := range redisTaskItems {
+		pengdigStopItem := &meta.CloudSyncRedisPendingStop{}
+		if err := json.Unmarshal([]byte(item), pengdigStopItem); err != nil {
 			blog.Warnf("get task stop item from redis fail, error:%s", err.Error())
 			continue
 		}
 
-		ownerID := util.GetOwnerID(lgc.header)
-		if ownerID == item.OwnerID {
-			taskInfoItem, ok := taskInfoMap[item.TaskID]
-			if !ok {
-				return
+		for key := range taskInfoMap {
+			if pengdigStopItem.TaskID == key {
+				taskInfoItem, ok := taskInfoMap[key]
+				if !ok {
+					continue
+				}
+				taskInfoItem.ManagerChn <- true
+				delete(taskInfoMap, key)
 			}
-			taskInfoItem.ManagerChn <- true
-			delete(taskInfoMap, item.TaskID)
-			lgc.CloudSyncSwitch(context.Background(), taskInfoItem)
 		}
 
-		lgc.cache.SDiffStore(common.RedisCloudSyncInstanceStarted, common.RedisCloudSyncInstanceStarted, common.RedisCloudSyncInstancePendingStop)
+		if err := lgc.cache.LRem(common.RedisCloudSyncInstancePendingStop, 1, item).Err(); err != nil {
+			blog.Errorf("remove stop task item fail, error: %v", err)
+		}
 	}
 }
 
-func (lgc *Logics) CloudSyncSwitch(ctx context.Context, taskInfoItem meta.TaskInfo) {
-	for {
-		ticker := time.NewTicker(time.Duration(taskInfoItem.NextTrigger) * time.Minute)
-		select {
-		case <-ticker.C:
-			lgc.ExecSync(ctx, taskInfoItem.Args)
-			switch taskInfoItem.Method {
-			case "day":
-				taskInfoItem.NextTrigger = 1440
-			case "hour":
-				taskInfoItem.NextTrigger = 60
-			case "minute":
-				taskInfoItem.NextTrigger = 5
+func (lgc *Logics) CompareRedisWithDB(ctx context.Context) {
+	opt := make(map[string]interface{})
+	response, err := lgc.CoreAPI.HostController().Cloud().SearchCloudTask(ctx, lgc.header, opt)
+	if err != nil {
+		blog.Errorf("search cloud task info fail, err: %v", err)
+		return
+	}
+
+	if response.Count == 0 {
+		return
+	}
+
+	pendingStopItems, err := lgc.cache.LRange(common.RedisCloudSyncInstancePendingStop, 0, -1).Result()
+	if err != nil {
+		blog.Errorf("get task item from redis fail, error: %v", err)
+	}
+	stopTaskArr := make([]meta.CloudSyncRedisPendingStop, 0)
+	for _, item := range pendingStopItems {
+		stopItem := meta.CloudSyncRedisPendingStop{}
+		if err := json.Unmarshal([]byte(item), &stopItem); err != nil {
+			blog.Warnf("get task pending start item from redis fail, error:%s", err.Error())
+			continue
+		}
+		stopTaskArr = append(stopTaskArr, stopItem)
+	}
+
+	pendingStartItems, err := lgc.cache.LRange(common.RedisCloudSyncInstancePendingStart, 0, -1).Result()
+	if err != nil {
+		blog.Errorf("get task item from redis fail, error: %v", err)
+	}
+
+	startedItems, err := lgc.cache.LRange(common.RedisCloudSyncInstanceStarted, 0, -1).Result()
+	if err != nil {
+		blog.Errorf("get task item from redis fail, error: %v", err)
+	}
+
+	allStartItems := make([]string, 0)
+	allStartItems = append(allStartItems, pendingStartItems...)
+	allStartItems = append(allStartItems, startedItems...)
+
+	startTaskArr := make([]meta.CloudSyncRedisPendingStart, 0)
+	for _, item := range allStartItems {
+		startItem := meta.CloudSyncRedisPendingStart{}
+		if err := json.Unmarshal([]byte(item), &startItem); err != nil {
+			blog.Warnf("get task pending start item from redis fail, error:%s", err.Error())
+			continue
+		}
+		startTaskArr = append(startTaskArr, startItem)
+	}
+
+	shouldStartItems := make([]meta.CloudSyncRedisPendingStart, 0)
+	shouldStopItems := make([]meta.CloudSyncRedisPendingStop, 0)
+	for _, dbItem := range response.Info {
+		if dbItem.Status {
+			for _, item := range startTaskArr {
+				if dbItem.TaskID == item.TaskID {
+					break
+				}
+				shouldStartItems = append(shouldStartItems, item)
 			}
-		case <-taskInfoItem.ManagerChn:
-			blog.Info("stop cloud sync")
+		} else {
+			for _, item := range stopTaskArr {
+				if dbItem.TaskID == item.TaskID {
+					break
+				}
+				shouldStopItems = append(shouldStopItems, item)
+			}
+		}
+	}
+
+	if len(shouldStartItems) > 0 {
+		if err := lgc.cache.RPush(common.RedisCloudSyncInstancePendingStart, shouldStartItems).Err(); err != nil {
+			blog.Errorf("add cloud task item to redis fail, err: %v", err)
 			return
 		}
 	}
+	if len(shouldStopItems) > 0 {
+		if err := lgc.cache.RPush(common.RedisCloudSyncInstancePendingStop, shouldStopItems).Err(); err != nil {
+			blog.Errorf("add cloud task item to redis fail, err: %v", err)
+			return
+		}
+	}
+
+	return
+}
+
+func (lgc *Logics) CloudSyncSwitch(ctx context.Context, taskInfoItem *meta.TaskInfo) {
+	go func() {
+		for {
+			ticker := time.NewTicker(time.Duration(taskInfoItem.NextTrigger) * time.Minute)
+			select {
+			case <-ticker.C:
+				lgc.ExecSync(ctx, taskInfoItem.Args)
+				switch taskInfoItem.Method {
+				case "day":
+					taskInfoItem.NextTrigger = 1440
+				case "hour":
+					taskInfoItem.NextTrigger = 60
+				case "minute":
+					taskInfoItem.NextTrigger = 5
+				}
+			case <-taskInfoItem.ManagerChn:
+				blog.Info("stop cloud sync")
+				return
+			}
+		}
+	}()
 }
 
 func (lgc *Logics) ExecSync(ctx context.Context, taskInfo meta.CloudTaskInfo) error {
@@ -173,13 +375,13 @@ func (lgc *Logics) ExecSync(ctx context.Context, taskInfo meta.CloudTaskInfo) er
 	cloudHistory.TaskID = taskInfo.TaskID
 	startTime := time.Now().Unix()
 
-	defer lgc.CloudSyncHistory(ctx, taskInfo.TaskID, startTime, cloudHistory)
-
 	var errOrigin error
 	defer func() {
 		if errOrigin != nil {
 			cloudHistory.Status = "fail"
+			cloudHistory.FailReason = errOrigin
 		}
+		lgc.CloudSyncHistory(ctx, taskInfo.TaskID, startTime, cloudHistory)
 	}()
 
 	// obtain the hosts from cc_HostBase
@@ -210,33 +412,19 @@ func (lgc *Logics) ExecSync(ctx context.Context, taskInfo meta.CloudTaskInfo) er
 		existHostList = append(existHostList, ip)
 	}
 
-	/*
-		// obtain hosts from TencentCloud needs secretID and secretKey
-		secretID, errS := taskList.String("bk_secret_id")
-		if errS != nil {
-			blog.Errorf("mapstr convert to string failed.")
-			errOrigin = errS
-			return errS
-		}
-		secretKeyEncrypted, errKey := taskList.String("bk_secret_key")
-		if errKey != nil {
-			blog.Errorf("mapstr convert to string failed.")
-			errOrigin = errKey
-			return errKey
-		}
+	// obtain hosts from TencentCloud needs secretID and secretKey
+	decodeBytes, errDecode := base64.StdEncoding.DecodeString(taskInfo.SecretKey)
+	if errDecode != nil {
+		blog.Errorf("Base64 decode secretKey failed.")
+		errOrigin = errDecode
+		return errDecode
+	}
+	secretKey := string(decodeBytes)
 
-		decodeBytes, errDecode := base64.StdEncoding.DecodeString(taskInfo.SecretKey)
-		if errDecode != nil {
-			blog.Errorf("Base64 decode secretKey failed.")
-			errOrigin = errDecode
-			return errDecode
-		}
-		secretKey := string(decodeBytes)
-
-	*/
+	secretID := taskInfo.SecretID
 
 	// ObtainCloudHosts obtain cloud hosts
-	cloudHostInfo, err := lgc.ObtainCloudHosts(taskInfo.SecretID, taskInfo.SecretKey)
+	cloudHostInfo, err := lgc.ObtainCloudHosts(secretID, secretKey)
 	if err != nil {
 		blog.Errorf("obtain cloud hosts failed with err: %v", err)
 		errOrigin = err
@@ -356,7 +544,8 @@ func (lgc *Logics) ExecSync(ctx context.Context, taskInfo meta.CloudTaskInfo) er
 	}
 
 	if attrConfirm && len(cloudHostAttr) > 0 {
-		blog.Debug("attr chang")
+		blog.V(5).Info("attr chang")
+
 		for _, host := range cloudHostAttr {
 			resourceConfirm := mapstr.MapStr{}
 			resourceConfirm["bk_obj_id"] = taskInfo.ObjID
@@ -382,7 +571,6 @@ func (lgc *Logics) ExecSync(ctx context.Context, taskInfo meta.CloudTaskInfo) er
 			resourceConfirm[common.BKHostInnerIPField] = innerIp
 			resourceConfirm[common.BKHostOuterIPField] = outerIp
 			resourceConfirm[common.BKOSNameField] = osName
-			resourceConfirm["bk_source_type"] = "cloud_sync"
 			resourceConfirm["bk_task_id"] = taskInfo.TaskID
 			resourceConfirm["bk_attr_confirm"] = attrConfirm
 			resourceConfirm["bk_confirm"] = false
@@ -476,10 +664,10 @@ func (lgc *Logics) UpdateCloudHosts(ctx context.Context, cloudHostAttr []mapstr.
 func (lgc *Logics) NewAddConfirm(ctx context.Context, taskInfo meta.CloudTaskInfo, newCloudHost []mapstr.MapStr) (int, error) {
 	// Check whether the host is already exist in resource confirm.
 	opt := make(map[string]interface{})
-	confirmHosts, errS := lgc.CoreAPI.HostController().Cloud().SearchConfirm(ctx, lgc.header, opt)
-	if errS != nil {
-		blog.Errorf("get confirm info failed with err: %v", errS)
-		return 0, errS
+	confirmHosts, err := lgc.CoreAPI.HostController().Cloud().SearchConfirm(ctx, lgc.header, opt)
+	if err != nil {
+		blog.Errorf("get confirm info failed with err: %v", err)
+		return 0, err
 	}
 
 	confirmIpList := make([]string, 0)
@@ -526,7 +714,6 @@ func (lgc *Logics) NewAddConfirm(ctx context.Context, taskInfo meta.CloudTaskInf
 			resourceConfirm := mapstr.MapStr{}
 			resourceConfirm["bk_obj_id"] = taskInfo.ObjID
 			resourceConfirm[common.BKHostInnerIPField] = innerIp
-			resourceConfirm["bk_source_type"] = "云同步"
 			resourceConfirm["bk_task_id"] = taskInfo.TaskID
 			resourceConfirm[common.BKOSNameField] = osName
 			resourceConfirm[common.BKHostOuterIPField] = outerIp
@@ -554,8 +741,6 @@ func (lgc *Logics) NextTrigger(ctx context.Context, periodType string, period st
 	var unixSubtract int64
 	nowStr := time.Unix(time.Now().Unix(), 0).Format(timeLayout)
 
-	blog.Debug("periodType: %v", periodType)
-	blog.Debug("period: %v", period)
 	if periodType == "day" {
 		intHour, _ := strconv.Atoi(toBeCharge[:2])
 		intMinute, _ := strconv.Atoi(toBeCharge[3:])
@@ -610,66 +795,6 @@ func (lgc *Logics) NextTrigger(ctx context.Context, periodType string, period st
 
 	minuteNextTrigger := unixSubtract / 60
 	return minuteNextTrigger
-}
-
-func (lgc *Logics) FrontEndSyncSwitch(ctx context.Context, opt map[string]interface{}) error {
-	response, err := lgc.CoreAPI.HostController().Cloud().SearchCloudTask(ctx, lgc.header, opt)
-	if err != nil {
-		blog.Errorf("search cloud task instance failed, err: %v", err)
-		return lgc.ccErr.Error(1110036)
-	}
-
-	taskInfoRedisArr := make([]interface{}, 0)
-	taskRedisPendingStop := make([]interface{}, 0)
-	var mutex = &sync.Mutex{}
-
-	if response.Count > 0 {
-		taskInfo := response.Info[0]
-		status := taskInfo.Status
-		taskID := taskInfo.TaskID
-		if _, ok := taskInfoMap[taskID]; ok {
-			return nil
-		}
-
-		if status {
-			nextTrigger := lgc.NextTrigger(ctx, taskInfo.PeriodType, taskInfo.Period)
-			taskInfoItem := meta.TaskInfo{
-				Method:      taskInfo.PeriodType,
-				NextTrigger: nextTrigger,
-				Args:        taskInfo,
-			}
-
-			mutex.Lock()
-			taskInfoMap[taskID] = taskInfoItem
-			mutex.Unlock()
-
-			ownerID := util.GetOwnerID(lgc.header)
-			info := meta.CloudSyncRedisStart{TaskID: taskInfo.TaskID, Admin: taskInfo.AccountAdmin, StartTime: time.Now(), OwnerID: ownerID}
-			startedTaskInfo, err := json.Marshal(info)
-			if err != nil {
-				blog.Errorf("add redis failed taskID: %v, accountAdmin: %v", taskInfo.TaskID, taskInfo.AccountAdmin)
-			}
-			taskInfoRedisArr = append(taskInfoRedisArr, startedTaskInfo)
-			if err := lgc.cache.SAdd(common.RedisCloudSyncInstanceStarted, taskInfoRedisArr...).Err(); err != nil {
-				blog.Errorf("add cloud task redis item fail, err: %v", err)
-			}
-
-			lgc.CloudSyncSwitch(ctx, taskInfoItem)
-		} else {
-			ownerID := util.GetOwnerID(lgc.header)
-			info := meta.CloudSyncRedisStop{TaskID: taskInfo.TaskID, OwnerID: ownerID}
-			stopTaskInfo, err := json.Marshal(info)
-			if err != nil {
-				blog.Errorf("stop task add redis failed taskID: %v, accountAdmin: %v", taskInfo.TaskID, taskInfo.AccountAdmin)
-			}
-			taskRedisPendingStop = append(taskRedisPendingStop, stopTaskInfo)
-			if err := lgc.cache.SAdd(common.RedisCloudSyncInstancePendingStop, taskRedisPendingStop...).Err(); err != nil {
-				blog.Errorf("add cloud task redis item fail, err: %v", err)
-			}
-		}
-	}
-
-	return nil
 }
 
 func (lgc *Logics) CloudSyncHistory(ctx context.Context, taskID int64, startTime int64, cloudHistory *meta.CloudHistory) error {
