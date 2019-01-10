@@ -25,7 +25,7 @@ func (m *modelClassification) count(ctx core.ContextParams, cond universalsql.Co
 
 	cnt, err = m.dbProxy.Table(common.BKTableNameObjClassifiction).Find(cond.ToMapStr()).Count(ctx)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to execute a database count operation on the table(%s) by the condition(%v), error info is %s", ctx.ReqID, common.BKTableNameObjClassifiction, cond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to execute a database count operation on the table(%s) by the condition(%#v), error info is %s", ctx.ReqID, common.BKTableNameObjClassifiction, cond.ToMapStr(), err.Error())
 		return 0, err
 	}
 	return cnt, err
@@ -60,7 +60,7 @@ func (m *modelClassification) update(ctx core.ContextParams, data mapstr.MapStr,
 	data.Remove(metadata.ClassFieldClassificationID)
 	err = m.dbProxy.Table(common.BKTableNameObjClassifiction).Update(ctx, cond, data)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to execute a database update operation on the table(%s) by the condition(%v) , error info is %s", ctx.ReqID, common.BKTableNameObjClassifiction, cond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to execute a database update operation on the table(%s) by the condition(%#v) , error info is %s", ctx.ReqID, common.BKTableNameObjClassifiction, cond.ToMapStr(), err.Error())
 		return 0, err
 	}
 	return cnt, err
@@ -79,7 +79,7 @@ func (m *modelClassification) delete(ctx core.ContextParams, cond universalsql.C
 
 	err = m.dbProxy.Table(common.BKTableNameObjClassifiction).Delete(ctx, cond.ToMapStr())
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to execute a database deletion operation on the table(%s) by the condition(%v), error info is %s", ctx.ReqID, common.BKTableNameObjClassifiction, cond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to execute a database deletion operation on the table(%s) by the condition(%#v), error info is %s", ctx.ReqID, common.BKTableNameObjClassifiction, cond.ToMapStr(), err.Error())
 		return 0, err
 	}
 

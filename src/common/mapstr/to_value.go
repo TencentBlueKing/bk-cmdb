@@ -12,8 +12,15 @@
 
 package mapstr
 
-func toInt(tagVal interface{}) int {
-	switch t := tagVal.(type) {
+func toBool(val interface{}) bool {
+	if val, ok := val.(bool); ok {
+		return val
+	}
+	return false
+}
+
+func toInt(val interface{}) int {
+	switch t := val.(type) {
 	default:
 		return 0
 	case float32:
@@ -30,16 +37,29 @@ func toInt(tagVal interface{}) int {
 		return int(t)
 	case int8:
 		return int(t)
+
+	}
+}
+
+func toUint(val interface{}) uint {
+
+	switch t := val.(type) {
+	default:
+		return 0
+	case float32:
+		return uint(t)
+	case float64:
+		return uint(t)
 	case uint:
-		return int(t)
+		return t
 	case uint16:
-		return int(t)
+		return uint(t)
 	case uint32:
-		return int(t)
+		return uint(t)
 	case uint64:
-		return int(t)
+		return uint(t)
 	case uint8:
-		return int(t)
+		return uint(t)
 	}
 }
 
