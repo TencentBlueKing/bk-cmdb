@@ -13,12 +13,13 @@
 package api
 
 import (
+	"context"
+
 	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/httpserver"
 	"configcenter/src/framework/core/input"
 	"configcenter/src/framework/core/manager"
 	"configcenter/src/framework/core/output"
-	"context"
 )
 
 //  mgr the global variable for the manager
@@ -32,11 +33,10 @@ func Init() {
 	// create Framework
 	mgr = manager.New()
 
-	/** initialize the default configuration */
+	// initialize the default configuration
 
 	// set outputer manager
 	mgr.OutputerMgr = output.New()
-
 	// set inputer manager
 	mgr.InputerMgr = input.New()
 

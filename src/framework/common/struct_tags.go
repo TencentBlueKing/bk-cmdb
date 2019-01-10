@@ -13,10 +13,10 @@
 package common
 
 import (
+	"reflect"
+
 	"configcenter/src/framework/core/log"
 	"configcenter/src/framework/core/types"
-	"fmt"
-	"reflect"
 )
 
 // GetTags parse a object and get the all tags
@@ -27,7 +27,6 @@ func GetTags(target interface{}) []string {
 	default:
 		break
 	case reflect.Ptr:
-		fmt.Printf("hello")
 		targetType = targetType.Elem()
 
 	}
