@@ -181,7 +181,7 @@ func (s *coreService) SearchModel(params core.ContextParams, pathParams, queryPa
 func (s *coreService) CreateModelAttributeGroup(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	inputData := metadata.CreateModelAttributeGroup{}
-	if err := data.ToStructByTag(inputData.Data, "field"); nil != err {
+	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
 	}
 
@@ -191,9 +191,10 @@ func (s *coreService) CreateModelAttributeGroup(params core.ContextParams, pathP
 func (s *coreService) SetModelAttributeGroup(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	inputData := metadata.SetModelAttributeGroup{}
-	if err := data.ToStructByTag(inputData.Data, "field"); nil != err {
+	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
 	}
+
 	return s.core.ModelOperation().SetModelAttributeGroup(params, pathParams("bk_obj_id"), inputData)
 }
 
@@ -203,6 +204,7 @@ func (s *coreService) UpdateModelAttributeGroup(params core.ContextParams, pathP
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
 	}
+
 	return s.core.ModelOperation().UpdateModelAttributeGroup(params, pathParams("bk_obj_id"), inputData)
 }
 
