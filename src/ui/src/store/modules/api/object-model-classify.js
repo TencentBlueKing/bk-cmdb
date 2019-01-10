@@ -215,13 +215,13 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchClassificationsObjects ({ commit, state, dispatch, rootGetters }, { params = {}, config }) {
-        // return $http.post('find/classificationobject', params, config).then(data => {
-        //     commit('setClassificationsObjects', data)
-        //     return data
-        // })
-        return $http.post(`object/classification/${rootGetters.supplierAccount}/objects`, params, config).then(classifications => {
-            commit('setClassificationsObjects', classifications)
+        return $http.post('find/classificationobject', params, config).then(data => {
+            commit('setClassificationsObjects', data)
+            return data
         })
+        // return $http.post(`object/classification/${rootGetters.supplierAccount}/objects`, params, config).then(classifications => {
+        //     commit('setClassificationsObjects', classifications)
+        // })
     }
 }
 
