@@ -36,6 +36,8 @@ func (s *Service) AddCloudTask(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
+	taskList.User = srvData.user
+
 	if err := srvData.lgc.AddCloudTask(srvData.ctx, taskList); err != nil {
 		blog.Errorf("add task failed with err: %v", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudSyncCreateFail)})
@@ -81,18 +83,64 @@ func (s *Service) SearchCloudTask(req *restful.Request, resp *restful.Response) 
 func (s *Service) UpdateCloudTask(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
 
-	data := make(map[string]interface{})
+	data := make(mapstr.MapStr, 0)
 	if err := json.NewDecoder(req.Request.Body).Decode(&data); err != nil {
 		blog.Errorf("update task failed with decode body err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
-	_, err := s.CoreAPI.HostController().Cloud().UpdateCloudTask(srvData.ctx, srvData.header, data)
+	// TaskName Uniqueness check
+	response, err := s.CoreAPI.HostController().Cloud().TaskNameCheck(srvData.ctx, srvData.header, data)
 	if err != nil {
-		blog.Errorf("update task failed with decode body err: %v", err)
+		blog.Debug("task name unique check fail, error: %v", err)
+		return
+	}
+
+	if response.Data != 0.0 {
+		blog.Errorf("update task failed, task name already exits.")
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudTaskNameAlreadyExist)})
+		return
+	}
+
+	status, err := data.Bool("bk_status")
+	if err != nil {
+		blog.Errorf("interface convert to bool fail, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommDBUpdateFailed)})
 		return
+	}
+
+	if status {
+		// 开启同步状态下，update；先关闭同步，更新数据后，再开启同步
+		data["bk_status"] = false
+		if _, err := s.CoreAPI.HostController().Cloud().UpdateCloudTask(srvData.ctx, srvData.header, data); err != nil {
+			blog.Errorf("update task failed with decode body err: %v", err)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommDBUpdateFailed)})
+			return
+		}
+
+		if err := srvData.lgc.FrontEndSyncSwitch(srvData.ctx, data); err != nil {
+			blog.Errorf("stop cloud sync fail, err: %v", err)
+			return
+		}
+
+		data["bk_status"] = true
+		if _, err := s.CoreAPI.HostController().Cloud().UpdateCloudTask(srvData.ctx, srvData.header, data); err != nil {
+			blog.Errorf("update task failed with decode body err: %v", err)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommDBUpdateFailed)})
+			return
+		}
+
+		if err := srvData.lgc.FrontEndSyncSwitch(srvData.ctx, data); err != nil {
+			blog.Errorf("stop cloud sync fail, err: %v", err)
+			return
+		}
+	} else {
+		if _, err := s.CoreAPI.HostController().Cloud().UpdateCloudTask(srvData.ctx, srvData.header, data); err != nil {
+			blog.Errorf("update task failed with decode body err: %v", err)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommDBUpdateFailed)})
+			return
+		}
 	}
 
 	resp.WriteEntity(meta.NewSuccessResp(nil))
@@ -131,6 +179,8 @@ func (s *Service) StartCloudSync(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
+	delete(opt, "bk_task_name")
+
 	if err := srvData.lgc.FrontEndSyncSwitch(srvData.ctx, opt); err != nil {
 		blog.Errorf("start cloud sync fail, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudSyncStartFail)})
@@ -157,10 +207,11 @@ func (s *Service) ResourceConfirm(req *restful.Request, resp *restful.Response) 
 		response, err := s.CoreAPI.HostController().Cloud().SearchConfirm(srvData.ctx, srvData.header, opt)
 		if err != nil {
 			blog.Errorf("get resourceID %v confirm list failed. err: %v", id, err)
-			break
+			continue
 		}
-
-		cloudHostInfo = append(cloudHostInfo, response.Info[0])
+		if response.Count > 0 {
+			cloudHostInfo = append(cloudHostInfo, response.Info[0])
+		}
 	}
 
 	AddHostList := make([]mapstr.MapStr, 0)
@@ -169,7 +220,7 @@ func (s *Service) ResourceConfirm(req *restful.Request, resp *restful.Response) 
 		addConfirm, ok := hostInfo["bk_confirm"].(bool)
 		if !ok {
 			blog.Errorf("interface convert to bool fail")
-			break
+			continue
 		}
 		if addConfirm {
 			AddHostList = append(AddHostList, hostInfo)
@@ -178,7 +229,7 @@ func (s *Service) ResourceConfirm(req *restful.Request, resp *restful.Response) 
 		attrConfirm, ok := hostInfo["bk_attr_confirm"].(bool)
 		if !ok {
 			blog.Errorf("interface convert to bool fail")
-			break
+			continue
 		}
 		if attrConfirm {
 			updateHostList = append(updateHostList, hostInfo)
@@ -190,15 +241,15 @@ func (s *Service) ResourceConfirm(req *restful.Request, resp *restful.Response) 
 		err := srvData.lgc.AddCloudHosts(srvData.ctx, AddHostList)
 		if err != nil {
 			blog.Errorf("add cloud host failed, err: %v , err")
-			return
+			srvData.ccErr.Error(1110080)
 		}
-
 	}
 
 	if len(updateHostList) > 0 {
 		err := srvData.lgc.UpdateCloudHosts(srvData.ctx, updateHostList)
 		if err != nil {
 			blog.Errorf("update cloud hosts failed, err: %v", err)
+			srvData.ccErr.Error(1110003)
 		}
 	}
 
@@ -207,7 +258,7 @@ func (s *Service) ResourceConfirm(req *restful.Request, resp *restful.Response) 
 		_, errD := srvData.lgc.CoreAPI.HostController().Cloud().DeleteConfirm(srvData.ctx, srvData.header, id)
 		if errD != nil {
 			blog.Errorf("delete resource confirm failed with err: %v", errD)
-			break
+			continue
 		}
 	}
 
@@ -303,7 +354,6 @@ func (s *Service) AddConfirmHistory(req *restful.Request, resp *restful.Response
 	}
 
 	resourceIDs := resourceIDMap["bk_resource_id"]
-	blog.Debug("confirm history resource id: %v", resourceIDs)
 
 	for _, id := range resourceIDs {
 		condition := make(map[string]interface{})
@@ -314,10 +364,12 @@ func (s *Service) AddConfirmHistory(req *restful.Request, resp *restful.Response
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudGetConfirmFail)})
 		}
 
-		opt := response.Info[0]
-		if _, err := s.CoreAPI.HostController().Cloud().AddConfirmHistory(srvData.ctx, srvData.header, opt); err != nil {
-			blog.Errorf("add confirm history failed")
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudAddConfirmHistoryFail)})
+		if response.Count > 0 {
+			opt := response.Info[0]
+			if _, err := s.CoreAPI.HostController().Cloud().AddConfirmHistory(srvData.ctx, srvData.header, opt); err != nil {
+				blog.Errorf("add confirm history failed")
+				resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudAddConfirmHistoryFail)})
+			}
 		}
 	}
 

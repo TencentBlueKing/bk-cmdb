@@ -14,10 +14,10 @@ package service
 
 import (
 	"context"
-	"gopkg.in/redis.v5"
 	"net/http"
 
 	"github.com/emicklei/go-restful"
+	"gopkg.in/redis.v5"
 
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
@@ -211,4 +211,15 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	}
 	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteEntity(answer)
+}
+
+func (s *Service) InitBackground() {
+	header := make(http.Header, 0)
+	if "" == util.GetOwnerID(header) {
+		header.Set(common.BKHTTPOwnerID, common.BKSuperOwnerID)
+		header.Set(common.BKHTTPHeaderUser, common.BKProcInstanceOpUser)
+	}
+
+	srvData := s.newSrvComm(header)
+	go srvData.lgc.TimerTriggerCheckStatus(srvData.ctx)
 }

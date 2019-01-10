@@ -52,7 +52,9 @@
                         </a>
                     </label>
                     <div class="update-item-content">
-                        <input v-model="curPush.bk_secret_key" class="cmdb-form-input"/>
+                        <input v-model="curPush.bk_secret_key"
+                               class="cmdb-form-input"
+                               type="password"/>
                     </div>
                 </li>
                 <li class="form-item-two">

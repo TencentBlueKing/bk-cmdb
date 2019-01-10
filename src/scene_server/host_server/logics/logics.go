@@ -13,8 +13,9 @@
 package logics
 
 import (
-	"gopkg.in/redis.v5"
 	"net/http"
+
+	"gopkg.in/redis.v5"
 
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"

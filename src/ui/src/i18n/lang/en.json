@@ -578,6 +578,7 @@
         "腾讯云": "Tencent cloud",
         "同步周期": "Synchronization cycle",
         "同步资源": "Synchronous resources",
+        "请先停止同步": "Please stop sync first",
         "交换机": "Switch",
         "ID": "ID",
         "Key": "Key",

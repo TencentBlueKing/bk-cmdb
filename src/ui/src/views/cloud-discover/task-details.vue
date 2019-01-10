@@ -33,7 +33,7 @@
                         {{ $t('Cloud["Key"]')}} ：
                     </label>
                     <div class="detail-item-content">
-                        <span>{{curPush.bk_secret_key}}}</span>
+                        *************
                     </div>
                 </li>
                 <li class="detail-form-item">

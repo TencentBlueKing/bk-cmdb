@@ -275,12 +275,16 @@
                 this.slider.title = item['bk_task_name']
             },
             deleteConfirm (item) {
-                this.$bkInfo({
-                    title: this.$tc('Cloud["确认删除该任务?"]'),
-                    confirmFn: () => {
-                        this.deleteTask(item['bk_task_id'])
-                    }
-                })
+                if (item.bk_status) {
+                    this.$warn(this.$t('Cloud["请先停止同步"]'))
+                } else {
+                    this.$bkInfo({
+                        title: this.$tc('Cloud["确认删除该任务?"]'),
+                        confirmFn: () => {
+                            this.deleteTask(item['bk_task_id'])
+                        }
+                    })
+                }
             },
             async deleteTask (taskID) {
                 await this.deleteCloudTask({ taskID })

@@ -13,9 +13,6 @@
 package app
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/storage/dal/redis"
 	"context"
 	"fmt"
 	"os"
@@ -25,13 +22,15 @@ import (
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
+	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/host_server/app/options"
-	"configcenter/src/scene_server/host_server/logics"
 	hostsvc "configcenter/src/scene_server/host_server/service"
+	"configcenter/src/storage/dal/redis"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -100,13 +99,12 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	hostSvr.Core = engine
 	hostSvr.Service = service
 
-	go hostSvr.Logics.InitFunc()
+	go hostSvr.Service.InitBackground()
 	select {}
 	return nil
 }
 
 type HostServer struct {
-	*logics.Logics
 	Core    *backbone.Engine
 	Config  options.Config
 	Service *hostsvc.Service
