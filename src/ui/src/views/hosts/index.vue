@@ -71,6 +71,7 @@
             }
         },
         async created () {
+            this.$store.commit('setHeaderTitle', this.$t('Nav["业务主机"]'))
             try {
                 await Promise.all([
                     this.getBusiness(),

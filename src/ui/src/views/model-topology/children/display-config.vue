@@ -15,32 +15,36 @@
                 <li class="group-item" v-for="(group, groupIndex) in topoList" :key="groupIndex">
                     <p class="group-name">{{group['bk_classification_name']}}</p>
                     <ul class="clearfix">
-                        <li class="model-item" v-for="(model, modelIndex) in group['bk_objects']" :key="modelIndex">
-                            <label class="cmdb-form-checkbox cmdb-checkbox-small">
+                        <li class="model-item" :class="{'active': model['bk_obj_id'] === activePop}" v-for="(model, modelIndex) in group['bk_objects']" :key="modelIndex">
+                            <label class="cmdb-form-checkbox checkbox cmdb-checkbox-small">
                                 <input type="checkbox" :checked="isChecked(model)" @click="checkAll(model)">
+                            </label>
+                            <div class="cmdb-form-checkbox text-box" @click.stop="toggleActivePop(model['bk_obj_id'])">
                                 <span class="cmdb-checkbox-text">{{model['bk_obj_name']}}</span>
                                 <span class="count">({{model.asstInfo.assts.length}})</span>
                                 <i class="bk-icon icon-angle-down"></i>
-                            </label>
-                            <div class="relation-detail">
-                                <div class="detail-title clearfix">
-                                    <div class="fl">
-                                        <span class="title">{{$t('ModelManagement["模型关联"]')}}</span>
-                                        <span class="info">({{$t('ModelManagement["即视图中的连线"]')}})</span>
+                                <cmdb-collapse-transition>
+                                    <div class="relation-detail" v-click-outside="hidePop" @click.stop v-if="activePop === model['bk_obj_id']">
+                                        <div class="detail-title clearfix">
+                                            <div class="fl">
+                                                <span class="title">{{$t('ModelManagement["模型关联"]')}}</span>
+                                                <span class="info">({{$t('ModelManagement["即视图中的连线"]')}})</span>
+                                            </div>
+                                            <label class="fr cmdb-form-checkbox cmdb-checkbox-small">
+                                                <input type="checkbox" :checked="isChecked(model)" @click="checkAll(model)">
+                                                <span class="cmdb-checkbox-text">{{$t('Common["全选"]')}}</span>
+                                            </label>
+                                        </div>
+                                        <ul class="relation-list clearfix">
+                                            <li class="fl" v-for="(asst, asstIndex) in findCurrentModelAsst(model)" :key="asstIndex">
+                                                <label class="cmdb-form-checkbox cmdb-checkbox-small" :title="asstLabel(model, asst)">
+                                                    <input type="checkbox" v-model="asst.checked">
+                                                    <span class="cmdb-checkbox-text">{{asstLabel(model, asst)}}</span>
+                                                </label>
+                                            </li>
+                                        </ul>
                                     </div>
-                                    <label class="fr cmdb-form-checkbox cmdb-checkbox-small">
-                                        <input type="checkbox" :checked="isChecked(model)" @click="checkAll(model)">
-                                        <span class="cmdb-checkbox-text">{{$t('Common["全选"]')}}</span>
-                                    </label>
-                                </div>
-                                <ul class="relation-list clearfix">
-                                    <li class="fl" v-for="(asst, asstIndex) in findCurrentModelAsst(model)" :key="asstIndex">
-                                        <label class="cmdb-form-checkbox cmdb-checkbox-small" :title="asstLabel(model, asst)">
-                                            <input type="checkbox" v-model="asst.checked">
-                                            <span class="cmdb-checkbox-text">{{asstLabel(model, asst)}}</span>
-                                        </label>
-                                    </li>
-                                </ul>
+                                </cmdb-collapse-transition>
                             </div>
                         </li>
                     </ul>
@@ -94,6 +98,12 @@
             this.initTopoList()
         },
         methods: {
+            hidePop () {
+                this.activePop = ''
+            },
+            toggleActivePop (objId) {
+                this.activePop = this.activePop === objId ? '' : objId
+            },
             initLocalTopoModelList () {
                 this.localTopoModelList = this.$tools.clone(this.topoModelList)
             },
@@ -185,7 +195,7 @@
     }
     .display-setting {
         .cmdb-form-checkbox {
-            width: 154px;
+            min-width: 154px;
         }
     }
     .display-list {
@@ -195,17 +205,14 @@
             .group-name {
                 margin-bottom: 15px;
                 padding-left: 8px;
-                border-left: 4px solid $cmdbBorderFocusColor;
-                line-height: 16px;
+                border-left: 4px solid $cmdbBorderColor;
+                line-height: 14px;
             }
         }
         .model-item {
             float: left;
             width: 175px;
-            &:hover {
-                .relation-detail {
-                    display: block;
-                }
+            &.active {
                 .count {
                     &:after {
                         position: absolute;
@@ -228,14 +235,17 @@
                 }
             }
             >.cmdb-form-checkbox {
-                margin-right: 10px;
-                width: 165px;
-                font-size: 0;
-                cursor: pointer;
-                >.cmdb-checkbox-text {
-                    max-width: 100px;
-                    font-size: 14px;
-                    @include ellipsis;
+                vertical-align: middle;
+                margin-right: 0;
+                &.checkbox {
+                    font-size: 0;
+                }
+                &.text-box {
+                    margin-right: 10px;
+                    cursor: pointer;
+                    .cmdb-checkbox-text {
+                        max-width: 100px;
+                    }
                 }
             }
             .count {
@@ -247,10 +257,10 @@
             }
             .relation-detail {
                 position: absolute;
-                display: none;
+                margin-top: 7px;
+                padding: 5px 20px 10px;
                 left: 0;
                 width: 100%;
-                padding: 5px 20px 10px;
                 background: #fff;
                 border: 1px solid $cmdbTableBorderColor;
                 z-index: 1;

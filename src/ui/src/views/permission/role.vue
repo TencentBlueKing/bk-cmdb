@@ -114,6 +114,7 @@
             }
         },
         created () {
+            this.$store.commit('setHeaderTitle', this.$t('Nav["系统权限管理"]'))
             this.getRoleList()
         },
         methods: {

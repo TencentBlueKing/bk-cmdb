@@ -21,8 +21,8 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-// IntOption integer option
-type IntOption struct {
+// MinMaxOption option for number
+type MinMaxOption struct {
 	Min string `bson:"min" json:"min"`
 	Max string `bson:"max" json:"max"`
 }
@@ -59,8 +59,8 @@ type ValidMap struct {
 
 	propertys     map[string]metadata.Attribute
 	propertyslice []metadata.Attribute
+	idToProperty  map[int64]metadata.Attribute
 	require       map[string]bool
 	requirefields []string
-	isOnly        map[string]bool
 	shouldIgnore  map[string]bool
 }

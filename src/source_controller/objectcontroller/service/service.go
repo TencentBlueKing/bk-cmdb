@@ -16,15 +16,13 @@ import (
 	"github.com/emicklei/go-restful"
 	"gopkg.in/redis.v5"
 
-	"configcenter/src/common/metadata"
-
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
-
 	"configcenter/src/storage/dal"
 )
 
@@ -80,6 +78,11 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.POST("/meta/object/classification").To(s.CreateClassification))
 	ws.Route(ws.PUT("/meta/object/classification/{id}").To(s.UpdateClassification))
 
+	ws.Route(ws.POST("/object/{bk_obj_id}/unique/action/create").To(s.CreateObjectUnique))
+	ws.Route(ws.PUT("/object/{bk_obj_id}/unique/{id}/action/update").To(s.UpdateObjectUnique))
+	ws.Route(ws.DELETE("/object/{bk_obj_id}/unique/{id}/action/delete").To(s.DeleteObjectUnique))
+	ws.Route(ws.GET("/object/{bk_obj_id}/unique/action/search").To(s.SearchObjectUnique))
+
 	// association api
 	ws.Route(ws.POST("/association/action/search").To(s.SearchAssociationType))
 	ws.Route(ws.POST("/association/action/create").To(s.CreateAssociationType))
@@ -93,7 +96,7 @@ func (s *Service) WebService() *restful.WebService {
 
 	ws.Route(ws.POST("/inst/association/action/search").To(s.SearchInstAssociations))
 	ws.Route(ws.POST("/inst/association/action/create").To(s.CreateInstAssociation))
-	ws.Route(ws.DELETE("/inst/association/action/delete").To(s.DeleteInstAssociation))
+	ws.Route(ws.DELETE("/inst/association/{association_id}/action/delete").To(s.DeleteInstAssociation))
 
 	ws.Route(ws.POST("/topographics/search").To(s.SearchTopoGraphics))
 	ws.Route(ws.POST("/topographics/update").To(s.UpdateTopoGraphics))

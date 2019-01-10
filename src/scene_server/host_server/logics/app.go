@@ -30,6 +30,9 @@ import (
 
 func (lgc *Logics) GetDefaultAppIDWithSupplier(pheader http.Header) (int64, error) {
 	cond := hutil.NewOperation().WithDefaultField(int64(common.DefaultAppFlag)).WithOwnerID(util.GetOwnerID(pheader)).Data()
+	cond[common.BKDBAND] = []mapstr.MapStr{
+		mapstr.MapStr{common.BKOwnerIDField: util.GetOwnerID(pheader)},
+	}
 	appDetails, err := lgc.GetAppDetails(common.BKAppIDField, cond, pheader)
 	if err != nil {
 		return -1, err
@@ -44,6 +47,10 @@ func (lgc *Logics) GetDefaultAppIDWithSupplier(pheader http.Header) (int64, erro
 
 func (lgc *Logics) GetDefaultAppID(ownerID string, pheader http.Header) (int64, error) {
 	cond := hutil.NewOperation().WithOwnerID(ownerID).WithDefaultField(int64(common.DefaultAppFlag)).Data()
+	blog.Infof("get default app id cond: %v", cond)
+	cond[common.BKDBAND] = []mapstr.MapStr{
+		mapstr.MapStr{common.BKOwnerIDField: util.GetOwnerID(pheader)},
+	}
 	appDetails, err := lgc.GetAppDetails(common.BKAppIDField, cond, pheader)
 	if err != nil {
 		return -1, err

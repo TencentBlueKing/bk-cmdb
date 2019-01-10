@@ -28,19 +28,19 @@ import (
 
 // helpers
 func (phpapi *PHPAPI) UpdateHostMain(hostCondition, data map[string]interface{}, appID int64) (string, error) {
-	//blog.V(3).Infof("updateHostMain start")
-	blog.V(3).Infof("hostCondition:%v", hostCondition)
+	//blog.V(5).Infof("updateHostMain start")
+	blog.V(5).Infof("hostCondition:%v", hostCondition)
 
 	_, hostIDArr, err := phpapi.GetHostMapByCond(hostCondition)
 
-	blog.V(3).Infof("hostIDArr:%v", hostIDArr)
+	blog.V(5).Infof("hostIDArr:%v", hostIDArr)
 	if nil != err {
 		return "", fmt.Errorf("GetHostIDByCond error:%v", err)
 	}
 
 	lenOfHostIDArr := len(hostIDArr)
 	if lenOfHostIDArr != 1 {
-		blog.V(3).Infof("GetHostMapByCond condition: %v, host:%v", hostCondition, hostIDArr)
+		blog.V(5).Infof("GetHostMapByCond condition: %v, host:%v", hostCondition, hostIDArr)
 		return "", errors.New("not find host info ")
 	}
 
@@ -113,7 +113,7 @@ func (phpapi *PHPAPI) AddModuleHostConfig(hostID, appID int64, moduleIDs []int64
 		HostID:        hostID,
 		ModuleID:      moduleIDs,
 	}
-	blog.V(3).Infof("addModuleHostConfig start, data: %v", data)
+	blog.V(5).Infof("addModuleHostConfig start, data: %v", data)
 
 	res, err := phpapi.logic.CoreAPI.HostController().Module().AddModuleHostConfig(context.Background(), phpapi.header, data)
 	if nil != err {
@@ -124,7 +124,7 @@ func (phpapi *PHPAPI) AddModuleHostConfig(hostID, appID int64, moduleIDs []int64
 	if !res.Result {
 		return errors.New(res.ErrMsg)
 	}
-	blog.V(3).Infof("addModuleHostConfig success, res: %v", res)
+	blog.V(5).Infof("addModuleHostConfig success, res: %v", res)
 	return nil
 }
 
@@ -139,7 +139,7 @@ func (phpapi *PHPAPI) addObj(data map[string]interface{}, objType string) (int64
 		return 0, errors.New(resp.ErrMsg)
 	}
 
-	blog.V(3).Infof("add object result : %v", resMap)
+	blog.V(5).Infof("add object result : %v", resMap)
 
 	objID, err := resp.Data.Int64(common.GetInstIDField(objType))
 	if nil != err {
@@ -151,10 +151,10 @@ func (phpapi *PHPAPI) addObj(data map[string]interface{}, objType string) (int64
 
 //search host helpers
 
-func (phpapi *PHPAPI) SetHostData(moduleHostConfig []map[string]int64, hostMap map[int64]map[string]interface{}) ([]interface{}, error) {
+func (phpapi *PHPAPI) SetHostData(moduleHostConfig []map[string]int64, hostMap map[int64]map[string]interface{}) ([]mapstr.MapStr, error) {
 
 	//total data
-	hostData := make([]interface{}, 0)
+	hostData := make([]mapstr.MapStr, 0)
 
 	appIDArr := make([]int64, 0)
 	setIDArr := make([]int64, 0)
@@ -181,10 +181,11 @@ func (phpapi *PHPAPI) SetHostData(moduleHostConfig []map[string]int64, hostMap m
 		},
 	})
 	if err != nil {
+		blog.Errorf("hostMap GetSetMapByCond  error, err:%s,rid:%s", err.Error(), phpapi.rid)
 		return hostData, err
 	}
 
-	blog.V(3).Infof("GetAppMapByCond , appIDArr:%v", appIDArr)
+	blog.V(5).Infof("GetAppMapByCond , appIDArr:%v, rid:%s", appIDArr, phpapi.rid)
 	appMap, err := phpapi.logic.GetAppMapByCond(phpapi.header, "", map[string]interface{}{
 		common.BKAppIDField: map[string]interface{}{
 			common.BKDBIN: appIDArr,
@@ -192,12 +193,13 @@ func (phpapi *PHPAPI) SetHostData(moduleHostConfig []map[string]int64, hostMap m
 	})
 
 	if err != nil {
+		blog.Errorf("hostMap GetAppMapByCond  error, err:%s,rid:%s", err.Error(), phpapi.rid)
 		return hostData, err
 	}
 	for _, config := range moduleHostConfig {
 		hostItem, hasHost := hostMap[config[common.BKHostIDField]]
 		if !hasHost {
-			blog.Errorf("hostMap has not hostID: %d", config[common.BKHostIDField])
+			blog.Errorf("hostMap has not hostID: %d,rid:%s", config[common.BKHostIDField], phpapi.rid)
 			continue
 		}
 		host := mapstr.New()

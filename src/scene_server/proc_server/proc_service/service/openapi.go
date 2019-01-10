@@ -72,7 +72,7 @@ func (ps *ProcServer) GetProcessPortByApplicationID(req *restful.Request, resp *
 
 	}
 
-	blog.V(3).Infof("moduleToProcessesMap: %v", moduleToProcessesMap)
+	blog.V(5).Infof("moduleToProcessesMap: %v", moduleToProcessesMap)
 	moduleHostConfigs, err := ps.getModuleHostConfigsByAppID(appID, forward)
 	if err != nil {
 		blog.Errorf("getModuleHostConfigsByAppID failed in GetProcessPortByApplicationID, err: %s", err.Error())
@@ -80,7 +80,7 @@ func (ps *ProcServer) GetProcessPortByApplicationID(req *restful.Request, resp *
 		return
 	}
 
-	blog.V(3).Infof("moduleHostConfigs:%v", moduleHostConfigs)
+	blog.V(5).Infof("moduleHostConfigs:%v", moduleHostConfigs)
 	// 根据AppID获取AppInfo
 	appInfoMap, err := ps.getAppInfoByID(appID, forward)
 	if err != nil {
@@ -103,7 +103,7 @@ func (ps *ProcServer) GetProcessPortByApplicationID(req *restful.Request, resp *
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcGetByApplicationIDFail)})
 		return
 	}
-	blog.V(3).Infof("GetProcessPortByApplicationID  hostMap:%v", hostMap)
+	blog.V(5).Infof("GetProcessPortByApplicationID  hostMap:%v", hostMap)
 
 	hostProcs := make(map[int64][]mapstr.MapStr, 0)
 	for _, moduleHostConf := range moduleHostConfigs {
@@ -145,7 +145,7 @@ func (ps *ProcServer) GetProcessPortByApplicationID(req *restful.Request, resp *
 		retData = append(retData, host)
 	}
 
-	blog.V(3).Infof("GetProcessPortByApplicationID: %+v", retData)
+	blog.V(5).Infof("GetProcessPortByApplicationID: %+v", retData)
 	resp.WriteEntity(meta.NewSuccessResp(retData))
 }
 
@@ -180,7 +180,7 @@ func (ps *ProcServer) GetProcessPortByIP(req *restful.Request, resp *restful.Res
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcGetByIP)})
 		return
 	}
-	blog.V(3).Infof("configArr: %+v", confArr)
+	blog.V(5).Infof("configArr: %+v", confArr)
 	//根据业务id获取进程
 	resultData := make([]interface{}, 0)
 	for _, item := range confArr {
@@ -210,7 +210,7 @@ func (ps *ProcServer) GetProcessPortByIP(req *restful.Request, resp *restful.Res
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcGetByIP)})
 			return
 		}
-		blog.V(3).Infof("moduleData:%v", moduleData)
+		blog.V(5).Infof("moduleData:%v", moduleData)
 
 		//进程
 		procData, err := ps.getProcessMapByAppID(appId, forward)
@@ -219,7 +219,7 @@ func (ps *ProcServer) GetProcessPortByIP(req *restful.Request, resp *restful.Res
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcGetByIP)})
 			return
 		}
-		blog.V(3).Infof("procData: %v", procData)
+		blog.V(5).Infof("procData: %v", procData)
 		//获取绑定关系
 		for _, itemProcData := range procData {
 			result := make(map[string]interface{})
@@ -237,7 +237,7 @@ func (ps *ProcServer) GetProcessPortByIP(req *restful.Request, resp *restful.Res
 
 			for _, procMod := range procModuleData {
 				itemMap, _ := procMod.(map[string]interface{})[common.BKModuleNameField].(string)
-				blog.V(3).Infof("process module, %v", itemMap)
+				blog.V(5).Infof("process module, %v", itemMap)
 				if itemMap == moduleName {
 					result[common.BKAppNameField], err = appData[appId].(mapstr.MapStr).String(common.BKAppNameField)
 					if nil != err {
@@ -528,6 +528,6 @@ func (ps *ProcServer) getProcessBindModule(appId, procId int64, forward http.Hea
 		result = append(result, data)
 	}
 
-	blog.V(3).Infof("getProcessBindModule result: %+v", result)
+	blog.V(5).Infof("getProcessBindModule result: %+v", result)
 	return result, nil
 }

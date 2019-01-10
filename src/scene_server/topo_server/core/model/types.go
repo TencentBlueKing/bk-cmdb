@@ -57,10 +57,15 @@ type Association interface {
 
 // Factory used to create object  classification attribute etd.
 type Factory interface {
-	CreaetObject(params types.ContextParams) Object
-	CreaetClassification(params types.ContextParams) Classification
+	CreateObject(params types.ContextParams) Object
+	CreateClassification(params types.ContextParams) Classification
 	CreateAttribute(params types.ContextParams) Attribute
 	CreateGroup(params types.ContextParams) Group
 	CreateCommonAssociation(params types.ContextParams, obj Object, asstKey string, asstObj Object) Association
-	CreateMainLineAssociatin(params types.ContextParams, obj Object, asstKey string, asstObj Object) Association
+	CreateMainLineAssociation(params types.ContextParams, obj Object, asstKey string, asstObj Object) Association
+}
+
+type ObjectAssoPair struct {
+	Object      Object
+	Association metadata.Association
 }

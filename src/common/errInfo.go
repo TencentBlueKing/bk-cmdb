@@ -61,9 +61,6 @@ const (
 	// CCErrCommParamsIsInvalid the parameter is invalid or nonexistent
 	CCErrCommParamsIsInvalid = 1199011
 
-	// CCErrCommUniqueCheckFailed the uniqueness validation fails
-	CCErrCommUniqueCheckFailed = 1199012
-
 	// CCErrCommParseDataFailed failed to read data from data field
 	CCErrCommParseDataFailed = 1199013
 
@@ -144,6 +141,9 @@ const (
 	CCErrCommInstFieldConvFail = 1199040
 	// CCErrCommUtilFail  handle %s error %s
 	CCErrCommUtilHandleFail = 1199041
+
+	// CCErrCommParamsNeedFloat the parameter must be float type
+	CCErrCommParamsNeedFloat = 1199042
 
 	// apiserver 1100XXX
 
@@ -266,7 +266,7 @@ const (
 	// the destination association object does not exist
 	CCErrTopoAssociationDestinationObjectNotExist = 1101040
 	// invalid object association id, should be int64
-	CCErrTopoInvalidObjectAssociaitonID = 1101041
+	CCErrTopoInvalidObjectAssociationID = 1101041
 	// got multiple object association with one association id
 	CCErrTopoGotMultipleAssociationInstance = 1101042
 	// association with a object has multiple instance, can not be deleted.
@@ -288,15 +288,23 @@ const (
 	// delete a pre-defined association kind.
 	CCErrorTopoDeletePredefinedAssociationKind = 1101051
 	// create new instance for a new association, but association map is 1:1
-    CCErrorTopoCreateMultipleInstancesForOneToOneAssociation = 1101052
-    // the object has associate to another object, or has been associated by another one.
-    CCErrorTopoObjectHasAlreadyAssociated = 1101053
-    // update a pre-defined association, it's forbidden.
-    CCErrorTopoUpdatePredefinedAssociation = 1101054
-    // can not delete a pre-defined association.
-    CCErrorTopoDeletePredefinedAssociation = 1101055
-    // association do not exist.
-    CCErrorTopoAssociationDoNotExist = 1101056
+	CCErrorTopoCreateMultipleInstancesForOneToOneAssociation = 1101052
+	// the object has associate to another object, or has been associated by another one.
+	CCErrorTopoObjectHasAlreadyAssociated = 1101053
+	// update a pre-defined association, it's forbidden.
+	CCErrorTopoUpdatePredefinedAssociation = 1101054
+	// can not delete a pre-defined association.
+	CCErrorTopoDeletePredefinedAssociation = 1101055
+	// association do not exist.
+	CCErrorTopoAssociationDoNotExist = 1101056
+	// create model's instance patch, but instance's data missing field bk_inst_name
+	CCErrorTopoObjectInstanceMissingInstanceNameField = 1101057
+	// object instance's bk_inst_name filed is not string
+	CCErrorTopoInvalidObjectInstanceNameFieldValue = 1101058
+	// create model's instance patch, but instance's name is duplicate.
+	CCErrorTopoMutipleObjectInstanceName = 1101059
+	// association kind has already been instantiated
+	CCErrorTopoAssociationKindHasBeenUsed = 1101060
 
 	CCErrTopoAppDeleteFailed                       = 1001031
 	CCErrTopoAppUpdateFailed                       = 1001032
@@ -319,6 +327,16 @@ const (
 	CCErrHostNotAllowedToMutiBiz                   = 1001050
 	CCErrTopoGraphicsSearchFailed                  = 1001051
 	CCErrTopoGraphicsUpdateFailed                  = 1001052
+	CCErrTopoObjectUniqueCreateFailed              = 1001060
+	CCErrTopoObjectUniqueUpdateFailed              = 1001061
+	CCErrTopoObjectUniqueDeleteFailed              = 1001062
+	CCErrTopoObjectUniqueSearchFailed              = 1001063
+	CCErrTopoObjectPropertyNotFound                = 1001064
+	CCErrTopoObjectPropertyUsedByUnique            = 1001065
+	CCErrTopoObjectUniqueKeyKindInvalid            = 1001066
+	CCErrTopoObjectUniquePresetCouldNotDelOrEdit   = 1001067
+	CCErrTopoObjectUniqueCanNotHasMutiMustCheck    = 1001068
+	CCErrTopoObjectUniqueShouldHaveMoreThanOne     = 1001069
 
 	CCErrTopoMulueIDNotfoundFailed = 1101080
 	CCErrTopoBkAppNotAllowedDelete = 1101081

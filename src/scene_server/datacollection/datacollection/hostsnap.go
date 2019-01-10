@@ -24,13 +24,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/rs/xid"
-	"github.com/tidwall/gjson"
-	redis "gopkg.in/redis.v5"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal"
+
+	"github.com/rs/xid"
+	"github.com/tidwall/gjson"
+	redis "gopkg.in/redis.v5"
 )
 
 var (
@@ -384,6 +384,9 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 	return setter
 }
 func getIPS(val *gjson.Result) (ips []string) {
+	if !strings.HasPrefix(val.Get("ip").String(), "127.0.0.") {
+		ips = append(ips, val.Get("ip").String())
+	}
 	interfaces := val.Get("data.net.interface.#.addrs.#.addr").Array()
 	for _, addrs := range interfaces {
 		for _, addr := range addrs.Array() {
@@ -393,9 +396,6 @@ func getIPS(val *gjson.Result) (ips []string) {
 			}
 			ips = append(ips, ip)
 		}
-	}
-	if !strings.HasPrefix(val.Get("ip").String(), "127.0.0.") {
-		ips = append(ips, val.Get("ip").String())
 	}
 	return ips
 }

@@ -225,7 +225,7 @@ func (dh *DistHandler) handleDist(sub *metadata.Subscription, dist *metadata.Dis
 		if err = dh.saveDistDone(dist); err != nil {
 			return
 		}
-		blog.Info("done event dist : %v", dist.DstbID)
+		blog.Infof("done event dist : %v", dist.DstbID)
 	}()
 
 	if err = dh.SendCallback(sub, dist.Raw); err != nil {
