@@ -211,6 +211,7 @@ type CloudTaskSearch struct {
 }
 
 type CloudTaskInfo struct {
+	User            string `json:"bk_user" bson:"bk_user"`
 	TaskName        string `json:"bk_task_name" bson:"bk_task_name"`
 	TaskID          int64  `json:"bk_task_id" bson:"bk_task_id"`
 	AccountType     string `json:"bk_account_type" bson:"bk_account_type"`
@@ -227,4 +228,5 @@ type CloudTaskInfo struct {
 	SyncStatus      string `json:"bk_sync_status" bson:"bk_sync_status"`
 	NewAdd          int64  `json:"new_add" bson:"new_add"`
 	AttrChanged     int64  `json:"attr_changed" bson:"attr_changed"`
+	OwnerID         string `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }

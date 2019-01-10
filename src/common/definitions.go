@@ -536,6 +536,9 @@ const (
 	// ConfirmTimeField the cloud resource confirm time filed
 	ConfirmTimeField = "confirm_time"
 
+	// StartTimeField the cloud sync start time field
+	StartTimeFiled = "start_time"
+
 	// ModifierField the modifier field
 	ModifierField = "modifier"
 
@@ -897,8 +900,10 @@ const (
 	RedisProcSrvHostInstanceRefreshModuleKey  = BKCacheKeyV3Prefix + "prochostinstancerefresh:set"
 	RedisProcSrvHostInstanceAllRefreshLockKey = BKCacheKeyV3Prefix + "lock:prochostinstancerefresh"
 	RedisProcSrvQueryProcOPResultKey          = BKCacheKeyV3Prefix + "procsrv:query:opresult:set"
-	RedisCloudSyncInstanceStarted             = BKCacheKeyV3Prefix + "cloudsyncinstancestarted:set"
-	RedisCloudSyncInstancePendingStop         = BKCacheKeyV3Prefix + "cloudsyncinstancependingstop:set"
+	RedisCloudSyncInstancePendingStart        = BKCacheKeyV3Prefix + "cloudsyncinstancependingstart:list"
+	RedisCloudSyncInstanceStarted             = BKCacheKeyV3Prefix + "cloudsyncinstancestarted:list"
+	RedisCloudSyncInstancePendingStop         = BKCacheKeyV3Prefix + "cloudsyncinstancependingstop:list"
+	RedisCloudSyncStartLockKey                = BKCacheKeyV3Prefix + "lock:cloudsyncstart"
 )
 
 // association fields

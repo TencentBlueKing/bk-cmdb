@@ -510,7 +510,8 @@ const (
 	CCErrCloudAddConfirmHistoryFail = 1110035
 	CCErrCloudGetTaskFail           = 1110036
 	CCErrCloudGetConfirmHistoryFail = 1110037
-	CCErrCloudSyncStartFail         = 1110038
+	CCErrCloudTaskNameAlreadyExist  = 1110038
+	CCErrCloudSyncStartFail         = 1110039
 
 	// hostserver api machinery new error code
 	CCErrAddUserCustomQueryFaild       = 1110040
