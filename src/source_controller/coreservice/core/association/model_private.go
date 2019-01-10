@@ -68,7 +68,7 @@ func (m *associationModel) isExistsAssociationObjectWithAnotherObject(ctx core.C
 
 	cnt, err := m.count(ctx, existsCheckCond)
 	if nil != err {
-		blog.Errorf("request(%s): it is to failed to check whether the association (%s=>%s) is exists by the condition (%v), error info is %s", ctx.ReqID, targetObjectID, anotherObjectID, existsCheckCond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is to failed to check whether the association (%s=>%s) is exists by the condition (%#v), error info is %s", ctx.ReqID, targetObjectID, anotherObjectID, existsCheckCond.ToMapStr(), err.Error())
 		return false, err
 	}
 	return 0 != cnt, err

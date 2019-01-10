@@ -34,7 +34,7 @@ func (g *modelAttributeGroup) CreateModelAttributeGroup(ctx core.ContextParams, 
 	dataResult := &metadata.CreateOneDataResult{}
 
 	if err := g.model.isValid(ctx, objID); nil != err {
-		blog.Errorf("request(%s): it is failed to create a model attribute group (%v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
+		blog.Errorf("request(%s): it is failed to create a model attribute group (%#v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
 		return dataResult, err
 	}
 	inputParam.Data.ObjectID = objID
@@ -45,7 +45,7 @@ func (g *modelAttributeGroup) CreateModelAttributeGroup(ctx core.ContextParams, 
 		return dataResult, err
 	}
 	if isExists {
-		blog.Warnf("request(%s): it is to failed to create a new group (%v), because of the groupID (%s) is exists", ctx.ReqID, inputParam.Data, inputParam.Data.GroupID)
+		blog.Warnf("request(%s): it is to failed to create a new group (%#v), because of the groupID (%s) is exists", ctx.ReqID, inputParam.Data, inputParam.Data.GroupID)
 		return dataResult, ctx.Error.Errorf(common.CCErrCommDuplicateItem, inputParam.Data.GroupID)
 	}
 
@@ -60,7 +60,7 @@ func (g *modelAttributeGroup) CreateModelAttributeGroup(ctx core.ContextParams, 
 
 	id, err := g.save(ctx, inputParam.Data)
 	if nil != err {
-		blog.Errorf("request(%s): it is to failed to create a new model attribtue group (%v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
+		blog.Errorf("request(%s): it is to failed to create a new model attribtue group (%#v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
 		return dataResult, err
 	}
 	dataResult.Created.ID = id
@@ -76,7 +76,7 @@ func (g *modelAttributeGroup) SetModelAttributeGroup(ctx core.ContextParams, obj
 	}
 
 	if err := g.model.isValid(ctx, objID); nil != err {
-		blog.Errorf("request(%s): it is failed to set a model attribute group (%v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
+		blog.Errorf("request(%s): it is failed to set a model attribute group (%#v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
 		return dataResult, err
 	}
 	inputParam.Data.ObjectID = objID
@@ -100,7 +100,7 @@ func (g *modelAttributeGroup) SetModelAttributeGroup(ctx core.ContextParams, obj
 
 		id, err := g.save(ctx, inputParam.Data)
 		if nil != err {
-			blog.Errorf("request(%s): it is to failed to create a new model attribtue group (%v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
+			blog.Errorf("request(%s): it is to failed to create a new model attribtue group (%#v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
 			return &metadata.SetDataResult{}, err
 		}
 
@@ -120,7 +120,7 @@ func (g *modelAttributeGroup) SetModelAttributeGroup(ctx core.ContextParams, obj
 
 	cnt, err := g.update(ctx, mapstr.NewFromStruct(inputParam.Data, "field"), cond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to update the model attribute group (%v) by the condition (%v), error info is %s")
+		blog.Errorf("request(%s): it is failed to update the model attribute group (%#v) by the condition (%#v), error info is %s")
 		return dataResult, err
 	}
 	dataResult.UpdatedCount.Count = cnt
@@ -135,13 +135,13 @@ func (g *modelAttributeGroup) SetModelAttributeGroup(ctx core.ContextParams, obj
 func (g *modelAttributeGroup) UpdateModelAttributeGroup(ctx core.ContextParams, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 
 	if err := g.model.isValid(ctx, objID); nil != err {
-		blog.Errorf("request(%s): it is failed to create a model attribute group (%v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
+		blog.Errorf("request(%s): it is failed to create a model attribute group (%#v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
 		return &metadata.UpdatedCount{}, err
 	}
 
 	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert the condition (%v) from mapstr to condition, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
+		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr to condition, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.UpdatedCount{}, err
 	}
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldObjectID, Val: objID})
@@ -153,7 +153,7 @@ func (g *modelAttributeGroup) UpdateModelAttributeGroup(ctx core.ContextParams, 
 
 	cnt, err := g.update(ctx, inputParam.Data, cond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to update the data (%s) by the condition (%v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
+		blog.Errorf("request(%s): it is failed to update the data (%s) by the condition (%#v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
 		return &metadata.UpdatedCount{}, err
 	}
 
@@ -164,7 +164,7 @@ func (g *modelAttributeGroup) UpdateModelAttributeGroupByCondition(ctx core.Cont
 
 	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert the condition (%v) from mapstr to condition, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
+		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr to condition, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.UpdatedCount{}, err
 	}
 
@@ -175,7 +175,7 @@ func (g *modelAttributeGroup) UpdateModelAttributeGroupByCondition(ctx core.Cont
 
 	cnt, err := g.update(ctx, inputParam.Data, cond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to update the data (%s) by the condition (%v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
+		blog.Errorf("request(%s): it is failed to update the data (%s) by the condition (%#v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
 		return &metadata.UpdatedCount{}, err
 	}
 
@@ -189,27 +189,28 @@ func (g *modelAttributeGroup) SearchModelAttributeGroup(ctx core.ContextParams, 
 	}
 
 	// TODO: Paging queries needs to be implemented
-	if err := g.model.isValid(ctx, objID); nil != err {
-		blog.Errorf("request(%s): it is failed to query a model by the condition(%v), error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
-		return dataResult, err
-	}
+	// NOW: Temporarily blocked
+	// if err := g.model.isValid(ctx, objID); nil != err {
+	// 	blog.Errorf("request(%s): it is failed to query a model by the condition(%#v), error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
+	// 	return dataResult, err
+	// }
 
 	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert the condition (%v) from mapstr to condition, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
+		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr to condition, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return dataResult, err
 	}
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldObjectID, Val: objID})
 
 	totalCount, err := g.count(ctx, cond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to count by the condition (%v), error info is %s ", ctx.ReqID, cond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to count by the condition (%#v), error info is %s ", ctx.ReqID, cond.ToMapStr(), err.Error())
 		return dataResult, err
 	}
 
 	grps, err := g.search(ctx, cond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to query a model by the condition(%v), error info is %s", ctx.ReqID, cond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to query a model by the condition(%#v), error info is %s", ctx.ReqID, cond.ToMapStr(), err.Error())
 		return dataResult, err
 	}
 
@@ -223,19 +224,19 @@ func (g *modelAttributeGroup) SearchModelAttributeGroupByCondition(ctx core.Cont
 
 	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert the condition (%v) from mapstr to condition, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
+		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr to condition, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.QueryModelAttributeGroupDataResult{}, err
 	}
 
 	totalCount, err := g.count(ctx, cond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to count by the condition (%v), error info is %s ", ctx.ReqID, cond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to count by the condition (%#v), error info is %s ", ctx.ReqID, cond.ToMapStr(), err.Error())
 		return &metadata.QueryModelAttributeGroupDataResult{}, err
 	}
 
 	grps, err := g.search(ctx, cond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to query a model by the condition(%v), error info is %s", ctx.ReqID, cond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to query a model by the condition(%#v), error info is %s", ctx.ReqID, cond.ToMapStr(), err.Error())
 		return &metadata.QueryModelAttributeGroupDataResult{}, err
 	}
 
@@ -248,13 +249,13 @@ func (g *modelAttributeGroup) DeleteModelAttributeGroupByCondition(ctx core.Cont
 
 	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert the condition (%v) from mapstr to condition, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
+		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr to condition, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
 	grps, err := g.search(ctx, cond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to query model attribute groups by the condition (%v), error info is %s", ctx.ReqID, cond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to query model attribute groups by the condition (%#v), error info is %s", ctx.ReqID, cond.ToMapStr(), err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
@@ -265,7 +266,7 @@ func (g *modelAttributeGroup) DeleteModelAttributeGroupByCondition(ctx core.Cont
 
 	cnt, err := g.delete(ctx, cond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to delete the group by the condition(%v), error info is %s", ctx.ReqID, cond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to delete the group by the condition(%#v), error info is %s", ctx.ReqID, cond.ToMapStr(), err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
@@ -275,20 +276,20 @@ func (g *modelAttributeGroup) DeleteModelAttributeGroupByCondition(ctx core.Cont
 func (g *modelAttributeGroup) DeleteModelAttributeGroup(ctx core.ContextParams, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
 	if err := g.model.isValid(ctx, objID); nil != err {
-		blog.Errorf("request(%s): it is failed to delete a model by the condition(%v), error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
+		blog.Errorf("request(%s): it is failed to delete a model by the condition(%#v), error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
 	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert the condition (%v) from mapstr to condition, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
+		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr to condition, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldObjectID, Val: objID})
 
 	grps, err := g.search(ctx, cond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to query model attribute groups by the condition (%v), error info is %s", ctx.ReqID, cond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to query model attribute groups by the condition (%#v), error info is %s", ctx.ReqID, cond.ToMapStr(), err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
@@ -299,7 +300,7 @@ func (g *modelAttributeGroup) DeleteModelAttributeGroup(ctx core.ContextParams, 
 
 	isExists, err := g.hasAttributes(ctx, objID, grpIDS)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to check whether the group IDS (%v) has some attributes for the model(%s), error info is %s", ctx.ReqID, grpIDS, objID, err.Error())
+		blog.Errorf("request(%s): it is failed to check whether the group IDS (%#v) has some attributes for the model(%s), error info is %s", ctx.ReqID, grpIDS, objID, err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
@@ -309,7 +310,7 @@ func (g *modelAttributeGroup) DeleteModelAttributeGroup(ctx core.ContextParams, 
 
 	cnt, err := g.delete(ctx, cond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to delete the group by the condition(%v), error info is %s", ctx.ReqID, cond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to delete the group by the condition(%#v), error info is %s", ctx.ReqID, cond.ToMapStr(), err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
