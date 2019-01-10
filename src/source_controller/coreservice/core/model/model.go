@@ -95,13 +95,13 @@ func (m *modelManager) CreateModel(ctx core.ContextParams, inputParam metadata.C
 	inputParam.Spec.OwnerID = ctx.SupplierAccount
 	id, err := m.save(ctx, &inputParam.Spec)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to save the model (%v), error info is %s", ctx.ReqID, inputParam.Spec, err.Error())
+		blog.Errorf("request(%s): it is failed to save the model (%#v), error info is %s", ctx.ReqID, inputParam.Spec, err.Error())
 		return dataResult, err
 	}
 
 	_, err = m.modelAttribute.CreateModelAttributes(ctx, inputParam.Spec.ObjectID, metadata.CreateModelAttributes{Attributes: inputParam.Attributes})
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to create some attributes (%v) for the model (%s), error info is %s", ctx.ReqID, inputParam.Attributes, inputParam.Spec.ObjectID)
+		blog.Errorf("request(%s): it is failed to create some attributes (%#v) for the model (%s), error info is %s", ctx.ReqID, inputParam.Attributes, inputParam.Spec.ObjectID)
 
 		return dataResult, err
 	}
@@ -153,7 +153,7 @@ func (m *modelManager) SetModel(ctx core.ContextParams, inputParam metadata.SetM
 
 		_, err := m.update(ctx, mapstr.NewFromStruct(inputParam.Spec, "field"), updateCond)
 		if nil != err {
-			blog.Errorf("request(%s): it is failed to update some fields (%v) for the model (%s), error info is %s", ctx.ReqID, inputParam.Attributes, inputParam.Spec.ObjectID, err.Error())
+			blog.Errorf("request(%s): it is failed to update some fields (%#v) for the model (%s), error info is %s", ctx.ReqID, inputParam.Attributes, inputParam.Spec.ObjectID, err.Error())
 			return dataResult, err
 		}
 
@@ -162,7 +162,7 @@ func (m *modelManager) SetModel(ctx core.ContextParams, inputParam metadata.SetM
 	} else {
 		id, err := m.save(ctx, &inputParam.Spec)
 		if nil != err {
-			blog.Errorf("request(%s): it is failed to save the model (%v), error info is %s", ctx.ReqID, inputParam.Spec.ObjectID, err.Error())
+			blog.Errorf("request(%s): it is failed to save the model (%#v), error info is %s", ctx.ReqID, inputParam.Spec.ObjectID, err.Error())
 			return dataResult, err
 		}
 		dataResult.CreatedCount.Count++
@@ -172,7 +172,7 @@ func (m *modelManager) SetModel(ctx core.ContextParams, inputParam metadata.SetM
 	// set model attributes
 	setAttrResult, err := m.modelAttribute.SetModelAttributes(ctx, inputParam.Spec.ObjectID, metadata.SetModelAttributes{Attributes: inputParam.Attributes})
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to update the attributes (%v) for the model (%s), error info is %s", ctx.ReqID, inputParam.Attributes, inputParam.Spec.ObjectID, err.Error())
+		blog.Errorf("request(%s): it is failed to update the attributes (%#v) for the model (%s), error info is %s", ctx.ReqID, inputParam.Attributes, inputParam.Spec.ObjectID, err.Error())
 		return dataResult, err
 	}
 	_ = setAttrResult // TODO: how to return this result ? let me think about it;
@@ -192,7 +192,7 @@ func (m *modelManager) UpdateModel(ctx core.ContextParams, inputParam metadata.U
 
 	updateCond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert the condition (%v) from mapstr into condition object, error info is %s ", ctx.ReqID, inputParam.Condition, err.Error())
+		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr into condition object, error info is %s ", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.UpdatedCount{}, err
 	}
 	updateCond.Element(&mongo.Eq{Key: metadata.ModelFieldOwnerID, Val: ctx.SupplierAccount})
@@ -206,13 +206,13 @@ func (m *modelManager) DeleteModel(ctx core.ContextParams, inputParam metadata.D
 	// read all models by the deletion conditon
 	deleteCond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert the condition (%v) from mapstr into condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
+		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr into condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.DeletedCount{}, ctx.Error.New(common.CCErrCommParamsInvalid, err.Error())
 	}
 
 	modelItems, err := m.search(ctx, deleteCond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to find the all models by the condition (%v), error info is %s", ctx.ReqID, deleteCond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to find the all models by the condition (%#v), error info is %s", ctx.ReqID, deleteCond.ToMapStr(), err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
@@ -224,31 +224,31 @@ func (m *modelManager) DeleteModel(ctx core.ContextParams, inputParam metadata.D
 	// check if the model is used: firstly to check instance
 	exists, err := m.dependent.HasInstance(ctx, targetObjIDS)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to check whether some models (%v) has some instances, error info is %s", ctx.ReqID, targetObjIDS, err.Error())
+		blog.Errorf("request(%s): it is failed to check whether some models (%#v) has some instances, error info is %s", ctx.ReqID, targetObjIDS, err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
 	if exists {
-		blog.Warnf("request(%s): it is forbidden to delete the models (%v), because of they have some instances.", ctx.ReqID, targetObjIDS)
+		blog.Warnf("request(%s): it is forbidden to delete the models (%#v), because of they have some instances.", ctx.ReqID, targetObjIDS)
 		return &metadata.DeletedCount{}, ctx.Error.Error(common.CCErrTopoObjectHasSomeInstsForbiddenToDelete)
 	}
 
 	// check if the model is used: secondly to check association
 	exists, err = m.dependent.HasAssociation(ctx, targetObjIDS)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to check whether some models (%v) has some associations, error info is %s", ctx.ReqID, targetObjIDS, err.Error())
+		blog.Errorf("request(%s): it is failed to check whether some models (%#v) has some associations, error info is %s", ctx.ReqID, targetObjIDS, err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
 	if exists {
-		blog.Warnf("request(%s): it is forbidden to delete the models (%v), because of they have some associations.", ctx.ReqID, targetObjIDS)
+		blog.Warnf("request(%s): it is forbidden to delete the models (%#v), because of they have some associations.", ctx.ReqID, targetObjIDS)
 		return &metadata.DeletedCount{}, ctx.Error.Error(common.CCErrTopoForbiddenToDeleteModelFailed)
 	}
 
 	// delete model self
 	cnt, err := m.deleteModelAndAttributes(ctx, targetObjIDS)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to delete the models (%v) and their attributes, error info is %s", ctx.ReqID, targetObjIDS, err.Error())
+		blog.Errorf("request(%s): it is failed to delete the models (%#v) and their attributes, error info is %s", ctx.ReqID, targetObjIDS, err.Error())
 		return &metadata.DeletedCount{}, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 
@@ -260,14 +260,14 @@ func (m *modelManager) CascadeDeleteModel(ctx core.ContextParams, inputParam met
 	// read all models by the deletion condition
 	deleteCond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert the condition (%v) from mapstr into condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
+		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr into condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.DeletedCount{}, ctx.Error.New(common.CCErrCommParamsInvalid, err.Error())
 	}
 	deleteCond.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: ctx.SupplierAccount})
 
 	cnt, err := m.cascadeDelete(ctx, deleteCond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to cascade delete some models by the condition (%v), error info is %s", ctx.ReqID, deleteCond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to cascade delete some models by the condition (%#v), error info is %s", ctx.ReqID, deleteCond.ToMapStr(), err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 	return &metadata.DeletedCount{Count: cnt}, err
@@ -279,19 +279,19 @@ func (m *modelManager) SearchModel(ctx core.ContextParams, inputParam metadata.Q
 
 	searchCond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert the condition (%v) from mapstr into condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
+		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr into condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return dataResult, err
 	}
 
 	totalCount, err := m.count(ctx, searchCond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to get the count by the condition (%v), error info is %s", ctx.ReqID, searchCond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to get the count by the condition (%#v), error info is %s", ctx.ReqID, searchCond.ToMapStr(), err.Error())
 		return dataResult, err
 	}
 
 	modelItems, err := m.search(ctx, searchCond)
 	if nil != err {
-		blog.Errorf("request(%s): it is faield to search models by the condition (%v), error info is %s", ctx.ReqID, searchCond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is faield to search models by the condition (%#v), error info is %s", ctx.ReqID, searchCond.ToMapStr(), err.Error())
 		return dataResult, err
 	}
 
@@ -306,20 +306,20 @@ func (m *modelManager) SearchModelWithAttribute(ctx core.ContextParams, inputPar
 
 	searchCond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert the condition (%v) from mapstr into condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
+		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr into condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return dataResult, err
 	}
 
 	totalCount, err := m.count(ctx, searchCond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to get the count by the condition (%v), error info is %s", ctx.ReqID, searchCond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to get the count by the condition (%#v), error info is %s", ctx.ReqID, searchCond.ToMapStr(), err.Error())
 		return dataResult, err
 	}
 
 	dataResult.Count = int64(totalCount)
 	modelItems, err := m.search(ctx, searchCond)
 	if nil != err {
-		blog.Errorf("request(%s): it is faield to search models by the condition (%v), error info is %s", ctx.ReqID, searchCond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is faield to search models by the condition (%#v), error info is %s", ctx.ReqID, searchCond.ToMapStr(), err.Error())
 		return dataResult, err
 	}
 

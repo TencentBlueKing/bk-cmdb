@@ -21,10 +21,10 @@
 			"revisionTime": "2018-05-18T05:39:59Z"
 		},
 		{
-			"checksumSHA1": "BdfX7mOcH3aOUAmfN5ZjTTKH4vI=",
+			"checksumSHA1": "/iUJjKfnlpZZDts1SyifOl0/kow=",
 			"path": "github.com/mongodb/mongo-go-driver",
-			"revision": "29905d4bda472574c8b499e2f93b5b2747d8fbd7",
-			"revisionTime": "2018-12-06T20:13:04Z",
+			"revision": "3cfdc9ffcf780eede57d27ec26a3edad4c9ab6a9",
+			"revisionTime": "2019-01-08T16:35:58Z",
 			"tree": true
 		},
 		{

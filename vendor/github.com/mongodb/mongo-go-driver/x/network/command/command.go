@@ -11,6 +11,8 @@ import (
 
 	"context"
 
+	"fmt"
+
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/bson/bsontype"
 	"github.com/mongodb/mongo-go-driver/bson/primitive"
@@ -131,20 +133,17 @@ func extractError(rdr bson.Raw) error {
 	}
 }
 
-func responseClusterTime(response bson.Raw) bsonx.Doc {
+func responseClusterTime(response bson.Raw) bson.Raw {
 	clusterTime, err := response.LookupErr("$clusterTime")
 	if err != nil {
 		// $clusterTime not included by the server
 		return nil
 	}
-
-	val := bsonx.Val{}
-	err = val.UnmarshalBSONValue(clusterTime.Type, clusterTime.Value)
-	if err != nil {
-		return nil
-	}
-
-	return bsonx.Doc{{"$clusterTime", val}}
+	idx, doc := bsoncore.AppendDocumentStart(nil)
+	doc = bsoncore.AppendHeader(doc, clusterTime.Type, "$clusterTime")
+	doc = append(doc, clusterTime.Value...)
+	doc, _ = bsoncore.AppendDocumentEnd(doc, idx)
+	return doc
 }
 
 func updateClusterTimes(sess *session.Client, clock *session.ClusterClock, response bson.Raw) error {
@@ -234,7 +233,7 @@ func addClusterTime(cmd bsonx.Doc, desc description.SelectedServer, sess *sessio
 		return cmd
 	}
 
-	var clusterTime bsonx.Doc
+	var clusterTime bson.Raw
 	if clock != nil {
 		clusterTime = clock.GetClusterTime()
 	}
@@ -251,9 +250,14 @@ func addClusterTime(cmd bsonx.Doc, desc description.SelectedServer, sess *sessio
 		return cmd
 	}
 
+	d, err := bsonx.ReadDoc(clusterTime)
+	if err != nil {
+		return cmd // broken clusterTime
+	}
+
 	cmd = cmd.Delete("$clusterTime")
 
-	return append(cmd, clusterTime...)
+	return append(cmd, d...)
 }
 
 // add a read concern to a BSON doc representing a command
@@ -272,17 +276,21 @@ func addReadConcern(cmd bsonx.Doc, desc description.SelectedServer, rc *readconc
 		return cmd, nil
 	}
 
-	element, err := rc.MarshalBSONElement()
+	t, data, err := rc.MarshalBSONValue()
 	if err != nil {
 		return cmd, err
 	}
 
-	rcDoc := element.Value.Document()
+	var rcDoc bsonx.Doc
+	err = rcDoc.UnmarshalBSONValue(t, data)
+	if err != nil {
+		return cmd, err
+	}
 	if description.SessionsSupported(desc.WireVersion) && sess != nil && sess.Consistent && sess.OperationTime != nil {
 		rcDoc = append(rcDoc, bsonx.Elem{"afterClusterTime", bsonx.Timestamp(sess.OperationTime.T, sess.OperationTime.I)})
 	}
 
-	cmd = cmd.Delete(element.Key)
+	cmd = cmd.Delete("readConcern")
 
 	if len(rcDoc) != 0 {
 		cmd = append(cmd, bsonx.Elem{"readConcern", bsonx.Document(rcDoc)})
@@ -296,15 +304,24 @@ func addWriteConcern(cmd bsonx.Doc, wc *writeconcern.WriteConcern) (bsonx.Doc, e
 		return cmd, nil
 	}
 
-	element, err := wc.MarshalBSONElement()
+	t, data, err := wc.MarshalBSONValue()
+	if err != nil {
+		if err == writeconcern.ErrEmptyWriteConcern {
+			return cmd, nil
+		}
+		return cmd, err
+	}
+
+	var xval bsonx.Val
+	err = xval.UnmarshalBSONValue(t, data)
 	if err != nil {
 		return cmd, err
 	}
 
 	// delete if doc already has write concern
-	cmd = cmd.Delete(element.Key)
+	cmd = cmd.Delete("writeConcern")
 
-	return append(cmd, element), nil
+	return append(cmd, bsonx.Elem{Key: "writeConcern", Value: xval}), nil
 }
 
 // Get the error labels from a command response
@@ -609,6 +626,85 @@ func roundTripBatches(
 	}
 
 	return res, batches, nil
+}
+
+// get the firstBatch, cursor ID, and namespace from a bson.Raw
+func getCursorValues(result bson.Raw) ([]bson.RawValue, Namespace, int64, error) {
+	cur, err := result.LookupErr("cursor")
+	if err != nil {
+		return nil, Namespace{}, 0, err
+	}
+	if cur.Type != bson.TypeEmbeddedDocument {
+		return nil, Namespace{}, 0, fmt.Errorf("cursor should be an embedded document but it is a BSON %s", cur.Type)
+	}
+
+	elems, err := cur.Document().Elements()
+	if err != nil {
+		return nil, Namespace{}, 0, err
+	}
+
+	var ok bool
+	var arr bson.Raw
+	var namespace Namespace
+	var cursorID int64
+
+	for _, elem := range elems {
+		switch elem.Key() {
+		case "firstBatch":
+			arr, ok = elem.Value().ArrayOK()
+			if !ok {
+				return nil, Namespace{}, 0, fmt.Errorf("firstBatch should be an array but it is a BSON %s", elem.Value().Type)
+			}
+			if err != nil {
+				return nil, Namespace{}, 0, err
+			}
+		case "ns":
+			if elem.Value().Type != bson.TypeString {
+				return nil, Namespace{}, 0, fmt.Errorf("namespace should be a string but it is a BSON %s", elem.Value().Type)
+			}
+			namespace = ParseNamespace(elem.Value().StringValue())
+			err = namespace.Validate()
+			if err != nil {
+				return nil, Namespace{}, 0, err
+			}
+		case "id":
+			cursorID, ok = elem.Value().Int64OK()
+			if !ok {
+				return nil, Namespace{}, 0, fmt.Errorf("id should be an int64 but it is a BSON %s", elem.Value().Type)
+			}
+		}
+	}
+
+	vals, err := arr.Values()
+	if err != nil {
+		return nil, Namespace{}, 0, err
+	}
+
+	return vals, namespace, cursorID, nil
+}
+
+func getBatchSize(opts []bsonx.Elem) int32 {
+	for _, opt := range opts {
+		if opt.Key == "batchSize" {
+			return opt.Value.Int32()
+		}
+	}
+
+	return 0
+}
+
+func buildLegacyCursor(cb CursorBuilder, rdr bson.Raw, batchSize int32) (Cursor, error) {
+	firstBatchVals, ns, cursorID, err := getCursorValues(rdr)
+	if err != nil {
+		return nil, err
+	}
+
+	batchRaw := make([]bson.Raw, len(firstBatchVals))
+	for i, val := range firstBatchVals {
+		batchRaw[i] = val.Value
+	}
+
+	return cb.BuildLegacyCursor(ns, cursorID, batchRaw, 0, batchSize)
 }
 
 // ErrUnacknowledgedWrite is returned from functions that have an unacknowledged

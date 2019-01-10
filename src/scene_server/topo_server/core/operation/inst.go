@@ -875,8 +875,12 @@ func (c *commonInst) UpdateInst(params types.ContextParams, data mapstr.MapStr, 
 	}
 
 	// update insts
+	inputParams := metadata.UpdateOption{
+		Data:      data,
+		Condition: cond.ToMapStr(),
+	}
 	preAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, cond.ToMapStr())
-	rsp, err := c.clientSet.CoreService().Instance().ReadInstance(context.Background(), params.Header, obj.GetObjectID(), &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := c.clientSet.CoreService().Instance().UpdateInstance(context.Background(), params.Header, obj.GetObjectID(), &inputParams)
 	if nil != err {
 		blog.Errorf("[operation-inst] failed to request object controller, err: %s", err.Error())
 		return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
