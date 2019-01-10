@@ -209,7 +209,11 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 }
 
 func (c *classification) FindClassification(params types.ContextParams, cond condition.Condition) ([]model.Classification, error) {
-	rsp, err := c.clientSet.CoreService().Model().ReadModelClassification(context.Background(), params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	fCond := cond.ToMapStr()
+	//	if nil == params.MetaData {
+	//		fCond.Merge(metadata.BizLabelNotExist)
+	//	}
+	rsp, err := c.clientSet.CoreService().Model().ReadModelClassification(context.Background(), params.Header, &metadata.QueryCondition{Condition: fCond})
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s", err.Error())
 		return nil, err
