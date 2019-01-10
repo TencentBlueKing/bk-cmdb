@@ -28,8 +28,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     createGroup ({ commit, state, dispatch }, { params, config }) {
-        // return $http.post('create/objectattgroup', params, config)
-        return $http.post(`objectatt/group/new`, params, config)
+        return $http.post('create/objectattgroup', params, config)
     },
 
     /**
@@ -42,8 +41,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchGroup ({ commit, state, dispatch, rootGetters }, {objId, params, config}) {
-        // return $http.post(`find/objectattgroup/object/${objId}`, params, config)
-        return $http.post(`objectatt/group/property/owner/${rootGetters.supplierAccount}/object/${objId}`, {}, config)
+        return $http.post(`find/objectattgroup/object/${objId}`, params, config)
     },
 
     /**
@@ -55,8 +53,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     updateGroup ({ commit, state, dispatch }, { params, config }) {
-        // return $http.put('update/objectattgroup', params, config)
-        return $http.put(`objectatt/group/update`, params, config)
+        return $http.put('update/objectattgroup', params, config)
     },
 
     /**
@@ -68,8 +65,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     deleteGroup ({ commit, state, dispatch }, { id, config }) {
-        // return $http.delete(`delete/objectattgroup/${id}`, config)
-        return $http.delete(`objectatt/group/groupid/${id}`, config)
+        return $http.delete(`delete/objectattgroup/${id}`, config)
     },
 
     /**
