@@ -57,12 +57,10 @@
                             <span>{{$t('ModelManagement["导入"]')}}</span>
                             <input v-if="!isReadOnly" ref="fileInput" type="file" @change.prevent="handleFile">
                         </label>
-                        <form class="export-form" ref="submitForm" :action="exportUrl" method="POST" v-if="tab.active==='field'">
-                            <label class="label-btn" @click="exportField">
-                                <i class="icon-cc-derivation"></i>
-                                <span>{{$t('ModelManagement["导出"]')}}</span>
-                            </label>
-                        </form>
+                        <label class="label-btn" @click="exportField">
+                            <i class="icon-cc-derivation"></i>
+                            <span>{{$t('ModelManagement["导出"]')}}</span>
+                        </label>
                     </template>
                     <template v-if="!activeModel['ispre'] && authority.includes('update')">
                         <label class="label-btn"
@@ -192,7 +190,8 @@
                 'deleteObject'
             ]),
             ...mapActions('objectBatch', [
-                'importObjectAttribute'
+                'importObjectAttribute',
+                'exportObjectAttribute'
             ]),
             ...mapActions('objectMainLineModule', [
                 'deleteMainlineObject'
@@ -207,7 +206,7 @@
                 try {
                     const res = await this.importObjectAttribute({
                         params: this.$injectMetadata(formData),
-                        bkObjId: this.activeModel['bk_obj_id'],
+                        objId: this.activeModel['bk_obj_id'],
                         config: {
                             requestId: 'importObjectAttribute',
                             globalError: false,
@@ -287,8 +286,27 @@
                     objName: this.activeModel['bk_obj_name']
                 }
             },
-            exportField () {
-                this.$refs.submitForm.submit()
+            exportExcel (data) {
+                const url = window.URL.createObjectURL(new Blob([data], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}))
+                const link = document.createElement('a')
+                link.style.display = 'none'
+                link.href = url
+                link.setAttribute('download', `inst_${this.activeModel['bk_obj_id']}.xlsx`)
+                document.body.appendChild(link)
+                link.click()
+                document.body.removeChild(link)
+            },
+            async exportField () {
+                const res = await this.exportObjectAttribute({
+                    objId: this.activeModel['bk_obj_id'],
+                    params: this.$injectMetadata({}),
+                    config: {
+                        globalError: false,
+                        originalResponse: true,
+                        responseType: 'blob'
+                    }
+                })
+                this.exportExcel(res)
             },
             dialogConfirm (type) {
                 switch (type) {
