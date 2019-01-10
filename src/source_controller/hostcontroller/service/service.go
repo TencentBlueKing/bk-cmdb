@@ -80,7 +80,7 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.POST("/host/lock/search").To(s.QueryLockHost))
 
 	//Cloud host resource sync
-	ws.Route(ws.POST("/hosts/cloud/add").To(s.AddCloud))
+	ws.Route(ws.POST("/hosts/cloud/add").To(s.AddCloudTask))
 	ws.Route(ws.POST("/hosts/cloud/confirm").To(s.ResourceConfirm))
 	ws.Route(ws.POST("/hosts/cloud/nameCheck").To(s.TaskNameCheck))
 	ws.Route(ws.DELETE("/hosts/cloud/delete/{taskID}").To(s.DeleteCloudTask))

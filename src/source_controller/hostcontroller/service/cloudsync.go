@@ -13,7 +13,6 @@
 package service
 
 import (
-	"configcenter/src/common/mapstr"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -24,11 +23,12 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
 
-func (s *Service) AddCloud(req *restful.Request, resp *restful.Response) {
+func (s *Service) AddCloudTask(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ownerID := util.GetOwnerID(pheader)
@@ -187,8 +187,6 @@ func (s *Service) SearchCloudTask(req *restful.Request, resp *restful.Response) 
 		num = number
 	}
 
-	blog.Debug("search cloud task result: %v", result)
-
 	resp.WriteEntity(meta.CloudTaskSearch{
 		Count: num,
 		Info:  result,
@@ -254,24 +252,73 @@ func (s *Service) SearchConfirm(req *restful.Request, resp *restful.Response) {
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 
-	condition := make(map[string]interface{})
-	result := make([]map[string]interface{}, 0)
-	err := s.Instance.Table(common.BKTableNameCloudResourceConfirm).Find(condition).All(ctx, &result)
-	if err != nil {
-		blog.Error("get failed, err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
+	opt := make(map[string]interface{})
+	if err := json.NewDecoder(req.Request.Body).Decode(&opt); err != nil {
+		blog.Errorf("search confirm failed with decode body err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
-	num, errN := s.Instance.Table(common.BKTableNameCloudResourceConfirm).Find(condition).Count(ctx)
-	if errN != nil {
-		blog.Error("get task name [%s] failed, err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
-		return
+	result := make([]map[string]interface{}, 0)
+	var number uint64
+	if opt["page"] != nil {
+		page, err := mapstr.NewFromInterface(opt["page"])
+		if err != nil {
+			blog.Errorf("interface convert to mapstr fail, error: %v", err)
+		}
+		delete(opt, "page")
+
+		sort, errS := page.String("sort")
+		if errS != nil {
+			blog.Error("interface convert to string failed")
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCloudSyncHistorySearchFail)})
+			return
+		}
+		limit, errL := page.Int64("limit")
+		if errL != nil {
+			blog.Error("interface convert to string failed")
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCloudSyncHistorySearchFail)})
+			return
+		}
+		start, errStart := page.Int64("start")
+		if errStart != nil {
+			blog.Error("interface convert to string failed")
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCloudSyncHistorySearchFail)})
+			return
+		}
+
+		errR := s.Instance.Table(common.BKTableNameCloudResourceConfirm).Find(opt).Sort(sort).Start(uint64(start)).Limit(uint64(limit)).All(ctx, &result)
+		if errR != nil {
+			blog.Error("get failed, err: %v", errR)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
+			return
+		}
+
+		num, errN := s.Instance.Table(common.BKTableNameCloudResourceConfirm).Find(opt).Count(ctx)
+		if errN != nil {
+			blog.Error("get task name [%s] failed, err: %v", errN)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
+			return
+		}
+		number = num
+	} else {
+		if err := s.Instance.Table(common.BKTableNameCloudResourceConfirm).Find(opt).All(ctx, &result); err != nil {
+			blog.Error("get failed, err: %v", err)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
+			return
+		}
+
+		num, err := s.Instance.Table(common.BKTableNameCloudResourceConfirm).Find(opt).Count(ctx)
+		if err != nil {
+			blog.Error("get task name [%s] failed, err: %v", err)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
+			return
+		}
+		number = num
 	}
 
 	resp.WriteEntity(meta.FavoriteResult{
-		Count: num,
+		Count: number,
 		Info:  result,
 	})
 }
@@ -423,7 +470,7 @@ func (s *Service) SearchConfirmHistory(req *restful.Request, resp *restful.Respo
 
 	opt := make(map[string]interface{})
 	if err := json.NewDecoder(req.Request.Body).Decode(&opt); err != nil {
-		blog.Errorf("add cloud sync task failed with decode body err: %v", err)
+		blog.Errorf("search confirm history failed with decode body err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}

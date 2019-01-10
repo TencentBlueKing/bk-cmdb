@@ -14,7 +14,6 @@ package metadata
 
 import (
 	"configcenter/src/common/mapstr"
-	"time"
 )
 
 type DeleteHostBatchOpt struct {
@@ -140,6 +139,7 @@ type CloneHostPropertyParams struct {
 }
 
 type CloudTaskList struct {
+	User            string `json:"bk_user"`
 	TaskName        string `json:"bk_task_name"`
 	TaskID          int64  `json:"bk_task_id"`
 	AccountType     string `json:"bk_account_type"`
@@ -176,6 +176,7 @@ type CloudHistory struct {
 	StartTime   string `json:"bk_start_time"`
 	TaskID      int64  `json:"bk_task_id"`
 	HistoryID   int64  `json:"bk_history_id"`
+	FailReason  error  `json:"fail_reason"`
 }
 
 type DeleteCloudTask struct {
@@ -215,15 +216,19 @@ type TaskInfo struct {
 	ManagerChn  chan bool
 }
 
-type CloudSyncRedisStart struct {
-	TaskID    int64     `json:"bk_task_id"'`
-	Admin     string    `json:"bk_account_admin"`
-	StartTime time.Time `json:"start_time"`
-	OwnerID   string    `json:"owner_id"`
+type CloudSyncRedisPendingStart struct {
+	TaskID       int64    `json:"bk_task_id"`
+	TaskItemInfo TaskInfo `json:"task_item_info"`
+	OwnerID      string   `json:"bk_supplier_account"`
 }
 
-type CloudSyncRedisStop struct {
-	TaskID   int64     `json:"bk_task_id"`
-	StopTime time.Time `json:"stop_time"`
-	OwnerID  string    `json:"owner_id"`
+type CloudSyncRedisAlreadyStarted struct {
+	TaskID       int64    `json:"bk_task_id"`
+	TaskItemInfo TaskInfo `json:"task_item_info"`
+	OwnerID      string   `json:"bk_supplier_account"`
+}
+
+type CloudSyncRedisPendingStop struct {
+	TaskID  int64  `json:"bk_task_id"`
+	OwnerID string `json:"bk_supplier_account"`
 }
