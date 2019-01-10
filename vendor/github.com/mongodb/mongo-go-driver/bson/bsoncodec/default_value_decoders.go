@@ -83,7 +83,6 @@ func (dvd DefaultValueDecoders) RegisterDefaultDecoders(rb *RegistryBuilder) {
 		RegisterDefaultDecoder(reflect.Ptr, NewPointerCodec()).
 		RegisterTypeMapEntry(bsontype.Double, tFloat64).
 		RegisterTypeMapEntry(bsontype.String, tString).
-		RegisterTypeMapEntry(bsontype.EmbeddedDocument, tD).
 		RegisterTypeMapEntry(bsontype.Array, tA).
 		RegisterTypeMapEntry(bsontype.Binary, tBinary).
 		RegisterTypeMapEntry(bsontype.Undefined, tUndefined).
@@ -94,12 +93,14 @@ func (dvd DefaultValueDecoders) RegisterDefaultDecoders(rb *RegistryBuilder) {
 		RegisterTypeMapEntry(bsontype.DBPointer, tDBPointer).
 		RegisterTypeMapEntry(bsontype.JavaScript, tJavaScript).
 		RegisterTypeMapEntry(bsontype.Symbol, tSymbol).
+		RegisterTypeMapEntry(bsontype.CodeWithScope, tCodeWithScope).
 		RegisterTypeMapEntry(bsontype.Int32, tInt32).
 		RegisterTypeMapEntry(bsontype.Int64, tInt64).
 		RegisterTypeMapEntry(bsontype.Timestamp, tTimestamp).
 		RegisterTypeMapEntry(bsontype.Decimal128, tDecimal).
 		RegisterTypeMapEntry(bsontype.MinKey, tMinKey).
-		RegisterTypeMapEntry(bsontype.MaxKey, tMaxKey)
+		RegisterTypeMapEntry(bsontype.MaxKey, tMaxKey).
+		RegisterTypeMapEntry(bsontype.Type(0), tD)
 }
 
 // BooleanDecodeValue is the ValueDecoderFunc for bool types.
@@ -674,6 +675,11 @@ func (dvd DefaultValueDecoders) MapDecodeValue(dc DecodeContext, vr bsonrw.Value
 		return err
 	}
 
+	if eType == tEmpty {
+		dc.Ancestor = val.Type()
+	}
+
+	keyType := val.Type().Key()
 	for {
 		key, vr, err := dr.ReadElement()
 		if err == bsonrw.ErrEOD {
@@ -690,7 +696,7 @@ func (dvd DefaultValueDecoders) MapDecodeValue(dc DecodeContext, vr bsonrw.Value
 			return err
 		}
 
-		val.SetMapIndex(reflect.ValueOf(key), elem)
+		val.SetMapIndex(reflect.ValueOf(key).Convert(keyType), elem)
 	}
 	return nil
 }
@@ -757,6 +763,7 @@ func (dvd DefaultValueDecoders) SliceDecodeValue(dc DecodeContext, vr bsonrw.Val
 	var elemsFunc func(DecodeContext, bsonrw.ValueReader, reflect.Value) ([]reflect.Value, error)
 	switch val.Type().Elem() {
 	case tE:
+		dc.Ancestor = val.Type()
 		elemsFunc = dvd.decodeD
 	default:
 		elemsFunc = dvd.decodeDefault
@@ -851,11 +858,19 @@ func (dvd DefaultValueDecoders) EmptyInterfaceDecodeValue(dc DecodeContext, vr b
 
 	rtype, err := dc.LookupTypeMapEntry(vr.Type())
 	if err != nil {
-		if vr.Type() == bsontype.Null {
+		switch vr.Type() {
+		case bsontype.EmbeddedDocument:
+			if dc.Ancestor != nil {
+				rtype = dc.Ancestor
+				break
+			}
+			rtype = tD
+		case bsontype.Null:
 			val.Set(reflect.Zero(val.Type()))
 			return vr.ReadNull()
+		default:
+			return err
 		}
-		return err
 	}
 
 	decoder, err := dc.LookupDecoder(rtype)
