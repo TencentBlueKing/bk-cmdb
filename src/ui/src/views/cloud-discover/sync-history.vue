@@ -21,8 +21,11 @@
                     </span>
                 </template>
                 <template slot="details" slot-scope="{ item }">
-                    <span v-if="item.fail_reason">
-                        {{ item.fail_reason }}
+                    <span v-if="item.fail_reason === 'AuthFailure'">
+                        {{ $t('Cloud["ID和Key认证失败"]') }}
+                    </span>
+                    <span v-else-if="item.fail_reason === 'else'">
+                        {{ $t('Cloud["服务器错误"]') }}
                     </span>
                     <span v-else>
                         {{$t('Cloud[\'新增\']')}} ({{item.new_add}}) / {{$t('Cloud[\'变更\']')}} ({{item.attr_changed}})

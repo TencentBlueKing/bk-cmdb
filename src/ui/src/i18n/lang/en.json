@@ -592,6 +592,8 @@
         "同步历史": "Synchronous history",
         "任务名称": "Task name",
         "编辑": "Edit",
+        "ID和Key认证失败": "AuthFailure",
+        "服务器错误": "Server Error",
         "直接入库，不需要确认": "Direct storage, no confirmation required",
         "账号类型": "Account type",
         "腾讯云": "Tencent cloud",

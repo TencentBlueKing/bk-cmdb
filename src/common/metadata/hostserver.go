@@ -176,7 +176,7 @@ type CloudHistory struct {
 	StartTime   string `json:"bk_start_time"`
 	TaskID      int64  `json:"bk_task_id"`
 	HistoryID   int64  `json:"bk_history_id"`
-	FailReason  error  `json:"fail_reason"`
+	FailReason  string `json:"fail_reason"`
 }
 
 type DeleteCloudTask struct {
