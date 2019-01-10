@@ -1,11 +1,12 @@
 package x18_11_07_01
 
 import (
+	"context"
+	"gopkg.in/mgo.v2"
+
 	"configcenter/src/common"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
-	"context"
-	"gopkg.in/mgo.v2"
 )
 
 func addCloudTaskTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
@@ -22,8 +23,8 @@ func addCloudTaskTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) e
 	}
 
 	indexs := []dal.Index{
-		dal.Index{Name: "", Keys: map[string]interface{}{"bk_task_id": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]interface{}{"bk_task_name": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{"bk_task_id": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{"bk_task_name": 1}, Background: true},
 	}
 
 	for _, index := range indexs {
@@ -48,8 +49,8 @@ func addCloudResourceConfirmTable(ctx context.Context, db dal.RDB, conf *upgrade
 	}
 
 	indexs := []dal.Index{
-		dal.Index{Name: "", Keys: map[string]interface{}{"bk_resource_id": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]interface{}{"bk_obj_id": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{"bk_resource_id": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{"bk_obj_id": 1}, Background: true},
 	}
 
 	for _, index := range indexs {
@@ -75,8 +76,8 @@ func addCloudSyncHistoryTable(ctx context.Context, db dal.RDB, conf *upgrader.Co
 	}
 
 	indexs := []dal.Index{
-		dal.Index{Name: "", Keys: map[string]interface{}{"bk_task_id": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]interface{}{"bk_history_id": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{"bk_task_id": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{"bk_history_id": 1}, Background: true},
 	}
 
 	for _, index := range indexs {
@@ -102,8 +103,8 @@ func addCloudConfirmHistoryTable(ctx context.Context, db dal.RDB, conf *upgrader
 	}
 
 	indexs := []dal.Index{
-		dal.Index{Name: "", Keys: map[string]interface{}{"bk_resource_id": 1}, Background: true},
-		dal.Index{Name: "", Keys: map[string]interface{}{"confirm_history_id": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{"bk_resource_id": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]int32{"confirm_history_id": 1}, Background: true},
 	}
 
 	for _, index := range indexs {
