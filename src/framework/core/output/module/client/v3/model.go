@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/tidwall/gjson"
 
@@ -28,7 +29,7 @@ type ModelGetter interface {
 	Model() ModelInterface
 }
 type ModelInterface interface {
-	CreateObject(data types.MapStr) (int, error)
+	CreateObject(data types.MapStr) (int64, error)
 	DeleteObject(cond common.Condition) error
 	UpdateObject(data types.MapStr, cond common.Condition) error
 	SearchObjects(cond common.Condition) ([]types.MapStr, error)
@@ -46,7 +47,7 @@ func newModel(cli *Client) *Model {
 }
 
 // CreateObject create a new model object
-func (m *Model) CreateObject(data types.MapStr) (int, error) {
+func (m *Model) CreateObject(data types.MapStr) (int64, error) {
 
 	targetURL := fmt.Sprintf("%s/api/v3/object", m.cli.GetAddress())
 
@@ -63,9 +64,12 @@ func (m *Model) CreateObject(data types.MapStr) (int, error) {
 	}
 
 	// parse id
-	id := gs.Get("data.id").Int()
+	id, err := strconv.ParseInt(gs.Get("data.id").String(), 10, 64)
+	if err != nil {
+		return 0, errors.New(gs.Get("bk_error_msg").String())
+	}
 
-	return int(id), nil
+	return id, nil
 }
 
 // DeleteObject delete a object by condition
@@ -125,7 +129,6 @@ func (m *Model) SearchObjects(cond common.Condition) ([]types.MapStr, error) {
 	data := cond.ToMapStr()
 
 	targetURL := fmt.Sprintf("%s/api/v3/objects", m.cli.GetAddress())
-	//fmt.Println("dowenr:", m.cli.httpCli.GetHeader("HTTP_BLUEKING_SUPPLIER_ID"), " ", string(data.ToJSON()))
 
 	rst, err := m.cli.httpCli.POST(targetURL, nil, data.ToJSON())
 	if nil != err {
@@ -143,8 +146,6 @@ func (m *Model) SearchObjects(cond common.Condition) ([]types.MapStr, error) {
 	if 0 == len(dataStr) {
 		return nil, errors.New("data is empty")
 	}
-
-	//fmt.Println("data:", dataStr)
 
 	resultMap := make([]types.MapStr, 0)
 	err = json.Unmarshal([]byte(dataStr), &resultMap)

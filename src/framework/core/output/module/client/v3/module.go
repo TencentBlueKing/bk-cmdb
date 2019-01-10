@@ -138,7 +138,6 @@ func (cli *Module) SearchModules(cond common.Condition) ([]types.MapStr, error) 
 	}
 
 	targetURL := fmt.Sprintf("%s/api/v3/module/search/%s/%s/%s", cli.cli.GetAddress(), cli.cli.supplierAccount, appID, setID)
-	//fmt.Println(targetURL)
 	rst, err := cli.cli.httpCli.POST(targetURL, nil, condInner.ToJSON())
 	if nil != err {
 		return nil, err
@@ -148,7 +147,6 @@ func (cli *Module) SearchModules(cond common.Condition) ([]types.MapStr, error) 
 
 	// check result
 	if !gs.Get("result").Bool() {
-		//fmt.Println("the result:", string(rst))
 		return nil, errors.New(gs.Get("bk_error_msg").String())
 	}
 

@@ -89,8 +89,6 @@ func (cli *Client) SetAddress(address string) {
 // SetSupplierAccount set a new supplieraccount
 func (cli *Client) SetSupplierAccount(supplierAccount string) {
 	if 0 != len(supplierAccount) {
-		//fmt.Println("client owner:", supplierAccount)
-		//panic(supplierAccount)
 		cli.httpCli.SetHeader(common.BKHTTPOwnerID, supplierAccount)
 	} else {
 		cli.httpCli.SetHeader(common.BKHTTPOwnerID, cli.supplierAccount)
