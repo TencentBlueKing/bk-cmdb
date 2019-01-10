@@ -16,12 +16,10 @@ import (
 	"encoding/json"
 	"testing"
 
-	"configcenter/src/common/mapstr"
-
-	"configcenter/src/common/universalsql/mongo"
-
 	"configcenter/src/common/http/httpclient"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/universalsql/mongo"
 
 	"github.com/rs/xid"
 	"github.com/stretchr/testify/require"
