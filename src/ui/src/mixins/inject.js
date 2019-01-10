@@ -11,7 +11,7 @@ export default {
                 Object.assign(injectedParams, {
                     metadata: {
                         label: {
-                            bk_biz_id: this.$store.getters['objectBiz/bizId']
+                            bk_biz_id: String(this.$store.getters['objectBiz/bizId'])
                         }
                     }
                 })
