@@ -42,9 +42,10 @@ type jsonToken struct {
 }
 
 type jsonScanner struct {
-	r   io.Reader
-	buf []byte
-	pos int
+	r           io.Reader
+	buf         []byte
+	pos         int
+	lastReadErr error
 }
 
 // nextToken returns the next JSON token if one exists. A token is a character
@@ -126,11 +127,23 @@ func (js *jsonScanner) readNNextBytes(dst []byte, n, offset int) error {
 
 // readIntoBuf reads up to 512 bytes from the scanner's io.Reader into the buffer
 func (js *jsonScanner) readIntoBuf() error {
+	if js.lastReadErr != nil {
+		js.buf = js.buf[:0]
+		js.pos = 0
+		return js.lastReadErr
+	}
+
 	if cap(js.buf) == 0 {
 		js.buf = make([]byte, 0, 512)
 	}
 
 	n, err := js.r.Read(js.buf[:cap(js.buf)])
+	if err != nil {
+		js.lastReadErr = err
+		if n > 0 {
+			err = nil
+		}
+	}
 	js.buf = js.buf[:n]
 	js.pos = 0
 
@@ -404,25 +417,23 @@ func (js *jsonScanner) scanNumber(first byte) (*jsonToken, error) {
 			return nil, fmt.Errorf("invalid JSON number. Position: %d", start)
 		case nssDone:
 			js.pos = int(math.Max(0, float64(js.pos-1)))
-			if t == jttDouble {
-				v, err := strconv.ParseFloat(b.String(), 64)
-				if err != nil {
-					return nil, err
-				}
+			if t != jttDouble {
+				v, err := strconv.ParseInt(b.String(), 10, 64)
+				if err == nil {
+					if v < math.MinInt32 || v > math.MaxInt32 {
+						return &jsonToken{t: jttInt64, v: v, p: start}, nil
+					}
 
-				return &jsonToken{t: t, v: v, p: start}, nil
+					return &jsonToken{t: jttInt32, v: int32(v), p: start}, nil
+				}
 			}
 
-			v, err := strconv.ParseInt(b.String(), 10, 64)
+			v, err := strconv.ParseFloat(b.String(), 64)
 			if err != nil {
 				return nil, err
 			}
 
-			if v < math.MinInt32 || v > math.MaxInt32 {
-				return &jsonToken{t: t, v: v, p: start}, nil
-			}
-
-			return &jsonToken{t: jttInt32, v: int32(v), p: start}, nil
+			return &jsonToken{t: jttDouble, v: v, p: start}, nil
 		}
 	}
 }

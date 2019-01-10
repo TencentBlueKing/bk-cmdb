@@ -76,7 +76,11 @@ func (c *collection) CreateIndex(index mongodb.Index) error {
 		keys = keys.Append(key, bsonx.Int32(val))
 	}
 
-	indexOpts := mongo.NewIndexOptionsBuilder().Name(index.Name).Background(index.Background).Unique(index.Unique).Build()
+	indexOpts := &options.IndexOptions{
+		Name:       &index.Name,
+		Background: &index.Background,
+		Unique:     &index.Unique,
+	}
 
 	// in a session
 	if nil != c.innerSession {
