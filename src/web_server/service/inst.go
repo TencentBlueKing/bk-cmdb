@@ -20,14 +20,14 @@ import (
 	"os"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/rentiansheng/xlsx"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/logics"
+
+	"github.com/gin-gonic/gin"
+	"github.com/rentiansheng/xlsx"
 )
 
 // ImportInst import inst
@@ -74,7 +74,7 @@ func (s *Service) ImportInst(c *gin.Context) {
 		return
 	}
 
-	c.String(http.StatusOK, getReturnStr(0, "", nil))
+	c.String(http.StatusOK, getReturnStr(0, "", data))
 }
 
 // ExportInst export inst
@@ -123,9 +123,9 @@ func (s *Service) ExportInst(c *gin.Context) {
 	logics.ProductExcelCommentSheet(file, defLang)
 	err = file.Save(dirFileName)
 	if err != nil {
-		blog.Error("ExportInst save file error:%s", err.Error())
+		blog.Errorf("ExportInst save file error:%s", err.Error())
 		if err != nil {
-			blog.Error("ExportInst save file error:%s", err.Error())
+			blog.Errorf("ExportInst save file error:%s", err.Error())
 			reply := getReturnStr(common.CCErrWebCreateEXCELFail, defErr.Errorf(common.CCErrCommExcelTemplateFailed, err.Error()).Error(), nil)
 			c.Writer.Write([]byte(reply))
 			return

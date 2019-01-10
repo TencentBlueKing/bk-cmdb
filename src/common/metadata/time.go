@@ -17,10 +17,12 @@ import (
 	"fmt"
 	"strconv"
 	"time"
+
+	"gopkg.in/mgo.v2/bson"
 )
 
 type Time struct {
-	time.Time
+	time.Time `bson:",inline"`
 }
 
 // Scan implement sql driver's Scan interface
@@ -63,6 +65,28 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 	return err
 }
 
+// GetBSON implements bson.GetBSON interface
+func (t Time) GetBSON() (interface{}, error) {
+	return t.Time, nil
+}
+
+// SetBSON implements bson.SetBSON interface
+func (t *Time) SetBSON(raw bson.Raw) error {
+	if raw.Kind == 0x09 {
+		// 0x09 timestamp
+		return raw.Unmarshal(&t.Time)
+	}
+	tt := tmptime{}
+	err := raw.Unmarshal(&tt)
+	t.Time = tt.Time
+	return err
+}
+
+type tmptime struct {
+	time.Time
+}
+
+// Now retruns now
 func Now() Time {
-	return Time{time.Now()}
+	return Time{time.Now().UTC()}
 }

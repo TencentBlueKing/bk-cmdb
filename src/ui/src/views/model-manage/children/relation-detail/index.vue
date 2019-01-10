@@ -18,7 +18,7 @@
                 <input type="text" class="cmdb-form-input"
                 name="asstName"
                 :placeholder="$t('ModelManagement[\'请输入关联描述\']')"
-                :disabled="relationInfo.ispre"
+                :disabled="relationInfo.ispre || isReadOnly"
                 v-model.trim="relationInfo['bk_obj_asst_name']"
                 v-validate="'singlechar'">
                 <p class="form-error">{{errors.first('asstName')}}</p>
@@ -31,14 +31,15 @@
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{'is-error': errors.has('objId')}">
-                <form-selector
+                <cmdb-selector
                     :disabled="relationInfo.ispre || isEdit"
                     :has-children="true"
+                    :autoSelect="false"
                     :list="asstList"
                     v-validate="'required'"
                     name="objId"
                     v-model="relationInfo['bk_obj_id']"
-                ></form-selector>
+                ></cmdb-selector>
                 <p class="form-error">{{errors.first('objId')}}</p>
             </div>
             <i class="bk-icon icon-info-circle"></i>
@@ -49,14 +50,15 @@
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{'is-error': errors.has('asstObjId')}">
-                <form-selector
+                <cmdb-selector
                     :disabled="relationInfo.ispre || isEdit"
                     :has-children="true"
+                    :autoSelect="false"
                     :list="asstList"
                     v-validate="'required'"
                     name="asstObjId"
                     v-model="relationInfo['bk_asst_obj_id']"
-                ></form-selector>
+                ></cmdb-selector>
                 <p class="form-error">{{errors.first('asstObjId')}}</p>
             </div>
             <i class="bk-icon icon-info-circle"></i>
@@ -67,13 +69,13 @@
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{'is-error': errors.has('asstId')}">
-                <form-selector
-                    :disabled="relationInfo.ispre"
+                <cmdb-selector
+                    :disabled="relationInfo.ispre || isReadOnly"
                     :list="relationList"
                     v-validate="'required'"
                     name="asstId"
                     v-model="relationInfo['bk_asst_id']"
-                ></form-selector>
+                ></cmdb-selector>
                 <p class="form-error">{{errors.first('asstId')}}</p>
             </div>
             <i class="bk-icon icon-info-circle"></i>
@@ -84,13 +86,13 @@
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{'is-error': errors.has('mapping')}">
-                <form-selector
+                <cmdb-selector
                     :disabled="relationInfo.ispre || isEdit"
                     :list="mappingList"
                     v-validate="'required'"
                     name="mapping"
                     v-model="relationInfo.mapping"
-                ></form-selector>
+                ></cmdb-selector>
                 <p class="form-error">{{errors.first('mapping')}}</p>
             </div>
             <i class="bk-icon icon-info-circle"></i>
@@ -108,11 +110,7 @@
 
 <script>
     import { mapGetters, mapActions } from 'vuex'
-    import formSelector from './form-selector'
     export default {
-        components: {
-            formSelector
-        },
         props: {
             relation: {
                 type: Object
@@ -150,7 +148,8 @@
                     bk_asst_obj_id: '',
                     bk_asst_id: '',
                     mapping: ''
-                }
+                },
+                specialModel: ['process', 'plat']
             }
         },
         computed: {
@@ -191,10 +190,12 @@
                     if (classify['bk_objects'].length) {
                         let objects = []
                         classify['bk_objects'].forEach(({bk_obj_id: objId, bk_obj_name: objName}) => {
-                            objects.push({
-                                id: objId,
-                                name: objName
-                            })
+                            if (!this.specialModel.includes(objId)) {
+                                objects.push({
+                                    id: objId,
+                                    name: objName
+                                })
+                            }
                         })
                         if (objects.length) {
                             asstList.push({
@@ -236,6 +237,8 @@
                     for (let key in this.relationInfo) {
                         this.relationInfo[key] = this.$tools.clone(this.relation[key])
                     }
+                } else {
+                    this.relationInfo['bk_obj_id'] = this.activeModel['bk_obj_id']
                 }
             },
             async saveRelation () {

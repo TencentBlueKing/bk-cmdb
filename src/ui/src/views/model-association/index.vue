@@ -1,7 +1,9 @@
 <template>
     <div class="relation-wrapper">
         <p class="operation-box">
-            <bk-button type="primary" @click="createRelation">
+            <bk-button type="primary"
+                :disabled="!authority.includes('update')"
+                @click="createRelation">
                 {{$t('ModelManagement["新增关联类型"]')}}
             </bk-button>
             <label class="search-input">
@@ -21,12 +23,22 @@
                 {{item['bk_asst_name'] || '--'}}
             </template>
             <template slot="operation" slot-scope="{ item }">
-                <span class="text-primary mr10" @click.stop="editRelation(item)">
-                    {{$t('Common["编辑"]')}}
-                </span>
-                <span class="text-primary" v-if="!item.ispre && !isReadOnly" @click.stop="deleteRelation(item)">
-                    {{$t('Common["删除"]')}}
-                </span>
+                <template v-if="item.ispre">
+                    <span class="text-primary disabled mr10">
+                        {{$t('Common["编辑"]')}}
+                    </span>
+                    <span class="text-primary disabled">
+                        {{$t('Common["删除"]')}}
+                    </span>
+                </template>
+                <template v-else>
+                    <span class="text-primary mr10" @click.stop="editRelation(item)">
+                        {{$t('Common["编辑"]')}}
+                    </span>
+                    <span class="text-primary" @click.stop="deleteRelation(item)">
+                        {{$t('Common["删除"]')}}
+                    </span>
+                </template>
             </template>
         </cmdb-table>
         <cmdb-slider
@@ -47,7 +59,7 @@
 </template>
 
 <script>
-    import theRelation from './relation-type'
+    import theRelation from './_detail'
     import { mapGetters, mapActions } from 'vuex'
     export default {
         components: {
@@ -77,7 +89,8 @@
                         name: this.$t('ModelManagement["目标->源描述"]')
                     }, {
                         id: 'count',
-                        name: this.$t('ModelManagement["使用数"]')
+                        name: this.$t('ModelManagement["使用数"]'),
+                        sortable: false
                     }, {
                         id: 'operation',
                         name: this.$t('Common["操作"]'),
@@ -89,13 +102,10 @@
                         current: 1,
                         size: 10
                     },
-                    defaultSort: '-bk_asst_id',
-                    sort: '-bk_asst_id'
+                    defaultSort: '-ispre',
+                    sort: '-ispre'
                 }
             }
-        },
-        created () {
-            this.searchRelation()
         },
         computed: {
             ...mapGetters('objectModel', [
@@ -125,7 +135,17 @@
                     })
                 }
                 return params
+            },
+            authority () {
+                return this.$store.getters.admin ? ['search', 'update', 'delete'] : []
             }
+        },
+        created () {
+            if (!this.authority.includes('update')) {
+                this.table.header.pop()
+            }
+            this.$store.commit('setHeaderTitle', this.$t('Nav["关联类型"]'))
+            this.searchRelation()
         },
         methods: {
             ...mapActions('objectAssociation', [
@@ -200,7 +220,7 @@
                 this.handlePageChange(1)
             },
             handleSortChange (sort) {
-                this.sort = sort
+                this.table.sort = sort
                 this.searchRelation()
             }
         }

@@ -16,12 +16,12 @@
                         <span class="group-name">{{group.info['bk_group_name']}}</span>
                         <span class="group-count">({{group.properties.length}})</span>
                         <i class="title-icon icon icon-cc-edit"
-                            v-if="group.info['bk_group_id'] !== 'none'"
+                            v-if="authority.includes('update') && group.info['bk_group_id'] !== 'none'"
                             @click="handleEditGroupName(group)">
                         </i>
                     </template>
                 </div>
-                <div class="header-options fr">
+                <div class="header-options fr" v-if="authority.includes('update')">
                     <i class="options-icon bk-icon icon-arrows-up"
                         v-tooltip="$t('ModelManagement[\'上移\']')"
                         :class="{disabled: index === 0 || ['none'].includes(group.info['bk_group_id'])}"
@@ -49,7 +49,8 @@
                 :options="{
                     group: 'property',
                     animation: 150,
-                    filter: '.filter-empty'
+                    filter: '.filter-empty',
+                    disabled: !authority.includes('update')
                 }"
                 :class="{empty: !group.properties.length}"
                 @change="handleDragChange"
@@ -60,23 +61,28 @@
                     :title="property['bk_property_name']">
                     {{property['bk_property_name']}}
                 </li>
-                <li class="property-empty" v-if="!group.properties.length" @click="handleAddProperty(group)">立即添加</li>
-            </vue-draggable>
-            <div class="add-group" v-if="index === (groupedProperties.length - 2)">
-                <a class="add-group-trigger" href="javascript:void(0)"
-                    v-if="!showAddGroup"
-                    @click="handleAddGroup">
-                    {{$t('ModelManagement["新建分组"]')}}
-                    <i class="icon icon-cc-edit"></i>
-                </a>
-                <template v-else>
-                    <input type="text" class="add-group-input cmdb-form-input"
-                        ref="addGroupInput"
-                        v-model.trim="newGroupName">
-                    <a class="add-group-button" href="javascript:void(0)" @click="handleCreateGroup">保存</a>
-                    <a class="add-group-button" href="javascript:void(0)" @click="handleCancelCreateGroup">取消</a>
+                <template v-if="!group.properties.length">
+                    <li class="property-empty" v-if="authority.includes('update')" @click="handleAddProperty(group)">{{$t('ModelManagement["立即添加"]')}}</li>
+                    <li class="property-empty disabled" v-else>{{$t('ModelManagement["暂无字段"]')}}</li>
                 </template>
-            </div>
+            </vue-draggable>
+            <template v-if="authority.includes('update')">
+                <div class="add-group" v-if="index === (groupedProperties.length - 2)">
+                    <a class="add-group-trigger" href="javascript:void(0)"
+                        v-if="!showAddGroup"
+                        @click="handleAddGroup">
+                        {{$t('ModelManagement["新建分组"]')}}
+                        <i class="icon icon-cc-edit"></i>
+                    </a>
+                    <template v-else>
+                        <input type="text" class="add-group-input cmdb-form-input"
+                            ref="addGroupInput"
+                            v-model.trim="newGroupName">
+                        <a class="add-group-button" href="javascript:void(0)" @click="handleCreateGroup">{{$t('Common["保存"]')}}</a>
+                        <a class="add-group-button" href="javascript:void(0)" @click="handleCancelCreateGroup">{{$t('Common["取消"]')}}</a>
+                    </template>
+                </div>
+            </template>
         </div>
         <bk-dialog
             :is-show.sync="dialog.isShow"
@@ -157,6 +163,13 @@
                     count[groupId] = properties.length
                 })
                 return count
+            },
+            authority () {
+                const cantEdit = ['process', 'plat']
+                if (cantEdit.includes(this.objId)) {
+                    return []
+                }
+                return this.$store.getters.admin ? ['search', 'update', 'delete'] : []
             }
         },
         async created () {
@@ -624,6 +637,10 @@
             font-size: 14px;
             color: $modelHighlightColor;
             cursor: pointer;
+            &.disabled {
+                cursor: default;
+                color: #aaa;
+            }
         }
     }
     .add-group {

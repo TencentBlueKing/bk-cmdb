@@ -23,10 +23,7 @@
                             v-if="node['bk_obj_id'] === 'module'"
                             :checked="selectedModuleStates.includes(state)"
                             :true-value="true"
-                            :false-value="false"
-                            @click.stop
-                            @change="handleNodeCheck(...arguments, node, state)"
-                            >
+                            :false-value="false">
                         </cmdb-form-bool>
                         <template v-if="[1, 2].includes(node.default)">
                             <i class='topo-node-icon topo-node-icon-internal icon-cc-host-free-pool' v-if="node.default === 1"></i>
@@ -254,20 +251,6 @@
                 }
                 return asyncConfirm
             },
-            async handleNodeCheck (checked, vNode, node, state) {
-                if (!checked) {
-                    this.selectedModuleStates = this.selectedModuleStates.filter(moduleState => moduleState !== state)
-                } else {
-                    const confirm = await this.beforeNodeSelect(node, state)
-                    if (confirm) {
-                        if (!this.selectedModuleStates.includes(state)) {
-                            this.selectedModuleStates.push(state)
-                        }
-                    } else {
-                        vNode.localChecked = false
-                    }
-                }
-            },
             handleNodeClick (node, state) {
                 const isModule = node['bk_obj_id'] === 'module'
                 const isExist = this.selectedModuleStates.some(selectedState => selectedState === state)
@@ -434,6 +417,7 @@
             transform: scale(0.888);
             background-color: #fff;
             z-index: 2;
+            pointer-events: none;
         }
         .topo-node-icon{
             display: inline-block;

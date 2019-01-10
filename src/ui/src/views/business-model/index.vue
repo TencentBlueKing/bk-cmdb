@@ -17,7 +17,7 @@
                 </router-link>
                 <div class="node-name" :title="model['bk_obj_name']">{{model['bk_obj_name']}}</div>
                 <a href="javascript:void(0)" class="node-add"
-                    v-if="!['set', 'module', 'host'].includes(model['bk_obj_id'])"
+                    v-if="canAddLevel(model)"
                     @click="handleAddLevel(model)">
                 </a>
             </div>
@@ -71,7 +71,7 @@
 
 <script>
     import { mapGetters, mapActions } from 'vuex'
-    import theChooseIcon from './_choose-icon.vue'
+    import theChooseIcon from '@/components/model-manage/_choose-icon'
 
     const NODE_MARGIN = 62
 
@@ -95,9 +95,13 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'userName'])
+            ...mapGetters(['supplierAccount', 'userName', 'admin']),
+            authority () {
+                return this.admin ? ['search', 'update', 'delete'] : []
+            }
         },
         created () {
+            this.$store.commit('setHeaderTitle', this.$t('Nav["业务模型"]'))
             this.getMainLineModel()
         },
         methods: {
@@ -125,6 +129,9 @@
             getModelIcon (objId) {
                 const model = this.$allModels.find(model => model['bk_obj_id'] === objId)
                 return (model || {})['bk_obj_icon']
+            },
+            canAddLevel (model) {
+                return this.authority.includes('update') && !['set', 'module', 'host'].includes(model['bk_obj_id'])
             },
             handleAddLevel (model) {
                 this.addLevel.parent = model

@@ -1,77 +1,99 @@
 <template>
     <div class="model-detail-wrapper">
-        <div class="model-info" v-if="activeModel">
-            <div class="choose-icon-wrapper">
-                <div class="icon-box" @click="isIconListShow = true">
-                    <i class="icon" :class="activeModel ? activeModel['bk_obj_icon'] : 'icon-cc-default'"></i>
-                    <p class="hover-text">{{$t('ModelManagement["点击切换"]')}}</p>
+        <div class="model-info" v-bkloading="{isLoading: $loading('searchObjects')}">
+            <template v-if="activeModel !== null">
+                <div class="choose-icon-wrapper">
+                    <template v-if="authority.includes('update')">
+                        <div class="icon-box" @click="isIconListShow = true">
+                            <i class="icon" :class="activeModel ? activeModel['bk_obj_icon'] : 'icon-cc-default'"></i>
+                            <p class="hover-text">{{$t('ModelManagement["点击切换"]')}}</p>
+                        </div>
+                        <div class="choose-icon-box" v-if="isIconListShow" v-click-outside="hideChooseBox">
+                            <the-choose-icon
+                                :type="'update'"
+                                v-model="modelInfo.objIcon"
+                                @chooseIcon="chooseIcon"
+                            ></the-choose-icon>
+                        </div>
+                    </template>
+                    <template v-else>
+                        <div class="icon-box" style="cursor: default;">
+                            <i class="icon" :class="activeModel ? activeModel['bk_obj_icon'] : 'icon-cc-default'"></i>
+                        </div>
+                    </template>
                 </div>
-                <div class="choose-icon-box" v-if="isIconListShow" v-click-outside="hideChooseBox">
-                    <the-choose-icon
-                        :type="'update'"
-                        v-model="modelInfo.objIcon"
-                        @chooseIcon="chooseIcon"
-                    ></the-choose-icon>
+                <div class="model-text">
+                    <span>{{$t('ModelManagement["唯一标识"]')}}：</span>
+                    <span class="text-content id">{{activeModel ? activeModel['bk_obj_id'] : ''}}</span>
                 </div>
-            </div>
-            <div class="model-text">
-                <span>{{$t('ModelManagement["唯一标识"]')}}：</span>
-                <span class="text-content id">{{activeModel ? activeModel['bk_obj_id'] : ''}}</span>
-            </div>
-            <div class="model-text">
-                <span>{{$t('Hosts["名称"]')}}：</span>
-                <template v-if="!isEditName">
-                    <span class="text-content">{{activeModel ? activeModel['bk_obj_name'] : ''}}
-                    </span>
-                    <i class="icon icon-cc-edit text-primary" v-if="!(isReadOnly || (activeModel && activeModel['ispre']))" @click="editModelName"></i>
-                </template>
-                <template v-else>
-                    <div class="cmdb-form-item" :class="{'is-error': errors.has('modelName')}">
-                        <input type="text" class="cmdb-form-input"
-                        name="modelName"
-                        v-validate="'required|singlechar'"
-                        v-model.trim="modelInfo.objName">
-                    </div>
-                    <span class="text-primary" @click="saveModel">{{$t("Common['保存']")}}</span>
-                    <span class="text-primary" @click="isEditName = false">{{$t("Common['取消']")}}</span>
-                </template>
-            </div>
-            <div class="btn-group">
-                <form class="export-form" ref="submitForm" :action="exportUrl" method="POST" v-if="tab.active==='field'">
-                    <label class="label-btn" @click="exportField">
-                        <i class="icon-cc-derivation"></i>
-                        <span>{{$t('ModelManagement["导出"]')}}</span>
-                    </label>
-                </form>
-                <template v-if="!activeModel['ispre']">
-                    <label class="label-btn"
-                    v-if="!isMainLine"
-                    v-tooltip="$t('ModelManagement[\'保留模型和相应实例，隐藏关联关系\']')">
-                        <i class="bk-icon icon-minus-circle-shape"></i>
-                        <span v-if="activeModel['bk_ispaused']" @click="dialogConfirm('restart')">
-                            {{$t('ModelManagement["启用"]')}}
+                <div class="model-text">
+                    <span>{{$t('Hosts["名称"]')}}：</span>
+                    <template v-if="!isEditName">
+                        <span class="text-content">{{activeModel ? activeModel['bk_obj_name'] : ''}}
                         </span>
-                        <span v-else @click="dialogConfirm('stop')">
-                            {{$t('ModelManagement["停用"]')}}
-                        </span>
-                    </label>
-                    <label class="label-btn"
-                        v-tooltip="$t('ModelManagement[\'删除模型和其下所有实例，此动作不可逆，请谨慎操作\']')"
-                        @click="dialogConfirm('delete')">
-                        <i class="icon-cc-del"></i>
-                        <span>{{$t("Common['删除']")}}</span>
-                    </label>
-                </template>
-            </div>
-        </div>
-        <div class="model-info" v-bkloading="{isLoading: $loading('searchObjects')}" v-else>
+                        <i class="icon icon-cc-edit text-primary"
+                            v-if="!(isReadOnly || (activeModel && activeModel['ispre'])) && authority.includes('update')"
+                            @click="editModelName">
+                        </i>
+                    </template>
+                    <template v-else>
+                        <div class="cmdb-form-item" :class="{'is-error': errors.has('modelName')}">
+                            <input type="text" class="cmdb-form-input"
+                            name="modelName"
+                            v-validate="'required|singlechar'"
+                            v-model.trim="modelInfo.objName">
+                        </div>
+                        <span class="text-primary" @click="saveModel">{{$t("Common['保存']")}}</span>
+                        <span class="text-primary" @click="isEditName = false">{{$t("Common['取消']")}}</span>
+                    </template>
+                </div>
+                <div class="btn-group">
+                    <template v-if="canBeImport">
+                        <label class="label-btn"
+                            v-if="tab.active==='field' && authority.includes('update')"
+                            :class="{'disabled': isReadOnly}">
+                            <i class="icon-cc-import"></i>
+                            <span>{{$t('ModelManagement["导入"]')}}</span>
+                            <input v-if="!isReadOnly" ref="fileInput" type="file" @change.prevent="handleFile">
+                        </label>
+                        <form class="export-form" ref="submitForm" :action="exportUrl" method="POST" v-if="tab.active==='field'">
+                            <label class="label-btn" @click="exportField">
+                                <i class="icon-cc-derivation"></i>
+                                <span>{{$t('ModelManagement["导出"]')}}</span>
+                            </label>
+                        </form>
+                    </template>
+                    <template v-if="!activeModel['ispre'] && authority.includes('update')">
+                        <label class="label-btn"
+                        v-if="!isMainLine"
+                        v-tooltip="$t('ModelManagement[\'保留模型和相应实例，隐藏关联关系\']')">
+                            <i class="bk-icon icon-minus-circle-shape"></i>
+                            <span v-if="activeModel['bk_ispaused']" @click="dialogConfirm('restart')">
+                                {{$t('ModelManagement["启用"]')}}
+                            </span>
+                            <span v-else @click="dialogConfirm('stop')">
+                                {{$t('ModelManagement["停用"]')}}
+                            </span>
+                        </label>
+                        <label class="label-btn"
+                            v-tooltip="$t('ModelManagement[\'删除模型和其下所有实例，此动作不可逆，请谨慎操作\']')"
+                            @click="dialogConfirm('delete')">
+                            <i class="icon-cc-del"></i>
+                            <span>{{$t("Common['删除']")}}</span>
+                        </label>
+                    </template>
+                </div>
+            </template>
         </div>
         <bk-tab class="model-details-tab" :active-name.sync="tab.active">
             <bk-tabpanel name="field" :title="$t('ModelManagement[\'模型字段\']')">
-                <the-field></the-field>
+                <the-field ref="field" v-if="tab.active === 'field'"></the-field>
             </bk-tabpanel>
-            <bk-tabpanel name="relation" :title="$t('ModelManagement[\'模型关联\']')">
+            <bk-tabpanel name="relation" :title="$t('ModelManagement[\'模型关联\']')" :show="activeModel && !specialModel.includes(activeModel['bk_obj_id'])">
                 <the-relation v-if="tab.active === 'relation'"></the-relation>
+            </bk-tabpanel>
+            <bk-tabpanel name="verification" :title="$t('ModelManagement[\'唯一校验\']')">
+                <the-verification v-if="tab.active === 'verification'"></the-verification>
             </bk-tabpanel>
             <bk-tabpanel name="propertyGroup" :title="$t('ModelManagement[\'字段分组\']')">
                 <the-property-group v-if="tab.active === 'propertyGroup'"></the-property-group>
@@ -84,20 +106,16 @@
     import thePropertyGroup from './_property-group.vue'
     import theField from './field'
     import theRelation from './relation'
-    import theChooseIcon from '../_choose-icon'
+    import theChooseIcon from '@/components/model-manage/_choose-icon'
+    import theVerification from './verification'
     import { mapActions, mapGetters, mapMutations } from 'vuex'
     export default {
         components: {
             thePropertyGroup,
             theField,
             theRelation,
+            theVerification,
             theChooseIcon
-        },
-        props: {
-            isReadOnly: {
-                type: Boolean,
-                default: false
-            }
         },
         data () {
             return {
@@ -109,17 +127,25 @@
                     objIcon: ''
                 },
                 isIconListShow: false,
-                isEditName: false
+                isEditName: false,
+                specialModel: ['process', 'plat']
             }
         },
         computed: {
             ...mapGetters([
                 'supplierAccount',
-                'userName'
+                'userName',
+                'admin'
             ]),
             ...mapGetters('objectModel', [
                 'activeModel'
             ]),
+            isReadOnly () {
+                if (this.activeModel) {
+                    return this.activeModel['bk_ispaused']
+                }
+                return false
+            },
             isMainLine () {
                 return this.activeModel['bk_classification_id'] === 'bk_biz_topo'
             },
@@ -141,6 +167,13 @@
             },
             exportUrl () {
                 return `${window.API_HOST}object/owner/${this.supplierAccount}/object/${this.activeModel['bk_obj_id']}/export`
+            },
+            authority () {
+                return this.admin ? ['search', 'update', 'delete'] : []
+            },
+            canBeImport () {
+                const cantImport = ['host', 'biz', 'process', 'plat']
+                return this.authority.includes('update') && !this.isMainLine && !cantImport.includes(this.$route.params.modelId)
             }
         },
         watch: {
@@ -157,12 +190,51 @@
                 'updateObject',
                 'deleteObject'
             ]),
+            ...mapActions('objectBatch', [
+                'importObjectAttribute'
+            ]),
             ...mapActions('objectMainLineModule', [
                 'deleteMainlineObject'
             ]),
             ...mapMutations('objectModel', [
                 'setActiveModel'
             ]),
+            async handleFile (e) {
+                let files = e.target.files
+                let formData = new FormData()
+                formData.append('file', files[0])
+                try {
+                    const res = await this.importObjectAttribute({
+                        params: formData,
+                        bkObjId: this.activeModel['bk_obj_id'],
+                        config: {
+                            requestId: 'importObjectAttribute',
+                            globalError: false,
+                            originalResponse: true
+                        }
+                    }).then(res => {
+                        this.$http.cancel(`post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`)
+                        return res
+                    })
+                    if (res.result) {
+                        let data = res.data[this.activeModel['bk_obj_id']]
+                        if (data.hasOwnProperty('insert_failed')) {
+                            this.$error(data['insert_failed'][0])
+                        } else if (data.hasOwnProperty('update_failed')) {
+                            this.$error(data['update_failed'][0])
+                        } else {
+                            this.$success(this.$t('ModelManagement["导入成功"]'))
+                            this.$refs.field.initFieldList()
+                        }
+                    } else {
+                        this.$error(res['bk_error_msg'])
+                    }
+                } catch (e) {
+                    this.$error(e.data['bk_error_msg'])
+                } finally {
+                    this.$refs.fileInput.value = ''
+                }
+            },
             checkModel () {
                 return this.$allModels.find(model => model['bk_obj_id'] === this.$route.params.modelId)
             },
@@ -258,7 +330,7 @@
                 }).then(() => {
                     this.$http.cancel('post_searchClassificationsObjects')
                 })
-                this.$router.push('/model')
+                this.initObject()
             },
             async deleteModel () {
                 if (this.isMainLine) {
@@ -405,6 +477,21 @@
             float: right;
             height: 100px;
             line-height: 100px;
+            .label-btn {
+                position: relative;
+                &.disabled {
+                    cursor: not-allowed;
+                }
+                input[type="file"] {
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    opacity: 0;
+                    width: 100%;
+                    height: 100%;
+                    cursor: pointer;
+                }
+            }
             .export-form {
                 display: inline-block;
             }

@@ -111,7 +111,7 @@ func (s *Service) Do(req *restful.Request, resp *restful.Response) {
 		}
 		return
 	}
-	blog.V(3).Infof("success [%s] do request[url: %s]  ", response.Status, url)
+	blog.V(5).Infof("success [%s] do request[url: %s]  ", response.Status, url)
 
 	defer response.Body.Close()
 

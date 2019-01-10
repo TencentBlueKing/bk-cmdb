@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 
+	"configcenter/src/common/mapstr"
 	"strings"
 	"time"
 
@@ -77,6 +78,12 @@ var procName2ID map[string]uint64
 
 //addBKApp add bk app
 func addBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+
+	if count, err := db.Table("cc_ApplicationBase").Find(mapstr.MapStr{common.BKAppNameField: common.BKAppName}).Count(ctx); err != nil {
+		return err
+	} else if count >= 1 {
+		return nil
+	}
 
 	// add bk app
 	appModelData := map[string]interface{}{}

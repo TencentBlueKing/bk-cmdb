@@ -37,6 +37,7 @@
                 editableMap: [
                     'singlechar',
                     'int',
+                    'float',
                     'enum',
                     'date',
                     'time',
@@ -48,6 +49,7 @@
                 isrequiredMap: [
                     'singlechar',
                     'int',
+                    'float',
                     'date',
                     'time',
                     'longchar',

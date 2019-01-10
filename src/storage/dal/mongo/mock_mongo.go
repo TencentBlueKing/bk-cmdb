@@ -17,11 +17,11 @@ import (
 	"encoding/json"
 	"strings"
 
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
-
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/types"
+
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 )
 
 // Mock implement client.DALRDB interface
@@ -439,5 +439,57 @@ func (c *MockCollection) DropColumn(ctx context.Context, field string) error {
 	c.cache[key] = c.retval
 	c.retval = nil
 
+	return nil
+}
+
+func (c *MockCollection) AggregateAll(ctx context.Context, pipeline interface{}, result interface{}) error {
+	out, err := json.Marshal(pipeline)
+	if err != nil {
+		return err
+	}
+	key := "AGGREGATE:" + c.collName + ":" + string(out)
+
+	if retval, ok := c.Mock.cache[string(key)]; ok {
+		raw := bson.Raw{Kind: 4, Data: retval.RawResult}
+		err = raw.Unmarshal(result)
+		if err != nil {
+			return err
+		}
+		return retval.Err
+	}
+
+	bsonout, err := bson.Marshal(result)
+	if err != nil {
+		return err
+	}
+	c.Mock.retval.RawResult = bsonout
+	c.Mock.cache[string(key)] = c.Mock.retval
+	c.Mock.retval = nil
+	return nil
+}
+
+func (c *MockCollection) AggregateOne(ctx context.Context, pipeline interface{}, result interface{}) error {
+	out, err := json.Marshal(pipeline)
+	if err != nil {
+		return err
+	}
+	key := "AGGREGATE:" + c.collName + ":" + string(out)
+
+	if retval, ok := c.Mock.cache[string(key)]; ok {
+		raw := bson.Raw{Kind: 4, Data: retval.RawResult}
+		err = raw.Unmarshal(result)
+		if err != nil {
+			return err
+		}
+		return retval.Err
+	}
+
+	bsonout, err := bson.Marshal(result)
+	if err != nil {
+		return err
+	}
+	c.Mock.retval.RawResult = bsonout
+	c.Mock.cache[string(key)] = c.Mock.retval
+	c.Mock.retval = nil
 	return nil
 }

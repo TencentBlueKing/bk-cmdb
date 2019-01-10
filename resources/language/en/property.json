@@ -11,6 +11,7 @@
     "biz_property_operator": "operator",
     "biz_property_time_zone": "time_zone",
     "biz_property_language": "language",
+    "biz_property_bk_supplier_id":"supplier id",
 
     "set_property_bk_biz_id": "business id",
     "set_property_bk_set_name": "set name",
@@ -84,7 +85,8 @@
 
     "bk_switch_property_bk_asset_id":"asset id",
     "bk_switch_property_bk_sn":"SN",
-    "bk_switch_property_bk_name":"name",
+    "bk_switch_property_bk_inst_name":"middleware",
+    "bk_switch_property_bk_inst_key": "name",
     "bk_switch_property_bk_func":"purpose",
     "bk_switch_property_bk_vendor":"vendor",
     "bk_switch_property_bk_model":"model",
@@ -97,7 +99,8 @@
     
     "bk_router_property_bk_asset_id":"asset id",
     "bk_router_property_bk_sn":"SN",
-    "bk_router_property_bk_name":"name",
+    "bk_router_property_bk_inst_name":"middleware",
+    "bk_router_property_bk_inst_key": "name",
     "bk_router_property_bk_func":"purpose",
     "bk_router_property_bk_vendor":"vendor",
     "bk_router_property_bk_model":"model",
@@ -110,7 +113,8 @@
     
     "bk_load_balance_property_bk_asset_id":"asset id",
     "bk_load_balance_property_bk_sn":"SN",
-    "bk_load_balance_property_bk_name":"name",
+    "bk_load_balance_property_bk_inst_name":"middleware",
+    "bk_load_balance_property_bk_inst_key": "name",
     "bk_load_balance_property_bk_func":"purpose",
     "bk_load_balance_property_bk_vendor":"vendor",
     "bk_load_balance_property_bk_model":"model",
@@ -122,7 +126,7 @@
     
     "bk_firewall_property_bk_asset_id":"asset id",
     "bk_firewall_property_bk_sn":"SN",
-    "bk_firewall_property_bk_name":"name",
+  "bk_firewall_property_bk_inst_name": "name",
     "bk_firewall_property_bk_func":"purpose",
     "bk_firewall_property_bk_vendor":"vendor",
     "bk_firewall_property_bk_model":"model",
@@ -131,8 +135,9 @@
     "bk_firewall_property_bk_os_detail":"os detail",
     "bk_firewall_property_bk_detail":"detail",
     "bk_firewall_property_bk_biz_status":"business status",
-
-    "bk_weblogic_property_bk_name":"name",
+  
+    "bk_weblogic_property_bk_inst_name": "middleware",
+    "bk_weblogic_property_bk_inst_key": "name",
     "bk_weblogic_property_bk_version":"version",
     "bk_weblogic_property_bk_patch_version":"patch version",
     "bk_weblogic_property_bk_main_path":"main path",
@@ -146,7 +151,8 @@
     "bk_weblogic_property_bk_jvm_capacity":"JVM heap capacity",
     "bk_weblogic_property_bk_jvm_used_mem":"JVM heap available",
     
-    "bk_tomcat_property_bk_name":"name",
+    "bk_tomcat_property_bk_inst_name":"middleware",
+    "bk_tomcat_property_bk_inst_key": "name",
     "bk_tomcat_property_bk_version":"version",
     "bk_tomcat_property_bk_patch_version":"patch version",
     "bk_tomcat_property_bk_main_path":"main path",
@@ -157,7 +163,8 @@
     "bk_tomcat_property_bk_detail":"detail",
     "bk_tomcat_property_bk_jdk_version":"JDK version",
 
-    "bk_apache_property_bk_name":"name",
+    "bk_apache_property_bk_inst_name":"middleware",
+    "bk_apache_property_bk_inst_key": "name",
     "bk_apache_property_bk_version":"version",
     "bk_apache_property_bk_patch_version":"patch version",
     "bk_apache_property_bk_main_path":"main path",

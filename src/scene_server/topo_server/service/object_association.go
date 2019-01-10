@@ -31,12 +31,12 @@ func (s *topoService) CreateObjectAssociation(params types.ContextParams, pathPa
 		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 	}
 
-	err := s.core.AssociationOperation().CreateCommonAssociation(params, asso)
+	association, err := s.core.AssociationOperation().CreateCommonAssociation(params, asso)
 	if nil != err {
 		return nil, err
 	}
 
-	return asso.ToMapStr(), nil
+	return association, nil
 
 }
 
@@ -92,12 +92,12 @@ func (s *topoService) DeleteObjectAssociation(params types.ContextParams, pathPa
 	id, err := strconv.ParseInt(pathParams("id"), 10, 64)
 	if err != nil {
 		blog.Errorf("delete object association failed, got a invalid object association id[%v], err: %v", pathParams("id"), err)
-		return nil, params.Err.Error(common.CCErrTopoInvalidObjectAssociaitonID)
+		return nil, params.Err.Error(common.CCErrTopoInvalidObjectAssociationID)
 	}
 
 	if id <= 0 {
 		blog.Errorf("delete object association failed, got a invalid objasst id[%d]", id)
-		return nil, params.Err.Error(common.CCErrTopoInvalidObjectAssociaitonID)
+		return nil, params.Err.Error(common.CCErrTopoInvalidObjectAssociationID)
 	}
 
 	return nil, s.core.AssociationOperation().DeleteAssociationWithPreCheck(params, id)

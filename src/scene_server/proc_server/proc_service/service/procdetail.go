@@ -108,7 +108,7 @@ func (ps *ProcServer) getProcDetail(req *restful.Request, ownerID string, appID,
 		// key is the association object filed，val is association object id
 		if val, ok := rstmap[propertyID]; ok {
 			keyItemStr := fmt.Sprintf("%v", proc[propertyID])
-			blog.V(3).Infof("keyitemstr:%s", keyItemStr)
+			blog.V(5).Infof("keyitemstr:%s", keyItemStr)
 			retData, _, retErr := ps.getInstAsst(forward, ownerID, val, strings.Split(keyItemStr, ","), nil)
 			if common.CCSuccess != retErr {
 				blog.Error("failed to get inst details")

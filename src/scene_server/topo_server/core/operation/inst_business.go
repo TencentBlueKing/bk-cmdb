@@ -120,8 +120,14 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 	}
 
 	data.Set(common.BKOwnerIDField, params.SupplierAccount)
-	data.Set(common.BKSupplierIDField, common.BKDefaultSupplierID)
-
+	//data.Set(common.BKSupplierIDField, common.BKDefaultSupplierID)
+	if util.IsExistSupplierID(params.Header) {
+		supplierID, err := util.GetSupplierID(params.Header)
+		if err != nil {
+			return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, common.BKSupplierIDField)
+		}
+		data[common.BKSupplierIDField] = supplierID
+	}
 	bizInst, err := b.inst.CreateInst(params, obj, data)
 	if nil != err {
 		blog.Errorf("[opeartion-biz] failed to create business, error info is %s", err.Error())

@@ -12,6 +12,8 @@
 
 package common
 
+import "math"
+
 const (
 	// HTTPCreate create method
 	HTTPCreate = "POST"
@@ -134,7 +136,7 @@ const (
 	// BKDBOR the db operator
 	BKDBOR = "$or"
 
-	// BKDBOR the db operator
+	// BKDBAND the db operator
 	BKDBAND = "$and"
 
 	// BKDBLIKE the db operator
@@ -167,6 +169,21 @@ const (
 	// BKDBNot the db opeartor
 	BKDBNot = "$not"
 
+	// BKDBCount the db opeartor
+	BKDBCount = "$count"
+
+	// BKDBGroup the db opeartor
+	BKDBGroup = "$group"
+
+	// BKDBMatch the db opeartor
+	BKDBMatch = "$match"
+
+	// BKDBSum the db opeartor
+	BKDBSum = "$sum"
+
+	// BKDBPush the db opeartor
+	BKDBPush = "$push"
+
 	// BKDBSortFieldSep the db sort field split char
 	BKDBSortFieldSep = ","
 )
@@ -179,7 +196,7 @@ const (
 )
 
 const (
-	// BKFIeldID the id definition
+	// BKFieldID the id definition
 	BKFieldID = "id"
 
 	// BKDefaultField the default field
@@ -194,8 +211,11 @@ const (
 	// BKAppIDField the appid field
 	BKAppIDField = "bk_biz_id"
 
-	// BKIPAddr the ip address
+	// BKIPArr the ip address
 	BKIPArr = "ipArr"
+
+	// BKAssetIDField  the asset id field
+	BKAssetIDField = "bk_asset_id"
 
 	// BKHostInnerIPField the host innerip field
 	BKHostInnerIPField = "bk_host_innerip"
@@ -552,6 +572,9 @@ const (
 	// FieldTypeInt the int field type
 	FieldTypeInt string = "int"
 
+	// FieldTypeFloat the float field type
+	FieldTypeFloat string = "float"
+
 	// FieldTypeEnum the enum field type
 	FieldTypeEnum string = "enum"
 
@@ -714,6 +737,7 @@ const (
 	//BKHTTPOwnerID = "HTTP_BLUEKING_OWNERID"
 	BKHTTPCookieLanugageKey = "blueking_language"
 	BKSessionLanugageKey    = "language"
+	BKHTTPSupplierID        = "bk_supplier_id"
 
 	BKHTTPCCRequestID     = "cc_request_id"
 	BKHTTPCCTransactionID = "cc_txn_id"
@@ -751,6 +775,8 @@ const (
 	MinUint   = 0
 	MaxInt    = int(MaxUint >> 1)
 	MinInt    = -MaxInt - 1
+	MaxFloat64 = math.MaxFloat64
+	MinFloat64 = -math.MaxFloat64
 )
 
 //flag
@@ -800,6 +826,7 @@ const (
 	WEBSessionAvatarUrlKey     = "avatar_url"
 	WEBSessionMultiSupplierKey = "multisupplier"
 	WEBSessionLanguageKey      = "language"
+	WEBSessionSupplierID       = "supplier_id"
 
 	LoginSystemMultiSupplierTrue  = "1"
 	LoginSystemMultiSupplierFalse = "0"

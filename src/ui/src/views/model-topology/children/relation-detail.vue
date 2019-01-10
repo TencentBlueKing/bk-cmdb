@@ -49,10 +49,10 @@
             </div>
         </label>
         <div class="btn-group" v-if="isEdit">
-            <bk-button type="primary" @click="saveRelation">
+            <bk-button type="primary" :loading="$loading('updateObjectAssociation')" @click="saveRelation">
                 {{$t('Common["确定"]')}}
             </bk-button>
-            <bk-button type="danger" @click="deleteRelation" :disabled="relationInfo.ispre">
+            <bk-button type="danger" @click="deleteRelation" :disabled="relationInfo.ispre || $loading('deleteObjectAssociation')">
                 {{$t('ModelManagement["删除关联"]')}}
             </bk-button>
         </div>
@@ -106,20 +106,20 @@
         },
         methods: {
             ...mapActions('objectAssociation', [
-                'searchObjectAssociation'
+                'searchObjectAssociation',
+                'updateObjectAssociation',
+                'deleteObjectAssociation'
             ]),
             async initData () {
                 let asstList = await this.searchObjectAssociation({
                     params: {
                         condition: {
-                            'bk_obj_id': this.objId
+                            id: this.asstId
                         }
                     }
                 })
                 if (this.asstId !== '') {
                     this.relationInfo = asstList.find(asst => asst.id === this.asstId)
-                } else {
-                    this.relationInfo = this.$tools.clone(this.asstInfo)
                 }
             },
             getModelName (objId) {
@@ -130,6 +130,15 @@
                 return ''
             },
             async saveRelation () {
+                await this.updateObjectAssociation({
+                    id: this.relationInfo.id,
+                    params: {
+                        bk_obj_asst_name: this.relationInfo['bk_obj_asst_name']
+                    },
+                    config: {
+                        requestId: 'updateObjectAssociation'
+                    }
+                })
                 this.$emit('save', {
                     type: 'update',
                     params: {
@@ -140,8 +149,14 @@
             },
             deleteRelation () {
                 this.$bkInfo({
-                    title: this.$tc('ModelManagement["确定删除关联关系？"]', this.relationInfo['bk_property_name'], {name: this.relationInfo['bk_property_name']}),
+                    title: this.$t('ModelManagement["确定删除关联关系?"]'),
                     confirmFn: async () => {
+                        await this.deleteObjectAssociation({
+                            id: this.relationInfo.id,
+                            config: {
+                                requestId: 'deleteObjectAssociation'
+                            }
+                        })
                         this.$emit('save', {
                             type: 'delete',
                             params: {
