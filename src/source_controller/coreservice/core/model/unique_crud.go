@@ -59,7 +59,7 @@ func (m *modelAttrUnique) createModelAttrUnique(ctx core.ContextParams, objID st
 		cond.Field("must_check").Eq(true)
 		count, err := m.dbProxy.Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).Count(ctx)
 		if nil != err {
-			blog.Errorf("[CreateObjectUnique] check must check error: %v", err)
+			blog.Errorf("[CreateObjectUnique] check must check error: %#v", err)
 			return 0, ctx.Error.Error(common.CCErrObjectDBOpErrno)
 		}
 		if count > 0 {
@@ -70,13 +70,13 @@ func (m *modelAttrUnique) createModelAttrUnique(ctx core.ContextParams, objID st
 
 	err := m.recheckUniqueForExistsInsts(ctx, objID, inputParam.Data.Keys, inputParam.Data.MustCheck)
 	if nil != err {
-		blog.Errorf("[CreateObjectUnique] recheckUniqueForExistsInsts for %s with %v error: %v", objID, inputParam, err)
+		blog.Errorf("[CreateObjectUnique] recheckUniqueForExistsInsts for %s with %#v error: %#v", objID, inputParam, err)
 		return 0, ctx.Error.Error(common.CCErrCommDuplicateItem)
 	}
 
 	id, err := m.dbProxy.NextSequence(ctx, common.BKTableNameObjUnique)
 	if nil != err {
-		blog.Errorf("[CreateObjectUnique] NextSequence error: %v", err)
+		blog.Errorf("[CreateObjectUnique] NextSequence error: %#v", err)
 		return 0, ctx.Error.Error(common.CCErrObjectDBOpErrno)
 	}
 
@@ -92,7 +92,7 @@ func (m *modelAttrUnique) createModelAttrUnique(ctx core.ContextParams, objID st
 
 	err = m.dbProxy.Table(common.BKTableNameObjUnique).Insert(ctx, &unique)
 	if nil != err {
-		blog.Errorf("[CreateObjectUnique] Insert error: %v, raw: %#v", err, &unique)
+		blog.Errorf("[CreateObjectUnique] Insert error: %#v, raw: %#v", err, &unique)
 		return 0, ctx.Error.Error(common.CCErrObjectDBOpErrno)
 	}
 
@@ -120,7 +120,7 @@ func (m *modelAttrUnique) updateModelAttrUnique(ctx core.ContextParams, objID st
 		cond.Field("id").NotEq(id)
 		count, err := m.dbProxy.Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).Count(ctx)
 		if nil != err {
-			blog.Errorf("[UpdateObjectUnique] check must check  error: %v", err)
+			blog.Errorf("[UpdateObjectUnique] check must check  error: %#v", err)
 			return ctx.Error.Error(common.CCErrObjectDBOpErrno)
 		}
 		if count > 0 {
@@ -131,7 +131,7 @@ func (m *modelAttrUnique) updateModelAttrUnique(ctx core.ContextParams, objID st
 
 	err := m.recheckUniqueForExistsInsts(ctx, objID, unique.Keys, unique.MustCheck)
 	if nil != err {
-		blog.Errorf("[UpdateObjectUnique] recheckUniqueForExistsInsts for %s with %v error: %v", objID, unique, err)
+		blog.Errorf("[UpdateObjectUnique] recheckUniqueForExistsInsts for %s with %#v error: %#v", objID, unique, err)
 		return ctx.Error.Error(common.CCErrCommDuplicateItem)
 	}
 

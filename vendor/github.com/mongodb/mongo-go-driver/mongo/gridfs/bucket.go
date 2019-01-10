@@ -7,6 +7,7 @@
 package gridfs
 
 import (
+	"bytes"
 	"context"
 
 	"io"
@@ -15,6 +16,7 @@ import (
 
 	"time"
 
+	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/bson/primitive"
 	"github.com/mongodb/mongo-go-driver/mongo"
 	"github.com/mongodb/mongo-go-driver/mongo/options"
@@ -424,12 +426,13 @@ func createIndexIfNotExists(ctx context.Context, iv mongo.IndexView, model mongo
 			return err
 		}
 
-		keyElemDoc, err := bsonx.ReadDoc(keyElem.Document())
+		keyElemDoc := keyElem.Document()
+		modelKeysDoc, err := bson.Marshal(model.Keys)
 		if err != nil {
 			return err
 		}
 
-		if model.Keys.Equal(keyElemDoc) {
+		if bytes.Equal(modelKeysDoc, keyElemDoc) {
 			found = true
 			break
 		}
@@ -455,31 +458,34 @@ func (b *Bucket) createIndexes(ctx context.Context) error {
 
 	docRes := cloned.FindOne(ctx, bsonx.Doc{}, options.FindOne().SetProjection(bsonx.Doc{{"_id", bsonx.Int32(1)}}))
 
-	err = docRes.Err()
-	if err == mongo.ErrNoDocuments {
-		filesIv := b.filesColl.Indexes()
-		chunksIv := b.chunksColl.Indexes()
+	_, err = docRes.DecodeBytes()
+	if err != mongo.ErrNoDocuments {
+		// nil, or error that occured during the FindOne operation
+		return err
+	}
 
-		filesModel := mongo.IndexModel{
-			Keys: bsonx.Doc{
-				{"filename", bsonx.Int32(1)},
-				{"uploadDate", bsonx.Int32(1)},
-			},
-		}
+	filesIv := b.filesColl.Indexes()
+	chunksIv := b.chunksColl.Indexes()
 
-		chunksModel := mongo.IndexModel{
-			Keys: bsonx.Doc{
-				{"files_id", bsonx.Int32(1)},
-				{"n", bsonx.Int32(1)},
-			},
-		}
+	filesModel := mongo.IndexModel{
+		Keys: bson.D{
+			{"filename", int32(1)},
+			{"uploadDate", int32(1)},
+		},
+	}
 
-		if err = createIndexIfNotExists(ctx, filesIv, filesModel); err != nil {
-			return err
-		}
-		if err = createIndexIfNotExists(ctx, chunksIv, chunksModel); err != nil {
-			return err
-		}
+	chunksModel := mongo.IndexModel{
+		Keys: bson.D{
+			{"files_id", int32(1)},
+			{"n", int32(1)},
+		},
+	}
+
+	if err = createIndexIfNotExists(ctx, filesIv, filesModel); err != nil {
+		return err
+	}
+	if err = createIndexIfNotExists(ctx, chunksIv, chunksModel); err != nil {
+		return err
 	}
 
 	return nil

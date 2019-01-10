@@ -72,7 +72,7 @@ func (m *instanceManager) getInstDataByID(ctx core.ContextParams, objID string, 
 	if common.GetInstTableName(objID) == common.BKTableNameBaseInst {
 		cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
 	}
-	err = m.dbProxy.Table(tableName).Find(cond.ToMapStr()).One(ctx, origin)
+	err = m.dbProxy.Table(tableName).Find(cond.ToMapStr()).One(ctx, &origin)
 	if nil != err {
 		return nil, err
 	}
@@ -85,7 +85,9 @@ func (m *instanceManager) searchInstance(ctx core.ContextParams, objID string, i
 	if nil != err {
 		return results, err
 	}
-	condition.And(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
+	if tableName == common.BKTableNameBaseInst {
+		condition.And(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
+	}
 	instHandler := m.dbProxy.Table(tableName).Find(condition.ToMapStr())
 	for _, sort := range inputParam.SortArr {
 		fileld := sort.Field
@@ -105,7 +107,9 @@ func (m *instanceManager) countInstance(ctx core.ContextParams, objID string, co
 	if nil != err {
 		return 0, err
 	}
-	condition.And(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
+	if tableName == common.BKTableNameBaseInst {
+		condition.And(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
+	}
 	count, err = m.dbProxy.Table(tableName).Find(condition.ToMapStr()).Count(ctx)
 
 	return count, err
