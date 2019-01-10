@@ -32,8 +32,8 @@ func (s *topoService) initBusinessClassification() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/objectclassification", HandlerFunc: s.CreateClassification})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/classificationobject", HandlerFunc: s.SearchClassificationWithObjects})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/objectclassification", HandlerFunc: s.SearchClassification})
-	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/object/classification/{id}", HandlerFunc: s.UpdateClassification})
-	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/object/classification/{id}", HandlerFunc: s.DeleteClassification})
+	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/objectclassification/{id}", HandlerFunc: s.UpdateClassification})
+	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/objectclassification/{id}", HandlerFunc: s.DeleteClassification})
 
 }
 
@@ -55,9 +55,9 @@ func (s *topoService) initBusinessObjectAttrGroup() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/objectattgroup", HandlerFunc: s.CreateObjectGroup})
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/objectattgroup", HandlerFunc: s.UpdateObjectGroup})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/objectattgroup/{id}", HandlerFunc: s.DeleteObjectGroup})
-	//	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/objectatt/group/property", HandlerFunc: s.UpdateObjectAttributeGroup, HandlerParseOriginDataFunc: s.ParseUpdateObjectAttributeGroupInput})
-	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/objectattgroupasst/object/{bk_obj_id}/property/{property_id}/group/{group_id}", HandlerFunc: s.DeleteObjectAttributeGroup})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/objectattgroup/object/{bk_obj_id}", HandlerFunc: s.SearchGroupByObject})
+	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/objectattgroupproperty", HandlerFunc: s.UpdateObjectAttributeGroup, HandlerParseOriginDataFunc: s.ParseUpdateObjectAttributeGroupInput})
+	//	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/objectattgroupasst/object/{bk_obj_id}/property/{property_id}/group/{group_id}", HandlerFunc: s.DeleteObjectAttributeGroup})
+	//s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/objectattgroup/object/{bk_obj_id}", HandlerFunc: s.SearchGroupByObject})
 }
 
 func (s *topoService) initBusinessGraphics() {
