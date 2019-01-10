@@ -486,8 +486,8 @@ func (p *parser) addOption(pair string) error {
 		p.Compressors = compressors
 	case "connect":
 		switch strings.ToLower(value) {
-		case "auto", "automatic":
-		case "direct", "single":
+		case "automatic":
+		case "direct":
 			p.Connect = SingleConnect
 		default:
 			return fmt.Errorf("invalid 'connect' value: %s", value)
@@ -573,12 +573,14 @@ func (p *parser) addOption(pair string) error {
 			return fmt.Errorf("invalid value for %s: %s", key, value)
 		}
 		p.ServerSelectionTimeout = time.Duration(n) * time.Millisecond
+		p.ServerSelectionTimeoutSet = true
 	case "sockettimeoutms":
 		n, err := strconv.Atoi(value)
 		if err != nil || n < 0 {
 			return fmt.Errorf("invalid value for %s: %s", key, value)
 		}
 		p.SocketTimeout = time.Duration(n) * time.Millisecond
+		p.SocketTimeoutSet = true
 	case "ssl":
 		switch value {
 		case "true":

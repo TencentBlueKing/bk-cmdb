@@ -40,7 +40,7 @@ func (s *coreService) initModel() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/model", HandlerFunc: s.SearchModel})
 
 	// init model attribute groups methods
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/model/{bk_obj_id/group", HandlerFunc: s.CreateModelAttributeGroup})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/model/{bk_obj_id}/group", HandlerFunc: s.CreateModelAttributeGroup})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/set/model/{bk_obj_id}/group", HandlerFunc: s.SetModelAttributeGroup})
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/model/{bk_obj_id}/group", HandlerFunc: s.UpdateModelAttributeGroup})
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/model/group", HandlerFunc: s.UpdateModelAttributeGroupByCondition})

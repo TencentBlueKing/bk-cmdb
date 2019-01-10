@@ -16,16 +16,13 @@ import (
 	"encoding/json"
 	"testing"
 
+	"configcenter/src/common/http/httpclient"
 	"configcenter/src/common/mapstr"
-
-	"configcenter/src/common/universalsql/mongo"
-
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/universalsql/mongo"
 
 	"github.com/rs/xid"
 	"github.com/stretchr/testify/require"
-
-	"configcenter/src/common/http/httpclient"
 )
 
 func createModel(t *testing.T, client *httpclient.HttpClient, modelID, classID string) {
@@ -91,7 +88,7 @@ func setModel(t *testing.T, client *httpclient.HttpClient, modelID, classID stri
 	require.NoError(t, err)
 	require.NotNil(t, dataResult)
 
-	modelResult := &metadata.CreatedOneOptionResult{}
+	modelResult := &metadata.SetDataResult{}
 	err = json.Unmarshal(dataResult, modelResult)
 	require.NoError(t, err)
 

@@ -43,7 +43,7 @@ func (m *modelAttribute) update(ctx core.ContextParams, data mapstr.MapStr, cond
 
 	cnt, err = m.count(ctx, cond)
 	if 0 == cnt {
-		blog.Errorf("request(%s): find nothing by the condition(%v)", ctx.ReqID, cond.ToMapStr())
+		blog.Errorf("request(%s): find nothing by the condition(%#v)", ctx.ReqID, cond.ToMapStr())
 		return cnt, nil
 	}
 
