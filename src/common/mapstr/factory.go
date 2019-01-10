@@ -14,7 +14,7 @@ package mapstr
 
 import (
 	"encoding/json"
-	"errors"
+	"fmt"
 	"reflect"
 )
 
@@ -26,15 +26,6 @@ func New() MapStr {
 // NewArray create MapStr array
 func NewArray() []MapStr {
 	return []MapStr{}
-}
-
-// NewArrayFromInterface create a new array from interface
-func NewArrayFromInterface(datas []map[string]interface{}) []MapStr {
-	results := []MapStr{}
-	for _, item := range datas {
-		results = append(results, item)
-	}
-	return results
 }
 
 // NewArrayFromMapStr create a new array from mapstr array
@@ -55,7 +46,7 @@ func NewFromInterface(data interface{}) (MapStr, error) {
 
 	switch tmp := data.(type) {
 	default:
-		return convertInterfaceIntoMapStrByReflection(data)
+		return convertInterfaceIntoMapStrByReflection(data, "")
 	case nil:
 		return MapStr{}, nil
 	case MapStr:
@@ -92,48 +83,72 @@ func NewFromMap(data map[string]interface{}) MapStr {
 	return MapStr(data)
 }
 
-/*NewFromStruct convert the  struct into MapStr , the struct must be taged with 'tagName' .
-
-  eg:
-  type targetStruct struct{
-  Name string `field:"testName"`
-  }
-  will be converted the follow map
-  {"testName":""}
-*/
+// NewFromStruct convert the  struct into MapStr , the struct must be taged with 'tagName' .
+//
+//  eg:
+//  type targetStruct struct{
+//       Name string `field:"testName"`
+//  }
+//  will be converted the follow map
+//  {"testName":""}
+//
 func NewFromStruct(targetStruct interface{}, tagName string) MapStr {
 	return SetValueToMapStrByTagsWithTagName(targetStruct, tagName)
 }
 
-// ConvertArrayMapStrInto convert a MapStr array into a new slice instance
-func ConvertArrayMapStrInto(datas []MapStr, output interface{}) error {
-
-	resultv := reflect.ValueOf(output)
-	if resultv.Kind() != reflect.Ptr || resultv.Elem().Kind() != reflect.Slice {
-		return errors.New("result argument must be a slice address")
+// NewArrayFromInterface create a new array from interface
+func NewArrayFromInterface(datas []map[string]interface{}) []MapStr {
+	results := []MapStr{}
+	for _, item := range datas {
+		results = append(results, item)
 	}
-	slicev := resultv.Elem()
-	slicev = slicev.Slice(0, slicev.Cap())
-	elemt := slicev.Type().Elem()
-	idx := 0
-	for _, dataItem := range datas {
-		if slicev.Len() == idx {
-			elemp := reflect.New(elemt)
-			if err := dataItem.MarshalJSONInto(elemp.Interface()); nil != err {
-				panic(err)
-			}
-			slicev = reflect.Append(slicev, elemp.Elem())
-			slicev = slicev.Slice(0, slicev.Cap())
-			idx++
-			continue
-		}
+	return results
+}
 
-		if err := dataItem.MarshalJSONInto(slicev.Index(idx).Addr().Interface()); nil != err {
-			return err
-		}
-		idx++
+// SetValueToMapStrByTags  convert a struct to MapStr by tags default tag name is field
+func SetValueToMapStrByTags(source interface{}) MapStr {
+	return SetValueToMapStrByTagsWithTagName(source, "field")
+}
+
+// SetValueToMapStrByTagsWithTagName convert a struct to MapStr by tags
+func SetValueToMapStrByTagsWithTagName(source interface{}, tagName string) MapStr {
+	values := MapStr{}
+
+	if nil == source {
+		return values
 	}
-	resultv.Elem().Set(slicev.Slice(0, idx))
 
-	return nil
+	targetType := getTypeElem(reflect.TypeOf(source))
+	targetValue := getValueElem(reflect.ValueOf(source))
+
+	setMapStrByStruct(targetType, targetValue, values, tagName)
+
+	return values
+}
+
+// SetValueToStructByTags set the struct object field value by tags, default tag name is field
+func SetValueToStructByTags(target interface{}, values MapStr) error {
+	return SetValueToStructByTagsWithTagName(target, values, "field")
+}
+
+// SetValueToStructByTagsWithTagName set the struct object field value by tags
+func SetValueToStructByTagsWithTagName(target interface{}, values MapStr, tagName string) error {
+
+	targetType := reflect.TypeOf(target)
+	targetValue := reflect.ValueOf(target)
+
+	return setStructByMapStr(targetType, targetValue, values, tagName)
+}
+
+func convertInterfaceIntoMapStrByReflection(target interface{}, tagName string) (MapStr, error) {
+
+	value := reflect.ValueOf(target)
+	switch value.Kind() {
+	case reflect.Map:
+		return dealMap(value, tagName)
+	case reflect.Struct:
+		return dealStruct(value.Type(), value, tagName)
+	}
+
+	return nil, fmt.Errorf("no support the kind(%s)", value.Kind())
 }

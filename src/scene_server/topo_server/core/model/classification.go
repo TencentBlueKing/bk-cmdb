@@ -66,7 +66,7 @@ func (cli *classification) GetObjects() ([]Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(metadata.ModelFieldObjCls).Eq(cli.cls.ClassificationID)
 
-	rsp, err := cli.clientSet.CoreService().Model().ReadModelClassification(context.Background(), cli.params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := cli.clientSet.CoreService().Model().ReadModel(context.Background(), cli.params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
 		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -79,16 +79,10 @@ func (cli *classification) GetObjects() ([]Object, error) {
 
 	rstItems := make([]Object, 0)
 	for _, item := range rsp.Data.Info {
-
 		tmpObj := &object{
+			obj:   item.Spec,
 			isNew: false,
 		}
-
-		err := mapstr.SetValueToStructByTags(tmpObj.obj, item.ToMapStr())
-		if nil != err {
-			return nil, err
-		}
-
 		rstItems = append(rstItems, tmpObj)
 	}
 

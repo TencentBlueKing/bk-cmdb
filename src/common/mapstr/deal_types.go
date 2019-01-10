@@ -13,11 +13,36 @@
 package mapstr
 
 import (
-	"fmt"
 	"reflect"
+	"strings"
 )
 
-func dealMap(value reflect.Value) (MapStr, error) {
+func dealPointer(value reflect.Value, tag, tagName string) interface{} {
+
+	if value.IsNil() {
+		return getZeroValue(value.Type())
+	}
+
+	value = value.Elem()
+
+	switch value.Kind() {
+	case reflect.Struct:
+		if value.CanInterface() {
+			innerMapStr := SetValueToMapStrByTagsWithTagName(value.Interface(), tagName)
+			return MapStr{tag: innerMapStr}
+		}
+	case reflect.Ptr:
+		return dealPointer(value.Elem(), tag, tagName)
+	}
+
+	if value.CanInterface() {
+		return value.Interface()
+	}
+
+	return nil
+}
+
+func dealMap(value reflect.Value, tagName string) (MapStr, error) {
 	mapKeys := value.MapKeys()
 	mapResult := MapStr{}
 	for _, key := range mapKeys {
@@ -26,19 +51,19 @@ func dealMap(value reflect.Value) (MapStr, error) {
 		default:
 			mapResult.Set(key.String(), keyValue.Interface())
 		case reflect.Interface:
-			subMapResult, err := convertInterfaceIntoMapStrByReflection(keyValue.Interface())
+			subMapResult, err := convertInterfaceIntoMapStrByReflection(keyValue.Interface(), tagName)
 			if nil != err {
 				return nil, err
 			}
 			mapResult.Set(key.String(), subMapResult)
 		case reflect.Struct:
-			subMapResult, err := dealStruct(keyValue.Type(), keyValue)
+			subMapResult, err := dealStruct(keyValue.Type(), keyValue, tagName)
 			if nil != err {
 				return nil, err
 			}
 			mapResult.Set(key.String(), subMapResult)
 		case reflect.Map:
-			subMapResult, err := dealMap(keyValue)
+			subMapResult, err := dealMap(keyValue, tagName)
 			if nil != err {
 				return nil, err
 			}
@@ -49,7 +74,7 @@ func dealMap(value reflect.Value) (MapStr, error) {
 	return mapResult, nil
 }
 
-func dealStruct(kind reflect.Type, value reflect.Value) (MapStr, error) {
+func dealStruct(kind reflect.Type, value reflect.Value, tagName string) (MapStr, error) {
 
 	mapResult := MapStr{}
 
@@ -65,20 +90,31 @@ func dealStruct(kind reflect.Type, value reflect.Value) (MapStr, error) {
 				mapResult.Set(fieldType.Name, fieldValue.Interface())
 			}
 		case reflect.Interface:
-			subMapResult, err := convertInterfaceIntoMapStrByReflection(fieldValue.Interface())
+			subMapResult, err := convertInterfaceIntoMapStrByReflection(fieldValue.Interface(), tagName)
 			if nil != err {
 				return nil, err
 			}
 			mapResult.Set(fieldType.Name, subMapResult)
 		case reflect.Struct:
-			subMapResult, err := dealStruct(fieldValue.Type(), fieldValue)
+			subMapResult, err := dealStruct(fieldValue.Type(), fieldValue, tagName)
 			if nil != err {
 				return nil, err
 			}
-			mapResult.Set(fieldType.Name, subMapResult)
+
+			tag, ok := fieldType.Tag.Lookup(tagName)
+			if !ok {
+				mapResult.Set(fieldType.Name, subMapResult)
+				continue
+			}
+			if 0 == len(tag) || strings.Contains(tag, "ignoretomap") {
+				continue
+			}
+
+			tags := strings.Split(tag, ",")
+			mapResult.Set(tags[0], subMapResult)
 
 		case reflect.Map:
-			subMapResult, err := dealMap(fieldValue)
+			subMapResult, err := dealMap(fieldValue, tagName)
 			if nil != err {
 				return nil, err
 			}
@@ -87,16 +123,4 @@ func dealStruct(kind reflect.Type, value reflect.Value) (MapStr, error) {
 	}
 
 	return mapResult, nil
-}
-func convertInterfaceIntoMapStrByReflection(target interface{}) (MapStr, error) {
-
-	value := reflect.ValueOf(target)
-	switch value.Kind() {
-	case reflect.Map:
-		return dealMap(value)
-	case reflect.Struct:
-		return dealStruct(value.Type(), value)
-	}
-
-	return nil, fmt.Errorf("no support the kind(%s)", value.Kind())
 }
