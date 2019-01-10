@@ -155,6 +155,8 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 	for _, cls := range rsp.Data.Info {
 		clsItem := metadata.ClassificationWithObject{
 			Classification: cls,
+			Objects:        []metadata.Object{},
+			AsstObjects:    map[string][]metadata.Object{},
 		}
 		queryObjectCond := condition.CreateCondition().Field(common.BKClassificationIDField).Eq(cls.ClassificationID)
 		queryObjectResp, err := c.clientSet.CoreService().Model().ReadModel(context.Background(), params.Header, &metadata.QueryCondition{Condition: queryObjectCond.ToMapStr()})
@@ -176,7 +178,6 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 	}
 
 	for idx, clsItem := range datas {
-		datas[idx].AsstObjects = make(map[string][]metadata.Object)
 		for _, objItem := range clsItem.Objects {
 			asstItems, err := c.asst.SearchObjectAssociation(params, objItem.ObjectID)
 			if nil != err {
@@ -223,12 +224,12 @@ func (c *classification) FindClassification(params types.ContextParams, cond con
 func (c *classification) UpdateClassification(params types.ContextParams, data mapstr.MapStr, id int64, cond condition.Condition) error {
 
 	cls := c.modelFactory.CreateClassification(params)
+	data.Set("id", id)
 	if _, err := cls.Parse(data); err != nil {
 		blog.Errorf("update classification, but parse classification failed, err：%v", err)
 		return err
 	}
 
-	data.Set("id", id)
 	err := cls.Update(data)
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to update the classification(%#v), error info is %s", cls, err.Error())

@@ -71,7 +71,7 @@ func (m *modelAttribute) CreateModelAttributes(ctx core.ContextParams, objID str
 		}
 		id, err := m.save(ctx, attr)
 		if nil != err {
-			blog.Errorf("request(%s): it is failed to save the attribute(%v), error info is %s", attr, err.Error())
+			blog.Errorf("request(%s): it is failed to save the attribute(%#v), error info is %s", attr, err.Error())
 			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
 			continue
 		}
@@ -122,7 +122,7 @@ func (m *modelAttribute) SetModelAttributes(ctx core.ContextParams, objID string
 
 			_, err := m.update(ctx, mapstr.NewFromStruct(attr, "field"), cond)
 			if nil != err {
-				blog.Errorf("request(%s): it is failed to update the attribute(%v) by the condition(%v), error info is %s", ctx.ReqID, attr, cond.ToMapStr(), err.Error())
+				blog.Errorf("request(%s): it is failed to update the attribute(%#v) by the condition(%#v), error info is %s", ctx.ReqID, attr, cond.ToMapStr(), err.Error())
 				addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
 				continue
 			}
@@ -134,7 +134,7 @@ func (m *modelAttribute) SetModelAttributes(ctx core.ContextParams, objID string
 		}
 		id, err := m.save(ctx, attr)
 		if nil != err {
-			blog.Errorf("request(%s): it is failed to save the attribute(%v), error info is %s", ctx.ReqID, attr, err.Error())
+			blog.Errorf("request(%s): it is failed to save the attribute(%#v), error info is %s", ctx.ReqID, attr, err.Error())
 			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
 			continue
 		}
@@ -157,13 +157,13 @@ func (m *modelAttribute) UpdateModelAttributes(ctx core.ContextParams, objID str
 
 	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert from mapstr(%v) into a condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
+		blog.Errorf("request(%s): it is failed to convert from mapstr(%#v) into a condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.UpdatedCount{}, err
 	}
 
 	cnt, err := m.update(ctx, inputParam.Data, cond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to update some fields (%v)of the attribute of the model(%s) by the condition(%v), error info is %s", ctx.ReqID, inputParam.Data, objID, err.Error())
+		blog.Errorf("request(%s): it is failed to update some fields (%#v)of the attribute of the model(%s) by the condition(%#v), error info is %s", ctx.ReqID, inputParam.Data, objID, err.Error())
 		return &metadata.UpdatedCount{}, err
 	}
 
@@ -174,13 +174,13 @@ func (m *modelAttribute) UpdateModelAttributesByCondition(ctx core.ContextParams
 
 	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert from mapstr(%v) into a condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
+		blog.Errorf("request(%s): it is failed to convert from mapstr(%#v) into a condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.UpdatedCount{}, err
 	}
 
 	cnt, err := m.update(ctx, inputParam.Data, cond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to update some fields (%v)of the attribute by the condition(%v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
+		blog.Errorf("request(%s): it is failed to update some fields (%#v)of the attribute by the condition(%#v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
 		return &metadata.UpdatedCount{}, err
 	}
 
@@ -196,7 +196,7 @@ func (m *modelAttribute) DeleteModelAttributes(ctx core.ContextParams, objID str
 
 	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert from mapstr(%v) into a condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
+		blog.Errorf("request(%s): it is failed to convert from mapstr(%#v) into a condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
@@ -218,7 +218,7 @@ func (m *modelAttribute) SearchModelAttributes(ctx core.ContextParams, objID str
 
 	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert from mapstr(%v) into a condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
+		blog.Errorf("request(%s): it is failed to convert from mapstr(%#v) into a condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.QueryModelAttributeDataResult{}, err
 	}
 	attrArr := []string{ctx.SupplierAccount, common.BKDefaultOwnerID}
@@ -242,7 +242,7 @@ func (m *modelAttribute) SearchModelAttributesByCondition(ctx core.ContextParams
 
 	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert from mapstr(%v) into a condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
+		blog.Errorf("request(%s): it is failed to convert from mapstr(%#v) into a condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.QueryModelAttributeDataResult{}, err
 	}
 	attrArr := []string{ctx.SupplierAccount, common.BKDefaultOwnerID}

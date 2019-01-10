@@ -75,12 +75,16 @@ func (a *Aggregate) encode(desc description.SelectedServer) (*Read, error) {
 
 	// add write concern because it won't be added by the Read command's Encode()
 	if desc.WireVersion.Max >= 5 && hasOutStage && a.WriteConcern != nil {
-		element, err := a.WriteConcern.MarshalBSONElement()
+		t, data, err := a.WriteConcern.MarshalBSONValue()
 		if err != nil {
 			return nil, err
 		}
-
-		command = append(command, element)
+		var xval bsonx.Val
+		err = xval.UnmarshalBSONValue(t, data)
+		if err != nil {
+			return nil, err
+		}
+		command = append(command, bsonx.Elem{Key: "writeConcern", Value: xval})
 	}
 
 	return &Read{
@@ -127,7 +131,13 @@ func (a *Aggregate) decode(desc description.SelectedServer, cb CursorBuilder, rd
 	labels, err := getErrorLabels(&rdr)
 	a.err = err
 
-	res, err := cb.BuildCursor(rdr, a.Session, a.Clock, a.CursorOpts...)
+	var res Cursor
+	if desc.WireVersion.Max >= 4 {
+		res, err = cb.BuildCursor(rdr, a.Session, a.Clock, a.CursorOpts...)
+	} else {
+		res, err = buildLegacyCursor(cb, rdr, getBatchSize(a.CursorOpts))
+	}
+
 	a.result = res
 	if err != nil {
 		a.err = Error{Message: err.Error(), Labels: labels}

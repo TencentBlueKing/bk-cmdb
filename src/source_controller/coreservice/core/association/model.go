@@ -84,7 +84,7 @@ func (m *associationModel) UpdateModelAssociation(ctx core.ContextParams, inputP
 	updateCond.Element(&mongo.Eq{Key: metadata.AssociationFieldSupplierAccount, Val: ctx.SupplierAccount})
 	cnt, err := m.update(ctx, inputParam.Data, updateCond)
 	if nil != err {
-		blog.Errorf("request(%s): it is to update the association by the condition (%v), error info is %s", ctx.ReqID, updateCond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is to update the association by the condition (%#v), error info is %s", ctx.ReqID, updateCond.ToMapStr(), err.Error())
 		return &metadata.UpdatedCount{}, err
 	}
 
@@ -102,7 +102,7 @@ func (m *associationModel) SearchModelAssociation(ctx core.ContextParams, inputP
 	searchCond.Element(&mongo.Eq{Key: metadata.AssociationFieldSupplierAccount, Val: ctx.SupplierAccount})
 	resultItems, err := m.searchReturnMapStr(ctx, searchCond)
 	if nil != err {
-		blog.Errorf("request(%s): it is to search all associations by the condition (%v), error info is %s", ctx.ReqID, searchCond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is to search all associations by the condition (%#v), error info is %s", ctx.ReqID, searchCond.ToMapStr(), err.Error())
 		return &metadata.QueryResult{}, err
 	}
 
@@ -121,7 +121,7 @@ func (m *associationModel) DeleteModelAssociation(ctx core.ContextParams, inputP
 
 	needDeleteAssocaitionItems, err := m.search(ctx, deleteCond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to search all by the condition (%v), error info is %s", ctx.ReqID, deleteCond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to search all by the condition (%#v), error info is %s", ctx.ReqID, deleteCond.ToMapStr(), err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
@@ -133,18 +133,18 @@ func (m *associationModel) DeleteModelAssociation(ctx core.ContextParams, inputP
 
 	exists, err := m.usedInSomeInstanceAssociation(ctx, associationIDS)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to check if the instances (%v) is in used, error info is %s", ctx.ReqID, associationIDS, err.Error())
+		blog.Errorf("request(%s): it is failed to check if the instances (%#v) is in used, error info is %s", ctx.ReqID, associationIDS, err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 	if exists {
-		blog.Warnf("request(%s): it is forbbiden to delete the model association by the instances (%v)", ctx.ReqID, associationIDS)
+		blog.Warnf("request(%s): it is forbbiden to delete the model association by the instances (%#v)", ctx.ReqID, associationIDS)
 		return &metadata.DeletedCount{}, ctx.Error.Error(common.CCErrTopoAssociationHasAlreadyBeenInstantiated)
 	}
 
 	// deletion operation
 	cnt, err := m.delete(ctx, deleteCond)
 	if nil != err {
-		blog.Errorf("request(%s): it is delete the instances by the condition (%v), error info is %s", ctx.ReqID, deleteCond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is delete the instances by the condition (%#v), error info is %s", ctx.ReqID, deleteCond.ToMapStr(), err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 	return &metadata.DeletedCount{Count: cnt}, nil
@@ -162,7 +162,7 @@ func (m *associationModel) CascadeDeleteModelAssociation(ctx core.ContextParams,
 
 	needDeleteAssocaitionItems, err := m.search(ctx, deleteCond)
 	if nil != err {
-		blog.Errorf("request(%s): it is to search associations by the condition (%v), error info is %s", ctx.ReqID, deleteCond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is to search associations by the condition (%#v), error info is %s", ctx.ReqID, deleteCond.ToMapStr(), err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
@@ -174,14 +174,14 @@ func (m *associationModel) CascadeDeleteModelAssociation(ctx core.ContextParams,
 
 	// cascade deletion operation
 	if err := m.cascadeInstanceAssociation(ctx, associationIDS); nil != err {
-		blog.Errorf("request(%s): it is failed to cascade delete the assocaitions of the instances (%v), error info is %s ", ctx.ReqID, associationIDS, err.Error())
+		blog.Errorf("request(%s): it is failed to cascade delete the assocaitions of the instances (%#v), error info is %s ", ctx.ReqID, associationIDS, err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 
 	// deletion operation
 	cnt, err := m.delete(ctx, deleteCond)
 	if nil != err {
-		blog.Errorf("request(%s): it is to delete some associations by the condition (%v), error info is %s", ctx.ReqID, deleteCond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is to delete some associations by the condition (%#v), error info is %s", ctx.ReqID, deleteCond.ToMapStr(), err.Error())
 		return &metadata.DeletedCount{}, err
 	}
 	return &metadata.DeletedCount{Count: cnt}, nil
