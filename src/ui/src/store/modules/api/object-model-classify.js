@@ -162,8 +162,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     createClassification ({ commit, state, dispatch }, { params, config }) {
-        // return $http.post('create/objectclassification', params, config)
-        return $http.post(`object/classification`, params)
+        return $http.post('create/objectclassification', params, config)
     },
 
     /**
@@ -175,8 +174,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     deleteClassification ({ commit, state, dispatch }, { id }) {
-        // return $http.delete(`delete/objectclassification/${id}`)
-        return $http.delete(`object/classification/${id}`)
+        return $http.delete(`delete/objectclassification/${id}`)
     },
 
     /**
@@ -189,8 +187,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     updateClassification ({ commit, state, dispatch }, { id, params }) {
-        // return $http.put(`update/objectclassification/${id}`, params)
-        return $http.put(`object/classification/${id}`, params)
+        return $http.put(`update/objectclassification/${id}`, params)
     },
 
     /**
@@ -202,8 +199,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchClassifications ({ commit, state, dispatch }, {params, config}) {
-        // return $http.post('find/objectclassification', params || {}, config)
-        return $http.post(`object/classifications`)
+        return $http.post('find/objectclassification', params || {}, config)
     },
 
     /**
@@ -215,12 +211,9 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchClassificationsObjects ({ commit, state, dispatch, rootGetters }, { params = {}, config }) {
-        // return $http.post('find/classificationobject', params, config).then(data => {
-        //     commit('setClassificationsObjects', data)
-        //     return data
-        // })
-        return $http.post(`object/classification/${rootGetters.supplierAccount}/objects`, params, config).then(classifications => {
-            commit('setClassificationsObjects', classifications)
+        return $http.post('find/classificationobject', params, config).then(data => {
+            commit('setClassificationsObjects', data)
+            return data
         })
     }
 }

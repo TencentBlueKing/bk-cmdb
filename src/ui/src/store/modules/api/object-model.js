@@ -28,8 +28,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     createObject ({ commit, state, dispatch }, { params, config }) {
-        // return $http.post('create/object', params, config)
-        return $http.post(`object`, params, config)
+        return $http.post('create/object', params, config)
     },
 
     /**
@@ -41,8 +40,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     deleteObject ({ commit, state, dispatch }, { id, config }) {
-        // return $http.delete(`delete/object/${id}`, config)
-        return $http.delete(`object/${id}`, config)
+        return $http.delete(`delete/object/${id}`, config)
     },
 
     /**
@@ -55,8 +53,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     updateObject ({ commit, state, dispatch }, { id, params, config }) {
-        // return $http.put(`update/object/${id}`, params, config)
-        return $http.put(`object/${id}`, params, config)
+        return $http.put(`update/object/${id}`, params, config)
     },
 
     /**
@@ -68,8 +65,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchObjects ({ commit, state, dispatch }, { params, config }) {
-        // return $http.post('find/object', params, config)
-        return $http.post(`objects`, params, config)
+        return $http.post('find/object', params, config)
     },
 
     /**
@@ -81,8 +77,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchObjectTopo ({ commit, state, dispatch }, { params, config }) {
-        // return $http.post('find/objecttopology', params, config)
-        return $http.post(`objects/topo`, params)
+        return $http.post('find/objecttopology', params, config)
     }
 }
 
