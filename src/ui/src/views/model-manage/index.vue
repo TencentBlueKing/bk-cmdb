@@ -292,7 +292,7 @@
                 await this.createObject({params, config: {requestId: 'createModel'}})
                 this.$http.cancel('post_searchClassificationsObjects')
                 this.searchClassificationsObjects({
-                    params: this.injectMetadata()
+                    params: this.$injectMetadata()
                 })
             },
             modelClick (model) {
