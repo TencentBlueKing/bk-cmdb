@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -72,6 +73,8 @@ func (lgc *Logics) TimerTriggerCheckStatus(ctx context.Context) {
 			if err := lgc.SyncTaskDBManager(ctx); err != nil {
 				blog.Errorf("check cloud sync task from db fail, error: %v", err)
 			}
+
+			lgc.CompareRedisWithDB(ctx)
 		}
 	}()
 }
@@ -202,7 +205,6 @@ func (lgc *Logics) SyncTaskRedisStartManager(ctx context.Context) {
 				continue
 			}
 
-			// todo
 			taskInfoItem := pengdigStartItem.TaskItemInfo
 			taskID := pengdigStartItem.TaskID
 			ownerID := util.GetOwnerID(lgc.header)
@@ -219,7 +221,6 @@ func (lgc *Logics) SyncTaskRedisStartManager(ctx context.Context) {
 				continue
 			}
 
-			// todo
 			lgc.CloudSyncSwitch(ctx, &taskInfoItem)
 		}
 	}
@@ -312,6 +313,8 @@ func (lgc *Logics) CompareRedisWithDB(ctx context.Context) {
 
 	shouldStartItems := make([]meta.CloudSyncRedisPendingStart, 0)
 	shouldStopItems := make([]meta.CloudSyncRedisPendingStop, 0)
+	var mutex = &sync.Mutex{}
+
 	for _, dbItem := range response.Info {
 		if dbItem.Status {
 			for _, item := range startTaskArr {
@@ -319,6 +322,17 @@ func (lgc *Logics) CompareRedisWithDB(ctx context.Context) {
 					break
 				}
 				shouldStartItems = append(shouldStartItems, item)
+				nextTrigger := lgc.NextTrigger(ctx, dbItem.PeriodType, dbItem.Period)
+				taskInfoItem := &meta.TaskInfo{
+					Method:      dbItem.PeriodType,
+					NextTrigger: nextTrigger,
+					Args:        dbItem,
+					ManagerChn:  make(chan bool, 0),
+				}
+
+				mutex.Lock()
+				taskInfoMap[dbItem.TaskID] = taskInfoItem
+				mutex.Unlock()
 			}
 		} else {
 			for _, item := range stopTaskArr {
@@ -379,7 +393,12 @@ func (lgc *Logics) ExecSync(ctx context.Context, taskInfo meta.CloudTaskInfo) er
 	defer func() {
 		if errOrigin != nil {
 			cloudHistory.Status = "fail"
-			cloudHistory.FailReason = errOrigin
+			errString := fmt.Sprintf("%s", errOrigin)
+			if strings.Contains(errString, "AuthFailure") {
+				cloudHistory.FailReason = "AuthFailure"
+			}
+			cloudHistory.FailReason = "else"
+
 		}
 		lgc.CloudSyncHistory(ctx, taskInfo.TaskID, startTime, cloudHistory)
 	}()

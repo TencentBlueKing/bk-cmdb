@@ -240,7 +240,7 @@ func (s *Service) ResourceConfirm(req *restful.Request, resp *restful.Response) 
 		blog.Info("new add confirmed")
 		err := srvData.lgc.AddCloudHosts(srvData.ctx, AddHostList)
 		if err != nil {
-			blog.Errorf("add cloud host failed, err: %v , err")
+			blog.Errorf("add cloud host failed, err: %v", err)
 			srvData.ccErr.Error(1110080)
 		}
 	}
