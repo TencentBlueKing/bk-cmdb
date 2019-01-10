@@ -370,6 +370,7 @@ func (s *Server) heartbeat(conn connection.Connection) (description.Server, conn
 			opts := []connection.Option{
 				connection.WithConnectTimeout(func(time.Duration) time.Duration { return s.cfg.heartbeatTimeout }),
 				connection.WithReadTimeout(func(time.Duration) time.Duration { return s.cfg.heartbeatTimeout }),
+				connection.WithWriteTimeout(func(time.Duration) time.Duration { return s.cfg.heartbeatTimeout }),
 			}
 			opts = append(opts, s.cfg.connectionOpts...)
 			// We override whatever handshaker is currently attached to the options with an empty
@@ -448,6 +449,11 @@ func (s *Server) Drain() error { return s.pool.Drain() }
 // BuildCursor implements the command.CursorBuilder interface for the Server type.
 func (s *Server) BuildCursor(result bson.Raw, clientSession *session.Client, clock *session.ClusterClock, opts ...bsonx.Elem) (command.Cursor, error) {
 	return newCursor(result, clientSession, clock, s, opts...)
+}
+
+// BuildLegacyCursor implements the command.CursorBuilder interface for the Server type.
+func (s *Server) BuildLegacyCursor(ns command.Namespace, cursorID int64, batch []bson.Raw, limit int32, batchSize int32) (command.Cursor, error) {
+	return newLegacyCursor(ns, cursorID, batch, limit, batchSize, s)
 }
 
 // ServerSubscription represents a subscription to the description.Server updates for
