@@ -212,8 +212,7 @@ func (c *classification) FindClassification(params types.ContextParams, cond con
 	fCond := cond.ToMapStr()
 	if nil == params.MetaData {
 		fCond.Merge(metadata.BizLabelNotExist)
-	}
-	blog.Errorf("aaaaaaaaaaaaaaaaaa %v", fCond)
+	}∂∂∂
 	rsp, err := c.clientSet.CoreService().Model().ReadModelClassification(context.Background(), params.Header, &metadata.QueryCondition{Condition: fCond})
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s", err.Error())

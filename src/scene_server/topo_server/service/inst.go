@@ -192,7 +192,6 @@ func (s *topoService) SearchInsts(params types.ContextParams, pathParams, queryP
 		blog.Errorf("[api-inst] failed to parse the data and the condition, the input (%#v), error info is %s", data, err.Error())
 		return nil, err
 	}
-	blog.Errorf("aaaaaaaaaaaaaaa  %v", data)
 	page := metadata.ParsePage(queryCond.Page)
 	query := &metadata.QueryInput{}
 	query.Condition = queryCond.Condition
