@@ -38,7 +38,7 @@ func (m *associationModel) isValid(ctx core.ContextParams, inputParam metadata.C
 	}
 
 	if 0 == len(inputParam.Spec.AsstKindID) {
-		blog.Errorf("request(%s): it is failed to create a new model association, because of the AssoObjectID (%s) is not set", ctx.ReqID, metadata.AssociationFieldAssociationObjectID)
+		blog.Errorf("request(%s): it is failed to create a new model association, because of the AssoObjectID (%s) is not set", ctx.ReqID, metadata.AssociationFieldAssociationKind)
 		return ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.AssociationFieldAssociationObjectID)
 	}
 
