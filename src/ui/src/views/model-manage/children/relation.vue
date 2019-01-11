@@ -47,7 +47,7 @@
                     <span class="text-primary mr10" @click.stop="editRelation(item)">
                         {{$t('Common["编辑"]')}}
                     </span>
-                    <span class="text-primary" @click.stop="deleteRelation(item, index)">
+                    <span class="text-primary" @click.stop="deleteRelation(item)">
                         {{$t('Common["删除"]')}}
                     </span>
                 </template>
@@ -197,7 +197,7 @@
                 this.slider.title = this.$t('ModelManagement["编辑关联"]')
                 this.slider.isShow = true
             },
-            deleteRelation (relation, index) {
+            deleteRelation (relation) {
                 this.$bkInfo({
                     title: this.$t('ModelManagement["确定删除关联关系?"]'),
                     confirmFn: async () => {
