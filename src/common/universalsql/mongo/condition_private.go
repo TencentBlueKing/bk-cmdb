@@ -53,7 +53,12 @@ func parseConditionFromMapStr(inputCond *mongoCondition, inputKey string, inputC
 			outputCond.Element(ele)
 		default:
 
-			switch reflect.TypeOf(val).Kind() {
+			tmpType := reflect.TypeOf(val)
+			if nil == tmpType {
+				return nil // val is nil , ignore this operation
+			}
+
+			switch tmpType.Kind() {
 			case reflect.String,
 				reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 				reflect.Float32, reflect.Float64,
@@ -90,7 +95,7 @@ func parseConditionFromMapStr(inputCond *mongoCondition, inputKey string, inputC
 				outputCond.merge(tmpCond)
 			}
 
-		}
+		} // end operatorKey switch
 
 		return nil
 	})
