@@ -137,7 +137,7 @@ func (g *group) UpdateObjectAttributeGroup(params types.ContextParams, conds []m
 			Data:      mapstr.NewFromStruct(cond.Data, "json"),
 		}
 
-		rsp, err := g.clientSet.CoreService().Model().UpdateAttributeGroupByCondition(context.Background(), params.Header, input)
+		rsp, err := g.clientSet.CoreService().Model().UpdateModelAttrsByCondition(context.Background(), params.Header, &input)
 		if nil != err {
 			blog.Errorf("[operation-grp] failed to set the group  by the condition (%#v), error info is %s ", cond, err.Error())
 			return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
