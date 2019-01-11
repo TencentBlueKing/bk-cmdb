@@ -140,11 +140,15 @@ func queryModel(t *testing.T, client *httpclient.HttpClient, modelID, classID st
 		require.NotEmpty(t, item.Spec.OwnerID)
 		require.NotEmpty(t, item.Spec.ObjectID)
 		require.NotEmpty(t, item.Spec.ObjCls)
+		require.NotNil(t, item.Spec.CreateTime)
+		require.NotNil(t, item.Spec.LastTime)
 
 		for _, attr := range item.Attributes {
 			require.NotEmpty(t, attr.OwnerID)
 			require.NotEmpty(t, attr.PropertyID)
 			require.NotEqual(t, int64(0), attr.ID)
+			require.NotNil(t, attr.CreateTime)
+			require.NotNil(t, attr.LastTime)
 		}
 	}
 

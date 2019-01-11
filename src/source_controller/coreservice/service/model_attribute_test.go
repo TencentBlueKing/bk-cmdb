@@ -144,6 +144,8 @@ func queryModelAttributes(t *testing.T, client *httpclient.HttpClient, modelID, 
 		require.NotEmpty(t, item.OwnerID)
 		require.NotEmpty(t, item.PropertyID)
 		require.NotEmpty(t, item.ObjectID)
+		require.NotNil(t, item.LastTime)
+		require.NotNil(t, item.CreateTime)
 	}
 
 	resultStr, err := json.Marshal(modelResult)
