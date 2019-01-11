@@ -118,5 +118,5 @@ func (s *topoService) SearchGroupByObject(params types.ContextParams, pathParams
 
 	cond := condition.CreateCondition()
 
-	return s.core.GroupOperation().FindGroupByObject(params, pathParams("bk_object_id"), cond)
+	return s.core.GroupOperation().FindGroupByObject(params, pathParams("bk_obj_id"), cond)
 }

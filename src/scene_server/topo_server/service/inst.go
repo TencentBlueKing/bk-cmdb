@@ -74,9 +74,9 @@ func (s *topoService) CreateInst(params types.ContextParams, pathParams, queryPa
 }
 func (s *topoService) DeleteInsts(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	obj, err := s.core.ObjectOperation().FindSingleObject(params, pathParams("obj_id"))
+	obj, err := s.core.ObjectOperation().FindSingleObject(params, pathParams("bk_obj_id"))
 	if nil != err {
-		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
+		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("bk_obj_id"), err.Error())
 		return nil, err
 	}
 

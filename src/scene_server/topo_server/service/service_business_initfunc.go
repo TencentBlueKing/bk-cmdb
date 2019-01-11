@@ -18,12 +18,12 @@ import (
 
 func (s *topoService) initBusinessObject() {
 
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/createmany/objectdes", HandlerFunc: s.CreateObjectBatch})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/findmany/objectdes", HandlerFunc: s.SearchObjectBatch})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/objectdes", HandlerFunc: s.CreateOneObject})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/objectdes", HandlerFunc: s.SearchObject})
-	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/objectdes/{id}", HandlerFunc: s.UpdateObject})
-	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/objectdes/{id}", HandlerFunc: s.DeleteObject})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/createmany/object", HandlerFunc: s.CreateObjectBatch})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/findmany/object", HandlerFunc: s.SearchObjectBatch})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/object", HandlerFunc: s.CreateOneObject})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/object", HandlerFunc: s.SearchObject})
+	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/object/{id}", HandlerFunc: s.UpdateObject})
+	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/object/{id}", HandlerFunc: s.DeleteObject})
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/find/objecttopology", HandlerFunc: s.SearchObjectTopo})
 
 }
@@ -48,7 +48,7 @@ func (s *topoService) initBusinessObjectUnique() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/objectunique/object/{bk_obj_id}", HandlerFunc: s.CreateObjectUnique})
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/objectunique/object/{bk_obj_id}/unique/{id}", HandlerFunc: s.UpdateObjectUnique})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/objectunique/object/{bk_obj_id}/unique/{id}", HandlerFunc: s.DeleteObjectUnique})
-	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/find/objectunique/object/{bk_obj_id", HandlerFunc: s.SearchObjectUnique})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/objectunique/object/{bk_obj_id}", HandlerFunc: s.SearchObjectUnique})
 }
 
 func (s *topoService) initBusinessObjectAttrGroup() {
@@ -106,7 +106,7 @@ func (s *topoService) initBusinessAssociation() {
 
 func (s *topoService) initBusinessInst() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/instance/object/{bk_obj_id}", HandlerFunc: s.CreateInst})
-	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/instance/object/{bk_obj_id}/inst/{bk_inst_id}", HandlerFunc: s.DeleteInst})
+	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/instance/object/{bk_obj_id}/inst/{inst_id}", HandlerFunc: s.DeleteInst})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/deletemany/instance/object/{bk_obj_id}", HandlerFunc: s.DeleteInsts})
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/instance/object/{bk_obj_id}/inst/{inst_id}", HandlerFunc: s.UpdateInst})
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/updatemany/instance/object/{bk_obj_id}", HandlerFunc: s.UpdateInsts})
