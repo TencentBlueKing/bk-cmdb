@@ -105,6 +105,14 @@ func queryModelAttributeGroup(t *testing.T, client *httpclient.HttpClient, model
 	modelResult := &metadata.ReadModelAttributeGroupResult{}
 	err = json.Unmarshal(dataResult, modelResult)
 	require.NoError(t, err)
+	require.NotNil(t, modelResult)
+	require.Equal(t, modelResult.Data.Count, int64(len(modelResult.Data.Info)))
+	for _, item := range modelResult.Data.Info {
+		require.NotEmpty(t, item.OwnerID)
+		require.NotEmpty(t, item.ObjectID)
+		require.NotEmpty(t, item.GroupID)
+		require.NotEqual(t, int64(0), item.ID)
+	}
 
 	resultStr, err := json.Marshal(modelResult)
 	require.NoError(t, err)
@@ -136,6 +144,8 @@ func updateModelAttributeGroup(t *testing.T, client *httpclient.HttpClient, mode
 	modelResult := &metadata.UpdatedOptionResult{}
 	err = json.Unmarshal(dataResult, modelResult)
 	require.NoError(t, err)
+	require.NotNil(t, modelResult)
+	require.NotEqual(t, uint64(0), modelResult.Data.Count)
 
 	resultStr, err := json.Marshal(modelResult)
 	require.NoError(t, err)
@@ -144,7 +154,7 @@ func updateModelAttributeGroup(t *testing.T, client *httpclient.HttpClient, mode
 }
 
 func deleteModelAttributeGroup(t *testing.T, client *httpclient.HttpClient, modelID, modelAttributeGroupID string) {
-	return
+
 	cond := mongo.NewCondition()
 	cond.Element(mongo.Field(metadata.GroupFieldObjectID).Eq(modelID))
 	cond.Element(mongo.Field(metadata.GroupFieldGroupID).Eq(modelAttributeGroupID))
@@ -164,6 +174,8 @@ func deleteModelAttributeGroup(t *testing.T, client *httpclient.HttpClient, mode
 	modelResult := &metadata.DeletedOptionResult{}
 	err = json.Unmarshal(dataResult, modelResult)
 	require.NoError(t, err)
+	require.NotNil(t, modelResult)
+	require.NotEqual(t, uint64(0), modelResult.Data.Count)
 
 	resultStr, err := json.Marshal(modelResult)
 	require.NoError(t, err)
