@@ -8,11 +8,11 @@
                     </label>
                     <div class="create-item-content">
                         <input type="text"
-                               v-model="taskMap.bk_task_name"
-                               class="cmdb-form-input"
-                               name="taskName"
-                               v-validate="'required|singlechar'"
-                               :placeholder="$t('Cloud[\'请输入任务名称\']')"/>
+                            v-model="taskMap.bk_task_name"
+                            class="cmdb-form-input"
+                            name="taskName"
+                            v-validate="'required|singlechar'"
+                            :placeholder="$t('Cloud[\'请输入任务名称\']')"/>
                     </div>
                     <span v-show="errors.has('taskName')" class="error-info color-danger">{{ errors.first('taskName') }}</span>
                 </li>
@@ -36,12 +36,13 @@
                         {{ $t('Cloud["ID"]')}}<span class="color-danger">*</span>
                     </label>
                     <div class="create-item-content">
-                        <input type="text"
-                               v-model="taskMap.bk_secret_id"
-                               class="cmdb-form-input"
-                               name="ID"
-                               v-validate="'required|singlechar'"
-                               :placeholder="$t('Cloud[\'请输入ID\']')"/>
+                        <input
+                            type="text"
+                            v-model="taskMap.bk_secret_id"
+                            class="cmdb-form-input"
+                            name="ID"
+                            v-validate="'required|singlechar'"
+                            :placeholder="$t('Cloud[\'请输入ID\']')"/>
                     </div>
                     <span v-show="errors.has('ID')" class="error-info color-danger">{{ errors.first('ID') }}</span>
                 </li>
@@ -54,12 +55,13 @@
                         </a>
                     </label>
                     <div class="create-item-content">
-                        <input type="password"
-                               v-model="taskMap.bk_secret_key"
-                               class="cmdb-form-input"
-                               name="Key"
-                               v-validate="'required|singlechar'"
-                               :placeholder="$t('Cloud[\'请输入key\']')"/>
+                        <input
+                            type="password"
+                            v-model="taskMap.bk_secret_key"
+                            class="cmdb-form-input"
+                            name="Key"
+                            v-validate="'required|singlechar'"
+                            :placeholder="$t('Cloud[\'请输入key\']')"/>
                     </div>
                     <span v-show="errors.has('Key')" class="error-info color-danger">{{ errors.first('Key') }}</span>
                 </li>
@@ -73,20 +75,21 @@
                             :list="periodList"
                             :selected.sync="taskMap.bk_period_type">
                         </bk-selector>
+                        <input
+                            type="text"
+                            class="cmdb-form-input"
+                            v-model="taskMap.bk_period"
+                            v-if="taskMap.bk_period_type === 'day'"
+                            name="day"
+                            v-validate="'required|dayFormat'"
+                            :placeholder="$t('Cloud[\'例如: 19:30\']')"/>
                         <input type="text"
-                               class="cmdb-form-input"
-                               v-model="taskMap.bk_period"
-                               v-if="taskMap.bk_period_type === 'day'"
-                               name="day"
-                               v-validate="'required|dayFormat'"
-                               :placeholder="$t('Cloud[\'例如: 19:30\']')"/>
-                        <input type="text"
-                               class="cmdb-form-input"
-                               v-model="taskMap.bk_period"
-                               v-if="taskMap.bk_period_type === 'hour'"
-                               name="hour"
-                               v-validate="'required|hourFormat'"
-                               :placeholder="$t('Cloud[\'例如: 30\']')">
+                            class="cmdb-form-input"
+                            v-model="taskMap.bk_period"
+                            v-if="taskMap.bk_period_type === 'hour'"
+                            name="hour"
+                            v-validate="'required|hourFormat'"
+                            :placeholder="$t('Cloud[\'例如: 30\']')">
                         <div v-show="errors.has('hour')" class="error-info-two color-danger">{{ errors.first('hour') }}</div>
                         <div v-show="errors.has('day')" class="error-info-two color-danger">{{ errors.first('day') }}</div>
                     </div>

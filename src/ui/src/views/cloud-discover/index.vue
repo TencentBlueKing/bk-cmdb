@@ -4,15 +4,15 @@
             <bk-button class="cloud-btn" type="primary" @click="handleCreate">{{ $t('Cloud["新建云同步任务"]')}}</bk-button>
             <div class="cloud-option-filter clearfix fr">
                 <bk-selector class="cloud-filter-selector fl"
-                             :list="list"
-                             :selected.sync="defaultDemo.selected">
+                    :list="list"
+                    :selected.sync="defaultDemo.selected">
                 </bk-selector>
                 <input class="cloud-filter-value cmdb-form-input fl"
-                       type="text"
-                       :placeholder="$t('Cloud[\'任务名称搜索\']')"
-                       v-model.trim="filter.text"
-                       @keyup.enter="getTableData">
-                    <i class="cloud-filter-search bk-icon icon-search" @click="getTableData"></i>
+                    type="text"
+                    :placeholder="$t('Cloud[\'任务名称搜索\']')"
+                    v-model.trim="filter.text"
+                    @keyup.enter="getTableData">
+                <i class="cloud-filter-search bk-icon icon-search" @click="getTableData"></i>
             </div>
         </div>
         <cmdb-table class="cloud-discover-table" ref="table"
@@ -59,7 +59,7 @@
                     <span>{{$t('Cloud["腾讯云"]')}}</span>
                 </template>
                 <template slot="bk_obj_id" slot-scope="{ item }">
-                    {{ $t('Hosts["主机"]')}}
+                    <span>{{ $t('Hosts["主机"]')}}</span>
                 </template>
                 <template slot="bk_last_sync_time" slot-scope="{ item }">
                     <span v-if="item.bk_last_sync_time === ''">--</span>
@@ -87,11 +87,11 @@
             :beforeClose="handleSliderBeforeClose"
             :width="680">
             <v-create v-if="attribute.type === 'create'"
-                      slot="content"
-                      ref="detail"
-                      :type="attribute.type"
-                      @saveSuccess="saveSuccess"
-                      @cancel="closeSlider">
+                slot="content"
+                ref="detail"
+                :type="attribute.type"
+                @saveSuccess="saveSuccess"
+                @cancel="closeSlider">
             </v-create>
             <bk-tab :active-name.sync="tab.active" slot="content" v-else>
                 <bk-tabpanel name="details" :title="$t('Cloud[\'任务详情\']')" style="width: calc(100% + 40px);margin: 0 -20px;">

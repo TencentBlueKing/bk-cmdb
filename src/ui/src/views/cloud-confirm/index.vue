@@ -1,9 +1,10 @@
 <template>
     <div>
         <div class="clearfix">
-            <bk-button type="primary"
-                       @click="batchConfirm"
-                       :disabled="!table.checked.length">
+            <bk-button
+                type="primary"
+                @click="batchConfirm"
+                :disabled="!table.checked.length">
                 <span>{{$t("Cloud['批量确认']")}}</span>
             </bk-button>
             <div class="confirm-options-button fr">
@@ -12,56 +13,60 @@
                 </bk-button>
             </div>
             <div class="confirm-options-filter clearfix fr">
-                <bk-selector class="confirm-filter-selector fl"
-                             :list="selector.list"
-                             :selected.sync="selector.defaultDemo.selected">
+                <bk-selector
+                    class="confirm-filter-selector fl"
+                    :list="selector.list"
+                    :selected.sync="selector.defaultDemo.selected">
                 </bk-selector>
-                <cmdb-form-enum class="confirm-filter-value fl"
-                                v-if="filter.type === 'enum'"
-                                :options="$tools.getEnumOptions(properties, filter.id)"
-                                :allow-clear="true"
-                                v-model="filter.value"
-                                @on-selected="getTableData">
+                <cmdb-form-enum
+                    class="confirm-filter-value fl"
+                    v-if="filter.type === 'enum'"
+                    :options="$tools.getEnumOptions(properties, filter.id)"
+                    :allow-clear="true"
+                    v-model="filter.value"
+                    @on-selected="getTableData">
                 </cmdb-form-enum>
-                <input class="confirm-filter-value cmdb-form-input fl" type="text"
-                       v-else
-                       v-model.trim="filter.text"
-                       @keydown.enter="getTableData">
+                <input
+                    class="confirm-filter-value cmdb-form-input fl"
+                    type="text"
+                    v-else
+                    v-model.trim="filter.text"
+                    @keydown.enter="getTableData">
                 <i class="confirm-filter-search bk-icon icon-search" @click="getTableData"></i>
             </div>
         </div>
         <cmdb-table class="cloud-table" ref="table"
-                    :loading="$loading('searchConfirm')"
-                    :header="table.header"
-                    :checked.sync="table.checked"
-                    :list="table.list"
-                    :pagination.sync="table.pagination"
-                    :defaultSort="table.defaultSort"
-                    :wrapperMinusHeight="157"
-                    @handleSizeChange="handleSizeChange"
-                    @handlePageChange="handlePageChange">
-                        <template slot="bk_resource_type" slot-scope="{ item }">
-                                        <span class="attr-changed" v-if="item.bk_resource_type === 'change'">
-                                            {{$t('Cloud["变更"]')}}
-                                        </span>
-                            <span class="new-add" v-else>
-                                            {{$t('Cloud["新增"]')}}
-                                        </span>
-                        </template>
-                        <template slot="bk_account_type" slot-scope="{ item }">
-                            <span>{{$t('Cloud["腾讯云"]')}}</span>
-                        </template>
-                        <template slot="bk_obj_id" slot-scope="{ item }">
-                            {{ $t('Hosts["主机"]')}}
-                        </template>
-                        <template slot="operation" slot-scope="{ item }">
-                            <span class="text-primary mr20" @click.stop="singleConfirm(item)">{{$t('Hosts["确认"]')}}</span>
-                        </template>
-                        <div class="empty-info" slot="data-empty">
-                            <p>{{$t("Cloud['暂时没有数据，请确保先添加云资源发现任务，']")}}
-                                <span class="text-primary" @click="handleAdd">{{ $t('Cloud["去添加"]')}}</span>
-                            </p>
-                        </div>
+            :loading="$loading('searchConfirm')"
+            :header="table.header"
+            :checked.sync="table.checked"
+            :list="table.list"
+            :pagination.sync="table.pagination"
+            :defaultSort="table.defaultSort"
+            :wrapperMinusHeight="157"
+            @handleSizeChange="handleSizeChange"
+            @handlePageChange="handlePageChange">
+                <template slot="bk_resource_type" slot-scope="{ item }">
+                    <span class="attr-changed" v-if="item.bk_resource_type === 'change'">
+                        {{$t('Cloud["变更"]')}}
+                    </span>
+                    <span class="new-add" v-else>
+                        {{$t('Cloud["新增"]')}}
+                    </span>
+                </template>
+                <template slot="bk_account_type" slot-scope="{ item }">
+                    <span>{{$t('Cloud["腾讯云"]')}}</span>
+                </template>
+                <template slot="bk_obj_id" slot-scope="{ item }">
+                    {{ $t('Hosts["主机"]')}}
+                </template>
+                <template slot="operation" slot-scope="{ item }">
+                    <span class="text-primary mr20" @click.stop="singleConfirm(item)">{{$t('Hosts["确认"]')}}</span>
+                </template>
+                <div class="empty-info" slot="data-empty">
+                    <p>{{$t("Cloud['暂时没有数据，请确保先添加云资源发现任务，']")}}
+                        <span class="text-primary" @click="handleAdd">{{ $t('Cloud["去添加"]')}}</span>
+                    </p>
+                </div>
         </cmdb-table>
     </div>
 </template>
@@ -69,8 +74,6 @@
 <script>
     import { mapActions } from 'vuex'
     export default {
-        components: {
-        },
         data () {
             return {
                 selector: {
