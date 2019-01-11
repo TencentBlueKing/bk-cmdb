@@ -356,7 +356,7 @@ func (m *model) CreateAttributeGroup(ctx context.Context, h http.Header, objID s
 func (m *model) UpdateAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.UpdateOption) (resp metadata.UpdatedOptionResult, err error) {
 	subPath := fmt.Sprintf("/update/model/%s/group", objID)
 
-	err = m.client.Post().
+	err = m.client.Put().
 		WithContext(ctx).
 		Body(input).
 		SubResource(subPath).
@@ -369,7 +369,7 @@ func (m *model) UpdateAttributeGroup(ctx context.Context, h http.Header, objID s
 func (m *model) UpdateAttributeGroupByCondition(ctx context.Context, h http.Header, input metadata.UpdateOption) (resp metadata.UpdatedOptionResult, err error) {
 	subPath := fmt.Sprintf("/update/model/group")
 
-	err = m.client.Post().
+	err = m.client.Put().
 		WithContext(ctx).
 		Body(input).
 		SubResource(subPath).
@@ -395,7 +395,7 @@ func (m *model) SetAttributeGroup(ctx context.Context, h http.Header, objID stri
 func (m *model) DeleteAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.DeleteOption) (resp metadata.DeletedOptionResult, err error) {
 	subPath := fmt.Sprintf("/delete/model/%s/group", objID)
 
-	err = m.client.Post().
+	err = m.client.Delete().
 		WithContext(ctx).
 		Body(input).
 		SubResource(subPath).
@@ -408,7 +408,7 @@ func (m *model) DeleteAttributeGroup(ctx context.Context, h http.Header, objID s
 func (m *model) DeleteAttributeGroupByCondition(ctx context.Context, h http.Header, input metadata.DeleteOption) (resp metadata.DeletedOptionResult, err error) {
 	subPath := fmt.Sprintf("/delete/model/group")
 
-	err = m.client.Post().
+	err = m.client.Delete().
 		WithContext(ctx).
 		Body(input).
 		SubResource(subPath).
@@ -422,6 +422,7 @@ func (m *model) CreateModelAttrUnique(ctx context.Context, h http.Header, objID 
 	subPath := fmt.Sprintf("/create/model/%s/attributes/unique", objID)
 	err = m.client.Post().
 		WithContext(ctx).
+		Body(data).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
@@ -445,7 +446,7 @@ func (m *model) UpdateModelAttrUnique(ctx context.Context, h http.Header, objID 
 func (m *model) DeleteModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64) (resp *metadata.DeletedOptionResult, err error) {
 	subPath := fmt.Sprintf("/delete/model/%s/attributes/unique/%d", objID, id)
 
-	err = m.client.Post().
+	err = m.client.Delete().
 		WithContext(ctx).
 		SubResource(subPath).
 		WithHeaders(h).
