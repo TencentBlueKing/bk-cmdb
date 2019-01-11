@@ -39,7 +39,8 @@ func (m *modelManager) save(ctx core.ContextParams, model *metadata.Object) (id 
 		blog.Errorf("request(%s): it is failed to make sequence id on the table (%s), error info is %s", ctx.ReqID, common.BKTableNameObjDes, err.Error())
 		return id, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
-
+	model.ID = int64(id)
+	model.OwnerID = ctx.SupplierAccount
 	err = m.dbProxy.Table(common.BKTableNameObjDes).Insert(ctx, model)
 	return id, err
 }
