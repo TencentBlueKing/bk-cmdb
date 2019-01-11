@@ -50,6 +50,21 @@ func setManyClassification(t *testing.T, client *httpclient.HttpClient, classifi
 	clsResult := metadata.SetOptionResult{}
 	err = json.Unmarshal(dataResult, &clsResult)
 	require.NoError(t, err)
+
+	for _, item := range clsResult.Data.Created {
+		require.NotEqual(t, uint64(0), item.ID)
+	}
+
+	for _, item := range clsResult.Data.Updated {
+		require.NotEqual(t, uint64(0), item.ID)
+	}
+
+	for _, item := range clsResult.Data.Exceptions {
+		require.NotEmpty(t, item.Message)
+		require.NotNil(t, item.Data)
+		require.NotEqual(t, int64(0), item.Code)
+	}
+
 	resultStr, err := json.Marshal(clsResult)
 	require.NoError(t, err)
 	t.Logf("set many data result:%s", resultStr)
@@ -79,6 +94,21 @@ func setOneClassification(t *testing.T, client *httpclient.HttpClient, classific
 	clsResult := metadata.SetOptionResult{}
 	err = json.Unmarshal(dataResult, &clsResult)
 	require.NoError(t, err)
+	for _, item := range clsResult.Data.Created {
+		require.NotEqual(t, uint64(0), item.ID)
+	}
+
+	for _, item := range clsResult.Data.Updated {
+		require.NotEqual(t, uint64(0), item.ID)
+	}
+
+	for _, item := range clsResult.Data.Exceptions {
+		require.NotEqual(t, uint64(0), item.Code)
+		require.NotEmpty(t, item.Message)
+		require.NotNil(t, item.Data)
+		require.NotEmpty(t, item.Data)
+	}
+
 	resultStr, err := json.Marshal(clsResult)
 	require.NoError(t, err)
 	t.Logf("set one data result:%s", resultStr)
@@ -110,6 +140,22 @@ func createManyClassification(t *testing.T, client *httpclient.HttpClient, class
 	clsResult := metadata.CreatedManyOptionResult{}
 	err = json.Unmarshal(dataResult, &clsResult)
 	require.NoError(t, err)
+
+	for _, item := range clsResult.Data.Created {
+		require.NotEqual(t, uint64(0), item.ID)
+	}
+
+	for _, item := range clsResult.Data.Repeated {
+		require.NotNil(t, item.Data)
+		require.NotEmpty(t, item.Data)
+	}
+
+	for _, item := range clsResult.Data.Exceptions {
+		require.NotNil(t, item.Data)
+		require.NotEmpty(t, item.Data)
+		require.NotEmpty(t, item.Message)
+	}
+
 	resultStr, err := json.Marshal(clsResult)
 	require.NoError(t, err)
 	t.Logf("create many data result:%s", resultStr)
@@ -140,6 +186,9 @@ func createOneClassification(t *testing.T, client *httpclient.HttpClient, classi
 	clsResult := metadata.CreatedOneOptionResult{}
 	err = json.Unmarshal(dataResult, &clsResult)
 	require.NoError(t, err)
+
+	require.NotEqual(t, uint64(0), clsResult.Data.Created.ID)
+
 	resultStr, err := json.Marshal(clsResult)
 	require.NoError(t, err)
 	t.Logf("create one data result:%s", resultStr)
@@ -172,6 +221,13 @@ func queryClassification(t *testing.T, client *httpclient.HttpClient, classifica
 	clsResult := metadata.ReadModelClassifitionResult{}
 	err = json.Unmarshal(dataResult, &clsResult)
 	require.NoError(t, err)
+	require.Equal(t, clsResult.Data.Count, int64(len(clsResult.Data.Info)))
+	for _, item := range clsResult.Data.Info {
+		require.NotEqual(t, int64(0), item.ID)
+		require.NotEmpty(t, item.OwnerID)
+		require.NotEmpty(t, item.ClassificationID)
+	}
+
 	resultStr, err := json.Marshal(clsResult)
 	require.NoError(t, err)
 	t.Logf("query data result:%s", resultStr)
