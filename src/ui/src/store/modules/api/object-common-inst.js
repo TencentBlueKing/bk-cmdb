@@ -29,7 +29,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     createInst ({ commit, state, dispatch, rootGetters }, { objId, params, config }) {
-        return $http.post(`create/inst/object/${objId}`, params, config)
+        return $http.post(`create/instance/object/${objId}`, params, config)
     },
 
     /**
@@ -42,7 +42,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     updateInst ({ commit, state, dispatch, rootGetters }, { objId, instId, params, config }) {
-        return $http.put(`update/inst/object/${objId}/inst/${instId}`, params, config)
+        return $http.put(`update/instance/object/${objId}/inst/${instId}`, params, config)
     },
 
     /**
@@ -55,7 +55,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     batchUpdateInst ({ commit, state, dispatch, rootGetters }, { objId, params, config }) {
-        return $http.put(`updatemany/inst/object/${objId}`, params, config)
+        return $http.put(`updatemany/instance/object/${objId}`, params, config)
     },
     
     /**
@@ -103,7 +103,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     deleteInst ({ commit, state, dispatch, rootGetters }, { objId, instId, config }) {
-        return $http.delete(`delete/inst/object/${objId}/inst/${instId}`, config)
+        return $http.delete(`delete/instance/object/${objId}/inst/${instId}`, config)
     },
 
     /**
@@ -113,7 +113,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     batchDeleteInst ({ commit, state, dispatch, rootGetters }, {objId, config}) {
-        return $http.delete(`deletemany/inst/object/${objId}`, config)
+        return $http.delete(`deletemany/instance/object/${objId}`, config)
     }
 }
 
