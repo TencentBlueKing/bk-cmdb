@@ -13,6 +13,7 @@
 package logics
 
 import (
+	"configcenter/src/common"
 	"net/http"
 
 	"gopkg.in/redis.v5"
@@ -32,6 +33,37 @@ type Logics struct {
 	user    string
 	ownerID string
 	cache   *redis.Client
+}
+
+// NewFromHeader new Logic from header
+func (lgc *Logics) NewFromHeader(header http.Header) *Logics {
+	lang := util.GetLanguage(header)
+	rid := util.GetHTTPCCRequestID(header)
+	if rid == "" {
+		if lgc.rid == "" {
+			rid = util.GenerateRID()
+		} else {
+			rid = lgc.rid
+		}
+		header.Set(common.BKHTTPCCRequestID, rid)
+	}
+	newLgc := &Logics{
+		header:  header,
+		Engine:  lgc.Engine,
+		rid:     rid,
+		cache:   lgc.cache,
+		user:    util.GetUser(header),
+		ownerID: util.GetOwnerID(header),
+	}
+	// if language not exist, use old language
+	if lang == "" {
+		newLgc.ccErr = lgc.ccErr
+		newLgc.ccLang = lgc.ccLang
+	} else {
+		newLgc.ccErr = lgc.CCErr.CreateDefaultCCErrorIf(lang)
+		newLgc.ccLang = lgc.Language.CreateDefaultCCLanguageIf(lang)
+	}
+	return newLgc
 }
 
 // NewLogics get logic handle
