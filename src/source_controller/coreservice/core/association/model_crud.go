@@ -51,6 +51,8 @@ func (m *associationModel) save(ctx core.ContextParams, assoParam *metadata.Asso
 		return id, err
 	}
 
+	assoParam.ID = int64(id)
+	assoParam.OwnerID = ctx.SupplierAccount
 	err = m.dbProxy.Table(common.BKTableNameObjAsst).Insert(ctx, assoParam)
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to execute database insert operation on the table (%s), error info is %s", ctx.ReqID, common.BKTableNameObjAsst, err.Error())
