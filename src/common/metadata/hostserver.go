@@ -14,6 +14,8 @@ package metadata
 
 import (
 	"configcenter/src/common/mapstr"
+	"net/http"
+	"time"
 )
 
 type DeleteHostBatchOpt struct {
@@ -217,15 +219,18 @@ type TaskInfo struct {
 }
 
 type CloudSyncRedisPendingStart struct {
-	TaskID       int64    `json:"bk_task_id"`
-	TaskItemInfo TaskInfo `json:"task_item_info"`
-	OwnerID      string   `json:"bk_supplier_account"`
+	NewHeader    http.Header `json:"new_header"`
+	TaskID       int64       `json:"bk_task_id"`
+	TaskItemInfo TaskInfo    `json:"task_item_info"`
+	OwnerID      string      `json:"bk_supplier_account"`
 }
 
 type CloudSyncRedisAlreadyStarted struct {
-	TaskID       int64    `json:"bk_task_id"`
-	TaskItemInfo TaskInfo `json:"task_item_info"`
-	OwnerID      string   `json:"bk_supplier_account"`
+	LastSyncTime time.Time   `json:"last_sync_time"`
+	NewHeader    http.Header `json:"new_header"`
+	TaskID       int64       `json:"bk_task_id"`
+	TaskItemInfo TaskInfo    `json:"task_item_info"`
+	OwnerID      string      `json:"bk_supplier_account"`
 }
 
 type CloudSyncRedisPendingStop struct {
