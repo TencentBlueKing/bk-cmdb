@@ -22,7 +22,7 @@ import (
 )
 
 type Time struct {
-	time.Time `bson:",inline"`
+	time.Time `bson:",inline" json:",inline"`
 }
 
 // Scan implement sql driver's Scan interface
@@ -37,7 +37,7 @@ func (t Time) Value() (driver.Value, error) {
 }
 
 func (t Time) MarshalJSON() ([]byte, error) {
-	return []byte(t.UTC().Format(`"2006-01-02T15:04:05Z"`)), nil
+	return []byte(t.Format(`"2006-01-02 15:04:05"`)), nil
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface.

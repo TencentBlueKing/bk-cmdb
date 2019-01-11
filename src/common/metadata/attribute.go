@@ -13,8 +13,6 @@
 package metadata
 
 import (
-	"time"
-
 	"configcenter/src/common/mapstr"
 	types "configcenter/src/common/mapstr"
 )
@@ -68,9 +66,9 @@ type Attribute struct {
 	Option            interface{} `field:"option" json:"option" bson:"option"`
 	Description       string      `field:"description" json:"description" bson:"description"`
 
-	Creator    string     `field:"creator" json:"creator" bson:"creator"`
-	CreateTime *time.Time `json:"create_time" bson:"creaet_time"`
-	LastTime   *time.Time `json:"last_time" bson:"last_time"`
+	Creator    string `field:"creator" json:"creator" bson:"creator"`
+	CreateTime *Time  `json:"create_time" bson:"creaet_time"`
+	LastTime   *Time  `json:"last_time" bson:"last_time"`
 }
 
 // AttributeGroup attribute metadata definition

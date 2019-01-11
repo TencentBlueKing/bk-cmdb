@@ -15,7 +15,10 @@ package mongo_test
 import (
 	"testing"
 
+	"configcenter/src/common/mapstr"
+
 	"configcenter/src/common"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 
 	"github.com/stretchr/testify/require"
@@ -97,4 +100,20 @@ func TestMgCondition(t *testing.T) {
 	)
 	sql, _ = target.ToSQL()
 	t.Logf("%s", sql)
+}
+
+func TestIssue1708(t *testing.T) {
+	testData := metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			"bk_group_id": "default",
+			"bk_obj_id":   "1",
+			"id":          mapstr.MapStr{"$nin": []int{0}},
+			"metadata":    mapstr.MapStr{"label": nil},
+		},
+	}
+
+	cond, err := mongo.NewConditionFromMapStr(testData.Condition)
+	require.NoError(t, err)
+	t.Logf("t:%#v", cond.ToMapStr())
+
 }

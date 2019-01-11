@@ -13,6 +13,8 @@
 package model
 
 import (
+	"time"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
@@ -36,6 +38,16 @@ func (m *modelAttribute) save(ctx core.ContextParams, attribute metadata.Attribu
 	attribute.ID = int64(id)
 	attribute.OwnerID = ctx.SupplierAccount
 
+	if nil == attribute.CreateTime {
+		attribute.CreateTime = &metadata.Time{}
+		attribute.CreateTime.Time = time.Now()
+	}
+
+	if nil == attribute.LastTime {
+		attribute.LastTime = &metadata.Time{}
+		attribute.LastTime.Time = time.Now()
+	}
+
 	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Insert(ctx, attribute)
 	return id, err
 }
@@ -50,6 +62,8 @@ func (m *modelAttribute) update(ctx core.ContextParams, data mapstr.MapStr, cond
 
 	data.Remove(metadata.AttributeFieldPropertyID)
 	data.Remove(metadata.AttributeFieldSupplierAccount)
+	data.Set(metadata.AttributeFieldLastTime, time.Now())
+
 	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Update(ctx, cond.ToMapStr(), data)
 	if nil != err {
 		blog.Errorf("request(%s): database operation is failed, error info is %s", ctx.ReqID, err.Error())
