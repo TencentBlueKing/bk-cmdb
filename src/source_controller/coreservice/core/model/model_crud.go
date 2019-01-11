@@ -49,6 +49,7 @@ func (m *modelManager) save(ctx core.ContextParams, model *metadata.Object) (id 
 	// 	model.CreateTime = new(time.Time)
 	// 	*model.CreateTime = time.Now()
 	// }
+
 	err = m.dbProxy.Table(common.BKTableNameObjDes).Insert(ctx, model)
 	return id, err
 }

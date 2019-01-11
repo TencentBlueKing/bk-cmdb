@@ -397,7 +397,7 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 			IsRequired:        true,
 			PropertyType:      common.FieldTypeInt,
 			PropertyID:        common.BKInstParentStr,
-			PropertyName:      obj.GetDefaultInstPropertyName(),
+			PropertyName:      common.BKInstParentStr,
 		})
 
 		if err = pAttr.Create(); nil != err {
