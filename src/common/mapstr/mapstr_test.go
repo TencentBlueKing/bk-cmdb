@@ -245,7 +245,7 @@ func TestConvertToMapStrFromStructInnerPointer(t *testing.T) {
 	resultTmp := targetTest{}
 	err = targetMapStr.ToStructByTag(&resultTmp, "field")
 	require.NoError(t, err)
-	t.Logf("result struct:%v %s", resultTmp, *resultTmp.Field3)
+	t.Logf("result struct:%#v %s", resultTmp, *resultTmp.Field3)
 }
 
 func TestConvertToMapStrFromStructInnerEmbedPointer(t *testing.T) {

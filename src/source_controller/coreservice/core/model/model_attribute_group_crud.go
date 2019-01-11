@@ -63,7 +63,6 @@ func (g *modelAttributeGroup) update(ctx core.ContextParams, data mapstr.MapStr,
 	if nil != err {
 		return cnt, err
 	}
-
-	err = g.dbProxy.Table(common.BKTableNamePropertyGroup).Update(ctx, data, cond.ToMapStr())
+	err = g.dbProxy.Table(common.BKTableNamePropertyGroup).Update(ctx, cond.ToMapStr(), data)
 	return cnt, err
 }
