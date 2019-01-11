@@ -446,7 +446,7 @@ func (m *model) UpdateModelAttrUnique(ctx context.Context, h http.Header, objID 
 func (m *model) DeleteModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64) (resp *metadata.DeletedOptionResult, err error) {
 	subPath := fmt.Sprintf("/delete/model/%s/attributes/unique/%d", objID, id)
 
-	err = m.client.Post().
+	err = m.client.Delete().
 		WithContext(ctx).
 		SubResource(subPath).
 		WithHeaders(h).
