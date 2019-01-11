@@ -116,6 +116,8 @@ func (cli MapStr) Int64(key string) (int64, error) {
 		return int64(t), nil
 	case int64:
 		return t, nil
+	case uint64:
+		return int64(t), nil
 	case float32:
 		return int64(t), nil
 	case float64:
