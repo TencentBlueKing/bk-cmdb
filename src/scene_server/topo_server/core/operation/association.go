@@ -534,7 +534,7 @@ func (a *association) DeleteType(params types.ContextParams, asstTypeID int) (re
 func (a *association) SearchObject(params types.ContextParams, request *metadata.SearchAssociationObjectRequest) (resp *metadata.SearchAssociationObjectResult, err error) {
 	rsp, err := a.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), params.Header, &metadata.QueryCondition{Condition: request.Condition})
 
-	resp = &metadata.SearchAssociationObjectResult{BaseResp: rsp.BaseResp}
+	resp = &metadata.SearchAssociationObjectResult{BaseResp: rsp.BaseResp, Data: []*metadata.Association{}}
 	for index := range rsp.Data.Info {
 		resp.Data = append(resp.Data, &rsp.Data.Info[index])
 	}
