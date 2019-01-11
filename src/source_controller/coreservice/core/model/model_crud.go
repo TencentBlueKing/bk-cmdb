@@ -13,6 +13,8 @@
 package model
 
 import (
+	"time"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
@@ -41,14 +43,15 @@ func (m *modelManager) save(ctx core.ContextParams, model *metadata.Object) (id 
 	}
 	model.ID = int64(id)
 	model.OwnerID = ctx.SupplierAccount
-	// if nil == model.LastTime {
-	// 	model.LastTime = new(time.Time)
-	// 	*model.LastTime = time.Now()
-	// }
-	// if nil == model.CreateTime {
-	// 	model.CreateTime = new(time.Time)
-	// 	*model.CreateTime = time.Now()
-	// }
+
+	if nil == model.LastTime {
+		model.LastTime = &metadata.Time{}
+		model.LastTime.Time = time.Now()
+	}
+	if nil == model.CreateTime {
+		model.CreateTime = &metadata.Time{}
+		model.CreateTime.Time = time.Now()
+	}
 
 	err = m.dbProxy.Table(common.BKTableNameObjDes).Insert(ctx, model)
 	return id, err
@@ -64,6 +67,8 @@ func (m *modelManager) update(ctx core.ContextParams, data mapstr.MapStr, cond u
 	if 0 == cnt {
 		return 0, nil
 	}
+
+	data.Set(metadata.ModelFieldLastTime, time.Now())
 
 	err = m.dbProxy.Table(common.BKTableNameObjDes).Update(ctx, cond.ToMapStr(), data)
 	if nil != err {
