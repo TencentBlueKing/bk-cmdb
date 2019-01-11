@@ -41,6 +41,7 @@ func (m *modelManager) save(ctx core.ContextParams, model *metadata.Object) (id 
 	}
 	model.ID = int64(id)
 	model.OwnerID = ctx.SupplierAccount
+
 	err = m.dbProxy.Table(common.BKTableNameObjDes).Insert(ctx, model)
 	return id, err
 }

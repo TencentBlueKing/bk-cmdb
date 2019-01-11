@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
 )
@@ -53,6 +54,11 @@ func (m *modelAttribute) CreateModelAttributes(ctx core.ContextParams, objID str
 	}
 
 	for attrIdx, attr := range inputParam.Attributes {
+		if attr.IsPre {
+			if attr.PropertyID == common.BKInstNameField {
+				attr.PropertyName = util.FirstNotEmptyString(ctx.Lang.Language("common_property_"+attr.PropertyID), attr.PropertyName, attr.PropertyID)
+			}
+		}
 
 		attr.OwnerID = ctx.SupplierAccount
 		_, exists, err := m.isExists(ctx, attr.PropertyID, attr.Metadata)
