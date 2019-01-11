@@ -21,19 +21,31 @@ import (
 )
 
 func TestIssue1720(t *testing.T) {
-	type testData struct {
-		TestName   string `json:"test_name"`
-		CreateTime *Time  `json:"create_time"`
+	testData := ReadModelResult{
+		Data: QueryModelWithAttributeDataResult{
+			Info: []SearchModelInfo{
+				SearchModelInfo{
+					Spec: Object{
+						CreateTime: &Time{Time: time.Now()},
+					},
+					Attributes: []Attribute{
+						Attribute{
+							CreateTime: &Time{Time: time.Now()},
+						},
+					},
+				},
+			},
+		},
 	}
 
-	inputData, err := json.Marshal(&testData{TestName: "hello-name", CreateTime: &Time{Time: time.Now()}})
+	inputData, err := json.Marshal(testData)
 
 	require.NoError(t, err)
 	t.Logf("input data:%s", inputData)
 
-	out := &testData{}
+	out := &ReadModelResult{}
 	err = json.Unmarshal(inputData, out)
 	require.NoError(t, err)
-	t.Logf("out:%#v %s", out, out.CreateTime)
+	t.Logf("out:%s %s", out.Data.Info[0].Spec.CreateTime.String(), out.Data.Info[0].Attributes[0].CreateTime.String())
 
 }
