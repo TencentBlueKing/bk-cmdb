@@ -38,7 +38,7 @@ func (s *coreService) IsInstAsstExist(ctx core.ContextParams, objID string, inst
 		blog.Errorf("search instance to association error %v", err)
 		return false, err
 	}
-	if 0 == objInsts.Count && 0 == objAsstInsts.Count {
+	if 0 < objInsts.Count && 0 < objAsstInsts.Count {
 		return true, nil
 	}
 	return false, nil
