@@ -106,6 +106,10 @@ func (a *attribute) Parse(data mapstr.MapStr) error {
 		a.attr.PropertyGroup = "default"
 	}
 
+	if len(a.ObjectID) <= 0 {
+		a.ObjectID = attr.ObjectID
+	}
+
 	return err
 }
 
