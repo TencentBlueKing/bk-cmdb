@@ -12,19 +12,28 @@
 
 package metadata
 
-import "testing"
+import (
+	"encoding/json"
+	"testing"
+	"time"
 
-func TestSort(t *testing.T) {
-	sorter := HostIdentProcessSorter{
-		{BindModules: []int64{1, 2}, ProcessID: 1}, {BindModules: []int64{2, 3}, ProcessID: 2},
+	"github.com/stretchr/testify/require"
+)
+
+func TestIssue1720(t *testing.T) {
+	type testData struct {
+		TestName   string `json:"test_name"`
+		CreateTime *Time  `json:"create_time"`
 	}
 
-	sorter.Swap(0, 1)
-	if sorter.Len() != 2 {
-		t.Fail()
-	}
-	if sorter.Less(0, 1) {
-		t.Fail()
-	}
+	inputData, err := json.Marshal(&testData{TestName: "hello-name", CreateTime: &Time{Time: time.Now()}})
+
+	require.NoError(t, err)
+	t.Logf("input data:%s", inputData)
+
+	out := &testData{}
+	err = json.Unmarshal(inputData, out)
+	require.NoError(t, err)
+	t.Logf("out:%#v %s", out, out.CreateTime)
 
 }
