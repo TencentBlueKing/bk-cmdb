@@ -49,6 +49,17 @@ func createModelAttributes(t *testing.T, client *httpclient.HttpClient, modelID,
 	modelResult := &metadata.CreatedManyOptionResult{}
 	err = json.Unmarshal(dataResult, modelResult)
 	require.NoError(t, err)
+	require.NotNil(t, modelResult)
+
+	for _, attrCreated := range modelResult.Data.CreateManyInfoResult.Created {
+		require.NotEqual(t, uint64(0), attrCreated.ID)
+	}
+
+	for _, attrException := range modelResult.Data.Exceptions {
+		require.NotEqual(t, int64(0), attrException.Code)
+		require.NotEmpty(t, attrException.Message)
+		require.NotNil(t, attrException.Data)
+	}
 
 	resultStr, err := json.Marshal(modelResult)
 	require.NoError(t, err)
@@ -81,6 +92,21 @@ func setModelAttributes(t *testing.T, client *httpclient.HttpClient, modelID, mo
 	modelResult := &metadata.SetDataResult{}
 	err = json.Unmarshal(dataResult, modelResult)
 	require.NoError(t, err)
+	require.NotNil(t, modelResult)
+	for _, item := range modelResult.Created {
+		require.NotEqual(t, uint64(0), item.ID)
+	}
+
+	for _, item := range modelResult.Updated {
+		require.NotEqual(t, uint64(0), item.ID)
+	}
+
+	for _, item := range modelResult.Exceptions {
+		require.NotEqual(t, uint64(0), item.Code)
+		require.NotNil(t, item.Data)
+		require.NotEmpty(t, item.Data)
+		require.NotEmpty(t, item.Message)
+	}
 
 	resultStr, err := json.Marshal(modelResult)
 	require.NoError(t, err)
@@ -109,6 +135,16 @@ func queryModelAttributes(t *testing.T, client *httpclient.HttpClient, modelID, 
 	modelResult := &metadata.ReadModelAttrResult{}
 	err = json.Unmarshal(dataResult, modelResult)
 	require.NoError(t, err)
+	require.NotNil(t, modelResult)
+	require.Equal(t, modelResult.Data.Count, int64(len(modelResult.Data.Info)))
+	require.NotNil(t, modelResult.Data.Info)
+
+	for _, item := range modelResult.Data.Info {
+		require.NotEqual(t, int64(0), item.ID)
+		require.NotEmpty(t, item.OwnerID)
+		require.NotEmpty(t, item.PropertyID)
+		require.NotEmpty(t, item.ObjectID)
+	}
 
 	resultStr, err := json.Marshal(modelResult)
 	require.NoError(t, err)
@@ -140,7 +176,8 @@ func updateModelAttributes(t *testing.T, client *httpclient.HttpClient, modelID,
 	modelResult := &metadata.UpdatedOptionResult{}
 	err = json.Unmarshal(dataResult, modelResult)
 	require.NoError(t, err)
-
+	require.NotNil(t, modelResult)
+	require.NotEqual(t, uint64(0), modelResult.Data.Count)
 	resultStr, err := json.Marshal(modelResult)
 	require.NoError(t, err)
 
@@ -168,6 +205,8 @@ func deleteModelAttributes(t *testing.T, client *httpclient.HttpClient, modelID,
 	modelResult := &metadata.DeletedOptionResult{}
 	err = json.Unmarshal(dataResult, modelResult)
 	require.NoError(t, err)
+	require.NotNil(t, modelResult)
+	require.NotEqual(t, uint64(0), modelResult)
 
 	resultStr, err := json.Marshal(modelResult)
 	require.NoError(t, err)

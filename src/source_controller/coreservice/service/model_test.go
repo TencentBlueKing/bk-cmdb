@@ -54,6 +54,8 @@ func createModel(t *testing.T, client *httpclient.HttpClient, modelID, classID s
 	modelResult := &metadata.CreatedOneOptionResult{}
 	err = json.Unmarshal(dataResult, modelResult)
 	require.NoError(t, err)
+	require.NotNil(t, modelResult)
+	require.NotEqual(t, 0, modelResult.Data.Created.ID)
 
 	resultStr, err := json.Marshal(modelResult)
 	require.NoError(t, err)
@@ -91,7 +93,19 @@ func setModel(t *testing.T, client *httpclient.HttpClient, modelID, classID stri
 	modelResult := &metadata.SetDataResult{}
 	err = json.Unmarshal(dataResult, modelResult)
 	require.NoError(t, err)
+	require.NotNil(t, modelResult)
 
+	for _, modelCreated := range modelResult.Created {
+		require.NotEqual(t, uint64(0), modelCreated.ID)
+	}
+	for _, modelUpdated := range modelResult.Updated {
+		require.NotEqual(t, uint64(0), modelUpdated.ID)
+	}
+	for _, modelException := range modelResult.Exceptions {
+		require.NotEqual(t, int64(0), modelException.Code)
+		require.NotNil(t, modelException.Data)
+		require.NotEmpty(t, modelException.Message)
+	}
 	resultStr, err := json.Marshal(modelResult)
 	require.NoError(t, err)
 
@@ -119,6 +133,20 @@ func queryModel(t *testing.T, client *httpclient.HttpClient, modelID, classID st
 	modelResult := &metadata.ReadModelResult{}
 	err = json.Unmarshal(dataResult, modelResult)
 	require.NoError(t, err)
+	require.NotNil(t, modelResult)
+	require.Equal(t, modelResult.Data.Count, int64(len(modelResult.Data.Info)))
+	for _, item := range modelResult.Data.Info {
+		require.NotEqual(t, int64(0), item.Spec.ID)
+		require.NotEmpty(t, item.Spec.OwnerID)
+		require.NotEmpty(t, item.Spec.ObjectID)
+		require.NotEmpty(t, item.Spec.ObjCls)
+
+		for _, attr := range item.Attributes {
+			require.NotEmpty(t, attr.OwnerID)
+			require.NotEmpty(t, attr.PropertyID)
+			require.NotEqual(t, int64(0), attr.ID)
+		}
+	}
 
 	resultStr, err := json.Marshal(modelResult)
 	require.NoError(t, err)
@@ -178,6 +206,8 @@ func deleteModel(t *testing.T, client *httpclient.HttpClient, modelID, classID s
 	modelResult := &metadata.DeletedOptionResult{}
 	err = json.Unmarshal(dataResult, modelResult)
 	require.NoError(t, err)
+	require.NotNil(t, modelResult)
+	require.NotEqual(t, uint64(0), modelResult.Data.Count)
 
 	resultStr, err := json.Marshal(modelResult)
 	require.NoError(t, err)
