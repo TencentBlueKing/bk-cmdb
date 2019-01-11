@@ -96,6 +96,11 @@
                 ]
             }
         },
+        watch: {
+            'filterRange' () {
+                this.getTableData()
+            }
+        },
         created () {
             this.initDateRange()
             this.getTableData()
@@ -141,11 +146,6 @@
                 this.table.sort = sort
                 this.getTableData()
             }
-        },
-        watch: {
-            'filterRange' () {
-                this.getTableData()
-            }
         }
     }
 </script>
@@ -158,10 +158,6 @@
     }
     .sync-history-options {
         padding: 20px 0;
-        .sync-options-label {
-            display: inline-block;
-            vertical-align: middle;
-        }
         .sync-options-filter {
             display: inline-block;
             vertical-align: middle;

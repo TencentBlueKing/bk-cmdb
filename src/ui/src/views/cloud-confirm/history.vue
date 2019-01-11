@@ -5,25 +5,25 @@
             <cmdb-form-date-range class="confirm-filter" v-model="dateRange" position="left"></cmdb-form-date-range>
         </div>
         <cmdb-table ref="table"
-                    :loading="$loading('getConfirHistory')"
-                    :header="table.header"
-                    :list="table.list"
-                    :pagination.sync="table.pagination"
-                    :wrapperMinusHeight="220"
-                    @handlePageChange="handlePageChange"
-                    @handleSizeChange="handleSizeChange"
-                    @handleSortChange="handleSortChange">
-                        <template slot="bk_resource_type" slot-scope="{ item }">
-                            <span class="change-span" v-if="item.bk_resource_type === 'change'">
-                                {{$t('Cloud["变更"]')}}
-                            </span>
-                            <span class="new-add-span" v-else>
-                                {{$t('Cloud["新增"]')}}
-                            </span>
-                        </template>
-                        <template slot="bk_account_type" slot-scope="{ item }">
-                            <span>{{$t('Cloud["腾讯云"]')}}</span>
-                        </template>
+            :loading="$loading('getConfirHistory')"
+            :header="table.header"
+            :list="table.list"
+            :pagination.sync="table.pagination"
+            :wrapperMinusHeight="220"
+            @handlePageChange="handlePageChange"
+            @handleSizeChange="handleSizeChange"
+            @handleSortChange="handleSortChange">
+                <template slot="bk_resource_type" slot-scope="{ item }">
+                    <span class="change-span" v-if="item.bk_resource_type === 'change'">
+                        {{$t('Cloud["变更"]')}}
+                    </span>
+                    <span class="new-add-span" v-else>
+                        {{$t('Cloud["新增"]')}}
+                    </span>
+                </template>
+                <template slot="bk_account_type" slot-scope="{ item }">
+                    <span>{{$t('Cloud["腾讯云"]')}}</span>
+                </template>
         </cmdb-table>
     </div>
 </template>
@@ -34,6 +34,10 @@
     export default {
         props: {
             curPush: {
+                type: {
+                    type: String,
+                    default: 'create'
+                }
             }
         },
         data () {
@@ -90,6 +94,11 @@
                 ]
             }
         },
+        watch: {
+            'filterRange' () {
+                this.getTableData()
+            }
+        },
         created () {
             this.$store.commit('setHeaderTitle', this.$t('Cloud["确认记录"]'))
             this.initDateRange()
@@ -137,11 +146,6 @@
             },
             handleSortChange (sort) {
                 this.table.sort = sort
-                this.getTableData()
-            }
-        },
-        watch: {
-            'filterRange' () {
                 this.getTableData()
             }
         }

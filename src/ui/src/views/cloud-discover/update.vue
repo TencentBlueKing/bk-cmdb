@@ -8,10 +8,10 @@
                     </label>
                     <div class="update-item-content">
                         <input type="text"
-                               v-model="curPush.bk_task_name"
-                               name="taskName"
-                               v-validate="'required|singlechar'"
-                               class="cmdb-form-input">
+                            v-model="curPush.bk_task_name"
+                            name="taskName"
+                            v-validate="'required|singlechar'"
+                            class="cmdb-form-input">
                     </div>
                     <span v-show="errors.has('taskName')" class="color-danger">{{ errors.first('taskName') }}</span>
                 </li>
@@ -36,10 +36,10 @@
                     </label>
                     <div class="update-item-content">
                         <input type="text"
-                               v-model="curPush.bk_secret_id"
-                               name="ID"
-                               v-validate="'required|singlechar'"
-                               class="cmdb-form-input"/>
+                            v-model="curPush.bk_secret_id"
+                            name="ID"
+                            v-validate="'required|singlechar'"
+                            class="cmdb-form-input"/>
                     </div>
                     <span v-show="errors.has('ID')" class="color-danger">{{ errors.first('ID') }}</span>
                 </li>
@@ -65,19 +65,19 @@
                             :selected.sync="curPush.bk_period_type"
                         ></bk-selector>
                         <input type="text"
-                               class="cmdb-form-input"
-                               v-model="curPush.bk_period"
-                               v-if="curPush.bk_period_type === 'day'"
-                               name="day"
-                               v-validate="'required|dayFormat'"
-                               :placeholder="$t('Cloud[\'例如: 19:30\']')"/>
+                            class="cmdb-form-input"
+                            v-model="curPush.bk_period"
+                            v-if="curPush.bk_period_type === 'day'"
+                            name="day"
+                            v-validate="'required|dayFormat'"
+                            :placeholder="$t('Cloud[\'例如: 19:30\']')"/>
                         <input type="text"
-                               class="cmdb-form-input"
-                               v-model="curPush.bk_period"
-                               v-if="curPush.bk_period_type === 'hour'"
-                               name="hour"
-                               v-validate="'required|hourFormat'"
-                               :placeholder="$t('Cloud[\'例如: 30\']')">
+                            class="cmdb-form-input"
+                            v-model="curPush.bk_period"
+                            v-if="curPush.bk_period_type === 'hour'"
+                            name="hour"
+                            v-validate="'required|hourFormat'"
+                            :placeholder="$t('Cloud[\'例如: 30\']')">
                         <div v-show="errors.has('day')" class="update-error-info color-danger">{{ errors.first('day') }}</div>
                         <div v-show="errors.has('hour')" class="update-error-info color-danger">{{ errors.first('hour') }}</div>
                     </div>
