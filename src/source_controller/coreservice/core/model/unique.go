@@ -53,14 +53,16 @@ func (m *modelAttrUnique) SearchModelAttrUnique(ctx core.ContextParams, inputPar
 
 	uniqueItems, err := m.searchModelAttrUnique(ctx, inputParam)
 	if nil != err {
-		return &metadata.QueryUniqueResult{}, err
+		return &metadata.QueryUniqueResult{Info: []metadata.ObjectUnique{}}, err
 	}
-	dataResult := &metadata.QueryUniqueResult{}
+	dataResult := &metadata.QueryUniqueResult{Info: []metadata.ObjectUnique{}}
 	dataResult.Count, err = m.countModelAttrUnique(ctx, inputParam.Condition)
 	if nil != err {
-		return &metadata.QueryUniqueResult{}, err
+		return &metadata.QueryUniqueResult{Info: []metadata.ObjectUnique{}}, err
 	}
-	dataResult.Info = uniqueItems
+	if len(dataResult.Info) > 0 {
+		dataResult.Info = uniqueItems
+	}
 
 	return dataResult, nil
 }
