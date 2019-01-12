@@ -13,38 +13,39 @@
 package metadata
 
 import (
-	"configcenter/src/common"
-	types "configcenter/src/common/mapstr"
+	"encoding/json"
 	"testing"
+	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
-func TestObject(t *testing.T) {
-	m, err := types.NewFromInterface(map[string]interface{}{"id": 0, "bk_supplier_account": "bk_supplier_account"})
-	attr := &Object{}
-	attr, err = attr.Parse(m)
-
-	if str, _ := attr.ToMapStr().String("bk_supplier_account"); str != "bk_supplier_account" || err != nil {
-		t.Fail()
+func TestIssue1720(t *testing.T) {
+	testData := ReadModelResult{
+		Data: QueryModelWithAttributeDataResult{
+			Info: []SearchModelInfo{
+				SearchModelInfo{
+					Spec: Object{
+						CreateTime: &Time{Time: time.Now()},
+					},
+					Attributes: []Attribute{
+						Attribute{
+							CreateTime: &Time{Time: time.Now()},
+						},
+					},
+				},
+			},
+		},
 	}
 
-	if !attr.IsCommon() {
-		t.Fail()
-	}
+	inputData, err := json.Marshal(testData)
 
-	if attr.GetObjectType() != common.BKInnerObjIDObject {
-		t.Fail()
-	}
+	require.NoError(t, err)
+	t.Logf("input data:%s", inputData)
 
-	if attr.GetInstNameFieldName() != common.BKInstNameField {
-		t.Fail()
-	}
-
-	if attr.GetInstIDFieldName() != common.BKInstIDField {
-		t.Fail()
-	}
-
-	if attr.GetDefaultInstPropertyName() != "" {
-		t.Fail()
-	}
+	out := &ReadModelResult{}
+	err = json.Unmarshal(inputData, out)
+	require.NoError(t, err)
+	t.Logf("out:%s %s", out.Data.Info[0].Spec.CreateTime.String(), out.Data.Info[0].Attributes[0].CreateTime.String())
 
 }
