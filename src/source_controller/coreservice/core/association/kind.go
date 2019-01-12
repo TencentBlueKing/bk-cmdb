@@ -267,6 +267,7 @@ func (m *associationKind) SearchAssociationKind(ctx core.ContextParams, inputPar
 
 	dataResult := &metadata.QueryResult{}
 	dataResult.Count, err = m.countInstanceAssociation(ctx, inputParam.Condition)
+	dataResult.Info = make([]mapstr.MapStr, 0)
 	if nil != err {
 		return &metadata.QueryResult{}, err
 	}

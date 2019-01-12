@@ -158,8 +158,9 @@ var _ universalsql.ConditionElement = (*Exists)(nil)
 // Exists mongodb operator $exists
 func (e *Exists) ToMapStr() mapstr.MapStr {
 	return mapstr.MapStr{
-		e.Key: e.Val,
-	}
+		e.Key: mapstr.MapStr{
+			universalsql.EXISTS: e.Val,
+		}}
 }
 
 // Elements Operator End
