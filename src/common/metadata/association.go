@@ -34,7 +34,8 @@ const (
 	// AssociationFieldAssociationName the association data field definition
 	// AssociationFieldAssociationName = "bk_asst_name"
 	// AssociationFieldAssociationId auto incr id
-	AssociationFieldAssociationId = "id"
+	AssociationFieldAssociationId   = "id"
+	AssociationFieldAssociationKind = "bk_asst_id"
 )
 
 type SearchAssociationTypeRequest struct {
