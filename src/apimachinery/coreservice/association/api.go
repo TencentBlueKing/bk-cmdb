@@ -161,7 +161,7 @@ func (asst *association) SetModelAssociation(ctx context.Context, h http.Header,
 
 func (asst *association) UpdateModelAssociation(ctx context.Context, h http.Header, input *metadata.UpdateOption) (resp *metadata.UpdatedOptionResult, err error) {
 	resp = new(metadata.UpdatedOptionResult)
-	subPath := "/create/associationkind"
+	subPath := "/update/modelassociation"
 
 	err = asst.client.Put().
 		WithContext(ctx).
