@@ -42,6 +42,8 @@ var (
 	LabelKeyNotExistError = errors.New("label key does not exist")
 )
 
+var BizLabelNotExist = mapstr.MapStr{"metadata.label.bk_biz_id": mapstr.MapStr{"$exists": false}}
+
 const (
 	BKMetadata string = "metadata"
 	BKLabel    string = "label"

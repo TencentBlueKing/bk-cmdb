@@ -26,7 +26,6 @@ import (
 // CreateObjectGroup create a new object group
 
 func (s *topoService) CreateObjectGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	data.Remove(metadata.BKMetadata)
 	rsp, err := s.core.GroupOperation().CreateObjectGroup(params, data)
 	if nil != err {
 		return nil, err
@@ -119,5 +118,5 @@ func (s *topoService) SearchGroupByObject(params types.ContextParams, pathParams
 
 	cond := condition.CreateCondition()
 
-	return s.core.GroupOperation().FindGroupByObject(params, pathParams("bk_object_id"), cond)
+	return s.core.GroupOperation().FindGroupByObject(params, pathParams("bk_obj_id"), cond)
 }

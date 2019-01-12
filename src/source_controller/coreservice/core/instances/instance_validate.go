@@ -17,8 +17,31 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 )
+
+var updateIgnoreKeys = []string{
+	common.BKOwnerIDField,
+	common.BKDefaultField,
+	common.BKInstParentStr,
+	common.BKOwnerIDField,
+	common.BKAppIDField,
+	common.BKDataStatusField,
+	common.BKDataStatusField,
+	common.BKSupplierIDField,
+	common.BKInstIDField,
+}
+
+var createIgnoreKeys = []string{
+	common.BKOwnerIDField,
+	common.BKDefaultField,
+	common.BKInstParentStr,
+	common.BKOwnerIDField,
+	common.BKAppIDField,
+	common.BKSupplierIDField,
+	common.BKInstIDField,
+}
 
 func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID string, instanceData mapstr.MapStr) error {
 	valid, err := NewValidator(ctx, m.dependent, objID)
@@ -43,7 +66,7 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 			}
 			continue
 		}
-		if valid.shouldIgnore[key] {
+		if util.InStrArr(createIgnoreKeys, key) {
 			// ignore the key field
 			continue
 		}
@@ -91,7 +114,7 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 
 	for key, val := range instanceData {
 
-		if valid.shouldIgnore[key] {
+		if util.InStrArr(createIgnoreKeys, key) {
 			// ignore the key field
 			continue
 		}
