@@ -161,7 +161,7 @@ func (m *modelAttribute) UpdateModelAttributes(ctx core.ContextParams, objID str
 		return &metadata.UpdatedCount{}, err
 	}
 
-	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
+	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to convert from mapstr(%#v) into a condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.UpdatedCount{}, err
@@ -178,7 +178,7 @@ func (m *modelAttribute) UpdateModelAttributes(ctx core.ContextParams, objID str
 
 func (m *modelAttribute) UpdateModelAttributesByCondition(ctx core.ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 
-	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
+	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to convert from mapstr(%#v) into a condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.UpdatedCount{}, err
@@ -200,7 +200,7 @@ func (m *modelAttribute) DeleteModelAttributes(ctx core.ContextParams, objID str
 		return &metadata.DeletedCount{}, err
 	}
 
-	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
+	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to convert from mapstr(%#v) into a condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.DeletedCount{}, err
@@ -222,7 +222,7 @@ func (m *modelAttribute) SearchModelAttributes(ctx core.ContextParams, objID str
 		return &metadata.QueryModelAttributeDataResult{}, err
 	}
 
-	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
+	cond, err := mongo.NewConditionFromMapStr(util.SetQueryOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to convert from mapstr(%#v) into a condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.QueryModelAttributeDataResult{}, err
@@ -246,7 +246,7 @@ func (m *modelAttribute) SearchModelAttributesByCondition(ctx core.ContextParams
 		Info: []metadata.Attribute{},
 	}
 
-	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
+	cond, err := mongo.NewConditionFromMapStr(util.SetQueryOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to convert from mapstr(%#v) into a condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.QueryModelAttributeDataResult{}, err
