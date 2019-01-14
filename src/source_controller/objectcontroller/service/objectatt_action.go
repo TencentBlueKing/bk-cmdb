@@ -22,6 +22,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
@@ -57,10 +58,14 @@ func (cli *Service) CreateObjectAtt(req *restful.Request, resp *restful.Response
 	}
 
 	// save to the storage
-	obj.CreateTime = new(time.Time)
-	*obj.CreateTime = time.Now()
-	obj.LastTime = new(time.Time)
-	*obj.LastTime = time.Now()
+	if nil == obj.LastTime {
+		obj.LastTime = &metadata.Time{}
+		obj.LastTime.Time = time.Now()
+	}
+	if nil == obj.CreateTime {
+		obj.CreateTime = &metadata.Time{}
+		obj.CreateTime.Time = time.Now()
+	}
 
 	if obj.IsPre {
 		if obj.PropertyID == common.BKInstNameField {

@@ -397,7 +397,7 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 			IsRequired:        true,
 			PropertyType:      common.FieldTypeInt,
 			PropertyID:        common.BKInstParentStr,
-			PropertyName:      obj.GetDefaultInstPropertyName(),
+			PropertyName:      common.BKInstParentStr,
 		})
 
 		if err = pAttr.Create(); nil != err {
@@ -743,6 +743,9 @@ func (o *object) CreateOneObject(params types.ContextParams, data mapstr.MapStr)
 		PropertyID:        obj.GetInstNameFieldName(),
 		PropertyName:      obj.GetDefaultInstPropertyName(),
 	})
+	if nil != params.MetaData {
+		attr.Attribute().Metadata = *params.MetaData
+	}
 
 	if err = attr.Create(); nil != err {
 		blog.Errorf("[operation-obj] failed to create the default inst name field, error info is %s", err.Error())

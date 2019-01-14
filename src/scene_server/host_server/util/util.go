@@ -114,7 +114,9 @@ func (o *operation) WithCloudID(id int64) *operation {
 }
 
 func (o *operation) WithAttrComm() *operation {
-	attrMeta := metadata.Metadata{}
+	attrMeta := metadata.Metadata{
+		Label: make(metadata.Label, 0),
+	}
 	attrMeta.Label.SetModelKind(metadata.PublicModelKindValue)
 	conds := mapstr.New()
 	for key, val := range attrMeta.Label {
@@ -125,7 +127,9 @@ func (o *operation) WithAttrComm() *operation {
 }
 
 func (o *operation) WithAttrBizID(bizID int64) *operation {
-	attrMeta := metadata.Metadata{}
+	attrMeta := metadata.Metadata{
+		Label: make(metadata.Label, 0),
+	}
 	attrMeta.Label.SetModelKind(metadata.BusinessModelKindValue)
 	attrMeta.Label.SetBusinessID(bizID)
 	conds := mapstr.New()

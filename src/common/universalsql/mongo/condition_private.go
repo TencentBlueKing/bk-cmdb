@@ -45,7 +45,7 @@ func parseConditionFromMapStr(inputCond *mongoCondition, inputKey string, inputC
 				return err
 			}
 
-		case universalsql.EQ, universalsql.NEQ, universalsql.GT, universalsql.GTE, universalsql.LTE, universalsql.LT, universalsql.IN, universalsql.NIN, universalsql.REGEX:
+		case universalsql.EQ, universalsql.NEQ, universalsql.GT, universalsql.GTE, universalsql.LTE, universalsql.LT, universalsql.IN, universalsql.NIN, universalsql.REGEX, universalsql.EXISTS:
 			ele, err := convertToElement(inputKey, operatorKey, val, outputCond, inputCondMapStr)
 			if nil != err {
 				return err
@@ -53,7 +53,12 @@ func parseConditionFromMapStr(inputCond *mongoCondition, inputKey string, inputC
 			outputCond.Element(ele)
 		default:
 
-			switch reflect.TypeOf(val).Kind() {
+			tmpType := reflect.TypeOf(val)
+			if nil == tmpType {
+				return nil // val is nil , ignore this operation
+			}
+
+			switch tmpType.Kind() {
 			case reflect.String,
 				reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 				reflect.Float32, reflect.Float64,
@@ -90,7 +95,7 @@ func parseConditionFromMapStr(inputCond *mongoCondition, inputKey string, inputC
 				outputCond.merge(tmpCond)
 			}
 
-		}
+		} // end operatorKey switch
 
 		return nil
 	})
@@ -120,6 +125,8 @@ func convertToElement(key, operator string, val interface{}, inputCond *mongoCon
 		return &Nin{Key: key, Val: val}, nil
 	case universalsql.REGEX:
 		return &Regex{Key: key, Val: val}, nil
+	case universalsql.EXISTS:
+		return &Exists{Key: key, Val: val}, nil
 	default:
 		// deal embed condition
 		return nil, fmt.Errorf("not support the operator '%s'", operator)
