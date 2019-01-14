@@ -14,6 +14,7 @@ package metadata
 
 import (
 	"database/sql/driver"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -22,7 +23,7 @@ import (
 )
 
 type Time struct {
-	time.Time `bson:",inline"`
+	time.Time `bson:",inline" json:",inline"`
 }
 
 // Scan implement sql driver's Scan interface
@@ -37,7 +38,44 @@ func (t Time) Value() (driver.Value, error) {
 }
 
 func (t Time) MarshalJSON() ([]byte, error) {
-	return []byte(t.UTC().Format(`"2006-01-02T15:04:05Z"`)), nil
+	return []byte(t.Format(`"2006-01-02 15:04:05"`)), nil
+}
+
+func (t *Time) parseTime(tmStr string) (time.Time, error) {
+
+	if tm, tmErr := time.Parse(`"2006-01-02 15:04:05"`, tmStr); nil == tmErr {
+		return tm, tmErr
+	}
+
+	if tm, tmErr := time.Parse(time.RFC1123, tmStr); nil == tmErr {
+		return tm, nil
+	}
+
+	if tm, tmErr := time.Parse(time.RFC1123Z, tmStr); nil == tmErr {
+		return tm, nil
+	}
+
+	if tm, tmErr := time.Parse(time.RFC3339, tmStr); nil == tmErr {
+		return tm, nil
+	}
+
+	if tm, tmErr := time.Parse(time.RFC3339Nano, tmStr); nil == tmErr {
+		return tm, nil
+	}
+
+	if tm, tmErr := time.Parse(time.RFC822, tmStr); nil == tmErr {
+		return tm, nil
+	}
+
+	if tm, tmErr := time.Parse(time.RFC822Z, tmStr); nil == tmErr {
+		return tm, nil
+	}
+
+	if tm, tmErr := time.Parse(time.RFC850, tmStr); nil == tmErr {
+		return tm, nil
+	}
+
+	return time.Now(), errors.New("can not parse the time (" + tmStr + ")")
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface.
@@ -47,11 +85,13 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 	if string(data) == "null" {
 		return nil
 	}
-	parsed, err := time.Parse(`"`+time.RFC3339+`"`, string(data))
+
+	parsed, err := t.parseTime(string(data))
 	if err == nil {
 		*t = Time{parsed}
 		return nil
 	}
+
 	parsed, err = time.ParseInLocation(`"2006-01-02 15:04:05"`, string(data), time.UTC)
 	if err == nil {
 		*t = Time{parsed}
