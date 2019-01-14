@@ -74,12 +74,12 @@ func CreateGroup(params types.ContextParams, clientSet apimachinery.ClientSetInt
 func CreateAttribute(params types.ContextParams, clientSet apimachinery.ClientSetInterface, attrItems []metadata.Attribute) []AttributeInterface {
 	results := make([]AttributeInterface, 0)
 	for _, attr := range attrItems {
-
 		results = append(results, &attribute{
 			attr:      attr,
 			params:    params,
 			clientSet: clientSet,
 		})
+
 	}
 
 	return results
