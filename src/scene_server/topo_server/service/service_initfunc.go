@@ -53,7 +53,7 @@ func (s *topoService) initAssociation() {
 
 	// topo search methods
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/association/search/owner/{owner_id}/object/{bk_obj_id}", HandlerFunc: s.SearchInstByAssociation})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/association/topo/search/owner/{owner_id}/object/{bk_object_id}/inst/{inst_id}", HandlerFunc: s.SearchInstTopo})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/association/topo/search/owner/{owner_id}/object/{bk_obj_id}/inst/{inst_id}", HandlerFunc: s.SearchInstTopo})
 
 	// ATTENTION: the following methods is not recommended
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/inst/search/topo/owner/{owner_id}/object/{bk_object_id}/inst/{inst_id}", HandlerFunc: s.SearchInstChildTopo})
