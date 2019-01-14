@@ -14,12 +14,11 @@ package metadata
 
 import (
 	"configcenter/src/common/mapstr"
-	types "configcenter/src/common/mapstr"
 )
 
 type PermissionSystemResponse struct {
 	BaseResp `json:",inline"`
-	Data     types.MapStr `json:"data"`
+	Data     mapstr.MapStr `json:"data"`
 }
 
 type PermissionGroupListResult struct {
@@ -90,7 +89,7 @@ type UserGroup struct {
 }
 
 // Parse load the data from mapstr object into object instance
-func (u *UserGroup) Parse(data types.MapStr) (*UserGroup, error) {
+func (u *UserGroup) Parse(data mapstr.MapStr) (*UserGroup, error) {
 
 	err := mapstr.SetValueToStructByTags(u, data)
 	if nil != err {
@@ -101,20 +100,20 @@ func (u *UserGroup) Parse(data types.MapStr) (*UserGroup, error) {
 }
 
 // ToMapStr to mapstr
-func (u *UserGroup) ToMapStr() types.MapStr {
+func (u *UserGroup) ToMapStr() mapstr.MapStr {
 	return mapstr.SetValueToMapStrByTags(u)
 }
 
 // PrivilegeUserGroup the user group permission configure
 type PrivilegeUserGroup struct {
-	SupplierAccount string       `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
-	GroupID         string       `field:"group_id" json:"group_id" bson:"bk_supplier_account"`
-	ModelConfig     types.MapStr `field:"model_config" json:"model_config" bson:"model_config"`
-	SystemConfig    types.MapStr `field:"sys_config" json:"sys_config" bson:"sys_config"`
+	SupplierAccount string        `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	GroupID         string        `field:"group_id" json:"group_id" bson:"bk_supplier_account"`
+	ModelConfig     mapstr.MapStr `field:"model_config" json:"model_config" bson:"model_config"`
+	SystemConfig    mapstr.MapStr `field:"sys_config" json:"sys_config" bson:"sys_config"`
 }
 
 // Parse load the data from mapstr object into object instance
-func (p *PrivilegeUserGroup) Parse(data types.MapStr) (*PrivilegeUserGroup, error) {
+func (p *PrivilegeUserGroup) Parse(data mapstr.MapStr) (*PrivilegeUserGroup, error) {
 
 	err := mapstr.SetValueToStructByTags(p, data)
 	if nil != err {
@@ -125,6 +124,6 @@ func (p *PrivilegeUserGroup) Parse(data types.MapStr) (*PrivilegeUserGroup, erro
 }
 
 // ToMapStr to mapstr
-func (p *PrivilegeUserGroup) ToMapStr() types.MapStr {
+func (p *PrivilegeUserGroup) ToMapStr() mapstr.MapStr {
 	return mapstr.SetValueToMapStrByTags(p)
 }

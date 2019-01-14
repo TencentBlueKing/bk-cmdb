@@ -598,8 +598,6 @@ func (o *object) CreateAttribute() AttributeInterface {
 		params:    o.params,
 		clientSet: o.clientSet,
 		attr:      meta.Attribute{},
-		OwnerID:   o.obj.OwnerID,
-		ObjectID:  o.obj.ObjectID,
 	}
 }
 

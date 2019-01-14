@@ -42,11 +42,10 @@ var _ AttributeInterface = (*attribute)(nil)
 // attribute the metadata structure definition of the model attribute
 type attribute struct {
 	FieldValid
-	OwnerID, ObjectID string
-	attr              metadata.Attribute
-	isNew             bool
-	params            types.ContextParams
-	clientSet         apimachinery.ClientSetInterface
+	attr      metadata.Attribute
+	isNew     bool
+	params    types.ContextParams
+	clientSet apimachinery.ClientSetInterface
 }
 
 func (a *attribute) Attribute() *metadata.Attribute {
@@ -54,8 +53,6 @@ func (a *attribute) Attribute() *metadata.Attribute {
 }
 func (a *attribute) SetAttribute(attr metadata.Attribute) {
 	a.attr = attr
-	a.attr.OwnerID = a.OwnerID
-	a.attr.ObjectID = a.ObjectID
 }
 
 func (a *attribute) IsMainlineField() bool {
@@ -104,10 +101,6 @@ func (a *attribute) Parse(data mapstr.MapStr) error {
 
 	if 0 == len(a.attr.PropertyGroup) {
 		a.attr.PropertyGroup = "default"
-	}
-
-	if len(a.ObjectID) <= 0 {
-		a.ObjectID = attr.ObjectID
 	}
 
 	return err
@@ -185,7 +178,7 @@ func (a *attribute) Create() error {
 
 	// create a new record
 	input := metadata.CreateModelAttributes{Attributes: []metadata.Attribute{a.attr}}
-	rsp, err := a.clientSet.CoreService().Model().CreateModelAttrs(context.Background(), a.params.Header, a.ObjectID, &input)
+	rsp, err := a.clientSet.CoreService().Model().CreateModelAttrs(context.Background(), a.params.Header, a.attr.ObjectID, &input)
 	if nil != err {
 		blog.Errorf("faield to request the object controller, the err: %s", err.Error())
 		return err
@@ -226,7 +219,7 @@ func (a *attribute) Update(data mapstr.MapStr) error {
 		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(a.attr.ID).ToMapStr(),
 		Data:      data,
 	}
-	rsp, err := a.clientSet.CoreService().Model().UpdateModelAttrs(context.Background(), a.params.Header, a.ObjectID, &input)
+	rsp, err := a.clientSet.CoreService().Model().UpdateModelAttrs(context.Background(), a.params.Header, a.attr.ObjectID, &input)
 	if nil != err {
 		blog.Errorf("failed to request object controller, err: %s", err.Error())
 		return err
@@ -241,7 +234,7 @@ func (a *attribute) Update(data mapstr.MapStr) error {
 }
 func (a *attribute) search(cond condition.Condition) ([]metadata.Attribute, error) {
 
-	rsp, err := a.clientSet.CoreService().Model().ReadModelAttr(context.Background(), a.params.Header, a.ObjectID, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	rsp, err := a.clientSet.CoreService().Model().ReadModelAttr(context.Background(), a.params.Header, a.attr.ObjectID, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request to object controller, err: %s", err.Error())
 		return nil, err
