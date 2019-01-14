@@ -2,33 +2,35 @@
     <div class="group-wrapper">
         <cmdb-main-inject
             inject-type="prepend"
-            :class="['btn-group', {sticky: !!scrollTop}]">
-            <bk-button type="primary"
-                :disabled="!authority.includes('update') || modelType === 'disabled'"
-                @click="showModelDialog(false)">
-                {{$t('ModelManagement["新增模型"]')}}
-            </bk-button>
-            <bk-button type="default"
-                :disabled="!authority.includes('update') || modelType === 'disabled'"
-                @click="showGroupDialog(false)">
-                {{$t('ModelManagement["新建分组"]')}}
-            </bk-button>
+            :class="['btn-group', 'clearfix', {sticky: !!scrollTop}]">
+            <div class="fl">
+                <bk-button type="primary"
+                    :disabled="!authority.includes('update') || modelType === 'disabled'"
+                    @click="showModelDialog(false)">
+                    {{$t('ModelManagement["新增模型"]')}}
+                </bk-button>
+                <bk-button type="default"
+                    :disabled="!authority.includes('update') || modelType === 'disabled'"
+                    @click="showGroupDialog(false)">
+                    {{$t('ModelManagement["新建分组"]')}}
+                </bk-button>
+            </div>
+            <div class="model-type-options fr">
+                <bk-button class="model-type-button enable"
+                    size="mini"
+                    :type="modelType === 'enable' ? 'primary' : 'default'"
+                    @click="modelType = 'enable'">
+                    {{$t('ModelManagement["启用模型"]')}}
+                </bk-button>
+                <bk-button class="model-type-button disabled"
+                    size="mini"
+                    :disabled="!disabledClassifications.length"
+                    :type="modelType === 'disabled' ? 'primary' : 'default'"
+                    @click="modelType = 'disabled'">
+                    {{$t('ModelManagement["停用模型"]')}}
+                </bk-button>
+            </div>
         </cmdb-main-inject>
-        <div class="model-type-options">
-            <bk-button class="model-type-button enable"
-                size="mini"
-                :type="modelType === 'enable' ? 'primary' : 'default'"
-                @click="modelType = 'enable'">
-                {{$t('ModelManagement["启用模型"]')}}
-            </bk-button>
-            <bk-button class="model-type-button disabled"
-                size="mini"
-                :disabled="!disabledClassifications.length"
-                :type="modelType === 'disabled' ? 'primary' : 'default'"
-                @click="modelType = 'disabled'">
-                {{$t('ModelManagement["停用模型"]')}}
-            </bk-button>
-        </div>
         <ul class="group-list">
             <li class="group-item clearfix"
                 v-for="(classification, classIndex) in currentClassifications"
@@ -308,7 +310,7 @@
 
 <style lang="scss" scoped>
     .group-wrapper {
-        padding: 56px 20px 20px 0;
+        padding: 76px 20px 20px 0;
     }
     .btn-group {
         position: absolute;
@@ -327,13 +329,14 @@
         }
     }
     .model-type-options {
-        margin: 20px 0 -30px 0;
+        margin: 6px 0;
         font-size: 0;
         text-align: right;
         position: relative;
         z-index: 1;
         .model-type-button {
             position: relative;
+            margin: 0;
             font-size: 12px;
             &.enable {
                 border-radius: 2px 0 0 2px;
