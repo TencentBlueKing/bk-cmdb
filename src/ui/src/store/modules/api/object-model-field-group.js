@@ -69,6 +69,18 @@ const actions = {
     },
 
     /**
+     * 更新模型属性分组
+     * @param {Function} commit store commit mutation hander
+     * @param {Object} state store state
+     * @param {String} dispatch store dispatch action hander
+     * @param {Object} params 参数
+     * @return {promises} promises 对象
+     */
+    updatePropertyGroup ({ commit, state, dispatch }, { params, config }) {
+        return $http.put(`objectatt/group/property`, params, config)
+    },
+
+    /**
      * 删除模型属性分组
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
