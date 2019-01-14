@@ -111,7 +111,7 @@ func (s *topoService) initBusinessInst() {
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/instance/object/{bk_obj_id}/inst/{inst_id}", HandlerFunc: s.UpdateInst})
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/updatemany/instance/object/{bk_obj_id}", HandlerFunc: s.UpdateInsts})
 	//	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/inst/object/{bk_obj_id}", HandlerFunc: s.SearchInsts})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/instassociationdetail/object/{bk_obj_id}", HandlerFunc: s.SearchInstAndAssociationDetail})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/instance/object/{bk_obj_id}", HandlerFunc: s.SearchInstAndAssociationDetail})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/instdetail/object/{bk_obj_id}/inst/{inst_id}", HandlerFunc: s.SearchInstByInstID})
 
 }
