@@ -228,20 +228,24 @@ $color: #979ba5;
     color: #a3acb9;
     font-size: 18px;
     font-weight: bold;
+    white-space: nowrap;
     overflow: hidden;
     cursor: pointer;
     background: url('../../assets/images/logo.svg') no-repeat;
     background-position: 16px 14px;
     >span {
         display: inline-block;
-        padding: 1px;
+        padding: 0 8px;
+        margin: 0 0 0 2px;
+        vertical-align: middle;
         border-radius: 2px;
         color: #fff;
-        font-size: 12px;
+        font-size: 20px;
         font-weight: normal;
-        line-height: 16px;
+        line-height: 32px;
         background: #e3a547;
-        transform: scale(calc(10 / 12));
+        transform: scale(0.5);
+        transform-origin: left center;
     }
 }
 
