@@ -178,9 +178,9 @@
             async searchVerification () {
                 const res = await this.searchObjectUniqueConstraints({
                     objId: this.activeModel['bk_obj_id'],
+                    params: this.$injectMetadata(),
                     config: {
-                        requestId: 'searchObjectUniqueConstraints',
-                        data: this.$injectMetadata()
+                        requestId: 'searchObjectUniqueConstraints'
                     }
                 })
                 this.table.list = res
