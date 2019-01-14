@@ -80,6 +80,7 @@ func (m *instanceManager) getInstDataByID(ctx core.ContextParams, objID string, 
 }
 
 func (m *instanceManager) searchInstance(ctx core.ContextParams, objID string, inputParam metadata.QueryCondition) (results []mapstr.MapStr, err error) {
+	results = []mapstr.MapStr{}
 	tableName := common.GetInstTableName(objID)
 	condition, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	results = make([]mapstr.MapStr, 0)
