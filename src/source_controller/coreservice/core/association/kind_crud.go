@@ -79,6 +79,7 @@ func (m *associationKind) save(ctx core.ContextParams, associationKind metadata.
 }
 
 func (m *associationKind) searchAssociationKind(ctx core.ContextParams, inputParam metadata.QueryCondition) (results []metadata.AssociationKind, err error) {
+	results = []metadata.AssociationKind{}
 	instHandler := m.dbProxy.Table(common.BKTableNameAsstDes).Find(inputParam.Condition).Fields(inputParam.Fields...)
 	for _, sort := range inputParam.SortArr {
 		fileld := sort.Field
