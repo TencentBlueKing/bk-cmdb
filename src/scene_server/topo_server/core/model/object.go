@@ -413,7 +413,7 @@ func (o *object) UpdateMainlineObjectAssociationTo(prevObjID, relateToObjID stri
 	cond.Field(common.AssociatedObjectIDField).Eq(prevObjID)
 	cond.Field(common.AssociationKindIDField).Eq(common.AssociationKindMainline)
 
-	resp, err := o.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), o.params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	resp, err := o.clientSet.CoreService().Association().DeleteModelAssociation(context.Background(), o.params.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
 	if err != nil {
 		blog.Errorf("update mainline object[%S] association to %s, search object association failed, err: %v",
 			o.obj.ObjectID, relateToObjID, err)
@@ -425,35 +425,7 @@ func (o *object) UpdateMainlineObjectAssociationTo(prevObjID, relateToObjID stri
 			o.obj.ObjectID, relateToObjID, resp.ErrMsg)
 		return o.params.Err.Errorf(resp.Code, resp.ErrMsg)
 	}
-
-	if len(resp.Data.Info) == 0 {
-		blog.Errorf("update mainline object[%S] association to %s, but can not find this association.", o.obj.ObjectID, relateToObjID)
-		return o.params.Err.Errorf(common.CCErrorTopoMainlineObjectAssociationNotExist, o.obj.ObjectID, prevObjID)
-	}
-
-	if len(resp.Data.Info) > 1 {
-		blog.Errorf("update mainline object[%S] association to %s, but get multiple association.", o.obj.ObjectID, relateToObjID)
-		return o.params.Err.Error(common.CCErrTopoGotMultipleAssociationInstance)
-	}
-
-	fields := mapstr.New()
-	fields.Set(common.AssociatedObjectIDField, relateToObjID)
-	update := metadata.UpdateOption{
-		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(resp.Data.Info[0].ID).ToMapStr(),
-		Data:      fields,
-	}
-	result, err := o.clientSet.CoreService().Association().UpdateModelAssociation(context.Background(), o.params.Header, &update)
-	if err != nil {
-		blog.Errorf("[model-obj] update mainline object's[%d] association to object[%s] failed, err: %v", o.obj.ID, relateToObjID, err)
-		return err
-	}
-
-	if result.Code != common.CCSuccess {
-		blog.Errorf("[model-obj] update mainline object's[%d] association to object[%s] failed, err: %s", o.obj.ID, relateToObjID, result.ErrMsg)
-		return o.params.Err.Error(result.Code)
-	}
-
-	return nil
+	return o.CreateMainlineObjectAssociation(relateToObjID)
 }
 
 func (o *object) IsExists() (bool, error) {
