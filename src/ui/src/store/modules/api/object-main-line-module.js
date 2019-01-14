@@ -92,7 +92,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     getInternalTopo ({ commit, state, dispatch, rootGetters }, { bizId, config }) {
-        return $http.get(`find/topointernal/biz/${bizId}`, config)
+        return $http.get(`topo/internal/${rootGetters.supplierAccount}/${bizId}`, config)
     }
 }
 
