@@ -39,7 +39,9 @@ func NewValidator(ctx core.ContextParams, dependent OperationDependences, objID 
 	valid.propertyslice = make([]metadata.Attribute, 0)
 	valid.require = make(map[string]bool)
 	valid.requirefields = make([]string, 0)
-	valid.shouldIgnore = make(map[string]bool)
+	valid.shouldIgnore = map[string]bool{
+		"default": true,
+	}
 	valid.errif = ctx.Error
 	result, err := dependent.SelectObjectAttWithParams(ctx, objID)
 	if nil != err {
