@@ -14,7 +14,6 @@ package metadata
 
 import (
 	"configcenter/src/common/mapstr"
-	types "configcenter/src/common/mapstr"
 )
 
 const (
@@ -84,7 +83,7 @@ type AttributeGroup struct {
 }
 
 // Parse load the data from mapstr attribute into attribute instance
-func (cli *Attribute) Parse(data types.MapStr) (*Attribute, error) {
+func (cli *Attribute) Parse(data mapstr.MapStr) (*Attribute, error) {
 
 	err := mapstr.SetValueToStructByTags(cli, data)
 	if nil != err {
@@ -95,7 +94,7 @@ func (cli *Attribute) Parse(data types.MapStr) (*Attribute, error) {
 }
 
 // ToMapStr to mapstr
-func (cli *Attribute) ToMapStr() types.MapStr {
+func (cli *Attribute) ToMapStr() mapstr.MapStr {
 	return mapstr.SetValueToMapStrByTags(cli)
 }
 
