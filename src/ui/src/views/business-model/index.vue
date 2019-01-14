@@ -123,6 +123,7 @@
             },
             handleCancelCreateLevel () {
                 this.addLevel.parent = null
+                this.addLevel.showDialog = false
             }
         }
     }
