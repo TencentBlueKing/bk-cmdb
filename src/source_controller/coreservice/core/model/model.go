@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
 )
@@ -190,7 +191,7 @@ func (m *modelManager) SetModel(ctx core.ContextParams, inputParam metadata.SetM
 
 func (m *modelManager) UpdateModel(ctx core.ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 
-	updateCond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
+	updateCond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr into condition object, error info is %s ", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.UpdatedCount{}, err
@@ -204,7 +205,7 @@ func (m *modelManager) UpdateModel(ctx core.ContextParams, inputParam metadata.U
 func (m *modelManager) DeleteModel(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
 	// read all models by the deletion conditon
-	deleteCond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
+	deleteCond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr into condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.DeletedCount{}, ctx.Error.New(common.CCErrCommParamsInvalid, err.Error())
@@ -258,12 +259,11 @@ func (m *modelManager) DeleteModel(ctx core.ContextParams, inputParam metadata.D
 func (m *modelManager) CascadeDeleteModel(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
 	// read all models by the deletion condition
-	deleteCond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
+	deleteCond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr into condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.DeletedCount{}, ctx.Error.New(common.CCErrCommParamsInvalid, err.Error())
 	}
-	deleteCond.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: ctx.SupplierAccount})
 
 	cnt, err := m.cascadeDelete(ctx, deleteCond)
 	if nil != err {
@@ -277,7 +277,7 @@ func (m *modelManager) SearchModel(ctx core.ContextParams, inputParam metadata.Q
 
 	dataResult := &metadata.QueryModelDataResult{}
 
-	searchCond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
+	searchCond, err := mongo.NewConditionFromMapStr(util.SetQueryOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr into condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return dataResult, err
@@ -304,7 +304,7 @@ func (m *modelManager) SearchModelWithAttribute(ctx core.ContextParams, inputPar
 
 	dataResult := &metadata.QueryModelWithAttributeDataResult{}
 
-	searchCond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
+	searchCond, err := mongo.NewConditionFromMapStr(util.SetQueryOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr into condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return dataResult, err

@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
 )
@@ -39,6 +40,7 @@ func (g *modelAttributeGroup) CreateModelAttributeGroup(ctx core.ContextParams, 
 	// 	return dataResult, err
 	// }
 	inputParam.Data.ObjectID = objID
+	inputParam.Data.OwnerID = ctx.SupplierAccount
 
 	_, isExists, err := g.groupIDIsExists(ctx, objID, inputParam.Data.GroupID)
 	if nil != err {
@@ -81,6 +83,7 @@ func (g *modelAttributeGroup) SetModelAttributeGroup(ctx core.ContextParams, obj
 		return dataResult, err
 	}
 	inputParam.Data.ObjectID = objID
+	inputParam.Data.OwnerID = ctx.SupplierAccount
 
 	_, isExists, err := g.groupNameIsExists(ctx, objID, inputParam.Data.GroupName)
 	if nil != err {
@@ -140,7 +143,7 @@ func (g *modelAttributeGroup) UpdateModelAttributeGroup(ctx core.ContextParams, 
 		return &metadata.UpdatedCount{}, err
 	}
 
-	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
+	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr to condition, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.UpdatedCount{}, err
@@ -163,7 +166,7 @@ func (g *modelAttributeGroup) UpdateModelAttributeGroup(ctx core.ContextParams, 
 
 func (g *modelAttributeGroup) UpdateModelAttributeGroupByCondition(ctx core.ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 
-	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
+	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr to condition, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.UpdatedCount{}, err
@@ -196,7 +199,7 @@ func (g *modelAttributeGroup) SearchModelAttributeGroup(ctx core.ContextParams, 
 	// 	return dataResult, err
 	// }
 
-	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
+	cond, err := mongo.NewConditionFromMapStr(util.SetQueryOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr to condition, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return dataResult, err
@@ -223,7 +226,7 @@ func (g *modelAttributeGroup) SearchModelAttributeGroup(ctx core.ContextParams, 
 
 func (g *modelAttributeGroup) SearchModelAttributeGroupByCondition(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeGroupDataResult, error) {
 
-	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
+	cond, err := mongo.NewConditionFromMapStr(util.SetQueryOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr to condition, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.QueryModelAttributeGroupDataResult{}, err
@@ -248,7 +251,7 @@ func (g *modelAttributeGroup) SearchModelAttributeGroupByCondition(ctx core.Cont
 // desperated only for old api
 func (g *modelAttributeGroup) DeleteModelAttributeGroupByCondition(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
-	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
+	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr to condition, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.DeletedCount{}, err
@@ -281,7 +284,7 @@ func (g *modelAttributeGroup) DeleteModelAttributeGroup(ctx core.ContextParams, 
 		return &metadata.DeletedCount{}, err
 	}
 
-	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
+	cond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
 	if nil != err {
 		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr to condition, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.DeletedCount{}, err
