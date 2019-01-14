@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package RegisterDiscover
+package registerdiscover
 
 import (
 	"time"
@@ -75,7 +75,7 @@ func (rd *RegDiscover) RegisterAndWatchService(key string, data []byte) error {
 }
 
 func (rd *RegDiscover) GetServNodes(key string) ([]string, error) {
-    return rd.rdServer.GetServNodes(key)
+	return rd.rdServer.GetServNodes(key)
 }
 
 //DiscoverService used to discover the service that registered in `key`
