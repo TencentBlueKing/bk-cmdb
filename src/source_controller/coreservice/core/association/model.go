@@ -73,7 +73,7 @@ func (m *associationModel) UpdateModelAssociation(ctx core.ContextParams, inputP
 	inputParam.Data.Remove(metadata.AssociationFieldObjectID)
 	inputParam.Data.Remove(metadata.AssociationFieldAssociationObjectID)
 	inputParam.Data.Remove(metadata.AssociationFieldSupplierAccount)
-	inputParam.Data.Remove(metadata.AssociationFieldObjectID)
+	inputParam.Data.Remove(metadata.AssociationFieldAsstID)
 
 	updateCond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
