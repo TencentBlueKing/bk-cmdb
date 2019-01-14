@@ -3,7 +3,7 @@
         <div class="model-info" v-bkloading="{isLoading: $loading('searchObjects')}">
             <template v-if="activeModel !== null">
                 <div class="choose-icon-wrapper">
-                    <span class="model-type">公共</span>
+                    <span class="model-type" v-if="isPublicModel">公共</span>
                     <template v-if="authority.includes('update')">
                         <div class="icon-box" @click="isIconListShow = true">
                             <i class="icon" :class="activeModel ? activeModel['bk_obj_icon'] : 'icon-cc-default'"></i>
@@ -147,6 +147,9 @@
             },
             isMainLine () {
                 return this.activeModel['bk_classification_id'] === 'bk_biz_topo'
+            },
+            isPublicModel () {
+                return !(this.activeModel.metadata || {}).label
             },
             modelParams () {
                 let {
