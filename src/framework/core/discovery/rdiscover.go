@@ -21,13 +21,13 @@ import (
 	"sync"
 	"time"
 
-	"configcenter/src/framework/core/log"
 	"context"
 
-	"configcenter/src/common/RegisterDiscover"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/registerdiscover"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
+	"configcenter/src/framework/core/log"
 )
 
 var _ DiscoverInterface = &RegDiscover{}
@@ -38,7 +38,7 @@ type RegDiscover struct {
 	ip         string
 	port       uint
 	isSSL      bool
-	rd         *RegisterDiscover.RegDiscover
+	rd         *registerdiscover.RegDiscover
 	rootCtx    context.Context
 	cancel     context.CancelFunc
 	topoServs  []*types.TopoServInfo
@@ -54,7 +54,7 @@ func NewRegDiscover(moduleName string, zkserv string, ip string, port uint, isSS
 		ip:         ip,
 		port:       port,
 		isSSL:      isSSL,
-		rd:         RegisterDiscover.NewRegDiscoverEx(zkserv, 10*time.Second),
+		rd:         registerdiscover.NewRegDiscoverEx(zkserv, 10*time.Second),
 		topoServs:  []*types.TopoServInfo{},
 		procServs:  []*types.ProcServInfo{},
 	}
