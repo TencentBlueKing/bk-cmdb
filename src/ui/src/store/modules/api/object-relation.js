@@ -30,7 +30,7 @@ const actions = {
      * @return {Promise} promise 对象
      */
     getInstRelation ({ commit, state, dispatch, rootGetters }, { objId, instId, config }) {
-        return $http.post(`inst/association/topo/search/owner/${rootGetters.supplierAccount}/object/${objId}/inst/${instId}`, {}, config)
+        return $http.post(`find/instassttopo/object/${objId}/inst/${instId}`, {}, config)
     },
 
     updateInstRelation ({commit, state, dispatch, rootGetters}, {params, config}) {
