@@ -23,6 +23,7 @@ import (
 )
 
 func (m *modelAttrUnique) searchModelAttrUnique(ctx core.ContextParams, inputParam metadata.QueryCondition) (results []metadata.ObjectUnique, err error) {
+	results = []metadata.ObjectUnique{}
 	instHandler := m.dbProxy.Table(common.BKTableNameObjUnique).Find(inputParam.Condition)
 	for _, sort := range inputParam.SortArr {
 		fileld := sort.Field
