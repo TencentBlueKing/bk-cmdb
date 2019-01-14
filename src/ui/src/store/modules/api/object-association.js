@@ -87,7 +87,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     updateObjectAssociation ({ commit, state, dispatch }, { id, params, config }) {
-        return $http.put(`update/object/association/${id}`, params, config)
+        return $http.put(`update/objectassociation/${id}`, params, config)
     },
     /**
      * 删除模型关联
