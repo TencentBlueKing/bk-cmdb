@@ -605,6 +605,10 @@ func (a *association) CreateInst(params types.ContextParams, request *metadata.C
 		return nil, params.Err.Error(common.CCErrorTopoObjectAssociationNotExist)
 	}
 
+	objectAsst := result.Data[0]
+
+	objID := objectAsst.ObjectID
+	asstObjID := objectAsst.AsstObjID
 	// search instances belongs to this association.
 	inst, err := a.SearchInst(params, &metadata.SearchAssociationInstRequest{Condition: cond.ToMapStr()})
 	if err != nil {
@@ -633,6 +637,8 @@ func (a *association) CreateInst(params types.ContextParams, request *metadata.C
 			ObjectAsstID: request.ObjectAsstID,
 			InstID:       request.InstID,
 			AsstInstID:   request.AsstInstID,
+			ObjectID:     objID,
+			AsstObjectID: asstObjID,
 		},
 	}
 	rsp, err := a.clientSet.CoreService().Association().CreateInstAssociation(context.Background(), params.Header, &input)
