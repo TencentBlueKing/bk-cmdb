@@ -3,7 +3,7 @@
         <v-search class="index-search"></v-search>
         <v-recently ref="recently"></v-recently>
         <v-classify></v-classify>
-        <cmdb-main-inject class="copyright">
+        <cmdb-main-inject class="copyright" ref="copyright">
             Copyright © 2012-{{year}} Tencent BlueKing. All Rights Reserved. 腾讯蓝鲸 版权所有
         </cmdb-main-inject>
     </div>
@@ -14,6 +14,7 @@
     import vSearch from './children/search'
     import vRecently from './children/recently'
     import vClassify from './children/classify'
+    import { addMainResizeListener, removeMainResizeListener } from '@/utils/main-scroller'
     export default {
         components: {
             vSearch,
@@ -24,7 +25,8 @@
         data () {
             const year = (new Date()).getFullYear()
             return {
-                year
+                year,
+                resizeHandler: null
             }
         },
         beforeRouteLeave (to, from, next) {
@@ -33,6 +35,22 @@
         },
         created () {
             this.$store.commit('setHeaderTitle', this.$t('Index["首页"]'))
+        },
+        mounted () {
+            const $copyright = this.$refs.copyright.$el
+            this.resizeHandler = event => {
+                const target = event.target
+                if (target.offsetWidth < 1100) {
+                    $copyright.style.bottom = '8px'
+                } else {
+                    $copyright.style.bottom = 0
+                }
+            }
+            addMainResizeListener(this.resizeHandler)
+            this.resizeHandler({target: document.querySelector('.main-scroller')})
+        },
+        beforeDestroy () {
+            removeMainResizeListener(this.resizeHandler)
         }
     }
 </script>
