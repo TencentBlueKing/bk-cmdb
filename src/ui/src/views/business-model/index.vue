@@ -160,7 +160,7 @@
             background: #fff;
             box-shadow: 0px 2px 4px 0px rgba(147,147,147,0.5);
             border-radius: 50%;
-            font-size: 24px;
+            font-size: 0;
             color: #3c96ff;
             &.is-inner {
                 color: #868b97;
@@ -187,6 +187,9 @@
             &.is-first:before,
             &.is-last:after {
                 display: none;
+            }
+            .icon {
+                font-size: 24px;
             }
         }
         .node-name {
