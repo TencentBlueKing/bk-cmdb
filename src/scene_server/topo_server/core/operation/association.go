@@ -290,7 +290,7 @@ func (a *association) DeleteAssociation(params types.ContextParams, cond conditi
 	if len(rsp.Data.Info) < 1 {
 		// we assume this association has already been deleted.
 		blog.Warnf("delete object association, but can not get association with cond[%v] ", cond.ToMapStr())
-		return params.Err.Error(common.CCErrorTopoAssociationDoNotExist)
+		return nil
 	}
 
 	// a pre-defined association can not be updated.
