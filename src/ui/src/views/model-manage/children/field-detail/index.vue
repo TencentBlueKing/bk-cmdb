@@ -1,79 +1,77 @@
 <template>
     <div class="slider-content">
-        <div class="content-box">
-            <label class="form-label">
-                <span class="label-text">
-                    {{$t('ModelManagement["唯一标识"]')}}
-                    <span class="color-danger">*</span>
-                </span>
-                <div class="cmdb-form-item" :class="{'is-error': errors.has('fieldId')}">
-                    <input type="text" class="cmdb-form-input"
-                    name="fieldId"
-                    :placeholder="$t('ModelManagement[\'下划线/数字/字母\']')"
-                    v-model.trim="fieldInfo['bk_property_id']"
+        <label class="form-label">
+            <span class="label-text">
+                {{$t('ModelManagement["唯一标识"]')}}
+                <span class="color-danger">*</span>
+            </span>
+            <div class="cmdb-form-item" :class="{'is-error': errors.has('fieldId')}">
+                <input type="text" class="cmdb-form-input"
+                name="fieldId"
+                :placeholder="$t('ModelManagement[\'下划线/数字/字母\']')"
+                v-model.trim="fieldInfo['bk_property_id']"
+                :disabled="isEditField"
+                v-validate="'required|fieldId'">
+                <p class="form-error">{{errors.first('fieldId')}}</p>
+            </div>
+        </label>
+        <label class="form-label">
+            <span class="label-text">
+                {{$t('ModelManagement["名称"]')}}
+                <span class="color-danger">*</span>
+            </span>
+            <div class="cmdb-form-item" :class="{'is-error': errors.has('fieldName')}">
+                <input type="text" class="cmdb-form-input"
+                name="fieldName"
+                :placeholder="$t('ModelManagement[\'请输入字段名称\']')"
+                v-model.trim="fieldInfo['bk_property_name']"
+                :disabled="isReadOnly"
+                v-validate="'required|enumName'">
+                <p class="form-error">{{errors.first('fieldName')}}</p>
+            </div>
+        </label>
+        <div class="form-label">
+            <span class="label-text">
+                {{$t('ModelManagement["字段类型"]')}}
+                <span class="color-danger">*</span>
+            </span>
+            <div class="cmdb-form-item">
+                <bk-selector
                     :disabled="isEditField"
-                    v-validate="'required|fieldId'">
-                    <p class="form-error">{{errors.first('fieldId')}}</p>
-                </div>
-            </label>
-            <label class="form-label">
-                <span class="label-text">
-                    {{$t('ModelManagement["名称"]')}}
-                    <span class="color-danger">*</span>
-                </span>
-                <div class="cmdb-form-item" :class="{'is-error': errors.has('fieldName')}">
-                    <input type="text" class="cmdb-form-input"
-                    name="fieldName"
-                    :placeholder="$t('ModelManagement[\'请输入字段名称\']')"
-                    v-model.trim="fieldInfo['bk_property_name']"
-                    :disabled="isReadOnly"
-                    v-validate="'required|enumName'">
-                    <p class="form-error">{{errors.first('fieldName')}}</p>
-                </div>
-            </label>
-            <div class="form-label">
-                <span class="label-text">
-                    {{$t('ModelManagement["字段类型"]')}}
-                    <span class="color-danger">*</span>
-                </span>
-                <div class="cmdb-form-item">
-                    <bk-selector
-                        :disabled="isEditField"
-                        :list="fieldTypeList"
-                        :selected.sync="fieldInfo['bk_property_type']"
-                    ></bk-selector>
-                </div>
+                    :list="fieldTypeList"
+                    :selected.sync="fieldInfo['bk_property_type']"
+                ></bk-selector>
             </div>
-            <div class="field-detail">
-                <the-config
-                    :type="fieldInfo['bk_property_type']"
-                    :isReadOnly="isReadOnly"
-                    :editable.sync="fieldInfo['editable']"
-                    :isrequired.sync="fieldInfo['isrequired']"
-                ></the-config>
-                <component 
-                    v-if="isComponentShow"
-                    :isReadOnly="isReadOnly"
-                    :is="`the-field-${fieldType}`"
-                    v-model="fieldInfo.option"
-                    ref="component"
-                ></component>
+        </div>
+        <div class="field-detail">
+            <the-config
+                :type="fieldInfo['bk_property_type']"
+                :isReadOnly="isReadOnly"
+                :editable.sync="fieldInfo['editable']"
+                :isrequired.sync="fieldInfo['isrequired']"
+            ></the-config>
+            <component 
+                v-if="isComponentShow"
+                :isReadOnly="isReadOnly"
+                :is="`the-field-${fieldType}`"
+                v-model="fieldInfo.option"
+                ref="component"
+            ></component>
+        </div>
+        <label class="form-label">
+            <span class="label-text">
+                {{$t('ModelManagement["单位"]')}}
+            </span>
+            <div class="cmdb-form-item">
+                <input type="text" class="cmdb-form-input"
+                v-model.trim="fieldInfo['unit']"
+                :disabled="isReadOnly"
+                :placeholder="$t('ModelManagement[\'请输入单位\']')">
             </div>
-            <label class="form-label">
-                <span class="label-text">
-                    {{$t('ModelManagement["单位"]')}}
-                </span>
-                <div class="cmdb-form-item">
-                    <input type="text" class="cmdb-form-input"
-                    v-model.trim="fieldInfo['unit']"
-                    :disabled="isReadOnly"
-                    :placeholder="$t('ModelManagement[\'请输入单位\']')">
-                </div>
-            </label>
-            <div class="form-label">
-                <span class="label-text">{{$t('ModelManagement["用户提示"]')}}</span>
-                <textarea v-model.trim="fieldInfo['placeholder']" :disabled="isReadOnly"></textarea>
-            </div>
+        </label>
+        <div class="form-label">
+            <span class="label-text">{{$t('ModelManagement["用户提示"]')}}</span>
+            <textarea v-model.trim="fieldInfo['placeholder']" :disabled="isReadOnly"></textarea>
         </div>
         <div class="btn-group">
             <bk-button type="primary" :loading="$loading(['updateObjectAttribute', 'createObjectAttribute'])" @click="saveField">
@@ -280,13 +278,6 @@
             width: 90px;
             line-height: 22px;
             vertical-align: middle;
-        }
-    }
-    .btn-group {
-        margin: 30px 0 0 110px;
-        font-size: 0;
-        .bk-primary {
-            margin-right: 10px;
         }
     }
 </style>
