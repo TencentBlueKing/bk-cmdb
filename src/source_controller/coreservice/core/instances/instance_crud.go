@@ -14,7 +14,6 @@ package instances
 
 import (
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
@@ -114,7 +113,6 @@ func (m *instanceManager) countInstance(ctx core.ContextParams, objID string, co
 		condition.And(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
 	}
 
-	blog.Infof("count instance: tablename: %s, condition: %#v", tableName, condition.ToMapStr())
 	count, err = m.dbProxy.Table(tableName).Find(condition.ToMapStr()).Count(ctx)
 
 	return count, err
