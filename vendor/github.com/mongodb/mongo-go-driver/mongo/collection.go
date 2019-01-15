@@ -149,7 +149,7 @@ func (coll *Collection) BulkWrite(ctx context.Context, models []WriteModel,
 	opts ...*options.BulkWriteOptions) (*BulkWriteResult, error) {
 
 	if len(models) == 0 {
-		return nil, errors.New("a bulk write must contain at least one write model")
+		return nil, ErrEmptySlice
 	}
 
 	if ctx == nil {
@@ -165,6 +165,9 @@ func (coll *Collection) BulkWrite(ctx context.Context, models []WriteModel,
 
 	dispatchModels := make([]driver.WriteModel, len(models))
 	for i, model := range models {
+		if model == nil {
+			return nil, ErrNilDocument
+		}
 		dispatchModels[i] = model.convertModel()
 	}
 
@@ -271,10 +274,17 @@ func (coll *Collection) InsertMany(ctx context.Context, documents []interface{},
 		ctx = context.Background()
 	}
 
+	if len(documents) == 0 {
+		return nil, ErrEmptySlice
+	}
+
 	result := make([]interface{}, len(documents))
 	docs := make([]bsonx.Doc, len(documents))
 
 	for i, doc := range documents {
+		if doc == nil {
+			return nil, ErrNilDocument
+		}
 		bdoc, insertedID, err := transformAndEnsureID(coll.registry, doc)
 		if err != nil {
 			return nil, err
@@ -499,6 +509,7 @@ func (coll *Collection) updateOrReplaceOne(ctx context.Context, filter,
 	res := &UpdateResult{
 		MatchedCount:  r.MatchedCount,
 		ModifiedCount: r.ModifiedCount,
+		UpsertedCount: int64(len(r.Upserted)),
 	}
 	if len(r.Upserted) > 0 {
 		res.UpsertedID = r.Upserted[0].ID
@@ -610,6 +621,7 @@ func (coll *Collection) UpdateMany(ctx context.Context, filter interface{}, upda
 	res := &UpdateResult{
 		MatchedCount:  r.MatchedCount,
 		ModifiedCount: r.ModifiedCount,
+		UpsertedCount: int64(len(r.Upserted)),
 	}
 	// TODO(skriptble): Is this correct? Do we only return the first upserted ID for an UpdateMany?
 	if len(r.Upserted) > 0 {
@@ -879,13 +891,9 @@ func (coll *Collection) Distinct(ctx context.Context, fieldName string, filter i
 		ctx = context.Background()
 	}
 
-	var f bsonx.Doc
-	var err error
-	if filter != nil {
-		f, err = transformDocument(coll.registry, filter)
-		if err != nil {
-			return nil, err
-		}
+	f, err := transformDocument(coll.registry, filter)
+	if err != nil {
+		return nil, err
 	}
 
 	sess := sessionFromContext(ctx)
@@ -934,13 +942,9 @@ func (coll *Collection) Find(ctx context.Context, filter interface{},
 		ctx = context.Background()
 	}
 
-	var f bsonx.Doc
-	var err error
-	if filter != nil {
-		f, err = transformDocument(coll.registry, filter)
-		if err != nil {
-			return nil, err
-		}
+	f, err := transformDocument(coll.registry, filter)
+	if err != nil {
+		return nil, err
 	}
 
 	sess := sessionFromContext(ctx)
@@ -986,13 +990,9 @@ func (coll *Collection) FindOne(ctx context.Context, filter interface{},
 		ctx = context.Background()
 	}
 
-	var f bsonx.Doc
-	var err error
-	if filter != nil {
-		f, err = transformDocument(coll.registry, filter)
-		if err != nil {
-			return &SingleResult{err: err}
-		}
+	f, err := transformDocument(coll.registry, filter)
+	if err != nil {
+		return &SingleResult{err: err}
 	}
 
 	sess := sessionFromContext(ctx)
@@ -1065,13 +1065,9 @@ func (coll *Collection) FindOneAndDelete(ctx context.Context, filter interface{}
 		ctx = context.Background()
 	}
 
-	var f bsonx.Doc
-	var err error
-	if filter != nil {
-		f, err = transformDocument(coll.registry, filter)
-		if err != nil {
-			return &SingleResult{err: err}
-		}
+	f, err := transformDocument(coll.registry, filter)
+	if err != nil {
+		return &SingleResult{err: err}
 	}
 
 	sess := sessionFromContext(ctx)

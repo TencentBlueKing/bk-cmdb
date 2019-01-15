@@ -20,6 +20,9 @@ import (
 	"github.com/mongodb/mongo-go-driver/x/bsonx/bsoncore"
 )
 
+// ErrNilContext is returned when the provided DecodeContext is nil.
+var ErrNilContext = errors.New("DecodeContext cannot be nil")
+
 // ErrNilRegistry is returned when the provided registry is nil.
 var ErrNilRegistry = errors.New("Registry cannot be nil")
 
@@ -80,6 +83,26 @@ func (rv RawValue) UnmarshalWithRegistry(r *bsoncodec.Registry, val interface{})
 	return dec.DecodeValue(bsoncodec.DecodeContext{Registry: r}, vr, rval)
 }
 
+// UnmarshalWithContext performs the same unmarshalling as Unmarshal but uses the provided DecodeContext
+// instead of the one attached or the default registry.
+func (rv RawValue) UnmarshalWithContext(dc *bsoncodec.DecodeContext, val interface{}) error {
+	if dc == nil {
+		return ErrNilContext
+	}
+
+	vr := bsonrw.NewBSONValueReader(rv.Type, rv.Value)
+	rval := reflect.ValueOf(val)
+	if rval.Kind() != reflect.Ptr {
+		return fmt.Errorf("argument to Unmarshal* must be a pointer to a type, but got %v", rval)
+	}
+	rval = rval.Elem()
+	dec, err := dc.LookupDecoder(rval.Type())
+	if err != nil {
+		return err
+	}
+	return dec.DecodeValue(*dc, vr, rval)
+}
+
 func convertFromCoreValue(v bsoncore.Value) RawValue { return RawValue{Type: v.Type, Value: v.Data} }
 func convertToCoreValue(v RawValue) bsoncore.Value   { return bsoncore.Value{Type: v.Type, Data: v.Value} }
 
@@ -104,7 +127,7 @@ func (rv RawValue) Double() float64 { return convertToCoreValue(rv).Double() }
 // DoubleOK is the same as Double, but returns a boolean instead of panicking.
 func (rv RawValue) DoubleOK() (float64, bool) { return convertToCoreValue(rv).DoubleOK() }
 
-// StringValue returns the string balue for this element.
+// StringValue returns the string value for this element.
 // It panics if e's BSON type is not bsontype.String.
 //
 // NOTE: This method is called StringValue to avoid a collision with the String method which

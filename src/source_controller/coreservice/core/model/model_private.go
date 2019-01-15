@@ -26,7 +26,7 @@ func (m *modelManager) isExists(ctx core.ContextParams, cond universalsql.Condit
 	oneModel = &metadata.ObjectDes{}
 	err = m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).One(ctx, oneModel)
 	if nil != err && !m.dbProxy.IsNotFoundError(err) {
-		blog.Errorf("request(%s): it is failed to execute database findone operation on the table (%v) by the condition (%v), error info is %s", ctx.ReqID, common.BKTableNameObjDes, cond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to execute database findone operation on the table (%#v) by the condition (%#v), error info is %s", ctx.ReqID, common.BKTableNameObjDes, cond.ToMapStr(), err.Error())
 		return oneModel, exists, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 	exists = !m.dbProxy.IsNotFoundError(err)
@@ -42,7 +42,7 @@ func (m *modelManager) isValid(ctx core.ContextParams, objID string) error {
 	cnt, err := m.dbProxy.Table(common.BKTableNameObjDes).Find(checkCond.ToMapStr()).Count(ctx)
 	isValid := (0 != cnt)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to execute database cout operation on the table (%s) by the condition (%v), error info is %s", ctx.ReqID, common.BKTableNameObjDes, checkCond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to execute database cout operation on the table (%s) by the condition (%#v), error info is %s", ctx.ReqID, common.BKTableNameObjDes, checkCond.ToMapStr(), err.Error())
 		return ctx.Error.Error(common.CCErrObjectDBOpErrno)
 	}
 
@@ -60,7 +60,7 @@ func (m *modelManager) deleteModelAndAttributes(ctx core.ContextParams, targetOb
 	deleteAttributeCond.Element(&mongo.In{Key: metadata.AttributeFieldObjectID, Val: targetObjIDS})
 	cnt, err := m.modelAttribute.delete(ctx, deleteAttributeCond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to delete the attribute by the condition (%v), error info is %s", ctx.ReqID, deleteAttributeCond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to delete the attribute by the condition (%#v), error info is %s", ctx.ReqID, deleteAttributeCond.ToMapStr(), err.Error())
 		return cnt, err
 	}
 
@@ -71,7 +71,7 @@ func (m *modelManager) deleteModelAndAttributes(ctx core.ContextParams, targetOb
 
 	cnt, err = m.delete(ctx, deleteModelCond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to delete some models by the condition (%v), error info is %s", ctx.ReqID, deleteModelCond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is failed to delete some models by the condition (%#v), error info is %s", ctx.ReqID, deleteModelCond.ToMapStr(), err.Error())
 		return 0, ctx.Error.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
 

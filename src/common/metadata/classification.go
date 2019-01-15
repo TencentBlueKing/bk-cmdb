@@ -14,7 +14,6 @@ package metadata
 
 import (
 	"configcenter/src/common/mapstr"
-	types "configcenter/src/common/mapstr"
 )
 
 const (
@@ -28,17 +27,17 @@ const (
 
 // Classification the classification metadata definition
 type Classification struct {
-	Metadata           `field:"metadata" json:"metadata" bson:"metadata"`
-	ID                 int64  `field:"id" json:"id" bson:"id"`
-	ClassificationID   string `field:"bk_classification_id"  json:"bk_classification_id" bson:"bk_classification_id"`
-	ClassificationName string `field:"bk_classification_name" json:"bk_classification_name" bson:"bk_classification_name"`
-	ClassificationType string `field:"bk_classification_type" json:"bk_classification_type" bson:"bk_classification_type"`
-	ClassificationIcon string `field:"bk_classification_icon" json:"bk_classification_icon" bson:"bk_classification_icon"`
-	OwnerID            string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"  `
+	Metadata           Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+	ID                 int64    `field:"id" json:"id" bson:"id"`
+	ClassificationID   string   `field:"bk_classification_id"  json:"bk_classification_id" bson:"bk_classification_id"`
+	ClassificationName string   `field:"bk_classification_name" json:"bk_classification_name" bson:"bk_classification_name"`
+	ClassificationType string   `field:"bk_classification_type" json:"bk_classification_type" bson:"bk_classification_type"`
+	ClassificationIcon string   `field:"bk_classification_icon" json:"bk_classification_icon" bson:"bk_classification_icon"`
+	OwnerID            string   `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"  `
 }
 
 // Parse load the data from mapstr classification into classification instance
-func (cli *Classification) Parse(data types.MapStr) (*Classification, error) {
+func (cli *Classification) Parse(data mapstr.MapStr) (*Classification, error) {
 
 	err := mapstr.SetValueToStructByTags(cli, data)
 	if nil != err {
@@ -49,6 +48,6 @@ func (cli *Classification) Parse(data types.MapStr) (*Classification, error) {
 }
 
 // ToMapStr to mapstr
-func (cli *Classification) ToMapStr() types.MapStr {
+func (cli *Classification) ToMapStr() mapstr.MapStr {
 	return mapstr.SetValueToMapStrByTags(cli)
 }

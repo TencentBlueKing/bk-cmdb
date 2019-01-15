@@ -36,16 +36,15 @@ func (cli MapStr) ToMapInterface() map[string]interface{} {
 	return cli
 }
 
-/*ToStructByTag convert self into a struct with 'tagName'
-
-  eg:
-  self := MapStr{"testName":"testvalue"}
-  targetStruct := struct{
-      Name string `field:"testName"`
-  }
-  After call the function self.ToStructByTag(targetStruct, "field")
-  the targetStruct.Name value will be 'testvalue'
-*/
+// ToStructByTag convert self into a struct with 'tagName'
+//
+//  eg:
+//  self := MapStr{"testName":"testvalue"}
+//  targetStruct := struct{
+//      Name string `field:"testName"`
+//  }
+//  After call the function self.ToStructByTag(targetStruct, "field")
+//  the targetStruct.Name value will be 'testvalue'
 func (cli MapStr) ToStructByTag(targetStruct interface{}, tagName string) error {
 	return SetValueToStructByTagsWithTagName(targetStruct, cli, tagName)
 }
@@ -103,7 +102,6 @@ func (cli MapStr) Bool(key string) (bool, error) {
 
 // Int64 return the value by the key
 func (cli MapStr) Int64(key string) (int64, error) {
-
 	switch t := cli[key].(type) {
 	default:
 		return 0, errors.New("invalid num")
@@ -120,6 +118,14 @@ func (cli MapStr) Int64(key string) (int64, error) {
 	case float32:
 		return int64(t), nil
 	case float64:
+		return int64(t), nil
+	case uint:
+		return int64(t), nil
+	case uint16:
+		return int64(t), nil
+	case uint32:
+		return int64(t), nil
+	case uint64:
 		return int64(t), nil
 	case json.Number:
 		num, err := t.Int64()

@@ -88,6 +88,12 @@ const (
 	BKTableNameNetcollectHistory = "cc_NetcollectHistory"
 
 	BKTableNameHostLock = "cc_HostLock"
+
+	// Cloud sync tables
+	BKTableNameCloudTask              = "cc_CloudTask"
+	BKTableNameCloudSyncHistory       = "cc_CloudSyncHistory"
+	BKTableNameCloudResourceConfirm   = "cc_CloudResourceConfirm"
+	BKTableNameResourceConfirmHistory = "cc_ResourceConfirmHistory"
 )
 
 // AllTables alltables
@@ -130,6 +136,10 @@ var AllTables = []string{
 	BKTableNameTransaction,
 	BKTableNameIDgenerator,
 	BKTableNameHostLock,
+	BKTableNameCloudTask,
+	BKTableNameCloudSyncHistory,
+	BKTableNameCloudResourceConfirm,
+	BKTableNameResourceConfirmHistory,
 	BKTableNameObjUnique,
 	BKTableNameAsstDes,
 }

@@ -28,7 +28,6 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/proc_server/app/options"
-	"configcenter/src/scene_server/proc_server/logics"
 	"configcenter/src/scene_server/proc_server/proc_service/service"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/esbserver"
@@ -58,7 +57,6 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	procSvr := new(service.ProcServer)
-	procSvr.Logics = &logics.Logics{}
 	procSvr.EsbConfigChn = make(chan esbutil.EsbConfig, 0)
 	container := restful.NewContainer()
 	container.Add(procSvr.WebService())
@@ -106,9 +104,8 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("create esb api  object failed. err: %v", err)
 	}
 	procSvr.Engine = engine
-	procSvr.Logics.Engine = engine
-	procSvr.Logics.EsbServ = esbSrv
-	procSvr.SetCache(cacheDB)
+	procSvr.EsbServ = esbSrv
+	procSvr.Cache = cacheDB
 	go procSvr.InitFunc()
 
 	select {

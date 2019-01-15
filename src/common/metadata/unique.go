@@ -22,7 +22,7 @@ type ObjectUnique struct {
 	ID        uint64      `json:"id" bson:"id"`
 	ObjID     string      `json:"bk_obj_id" bson:"bk_obj_id"`
 	MustCheck bool        `json:"must_check" bson:"must_check"`
-	Keys      []UinqueKey `json:"keys" bson:"keys"`
+	Keys      []UniqueKey `json:"keys" bson:"keys"`
 	Ispre     bool        `json:"ispre" bson:"ispre"`
 	OwnerID   string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	LastTime  Time        `json:"last_time" bson:"last_time"`
@@ -37,20 +37,21 @@ func (u ObjectUnique) KeysHash() string {
 	return strings.Join(keys, "#")
 }
 
-type UinqueKey struct {
+type UniqueKey struct {
 	Kind string `json:"key_kind" bson:"key_kind"`
 	ID   uint64 `json:"key_id" bson:"key_id"`
 }
 
 const (
-	UinqueKeyKindProperty    = "property"
-	UinqueKeyKindAssociation = "association"
+	UniqueKeyKindProperty    = "property"
+	UniqueKeyKindAssociation = "association"
 )
 
 type CreateUniqueRequest struct {
 	ObjID     string      `json:"bk_obj_id" bson:"bk_obj_id"`
 	MustCheck bool        `json:"must_check" bson:"must_check"`
-	Keys      []UinqueKey `json:"keys" bson:"keys"`
+	Keys      []UniqueKey `json:"keys" bson:"keys"`
+	Metadata  `field:"metadata" json:"metadata" bson:"metadata"`
 }
 
 type CreateUniqueResult struct {
@@ -60,7 +61,7 @@ type CreateUniqueResult struct {
 
 type UpdateUniqueRequest struct {
 	MustCheck bool        `json:"must_check" bson:"must_check"`
-	Keys      []UinqueKey `json:"keys" bson:"keys"`
+	Keys      []UniqueKey `json:"keys" bson:"keys"`
 	LastTime  Time        `json:"last_time" bson:"last_time"`
 }
 

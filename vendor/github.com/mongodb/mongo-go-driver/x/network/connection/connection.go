@@ -24,9 +24,11 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/bson/bsontype"
 	"github.com/mongodb/mongo-go-driver/event"
 	"github.com/mongodb/mongo-go-driver/x/bsonx"
+	"github.com/mongodb/mongo-go-driver/x/bsonx/bsoncore"
 	"github.com/mongodb/mongo-go-driver/x/network/address"
 	"github.com/mongodb/mongo-go-driver/x/network/compressor"
 	"github.com/mongodb/mongo-go-driver/x/network/description"
@@ -34,7 +36,7 @@ import (
 )
 
 var globalClientConnectionID uint64
-var emptyDoc = bsonx.Doc{}
+var emptyDoc bson.Raw
 
 func nextClientConnectionID() uint64 {
 	return atomic.AddUint64(&globalClientConnectionID, 1)
@@ -93,7 +95,7 @@ type connection struct {
 	compressor  compressor.Compressor // use for compressing messages
 	// server can compress response with any compressor supported by driver
 	compressorMap    map[wiremessage.CompressorID]compressor.Compressor
-	commandMap       map[int64]*event.CommandMetadata // map for monitoring commands sent to server
+	commandMap       map[int64]*commandMetadata // map for monitoring commands sent to server
 	dead             bool
 	idleTimeout      time.Duration
 	idleDeadline     time.Time
@@ -146,7 +148,7 @@ func New(ctx context.Context, addr address.Address, opts ...Option) (Connection,
 		conn:             nc,
 		compressBuf:      make([]byte, 256),
 		compressorMap:    compressorMap,
-		commandMap:       make(map[int64]*event.CommandMetadata),
+		commandMap:       make(map[int64]*commandMetadata),
 		addr:             addr,
 		idleTimeout:      cfg.idleTimeout,
 		lifetimeDeadline: lifetimeDeadline,
@@ -370,23 +372,22 @@ func (c *connection) commandStartedEvent(ctx context.Context, wm wiremessage.Wir
 
 	var cmd bsonx.Doc
 	var err error
+	var legacy bool
+	var fullCollName string
 
 	var acknowledged bool
 	switch converted := wm.(type) {
 	case wiremessage.Query:
-		cmd, err = bsonx.ReadDoc([]byte(converted.Query))
+		cmd, err = converted.CommandDocument()
 		if err != nil {
 			return err
 		}
 
 		acknowledged = converted.AcknowledgedWrite()
-		startedEvent.DatabaseName = converted.FullCollectionName[:len(converted.FullCollectionName)-5] // remove $.cmd
+		startedEvent.DatabaseName = converted.DatabaseName()
 		startedEvent.RequestID = int64(converted.MsgHeader.RequestID)
-
-		cmdElem := cmd[0]
-		if cmdElem.Key == "$query" {
-			cmd = cmdElem.Value.Document()
-		}
+		legacy = converted.Legacy()
+		fullCollName = converted.FullCollectionName
 	case wiremessage.Msg:
 		cmd, err = converted.GetMainDocument()
 		if err != nil {
@@ -410,9 +411,22 @@ func (c *connection) commandStartedEvent(ctx context.Context, wm wiremessage.Wir
 
 		startedEvent.DatabaseName = dbVal.StringValue()
 		startedEvent.RequestID = int64(converted.MsgHeader.RequestID)
+	case wiremessage.GetMore:
+		cmd = converted.CommandDocument()
+		startedEvent.DatabaseName = converted.DatabaseName()
+		startedEvent.RequestID = int64(converted.MsgHeader.RequestID)
+		acknowledged = true
+		legacy = true
+		fullCollName = converted.FullCollectionName
+	case wiremessage.KillCursors:
+		cmd = converted.CommandDocument()
+		startedEvent.DatabaseName = converted.DatabaseName
+		startedEvent.RequestID = int64(converted.MsgHeader.RequestID)
+		legacy = true
 	}
 
-	startedEvent.Command = cmd
+	rawcmd, _ := cmd.MarshalBSON()
+	startedEvent.Command = rawcmd
 	startedEvent.CommandName = cmd[0].Key
 	if !canMonitor(startedEvent.CommandName) {
 		startedEvent.Command = emptyDoc
@@ -435,13 +449,13 @@ func (c *connection) commandStartedEvent(ctx context.Context, wm wiremessage.Wir
 
 		c.cmdMonitor.Succeeded(ctx, &event.CommandSucceededEvent{
 			CommandFinishedEvent: finishedEvent,
-			Reply:                bsonx.Doc{{"ok", bsonx.Int32(1)}},
+			Reply:                bsoncore.BuildDocument(nil, bsoncore.AppendInt32Element(nil, "ok", 1)),
 		})
 
 		return nil
 	}
 
-	c.commandMap[startedEvent.RequestID] = event.CreateMetadata(startedEvent.CommandName)
+	c.commandMap[startedEvent.RequestID] = createMetadata(startedEvent.CommandName, legacy, fullCollName)
 	return nil
 }
 
@@ -498,18 +512,26 @@ func (c *connection) commandFinishedEvent(ctx context.Context, wm wiremessage.Wi
 	switch converted := wm.(type) {
 	case wiremessage.Reply:
 		requestID = int64(converted.MsgHeader.ResponseTo)
-		reply, err = converted.GetMainDocument()
 	case wiremessage.Msg:
 		requestID = int64(converted.MsgHeader.ResponseTo)
+	}
+	cmdMetadata := c.commandMap[requestID]
+	delete(c.commandMap, requestID)
+
+	switch converted := wm.(type) {
+	case wiremessage.Reply:
+		if cmdMetadata.Legacy {
+			reply, err = converted.GetMainLegacyDocument(cmdMetadata.FullCollectionName)
+		} else {
+			reply, err = converted.GetMainDocument()
+		}
+	case wiremessage.Msg:
 		reply, err = converted.GetMainDocument()
 	}
-
 	if err != nil {
 		return err
 	}
 
-	cmdMetadata := c.commandMap[requestID]
-	delete(c.commandMap, requestID)
 	success, errmsg := processReply(reply)
 
 	if (success && c.cmdMonitor.Succeeded == nil) || (!success && c.cmdMonitor.Failed == nil) {
@@ -545,8 +567,9 @@ func (c *connection) commandFinishedEvent(ctx context.Context, wm wiremessage.Wi
 			}
 		}
 
+		replyraw, _ := reply.MarshalBSON()
 		successEvent := &event.CommandSucceededEvent{
-			Reply:                reply,
+			Reply:                replyraw,
 			CommandFinishedEvent: finishedEvent,
 		}
 

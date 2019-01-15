@@ -18,5 +18,8 @@
 	"1106017": "Failed to delete host favorites",
 	"1106019": "snapshot channel was empty in last minute",
 	"1106020": "couldn't connect to snapshot channel",
+	"1106021": "Failed to create cloud synchronization task",
+	"1106022": "Failed to add resource confirm history",
+	"1106023": "Failed to search synchronization history",
 	"": "" 
 }
