@@ -61,6 +61,12 @@ const router = new Router({
             isModel: false
         }
     }, {
+        path: '/model/details/process',
+        redirect: '/status-404'
+    }, {
+        path: '/model/details/plat',
+        redirect: '/status-404'
+    }, {
         path: '/model/details/:modelId',
         component: modelDetail,
         meta: {

@@ -70,10 +70,10 @@ func (s *Service) newSrvComm(header http.Header) *srvComm {
 
 func (s *Service) WebService() *restful.WebService {
 	ws := new(restful.WebService)
-	getErrFun := func() errors.CCErrorIf {
+	getErrFunc := func() errors.CCErrorIf {
 		return s.CCErr
 	}
-	ws.Path("/host/{version}").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
+	ws.Path("/host/{version}").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 	//restful.DefaultRequestContentType(restful.MIME_JSON)
 	//restful.DefaultResponseContentType(restful.MIME_JSON)
 
