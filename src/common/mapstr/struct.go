@@ -51,7 +51,7 @@ func setMapStrByStruct(targetType reflect.Type, targetValue reflect.Value, value
 		}
 
 		fieldValue := targetValue.FieldByName(structField.Name)
-		if !fieldValue.CanInterface() {
+		if fieldValue.IsValid() && !fieldValue.CanInterface() {
 			continue
 		}
 
@@ -191,7 +191,7 @@ func setMapToReflectValue(returnVal, inputVal reflect.Value) (reflect.Value, err
 	for _, key := range mapKeys {
 
 		value := inputVal.MapIndex(key)
-		if !value.CanInterface() {
+		if value.IsValid() && !value.CanInterface() {
 			continue
 		}
 
