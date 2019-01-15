@@ -4,11 +4,8 @@
 .model-manage-wrapper {
     .slider-content {
         height: 100%;
-        >.content-box {
-            padding: 20px 20px 0;
-            max-height: calc(100% - 76px);
-            @include scrollbar;
-        }
+        padding: 20px 20px 0;
+        @include scrollbar;
         .form-label {
             display: block;
             margin-bottom: 15px;
@@ -56,8 +53,13 @@
             }
         }
         .btn-group {
-            margin: 20px;
+            position: sticky;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px 0;
             font-size: 0;
+            background: #fff;
             .bk-primary {
                 margin-right: 10px;
             }
