@@ -112,6 +112,7 @@ func (m *instanceManager) countInstance(ctx core.ContextParams, objID string, co
 	if tableName == common.BKTableNameBaseInst {
 		condition.And(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
 	}
+
 	count, err = m.dbProxy.Table(tableName).Find(condition.ToMapStr()).Count(ctx)
 
 	return count, err

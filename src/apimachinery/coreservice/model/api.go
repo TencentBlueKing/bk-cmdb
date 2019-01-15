@@ -433,7 +433,7 @@ func (m *model) CreateModelAttrUnique(ctx context.Context, h http.Header, objID 
 func (m *model) UpdateModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64, data metadata.UpdateModelAttrUnique) (resp *metadata.UpdatedOptionResult, err error) {
 	subPath := fmt.Sprintf("/update/model/%s/attributes/unique/%d", objID, id)
 
-	err = m.client.Post().
+	err = m.client.Put().
 		WithContext(ctx).
 		Body(data).
 		SubResource(subPath).

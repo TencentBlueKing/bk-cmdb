@@ -45,7 +45,9 @@ func parseConditionFromMapStr(inputCond *mongoCondition, inputKey string, inputC
 				return err
 			}
 
-		case universalsql.EQ, universalsql.NEQ, universalsql.GT, universalsql.GTE, universalsql.LTE, universalsql.LT, universalsql.IN, universalsql.NIN, universalsql.REGEX, universalsql.EXISTS:
+		case universalsql.EQ, universalsql.NEQ,
+			universalsql.GT, universalsql.GTE, universalsql.LTE, universalsql.LT,
+			universalsql.IN, universalsql.NIN, universalsql.REGEX, universalsql.EXISTS:
 			ele, err := convertToElement(inputKey, operatorKey, val, outputCond, inputCondMapStr)
 			if nil != err {
 				return err
@@ -55,7 +57,9 @@ func parseConditionFromMapStr(inputCond *mongoCondition, inputKey string, inputC
 
 			tmpType := reflect.TypeOf(val)
 			if nil == tmpType {
-				return nil // val is nil , ignore this operation
+				// val is nil , return origin by $eq
+				outputCond.Element(&Eq{Key: operatorKey, Val: val})
+				return nil
 			}
 
 			switch tmpType.Kind() {
