@@ -14,11 +14,11 @@ package metadata
 
 import (
 	"database/sql/driver"
-	"errors"
 	"fmt"
 	"strconv"
 	"time"
 
+	"github.com/coccyx/timeparser"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -41,43 +41,6 @@ func (t Time) MarshalJSON() ([]byte, error) {
 	return []byte(t.Format(`"2006-01-02 15:04:05"`)), nil
 }
 
-func (t *Time) parseTime(tmStr string) (time.Time, error) {
-
-	if tm, tmErr := time.Parse(`"2006-01-02 15:04:05"`, tmStr); nil == tmErr {
-		return tm, tmErr
-	}
-
-	if tm, tmErr := time.Parse(time.RFC1123, tmStr); nil == tmErr {
-		return tm, nil
-	}
-
-	if tm, tmErr := time.Parse(time.RFC1123Z, tmStr); nil == tmErr {
-		return tm, nil
-	}
-
-	if tm, tmErr := time.Parse(time.RFC3339, tmStr); nil == tmErr {
-		return tm, nil
-	}
-
-	if tm, tmErr := time.Parse(time.RFC3339Nano, tmStr); nil == tmErr {
-		return tm, nil
-	}
-
-	if tm, tmErr := time.Parse(time.RFC822, tmStr); nil == tmErr {
-		return tm, nil
-	}
-
-	if tm, tmErr := time.Parse(time.RFC822Z, tmStr); nil == tmErr {
-		return tm, nil
-	}
-
-	if tm, tmErr := time.Parse(time.RFC850, tmStr); nil == tmErr {
-		return tm, nil
-	}
-
-	return time.Now(), errors.New("can not parse the time (" + tmStr + ")")
-}
-
 // UnmarshalJSON implements the json.Unmarshaler interface.
 // The time is expected to be a quoted string in RFC 3339 format.
 func (t *Time) UnmarshalJSON(data []byte) error {
@@ -86,7 +49,7 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 
-	parsed, err := t.parseTime(string(data))
+	parsed, err := timeparser.TimeParser(string(data))
 	if err == nil {
 		*t = Time{parsed}
 		return nil
