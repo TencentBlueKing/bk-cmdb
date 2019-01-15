@@ -13,9 +13,6 @@
 package service
 
 import (
-	"github.com/emicklei/go-restful"
-	redis "gopkg.in/redis.v5"
-
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
@@ -23,8 +20,12 @@ import (
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
-	"configcenter/src/scene_server/datacollection/logics"
-	"configcenter/src/storage/dal"
+    "configcenter/src/scene_server/datacollection/logics"
+    "configcenter/src/storage/dal"
+
+    "github.com/emicklei/go-restful"
+    redis "gopkg.in/redis.v5"
+
 )
 
 type Service struct {
@@ -44,11 +45,11 @@ func (s *Service) SetCache(db *redis.Client) {
 
 func (s *Service) WebService() *restful.WebService {
 	ws := new(restful.WebService)
-	getErrFun := func() errors.CCErrorIf {
+	getErrFunc := func() errors.CCErrorIf {
 		return s.CCErr
 	}
 
-	ws.Path("/collector/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
+	ws.Path("/collector/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
 	ws.Route(ws.POST("/netcollect/device/action/create").To(s.CreateDevice))
 	ws.Route(ws.POST("/netcollect/device/{device_id}/action/update").To(s.UpdateDevice))
@@ -71,6 +72,7 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.POST("/netcollect/collector/action/update").To(s.UpdateCollector))
 	ws.Route(ws.POST("/netcollect/collector/action/discover").To(s.DiscoverNetDevice))
 
+	ws.Path("/collector/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
 	ws.Route(ws.GET("/healthz").To(s.Healthz))
 
 	return ws
