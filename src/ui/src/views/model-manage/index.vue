@@ -38,12 +38,10 @@
                 <div class="group-title">
                     <span>{{classification['bk_classification_name']}}</span>
                     <span class="number">({{classification['bk_objects'].length}})</span>
-                    <template v-if="authority.includes('update')">
+                    <template v-if="authority.includes('update') && isEditable(classification)">
                         <i class="icon-cc-edit text-primary"
-                        v-if="classification['bk_classification_type'] !== 'inner'"
                         @click="showGroupDialog(true, classification)"></i>
                         <i class="icon-cc-del text-primary"
-                        v-if="classification['bk_classification_type'] !== 'inner'"
                         @click="deleteGroup(classification)"></i>
                     </template>
                 </div>
@@ -159,7 +157,7 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'userName', 'admin']),
+            ...mapGetters(['supplierAccount', 'userName', 'admin', 'isAdminView']),
             ...mapGetters('objectModelClassify', [
                 'classifications'
             ]),
@@ -217,6 +215,15 @@
             ...mapActions('objectModel', [
                 'createObject'
             ]),
+            isEditable (classification) {
+                if (classification['bk_classification_type'] === 'inner') {
+                    return false
+                }
+                if (this.isAdminView) {
+                    return true
+                }
+                return classification.metadata.label.hasOwnProperty('bk_biz_id')
+            },
             showGroupDialog (isEdit, group) {
                 if (isEdit) {
                     this.groupDialog.data.id = group.id
@@ -253,7 +260,7 @@
                 if (this.groupDialog.isEdit) {
                     const res = await this.updateClassification({
                         id: this.groupDialog.data.id,
-                        params: this.$injectMetadata(params, true),
+                        params: this.$injectMetadata(params, {clone: true}),
                         config: {
                             requestId: 'updateClassification'
                         }
@@ -261,7 +268,7 @@
                     this.updateClassify({...params, ...{id: this.groupDialog.data.id}})
                 } else {
                     const res = await this.createClassification({
-                        params: this.$injectMetadata(params, true),
+                        params: this.$injectMetadata(params, {clone: true}),
                         config: {requestId: 'createClassification'}
                     })
                     this.updateClassify({...params, ...{id: res.id}})

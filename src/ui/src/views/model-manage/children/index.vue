@@ -149,7 +149,9 @@
                 return this.activeModel['bk_classification_id'] === 'bk_biz_topo'
             },
             isPublicModel () {
-                return !(this.activeModel.metadata || {}).label
+                const metadata = this.activeModel.metadata || {}
+                const label = metadata.label || {}
+                return !label.hasOwnProperty('bk_biz_id')
             },
             modelParams () {
                 let {
@@ -258,7 +260,7 @@
                 }
                 await this.updateObject({
                     id: this.activeModel['id'],
-                    params: this.$injectMetadata(this.modelParams, true)
+                    params: this.$injectMetadata(this.modelParams, {clone: true})
                 }).then(() => {
                     this.$http.cancel('post_searchClassificationsObjects')
                 })

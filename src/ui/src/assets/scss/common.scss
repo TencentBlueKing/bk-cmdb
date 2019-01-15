@@ -266,14 +266,14 @@ input.cmdb-form-input {
 
 .text-primary {
     color: #3c96ff;
-
+    cursor: pointer;
     &:hover {
         color: #0082ff;
     }
 
     &.disabled {
         opacity: .385;
-        cursor: not-allowed;
+        cursor: not-allowed !important;
     }
 }
 

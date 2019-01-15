@@ -119,12 +119,23 @@
             ...mapGetters('objectModelClassify', [
                 'classifications'
             ]),
+            ...mapGetters(['isAdminView']),
             localClassifications () {
                 let localClassifications = []
                 this.classifications.forEach(classification => {
-                    localClassifications.push({...classification, ...{isModelShow: false}})
+                    if (!['bk_biz_topo', 'bk_host_manage', 'bk_organization'].includes(classification['bk_classification_id'])) {
+                        const localClassification = {
+                            ...classification,
+                            isModelShow: false
+                        }
+                        if (this.isAdminView) {
+                            localClassifications.push(localClassification)
+                        } else if (classification.metadata.label.hasOwnProperty('bk_biz_id')) {
+                            localClassifications.push(localClassification)
+                        }
+                    }
                 })
-                return localClassifications.filter(({bk_classification_id: classificationId}) => !['bk_biz_topo', 'bk_host_manage', 'bk_organization'].includes(classificationId))
+                return localClassifications
             }
         },
         methods: {
