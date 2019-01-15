@@ -1,13 +1,17 @@
 export default {
     methods: {
-        $injectMetadata (params = {}, shouldClone = false) {
+        $injectMetadata (params = {}, options = {}) {
+            const mergedOptions = {
+                clone: options.clone || false,
+                inject: (options.inject === undefined ? true : options.inject) && !this.$store.getters.isAdminView
+            }
             let injectedParams
-            if (shouldClone) {
+            if (mergedOptions.clone) {
                 injectedParams = this.$tools.clone(params)
             } else {
                 injectedParams = params
             }
-            if (!this.$store.getters.isAdminView) {
+            if (mergedOptions.inject) {
                 Object.assign(injectedParams, {
                     metadata: {
                         label: {
