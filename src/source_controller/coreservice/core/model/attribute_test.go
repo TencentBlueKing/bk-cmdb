@@ -61,7 +61,7 @@ func TestAttributeMaintainces(t *testing.T) {
 	createAttrResult, err := modelMgr.CreateModelAttributes(defaultCtx, objectID, metadata.CreateModelAttributes{
 		Attributes: []metadata.Attribute{
 			metadata.Attribute{
-				PropertyID:   xid.New().String(),
+				PropertyID:   propertyID,
 				PropertyName: "create_attribute",
 			},
 		},
@@ -87,7 +87,7 @@ func TestAttributeMaintainces(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.NotNil(t, updateResult)
-	require.Equal(t, uint64(1), updateResult.Count)
+	require.Equal(t, uint64(1), updateResult.Count, propertyID)
 
 	// search attribute
 	searchResult, err := modelMgr.SearchModelAttributes(defaultCtx, objectID, metadata.QueryCondition{
@@ -100,7 +100,7 @@ func TestAttributeMaintainces(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, searchResult)
 	require.Equal(t, uint64(1), uint64(len(searchResult.Info)))
-	require.Equal(t, uint64(1), searchResult.Count)
+	require.Equal(t, int64(1), searchResult.Count)
 
 	for _, attr := range searchResult.Info {
 		require.Equal(t, "create_attribute_to_updated", attr.PropertyName)
@@ -116,6 +116,6 @@ func TestAttributeMaintainces(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.NotNil(t, deleteResult)
-	require.Equal(t, uint64(1), deleteResult.Count)
+	require.Equal(t, uint64(1), deleteResult.Count, propertyID)
 
 }

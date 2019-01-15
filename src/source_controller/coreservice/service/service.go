@@ -19,9 +19,9 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-    "time"
+	"time"
 
-    "github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -31,6 +31,7 @@ import (
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/rdapi"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/app/options"
 	"configcenter/src/source_controller/coreservice/core"
@@ -91,8 +92,10 @@ func (s *coreService) WebService() *restful.WebService {
 	s.initService()
 
 	ws := new(restful.WebService)
-
-	ws.Path("/api/v3").Produces(restful.MIME_JSON)
+	getErrFunc := func() errors.CCErrorIf {
+		return s.err
+	}
+	ws.Path("/api/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
 	innerActions := s.Actions()
 

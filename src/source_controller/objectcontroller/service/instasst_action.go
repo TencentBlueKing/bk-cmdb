@@ -19,7 +19,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -88,7 +87,6 @@ func (cli *Service) CreateInstAssociation(req *restful.Request, resp *restful.Re
 		AsstInstID:        request.AsstInstID,
 		AssociationKindID: objResult.AsstKindID,
 		OwnerID:           ownerID,
-		CreateTime:        time.Now(),
 	}
 
 	err = db.Table(common.BKTableNameInstAsst).Insert(ctx, data)

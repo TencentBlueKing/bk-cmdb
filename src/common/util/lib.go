@@ -26,6 +26,7 @@ import (
 	"configcenter/src/storage/dal"
 
 	restful "github.com/emicklei/go-restful"
+	"github.com/rs/xid"
 )
 
 func InStrArr(arr []string, key string) bool {
@@ -220,4 +221,10 @@ func runNoPanic(f func() error) (err error) {
 
 	err = f()
 	return err
+}
+
+func GenerateRID() string {
+	unused := "0000"
+	id := xid.New()
+	return fmt.Sprintf("cc%s%s", unused, id.String())
 }

@@ -540,7 +540,12 @@ func (l *loggingT) header(s severity, depth int) (*buffer, string, int) {
 	} else {
 		slash := strings.LastIndex(file, "/")
 		if slash >= 0 {
-			file = file[slash+1:]
+			slash2 := strings.LastIndex(file[:slash], "/")
+			if slash >= 0 {
+				file = file[slash2+1:]
+			} else {
+				file = file[slash+1:]
+			}
 		}
 	}
 	return l.formatHeader(s, file, line), file, line
@@ -1052,6 +1057,14 @@ func (v Verbose) Infoln(args ...interface{}) {
 func (v Verbose) Infof(format string, args ...interface{}) {
 	if v {
 		logging.printf(infoLog, format, args...)
+	}
+}
+
+// InfoDepthf is equivalent to the global Infof function, guarded by the value of v.
+// See the documentation of V for usage.
+func (v Verbose) InfoDepthf(depth int, format string, args ...interface{}) {
+	if v {
+		logging.printDepthf(infoLog, format, depth, args...)
 	}
 }
 

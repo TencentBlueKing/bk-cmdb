@@ -21,7 +21,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
-	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
@@ -30,20 +30,20 @@ import (
 
 // ObjectOperationInterface object operation methods
 type ObjectOperationInterface interface {
-	CreateObjectBatch(params types.ContextParams, data frtypes.MapStr) (frtypes.MapStr, error)
-	FindObjectBatch(params types.ContextParams, data frtypes.MapStr) (frtypes.MapStr, error)
-	CreateObject(params types.ContextParams, isMainline bool, data frtypes.MapStr) (model.Object, error)
+	CreateObjectBatch(params types.ContextParams, data mapstr.MapStr) (mapstr.MapStr, error)
+	FindObjectBatch(params types.ContextParams, data mapstr.MapStr) (mapstr.MapStr, error)
+	CreateObject(params types.ContextParams, isMainline bool, data mapstr.MapStr) (model.Object, error)
 	CanDelete(params types.ContextParams, targetObj model.Object) error
 	DeleteObject(params types.ContextParams, id int64, cond condition.Condition, needCheckInst bool) error
 	FindObject(params types.ContextParams, cond condition.Condition) ([]model.Object, error)
 	FindObjectTopo(params types.ContextParams, cond condition.Condition) ([]metadata.ObjectTopo, error)
 	FindSingleObject(params types.ContextParams, objectID string) (model.Object, error)
-	UpdateObject(params types.ContextParams, data frtypes.MapStr, id int64, cond condition.Condition) error
+	UpdateObject(params types.ContextParams, data mapstr.MapStr, id int64, cond condition.Condition) error
 
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, cls ClassificationOperationInterface, asst AssociationOperationInterface, inst InstOperationInterface, attr AttributeOperationInterface, grp GroupOperationInterface, unique UniqueOperationInterface)
 	IsValidObject(params types.ContextParams, objID string) error
 
-	CreateOneObject(params types.ContextParams, data frtypes.MapStr) (model.Object, error)
+	CreateOneObject(params types.ContextParams, data mapstr.MapStr) (model.Object, error)
 }
 
 // NewObjectOperation create a new object operation instance
@@ -94,16 +94,16 @@ func (o *object) IsValidObject(params types.ContextParams, objID string) error {
 	return nil
 }
 
-func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapStr) (mapstr.MapStr, error) {
 
 	inputData := map[string]ImportObjectData{}
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
 	}
 
-	result := frtypes.New()
+	result := mapstr.New()
 	for objID, inputData := range inputData {
-		subResult := frtypes.New()
+		subResult := mapstr.New()
 		if err := o.IsValidObject(params, objID); nil != err {
 			blog.Errorf("not found the  objid: %s", objID)
 			subResult["errors"] = fmt.Sprintf("the object(%s) is invalid", objID)
@@ -266,14 +266,14 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data frtypes.MapS
 
 	return result, nil
 }
-func (o *object) FindObjectBatch(params types.ContextParams, data frtypes.MapStr) (frtypes.MapStr, error) {
+func (o *object) FindObjectBatch(params types.ContextParams, data mapstr.MapStr) (mapstr.MapStr, error) {
 
 	cond := &ExportObjectCondition{}
 	if err := data.MarshalJSONInto(cond); nil != err {
 		return nil, err
 	}
 
-	result := frtypes.New()
+	result := mapstr.New()
 
 	for _, objID := range cond.ObjIDS {
 		obj, err := o.FindSingleObject(params, objID)
@@ -286,7 +286,7 @@ func (o *object) FindObjectBatch(params types.ContextParams, data frtypes.MapStr
 			return nil, err
 		}
 
-		result.Set(objID, frtypes.MapStr{
+		result.Set(objID, mapstr.MapStr{
 			"attr": attrs,
 		})
 	}
@@ -309,7 +309,7 @@ func (o *object) FindSingleObject(params types.ContextParams, objectID string) (
 	}
 	return nil, params.Err.New(common.CCErrTopoObjectSelectFailed, params.Err.Errorf(common.CCErrCommParamsIsInvalid, objectID).Error())
 }
-func (o *object) CreateObject(params types.ContextParams, isMainline bool, data frtypes.MapStr) (model.Object, error) {
+func (o *object) CreateObject(params types.ContextParams, isMainline bool, data mapstr.MapStr) (model.Object, error) {
 	obj := o.modelFactory.CreateObject(params)
 
 	err := obj.Parse(data)
@@ -359,7 +359,7 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 		return nil, params.Err.Error(common.CCErrTopoObjectGroupCreateFailed)
 	}
 
-	keys := make([]metadata.UinqueKey, 0)
+	keys := make([]metadata.UniqueKey, 0)
 	// create the default inst name
 	group := grp.Group()
 	attr := obj.CreateAttribute()
@@ -382,39 +382,40 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 		return nil, err
 	}
 
-    keys = append(keys, metadata.UinqueKey{Kind: metadata.UinqueKeyKindProperty, ID: uint64(attr.Attribute().ID)})
+	keys = append(keys, metadata.UniqueKey{Kind: metadata.UniqueKeyKindProperty, ID: uint64(attr.Attribute().ID)})
 
-    if isMainline {
-        pAttr := obj.CreateAttribute()
-        pAttr.SetAttribute(metadata.Attribute{
-            IsOnly:            true,
-            IsPre:             true,
-            Creator:           "user",
-            IsEditable:        true,
-            PropertyIndex:     -1,
-            PropertyGroup:     group.GroupID,
-            PropertyGroupName: group.GroupName,
-            IsRequired:        true,
-            PropertyType:      common.FieldTypeInt,
-            PropertyID:        common.BKInstParentStr,
-            PropertyName:      obj.GetDefaultInstPropertyName(),
-        })
-        
-        if err = pAttr.Create(); nil != err {
-            blog.Errorf("[operation-obj] failed to create the default inst name field, err: %s", err.Error())
-            return nil, params.Err.Error(common.CCErrTopoObjectAttributeCreateFailed)
-        }
-        keys = append(keys, metadata.UinqueKey{Kind: metadata.UinqueKeyKindProperty, ID: uint64(pAttr.Attribute().ID)})
-    }
+	if isMainline {
+		pAttr := obj.CreateAttribute()
+		pAttr.SetAttribute(metadata.Attribute{
+			IsOnly:            true,
+			IsPre:             true,
+			Creator:           "user",
+			IsEditable:        true,
+			PropertyIndex:     -1,
+			PropertyGroup:     group.GroupID,
+			PropertyGroupName: group.GroupName,
+			IsRequired:        true,
+			PropertyType:      common.FieldTypeInt,
+			PropertyID:        common.BKInstParentStr,
+			PropertyName:      common.BKInstParentStr,
+			IsSystem:          true,
+		})
 
-    uni := obj.CreateUnique()
-    uni.SetKeys(keys)
-    uni.SetIsPre(false)
-    uni.SetMustCheck(true)
-    if err = uni.Save(nil); nil != err {
-        blog.Errorf("[operation-obj] failed to create the default inst name field, err: %s", err.Error())
-        return nil, err
-    }
+		if err = pAttr.Create(); nil != err {
+			blog.Errorf("[operation-obj] failed to create the default inst name field, err: %s", err.Error())
+			return nil, params.Err.Error(common.CCErrTopoObjectAttributeCreateFailed)
+		}
+		keys = append(keys, metadata.UniqueKey{Kind: metadata.UniqueKeyKindProperty, ID: uint64(pAttr.Attribute().ID)})
+	}
+
+	uni := obj.CreateUnique()
+	uni.SetKeys(keys)
+	uni.SetIsPre(false)
+	uni.SetMustCheck(true)
+	if err = uni.Save(nil); nil != err {
+		blog.Errorf("[operation-obj] failed to create the default inst name field, err: %s", err.Error())
+		return nil, err
+	}
 
 	return obj, nil
 }
@@ -423,7 +424,6 @@ func (o *object) CanDelete(params types.ContextParams, targetObj model.Object) e
 
 	tObject := targetObj.Object()
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	if targetObj.IsCommon() {
 		cond.Field(common.BKObjIDField).Eq(tObject.ObjectID)
 	}
@@ -441,12 +441,11 @@ func (o *object) CanDelete(params types.ContextParams, targetObj model.Object) e
 	}
 
 	or := make([]interface{}, 0)
-	or = append(or, frtypes.MapStr{common.BKObjIDField: tObject.ObjectID})
-	or = append(or, frtypes.MapStr{common.AssociatedObjectIDField: tObject.ObjectID})
+	or = append(or, mapstr.MapStr{common.BKObjIDField: tObject.ObjectID})
+	or = append(or, mapstr.MapStr{common.AssociatedObjectIDField: tObject.ObjectID})
 
 	cond = condition.CreateCondition()
 	cond.NewOR().Array(or)
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 
 	assoResult, err := o.asst.SearchObject(params, &metadata.SearchAssociationObjectRequest{Condition: cond.ToMapStr()})
 	if err != nil {
@@ -472,7 +471,6 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 		cond = condition.CreateCondition()
 		cond.Field(metadata.ModelFieldID).Eq(id)
 	}
-
 	objs, err := o.FindObject(params, cond)
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to find objects, the condition is (%v) err: %s", cond, err.Error())
@@ -502,7 +500,6 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 		}
 
 		attrCond := condition.CreateCondition()
-		attrCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 		attrCond.Field(common.BKObjIDField).Eq(object.ObjectID)
 
 		if err := o.attr.DeleteObjectAttribute(params, attrCond); nil != err {
@@ -522,15 +519,14 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 			}
 		}
 
-		rsp, err := o.clientSet.ObjectController().Meta().DeleteObject(context.Background(), object.ID, params.Header, cond.ToMapStr())
-
+		rsp, err := o.clientSet.CoreService().Model().DeleteModel(context.Background(), params.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
 		if nil != err {
 			blog.Errorf("[operation-obj] failed to request the object controller, err: %s", err.Error())
 			return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
-		if common.CCSuccess != rsp.Code {
+		if !rsp.Result {
 			blog.Errorf("[opration-obj] failed to delete the object by the condition(%#v) or the id(%d)", cond.ToMapStr(), id)
-			return params.Err.Error(rsp.Code)
+			return params.Err.New(rsp.Code, rsp.ErrMsg)
 		}
 
 	}
@@ -573,7 +569,6 @@ func (o *object) FindObjectTopo(params types.ContextParams, cond condition.Condi
 			// find association kind with association kind id.
 			typeCond := condition.CreateCondition()
 			typeCond.Field(common.AssociationKindIDField).Eq(asst.AsstKindID)
-			typeCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 			request := &metadata.SearchAssociationTypeRequest{
 				Condition: typeCond.ToMapStr(),
 			}
@@ -596,7 +591,6 @@ func (o *object) FindObjectTopo(params types.ContextParams, cond condition.Condi
 
 			cond = condition.CreateCondition()
 			cond.Field(common.BKObjIDField).Eq(asst.AsstObjID)
-			cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 
 			asstObjs, err := o.FindObject(params, cond)
 			if nil != err {
@@ -649,22 +643,25 @@ func (o *object) FindObjectTopo(params types.ContextParams, cond condition.Condi
 }
 
 func (o *object) FindObject(params types.ContextParams, cond condition.Condition) ([]model.Object, error) {
-
-	rsp, err := o.clientSet.ObjectController().Meta().SelectObjects(context.Background(), params.Header, cond.ToMapStr())
+	rsp, err := o.clientSet.CoreService().Model().ReadModel(context.Background(), params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to request the object controller, err: %s", err.Error())
 		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
-		blog.Errorf("[operation-obj] failed to search the objects by the condition(%#v) , err: %s", cond.ToMapStr(), rsp.ErrMsg)
-		return nil, params.Err.Error(rsp.Code)
+	if !rsp.Result {
+		blog.Errorf("[operation-obj] failed to search the objects by the condition(%#v) , error info is %s", cond.ToMapStr(), rsp.ErrMsg)
+		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	return model.CreateObject(params, o.clientSet, rsp.Data), nil
+	models := []metadata.Object{}
+	for index := range rsp.Data.Info {
+		models = append(models, rsp.Data.Info[index].Spec)
+	}
+	return model.CreateObject(params, o.clientSet, models), nil
 }
 
-func (o *object) UpdateObject(params types.ContextParams, data frtypes.MapStr, id int64, cond condition.Condition) error {
+func (o *object) UpdateObject(params types.ContextParams, data mapstr.MapStr, id int64, cond condition.Condition) error {
 
 	obj := o.modelFactory.CreateObject(params)
 	obj.SetRecordID(id)
@@ -693,7 +690,7 @@ func (o *object) UpdateObject(params types.ContextParams, data frtypes.MapStr, i
 	return nil
 }
 
-func (o *object) CreateOneObject(params types.ContextParams, data frtypes.MapStr) (model.Object, error) {
+func (o *object) CreateOneObject(params types.ContextParams, data mapstr.MapStr) (model.Object, error) {
 	obj := o.modelFactory.CreateObject(params)
 
 	err := obj.Parse(data)
@@ -747,6 +744,9 @@ func (o *object) CreateOneObject(params types.ContextParams, data frtypes.MapStr
 		PropertyID:        obj.GetInstNameFieldName(),
 		PropertyName:      obj.GetDefaultInstPropertyName(),
 	})
+	if nil != params.MetaData {
+		attr.Attribute().Metadata = *params.MetaData
+	}
 
 	if err = attr.Create(); nil != err {
 		blog.Errorf("[operation-obj] failed to create the default inst name field, error info is %s", err.Error())
@@ -754,7 +754,7 @@ func (o *object) CreateOneObject(params types.ContextParams, data frtypes.MapStr
 	}
 
 	uni := obj.CreateUnique()
-	uni.SetKeys([]metadata.UinqueKey{{Kind: metadata.UinqueKeyKindProperty, ID: uint64(attr.Attribute().ID)}})
+	uni.SetKeys([]metadata.UniqueKey{{Kind: metadata.UniqueKeyKindProperty, ID: uint64(attr.Attribute().ID)}})
 	uni.SetIsPre(false)
 	uni.SetMustCheck(true)
 	if err = uni.Save(nil); nil != err {

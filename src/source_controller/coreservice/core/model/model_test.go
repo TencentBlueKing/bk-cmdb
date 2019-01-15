@@ -13,6 +13,7 @@
 package model_test
 
 import (
+	"encoding/json"
 	"testing"
 
 	"configcenter/src/common"
@@ -178,23 +179,25 @@ func TestSearchAndDeleteModel(t *testing.T) {
 	require.NotEqual(t, uint64(0), dataResult.Created.ID)
 
 	// search the created one
-	searchResult, err := modelMgr.SearchModel(defaultCtx, metadata.QueryCondition{
+	searchResult, err := modelMgr.SearchModelWithAttribute(defaultCtx, metadata.QueryCondition{
 		Condition: mapstr.MapStr{
-			metadata.ModelFieldObjectName: mapstr.MapStr{
-				"$regex": "delete_",
+			metadata.ModelFieldObjectID: mapstr.MapStr{
+				"$regex": inputModel.Spec.ObjectID,
 			},
 		},
 	})
 	require.NoError(t, err)
 	require.NotNil(t, searchResult)
-	require.Equal(t, uint64(1), searchResult.Count)
-	require.Equal(t, searchResult.Count, uint64(len(searchResult.Info)))
+	require.Equal(t, int64(1), searchResult.Count)
+	require.Equal(t, searchResult.Count, int64(len(searchResult.Info)))
+	resultStr, _ := json.Marshal(searchResult)
+	t.Logf("the query result:%s", resultStr)
 
 	// search delete the one
 	deleteResult, err := modelMgr.DeleteModel(defaultCtx, metadata.DeleteOption{
 		Condition: mapstr.MapStr{
-			metadata.ModelFieldObjectName: mapstr.MapStr{
-				"$regex": "delete_",
+			metadata.ModelFieldObjectID: mapstr.MapStr{
+				"$regex": inputModel.Spec.ObjectID,
 			},
 		},
 	})
@@ -204,15 +207,15 @@ func TestSearchAndDeleteModel(t *testing.T) {
 	require.Equal(t, uint64(1), deleteResult.Count)
 
 	// search the created one
-	searchResult, err = modelMgr.SearchModel(defaultCtx, metadata.QueryCondition{
+	searchResult, err = modelMgr.SearchModelWithAttribute(defaultCtx, metadata.QueryCondition{
 		Condition: mapstr.MapStr{
-			metadata.ModelFieldObjectName: mapstr.MapStr{
-				"$regex": "delete_",
+			metadata.ModelFieldObjectID: mapstr.MapStr{
+				"$regex": inputModel.Spec.ObjectID,
 			},
 		},
 	})
 	require.NoError(t, err)
 	require.NotNil(t, searchResult)
-	require.Equal(t, uint64(0), searchResult.Count)
-	require.Equal(t, searchResult.Count, uint64(len(searchResult.Info)))
+	require.Equal(t, int64(0), searchResult.Count)
+	require.Equal(t, searchResult.Count, int64(len(searchResult.Info)))
 }
