@@ -112,9 +112,18 @@ maxIDleConns=1000
 addr=$rd_server
 user=bkzk
 pwd=L%blKas
+
+[redis]
+host=$redis_host
+usr=$redis_user
+pwd=$redis_pass
+database=0
+port=$redis_port
+maxOpenConns=3000
+maxIDleConns=1000
 '''
     template = FileTemplate(host_file_template_str)
-    result = template.substitute(dict(rd_server=rd_server_v))
+    result = template.substitute(dict(rd_server=rd_server_v,redis_host=redis_ip_v,redis_port=redis_port_v,redis_user=redis_user_v,redis_pass=redis_pass_v))
     with open( output + "host.conf",'w') as tmp_file:
         tmp_file.write(result)
 
