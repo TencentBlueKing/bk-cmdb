@@ -1,55 +1,53 @@
 <template>
     <div>
-        <div class="content-box">
-            <label class="form-label">
-                <span class="label-text">
-                    {{$t('ModelManagement["源模型"]')}}
-                    <span class="color-danger">*</span>
-                </span>
-                <div class="cmdb-form-item">
-                    <input type="text" class="cmdb-form-input" disabled :value="getModelName(relationInfo['bk_obj_id'])">
-                </div>
-            </label>
-            <label class="form-label">
-                <span class="label-text">
-                    {{$t('ModelManagement["目标模型"]')}}
-                    <span class="color-danger">*</span>
-                </span>
-                <div class="cmdb-form-item">
-                    <input type="text" class="cmdb-form-input" disabled :value="getModelName(relationInfo['bk_asst_obj_id'])">
-                </div>
-            </label>
-            <label class="form-label">
-                <span class="label-text">
-                    {{$t('ModelManagement["关联描述"]')}}
-                    <span class="color-danger">*</span>
-                </span>
-                <div class="cmdb-form-item" :class="{'is-error': errors.has('asstName')}">
-                    <input type="text" class="cmdb-form-input"
-                    name="asstName"
-                    :disabled="relationInfo.ispre || !isEdit"
-                    v-model.trim="relationInfo['bk_obj_asst_name']"
-                    v-validate="'required|singlechar'">
-                    <p class="form-error">{{errors.first('asstName')}}</p>
-                </div>
-            </label>
-            <label class="form-label">
-                <span class="label-text">
-                    {{$t('ModelManagement["源-目标约束"]')}}
-                    <span class="color-danger">*</span>
-                </span>
-                <div class="cmdb-form-item" :class="{'is-error': errors.has('asstId')}">
-                    <cmdb-selector
-                        :disabled="true"
-                        :list="mappingList"
-                        v-validate="'required'"
-                        name="mapping"
-                        v-model="relationInfo.mapping"
-                    ></cmdb-selector>
-                    <p class="form-error">{{errors.first('asstId')}}</p>
-                </div>
-            </label>
-        </div>
+        <label class="form-label">
+            <span class="label-text">
+                {{$t('ModelManagement["源模型"]')}}
+                <span class="color-danger">*</span>
+            </span>
+            <div class="cmdb-form-item">
+                <input type="text" class="cmdb-form-input" disabled :value="getModelName(relationInfo['bk_obj_id'])">
+            </div>
+        </label>
+        <label class="form-label">
+            <span class="label-text">
+                {{$t('ModelManagement["目标模型"]')}}
+                <span class="color-danger">*</span>
+            </span>
+            <div class="cmdb-form-item">
+                <input type="text" class="cmdb-form-input" disabled :value="getModelName(relationInfo['bk_asst_obj_id'])">
+            </div>
+        </label>
+        <label class="form-label">
+            <span class="label-text">
+                {{$t('ModelManagement["关联描述"]')}}
+                <span class="color-danger">*</span>
+            </span>
+            <div class="cmdb-form-item" :class="{'is-error': errors.has('asstName')}">
+                <input type="text" class="cmdb-form-input"
+                name="asstName"
+                :disabled="relationInfo.ispre || !isEdit"
+                v-model.trim="relationInfo['bk_obj_asst_name']"
+                v-validate="'required|singlechar'">
+                <p class="form-error">{{errors.first('asstName')}}</p>
+            </div>
+        </label>
+        <label class="form-label">
+            <span class="label-text">
+                {{$t('ModelManagement["源-目标约束"]')}}
+                <span class="color-danger">*</span>
+            </span>
+            <div class="cmdb-form-item" :class="{'is-error': errors.has('asstId')}">
+                <cmdb-selector
+                    :disabled="true"
+                    :list="mappingList"
+                    v-validate="'required'"
+                    name="mapping"
+                    v-model="relationInfo.mapping"
+                ></cmdb-selector>
+                <p class="form-error">{{errors.first('asstId')}}</p>
+            </div>
+        </label>
         <div class="btn-group" v-if="isEdit">
             <bk-button type="primary" :loading="$loading('updateObjectAssociation')" @click="saveRelation">
                 {{$t('Common["确定"]')}}
