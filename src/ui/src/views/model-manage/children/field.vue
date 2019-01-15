@@ -121,6 +121,11 @@
             objId () {
                 return this.$route.params.modelId
             },
+            isPublicModel () {
+                const metadata = this.activeModel.metadata || {}
+                const label = metadata.label || {}
+                return !label.hasOwnProperty('bk_biz_id')
+            },
             isReadOnly () {
                 if (this.activeModel) {
                     return this.activeModel['bk_ispaused']

@@ -226,7 +226,7 @@
                 if (this.isEditField) {
                     await this.updateObjectAttribute({
                         id: this.field.id,
-                        params: this.$injectMetadata(this.fieldInfo, true),
+                        params: this.$injectMetadata(this.fieldInfo, {clone: true}),
                         config: {
                             requestId: 'updateObjectAttribute'
                         }
