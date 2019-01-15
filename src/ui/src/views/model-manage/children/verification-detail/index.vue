@@ -1,39 +1,41 @@
 <template>
     <div class="verification-detail-wrapper">
-        <div class="form-label">
-            <span class="label-text">
-                {{$t('ModelManagement["校验规则"]')}}
-                <span class="color-danger">*</span>
-            </span>
-            <div class="verification-selector">
-                <div class="text-content" @click="toggleSelector(true)" :class="{'open': attribute.isShow}">
-                    <span>{{selectedName}}</span>
-                    <i class="bk-icon icon-angle-down"></i>
+        <div class="content-box">
+            <div class="form-label">
+                <span class="label-text">
+                    {{$t('ModelManagement["校验规则"]')}}
+                    <span class="color-danger">*</span>
+                </span>
+                <div class="verification-selector">
+                    <div class="text-content" @click="toggleSelector(true)" :class="{'open': attribute.isShow}">
+                        <span>{{selectedName}}</span>
+                        <i class="bk-icon icon-angle-down"></i>
+                    </div>
+                    <bk-selector
+                        setting-key="id"
+                        display-key="bk_property_name"
+                        ref="attrSelector"
+                        :multi-select="true"
+                        :selected.sync="verificationInfo.selected"
+                        :list="attribute.list"
+                        @visible-toggle="toggleSelector"
+                    ></bk-selector>
                 </div>
-                <bk-selector
-                    setting-key="id"
-                    display-key="bk_property_name"
-                    ref="attrSelector"
-                    :multi-select="true"
-                    :selected.sync="verificationInfo.selected"
-                    :list="attribute.list"
-                    @visible-toggle="toggleSelector"
-                ></bk-selector>
             </div>
-        </div>
-        <div class="verification-selector-mask" v-if="attribute.isShow"></div>
-        <div class="radio-box">
-            <label class="label-text">
-                {{$t('ModelManagement["是否为必须校验"]')}}
-            </label>
-            <label class="cmdb-form-radio cmdb-radio-small">
-                <input type="radio" name="required" :value="true" :disabled="isReadOnly" v-model="verificationInfo['must_check']">
-                <span class="cmdb-radio-text">{{$t('ModelManagement["是"]')}}</span>
-            </label>
-            <label class="cmdb-form-radio cmdb-radio-small">
-                <input type="radio" name="required" :value="false" :disabled="isReadOnly" v-model="verificationInfo['must_check']">
-                <span class="cmdb-radio-text">{{$t('ModelManagement["否"]')}}</span>
-            </label>
+            <div class="verification-selector-mask" v-if="attribute.isShow"></div>
+            <div class="radio-box">
+                <label class="label-text">
+                    {{$t('ModelManagement["是否为必须校验"]')}}
+                </label>
+                <label class="cmdb-form-radio cmdb-radio-small">
+                    <input type="radio" name="required" :value="true" :disabled="isReadOnly" v-model="verificationInfo['must_check']">
+                    <span class="cmdb-radio-text">{{$t('ModelManagement["是"]')}}</span>
+                </label>
+                <label class="cmdb-form-radio cmdb-radio-small">
+                    <input type="radio" name="required" :value="false" :disabled="isReadOnly" v-model="verificationInfo['must_check']">
+                    <span class="cmdb-radio-text">{{$t('ModelManagement["否"]')}}</span>
+                </label>
+            </div>
         </div>
         <div class="btn-group">
             <bk-button type="primary"
