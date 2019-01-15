@@ -275,6 +275,7 @@ func generateHttpHeaderRID(req *restful.Request, resp *restful.Response) {
 	cid := util.GetHTTPCCRequestID(req.Request.Header)
 	if "" == cid {
 		cid = util.GenerateRID()
+		req.Request.Header.Set(common.BKHTTPCCRequestID, cid)
 	}
 	// todo support esb request id
 
