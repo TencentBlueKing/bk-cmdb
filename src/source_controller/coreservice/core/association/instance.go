@@ -57,6 +57,7 @@ func (m *associationInstance) instCount(ctx core.ContextParams, cond mapstr.MapS
 }
 
 func (m *associationInstance) searchInstanceAssociation(ctx core.ContextParams, inputParam metadata.QueryCondition) (results []metadata.InstAsst, err error) {
+	results = []metadata.InstAsst{}
 	instHandler := m.dbProxy.Table(common.BKTableNameInstAsst).Find(inputParam.Condition).Fields(inputParam.Fields...)
 	for _, sort := range inputParam.SortArr {
 		fileld := sort.Field
@@ -255,6 +256,7 @@ func (m *associationInstance) SearchInstanceAssociation(ctx core.ContextParams, 
 
 	dataResult := &metadata.QueryResult{}
 	dataResult.Count, err = m.countInstanceAssociation(ctx, inputParam.Condition)
+	dataResult.Info = make([]mapstr.MapStr, 0)
 	if nil != err {
 		blog.Errorf("search inst association count err [%#v]", err)
 		return &metadata.QueryResult{}, err

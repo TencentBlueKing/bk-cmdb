@@ -60,7 +60,7 @@ func (m *modelAttrUnique) SearchModelAttrUnique(ctx core.ContextParams, inputPar
 	if nil != err {
 		return &metadata.QueryUniqueResult{Info: []metadata.ObjectUnique{}}, err
 	}
-	if len(dataResult.Info) > 0 {
+	if len(uniqueItems) > 0 {
 		dataResult.Info = uniqueItems
 	}
 

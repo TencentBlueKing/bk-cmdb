@@ -290,7 +290,7 @@ func (a *association) DeleteAssociation(params types.ContextParams, cond conditi
 	if len(rsp.Data.Info) < 1 {
 		// we assume this association has already been deleted.
 		blog.Warnf("delete object association, but can not get association with cond[%v] ", cond.ToMapStr())
-		return params.Err.Error(common.CCErrorTopoAssociationDoNotExist)
+		return nil
 	}
 
 	// a pre-defined association can not be updated.
@@ -578,7 +578,7 @@ func (a *association) DeleteObject(params types.ContextParams, asstID int) (resp
 func (a *association) SearchInst(params types.ContextParams, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error) {
 	rsp, err := a.clientSet.CoreService().Association().ReadInstAssociation(context.Background(), params.Header, &metadata.QueryCondition{Condition: request.Condition})
 
-	resp = &metadata.SearchAssociationInstResult{BaseResp: rsp.BaseResp}
+	resp = &metadata.SearchAssociationInstResult{BaseResp: rsp.BaseResp, Data: []*metadata.InstAsst{}}
 	for index := range rsp.Data.Info {
 		resp.Data = append(resp.Data, &rsp.Data.Info[index])
 	}
@@ -605,6 +605,10 @@ func (a *association) CreateInst(params types.ContextParams, request *metadata.C
 		return nil, params.Err.Error(common.CCErrorTopoObjectAssociationNotExist)
 	}
 
+	objectAsst := result.Data[0]
+
+	objID := objectAsst.ObjectID
+	asstObjID := objectAsst.AsstObjID
 	// search instances belongs to this association.
 	inst, err := a.SearchInst(params, &metadata.SearchAssociationInstRequest{Condition: cond.ToMapStr()})
 	if err != nil {
@@ -633,6 +637,8 @@ func (a *association) CreateInst(params types.ContextParams, request *metadata.C
 			ObjectAsstID: request.ObjectAsstID,
 			InstID:       request.InstID,
 			AsstInstID:   request.AsstInstID,
+			ObjectID:     objID,
+			AsstObjectID: asstObjID,
 		},
 	}
 	rsp, err := a.clientSet.CoreService().Association().CreateInstAssociation(context.Background(), params.Header, &input)

@@ -17,6 +17,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
 )
@@ -31,6 +32,8 @@ func (m *associationModel) CreateModelAssociation(ctx core.ContextParams, inputP
 	if err := m.isValid(ctx, inputParam); nil != err {
 		return &metadata.CreateOneDataResult{}, err
 	}
+
+	inputParam.Spec.OwnerID = ctx.SupplierAccount
 
 	exists, err := m.isExistsAssociationID(ctx, inputParam.Spec.AssociationName)
 	if nil != err {
@@ -73,15 +76,14 @@ func (m *associationModel) UpdateModelAssociation(ctx core.ContextParams, inputP
 	inputParam.Data.Remove(metadata.AssociationFieldObjectID)
 	inputParam.Data.Remove(metadata.AssociationFieldAssociationObjectID)
 	inputParam.Data.Remove(metadata.AssociationFieldSupplierAccount)
-	inputParam.Data.Remove(metadata.AssociationFieldObjectID)
+	inputParam.Data.Remove(metadata.AssociationFieldAsstID)
 
-	updateCond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
+	updateCond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
 	if nil != err {
 		blog.Errorf("request(%s): it is to failed to update the association by the condition (%v), error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.UpdatedCount{}, ctx.Error.New(common.CCErrCommPostInputParseError, err.Error())
 	}
 
-	updateCond.Element(&mongo.Eq{Key: metadata.AssociationFieldSupplierAccount, Val: ctx.SupplierAccount})
 	cnt, err := m.update(ctx, inputParam.Data, updateCond)
 	if nil != err {
 		blog.Errorf("request(%s): it is to update the association by the condition (%#v), error info is %s", ctx.ReqID, updateCond.ToMapStr(), err.Error())
@@ -93,13 +95,12 @@ func (m *associationModel) UpdateModelAssociation(ctx core.ContextParams, inputP
 
 func (m *associationModel) SearchModelAssociation(ctx core.ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
 
-	searchCond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
+	searchCond, err := mongo.NewConditionFromMapStr(util.SetQueryOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
 	if nil != err {
 		blog.Errorf("request(%s): it is to convert the condition (%v) from mapstr into condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.QueryResult{}, ctx.Error.New(common.CCErrCommPostInputParseError, err.Error())
 	}
 
-	searchCond.Element(&mongo.Eq{Key: metadata.AssociationFieldSupplierAccount, Val: ctx.SupplierAccount})
 	resultItems, err := m.searchReturnMapStr(ctx, searchCond)
 	if nil != err {
 		blog.Errorf("request(%s): it is to search all associations by the condition (%#v), error info is %s", ctx.ReqID, searchCond.ToMapStr(), err.Error())
@@ -112,12 +113,11 @@ func (m *associationModel) SearchModelAssociation(ctx core.ContextParams, inputP
 func (m *associationModel) DeleteModelAssociation(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
 	// read all model associations
-	deleteCond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
+	deleteCond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
 	if nil != err {
 		blog.Errorf("request(%s): it is to convert the condition (%s) from mapstr into condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.DeletedCount{}, ctx.Error.New(common.CCErrCommPostInputParseError, err.Error())
 	}
-	deleteCond.Element(&mongo.Eq{Key: metadata.AssociationFieldSupplierAccount, Val: ctx.SupplierAccount})
 
 	needDeleteAssocaitionItems, err := m.search(ctx, deleteCond)
 	if nil != err {
@@ -153,12 +153,11 @@ func (m *associationModel) DeleteModelAssociation(ctx core.ContextParams, inputP
 func (m *associationModel) CascadeDeleteModelAssociation(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
 	// read all model associations
-	deleteCond, err := mongo.NewConditionFromMapStr(inputParam.Condition)
+	deleteCond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
 	if nil != err {
 		blog.Errorf("request(%s): it is to convert the condition (%s) from mapstr into condition object, error info is %s", ctx.ReqID, inputParam.Condition, err.Error())
 		return &metadata.DeletedCount{}, ctx.Error.New(common.CCErrCommPostInputParseError, err.Error())
 	}
-	deleteCond.Element(&mongo.Eq{Key: metadata.AssociationFieldSupplierAccount, Val: ctx.SupplierAccount})
 
 	needDeleteAssocaitionItems, err := m.search(ctx, deleteCond)
 	if nil != err {
