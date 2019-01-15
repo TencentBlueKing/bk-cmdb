@@ -94,23 +94,23 @@ const (
 	resPattern    = `(hosts/import|export)|(hosts/modules/resource/idle)`
 	objectPattern = `object/classification/[a-z0-9A-Z_]+/objects$`
 	// proc search
-	procSearch         = `proc/search/[a-z0-9A-Z_]+/[a-z0-9A-Z_]+$`
-	topoGraphicsSearch = `objects/topographics/scope_type/[a-z0-9A-Z-_]+/scope_id/[a-z0-9A-Z-_]+/action/search$`
-	searchUserAPI      = `userapi/search/[0-9]+$`
-	searchUniquesInfo  = `/api/v3/object/[a-z0-9A-Z_]+/unique/action/search$`
-	exportObjectExcel  = "/object/owner/[a-z0-9A-Z]+/object/[a-z0-9A-Z_]+/export$"
+	procSearch            = `proc/search/[a-z0-9A-Z_]+/[a-z0-9A-Z_]+$`
+	topoGraphicsSearch    = `objects/topographics/scope_type/[a-z0-9A-Z-_]+/scope_id/[a-z0-9A-Z-_]+/action/search$`
+	searchUserAPI         = `userapi/search/[0-9]+$`
+	searchUniquesInfo     = `/api/v3/object/[a-z0-9A-Z_]+/unique/action/search$`
+	exportObjectExcel     = "/object/owner/[a-z0-9A-Z]+/object/[a-z0-9A-Z_]+/export$"
 	deleteInstAssociation = "/api/v3/inst/association/[0-9]+/action/delete$"
 )
 
 //system config privilege regexp
 var (
-	ResPatternRegexp          = regexp.MustCompile(resPattern)
-	ObjectPatternRegexp       = regexp.MustCompile(objectPattern)
-	ProcSearchRegexp          = regexp.MustCompile(procSearch)
-	TopoGraphicsSearchRegexp  = regexp.MustCompile(topoGraphicsSearch)
-	SearchUserAPIRegexp       = regexp.MustCompile(searchUserAPI)
-	SearchObjectUniquesRegexp = regexp.MustCompile(searchUniquesInfo)
-	ExportObjectExcelRegexp   = regexp.MustCompile(exportObjectExcel)
+	ResPatternRegexp           = regexp.MustCompile(resPattern)
+	ObjectPatternRegexp        = regexp.MustCompile(objectPattern)
+	ProcSearchRegexp           = regexp.MustCompile(procSearch)
+	TopoGraphicsSearchRegexp   = regexp.MustCompile(topoGraphicsSearch)
+	SearchUserAPIRegexp        = regexp.MustCompile(searchUserAPI)
+	SearchObjectUniquesRegexp  = regexp.MustCompile(searchUniquesInfo)
+	ExportObjectExcelRegexp    = regexp.MustCompile(exportObjectExcel)
 	DeleteInstAssociationRegex = regexp.MustCompile(deleteInstAssociation)
 )
 
