@@ -17,6 +17,8 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+
+	"configcenter/src/common/blog"
 )
 
 func setMapStrByStruct(targetType reflect.Type, targetValue reflect.Value, values MapStr, tagName string) error {
@@ -58,7 +60,12 @@ func setMapStrByStruct(targetType reflect.Type, targetValue reflect.Value, value
 			reflect.Float32, reflect.Float64,
 			reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
-			reflect.Map:
+			reflect.Complex64, reflect.Complex128,
+			reflect.Array,
+			reflect.Interface,
+			reflect.Map,
+			reflect.Slice,
+			reflect.Bool:
 			values.Set(tags[0], fieldValue.Interface())
 		case reflect.Struct:
 			innerMapStr := SetValueToMapStrByTagsWithTagName(fieldValue.Interface(), tagName)
@@ -68,7 +75,8 @@ func setMapStrByStruct(targetType reflect.Type, targetValue reflect.Value, value
 
 			innerValue := dealPointer(fieldValue, tags[0], tagName)
 			values.Set(tags[0], innerValue)
-
+		default:
+			blog.Infof("[mapstr] invalide kind: %v for field %v", structField.Type.Kind(), tags[0])
 		}
 
 	}
