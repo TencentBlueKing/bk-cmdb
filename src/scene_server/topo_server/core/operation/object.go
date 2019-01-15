@@ -364,6 +364,7 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 	group := grp.Group()
 	attr := obj.CreateAttribute()
 	attr.SetAttribute(metadata.Attribute{
+		ObjectID:          obj.Object().ObjectID,
 		IsOnly:            true,
 		IsPre:             true,
 		Creator:           "user",
@@ -387,6 +388,7 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 	if isMainline {
 		pAttr := obj.CreateAttribute()
 		pAttr.SetAttribute(metadata.Attribute{
+			ObjectID:          obj.Object().ObjectID,
 			IsOnly:            true,
 			IsPre:             true,
 			Creator:           "user",
