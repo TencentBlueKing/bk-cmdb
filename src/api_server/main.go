@@ -18,16 +18,16 @@ import (
 	"os"
 	"runtime"
 
-	_ "net/http/pprof"
-
-	"github.com/spf13/pflag"
-
 	"configcenter/src/api_server/app"
 	"configcenter/src/api_server/app/options"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
+
+	"github.com/spf13/pflag"
+
+	_ "net/http/pprof"
 )
 
 func main() {
