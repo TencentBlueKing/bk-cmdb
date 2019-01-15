@@ -116,15 +116,13 @@
         },
         computed: {
             ...mapGetters('objectModel', [
-                'activeModel'
+                'activeModel',
+                'isPublicModel',
+                'isMainLine',
+                'isInjectable'
             ]),
             objId () {
                 return this.$route.params.modelId
-            },
-            isPublicModel () {
-                const metadata = this.activeModel.metadata || {}
-                const label = metadata.label || {}
-                return !label.hasOwnProperty('bk_biz_id')
             },
             isReadOnly () {
                 if (this.activeModel) {
@@ -190,6 +188,8 @@
                 const res = await this.searchObjectAttribute({
                     params: this.$injectMetadata({
                         bk_obj_id: this.objId
+                    }, {
+                        inject: this.isInjectable
                     }),
                     config: {
                         requestId: `post_searchObjectAttribute_${this.objId}`

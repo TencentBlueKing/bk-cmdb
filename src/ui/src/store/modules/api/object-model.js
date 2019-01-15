@@ -15,7 +15,16 @@ const state = {
 }
 
 const getters = {
-    activeModel: (state) => state.activeModel
+    activeModel: (state) => state.activeModel,
+    isPublicModel: state => {
+        const metadata = state.activeModel.metadata || {}
+        const label = metadata.label || {}
+        return !label.hasOwnProperty('bk_biz_id')
+    },
+    isInjectable: state => {
+        return state.activeModel['bk_classification_id'] === 'bk_biz_topo' || ['host'].includes(state.activeModel['bk_obj_id'])
+    },
+    isMainLine: state => state.activeModel['bk_classification_id'] === 'bk_biz_topo'
 }
 
 const actions = {

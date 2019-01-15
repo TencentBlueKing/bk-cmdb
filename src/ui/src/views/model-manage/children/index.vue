@@ -137,21 +137,15 @@
                 'admin'
             ]),
             ...mapGetters('objectModel', [
-                'activeModel'
+                'activeModel',
+                'isPublicModel',
+                'isMainLine'
             ]),
             isReadOnly () {
                 if (this.activeModel) {
                     return this.activeModel['bk_ispaused']
                 }
                 return false
-            },
-            isMainLine () {
-                return this.activeModel['bk_classification_id'] === 'bk_biz_topo'
-            },
-            isPublicModel () {
-                const metadata = this.activeModel.metadata || {}
-                const label = metadata.label || {}
-                return !label.hasOwnProperty('bk_biz_id')
             },
             modelParams () {
                 let {
@@ -272,6 +266,8 @@
                     params: this.$injectMetadata({
                         bk_obj_id: this.$route.params.modelId,
                         bk_supplier_account: this.supplierAccount
+                    }, {
+                        inject: !this.isPublicModel
                     }),
                     config: {
                         requestId: 'searchObjects'
@@ -304,7 +300,7 @@
             async exportField () {
                 const res = await this.exportObjectAttribute({
                     objId: this.activeModel['bk_obj_id'],
-                    params: this.$injectMetadata({}),
+                    params: this.$injectMetadata(),
                     config: {
                         globalError: false,
                         originalResponse: true,
