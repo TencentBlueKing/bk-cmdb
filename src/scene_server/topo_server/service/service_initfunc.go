@@ -172,23 +172,6 @@ func (s *topoService) initObject() {
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/find/object-topology", HandlerFunc: s.SearchObjectTopo})
 
 }
-func (s *topoService) initPrivilegeGroup() {
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/topo/privilege/group/{bk_supplier_account}", HandlerFunc: s.CreateUserGroup})
-	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/topo/privilege/group/{bk_supplier_account}/{group_id}", HandlerFunc: s.DeleteUserGroup})
-	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/topo/privilege/group/{bk_supplier_account}/{group_id}", HandlerFunc: s.UpdateUserGroup})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/topo/privilege/group/{bk_supplier_account}/search", HandlerFunc: s.SearchUserGroup})
-}
-
-func (s *topoService) initPrivilegeRole() {
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/topo/privilege/{bk_supplier_account}/{bk_obj_id}/{bk_property_id}", HandlerFunc: s.CreatePrivilege, HandlerParseOriginDataFunc: s.ParseCreateRolePrivilegeOriginData})
-	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/privilege/{bk_supplier_account}/{bk_obj_id}/{bk_property_id}", HandlerFunc: s.GetPrivilege})
-}
-
-func (s *topoService) initPrivilege() {
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/topo/privilege/group/detail/{bk_supplier_account}/{group_id}", HandlerFunc: s.UpdateUserGroupPrivi})
-	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/privilege/group/detail/{bk_supplier_account}/{group_id}", HandlerFunc: s.GetUserGroupPrivi})
-	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/privilege/user/detail/{bk_supplier_account}/{user_name}", HandlerFunc: s.GetUserPrivi})
-}
 
 func (s *topoService) initGraphics() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/objects/topographics/scope_type/{scope_type}/scope_id/{scope_id}/action/search", HandlerFunc: s.SelectObjectTopoGraphics})
@@ -211,9 +194,7 @@ func (s *topoService) initService() {
 	s.initObjectAttribute()
 	s.initObjectClassification()
 	s.initObjectGroup()
-	s.initPrivilegeGroup()
-	s.initPrivilegeRole()
-	s.initPrivilege()
+
 	s.initGraphics()
 	s.initIdentifier()
 	s.initObjectObjectUnique()
