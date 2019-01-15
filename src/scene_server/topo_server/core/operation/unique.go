@@ -88,8 +88,16 @@ func (a *unique) Delete(params types.ContextParams, objectID string, id uint64) 
 }
 
 func (a *unique) Search(params types.ContextParams, objectID string) (objectUniques []metadata.ObjectUnique, err error) {
+	fCond := condition.CreateCondition().Field(common.BKObjIDField).Eq(objectID).ToMapStr()
+	if nil != params.MetaData {
+		fCond.Merge(metadata.PublicAndBizCondition(*params.MetaData))
+		fCond.Remove(metadata.BKMetadata)
+	} else {
+		fCond.Merge(metadata.BizLabelNotExist)
+	}
+
 	cond := metadata.QueryCondition{
-		Condition: condition.CreateCondition().Field(common.BKObjIDField).Eq(objectID).ToMapStr(),
+		Condition: fCond,
 	}
 	resp, err := a.clientSet.CoreService().Model().ReadModelAttrUnique(context.Background(), params.Header, cond)
 	if err != nil {
