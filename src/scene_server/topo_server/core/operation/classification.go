@@ -210,7 +210,10 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 
 func (c *classification) FindClassification(params types.ContextParams, cond condition.Condition) ([]model.Classification, error) {
 	fCond := cond.ToMapStr()
-	if nil == params.MetaData {
+	if nil != params.MetaData {
+		fCond.Merge(metadata.PublicAndBizCondition(*params.MetaData))
+		fCond.Remove(metadata.BKMetadata)
+	} else {
 		fCond.Merge(metadata.BizLabelNotExist)
 	}
 	rsp, err := c.clientSet.CoreService().Model().ReadModelClassification(context.Background(), params.Header, &metadata.QueryCondition{Condition: fCond})

@@ -44,6 +44,16 @@ var (
 
 var BizLabelNotExist = mapstr.MapStr{"metadata.label.bk_biz_id": mapstr.MapStr{"$exists": false}}
 
+func PublicAndBizCondition(meta Metadata) mapstr.MapStr {
+	exist, bizID := meta.Label.Get(LabelBusinessID)
+	if false == exist {
+		bizID = ""
+	}
+	condArr := make([]mapstr.MapStr, 0)
+	condArr = append(condArr, BizLabelNotExist, mapstr.MapStr{"metadata.label.bk_biz_id": bizID})
+	return mapstr.MapStr{"$or": condArr}
+}
+
 const (
 	BKMetadata string = "metadata"
 	BKLabel    string = "label"
