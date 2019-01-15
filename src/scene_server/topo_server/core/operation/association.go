@@ -101,7 +101,15 @@ func (a *association) SearchObjectAssociation(params types.ContextParams, objID 
 		cond.Field(common.BKObjIDField).Eq(objID)
 	}
 
-	rsp, err := a.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	fCond := cond.ToMapStr()
+	if nil != params.MetaData {
+		fCond.Merge(metadata.PublicAndBizCondition(*params.MetaData))
+		fCond.Remove(metadata.BKMetadata)
+	} else {
+		fCond.Merge(metadata.BizLabelNotExist)
+	}
+
+	rsp, err := a.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), params.Header, &metadata.QueryCondition{Condition: fCond})
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to request object controller, err: %s", err.Error())
 		return nil, params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
