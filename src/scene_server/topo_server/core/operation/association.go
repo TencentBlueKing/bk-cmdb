@@ -634,11 +634,12 @@ func (a *association) CreateInst(params types.ContextParams, request *metadata.C
 
 	input := metadata.CreateOneInstanceAssociation{
 		Data: metadata.InstAsst{
-			ObjectAsstID: request.ObjectAsstID,
-			InstID:       request.InstID,
-			AsstInstID:   request.AsstInstID,
-			ObjectID:     objID,
-			AsstObjectID: asstObjID,
+			ObjectAsstID:      request.ObjectAsstID,
+			InstID:            request.InstID,
+			AsstInstID:        request.AsstInstID,
+			ObjectID:          objID,
+			AsstObjectID:      asstObjID,
+			AssociationKindID: objectAsst.AsstKindID,
 		},
 	}
 	rsp, err := a.clientSet.CoreService().Association().CreateInstAssociation(context.Background(), params.Header, &input)
