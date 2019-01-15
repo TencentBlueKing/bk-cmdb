@@ -24,11 +24,15 @@ const networkDiscovery = () => import(/* webpackChunkName: networkDiscovery */ '
 const networkConfirm = () => import(/* webpackChunkName: networkConfirm */ '@/views/network-discovery/confirm')
 const networkHistory = () => import(/* webpackChunkName: networkConfirm */ '@/views/network-discovery/history')
 const error = () => import(/* webpackChunkName: error */ '@/views/status/error')
+const cloudDiscover = () => import(/* webpackChunkName: cloudDiscover */ '@/views/cloud-discover')
+const cloudConfirm = () => import(/* webpackChunkName: cloudConfirm */ '@/views/cloud-confirm')
+const confirmHistory = () => import(/* webpackChunkName: cloudConfirm */ '@/views/cloud-confirm/history')
 const systemAuthority = () => import(/* webpackChunkName: systemAuthority */ '@/views/permission/role')
 const businessAuthority = () => import(/* webpackChunkName: businessAuthority */ '@/views/permission/business')
 const modelTopology = () => import(/* webpackChunkName: modelTopology */ '@/views/model-topology')
 const businessModel = () => import(/* webpackChunkName: businessModel */ '@/views/business-model')
 const modelAssociation = () => import(/* webpackChunkName: modelAssociation */ '@/views/model-association')
+
 Vue.use(Router)
 
 const router = new Router({
@@ -227,6 +231,19 @@ const router = new Router({
     }, {
         path: '*',
         redirect: '/status-404'
+    }, {
+        path: '/resource-confirm',
+        component: cloudConfirm
+    }, {
+        name: 'cloud',
+        path: '/cloud-discover',
+        component: cloudDiscover
+    }, {
+        path: '/confirm/history',
+        component: confirmHistory,
+        meta: {
+            relative: '/resource-confirm'
+        }
     }]
 })
 

@@ -13,10 +13,10 @@
 package input
 
 import (
-    "context"
-    "time"
-    
-    "configcenter/src/framework/core/log"
+	"context"
+	"time"
+
+	"configcenter/src/framework/core/log"
 )
 
 func (cli *manager) subExecuteInputer(inputer *wrapInputer) error {
