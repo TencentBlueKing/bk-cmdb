@@ -279,6 +279,8 @@
                     }),
                     this.$store.dispatch('objectMainLineModule/searchMainlineObject', {requestId: 'getMainLineModels', fromCache: true})
                 ]).then(([dataAsSource, dataAsTarget, mainLineModels]) => {
+                    dataAsSource = dataAsSource || []
+                    dataAsTarget = dataAsTarget || []
                     mainLineModels = mainLineModels.filter(model => !['biz', 'host'].includes(model['bk_obj_id']))
                     dataAsSource = this.getAvailableAssociation(dataAsSource, mainLineModels)
                     dataAsTarget = this.getAvailableAssociation(dataAsTarget, mainLineModels)
@@ -335,7 +337,7 @@
                         }
                     })
                 }).then(data => {
-                    this.existInstAssociation = data
+                    this.existInstAssociation = data || []
                 })
             },
             isAssociated (inst) {
