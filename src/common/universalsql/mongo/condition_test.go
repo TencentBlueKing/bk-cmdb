@@ -125,6 +125,7 @@ func TestIssue1738(t *testing.T) {
 	cond.Element(&mongo.Eq{Key: "bk_biz_id", Val: nil})
 	cond.Element(&mongo.Eq{Key: "bk_parent_id", Val: 2})
 	cond.Element(&mongo.In{Key: "bk_parent_in_nil", Val: nil})
+	cond.Element(&mongo.Nin{Key: "bk_parent_nin_nil", Val: nil})
 	cond.Element(&mongo.Neq{Key: "bk_data_status", Val: "disabled"})
 
 	result, err := cond.ToSQL()
