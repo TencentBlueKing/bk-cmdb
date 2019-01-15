@@ -140,7 +140,9 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	middleware.CacheCli = cacheCli
 	middleware.LoginPlg = service.VersionPlg
 
-	select {}
+	select {
+	case <-ctx.Done():
+	}
 	return nil
 
 }
@@ -151,7 +153,7 @@ func (w *WebServer) getConfig(regDiscover string) error {
 
 	/// fetch config of itselft
 	var confData []byte
-	_ = confData
+
 	for {
 		confData = cfCenter.GetConfigureCtx()
 		if confData == nil {
