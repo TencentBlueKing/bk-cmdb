@@ -266,7 +266,7 @@
     }
     .field-detail {
         margin-bottom: 20px;
-        padding: 20px 0;
+        padding: 20px;
         background: #f3f8ff;
         .form-label:last-child {
             margin: 0;

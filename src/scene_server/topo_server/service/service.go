@@ -29,6 +29,7 @@ import (
 	"configcenter/src/common/language"
 	frtypes "configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
+	"configcenter/src/common/rdapi"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
@@ -79,14 +80,10 @@ func (s *topoService) WebService() *restful.WebService {
 
 	ws := new(restful.WebService)
 
-	/*
-		getErrFun := func() errors.CCErrorIf {
-			return s.err
-		}
-
-		ws.Path("/topo/{version}").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
-	*/
-	ws.Path("/topo/{version}").Produces(restful.MIME_JSON) // TODO: {version} need to replaced by v3
+	getErrFunc := func() errors.CCErrorIf {
+		return s.err
+	}
+	ws.Path("/topo/{version}").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON) // TODO: {version} need to replaced by v3
 
 	innerActions := s.Actions()
 
