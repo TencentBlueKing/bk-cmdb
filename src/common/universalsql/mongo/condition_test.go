@@ -117,3 +117,30 @@ func TestIssue1708(t *testing.T) {
 	t.Logf("t:%#v", cond.ToMapStr())
 
 }
+
+func TestIssue1738(t *testing.T) {
+	cond := mongo.NewCondition()
+	cond.Element(&mongo.Eq{Key: "bk_set_name", Val: nil})
+	cond.Element(&mongo.Eq{Key: "bk_set_id", Val: nil})
+	cond.Element(&mongo.Eq{Key: "bk_biz_id", Val: nil})
+	cond.Element(&mongo.Eq{Key: "bk_parent_id", Val: 2})
+	cond.Element(&mongo.In{Key: "bk_parent_in_nil", Val: nil})
+	cond.Element(&mongo.Nin{Key: "bk_parent_nin_nil", Val: nil})
+	cond.Element(&mongo.Neq{Key: "bk_data_status", Val: "disabled"})
+
+	result, err := cond.ToSQL()
+	require.NoError(t, err)
+	t.Logf("sql:%s", result)
+
+	inputMapStr := cond.ToMapStr()
+
+	outCond := mongo.NewCondition()
+	for i := 0; i <= 1; i++ {
+		outCond, err = mongo.NewConditionFromMapStr(inputMapStr)
+		require.NoError(t, err)
+	}
+
+	result, err = outCond.ToSQL()
+	require.NoError(t, err)
+	t.Logf("sql_1738:%s", result)
+}

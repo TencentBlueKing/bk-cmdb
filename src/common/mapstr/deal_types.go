@@ -27,7 +27,7 @@ func dealPointer(value reflect.Value, tag, tagName string) interface{} {
 
 	switch value.Kind() {
 	case reflect.Struct:
-		if value.CanInterface() {
+		if value.IsValid() && value.CanInterface() {
 			innerMapStr := SetValueToMapStrByTagsWithTagName(value.Interface(), tagName)
 			return MapStr{tag: innerMapStr}
 		}
@@ -35,7 +35,7 @@ func dealPointer(value reflect.Value, tag, tagName string) interface{} {
 		return dealPointer(value.Elem(), tag, tagName)
 	}
 
-	if value.CanInterface() {
+	if value.IsValid() && value.CanInterface() {
 		return value.Interface()
 	}
 
@@ -86,7 +86,7 @@ func dealStruct(kind reflect.Type, value reflect.Value, tagName string) (MapStr,
 
 		switch fieldValue.Kind() {
 		default:
-			if fieldValue.CanInterface() {
+			if fieldValue.IsValid() && fieldValue.CanInterface() {
 				mapResult.Set(fieldType.Name, fieldValue.Interface())
 			}
 		case reflect.Interface:

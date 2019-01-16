@@ -311,7 +311,6 @@ func (o *object) FindSingleObject(params types.ContextParams, objectID string) (
 }
 func (o *object) CreateObject(params types.ContextParams, isMainline bool, data mapstr.MapStr) (model.Object, error) {
 	obj := o.modelFactory.CreateObject(params)
-
 	err := obj.Parse(data)
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to parse the data(%#v), err: %s", data, err.Error())
@@ -364,6 +363,7 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 	group := grp.Group()
 	attr := obj.CreateAttribute()
 	attr.SetAttribute(metadata.Attribute{
+		ObjectID:          obj.Object().ObjectID,
 		IsOnly:            true,
 		IsPre:             true,
 		Creator:           "user",
@@ -376,7 +376,9 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 		PropertyID:        obj.GetInstNameFieldName(),
 		PropertyName:      obj.GetDefaultInstPropertyName(),
 	})
-
+	if nil != params.MetaData {
+		attr.Attribute().Metadata = *params.MetaData
+	}
 	if err = attr.Create(); nil != err {
 		blog.Errorf("[operation-obj] failed to create the default inst name field, error info is %s", err.Error())
 		return nil, err
@@ -387,6 +389,7 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 	if isMainline {
 		pAttr := obj.CreateAttribute()
 		pAttr.SetAttribute(metadata.Attribute{
+			ObjectID:          obj.Object().ObjectID,
 			IsOnly:            true,
 			IsPre:             true,
 			Creator:           "user",
