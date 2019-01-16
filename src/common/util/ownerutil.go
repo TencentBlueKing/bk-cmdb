@@ -77,6 +77,8 @@ func SetModOwner(condition interface{}, ownerID string) map[string]interface{} {
 	switch cond := condition.(type) {
 	case map[string]interface{}:
 		ret = cond
+	case mapstr.MapStr:
+		ret = cond
 	case common.KvMap:
 		ret = cond
 	default:
