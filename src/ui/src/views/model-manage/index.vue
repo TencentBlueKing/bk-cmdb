@@ -49,13 +49,13 @@
                     <li class="model-item"
                     :class="{
                         'ispaused': model['bk_ispaused'],
-                        'ispre': model['ispre']
+                        'ispre': isInner(model)
                     }"
                     v-for="(model, modelIndex) in classification['bk_objects']"
                     :key="modelIndex"
                     @click="modelClick(model)">
                         <div class="icon-box">
-                            <i class="icon" :class="[model['bk_obj_icon'], {ispre: model['ispre']}]"></i>
+                            <i class="icon" :class="[model['bk_obj_icon']]"></i>
                         </div>
                         <div class="model-details">
                             <p class="model-name" :title="model['bk_obj_name']">{{model['bk_obj_name']}}</p>
@@ -166,7 +166,9 @@
                 this.classifications.forEach(classification => {
                     enableClassifications.push({
                         ...classification,
-                        'bk_objects': classification['bk_objects'].filter(model => !model['bk_ispaused'])
+                        'bk_objects': classification['bk_objects'].filter(model => {
+                            return !model['bk_ispaused'] && !['process', 'plat'].includes(model['bk_obj_id'])
+                        })
                     })
                 })
                 return enableClassifications
@@ -174,7 +176,9 @@
             disabledClassifications () {
                 const disabledClassifications = []
                 this.classifications.forEach(classification => {
-                    const disabledModels = classification['bk_objects'].filter(model => model['bk_ispaused'])
+                    const disabledModels = classification['bk_objects'].filter(model => {
+                        return model['bk_ispaused'] && !['process', 'plat'].includes(model['bk_obj_id'])
+                    })
                     if (disabledModels.length) {
                         disabledClassifications.push({
                             ...classification,
@@ -223,6 +227,11 @@
                     return true
                 }
                 return classification.metadata.label.hasOwnProperty('bk_biz_id')
+            },
+            isInner (model) {
+                const metadata = model.metadata || {}
+                const label = metadata.label || {}
+                return !label.hasOwnProperty('bk_biz_id')
             },
             showGroupDialog (isEdit, group) {
                 if (isEdit) {
@@ -306,6 +315,7 @@
                 this.modelDialog.isShow = false
             },
             modelClick (model) {
+                this.$store.commit('objectModel/setActiveModel', model)
                 this.$store.commit('setHeaderStatus', {
                     back: true
                 })

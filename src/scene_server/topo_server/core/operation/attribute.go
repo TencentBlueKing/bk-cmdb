@@ -140,15 +140,24 @@ func (a *attribute) FindObjectAttributeWithDetail(params types.ContextParams, co
 
 	return results, nil
 }
+
 func (a *attribute) FindObjectAttribute(params types.ContextParams, cond condition.Condition) ([]model.AttributeInterface, error) {
-	rsp, err := a.clientSet.CoreService().Model().ReadModelAttrByCondition(context.Background(), params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	fCond := cond.ToMapStr()
+	if nil != params.MetaData {
+		fCond.Merge(metadata.PublicAndBizCondition(*params.MetaData))
+		fCond.Remove(metadata.BKMetadata)
+	} else {
+		fCond.Merge(metadata.BizLabelNotExist)
+	}
+
+	rsp, err := a.clientSet.CoreService().Model().ReadModelAttrByCondition(context.Background(), params.Header, &metadata.QueryCondition{Condition: fCond})
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to request object controller, error info is %s", err.Error())
 		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[operation-attr] failed to search attribute by the condition(%#v), error info is %s", cond.ToMapStr(), rsp.ErrMsg)
+		blog.Errorf("[operation-attr] failed to search attribute by the condition(%#v), error info is %s", fCond, rsp.ErrMsg)
 		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 

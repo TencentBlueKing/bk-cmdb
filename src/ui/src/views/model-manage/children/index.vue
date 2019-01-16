@@ -3,8 +3,8 @@
         <div class="model-info" v-bkloading="{isLoading: $loading('searchObjects')}">
             <template v-if="activeModel !== null">
                 <div class="choose-icon-wrapper">
-                    <span class="model-type" v-if="isPublicModel">公共</span>
-                    <template v-if="authority.includes('update')">
+                    <span class="model-type">{{getModelType()}}</span>
+                    <template v-if="isEditable">
                         <div class="icon-box" @click="isIconListShow = true">
                             <i class="icon" :class="[activeModel ? activeModel['bk_obj_icon'] : 'icon-cc-default', {ispre: activeModel['ispre']}]"></i>
                             <p class="hover-text">{{$t('ModelManagement["点击切换"]')}}</p>
@@ -33,7 +33,7 @@
                         <span class="text-content">{{activeModel ? activeModel['bk_obj_name'] : ''}}
                         </span>
                         <i class="icon icon-cc-edit text-primary"
-                            v-if="!(isReadOnly || (activeModel && activeModel['ispre'])) && authority.includes('update')"
+                            v-if="isEditable && !activeModel.ispre"
                             @click="editModelName">
                         </i>
                     </template>
@@ -134,10 +134,13 @@
             ...mapGetters([
                 'supplierAccount',
                 'userName',
-                'admin'
+                'admin',
+                'isAdminView'
             ]),
             ...mapGetters('objectModel', [
-                'activeModel'
+                'activeModel',
+                'isPublicModel',
+                'isMainLine'
             ]),
             isReadOnly () {
                 if (this.activeModel) {
@@ -145,13 +148,17 @@
                 }
                 return false
             },
-            isMainLine () {
-                return this.activeModel['bk_classification_id'] === 'bk_biz_topo'
-            },
-            isPublicModel () {
-                const metadata = this.activeModel.metadata || {}
-                const label = metadata.label || {}
-                return !label.hasOwnProperty('bk_biz_id')
+            isEditable () {
+                if (!this.authority.includes('update')) {
+                    return false
+                } else if (this.isReadOnly) {
+                    return false
+                } else if (this.isAdminView) {
+                    return true
+                } else if (this.isPublicModel) {
+                    return false
+                }
+                return true
             },
             modelParams () {
                 let {
@@ -204,6 +211,18 @@
             ...mapMutations('objectModel', [
                 'setActiveModel'
             ]),
+            getModelType () {
+                if (this.activeModel.ispre) {
+                    return this.$t('ModelManagement["内置"]')
+                } else {
+                    const metadata = this.activeModel.metadata || {}
+                    const label = metadata.label || {}
+                    if (label.hasOwnProperty('bk_biz_id')) {
+                        return this.$t('ModelManagement["自定义"]')
+                    }
+                    return this.$t('ModelManagement["公共"]')
+                }
+            },
             async handleFile (e) {
                 let files = e.target.files
                 let formData = new FormData()
@@ -268,18 +287,10 @@
                 this.isEditName = false
             },
             async initObject () {
-                const res = await this.searchObjects({
-                    params: this.$injectMetadata({
-                        bk_obj_id: this.$route.params.modelId,
-                        bk_supplier_account: this.supplierAccount
-                    }),
-                    config: {
-                        requestId: 'searchObjects'
-                    }
-                })
-                if (res.length) {
-                    this.$store.commit('objectModel/setActiveModel', res[0])
-                    this.$store.commit('setHeaderTitle', this.activeModel['bk_obj_name'])
+                const model = this.$store.getters['objectModelClassify/getModelById'](this.$route.params.modelId)
+                if (model) {
+                    this.$store.commit('objectModel/setActiveModel', model)
+                    this.$store.commit('setHeaderTitle', model['bk_obj_name'])
                     this.initModelInfo()
                 } else {
                     this.$router.replace('/status-404')
@@ -304,7 +315,7 @@
             async exportField () {
                 const res = await this.exportObjectAttribute({
                     objId: this.activeModel['bk_obj_id'],
-                    params: this.$injectMetadata({}),
+                    params: this.$injectMetadata(),
                     config: {
                         globalError: false,
                         originalResponse: true,
