@@ -226,7 +226,9 @@
                 if (this.isAdminView) {
                     return true
                 }
-                return classification.metadata.label.hasOwnProperty('bk_biz_id')
+                const metadata = classification.metadata || {}
+                const label = metadata.label || {}
+                return label.hasOwnProperty('bk_biz_id')
             },
             isInner (model) {
                 const metadata = model.metadata || {}
