@@ -15,7 +15,7 @@ package mongo
 import (
 	"configcenter/src/storage/dal"
 	mgo "configcenter/src/storage/dal/mongo/local"
-    "time"
+	"time"
 )
 
 // NewMgo returns new RDB

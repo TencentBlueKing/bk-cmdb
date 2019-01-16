@@ -11,12 +11,15 @@ import (
 	"time"
 
 	"github.com/mongodb/mongo-go-driver/bson"
-	"github.com/mongodb/mongo-go-driver/x/bsonx"
+	"github.com/mongodb/mongo-go-driver/bson/bsontype"
 	"github.com/mongodb/mongo-go-driver/x/bsonx/bsoncore"
 )
 
 // ErrInconsistent indicates that an inconsistent write concern was specified.
 var ErrInconsistent = errors.New("a write concern cannot have both w=0 and j=true")
+
+// ErrEmptyWriteConcern indicates that a write concern has no fields set.
+var ErrEmptyWriteConcern = errors.New("a write concern must have at least one field set")
 
 // ErrNegativeW indicates that a negative integer `w` field was specified.
 var ErrNegativeW = errors.New("write concern `w` field cannot be a negative number")
@@ -85,58 +88,48 @@ func WTimeout(d time.Duration) Option {
 	}
 }
 
-// MarshalBSONElement marshals the write concern into a *bsonx.Element.
-func (wc *WriteConcern) MarshalBSONElement() (bsonx.Elem, error) {
+// MarshalBSONValue implements the bson.ValueMarshaler interface.
+func (wc *WriteConcern) MarshalBSONValue() (bsontype.Type, []byte, error) {
 	if !wc.IsValid() {
-		return bsonx.Elem{}, ErrInconsistent
+		return bsontype.Type(0), nil, ErrInconsistent
 	}
 
-	elems := bsonx.Doc{}
+	var elems []byte
 
 	if wc.w != nil {
 		switch t := wc.w.(type) {
 		case int:
 			if t < 0 {
-				return bsonx.Elem{}, ErrNegativeW
+				return bsontype.Type(0), nil, ErrNegativeW
 			}
 
-			elems = append(elems, bsonx.Elem{"w", bsonx.Int32(int32(t))})
+			elems = bsoncore.AppendInt32Element(elems, "w", int32(t))
 		case string:
-			elems = append(elems, bsonx.Elem{"w", bsonx.String(t)})
+			elems = bsoncore.AppendStringElement(elems, "w", string(t))
 		}
 	}
 
 	if wc.j {
-		elems = append(elems, bsonx.Elem{"j", bsonx.Boolean(wc.j)})
+		elems = bsoncore.AppendBooleanElement(elems, "j", wc.j)
 	}
 
 	if wc.wTimeout < 0 {
-		return bsonx.Elem{}, ErrNegativeWTimeout
+		return bsontype.Type(0), nil, ErrNegativeWTimeout
 	}
 
 	if wc.wTimeout != 0 {
-		elems = append(elems, bsonx.Elem{"wtimeout", bsonx.Int64(int64(wc.wTimeout / time.Millisecond))})
+		elems = bsoncore.AppendInt64Element(elems, "wtimeout", int64(wc.wTimeout/time.Millisecond))
 	}
 
-	return bsonx.Elem{"writeConcern", bsonx.Document(elems)}, nil
-}
-
-// AcknowledgedElement returns true if a BSON element for a write concern represents an acknowledged write concern.
-// The element's value must be a document representing a write concern.
-func AcknowledgedElement(elem bsonx.Elem) bool {
-	wcDoc := elem.Value.Document()
-	wVal, err := wcDoc.LookupErr("w")
-	if err != nil {
-		// key w not found --> acknowledged
-		return true
+	if len(elems) == 0 {
+		return bsontype.Type(0), nil, ErrEmptyWriteConcern
 	}
-
-	return wVal.Int32() != 0
+	return bsontype.EmbeddedDocument, bsoncore.BuildDocument(nil, elems), nil
 }
 
-// AcknowledgedElementRaw returns true if a BSON RawValue for a write concern represents an acknowledged write concern.
+// AcknowledgedValue returns true if a BSON RawValue for a write concern represents an acknowledged write concern.
 // The element's value must be a document representing a write concern.
-func AcknowledgedElementRaw(rawv bson.RawValue) bool {
+func AcknowledgedValue(rawv bson.RawValue) bool {
 	doc, ok := bsoncore.Value{Type: rawv.Type, Data: rawv.Value}.DocumentOK()
 	if !ok {
 		return false

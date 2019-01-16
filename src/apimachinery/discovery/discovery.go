@@ -16,7 +16,7 @@ import (
 	"fmt"
 	"time"
 
-	regd "configcenter/src/common/RegisterDiscover"
+	"configcenter/src/common/registerdiscover"
 	"configcenter/src/common/types"
 )
 
@@ -41,7 +41,7 @@ type Interface interface {
 }
 
 func NewDiscoveryInterface(zkAddr string) (DiscoveryInterface, error) {
-	disc := regd.NewRegDiscoverEx(zkAddr, 10*time.Second)
+	disc := registerdiscover.NewRegDiscoverEx(zkAddr, 10*time.Second)
 	if err := disc.Start(); nil != err {
 		return nil, err
 	}

@@ -17,8 +17,31 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 )
+
+var updateIgnoreKeys = []string{
+	common.BKOwnerIDField,
+	common.BKDefaultField,
+	common.BKInstParentStr,
+	common.BKOwnerIDField,
+	common.BKAppIDField,
+	common.BKDataStatusField,
+	common.BKDataStatusField,
+	common.BKSupplierIDField,
+	common.BKInstIDField,
+}
+
+var createIgnoreKeys = []string{
+	common.BKOwnerIDField,
+	common.BKDefaultField,
+	common.BKInstParentStr,
+	common.BKOwnerIDField,
+	common.BKAppIDField,
+	common.BKSupplierIDField,
+	common.BKInstIDField,
+}
 
 func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID string, instanceData mapstr.MapStr) error {
 	valid, err := NewValidator(ctx, m.dependent, objID)
@@ -43,7 +66,7 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 			}
 			continue
 		}
-		if valid.shouldIgnore[key] {
+		if util.InStrArr(createIgnoreKeys, key) {
 			// ignore the key field
 			continue
 		}
@@ -82,26 +105,16 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 	return valid.validCreateUnique(ctx, instanceData, instMedataData, m)
 }
 
-func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID string, instanceData mapstr.MapStr, instID uint64) error {
+func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID string, instanceData mapstr.MapStr, instMetaData metadata.Metadata, instID uint64) error {
 	valid, err := NewValidator(ctx, m.dependent, objID)
 	if nil != err {
 		blog.Errorf("init validator faile %s", err.Error())
 		return err
 	}
 
-	var instMedataData metadata.Metadata
-	instMedataData.Label = make(metadata.Label)
-
 	for key, val := range instanceData {
-		if metadata.BKMetadata == key {
-			bizID := metadata.GetBusinessIDFromMeta(val)
-			if "" != bizID {
-				instMedataData.Label.Set(metadata.LabelBusinessID, metadata.GetBusinessIDFromMeta(val))
-			}
-			continue
-		}
 
-		if valid.shouldIgnore[key] {
+		if util.InStrArr(createIgnoreKeys, key) {
 			// ignore the key field
 			continue
 		}
@@ -138,5 +151,5 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 			return err
 		}
 	}
-	return valid.validUpdateUnique(ctx, instanceData, instMedataData, instID, m)
+	return valid.validUpdateUnique(ctx, instanceData, instMetaData, instID, m)
 }

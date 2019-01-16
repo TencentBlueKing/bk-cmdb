@@ -218,7 +218,10 @@ func (r *Request) Do() *Result {
 	maxRetryCycle := 3
 	retries := 0
 
-	hosts, err := r.capability.Discover.GetServers()
+	hosts, err := r.
+		capability.
+		Discover.
+		GetServers()
 	if err != nil {
 		result.Err = err
 		return result
@@ -286,7 +289,7 @@ func (r *Request) Do() *Result {
 				}
 				body = data
 			}
-			blog.V(4).Infof("http request uri:%s body:%s, rid:%s", r.subPath, string(body), commonUtil.GetHTTPCCRequestID(r.headers))
+			blog.V(4).InfoDepthf(2, "[apimachinary][peek] %s %s with body %s, response %s, rid: %s", string(r.verb), url, r.body, body, commonUtil.GetHTTPCCRequestID(r.headers))
 			result.Body = body
 			result.StatusCode = resp.StatusCode
 			if r.peek {

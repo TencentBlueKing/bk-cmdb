@@ -54,17 +54,17 @@ func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 		{
 			ObjID:     common.BKInnerObjIDProc,
 			MustCheck: false,
-			Keys: []metadata.UinqueKey{
+			Keys: []metadata.UniqueKey{
 				{
-					Kind: metadata.UinqueKeyKindProperty,
+					Kind: metadata.UniqueKeyKindProperty,
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDProc, common.BKAppIDField)].ID),
 				},
 				{
-					Kind: metadata.UinqueKeyKindProperty,
+					Kind: metadata.UniqueKeyKindProperty,
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDProc, "bk_start_param_regex")].ID),
 				},
 				{
-					Kind: metadata.UinqueKeyKindProperty,
+					Kind: metadata.UniqueKeyKindProperty,
 					ID:   uint64(propertyIDToProperty[keyfunc(common.BKInnerObjIDProc, common.BKFuncName)].ID),
 				},
 			},

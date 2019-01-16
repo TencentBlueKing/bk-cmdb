@@ -13,11 +13,14 @@
 package instances
 
 import (
+	"strings"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
@@ -39,7 +42,7 @@ func (valid *validator) validCreateUnique(ctx core.ContextParams, instanceData m
 		uniquekeys := map[string]bool{}
 		for _, key := range unique.Keys {
 			switch key.Kind {
-			case metadata.UinqueKeyKindProperty:
+			case metadata.UniqueKeyKindProperty:
 				property, ok := valid.idToProperty[int64(key.ID)]
 				if !ok {
 					blog.Errorf("[validCreateUnique] find [%s] property [%d] error %v", valid.objID, key.ID)
@@ -54,16 +57,16 @@ func (valid *validator) validCreateUnique(ctx core.ContextParams, instanceData m
 
 		cond := mongo.NewCondition()
 
-		allEmpty := true
+		anyEmpty := false
 		for key := range uniquekeys {
 			val, ok := instanceData[key]
-			cond.Element(&mongo.Eq{Key: key, Val: val})
-			if ok && !isEmpty(val) {
-				allEmpty = false
+			if !ok || isEmpty(val) {
+				anyEmpty = true
 			}
+			cond.Element(&mongo.Eq{Key: key, Val: val})
 		}
 
-		if allEmpty && !unique.MustCheck {
+		if anyEmpty && !unique.MustCheck {
 			continue
 		}
 
@@ -89,7 +92,12 @@ func (valid *validator) validCreateUnique(ctx core.ContextParams, instanceData m
 
 		if 0 < result.Count {
 			blog.Errorf("[validCreateUnique] duplicate data condition: %#v, unique keys: %#v, objID %s", cond.ToMapStr(), uniquekeys, valid.objID)
-			return valid.errif.Error(common.CCErrCommDuplicateItem)
+			propertyNames := []string{}
+			for key := range uniquekeys {
+				propertyNames = append(propertyNames, util.FirstNotEmptyString(ctx.Lang.Language(valid.objID+"_property_"+key), valid.propertys[key].PropertyName, key))
+			}
+
+			return valid.errif.Errorf(common.CCErrCommDuplicateItem, strings.Join(propertyNames, ","))
 		}
 
 	}
@@ -126,7 +134,7 @@ func (valid *validator) validUpdateUnique(ctx core.ContextParams, instanceData m
 		uniquekeys := map[string]bool{}
 		for _, key := range unique.Keys {
 			switch key.Kind {
-			case metadata.UinqueKeyKindProperty:
+			case metadata.UniqueKeyKindProperty:
 				property, ok := valid.idToProperty[int64(key.ID)]
 				if !ok {
 					blog.Errorf("[validUpdateUnique] find [%s] property [%d] error %v", valid.objID, key.ID)
@@ -140,16 +148,16 @@ func (valid *validator) validUpdateUnique(ctx core.ContextParams, instanceData m
 		}
 
 		cond := mongo.NewCondition()
-		allEmpty := true
+		anyEmpty := false
 		for key := range uniquekeys {
 			val, ok := instanceData[key]
-			cond.Element(&mongo.Eq{Key: key, Val: val})
-			if ok && !isEmpty(val) {
-				allEmpty = false
+			if !ok || isEmpty(val) {
+				anyEmpty = true
 			}
+			cond.Element(&mongo.Eq{Key: key, Val: val})
 		}
 
-		if allEmpty && !unique.MustCheck {
+		if anyEmpty && !unique.MustCheck {
 			continue
 		}
 
@@ -175,7 +183,13 @@ func (valid *validator) validUpdateUnique(ctx core.ContextParams, instanceData m
 
 		if 0 < result.Count {
 			blog.Errorf("[validUpdateUnique] duplicate data condition: %#v, origin: %#v, unique keys: %v, objID: %s, instID %v count %d", cond.ToMapStr(), mapData, uniquekeys, valid.objID, instID, result.Count)
-			return valid.errif.Error(common.CCErrCommDuplicateItem)
+			propertyNames := []string{}
+			for key := range uniquekeys {
+				propertyNames = append(propertyNames, util.FirstNotEmptyString(ctx.Lang.Language(valid.objID+"_property_"+key), valid.propertys[key].PropertyName, key))
+			}
+
+			return valid.errif.Errorf(common.CCErrCommDuplicateItem, strings.Join(propertyNames, ","))
+
 		}
 	}
 	return nil

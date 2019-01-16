@@ -6,7 +6,7 @@
                     <span class="model-type">{{getModelType()}}</span>
                     <template v-if="isEditable">
                         <div class="icon-box" @click="isIconListShow = true">
-                            <i class="icon" :class="activeModel ? activeModel['bk_obj_icon'] : 'icon-cc-default'"></i>
+                            <i class="icon" :class="[activeModel ? activeModel['bk_obj_icon'] : 'icon-cc-default', {ispre: activeModel['ispre']}]"></i>
                             <p class="hover-text">{{$t('ModelManagement["点击切换"]')}}</p>
                         </div>
                         <div class="choose-icon-box" v-if="isIconListShow" v-click-outside="hideChooseBox">
@@ -493,6 +493,9 @@
             }
             .icon {
                 vertical-align: top;
+                &.ispre {
+                    color: #868b97;
+                }
             }
         }
         .model-text {

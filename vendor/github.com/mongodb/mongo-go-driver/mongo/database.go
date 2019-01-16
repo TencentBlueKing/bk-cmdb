@@ -14,7 +14,6 @@ import (
 	"github.com/mongodb/mongo-go-driver/mongo/readconcern"
 	"github.com/mongodb/mongo-go-driver/mongo/readpref"
 	"github.com/mongodb/mongo-go-driver/mongo/writeconcern"
-	"github.com/mongodb/mongo-go-driver/x/bsonx"
 	"github.com/mongodb/mongo-go-driver/x/mongo/driver"
 	"github.com/mongodb/mongo-go-driver/x/network/command"
 	"github.com/mongodb/mongo-go-driver/x/network/description"
@@ -150,7 +149,7 @@ func (db *Database) RunCommand(ctx context.Context, runCommand interface{}, opts
 		db.client.topology.SessionPool,
 	)
 
-	return &SingleResult{err: replaceTopologyErr(err), rdr: doc}
+	return &SingleResult{err: replaceTopologyErr(err), rdr: doc, reg: db.registry}
 }
 
 // RunCommandCursor runs a command on the database and returns a cursor over the resulting reader. A user can supply
@@ -221,26 +220,27 @@ func (db *Database) ListCollections(ctx context.Context, filter interface{}, opt
 		return nil, err
 	}
 
-	var filterDoc bsonx.Doc
-	if filter != nil {
-		filterDoc, err = transformDocument(db.registry, filter)
-		if err != nil {
-			return nil, err
-		}
+	filterDoc, err := transformDocument(db.registry, filter)
+	if err != nil {
+		return nil, err
 	}
 
 	cmd := command.ListCollections{
 		DB:       db.name,
 		Filter:   filterDoc,
-		ReadPref: db.readPreference,
+		ReadPref: readpref.Primary(), // list collections must be run on a primary by default
 		Session:  sess,
 		Clock:    db.client.clock,
 	}
 
+	readSelector := description.CompositeSelector([]description.ServerSelector{
+		description.ReadPrefSelector(readpref.Primary()),
+		description.LatencySelector(db.client.localThreshold),
+	})
 	cursor, err := driver.ListCollections(
 		ctx, cmd,
 		db.client.topology,
-		db.readSelector,
+		readSelector,
 		db.client.id,
 		db.client.topology.SessionPool,
 		opts...,

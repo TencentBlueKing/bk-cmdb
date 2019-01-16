@@ -16,6 +16,8 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+
+	"configcenter/src/common/mapstr"
 )
 
 type ModelKind string
@@ -40,6 +42,18 @@ var (
 	LabelKeyNotExistError = errors.New("label key does not exist")
 )
 
+var BizLabelNotExist = mapstr.MapStr{"metadata.label.bk_biz_id": mapstr.MapStr{"$exists": false}}
+
+func PublicAndBizCondition(meta Metadata) mapstr.MapStr {
+	exist, bizID := meta.Label.Get(LabelBusinessID)
+	if false == exist {
+		bizID = ""
+	}
+	condArr := make([]mapstr.MapStr, 0)
+	condArr = append(condArr, BizLabelNotExist, mapstr.MapStr{"metadata.label.bk_biz_id": bizID})
+	return mapstr.MapStr{"$or": condArr}
+}
+
 const (
 	BKMetadata string = "metadata"
 	BKLabel    string = "label"
@@ -48,7 +62,17 @@ const (
 // Label define the Label type used to limit the scope of application of resources
 type Label map[string]string
 
+func NewMetaDataFromBusinessID(value string) Metadata {
+	label := make(Label)
+	label[LabelBusinessID] = value
+	meta := Metadata{Label: label}
+	return meta
+}
+
 func GetBusinessIDFromMeta(data interface{}) string {
+	if nil == data {
+		return ""
+	}
 	tmp, ok := data.(map[string]interface{})
 	if !ok {
 		return ""
@@ -64,9 +88,31 @@ func GetBusinessIDFromMeta(data interface{}) string {
 	return bizID
 }
 
+func NewMetaDataFromMap(mapData mapstr.MapStr) *Metadata {
+	data, exsit := mapData.Get(BKMetadata)
+	if !exsit {
+		return nil
+	}
+
+	tmp, ok := data.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	label, ok := tmp[BKLabel].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	bizID, ok := label[LabelBusinessID].(string)
+	if !ok {
+		return nil
+	}
+
+	return &Metadata{Label: Label{LabelBusinessID: bizID}}
+}
+
 // Metadata  used to define the metadata for the resources
 type Metadata struct {
-	Label Label
+	Label Label `field:"label" json:"label" bson:"label"`
 }
 
 func (label Label) Set(key, value string) {

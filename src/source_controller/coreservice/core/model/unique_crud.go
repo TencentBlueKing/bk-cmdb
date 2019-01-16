@@ -23,6 +23,7 @@ import (
 )
 
 func (m *modelAttrUnique) searchModelAttrUnique(ctx core.ContextParams, inputParam metadata.QueryCondition) (results []metadata.ObjectUnique, err error) {
+	results = []metadata.ObjectUnique{}
 	instHandler := m.dbProxy.Table(common.BKTableNameObjUnique).Find(inputParam.Condition)
 	for _, sort := range inputParam.SortArr {
 		fileld := sort.Field
@@ -46,7 +47,7 @@ func (m *modelAttrUnique) countModelAttrUnique(ctx core.ContextParams, cond maps
 func (m *modelAttrUnique) createModelAttrUnique(ctx core.ContextParams, objID string, inputParam metadata.CreateModelAttrUnique) (uint64, error) {
 	for _, key := range inputParam.Data.Keys {
 		switch key.Kind {
-		case metadata.UinqueKeyKindProperty:
+		case metadata.UniqueKeyKindProperty:
 		default:
 			blog.Errorf("[CreateObjectUnique] invalid key kind: %s", key.Kind)
 			return 0, ctx.Error.Errorf(common.CCErrTopoObjectUniqueKeyKindInvalid, key.Kind)
@@ -59,7 +60,7 @@ func (m *modelAttrUnique) createModelAttrUnique(ctx core.ContextParams, objID st
 		cond.Field("must_check").Eq(true)
 		count, err := m.dbProxy.Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).Count(ctx)
 		if nil != err {
-			blog.Errorf("[CreateObjectUnique] check must check error: %v", err)
+			blog.Errorf("[CreateObjectUnique] check must check error: %#v", err)
 			return 0, ctx.Error.Error(common.CCErrObjectDBOpErrno)
 		}
 		if count > 0 {
@@ -70,13 +71,13 @@ func (m *modelAttrUnique) createModelAttrUnique(ctx core.ContextParams, objID st
 
 	err := m.recheckUniqueForExistsInsts(ctx, objID, inputParam.Data.Keys, inputParam.Data.MustCheck)
 	if nil != err {
-		blog.Errorf("[CreateObjectUnique] recheckUniqueForExistsInsts for %s with %v error: %v", objID, inputParam, err)
+		blog.Errorf("[CreateObjectUnique] recheckUniqueForExistsInsts for %s with %#v error: %#v", objID, inputParam, err)
 		return 0, ctx.Error.Error(common.CCErrCommDuplicateItem)
 	}
 
 	id, err := m.dbProxy.NextSequence(ctx, common.BKTableNameObjUnique)
 	if nil != err {
-		blog.Errorf("[CreateObjectUnique] NextSequence error: %v", err)
+		blog.Errorf("[CreateObjectUnique] NextSequence error: %#v", err)
 		return 0, ctx.Error.Error(common.CCErrObjectDBOpErrno)
 	}
 
@@ -92,7 +93,7 @@ func (m *modelAttrUnique) createModelAttrUnique(ctx core.ContextParams, objID st
 
 	err = m.dbProxy.Table(common.BKTableNameObjUnique).Insert(ctx, &unique)
 	if nil != err {
-		blog.Errorf("[CreateObjectUnique] Insert error: %v, raw: %#v", err, &unique)
+		blog.Errorf("[CreateObjectUnique] Insert error: %#v, raw: %#v", err, &unique)
 		return 0, ctx.Error.Error(common.CCErrObjectDBOpErrno)
 	}
 
@@ -106,7 +107,7 @@ func (m *modelAttrUnique) updateModelAttrUnique(ctx core.ContextParams, objID st
 
 	for _, key := range unique.Keys {
 		switch key.Kind {
-		case metadata.UinqueKeyKindProperty:
+		case metadata.UniqueKeyKindProperty:
 		default:
 			blog.Errorf("[UpdateObjectUnique] invalid key kind: %s", key.Kind)
 			return ctx.Error.Errorf(common.CCErrTopoObjectUniqueKeyKindInvalid, key.Kind)
@@ -120,7 +121,7 @@ func (m *modelAttrUnique) updateModelAttrUnique(ctx core.ContextParams, objID st
 		cond.Field("id").NotEq(id)
 		count, err := m.dbProxy.Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).Count(ctx)
 		if nil != err {
-			blog.Errorf("[UpdateObjectUnique] check must check  error: %v", err)
+			blog.Errorf("[UpdateObjectUnique] check must check  error: %#v", err)
 			return ctx.Error.Error(common.CCErrObjectDBOpErrno)
 		}
 		if count > 0 {
@@ -131,7 +132,7 @@ func (m *modelAttrUnique) updateModelAttrUnique(ctx core.ContextParams, objID st
 
 	err := m.recheckUniqueForExistsInsts(ctx, objID, unique.Keys, unique.MustCheck)
 	if nil != err {
-		blog.Errorf("[UpdateObjectUnique] recheckUniqueForExistsInsts for %s with %v error: %v", objID, unique, err)
+		blog.Errorf("[UpdateObjectUnique] recheckUniqueForExistsInsts for %s with %#v error: %#v", objID, unique, err)
 		return ctx.Error.Error(common.CCErrCommDuplicateItem)
 	}
 
@@ -187,11 +188,11 @@ func (m *modelAttrUnique) deleteModelAttrUnique(ctx core.ContextParams, objID st
 	return nil
 }
 
-func (m *modelAttrUnique) recheckUniqueForExistsInsts(ctx core.ContextParams, objID string, keys []metadata.UinqueKey, mustCheck bool) error {
+func (m *modelAttrUnique) recheckUniqueForExistsInsts(ctx core.ContextParams, objID string, keys []metadata.UniqueKey, mustCheck bool) error {
 	propertyIDs := []uint64{}
 	for _, key := range keys {
 		switch key.Kind {
-		case metadata.UinqueKeyKindProperty:
+		case metadata.UniqueKeyKindProperty:
 			propertyIDs = append(propertyIDs, key.ID)
 		default:
 			return ctx.Error.Errorf(common.CCErrTopoObjectUniqueKeyKindInvalid, key.Kind)

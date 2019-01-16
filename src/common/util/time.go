@@ -25,7 +25,7 @@ import (
 
 var (
 	//需要转换的时间的标志
-	convTimeFields []string = []string{common.CreateTimeField, common.LastTimeField}
+	convTimeFields []string = []string{common.CreateTimeField, common.LastTimeField, common.ConfirmTimeField}
 )
 
 func GetCurrentTimeStr() string {

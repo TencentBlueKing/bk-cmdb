@@ -69,7 +69,7 @@ type CommonInstTopo struct {
 }
 
 type CommonInstTopoV2 struct {
-	Prev []*CommonInstTopo        `json:"prev"`
+	Prev []*CommonInstTopo `json:"prev"`
 	Next []*CommonInstTopo `json:"next"`
 	Curr interface{}       `json:"curr"`
 }
