@@ -37,7 +37,7 @@
         </div>
         <div class="btn-group">
             <bk-button type="primary"
-            :disabled="isReadOnly"
+            :disabled="isReadOnly || !verificationInfo.selected.length"
             :loading="$loading(['createObjectUniqueConstraints', 'updateObjectUniqueConstraints'])"
             @click="saveVerification">
                 {{$t('Common["确定"]')}}
