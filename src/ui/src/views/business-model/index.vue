@@ -174,6 +174,7 @@
                 width: 62px;
                 height: 0;
                 border-top: 2px dashed $cmdbBorderColor;
+                pointer-events: none;
             }
             &:after {
                 content: "";
@@ -184,6 +185,7 @@
                 height: 40px;
                 margin: 0 0 0 -1px;
                 border-right: 2px dashed $cmdbBorderColor;
+                pointer-events: none;
             }
             &.is-first:before,
             &.is-last:after {
