@@ -387,7 +387,9 @@
         "内置": "Built-in",
         "确认要删除此分组": "Confirm to delete this group",
         "编辑分组": "Modify group",
-        "请输入唯一标识": "Enter ID"
+        "请输入唯一标识": "Enter ID",
+        "公共": "Public",
+        "自定义": "Custom"
     },
     "HostResourcePool": {
         "资源池": "Resource Pool",
