@@ -102,7 +102,7 @@
 </template>
 
 <script>
-    import thePropertyGroup from './_property-group.vue'
+    import thePropertyGroup from './property-group.vue'
     import theField from './field'
     import theRelation from './relation'
     import theChooseIcon from '@/components/model-manage/_choose-icon'
