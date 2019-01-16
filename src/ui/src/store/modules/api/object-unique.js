@@ -66,8 +66,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    searchObjectUniqueConstraints ({ commit, state, dispatch }, { objId, config }) {
-        return $http.post(`find/objectunique/object/${objId}`, config)
+    searchObjectUniqueConstraints ({ commit, state, dispatch }, { objId, params, config }) {
+        return $http.post(`find/objectunique/object/${objId}`, params, config)
     }
 }
 

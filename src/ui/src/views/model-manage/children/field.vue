@@ -31,15 +31,16 @@
                 {{$tools.formatTime(item['create_time'])}}
             </template>
             <template slot="operation" slot-scope="{ item }">
-                <span class="text-primary mr10" @click.stop="editField(item)">
+                <button class="text-primary mr10"
+                    :disabled="!isFieldEditable(item)"
+                    @click.stop="editField(item)">
                     {{$t('Common["编辑"]')}}
-                </span>
-                <span class="text-primary" v-if="!item.ispre && !isReadOnly" @click.stop="deleteField(item)">
+                </button>
+                <button class="text-primary"
+                    :disabled="item.ispre || !isFieldEditable(item)"
+                    @click.stop="deleteField(item)">
                     {{$t('Common["删除"]')}}
-                </span>
-                <span class="text-primary disabled" v-else>
-                    {{$t('Common["删除"]')}}
-                </span>
+                </button>
             </template>
         </cmdb-table>
         <cmdb-slider
@@ -115,16 +116,15 @@
             }
         },
         computed: {
+            ...mapGetters(['isAdminView']),
             ...mapGetters('objectModel', [
-                'activeModel'
+                'activeModel',
+                'isPublicModel',
+                'isMainLine',
+                'isInjectable'
             ]),
             objId () {
                 return this.$route.params.modelId
-            },
-            isPublicModel () {
-                const metadata = this.activeModel.metadata || {}
-                const label = metadata.label || {}
-                return !label.hasOwnProperty('bk_biz_id')
             },
             isReadOnly () {
                 if (this.activeModel) {
@@ -156,6 +156,17 @@
                 'searchObjectAttribute',
                 'deleteObjectAttribute'
             ]),
+            isFieldEditable (item) {
+                if (this.isReadOnly) {
+                    return false
+                }
+                if (!this.isAdminView) {
+                    const metadata = item.metadata || {}
+                    const label = metadata.label || {}
+                    return label.hasOwnProperty('bk_biz_id')
+                }
+                return true
+            },
             createField () {
                 this.slider.isEditField = false
                 this.slider.isReadOnly = false
@@ -188,12 +199,8 @@
             },
             async initFieldList () {
                 const res = await this.searchObjectAttribute({
-                    params: this.$injectMetadata({
-                        bk_obj_id: this.objId
-                    }),
-                    config: {
-                        requestId: `post_searchObjectAttribute_${this.objId}`
-                    }
+                    params: this.$injectMetadata({bk_obj_id: this.objId}, {inject: this.isInjectable}),
+                    config: {requestId: `post_searchObjectAttribute_${this.objId}`}
                 })
                 this.table.list = res
             },
