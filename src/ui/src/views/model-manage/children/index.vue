@@ -365,7 +365,7 @@
                 }).then(() => {
                     this.$http.cancel('post_searchClassificationsObjects')
                 })
-                this.initObject()
+                this.setActiveModel({...this.activeModel, ...{bk_ispaused: ispaused}})
             },
             async deleteModel () {
                 if (this.isMainLine) {
