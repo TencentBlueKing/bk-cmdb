@@ -17,12 +17,12 @@ import (
 	"fmt"
 	"net/http"
 
-	metatype "configcenter/src/common/metadata"
+	"configcenter/src/common/metadata"
 )
 
-func (t *meta) SelectClassificationWithObject(ctx context.Context, ownerID string, h http.Header, dat map[string]interface{}) (resp *metatype.QueryObjectClassificationWithObjectsResult, err error) {
+func (t *meta) SelectClassificationWithObject(ctx context.Context, ownerID string, h http.Header, dat map[string]interface{}) (resp *metadata.QueryObjectClassificationWithObjectsResult, err error) {
 	subPath := fmt.Sprintf("/meta/object/classification/%s/objects", ownerID)
-	resp = new(metatype.QueryObjectClassificationWithObjectsResult)
+	resp = new(metadata.QueryObjectClassificationWithObjectsResult)
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(dat).
@@ -33,9 +33,9 @@ func (t *meta) SelectClassificationWithObject(ctx context.Context, ownerID strin
 	return
 }
 
-func (t *meta) SelectClassifications(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metatype.QueryObjectClassificationResult, err error) {
+func (t *meta) SelectClassifications(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.QueryObjectClassificationResult, err error) {
 	subPath := "/meta/object/classification/search"
-	resp = new(metatype.QueryObjectClassificationResult)
+	resp = new(metadata.QueryObjectClassificationResult)
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(dat).
@@ -46,9 +46,9 @@ func (t *meta) SelectClassifications(ctx context.Context, h http.Header, dat map
 	return
 }
 
-func (t *meta) DeleteClassification(ctx context.Context, id int64, h http.Header, dat map[string]interface{}) (resp *metatype.DeleteResult, err error) {
+func (t *meta) DeleteClassification(ctx context.Context, id int64, h http.Header, dat map[string]interface{}) (resp *metadata.DeleteResult, err error) {
 	subPath := fmt.Sprintf("/meta/object/classification/%d", id)
-	resp = new(metatype.DeleteResult)
+	resp = new(metadata.DeleteResult)
 	err = t.client.Delete().
 		WithContext(ctx).
 		Body(dat).
@@ -59,9 +59,9 @@ func (t *meta) DeleteClassification(ctx context.Context, id int64, h http.Header
 	return
 }
 
-func (t *meta) CreateClassification(ctx context.Context, h http.Header, dat *metatype.Classification) (resp *metatype.CreateObjectClassificationResult, err error) {
+func (t *meta) CreateClassification(ctx context.Context, h http.Header, dat *metadata.Classification) (resp *metadata.CreateObjectClassificationResult, err error) {
 	subPath := "/meta/object/classification"
-	resp = new(metatype.CreateObjectClassificationResult)
+	resp = new(metadata.CreateObjectClassificationResult)
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(dat).
@@ -72,9 +72,9 @@ func (t *meta) CreateClassification(ctx context.Context, h http.Header, dat *met
 	return
 }
 
-func (t *meta) UpdateClassification(ctx context.Context, id int64, h http.Header, dat map[string]interface{}) (resp *metatype.UpdateResult, err error) {
+func (t *meta) UpdateClassification(ctx context.Context, id int64, h http.Header, dat map[string]interface{}) (resp *metadata.UpdateResult, err error) {
 	subPath := fmt.Sprintf("/meta/object/classification/%d", id)
-	resp = new(metatype.UpdateResult)
+	resp = new(metadata.UpdateResult)
 	err = t.client.Put().
 		WithContext(ctx).
 		Body(dat).

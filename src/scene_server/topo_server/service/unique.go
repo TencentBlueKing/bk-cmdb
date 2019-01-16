@@ -56,6 +56,8 @@ func (s *topoService) UpdateObjectUnique(params types.ContextParams, pathParams,
 		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, "id")
 	}
 
+	data.Remove(metadata.BKMetadata)
+
 	err = s.core.UniqueOperation().Update(params, objectID, id, request)
 	if err != nil {
 		blog.Errorf("[UpdateObjectUnique] update for [%s](%d) failed: %v, raw: %#v", objectID, id, err, data)
@@ -71,6 +73,7 @@ func (s *topoService) DeleteObjectUnique(params types.ContextParams, pathParams,
 	if err != nil {
 		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, "id")
 	}
+	data.Remove(metadata.BKMetadata)
 
 	uniques, err := s.core.UniqueOperation().Search(params, objectID)
 	if err != nil {

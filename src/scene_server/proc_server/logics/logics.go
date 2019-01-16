@@ -13,28 +13,90 @@
 package logics
 
 import (
-	redis "gopkg.in/redis.v5"
+	"context"
+	"net/http"
 	"time"
 
+	redis "gopkg.in/redis.v5"
+
+	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/language"
+	"configcenter/src/common/util"
 	"configcenter/src/thirdpartyclient/esbserver"
 )
 
 type Logics struct {
 	*backbone.Engine
-	EsbServ      esbserver.EsbClientInterface
-	ProcHostInst *ProcHostInstConfig
+	esbServ      esbserver.EsbClientInterface
+	procHostInst *ProcHostInstConfig
 	ErrHandle    errors.DefaultCCErrorIf
 	cache        *redis.Client
+	header       http.Header
+	rid          string
+	ownerID      string
+	user         string
+	ccErr        errors.DefaultCCErrorIf
+	ccLang       language.DefaultCCLanguageIf
+}
+
+// NewLogics get logic handle
+func NewLogics(b *backbone.Engine, header http.Header, cache *redis.Client, esbServ esbserver.EsbClientInterface, procHostInst *ProcHostInstConfig) *Logics {
+	lang := util.GetLanguage(header)
+	return &Logics{
+		Engine:       b,
+		header:       header,
+		rid:          util.GetHTTPCCRequestID(header),
+		ccErr:        b.CCErr.CreateDefaultCCErrorIf(lang),
+		ccLang:       b.Language.CreateDefaultCCLanguageIf(lang),
+		user:         util.GetUser(header),
+		ownerID:      util.GetOwnerID(header),
+		cache:        cache,
+		esbServ:      esbServ,
+		procHostInst: procHostInst,
+	}
+}
+
+// NewFromHeader new Logic from header
+func (lgc *Logics) NewFromHeader(header http.Header) *Logics {
+	lang := util.GetLanguage(header)
+	rid := util.GetHTTPCCRequestID(header)
+	if rid == "" {
+		if lgc.rid == "" {
+			rid = util.GenerateRID()
+		} else {
+			rid = lgc.rid
+		}
+		header.Set(common.BKHTTPCCRequestID, rid)
+	}
+	newLgc := &Logics{
+		header:       header,
+		Engine:       lgc.Engine,
+		rid:          rid,
+		cache:        lgc.cache,
+		esbServ:      lgc.esbServ,
+		procHostInst: lgc.procHostInst,
+		user:         util.GetUser(header),
+		ownerID:      util.GetOwnerID(header),
+	}
+	// if language not exist, use old language
+	if lang == "" {
+		newLgc.ccErr = lgc.ccErr
+		newLgc.ccLang = lgc.ccLang
+	} else {
+		newLgc.ccErr = lgc.CCErr.CreateDefaultCCErrorIf(lang)
+		newLgc.ccLang = lgc.Language.CreateDefaultCCLanguageIf(lang)
+	}
+	return newLgc
 }
 
 //InitFunc The method that needs to be executed when the service starts.
-func (lgc *Logics) InitFunc() {
+func (lgc *Logics) InitFunc(ctx context.Context) {
 	//init resource
-	chnOpLock.Do(lgc.bgHandle)
+	chnOpLock.Do(func() { lgc.bgHandle(ctx) })
 	// timed tigger refresh  host
-	go lgc.timedTriggerRefreshHostInstance()
+	go lgc.timedTriggerRefreshHostInstance(ctx)
 
 }
 

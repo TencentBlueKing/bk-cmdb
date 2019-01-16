@@ -13,10 +13,7 @@
 package metadata
 
 import (
-	"time"
-
 	"configcenter/src/common/mapstr"
-	types "configcenter/src/common/mapstr"
 )
 
 const (
@@ -68,9 +65,9 @@ type Attribute struct {
 	Option            interface{} `field:"option" json:"option" bson:"option"`
 	Description       string      `field:"description" json:"description" bson:"description"`
 
-	Creator    string     `field:"creator" json:"creator" bson:"creator"`
-	CreateTime *time.Time `json:"create_time" bson:"creaet_time"`
-	LastTime   *time.Time `json:"last_time" bson:"last_time"`
+	Creator    string `field:"creator" json:"creator" bson:"creator"`
+	CreateTime *Time  `json:"create_time" bson:"create_time"`
+	LastTime   *Time  `json:"last_time" bson:"last_time"`
 }
 
 // AttributeGroup attribute metadata definition
@@ -86,7 +83,7 @@ type AttributeGroup struct {
 }
 
 // Parse load the data from mapstr attribute into attribute instance
-func (cli *Attribute) Parse(data types.MapStr) (*Attribute, error) {
+func (cli *Attribute) Parse(data mapstr.MapStr) (*Attribute, error) {
 
 	err := mapstr.SetValueToStructByTags(cli, data)
 	if nil != err {
@@ -97,7 +94,7 @@ func (cli *Attribute) Parse(data types.MapStr) (*Attribute, error) {
 }
 
 // ToMapStr to mapstr
-func (cli *Attribute) ToMapStr() types.MapStr {
+func (cli *Attribute) ToMapStr() mapstr.MapStr {
 	return mapstr.SetValueToMapStrByTags(cli)
 }
 

@@ -13,6 +13,8 @@
 package model
 
 import (
+	"time"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
@@ -22,7 +24,7 @@ import (
 )
 
 func (m *modelAttribute) count(ctx core.ContextParams, cond universalsql.Condition) (cnt uint64, err error) {
-	cnt, err = m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).Count(ctx)
+	cnt, err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).Count(ctx)
 	return cnt, err
 }
 
@@ -35,6 +37,17 @@ func (m *modelAttribute) save(ctx core.ContextParams, attribute metadata.Attribu
 
 	attribute.ID = int64(id)
 	attribute.OwnerID = ctx.SupplierAccount
+
+	if nil == attribute.CreateTime {
+		attribute.CreateTime = &metadata.Time{}
+		attribute.CreateTime.Time = time.Now()
+	}
+
+	if nil == attribute.LastTime {
+		attribute.LastTime = &metadata.Time{}
+		attribute.LastTime.Time = time.Now()
+	}
+
 	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Insert(ctx, attribute)
 	return id, err
 }
@@ -43,11 +56,14 @@ func (m *modelAttribute) update(ctx core.ContextParams, data mapstr.MapStr, cond
 
 	cnt, err = m.count(ctx, cond)
 	if 0 == cnt {
+		blog.Errorf("request(%s): find nothing by the condition(%#v)", ctx.ReqID, cond.ToMapStr())
 		return cnt, nil
 	}
 
 	data.Remove(metadata.AttributeFieldPropertyID)
 	data.Remove(metadata.AttributeFieldSupplierAccount)
+	data.Set(metadata.AttributeFieldLastTime, time.Now())
+
 	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Update(ctx, cond.ToMapStr(), data)
 	if nil != err {
 		blog.Errorf("request(%s): database operation is failed, error info is %s", ctx.ReqID, err.Error())
@@ -73,7 +89,7 @@ func (m *modelAttribute) searchReturnMapStr(ctx core.ContextParams, cond univers
 
 func (m *modelAttribute) delete(ctx core.ContextParams, cond universalsql.Condition) (cnt uint64, err error) {
 
-	cnt, err = m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).Count(ctx)
+	cnt, err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).Count(ctx)
 	if nil != err {
 		blog.Errorf("request(%s): database count operation is failed, error info is %s", ctx.ReqID, err.Error())
 		return cnt, err

@@ -16,13 +16,15 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
+	"configcenter/src/common/errors"
+	"configcenter/src/common/language"
 	"configcenter/src/source_controller/coreservice/app/options"
 	"configcenter/src/source_controller/coreservice/service"
 	"configcenter/src/storage/dal/mongo"
+
+	"github.com/stretchr/testify/require"
 
 	restful "github.com/emicklei/go-restful"
 )
@@ -59,6 +61,12 @@ func startCoreService(t *testing.T, ip string, port uint) {
 	engine, err := backbone.NewMockBackbone(bonC)
 	require.NoError(t, err)
 
+	errE, err := errors.New("../../../../resources/errors/")
+	require.NoError(t, err)
+	lan, err := language.New("../../../../resources/language/")
+	require.NoError(t, err)
+	engine.CCErr = errE
+	engine.Language = lan
 	// set the config
 	coreService.SetConfig(options.Config{
 		Mongo: mongo.Config{

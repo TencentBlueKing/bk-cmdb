@@ -38,7 +38,7 @@ func (m *associationModel) isValid(ctx core.ContextParams, inputParam metadata.C
 	}
 
 	if 0 == len(inputParam.Spec.AsstKindID) {
-		blog.Errorf("request(%s): it is failed to create a new model association, because of the AssoObjectID (%s) is not set", ctx.ReqID, metadata.AssociationFieldAssociationObjectID)
+		blog.Errorf("request(%s): it is failed to create a new model association, because of the AssoObjectID (%s) is not set", ctx.ReqID, metadata.AssociationFieldAssociationKind)
 		return ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.AssociationFieldAssociationObjectID)
 	}
 
@@ -68,7 +68,7 @@ func (m *associationModel) isExistsAssociationObjectWithAnotherObject(ctx core.C
 
 	cnt, err := m.count(ctx, existsCheckCond)
 	if nil != err {
-		blog.Errorf("request(%s): it is to failed to check whether the association (%s=>%s) is exists by the condition (%v), error info is %s", ctx.ReqID, targetObjectID, anotherObjectID, existsCheckCond.ToMapStr(), err.Error())
+		blog.Errorf("request(%s): it is to failed to check whether the association (%s=>%s) is exists by the condition (%#v), error info is %s", ctx.ReqID, targetObjectID, anotherObjectID, existsCheckCond.ToMapStr(), err.Error())
 		return false, err
 	}
 	return 0 != cnt, err

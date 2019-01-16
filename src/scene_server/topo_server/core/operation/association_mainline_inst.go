@@ -19,7 +19,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
-	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
@@ -151,7 +151,6 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 
 		// we create the current object's instance for each parent instance belongs to the parent object.
 		currentInst := cli.instFactory.CreateInst(params, current)
-		currentInst.SetValue(common.BKOwnerIDField, params.SupplierAccount)
 		currentInst.SetValue(current.GetInstNameFieldName(), current.Object().ObjectName)
 		currentInst.SetValue(common.BKDefaultField, 0)
 		// set current instance's parent id to parent instance's id, so that they can be chained.
@@ -175,6 +174,7 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 
 		curInstID, err := currentInst.GetInstID()
 		if err != nil {
+			blog.Errorf("[operation-asst] failed to get the instID(%#s), err: %s", currentInst.ToMapStr(), err.Error())
 			return err
 		}
 
@@ -197,7 +197,7 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 func (cli *association) SearchMainlineAssociationInstTopo(params types.ContextParams, obj model.Object, instID int64) ([]*metadata.TopoInstRst, error) {
 
 	cond := &metadata.QueryInput{}
-	cond.Condition = frtypes.MapStr{
+	cond.Condition = mapstr.MapStr{
 		obj.GetInstIDFieldName(): instID,
 	}
 
