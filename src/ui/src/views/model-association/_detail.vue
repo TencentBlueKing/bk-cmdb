@@ -24,7 +24,7 @@
                 class="cmdb-form-input"
                 name="asstName"
                 :disabled="isEdit && relation.ispre"
-                v-validate="'required|singlechar'"
+                v-validate="'singlechar'"
                 v-model.trim="relationInfo['bk_asst_name']" 
                 :placeholder="$t('ModelManagement[\'请输入名称\']')">
                 <p class="form-error">{{errors.first('asstName')}}</p>

@@ -284,11 +284,4 @@
             vertical-align: middle;
         }
     }
-    .btn-group {
-        margin: 30px 0 0 110px;
-        font-size: 0;
-        .bk-primary {
-            margin-right: 10px;
-        }
-    }
 </style>

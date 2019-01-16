@@ -53,7 +53,7 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'userName', 'admin']),
+            ...mapGetters(['supplierAccount', 'userName', 'admin', 'isAdminView']),
             authority () {
                 return this.admin ? ['search', 'update', 'delete'] : []
             }
@@ -89,7 +89,7 @@
                 return (model || {})['bk_obj_icon']
             },
             canAddLevel (model) {
-                return this.authority.includes('update') && !['set', 'module', 'host'].includes(model['bk_obj_id'])
+                return !this.isAdminView && this.authority.includes('update') && !['set', 'module', 'host'].includes(model['bk_obj_id'])
             },
             handleAddLevel (model) {
                 this.addLevel.parent = model
@@ -123,6 +123,7 @@
             },
             handleCancelCreateLevel () {
                 this.addLevel.parent = null
+                this.addLevel.showDialog = false
             }
         }
     }
