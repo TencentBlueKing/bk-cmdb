@@ -357,7 +357,7 @@
                         await this.deleteAssociation(instId)
                         this.$success(this.$t('Association["取消关联成功"]'))
                     } else if (updateType === 'update') {
-                        await this.deleteAssociation(this.existInstAssociation[0]['bk_inst_id'])
+                        await this.deleteAssociation(this.isSource ? this.existInstAssociation[0]['bk_asst_inst_id'] : this.existInstAssociation[0]['bk_inst_id'])
                         await this.createAssociation(instId)
                         this.$success(this.$t('Association["添加关联成功"]'))
                     }
