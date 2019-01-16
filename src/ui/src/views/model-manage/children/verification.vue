@@ -22,28 +22,22 @@
                         {{item['must_check'] ? $t('ModelManagement["是"]') : $t('ModelManagement["否"]')}}
                     </template>
                     <template v-else-if="header.id==='operation'">
-                        <template v-if="item.ispre">
-                            <span class="text-primary disabled mr10">
-                                {{$t('Common["编辑"]')}}
-                            </span>
-                            <span class="text-primary disabled">
-                                {{$t('Common["删除"]')}}
-                            </span>
-                        </template>
-                        <template v-else>
-                            <span class="text-primary mr10" @click.stop="editVerification(item)">
-                                {{$t('Common["编辑"]')}}
-                            </span>
-                            <span class="text-primary" @click.stop="deleteVerification(item)">
-                                {{$t('Common["删除"]')}}
-                            </span>
-                        </template>
+                        <button class="text-primary mr10"
+                            :disabled="!isEditable(item)"
+                            @click.stop="editVerification(item)">
+                            {{$t('Common["编辑"]')}}
+                        </button>
+                        <button class="text-primary"
+                            :disabled="!isEditable(item)"
+                            @click.stop="deleteVerification(item)">
+                            {{$t('Common["删除"]')}}
+                        </button>
                     </template>
                 </div>
             </template>
         </cmdb-table>
         <cmdb-slider
-            :width="514"
+            :width="410"
             :title="slider.title"
             :isShow.sync="slider.isShow">
             <the-verification-detail
@@ -91,6 +85,7 @@
             }
         },
         computed: {
+            ...mapGetters(['isAdminView']),
             ...mapGetters('objectModel', [
                 'activeModel'
             ]),
@@ -123,6 +118,20 @@
                 'searchObjectUniqueConstraints',
                 'deleteObjectUniqueConstraints'
             ]),
+            isEditable (item) {
+                if (item.ispre) {
+                    return false
+                }
+                if (this.isReadOnly) {
+                    return false
+                }
+                if (!this.isAdminView) {
+                    const metadata = item.metadata || {}
+                    const label = metadata.label || {}
+                    return label.hasOwnProperty('bk_biz_id')
+                }
+                return true
+            },
             getRuleName (keys) {
                 let name = []
                 keys.forEach(key => {
