@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package v2
+package service
 
 import (
 	"context"
@@ -19,7 +19,7 @@ import (
 	"strconv"
 	"strings"
 
-	"configcenter/src/apiserver/logics/v2/common/converter"
+	"configcenter/src/apiserver/core/compatiblev2/common/converter"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
@@ -29,7 +29,7 @@ import (
 	"github.com/emicklei/go-restful"
 )
 
-func (s *Service) getCustomerGroupList(req *restful.Request, resp *restful.Response) {
+func (s *service) getCustomerGroupList(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -56,7 +56,7 @@ func (s *Service) getCustomerGroupList(req *restful.Request, resp *restful.Respo
 	postInput.Start = 0
 	postInput.Limit = common.BKNoLimit
 
-	resDataV2 := make([]mapstr.MapStr, 0)
+	resDataV2 := mapstr.NewArray()
 
 	// all application ids
 	for _, appID := range appIDs {
@@ -87,7 +87,7 @@ func (s *Service) getCustomerGroupList(req *restful.Request, resp *restful.Respo
 	converter.RespSuccessV2(resDataV2, resp)
 }
 
-func (s *Service) getContentByCustomerGroupID(req *restful.Request, resp *restful.Response) {
+func (s *service) getContentByCustomerGroupID(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -181,7 +181,7 @@ func (s *Service) getContentByCustomerGroupID(req *restful.Request, resp *restfu
 
 }
 
-func (s *Service) GetNameByID(appID, id string, pheader http.Header) (string, error, int) {
+func (s *service) GetNameByID(appID, id string, pheader http.Header) (string, error, int) {
 
 	result, err := s.CoreAPI.HostServer().GetUserCustomQueryDetail(context.Background(), appID, id, pheader)
 	//http request error
