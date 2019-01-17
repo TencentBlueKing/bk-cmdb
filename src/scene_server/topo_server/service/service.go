@@ -175,8 +175,6 @@ func (s *topoService) Actions() []*httpserver.Action {
 			httpactions = append(httpactions, &httpserver.Action{Verb: act.Method, Path: act.Path, Handler: func(req *restful.Request, resp *restful.Response) {
 				ownerID := util.GetActionOnwerID(req)
 				user := util.GetActionUser(req)
-				fmt.Println("path: ", req.Request.URL.Path)
-				fmt.Println("path: ", req.Request.URL.String())
 
 				// get the language
 				language := util.GetActionLanguage(req)
