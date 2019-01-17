@@ -132,14 +132,7 @@ func (o *object) IsMainlineObject() (bool, error) {
 }
 
 func (o *object) searchAttributes(cond condition.Condition) ([]AttributeInterface, error) {
-	fCond := cond.ToMapStr()
-	if nil != params.MetaData {
-		fCond.Merge(metadata.PublicAndBizCondition(*params.MetaData))
-		fCond.Remove(metadata.BKMetadata)
-	} else {
-		fCond.Merge(metadata.BizLabelNotExist)
-	}
-	rsp, err := o.clientSet.CoreService().Model().ReadModelAttr(context.Background(), o.params.Header, o.obj.ObjectID, &metadata.QueryCondition{Condition: fCond})
+	rsp, err := o.clientSet.CoreService().Model().ReadModelAttr(context.Background(), o.params.Header, o.obj.ObjectID, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
 		return nil, o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)

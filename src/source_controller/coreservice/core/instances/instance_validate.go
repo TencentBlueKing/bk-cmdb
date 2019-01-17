@@ -114,7 +114,7 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 
 	for key, val := range instanceData {
 
-		if util.InStrArr(createIgnoreKeys, key) {
+		if util.InStrArr(updateIgnoreKeys, key) {
 			// ignore the key field
 			continue
 		}
