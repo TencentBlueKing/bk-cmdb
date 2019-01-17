@@ -51,8 +51,8 @@ const actions = {
      * @param {String} dispatch store dispatch action hander
      * @return {promises} promises 对象
      */
-    searchMainlineObject ({ commit, state, dispatch, rootGetters }, data, config) {
-        return $http.post(`find/topomodelmainline`, data, config)
+    searchMainlineObject ({ commit, state, dispatch, rootGetters }, {params, config}) {
+        return $http.post(`find/topomodelmainline`, params, config)
     },
 
     /**
