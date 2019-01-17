@@ -10,15 +10,15 @@
  * limitations under the License.
  */
 
-package v2
+package service
 
 import (
 	"context"
 	"net/http"
 	"strings"
 
-	"configcenter/src/apiserver/logics/v2/common/converter"
-	"configcenter/src/apiserver/logics/v2/common/utils"
+	"configcenter/src/apiserver/core/compatiblev2/common/converter"
+	"configcenter/src/apiserver/core/compatiblev2/common/utils"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	ccError "configcenter/src/common/errors"
@@ -28,7 +28,7 @@ import (
 	"github.com/emicklei/go-restful"
 )
 
-func (s *Service) getProcessPortByApplicationID(req *restful.Request, resp *restful.Response) {
+func (s *service) getProcessPortByApplicationID(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	user := util.GetUser(pheader)
@@ -91,7 +91,7 @@ func (s *Service) getProcessPortByApplicationID(req *restful.Request, resp *rest
 
 }
 
-func (s *Service) getProcessPortByIP(req *restful.Request, resp *restful.Response) {
+func (s *service) getProcessPortByIP(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -142,7 +142,7 @@ func (s *Service) getProcessPortByIP(req *restful.Request, resp *restful.Respons
 	converter.RespSuccessV2(converter.ResV2ToForProcList(result.Data, defLang), resp)
 }
 
-func (s *Service) getModulesByAppId(appID string, user string, pheader http.Header) ([]mapstr.MapStr, ccError.CCError) {
+func (s *service) getModulesByAppId(appID string, user string, pheader http.Header) ([]mapstr.MapStr, ccError.CCError) {
 	rid := util.GetHTTPCCRequestID(pheader)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 

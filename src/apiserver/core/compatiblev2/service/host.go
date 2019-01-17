@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package v2
+package service
 
 import (
 	"context"
@@ -18,8 +18,8 @@ import (
 	"strconv"
 	"strings"
 
-	"configcenter/src/apiserver/logics/v2/common/converter"
-	"configcenter/src/apiserver/logics/v2/common/utils"
+	"configcenter/src/apiserver/core/compatiblev2/common/converter"
+	"configcenter/src/apiserver/core/compatiblev2/common/utils"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
@@ -29,7 +29,7 @@ import (
 	"github.com/emicklei/go-restful"
 )
 
-func (s *Service) updateHostStatus(req *restful.Request, resp *restful.Response) {
+func (s *service) updateHostStatus(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -84,7 +84,7 @@ func (s *Service) updateHostStatus(req *restful.Request, resp *restful.Response)
 
 }
 
-func (s *Service) updateHostByAppID(req *restful.Request, resp *restful.Response) {
+func (s *service) updateHostByAppID(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	user := util.GetUser(pheader)
@@ -150,7 +150,7 @@ func (s *Service) updateHostByAppID(req *restful.Request, resp *restful.Response
 
 }
 
-func (s *Service) getCompanyIDByIps(req *restful.Request, resp *restful.Response) {
+func (s *service) getCompanyIDByIps(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -203,7 +203,7 @@ func (s *Service) getCompanyIDByIps(req *restful.Request, resp *restful.Response
 	converter.RespSuccessV2(resDataV2, resp)
 }
 
-func (s *Service) getHostListByAppIDAndField(req *restful.Request, resp *restful.Response) {
+func (s *service) getHostListByAppIDAndField(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -249,7 +249,7 @@ func (s *Service) getHostListByAppIDAndField(req *restful.Request, resp *restful
 	converter.RespSuccessV2(resDataV2, resp)
 }
 
-func (s *Service) updateHostModule(req *restful.Request, resp *restful.Response) {
+func (s *service) updateHostModule(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -423,7 +423,7 @@ func (s *Service) updateHostModule(req *restful.Request, resp *restful.Response)
 	converter.RespCommonResV2(result.Result, result.Code, result.ErrMsg, resp)
 }
 
-func (s *Service) updateCustomProperty(req *restful.Request, resp *restful.Response) {
+func (s *service) updateCustomProperty(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -470,7 +470,7 @@ func (s *Service) updateCustomProperty(req *restful.Request, resp *restful.Respo
 	converter.RespCommonResV2(result.Result, result.Code, result.ErrMsg, resp)
 }
 
-func (s *Service) cloneHostProperty(req *restful.Request, resp *restful.Response) {
+func (s *service) cloneHostProperty(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -528,7 +528,7 @@ func (s *Service) cloneHostProperty(req *restful.Request, resp *restful.Response
 	converter.RespCommonResV2(result.Result, result.Code, result.ErrMsg, resp)
 }
 
-func (s *Service) delHostInApp(req *restful.Request, resp *restful.Response) {
+func (s *service) delHostInApp(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -567,7 +567,7 @@ func (s *Service) delHostInApp(req *restful.Request, resp *restful.Response) {
 	converter.RespCommonResV2(result.Result, result.Code, result.ErrMsg, resp)
 }
 
-func (s *Service) getGitServerIp(req *restful.Request, resp *restful.Response) {
+func (s *service) getGitServerIp(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -596,7 +596,7 @@ func (s *Service) getGitServerIp(req *restful.Request, resp *restful.Response) {
 	converter.RespSuccessV2(resDataV2, resp)
 }
 
-func (s *Service) GetHostHardInfo(req *restful.Request, resp *restful.Response) {
+func (s *service) GetHostHardInfo(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	err := req.Request.ParseForm()

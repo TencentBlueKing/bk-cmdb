@@ -10,15 +10,15 @@
  * limitations under the License.
  */
 
-package v2
+package service
 
 import (
 	"context"
 	"strconv"
 	"strings"
 
-	"configcenter/src/apiserver/logics/v2/common/converter"
-	"configcenter/src/apiserver/logics/v2/common/utils"
+	"configcenter/src/apiserver/core/compatiblev2/common/converter"
+	"configcenter/src/apiserver/core/compatiblev2/common/utils"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
@@ -37,7 +37,7 @@ const (
 	ModuleTypeDBI     = "2"
 )
 
-func (s *Service) getModulesByApp(req *restful.Request, resp *restful.Response) {
+func (s *service) getModulesByApp(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -90,7 +90,7 @@ func (s *Service) getModulesByApp(req *restful.Request, resp *restful.Response) 
 	converter.RespSuccessV2(resDataV2, resp)
 }
 
-func (s *Service) updateModule(req *restful.Request, resp *restful.Response) {
+func (s *service) updateModule(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -179,7 +179,7 @@ func (s *Service) updateModule(req *restful.Request, resp *restful.Response) {
 	converter.RespCommonResV2(result.Result, result.Code, result.ErrMsg, resp)
 }
 
-func (s *Service) addModule(req *restful.Request, resp *restful.Response) {
+func (s *service) addModule(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -261,7 +261,7 @@ func (s *Service) addModule(req *restful.Request, resp *restful.Response) {
 
 }
 
-func (s *Service) deleteModule(req *restful.Request, resp *restful.Response) {
+func (s *service) deleteModule(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))

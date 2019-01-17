@@ -10,15 +10,15 @@
  * limitations under the License.
  */
 
-package v2
+package service
 
 import (
 	"context"
 	"strconv"
 	"strings"
 
-	"configcenter/src/apiserver/logics/v2/common/converter"
-	"configcenter/src/apiserver/logics/v2/common/utils"
+	"configcenter/src/apiserver/core/compatiblev2/common/converter"
+	"configcenter/src/apiserver/core/compatiblev2/common/utils"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
@@ -26,7 +26,7 @@ import (
 	"github.com/emicklei/go-restful"
 )
 
-func (s *Service) updateHost(req *restful.Request, resp *restful.Response) {
+func (s *service) updateHost(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -75,7 +75,7 @@ func (s *Service) updateHost(req *restful.Request, resp *restful.Response) {
 
 }
 
-func (s *Service) getPlats(req *restful.Request, resp *restful.Response) {
+func (s *service) getPlats(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -103,7 +103,7 @@ func (s *Service) getPlats(req *restful.Request, resp *restful.Response) {
 	converter.RespSuccessV2(resDataV2, resp)
 }
 
-func (s *Service) deletePlats(req *restful.Request, resp *restful.Response) {
+func (s *service) deletePlats(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -138,7 +138,7 @@ func (s *Service) deletePlats(req *restful.Request, resp *restful.Response) {
 	converter.RespCommonResV2(result.Result, result.Code, result.ErrMsg, resp)
 }
 
-func (s *Service) createPlats(req *restful.Request, resp *restful.Response) {
+func (s *service) createPlats(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	user := util.GetUser(pheader)
