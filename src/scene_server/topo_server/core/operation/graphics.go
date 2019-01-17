@@ -51,7 +51,9 @@ func (g *graphics) SelectObjectTopoGraphics(params types.ContextParams, scopeTyp
 	graphcondition := &metadata.TopoGraphics{}
 	graphcondition.SetScopeType(scopeType)
 	graphcondition.SetScopeID(scopeID)
-
+	if nil != params.MetaData {
+		graphcondition.SetMetaData(*params.MetaData)
+	}
 	rsp, err := g.clientSet.ObjectController().Meta().SearchTopoGraphics(context.Background(), params.Header, graphcondition)
 	if nil != err {
 		return nil, err
