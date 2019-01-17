@@ -28,7 +28,7 @@ const actions = {
      * @return {Promise} promise 对象
      */
     searchModelAction ({ commit, state, dispatch }, params) {
-        return $http.post(`objects/topographics/scope_type/global/scope_id/0/action/search`, params)
+        return $http.post(`find/objecttopo/scope_type/global/scope_id/0`, params)
     },
 
     /**
@@ -40,8 +40,7 @@ const actions = {
      * @return {Promise} promise 对象
      */
     updateModelAction ({ commit, state, dispatch }, { params }) {
-        // return $http.post('update/objecttopo/scope_type/global/scope_id/0', params)
-        return $http.post(`objects/topographics/scope_type/global/scope_id/0/action/update`, params)
+        return $http.post(`update/objecttopo/scope_type/global/scope_id/0`, params)
     }
 }
 
