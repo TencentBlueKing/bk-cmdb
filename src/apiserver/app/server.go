@@ -19,12 +19,12 @@ import (
 
 	"github.com/emicklei/go-restful"
 
-	"configcenter/src/api_server/app/options"
-	apisvc "configcenter/src/api_server/service"
-	"configcenter/src/api_server/service/v3"
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/util"
+	"configcenter/src/apiserver/app/options"
+	apisvc "configcenter/src/apiserver/service"
+	"configcenter/src/apiserver/service/v3"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/types"

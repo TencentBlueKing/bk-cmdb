@@ -18,8 +18,8 @@ import (
 	"os"
 	"runtime"
 
-	"configcenter/src/api_server/app"
-	"configcenter/src/api_server/app/options"
+	"configcenter/src/apiserver/app"
+	"configcenter/src/apiserver/app/options"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"

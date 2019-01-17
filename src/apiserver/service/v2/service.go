@@ -15,7 +15,7 @@ package v2
 import (
 	"github.com/emicklei/go-restful"
 
-	"configcenter/src/api_server/logics/v2"
+	"configcenter/src/apiserver/logics/v2"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/rdapi"
