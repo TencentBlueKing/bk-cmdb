@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package v2
+package service
 
 import (
 	"context"
@@ -20,8 +20,8 @@ import (
 	"strconv"
 	"strings"
 
-	"configcenter/src/apiserver/logics/v2/common/converter"
-	"configcenter/src/apiserver/logics/v2/common/utils"
+	"configcenter/src/apiserver/core/compatiblev2/common/converter"
+	"configcenter/src/apiserver/core/compatiblev2/common/utils"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
@@ -31,7 +31,7 @@ import (
 	"github.com/emicklei/go-restful"
 )
 
-func (s *Service) getSets(req *restful.Request, resp *restful.Response) {
+func (s *service) getSets(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -110,7 +110,7 @@ func (s *Service) getSets(req *restful.Request, resp *restful.Response) {
 	converter.RespSuccessV2(resDataV2, resp)
 }
 
-func (s *Service) getsetproperty(req *restful.Request, resp *restful.Response) {
+func (s *service) getsetproperty(req *restful.Request, resp *restful.Response) {
 	resDataV2 := common.KvMap{
 		/*"option" : [
 		    {
@@ -160,7 +160,7 @@ func (s *Service) getsetproperty(req *restful.Request, resp *restful.Response) {
 	converter.RespSuccessV2(resDataV2, resp)
 }
 
-func (s *Service) getModulesByProperty(req *restful.Request, resp *restful.Response) {
+func (s *service) getModulesByProperty(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -222,7 +222,7 @@ func (s *Service) getModulesByProperty(req *restful.Request, resp *restful.Respo
 
 }
 
-func (s *Service) addSet(req *restful.Request, resp *restful.Response) {
+func (s *service) addSet(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	user := util.GetUser(pheader)
@@ -406,7 +406,7 @@ func getSetServiceAndEnv(formData url.Values) (string, string) {
 	return strStatus, strEnv
 }
 
-func (s *Service) updateSet(req *restful.Request, resp *restful.Response) {
+func (s *service) updateSet(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -495,7 +495,7 @@ func (s *Service) updateSet(req *restful.Request, resp *restful.Response) {
 	converter.RespCommonResV2(result.Result, result.Code, result.ErrMsg, resp)
 }
 
-func (s *Service) updateSetServiceStatus(req *restful.Request, resp *restful.Response) {
+func (s *service) updateSetServiceStatus(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -555,7 +555,7 @@ func (s *Service) updateSetServiceStatus(req *restful.Request, resp *restful.Res
 	converter.RespCommonResV2(result.Result, result.Code, result.ErrMsg, resp)
 }
 
-func (s *Service) delSet(req *restful.Request, resp *restful.Response) {
+func (s *service) delSet(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -593,7 +593,7 @@ func (s *Service) delSet(req *restful.Request, resp *restful.Response) {
 	converter.RespCommonResV2(result.Result, result.Code, result.ErrMsg, resp)
 }
 
-func (s *Service) delSetHost(req *restful.Request, resp *restful.Response) {
+func (s *service) delSetHost(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 

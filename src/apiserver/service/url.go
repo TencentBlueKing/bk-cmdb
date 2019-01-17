@@ -1,38 +1,29 @@
 /*
- * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.,
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except
+ * Licensed under the MIT License (the ",License",); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
- * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * the License is distributed on an ",AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
-package v3
+package service
 
 import (
 	"errors"
 	"strings"
 
-	"github.com/emicklei/go-restful"
+	restful "github.com/emicklei/go-restful"
 )
 
-type RequestType string
+// URLPath url path filter
+type URLPath string
 
-const (
-	UnknownType     RequestType = "unknown"
-	TopoType        RequestType = "topo"
-	HostType        RequestType = "host"
-	ProcType        RequestType = "proc"
-	EventType       RequestType = "event"
-	DataCollectType RequestType = "collect"
-)
-
-type V3URLPath string
-
-func (u V3URLPath) FilterChain(req *restful.Request) (RequestType, error) {
+// FilterChain url path filter
+func (u URLPath) FilterChain(req *restful.Request) (RequestType, error) {
 	switch {
 	case u.WithTopo(req):
 		return TopoType, nil
@@ -49,7 +40,8 @@ func (u V3URLPath) FilterChain(req *restful.Request) (RequestType, error) {
 	}
 }
 
-func (u *V3URLPath) WithTopo(req *restful.Request) (isHit bool) {
+// WithTopo parse topo api's url
+func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 	topoRoot := "/topo/v3"
 	from, to := rootPath, topoRoot
 	switch {
@@ -162,7 +154,8 @@ func (u *V3URLPath) WithTopo(req *restful.Request) (isHit bool) {
 	return false
 }
 
-func (u *V3URLPath) WithHost(req *restful.Request) (isHit bool) {
+// WithHost transform the host's url
+func (u *URLPath) WithHost(req *restful.Request) (isHit bool) {
 	hostRoot := "/host/v3"
 	from, to := rootPath, hostRoot
 
@@ -196,7 +189,8 @@ func (u *V3URLPath) WithHost(req *restful.Request) (isHit bool) {
 	return false
 }
 
-func (u *V3URLPath) WithEvent(req *restful.Request) (isHit bool) {
+// WithEvent transform event's url
+func (u *URLPath) WithEvent(req *restful.Request) (isHit bool) {
 	eventRoot := "/event/v3"
 	from, to := rootPath, eventRoot
 
@@ -215,7 +209,8 @@ func (u *V3URLPath) WithEvent(req *restful.Request) (isHit bool) {
 	return false
 }
 
-func (u *V3URLPath) WithProc(req *restful.Request) (isHit bool) {
+// WithProc transform the proc's url
+func (u *URLPath) WithProc(req *restful.Request) (isHit bool) {
 	procRoot := "/process/v3"
 	from, to := rootPath, procRoot
 
@@ -234,7 +229,8 @@ func (u *V3URLPath) WithProc(req *restful.Request) (isHit bool) {
 	return false
 }
 
-func (u *V3URLPath) WithDataCollect(req *restful.Request) (isHit bool) {
+// WithDataCollect transform DataCollect's url
+func (u *URLPath) WithDataCollect(req *restful.Request) (isHit bool) {
 	dataCollectRoot := "/collector/v3"
 	from, to := rootPath, dataCollectRoot
 
@@ -253,7 +249,7 @@ func (u *V3URLPath) WithDataCollect(req *restful.Request) (isHit bool) {
 	return false
 }
 
-func (u V3URLPath) revise(req *restful.Request, from, to string) {
+func (u URLPath) revise(req *restful.Request, from, to string) {
 	req.Request.RequestURI = to + req.Request.RequestURI[len(from):]
 	req.Request.URL.Path = to + req.Request.URL.Path[len(from):]
 }

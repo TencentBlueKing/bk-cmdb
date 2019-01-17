@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package v2
+package service
 
 import (
 	"context"
@@ -19,9 +19,9 @@ import (
 	"strconv"
 	"strings"
 
-	"configcenter/src/apiserver/logics/v2/common/converter"
-	"configcenter/src/apiserver/logics/v2/common/defs"
-	"configcenter/src/apiserver/logics/v2/common/utils"
+	"configcenter/src/apiserver/core/compatiblev2/common/converter"
+	"configcenter/src/apiserver/core/compatiblev2/common/defs"
+	"configcenter/src/apiserver/core/compatiblev2/common/utils"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	ccErr "configcenter/src/common/errors"
@@ -32,7 +32,7 @@ import (
 	"github.com/emicklei/go-restful"
 )
 
-func (s *Service) getModuleInfoByApp(appID int64, pheader http.Header) (map[int64]mapstr.MapStr, ccErr.CCError) {
+func (s *service) getModuleInfoByApp(appID int64, pheader http.Header) (map[int64]mapstr.MapStr, ccErr.CCError) {
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	rid := util.GetHTTPCCRequestID(pheader)
 
@@ -68,7 +68,7 @@ func (s *Service) getModuleInfoByApp(appID int64, pheader http.Header) (map[int6
 	return moduleMap, nil
 }
 
-func (s *Service) getIPAndProxyByCompany(req *restful.Request, resp *restful.Response) {
+func (s *service) getIPAndProxyByCompany(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -120,7 +120,7 @@ func (s *Service) getIPAndProxyByCompany(req *restful.Request, resp *restful.Res
 	converter.RespSuccessV2(result.Data, resp)
 }
 
-func (s *Service) getHostListByIP(req *restful.Request, resp *restful.Response) {
+func (s *service) getHostListByIP(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	rid := util.GetHTTPCCRequestID(pheader)
@@ -193,7 +193,7 @@ func (s *Service) getHostListByIP(req *restful.Request, resp *restful.Response) 
 
 }
 
-func (s *Service) getSetHostList(req *restful.Request, resp *restful.Response) {
+func (s *service) getSetHostList(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -251,7 +251,7 @@ func (s *Service) getSetHostList(req *restful.Request, resp *restful.Response) {
 	converter.RespSuccessV2(resDataV2, resp)
 }
 
-func (s *Service) getModuleHostList(req *restful.Request, resp *restful.Response) {
+func (s *service) getModuleHostList(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -310,7 +310,7 @@ func (s *Service) getModuleHostList(req *restful.Request, resp *restful.Response
 	converter.RespSuccessV2(resDataV2, resp)
 }
 
-func (s *Service) getAppHostList(req *restful.Request, resp *restful.Response) {
+func (s *service) getAppHostList(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -363,7 +363,7 @@ func (s *Service) getAppHostList(req *restful.Request, resp *restful.Response) {
 	converter.RespSuccessV2(resDataV2, resp)
 }
 
-func (s *Service) getHostsByProperty(req *restful.Request, resp *restful.Response) {
+func (s *service) getHostsByProperty(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))

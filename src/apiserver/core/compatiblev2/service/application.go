@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package v2
+package service
 
 import (
 	"context"
@@ -18,9 +18,9 @@ import (
 	"strconv"
 	"strings"
 
-	"configcenter/src/apiserver/logics/v2/common/converter"
-	"configcenter/src/apiserver/logics/v2/common/defs"
-	"configcenter/src/apiserver/logics/v2/common/utils"
+	"configcenter/src/apiserver/core/compatiblev2/common/converter"
+	"configcenter/src/apiserver/core/compatiblev2/common/defs"
+	"configcenter/src/apiserver/core/compatiblev2/common/utils"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
@@ -42,7 +42,7 @@ const (
 	AppStatusStopI   = "3"
 )
 
-func (s *Service) getAppList(req *restful.Request, resp *restful.Response) {
+func (s *service) getAppList(req *restful.Request, resp *restful.Response) {
 
 	param := &params.SearchParams{Condition: nil}
 
@@ -68,7 +68,7 @@ func (s *Service) getAppList(req *restful.Request, resp *restful.Response) {
 	converter.RespSuccessV2(resDataV2, resp)
 }
 
-func (s *Service) getAppByID(req *restful.Request, resp *restful.Response) {
+func (s *service) getAppByID(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	user := util.GetUser(pheader)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -122,7 +122,7 @@ func (s *Service) getAppByID(req *restful.Request, resp *restful.Response) {
 	converter.RespSuccessV2(resDataV2, resp)
 }
 
-func (s *Service) getAppByUin(req *restful.Request, resp *restful.Response) {
+func (s *service) getAppByUin(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	user := util.GetUser(pheader)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -190,7 +190,7 @@ func (s *Service) getAppByUin(req *restful.Request, resp *restful.Response) {
 	converter.RespSuccessV2(resDataV2, resp)
 }
 
-func (s *Service) getUserRoleApp(req *restful.Request, resp *restful.Response) {
+func (s *service) getUserRoleApp(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	user := util.GetUser(pheader)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -250,7 +250,7 @@ func (s *Service) getUserRoleApp(req *restful.Request, resp *restful.Response) {
 	converter.RespSuccessV2(resDataV2, resp)
 }
 
-func (s *Service) getAppSetModuleTreeByAppId(req *restful.Request, resp *restful.Response) {
+func (s *service) getAppSetModuleTreeByAppId(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	user := util.GetUser(pheader)
@@ -300,7 +300,7 @@ func (s *Service) getAppSetModuleTreeByAppId(req *restful.Request, resp *restful
 	converter.RespSuccessV2(topo, resp)
 }
 
-func (s *Service) addApp(req *restful.Request, resp *restful.Response) {
+func (s *service) addApp(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	user := util.GetUser(pheader)
@@ -394,7 +394,7 @@ func (s *Service) addApp(req *restful.Request, resp *restful.Response) {
 	converter.RespSuccessV2(resData, resp)
 }
 
-func (s *Service) deleteApp(req *restful.Request, resp *restful.Response) {
+func (s *service) deleteApp(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	user := util.GetUser(pheader)
@@ -425,7 +425,7 @@ func (s *Service) deleteApp(req *restful.Request, resp *restful.Response) {
 
 }
 
-func (s *Service) editApp(req *restful.Request, resp *restful.Response) {
+func (s *service) editApp(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	user := util.GetUser(pheader)
@@ -507,7 +507,7 @@ func (s *Service) editApp(req *restful.Request, resp *restful.Response) {
 	converter.RespCommonResV2(result.Result, result.Code, result.ErrMsg, resp)
 }
 
-func (s *Service) getHostAppByCompanyId(req *restful.Request, resp *restful.Response) {
+func (s *service) getHostAppByCompanyId(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
@@ -552,7 +552,7 @@ func (s *Service) getHostAppByCompanyId(req *restful.Request, resp *restful.Resp
 	converter.RespSuccessV2(resDataV2, resp)
 }
 
-func (s *Service) getAppByOwnerAndUin(req *restful.Request, resp *restful.Response) {
+func (s *service) getAppByOwnerAndUin(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))

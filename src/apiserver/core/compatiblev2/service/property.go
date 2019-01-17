@@ -10,14 +10,14 @@
  * limitations under the License.
  */
 
-package v2
+package service
 
 import (
 	"context"
 
-	"configcenter/src/apiserver/logics/v2/common/converter"
-	"configcenter/src/apiserver/logics/v2/common/defs"
-	"configcenter/src/apiserver/logics/v2/common/utils"
+	"configcenter/src/apiserver/core/compatiblev2/common/converter"
+	"configcenter/src/apiserver/core/compatiblev2/common/defs"
+	"configcenter/src/apiserver/core/compatiblev2/common/utils"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
@@ -25,7 +25,7 @@ import (
 	"github.com/emicklei/go-restful"
 )
 
-func (s *Service) getObjProperty(req *restful.Request, resp *restful.Response) {
+func (s *service) getObjProperty(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))

@@ -21,8 +21,8 @@ import (
 	"strings"
 	"time"
 
-	"configcenter/src/apiserver/logics/v2/common/defs"
-	"configcenter/src/apiserver/logics/v2/common/utils"
+	"configcenter/src/apiserver/core/compatiblev2/common/defs"
+	"configcenter/src/apiserver/core/compatiblev2/common/utils"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	ccError "configcenter/src/common/errors"
