@@ -851,7 +851,11 @@
                 }
             },
             updateSingleNodePosition (node) {
-                this.$store.dispatch('globalModels/updateModelAction', {params: [node]})
+                this.$store.dispatch('globalModels/updateModelAction', {
+                    params: this.$injectMetadata({
+                        origin: [node]
+                    })
+                })
             },
             // 批量更新节点位置信息
             async updateNodePosition (updateNodes, removeNodes = []) {
@@ -887,7 +891,11 @@
                     })
                 }
 
-                await this.$store.dispatch('globalModels/updateModelAction', {params})
+                await this.$store.dispatch('globalModels/updateModelAction', {
+                    params: this.$injectMetadata({
+                        origin: params
+                    })
+                })
                 updateNodes.forEach(node => {
                     let model = this.localTopoModelList.find(({bk_obj_id: objId}) => objId === node.id)
                     model.position.x = nodePositions[node.id]['x']
