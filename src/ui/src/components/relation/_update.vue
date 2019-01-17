@@ -277,7 +277,13 @@
                             fromCache: true
                         }
                     }),
-                    this.$store.dispatch('objectMainLineModule/searchMainlineObject', {requestId: 'getMainLineModels', fromCache: true})
+                    this.$store.dispatch('objectMainLineModule/searchMainlineObject', {
+                        params: this.$injectMetadata(),
+                        config: {
+                            requestId: 'getMainLineModels',
+                            fromCache: true
+                        }
+                    })
                 ]).then(([dataAsSource, dataAsTarget, mainLineModels]) => {
                     dataAsSource = dataAsSource || []
                     dataAsTarget = dataAsTarget || []
