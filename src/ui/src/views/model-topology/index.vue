@@ -680,7 +680,7 @@
             },
             async initNetwork () {
                 await this.getAssociationType()
-                const response = await this.$store.dispatch('globalModels/searchModelAction')
+                const response = await this.$store.dispatch('globalModels/searchModelAction', this.$injectMetadata())
                 this.localTopoModelList = response
                 this.localTopoModelList.forEach(model => {
                     if (model.hasOwnProperty('assts') && model.assts.length) {
