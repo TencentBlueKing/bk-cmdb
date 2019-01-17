@@ -98,7 +98,7 @@
             async handleCreateLevel (data) {
                 try {
                     await this.createMainlineObject({
-                        params: {
+                        params: this.$injectMetadata({
                             'bk_asst_obj_id': this.addLevel.parent['bk_obj_id'],
                             'bk_classification_id': 'bk_biz_topo',
                             'bk_obj_icon': data['bk_obj_icon'],
@@ -106,7 +106,7 @@
                             'bk_obj_name': data['bk_obj_name'],
                             'bk_supplier_account': this.supplierAccount,
                             'creator': this.userName
-                        }
+                        })
                     })
                     await this.searchClassificationsObjects({
                         params: this.$injectMetadata({}),
