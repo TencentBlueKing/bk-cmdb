@@ -162,7 +162,8 @@
             ...mapGetters(['supplierAccount', 'userName']),
             ...mapGetters('objectModel', [
                 'activeModel',
-                'isPublicModel'
+                'isPublicModel',
+                'isInjectable'
             ]),
             fieldType () {
                 let {
@@ -228,7 +229,7 @@
                     await this.updateObjectAttribute({
                         id: this.field.id,
                         params: this.$injectMetadata(this.fieldInfo, {
-                            clone: true, inject: !this.isPublicModel
+                            clone: true, inject: this.isInjectable
                         }),
                         config: {
                             requestId: 'updateObjectAttribute'
@@ -244,7 +245,11 @@
                         bk_supplier_account: this.supplierAccount
                     }
                     await this.createObjectAttribute({
-                        params: this.$injectMetadata({...this.fieldInfo, ...otherParams}, {inject: !this.isPublicModel
+                        params: this.$injectMetadata({
+                            ...this.fieldInfo,
+                            ...otherParams
+                        }, {
+                            inject: this.isInjectable
                         }),
                         config: {
                             requestId: 'createObjectAttribute'
