@@ -11,21 +11,3 @@
  */
 
 package auth
-
-type Authorizer interface {
-	// Authorize works to check if a user has the authority to operate resources.
-	Authorize(a *Attribute) (authorized Decision, reason string, err error)
-}
-
-// ResourceManager is used to handle the resources register to authorize center.
-// request id is a identifier for a request, returned by IAM.
-type ResourceHandler interface {
-	// register a resource
-	Register(scope ScopeInfo, res ResourceInfo) (requestID string, err error)
-	// deregister a resource
-	Deregister(scope ScopeInfo, res ResourceInfo) (requestID string, err error)
-	// update a resource's info
-	Update(scope ScopeInfo, res ResourceInfo) (requestID string, err error)
-	// get a resource's info
-	Get() error
-}
