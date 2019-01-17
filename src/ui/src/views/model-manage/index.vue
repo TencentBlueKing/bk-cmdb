@@ -226,14 +226,12 @@
                 if (this.isAdminView) {
                     return true
                 }
-                const metadata = classification.metadata || {}
-                const label = metadata.label || {}
-                return label.hasOwnProperty('bk_biz_id')
+                return !!this.$tools.getMetadataBiz(classification)
             },
             isInner (model) {
                 const metadata = model.metadata || {}
                 const label = metadata.label || {}
-                return !label.hasOwnProperty('bk_biz_id')
+                return !this.$tools.getMetadataBiz(model)
             },
             showGroupDialog (isEdit, group) {
                 if (isEdit) {
@@ -263,15 +261,15 @@
                 if (res.includes(false)) {
                     return
                 }
-                let params = {
+                let params = this.$injectMetadata({
                     bk_supplier_account: this.supplierAccount,
                     bk_classification_id: this.groupDialog.data['bk_classification_id'],
                     bk_classification_name: this.groupDialog.data['bk_classification_name']
-                }
+                })
                 if (this.groupDialog.isEdit) {
                     const res = await this.updateClassification({
                         id: this.groupDialog.data.id,
-                        params: this.$injectMetadata(params, {clone: true}),
+                        params,
                         config: {
                             requestId: 'updateClassification'
                         }
@@ -279,7 +277,7 @@
                     this.updateClassify({...params, ...{id: this.groupDialog.data.id}})
                 } else {
                     const res = await this.createClassification({
-                        params: this.$injectMetadata(params, {clone: true}),
+                        params,
                         config: {requestId: 'createClassification'}
                     })
                     this.updateClassify({...params, ...{id: res.id}})

@@ -215,9 +215,7 @@
                 if (this.activeModel.ispre) {
                     return this.$t('ModelManagement["内置"]')
                 } else {
-                    const metadata = this.activeModel.metadata || {}
-                    const label = metadata.label || {}
-                    if (label.hasOwnProperty('bk_biz_id')) {
+                    if (this.$tools.getMetadataBiz(this.activeModel)) {
                         return this.$t('ModelManagement["自定义"]')
                     }
                     return this.$t('ModelManagement["公共"]')
