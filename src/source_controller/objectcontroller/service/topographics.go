@@ -55,6 +55,12 @@ func (cli *Service) SearchTopoGraphics(req *restful.Request, resp *restful.Respo
 		"scope_id":            selector.ScopeID,
 		"bk_supplier_account": ownerID,
 	}
+	_, err = selector.MetaData.Label.GetBusinessID()
+	if nil == err {
+		cond.Merge(meta.PublicAndBizCondition(selector.MetaData))
+	} else {
+		cond.Merge(meta.BizLabelNotExist)
+	}
 
 	results := []meta.TopoGraphics{}
 	if selErr := db.Table(common.BKTableNameTopoGraphics).Find(cond).All(ctx, &results); nil != selErr {
