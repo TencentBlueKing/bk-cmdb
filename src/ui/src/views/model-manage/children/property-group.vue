@@ -168,11 +168,7 @@
                 return count
             },
             metadataGroupedProperties () {
-                return this.groupedProperties.filter(group => {
-                    const metadata = group.info.metadata || {}
-                    const label = metadata.label || {}
-                    return label.hasOwnProperty('bk_biz_id')
-                })
+                return this.groupedProperties.filter(group => !!this.$tools.getMetadataBiz(group))
             },
             authority () {
                 const cantEdit = ['process', 'plat']
@@ -201,9 +197,7 @@
                 if (this.isAdminView) {
                     return true
                 }
-                const metadata = group.info.metadata || {}
-                const label = metadata.label || {}
-                return label.hasOwnProperty('bk_biz_id')
+                return !!this.$tools.getMetadataBiz(group)
             },
             canRiseGroup (index, group) {
                 if (this.isAdminView) {

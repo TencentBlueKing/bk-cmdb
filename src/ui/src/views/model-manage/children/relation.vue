@@ -152,9 +152,7 @@
                     return false
                 }
                 if (!this.isAdminView) {
-                    const metadata = item.metadata || {}
-                    const label = metadata.label || {}
-                    return label.hasOwnProperty('bk_biz_id')
+                    return !!this.$tools.getMetadataBiz(item)
                 }
                 return true
             },
