@@ -740,7 +740,7 @@
                 const selected = state.selected
                 const isBlueKing = this.tree.data[0]['bk_inst_name'] === '蓝鲸'
                 const isModule = node['bk_obj_id'] === 'module'
-                return selected && !isBlueKing && !isModule
+                return !this.isAdminView && selected && !isBlueKing && !isModule
             },
             simplifyTree () {
                 this.$refs.topoTree.selectNode(this.getTopoNodeId(this.tree.data[0]))

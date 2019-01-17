@@ -91,7 +91,7 @@
                 return (model || {})['bk_obj_icon']
             },
             canAddLevel (model) {
-                return !this.isAdminView && this.authority.includes('update') && !['set', 'module', 'host'].includes(model['bk_obj_id'])
+                return this.isAdminView && this.authority.includes('update') && !['set', 'module', 'host'].includes(model['bk_obj_id'])
             },
             handleAddLevel (model) {
                 this.addLevel.parent = model
