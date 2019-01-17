@@ -15,9 +15,9 @@ package v2
 import (
 	"context"
 
-	"configcenter/src/api_server/logics/v2/common/converter"
-	"configcenter/src/api_server/logics/v2/common/defs"
-	"configcenter/src/api_server/logics/v2/common/utils"
+	"configcenter/src/apiserver/logics/v2/common/converter"
+	"configcenter/src/apiserver/logics/v2/common/defs"
+	"configcenter/src/apiserver/logics/v2/common/utils"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"

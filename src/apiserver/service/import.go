@@ -3,7 +3,7 @@ package service
 import (
 	"github.com/emicklei/go-restful"
 
-	"configcenter/src/api_server/service/v2"
+	"configcenter/src/apiserver/service/v2"
 	"configcenter/src/common/backbone"
 )
 

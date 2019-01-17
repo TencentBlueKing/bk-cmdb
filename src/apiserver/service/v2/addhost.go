@@ -16,7 +16,7 @@ import (
 	"context"
 	"strings"
 
-	"configcenter/src/api_server/logics/v2/common/converter"
+	"configcenter/src/apiserver/logics/v2/common/converter"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
