@@ -130,7 +130,7 @@
                         }
                         if (this.isAdminView) {
                             localClassifications.push(localClassification)
-                        } else if (classification.metadata.label.hasOwnProperty('bk_biz_id')) {
+                        } else if (this.$tools.getMetadataBiz(classification)) {
                             localClassifications.push(localClassification)
                         }
                     }

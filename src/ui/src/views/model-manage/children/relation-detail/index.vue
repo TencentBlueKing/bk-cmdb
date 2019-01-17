@@ -157,7 +157,8 @@
                 'classifications'
             ]),
             ...mapGetters('objectModel', [
-                'activeModel'
+                'activeModel',
+                'isInjectable'
             ]),
             objAsstId () {
                 let {
@@ -248,14 +249,20 @@
                 if (this.isEdit) {
                     await this.updateObjectAssociation({
                         id: this.relationInfo.id,
-                        params: this.$injectMetadata(this.updateParams, {clone: true}),
+                        params: this.$injectMetadata(this.updateParams, {
+                            clone: true,
+                            inject: this.isInjectable
+                        }),
                         config: {
                             requestId: 'updateObjectAssociation'
                         }
                     })
                 } else {
                     await this.createObjectAssociation({
-                        params: this.$injectMetadata(this.createParams, {clone: true}),
+                        params: this.$injectMetadata(this.createParams, {
+                            clone: true,
+                            inject: this.isInjectable
+                        }),
                         config: {
                             requestId: 'createObjectAssociation'
                         }

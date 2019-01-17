@@ -82,7 +82,8 @@
         },
         computed: {
             ...mapGetters('objectModel', [
-                'activeModel'
+                'activeModel',
+                'isInjectable'
             ]),
             selectedName () {
                 let nameList = []
@@ -135,7 +136,10 @@
                     await this.updateObjectUniqueConstraints({
                         id: this.verification.id,
                         objId: this.activeModel['bk_obj_id'],
-                        params: this.$injectMetadata(this.params, {clone: true}),
+                        params: this.$injectMetadata(this.params, {
+                            clone: true,
+                            inject: this.isInjectable
+                        }),
                         config: {
                             requestId: 'updateObjectUniqueConstraints'
                         }
@@ -144,7 +148,10 @@
                 } else {
                     await this.createObjectUniqueConstraints({
                         objId: this.activeModel['bk_obj_id'],
-                        params: this.$injectMetadata(this.params, {clone: true}),
+                        params: this.$injectMetadata(this.params, {
+                            clone: true,
+                            inject: this.isInjectable
+                        }),
                         config: {
                             requestId: 'createObjectUniqueConstraints'
                         }
