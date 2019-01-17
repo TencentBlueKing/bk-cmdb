@@ -10,21 +10,21 @@
  * limitations under the License.
  */
 
-package v2
+package service
 
 import (
 	"context"
 
 	"github.com/emicklei/go-restful"
 
-	"configcenter/src/apiserver/logics/v2/common/converter"
-	"configcenter/src/apiserver/logics/v2/common/utils"
+	"configcenter/src/apiserver/core/compatiblev2/common/converter"
+	"configcenter/src/apiserver/core/compatiblev2/common/utils"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 )
 
-func (s *Service) getAgentStatus(req *restful.Request, resp *restful.Response) {
+func (s *service) getAgentStatus(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))

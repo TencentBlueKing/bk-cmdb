@@ -10,13 +10,13 @@
  * limitations under the License.
  */
 
-package v2
+package service
 
 import (
 	"context"
 	"strings"
 
-	"configcenter/src/apiserver/logics/v2/common/converter"
+	"configcenter/src/apiserver/core/compatiblev2/common/converter"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
@@ -25,7 +25,7 @@ import (
 	"github.com/emicklei/go-restful"
 )
 
-func (s *Service) addHost(req *restful.Request, resp *restful.Response) {
+func (s *service) addHost(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	user := util.GetUser(pheader)
@@ -83,7 +83,7 @@ func (s *Service) addHost(req *restful.Request, resp *restful.Response) {
 	converter.RespSuccessV2("", resp)
 }
 
-func (s *Service) enterIP(req *restful.Request, resp *restful.Response) {
+func (s *service) enterIP(req *restful.Request, resp *restful.Response) {
 
 	pheader := req.Request.Header
 	user := util.GetUser(pheader)

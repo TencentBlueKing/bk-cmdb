@@ -10,24 +10,44 @@
  * limitations under the License.
  */
 
-package v2
+package service
 
 import (
-	"github.com/emicklei/go-restful"
-
-	"configcenter/src/apiserver/logics/v2"
+	"configcenter/src/apiserver/core"
+	"configcenter/src/apiserver/core/compatiblev2/logic"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/rdapi"
+
+	"github.com/emicklei/go-restful"
 )
 
-type Service struct {
-	*backbone.Engine
-	*logics.Logics
+var _ core.CompatibleV2Operation = (*service)(nil)
+
+// New create a compatibleV2 service instance
+func New(engine *backbone.Engine) core.CompatibleV2Operation {
+
+	return &service{
+		Engine: engine,
+		Logics: &logic.Logics{
+			Engine: engine,
+		},
+	}
 }
 
-func (s *Service) WebService() *restful.WebService {
-	ws := new(restful.WebService)
+type service struct {
+	*backbone.Engine
+	*logic.Logics
+}
+
+func (s *service) SetConfig(engine *backbone.Engine) {
+	s.Engine = engine
+	s.Logics.Engine = engine
+}
+
+func (s *service) WebService() *restful.WebService {
+	ws := &restful.WebService{}
+
 	getErrFun := func() errors.CCErrorIf {
 		return s.CCErr
 	}
@@ -114,11 +134,4 @@ func (s *Service) WebService() *restful.WebService {
 
 	return ws
 
-}
-
-func (s *Service) SetEngine(engine *backbone.Engine) {
-	s.Engine = engine
-	s.Logics = &logics.Logics{
-		Engine: engine,
-	}
 }
