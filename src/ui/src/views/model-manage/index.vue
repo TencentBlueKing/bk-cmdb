@@ -113,7 +113,7 @@
                 <bk-button type="default" @click="hideGroupDialog">{{$t("Common['取消']")}}</bk-button>
             </div>
         </bk-dialog>
-        <the-create-model v-if="modelDialog.isShow"
+        <the-create-model
             :is-show.sync="modelDialog.isShow"
             :title="$t('ModelManagement[\'新增模型\']')"
             @confirm="saveModel">
