@@ -55,6 +55,10 @@ func setMapStrByStruct(targetType reflect.Type, targetValue reflect.Value, value
 			continue
 		}
 
+		if isEmptyValue(fieldValue) && strings.Contains(tag, "omitempty") {
+			continue
+		}
+
 		switch structField.Type.Kind() {
 		case reflect.String,
 			reflect.Float32, reflect.Float64,
@@ -230,4 +234,22 @@ func setMapToReflectValue(returnVal, inputVal reflect.Value) (reflect.Value, err
 	}
 
 	return returnVal, nil
+}
+
+func isEmptyValue(v reflect.Value) bool {
+	switch v.Kind() {
+	case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
+		return v.Len() == 0
+	case reflect.Bool:
+		return !v.Bool()
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return v.Int() == 0
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return v.Uint() == 0
+	case reflect.Float32, reflect.Float64:
+		return v.Float() == 0
+	case reflect.Interface, reflect.Ptr:
+		return v.IsNil()
+	}
+	return false
 }
