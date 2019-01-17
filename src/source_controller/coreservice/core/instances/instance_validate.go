@@ -25,9 +25,7 @@ var updateIgnoreKeys = []string{
 	common.BKOwnerIDField,
 	common.BKDefaultField,
 	common.BKInstParentStr,
-	common.BKOwnerIDField,
 	common.BKAppIDField,
-	common.BKDataStatusField,
 	common.BKDataStatusField,
 	common.BKSupplierIDField,
 	common.BKInstIDField,
@@ -37,10 +35,10 @@ var createIgnoreKeys = []string{
 	common.BKOwnerIDField,
 	common.BKDefaultField,
 	common.BKInstParentStr,
-	common.BKOwnerIDField,
 	common.BKAppIDField,
 	common.BKSupplierIDField,
 	common.BKInstIDField,
+	common.BKDataStatusField,
 }
 
 func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID string, instanceData mapstr.MapStr) error {
@@ -114,7 +112,7 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 
 	for key, val := range instanceData {
 
-		if util.InStrArr(createIgnoreKeys, key) {
+		if util.InStrArr(updateIgnoreKeys, key) {
 			// ignore the key field
 			continue
 		}
