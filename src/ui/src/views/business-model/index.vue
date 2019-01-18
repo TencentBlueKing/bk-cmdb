@@ -72,9 +72,7 @@
             ]),
             async getMainLineModel () {
                 try {
-                    const topo = await this.searchMainlineObject({
-                        params: this.$injectMetadata()
-                    })
+                    const topo = await this.searchMainlineObject({})
                     this.topo = topo.map(model => {
                         return {
                             ...model,
