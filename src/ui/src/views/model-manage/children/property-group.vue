@@ -16,12 +16,12 @@
                         <span class="group-name">{{group.info['bk_group_name']}}</span>
                         <span class="group-count">({{group.properties.length}})</span>
                         <i class="title-icon icon icon-cc-edit"
-                            v-if="authority.includes('update') && group.info['bk_group_id'] !== 'none' && isEditable(group)"
+                            v-if="authority.includes('update') && group.info['bk_group_id'] !== 'none' && isEditable(group.info)"
                             @click="handleEditGroupName(group)">
                         </i>
                     </template>
                 </div>
-                <div class="header-options fr" v-if="authority.includes('update') && isEditable(group)">
+                <div class="header-options fr" v-if="authority.includes('update') && isEditable(group.info)">
                     <i class="options-icon bk-icon icon-arrows-up"
                         v-tooltip="$t('ModelManagement[\'上移\']')"
                         :class="{
@@ -54,7 +54,7 @@
                     group: 'property',
                     animation: 150,
                     filter: '.filter-empty',
-                    disabled: !authority.includes('update') || !isEditable(group)
+                    disabled: !authority.includes('update') || !isEditable(group.info)
                 }"
                 :class="{empty: !group.properties.length}"
                 @change="handleDragChange"
@@ -66,7 +66,10 @@
                     {{property['bk_property_name']}}
                 </li>
                 <template v-if="!group.properties.length">
-                    <li class="property-empty" v-if="authority.includes('update')" @click="handleAddProperty(group)">{{$t('ModelManagement["立即添加"]')}}</li>
+                    <li class="property-empty" v-if="authority.includes('update') && isEditable(group.info)"
+                        @click="handleAddProperty(group)">
+                        {{$t('ModelManagement["立即添加"]')}}
+                    </li>
                     <li class="property-empty disabled" v-else>{{$t('ModelManagement["暂无字段"]')}}</li>
                 </template>
             </vue-draggable>
@@ -168,7 +171,7 @@
                 return count
             },
             metadataGroupedProperties () {
-                return this.groupedProperties.filter(group => !!this.$tools.getMetadataBiz(group))
+                return this.groupedProperties.filter(group => !!this.$tools.getMetadataBiz(group.info))
             },
             authority () {
                 const cantEdit = ['process', 'plat']
@@ -215,6 +218,7 @@
             },
             init (properties, groups) {
                 properties = this.setPropertIndex(properties)
+                groups = this.separateMetadataGroups(groups)
                 groups = this.setGroupIndex(groups.concat({
                     'bk_group_index': Infinity,
                     'bk_group_id': 'none',
@@ -250,10 +254,25 @@
                     }
                 })
             },
-            setGroupIndex (groups) {
-                groups.sort((groupA, groupB) => {
+            separateMetadataGroups (groups) {
+                const publicGroups = []
+                const metadataGroups = []
+                groups.forEach(group => {
+                    if (this.$tools.getMetadataBiz(group)) {
+                        metadataGroups.push(group)
+                    } else {
+                        publicGroups.push(group)
+                    }
+                })
+                publicGroups.sort((groupA, groupB) => {
                     return groupA['bk_group_index'] - groupB['bk_group_index']
                 })
+                metadataGroups.sort((groupA, groupB) => {
+                    return groupA['bk_group_index'] - groupB['bk_group_index']
+                })
+                return [...publicGroups, ...metadataGroups]
+            },
+            setGroupIndex (groups) {
                 groups.forEach((group, index) => {
                     group['bk_group_index'] = index
                 })
