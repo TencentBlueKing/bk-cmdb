@@ -159,7 +159,7 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'userName']),
+            ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
             ...mapGetters('objectModel', [
                 'activeModel',
                 'isPublicModel',
@@ -240,7 +240,7 @@
                 } else {
                     let otherParams = {
                         creator: this.userName,
-                        bk_property_group: this.isInjectable ? 'bizdefault' : 'default',
+                        bk_property_group: (this.isPublicModel && !this.isAdminView) ? 'bizdefault' : 'default',
                         bk_obj_id: this.activeModel['bk_obj_id'],
                         bk_supplier_account: this.supplierAccount
                     }
