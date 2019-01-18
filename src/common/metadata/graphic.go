@@ -46,6 +46,11 @@ type TopoGraphics struct {
 	Assts           []GraphAsst `json:"assts,omitempty"`
 }
 
+type UpdateTopoGraphicsInput struct {
+	MetaData Metadata       `field:"metadata" json:"metadata" bson:"metadata"`
+	Origin   []TopoGraphics `field:"origin" json:"origin" bson:"origin"`
+}
+
 func (t *TopoGraphics) FillBlank() *TopoGraphics {
 	t.SetSupplierAccount("0")
 	t.SetExt(map[string]interface{}{})

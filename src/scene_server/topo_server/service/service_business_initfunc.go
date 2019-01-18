@@ -62,7 +62,7 @@ func (s *topoService) initBusinessObjectAttrGroup() {
 
 func (s *topoService) initBusinessGraphics() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/objecttopo/scope_type/{scope_type}/scope_id/{scope_id}", HandlerFunc: s.SelectObjectTopoGraphics})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/update/objecttopo/scope_type/{scope_type}/scope_id/{scope_id}", HandlerFunc: s.UpdateObjectTopoGraphics, HandlerParseOriginDataFunc: s.ParseOriginGraphicsUpdateInput})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/update/objecttopo/scope_type/{scope_type}/scope_id/{scope_id}", HandlerFunc: s.UpdateObjectTopoGraphicsNew})
 }
 
 func (s *topoService) initBusinessAssociation() {
