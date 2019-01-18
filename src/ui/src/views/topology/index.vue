@@ -387,7 +387,6 @@
             },
             getMainlineModel () {
                 return this.searchMainlineObject({
-                    params: this.$injectMetadata(),
                     config: {
                         requestId: 'get_searchMainlineObject'
                     }

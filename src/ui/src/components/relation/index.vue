@@ -100,7 +100,6 @@
                         this.getObjectAssociation({'bk_obj_id': this.objId}, {requestId: 'getSourceAssocaition'}),
                         this.getObjectAssociation({'bk_asst_obj_id': this.objId}, {requestId: 'getTargetAssocaition'}),
                         this.$store.dispatch('objectMainLineModule/searchMainlineObject', {
-                            params: this.$injectMetadata(),
                             config: {
                                 requestId: 'getMainLineModels'
                             }
