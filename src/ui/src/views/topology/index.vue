@@ -82,7 +82,8 @@
                     <cmdb-details class="topology-details"
                         v-if="isNodeDetailsActive"
                         :authority="['search', 'update', 'delete']"
-                        :showDelete="false"
+                        :show-delete="false"
+                        :show-options="!isAdminView"
                         :properties="tab.properties"
                         :property-groups="tab.propertyGroups"
                         :inst="tree.flatternedSelectedNodeInst"
@@ -664,7 +665,7 @@
                     promise = this.updateInst({
                         objId: objId,
                         instId: selectedNode['bk_inst_id'],
-                        params: this.$injectMetadata(formData)
+                        params: formData
                     })
                 }
                 promise.then(() => {
