@@ -507,7 +507,9 @@
                         this.deleteInst({
                             objId: this.objId,
                             instId: inst['bk_inst_id'],
-                            data: this.$injectMetadata({})
+                            config: {
+                                data: this.$injectMetadata({})
+                            }
                         }).then(() => {
                             this.slider.show = false
                             this.$success(this.$t('Common["删除成功"]'))
