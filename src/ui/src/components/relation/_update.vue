@@ -278,7 +278,6 @@
                         }
                     }),
                     this.$store.dispatch('objectMainLineModule/searchMainlineObject', {
-                        params: this.$injectMetadata(),
                         config: {
                             requestId: 'getMainLineModels',
                             fromCache: true
