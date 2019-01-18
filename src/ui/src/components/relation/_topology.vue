@@ -155,6 +155,7 @@
                 return this.getInstRelation({
                     objId,
                     instId,
+                    params: this.$injectMetadata(),
                     config: {
                         requestId: this.getRelationRequestId,
                         clearCache: true
