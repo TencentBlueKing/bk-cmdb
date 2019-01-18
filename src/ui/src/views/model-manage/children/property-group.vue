@@ -66,7 +66,10 @@
                     {{property['bk_property_name']}}
                 </li>
                 <template v-if="!group.properties.length">
-                    <li class="property-empty" v-if="authority.includes('update')" @click="handleAddProperty(group)">{{$t('ModelManagement["立即添加"]')}}</li>
+                    <li class="property-empty" v-if="authority.includes('update') && isEditable(group.info)"
+                        @click="handleAddProperty(group)">
+                        {{$t('ModelManagement["立即添加"]')}}
+                    </li>
                     <li class="property-empty disabled" v-else>{{$t('ModelManagement["暂无字段"]')}}</li>
                 </template>
             </vue-draggable>
