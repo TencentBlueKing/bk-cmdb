@@ -377,6 +377,7 @@
                     await this.deleteObject({
                         id: this.activeModel['id'],
                         config: {
+                            data: this.$injectMetadata(),
                             requestId: 'deleteModel'
                         }
                     })
