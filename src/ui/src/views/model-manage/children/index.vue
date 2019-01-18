@@ -370,8 +370,7 @@
                     await this.deleteMainlineObject({
                         bkObjId: this.activeModel['bk_obj_id'],
                         config: {
-                            requestId: 'deleteModel',
-                            data: this.$injectMetadata()
+                            requestId: 'deleteModel'
                         }
                     })
                 } else {

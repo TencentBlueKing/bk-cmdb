@@ -72,9 +72,7 @@
             ]),
             async getMainLineModel () {
                 try {
-                    const topo = await this.searchMainlineObject({
-                        params: this.$injectMetadata()
-                    })
+                    const topo = await this.searchMainlineObject({})
                     this.topo = topo.map(model => {
                         return {
                             ...model,
@@ -91,7 +89,7 @@
                 return (model || {})['bk_obj_icon']
             },
             canAddLevel (model) {
-                return !this.isAdminView && this.authority.includes('update') && !['set', 'module', 'host'].includes(model['bk_obj_id'])
+                return this.isAdminView && this.authority.includes('update') && !['set', 'module', 'host'].includes(model['bk_obj_id'])
             },
             handleAddLevel (model) {
                 this.addLevel.parent = model
