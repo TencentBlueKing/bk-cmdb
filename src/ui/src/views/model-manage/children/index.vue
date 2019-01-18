@@ -62,7 +62,7 @@
                             <span>{{$t('ModelManagement["导出"]')}}</span>
                         </label>
                     </template>
-                    <template v-if="!activeModel['ispre'] && authority.includes('update')">
+                    <template v-if="isShowOperationButton">
                         <label class="label-btn"
                         v-if="!isMainLine"
                         v-tooltip="$t('ModelManagement[\'保留模型和相应实例，隐藏关联关系\']')">
@@ -142,6 +142,9 @@
                 'isPublicModel',
                 'isMainLine'
             ]),
+            isShowOperationButton () {
+                return (this.isAdminView || !this.isPublicModel) && !this.activeModel['ispre'] && this.authority.includes('update')
+            },
             isReadOnly () {
                 if (this.activeModel) {
                     return this.activeModel['bk_ispaused']
