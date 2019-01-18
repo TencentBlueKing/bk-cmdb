@@ -21,7 +21,7 @@
                         {{fieldTypeMap[item['bk_property_type']]}}
                     </template>
                     <template v-else-if="header.id==='isrequired'">
-                        <i class="bk-icon icon-check-1"></i>
+                        <i class="bk-icon icon-check-1" v-if="item.isrequired"></i>
                     </template>
                     <template v-else-if="header.id==='create_time'">
                         {{$tools.formatTime(item['create_time'])}}
@@ -31,6 +31,9 @@
                             {{$t('Common["编辑"]')}}
                         </span>
                         <span class="text-primary" v-if="!item.ispre && !isReadOnly" @click.stop="deleteField(item)">
+                            {{$t('Common["删除"]')}}
+                        </span>
+                        <span class="text-primary disabled" style="color: #3c96ff;" v-else>
                             {{$t('Common["删除"]')}}
                         </span>
                     </template>
@@ -125,6 +128,10 @@
                 return false
             },
             authority () {
+                const cantEdit = ['process', 'plat']
+                if (cantEdit.includes(this.objId)) {
+                    return []
+                }
                 return this.$store.getters.admin ? ['search', 'update', 'delete'] : []
             }
         },
@@ -217,7 +224,7 @@
     }
     .field-table {
         .disabled {
-            color: #ccc;
+            color: #bfc7d2;
         }
     }
 </style>

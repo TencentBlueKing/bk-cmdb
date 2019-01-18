@@ -13,12 +13,11 @@
 package service
 
 import (
-	"encoding/json"
-
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
+	"encoding/json"
 )
 
 func (s topoService) ParseOriginGraphicsUpdateInput(data []byte) (mapstr.MapStr, error) {
@@ -32,6 +31,7 @@ func (s topoService) ParseOriginGraphicsUpdateInput(data []byte) (mapstr.MapStr,
 	return result, nil
 }
 func (s *topoService) SelectObjectTopoGraphics(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
 	return s.core.GraphicsOperation().SelectObjectTopoGraphics(params, pathParams("scope_type"), pathParams("scope_id"))
 }
 

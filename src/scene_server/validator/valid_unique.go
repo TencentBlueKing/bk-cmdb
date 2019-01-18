@@ -13,10 +13,13 @@
 package validator
 
 import (
+	"strings"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 // validCreateUnique  valid create unique
@@ -37,11 +40,11 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
 	}
 
 	for _, unique := range uniqueresp.Data {
-		// retrive unique value
+		// retrieve unique value
 		uniquekeys := map[string]bool{}
 		for _, key := range unique.Keys {
 			switch key.Kind {
-			case metadata.UinqueKeyKindProperty:
+			case metadata.UniqueKeyKindProperty:
 				property, ok := valid.idToProperty[int64(key.ID)]
 				if !ok {
 					blog.Errorf("[validCreateUnique] find [%s] property [%d] error %v", valid.objID, key.ID)
@@ -56,20 +59,20 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
 
 		cond := condition.CreateCondition()
 
-		allEmpty := true
+		anyEmpty := false
 		for key := range uniquekeys {
 			val, ok := valData[key]
-			cond.Field(key).Eq(val)
-			if ok && !isEmpty(val) {
-				allEmpty = false
+			if !ok || isEmpty(val) {
+				anyEmpty = true
 			}
+			cond.Field(key).Eq(val)
 		}
 
-		if allEmpty && !unique.MustCheck {
+		if anyEmpty && !unique.MustCheck {
 			continue
 		}
 
-		// only search data not in diable status
+		// only search data not in disable status
 		cond.Field(common.BKDataStatusField).NotEq(common.DataStatusDisabled)
 		if common.GetObjByType(valid.objID) == common.BKInnerObjIDObject {
 			cond.Field(common.BKObjIDField).Eq(valid.objID)
@@ -87,7 +90,14 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
 
 		if 0 < result.Data.Count {
 			blog.Errorf("[validUpdateUnique] duplicate data condition: %#v, unique keys: %#v, objID %s", cond.ToMapStr(), uniquekeys, valid.objID)
-			return valid.errif.Error(common.CCErrCommDuplicateItem)
+
+			defLang := valid.Language.CreateDefaultCCLanguageIf(util.GetLanguage(valid.pheader))
+			propertyNames := []string{}
+			for key := range uniquekeys {
+				propertyNames = append(propertyNames, util.FirstNotEmptyString(defLang.Language(valid.objID+"_property_"+key), valid.propertys[key].PropertyName, key))
+			}
+
+			return valid.errif.Errorf(common.CCErrCommDuplicateItem, strings.Join(propertyNames, ","))
 		}
 
 	}
@@ -134,7 +144,7 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 		uniquekeys := map[string]bool{}
 		for _, key := range unique.Keys {
 			switch key.Kind {
-			case metadata.UinqueKeyKindProperty:
+			case metadata.UniqueKeyKindProperty:
 				property, ok := valid.idToProperty[int64(key.ID)]
 				if !ok {
 					blog.Errorf("[validUpdateUnique] find [%s] property [%d] error %v", valid.objID, key.ID)
@@ -148,16 +158,16 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 		}
 
 		cond := condition.CreateCondition()
-		allEmpty := true
+		anyEmpty := false
 		for key := range uniquekeys {
 			val, ok := valData[key]
-			cond.Field(key).Eq(val)
-			if ok && !isEmpty(val) {
-				allEmpty = false
+			if !ok || isEmpty(val) {
+				anyEmpty = true
 			}
+			cond.Field(key).Eq(val)
 		}
 
-		if allEmpty && !unique.MustCheck {
+		if anyEmpty && !unique.MustCheck {
 			continue
 		}
 
@@ -180,7 +190,13 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 
 		if 0 < result.Data.Count {
 			blog.Errorf("[validUpdateUnique] duplicate data condition: %#v, origin: %#v, unique keys: %v, objID: %s, instID %v count %d", cond.ToMapStr(), mapData, uniquekeys, valid.objID, instID, result.Data.Count)
-			return valid.errif.Error(common.CCErrCommDuplicateItem)
+			defLang := valid.Language.CreateDefaultCCLanguageIf(util.GetLanguage(valid.pheader))
+			propertyNames := []string{}
+			for key := range uniquekeys {
+				propertyNames = append(propertyNames, util.FirstNotEmptyString(defLang.Language(valid.objID+"_property_"+key), valid.propertys[key].PropertyName, key))
+			}
+
+			return valid.errif.Errorf(common.CCErrCommDuplicateItem, strings.Join(propertyNames, " + "))
 		}
 	}
 	return nil

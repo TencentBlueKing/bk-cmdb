@@ -33,6 +33,7 @@ func (a *association) DeleteMainlineAssociaton(params types.ContextParams, objID
 		return err
 	}
 
+	tObject := targetObj.Object()
 	parentObj, err := targetObj.GetMainlineParentObject()
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to find the object(%s)'s parent, error info is %s", objID, err.Error())
@@ -53,24 +54,25 @@ func (a *association) DeleteMainlineAssociaton(params types.ContextParams, objID
 
 	if nil != childObj {
 		// FIX: 正常情况下 childObj 不可以能为 nil，只有在拓扑异常的时候才会出现
-		if err = childObj.SetMainlineParentObject(parentObj.GetID()); nil != err && io.EOF != err {
+		if err = childObj.SetMainlineParentObject(parentObj.Object().ObjectID); nil != err && io.EOF != err {
 			blog.Errorf("[operation-asst] failed to update the association, error info is %s", err.Error())
 			return err
 		}
 
 	}
-	// delete objects
-	if err = a.obj.DeleteObject(params, targetObj.GetRecordID(), nil, false); nil != err && io.EOF != err {
-		blog.Errorf("[operation-asst] failed to delete the object(%s), error info is %s", targetObj.GetID(), err.Error())
-		return err
-	}
 
 	// delete this object related association.
 	cond := condition.CreateCondition()
-	cond.Field(metadata.AssociationFieldObjectID).Eq(targetObj.GetID())
-	cond.Field(common.BKOwnerIDField).Eq(targetObj.GetSupplierAccount())
+	or := cond.NewOR()
+	or.Item(mapstr.MapStr{metadata.AssociationFieldObjectID: objID})
+	or.Item(mapstr.MapStr{metadata.AssociationFieldAssociationObjectID: objID})
 	if err = a.DeleteAssociation(params, cond); nil != err {
-		blog.Errorf("[operation-asst] failed to delete the association, error info is %s", err.Error())
+		return err
+	}
+
+	// delete objects
+	if err = a.obj.DeleteObject(params, tObject.ID, nil, false); nil != err && io.EOF != err {
+		blog.Errorf("[operation-asst] failed to delete the object(%s), error info is %s", tObject.ID, err.Error())
 		return err
 	}
 
@@ -81,24 +83,24 @@ func (a *association) SearchMainlineAssociationTopo(params types.ContextParams, 
 
 	results := make([]*metadata.MainlineObjectTopo, 0)
 	for {
-
+		tObject := targetObj.Object()
 		tmpRst := &metadata.MainlineObjectTopo{}
-		tmpRst.ObjID = targetObj.GetID()
-		tmpRst.ObjName = targetObj.GetName()
+		tmpRst.ObjID = tObject.ObjectID
+		tmpRst.ObjName = tObject.ObjectName
 		tmpRst.OwnerID = params.SupplierAccount
 
 		parentObj, err := targetObj.GetMainlineParentObject()
 		if nil == err {
-			tmpRst.PreObjID = parentObj.GetID()
-			tmpRst.PreObjName = parentObj.GetName()
+			tmpRst.PreObjID = parentObj.Object().ObjectID
+			tmpRst.PreObjName = parentObj.Object().ObjectName
 		} else if nil != err && io.EOF != err {
 			return nil, err
 		}
 
 		childObj, err := targetObj.GetMainlineChildObject()
 		if nil == err {
-			tmpRst.NextObj = childObj.GetID()
-			tmpRst.NextName = childObj.GetName()
+			tmpRst.NextObj = childObj.Object().ObjectID
+			tmpRst.NextName = childObj.Object().ObjectName
 		} else if nil != err {
 			if io.EOF == err {
 				results = append(results, tmpRst)
@@ -120,7 +122,7 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 		blog.Errorf("[operation-asst] failed to check the mainline topo level, error info is %s", err.Error())
 		return nil, err
 	}
-
+	params.MetaData = &data.Metadata
 	items, err := a.SearchMainlineAssociationTopo(params, bizObj)
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to check the mainline topo level, error info is %s", err.Error())
@@ -146,10 +148,11 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 		}
 	}
 
+	pObject := parentObj.Object()
 	// find the mainline child object for the parent
 	childObj, err := parentObj.GetMainlineChildObject()
 	if nil != err {
-		blog.Errorf("[operation-asst] failed to find the child object for the object(%s), error info is %s", parentObj.GetID(), err.Error())
+		blog.Errorf("[operation-asst] failed to find the child object for the object(%s), error info is %s", pObject.ObjectID, err.Error())
 		return nil, err
 	}
 
@@ -165,26 +168,27 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 		common.BKObjIconField:          data.ObjectIcon,
 		common.BKClassificationIDField: data.ClassificationID,
 	}
-	currentObj, err := a.obj.CreateObject(params, objData)
+	currentObj, err := a.obj.CreateObject(params, true, objData)
 	if err != nil {
 		return nil, err
 	}
 
+	cObj := currentObj.Object()
 	// update the mainline topo inst association
 	if err = a.SetMainlineInstAssociation(params, parentObj, currentObj, childObj); nil != err {
 		blog.Errorf("[operation-asst] failed set the mainline inst association, error info is %s", err.Error())
 		return nil, err
 	}
 
-	if err = currentObj.CreateMainlineObjectAssociation(parentObj.GetID()); err != nil {
+	if err = currentObj.CreateMainlineObjectAssociation(pObject.ObjectID); err != nil {
 		blog.Errorf("[operation-asst] create mainline object[%s] association related to object[%s] failed, err: %v",
-			currentObj.GetID(), parentObj.GetID(), err)
+			cObj.ObjectID, pObject.ObjectID, err)
 		return nil, err
 	}
 
-	if err = childObj.UpdateMainlineObjectAssociationTo(parentObj.GetID(), currentObj.GetID()); err != nil {
+	if err = childObj.SetMainlineParentObject(cObj.ObjectID); err != nil {
 		blog.Errorf("[operation-asst] update mainline current object's[%s] child object[%s] association to current failed, err: %v",
-			currentObj.GetID(), childObj.GetID(), err)
+			cObj.ObjectID, childObj.Object().ObjectID, err)
 		return nil, err
 	}
 

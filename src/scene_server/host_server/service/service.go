@@ -13,16 +13,22 @@
 package service
 
 import (
-	"configcenter/src/common/metadata"
+	"context"
+	"net/http"
+
 	"github.com/emicklei/go-restful"
+	"gopkg.in/redis.v5"
 
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/language"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/host_server/app/options"
 	"configcenter/src/scene_server/host_server/logics"
 )
@@ -30,8 +36,36 @@ import (
 type Service struct {
 	*options.Config
 	*backbone.Engine
-	*logics.Logics
-	disc discovery.DiscoveryInterface
+	disc    discovery.DiscoveryInterface
+	CacheDB *redis.Client
+}
+
+type srvComm struct {
+	header        http.Header
+	rid           string
+	ccErr         errors.DefaultCCErrorIf
+	ccLang        language.DefaultCCLanguageIf
+	ctx           context.Context
+	ctxCancelFunc context.CancelFunc
+	user          string
+	ownerID       string
+	lgc           *logics.Logics
+}
+
+func (s *Service) newSrvComm(header http.Header) *srvComm {
+	lang := util.GetLanguage(header)
+	ctx, cancel := s.Engine.CCCtx.WithCancel()
+	return &srvComm{
+		header:        header,
+		rid:           util.GetHTTPCCRequestID(header),
+		ccErr:         s.CCErr.CreateDefaultCCErrorIf(lang),
+		ccLang:        s.Language.CreateDefaultCCLanguageIf(lang),
+		ctx:           ctx,
+		ctxCancelFunc: cancel,
+		user:          util.GetUser(header),
+		ownerID:       util.GetOwnerID(header),
+		lgc:           logics.NewLogics(s.Engine, header, s.CacheDB),
+	}
 }
 
 func (s *Service) WebService() *restful.WebService {
@@ -103,6 +137,19 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.DELETE("/plat/{bk_cloud_id}").To(s.DelPlat))
 	ws.Route(ws.GET("/healthz").To(s.Healthz))
 
+	// cloud sync
+	ws.Route(ws.POST("/hosts/cloud/add").To(s.AddCloudTask))
+	ws.Route(ws.DELETE("/hosts/cloud/delete/{taskID}").To(s.DeleteCloudTask))
+	ws.Route(ws.POST("/hosts/cloud/search").To(s.SearchCloudTask))
+	ws.Route(ws.PUT("/hosts/cloud/update").To(s.UpdateCloudTask))
+	ws.Route(ws.POST("/hosts/cloud/startSync").To(s.StartCloudSync))
+	ws.Route(ws.POST("/hosts/cloud/resourceConfirm").To(s.ResourceConfirm))
+	ws.Route(ws.POST("/hosts/cloud/searchConfirm").To(s.SearchConfirm))
+	ws.Route(ws.POST("/hosts/cloud/confirmHistory/add").To(s.AddConfirmHistory))
+	ws.Route(ws.POST("/hosts/cloud/confirmHistory/search").To(s.SearchConfirmHistory))
+	ws.Route(ws.POST("/hosts/cloud/accountSearch").To(s.SearchAccount))
+	ws.Route(ws.POST("/hosts/cloud/syncHistory").To(s.CloudSyncHistory))
+
 	return ws
 }
 
@@ -164,4 +211,15 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	}
 	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteEntity(answer)
+}
+
+func (s *Service) InitBackground() {
+	header := make(http.Header, 0)
+	if "" == util.GetOwnerID(header) {
+		header.Set(common.BKHTTPOwnerID, common.BKSuperOwnerID)
+		header.Set(common.BKHTTPHeaderUser, common.BKProcInstanceOpUser)
+	}
+
+	srvData := s.newSrvComm(header)
+	go srvData.lgc.TimerTriggerCheckStatus(srvData.ctx)
 }

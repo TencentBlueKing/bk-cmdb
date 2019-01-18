@@ -22,6 +22,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
@@ -57,10 +58,14 @@ func (cli *Service) CreateObjectAtt(req *restful.Request, resp *restful.Response
 	}
 
 	// save to the storage
-	obj.CreateTime = new(time.Time)
-	*obj.CreateTime = time.Now()
-	obj.LastTime = new(time.Time)
-	*obj.LastTime = time.Now()
+	if nil == obj.LastTime {
+		obj.LastTime = &metadata.Time{}
+		obj.LastTime.Time = time.Now()
+	}
+	if nil == obj.CreateTime {
+		obj.CreateTime = &metadata.Time{}
+		obj.CreateTime.Time = time.Now()
+	}
 
 	if obj.IsPre {
 		if obj.PropertyID == common.BKInstNameField {
@@ -155,7 +160,7 @@ func (cli *Service) DeleteObjectAttByID(req *restful.Request, resp *restful.Resp
 	usedKeyID := map[int64]bool{}
 	for _, unique := range uniques {
 		for _, key := range unique.Keys {
-			if key.Kind == meta.UinqueKeyKindProperty {
+			if key.Kind == meta.UniqueKeyKindProperty {
 				usedKeyID[int64(key.ID)] = true
 			}
 		}
@@ -264,7 +269,7 @@ func (cli *Service) SelectObjectAttByID(req *restful.Request, resp *restful.Resp
 	// translate language
 	for index := range result {
 		result[index].PropertyName = cli.TranslatePropertyName(defLang, &result[index])
-		result[index].Description = cli.TranslateDescription(defLang, &result[index])
+		result[index].Description = cli.TranslatePlaceholder(defLang, &result[index])
 		if result[index].PropertyType == common.FieldTypeEnum {
 			result[index].Option = cli.TranslateEnumName(defLang, &result[index], result[index].Option)
 		}
@@ -319,7 +324,7 @@ func (cli *Service) SelectObjectAttWithParams(req *restful.Request, resp *restfu
 	// translate language
 	for index := range results {
 		results[index].PropertyName = cli.TranslatePropertyName(defLang, &results[index])
-		results[index].Description = cli.TranslateDescription(defLang, &results[index])
+		results[index].Placeholder = cli.TranslatePlaceholder(defLang, &results[index])
 		if results[index].PropertyType == common.FieldTypeEnum {
 			results[index].Option = cli.TranslateEnumName(defLang, &results[index], results[index].Option)
 		}

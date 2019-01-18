@@ -13,7 +13,7 @@
 package metadata
 
 import (
-	types "configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstr"
 )
 
 const (
@@ -42,6 +42,7 @@ type PropertyGroupObjectAtt struct {
 
 // Group group metadata definition
 type Group struct {
+	Metadata   `field:"metadata" json:"metadata" bson:"metadata"`
 	ID         int64  `field:"id" json:"id" bson:"id"`
 	GroupID    string `field:"bk_group_id" json:"bk_group_id" bson:"bk_group_id"`
 	GroupName  string `field:"bk_group_name" json:"bk_group_name" bson:"bk_group_name"`
@@ -53,9 +54,9 @@ type Group struct {
 }
 
 // Parse load the data from mapstr group into group instance
-func (cli *Group) Parse(data types.MapStr) (*Group, error) {
+func (cli *Group) Parse(data mapstr.MapStr) (*Group, error) {
 
-	err := SetValueToStructByTags(cli, data)
+	err := mapstr.SetValueToStructByTags(cli, data)
 	if nil != err {
 		return nil, err
 	}
@@ -64,6 +65,6 @@ func (cli *Group) Parse(data types.MapStr) (*Group, error) {
 }
 
 // ToMapStr to mapstr
-func (cli *Group) ToMapStr() types.MapStr {
-	return SetValueToMapStrByTags(cli)
+func (cli *Group) ToMapStr() mapstr.MapStr {
+	return mapstr.SetValueToMapStrByTags(cli)
 }

@@ -13,7 +13,7 @@
 package metadata
 
 import (
-	types "configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstr"
 )
 
 // RspID response id
@@ -24,7 +24,7 @@ type RspID struct {
 // CreateResult create result
 type CreateResult struct {
 	BaseResp `json:",inline"`
-	Data []Association `json:"data"`
+	Data     []Association `json:"data"`
 }
 
 // UpdateResult update result
@@ -135,8 +135,8 @@ type QueryObjectAssociationResult struct {
 
 // InstResult inst item result
 type InstResult struct {
-	Count int            `json:"count"`
-	Info  []types.MapStr `json:"info"`
+	Count int             `json:"count"`
+	Info  []mapstr.MapStr `json:"info"`
 }
 
 // QueryInstResult query inst result
@@ -148,7 +148,7 @@ type QueryInstResult struct {
 // CreateInstResult create inst result
 type CreateInstResult struct {
 	BaseResp `json:",inline"`
-	Data     types.MapStr `json:"data"`
+	Data     mapstr.MapStr `json:"data"`
 }
 
 // ObjClassificationObject define the class object class

@@ -144,6 +144,11 @@
                     this.table.checked = []
                     this.handlePageChange(1)
                 }
+            },
+            'slider.show' (show) {
+                if (!show) {
+                    this.tab.active = 'attribute'
+                }
             }
         },
         created () {
@@ -255,7 +260,7 @@
                 this.attribute.type = 'create'
                 this.attribute.inst.edit = {}
                 this.slider.show = true
-                this.slider.title = `${this.$t("Common['创建']")} ${this.$model['bk_obj_name']}`
+                this.slider.title = `${this.$t("Common['创建']")} ${this.$t('ProcessManagement["进程"]')}`
             },
             handleDelete (process) {
                 this.$bkInfo({
