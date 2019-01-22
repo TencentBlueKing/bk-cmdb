@@ -247,6 +247,10 @@
             },
             authority () {
                 return this.$store.getters['userPrivilege/modelAuthority'](this.objId)
+            },
+            isPublicModel () {
+                const model = this.$allModels.find(model => model['bk_obj_id'] === this.objId) || {}
+                return !this.$tools.getMetadataBiz(model)
             }
         },
         watch: {
@@ -290,10 +294,10 @@
                         params: this.$injectMetadata({
                             bk_obj_id: this.objId,
                             bk_supplier_account: this.supplierAccount
-                        }),
+                        }, {inject: !this.isPublicModel}),
                         config: {
                             requestId: `post_searchObjectAttribute_${this.objId}`,
-                            fromCache: true
+                            fromCache: false
                         }
                     })
                     await Promise.all([
@@ -324,9 +328,9 @@
             getPropertyGroups () {
                 return this.searchGroup({
                     objId: this.objId,
-                    params: this.$injectMetadata(),
+                    params: this.$injectMetadata({}, {inject: !this.isPublicModel}),
                     config: {
-                        fromCache: true,
+                        fromCache: false,
                         requestId: `post_searchGroup_${this.objId}`
                     }
                 }).then(groups => {
@@ -393,7 +397,7 @@
             getInstList (config = {cancelPrevious: true}) {
                 return this.searchInst({
                     objId: this.objId,
-                    params: this.$injectMetadata(this.getSearchParams()),
+                    params: this.$injectMetadata(this.getSearchParams(), {inject: !this.isPublicModel}),
                     config: Object.assign({requestId: `post_searchInst_${this.objId}`}, config)
                 })
             },
@@ -403,7 +407,7 @@
                     params: this.$injectMetadata({
                         ...this.getSearchParams(),
                         page: {}
-                    }),
+                    }, {inject: !this.isPublicModel}),
                     config: {
                         requestId: `${this.objId}AllList`,
                         cancelPrevious: true
@@ -508,7 +512,7 @@
                             objId: this.objId,
                             instId: inst['bk_inst_id'],
                             config: {
-                                data: this.$injectMetadata({})
+                                data: this.$injectMetadata({}, {inject: !this.isPublicModel})
                             }
                         }).then(() => {
                             this.slider.show = false
@@ -523,13 +527,13 @@
                     this.updateInst({
                         objId: this.objId,
                         instId: originalValues['bk_inst_id'],
-                        params: this.$injectMetadata(values)
+                        params: this.$injectMetadata(values, {inject: !this.isPublicModel})
                     }).then(() => {
                         this.getTableData()
                         this.searchInstById({
                             objId: this.objId,
                             instId: originalValues['bk_inst_id'],
-                            params: this.$injectMetadata({})
+                            params: this.$injectMetadata({}, {inject: !this.isPublicModel})
                         }).then(item => {
                             this.attribute.inst.details = this.$tools.flatternItem(this.properties, item)
                         })
@@ -538,7 +542,7 @@
                     })
                 } else {
                     this.createInst({
-                        params: this.$injectMetadata(values),
+                        params: this.$injectMetadata(values, {inject: !this.isPublicModel}),
                         objId: this.objId
                     }).then(() => {
                         this.handlePageChange(1)
@@ -569,7 +573,7 @@
                                 'inst_id': instId
                             }
                         })
-                    }),
+                    }, {inject: !this.isPublicModel}),
                     config: {
                         requestId: `${this.objId}BatchUpdate`
                     }
@@ -597,7 +601,7 @@
                             'delete': {
                                 'inst_ids': this.table.checked
                             }
-                        })
+                        }, {inject: !this.isPublicModel})
                     }
                 }).then(() => {
                     this.$success(this.$t('Common["删除成功"]'))
