@@ -225,9 +225,12 @@
                 let files = e.target.files
                 let formData = new FormData()
                 formData.append('file', files[0])
+                if (!this.isPublicModel) {
+                    formData.append('json', JSON.stringify(this.$injectMetadata()))
+                }
                 try {
                     const res = await this.importObjectAttribute({
-                        params: this.$injectMetadata(formData),
+                        params: formData,
                         objId: this.activeModel['bk_obj_id'],
                         config: {
                             requestId: 'importObjectAttribute',
