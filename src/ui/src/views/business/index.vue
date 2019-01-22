@@ -2,7 +2,7 @@
     <div class="business-layout">
         <div class="business-options clearfix">
             <bk-button class="fl" type="primary"
-                :disabled="!authority.includes('update')"
+                :disabled="!authority.includes('update') || !isAdminView"
                 @click="handleCreate">
                 {{$t("Inst['立即创建']")}}
             </bk-button>
@@ -64,6 +64,7 @@
                         :inst="attribute.inst.details"
                         :deleteButtonText="$t('Inst[\'归档\']')"
                         :show-delete="attribute.inst.details['bk_biz_name'] !== '蓝鲸'"
+                        :show-options="isAdminView"
                         @on-edit="handleEdit"
                         @on-delete="handleDelete">
                     </cmdb-details>
