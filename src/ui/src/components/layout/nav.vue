@@ -5,7 +5,7 @@
         @mouseleave="handleMouseLeave">
         <div class="nav-wrapper"
             :class="{unfold: unfold, flexible: !navStick}">
-            <div class="logo" @click="$router.push('/index')">
+            <div class="logo" @click="$router.push({name: 'index'})">
                 {{$t('Nav["蓝鲸配置平台"]')}}<span v-if="isAdminView" :title="$t('Nav[\'后台管理标题\']')">{{$t('Nav["后台管理"]')}}</span>
             </div>
             <ul class="classify-list">
@@ -86,6 +86,9 @@ export default {
         navigations () {
             const navigations = this.$tools.clone(this.authorizedNavigation)
             if (this.admin) {
+                if (this.isAdminView) {
+                    return navigations.filter(classify => classify.classificationId !== 'bk_business_resource')
+                }
                 return navigations
             }
             navigations.forEach(classify => {
@@ -153,7 +156,7 @@ export default {
         // 被点击的有对应的路由，则跳转
         checkPath (classify) {
             if (classify.hasOwnProperty('path')) {
-                this.$router.push(classify.path)
+                this.$router.push({path: classify.path})
             }
         },
         // 切换展开的分类

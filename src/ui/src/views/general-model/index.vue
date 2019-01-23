@@ -621,7 +621,15 @@
                 })
             },
             routeToHistory () {
-                this.$router.push(`/history/${this.objId}?relative=/general-model/${this.objId}`)
+                this.$router.push({
+                    name: 'modelHistory',
+                    params: {
+                        objId: this.objId
+                    },
+                    query: {
+                        relative: `/general-model/${this.objId}`
+                    }
+                })
             },
             handleSliderBeforeClose () {
                 if (this.tab.active === 'attribute' && this.attribute.type !== 'details') {

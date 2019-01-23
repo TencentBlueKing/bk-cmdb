@@ -74,7 +74,7 @@
             // 回退路由
             back () {
                 if (!this.showBack && this.$route.meta.returnPath) {
-                    this.$router.push(this.$route.meta.returnPath)
+                    this.$router.push({path: this.$route.meta.returnPath})
                 } else {
                     this.$store.commit('setHeaderStatus', {
                         back: false

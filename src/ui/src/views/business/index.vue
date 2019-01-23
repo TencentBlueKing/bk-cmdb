@@ -393,7 +393,7 @@
                 })
             },
             routeToHistory () {
-                this.$router.push('/history/biz?relative=/business')
+                this.$router.push({name: 'businessHistory'})
             },
             handleSliderBeforeClose () {
                 if (this.tab.active === 'attribute' && this.attribute.type !== 'details') {

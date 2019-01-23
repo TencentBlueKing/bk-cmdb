@@ -247,7 +247,15 @@
                 return params
             },
             routeToHistory () {
-                this.$router.push('/history/host?relative=/resource')
+                this.$router.push({
+                    name: 'modelHistory',
+                    params: {
+                        objId: 'host'
+                    },
+                    query: {
+                        relative: '/resource'
+                    }
+                })
             },
             handleAssignHosts (businessId, business) {
                 if (!businessId) return

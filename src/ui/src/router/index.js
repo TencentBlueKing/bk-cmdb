@@ -41,6 +41,7 @@ const router = new Router({
         path: '/',
         redirect: '/index'
     }, {
+        name: 'index',
         path: '/index',
         component: index,
         meta: {
@@ -48,6 +49,7 @@ const router = new Router({
             isModel: false
         }
     }, {
+        name: 'business',
         path: '/business',
         component: business,
         meta: {
@@ -55,6 +57,7 @@ const router = new Router({
             objId: 'biz'
         }
     }, {
+        name: 'model',
         path: '/model',
         component: modelManage,
         meta: {
@@ -67,6 +70,7 @@ const router = new Router({
         path: '/model/details/plat',
         redirect: '/status-404'
     }, {
+        name: 'modelDetails',
         path: '/model/details/:modelId',
         component: modelDetail,
         meta: {
@@ -76,24 +80,28 @@ const router = new Router({
             isModel: false
         }
     }, {
+        name: 'modelTopology',
         path: '/model/topology',
         component: modelTopology,
         meta: {
             isModel: false
         }
     }, {
+        name: 'modelBusiness',
         path: '/model/business',
         component: businessModel,
         meta: {
             isModel: false
         }
     }, {
+        name: 'modelAssociation',
         path: '/model/association',
         component: modelAssociation,
         meta: {
             isModel: false
         }
     }, {
+        name: 'eventpush',
         path: '/eventpush',
         component: eventpush,
         meta: {
@@ -104,6 +112,7 @@ const router = new Router({
             }
         }
     }, {
+        name: 'businessAuthority',
         path: '/authority/business',
         component: businessAuthority,
         meta: {
@@ -111,6 +120,7 @@ const router = new Router({
             isAdminOnly: true
         }
     }, {
+        name: 'systemAuthority',
         path: '/authority/system',
         component: systemAuthority,
         meta: {
@@ -118,24 +128,28 @@ const router = new Router({
             isAdminOnly: true
         }
     }, {
+        name: 'businessHistory',
         path: '/history/biz',
         component: businessArchived,
         meta: {
             relative: '/business'
         }
     }, {
+        name: 'generalModel',
         path: '/general-model/:objId',
         component: generalModel,
         meta: {
             isModel: true
         }
     }, {
+        name: 'modelHistory',
         path: '/history/:objId',
         component: deleteHistory,
         meta: {
             isModel: false
         }
     }, {
+        name: 'hosts',
         path: '/hosts',
         component: hosts,
         meta: {
@@ -143,6 +157,7 @@ const router = new Router({
             isModel: false
         }
     }, {
+        name: 'resource',
         path: '/resource',
         component: resource,
         meta: {
@@ -153,6 +168,7 @@ const router = new Router({
             }
         }
     }, {
+        name: 'auditing',
         path: '/auditing',
         component: audit,
         meta: {
@@ -163,6 +179,7 @@ const router = new Router({
             }
         }
     }, {
+        name: 'topology',
         path: '/topology',
         component: topology,
         meta: {
@@ -170,6 +187,7 @@ const router = new Router({
             isModel: false
         }
     }, {
+        name: 'process',
         path: '/process',
         component: process,
         meta: {
@@ -177,6 +195,7 @@ const router = new Router({
             isModel: false
         }
     }, {
+        name: 'customQuery',
         path: '/custom-query',
         component: customQuery,
         meta: {
@@ -184,9 +203,11 @@ const router = new Router({
             isModel: false
         }
     }, {
+        name: 'networkDiscovery',
         path: '/network-discovery',
         component: networkDiscovery
     }, {
+        name: 'networkDiscoveryConfig',
         path: '/network-discovery/config',
         component: networkDiscoveryConfiguration,
         meta: {
@@ -195,6 +216,7 @@ const router = new Router({
             relative: '/network-discovery'
         }
     }, {
+        name: 'networkDiscoveryConfirm',
         path: '/network-discovery/:cloudId/confirm',
         component: networkConfirm,
         meta: {
@@ -203,6 +225,7 @@ const router = new Router({
             relative: '/network-discovery'
         }
     }, {
+        name: 'networkDiscoveryHistory',
         path: '/network-discovery/history',
         component: networkHistory,
         meta: {
@@ -211,24 +234,28 @@ const router = new Router({
             relative: '/network-discovery'
         }
     }, {
+        name: 'statusRequireBusiness',
         path: '/status-require-business',
         components: require('@/views/status/require-business'),
         meta: {
             ignoreAuthorize: true
         }
     }, {
+        name: 'status403',
         path: '/status-403',
         components: require('@/views/status/403'),
         meta: {
             ignoreAuthorize: true
         }
     }, {
+        name: 'status404',
         path: '/status-404',
         components: require('@/views/status/404'),
         meta: {
             ignoreAuthorize: true
         }
     }, {
+        name: 'statusError',
         path: '/status-error',
         component: error,
         meta: {
@@ -238,6 +265,7 @@ const router = new Router({
         path: '*',
         redirect: '/status-404'
     }, {
+        name: 'resourceConfirm',
         path: '/resource-confirm',
         component: cloudConfirm
     }, {
@@ -245,6 +273,7 @@ const router = new Router({
         path: '/cloud-discover',
         component: cloudDiscover
     }, {
+        name: 'resourceConfirmHistory',
         path: '/confirm/history',
         component: confirmHistory,
         meta: {
@@ -292,13 +321,19 @@ router.beforeEach(async (to, from, next) => {
                         path: '/status-403'
                     })
                 }
-            } else if (to.meta.requireBusiness && !hasPrivilegeBusiness()) {
-                next({
-                    path: '/status-require-business',
-                    query: {
-                        relative: to.path
-                    }
-                })
+            } else if (to.meta.requireBusiness) {
+                if (router.app.$store.getters.isAdminView) {
+                    next({
+                        path: '/status-404'
+                    })
+                } else if (!hasPrivilegeBusiness()) {
+                    next({
+                        path: '/status-require-business',
+                        query: {
+                            relative: to.path
+                        }
+                    })
+                }
             } else {
                 next()
             }

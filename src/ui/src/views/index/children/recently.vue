@@ -79,7 +79,12 @@
                 this.$store.commit('setHeaderStatus', {
                     back: true
                 })
-                this.$router.push(`/general-model/${model['bk_obj_id']}`)
+                this.$router.push({
+                    name: 'generalModel',
+                    params: {
+                        objId: model['bk_obj_id']
+                    }
+                })
             },
             // 删除最近浏览的模型
             deleteRecently (model) {
