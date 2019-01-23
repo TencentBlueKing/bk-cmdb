@@ -167,6 +167,17 @@ func (a *attribute) Create() error {
 
 	// check the property id repeated
 	a.attr.OwnerID = a.params.SupplierAccount
+<<<<<<< HEAD
+=======
+	exists, err := a.IsExists()
+	if nil != err {
+		return err
+	}
+
+	if exists {
+		return a.params.Err.Errorf(common.CCErrCommDuplicateItem, "")
+	}
+>>>>>>> refactor: update duplicate item message
 
 	// create a new record
 	input := metadata.CreateModelAttributes{Attributes: []metadata.Attribute{a.attr}}
