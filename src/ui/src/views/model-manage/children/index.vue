@@ -319,7 +319,7 @@
             async exportField () {
                 const res = await this.exportObjectAttribute({
                     objId: this.activeModel['bk_obj_id'],
-                    params: this.$injectMetadata(),
+                    params: this.$injectMetadata({}, {inject: !this.isPublicModel}),
                     config: {
                         globalError: false,
                         originalResponse: true,
