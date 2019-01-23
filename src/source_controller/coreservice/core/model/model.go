@@ -91,7 +91,7 @@ func (m *modelManager) CreateModel(ctx core.ContextParams, inputParam metadata.C
 
 	if exists {
 		blog.Warnf("request(%s): it is failed to  create a new model , because of the model (%s) is already exists ", ctx.ReqID, inputParam.Spec.ObjectID)
-		return dataResult, ctx.Error.Error(common.CCErrCommDuplicateItem)
+		return dataResult, ctx.Error.Errorf(common.CCErrCommDuplicateItem, "")
 	}
 	inputParam.Spec.OwnerID = ctx.SupplierAccount
 	id, err := m.save(ctx, &inputParam.Spec)

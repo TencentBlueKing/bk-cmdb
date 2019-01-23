@@ -204,7 +204,7 @@ func (a *attribute) Update(data mapstr.MapStr) error {
 	}
 
 	if exists {
-		return a.params.Err.Error(common.CCErrCommDuplicateItem)
+		return a.params.Err.Errorf(common.CCErrCommDuplicateItem, "")
 	}
 
 	input := metadata.UpdateOption{
