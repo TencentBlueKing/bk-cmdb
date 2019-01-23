@@ -346,7 +346,7 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 
 	if exists {
 		blog.Errorf("[operation-obj] the object(%#v) is repeated", data)
-		return nil, params.Err.Error(common.CCErrCommDuplicateItem)
+		return nil, params.Err.Errorf(common.CCErrCommDuplicateItem, "")
 	}
 
 	err = obj.Create()
@@ -707,7 +707,7 @@ func (o *object) UpdateObject(params types.ContextParams, data mapstr.MapStr, id
 
 	if exists {
 		blog.Errorf("[operation-obj] the object(%#v) is repeated", data)
-		return params.Err.Error(common.CCErrCommDuplicateItem)
+		return params.Err.Errorf(common.CCErrCommDuplicateItem, "")
 	}
 	if err = obj.Update(data); nil != err {
 		blog.Errorf("[operation-obj] failed to update the object(%d), the new data(%#v), err: %s", id, data, err.Error())
