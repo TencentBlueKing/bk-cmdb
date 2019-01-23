@@ -319,7 +319,12 @@
                 this.$store.commit('setHeaderStatus', {
                     back: true
                 })
-                this.$router.push(`model/details/${model['bk_obj_id']}`)
+                this.$router.push({
+                    name: 'modelDetails',
+                    params: {
+                        modelId: model['bk_obj_id']
+                    }
+                })
             }
         }
     }

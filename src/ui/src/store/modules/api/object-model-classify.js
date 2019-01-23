@@ -99,7 +99,8 @@ const getters = {
             path: '/business',
             icon: 'icon-cc-business',
             i18n: 'Nav["业务"]',
-            authorized: true
+            authorized: true,
+            classificationId: collectionKey
         }]
         const hasResourcePrivilege = rootGetters.admin || (authority['sys_config']['global_busi'] || []).includes('resource')
         if (hasResourcePrivilege) {
@@ -108,7 +109,8 @@ const getters = {
                 path: '/resource',
                 icon: 'icon-cc-host-free-pool',
                 i18n: 'Nav["主机"]',
-                authorized: hasResourcePrivilege
+                authorized: hasResourcePrivilege,
+                classificationId: collectionKey
             })
         }
         const collectedModelKey = rootGetters['userCustom/classifyNavigationKey']

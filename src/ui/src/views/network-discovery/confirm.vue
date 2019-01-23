@@ -300,7 +300,7 @@
         beforeRouteEnter (to, from, next) {
             next(vm => {
                 if (vm.cloudName === null) {
-                    vm.$router.push('/network-discovery')
+                    vm.$router.push({name: 'networkDiscovery'})
                 }
             })
         },

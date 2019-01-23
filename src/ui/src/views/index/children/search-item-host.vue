@@ -27,16 +27,18 @@
         },
         methods: {
             handleHostClick () {
-                const path = this.host['biz'][0]['default'] === 1 ? this.pathMap.resource : this.pathMap.hosts
+                const resourceName = 'resource'
+                const hostName = 'hosts'
+                const name = this.host['biz'][0]['default'] === 1 ? resourceName : hostName
                 const bizId = this.host['biz'][0]['bk_biz_id']
-                if (path === this.pathMap.hosts) {
+                if (name === hostName) {
                     if (!this.checkoutBizAuth(bizId)) {
                         this.$error(this.$t('Hosts["权限不足"]'))
                         return
                     }
                 }
                 this.$router.push({
-                    path,
+                    name,
                     query: {
                         business: bizId,
                         ip: this.host['host']['bk_host_innerip'],

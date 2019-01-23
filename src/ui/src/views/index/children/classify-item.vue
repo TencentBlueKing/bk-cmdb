@@ -60,7 +60,7 @@
                 this.$store.commit('setHeaderStatus', {
                     back: true
                 })
-                this.$router.push(path)
+                this.$router.push({path})
             },
             getModelLink (model) {
                 if (model.hasOwnProperty('path')) {

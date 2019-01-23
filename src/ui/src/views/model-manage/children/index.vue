@@ -297,7 +297,7 @@
                     this.$store.commit('setHeaderTitle', model['bk_obj_name'])
                     this.initModelInfo()
                 } else {
-                    this.$router.replace('/status-404')
+                    this.$router.replace({name: 'status404'})
                 }
             },
             initModelInfo () {
@@ -389,7 +389,7 @@
                     })
                 }
                 this.$http.cancel('post_searchClassificationsObjects')
-                this.$router.replace('/model')
+                this.$router.replace({name: 'model'})
             }
         }
     }

@@ -198,7 +198,7 @@
                 pagination.count = res.count
             },
             confirmHistory () {
-                this.$router.push('/confirm/history?relative=/cloud-confirm')
+                this.$router.push({name: 'resourceConfirmHistory'})
             },
             handleSizeChange (size) {
                 this.table.pagination.size = size
