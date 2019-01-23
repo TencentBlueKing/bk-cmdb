@@ -67,6 +67,8 @@ const (
 	DeleteMany Action = "deleteMany"
 	Find       Action = "find"
 	FindMany   Action = "findMany"
+	// unknown action, which is also unsupported actions.
+	Unknown Action = "unknown"
 )
 
 type RegisterInfo struct {
