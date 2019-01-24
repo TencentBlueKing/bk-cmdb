@@ -12,6 +12,8 @@
 
 package auth
 
+import "context"
+
 type Authorizer interface {
 	// Authorize works to check if a user has the authority to operate resources.
 	Authorize(a *Attribute) (authorized Decision, reason string, err error)
@@ -21,13 +23,13 @@ type Authorizer interface {
 // request id is a identifier for a request, returned by IAM.
 type ResourceHandler interface {
 	// register a resource
-	Register(r *ResourceAttribute) (requestID string, err error)
+	Register(ctx context.Context, r *ResourceAttribute) (requestID string, err error)
 	// deregister a resource
-	Deregister(r *ResourceAttribute) (requestID string, err error)
+	Deregister(ctx context.Context, r *ResourceAttribute) (requestID string, err error)
 	// update a resource's info
-	Update(r *ResourceAttribute) (requestID string, err error)
+	Update(ctx context.Context, r *ResourceAttribute) (requestID string, err error)
 	// get a resource's info
-	Get() error
+	Get(ctx context.Context) error
 }
 
 func NewAuthorizer() (Authorizer, err error) {
