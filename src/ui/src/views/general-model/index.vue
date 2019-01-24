@@ -155,8 +155,9 @@
             :is-show.sync="importSlider.show"
             :title="$t('HostResourcePool[\'批量导入\']')">
             <cmdb-import v-if="importSlider.show" slot="content" 
-                :templateUrl="url.template" 
-                :importUrl="url.import" 
+                :template-url="url.template" 
+                :import-url="url.import"
+                :download-payload="url.downloadPayload"
                 @success="handlePageChange(1)"
                 @partialSuccess="handlePageChange(1)">
             </cmdb-import>
@@ -242,7 +243,8 @@
                 return {
                     import: prefix + 'import',
                     export: prefix + 'export',
-                    template: `${window.API_HOST}importtemplate/${this.objId}`
+                    template: `${window.API_HOST}importtemplate/${this.objId}`,
+                    downloadPayload: this.$injectMetadata({}, {inject: !this.isPublicModel})
                 }
             },
             authority () {
