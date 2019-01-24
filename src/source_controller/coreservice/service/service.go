@@ -21,8 +21,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -38,7 +36,10 @@ import (
 	"configcenter/src/source_controller/coreservice/core/association"
 	"configcenter/src/source_controller/coreservice/core/instances"
 	"configcenter/src/source_controller/coreservice/core/model"
+	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
+
+	"github.com/emicklei/go-restful"
 )
 
 // CoreServiceInterface the topo service methods used to init
@@ -75,14 +76,24 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 		s.language = language
 	}
 
-	// connect the remote mongodb
-	dbProxy, dbErr := mongo.NewMgo(cfg.Mongo.BuildURI(), time.Minute)
-	if dbErr != nil {
-		blog.Errorf("failed to connect the remote server(%s), error info is %s", cfg.Mongo.BuildURI(), dbErr.Error())
-		return
+	var db dal.DB
+	var dbErr error
+	if cfg.Mongo.Transaction == "enable" {
+		db, dbErr = mongo.NewTXClient(engin.Discover.CoreService().GetServers, time.Minute)
+		if dbErr != nil {
+			blog.Errorf("failed to connect the txc server, error info is %s", dbErr.Error())
+			return
+		}
+	} else {
+		db, dbErr = mongo.NewMgo(cfg.Mongo.BuildURI(), time.Minute)
+		if dbErr != nil {
+			blog.Errorf("failed to connect the remote server(%s), error info is %s", cfg.Mongo.BuildURI(), dbErr.Error())
+			return
+		}
 	}
+	// connect the remote mongodb
 
-	s.core = core.New(model.New(dbProxy, s), instances.New(dbProxy, s), association.New(dbProxy, s))
+	s.core = core.New(model.New(db, s), instances.New(db, s), association.New(db, s))
 }
 
 // WebService the web service

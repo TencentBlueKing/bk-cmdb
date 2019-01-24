@@ -17,8 +17,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/api_server/app/options"
 	apisvc "configcenter/src/api_server/service"
 	"configcenter/src/api_server/service/v3"
@@ -29,6 +27,8 @@ import (
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
+
+	"github.com/emicklei/go-restful"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -37,14 +37,18 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
+	discover, err := discovery.NewDiscoveryInterface(op.ServConf.RegDiscover)
+	if err != nil {
+		return fmt.Errorf("connect zookeeper [%s] failed: %v", op.ServConf.RegDiscover, err)
+	}
+
 	c := &util.APIMachineryConfig{
-		ZkAddr:    op.ServConf.RegDiscover,
 		QPS:       1000,
 		Burst:     2000,
 		TLSConfig: nil,
 	}
 
-	machinery, err := apimachinery.NewApiMachinery(c)
+	machinery, err := apimachinery.NewApiMachinery(c, discover)
 	if err != nil {
 		return fmt.Errorf("new api machinery failed, err: %v", err)
 	}
@@ -86,6 +90,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		types.CC_MODULE_APISERVER,
 		op.ServConf.ExConfig,
 		apiSvr.onHostConfigUpdate,
+		discover,
 		bonC)
 
 	if err != nil {

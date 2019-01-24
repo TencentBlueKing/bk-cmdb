@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"configcenter/src/apimachinery"
+	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/backbone/configcenter"
@@ -42,6 +43,11 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
+	discover, err := discovery.NewDiscoveryInterface(op.ServConf.RegDiscover)
+	if err != nil {
+		return fmt.Errorf("connect zookeeper [%s] failed: %v", op.ServConf.RegDiscover, err)
+	}
+
 	process := new(MigrateServer)
 	pconfig, err := configcenter.ParseConfigWithFile(op.ServConf.ExConfig)
 	if nil != err {
@@ -50,13 +56,12 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	process.onHostConfigUpdate(*pconfig, *pconfig)
 
 	c := &util.APIMachineryConfig{
-		ZkAddr:    process.Config.Register.Address,
 		QPS:       1000,
 		Burst:     2000,
 		TLSConfig: nil,
 	}
 
-	machinery, err := apimachinery.NewApiMachinery(c)
+	machinery, err := apimachinery.NewApiMachinery(c, discover)
 	if err != nil {
 		return fmt.Errorf("new api machinery failed, err: %v", err)
 	}
@@ -81,6 +86,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		types.CC_MODULE_MIGRATE,
 		op.ServConf.ExConfig,
 		process.onHostConfigUpdate,
+		discover,
 		bonC)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
