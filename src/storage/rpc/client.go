@@ -69,7 +69,7 @@ func NewClient(conn net.Conn, compress string) (*Client, error) {
 		codec:    JSONCodec,
 		stream:   newStreamStore(),
 	}
-	blog.V(3).Infof("connected to %s", c.TargetID())
+	blog.V(3).Infof("connected to rpc server %s", c.TargetID())
 	go c.write()
 	go c.read()
 	return c, nil
