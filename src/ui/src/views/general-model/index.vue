@@ -158,6 +158,7 @@
                 :template-url="url.template" 
                 :import-url="url.import"
                 :download-payload="url.downloadPayload"
+                :import-payload="url.importPayload"
                 @success="handlePageChange(1)"
                 @partialSuccess="handlePageChange(1)">
             </cmdb-import>
@@ -244,7 +245,8 @@
                     import: prefix + 'import',
                     export: prefix + 'export',
                     template: `${window.API_HOST}importtemplate/${this.objId}`,
-                    downloadPayload: this.$injectMetadata({}, {inject: !this.isPublicModel})
+                    downloadPayload: this.$injectMetadata({}, {inject: !this.isPublicModel}),
+                    importPayload: this.$injectMetadata({}, {inject: !this.isPublicModel})
                 }
             },
             authority () {

@@ -73,6 +73,12 @@
                     return {}
                 }
             },
+            importPayload: {
+                type: Object,
+                default () {
+                    return {}
+                }
+            },
             importUrl: {
                 type: String,
                 required: true
@@ -129,6 +135,9 @@
                     this.fileInfo.size = `${(fileInfo.size / 1024).toFixed(2)}kb`
                     let formData = new FormData()
                     formData.append('file', files[0])
+                    if (Object.keys(this.importPayload).length) {
+                        formData.append('json', JSON.stringify(this.importPayload))
+                    }
                     this.isLoading = true
                     this.$http.post(this.importUrl, formData, {transformData: false, globalError: false}).then(res => {
                         const defaultResult = {
