@@ -72,8 +72,8 @@ const actions = {
         return $http.post(`find/instassociation/object/${objId}`, params, config)
     },
 
-    searchInstById ({ rootGetters }, { config, objId, instId, idKey = 'bk_inst_id' }) {
-        return $http.post(`find/instassociation/object/${objId}`, {
+    searchInstById ({ rootGetters }, { config, objId, instId, idKey = 'bk_inst_id', params }) {
+        return $http.post(`find/instassociation/object/${objId}`, Object.assign({
             condition: {
                 [objId]: [{
                     field: idKey,
@@ -86,7 +86,7 @@ const actions = {
                 start: 0,
                 limit: 1
             }
-        }, config).then(data => {
+        }, params), config).then(data => {
             return data.info[0] || {}
         })
     },
