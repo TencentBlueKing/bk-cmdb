@@ -418,7 +418,7 @@
                     }
                 })
                 try {
-                    const res = await this.confirmNetcollectChange({params, config: {globalError: false, requestId: 'confirmNetcollectChange', originalResponse: true}})
+                    const res = await this.confirmNetcollectChange({params, config: {globalError: false, requestId: 'confirmNetcollectChange', transformData: false}})
                     this.resultDialog.data = res.data
                 } catch (e) {
                     this.$error(e.data['bk_error_msg'])
