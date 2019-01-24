@@ -21,11 +21,19 @@ type Authorizer interface {
 // request id is a identifier for a request, returned by IAM.
 type ResourceHandler interface {
 	// register a resource
-	Register(scope ScopeInfo, res ResourceInfo) (requestID string, err error)
+	Register(r *ResourceAttribute) (requestID string, err error)
 	// deregister a resource
-	Deregister(scope ScopeInfo, res ResourceInfo) (requestID string, err error)
+	Deregister(r *ResourceAttribute) (requestID string, err error)
 	// update a resource's info
-	Update(scope ScopeInfo, res ResourceInfo) (requestID string, err error)
+	Update(r *ResourceAttribute) (requestID string, err error)
 	// get a resource's info
 	Get() error
+}
+
+func NewAuthorizer() (Authorizer, err error) {
+	panic("implement me")
+}
+
+func NewResourceHandler() (ResourceHandler, error) {
+	panic("implement me")
 }
