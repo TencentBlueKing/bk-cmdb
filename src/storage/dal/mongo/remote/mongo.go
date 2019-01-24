@@ -19,6 +19,7 @@ import (
 	"strconv"
 
 	"configcenter/src/common"
+	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/rpc"
 	"configcenter/src/storage/types"
@@ -42,7 +43,12 @@ func NewWithDiscover(getServer types.GetServerFunc) (dal.DB, error) {
 		return nil, err
 	}
 
-	rpccli, err := rpc.DialHTTPPath("tcp", servers[0], "/txn/v3/rpc")
+	address, err := util.GetDailAddress(servers[0])
+	if err != nil {
+		return nil, fmt.Errorf("GetDailAddress %s, failed: %v", servers[0], err)
+	}
+
+	rpccli, err := rpc.DialHTTPPath("tcp", address, "/txn/v3/rpc")
 	if err != nil {
 		return nil, err
 	}

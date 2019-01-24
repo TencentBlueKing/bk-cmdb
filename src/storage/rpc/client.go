@@ -15,6 +15,7 @@ package rpc
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -57,7 +58,7 @@ type Client struct {
 func NewClient(conn net.Conn, compress string) (*Client, error) {
 	wire, err := NewBinaryWire(conn, compress)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("[rpc] NewWire failed %v", err)
 	}
 	c := &Client{
 		wire:     wire,
@@ -92,7 +93,7 @@ func DialHTTPPath(network, address, path string) (*Client, error) {
 	var err error
 	conn, err := net.Dial("tcp", address)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("[rpc] dail tcp error: %v", err)
 	}
 	io.WriteString(conn, "CONNECT "+path+" HTTP/1.0\n\n")
 

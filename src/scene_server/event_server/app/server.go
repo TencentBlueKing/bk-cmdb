@@ -90,7 +90,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	service.Engine = engine
 	process.Core = engine
 	process.Service = service
-	errCh := make(chan error)
+	errCh := make(chan error, 1)
 	for {
 		if process.Config == nil {
 			time.Sleep(time.Second * 2)

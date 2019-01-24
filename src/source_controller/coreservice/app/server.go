@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/discovery"
@@ -47,6 +48,10 @@ func (t *CoreServer) onCoreServiceConfigUpdate(previous, current cc.ProcessConfi
 	t.Config.Redis = redis.ParseConfigFromKV("redis", current.ConfigMap)
 
 	blog.V(3).Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
+	for t.Core == nil {
+		time.Sleep(time.Second)
+		blog.V(3).Info("sleep for engine")
+	}
 	t.Service.SetConfig(t.Config, t.Core, nil, nil)
 }
 
