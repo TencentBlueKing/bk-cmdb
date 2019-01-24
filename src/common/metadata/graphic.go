@@ -30,6 +30,7 @@ type GraphAsst struct {
 }
 
 type TopoGraphics struct {
+	Metadata  `field:"metadata" json:"metadata" bson:"metadata"`
 	ScopeType string                 `json:"scope_type,omitempty" bson:"scope_type,omitempty"` // biz,user,global,classification
 	ScopeID   string                 `json:"scope_id,omitempty" bson:"scope_id,omitempty"`     // ID for ScopeType
 	NodeType  string                 `json:"node_type" bson:"node_type"`                       // obj inst
@@ -43,6 +44,11 @@ type TopoGraphics struct {
 	// BizID           int                    `json:"bk_biz_id,omitempty" bson:"bk_biz_id,omitempty"`
 	SupplierAccount string      `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account,omitempty"` // bk_supplier_account
 	Assts           []GraphAsst `json:"assts,omitempty"`
+}
+
+type UpdateTopoGraphicsInput struct {
+	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+	Origin   []TopoGraphics `field:"origin" json:"origin" bson:"origin"`
 }
 
 func (t *TopoGraphics) FillBlank() *TopoGraphics {
@@ -65,6 +71,7 @@ func (t *TopoGraphics) SetIcon(val string)                { t.Icon = val }
 func (t *TopoGraphics) SetScopeType(val string)           { t.ScopeType = val }
 func (t *TopoGraphics) SetScopeID(val string)             { t.ScopeID = val }
 func (t *TopoGraphics) SetSupplierAccount(val string)     { t.SupplierAccount = val }
+func (t *TopoGraphics) SetMetaData(val Metadata)          { t.Metadata = val }
 
 type SearchTopoGraphicsResult struct {
 	BaseResp `json:",inline"`

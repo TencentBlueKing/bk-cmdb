@@ -90,7 +90,10 @@ func (m *modelAttrUnique) createModelAttrUnique(ctx core.ContextParams, objID st
 		OwnerID:   ctx.SupplierAccount,
 		LastTime:  metadata.Now(),
 	}
-
+	_, err = inputParam.Data.Metadata.Label.GetBusinessID()
+	if nil == err {
+		unique.Metadata = inputParam.Data.Metadata
+	}
 	err = m.dbProxy.Table(common.BKTableNameObjUnique).Insert(ctx, &unique)
 	if nil != err {
 		blog.Errorf("[CreateObjectUnique] Insert error: %#v, raw: %#v", err, &unique)
