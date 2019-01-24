@@ -52,7 +52,7 @@
         </div>
         <div class="clearfix down-model-content">
             <slot name="download-desc"></slot>
-            <a :href="templateUrl" style="text-decoration: none;">
+            <a href="javascript:void(0);" style="text-decoration: none;" @click="handleDownloadTemplate">
                 <img src="../../assets/images/icon/down_model_icon.png">
                 <span class="submit-btn">{{$t("Inst['下载模版']")}}</span>
             </a>
@@ -66,6 +66,12 @@
             templateUrl: {
                 type: String,
                 required: true
+            },
+            downloadPayload: {
+                type: Object,
+                default () {
+                    return {}
+                }
             },
             importUrl: {
                 type: String,
@@ -124,7 +130,7 @@
                     let formData = new FormData()
                     formData.append('file', files[0])
                     this.isLoading = true
-                    this.$http.post(this.importUrl, formData, {originalResponse: true, globalError: false}).then(res => {
+                    this.$http.post(this.importUrl, formData, {transformData: false, globalError: false}).then(res => {
                         const defaultResult = {
                             success: null,
                             error: null,
@@ -175,6 +181,33 @@
                     error: null,
                     update_error: null,
                     asst_error: null
+                }
+            },
+            exportExcel (response) {
+                const contentDisposition = response.headers['content-disposition']
+                const fileName = contentDisposition.substring(contentDisposition.indexOf('filename') + 9)
+                const url = window.URL.createObjectURL(new Blob([response.data], {
+                    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                }))
+                const link = document.createElement('a')
+                link.style.display = 'none'
+                link.href = url
+                link.setAttribute('download', fileName)
+                document.body.appendChild(link)
+                link.click()
+                document.body.removeChild(link)
+            },
+            async handleDownloadTemplate () {
+                try {
+                    const response = await this.$http.get(this.templateUrl, {
+                        globalError: false,
+                        originalResponse: true,
+                        responseType: 'blob',
+                        data: this.downloadPayload
+                    })
+                    this.exportExcel(response)
+                } catch (e) {
+                    this.$error(e)
                 }
             }
         }

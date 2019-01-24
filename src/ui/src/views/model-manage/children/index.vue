@@ -238,7 +238,7 @@
                         config: {
                             requestId: 'importObjectAttribute',
                             globalError: false,
-                            originalResponse: true
+                            transformData: false
                         }
                     }).then(res => {
                         this.$http.cancel(`post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`)
@@ -306,12 +306,14 @@
                     objName: this.activeModel['bk_obj_name']
                 }
             },
-            exportExcel (data) {
-                const url = window.URL.createObjectURL(new Blob([data], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}))
+            exportExcel (response) {
+                const contentDisposition = response.headers['content-disposition']
+                const fileName = contentDisposition.substring(contentDisposition.indexOf('filename') + 9)
+                const url = window.URL.createObjectURL(new Blob([response.data], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}))
                 const link = document.createElement('a')
                 link.style.display = 'none'
                 link.href = url
-                link.setAttribute('download', `inst_${this.activeModel['bk_obj_id']}.xlsx`)
+                link.setAttribute('download', fileName)
                 document.body.appendChild(link)
                 link.click()
                 document.body.removeChild(link)

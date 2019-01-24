@@ -333,6 +333,8 @@ router.beforeEach(async (to, from, next) => {
                             relative: to.path
                         }
                     })
+                } else {
+                    next()
                 }
             } else {
                 next()
