@@ -88,11 +88,14 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	errCh := make(chan error, 1)
 
 	for {
+		tmServer.configLock.Lock()
 		if tmServer.config == nil {
+			tmServer.configLock.Unlock()
 			blog.Infof("config is empty, retry 2s later")
 			time.Sleep(time.Second * 2)
 			continue
 		}
+		tmServer.configLock.Unlock()
 
 		// connect db
 		db := mgo.NewClient(tmServer.config.MongoDB.BuildURI())

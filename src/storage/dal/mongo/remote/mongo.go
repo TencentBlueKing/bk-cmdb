@@ -17,8 +17,10 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/rpc"
@@ -37,8 +39,17 @@ type Mongo struct {
 }
 
 // NewWithDiscover returns new DB
-func NewWithDiscover(getServer types.GetServerFunc) (dal.DB, error) {
-	servers, err := getServer()
+func NewWithDiscover(getServer types.GetServerFunc) (db dal.DB, err error) {
+	servers := []string{}
+	for i := 3; i > 0; i-- {
+		servers, err = getServer()
+		if err != nil {
+			blog.Infof("fetch tmserver address failed: %v, retry 2s later", err)
+			time.Sleep(time.Second * 2)
+			continue
+		}
+		break
+	}
 	if err != nil {
 		return nil, err
 	}
