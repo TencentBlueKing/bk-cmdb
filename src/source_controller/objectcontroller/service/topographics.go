@@ -55,9 +55,9 @@ func (cli *Service) SearchTopoGraphics(req *restful.Request, resp *restful.Respo
 		"scope_id":            selector.ScopeID,
 		"bk_supplier_account": ownerID,
 	}
-	_, err = selector.MetaData.Label.GetBusinessID()
+	_, err = selector.Metadata.Label.GetBusinessID()
 	if nil == err {
-		cond.Merge(meta.PublicAndBizCondition(selector.MetaData))
+		cond.Merge(meta.PublicAndBizCondition(selector.Metadata))
 	} else {
 		cond.Merge(meta.BizLabelNotExist)
 	}
@@ -105,11 +105,11 @@ func (cli *Service) UpdateTopoGraphics(req *restful.Request, resp *restful.Respo
 			"bk_inst_id":          datas[index].InstID,
 			"bk_supplier_account": ownerID,
 		}
-		_, err := datas[index].MetaData.Label.GetBusinessID()
+		_, err := datas[index].Metadata.Label.GetBusinessID()
 		if nil != err {
 			cond.Merge(meta.BizLabelNotExist)
 		} else {
-			cond.Set("metadata", datas[index].MetaData)
+			cond.Set("metadata", datas[index].Metadata)
 		}
 		cnt, err := db.Table(common.BKTableNameTopoGraphics).Find(cond).Count(ctx)
 		if nil != err {
