@@ -344,14 +344,18 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 
 	// create the default group
 	grp := obj.CreateGroup()
-	grp.SetGroup(metadata.Group{
+	groupData := metadata.Group{
 		IsDefault:  true,
 		GroupIndex: -1,
 		GroupName:  "Default",
 		GroupID:    model.NewGroupID(true),
 		ObjectID:   obj.Object().ObjectID,
 		OwnerID:    obj.Object().OwnerID,
-	})
+	}
+	if nil != params.MetaData {
+		groupData.Metadata = *params.MetaData
+	}
+	grp.SetGroup(groupData)
 
 	if err = grp.Save(nil); nil != err {
 		blog.Errorf("[operation-obj] failed to create the default group, err: %s", err.Error())
