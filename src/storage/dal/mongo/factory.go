@@ -13,12 +13,20 @@
 package mongo
 
 import (
+	"time"
+
 	"configcenter/src/storage/dal"
 	mgo "configcenter/src/storage/dal/mongo/local"
-	"time"
+	txc "configcenter/src/storage/dal/mongo/remote"
+	"configcenter/src/storage/types"
 )
 
 // NewMgo returns new RDB
 func NewMgo(uri string, timeout time.Duration) (dal.DB, error) {
 	return mgo.NewMgo(uri, timeout)
+}
+
+// NewTXClient return new txc client
+func NewTXClient(getServer types.GetServerFunc, timeout time.Duration) (dal.DB, error) {
+	return txc.NewWithDiscover(getServer)
 }
