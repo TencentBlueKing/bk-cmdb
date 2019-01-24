@@ -2,6 +2,15 @@ package authcenter
 
 import "configcenter/src/common/metadata"
 
+type AuthConfig struct {
+	// blueking's auth center addresses
+	Address []string
+	// app secret is used for authorized
+	AppSecret string
+	// the system id that cmdb used in auth center.
+	SystemID string
+}
+
 type RegisterInfo struct {
 	CreatorType  string `json:"creator_type"`
 	CreatorID    string `json:"creator_id"`
@@ -39,6 +48,11 @@ type ResultStatus struct {
 }
 
 type DeregisterInfo struct {
+	ScopeInfo    `json:",inline"`
+	ResourceInfo `json:",inline"`
+}
+
+type UpdateInfo struct {
 	ScopeInfo    `json:",inline"`
 	ResourceInfo `json:",inline"`
 }

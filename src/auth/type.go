@@ -73,13 +73,14 @@ type ResourceAttribute struct {
 	// object's id
 	Object string
 	// object's name
+	// it's not be needed when it's used to deregister a resource.
 	ObjectName string
 	// if this object belongs to a topology, like mainline topology,
 	// layers means each object's item before this object.
-	Layers []Items
+	Layers []Item
 }
 
-type Items struct {
+type Item struct {
 	// object's id
 	Object string
 	// this object's instance id
