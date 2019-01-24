@@ -32,7 +32,6 @@ import (
 
 // Run main goroute
 func Run(ctx context.Context, op *options.ServerOption) error {
-
 	svrInfo, err := newServerInfo(op)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
@@ -86,10 +85,11 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	tmServer.coreService = coreService
 
 	// connect to the mongodb
-	errCh := make(chan error)
+	errCh := make(chan error, 1)
 
 	for {
 		if tmServer.config == nil {
+			blog.Infof("config is empty, retry 2s later")
 			time.Sleep(time.Second * 2)
 			continue
 		}
@@ -98,13 +98,13 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		db := mgo.NewClient(tmServer.config.MongoDB.BuildURI())
 		err = db.Open()
 		if nil != err {
-			errCh <- err
 			return fmt.Errorf("connect mongo server failed %s", err.Error())
 		}
 
+		blog.Infof("connected to mongo %v", tmServer.config.MongoDB.BuildURI())
+
 		// set core service
 		coreService.SetConfig(engine, db, tmServer.config.Transaction)
-
 		break
 	}
 

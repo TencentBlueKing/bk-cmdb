@@ -43,17 +43,17 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
-	discover, err := discovery.NewDiscoveryInterface(op.ServConf.RegDiscover)
-	if err != nil {
-		return fmt.Errorf("connect zookeeper [%s] failed: %v", op.ServConf.RegDiscover, err)
-	}
-
 	process := new(MigrateServer)
 	pconfig, err := configcenter.ParseConfigWithFile(op.ServConf.ExConfig)
 	if nil != err {
 		return fmt.Errorf("parse config file error %s", err.Error())
 	}
 	process.onHostConfigUpdate(*pconfig, *pconfig)
+
+	discover, err := discovery.NewDiscoveryInterface(process.Config.Register.Address)
+	if err != nil {
+		return fmt.Errorf("connect zookeeper [%s] failed: %v", op.ServConf.RegDiscover, err)
+	}
 
 	c := &util.APIMachineryConfig{
 		QPS:       1000,

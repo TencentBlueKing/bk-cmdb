@@ -79,7 +79,7 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 	var db dal.DB
 	var dbErr error
 	if cfg.Mongo.Transaction == "enable" {
-		db, dbErr = mongo.NewTXClient(engin.Discover.CoreService().GetServers, time.Minute)
+		db, dbErr = mongo.NewTXClient(engin.Discover.TMServer().GetServers, time.Minute)
 		if dbErr != nil {
 			blog.Errorf("failed to connect the txc server, error info is %s", dbErr.Error())
 			return
