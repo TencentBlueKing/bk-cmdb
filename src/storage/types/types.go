@@ -83,7 +83,7 @@ func (d Documents) Decode(result interface{}) error {
 	case reflect.Slice:
 		err := decodeBsonArray(d, result)
 		if err != nil {
-			return fmt.Errorf("Decode Document array error: %v, source is %#v", err, d)
+			return fmt.Errorf("Decode Document array error: %v", err)
 		}
 		return nil
 	default:
@@ -114,7 +114,7 @@ func (d *Documents) Encode(value interface{}) error {
 	case reflect.Slice:
 		err := decodeBsonArray(value, d)
 		if err != nil {
-			return fmt.Errorf("Encode Document array error: %v, source is %#v", err, value)
+			return fmt.Errorf("Encode Document array error: %v", err)
 		}
 		return nil
 	default:
@@ -125,7 +125,7 @@ func (d *Documents) Encode(value interface{}) error {
 		*d = []Document{Document{}}
 		err = bson.Unmarshal(out, &(*d)[0])
 		if err != nil {
-			return fmt.Errorf("Encode Documents when unmarshal error: %v, source is %s", err, out)
+			return fmt.Errorf("Encode Documents when unmarshal error: %v, source is %v", err, bson.Raw(out))
 		}
 	}
 	return nil
@@ -135,13 +135,13 @@ func decodeBsonArray(inArr, outArr interface{}) error {
 	in := struct{ Data interface{} }{Data: inArr}
 	bsonraw, err := bson.Marshal(in)
 	if err != nil {
-		return err
+		return fmt.Errorf("[decodeBsonArray] marshal error: %v, source: %#v", err, in)
 	}
 
 	out := struct{ Data []bson.Raw }{}
 	err = bson.Unmarshal(bsonraw, &out)
 	if err != nil {
-		return err
+		return fmt.Errorf("[decodeBsonArray] unmarshal error: %v, source: %v", err, bson.Raw(bsonraw))
 	}
 
 	resultv := reflect.ValueOf(outArr)
@@ -156,7 +156,7 @@ func decodeBsonArray(inArr, outArr interface{}) error {
 		if slicev.Len() == idx {
 			elemp := reflect.New(elemt)
 			if err := bson.Unmarshal(dataItem, elemp.Interface()); nil != err {
-				return err
+				return fmt.Errorf("[decodeBsonArray] unmarshal item error: %v, source: %v", err, bson.Raw(dataItem))
 			}
 			slicev = reflect.Append(slicev, elemp.Elem())
 			slicev = slicev.Slice(0, slicev.Cap())
@@ -165,7 +165,7 @@ func decodeBsonArray(inArr, outArr interface{}) error {
 		}
 
 		if err := bson.Unmarshal(dataItem, slicev.Index(idx).Addr().Interface()); nil != err {
-			return err
+			return fmt.Errorf("[decodeBsonArray] unmarshal element error: %v, source: %v", err, bson.Raw(dataItem))
 		}
 		idx++
 	}
