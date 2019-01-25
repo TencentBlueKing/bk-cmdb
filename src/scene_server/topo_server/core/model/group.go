@@ -109,19 +109,6 @@ func (g *group) Create() error {
 		return err
 	}
 
-<<<<<<< HEAD
-=======
-	g.grp.OwnerID = g.params.SupplierAccount
-	exists, err := g.IsExists()
-	if nil != err {
-		return err
-	}
-
-	if exists {
-		return g.params.Err.Errorf(common.CCErrCommDuplicateItem, "")
-	}
-
->>>>>>> refactor: update duplicate item message
 	rsp, err := g.clientSet.CoreService().Model().CreateAttributeGroup(context.Background(), g.params.Header, g.GetObjectID(), metadata.CreateModelAttributeGroup{Data: g.grp})
 	if nil != err {
 		blog.Errorf("[model-grp] failed to request object controller, err: %s", err.Error())
