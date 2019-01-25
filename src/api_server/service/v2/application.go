@@ -13,7 +13,6 @@
 package v2
 
 import (
-	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -43,25 +42,26 @@ const (
 )
 
 func (s *Service) getAppList(req *restful.Request, resp *restful.Response) {
+	srvData := s.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
 
 	param := &params.SearchParams{Condition: nil}
-
-	pheader := req.Request.Header
-	user := util.GetUser(pheader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-
-	result, err := s.CoreAPI.TopoServer().Instance().SearchApp(context.Background(), user, pheader, param)
-
+	result, err := s.CoreAPI.TopoServer().Instance().SearchApp(srvData.ctx, srvData.ownerID, srvData.header, param)
 	if err != nil {
-		blog.Errorf("getAppList failed, err: %v", err)
+		blog.Errorf("getAppList http error, err: %v,rid:%s", err, srvData.rid)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
+		return
+	}
+	if !result.Result {
+		blog.Errorf("getAppList http reply error, err: %#v,rid:%s", result, srvData.rid)
+		converter.RespFailV2Error(defErr.New(result.Code, result.ErrMsg), resp)
 		return
 	}
 
 	resDataV2, err := converter.ResToV2ForAppList(result.Data)
 
 	if err != nil {
-		blog.Errorf("convert v3 applist to v2 error:%v", err)
+		blog.Errorf("convert v3 applist to v2 error:%v,rid:%s", err, srvData.rid)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}
@@ -69,23 +69,22 @@ func (s *Service) getAppList(req *restful.Request, resp *restful.Response) {
 }
 
 func (s *Service) getAppByID(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	user := util.GetUser(pheader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	srvData := s.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Errorf("getAppByID error:%v", err)
+		blog.Errorf("getAppByID error:%v,rid:%s", err, srvData.rid)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
 
 	formData := req.Request.Form
 
-	blog.V(5).Infof("getAppByID data:%v", formData)
+	blog.V(5).Infof("getAppByID data:%#v,rid:%s", formData, srvData.rid)
 
 	if len(formData["ApplicationID"]) == 0 {
-		blog.Errorf("getAppByID error: ApplicationID is empty!")
+		blog.Errorf("getAppByID error: ApplicationID is empty!,input:%#v,rid:%s", formData, srvData.rid)
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "ApplicationID").Error(), resp)
 		return
 	}
@@ -96,7 +95,7 @@ func (s *Service) getAppByID(req *restful.Request, resp *restful.Response) {
 	for _, appID := range appIDsArr {
 		id, err := strconv.ParseInt(appID, 10, 64)
 		if err != nil {
-			blog.Errorf("convert str to int error")
+			blog.Errorf("convert str to int error,input:%#v,rid:%s", formData, srvData.rid)
 			converter.RespFailV2(common.CCErrCommParamsNeedInt, defErr.Errorf(common.CCErrCommParamsNeedInt, "ApplicationID").Error(), resp)
 			return
 		}
@@ -104,11 +103,15 @@ func (s *Service) getAppByID(req *restful.Request, resp *restful.Response) {
 	}
 	param := &params.SearchParams{Condition: mapstr.MapStr{common.BKAppIDField: mapstr.MapStr{common.BKDBIN: appIDArr}}}
 
-	result, err := s.CoreAPI.TopoServer().Instance().SearchApp(context.Background(), user, pheader, param)
-
+	result, err := s.CoreAPI.TopoServer().Instance().SearchApp(srvData.ctx, srvData.ownerID, srvData.header, param)
 	if err != nil {
-		blog.Errorf("getAppByID  params:%v, error:%v", param, err)
+		blog.Errorf("getAppByID http do error, error:%v,input:%#v,params:%#v,rid:%s", err, formData, param, srvData.rid)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
+		return
+	}
+	if !result.Result {
+		blog.Errorf("getAppByID http reply error, reply:%#v,input:%#v,params:%#v,rid:%s", result, formData, param, srvData.rid)
+		converter.RespFailV2Error(defErr.New(result.Code, result.ErrMsg), resp)
 		return
 	}
 
@@ -123,23 +126,22 @@ func (s *Service) getAppByID(req *restful.Request, resp *restful.Response) {
 }
 
 func (s *Service) getAppByUin(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	user := util.GetUser(pheader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	srvData := s.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Errorf("getAppByUin error:%v", err)
+		blog.Errorf("getAppByUin error:%v,rid:%s", err, srvData.rid)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
 
 	formData := req.Request.Form
 
-	blog.V(5).Infof("getAppByUin data:%v", formData)
+	blog.V(5).Infof("getAppByUin data:%#v,rid:%s", formData, srvData.rid)
 
 	if len(formData["userName"]) == 0 || formData["userName"][0] == "" {
-		blog.Errorf("get app by uin error: userName is empty!")
+		blog.Errorf("get app by uin error: userName is empty!,input:%#v,rid:%s", formData, srvData.rid)
 		converter.RespFailV2(common.CCErrCommParamsNeedInt, defErr.Errorf(common.CCErrCommParamsNeedSet, "userName").Error(), resp)
 		return
 	}
@@ -172,17 +174,21 @@ func (s *Service) getAppByUin(req *restful.Request, resp *restful.Response) {
 
 	param := &params.SearchParams{Condition: mapstr.MapStr{common.BKDBOR: orCondition}}
 
-	result, err := s.CoreAPI.TopoServer().Instance().SearchApp(context.Background(), user, pheader, param)
-
+	result, err := s.CoreAPI.TopoServer().Instance().SearchApp(srvData.ctx, srvData.ownerID, srvData.header, param)
 	if err != nil {
-		blog.Errorf("getAppByUin  error:%v", err)
-		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
+		blog.Errorf("getAppByUin http do error, err:%v,input:%#v,http input:%#v,rid:%s", err, formData, param, srvData.rid)
+		converter.RespFailV2Error(defErr.Error(common.CCErrCommHTTPDoRequestFailed), resp)
+		return
+	}
+	if !result.Result {
+		blog.Errorf("getAppByUin http reply error, reply:%v,input:%#v,http input:%#v,rid:%s", result, formData, param, srvData.rid)
+		converter.RespFailV2Error(defErr.New(result.Code, result.ErrMsg), resp)
 		return
 	}
 
 	resDataV2, err := converter.ResToV2ForAppList(result.Data)
 	if err != nil {
-		blog.Errorf("convert res to v2 error:%v", err)
+		blog.Errorf("convert res to v2 error:%v,input:%#v,http input:%#v,rid:%s", err, formData, param, srvData.rid)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}
@@ -191,13 +197,12 @@ func (s *Service) getAppByUin(req *restful.Request, resp *restful.Response) {
 }
 
 func (s *Service) getUserRoleApp(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	user := util.GetUser(pheader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	srvData := s.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Errorf("GetUserRoleApp error:%v", err)
+		blog.Errorf("GetUserRoleApp error:%v,rid:%s", err, srvData.rid)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
@@ -207,7 +212,7 @@ func (s *Service) getUserRoleApp(req *restful.Request, resp *restful.Response) {
 	res, msg := utils.ValidateFormData(formData, []string{"uin", "roleList"})
 
 	if !res {
-		blog.Errorf("GetUserRoleApp error: %s", msg)
+		blog.Errorf("GetUserRoleApp error: %s,input:%#v,rid:%s", msg, formData, srvData.rid)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
@@ -233,16 +238,21 @@ func (s *Service) getUserRoleApp(req *restful.Request, resp *restful.Response) {
 
 	param := &params.SearchParams{Condition: mapstr.MapStr{common.BKDBOR: roleOrCondition}}
 
-	result, err := s.CoreAPI.TopoServer().Instance().SearchApp(context.Background(), user, pheader, param)
+	result, err := s.CoreAPI.TopoServer().Instance().SearchApp(srvData.ctx, srvData.ownerID, srvData.header, param)
 	if err != nil {
-		blog.Errorf("GetUserRoleApp  error:%v", err)
-		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
+		blog.Errorf("GetUserRoleApp http do error. err:%v,input:%#v,http input:%#v,rid:%s", err, formData, param, srvData.rid)
+		converter.RespFailV2Error(defErr.Error(common.CCErrCommHTTPDoRequestFailed), resp)
+		return
+	}
+	if !result.Result {
+		blog.Errorf("GetUserRoleApp http reply error. reply:%v,input:%#v,http input:%#v,rid:%s", result, formData, param, srvData.rid)
+		converter.RespFailV2Error(defErr.New(result.Code, result.ErrMsg), resp)
 		return
 	}
 
 	resDataV2, err := converter.ResToV2ForRoleApp(result.Data, converter.DecorateUserName(userName), roleArr)
 	if err != nil {
-		blog.Errorf("convert res to v2 error:%v", err)
+		blog.Errorf("convert res to v2 error:%v,input:%#v,http input:%#v,rid:%s", err, formData, param, srvData.rid)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}
@@ -251,15 +261,12 @@ func (s *Service) getUserRoleApp(req *restful.Request, resp *restful.Response) {
 }
 
 func (s *Service) getAppSetModuleTreeByAppId(req *restful.Request, resp *restful.Response) {
-
-	pheader := req.Request.Header
-	user := util.GetUser(pheader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-	rid := util.GetHTTPCCRequestID(pheader)
+	srvData := s.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Errorf("getAppSetModuleTreeByAppId error:%v, rid:%s", err, rid)
+		blog.Errorf("getAppSetModuleTreeByAppId error:%v, rid:%s", err, srvData.rid)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
@@ -267,32 +274,31 @@ func (s *Service) getAppSetModuleTreeByAppId(req *restful.Request, resp *restful
 	formData := req.Request.Form
 
 	if len(formData["ApplicationID"]) == 0 {
-		blog.Errorf("getAppSetModuleTreeByAppId error error: ApplicationID is empty!")
+		blog.Errorf("getAppSetModuleTreeByAppId error error: ApplicationID is empty!input:%#v,rid:%s", formData, srvData.rid)
 		converter.RespFailV2(common.CCErrCommParamsNeedInt, defErr.Errorf(common.CCErrCommParamsNeedInt, "ApplicationID").Error(), resp)
 		return
 	}
 
 	intAppID, err := util.GetInt64ByInterface(formData["ApplicationID"][0])
+	if nil != err {
+		blog.Errorf("getAppSetModuleTreeByAppId   appID:%v, error:%v, input:%+v,rid:%s", formData["ApplicationID"][0], err, formData, srvData.rid)
+		converter.RespFailV2(common.CCErrCommParamsNeedInt, defErr.Errorf(common.CCErrCommParamsNeedInt, "ApplicationID").Error(), resp)
+		return
+	}
 
 	conds := mapstr.MapStr{}
 	if 0 < len(formData["ModuleType"]) {
 		conds[common.BKModuleTypeField] = formData["ModuleType"][0]
 	}
 
-	if nil != err {
-		blog.Errorf("getAppSetModuleTreeByAppId   appID:%v, error:%v, input:%+v,rid:%s", formData["ApplicationID"][0], err, formData, rid)
-		converter.RespFailV2(common.CCErrCommParamsNeedInt, defErr.Errorf(common.CCErrCommParamsNeedInt, "ApplicationID").Error(), resp)
-		return
-	}
-
-	topo, err := s.Logics.GetAppTopo(user, pheader, intAppID, conds)
+	topo, err := srvData.lgc.GetAppTopo(srvData.ctx, intAppID, conds)
 	if err != nil {
 		converter.RespFailV2Error(err, resp)
 		return
 	}
 
 	if nil != topo {
-		s.Logics.SetModuleHostCount([]mapstr.MapStr{topo}, user, pheader)
+		srvData.lgc.SetModuleHostCount(srvData.ctx, []mapstr.MapStr{topo})
 	} else {
 		converter.RespSuccessV2(make(map[string]interface{}), resp)
 		return
@@ -301,20 +307,18 @@ func (s *Service) getAppSetModuleTreeByAppId(req *restful.Request, resp *restful
 }
 
 func (s *Service) addApp(req *restful.Request, resp *restful.Response) {
-
-	pheader := req.Request.Header
-	user := util.GetUser(pheader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	srvData := s.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Errorf("AddApp error:%v", err)
+		blog.Errorf("AddApp error:%v,rid:%s", err, srvData.rid)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
 	formData := req.Request.Form
 
-	blog.V(5).Infof("AddApp formData:%v", formData)
+	blog.V(5).Infof("AddApp formData:%v,rid:%s", formData, srvData.rid)
 	res, msg := utils.ValidateFormData(formData, []string{
 		"ApplicationName",
 		"Maintainers",
@@ -322,11 +326,12 @@ func (s *Service) addApp(req *restful.Request, resp *restful.Response) {
 		"LifeCycle",
 	})
 	if !res {
-		blog.Errorf("AddApp error: %s", msg)
+		blog.Errorf("AddApp error: %s,input:%#v,rid:%s", msg, formData, srvData.rid)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
 	if len(formData.Get("ApplicationName")) > 32 {
+		blog.Errorf("AddApp ApplicationName > 32,input:%#v,rid:%s", formData, srvData.rid)
 		converter.RespFailV2(common.CCErrAPIServerV2APPNameLenErr, defErr.Error(common.CCErrAPIServerV2APPNameLenErr).Error(), resp)
 		return
 	}
@@ -363,27 +368,23 @@ func (s *Service) addApp(req *restful.Request, resp *restful.Response) {
 	param[common.BKTesterField] = formData.Get("Tester")
 	param[common.BKOperatorField] = formData.Get("Operator")
 
-	blog.V(5).Infof("AddApp v3 param data1: %v", param)
+	blog.V(5).Infof("AddApp  params:%#v,input:%#v,rid:%s", param, formData, srvData.rid)
 
-	param, err = s.Logics.AutoInputV3Field(param, common.BKInnerObjIDApp, user, pheader)
-
+	param, err = srvData.lgc.AutoInputV3Field(srvData.ctx, param, common.BKInnerObjIDApp)
 	if nil != err {
-		blog.Errorf("AddApp params:%s, error:%v", param, err.Error())
+		blog.Errorf("AddApp AutoInputV3Field error.params:%#v, error:%v,rid:%s", param, err.Error(), srvData.rid)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
-
-	result, err := s.CoreAPI.TopoServer().Instance().CreateApp(context.Background(), user, pheader, param)
-
-	blog.V(5).Infof("AddApp  params:%v", param)
+	result, err := s.CoreAPI.TopoServer().Instance().CreateApp(srvData.ctx, srvData.ownerID, srvData.header, param)
 	if nil != err {
-		blog.Errorf("AddApp  params:%v, error:%s", param, err.Error())
+		blog.Errorf("AddApp http do error. input:%#vparams:%#v, error:%s,rid:%s", formData, param, err.Error(), srvData.rid)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
 	if !result.Result {
-		blog.Errorf("AddApp  error:%s", result.ErrMsg)
-		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error()+" :"+result.ErrMsg, resp)
+		blog.Errorf("AddApp http reply error, reply:%#v,input:%#v,param:%#v,rid:%s", result, formData, param, srvData.rid)
+		converter.RespFailV2Error(defErr.New(result.Code, result.ErrMsg), resp)
 		return
 	}
 
@@ -395,29 +396,31 @@ func (s *Service) addApp(req *restful.Request, resp *restful.Response) {
 }
 
 func (s *Service) deleteApp(req *restful.Request, resp *restful.Response) {
-
-	pheader := req.Request.Header
-	user := util.GetUser(pheader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	srvData := s.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Errorf("deleteApp error:%v", err)
+		blog.Errorf("deleteApp error:%v,rid:%s", err, srvData.rid)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
 	formData := req.Request.Form
 	appID := formData.Get("ApplicationID")
 	if "" == appID {
-		blog.Errorf("deleteApp error ApplicationID empty")
+		blog.Errorf("deleteApp error ApplicationID empty.input:%#v,rid:%s", formData, srvData.rid)
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "ApplicationID").Error(), resp)
 		return
 	}
-	result, err := s.CoreAPI.TopoServer().Instance().DeleteApp(context.Background(), appID, user, pheader)
-
+	result, err := s.CoreAPI.TopoServer().Instance().DeleteApp(srvData.ctx, appID, srvData.ownerID, srvData.header)
 	if nil != err {
-		blog.Errorf("deleteApp  error:%s", err)
+		blog.Errorf("deleteApp  error:%s,input:%#v,rid:%s", err, formData, srvData.rid)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
+		return
+	}
+	if !result.Result {
+		blog.Errorf("deleteApp  error:%s,input:%#v,rid:%s", result, formData, srvData.rid)
+		converter.RespFailV2Error(defErr.New(result.Code, result.ErrMsg), resp)
 		return
 	}
 
@@ -426,30 +429,29 @@ func (s *Service) deleteApp(req *restful.Request, resp *restful.Response) {
 }
 
 func (s *Service) editApp(req *restful.Request, resp *restful.Response) {
-
-	pheader := req.Request.Header
-	user := util.GetUser(pheader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	srvData := s.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Errorf("editApp error:%v", err)
+		blog.Errorf("editApp error:%v,rid:%s", err, srvData.rid)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
 	formData := req.Request.Form
-	blog.V(5).Infof("editApp formData:%v", formData)
+	blog.V(5).Infof("editApp input:%#v,rid:%s", formData, srvData.rid)
 	res, msg := utils.ValidateFormData(formData, []string{
 		"ApplicationID",
 	})
 	if !res {
-		blog.Errorf("editApp error: %s", msg)
+		blog.Errorf("editApp error: %s,input:%#v,rid:%s", msg, formData, srvData.rid)
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "ApplicationID").Error(), resp)
 		return
 	}
 	appName := formData.Get("ApplicationName")
 
 	if "" != appName && len(appName) > 32 {
+		blog.Errorf("editApp ApplicationName > 32,input:%#v,rid:%s", formData, srvData.rid)
 		converter.RespFailV2(common.CCErrAPIServerV2APPNameLenErr, defErr.Error(common.CCErrAPIServerV2APPNameLenErr).Error(), resp)
 		return
 	}
@@ -464,6 +466,7 @@ func (s *Service) editApp(req *restful.Request, resp *restful.Response) {
 		} else if LifeCycle == AppStatusStopI || LifeCycle == AppStatusStop {
 			LifeCycle = AppStatusStopI
 		} else {
+			blog.Errorf("editApp  lifeCycle value bad,input:%#v,rid:%s", formData, srvData.rid)
 			converter.RespFailV2(common.CCErrCommParamsIsInvalid, defErr.Errorf(common.CCErrCommParamsIsInvalid, "LifeCycle").Error(), resp)
 			return
 		}
@@ -497,10 +500,15 @@ func (s *Service) editApp(req *restful.Request, resp *restful.Response) {
 
 	blog.Errorf("editApp param:%v", param)
 
-	result, err := s.CoreAPI.TopoServer().Instance().UpdateApp(context.Background(), user, appID, pheader, param)
+	result, err := s.CoreAPI.TopoServer().Instance().UpdateApp(srvData.ctx, srvData.ownerID, appID, srvData.header, param)
 	if nil != err {
-		blog.Errorf("editApp  params:%s, error:%v", param, err)
+		blog.Errorf("editApp http do error. error:%v,params:%#v,input:%#v,rid:%s", err, param, formData, srvData.rid)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
+		return
+	}
+	if !result.Result {
+		blog.Errorf("editApp http reply error. reply:%s,input:%#v,rid:%s", result, formData, srvData.rid)
+		converter.RespFailV2Error(defErr.New(result.Code, result.ErrMsg), resp)
 		return
 	}
 
@@ -508,25 +516,24 @@ func (s *Service) editApp(req *restful.Request, resp *restful.Response) {
 }
 
 func (s *Service) getHostAppByCompanyId(req *restful.Request, resp *restful.Response) {
-
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	srvData := s.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Errorf("getHostAppByCompanyId error:%v", err)
+		blog.Errorf("getHostAppByCompanyId error:%v,rid:%s", err, srvData.rid)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
 	formData := req.Request.Form
-	blog.V(5).Infof("GetHostAppByCompanyId formData:%v", formData)
+	blog.V(5).Infof("GetHostAppByCompanyId formData:%v,rid:%s", formData, srvData.rid)
 	res, msg := utils.ValidateFormData(formData, []string{
 		"companyId",
 		"ip",
 		"platId",
 	})
 	if !res {
-		blog.Errorf("getHostAppByCompanyId error: %s", msg)
+		blog.Errorf("getHostAppByCompanyId error: %s,input:%#v,rid:%s", msg, formData, srvData.rid)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
@@ -535,10 +542,15 @@ func (s *Service) getHostAppByCompanyId(req *restful.Request, resp *restful.Resp
 	param["ip"] = formData.Get("ip")
 	param[common.BKCloudIDField] = formData.Get("platId")
 
-	result, err := s.CoreAPI.HostServer().GetHostAppByCompanyId(context.Background(), pheader, param)
+	result, err := s.CoreAPI.HostServer().GetHostAppByCompanyId(srvData.ctx, srvData.header, param)
 	if nil != err {
-		blog.Errorf("getHostAppByCompanyId  params:%v, error:%v", param, err)
+		blog.Errorf("getHostAppByCompanyId http do error. error:%v,input:%#v,param:%#v,rid:%s", err, formData, param, srvData.rid)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
+		return
+	}
+	if !result.Result {
+		blog.Errorf("getHostAppByCompanyId http do error. reply:%#v,input:%#v,param:%#v,rid:%s", result, formData, param, srvData.rid)
+		converter.RespFailV2Error(defErr.New(result.Code, result.ErrMsg), resp)
 		return
 	}
 
@@ -548,18 +560,17 @@ func (s *Service) getHostAppByCompanyId(req *restful.Request, resp *restful.Resp
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}
-	blog.V(5).Infof("GetHostAppByCompanyId success, data length: %d", len(resDataV2))
+	blog.V(5).Infof("GetHostAppByCompanyId success, data length: %d,rid:%s", len(resDataV2), srvData.rid)
 	converter.RespSuccessV2(resDataV2, resp)
 }
 
 func (s *Service) getAppByOwnerAndUin(req *restful.Request, resp *restful.Response) {
-
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	srvData := s.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Errorf("getHostListByOwner error:%s, request-id:%s", err.Error(), util.GetHTTPCCRequestID(pheader))
+		blog.Errorf("getHostListByOwner error:%s, rid:%s", err.Error(), srvData.rid)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
@@ -568,15 +579,18 @@ func (s *Service) getAppByOwnerAndUin(req *restful.Request, resp *restful.Respon
 
 	res, msg := utils.ValidateFormData(formData, []string{"Owner_uin", "Uin"})
 	if !res {
-		blog.Errorf("getHostListByOwner error: %s", msg)
+		blog.Errorf("getHostListByOwner error: %s,rid:%s", msg, srvData.rid)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
 	ownerID := formData["Owner_uin"][0]
 	uin := formData["Uin"][0]
-	appInfoArr, errCode, err := s.Logics.GetAppListByOwnerIDAndUin(context.Background(), pheader, ownerID, uin)
+	// reset http header owner
+	srvData.header.Set(common.BKHTTPOwnerID, ownerID)
+	srvData.ownerID = ownerID
+	appInfoArr, errCode, err := srvData.lgc.GetAppListByOwnerIDAndUin(srvData.ctx, uin)
 	if nil != err {
-		blog.Errorf("getHostListByOwner error:%s, request data:%+v, request-id:%s", err.Error(), formData, util.GetHTTPCCRequestID(pheader))
+		blog.Errorf("getHostListByOwner error:%s, input:%+v, rid:%s", err.Error(), formData, srvData.rid)
 		converter.RespFailV2(errCode, err.Error(), resp)
 		return
 	}
