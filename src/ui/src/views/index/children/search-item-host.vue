@@ -14,37 +14,21 @@
                 required: true
             }
         },
-        data () {
-            return {
-                pathMap: {
-                    resource: '/resource',
-                    hosts: '/hosts'
-                }
-            }
-        },
         computed: {
             ...mapGetters('objectBiz', ['privilegeBusiness'])
         },
         methods: {
             handleHostClick () {
-                const resourceName = 'resource'
-                const hostName = 'hosts'
-                const name = this.host['biz'][0]['default'] === 1 ? resourceName : hostName
                 const bizId = this.host['biz'][0]['bk_biz_id']
-                if (name === hostName) {
-                    if (!this.checkoutBizAuth(bizId)) {
-                        this.$error(this.$t('Hosts["权限不足"]'))
-                        return
-                    }
-                }
                 this.$router.push({
-                    name,
+                    name: 'resource',
                     query: {
                         business: bizId,
                         ip: this.host['host']['bk_host_innerip'],
                         outer: false,
                         inner: true,
-                        exact: 1
+                        exact: 1,
+                        assigned: true
                     }
                 })
             },

@@ -62,7 +62,8 @@ const router = new Router({
         component: modelManage,
         meta: {
             isModel: false,
-            requireBusiness: true
+            requireBusiness: true,
+            showInAdminView: true
         }
     }, {
         path: '/model/details/process',
@@ -86,7 +87,8 @@ const router = new Router({
         component: modelTopology,
         meta: {
             isModel: false,
-            requireBusiness: true
+            requireBusiness: true,
+            showInAdminView: true
         }
     }, {
         name: 'modelBusiness',
@@ -309,8 +311,9 @@ const hasAuthority = to => {
 
 router.beforeEach(async (to, from, next) => {
     try {
-        if (to.path !== '/status-error') {
-            router.app.$store.commit('setGlobalLoading', true)
+        const store = router.app.$store
+        if (to.name !== 'statusError') {
+            store.commit('setGlobalLoading', true)
             await cancelRequest()
             await preload(router.app)
             if (to.meta.ignoreAuthorize) {
@@ -319,18 +322,18 @@ router.beforeEach(async (to, from, next) => {
                 if (hasAuthority(to)) {
                     next()
                 } else {
-                    next({
-                        path: '/status-403'
-                    })
+                    next({name: 'status403'})
                 }
             } else if (to.meta.requireBusiness) {
-                if (router.app.$store.getters.isAdminView) {
-                    next({
-                        path: '/status-404'
-                    })
+                if (store.getters.isAdminView) {
+                    if (to.meta.showInAdminView) {
+                        next()
+                    } else {
+                        next({name: 'status404'})
+                    }
                 } else if (!hasPrivilegeBusiness()) {
                     next({
-                        path: '/status-require-business',
+                        name: 'statusRequireBusiness',
                         query: {
                             relative: to.path
                         }
@@ -342,11 +345,12 @@ router.beforeEach(async (to, from, next) => {
                 next()
             }
         } else {
+            store.commit('setGlobalLoading', false)
             next()
         }
     } catch (e) {
         next({
-            path: '/status-error',
+            name: 'statusError',
             query: {
                 relative: to.path
             }
@@ -355,10 +359,11 @@ router.beforeEach(async (to, from, next) => {
 })
 
 router.afterEach((to, from) => {
-    if (to.path === '/status-error') {
+    const store = router.app.$store
+    if (to.name === 'statusError') {
         $http.cancel()
     }
-    router.app.$store.commit('setGlobalLoading', false)
+    store.commit('setGlobalLoading', false)
 })
 
 export default router
