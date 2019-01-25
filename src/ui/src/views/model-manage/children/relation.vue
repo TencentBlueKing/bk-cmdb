@@ -113,7 +113,7 @@
             }
         },
         computed: {
-            ...mapGetters(['isAdminView']),
+            ...mapGetters(['isAdminView', 'isBusinessSelected']),
             ...mapGetters('objectModel', [
                 'activeModel'
             ]),
@@ -128,7 +128,10 @@
                 if (cantEdit.includes(this.$route.params.modelId)) {
                     return []
                 }
-                return this.$store.getters.admin ? ['search', 'update', 'delete'] : []
+                if (this.isAdminView || this.isBusinessSelected) {
+                    return ['search', 'update', 'delete']
+                }
+                return []
             }
         },
         created () {

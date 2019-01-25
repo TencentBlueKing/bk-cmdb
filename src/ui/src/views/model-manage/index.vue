@@ -157,7 +157,7 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'userName', 'admin', 'isAdminView']),
+            ...mapGetters(['supplierAccount', 'userName', 'admin', 'isAdminView', 'isBusinessSelected']),
             ...mapGetters('objectModelClassify', [
                 'classifications'
             ]),
@@ -192,7 +192,10 @@
                 return this.modelType === 'enable' ? this.enableClassifications : this.disabledClassifications
             },
             authority () {
-                return this.admin ? ['search', 'update', 'delete'] : []
+                if (this.isAdminView || this.isBusinessSelected) {
+                    return ['search', 'update', 'delete']
+                }
+                return []
             }
         },
         created () {

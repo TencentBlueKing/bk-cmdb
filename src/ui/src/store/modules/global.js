@@ -34,6 +34,9 @@ const getters = {
             return false
         }
     },
+    isBusinessSelected: (state, getters, rootState, rootGetters) => {
+        return rootGetters['objectBiz/bizId'] !== null
+    },
     language: state => state.language,
     supplier: state => state.supplier,
     supplierAccount: state => state.supplier.account,

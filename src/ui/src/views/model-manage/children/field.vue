@@ -116,7 +116,7 @@
             }
         },
         computed: {
-            ...mapGetters(['isAdminView']),
+            ...mapGetters(['isAdminView', 'isBusinessSelected']),
             ...mapGetters('objectModel', [
                 'activeModel',
                 'isPublicModel',
@@ -137,7 +137,10 @@
                 if (cantEdit.includes(this.objId)) {
                     return []
                 }
-                return this.$store.getters.admin ? ['search', 'update', 'delete'] : []
+                if (this.isAdminView || this.isBusinessSelected) {
+                    return ['search', 'update', 'delete']
+                }
+                return []
             }
         },
         watch: {
