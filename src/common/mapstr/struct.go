@@ -195,7 +195,7 @@ func setMapToReflectValue(returnVal, inputVal reflect.Value) (reflect.Value, err
 	for _, key := range mapKeys {
 
 		value := inputVal.MapIndex(key)
-		if value.IsValid() && !value.CanInterface() {
+		if !returnVal.CanSet() || !value.IsValid() || !value.CanInterface() {
 			continue
 		}
 
