@@ -96,9 +96,17 @@ func (t Time) MarshalBSON() ([]byte, error) {
 
 // UnmarshalBSONValue implements bson.UnmarshalBSONValue interface
 func (t *Time) UnmarshalBSONValue(typo bsontype.Type, raw []byte) error {
-	if typo == bsontype.Timestamp {
-		// 0x09 timestamp
+	switch typo {
+	case bsontype.Timestamp:
+		// 0x11 timestamp
 		return bson.Unmarshal(raw, &t.Time)
+	case bsontype.Double:
+		rv := bson.RawValue{Type: bsontype.Double, Value: raw}
+		if dt, ok := rv.DoubleOK(); ok {
+			t.Time = time.Unix(int64(dt/1000), int64(uint64(dt)%1000*1000000))
+			return nil
+		}
+		return nil
 	}
 	// for compatibility purpose
 	tt := tmptime{}
