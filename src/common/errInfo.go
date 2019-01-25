@@ -576,6 +576,9 @@ const (
 	// CCErrorModelAttributeGroupHasSomeAttributes the group has some attributes
 	CCErrCoreServiceModelAttributeGroupHasSomeAttributes = 1113001
 
+	// synchronize data coreservice  11139xx
+	CCErrCoreServiceSyncInstError = 1113900
+
 	// CCErrApiServerV2AppNameLenErr app name must be 1-32 len
 	CCErrAPIServerV2APPNameLenErr = 1170001
 
