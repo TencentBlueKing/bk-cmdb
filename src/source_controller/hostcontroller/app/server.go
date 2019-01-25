@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/eventclient"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/source_controller/hostcontroller/app/options"
@@ -126,13 +127,15 @@ func (h *HostController) onHostConfigUpdate(previous, current cc.ProcessConfig) 
 		blog.Errorf("new redis client failed, err: %v", err)
 		return
 	}
+	ec := eventclient.NewClientViaRedis(cache, instance)
 
 	h.Service.Instance = instance
 	h.Service.Logics.Instance = instance
+	h.Service.Logics.EventC = ec
 
 	h.Cache = cache
 	h.Service.Cache = cache
-
+	h.Service.EventC = ec
 }
 
 func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {

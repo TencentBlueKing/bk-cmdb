@@ -13,7 +13,6 @@
 package discovery
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -21,9 +20,10 @@ import (
 	"strconv"
 	"sync"
 	"time"
+	"context"
 
-	"configcenter/src/common/RegisterDiscover"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/registerdiscover"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/framework/core/log"
@@ -37,7 +37,7 @@ type RegDiscover struct {
 	ip         string
 	port       uint
 	isSSL      bool
-	rd         *RegisterDiscover.RegDiscover
+	rd         *registerdiscover.RegDiscover
 	rootCtx    context.Context
 	cancel     context.CancelFunc
 	topoLock   sync.RWMutex
@@ -52,8 +52,7 @@ func NewRegDiscover(moduleName string, zkserv string, ip string, port uint, isSS
 		ip:         ip,
 		port:       port,
 		isSSL:      isSSL,
-		rd:         RegisterDiscover.NewRegDiscoverEx(zkserv, 10*time.Second),
-		apiServers: []*types.ProcServInfo{},
+		rd:         registerdiscover.NewRegDiscoverEx(zkserv, 10*time.Second),
 	}
 }
 
@@ -69,7 +68,7 @@ func (r *RegDiscover) Start() error {
 	r.rootCtx, r.cancel = context.WithCancel(context.Background())
 	//start regdiscover
 	if err := r.rd.Start(); err != nil {
-		blog.Error("fail to start register and discover serv. err:%s", err.Error())
+		blog.Errorf("fail to start register and discover serv. err:%s", err.Error())
 		return err
 	}
 

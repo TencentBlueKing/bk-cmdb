@@ -22,7 +22,7 @@
                             :id="'business-authority-' + authority.id" 
                             :disabled="isMaintainers"
                             v-model="authorities.selected">
-                    <span class="cmdb-checkbox-text">{{$t(authority.name)}}</span>
+                        <span class="cmdb-checkbox-text">{{$t(authority.name)}}</span>
                     </label>
                 </span>
             </div>

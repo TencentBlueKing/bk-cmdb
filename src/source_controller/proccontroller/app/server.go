@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/eventclient"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/source_controller/proccontroller/app/options"
@@ -124,6 +125,8 @@ func (h *ProcController) onProcConfigUpdate(previous, current cc.ProcessConfig) 
 	}
 	h.ProctrlServer.Cache = cache
 
+	ec := eventclient.NewClientViaRedis(cache, instance)
+	h.ProctrlServer.EventC = ec
 }
 
 func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {

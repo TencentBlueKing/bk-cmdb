@@ -30,9 +30,9 @@ import (
 )
 
 // GetImportInsts get insts from excel file
-func (lgc *Logics) GetImportInsts(f *xlsx.File, objID string, header http.Header, headerRow int, isInst bool, defLang lang.DefaultCCLanguageIf) (map[int]map[string]interface{}, []string, error) {
+func (lgc *Logics) GetImportInsts(f *xlsx.File, objID string, header http.Header, headerRow int, isInst bool, defLang lang.DefaultCCLanguageIf, meta metadata.Metadata) (map[int]map[string]interface{}, []string, error) {
 
-	fields, err := lgc.GetObjFieldIDs(objID, nil, header)
+	fields, err := lgc.GetObjFieldIDs(objID, nil, header, meta)
 	if nil != err {
 		return nil, nil, errors.New(defLang.Languagef("web_get_object_field_failure", err.Error()))
 	}
@@ -100,10 +100,10 @@ func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Hea
 }
 
 // ImportHosts import host info
-func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, header http.Header, defLang lang.DefaultCCLanguageIf) (resultData mapstr.MapStr, errCode int, err error) {
+func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, header http.Header, defLang lang.DefaultCCLanguageIf, meta metadata.Metadata) (resultData mapstr.MapStr, errCode int, err error) {
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	resultData = mapstr.New()
-	insts, errMsg, err := lgc.GetImportInsts(f, objID, header, 0, true, defLang)
+	insts, errMsg, err := lgc.GetImportInsts(f, objID, header, 0, true, defLang, meta)
 	if nil != err {
 		blog.Errorf("ImportInsts  get %s inst info from excel error, error:%s logID:%s", objID, err.Error(), util.GetHTTPCCRequestID(header))
 		return

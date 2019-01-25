@@ -141,9 +141,12 @@ const (
 	CCErrCommInstFieldConvFail = 1199040
 	// CCErrCommUtilFail  handle %s error %s
 	CCErrCommUtilHandleFail = 1199041
+	// CCErrCommFieldNotValidFail  valid data error, %s
+	CCErrCommFieldNotValidFail = 1199043
 
 	// CCErrCommParamsNeedFloat the parameter must be float type
 	CCErrCommParamsNeedFloat = 1199042
+	CCErrCommNotAllSuccess   = 1199044
 
 	// apiserver 1100XXX
 
@@ -338,6 +341,16 @@ const (
 	CCErrTopoObjectUniqueCanNotHasMutiMustCheck    = 1001068
 	CCErrTopoObjectUniqueShouldHaveMoreThanOne     = 1001069
 
+	// association kind has been apply to object
+	CCErrorTopoAssKindHasApplyToObject = 1101069
+
+	// pre definition association kind can not be delete
+	CCErrorTopoPreAssKindCanNotBeDelete = 1101070
+	CCErrorTopoAsstKindIsNotExist       = 1101071
+	CCErrorAsstInstIsNotExist           = 1101072
+	CCErrorInstToAsstIsNotExist         = 1101073
+	CCErrorInstHasAsst                  = 1101074
+
 	CCErrTopoMulueIDNotfoundFailed = 1101080
 	CCErrTopoBkAppNotAllowedDelete = 1101081
 
@@ -409,6 +422,9 @@ const (
 	CCErrHostFavouriteDupFail            = 1106018
 	CCErrHostGetSnapshotChannelEmpty     = 1106019
 	CCErrHostGetSnapshotChannelClose     = 1106020
+	CCErrCloudCreateSyncTaskFail         = 1106021
+	CCErrCloudConfirmHistoryAddFail      = 1106022
+	CCErrCloudSyncHistorySearchFail      = 1106023
 
 	// proccontroller 1107XXX
 	CCErrProcDeleteProc2Module   = 1107001
@@ -486,6 +502,19 @@ const (
 	CCErrAddHostToModule          = 1110029
 	CCErrAddHostToModuleFailStr   = 1110030
 
+	// CCErrCloudSyncCreateFail cloud hosts sync table create failed
+	CCErrCloudSyncCreateFail = 1110031
+
+	// CCErrCloudHistoryCreateFail cloud sync history table create failed
+	CCErrCloudHistoryCreateFail     = 1110032
+	CCErrCloudConfirmCreateFail     = 1110033
+	CCErrCloudGetConfirmFail        = 1110034
+	CCErrCloudAddConfirmHistoryFail = 1110035
+	CCErrCloudGetTaskFail           = 1110036
+	CCErrCloudGetConfirmHistoryFail = 1110037
+	CCErrCloudTaskNameAlreadyExist  = 1110038
+	CCErrCloudSyncStartFail         = 1110039
+
 	// hostserver api machinery new error code
 	CCErrAddUserCustomQueryFaild       = 1110040
 	CCErrUpdateUserCustomQueryFaild    = 1110041
@@ -498,16 +527,54 @@ const (
 	CCErrHostAPPNotFoundFail           = 1110048
 	CCErrHostGetModuleFail             = 1110049
 	CCErrHostAgentStatusFail           = 1110050
+	// CCErrHostNotResourceFail The resource pool was not found"
+	CCErrHostNotResourceFail = 1110051
+	// CCErrHostBelongResourceFail The host is already in the resource pool
+	CCErrHostBelongResourceFail = 1110052
+	// CCErrHostGetResourceFail failed to get resource pool information, error message: %s
+	CCErrHostGetResourceFail = 1110053
+	// CCErrHostModuleNotExist get %s module not found
+	CCErrHostModuleNotExist = 1110054
 
 	//web  1111XXX
-	CCErrWebFileNoFound      = 1111001
-	CCErrWebFileSaveFail     = 1111002
-	CCErrWebOpenFileFail     = 1111003
-	CCErrWebFileContentEmpty = 1111004
-	CCErrWebFileContentFail  = 1111005
-	CCErrWebGetHostFail      = 1111006
-	CCErrWebCreateEXCELFail  = 1111007
-	CCErrWebGetObjectFail    = 1111008
+	CCErrWebFileNoFound                 = 1111001
+	CCErrWebFileSaveFail                = 1111002
+	CCErrWebOpenFileFail                = 1111003
+	CCErrWebFileContentEmpty            = 1111004
+	CCErrWebFileContentFail             = 1111005
+	CCErrWebGetHostFail                 = 1111006
+	CCErrWebCreateEXCELFail             = 1111007
+	CCErrWebGetObjectFail               = 1111008
+	CCErrWebGetAddNetDeviceResultFail   = 1111009
+	CCErrWebGetAddNetPropertyResultFail = 1111010
+	CCErrWebGetNetDeviceFail            = 1111011
+	CCErrWebGetNetPropertyFail          = 1111012
+
+	// datacollection 1112xxx
+	CCErrCollectNetDeviceCreateFail            = 1112000
+	CCErrCollectNetDeviceGetFail               = 1112001
+	CCErrCollectNetDeviceDeleteFail            = 1112002
+	CCErrCollectObjIDNotNetDevice              = 1112003
+	CCErrCollectNetPropertyCreateFail          = 1112004
+	CCErrCollectNetPropertyGetFail             = 1112005
+	CCErrCollectNetPropertyDeleteFail          = 1112006
+	CCErrCollectNetDeviceObjPropertyNotExist   = 1112007
+	CCErrCollectDeviceNotExist                 = 1112008
+	CCErrCollectPeriodFormatFail               = 1112009
+	CCErrCollectNetDeviceHasPropertyDeleteFail = 1112010
+	CCErrCollectNetCollectorSearchFail         = 1112011
+	CCErrCollectNetCollectorUpdateFail         = 1112012
+	CCErrCollectNetCollectorDiscoverFail       = 1112013
+	CCErrCollectNetReportSearchFail            = 1112014
+	CCErrCollectNetReportConfirmFail           = 1112015
+	CCErrCollectNetHistorySearchFail           = 1112016
+	CCErrCollectNetDeviceUpdateFail            = 1112017
+	CCErrCollectNetPropertyUpdateFail          = 1112018
+
+	// coreservice 1113xxx
+
+	// CCErrorModelAttributeGroupHasSomeAttributes the group has some attributes
+	CCErrCoreServiceModelAttributeGroupHasSomeAttributes = 1113001
 
 	// CCErrApiServerV2AppNameLenErr app name must be 1-32 len
 	CCErrAPIServerV2APPNameLenErr = 1170001

@@ -15,6 +15,7 @@ package hostcontroller
 import (
 	"fmt"
 
+	"configcenter/src/apimachinery/hostcontroller/cloud"
 	"configcenter/src/apimachinery/hostcontroller/favorite"
 	"configcenter/src/apimachinery/hostcontroller/history"
 	"configcenter/src/apimachinery/hostcontroller/host"
@@ -30,6 +31,7 @@ type HostCtrlClientInterface interface {
 	Host() host.HostInterface
 	Module() module.ModuleInterface
 	User() user.UserInterface
+	Cloud() cloud.CloudInterface
 }
 
 func NewHostCtrlClientInterface(c *util.Capability, version string) HostCtrlClientInterface {
@@ -61,4 +63,8 @@ func (h *hostctl) Module() module.ModuleInterface {
 
 func (h *hostctl) User() user.UserInterface {
 	return user.NewUserInterface(h.client)
+}
+
+func (h *hostctl) Cloud() cloud.CloudInterface {
+	return cloud.NewCloudInterface(h.client)
 }

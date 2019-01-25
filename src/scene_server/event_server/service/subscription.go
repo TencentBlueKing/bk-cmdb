@@ -65,7 +65,7 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 	exists := []metadata.Subscription{}
 	err = s.db.Table(common.BKTableNameSubscription).Find(map[string]interface{}{common.BKSubscriptionNameField: sub.SubscriptionName, common.BKOwnerIDField: ownerID}).All(s.ctx, &exists)
 	if err != nil {
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDuplicateItem)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommDuplicateItem, "subscription_name")})
 		return
 	}
 

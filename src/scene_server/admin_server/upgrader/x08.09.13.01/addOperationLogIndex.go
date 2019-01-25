@@ -37,10 +37,10 @@ func addOperationLogIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config
 	blog.Infof("existing index %v", existIndexMap)
 
 	expectIndexs := []dal.Index{
-		{Name: "op_target_1_inst_id_1_op_time_-1", Keys: map[string]interface{}{"op_target": 1, "inst_id": 1, "op_time": -1}, Background: true},
-		{Name: "bk_supplier_account_1_op_time_-1", Keys: map[string]interface{}{"bk_supplier_account": 1, "op_time": -1}, Background: true},
-		{Name: "bk_biz_id_1_bk_supplier_account_1_op_time_-1", Keys: map[string]interface{}{"bk_biz_id": 1, "bk_supplier_account": 1, "op_time": -1}, Background: true},
-		{Name: "ext_key_1_bk_supplier_account_1_op_time_-1", Keys: map[string]interface{}{"ext_key": 1, "bk_supplier_account": 1, "op_time": -1}, Background: true},
+		{Name: "op_target_1_inst_id_1_op_time_-1", Keys: map[string]int32{"op_target": 1, "inst_id": 1, "op_time": -1}, Background: true},
+		{Name: "bk_supplier_account_1_op_time_-1", Keys: map[string]int32{"bk_supplier_account": 1, "op_time": -1}, Background: true},
+		{Name: "bk_biz_id_1_bk_supplier_account_1_op_time_-1", Keys: map[string]int32{"bk_biz_id": 1, "bk_supplier_account": 1, "op_time": -1}, Background: true},
+		{Name: "ext_key_1_bk_supplier_account_1_op_time_-1", Keys: map[string]int32{"ext_key": 1, "bk_supplier_account": 1, "op_time": -1}, Background: true},
 	}
 	for _, idx := range expectIndexs {
 		blog.Infof("creating index %s", idx.Name)

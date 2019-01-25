@@ -48,11 +48,11 @@ const (
 
 func (s *Service) V3WebService() *restful.WebService {
 	ws := new(restful.WebService)
-	getErrFun := func() cErr.CCErrorIf {
+	getErrFunc := func() cErr.CCErrorIf {
 		return s.Engine.CCErr
 	}
 	ws.Path(rootPath).
-		Filter(rdapi.AllGlobalFilter(getErrFun)).
+		Filter(rdapi.AllGlobalFilter(getErrFunc)).
 		Produces(restful.MIME_JSON)
 	ws.Route(ws.GET("{.*}").Filter(s.URLFilterChan).To(s.Get))
 	ws.Route(ws.POST("{.*}").Filter(s.URLFilterChan).To(s.Post))
@@ -177,6 +177,9 @@ func (s *Service) URLFilterChan(req *restful.Request, resp *restful.Response, ch
 	case HostType:
 		servers, err = s.Disc.HostServer().GetServers()
 
+	case DataCollectType:
+		servers, err = s.Disc.DataCollect().GetServers()
+
 	}
 
 	if err != nil {
@@ -196,10 +199,10 @@ func (s *Service) URLFilterChan(req *restful.Request, resp *restful.Response, ch
 
 func (s *Service) V3Healthz() *restful.WebService {
 	ws := new(restful.WebService)
-	getErrFun := func() cErr.CCErrorIf {
+	getErrFunc := func() cErr.CCErrorIf {
 		return s.Engine.CCErr
 	}
-	ws.Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
+	ws.Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
 	ws.Route(ws.GET("healthz").To(s.healthz))
 

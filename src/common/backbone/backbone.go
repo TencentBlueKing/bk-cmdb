@@ -13,7 +13,6 @@
 package backbone
 
 import (
-	"configcenter/src/common/types"
 	"context"
 	"fmt"
 	"sync"
@@ -23,6 +22,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
+	"configcenter/src/common/types"
 )
 
 func NewBackbone(ctx context.Context, zkAddr string, procName string, confPath string, procHandler cc.ProcHandlerFunc, c *Config) (*Engine, error) {
@@ -65,6 +65,7 @@ func New(c *Config, disc ServiceDiscoverInterface) (*Engine, error) {
 		SvcDisc:    disc,
 		Language:   language.NewFromCtx(language.EmptyLanguageSetting),
 		CCErr:      errors.NewFromCtx(errors.EmptyErrorsSetting),
+		CCCtx:      newCCContext(),
 	}, nil
 }
 
@@ -75,6 +76,7 @@ type Engine struct {
 	SvcDisc    ServiceDiscoverInterface
 	Language   language.CCLanguageIf
 	CCErr      errors.CCErrorIf
+	CCCtx      CCContextInterface
 }
 
 func (e *Engine) onLanguageUpdate(previous, current map[string]language.LanguageMap) {
