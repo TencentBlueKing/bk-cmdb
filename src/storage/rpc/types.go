@@ -20,6 +20,8 @@ import (
 	"sync"
 
 	"configcenter/src/common/util"
+
+	"github.com/mongodb/mongo-go-driver/bson"
 )
 
 // Errors define
@@ -164,6 +166,18 @@ func (jsonCodec) Encode(v interface{}) ([]byte, error) {
 	buf := &bytes.Buffer{}
 	err := json.NewEncoder(buf).Encode(v)
 	return buf.Bytes(), err
+}
+
+type bsonCodec struct{}
+
+// BSONCodec implements Codec interface
+var BSONCodec Codec = new(bsonCodec)
+
+func (bsonCodec) Decode(data []byte, v interface{}) error {
+	return bson.Unmarshal(data, v)
+}
+func (bsonCodec) Encode(v interface{}) ([]byte, error) {
+	return bson.Marshal(v)
 }
 
 const (
