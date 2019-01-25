@@ -88,10 +88,11 @@ func (s *service) enterIP(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	user := util.GetUser(pheader)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	rid := util.GetHTTPCCRequestID(pheader)
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Errorf("enterIP error:%v", err)
+		blog.Errorf("enterIP error:%v,rid:%s", err, rid)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
@@ -105,7 +106,7 @@ func (s *service) enterIP(req *restful.Request, resp *restful.Response) {
 	osType := formData.Get("osType")
 
 	if "" == ips {
-		blog.Errorf("enterIP error ips empty")
+		blog.Errorf("enterIP error ips empty,input:%+v,rid:%s", formData, rid)
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "ip").Error(), resp)
 		return
 	}
@@ -118,13 +119,13 @@ func (s *service) enterIP(req *restful.Request, resp *restful.Response) {
 		osType = "windows"
 	}
 	if "" != osType && osType != "windows" && osType != "linux" {
-		blog.Errorf("osType mast be windows or linux; not %s", osType)
+		blog.Errorf("osType mast be windows or linux; not %s,input:%+v,rid:%s", osType, formData, rid)
 		converter.RespFailV2(common.CCErrAPIServerV2OSTypeErr, defErr.Error(common.CCErrAPIServerV2OSTypeErr).Error(), resp)
 		return
 	}
-	osType = "1"
+	osTypeEnumKey := "1"
 	if "windows" == osType {
-		osType = "2"
+		osTypeEnumKey = "2"
 	}
 
 	param := &metadata.HostToAppModule{Ips: ipArr,
@@ -133,19 +134,19 @@ func (s *service) enterIP(req *restful.Request, resp *restful.Response) {
 		SetName:     setName,
 		AppName:     appName,
 		OwnerID:     user,
-		OsType:      osType,
+		OsType:      osTypeEnumKey,
 		IsIncrement: true}
 	result, err := s.CoreAPI.HostServer().AssignHostToAppModule(context.Background(), pheader, param)
 
 	if err != nil {
-		blog.Errorf("enterIP  error:%v", err)
+		blog.Errorf("enterIP  error:%v,input:%+v,rid:%s", err, formData, rid)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
 
 	err = converter.ResToV2ForEnterIP(result.Result, result.ErrMsg, result.Data)
 	if err != nil {
-		blog.Errorf("convert enterip result to v2 error:%v, reply:%v", err.Error(), result.Data)
+		blog.Errorf("convert enterip result to v2 error:%v, reply:%v,input:%+v,rid:%s", err.Error(), result.Data, formData, rid)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}

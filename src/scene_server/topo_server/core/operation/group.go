@@ -101,14 +101,21 @@ func (g *group) DeleteObjectGroup(params types.ContextParams, groupID int64) err
 }
 
 func (g *group) FindObjectGroup(params types.ContextParams, cond condition.Condition) ([]model.GroupInterface, error) {
-	rsp, err := g.clientSet.CoreService().Model().ReadAttributeGroupByCondition(context.Background(), params.Header, metadata.QueryCondition{Condition: cond.ToMapStr()})
+	fCond := cond.ToMapStr()
+	if nil != params.MetaData {
+		fCond.Merge(metadata.PublicAndBizCondition(*params.MetaData))
+		fCond.Remove(metadata.BKMetadata)
+	} else {
+		fCond.Merge(metadata.BizLabelNotExist)
+	}
+	rsp, err := g.clientSet.CoreService().Model().ReadAttributeGroupByCondition(context.Background(), params.Header, metadata.QueryCondition{Condition: fCond})
 	if nil != err {
 		blog.Errorf("[operation-grp] failed to request the object controller, error info is %s", err.Error())
 		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[opeartion-grp] failed to search the group by the condition(%#v), error info is %s", cond.ToMapStr(), rsp.ErrMsg)
+		blog.Errorf("[opeartion-grp] failed to search the group by the condition(%#v), error info is %s", fCond, rsp.ErrMsg)
 		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -116,14 +123,23 @@ func (g *group) FindObjectGroup(params types.ContextParams, cond condition.Condi
 }
 
 func (g *group) FindGroupByObject(params types.ContextParams, objID string, cond condition.Condition) ([]model.GroupInterface, error) {
-	rsp, err := g.clientSet.CoreService().Model().ReadAttributeGroup(context.Background(), params.Header, objID, metadata.QueryCondition{Condition: cond.ToMapStr()})
+
+	fCond := cond.ToMapStr()
+	if nil != params.MetaData {
+		fCond.Merge(metadata.PublicAndBizCondition(*params.MetaData))
+		fCond.Remove(metadata.BKMetadata)
+	} else {
+		fCond.Merge(metadata.BizLabelNotExist)
+	}
+
+	rsp, err := g.clientSet.CoreService().Model().ReadAttributeGroup(context.Background(), params.Header, objID, metadata.QueryCondition{Condition: fCond})
 	if nil != err {
 		blog.Errorf("[operation-grp] failed to request the object controller, error info is %s", err.Error())
 		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[operation-grp] failed to search the group of the object(%s) by the condition (%#v), error info is %s", objID, cond.ToMapStr(), rsp.ErrMsg)
+		blog.Errorf("[operation-grp] failed to search the group of the object(%s) by the condition (%#v), error info is %s", objID, fCond, rsp.ErrMsg)
 		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 

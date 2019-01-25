@@ -13,18 +13,24 @@
 package model
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (g *modelAttributeGroup) groupIDIsExists(ctx core.ContextParams, objID, groupID string) (oneResult metadata.Group, isExists bool, err error) {
+func (g *modelAttributeGroup) groupIDIsExists(ctx core.ContextParams, objID, groupID string, meta metadata.Metadata) (oneResult metadata.Group, isExists bool, err error) {
 
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldGroupID, Val: groupID})
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldSupplierAccount, Val: ctx.SupplierAccount})
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldObjectID, Val: objID})
-
+	exist, bizID := meta.Label.Get(common.BKAppIDField)
+	if exist {
+		_, metaCond := cond.Embed(metadata.BKMetadata)
+		_, lableCond := metaCond.Embed(metadata.BKLabel)
+		lableCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
+	}
 	grps, err := g.search(ctx, cond)
 	if nil != err {
 		return oneResult, isExists, err
@@ -37,13 +43,18 @@ func (g *modelAttributeGroup) groupIDIsExists(ctx core.ContextParams, objID, gro
 	return oneResult, isExists, nil
 }
 
-func (g *modelAttributeGroup) groupNameIsExists(ctx core.ContextParams, objID, groupName string) (oneResult metadata.Group, isExists bool, err error) {
+func (g *modelAttributeGroup) groupNameIsExists(ctx core.ContextParams, objID, groupName string, meta metadata.Metadata) (oneResult metadata.Group, isExists bool, err error) {
 
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldGroupName, Val: groupName})
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldSupplierAccount, Val: ctx.SupplierAccount})
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldObjectID, Val: objID})
-
+	exist, bizID := meta.Label.Get(common.BKAppIDField)
+	if exist {
+		_, metaCond := cond.Embed(metadata.BKMetadata)
+		_, lableCond := metaCond.Embed(metadata.BKLabel)
+		lableCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bizID})
+	}
 	grps, err := g.search(ctx, cond)
 	if nil != err {
 		return oneResult, isExists, err

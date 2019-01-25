@@ -51,7 +51,9 @@ func (g *graphics) SelectObjectTopoGraphics(params types.ContextParams, scopeTyp
 	graphcondition := &metadata.TopoGraphics{}
 	graphcondition.SetScopeType(scopeType)
 	graphcondition.SetScopeID(scopeID)
-
+	if nil != params.MetaData {
+		graphcondition.SetMetaData(*params.MetaData)
+	}
 	rsp, err := g.clientSet.ObjectController().Meta().SearchTopoGraphics(context.Background(), params.Header, graphcondition)
 	if nil != err {
 		return nil, err
@@ -98,7 +100,6 @@ func (g *graphics) SelectObjectTopoGraphics(params types.ContextParams, scopeTyp
 			node.SetNodeName(object.ObjectName)
 			node.SetScopeType("global")
 			node.SetScopeID("0")
-			node.SetBizID(0)
 			node.SetSupplierAccount("0")
 			node.SetIsPre(object.IsPre)
 			node.SetIcon(object.ObjIcon)
@@ -157,8 +158,10 @@ func (g *graphics) UpdateObjectTopoGraphics(params types.ContextParams, scopeTyp
 	for index := range datas {
 		datas[index].SetScopeType(scopeType)
 		datas[index].SetScopeID(scopeID)
+		if nil != params.MetaData {
+			datas[index].SetMetaData(*params.MetaData)
+		}
 	}
-
 	rsp, err := g.clientSet.ObjectController().Meta().UpdateTopoGraphics(context.Background(), params.Header, datas)
 	if err != nil {
 		blog.Errorf("UpdateGraphics failed %v", err.Error())
