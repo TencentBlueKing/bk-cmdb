@@ -102,12 +102,14 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 	}
 
 	result := mapstr.New()
+	hasError := false
 	for objID, inputData := range inputData {
 		subResult := mapstr.New()
 		if err := o.IsValidObject(params, objID); nil != err {
 			blog.Errorf("not found the  objid: %s", objID)
 			subResult["errors"] = fmt.Sprintf("the object(%s) is invalid", objID)
 			result[objID] = subResult
+			hasError = true
 			continue
 		}
 
@@ -122,6 +124,7 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 				blog.Errorf("not found the  objid: %s", objID)
 				subResult["errors"] = err.Error()
 				result[objID] = subResult
+				hasError = true
 				continue
 			}
 
@@ -143,6 +146,7 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 				errStr := params.Lang.Languagef("import_row_int_error_str", idx, err)
 				subResult["errors"] = errStr
 				result[objID] = subResult
+				hasError = true
 				continue
 			}
 
@@ -170,6 +174,7 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 						}
 					}
 					result[objID] = subResult
+					hasError = true
 					continue
 				}
 
@@ -190,6 +195,7 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 					}
 				}
 				result[objID] = subResult
+				hasError = true
 				continue
 			}
 			attrCond := condition.CreateCondition()
@@ -209,6 +215,7 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 					}
 				}
 				result[objID] = subResult
+				hasError = true
 				continue
 			}
 
@@ -227,6 +234,7 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 						}
 					}
 					result[objID] = subResult
+					hasError = true
 					continue
 				}
 
@@ -245,6 +253,7 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 						}
 					}
 					result[objID] = subResult
+					hasError = true
 					continue
 				}
 
@@ -264,7 +273,11 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 
 	}
 
+	if hasError {
+		return result, params.Err.Error(common.CCErrCommNotAllSuccess)
+	}
 	return result, nil
+
 }
 func (o *object) FindObjectBatch(params types.ContextParams, data mapstr.MapStr) (mapstr.MapStr, error) {
 
@@ -333,7 +346,7 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 
 	if exists {
 		blog.Errorf("[operation-obj] the object(%#v) is repeated", data)
-		return nil, params.Err.Error(common.CCErrCommDuplicateItem)
+		return nil, params.Err.Errorf(common.CCErrCommDuplicateItem, "")
 	}
 
 	err = obj.Create()
@@ -694,7 +707,7 @@ func (o *object) UpdateObject(params types.ContextParams, data mapstr.MapStr, id
 
 	if exists {
 		blog.Errorf("[operation-obj] the object(%#v) is repeated", data)
-		return params.Err.Error(common.CCErrCommDuplicateItem)
+		return params.Err.Errorf(common.CCErrCommDuplicateItem, "")
 	}
 	if err = obj.Update(data); nil != err {
 		blog.Errorf("[operation-obj] failed to update the object(%d), the new data(%#v), err: %s", id, data, err.Error())
