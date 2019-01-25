@@ -61,7 +61,8 @@ const router = new Router({
         path: '/model',
         component: modelManage,
         meta: {
-            isModel: false
+            isModel: false,
+            requireBusiness: true
         }
     }, {
         path: '/model/details/process',
@@ -84,7 +85,8 @@ const router = new Router({
         path: '/model/topology',
         component: modelTopology,
         meta: {
-            isModel: false
+            isModel: false,
+            requireBusiness: true
         }
     }, {
         name: 'modelBusiness',
