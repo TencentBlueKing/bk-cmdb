@@ -49,7 +49,9 @@ func dealMap(value reflect.Value, tagName string) (MapStr, error) {
 		keyValue := value.MapIndex(key)
 		switch keyValue.Kind() {
 		default:
-			mapResult.Set(key.String(), keyValue.Interface())
+			if keyValue.IsValid() && keyValue.CanInterface() {
+				mapResult.Set(key.String(), keyValue.Interface())
+			}
 		case reflect.Interface:
 			subMapResult, err := convertInterfaceIntoMapStrByReflection(keyValue.Interface(), tagName)
 			if nil != err {

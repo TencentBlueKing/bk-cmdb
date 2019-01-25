@@ -13,43 +13,71 @@
 package service
 
 import (
+	"context"
+	"net/http"
+
 	"configcenter/src/apiserver/core"
 	"configcenter/src/apiserver/core/compatiblev2/logic"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/language"
 	"configcenter/src/common/rdapi"
 
-	"github.com/emicklei/go-restful"
+	restful "github.com/emicklei/go-restful"
+
+	"configcenter/src/common/util"
 )
 
 var _ core.CompatibleV2Operation = (*service)(nil)
 
 // New create a compatibleV2 service instance
 func New(engine *backbone.Engine) core.CompatibleV2Operation {
-
 	return &service{
 		Engine: engine,
-		Logics: &logic.Logics{
-			Engine: engine,
-		},
 	}
 }
 
 type service struct {
 	*backbone.Engine
-	*logic.Logics
+}
+
+type srvComm struct {
+	header        http.Header
+	rid           string
+	ccErr         errors.DefaultCCErrorIf
+	ccLang        language.DefaultCCLanguageIf
+	ctx           context.Context
+	ctxCancelFunc context.CancelFunc
+	user          string
+	ownerID       string
+	lgc           *logic.Logics
+}
+
+func (s *service) newSrvComm(header http.Header) *srvComm {
+	lang := util.GetLanguage(header)
+	ctx, cancel := s.Engine.CCCtx.WithCancel()
+	return &srvComm{
+		header:        header,
+		rid:           util.GetHTTPCCRequestID(header),
+		ccErr:         s.Engine.CCErr.CreateDefaultCCErrorIf(lang),
+		ccLang:        s.Engine.Language.CreateDefaultCCLanguageIf(lang),
+		ctx:           ctx,
+		ctxCancelFunc: cancel,
+		user:          util.GetUser(header),
+		ownerID:       util.GetOwnerID(header),
+		lgc:           logic.NewLogics(s.Engine, header),
+	}
 }
 
 func (s *service) SetConfig(engine *backbone.Engine) {
 	s.Engine = engine
-	s.Logics.Engine = engine
 }
 
 func (s *service) WebService() *restful.WebService {
 	ws := &restful.WebService{}
 
 	getErrFunc := func() errors.CCErrorIf {
-		return s.CCErr
+		return s.Engine.CCErr
 	}
 	ws.Path("/api/v2").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 

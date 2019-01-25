@@ -15,7 +15,6 @@ package logic
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 
 	"configcenter/src/common"
@@ -26,15 +25,19 @@ import (
 )
 
 // getObjFieldIDs get the values of properyID and properyName
-func (lgc *Logics) GetObjFieldIDs(objID, user string, header http.Header) (common.KvMap, error) {
-	conds := mapstr.MapStr{common.BKObjIDField: objID, common.BKOwnerIDField: user, "page": common.KvMap{"skip": 0, "limit": common.BKNoLimit}}
-	result, err := lgc.CoreAPI.TopoServer().Object().SelectObjectAttWithParams(context.Background(), header, conds)
+func (lgc *Logics) GetObjFieldIDs(ctx context.Context, objID string) (common.KvMap, error) {
+	conds := mapstr.MapStr{common.BKObjIDField: objID, common.BKOwnerIDField: lgc.ownerID, "page": common.KvMap{"skip": 0, "limit": common.BKNoLimit}}
+	result, err := lgc.CoreAPI.TopoServer().Object().SelectObjectAttWithParams(ctx, lgc.header, conds)
 	if nil != err {
-		blog.Errorf("get %s fields error:%s", objID, err.Error())
+		blog.Errorf("SelectObjectAttWithParams http do error.get %s fields error:%s,rid:%s", objID, err.Error(), lgc.rid)
 		return nil, err
 	}
+	if !result.Result {
+		blog.Errorf("SelectObjectAttWithParams http do error.get %s fields error:%s,rid:%s", objID, err.Error(), lgc.rid)
+		return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
+	}
 
-	blog.V(5).Infof("get %s fields return:%v", objID, result)
+	blog.V(5).Infof("get %s fields return:%#v,rid:%s", objID, result, lgc.rid)
 	fields, _ := result.Data.([]interface{})
 	ret := common.KvMap{}
 
@@ -53,12 +56,10 @@ func (lgc *Logics) GetObjFieldIDs(objID, user string, header http.Header) (commo
 }
 
 // AutoInputV3Field fields required to automatically populate the current object v3
-func (lgc *Logics) AutoInputV3Field(params mapstr.MapStr, objId, user string, header http.Header) (mapstr.MapStr, error) {
-	appFields, err := lgc.GetObjFieldIDs(objId, user, header)
+func (lgc *Logics) AutoInputV3Field(ctx context.Context, params mapstr.MapStr, objID string) (mapstr.MapStr, error) {
+	appFields, err := lgc.GetObjFieldIDs(ctx, objID)
 	if nil != err {
-
-		blog.Errorf("CreateApp error:%s", err.Error())
-		return nil, errors.New("CC_Err_Comm_APP_Create_FAIL_STR")
+		return nil, err
 	}
 	for fieldId, item := range appFields {
 		mapItem, _ := item.(common.KvMap)
