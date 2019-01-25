@@ -15,11 +15,30 @@ package mongo_test
 import (
 	"testing"
 
+	"configcenter/src/common/mapstr"
+
+	"configcenter/src/common"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 
 	"github.com/stretchr/testify/require"
 )
 
+func TestNewConditionFromMapStrWithCustomType(t *testing.T) {
+
+	target := mongo.NewCondition()
+	target.Element(&mongo.Eq{Key: "custom_type", Val: common.DataStatusDisabled})
+
+	sql, err := target.ToSQL()
+	require.NoError(t, err)
+	t.Logf("target sql:%s", sql)
+
+	recoverSql, err := mongo.NewConditionFromMapStr(target.ToMapStr())
+	require.NoError(t, err)
+	sql, err = recoverSql.ToSQL()
+	require.NoError(t, err)
+	t.Logf("recover sql:%s", sql)
+}
 func TestNewConditionFromMapStr(t *testing.T) {
 
 	target := mongo.NewCondition()
@@ -81,4 +100,47 @@ func TestMgCondition(t *testing.T) {
 	)
 	sql, _ = target.ToSQL()
 	t.Logf("%s", sql)
+}
+
+func TestIssue1708(t *testing.T) {
+	testData := metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			"bk_group_id": "default",
+			"bk_obj_id":   "1",
+			"id":          mapstr.MapStr{"$nin": []int{0}},
+			"metadata":    mapstr.MapStr{"label": nil},
+		},
+	}
+
+	cond, err := mongo.NewConditionFromMapStr(testData.Condition)
+	require.NoError(t, err)
+	t.Logf("t:%#v", cond.ToMapStr())
+
+}
+
+func TestIssue1738(t *testing.T) {
+	cond := mongo.NewCondition()
+	cond.Element(&mongo.Eq{Key: "bk_set_name", Val: nil})
+	cond.Element(&mongo.Eq{Key: "bk_set_id", Val: nil})
+	cond.Element(&mongo.Eq{Key: "bk_biz_id", Val: nil})
+	cond.Element(&mongo.Eq{Key: "bk_parent_id", Val: 2})
+	cond.Element(&mongo.In{Key: "bk_parent_in_nil", Val: nil})
+	cond.Element(&mongo.Nin{Key: "bk_parent_nin_nil", Val: nil})
+	cond.Element(&mongo.Neq{Key: "bk_data_status", Val: "disabled"})
+
+	result, err := cond.ToSQL()
+	require.NoError(t, err)
+	t.Logf("sql:%s", result)
+
+	inputMapStr := cond.ToMapStr()
+
+	outCond := mongo.NewCondition()
+	for i := 0; i <= 1; i++ {
+		outCond, err = mongo.NewConditionFromMapStr(inputMapStr)
+		require.NoError(t, err)
+	}
+
+	result, err = outCond.ToSQL()
+	require.NoError(t, err)
+	t.Logf("sql_1738:%s", result)
 }

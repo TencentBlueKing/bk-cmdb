@@ -13,8 +13,6 @@
 package metadata
 
 import (
-	"time"
-
 	"configcenter/src/common/mapstr"
 )
 
@@ -34,7 +32,8 @@ const (
 	// AssociationFieldAssociationName the association data field definition
 	// AssociationFieldAssociationName = "bk_asst_name"
 	// AssociationFieldAssociationId auto incr id
-	AssociationFieldAssociationId = "id"
+	AssociationFieldAssociationId   = "id"
+	AssociationFieldAssociationKind = "bk_asst_id"
 )
 
 type SearchAssociationTypeRequest struct {
@@ -187,7 +186,7 @@ type AssociationKind struct {
 	Direction AssociationDirection `field:"direction" json:"direction" bson:"direction"`
 	// whether this is a pre-defined kind.
 	IsPre *bool `field:"ispre" json:"ispre" bson:"ispre"`
-	//	define the metadata of assocication kind and not use it
+	//	define the metadata of assocication kind
 	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 }
 
@@ -239,6 +238,9 @@ type Association struct {
 	ClassificationID string `field:"bk_classification_id" json:"-" bson:"-"`
 	ObjectIcon       string `field:"bk_obj_icon" json:"-" bson:"-"`
 	ObjectName       string `field:"bk_obj_name" json:"-" bson:"-"`
+
+	//	define the metadata of assocication
+	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 }
 
 // return field means which filed is set but is forbidden to update.
@@ -277,7 +279,7 @@ func (a *Association) CanUpdate() (field string, can bool) {
 
 // Parse load the data from mapstr attribute into attribute instance
 func (cli *Association) Parse(data mapstr.MapStr) (*Association, error) {
-
+	//TODO support parse metadata params
 	err := mapstr.SetValueToStructByTags(cli, data)
 	if nil != err {
 		return nil, err
@@ -312,9 +314,6 @@ type InstAsst struct {
 
 	//	define the metadata of assocication kind
 	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
-
-	CreateTime time.Time `field:"create_time" json:"create_time" bson:"create_time"`
-	LastTime   time.Time `field:"last_time" json:"last_time" bson:"last_time"`
 }
 
 func (asst InstAsst) GetInstID(objID string) (instID int64, ok bool) {

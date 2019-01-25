@@ -26,7 +26,7 @@ func (lgc *Logics) LockHost(ctx context.Context, input *metadata.HostLockRequest
 	hostLockResult, err := lgc.CoreAPI.HostController().Host().LockHost(ctx, lgc.header, input)
 	if nil != err {
 		blog.Errorf("lock host, http request error, error:%s,input:%+v,logID:%s", err.Error(), input, lgc.rid)
-		return lgc.ccErr.Errorf(common.CCErrCommHTTPDoRequestFailed)
+		return lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !hostLockResult.Result {
 		blog.Errorf("lock host, add host lock  error, error code:%d error message:%s,input:%+v,logID:%s", hostLockResult.Code, hostLockResult.ErrMsg, input, lgc.rid)
@@ -40,7 +40,7 @@ func (lgc *Logics) UnlockHost(ctx context.Context, input *metadata.HostLockReque
 	hostUnlockResult, err := lgc.CoreAPI.HostController().Host().UnlockHost(ctx, lgc.header, input)
 	if nil != err {
 		blog.Errorf("unlock host, http request error, error:%s,input:%+v,logID:%s", err.Error(), input, lgc.rid)
-		return lgc.ccErr.Errorf(common.CCErrCommHTTPDoRequestFailed)
+		return lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !hostUnlockResult.Result {
 		blog.Errorf("unlock host, release host lock  error, error code:%d error message:%s,input:%+v,logID:%s", hostUnlockResult.Code, hostUnlockResult.ErrMsg, input, lgc.rid)
@@ -54,7 +54,7 @@ func (lgc *Logics) QueryHostLock(ctx context.Context, input *metadata.QueryHostL
 	hostLockResult, err := lgc.CoreAPI.HostController().Host().QueryHostLock(ctx, lgc.header, input)
 	if nil != err {
 		blog.Errorf("query lock host, http request error, error:%s,input:%+v,logID:%s", err.Error(), input, lgc.rid)
-		return nil, lgc.ccErr.Errorf(common.CCErrCommHTTPDoRequestFailed)
+		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !hostLockResult.Result {
 		blog.Errorf("query host lock  error, error code:%d error message:%s,input:%+v,logID:%s", hostLockResult.Code, hostLockResult.ErrMsg, input, lgc.rid)

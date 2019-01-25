@@ -44,7 +44,7 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
 		uniquekeys := map[string]bool{}
 		for _, key := range unique.Keys {
 			switch key.Kind {
-			case metadata.UinqueKeyKindProperty:
+			case metadata.UniqueKeyKindProperty:
 				property, ok := valid.idToProperty[int64(key.ID)]
 				if !ok {
 					blog.Errorf("[validCreateUnique] find [%s] property [%d] error %v", valid.objID, key.ID)
@@ -144,7 +144,7 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 		uniquekeys := map[string]bool{}
 		for _, key := range unique.Keys {
 			switch key.Kind {
-			case metadata.UinqueKeyKindProperty:
+			case metadata.UniqueKeyKindProperty:
 				property, ok := valid.idToProperty[int64(key.ID)]
 				if !ok {
 					blog.Errorf("[validUpdateUnique] find [%s] property [%d] error %v", valid.objID, key.ID)

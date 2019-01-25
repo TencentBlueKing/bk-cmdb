@@ -14,7 +14,6 @@ package metadata
 
 import (
 	"configcenter/src/common/mapstr"
-	types "configcenter/src/common/mapstr"
 )
 
 const (
@@ -38,7 +37,7 @@ type Classification struct {
 }
 
 // Parse load the data from mapstr classification into classification instance
-func (cli *Classification) Parse(data types.MapStr) (*Classification, error) {
+func (cli *Classification) Parse(data mapstr.MapStr) (*Classification, error) {
 
 	err := mapstr.SetValueToStructByTags(cli, data)
 	if nil != err {
@@ -49,6 +48,6 @@ func (cli *Classification) Parse(data types.MapStr) (*Classification, error) {
 }
 
 // ToMapStr to mapstr
-func (cli *Classification) ToMapStr() types.MapStr {
+func (cli *Classification) ToMapStr() mapstr.MapStr {
 	return mapstr.SetValueToMapStrByTags(cli)
 }

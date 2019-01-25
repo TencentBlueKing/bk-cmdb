@@ -32,7 +32,7 @@
             :isShow.sync="slider.isShow"
             :title="slider.title"
             :width="564"
-            :beforeClose="handleSliderBeforeClose">
+            :beforeClose="handleBeforeSliderClose">
             <v-push-detail
                 ref="detail"
                 slot="content"
@@ -101,7 +101,7 @@
                 'searchSubscription',
                 'unsubcribeEvent'
             ]),
-            handleSliderBeforeClose () {
+            handleBeforeSliderClose () {
                 if (this.$refs.detail.isCloseConfirmShow()) {
                     return new Promise((resolve, reject) => {
                         this.$bkInfo({
