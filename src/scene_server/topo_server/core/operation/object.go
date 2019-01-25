@@ -311,7 +311,6 @@ func (o *object) FindSingleObject(params types.ContextParams, objectID string) (
 }
 func (o *object) CreateObject(params types.ContextParams, isMainline bool, data mapstr.MapStr) (model.Object, error) {
 	obj := o.modelFactory.CreateObject(params)
-
 	err := obj.Parse(data)
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to parse the data(%#v), err: %s", data, err.Error())
@@ -345,14 +344,18 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 
 	// create the default group
 	grp := obj.CreateGroup()
-	grp.SetGroup(metadata.Group{
+	groupData := metadata.Group{
 		IsDefault:  true,
 		GroupIndex: -1,
 		GroupName:  "Default",
 		GroupID:    model.NewGroupID(true),
 		ObjectID:   obj.Object().ObjectID,
 		OwnerID:    obj.Object().OwnerID,
-	})
+	}
+	if nil != params.MetaData {
+		groupData.Metadata = *params.MetaData
+	}
+	grp.SetGroup(groupData)
 
 	if err = grp.Save(nil); nil != err {
 		blog.Errorf("[operation-obj] failed to create the default group, err: %s", err.Error())
@@ -364,6 +367,7 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 	group := grp.Group()
 	attr := obj.CreateAttribute()
 	attr.SetAttribute(metadata.Attribute{
+		ObjectID:          obj.Object().ObjectID,
 		IsOnly:            true,
 		IsPre:             true,
 		Creator:           "user",
@@ -376,7 +380,9 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 		PropertyID:        obj.GetInstNameFieldName(),
 		PropertyName:      obj.GetDefaultInstPropertyName(),
 	})
-
+	if nil != params.MetaData {
+		attr.Attribute().Metadata = *params.MetaData
+	}
 	if err = attr.Create(); nil != err {
 		blog.Errorf("[operation-obj] failed to create the default inst name field, error info is %s", err.Error())
 		return nil, err
@@ -387,6 +393,7 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 	if isMainline {
 		pAttr := obj.CreateAttribute()
 		pAttr.SetAttribute(metadata.Attribute{
+			ObjectID:          obj.Object().ObjectID,
 			IsOnly:            true,
 			IsPre:             true,
 			Creator:           "user",
@@ -643,14 +650,21 @@ func (o *object) FindObjectTopo(params types.ContextParams, cond condition.Condi
 }
 
 func (o *object) FindObject(params types.ContextParams, cond condition.Condition) ([]model.Object, error) {
-	rsp, err := o.clientSet.CoreService().Model().ReadModel(context.Background(), params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	fCond := cond.ToMapStr()
+	if nil != params.MetaData {
+		fCond.Merge(metadata.PublicAndBizCondition(*params.MetaData))
+		fCond.Remove(metadata.BKMetadata)
+	} else {
+		fCond.Merge(metadata.BizLabelNotExist)
+	}
+	rsp, err := o.clientSet.CoreService().Model().ReadModel(context.Background(), params.Header, &metadata.QueryCondition{Condition: fCond})
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to request the object controller, err: %s", err.Error())
 		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[operation-obj] failed to search the objects by the condition(%#v) , error info is %s", cond.ToMapStr(), rsp.ErrMsg)
+		blog.Errorf("[operation-obj] failed to search the objects by the condition(%#v) , error info is %s", fCond, rsp.ErrMsg)
 		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 

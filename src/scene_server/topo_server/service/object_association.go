@@ -59,6 +59,13 @@ func (s *topoService) SearchObjectAssociation(params types.ContextParams, pathPa
 			return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 		}
 
+		if nil != params.MetaData {
+			cond.Merge(metadata.PublicAndBizCondition(*params.MetaData))
+			cond.Remove(metadata.BKMetadata)
+		} else {
+			cond.Merge(metadata.BizLabelNotExist)
+		}
+
 		resp, err := s.core.AssociationOperation().SearchObject(params, &metadata.SearchAssociationObjectRequest{Condition: cond})
 		if err != nil {
 			blog.Errorf("search object association with cond[%v] failed, err: %v", cond, err)

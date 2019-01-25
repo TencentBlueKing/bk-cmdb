@@ -14,6 +14,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -23,6 +24,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/logics"
 
@@ -41,6 +43,14 @@ func (s *Service) ImportInst(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if nil != err {
 		msg := getReturnStr(common.CCErrWebFileNoFound, defErr.Error(common.CCErrWebFileNoFound).Error(), nil)
+		c.String(http.StatusOK, string(msg))
+		return
+	}
+
+	inputJson := c.PostForm("json")
+	metaInfo := map[string]metadata.Metadata{}
+	if err := json.Unmarshal([]byte(inputJson), &metaInfo); 0 != len(inputJson) && nil != err {
+		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
 	}
@@ -66,7 +76,7 @@ func (s *Service) ImportInst(c *gin.Context) {
 		return
 	}
 
-	data, errCode, err := s.Logics.ImportInsts(context.Background(), f, objID, c.Request.Header, defLang)
+	data, errCode, err := s.Logics.ImportInsts(context.Background(), f, objID, c.Request.Header, defLang, metaInfo[metadata.BKMetadata])
 
 	if nil != err {
 		msg := getReturnStr(errCode, err.Error(), data)
@@ -89,6 +99,11 @@ func (s *Service) ExportInst(c *gin.Context) {
 	objID := c.Param(common.BKObjIDField)
 	instIDStr := c.PostForm(common.BKInstIDField)
 
+	metaInfo := make(map[string]metadata.Metadata)
+	if err := c.Bind(&metaInfo); nil != err {
+		blog.Errorf("parse input metadata error: %v", err)
+	}
+
 	kvMap := mapstr.MapStr{}
 	instInfo, err := s.Logics.GetInstData(ownerID, objID, instIDStr, pheader, kvMap)
 
@@ -104,8 +119,8 @@ func (s *Service) ExportInst(c *gin.Context) {
 
 	file = xlsx.NewFile()
 
-	fields, err := s.Logics.GetObjFieldIDs(objID, nil, pheader)
-	err = s.Logics.BuildExcelFromData(context.Background(), objID, fields, nil, instInfo, file, pheader)
+	fields, err := s.Logics.GetObjFieldIDs(objID, nil, pheader, metaInfo[metadata.BKMetadata])
+	err = s.Logics.BuildExcelFromData(context.Background(), objID, fields, nil, instInfo, file, pheader, metaInfo[metadata.BKMetadata])
 	if nil != err {
 		blog.Errorf("ExportHost object:%s error:%s", objID, err.Error())
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)

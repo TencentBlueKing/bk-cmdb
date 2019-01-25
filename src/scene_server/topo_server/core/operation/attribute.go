@@ -77,6 +77,38 @@ func (a *attribute) CreateObjectAttribute(params types.ContextParams, data mapst
 		return nil, params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
 	}
 
+	// check is the group exist
+
+	cond := condition.CreateCondition()
+	cond.Field(common.BKObjIDField).Eq(att.Attribute().ObjectID)
+	cond.Field(common.BKPropertyGroupIDField).Eq(att.Attribute().PropertyGroup)
+	groupResult, err := a.grp.FindObjectGroup(params, cond)
+	if nil != err {
+		blog.Errorf("[operation-attr] failed to search the attribute group data (%#v), error info is %s", cond.ToMapStr(), err.Error())
+		return nil, err
+	}
+	// create the default group
+	if 0 == len(groupResult) {
+
+		group := metadata.Group{
+			IsDefault:  true,
+			GroupIndex: -1,
+			GroupName:  common.BKBizDefault,
+			GroupID:    common.BKBizDefault,
+			ObjectID:   att.Attribute().ObjectID,
+			OwnerID:    att.Attribute().OwnerID,
+		}
+		if nil != params.MetaData {
+			group.Metadata = *params.MetaData
+		}
+
+		data := mapstr.NewFromStruct(group, "field")
+		if _, err := a.grp.CreateObjectGroup(params, data); nil != err {
+			blog.Errorf("[operation-obj] failed to create the default group, err: %s", err.Error())
+			return nil, params.Err.Error(common.CCErrTopoObjectGroupCreateFailed)
+		}
+	}
+
 	// create a new one
 	err = att.Create()
 	if nil != err {
@@ -140,15 +172,24 @@ func (a *attribute) FindObjectAttributeWithDetail(params types.ContextParams, co
 
 	return results, nil
 }
+
 func (a *attribute) FindObjectAttribute(params types.ContextParams, cond condition.Condition) ([]model.AttributeInterface, error) {
-	rsp, err := a.clientSet.CoreService().Model().ReadModelAttrByCondition(context.Background(), params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	fCond := cond.ToMapStr()
+	if nil != params.MetaData {
+		fCond.Merge(metadata.PublicAndBizCondition(*params.MetaData))
+		fCond.Remove(metadata.BKMetadata)
+	} else {
+		fCond.Merge(metadata.BizLabelNotExist)
+	}
+
+	rsp, err := a.clientSet.CoreService().Model().ReadModelAttrByCondition(context.Background(), params.Header, &metadata.QueryCondition{Condition: fCond})
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to request object controller, error info is %s", err.Error())
 		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[operation-attr] failed to search attribute by the condition(%#v), error info is %s", cond.ToMapStr(), rsp.ErrMsg)
+		blog.Errorf("[operation-attr] failed to search attribute by the condition(%#v), error info is %s", fCond, rsp.ErrMsg)
 		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
