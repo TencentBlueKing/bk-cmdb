@@ -143,14 +143,22 @@ func (c *classification) DeleteClassification(params types.ContextParams, id int
 }
 
 func (c *classification) FindClassificationWithObjects(params types.ContextParams, cond condition.Condition) ([]metadata.ClassificationWithObject, error) {
-	rsp, err := c.clientSet.CoreService().Model().ReadModelClassification(context.Background(), params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	fCond := cond.ToMapStr()
+	if nil != params.MetaData {
+		fCond.Merge(metadata.PublicAndBizCondition(*params.MetaData))
+		fCond.Remove(metadata.BKMetadata)
+	} else {
+		fCond.Merge(metadata.BizLabelNotExist)
+	}
+
+	rsp, err := c.clientSet.CoreService().Model().ReadModelClassification(context.Background(), params.Header, &metadata.QueryCondition{Condition: fCond})
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s", err.Error())
 		return nil, err
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[operation-cls] failed to search the classification by the condition(%#v), error info is %s", cond.ToMapStr(), rsp.ErrMsg)
+		blog.Errorf("[operation-cls] failed to search the classification by the condition(%#v), error info is %s", fCond, rsp.ErrMsg)
 		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -169,7 +177,7 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 		}
 
 		if !queryObjectResp.Result {
-			blog.Errorf("[operation-cls] failed to search the classification by the condition(%#v), error info is %s", cond.ToMapStr(), queryObjectResp.ErrMsg)
+			blog.Errorf("[operation-cls] failed to search the classification by the condition(%#v), error info is %s", fCond, queryObjectResp.ErrMsg)
 			return nil, params.Err.New(queryObjectResp.Code, queryObjectResp.ErrMsg)
 		}
 
@@ -210,7 +218,10 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 
 func (c *classification) FindClassification(params types.ContextParams, cond condition.Condition) ([]model.Classification, error) {
 	fCond := cond.ToMapStr()
-	if nil == params.MetaData {
+	if nil != params.MetaData {
+		fCond.Merge(metadata.PublicAndBizCondition(*params.MetaData))
+		fCond.Remove(metadata.BKMetadata)
+	} else {
 		fCond.Merge(metadata.BizLabelNotExist)
 	}
 	rsp, err := c.clientSet.CoreService().Model().ReadModelClassification(context.Background(), params.Header, &metadata.QueryCondition{Condition: fCond})

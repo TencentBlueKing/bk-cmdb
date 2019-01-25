@@ -96,9 +96,6 @@ func (s *topoService) DeleteObjectUnique(params types.ContextParams, pathParams,
 // SearchObjectUnique search object uniques
 func (s *topoService) SearchObjectUnique(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	objectID := pathParams(common.BKObjIDField)
-
-	data.Remove(metadata.BKMetadata)
-
 	uniques, err := s.core.UniqueOperation().Search(params, objectID)
 	if err != nil {
 		blog.Errorf("[SearchObjectUnique] search for [%s] failed: %v", objectID, err)
