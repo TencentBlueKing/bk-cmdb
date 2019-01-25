@@ -993,3 +993,7 @@ const (
 	// MetadataField data business key
 	MetadataField = "metadata"
 )
+
+const (
+	BKBizDefault = "bizdefault"
+)
