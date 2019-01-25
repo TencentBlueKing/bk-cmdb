@@ -62,7 +62,7 @@ func (s *topoService) initBusinessObjectAttrGroup() {
 
 func (s *topoService) initBusinessGraphics() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/objecttopo/scope_type/{scope_type}/scope_id/{scope_id}", HandlerFunc: s.SelectObjectTopoGraphics})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/update/objecttopo/scope_type/{scope_type}/scope_id/{scope_id}", HandlerFunc: s.UpdateObjectTopoGraphics, HandlerParseOriginDataFunc: s.ParseOriginGraphicsUpdateInput})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/update/objecttopo/scope_type/{scope_type}/scope_id/{scope_id}", HandlerFunc: s.UpdateObjectTopoGraphicsNew})
 }
 
 func (s *topoService) initBusinessAssociation() {
@@ -70,9 +70,9 @@ func (s *topoService) initBusinessAssociation() {
 	// mainline topo methods
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/topomodelmainline", HandlerFunc: s.CreateMainLineObject})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/topomodelmainline/object/{bk_obj_id}", HandlerFunc: s.DeleteMainLineObject})
-	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/find/topomodelmainline", HandlerFunc: s.SearchMainLineObjectTopo})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/topomodelmainline", HandlerFunc: s.SearchMainLineObjectTopo})
 	//	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/model/{owner_id}/{cls_id}/{obj_id}", HandlerFunc: s.SearchObjectByClassificationID})
-	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/find/topoinst/biz/{bk_biz_id}", HandlerFunc: s.SearchBusinessTopo})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/topoinst/biz/{bk_biz_id}", HandlerFunc: s.SearchBusinessTopo})
 	// TODO: delete this api, it's not used by front.
 	//	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/inst/child/{owner_id}/{obj_id}/{app_id}/{inst_id}", HandlerFunc: s.SearchMainLineChildInstTopo})
 
