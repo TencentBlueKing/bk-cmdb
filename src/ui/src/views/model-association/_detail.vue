@@ -18,6 +18,7 @@
         <label class="form-label">
             <span class="label-text">
                 {{$t('Hosts["名称"]')}}
+                <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{'is-error': errors.has('asstName')}">
                 <input type="text"
