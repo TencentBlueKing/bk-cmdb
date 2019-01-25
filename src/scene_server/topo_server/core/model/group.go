@@ -137,7 +137,7 @@ func (g *group) Update(data mapstr.MapStr) error {
 	}
 
 	if exists {
-		return g.params.Err.Error(common.CCErrCommDuplicateItem)
+		return g.params.Err.Errorf(common.CCErrCommDuplicateItem, "")
 	}
 
 	cond := condition.CreateCondition()

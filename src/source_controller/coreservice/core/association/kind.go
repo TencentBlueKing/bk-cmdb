@@ -36,7 +36,7 @@ func (m *associationKind) CreateAssociationKind(ctx core.ContextParams, inputPar
 	}
 	if exists {
 		blog.Errorf("association kind (%#v)is duplicated", inputParam.Data)
-		return nil, ctx.Error.Error(common.CCErrCommDuplicateItem)
+		return nil, ctx.Error.Errorf(common.CCErrCommDuplicateItem, "")
 	}
 
 	id, err := m.save(ctx, inputParam.Data)
