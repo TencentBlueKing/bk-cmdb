@@ -167,14 +167,6 @@ func (a *attribute) Create() error {
 
 	// check the property id repeated
 	a.attr.OwnerID = a.params.SupplierAccount
-	exists, err := a.IsExists()
-	if nil != err {
-		return err
-	}
-
-	if exists {
-		return a.params.Err.Error(common.CCErrCommDuplicateItem)
-	}
 
 	// create a new record
 	input := metadata.CreateModelAttributes{Attributes: []metadata.Attribute{a.attr}}
@@ -212,7 +204,7 @@ func (a *attribute) Update(data mapstr.MapStr) error {
 	}
 
 	if exists {
-		return a.params.Err.Error(common.CCErrCommDuplicateItem)
+		return a.params.Err.Errorf(common.CCErrCommDuplicateItem, "")
 	}
 
 	input := metadata.UpdateOption{

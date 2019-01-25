@@ -17,5 +17,19 @@
     "bk_apache_property_group_default": "default",
     "bk_tomcat_property_group_default": "default",
     "bk_firewall_property_group_default": "default",
+	
+	"biz_property_group_bizdefault": "bizdefault",
+	"set_property_group_bizdefault": "bizdefault",
+	"module_property_group_bizdefault": "bizdefault",
+	"host_property_group_bizdefault": "bizdefault",
+	"process_property_group_bizdefault": "bizdefault",
+	"plat_property_group_bizdefault": "bizdefault",
+    "switch_property_group_bizdefault": "bizdefault",
+    "bk_router_property_group_bizdefault": "bizdefault",
+    "bk_load_balance_property_group_bizdefault": "bizdefault",
+    "bk_weblogic_property_group_bizdefault": "bizdefault",
+    "bk_apache_property_group_bizdefault": "bizdefault",
+    "bk_tomcat_property_group_bizdefault": "bizdefault",
+    "bk_firewall_property_group_bizdefault": "bizdefault",
     "": ""
 }
