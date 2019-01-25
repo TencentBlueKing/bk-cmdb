@@ -69,7 +69,7 @@ func (s *Service) AddUserConfig(req *restful.Request, resp *restful.Response) {
 	}
 	if 0 != rowCount {
 		blog.Errorf("add user config, [%s] user api is exist", addQuery.Name)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDuplicateItem)})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommDuplicateItem, "")})
 		return
 	}
 
@@ -145,7 +145,7 @@ func (s *Service) UpdateUserConfig(req *restful.Request, resp *restful.Response)
 		}
 		if 0 < rowCount {
 			blog.V(5).Infof("host user api  name duplicate , params:%v", dupParams)
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDuplicateItem)})
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommDuplicateItem, "")})
 			return
 		}
 	}
