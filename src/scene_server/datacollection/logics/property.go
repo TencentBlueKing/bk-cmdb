@@ -235,7 +235,7 @@ func (lgc *Logics) addProperty(pheader http.Header, netPropertyInfo meta.Netcoll
 	}
 	if isExist { // exist the same [deviceID + propertyID], duplicate data
 		blog.Errorf("[NetProperty] add net property fail, error: duplicate propertyID and deviceID")
-		return INVALIDID, defErr.Errorf(common.CCErrCommDuplicateItem)
+		return INVALIDID, defErr.Errorf(common.CCErrCommDuplicateItem, "property_id+device_id")
 	}
 
 	// add to the storage
@@ -278,7 +278,7 @@ func (lgc *Logics) updateProperty(
 			blog.Errorf("[NetProperty] update net property fail, duplicate deviceID [%d] and propertyID [%s]",
 				netPropertyInfo.DeviceID, netPropertyInfo.PropertyID)
 
-			return defErr.Error(common.CCErrCommDuplicateItem)
+			return defErr.Errorf(common.CCErrCommDuplicateItem, "property_id+device_id")
 		}
 	}
 

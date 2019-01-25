@@ -53,7 +53,7 @@ func (s *service) getAgentStatus(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	result, err := s.CoreAPI.HostServer().GetAgentStatus(context.Background(), appID, pheader)
+	result, err := s.Engine.CoreAPI.HostServer().GetAgentStatus(context.Background(), appID, pheader)
 	if err != nil {
 		blog.Errorf("getAgentStatus error:%v", err)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
