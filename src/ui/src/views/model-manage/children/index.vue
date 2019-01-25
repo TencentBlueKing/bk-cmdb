@@ -135,7 +135,8 @@
                 'supplierAccount',
                 'userName',
                 'admin',
-                'isAdminView'
+                'isAdminView',
+                'isBusinessSelected'
             ]),
             ...mapGetters('objectModel', [
                 'activeModel',
@@ -183,7 +184,10 @@
                 return `${window.API_HOST}object/owner/${this.supplierAccount}/object/${this.activeModel['bk_obj_id']}/export`
             },
             authority () {
-                return this.admin ? ['search', 'update', 'delete'] : []
+                if (this.isAdminView || this.isBusinessSelected) {
+                    return ['search', 'update', 'delete']
+                }
+                return []
             },
             canBeImport () {
                 const cantImport = ['host', 'biz', 'process', 'plat']

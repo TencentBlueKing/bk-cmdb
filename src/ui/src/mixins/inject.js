@@ -11,11 +11,12 @@ export default {
             } else {
                 injectedParams = params
             }
-            if (mergedOptions.inject) {
+            const bizId = this.$store.getters['objectBiz/bizId']
+            if (mergedOptions.inject && bizId !== null) {
                 Object.assign(injectedParams, {
                     metadata: {
                         label: {
-                            bk_biz_id: String(this.$store.getters['objectBiz/bizId'])
+                            bk_biz_id: String(bizId)
                         }
                     }
                 })
