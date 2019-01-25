@@ -142,7 +142,7 @@ func (s *ServerSession) readFromWire() error {
 
 	switch msg.typz {
 	case TypeRequest:
-		blog.V(3).Infof("[rpc server] calling [%s]", msg.cmd)
+		blog.V(5).Infof("[rpc server] calling [%s]", msg.cmd)
 		if handlerFunc, ok := s.srv.handlers[msg.cmd]; ok {
 			go s.handle(handlerFunc, &msg)
 		} else if handlerFunc, ok := s.srv.streamHandlers[msg.cmd]; ok {
