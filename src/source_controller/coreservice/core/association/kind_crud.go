@@ -32,7 +32,7 @@ func (m *associationKind) isExists(ctx core.ContextParams, associationKindID str
 }
 
 func (m *associationKind) hasModel(ctx core.ContextParams, cond mapstr.MapStr) (cnt uint64, exists bool, err error) {
-	cnt, err = m.dbProxy.Table(common.BKTableNameAsstDes).Find(cond).Count(ctx)
+	cnt, err = m.dbProxy.Table(common.BKTableNameObjDes).Find(cond).Count(ctx)
 	exists = 0 != cnt
 	return cnt, exists, err
 }
@@ -79,6 +79,7 @@ func (m *associationKind) save(ctx core.ContextParams, associationKind metadata.
 }
 
 func (m *associationKind) searchAssociationKind(ctx core.ContextParams, inputParam metadata.QueryCondition) (results []metadata.AssociationKind, err error) {
+	results = []metadata.AssociationKind{}
 	instHandler := m.dbProxy.Table(common.BKTableNameAsstDes).Find(inputParam.Condition).Fields(inputParam.Fields...)
 	for _, sort := range inputParam.SortArr {
 		fileld := sort.Field

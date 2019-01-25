@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	// "configcenter/src/common/blog"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/types"
@@ -45,6 +46,8 @@ func NewMgo(uri string, timeout time.Duration) (*Mongo, error) {
 	}
 	client.SetSyncTimeout(timeout)
 	client.SetSocketTimeout(timeout)
+	// mgo.SetLogger(blog.GlogWriter{})
+	// mgo.SetDebug(true)
 	return &Mongo{
 		dbc:    client,
 		dbname: cs.Database,

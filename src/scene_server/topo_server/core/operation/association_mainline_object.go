@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
@@ -60,18 +61,19 @@ func (a *association) DeleteMainlineAssociaton(params types.ContextParams, objID
 		}
 
 	}
-	// delete objects
-	if err = a.obj.DeleteObject(params, tObject.ID, nil, false); nil != err && io.EOF != err {
-		blog.Errorf("[operation-asst] failed to delete the object(%s), error info is %s", tObject.ID, err.Error())
-		return err
-	}
 
 	// delete this object related association.
 	cond := condition.CreateCondition()
-	cond.Field(metadata.AssociationFieldObjectID).Eq(tObject.ID)
-	cond.Field(common.BKOwnerIDField).Eq(tObject.OwnerID)
+	or := cond.NewOR()
+	or.Item(mapstr.MapStr{metadata.AssociationFieldObjectID: objID})
+	or.Item(mapstr.MapStr{metadata.AssociationFieldAssociationObjectID: objID})
 	if err = a.DeleteAssociation(params, cond); nil != err {
-		blog.Errorf("[operation-asst] failed to delete the association, error info is %s", err.Error())
+		return err
+	}
+
+	// delete objects
+	if err = a.obj.DeleteObject(params, tObject.ID, nil, false); nil != err && io.EOF != err {
+		blog.Errorf("[operation-asst] failed to delete the object(%s), error info is %s", tObject.ID, err.Error())
 		return err
 	}
 
@@ -81,9 +83,8 @@ func (a *association) DeleteMainlineAssociaton(params types.ContextParams, objID
 func (a *association) SearchMainlineAssociationTopo(params types.ContextParams, targetObj model.Object) ([]*metadata.MainlineObjectTopo, error) {
 
 	results := make([]*metadata.MainlineObjectTopo, 0)
-	tObject := targetObj.Object()
 	for {
-
+		tObject := targetObj.Object()
 		tmpRst := &metadata.MainlineObjectTopo{}
 		tmpRst.ObjID = tObject.ObjectID
 		tmpRst.ObjName = tObject.ObjectName
@@ -123,6 +124,12 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 		return nil, err
 	}
 
+	if data.AsstObjID == "" {
+		blog.Errorf("[operation-asst] bk_asst_obj_id empty,rid:%s", util.GetHTTPCCRequestID(params.Header))
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedSet, common.BKAsstObjIDField)
+	}
+
+	params.MetaData = &data.Metadata
 	items, err := a.SearchMainlineAssociationTopo(params, bizObj)
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to check the mainline topo level, error info is %s", err.Error())
@@ -186,7 +193,7 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 		return nil, err
 	}
 
-	if err = childObj.UpdateMainlineObjectAssociationTo(parentObj.Object().ObjectID, cObj.ObjectID); err != nil {
+	if err = childObj.SetMainlineParentObject(cObj.ObjectID); err != nil {
 		blog.Errorf("[operation-asst] update mainline current object's[%s] child object[%s] association to current failed, err: %v",
 			cObj.ObjectID, childObj.Object().ObjectID, err)
 		return nil, err

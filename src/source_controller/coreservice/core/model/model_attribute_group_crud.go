@@ -35,6 +35,7 @@ func (g *modelAttributeGroup) save(ctx core.ContextParams, group metadata.Group)
 
 	group.ID = int64(id)
 	group.OwnerID = ctx.SupplierAccount
+
 	err = g.dbProxy.Table(common.BKTableNamePropertyGroup).Insert(ctx, group)
 	return id, err
 }
@@ -63,7 +64,6 @@ func (g *modelAttributeGroup) update(ctx core.ContextParams, data mapstr.MapStr,
 	if nil != err {
 		return cnt, err
 	}
-
-	err = g.dbProxy.Table(common.BKTableNamePropertyGroup).Update(ctx, data, cond.ToMapStr())
+	err = g.dbProxy.Table(common.BKTableNamePropertyGroup).Update(ctx, cond.ToMapStr(), data)
 	return cnt, err
 }

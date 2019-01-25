@@ -24,7 +24,7 @@ import (
 	"configcenter/src/common/util"
 )
 
-func (lgc *Logics) getAssociationData(ctx context.Context, header http.Header, objID string, instAsstArr []*metadata.InstAsst) (map[string]map[int64][]PropertyPrimaryVal, error) {
+func (lgc *Logics) getAssociationData(ctx context.Context, header http.Header, objID string, instAsstArr []*metadata.InstAsst, meta metadata.Metadata) (map[string]map[int64][]PropertyPrimaryVal, error) {
 
 	// map[objID][]instID
 	asstObjIDIDArr := make(map[string][]int64)
@@ -39,7 +39,7 @@ func (lgc *Logics) getAssociationData(ctx context.Context, header http.Header, o
 	// map[objID]map[inst_id][]Property
 	retAsstObjIDInstInfoMap := make(map[string]map[int64][]PropertyPrimaryVal)
 	for itemObjID, asstInstIDArr := range asstObjIDIDArr {
-		objPrimaryInfo, err := lgc.fetchInstAssocationData(ctx, header, itemObjID, asstInstIDArr)
+		objPrimaryInfo, err := lgc.fetchInstAssocationData(ctx, header, itemObjID, asstInstIDArr, meta)
 		if err != nil {
 			return nil, err
 		}
@@ -72,12 +72,12 @@ func (lgc *Logics) fetchAssocationData(ctx context.Context, header http.Header, 
 	return result.Data, nil
 }
 
-func (lgc *Logics) fetchInstAssocationData(ctx context.Context, header http.Header, objID string, instIDArr []int64) (map[int64][]PropertyPrimaryVal, error) {
+func (lgc *Logics) fetchInstAssocationData(ctx context.Context, header http.Header, objID string, instIDArr []int64, meta metadata.Metadata) (map[int64][]PropertyPrimaryVal, error) {
 
 	ccErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	conds := mapstr.New()
 	conds.Set(common.BKIsOnlyField, true)
-	propertyArr, err := lgc.getAsstObjectPrimaryFieldByObjID(objID, header, conds)
+	propertyArr, err := lgc.getAsstObjectPrimaryFieldByObjID(objID, header, conds, meta)
 	if err != nil {
 		return nil, err
 	}

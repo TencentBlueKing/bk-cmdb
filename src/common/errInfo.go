@@ -421,6 +421,9 @@ const (
 	CCErrHostFavouriteDupFail            = 1106018
 	CCErrHostGetSnapshotChannelEmpty     = 1106019
 	CCErrHostGetSnapshotChannelClose     = 1106020
+	CCErrCloudCreateSyncTaskFail         = 1106021
+	CCErrCloudConfirmHistoryAddFail      = 1106022
+	CCErrCloudSyncHistorySearchFail      = 1106023
 
 	// proccontroller 1107XXX
 	CCErrProcDeleteProc2Module   = 1107001
@@ -497,6 +500,20 @@ const (
 	CCErrHostEditRelationPoolFail = 1110028
 	CCErrAddHostToModule          = 1110029
 	CCErrAddHostToModuleFailStr   = 1110030
+
+	// CCErrCloudSyncCreateFail cloud hosts sync table create failed
+	CCErrCloudSyncCreateFail = 1110031
+
+	// CCErrCloudHistoryCreateFail cloud sync history table create failed
+	CCErrCloudHistoryCreateFail     = 1110032
+	CCErrCloudConfirmCreateFail     = 1110033
+	CCErrCloudGetConfirmFail        = 1110034
+	CCErrCloudAddConfirmHistoryFail = 1110035
+	CCErrCloudGetTaskFail           = 1110036
+	CCErrCloudGetConfirmHistoryFail = 1110037
+	CCErrCloudTaskNameAlreadyExist  = 1110038
+	CCErrCloudSyncStartFail         = 1110039
+
 	// hostserver api machinery new error code
 	CCErrAddUserCustomQueryFaild       = 1110040
 	CCErrUpdateUserCustomQueryFaild    = 1110041

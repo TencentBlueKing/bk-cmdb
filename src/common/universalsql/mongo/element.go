@@ -113,6 +113,9 @@ var _ universalsql.ConditionElement = (*In)(nil)
 
 // ToMapStr return the format result
 func (i *In) ToMapStr() mapstr.MapStr {
+	if nil == i.Val {
+		i.Val = []interface{}{}
+	}
 	return mapstr.MapStr{
 		i.Key: mapstr.MapStr{
 			universalsql.IN: i.Val,
@@ -127,6 +130,9 @@ var _ universalsql.ConditionElement = (*Nin)(nil)
 
 // ToMapStr return the format result
 func (n *Nin) ToMapStr() mapstr.MapStr {
+	if nil == n.Val {
+		n.Val = []interface{}{}
+	}
 	return mapstr.MapStr{
 		n.Key: mapstr.MapStr{
 			universalsql.NIN: n.Val,
@@ -150,7 +156,7 @@ func (r *Regex) ToMapStr() mapstr.MapStr {
 
 // Comparison Operator End
 
-// Elements Operator Start
+// Exists Operator Start
 type Exists element
 
 var _ universalsql.ConditionElement = (*Exists)(nil)
@@ -158,8 +164,9 @@ var _ universalsql.ConditionElement = (*Exists)(nil)
 // Exists mongodb operator $exists
 func (e *Exists) ToMapStr() mapstr.MapStr {
 	return mapstr.MapStr{
-		e.Key: e.Val,
-	}
+		e.Key: mapstr.MapStr{
+			universalsql.EXISTS: e.Val,
+		}}
 }
 
 // Elements Operator End

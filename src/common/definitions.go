@@ -220,8 +220,50 @@ const (
 	// BKHostInnerIPField the host innerip field
 	BKHostInnerIPField = "bk_host_innerip"
 
+	// BKHostCloudRegionField the host cloud region field
+	BKHostCloudRegionField = "bk_cloud_region"
+
 	// BKHostOuterIPField the host outerip field
 	BKHostOuterIPField = "bk_host_outerip"
+
+	// TimeTransferModel the time transferModel field
+	TimeTransferModel = "2006-01-02 15:04:05"
+
+	// BKLastTimeCloudSync the last time cloud sync
+	BKLastTimeCloudSync = "bk_last_sync_time"
+
+	// BKCloudTaskID the cloud sync task id
+	BKCloudTaskID = "bk_task_id"
+
+	// BKSyncStatus the cloud sync status
+	BKSyncStatus = "bk_sync_status"
+
+	// BKNewAddHost the cloud sync new add hosts
+	BKNewAddHost = "new_add"
+
+	// BKAttrChangedHost the cloud sync attr changed hosts
+	BKAttrChangedHost = "attr_changed"
+
+	// BKCloudConfirm whether new add cloud hosts need confirm
+	BKCloudConfirm = "bk_confirm"
+
+	// BKAttrConfirm the cloud hosts attr changed need confirm
+	BKAttrConfirm = "bk_attr_confirm"
+
+	// BKCloudSyncTaskName the cloud sync task name field
+	BKCloudSyncTaskName = "bk_task_name"
+
+	// BKCloudAccountType the cloud account type field
+	BKCloudAccountType = "bk_account_type"
+
+	// BKCloudSyncAccountAdmin the cloud sync account admin
+	BKCloudSyncAccountAdmin = "bk_account_admin"
+
+	// BKResourceType the cloud sync resource type
+	BKResourceType = "bk_resource_type"
+
+	// BKImportFrom the host import from field
+	BKImportFrom = "import_from"
 
 	// BKHostIDField the host id field
 	BKHostIDField = "bk_host_id"
@@ -254,6 +296,18 @@ const (
 
 	// BKOSNameField the os name field
 	BKOSNameField = "bk_os_name"
+
+	// BKHttpGet the http get
+	BKHttpGet = "GET"
+
+	// BKTencentCloudTimeOut the tencent cloud timeout
+	BKTencentCloudTimeOut = 10
+
+	// TencentCloudUrl the tencent cloud url
+	TencentCloudUrl = "cvm.tencentcloudapi.com"
+
+	// TencentCloudSignMethod the tencent cloud sign method
+	TencentCloudSignMethod = "HmacSHA1"
 
 	// BKCloudIDField the cloud id field
 	BKCloudIDField = "bk_cloud_id"
@@ -535,6 +589,12 @@ const (
 	// CreateTimeField the create time field
 	CreateTimeField = "create_time"
 
+	// ConfirmTimeField the cloud resource confirm time filed
+	ConfirmTimeField = "confirm_time"
+
+	// StartTimeField the cloud sync start time field
+	StartTimeFiled = "start_time"
+
 	// ModifierField the modifier field
 	ModifierField = "modifier"
 
@@ -759,9 +819,12 @@ const (
 	BKSessionLanugageKey    = "language"
 	BKHTTPSupplierID        = "bk_supplier_id"
 
-	BKHTTPCCRequestID     = "cc_request_id"
-	BKHTTPCCRequestTime   = "cc_request_time"
-	BKHTTPCCTransactionID = "cc_txn_id"
+	// BKHTTPCCRequestID cc request id cc_request_id
+	BKHTTPCCRequestID = "CC_REQUEST_ID"
+	// BKHTTPOtherRequestID esb request id  X-Bkapi-Request-Id
+	BKHTTPOtherRequestID  = "X-Bkapi-Request-Id"
+	BKHTTPCCRequestTime   = "CC_REQUEST_TIME"
+	BKHTTPCCTransactionID = "CC_TXN_ID"
 )
 
 type CCContextKey string
@@ -901,6 +964,10 @@ const (
 	RedisProcSrvHostInstanceRefreshModuleKey  = BKCacheKeyV3Prefix + "prochostinstancerefresh:set"
 	RedisProcSrvHostInstanceAllRefreshLockKey = BKCacheKeyV3Prefix + "lock:prochostinstancerefresh"
 	RedisProcSrvQueryProcOPResultKey          = BKCacheKeyV3Prefix + "procsrv:query:opresult:set"
+	RedisCloudSyncInstancePendingStart        = BKCacheKeyV3Prefix + "cloudsyncinstancependingstart:list"
+	RedisCloudSyncInstanceStarted             = BKCacheKeyV3Prefix + "cloudsyncinstancestarted:list"
+	RedisCloudSyncInstancePendingStop         = BKCacheKeyV3Prefix + "cloudsyncinstancependingstop:list"
+	RedisCloudSyncStartLockKey                = BKCacheKeyV3Prefix + "lock:cloudsyncstart"
 )
 
 // association fields
@@ -925,4 +992,8 @@ const (
 const (
 	// MetadataField data business key
 	MetadataField = "metadata"
+)
+
+const (
+	BKBizDefault = "bizdefault"
 )

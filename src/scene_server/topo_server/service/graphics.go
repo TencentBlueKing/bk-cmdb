@@ -31,6 +31,7 @@ func (s topoService) ParseOriginGraphicsUpdateInput(data []byte) (mapstr.MapStr,
 	return result, nil
 }
 func (s *topoService) SelectObjectTopoGraphics(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
 	return s.core.GraphicsOperation().SelectObjectTopoGraphics(params, pathParams("scope_type"), pathParams("scope_id"))
 }
 
@@ -45,5 +46,16 @@ func (s *topoService) UpdateObjectTopoGraphics(params types.ContextParams, pathP
 	datas, _ = val.([]metadata.TopoGraphics)
 
 	err := s.core.GraphicsOperation().UpdateObjectTopoGraphics(params, pathParams("scope_type"), pathParams("scope_id"), datas)
+	return nil, err
+}
+
+func (s *topoService) UpdateObjectTopoGraphicsNew(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	datas := metadata.UpdateTopoGraphicsInput{}
+	err := data.MarshalJSONInto(&datas)
+	if nil != err {
+		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, "not set anything")
+	}
+
+	err = s.core.GraphicsOperation().UpdateObjectTopoGraphics(params, pathParams("scope_type"), pathParams("scope_id"), datas.Origin)
 	return nil, err
 }

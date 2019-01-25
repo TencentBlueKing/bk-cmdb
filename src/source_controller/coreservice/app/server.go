@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/source_controller/coreservice/app/options"
@@ -73,10 +74,12 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	coreService := coresvr.New()
 	coreSvr.Service = coreService
 
+	webhandler := restful.NewContainer().Add(coreService.WebService())
+	webhandler.ServiceErrorHandler(rdapi.ServiceErrorHandler)
 	server := backbone.Server{
 		ListenAddr: svrInfo.IP,
 		ListenPort: svrInfo.Port,
-		Handler:    restful.NewContainer().Add(coreService.WebService()),
+		Handler:    webhandler,
 		TLS:        backbone.TLSConfig{},
 	}
 
