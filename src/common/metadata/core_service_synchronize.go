@@ -30,17 +30,38 @@ const (
 	SynchronizeOperateTypeDelete
 )
 
-// SynchronizeDataParameter synchronize data http request parameter
-type SynchronizeDataParameter struct {
+// SynchronizeInstanceParameter synchronize instance data http request parameter
+type SynchronizeInstanceParameter struct {
 	OperateType       SynchronizeOperateType `json:"op_type"`
 	ObjectID          string                 `json:"obj_id"`
-	InstacneInfoArray []*SynchronizeDataItem `json:"instance_info_array"`
+	InstacneInfoArray []*SynchronizeItem     `json:"instance_info_array"`
 	// source data sign
 	SynchronizeSign string `json:"sync_sign"`
 }
 
-// SynchronizeDataItem synchronize data information
-type SynchronizeDataItem struct {
-	InstanceInfo mapstr.MapStr `json:"instance_info"`
-	InstanceID   int64         `json:"instance_id"`
+// SynchronizeItem synchronize data information
+type SynchronizeItem struct {
+	Info mapstr.MapStr `json:"info"`
+	ID   int64         `json:"id"`
+}
+
+// SynchronizeModelDescType synchronize model data type
+type SynchronizeModelDescType int
+
+const (
+	// SynchronizeModelDescTypeGroupInfo synchroneize model ggroup
+	SynchronizeModelDescTypeGroupInfo SynchronizeModelDescType = iota + 1
+	// SynchronizeModelDescTypeModuleAttribute synchroneize model attribute
+	SynchronizeModelDescTypeModuleAttribute
+	// SynchronizeModelDescTypeModuleAttributeGroup synchroneize model attribute group
+	SynchronizeModelDescTypeModuleAttributeGroup
+)
+
+// SynchronizeModelDataParameter  synchronize model data http request parameter
+type SynchronizeModelDescParameter struct {
+	OperateType        SynchronizeOperateType   `json:"op_type"`
+	ModelDescription   SynchronizeModelDescType `json:"model_desc"`
+	ModelDescInfoArray []*SynchronizeItem       `json:"model_attr_array"`
+	// source data sign
+	SynchronizeSign string `json:"sync_sign"`
 }
