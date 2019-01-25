@@ -16,7 +16,7 @@ import (
 	"fmt"
 	"time"
 
-	regd "configcenter/src/common/RegisterDiscover"
+	"configcenter/src/common/registerdiscover"
 	"configcenter/src/common/types"
 )
 
@@ -33,6 +33,7 @@ type DiscoveryInterface interface {
 	ObjectCtrl() Interface
 	ProcCtrl() Interface
 	GseProcServ() Interface
+	CoreService() Interface
 }
 
 type Interface interface {
@@ -40,7 +41,7 @@ type Interface interface {
 }
 
 func NewDiscoveryInterface(zkAddr string) (DiscoveryInterface, error) {
-	disc := regd.NewRegDiscoverEx(zkAddr, 10*time.Second)
+	disc := registerdiscover.NewRegDiscoverEx(zkAddr, 10*time.Second)
 	if err := disc.Start(); nil != err {
 		return nil, err
 	}
@@ -114,4 +115,8 @@ func (d *discover) ProcCtrl() Interface {
 
 func (d *discover) GseProcServ() Interface {
 	return d.servers[types.GSE_MODULE_PROCSERVER]
+}
+
+func (d *discover) CoreService() Interface {
+	return d.servers[types.CC_MODULE_CORESERVICE]
 }

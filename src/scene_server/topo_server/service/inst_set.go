@@ -19,7 +19,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
-	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	gparams "configcenter/src/common/paraparse"
 	"configcenter/src/scene_server/topo_server/core/operation"
@@ -27,7 +26,7 @@ import (
 )
 
 // CreateSet create a new set
-func (s *topoService) CreateSet(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) CreateSet(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDSet)
 	if nil != err {
@@ -43,7 +42,8 @@ func (s *topoService) CreateSet(params types.ContextParams, pathParams, queryPar
 
 	return s.core.SetOperation().CreateSet(params, obj, bizID, data)
 }
-func (s *topoService) DeleteSets(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+
+func (s *topoService) DeleteSets(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
 	if nil != err {
 		blog.Errorf("[api-set]failed to parse the biz id, error info is %s", err.Error())
@@ -67,7 +67,7 @@ func (s *topoService) DeleteSets(params types.ContextParams, pathParams, queryPa
 }
 
 // DeleteSet delete the set
-func (s *topoService) DeleteSet(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) DeleteSet(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	if "batch" == pathParams("set_id") {
 		return s.DeleteSets(params, pathParams, queryParams, data)
@@ -96,7 +96,7 @@ func (s *topoService) DeleteSet(params types.ContextParams, pathParams, queryPar
 }
 
 // UpdateSet update the set
-func (s *topoService) UpdateSet(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) UpdateSet(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
 	if nil != err {
@@ -120,7 +120,7 @@ func (s *topoService) UpdateSet(params types.ContextParams, pathParams, queryPar
 }
 
 // SearchSet search the set
-func (s *topoService) SearchSet(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchSet(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
 	if nil != err {
@@ -142,7 +142,6 @@ func (s *topoService) SearchSet(params types.ContextParams, pathParams, queryPar
 	}
 
 	paramsCond.Condition[common.BKAppIDField] = bizID
-	paramsCond.Condition[common.BKOwnerIDField] = params.SupplierAccount
 
 	queryCond := &metadata.QueryInput{}
 	queryCond.Condition = paramsCond.Condition
@@ -158,7 +157,7 @@ func (s *topoService) SearchSet(params types.ContextParams, pathParams, queryPar
 		return nil, err
 	}
 
-	result := frtypes.MapStr{}
+	result := mapstr.MapStr{}
 	result.Set("count", cnt)
 	result.Set("info", instItems)
 

@@ -314,20 +314,17 @@ func productExcelHealer(fields map[string]Property, filter []string, sheet *xlsx
 
 			if ok {
 				enumVals := getEnumNames(optionArr)
+				dd := xlsx.NewXlsxCellDataValidation(true, true, true)
+				dd.SetDropList(enumVals)
+				sheet.Col(index).SetDataValidationWithStart(dd, common.HostAddMethodExcelIndexOffset)
 
-				if len(enumVals) < common.ExcelDataValidationListLen {
-					dd := xlsx.NewXlsxCellDataValidation(true, true, true)
-					dd.SetDropList(enumVals)
-					sheet.Col(index).SetDataValidationWithStart(dd, common.HostAddMethodExcelIndexOffset+1)
-
-				}
 			}
 			sheet.Col(index).SetType(xlsx.CellTypeString)
 
 		case common.FieldTypeBool:
 			dd := xlsx.NewXlsxCellDataValidation(true, true, true)
 			dd.SetDropList([]string{fieldTypeBoolTrue, fieldTypeBoolFalse})
-			sheet.Col(index).SetDataValidationWithStart(dd, common.HostAddMethodExcelIndexOffset+1)
+			sheet.Col(index).SetDataValidationWithStart(dd, common.HostAddMethodExcelIndexOffset)
 			sheet.Col(index).SetType(xlsx.CellTypeString)
 		default:
 			sheet.Col(index).SetType(xlsx.CellTypeString)

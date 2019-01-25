@@ -37,5 +37,7 @@
     "1199039": "%s field does not exist in %s",
     "1199040": "convert %s model field %s to %s error %s",
     "1199041": "handle %s error %s",
+    "1199043": "The field value check does not pass, %s",
+    "1199044": "not all success",
     "":""
 }

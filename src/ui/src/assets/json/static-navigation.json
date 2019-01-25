@@ -58,6 +58,22 @@
             "name": "动态分组",
             "authorized": true,
             "classificationId": "bk_business_resource"
+        }, {
+            "i18n": "Cloud['资源确认']",
+            "path": "/resource-confirm",
+            "id": "resource_confirm",
+            "icon": "icon-cc-host-free-pool",
+            "name": "资源确认",
+            "authorized": true,
+            "classificationId": "bk_business_resource"
+        },{
+            "i18n": "Cloud['云资源发现']",
+            "path": "/cloud-discover",
+            "id": "cloud",
+            "icon": "icon-cc-host-free-pool",
+            "name": "云资源发现",
+            "authorized": true,
+            "classificationId": "bk_business_resource"
         }]
     },
     "bk_audit_analysis": {
@@ -100,7 +116,7 @@
         }]
     },
     "bk_ci_model": {
-        "i18n": "Nav['CI模型']",
+        "i18n": "Nav['模型管理']",
         "icon": "icon-cc-nav-model",
         "id": "bk_ci_model",
         "name": "权限控制",
@@ -141,6 +157,13 @@
             "name": "事件推送",
             "authorized": true,
             "classificationId": "bk_ci_model"
+        }, {
+            "i18n": "NetworkDiscovery['网络发现']",
+            "path": "/network-discovery",
+            "id": "network",
+            "name": "网络发现",
+            "classificationId": "bk_ci_model",
+            "authorized": true
         }]
     }
 }

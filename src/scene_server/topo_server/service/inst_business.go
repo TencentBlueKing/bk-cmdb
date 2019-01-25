@@ -18,13 +18,13 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
-	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstr"
 	gparams "configcenter/src/common/paraparse"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // CreateBusiness create a new business
-func (s *topoService) CreateBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) CreateBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
@@ -37,7 +37,7 @@ func (s *topoService) CreateBusiness(params types.ContextParams, pathParams, que
 }
 
 // DeleteBusiness delete the business
-func (s *topoService) DeleteBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) DeleteBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
@@ -55,7 +55,7 @@ func (s *topoService) DeleteBusiness(params types.ContextParams, pathParams, que
 }
 
 // UpdateBusiness update the business
-func (s *topoService) UpdateBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) UpdateBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
@@ -74,7 +74,7 @@ func (s *topoService) UpdateBusiness(params types.ContextParams, pathParams, que
 }
 
 // UpdateBusinessStatus update the business status
-func (s *topoService) UpdateBusinessStatus(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) UpdateBusinessStatus(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
@@ -87,7 +87,7 @@ func (s *topoService) UpdateBusinessStatus(params types.ContextParams, pathParam
 		blog.Errorf("[api-business]failed to parse the biz id, error info is %s", err.Error())
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
-	data = frtypes.New()
+	data = mapstr.New()
 	_, bizs, err := s.core.BusinessOperation().FindBusiness(params, obj, nil, condition.CreateCondition().Field(common.BKAppIDField).Eq(bizID))
 	if nil != err {
 		return nil, err
@@ -98,8 +98,7 @@ func (s *topoService) UpdateBusinessStatus(params types.ContextParams, pathParam
 	switch common.DataStatusFlag(pathParams("flag")) {
 	case common.DataStatusDisabled:
 		innerCond := condition.CreateCondition()
-		innerCond.Field(common.BKAsstObjIDField).Eq(obj.GetID())
-		innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+		innerCond.Field(common.BKAsstObjIDField).Eq(obj.Object().ObjectID)
 		innerCond.Field(common.BKAsstInstIDField).Eq(bizID)
 		if err := s.core.AssociationOperation().CheckBeAssociation(params, obj, innerCond); nil != err {
 			return nil, err
@@ -124,7 +123,7 @@ func (s *topoService) UpdateBusinessStatus(params types.ContextParams, pathParam
 }
 
 // SearchBusiness search the business by condition
-func (s *topoService) SearchBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
@@ -133,7 +132,7 @@ func (s *topoService) SearchBusiness(params types.ContextParams, pathParams, que
 	}
 
 	searchCond := &gparams.SearchParams{
-		Condition: frtypes.New(),
+		Condition: mapstr.New(),
 	}
 	if err := data.MarshalJSONInto(&searchCond); nil != err {
 		blog.Errorf("failed to parse the params, error info is %s", err.Error())
@@ -159,7 +158,6 @@ func (s *topoService) SearchBusiness(params types.ContextParams, pathParams, que
 	}
 
 	innerCond.Field(common.BKDefaultField).Eq(0)
-//	innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	innerCond.SetPage(searchCond.Page)
 	innerCond.SetFields(searchCond.Fields)
 
@@ -169,7 +167,7 @@ func (s *topoService) SearchBusiness(params types.ContextParams, pathParams, que
 		return nil, err
 	}
 
-	result := frtypes.MapStr{}
+	result := mapstr.MapStr{}
 	result.Set("count", cnt)
 	result.Set("info", instItems)
 
@@ -177,7 +175,7 @@ func (s *topoService) SearchBusiness(params types.ContextParams, pathParams, que
 }
 
 // SearchDefaultBusiness search the business by condition
-func (s *topoService) SearchDefaultBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchDefaultBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
@@ -197,14 +195,14 @@ func (s *topoService) SearchDefaultBusiness(params types.ContextParams, pathPara
 		blog.Errorf("[api-business] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 		return nil, err
 	}
-	result := frtypes.MapStr{}
+	result := mapstr.MapStr{}
 	result.Set("count", cnt)
 	result.Set("info", instItems)
 	return result, nil
 }
 
 // CreateDefaultBusiness create the default business
-func (s *topoService) CreateDefaultBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) CreateDefaultBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
 		blog.Errorf("failed to search the business, %s", err.Error())
@@ -215,7 +213,7 @@ func (s *topoService) CreateDefaultBusiness(params types.ContextParams, pathPara
 	return s.core.BusinessOperation().CreateBusiness(params, obj, data)
 }
 
-func (s *topoService) GetInternalModule(params types.ContextParams, pathParams, queryparams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) GetInternalModule(params types.ContextParams, pathParams, queryparams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
 		blog.Errorf("failed to search the business, %s", err.Error())
