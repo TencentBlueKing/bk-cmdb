@@ -49,6 +49,9 @@ func (a *unique) Create(params types.ContextParams, objectID string, request *me
 		MustCheck: request.MustCheck,
 	}
 
+	if nil != params.MetaData {
+		unique.Metadata = *params.MetaData
+	}
 	resp, err := a.clientSet.CoreService().Model().CreateModelAttrUnique(context.Background(), params.Header, objectID, metadata.CreateModelAttrUnique{Data: unique})
 	if err != nil {
 		blog.Errorf("[UniqueOperation] create for %s, %#v failed %v", objectID, request, err)
