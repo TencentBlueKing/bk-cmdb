@@ -116,7 +116,7 @@
         }]
     },
     "bk_ci_model": {
-        "i18n": "Nav['CI模型']",
+        "i18n": "Nav['模型管理']",
         "icon": "icon-cc-nav-model",
         "id": "bk_ci_model",
         "name": "权限控制",
