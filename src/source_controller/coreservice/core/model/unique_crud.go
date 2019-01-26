@@ -72,7 +72,7 @@ func (m *modelAttrUnique) createModelAttrUnique(ctx core.ContextParams, objID st
 	err := m.recheckUniqueForExistsInsts(ctx, objID, inputParam.Data.Keys, inputParam.Data.MustCheck)
 	if nil != err {
 		blog.Errorf("[CreateObjectUnique] recheckUniqueForExistsInsts for %s with %#v error: %#v", objID, inputParam, err)
-		return 0, ctx.Error.Error(common.CCErrCommDuplicateItem)
+		return 0, ctx.Error.Errorf(common.CCErrCommDuplicateItem, "")
 	}
 
 	id, err := m.dbProxy.NextSequence(ctx, common.BKTableNameObjUnique)
@@ -90,7 +90,10 @@ func (m *modelAttrUnique) createModelAttrUnique(ctx core.ContextParams, objID st
 		OwnerID:   ctx.SupplierAccount,
 		LastTime:  metadata.Now(),
 	}
-
+	_, err = inputParam.Data.Metadata.Label.GetBusinessID()
+	if nil == err {
+		unique.Metadata = inputParam.Data.Metadata
+	}
 	err = m.dbProxy.Table(common.BKTableNameObjUnique).Insert(ctx, &unique)
 	if nil != err {
 		blog.Errorf("[CreateObjectUnique] Insert error: %#v, raw: %#v", err, &unique)
@@ -133,7 +136,7 @@ func (m *modelAttrUnique) updateModelAttrUnique(ctx core.ContextParams, objID st
 	err := m.recheckUniqueForExistsInsts(ctx, objID, unique.Keys, unique.MustCheck)
 	if nil != err {
 		blog.Errorf("[UpdateObjectUnique] recheckUniqueForExistsInsts for %s with %#v error: %#v", objID, unique, err)
-		return ctx.Error.Error(common.CCErrCommDuplicateItem)
+		return ctx.Error.Errorf(common.CCErrCommDuplicateItem, "")
 	}
 
 	cond := condition.CreateCondition()
