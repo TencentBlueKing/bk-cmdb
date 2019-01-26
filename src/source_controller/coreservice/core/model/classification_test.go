@@ -47,7 +47,7 @@ func TestCreateOneClassification(t *testing.T) {
 		ClassificationName: "test_classification_name",
 	},
 	})
-	require.EqualError(t, err, defaultCtx.Error.Error(common.CCErrCommDuplicateItem).Error())
+	require.EqualError(t, err, defaultCtx.Error.Errorf(common.CCErrCommDuplicateItem, "").Error())
 
 }
 

@@ -31,7 +31,6 @@ type modelAttributeGroup struct {
 }
 
 func (g *modelAttributeGroup) CreateModelAttributeGroup(ctx core.ContextParams, objID string, inputParam metadata.CreateModelAttributeGroup) (*metadata.CreateOneDataResult, error) {
-
 	dataResult := &metadata.CreateOneDataResult{}
 
 	// NOW: Temporarily blocked
@@ -42,25 +41,25 @@ func (g *modelAttributeGroup) CreateModelAttributeGroup(ctx core.ContextParams, 
 	inputParam.Data.ObjectID = objID
 	inputParam.Data.OwnerID = ctx.SupplierAccount
 
-	_, isExists, err := g.groupIDIsExists(ctx, objID, inputParam.Data.GroupID)
+	_, isExists, err := g.groupIDIsExists(ctx, objID, inputParam.Data.GroupID, inputParam.Data.Metadata)
 	if nil != err {
 		blog.Errorf("request(%s): it is to failed to check the group ID (%s) if it is exists, error info is %s", ctx.ReqID, inputParam.Data.GroupID, err.Error())
 		return dataResult, err
 	}
 	if isExists {
-		blog.Warnf("request(%s): it is to failed to create a new group (%#v), because of the groupID (%s) is exists", ctx.ReqID, inputParam.Data, inputParam.Data.GroupID)
+		blog.Errorf("request(%s): it is to failed to create a new group (%#v), because of the groupID (%s) is exists", ctx.ReqID, inputParam.Data, inputParam.Data.GroupID)
 		return dataResult, ctx.Error.Errorf(common.CCErrCommDuplicateItem, inputParam.Data.GroupID)
 	}
 
-	_, isExists, err = g.groupNameIsExists(ctx, objID, inputParam.Data.GroupName)
+	_, isExists, err = g.groupNameIsExists(ctx, objID, inputParam.Data.GroupName, inputParam.Data.Metadata)
 	if nil != err {
 		blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, error info is %s", ctx.ReqID, inputParam.Data.GroupName, err.Error())
 		return dataResult, err
 	}
 	if isExists {
+		blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, error info is %s", ctx.ReqID, inputParam.Data.GroupName, err.Error())
 		return dataResult, ctx.Error.Errorf(common.CCErrCommDuplicateItem, inputParam.Data.GroupName)
 	}
-
 	id, err := g.save(ctx, inputParam.Data)
 	if nil != err {
 		blog.Errorf("request(%s): it is to failed to create a new model attribtue group (%#v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
@@ -85,7 +84,7 @@ func (g *modelAttributeGroup) SetModelAttributeGroup(ctx core.ContextParams, obj
 	inputParam.Data.ObjectID = objID
 	inputParam.Data.OwnerID = ctx.SupplierAccount
 
-	_, isExists, err := g.groupNameIsExists(ctx, objID, inputParam.Data.GroupName)
+	_, isExists, err := g.groupNameIsExists(ctx, objID, inputParam.Data.GroupName, inputParam.Data.Metadata)
 	if nil != err {
 		blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, error info is %s", ctx.ReqID, inputParam.Data.GroupName, err.Error())
 		return dataResult, err
@@ -94,7 +93,7 @@ func (g *modelAttributeGroup) SetModelAttributeGroup(ctx core.ContextParams, obj
 		return dataResult, ctx.Error.Errorf(common.CCErrCommDuplicateItem, inputParam.Data.GroupName)
 	}
 
-	existsGroup, isExists, err := g.groupIDIsExists(ctx, objID, inputParam.Data.GroupID)
+	existsGroup, isExists, err := g.groupIDIsExists(ctx, objID, inputParam.Data.GroupID, inputParam.Data.Metadata)
 	if nil != err {
 		blog.Errorf("request(%s): it is to failed to check the group ID (%s) if it is exists, error info is %s", ctx.ReqID, inputParam.Data.GroupID, err.Error())
 		return dataResult, err

@@ -62,7 +62,7 @@ func (lgc *Logics) UpdateDevice(pheader http.Header, netDeviceID uint64, deviceI
 	// device name has been occupied
 	if nil == err && deviceID != netDeviceID {
 		blog.Errorf("[NetDevice] update net device fail, duplicate device name: [%s]", deviceInfo.DeviceName)
-		return defErr.Error(common.CCErrCommDuplicateItem)
+		return defErr.Errorf(common.CCErrCommDuplicateItem, "device")
 	}
 
 	return lgc.updateDevice(pheader, deviceInfo, netDeviceID, util.GetOwnerID(pheader))
@@ -206,7 +206,7 @@ func (lgc *Logics) addDevice(pheader http.Header, deviceInfo meta.NetcollectDevi
 	}
 	if isExist {
 		blog.Errorf("[NetDevice] add net device fail, error: duplicate device_name")
-		return INVALIDID, defErr.Error(common.CCErrCommDuplicateItem)
+		return INVALIDID, defErr.Errorf(common.CCErrCommDuplicateItem, "device")
 	}
 
 	// add to the storage

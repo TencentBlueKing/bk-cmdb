@@ -109,16 +109,6 @@ func (g *group) Create() error {
 		return err
 	}
 
-	g.grp.OwnerID = g.params.SupplierAccount
-	exists, err := g.IsExists()
-	if nil != err {
-		return err
-	}
-
-	if exists {
-		return g.params.Err.Error(common.CCErrCommDuplicateItem)
-	}
-
 	rsp, err := g.clientSet.CoreService().Model().CreateAttributeGroup(context.Background(), g.params.Header, g.GetObjectID(), metadata.CreateModelAttributeGroup{Data: g.grp})
 	if nil != err {
 		blog.Errorf("[model-grp] failed to request object controller, err: %s", err.Error())
@@ -147,7 +137,7 @@ func (g *group) Update(data mapstr.MapStr) error {
 	}
 
 	if exists {
-		return g.params.Err.Error(common.CCErrCommDuplicateItem)
+		return g.params.Err.Errorf(common.CCErrCommDuplicateItem, "")
 	}
 
 	cond := condition.CreateCondition()

@@ -13,7 +13,6 @@
 package v2
 
 import (
-	"context"
 	"strconv"
 	"strings"
 
@@ -21,30 +20,30 @@ import (
 	"configcenter/src/api_server/logics/v2/common/utils"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
 )
 
 func (s *Service) updateHost(req *restful.Request, resp *restful.Response) {
-
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	srvData := s.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Errorf("updateHost error:%v", err)
+		blog.Errorf("updateHost error:%v,rid:%s", err, srvData.rid)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
 
 	formData := req.Request.Form
 
-	blog.V(5).Infof("updateHost data:%v", formData)
+	blog.V(5).Infof("updateHost data:%#v,rid:%s", formData, srvData.rid)
 
 	res, msg := utils.ValidateFormData(formData, []string{"appId", "orgPlatId", "ip", "dstPlatId"})
 	if !res {
-		blog.Errorf("ValidateFormData error:%s", msg)
+		blog.Errorf("ValidateFormData error:%s,input:%#v,rid:%s", msg, formData, srvData.rid)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
@@ -64,10 +63,15 @@ func (s *Service) updateHost(req *restful.Request, resp *restful.Response) {
 		},
 	}
 
-	result, err := s.CoreAPI.HostServer().UpdateHost(context.Background(), appID, pheader, param)
+	result, err := s.CoreAPI.HostServer().UpdateHost(srvData.ctx, appID, srvData.header, param)
 	if err != nil {
-		blog.Errorf("updateHost u error:%v", err)
+		blog.Errorf("updateHost http do error.err:%v,input:%#v,rid:%s", err, formData, srvData.rid)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
+		return
+	}
+	if !result.Result {
+		blog.Errorf("updateHost http reply error.reply:%#v,input:%#v,rid:%s", result, formData, srvData.rid)
+		converter.RespFailV2(result.Code, result.ErrMsg, resp)
 		return
 	}
 
@@ -76,26 +80,24 @@ func (s *Service) updateHost(req *restful.Request, resp *restful.Response) {
 }
 
 func (s *Service) getPlats(req *restful.Request, resp *restful.Response) {
+	srvData := s.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
 
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-	rid := util.GetHTTPCCRequestID(pheader)
-
-	result, err := s.CoreAPI.HostServer().GetPlat(context.Background(), pheader)
+	result, err := s.CoreAPI.HostServer().GetPlat(srvData.ctx, srvData.header)
 	if err != nil {
-		blog.Errorf("getPlats error:%v, rid:%s", err, rid)
+		blog.Errorf("getPlats error:%v, rid:%s", err, srvData.rid)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
 	if !result.Result {
-		blog.Errorf("getPlats http response error, err code:%d, err msg:%s,rid:%s", result.Code, result.ErrMsg, rid)
+		blog.Errorf("getPlats http response error, err code:%d, err msg:%s,rid:%s", result.Code, result.ErrMsg, srvData.rid)
 		converter.RespFailV2(result.Code, result.ErrMsg, resp)
 		return
 	}
 
 	resDataV2, err := converter.ResToV2ForPlatList(result.Data)
 	if err != nil {
-		blog.Errorf("convert plat res to v2 error:%v, rid:%s", err, rid)
+		blog.Errorf("convert plat res to v2 error:%v, rid:%s", err, srvData.rid)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}
@@ -104,34 +106,38 @@ func (s *Service) getPlats(req *restful.Request, resp *restful.Response) {
 }
 
 func (s *Service) deletePlats(req *restful.Request, resp *restful.Response) {
-
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	srvData := s.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Errorf("deletePlats error:%v", err)
+		blog.Errorf("deletePlats error:%v,rid:%s", err, srvData.rid)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
 
 	formData := req.Request.Form
 
-	blog.V(5).Infof("deletePlats data:%v", formData)
+	blog.V(5).Infof("deletePlats data:%#v,rid:%s", formData, srvData.rid)
 
 	res, msg := utils.ValidateFormData(formData, []string{"platId"})
 	if !res {
-		blog.Errorf("ValidateFormData error:%s", msg)
+		blog.Errorf("ValidateFormData error:%s,input:%#v,rid:%s", msg, formData, srvData.rid)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
 
 	platID := formData["platId"][0]
 
-	result, err := s.CoreAPI.HostServer().DelPlat(context.Background(), platID, pheader)
+	result, err := s.CoreAPI.HostServer().DelPlat(srvData.ctx, platID, srvData.header)
 	if err != nil {
-		blog.Errorf("deletePlats error:%v", err)
+		blog.Errorf("deletePlats http do error.err:%v,input:%#v,rid:%s", err, formData, srvData.rid)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
+		return
+	}
+	if !result.Result {
+		blog.Errorf("deletePlats http reply error.err:%#v,input:%#v,rid:%s", result, formData, srvData.rid)
+		converter.RespFailV2(result.Code, result.ErrMsg, resp)
 		return
 	}
 
@@ -139,39 +145,41 @@ func (s *Service) deletePlats(req *restful.Request, resp *restful.Response) {
 }
 
 func (s *Service) createPlats(req *restful.Request, resp *restful.Response) {
-
-	pheader := req.Request.Header
-	user := util.GetUser(pheader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	srvData := s.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Errorf("createPlats error:%v", err)
+		blog.Errorf("createPlats error:%v,rid:%s", err, srvData.rid)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
 
 	formData := req.Request.Form
 
-	blog.V(5).Infof("createPlats data:%v", formData)
+	blog.V(5).Infof("createPlats data:%#v,rid:%s", formData, srvData.rid)
 
 	res, msg := utils.ValidateFormData(formData, []string{"platName"})
 	if !res {
-		blog.Errorf("ValidateFormData error:%s", msg)
+		blog.Errorf("ValidateFormData error:%s,input:%#v,rid:%s", msg, formData, srvData.rid)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
 
 	platName := formData["platName"][0]
-	param := map[string]interface{}{
+	param := mapstr.MapStr{
 		common.BKCloudNameField: platName,
 	}
 
-	param, _ = s.Logics.AutoInputV3Field(param, common.BKInnerObjIDPlat, user, pheader)
-
-	result, err := s.CoreAPI.HostServer().CreatePlat(context.Background(), pheader, param)
+	param, err = srvData.lgc.AutoInputV3Field(srvData.ctx, param, common.BKInnerObjIDPlat)
+	if err != nil {
+		blog.Errorf("AutoInputV3Field err,err:%s,input:%#v,rid:%s", err.Error(), formData, srvData.rid)
+		converter.RespFailV2Error(err, resp)
+		return
+	}
+	result, err := s.CoreAPI.HostServer().CreatePlat(srvData.ctx, srvData.header, param)
 	if nil != err {
-		blog.Errorf("createPlats  error:%v", err)
+		blog.Errorf("createPlats http do error.err:%v,input:%#v,rid:%s", err, formData, srvData.rid)
 		if strings.Contains(err.Error(), strconv.Itoa(common.CCErrCommDuplicateItem)) {
 			converter.RespFailV2(common.CCErrCommDuplicateItem, defErr.Error(common.CCErrCommDuplicateItem).Error(), resp)
 			return
@@ -179,15 +187,15 @@ func (s *Service) createPlats(req *restful.Request, resp *restful.Response) {
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
-
 	if !result.Result {
-		blog.Errorf("createPlats error:%s", result.ErrMsg)
+		blog.Errorf("createPlats http reply error.reply:%#v,input:%#v,rid:%s", result, formData, srvData.rid)
 		converter.RespFailV2(result.Code, result.ErrMsg, resp)
 		return
 	}
 
 	rspDataV3Map, ok := result.Data.(map[string]interface{})
 	if false == ok {
+		blog.Errorf("createPlats http reply error.data not ma[string]interface.reply:%#v,input:%#v,rid:%s", result.Data, formData, srvData.rid)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}

@@ -13,17 +13,50 @@
 package v2
 
 import (
+	"context"
+	"net/http"
+
 	"github.com/emicklei/go-restful"
 
-	"configcenter/src/api_server/logics/v2"
+	logics "configcenter/src/api_server/logics/v2"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/language"
 	"configcenter/src/common/rdapi"
+	"configcenter/src/common/util"
 )
 
 type Service struct {
 	*backbone.Engine
-	*logics.Logics
+	//*logics.Logics
+}
+
+type srvComm struct {
+	header        http.Header
+	rid           string
+	ccErr         errors.DefaultCCErrorIf
+	ccLang        language.DefaultCCLanguageIf
+	ctx           context.Context
+	ctxCancelFunc context.CancelFunc
+	user          string
+	ownerID       string
+	lgc           *logics.Logics
+}
+
+func (s *Service) newSrvComm(header http.Header) *srvComm {
+	lang := util.GetLanguage(header)
+	ctx, cancel := s.Engine.CCCtx.WithCancel()
+	return &srvComm{
+		header:        header,
+		rid:           util.GetHTTPCCRequestID(header),
+		ccErr:         s.CCErr.CreateDefaultCCErrorIf(lang),
+		ccLang:        s.Language.CreateDefaultCCLanguageIf(lang),
+		ctx:           ctx,
+		ctxCancelFunc: cancel,
+		user:          util.GetUser(header),
+		ownerID:       util.GetOwnerID(header),
+		lgc:           logics.NewLogics(s.Engine, header),
+	}
 }
 
 func (s *Service) WebService() *restful.WebService {
@@ -118,7 +151,4 @@ func (s *Service) WebService() *restful.WebService {
 
 func (s *Service) SetEngine(engine *backbone.Engine) {
 	s.Engine = engine
-	s.Logics = &logics.Logics{
-		Engine: engine,
-	}
 }
