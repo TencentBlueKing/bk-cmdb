@@ -209,14 +209,13 @@
             async handleDownloadTemplate () {
                 try {
                     const response = await this.$http.get(this.templateUrl, {
-                        globalError: false,
                         originalResponse: true,
                         responseType: 'blob',
                         data: this.downloadPayload
                     })
                     this.exportExcel(response)
                 } catch (e) {
-                    this.$error(e)
+                    console.log(e)
                 }
             }
         }
