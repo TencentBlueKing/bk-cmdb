@@ -210,11 +210,10 @@
                     params: this.$injectMetadata({
                         bk_obj_id: {'$in': Object.keys(this.properties)},
                         bk_supplier_account: this.supplierAccount
-                    }),
+                    }, {inject: false}),
                     config: {
                         requestId: `post_batchSearchObjectAttribute_${Object.keys(this.properties).join('_')}`,
-                        requestGroup: Object.keys(this.properties).map(id => `post_searchObjectAttribute_${id}`),
-                        fromCache: true
+                        requestGroup: Object.keys(this.properties).map(id => `post_searchObjectAttribute_${id}`)
                     }
                 }).then(result => {
                     Object.keys(this.properties).forEach(objId => {

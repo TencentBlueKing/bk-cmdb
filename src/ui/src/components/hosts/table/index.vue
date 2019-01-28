@@ -20,6 +20,9 @@
                 <form id="exportForm" :action="table.exportUrl" method="POST" hidden>
                     <input type="hidden" name="bk_host_id" :value="table.checked">
                     <input type="hidden" name="bk_biz_id" value="-1">
+                    <input type="hidden" name="json"
+                        v-if="$route.name !== 'resource'"
+                        :value="JSON.stringify($injectMetadata())">
                 </form>
                 <cmdb-clipboard-selector class="options-button"
                     :list="clipboardList"
@@ -297,6 +300,9 @@
             },
             customColumns () {
                 this.setTableHeader()
+            },
+            columnsConfigProperties () {
+                this.setTableHeader()
             }
         },
         async created () {
@@ -305,7 +311,6 @@
                     this.getProperties(),
                     this.getHostPropertyGroups()
                 ])
-                await this.setTableHeader()
             } catch (e) {
                 console.log(e)
             }
@@ -327,11 +332,10 @@
                     params: this.$injectMetadata({
                         bk_obj_id: {'$in': Object.keys(this.properties)},
                         bk_supplier_account: this.supplierAccount
-                    }),
+                    }, {inject: this.$route.name !== 'resource'}),
                     config: {
                         requestId: `post_batchSearchObjectAttribute_${Object.keys(this.properties).join('_')}`,
-                        requestGroup: Object.keys(this.properties).map(id => `post_searchObjectAttribute_${id}`),
-                        fromCache: true
+                        requestGroup: Object.keys(this.properties).map(id => `post_searchObjectAttribute_${id}`)
                     }
                 }).then(result => {
                     Object.keys(this.properties).forEach(objId => {
@@ -354,24 +358,20 @@
                 })
             },
             setTableHeader () {
-                return new Promise((resolve, reject) => {
-                    const headerProperties = this.$tools.getHeaderProperties(this.columnsConfigProperties, this.customColumns, this.columnsConfigDisabledColumns)
-                    resolve(headerProperties)
-                }).then(properties => {
-                    this.table.header = [{
-                        id: 'bk_host_id',
-                        type: 'checkbox',
-                        objId: 'host'
-                    }].concat(properties.map(property => {
-                        return {
-                            id: property['bk_property_id'],
-                            name: property['bk_property_name'],
-                            objId: property['bk_obj_id'],
-                            sortable: property['bk_obj_id'] === 'host' && !['foreignkey'].includes(property['bk_property_type'])
-                        }
-                    }))
-                    this.columnsConfig.selected = properties.map(property => property['bk_property_id'])
-                })
+                const properties = this.$tools.getHeaderProperties(this.columnsConfigProperties, this.customColumns, this.columnsConfigDisabledColumns)
+                this.table.header = [{
+                    id: 'bk_host_id',
+                    type: 'checkbox',
+                    objId: 'host'
+                }].concat(properties.map(property => {
+                    return {
+                        id: property['bk_property_id'],
+                        name: property['bk_property_name'],
+                        objId: property['bk_obj_id'],
+                        sortable: property['bk_obj_id'] === 'host' && !['foreignkey'].includes(property['bk_property_type'])
+                    }
+                }))
+                this.columnsConfig.selected = properties.map(property => property['bk_property_id'])
             },
             setAllHostList (list) {
                 const newList = []
@@ -499,10 +499,10 @@
                 this.tab.attribute.type = 'details'
             },
             async handleSave (values, changedValues, inst, type) {
-                await this.batchUpdate({
+                await this.batchUpdate(this.$injectMetadata({
                     ...changedValues,
                     'bk_host_id': inst['bk_host_id'].toString()
-                })
+                }, {inject: this.$route.name !== 'resource'}))
                 this.tab.attribute.type = 'details'
                 this.searchHostByInnerip({
                     bizId: this.filter.business,
@@ -533,10 +533,10 @@
                 this.slider.show = true
             },
             async handleMultipleSave (changedValues) {
-                await this.batchUpdate({
+                await this.batchUpdate(this.$injectMetadata({
                     ...changedValues,
                     'bk_host_id': this.table.checked.join(',')
-                })
+                }, {inject: this.$route.name !== 'resource'}))
                 this.slider.show = false
             },
             handleMultipleCancel () {
