@@ -997,3 +997,7 @@ const (
 const (
 	BKBizDefault = "bizdefault"
 )
+
+const (
+	MetaDataSynchronizeSignField = "metadata_sync_sign"
+)
