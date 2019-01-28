@@ -401,6 +401,9 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 		return nil, err
 	}
 
+	// register resource into auth center
+	//params.AuthAPI.Register(params.Context,)
+
 	keys = append(keys, metadata.UniqueKey{Kind: metadata.UniqueKeyKindProperty, ID: uint64(attr.Attribute().ID)})
 
 	if isMainline {
