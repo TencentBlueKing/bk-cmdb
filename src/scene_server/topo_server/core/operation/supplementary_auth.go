@@ -134,7 +134,7 @@ func (a Auth) RegisterAuthResourceWithObject(ctx types.ContextParams, targetObje
 // RegisterAuthResourceWithInstance
 func (a Auth) RegisterAuthResourceWithInstance(ctx types.ContextParams, targetInsts []inst.Inst) error {
 
-	registerMainlineObjectFunc := func(obj model.Object) (*auth.ResourceAttribute, error) {
+	registerMainlineObjectInstFunc := func(objInst inst.Inst) (*auth.ResourceAttribute, error) {
 
 		// TODO: the data structure of the instance resource needs to be supplemented
 		authResourceAttr := &auth.ResourceAttribute{}
@@ -154,7 +154,7 @@ func (a Auth) RegisterAuthResourceWithInstance(ctx types.ContextParams, targetIn
 			return err
 		}
 		if yes {
-			authResourceAttr, err = registerMainlineObjectFunc(obj)
+			authResourceAttr, err = registerMainlineObjectInstFunc(objInst)
 			if err != nil {
 				return err
 			}
@@ -177,27 +177,92 @@ func (a Auth) RegisterAuthResourceWithInstance(ctx types.ContextParams, targetIn
 }
 
 // UpdateAuthResourceWithObjecgt
-func (a Auth) UpdateAuthResourceWithObject(ctx types.ContextParams, targetObject []model.Object) error {
+func (a Auth) UpdateAuthResourceWithObject(ctx types.ContextParams, targetObjects []model.Object) error {
 
-	requestID, err := ctx.AuthAPI.Update(ctx.Context, &auth.ResourceAttribute{})
-	_ = requestID
+	registerMainlineObjectFunc := func(obj model.Object) (*auth.ResourceAttribute, error) {
 
-	// TODO: need to be implemented
-	panic("need to be implemented")
+		// TODO: the data structure of the instance resource needs to be supplemented
+		authResourceAttr := &auth.ResourceAttribute{}
 
-	return err
+		// TODO: building the object topology
+		panic("need to be implemented")
+
+		return authResourceAttr, nil
+	}
+
+	for _, obj := range targetObjects {
+
+		var authResourceAttr *auth.ResourceAttribute
+		yes, err := obj.IsMainlineObject()
+		if err != nil {
+			return err
+		}
+		if yes {
+			authResourceAttr, err = registerMainlineObjectFunc(obj)
+			if err != nil {
+				return err
+			}
+		} else {
+			// TODO: the data structure of the instance resource needs to be supplemented
+			authResourceAttr = &auth.ResourceAttribute{}
+		}
+
+		requestID, err := ctx.AuthAPI.Update(ctx.Context, authResourceAttr)
+		if nil != err {
+			return err
+		}
+		_ = requestID
+
+		// TODO: need to be implemented
+		panic("need to be implemented")
+	}
+
+	return nil
 }
 
 // UpdateAuthResourceWithInstance
-func (a Auth) UpdateAuthResourceWithInstance(ctx types.ContextParams, targetInsts []model.Object) error {
+func (a Auth) UpdateAuthResourceWithInstance(ctx types.ContextParams, targetInsts []inst.Inst) error {
 
-	requestID, err := ctx.AuthAPI.Update(ctx.Context, &auth.ResourceAttribute{})
-	_ = requestID
+	registerMainlineObjectInstFunc := func(objInst inst.Inst) (*auth.ResourceAttribute, error) {
 
-	// TODO: need to be implemented
-	panic("need to be implemented")
+		// TODO: the data structure of the instance resource needs to be supplemented
+		authResourceAttr := &auth.ResourceAttribute{}
 
-	return err
+		// TODO: building the object topology
+		panic("need to be implemented")
+
+		return authResourceAttr, nil
+	}
+
+	for _, objInst := range targetInsts {
+
+		var authResourceAttr *auth.ResourceAttribute
+		obj := objInst.GetObject()
+		yes, err := obj.IsMainlineObject()
+		if err != nil {
+			return err
+		}
+		if yes {
+			authResourceAttr, err = registerMainlineObjectInstFunc(objInst)
+			if err != nil {
+				return err
+			}
+		} else {
+			// TODO: the data structure of the instance resource needs to be supplemented
+			authResourceAttr = &auth.ResourceAttribute{}
+		}
+
+		requestID, err := ctx.AuthAPI.Update(ctx.Context, authResourceAttr)
+		if nil != err {
+			return err
+		}
+		_ = requestID
+
+		// TODO: need to be implemented
+		panic("need to be implemented")
+	}
+
+	return nil
 }
 
 func (a Auth) GetAuthResourceWithObject(ctx types.ContextParams) error {
@@ -217,7 +282,7 @@ func (a Auth) GetAuthResourceWithInstance(ctx types.ContextParams) error {
 }
 
 // UnRegisterAuthResourceWithObject
-func (a Auth) UnRegisterAuthResourceWithObject(ctx types.ContextParams, targetObject []model.Object) error {
+func (a Auth) UnRegisterAuthResourceWithObject(ctx types.ContextParams, targetObjects []model.Object) error {
 
 	requestID, err := ctx.AuthAPI.Deregister(ctx.Context, &auth.ResourceAttribute{})
 	_ = requestID
