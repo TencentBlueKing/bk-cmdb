@@ -575,6 +575,9 @@ func (o *object) Create() error {
 		return o.params.Err.Error(common.CCErrCommDuplicateItem)
 	}
 
+	if o.obj.ObjIcon == "" {
+		return o.params.Err.Errorf(common.CCErrCommParamsNeedSet, common.BKObjIconField)
+	}
 	rsp, err := o.clientSet.ObjectController().Meta().CreateObject(context.Background(), o.params.Header, &o.obj)
 
 	if nil != err {
