@@ -212,11 +212,11 @@
                 this.searchRelation()
             },
             handlePageChange (current) {
-                this.pagination.current = current
+                this.table.pagination.current = current
                 this.searchRelation()
             },
             handleSizeChange (size) {
-                this.pagination.size = size
+                this.table.pagination.size = size
                 this.handlePageChange(1)
             },
             handleSortChange (sort) {
