@@ -452,6 +452,10 @@
             padding: 0 0 0 25px;
         }
     }
+    .modules-layout {
+        height: calc(100% - 65px);
+        @include scrollbar-y;
+    }
     .module-list {
         .module-item {
             height: 44px;

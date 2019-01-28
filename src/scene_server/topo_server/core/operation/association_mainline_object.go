@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
@@ -119,6 +120,16 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to check the mainline topo level, error info is %s", err.Error())
 		return nil, err
+	}
+
+	if data.AsstObjID == "" {
+		blog.Errorf("[operation-asst] bk_asst_obj_id empty,rid:%s", util.GetHTTPCCRequestID(params.Header))
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedSet, common.BKAsstObjIDField)
+	}
+
+	if data.ClassificationID == "" {
+		blog.Errorf("[operation-asst] bk_classification_id empty,rid:%s", util.GetHTTPCCRequestID(params.Header))
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedSet, common.BKClassificationIDField)
 	}
 
 	items, err := a.SearchMainlineAssociationTopo(params, bizObj)

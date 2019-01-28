@@ -28,10 +28,10 @@ type Service struct {
 
 func (s *Service) WebService() *restful.WebService {
 	ws := new(restful.WebService)
-	getErrFun := func() errors.CCErrorIf {
+	getErrFunc := func() errors.CCErrorIf {
 		return s.CCErr
 	}
-	ws.Path("/api/v2").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
+	ws.Path("/api/v2").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
 	ws.Route(ws.POST("App/getapplist").To(s.getAppList))
 	ws.Route(ws.POST("app/getapplist").To(s.getAppList))
