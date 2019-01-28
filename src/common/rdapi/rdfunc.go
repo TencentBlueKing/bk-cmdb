@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
 	restful "github.com/emicklei/go-restful"
@@ -255,25 +256,14 @@ func GlobalFilter(typeSrvs ...string) func(req *restful.Request, resp *restful.R
 	}
 }
 
-func createAPIRspStr(errcode int, info interface{}) (string, error) {
+func createAPIRspStr(errcode int, info string) (string, error) {
 
-	type apiRsp struct {
-		Result  bool        `json:"result"`
-		Code    int         `json:"code"`
-		Message interface{} `json:"message"`
-		Data    interface{} `json:"data"`
-	}
-	rsp := apiRsp{
-		Result:  true,
-		Code:    0,
-		Message: nil,
-		Data:    nil,
-	}
+	var rsp metadata.Response
 
 	if 0 != errcode {
 		rsp.Result = false
 		rsp.Code = errcode
-		rsp.Message = info
+		rsp.ErrMsg = info
 	} else {
 		rsp.Data = info
 	}

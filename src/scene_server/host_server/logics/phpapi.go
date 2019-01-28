@@ -353,6 +353,7 @@ func (lgc *Logics) UpdateCustomProperty(hostID, appID int64, proeprtyJson map[st
 
 func (lgc *Logics) CloneHostProperty(input *meta.CloneHostPropertyParams, appID, cloudID int64, header http.Header) (interface{}, error) {
 	defError := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	rid := util.GetHTTPCCRequestID(header)
 
 	condition := common.KvMap{
 		common.BKHostInnerIPField: input.OrgIP,
@@ -441,6 +442,11 @@ func (lgc *Logics) CloneHostProperty(input *meta.CloneHostPropertyParams, appID,
 		}
 	}
 
+	hostMapData, err = lgc.removeHostBadField(hostMapData, header)
+	if nil != err {
+		blog.Errorf("CloneHostProperty clone host property error : %v, input:%#v,rid:%s", err, input, rid)
+		return nil, defError.Errorf(common.CCErrHostDetailFail, err.Error())
+	}
 	//更新的时候，不修改为nil的数据
 	updateHostData := make(map[string]interface{})
 	for key, val := range hostMapData {
@@ -455,6 +461,7 @@ func (lgc *Logics) CloneHostProperty(input *meta.CloneHostPropertyParams, appID,
 	}
 
 	blog.V(5).Infof("configData[0]:%v, input:%v", configDataArr[0], input)
+
 	moduleIDs := make([]int64, 0)
 	for _, configData := range configDataArr {
 
@@ -525,4 +532,30 @@ func (lgc *Logics) CloneHostProperty(input *meta.CloneHostPropertyParams, appID,
 	}
 
 	return nil, nil
+}
+
+// removeHostBadField remove host bad field, host module delete field
+func (lgc *Logics) removeHostBadField(hostInfo map[string]interface{}, header http.Header) (mapstr.MapStr, error) {
+	// v3.3.x branch todo use Logics struct
+	defError := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	rid := util.GetHTTPCCRequestID(header)
+
+	newHostInfo := mapstr.New()
+	hostAttributeArr, err := lgc.GetHostAttributes(util.GetOwnerID(header), header)
+	if err != nil {
+		blog.Errorf("CloneHostProperty GetHostAttributes, err:%s, rid:%s", err.Error(), rid)
+		return nil, defError.Error(common.CCErrHostDetailFail)
+	}
+	hostAttributeMap := make(map[string]string, 0)
+	for _, attr := range hostAttributeArr {
+		hostAttributeMap[attr.PropertyID] = attr.PropertyID
+	}
+	// delete bad field
+	for key, val := range hostInfo {
+		_, ok := hostAttributeMap[key]
+		if ok {
+			newHostInfo.Set(key, val)
+		}
+	}
+	return newHostInfo, nil
 }
