@@ -20,9 +20,9 @@
                 <form id="exportForm" :action="table.exportUrl" method="POST" hidden>
                     <input type="hidden" name="bk_host_id" :value="table.checked">
                     <input type="hidden" name="bk_biz_id" value="-1">
-                    <input type="hidden" name="json"
+                    <input type="hidden" name="metadata"
                         v-if="$route.name !== 'resource'"
-                        :value="JSON.stringify($injectMetadata())">
+                        :value="JSON.stringify($injectMetadata().metadata)">
                 </form>
                 <cmdb-clipboard-selector class="options-button"
                     :list="clipboardList"

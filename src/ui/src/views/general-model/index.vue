@@ -17,9 +17,9 @@
                 </div>
                 <form id="exportForm" :action="url.export" method="POST" hidden>
                     <input type="hidden" name="bk_inst_id" :value="table.checked.join(',')">
-                    <input type="hidden" name="json"
+                    <input type="hidden" name="metadata"
                         v-if="!isPublicModel"
-                        :value="JSON.stringify($injectMetadata())">
+                        :value="JSON.stringify($injectMetadata().metadata)">
                 </form>
                 <div class="fl" v-tooltip="$t('Inst[\'批量更新\']')">
                     <bk-button class="models-button"

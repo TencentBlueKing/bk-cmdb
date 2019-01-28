@@ -233,7 +233,7 @@
                 let formData = new FormData()
                 formData.append('file', files[0])
                 if (!this.isPublicModel) {
-                    formData.append('json', JSON.stringify(this.$injectMetadata()))
+                    formData.append('metadata', JSON.stringify(this.$injectMetadata().metadata))
                 }
                 try {
                     const res = await this.importObjectAttribute({
