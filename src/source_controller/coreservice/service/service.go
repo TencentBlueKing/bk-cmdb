@@ -37,7 +37,8 @@ import (
 	"configcenter/src/source_controller/coreservice/core/instances"
 	"configcenter/src/source_controller/coreservice/core/model"
 	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/mongo"
+	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/dal/mongo/remote"
 
 	"github.com/emicklei/go-restful"
 )
@@ -79,13 +80,13 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 	var db dal.DB
 	var dbErr error
 	if cfg.Mongo.Transaction == "enable" {
-		db, dbErr = mongo.NewTXClient(engin.Discover.TMServer().GetServers, time.Minute)
+		db, dbErr = remote.NewWithDiscover(engin.Discover.TMServer().GetServers, cfg.Mongo)
 		if dbErr != nil {
 			blog.Errorf("failed to connect the txc server, error info is %s", dbErr.Error())
 			return
 		}
 	} else {
-		db, dbErr = mongo.NewMgo(cfg.Mongo.BuildURI(), time.Minute)
+		db, dbErr = local.NewMgo(cfg.Mongo.BuildURI(), time.Minute)
 		if dbErr != nil {
 			blog.Errorf("failed to connect the remote server(%s), error info is %s", cfg.Mongo.BuildURI(), dbErr.Error())
 			return

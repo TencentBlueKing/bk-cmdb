@@ -23,6 +23,9 @@ import (
 
 // StartTransaction create a new transaction
 func (c *Mongo) StartTransaction(ctx context.Context) (dal.DB, error) {
+	if !c.enableTransaction {
+		return c, nil
+	}
 	if c.TxnID != "" {
 		return nil, dal.ErrTransactionStated
 	}
@@ -54,6 +57,9 @@ func (c *Mongo) StartTransaction(ctx context.Context) (dal.DB, error) {
 
 // Commit 提交事务
 func (c *Mongo) Commit(ctx context.Context) error {
+	if !c.enableTransaction {
+		return nil
+	}
 	if c.TxnID == "" {
 		return dal.ErrTransactionNotFound
 	}
@@ -76,6 +82,9 @@ func (c *Mongo) Commit(ctx context.Context) error {
 
 // Abort 取消事务
 func (c *Mongo) Abort(ctx context.Context) error {
+	if !c.enableTransaction {
+		return nil
+	}
 	if c.TxnID == "" {
 		return dal.ErrTransactionNotFound
 	}
