@@ -65,6 +65,8 @@ func (c OPCode) String() string {
 		return "OPCommit"
 	case OPAbortCode:
 		return "OPAbort"
+	case OPAggregateCode:
+		return "OPAggregate"
 	default:
 		return "UNKNOW"
 	}
@@ -78,9 +80,10 @@ type OPInsertOperation struct {
 }
 
 // OPPipelineOperation insert operation request structure
-type OPPipelineOperation struct {
-	MsgHeader           // 标准报文头
-	Pipiline  Documents // 要插入集合的文档
+type OPAggregateOperation struct {
+	MsgHeader            // 标准报文头
+	Collection string    // "dbname.collectionname"
+	Pipiline   Documents // 要插入集合的文档
 }
 
 // OPUpdateOperation update operation request structure

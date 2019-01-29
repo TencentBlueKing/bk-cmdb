@@ -183,8 +183,9 @@ func (c *Collection) DropColumn(ctx context.Context, field string) error {
 // AggregateOne 聚合查询
 func (c *Collection) AggregateOne(ctx context.Context, pipeline interface{}, result interface{}) error {
 	// build msg
-	msg := types.OPPipelineOperation{}
-	msg.OPCode = types.OPInsertCode
+	msg := types.OPAggregateOperation{}
+	msg.OPCode = types.OPAggregateCode
+	msg.Collection = c.collection
 
 	if err := msg.Pipiline.Encode(pipeline); err != nil {
 		return err

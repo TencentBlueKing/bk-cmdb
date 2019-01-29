@@ -36,7 +36,7 @@ func (d *aggregate) SetDBProxy(db mongodb.Client) {
 }
 func (d *aggregate) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPReply, error) {
 
-	msg := types.OPPipelineOperation{}
+	msg := types.OPAggregateOperation{}
 	reply := &types.OPReply{}
 	if err := decoder.Decode(&msg); nil != err {
 		reply.Message = err.Error()
@@ -47,7 +47,7 @@ func (d *aggregate) Execute(ctx core.ContextParams, decoder rpc.Request) (*types
 	opt := aggregateopt.One{}
 	//opt.Sort = msg.Sort
 
-	err := d.dbProxy.AggregateOne(ctx, msg.Pipiline, &opt, &reply.Docs)
+	err := d.dbProxy.Collection(msg.Collection).AggregateOne(ctx, msg.Pipiline, &opt, &reply.Docs)
 	if nil == err {
 		reply.Success = true
 	} else {

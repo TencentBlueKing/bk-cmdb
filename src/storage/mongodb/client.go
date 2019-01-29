@@ -12,18 +12,11 @@
 
 package mongodb
 
-import (
-	"context"
-
-	"configcenter/src/storage/mongodb/options/aggregateopt"
-)
-
 // Client client for mongo
 type Client interface {
 	Ping() error
 	Database() Database
 	Collection(collName string) CollectionInterface
-	AggregateOne(ctx context.Context, pipeline interface{}, opts *aggregateopt.One, output interface{}) error
 	Session() SessionOperation
 }
 
