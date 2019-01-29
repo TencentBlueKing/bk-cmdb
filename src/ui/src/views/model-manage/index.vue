@@ -5,6 +5,14 @@
             :class="['btn-group', 'clearfix', {sticky: !!scrollTop}]">
             <div class="fl">
                 <bk-button type="primary"
+                    v-if="isAdminView"
+                    :disabled="!authority.includes('update') || modelType === 'disabled'"
+                    @click="showModelDialog(false)">
+                    {{$t('ModelManagement["新增模型"]')}}
+                </bk-button>
+                <bk-button type="primary"
+                    v-else
+                    v-tooltip="$t('ModelManagement[\'新增模型提示\']')"
                     :disabled="!authority.includes('update') || modelType === 'disabled'"
                     @click="showModelDialog(false)">
                     {{$t('ModelManagement["新增模型"]')}}
