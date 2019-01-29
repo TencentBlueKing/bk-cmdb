@@ -43,7 +43,7 @@
         </cmdb-table>
         <cmdb-slider
             class="relation-slider"
-            :width="410"
+            :width="450"
             :title="slider.title"
             :isShow.sync="slider.isShow">
             <the-relation
@@ -212,11 +212,11 @@
                 this.searchRelation()
             },
             handlePageChange (current) {
-                this.pagination.current = current
+                this.table.pagination.current = current
                 this.searchRelation()
             },
             handleSizeChange (size) {
-                this.pagination.size = size
+                this.table.pagination.size = size
                 this.handlePageChange(1)
             },
             handleSortChange (sort) {
