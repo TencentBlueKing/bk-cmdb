@@ -93,7 +93,7 @@ func (d *findAndModify) Execute(ctx core.ContextParams, decoder rpc.Request) (*t
 	}
 
 	reply.Docs = types.Documents{types.Document{}}
-	err := targetCol.FindOneAndModify(ctx, msg.Selector, msg.DOC, nil, &reply.Docs[0])
+	err := targetCol.FindOneAndModify(ctx, msg.Selector, msg.DOC, &opt, &reply.Docs[0])
 	if nil == err {
 		reply.Success = true
 	} else {
