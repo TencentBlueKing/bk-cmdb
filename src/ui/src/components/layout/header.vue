@@ -238,7 +238,7 @@
     }
     .admin {
         display: inline-block;
-        width: 120px;
+        padding: 0 30px;
         line-height: 60px;
         font-size: 14px;
         color: #3a84ff;
@@ -246,6 +246,9 @@
         cursor: pointer;
         text-align: center;
         vertical-align: top;
+        &:hover {
+            background-color: #f7f7f7;
+        }
     }
 </style>
 

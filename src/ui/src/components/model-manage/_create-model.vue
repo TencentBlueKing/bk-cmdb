@@ -29,6 +29,7 @@
                                 :content-max-height="200"
                                 :selected.sync="modelDialog.data['bk_classification_id']"
                                 :list="localClassifications"
+                                :empty-text="isAdminView ? '' : $t('ModelManagement[\'无自定义分组\']')"
                                 v-validate="'required'"
                                 v-model="modelDialog.data['bk_classification_id']"
                             ></cmdb-selector>

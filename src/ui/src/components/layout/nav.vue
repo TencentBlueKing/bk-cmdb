@@ -6,7 +6,12 @@
         <div class="nav-wrapper"
             :class="{unfold: unfold, flexible: !navStick}">
             <div class="logo" @click="$router.push({name: 'index'})">
-                {{$t('Nav["蓝鲸配置平台"]')}}<span v-if="isAdminView" :title="$t('Nav[\'后台管理标题\']')">{{$t('Nav["后台管理"]')}}</span>
+                <span class="logo-text">
+                    {{$t('Nav["蓝鲸配置平台"]')}}
+                </span>
+                <span class="logo-tag" v-if="isAdminView" :title="$t('Nav[\'后台管理标题\']')">
+                    {{$t('Nav["后台管理"]')}}
+                </span>
             </div>
             <ul class="classify-list">
                 <li class="classify-item"
@@ -229,23 +234,28 @@ $color: #979ba5;
     background-color: #182132;
     line-height: 59px;
     color: #a3acb9;
-    font-size: 18px;
+    font-size: 0;
     font-weight: bold;
     white-space: nowrap;
     overflow: hidden;
     cursor: pointer;
     background: url('../../assets/images/logo.svg') no-repeat;
     background-position: 16px 14px;
-    >span {
+    .logo-text {
+        display: inline-block;
+        vertical-align: middle;
+        font-size: 18px;
+    }
+    .logo-tag {
         display: inline-block;
         padding: 0 8px;
-        margin: 0 0 0 2px;
+        margin: 0 0 0 4px;
         vertical-align: middle;
         border-radius: 2px;
         color: #fff;
         font-size: 20px;
         font-weight: normal;
-        line-height: 33px;
+        line-height: 32px;
         background: #e3a547;
         transform: scale(0.5);
         transform-origin: left center;

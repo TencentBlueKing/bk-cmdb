@@ -116,7 +116,9 @@
         "确定离开页面？": "Make sure to leave the page?",
         "系统不会保存您所做的修改，确认要离开？": "Your changes will not be saved. Are you sure you want to leave?",
         "搜索": "Search",
-        "确定删除选中的实例": "Confirm to delete selected instance(s)?"
+        "确定删除选中的实例": "Confirm to delete selected instance(s)?",
+        "管理员后台": "Administrator Backstage",
+        "返回业务管理": "Return to Business Management"
     },
     "Nav": {
         "首页": "Index",
@@ -140,7 +142,9 @@
         "主机查询": "Host Query",
         "模型": "Model",
         "关联类型": "Association Type",
-        "蓝鲸配置平台": "BK CMDB"
+        "蓝鲸配置平台": "BK CMDB",
+        "后台管理": "Back-stage",
+        "后台管理标题": "Back-stage Management"
     },
     "Index": {
         "首页": "Index",
@@ -389,7 +393,9 @@
         "编辑分组": "Modify group",
         "请输入唯一标识": "Enter ID",
         "公共": "Public",
-        "自定义": "Custom"
+        "自定义": "Custom",
+        "新增模型提示": "Can only add in custom group",
+        "无自定义分组": "There are no custom groups"
     },
     "HostResourcePool": {
         "资源池": "Resource Pool",
