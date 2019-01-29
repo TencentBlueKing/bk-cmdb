@@ -1000,4 +1000,20 @@ const (
 
 const (
 	MetaDataSynchronizeSignField = "metadata_sync_sign"
+
+	/* synchronize model description sign*/
+
+	// SynchronizeModelTypeClassification synchroneize model classification
+	SynchronizeModelTypeClassification = "model_classification"
+	// SynchronizeModelTypeAttribute synchroneize model attribute
+	SynchronizeModelTypeAttribute = "model_attribute"
+	// SynchronizeModelTypeAttributeGroup synchroneize model attribute group
+	SynchronizeModelTypeAttributeGroup = "model_atrribute_group"
+	// SynchronizeModelTypeBase synchroneize model attribute group
+	SynchronizeModelTypeBase = "model"
+
+	/* synchronize instance assoication sign*/
+
+	// SynchronizeAssociationTypeModelHost synchroneize model ggroup
+	SynchronizeAssociationTypeModelHost = "module_host"
 )
