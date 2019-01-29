@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/rpc"
 	"configcenter/src/storage/types"
 )
@@ -37,10 +38,23 @@ type Mongo struct {
 	rpc       *rpc.Client
 	getServer types.GetServerFunc
 	parent    *Mongo
+
+	enableTransaction bool
 }
 
 // NewWithDiscover returns new DB
-func NewWithDiscover(getServer types.GetServerFunc) (db dal.DB, err error) {
+func NewWithDiscover(getServer types.GetServerFunc, config mongo.Config) (db dal.DB, err error) {
+	var enableTransaction bool
+	if config.Transaction == "enable" {
+		enableTransaction = true
+	}
+
+	if !enableTransaction {
+		return &Mongo{
+			enableTransaction: enableTransaction,
+		}, nil
+	}
+
 	servers := []string{}
 	for i := 3; i > 0; i-- {
 		servers, err = getServer()
@@ -67,6 +81,8 @@ func NewWithDiscover(getServer types.GetServerFunc) (db dal.DB, err error) {
 	return &Mongo{
 		rpc:       rpccli,
 		getServer: getServer,
+
+		enableTransaction: enableTransaction,
 	}, nil
 }
 

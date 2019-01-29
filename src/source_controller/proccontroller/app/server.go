@@ -31,6 +31,7 @@ import (
 	"configcenter/src/source_controller/proccontroller/app/options"
 	"configcenter/src/source_controller/proccontroller/service"
 	"configcenter/src/storage/dal/mongo"
+	"configcenter/src/storage/dal/mongo/local"
 	dalredis "configcenter/src/storage/dal/redis"
 
 	restful "github.com/emicklei/go-restful"
@@ -117,7 +118,7 @@ func (h *ProcController) onProcConfigUpdate(previous, current cc.ProcessConfig) 
 		Redis: dalredis.ParseConfigFromKV("redis", current.ConfigMap),
 	}
 
-	instance, err := mongo.NewMgo(h.Config.Mongo.BuildURI(), time.Minute)
+	instance, err := local.NewMgo(h.Config.Mongo.BuildURI(), time.Minute)
 	if err != nil {
 		blog.Errorf("new mongo client failed, err: %v", err)
 		return

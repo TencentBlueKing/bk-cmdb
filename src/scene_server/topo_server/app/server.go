@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/discovery"
@@ -30,6 +31,7 @@ import (
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
 	toposvr "configcenter/src/scene_server/topo_server/service"
+	"configcenter/src/storage/dal/mongo"
 
 	"github.com/emicklei/go-restful"
 )
@@ -52,9 +54,13 @@ func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 		}
 	}
 	t.Config.BusinessTopoLevelMax = topoMax
+	t.Config.Mongo = mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
 
 	blog.V(3).Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
-
+	for t.Core == nil {
+		time.Sleep(time.Second)
+		blog.V(3).Info("sleep for engine")
+	}
 	t.Service.SetConfig(t.Config, t.Core)
 }
 

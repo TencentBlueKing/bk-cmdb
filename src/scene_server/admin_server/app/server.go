@@ -33,6 +33,7 @@ import (
 	"configcenter/src/scene_server/admin_server/configures"
 	svc "configcenter/src/scene_server/admin_server/service"
 	"configcenter/src/storage/dal/mongo"
+	"configcenter/src/storage/dal/mongo/local"
 
 	"github.com/emicklei/go-restful"
 )
@@ -102,7 +103,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			blog.V(3).Info("config not found, retry 2s later")
 			continue
 		}
-		db, err := mongo.NewMgo(process.Config.MongoDB.BuildURI(), 0)
+		db, err := local.NewMgo(process.Config.MongoDB.BuildURI(), 0)
 		if err != nil {
 			return fmt.Errorf("connect mongo server failed %s", err.Error())
 		}
