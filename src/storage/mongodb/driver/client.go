@@ -16,8 +16,10 @@ import (
 	"context"
 
 	"configcenter/src/storage/mongodb"
+	"configcenter/src/storage/mongodb/options/aggregateopt"
 
 	"github.com/mongodb/mongo-go-driver/mongo"
+	"github.com/mongodb/mongo-go-driver/mongo/options"
 	"github.com/mongodb/mongo-go-driver/x/network/connstring"
 )
 
@@ -87,6 +89,39 @@ func (c *client) Collection(collName string) mongodb.CollectionInterface {
 		c.collectionMaps[collectionName(collName)] = target
 	}
 	return target
+}
+
+func (c *client) AggregateOne(ctx context.Context, pipeline interface{}, opts *aggregateopt.One, output interface{}) error {
+	aggregateOptions := &options.AggregateOptions{}
+	if nil != opts {
+		aggregateOptions = opts.ConvertToMongoOptions()
+	}
+
+	c.innerClient.Database("").Collection("asdf").Aggregate
+	mongo.WithSession(ctx, c.innerSession, func(mctx mongo.SessionContext) error {
+		cursor, err := c.innerCollection.Aggregate(mctx, pipeline, aggregateOptions)
+		if nil != err {
+			return err
+		}
+
+		defer cursor.Close(mctx)
+		for cursor.Next(ctx) {
+			return cursor.Decode(output)
+		}
+		return cursor.Err()
+	})
+
+	// no session
+	cursor, err := c.innerCollection.Aggregate(ctx, pipeline, aggregateOptions)
+	if nil != err {
+		return err
+	}
+	defer cursor.Close(ctx)
+
+	for cursor.Next(ctx) {
+		return cursor.Decode(output)
+	}
+	return cursor.Err()
 }
 
 func (c *client) Session() mongodb.SessionOperation {

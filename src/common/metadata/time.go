@@ -21,6 +21,7 @@ import (
 	"github.com/coccyx/timeparser"
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/bson/bsontype"
+	"github.com/mongodb/mongo-go-driver/x/bsonx"
 	mgobson "gopkg.in/mgo.v2/bson"
 )
 
@@ -89,9 +90,9 @@ func (t *Time) SetBSON(raw mgobson.Raw) error {
 	return err
 }
 
-// MarshalBSON implements bson.MarshalBSON interface
-func (t Time) MarshalBSON() ([]byte, error) {
-	return bson.Marshal(t.Time)
+// MarshalBSONValue implements bson.MarshalBSON interface
+func (t Time) MarshalBSONValue() (bsontype.Type, []byte, error) {
+	return bsonx.Time(t.Time).MarshalBSONValue()
 }
 
 // UnmarshalBSONValue implements bson.UnmarshalBSONValue interface

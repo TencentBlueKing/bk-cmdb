@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"configcenter/src/common"
@@ -102,13 +103,24 @@ func (c *Mongo) Clone() dal.DB {
 }
 
 // IsDuplicatedError check the error
-func (c *Mongo) IsDuplicatedError(error) bool {
+func (c *Mongo) IsDuplicatedError(err error) bool {
+	if err == dal.ErrDuplicated {
+		return true
+	}
+	if err != nil {
+		if strings.Contains(err.Error(), "The existing index") {
+			return true
+		}
+		if strings.Contains(err.Error(), "There's already an index with name") {
+			return true
+		}
+	}
 	return false
 }
 
 // IsNotFoundError check the error
-func (c *Mongo) IsNotFoundError(error) bool {
-	return false
+func (c *Mongo) IsNotFoundError(err error) bool {
+	return err == dal.ErrDocumentNotFound
 }
 
 // Table collection operation
