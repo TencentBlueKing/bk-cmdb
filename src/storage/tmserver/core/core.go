@@ -77,7 +77,7 @@ func (c *core) ExecuteCommand(ctx ContextParams, input rpc.Request) (*types.OPRe
 
 	reply, err := cmd.Execute(ctx, input)
 	if err != nil {
-		blog.Errorf("[MONGO OPERATION] failed: %v", err)
+		blog.Errorf("[MONGO OPERATION] failed: %v, cmd: %s", err, input)
 	}
 	return reply, err
 

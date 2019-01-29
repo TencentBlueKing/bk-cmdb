@@ -10,25 +10,12 @@
  * limitations under the License.
  */
 
-package mongodb
+package aggregateopt
 
-import (
-	"context"
-
-	"configcenter/src/storage/mongodb/options/aggregateopt"
-)
-
-// Client client for mongo
-type Client interface {
-	Ping() error
-	Database() Database
-	Collection(collName string) CollectionInterface
-	AggregateOne(ctx context.Context, pipeline interface{}, opts *aggregateopt.One, output interface{}) error
-	Session() SessionOperation
+// One update one options
+type One struct {
 }
 
-// CommonClient single client instance
-type CommonClient interface {
-	OpenCloser
-	Client
+// Many update many options
+type Many struct {
 }

@@ -92,7 +92,8 @@ func (d *findAndModify) Execute(ctx core.ContextParams, decoder rpc.Request) (*t
 		targetCol = d.dbProxy.Collection(msg.Collection)
 	}
 
-	err := targetCol.FindOneAndModify(ctx, msg.Selector, msg.DOC, nil, &reply.Docs)
+	reply.Docs = types.Documents{types.Document{}}
+	err := targetCol.FindOneAndModify(ctx, msg.Selector, msg.DOC, nil, &reply.Docs[0])
 	if nil == err {
 		reply.Success = true
 	} else {
