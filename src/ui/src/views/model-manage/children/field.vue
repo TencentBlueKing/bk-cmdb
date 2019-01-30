@@ -137,7 +137,7 @@
                 if (cantEdit.includes(this.objId)) {
                     return []
                 }
-                if (this.isAdminView || this.isBusinessSelected) {
+                if (this.isAdminView || (this.isBusinessSelected && this.isInjectable)) {
                     return ['search', 'update', 'delete']
                 }
                 return []

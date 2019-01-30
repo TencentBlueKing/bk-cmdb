@@ -113,7 +113,7 @@
             }
         },
         computed: {
-            ...mapGetters(['isAdminView', 'isBusinessSelected']),
+            ...mapGetters(['isAdminView', 'isBusinessSelected', 'isInjectable']),
             ...mapGetters('objectModel', [
                 'activeModel'
             ]),
@@ -128,7 +128,7 @@
                 if (cantEdit.includes(this.$route.params.modelId)) {
                     return []
                 }
-                if (this.isAdminView || this.isBusinessSelected) {
+                if (this.isAdminView || (this.isBusinessSelected && this.isInjectable)) {
                     return ['search', 'update', 'delete']
                 }
                 return []
