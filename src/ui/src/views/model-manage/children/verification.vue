@@ -43,7 +43,7 @@
             </template>
         </cmdb-table>
         <cmdb-slider
-            :width="410"
+            :width="450"
             :title="slider.title"
             :isShow.sync="slider.isShow">
             <the-verification-detail
