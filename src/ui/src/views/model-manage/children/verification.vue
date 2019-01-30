@@ -85,9 +85,10 @@
             }
         },
         computed: {
-            ...mapGetters(['isAdminView', 'isBusinessSelected', 'isInjectable']),
+            ...mapGetters(['isAdminView', 'isBusinessSelected']),
             ...mapGetters('objectModel', [
-                'activeModel'
+                'activeModel',
+                'isInjectable'
             ]),
             isReadOnly () {
                 if (this.activeModel) {
