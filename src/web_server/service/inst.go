@@ -47,8 +47,8 @@ func (s *Service) ImportInst(c *gin.Context) {
 		return
 	}
 
-	inputJson := c.PostForm("json")
-	metaInfo := map[string]metadata.Metadata{}
+	inputJson := c.PostForm(metadata.BKMetadata)
+	metaInfo := metadata.Metadata{}
 	if err := json.Unmarshal([]byte(inputJson), &metaInfo); 0 != len(inputJson) && nil != err {
 		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), nil)
 		c.String(http.StatusOK, string(msg))
@@ -76,7 +76,7 @@ func (s *Service) ImportInst(c *gin.Context) {
 		return
 	}
 
-	data, errCode, err := s.Logics.ImportInsts(context.Background(), f, objID, c.Request.Header, defLang, metaInfo[metadata.BKMetadata])
+	data, errCode, err := s.Logics.ImportInsts(context.Background(), f, objID, c.Request.Header, defLang, metaInfo)
 
 	if nil != err {
 		msg := getReturnStr(errCode, err.Error(), data)
@@ -99,13 +99,16 @@ func (s *Service) ExportInst(c *gin.Context) {
 	objID := c.Param(common.BKObjIDField)
 	instIDStr := c.PostForm(common.BKInstIDField)
 
-	metaInfo := make(map[string]metadata.Metadata)
-	if err := c.Bind(&metaInfo); nil != err {
-		blog.Errorf("parse input metadata error: %v", err)
+	inputJson := c.PostForm(metadata.BKMetadata)
+	metaInfo := metadata.Metadata{}
+	if err := json.Unmarshal([]byte(inputJson), &metaInfo); 0 != len(inputJson) && nil != err {
+		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), nil)
+		c.String(http.StatusOK, string(msg))
+		return
 	}
 
 	kvMap := mapstr.MapStr{}
-	instInfo, err := s.Logics.GetInstData(ownerID, objID, instIDStr, pheader, kvMap)
+	instInfo, err := s.Logics.GetInstData(ownerID, objID, instIDStr, pheader, kvMap, metaInfo)
 
 	if err != nil {
 		blog.Error(err.Error())
@@ -119,8 +122,8 @@ func (s *Service) ExportInst(c *gin.Context) {
 
 	file = xlsx.NewFile()
 
-	fields, err := s.Logics.GetObjFieldIDs(objID, nil, pheader, metaInfo[metadata.BKMetadata])
-	err = s.Logics.BuildExcelFromData(context.Background(), objID, fields, nil, instInfo, file, pheader, metaInfo[metadata.BKMetadata])
+	fields, err := s.Logics.GetObjFieldIDs(objID, nil, pheader, metaInfo)
+	err = s.Logics.BuildExcelFromData(context.Background(), objID, fields, nil, instInfo, file, pheader, metaInfo)
 	if nil != err {
 		blog.Errorf("ExportHost object:%s error:%s", objID, err.Error())
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
@@ -148,6 +151,5 @@ func (s *Service) ExportInst(c *gin.Context) {
 	}
 	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("inst_%s.xlsx", objID))
 	c.File(dirFileName)
-
 	os.Remove(dirFileName)
 }
