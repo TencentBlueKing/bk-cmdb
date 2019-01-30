@@ -13,7 +13,6 @@
 package v2
 
 import (
-	"context"
 	"strings"
 
 	"configcenter/src/api_server/logics/v2/common/converter"
@@ -26,14 +25,11 @@ import (
 )
 
 func (s *Service) addHost(req *restful.Request, resp *restful.Response) {
-
-	pheader := req.Request.Header
-	user := util.GetUser(pheader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-
+	srvData := s.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Errorf("addHost error:%v", err)
+		blog.Errorf("addHost error:%v,rid:%s", err, srvData.rid)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
@@ -46,7 +42,7 @@ func (s *Service) addHost(req *restful.Request, resp *restful.Response) {
 	platID := formData.Get("platId")
 
 	if "" == ips {
-		blog.Errorf("addHost error ip empty")
+		blog.Errorf("addHost error ip empty,input:%#v,rid:%s", formData, srvData.rid)
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "ip").Error(), resp)
 		return
 	}
@@ -54,7 +50,7 @@ func (s *Service) addHost(req *restful.Request, resp *restful.Response) {
 
 	intPlatID, err := util.GetInt64ByInterface(platID)
 	if nil != err {
-		blog.Errorf("addHost error ip empty")
+		blog.Errorf("addHost error platID not integer, input:%#v,rid:%s", formData, srvData.rid)
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "platId").Error(), resp)
 		return
 	}
@@ -63,13 +59,18 @@ func (s *Service) addHost(req *restful.Request, resp *restful.Response) {
 		ModuleName:  moduleName,
 		SetName:     setName,
 		AppName:     appName,
-		OwnerID:     user,
+		OwnerID:     srvData.ownerID,
 		PlatID:      intPlatID,
 		IsIncrement: true}
-	result, err := s.CoreAPI.HostServer().AssignHostToAppModule(context.Background(), pheader, param)
+	result, err := s.CoreAPI.HostServer().AssignHostToAppModule(srvData.ctx, srvData.header, param)
 	if err != nil {
-		blog.Errorf("addHost  error:%v", err)
+		blog.Errorf("addHost  error:%v,input:%#v,codition:%#v,rid:%s", err, formData, param, srvData.rid)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
+		return
+	}
+	if !result.Result {
+		blog.Errorf("addHost  error, err code:%d,err msg:%s,input:%#v,codition:%#v,rid:%s", result.Code, result.ErrMsg, formData, param, srvData.rid)
+		converter.RespFailV2Error(defErr.New(result.Code, result.ErrMsg), resp)
 		return
 	}
 
@@ -84,15 +85,12 @@ func (s *Service) addHost(req *restful.Request, resp *restful.Response) {
 }
 
 func (s *Service) enterIP(req *restful.Request, resp *restful.Response) {
-
-	pheader := req.Request.Header
-	user := util.GetUser(pheader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-	rid := util.GetHTTPCCRequestID(pheader)
+	srvData := s.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Errorf("enterIP error:%v,rid:%s", err, rid)
+		blog.Errorf("enterIP error:%v,rid:%s", err, srvData.rid)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
@@ -106,7 +104,7 @@ func (s *Service) enterIP(req *restful.Request, resp *restful.Response) {
 	osType := formData.Get("osType")
 
 	if "" == ips {
-		blog.Errorf("enterIP error ips empty,input:%+v,rid:%s", formData, rid)
+		blog.Errorf("enterIP error ips empty,input:%+v,rid:%s", formData, srvData.rid)
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "ip").Error(), resp)
 		return
 	}
@@ -119,7 +117,7 @@ func (s *Service) enterIP(req *restful.Request, resp *restful.Response) {
 		osType = "windows"
 	}
 	if "" != osType && osType != "windows" && osType != "linux" {
-		blog.Errorf("osType mast be windows or linux; not %s,input:%+v,rid:%s", osType, formData, rid)
+		blog.Errorf("osType mast be windows or linux; not %s,input:%+v,rid:%s", osType, formData, srvData.rid)
 		converter.RespFailV2(common.CCErrAPIServerV2OSTypeErr, defErr.Error(common.CCErrAPIServerV2OSTypeErr).Error(), resp)
 		return
 	}
@@ -133,20 +131,24 @@ func (s *Service) enterIP(req *restful.Request, resp *restful.Response) {
 		ModuleName:  moduleName,
 		SetName:     setName,
 		AppName:     appName,
-		OwnerID:     user,
+		OwnerID:     srvData.ownerID,
 		OsType:      osTypeEnumKey,
 		IsIncrement: true}
-	result, err := s.CoreAPI.HostServer().AssignHostToAppModule(context.Background(), pheader, param)
-
+	result, err := s.CoreAPI.HostServer().AssignHostToAppModule(srvData.ctx, srvData.header, param)
 	if err != nil {
-		blog.Errorf("enterIP  error:%v,input:%+v,rid:%s", err, formData, rid)
+		blog.Errorf("enterIP  error:%v,input:%+v.condition:%#v,rid:%s", err, formData, param, srvData.rid)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
+		return
+	}
+	if !result.Result {
+		blog.Errorf("enterIP  error, err code:%d,err msg:%s,input:%+v.condition:%#v,rid:%s", result.Code, result.ErrMsg, formData, param, srvData.rid)
+		converter.RespFailV2Error(defErr.New(result.Code, result.ErrMsg), resp)
 		return
 	}
 
 	err = converter.ResToV2ForEnterIP(result.Result, result.ErrMsg, result.Data)
 	if err != nil {
-		blog.Errorf("convert enterip result to v2 error:%v, reply:%v,input:%+v,rid:%s", err.Error(), result.Data, formData, rid)
+		blog.Errorf("convert enterip result to v2 error:%v, reply:%v,input:%+v,rid:%s", err.Error(), result.Data, formData, srvData.rid)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}
