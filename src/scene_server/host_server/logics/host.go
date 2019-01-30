@@ -295,3 +295,9 @@ func (lgc *Logics) GetHostIDByCond(ctx context.Context, cond map[string][]int64)
 
 	return hostIDs, nil
 }
+
+// DeleteHostBusinessAttributes delete host business private property
+func (lgc *Logics) DeleteHostBusinessAttributes(ctx context.Context, hostIDArr []int64, businessMedatadata *metadata.Metadata) error {
+
+	return nil
+}
