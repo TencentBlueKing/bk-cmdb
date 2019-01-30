@@ -512,7 +512,7 @@ func (lgc *Logics) removeHostBadField(ctx context.Context, hostInfo map[string]i
 	defError := lgc.ccErr
 
 	newHostInfo := mapstr.New()
-	hostAttributeArr, err := lgc.GetHostAttributes(ctx, lgc.ownerID)
+	hostAttributeArr, err := lgc.GetHostAttributes(ctx, lgc.ownerID, nil)
 	if err != nil {
 		blog.Errorf("CloneHostProperty GetHostAttributes, err:%s, rid:%s", err.Error(), lgc.rid)
 		return nil, defError.Error(common.CCErrHostDetailFail)

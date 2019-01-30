@@ -24,11 +24,13 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	hutil "configcenter/src/scene_server/host_server/util"
-	"configcenter/src/scene_server/validator"
 )
 
-func (lgc *Logics) GetHostAttributes(ctx context.Context, ownerID string) ([]metadata.Header, error) {
+func (lgc *Logics) GetHostAttributes(ctx context.Context, ownerID string, businessMedatadata *metadata.Metadata) ([]metadata.Header, error) {
 	searchOp := hutil.NewOperation().WithObjID(common.BKInnerObjIDHost).WithOwnerID(lgc.ownerID).WithAttrComm().MapStr()
+	if businessMedatadata != nil {
+		searchOp.Set(common.MetadataField, businessMedatadata)
+	}
 	query := &metadata.QueryCondition{
 		Condition: searchOp,
 	}
@@ -145,13 +147,6 @@ func (lgc *Logics) EnterIP(ctx context.Context, ownerID string, appID, moduleID 
 					host[field.PropertyID] = nil
 				}
 			}
-		}
-
-		valid := validator.NewValidMap(util.GetOwnerID(lgc.header), common.BKInnerObjIDHost, lgc.header, lgc.Engine)
-		hasErr = valid.ValidMap(host, "create", 0)
-		if nil != hasErr {
-			blog.Errorf("EnterIP valid error, input:%+v, err:%s, rid:%s", host, err.Error(), lgc.rid)
-			return lgc.ccErr.Errorf(common.CCErrCommFieldNotValidFail, hasErr.Error())
 		}
 
 		result, err := lgc.CoreAPI.HostController().Host().AddHost(ctx, lgc.header, host)
