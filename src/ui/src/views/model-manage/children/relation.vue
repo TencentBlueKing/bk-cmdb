@@ -29,7 +29,7 @@
                         {{getModelName(item['bk_asst_obj_id'])}}
                     </template>
                     <template v-else-if="header.id==='operation'">
-                        <template v-if="item.ispre">
+                        <template v-if="item.ispre || item['bk_asst_id'] === 'bk_mainline'">
                             <span class="text-primary mr10 disabled">
                             {{$t('Common["编辑"]')}}
                             </span>
@@ -53,7 +53,7 @@
             </template>
         </cmdb-table>
         <cmdb-slider
-            :width="410"
+            :width="450"
             :title="slider.title"
             :isShow.sync="slider.isShow">
             <the-relation-detail
