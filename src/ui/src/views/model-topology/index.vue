@@ -828,7 +828,7 @@
                             id: node.id,
                             image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON(image, {
                                 name: node.data['node_name'],
-                                iconColor: node.data.ispre ? '#868b97' : '#3c96ff',
+                                iconColor: this.$tools.getMetadataBiz(node.data) ? '#3c96ff' : '#868b97',
                                 backgroundColor: '#fff'
                             }))}`
                         })

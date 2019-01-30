@@ -56,7 +56,10 @@
                     filter: '.filter-empty',
                     disabled: !authority.includes('update') || !isEditable(group.info)
                 }"
-                :class="{empty: !group.properties.length}"
+                :class="{
+                    empty: !group.properties.length,
+                    disabled: !authority.includes('update') || !isEditable(group.info)
+                }"
                 @change="handleDragChange"
                 @end="handleDragEnd">
                 <li class="property-item fl"
@@ -642,6 +645,11 @@
         &.empty {
             min-height: 70px;
         }
+        &.disabled {
+            .property-item {
+                cursor: not-allowed;
+            }
+        }
         .property-item {
             position: relative;
             width: calc(20% - 10px);
@@ -650,7 +658,7 @@
             border: 1px solid #dde4eb;
             background-color: #f6f6f6;
             user-select: none;
-            cursor: pointer;
+            cursor: move;
             @include ellipsis;
             &:hover {
                 &:before {
