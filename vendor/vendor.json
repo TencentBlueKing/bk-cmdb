@@ -21,6 +21,12 @@
 			"revisionTime": "2018-05-18T05:39:59Z"
 		},
 		{
+			"checksumSHA1": "2jsbDTvwxafPp7FJjJ8IIFlTLjs=",
+			"path": "github.com/mohae/deepcopy",
+			"revision": "c48cc78d482608239f6c4c92a4abd87eb8761c90",
+			"revisionTime": "2017-09-29T03:49:55Z"
+		},
+		{
 			"checksumSHA1": "/iUJjKfnlpZZDts1SyifOl0/kow=",
 			"path": "github.com/mongodb/mongo-go-driver",
 			"revision": "3cfdc9ffcf780eede57d27ec26a3edad4c9ab6a9",
@@ -62,6 +68,10 @@
 			"path": "golang.org/x/text/unicode/norm",
 			"revision": "17bcc049122f272a32787ba38073ee47433023e9",
 			"revisionTime": "2018-12-10T23:38:19Z"
+		},
+		{
+			"path": "https://github.com/mohae/deepcopy.git",
+			"revision": ""
 		}
 	],
 	"rootPath": "configcenter"
