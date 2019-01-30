@@ -19,10 +19,18 @@ import (
 	"reflect"
 	"strconv"
 	"time"
+
+	"github.com/mohae/deepcopy"
 )
 
 // MapStr the common event data definition
 type MapStr map[string]interface{}
+
+// Clone create a new MapStr by deepcopy
+func (cli MapStr) Clone() MapStr {
+	cpyInst := deepcopy.Copy(cli)
+	return cpyInst.(MapStr)
+}
 
 // Merge merge second into self,if the key is the same then the new value replaces the old value.
 func (cli MapStr) Merge(second MapStr) {
