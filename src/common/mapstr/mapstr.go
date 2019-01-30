@@ -349,3 +349,13 @@ func (cli MapStr) Different(target MapStr) (more MapStr, less MapStr, changes Ma
 
 	return more, less, changes
 }
+
+// Clone  MapStr clone new MapStr. not support pointer
+// error unused. leave for deep copy
+func (cli MapStr) Clone() (MapStr, error) {
+	newCli := MapStr{}
+	for key, val := range cli {
+		newCli.Set(key, val)
+	}
+	return newCli, nil
+}
