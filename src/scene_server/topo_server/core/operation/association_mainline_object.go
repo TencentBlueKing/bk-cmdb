@@ -80,8 +80,10 @@ func (a *association) DeleteMainlineAssociaton(params types.ContextParams, objID
 
 func (a *association) SearchMainlineAssociationTopo(params types.ContextParams, targetObj model.Object) ([]*metadata.MainlineObjectTopo, error) {
 
+	foundObjIDMap := make(map[string]bool)
 	results := make([]*metadata.MainlineObjectTopo, 0)
 	for {
+		resultsLen := len(results)
 
 		tmpRst := &metadata.MainlineObjectTopo{}
 		tmpRst.ObjID = targetObj.GetID()
@@ -101,15 +103,26 @@ func (a *association) SearchMainlineAssociationTopo(params types.ContextParams, 
 			tmpRst.NextObj = childObj.GetID()
 			tmpRst.NextName = childObj.GetName()
 		} else if nil != err {
-			if io.EOF == err {
-				results = append(results, tmpRst)
-				return results, nil
+			if io.EOF != err {
+				return nil, err
 			}
-			return nil, err
+			if _, ok := foundObjIDMap[tmpRst.ObjID]; !ok {
+				results = append(results, tmpRst)
+				foundObjIDMap[tmpRst.ObjID] = true
+			}
+			return results, nil
 		}
 
-		results = append(results, tmpRst)
+		if _, ok := foundObjIDMap[tmpRst.ObjID]; !ok {
+			results = append(results, tmpRst)
+			foundObjIDMap[tmpRst.ObjID] = true
+		}
 		targetObj = childObj
+
+		if resultsLen == len(results) {
+			// no new element add to result
+			return results, nil
+		}
 	}
 
 }
