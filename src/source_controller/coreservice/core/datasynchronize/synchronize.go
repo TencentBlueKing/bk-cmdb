@@ -13,7 +13,6 @@
 package instances
 
 import (
-	"configcenter/src/common"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
@@ -24,8 +23,30 @@ type synchronizeManager struct {
 	dbProxy dal.RDB
 }
 
-func (s *synchronizeManager) SynchronizeAdapter(ctx core.ContextParams, syncData *metadata.SynchronizeDataParameter) ([]string, errors.CCError) {
-	syncDataAdpater := newSynchronizeDataAdapter(syncData, s.dbProxy)
+func (s *synchronizeManager) SynchronizeInstanceAdapter(ctx core.ContextParams, syncData *metadata.SynchronizeParameter) ([]string, errors.CCError) {
+	syncDataAdpater := NewSynchronizeInstanceAdapter(syncData, s.dbProxy)
+	err := syncDataAdpater.PreSynchronizeFilter(ctx)
+	if err != nil {
+		return nil, err
+	}
+	syncDataAdpater.SaveSynchronize(ctx)
+	return syncDataAdpater.GetErrorStringArr(ctx)
+
+}
+
+func (s *synchronizeManager) SynchronizeModelAdapter(ctx core.ContextParams, syncData *metadata.SynchronizeParameter) ([]string, errors.CCError) {
+	syncDataAdpater := NewSynchronizeModelAdapter(syncData, s.dbProxy)
+	err := syncDataAdpater.PreSynchronizeFilter(ctx)
+	if err != nil {
+		return nil, err
+	}
+	syncDataAdpater.SaveSynchronize(ctx)
+	return syncDataAdpater.GetErrorStringArr(ctx)
+
+}
+
+func (s *synchronizeManager) SynchronizeAssociationAdapter(ctx core.ContextParams, syncData *metadata.SynchronizeParameter) ([]string, errors.CCError) {
+	syncDataAdpater := NewSynchronizeAssociationAdapter(syncData, s.dbProxy)
 	err := syncDataAdpater.PreSynchronizeFilter(ctx)
 	if err != nil {
 		return nil, err

@@ -20,27 +20,47 @@ import (
 type SynchronizeOperateType int64
 
 const (
-	// SynchronizeOperateTypeAdd synchroneize data add
+	// SynchronizeOperateTypeAdd synchronize data add
 	SynchronizeOperateTypeAdd SynchronizeOperateType = iota + 1
-	// SynchronizeOperateTypeUpdate synchroneize data update
+	// SynchronizeOperateTypeUpdate synchronize data update
 	SynchronizeOperateTypeUpdate
-	// SynchronizeOperateTypeRepalce synchroneize data add or update
+	// SynchronizeOperateTypeRepalce synchronize data add or update
 	SynchronizeOperateTypeRepalce
-	// SynchronizeOperateTypeDelete synchroneize data delete
+	// SynchronizeOperateTypeDelete synchronize data delete
 	SynchronizeOperateTypeDelete
 )
 
-// SynchronizeDataParameter synchronize data http request parameter
-type SynchronizeDataParameter struct {
-	OperateType       SynchronizeOperateType `json:"op_type"`
-	ObjectID          string                 `json:"obj_id"`
-	InstacneInfoArray []*SynchronizeDataItem `json:"instance_info_array"`
+// SynchronizeOperateType synchronize data operate type
+type SynchronizeDataType int64
+
+const (
+	// SynchronizeDataTypeInstance synchronize data is instance
+	SynchronizeDataTypeInstance SynchronizeDataType = iota + 1
+	// SynchronizeDataTypeModel synchronize data is model
+	SynchronizeDataTypeModel
+	//SynchronizeDataTypeAssociation synchronize data is association
+	SynchronizeDataTypeAssociation
+)
+
+// SynchronizeInstanceParameter synchronize instance data http request parameter
+type SynchronizeParameter struct {
+	OperateType SynchronizeOperateType `json:"op_type"`
+	// synchronize data type
+	DataType SynchronizeDataType `json:"data_type"`
+	// DataType = SynchronizeDataTypeInstance,
+	// DataSign = object_id,  eg:host,plat,module,proc etc.
+	// DataType = SynchronizeDataTypeModel,
+	// DataSign = common.SynchronizeModelDescTypeGroupInfo,common.SynchronizeModelDescTypeModuleAttribute etc
+	// DataType = SynchronizeDataTypeAssociation
+	// DataSign = common.SynchronizeAssociationTypeModelHost etc.
+	DataSign  string             `json:"data_sign"`
+	InfoArray []*SynchronizeItem `json:"instance_info_array"`
 	// source data sign
 	SynchronizeSign string `json:"sync_sign"`
 }
 
-// SynchronizeDataItem synchronize data information
-type SynchronizeDataItem struct {
-	InstanceInfo mapstr.MapStr `json:"instance_info"`
-	InstanceID   int64         `json:"instance_id"`
+// SynchronizeItem synchronize data information
+type SynchronizeItem struct {
+	Info mapstr.MapStr `json:"info"`
+	ID   int64         `json:"id"`
 }
