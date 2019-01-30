@@ -210,6 +210,7 @@
                 try {
                     const response = await this.$http.get(this.templateUrl, {
                         originalResponse: true,
+                        globalError: false,
                         responseType: 'blob',
                         data: this.downloadPayload
                     })
