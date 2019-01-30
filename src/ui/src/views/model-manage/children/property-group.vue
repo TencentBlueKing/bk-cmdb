@@ -150,7 +150,8 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'isAdminView', 'isBusinessSelected', 'isInjectable']),
+            ...mapGetters(['supplierAccount', 'isAdminView', 'isBusinessSelected']),
+            ...mapGetters('objectModel', ['isInjectable']),
             objId () {
                 return this.$route.params.modelId
             },
