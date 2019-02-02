@@ -10,20 +10,14 @@
  * limitations under the License.
  */
 
-package findopt
+package aggregateopt
 
 import "github.com/mongodb/mongo-go-driver/mongo/options"
 
-// ConvertToMongoOptions convert to mongodb option
-func (m *FindAndModify) ConvertToMongoOptions() *options.FindOneAndUpdateOptions {
-	option := &options.FindOneAndUpdateOptions{
-		Upsert: &m.Upsert,
-	}
+// ConvertToMongoOptions convert update many opt into mongo options array
+func (m *Many) ConvertToMongoOptions() *options.AggregateOptions {
 
-	if m.New {
-		n := options.After
-		option.ReturnDocument = &n
-	}
-
+	option := &options.AggregateOptions{}
+	// TODO: need to be implemented
 	return option
 }
