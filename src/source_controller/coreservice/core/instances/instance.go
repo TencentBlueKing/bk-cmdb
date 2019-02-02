@@ -143,14 +143,14 @@ func (m *instanceManager) SearchModelInstance(ctx core.ContextParams, objID stri
 
 	instItems, err := m.searchInstance(ctx, objID, inputParam)
 	if nil != err {
-		blog.Errorf("parse conditon  error [%v]", err)
+		blog.Errorf("search instance error [%v]", err)
 		return &metadata.QueryResult{}, err
 	}
 
 	dataResult := &metadata.QueryResult{}
 	dataResult.Count, err = m.countInstance(ctx, objID, inputParam.Condition)
 	if nil != err {
-		blog.Errorf("parse conditon  error [%v]", err)
+		blog.Errorf("count instance error [%v]", err)
 		return &metadata.QueryResult{}, err
 	}
 	dataResult.Info = instItems
