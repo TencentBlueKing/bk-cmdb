@@ -17,9 +17,14 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
+	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/rpc"
 	"configcenter/src/storage/types"
 )
@@ -33,22 +38,51 @@ type Mongo struct {
 	rpc       *rpc.Client
 	getServer types.GetServerFunc
 	parent    *Mongo
+
+	enableTransaction bool
 }
 
 // NewWithDiscover returns new DB
-func NewWithDiscover(getServer types.GetServerFunc) (dal.DB, error) {
-	servers, err := getServer()
+func NewWithDiscover(getServer types.GetServerFunc, config mongo.Config) (db dal.DB, err error) {
+	var enableTransaction bool
+	if config.Transaction == "enable" {
+		enableTransaction = true
+	}
+
+	if !enableTransaction {
+		return &Mongo{
+			enableTransaction: enableTransaction,
+		}, nil
+	}
+
+	servers := []string{}
+	for i := 3; i > 0; i-- {
+		servers, err = getServer()
+		if err != nil {
+			blog.Infof("fetch tmserver address failed: %v, retry 2s later", err)
+			time.Sleep(time.Second * 2)
+			continue
+		}
+		break
+	}
 	if err != nil {
 		return nil, err
 	}
 
-	rpccli, err := rpc.DialHTTPPath("tcp", servers[0], "/txn/v3/rpc")
+	address, err := util.GetDailAddress(servers[0])
+	if err != nil {
+		return nil, fmt.Errorf("GetDailAddress %s, failed: %v", servers[0], err)
+	}
+
+	rpccli, err := rpc.DialHTTPPath("tcp", address, "/txn/v3/rpc")
 	if err != nil {
 		return nil, err
 	}
 	return &Mongo{
 		rpc:       rpccli,
 		getServer: getServer,
+
+		enableTransaction: enableTransaction,
 	}, nil
 }
 
@@ -85,13 +119,24 @@ func (c *Mongo) Clone() dal.DB {
 }
 
 // IsDuplicatedError check the error
-func (c *Mongo) IsDuplicatedError(error) bool {
+func (c *Mongo) IsDuplicatedError(err error) bool {
+	if err == dal.ErrDuplicated {
+		return true
+	}
+	if err != nil {
+		if strings.Contains(err.Error(), "The existing index") {
+			return true
+		}
+		if strings.Contains(err.Error(), "There's already an index with name") {
+			return true
+		}
+	}
 	return false
 }
 
 // IsNotFoundError check the error
-func (c *Mongo) IsNotFoundError(error) bool {
-	return false
+func (c *Mongo) IsNotFoundError(err error) bool {
+	return err == dal.ErrDocumentNotFound
 }
 
 // Table collection operation
