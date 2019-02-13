@@ -16,20 +16,24 @@
                         <span class="group-name">{{group.info['bk_group_name']}}</span>
                         <span class="group-count">({{group.properties.length}})</span>
                         <i class="title-icon icon icon-cc-edit"
-                            v-if="authority.includes('update') && group.info['bk_group_id'] !== 'none'"
+                            v-if="authority.includes('update') && group.info['bk_group_id'] !== 'none' && isEditable(group.info)"
                             @click="handleEditGroupName(group)">
                         </i>
                     </template>
                 </div>
-                <div class="header-options fr" v-if="authority.includes('update')">
+                <div class="header-options fr" v-if="authority.includes('update') && isEditable(group.info)">
                     <i class="options-icon bk-icon icon-arrows-up"
                         v-tooltip="$t('ModelManagement[\'上移\']')"
-                        :class="{disabled: index === 0 || ['none'].includes(group.info['bk_group_id'])}"
+                        :class="{
+                            disabled: !canRiseGroup(index, group)
+                        }"
                         @click="handleRiseGroup(index, group)">
                     </i>
                     <i class="options-icon bk-icon icon-arrows-down"
                         v-tooltip="$t('ModelManagement[\'下移\']')"
-                        :class="{disabled: index === (groupedProperties.length - 2) || ['none'].includes(group.info['bk_group_id'])}"
+                        :class="{
+                            disabled: !canDropGroup(index, group)
+                        }"
                         @click="handleDropGroup(index, group)">
                     </i>
                     <i class="options-icon bk-icon icon-plus-circle-shape"
@@ -50,9 +54,12 @@
                     group: 'property',
                     animation: 150,
                     filter: '.filter-empty',
-                    disabled: !authority.includes('update')
+                    disabled: !authority.includes('update') || !isEditable(group.info)
                 }"
-                :class="{empty: !group.properties.length}"
+                :class="{
+                    empty: !group.properties.length,
+                    disabled: !authority.includes('update') || !isEditable(group.info)
+                }"
                 @change="handleDragChange"
                 @end="handleDragEnd">
                 <li class="property-item fl"
@@ -62,7 +69,10 @@
                     {{property['bk_property_name']}}
                 </li>
                 <template v-if="!group.properties.length">
-                    <li class="property-empty" v-if="authority.includes('update')" @click="handleAddProperty(group)">{{$t('ModelManagement["立即添加"]')}}</li>
+                    <li class="property-empty" v-if="authority.includes('update') && isEditable(group.info)"
+                        @click="handleAddProperty(group)">
+                        {{$t('ModelManagement["立即添加"]')}}
+                    </li>
                     <li class="property-empty disabled" v-else>{{$t('ModelManagement["暂无字段"]')}}</li>
                 </template>
             </vue-draggable>
@@ -143,33 +153,39 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount']),
+            ...mapGetters(['supplierAccount', 'isAdminView', 'isBusinessSelected']),
+            ...mapGetters('objectModel', ['isInjectable']),
             objId () {
                 return this.$route.params.modelId
             },
             sortedProperties () {
-                const properties = []
-                this.groupedProperties.forEach(group => {
-                    group.properties.forEach(property => {
-                        properties.push(property)
-                    })
+                const propertiesSorted = this.isAdminView ? this.groupedProperties : this.metadataGroupedProperties
+                let properties = []
+                propertiesSorted.forEach(group => {
+                    properties = properties.concat(group.properties)
                 })
                 return properties
             },
             groupedPropertiesCount () {
                 const count = {}
-                this.groupedProperties.forEach(({group, properties}) => {
-                    const groupId = group['bk_group_id']
+                this.groupedProperties.forEach(({info, properties}) => {
+                    const groupId = info['bk_group_id']
                     count[groupId] = properties.length
                 })
                 return count
+            },
+            metadataGroupedProperties () {
+                return this.groupedProperties.filter(group => !!this.$tools.getMetadataBiz(group.info))
             },
             authority () {
                 const cantEdit = ['process', 'plat']
                 if (cantEdit.includes(this.objId)) {
                     return []
                 }
-                return this.$store.getters.admin ? ['search', 'update', 'delete'] : []
+                if (this.isAdminView || (this.isBusinessSelected && this.isInjectable)) {
+                    return ['search', 'update', 'delete']
+                }
+                return []
             }
         },
         async created () {
@@ -187,8 +203,29 @@
             ...mapActions('objectModelProperty', [
                 'searchObjectAttribute'
             ]),
+            isEditable (group) {
+                if (this.isAdminView) {
+                    return true
+                }
+                return !!this.$tools.getMetadataBiz(group)
+            },
+            canRiseGroup (index, group) {
+                if (this.isAdminView) {
+                    return index !== 0 && !['none'].includes(group.info['bk_group_id'])
+                }
+                const metadataIndex = this.metadataGroupedProperties.indexOf(group)
+                return metadataIndex !== 0
+            },
+            canDropGroup (index, group) {
+                if (this.isAdminView) {
+                    return index !== (this.groupedProperties.length - 2) && !['none'].includes(group.info['bk_group_id'])
+                }
+                const metadataIndex = this.metadataGroupedProperties.indexOf(group)
+                return metadataIndex !== (this.metadataGroupedProperties.length - 1)
+            },
             init (properties, groups) {
                 properties = this.setPropertIndex(properties)
+                groups = this.separateMetadataGroups(groups)
                 groups = this.setGroupIndex(groups.concat({
                     'bk_group_index': Infinity,
                     'bk_group_id': 'none',
@@ -205,6 +242,7 @@
             getPropertyGroups () {
                 return this.searchGroup({
                     objId: this.objId,
+                    params: this.$injectMetadata(),
                     config: {
                         requestId: `get_searchGroup_${this.objId}`,
                         cancelPrevious: true
@@ -213,18 +251,35 @@
             },
             getProperties () {
                 return this.searchObjectAttribute({
-                    params: {
+                    params: this.$injectMetadata({
                         'bk_obj_id': this.objId,
                         'bk_supplier_account': this.supplierAccount
-                    },
+                    }),
                     config: {
                         requestId: `post_searchObjectAttribute_${this.objId}`,
                         cancelPrevious: true
                     }
                 })
             },
+            separateMetadataGroups (groups) {
+                const publicGroups = []
+                const metadataGroups = []
+                groups.forEach(group => {
+                    if (this.$tools.getMetadataBiz(group)) {
+                        metadataGroups.push(group)
+                    } else {
+                        publicGroups.push(group)
+                    }
+                })
+                publicGroups.sort((groupA, groupB) => {
+                    return groupA['bk_group_index'] - groupB['bk_group_index']
+                })
+                metadataGroups.sort((groupA, groupB) => {
+                    return groupA['bk_group_index'] - groupB['bk_group_index']
+                })
+                return [...publicGroups, ...metadataGroups]
+            },
             setGroupIndex (groups) {
-                groups.sort((groupA, groupB) => groupA['bk_group_index'] - groupB['bk_group_index'])
                 groups.forEach((group, index) => {
                     group['bk_group_index'] = index
                 })
@@ -254,14 +309,14 @@
                     return
                 }
                 this.updateGroup({
-                    params: {
+                    params: this.$injectMetadata({
                         condition: {
                             id: this.groupInEditing.info.id
                         },
                         data: {
                             'bk_group_name': this.groupNameInEditing
                         }
-                    },
+                    }),
                     config: {
                         requestId: `put_updateGroup_name_${this.groupInEditing.info.id}`,
                         cancelPrevious: true
@@ -271,8 +326,8 @@
                 this.groupInEditing = null
             },
             handleRiseGroup (index, group) {
-                if (!index || ['none'].includes(group.info['bk_group_id'])) {
-                    return
+                if (!this.canRiseGroup(index, group)) {
+                    return false
                 }
                 this.groupedProperties[index - 1]['info']['bk_group_index'] = index
                 group['info']['bk_group_index'] = index - 1
@@ -281,8 +336,8 @@
                 this.updatePropertyIndex()
             },
             handleDropGroup (index, group) {
-                if (index === (this.groupedProperties.length - 2) || ['none'].includes(group.info['bk_group_id'])) {
-                    return
+                if (!this.canDropGroup(index, group)) {
+                    return false
                 }
                 this.groupedProperties[index + 1]['info']['bk_group_index'] = index
                 group.info['bk_group_index'] = index + 1
@@ -390,14 +445,14 @@
                 const groupToUpdate = this.groupedProperties.filter((group, index) => group.info['bk_group_index'] !== index && group.info['bk_group_id'] !== 'none')
                 groupToUpdate.forEach(group => {
                     this.updateGroup({
-                        params: {
+                        params: this.$injectMetadata({
                             condition: {
                                 id: group.info.id
                             },
                             data: {
                                 'bk_group_index': group.info['bk_group_index']
                             }
-                        },
+                        }),
                         config: {
                             requestId: `put_updateGroup_index_${group.info.id}`,
                             cancelWhenRouteChange: false,
@@ -470,13 +525,13 @@
                 }
                 const groupId = Date.now().toString()
                 this.createGroup({
-                    params: {
+                    params: this.$injectMetadata({
                         'bk_group_id': groupId,
                         'bk_group_index': groupedProperties.length - 1,
                         'bk_group_name': this.newGroupName,
                         'bk_obj_id': this.objId,
                         'bk_supplier_account': this.supplierAccount
-                    },
+                    }),
                     config: {
                         requestId: `post_createGroup_${groupId}`
                     }
@@ -590,6 +645,11 @@
         &.empty {
             min-height: 70px;
         }
+        &.disabled {
+            .property-item {
+                cursor: not-allowed;
+            }
+        }
         .property-item {
             position: relative;
             width: calc(20% - 10px);
@@ -598,7 +658,7 @@
             border: 1px solid #dde4eb;
             background-color: #f6f6f6;
             user-select: none;
-            cursor: pointer;
+            cursor: move;
             @include ellipsis;
             &:hover {
                 &:before {

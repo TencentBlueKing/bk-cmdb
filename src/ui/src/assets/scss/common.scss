@@ -265,15 +265,20 @@ input.cmdb-form-input {
 }
 
 .text-primary {
+    -webkit-appearance: none;
+    border: none;
+    outline: 0;
+    background-color: transparent;
     color: #3c96ff;
-
+    cursor: pointer;
     &:hover {
         color: #0082ff;
     }
 
-    &.disabled {
+    &.disabled,
+    &:disabled {
         opacity: .385;
-        cursor: not-allowed;
+        cursor: not-allowed !important;
     }
 }
 
