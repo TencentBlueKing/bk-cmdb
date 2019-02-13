@@ -18,10 +18,9 @@ import (
 	"sync"
 	"time"
 
-	"configcenter/src/common/universalsql/mongo"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/storage/mongodb"
 	"configcenter/src/storage/tmserver/app/options"
 	"configcenter/src/storage/types"
@@ -179,6 +178,7 @@ func (tm *Manager) CreateTransaction(requestID string) (*Session, error) {
 		Status:     types.TxStatusOnProgress,
 		CreateTime: time.Now(),
 		LastTime:   time.Now(),
+		TxnID:      tm.newTxnID(),
 	}
 
 	if !tm.enable {
@@ -208,7 +208,6 @@ func (tm *Manager) CreateTransaction(requestID string) (*Session, error) {
 		return nil, err
 	}
 
-	txn.TxnID = tm.newTxnID()
 	inst := &Session{
 		Txninst: &txn,
 		Session: session,
