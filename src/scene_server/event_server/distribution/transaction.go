@@ -18,10 +18,9 @@ import (
 	"strconv"
 	"time"
 
-	"configcenter/src/common/universalsql/mongo"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
 	ccredis "configcenter/src/storage/dal/redis"
 	daltypes "configcenter/src/storage/types"
