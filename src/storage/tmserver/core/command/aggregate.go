@@ -15,28 +15,28 @@ package command
 import (
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/mongodb"
+	"configcenter/src/storage/mongodb/options/aggregateopt"
 	"configcenter/src/storage/rpc"
 	"configcenter/src/storage/tmserver/core"
 	"configcenter/src/storage/types"
 )
 
 func init() {
-	core.GCommands.SetCommand(types.OPCountCode, &count{})
+	core.GCommands.SetCommand(types.OPAggregateCode, &aggregate{})
 }
 
-var _ core.SetDBProxy = (*count)(nil)
+var _ core.SetDBProxy = (*aggregate)(nil)
 
-type count struct {
+type aggregate struct {
 	dbProxy mongodb.Client
 }
 
-func (d *count) SetDBProxy(db mongodb.Client) {
+func (d *aggregate) SetDBProxy(db mongodb.Client) {
 	d.dbProxy = db
 }
+func (d *aggregate) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPReply, error) {
 
-func (d *count) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPReply, error) {
-
-	msg := types.OPDeleteOperation{}
+	msg := types.OPAggregateOperation{}
 	reply := &types.OPReply{}
 	if err := decoder.Decode(&msg); nil != err {
 		reply.Message = err.Error()
@@ -44,15 +44,10 @@ func (d *count) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPR
 	}
 	blog.V(4).Infof("[MONGO OPERATION] %+v", &msg)
 
-	var targetCol mongodb.CollectionInterface
-	if nil != ctx.Session {
-		targetCol = ctx.Session.Collection(msg.Collection)
-	} else {
-		targetCol = d.dbProxy.Collection(msg.Collection)
-	}
+	opt := aggregateopt.One{}
+	//opt.Sort = msg.Sort
 
-	cnt, err := targetCol.Count(ctx, msg.Selector)
-	reply.Count = cnt
+	err := d.dbProxy.Collection(msg.Collection).AggregateOne(ctx, msg.Pipiline, &opt, &reply.Docs)
 	if nil == err {
 		reply.Success = true
 	} else {

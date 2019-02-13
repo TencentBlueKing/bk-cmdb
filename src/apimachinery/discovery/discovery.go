@@ -34,6 +34,7 @@ type DiscoveryInterface interface {
 	ProcCtrl() Interface
 	GseProcServ() Interface
 	CoreService() Interface
+	TMServer() Interface
 }
 
 type Interface interface {
@@ -119,4 +120,8 @@ func (d *discover) GseProcServ() Interface {
 
 func (d *discover) CoreService() Interface {
 	return d.servers[types.CC_MODULE_CORESERVICE]
+}
+
+func (d *discover) TMServer() Interface {
+	return d.servers[types.CC_MODULE_TXC]
 }
