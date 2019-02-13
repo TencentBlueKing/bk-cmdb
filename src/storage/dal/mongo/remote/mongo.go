@@ -18,11 +18,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/rpc"
@@ -31,11 +28,17 @@ import (
 
 var _ dal.DB = (*Mongo)(nil)
 
+type rpcclient interface {
+	Call(cmd string, input interface{}, result interface{}) error
+	Ping() error
+	Close() error
+}
+
 // Mongo implement dal.DB interface
 type Mongo struct {
 	RequestID string // 请求ID,可选项
 	TxnID     string // 事务ID,uuid
-	rpc       *rpc.Client
+	rpc       rpcclient
 	getServer types.GetServerFunc
 	parent    *Mongo
 
@@ -55,34 +58,12 @@ func NewWithDiscover(getServer types.GetServerFunc, config mongo.Config) (db dal
 		}, nil
 	}
 
-	servers := []string{}
-	for i := 3; i > 0; i-- {
-		servers, err = getServer()
-		if err != nil {
-			blog.Infof("fetch tmserver address failed: %v, retry 2s later", err)
-			time.Sleep(time.Second * 2)
-			continue
-		}
-		break
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	address, err := util.GetDailAddress(servers[0])
-	if err != nil {
-		return nil, fmt.Errorf("GetDailAddress %s, failed: %v", servers[0], err)
-	}
-
-	rpccli, err := rpc.DialHTTPPath("tcp", address, "/txn/v3/rpc")
+	pool, err := rpc.NewClientPool("tcp", getServer, "/txn/v3/rpc")
 	if err != nil {
 		return nil, err
 	}
 	return &Mongo{
-		rpc:       rpccli,
-		getServer: getServer,
-
-		enableTransaction: enableTransaction,
+		rpc: pool,
 	}, nil
 }
 

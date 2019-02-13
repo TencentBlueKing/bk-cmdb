@@ -110,7 +110,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		}
 		process.Service.SetCache(cache)
 
-		var rpccli *rpc.Client
+		var rpccli rpc.Client
 		if process.Config.RPC.Address != "" {
 			rpccli, err = rpc.Dial(process.Config.RPC.Address)
 			if err != nil {
