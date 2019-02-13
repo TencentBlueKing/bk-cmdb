@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"configcenter/src/apimachinery"
+	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -30,6 +31,7 @@ import (
 	"configcenter/src/source_controller/auditcontroller/logics"
 	"configcenter/src/source_controller/auditcontroller/service"
 	"configcenter/src/storage/dal/mongo"
+	"configcenter/src/storage/dal/mongo/local"
 
 	"github.com/emicklei/go-restful"
 )
@@ -42,14 +44,18 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("wrap server info failed, err: %s", err.Error())
 	}
 
+	discover, err := discovery.NewDiscoveryInterface(op.ServConf.RegDiscover)
+	if err != nil {
+		return fmt.Errorf("connect zookeeper [%s] failed: %v", op.ServConf.RegDiscover, err)
+	}
+
 	c := &util.APIMachineryConfig{
-		ZkAddr:    op.ServConf.RegDiscover,
 		QPS:       1000,
 		Burst:     2000,
 		TLSConfig: nil,
 	}
 
-	machinery, err := apimachinery.NewApiMachinery(c)
+	machinery, err := apimachinery.NewApiMachinery(c, discover)
 	if err != nil {
 		return fmt.Errorf("new api machinery failed, err: %s", err.Error())
 	}
@@ -77,6 +83,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		types.CC_MODULE_AUDITCONTROLLER,
 		op.ServConf.ExConfig,
 		audit.onAduitConfigUpdate,
+		discover,
 		bonC)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
@@ -114,7 +121,7 @@ func (h *AuditController) onAduitConfigUpdate(previous, current cc.ProcessConfig
 		Mongo: mongo.ParseConfigFromKV("mongodb", current.ConfigMap),
 	}
 
-	instance, err := mongo.NewMgo(h.Config.Mongo.BuildURI(), time.Minute)
+	instance, err := local.NewMgo(h.Config.Mongo.BuildURI(), time.Minute)
 	if err != nil {
 		blog.Errorf("new mongo client failed, err: %s", err.Error())
 		return

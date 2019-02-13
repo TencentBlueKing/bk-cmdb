@@ -159,14 +159,16 @@ func (s *Service) BuildDownLoadExcelTemplate(c *gin.Context) {
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
-	metaInfo := make(map[string]metadata.Metadata)
-	err = c.Bind(&metaInfo)
-	if nil != err {
-		blog.Errorf("parse input metadata error: %v", err)
+	inputJson := c.PostForm(metadata.BKMetadata)
+	metaInfo := metadata.Metadata{}
+	if err := json.Unmarshal([]byte(inputJson), &metaInfo); 0 != len(inputJson) && nil != err {
+		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), nil)
+		c.String(http.StatusOK, string(msg))
+		return
 	}
 
 	file := fmt.Sprintf("%s/%stemplate-%d-%d.xlsx", dir, objID, time.Now().UnixNano(), randNum)
-	err = s.Logics.BuildExcelTemplate(objID, file, c.Request.Header, defLang, metaInfo[metadata.BKMetadata])
+	err = s.Logics.BuildExcelTemplate(objID, file, c.Request.Header, defLang, metaInfo)
 	if nil != err {
 		blog.Errorf("BuildDownLoadExcelTemplate object:%s error:%s", objID, err.Error())
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)

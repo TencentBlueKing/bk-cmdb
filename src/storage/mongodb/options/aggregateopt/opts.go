@@ -10,15 +10,12 @@
  * limitations under the License.
  */
 
-package mongo
+package aggregateopt
 
-import (
-	"configcenter/src/storage/dal"
-	mgo "configcenter/src/storage/dal/mongo/local"
-	"time"
-)
+// One update one options
+type One struct {
+}
 
-// NewMgo returns new RDB
-func NewMgo(uri string, timeout time.Duration) (dal.DB, error) {
-	return mgo.NewMgo(uri, timeout)
+// Many update many options
+type Many struct {
 }

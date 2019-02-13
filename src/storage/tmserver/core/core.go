@@ -15,6 +15,7 @@ package core
 import (
 	"fmt"
 
+	"configcenter/src/common/blog"
 	"configcenter/src/storage/mongodb"
 	"configcenter/src/storage/rpc"
 	"configcenter/src/storage/tmserver/core/transaction"
@@ -75,6 +76,9 @@ func (c *core) ExecuteCommand(ctx ContextParams, input rpc.Request) (*types.OPRe
 	}
 
 	reply, err := cmd.Execute(ctx, input)
+	if err != nil {
+		blog.Errorf("[MONGO OPERATION] failed: %v, cmd: %s", err, input)
+	}
 	return reply, err
 
 }

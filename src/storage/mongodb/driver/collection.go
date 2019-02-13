@@ -17,6 +17,7 @@ import (
 
 	"configcenter/src/common/mapstr"
 	"configcenter/src/storage/mongodb"
+	"configcenter/src/storage/mongodb/options/aggregateopt"
 	"configcenter/src/storage/mongodb/options/deleteopt"
 	"configcenter/src/storage/mongodb/options/findopt"
 	"configcenter/src/storage/mongodb/options/insertopt"
@@ -337,6 +338,38 @@ func (c *collection) FindOneAndModify(ctx context.Context, filter interface{}, u
 
 	// no session
 	return c.innerCollection.FindOneAndUpdate(ctx, filter, update, findOneAndModify).Decode(output)
+}
+
+func (c *collection) AggregateOne(ctx context.Context, pipeline interface{}, opts *aggregateopt.One, output interface{}) error {
+	aggregateOptions := &options.AggregateOptions{}
+	if nil != opts {
+		aggregateOptions = opts.ConvertToMongoOptions()
+	}
+
+	mongo.WithSession(ctx, c.innerSession, func(mctx mongo.SessionContext) error {
+		cursor, err := c.innerCollection.Aggregate(mctx, pipeline, aggregateOptions)
+		if nil != err {
+			return err
+		}
+
+		defer cursor.Close(mctx)
+		for cursor.Next(ctx) {
+			return cursor.Decode(output)
+		}
+		return cursor.Err()
+	})
+
+	// no session
+	cursor, err := c.innerCollection.Aggregate(ctx, pipeline, aggregateOptions)
+	if nil != err {
+		return err
+	}
+	defer cursor.Close(ctx)
+
+	for cursor.Next(ctx) {
+		return cursor.Decode(output)
+	}
+	return cursor.Err()
 }
 
 func (c *collection) InsertOne(ctx context.Context, document interface{}, opts *insertopt.One) error {
