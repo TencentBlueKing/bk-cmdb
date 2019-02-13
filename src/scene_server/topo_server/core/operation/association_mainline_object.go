@@ -119,8 +119,11 @@ func (a *association) SearchMainlineAssociationTopo(params types.ContextParams, 
 		}
 		targetObj = childObj
 
+		// detect infinite loop by checking whether there are new added objects in current loop.
 		if resultsLen == len(results) {
-			// no new element add to result
+			// merely return found objects here to avoid infinite loop.
+			// returned results here maybe parts of all mainline objects.
+			// we must prevent loop from taking shape seriously, at adding or editing association.
 			return results, nil
 		}
 	}
