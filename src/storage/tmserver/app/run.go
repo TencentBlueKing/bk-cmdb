@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"configcenter/src/apimachinery"
+	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -31,20 +32,23 @@ import (
 
 // Run main goroute
 func Run(ctx context.Context, op *options.ServerOption) error {
-
 	svrInfo, err := newServerInfo(op)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
+	discover, err := discovery.NewDiscoveryInterface(op.ServConf.RegDiscover)
+	if err != nil {
+		return fmt.Errorf("connect zookeeper [%s] failed: %v", op.ServConf.RegDiscover, err)
+	}
+
 	c := &util.APIMachineryConfig{
-		ZkAddr:    op.ServConf.RegDiscover,
 		QPS:       1000,
 		Burst:     2000,
 		TLSConfig: nil,
 	}
 
-	machinery, err := apimachinery.NewApiMachinery(c)
+	machinery, err := apimachinery.NewApiMachinery(c, discover)
 	if err != nil {
 		return fmt.Errorf("new api machinery failed, err: %v", err)
 	}
@@ -70,6 +74,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		types.CC_MODULE_TXC,
 		op.ServConf.ExConfig,
 		tmServer.onConfigUpdate,
+		discover,
 		bonC)
 
 	if err != nil {
@@ -80,25 +85,29 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	tmServer.coreService = coreService
 
 	// connect to the mongodb
-	errCh := make(chan error)
+	errCh := make(chan error, 1)
 
 	for {
+		tmServer.configLock.Lock()
 		if tmServer.config == nil {
+			tmServer.configLock.Unlock()
+			blog.Infof("config is empty, retry 2s later")
 			time.Sleep(time.Second * 2)
 			continue
 		}
+		tmServer.configLock.Unlock()
 
 		// connect db
 		db := mgo.NewClient(tmServer.config.MongoDB.BuildURI())
 		err = db.Open()
 		if nil != err {
-			errCh <- err
 			return fmt.Errorf("connect mongo server failed %s", err.Error())
 		}
 
+		blog.Infof("connected to mongo %v", tmServer.config.MongoDB.BuildURI())
+
 		// set core service
 		coreService.SetConfig(engine, db, tmServer.config.Transaction)
-
 		break
 	}
 
