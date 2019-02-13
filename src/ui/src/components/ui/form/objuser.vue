@@ -151,6 +151,9 @@
             matchedUsers (matchedUsers) {
                 this.highlightIndex = -1
                 if (matchedUsers.length) {
+                    if (this.exclude) {
+                        this.highlightIndex = 0
+                    }
                     this.updateSuggestionPosition()
                 }
             },
