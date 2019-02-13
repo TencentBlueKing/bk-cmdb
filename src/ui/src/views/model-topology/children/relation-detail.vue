@@ -112,11 +112,11 @@
             ]),
             async initData () {
                 let asstList = await this.searchObjectAssociation({
-                    params: {
+                    params: this.$injectMetadata({
                         condition: {
                             id: this.asstId
                         }
-                    }
+                    })
                 })
                 if (this.asstId !== '') {
                     this.relationInfo = asstList.find(asst => asst.id === this.asstId)
@@ -132,9 +132,9 @@
             async saveRelation () {
                 await this.updateObjectAssociation({
                     id: this.relationInfo.id,
-                    params: {
+                    params: this.$injectMetadata({
                         bk_obj_asst_name: this.relationInfo['bk_obj_asst_name']
-                    },
+                    }),
                     config: {
                         requestId: 'updateObjectAssociation'
                     }
