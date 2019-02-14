@@ -36,7 +36,7 @@ type Pool struct {
 
 func NewClientPool(network string, getServer types.GetServerFunc, path string) (*Pool, error) {
 	pool := &Pool{
-		conns:     make(chan Client),
+		conns:     make(chan Client, 3),
 		getServer: getServer,
 	}
 	conn, err := pool.new()
@@ -61,8 +61,8 @@ func (p *Pool) new() (Client, error) {
 			time.Sleep(time.Second * 2)
 			continue
 		}
-		err = fmt.Errorf("service discover returns 0 tmserver address")
 		if len(servers) <= 0 {
+			err = fmt.Errorf("service discover returns 0 tmserver address")
 			blog.Infof("fetch tmserver address failed: %v, retry 2s later", err)
 			time.Sleep(time.Second * 2)
 			continue
@@ -112,24 +112,39 @@ func (p *Pool) put(conn Client) {
 					time.Sleep(time.Second)
 				}
 			}
+			// close the connection, because the idle connection is full
+			blog.Warnf("idle connection is full, drop connection")
 			conn.Close()
 		}()
 	}
 }
 
 func (p *Pool) Call(cmd string, input interface{}, result interface{}) (err error) {
+	blog.V(4).Infof("calling %s, %v", cmd, input)
+	defer blog.V(4).Infof("calling %s success", cmd)
 	conn := p.pop()
 	if conn != nil {
 		err = conn.Call(cmd, input, result)
+		if err == ErrRWTimeout {
+
+		}
 		if err != nil {
-			if pingErr := conn.Ping(); pingErr == nil {
-				p.put(conn)
-				return err
+			if err != ErrRWTimeout {
+				if pingErr := conn.Ping(); pingErr == nil {
+					p.put(conn)
+					blog.V(4).Infof("restore connection on error: %v", err)
+					return err
+				}
 			}
 			conn.Close()
+		} else {
+			p.put(conn)
+			blog.V(4).Infof("restore connection on success")
+			return
 		}
 	}
 
+	blog.V(4).Infof("create new rpc connection")
 	conn, err = p.new()
 	if err != nil {
 		return err
@@ -143,6 +158,7 @@ func (p *Pool) Call(cmd string, input interface{}, result interface{}) (err erro
 		}
 		conn.Close()
 	}
+	p.put(conn)
 	return nil
 }
 

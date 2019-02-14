@@ -98,7 +98,7 @@ func Dial(connect string) (*client, error) {
 // DialHTTPPath connects to an HTTP RPC server
 // at the specified network address and path.
 func DialHTTPPath(network, address, path string) (*client, error) {
-	blog.Infof("connecting to rpc server %s")
+	blog.Infof("connecting to rpc server %s", address)
 	var err error
 	conn, err := net.Dial("tcp", address)
 	if err != nil {
@@ -110,7 +110,6 @@ func DialHTTPPath(network, address, path string) (*client, error) {
 	// before switching to RPC protocol.
 	resp, err := http.ReadResponse(bufio.NewReader(conn), &http.Request{Method: "CONNECT"})
 	if err == nil && resp.Status == connected {
-		blog.Infof("connected to rpc server %s")
 		return NewClient(conn, "deflate")
 	}
 	if err == nil {
@@ -281,7 +280,6 @@ func (c *client) handleResponse(resp *Message) {
 			c.replyError(msg)
 		}
 		c.messageMutex.RUnlock()
-		// TODO reconnect when transportErr?
 		return
 	}
 	if resp.typz == TypeStream || resp.typz == TypeStreamClose {
@@ -317,6 +315,7 @@ func (c *client) handleResponse(resp *Message) {
 func (c *client) write() {
 	for msg := range c.send {
 		if err := c.wire.Write(msg); err != nil {
+			blog.Errorf("Error write to wire: %v", err)
 			msg.transportErr = err
 			c.handleResponse(msg)
 		}
@@ -328,6 +327,7 @@ func (c *client) read() {
 		err := c.wire.Read(&c.response)
 		if err != nil {
 			blog.Errorf("Error reading from wire: %v", err)
+			c.response.transportErr = err
 			c.handleResponse(&c.response)
 			break
 		}
