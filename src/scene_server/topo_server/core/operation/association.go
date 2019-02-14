@@ -436,6 +436,16 @@ func (a *association) SearchObjectAssoWithAssoKindList(params types.ContextParam
 }
 
 func (a *association) SearchType(params types.ContextParams, request *metadata.SearchAssociationTypeRequest) (resp *metadata.SearchAssociationTypeResult, err error) {
+	cond := condition.CreateCondition()
+	cond.Field(common.AssociationKindIDField).NotEq(common.AssociationKindMainline)
+	nAsstKindCond := cond.ToMapStr()
+	if 0 == len(request.Condition) {
+		request.Condition = make(map[string]interface{})
+	}
+	for key, val := range nAsstKindCond {
+		request.Condition[key] = val
+	}
+
 	input := metadata.QueryCondition{
 		Condition: request.Condition,
 		Limit:     metadata.SearchLimit{Limit: int64(request.Limit), Offset: int64(request.Start)},
@@ -482,6 +492,7 @@ func (a *association) UpdateType(params types.ContextParams, asstTypeID int, req
 func (a *association) DeleteType(params types.ContextParams, asstTypeID int) (resp *metadata.DeleteAssociationTypeResult, err error) {
 	cond := condition.CreateCondition()
 	cond.Field("id").Eq(asstTypeID)
+	cond.Field(common.AssociationKindIDField).NotEq(common.AssociationKindMainline)
 	query := &metadata.SearchAssociationTypeRequest{
 		Condition: cond.ToMapStr(),
 	}
