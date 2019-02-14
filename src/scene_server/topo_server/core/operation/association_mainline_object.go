@@ -123,7 +123,7 @@ func (a *association) SearchMainlineAssociationTopo(params types.ContextParams, 
 		if resultsLen == len(results) {
 			// merely return found objects here to avoid infinite loop.
 			// returned results here maybe parts of all mainline objects.
-			// we must prevent loop from taking shape seriously, at adding or editing association.
+			// better to prevent loop from taking shape seriously, at adding or editing association.
 			return results, nil
 		}
 	}
