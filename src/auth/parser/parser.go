@@ -39,7 +39,7 @@ func ParseAttribute(req *restful.Request) (*auth.Attribute, error) {
 	if version != "v3" {
 		return nil, fmt.Errorf("unsupported api version: %s", version)
 	}
-	attr.Resource.APIVersion = version
+	attr.APIVersion = version
 
 	return nil, nil
 }

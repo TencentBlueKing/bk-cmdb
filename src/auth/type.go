@@ -13,8 +13,10 @@
 package auth
 
 type Attribute struct {
-	Resources []Resource
-	User      UserInfo
+	// the version of this resource, which is the api version.
+	APIVersion string
+	Resources  []Resource
+	User       UserInfo
 }
 
 type UserInfo struct {
@@ -33,9 +35,6 @@ type Resource struct {
 
 	// the action that user want to do with this resource.
 	Action Action
-
-	// the version of this resource, which is the api version.
-	APIVersion string
 
 	// the business id that this resource belongs to, but it's not necessary for
 	// a resource that does not belongs to a business.

@@ -53,6 +53,6 @@ func handleVersion(ctx *RequestContext) (bool, error) {
 	if version != "v3" {
 		return false, fmt.Errorf("unsupported version %s", version)
 	}
-	ctx.Attribute.Resource.APIVersion = version
+	ctx.Attribute.APIVersion = version
 	return true, nil
 }
