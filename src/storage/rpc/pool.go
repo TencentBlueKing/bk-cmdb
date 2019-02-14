@@ -120,26 +120,19 @@ func (p *Pool) put(conn Client) {
 }
 
 func (p *Pool) Call(cmd string, input interface{}, result interface{}) (err error) {
-	blog.V(4).Infof("calling %s, %v", cmd, input)
-	defer blog.V(4).Infof("calling %s success", cmd)
 	conn := p.pop()
 	if conn != nil {
 		err = conn.Call(cmd, input, result)
-		if err == ErrRWTimeout {
-
-		}
 		if err != nil {
 			if err != ErrRWTimeout {
 				if pingErr := conn.Ping(); pingErr == nil {
 					p.put(conn)
-					blog.V(4).Infof("restore connection on error: %v", err)
 					return err
 				}
 			}
 			conn.Close()
 		} else {
 			p.put(conn)
-			blog.V(4).Infof("restore connection on success")
 			return
 		}
 	}
