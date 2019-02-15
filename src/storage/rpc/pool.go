@@ -28,15 +28,12 @@ type Pool struct {
 	conns chan Client
 
 	getServer types.GetServerFunc
-	servers   []string
 	lastIndex int
-
-	enableTransaction bool
 }
 
 func NewClientPool(network string, getServer types.GetServerFunc, path string) (*Pool, error) {
 	pool := &Pool{
-		conns:     make(chan Client, 3),
+		conns:     make(chan Client, 40),
 		getServer: getServer,
 	}
 	conn, err := pool.new()
@@ -76,19 +73,16 @@ func (p *Pool) new() (Client, error) {
 	sort.Strings(servers)
 
 	p.Lock()
-	p.servers = servers
-
 	p.lastIndex++
-	if p.lastIndex >= len(p.servers) {
+	if p.lastIndex >= len(servers) {
 		p.lastIndex = 0
 	}
-
-	address, err := util.GetDailAddress(p.servers[p.lastIndex])
-	if err != nil {
-		p.Unlock()
-		return nil, fmt.Errorf("GetDailAddress %s, failed: %v", p.servers[p.lastIndex], err)
-	}
 	p.Unlock()
+
+	address, err := util.GetDailAddress(servers[p.lastIndex])
+	if err != nil {
+		return nil, fmt.Errorf("GetDailAddress %s, failed: %v", servers[p.lastIndex], err)
+	}
 
 	return DialHTTPPath("tcp", address, "/txn/v3/rpc")
 }
@@ -126,18 +120,8 @@ func (p *Pool) put(conn Client) {
 }
 
 func (p *Pool) Call(cmd string, input interface{}, result interface{}) (err error) {
-	blog.Infof("calling %s", cmd)
-	defer func() {
-		if err != nil {
-			blog.Infof("call %s failed", cmd, err)
-		} else {
-			blog.Infof("call %s success", cmd, err)
-		}
-	}()
-
 	conn := p.pop()
 	if conn != nil {
-		blog.Infof("calling %s on pop", cmd)
 		err = conn.Call(cmd, input, result)
 		if err != nil {
 			if err != ErrRWTimeout {
@@ -159,7 +143,6 @@ func (p *Pool) Call(cmd string, input interface{}, result interface{}) (err erro
 		return err
 	}
 
-	blog.Infof("calling %s on new", cmd)
 	err = conn.Call(cmd, input, result)
 	if err != nil {
 		if pingErr := conn.Ping(); pingErr == nil {
