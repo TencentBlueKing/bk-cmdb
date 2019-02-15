@@ -132,7 +132,6 @@
                     is_default: false,
                     name: ''
                 })
-                this.handleInput()
             },
             deleteEnum (index) {
                 this.enumList.splice(index, 1)

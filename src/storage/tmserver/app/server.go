@@ -40,12 +40,11 @@ func (s *Server) onConfigUpdate(previous, current cc.ProcessConfig) {
 	defer s.configLock.Unlock()
 
 	if len(current.ConfigMap) > 0 {
-
 		if nil == s.config {
 			s.config = &options.Config{}
 		}
 
-		s.config.MongoDB = mongo.ParseConfigFromKV("mongo", current.ConfigMap)
+		s.config.MongoDB = mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
 		s.config.Redis = redis.ParseConfigFromKV("redis", current.ConfigMap)
 
 		s.config.Transaction.Enable = current.ConfigMap["transaction.enable"]
