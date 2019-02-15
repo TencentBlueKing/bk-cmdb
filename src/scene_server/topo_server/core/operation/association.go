@@ -443,6 +443,26 @@ func (a *association) SearchObjectAssoWithAssoKindList(params types.ContextParam
 }
 
 func (a *association) SearchType(params types.ContextParams, request *metadata.SearchAssociationTypeRequest) (resp *metadata.SearchAssociationTypeResult, err error) {
+	needComb := true
+	if KindIDCond, ok := request.Condition[common.AssociationKindIDField]; ok {
+		if kindIDSearchCond, ok := KindIDCond.(map[string]interface{}); ok {
+			needComb = false
+			kindIDSearchCond[common.BKDBNE] = common.AssociationKindMainline
+			request.Condition[common.AssociationKindIDField] = kindIDSearchCond
+		}
+	}
+	if needComb {
+		cond := condition.CreateCondition()
+		cond.Field(common.AssociationKindIDField).NotEq(common.AssociationKindMainline)
+		nAsstKindCond := cond.ToMapStr()
+		if 0 == len(request.Condition) {
+			request.Condition = make(map[string]interface{})
+		}
+		for key, val := range nAsstKindCond {
+			request.Condition[key] = val
+		}
+	}
+
 	return a.clientSet.ObjectController().Association().SearchType(context.TODO(), params.Header, request)
 }
 func (a *association) CreateType(params types.ContextParams, request *metadata.AssociationKind) (resp *metadata.CreateAssociationTypeResult, err error) {
@@ -455,6 +475,7 @@ func (a *association) DeleteType(params types.ContextParams, asstTypeID int) (re
 	cond := condition.CreateCondition()
 	cond.Field("id").Eq(asstTypeID)
 	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+	cond.Field(common.AssociationKindIDField).NotEq(common.AssociationKindMainline)
 	query := &metadata.SearchAssociationTypeRequest{
 		Condition: cond.ToMapStr(),
 	}
