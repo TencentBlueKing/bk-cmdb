@@ -44,7 +44,7 @@ func (dh *DistHandler) StartDistribute() (err error) {
 	rccler.reconcile()
 	subscribers := rccler.persistedSubscribers
 
-	chErr := make(chan error)
+	chErr := make(chan error, 1)
 	routines := map[int64]chan struct{}{}
 	renewMaps := map[int64]chan metadata.Subscription{}
 	for _, str := range subscribers {

@@ -271,7 +271,7 @@
             },
             async getObjAttr (device) {
                 this.propertyDialog.attrList = await this.searchObjectAttribute({
-                    params: {bk_obj_id: device['bk_obj_id']},
+                    params: this.$injectMetadata({bk_obj_id: device['bk_obj_id']}),
                     config: {
                         requestId: `post_searchObjectAttribute_${device['bk_obj_id']}`,
                         fromCache: true

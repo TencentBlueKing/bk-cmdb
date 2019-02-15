@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal/mongo"
+	"configcenter/src/storage/dal/mongo/local"
 
 	"github.com/spf13/pflag"
 )
@@ -67,7 +68,7 @@ func Parse(args []string) error {
 	}
 	config := mongo.ParseConfigFromKV("mongodb", pconfig.ConfigMap)
 	// connect to mongo db
-	db, err := mongo.NewMgo(config.BuildURI(), 0)
+	db, err := local.NewMgo(config.BuildURI(), 0)
 	if err != nil {
 		return fmt.Errorf("connect mongo server failed %s", err.Error())
 	}

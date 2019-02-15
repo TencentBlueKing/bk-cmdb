@@ -116,7 +116,9 @@
         "确定离开页面？": "Make sure to leave the page?",
         "系统不会保存您所做的修改，确认要离开？": "Your changes will not be saved. Are you sure you want to leave?",
         "搜索": "Search",
-        "确定删除选中的实例": "Confirm to delete selected instance(s)?"
+        "确定删除选中的实例": "Confirm to delete selected instance(s)?",
+        "管理员后台": "Administrator Backstage",
+        "返回业务管理": "Return to Business Management"
     },
     "Nav": {
         "首页": "Index",
@@ -137,10 +139,12 @@
         "业务模型": "Business Model",
         "关联模型": "Association Model",
         "事件推送": "Event Push",
-        "业务主机": "Business Host",
+        "主机查询": "Host Query",
         "模型": "Model",
         "关联类型": "Association Type",
-        "蓝鲸配置平台": "BK CMDB"
+        "蓝鲸配置平台": "BK CMDB",
+        "后台管理": "Back-stage",
+        "后台管理标题": "Back-stage Management"
     },
     "Index": {
         "首页": "Index",
@@ -309,6 +313,7 @@
         "下划线": "Underline",
         "名称": "Name",
         "点击切换": "Modify",
+        "选择图标": "Choose Icon",
         "所属分组": "Direction",
         "新增关联类型": "New association type",
         "编辑关联类型": "Modify association type",
@@ -370,6 +375,9 @@
         "确认要启用该模型？": "Are you sure you want to enable this model?",
         "确认要停用该模型？": "Are you sure you want to disable this model?",
         "确认要删除该模型？": "Are you sure you want to delete this model?",
+        "所有更改已自动保存": "All changes saved automatically",
+        "启用模型": "Enable Models",
+        "停用模型": "Disabled Models",
         "唯一校验": "Unique check",
         "校验规则": "Regex",
         "是否为必须校验": "Is required",
@@ -378,11 +386,16 @@
         "是": "Yes",
         "否": "No",
         "确定删除唯一校验": "Confirm delete rule",
-        "所有更改已自动保存": "All changes saved automatically",
         "立即添加": "Add",
         "暂无字段": "Empty",
+        "内置": "Built-in",
         "确认要删除此分组": "Confirm to delete this group",
-        "编辑分组": "Modify group"
+        "编辑分组": "Modify group",
+        "请输入唯一标识": "Enter ID",
+        "公共": "Public",
+        "自定义": "Custom",
+        "新增模型提示": "Can only add in custom group",
+        "无自定义分组": "There are no custom groups"
     },
     "HostResourcePool": {
         "资源池": "Resource Pool",

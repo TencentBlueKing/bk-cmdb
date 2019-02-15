@@ -22,7 +22,7 @@ import (
 // Wire define a wire
 type Wire interface {
 	Write(*Message) error
-	Read(*Message,) ( error)
+	Read(*Message) error
 	Close() error
 }
 
@@ -35,7 +35,7 @@ type BinaryWire struct {
 
 // NewBinaryWire returns a new BinaryWire
 func NewBinaryWire(rwc io.ReadWriteCloser, compress string) (*BinaryWire, error) {
-	compressor, err := newCompressor(rwc,rwc, compress)
+	compressor, err := newCompressor(rwc, rwc, compress)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func (w *BinaryWire) Write(msg *Message) error {
 	return w.writer.Flush()
 }
 
-func (w *BinaryWire) Read(msg *Message) (error) {
+func (w *BinaryWire) Read(msg *Message) error {
 	var (
 		err error
 	)
@@ -96,7 +96,7 @@ func (w *BinaryWire) Read(msg *Message) (error) {
 	if msg.Data, err = readBytes(w.reader); err != nil {
 		return err
 	}
-	return  nil
+	return nil
 }
 
 // Close close the wire
