@@ -58,13 +58,13 @@ func (p *Pool) new() (Client, error) {
 		servers, err = p.getServer()
 		if err != nil {
 			blog.Infof("fetch tmserver address failed: %v, retry 2s later", err)
-			time.Sleep(time.Second * 2)
+			time.Sleep(time.Millisecond * 200)
 			continue
 		}
 		if len(servers) <= 0 {
 			err = fmt.Errorf("service discover returns 0 tmserver address")
 			blog.Infof("fetch tmserver address failed: %v, retry 2s later", err)
-			time.Sleep(time.Second * 2)
+			time.Sleep(time.Millisecond * 200)
 			continue
 		}
 		break
@@ -93,10 +93,16 @@ func (p *Pool) new() (Client, error) {
 	return DialHTTPPath("tcp", address, "/txn/v3/rpc")
 }
 
-func (p *Pool) pop() (conn Client) {
-	conn, _ = <-p.conns
-	return conn
-
+func (p *Pool) pop() Client {
+	select {
+	case conn, ok := <-p.conns:
+		if !ok {
+			return nil
+		}
+		return conn
+	default:
+		return nil
+	}
 }
 
 func (p *Pool) put(conn Client) {
@@ -120,8 +126,18 @@ func (p *Pool) put(conn Client) {
 }
 
 func (p *Pool) Call(cmd string, input interface{}, result interface{}) (err error) {
+	blog.Infof("calling %s", cmd)
+	defer func() {
+		if err != nil {
+			blog.Infof("call %s failed", cmd, err)
+		} else {
+			blog.Infof("call %s success", cmd, err)
+		}
+	}()
+
 	conn := p.pop()
 	if conn != nil {
+		blog.Infof("calling %s on pop", cmd)
 		err = conn.Call(cmd, input, result)
 		if err != nil {
 			if err != ErrRWTimeout {
@@ -143,6 +159,7 @@ func (p *Pool) Call(cmd string, input interface{}, result interface{}) (err erro
 		return err
 	}
 
+	blog.Infof("calling %s on new", cmd)
 	err = conn.Call(cmd, input, result)
 	if err != nil {
 		if pingErr := conn.Ping(); pingErr == nil {
@@ -185,11 +202,16 @@ func (p *Pool) Ping() (err error) {
 
 func (p *Pool) Close() (err error) {
 	for {
-		conn, ok := <-p.conns
-		if !ok {
-			break
+		select {
+		case conn, ok := <-p.conns:
+			if !ok {
+				return nil
+			}
+			conn.Close()
+		default:
+			close(p.conns)
+			return nil
 		}
-		conn.Close()
 	}
-	return nil
+
 }
