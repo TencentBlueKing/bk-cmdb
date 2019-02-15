@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="slider-content">
         <label class="form-label" v-if="isEdit">
             <span class="label-text">
                 {{$t('ModelManagement["唯一标识"]')}}
@@ -71,7 +71,7 @@
             <div class="cmdb-form-item" :class="{'is-error': errors.has('asstId')}">
                 <cmdb-selector
                     :disabled="relationInfo.ispre || isReadOnly"
-                    :list="relationList"
+                    :list="usefulRelationList"
                     v-validate="'required'"
                     name="asstId"
                     v-model="relationInfo['bk_asst_id']"
@@ -159,6 +159,9 @@
             ...mapGetters('objectModel', [
                 'activeModel'
             ]),
+            usefulRelationList () {
+                return this.relationList.filter(relation => relation.id !== 'bk_mainline')
+            },
             objAsstId () {
                 let {
                     relationInfo
