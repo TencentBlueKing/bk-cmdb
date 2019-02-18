@@ -63,7 +63,8 @@ func NewWithDiscover(getServer types.GetServerFunc, config mongo.Config) (db dal
 		return nil, err
 	}
 	return &Mongo{
-		rpc: pool,
+		rpc:               pool,
+		enableTransaction: enableTransaction,
 	}, nil
 }
 
