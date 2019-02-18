@@ -17,6 +17,7 @@ import (
 	"errors"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/types"
 )
@@ -24,9 +25,11 @@ import (
 // StartTransaction create a new transaction
 func (c *Mongo) StartTransaction(ctx context.Context) (dal.DB, error) {
 	if !c.enableTransaction {
+		blog.Warnf("not enable transaction")
 		return c, nil
 	}
 	if c.TxnID != "" {
+		blog.Warnf("TxnID is empty")
 		return nil, dal.ErrTransactionStated
 	}
 	// build msg
