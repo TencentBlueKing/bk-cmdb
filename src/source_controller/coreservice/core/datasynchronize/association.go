@@ -9,7 +9,7 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package instances
+package datasynchronize
 
 import (
 	"fmt"
@@ -59,22 +59,25 @@ func (a *association) PreSynchronizeFilter(ctx core.ContextParams) errors.CCErro
 	return a.base.PreSynchronizeFilter(ctx)
 }
 
-func (a *association) GetErrorStringArr(ctx core.ContextParams) ([]string, errors.CCError) {
+func (a *association) GetErrorStringArr(ctx core.ContextParams) ([]metadata.ExceptionResult, errors.CCError) {
 
 	if len(a.base.errorArray) == 0 {
-		return make([]string, 0), nil
+		return nil, nil
 	}
 	err := ctx.Error.Error(common.CCErrCoreServiceSyncError)
 	switch a.base.syncData.DataSign {
 	case common.SynchronizeAssociationTypeModelHost:
-		var errStrArr []string
+		var errArr []metadata.ExceptionResult
 		for _, err := range a.base.errorArray {
 			errMsg := fmt.Sprintf("module and host relation error. info:%#v error:%s", err.instInfo.Info, err.err.Error())
-			errStrArr = append(errStrArr, errMsg)
+			errArr = append(errArr, metadata.ExceptionResult{
+				OriginIndex: err.idx,
+				Message:     errMsg,
+			})
 		}
-		return errStrArr, err
+		return errArr, err
 	default:
-		return a.base.getErrorStringArr(ctx), err
+		return a.base.GetErrorStringArr(ctx)
 	}
 }
 

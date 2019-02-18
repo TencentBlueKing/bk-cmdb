@@ -9,7 +9,7 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package instances
+package datasynchronize
 
 import (
 	"fmt"
@@ -42,7 +42,7 @@ type synchronizeAdapter struct {
 
 type dataTypeInterface interface {
 	PreSynchronizeFilter(ctx core.ContextParams) errors.CCError
-	GetErrorStringArr(ctx core.ContextParams) ([]string, errors.CCError)
+	GetErrorStringArr(ctx core.ContextParams) ([]metadata.ExceptionResult, errors.CCError)
 	SaveSynchronize(ctx core.ContextParams) errors.CCError
 }
 
@@ -94,25 +94,19 @@ func (s *synchronizeAdapter) PreSynchronizeFilter(ctx core.ContextParams) errors
 	return nil
 }
 
-func (s *synchronizeAdapter) GetErrorStringArr(ctx core.ContextParams) ([]string, errors.CCError) {
+func (s *synchronizeAdapter) GetErrorStringArr(ctx core.ContextParams) ([]metadata.ExceptionResult, errors.CCError) {
 	if len(s.errorArray) == 0 {
-		return make([]string, 0), nil
+		return nil, nil
 	}
-	var errStrArr []string
+	var errArr []metadata.ExceptionResult
 	for _, err := range s.errorArray {
 		errMsg := fmt.Sprintf("[%s] instID:[%d] error:%s", s.syncData.DataSign, err.instInfo.ID, err.err.Error())
-		errStrArr = append(errStrArr, errMsg)
+		errArr = append(errArr, metadata.ExceptionResult{
+			OriginIndex: err.instInfo.ID,
+			Message:     errMsg,
+		})
 	}
-	return errStrArr, ctx.Error.Error(common.CCErrCoreServiceSyncError)
-}
-
-func (s *synchronizeAdapter) getErrorStringArr(ctx core.ContextParams) []string {
-	var errStrArr []string
-	for _, err := range s.errorArray {
-		errMsg := fmt.Sprintf("[%s] instID:[%d] error:%s", s.syncData.DataSign, err.instInfo.ID, err.err.Error())
-		errStrArr = append(errStrArr, errMsg)
-	}
-	return errStrArr
+	return errArr, ctx.Error.Error(common.CCErrCoreServiceSyncError)
 }
 
 func (s *synchronizeAdapter) saveSynchronize(ctx core.ContextParams, dbParam synchronizeAdapterDBParameter) {

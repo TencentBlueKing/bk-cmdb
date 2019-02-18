@@ -36,6 +36,7 @@ import (
 	"configcenter/src/source_controller/coreservice/app/options"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/source_controller/coreservice/core/association"
+	"configcenter/src/source_controller/coreservice/core/datasynchronize"
 	"configcenter/src/source_controller/coreservice/core/instances"
 	"configcenter/src/source_controller/coreservice/core/model"
 	"configcenter/src/storage/dal/mongo"
@@ -82,7 +83,7 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 		return
 	}
 
-	s.core = core.New(model.New(dbProxy, s), instances.New(dbProxy, s), association.New(dbProxy, s))
+	s.core = core.New(model.New(dbProxy, s), instances.New(dbProxy, s), association.New(dbProxy, s), datasynchronize.New(dbProxy, s))
 }
 
 // WebService the web service
