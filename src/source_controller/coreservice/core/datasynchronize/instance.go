@@ -9,7 +9,7 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package instances
+package datasynchronize
 
 import (
 	"configcenter/src/common"
@@ -44,10 +44,10 @@ func (inst *instance) PreSynchronizeFilter(ctx core.ContextParams) errors.CCErro
 	return inst.base.PreSynchronizeFilter(ctx)
 }
 
-func (inst *instance) GetErrorStringArr(ctx core.ContextParams) ([]string, errors.CCError) {
+func (inst *instance) GetErrorStringArr(ctx core.ContextParams) ([]metadata.ExceptionResult, errors.CCError) {
 
 	if len(inst.base.errorArray) == 0 {
-		return make([]string, 0), nil
+		return nil, nil
 	}
 
 	return inst.base.GetErrorStringArr(ctx)
@@ -133,9 +133,9 @@ func (inst *instance) saveSynchronizeObjectInstance(ctx core.ContextParams) erro
 	return nil
 }
 
-func (inst *instance) getErrorStringArr(ctx core.ContextParams) []string {
+func (inst *instance) getErrorStringArr(ctx core.ContextParams) ([]metadata.ExceptionResult, errors.CCError) {
 
-	return inst.base.getErrorStringArr(ctx)
+	return inst.base.GetErrorStringArr(ctx)
 
 }
 

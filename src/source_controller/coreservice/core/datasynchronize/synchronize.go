@@ -10,20 +10,29 @@
  * limitations under the License.
  */
 
-package instances
+package datasynchronize
 
 import (
-	"configcenter/src/common/errors"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
 )
 
-type synchronizeManager struct {
-	dbProxy dal.RDB
+type SynchronizeManager struct {
+	dbProxy   dal.RDB
+	dependent OperationDependences
 }
 
-func (s *synchronizeManager) SynchronizeInstanceAdapter(ctx core.ContextParams, syncData *metadata.SynchronizeParameter) ([]string, errors.CCError) {
+// New create a new model manager instance
+func New(dbProxy dal.RDB, dependent OperationDependences) core.DataSynchronizeOperation {
+	return &SynchronizeManager{
+		dbProxy:   dbProxy,
+		dependent: dependent,
+	}
+}
+
+func (s *SynchronizeManager) SynchronizeInstanceAdapter(ctx core.ContextParams, syncData *metadata.SynchronizeParameter) ([]metadata.ExceptionResult, error) {
 	syncDataAdpater := NewSynchronizeInstanceAdapter(syncData, s.dbProxy)
 	err := syncDataAdpater.PreSynchronizeFilter(ctx)
 	if err != nil {
@@ -34,7 +43,7 @@ func (s *synchronizeManager) SynchronizeInstanceAdapter(ctx core.ContextParams, 
 
 }
 
-func (s *synchronizeManager) SynchronizeModelAdapter(ctx core.ContextParams, syncData *metadata.SynchronizeParameter) ([]string, errors.CCError) {
+func (s *SynchronizeManager) SynchronizeModelAdapter(ctx core.ContextParams, syncData *metadata.SynchronizeParameter) ([]metadata.ExceptionResult, error) {
 	syncDataAdpater := NewSynchronizeModelAdapter(syncData, s.dbProxy)
 	err := syncDataAdpater.PreSynchronizeFilter(ctx)
 	if err != nil {
@@ -45,7 +54,7 @@ func (s *synchronizeManager) SynchronizeModelAdapter(ctx core.ContextParams, syn
 
 }
 
-func (s *synchronizeManager) SynchronizeAssociationAdapter(ctx core.ContextParams, syncData *metadata.SynchronizeParameter) ([]string, errors.CCError) {
+func (s *SynchronizeManager) SynchronizeAssociationAdapter(ctx core.ContextParams, syncData *metadata.SynchronizeParameter) ([]metadata.ExceptionResult, error) {
 	syncDataAdpater := NewSynchronizeAssociationAdapter(syncData, s.dbProxy)
 	err := syncDataAdpater.PreSynchronizeFilter(ctx)
 	if err != nil {
@@ -54,4 +63,9 @@ func (s *synchronizeManager) SynchronizeAssociationAdapter(ctx core.ContextParam
 	syncDataAdpater.SaveSynchronize(ctx)
 	return syncDataAdpater.GetErrorStringArr(ctx)
 
+}
+
+func (s *SynchronizeManager) GetAssociationInfo(ctx core.ContextParams, fetch *metadata.SynchronizeFetchInfoParameter) ([]mapstr.MapStr, uint64, error) {
+	fetchAdapter := NewSynchronizeFetchAdapter(fetch, s.dbProxy)
+	return fetchAdapter.Fetch(ctx)
 }

@@ -9,7 +9,7 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package instances
+package datasynchronize
 
 import (
 	"configcenter/src/common"
@@ -44,10 +44,10 @@ func (m *model) PreSynchronizeFilter(ctx core.ContextParams) errors.CCError {
 	return m.base.PreSynchronizeFilter(ctx)
 }
 
-func (m *model) GetErrorStringArr(ctx core.ContextParams) ([]string, errors.CCError) {
+func (m *model) GetErrorStringArr(ctx core.ContextParams) ([]metadata.ExceptionResult, errors.CCError) {
 
 	if len(m.base.errorArray) == 0 {
-		return make([]string, 0), nil
+		return nil, nil
 	}
 
 	return m.base.GetErrorStringArr(ctx)
