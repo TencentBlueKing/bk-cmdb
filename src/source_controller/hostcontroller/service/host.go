@@ -79,9 +79,9 @@ func (s *Service) GetHosts(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-
 	condition := util.ConvParamsTime(dat.Condition)
 	condition = util.SetModOwner(condition, ownerID)
+
 	fieldArr := util.SplitStrField(dat.Fields, ",")
 	result, err := s.Logics.GetObjectByCondition(ctx, lang, common.BKInnerObjIDHost, fieldArr, condition, dat.Sort, dat.Start, dat.Limit)
 	if err != nil {

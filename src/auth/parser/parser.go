@@ -20,6 +20,7 @@ import (
 
 	"configcenter/src/auth"
 	"configcenter/src/common"
+
 	"github.com/emicklei/go-restful"
 )
 
@@ -40,8 +41,53 @@ func ParseAttribute(req *restful.Request) (*auth.Attribute, error) {
 		return nil, fmt.Errorf("unsupported api version: %s", version)
 	}
 	attr.APIVersion = version
-
 	return nil, nil
+}
+
+// ParseCommonInfo get common info from req, aims at avoiding too much repeat code
+func ParseCommonInfo(req *restful.Request) (*auth.CommonInfo, error) {
+	commonInfo := new(auth.CommonInfo)
+
+	userInfo, err := ParseUserInfo(req)
+	if err != nil {
+		return nil, err
+	}
+	commonInfo.User = *userInfo
+
+	apiVersion, err := ParseAPIVersion(req)
+	if err != nil {
+		return nil, err
+	}
+	commonInfo.APIVersion = apiVersion
+
+	return commonInfo, nil
+}
+
+func ParseUserInfo(req *restful.Request) (*auth.UserInfo, error) {
+	userInfo := new(auth.UserInfo)
+	user := req.Request.Header.Get(common.BKHTTPHeaderUser)
+	if len(user) == 0 {
+		return nil, errors.New("miss BK_User in your request header")
+	}
+	userInfo.UserName = user
+	supplierID := req.Request.Header.Get(common.BKHTTPSupplierID)
+	if len(supplierID) == 0 {
+		return nil, errors.New("miss bk_supplier_id in your request header")
+	}
+	userInfo.SupplierID = supplierID
+	return userInfo, nil
+}
+
+func ParseAPIVersion(req *restful.Request) (string, error) {
+	elements, err := urlParse(req.Request.URL.Path)
+	if err != nil {
+		return "", err
+	}
+	version := elements[1]
+	if version != "v3" {
+		return "", fmt.Errorf("unsupported api version: %s", version)
+	}
+	return version, nil
 }
 
 // url example: /api/v3/create/model

@@ -14,17 +14,20 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/emicklei/go-restful"
 
+	"configcenter/src/auth"
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/host_server/logics"
 	hutil "configcenter/src/scene_server/host_server/util"
 )
@@ -52,6 +55,7 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 	}
 
 	hostIDArr := strings.Split(opt.HostID, ",")
+
 	var iHostIDArr []int64
 	for _, i := range hostIDArr {
 		iHostID, err := strconv.ParseInt(i, 10, 64)
@@ -61,6 +65,11 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 			return
 		}
 		iHostIDArr = append(iHostIDArr, iHostID)
+	}
+
+	// check authorization
+	if shouldContinue := s.verifyHostPermission(req, resp, &iHostIDArr, auth.DeleteMany); shouldContinue == false {
+		return
 	}
 
 	condition := make(map[string]interface{})
@@ -75,7 +84,7 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 		return
 	}
 	if !result.Result {
-		blog.Errorf("delete host in batch SearchObjects http reponse erro, err code:%d,err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, opt, srvData.rid)
+		blog.Errorf("delete host in batch SearchObjects http response error, err code:%d,err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, opt, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
 		return
 	}
@@ -98,6 +107,10 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 		blog.Errorf("delete host batch failed, err: %v,input:%+v,rid:%s", err, opt, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
+	}
+
+	if err := s.deregisterHostFromCurrentBusiness(req, &iHostIDArr); err != nil {
+		blog.Errorf("deregist host from current business failed, err:%v, hosts:%+v, rid:%s", err, iHostIDArr, srvData.rid)
 	}
 
 	var logConents []auditoplog.AuditLogExt
@@ -136,11 +149,17 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 			common.BKHostIDField: hostCond,
 		},
 	}
+
 	delResult, err := s.CoreAPI.CoreService().Instance().DeleteInstanceCascade(srvData.ctx, srvData.header, common.BKInnerObjIDHost, condInput)
 	if err != nil || (err == nil && !delResult.Result) {
 		blog.Errorf("delete host in batch, but delete host failed, err: %v, result err: %v,rid:%s", err, delResult.ErrMsg, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDeleteFail)})
 		return
+	}
+
+	var hostIDArrUint64 []uint64
+	for _, i := range iHostIDArr {
+		hostIDArrUint64 = append(hostIDArrUint64, uint64(i))
 	}
 
 	addHostLogs := common.KvMap{common.BKContentField: logConents, common.BKOpDescField: "delete host", common.BKOpTypeField: auditoplog.AuditOpTypeDel}
@@ -162,6 +181,12 @@ func (s *Service) GetHostInstanceProperties(req *restful.Request, resp *restful.
 	if err != nil {
 		blog.Errorf("get host defails failed, err: %v,host:%s,rid:%s", err, hostID, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+		return
+	}
+
+	hostIDInt64 := details[common.BKHostIDField].(int64)
+	// check authorization
+	if shouldContinue := s.verifyHostPermission(req, resp, &[]int64{hostIDInt64}, auth.Find); shouldContinue == false {
 		return
 	}
 
@@ -190,10 +215,26 @@ func (s *Service) GetHostInstanceProperties(req *restful.Request, resp *restful.
 	})
 }
 
+// HostSnapInfo return host state
 func (s *Service) HostSnapInfo(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
 
 	hostID := req.PathParameter(common.BKHostIDField)
+
+	hostIDInt64, err := strconv.ParseInt(hostID, 10, 64)
+	if err != nil {
+		blog.Errorf("HostSnapInfohttp hostID convert to int64 failed, err:%v, input:%+v, rid:%s", err, hostID, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsNeedInt)})
+		return
+	}
+
+	// check authorization
+	shouldContinue := s.verifyHostPermission(req, resp, &[]int64{hostIDInt64}, auth.Find)
+	if shouldContinue == false {
+		return
+	}
+
+	// get snapshot
 	result, err := s.CoreAPI.HostController().Host().GetHostSnap(srvData.ctx, hostID, srvData.header)
 
 	if err != nil {
@@ -257,6 +298,11 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
+	// check permission to edit business
+	if shouldContinue := s.verifyBusinessPermission(req, resp, hostList.ApplicationID, auth.Update); shouldContinue == false {
+		return
+	}
+
 	succ, updateErrRow, errRow, err := srvData.lgc.AddHost(srvData.ctx, appID, []int64{moduleID}, srvData.ownerID, hostList.HostInfo, hostList.InputType)
 	retData := make(map[string]interface{})
 	if err != nil {
@@ -270,6 +316,17 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 		return
 	}
 	retData["success"] = succ
+
+	// register hosts
+	hostIDArr := make([]int64, 0)
+	for _, h := range hostList.HostInfo {
+		hostID := h[common.BKHostIDField].(int64)
+		hostIDArr := append(hostIDArr, hostID)
+	}
+	if err := s.registerHostToCurrentBusiness(req, &hostIDArr); err != nil {
+		blog.Errorf("register hosts to auth center failed, hostList:%+v, err:%v, rid:%s", err, hostList, srvData.rid)
+	}
+
 	resp.WriteEntity(meta.NewSuccessResp(retData))
 }
 
@@ -301,6 +358,11 @@ func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response)
 		return
 	}
 
+	// check authorization
+	// FIXME is AddHostFromAgent's authentication the same with common api?
+	if shouldContinue := s.verifyBusinessPermission(req, resp, appID, auth.Update); shouldContinue == false {
+		return
+	}
 	opt := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithModuleName(common.DefaultResModuleName).WithAppID(appID)
 	moduleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, opt.MapStr())
 	if err != nil {
@@ -326,6 +388,20 @@ func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response)
 			Data:     retData,
 		})
 		return
+	}
+
+	// register hosts
+	hostMap, err := srvData.lgc.GetAddHostIDMap(srvData.ctx, addHost)
+	hostIDArr := make([]int64, 0)
+	for _, v := range hostMap {
+		for _, host := range v {
+			hostID := host.(map[string]interface{})[common.BKHostIDField].(int64)
+			hostIDArr := append(hostIDArr, hostID)
+		}
+	}
+	if err := s.registerHostToCurrentBusiness(req, &hostIDArr); err != nil {
+		// FIXME it the failure with auto retry?
+		blog.Errorf("register hosts to auth center failed, hosts:%+v, err: %v, rid:%s", hostIDArr, err, srvData.rid)
 	}
 
 	resp.WriteEntity(meta.NewSuccessResp(succ))
@@ -407,6 +483,11 @@ func (s *Service) SearchHost(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
+	hostIDArray := host.ExtractHostIDs()
+	if shouldContinue := s.verifyHostPermission(req, resp, hostIDArray, auth.FindMany); shouldContinue == false {
+		return
+	}
+
 	resp.WriteEntity(meta.SearchHostResult{
 		BaseResp: meta.SuccessBaseResp,
 		Data:     *host,
@@ -427,6 +508,11 @@ func (s *Service) SearchHostWithAsstDetail(req *restful.Request, resp *restful.R
 	if err != nil {
 		blog.Errorf("search host failed, err: %v,input:%+v,rid:%s", err, body, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+		return
+	}
+
+	hostIDArray := host.ExtractHostIDs()
+	if shouldContinue := s.verifyHostPermission(req, resp, hostIDArray, auth.FindMany); shouldContinue == false {
 		return
 	}
 
@@ -502,6 +588,32 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 		logPreConents[hostID] = *audit.AuditLog(srvData.ctx, hostID)
 	}
 
+	// authorization check
+	hostIDStrArray := make([]string, len(hostIDs))
+	for _, hostID := range hostIDs {
+		hostIDStr := fmt.Sprintf("%d", hostID)
+		hostIDStrArray = append(hostIDStrArray, hostIDStr)
+	}
+	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDStrArray, auth.UpdateMany); shouldContinue == false {
+		return
+	}
+
+	opt := &meta.UpdateOption{
+		Condition: mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: hostIDs}},
+		Data:      mapstr.NewFromMap(data),
+	}
+	result, err := s.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDHost, opt)
+	if err != nil {
+		blog.Errorf("UpdateHostBatch UpdateObject http do error, err: %v,input:%+v,param:%+v,rid:%s", err, data, opt, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+		return
+	}
+	if !result.Result {
+		blog.Errorf("UpdateHostBatch UpdateObject http response error, err code:%s,err msg:%s,input:%+v,param:%+v,rid:%s", result.Code, data, opt, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
+		return
+	}
+
 	hostModuleConfig, err := srvData.lgc.GetConfigByCond(srvData.ctx, map[string][]int64{common.BKHostIDField: hostIDs})
 	if err != nil {
 		blog.Errorf("update host batch failed, ids[%v], err: %v,input:%+v,rid:%s", hostIDs, err, data, srvData.rid)
@@ -544,6 +656,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
+// NewHostSyncAppTopo add new hosts to the business
 func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
 
@@ -604,6 +717,12 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 		return
 
 	}
+
+	// check authorization
+	if shouldContinue := s.verifyBusinessPermission(req, resp, hostList.ApplicationID, auth.Update); shouldContinue == false {
+		return
+	}
+
 	succ, updateErrRow, errRow, err := srvData.lgc.AddHost(srvData.ctx, hostList.ApplicationID, hostList.ModuleID, srvData.ownerID, hostList.HostInfo, common.InputTypeApiNewHostSync)
 	if err != nil {
 		blog.Errorf("add host failed, succ: %v, update: %v, err: %v, %v", succ, updateErrRow, err, errRow)
@@ -617,6 +736,16 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 			Data:     retData,
 		})
 		return
+	}
+
+	// register host to iam
+	hostIDArr := make([]int64, 0)
+	for _, host := range hostList.HostInfo {
+		hostID := host.(map[string]interface{})[common.BKHostIDField].(int64)
+		hostIDArr = append(hostIDArr, hostID)
+	}
+	if err := s.registerHostToCurrentBusiness(req, &hostIDArr); err != nil {
+		blog.Errorf("register hosts:%+v to iam failed, err: %v", hostIDArr, err, srvData.rid)
 	}
 
 	resp.WriteEntity(meta.NewSuccessResp(succ))
@@ -682,6 +811,24 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 	moduleHostConfigParams := make(map[string]interface{})
 	moduleHostConfigParams[common.BKAppIDField] = data.ApplicationID
 	audit := srvData.lgc.NewHostModuleLog(hostIDArr)
+
+	// check authentication
+	// step1. check host permission
+	hostIDStrArray := make([]string, 0)
+	for _, hostID := range hostIDArr {
+		hostIDStrArray = append(hostIDStrArray, fmt.Sprintf("%d", hostID))
+	}
+	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth.TransferHost); shouldContinue == false {
+		return
+	}
+	// step2. check permission for target business
+	if shouldContinue := s.verifyBusinessPermission(req, resp, hostList.ApplicationID, auth.Update); shouldContinue == false {
+		return
+	}
+	// step3. deregist host from iam
+	if err := s.deregisterHostToCurrentBusiness(req, &hostIDArr); err != nil {
+		blog.Errorf("deregist host:%+v from iam failed, error:%v, rid:%s", hostIDArr, err, srvData.rid)
+	}
 
 	for _, hostID := range hostIDArr {
 
@@ -750,11 +897,51 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 
 	audit.SaveAudit(srvData.ctx, strconv.FormatInt(data.ApplicationID, 10), srvData.user, "host to empty module")
 
+	// regist host to iam
+	if err := s.registerHostToCurrentBusiness(req, &hostIDArr); err != nil {
+		blog.Errorf("regist host:%+v to iam failed, error:%v, rid:%s", hostIDArr, err, srvData.rid)
+	}
+
 	resp.WriteEntity(meta.NewSuccessResp(nil))
 	return
 }
 
+func (s *Service) ip2hostID(srvData *srvComm, ip string, cloudID int64) (hostID string, err error) {
+	// FIXME there must be a better ip to hostID solution
+	condition := common.KvMap{
+		common.BKHostInnerIPField: ip,
+		common.BKCloudIDField:     cloudID,
+	}
+
+	phpapi := srvData.lgc.NewPHPAPI()
+	hostMap, hostIDArr, err := phpapi.GetHostMapByCond(srvData.ctx, condition)
+	if err != nil {
+		err := fmt.Errorf("GetHostMapByCond failed, %v", err)
+		return "", err
+	}
+	if len(hostIDArr) == 0 {
+		return "", fmt.Errorf("ip %d:%s not found", cloudID, ip)
+	}
+
+	hostMapData, ok := hostMap[hostIDArr[0]]
+	if false == ok {
+		blog.Errorf("ip2hostID source ip invalid, raw data format hostMap:%+v, ip:%+v, cloudID:%+v, rid:%s", hostMap, ip, cloudID, srvData.rid)
+		return "", fmt.Errorf("ip %d:%s not found", cloudID, ip)
+	}
+
+	hostIDInt64, err := util.GetInt64ByInterface(hostMapData[common.BKHostIDField])
+	if nil != err {
+		blog.Errorf("ip2hostID bk_host_id field not found hostmap:%+v ip:%+v, cloudID:%+v,rid:%s", hostMapData, ip, cloudID, srvData.rid)
+		return "", fmt.Errorf("ip %+v:%+v not found", cloudID, ip)
+	}
+
+	hostID = fmt.Sprintf("%d", hostIDInt64)
+	return hostID, nil
+}
+
+// CloneHostProperty clone host property from src host to dst host
 func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response) {
+	// TODO valid input parameters format, so that avoid code injection
 	srvData := s.newSrvComm(req.Request.Header)
 
 	input := &meta.CloneHostPropertyParams{}
@@ -765,14 +952,36 @@ func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response
 	}
 
 	if 0 == input.AppID {
-		blog.Errorf("CloneHostProperty ,appliation not foud input:%+v,rid:%s", input, srvData.rid)
+		blog.Errorf("CloneHostProperty, application not found input:%+v,rid:%s", input, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedInt, "ApplicationID")})
+		return
+	}
+
+	// authorization check
+	// step1. verify has permission to read src host
+	srcHostID, err := s.ip2hostID(srvData, input.OrgIP, input.CloudID)
+	if err != nil {
+		blog.Errorf("ip2hostID failed, ip:%s, input:%+v, rid:%s", input.OrgIP, input, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedInt, "OrgIP")})
+		return
+	}
+	if shouldContinue := s.verifyHostPermission(req, resp, &[]string{srcHostID}, auth.Find); shouldContinue == false {
+		return
+	}
+	// step2. verify has permission to update dst host
+	dstHostID, err := s.ip2hostID(srvData, input.DstIP, input.CloudID)
+	if err != nil {
+		blog.Errorf("ip2hostID failed, ip:%s, input:%+v, rid:%s", input.DstIP, input, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedInt, "DstIP")})
+		return
+	}
+	if shouldContinue := s.verifyHostPermission(req, resp, &[]string{dstHostID}, auth.Update); shouldContinue == false {
 		return
 	}
 
 	res, err := srvData.lgc.CloneHostProperty(srvData.ctx, input, input.AppID, input.CloudID)
 	if nil != err {
-		blog.Errorf("CloneHostProperty ,appliation not int , err: %v, input:%v", err, input)
+		blog.Errorf("CloneHostProperty, application not int, err: %v, input:%v", err, input)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}

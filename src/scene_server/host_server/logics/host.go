@@ -80,6 +80,7 @@ func (lgc *Logics) GetHostInstanceDetails(ctx context.Context, ownerID, hostID s
 	return hostInfo, ip, nil
 }
 
+// GetConfigByCond get hosts owened set, module info, where hosts must match condition specify by cond.
 func (lgc *Logics) GetConfigByCond(ctx context.Context, cond map[string][]int64) ([]map[string]int64, errors.CCError) {
 	configArr := make([]map[string]int64, 0)
 
@@ -108,7 +109,7 @@ func (lgc *Logics) GetConfigByCond(ctx context.Context, cond map[string][]int64)
 	return configArr, nil
 }
 
-// EnterIP 将机器导入到制定模块或者空闲机器， 已经存在机器，不操作
+// EnterIP 将机器导入到指定模块或者空闲模块， 已经存在机器，不操作
 func (lgc *Logics) EnterIP(ctx context.Context, ownerID string, appID, moduleID int64, ip string, cloudID int64, host map[string]interface{}, isIncrement bool) errors.CCError {
 
 	isExist, err := lgc.IsPlatExist(ctx, mapstr.MapStr{common.BKCloudIDField: cloudID})
@@ -265,13 +266,15 @@ func (lgc *Logics) GetHostInfoByConds(ctx context.Context, cond map[string]inter
 	return result.Data.Info, nil
 }
 
-// HostSearch search host by mutiple condition
+// HostSearch search host by multiple condition
 const (
 	SplitFlag      = "##"
 	TopoSetName    = "TopSetName"
 	TopoModuleName = "TopModuleName"
 )
 
+// GetHostIDByCond query hostIDs by condition base on cc_ModuleHostConfig
+// available condition fields are bk_supplier_account, bk_biz_id, bk_host_id, bk_module_id, bk_set_id
 func (lgc *Logics) GetHostIDByCond(ctx context.Context, cond map[string][]int64) ([]int64, errors.CCError) {
 	result, err := lgc.CoreAPI.HostController().Module().GetModulesHostConfig(ctx, lgc.header, cond)
 	if err != nil {

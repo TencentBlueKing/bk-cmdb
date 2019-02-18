@@ -55,6 +55,12 @@ type Basic struct {
 	InstanceID int64
 }
 
+// CommonInfo contains common field which can be extracted from restful.Request
+type CommonInfo struct {
+	User       UserInfo
+	APIVersion string
+}
+
 type Decision struct {
 	// the authorize decision, whether a user has been authorized or not.
 	Authorized bool
@@ -66,14 +72,15 @@ type Decision struct {
 type Action string
 
 const (
-	Create     Action = "create"
-	CreateMany Action = "createMany"
-	Update     Action = "update"
-	UpdateMany Action = "updateMany"
-	Delete     Action = "delete"
-	DeleteMany Action = "deleteMany"
-	Find       Action = "find"
-	FindMany   Action = "findMany"
+	Create       Action = "create"
+	CreateMany   Action = "createMany"
+	Update       Action = "update"
+	UpdateMany   Action = "updateMany"
+	Delete       Action = "delete"
+	DeleteMany   Action = "deleteMany"
+	Find         Action = "find"
+	FindMany     Action = "findMany"
+	TransferHost Action = "transferHost"
 	// unknown action, which is also unsupported actions.
 	Unknown Action = "unknown"
 )
