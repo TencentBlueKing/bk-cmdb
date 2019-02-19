@@ -15,6 +15,7 @@ package driver
 import (
 	"context"
 
+	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/storage/mongodb"
 	"configcenter/src/storage/mongodb/options/aggregateopt"
@@ -168,7 +169,7 @@ func (c *collection) Count(ctx context.Context, filter interface{}) (uint64, err
 	if nil != c.innerSession {
 		var innerCnt uint64
 		err := mongo.WithSession(ctx, c.innerSession, func(mctx mongo.SessionContext) error {
-			cnt, err := c.innerCollection.Count(ctx, filter)
+			cnt, err := c.innerCollection.CountDocuments(mctx, filter)
 			innerCnt = uint64(cnt)
 			return err
 		})
@@ -176,7 +177,8 @@ func (c *collection) Count(ctx context.Context, filter interface{}) (uint64, err
 	}
 
 	// no session
-	cnt, err := c.innerCollection.Count(ctx, filter)
+	blog.Infof("count in no session")
+	cnt, err := c.innerCollection.CountDocuments(ctx, filter)
 	return uint64(cnt), err
 }
 

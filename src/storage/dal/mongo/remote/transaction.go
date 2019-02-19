@@ -29,7 +29,7 @@ func (c *Mongo) StartTransaction(ctx context.Context) (dal.DB, error) {
 		return c, nil
 	}
 	if c.TxnID != "" {
-		blog.Warnf("TxnID is empty")
+		blog.Warnf("transaction started")
 		return nil, dal.ErrTransactionStated
 	}
 	// build msg
@@ -61,9 +61,11 @@ func (c *Mongo) StartTransaction(ctx context.Context) (dal.DB, error) {
 // Commit 提交事务
 func (c *Mongo) Commit(ctx context.Context) error {
 	if !c.enableTransaction {
+		blog.Warnf("not enable transaction")
 		return nil
 	}
 	if c.TxnID == "" {
+		blog.Warnf("TxnID is empty")
 		return dal.ErrTransactionNotFound
 	}
 	msg := types.OPCommitOperation{}
@@ -86,9 +88,11 @@ func (c *Mongo) Commit(ctx context.Context) error {
 // Abort 取消事务
 func (c *Mongo) Abort(ctx context.Context) error {
 	if !c.enableTransaction {
+		blog.Warnf("not enable transaction")
 		return nil
 	}
 	if c.TxnID == "" {
+		blog.Warnf("TxnID is empty")
 		return dal.ErrTransactionNotFound
 	}
 	msg := types.OPAbortOperation{}
