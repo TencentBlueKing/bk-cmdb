@@ -476,6 +476,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 		conds := mapstr.New()
 		if businessMedata != nil {
 			//conds.Set(common.MetadataField, businessMedata)
+			// TODO use metadata
 		}
 		conds.Set(common.BKHostIDField, hostID)
 		opt := &meta.UpdateOption{
@@ -483,7 +484,6 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 			Data:      mapstr.NewFromMap(data),
 		}
 		result, err := s.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDHost, opt)
-		blog.InfoJSON("%s,%s", conds, result)
 		if err != nil {
 			blog.Errorf("UpdateHostBatch UpdateObject http do error, err: %v,input:%+v,param:%+v,rid:%s", err, data, opt, srvData.rid)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
