@@ -25,6 +25,7 @@ import (
 
 // CreateMainLineObject create a new object in the main line topo
 func (s *topoService) CreateMainLineObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	blog.Infof("[api-asst] startting transaction")
 	tx, err := s.tx.StartTransaction(context.Background())
 	if err != nil {
 		blog.Errorf("[api-asst] start transaction failed; %v", err)
