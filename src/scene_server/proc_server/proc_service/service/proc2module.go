@@ -146,58 +146,60 @@ func (ps *ProcServer) GetProcessBindModule(req *restful.Request, resp *restful.R
 		return
 	}
 
-	disModuleNameArr := make([]string, 0)
+	moduleNameCountMap := make(map[string]int, 0)
 	for _, moduleInfo := range objRet.Data.Info {
-		if !util.InArray(moduleInfo[common.BKModuleNameField], disModuleNameArr) {
-			moduleName, ok := moduleInfo[common.BKModuleNameField].(string)
-			if !ok {
-				continue
-			}
-			if moduleInfo.Exists(common.BKDefaultField) {
-				isDefault64, err := moduleInfo.Int64(common.BKDefaultField)
-				if nil != err {
-					blog.Warnf("get module default error:%s", err.Error())
-				} else {
-					if 0 != isDefault64 {
-						continue
-					}
-				}
-				disModuleNameArr = append(disModuleNameArr, moduleName)
+		moduleName, ok := moduleInfo[common.BKModuleNameField].(string)
+		if !ok {
+			blog.Warnf("not found moduleName %#v,input:%#v", moduleInfo, input)
+			continue
+		}
+
+		if moduleInfo.Exists(common.BKDefaultField) {
+			isDefault64, err := moduleInfo.Int64(common.BKDefaultField)
+			if nil != err {
+				blog.Warnf("get module default error:%s", err.Error())
 			} else {
-				blog.Errorf("ApplicationID %d  module name %s not found default field", appID, moduleName)
+				if 0 != isDefault64 {
+					continue
+				}
 			}
-
-		}
-	}
-
-	result := make([]interface{}, 0)
-	for _, disModuleName := range disModuleNameArr {
-		num := 0
-		isBind := 0
-		for _, moduleInfo := range objRet.Data.Info {
-			moduleName, ok := moduleInfo[common.BKModuleNameField].(string)
-			if !ok {
+			_, ok = moduleNameCountMap[moduleName]
+			if ok {
+				// already existed. The number of occurrentces plus one
+				moduleNameCountMap[moduleName] += 1
 				continue
+			} else {
+				moduleNameCountMap[moduleName] = 1
 			}
 
-			if disModuleName == moduleName {
-				num++
-			}
+		} else {
+			blog.Errorf("ApplicationID %d  module name %s not found default field", appID, moduleName)
 		}
 
-		for _, procModule := range p2mRet.Data {
-			if disModuleName == procModule.ModuleName {
-				isBind = 1
-				break
-			}
-		}
-
-		data := make(map[string]interface{})
-		data[common.BKModuleNameField] = disModuleName
-		data["set_num"] = num
-		data["is_bind"] = isBind
-		result = append(result, data)
 	}
 
+	moduleBindMap := make(map[string]map[string]interface{})
+	for _, procModule := range p2mRet.Data {
+		data := make(map[string]interface{})
+		data[common.BKModuleNameField] = procModule.ModuleName
+		data["set_num"] = 0
+		data["is_bind"] = 1
+		moduleBindMap[procModule.ModuleName] = data
+	}
+	for moduleName, count := range moduleNameCountMap {
+		_, ok := moduleBindMap[moduleName]
+		// not exist
+		if !ok {
+			data := make(map[string]interface{})
+			data[common.BKModuleNameField] = moduleName
+			data["is_bind"] = 0
+			moduleBindMap[moduleName] = data
+		}
+		moduleBindMap[moduleName]["set_num"] = count
+	}
+	result := make([]map[string]interface{}, 0)
+	for _, item := range moduleBindMap {
+		result = append(result, item)
+	}
 	resp.WriteEntity(meta.NewSuccessResp(result))
 }
