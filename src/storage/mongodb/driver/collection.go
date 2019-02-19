@@ -15,7 +15,6 @@ package driver
 import (
 	"context"
 
-	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/storage/mongodb"
 	"configcenter/src/storage/mongodb/options/aggregateopt"
@@ -177,7 +176,6 @@ func (c *collection) Count(ctx context.Context, filter interface{}) (uint64, err
 	}
 
 	// no session
-	blog.Infof("count in no session")
 	cnt, err := c.innerCollection.CountDocuments(ctx, filter)
 	return uint64(cnt), err
 }
@@ -226,7 +224,7 @@ func (c *collection) DeleteMany(ctx context.Context, filter interface{}, opts *d
 	// in a session
 	if nil != c.innerSession {
 		err := mongo.WithSession(ctx, c.innerSession, func(mtcx mongo.SessionContext) error {
-			delResult, err := c.innerCollection.DeleteMany(ctx, filter, deleteOption)
+			delResult, err := c.innerCollection.DeleteMany(mtcx, filter, deleteOption)
 			if nil != err {
 				return err
 			}
@@ -256,7 +254,6 @@ func (c *collection) Find(ctx context.Context, filter interface{}, opts *findopt
 
 	// in a session
 	if nil != c.innerSession {
-
 		return mongo.WithSession(ctx, c.innerSession, func(mctx mongo.SessionContext) error {
 
 			cursor, err := c.innerCollection.Find(mctx, filter, findOptions)
