@@ -9,22 +9,30 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package x19_01_18_01
+package x19_02_15_10
 
 import (
 	"context"
-	"strings"
 
+	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
 
-func dropIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	if err = db.Table("cc_TopoGraphics").
-		DropIndex(ctx, "scope_id_1_node_type_1_bk_obj_id_1_bk_inst_id_1_scope_type_1"); err != nil &&
-		!strings.Contains(err.Error(), "not found") {
+func init() {
+	upgrader.RegistUpgrader("x19.02.15.10", upgrade)
+}
+
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	err = fixAssociationTypeName(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade x19.02.15.10] fixAssociationTypeName error  %s", err.Error())
 		return err
 	}
-	return nil
+	err = fixEventSubscribeLastTime(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade x19.02.15.10] fixEventSubscribeLastTime error  %s", err.Error())
+		return err
+	}
+	return
 }
