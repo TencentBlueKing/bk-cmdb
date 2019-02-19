@@ -18,9 +18,17 @@
 
 请提供以下信息:
 
- - [x] bk-cmdb   版本 (发布版本号 或 git tag): <!--   `<示例： v3.0.6-alpha 或者 git sha. 请不要使用 "最新版本" 或 "当前版本"等无法准确定位代码版本的语句描述>`  -->
- - [ ] Redis     版本: <!-- `<示例： 3.2.11>`  -->
- - [ ] MongoDB   版本: <!--  `<示例： 2.8.0>` -->
- - [ ] ZooKeeper 版本: <!-- `<示例： 3.4.11>` -->
- - [ ] 操作系统      : <!--  `<示例： Centos 5 (x64)>` -->
+ - [x] bk-cmdb   版本: 
+ <!-- 示例： ./cmdb/cmdb-apiserver --version 输出的内容:
+Version  : oc-19.01.30
+Tag      : 
+Branch   : v3.3.x
+BuildTime: 2019-01-30T11:29:27+0800
+GitHash  : a99aabedf7a369387423ad0ab013730c88f4a7b6
+RunMode  : product
+ -->
+ - [ ] Redis     版本: <!-- `示例： 3.2.11`  -->
+ - [ ] MongoDB   版本: <!-- `示例： 2.8.0` -->
+ - [ ] ZooKeeper 版本: <!-- `示例： 3.4.11` -->
+ - [ ] 操作系统      : <!-- `示例： Centos 5 (x64>` -->
  - [ ] bk-cmdb 异常日志
