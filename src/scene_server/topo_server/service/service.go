@@ -19,6 +19,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"configcenter/src/scene_server/topo_server/core/wrapper"
+
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -26,7 +28,7 @@ import (
 	"configcenter/src/common/http/httpserver"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
-	meta "configcenter/src/common/metadata"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/app/options"
@@ -56,11 +58,17 @@ type topoService struct {
 	actions  []action
 	core     core.Core
 	cfg      options.Config
+	authAPI  wrapper.AuthAPI
 }
 
 func (s *topoService) SetConfig(cfg options.Config, engin *backbone.Engine) {
 	s.cfg = cfg
 	s.engin = engin
+	authAPI, err := wrapper.NewAuthAPI()
+	if err != nil {
+		blog.Errorf("it is failed to create a new auth API, err:%s", err.Error())
+	}
+	s.authAPI = authAPI
 }
 
 // SetOperation set the operation
@@ -107,8 +115,8 @@ func (s *topoService) WebService() *restful.WebService {
 
 func (s *topoService) createAPIRspStr(errcode int, info interface{}) (string, error) {
 
-	rsp := meta.Response{
-		BaseResp: meta.SuccessBaseResp,
+	rsp := metadata.Response{
+		BaseResp: metadata.SuccessBaseResp,
 		Data:     nil,
 	}
 
@@ -127,8 +135,8 @@ func (s *topoService) createAPIRspStr(errcode int, info interface{}) (string, er
 
 func (s *topoService) createCompleteAPIRspStr(errcode int, errmsg string, info interface{}) (string, error) {
 
-	rsp := meta.Response{
-		BaseResp: meta.SuccessBaseResp,
+	rsp := metadata.Response{
+		BaseResp: metadata.SuccessBaseResp,
 		Data:     nil,
 	}
 
@@ -147,7 +155,9 @@ func (s *topoService) createCompleteAPIRspStr(errcode int, errmsg string, info i
 func (s *topoService) sendResponse(resp *restful.Response, errorCode int, dataMsg interface{}) {
 	resp.Header().Set("Content-Type", "application/json")
 	if rsp, rspErr := s.createAPIRspStr(errorCode, dataMsg); nil == rspErr {
-		io.WriteString(resp, rsp)
+		if _, err := io.WriteString(resp, rsp); nil != err {
+			blog.Errorf("faield to write string, error info is %s", err.Error())
+		}
 	} else {
 		blog.Errorf("failed to send response , error info is %s", rspErr.Error())
 	}
@@ -157,7 +167,9 @@ func (s *topoService) sendCompleteResponse(resp *restful.Response, errorCode int
 	resp.Header().Set("Content-Type", "application/json")
 	rsp, rspErr := s.createCompleteAPIRspStr(errorCode, errMsg, info)
 	if nil == rspErr {
-		io.WriteString(resp, rsp)
+		if _, err := io.WriteString(resp, rsp); nil != err {
+			blog.Errorf("it is failed to write some data, err:%s", err.Error())
+		}
 		return
 	}
 	blog.Errorf("failed to send response , error info is %s", rspErr.Error())
@@ -194,7 +206,7 @@ func (s *topoService) Actions() []*httpserver.Action {
 
 				mData := mapstr.MapStr{}
 				if nil == act.HandlerParseOriginDataFunc {
-					if err := json.Unmarshal(value, &mData); nil != err && 0 != len(value) {
+					if err = json.Unmarshal(value, &mData); nil != err && len(value) != 0 {
 						blog.Errorf("failed to unmarshal the data, error %s", err.Error())
 						errStr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 						s.sendResponse(resp, common.CCErrCommJSONUnmarshalFailed, errStr)
@@ -209,8 +221,11 @@ func (s *topoService) Actions() []*httpserver.Action {
 						return
 					}
 				}
-				metadata := meta.NewMetaDataFromMap(mData)
+
+				ctx, _ := s.engin.CCCtx.WithCancel()
+				metadata := metadata.NewMetaDataFromMap(mData)
 				data, dataErr := act.HandlerFunc(types.ContextParams{
+					Context:         ctx,
 					Err:             defErr,
 					Lang:            defLang,
 					MaxTopoLevel:    s.cfg.BusinessTopoLevelMax,
@@ -219,6 +234,7 @@ func (s *topoService) Actions() []*httpserver.Action {
 					User:            user,
 					Engin:           s.engin,
 					MetaData:        metadata,
+					AuthAPI:         s.authAPI,
 				},
 					req.PathParameter,
 					req.QueryParameter,
