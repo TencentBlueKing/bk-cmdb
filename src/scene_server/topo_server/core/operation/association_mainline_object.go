@@ -13,7 +13,6 @@
 package operation
 
 import (
-	"fmt"
 	"io"
 
 	"configcenter/src/common"
@@ -204,8 +203,6 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 			cObj.ObjectID, childObj.Object().ObjectID, err)
 		return nil, err
 	}
-
-	return currentObj, fmt.Errorf("assume error")
 
 	return currentObj, nil
 }

@@ -14,9 +14,9 @@ package types
 
 // MsgHeader message header
 type MsgHeader struct {
+	OPCode    OPCode
 	TxnID     string
 	RequestID string
-	OPCode    OPCode
 }
 
 // OPCode operation code type

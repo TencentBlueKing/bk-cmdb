@@ -89,9 +89,6 @@ func (c *Collection) Delete(ctx context.Context, filter dal.Filter) error {
 	if err := msg.Selector.Encode(filter); err != nil {
 		return err
 	}
-	if c.TxnID != "" {
-		msg.TxnID = c.TxnID
-	}
 
 	// set txn
 	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)

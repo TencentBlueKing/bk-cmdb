@@ -17,7 +17,9 @@ import (
 	"net/http"
 	"testing"
 
+	"configcenter/src/common"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/dal"
 
 	"github.com/stretchr/testify/require"
 )
@@ -26,17 +28,25 @@ func TestTransaction(t *testing.T) {
 	db, err := New("192.168.100.130:60008", true)
 	require.NoError(t, err)
 
-	ctx := context.Background()
-	tablename := "tmptest"
-	err = db.Table(tablename).Insert(ctx, map[string]interface{}{"name": "m"})
-	require.NoError(t, err)
-	defer db.Table(tablename).Delete(ctx, map[string]interface{}{})
-
-	tx, err := db.StartTransaction(ctx)
-	require.NoError(t, err)
 	header := http.Header{}
-	header = db.TxnInfo().IntoHeader(header)
-	ctx = util.GetDBContext(context.Background(), header)
+	header.Set(common.BKHTTPCCRequestID, "xxxxx")
+	orgctx := context.WithValue(context.Background(), common.CCContextKeyJoinOption, dal.JoinOption{
+		RequestID: header.Get(common.BKHTTPCCRequestID),
+		TxnID:     header.Get(common.BKHTTPCCTransactionID),
+	})
+	tablename := "tmptest"
+	err = db.Table(tablename).Insert(orgctx, map[string]interface{}{"name": "m"})
+	require.NoError(t, err)
+	defer db.Table(tablename).Delete(orgctx, map[string]interface{}{})
+
+	tx, err := db.StartTransaction(orgctx)
+	require.NoError(t, err)
+	header = tx.TxnInfo().IntoHeader(header)
+	ctx := util.GetDBContext(context.Background(), header)
+	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
+	require.True(t, ok)
+	require.NotEmpty(t, opt.RequestID)
+	require.NotEmpty(t, opt.TxnID)
 
 	err = tx.Table(tablename).Insert(ctx, map[string]interface{}{"name": "a"})
 	require.NoError(t, err)
@@ -57,7 +67,7 @@ func TestTransaction(t *testing.T) {
 	result = []map[string]interface{}{}
 	err = tx.Table(tablename).Find(map[string]interface{}{"name": "b"}).All(ctx, &result)
 	require.NoError(t, err)
-	require.True(t, len(result) == 1)
+	require.Equal(t, 1, len(result))
 	require.Equal(t, "b", result[0]["name"])
 
 	err = tx.Table(tablename).Delete(ctx, map[string]interface{}{"name": "b"})
@@ -66,7 +76,7 @@ func TestTransaction(t *testing.T) {
 	result = []map[string]interface{}{}
 	err = tx.Table(tablename).Find(map[string]interface{}{"name": "b"}).All(ctx, &result)
 	require.NoError(t, err)
-	require.True(t, len(result) == 0)
+	require.Equal(t, 0, len(result))
 
 	err = tx.Table(tablename).Insert(ctx, map[string]interface{}{"name": "c"})
 	require.NoError(t, err)
@@ -74,28 +84,37 @@ func TestTransaction(t *testing.T) {
 	result = []map[string]interface{}{}
 	err = db.Table(tablename).Find(map[string]interface{}{"name": "c"}).All(ctx, &result)
 	require.NoError(t, err)
-	require.True(t, len(result) == 0)
+	require.Equal(t, 1, len(result))
 
 	err = tx.Commit(ctx)
 	require.NoError(t, err)
 
 	result = []map[string]interface{}{}
-	err = db.Table(tablename).Find(map[string]interface{}{"name": "c"}).All(ctx, &result)
+	err = db.Table(tablename).Find(map[string]interface{}{"name": "c"}).All(orgctx, &result)
 	require.NoError(t, err)
-	require.True(t, len(result) == 1)
+	require.Equal(t, 1, len(result))
 	require.Equal(t, "c", result[0]["name"])
 
-	tx, err = tx.StartTransaction(ctx)
+	tx, err = db.StartTransaction(orgctx)
 	require.NoError(t, err)
+	header = tx.TxnInfo().IntoHeader(header)
+	ctx = util.GetDBContext(context.Background(), header)
+	opt, ok = ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
+	require.True(t, ok)
+	require.NotEmpty(t, opt.RequestID)
+	require.NotEmpty(t, opt.TxnID)
 	err = tx.Table(tablename).Insert(ctx, map[string]interface{}{"name": "d"})
 	require.NoError(t, err)
 	err = tx.Abort(ctx)
 	require.NoError(t, err)
 
 	result = []map[string]interface{}{}
-	err = db.Table(tablename).Find(map[string]interface{}{"name": "d"}).All(ctx, &result)
+	err = db.Table(tablename).Find(map[string]interface{}{"name": "d"}).All(orgctx, &result)
 	require.NoError(t, err)
-	require.True(t, len(result) == 1)
-	require.Equal(t, len(result), result[0]["name"])
+	require.Equal(t, 0, len(result))
+
+	count, err = db.Table(tablename).Find(map[string]interface{}{}).Count(orgctx)
+	require.NoError(t, err)
+	require.EqualValues(t, 2, count)
 
 }
