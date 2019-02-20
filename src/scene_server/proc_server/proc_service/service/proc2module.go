@@ -12,17 +12,16 @@
 package service
 
 import (
-	"fmt"
-	"net/http"
-	"strconv"
+    "fmt"
+    "net/http"
+    "strconv"
 
-	"github.com/emicklei/go-restful"
+    "github.com/emicklei/go-restful"
 
-	"configcenter/src/common"
-	"configcenter/src/common/auditoplog"
-	"configcenter/src/common/blog"
-	meta "configcenter/src/common/metadata"
-	"configcenter/src/common/util"
+    "configcenter/src/common"
+    "configcenter/src/common/auditoplog"
+    "configcenter/src/common/blog"
+    meta "configcenter/src/common/metadata"
 )
 
 func (ps *ProcServer) BindModuleProcess(req *restful.Request, resp *restful.Response) {
@@ -165,38 +164,17 @@ func (ps *ProcServer) GetProcessBindModule(req *restful.Request, resp *restful.R
 
 	moduleNameCountMap := make(map[string]int, 0)
 	for _, moduleInfo := range objRet.Data.Info {
-<<<<<<< HEAD
-		if !util.InArray(moduleInfo[common.BKModuleNameField], disModuleNameArr) {
-			moduleName, ok := moduleInfo[common.BKModuleNameField].(string)
-			if !ok {
-				continue
-			}
-			if moduleInfo.Exists(common.BKDefaultField) {
-				isDefault64, err := moduleInfo.Int64(common.BKDefaultField)
-				if nil != err {
-					blog.Warnf("get module default error:%s,input:%+v,rid:%s", err.Error(), input, srvData.rid)
-				} else {
-					if 0 != isDefault64 {
-						continue
-					}
-				}
-				disModuleNameArr = append(disModuleNameArr, moduleName)
-			} else {
-				blog.Errorf("ApplicationID %d  module name %s not found default field,rid:%s", appID, moduleName, srvData.rid)
-			}
 
-=======
 		moduleName, ok := moduleInfo[common.BKModuleNameField].(string)
 		if !ok {
-			blog.Warnf("not found moduleName %#v,input:%#v", moduleInfo, input)
+			blog.Warnf("not found moduleName %#v,input: %#v, rid: %s", moduleInfo, input, srvData.rid)
 			continue
->>>>>>> 14026d61b305f66ac05678ebac69ce0aa8706d95
 		}
 
 		if moduleInfo.Exists(common.BKDefaultField) {
 			isDefault64, err := moduleInfo.Int64(common.BKDefaultField)
 			if nil != err {
-				blog.Warnf("get module default error:%s", err.Error())
+				blog.Warnf("get module default error: %s, rid: %s", err.Error(),srvData.rid)
 			} else {
 				if 0 != isDefault64 {
 					continue
@@ -204,7 +182,7 @@ func (ps *ProcServer) GetProcessBindModule(req *restful.Request, resp *restful.R
 			}
 			_, ok = moduleNameCountMap[moduleName]
 			if ok {
-				// already existed. The number of occurrentces plus one
+				// already exist. The number of current plus one
 				moduleNameCountMap[moduleName] += 1
 				continue
 			} else {
@@ -212,7 +190,7 @@ func (ps *ProcServer) GetProcessBindModule(req *restful.Request, resp *restful.R
 			}
 
 		} else {
-			blog.Errorf("ApplicationID %d  module name %s not found default field", appID, moduleName)
+			blog.Errorf("ApplicationID %d  module name %s not found default field, rid: %s", appID, moduleName, srvData.rid)
 		}
 
 	}
