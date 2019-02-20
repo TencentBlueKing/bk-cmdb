@@ -19,7 +19,10 @@ import (
 	"time"
 
 	"github.com/coccyx/timeparser"
-	"gopkg.in/mgo.v2/bson"
+	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/bson/bsontype"
+	"github.com/mongodb/mongo-go-driver/x/bsonx"
+	mgobson "gopkg.in/mgo.v2/bson"
 )
 
 type Time struct {
@@ -74,13 +77,41 @@ func (t Time) GetBSON() (interface{}, error) {
 }
 
 // SetBSON implements bson.SetBSON interface
-func (t *Time) SetBSON(raw bson.Raw) error {
+func (t *Time) SetBSON(raw mgobson.Raw) error {
 	if raw.Kind == 0x09 {
 		// 0x09 timestamp
 		return raw.Unmarshal(&t.Time)
 	}
+
+	// for compatibility purpose
 	tt := tmptime{}
 	err := raw.Unmarshal(&tt)
+	t.Time = tt.Time
+	return err
+}
+
+// MarshalBSONValue implements bson.MarshalBSON interface
+func (t Time) MarshalBSONValue() (bsontype.Type, []byte, error) {
+	return bsonx.Time(t.Time).MarshalBSONValue()
+}
+
+// UnmarshalBSONValue implements bson.UnmarshalBSONValue interface
+func (t *Time) UnmarshalBSONValue(typo bsontype.Type, raw []byte) error {
+	switch typo {
+	case bsontype.Timestamp:
+		// 0x11 timestamp
+		return bson.Unmarshal(raw, &t.Time)
+	case bsontype.Double:
+		rv := bson.RawValue{Type: bsontype.Double, Value: raw}
+		if dt, ok := rv.DoubleOK(); ok {
+			t.Time = time.Unix(int64(dt/1000), int64(uint64(dt)%1000*1000000))
+			return nil
+		}
+		return nil
+	}
+	// for compatibility purpose
+	tt := tmptime{}
+	err := bson.Unmarshal(raw, &tt)
 	t.Time = tt.Time
 	return err
 }

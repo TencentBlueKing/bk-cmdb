@@ -108,7 +108,7 @@ class TableLayout {
                     attr: head.attr || {},
                     type: head.type || 'text',
                     width: head.type === 'checkbox' ? 75 : head.width,
-                    minWidth: head.type === 'checkbox' ? 75 : 100,
+                    minWidth: head.type === 'checkbox' ? 75 : typeof head.minWidth === 'number' ? head.minWidth : 100,
                     realWidth: head.type === 'checkbox' ? 75 : typeof head.width === 'number' ? head.width : 100,
                     flex: head.type !== 'checkbox' && typeof head.width !== 'number',
                     sortable: table.sortable && (head.hasOwnProperty('sortable') ? head.sortable : true),

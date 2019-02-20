@@ -1,4 +1,3 @@
-import Vue from 'vue'
 import Axios from 'axios'
 import md5 from 'md5'
 import CachedPromise from './_cached-promise'
@@ -20,7 +19,7 @@ const axiosInstance = Axios.create({
 // axios实例拦截器
 axiosInstance.interceptors.response.use(
     response => {
-        return response.data
+        return response
     },
     error => {
         return Promise.reject(error)
@@ -128,10 +127,11 @@ async function getPromise (method, url, data, userConfig = {}) {
  * @return
  */
 function handleResponse ({config, response, resolve, reject}) {
-    if (!response.result && config.globalError) {
-        reject({message: response['bk_error_msg']})
+    const transformedResponse = response.data
+    if (!transformedResponse.result && config.globalError) {
+        reject({message: transformedResponse['bk_error_msg']})
     } else {
-        resolve(config.originalResponse ? response : response.data, config)
+        resolve(config.originalResponse ? response : config.transformData ? transformedResponse.data : transformedResponse)
     }
 }
 
@@ -188,6 +188,8 @@ function initConfig (method, url, userConfig) {
         clearCache: false,
         // 响应结果是否返回原始数据
         originalResponse: false,
+        // 转换返回数据，仅返回data对象
+        transformData: true,
         // 当路由变更时取消请求
         cancelWhenRouteChange: true,
         // 取消上次请求
@@ -212,7 +214,5 @@ function getCancelToken () {
         cancelExcutor
     }
 }
-
-Vue.prototype.$http = $http
 
 export default $http
