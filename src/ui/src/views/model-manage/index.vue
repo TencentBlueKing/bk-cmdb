@@ -1,49 +1,74 @@
 <template>
-    <div class="group-wrapper" @scroll="handleWrapperScroll">
-        <p class="btn-group" :class="{sticky: wrapperScroll}">
-            <bk-button type="primary"
-                :disabled="!authority.includes('update')"
-                @click="showModelDialog(false)">
-                {{$t('ModelManagement["新增模型"]')}}
-            </bk-button>
-            <bk-button type="default"
-                :disabled="!authority.includes('update')"
-                @click="showGroupDialog(false)">
-                {{$t('ModelManagement["新建分组"]')}}
-            </bk-button>
-        </p>
+    <div class="group-wrapper">
+        <cmdb-main-inject
+            inject-type="prepend"
+            :class="['btn-group', 'clearfix', {sticky: !!scrollTop}]">
+            <div class="fl">
+                <bk-button type="primary"
+                    v-if="isAdminView"
+                    :disabled="!authority.includes('update') || modelType === 'disabled'"
+                    @click="showModelDialog(false)">
+                    {{$t('ModelManagement["新增模型"]')}}
+                </bk-button>
+                <bk-button type="primary"
+                    v-else
+                    v-tooltip="$t('ModelManagement[\'新增模型提示\']')"
+                    :disabled="!authority.includes('update') || modelType === 'disabled'"
+                    @click="showModelDialog(false)">
+                    {{$t('ModelManagement["新增模型"]')}}
+                </bk-button>
+                <bk-button type="default"
+                    :disabled="!authority.includes('update') || modelType === 'disabled'"
+                    @click="showGroupDialog(false)">
+                    {{$t('ModelManagement["新建分组"]')}}
+                </bk-button>
+            </div>
+            <div class="model-type-options fr">
+                <bk-button class="model-type-button enable"
+                    size="mini"
+                    :type="modelType === 'enable' ? 'primary' : 'default'"
+                    @click="modelType = 'enable'">
+                    {{$t('ModelManagement["启用模型"]')}}
+                </bk-button>
+                <bk-button class="model-type-button disabled"
+                    size="mini"
+                    :disabled="!disabledClassifications.length"
+                    :type="modelType === 'disabled' ? 'primary' : 'default'"
+                    @click="modelType = 'disabled'">
+                    {{$t('ModelManagement["停用模型"]')}}
+                </bk-button>
+            </div>
+        </cmdb-main-inject>
         <ul class="group-list">
             <li class="group-item clearfix"
-                v-for="(classification, classIndex) in localClassifications"
+                v-for="(classification, classIndex) in currentClassifications"
                 :key="classIndex">
-                <p class="group-title">
+                <div class="group-title">
                     <span>{{classification['bk_classification_name']}}</span>
                     <span class="number">({{classification['bk_objects'].length}})</span>
-                    <template v-if="authority.includes('update')">
+                    <template v-if="authority.includes('update') && isEditable(classification)">
                         <i class="icon-cc-edit text-primary"
-                        v-if="classification['bk_classification_type'] !== 'inner'"
                         @click="showGroupDialog(true, classification)"></i>
                         <i class="icon-cc-del text-primary"
-                        v-if="classification['bk_classification_type'] !== 'inner'"
                         @click="deleteGroup(classification)"></i>
                     </template>
-                </p>
-                <ul class="model-list clearfix">
+                </div>
+                <ul class="model-list clearfix" >
                     <li class="model-item"
-                    :class="{'ispaused': model['bk_ispaused']}"
+                    :class="{
+                        'ispaused': model['bk_ispaused'],
+                        'ispre': isInner(model)
+                    }"
                     v-for="(model, modelIndex) in classification['bk_objects']"
                     :key="modelIndex"
                     @click="modelClick(model)">
                         <div class="icon-box">
-                            <i class="icon" :class="[model['bk_obj_icon'], {ispre: model['ispre']}]"></i>
+                            <i class="icon" :class="[model['bk_obj_icon']]"></i>
                         </div>
                         <div class="model-details">
                             <p class="model-name" :title="model['bk_obj_name']">{{model['bk_obj_name']}}</p>
                             <p class="model-id" :title="model['bk_obj_id']">{{model['bk_obj_id']}}</p>
                         </div>
-                        <span class="paused-info" v-if="model['bk_ispaused']">
-                            {{$t('ModelManagement["已停用"]')}}
-                        </span>
                     </li>
                 </ul>
             </li>
@@ -60,16 +85,16 @@
                 <p class="title">{{groupDialog.title}}</p>
                 <div class="content">
                     <label>
-                        <span class="label-title">
-                            {{$t('ModelManagement["唯一标识"]')}}
-                        </span>
-                        <span class="color-danger">*</span>
+                        <div class="label-title">
+                            {{$t('ModelManagement["唯一标识"]')}}<span class="color-danger">*</span>
+                        </div>
                         <div class="cmdb-form-item" :class="{'is-error': errors.has('classifyId')}">
                             <input type="text" class="cmdb-form-input"
-                            v-model.trim="groupDialog.data['bk_classification_id']"
                             name="classifyId"
-                            v-validate="'required|classifyId'"
-                            :disabled="groupDialog.isEdit">
+                            :placeholder="$t('ModelManagement[\'请输入唯一标识\']')"
+                            :disabled="groupDialog.isEdit"
+                            v-model.trim="groupDialog.data['bk_classification_id']"
+                            v-validate="'required|classifyId'">
                             <p class="form-error">{{errors.first('classifyId')}}</p>
                         </div>
                         <i class="bk-icon icon-info-circle" v-tooltip="$t('ModelManagement[\'下划线，数字，英文小写的组合\']')"></i>
@@ -80,9 +105,11 @@
                         </span>
                         <span class="color-danger">*</span>
                         <div class="cmdb-form-item" :class="{'is-error': errors.has('classifyName')}">
-                            <input type="text" class="cmdb-form-input"
-                            v-model.trim="groupDialog.data['bk_classification_name']"
+                            <input type="text" 
+                            class="cmdb-form-input"
                             name="classifyName"
+                            :placeholder="$t('ModelManagement[\'请输入名称\']')"
+                            v-model.trim="groupDialog.data['bk_classification_name']"
                             v-validate="'required|classifyName'">
                             <p class="form-error">{{errors.first('classifyName')}}</p>
                         </div>
@@ -94,98 +121,30 @@
                 <bk-button type="default" @click="hideGroupDialog">{{$t("Common['取消']")}}</bk-button>
             </div>
         </bk-dialog>
-        <bk-dialog
-            class="model-dialog dialog"
-            :close-icon="false"
-            :hasHeader="false"
-            :width="600"
-            :padding="0"
-            :quick-close="false"
-            :is-show.sync="modelDialog.isShow">
-            <div slot="content" class="dialog-content">
-                <p class="title">{{$t('ModelManagement["新增模型"]')}}</p>
-                <div class="content clearfix">
-                    <div class="content-left" @click="modelDialog.isIconListShow = true">
-                        <div class="icon-wrapper">
-                            <i :class="modelDialog.data['bk_obj_icon']"></i>
-                        </div>
-                        <div class="text">{{$t('ModelManagement["点击切换"]')}}</div>
-                    </div>
-                    <div class="content-right">
-                        <div class="label-item">
-                            <span class="label-title">{{$t('ModelManagement["所属分组"]')}}</span>
-                            <span class="color-danger">*</span>
-                            <div class="cmdb-form-item" :class="{'is-error': errors.has('modelGroup')}">
-                                <cmdb-selector
-                                    class="selector-box"
-                                    name="modelGroup"
-                                    setting-key="bk_classification_id"
-                                    display-key="bk_classification_name"
-                                    :content-max-height="200"
-                                    :selected.sync="modelDialog.data['bk_classification_id']"
-                                    :list="modelDialog.classificationList"
-                                    v-validate="'required'"
-                                    v-model="modelDialog.data['bk_classification_id']"
-                                ></cmdb-selector>
-                                <p class="form-error">{{errors.first('modelGroup')}}</p>
-                            </div>
-                        </div>
-                        <label>
-                            <span class="label-title">{{$t('ModelManagement["唯一标识"]')}}</span>
-                            <span class="color-danger">*</span>
-                            <div class="cmdb-form-item" :class="{'is-error': errors.has('modelId')}">
-                                <input type="text" class="cmdb-form-input"
-                                name="modelId"
-                                v-model.trim="modelDialog.data['bk_obj_id']"
-                                v-validate="'required|modelId'">
-                                <p class="form-error">{{errors.first('modelId')}}</p>
-                            </div>
-                            <i class="bk-icon icon-info-circle" v-tooltip="$t('ModelManagement[\'下划线，数字，英文小写的组合\']')"></i>
-                        </label>
-                        <label>
-                            <span class="label-title">{{$t('ModelManagement["名称"]')}}</span>
-                            <span class="color-danger">*</span>
-                            <div class="cmdb-form-item" :class="{'is-error': errors.has('modelName')}">
-                                <input type="text" class="cmdb-form-input"
-                                name="modelName"
-                                v-validate="'required|singlechar'"
-                                v-model.trim="modelDialog.data['bk_obj_name']">
-                                <p class="form-error">{{errors.first('modelName')}}</p>
-                            </div>
-                            <i class="bk-icon icon-info-circle" v-tooltip="$t('ModelManagement[\'请填写模型名\']')"></i>
-                        </label>
-                    </div>
-                </div>
-                <div class="model-icon-wrapper" v-if="modelDialog.isIconListShow">
-                    <span class="back" @click="modelDialog.isIconListShow = false">
-                        <i class="bk-icon icon-back2"></i>
-                    </span>
-                    <the-choose-icon
-                        v-model="modelDialog.data['bk_obj_icon']"
-                        @chooseIcon="modelDialog.isIconListShow = false"
-                    ></the-choose-icon>
-                </div>
-            </div>
-            <div slot="footer" class="footer">
-                <bk-button type="primary" @click="saveModel">{{$t("Common['保存']")}}</bk-button>
-                <bk-button type="default" @click="hideModelDialog">{{$t("Common['取消']")}}</bk-button>
-            </div>
-        </bk-dialog>
+        <the-create-model
+            :is-show.sync="modelDialog.isShow"
+            :title="$t('ModelManagement[\'新增模型\']')"
+            @confirm="saveModel">
+        </the-create-model>
     </div>
 </template>
 
 <script>
-    import theChooseIcon from '@/components/model-manage/_choose-icon'
+    import cmdbMainInject from '@/components/layout/main-inject'
+    import theCreateModel from '@/components/model-manage/_create-model'
     import theModel from './children'
     import { mapGetters, mapMutations, mapActions } from 'vuex'
+    import {addMainScrollListener, removeMainScrollListener} from '@/utils/main-scroller'
     export default {
         components: {
-            theChooseIcon,
-            theModel
+            theModel,
+            theCreateModel,
+            cmdbMainInject
         },
         data () {
             return {
-                wrapperScroll: 0,
+                scrollHandler: null,
+                scrollTop: 0,
                 groupDialog: {
                     isShow: false,
                     isEdit: false,
@@ -200,44 +159,62 @@
                     modelId: 'modelId'
                 },
                 modelDialog: {
-                    isShow: false,
-                    isEdit: false,
-                    isIconListShow: false,
-                    classificationList: [],
-                    data: {
-                        bk_classification_id: '',
-                        bk_obj_icon: 'icon-cc-default',
-                        bk_obj_id: '',
-                        bk_obj_name: ''
-                    }
-                }
+                    isShow: false
+                },
+                modelType: 'enable'
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'userName', 'admin']),
+            ...mapGetters(['supplierAccount', 'userName', 'admin', 'isAdminView', 'isBusinessSelected']),
             ...mapGetters('objectModelClassify', [
                 'classifications'
             ]),
-            localClassifications () {
-                let localClassifications = []
+            enableClassifications () {
+                const enableClassifications = []
                 this.classifications.forEach(classification => {
-                    if (classification['bk_classification_id'] === 'bk_host_manage') {
-                        const currentClassification = this.$tools.clone(classification)
-                        currentClassification['bk_objects'] = classification['bk_objects'].filter(({bk_obj_id: objId}) => !['process', 'plat'].includes(objId))
-                        localClassifications.push({...currentClassification, ...{isModelShow: false}})
-                    } else {
-                        localClassifications.push({...classification, ...{isModelShow: false}})
+                    enableClassifications.push({
+                        ...classification,
+                        'bk_objects': classification['bk_objects'].filter(model => {
+                            return !model['bk_ispaused'] && !['process', 'plat'].includes(model['bk_obj_id'])
+                        })
+                    })
+                })
+                return enableClassifications
+            },
+            disabledClassifications () {
+                const disabledClassifications = []
+                this.classifications.forEach(classification => {
+                    const disabledModels = classification['bk_objects'].filter(model => {
+                        return model['bk_ispaused'] && !['process', 'plat'].includes(model['bk_obj_id'])
+                    })
+                    if (disabledModels.length) {
+                        disabledClassifications.push({
+                            ...classification,
+                            'bk_objects': disabledModels
+                        })
                     }
                 })
-                this.modelDialog.classificationList = localClassifications.filter(({bk_classification_id: classificationId}) => !['bk_biz_topo', 'bk_host_manage', 'bk_organization'].includes(classificationId))
-                return localClassifications
+                return disabledClassifications
+            },
+            currentClassifications () {
+                return this.modelType === 'enable' ? this.enableClassifications : this.disabledClassifications
             },
             authority () {
-                return this.admin ? ['search', 'update', 'delete'] : []
+                if (this.isAdminView || this.isBusinessSelected) {
+                    return ['search', 'update', 'delete']
+                }
+                return []
             }
         },
         created () {
             this.$store.commit('setHeaderTitle', this.$t('Nav["模型"]'))
+            this.scrollHandler = event => {
+                this.scrollTop = event.target.scrollTop
+            }
+            addMainScrollListener(this.scrollHandler)
+        },
+        beforeDestroy () {
+            removeMainScrollListener(this.scrollHandler)
         },
         methods: {
             ...mapMutations('objectModelClassify', [
@@ -253,8 +230,19 @@
             ...mapActions('objectModel', [
                 'createObject'
             ]),
-            handleWrapperScroll () {
-                this.wrapperScroll = this.$el.scrollTop
+            isEditable (classification) {
+                if (classification['bk_classification_type'] === 'inner') {
+                    return false
+                }
+                if (this.isAdminView) {
+                    return true
+                }
+                return !!this.$tools.getMetadataBiz(classification)
+            },
+            isInner (model) {
+                const metadata = model.metadata || {}
+                const label = metadata.label || {}
+                return !this.$tools.getMetadataBiz(model)
             },
             showGroupDialog (isEdit, group) {
                 if (isEdit) {
@@ -274,6 +262,7 @@
             },
             hideGroupDialog () {
                 this.groupDialog.isShow = false
+                this.$validator.reset()
             },
             async saveGroup () {
                 const res = await Promise.all([
@@ -283,11 +272,11 @@
                 if (res.includes(false)) {
                     return
                 }
-                let params = {
+                let params = this.$injectMetadata({
                     bk_supplier_account: this.supplierAccount,
                     bk_classification_id: this.groupDialog.data['bk_classification_id'],
                     bk_classification_name: this.groupDialog.data['bk_classification_name']
-                }
+                })
                 if (this.groupDialog.isEdit) {
                     const res = await this.updateClassification({
                         id: this.groupDialog.data.id,
@@ -298,7 +287,10 @@
                     })
                     this.updateClassify({...params, ...{id: this.groupDialog.data.id}})
                 } else {
-                    const res = await this.createClassification({params, config: {requestId: 'createClassification'}})
+                    const res = await this.createClassification({
+                        params,
+                        config: {requestId: 'createClassification'}
+                    })
                     this.updateClassify({...params, ...{id: res.id}})
                 }
                 this.hideGroupDialog()
@@ -315,43 +307,35 @@
                 })
             },
             showModelDialog () {
-                this.modelDialog.data['bk_obj_icon'] = 'icon-cc-default'
-                this.modelDialog.data['bk_obj_id'] = ''
-                this.modelDialog.data['bk_obj_name'] = ''
-                this.modelDialog.data['bk_classification_id'] = ''
-                this.$validator.reset()
                 this.modelDialog.isShow = true
             },
-            hideModelDialog () {
-                this.modelDialog.isShow = false
-            },
-            async saveModel () {
-                const res = await Promise.all([
-                    this.$validator.validate('modelGroup'),
-                    this.$validator.validate('modelId'),
-                    this.$validator.validate('modelName')
-                ])
-                if (res.includes(false)) {
-                    return
-                }
-                let params = {
+            async saveModel (data) {
+                const params = this.$injectMetadata({
                     bk_supplier_account: this.supplierAccount,
-                    bk_obj_name: this.modelDialog.data['bk_obj_name'],
-                    bk_obj_icon: this.modelDialog.data['bk_obj_icon'],
-                    bk_classification_id: this.modelDialog.data['bk_classification_id'],
-                    bk_obj_id: this.modelDialog.data['bk_obj_id'],
+                    bk_obj_name: data['bk_obj_name'],
+                    bk_obj_icon: data['bk_obj_icon'],
+                    bk_classification_id: data['bk_classification_id'],
+                    bk_obj_id: data['bk_obj_id'],
                     userName: this.userName
-                }
+                })
                 await this.createObject({params, config: {requestId: 'createModel'}})
                 this.$http.cancel('post_searchClassificationsObjects')
-                this.searchClassificationsObjects({})
-                this.hideModelDialog()
+                this.searchClassificationsObjects({
+                    params: this.$injectMetadata()
+                })
+                this.modelDialog.isShow = false
             },
             modelClick (model) {
+                this.$store.commit('objectModel/setActiveModel', model)
                 this.$store.commit('setHeaderStatus', {
                     back: true
                 })
-                this.$router.push(`model/details/${model['bk_obj_id']}`)
+                this.$router.push({
+                    name: 'modelDetails',
+                    params: {
+                        modelId: model['bk_obj_id']
+                    }
+                })
             }
         }
     }
@@ -359,24 +343,46 @@
 
 <style lang="scss" scoped>
     .group-wrapper {
-        position: relative;
-        height: 100%;
-        padding: 0;
-        overflow-y: auto;
+        padding: 76px 20px 20px 0;
     }
     .btn-group {
-        position: sticky;
+        position: absolute;
         top: 0;
         left: 0;
+        width: calc(100% - 8px);
         padding: 20px;
         font-size: 0;
-        z-index: 2;
         background-color: #fff;
+        z-index: 100;
         .bk-primary {
             margin-right: 10px;
         }
         &.sticky {
             box-shadow: 0 0 8px 1px rgba(0, 0, 0, 0.03);
+        }
+    }
+    .model-type-options {
+        margin: 6px 0;
+        font-size: 0;
+        text-align: right;
+        position: relative;
+        z-index: 1;
+        .model-type-button {
+            position: relative;
+            margin: 0;
+            font-size: 12px;
+            &.enable {
+                border-radius: 2px 0 0 2px;
+                z-index: 2;
+            }
+            &.disabled {
+                border-radius: 0 2px 2px 0;
+                margin-left: -1px;
+                z-index: 1;
+            }
+            &:hover {
+                z-index: 2;
+            }
         }
     }
     .group-list {
@@ -400,19 +406,28 @@
         }
         .group-title {
             display: inline-block;
-            padding: 0 40px 0 8px;
-            border-left: 4px solid $cmdbBorderColor;
-            line-height: 14px;
+            padding: 0 40px 0 0;
+            line-height: 21px;
             color: #333948;
+            &:before {
+                content: "";
+                display: inline-block;
+                width:4px;
+                height:14px;
+                margin: 0 10px 0 0;
+                vertical-align: middle;
+                background: $cmdbBorderColor;
+            }
             >span {
                 display: inline-block;
+                vertical-align: middle;
             }
             .number {
                 color: $cmdbBorderColor;
             }
             >.text-primary {
                 display: none;
-                vertical-align: top;
+                vertical-align: middle;
                 cursor: pointer;
             }
             &:hover {
@@ -430,32 +445,27 @@
             position: relative;
             float: left;
             margin: 10px 10px 0 0;
-            width: 260px;
+            width: calc((100% - 10px * 4) / 5);
             height: 70px;
             border: 1px solid $cmdbTableBorderColor;
             border-radius: 4px;
             cursor: pointer;
+            &:nth-child(5n) {
+                margin-right: 0;
+            }
             &.ispaused {
-                background: #fafbfd;
-                opacity: .6;
-                &:after {
-                    content: '';
-                    display: inline-block;
-                    position: absolute;
-                    top: -33px;
-                    right: -33px;
-                    border: 32px solid transparent;
-                    border-bottom-color: $cmdbDangerColor;
-                    transform: rotate(45deg);
+                background: #fcfdfe;
+                border-color: #dde4eb;
+                .icon-box {
+                    color: #96c2f7;
                 }
-                .paused-info {
-                    position: absolute;
-                    right: -2px;
-                    top: 7px;
-                    font-size: 12px;
-                    z-index: 1;
-                    color: #fff;
-                    transform: rotate(45deg) scale(.8);
+                .model-name {
+                    color: #bfc7d2;
+                }
+            }
+            &.ispre {
+                .icon-box {
+                    color: #798aad;
                 }
             }
             &:hover {
@@ -464,29 +474,26 @@
             }
             .icon-box {
                 float: left;
-                width: 50px;
+                width: 66px;
+                text-align: center;
+                font-size: 32px;
+                color: $cmdbBorderFocusColor;
                 .icon {
-                    padding-left: 18px;
-                    font-size: 32px;
-                    line-height: 70px;
-                    color: $cmdbBorderFocusColor;
-                    &.ispre {
-                        color: #868b97;
-                    }
+                    line-height: 68px;
                 }
             }
             .model-details {
-                float: left;
-                width: 208px;
-                line-height: 16px;
-                margin-top: 20px;
-                padding: 0 10px;
+                padding: 0 10px 0 0;
+                overflow: hidden;
             }
             .model-name {
+                margin-top: 16px;
+                line-height: 19px;
                 font-size: 14px;
                 @include ellipsis;
             }
             .model-id {
+                line-height: 16px;
                 font-size: 12px;
                 color: #bfc7d2;
                 @include ellipsis;
@@ -495,13 +502,9 @@
     }
     .dialog {
         .dialog-content {
-            padding: 20px 10px;
-            .content {
-                padding: 0 10px;
-            }
+            padding: 20px 15px 20px 28px;
         }
         .title {
-            margin-bottom: 30px;
             font-size: 20px;
             color: #333948;
             line-height: 1;
@@ -509,7 +512,7 @@
         .label-item,
         label {
             display: block;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             font-size: 0;
             &:last-child {
                 margin: 0;
@@ -524,13 +527,8 @@
             .icon-info-circle {
                 font-size: 18px;
                 color: $cmdbBorderColor;
-                // line-height: 36px;
-                // vertical-align: middle;
             }
             .label-title {
-                display: inline-block;
-                width: 85px;
-                text-align: right;
                 font-size: 16px;
                 line-height: 36px;
                 vertical-align: middle;
@@ -539,7 +537,7 @@
             .cmdb-form-item {
                 display: inline-block;
                 margin-right: 10px;
-                width: calc(100% - 130px);
+                width: 519px;
                 vertical-align: middle;
             }
         }
@@ -549,69 +547,6 @@
             text-align: right;
             .bk-primary {
                 margin-right: 10px;
-            }
-        }
-    }
-    .group-dialog {
-        .dialog-content {
-            .content {
-                padding: 30px 10px 40px;
-            }
-        }
-    }
-    .model-dialog {
-        .dialog-content {
-            position: relative;
-        }
-        .content-left {
-            float: left;
-            width: 93px;
-            height: 100px;
-            border: 1px solid #dde4eb;
-            border-radius: 4px 4px 0 0;
-            cursor: pointer;
-            .icon-wrapper {
-                width: 100%;
-                height: 68px;
-                font-size: 38px;
-                text-align: center;
-                i {
-                    vertical-align: top;
-                    line-height: 68px;
-                    color: $cmdbBorderFocusColor;
-                }
-            }
-            .text {
-                height: 30px;
-                border-top: 1px solid #dde4eb;
-                text-align: center;
-                line-height: 30px;
-                background: #ebf4ff;
-            }
-        }
-        .content-right {
-            float: right;
-            width: 460px;
-        }
-        .model-icon-wrapper {
-            position: absolute;
-            left: 0;
-            top:0;
-            width: 100%;
-            height: calc(100% + 60px);
-            background: #fff;
-            .back {
-                position: absolute;
-                right: -47px;
-                top: 0;
-                width: 44px;
-                height: 44px;
-                padding: 7px;
-                cursor: pointer;
-                font-size: 18px;
-                text-align: center;
-                background: #2f2f2f;
-                color: #fff;
             }
         }
     }

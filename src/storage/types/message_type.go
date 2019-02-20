@@ -35,6 +35,8 @@ const (
 	OPFindAndModifyCode
 	// OPCountCode count operation code
 	OPCountCode
+	// OPAggregateCode aggregate operation code
+	OPAggregateCode
 	// OPStartTransactionCode start a transaction code
 	OPStartTransactionCode OPCode = 666
 	// OPCommitCode transaction commit operation code
@@ -63,6 +65,8 @@ func (c OPCode) String() string {
 		return "OPCommit"
 	case OPAbortCode:
 		return "OPAbort"
+	case OPAggregateCode:
+		return "OPAggregate"
 	default:
 		return "UNKNOW"
 	}
@@ -73,6 +77,13 @@ type OPInsertOperation struct {
 	MsgHeader            // 标准报文头
 	Collection string    // "dbname.collectionname"
 	DOCS       Documents // 要插入集合的文档
+}
+
+// OPPipelineOperation insert operation request structure
+type OPAggregateOperation struct {
+	MsgHeader            // 标准报文头
+	Collection string    // "dbname.collectionname"
+	Pipiline   Documents // 要插入集合的文档
 }
 
 // OPUpdateOperation update operation request structure

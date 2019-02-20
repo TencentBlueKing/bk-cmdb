@@ -452,7 +452,7 @@ func (ia *importAssociation) isExistInstAsst(idx int, cond condition.Condition, 
 	}
 	if rsp.Data.Info[0].AsstInstID != dstInstID &&
 		asstMapping == metadata.OneToOneMapping {
-		return false, ia.params.Err.Errorf(common.CCErrCommDuplicateItem)
+		return false, ia.params.Err.Errorf(common.CCErrCommDuplicateItem, "")
 	}
 
 	return true, nil

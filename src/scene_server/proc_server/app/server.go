@@ -18,9 +18,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/apimachinery"
+	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -32,20 +31,26 @@ import (
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/esbserver"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
+
+	"github.com/emicklei/go-restful"
 )
 
 //Run ccapi server
 func Run(ctx context.Context, op *options.ServerOption) error {
 
+	discover, err := discovery.NewDiscoveryInterface(op.ServConf.RegDiscover)
+	if err != nil {
+		return fmt.Errorf("connect zookeeper [%s] failed: %v", op.ServConf.RegDiscover, err)
+	}
+
 	// clientset
 	apiMachConf := &util.APIMachineryConfig{
-		ZkAddr:    op.ServConf.RegDiscover,
 		QPS:       op.ServConf.Qps,
 		Burst:     op.ServConf.Burst,
 		TLSConfig: nil,
 	}
 
-	apiMachinery, err := apimachinery.NewApiMachinery(apiMachConf)
+	apiMachinery, err := apimachinery.NewApiMachinery(apiMachConf, discover)
 	if err != nil {
 		return fmt.Errorf("create api machinery object failed. err: %v", err)
 	}
@@ -80,6 +85,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		types.CC_MODULE_PROC,
 		op.ServConf.ExConfig,
 		procSvr.OnProcessConfigUpdate,
+		discover,
 		bkbCfg)
 	configReady := false
 	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {

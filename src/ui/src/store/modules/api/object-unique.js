@@ -29,7 +29,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     createObjectUniqueConstraints ({ commit, state, dispatch }, { objId, params, config }) {
-        return $http.post(`object/${objId}/unique/action/create`, params, config)
+        return $http.post(`create/objectunique/object/${objId}`, params, config)
     },
     /**
      * 编辑模型唯一约束
@@ -42,7 +42,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     updateObjectUniqueConstraints ({ commit, state, dispatch }, { objId, id, params, config }) {
-        return $http.put(`object/${objId}/unique/${id}/action/update`, params, config)
+        return $http.put(`update/objectunique/object/${objId}/unique/${id}`, params, config)
     },
     /**
      * 删除模型唯一约束
@@ -55,7 +55,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     deleteObjectUniqueConstraints ({ commit, state, dispatch }, { objId, id, config }) {
-        return $http.delete(`object/${objId}/unique/${id}/action/delete`, config)
+        return $http.delete(`delete/objectunique/object/${objId}/unique/${id}`, config)
     },
     /**
      * 删除模型唯一约束
@@ -66,8 +66,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    searchObjectUniqueConstraints ({ commit, state, dispatch }, { objId, config }) {
-        return $http.get(`object/${objId}/unique/action/search`, config)
+    searchObjectUniqueConstraints ({ commit, state, dispatch }, { objId, params, config }) {
+        return $http.post(`find/objectunique/object/${objId}`, params, config)
     }
 }
 

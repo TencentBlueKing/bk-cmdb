@@ -1,86 +1,91 @@
 <template>
     <div class="relation-type-content">
-        <label class="form-label">
-            <span class="label-text">
-                {{$t('ModelManagement["唯一标识"]')}}
-                <span class="color-danger">*</span>
-            </span>
-            <div class="cmdb-form-item" :class="{'is-error': errors.has('asstId')}">
-                <input type="text" class="cmdb-form-input"
-                name="asstId"
-                :disabled="isEdit"
-                v-model.trim="relationInfo['bk_asst_id']"
-                v-validate="'required|singlechar'"
-                :placeholder="$t('ModelManagement[\'请输入英文标识\']')">
-                <p class="form-error">{{errors.first('asstId')}}</p>
-            </div>
-        </label>
-        <label class="form-label">
-            <span class="label-text">
-                {{$t('Hosts["名称"]')}}
-            </span>
-            <div class="cmdb-form-item" :class="{'is-error': errors.has('asstName')}">
-                <input type="text"
-                class="cmdb-form-input"
-                name="asstName"
-                :disabled="isEdit && relation.ispre"
-                v-validate="'required|singlechar'"
-                v-model.trim="relationInfo['bk_asst_name']" 
-                :placeholder="$t('ModelManagement[\'请输入名称\']')">
-                <p class="form-error">{{errors.first('asstName')}}</p>
-            </div>
-        </label>
-        <label class="form-label">
-            <span class="label-text">
-                {{$t('ModelManagement["源->目标描述"]')}}
-                <span class="color-danger">*</span>
-            </span>
-            <div class="cmdb-form-item" :class="{'is-error': errors.has('srcDes')}">
-                <input type="text"
-                class="cmdb-form-input"
-                name="srcDes"
-                :disabled="isEdit && relation.ispre"
-                v-validate="'required|singlechar'"
-                v-model.trim="relationInfo['src_des']" 
-                :placeholder="$t('ModelManagement[\'请输入关联描述如：连接、运行\']')">
-                <p class="form-error">{{errors.first('srcDes')}}</p>
-            </div>
-        </label>
-        <label class="form-label">
-            <span class="label-text">
-                {{$t('ModelManagement["目标->源描述"]')}}
-                <span class="color-danger">*</span>
-            </span>
-            <div class="cmdb-form-item" :class="{'is-error': errors.has('destDes')}">
-                <input type="text"
-                class="cmdb-form-input"
-                name="destDes"
-                :disabled="isEdit && relation.ispre"
-                v-validate="'required|singlechar'"
-                v-model.trim="relationInfo['dest_des']" 
-                :placeholder="$t('ModelManagement[\'请输入关联描述如：属于、上联\']')">
-                <p class="form-error">{{errors.first('destDes')}}</p>
-            </div>
-        </label>
-        <div class="radio-box overflow">
-            <label class="label-text">
-                {{$t('ModelManagement["是否有方向"]')}}
+        <div class="content-box">
+            <label class="form-label">
+                <span class="label-text">
+                    {{$t('ModelManagement["唯一标识"]')}}
+                    <span class="color-danger">*</span>
+                </span>
+                <div class="cmdb-form-item" :class="{'is-error': errors.has('asstId')}">
+                    <input type="text" class="cmdb-form-input"
+                    name="asstId"
+                    :disabled="isEdit"
+                    v-model.trim="relationInfo['bk_asst_id']"
+                    v-validate="'required|singlechar'"
+                    :placeholder="$t('ModelManagement[\'请输入英文标识\']')">
+                    <p class="form-error">{{errors.first('asstId')}}</p>
+                </div>
             </label>
-            <label class="cmdb-form-radio cmdb-radio-small">
-                <input type="radio" name="direction" value="src_to_dest" v-model="relationInfo.direction"
-                :disabled="isEdit && relation.ispre">
-                <span class="cmdb-radio-text">{{$t('ModelManagement["有，源指向目标"]')}}</span>
+            <label class="form-label">
+                <span class="label-text">
+                    {{$t('Hosts["名称"]')}}
+                    <span class="color-danger">*</span>
+                </span>
+                <div class="cmdb-form-item" :class="{'is-error': errors.has('asstName')}">
+                    <input type="text"
+                    class="cmdb-form-input"
+                    name="asstName"
+                    :disabled="isEdit && relation.ispre"
+                    v-validate="'required|singlechar'"
+                    v-model.trim="relationInfo['bk_asst_name']" 
+                    :placeholder="$t('ModelManagement[\'请输入名称\']')">
+                    <p class="form-error">{{errors.first('asstName')}}</p>
+                </div>
             </label>
-            <label class="cmdb-form-radio cmdb-radio-small">
-                <input type="radio" name="direction" value="none" v-model="relationInfo.direction"
-                :disabled="isEdit && relation.ispre">
-                <span class="cmdb-radio-text">{{$t('ModelManagement["无方向"]')}}</span>
+            <label class="form-label">
+                <span class="label-text">
+                    {{$t('ModelManagement["源->目标描述"]')}}
+                    <span class="color-danger">*</span>
+                </span>
+                <div class="cmdb-form-item" :class="{'is-error': errors.has('srcDes')}">
+                    <input type="text"
+                    class="cmdb-form-input"
+                    name="srcDes"
+                    :disabled="isEdit && relation.ispre"
+                    v-validate="'required|singlechar'"
+                    v-model.trim="relationInfo['src_des']" 
+                    :placeholder="$t('ModelManagement[\'请输入关联描述如：连接、运行\']')">
+                    <p class="form-error">{{errors.first('srcDes')}}</p>
+                </div>
             </label>
-            <label class="cmdb-form-radio cmdb-radio-small">
-                <input type="radio" name="direction" value="bidirectional" v-model="relationInfo.direction"
-                :disabled="isEdit && relation.ispre">
-                <span class="cmdb-radio-text">{{$t('ModelManagement["双向"]')}}</span>
+            <label class="form-label">
+                <span class="label-text">
+                    {{$t('ModelManagement["目标->源描述"]')}}
+                    <span class="color-danger">*</span>
+                </span>
+                <div class="cmdb-form-item" :class="{'is-error': errors.has('destDes')}">
+                    <input type="text"
+                    class="cmdb-form-input"
+                    name="destDes"
+                    :disabled="isEdit && relation.ispre"
+                    v-validate="'required|singlechar'"
+                    v-model.trim="relationInfo['dest_des']" 
+                    :placeholder="$t('ModelManagement[\'请输入关联描述如：属于、上联\']')">
+                    <p class="form-error">{{errors.first('destDes')}}</p>
+                </div>
             </label>
+            <div class="radio-box overflow">
+                <div class="radio-box overflow">
+                    <label class="label-text">
+                        {{$t('ModelManagement["是否有方向"]')}}
+                    </label>
+                    <label class="cmdb-form-radio cmdb-radio-small">
+                        <input type="radio" name="direction" value="src_to_dest" v-model="relationInfo.direction"
+                        :disabled="isEdit && relation.ispre">
+                        <span class="cmdb-radio-text">{{$t('ModelManagement["有，源指向目标"]')}}</span>
+                    </label>
+                    <label class="cmdb-form-radio cmdb-radio-small">
+                        <input type="radio" name="direction" value="none" v-model="relationInfo.direction"
+                        :disabled="isEdit && relation.ispre">
+                        <span class="cmdb-radio-text">{{$t('ModelManagement["无方向"]')}}</span>
+                    </label>
+                    <label class="cmdb-form-radio cmdb-radio-small">
+                        <input type="radio" name="direction" value="bidirectional" v-model="relationInfo.direction"
+                        :disabled="isEdit && relation.ispre">
+                        <span class="cmdb-radio-text">{{$t('ModelManagement["双向"]')}}</span>
+                    </label>
+                </div>
+            </div>
         </div>
         <slot name="operation">
             <div class="btn-group">
@@ -186,17 +191,19 @@
 
 <style lang="scss" scoped>
     .relation-type-content {
-        .radio-box {
-            .cmdb-form-radio {
-                width: auto;
-                padding-right: 20px;
-                vertical-align: middle;
-                &:last-child {
-                    padding-right: 0;
+        .content-box {
+            .radio-box {
+                .cmdb-form-radio {
+                    width: auto;
+                    padding-right: 20px;
+                    vertical-align: middle;
+                    &:last-child {
+                        padding-right: 0;
+                    }
                 }
-            }
-            .label-text {
-                padding-right: 2px;
+                .label-text {
+                    padding-right: 2px;
+                }
             }
         }
     }

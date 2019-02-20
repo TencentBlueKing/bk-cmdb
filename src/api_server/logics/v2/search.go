@@ -14,7 +14,6 @@ package logics
 
 import (
 	"context"
-	"net/http"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -22,24 +21,21 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/paraparse"
-	"configcenter/src/common/util"
 )
 
-func (lgc *Logics) GetAllHostAndModuleRelation(ctx context.Context, ownerID string, pheader http.Header) ([]mapstr.MapStr, errors.CCError) {
-
-	pheader.Set(common.BKHTTPOwnerID, ownerID)
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+func (lgc *Logics) GetAllHostAndModuleRelation(ctx context.Context) ([]mapstr.MapStr, errors.CCError) {
+	defErr := lgc.ccErr
 
 	appConds := &metadata.SearchParams{
-		Condition: map[string]interface{}{common.BKOwnerIDField: ownerID},
+		Condition: map[string]interface{}{common.BKOwnerIDField: lgc.ownerID},
 	}
-	appList, err := lgc.CoreAPI.TopoServer().Instance().InstSearch(ctx, ownerID, common.BKInnerObjIDApp, pheader, appConds)
+	appList, err := lgc.CoreAPI.TopoServer().Instance().InstSearch(ctx, lgc.ownerID, common.BKInnerObjIDApp, lgc.header, appConds)
 	if nil != err {
-		blog.Errorf("GetAllHostAndModuleRelation error:%s, request-id:%s", err.Error(), util.GetHTTPCCRequestID(pheader))
+		blog.Errorf("GetAllHostAndModuleRelation http do error,err:%s,input:%#v,rid:%s", err.Error(), appConds, lgc.rid)
 		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !appList.Result {
-		blog.Errorf("GetAllHostAndModuleRelation error:%s, request-id:%s", appList.ErrMsg, util.GetHTTPCCRequestID(pheader))
+		blog.Errorf("GetAllHostAndModuleRelation http reply error, reply:%#v,input:%#v,rid:%s", appList, appConds, lgc.rid)
 		return nil, defErr.New(appList.Code, appList.ErrMsg)
 	}
 
@@ -61,17 +57,17 @@ func (lgc *Logics) GetAllHostAndModuleRelation(ctx context.Context, ownerID stri
 		},
 	}
 
-	hostList, err := lgc.CoreAPI.HostServer().SearchHost(ctx, pheader, dat)
+	hostList, err := lgc.CoreAPI.HostServer().SearchHost(ctx, lgc.header, dat)
 	if nil != err {
-		blog.Errorf("GetAllHostAndModuleRelation error:%s, request-id:%s", err.Error(), util.GetHTTPCCRequestID(pheader))
+		blog.Errorf("GetAllHostAndModuleRelation error:%s, rid:%s", err.Error(), lgc.rid)
 		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !hostList.Result {
-		blog.Errorf("GetAllHostAndModuleRelation error:%s, request-id:%s", hostList.ErrMsg, util.GetHTTPCCRequestID(pheader))
+		blog.Errorf("GetAllHostAndModuleRelation error:%s, rid:%s", hostList.ErrMsg, lgc.rid)
 		return nil, defErr.New(hostList.Code, hostList.ErrMsg)
 	}
 
-	hostAppRelation, err := lgc.handleHostAppRelationByHostModuleInfo(hostList.Data.Info, ownerID, pheader)
+	hostAppRelation, err := lgc.handleHostAppRelationByHostModuleInfo(hostList.Data.Info, lgc.ownerID)
 	if nil != err {
 		return nil, err
 	}
@@ -79,8 +75,9 @@ func (lgc *Logics) GetAllHostAndModuleRelation(ctx context.Context, ownerID stri
 	for _, app := range appList.Data.Info {
 		appID, err := app.Int64(common.BKAppIDField)
 		if nil != err {
-			blog.Errorf("GetAllHostAndModuleRelation not found app id, app info:%+v, owner:%s, request-id:%s", app, ownerID, util.GetHTTPCCRequestID(pheader))
-			return nil, defErr.New(hostList.Code, hostList.ErrMsg)
+			blog.Errorf("GetAllHostAndModuleRelation not found app id, app info:%+v, owner:%s, rid:%s", app, lgc.ownerID, lgc.rid)
+			// CCErrCommInstFieldConvFail  convert %s  field %s to %s error %s
+			return nil, defErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDApp, common.BKAppIDField, "int", err.Error())
 		}
 		hostInfoArr, ok := hostAppRelation[appID]
 		if ok {
@@ -96,20 +93,19 @@ func (lgc *Logics) GetAllHostAndModuleRelation(ctx context.Context, ownerID stri
 
 }
 
-func (lgc *Logics) handleHostAppRelationByHostModuleInfo(hostInfoArr []mapstr.MapStr, ownerID string, pheader http.Header) (map[int64][]mapstr.MapStr, errors.CCError) {
-
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+func (lgc *Logics) handleHostAppRelationByHostModuleInfo(hostInfoArr []mapstr.MapStr, ownerID string) (map[int64][]mapstr.MapStr, errors.CCError) {
+	defErr := lgc.ccErr
 
 	hostAppRelation := make(map[int64][]mapstr.MapStr, 0)
 	for _, host := range hostInfoArr {
 		moduleArr, ok := host[common.BKInnerObjIDModule].([]interface{})
 		if !ok {
-			blog.Warnf("GetAllHostAndModuleRelation not found module, owner:%s, request-id:%s", ownerID, util.GetHTTPCCRequestID(pheader))
+			blog.Warnf("GetAllHostAndModuleRelation not found module, owner:%s,hostInfo:%#v, rid:%s", ownerID, host, lgc.rid)
 			continue
 		}
 		hostDetail, ok := host[common.BKInnerObjIDHost].(map[string]interface{})
 		if !ok {
-			blog.Errorf("GetAllHostAndModuleRelation not found host, owner:%s, request-id:%s", ownerID, util.GetHTTPCCRequestID(pheader))
+			blog.Errorf("GetAllHostAndModuleRelation not found host, owner:%s,hostInfo:%#v, rid:%s", ownerID, host, lgc.rid)
 			return nil, defErr.Errorf(common.CCErrAPIServerV2DirectErr, "not foud host detail")
 		}
 		cloudArr, ok := hostDetail[common.BKCloudIDField].([]interface{})
@@ -117,12 +113,12 @@ func (lgc *Logics) handleHostAppRelationByHostModuleInfo(hostInfoArr []mapstr.Ma
 			if 0 < len(cloudArr) {
 				cloudMap, err := mapstr.NewFromInterface(cloudArr[0])
 				if nil != err {
-					blog.Errorf("GetAllHostAndModuleRelation not found host, owner:%s, request-id:%s", ownerID, util.GetHTTPCCRequestID(pheader))
+					blog.Errorf("GetAllHostAndModuleRelation not found host, owner:%s, rid:%s", ownerID, lgc.rid)
 					return nil, defErr.Errorf(common.CCErrAPIServerV2DirectErr, "not foud host Source")
 				}
 				hostDetail[common.BKCloudIDField], err = cloudMap.Int64(common.BKInstIDField)
 				if nil != err {
-					blog.Errorf("GetAllHostAndModuleRelation not found host, owner:%s, request-id:%s", ownerID, util.GetHTTPCCRequestID(pheader))
+					blog.Errorf("GetAllHostAndModuleRelation not found host, owner:%s, rid:%s", ownerID, lgc.rid)
 					return nil, defErr.Errorf(common.CCErrAPIServerV2DirectErr, "not foud host Source")
 				}
 			}
@@ -131,7 +127,7 @@ func (lgc *Logics) handleHostAppRelationByHostModuleInfo(hostInfoArr []mapstr.Ma
 			moduleMap, _ := mapstr.NewFromInterface(module)
 			appID, err := moduleMap.Int64(common.BKAppIDField)
 			if nil != err {
-				blog.Warnf("GetAllHostAndModuleRelation not found app id from module info,, module info:%+v, owner:%s, request-id:%s", host, ownerID, util.GetHTTPCCRequestID(pheader))
+				blog.Warnf("GetAllHostAndModuleRelation not found app id from module info,, module info:%+v, owner:%s, rid:%s", host, ownerID, lgc.rid)
 				continue
 			}
 			if _, ok := hostAppRelation[appID]; !ok {
