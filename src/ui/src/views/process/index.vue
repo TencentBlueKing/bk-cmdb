@@ -1,8 +1,6 @@
 <template>
     <div class="process-wrapper">
         <div class="process-filter clearfix">
-            <cmdb-business-selector class="business-selector" v-model="filter.bizId">
-            </cmdb-business-selector>
             <bk-button class="process-btn"
                 type="default"
                 :disabled="!table.checked.length || !authority.includes('update')" 
@@ -72,7 +70,7 @@
                     <v-module v-if="tab.active === 'moduleBind'"
                         :authority="authority"
                         :processId="attribute.inst.details['bk_process_id']"
-                        :bizId="filter.bizId"
+                        :bizId="bizId"
                     ></v-module>
                 </bk-tabpanel>
                 <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')" :show="attribute.type === 'details'">
@@ -113,9 +111,7 @@
                     active: 'attribute'
                 },
                 filter: {
-                    bizId: '',
-                    text: '',
-                    businessResolver: null
+                    text: ''
                 },
                 table: {
                     header: [],
@@ -134,7 +130,8 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount'])
+            ...mapGetters(['supplierAccount']),
+            ...mapGetters('objectBiz', ['bizId'])
         },
         watch: {
             'filter.bizId' () {
@@ -173,7 +170,7 @@
             },
             handleMultipleSave (values) {
                 this.batchUpdateProcess({
-                    bizId: this.filter.bizId,
+                    bizId: this.bizId,
                     params: {
                         ...values,
                         bk_process_id: this.table.checked.join(',')
@@ -189,27 +186,18 @@
             handleMultipleCancel () {
                 this.slider.show = false
             },
-            getBusiness () {
-                return new Promise((resolve, reject) => {
-                    this.filter.businessResolver = () => {
-                        this.filter.businessResolver = null
-                        resolve()
-                    }
-                })
-            },
             async reload () {
                 this.properties = await this.searchObjectAttribute({
-                    params: {
+                    params: this.$injectMetadata({
                         bk_obj_id: 'process',
                         bk_supplier_account: this.supplierAccount
-                    },
+                    }),
                     config: {
                         requestId: `post_searchObjectAttribute_process`,
                         fromCache: true
                     }
                 })
                 await Promise.all([
-                    this.getBusiness(),
                     this.getPropertyGroups(),
                     this.setTableHeader()
                 ])
@@ -218,6 +206,7 @@
             getPropertyGroups () {
                 return this.searchGroup({
                     objId: 'process',
+                    params: this.$injectMetadata(),
                     config: {
                         fromCache: true,
                         requestId: 'post_searchGroup_process'
@@ -267,7 +256,7 @@
                     title: this.$t("Common['确认要删除']", {name: process['bk_process_name']}),
                     confirmFn: () => {
                         this.deleteProcess({
-                            bizId: this.filter.bizId,
+                            bizId: this.bizId,
                             processId: process['bk_process_id']
                         }).then(() => {
                             this.slider.show = false
@@ -280,13 +269,13 @@
             handleSave (values, changedValues, originalValues, type) {
                 if (type === 'update') {
                     this.updateProcess({
-                        bizId: this.filter.bizId,
+                        bizId: this.bizId,
                         processId: originalValues['bk_process_id'],
                         params: values
                     }).then(() => {
                         this.getTableData()
                         this.searchProcessById({
-                            bizId: this.filter.bizId,
+                            bizId: this.bizId,
                             processId: originalValues['bk_process_id']
                         }).then(process => {
                             this.attribute.inst.details = this.$tools.flatternItem(this.properties, process)
@@ -297,7 +286,7 @@
                 } else {
                     this.createProcess({
                         params: values,
-                        bizId: this.filter.bizId
+                        bizId: this.bizId
                     }).then(() => {
                         this.handlePageChange(1)
                         this.handleCancel()
@@ -314,14 +303,14 @@
             },
             getProcessList (config = {cancelPrevious: true}) {
                 return this.searchProcess({
-                    bizId: this.filter.bizId,
+                    bizId: this.bizId,
                     params: this.getSearchParams(),
                     config: Object.assign({requestId: 'post_searchProcess_list'}, config)
                 })
             },
             getAllProcessList () {
                 return this.searchProcess({
-                    bizId: this.filter.bizId,
+                    bizId: this.bizId,
                     params: {
                         ...this.getSearchParams(),
                         page: {}
@@ -342,7 +331,7 @@
             getSearchParams () {
                 let params = {
                     condition: {
-                        'bk_biz_id': this.filter.bizId
+                        'bk_biz_id': this.bizId
                     },
                     fields: [],
                     page: {

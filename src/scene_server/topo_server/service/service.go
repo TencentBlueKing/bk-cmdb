@@ -34,6 +34,8 @@ import (
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
 	"configcenter/src/scene_server/topo_server/core/types"
+	"configcenter/src/storage/dal"
+	mongo "configcenter/src/storage/dal/mongo/remote"
 
 	"github.com/emicklei/go-restful"
 )
@@ -53,6 +55,7 @@ func New() TopoServiceInterface {
 // topoService topo service
 type topoService struct {
 	engin    *backbone.Engine
+	tx       dal.DB
 	language language.CCLanguageIf
 	err      errors.CCErrorIf
 	actions  []action
@@ -64,11 +67,22 @@ type topoService struct {
 func (s *topoService) SetConfig(cfg options.Config, engin *backbone.Engine) {
 	s.cfg = cfg
 	s.engin = engin
+
 	authAPI, err := wrapper.NewAuthAPI()
 	if err != nil {
 		blog.Errorf("it is failed to create a new auth API, err:%s", err.Error())
 	}
 	s.authAPI = authAPI
+
+	var dbErr error
+	s.tx, dbErr = mongo.NewWithDiscover(engin.
+		Discover.
+		TMServer().
+		GetServers, cfg.Mongo)
+	if dbErr != nil {
+		blog.Errorf("failed to connect the txc server, error info is %s", dbErr.Error())
+		return
+	}
 }
 
 // SetOperation set the operation

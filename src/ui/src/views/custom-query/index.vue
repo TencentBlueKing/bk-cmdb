@@ -1,10 +1,6 @@
 <template>
     <div class="api-wrapper">
         <div class="filter-wrapper clearfix">
-            <cmdb-business-selector
-                class="business-selector"
-                v-model="filter.bizId"
-            ></cmdb-business-selector>
             <bk-button type="primary" class="api-btn"
                 :disabled="!authority.includes('update')"
                 @click="showUserAPISlider('create')">
@@ -47,7 +43,7 @@
                 ref="define"
                 :authority="authority"
                 :id="slider.id"
-                :bizId="filter.bizId"
+                :bizId="bizId"
                 :type="slider.type"
                 @delete="getUserAPIList"
                 @create="handleCreate"
@@ -59,7 +55,7 @@
 </template>
 
 <script>
-    import { mapActions } from 'vuex'
+    import { mapActions, mapGetters } from 'vuex'
     import vDefine from './define'
     export default {
         components: {
@@ -68,7 +64,6 @@
         data () {
             return {
                 filter: {
-                    bizId: '',
                     name: ''
                 },
                 table: {
@@ -111,24 +106,20 @@
             }
         },
         computed: {
+            ...mapGetters('objectBiz', ['bizId']),
             searchParams () {
                 let params = {
                     start: (this.table.pagination.current - 1) * this.table.pagination.size,
                     limit: this.table.pagination.size,
                     sort: this.table.sort
                 }
-                this.filter.bkBizId ? params['bk_biz_id'] = this.filter.bizId : void (0)
                 this.filter.name ? params['condition'] = {'name': this.filter.name} : void (0)
                 return params
             }
         },
-        watch: {
-            'filter.bizId' () {
-                this.getUserAPIList()
-            }
-        },
         created () {
             this.$store.commit('setHeaderTitle', this.$t('Nav["动态分组"]'))
+            this.getUserAPIList()
         },
         methods: {
             ...mapActions('hostCustomApi', [
@@ -162,7 +153,7 @@
             },
             async getUserAPIList () {
                 const res = await this.searchCustomQuery({
-                    bizId: this.filter.bizId,
+                    bizId: this.bizId,
                     params: this.searchParams,
                     config: {
                         requestId: 'searchCustomQuery'

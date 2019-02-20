@@ -14,17 +14,15 @@ package service
 
 import (
 	"context"
-	"log"
 	"net/http"
-	"os"
-
-	"configcenter/src/storage/tmserver/app/options"
-	"configcenter/src/storage/tmserver/core/transaction"
 
 	"configcenter/src/common/backbone"
+	"configcenter/src/common/blog"
 	"configcenter/src/storage/mongodb"
 	"configcenter/src/storage/rpc"
+	"configcenter/src/storage/tmserver/app/options"
 	"configcenter/src/storage/tmserver/core"
+	"configcenter/src/storage/tmserver/core/transaction"
 	"configcenter/src/storage/types"
 
 	restful "github.com/emicklei/go-restful"
@@ -80,8 +78,8 @@ func (s *coreService) WebService() *restful.WebService {
 
 	restful.DefaultRequestContentType(restful.MIME_JSON)
 	restful.DefaultResponseContentType(restful.MIME_JSON)
-	restful.SetLogger(log.New(os.Stdout, "restful", log.LstdFlags))
-	restful.TraceLogger(log.New(os.Stdout, "restful", log.LstdFlags))
+	restful.SetLogger(&blog.GlogWriter{})
+	restful.TraceLogger(&blog.GlogWriter{})
 
 	ws := &restful.WebService{}
 	ws.Path("/txn/v3")

@@ -201,10 +201,10 @@
             ...mapActions('hostSearch', ['searchHost']),
             getAsstObjProperties () {
                 return this.searchObjectAttribute({
-                    params: {
+                    params: this.$injectMetadata({
                         'bk_obj_id': this.currentAsstObj,
                         'bk_supplier_account': this.supplierAccount
-                    },
+                    }),
                     config: {
                         requestId: `post_searchObjectAttribute_${this.currentAsstObj}`
                     }
@@ -256,29 +256,36 @@
             getObjAssociation () {
                 return Promise.all([
                     this.searchObjectAssociation({
-                        params: {
+                        params: this.$injectMetadata({
                             condition: {
                                 'bk_obj_id': this.objId
                             }
-                        },
+                        }),
                         config: {
                             requestId: 'getSourceAssocaition',
                             fromCache: true
                         }
                     }),
                     this.searchObjectAssociation({
-                        params: {
+                        params: this.$injectMetadata({
                             condition: {
                                 'bk_asst_obj_id': this.objId
                             }
-                        },
+                        }),
                         config: {
                             requestId: 'getTargetAssocaition',
                             fromCache: true
                         }
                     }),
-                    this.$store.dispatch('objectMainLineModule/searchMainlineObject', {requestId: 'getMainLineModels', fromCache: true})
+                    this.$store.dispatch('objectMainLineModule/searchMainlineObject', {
+                        config: {
+                            requestId: 'getMainLineModels',
+                            fromCache: true
+                        }
+                    })
                 ]).then(([dataAsSource, dataAsTarget, mainLineModels]) => {
+                    dataAsSource = dataAsSource || []
+                    dataAsTarget = dataAsTarget || []
                     mainLineModels = mainLineModels.filter(model => !['biz', 'host'].includes(model['bk_obj_id']))
                     dataAsSource = this.getAvailableAssociation(dataAsSource, mainLineModels)
                     dataAsTarget = this.getAvailableAssociation(dataAsTarget, mainLineModels)
@@ -325,7 +332,7 @@
                 const option = this.currentOption
                 const isSource = this.isSource
                 return this.searchInstAssociation({
-                    params: {
+                    params: this.$injectMetadata({
                         condition: {
                             'bk_asst_id': option['bk_asst_id'],
                             'bk_obj_asst_id': option['bk_obj_asst_id'],
@@ -333,9 +340,9 @@
                             'bk_asst_obj_id': isSource ? option['bk_asst_obj_id'] : this.objId,
                             [`${isSource ? 'bk_inst_id' : 'bk_asst_inst_id'}`]: this.instId
                         }
-                    }
+                    })
                 }).then(data => {
-                    this.existInstAssociation = data
+                    this.existInstAssociation = data || []
                 })
             },
             isAssociated (inst) {
@@ -355,7 +362,7 @@
                         await this.deleteAssociation(instId)
                         this.$success(this.$t('Association["取消关联成功"]'))
                     } else if (updateType === 'update') {
-                        await this.deleteAssociation(this.existInstAssociation[0]['bk_asst_inst_id'])
+                        await this.deleteAssociation(this.isSource ? this.existInstAssociation[0]['bk_asst_inst_id'] : this.existInstAssociation[0]['bk_inst_id'])
                         await this.createAssociation(instId)
                         this.$success(this.$t('Association["添加关联成功"]'))
                     }
@@ -366,11 +373,11 @@
             },
             createAssociation (instId) {
                 return this.createInstAssociation({
-                    params: {
+                    params: this.$injectMetadata({
                         'bk_obj_asst_id': this.currentOption['bk_obj_asst_id'],
                         'bk_inst_id': this.isSource ? this.instId : instId,
                         'bk_asst_inst_id': this.isSource ? instId : this.instId
-                    }
+                    })
                 })
             },
             deleteAssociation (instId) {
@@ -477,7 +484,7 @@
             getObjInstance (objId, config) {
                 return this.searchInst({
                     objId: objId,
-                    params: this.getObjParams(),
+                    params: this.$injectMetadata(this.getObjParams()),
                     config
                 })
             },

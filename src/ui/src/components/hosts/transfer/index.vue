@@ -146,7 +146,9 @@
             ]),
             getMainlineModel () {
                 return this.searchMainlineObject({
-                    requestId: 'get_searchMainlineObject'
+                    config: {
+                        requestId: 'get_searchMainlineObject'
+                    }
                 }).then(topoModel => {
                     this.topoModel = topoModel
                     return topoModel

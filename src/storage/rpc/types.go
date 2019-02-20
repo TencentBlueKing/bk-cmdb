@@ -20,6 +20,8 @@ import (
 	"sync"
 
 	"configcenter/src/common/util"
+
+	"github.com/mongodb/mongo-go-driver/bson"
 )
 
 // Errors define
@@ -166,6 +168,18 @@ func (jsonCodec) Encode(v interface{}) ([]byte, error) {
 	return buf.Bytes(), err
 }
 
+type bsonCodec struct{}
+
+// BSONCodec implements Codec interface
+var BSONCodec Codec = new(bsonCodec)
+
+func (bsonCodec) Decode(data []byte, v interface{}) error {
+	return bson.Unmarshal(data, v)
+}
+func (bsonCodec) Encode(v interface{}) ([]byte, error) {
+	return bson.Marshal(v)
+}
+
 const (
 	// MagicVersion is the cc rpc protocal version
 	MagicVersion = uint16(0x1b01) // cmdb01
@@ -220,6 +234,10 @@ func (msg *Message) Encode(value interface{}) error {
 		msg.Data, err = msg.codec.Encode(value)
 	}
 	return err
+}
+
+func (msg *Message) String() string {
+	return string(msg.Data)
 }
 
 type ClientConfig struct {

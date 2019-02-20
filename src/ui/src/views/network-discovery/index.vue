@@ -102,20 +102,27 @@
                 this.$store.commit('setHeaderStatus', {
                     back: true
                 })
-                this.$router.push('/network-discovery/config')
+                this.$router.push({name: 'networkDiscoveryConfig'})
             },
             routeToConfirm (item) {
                 this.$store.commit('setHeaderStatus', {
                     back: true
                 })
                 this.setCloudName(item['bk_cloud_name'])
-                this.$router.push(`/network-discovery/${item['bk_cloud_id']}/confirm`)
+                this.$router.push({
+                    name: 'networkDiscoveryConfirm',
+                    params: {
+                        cloudId: item['bk_cloud_id']
+                    }
+                })
             },
             routeToHistory () {
                 this.$store.commit('setHeaderStatus', {
                     back: true
                 })
-                this.$router.push('/network-discovery/history')
+                this.$router.push({
+                    name: 'networkDiscoveryHistory'
+                })
             },
             async getTableData () {
                 const res = await this.searchNetcollect({params: {}, config: {requestId: 'searchNetcollect'}})

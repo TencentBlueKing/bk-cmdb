@@ -184,6 +184,9 @@ const (
 	// BKDBPush the db opeartor
 	BKDBPush = "$push"
 
+	// BKDBUNSET the db opeartor
+	BKDBUNSET = "$unset"
+
 	// BKDBSortFieldSep the db sort field split char
 	BKDBSortFieldSep = ","
 )

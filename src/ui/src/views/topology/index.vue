@@ -6,8 +6,6 @@
             :handler-offset="3"
             :min="200"
             :max="480">
-            <cmdb-business-selector class="business-selector" v-model="business">
-            </cmdb-business-selector>
             <div class="tree-simplify" v-if="false && tree.simplifyAvailable">
                 <cmdb-form-bool class="tree-simplify-checkbox"
                     :size="16"
@@ -72,7 +70,7 @@
                         {{$t("HostResourcePool['刷新查询']")}}
                     </bk-button>
                     <cmdb-hosts-table class="topo-table" ref="topoTable"
-                        :columns-config-key="table.columnsConfigKey"
+                        :columns-config-key="columnsConfigKey"
                         :columns-config-properties="columnsConfigProperties"
                         :quick-search="true"
                         @on-quick-search="handleQuickSearch">
@@ -84,7 +82,8 @@
                     <cmdb-details class="topology-details"
                         v-if="isNodeDetailsActive"
                         :authority="['search', 'update', 'delete']"
-                        :showDelete="false"
+                        :show-delete="false"
+                        :show-options="!isAdminView"
                         :properties="tab.properties"
                         :property-groups="tab.propertyGroups"
                         :inst="tree.flatternedSelectedNodeInst"
@@ -108,7 +107,7 @@
                     :show="showProcessPanel">
                     <cmdb-topo-node-process
                         v-if="tab.active === 'process'"
-                        :business="business"
+                        :business="bizId"
                         :module="tree.selectedNode">
                     </cmdb-topo-node-process>
                 </bk-tabpanel>
@@ -164,7 +163,6 @@
                 },
                 table: {
                     params: null,
-                    columnsConfigKey: 'topology_table_columns',
                     quickSearch: {
                         property: null,
                         value: '',
@@ -174,7 +172,11 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount']),
+            ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
+            ...mapGetters('objectBiz', ['bizId']),
+            columnsConfigKey () {
+                return `${this.userName}_$topology_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
+            },
             columnsConfigProperties () {
                 const setProperties = this.properties.set.filter(property => ['bk_set_name'].includes(property['bk_property_id']))
                 const moduleProperties = this.properties.module.filter(property => ['bk_module_name'].includes(property['bk_property_id']))
@@ -237,7 +239,7 @@
             this.$store.commit('setHeaderTitle', this.$t('Nav["业务拓扑"]'))
             try {
                 await Promise.all([
-                    this.getBusiness(),
+                    // this.getBusiness(),
                     this.getProperties()
                 ])
                 await this.getMainlineModel()
@@ -285,10 +287,10 @@
             },
             getProperties () {
                 return this.batchSearchObjectAttribute({
-                    params: {
+                    params: this.$injectMetadata({
                         bk_obj_id: {'$in': Object.keys(this.properties)},
                         bk_supplier_account: this.supplierAccount
-                    },
+                    }),
                     config: {
                         requestId: `post_batchSearchObjectAttribute_${Object.keys(this.properties).join('_')}`
                     }
@@ -305,10 +307,10 @@
                     return Promise.resolve(this.properties[objId])
                 }
                 return this.searchObjectAttribute({
-                    params: {
+                    params: this.$injectMetadata({
                         'bk_obj_id': objId,
                         'bk_supplier_account': this.supplierAccount
-                    },
+                    }),
                     config: {
                         requestId: `post_searchObjectAttribute_${objId}`
                     }
@@ -322,6 +324,7 @@
                 this.tab.propertyGroups = []
                 this.searchGroup({
                     objId,
+                    params: this.$injectMetadata(),
                     config: {
                         requestId: `post_searchGroup_${objId}`
                     }
@@ -352,7 +355,7 @@
                 if (objId === 'set') {
                     requestParams.condition['bk_set_id'] = instId
                     promise = this.searchSet({
-                        bizId: this.business,
+                        bizId: this.bizId,
                         params: requestParams,
                         config: requestConfig
                     })
@@ -360,7 +363,7 @@
                     requestParams.condition['bk_module_id'] = instId
                     requestParams.condition['bk_supplier_account'] = this.supplierAccount
                     promise = this.searchModule({
-                        bizId: this.business,
+                        bizId: this.bizId,
                         setId: this.tree.selectedNodeState.parent.node['bk_inst_id'],
                         params: requestParams,
                         config: requestConfig
@@ -374,7 +377,7 @@
                     }]
                     promise = this.searchInst({
                         objId,
-                        params: requestParams,
+                        params: this.$injectMetadata(requestParams),
                         config: requestConfig
                     })
                 }
@@ -385,7 +388,9 @@
             },
             getMainlineModel () {
                 return this.searchMainlineObject({
-                    requestId: 'get_searchMainlineObject'
+                    config: {
+                        requestId: 'get_searchMainlineObject'
+                    }
                 }).then(topoModel => {
                     this.topoModel = topoModel
                     return topoModel
@@ -394,16 +399,16 @@
             getBusinessTopo () {
                 return Promise.all([
                     this.getInstTopo({
-                        bizId: this.business,
+                        bizId: this.bizId,
                         config: {
-                            requestId: `get_getInstTopo_${this.business}`,
+                            requestId: `get_getInstTopo_${this.bizId}`,
                             cancelPrevious: true
                         }
                     }),
                     this.getInternalTopo({
-                        bizId: this.business,
+                        bizId: this.bizId,
                         config: {
-                            requestId: `get_getInternalTopo_${this.business}`,
+                            requestId: `get_getInternalTopo_${this.bizId}`,
                             cancelPrevious: true
                         }
                     })
@@ -459,7 +464,7 @@
                 this.handleRefresh()
             },
             handleRefresh (resetPage = true) {
-                this.$refs.topoTable.search(this.business, this.table.params, true)
+                this.$refs.topoTable.search(this.bizId, this.table.params, true)
             },
             setSearchParams () {
                 const necessaryObj = Object.keys(this.properties)
@@ -582,7 +587,7 @@
                 const nextObjId = selectedNodeModel['bk_next_obj']
                 const formData = {
                     ...value,
-                    'bk_biz_id': this.business,
+                    'bk_biz_id': this.bizId,
                     'bk_parent_id': selectedNode['bk_inst_id']
                 }
                 let promise
@@ -593,7 +598,7 @@
                     instIdKey = 'bk_set_id'
                     instNameKey = 'bk_set_name'
                     promise = this.createSet({
-                        bizId: this.business,
+                        bizId: this.bizId,
                         params: formData
                     })
                 } else if (nextObjId === 'module') {
@@ -601,7 +606,7 @@
                     instIdKey = 'bk_module_id'
                     instNameKey = 'bk_module_name'
                     promise = this.createModule({
-                        bizId: this.business,
+                        bizId: this.bizId,
                         setId: selectedNode['bk_inst_id'],
                         params: formData
                     })
@@ -610,7 +615,7 @@
                     instNameKey = 'bk_inst_name'
                     promise = this.createInst({
                         objId: nextObjId,
-                        params: formData
+                        params: this.$injectMetadata(formData)
                     })
                 }
                 promise.then(inst => {
@@ -644,14 +649,14 @@
                 if (objId === 'set') {
                     formData['bk_supplier_account'] = this.supplierAccount
                     promise = this.updateSet({
-                        bizId: this.business,
+                        bizId: this.bizId,
                         setId: selectedNode['bk_inst_id'],
                         params: formData
                     })
                 } else if (objId === 'module') {
                     formData['bk_supplier_account'] = this.supplierAccount
                     promise = this.updateModule({
-                        bizId: this.business,
+                        bizId: this.bizId,
                         setId: this.tree.selectedNodeInst['bk_set_id'],
                         moduleId: selectedNode['bk_inst_id'],
                         params: formData
@@ -701,13 +706,13 @@
                         let promise
                         if (objId === 'set') {
                             promise = this.deleteSet({
-                                bizId: this.business,
+                                bizId: this.bizId,
                                 setId: selectedNode['bk_inst_id'],
                                 config
                             })
                         } else if (objId === 'module') {
                             promise = this.deleteModule({
-                                bizId: this.business,
+                                bizId: this.bizId,
                                 setId: parentNode['bk_inst_id'],
                                 moduleId: selectedNode['bk_inst_id'],
                                 config
@@ -716,7 +721,10 @@
                             promise = this.deleteInst({
                                 objId,
                                 instId: selectedNode['bk_inst_id'],
-                                config
+                                config: {
+                                    ...config,
+                                    data: this.$injectMetadata({})
+                                }
                             })
                         }
                         promise.then(() => {
@@ -732,7 +740,7 @@
                 const selected = state.selected
                 const isBlueKing = this.tree.data[0]['bk_inst_name'] === '蓝鲸'
                 const isModule = node['bk_obj_id'] === 'module'
-                return selected && !isBlueKing && !isModule
+                return !this.isAdminView && selected && !isBlueKing && !isModule
             },
             simplifyTree () {
                 this.$refs.topoTree.selectNode(this.getTopoNodeId(this.tree.data[0]))

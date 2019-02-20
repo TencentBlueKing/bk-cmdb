@@ -27,7 +27,7 @@ import (
 	"configcenter/src/scene_server/datacollection/datacollection/middleware"
 	"configcenter/src/scene_server/datacollection/datacollection/netcollect"
 	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/mongo"
+	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/redis"
 )
 
@@ -53,7 +53,7 @@ func (d *DataCollection) Run() error {
 	}
 	blog.Infof("[datacollect][RUN]connected to cc redis %+v", d.Config.CCRedis)
 
-	db, err := mongo.NewMgo(d.Config.MongoDB.BuildURI(), time.Minute)
+	db, err := local.NewMgo(d.Config.MongoDB.BuildURI(), time.Minute)
 	if err != nil {
 		blog.Errorf("[datacollection][RUN] connect mongo failed: %v", err)
 		return fmt.Errorf("connect mongo server failed %s", err.Error())

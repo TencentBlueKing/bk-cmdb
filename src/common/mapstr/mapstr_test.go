@@ -342,3 +342,34 @@ func TestEmbedMap(t *testing.T) {
 	t.Logf("output:%#v", out)
 
 }
+
+func TestClone(t *testing.T) {
+
+	type targetTest struct {
+		Field1        string  `field:"field_one"`
+		Field2        int     `field:"field_two"`
+		Field3        float64 `field:"field_float"`
+		Labels        Label   `field:"field_mapstr"`
+		privateField  string
+		*TargetInline `field:"field_inline_target"`
+	}
+
+	targetMapStr := mapstr.MapStr{
+		"struct": &targetTest{
+			Field1:       "field1",
+			Field2:       2,
+			Field3:       3.3,
+			privateField: "hello private",
+			Labels:       Label{"key": "value"},
+			TargetInline: &TargetInline{
+				Field1Inline: "field_in_line",
+				Field2Inline: 2,
+			},
+		},
+	}
+
+	cloneInst := targetMapStr.Clone()
+	(cloneInst["struct"].(*targetTest)).TargetInline.Field1Inline = "inline_hello"
+	t.Logf("origin:%#v private:%s", (targetMapStr["struct"].(*targetTest)).TargetInline.Field1Inline, (targetMapStr["struct"].(*targetTest)).privateField)
+	t.Logf("clone:%#v private:%s", (cloneInst["struct"].(*targetTest)).TargetInline.Field1Inline, (cloneInst["struct"].(*targetTest)).privateField)
+}
