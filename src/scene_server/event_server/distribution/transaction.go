@@ -122,6 +122,17 @@ func (th *TxnHandler) fetchTimeout() {
 			continue
 		}
 		blog.V(4).Infof("fetch transaction by score %v, resturns %v, txns: %v", opt.Max, txnIDs, txns)
+		if len(txnIDs) != len(txns) {
+			m := map[string]bool{}
+			for index := range txns {
+				m[txns[index].TxnID] = true
+			}
+			for _, txnID := range txnIDs {
+				if !m[txnID] {
+					txns = append(txns, daltypes.Transaction{TxnID: txnID, Status: daltypes.TxStatusException})
+				}
+			}
+		}
 		go th.handleTxn(txns...)
 	}
 }
