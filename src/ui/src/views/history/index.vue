@@ -50,12 +50,13 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount']),
+            ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
             ...mapGetters('userCustom', ['usercustom']),
+            ...mapGetters('objectBiz', ['bizId']),
             customColumns () {
                 const customKeyMap = {
-                    [this.objId]: `${this.objId}_table_columns`,
-                    'host': 'resource_table_columns'
+                    [this.objId]: `${this.userName}_${this.objId}_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`,
+                    'host': `${this.userName}_$resource_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
                 }
                 return this.usercustom[customKeyMap[this.objId]] || []
             },
@@ -93,10 +94,10 @@
             try {
                 await this.setTimeResolver()
                 this.properties = await this.searchObjectAttribute({
-                    params: {
+                    params: this.$injectMetadata({
                         bk_obj_id: this.objId,
                         bk_supplier_account: this.supplierAccount
-                    },
+                    }),
                     config: {
                         requestId: `post_searchObjectAttribute_${this.objId}`,
                         fromCache: false

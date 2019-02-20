@@ -79,7 +79,12 @@
                 this.$store.commit('setHeaderStatus', {
                     back: true
                 })
-                this.$router.push(`/general-model/${model['bk_obj_id']}`)
+                this.$router.push({
+                    name: 'generalModel',
+                    params: {
+                        objId: model['bk_obj_id']
+                    }
+                })
             },
             // 删除最近浏览的模型
             deleteRecently (model) {
@@ -130,14 +135,14 @@
             // 加载通用模型实例数量
             loadCommonInst (id) {
                 return this.$store.dispatch('objectCommonInst/searchInst', {
-                    params: {
+                    params: this.$injectMetadata({
                         condition: {},
                         fields: {},
                         page: {
                             start: 0,
                             limit: 1
                         }
-                    },
+                    }),
                     objId: id
                 })
             }

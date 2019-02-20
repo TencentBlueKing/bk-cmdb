@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"os"
 
+
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/util"
@@ -26,9 +27,9 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 
-	cc "configcenter/src/common/backbone/configcenter"
-
 	"github.com/emicklei/go-restful"
+	cc "configcenter/src/common/backbone/configcenter"
+	
 )
 
 // Run main loop function
@@ -38,14 +39,18 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
+	discover, err := discovery.NewDiscoveryInterface(op.ServConf.RegDiscover)
+	if err != nil {
+		return fmt.Errorf("connect zookeeper [%s] failed: %v", op.ServConf.RegDiscover, err)
+	}
+
 	c := &util.APIMachineryConfig{
-		ZkAddr:    op.ServConf.RegDiscover,
 		QPS:       1000,
 		Burst:     2000,
 		TLSConfig: nil,
 	}
 
-	machinery, err := apimachinery.NewApiMachinery(c)
+	machinery, err := apimachinery.NewApiMachinery(c, discover)
 	if err != nil {
 		return fmt.Errorf("new api machinery failed, err: %v", err)
 	}
@@ -57,10 +62,10 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("new proxy client failed, err: %v", err)
 	}
 
-	discover, err := discovery.NewDiscoveryInterface(op.ServConf.RegDiscover)
-	if err != nil {
-		return fmt.Errorf("new proxy discovery instance failed, err: %v", err)
-	}
+	// v3Service.Disc, err = discovery.NewDiscoveryInterface(op.ServConf.RegDiscover)
+	// if err != nil {
+	// 	return fmt.Errorf("new proxy discovery instance failed, err: %v", err)
+	// }
 
 	ctnr := restful.NewContainer()
 	ctnr.Router(restful.CurlyRouter{})
@@ -87,7 +92,8 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	engine, err := backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
 		types.CC_MODULE_APISERVER,
 		op.ServConf.ExConfig,
-		apiServer.onHostConfigUpdate,
+        apiServer.onHostConfigUpdate,
+		discover,
 		bonC)
 
 	if err != nil {

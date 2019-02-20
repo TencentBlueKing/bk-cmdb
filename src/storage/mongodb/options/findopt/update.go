@@ -16,7 +16,14 @@ import "github.com/mongodb/mongo-go-driver/mongo/options"
 
 // ConvertToMongoOptions convert to mongodb option
 func (m *FindAndModify) ConvertToMongoOptions() *options.FindOneAndUpdateOptions {
-	option := &options.FindOneAndUpdateOptions{}
-	// TODO: need to be implemented
+	option := &options.FindOneAndUpdateOptions{
+		Upsert: &m.Upsert,
+	}
+
+	if m.New {
+		n := options.After
+		option.ReturnDocument = &n
+	}
+
 	return option
 }

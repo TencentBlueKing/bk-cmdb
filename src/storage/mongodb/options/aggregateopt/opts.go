@@ -10,19 +10,12 @@
  * limitations under the License.
  */
 
-package x19_01_18_01
+package aggregateopt
 
-import (
-	"context"
+// One update one options
+type One struct {
+}
 
-	"configcenter/src/scene_server/admin_server/upgrader"
-	"configcenter/src/storage/dal"
-
-	"gopkg.in/mgo.v2"
-)
-
-func dropIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	if err = db.Table("cc_TopoGraphics").DropIndex(ctx, "scope_id_1_node_type_1_bk_obj_id_1_bk_inst_id_1_scope_type_1"); err != nil {
-		return err
-	}
+// Many update many options
+type Many struct {
 }

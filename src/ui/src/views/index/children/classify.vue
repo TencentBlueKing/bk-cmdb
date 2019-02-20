@@ -48,7 +48,7 @@
                 if (this.admin || (this.privilege['sys_config']['global_busi'] || []).includes('resource')) {
                     hostManageClassification['bk_objects'].push({
                         'bk_obj_name': this.$t('Nav["主机"]'),
-                        'bk_obj_id': 'resource',
+                        'bk_obj_id': '$resource',
                         'bk_obj_icon': 'icon-cc-host-free-pool',
                         'path': '/resource',
                         'bk_classification_id': 'bk_collection'
