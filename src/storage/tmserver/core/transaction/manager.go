@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/storage/mongodb"
+	"configcenter/src/storage/mongodb/options/deleteopt"
 	"configcenter/src/storage/mongodb/options/findopt"
 	"configcenter/src/storage/tmserver/app/options"
 	"configcenter/src/storage/types"
@@ -166,6 +167,13 @@ func (tm *Manager) reconcilePersistence() {
 				}
 				txns = txns[:0]
 			}
+
+			removeCond := mongo.NewCondition()
+			removeCond.Element(&mongo.Gt{Key: common.LastTimeField, Val: time.Now().Add(time.Hour * 24 * 2)})
+			if _, err := tm.db.Collection(common.BKTableNameTransaction).DeleteMany(tm.ctx, removeCond.ToMapStr(), &deleteopt.Many{}); err != nil {
+				blog.Errorf("delete outdate transaction faile: %s", err.Error())
+			}
+
 			blog.Infof("reconcile persistence finish")
 		}
 	}
