@@ -28,7 +28,7 @@ type UserInfo struct {
 
 type Resource struct {
 	// the name of the resource, which could be a model name.
-	Name string
+	Name ResourceType
 
 	// the instance id of this resource, which could be a model's instance id.
 	InstanceID uint64
@@ -39,6 +39,14 @@ type Resource struct {
 	// the business id that this resource belongs to, but it's not necessary for
 	// a resource that does not belongs to a business.
 	BusinessID uint64
+
+	// affiliated resource info
+	Affiliated Affiliated
+}
+
+type Affiliated struct {
+	// the name of the affiliated resource, which could be a model name.
+	Name ResourceType
 }
 
 type Decision string
