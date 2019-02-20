@@ -18,9 +18,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/coccyx/timeparser"
-
 	"configcenter/src/common"
+
+	"github.com/coccyx/timeparser"
 )
 
 var (
@@ -199,7 +199,10 @@ func (t *Ticker) Stop() {
 }
 
 func (t *Ticker) Tick() {
-	t.C <- time.Now()
+	select {
+	case t.C <- time.Now():
+	default:
+	}
 }
 
 func NewTicker(d time.Duration) *Ticker {
