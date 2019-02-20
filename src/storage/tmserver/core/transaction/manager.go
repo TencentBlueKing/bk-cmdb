@@ -72,8 +72,7 @@ func (tm *Manager) UnSubscribe(ch chan<- *types.Transaction) {
 }
 
 func (tm *Manager) Publish() {
-	for {
-		event := <-tm.eventChan
+	for event := range tm.eventChan {
 		tm.pubsubMutex.Lock()
 		for subscriber := range tm.subscribers {
 			select {

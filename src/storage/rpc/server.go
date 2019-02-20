@@ -73,9 +73,10 @@ func (s *Server) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	}
 	blog.V(3).Infof("connected from rpc client %s", req.RemoteAddr)
 	if err = session.Run(); err != nil {
-		blog.Errorf("dissconnect from rpc client %s: %s ", req.RemoteAddr, err.Error())
+		blog.Errorf("disconnect from rpc client %s with error: %s ", req.RemoteAddr, err.Error())
 		return
 	}
+	blog.V(3).Infof("disconnect from rpc client %s", req.RemoteAddr)
 }
 
 // Handle regist new handler

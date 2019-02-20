@@ -192,7 +192,6 @@ func (p *Pool) Close() (err error) {
 			}
 			conn.Close()
 		default:
-			close(p.conns)
 			return nil
 		}
 	}
