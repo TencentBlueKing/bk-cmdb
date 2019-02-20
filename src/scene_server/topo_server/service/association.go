@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"strconv"
 
 	"configcenter/src/common"
@@ -24,15 +25,32 @@ import (
 
 // CreateMainLineObject create a new object in the main line topo
 func (s *topoService) CreateMainLineObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
+	tx, err := s.tx.StartTransaction(context.Background())
+	params.Header = tx.TxnInfo().IntoHeader(params.Header)
 	mainLineAssociation := &metadata.Association{}
 
-	_, err := mainLineAssociation.Parse(data)
+	_, err = mainLineAssociation.Parse(data)
 	if nil != err {
 		blog.Errorf("[api-asst] failed to parse the data(%#v), error info is %s", data, err.Error())
 	}
 	params.MetaData = &mainLineAssociation.Metadata
-	return s.core.AssociationOperation().CreateMainlineAssociation(params, mainLineAssociation)
+	ret, err := s.core.AssociationOperation().CreateMainlineAssociation(params, mainLineAssociation)
+
+	if err != nil {
+		blog.Infof("[api-asst] abording transaction")
+		if txerr := tx.Abort(context.Background()); txerr != nil {
+			blog.Errorf("[api-asst] abort transaction failed; %v", err)
+			return ret, params.Err.Error(common.CCErrObjectDBOpErrno)
+		}
+	} else {
+		blog.Infof("[api-asst] committing transaction")
+		if txerr := tx.Commit(context.Background()); txerr != nil {
+			blog.Errorf("[api-asst] commit transaction failed; %v", err)
+			return ret, params.Err.Error(common.CCErrObjectDBOpErrno)
+		}
+	}
+
+	return ret, err
 }
 
 // DeleteMainLineObject delete a object int the main line topo

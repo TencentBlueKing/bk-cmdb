@@ -1,6 +1,6 @@
 <template>
     <div>
-        <label class="form-label exchange-icon-wrapper">
+        <label class="form-label">
             <span class="label-text">
                 {{$t('ModelManagement["源模型"]')}}
                 <span class="color-danger">*</span>
@@ -8,11 +8,8 @@
             <div class="cmdb-form-item">
                 <input type="text" class="cmdb-form-input" disabled :value="getModelName(relationInfo['bk_obj_id'])">
             </div>
-            <span class="exchange-icon" @click="exchangeObjAsst">
-                <i class="bk-icon icon-sort"></i>
-            </span>
         </label>
-        <label class="form-label">
+        <label class="form-label exchange-icon-wrapper">
             <span class="label-text">
                 {{$t('ModelManagement["目标模型"]')}}
                 <span class="color-danger">*</span>
@@ -20,6 +17,9 @@
             <div class="cmdb-form-item">
                 <input type="text" class="cmdb-form-input" disabled :value="getModelName(relationInfo['bk_asst_obj_id'])">
             </div>
+            <span class="exchange-icon" @click="exchangeObjAsst">
+                <i class="bk-icon icon-sort"></i>
+            </span>
         </label>
         <label class="form-label">
             <span class="label-text">
@@ -175,20 +175,20 @@
             },
             searchAsSource () {
                 return this.searchObjectAssociation({
-                    params: {
+                    params: this.$injectMetadata({
                         condition: {
                             'bk_obj_id': this.relationInfo['bk_obj_id']
                         }
-                    }
+                    })
                 })
             },
             searchAsDest () {
                 return this.searchObjectAssociation({
-                    params: {
+                    params: this.$injectMetadata({
                         condition: {
                             'bk_asst_obj_id': this.relationInfo['bk_obj_id']
                         }
-                    }
+                    })
                 })
             },
             async saveRelation () {
@@ -202,7 +202,7 @@
                     }
                 }
                 const res = await this.createObjectAssociation({
-                    params,
+                    params: this.$injectMetadata(params),
                     config: {
                         requestId: 'createObjectAssociation'
                     }
@@ -225,7 +225,7 @@
         position: absolute;
         display: inline-block;
         right: 0;
-        top: 36px;
+        top: 0;
         padding-top: 2px;
         width: 20px;
         height: 20px;

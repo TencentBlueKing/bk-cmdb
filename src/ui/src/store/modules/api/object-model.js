@@ -15,7 +15,21 @@ const state = {
 }
 
 const getters = {
-    activeModel: (state) => state.activeModel
+    activeModel: (state) => state.activeModel,
+    isPublicModel: state => {
+        const metadata = state.activeModel.metadata || {}
+        const label = metadata.label || {}
+        return !label.hasOwnProperty('bk_biz_id')
+    },
+    isInjectable: (state, getters, rootState, rootGetters) => {
+        const model = state.activeModel
+        const isPublicModel = getters.isPublicModel
+        if (!isPublicModel) {
+            return true
+        }
+        return model['bk_classification_id'] === 'bk_biz_topo' || ['host', 'biz'].includes(model['bk_obj_id'])
+    },
+    isMainLine: state => state.activeModel['bk_classification_id'] === 'bk_biz_topo'
 }
 
 const actions = {
@@ -28,7 +42,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     createObject ({ commit, state, dispatch }, { params, config }) {
-        return $http.post(`object`, params, config)
+        return $http.post('create/object', params, config)
     },
 
     /**
@@ -40,7 +54,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     deleteObject ({ commit, state, dispatch }, { id, config }) {
-        return $http.delete(`object/${id}`, config)
+        return $http.delete(`delete/object/${id}`, config)
     },
 
     /**
@@ -53,7 +67,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     updateObject ({ commit, state, dispatch }, { id, params, config }) {
-        return $http.put(`object/${id}`, params, config)
+        return $http.put(`update/object/${id}`, params, config)
     },
 
     /**
@@ -65,7 +79,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchObjects ({ commit, state, dispatch }, { params, config }) {
-        return $http.post(`objects`, params, config)
+        return $http.post('find/object', params, config)
     },
 
     /**
@@ -76,8 +90,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    searchObjectTopo ({ commit, state, dispatch }, { params }) {
-        return $http.post(`objects/topo`, params)
+    searchObjectTopo ({ commit, state, dispatch }, { params, config }) {
+        return $http.post('find/objecttopology', params, config)
     }
 }
 

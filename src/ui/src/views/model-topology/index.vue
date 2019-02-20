@@ -253,6 +253,7 @@
             }
         },
         computed: {
+            ...mapGetters(['isAdminView', 'isBusinessSelected']),
             ...mapGetters('objectModelClassify', [
                 'classifications'
             ]),
@@ -271,7 +272,10 @@
                 })
             },
             authority () {
-                return this.$store.getters.admin ? ['search', 'update', 'delete'] : []
+                if (this.isAdminView || this.isBusinessSelected) {
+                    return ['search', 'update', 'delete']
+                }
+                return []
             }
         },
         watch: {
@@ -680,7 +684,7 @@
             },
             async initNetwork () {
                 await this.getAssociationType()
-                const response = await this.$store.dispatch('globalModels/searchModelAction')
+                const response = await this.$store.dispatch('globalModels/searchModelAction', this.$injectMetadata())
                 this.localTopoModelList = response
                 this.localTopoModelList.forEach(model => {
                     if (model.hasOwnProperty('assts') && model.assts.length) {
@@ -824,7 +828,7 @@
                             id: node.id,
                             image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON(image, {
                                 name: node.data['node_name'],
-                                iconColor: node.data.ispre ? '#868b97' : '#3c96ff',
+                                iconColor: this.$tools.getMetadataBiz(node.data) ? '#3c96ff' : '#868b97',
                                 backgroundColor: '#fff'
                             }))}`
                         })
@@ -851,7 +855,11 @@
                 }
             },
             updateSingleNodePosition (node) {
-                this.$store.dispatch('globalModels/updateModelAction', {params: [node]})
+                this.$store.dispatch('globalModels/updateModelAction', {
+                    params: this.$injectMetadata({
+                        origin: [node]
+                    })
+                })
             },
             // 批量更新节点位置信息
             async updateNodePosition (updateNodes, removeNodes = []) {
@@ -887,7 +895,11 @@
                     })
                 }
 
-                await this.$store.dispatch('globalModels/updateModelAction', {params})
+                await this.$store.dispatch('globalModels/updateModelAction', {
+                    params: this.$injectMetadata({
+                        origin: params
+                    })
+                })
                 updateNodes.forEach(node => {
                     let model = this.localTopoModelList.find(({bk_obj_id: objId}) => objId === node.id)
                     model.position.x = nodePositions[node.id]['x']

@@ -159,9 +159,11 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'userName']),
+            ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
             ...mapGetters('objectModel', [
-                'activeModel'
+                'activeModel',
+                'isPublicModel',
+                'isInjectable'
             ]),
             fieldType () {
                 let {
@@ -226,7 +228,9 @@
                 if (this.isEditField) {
                     await this.updateObjectAttribute({
                         id: this.field.id,
-                        params: this.fieldInfo,
+                        params: this.$injectMetadata(this.fieldInfo, {
+                            clone: true, inject: this.isInjectable
+                        }),
                         config: {
                             requestId: 'updateObjectAttribute'
                         }
@@ -236,12 +240,17 @@
                 } else {
                     let otherParams = {
                         creator: this.userName,
-                        bk_property_group: 'default',
+                        bk_property_group: (this.isPublicModel && !this.isAdminView) ? 'bizdefault' : 'default',
                         bk_obj_id: this.activeModel['bk_obj_id'],
                         bk_supplier_account: this.supplierAccount
                     }
                     await this.createObjectAttribute({
-                        params: {...this.fieldInfo, ...otherParams},
+                        params: this.$injectMetadata({
+                            ...this.fieldInfo,
+                            ...otherParams
+                        }, {
+                            inject: this.isInjectable
+                        }),
                         config: {
                             requestId: 'createObjectAttribute'
                         }
@@ -278,13 +287,6 @@
             width: 90px;
             line-height: 22px;
             vertical-align: middle;
-        }
-    }
-    .btn-group {
-        margin: 30px 0 0 110px;
-        font-size: 0;
-        .bk-primary {
-            margin-right: 10px;
         }
     }
 </style>
