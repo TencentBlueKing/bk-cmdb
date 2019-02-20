@@ -99,7 +99,7 @@ func Dial(connect string) (*client, error) {
 // DialHTTPPath connects to an HTTP RPC server
 // at the specified network address and path.
 func DialHTTPPath(network, address, path string) (*client, error) {
-	blog.Infof("connecting to rpc server %s", address)
+	blog.V(3).Infof("connecting to rpc server %s", address)
 	var err error
 	conn, err := net.Dial("tcp", address)
 	if err != nil {
@@ -128,7 +128,7 @@ func DialHTTPPath(network, address, path string) (*client, error) {
 //Close replica client
 func (c *client) Close() error {
 	if c.done.SetIfNotSet() {
-		blog.Warnf("rpc connection %s -> %s close", c.localAddr, c.peerAddr)
+		blog.V(3).Infof("rpc connection %s -> %s close", c.localAddr, c.peerAddr)
 		close(c.send)
 		c.wire.Close()
 	}
@@ -306,7 +306,7 @@ func (c *client) handleResponse(resp *Message) {
 func (c *client) write() {
 	for msg := range c.send {
 		if err := c.wire.Write(msg); err != nil {
-			blog.Errorf("Error write to wire: %v", err)
+			blog.V(3).Infof("Error write to wire: %v", err)
 			msg.transportErr = err
 			c.handleResponse(msg)
 		}
@@ -317,7 +317,7 @@ func (c *client) read() {
 	for {
 		err := c.wire.Read(&c.response)
 		if err != nil {
-			blog.Errorf("Error reading from wire: %v", err)
+			blog.V(3).Infof("Error reading from wire: %v", err)
 			c.response.transportErr = err
 			c.handleResponse(&c.response)
 			break

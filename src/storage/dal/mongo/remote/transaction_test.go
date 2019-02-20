@@ -35,6 +35,7 @@ func TestTransaction(t *testing.T) {
 		TxnID:     header.Get(common.BKHTTPCCTransactionID),
 	})
 	tablename := "tmptest"
+	db.Table(tablename).Delete(orgctx, map[string]interface{}{})
 	err = db.Table(tablename).Insert(orgctx, map[string]interface{}{"name": "m"})
 	require.NoError(t, err)
 	defer db.Table(tablename).Delete(orgctx, map[string]interface{}{})
