@@ -21,7 +21,6 @@ import (
 
 	"configcenter/src/common/util"
 
-	"github.com/json-iterator/go"
 	"github.com/mongodb/mongo-go-driver/bson"
 )
 
@@ -187,20 +186,6 @@ func (jsonCodec) Decode(data []byte, v interface{}) error {
 func (jsonCodec) Encode(v interface{}) ([]byte, error) {
 	buf := &bytes.Buffer{}
 	err := json.NewEncoder(buf).Encode(v)
-	return buf.Bytes(), err
-}
-
-type jsonIteratorCodec struct{}
-
-// JSONIteratorCodec implements Codec interface
-var JSONIteratorCodec Codec = new(jsonIteratorCodec)
-
-func (jsonIteratorCodec) Decode(data []byte, v interface{}) error {
-	return jsoniter.ConfigCompatibleWithStandardLibrary.NewDecoder(bytes.NewReader(data)).Decode(v)
-}
-func (jsonIteratorCodec) Encode(v interface{}) ([]byte, error) {
-	buf := &bytes.Buffer{}
-	err := jsoniter.ConfigCompatibleWithStandardLibrary.NewEncoder(buf).Encode(v)
 	return buf.Bytes(), err
 }
 
