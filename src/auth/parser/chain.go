@@ -1,14 +1,17 @@
 package parser
 
 import (
+	"configcenter/src/auth"
+	"configcenter/src/common"
 	"errors"
 	"fmt"
-	"sync"
-
-	"configcenter/src/auth"
+	"net/http"
+	"regexp"
 )
 
 type RequestContext struct {
+	// http header
+	Header http.Header
 	// http method
 	Method string
 	// request's url path
@@ -21,38 +24,150 @@ type RequestContext struct {
 	Elements []string
 	// http request body contents.
 	Body []byte
-
-	Attribute *auth.Attribute
 }
 
-// next means if the next chain func should be called.
-type chainFunc func(ctx *RequestContext) (next bool, err error)
-
-var chains []chainFunc
-var once sync.Once
-
-func init() {
-	once.Do(func() {
-		// do not change the chain sequences.
-		chains = []chainFunc{
-			validateAPI,
-			handleVersion,
-		}
-	})
+type parseStream struct {
+	RequestCtx *RequestContext
+	Attribute  *auth.Attribute
+	err        error
+	action     auth.Action
 }
 
-func validateAPI(ctx *RequestContext) (bool, error) {
-	if ctx.Elements[0] != "api" {
-		return false, errors.New("unsupported api format")
+func newParseStream(rc *RequestContext) (*parseStream, error) {
+	if nil == rc {
+		return nil, errors.New("request context is nil")
 	}
-	return true, nil
+
+	return &parseStream{RequestCtx: rc}, nil
 }
 
-func handleVersion(ctx *RequestContext) (bool, error) {
-	version := ctx.Elements[1]
+func (ps *parseStream) Parse() (*auth.Attribute, error) {
+	if ps.err != nil {
+		return nil, ps.err
+	}
+
+	ps.validateAPI().
+		validateVersion().
+		validateResourceAction().
+		validateUserAndSupplier().
+
+		// finalizer must be at the end of the check chains.
+		finalizer()
+
+	if ps.err != nil {
+		return nil, ps.err
+	}
+
+	return ps.Attribute, nil
+}
+
+func (ps *parseStream) validateAPI() *parseStream {
+	if ps.err != nil {
+		return ps
+	}
+
+	if ps.RequestCtx.Elements[0] != "api" {
+		ps.err = errors.New("unsupported api format")
+	}
+
+	return ps
+}
+
+func (ps *parseStream) validateVersion() *parseStream {
+	if ps.err != nil {
+		return ps
+	}
+
+	version := ps.RequestCtx.Elements[1]
 	if version != "v3" {
-		return false, fmt.Errorf("unsupported version %s", version)
+		ps.err = fmt.Errorf("unsupported version %s", version)
+		return ps
 	}
-	ctx.Attribute.APIVersion = version
-	return true, nil
+	ps.Attribute.APIVersion = version
+
+	return ps
+}
+
+func (ps *parseStream) validateResourceAction() *parseStream {
+	if ps.err != nil {
+		return ps
+	}
+
+	action := ps.RequestCtx.Elements[2]
+	switch action {
+	case "find":
+		ps.action = auth.Find
+	case "findMany":
+		ps.action = auth.FindMany
+
+	case "create":
+		ps.action = auth.Create
+	case "createMany":
+		ps.action = auth.CreateMany
+
+	case "update":
+		ps.action = auth.Update
+	case "updateMany":
+		ps.action = auth.UpdateMany
+
+	case "delete":
+		ps.action = auth.Delete
+	case "deleteMany":
+		ps.action = auth.DeleteMany
+
+	default:
+		ps.action = auth.Unknown
+		// to compatible api that is not this kind of format,
+		// this err will not be set, but it will be set when
+		// all the api is normalized.
+
+		// TODO: uncomment this err code.
+		// ps.err = fmt.Errorf("unsupported action %s", action)
+		return ps
+	}
+
+	return ps
+}
+
+// user and supplier account must be set in the http
+// request header, otherwise, an error will be occur.
+func (ps *parseStream) validateUserAndSupplier() *parseStream {
+	if ps.err != nil {
+		return ps
+	}
+
+	// validate user header at first.
+	user := ps.RequestCtx.Header.Get(common.BKHTTPHeaderUser)
+	if len(user) == 0 {
+		ps.err = fmt.Errorf("request lost header: %s", common.BKHTTPHeaderUser)
+		return ps
+	}
+	ps.Attribute.User.UserName = user
+
+	// validate the supplier account now.
+	supplier := ps.RequestCtx.Header.Get(common.BKHTTPOwnerID)
+	if len(supplier) == 0 {
+		ps.err = fmt.Errorf("request lost header: %s", common.BKHTTPOwnerID)
+		return ps
+	}
+	ps.Attribute.User.SupplierID = supplier
+
+	return ps
+}
+
+// finalizer is to find whether a url resource has been matched or not.
+func (ps *parseStream) finalizer() *parseStream {
+	if ps.err == nil {
+		ps.err = errors.New("unsupported resource operation")
+		return ps
+	}
+	return ps
+}
+
+func (ps *parseStream) hitRegexp(reg *regexp.Regexp, httpMethod string) bool {
+	return reg.MatchString(ps.RequestCtx.URI) && ps.RequestCtx.Method == httpMethod
+}
+
+func (ps *parseStream) hitPattern(pattern, httpMethod string) bool {
+	return pattern == ps.RequestCtx.URI && ps.RequestCtx.Method == httpMethod
 }
