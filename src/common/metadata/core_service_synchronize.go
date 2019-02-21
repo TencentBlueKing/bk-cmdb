@@ -30,37 +30,78 @@ const (
 	SynchronizeOperateTypeDelete
 )
 
-// SynchronizeOperateType synchronize data operate type
-type SynchronizeDataType int64
+// SynchronizeOperateDataType synchronize data operate type
+type SynchronizeOperateDataType int64
 
 const (
-	// SynchronizeDataTypeInstance synchronize data is instance
-	SynchronizeDataTypeInstance SynchronizeDataType = iota + 1
-	// SynchronizeDataTypeModel synchronize data is model
-	SynchronizeDataTypeModel
-	//SynchronizeDataTypeAssociation synchronize data is association
-	SynchronizeDataTypeAssociation
+	// SynchronizeOperateDataTypeInstance synchronize data is instance
+	SynchronizeOperateDataTypeInstance SynchronizeOperateDataType = iota + 1
+	// SynchronizeOperateDataTypeModel synchronize data is model
+	SynchronizeOperateDataTypeModel
+	//SynchronizeOperateDataTypeAssociation synchronize data is association
+	SynchronizeOperateDataTypeAssociation
 )
 
-// SynchronizeInstanceParameter synchronize instance data http request parameter
+// SynchronizeDataInfo synchronize instance data http request parameter
+type SynchronizeDataInfo struct {
+	OperateDataType SynchronizeOperateDataType `json:"operate_data_type"`
+	// OperateDataType = SynchronizeOperateDataTypeInstance,
+	// DataClassify = object_id,  eg:host,plat,module,proc etc.
+	// OperateDataType = SynchronizeOperateDataTypeModel,
+	// DataClassify = common.SynchronizeModelDescTypeGroupInfo,common.SynchronizeModelDescTypeModuleAttribute etc
+	// OperateDataType = SynchronizeOperateDataTypeAssociation
+	// DataClassify = common.SynchronizeAssociationTypeModelHost etc.
+	DataClassify string          `json:"data_classify"`
+	InfoArray    []mapstr.MapStr `json:"instance_info_array"`
+	// OffSet current data offset  start location
+	Offset int64 `json:"offset"`
+	// Count total data count
+	Count           int64  `json:"count"`
+	Version         string `json:"version"`
+	SynchronizeFlag string `json:"synchronize_flag"`
+}
+
+// SynchronizeParameter synchronize instance data http request parameter
 type SynchronizeParameter struct {
 	OperateType SynchronizeOperateType `json:"op_type"`
 	// synchronize data type
-	DataType SynchronizeDataType `json:"data_type"`
-	// DataType = SynchronizeDataTypeInstance,
-	// DataSign = object_id,  eg:host,plat,module,proc etc.
-	// DataType = SynchronizeDataTypeModel,
-	// DataSign = common.SynchronizeModelDescTypeGroupInfo,common.SynchronizeModelDescTypeModuleAttribute etc
-	// DataType = SynchronizeDataTypeAssociation
-	// DataSign = common.SynchronizeAssociationTypeModelHost etc.
-	DataSign  string             `json:"data_sign"`
-	InfoArray []*SynchronizeItem `json:"instance_info_array"`
-	// source data sign
-	SynchronizeSign string `json:"sync_sign"`
+	OperateDataType SynchronizeOperateDataType `json:"operate_data_type"`
+	// OperateDataType = SynchronizeOperateDataTypeInstance,
+	// DataClassify = object_id,  eg:host,plat,module,proc etc.
+	// OperateDataType = SynchronizeOperateDataTypeModel,
+	// DataClassify = common.SynchronizeModelDescTypeGroupInfo,common.SynchronizeModelDescTypeModuleAttribute etc
+	// OperateDataType = SynchronizeOperateDataTypeAssociation
+	// DataClassify = common.SynchronizeAssociationTypeModelHost etc.
+	DataClassify    string             `json:"data_classify"`
+	InfoArray       []*SynchronizeItem `json:"instance_info_array"`
+	Version         string             `json:"version"`
+	SynchronizeFlag string             `json:"synchronize_flag"`
 }
 
 // SynchronizeItem synchronize data information
 type SynchronizeItem struct {
 	Info mapstr.MapStr `json:"info"`
 	ID   int64         `json:"id"`
+}
+
+// SynchronizeFetchInfoParameter synchronize  data fetch data http request parameter
+type SynchronizeFetchInfoParameter struct {
+	DataType     SynchronizeOperateDataType `json:"data_type"`
+	DataClassify string                     `json:"data_classify"`
+	Condition    mapstr.MapStr              `json:"condition"`
+	Start        uint64                     `json:"start"`
+	Limit        uint64                     `json:"limit"`
+}
+
+// SynchronizeResult synchronize result
+type SynchronizeResult struct {
+	BaseResp `json:",inline"`
+	Data     SetDataResult `json:"data"`
+}
+
+// SynchronizeDataResult common Synchronize result definition
+type SynchronizeDataResult struct {
+	//Created    []CreatedDataResult `json:"created"`
+	//Updated    []UpdatedDataResult `json:"updated"`
+	Exceptions []ExceptionResult `json:"exception"`
 }

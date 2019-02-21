@@ -77,10 +77,17 @@ type MapArrayResponse struct {
 // ResponseInstData
 type ResponseInstData struct {
 	BaseResp `json:",inline"`
-	Data     struct {
+	Data     InstDataInfo `json:"data"`
+	/*struct {
 		Count int             `json:"count"`
 		Info  []mapstr.MapStr `json:"info"`
-	} `json:"data"`
+	} `json:"data"`*/
+}
+
+// InstDataInfo response instance data result Data field
+type InstDataInfo struct {
+	Count int             `json:"count"`
+	Info  []mapstr.MapStr `json:"info"`
 }
 
 type ResponseDataMapStr struct {
