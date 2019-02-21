@@ -155,6 +155,42 @@ func (p *Pool) Call(cmd string, input interface{}, result interface{}) (err erro
 	return nil
 }
 
+func (p *Pool) CallStream(cmd string, input interface{}) (*StreamMessage, error) {
+	conn := p.pop()
+	if conn != nil {
+		stream, err := conn.CallStream(cmd, input)
+		if err != nil {
+			if err != ErrRWTimeout {
+				if pingErr := conn.Ping(); pingErr == nil {
+					p.put(conn)
+					return nil, err
+				}
+			}
+			conn.Close()
+		} else {
+			p.put(conn)
+			return stream, nil
+		}
+	}
+
+	blog.V(4).Infof("create new rpc connection")
+	conn, err := p.new()
+	if err != nil {
+		return nil, err
+	}
+
+	stream, err := conn.CallStream(cmd, input)
+	if err != nil {
+		if pingErr := conn.Ping(); pingErr == nil {
+			p.put(conn)
+			return nil, err
+		}
+		conn.Close()
+	}
+	p.put(conn)
+	return stream, nil
+}
+
 func (p *Pool) Ping() (err error) {
 	conn := p.pop()
 	if conn != nil {
@@ -181,6 +217,15 @@ func (p *Pool) Ping() (err error) {
 	}
 
 	return err
+}
+
+func (p *Pool) TargetID() string {
+	conn := p.pop()
+	if conn != nil {
+		p.put(conn)
+		return conn.TargetID()
+	}
+	return ""
 }
 
 func (p *Pool) Close() (err error) {

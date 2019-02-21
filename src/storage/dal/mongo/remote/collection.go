@@ -18,6 +18,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/rpc"
 	"configcenter/src/storage/types"
 )
 
@@ -27,7 +28,7 @@ type Collection struct {
 	Processor  string // 处理进程号，结构为"IP:PORT-PID"用于识别事务session被存于那个TM多活实例
 	TxnID      string // 事务ID,uuid
 	collection string // 集合名
-	rpc        rpcclient
+	rpc        rpc.Client
 }
 
 // Find 查询多个并反序列化到 Result

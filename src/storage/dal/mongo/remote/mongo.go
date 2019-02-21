@@ -29,17 +29,11 @@ import (
 
 var _ dal.DB = (*Mongo)(nil)
 
-type rpcclient interface {
-	Call(cmd string, input interface{}, result interface{}) error
-	Ping() error
-	Close() error
-}
-
 // Mongo implement dal.DB interface
 type Mongo struct {
 	RequestID string // 请求ID,可选项
 	TxnID     string // 事务ID,uuid
-	rpc       rpcclient
+	rpc       rpc.Client
 	getServer types.GetServerFunc
 	parent    *Mongo
 
