@@ -77,19 +77,21 @@ func (th *TxnHandler) watchTransaction() {
 		return
 	}
 
-	stream, err := th.rc.CallStream(daltypes.CommandWatchTransactionOperation, nil)
-	if err != nil {
-		blog.Errorf("WatchTransaction faile %v", err)
-		return
-	}
-	defer stream.Close()
-	txn := daltypes.Transaction{}
-	var recvErr error
-	for recvErr = stream.Recv(&txn); recvErr != nil || th.shouldClose.IsSet(); recvErr = stream.Recv(&txn) {
-		go th.handleTxn(txn)
-	}
-	if recvErr != nil {
-		blog.Errorf("watch stream stoped with error: %v", recvErr)
+	for !th.shouldClose.IsSet() {
+		stream, err := th.rc.CallStream(daltypes.CommandWatchTransactionOperation, nil)
+		if err != nil {
+			blog.Errorf("WatchTransaction faile %v", err)
+			return
+		}
+		txn := daltypes.Transaction{}
+		var recvErr error
+		for recvErr = stream.Recv(&txn); recvErr == nil && !th.shouldClose.IsSet(); recvErr = stream.Recv(&txn) {
+			go th.handleTxn(txn)
+		}
+		if recvErr != nil {
+			blog.Errorf("watch stream stoped with error: %v", recvErr)
+		}
+		stream.Close()
 	}
 }
 
