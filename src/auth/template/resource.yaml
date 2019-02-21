@@ -1,0 +1,27 @@
+- name: 业务
+  id: application
+  actions:
+     - name: 查看
+       id: view
+       relate_inst: true
+     - name: 编辑
+       id: edit
+       relate_inst: true
+- name: 进程
+  id: process
+  actions:
+     - name: 查看
+       id: view
+       relate_inst: true
+     - name: 新建
+       id: create
+       relate_inst: true
+     - name: 编辑
+       id: edit
+       relate_inst: true
+     - name: 删除
+       id: delete
+       relate_inst: true
+     - name: 绑定模块
+       id: delete
+       bind-module: true
