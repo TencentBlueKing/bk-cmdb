@@ -270,6 +270,9 @@ func (o *object) GetMainlineChildObject() (Object, error) {
 		}
 
 		objItems := CreateObject(o.params, o.clientSet, rspRst)
+		if len(objItems) > 1 {
+			blog.Errorf("[model-obj] get multiple(%d) children for object(%s)", len(objItems), asst.ObjectID)
+		}
 		for _, item := range objItems {
 			// only one child in the main-line
 			return item, nil
