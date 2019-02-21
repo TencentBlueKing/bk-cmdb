@@ -946,7 +946,8 @@ const (
 )
 
 const (
-	BKProcInstanceOpUser = "proc instance user"
+	BKProcInstanceOpUser             = "proc instance user"
+	BKSynchronizeDataTaskDefaultUser = "synchronize task user"
 )
 
 const (
@@ -999,9 +1000,10 @@ const (
 )
 
 const (
-	MetaDataSynchronizeSignField = "metadata_sync_sign"
+	MetaDataSynchronizeFlagField    = "metadata_sync_flag"
+	MetaDataSynchronizeVersionField = "metadata_sync_version"
 
-	/* synchronize model description sign*/
+	/* synchronize model description classify*/
 
 	// SynchronizeModelTypeClassification synchroneize model classification
 	SynchronizeModelTypeClassification = "model_classification"
