@@ -20,19 +20,20 @@ import (
 )
 
 type instance struct {
-	base     *synchronizeAdapter
-	dataType metadata.SynchronizeDataType
-	dbProxy  dal.RDB
-	dataSign string
+	base         *synchronizeAdapter
+	dataType     metadata.SynchronizeOperateDataType
+	dbProxy      dal.RDB
+	DataClassify string
 }
 
 func NewSynchronizeInstanceAdapter(s *metadata.SynchronizeParameter, dbProxy dal.RDB) dataTypeInterface {
 
 	return &association{
 		base:     newSynchronizeAdapter(s, dbProxy),
-		dataType: s.DataType,
-		dataSign: s.DataSign,
-		dbProxy:  dbProxy,
+		dataType: s.OperateDataType,
+		// instance data classify
+		DataClassify: s.DataClassify,
+		dbProxy:      dbProxy,
 	}
 }
 
@@ -58,7 +59,7 @@ func (inst *instance) SaveSynchronize(ctx core.ContextParams) errors.CCError {
 	// Each model is written separately for subsequent expansion,
 	// each model may be processed differently.
 
-	switch inst.dataSign {
+	switch inst.DataClassify {
 	case common.BKInnerObjIDApp:
 		return inst.saveSynchronizeAppInstance(ctx)
 	case common.BKInnerObjIDSet:

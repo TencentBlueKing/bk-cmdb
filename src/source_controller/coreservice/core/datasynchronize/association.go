@@ -24,29 +24,30 @@ import (
 
 type association struct {
 	base     *synchronizeAdapter
-	dataType metadata.SynchronizeDataType
-	dbProxy  dal.RDB
-	dataSign string
+	dataType metadata.SynchronizeOperateDataType
+	// instance data classify
+	dbProxy      dal.RDB
+	DataClassify string
 }
 
 func NewSynchronizeAssociationAdapter(s *metadata.SynchronizeParameter, dbProxy dal.RDB) dataTypeInterface {
 
 	return &association{
-		base:     newSynchronizeAdapter(s, dbProxy),
-		dataType: s.DataType,
-		dataSign: s.DataSign,
-		dbProxy:  dbProxy,
+		base:         newSynchronizeAdapter(s, dbProxy),
+		dataType:     s.OperateDataType,
+		DataClassify: s.DataClassify,
+		dbProxy:      dbProxy,
 	}
 }
 
 func (a *association) SaveSynchronize(ctx core.ContextParams) errors.CCError {
 	// Each model is written separately for subsequent expansion,
 	// each type may be processed differently.
-	switch a.base.syncData.DataSign {
+	switch a.base.syncData.DataClassify {
 	case common.SynchronizeAssociationTypeModelHost:
 		return a.saveSynchronizeAssociationModuleHostConfig(ctx)
 	default:
-		return ctx.Error.Errorf(common.CCErrCoreServiceSyncDataSignNotExistError, a.dataType, a.dataSign)
+		return ctx.Error.Errorf(common.CCErrCoreServiceSyncDataClassifyNotExistError, a.dataType, a.DataClassify)
 	}
 	return nil
 }
@@ -65,7 +66,7 @@ func (a *association) GetErrorStringArr(ctx core.ContextParams) ([]metadata.Exce
 		return nil, nil
 	}
 	err := ctx.Error.Error(common.CCErrCoreServiceSyncError)
-	switch a.base.syncData.DataSign {
+	switch a.base.syncData.DataClassify {
 	case common.SynchronizeAssociationTypeModelHost:
 		var errArr []metadata.ExceptionResult
 		for _, err := range a.base.errorArray {
@@ -92,14 +93,14 @@ func (a *association) saveSynchronizeAssociationModuleHostConfig(ctx core.Contex
 			blog.Errorf("saveSynchronizeAssociationModuleHostConfig copy data error. err:%s, inst info:%#v,rid:%s", err.Error(), item, ctx.ReqID)
 			a.base.errorArray[item.ID] = synchronizeAdapterError{
 				instInfo: item,
-				err:      ctx.Error.Errorf(common.CCErrCommInstFieldConvFail, a.dataSign, "info", "copy mapstr", err.Error()),
+				err:      ctx.Error.Errorf(common.CCErrCommInstFieldConvFail, a.DataClassify, "info", "copy mapstr", err.Error()),
 			}
 			continue
 		}
 		newItem.Remove(common.MetadataField)
 		cnt, err := a.dbProxy.Table(common.BKTableNameProcInstanceModel).Find(newItem).Count(ctx)
 		if err != nil {
-			blog.Errorf("saveSynchronizeAssociationModuleHostConfig query db error,err:%s.DataSign:%s,condition:%#v,rid:%s", err.Error(), a.dataSign, newItem, ctx.ReqID)
+			blog.Errorf("saveSynchronizeAssociationModuleHostConfig query db error,err:%s.DataSign:%s,condition:%#v,rid:%s", err.Error(), a.DataClassify, newItem, ctx.ReqID)
 			a.base.errorArray[item.ID] = synchronizeAdapterError{
 				instInfo: item,
 				err:      ctx.Error.Error(common.CCErrCommDBSelectFailed),
@@ -109,7 +110,7 @@ func (a *association) saveSynchronizeAssociationModuleHostConfig(ctx core.Contex
 		if cnt == 0 {
 			err := a.dbProxy.Table(common.BKTableNameProcInstanceModel).Insert(ctx, item)
 			if err != nil {
-				blog.Errorf("saveSynchronizeAssociationModuleHostConfig save data to db error,err:%s.DataSign:%s,info:%#v,rid:%s", err.Error(), a.dataSign, item, ctx.ReqID)
+				blog.Errorf("saveSynchronizeAssociationModuleHostConfig save data to db error,err:%s.DataSign:%s,info:%#v,rid:%s", err.Error(), a.DataClassify, item, ctx.ReqID)
 				a.base.errorArray[item.ID] = synchronizeAdapterError{
 					instInfo: item,
 					err:      ctx.Error.Error(common.CCErrCommDBInsertFailed),
@@ -122,7 +123,7 @@ func (a *association) saveSynchronizeAssociationModuleHostConfig(ctx core.Contex
 }
 
 func (a *association) preSynchronizeFilterBefore(ctx core.ContextParams) errors.CCError {
-	switch a.base.syncData.DataSign {
+	switch a.base.syncData.DataClassify {
 	case common.SynchronizeAssociationTypeModelHost:
 		for idx, item := range a.base.syncData.InfoArray {
 			// cc_ModuleHostConfig not id field.

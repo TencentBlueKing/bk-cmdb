@@ -20,19 +20,19 @@ import (
 )
 
 type model struct {
-	base     *synchronizeAdapter
-	dataType metadata.SynchronizeDataType
-	dbProxy  dal.RDB
-	dataSign string
+	base         *synchronizeAdapter
+	dataType     metadata.SynchronizeOperateDataType
+	dbProxy      dal.RDB
+	DataClassify string
 }
 
 func NewSynchronizeModelAdapter(s *metadata.SynchronizeParameter, dbProxy dal.RDB) dataTypeInterface {
 
 	return &model{
-		base:     newSynchronizeAdapter(s, dbProxy),
-		dataType: s.DataType,
-		dataSign: s.DataSign,
-		dbProxy:  dbProxy,
+		base:         newSynchronizeAdapter(s, dbProxy),
+		dataType:     s.OperateDataType,
+		DataClassify: s.DataClassify,
+		dbProxy:      dbProxy,
 	}
 }
 
@@ -56,7 +56,7 @@ func (m *model) GetErrorStringArr(ctx core.ContextParams) ([]metadata.ExceptionR
 func (m *model) SaveSynchronize(ctx core.ContextParams) errors.CCError {
 	// Each model is written separately for subsequent expansion,
 	// each type may be processed differently.
-	switch m.dataSign {
+	switch m.DataClassify {
 	case common.SynchronizeModelTypeClassification:
 		return m.saveSynchronizeModelClassification(ctx)
 	case common.SynchronizeModelTypeAttribute:
@@ -66,7 +66,7 @@ func (m *model) SaveSynchronize(ctx core.ContextParams) errors.CCError {
 	case common.SynchronizeModelTypeBase:
 		return m.saveSynchronizeModelBase(ctx)
 	default:
-		return ctx.Error.Errorf(common.CCErrCoreServiceSyncDataSignNotExistError, m.dataType, m.dataSign)
+		return ctx.Error.Errorf(common.CCErrCoreServiceSyncDataClassifyNotExistError, m.dataType, m.DataClassify)
 	}
 	return nil
 }
