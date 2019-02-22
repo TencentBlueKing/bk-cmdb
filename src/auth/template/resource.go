@@ -11,7 +11,3 @@
  */
 
 package template
-
-func main() {
-
-}
