@@ -1,6 +1,9 @@
 package authcenter
 
-import "configcenter/src/common/metadata"
+import (
+	"configcenter/src/common/metadata"
+	"fmt"
+)
 
 type AuthConfig struct {
 	// blueking's auth center addresses
@@ -55,4 +58,16 @@ type DeregisterInfo struct {
 type UpdateInfo struct {
 	ScopeInfo    `json:",inline"`
 	ResourceInfo `json:",inline"`
+}
+
+type AuthError struct {
+	RequestID string
+	Reason    error
+}
+
+func (a *AuthError) Error() string {
+	if len(a.RequestID) == 0 {
+		return a.Reason.Error()
+	}
+	return fmt.Sprintf("request id: %s, err: %s", a.RequestID, a.Reason.Error())
 }
