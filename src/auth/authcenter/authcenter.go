@@ -59,26 +59,26 @@ type authCenter struct {
 	header http.Header
 }
 
-func (ac *authCenter) Register(ctx context.Context, r *auth.ResourceAttribute) (requestID string, err error) {
-	if len(r.Object) == 0 {
-		return "", errors.New("invalid resource attribute with empty object")
+func (ac *authCenter) Register(ctx context.Context, r *auth.ResourceAttribute) error {
+	if len(r.Basic.Type) == 0 {
+		return errors.New("invalid resource attribute with empty object")
 	}
 	scope, err := ac.getScopeInfo(r)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	rscID, err := ac.getResourceID(r.Layers)
 	if err != nil {
-		return "", err
+		return err
 	}
 	info := &RegisterInfo{
 		CreatorType: cmdbUser,
 		CreatorID:   cmdbUserID,
 		ScopeInfo:   *scope,
 		ResourceInfo: ResourceInfo{
-			ResourceType: r.Object,
-			ResourceName: r.ObjectName,
+			ResourceType: string(r.Basic.Type),
+			ResourceName: r.Basic.Name,
 			ResourceID:   rscID,
 		},
 	}
@@ -93,39 +93,39 @@ func (ac *authCenter) Register(ctx context.Context, r *auth.ResourceAttribute) (
 		Do().Into(resp)
 
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	if resp.Code != 0 {
-		return resp.RequestID, fmt.Errorf("register resource failed, error code: %d, message: %s", resp.Code, resp.ErrMsg)
+		return &AuthError{RequestID: resp.RequestID, Reason: fmt.Errorf("register resource failed, error code: %d, message: %s", resp.Code, resp.ErrMsg)}
 	}
 
 	if !resp.Data.IsCreated {
-		return resp.RequestID, fmt.Errorf("register resource failed, error code: %d", resp.Code)
+		return &AuthError{resp.RequestID, fmt.Errorf("register resource failed, error code: %d", resp.Code)}
 	}
 
-	return resp.RequestID, nil
+	return nil
 }
 
-func (ac *authCenter) Deregister(ctx context.Context, r *auth.ResourceAttribute) (requestID string, err error) {
-	if len(r.Object) == 0 {
-		return "", errors.New("invalid resource attribute with empty object")
+func (ac *authCenter) Deregister(ctx context.Context, r *auth.ResourceAttribute) error {
+	if len(r.Basic.Type) == 0 {
+		return errors.New("invalid resource attribute with empty object")
 	}
 
 	scope, err := ac.getScopeInfo(r)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	rscID, err := ac.getResourceID(r.Layers)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	info := &DeregisterInfo{
 		ScopeInfo: *scope,
 		ResourceInfo: ResourceInfo{
-			ResourceType: r.Object,
+			ResourceType: r.Basic.Type.String(),
 			ResourceID:   rscID,
 		},
 	}
@@ -140,39 +140,39 @@ func (ac *authCenter) Deregister(ctx context.Context, r *auth.ResourceAttribute)
 		Do().Into(resp)
 
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	if resp.Code != 0 {
-		return resp.RequestID, fmt.Errorf("deregister resource failed, error code: %d, message: %s", resp.Code, resp.ErrMsg)
+		return &AuthError{resp.RequestID, fmt.Errorf("deregister resource failed, error code: %d, message: %s", resp.Code, resp.ErrMsg)}
 	}
 
 	if !resp.Data.IsDeleted {
-		return resp.RequestID, fmt.Errorf("deregister resource failed, error code: %d", resp.Code)
+		return &AuthError{resp.RequestID, fmt.Errorf("deregister resource failed, error code: %d", resp.Code)}
 	}
 
-	return resp.RequestID, nil
+	return nil
 }
 
-func (ac *authCenter) Update(ctx context.Context, r *auth.ResourceAttribute) (requestID string, err error) {
-	if len(r.Object) == 0 || len(r.ObjectName) == 0 {
-		return "", errors.New("invalid resource attribute with empty object or object name")
+func (ac *authCenter) Update(ctx context.Context, r *auth.ResourceAttribute) error {
+	if len(r.Basic.Type) == 0 || len(r.Basic.Name) == 0 {
+		return errors.New("invalid resource attribute with empty object or object name")
 	}
 
 	scope, err := ac.getScopeInfo(r)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	rscID, err := ac.getResourceID(r.Layers)
 	if err != nil {
-		return "", err
+		return err
 	}
 	info := &UpdateInfo{
 		ScopeInfo: *scope,
 		ResourceInfo: ResourceInfo{
-			ResourceType: r.Object,
-			ResourceName: r.ObjectName,
+			ResourceType: r.Basic.Type.String(),
+			ResourceName: r.Basic.Name,
 			ResourceID:   rscID,
 		},
 	}
@@ -187,18 +187,18 @@ func (ac *authCenter) Update(ctx context.Context, r *auth.ResourceAttribute) (re
 		Do().Into(resp)
 
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	if resp.Code != 0 {
-		return resp.RequestID, fmt.Errorf("update resource failed, error code: %d, message: %s", resp.Code, resp.ErrMsg)
+		return &AuthError{resp.RequestID, fmt.Errorf("update resource failed, error code: %d, message: %s", resp.Code, resp.ErrMsg)}
 	}
 
 	if !resp.Data.IsUpdated {
-		return resp.RequestID, fmt.Errorf("update resource failed, error code: %d", resp.Code)
+		return &AuthError{resp.RequestID, fmt.Errorf("update resource failed, error code: %d", resp.Code)}
 	}
 
-	return resp.RequestID, nil
+	return nil
 }
 
 func (ac *authCenter) Get(ctx context.Context) error {
@@ -207,12 +207,12 @@ func (ac *authCenter) Get(ctx context.Context) error {
 
 func (ac *authCenter) getScopeInfo(r *auth.ResourceAttribute) (*ScopeInfo, error) {
 	s := new(ScopeInfo)
-	switch r.Object {
+	switch r.Basic.Name {
 	case "set", "module":
 		s.ScopeType = "biz"
 	// TODO: add filter rules for scope info.
 	default:
-		return nil, fmt.Errorf("unsupported scope type or info for %s", r.Object)
+		return nil, fmt.Errorf("unsupported scope type or info for %s", r.Basic.Name)
 	}
 	return s, nil
 }
@@ -220,10 +220,10 @@ func (ac *authCenter) getScopeInfo(r *auth.ResourceAttribute) (*ScopeInfo, error
 func (ac *authCenter) getResourceID(layers []auth.Item) (string, error) {
 	var id string
 	for _, item := range layers {
-		if len(item.Object) == 0 || len(item.Object) == 0 {
-			return "", fmt.Errorf("invalid resoutece item %s/%d", item.Object, item.InstanceID)
+		if len(item.Name) == 0 || len(item.Type) == 0 {
+			return "", fmt.Errorf("invalid resoutece item %s/%d", item.Name, item.InstanceID)
 		}
-		id = fmt.Sprintf("%s/%s:%d", id, item.Object, item.InstanceID)
+		id = fmt.Sprintf("%s/%s:%d", item.Type, item.Name, item.InstanceID)
 	}
 	id = strings.TrimLeft(id, "/")
 

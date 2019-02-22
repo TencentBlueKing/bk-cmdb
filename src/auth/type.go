@@ -26,40 +26,42 @@ type UserInfo struct {
 	SupplierID string
 }
 
-type Resource struct {
-	// the name of the resource, which could be a model name.
-	Name ResourceType
+type Affiliated Basic
 
-	// the instance id of this resource, which could be a model's instance id.
-	InstanceID uint64
+type Resource struct {
+	Basic
 
 	// the action that user want to do with this resource.
 	Action Action
 
 	// the business id that this resource belongs to, but it's not necessary for
 	// a resource that does not belongs to a business.
-	BusinessID uint64
+	BusinessID int64
 
 	// affiliated resource info
 	Affiliated Affiliated
 }
 
-type Affiliated struct {
+// Basic defines the basic info for a resource.
+type Basic struct {
 	// the name of the affiliated resource, which could be a model name.
-	Name ResourceType
+	Type ResourceType
+
+	// the name of the resource, which could be a bk-route, etc.
+	// this filed is not necessary for all the resources.
+	Name string
+
+	// the instance id of this resource, which could be a model's instance id.
+	InstanceID int64
 }
 
-type Decision string
+type Decision struct {
+	// the authorize decision, whether a user has been authorized or not.
+	Authorized bool
 
-const (
-	// DecisionDeny means that an authorizer decided to deny the action.
-	DecisionDeny Decision = "deny"
-	// DecisionAllow means that an authorizer decided to allow the action.
-	DecisionAllow Decision = "allow"
-	// DecisionNoOpinion means that an authorizer has no opinion on whether
-	// to allow or deny an action.
-	DecisionNoOpinion Decision = "noOpinion"
-)
+	// the detailed reason for this authorize.
+	Reason string
+}
 
 type Action string
 
@@ -76,20 +78,13 @@ const (
 	Unknown Action = "unknown"
 )
 
+type Item Basic
+
 type ResourceAttribute struct {
-	// object's id
-	Object string
-	// object's name
-	// it's not be needed when it's used to deregister a resource.
-	ObjectName string
+	Basic
+
+	BusinessID int64
 	// if this object belongs to a topology, like mainline topology,
 	// layers means each object's item before this object.
 	Layers []Item
-}
-
-type Item struct {
-	// object's id
-	Object string
-	// this object's instance id
-	InstanceID int64
 }

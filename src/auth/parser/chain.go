@@ -3,6 +3,7 @@ package parser
 import (
 	"configcenter/src/auth"
 	"configcenter/src/common"
+	"configcenter/src/common/metadata"
 	"errors"
 	"fmt"
 	"net/http"
@@ -24,6 +25,8 @@ type RequestContext struct {
 	Elements []string
 	// http request body contents.
 	Body []byte
+
+	Metadata metadata.Metadata
 }
 
 type parseStream struct {
@@ -157,10 +160,10 @@ func (ps *parseStream) validateUserAndSupplier() *parseStream {
 
 // finalizer is to find whether a url resource has been matched or not.
 func (ps *parseStream) finalizer() *parseStream {
-	if ps.err == nil {
-		ps.err = errors.New("unsupported resource operation")
+	if ps.err != nil {
 		return ps
 	}
+	ps.err = errors.New("unsupported resource operation")
 	return ps
 }
 
