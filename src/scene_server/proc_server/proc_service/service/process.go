@@ -18,9 +18,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/emicklei/go-restful"
-	"github.com/gin-gonic/gin/json"
-
+	"configcenter/src/auth"
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
@@ -29,6 +27,9 @@ import (
 	"configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/validator"
+
+	"github.com/emicklei/go-restful"
+	"github.com/gin-gonic/gin/json"
 )
 
 func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response) {
@@ -41,6 +42,29 @@ func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response
 	if err != nil {
 		blog.Errorf("convert appid from string to int failed!, err: %s, input:%s,rid:%s", err.Error(), appID, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
+		return
+	}
+
+	authed, reason, err := ps.auth.Authorize(&auth.Attribute{
+		Resources: []auth.Resource{{
+			Name:       common.BKInnerObjIDProc,
+			Action:     auth.Create,
+			BusinessID: uint64(appID),
+			APIVersion: "v3",
+		}},
+		User: auth.UserInfo{
+			UserName:   util.GetUser(req.Request.Header),
+			SupplierID: util.GetOwnerID(req.Request.Header),
+		},
+	})
+	if err != nil {
+		blog.Errorf("create process failed! decode request body err: %v,rid:%s", err, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommJSONUnmarshalFailed, err)})
+		return
+	}
+	if authed != auth.DecisionAllow {
+		blog.Errorf("create process failed! authorize failed, %s by reason: %v,rid:%s", authed, reason, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
@@ -79,6 +103,19 @@ func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response
 		blog.Errorf("get process instance detail failed. err:%s,input:%+v,rid:%s", err.Error(), input, srvData.rid)
 	} else {
 		ps.addProcLog(srvData.ctx, srvData.ownerID, appIDStr, srvData.user, nil, curDetail, auditoplog.AuditOpTypeAdd, int(instID), srvData.header)
+	}
+
+	// regist resource to auth center
+	requestID, err := ps.resHandler.Register(context.Background(), &auth.ResourceAttribute{
+		Object:     common.BKInnerObjIDProc,
+		ObjectName: common.BKInnerObjIDProc,
+		Layers:     []auth.Item{{Object: common.BKInnerObjIDProc, InstanceID: int64(instID)}},
+	})
+
+	if err != nil {
+		blog.Errorf("regist resource failed %v,IAM requestID:%s, rid:%s", err, requestID, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
 	}
 
 	// return success
