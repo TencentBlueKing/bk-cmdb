@@ -45,12 +45,11 @@ func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response
 		return
 	}
 
-	authed, reason, err := ps.auth.Authorize(&auth.Attribute{
+	authed, err := ps.auth.Authorize(&auth.Attribute{
 		Resources: []auth.Resource{{
-			Name:       common.BKInnerObjIDProc,
+			Basic:      auth.Basic{Type: auth.ObjectInstance, Name: common.BKInnerObjIDProc},
 			Action:     auth.Create,
-			BusinessID: uint64(appID),
-			APIVersion: "v3",
+			BusinessID: int64(appID),
 		}},
 		User: auth.UserInfo{
 			UserName:   util.GetUser(req.Request.Header),
@@ -59,12 +58,12 @@ func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response
 	})
 	if err != nil {
 		blog.Errorf("create process failed! decode request body err: %v,rid:%s", err, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommJSONUnmarshalFailed, err)})
+		resp.WriteError(http.StatusUnauthorized, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommAuthorizeFailed, err)})
 		return
 	}
-	if authed != auth.DecisionAllow {
-		blog.Errorf("create process failed! authorize failed, %s by reason: %v,rid:%s", authed, reason, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+	if authed.Authorized {
+		blog.Errorf("create process failed! authorize failed by reason: %v,rid:%s", authed.Reason, srvData.rid)
+		resp.WriteError(http.StatusUnauthorized, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommAuthorizeFailed, authed.Reason)})
 		return
 	}
 
@@ -106,15 +105,12 @@ func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response
 	}
 
 	// regist resource to auth center
-	requestID, err := ps.resHandler.Register(context.Background(), &auth.ResourceAttribute{
-		Object:     common.BKInnerObjIDProc,
-		ObjectName: common.BKInnerObjIDProc,
-		Layers:     []auth.Item{{Object: common.BKInnerObjIDProc, InstanceID: int64(instID)}},
-	})
-
-	if err != nil {
-		blog.Errorf("regist resource failed %v,IAM requestID:%s, rid:%s", err, requestID, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+	if err = ps.resHandler.Register(context.Background(), &auth.ResourceAttribute{
+		Basic:      auth.Basic{Type: auth.ObjectInstance, Name: common.BKInnerObjIDProc},
+		BusinessID: int64(appID),
+	}); err != nil {
+		blog.Errorf("regist resource failed %v, rid:%s", err, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
 		return
 	}
 
