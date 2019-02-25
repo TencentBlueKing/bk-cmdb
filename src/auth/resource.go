@@ -24,4 +24,18 @@ const (
 	ObjectAttributeGroup      ResourceType = "objectAttributeGroup"
 	ObjectAttribute           ResourceType = "objectAttribute"
 	ObjectUnique              ResourceType = "objectUnique"
+
+	HostUserCustom        ResourceType = "hostUserCustom"
+	HostFavorite          ResourceType = "hostFavorite"
+	Host                  ResourceType = "host"
+	AddHostToResourcePool ResourceType = "addHostToResourcePool"
+	MoveHostToModule      ResourceType = "moveHostToModule"
+	// move resource pool hosts to a business idle module
+	MoveResPoolHostToBizIdleModule ResourceType = "moveResPoolHostToBizIdleModule"
+	MoveHostToBizFaultModule       ResourceType = "moveHostToBizFaultModule"
+	MoveHostToBizIdleModule        ResourceType = "moveHostToBizIdleModule"
+	MoveHostFromModuleToResPool    ResourceType = "moveHostFromModuleToResPool"
+	MoveHostToAnotherBizModule     ResourceType = "moveHostToAnotherBizModule"
+	CleanHostInSetOrModule         ResourceType = "cleanHostInSetOrModule"
+	MoveHostsToOrBusinessModule    ResourceType = "moveHostsToBusinessOrModule"
 )
