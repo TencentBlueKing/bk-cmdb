@@ -48,7 +48,7 @@ func (h *HostLog) WithPrevious(ctx context.Context, hostID string, headers []met
 	if headers != nil || len(headers) != 0 {
 		h.Content.Headers = headers
 	} else {
-		h.Content.Headers, err = h.logic.GetHostAttributes(ctx, h.ownerID)
+		h.Content.Headers, err = h.logic.GetHostAttributes(ctx, h.ownerID, nil)
 		if err != nil {
 			return err
 		}
