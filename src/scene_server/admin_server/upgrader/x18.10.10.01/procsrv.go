@@ -16,13 +16,13 @@ import (
 	"fmt"
 	"strings"
 
-	"gopkg.in/mgo.v2"
-
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
+
+	"gopkg.in/mgo.v2"
 )
 
 func addProcOpTaskTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
@@ -101,7 +101,7 @@ func addProcFreshInstance(ctx context.Context, db dal.RDB, conf *upgrader.Config
 		if nil != err {
 			return err
 		}
-		SubscriptionName := "process instance refresh [incorrect deletion]"
+		SubscriptionName := "process instance refresh [Do not remove it]"
 		cnt, err := db.Table(tableName).Find(mapstr.MapStr{common.BKSubscriptionNameField: SubscriptionName, common.BKOperatorField: conf.User}).Count(ctx)
 		if nil != err {
 			return err
@@ -120,6 +120,7 @@ func addProcFreshInstance(ctx context.Context, db dal.RDB, conf *upgrader.Config
 			SubscriptionForm: "hostupdate,moduletransfer,update,processmodule,processupdate",
 			OwnerID:          common.BKDefaultOwnerID,
 			Operator:         conf.User,
+			LastTime:         metadata.Now(),
 		}
 		return db.Table(tableName).Insert(ctx, subscription)
 	}
