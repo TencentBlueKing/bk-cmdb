@@ -121,13 +121,13 @@ func importBKBiz(ctx context.Context, db dal.RDB, opt *option) error {
 					return err
 				}
 
-				cur.BizTopo.walk(func(node *Node) error {
+				err = cur.BizTopo.walk(func(node *Node) error {
 					nodeID, err := node.getInstID()
 					if nil != err {
 						return err
 					}
 					if node.ObjID == objID && nodeID == instID {
-						node.walk(func(child *Node) error {
+						childErr := node.walk(func(child *Node) error {
 							childID, err := child.getInstID()
 							if nil != err {
 								return err
@@ -142,7 +142,7 @@ func importBKBiz(ctx context.Context, db dal.RDB, opt *option) error {
 									return fmt.Errorf("get host count error: %s", err.Error())
 								}
 								if count > 0 {
-									return fmt.Errorf("there are %d hosts binded to module %v, please unbind them first and try again ", node.Data[common.BKModuleNameField], err.Error())
+									return fmt.Errorf("there are %d hosts binded to module %v, please unbind them first and try again ", count, node.Data[common.BKModuleNameField])
 								}
 							}
 
@@ -164,10 +164,15 @@ func importBKBiz(ctx context.Context, db dal.RDB, opt *option) error {
 							}
 							return nil
 						})
-						return fmt.Errorf("break")
+						if childErr != nil {
+							return childErr
+						}
 					}
 					return nil
 				})
+				if err != nil && err.Error() != "break" {
+					return err
+				}
 
 			}
 		}
