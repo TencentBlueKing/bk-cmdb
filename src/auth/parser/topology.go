@@ -13,12 +13,13 @@
 package parser
 
 import (
-	"configcenter/src/auth"
-	"configcenter/src/framework/core/errors"
 	"fmt"
-	"net/http"
-	"regexp"
-	"strconv"
+    "net/http"
+    "regexp"
+    "strconv"
+	
+    "configcenter/src/auth"
+    "configcenter/src/framework/core/errors"
 )
 
 func (ps *parseStream) topology() *parseStream {
@@ -53,7 +54,9 @@ func (ps *parseStream) business() *parseStream {
 	if createBusinessRegexp.MatchString(ps.RequestCtx.URI) && ps.RequestCtx.Method == http.MethodPost {
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:   auth.Business,
+				Basic: auth.Basic{
+				    Type:   auth.Business,
+                },
 				Action: auth.Create,
 			},
 		}
@@ -76,9 +79,11 @@ func (ps *parseStream) business() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.Business,
-				Action:     auth.Update,
-				InstanceID: bizID,
+				Basic: auth.Basic{
+				    Type:       auth.Business,
+                    InstanceID: bizID,
+                },
+                Action:     auth.Update,
 				BusinessID: bizID,
 			},
 		}
@@ -101,9 +106,11 @@ func (ps *parseStream) business() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.Business,
-				Action:     auth.Update,
-				InstanceID: bizID,
+				Basic: auth.Basic{
+				    Type:       auth.Business,
+                    InstanceID: bizID,
+                },
+                Action:     auth.Update,
 				BusinessID: bizID,
 			},
 		}
@@ -126,9 +133,11 @@ func (ps *parseStream) business() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.Business,
-				Action:     auth.Delete,
-				InstanceID: bizID,
+				Basic: auth.Basic{
+				    Type:       auth.Business,
+                    InstanceID: bizID,
+                },
+                Action:     auth.Delete,
 				BusinessID: bizID,
 			},
 		}
@@ -140,7 +149,9 @@ func (ps *parseStream) business() *parseStream {
 	if findBusinessRegexp.MatchString(ps.RequestCtx.URI) && ps.RequestCtx.Method == http.MethodPost {
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type: auth.Business,
+				Basic: auth.Basic{
+				    Type: auth.Business,
+                },
 				// we don't know if one or more business is to find, so we assume it's a find many
 				// business operation.
 				Action: auth.FindMany,
@@ -173,7 +184,9 @@ func (ps *parseStream) mainline() *parseStream {
 	if ps.hitPattern(createMainlineObjectPattern, http.MethodPost) {
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:   auth.MainlineObject,
+				Basic: auth.Basic{
+				    Type:   auth.MainlineObject,
+                },
 				Action: auth.Create,
 			},
 		}
@@ -184,7 +197,9 @@ func (ps *parseStream) mainline() *parseStream {
 	if ps.hitRegexp(deleteMainlineObjectRegexp, http.MethodDelete) {
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:   auth.MainlineObject,
+				Basic: auth.Basic{
+				    Type:   auth.MainlineObject,
+                },
 				Action: auth.Delete,
 			},
 		}
@@ -196,7 +211,9 @@ func (ps *parseStream) mainline() *parseStream {
 	if ps.hitRegexp(findMainlineObjectTopoRegexp, http.MethodGet) {
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:   auth.MainlineObjectTopology,
+				Basic: auth.Basic{
+				    Type:   auth.MainlineObjectTopology,
+                },
 				Action: auth.Find,
 			},
 		}
@@ -245,7 +262,9 @@ func (ps *parseStream) mainline() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.MainlineInstanceTopology,
+				Basic: auth.Basic{
+				    Type:       auth.MainlineInstanceTopology,
+                },
 				Action:     auth.Find,
 				BusinessID: bizID,
 			},
@@ -269,7 +288,9 @@ func (ps *parseStream) mainline() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.MainlineObject,
+				Basic: auth.Basic{
+				    Type:       auth.MainlineObject,
+                },
 				Action:     auth.Find,
 				BusinessID: bizID,
 			},
@@ -300,7 +321,9 @@ func (ps *parseStream) associationType() *parseStream {
 	if ps.hitPattern(findManyAssociationKindPattern, http.MethodPost) {
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:   auth.AssociationType,
+				Basic: auth.Basic{
+				    Type:   auth.AssociationType,
+                },
 				Action: auth.FindMany,
 			},
 		}
@@ -311,7 +334,9 @@ func (ps *parseStream) associationType() *parseStream {
 	if ps.hitPattern(createAssociationKindPattern, http.MethodPost) {
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:   auth.AssociationType,
+				Basic: auth.Basic{
+				    Type:   auth.AssociationType,
+                },
 				Action: auth.Create,
 			},
 		}
@@ -332,9 +357,11 @@ func (ps *parseStream) associationType() *parseStream {
 		}
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.AssociationType,
-				Action:     auth.Update,
-				InstanceID: kindID,
+				Basic: auth.Basic{
+				    Type:       auth.AssociationType,
+                    InstanceID: kindID,
+                },
+                Action:     auth.Update,
 			},
 		}
 
@@ -355,9 +382,11 @@ func (ps *parseStream) associationType() *parseStream {
 		}
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.AssociationType,
-				Action:     auth.Delete,
-				InstanceID: kindID,
+				Basic: auth.Basic{
+				    Type:       auth.AssociationType,
+                    InstanceID: kindID,
+                },
+                Action:     auth.Delete,
 			},
 		}
 
@@ -387,7 +416,9 @@ func (ps *parseStream) objectAssociation() *parseStream {
 	if ps.RequestCtx.URI == findObjectAssociationPattern && ps.RequestCtx.Method == http.MethodPost {
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:   auth.ObjectAssociation,
+				Basic: auth.Basic{
+				    Type:   auth.ObjectAssociation,
+                },
 				Action: auth.FindMany,
 			},
 		}
@@ -398,7 +429,9 @@ func (ps *parseStream) objectAssociation() *parseStream {
 	if ps.RequestCtx.URI == createObjectAssociationPattern && ps.RequestCtx.Method == http.MethodPost {
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:   auth.ObjectAssociation,
+				Basic: auth.Basic{
+				    Type:   auth.ObjectAssociation,
+                },
 				Action: auth.Create,
 			},
 		}
@@ -420,9 +453,11 @@ func (ps *parseStream) objectAssociation() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.ObjectAssociation,
-				Action:     auth.Update,
-				InstanceID: assoID,
+				Basic: auth.Basic{
+				    Type:       auth.ObjectAssociation,
+                    InstanceID: assoID,
+                },
+                Action:     auth.Update,
 			},
 		}
 		return ps
@@ -443,9 +478,11 @@ func (ps *parseStream) objectAssociation() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.ObjectAssociation,
-				Action:     auth.Delete,
-				InstanceID: assoID,
+				Basic: auth.Basic{
+				    Type:       auth.ObjectAssociation,
+                    InstanceID: assoID,
+                },
+                Action:     auth.Delete,
 			},
 		}
 		return ps
@@ -455,7 +492,9 @@ func (ps *parseStream) objectAssociation() *parseStream {
 	if ps.RequestCtx.URI == findObjectAssociationWithAssociationKindPattern && ps.RequestCtx.Method == http.MethodPost {
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:   auth.ObjectAssociation,
+				Basic: auth.Basic{
+				    Type:   auth.ObjectAssociation,
+                },
 				Action: auth.FindMany,
 			},
 		}
@@ -483,7 +522,9 @@ func (ps *parseStream) objectInstanceAssociation() *parseStream {
 	if ps.RequestCtx.URI == findObjectInstanceAssociationPattern && ps.RequestCtx.Method == http.MethodPost {
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:   auth.ObjectInstanceAssociation,
+				Basic: auth.Basic{
+				    Type:   auth.ObjectInstanceAssociation,
+                },
 				Action: auth.FindMany,
 			},
 		}
@@ -494,7 +535,9 @@ func (ps *parseStream) objectInstanceAssociation() *parseStream {
 	if ps.RequestCtx.URI == createObjectInstanceAssociationPattern && ps.RequestCtx.Method == http.MethodPost {
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:   auth.ObjectInstanceAssociation,
+				Basic: auth.Basic{
+				    Type:   auth.ObjectInstanceAssociation,
+                },
 				Action: auth.Create,
 			},
 		}
@@ -516,9 +559,11 @@ func (ps *parseStream) objectInstanceAssociation() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.ObjectInstanceAssociation,
-				Action:     auth.Delete,
-				InstanceID: assoID,
+				Basic: auth.Basic{
+				    Type:       auth.ObjectInstanceAssociation,
+                    InstanceID: assoID,
+                },
+                Action:     auth.Delete,
 			},
 		}
 		return ps
@@ -549,7 +594,9 @@ func (ps *parseStream) objectInstance() *parseStream {
 	if ps.hitRegexp(createObjectInstanceRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:   auth.ObjectInstance,
+				Basic: auth.Basic{
+				    Type:   auth.ObjectInstance,
+                },
 				Action: auth.Create,
 			},
 		}
@@ -564,7 +611,9 @@ func (ps *parseStream) objectInstance() *parseStream {
 		}
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:   auth.ObjectInstance,
+				Basic: auth.Basic{
+				    Type:   auth.ObjectInstance,
+                },
 				Action: auth.Find,
 				Affiliated: auth.Affiliated{
 					Type: auth.Object,
@@ -590,9 +639,11 @@ func (ps *parseStream) objectInstance() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.ObjectInstance,
-				Action:     auth.Update,
-				InstanceID: instID,
+				Basic: auth.Basic{
+				    Type:       auth.ObjectInstance,
+                    InstanceID: instID,
+                },
+                Action:     auth.Update,
 				Affiliated: auth.Affiliated{
 					Type: auth.Object,
 					Name: ps.RequestCtx.Elements[4],
@@ -611,8 +662,10 @@ func (ps *parseStream) objectInstance() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:   auth.ObjectInstance,
-				Action: auth.UpdateMany,
+				Basic: auth.Basic{
+				    Type: auth.ObjectInstance,
+                },
+				Action:  auth.UpdateMany,
 				Affiliated: auth.Affiliated{
 					Type: auth.Object,
 					Name: ps.RequestCtx.Elements[4],
@@ -631,7 +684,9 @@ func (ps *parseStream) objectInstance() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:   auth.ObjectInstance,
+				Basic: auth.Basic{
+				    Type:   auth.ObjectInstance,
+                },
 				Action: auth.DeleteMany,
 				Affiliated: auth.Affiliated{
 					Type: auth.Object,
@@ -657,9 +712,11 @@ func (ps *parseStream) objectInstance() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.ObjectInstance,
-				Action:     auth.Delete,
-				InstanceID: instID,
+				Basic: auth.Basic{
+				    Type:       auth.ObjectInstance,
+                    InstanceID: instID,
+                },
+                Action:     auth.Delete,
 				Affiliated: auth.Affiliated{
 					Type: auth.Object,
 					Name: ps.RequestCtx.Elements[4],
@@ -684,9 +741,11 @@ func (ps *parseStream) objectInstance() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.ObjectInstanceTopology,
-				Action:     auth.Find,
-				InstanceID: instID,
+				Basic: auth.Basic{
+				    Type:       auth.ObjectInstanceTopology,
+                    InstanceID: instID,
+                },
+                Action:     auth.Find,
 				Affiliated: auth.Affiliated{
 					Type: auth.Object,
 					Name: ps.RequestCtx.Elements[9],
@@ -711,9 +770,11 @@ func (ps *parseStream) objectInstance() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.ObjectInstanceTopology,
-				Action:     auth.Find,
-				InstanceID: instID,
+				Basic: auth.Basic{
+				    Type:       auth.ObjectInstanceTopology,
+                    InstanceID: instID,
+                },
+                Action:     auth.Find,
 				Affiliated: auth.Affiliated{
 					Type: auth.Object,
 					Name: ps.RequestCtx.Elements[9],
@@ -739,9 +800,11 @@ func (ps *parseStream) objectInstance() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.ObjectInstanceTopology,
-				Action:     auth.Find,
-				InstanceID: bizID,
+				Basic: auth.Basic{
+				    Type:       auth.ObjectInstanceTopology,
+                    InstanceID: bizID,
+                },
+                Action:     auth.Find,
 				Affiliated: auth.Affiliated{
 					Type: auth.Object,
 					Name: string(auth.Business),
@@ -760,7 +823,9 @@ func (ps *parseStream) objectInstance() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:   auth.ObjectInstanceTopology,
+				Basic: auth.Basic{
+				    Type:   auth.ObjectInstanceTopology,
+                },
 				Action: auth.FindMany,
 				Affiliated: auth.Affiliated{
 					Type: auth.Object,
@@ -796,7 +861,9 @@ func (ps *parseStream) object() *parseStream {
 	if ps.hitPattern(createObjectPattern, http.MethodPost) {
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:   auth.Object,
+				Basic: auth.Basic{
+				    Type:   auth.Object,
+                },
 				Action: auth.Create,
 			},
 		}
@@ -818,9 +885,11 @@ func (ps *parseStream) object() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.Object,
-				Action:     auth.Delete,
-				InstanceID: objID,
+				Basic: auth.Basic{
+				    Type:       auth.Object,
+                    InstanceID: objID,
+                },
+                Action:     auth.Delete,
 			},
 		}
 		return ps
@@ -841,9 +910,11 @@ func (ps *parseStream) object() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.Object,
-				Action:     auth.Update,
-				InstanceID: objID,
+				Basic: auth.Basic{
+				    Type:       auth.Object,
+                    InstanceID: objID,
+                },
+                Action:     auth.Update,
 			},
 		}
 		return ps
@@ -853,7 +924,9 @@ func (ps *parseStream) object() *parseStream {
 	if ps.hitPattern(findObjectsPattern, http.MethodPost) {
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:   auth.Object,
+				Basic: auth.Basic{
+				    Type:   auth.Object,
+                },
 				Action: auth.FindMany,
 			},
 		}
@@ -864,7 +937,9 @@ func (ps *parseStream) object() *parseStream {
 	if ps.hitPattern(findObjectTopologyPattern, http.MethodPost) {
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:   auth.ObjectTopology,
+				Basic: auth.Basic{
+				    Type:   auth.ObjectTopology,
+                },
 				Action: auth.Find,
 			},
 		}
@@ -875,7 +950,9 @@ func (ps *parseStream) object() *parseStream {
 	if ps.hitRegexp(findObjectTopologyGraphicRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:   auth.ObjectTopology,
+				Basic: auth.Basic{
+				    Type:   auth.ObjectTopology,
+                },
 				Action: auth.Find,
 			},
 		}
@@ -886,7 +963,9 @@ func (ps *parseStream) object() *parseStream {
 	if ps.hitRegexp(updateObjectTopologyGraphicRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:   auth.ObjectTopology,
+				Basic: auth.Basic{
+				    Type:   auth.ObjectTopology,
+                },
 				Action: auth.Update,
 			},
 		}
@@ -916,7 +995,9 @@ func (ps *parseStream) ObjectClassification() *parseStream {
 	if ps.hitPattern(createObjectClassificationPattern, http.MethodPost) {
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:   auth.ObjectClassification,
+				Basic: auth.Basic{
+				    Type:   auth.ObjectClassification,
+                },
 				Action: auth.Create,
 			},
 		}
@@ -938,9 +1019,11 @@ func (ps *parseStream) ObjectClassification() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.ObjectClassification,
-				Action:     auth.Delete,
-				InstanceID: classID,
+				Basic: auth.Basic{
+				    Type:       auth.ObjectClassification,
+                    InstanceID: classID,
+                },
+                Action:     auth.Delete,
 			},
 		}
 		return ps
@@ -961,9 +1044,11 @@ func (ps *parseStream) ObjectClassification() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.ObjectClassification,
-				Action:     auth.Update,
-				InstanceID: classID,
+				Basic: auth.Basic{
+				    Type:       auth.ObjectClassification,
+                    InstanceID: classID,
+                },
+                Action:     auth.Update,
 			},
 		}
 		return ps
@@ -973,7 +1058,9 @@ func (ps *parseStream) ObjectClassification() *parseStream {
 	if ps.hitPattern(findObjectClassificationListPattern, http.MethodPost) {
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:   auth.ObjectClassification,
+				Basic: auth.Basic{
+				    Type:   auth.ObjectClassification,
+                },
 				Action: auth.FindMany,
 			},
 		}
@@ -984,7 +1071,9 @@ func (ps *parseStream) ObjectClassification() *parseStream {
 	if ps.hitRegexp(findObjectsBelongsToClassificationRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:   auth.ObjectClassification,
+				Basic: auth.Basic{
+				    Type:   auth.ObjectClassification,
+                },
 				Action: auth.FindMany,
 			},
 		}
@@ -1014,7 +1103,9 @@ func (ps *parseStream) objectAttributeGroup() *parseStream {
 	if ps.hitPattern(createObjectAttributeGroupPattern, http.MethodPost) {
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:   auth.ObjectAttributeGroup,
+				Basic: auth.Basic{
+				    Type:   auth.ObjectAttributeGroup,
+                },
 				Action: auth.Create,
 			},
 		}
@@ -1030,7 +1121,9 @@ func (ps *parseStream) objectAttributeGroup() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:   auth.ObjectAttributeGroup,
+				Basic: auth.Basic{
+				    Type:   auth.ObjectAttributeGroup,
+                },
 				Action: auth.Find,
 				Affiliated: auth.Affiliated{
 					Type: auth.Object,
@@ -1045,7 +1138,9 @@ func (ps *parseStream) objectAttributeGroup() *parseStream {
 	if ps.hitPattern(updateObjectAttributeGroupPattern, http.MethodPut) {
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:   auth.ObjectClassification,
+				Basic: auth.Basic{
+				    Type:   auth.ObjectClassification,
+                },
 				Action: auth.Update,
 			},
 		}
@@ -1067,9 +1162,11 @@ func (ps *parseStream) objectAttributeGroup() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.ObjectAttributeGroup,
-				Action:     auth.Delete,
-				InstanceID: groupID,
+				Basic: auth.Basic{
+				    Type:       auth.ObjectAttributeGroup,
+                    InstanceID: groupID,
+                },
+                Action:     auth.Delete,
 			},
 		}
 		return ps
@@ -1083,8 +1180,10 @@ func (ps *parseStream) objectAttributeGroup() *parseStream {
 		}
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:   auth.ObjectAttributeGroup,
-				Name:   ps.RequestCtx.Elements[11],
+				Basic: auth.Basic{
+				    Type:   auth.ObjectAttributeGroup,
+                    Name:   ps.RequestCtx.Elements[11],
+                },
 				Action: auth.Delete,
 			},
 		}
@@ -1113,7 +1212,9 @@ func (ps *parseStream) objectAttribute() *parseStream {
 	if ps.hitPattern(createObjectAttributePattern, http.MethodPost) {
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:   auth.ObjectAttribute,
+				Basic: auth.Basic{
+				    Type:   auth.ObjectAttribute,
+                },
 				Action: auth.Create,
 			},
 		}
@@ -1135,9 +1236,11 @@ func (ps *parseStream) objectAttribute() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.ObjectAttribute,
-				Action:     auth.Delete,
-				InstanceID: attrID,
+				Basic: auth.Basic{
+				    Type:       auth.ObjectAttribute,
+                    InstanceID: attrID,
+                },
+                Action:     auth.Delete,
 			},
 		}
 		return ps
@@ -1158,9 +1261,11 @@ func (ps *parseStream) objectAttribute() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.ObjectAttribute,
-				Action:     auth.Update,
-				InstanceID: attrID,
+				Basic: auth.Basic{
+				    Type:       auth.ObjectAttribute,
+                    InstanceID: attrID,
+                },
+                Action:     auth.Update,
 			},
 		}
 		return ps
@@ -1170,7 +1275,9 @@ func (ps *parseStream) objectAttribute() *parseStream {
 	if ps.hitPattern(findObjectAttributePattern, http.MethodPost) {
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:   auth.ObjectAttribute,
+				Basic: auth.Basic{
+				    Type:   auth.ObjectAttribute,
+                },
 				Action: auth.Find,
 			},
 		}
@@ -1213,7 +1320,9 @@ func (ps *parseStream) ObjectModule() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.ObjectModule,
+				Basic: auth.Basic{
+				    Type:       auth.ObjectModule,
+                },
 				Action:     auth.Create,
 				BusinessID: bizID,
 				Affiliated: auth.Affiliated{
@@ -1253,9 +1362,11 @@ func (ps *parseStream) ObjectModule() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.ObjectModule,
-				Action:     auth.Delete,
-				InstanceID: moduleID,
+				Basic: auth.Basic{
+				    Type:       auth.ObjectModule,
+                    InstanceID: moduleID,
+                },
+                Action:     auth.Delete,
 				BusinessID: bizID,
 				Affiliated: auth.Affiliated{
 					Type:       auth.ObjectInstance,
@@ -1294,9 +1405,11 @@ func (ps *parseStream) ObjectModule() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.ObjectModule,
-				Action:     auth.Update,
-				InstanceID: moduleID,
+				Basic: auth.Basic{
+				    Type:       auth.ObjectModule,
+                    InstanceID: moduleID,
+                },
+                Action:     auth.Update,
 				BusinessID: bizID,
 				Affiliated: auth.Affiliated{
 					Type:       auth.ObjectInstance,
@@ -1329,7 +1442,9 @@ func (ps *parseStream) ObjectModule() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.ObjectModule,
+				Basic: auth.Basic{
+				    Type:       auth.ObjectModule,
+                },
 				Action:     auth.FindMany,
 				BusinessID: bizID,
 				Affiliated: auth.Affiliated{
@@ -1372,7 +1487,9 @@ func (ps *parseStream) ObjectSet() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.ObjectSet,
+				Basic: auth.Basic{
+				    Type:       auth.ObjectSet,
+                },
 				Action:     auth.Create,
 				BusinessID: bizID,
 			},
@@ -1401,9 +1518,11 @@ func (ps *parseStream) ObjectSet() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.ObjectSet,
-				Action:     auth.Delete,
-				InstanceID: setID,
+				Basic: auth.Basic{
+				    Type:       auth.ObjectSet,
+                    InstanceID: setID,
+                },
+                Action:     auth.Delete,
 				BusinessID: bizID,
 			},
 		}
@@ -1425,7 +1544,9 @@ func (ps *parseStream) ObjectSet() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.ObjectSet,
+				Basic: auth.Basic{
+				    Type:       auth.ObjectSet,
+                },
 				Action:     auth.DeleteMany,
 				BusinessID: bizID,
 			},
@@ -1454,9 +1575,11 @@ func (ps *parseStream) ObjectSet() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.ObjectSet,
-				Action:     auth.Update,
-				InstanceID: setID,
+				Basic: auth.Basic{
+				    Type:       auth.ObjectSet,
+                    InstanceID: setID,
+                },
+                Action:     auth.Update,
 				BusinessID: bizID,
 			},
 		}
@@ -1478,7 +1601,9 @@ func (ps *parseStream) ObjectSet() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.ObjectSet,
+				Basic: auth.Basic{
+				    Type:       auth.ObjectSet,
+                },
 				Action:     auth.FindMany,
 				BusinessID: bizID,
 			},
@@ -1505,8 +1630,10 @@ func (ps *parseStream) objectUnique() *parseStream {
 	if ps.hitRegexp(createObjectUniqueRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:   auth.ObjectUnique,
-				Name:   ps.RequestCtx.Elements[3],
+				Basic: auth.Basic{
+				    Type:   auth.ObjectUnique,
+                    Name:   ps.RequestCtx.Elements[3],
+                },
 				Action: auth.Create,
 			},
 		}
@@ -1523,8 +1650,10 @@ func (ps *parseStream) objectUnique() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.ObjectUnique,
-				InstanceID: uniqueID,
+				Basic: auth.Basic{
+				    Type:       auth.ObjectUnique,
+                    InstanceID: uniqueID,
+                },
 				Action:     auth.Update,
 				Affiliated: auth.Affiliated{
 					Type: auth.Object,
@@ -1545,8 +1674,10 @@ func (ps *parseStream) objectUnique() *parseStream {
 
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:       auth.ObjectUnique,
-				InstanceID: uniqueID,
+				Basic: auth.Basic{
+				    Type:       auth.ObjectUnique,
+                    InstanceID: uniqueID,
+                },
 				Action:     auth.Delete,
 				Affiliated: auth.Affiliated{
 					Type: auth.Object,
@@ -1561,7 +1692,9 @@ func (ps *parseStream) objectUnique() *parseStream {
 	if ps.hitRegexp(findObjectUniqueRegexp, http.MethodGet) {
 		ps.Attribute.Resources = []auth.Resource{
 			auth.Resource{
-				Type:   auth.ObjectUnique,
+				Basic: auth.Basic{
+				    Type:   auth.ObjectUnique,
+                },
 				Action: auth.FindMany,
 				Affiliated: auth.Affiliated{
 					Type: auth.Object,
