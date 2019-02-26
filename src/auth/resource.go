@@ -43,4 +43,9 @@ const (
 	ProcessConfigTemplate        ResourceType = "processConfigTemplate"
 	ProcessConfigTemplateVersion ResourceType = "processConfigTemplateVersion"
 	ProcessBoundConfig           ResourceType = "processBoundConfig"
+
+	NetCollector ResourceType = "netCollector"
+	NetDevice    ResourceType = "netDevice"
+	NetProperty  ResourceType = "netProperty"
+	NetReport    ResourceType = "netReport"
 )
