@@ -159,7 +159,9 @@ func (c *Mongo) NextSequence(ctx context.Context, sequenceName string) (uint64, 
 	msg.OPCode = types.OPFindAndModifyCode
 	msg.Collection = common.BKTableNameIDgenerator
 	if err := msg.DOC.Encode(types.Document{
-		"$inc": types.Document{"SequenceID": 1},
+		"$inc":         types.Document{"SequenceID": 1},
+		"$setOnInsert": types.Document{"create_time": time.Now()},
+		"$set":         types.Document{"last_time": time.Now()},
 	}); err != nil {
 		return 0, err
 	}
