@@ -38,4 +38,9 @@ const (
 	MoveHostToAnotherBizModule     ResourceType = "moveHostToAnotherBizModule"
 	CleanHostInSetOrModule         ResourceType = "cleanHostInSetOrModule"
 	MoveHostsToOrBusinessModule    ResourceType = "moveHostsToBusinessOrModule"
+
+	Process                      ResourceType = "process"
+	ProcessConfigTemplate        ResourceType = "processConfigTemplate"
+	ProcessConfigTemplateVersion ResourceType = "processConfigTemplateVersion"
+	ProcessBoundConfig           ResourceType = "processBoundConfig"
 )
