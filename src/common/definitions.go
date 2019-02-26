@@ -565,6 +565,7 @@ const (
 
 	// BKGseOpProcTaskDetailField gse operate process return detail
 	BKGseOpProcTaskDetailField = "detail"
+	BKGroupField               = "group"
 )
 
 const (
