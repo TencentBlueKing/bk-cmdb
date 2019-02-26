@@ -238,11 +238,11 @@ func (ac *AuthCenter) Get(ctx context.Context) error {
 	panic("implement me")
 }
 
-func (ac *AuthCenter) QuerySystemInfo(ctx context.Context, systemID string) (*QuerySystemResponse, error) {
+func (ac *AuthCenter) QuerySystemInfo(ctx context.Context, systemID string) (*SystemDetail, error) {
 	url := fmt.Sprintf("/bkiam/api/v1/perm-model/systems/%s", systemID)
 	resp := struct {
 		BaseResponse
-		Data QuerySystemResponse `json:"data"`
+		Data SystemDetail `json:"data"`
 	}{}
 
 	err := ac.client.Get().
@@ -375,6 +375,25 @@ func (ac *AuthCenter) UpdateResourceActionBatch(ctx context.Context, systemID, s
 	return nil
 }
 
+func (ac *AuthCenter) InitSystemBatch(ctx context.Context, detail SystemDetail) error {
+	const url = "/bkiam/api/v1/perm-model/systems/init"
+	resp := BaseResponse{}
+
+	err := ac.client.Put().
+		SubResource(url).
+		WithContext(ctx).
+		WithHeaders(ac.header).
+		Body(detail).
+		Do().Into(&resp)
+	if err != nil {
+		return fmt.Errorf("init system resource failed, error: %v", err)
+	}
+	if !resp.Result {
+		return fmt.Errorf("init system resource failed, message: %s, code: %v", resp.Message, resp.Code)
+	}
+
+	return nil
+}
 func (ac *AuthCenter) getScopeInfo(r *meta.ResourceAttribute) (*ScopeInfo, error) {
 	s := new(ScopeInfo)
 	// TODO: this operation may be wrong, because some api filters does not
