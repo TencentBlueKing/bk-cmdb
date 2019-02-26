@@ -98,6 +98,19 @@ func (t *meta) DeleteObjectAssociation(ctx context.Context, objID int64, h http.
 	return
 }
 
+func (t *meta) CreateMainlineObjectAssociation(ctx context.Context, h http.Header, dat *metatype.Association) (resp *metatype.CreateResult, err error) {
+	subPath := "/meta/mainlineobjectasst"
+	resp = new(metatype.CreateResult)
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
 func (t *meta) CreateObjectAssociation(ctx context.Context, h http.Header, dat *metatype.Association) (resp *metatype.CreateResult, err error) {
 	subPath := "/meta/objectasst"
 	resp = new(metatype.CreateResult)
