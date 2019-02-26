@@ -124,21 +124,23 @@ type System struct {
 }
 
 type Resource struct {
-	ResourceTypeID       string `json:"resource_type_id"`
-	ResourceTypeName     string `json:"resource_type_name"`
-	ParentResourceTypeID string `json:"parent_resource_type_id"`
-	Actions              []struct {
-		ActionID          string `json:"action_id"`
-		ActionName        string `json:"action_name"`
-		IsRelatedResource bool   `json:"is_related_resource"`
-	} `json:"actions"`
+	ResourceTypeID       string   `json:"resource_type_id"`
+	ResourceTypeName     string   `json:"resource_type_name"`
+	ParentResourceTypeID string   `json:"parent_resource_type_id"`
+	Actions              []Action `json:"actions"`
 }
 
-type QuerySystemResponse struct {
+type Action struct {
+	ActionID          string `json:"action_id"`
+	ActionName        string `json:"action_name"`
+	IsRelatedResource bool   `json:"is_related_resource"`
+}
+
+type SystemDetail struct {
 	System
 	Scopes []struct {
-		ScopeTypeID  string     `json:"scope_type_id"`
-		ResourceType []Resource `json:"resource_types"`
+		ScopeTypeID   string     `json:"scope_type_id"`
+		ResourceTypes []Resource `json:"resource_types"`
 	} `json:"scopes"`
 }
 
