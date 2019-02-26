@@ -1,3 +1,15 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2019 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package authcenter
 
 import (
@@ -93,7 +105,7 @@ func NewAuthCenter(tls *util.TLSClientConfig, authCfg map[string]string) (*AuthC
 	}, nil
 }
 
-// authCenter means BlueKing's authorize center,
+// AuthCenter means BlueKing's authorize center,
 // which is also a open source product.
 type AuthCenter struct {
 	Config AuthConfig
@@ -224,6 +236,143 @@ func (ac *AuthCenter) Update(ctx context.Context, r *meta.ResourceAttribute) err
 
 func (ac *AuthCenter) Get(ctx context.Context) error {
 	panic("implement me")
+}
+
+func (ac *AuthCenter) QuerySystemInfo(ctx context.Context, systemID string) (*QuerySystemResponse, error) {
+	url := fmt.Sprintf("/bkiam/api/v1/perm-model/systems/%s", systemID)
+	resp := struct {
+		BaseResponse
+		Data QuerySystemResponse `json:"data"`
+	}{}
+
+	err := ac.client.Get().
+		SubResource(url).
+		WithContext(ctx).
+		WithHeaders(ac.header).
+		Do().Into(&resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if !resp.Result {
+		return nil, fmt.Errorf("query system info for [%s] failed, message: %s, code: %v", systemID, resp.Message, resp.Code)
+	}
+
+	return &resp.Data, nil
+}
+
+func (ac *AuthCenter) RegistSystem(ctx context.Context, system System) error {
+	const url = "/bkiam/api/v1/perm-model/systems"
+	resp := struct {
+		BaseResponse
+		Data System `json:"data"`
+	}{}
+
+	err := ac.client.Post().
+		SubResource(url).
+		WithContext(ctx).
+		WithHeaders(ac.header).
+		Body(system).
+		Do().Into(&resp)
+	if err != nil {
+		return err
+	}
+
+	if !resp.Result {
+		return fmt.Errorf("regist system info for [%s] failed, message: %s, code: %v", system.SystemID, resp.Message, resp.Code)
+	}
+
+	return nil
+}
+
+func (ac *AuthCenter) UpdateSystem(ctx context.Context, system System) error {
+	url := fmt.Sprintf("/bkiam/api/v1/perm-model/systems/%s", system.SystemID)
+	resp := struct {
+		BaseResponse
+		Data System `json:"data"`
+	}{}
+
+	err := ac.client.Put().
+		SubResource(url).
+		WithContext(ctx).
+		WithHeaders(ac.header).
+		Body(system).
+		Do().Into(&resp)
+	if err != nil {
+		return err
+	}
+
+	if !resp.Result {
+		return fmt.Errorf("regist system info for [%s] failed, message: %s, code: %v", system.SystemID, resp.Message, resp.Code)
+	}
+
+	return nil
+}
+
+func (ac *AuthCenter) RegistResourceBatch(ctx context.Context, systemID, scopeType string, resources []Resource) error {
+	url := fmt.Sprintf("/bkiam/api/v1/perm-model/systems/%s/scope-types/%s/resource-types/batch-register", systemID, scopeType)
+	resp := BaseResponse{}
+
+	err := ac.client.Put().
+		SubResource(url).
+		WithContext(ctx).
+		WithHeaders(ac.header).
+		Body(struct {
+			ResourceTypes []Resource `json:"resource_types"`
+		}{resources}).
+		Do().Into(&resp)
+	if err != nil {
+		return fmt.Errorf("regist resource %+v for [%s] failed, error: %v", resources, systemID, err)
+	}
+	if !resp.Result {
+		return fmt.Errorf("regist resource %+v for [%s] failed, message: %s, code: %v", resources, systemID, resp.Message, resp.Code)
+	}
+
+	return nil
+}
+
+func (ac *AuthCenter) UpdateResourceBatch(ctx context.Context, systemID, scopeType string, resources []Resource) error {
+	url := fmt.Sprintf("/bkiam/api/v1/perm-model/systems/%s/scope-types/%s/resource-types/batch-update", systemID, scopeType)
+	resp := BaseResponse{}
+
+	err := ac.client.Put().
+		SubResource(url).
+		WithContext(ctx).
+		WithHeaders(ac.header).
+		Body(struct {
+			ResourceTypes []Resource `json:"resource_types"`
+		}{resources}).
+		Do().Into(&resp)
+	if err != nil {
+		return fmt.Errorf("regist resource %+v for [%s] failed, error: %v", resources, systemID, err)
+	}
+	if !resp.Result {
+		return fmt.Errorf("regist resource %+v for [%s] failed, message: %s, code: %v", resources, systemID, resp.Message, resp.Code)
+	}
+
+	return nil
+}
+
+func (ac *AuthCenter) UpdateResourceActionBatch(ctx context.Context, systemID, scopeType string, resources []Resource) error {
+	url := fmt.Sprintf("/bkiam/api/v1/perm-model/systems/%s/scope-types/%s/resource-type-actions/batch-update", systemID, scopeType)
+	resp := BaseResponse{}
+
+	err := ac.client.Put().
+		SubResource(url).
+		WithContext(ctx).
+		WithHeaders(ac.header).
+		Body(struct {
+			ResourceTypes []Resource `json:"resource_types"`
+		}{resources}).
+		Do().Into(&resp)
+	if err != nil {
+		return fmt.Errorf("regist resource %+v for [%s] failed, error: %v", resources, systemID, err)
+	}
+	if !resp.Result {
+		return fmt.Errorf("regist resource %+v for [%s] failed, message: %s, code: %v", resources, systemID, resp.Message, resp.Code)
+	}
+
+	return nil
 }
 
 func (ac *AuthCenter) getScopeInfo(r *meta.ResourceAttribute) (*ScopeInfo, error) {
