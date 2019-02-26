@@ -25,3 +25,4 @@
      - name: 绑定模块
        id: delete
        bind-module: true
+ 
