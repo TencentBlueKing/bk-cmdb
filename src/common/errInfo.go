@@ -145,6 +145,9 @@ const (
 	// CCErrCommParamsNeedFloat the parameter must be float type
 	CCErrCommParamsNeedFloat = 1199042
 
+	// CCErrUseBKMainlineForbidden forbidden use association type bk_mainline
+	CCErrUseBKMainlineForbidden = 1199043
+
 	// apiserver 1100XXX
 
 	// toposerver 1101XXX

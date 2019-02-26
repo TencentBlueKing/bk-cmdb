@@ -372,7 +372,7 @@ func (o *object) SetMainlineParentObject(objID string) error {
 		asst.ObjectID = o.obj.ObjectID
 		asst.AsstObjID = objID
 
-		rsp, err := o.clientSet.ObjectController().Meta().CreateObjectAssociation(context.Background(), o.params.Header, asst)
+		rsp, err := o.clientSet.ObjectController().Meta().CreateMainlineObjectAssociation(context.Background(), o.params.Header, asst)
 
 		if nil != err {
 			blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
@@ -428,7 +428,7 @@ func (o *object) CreateMainlineObjectAssociation(relateToObjID string) error {
 		IsPre:      &defined,
 	}
 
-	result, err := o.clientSet.ObjectController().Meta().CreateObjectAssociation(context.Background(), o.params.Header, &association)
+	result, err := o.clientSet.ObjectController().Meta().CreateMainlineObjectAssociation(context.Background(), o.params.Header, &association)
 	if err != nil {
 		blog.Errorf("[model-obj] create mainline object association failed, err: %v", err)
 		return err
