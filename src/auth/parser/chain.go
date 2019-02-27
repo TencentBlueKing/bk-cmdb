@@ -1,13 +1,14 @@
 package parser
 
 import (
-	"configcenter/src/auth"
-	"configcenter/src/common"
-	"configcenter/src/common/metadata"
 	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
+
+	"configcenter/src/auth/meta"
+	"configcenter/src/common"
+	"configcenter/src/common/metadata"
 )
 
 type RequestContext struct {
@@ -31,9 +32,9 @@ type RequestContext struct {
 
 type parseStream struct {
 	RequestCtx *RequestContext
-	Attribute  *auth.Attribute
+	Attribute  *meta.Attribute
 	err        error
-	action     auth.Action
+	action     meta.Action
 }
 
 func newParseStream(rc *RequestContext) (*parseStream, error) {
@@ -44,7 +45,8 @@ func newParseStream(rc *RequestContext) (*parseStream, error) {
 	return &parseStream{RequestCtx: rc}, nil
 }
 
-func (ps *parseStream) Parse() (*auth.Attribute, error) {
+// parse is used to parse the auth attribute from RequestContext.
+func (ps *parseStream) Parse() (*meta.Attribute, error) {
 	if ps.err != nil {
 		return nil, ps.err
 	}
@@ -53,7 +55,11 @@ func (ps *parseStream) Parse() (*auth.Attribute, error) {
 		validateVersion().
 		validateResourceAction().
 		validateUserAndSupplier().
-
+		hostRelated().
+		topology().
+		topologyLatest().
+		netCollectorRelated().
+		processRelated().
 		// finalizer must be at the end of the check chains.
 		finalizer()
 
@@ -99,27 +105,27 @@ func (ps *parseStream) validateResourceAction() *parseStream {
 	action := ps.RequestCtx.Elements[2]
 	switch action {
 	case "find":
-		ps.action = auth.Find
+		ps.action = meta.Find
 	case "findMany":
-		ps.action = auth.FindMany
+		ps.action = meta.FindMany
 
 	case "create":
-		ps.action = auth.Create
+		ps.action = meta.Create
 	case "createMany":
-		ps.action = auth.CreateMany
+		ps.action = meta.CreateMany
 
 	case "update":
-		ps.action = auth.Update
+		ps.action = meta.Update
 	case "updateMany":
-		ps.action = auth.UpdateMany
+		ps.action = meta.UpdateMany
 
 	case "delete":
-		ps.action = auth.Delete
+		ps.action = meta.Delete
 	case "deleteMany":
-		ps.action = auth.DeleteMany
+		ps.action = meta.DeleteMany
 
 	default:
-		ps.action = auth.Unknown
+		ps.action = meta.Unknown
 		// to compatible api that is not this kind of format,
 		// this err will not be set, but it will be set when
 		// all the api is normalized.

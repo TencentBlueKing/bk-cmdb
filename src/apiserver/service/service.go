@@ -16,9 +16,17 @@ import (
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apiserver/core"
 	compatiblev2 "configcenter/src/apiserver/core/compatiblev2/service"
+	"configcenter/src/auth"
+	"configcenter/src/auth/parser"
+	"configcenter/src/auth/permit"
+	"configcenter/src/common"
 	"configcenter/src/common/backbone"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/rdapi"
+	"configcenter/src/common/util"
+	"net/http"
 
 	"github.com/emicklei/go-restful"
 )
@@ -26,7 +34,7 @@ import (
 // Service service methods
 type Service interface {
 	WebServices() []*restful.WebService
-	SetConfig(engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface)
+	SetConfig(engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface, authorize auth.Authorize)
 }
 
 // NewService create a new service instance
@@ -37,17 +45,19 @@ func NewService() Service {
 }
 
 type service struct {
-	engine    *backbone.Engine
-	client    HTTPClient
-	core      core.Core
-	discovery discovery.DiscoveryInterface
+	engine     *backbone.Engine
+	client     HTTPClient
+	core       core.Core
+	discovery  discovery.DiscoveryInterface
+	authorizer auth.Authorizer
 }
 
-func (s *service) SetConfig(engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface) {
+func (s *service) SetConfig(engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface, authorize auth.Authorize) {
 	s.engine = engine
 	s.client = httpClient
 	s.discovery = discovery
 	s.core.CompatibleV2Operation().SetConfig(engine)
+	s.authorizer = authorize
 }
 
 func (s *service) WebServices() []*restful.WebService {
@@ -61,7 +71,8 @@ func (s *service) WebServices() []*restful.WebService {
 	// init V3
 	ws := &restful.WebService{}
 
-	ws.Path(rootPath).Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
+	ws.Path(rootPath).Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).
+		Filter(authFilter(s.authorizer, getErrFun))
 	ws.Route(ws.GET("{.*}").Filter(s.URLFilterChan).To(s.Get))
 	ws.Route(ws.POST("{.*}").Filter(s.URLFilterChan).To(s.Post))
 	ws.Route(ws.PUT("{.*}").Filter(s.URLFilterChan).To(s.Put))
@@ -73,4 +84,69 @@ func (s *service) WebServices() []*restful.WebService {
 	allWebServices = append(allWebServices, s.core.CompatibleV2Operation().WebService())
 
 	return allWebServices
+}
+
+func authFilter(authorize auth.Authorizer, errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+		language := util.GetLanguage(req.Request.Header)
+		attribute, err := parser.ParseAttribute(req)
+		if err != nil {
+			blog.Errorf("request id: %s, parse auth attribute failed, err: %v", util.GetHTTPCCRequestID(req.Request.Header), err)
+			rsp := metadata.BaseResp{
+				Code:   common.CCErrCommParseAuthAttributeFailed,
+				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommParseAuthAttributeFailed).Error(),
+				Result: false,
+			}
+			resp.WriteHeader(http.StatusBadRequest)
+			resp.WriteAsJson(rsp)
+			return
+		}
+
+		// check whether this request is in whitelist, so that it can be skip directly.
+		if permit.IsPermit(attribute) {
+			fchain.ProcessFilter(req, resp)
+			return
+		}
+		
+		// check if authorize is nil or not, which means to check if the authorize instance has 
+		// already been initialized or not. if not, api server should not be used.
+		if nil == authorize {
+            blog.Error("authorize instance has not been initialized")
+            rsp := metadata.BaseResp{
+                Code:   common.CCErrCommCheckAuthorizeFailed,
+                ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
+                Result: false,
+            }
+            resp.WriteHeader(http.StatusInternalServerError)
+            resp.WriteAsJson(rsp)
+        }
+
+		decision, err := authorize.Authorize(attribute)
+		if err != nil {
+			blog.Errorf("request id: %s, authorized failed, because authorize this request failed, err: %v", err)
+			rsp := metadata.BaseResp{
+				Code:   common.CCErrCommCheckAuthorizeFailed,
+				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
+				Result: false,
+			}
+			resp.WriteHeader(http.StatusInternalServerError)
+			resp.WriteAsJson(rsp)
+			return
+		}
+
+		if !decision.Authorized {
+			blog.Errorf("request id: %s, auth failed. reason: ", err, decision.Reason)
+			rsp := metadata.BaseResp{
+				Code:   common.CCErrCommAuthNotHavePermission,
+				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommAuthNotHavePermission).Error(),
+				Result: false,
+			}
+			resp.WriteHeader(http.StatusForbidden)
+			resp.WriteAsJson(rsp)
+			return
+		}
+
+		fchain.ProcessFilter(req, resp)
+		return
+	}
 }

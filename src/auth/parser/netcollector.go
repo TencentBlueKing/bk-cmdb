@@ -4,8 +4,21 @@ import (
 	"net/http"
 	"regexp"
 
-	"configcenter/src/auth"
+	"configcenter/src/auth/meta"
 )
+
+func (ps *parseStream) netCollectorRelated() *parseStream {
+	if ps.err != nil {
+		return ps
+	}
+
+	ps.netCollector().
+		netDevice().
+		netProperty().
+		netReport()
+
+	return ps
+}
 
 const (
 	findNetCollectorsPattern  = "/api/v3/collector/netcollect/collector/action/search"
@@ -20,12 +33,13 @@ func (ps *parseStream) netCollector() *parseStream {
 
 	// find all the business's net collectors
 	if ps.hitPattern(findNetCollectorsPattern, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type: auth.NetCollector,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.NetDataCollector,
+					Name: meta.NetCollector,
 				},
-				Action: auth.FindMany,
+				Action: meta.FindMany,
 			},
 		}
 		return ps
@@ -33,12 +47,13 @@ func (ps *parseStream) netCollector() *parseStream {
 
 	// update net collector in a business.
 	if ps.hitPattern(updateNetCollectorPattern, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type: auth.NetCollector,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.NetDataCollector,
+					Name: meta.NetCollector,
 				},
-				Action: auth.UpdateMany,
+				Action: meta.UpdateMany,
 			},
 		}
 		return ps
@@ -46,12 +61,13 @@ func (ps *parseStream) netCollector() *parseStream {
 
 	// start one/many net collector to collector data.
 	if ps.hitPattern(startNetCollectorPattern, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type: auth.NetCollector,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.NetDataCollector,
+					Name: meta.NetCollector,
 				},
-				Action: auth.UpdateMany,
+				Action: meta.UpdateMany,
 			},
 		}
 		return ps
@@ -78,12 +94,13 @@ func (ps *parseStream) netDevice() *parseStream {
 
 	// create a net device
 	if ps.hitPattern(createNetDevicePattern, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type: auth.NetDevice,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.NetDataCollector,
+					Name: meta.NetDevice,
 				},
-				Action: auth.Create,
+				Action: meta.Create,
 			},
 		}
 		return ps
@@ -91,12 +108,13 @@ func (ps *parseStream) netDevice() *parseStream {
 
 	// update a device
 	if ps.hitRegexp(updateNetDeviceRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type: auth.NetDevice,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.NetDataCollector,
+					Name: meta.NetDevice,
 				},
-				Action: auth.Update,
+				Action: meta.Update,
 			},
 		}
 		return ps
@@ -104,12 +122,13 @@ func (ps *parseStream) netDevice() *parseStream {
 
 	// update or create new net device in batch.
 	if ps.hitPattern(updateOrCreateNetDevicePattern, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type: auth.NetDevice,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.NetDataCollector,
+					Name: meta.NetDevice,
 				},
-				Action: auth.UpdateMany,
+				Action: meta.UpdateMany,
 			},
 		}
 		return ps
@@ -117,12 +136,13 @@ func (ps *parseStream) netDevice() *parseStream {
 
 	// find net devices
 	if ps.hitPattern(findNetDevicePattern, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type: auth.NetDevice,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.NetDataCollector,
+					Name: meta.NetDevice,
 				},
-				Action: auth.FindMany,
+				Action: meta.FindMany,
 			},
 		}
 		return ps
@@ -130,12 +150,13 @@ func (ps *parseStream) netDevice() *parseStream {
 
 	// delete net device patch
 	if ps.hitPattern(deleteNetDevicePattern, http.MethodDelete) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type: auth.NetDevice,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.NetDataCollector,
+					Name: meta.NetDevice,
 				},
-				Action: auth.DeleteMany,
+				Action: meta.DeleteMany,
 			},
 		}
 		return ps
@@ -165,12 +186,13 @@ func (ps *parseStream) netProperty() *parseStream {
 
 	// create property for a net collector
 	if ps.hitPattern(createNetCollectorPropertyPattern, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type: auth.NetProperty,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.NetDataCollector,
+					Name: meta.NetProperty,
 				},
-				Action: auth.Create,
+				Action: meta.Create,
 			},
 		}
 		return ps
@@ -178,12 +200,13 @@ func (ps *parseStream) netProperty() *parseStream {
 
 	// update property for a net collector.
 	if ps.hitRegexp(updateNetCollectorPropertyRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type: auth.NetProperty,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.NetDataCollector,
+					Name: meta.NetProperty,
 				},
-				Action: auth.Update,
+				Action: meta.Update,
 			},
 		}
 		return ps
@@ -191,12 +214,13 @@ func (ps *parseStream) netProperty() *parseStream {
 
 	// update or create net collector properties.
 	if ps.hitPattern(updateOrCreateNetCollectorPropertiesPattern, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type: auth.NetProperty,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.NetDataCollector,
+					Name: meta.NetProperty,
 				},
-				Action: auth.UpdateMany,
+				Action: meta.UpdateMany,
 			},
 		}
 		return ps
@@ -204,12 +228,13 @@ func (ps *parseStream) netProperty() *parseStream {
 
 	// find net collector properties
 	if ps.hitPattern(findNetCollectorPropertiesPattern, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type: auth.NetProperty,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.NetDataCollector,
+					Name: meta.NetProperty,
 				},
-				Action: auth.Find,
+				Action: meta.Find,
 			},
 		}
 		return ps
@@ -217,12 +242,13 @@ func (ps *parseStream) netProperty() *parseStream {
 
 	// delete net collector properties batch
 	if ps.hitPattern(deleteNetCollectorPropertiesPattern, http.MethodDelete) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type: auth.NetProperty,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.NetDataCollector,
+					Name: meta.NetProperty,
 				},
-				Action: auth.DeleteMany,
+				Action: meta.DeleteMany,
 			},
 		}
 		return ps
@@ -247,12 +273,13 @@ func (ps *parseStream) netReport() *parseStream {
 	}
 	// find net device simple report
 	if ps.hitPattern(findNetDeviceSimpleReportPattern, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type: auth.NetReport,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.NetDataCollector,
+					Name: meta.NetReport,
 				},
-				Action: auth.Find,
+				Action: meta.Find,
 			},
 		}
 		return ps
@@ -260,12 +287,13 @@ func (ps *parseStream) netReport() *parseStream {
 
 	// find net device detailed report
 	if ps.hitPattern(findNetDeviceDetailReportPattern, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type: auth.NetReport,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.NetDataCollector,
+					Name: meta.NetReport,
 				},
-				Action: auth.Find,
+				Action: meta.Find,
 			},
 		}
 		return ps
@@ -273,12 +301,13 @@ func (ps *parseStream) netReport() *parseStream {
 
 	// find net device report confirm history.
 	if ps.hitPattern(findNetDeviceReportConfirmPattern, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type: auth.NetReport,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.NetDataCollector,
+					Name: meta.NetReport,
 				},
-				Action: auth.Find,
+				Action: meta.Find,
 			},
 		}
 		return ps
@@ -286,12 +315,13 @@ func (ps *parseStream) netReport() *parseStream {
 
 	// find net device detailed report confirm history.
 	if ps.hitPattern(findNetDeviceReportConfirmDetailPattern, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type: auth.NetReport,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.NetDataCollector,
+					Name: meta.NetReport,
 				},
-				Action: auth.Find,
+				Action: meta.Find,
 			},
 		}
 		return ps

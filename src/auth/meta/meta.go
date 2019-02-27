@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package auth
+package meta
 
 type Attribute struct {
 	// the version of this resource, which is the api version.
