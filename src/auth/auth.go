@@ -32,7 +32,7 @@ type ResourceHandler interface {
 	Get(ctx context.Context) error
 }
 
-func NewAuthorizer() (Authorizer, err error) {
+func NewAuthorizer() (Authorizer, error) {
 	panic("implement me")
 }
 

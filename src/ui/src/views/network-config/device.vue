@@ -174,9 +174,9 @@
         },
         async created () {
             const res = await this.searchObjects({
-                params: {
+                params: this.$injectMetadata({
                     bk_classification_id: 'bk_network'
-                },
+                }),
                 config: {
                     fromCache: true,
                     requestId: 'post_searchObjects_bk_network'

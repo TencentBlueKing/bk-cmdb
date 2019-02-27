@@ -39,6 +39,7 @@ const (
 
 //bk search
 const (
+	BK_FIND                          = "find/"
 	BK_APP_SEARCH                    = "biz/search"
 	BK_SET_SEARCH                    = "set/search"
 	BK_MODULE_SEARCH                 = "module/search"

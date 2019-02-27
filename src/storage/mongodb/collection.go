@@ -15,6 +15,7 @@ package mongodb
 import (
 	"context"
 
+	"configcenter/src/storage/mongodb/options/aggregateopt"
 	"configcenter/src/storage/mongodb/options/deleteopt"
 	"configcenter/src/storage/mongodb/options/findopt"
 	"configcenter/src/storage/mongodb/options/insertopt"
@@ -37,6 +38,8 @@ type CollectionInterface interface {
 	Find(ctx context.Context, filter interface{}, opts *findopt.Many, output interface{}) error
 	FindOne(ctx context.Context, filter interface{}, opts *findopt.One, output interface{}) error
 	FindOneAndModify(ctx context.Context, filter interface{}, update interface{}, opts *findopt.FindAndModify, output interface{}) error
+
+	AggregateOne(ctx context.Context, pipeline interface{}, opts *aggregateopt.One, output interface{}) error
 
 	InsertOne(ctx context.Context, document interface{}, opts *insertopt.One) error
 	InsertMany(ctx context.Context, document []interface{}, opts *insertopt.Many) error
