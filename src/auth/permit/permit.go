@@ -12,10 +12,10 @@
 
 package permit
 
-import "configcenter/src/auth"
+import "configcenter/src/auth/meta"
 
 // this function is used to check where this request attribute is permitted as default,
 // so that it is not need to check permission status in auth center.
-func IsPermit(attribute *auth.Attribute) bool {
-    return false
+func IsPermit(attribute *meta.Attribute) bool {
+	return false
 }

@@ -118,7 +118,10 @@ func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.Attribute) (decisio
 	}
 
 	if resp.Code != 0 {
-		return meta.Decision{}, &AuthError{RequestID: resp.RequestID, Reason: fmt.Errorf("register resource failed, error code: %d, message: %s", resp.Code, resp.ErrMsg)}
+		return meta.Decision{}, &AuthError{
+			RequestID: resp.RequestID,
+			Reason:    fmt.Errorf("register resource failed, error code: %d, message: %s", resp.Code, resp.ErrMsg),
+		}
 	}
 
 	noAuth := make([]string, 0)
@@ -129,7 +132,10 @@ func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.Attribute) (decisio
 	}
 
 	if len(noAuth) != 0 {
-		return meta.Decision{Authorized: false, Reason: fmt.Sprintf("resource [%s] do not have permission", strings.Join(noAuth, ","))}, nil
+		return meta.Decision{
+			Authorized: false,
+			Reason:     fmt.Sprintf("resource [%s] do not have permission", strings.Join(noAuth, ",")),
+		}, nil
 	}
 
 	return meta.Decision{Authorized: true}, nil

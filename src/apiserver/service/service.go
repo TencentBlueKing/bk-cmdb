@@ -107,21 +107,21 @@ func authFilter(authorize auth.Authorizer, errFunc func() errors.CCErrorIf) func
 			fchain.ProcessFilter(req, resp)
 			return
 		}
-		
-		// check if authorize is nil or not, which means to check if the authorize instance has 
+
+		// check if authorize is nil or not, which means to check if the authorize instance has
 		// already been initialized or not. if not, api server should not be used.
 		if nil == authorize {
-            blog.Error("authorize instance has not been initialized")
-            rsp := metadata.BaseResp{
-                Code:   common.CCErrCommCheckAuthorizeFailed,
-                ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
-                Result: false,
-            }
-            resp.WriteHeader(http.StatusInternalServerError)
-            resp.WriteAsJson(rsp)
-        }
+			blog.Error("authorize instance has not been initialized")
+			rsp := metadata.BaseResp{
+				Code:   common.CCErrCommCheckAuthorizeFailed,
+				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
+				Result: false,
+			}
+			resp.WriteHeader(http.StatusInternalServerError)
+			resp.WriteAsJson(rsp)
+		}
 
-		decision, err := authorize.Authorize(attribute)
+		decision, err := authorize.Authorize(req.Request.Context(), attribute)
 		if err != nil {
 			blog.Errorf("request id: %s, authorized failed, because authorize this request failed, err: %v", err)
 			rsp := metadata.BaseResp{
