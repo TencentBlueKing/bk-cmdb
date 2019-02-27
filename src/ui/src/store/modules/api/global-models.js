@@ -20,15 +20,15 @@ const getters = {
 
 const actions = {
     /**
-     * 订阅事件
+     * 查询模型拓扑
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    searchModelAction ({ commit, state, dispatch }) {
-        return $http.post(`objects/topographics/scope_type/global/scope_id/0/action/search`)
+    searchModelAction ({ commit, state, dispatch }, params) {
+        return $http.post(`find/objecttopo/scope_type/global/scope_id/0`, params)
     },
 
     /**
@@ -40,7 +40,7 @@ const actions = {
      * @return {Promise} promise 对象
      */
     updateModelAction ({ commit, state, dispatch }, { params }) {
-        return $http.post(`objects/topographics/scope_type/global/scope_id/0/action/update`, params)
+        return $http.post(`update/objecttopo/scope_type/global/scope_id/0`, params)
     }
 }
 

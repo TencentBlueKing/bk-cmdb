@@ -18,14 +18,15 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/validator"
+
+	"github.com/emicklei/go-restful"
 )
 
 // updateHostPlat 根据条件更新主机信息
@@ -802,9 +803,10 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 
 	if nil != validErr {
 		blog.Errorf("CreatePlat error: %v, input:%+v,rid:%s", validErr, input, srvData.rid)
-		if strings.Contains(srvData.ccErr.Error(common.CCErrCommDuplicateItem).Error(), validErr.Error()) {
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommDuplicateItem)})
-			return
+		if se, ok := validErr.(errors.CCErrorCoder); ok {
+			if se.GetCode() == common.CCErrCommDuplicateItem {
+				resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommDuplicateItem, "")})
+			}
 		}
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrTopoInstCreateFailed)})
 		return

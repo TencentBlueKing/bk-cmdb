@@ -9,42 +9,42 @@
         </div>
         <cmdb-table
             class="field-table"
-            :loading="$loading('initFieldList')"
+            :loading="$loading(`post_searchObjectAttribute_${objId}`)"
             :header="table.header"
             :has-footer="false"
             :list="table.list"
             :wrapperMinusHeight="300"
             @handleSortChange="handleSortChange">
-            <template v-for="(header, index) in table.header" :slot="header.id" slot-scope="{ item }">
-                <div :key="index" :class="{'disabled': item.ispre || isReadOnly}">
-                    <template v-if="header.id==='bk_property_type'">
-                        {{fieldTypeMap[item['bk_property_type']]}}
-                    </template>
-                    <template v-else-if="header.id==='isrequired'">
-                        <i class="bk-icon icon-check-1" v-if="item.isrequired"></i>
-                    </template>
-                    <template v-else-if="header.id==='create_time'">
-                        {{$tools.formatTime(item['create_time'])}}
-                    </template>
-                    <template v-else-if="header.id==='operation'">
-                        <span class="text-primary mr10" @click.stop="editField(item)">
-                            {{$t('Common["编辑"]')}}
-                        </span>
-                        <span class="text-primary" v-if="!item.ispre && !isReadOnly" @click.stop="deleteField(item)">
-                            {{$t('Common["删除"]')}}
-                        </span>
-                        <span class="text-primary disabled" style="color: #3c96ff;" v-else>
-                            {{$t('Common["删除"]')}}
-                        </span>
-                    </template>
-                    <template v-else>
-                        {{item[header.id]}}
-                    </template>
-                </div>
+            <template slot="bk_property_id" slot-scope="{ item }">
+                <span
+                    v-if="item['ispre']"
+                    :class="['field-pre', $i18n.locale]">
+                    {{$t('ModelManagement["内置"]')}}
+                </span>
+                <span class="field-id">{{item['bk_property_id']}}</span>
+            </template>
+            <template slot="isrequired" slot-scope="{ item }">
+                <i class="field-required-icon bk-icon icon-check-1" v-if="item.isrequired"></i>
+                <i class="field-required-icon bk-icon icon-close" v-else></i>
+            </template>
+            <template slot="create_time" slot-scope="{ item }">
+                {{$tools.formatTime(item['create_time'])}}
+            </template>
+            <template slot="operation" slot-scope="{ item }">
+                <button class="text-primary mr10"
+                    :disabled="!isFieldEditable(item)"
+                    @click.stop="editField(item)">
+                    {{$t('Common["编辑"]')}}
+                </button>
+                <button class="text-primary"
+                    :disabled="item.ispre || !isFieldEditable(item)"
+                    @click.stop="deleteField(item)">
+                    {{$t('Common["删除"]')}}
+                </button>
             </template>
         </cmdb-table>
         <cmdb-slider
-            :width="410"
+            :width="450"
             :title="slider.title"
             :isShow.sync="slider.isShow">
             <the-field-detail
@@ -90,7 +90,8 @@
                 table: {
                     header: [{
                         id: 'bk_property_id',
-                        name: this.$t('ModelManagement["唯一标识"]')
+                        name: this.$t('ModelManagement["唯一标识"]'),
+                        minWidth: 110
                     }, {
                         id: 'bk_property_type',
                         name: this.$t('ModelManagement["字段类型"]')
@@ -115,8 +116,12 @@
             }
         },
         computed: {
+            ...mapGetters(['isAdminView', 'isBusinessSelected']),
             ...mapGetters('objectModel', [
-                'activeModel'
+                'activeModel',
+                'isPublicModel',
+                'isMainLine',
+                'isInjectable'
             ]),
             objId () {
                 return this.$route.params.modelId
@@ -132,7 +137,10 @@
                 if (cantEdit.includes(this.objId)) {
                     return []
                 }
-                return this.$store.getters.admin ? ['search', 'update', 'delete'] : []
+                if (this.isAdminView || (this.isBusinessSelected && this.isInjectable)) {
+                    return ['search', 'update', 'delete']
+                }
+                return []
             }
         },
         watch: {
@@ -151,6 +159,15 @@
                 'searchObjectAttribute',
                 'deleteObjectAttribute'
             ]),
+            isFieldEditable (item) {
+                if (this.isReadOnly) {
+                    return false
+                }
+                if (!this.isAdminView) {
+                    return !!this.$tools.getMetadataBiz(item)
+                }
+                return true
+            },
             createField () {
                 this.slider.isEditField = false
                 this.slider.isReadOnly = false
@@ -183,12 +200,8 @@
             },
             async initFieldList () {
                 const res = await this.searchObjectAttribute({
-                    params: {
-                        bk_obj_id: this.objId
-                    },
-                    config: {
-                        requestId: `post_searchObjectAttribute_${this.objId}`
-                    }
+                    params: this.$injectMetadata({bk_obj_id: this.objId}, {inject: this.isInjectable}),
+                    config: {requestId: `post_searchObjectAttribute_${this.objId}`}
                 })
                 this.table.list = res
             },
@@ -222,9 +235,33 @@
     .create-btn {
         margin: 10px 0;
     }
-    .field-table {
-        .disabled {
-            color: #bfc7d2;
+    .field-pre {
+        display: inline-block;
+        margin-right: -26px;
+        padding: 0 6px;
+        vertical-align: middle;
+        line-height: 32px;
+        border-radius: 4px;
+        background-color: #a4aab3;
+        color: #fff;
+        font-size: 20px;
+        transform: scale(0.5);
+        transform-origin: left center;
+        opacity: 0.4;
+        &.en {
+            margin-right: -40px;
         }
+    }
+    .field-id {
+        display: inline-block;
+        vertical-align: middle;
+    }
+    .field-required-icon {
+        font-size: 20px;
+        transform: scale(.5);
+        transform-origin: left center;
+    }
+    .text-primary {
+        cursor: pointer;
     }
 </style>

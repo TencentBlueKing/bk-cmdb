@@ -13,16 +13,19 @@
 package types
 
 import (
+	"context"
 	"net/http"
 
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/topo_server/core/wrapper"
 )
 
 // ContextParams the logic function params
 type ContextParams struct {
+	context.Context
 	Engin           *backbone.Engine
 	Header          http.Header
 	MaxTopoLevel    int
@@ -31,4 +34,5 @@ type ContextParams struct {
 	Err             errors.DefaultCCErrorIf
 	Lang            language.DefaultCCLanguageIf
 	MetaData        *metadata.Metadata
+	AuthAPI         wrapper.AuthAPI
 }

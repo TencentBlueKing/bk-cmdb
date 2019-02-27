@@ -11,8 +11,9 @@
                 </bk-button>
             </div>
         </div>
-        <ul class="icon-box clearfix">
-            <li class="icon" 
+        <ul class="icon-box clearfix" ref="iconBox">
+            <li class="icon"
+                ref="iconItem"
                 :class="{'create': type === 'create', 'active': icon.value === localValue}"
                 v-tooltip="{content: language === 'zh_CN' ? icon.nameZh : icon.nameEn}"
                 v-for="(icon, index) in curIconList" 
@@ -62,7 +63,6 @@
                         return icon.nameZh.toLowerCase().indexOf(searchText.toLowerCase()) > -1 || icon.nameEn.toLowerCase().indexOf(searchText.toLowerCase()) > -1
                     })
                 }
-                this.page.totalPage = Math.ceil(curIconList.length / page.size)
                 return curIconList.slice(page.size * page.current, page.size * (page.current + 1))
             }
         },
@@ -71,7 +71,17 @@
                 this.page.current = 0
             }
         },
+        mounted () {
+            this.init()
+        },
         methods: {
+            async init () {
+                await this.$nextTick()
+                const boxHeight = this.$refs.iconBox.clientHeight
+                const iconHeight = this.$refs.iconItem[0].clientHeight
+                this.page.size = Math.floor(boxHeight / iconHeight) * 7
+                this.page.totalPage = Math.ceil(this.iconList.length / this.page.size)
+            },
             chooseIcon (value) {
                 this.localValue = value
                 this.$emit('input', value)
@@ -122,8 +132,8 @@
             cursor: pointer;
             &.create {
                 font-size: 30px;
-                margin-bottom: 10px;
-                height: 50px;
+                padding-top: 10px;
+                height: 60px;
             }
             &:hover,
             &.active {

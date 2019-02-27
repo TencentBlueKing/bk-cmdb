@@ -32,6 +32,8 @@
     import moment from 'moment'
     export default {
         data () {
+            const startDate = this.$tools.formatTime(moment().subtract(1, 'month'), 'YYYY-MM-DD')
+            const endDate = this.$tools.formatTime(moment(), 'YYYY-MM-DD')
             return {
                 properties: [],
                 header: [],
@@ -41,29 +43,42 @@
                     size: 10,
                     count: 0
                 },
-                ranges: {},
                 opTime: [],
+                startDate,
+                endDate,
                 opTimeResolver: null
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount']),
+            ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
             ...mapGetters('userCustom', ['usercustom']),
+            ...mapGetters('objectBiz', ['bizId']),
             customColumns () {
                 const customKeyMap = {
-                    [this.objId]: `${this.objId}_table_columns`,
-                    'host': 'resource_table_columns'
+                    [this.objId]: `${this.userName}_${this.objId}_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`,
+                    'host': `${this.userName}_$resource_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
                 }
                 return this.usercustom[customKeyMap[this.objId]] || []
             },
             objId () {
                 return this.$route.params.objId
             },
-            startDate () {
-                return this.$tools.formatTime(moment().subtract(1, 'month'), 'YYYY-MM-DD')
-            },
-            endDate () {
-                return this.$tools.formatTime(moment(), 'YYYY-MM-DD')
+            ranges () {
+                const language = this.$i18n.locale
+                if (language === 'en') {
+                    return {
+                        'Yesterday': [moment().subtract(1, 'days'), moment()],
+                        'Last Week': [moment().subtract(7, 'days'), moment()],
+                        'Last Month': [moment().subtract(1, 'month'), moment()],
+                        'Last Three Month': [moment().subtract(3, 'month'), moment()]
+                    }
+                }
+                return {
+                    昨天: [moment().subtract(1, 'days'), moment()],
+                    最近一周: [moment().subtract(7, 'days'), moment()],
+                    最近一个月: [moment().subtract(1, 'month'), moment()],
+                    最近三个月: [moment().subtract(3, 'month'), moment()]
+                }
             }
         },
         watch: {
@@ -77,19 +92,18 @@
         },
         async created () {
             try {
+                await this.setTimeResolver()
                 this.properties = await this.searchObjectAttribute({
-                    params: {
+                    params: this.$injectMetadata({
                         bk_obj_id: this.objId,
                         bk_supplier_account: this.supplierAccount
-                    },
+                    }),
                     config: {
                         requestId: `post_searchObjectAttribute_${this.objId}`,
-                        fromCache: true
+                        fromCache: false
                     }
                 })
                 await this.setTableHeader()
-                await this.setTimeResolver()
-                await this.initFilterTime()
                 this.getTableData()
             } catch (e) {
                 // ignore
@@ -108,26 +122,6 @@
                         resolve()
                     }
                 })
-            },
-            initFilterTime () {
-                const language = this.$i18n.locale
-                if (language === 'en') {
-                    this.ranges = {
-                        'Yesterday': [moment().subtract(1, 'days'), moment()],
-                        'Last Week': [moment().subtract(7, 'days'), moment()],
-                        'Last Month': [moment().subtract(1, 'month'), moment()],
-                        'Last Three Month': [moment().subtract(3, 'month'), moment()]
-                    }
-                } else {
-                    this.ranges = {
-                        昨天: [moment().subtract(1, 'days'), moment()],
-                        最近一周: [moment().subtract(7, 'days'), moment()],
-                        最近一个月: [moment().subtract(1, 'month'), moment()],
-                        最近三个月: [moment().subtract(3, 'month'), moment()]
-                    }
-                }
-                this.opTime = [this.startDate + ' 00:00:00', this.endDate + ' 23:59:59']
-                return Promise.resolve()
             },
             setTableHeader () {
                 const idMap = {
@@ -173,14 +167,19 @@
                         requestId: `search${this.objId}OperationLog`
                     }
                 }).then(log => {
-                    this.pagination.count = log.count
-                    const list = log.info.map(data => {
-                        return {
-                            ...(data.content['cur_data'] ? data.content['cur_data'] : data.content['pre_data']),
-                            'op_time': this.$tools.formatTime(data['op_time'])
-                        }
-                    })
-                    this.list = this.$tools.flatternList(this.properties, list)
+                    try {
+                        this.pagination.count = log.count
+                        const list = log.info.map(data => {
+                            return {
+                                ...(data.content['cur_data'] ? data.content['cur_data'] : data.content['pre_data']),
+                                'op_time': this.$tools.formatTime(data['op_time'])
+                            }
+                        })
+                        this.list = this.$tools.flatternList(this.properties, list)
+                    } catch (e) {
+                        this.list = []
+                        this.$error(e.message)
+                    }
                 })
             },
             getSearchParams () {

@@ -47,13 +47,8 @@ type ClientSetInterface interface {
 	Healthz() healthz.HealthzInterface
 }
 
-func NewApiMachinery(c *util.APIMachineryConfig) (ClientSetInterface, error) {
+func NewApiMachinery(c *util.APIMachineryConfig, discover discovery.DiscoveryInterface) (ClientSetInterface, error) {
 	client, err := util.NewClient(c.TLSConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	discover, err := discovery.NewDiscoveryInterface(c.ZkAddr)
 	if err != nil {
 		return nil, err
 	}

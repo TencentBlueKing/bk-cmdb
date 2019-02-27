@@ -146,6 +146,7 @@ const (
 
 	// CCErrCommParamsNeedFloat the parameter must be float type
 	CCErrCommParamsNeedFloat = 1199042
+	CCErrCommNotAllSuccess   = 1199044
 
 	// apiserver 1100XXX
 

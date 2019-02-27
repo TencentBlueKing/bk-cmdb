@@ -43,6 +43,13 @@ func (writer GlogWriter) Output(calldepth int, s string) error {
 	return nil
 }
 
+func (writer GlogWriter) Print(v ...interface{}) {
+	glog.InfoDepth(1, v...)
+}
+func (writer GlogWriter) Printf(format string, v ...interface{}) {
+	glog.InfoDepthf(1, format, v...)
+}
+
 var once sync.Once
 
 // InitLogs initializes logs the way we want for blog.

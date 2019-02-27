@@ -18,8 +18,6 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/spf13/pflag"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
@@ -27,6 +25,8 @@ import (
 	"configcenter/src/scene_server/admin_server/app"
 	"configcenter/src/scene_server/admin_server/app/options"
 	"configcenter/src/scene_server/admin_server/command"
+
+	"github.com/spf13/pflag"
 )
 
 func main() {
@@ -48,6 +48,7 @@ func main() {
 
 	if err := app.Run(context.Background(), op); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
+		blog.Errorf("process stoped by %v", err)
 		blog.CloseLogs()
 		os.Exit(1)
 	}
