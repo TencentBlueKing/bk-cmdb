@@ -98,6 +98,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		tmServer.configLock.Unlock()
 
 		// connect db
+		blog.Infof("connecting to mongo %v", tmServer.config.MongoDB.BuildURI())
 		db := mgo.NewClient(tmServer.config.MongoDB.BuildURI())
 		err = db.Open()
 		if nil != err {

@@ -38,6 +38,7 @@ func (d *update) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OP
 
 	msg := types.OPUpdateOperation{}
 	reply := &types.OPReply{}
+	reply.RequestID = ctx.Header.RequestID
 	if err := decoder.Decode(&msg); nil != err {
 		reply.Message = err.Error()
 		return reply, err
