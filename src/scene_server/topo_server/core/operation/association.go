@@ -507,7 +507,6 @@ func (a *association) DeleteType(params types.ContextParams, asstTypeID int) (re
 	cond.Field("id").Eq(asstTypeID)
 	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	cond.Field(common.AssociationKindIDField).NotEq(common.AssociationKindMainline)
-
 	query := &metadata.SearchAssociationTypeRequest{
 		Condition: cond.ToMapStr(),
 	}
