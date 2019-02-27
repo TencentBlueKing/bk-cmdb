@@ -13,12 +13,25 @@
 package parser
 
 import (
-	"configcenter/src/auth"
 	"fmt"
-	"net/http"
-	"regexp"
-	"strconv"
+    "net/http"
+    "regexp"
+    "strconv"
+
+    "configcenter/src/auth/meta"
 )
+
+func (ps *parseStream) processRelated() *parseStream {
+	if ps.err != nil {
+		return ps
+	}
+
+	ps.process().
+		processTemplate().
+		processTemplateBound()
+
+	return ps
+}
 
 var (
 	createProcessRegexp            = regexp.MustCompile(`^/api/v3/proc/[\S][^/]+/[0-9]+$`)
@@ -46,14 +59,14 @@ func (ps *parseStream) process() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type: auth.Process,
-					Name: string(auth.Process),
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.Process,
+					Name: string(meta.Process),
 				},
 				BusinessID: bizID,
-				Action:     auth.Create,
+				Action:     meta.Create,
 			},
 		}
 
@@ -68,14 +81,14 @@ func (ps *parseStream) process() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type: auth.Process,
-					Name: string(auth.Process),
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.Process,
+					Name: string(meta.Process),
 				},
 				BusinessID: bizID,
-				Action:     auth.FindMany,
+				Action:     meta.FindMany,
 			},
 		}
 
@@ -95,15 +108,15 @@ func (ps *parseStream) process() *parseStream {
 			ps.err = fmt.Errorf("find process detail, but got invalid process id: %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type:       auth.Process,
-					Name:       string(auth.Process),
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.Process,
+					Name:       string(meta.Process),
 					InstanceID: procID,
 				},
 				BusinessID: bizID,
-				Action:     auth.FindMany,
+				Action:     meta.FindMany,
 			},
 		}
 
@@ -123,15 +136,15 @@ func (ps *parseStream) process() *parseStream {
 			ps.err = fmt.Errorf("delete process, but got invalid process id: %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type:       auth.Process,
-					Name:       string(auth.Process),
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.Process,
+					Name:       string(meta.Process),
 					InstanceID: procID,
 				},
 				BusinessID: bizID,
-				Action:     auth.DeleteMany,
+				Action:     meta.DeleteMany,
 			},
 		}
 
@@ -151,15 +164,15 @@ func (ps *parseStream) process() *parseStream {
 			ps.err = fmt.Errorf("update process, but got invalid process id: %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type:       auth.Process,
-					Name:       string(auth.Process),
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.Process,
+					Name:       string(meta.Process),
 					InstanceID: procID,
 				},
 				BusinessID: bizID,
-				Action:     auth.Update,
+				Action:     meta.Update,
 			},
 		}
 
@@ -174,14 +187,14 @@ func (ps *parseStream) process() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type: auth.Process,
-					Name: string(auth.Process),
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.Process,
+					Name: string(meta.Process),
 				},
 				BusinessID: bizID,
-				Action:     auth.UpdateMany,
+				Action:     meta.UpdateMany,
 			},
 		}
 
@@ -202,15 +215,15 @@ func (ps *parseStream) process() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type:       auth.Process,
-					Name:       string(auth.Process),
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.Process,
+					Name:       string(meta.Process),
 					InstanceID: procID,
 				},
 				BusinessID: bizID,
-				Action:     auth.FindMany,
+				Action:     meta.FindMany,
 			},
 		}
 
@@ -231,15 +244,15 @@ func (ps *parseStream) process() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type:       auth.Process,
-					Name:       string(auth.Process),
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.Process,
+					Name:       string(meta.Process),
 					InstanceID: procID,
 				},
 				BusinessID: bizID,
-				Action:     auth.Create,
+				Action:     meta.Create,
 			},
 		}
 
@@ -260,15 +273,15 @@ func (ps *parseStream) process() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type:       auth.Process,
-					Name:       string(auth.Process),
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.Process,
+					Name:       string(meta.Process),
 					InstanceID: procID,
 				},
 				BusinessID: bizID,
-				Action:     auth.Delete,
+				Action:     meta.Delete,
 			},
 		}
 
@@ -284,14 +297,14 @@ func (ps *parseStream) process() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type: auth.Process,
-					Name: string(auth.Process),
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.Process,
+					Name: string(meta.Process),
 				},
 				BusinessID: bizID,
-				Action:     auth.FindMany,
+				Action:     meta.FindMany,
 			},
 		}
 
@@ -325,14 +338,14 @@ func (ps *parseStream) processTemplate() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type: auth.Process,
-					Name: string(auth.ProcessConfigTemplate),
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.Process,
+					Name: string(meta.ProcessConfigTemplate),
 				},
 				BusinessID: bizID,
-				Action:     auth.Create,
+				Action:     meta.Create,
 			},
 		}
 
@@ -353,15 +366,15 @@ func (ps *parseStream) processTemplate() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type:       auth.Process,
-					Name:       string(auth.ProcessConfigTemplate),
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.Process,
+					Name:       string(meta.ProcessConfigTemplate),
 					InstanceID: templateID,
 				},
 				BusinessID: bizID,
-				Action:     auth.Update,
+				Action:     meta.Update,
 			},
 		}
 
@@ -376,14 +389,14 @@ func (ps *parseStream) processTemplate() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type: auth.Process,
-					Name: string(auth.ProcessConfigTemplate),
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.Process,
+					Name: string(meta.ProcessConfigTemplate),
 				},
 				BusinessID: bizID,
-				Action:     auth.FindMany,
+				Action:     meta.FindMany,
 			},
 		}
 
@@ -403,15 +416,15 @@ func (ps *parseStream) processTemplate() *parseStream {
 			ps.err = fmt.Errorf("delete process config template, but got invalid template id: %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type:       auth.Process,
-					Name:       string(auth.ProcessConfigTemplate),
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.Process,
+					Name:       string(meta.ProcessConfigTemplate),
 					InstanceID: templateID,
 				},
 				BusinessID: bizID,
-				Action:     auth.Delete,
+				Action:     meta.Delete,
 			},
 		}
 
@@ -432,15 +445,15 @@ func (ps *parseStream) processTemplate() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type:       auth.Process,
-					Name:       string(auth.ProcessConfigTemplate),
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.Process,
+					Name:       string(meta.ProcessConfigTemplate),
 					InstanceID: templateID,
 				},
 				BusinessID: bizID,
-				Action:     auth.FindMany,
+				Action:     meta.FindMany,
 			},
 		}
 
@@ -455,14 +468,14 @@ func (ps *parseStream) processTemplate() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type: auth.Process,
-					Name: string(auth.ProcessConfigTemplateVersion),
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.Process,
+					Name: string(meta.ProcessConfigTemplateVersion),
 				},
 				BusinessID: bizID,
-				Action:     auth.Create,
+				Action:     meta.Create,
 			},
 		}
 
@@ -483,15 +496,15 @@ func (ps *parseStream) processTemplate() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type:       auth.Process,
-					Name:       string(auth.ProcessConfigTemplateVersion),
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.Process,
+					Name:       string(meta.ProcessConfigTemplateVersion),
 					InstanceID: versionID,
 				},
 				BusinessID: bizID,
-				Action:     auth.Create,
+				Action:     meta.Create,
 			},
 		}
 
@@ -512,15 +525,15 @@ func (ps *parseStream) processTemplate() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type:       auth.Process,
-					Name:       string(auth.ProcessConfigTemplate),
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.Process,
+					Name:       string(meta.ProcessConfigTemplate),
 					InstanceID: templateID,
 				},
 				BusinessID: bizID,
-				Action:     auth.Find,
+				Action:     meta.Find,
 			},
 		}
 
@@ -555,15 +568,15 @@ func (ps *parseStream) processTemplateBound() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type:       auth.Process,
-					Name:       string(auth.ProcessBoundConfig),
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.Process,
+					Name:       string(meta.ProcessBoundConfig),
 					InstanceID: procID,
 				},
 				BusinessID: bizID,
-				Action:     auth.Find,
+				Action:     meta.Find,
 			},
 		}
 
@@ -578,14 +591,14 @@ func (ps *parseStream) processTemplateBound() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type: auth.Process,
-					Name: string(auth.ProcessBoundConfig),
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.Process,
+					Name: string(meta.ProcessBoundConfig),
 				},
 				BusinessID: bizID,
-				Action:     auth.Create,
+				Action:     meta.Create,
 			},
 		}
 
@@ -600,14 +613,14 @@ func (ps *parseStream) processTemplateBound() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type: auth.Process,
-					Name: string(auth.ProcessBoundConfig),
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.Process,
+					Name: string(meta.ProcessBoundConfig),
 				},
 				BusinessID: bizID,
-				Action:     auth.Delete,
+				Action:     meta.Delete,
 			},
 		}
 
@@ -622,14 +635,14 @@ func (ps *parseStream) processTemplateBound() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type: auth.Process,
-					Name: string(auth.ProcessBoundConfig),
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.Process,
+					Name: string(meta.ProcessBoundConfig),
 				},
 				BusinessID: bizID,
-				Action:     auth.DeleteMany,
+				Action:     meta.DeleteMany,
 			},
 		}
 

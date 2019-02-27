@@ -33,11 +33,14 @@
     "1199033": "Failed to get field property, error: %s",
     "1199034": "'%s' data type should be enum",
     "1199035": " %s exceed the limit %d",
-    "1199038": "need data %s is null",
+    "1199038": "Need data %s is null",
     "1199039": "%s field does not exist in %s",
-    "1199040": "convert %s model field %s to %s error %s",
-    "1199041": "handle %s error %s",
+    "1199040": "Convert %s model field %s to %s error %s",
+    "1199041": "Handle %s error %s",
     "1199043": "The field value check does not pass, %s",
-    "1199044": "not all success",
+    "1199044": "Not all success",
+    "1199045": "Parse authorize attributes failed.",
+    "1199046": "Authorize request failed.",
+    "1199047": "Do not have access permission.",
     "":""
 }
