@@ -15,12 +15,12 @@ package driver
 import (
 	"context"
 
-	"github.com/mongodb/mongo-go-driver/mongo"
-
 	"configcenter/src/storage/mongodb"
+
+	"github.com/mongodb/mongo-go-driver/mongo"
 )
 
-func (c *collection) parseIndexResult(ctx context.Context, cursor mongo.Cursor) (*mongodb.QueryIndexResult, error) {
+func (c *collection) parseIndexResult(ctx context.Context, cursor *mongo.Cursor) (*mongodb.QueryIndexResult, error) {
 
 	// this struct from mongodb go driver about index
 	type index struct {

@@ -18,11 +18,9 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/rpc"
@@ -35,7 +33,7 @@ var _ dal.DB = (*Mongo)(nil)
 type Mongo struct {
 	RequestID string // 请求ID,可选项
 	TxnID     string // 事务ID,uuid
-	rpc       *rpc.Client
+	rpc       rpc.Client
 	getServer types.GetServerFunc
 	parent    *Mongo
 
@@ -50,50 +48,31 @@ func NewWithDiscover(getServer types.GetServerFunc, config mongo.Config) (db dal
 	}
 
 	if !enableTransaction {
+		blog.Warnf("not enable transaction")
 		return &Mongo{
 			enableTransaction: enableTransaction,
 		}, nil
 	}
 
-	servers := []string{}
-	for i := 3; i > 0; i-- {
-		servers, err = getServer()
-		if err != nil {
-			blog.Infof("fetch tmserver address failed: %v, retry 2s later", err)
-			time.Sleep(time.Second * 2)
-			continue
-		}
-		break
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	address, err := util.GetDailAddress(servers[0])
-	if err != nil {
-		return nil, fmt.Errorf("GetDailAddress %s, failed: %v", servers[0], err)
-	}
-
-	rpccli, err := rpc.DialHTTPPath("tcp", address, "/txn/v3/rpc")
+	pool, err := rpc.NewClientPool("tcp", getServer, "/txn/v3/rpc")
 	if err != nil {
 		return nil, err
 	}
 	return &Mongo{
-		rpc:       rpccli,
-		getServer: getServer,
-
+		rpc:               pool,
 		enableTransaction: enableTransaction,
 	}, nil
 }
 
 // New returns new DB
-func New(uri string) (dal.DB, error) {
+func New(uri string, enableTransaction bool) (dal.DB, error) {
 	rpccli, err := rpc.DialHTTPPath("tcp", uri, "/txn/v3/rpc")
 	if err != nil {
 		return nil, err
 	}
 	return &Mongo{
-		rpc: rpccli,
+		rpc:               rpccli,
+		enableTransaction: enableTransaction,
 	}, nil
 }
 
@@ -110,10 +89,11 @@ func (c *Mongo) Ping() error {
 // Clone create a new DB instance
 func (c *Mongo) Clone() dal.DB {
 	nc := Mongo{
-		TxnID:     c.TxnID,
-		RequestID: c.RequestID,
-		rpc:       c.rpc,
-		parent:    c,
+		TxnID:             c.TxnID,
+		RequestID:         c.RequestID,
+		rpc:               c.rpc,
+		parent:            c,
+		enableTransaction: c.enableTransaction,
 	}
 	return &nc
 }

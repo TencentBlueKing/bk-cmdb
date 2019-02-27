@@ -39,6 +39,7 @@ func (d *insert) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OP
 
 	msg := types.OPInsertOperation{}
 	reply := &types.OPReply{}
+	reply.RequestID = ctx.Header.RequestID
 	if err := decoder.Decode(&msg); nil != err {
 		reply.Message = err.Error()
 		return reply, err
