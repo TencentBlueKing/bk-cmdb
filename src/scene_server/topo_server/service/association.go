@@ -226,11 +226,11 @@ func (s *topoService) CreateAssociationInst(params types.ContextParams, pathPara
 }
 
 func (s *topoService) DeleteAssociationInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-	
+
 	id, err := strconv.ParseInt(pathParams("association_id"), 10, 64)
 	if err != nil {
-	    return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
-    }
+		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
+	}
 	ret, err := s.core.AssociationOperation().DeleteInst(params, id)
 	if err != nil {
 		return nil, err

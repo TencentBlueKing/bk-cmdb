@@ -107,7 +107,13 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 				}
 			}
 
-			createAsstRsp, err := b.clientSet.ObjectController().Meta().CreateObjectAssociation(context.Background(), params.Header, &asst)
+			var createAsstRsp *metadata.CreateResult
+			if asst.AsstKindID == common.AssociationKindMainline {
+				// bk_maineline is a inner association type that can only create in special case, so we separate bk_mainline association type creation with a independent method,
+				createAsstRsp, err = b.clientSet.ObjectController().Meta().CreateMainlineObjectAssociation(context.Background(), params.Header, &asst)
+			} else {
+				createAsstRsp, err = b.clientSet.ObjectController().Meta().CreateObjectAssociation(context.Background(), params.Header, &asst)
+			}
 			if nil != err {
 				blog.Errorf("[operation-biz] failed to copy default assts, error info is %s", err.Error())
 				return nil, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
