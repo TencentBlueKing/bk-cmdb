@@ -90,6 +90,7 @@ func (s *Service) registerHostToCurrentBusiness(req *restful.Request, hostIDArr 
 		blog.Errorf("get businessID by hostID failed, hosts:%+v, err: %v", hostIDArr, err)
 		return err
 	}
+	# TODO regist host
 	return nil
 }
 
@@ -101,6 +102,7 @@ func (s *Service) deregisterHostFromCurrentBusiness(req *restful.Request, hostID
 		blog.Errorf("get businessID by hostID failed, hosts:%+v, err: %v", hostIDArr, err)
 		return err
 	}
+	# TODO deregist host
 	return nil
 }
 
