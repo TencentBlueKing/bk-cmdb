@@ -74,7 +74,7 @@ func (cli *Service) CreateInstAssociation(req *restful.Request, resp *restful.Re
 	// bk_mainline shouldn't be use
 	if objResult.AsstKindID == common.AssociationKindMainline {
 		blog.Errorf("use inner association type: %v is forbidden", common.AssociationKindMainline)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrUseBKMainlineForbidden, request.ObjectAsstId)})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrorTopoAssociationKindMainlineUnavailable, request.ObjectAsstId)})
 		return
 	}
 
