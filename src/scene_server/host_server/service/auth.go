@@ -108,6 +108,7 @@ func (s *Service) deregisterHostFromCurrentBusiness(req *restful.Request, hostID
 
 func (s *Service) verifyPlatPermission(req *restful.Request, resp *restful.Response, platIDArr *[]int64, action auth.Action) (shouldContinue bool) {
 	shouldContinue = true
+	# TODO finish this method
 }
 
 func (s *Service) registerPlat(req *restful.Request, platID int64, businessID int64) error {
