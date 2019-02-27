@@ -76,14 +76,14 @@ func (cli *Service) createObjectAssociation(req *restful.Request, resp *restful.
 		// AsstKindID shouldn't be use bk_mainline
 		if obj.AsstKindID == common.AssociationKindMainline {
 			blog.Errorf("use inner association type: %v is forbidden", common.AssociationKindMainline)
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrUseBKMainlineForbidden, obj.AsstKindID)})
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrorTopoAssociationKindMainlineUnavailable, obj.AsstKindID)})
 			return
 		}
 	} else {
 		// AsstKindID could only be bk_mainline
 		if obj.AsstKindID != common.AssociationKindMainline {
 			blog.Errorf("use CreateMainlineObjectAssociation method but bk_asst_id is: %s", obj.AsstKindID)
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrUseBKMainlineForbidden, obj.AsstKindID)})
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrorTopoAssociationKindInconsistent, obj.AsstKindID)})
 			return
 		}
 	}
