@@ -110,7 +110,7 @@ func main() {
 	server.RegisterActions(api.Actions()...)
 	server.RegisterActions(metricManager.Actions()...)
 
-	httpChan := make(chan error)
+	httpChan := make(chan error, 1)
 	go func() { httpChan <- server.ListenAndServe() }()
 
 	sigs := make(chan os.Signal, 1)

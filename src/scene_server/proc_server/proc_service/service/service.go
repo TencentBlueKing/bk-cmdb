@@ -74,13 +74,13 @@ func (s *ProcServer) newSrvComm(header http.Header) *srvComm {
 }
 
 func (ps *ProcServer) WebService() *restful.WebService {
-	getErrFun := func() errors.CCErrorIf {
+	getErrFunc := func() errors.CCErrorIf {
 		return ps.Engine.CCErr
 	}
 
 	// v3
 	ws := new(restful.WebService)
-	ws.Path("/process/{version}").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
+	ws.Path("/process/{version}").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 	restful.DefaultRequestContentType(restful.MIME_JSON)
 	restful.DefaultResponseContentType(restful.MIME_JSON)
 

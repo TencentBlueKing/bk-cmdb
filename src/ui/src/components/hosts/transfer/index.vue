@@ -146,7 +146,9 @@
             ]),
             getMainlineModel () {
                 return this.searchMainlineObject({
-                    requestId: 'get_searchMainlineObject'
+                    config: {
+                        requestId: 'get_searchMainlineObject'
+                    }
                 }).then(topoModel => {
                     this.topoModel = topoModel
                     return topoModel
@@ -451,6 +453,10 @@
         .selected-label {
             padding: 0 0 0 25px;
         }
+    }
+    .modules-layout {
+        height: calc(100% - 65px);
+        @include scrollbar-y;
     }
     .module-list {
         .module-item {

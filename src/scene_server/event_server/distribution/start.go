@@ -31,7 +31,7 @@ import (
 )
 
 func Start(ctx context.Context, cache *redis.Client, db dal.RDB, rc *rpc.Client) error {
-	chErr := make(chan error)
+	chErr := make(chan error, 1)
 	err := migrateIDToMongo(ctx, cache, db)
 	if err != nil {
 		return fmt.Errorf("migrateIDToMongo failed: %v", err)

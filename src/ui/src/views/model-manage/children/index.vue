@@ -3,22 +3,23 @@
         <div class="model-info" v-bkloading="{isLoading: $loading('searchObjects')}">
             <template v-if="activeModel !== null">
                 <div class="choose-icon-wrapper">
-                    <template v-if="authority.includes('update')">
+                    <span class="model-type">{{getModelType()}}</span>
+                    <template v-if="isEditable">
                         <div class="icon-box" @click="isIconListShow = true">
-                            <i class="icon" :class="activeModel ? activeModel['bk_obj_icon'] : 'icon-cc-default'"></i>
+                            <i class="icon" :class="[activeModel ? activeModel['bk_obj_icon'] : 'icon-cc-default', {ispre: isPublicModel}]"></i>
                             <p class="hover-text">{{$t('ModelManagement["点击切换"]')}}</p>
                         </div>
                         <div class="choose-icon-box" v-if="isIconListShow" v-click-outside="hideChooseBox">
                             <the-choose-icon
-                                :type="'update'"
                                 v-model="modelInfo.objIcon"
-                                @chooseIcon="chooseIcon"
-                            ></the-choose-icon>
+                                type="update"
+                                @chooseIcon="chooseIcon">
+                            </the-choose-icon>
                         </div>
                     </template>
                     <template v-else>
                         <div class="icon-box" style="cursor: default;">
-                            <i class="icon" :class="activeModel ? activeModel['bk_obj_icon'] : 'icon-cc-default'"></i>
+                            <i class="icon" :class="[activeModel ? activeModel['bk_obj_icon'] : 'icon-cc-default', {ispre: isPublicModel}]"></i>
                         </div>
                     </template>
                 </div>
@@ -32,7 +33,7 @@
                         <span class="text-content">{{activeModel ? activeModel['bk_obj_name'] : ''}}
                         </span>
                         <i class="icon icon-cc-edit text-primary"
-                            v-if="!(isReadOnly || (activeModel && activeModel['ispre'])) && authority.includes('update')"
+                            v-if="isEditable && !activeModel.ispre"
                             @click="editModelName">
                         </i>
                     </template>
@@ -56,14 +57,12 @@
                             <span>{{$t('ModelManagement["导入"]')}}</span>
                             <input v-if="!isReadOnly" ref="fileInput" type="file" @change.prevent="handleFile">
                         </label>
-                        <form class="export-form" ref="submitForm" :action="exportUrl" method="POST" v-if="tab.active==='field'">
-                            <label class="label-btn" @click="exportField">
-                                <i class="icon-cc-derivation"></i>
-                                <span>{{$t('ModelManagement["导出"]')}}</span>
-                            </label>
-                        </form>
+                        <label class="label-btn" @click="exportField">
+                            <i class="icon-cc-derivation"></i>
+                            <span>{{$t('ModelManagement["导出"]')}}</span>
+                        </label>
                     </template>
-                    <template v-if="!activeModel['ispre'] && authority.includes('update')">
+                    <template v-if="isShowOperationButton">
                         <label class="label-btn"
                         v-if="!isMainLine"
                         v-tooltip="$t('ModelManagement[\'保留模型和相应实例，隐藏关联关系\']')">
@@ -103,7 +102,7 @@
 </template>
 
 <script>
-    import thePropertyGroup from './_property-group.vue'
+    import thePropertyGroup from './property-group.vue'
     import theField from './field'
     import theRelation from './relation'
     import theChooseIcon from '@/components/model-manage/_choose-icon'
@@ -135,19 +134,35 @@
             ...mapGetters([
                 'supplierAccount',
                 'userName',
-                'admin'
+                'admin',
+                'isAdminView',
+                'isBusinessSelected'
             ]),
             ...mapGetters('objectModel', [
-                'activeModel'
+                'activeModel',
+                'isPublicModel',
+                'isMainLine'
             ]),
+            isShowOperationButton () {
+                return (this.isAdminView || !this.isPublicModel) && !this.activeModel['ispre'] && this.authority.includes('update')
+            },
             isReadOnly () {
                 if (this.activeModel) {
                     return this.activeModel['bk_ispaused']
                 }
                 return false
             },
-            isMainLine () {
-                return this.activeModel['bk_classification_id'] === 'bk_biz_topo'
+            isEditable () {
+                if (!this.authority.includes('update')) {
+                    return false
+                } else if (this.isReadOnly) {
+                    return false
+                } else if (this.isAdminView) {
+                    return true
+                } else if (this.isPublicModel) {
+                    return false
+                }
+                return true
             },
             modelParams () {
                 let {
@@ -169,7 +184,10 @@
                 return `${window.API_HOST}object/owner/${this.supplierAccount}/object/${this.activeModel['bk_obj_id']}/export`
             },
             authority () {
-                return this.admin ? ['search', 'update', 'delete'] : []
+                if (this.isAdminView || this.isBusinessSelected) {
+                    return ['search', 'update', 'delete']
+                }
+                return []
             },
             canBeImport () {
                 const cantImport = ['host', 'biz', 'process', 'plat']
@@ -191,7 +209,8 @@
                 'deleteObject'
             ]),
             ...mapActions('objectBatch', [
-                'importObjectAttribute'
+                'importObjectAttribute',
+                'exportObjectAttribute'
             ]),
             ...mapActions('objectMainLineModule', [
                 'deleteMainlineObject'
@@ -199,18 +218,31 @@
             ...mapMutations('objectModel', [
                 'setActiveModel'
             ]),
+            getModelType () {
+                if (this.activeModel.ispre) {
+                    return this.$t('ModelManagement["内置"]')
+                } else {
+                    if (this.$tools.getMetadataBiz(this.activeModel)) {
+                        return this.$t('ModelManagement["自定义"]')
+                    }
+                    return this.$t('ModelManagement["公共"]')
+                }
+            },
             async handleFile (e) {
                 let files = e.target.files
                 let formData = new FormData()
                 formData.append('file', files[0])
+                if (!this.isPublicModel) {
+                    formData.append('metadata', JSON.stringify(this.$injectMetadata().metadata))
+                }
                 try {
                     const res = await this.importObjectAttribute({
                         params: formData,
-                        bkObjId: this.activeModel['bk_obj_id'],
+                        objId: this.activeModel['bk_obj_id'],
                         config: {
                             requestId: 'importObjectAttribute',
                             globalError: false,
-                            originalResponse: true
+                            transformData: false
                         }
                     }).then(res => {
                         this.$http.cancel(`post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`)
@@ -255,7 +287,7 @@
                 }
                 await this.updateObject({
                     id: this.activeModel['id'],
-                    params: this.modelParams
+                    params: this.$injectMetadata(this.modelParams, {clone: true})
                 }).then(() => {
                     this.$http.cancel('post_searchClassificationsObjects')
                 })
@@ -263,21 +295,13 @@
                 this.isEditName = false
             },
             async initObject () {
-                const res = await this.searchObjects({
-                    params: {
-                        bk_obj_id: this.$route.params.modelId,
-                        bk_supplier_account: this.supplierAccount
-                    },
-                    config: {
-                        requestId: 'searchObjects'
-                    }
-                })
-                if (res.length) {
-                    this.$store.commit('objectModel/setActiveModel', res[0])
-                    this.$store.commit('setHeaderTitle', this.activeModel['bk_obj_name'])
+                const model = this.$store.getters['objectModelClassify/getModelById'](this.$route.params.modelId)
+                if (model) {
+                    this.$store.commit('objectModel/setActiveModel', model)
+                    this.$store.commit('setHeaderTitle', model['bk_obj_name'])
                     this.initModelInfo()
                 } else {
-                    this.$router.replace('/status-404')
+                    this.$router.replace({name: 'status404'})
                 }
             },
             initModelInfo () {
@@ -286,8 +310,29 @@
                     objName: this.activeModel['bk_obj_name']
                 }
             },
-            exportField () {
-                this.$refs.submitForm.submit()
+            exportExcel (response) {
+                const contentDisposition = response.headers['content-disposition']
+                const fileName = contentDisposition.substring(contentDisposition.indexOf('filename') + 9)
+                const url = window.URL.createObjectURL(new Blob([response.data], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}))
+                const link = document.createElement('a')
+                link.style.display = 'none'
+                link.href = url
+                link.setAttribute('download', fileName)
+                document.body.appendChild(link)
+                link.click()
+                document.body.removeChild(link)
+            },
+            async exportField () {
+                const res = await this.exportObjectAttribute({
+                    objId: this.activeModel['bk_obj_id'],
+                    params: this.$injectMetadata({}, {inject: !this.isPublicModel}),
+                    config: {
+                        globalError: false,
+                        originalResponse: true,
+                        responseType: 'blob'
+                    }
+                })
+                this.exportExcel(res)
             },
             dialogConfirm (type) {
                 switch (type) {
@@ -321,16 +366,16 @@
             async updateModelObject (ispaused) {
                 await this.updateObject({
                     id: this.activeModel['id'],
-                    params: {
+                    params: this.$injectMetadata({
                         bk_ispaused: ispaused
-                    },
+                    }),
                     config: {
                         requestId: 'updateModel'
                     }
                 }).then(() => {
                     this.$http.cancel('post_searchClassificationsObjects')
                 })
-                this.initObject()
+                this.setActiveModel({...this.activeModel, ...{bk_ispaused: ispaused}})
             },
             async deleteModel () {
                 if (this.isMainLine) {
@@ -344,12 +389,13 @@
                     await this.deleteObject({
                         id: this.activeModel['id'],
                         config: {
+                            data: this.$injectMetadata(),
                             requestId: 'deleteModel'
                         }
                     })
                 }
                 this.$http.cancel('post_searchClassificationsObjects')
-                this.$router.replace('/model')
+                this.$router.replace({name: 'model'})
             }
         }
     }
@@ -371,10 +417,37 @@
         .choose-icon-wrapper {
             position: relative;
             float: left;
+            margin: 14px 30px 0 0;
+            .model-type {
+                position: absolute;
+                left: 58px;
+                top: -8px;
+                padding: 0 6px;
+                border-radius: 4px;
+                background-color: #ffb23a;
+                font-size: 20px;
+                line-height: 32px;
+                color: #fff;
+                white-space: nowrap;
+                transform: scale(.5);
+                transform-origin: left center;
+                &:after {
+                    content: "";
+                    position: absolute;
+                    top: 100%;
+                    left: 10px;
+                    width: 0;
+                    height: 0;
+                    border-top: 8px solid #ffb23a;
+                    border-right: 10px solid transparent;
+                    transform: skew(-15deg);
+                    transform-origin: left top;
+                }
+            }
             .choose-icon-box {
                 position: absolute;
                 left: 0;
-                top: 95px;
+                top: 80px;
                 width: 395px;
                 height: 262px;
                 background: #fff;
@@ -400,10 +473,6 @@
             }
         }
         .icon-box {
-            position: relative;
-            float: left;
-            margin-top: 14px;
-            margin: 14px 30px 0 0;
             padding-top: 20px;
             width: 72px;
             height: 72px;
@@ -435,6 +504,9 @@
             }
             .icon {
                 vertical-align: top;
+                &.ispre {
+                    color: #868b97;
+                }
             }
         }
         .model-text {

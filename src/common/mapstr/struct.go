@@ -17,6 +17,8 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+
+	"configcenter/src/common/blog"
 )
 
 func setMapStrByStruct(targetType reflect.Type, targetValue reflect.Value, values MapStr, tagName string) error {
@@ -49,7 +51,11 @@ func setMapStrByStruct(targetType reflect.Type, targetValue reflect.Value, value
 		}
 
 		fieldValue := targetValue.FieldByName(structField.Name)
-		if !fieldValue.CanInterface() {
+		if fieldValue.IsValid() && !fieldValue.CanInterface() {
+			continue
+		}
+
+		if isEmptyValue(fieldValue) && strings.Contains(tag, "omitempty") {
 			continue
 		}
 
@@ -58,7 +64,12 @@ func setMapStrByStruct(targetType reflect.Type, targetValue reflect.Value, value
 			reflect.Float32, reflect.Float64,
 			reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
-			reflect.Map:
+			reflect.Complex64, reflect.Complex128,
+			reflect.Array,
+			reflect.Interface,
+			reflect.Map,
+			reflect.Slice,
+			reflect.Bool:
 			values.Set(tags[0], fieldValue.Interface())
 		case reflect.Struct:
 			innerMapStr := SetValueToMapStrByTagsWithTagName(fieldValue.Interface(), tagName)
@@ -68,7 +79,8 @@ func setMapStrByStruct(targetType reflect.Type, targetValue reflect.Value, value
 
 			innerValue := dealPointer(fieldValue, tags[0], tagName)
 			values.Set(tags[0], innerValue)
-
+		default:
+			blog.Infof("[mapstr] invalide kind: %v for field %v", structField.Type.Kind(), tags[0])
 		}
 
 	}
@@ -183,7 +195,7 @@ func setMapToReflectValue(returnVal, inputVal reflect.Value) (reflect.Value, err
 	for _, key := range mapKeys {
 
 		value := inputVal.MapIndex(key)
-		if !value.CanInterface() {
+		if !returnVal.CanSet() || !value.IsValid() || !value.CanInterface() {
 			continue
 		}
 
@@ -222,4 +234,22 @@ func setMapToReflectValue(returnVal, inputVal reflect.Value) (reflect.Value, err
 	}
 
 	return returnVal, nil
+}
+
+func isEmptyValue(v reflect.Value) bool {
+	switch v.Kind() {
+	case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
+		return v.Len() == 0
+	case reflect.Bool:
+		return !v.Bool()
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return v.Int() == 0
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return v.Uint() == 0
+	case reflect.Float32, reflect.Float64:
+		return v.Float() == 0
+	case reflect.Interface, reflect.Ptr:
+		return v.IsNil()
+	}
+	return false
 }

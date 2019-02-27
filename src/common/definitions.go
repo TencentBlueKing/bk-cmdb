@@ -184,6 +184,9 @@ const (
 	// BKDBPush the db opeartor
 	BKDBPush = "$push"
 
+	// BKDBUNSET the db opeartor
+	BKDBUNSET = "$unset"
+
 	// BKDBSortFieldSep the db sort field split char
 	BKDBSortFieldSep = ","
 )
@@ -819,7 +822,10 @@ const (
 	BKSessionLanugageKey    = "language"
 	BKHTTPSupplierID        = "bk_supplier_id"
 
-	BKHTTPCCRequestID     = "CC_REQUEST_ID"
+	// BKHTTPCCRequestID cc request id cc_request_id
+	BKHTTPCCRequestID = "CC_REQUEST_ID"
+	// BKHTTPOtherRequestID esb request id  X-Bkapi-Request-Id
+	BKHTTPOtherRequestID  = "X-Bkapi-Request-Id"
 	BKHTTPCCRequestTime   = "CC_REQUEST_TIME"
 	BKHTTPCCTransactionID = "CC_TXN_ID"
 )
@@ -989,4 +995,8 @@ const (
 const (
 	// MetadataField data business key
 	MetadataField = "metadata"
+)
+
+const (
+	BKBizDefault = "bizdefault"
 )

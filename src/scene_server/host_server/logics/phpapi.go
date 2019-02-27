@@ -418,6 +418,11 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, input *meta.CloneHostP
 		}
 	}
 
+	hostMapData, err = lgc.removeHostBadField(ctx, hostMapData)
+	if nil != err {
+		blog.Errorf("CloneHostProperty clone host property error : %v, input:%#v,rid:%s", err, input, lgc.rid)
+		return nil, lgc.ccErr.Errorf(common.CCErrHostDetailFail, err.Error())
+	}
 	//更新的时候，不修改为nil的数据
 	updateHostData := make(map[string]interface{})
 	for key, val := range hostMapData {
@@ -500,4 +505,28 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, input *meta.CloneHostP
 	}
 
 	return nil, nil
+}
+
+// removeHostBadField remove host bad field, host module delete field
+func (lgc *Logics) removeHostBadField(ctx context.Context, hostInfo map[string]interface{}) (mapstr.MapStr, error) {
+	defError := lgc.ccErr
+
+	newHostInfo := mapstr.New()
+	hostAttributeArr, err := lgc.GetHostAttributes(ctx, lgc.ownerID, nil)
+	if err != nil {
+		blog.Errorf("CloneHostProperty GetHostAttributes, err:%s, rid:%s", err.Error(), lgc.rid)
+		return nil, defError.Error(common.CCErrHostDetailFail)
+	}
+	hostAttributeMap := make(map[string]string, 0)
+	for _, attr := range hostAttributeArr {
+		hostAttributeMap[attr.PropertyID] = attr.PropertyID
+	}
+	// delete bad field
+	for key, val := range hostInfo {
+		_, ok := hostAttributeMap[key]
+		if ok {
+			newHostInfo.Set(key, val)
+		}
+	}
+	return newHostInfo, nil
 }

@@ -13,13 +13,71 @@
 package parser
 
 import (
+	"errors"
+	"fmt"
+	"regexp"
+	"strings"
+
 	"configcenter/src/auth"
-	// "configcenter/src/common"
+	"configcenter/src/common"
 	"github.com/emicklei/go-restful"
 )
 
 func ParseAttribute(req *restful.Request) (*auth.Attribute, error) {
+	attr := new(auth.Attribute)
+	user := req.Request.Header.Get(common.BKHTTPHeaderUser)
+	if len(user) == 0 {
+		return nil, errors.New("miss BK_User in your request header")
+	}
 
-	// user := req.Request.Header.Get(common.BKHTTPHeaderUser)
-	// path := req.Request.URL.Path
+	elements, err := urlParse(req.Request.URL.Path)
+	if err != nil {
+		return nil, err
+	}
+
+	version := elements[1]
+	if version != "v3" {
+		return nil, fmt.Errorf("unsupported api version: %s", version)
+	}
+	attr.APIVersion = version
+
+	return nil, nil
+}
+
+// url example: /api/v3/create/model
+var urlRegex = regexp.MustCompile(`^/api/([^/]+)/([^/]+)/([^/]+)/(.*)$`)
+
+func urlParse(url string) (elements []string, err error) {
+	if !urlRegex.MatchString(url) {
+		return nil, errors.New("invalid url format")
+	}
+
+	return strings.Split(url, "/")[1:], nil
+}
+
+func filterAction(action string) (auth.Action, error) {
+	switch action {
+	case "find":
+		return auth.Find, nil
+	case "findMany":
+		return auth.FindMany, nil
+
+	case "create":
+		return auth.Create, nil
+	case "createMany":
+		return auth.CreateMany, nil
+
+	case "update":
+		return auth.Update, nil
+	case "updateMany":
+		return auth.UpdateMany, nil
+
+	case "delete":
+		return auth.Delete, nil
+	case "deleteMany":
+		return auth.DeleteMany, nil
+
+	default:
+		return auth.Unknown, fmt.Errorf("unsupported action %s", action)
+	}
 }

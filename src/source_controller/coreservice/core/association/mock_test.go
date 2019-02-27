@@ -15,6 +15,7 @@ package association_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
@@ -24,6 +25,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core/instances"
 	"configcenter/src/source_controller/coreservice/core/model"
 	"configcenter/src/storage/dal/mongo"
+	"configcenter/src/storage/dal/mongo/local"
 
 	"github.com/stretchr/testify/require"
 )
@@ -79,21 +81,21 @@ func (m *mockDependences) IsInstanceExist(ctx core.ContextParams, objID string, 
 
 func newModel(t *testing.T) core.ModelOperation {
 
-	db, err := mongo.NewMgo("mongodb://cc:cc@localhost:27010,localhost:27011,localhost:27012,localhost:27013/cmdb")
+	db, err := local.NewMgo("mongodb://cc:cc@localhost:27010,localhost:27011,localhost:27012,localhost:27013/cmdb", time.Minute)
 	require.NoError(t, err)
 	return model.New(db, &mockDependences{})
 }
 
 func newAssociation(t *testing.T) core.AssociationOperation {
 
-	db, err := mongo.NewMgo("mongodb://cc:cc@localhost:27010,localhost:27011,localhost:27012,localhost:27013/cmdb")
+	db, err := local.NewMgo("mongodb://cc:cc@localhost:27010,localhost:27011,localhost:27012,localhost:27013/cmdb", time.Minute)
 	require.NoError(t, err)
 	return association.New(db, &mockDependences{})
 }
 
 func newInstances(t *testing.T) core.InstanceOperation {
 
-	db, err := mongo.NewMgo("mongodb://cc:cc@localhost:27010,localhost:27011,localhost:27012,localhost:27013/cmdb")
+	db, err := local.NewMgo("mongodb://cc:cc@localhost:27010,localhost:27011,localhost:27012,localhost:27013/cmdb", time.Minute)
 	require.NoError(t, err)
 	return instances.New(db, &instDependences{})
 }

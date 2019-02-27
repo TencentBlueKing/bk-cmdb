@@ -56,16 +56,22 @@ export function getPropertyText (property, item) {
     const propertyType = property['bk_property_type']
     let propertyValue = item[propertyId]
     if (propertyType === 'enum') {
-        const enumOption = (property.option || []).find(option => option.id === propertyValue)
+        const options = Array.isArray(property.option) ? property.option : []
+        const enumOption = options.find(option => option.id === propertyValue)
         propertyValue = enumOption ? enumOption.name : null
     } else if (['singleasst', 'multiasst'].includes(propertyType)) {
-        propertyValue = (propertyValue || []).map(inst => inst['bk_inst_name']).join(',')
+        const values = Array.isArray(propertyValue) ? propertyValue : []
+        propertyValue = values.map(inst => inst['bk_inst_name']).join(',')
     } else if (['date', 'time'].includes(propertyType)) {
         propertyValue = formatTime(propertyValue, propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
     } else if (propertyType === 'objuser') {
         propertyValue = getFullName(propertyValue)
     } else if (propertyType === 'foreignkey') {
-        propertyValue = (propertyValue || []).map(inst => inst['bk_inst_name']).join(',')
+        if (Array.isArray(propertyValue)) {
+            propertyValue = propertyValue.map(inst => inst['bk_inst_name']).join(',')
+        } else {
+            return String(propertyValue).length ? propertyValue : '--'
+        }
     }
     return propertyValue || '--'
 }
@@ -253,6 +259,18 @@ export function clone (object) {
     return JSON.parse(JSON.stringify(object))
 }
 
+/**
+ * 获取对象中的metada.label.bk_biz_id属性
+ * @param {Object} object - 需拷贝的对象
+ * @return {Object} 拷贝后的对象
+ */
+export function getMetadataBiz (object) {
+    const metadata = object.metadata || {}
+    const label = metadata.label || {}
+    const biz = label['bk_biz_id']
+    return biz
+}
+
 export default {
     getProperty,
     getPropertyText,
@@ -267,5 +285,6 @@ export default {
     flatternHostItem,
     formatTime,
     clone,
-    getInstFormValues
+    getInstFormValues,
+    getMetadataBiz
 }

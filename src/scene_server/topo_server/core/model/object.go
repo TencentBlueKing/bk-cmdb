@@ -286,6 +286,14 @@ func (o *object) searchAssoObjects(isNeedChild bool, cond condition.Condition) (
 	return pair, nil
 }
 
+// func (o *object) GetChildObjectByFieldID(fieldID string) ([]Object, error) {
+// 	cond := condition.CreateCondition()
+// 	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
+// 	cond.Field(meta.AssociationFieldObjectID).Eq(o.obj.ObjectID)
+// 	// cond.Field(meta.AssociationFieldAssociationName).Eq(fieldID)
+//
+// 	return o.searchObjects(true, cond)
+// }
 func (o *object) GetParentObject() ([]ObjectAssoPair, error) {
 
 	cond := condition.CreateCondition()
@@ -442,7 +450,11 @@ func (o *object) Create() error {
 	}
 
 	if exists {
-		return o.params.Err.Error(common.CCErrCommDuplicateItem)
+		return o.params.Err.Errorf(common.CCErrCommDuplicateItem, "")
+	}
+
+	if o.obj.ObjIcon == "" {
+		return o.params.Err.Errorf(common.CCErrCommParamsNeedSet, common.BKObjIconField)
 	}
 
 	rsp, err := o.clientSet.CoreService().Model().CreateModel(context.Background(), o.params.Header, &metadata.CreateModel{Spec: o.obj})
@@ -477,7 +489,7 @@ func (o *object) Update(data mapstr.MapStr) error {
 	}
 
 	if exists {
-		return o.params.Err.Error(common.CCErrCommDuplicateItem)
+		return o.params.Err.Errorf(common.CCErrCommDuplicateItem, "")
 	}
 
 	// update action

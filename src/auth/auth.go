@@ -12,20 +12,30 @@
 
 package auth
 
+import "context"
+
 type Authorizer interface {
 	// Authorize works to check if a user has the authority to operate resources.
-	Authorize(a *Attribute) (authorized Decision, reason string, err error)
+	Authorize(a *Attribute) (decision Decision, err error)
 }
 
 // ResourceManager is used to handle the resources register to authorize center.
 // request id is a identifier for a request, returned by IAM.
 type ResourceHandler interface {
 	// register a resource
-	Register(scope ScopeInfo, res ResourceInfo) (requestID string, err error)
+	Register(ctx context.Context, r *ResourceAttribute) error
 	// deregister a resource
-	Deregister(scope ScopeInfo, res ResourceInfo) (requestID string, err error)
+	Deregister(ctx context.Context, r *ResourceAttribute) error
 	// update a resource's info
-	Update(scope ScopeInfo, res ResourceInfo) (requestID string, err error)
+	Update(ctx context.Context, r *ResourceAttribute) error
 	// get a resource's info
-	Get() error
+	Get(ctx context.Context) error
+}
+
+func NewAuthorizer() (Authorizer, error) {
+	panic("implement me")
+}
+
+func NewResourceHandler() (ResourceHandler, error) {
+	panic("implement me")
 }

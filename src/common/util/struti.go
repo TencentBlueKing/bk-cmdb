@@ -14,6 +14,7 @@ package util
 
 import (
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -89,4 +90,13 @@ func FirstNotEmptyString(strs ...string) string {
 		}
 	}
 	return ""
+}
+
+func ContainsAnyString(s string, subs ...string) bool {
+	for index := range subs {
+		if strings.Contains(s, subs[index]) {
+			return true
+		}
+	}
+	return false
 }

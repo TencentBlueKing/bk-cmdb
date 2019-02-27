@@ -101,7 +101,15 @@ func (a *association) SearchObjectAssociation(params types.ContextParams, objID 
 		cond.Field(common.BKObjIDField).Eq(objID)
 	}
 
-	rsp, err := a.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
+	fCond := cond.ToMapStr()
+	if nil != params.MetaData {
+		fCond.Merge(metadata.PublicAndBizCondition(*params.MetaData))
+		fCond.Remove(metadata.BKMetadata)
+	} else {
+		fCond.Merge(metadata.BizLabelNotExist)
+	}
+
+	rsp, err := a.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), params.Header, &metadata.QueryCondition{Condition: fCond})
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to request object controller, err: %s", err.Error())
 		return nil, params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
@@ -450,6 +458,29 @@ func (a *association) SearchType(params types.ContextParams, request *metadata.S
 	}
 
 	return a.clientSet.CoreService().Association().ReadAssociation(context.Background(), params.Header, &input)
+
+	needComb := true
+	if KindIDCond, ok := request.Condition[common.AssociationKindIDField]; ok {
+		if kindIDSearchCond, ok := KindIDCond.(map[string]interface{}); ok {
+			needComb = false
+			kindIDSearchCond[common.BKDBNE] = common.AssociationKindMainline
+			request.Condition[common.AssociationKindIDField] = kindIDSearchCond
+		}
+	}
+	if needComb {
+		cond := condition.CreateCondition()
+		cond.Field(common.AssociationKindIDField).NotEq(common.AssociationKindMainline)
+		nAsstKindCond := cond.ToMapStr()
+		if 0 == len(request.Condition) {
+			request.Condition = make(map[string]interface{})
+		}
+		for key, val := range nAsstKindCond {
+			request.Condition[key] = val
+		}
+	}
+
+	return a.clientSet.ObjectController().Association().SearchType(context.TODO(), params.Header, request)
+
 }
 
 func (a *association) CreateType(params types.ContextParams, request *metadata.AssociationKind) (resp *metadata.CreateAssociationTypeResult, err error) {
@@ -474,6 +505,9 @@ func (a *association) UpdateType(params types.ContextParams, asstTypeID int, req
 func (a *association) DeleteType(params types.ContextParams, asstTypeID int) (resp *metadata.DeleteAssociationTypeResult, err error) {
 	cond := condition.CreateCondition()
 	cond.Field("id").Eq(asstTypeID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
+	cond.Field(common.AssociationKindIDField).NotEq(common.AssociationKindMainline)
+
 	query := &metadata.SearchAssociationTypeRequest{
 		Condition: cond.ToMapStr(),
 	}
@@ -609,36 +643,57 @@ func (a *association) CreateInst(params types.ContextParams, request *metadata.C
 
 	objID := objectAsst.ObjectID
 	asstObjID := objectAsst.AsstObjID
-	// search instances belongs to this association.
-	inst, err := a.SearchInst(params, &metadata.SearchAssociationInstRequest{Condition: cond.ToMapStr()})
-	if err != nil {
-		blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %v", cond, err)
-		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-
-	if !inst.Result {
-		blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %s", cond, resp.ErrMsg)
-		return nil, params.Err.New(resp.Code, resp.ErrMsg)
-	}
-
-	instances := len(inst.Data)
 
 	switch result.Data[0].Mapping {
 	case metadata.OneToOneMapping:
-		if instances >= 1 {
+		// search instances belongs to this association.
+		cond := condition.CreateCondition()
+		cond.Field(common.AssociationObjAsstIDField).Eq(request.ObjectAsstID)
+		cond.Field(common.BKInstIDField).Eq(request.InstID)
+		inst, err := a.SearchInst(params, &metadata.SearchAssociationInstRequest{Condition: cond.ToMapStr()})
+		if err != nil {
+			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %v", cond, err)
+			return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		}
+
+		if !inst.Result {
+			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %s", cond, resp.ErrMsg)
+			return nil, params.Err.New(resp.Code, resp.ErrMsg)
+		}
+		if len(inst.Data) >= 1 {
 			return nil, params.Err.Error(common.CCErrorTopoCreateMultipleInstancesForOneToOneAssociation)
 		}
+
+		cond = condition.CreateCondition()
+		cond.Field(common.AssociationObjAsstIDField).Eq(request.ObjectAsstID)
+		cond.Field(common.BKAsstInstIDField).Eq(request.AsstInstID)
+
+		inst, err = a.SearchInst(params, &metadata.SearchAssociationInstRequest{Condition: cond.ToMapStr()})
+		if err != nil {
+			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %v", cond, err)
+			return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		}
+
+		if !inst.Result {
+			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %s", cond, resp.ErrMsg)
+			return nil, params.Err.New(resp.Code, resp.ErrMsg)
+		}
+		if len(inst.Data) >= 1 {
+			return nil, params.Err.Error(common.CCErrorTopoCreateMultipleInstancesForOneToOneAssociation)
+		}
+
 	default:
 		// after all the check, new association instance can be created.
 	}
 
 	input := metadata.CreateOneInstanceAssociation{
 		Data: metadata.InstAsst{
-			ObjectAsstID: request.ObjectAsstID,
-			InstID:       request.InstID,
-			AsstInstID:   request.AsstInstID,
-			ObjectID:     objID,
-			AsstObjectID: asstObjID,
+			ObjectAsstID:      request.ObjectAsstID,
+			InstID:            request.InstID,
+			AsstInstID:        request.AsstInstID,
+			ObjectID:          objID,
+			AsstObjectID:      asstObjID,
+			AssociationKindID: objectAsst.AsstKindID,
 		},
 	}
 	rsp, err := a.clientSet.CoreService().Association().CreateInstAssociation(context.Background(), params.Header, &input)
