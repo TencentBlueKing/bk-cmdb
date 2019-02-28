@@ -65,12 +65,22 @@ func (m *model) SaveSynchronize(ctx core.ContextParams) errors.CCError {
 		return m.saveSynchronizeModelAttributeGroup(ctx)
 	case common.SynchronizeModelTypeBase:
 		return m.saveSynchronizeModelBase(ctx)
+	case common.SynchronizeModelTypeModelClassificationRelation:
+		return m.saveSynchronizeModelClassificationRelation(ctx)
 	default:
 		return ctx.Error.Errorf(common.CCErrCoreServiceSyncDataClassifyNotExistError, m.dataType, m.DataClassify)
 	}
 	return nil
 }
 
+func (m *model) saveSynchronizeModelClassificationRelation(ctx core.ContextParams) errors.CCError {
+	var dbParam synchronizeAdapterDBParameter
+	// "cc_ObjDes"
+	dbParam.tableName = common.BKTableNameObjDes
+	dbParam.InstIDField = common.BKFieldID
+	m.base.saveSynchronize(ctx, dbParam)
+	return nil
+}
 func (m *model) saveSynchronizeModelClassification(ctx core.ContextParams) errors.CCError {
 	var dbParam synchronizeAdapterDBParameter
 	// "cc_ObjClassification"

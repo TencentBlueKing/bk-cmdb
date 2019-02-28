@@ -13,6 +13,8 @@
 package datasynchronize
 
 import (
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
@@ -36,6 +38,7 @@ func (s *SynchronizeManager) SynchronizeInstanceAdapter(ctx core.ContextParams, 
 	syncDataAdpater := NewSynchronizeInstanceAdapter(syncData, s.dbProxy)
 	err := syncDataAdpater.PreSynchronizeFilter(ctx)
 	if err != nil {
+		blog.Errorf("SynchronizeInstanceAdapter error, err:%s,rid:%s", err.Error(), ctx.ReqID)
 		return nil, err
 	}
 	syncDataAdpater.SaveSynchronize(ctx)
@@ -65,7 +68,23 @@ func (s *SynchronizeManager) SynchronizeAssociationAdapter(ctx core.ContextParam
 
 }
 
-func (s *SynchronizeManager) GetAssociationInfo(ctx core.ContextParams, fetch *metadata.SynchronizeFetchInfoParameter) ([]mapstr.MapStr, uint64, error) {
-	fetchAdapter := NewSynchronizeFetchAdapter(fetch, s.dbProxy)
-	return fetchAdapter.Fetch(ctx)
+func (s *SynchronizeManager) Find(ctx core.ContextParams, input *metadata.SynchronizeFindInfoParameter) ([]mapstr.MapStr, uint64, error) {
+	adapter := NewSynchronizeFindAdapter(input, s.dbProxy)
+	return adapter.Find(ctx)
+}
+
+func (s *SynchronizeManager) ClearData(ctx core.ContextParams, input *metadata.SynchronizeClearDataParameter) error {
+
+	adapter := NewClearData(s.dbProxy, input)
+	if input.Sign == "" {
+		blog.Errorf("clearData parameter synchronize_flag illegal, input:%#v,rid:%s", input, ctx.ReqID)
+		return ctx.Error.Errorf(common.CCErrCommParamsNeedSet, "synchronize_flag")
+	}
+
+	if !input.Legality(common.SynchronizeSignPrefix) {
+		blog.Errorf("clearData parameter illegal, input:%#v,rid:%s", input, ctx.ReqID)
+		return ctx.Error.Errorf(common.CCErrCommParamsInvalid, input.Sign)
+	}
+	adapter.clearData(ctx)
+	return nil
 }

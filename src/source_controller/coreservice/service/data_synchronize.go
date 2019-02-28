@@ -51,17 +51,32 @@ func (s *coreService) SynchronizeAssociation(params core.ContextParams, pathPara
 	return s.core.DataSynchronizeOperation().SynchronizeAssociationAdapter(params, inputData)
 }
 
-func (s *coreService) SynchronizeFetch(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) SynchronizeFind(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	inputData := &metadata.SynchronizeFetchInfoParameter{}
+	inputData := &metadata.SynchronizeFindInfoParameter{}
 	if err := data.MarshalJSONInto(&inputData); nil != err {
-		blog.Errorf("SynchronizeAssociation MarshalJSONInto error, err:%s,input:%v,rid:%s", err.Error(), data, params.ReqID)
+		blog.Errorf("SynchronizeFind MarshalJSONInto error, err:%s,input:%v,rid:%s", err.Error(), data, params.ReqID)
 		return nil, err
 	}
-	info, cnt, err := s.core.DataSynchronizeOperation().GetAssociationInfo(params, inputData)
+	info, cnt, err := s.core.DataSynchronizeOperation().Find(params, inputData)
 	if err != nil {
-		blog.Errorf("SynchronizeAssociation GetAssociationInfo error, err:%s,input:%v,rid:%s", err.Error(), data, params.ReqID)
+		blog.Errorf("SynchronizeFind GetAssociationInfo error, err:%s,input:%v,rid:%s", err.Error(), data, params.ReqID)
 		return nil, err
 	}
 	return mapstr.MapStr{"info": info, "count": cnt}, nil
+}
+
+func (s *coreService) SynchronizeClearData(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
+	inputData := &metadata.SynchronizeClearDataParameter{}
+	if err := data.MarshalJSONInto(&inputData); nil != err {
+		blog.Errorf("ClearData MarshalJSONInto error, err:%s,input:%v,rid:%s", err.Error(), data, params.ReqID)
+		return nil, err
+	}
+	err := s.core.DataSynchronizeOperation().ClearData(params, inputData)
+	if err != nil {
+		blog.Errorf("ClearData GetAssociationInfo error, err:%s,input:%v,rid:%s", err.Error(), data, params.ReqID)
+		return nil, err
+	}
+	return nil, nil
 }

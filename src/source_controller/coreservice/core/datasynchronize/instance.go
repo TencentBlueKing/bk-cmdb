@@ -28,7 +28,7 @@ type instance struct {
 
 func NewSynchronizeInstanceAdapter(s *metadata.SynchronizeParameter, dbProxy dal.RDB) dataTypeInterface {
 
-	return &association{
+	return &instance{
 		base:     newSynchronizeAdapter(s, dbProxy),
 		dataType: s.OperateDataType,
 		// instance data classify

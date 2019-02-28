@@ -121,7 +121,8 @@ type DataSynchronizeOperation interface {
 	SynchronizeInstanceAdapter(ctx ContextParams, syncData *metadata.SynchronizeParameter) ([]metadata.ExceptionResult, error)
 	SynchronizeModelAdapter(ctx ContextParams, syncData *metadata.SynchronizeParameter) ([]metadata.ExceptionResult, error)
 	SynchronizeAssociationAdapter(ctx ContextParams, syncData *metadata.SynchronizeParameter) ([]metadata.ExceptionResult, error)
-	GetAssociationInfo(ctx ContextParams, fetch *metadata.SynchronizeFetchInfoParameter) ([]mapstr.MapStr, uint64, error)
+	Find(ctx ContextParams, find *metadata.SynchronizeFindInfoParameter) ([]mapstr.MapStr, uint64, error)
+	ClearData(ctx ContextParams, input *metadata.SynchronizeClearDataParameter) error
 }
 
 // AssociationOperation association methods
