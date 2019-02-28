@@ -13,6 +13,8 @@
 package metadata
 
 import (
+	"strings"
+
 	"configcenter/src/common/mapstr"
 )
 
@@ -38,8 +40,80 @@ type QueryCondition struct {
 
 // QueryResult common query result
 type QueryResult struct {
-	Count int64           `json:"count"`
+	Count uint64          `json:"count"`
 	Info  []mapstr.MapStr `json:"info"`
 }
 
 type QueryConditionResult ResponseInstData
+
+// SearchSortParse SearchSort parse interface
+type SearchSortParse interface {
+	String(sort string) *searchSortParse
+	Field(field string, isDesc bool) *searchSortParse
+	Set(ssArr []SearchSort) *searchSortParse
+	ToMongo() string
+	ToSearchSortArr() []SearchSort
+}
+
+// searchSortParse SearchSort parse struct
+type searchSortParse struct {
+	data []SearchSort
+}
+
+func NewSearchSortParse() SearchSortParse {
+	return &searchSortParse{}
+}
+
+//  String convert string sort to cc SearchSort struct array
+func (ss *searchSortParse) String(sort string) *searchSortParse {
+	if sort == "" {
+		return nil
+	}
+	sortArr := strings.Split(sort, ",")
+	for _, sortItem := range sortArr {
+		sortItemArr := strings.Split(sortItem, ":")
+		ssInst := SearchSort{
+			Field: sortItemArr[0],
+		}
+		if len(sortItemArr) > 1 && strings.TrimSpace(sortItemArr[1]) == "-1" {
+			ssInst.IsDsc = true
+
+		}
+		ss.data = append(ss.data, ssInst)
+	}
+	return ss
+}
+
+//  Field   cc SearchSort struct array
+func (ss *searchSortParse) Field(field string, isDesc bool) *searchSortParse {
+
+	ssInst := SearchSort{
+		Field: field,
+		IsDsc: isDesc,
+	}
+	ss.data = append(ss.data, ssInst)
+	return ss
+}
+
+func (ss *searchSortParse) Set(ssArr []SearchSort) *searchSortParse {
+	ss.data = append(ss.data, ssArr...)
+	return ss
+}
+
+// ToSearchSortArr cc SearchSort struct to mongodb sort filed
+func (ss *searchSortParse) ToSearchSortArr() []SearchSort {
+	return ss.data
+}
+
+// searchSortParse cc SearchSort struct to mongodb sort filed
+func (ss *searchSortParse) ToMongo() string {
+	var orderByArr []string
+	for _, item := range ss.data {
+		if item.IsDsc {
+			orderByArr = append(orderByArr, item.Field+":-1")
+		} else {
+			orderByArr = append(orderByArr, item.Field+":1")
+		}
+	}
+	return strings.Join(orderByArr, ",")
+}

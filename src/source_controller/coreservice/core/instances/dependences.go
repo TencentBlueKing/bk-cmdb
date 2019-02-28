@@ -1,6 +1,6 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.,
- * Copyright (C) 2017,-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  * Licensed under the MIT License (the ",License",); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
@@ -12,4 +12,25 @@
 
 package instances
 
-// TODO: 依赖其他模块的方法，在此文件声明 interface， 上线后统一在进程启动流程里注入
+import (
+	"configcenter/src/common/metadata"
+	"configcenter/src/source_controller/coreservice/core"
+)
+
+// ATTENTIONS: the dependent methods of the other module
+
+// OperationDependences methods definition
+type OperationDependences interface {
+
+	// IsInstanceExist used to check if the  instances  asst exist
+	IsInstAsstExist(ctx core.ContextParams, objID string, instID uint64) (exists bool, err error)
+
+	// DeleteInstAsst used to delete inst asst
+	DeleteInstAsst(ctx core.ContextParams, objID string, instID uint64) error
+
+	// SelectObjectAttWithParams select object att with params
+	SelectObjectAttWithParams(ctx core.ContextParams, objID string) (attribute []metadata.Attribute, err error)
+
+	// SearchUnique search unique attribute
+	SearchUnique(ctx core.ContextParams, objID string) (uniqueAttr []metadata.ObjectUnique, err error)
+}

@@ -33,7 +33,7 @@
                     <label for="" class="label-name">
                         URL<span class="color-danger">*</span>
                     </label>
-                    <div class="item-content url" :class="{'en': language !== 'zh_CN'}">
+                    <div class="item-content url">
                         <div class="url-box">
                             <input type="text" class="cmdb-form-input" :placeholder="$t('EventPush[\'请输入URL\']')"
                                 v-model.trim="tempEventData['callback_url']"
@@ -108,7 +108,7 @@
                     <transition name="slide">
                         <ul v-if="!classify.isHidden" :style="eventHeight(classify.children.length)">
                             <li v-for="(item, idx) in classify.children" :key="idx" class="event-item">
-                                <template v-if="item.id === 'resource'">
+                                <template v-if="item.id === 'resource' && classify.classificationId === 'bk_host_manage'">
                                     <label for="" class="label-name" :title="item.name">{{item.name}}</label>
                                     <div class="options">
                                         <label for="resourceall" class="cmdb-form-checkbox cmdb-checkbox-small">
@@ -251,9 +251,6 @@
             }
         },
         computed: {
-            ...mapGetters([
-                'language'
-            ]),
             selectNum () {
                 let num = 0
                 let {
@@ -382,6 +379,7 @@
                         let event = {
                             name: classify['bk_classification_name'],
                             isHidden: false,
+                            classificationId: classify['bk_classification_id'],
                             children: []
                         }
                         if (classify['bk_classification_id'] === 'bk_biz_topo') {
@@ -411,6 +409,7 @@
                 eventPushList.unshift({
                     isDefault: true,
                     isHidden: false,
+                    classificationId: 'bk_host_manage',
                     name: this.$t('EventPush["主机业务"]'),
                     children: [{
                         id: 'resource',
@@ -532,6 +531,7 @@
                 text-align: right;
                 line-height: 36px;
                 font-size: 14px;
+                @include ellipsis;
                 .color-danger{
                     position: absolute;
                     top: 2px;
@@ -552,14 +552,6 @@
                         vertical-align: top;
                         margin-left: 10px;
                         width: 96px;
-                    }
-                    &.en {
-                        .cmdb-form-input {
-                            width: calc(100% - 135px);
-                        }
-                        .test-btn {
-                            width: 125px;
-                        }
                     }
                 }
                 span {

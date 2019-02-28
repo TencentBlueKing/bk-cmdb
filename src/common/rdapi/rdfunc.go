@@ -19,15 +19,14 @@ import (
 	"net/http"
 	"strings"
 
-	restful "github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/api"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
-	"github.com/rs/xid"
+	restful "github.com/emicklei/go-restful"
 )
 
 var (
@@ -76,7 +75,7 @@ func FilterRdAddrSrv(typeSrv string) func(req *restful.Request, resp *restful.Re
 			resp.WriteHeader(http.StatusInternalServerError)
 			rsp, rsperr := createAPIRspStr(common.CCErrCommRelyOnServerAddressFailed, defErr.Errorf(common.CCErrCommRelyOnServerAddressFailed, typeSrv).Error())
 			if nil != rsperr {
-				blog.Error("create response failed, error information is %v", rsperr)
+				blog.Errorf("create response failed, error information is %v", rsperr)
 			} else {
 				// TODO: 暂时不设置 resp.WriteHeader(httpcode)
 				io.WriteString(resp, rsp)
@@ -88,7 +87,7 @@ func FilterRdAddrSrv(typeSrv string) func(req *restful.Request, resp *restful.Re
 			resp.WriteHeader(http.StatusInternalServerError)
 			rsp, rsperr := createAPIRspStr(common.CCErrCommRelyOnServerAddressFailed, defErr.Errorf(common.CCErrCommRelyOnServerAddressFailed, typeSrv).Error())
 			if nil != rsperr {
-				blog.Error("create response failed, error information is %v", rsperr)
+				blog.Errorf("create response failed, error information is %v", rsperr)
 			} else {
 				// TODO: 暂时不设置 resp.WriteHeader(httpcode)
 				io.WriteString(resp, rsp)
@@ -123,7 +122,7 @@ func FilterRdAddrSrvs(typeSrvs ...string) func(req *restful.Request, resp *restf
 				resp.WriteHeader(http.StatusInternalServerError)
 				rsp, rsperr := createAPIRspStr(common.CCErrCommRelyOnServerAddressFailed, defErr.Errorf(common.CCErrCommRelyOnServerAddressFailed, typeSrv).Error())
 				if nil != rsperr {
-					blog.Error("create response failed, error information is %v", rsperr)
+					blog.Errorf("create response failed, error information is %v", rsperr)
 				} else {
 					// TODO: 暂时不设置 resp.WriteHeader(httpcode)
 					io.WriteString(resp, rsp)
@@ -135,7 +134,7 @@ func FilterRdAddrSrvs(typeSrvs ...string) func(req *restful.Request, resp *restf
 				resp.WriteHeader(http.StatusInternalServerError)
 				rsp, rsperr := createAPIRspStr(common.CCErrCommRelyOnServerAddressFailed, defErr.Errorf(common.CCErrCommRelyOnServerAddressFailed, typeSrv).Error())
 				if nil != rsperr {
-					blog.Error("create response failed, error information is %v", rsperr)
+					blog.Errorf("create response failed, error information is %v", rsperr)
 				} else {
 					// TODO: 暂时不设置 resp.WriteHeader(httpcode)
 					io.WriteString(resp, rsp)
@@ -166,7 +165,6 @@ func checkHTTPAuth(req *restful.Request, defErr errors.DefaultCCErrorIf) (int, s
 
 func AllGlobalFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
-
 		generateHttpHeaderRID(req, resp)
 
 		whilteListSuffix := strings.Split(common.URLFilterWhiteListSuffix, common.URLFilterWhiteListSepareteChar)
@@ -176,11 +174,11 @@ func AllGlobalFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request,
 				return
 			}
 		}
-
 		language := util.GetActionLanguage(req)
 		defErr := errFunc().CreateDefaultCCErrorIf(language)
 
 		errNO, errMsg := checkHTTPAuth(req, defErr)
+
 		if common.CCSuccess != errNO {
 			resp.WriteHeader(http.StatusInternalServerError)
 			rsp, _ := createAPIRspStr(errNO, errMsg)
@@ -230,7 +228,7 @@ func GlobalFilter(typeSrvs ...string) func(req *restful.Request, resp *restful.R
 				resp.WriteHeader(http.StatusInternalServerError)
 				rsp, rsperr := createAPIRspStr(common.CCErrCommRelyOnServerAddressFailed, defErr.Errorf(common.CCErrCommRelyOnServerAddressFailed, typeSrv).Error())
 				if nil != rsperr {
-					blog.Error("create response failed, error information is %v", rsperr)
+					blog.Errorf("create response failed, error information is %v", rsperr)
 				} else {
 					// TODO: 暂时不设置 resp.WriteHeader(httpcode)
 					io.WriteString(resp, rsp)
@@ -242,7 +240,7 @@ func GlobalFilter(typeSrvs ...string) func(req *restful.Request, resp *restful.R
 				resp.WriteHeader(http.StatusInternalServerError)
 				rsp, rsperr := createAPIRspStr(common.CCErrCommRelyOnServerAddressFailed, defErr.Errorf(common.CCErrCommRelyOnServerAddressFailed, typeSrv).Error())
 				if nil != rsperr {
-					blog.Error("create response failed, error information is %v", rsperr)
+					blog.Errorf("create response failed, error information is %v", rsperr)
 				} else {
 					// TODO: 暂时不设置 resp.WriteHeader(httpcode)
 					io.WriteString(resp, rsp)
@@ -256,25 +254,14 @@ func GlobalFilter(typeSrvs ...string) func(req *restful.Request, resp *restful.R
 	}
 }
 
-func createAPIRspStr(errcode int, info interface{}) (string, error) {
+func createAPIRspStr(errcode int, info string) (string, error) {
 
-	type apiRsp struct {
-		Result  bool        `json:"result"`
-		Code    int         `json:"code"`
-		Message interface{} `json:"message"`
-		Data    interface{} `json:"data"`
-	}
-	rsp := apiRsp{
-		Result:  true,
-		Code:    0,
-		Message: nil,
-		Data:    nil,
-	}
+	var rsp metadata.Response
 
 	if 0 != errcode {
 		rsp.Result = false
 		rsp.Code = errcode
-		rsp.Message = info
+		rsp.ErrMsg = info
 	} else {
 		rsp.Data = info
 	}
@@ -285,10 +272,12 @@ func createAPIRspStr(errcode int, info interface{}) (string, error) {
 }
 
 func generateHttpHeaderRID(req *restful.Request, resp *restful.Response) {
-	unused := "0000"
 	cid := util.GetHTTPCCRequestID(req.Request.Header)
 	if "" == cid {
-		cid = generateRID(unused)
+		cid = getHTTPOtherRequestID(req.Request.Header)
+		if cid == "" {
+			cid = util.GenerateRID()
+		}
 		req.Request.Header.Set(common.BKHTTPCCRequestID, cid)
 	}
 	// todo support esb request id
@@ -296,7 +285,19 @@ func generateHttpHeaderRID(req *restful.Request, resp *restful.Response) {
 	resp.Header().Set(common.BKHTTPCCRequestID, cid)
 }
 
-func generateRID(unused string) string {
-	id := xid.New()
-	return fmt.Sprintf("cc%s%s", unused, id.String())
+func ServiceErrorHandler(err restful.ServiceError, req *restful.Request, resp *restful.Response) {
+	blog.Errorf("HTTP ERROR: %v, HTTP MESSAGE: %v, RequestURI: %s %s", err.Code, err.Message, req.Request.Method, req.Request.RequestURI)
+	ret := metadata.BaseResp{
+		Result: false,
+		Code:   -1,
+		ErrMsg: fmt.Sprintf("HTTP ERROR: %v, HTTP MESSAGE: %v, RequestURI: %s %s", err.Code, err.Message, req.Request.Method, req.Request.RequestURI),
+	}
+
+	resp.WriteHeaderAndJson(err.Code, ret, "application/json")
+}
+
+// getHTTPOtherRequestID return other system request id from http header
+func getHTTPOtherRequestID(header http.Header) string {
+	rid := header.Get(common.BKHTTPOtherRequestID)
+	return rid
 }

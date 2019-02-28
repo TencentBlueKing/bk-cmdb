@@ -29,17 +29,17 @@ var SuccessBaseResp = BaseResp{Result: true, Code: common.CCSuccess, ErrMsg: com
 
 // CreatedCount created count struct
 type CreatedCount struct {
-	Count int64 `json:"created_count"`
+	Count uint64 `json:"created_count"`
 }
 
 // UpdatedCount created count struct
 type UpdatedCount struct {
-	Count int64 `json:"updated_count"`
+	Count uint64 `json:"updated_count"`
 }
 
 // DeletedCount created count struct
 type DeletedCount struct {
-	Count int64 `json:"deleted_count"`
+	Count uint64 `json:"deleted_count"`
 }
 
 // ExceptionResult exception info
@@ -100,20 +100,76 @@ type SearchDataResult struct {
 	Info  []mapstr.MapStr `json:"info"`
 }
 
+// QueryModelDataResult used to define the model query
+type QueryModelDataResult struct {
+	Count int64    `json:"count"`
+	Info  []Object `json:"info"`
+}
+
+// QueryModelWithAttributeDataResult used to define the model with attribute query
+type QueryModelWithAttributeDataResult struct {
+	Count int64             `json:"count"`
+	Info  []SearchModelInfo `json:"info"`
+}
+
+// QueryModelAttributeDataResult search model attr data result
+type QueryModelAttributeDataResult struct {
+	Count int64       `json:"count"`
+	Info  []Attribute `json:"info"`
+}
+
+// QueryModelAttributeGroupDataResult query model attribute group result definition
+type QueryModelAttributeGroupDataResult struct {
+	Count int64   `json:"count"`
+	Info  []Group `json:"info"`
+}
+
+// QueryModelClassificationDataResult query model classification result definition
+type QueryModelClassificationDataResult struct {
+	Count int64            `json:"count"`
+	Info  []Classification `json:"info"`
+}
+
+// ReadModelAttrResult  read model attribute api http response return result struct
+type ReadModelAttrResult struct {
+	BaseResp `json:",inline"`
+	Data     QueryModelAttributeDataResult `json:"data"`
+}
+
 //ReadModelClassifitionResult  read model classifition api http response return result struct
 type ReadModelClassifitionResult struct {
 	BaseResp `json:",inline"`
-	Data     struct {
-		Count int              `json:"count"`
-		Info  []Classification `json:"info"`
-	} `json:"data"`
+	Data     QueryModelClassificationDataResult `json:"data"`
 }
 
 //ReadModelResult  read model classifition api http response return result struct
 type ReadModelResult struct {
 	BaseResp `json:",inline"`
-	Data     struct {
-		Count int               `json:"count"`
-		Info  []SearchModelInfo `json:"info"`
-	} `json:"data"`
+	Data     QueryModelWithAttributeDataResult `json:"data"`
+}
+
+type ReadModelAttributeGroupResult struct {
+	BaseResp `json:",inline"`
+	Data     QueryModelAttributeGroupDataResult `json:"data"`
+}
+
+type ReadModelUniqueResult struct {
+	BaseResp `json:",inline"`
+	Data     QueryUniqueResult `json:"data"`
+}
+
+type ReadModelAssociationResult struct {
+	BaseResp
+	Data struct {
+		Count uint64        `json:"count"`
+		Info  []Association `json:"info"`
+	}
+}
+
+type ReadInstAssociationResult struct {
+	BaseResp
+	Data struct {
+		Count uint64     `json:"count"`
+		Info  []InstAsst `json:"info"`
+	}
 }

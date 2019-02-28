@@ -1,6 +1,8 @@
 <template>
     <div>
-        <bk-button class="create-btn" type="primary" :disabled="isReadOnly" @click="createVerification">
+        <bk-button class="create-btn" type="primary"
+            :disabled="isReadOnly || !authority.includes('update')"
+            @click="createVerification">
             {{$t('ModelManagement["新建校验"]')}}
         </bk-button>
         <cmdb-table
@@ -20,18 +22,22 @@
                         {{item['must_check'] ? $t('ModelManagement["是"]') : $t('ModelManagement["否"]')}}
                     </template>
                     <template v-else-if="header.id==='operation'">
-                        <span class="text-primary mr10" @click.stop="editVerification(item)">
+                        <button class="text-primary mr10"
+                            :disabled="!isEditable(item)"
+                            @click.stop="editVerification(item)">
                             {{$t('Common["编辑"]')}}
-                        </span>
-                        <span class="text-primary" v-if="!isReadOnly && !item.ispre" @click.stop="deleteVerification(item)">
+                        </button>
+                        <button class="text-primary"
+                            :disabled="!isEditable(item)"
+                            @click.stop="deleteVerification(item)">
                             {{$t('Common["删除"]')}}
-                        </span>
+                        </button>
                     </template>
                 </div>
             </template>
         </cmdb-table>
         <cmdb-slider
-            :width="514"
+            :width="450"
             :title="slider.title"
             :isShow.sync="slider.isShow">
             <the-verification-detail
@@ -79,17 +85,32 @@
             }
         },
         computed: {
+            ...mapGetters(['isAdminView', 'isBusinessSelected']),
             ...mapGetters('objectModel', [
-                'activeModel'
+                'activeModel',
+                'isInjectable'
             ]),
             isReadOnly () {
                 if (this.activeModel) {
                     return this.activeModel['bk_ispaused']
                 }
                 return false
+            },
+            authority () {
+                const cantEdit = ['process', 'plat']
+                if (cantEdit.includes(this.$route.params.modelId)) {
+                    return []
+                }
+                if (this.isAdminView || (this.isBusinessSelected && this.isInjectable)) {
+                    return ['search', 'update', 'delete']
+                }
+                return []
             }
         },
         async created () {
+            if (!this.authority.includes('update')) {
+                this.table.header.pop()
+            }
             this.initAttrList()
             this.searchVerification()
         },
@@ -101,6 +122,18 @@
                 'searchObjectUniqueConstraints',
                 'deleteObjectUniqueConstraints'
             ]),
+            isEditable (item) {
+                if (item.ispre) {
+                    return false
+                }
+                if (this.isReadOnly) {
+                    return false
+                }
+                if (!this.isAdminView) {
+                    return !!this.$tools.getMetadataBiz(item)
+                }
+                return true
+            },
             getRuleName (keys) {
                 let name = []
                 keys.forEach(key => {
@@ -115,9 +148,9 @@
             },
             async initAttrList () {
                 this.attributeList = await this.searchObjectAttribute({
-                    params: {
+                    params: this.$injectMetadata({
                         bk_obj_id: this.activeModel['bk_obj_id']
-                    },
+                    }),
                     config: {
                         requestId: `post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`
                     }
@@ -156,7 +189,10 @@
             async searchVerification () {
                 const res = await this.searchObjectUniqueConstraints({
                     objId: this.activeModel['bk_obj_id'],
-                    requestId: 'searchObjectUniqueConstraints'
+                    params: this.$injectMetadata(),
+                    config: {
+                        requestId: 'searchObjectUniqueConstraints'
+                    }
                 })
                 this.table.list = res
             }

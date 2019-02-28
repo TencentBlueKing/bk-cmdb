@@ -1,10 +1,16 @@
+// Copyright (C) MongoDB, Inc. 2017-present.
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you may
+// not use this file except in compliance with the License. You may obtain
+// a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+
 package benchmark
 
 import (
 	"context"
 	"errors"
 
-	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/x/bsonx"
 )
 
 func MultiFindMany(ctx context.Context, tm TimerManager, iters int) error {
@@ -31,7 +37,7 @@ func MultiFindMany(ctx context.Context, tm TimerManager, iters int) error {
 
 	payload := make([]interface{}, iters)
 	for idx := range payload {
-		payload[idx] = *doc
+		payload[idx] = doc
 	}
 
 	if _, err = coll.InsertMany(ctx, payload); err != nil {
@@ -40,7 +46,7 @@ func MultiFindMany(ctx context.Context, tm TimerManager, iters int) error {
 
 	tm.ResetTimer()
 
-	cursor, err := coll.Find(ctx, bson.NewDocument())
+	cursor, err := coll.Find(ctx, bsonx.Doc{})
 	if err != nil {
 		return err
 	}
@@ -52,12 +58,7 @@ func MultiFindMany(ctx context.Context, tm TimerManager, iters int) error {
 		if err != nil {
 			return err
 		}
-		var r bson.Reader
-		r, err = cursor.DecodeBytes()
-		if err != nil {
-			return err
-		}
-		if len(r) == 0 {
+		if len(cursor.Current) == 0 {
 			return errors.New("error retrieving document")
 		}
 
@@ -102,14 +103,14 @@ func multiInsertCase(ctx context.Context, tm TimerManager, iters int, data strin
 		return err
 	}
 
-	_, err = db.RunCommand(ctx, bson.NewDocument(bson.EC.String("create", "corpus")))
+	err = db.RunCommand(ctx, bsonx.Doc{{"create", bsonx.String("corpus")}}).Err()
 	if err != nil {
 		return err
 	}
 
 	payload := make([]interface{}, iters)
 	for idx := range payload {
-		payload[idx] = *doc
+		payload[idx] = doc
 	}
 
 	coll := db.Collection("corpus")

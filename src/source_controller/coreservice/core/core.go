@@ -1,6 +1,6 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.,
- * Copyright (C) 2017,-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  * Licensed under the MIT License (the ",License",); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
@@ -16,6 +16,18 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// ModelAttributeGroup model attribute group methods definitions
+type ModelAttributeGroup interface {
+	CreateModelAttributeGroup(ctx ContextParams, objID string, inputParam metadata.CreateModelAttributeGroup) (*metadata.CreateOneDataResult, error)
+	SetModelAttributeGroup(ctx ContextParams, objID string, inputParam metadata.SetModelAttributeGroup) (*metadata.SetDataResult, error)
+	UpdateModelAttributeGroup(ctx ContextParams, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
+	UpdateModelAttributeGroupByCondition(ctx ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
+	SearchModelAttributeGroup(ctx ContextParams, objID string, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeGroupDataResult, error)
+	SearchModelAttributeGroupByCondition(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeGroupDataResult, error)
+	DeleteModelAttributeGroup(ctx ContextParams, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
+	DeleteModelAttributeGroupByCondition(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
+}
+
 // ModelClassification model classification methods definitions
 type ModelClassification interface {
 	CreateOneModelClassification(ctx ContextParams, inputParam metadata.CreateOneModelClassification) (*metadata.CreateOneDataResult, error)
@@ -25,7 +37,7 @@ type ModelClassification interface {
 	UpdateModelClassification(ctx ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	DeleteModelClassificaiton(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 	CascadeDeleteModeClassification(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
-	SearchModelClassification(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error)
+	SearchModelClassification(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryModelClassificationDataResult, error)
 }
 
 // ModelAttribute model attribute methods definitions
@@ -33,29 +45,40 @@ type ModelAttribute interface {
 	CreateModelAttributes(ctx ContextParams, objID string, inputParam metadata.CreateModelAttributes) (*metadata.CreateManyDataResult, error)
 	SetModelAttributes(ctx ContextParams, objID string, inputParam metadata.SetModelAttributes) (*metadata.SetDataResult, error)
 	UpdateModelAttributes(ctx ContextParams, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
+	UpdateModelAttributesByCondition(ctx ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	DeleteModelAttributes(ctx ContextParams, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
-	SearchModelAttributes(ctx ContextParams, objID string, inputParam metadata.QueryCondition) (*metadata.QueryResult, error)
+	SearchModelAttributes(ctx ContextParams, objID string, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeDataResult, error)
+	SearchModelAttributesByCondition(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryModelAttributeDataResult, error)
+}
+
+// ModelAttrUnique model attribute  unique methods definitions
+type ModelAttrUnique interface {
+	CreateModelAttrUnique(ctx ContextParams, objID string, data metadata.CreateModelAttrUnique) (*metadata.CreateOneDataResult, error)
+	UpdateModelAttrUnique(ctx ContextParams, objID string, id uint64, data metadata.UpdateModelAttrUnique) (*metadata.UpdatedCount, error)
+	DeleteModelAttrUnique(ctx ContextParams, objID string, id uint64) (*metadata.DeletedCount, error)
+	SearchModelAttrUnique(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryUniqueResult, error)
 }
 
 // ModelOperation model methods
 type ModelOperation interface {
 	ModelClassification
+	ModelAttributeGroup
 	ModelAttribute
+	ModelAttrUnique
 
 	CreateModel(ctx ContextParams, inputParam metadata.CreateModel) (*metadata.CreateOneDataResult, error)
 	SetModel(ctx ContextParams, inputParam metadata.SetModel) (*metadata.SetDataResult, error)
 	UpdateModel(ctx ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	DeleteModel(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 	CascadeDeleteModel(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
-	SearchModel(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error)
+	SearchModel(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryModelDataResult, error)
+	SearchModelWithAttribute(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryModelWithAttributeDataResult, error)
 }
 
 // InstanceOperation instance methods
 type InstanceOperation interface {
 	CreateModelInstance(ctx ContextParams, objID string, inputParam metadata.CreateModelInstance) (*metadata.CreateOneDataResult, error)
 	CreateManyModelInstance(ctx ContextParams, objID string, inputParam metadata.CreateManyModelInstance) (*metadata.CreateManyDataResult, error)
-	SetModelInstance(ctx ContextParams, objID string, inputParam metadata.SetModelInstance) (*metadata.SetDataResult, error)
-	SetManyModelInstance(ctx ContextParams, objID string, inputParam metadata.SetManyModelInstance) (*metadata.SetDataResult, error)
 	UpdateModelInstance(ctx ContextParams, objID string, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	SearchModelInstance(ctx ContextParams, objID string, inputParam metadata.QueryCondition) (*metadata.QueryResult, error)
 	DeleteModelInstance(ctx ContextParams, objID string, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
@@ -65,7 +88,7 @@ type InstanceOperation interface {
 // AssociationKind association kind methods
 type AssociationKind interface {
 	CreateAssociationKind(ctx ContextParams, inputParam metadata.CreateAssociationKind) (*metadata.CreateOneDataResult, error)
-	CreateManyAssociationKind(ctx ContextParams, inputParam metadata.CreateManyAssociationKind) (*metadata.CreateManyAssociationKind, error)
+	CreateManyAssociationKind(ctx ContextParams, inputParam metadata.CreateManyAssociationKind) (*metadata.CreateManyDataResult, error)
 	SetAssociationKind(ctx ContextParams, inputParam metadata.SetAssociationKind) (*metadata.SetDataResult, error)
 	SetManyAssociationKind(ctx ContextParams, inputParam metadata.SetManyAssociationKind) (*metadata.SetDataResult, error)
 	UpdateAssociationKind(ctx ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
@@ -87,10 +110,7 @@ type ModelAssociation interface {
 // InstanceAssociation manager instance association
 type InstanceAssociation interface {
 	CreateOneInstanceAssociation(ctx ContextParams, inputParam metadata.CreateOneInstanceAssociation) (*metadata.CreateOneDataResult, error)
-	SetOneInstanceAssociation(ctx ContextParams, inputParam metadata.SetOneInstanceAssociation) (*metadata.SetDataResult, error)
 	CreateManyInstanceAssociation(ctx ContextParams, inputParam metadata.CreateManyInstanceAssociation) (*metadata.CreateManyDataResult, error)
-	SetManyInstanceAssociation(ctx ContextParams, inputParam metadata.SetManyInstanceAssociation) (*metadata.SetDataResult, error)
-	UpdateInstanceAssociation(ctx ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	SearchInstanceAssociation(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error)
 	DeleteInstanceAssociation(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 }

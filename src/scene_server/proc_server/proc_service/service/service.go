@@ -12,14 +12,18 @@
 package service
 
 import (
+	"context"
+	"net/http"
 	"time"
 
 	"github.com/emicklei/go-restful"
+	redis "gopkg.in/redis.v5"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cfnc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/language"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
@@ -27,25 +31,56 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/proc_server/app/options"
 	"configcenter/src/scene_server/proc_server/logics"
-	"configcenter/src/storage/dal/redis"
+	ccRedis "configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdpartyclient/esbserver"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 )
 
+type srvComm struct {
+	header        http.Header
+	rid           string
+	ccErr         errors.DefaultCCErrorIf
+	ccLang        language.DefaultCCLanguageIf
+	ctx           context.Context
+	ctxCancelFunc context.CancelFunc
+	user          string
+	ownerID       string
+	lgc           *logics.Logics
+}
+
 type ProcServer struct {
 	*backbone.Engine
-	*logics.Logics
-	EsbConfigChn chan esbutil.EsbConfig
-	Config       *options.Config
+	EsbConfigChn       chan esbutil.EsbConfig
+	Config             *options.Config
+	EsbServ            esbserver.EsbClientInterface
+	Cache              *redis.Client
+	procHostInstConfig logics.ProcHostInstConfig
+}
+
+func (s *ProcServer) newSrvComm(header http.Header) *srvComm {
+	lang := util.GetLanguage(header)
+	ctx, cancel := s.Engine.CCCtx.WithCancel()
+	return &srvComm{
+		header:        header,
+		rid:           util.GetHTTPCCRequestID(header),
+		ccErr:         s.CCErr.CreateDefaultCCErrorIf(lang),
+		ccLang:        s.Language.CreateDefaultCCLanguageIf(lang),
+		ctx:           ctx,
+		ctxCancelFunc: cancel,
+		user:          util.GetUser(header),
+		ownerID:       util.GetOwnerID(header),
+		lgc:           logics.NewLogics(s.Engine, header, s.Cache, s.EsbServ, &s.procHostInstConfig),
+	}
 }
 
 func (ps *ProcServer) WebService() *restful.WebService {
-	getErrFun := func() errors.CCErrorIf {
+	getErrFunc := func() errors.CCErrorIf {
 		return ps.Engine.CCErr
 	}
 
 	// v3
 	ws := new(restful.WebService)
-	ws.Path("/process/{version}").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
+	ws.Path("/process/{version}").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 	restful.DefaultRequestContentType(restful.MIME_JSON)
 	restful.DefaultResponseContentType(restful.MIME_JSON)
 
@@ -78,6 +113,7 @@ func (ps *ProcServer) WebService() *restful.WebService {
 	ws.Route(ws.POST("/template/create/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.CreateCfg))
 	ws.Route(ws.POST("/template/push/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.PushCfg))
 	ws.Route(ws.POST("/template/getremote/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.GetRemoteCfg))
+	ws.Route(ws.GET("/template/group/{bk_supplier_account}/{bk_biz_id}").To(ps.GetTemplateGroup))
 
 	//v2
 	ws.Route(ws.POST("/openapi/GetProcessPortByApplicationID/{" + common.BKAppIDField + "}").To(ps.GetProcessPortByApplicationID))
@@ -167,13 +203,13 @@ func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig
 		}()
 	}
 
-	cfg := redis.ParseConfigFromKV("redis", current.ConfigMap)
+	cfg := ccRedis.ParseConfigFromKV("redis", current.ConfigMap)
 	ps.Config = &options.Config{
 		Redis: &cfg,
 	}
 
 	hostInstPrefix := "host instance"
-	procHostInstConfig := &logics.ProcHostInstConfig{}
+	procHostInstConfig := &ps.procHostInstConfig
 	if val, ok := current.ConfigMap[hostInstPrefix+".maxEventCount"]; ok {
 		eventCount, err := util.GetIntByInterface(val)
 		if nil == err {
@@ -192,5 +228,5 @@ func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig
 			procHostInstConfig.GetModuleIDInterval = time.Duration(get_mid_interval) * time.Second
 		}
 	}
-	ps.Logics.ProcHostInst = procHostInstConfig
+
 }

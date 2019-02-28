@@ -19,8 +19,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-
-	"github.com/emicklei/go-restful"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -30,13 +29,18 @@ import (
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/rdapi"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/app/options"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/source_controller/coreservice/core/association"
 	"configcenter/src/source_controller/coreservice/core/instances"
 	"configcenter/src/source_controller/coreservice/core/model"
-	"configcenter/src/storage/dal/mongo"
+	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/dal/mongo/remote"
+
+	"github.com/emicklei/go-restful"
 )
 
 // CoreServiceInterface the topo service methods used to init
@@ -73,14 +77,25 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 		s.language = language
 	}
 
-	// connect the remote mongodb
-	dbProxy, dbErr := mongo.NewMgo(cfg.Mongo.BuildURI())
-	if dbErr != nil {
-		blog.Errorf("failed to connect the remote server(%s), error info is %s", cfg.Mongo.BuildURI(), dbErr.Error())
-		return
+	var db dal.DB
+	var dbErr error
+	if cfg.Mongo.Transaction == "enable" {
+		blog.Infof("connecting to transaction manager")
+		db, dbErr = remote.NewWithDiscover(engin.Discover.TMServer().GetServers, cfg.Mongo)
+		if dbErr != nil {
+			blog.Errorf("failed to connect the txc server, error info is %s", dbErr.Error())
+			return
+		}
+	} else {
+		db, dbErr = local.NewMgo(cfg.Mongo.BuildURI(), time.Minute)
+		if dbErr != nil {
+			blog.Errorf("failed to connect the remote server(%s), error info is %s", cfg.Mongo.BuildURI(), dbErr.Error())
+			return
+		}
 	}
+	// connect the remote mongodb
 
-	s.core = core.New(model.New(dbProxy), instances.New(dbProxy), association.New(dbProxy))
+	s.core = core.New(model.New(db, s), instances.New(db, s), association.New(db, s))
 }
 
 // WebService the web service
@@ -90,8 +105,10 @@ func (s *coreService) WebService() *restful.WebService {
 	s.initService()
 
 	ws := new(restful.WebService)
-
-	ws.Path("/api/v3").Produces(restful.MIME_JSON)
+	getErrFunc := func() errors.CCErrorIf {
+		return s.err
+	}
+	ws.Path("/api/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
 	innerActions := s.Actions()
 

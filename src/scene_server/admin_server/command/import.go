@@ -32,11 +32,15 @@ func backup(ctx context.Context, db dal.RDB, opt *option) error {
 	dir := filepath.Dir(opt.position)
 	now := time.Now().Format("2006_01_02_15_04_05")
 	file := filepath.Join(dir, "backup_bk_biz_"+now+".json")
-	err := export(ctx, db, &option{position: file, OwnerID: opt.OwnerID, mini: false, scope: "all"})
+	exportOpt := *opt
+	exportOpt.position = file
+	exportOpt.mini = false
+	exportOpt.scope = "all"
+	err := export(ctx, db, &exportOpt)
 	if nil != err {
 		return err
 	}
-	fmt.Println("blueking business has been backup to \033[35m" + file + "\033[0m")
+	fmt.Println("%s business has been backup to \033[35m"+file+"\033[0m", opt.bizName)
 	return nil
 }
 

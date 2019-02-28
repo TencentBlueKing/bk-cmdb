@@ -9,6 +9,7 @@
     &::-webkit-scrollbar {
         width: 8px;
         height: 8px;
+        background: rgba(165, 165, 165, .1);
         &-thumb {
             border-radius: 20px;
             background: #a5a5a5;

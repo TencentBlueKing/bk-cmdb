@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common/blog"
 	types "configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
 	"github.com/flosch/pongo2"
@@ -29,27 +28,27 @@ import (
 )
 
 func (ps *ProcServer) PreviewCfg(req *restful.Request, resp *restful.Response) {
+	srvData := ps.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
 
-	language := util.GetLanguage(req.Request.Header)
-	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
 	appIDStr := req.PathParameter(common.BKAppIDField)
 	appID, err := strconv.ParseInt(appIDStr, 10, 64)
 	if nil != err {
-		blog.Errorf("search template version failed! derr: %v", err)
+		blog.Errorf("search template version failed! derr: %v,appIDStr:%s,rid:%s", err, appIDStr, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
 	var params meta.FilePriviewMap
 
 	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
-		blog.Errorf("decode request body err: %v", err)
+		blog.Errorf("decode request body err: %v,rid:%s", err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
 	instArr := strings.Split(params.Inst, ".")
 	if 0 != len(instArr) {
-		blog.Errorf("inst params error: %v", err)
+		blog.Errorf("inst params error: %v,input:%+v,rid:%s", err, params, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
@@ -61,29 +60,29 @@ func (ps *ProcServer) PreviewCfg(req *restful.Request, resp *restful.Response) {
 
 	funcID, err := strconv.ParseInt(funIDStr, 10, 64)
 	if 0 != len(instArr) {
-		blog.Errorf("funcID params error: %v", err)
+		blog.Errorf("funcID params error: %v,input:%+v,rid:%s", err, params, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
 	instID, err := strconv.ParseInt(instIDStr, 10, 64)
 	if 0 != len(instArr) {
-		blog.Errorf("inst params error: %v", err)
+		blog.Errorf("inst params error: %v,input:%+v,rid:%s", err, params, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
 
-	variables := ps.Logics.NewVariables(req.Request.Header, util.GetUser(req.Request.Header), appID)
-	vars := variables.GetStandVariables(setName, moduleName, funcID, instID)
+	variables := srvData.lgc.NewVariables(srvData.ctx, appID)
+	vars := variables.GetStandVariables(srvData.ctx, setName, moduleName, funcID, instID)
 	tpl, err := pongo2.FromString(params.Content)
 	if err != nil {
-		blog.Errorf("content params error: %v", err)
+		blog.Errorf("content params error: %v,input:%+v,rid:%s", err, params, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
 
 	out, err := tpl.Execute(pongo2.Context(vars))
 	if err != nil {
-		blog.Errorf("content params error: %v", err)
+		blog.Errorf("content params error: %v,input:%+v,rid:%s", err, params, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}

@@ -20,9 +20,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/apimachinery"
+	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -33,8 +32,11 @@ import (
 	"configcenter/src/scene_server/event_server/distribution"
 	svc "configcenter/src/scene_server/event_server/service"
 	"configcenter/src/storage/dal/mongo"
+	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/rpc"
+
+	"github.com/emicklei/go-restful"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -43,14 +45,18 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
+	discover, err := discovery.NewDiscoveryInterface(op.ServConf.RegDiscover)
+	if err != nil {
+		return fmt.Errorf("connect zookeeper [%s] failed: %v", op.ServConf.RegDiscover, err)
+	}
+
 	c := &util.APIMachineryConfig{
-		ZkAddr:    op.ServConf.RegDiscover,
 		QPS:       1000,
 		Burst:     2000,
 		TLSConfig: nil,
 	}
 
-	machinery, err := apimachinery.NewApiMachinery(c)
+	machinery, err := apimachinery.NewApiMachinery(c, discover)
 	if err != nil {
 		return fmt.Errorf("new api machinery failed, err: %v", err)
 	}
@@ -76,6 +82,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		types.CC_MODULE_EVENTSERVER,
 		op.ServConf.ExConfig,
 		process.onHostConfigUpdate,
+		discover,
 		bonC)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
@@ -84,14 +91,14 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	service.Engine = engine
 	process.Core = engine
 	process.Service = service
-	errCh := make(chan error)
+	errCh := make(chan error, 1)
 	for {
 		if process.Config == nil {
 			time.Sleep(time.Second * 2)
 			blog.V(3).Info("config not found, retry 2s later")
 			continue
 		}
-		db, err := mongo.NewMgo(process.Config.MongoDB.BuildURI())
+		db, err := local.NewMgo(process.Config.MongoDB.BuildURI(), time.Minute)
 		if err != nil {
 			return fmt.Errorf("connect mongo server failed %s", err.Error())
 		}
@@ -103,12 +110,9 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		}
 		process.Service.SetCache(cache)
 
-		var rpccli *rpc.Client
-		if process.Config.RPC.Address != "" {
-			rpccli, err = rpc.Dial(process.Config.RPC.Address)
-			if err != nil {
-				return fmt.Errorf("connect rpc server failed %s", err.Error())
-			}
+		rpccli, err := rpc.NewClientPool("tcp", engine.Discover.TMServer().GetServers, "/txn/v3/rpc")
+		if err != nil {
+			return fmt.Errorf("connect rpc server failed %s", err.Error())
 		}
 
 		subcli, err := redis.NewFromConfig(process.Config.Redis)

@@ -1,17 +1,21 @@
 <template>
     <nav class="nav-layout"
-        :class="{'sticked': navStick}"
+        :class="{'sticked': navStick, 'admin-view': isAdminView}"
         @mouseenter="handleMouseEnter"
         @mouseleave="handleMouseLeave">
         <div class="nav-wrapper"
             :class="{unfold: unfold, flexible: !navStick}">
-            <div class="logo" @click="$router.push('/index')">
-                {{$t('Nav["蓝鲸配置平台"]')}}
+            <div class="logo" @click="$router.push({name: 'index'})">
+                <span class="logo-text">
+                    {{$t('Nav["蓝鲸配置平台"]')}}
+                </span>
+                <span class="logo-tag" v-if="isAdminView" :title="$t('Nav[\'后台管理标题\']')">
+                    {{$t('Nav["后台管理"]')}}
+                </span>
             </div>
             <ul class="classify-list">
                 <li class="classify-item"
-                    v-for="(classify, index) in authorizedNavigation"
-                    v-if="isAvailableClassify(classify)"
+                    v-for="(classify, index) in navigations"
                     :class="{
                         active: isClassifyActive(classify),
                         'is-open': openedClassify === classify.id,
@@ -32,7 +36,6 @@
                         :style="getClassifyModelsStyle(classify)">
                         <router-link class="model-link" exact
                             v-for="(model, modelIndex) in classify.children"
-                            v-if="model.authorized"
                             :class="{
                                 active: isRouterActive(model),
                                 collection: classify.id === 'bk_collection'
@@ -72,7 +75,7 @@ export default {
         }
     },
     computed: {
-        ...mapGetters(['navStick', 'navFold']),
+        ...mapGetters(['navStick', 'navFold', 'admin', 'isAdminView']),
         ...mapGetters('objectModelClassify', ['classifications', 'authorizedNavigation', 'staticClassifyId']),
         ...mapGetters('userCustom', ['usercustom', 'classifyNavigationKey']),
         fixedClassifyId () {
@@ -85,11 +88,26 @@ export default {
         activeClassifyId () {
             return this.$classify.classificationId
         },
+        navigations () {
+            const navigations = this.$tools.clone(this.authorizedNavigation)
+            if (this.admin) {
+                if (this.isAdminView) {
+                    return navigations.filter(classify => classify.classificationId !== 'bk_business_resource')
+                }
+                return navigations
+            }
+            navigations.forEach(classify => {
+                classify.children = classify.children.filter(child => child.authorized)
+            })
+            return navigations.filter(classify => {
+                return (classify.hasOwnProperty('path') && classify.authorized) || classify.children.length
+            })
+        },
         // 展开的分类子菜单高度
         openedClassifyHeight () {
-            const openedClassify = this.authorizedNavigation.find(classify => classify.id === this.openedClassify)
+            const openedClassify = this.navigations.find(classify => classify.id === this.openedClassify)
             if (openedClassify) {
-                const modelsCount = openedClassify.children.filter(model => model.authorized).length
+                const modelsCount = openedClassify.children.length
                 return modelsCount * this.routerLinkHeight
             }
             return 0
@@ -143,7 +161,7 @@ export default {
         // 被点击的有对应的路由，则跳转
         checkPath (classify) {
             if (classify.hasOwnProperty('path')) {
-                this.$router.push(classify.path)
+                this.$router.push({path: classify.path})
             }
         },
         // 切换展开的分类
@@ -216,12 +234,32 @@ $color: #979ba5;
     background-color: #182132;
     line-height: 59px;
     color: #a3acb9;
-    font-size: 18px;
+    font-size: 0;
     font-weight: bold;
+    white-space: nowrap;
     overflow: hidden;
     cursor: pointer;
     background: url('../../assets/images/logo.svg') no-repeat;
     background-position: 16px 14px;
+    .logo-text {
+        display: inline-block;
+        vertical-align: middle;
+        font-size: 18px;
+    }
+    .logo-tag {
+        display: inline-block;
+        padding: 0 8px;
+        margin: 0 0 0 4px;
+        vertical-align: middle;
+        border-radius: 2px;
+        color: #fff;
+        font-size: 20px;
+        font-weight: normal;
+        line-height: 32px;
+        background: #e3a547;
+        transform: scale(0.5);
+        transform-origin: left center;
+    }
 }
 
 .classify-list {
@@ -402,5 +440,4 @@ $color: #979ba5;
         }
     }
 }
-
 </style>

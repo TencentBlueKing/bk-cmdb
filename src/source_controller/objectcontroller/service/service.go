@@ -13,8 +13,7 @@
 package service
 
 import (
-	"github.com/emicklei/go-restful"
-	"gopkg.in/redis.v5"
+	"configcenter/src/common/eventclient"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -24,20 +23,24 @@ import (
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal"
+
+	"github.com/emicklei/go-restful"
+	"gopkg.in/redis.v5"
 )
 
 type Service struct {
 	Core     *backbone.Engine
 	Instance dal.RDB
 	Cache    *redis.Client
+	EventC   eventclient.Client
 }
 
 func (s *Service) WebService() *restful.WebService {
 	ws := new(restful.WebService)
-	getErrFun := func() errors.CCErrorIf {
+	getErrFunc := func() errors.CCErrorIf {
 		return s.Core.CCErr
 	}
-	ws.Path("/object/{version}").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
+	ws.Path("/object/{version}").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 	//restful.DefaultRequestContentType(restful.MIME_JSON)
 	restful.DefaultResponseContentType(restful.MIME_JSON)
 
@@ -96,7 +99,7 @@ func (s *Service) WebService() *restful.WebService {
 
 	ws.Route(ws.POST("/inst/association/action/search").To(s.SearchInstAssociations))
 	ws.Route(ws.POST("/inst/association/action/create").To(s.CreateInstAssociation))
-	ws.Route(ws.DELETE("/inst/association/action/delete").To(s.DeleteInstAssociation))
+	ws.Route(ws.DELETE("/inst/association/{association_id}/action/delete").To(s.DeleteInstAssociation))
 
 	ws.Route(ws.POST("/topographics/search").To(s.SearchTopoGraphics))
 	ws.Route(ws.POST("/topographics/update").To(s.UpdateTopoGraphics))

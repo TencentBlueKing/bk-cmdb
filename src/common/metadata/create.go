@@ -12,8 +12,8 @@
 
 package metadata
 
-// CreateManyOptionResult create many api http response return this result struct
-type CreateManyOptionResult struct {
+// CreatedManyOptionResult create many api http response return this result struct
+type CreatedManyOptionResult struct {
 	BaseResp `json:",inline"`
 	Data     CreateManyDataResult `json:"data"`
 }

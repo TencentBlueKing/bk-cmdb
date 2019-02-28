@@ -14,6 +14,8 @@ package metadata
 
 import (
 	"configcenter/src/common/mapstr"
+	"net/http"
+	"time"
 )
 
 type DeleteHostBatchOpt struct {
@@ -44,7 +46,8 @@ type UserCustomQueryDetailResult struct {
 type HostInputType string
 
 const (
-	ExecelType HostInputType = "excel"
+	ExecelType  HostInputType = "excel"
+	CollectType HostInputType = "collect"
 )
 
 type HostList struct {
@@ -135,4 +138,102 @@ type CloneHostPropertyParams struct {
 	OrgIP   string `json:"bk_org_ip"`
 	DstIP   string `json:"bk_dst_ip"`
 	CloudID int64  `json:"bk_cloud_id"`
+}
+
+type CloudTaskList struct {
+	User            string `json:"bk_user"`
+	TaskName        string `json:"bk_task_name"`
+	TaskID          int64  `json:"bk_task_id"`
+	AccountType     string `json:"bk_account_type"`
+	AccountAdmin    string `json:"bk_account_admin"`
+	PeriodType      string `json:"bk_period_type"`
+	Period          string `json:"bk_period"`
+	LastSyncTime    string `json:"bk_last_sync_time"`
+	ObjID           string `json:"bk_obj_id"`
+	Status          bool   `json:"bk_status"`
+	ResourceConfirm bool   `json:"bk_confirm"`
+	AttrConfirm     bool   `json:"bk_attr_confirm"`
+	SecretID        string `json:"bk_secret_id"`
+	SecretKey       string `json:"bk_secret_key"`
+}
+
+type ResourceConfirm struct {
+	ObjID        string          `json:"bk_obj_id"`
+	ResourceName []mapstr.MapStr `json:"bk_resource_name"`
+	SourceType   string          `json:"bk_source_type"`
+	SourceName   string          `json:"bk_source_name"`
+	CreateTime   string          `json:"bk_create_time"`
+	TaskID       string          `json:"bk_task_id"`
+	ResourceID   int64           `json:"bk_resource_id"`
+	ConfirmType  string          `json:"bk_confirm_type`
+	Incharge     string          `json:"bk_in_charge"`
+}
+
+type CloudHistory struct {
+	ObjID       string `json:"bk_obj_id"`
+	Status      string `json:"bk_status"`
+	TimeConsume string `json:"bk_time_consume"`
+	NewAdd      int    `json:"new_add"`
+	AttrChanged int    `json:"attr_changed"`
+	StartTime   string `json:"bk_start_time"`
+	TaskID      int64  `json:"bk_task_id"`
+	HistoryID   int64  `json:"bk_history_id"`
+	FailReason  string `json:"fail_reason"`
+}
+
+type DeleteCloudTask struct {
+	TaskID int64 `json:"bk_task_id"`
+}
+
+type RegionResponse struct {
+	Response RegionSet `json:"Response"`
+}
+
+type RegionSet struct {
+	Data []Region `json:"RegionSet"`
+}
+
+type Region struct {
+	Region string `json:"Region"`
+}
+
+type HostResponse struct {
+	HostResponse InstanceSet `json:"Response"`
+}
+
+type InstanceSet struct {
+	InstanceSet []CloudHostInfo `json:"InstanceSet"`
+}
+
+type CloudHostInfo struct {
+	PrivateIpAddresses []string `json:"PrivateIpAddresses"`
+	PublicIpAddresses  []string `json:"PublicIpAddresses"`
+	OsName             string   `json:"OsName"`
+}
+
+type TaskInfo struct {
+	Args        CloudTaskInfo
+	Method      string
+	NextTrigger int64
+	ManagerChn  chan bool
+}
+
+type CloudSyncRedisPendingStart struct {
+	NewHeader    http.Header `json:"new_header"`
+	TaskID       int64       `json:"bk_task_id"`
+	TaskItemInfo TaskInfo    `json:"task_item_info"`
+	OwnerID      string      `json:"bk_supplier_account"`
+}
+
+type CloudSyncRedisAlreadyStarted struct {
+	LastSyncTime time.Time   `json:"last_sync_time"`
+	NewHeader    http.Header `json:"new_header"`
+	TaskID       int64       `json:"bk_task_id"`
+	TaskItemInfo TaskInfo    `json:"task_item_info"`
+	OwnerID      string      `json:"bk_supplier_account"`
+}
+
+type CloudSyncRedisPendingStop struct {
+	TaskID  int64  `json:"bk_task_id"`
+	OwnerID string `json:"bk_supplier_account"`
 }

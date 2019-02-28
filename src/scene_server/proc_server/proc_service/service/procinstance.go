@@ -12,8 +12,6 @@
 package service
 
 import (
-	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/emicklei/go-restful"
@@ -22,37 +20,35 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 )
 
 func (ps *ProcServer) OperateProcessInstance(req *restful.Request, resp *restful.Response) {
-	language := util.GetLanguage(req.Request.Header)
-	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
+	srvData := ps.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
 
 	procOpParam := new(meta.ProcessOperate)
 	if err := json.NewDecoder(req.Request.Body).Decode(procOpParam); err != nil {
-		blog.Errorf("fail to decode process operation parameter. err: %v", err)
+		blog.Errorf("fail to decode process operation parameter. err: %v,rid:%s", err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
 
-	header := req.Request.Header
 	matchProcInstParam := new(meta.MatchProcInstParam)
 	matchProcInstParam.ApplicationID = procOpParam.ApplicationID
 	matchProcInstParam.FuncID = procOpParam.FuncID
 	matchProcInstParam.HostInstanceID = procOpParam.HostInstanceID
 	matchProcInstParam.ModuleName = procOpParam.ModuleName
 	matchProcInstParam.SetName = procOpParam.SetName
-	procInstModel, err := ps.Logics.MatchProcessInstance(context.Background(), matchProcInstParam, header)
+	procInstModel, err := srvData.lgc.MatchProcessInstance(srvData.ctx, matchProcInstParam)
 	if err != nil {
 		blog.Errorf("match process instance failed in OperateProcessInstance. err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcOperateFaile)})
 		return
 	}
 
-	result, err := ps.Logics.OperateProcInstanceByGse(context.Background(), procOpParam, procInstModel, header)
+	result, err := srvData.lgc.OperateProcInstanceByGse(srvData.ctx, procOpParam, procInstModel)
 	if err != nil {
-		blog.Errorf("operate process failed. err: %v", err)
+		blog.Errorf("operate process failed. err: %v,input:%+v,rid:%s", err, procOpParam, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcOperateFaile)})
 		return
 	}
@@ -61,11 +57,11 @@ func (ps *ProcServer) OperateProcessInstance(req *restful.Request, resp *restful
 }
 
 func (ps *ProcServer) QueryProcessOperateResult(req *restful.Request, resp *restful.Response) {
-	language := util.GetLanguage(req.Request.Header)
-	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
+	srvData := ps.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
 
 	taskID := req.PathParameter("taskID")
-	succ, waitExec, mapExceErr, err := ps.Logics.QueryProcessOperateResult(context.Background(), taskID, req.Request.Header)
+	succ, waitExec, mapExceErr, err := srvData.lgc.QueryProcessOperateResult(srvData.ctx, taskID)
 	if nil != err {
 		data := common.KvMap{"error": mapExceErr}
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcQueryTaskInfoFail), Data: data})
@@ -85,29 +81,15 @@ func (ps *ProcServer) QueryProcessOperateResult(req *restful.Request, resp *rest
 }
 
 func (ps *ProcServer) RefreshProcHostInstByEvent(req *restful.Request, resp *restful.Response) {
-	language := util.GetLanguage(req.Request.Header)
-	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
+	srvData := ps.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
 
 	input := new(meta.EventInst)
 	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
-		blog.Errorf("fail to decode RefreshProcHostInstByEvent request body. err: %v", err)
+		blog.Errorf("fail to decode RefreshProcHostInstByEvent request body. err: %v,rid:%s", err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
-	ps.Logics.HandleHostProcDataChange(context.Background(), input)
+	srvData.lgc.HandleHostProcDataChange(srvData.ctx, input)
 	resp.WriteEntity(meta.NewSuccessResp(nil))
-}
-
-func (ps *ProcServer) deleteProcInstanceModel(appId, procId, moduleName string, forward http.Header) error {
-	condition := make(map[string]interface{})
-	condition[common.BKAppIDField] = appId
-	condition[common.BKProcessIDField] = procId
-	condition[common.BKModuleNameField] = moduleName
-
-	ret, err := ps.CoreAPI.ProcController().DeleteProcInstanceModel(context.Background(), forward, condition)
-	if err != nil || (err == nil && !ret.Result) {
-		return fmt.Errorf("fail to delete process instance model. err: %v, errcode: %d, errmsg: %s", err, ret.Code, ret.ErrMsg)
-	}
-
-	return nil
 }

@@ -51,10 +51,10 @@ func (s *Service) SetCache(db *redis.Client) {
 
 func (s *Service) WebService() *restful.WebService {
 	ws := new(restful.WebService)
-	getErrFun := func() errors.CCErrorIf {
+	getErrFunc := func() errors.CCErrorIf {
 		return s.CCErr
 	}
-	ws.Path("/event/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
+	ws.Path("/event/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
 	ws.Route(ws.POST("/subscribe/search/{ownerID}/{appID}").To(s.Query))
 	ws.Route(ws.POST("/subscribe/ping").To(s.Ping))

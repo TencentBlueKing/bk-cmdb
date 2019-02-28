@@ -20,9 +20,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/apimachinery"
+	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/backbone/configcenter"
@@ -34,6 +33,9 @@ import (
 	"configcenter/src/scene_server/admin_server/configures"
 	svc "configcenter/src/scene_server/admin_server/service"
 	"configcenter/src/storage/dal/mongo"
+	"configcenter/src/storage/dal/mongo/local"
+
+	"github.com/emicklei/go-restful"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -49,14 +51,18 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 	process.onHostConfigUpdate(*pconfig, *pconfig)
 
+	discover, err := discovery.NewDiscoveryInterface(process.Config.Register.Address)
+	if err != nil {
+		return fmt.Errorf("connect zookeeper [%s] failed: %v", op.ServConf.RegDiscover, err)
+	}
+
 	c := &util.APIMachineryConfig{
-		ZkAddr:    process.Config.Register.Address,
 		QPS:       1000,
 		Burst:     2000,
 		TLSConfig: nil,
 	}
 
-	machinery, err := apimachinery.NewApiMachinery(c)
+	machinery, err := apimachinery.NewApiMachinery(c, discover)
 	if err != nil {
 		return fmt.Errorf("new api machinery failed, err: %v", err)
 	}
@@ -81,6 +87,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		types.CC_MODULE_MIGRATE,
 		op.ServConf.ExConfig,
 		process.onHostConfigUpdate,
+		discover,
 		bonC)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
@@ -96,7 +103,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			blog.V(3).Info("config not found, retry 2s later")
 			continue
 		}
-		db, err := mongo.NewMgo(process.Config.MongoDB.BuildURI())
+		db, err := local.NewMgo(process.Config.MongoDB.BuildURI(), 0)
 		if err != nil {
 			return fmt.Errorf("connect mongo server failed %s", err.Error())
 		}

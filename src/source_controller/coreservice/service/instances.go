@@ -1,6 +1,6 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.,
- * Copyright (C) 2017,-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  * Licensed under the MIT License (the ",License",); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
@@ -13,8 +13,11 @@
 package service
 
 import (
+	"fmt"
+
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
@@ -36,24 +39,6 @@ func (s *coreService) CreateManyModelInstances(params core.ContextParams, pathPa
 	return s.core.InstanceOperation().CreateManyModelInstance(params, pathParams("bk_obj_id"), inputData)
 }
 
-func (s *coreService) SetOneModelInstance(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
-	inputData := metadata.SetModelInstance{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
-	}
-	return s.core.InstanceOperation().SetModelInstance(params, pathParams("bk_obj_id"), inputData)
-}
-
-func (s *coreService) SetManyModelInstances(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
-	inputData := metadata.SetManyModelInstance{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
-	}
-	return s.core.InstanceOperation().SetManyModelInstance(params, pathParams("bk_obj_id"), inputData)
-}
-
 func (s *coreService) UpdateModelInstances(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	inputData := metadata.UpdateOption{}
@@ -69,7 +54,22 @@ func (s *coreService) SearchModelInstances(params core.ContextParams, pathParams
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
 	}
-	return s.core.InstanceOperation().SearchModelInstance(params, pathParams("bk_obj_id"), inputData)
+	dataResult, err := s.core.InstanceOperation().SearchModelInstance(params, pathParams("bk_obj_id"), inputData)
+	if nil != err {
+		return dataResult, err
+	}
+
+	// translate language for default name
+	if m, ok := defaultNameLanguagePkg[pathParams("bk_obj_id")]; ok {
+		for idx := range dataResult.Info {
+			subResult := m[fmt.Sprint(dataResult.Info[idx]["default"])]
+			if len(subResult) >= 3 {
+				dataResult.Info[idx][subResult[1]] = util.FirstNotEmptyString(params.Lang.Language(subResult[0]), fmt.Sprint(dataResult.Info[idx][subResult[1]]), fmt.Sprint(dataResult.Info[idx][subResult[2]]))
+			}
+		}
+
+	}
+	return dataResult, err
 }
 
 func (s *coreService) DeleteModelInstances(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {

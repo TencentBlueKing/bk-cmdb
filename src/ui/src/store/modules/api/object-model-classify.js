@@ -67,18 +67,18 @@ const getters = {
     authorizedClassifications: (state, getters, rootState, rootGetters) => {
         let modelAuthority = rootGetters['userPrivilege/privilege']['model_config'] || {}
         let authorizedClassifications = JSON.parse(JSON.stringify(getters.activeClassifications))
-        if (!rootGetters.admin) {
-            // 1.去除无权限分类
-            authorizedClassifications = authorizedClassifications.filter(classification => {
-                return modelAuthority.hasOwnProperty(classification['bk_classification_id'])
-            })
-            // 2.去除分类下无权限的模型
-            authorizedClassifications.forEach(classification => {
-                classification['bk_objects'] = classification['bk_objects'].filter(model => {
-                    return modelAuthority[classification['bk_classification_id']].hasOwnProperty(model['bk_obj_id'])
-                })
-            })
-        }
+        // if (!rootGetters.admin) {
+        //     // 1.去除无权限分类
+        //     authorizedClassifications = authorizedClassifications.filter(classification => {
+        //         return modelAuthority.hasOwnProperty(classification['bk_classification_id'])
+        //     })
+        //     // 2.去除分类下无权限的模型
+        //     authorizedClassifications.forEach(classification => {
+        //         classification['bk_objects'] = classification['bk_objects'].filter(model => {
+        //             return modelAuthority[classification['bk_classification_id']].hasOwnProperty(model['bk_obj_id'])
+        //         })
+        //     })
+        // }
         return authorizedClassifications.filter(({bk_objects: bkObjects}) => bkObjects.length)
     },
     authorizedModels: (state, getters) => {
@@ -99,48 +99,44 @@ const getters = {
             path: '/business',
             icon: 'icon-cc-business',
             i18n: 'Nav["业务"]',
-            authorized: rootGetters.admin || (authority['model_config'] || {}).hasOwnProperty('bk_organization')
-        }, {
-            id: 'resource',
-            path: '/resource',
-            icon: 'icon-cc-host-free-pool',
-            i18n: 'Nav["主机"]',
-            authorized: rootGetters.admin || (authority['sys_config']['global_busi'] || []).includes('resource')
+            authorized: true,
+            classificationId: collectionKey
         }]
-        specialCollecton.forEach(special => {
-            const isCollected = rootGetters['userCustom/usercustom'][`is_${special.id}_collected`]
-            if (isCollected || isCollected === undefined) {
-                collection.push({
-                    ...special,
-                    classificationId: collectionKey
-                })
-            }
-        })
+        const hasResourcePrivilege = rootGetters.admin || (authority['sys_config']['global_busi'] || []).includes('resource')
+        if (hasResourcePrivilege) {
+            specialCollecton.push({
+                id: '$resource',
+                path: '/resource',
+                icon: 'icon-cc-host-free-pool',
+                i18n: 'Nav["主机"]',
+                authorized: hasResourcePrivilege,
+                classificationId: collectionKey
+            })
+        }
         const collectedModelKey = rootGetters['userCustom/classifyNavigationKey']
         const collectedModelIds = rootGetters['userCustom/usercustom'][collectedModelKey] || []
         collectedModelIds.forEach(modelId => {
-            const available = getters.authorizedClassifications.some(classification => {
-                return classification['bk_objects'].some(model => model['bk_obj_id'] === modelId)
-            })
-            if (available) {
+            const specialModel = specialCollecton.find(({id}) => id === modelId)
+            if (specialModel) {
+                collection.push(specialModel)
+            } else {
                 const model = getters.getModelById(modelId)
-                collection.push({
-                    id: modelId,
-                    name: model['bk_obj_name'],
-                    icon: model['bk_obj_icon'],
-                    path: `/general-model/${modelId}`,
-                    authorized: true,
-                    classificationId: collectionKey
-                })
+                if (model) {
+                    collection.push({
+                        id: modelId,
+                        name: model['bk_obj_name'],
+                        icon: model['bk_obj_icon'],
+                        path: `/general-model/${modelId}`,
+                        authorized: true,
+                        classificationId: collectionKey
+                    })
+                }
             }
         })
         STATIC_NAVIGATION[collectionKey].children = collection
 
         if (!rootGetters.admin) {
             STATIC_NAVIGATION['bk_authority'].children.forEach(navigation => {
-                navigation.authorized = false
-            })
-            STATIC_NAVIGATION['bk_ci_model'].children.forEach(navigation => {
                 navigation.authorized = false
             })
 
@@ -167,8 +163,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    createClassification ({ commit, state, dispatch }, { params }) {
-        return $http.post(`object/classification`, params)
+    createClassification ({ commit, state, dispatch }, { params, config }) {
+        return $http.post('create/objectclassification', params, config)
     },
 
     /**
@@ -180,7 +176,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     deleteClassification ({ commit, state, dispatch }, { id }) {
-        return $http.delete(`object/classification/${id}`)
+        return $http.delete(`delete/objectclassification/${id}`)
     },
 
     /**
@@ -193,7 +189,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     updateClassification ({ commit, state, dispatch }, { id, params }) {
-        return $http.put(`object/classification/${id}`, params)
+        return $http.put(`update/objectclassification/${id}`, params)
     },
 
     /**
@@ -204,8 +200,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    searchClassifications ({ commit, state, dispatch }) {
-        return $http.post(`object/classifications`)
+    searchClassifications ({ commit, state, dispatch }, {params, config}) {
+        return $http.post('find/objectclassification', params || {}, config)
     },
 
     /**
@@ -217,8 +213,9 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchClassificationsObjects ({ commit, state, dispatch, rootGetters }, { params = {}, config }) {
-        return $http.post(`object/classification/${rootGetters.supplierAccount}/objects`, params, config).then(classifications => {
-            commit('setClassificationsObjects', classifications)
+        return $http.post('find/classificationobject', params, config).then(data => {
+            commit('setClassificationsObjects', data)
+            return data
         })
     }
 }

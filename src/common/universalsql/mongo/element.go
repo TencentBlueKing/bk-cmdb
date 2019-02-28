@@ -22,6 +22,8 @@ type element struct {
 	Val interface{}
 }
 
+// Comparison Operator Start
+
 // Eq mongodb operator $eq
 type Eq element
 
@@ -30,9 +32,7 @@ var _ universalsql.ConditionElement = (*Eq)(nil)
 // ToMapStr return map[string]interface{}
 func (e *Eq) ToMapStr() mapstr.MapStr {
 	return mapstr.MapStr{
-		e.Key: mapstr.MapStr{
-			universalsql.EQ: e.Val,
-		},
+		e.Key: e.Val,
 	}
 }
 
@@ -113,6 +113,9 @@ var _ universalsql.ConditionElement = (*In)(nil)
 
 // ToMapStr return the format result
 func (i *In) ToMapStr() mapstr.MapStr {
+	if nil == i.Val {
+		i.Val = []interface{}{}
+	}
 	return mapstr.MapStr{
 		i.Key: mapstr.MapStr{
 			universalsql.IN: i.Val,
@@ -127,9 +130,43 @@ var _ universalsql.ConditionElement = (*Nin)(nil)
 
 // ToMapStr return the format result
 func (n *Nin) ToMapStr() mapstr.MapStr {
+	if nil == n.Val {
+		n.Val = []interface{}{}
+	}
 	return mapstr.MapStr{
 		n.Key: mapstr.MapStr{
 			universalsql.NIN: n.Val,
 		},
 	}
 }
+
+// Regex mongodb operator $regex
+type Regex element
+
+var _ universalsql.ConditionElement = (*Regex)(nil)
+
+// ToMapStr return the format result
+func (r *Regex) ToMapStr() mapstr.MapStr {
+	return mapstr.MapStr{
+		r.Key: mapstr.MapStr{
+			universalsql.REGEX: r.Val,
+		},
+	}
+}
+
+// Comparison Operator End
+
+// Exists Operator Start
+type Exists element
+
+var _ universalsql.ConditionElement = (*Exists)(nil)
+
+// Exists mongodb operator $exists
+func (e *Exists) ToMapStr() mapstr.MapStr {
+	return mapstr.MapStr{
+		e.Key: mapstr.MapStr{
+			universalsql.EXISTS: e.Val,
+		}}
+}
+
+// Elements Operator End
