@@ -1003,6 +1003,9 @@ const (
 	MetaDataSynchronizeFlagField    = "metadata_sync_flag"
 	MetaDataSynchronizeVersionField = "metadata_sync_version"
 
+	// SynchronizeSignPrefix  synchronize sign , Should appear in the configuration file
+	SynchronizeSignPrefix = "sync_blueking"
+
 	/* synchronize model description classify*/
 
 	// SynchronizeModelTypeClassification synchroneize model classification
@@ -1013,6 +1016,8 @@ const (
 	SynchronizeModelTypeAttributeGroup = "model_atrribute_group"
 	// SynchronizeModelTypeBase synchroneize model attribute group
 	SynchronizeModelTypeBase = "model"
+	// SynchronizeModelTypeModelClassificationRelation synchroneize model classification relation
+	SynchronizeModelTypeModelClassificationRelation = "model_classification_relation"
 
 	/* synchronize instance assoication sign*/
 
