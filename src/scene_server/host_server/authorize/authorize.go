@@ -14,6 +14,7 @@ package authorize
 
 import (
 	"configcenter/src/auth"
+	"configcenter/src/auth/meta"
 	"configcenter/src/auth/parser"
 	"configcenter/src/common/blog"
 	"context"
@@ -34,27 +35,49 @@ func NewHostAuthorizer() *HostAuthorizer {
 	return authorizer
 }
 
-// CanDoBusinessAction check permission for operate business
-func (ha *HostAuthorizer) CanDoBusinessAction(req *restful.Request, businessID int64, action auth.Action) (authorized auth.Decision, reason string, err error) {
+// NewIamAuthorizeData new a meta.Attribute object
+func NewIamAuthorizeData(apiVersion string, businessID int64, userInfo meta.UserInfo, resourceType meta.ResourceType, instanceIDs *[]int64, action meta.Action) *meta.Attribute {
+	attribute := &meta.Attribute{
+		APIVersion: apiVersion,
+		BusinessID: businessID,
+		User:       userInfo,
+	}
 
-	attribute := auth.Attribute{}
+	for _, instanceID := range instanceIDs {
+		resource := meta.Resource{
+			Type: resourceType,
+			Name: "",
+		}
+		Type ResourceType
+		Name string
+		InstanceID int64
+	}
+	return attribute
+}
+
+// CanDoBusinessAction check permission for operate business
+func (ha *HostAuthorizer) CanDoBusinessAction(req *restful.Request, businessID int64, action meta.Action) (decision meta.Decision, err error) {
 
 	commonInfo, err := parser.ParseCommonInfo(req)
 	if err != nil {
 		return auth.DecisionDeny, fmt.Sprintf("parse common info from request failed, %s", err), err
 	}
-	attribute.User = commonInfo.User
 
-	resource := auth.Resource{
-		Name:       "business", // FIXME replace with constant
-		InstanceID: businessID,
-		Action:     action,
+	iamAuthorizeRequestBody := meta.Attribute{
 		APIVersion: commonInfo.APIVersion,
 		BusinessID: businessID,
+		User:       commonInfo.User,
 	}
-	attribute.Resources = append(attribute.Resources, resource)
 
-	authorized, reason, err = ha.authorizer.Authorize(&attribute)
+	resource := meta.Resource{
+		Type:       meta.Business,
+		Name:       fmt.Sprint("%s[%d]", meta.Business, businessID),
+		InstanceID: businessID,
+		Action:     action,
+	}
+	iamAuthorizeRequestBody.Resources = append(iamAuthorizeRequestBody.Resources, resource)
+
+	decision, err = ha.authorizer.Authorize(&iamAuthorizeRequestBody)
 	if err != nil {
 		message := fmt.Sprintf("auth interface failed, %s", err)
 		blog.Errorf(message)
@@ -64,22 +87,23 @@ func (ha *HostAuthorizer) CanDoBusinessAction(req *restful.Request, businessID i
 }
 
 // CanDoHostAction check whether have permission to view host snapshot
-func (ha *HostAuthorizer) CanDoHostAction(req *restful.Request, businessID int64, hostIDs *[]int64, action auth.Action) (
-	authorized auth.Decision, reason string, err error) {
-
-	attribute := auth.Attribute{}
-
+func (ha *HostAuthorizer) CanDoHostAction(req *restful.Request, businessID int64, hostIDs *[]int64, action meta.Action) (decision meta.Decision, err error) {
 	commonInfo, err := parser.ParseCommonInfo(req)
 	if err != nil {
 		return auth.DecisionDeny, fmt.Sprintf("parse common info from request failed, %s", err), err
 	}
-	attribute.User = commonInfo.User
 
-	resources, err := newResources(req, businessID, hostIDs, "host", action) // FIXME replace host with constant
+	iamAuthorizeRequestBody := meta.Attribute{
+		APIVersion: commonInfo.APIVersion,
+		BusinessID: businessID,
+		User:       commonInfo.User,
+	}
+
+	resources, err := newResources(req, businessID, hostIDs, meta.Host, action)
 	if err != nil {
 		return auth.DecisionDeny, fmt.Sprintf("make host transfer authorize resources failed, %s", err), err
 	}
-	attribute.Resources = *resources
+	iamAuthorizeRequestBody.Resources = *resources
 
 	authorized, reason, err = ha.authorizer.Authorize(&attribute)
 	if err != nil {
