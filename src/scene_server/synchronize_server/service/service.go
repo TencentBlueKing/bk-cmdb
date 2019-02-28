@@ -20,6 +20,7 @@ import (
 	"gopkg.in/redis.v5"
 
 	"configcenter/src/apimachinery/discovery"
+	"configcenter/src/apimachinery/synchronize"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
@@ -34,8 +35,9 @@ import (
 type Service struct {
 	*options.Config
 	*backbone.Engine
-	disc    discovery.DiscoveryInterface
-	CacheDB *redis.Client
+	disc           discovery.DiscoveryInterface
+	CacheDB        *redis.Client
+	synchronizeSrv synchronize.SynchronizeClientInterface
 }
 
 type srvComm struct {
@@ -50,6 +52,10 @@ type srvComm struct {
 	lgc           *logics.Logics
 }
 
+func (s *Service) SetSynchronizeServer(synchronizeSrv synchronize.SynchronizeClientInterface) {
+	s.synchronizeSrv = synchronizeSrv
+}
+
 func (s *Service) newSrvComm(header http.Header) *srvComm {
 	lang := util.GetLanguage(header)
 	ctx, cancel := s.Engine.CCCtx.WithCancel()
@@ -62,7 +68,7 @@ func (s *Service) newSrvComm(header http.Header) *srvComm {
 		ctxCancelFunc: cancel,
 		user:          util.GetUser(header),
 		ownerID:       util.GetOwnerID(header),
-		lgc:           logics.NewLogics(s.Engine, header, s.CacheDB),
+		lgc:           logics.NewLogics(s.Engine, header, s.CacheDB, s.synchronizeSrv),
 	}
 }
 
@@ -95,9 +101,9 @@ func (s *Service) InitBackground() {
 	header := make(http.Header, 0)
 	if "" == util.GetOwnerID(header) {
 		header.Set(common.BKHTTPOwnerID, common.BKSuperOwnerID)
-		header.Set(common.BKHTTPHeaderUser, common.BKProcInstanceOpUser)
+		header.Set(common.BKHTTPHeaderUser, common.BKSynchronizeDataTaskDefaultUser)
 	}
 
 	srvData := s.newSrvComm(header)
-	go srvData.lgc.Synchronize(srvData.ctx)
+	go srvData.lgc.TriggerSynchronize(srvData.ctx, s.Config)
 }

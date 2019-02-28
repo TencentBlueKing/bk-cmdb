@@ -15,8 +15,8 @@ package logics
 import (
 	"context"
 
-	"bk-cmdb/src/common/blog"
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -42,15 +42,17 @@ func (lgc *Logics) NewFetchAssociation(syncConfig *options.ConfigItem, conds map
 
 // Fetch fetch massociation
 func (fa *FetchAssociation) Fetch(ctx context.Context, dataClassify string, start, limit int64) (*metadata.InstDataInfo, errors.CCError) {
-	input := &metadata.SynchronizeFetchInfoParameter{}
+	input := &metadata.SynchronizeFindInfoParameter{
+		Condition: mapstr.New(),
+	}
 	input.Limit = uint64(limit)
 	input.Start = uint64(start)
 	input.DataClassify = dataClassify
-	input.DataType = metadata.SynchronizeFetchInfoDataTypeAssociation
+	input.DataType = metadata.SynchronizeOperateDataTypeAssociation
 	input.Condition.Merge(fa.baseConds)
+	
 
 	result, err := fa.lgc.synchronizeSrv.SynchronizeSrv(fa.syncConfig.SynchronizeFlag).Find(ctx, fa.lgc.header, input)
-	//result, err := fa.lgc.CoreAPI.CoreService().Synchronize().SynchronizeFetch(ctx, fa.lgc.header, input)
 	if err != nil {
 		blog.Errorf("FetchModuleHostConfig http do error. err:%s,input:%#v,rid:%s", err.Error(), input, fa.lgc.rid)
 		return nil, fa.lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)

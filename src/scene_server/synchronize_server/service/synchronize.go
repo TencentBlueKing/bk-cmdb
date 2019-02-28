@@ -14,29 +14,32 @@ package service
 
 import (
 	"encoding/json"
+	"net/http"
 
 	"github.com/emicklei/go-restful"
 
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 )
 
 func (s *Service) Find(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
-	input := &metadata.SynchronizeFetchInfoParameter{}
+	input := &metadata.SynchronizeFindInfoParameter{}
 	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
 		blog.Errorf("FindInstance , but decode body failed, err: %v,rid:%s", err, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
 	data, err := srvData.lgc.Find(srvData.ctx, input)
 	if err != nil {
 		blog.Errorf("FindInstance error. error: %s,input:%#v,rid:%s", err.Error(), input, srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err})
 		return
 	}
 	resp.WriteEntity(metadata.QueryConditionResult{
-		BaseResp: meta.SuccessBaseResp,
-		Data:     data,
+		BaseResp: metadata.SuccessBaseResp,
+		Data:     *data,
 	})
 }
