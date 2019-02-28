@@ -19,13 +19,32 @@ import (
 	"regexp"
 	"strconv"
 
-	"configcenter/src/auth"
+	"configcenter/src/auth/meta"
 )
 
 // this package's topology filter is the latest api version
 // for these resources, it also has a elder resource api version.
 // TODO: if the elder api has been removed, delete their resource
 // filter at the same time.
+
+func (ps *parseStream) topologyLatest() *parseStream {
+	if ps.err != nil {
+		return ps
+	}
+
+	ps.objectUniqueLatest().
+		associationTypeLatest().
+		objectAssociationLatest().
+		objectInstanceAssociationLatest().
+		objectInstanceLatest().
+		objectLatest().
+		ObjectClassificationLatest().
+		objectAttributeGroupLatest().
+		objectAttributeLatest().
+		mainlineLatest()
+
+	return ps
+}
 
 var (
 	createObjectUniqueLatestRegexp = regexp.MustCompile(`^/api/v3/create/objectunique/object/[\S][^/]+$`)
@@ -42,11 +61,13 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 	// TODO: add business id for these filter rules to resources.
 	// add object unique operation.
 	if ps.hitRegexp(createObjectUniqueLatestRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectUnique,
-				Name:   ps.RequestCtx.Elements[5],
-				Action: auth.Create,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectUnique,
+					Name: ps.RequestCtx.Elements[5],
+				},
+				Action: meta.Create,
 			},
 		}
 		return ps
@@ -60,13 +81,15 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectUnique,
-				InstanceID: uniqueID,
-				Action:     auth.Update,
-				Affiliated: auth.Affiliated{
-					Type: auth.Object,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectUnique,
+					InstanceID: uniqueID,
+				},
+				Action: meta.Update,
+				Affiliated: meta.Affiliated{
+					Type: meta.Object,
 					Name: ps.RequestCtx.Elements[5],
 				},
 			},
@@ -82,13 +105,15 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectUnique,
-				InstanceID: uniqueID,
-				Action:     auth.Delete,
-				Affiliated: auth.Affiliated{
-					Type: auth.Object,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectUnique,
+					InstanceID: uniqueID,
+				},
+				Action: meta.Delete,
+				Affiliated: meta.Affiliated{
+					Type: meta.Object,
 					Name: ps.RequestCtx.Elements[5],
 				},
 			},
@@ -98,12 +123,14 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 
 	// find object unique operation.
 	if ps.hitRegexp(findObjectUniqueLatestRegexp, http.MethodGet) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectUnique,
-				Action: auth.FindMany,
-				Affiliated: auth.Affiliated{
-					Type: auth.Object,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectUnique,
+				},
+				Action: meta.FindMany,
+				Affiliated: meta.Affiliated{
+					Type: meta.Object,
 					Name: ps.RequestCtx.Elements[5],
 				},
 			},
@@ -131,10 +158,12 @@ func (ps *parseStream) associationTypeLatest() *parseStream {
 
 	// find association kind operation
 	if ps.hitPattern(findManyAssociationKindLatestPattern, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.AssociationType,
-				Action: auth.FindMany,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.AssociationType,
+				},
+				Action: meta.FindMany,
 			},
 		}
 		return ps
@@ -142,10 +171,12 @@ func (ps *parseStream) associationTypeLatest() *parseStream {
 
 	// create association kind operation
 	if ps.hitPattern(createAssociationKindLatestPattern, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.AssociationType,
-				Action: auth.Create,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.AssociationType,
+				},
+				Action: meta.Create,
 			},
 		}
 		return ps
@@ -163,11 +194,13 @@ func (ps *parseStream) associationTypeLatest() *parseStream {
 			ps.err = fmt.Errorf("update association kind, but got invalid kind id %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.AssociationType,
-				Action:     auth.Update,
-				InstanceID: kindID,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.AssociationType,
+					InstanceID: kindID,
+				},
+				Action: meta.Update,
 			},
 		}
 
@@ -186,11 +219,13 @@ func (ps *parseStream) associationTypeLatest() *parseStream {
 			ps.err = fmt.Errorf("delete association kind, but got invalid kind id %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.AssociationType,
-				Action:     auth.Delete,
-				InstanceID: kindID,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.AssociationType,
+					InstanceID: kindID,
+				},
+				Action: meta.Delete,
 			},
 		}
 
@@ -218,10 +253,12 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 
 	// search object association operation
 	if ps.hitPattern(findObjectAssociationLatestPattern, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectAssociation,
-				Action: auth.FindMany,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectAssociation,
+				},
+				Action: meta.FindMany,
 			},
 		}
 		return ps
@@ -229,10 +266,12 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 
 	// create object association operation
 	if ps.hitPattern(createObjectAssociationLatestPattern, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectAssociation,
-				Action: auth.Create,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectAssociation,
+				},
+				Action: meta.Create,
 			},
 		}
 		return ps
@@ -251,11 +290,13 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectAssociation,
-				Action:     auth.Update,
-				InstanceID: assoID,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectAssociation,
+					InstanceID: assoID,
+				},
+				Action: meta.Update,
 			},
 		}
 		return ps
@@ -274,11 +315,13 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectAssociation,
-				Action:     auth.Delete,
-				InstanceID: assoID,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectAssociation,
+					InstanceID: assoID,
+				},
+				Action: meta.Delete,
 			},
 		}
 		return ps
@@ -286,10 +329,12 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 
 	// find object association with a association kind list.
 	if ps.hitPattern(findObjectAssociationWithAssociationKindLatestPattern, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectAssociation,
-				Action: auth.FindMany,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectAssociation,
+				},
+				Action: meta.FindMany,
 			},
 		}
 		return ps
@@ -314,10 +359,12 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 	// find object instance's association operation.
 	if ps.hitPattern(findObjectInstanceAssociationLatestPattern, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectInstanceAssociation,
-				Action: auth.FindMany,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectInstanceAssociation,
+				},
+				Action: meta.FindMany,
 			},
 		}
 		return ps
@@ -325,10 +372,12 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 	// create object's instance association operation.
 	if ps.hitPattern(createObjectInstanceAssociationLatestPattern, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectInstanceAssociation,
-				Action: auth.Create,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectInstanceAssociation,
+				},
+				Action: meta.Create,
 			},
 		}
 		return ps
@@ -342,11 +391,13 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectInstanceAssociation,
-				Action:     auth.Delete,
-				InstanceID: assoID,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectInstanceAssociation,
+					InstanceID: assoID,
+				},
+				Action: meta.Delete,
 			},
 		}
 		return ps
@@ -375,10 +426,12 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 
 	// create object instance operation.
 	if ps.hitRegexp(createObjectInstanceLatestRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectInstance,
-				Action: auth.Create,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectInstance,
+				},
+				Action: meta.Create,
 			},
 		}
 		return ps
@@ -390,12 +443,14 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = errors.New("search object instance, but got invalid url")
 			return ps
 		}
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectInstance,
-				Action: auth.Find,
-				Affiliated: auth.Affiliated{
-					Type: auth.Object,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectInstance,
+				},
+				Action: meta.Find,
+				Affiliated: meta.Affiliated{
+					Type: meta.Object,
 					Name: ps.RequestCtx.Elements[5],
 				},
 			},
@@ -416,13 +471,15 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectInstance,
-				Action:     auth.Update,
-				InstanceID: instID,
-				Affiliated: auth.Affiliated{
-					Type: auth.Object,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectInstance,
+					InstanceID: instID,
+				},
+				Action: meta.Update,
+				Affiliated: meta.Affiliated{
+					Type: meta.Object,
 					Name: ps.RequestCtx.Elements[5],
 				},
 			},
@@ -437,12 +494,14 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectInstance,
-				Action: auth.UpdateMany,
-				Affiliated: auth.Affiliated{
-					Type: auth.Object,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectInstance,
+				},
+				Action: meta.UpdateMany,
+				Affiliated: meta.Affiliated{
+					Type: meta.Object,
 					Name: ps.RequestCtx.Elements[5],
 				},
 			},
@@ -457,12 +516,14 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectInstance,
-				Action: auth.DeleteMany,
-				Affiliated: auth.Affiliated{
-					Type: auth.Object,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectInstance,
+				},
+				Action: meta.DeleteMany,
+				Affiliated: meta.Affiliated{
+					Type: meta.Object,
 					Name: ps.RequestCtx.Elements[5],
 				},
 			},
@@ -483,13 +544,15 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectInstance,
-				Action:     auth.Delete,
-				InstanceID: instID,
-				Affiliated: auth.Affiliated{
-					Type: auth.Object,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectInstance,
+					InstanceID: instID,
+				},
+				Action: meta.Delete,
+				Affiliated: meta.Affiliated{
+					Type: meta.Object,
 					Name: ps.RequestCtx.Elements[5],
 				},
 			},
@@ -510,13 +573,15 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectInstanceTopology,
-				Action:     auth.Find,
-				InstanceID: instID,
-				Affiliated: auth.Affiliated{
-					Type: auth.Object,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectInstanceTopology,
+					InstanceID: instID,
+				},
+				Action: meta.Find,
+				Affiliated: meta.Affiliated{
+					Type: meta.Object,
 					Name: ps.RequestCtx.Elements[5],
 				},
 			},
@@ -542,15 +607,16 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = fmt.Errorf("find object instance, but get instance id %s", ps.RequestCtx.Elements[7])
 			return ps
 		}
-
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectInstanceTopology,
-				Action:     auth.Find,
-				InstanceID: instID,
-				BusinessID: bizID,
-				Affiliated: auth.Affiliated{
-					Type: auth.Object,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectInstanceTopology,
+					InstanceID: instID,
+				},
+				Action: meta.Find,
+				Affiliated: meta.Affiliated{
+					Type: meta.Object,
 					Name: ps.RequestCtx.Elements[5],
 				},
 			},
@@ -571,15 +637,16 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = fmt.Errorf("find business instance, but get business id in metadata failed, err: %v", err)
 			return ps
 		}
-
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectInstanceTopology,
-				Action:     auth.Find,
-				BusinessID: bizID,
-				Affiliated: auth.Affiliated{
-					Type: auth.Object,
-					Name: string(auth.Business),
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectInstanceTopology,
+				},
+				Action: meta.Find,
+				Affiliated: meta.Affiliated{
+					Type: meta.Object,
+					Name: string(meta.Business),
 				},
 			},
 		}
@@ -593,12 +660,14 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectInstanceTopology,
-				Action: auth.FindMany,
-				Affiliated: auth.Affiliated{
-					Type: auth.Object,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectInstanceTopology,
+				},
+				Action: meta.FindMany,
+				Affiliated: meta.Affiliated{
+					Type: meta.Object,
 					Name: ps.RequestCtx.Elements[5],
 				},
 			},
@@ -634,12 +703,13 @@ func (ps *parseStream) objectLatest() *parseStream {
 			ps.err = fmt.Errorf("create object, but get business id in metadata failed, err: %v", err)
 			return ps
 		}
-
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.Object,
-				BusinessID: bizID,
-				Action:     auth.Create,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.Object,
+				},
+				Action: meta.Create,
 			},
 		}
 		return ps
@@ -663,13 +733,14 @@ func (ps *parseStream) objectLatest() *parseStream {
 			ps.err = fmt.Errorf("delete object, but get business id in metadata failed, err: %v", err)
 			return ps
 		}
-
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.Object,
-				Action:     auth.Delete,
-				BusinessID: bizID,
-				InstanceID: objID,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.Object,
+					InstanceID: objID,
+				},
+				Action: meta.Delete,
 			},
 		}
 		return ps
@@ -693,13 +764,14 @@ func (ps *parseStream) objectLatest() *parseStream {
 			ps.err = fmt.Errorf("update object, but get business id in metadata failed, err: %v", err)
 			return ps
 		}
-
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.Object,
-				Action:     auth.Update,
-				BusinessID: bizID,
-				InstanceID: objID,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.Object,
+					InstanceID: objID,
+				},
+				Action: meta.Update,
 			},
 		}
 		return ps
@@ -712,12 +784,13 @@ func (ps *parseStream) objectLatest() *parseStream {
 			ps.err = fmt.Errorf("find object, but get business id in metadata failed, err: %v", err)
 			return ps
 		}
-
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.Object,
-				BusinessID: bizID,
-				Action:     auth.FindMany,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.Object,
+				},
+				Action: meta.FindMany,
 			},
 		}
 		return ps
@@ -730,11 +803,13 @@ func (ps *parseStream) objectLatest() *parseStream {
 			ps.err = fmt.Errorf("find object, but get business id in metadata failed, err: %v", err)
 			return ps
 		}
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectTopology,
-				BusinessID: bizID,
-				Action:     auth.Find,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectTopology,
+				},
+				Action: meta.Find,
 			},
 		}
 		return ps
@@ -747,11 +822,13 @@ func (ps *parseStream) objectLatest() *parseStream {
 			ps.err = fmt.Errorf("find object topology graphic, but get business id in metadata failed, err: %v", err)
 			return ps
 		}
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectTopology,
-				BusinessID: bizID,
-				Action:     auth.Find,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectTopology,
+				},
+				Action: meta.Find,
 			},
 		}
 		return ps
@@ -761,10 +838,12 @@ func (ps *parseStream) objectLatest() *parseStream {
 	// TODO: confirm if bizID is needed.
 	if ps.hitRegexp(updateObjectTopologyGraphicLatestRegexp, http.MethodPost) {
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectTopology,
-				Action: auth.Update,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectTopology,
+				},
+				Action: meta.Update,
 			},
 		}
 		return ps
@@ -796,11 +875,13 @@ func (ps *parseStream) ObjectClassificationLatest() *parseStream {
 			ps.err = fmt.Errorf("get business id in metadata failed, err: %v", err)
 			return ps
 		}
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectClassification,
-				BusinessID: bizID,
-				Action:     auth.Create,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectClassification,
+				},
+				Action: meta.Create,
 			},
 		}
 		return ps
@@ -824,13 +905,14 @@ func (ps *parseStream) ObjectClassificationLatest() *parseStream {
 			ps.err = fmt.Errorf("get business id in metadata failed, err: %v", err)
 			return ps
 		}
-
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectClassification,
-				Action:     auth.Delete,
-				BusinessID: bizID,
-				InstanceID: classID,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectClassification,
+					InstanceID: classID,
+				},
+				Action: meta.Delete,
 			},
 		}
 		return ps
@@ -854,13 +936,14 @@ func (ps *parseStream) ObjectClassificationLatest() *parseStream {
 			ps.err = fmt.Errorf("get business id in metadata failed, err: %v", err)
 			return ps
 		}
-
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectClassification,
-				Action:     auth.Update,
-				BusinessID: bizID,
-				InstanceID: classID,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectClassification,
+					InstanceID: classID,
+				},
+				Action: meta.Update,
 			},
 		}
 		return ps
@@ -873,11 +956,13 @@ func (ps *parseStream) ObjectClassificationLatest() *parseStream {
 			ps.err = fmt.Errorf("get business id in metadata failed, err: %v", err)
 			return ps
 		}
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectClassification,
-				BusinessID: bizID,
-				Action:     auth.FindMany,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectClassification,
+				},
+				Action: meta.FindMany,
 			},
 		}
 		return ps
@@ -890,11 +975,13 @@ func (ps *parseStream) ObjectClassificationLatest() *parseStream {
 			ps.err = fmt.Errorf("get business id in metadata failed, err: %v", err)
 			return ps
 		}
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectClassification,
-				BusinessID: bizID,
-				Action:     auth.FindMany,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectClassification,
+				},
+				Action: meta.FindMany,
 			},
 		}
 		return ps
@@ -926,11 +1013,13 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			ps.err = fmt.Errorf("get business id in metadata failed, err: %v", err)
 			return ps
 		}
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectAttributeGroup,
-				BusinessID: bizID,
-				Action:     auth.Create,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectAttributeGroup,
+				},
+				Action: meta.Create,
 			},
 		}
 		return ps
@@ -948,14 +1037,15 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			ps.err = fmt.Errorf("get business id in metadata failed, err: %v", err)
 			return ps
 		}
-
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectAttributeGroup,
-				Action:     auth.Find,
-				BusinessID: bizID,
-				Affiliated: auth.Affiliated{
-					Type: auth.Object,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectAttributeGroup,
+				},
+				Action: meta.Find,
+				Affiliated: meta.Affiliated{
+					Type: meta.Object,
 					Name: ps.RequestCtx.Elements[5],
 				},
 			},
@@ -970,11 +1060,13 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			ps.err = fmt.Errorf("get business id in metadata failed, err: %v", err)
 			return ps
 		}
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectClassification,
-				BusinessID: bizID,
-				Action:     auth.Update,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectClassification,
+				},
+				Action: meta.Update,
 			},
 		}
 		return ps
@@ -998,13 +1090,14 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			ps.err = fmt.Errorf("get business id in metadata failed, err: %v", err)
 			return ps
 		}
-
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectAttributeGroup,
-				Action:     auth.Delete,
-				BusinessID: bizID,
-				InstanceID: groupID,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectAttributeGroup,
+					InstanceID: groupID,
+				},
+				Action: meta.Delete,
 			},
 		}
 		return ps
@@ -1022,13 +1115,14 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			ps.err = fmt.Errorf("get business id in metadata failed, err: %v", err)
 			return ps
 		}
-
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectAttributeGroup,
-				Name:       ps.RequestCtx.Elements[11],
-				BusinessID: bizID,
-				Action:     auth.Delete,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectAttributeGroup,
+					Name: ps.RequestCtx.Elements[11],
+				},
+				Action: meta.Delete,
 			},
 		}
 		return ps
@@ -1059,11 +1153,13 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			ps.err = fmt.Errorf("get business id in metadata failed, err: %v", err)
 			return ps
 		}
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectAttribute,
-				BusinessID: bizID,
-				Action:     auth.Create,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectAttribute,
+				},
+				Action: meta.Create,
 			},
 		}
 		return ps
@@ -1087,13 +1183,14 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			ps.err = fmt.Errorf("get business id in metadata failed, err: %v", err)
 			return ps
 		}
-
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectAttribute,
-				Action:     auth.Delete,
-				BusinessID: bizID,
-				InstanceID: attrID,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectAttribute,
+					InstanceID: attrID,
+				},
+				Action: meta.Delete,
 			},
 		}
 		return ps
@@ -1117,13 +1214,14 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			ps.err = fmt.Errorf("get business id in metadata failed, err: %v", err)
 			return ps
 		}
-
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectAttribute,
-				Action:     auth.Update,
-				BusinessID: bizID,
-				InstanceID: attrID,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectAttribute,
+					InstanceID: attrID,
+				},
+				Action: meta.Update,
 			},
 		}
 		return ps
@@ -1136,12 +1234,13 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			ps.err = fmt.Errorf("get business id in metadata failed, err: %v", err)
 			return ps
 		}
-
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectAttribute,
-				BusinessID: bizID,
-				Action:     auth.Find,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectAttribute,
+				},
+				Action: meta.Find,
 			},
 		}
 		return ps
@@ -1174,12 +1273,13 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 			ps.err = fmt.Errorf("get business id in metadata failed, err: %v", err)
 			return ps
 		}
-
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.MainlineObject,
-				BusinessID: bizID,
-				Action:     auth.Create,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.MainlineObject,
+				},
+				Action: meta.Create,
 			},
 		}
 		return ps
@@ -1192,12 +1292,13 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 			ps.err = fmt.Errorf("get business id in metadata failed, err: %v", err)
 			return ps
 		}
-
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.MainlineObject,
-				BusinessID: bizID,
-				Action:     auth.Delete,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.MainlineObject,
+				},
+				Action: meta.Delete,
 			},
 		}
 
@@ -1211,11 +1312,13 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 			ps.err = fmt.Errorf("get business id in metadata failed, err: %v", err)
 			return ps
 		}
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.MainlineObjectTopology,
-				BusinessID: bizID,
-				Action:     auth.Find,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.MainlineObjectTopology,
+				},
+				Action: meta.Find,
 			},
 		}
 
@@ -1230,12 +1333,13 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 			ps.err = fmt.Errorf("get business id in metadata failed, err: %v", err)
 			return ps
 		}
-
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.MainlineInstanceTopology,
-				Action:     auth.Find,
-				BusinessID: bizID,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.MainlineInstanceTopology,
+				},
+				Action: meta.Find,
 			},
 		}
 
@@ -1254,12 +1358,13 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 			ps.err = fmt.Errorf("find mainline object's sub instance topology, but got invalid business id %s", ps.RequestCtx.Elements[6])
 			return ps
 		}
-
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.MainlineInstanceTopology,
-				Action:     auth.Find,
-				BusinessID: bizID,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.MainlineInstanceTopology,
+				},
+				Action: meta.Find,
 			},
 		}
 
@@ -1278,12 +1383,13 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 			ps.err = fmt.Errorf("find mainline idle and fault module, but got invalid business id %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.MainlineObject,
-				Action:     auth.Find,
-				BusinessID: bizID,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.MainlineObject,
+				},
+				Action: meta.Find,
 			},
 		}
 
