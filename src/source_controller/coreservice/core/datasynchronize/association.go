@@ -41,6 +41,7 @@ func NewSynchronizeAssociationAdapter(s *metadata.SynchronizeParameter, dbProxy 
 }
 
 func (a *association) SaveSynchronize(ctx core.ContextParams) errors.CCError {
+
 	// Each model is written separately for subsequent expansion,
 	// each type may be processed differently.
 	switch a.base.syncData.DataClassify {
@@ -85,7 +86,9 @@ func (a *association) GetErrorStringArr(ctx core.ContextParams) ([]metadata.Exce
 // saveSynchronizeAssociationModuleHostConfig
 // Host and module relationship is special, need special implementation
 func (a *association) saveSynchronizeAssociationModuleHostConfig(ctx core.ContextParams) errors.CCError {
+	tableName := common.BKTableNameModuleHostConfig
 	for _, item := range a.base.syncData.InfoArray {
+
 		// todo v3.3.x branch clone not support deep copy
 		// not change value
 		newItem, err := item.Info.Clone()
@@ -98,7 +101,7 @@ func (a *association) saveSynchronizeAssociationModuleHostConfig(ctx core.Contex
 			continue
 		}
 		newItem.Remove(common.MetadataField)
-		cnt, err := a.dbProxy.Table(common.BKTableNameProcInstanceModel).Find(newItem).Count(ctx)
+		cnt, err := a.dbProxy.Table(tableName).Find(newItem).Count(ctx)
 		if err != nil {
 			blog.Errorf("saveSynchronizeAssociationModuleHostConfig query db error,err:%s.DataSign:%s,condition:%#v,rid:%s", err.Error(), a.DataClassify, newItem, ctx.ReqID)
 			a.base.errorArray[item.ID] = synchronizeAdapterError{
@@ -108,12 +111,22 @@ func (a *association) saveSynchronizeAssociationModuleHostConfig(ctx core.Contex
 			continue
 		}
 		if cnt == 0 {
-			err := a.dbProxy.Table(common.BKTableNameProcInstanceModel).Insert(ctx, item)
+			err := a.dbProxy.Table(tableName).Insert(ctx, item.Info)
 			if err != nil {
 				blog.Errorf("saveSynchronizeAssociationModuleHostConfig save data to db error,err:%s.DataSign:%s,info:%#v,rid:%s", err.Error(), a.DataClassify, item, ctx.ReqID)
 				a.base.errorArray[item.ID] = synchronizeAdapterError{
 					instInfo: item,
 					err:      ctx.Error.Error(common.CCErrCommDBInsertFailed),
+				}
+				continue
+			}
+		} else {
+			err := a.dbProxy.Table(tableName).Update(ctx, newItem, item.Info)
+			if err != nil {
+				blog.Errorf("saveSynchronizeAssociationModuleHostConfig update data to db error,err:%s.DataSign:%s,info:%#v,rid:%s", err.Error(), a.DataClassify, item, ctx.ReqID)
+				a.base.errorArray[item.ID] = synchronizeAdapterError{
+					instInfo: item,
+					err:      ctx.Error.Error(common.CCErrCommDBUpdateFailed),
 				}
 				continue
 			}
