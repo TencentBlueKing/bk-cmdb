@@ -34,37 +34,6 @@ func NewHostAuthorizer() *HostAuthorizer {
 	return authorizer
 }
 
-// CanTransferHost2TargetBusiness check whether have permission to transfer host to target business,
-// currently achieved by checking business edit permission
-func (ha *HostAuthorizer) CanTransferHost2TargetBusiness(req *restful.Request, targetBusinessID int64) (
-	authorized auth.Decision, reason string, err error) {
-
-	attribute := auth.Attribute{}
-
-	commonInfo, err := parser.ParseCommonInfo(req)
-	if err != nil {
-		return auth.DecisionDeny, fmt.Sprintf("parse common info from request failed, %s", err), err
-	}
-	attribute.User = commonInfo.User
-
-	resource := auth.Resource{
-		Name:       "business",
-		InstanceID: targetBusinessID,
-		Action:     auth.Update,
-		APIVersion: commonInfo.APIVersion,
-		BusinessID: targetBusinessID,
-	}
-	attribute.Resources = append(attribute.Resources, resource)
-
-	authorized, reason, err = ha.authorizer.Authorize(&attribute)
-	if err != nil {
-		message := fmt.Sprintf("auth interface failed, %s", err)
-		blog.Errorf(message)
-		return auth.DecisionDeny, message, err
-	}
-	return
-}
-
 // CanDoBusinessAction check permission for operate business
 func (ha *HostAuthorizer) CanDoBusinessAction(req *restful.Request, businessID int64, action auth.Action) (authorized auth.Decision, reason string, err error) {
 
@@ -92,20 +61,6 @@ func (ha *HostAuthorizer) CanDoBusinessAction(req *restful.Request, businessID i
 		return auth.DecisionDeny, message, err
 	}
 	return
-}
-
-// CanTransferHosts check whether have priority to transfer host under business
-func (ha *HostAuthorizer) CanTransferHosts(req *restful.Request, sourceBusinessID int64, hostIDs *[]int64) (
-	authorized auth.Decision, reason string, err error) {
-
-	return ha.CanDoHostAction(req, sourceBusinessID, hostIDs, auth.TransferHost)
-}
-
-// CanViewHostSnapshot check whether have permission to view host snapshot
-func (ha *HostAuthorizer) CanViewHostSnapshot(req *restful.Request, hostIDs *[]int64, targetBusinessID int64) (
-	authorized auth.Decision, reason string, err error) {
-
-	return ha.CanDoHostAction(req, targetBusinessID, hostIDs, auth.Find)
 }
 
 // CanDoHostAction check whether have permission to view host snapshot
