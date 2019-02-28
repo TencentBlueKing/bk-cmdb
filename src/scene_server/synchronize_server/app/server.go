@@ -26,12 +26,14 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
-	"configcenter/src/common/blog"
+	//"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/synchronize_server/app/options"
-	//hostsvc "configcenter/src/scene_server/synchronize_server/service"
-	"configcenter/src/storage/dal/redis"
+	synchronizeService "configcenter/src/scene_server/synchronize_server/service"
+	//"configcenter/src/storage/dal/redis"
+	synchronizeClient "configcenter/src/apimachinery/synchronize"
+	synchronizeUtil "configcenter/src/apimachinery/synchronize/util"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -52,7 +54,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("new api machinery failed, err: %v", err)
 	}
 
-	service := new(hostsvc.Service)
+	service := new(synchronizeService.Service)
 	server := backbone.Server{
 		ListenAddr: svrInfo.IP,
 		ListenPort: svrInfo.Port,
@@ -60,7 +62,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		TLS:        backbone.TLSConfig{},
 	}
 
-	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_HOST, svrInfo.IP)
+	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_SYNCHRONZESERVER, svrInfo.IP)
 	bonC := &backbone.Config{
 		RegisterPath: regPath,
 		RegisterInfo: *svrInfo,
@@ -68,18 +70,20 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		Server:       server,
 	}
 
-	hostSvr := new(HostServer)
+	synchronSrv := &SynchronizeServer{
+		synchronizeClientConfig: make(chan synchronizeUtil.SychronizeConfig, 10),
+	}
 	engine, err := backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
-		types.CC_MODULE_HOST,
+		types.CC_MODULE_SYNCHRONZESERVER,
 		op.ServConf.ExConfig,
-		hostSvr.onHostConfigUpdate,
+		synchronSrv.onSynchronizeServerConfigUpdate,
 		bonC)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
 	configReady := false
 	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
-		if "" == hostSvr.Config.Redis.Address {
+		if synchronSrv.Config == nil {
 			time.Sleep(time.Second)
 		} else {
 			configReady = true
@@ -89,52 +93,69 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if false == configReady {
 		return fmt.Errorf("Configuration item not found")
 	}
-	cacheDB, err := redis.NewFromConfig(hostSvr.Config.Redis)
-	if err != nil {
-		blog.Errorf("new redis client failed, err: %s", err.Error())
-	}
-
 	service.Engine = engine
-	service.Config = &hostSvr.Config
-	service.CacheDB = cacheDB
-	hostSvr.Core = engine
-	hostSvr.Service = service
-
-	go hostSvr.Service.InitBackground()
+	service.Config = synchronSrv.Config
+	synchronSrv.Service = service
+	synchronizeClientInst, err := synchronizeClient.NewSynchronize(c, synchronSrv.synchronizeClientConfig)
+	if err != nil {
+		return fmt.Errorf("new NewSynchronize failed, err: %v", err)
+	}
+	service.SetSynchronizeServer(synchronizeClientInst)
+	go synchronSrv.Service.InitBackground()
 	select {}
 	return nil
 }
 
 type SynchronizeServer struct {
-	Core   *backbone.Engine
-	Config *options.Config
-	//Service *hostsvc.Service
+	Core                    *backbone.Engine
+	Config                  *options.Config
+	Service                 *synchronizeService.Service
+	synchronizeClientConfig chan synchronizeUtil.SychronizeConfig
 }
 
 func (s *SynchronizeServer) onSynchronizeServerConfigUpdate(previous, current cc.ProcessConfig) {
 	configInfo := &options.Config{}
-	names := current.ConfigMap["synchronze.name"]
+	names := current.ConfigMap["synchronize.name"]
 	configInfo.Names = strings.Split(names, ",")
 
+	configInfo.Trigger.TriggerType = current.ConfigMap["trigger.type"]
+	// role  unit minute.
+	// type = timing, ervery day  role minute trigger
+	// type = interval, interval role  minute trigger
+	configInfo.Trigger.Role = current.ConfigMap["trigger.role"]
+
 	for _, name := range configInfo.Names {
-		configItem := options.ConfigItem{}
-		ignoreAppNames := current.ConfigMap[name+".IgnoreAppNames"]
+		if strings.TrimSpace(name) == "" {
+			continue
+		}
+		configItem := &options.ConfigItem{}
+		appNames := current.ConfigMap[name+".AppNames"]
 		syncResource := current.ConfigMap[name+".SynchronizeResource"]
 		targetHost := current.ConfigMap[name+".TargetHost"]
 		fieldSign := current.ConfigMap[name+".FieldSign"]
-		dataSign := current.ConfigMap[name+".DataSign"]
+		dataSign := current.ConfigMap[name+".Flag"]
 		supplerAccount := current.ConfigMap[name+".SupplerAccount"]
+		witeList := current.ConfigMap[name+".WiteList"]
 
-		configItem.IgnoreAppNames = strings.Split(ignoreAppNames, ",")
+		configItem.AppNames = strings.Split(appNames, ",")
 		if syncResource == "1" {
 			configItem.SyncResource = true
+		}
+		if witeList == "1" {
+			configItem.WiteList = true
 		}
 		configItem.Name = name
 		configItem.TargetHost = targetHost
 		configItem.FieldSign = fieldSign
-		configItem.DataSign = dataSign
+		configItem.SynchronizeFlag = dataSign
 		configItem.SupplerAccount = strings.Split(supplerAccount, ",")
 		configInfo.ConifgItemArray = append(configInfo.ConifgItemArray, configItem)
+		if targetHost != "" {
+			s.synchronizeClientConfig <- synchronizeUtil.SychronizeConfig{
+				Name:  name,
+				Addrs: []string{targetHost},
+			}
+		}
 	}
 	s.Config = configInfo
 

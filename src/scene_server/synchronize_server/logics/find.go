@@ -15,8 +15,8 @@ package logics
 import (
 	"context"
 
-	"bk-cmdb/src/common/blog"
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 )
@@ -38,8 +38,8 @@ func (lgc *Logics) findInstance(ctx context.Context, objID string, input *metada
 	return &result.Data, nil
 }
 
-func (lgc *Logics) find(ctx context.Context, input *metadata.SynchronizeFetchInfoParameter) (*metadata.InstDataInfo, errors.CCError) {
-	result, err := lgc.CoreAPI.CoreService().Synchronize().SynchronizeFetch(ctx, lgc.header, input)
+func (lgc *Logics) find(ctx context.Context, input *metadata.SynchronizeFindInfoParameter) (*metadata.InstDataInfo, errors.CCError) {
+	result, err := lgc.CoreAPI.CoreService().Synchronize().SynchronizeFind(ctx, lgc.header, input)
 	if err != nil {
 		blog.Errorf("find http do error. err:%s,input:%#v,rid:%s", err.Error(), input, lgc.rid)
 		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -52,29 +52,29 @@ func (lgc *Logics) find(ctx context.Context, input *metadata.SynchronizeFetchInf
 	return &result.Data, nil
 }
 
-func (lgc *Logics) Find(ctx context.Context, input *metadata.SynchronizeFetchInfoParameter) (*metadata.InstDataInfo, errors.CCError) {
+func (lgc *Logics) Find(ctx context.Context, input *metadata.SynchronizeFindInfoParameter) (*metadata.InstDataInfo, errors.CCError) {
 	switch input.DataType {
-	case metadata.SynchronizeFetchInfoDataTypeInstance:
-		return lgc.findInstance(ctx, input.DataClassify, synchronizeFetchInfoParameterToQuerycondition(input))
-	case metadata.SynchronizeFetchInfoDataTypeAssociation:
+	case metadata.SynchronizeOperateDataTypeInstance:
+		return lgc.findInstance(ctx, input.DataClassify, SynchronizeFindInfoParameterToQuerycondition(input))
+	case metadata.SynchronizeOperateDataTypeAssociation:
 		return lgc.find(ctx, input)
-	case metadata.SynchronizeFetchInfoDataTypeModel:
+	case metadata.SynchronizeOperateDataTypeModel:
 		// cancel limit
-		input.Limit = 0
+		//input.Limit = 0
 		return lgc.find(ctx, input)
 	}
 	blog.Warnf("Find not found, input:%#v,rid:%s", input, lgc.rid)
 	return nil, nil
 }
 
-// synchronizeFetchInfoParameterToQuerycondition  SynchronizeFetchInfoParameter to Querycondition
-func synchronizeFetchInfoParameterToQuerycondition(input *metadata.SynchronizeFetchInfoParameter) *metadata.QueryCondition {
+// SynchronizeFindInfoParameterToQuerycondition  SynchronizeFindInfoParameter to Querycondition
+func SynchronizeFindInfoParameterToQuerycondition(input *metadata.SynchronizeFindInfoParameter) *metadata.QueryCondition {
 	ret := &metadata.QueryCondition{
 		Limit:     metadata.SearchLimit{Limit: int64(input.Limit), Offset: int64(input.Start)},
 		Condition: input.Condition,
 	}
 	if ret.Limit.Limit <= 0 {
-		// cancel limit
+		//  limit
 		ret.Limit.Limit = defaultLimit
 	}
 	return ret

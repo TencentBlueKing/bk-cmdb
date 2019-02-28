@@ -42,14 +42,39 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 // Config config file set
 type Config struct {
 	Names           []string
-	ConifgItemArray []ConfigItem
+	exceptionDir    string
+	ConifgItemArray []*ConfigItem
+	Trigger         TriggerTime
+}
+
+const (
+	TriggerTimeTypeTiming   = "timing"
+	TriggerTimeTypeInterval = "interval"
+)
+
+// TriggerTime  define synchronize task trigger style and role
+type TriggerTime struct {
+	// timing, interval , default value timing
+	TriggerType string
+	Role        string
+}
+
+// IsTiming judge is timing trigger
+func (t TriggerTime) IsTiming() bool {
+	if t.TriggerType != TriggerTimeTypeInterval {
+		return true
+	}
+	return false
 }
 
 // ConfigItem config item info
 type ConfigItem struct {
 	Name string
-	// out of sync business name
-	IgnoreAppNames []string
+	// White list, default false
+	WiteList bool
+	// White list  = true, need synchronize app list
+	// White list  = true,  out of synchronize business name,
+	AppNames []string
 	// resource pool sync config
 	SyncResource bool
 
@@ -65,6 +90,8 @@ type ConfigItem struct {
 	//SupplerAccount string
 	SupplerAccount []string
 
+	exceptionDirectory string
+
 	// Retry error max retry count
-	Retry int
+	ExceptionFileCount int
 }

@@ -10,44 +10,43 @@
  * limitations under the License.
  */
 
- package main
+package main
 
- import (
-	 "context"
-	 "fmt"
-	 "os"
-	 "runtime"
- 
-	 "github.com/spf13/pflag"
- 
-	 "configcenter/src/common"
-	 "configcenter/src/common/blog"
-	 "configcenter/src/common/types"
-	 "configcenter/src/common/util"
-	 "configcenter/src/scene_server/proc_server/app"
-	 "configcenter/src/scene_server/proc_server/app/options"
- )
- 
- func main() {
-	 common.SetIdentification(types.CC_MODULE_PROC)
-	 runtime.GOMAXPROCS(runtime.NumCPU())
- 
-	 blog.InitLogs()
-	 defer blog.CloseLogs()
- 
-	 op := options.NewServerOption()
-	 op.AddFlags(pflag.CommandLine)
- 
-	 util.InitFlags()
- 
-	 if err := common.SavePid(); err != nil {
-		 blog.Errorf("fail to save pid. err: %s", err.Error())
-	 }
- 
-	 if err := app.Run(context.Background(), op); err != nil {
-		 fmt.Fprintf(os.Stderr, "%v\n", err)
-		 blog.CloseLogs()
-		 os.Exit(1)
-	 }
- }
- 
+import (
+	"context"
+	"fmt"
+	"os"
+	"runtime"
+
+	"github.com/spf13/pflag"
+
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/types"
+	"configcenter/src/common/util"
+	"configcenter/src/scene_server/synchronize_server/app"
+	"configcenter/src/scene_server/synchronize_server/app/options"
+)
+
+func main() {
+	common.SetIdentification(types.CC_MODULE_PROC)
+	runtime.GOMAXPROCS(runtime.NumCPU())
+
+	blog.InitLogs()
+	defer blog.CloseLogs()
+
+	op := options.NewServerOption()
+	op.AddFlags(pflag.CommandLine)
+
+	util.InitFlags()
+
+	if err := common.SavePid(); err != nil {
+		blog.Errorf("fail to save pid. err: %s", err.Error())
+	}
+
+	if err := app.Run(context.Background(), op); err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		blog.CloseLogs()
+		os.Exit(1)
+	}
+}

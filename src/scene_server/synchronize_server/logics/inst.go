@@ -16,8 +16,8 @@ import (
 	"context"
 	"strings"
 
-	"bk-cmdb/src/common/blog"
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
@@ -36,8 +36,9 @@ type FetchInst struct {
 // NewFetchInst fetch instance struct
 func (lgc *Logics) NewFetchInst(syncConfig *options.ConfigItem, baseConds mapstr.MapStr) *FetchInst {
 	return &FetchInst{
-		lgc:       lgc,
-		baseConds: baseConds,
+		lgc:        lgc,
+		baseConds:  baseConds,
+		syncConfig: syncConfig,
 	}
 }
 
@@ -60,10 +61,11 @@ func combineMongoDBKey(keys ...string) string {
 
 // Fetch fetch instance data
 func (fi *FetchInst) Fetch(ctx context.Context, objID string, start, limit int64) (*metadata.InstDataInfo, errors.CCError) {
-	input := &metadata.SynchronizeFetchInfoParameter{}
+	input := &metadata.SynchronizeFindInfoParameter{
+		Condition: mapstr.New(),
+	}
 	input.Limit = uint64(limit)
 	input.Start = uint64(start)
-
 	switch objID {
 	case common.BKInnerObjIDApp:
 		conds := condition.CreateCondition()
@@ -82,19 +84,15 @@ func (fi *FetchInst) Fetch(ctx context.Context, objID string, start, limit int64
 	case common.BKInnerObjIDTempVersion:
 		return nil, nil
 	case common.BKInnerObjIDPlat:
-	case common.BKInnerObjIDObject:
 		// object get all model
 	default:
-		conds := condition.CreateCondition()
-		conds.Field(common.BKObjIDField).Eq(objID)
-		input.Condition.Merge(conds.ToMapStr())
+
 	}
 	input.Condition.Merge(fi.baseConds)
 	input.DataClassify = objID
-	input.DataType = metadata.SynchronizeFetchInfoDataTypeInstance
+	input.DataType = metadata.SynchronizeOperateDataTypeInstance
 
-	result, err := fi.lgc.synchronizeSrv.SynchronizeSrv(fi.syncConfig.SynchronizeFlag).Find(ctx, fi.lgc.header, input)
-	//result, err := fi.lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, fi.lgc.header, objID, input)
+	result, err := fi.lgc.synchronizeSrv.SynchronizeSrv(fi.syncConfig.Name).Find(ctx, fi.lgc.header, input)
 	if err != nil {
 		blog.Errorf("fetchInst http do error. err:%s,objID:%s,input:%#v,rid:%s", err.Error(), objID, input, fi.lgc.rid)
 		return nil, fi.lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)

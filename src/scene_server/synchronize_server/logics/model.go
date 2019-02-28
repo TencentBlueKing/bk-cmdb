@@ -15,8 +15,8 @@ package logics
 import (
 	"context"
 
-	"bk-cmdb/src/common/blog"
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -47,9 +47,11 @@ func (fm *FetchModel) Pretreatment() errors.CCError {
 
 // Fetch  get model info
 func (fm *FetchModel) Fetch(ctx context.Context, dataClassify string, start, limit int64) (*metadata.InstDataInfo, errors.CCError) {
-	input := &metadata.SynchronizeFetchInfoParameter{}
+	input := &metadata.SynchronizeFindInfoParameter{
+		Condition: mapstr.New(),
+	}
 	input.DataClassify = dataClassify
-	input.DataType = metadata.SynchronizeFetchInfoDataTypeModel
+	input.DataType = metadata.SynchronizeOperateDataTypeModel
 	input.Limit = uint64(limit)
 	input.Start = uint64(start)
 	input.Condition.Merge(fm.baseCondition)

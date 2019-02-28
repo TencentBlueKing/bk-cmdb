@@ -50,12 +50,13 @@ func (lgc *Logics) NewFromHeader(header http.Header) *Logics {
 		header.Set(common.BKHTTPCCRequestID, rid)
 	}
 	newLgc := &Logics{
-		header:  header,
-		Engine:  lgc.Engine,
-		rid:     rid,
-		cache:   lgc.cache,
-		user:    util.GetUser(header),
-		ownerID: util.GetOwnerID(header),
+		header:         header,
+		Engine:         lgc.Engine,
+		rid:            rid,
+		cache:          lgc.cache,
+		user:           util.GetUser(header),
+		ownerID:        util.GetOwnerID(header),
+		synchronizeSrv: lgc.synchronizeSrv,
 	}
 	// if language not exist, use old language
 	if lang == "" {
@@ -69,16 +70,26 @@ func (lgc *Logics) NewFromHeader(header http.Header) *Logics {
 }
 
 // NewLogics get logic handle
-func NewLogics(b *backbone.Engine, header http.Header, cache *redis.Client) *Logics {
+func NewLogics(b *backbone.Engine, header http.Header, cache *redis.Client, synchronizeSrv synchronize.SynchronizeClientInterface) *Logics {
 	lang := util.GetLanguage(header)
 	return &Logics{
-		Engine:  b,
-		header:  header,
-		rid:     util.GetHTTPCCRequestID(header),
-		ccErr:   b.CCErr.CreateDefaultCCErrorIf(lang),
-		ccLang:  b.Language.CreateDefaultCCLanguageIf(lang),
-		user:    util.GetUser(header),
-		ownerID: util.GetOwnerID(header),
-		cache:   cache,
+		Engine:         b,
+		header:         header,
+		rid:            util.GetHTTPCCRequestID(header),
+		ccErr:          b.CCErr.CreateDefaultCCErrorIf(lang),
+		ccLang:         b.Language.CreateDefaultCCLanguageIf(lang),
+		user:           util.GetUser(header),
+		ownerID:        util.GetOwnerID(header),
+		cache:          cache,
+		synchronizeSrv: synchronizeSrv,
 	}
+
+}
+
+func copyHeader(header http.Header) (newHeader http.Header) {
+	newHeader = make(http.Header, 0)
+	for key, val := range header {
+		newHeader.Set(key, val[0])
+	}
+	return
 }
