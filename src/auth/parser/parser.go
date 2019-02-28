@@ -13,22 +13,32 @@
 package parser
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"regexp"
 	"strings"
 
 	"configcenter/src/auth"
 	"configcenter/src/common"
 
+	"configcenter/src/auth/meta"
+	"configcenter/src/common/metadata"
+
 	"github.com/emicklei/go-restful"
 )
 
-func ParseAttribute(req *restful.Request) (*auth.Attribute, error) {
-	attr := new(auth.Attribute)
-	user := req.Request.Header.Get(common.BKHTTPHeaderUser)
-	if len(user) == 0 {
-		return nil, errors.New("miss BK_User in your request header")
+func ParseAttribute(req *restful.Request) (*meta.Attribute, error) {
+
+	body, err := ioutil.ReadAll(req.Request.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	meta := new(metadata.Metadata)
+	if err := json.Unmarshal(body, meta); err != nil {
+		return nil, err
 	}
 
 	elements, err := urlParse(req.Request.URL.Path)
@@ -36,12 +46,20 @@ func ParseAttribute(req *restful.Request) (*auth.Attribute, error) {
 		return nil, err
 	}
 
-	version := elements[1]
-	if version != "v3" {
-		return nil, fmt.Errorf("unsupported api version: %s", version)
+	requestContext := &RequestContext{
+		Header:   req.Request.Header,
+		Method:   req.Request.Method,
+		URI:      req.Request.URL.Path,
+		Elements: elements,
+		Body:     body,
+		Metadata: *meta,
 	}
-	attr.APIVersion = version
-	return nil, nil
+
+	stream, err := newParseStream(requestContext)
+	if err != nil {
+		return nil, err
+	}
+	return stream.Parse()
 }
 
 // ParseCommonInfo get common info from req, aims at avoiding too much repeat code
@@ -101,29 +119,29 @@ func urlParse(url string) (elements []string, err error) {
 	return strings.Split(url, "/")[1:], nil
 }
 
-func filterAction(action string) (auth.Action, error) {
+func filterAction(action string) (meta.Action, error) {
 	switch action {
 	case "find":
-		return auth.Find, nil
+		return meta.Find, nil
 	case "findMany":
-		return auth.FindMany, nil
+		return meta.FindMany, nil
 
 	case "create":
-		return auth.Create, nil
+		return meta.Create, nil
 	case "createMany":
-		return auth.CreateMany, nil
+		return meta.CreateMany, nil
 
 	case "update":
-		return auth.Update, nil
+		return meta.Update, nil
 	case "updateMany":
-		return auth.UpdateMany, nil
+		return meta.UpdateMany, nil
 
 	case "delete":
-		return auth.Delete, nil
+		return meta.Delete, nil
 	case "deleteMany":
-		return auth.DeleteMany, nil
+		return meta.DeleteMany, nil
 
 	default:
-		return auth.Unknown, fmt.Errorf("unsupported action %s", action)
+		return meta.Unknown, fmt.Errorf("unsupported action %s", action)
 	}
 }

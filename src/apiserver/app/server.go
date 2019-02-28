@@ -13,10 +13,13 @@
 package app
 
 import (
+	"configcenter/src/auth"
+	"configcenter/src/common/blog"
+	"configcenter/src/framework/core/errors"
 	"context"
 	"fmt"
 	"os"
-
+	"time"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/discovery"
@@ -27,9 +30,8 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 
-	"github.com/emicklei/go-restful"
 	cc "configcenter/src/common/backbone/configcenter"
-	
+	"github.com/emicklei/go-restful"
 )
 
 // Run main loop function
@@ -62,11 +64,6 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("new proxy client failed, err: %v", err)
 	}
 
-	// v3Service.Disc, err = discovery.NewDiscoveryInterface(op.ServConf.RegDiscover)
-	// if err != nil {
-	// 	return fmt.Errorf("new proxy discovery instance failed, err: %v", err)
-	// }
-
 	ctnr := restful.NewContainer()
 	ctnr.Router(restful.CurlyRouter{})
 	for _, item := range apisvr.WebServices() {
@@ -92,7 +89,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	engine, err := backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
 		types.CC_MODULE_APISERVER,
 		op.ServConf.ExConfig,
-        apiServer.onHostConfigUpdate,
+		apiServer.onApiServerConfigUpdate,
 		discover,
 		bonC)
 
@@ -100,7 +97,26 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
 
-	apisvr.SetConfig(engine, httpClient, discover)
+	try := 300
+	for i := 0; i <= try; i++ {
+		if len(apiServer.Config) == 0 {
+			blog.Info("waiting for the config items from zookeeper, will wait for another second.")
+			time.Sleep(time.Second)
+			continue
+		} else {
+			break
+		}
+
+		if i == try {
+			return errors.New("wait for api server config items in zookeeper timeout")
+		}
+	}
+
+	authorize, err := auth.NewAuthorize(nil, apiServer.Config)
+	if err != nil {
+		return err
+	}
+	apisvr.SetConfig(engine, httpClient, discover, authorize)
 	apiServer.Core = engine
 
 	select {
@@ -111,11 +127,12 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 // APIServer apiserver struct
 type APIServer struct {
-	Core *backbone.Engine
+	Core   *backbone.Engine
+	Config map[string]string
 }
 
-func (h *APIServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
-
+func (h *APIServer) onApiServerConfigUpdate(previous, current cc.ProcessConfig) {
+	h.Config = current.ConfigMap
 }
 
 func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
