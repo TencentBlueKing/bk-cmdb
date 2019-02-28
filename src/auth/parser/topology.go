@@ -13,12 +13,13 @@
 package parser
 
 import (
-	"configcenter/src/auth"
-	"configcenter/src/framework/core/errors"
 	"fmt"
 	"net/http"
 	"regexp"
 	"strconv"
+
+	"configcenter/src/auth/meta"
+	"configcenter/src/framework/core/errors"
 )
 
 func (ps *parseStream) topology() *parseStream {
@@ -30,7 +31,15 @@ func (ps *parseStream) topology() *parseStream {
 		mainline().
 		associationType().
 		objectAssociation().
-		objectInstanceAssociation()
+		objectInstanceAssociation().
+		objectInstance().
+		object().
+		ObjectClassification().
+		objectAttributeGroup().
+		objectAttribute().
+		ObjectModule().
+		ObjectSet().
+		objectUnique()
 
 	return ps
 }
@@ -51,10 +60,12 @@ func (ps *parseStream) business() *parseStream {
 	// create business, this is not a normalize api.
 	// TODO: update this api format.
 	if createBusinessRegexp.MatchString(ps.RequestCtx.URI) && ps.RequestCtx.Method == http.MethodPost {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.Business,
-				Action: auth.Create,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.Business,
+				},
+				Action: meta.Create,
 			},
 		}
 		return ps
@@ -74,12 +85,13 @@ func (ps *parseStream) business() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.Business,
-				Action:     auth.Update,
-				InstanceID: bizID,
-				BusinessID: bizID,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.Business,
+					InstanceID: bizID,
+				},
+				Action: meta.Update,
 			},
 		}
 		return ps
@@ -99,12 +111,13 @@ func (ps *parseStream) business() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.Business,
-				Action:     auth.Update,
-				InstanceID: bizID,
-				BusinessID: bizID,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.Business,
+					InstanceID: bizID,
+				},
+				Action: meta.Update,
 			},
 		}
 		return ps
@@ -124,12 +137,13 @@ func (ps *parseStream) business() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.Business,
-				Action:     auth.Delete,
-				InstanceID: bizID,
-				BusinessID: bizID,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.Business,
+					InstanceID: bizID,
+				},
+				Action: meta.Delete,
 			},
 		}
 		return ps
@@ -138,12 +152,14 @@ func (ps *parseStream) business() *parseStream {
 	// find business, this is not a normalize api.
 	// TODO: update this api format
 	if findBusinessRegexp.MatchString(ps.RequestCtx.URI) && ps.RequestCtx.Method == http.MethodPost {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type: auth.Business,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.Business,
+				},
 				// we don't know if one or more business is to find, so we assume it's a find many
 				// business operation.
-				Action: auth.FindMany,
+				Action: meta.FindMany,
 			},
 		}
 		return ps
@@ -171,10 +187,12 @@ func (ps *parseStream) mainline() *parseStream {
 
 	// create mainline object operation.
 	if ps.hitPattern(createMainlineObjectPattern, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.MainlineObject,
-				Action: auth.Create,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.MainlineObject,
+				},
+				Action: meta.Create,
 			},
 		}
 		return ps
@@ -182,10 +200,12 @@ func (ps *parseStream) mainline() *parseStream {
 
 	// delete mainline object operation
 	if ps.hitRegexp(deleteMainlineObjectRegexp, http.MethodDelete) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.MainlineObject,
-				Action: auth.Delete,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.MainlineObject,
+				},
+				Action: meta.Delete,
 			},
 		}
 
@@ -194,10 +214,12 @@ func (ps *parseStream) mainline() *parseStream {
 
 	// get mainline object operation
 	if ps.hitRegexp(findMainlineObjectTopoRegexp, http.MethodGet) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.MainlineObjectTopology,
-				Action: auth.Find,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.MainlineObjectTopology,
+				},
+				Action: meta.Find,
 			},
 		}
 
@@ -216,14 +238,13 @@ func (ps *parseStream) mainline() *parseStream {
 			ps.err = fmt.Errorf("find mainline instance topology, but got invalid business id %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Basic: auth.Basic{
-					Type: auth.MainlineInstanceTopology,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.MainlineInstanceTopology,
 				},
-				Action:     auth.Find,
-				BusinessID: bizID,
+				Action: meta.Find,
 			},
 		}
 
@@ -242,12 +263,13 @@ func (ps *parseStream) mainline() *parseStream {
 			ps.err = fmt.Errorf("find mainline object's sub instance topology, but got invalid business id %s", ps.RequestCtx.Elements[7])
 			return ps
 		}
-
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.MainlineInstanceTopology,
-				Action:     auth.Find,
-				BusinessID: bizID,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.MainlineInstanceTopology,
+				},
+				Action: meta.Find,
 			},
 		}
 
@@ -266,12 +288,13 @@ func (ps *parseStream) mainline() *parseStream {
 			ps.err = fmt.Errorf("find mainline idle and fault module, but got invalid business id %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.MainlineObject,
-				Action:     auth.Find,
-				BusinessID: bizID,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.MainlineObject,
+				},
+				Action: meta.Find,
 			},
 		}
 
@@ -298,10 +321,12 @@ func (ps *parseStream) associationType() *parseStream {
 
 	// find association kind operation
 	if ps.hitPattern(findManyAssociationKindPattern, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.AssociationType,
-				Action: auth.FindMany,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.AssociationType,
+				},
+				Action: meta.FindMany,
 			},
 		}
 		return ps
@@ -309,10 +334,12 @@ func (ps *parseStream) associationType() *parseStream {
 
 	// create association kind operation
 	if ps.hitPattern(createAssociationKindPattern, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.AssociationType,
-				Action: auth.Create,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.AssociationType,
+				},
+				Action: meta.Create,
 			},
 		}
 		return ps
@@ -330,11 +357,13 @@ func (ps *parseStream) associationType() *parseStream {
 			ps.err = fmt.Errorf("update association kind, but got invalid kind id %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.AssociationType,
-				Action:     auth.Update,
-				InstanceID: kindID,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.AssociationType,
+					InstanceID: kindID,
+				},
+				Action: meta.Update,
 			},
 		}
 
@@ -353,11 +382,13 @@ func (ps *parseStream) associationType() *parseStream {
 			ps.err = fmt.Errorf("delete association kind, but got invalid kind id %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.AssociationType,
-				Action:     auth.Delete,
-				InstanceID: kindID,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.AssociationType,
+					InstanceID: kindID,
+				},
+				Action: meta.Delete,
 			},
 		}
 
@@ -385,10 +416,12 @@ func (ps *parseStream) objectAssociation() *parseStream {
 
 	// search object association operation
 	if ps.RequestCtx.URI == findObjectAssociationPattern && ps.RequestCtx.Method == http.MethodPost {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectAssociation,
-				Action: auth.FindMany,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectAssociation,
+				},
+				Action: meta.FindMany,
 			},
 		}
 		return ps
@@ -396,10 +429,12 @@ func (ps *parseStream) objectAssociation() *parseStream {
 
 	// create object association operation
 	if ps.RequestCtx.URI == createObjectAssociationPattern && ps.RequestCtx.Method == http.MethodPost {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectAssociation,
-				Action: auth.Create,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectAssociation,
+				},
+				Action: meta.Create,
 			},
 		}
 		return ps
@@ -418,11 +453,13 @@ func (ps *parseStream) objectAssociation() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectAssociation,
-				Action:     auth.Update,
-				InstanceID: assoID,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectAssociation,
+					InstanceID: assoID,
+				},
+				Action: meta.Update,
 			},
 		}
 		return ps
@@ -441,11 +478,13 @@ func (ps *parseStream) objectAssociation() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectAssociation,
-				Action:     auth.Delete,
-				InstanceID: assoID,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectAssociation,
+					InstanceID: assoID,
+				},
+				Action: meta.Delete,
 			},
 		}
 		return ps
@@ -453,10 +492,12 @@ func (ps *parseStream) objectAssociation() *parseStream {
 
 	// find object association with a association kind list.
 	if ps.RequestCtx.URI == findObjectAssociationWithAssociationKindPattern && ps.RequestCtx.Method == http.MethodPost {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectAssociation,
-				Action: auth.FindMany,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectAssociation,
+				},
+				Action: meta.FindMany,
 			},
 		}
 		return ps
@@ -481,10 +522,12 @@ func (ps *parseStream) objectInstanceAssociation() *parseStream {
 
 	// find object instance's association operation.
 	if ps.RequestCtx.URI == findObjectInstanceAssociationPattern && ps.RequestCtx.Method == http.MethodPost {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectInstanceAssociation,
-				Action: auth.FindMany,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectInstanceAssociation,
+				},
+				Action: meta.FindMany,
 			},
 		}
 		return ps
@@ -492,10 +535,12 @@ func (ps *parseStream) objectInstanceAssociation() *parseStream {
 
 	// create object's instance association operation.
 	if ps.RequestCtx.URI == createObjectInstanceAssociationPattern && ps.RequestCtx.Method == http.MethodPost {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectInstanceAssociation,
-				Action: auth.Create,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectInstanceAssociation,
+				},
+				Action: meta.Create,
 			},
 		}
 		return ps
@@ -514,11 +559,13 @@ func (ps *parseStream) objectInstanceAssociation() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectInstanceAssociation,
-				Action:     auth.Delete,
-				InstanceID: assoID,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectInstanceAssociation,
+					InstanceID: assoID,
+				},
+				Action: meta.Delete,
 			},
 		}
 		return ps
@@ -547,10 +594,12 @@ func (ps *parseStream) objectInstance() *parseStream {
 
 	// create object instance operation.
 	if ps.hitRegexp(createObjectInstanceRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectInstance,
-				Action: auth.Create,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectInstance,
+				},
+				Action: meta.Create,
 			},
 		}
 		return ps
@@ -562,12 +611,14 @@ func (ps *parseStream) objectInstance() *parseStream {
 			ps.err = errors.New("search object instance, but got invalid url")
 			return ps
 		}
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectInstance,
-				Action: auth.Find,
-				Affiliated: auth.Affiliated{
-					Type: auth.Object,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectInstance,
+				},
+				Action: meta.Find,
+				Affiliated: meta.Affiliated{
+					Type: meta.Object,
 					Name: ps.RequestCtx.Elements[8],
 				},
 			},
@@ -588,13 +639,15 @@ func (ps *parseStream) objectInstance() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectInstance,
-				Action:     auth.Update,
-				InstanceID: instID,
-				Affiliated: auth.Affiliated{
-					Type: auth.Object,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectInstance,
+					InstanceID: instID,
+				},
+				Action: meta.Update,
+				Affiliated: meta.Affiliated{
+					Type: meta.Object,
 					Name: ps.RequestCtx.Elements[4],
 				},
 			},
@@ -609,12 +662,14 @@ func (ps *parseStream) objectInstance() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectInstance,
-				Action: auth.UpdateMany,
-				Affiliated: auth.Affiliated{
-					Type: auth.Object,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectInstance,
+				},
+				Action: meta.UpdateMany,
+				Affiliated: meta.Affiliated{
+					Type: meta.Object,
 					Name: ps.RequestCtx.Elements[4],
 				},
 			},
@@ -629,12 +684,14 @@ func (ps *parseStream) objectInstance() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectInstance,
-				Action: auth.DeleteMany,
-				Affiliated: auth.Affiliated{
-					Type: auth.Object,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectInstance,
+				},
+				Action: meta.DeleteMany,
+				Affiliated: meta.Affiliated{
+					Type: meta.Object,
 					Name: ps.RequestCtx.Elements[4],
 				},
 			},
@@ -655,13 +712,15 @@ func (ps *parseStream) objectInstance() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectInstance,
-				Action:     auth.Delete,
-				InstanceID: instID,
-				Affiliated: auth.Affiliated{
-					Type: auth.Object,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectInstance,
+					InstanceID: instID,
+				},
+				Action: meta.Delete,
+				Affiliated: meta.Affiliated{
+					Type: meta.Object,
 					Name: ps.RequestCtx.Elements[4],
 				},
 			},
@@ -682,13 +741,15 @@ func (ps *parseStream) objectInstance() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectInstanceTopology,
-				Action:     auth.Find,
-				InstanceID: instID,
-				Affiliated: auth.Affiliated{
-					Type: auth.Object,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectInstanceTopology,
+					InstanceID: instID,
+				},
+				Action: meta.Find,
+				Affiliated: meta.Affiliated{
+					Type: meta.Object,
 					Name: ps.RequestCtx.Elements[9],
 				},
 			},
@@ -709,13 +770,15 @@ func (ps *parseStream) objectInstance() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectInstanceTopology,
-				Action:     auth.Find,
-				InstanceID: instID,
-				Affiliated: auth.Affiliated{
-					Type: auth.Object,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectInstanceTopology,
+					InstanceID: instID,
+				},
+				Action: meta.Find,
+				Affiliated: meta.Affiliated{
+					Type: meta.Object,
 					Name: ps.RequestCtx.Elements[9],
 				},
 			},
@@ -737,14 +800,16 @@ func (ps *parseStream) objectInstance() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectInstanceTopology,
-				Action:     auth.Find,
-				InstanceID: bizID,
-				Affiliated: auth.Affiliated{
-					Type: auth.Object,
-					Name: string(auth.Business),
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectInstanceTopology,
+					InstanceID: bizID,
+				},
+				Action: meta.Find,
+				Affiliated: meta.Affiliated{
+					Type: meta.Object,
+					Name: string(meta.Business),
 				},
 			},
 		}
@@ -758,12 +823,14 @@ func (ps *parseStream) objectInstance() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectInstanceTopology,
-				Action: auth.FindMany,
-				Affiliated: auth.Affiliated{
-					Type: auth.Object,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectInstanceTopology,
+				},
+				Action: meta.FindMany,
+				Affiliated: meta.Affiliated{
+					Type: meta.Object,
 					Name: ps.RequestCtx.Elements[7],
 				},
 			},
@@ -794,10 +861,12 @@ func (ps *parseStream) object() *parseStream {
 
 	// create common object operation.
 	if ps.hitPattern(createObjectPattern, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.Object,
-				Action: auth.Create,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.Object,
+				},
+				Action: meta.Create,
 			},
 		}
 		return ps
@@ -816,11 +885,13 @@ func (ps *parseStream) object() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.Object,
-				Action:     auth.Delete,
-				InstanceID: objID,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.Object,
+					InstanceID: objID,
+				},
+				Action: meta.Delete,
 			},
 		}
 		return ps
@@ -839,11 +910,13 @@ func (ps *parseStream) object() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.Object,
-				Action:     auth.Update,
-				InstanceID: objID,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.Object,
+					InstanceID: objID,
+				},
+				Action: meta.Update,
 			},
 		}
 		return ps
@@ -851,10 +924,12 @@ func (ps *parseStream) object() *parseStream {
 
 	// get object operation.
 	if ps.hitPattern(findObjectsPattern, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.Object,
-				Action: auth.FindMany,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.Object,
+				},
+				Action: meta.FindMany,
 			},
 		}
 		return ps
@@ -862,10 +937,12 @@ func (ps *parseStream) object() *parseStream {
 
 	// find object's topology operation.
 	if ps.hitPattern(findObjectTopologyPattern, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectTopology,
-				Action: auth.Find,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectTopology,
+				},
+				Action: meta.Find,
 			},
 		}
 		return ps
@@ -873,10 +950,12 @@ func (ps *parseStream) object() *parseStream {
 
 	// find object's topology graphic operation.
 	if ps.hitRegexp(findObjectTopologyGraphicRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectTopology,
-				Action: auth.Find,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectTopology,
+				},
+				Action: meta.Find,
 			},
 		}
 		return ps
@@ -884,10 +963,12 @@ func (ps *parseStream) object() *parseStream {
 
 	// update object's topology graphic operation.
 	if ps.hitRegexp(updateObjectTopologyGraphicRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectTopology,
-				Action: auth.Update,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectTopology,
+				},
+				Action: meta.Update,
 			},
 		}
 		return ps
@@ -914,10 +995,12 @@ func (ps *parseStream) ObjectClassification() *parseStream {
 
 	// create object's classification operation.
 	if ps.hitPattern(createObjectClassificationPattern, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectClassification,
-				Action: auth.Create,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectClassification,
+				},
+				Action: meta.Create,
 			},
 		}
 		return ps
@@ -936,11 +1019,13 @@ func (ps *parseStream) ObjectClassification() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectClassification,
-				Action:     auth.Delete,
-				InstanceID: classID,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectClassification,
+					InstanceID: classID,
+				},
+				Action: meta.Delete,
 			},
 		}
 		return ps
@@ -959,11 +1044,13 @@ func (ps *parseStream) ObjectClassification() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectClassification,
-				Action:     auth.Update,
-				InstanceID: classID,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectClassification,
+					InstanceID: classID,
+				},
+				Action: meta.Update,
 			},
 		}
 		return ps
@@ -971,10 +1058,12 @@ func (ps *parseStream) ObjectClassification() *parseStream {
 
 	// find object's classification list operation.
 	if ps.hitPattern(findObjectClassificationListPattern, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectClassification,
-				Action: auth.FindMany,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectClassification,
+				},
+				Action: meta.FindMany,
 			},
 		}
 		return ps
@@ -982,10 +1071,12 @@ func (ps *parseStream) ObjectClassification() *parseStream {
 
 	// find all the objects belongs to a classification
 	if ps.hitRegexp(findObjectsBelongsToClassificationRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectClassification,
-				Action: auth.FindMany,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectClassification,
+				},
+				Action: meta.FindMany,
 			},
 		}
 		return ps
@@ -1012,10 +1103,12 @@ func (ps *parseStream) objectAttributeGroup() *parseStream {
 
 	// create object's attribute group operation.
 	if ps.hitPattern(createObjectAttributeGroupPattern, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectAttributeGroup,
-				Action: auth.Create,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectAttributeGroup,
+				},
+				Action: meta.Create,
 			},
 		}
 		return ps
@@ -1028,12 +1121,14 @@ func (ps *parseStream) objectAttributeGroup() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectAttributeGroup,
-				Action: auth.Find,
-				Affiliated: auth.Affiliated{
-					Type: auth.Object,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectAttributeGroup,
+				},
+				Action: meta.Find,
+				Affiliated: meta.Affiliated{
+					Type: meta.Object,
 					Name: ps.RequestCtx.Elements[8],
 				},
 			},
@@ -1043,10 +1138,12 @@ func (ps *parseStream) objectAttributeGroup() *parseStream {
 
 	// update object's attribute group operation.
 	if ps.hitPattern(updateObjectAttributeGroupPattern, http.MethodPut) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectClassification,
-				Action: auth.Update,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectClassification,
+				},
+				Action: meta.Update,
 			},
 		}
 		return ps
@@ -1065,11 +1162,13 @@ func (ps *parseStream) objectAttributeGroup() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectAttributeGroup,
-				Action:     auth.Delete,
-				InstanceID: groupID,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectAttributeGroup,
+					InstanceID: groupID,
+				},
+				Action: meta.Delete,
 			},
 		}
 		return ps
@@ -1081,11 +1180,13 @@ func (ps *parseStream) objectAttributeGroup() *parseStream {
 			ps.err = errors.New("remove a object attribute away from a group, but got invalid uri")
 			return ps
 		}
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectAttributeGroup,
-				Name:   ps.RequestCtx.Elements[11],
-				Action: auth.Delete,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectAttributeGroup,
+					Name: ps.RequestCtx.Elements[11],
+				},
+				Action: meta.Delete,
 			},
 		}
 		return ps
@@ -1111,10 +1212,12 @@ func (ps *parseStream) objectAttribute() *parseStream {
 
 	// create object's attribute operation.
 	if ps.hitPattern(createObjectAttributePattern, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectAttribute,
-				Action: auth.Create,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectAttribute,
+				},
+				Action: meta.Create,
 			},
 		}
 		return ps
@@ -1133,11 +1236,13 @@ func (ps *parseStream) objectAttribute() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectAttribute,
-				Action:     auth.Delete,
-				InstanceID: attrID,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectAttribute,
+					InstanceID: attrID,
+				},
+				Action: meta.Delete,
 			},
 		}
 		return ps
@@ -1156,11 +1261,13 @@ func (ps *parseStream) objectAttribute() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectAttribute,
-				Action:     auth.Update,
-				InstanceID: attrID,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectAttribute,
+					InstanceID: attrID,
+				},
+				Action: meta.Update,
 			},
 		}
 		return ps
@@ -1168,10 +1275,12 @@ func (ps *parseStream) objectAttribute() *parseStream {
 
 	// get object's attribute operation.
 	if ps.hitPattern(findObjectAttributePattern, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectAttribute,
-				Action: auth.Find,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectAttribute,
+				},
+				Action: meta.Find,
 			},
 		}
 		return ps
@@ -1211,13 +1320,15 @@ func (ps *parseStream) ObjectModule() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectModule,
-				Action:     auth.Create,
-				BusinessID: bizID,
-				Affiliated: auth.Affiliated{
-					Type:       auth.ObjectInstance,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectModule,
+				},
+				Action: meta.Create,
+				Affiliated: meta.Affiliated{
+					Type:       meta.ObjectInstance,
 					Name:       "set",
 					InstanceID: setID,
 				},
@@ -1251,14 +1362,16 @@ func (ps *parseStream) ObjectModule() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectModule,
-				Action:     auth.Delete,
-				InstanceID: moduleID,
-				BusinessID: bizID,
-				Affiliated: auth.Affiliated{
-					Type:       auth.ObjectInstance,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectModule,
+					InstanceID: moduleID,
+				},
+				Action: meta.Delete,
+				Affiliated: meta.Affiliated{
+					Type:       meta.ObjectInstance,
 					Name:       "set",
 					InstanceID: setID,
 				},
@@ -1291,15 +1404,16 @@ func (ps *parseStream) ObjectModule() *parseStream {
 			ps.err = fmt.Errorf("update module, but got invalid module id %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectModule,
-				Action:     auth.Update,
-				InstanceID: moduleID,
-				BusinessID: bizID,
-				Affiliated: auth.Affiliated{
-					Type:       auth.ObjectInstance,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectModule,
+					InstanceID: moduleID,
+				},
+				Action: meta.Update,
+				Affiliated: meta.Affiliated{
+					Type:       meta.ObjectInstance,
 					Name:       "set",
 					InstanceID: setID,
 				},
@@ -1326,14 +1440,15 @@ func (ps *parseStream) ObjectModule() *parseStream {
 			ps.err = fmt.Errorf("find module, but got invalid set id %s", ps.RequestCtx.Elements[6])
 			return ps
 		}
-
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectModule,
-				Action:     auth.FindMany,
-				BusinessID: bizID,
-				Affiliated: auth.Affiliated{
-					Type:       auth.ObjectSet,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectModule,
+				},
+				Action: meta.FindMany,
+				Affiliated: meta.Affiliated{
+					Type:       meta.ObjectSet,
 					InstanceID: setID,
 				},
 			},
@@ -1369,12 +1484,13 @@ func (ps *parseStream) ObjectSet() *parseStream {
 			ps.err = fmt.Errorf("create set, but got invalid business id %s", ps.RequestCtx.Elements[3])
 			return ps
 		}
-
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectSet,
-				Action:     auth.Create,
-				BusinessID: bizID,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectSet,
+				},
+				Action: meta.Create,
 			},
 		}
 		return ps
@@ -1398,13 +1514,14 @@ func (ps *parseStream) ObjectSet() *parseStream {
 			ps.err = fmt.Errorf("delete set, but got invalid set id %s", ps.RequestCtx.Elements[4])
 			return ps
 		}
-
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectSet,
-				Action:     auth.Delete,
-				InstanceID: setID,
-				BusinessID: bizID,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectSet,
+					InstanceID: setID,
+				},
+				Action: meta.Delete,
 			},
 		}
 		return ps
@@ -1422,12 +1539,13 @@ func (ps *parseStream) ObjectSet() *parseStream {
 			ps.err = fmt.Errorf("delete set list, but got invalid business id %s", ps.RequestCtx.Elements[3])
 			return ps
 		}
-
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectSet,
-				Action:     auth.DeleteMany,
-				BusinessID: bizID,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectSet,
+				},
+				Action: meta.DeleteMany,
 			},
 		}
 		return ps
@@ -1451,13 +1569,14 @@ func (ps *parseStream) ObjectSet() *parseStream {
 			ps.err = fmt.Errorf("update set, but got invalid set id %s", ps.RequestCtx.Elements[4])
 			return ps
 		}
-
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectSet,
-				Action:     auth.Update,
-				InstanceID: setID,
-				BusinessID: bizID,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectSet,
+					InstanceID: setID,
+				},
+				Action: meta.Update,
 			},
 		}
 		return ps
@@ -1475,12 +1594,13 @@ func (ps *parseStream) ObjectSet() *parseStream {
 			ps.err = fmt.Errorf("find set, but got invalid business id %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectSet,
-				Action:     auth.FindMany,
-				BusinessID: bizID,
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectSet,
+				},
+				Action: meta.FindMany,
 			},
 		}
 		return ps
@@ -1503,11 +1623,13 @@ func (ps *parseStream) objectUnique() *parseStream {
 
 	// add object unique operation.
 	if ps.hitRegexp(createObjectUniqueRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectUnique,
-				Name:   ps.RequestCtx.Elements[3],
-				Action: auth.Create,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectUnique,
+					Name: ps.RequestCtx.Elements[3],
+				},
+				Action: meta.Create,
 			},
 		}
 		return ps
@@ -1521,13 +1643,15 @@ func (ps *parseStream) objectUnique() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectUnique,
-				InstanceID: uniqueID,
-				Action:     auth.Update,
-				Affiliated: auth.Affiliated{
-					Type: auth.Object,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectUnique,
+					InstanceID: uniqueID,
+				},
+				Action: meta.Update,
+				Affiliated: meta.Affiliated{
+					Type: meta.Object,
 					Name: ps.RequestCtx.Elements[3],
 				},
 			},
@@ -1543,13 +1667,15 @@ func (ps *parseStream) objectUnique() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:       auth.ObjectUnique,
-				InstanceID: uniqueID,
-				Action:     auth.Delete,
-				Affiliated: auth.Affiliated{
-					Type: auth.Object,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type:       meta.ObjectUnique,
+					InstanceID: uniqueID,
+				},
+				Action: meta.Delete,
+				Affiliated: meta.Affiliated{
+					Type: meta.Object,
 					Name: ps.RequestCtx.Elements[3],
 				},
 			},
@@ -1559,12 +1685,14 @@ func (ps *parseStream) objectUnique() *parseStream {
 
 	// find object unique operation.
 	if ps.hitRegexp(findObjectUniqueRegexp, http.MethodGet) {
-		ps.Attribute.Resources = []auth.Resource{
-			auth.Resource{
-				Type:   auth.ObjectUnique,
-				Action: auth.FindMany,
-				Affiliated: auth.Affiliated{
-					Type: auth.Object,
+		ps.Attribute.Resources = []meta.Resource{
+			meta.Resource{
+				Basic: meta.Basic{
+					Type: meta.ObjectUnique,
+				},
+				Action: meta.FindMany,
+				Affiliated: meta.Affiliated{
+					Type: meta.Object,
 					Name: ps.RequestCtx.Elements[5],
 				},
 			},
