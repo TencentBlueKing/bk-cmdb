@@ -13,6 +13,8 @@
 package service
 
 import (
+	"net/http"
+
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apiserver/core"
 	compatiblev2 "configcenter/src/apiserver/core/compatiblev2/service"
@@ -26,8 +28,6 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/util"
-	"net/http"
-
 	"github.com/emicklei/go-restful"
 )
 

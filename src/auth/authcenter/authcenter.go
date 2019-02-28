@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -102,7 +103,34 @@ type AuthCenter struct {
 
 func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.Attribute) (decision meta.Decision, err error) {
 	// TODO: fill this struct.
-	info := &AuthBatch{}
+	info := &AuthBatch{
+		Principal: Principal{
+			Type: "user",
+			ID:   a.User.UserName,
+		},
+	}
+
+	// TODO: this operation may be wrong, because some api filters does not
+	// fill the business id field, so these api should be normalized.
+	if a.BusinessID != 0 {
+		info.ScopeType = "biz"
+		info.ScopeID = strconv.FormatInt(a.BusinessID, 10)
+	} else {
+		info.ScopeType = "system"
+		info.ScopeID = "bk-cmdb"
+	}
+
+	info.ResourceActions = make([]ResourceAction, 0)
+	for _, rsc := range a.Resources {
+		info.ResourceActions = append(info.ResourceActions, ResourceAction{
+			ActionID: rsc.Action.String(),
+			ResourceInfo: ResourceInfo{
+				ResourceType: rsc.Type.String(),
+				// TODO: add resource id field.
+				ResourceID: "",
+			},
+		})
+	}
 
 	resp := new(BatchResult)
 	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/resources-perms/verify", ac.Config.SystemID)

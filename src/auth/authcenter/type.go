@@ -69,16 +69,20 @@ type Principal struct {
 }
 
 type AuthBatch struct {
-	Principal    `json:",inline"`
-	ScopeInfo    `json:",inline"`
-	ActionID     string `json:"action_id"`
-	ResourceInfo `json:",inline"`
+	Principal       `json:",inline"`
+	ScopeInfo       `json:",inline"`
+	ResourceActions []ResourceAction `json:"resources_actions"`
 }
 
 type BatchResult struct {
 	metadata.BaseResp `json:",inline"`
 	RequestID         string        `json:"request_id"`
 	Data              []BatchStatus `json:"data"`
+}
+
+type ResourceAction struct {
+	ResourceInfo `json:",inline"`
+	ActionID     string `json:"action_id"`
 }
 
 type BatchStatus struct {
