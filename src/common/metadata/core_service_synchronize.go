@@ -13,6 +13,10 @@
 package metadata
 
 import (
+	"crypto/md5"
+	"encoding/base64"
+	"fmt"
+
 	"configcenter/src/common/mapstr"
 )
 
@@ -57,7 +61,7 @@ type SynchronizeDataInfo struct {
 	Offset int64 `json:"offset"`
 	// Count total data count
 	Count           int64  `json:"count"`
-	Version         string `json:"version"`
+	Version         int64  `json:"version"`
 	SynchronizeFlag string `json:"synchronize_flag"`
 }
 
@@ -74,7 +78,7 @@ type SynchronizeParameter struct {
 	// DataClassify = common.SynchronizeAssociationTypeModelHost etc.
 	DataClassify    string             `json:"data_classify"`
 	InfoArray       []*SynchronizeItem `json:"instance_info_array"`
-	Version         string             `json:"version"`
+	Version         int64              `json:"version"`
 	SynchronizeFlag string             `json:"synchronize_flag"`
 }
 
@@ -84,8 +88,8 @@ type SynchronizeItem struct {
 	ID   int64         `json:"id"`
 }
 
-// SynchronizeFetchInfoParameter synchronize  data fetch data http request parameter
-type SynchronizeFetchInfoParameter struct {
+// SynchronizeFindInfoParameter synchronize  data fetch data http request parameter
+type SynchronizeFindInfoParameter struct {
 	DataType     SynchronizeOperateDataType `json:"data_type"`
 	DataClassify string                     `json:"data_classify"`
 	Condition    mapstr.MapStr              `json:"condition"`
@@ -104,4 +108,32 @@ type SynchronizeDataResult struct {
 	//Created    []CreatedDataResult `json:"created"`
 	//Updated    []UpdatedDataResult `json:"updated"`
 	Exceptions []ExceptionResult `json:"exception"`
+}
+
+// SynchronizeClearDataParameter synchronize  data clear data http request parameter
+type SynchronizeClearDataParameter struct {
+	Tamestamp       int64  `json:"tamestamp"`
+	Sign            string `json:"sign"`
+	Version         int64  `json:"version"`
+	SynchronizeFlag string `json:"synchronizeFlag"`
+}
+
+// GenerateSign generate sign
+func (s *SynchronizeClearDataParameter) GenerateSign(key string) {
+	m := md5.New()
+	m.Write([]byte(s.signContext(key)))
+	s.Sign = base64.StdEncoding.EncodeToString((m.Sum(nil)))
+}
+
+//  Legality sign is legal
+func (s *SynchronizeClearDataParameter) Legality(key string) bool {
+	m := md5.New()
+	m.Write([]byte(s.signContext(key)))
+	// tamestamp need legality
+	return s.Sign == base64.StdEncoding.EncodeToString((m.Sum(nil)))
+}
+
+// GenerateSign generate sign
+func (s *SynchronizeClearDataParameter) signContext(key string) string {
+	return fmt.Sprintf("key-%s-%d-%d", key, s.SynchronizeFlag, s.Tamestamp, s.Version)
 }
