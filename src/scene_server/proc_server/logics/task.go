@@ -26,33 +26,32 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 )
 
 var (
 	needOpGseProcResultStatus = []metadata.ProcOpTaskStatus{metadata.ProcOpTaskStatusWaitOP, metadata.ProcOpTaskStatusExecuteing}
 )
 
-func (lgc *Logics) ModifyTaskInfo(ctx context.Context, header http.Header, cond mapstr.MapStr, data mapstr.MapStr) errors.CCError {
+func (lgc *Logics) ModifyTaskInfo(ctx context.Context, cond mapstr.MapStr, data mapstr.MapStr) errors.CCError {
 
 	dat := new(metadata.UpdateParams)
 	dat.Condition = cond
 	dat.Data = data
-	rsp, err := lgc.CoreAPI.ProcController().UpdateOperateTaskInfo(ctx, header, dat)
+	rsp, err := lgc.CoreAPI.ProcController().UpdateOperateTaskInfo(ctx, lgc.header, dat)
 	if nil != err {
-		blog.Errorf("ModifyTaskInfo http error:%s, logID:%s", err.Error(), util.GetHTTPCCRequestID(header))
-		return lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+		blog.Errorf("ModifyTaskInfo http error:%s, input:%+v,rid:%s", err.Error(), dat, lgc.rid)
+		return lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !rsp.Result {
-		blog.Errorf("ModifyTaskInfo http reply error:%s, logID:%s", rsp.ErrMsg, util.GetHTTPCCRequestID(header))
-		return lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(rsp.Code, rsp.ErrMsg)
+		blog.Errorf("ModifyTaskInfo http reply error:%s, input:%+v,rid:%s", rsp.ErrMsg, dat, lgc.rid)
+		return lgc.ccErr.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	return nil
 }
 
 // FilterGseTaskIDWaitResultByTaskID Filter out the need to go to gse to get the execution result of the gse task id
-func (lgc *Logics) FilterGseTaskIDWaitResultByTaskID(ctx context.Context, header http.Header, taskID string) ([]string, errors.CCError) {
+func (lgc *Logics) FilterGseTaskIDWaitResultByTaskID(ctx context.Context, taskID string) ([]string, errors.CCError) {
 
 	dat := &metadata.QueryInput{}
 	dat.Limit = common.BKNoLimit
@@ -60,14 +59,14 @@ func (lgc *Logics) FilterGseTaskIDWaitResultByTaskID(ctx context.Context, header
 		common.BKTaskIDField: taskID,
 		common.BKStatusField: mapstr.MapStr{common.BKDBIN: needOpGseProcResultStatus},
 	}
-	rsp, err := lgc.CoreAPI.ProcController().SearchOperateTaskInfo(ctx, header, dat)
+	rsp, err := lgc.CoreAPI.ProcController().SearchOperateTaskInfo(ctx, lgc.header, dat)
 	if nil != err {
-		blog.Errorf("FilterGseTaskWaitResult http error:%s, logID:%s", err.Error(), util.GetHTTPCCRequestID(header))
-		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+		blog.Errorf("FilterGseTaskWaitResult http error:%s, input:%+v,rid:%s", err.Error(), dat, lgc.rid)
+		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !rsp.Result {
-		blog.Errorf("ModifyTaskStatus http reply error:%s, logID:%s", rsp.ErrMsg, util.GetHTTPCCRequestID(header))
-		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(rsp.Code, rsp.ErrMsg)
+		blog.Errorf("ModifyTaskStatus http reply error:%s,input:%+v, rid:%s", rsp.ErrMsg, dat, lgc.rid)
+		return nil, lgc.ccErr.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	gseTaskIDArr := make([]string, 0)
@@ -103,27 +102,27 @@ func (lgc *Logics) getGseOPProcTaskIDFromRedis(interval time.Duration) {
 	}
 }
 
-func (lgc *Logics) handleOPProcTask(ctx context.Context, header http.Header, taskID string) (waitExecArr []string, exceErrMap map[string]string, requestErr errors.CCError) {
+func (lgc *Logics) handleOPProcTask(ctx context.Context, taskID string) (waitExecArr []string, exceErrMap map[string]string, requestErr errors.CCError) {
 	isErr := false
 	waitExecArr = make([]string, 0)
 	exceErrMap = make(map[string]string, 0)
 
-	gseTaskIDArr, err := lgc.FilterGseTaskIDWaitResultByTaskID(ctx, header, taskID)
+	gseTaskIDArr, err := lgc.FilterGseTaskIDWaitResultByTaskID(ctx, taskID)
 	if nil != err {
-		blog.Errorf("handleOPProcTask query task info from gse  error, taskID:%s, error:%s logID:%s", taskID, err.Error(), util.GetHTTPCCRequestID(header))
+		blog.Errorf("handleOPProcTask query task info from gse  error, taskID:%s, error:%s logID:%s", taskID, err.Error(), lgc.rid)
 		return nil, nil, err
 	}
 
 	for _, gseTaskID := range gseTaskIDArr {
 
-		gseRet, err := lgc.EsbServ.GseSrv().QueryProcOperateResult(ctx, header, gseTaskID)
+		gseRet, err := lgc.esbServ.GseSrv().QueryProcOperateResult(ctx, lgc.header, gseTaskID)
 		if err != nil {
 			requestErr = err
-			blog.Errorf("handleOPProcTask query task info from gse  error, taskID:%s, gseTaskID:%s, error:%s logID:%s", taskID, gseTaskID, err.Error(), util.GetHTTPCCRequestID(header))
+			blog.Errorf("handleOPProcTask query task info from gse  error, taskID:%s, gseTaskID:%s, error:%s logID:%s", taskID, gseTaskID, err.Error(), lgc.rid)
 			continue
 		} else if !gseRet.Result {
-			requestErr = lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(gseRet.Code, gseRet.Message)
-			blog.Errorf("handleOPProcTask query task info from gse failed,  taskID:%s, gseTaskID:%s, gse return error:%s, error code:%d logID:%s", taskID, gseTaskID, gseRet.Message, gseRet.Code, util.GetHTTPCCRequestID(header))
+			requestErr = lgc.ccErr.New(gseRet.Code, gseRet.Message)
+			blog.Errorf("handleOPProcTask query task info from gse failed,  taskID:%s, gseTaskID:%s, gse return error:%s, error code:%d rid:%s", taskID, gseTaskID, gseRet.Message, gseRet.Code, lgc.rid)
 			continue
 		}
 
@@ -144,9 +143,9 @@ func (lgc *Logics) handleOPProcTask(ctx context.Context, header http.Header, tas
 				common.BKStatusField: mapstr.MapStr{common.BKDBNE: metadata.ProcOpTaskStatusSucc},
 			}
 			data := mapstr.MapStr{common.BKStatusField: metadata.ProcOpTaskStatusErr, common.BKGseOpProcTaskDetailField: gseRet.Data}
-			err := lgc.ModifyTaskInfo(ctx, header, conds, data)
+			err := lgc.ModifyTaskInfo(ctx, conds, data)
 			if nil != err {
-				blog.Errorf("handleOPProcTask ModifyTaskStatus task detail  failed,  taskID:%s, gseTaskID:%s, gse return error:%s, error code:%d logID:%s", taskID, gseTaskID, gseRet.Message, gseRet.Code, util.GetHTTPCCRequestID(header))
+				blog.Errorf("handleOPProcTask ModifyTaskStatus task detail  failed,  taskID:%s, gseTaskID:%s, gse return error:%s, error code:%d rid:%s", taskID, gseTaskID, gseRet.Message, gseRet.Code, lgc.rid)
 				return nil, nil, err
 			}
 
@@ -155,9 +154,9 @@ func (lgc *Logics) handleOPProcTask(ctx context.Context, header http.Header, tas
 				common.BKStatusField: mapstr.MapStr{common.BKDBNE: metadata.ProcOpTaskStatusSucc},
 			}
 			data = mapstr.MapStr{common.BKStatusField: metadata.ProcOpTaskStatusErr}
-			err = lgc.ModifyTaskInfo(ctx, header, conds, data)
+			err = lgc.ModifyTaskInfo(ctx, conds, data)
 			if nil != err {
-				blog.Errorf("handleOPProcTask ModifyTaskStatus task status  failed,  taskID:%s, gseTaskID:%s, gse return error:%s, error code:%d logID:%s", taskID, gseTaskID, gseRet.Message, gseRet.Code, util.GetHTTPCCRequestID(header))
+				blog.Errorf("handleOPProcTask ModifyTaskStatus task status  failed,  taskID:%s, gseTaskID:%s, gse return error:%s, error code:%d rid:%s", taskID, gseTaskID, gseRet.Message, gseRet.Code, lgc.rid)
 			}
 			break
 		}
@@ -166,10 +165,10 @@ func (lgc *Logics) handleOPProcTask(ctx context.Context, header http.Header, tas
 			common.BKGseOpTaskIDField: gseTaskID,
 		}
 		data := mapstr.MapStr{common.BKStatusField: metadata.ProcOpTaskStatusSucc, common.BKGseOpProcTaskDetailField: gseRet.Data}
-		err = lgc.ModifyTaskInfo(ctx, header, conds, data)
+		err = lgc.ModifyTaskInfo(ctx, conds, data)
 		if nil != err {
 			requestErr = err
-			blog.Errorf("handleOPProcTask ModifyTaskStatus task status  failed,  taskID:%s, gseTaskID:%s, gse return error:%s, error code:%d logID:%s", taskID, gseTaskID, gseRet.Message, gseRet.Code, util.GetHTTPCCRequestID(header))
+			blog.Errorf("handleOPProcTask ModifyTaskStatus task status  failed,  taskID:%s, gseTaskID:%s, gse return error:%s, error code:%d rid:%s", taskID, gseTaskID, gseRet.Message, gseRet.Code, lgc.rid)
 			continue
 		}
 
@@ -188,17 +187,20 @@ func (lgc *Logics) timedTriggerTaskInfoToRedis(ctx context.Context) {
 			header := make(http.Header, 0)
 			header.Set(common.BKHTTPOwnerID, common.BKSuperOwnerID)
 			header.Set(common.BKHTTPHeaderUser, common.BKProcInstanceOpUser)
+			// use new header, so, new logics struct
+			newLgc := lgc.NewFromHeader(header)
+
 			dat := new(metadata.QueryInput)
 			dat.Fields = fmt.Sprintf("%s,%s,http_header", common.BKTaskIDField, common.BKGseTaskIDField)
 			dat.Limit = common.BKNoLimit
 			dat.Condition = mapstr.MapStr{common.BKStatusField: mapstr.MapStr{common.BKDBIN: needOpGseProcResultStatus}}
-			rsp, err := lgc.CoreAPI.ProcController().SearchOperateTaskInfo(ctx, header, dat)
+			rsp, err := newLgc.CoreAPI.ProcController().SearchOperateTaskInfo(ctx, newLgc.header, dat)
 			if nil != err {
-				blog.Warnf("timedTriggerTaskInfoToRedis http do error:%s", err.Error())
+				blog.V(5).Infof("timedTriggerTaskInfoToRedis http do error:%s,rid:%s", err.Error(), newLgc.rid)
 				continue
 			}
 			if !rsp.Result {
-				blog.Warnf("timedTriggerTaskInfoToRedis http reply error:%s", rsp.ErrMsg)
+				blog.V(5).Infof("timedTriggerTaskInfoToRedis http reply error:%s,rid:%s", rsp.ErrMsg, newLgc.rid)
 				continue
 			}
 			if 0 == rsp.Data.Count {
@@ -224,9 +226,9 @@ func (lgc *Logics) timedTriggerTaskInfoToRedis(ctx context.Context) {
 				}
 				cacheAllStr = append(cacheAllStr, string(byteInfo))
 			}
-			err = lgc.cache.SAdd(common.RedisProcSrvQueryProcOPResultKey, cacheAllStr...).Err()
+			err = newLgc.cache.SAdd(common.RedisProcSrvQueryProcOPResultKey, cacheAllStr...).Err()
 			if nil != err {
-				blog.Warnf("timedTriggerTaskInfoToRedis set cache  error:%s", err.Error())
+				blog.Warnf("timedTriggerTaskInfoToRedis set cache  error:%s,rid:%s", err.Error(), newLgc.rid)
 
 			}
 

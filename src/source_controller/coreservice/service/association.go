@@ -1,6 +1,6 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.,
- * Copyright (C) 2017,-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  * Licensed under the MIT License (the ",License",); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
@@ -160,33 +160,6 @@ func (s *coreService) CreateManyInstanceAssociation(params core.ContextParams, p
 		return nil, err
 	}
 	return s.core.AssociationOperation().CreateManyInstanceAssociation(params, inputData)
-}
-
-func (s *coreService) SetOneInstanceAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
-	inputData := metadata.SetOneInstanceAssociation{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
-	}
-	return s.core.AssociationOperation().SetOneInstanceAssociation(params, inputData)
-}
-
-func (s *coreService) SetManyInstanceAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
-	inputData := metadata.SetManyInstanceAssociation{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
-	}
-	return s.core.AssociationOperation().SetManyInstanceAssociation(params, inputData)
-}
-
-func (s *coreService) UpdateInstanceAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
-	inputData := metadata.UpdateOption{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
-	}
-	return s.core.AssociationOperation().UpdateInstanceAssociation(params, inputData)
 }
 
 func (s *coreService) SearchInstanceAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {

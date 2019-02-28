@@ -33,8 +33,8 @@ func (asst *association) CreateAssociation(ctx context.Context, h http.Header, i
 	return
 }
 
-func (asst *association) CreateManyAssociation(ctx context.Context, h http.Header, input *metadata.CreateManyAssociationKind) (resp *metadata.CreateManyOptionResult, err error) {
-	resp = new(metadata.CreateManyOptionResult)
+func (asst *association) CreateManyAssociation(ctx context.Context, h http.Header, input *metadata.CreateManyAssociationKind) (resp *metadata.CreatedManyOptionResult, err error) {
+	resp = new(metadata.CreatedManyOptionResult)
 	subPath := "/createmany/associationkind"
 
 	err = asst.client.Post().
@@ -117,8 +117,8 @@ func (asst *association) DeleteAssociationCascade(ctx context.Context, h http.He
 	return
 }
 
-func (asst *association) ReadAssociation(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.QueryConditionResult, err error) {
-	resp = new(metadata.QueryConditionResult)
+func (asst *association) ReadAssociation(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.SearchAssociationTypeResult, err error) {
+	resp = new(metadata.SearchAssociationTypeResult)
 	subPath := "/read/associationkind"
 
 	err = asst.client.Post().
@@ -161,7 +161,7 @@ func (asst *association) SetModelAssociation(ctx context.Context, h http.Header,
 
 func (asst *association) UpdateModelAssociation(ctx context.Context, h http.Header, input *metadata.UpdateOption) (resp *metadata.UpdatedOptionResult, err error) {
 	resp = new(metadata.UpdatedOptionResult)
-	subPath := "/create/associationkind"
+	subPath := "/update/modelassociation"
 
 	err = asst.client.Put().
 		WithContext(ctx).
@@ -173,8 +173,8 @@ func (asst *association) UpdateModelAssociation(ctx context.Context, h http.Head
 	return
 }
 
-func (asst *association) ReadModelAssociation(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.QueryConditionResult, err error) {
-	resp = new(metadata.QueryConditionResult)
+func (asst *association) ReadModelAssociation(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.ReadModelAssociationResult, err error) {
+	resp = new(metadata.ReadModelAssociationResult)
 	subPath := "/read/modelassociation"
 
 	err = asst.client.Post().
@@ -257,11 +257,11 @@ func (asst *association) UpdateInstAssociation(ctx context.Context, h http.Heade
 	return
 }
 
-func (asst *association) ReadInstAssociation(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.QueryConditionResult, err error) {
-	resp = new(metadata.QueryConditionResult)
+func (asst *association) ReadInstAssociation(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.ReadInstAssociationResult, err error) {
+	resp = new(metadata.ReadInstAssociationResult)
 	subPath := "/read/instanceassociation"
 
-	err = asst.client.Put().
+	err = asst.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResource(subPath).

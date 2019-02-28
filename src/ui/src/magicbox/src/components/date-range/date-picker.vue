@@ -40,8 +40,8 @@
                 <dd v-for="currentMonthItem in BkDate.getCurrentMouthDays()">
                     <span
                         :class="{
-                           'date-table-item': isAvailableDate(currentMonthItem),
-                           'date-item-view date-disable-item': !isAvailableDate(currentMonthItem),
+                           'date-table-item': isAvailableDate(currentMonthItem) && !isDisabledDate(currentMonthItem),
+                           'date-item-view date-disable-item': !isAvailableDate(currentMonthItem) || isDisabledDate(currentMonthItem),
                            'date-range-view': isInRange(currentMonthItem),
                            'today': shouldShowToday(currentMonthItem) === t('dateRange.datePicker.today'),
                            'selected': shouldBeSelected(currentMonthItem)
@@ -132,6 +132,14 @@
                 default: () => {
                     return {}
                 }
+            },
+            type: {
+                type: String,
+                default: ''
+            },
+            dateLimit: {
+                type: String,
+                default: ''
             }
         },
         directives: {
@@ -187,10 +195,15 @@
                 return time
             }
         },
+        watch: {
+            bkDate (value) {
+                this.BkDate = value
+            }
+        },
         methods: {
             // 选择日期
             selectDay (value) {
-                if (!this.isAvailableDate(value)) return
+                if (!this.isAvailableDate(value) || this.isDisabledDate(value)) return
                 // this.BkDate.setDate(`${this.BkDate.year}-${this.BkDate.month}-${value}`)
                 // this.selectedValue = this.BkDate.getFormatDate()
                 // this.$emit('date-selected', this.selectedValue)
@@ -316,6 +329,23 @@
                     type: type,
                     value: toYearDate.year + '-' + this.formatValue(this.BkDate.month) + '-01'
                 })
+            },
+
+            // 判断日期是否在配置了的可选时间范围内
+            isDisabledDate (day) {
+                let cmpTime = new Date(this.BkDate.year + '-' + this.formatValue(this.BkDate.month) + '-' + this.formatValue(day)).getTime()
+                let timeStamp
+                if (this.dateLimit) {
+                    timeStamp = new Date(this.dateLimit).getTime()
+                    if (this.type === 'start') {
+                        return cmpTime < timeStamp
+                    }
+                    if (this.type === 'end') {
+                        return cmpTime > timeStamp
+                    }
+                } else {
+                    return false
+                }
             },
 
             // 判断日期是否可选

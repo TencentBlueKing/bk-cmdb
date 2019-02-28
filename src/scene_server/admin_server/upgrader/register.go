@@ -85,7 +85,7 @@ func Upgrade(ctx context.Context, db dal.RDB, conf *Config) (err error) {
 			blog.Errorf("save version %s error: %s", v.version, err.Error())
 			return err
 		}
-		blog.Info("upgrade to version %s success", v.version)
+		blog.Infof("upgrade to version %s success", v.version)
 	}
 	if "" == cmdbVision.InitVersion {
 		cmdbVision.InitVersion = lastVersion

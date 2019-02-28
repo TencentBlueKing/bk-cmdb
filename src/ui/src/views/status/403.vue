@@ -9,7 +9,13 @@
         </div>
     </div>
 </template>
-
+<script>
+    export default {
+        created () {
+            this.$store.commit('setHeaderTitle', '')
+        }
+    }
+</script>
 <style lang="scss" scoped>
     .img-403{
         position: relative;

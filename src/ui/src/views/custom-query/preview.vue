@@ -13,7 +13,7 @@
                 @handleSizeChange="handleSizeChange"
                 @handleSortChange="handleSortChange">
                 <template v-for="({id,name, property}, index) in table.header" :slot="id" slot-scope="{ item }">
-                    <template>{{getCellValue(property, item)}}</template>
+                    <template>{{getHostCellText(property, item)}}</template>
                 </template>
             </cmdb-table>
         </div>
@@ -84,56 +84,15 @@
             ...mapActions('hostSearch', [
                 'searchHost'
             ]),
-            getCellValue (property, item) {
-                if (property) {
-                    let bkObjId = property['bk_obj_id']
-                    let value = item[bkObjId][property['bk_property_id']]
-                    if (property['bk_property_id'] === 'bk_module_name') {
-                        let moduleName = []
-                        item.module.map(({bk_module_name: bkModuleName}) => {
-                            moduleName.push(bkModuleName)
-                        })
-                        return moduleName.join(',')
-                    }
-                    if (property['bk_property_id'] === 'bk_set_name') {
-                        let setName = []
-                        item.set.map(({bk_set_name: bksetName}) => {
-                            setName.push(bksetName)
-                        })
-                        return setName.join(',')
-                    }
-                    if (property['bk_property_id'] === 'bk_biz_name') {
-                        let bizName = []
-                        item.biz.map(({bk_biz_name: bkbizName}) => {
-                            bizName.push(bkbizName)
-                        })
-                        return bizName.join(',')
-                    }
-                    if (property['bk_asst_obj_id'] && Array.isArray(value)) {
-                        let tempValue = []
-                        value.map(({bk_inst_name: bkInstName}) => {
-                            if (bkInstName) {
-                                tempValue.push(bkInstName)
-                            }
-                        })
-                        value = tempValue.join(',')
-                    } else if (property['bk_property_type'] === 'date') {
-                        value = this.$tools.formatTime(value, 'YYYY-MM-DD')
-                    } else if (property['bk_property_type'] === 'time') {
-                        value = this.$tools.formatTime(value)
-                    } else if (property['bk_property_type'] === 'enum') {
-                        let option = property.option.find(({id}) => {
-                            return id === value
-                        })
-                        if (option) {
-                            value = option.name
-                        } else {
-                            value = ''
-                        }
-                    }
-                    return value
-                }
-                return ''
+            getHostCellText (property, item) {
+                const objId = property['bk_obj_id']
+                const originalValues = item[objId] instanceof Array ? item[objId] : [item[objId]]
+                let text = []
+                originalValues.forEach(value => {
+                    const flatternedText = this.$tools.getPropertyText(property, value)
+                    flatternedText ? text.push(flatternedText) : void (0)
+                })
+                return text.join(',') || '--'
             },
             getColumnProperty (propertyId, objId) {
                 return this.allProperties.find(property => {

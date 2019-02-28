@@ -120,10 +120,10 @@
             },
             async objId (objId) {
                 const properties = await this.searchObjectAttribute({
-                    params: {
+                    params: this.$injectMetadata({
                         'bk_obj_id': objId,
                         'bk_supplier_account': this.supplierAccount
-                    },
+                    }),
                     config: {
                         requestId: `post_searchObjectAttribute_${objId}`,
                         fromCache: true

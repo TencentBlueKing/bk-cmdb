@@ -13,14 +13,30 @@
 package universalsql
 
 const (
-	GT  string = "$gt"
-	LT  string = "$lt"
-	GTE string = "$gte"
-	LTE string = "$lte"
-	IN  string = "$in"
-	NIN string = "$nin"
-	EQ  string = "$eq"
-	NEQ string = "$ne"
+	//Comparison Operator
+	GT    string = "$gt"
+	LT    string = "$lt"
+	GTE   string = "$gte"
+	LTE   string = "$lte"
+	IN    string = "$in"
+	NIN   string = "$nin"
+	EQ    string = "$eq"
+	NEQ   string = "$ne"
+	REGEX string = "$regex"
+
+	//Logic Operator
 	AND string = "$and"
 	OR  string = "$or"
+	NOT string = "$not"
+	NOR string = "$nor"
+
+	//TODO:
+	//Elements Operator
+	EXISTS string = "$exists"
+	TYPE   string = "$type"
+
+	//Array Operator
+	ALL       string = "$all"
+	ELEMMATCH string = "$elemMatch"
+	SIZE      string = "$size"
 )

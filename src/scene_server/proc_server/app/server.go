@@ -18,9 +18,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/apimachinery"
+	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -28,25 +27,30 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/proc_server/app/options"
-	"configcenter/src/scene_server/proc_server/logics"
 	"configcenter/src/scene_server/proc_server/proc_service/service"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/esbserver"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
+
+	"github.com/emicklei/go-restful"
 )
 
 //Run ccapi server
 func Run(ctx context.Context, op *options.ServerOption) error {
 
+	discover, err := discovery.NewDiscoveryInterface(op.ServConf.RegDiscover)
+	if err != nil {
+		return fmt.Errorf("connect zookeeper [%s] failed: %v", op.ServConf.RegDiscover, err)
+	}
+
 	// clientset
 	apiMachConf := &util.APIMachineryConfig{
-		ZkAddr:    op.ServConf.RegDiscover,
 		QPS:       op.ServConf.Qps,
 		Burst:     op.ServConf.Burst,
 		TLSConfig: nil,
 	}
 
-	apiMachinery, err := apimachinery.NewApiMachinery(apiMachConf)
+	apiMachinery, err := apimachinery.NewApiMachinery(apiMachConf, discover)
 	if err != nil {
 		return fmt.Errorf("create api machinery object failed. err: %v", err)
 	}
@@ -58,7 +62,6 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	procSvr := new(service.ProcServer)
-	procSvr.Logics = &logics.Logics{}
 	procSvr.EsbConfigChn = make(chan esbutil.EsbConfig, 0)
 	container := restful.NewContainer()
 	container.Add(procSvr.WebService())
@@ -82,6 +85,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		types.CC_MODULE_PROC,
 		op.ServConf.ExConfig,
 		procSvr.OnProcessConfigUpdate,
+		discover,
 		bkbCfg)
 	configReady := false
 	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
@@ -106,9 +110,8 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("create esb api  object failed. err: %v", err)
 	}
 	procSvr.Engine = engine
-	procSvr.Logics.Engine = engine
-	procSvr.Logics.EsbServ = esbSrv
-	procSvr.SetCache(cacheDB)
+	procSvr.EsbServ = esbSrv
+	procSvr.Cache = cacheDB
 	go procSvr.InitFunc()
 
 	select {

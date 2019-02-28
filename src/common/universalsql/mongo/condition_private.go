@@ -13,9 +13,11 @@
 package mongo
 
 import (
+	"fmt"
+	"reflect"
+
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/universalsql"
-	"fmt"
 )
 
 func parseConditionFromMapStr(inputCond *mongoCondition, inputKey string, inputCondMapStr mapstr.MapStr) (outputCond *mongoCondition, err error) {
@@ -43,7 +45,9 @@ func parseConditionFromMapStr(inputCond *mongoCondition, inputKey string, inputC
 				return err
 			}
 
-		case universalsql.EQ, universalsql.NEQ, universalsql.GT, universalsql.GTE, universalsql.LTE, universalsql.LT, universalsql.IN, universalsql.NIN:
+		case universalsql.EQ, universalsql.NEQ,
+			universalsql.GT, universalsql.GTE, universalsql.LTE, universalsql.LT,
+			universalsql.IN, universalsql.NIN, universalsql.REGEX, universalsql.EXISTS:
 			ele, err := convertToElement(inputKey, operatorKey, val, outputCond, inputCondMapStr)
 			if nil != err {
 				return err
@@ -51,30 +55,51 @@ func parseConditionFromMapStr(inputCond *mongoCondition, inputKey string, inputC
 			outputCond.Element(ele)
 		default:
 
-			operatorVal, err := inputCondMapStr.MapStr(operatorKey)
-			if nil != err {
-				return err
-			}
-
-			tmpCond := newCondition()
-			tmpCond, err = parseConditionFromMapStr(tmpCond, operatorKey, operatorVal)
-			if nil != err {
-				return err
-			}
-			if 0 != len(inputKey) {
-				// ATTENTION: check embed condition, maybe is not a good way
-				tmp, ok := outputCond.embed[inputKey]
-				if !ok {
-					outputCond.embed[inputKey] = tmpCond
-					return nil
-				}
-				tmp.merge(tmpCond)
+			tmpType := reflect.TypeOf(val)
+			if nil == tmpType {
+				// val is nil , return origin by $eq
+				outputCond.Element(&Eq{Key: operatorKey, Val: val})
 				return nil
 			}
 
-			outputCond.merge(tmpCond)
+			switch tmpType.Kind() {
+			case reflect.String,
+				reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+				reflect.Float32, reflect.Float64,
+				reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+				// Compatible with older versions of mongodb equal syntax
+				if 0 != len(inputKey) && 0 != len(operatorKey) {
+					outputCond.Element(&Eq{Key: inputKey, Val: (&Eq{Key: operatorKey, Val: val}).ToMapStr()})
+				} else {
+					outputCond.Element(&Eq{Key: operatorKey, Val: val})
+				}
 
-		}
+			default:
+				operatorVal, err := inputCondMapStr.MapStr(operatorKey)
+				if nil != err {
+					return err
+				}
+
+				tmpCond := newCondition()
+				tmpCond, err = parseConditionFromMapStr(tmpCond, operatorKey, operatorVal)
+				if nil != err {
+					return err
+				}
+				if 0 != len(inputKey) {
+					// ATTENTION: check embed condition, maybe is not a good way
+					tmp, ok := outputCond.embed[inputKey]
+					if !ok {
+						outputCond.embed[inputKey] = tmpCond
+						return nil
+					}
+					tmp.merge(tmpCond)
+					return nil
+				}
+
+				outputCond.merge(tmpCond)
+			}
+
+		} // end operatorKey switch
 
 		return nil
 	})
@@ -102,6 +127,10 @@ func convertToElement(key, operator string, val interface{}, inputCond *mongoCon
 		return &In{Key: key, Val: val}, nil
 	case universalsql.NIN:
 		return &Nin{Key: key, Val: val}, nil
+	case universalsql.REGEX:
+		return &Regex{Key: key, Val: val}, nil
+	case universalsql.EXISTS:
+		return &Exists{Key: key, Val: val}, nil
 	default:
 		// deal embed condition
 		return nil, fmt.Errorf("not support the operator '%s'", operator)

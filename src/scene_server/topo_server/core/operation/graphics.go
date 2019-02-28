@@ -51,7 +51,9 @@ func (g *graphics) SelectObjectTopoGraphics(params types.ContextParams, scopeTyp
 	graphcondition := &metadata.TopoGraphics{}
 	graphcondition.SetScopeType(scopeType)
 	graphcondition.SetScopeID(scopeID)
-
+	if nil != params.MetaData {
+		graphcondition.SetMetaData(*params.MetaData)
+	}
 	rsp, err := g.clientSet.ObjectController().Meta().SearchTopoGraphics(context.Background(), params.Header, graphcondition)
 	if nil != err {
 		return nil, err
@@ -66,7 +68,7 @@ func (g *graphics) SelectObjectTopoGraphics(params types.ContextParams, scopeTyp
 
 	graphnodes := map[string]*metadata.TopoGraphics{}
 	for index, node := range dbnodes {
-		graphnodes[*node.NodeType+*node.ObjID+strconv.Itoa(*node.InstID)] = &dbnodes[index]
+		graphnodes[node.NodeType+node.ObjID+strconv.Itoa(node.InstID)] = &dbnodes[index]
 	}
 
 	nodes := []metadata.TopoGraphics{}
@@ -90,32 +92,31 @@ func (g *graphics) SelectObjectTopoGraphics(params types.ContextParams, scopeTyp
 		}
 
 		for _, obj := range objs {
+			object := obj.Object()
 			node := metadata.TopoGraphics{}
 			node.SetNodeType("obj")
-			node.SetObjID(obj.GetID())
+			node.SetObjID(object.ObjectID)
 			node.SetInstID(0)
-			node.SetNodeName(obj.GetName())
+			node.SetNodeName(object.ObjectName)
 			node.SetScopeType("global")
 			node.SetScopeID("0")
-			node.SetBizID(0)
 			node.SetSupplierAccount("0")
-			node.SetIsPre(obj.GetIsPre())
-			node.SetIcon(obj.GetIcon())
+			node.SetIsPre(object.IsPre)
+			node.SetIcon(object.ObjIcon)
 
-			oldnode := graphnodes[*node.NodeType+*node.ObjID+strconv.Itoa(*node.InstID)]
+			oldnode := graphnodes[node.NodeType+node.ObjID+strconv.Itoa(node.InstID)]
 			if oldnode != nil {
 				node.SetPosition(oldnode.Position)
 				node.SetExt(oldnode.Ext)
 			} else {
-				node.SetPosition(&metadata.Position{})
+				node.SetPosition(metadata.Position{})
 				node.SetExt(map[string]interface{}{})
 			}
 
-			for _, asst := range objAssts[obj.GetID()] {
+			for _, asst := range objAssts[object.ObjectID] {
 
 				typeCond := condition.CreateCondition()
 				typeCond.Field(common.AssociationKindIDField).Eq(asst.AsstKindID)
-				typeCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 				request := &metadata.SearchAssociationTypeRequest{
 					Condition: typeCond.ToMapStr(),
 				}
@@ -137,12 +138,12 @@ func (g *graphics) SelectObjectTopoGraphics(params types.ContextParams, scopeTyp
 				}
 
 				node.Assts = append(node.Assts, metadata.GraphAsst{
-					AsstType: "",
-					NodeType: "obj",
-					ObjID:    asst.AsstObjID,
-					InstID:   asst.ID,
-					AssociationKindInstID:   resp.Data.Info[0].ID,
-					Label:    map[string]string{},
+					AsstType:              "",
+					NodeType:              "obj",
+					ObjID:                 asst.AsstObjID,
+					InstID:                asst.ID,
+					AssociationKindInstID: resp.Data.Info[0].ID,
+					Label:                 map[string]string{},
 				})
 			}
 			nodes = append(nodes, node)
@@ -157,8 +158,10 @@ func (g *graphics) UpdateObjectTopoGraphics(params types.ContextParams, scopeTyp
 	for index := range datas {
 		datas[index].SetScopeType(scopeType)
 		datas[index].SetScopeID(scopeID)
+		if nil != params.MetaData {
+			datas[index].SetMetaData(*params.MetaData)
+		}
 	}
-
 	rsp, err := g.clientSet.ObjectController().Meta().UpdateTopoGraphics(context.Background(), params.Header, datas)
 	if err != nil {
 		blog.Errorf("UpdateGraphics failed %v", err.Error())

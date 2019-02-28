@@ -37,13 +37,13 @@
             <slot name="details-options" >
                 <bk-button class="button-edit" type="primary"
                     v-if="showEdit"
-                    :disabled="!$authorized.update"
+                    :disabled="!authority.includes('update')"
                     @click="handleEdit">
                     {{editText}}
                 </bk-button>
                 <bk-button class="button-delete" type="danger"
                     v-if="showDelete"
-                    :disabled="!$authorized.delete"
+                    :disabled="!authority.includes('delete')"
                     @click="handleDelete">
                     {{deleteText}}
                 </bk-button>
@@ -82,6 +82,12 @@
             showDelete: {
                 type: Boolean,
                 default: true
+            },
+            authority: {
+                type: Array,
+                default () {
+                    return []
+                }
             }
         },
         data () {

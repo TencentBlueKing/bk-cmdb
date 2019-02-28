@@ -253,7 +253,7 @@ type ProcessModule struct {
 }
 
 type TemplateVersion struct {
-	Content     string `json:"content"`
-	Status      string `json:"status"`
-	Description string `json:"description"`
+	Content     string `json:"content" field:"content"`
+	Status      string `json:"status" field:"status"`
+	Description string `json:"description" field:"description"`
 }

@@ -29,7 +29,7 @@
                 <label class="filter-label">{{getFilterLabel(property)}}</label>
                 <div class="filter-field clearfix">
                     <filter-field-operator class="filter-field-operator fl"
-                        v-if="!['date', 'time'].includes(property['bk_property_type'])"
+                        v-show="!['date', 'time'].includes(property['bk_property_type'])"
                         :type="getOperatorType(property)"
                         v-model="condition[property['bk_obj_id']][property['bk_property_id']]['operator']">
                     </filter-field-operator>
@@ -266,14 +266,13 @@
             },
             getProperties () {
                 return this.batchSearchObjectAttribute({
-                    params: {
+                    params: this.$injectMetadata({
                         bk_obj_id: {'$in': Object.keys(this.properties)},
                         bk_supplier_account: this.supplierAccount
-                    },
+                    }, {inject: this.$route.name !== 'resource'}),
                     config: {
                         requestId: `post_batchSearchObjectAttribute_${Object.keys(this.properties).join('_')}`,
-                        requestGroup: Object.keys(this.properties).map(id => `post_searchObjectAttribute_${id}`),
-                        fromCache: true
+                        requestGroup: Object.keys(this.properties).map(id => `post_searchObjectAttribute_${id}`)
                     }
                 }).then(result => {
                     Object.keys(this.properties).forEach(objId => {
@@ -398,7 +397,6 @@
                 }
                 for (let objId in this.condition) {
                     for (let propertyId in this.condition[objId]) {
-                        this.condition[objId][propertyId].operator = ''
                         this.condition[objId][propertyId].value = ''
                     }
                 }

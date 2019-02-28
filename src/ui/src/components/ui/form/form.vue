@@ -49,7 +49,7 @@
             :class="{sticky: scrollbar}">
             <slot name="form-options">
                 <bk-button class="button-save" type="primary"
-                    :disabled="!$authorized.update || !hasChange || $loading()"
+                    :disabled="!authority.includes('update') || !hasChange || $loading()"
                     @click="handleSave">
                     {{$t("Common['保存']")}}
                 </bk-button>
@@ -73,6 +73,10 @@
                     return {}
                 }
             },
+            objId: {
+                type: String,
+                default: ''
+            },
             type: {
                 default: 'create',
                 validator (val) {
@@ -82,6 +86,12 @@
             showOptions: {
                 type: Boolean,
                 default: true
+            },
+            authority: {
+                type: Array,
+                default () {
+                    return []
+                }
             }
         },
         data () {
@@ -106,7 +116,7 @@
             },
             groupedProperties () {
                 return this.$groupedProperties.map(properties => {
-                    return properties.filter(property => !['singleasst', 'multiasst'].includes(property['bk_property_type']))
+                    return properties.filter(property => !['singleasst', 'multiasst', 'foreignkey'].includes(property['bk_property_type']))
                 })
             }
         },
@@ -189,6 +199,9 @@
                 if (propertyType === 'int') {
                     rules['numeric'] = true
                 }
+                if (propertyType === 'float') {
+                    rules['float'] = true
+                }
                 return rules
             },
             handleSave () {
@@ -236,6 +249,8 @@
                 display: block;
                 margin: 6px 0 9px;
                 color: $cmdbTextColor;
+                line-height: 16px;
+                font-size: 0;
             }
             .property-name-text{
                 position: relative;
@@ -243,6 +258,7 @@
                 max-width: calc(100% - 20px);
                 padding: 0 10px 0 0;
                 vertical-align: middle;
+                font-size: 12px;
                 @include ellipsis;
                 &.required:after{
                     position: absolute;

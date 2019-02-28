@@ -49,6 +49,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"configcenter/src/common/blog"
 )
 
 // --------------------------------------------------------------------------
@@ -279,7 +281,7 @@ var nullBytes = []byte("null")
 func (id *ObjectId) UnmarshalJSON(data []byte) error {
 	if len(data) > 0 && (data[0] == '{' || data[0] == 'O') {
 		var v struct {
-			Id json.RawMessage `json:"$oid"`
+			Id   json.RawMessage `json:"$oid"`
 			Func struct {
 				Id json.RawMessage
 			} `json:"$oidFunc"`
@@ -588,6 +590,7 @@ func (raw Raw) Unmarshal(out interface{}) (err error) {
 			return &TypeError{v.Type(), raw.Kind}
 		}
 	case reflect.Struct:
+		blog.Errorf("[NetDevice] Raw Unmarshal failed, out: %#v", out)
 		return errors.New("Raw Unmarshal can't deal with struct values. Use a pointer.")
 	default:
 		return errors.New("Raw Unmarshal needs a map or a valid pointer.")

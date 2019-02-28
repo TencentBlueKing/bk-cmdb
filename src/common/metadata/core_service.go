@@ -16,6 +16,14 @@ import (
 	"configcenter/src/common/mapstr"
 )
 
+// CreateModelAttributeGroup used to create a new group for some attributes
+type CreateModelAttributeGroup struct {
+	Data Group `json:"data"`
+}
+
+// SetModelAttributeGroup used to create a new group for  some attributes, if it is exists, then update it
+type SetModelAttributeGroup CreateModelAttributeGroup
+
 // CreateManyModelClassifiaction create many input params
 type CreateManyModelClassifiaction struct {
 	Data []Classification `json:"datas"`
@@ -40,7 +48,7 @@ type DeleteModelClassificationResult struct {
 
 // CreateModel create model params
 type CreateModel struct {
-	Spec       ObjectDes   `json:"spec"`
+	Spec       Object      `json:"spec"`
 	Attributes []Attribute `json:"attributes"`
 }
 
@@ -49,8 +57,8 @@ type SetModel CreateModel
 
 // SearchModelInfo search  model params
 type SearchModelInfo struct {
-	Spec       mapstr.MapStr   `json:"spec"`
-	Attributes []mapstr.MapStr `json:"attributes"`
+	Spec       Object      `json:"spec"`
+	Attributes []Attribute `json:"attributes"`
 }
 
 // CreateModelAttributes create model attributes
@@ -59,6 +67,14 @@ type CreateModelAttributes struct {
 }
 
 type SetModelAttributes CreateModelAttributes
+
+type CreateModelAttrUnique struct {
+	Data ObjectUnique `json:"data"`
+}
+
+type UpdateModelAttrUnique struct {
+	Data UpdateUniqueRequest `json:"data"`
+}
 
 type CreateModelInstance struct {
 	Data mapstr.MapStr `json:"data"`
@@ -76,7 +92,7 @@ type CreateAssociationKind struct {
 }
 
 type CreateManyAssociationKind struct {
-	Data []AssociationKind `json:"datas"`
+	Datas []AssociationKind `json:"datas"`
 }
 type SetAssociationKind CreateAssociationKind
 type SetManyAssociationKind CreateManyAssociationKind
@@ -88,10 +104,14 @@ type CreateModelAssociation struct {
 type SetModelAssociation CreateModelAssociation
 
 type CreateOneInstanceAssociation struct {
-	Datas InstAsst `json:"data"`
+	Data InstAsst `json:"data"`
 }
 type CreateManyInstanceAssociation struct {
-	Datas InstAsst `json:"datas"`
+	Datas []InstAsst `json:"datas"`
+}
+
+type Dimension struct {
+	AppID int64 `json:"bk_biz_id"`
 }
 
 type SetOneInstanceAssociation CreateOneInstanceAssociation

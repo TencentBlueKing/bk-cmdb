@@ -62,16 +62,16 @@ type AssociationParams struct {
 }
 
 // commonInstTopo common inst topo
-type commonInstTopo struct {
+type CommonInstTopo struct {
 	metadata.InstNameAsst
 	Count    int                     `json:"count"`
 	Children []metadata.InstNameAsst `json:"children"`
 }
 
-type commonInstTopoV2 struct {
-	Prev interface{} `json:"prev"`
-	Next interface{} `json:"next"`
-	Curr interface{} `json:"curr"`
+type CommonInstTopoV2 struct {
+	Prev []*CommonInstTopo `json:"prev"`
+	Next []*CommonInstTopo `json:"next"`
+	Curr interface{}       `json:"curr"`
 }
 
 type deletedInst struct {

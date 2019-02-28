@@ -20,8 +20,8 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-func (m *model) CreateManyModelClassification(ctx context.Context, h http.Header, input *metadata.CreateManyModelClassifiaction) (resp *metadata.CreateManyOptionResult, err error) {
-	resp = new(metadata.CreateManyOptionResult)
+func (m *model) CreateManyModelClassification(ctx context.Context, h http.Header, input *metadata.CreateManyModelClassifiaction) (resp *metadata.CreatedManyOptionResult, err error) {
+	resp = new(metadata.CreatedManyOptionResult)
 	subPath := "/createmany/model/classification"
 
 	err = m.client.Post().
@@ -66,7 +66,7 @@ func (m *model) SetModelClassification(ctx context.Context, h http.Header, input
 	resp = new(metadata.SetOptionResult)
 	subPath := "/set/model/classification"
 
-	err = m.client.Put().
+	err = m.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResource(subPath).
@@ -216,8 +216,8 @@ func (m *model) ReadModel(ctx context.Context, h http.Header, input *metadata.Qu
 	return
 }
 
-func (m *model) CreateModelAttrs(ctx context.Context, h http.Header, objID string, input *metadata.CreateModelAttributes) (resp *metadata.CreateManyOptionResult, err error) {
-	resp = new(metadata.CreateManyOptionResult)
+func (m *model) CreateModelAttrs(ctx context.Context, h http.Header, objID string, input *metadata.CreateModelAttributes) (resp *metadata.CreatedManyOptionResult, err error) {
+	resp = new(metadata.CreatedManyOptionResult)
 	subPath := fmt.Sprintf("/create/model/%s/attributes", objID)
 
 	err = m.client.Post().
@@ -244,8 +244,22 @@ func (m *model) UpdateModelAttrs(ctx context.Context, h http.Header, objID strin
 	return
 }
 
-func (m *model) SetModelAttrs(ctx context.Context, h http.Header, objID string, input *metadata.SetModelAttributes) (resp *metadata.CreateManyOptionResult, err error) {
-	resp = new(metadata.CreateManyOptionResult)
+func (m *model) UpdateModelAttrsByCondition(ctx context.Context, h http.Header, input *metadata.UpdateOption) (resp *metadata.UpdatedOptionResult, err error) {
+	resp = new(metadata.UpdatedOptionResult)
+	subPath := fmt.Sprintf("/update/model/attributes")
+
+	err = m.client.Put().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (m *model) SetModelAttrs(ctx context.Context, h http.Header, objID string, input *metadata.SetModelAttributes) (resp *metadata.SetOptionResult, err error) {
+	resp = new(metadata.SetOptionResult)
 	subPath := fmt.Sprintf("/set/model/%s/attributes", objID)
 
 	err = m.client.Post().
@@ -272,9 +286,114 @@ func (m *model) DeleteModelAttr(ctx context.Context, h http.Header, objID string
 	return
 }
 
-func (m *model) ReadModelAttr(ctx context.Context, h http.Header, objID string, input *metadata.QueryCondition) (resp *metadata.QueryConditionResult, err error) {
-	resp = new(metadata.QueryConditionResult)
+func (m *model) ReadModelAttr(ctx context.Context, h http.Header, objID string, input *metadata.QueryCondition) (resp *metadata.ReadModelAttrResult, err error) {
+	resp = new(metadata.ReadModelAttrResult)
 	subPath := fmt.Sprintf("/read/model/%s/attributes", objID)
+
+	err = m.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (m *model) ReadModelAttrByCondition(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.ReadModelAttrResult, err error) {
+	resp = new(metadata.ReadModelAttrResult)
+	subPath := fmt.Sprintf("/read/model/attributes")
+
+	err = m.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (m *model) ReadAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.QueryCondition) (resp metadata.ReadModelAttributeGroupResult, err error) {
+	subPath := fmt.Sprintf("/read/model/%s/group", objID)
+
+	err = m.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(&resp)
+	return
+}
+
+func (m *model) ReadAttributeGroupByCondition(ctx context.Context, h http.Header, input metadata.QueryCondition) (resp metadata.ReadModelAttributeGroupResult, err error) {
+	subPath := fmt.Sprintf("/read/model/group")
+
+	err = m.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(&resp)
+	return
+}
+
+func (m *model) CreateAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.CreateModelAttributeGroup) (resp metadata.CreatedOneOptionResult, err error) {
+	subPath := fmt.Sprintf("/create/model/%s/group", objID)
+
+	err = m.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(&resp)
+	return
+}
+
+func (m *model) UpdateAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.UpdateOption) (resp metadata.UpdatedOptionResult, err error) {
+	subPath := fmt.Sprintf("/update/model/%s/group", objID)
+
+	err = m.client.Put().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(&resp)
+	return
+}
+
+func (m *model) UpdateAttributeGroupByCondition(ctx context.Context, h http.Header, input metadata.UpdateOption) (resp metadata.UpdatedOptionResult, err error) {
+	subPath := fmt.Sprintf("/update/model/group")
+
+	err = m.client.Put().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(&resp)
+	return
+}
+
+func (m *model) SetAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.SetModelAttributes) (resp metadata.SetOptionResult, err error) {
+	subPath := fmt.Sprintf("/set/model/%s/group", objID)
+
+	err = m.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(&resp)
+	return
+}
+
+func (m *model) DeleteAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.DeleteOption) (resp metadata.DeletedOptionResult, err error) {
+	subPath := fmt.Sprintf("/delete/model/%s/group", objID)
 
 	err = m.client.Delete().
 		WithContext(ctx).
@@ -282,6 +401,69 @@ func (m *model) ReadModelAttr(ctx context.Context, h http.Header, objID string, 
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		Into(&resp)
+	return
+}
+
+func (m *model) DeleteAttributeGroupByCondition(ctx context.Context, h http.Header, input metadata.DeleteOption) (resp metadata.DeletedOptionResult, err error) {
+	subPath := fmt.Sprintf("/delete/model/group")
+
+	err = m.client.Delete().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(&resp)
+	return
+}
+
+func (m *model) CreateModelAttrUnique(ctx context.Context, h http.Header, objID string, data metadata.CreateModelAttrUnique) (resp *metadata.CreatedOneOptionResult, err error) {
+	subPath := fmt.Sprintf("/create/model/%s/attributes/unique", objID)
+	err = m.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(&resp)
+	return
+}
+
+func (m *model) UpdateModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64, data metadata.UpdateModelAttrUnique) (resp *metadata.UpdatedOptionResult, err error) {
+	subPath := fmt.Sprintf("/update/model/%s/attributes/unique/%d", objID, id)
+
+	err = m.client.Put().
+		WithContext(ctx).
+		Body(data).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(&resp)
+	return
+}
+
+func (m *model) DeleteModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64) (resp *metadata.DeletedOptionResult, err error) {
+	subPath := fmt.Sprintf("/delete/model/%s/attributes/unique/%d", objID, id)
+
+	err = m.client.Delete().
+		WithContext(ctx).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(&resp)
+	return
+}
+
+func (m *model) ReadModelAttrUnique(ctx context.Context, h http.Header, inputParam metadata.QueryCondition) (resp *metadata.ReadModelUniqueResult, err error) {
+	subPath := fmt.Sprintf("/read/model/attributes/unique")
+
+	err = m.client.Post().
+		WithContext(ctx).
+		SubResource(subPath).
+		WithHeaders(h).
+		Body(inputParam).
+		Do().
+		Into(&resp)
 	return
 }

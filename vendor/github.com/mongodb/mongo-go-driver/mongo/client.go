@@ -10,35 +10,42 @@ import (
 	"context"
 	"time"
 
-	"github.com/mongodb/mongo-go-driver/core/command"
-	"github.com/mongodb/mongo-go-driver/core/connstring"
-	"github.com/mongodb/mongo-go-driver/core/description"
-	"github.com/mongodb/mongo-go-driver/core/dispatch"
-	"github.com/mongodb/mongo-go-driver/core/option"
-	"github.com/mongodb/mongo-go-driver/core/readconcern"
-	"github.com/mongodb/mongo-go-driver/core/readpref"
-	"github.com/mongodb/mongo-go-driver/core/tag"
-	"github.com/mongodb/mongo-go-driver/core/topology"
-	"github.com/mongodb/mongo-go-driver/core/writeconcern"
-	"github.com/mongodb/mongo-go-driver/mongo/clientopt"
-	"github.com/mongodb/mongo-go-driver/mongo/dbopt"
+	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/bson/bsoncodec"
+	"github.com/mongodb/mongo-go-driver/mongo/options"
+	"github.com/mongodb/mongo-go-driver/mongo/readconcern"
+	"github.com/mongodb/mongo-go-driver/mongo/readpref"
+	"github.com/mongodb/mongo-go-driver/mongo/writeconcern"
+	"github.com/mongodb/mongo-go-driver/tag"
+	"github.com/mongodb/mongo-go-driver/x/mongo/driver"
+	"github.com/mongodb/mongo-go-driver/x/mongo/driver/session"
+	"github.com/mongodb/mongo-go-driver/x/mongo/driver/topology"
+	"github.com/mongodb/mongo-go-driver/x/mongo/driver/uuid"
+	"github.com/mongodb/mongo-go-driver/x/network/command"
+	"github.com/mongodb/mongo-go-driver/x/network/connstring"
+	"github.com/mongodb/mongo-go-driver/x/network/description"
 )
 
 const defaultLocalThreshold = 15 * time.Millisecond
 
 // Client performs operations on a given topology.
 type Client struct {
+	id              uuid.UUID
 	topologyOptions []topology.Option
 	topology        *topology.Topology
 	connString      connstring.ConnString
 	localThreshold  time.Duration
+	retryWrites     bool
+	clock           *session.ClusterClock
 	readPreference  *readpref.ReadPref
 	readConcern     *readconcern.ReadConcern
 	writeConcern    *writeconcern.WriteConcern
+	registry        *bsoncodec.Registry
+	marshaller      BSONAppender
 }
 
 // Connect creates a new Client and then initializes it using the Connect method.
-func Connect(ctx context.Context, uri string, opts ...clientopt.Option) (*Client, error) {
+func Connect(ctx context.Context, uri string, opts ...*options.ClientOptions) (*Client, error) {
 	c, err := NewClientWithOptions(uri, opts...)
 	if err != nil {
 		return nil, err
@@ -57,13 +64,13 @@ func NewClient(uri string) (*Client, error) {
 		return nil, err
 	}
 
-	return newClient(cs, nil)
+	return newClient(cs)
 }
 
 // NewClientWithOptions creates a new client to connect to to a cluster specified by the connection
 // string and the options manually passed in. If the same option is configured in both the
 // connection string and the manual options, the manual option will be ignored.
-func NewClientWithOptions(uri string, opts ...clientopt.Option) (*Client, error) {
+func NewClientWithOptions(uri string, opts ...*options.ClientOptions) (*Client, error) {
 	cs, err := connstring.Parse(uri)
 	if err != nil {
 		return nil, err
@@ -72,16 +79,16 @@ func NewClientWithOptions(uri string, opts ...clientopt.Option) (*Client, error)
 	return newClient(cs, opts...)
 }
 
-// NewClientFromConnString creates a new client to connect to a cluster, with configuration
-// specified by the connection string.
-func NewClientFromConnString(cs connstring.ConnString) (*Client, error) {
-	return newClient(cs, nil)
-}
-
 // Connect initializes the Client by starting background monitoring goroutines.
 // This method must be called before a Client can be used.
 func (c *Client) Connect(ctx context.Context) error {
-	return c.topology.Connect(ctx)
+	err := c.topology.Connect(ctx)
+	if err != nil {
+		return replaceTopologyErr(err)
+	}
+
+	return nil
+
 }
 
 // Disconnect closes sockets to the topology referenced by this Client. It will
@@ -93,34 +100,133 @@ func (c *Client) Connect(ctx context.Context) error {
 // or write operations. If this method returns with no errors, all connections
 // associated with this Client have been closed.
 func (c *Client) Disconnect(ctx context.Context) error {
-	return c.topology.Disconnect(ctx)
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	c.endSessions(ctx)
+	return replaceTopologyErr(c.topology.Disconnect(ctx))
 }
 
-func newClient(cs connstring.ConnString, opts ...clientopt.Option) (*Client, error) {
-	clientOpt, err := clientopt.BundleClient(opts...).Unbundle(cs)
-	if err != nil {
-		return nil, err
+// Ping verifies that the client can connect to the topology.
+// If readPreference is nil then will use the client's default read
+// preference.
+func (c *Client) Ping(ctx context.Context, rp *readpref.ReadPref) error {
+	if ctx == nil {
+		ctx = context.Background()
 	}
+
+	if rp == nil {
+		rp = c.readPreference
+	}
+
+	_, err := c.topology.SelectServer(ctx, description.ReadPrefSelector(rp))
+	return replaceTopologyErr(err)
+}
+
+// StartSession starts a new session.
+func (c *Client) StartSession(opts ...*options.SessionOptions) (Session, error) {
+	if c.topology.SessionPool == nil {
+		return nil, ErrClientDisconnected
+	}
+
+	sopts := options.MergeSessionOptions(opts...)
+	coreOpts := &session.ClientOptions{
+		DefaultReadConcern:    c.readConcern,
+		DefaultReadPreference: c.readPreference,
+		DefaultWriteConcern:   c.writeConcern,
+	}
+	if sopts.CausalConsistency != nil {
+		coreOpts.CausalConsistency = sopts.CausalConsistency
+	}
+	if sopts.DefaultReadConcern != nil {
+		coreOpts.DefaultReadConcern = sopts.DefaultReadConcern
+	}
+	if sopts.DefaultWriteConcern != nil {
+		coreOpts.DefaultWriteConcern = sopts.DefaultWriteConcern
+	}
+	if sopts.DefaultReadPreference != nil {
+		coreOpts.DefaultReadPreference = sopts.DefaultReadPreference
+	}
+
+	sess, err := session.NewClientSession(c.topology.SessionPool, c.id, session.Explicit, coreOpts)
+	if err != nil {
+		return nil, replaceTopologyErr(err)
+	}
+
+	sess.RetryWrite = c.retryWrites
+
+	return &sessionImpl{
+		Client: sess,
+		topo:   c.topology,
+	}, nil
+}
+
+func (c *Client) endSessions(ctx context.Context) {
+	if c.topology.SessionPool == nil {
+		return
+	}
+	cmd := command.EndSessions{
+		Clock:      c.clock,
+		SessionIDs: c.topology.SessionPool.IDSlice(),
+	}
+
+	_, _ = driver.EndSessions(ctx, cmd, c.topology, description.ReadPrefSelector(readpref.PrimaryPreferred()))
+}
+
+func newClient(cs connstring.ConnString, opts ...*options.ClientOptions) (*Client, error) {
+	clientOpt := options.MergeClientOptions(cs, opts...)
 
 	client := &Client{
 		topologyOptions: clientOpt.TopologyOptions,
 		connString:      clientOpt.ConnString,
 		localThreshold:  defaultLocalThreshold,
+		readPreference:  clientOpt.ReadPreference,
+		readConcern:     clientOpt.ReadConcern,
+		writeConcern:    clientOpt.WriteConcern,
+		registry:        clientOpt.Registry,
 	}
+
+	if client.connString.RetryWritesSet {
+		client.retryWrites = client.connString.RetryWrites
+	}
+	if clientOpt.RetryWrites != nil {
+		client.retryWrites = *clientOpt.RetryWrites
+	}
+
+	clientID, err := uuid.New()
+	if err != nil {
+		return nil, err
+	}
+	client.id = clientID
 
 	topts := append(
 		client.topologyOptions,
 		topology.WithConnString(func(connstring.ConnString) connstring.ConnString { return client.connString }),
+		topology.WithServerOptions(func(opts ...topology.ServerOption) []topology.ServerOption {
+			return append(opts, topology.WithClock(func(clock *session.ClusterClock) *session.ClusterClock {
+				return client.clock
+			}), topology.WithRegistry(func(registry *bsoncodec.Registry) *bsoncodec.Registry {
+				return client.registry
+			}))
+		}),
 	)
 	topo, err := topology.New(topts...)
 	if err != nil {
-		return nil, err
+		return nil, replaceTopologyErr(err)
 	}
 	client.topology = topo
+	client.clock = &session.ClusterClock{}
 
 	if client.readConcern == nil {
 		client.readConcern = readConcernFromConnString(&client.connString)
+
+		if client.readConcern == nil {
+			// no read concern in conn string
+			client.readConcern = readconcern.New()
+		}
 	}
+
 	if client.writeConcern == nil {
 		client.writeConcern = writeConcernFromConnString(&client.connString)
 	}
@@ -134,6 +240,10 @@ func newClient(cs connstring.ConnString, opts ...clientopt.Option) (*Client, err
 		} else {
 			client.readPreference = readpref.Primary()
 		}
+	}
+
+	if client.registry == nil {
+		client.registry = bson.DefaultRegistry
 	}
 	return client, nil
 }
@@ -212,8 +322,16 @@ func readPreferenceFromConnString(cs *connstring.ConnString) (*readpref.ReadPref
 	return rp, nil
 }
 
+// ValidSession returns an error if the session doesn't belong to the client
+func (c *Client) ValidSession(sess *session.Client) error {
+	if sess != nil && !uuid.Equal(sess.ClientID, c.id) {
+		return ErrWrongClient
+	}
+	return nil
+}
+
 // Database returns a handle for a given database.
-func (c *Client) Database(name string, opts ...dbopt.Option) *Database {
+func (c *Client) Database(name string, opts ...*options.DatabaseOptions) *Database {
 	return newDatabase(c, name, opts...)
 }
 
@@ -222,39 +340,54 @@ func (c *Client) ConnectionString() string {
 	return c.connString.Original
 }
 
-func (c *Client) listDatabasesHelper(ctx context.Context, filter interface{},
-	nameOnly bool) (ListDatabasesResult, error) {
+// ListDatabases returns a ListDatabasesResult.
+func (c *Client) ListDatabases(ctx context.Context, filter interface{}, opts ...*options.ListDatabasesOptions) (ListDatabasesResult, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 
-	f, err := TransformDocument(filter)
+	sess := sessionFromContext(ctx)
+
+	err := c.ValidSession(sess)
 	if err != nil {
 		return ListDatabasesResult{}, err
 	}
 
-	opts := []option.ListDatabasesOptioner{}
-
-	if nameOnly {
-		opts = append(opts, option.OptNameOnly(nameOnly))
-	}
-
-	cmd := command.ListDatabases{Filter: f, Opts: opts}
-
-	// The spec indicates that we should not run the listDatabase command on a secondary in a
-	// replica set.
-	res, err := dispatch.ListDatabases(ctx, cmd, c.topology, description.ReadPrefSelector(readpref.Primary()))
+	f, err := transformDocument(c.registry, filter)
 	if err != nil {
 		return ListDatabasesResult{}, err
 	}
+
+	cmd := command.ListDatabases{
+		Filter:  f,
+		Session: sess,
+		Clock:   c.clock,
+	}
+
+	readSelector := description.CompositeSelector([]description.ServerSelector{
+		description.ReadPrefSelector(readpref.Primary()),
+		description.LatencySelector(c.localThreshold),
+	})
+	res, err := driver.ListDatabases(
+		ctx, cmd,
+		c.topology,
+		readSelector,
+		c.id,
+		c.topology.SessionPool,
+		opts...,
+	)
+	if err != nil {
+		return ListDatabasesResult{}, replaceTopologyErr(err)
+	}
+
 	return (ListDatabasesResult{}).fromResult(res), nil
 }
 
-// ListDatabases returns a ListDatabasesResult.
-func (c *Client) ListDatabases(ctx context.Context, filter interface{}) (ListDatabasesResult, error) {
-	return c.listDatabasesHelper(ctx, filter, false)
-}
-
 // ListDatabaseNames returns a slice containing the names of all of the databases on the server.
-func (c *Client) ListDatabaseNames(ctx context.Context, filter interface{}) ([]string, error) {
-	res, err := c.listDatabasesHelper(ctx, filter, true)
+func (c *Client) ListDatabaseNames(ctx context.Context, filter interface{}, opts ...*options.ListDatabasesOptions) ([]string, error) {
+	opts = append(opts, options.ListDatabases().SetNameOnly(true))
+
+	res, err := c.ListDatabases(ctx, filter, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -265,4 +398,61 @@ func (c *Client) ListDatabaseNames(ctx context.Context, filter interface{}) ([]s
 	}
 
 	return names, nil
+}
+
+// WithSession allows a user to start a session themselves and manage
+// its lifetime. The only way to provide a session to a CRUD method is
+// to invoke that CRUD method with the mongo.SessionContext within the
+// closure. The mongo.SessionContext can be used as a regular context,
+// so methods like context.WithDeadline and context.WithTimeout are
+// supported.
+//
+// If the context.Context already has a mongo.Session attached, that
+// mongo.Session will be replaced with the one provided.
+//
+// Errors returned from the closure are transparently returned from
+// this function.
+func WithSession(ctx context.Context, sess Session, fn func(SessionContext) error) error {
+	return fn(contextWithSession(ctx, sess))
+}
+
+// UseSession creates a default session, that is only valid for the
+// lifetime of the closure. No cleanup outside of closing the session
+// is done upon exiting the closure. This means that an outstanding
+// transaction will be aborted, even if the closure returns an error.
+//
+// If ctx already contains a mongo.Session, that mongo.Session will be
+// replaced with the newly created mongo.Session.
+//
+// Errors returned from the closure are transparently returned from
+// this method.
+func (c *Client) UseSession(ctx context.Context, fn func(SessionContext) error) error {
+	return c.UseSessionWithOptions(ctx, options.Session(), fn)
+}
+
+// UseSessionWithOptions works like UseSession but allows the caller
+// to specify the options used to create the session.
+func (c *Client) UseSessionWithOptions(ctx context.Context, opts *options.SessionOptions, fn func(SessionContext) error) error {
+	defaultSess, err := c.StartSession(opts)
+	if err != nil {
+		return err
+	}
+
+	defer defaultSess.EndSession(ctx)
+
+	sessCtx := sessionContext{
+		Context: context.WithValue(ctx, sessionKey{}, defaultSess),
+		Session: defaultSess,
+	}
+
+	return fn(sessCtx)
+}
+
+// Watch returns a change stream cursor used to receive information of changes to the client. This method is preferred
+// to running a raw aggregation with a $changeStream stage because it supports resumability in the case of some errors.
+// The client must have read concern majority or no read concern for a change stream to be created successfully.
+func (c *Client) Watch(ctx context.Context, pipeline interface{},
+	opts ...*options.ChangeStreamOptions) (*ChangeStream, error) {
+
+	return newClientChangeStream(ctx, c, pipeline, opts...)
 }

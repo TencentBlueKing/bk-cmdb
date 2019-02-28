@@ -1,6 +1,6 @@
 <template>
     <div>
-        <label class="form-label exchange-icon-wrapper">
+        <label class="form-label">
             <span class="label-text">
                 {{$t('ModelManagement["源模型"]')}}
                 <span class="color-danger">*</span>
@@ -8,11 +8,8 @@
             <div class="cmdb-form-item">
                 <input type="text" class="cmdb-form-input" disabled :value="getModelName(relationInfo['bk_obj_id'])">
             </div>
-            <span class="exchange-icon" @click="exchangeObjAsst">
-                <i class="bk-icon icon-sort"></i>
-            </span>
         </label>
-        <label class="form-label">
+        <label class="form-label exchange-icon-wrapper">
             <span class="label-text">
                 {{$t('ModelManagement["目标模型"]')}}
                 <span class="color-danger">*</span>
@@ -20,6 +17,9 @@
             <div class="cmdb-form-item">
                 <input type="text" class="cmdb-form-input" disabled :value="getModelName(relationInfo['bk_asst_obj_id'])">
             </div>
+            <span class="exchange-icon" @click="exchangeObjAsst">
+                <i class="bk-icon icon-sort"></i>
+            </span>
         </label>
         <label class="form-label">
             <span class="label-text">
@@ -66,7 +66,7 @@
             <i class="bk-icon icon-info-circle"></i>
         </div>
         <div class="btn-group">
-            <bk-button type="primary" @click="saveRelation">
+            <bk-button type="primary" :loading="$loading('createObjectAssociation')" @click="saveRelation">
                 {{$t('Common["确定"]')}}
             </bk-button>
             <bk-button type="default" @click="cancel">
@@ -87,9 +87,6 @@
                 type: String
             },
             topoModelList: {
-                type: Array
-            },
-            edges: {
                 type: Array
             }
         },
@@ -133,6 +130,7 @@
         },
         methods: {
             ...mapActions('objectAssociation', [
+                'createObjectAssociation',
                 'searchAssociationType',
                 'searchObjectAssociation'
             ]),
@@ -177,43 +175,24 @@
             },
             searchAsSource () {
                 return this.searchObjectAssociation({
-                    params: {
+                    params: this.$injectMetadata({
                         condition: {
                             'bk_obj_id': this.relationInfo['bk_obj_id']
                         }
-                    }
+                    })
                 })
             },
             searchAsDest () {
                 return this.searchObjectAssociation({
-                    params: {
+                    params: this.$injectMetadata({
                         condition: {
                             'bk_asst_obj_id': this.relationInfo['bk_obj_id']
                         }
-                    }
+                    })
                 })
-            },
-            isRelationExist () {
-                let {
-                    relationInfo
-                } = this
-
-                let isExist = this.edges.find(edge => {
-                    return edge.type === 'create' && edge.params['bk_asst_id'] === relationInfo['bk_asst_id'] && edge.params['bk_obj_id'] === relationInfo['bk_obj_id'] && edge.params['bk_asst_obj_id'] === relationInfo['bk_asst_obj_id']
-                })
-                if (isExist) {
-                    return true
-                }
-
-                isExist = this.modelRelationList.some(({bk_asst_id: asstId, bk_obj_id: objId, bk_asst_obj_id: asstObjId}) => asstId === relationInfo['bk_asst_id'] && objId === relationInfo['bk_obj_id'] && asstObjId === relationInfo['bk_asst_obj_id'])
-                return isExist
             },
             async saveRelation () {
                 if (!await this.$validator.validateAll()) {
-                    return
-                }
-                if (this.isRelationExist()) {
-                    this.$error(this.$t('ModelManagement["关联关系重复"]'))
                     return
                 }
                 let params = {
@@ -222,7 +201,13 @@
                         bk_obj_asst_id: this.objAsstId
                     }
                 }
-                this.$emit('save', params)
+                const res = await this.createObjectAssociation({
+                    params: this.$injectMetadata(params),
+                    config: {
+                        requestId: 'createObjectAssociation'
+                    }
+                })
+                this.$emit('save', res)
                 this.$emit('cancel')
             },
             cancel () {
@@ -240,7 +225,7 @@
         position: absolute;
         display: inline-block;
         right: 0;
-        top: 36px;
+        top: 0;
         padding-top: 2px;
         width: 20px;
         height: 20px;

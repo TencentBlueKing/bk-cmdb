@@ -15,6 +15,10 @@ let locale = Cookies.get('blueking_language') || 'zh_CN'
 
 locale = languageMaps.hasOwnProperty(locale) ? languageMaps[locale] : locale
 
+if (locale === 'en') {
+    document.title = 'CMDB | BlueKing'
+}
+
 const i18n = new VueI18n({
     locale,
     fallbackLocale: 'zh_CN',

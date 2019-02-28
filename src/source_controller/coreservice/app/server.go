@@ -16,20 +16,23 @@ import (
 	"context"
 	"fmt"
 	"os"
-
-	restful "github.com/emicklei/go-restful"
+	"time"
 
 	"configcenter/src/apimachinery"
+	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/source_controller/coreservice/app/options"
 	coresvr "configcenter/src/source_controller/coreservice/service"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
+
+	restful "github.com/emicklei/go-restful"
 )
 
 // CoreServer the core server
@@ -45,6 +48,10 @@ func (t *CoreServer) onCoreServiceConfigUpdate(previous, current cc.ProcessConfi
 	t.Config.Redis = redis.ParseConfigFromKV("redis", current.ConfigMap)
 
 	blog.V(3).Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
+	for t.Core == nil {
+		time.Sleep(time.Second)
+		blog.V(3).Info("sleep for engine")
+	}
 	t.Service.SetConfig(t.Config, t.Core, nil, nil)
 }
 
@@ -55,14 +62,18 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
+	discover, err := discovery.NewDiscoveryInterface(op.ServConf.RegDiscover)
+	if err != nil {
+		return fmt.Errorf("connect zookeeper [%s] failed: %v", op.ServConf.RegDiscover, err)
+	}
+
 	c := &util.APIMachineryConfig{
-		ZkAddr:    op.ServConf.RegDiscover,
 		QPS:       1000,
 		Burst:     2000,
 		TLSConfig: nil,
 	}
 
-	machinery, err := apimachinery.NewApiMachinery(c)
+	machinery, err := apimachinery.NewApiMachinery(c, discover)
 	if err != nil {
 		return fmt.Errorf("new api machinery failed, err: %v", err)
 	}
@@ -73,10 +84,12 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	coreService := coresvr.New()
 	coreSvr.Service = coreService
 
+	webhandler := restful.NewContainer().Add(coreService.WebService())
+	webhandler.ServiceErrorHandler(rdapi.ServiceErrorHandler)
 	server := backbone.Server{
 		ListenAddr: svrInfo.IP,
 		ListenPort: svrInfo.Port,
-		Handler:    restful.NewContainer().Add(coreService.WebService()),
+		Handler:    webhandler,
 		TLS:        backbone.TLSConfig{},
 	}
 
@@ -93,6 +106,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		types.CC_MODULE_CORESERVICE,
 		op.ServConf.ExConfig,
 		coreSvr.onCoreServiceConfigUpdate,
+		discover,
 		bonC)
 
 	if nil != err {

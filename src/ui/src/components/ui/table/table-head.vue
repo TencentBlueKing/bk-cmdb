@@ -147,7 +147,7 @@
                     const $table = this.table.$el
                     const tableRect = $table.getBoundingClientRect()
                     const columnRect = this.dragStore.column.getBoundingClientRect()
-                    const minLeft = columnRect.left - tableRect.left + 100
+                    const minLeft = columnRect.left - tableRect.left + column.minWidth
                     this.dragStore.state = {
                         startMouseLeft: event.clientX,
                         startLeft: columnRect.right - tableRect.left,

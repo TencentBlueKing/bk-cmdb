@@ -14,62 +14,71 @@ package logics
 
 import (
 	"context"
-	"fmt"
-	"net/http"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	parse "configcenter/src/common/paraparse"
 )
 
-func (lgc *Logics) GetSetIDByCond(pheader http.Header, cond []metadata.ConditionItem) ([]int64, error) {
+func (lgc *Logics) GetSetIDByCond(ctx context.Context, cond []metadata.ConditionItem) ([]int64, errors.CCError) {
 	condc := make(map[string]interface{})
 	parse.ParseCommonParams(cond, condc)
 
-	query := &metadata.QueryInput{
-		Condition: condc,
-		Fields:    common.BKSetIDField,
-		Start:     0,
-		Limit:     common.BKNoLimit,
-		Sort:      common.BKSetIDField,
+	query := &metadata.QueryCondition{
+		Condition: mapstr.NewFromMap(condc),
+		Fields:    []string{common.BKSetIDField},
+		Limit:     metadata.SearchLimit{Offset: 0, Limit: common.BKNoLimit},
+		SortArr:   metadata.NewSearchSortParse().String(common.BKSetIDField).ToSearchSortArr(),
 	}
 
-	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDSet, pheader, query)
-	if err != nil || (err == nil && !result.Result) {
-		return nil, fmt.Errorf("%v, %v", err, result.ErrMsg)
+	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDSet, query)
+	if err != nil {
+		blog.Errorf("GetSetIDByCond http do error, err:%s,objID:%s,input:%+v,rid:%s", err.Error(), common.BKInnerObjIDSet, query, lgc.rid)
+		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.Errorf("GetSetIDByCond http reponse error, err code:%d, err msg:%s,objID:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, common.BKInnerObjIDSet, query, lgc.rid)
+		return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
 	setIDArr := make([]int64, 0)
 	for _, i := range result.Data.Info {
 		setID, err := i.Int64(common.BKSetIDField)
 		if err != nil {
-			return nil, fmt.Errorf("invalid set id: %v", err)
+			blog.Errorf("GetSetIDByCond convert %s %s to integer error, set info:%+v, input:%+v,rid:%s", common.BKInnerObjIDSet, common.BKSetIDField, i, query, lgc.rid)
+			return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDSet, common.BKSetIDField, "int", err.Error())
 		}
 		setIDArr = append(setIDArr, setID)
 	}
 	return setIDArr, nil
 }
 
-func (lgc *Logics) GetSetMapByCond(pheader http.Header, fields string, cond interface{}) (map[int64]mapstr.MapStr, error) {
-	query := &metadata.QueryInput{
+func (lgc *Logics) GetSetMapByCond(ctx context.Context, fields []string, cond mapstr.MapStr) (map[int64]mapstr.MapStr, errors.CCError) {
+	query := &metadata.QueryCondition{
 		Condition: cond,
 		Fields:    fields,
-		Start:     0,
-		Limit:     common.BKNoLimit,
-		Sort:      common.BKModuleIDField,
+		SortArr:   metadata.NewSearchSortParse().String(common.BKSetIDField).ToSearchSortArr(),
 	}
 
-	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDSet, pheader, query)
-	if err != nil || (err == nil && !result.Result) {
-		return nil, fmt.Errorf("%v, %v", err, result.ErrMsg)
+	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDSet, query)
+	if err != nil {
+		blog.Errorf("GetSetMapByCond http do error, err:%s,objID:%s,input:%+v,rid:%s", err.Error(), common.BKInnerObjIDSet, query, lgc.rid)
+		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.Errorf("GetSetMapByCond http reponse error, err code:%d, err msg:%s,objID:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, common.BKInnerObjIDSet, query, lgc.rid)
+		return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
 	setMap := make(map[int64]mapstr.MapStr)
 	for _, i := range result.Data.Info {
 		setID, err := i.Int64(common.BKSetIDField)
 		if err != nil {
-			return nil, fmt.Errorf("invalid set id %v", err)
+			blog.Errorf("GetSetMapByCond convert %s %s to integer error, set info:%+v, input:%+v,rid:%s", common.BKInnerObjIDSet, common.BKSetIDField, i, query, lgc.rid)
+			return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDSet, common.BKSetIDField, "int", err.Error())
 		}
 
 		setMap[setID] = i
