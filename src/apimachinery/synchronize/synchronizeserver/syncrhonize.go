@@ -19,6 +19,17 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-func (s *synchronize) Find(ctx context.Context, h http.Header, input *metadata.SynchronizeFetchInfoParameter) (resp *metadata.ResponseInstData, err error) {
-	return nil, nil
+func (s *synchronize) Find(ctx context.Context, h http.Header, input *metadata.SynchronizeFindInfoParameter) (resp *metadata.ResponseInstData, err error) {
+	resp = new(metadata.ResponseInstData)
+	subPath := "/search"
+
+	err = s.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	
+	return
 }
