@@ -24,7 +24,8 @@ type SynchronizeClientInterface interface {
 	SynchronizeInstance(ctx context.Context, h http.Header, input *metadata.SynchronizeParameter) (resp *metadata.SynchronizeResult, err error)
 	SynchronizeModel(ctx context.Context, h http.Header, input *metadata.SynchronizeParameter) (resp *metadata.SynchronizeResult, err error)
 	SynchronizeAssociation(ctx context.Context, h http.Header, input *metadata.SynchronizeParameter) (resp *metadata.SynchronizeResult, err error)
-	SynchronizeFetch(ctx context.Context, h http.Header, input *metadata.SynchronizeFetchInfoParameter) (resp *metadata.ResponseInstData, err error)
+	SynchronizeFind(ctx context.Context, h http.Header, input *metadata.SynchronizeFindInfoParameter) (resp *metadata.ResponseInstData, err error)
+	SynchronizeClearData(ctx context.Context, h http.Header, input *metadata.SynchronizeClearDataParameter) (resp *metadata.Response, err error)
 }
 
 // NewSynchronizeClientInterface new public api

@@ -16,7 +16,8 @@ import (
 )
 
 type SychronizeConfig struct {
-	Addrs map[string][]string
+	Name  string
+	Addrs []string
 }
 
 type SynchronizeConfigServ struct {
@@ -29,7 +30,9 @@ type SynchronizeServDiscoveryInterace interface {
 }
 
 var (
-	synchronize = &SynchronizeConfigServ{}
+	synchronize = &SynchronizeConfigServ{
+		addrs: make(map[string][]string, 0),
+	}
 )
 
 func NewSynchronizeConfigServ(srvChan chan SychronizeConfig) *SynchronizeConfigServ {
@@ -40,7 +43,7 @@ func NewSynchronizeConfigServ(srvChan chan SychronizeConfig) *SynchronizeConfigS
 		for {
 			config := <-srvChan
 			synchronize.Lock()
-			synchronize.addrs = config.Addrs
+			synchronize.addrs[config.Name] = config.Addrs
 			synchronize.Unlock()
 		}
 	}()

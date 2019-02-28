@@ -21,7 +21,7 @@ import (
 
 func (inst *synchronize) SynchronizeInstance(ctx context.Context, h http.Header, input *metadata.SynchronizeParameter) (resp *metadata.SynchronizeResult, err error) {
 	resp = new(metadata.SynchronizeResult)
-	subPath := "/synchronize/instance"
+	subPath := "/set/synchronize/instance"
 
 	err = inst.client.Post().
 		WithContext(ctx).
@@ -35,7 +35,7 @@ func (inst *synchronize) SynchronizeInstance(ctx context.Context, h http.Header,
 
 func (inst *synchronize) SynchronizeModel(ctx context.Context, h http.Header, input *metadata.SynchronizeParameter) (resp *metadata.SynchronizeResult, err error) {
 	resp = new(metadata.SynchronizeResult)
-	subPath := "/synchronize/model"
+	subPath := "/set/synchronize/model"
 
 	err = inst.client.Post().
 		WithContext(ctx).
@@ -49,7 +49,7 @@ func (inst *synchronize) SynchronizeModel(ctx context.Context, h http.Header, in
 
 func (inst *synchronize) SynchronizeAssociation(ctx context.Context, h http.Header, input *metadata.SynchronizeParameter) (resp *metadata.SynchronizeResult, err error) {
 	resp = new(metadata.SynchronizeResult)
-	subPath := "/synchronize/association"
+	subPath := "/set/synchronize/association"
 
 	err = inst.client.Post().
 		WithContext(ctx).
@@ -61,11 +61,25 @@ func (inst *synchronize) SynchronizeAssociation(ctx context.Context, h http.Head
 	return
 }
 
-func (inst *synchronize) SynchronizeFetch(ctx context.Context, h http.Header, input *metadata.SynchronizeFetchInfoParameter) (resp *metadata.ResponseInstData, err error) {
+func (inst *synchronize) SynchronizeFind(ctx context.Context, h http.Header, input *metadata.SynchronizeFindInfoParameter) (resp *metadata.ResponseInstData, err error) {
 	resp = new(metadata.ResponseInstData)
-	subPath := "/synchronize/fetch"
+	subPath := "/read/synchronize"
 
 	err = inst.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (inst *synchronize) SynchronizeClearData(ctx context.Context, h http.Header, input *metadata.SynchronizeClearDataParameter) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/clear/synchronize/data"
+
+	err = inst.client.Delete().
 		WithContext(ctx).
 		Body(input).
 		SubResource(subPath).
