@@ -7,7 +7,6 @@ import (
 	"regexp"
 	"strconv"
 
-	
 	"configcenter/src/auth/meta"
 	"configcenter/src/framework/core/errors"
 )
@@ -51,13 +50,13 @@ func (ps *parseStream) userCustom() *parseStream {
 			ps.err = fmt.Errorf("create host user custom query, but get business id failed, err: %v", err)
 			return ps
 		}
+
 		ps.Attribute.Resources = []meta.Resource{
 			meta.Resource{
 				Basic: meta.Basic{
 					Type: meta.HostUserCustom,
 				},
-				BusinessID: biz.BusinessID,
-				Action:     meta.Create,
+				Action: meta.Create,
 			},
 		}
 		return ps
@@ -74,15 +73,14 @@ func (ps *parseStream) userCustom() *parseStream {
 			ps.err = fmt.Errorf("update host user custom query failed, err: %v", err)
 			return ps
 		}
-
+		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.Resource{
 			meta.Resource{
 				Basic: meta.Basic{
 					Type: meta.HostUserCustom,
 					Name: ps.RequestCtx.Elements[4],
 				},
-				BusinessID: bizID,
-				Action:     meta.Update,
+				Action: meta.Update,
 			},
 		}
 		return ps
@@ -100,15 +98,14 @@ func (ps *parseStream) userCustom() *parseStream {
 			ps.err = fmt.Errorf("update host user custom query failed, err: %v", err)
 			return ps
 		}
-
+		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.Resource{
 			meta.Resource{
 				Basic: meta.Basic{
 					Type: meta.HostUserCustom,
 					Name: ps.RequestCtx.Elements[4],
 				},
-				BusinessID: bizID,
-				Action:     meta.Delete,
+				Action: meta.Delete,
 			},
 		}
 		return ps
@@ -127,14 +124,13 @@ func (ps *parseStream) userCustom() *parseStream {
 			ps.err = fmt.Errorf("find host user custom query failed, err: %v", err)
 			return ps
 		}
-
+		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.Resource{
 			meta.Resource{
 				Basic: meta.Basic{
 					Type: meta.HostUserCustom,
 				},
-				BusinessID: bizID,
-				Action:     meta.FindMany,
+				Action: meta.FindMany,
 			},
 		}
 		return ps
@@ -152,15 +148,14 @@ func (ps *parseStream) userCustom() *parseStream {
 			ps.err = fmt.Errorf("find host user custom query details failed, err: %v", err)
 			return ps
 		}
-
+		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.Resource{
 			meta.Resource{
 				Basic: meta.Basic{
 					Type: meta.HostUserCustom,
 					Name: ps.RequestCtx.Elements[5],
 				},
-				BusinessID: bizID,
-				Action:     meta.Find,
+				Action: meta.Find,
 			},
 		}
 		return ps
@@ -179,14 +174,14 @@ func (ps *parseStream) userCustom() *parseStream {
 			return ps
 		}
 
+		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.Resource{
 			meta.Resource{
 				Basic: meta.Basic{
 					Type: meta.HostUserCustom,
 					Name: ps.RequestCtx.Elements[5],
 				},
-				BusinessID: bizID,
-				Action:     meta.Find,
+				Action: meta.Find,
 			},
 		}
 		return ps

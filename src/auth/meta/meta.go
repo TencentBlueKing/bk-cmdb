@@ -16,6 +16,9 @@ type Attribute struct {
 	// the version of this resource, which is the api version.
 	APIVersion string
 	Resources  []Resource
+	// the business id that this resource belongs to, but it's not necessary for
+	// a resource that does not belongs to a business.
+	BusinessID int64
 	User       UserInfo
 }
 
@@ -33,10 +36,6 @@ type Resource struct {
 
 	// the action that user want to do with this resource.
 	Action Action
-
-	// the business id that this resource belongs to, but it's not necessary for
-	// a resource that does not belongs to a business.
-	BusinessID int64
 
 	// affiliated resource info
 	Affiliated Affiliated
@@ -64,6 +63,10 @@ type Decision struct {
 }
 
 type Action string
+
+func (a Action) String() string {
+	return string(a)
+}
 
 const (
 	Create     Action = "create"
