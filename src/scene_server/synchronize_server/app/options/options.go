@@ -75,6 +75,9 @@ type ConfigItem struct {
 	// White list  = true, need synchronize app list
 	// White list  = true,  out of synchronize business name,
 	AppNames []string
+
+	// ObjectID array source
+	ObjectIDArr []string
 	// resource pool sync config
 	SyncResource bool
 
