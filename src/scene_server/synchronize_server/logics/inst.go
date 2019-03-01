@@ -31,6 +31,7 @@ type FetchInst struct {
 	syncConfig *options.ConfigItem
 	//ingoreAppID []int64
 	baseConds mapstr.MapStr
+	appIDArr  []int64
 }
 
 // NewFetchInst fetch instance struct
@@ -39,6 +40,7 @@ func (lgc *Logics) NewFetchInst(syncConfig *options.ConfigItem, baseConds mapstr
 		lgc:        lgc,
 		baseConds:  baseConds,
 		syncConfig: syncConfig,
+		appIDArr:   make([]int64, 0),
 	}
 }
 
@@ -73,10 +75,21 @@ func (fi *FetchInst) Fetch(ctx context.Context, objID string, start, limit int64
 		if !fi.syncConfig.SyncResource {
 			conds.Field(common.BKDefaultField).Eq(0)
 		}
+		if len(fi.syncConfig.AppNames) > 0 {
+			if fi.syncConfig.WiteList {
+				conds.Field(common.BKAppNameField).In(fi.syncConfig.AppNames)
+			} else {
+				conds.Field(common.BKAppNameField).NotIn(fi.syncConfig.AppNames)
+			}
+		}
 		input.Condition.Merge(conds.ToMapStr())
 	case common.BKInnerObjIDSet:
+		input.Condition.Merge(fi.getAppCondition())
 	case common.BKInnerObjIDModule:
+		input.Condition.Merge(fi.getAppCondition())
 	case common.BKInnerObjIDHost:
+	case common.BKInnerObjIDProc:
+		input.Condition.Merge(fi.getAppCondition())
 	// not synchronized
 	case common.BKInnerObjIDConfigTemp:
 		return nil, nil
@@ -103,4 +116,17 @@ func (fi *FetchInst) Fetch(ctx context.Context, objID string, start, limit int64
 	}
 	return &result.Data, nil
 
+}
+
+// SetAppIDArr set app id
+func (fi *FetchInst) SetAppIDArr(appIDArr []int64) {
+	fi.appIDArr = appIDArr
+}
+
+func (fi *FetchInst) getAppCondition() mapstr.MapStr {
+	conds := condition.CreateCondition()
+	if len(fi.appIDArr) > 0 {
+		conds.Field(common.BKAppIDField).In(fi.appIDArr)
+	}
+	return conds.ToMapStr()
 }
