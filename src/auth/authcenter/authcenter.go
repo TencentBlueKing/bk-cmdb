@@ -101,7 +101,7 @@ type AuthCenter struct {
 	header http.Header
 }
 
-func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.Attribute) (decision meta.Decision, err error) {
+func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (decision meta.Decision, err error) {
 	// TODO: fill this struct.
 	info := &AuthBatch{
 		Principal: Principal{
@@ -122,12 +122,15 @@ func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.Attribute) (decisio
 
 	info.ResourceActions = make([]ResourceAction, 0)
 	for _, rsc := range a.Resources {
+		rscID, err := rsc.Type.ResourceID(rsc)
+		if err != nil {
+			return meta.Decision{}, fmt.Errorf("generate resource id failed, err: %v", err)
+		}
 		info.ResourceActions = append(info.ResourceActions, ResourceAction{
 			ActionID: rsc.Action.String(),
 			ResourceInfo: ResourceInfo{
 				ResourceType: rsc.Type.String(),
-				// TODO: add resource id field.
-				ResourceID: "",
+				ResourceID:   rscID,
 			},
 		})
 	}

@@ -59,13 +59,13 @@ func (ps *parseStream) process() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.Process,
-					Name: string(meta.Process),
+					Type:   meta.Process,
+					Action: meta.Create,
+					Name:   string(meta.Process),
 				},
-				Action: meta.Create,
 			},
 		}
 
@@ -80,13 +80,13 @@ func (ps *parseStream) process() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.Process,
-					Name: string(meta.Process),
+					Type:   meta.Process,
+					Action: meta.FindMany,
+					Name:   string(meta.Process),
 				},
-				Action: meta.FindMany,
 			},
 		}
 
@@ -107,14 +107,14 @@ func (ps *parseStream) process() *parseStream {
 			return ps
 			ps.Attribute.BusinessID = bizID
 		}
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:       meta.Process,
+					Action:     meta.FindMany,
 					Name:       string(meta.Process),
 					InstanceID: procID,
 				},
-				Action: meta.FindMany,
 			},
 		}
 
@@ -135,14 +135,14 @@ func (ps *parseStream) process() *parseStream {
 			return ps
 			ps.Attribute.BusinessID = bizID
 		}
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:       meta.Process,
+					Action:     meta.DeleteMany,
 					Name:       string(meta.Process),
 					InstanceID: procID,
 				},
-				Action: meta.DeleteMany,
 			},
 		}
 
@@ -163,14 +163,14 @@ func (ps *parseStream) process() *parseStream {
 			return ps
 			ps.Attribute.BusinessID = bizID
 		}
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:       meta.Process,
+					Action:     meta.Update,
 					Name:       string(meta.Process),
 					InstanceID: procID,
 				},
-				Action: meta.Update,
 			},
 		}
 
@@ -185,13 +185,13 @@ func (ps *parseStream) process() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.Process,
-					Name: string(meta.Process),
+					Type:   meta.Process,
+					Action: meta.UpdateMany,
+					Name:   string(meta.Process),
 				},
-				Action: meta.UpdateMany,
 			},
 		}
 
@@ -212,14 +212,14 @@ func (ps *parseStream) process() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:       meta.Process,
+					Action:     meta.FindMany,
 					Name:       string(meta.Process),
 					InstanceID: procID,
 				},
-				Action: meta.FindMany,
 			},
 		}
 
@@ -240,14 +240,14 @@ func (ps *parseStream) process() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:       meta.Process,
+					Action:     meta.Create,
 					Name:       string(meta.Process),
 					InstanceID: procID,
 				},
-				Action: meta.Create,
 			},
 		}
 
@@ -268,17 +268,16 @@ func (ps *parseStream) process() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:       meta.Process,
+					Action:     meta.Delete,
 					Name:       string(meta.Process),
 					InstanceID: procID,
 				},
-				Action: meta.Delete,
 			},
 		}
-
 		return ps
 	}
 
@@ -291,13 +290,13 @@ func (ps *parseStream) process() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.Process,
-					Name: string(meta.Process),
+					Type:   meta.Process,
+					Action: meta.FindMany,
+					Name:   string(meta.Process),
 				},
-				Action: meta.FindMany,
 			},
 		}
 
@@ -331,13 +330,13 @@ func (ps *parseStream) processTemplate() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.Process,
-					Name: string(meta.ProcessConfigTemplate),
+					Type:   meta.Process,
+					Action: meta.Create,
+					Name:   meta.ProcessConfigTemplate,
 				},
-				Action: meta.Create,
 			},
 		}
 
@@ -358,14 +357,14 @@ func (ps *parseStream) processTemplate() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:       meta.Process,
-					Name:       string(meta.ProcessConfigTemplate),
+					Action:     meta.Update,
+					Name:       meta.ProcessConfigTemplate,
 					InstanceID: templateID,
 				},
-				Action: meta.Update,
 			},
 		}
 
@@ -380,13 +379,13 @@ func (ps *parseStream) processTemplate() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.Process,
-					Name: string(meta.ProcessConfigTemplate),
+					Type:   meta.Process,
+					Action: meta.FindMany,
+					Name:   meta.ProcessConfigTemplate,
 				},
-				Action: meta.FindMany,
 			},
 		}
 
@@ -407,17 +406,16 @@ func (ps *parseStream) processTemplate() *parseStream {
 			return ps
 			ps.Attribute.BusinessID = bizID
 		}
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:       meta.Process,
-					Name:       string(meta.ProcessConfigTemplate),
+					Action:     meta.Delete,
+					Name:       meta.ProcessConfigTemplate,
 					InstanceID: templateID,
 				},
-				Action: meta.Delete,
 			},
 		}
-
 		return ps
 	}
 
@@ -435,14 +433,14 @@ func (ps *parseStream) processTemplate() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:       meta.Process,
-					Name:       string(meta.ProcessConfigTemplate),
+					Action:     meta.FindMany,
+					Name:       meta.ProcessConfigTemplateVersion,
 					InstanceID: templateID,
 				},
-				Action: meta.FindMany,
 			},
 		}
 
@@ -457,13 +455,13 @@ func (ps *parseStream) processTemplate() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.Process,
-					Name: string(meta.ProcessConfigTemplateVersion),
+					Type:   meta.Process,
+					Action: meta.Create,
+					Name:   meta.ProcessConfigTemplateVersion,
 				},
-				Action: meta.Create,
 			},
 		}
 
@@ -484,14 +482,14 @@ func (ps *parseStream) processTemplate() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:       meta.Process,
-					Name:       string(meta.ProcessConfigTemplateVersion),
+					Action:     meta.Create,
+					Name:       meta.ProcessConfigTemplateVersion,
 					InstanceID: versionID,
 				},
-				Action: meta.Create,
 			},
 		}
 
@@ -512,14 +510,14 @@ func (ps *parseStream) processTemplate() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:       meta.Process,
-					Name:       string(meta.ProcessConfigTemplate),
+					Action:     meta.Find,
+					Name:       meta.ProcessConfigTemplate,
 					InstanceID: templateID,
 				},
-				Action: meta.Find,
 			},
 		}
 
@@ -554,14 +552,14 @@ func (ps *parseStream) processTemplateBound() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:       meta.Process,
-					Name:       string(meta.ProcessBoundConfig),
+					Action:     meta.Find,
+					Name:       meta.ProcessBoundConfig,
 					InstanceID: procID,
 				},
-				Action: meta.Find,
 			},
 		}
 
@@ -576,13 +574,13 @@ func (ps *parseStream) processTemplateBound() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.Process,
-					Name: string(meta.ProcessBoundConfig),
+					Type:   meta.Process,
+					Action: meta.Create,
+					Name:   meta.ProcessBoundConfig,
 				},
-				Action: meta.Create,
 			},
 		}
 
@@ -597,13 +595,13 @@ func (ps *parseStream) processTemplateBound() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.Process,
-					Name: string(meta.ProcessBoundConfig),
+					Type:   meta.Process,
+					Action: meta.Delete,
+					Name:   meta.ProcessBoundConfig,
 				},
-				Action: meta.Delete,
 			},
 		}
 
@@ -618,20 +616,18 @@ func (ps *parseStream) processTemplateBound() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.Process,
-					Name: string(meta.ProcessBoundConfig),
+					Type:   meta.Process,
+					Action: meta.DeleteMany,
+					Name:   meta.ProcessBoundConfig,
 				},
-				Action: meta.DeleteMany,
 			},
 		}
 
 		return ps
 	}
-
-	//
 
 	return ps
 }
