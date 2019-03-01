@@ -25,7 +25,7 @@ import (
 	"github.com/emicklei/go-restful"
 )
 
-func ParseAttribute(req *restful.Request) (*meta.Attribute, error) {
+func ParseAttribute(req *restful.Request) (*meta.AuthAttribute, error) {
 
 	body, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
