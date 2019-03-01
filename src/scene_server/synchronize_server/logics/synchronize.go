@@ -63,7 +63,6 @@ func (lgc *Logics) TriggerSynchronize(ctx context.Context, config *options.Confi
 
 	// version
 	timeInterval := time.Duration(interval) * time.Minute
-	timeInterval = 10 * time.Second
 	for {
 		ticker := time.NewTimer(timeInterval)
 		<-ticker.C
@@ -88,6 +87,7 @@ func (lgc *Logics) Synchronize(ctx context.Context, config *options.Config) {
 // SynchronizeItem  synchronize data
 func (lgc *Logics) SynchronizeItem(ctx context.Context, syncConfig *options.ConfigItem) {
 	version := getVersion()
+	// syncConfig can modify
 	synchronizeItem := lgc.NewSynchronizeItem(version, syncConfig)
 
 	exceptionMap := make(map[string][]metadata.ExceptionResult)

@@ -50,7 +50,7 @@ type synchronizeItem struct {
 
 func (lgc *Logics) NewSynchronizeItem(version int64, syncConfig *options.ConfigItem) synchronizeItemInterface {
 
-	return &synchronizeItem{
+	ret := &synchronizeItem{
 		lgc:           lgc,
 		config:        syncConfig,
 		baseCondition: mapstr.New(),
@@ -58,6 +58,16 @@ func (lgc *Logics) NewSynchronizeItem(version int64, syncConfig *options.ConfigI
 		appIDArr:      make([]int64, 0),
 		version:       version,
 	}
+	ret.configPretreatment()
+	return ret
+}
+
+func (s *synchronizeItem) configPretreatment() {
+	if len(s.config.ObjectIDArr) > 0 && s.config.WiteList {
+		objectIDArr := []string{common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDHost, common.BKInnerObjIDProc, common.BKInnerObjIDPlat}
+		s.config.ObjectIDArr = append(s.config.ObjectIDArr, objectIDArr...)
+	}
+	return
 }
 
 func (s *synchronizeItem) synchronizeItemClearData(ctx context.Context) (map[string][]metadata.ExceptionResult, errors.CCError) {
