@@ -131,11 +131,12 @@ func (s *SynchronizeServer) onSynchronizeServerConfigUpdate(previous, current cc
 		configItem := &options.ConfigItem{}
 		appNames := current.ConfigMap[name+".AppNames"]
 		syncResource := current.ConfigMap[name+".SynchronizeResource"]
-		targetHost := current.ConfigMap[name+".TargetHost"]
+		targetHost := current.ConfigMap[name+".Host"]
 		fieldSign := current.ConfigMap[name+".FieldSign"]
 		dataSign := current.ConfigMap[name+".Flag"]
 		supplerAccount := current.ConfigMap[name+".SupplerAccount"]
 		witeList := current.ConfigMap[name+".WiteList"]
+		objectIDs := current.ConfigMap[name+".ObjectID"]
 
 		configItem.AppNames = strings.Split(appNames, ",")
 		if syncResource == "1" {
@@ -144,6 +145,7 @@ func (s *SynchronizeServer) onSynchronizeServerConfigUpdate(previous, current cc
 		if witeList == "1" {
 			configItem.WiteList = true
 		}
+		configItem.ObjectIDArr = strings.Split(objectIDs, ",")
 		configItem.Name = name
 		configItem.TargetHost = targetHost
 		configItem.FieldSign = fieldSign
