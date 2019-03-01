@@ -17,6 +17,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -29,6 +30,7 @@ type FetchAssociation struct {
 	syncConfig *options.ConfigItem
 	//ingoreAppID []int64
 	baseConds mapstr.MapStr
+	appIDArr  []int64
 }
 
 // NewFetchAssociation fetch instance struct
@@ -50,7 +52,10 @@ func (fa *FetchAssociation) Fetch(ctx context.Context, dataClassify string, star
 	input.DataClassify = dataClassify
 	input.DataType = metadata.SynchronizeOperateDataTypeAssociation
 	input.Condition.Merge(fa.baseConds)
-	
+	switch dataClassify {
+	case common.SynchronizeAssociationTypeModelHost:
+		input.Condition.Merge(fa.getAppCondition())
+	}
 
 	result, err := fa.lgc.synchronizeSrv.SynchronizeSrv(fa.syncConfig.SynchronizeFlag).Find(ctx, fa.lgc.header, input)
 	if err != nil {
@@ -63,4 +68,17 @@ func (fa *FetchAssociation) Fetch(ctx context.Context, dataClassify string, star
 	}
 
 	return &result.Data, nil
+}
+
+// SetAppIDArr set app id
+func (fa *FetchAssociation) SetAppIDArr(appIDArr []int64) {
+	fa.appIDArr = appIDArr
+}
+
+func (fa *FetchAssociation) getAppCondition() mapstr.MapStr {
+	conds := condition.CreateCondition()
+	if len(fa.appIDArr) > 0 {
+		conds.Field(common.BKAppIDField).In(fa.appIDArr)
+	}
+	return conds.ToMapStr()
 }

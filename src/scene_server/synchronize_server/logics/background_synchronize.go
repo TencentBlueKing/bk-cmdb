@@ -18,6 +18,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -43,7 +44,7 @@ type synchronizeItem struct {
 	baseCondition mapstr.MapStr
 	// all objID
 	objIDMap map[string]bool
-	appIDMap map[int64]bool
+	appIDArr []int64
 	version  int64
 }
 
@@ -54,7 +55,7 @@ func (lgc *Logics) NewSynchronizeItem(version int64, syncConfig *options.ConfigI
 		config:        syncConfig,
 		baseCondition: mapstr.New(),
 		objIDMap:      make(map[string]bool, 0),
-		appIDMap:      make(map[int64]bool, 0),
+		appIDArr:      make([]int64, 0),
 		version:       version,
 	}
 }
@@ -115,7 +116,26 @@ func (s *synchronizeItem) synchronizeInstanceTask(ctx context.Context) (errorInf
 
 	inst := s.lgc.NewFetchInst(s.config, s.baseCondition)
 	var partErrorInfoArr []metadata.ExceptionResult
+
+	// must first business.  get synchronize app information,
+	// set,modelneeds to be synchronized, and the required model can be filtered by the service,
+	//  the model needs the business information in the subsequent service.
+	if _, ok := s.objIDMap[common.BKInnerObjIDApp]; ok {
+		partErrorInfoArr, err = s.synchronizeInstance(ctx, common.BKInnerObjIDApp, inst)
+		if err != nil {
+			blog.Errorf("synchronizeInstanceTask synchronize %s error,err:%s,rid:%s", common.BKInnerObjIDApp, err.Error(), s.lgc.rid)
+			return
+		}
+		if len(partErrorInfoArr) > 0 {
+			partErrorInfoArr = append(partErrorInfoArr, partErrorInfoArr...)
+		}
+		inst.SetAppIDArr(s.appIDArr)
+	}
 	for objID, _ := range s.objIDMap {
+		if objID == common.BKInnerObjIDApp {
+			// last already synchronize
+			continue
+		}
 		partErrorInfoArr, err = s.synchronizeInstance(ctx, objID, inst)
 		if err != nil {
 			blog.Errorf("synchronizeInstanceTask synchronize %s error,err:%s,rid:%s", objID, err.Error(), s.lgc.rid)
@@ -161,6 +181,9 @@ func (s *synchronizeItem) synchronizeInstance(ctx context.Context, objID string,
 			break
 		}
 	}
+	if common.BKInnerObjIDApp == objID {
+		inst.SetAppIDArr(s.appIDArr)
+	}
 
 	return errorInfoArr, nil
 }
@@ -192,6 +215,9 @@ func (s *synchronizeItem) sycnhronizePartInstance(ctx context.Context, input *me
 				OriginIndex: 0,
 			})
 		}
+		if common.BKInnerObjIDApp == input.DataClassify {
+			s.appIDArr = append(s.appIDArr, id)
+		}
 		synchronizeParameter.InfoArray = append(synchronizeParameter.InfoArray, &metadata.SynchronizeItem{ID: id, Info: item})
 	}
 
@@ -218,8 +244,17 @@ func (s *synchronizeItem) sycnhronizePartInstance(ctx context.Context, input *me
 
 func (s *synchronizeItem) synchronizeModelTask(ctx context.Context) ([]metadata.ExceptionResult, errors.CCError) {
 	var errorInfoArr []metadata.ExceptionResult
-
-	model := s.lgc.NewFetchModel(s.config, s.baseCondition)
+	baseCondition := condition.CreateCondition()
+	if len(s.config.ObjectIDArr) > 0 {
+		if s.config.WiteList {
+			baseCondition.Field(common.BKObjIDField).In(s.config.ObjectIDArr)
+		} else {
+			baseCondition.Field(common.BKObjIDField).NotIn(s.config.ObjectIDArr)
+		}
+	}
+	conditionMapStr := baseCondition.ToMapStr()
+	conditionMapStr.Merge(s.baseCondition)
+	model := s.lgc.NewFetchModel(s.config, conditionMapStr)
 	classifyArr := []string{
 		common.SynchronizeModelTypeBase,
 		common.SynchronizeModelTypeClassification,
@@ -328,12 +363,14 @@ func (s *synchronizeItem) sycnhronizePartModel(ctx context.Context, input *metad
 func (s *synchronizeItem) synchronizeAssociationTask(ctx context.Context) ([]metadata.ExceptionResult, errors.CCError) {
 	var errorInfoArr []metadata.ExceptionResult
 
-	model := s.lgc.NewFetchAssociation(s.config, s.baseCondition)
+	association := s.lgc.NewFetchAssociation(s.config, s.baseCondition)
+
 	classifyArr := []string{
 		common.SynchronizeAssociationTypeModelHost,
 	}
+	association.SetAppIDArr(s.appIDArr)
 	for _, dataClassify := range classifyArr {
-		partErrorInfoArr, err := s.sycnhronizeAssociation(ctx, model, dataClassify)
+		partErrorInfoArr, err := s.sycnhronizeAssociation(ctx, association, dataClassify)
 		if err != nil {
 			return nil, err
 		}

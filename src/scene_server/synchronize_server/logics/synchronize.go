@@ -63,13 +63,13 @@ func (lgc *Logics) TriggerSynchronize(ctx context.Context, config *options.Confi
 
 	// version
 	timeInterval := time.Duration(interval) * time.Minute
+	timeInterval = 10 * time.Second
 	for {
-		ticker := time.NewTicker(timeInterval)
+		ticker := time.NewTimer(timeInterval)
 		<-ticker.C
 		lgc.Synchronize(ctx, config)
 		if config.Trigger.IsTiming() {
 			timeInterval = time.Duration(nextDayTrigger) * time.Minute
-
 		}
 
 	}
