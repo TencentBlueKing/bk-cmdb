@@ -124,6 +124,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	return nil
 }
 
+// MigrateServer be responsible for database migration
 type MigrateServer struct {
 	Core         *backbone.Engine
 	Config       *options.Config

@@ -49,7 +49,7 @@ func NewBackbone(ctx context.Context, zkAddr string, procName string, confPath s
 		return nil, fmt.Errorf("new config center failed, err: %v", err)
 	}
 
-	if err := ListenServer(c.Server); err != nil {
+	if err := ListenAndServer(c.Server); err != nil {
 		return nil, err
 	}
 
