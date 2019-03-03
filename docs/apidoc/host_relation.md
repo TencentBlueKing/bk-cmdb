@@ -7,15 +7,15 @@
 * input body：
 ```
 {
-　　"host_info":{
-　　　　"0":{
-　　　　　　"bk_host_innerip":"127.0.0.1",
-　　　　　　"import_from":"3",
-　　　　　　"bk_cloud_id":1
-　　　　}
-　　},
-　　"bk_supplier_id":0,
-　　"bk_biz_id":3
+    "host_info":{
+        "0":{
+            "bk_host_innerip":"127.0.0.1",
+            "import_from":"3",
+            "bk_cloud_id":1
+        }
+    },
+    "bk_supplier_id":0,
+    "bk_biz_id":3
 }
 ```
 * input字段说明:
