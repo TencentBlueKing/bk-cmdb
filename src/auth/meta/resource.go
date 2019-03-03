@@ -12,62 +12,10 @@
 
 package meta
 
-import "fmt"
-
 type ResourceType string
 
 func (r ResourceType) String() string {
 	return string(r)
-}
-
-func (r ResourceType) ResourceID(attribute ResourceAttribute) (string, error) {
-	switch r {
-	case Business:
-		return BusinessDescribe.ResourceID(attribute), nil
-	case Model:
-		return ModelDescribe.ResourceID(attribute), nil
-	case ModelModule:
-		return ModelModuleDescribe.ResourceID(attribute), nil
-	case ModelSet:
-		return ModelSetDescribe.ResourceID(attribute), nil
-	case MainlineModel:
-		return MainlineModelDescribe.ResourceID(attribute), nil
-	case MainlineModelTopology:
-		return MainlineModelTopologyDescribe.ResourceID(attribute), nil
-	case MainlineInstanceTopology:
-		return MainlineInstanceTopologyDescribe.ResourceID(attribute), nil
-	case AssociationType:
-		return AssociationTypeDescribe.ResourceID(attribute), nil
-	case ModelAssociation:
-		return ModelAssociationDescribe.ResourceID(attribute), nil
-	case ModelInstanceAssociation:
-		return ModelInstanceAssociationDescribe.ResourceID(attribute), nil
-	case ModelInstance:
-		return ModelInstanceDescribe.ResourceID(attribute), nil
-	case ModelInstanceTopology:
-		return ModelInstanceTopologyDescribe.ResourceID(attribute), nil
-	case ModelTopology:
-		return ModelTopologyDescribe.ResourceID(attribute), nil
-	case ModelClassification:
-		return ModelClassificationDescribe.ResourceID(attribute), nil
-	case ModelAttributeGroup:
-		return ModelAttributeGroupDescribe.ResourceID(attribute), nil
-	case ModelAttribute:
-		return ModelAttributeDescribe.ResourceID(attribute), nil
-	case ModelUnique:
-		return ModelUniqueDescribe.ResourceID(attribute), nil
-	case HostUserCustom:
-		return HostUserCustomDescribe.ResourceID(attribute), nil
-	case HostFavorite:
-		return HostFavoriteDescribe.ResourceID(attribute), nil
-	case Process:
-		return ProcessDescribe.ResourceID(attribute), nil
-	case NetDataCollector:
-		return NetDataCollectorDescribe.ResourceID(attribute), nil
-	default:
-		return "", fmt.Errorf("unsupported resource type: %s", r)
-	}
-
 }
 
 const (
@@ -88,11 +36,10 @@ const (
 	ModelAttributeGroup      ResourceType = "modelAttributeGroup"
 	ModelAttribute           ResourceType = "modelAttribute"
 	ModelUnique              ResourceType = "modelUnique"
-
-	HostUserCustom   ResourceType = "hostUserCustom"
-	HostFavorite     ResourceType = "hostFavorite"
-	Process          ResourceType = "process"
-	NetDataCollector ResourceType = "netDataCollector"
+	HostUserCustom           ResourceType = "hostUserCustom"
+	HostFavorite             ResourceType = "hostFavorite"
+	Process                  ResourceType = "process"
+	NetDataCollector         ResourceType = "netDataCollector"
 )
 
 const (
@@ -110,93 +57,57 @@ const (
 type ResourceDescribe struct {
 	Type    ResourceType
 	Actions []Action
-	// the rule to generate the resource id to represent this resource.
-	rule func(attribute ResourceAttribute) string
-}
-
-func (r ResourceDescribe) ResourceID(attribute ResourceAttribute) string {
-	return r.rule(attribute)
 }
 
 var (
 	BusinessDescribe = ResourceDescribe{
 		Type:    Business,
 		Actions: []Action{Create, Update, Delete, FindMany},
-		rule: func(attribute ResourceAttribute) string {
-			return ""
-		},
 	}
 
 	ModelDescribe = ResourceDescribe{
 		Type:    Model,
 		Actions: []Action{Create, Update, Delete, FindMany},
-		rule: func(attribute ResourceAttribute) string {
-			return ""
-		},
 	}
 
 	ModelModuleDescribe = ResourceDescribe{
 		Type:    ModelModule,
 		Actions: []Action{Create, Update, Delete, FindMany},
-		rule: func(attribute ResourceAttribute) string {
-			return ""
-		},
 	}
 
 	ModelSetDescribe = ResourceDescribe{
 		Type:    ModelSet,
 		Actions: []Action{Create, Update, Delete, FindMany, DeleteMany},
-		rule: func(attribute ResourceAttribute) string {
-			return ""
-		},
 	}
 
 	MainlineModelDescribe = ResourceDescribe{
 		Type:    MainlineModel,
 		Actions: []Action{Create, Delete, Find},
-		rule: func(attribute ResourceAttribute) string {
-			return ""
-		},
 	}
 
 	MainlineModelTopologyDescribe = ResourceDescribe{
 		Type:    MainlineModelTopology,
 		Actions: []Action{Find},
-		rule: func(attribute ResourceAttribute) string {
-			return ""
-		},
 	}
 
 	MainlineInstanceTopologyDescribe = ResourceDescribe{
 		Type:    MainlineInstanceTopology,
 		Actions: []Action{Find},
-		rule: func(attribute ResourceAttribute) string {
-			return ""
-		},
 	}
 
 	AssociationTypeDescribe = ResourceDescribe{
 		Type:    AssociationType,
 		Actions: []Action{FindMany, Create, Update, Delete},
-		rule: func(attribute ResourceAttribute) string {
-			return ""
-		},
 	}
 
 	ModelAssociationDescribe = ResourceDescribe{
 		Type:    ModelAssociation,
 		Actions: []Action{FindMany, Create, Update, Delete},
-		rule: func(attribute ResourceAttribute) string {
-			return ""
-		},
 	}
 
 	ModelInstanceAssociationDescribe = ResourceDescribe{
 		Type:    ModelInstanceAssociation,
 		Actions: []Action{FindMany, Create, Delete},
-		rule: func(attribute ResourceAttribute) string {
-			return ""
-		},
 	}
 
 	ModelInstanceDescribe = ResourceDescribe{
@@ -221,88 +132,55 @@ var (
 			AddHostToResourcePool,
 			MoveHostToModule,
 		},
-		rule: func(attribute ResourceAttribute) string {
-			return ""
-		},
 	}
 
 	ModelInstanceTopologyDescribe = ResourceDescribe{
 		Type:    ModelInstanceTopology,
 		Actions: []Action{Find, FindMany},
-		rule: func(attribute ResourceAttribute) string {
-			return ""
-		},
 	}
 
 	ModelTopologyDescribe = ResourceDescribe{
 		Type:    ModelTopology,
 		Actions: []Action{Find, Update},
-		rule: func(attribute ResourceAttribute) string {
-			return ""
-		},
 	}
 
 	ModelClassificationDescribe = ResourceDescribe{
 		Type:    ModelClassification,
 		Actions: []Action{FindMany, Create, Update, Delete},
-		rule: func(attribute ResourceAttribute) string {
-			return ""
-		},
 	}
 
 	ModelAttributeGroupDescribe = ResourceDescribe{
 		Type:    ModelAttributeGroup,
 		Actions: []Action{Find, Create, Delete},
-		rule: func(attribute ResourceAttribute) string {
-			return ""
-		},
 	}
 
 	ModelAttributeDescribe = ResourceDescribe{
 		Type:    ModelAttribute,
 		Actions: []Action{Find, Create, Update, Delete},
-		rule: func(attribute ResourceAttribute) string {
-			return ""
-		},
 	}
 
 	ModelUniqueDescribe = ResourceDescribe{
 		Type:    ModelUnique,
 		Actions: []Action{FindMany, Create, Update, Delete},
-		rule: func(attribute ResourceAttribute) string {
-			return ""
-		},
 	}
 
 	HostUserCustomDescribe = ResourceDescribe{
 		Type:    HostUserCustom,
 		Actions: []Action{Find, FindMany, Create, Update, Delete},
-		rule: func(attribute ResourceAttribute) string {
-			return ""
-		},
 	}
 
 	HostFavoriteDescribe = ResourceDescribe{
 		Type:    HostFavorite,
 		Actions: []Action{FindMany, Create, Update, Delete, DeleteMany},
-		rule: func(attribute ResourceAttribute) string {
-			return ""
-		},
 	}
 
 	ProcessDescribe = ResourceDescribe{
 		Type:    Process,
 		Actions: []Action{Create, Find, FindMany, Delete, DeleteMany, Update, UpdateMany, Create},
-		rule: func(attribute ResourceAttribute) string {
-			return ""
-		},
 	}
 
 	NetDataCollectorDescribe = ResourceDescribe{
 		Type:    NetDataCollector,
 		Actions: []Action{Find, FindMany, Update, UpdateMany, DeleteMany, Create, DeleteMany},
-		rule: func(attribute ResourceAttribute) string {
-			return ""
-		},
 	}
 )

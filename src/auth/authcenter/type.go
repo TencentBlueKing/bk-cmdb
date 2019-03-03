@@ -25,7 +25,9 @@ type RegisterInfo struct {
 }
 
 type ResourceInfo struct {
-	ResourceType string `json:"resource_type"`
+	ResourceType Type `json:"resource_type"`
+	// this filed is not always used, it's decided by the api
+	// that is used.
 	ResourceName string `json:"resource_name,omitempty"`
 	ResourceID   string `json:"resource_id"`
 }
@@ -82,7 +84,7 @@ type BatchResult struct {
 
 type ResourceAction struct {
 	ResourceInfo `json:",inline"`
-	ActionID     string `json:"action_id"`
+	ActionID     Action `json:"action_id"`
 }
 
 type BatchStatus struct {
