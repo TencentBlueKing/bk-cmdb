@@ -35,7 +35,8 @@ type Item Basic
 type ResourceAttribute struct {
 	Basic
 
-	BusinessID int64
+	SupplierAccount string
+	BusinessID      int64
 	// if this object belongs to a topology, like mainline topology,
 	// layers means each object's item before this object.
 	Layers []Item

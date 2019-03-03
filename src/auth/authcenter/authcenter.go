@@ -85,9 +85,11 @@ func NewAuthCenter(tls *util.TLSClientConfig, authCfg map[string]string) (*AuthC
 	header.Set(authAppSecretHeaderKey, cfg.AppSecret)
 
 	return &AuthCenter{
-		client: rest.NewRESTClient(c, ""),
-		Config: cfg,
-		header: header,
+		authClient: &authClient{
+			client:      rest.NewRESTClient(c, ""),
+			Config:      cfg,
+			basicHeader: header,
+		},
 	}, nil
 }
 
@@ -98,7 +100,8 @@ type AuthCenter struct {
 	// http client instance
 	client rest.ClientInterface
 	// http header info
-	header http.Header
+	header     http.Header
+	authClient *authClient
 }
 
 func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (decision meta.Decision, err error) {
@@ -122,54 +125,22 @@ func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (dec
 
 	info.ResourceActions = make([]ResourceAction, 0)
 	for _, rsc := range a.Resources {
-		rscID, err := rsc.Type.ResourceID(rsc)
+
+		rscInfo, err := adaptor(&rsc)
 		if err != nil {
-			return meta.Decision{}, fmt.Errorf("generate resource id failed, err: %v", err)
+			return meta.Decision{}, fmt.Errorf("adaptor resource info failed, err: %v", err)
 		}
+
 		info.ResourceActions = append(info.ResourceActions, ResourceAction{
-			ActionID: rsc.Action.String(),
-			ResourceInfo: ResourceInfo{
-				ResourceType: rsc.Type.String(),
-				ResourceID:   rscID,
-			},
+			ActionID:     adaptorAction(&rsc),
+			ResourceInfo: *rscInfo,
 		})
 	}
 
-	resp := new(BatchResult)
-	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/resources-perms/verify", ac.Config.SystemID)
-	err = ac.client.Post().
-		SubResource(url).
-		WithContext(ctx).
-		WithHeaders(ac.header).
-		Body(info).
-		Do().Into(resp)
+	header := http.Header{}
+	header.Add(AuthSupplierAccountHeaderKey, a.User.SupplierID)
+	return ac.authClient.verifyInList(ctx, header, info)
 
-	if err != nil {
-		return meta.Decision{}, err
-	}
-
-	if resp.Code != 0 {
-		return meta.Decision{}, &AuthError{
-			RequestID: resp.RequestID,
-			Reason:    fmt.Errorf("register resource failed, error code: %d, message: %s", resp.Code, resp.ErrMsg),
-		}
-	}
-
-	noAuth := make([]string, 0)
-	for _, item := range resp.Data {
-		if !item.IsPass {
-			noAuth = append(noAuth, item.ResourceType)
-		}
-	}
-
-	if len(noAuth) != 0 {
-		return meta.Decision{
-			Authorized: false,
-			Reason:     fmt.Sprintf("resource [%s] do not have permission", strings.Join(noAuth, ",")),
-		}, nil
-	}
-
-	return meta.Decision{Authorized: true}, nil
 }
 
 func (ac *AuthCenter) Register(ctx context.Context, r *meta.ResourceAttribute) error {
@@ -181,43 +152,20 @@ func (ac *AuthCenter) Register(ctx context.Context, r *meta.ResourceAttribute) e
 		return err
 	}
 
-	rscID, err := ac.getResourceID(r.Layers)
+	rscInfo, err := adaptor(r)
 	if err != nil {
-		return err
+		return fmt.Errorf("adaptor resource info failed, err: %v", err)
 	}
 	info := &RegisterInfo{
-		CreatorType: cmdbUser,
-		CreatorID:   cmdbUserID,
-		ScopeInfo:   *scope,
-		ResourceInfo: ResourceInfo{
-			ResourceType: string(r.Basic.Type),
-			ResourceName: r.Basic.Name,
-			ResourceID:   rscID,
-		},
+		CreatorType:  cmdbUser,
+		CreatorID:    cmdbUserID,
+		ScopeInfo:    *scope,
+		ResourceInfo: *rscInfo,
 	}
 
-	resp := new(ResourceResult)
-	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/resources", ac.Config.SystemID)
-	err = ac.client.Post().
-		SubResource(url).
-		WithContext(ctx).
-		WithHeaders(ac.header).
-		Body(info).
-		Do().Into(resp)
-
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != 0 {
-		return &AuthError{RequestID: resp.RequestID, Reason: fmt.Errorf("register resource failed, error code: %d, message: %s", resp.Code, resp.ErrMsg)}
-	}
-
-	if !resp.Data.IsCreated {
-		return &AuthError{resp.RequestID, fmt.Errorf("register resource failed, error code: %d", resp.Code)}
-	}
-
-	return nil
+	header := http.Header{}
+	header.Add(AuthSupplierAccountHeaderKey, r.SupplierAccount)
+	return ac.authClient.registerResource(ctx, header, info)
 }
 
 func (ac *AuthCenter) Deregister(ctx context.Context, r *meta.ResourceAttribute) error {
@@ -230,41 +178,19 @@ func (ac *AuthCenter) Deregister(ctx context.Context, r *meta.ResourceAttribute)
 		return err
 	}
 
-	rscID, err := ac.getResourceID(r.Layers)
+	rscInfo, err := adaptor(r)
 	if err != nil {
-		return err
+		return fmt.Errorf("adaptor resource info failed, err: %v", err)
 	}
 
 	info := &DeregisterInfo{
-		ScopeInfo: *scope,
-		ResourceInfo: ResourceInfo{
-			ResourceType: r.Basic.Type.String(),
-			ResourceID:   rscID,
-		},
+		ScopeInfo:    *scope,
+		ResourceInfo: *rscInfo,
 	}
 
-	resp := new(ResourceResult)
-	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/resources", ac.Config.SystemID)
-	err = ac.client.Delete().
-		SubResource(url).
-		WithContext(ctx).
-		WithHeaders(ac.header).
-		Body(info).
-		Do().Into(resp)
-
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != 0 {
-		return &AuthError{resp.RequestID, fmt.Errorf("deregister resource failed, error code: %d, message: %s", resp.Code, resp.ErrMsg)}
-	}
-
-	if !resp.Data.IsDeleted {
-		return &AuthError{resp.RequestID, fmt.Errorf("deregister resource failed, error code: %d", resp.Code)}
-	}
-
-	return nil
+	header := http.Header{}
+	header.Add(AuthSupplierAccountHeaderKey, r.SupplierAccount)
+	return ac.authClient.deregisterResource(ctx, header, info)
 }
 
 func (ac *AuthCenter) Update(ctx context.Context, r *meta.ResourceAttribute) error {
@@ -277,41 +203,18 @@ func (ac *AuthCenter) Update(ctx context.Context, r *meta.ResourceAttribute) err
 		return err
 	}
 
-	rscID, err := ac.getResourceID(r.Layers)
+	rscInfo, err := adaptor(r)
 	if err != nil {
-		return err
+		return fmt.Errorf("adaptor resource info failed, err: %v", err)
 	}
 	info := &UpdateInfo{
-		ScopeInfo: *scope,
-		ResourceInfo: ResourceInfo{
-			ResourceType: r.Basic.Type.String(),
-			ResourceName: r.Basic.Name,
-			ResourceID:   rscID,
-		},
+		ScopeInfo:    *scope,
+		ResourceInfo: *rscInfo,
 	}
 
-	resp := new(ResourceResult)
-	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/resources", ac.Config.SystemID)
-	err = ac.client.Put().
-		SubResource(url).
-		WithContext(ctx).
-		WithHeaders(ac.header).
-		Body(info).
-		Do().Into(resp)
-
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != 0 {
-		return &AuthError{resp.RequestID, fmt.Errorf("update resource failed, error code: %d, message: %s", resp.Code, resp.ErrMsg)}
-	}
-
-	if !resp.Data.IsUpdated {
-		return &AuthError{resp.RequestID, fmt.Errorf("update resource failed, error code: %d", resp.Code)}
-	}
-
-	return nil
+	header := http.Header{}
+	header.Add(AuthSupplierAccountHeaderKey, r.SupplierAccount)
+	return ac.authClient.updateResource(ctx, header, info)
 }
 
 func (ac *AuthCenter) Get(ctx context.Context) error {
@@ -320,27 +223,16 @@ func (ac *AuthCenter) Get(ctx context.Context) error {
 
 func (ac *AuthCenter) getScopeInfo(r *meta.ResourceAttribute) (*ScopeInfo, error) {
 	s := new(ScopeInfo)
-	switch r.Basic.Name {
-	case "set", "module":
+	// TODO: this operation may be wrong, because some api filters does not
+	// fill the business id field, so these api should be normalized.
+	if r.BusinessID != 0 {
 		s.ScopeType = "biz"
-	// TODO: add filter rules for scope info.
-	default:
-		return nil, fmt.Errorf("unsupported scope type or info for %s", r.Basic.Name)
+		s.ScopeID = strconv.FormatInt(r.BusinessID, 10)
+	} else {
+		s.ScopeType = "system"
+		s.ScopeID = "bk-cmdb"
 	}
 	return s, nil
-}
-
-func (ac *AuthCenter) getResourceID(layers []meta.Item) (string, error) {
-	var id string
-	for _, item := range layers {
-		if len(item.Name) == 0 || len(item.Type) == 0 {
-			return "", fmt.Errorf("invalid resoutece item %s/%d", item.Name, item.InstanceID)
-		}
-		id = fmt.Sprintf("%s/%s:%d", item.Type, item.Name, item.InstanceID)
-	}
-	id = strings.TrimLeft(id, "/")
-
-	return id, nil
 }
 
 type acDiscovery struct {
