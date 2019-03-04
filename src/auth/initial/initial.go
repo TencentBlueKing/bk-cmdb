@@ -33,17 +33,20 @@ func Init(ctx context.Context, cli authcenter.AuthCenter) error {
 		ResourceTypes: expectSystemResourceType,
 	})
 
-	info, err := cli.QuerySystemInfo(ctx, meta.SystemIDCMDB, false)
+	_, err := cli.QuerySystemInfo(ctx, meta.SystemIDCMDB, false)
 	if err != nil && err != authcenter.ErrNotFound {
 		return err
 	}
 
-	if info == nil {
-		if err := cli.RegistSystem(ctx, expectSystem); err != nil && err != authcenter.ErrDuplicated {
-			return err
-		}
+	if err := cli.RegistSystem(ctx, expectSystem); err != nil && err != authcenter.ErrDuplicated {
+		return err
+	}
 
-		cli.UpdateResourceActionBatch
+	if err := cli.UpsertResourceTypeBatch(ctx, meta.SystemIDCMDB, meta.ScopeTypeIDSystem, expectSystemResourceType); err != nil {
+		return err
+	}
+	if err := cli.UpsertResourceTypeBatch(ctx, meta.SystemIDCMDB, meta.ScopeTypeIDBiz, expectBizResourceType); err != nil {
+		return err
 	}
 
 	return nil
