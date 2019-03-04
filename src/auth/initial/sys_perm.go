@@ -95,7 +95,7 @@ var expectSystemResourceType = []authcenter.ResourceType{
 				IsRelatedResource: true,
 			},
 			{
-				ActionID:          authcenter.Delete,
+				ActionID:          authcenter.Get,
 				ActionName:        "查询",
 				IsRelatedResource: true,
 			},
@@ -116,6 +116,11 @@ var expectSystemResourceType = []authcenter.ResourceType{
 				ActionName:        "编辑",
 				IsRelatedResource: true,
 			},
+			{
+				ActionID:          authcenter.Delete,
+				ActionName:        "删除",
+				IsRelatedResource: true,
+			},
 		},
 	},
 	{
@@ -134,8 +139,8 @@ var expectSystemResourceType = []authcenter.ResourceType{
 				IsRelatedResource: true,
 			},
 			{
-				ActionID:          authcenter.Delete,
-				ActionName:        "删除",
+				ActionID:          authcenter.Archive,
+				ActionName:        "归档",
 				IsRelatedResource: true,
 			},
 			{
@@ -161,7 +166,17 @@ var expectSystemResourceType = []authcenter.ResourceType{
 				IsRelatedResource: true,
 			},
 			{
+				ActionID:          authcenter.Delete,
+				ActionName:        "编辑",
+				IsRelatedResource: true,
+			},
+			{
 				ActionID:          authcenter.Get,
+				ActionName:        "查询",
+				IsRelatedResource: true,
+			},
+			{
+				ActionID:          authcenter.ModuleTransfer,
 				ActionName:        "分配到业务",
 				IsRelatedResource: true,
 			},
@@ -182,6 +197,16 @@ var expectSystemResourceType = []authcenter.ResourceType{
 				ActionName:        "编辑",
 				IsRelatedResource: true,
 			},
+			{
+				ActionID:          authcenter.Delete,
+				ActionName:        "编辑",
+				IsRelatedResource: true,
+			},
+			{
+				ActionID:          authcenter.Get,
+				ActionName:        "查询",
+				IsRelatedResource: true,
+			},
 		},
 	},
 	{
@@ -190,12 +215,12 @@ var expectSystemResourceType = []authcenter.ResourceType{
 		ParentResourceTypeID: "",
 		Actions: []authcenter.Action{
 			{
-				ActionID:          authcenter.Create,
+				ActionID:          authcenter.TopoLayerManage,
 				ActionName:        "拓扑层级管理",
 				IsRelatedResource: false,
 			},
 			{
-				ActionID:          authcenter.Edit,
+				ActionID:          authcenter.AdminEntrance,
 				ActionName:        "管理页面入口",
 				IsRelatedResource: false,
 			},
