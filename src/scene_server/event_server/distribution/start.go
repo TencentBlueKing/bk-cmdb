@@ -90,7 +90,7 @@ func migrateIDToMongo(ctx context.Context, cache *redis.Client, db dal.RDB) erro
 	}
 
 	err = db.Table(common.BKTableNameIDgenerator).Insert(ctx, docs)
-	if err != nil {
+	if err != nil && !db.IsDuplicatedError(err) {
 		return err
 	}
 
