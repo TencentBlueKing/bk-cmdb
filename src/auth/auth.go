@@ -12,30 +12,42 @@
 
 package auth
 
-import "context"
+import (
+	"context"
+
+	"configcenter/src/apimachinery/util"
+	"configcenter/src/auth/authcenter"
+	"configcenter/src/auth/meta"
+)
+
+type Authorize interface {
+	Authorizer
+	ResourceHandler
+}
 
 type Authorizer interface {
 	// Authorize works to check if a user has the authority to operate resources.
-	Authorize(a *Attribute) (decision Decision, err error)
+	Authorize(ctx context.Context, a *meta.AuthAttribute) (decision meta.Decision, err error)
 }
 
 // ResourceManager is used to handle the resources register to authorize center.
 // request id is a identifier for a request, returned by IAM.
 type ResourceHandler interface {
 	// register a resource
-	Register(ctx context.Context, r *ResourceAttribute) error
+	Register(ctx context.Context, r *meta.ResourceAttribute) error
 	// deregister a resource
-	Deregister(ctx context.Context, r *ResourceAttribute) error
+	Deregister(ctx context.Context, r *meta.ResourceAttribute) error
 	// update a resource's info
-	Update(ctx context.Context, r *ResourceAttribute) error
+	Update(ctx context.Context, r *meta.ResourceAttribute) error
 	// get a resource's info
 	Get(ctx context.Context) error
 }
 
-func NewAuthorizer() (Authorizer, error) {
-	panic("implement me")
-}
-
-func NewResourceHandler() (ResourceHandler, error) {
-	panic("implement me")
+// NewAuthorize is used to initialized a Authorize instance interface,
+// which is used for request authorize and resource handle.
+// This allows bk-cmdb to support other kind of auth center.
+// tls can be nil if it is not care.
+// authConfig is a way to parse configuration info for the connection to a auth center.
+func NewAuthorize(tls *util.TLSClientConfig, authConfig map[string]string) (Authorize, error) {
+	return authcenter.NewAuthCenter(tls, authConfig)
 }

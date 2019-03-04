@@ -1,13 +1,16 @@
 package authcenter
 
 import (
-	"configcenter/src/common/metadata"
 	"fmt"
+
+	"configcenter/src/common/metadata"
 )
 
 type AuthConfig struct {
 	// blueking's auth center addresses
 	Address []string
+	// app code is used for authorize used.
+	AppCode string
 	// app secret is used for authorized
 	AppSecret string
 	// the system id that cmdb used in auth center.
@@ -22,7 +25,9 @@ type RegisterInfo struct {
 }
 
 type ResourceInfo struct {
-	ResourceType string `json:"resource_type"`
+	ResourceType Type `json:"resource_type"`
+	// this filed is not always used, it's decided by the api
+	// that is used.
 	ResourceName string `json:"resource_name,omitempty"`
 	ResourceID   string `json:"resource_id"`
 }
@@ -58,6 +63,36 @@ type DeregisterInfo struct {
 type UpdateInfo struct {
 	ScopeInfo    `json:",inline"`
 	ResourceInfo `json:",inline"`
+}
+
+type Principal struct {
+	Type string `json:"principal_type"`
+	ID   string `json:"principal_id"`
+}
+
+type AuthBatch struct {
+	Principal       `json:",inline"`
+	ScopeInfo       `json:",inline"`
+	ResourceActions []ResourceAction `json:"resources_actions"`
+}
+
+type BatchResult struct {
+	metadata.BaseResp `json:",inline"`
+	RequestID         string        `json:"request_id"`
+	Data              []BatchStatus `json:"data"`
+}
+
+type ResourceAction struct {
+	ResourceInfo `json:",inline"`
+	ActionID     Action `json:"action_id"`
+}
+
+type BatchStatus struct {
+	ActionID     string `json:"action_id"`
+	ResourceInfo `json:",inline"`
+	// for authorize confirm use, define if a user have
+	// the permission to this request.
+	IsPass bool `json:"is_pass"`
 }
 
 type AuthError struct {
