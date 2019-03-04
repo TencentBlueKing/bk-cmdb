@@ -30,7 +30,7 @@ echo $${branch})
 # BRANCH?=$(shell name=$(git symbolic-ref -q --short HEAD); if [[ -z ${name} ]]; then tag=$(git describe --tags --exact-match); branch=$(git branch -a --contains ${tag} | grep -v "HEAD" | awk -F '/' '{print $3}'); else branch=$(git status --ahead-behind | sed -n 2p | grep -q "Your branch" && git symbolic-ref -q --short HEAD); if [[ -z ${branch} ]]; then branch=$(git show-branch -a | grep '\*' | grep -v `git rev-parse --abbrev-ref HEAD` | head -n1 | sed 's/.*\[\(.*\)\].*/\1/' | sed 's/[\^~].*//'); fi; fi;  echo ${branch})
 #GITTAG?=$(shell git describe --always)
 # GITTAG?=$(shell git describe --tags --exact-match 2>1)
-GITTAG?=$(shell git describe --all --tags --exact-match 2>/dev/null | awk -F '-' '{print $$NF}')
+GITTAG?=$(shell git describe --all --tags --exact-match 2>/dev/null | awk -F '/' '{print $$NF}')
 #VERSION?=$(GITTAG)-$(shell date +%y.%m.%d)
 VERSION?=$(shell git symbolic-ref -q --short HEAD || git describe --all --tags --exact-match 2>/dev/null | awk -F '-' '{print $$NF}')
 
