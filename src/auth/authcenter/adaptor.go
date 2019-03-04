@@ -121,14 +121,17 @@ const (
 
 type ActionID string
 
+// ActionID define
 const (
-	// unknown action is a action that can not be recognized by the
-	// auth center.
+	// Unknown action is a action that can not be recognized by the auth center.
 	Unknown ActionID = "unknown"
 	Edit    ActionID = "edit"
 	Create  ActionID = "create"
 	Get     ActionID = "get"
 	Delete  ActionID = "delete"
+
+	// Archive for business
+	Archive ActionID = "archive"
 	// host action
 	ModuleTransfer ActionID = "moduleTransfer"
 	// business topology action
@@ -143,6 +146,9 @@ const (
 	// located system/host/assignHostsToBusiness in auth center.
 	AssignHostsToBusiness ActionID = "assignHostsToBusiness"
 	BindModule            ActionID = "bindModule"
+
+	TopoLayerManage ActionID = "topoManage"
+	AdminEntrance   ActionID = "adminEntrance"
 )
 
 func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
