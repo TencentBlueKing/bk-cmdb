@@ -123,7 +123,7 @@ type System struct {
 	Creator string `json:"creator,omitempty"`
 }
 
-type Resource struct {
+type ResourceType struct {
 	ResourceTypeID       string   `json:"resource_type_id"`
 	ResourceTypeName     string   `json:"resource_type_name"`
 	ParentResourceTypeID string   `json:"parent_resource_type_id"`
@@ -139,8 +139,8 @@ type Action struct {
 type SystemDetail struct {
 	System
 	Scopes []struct {
-		ScopeTypeID   string     `json:"scope_type_id"`
-		ResourceTypes []Resource `json:"resource_types"`
+		ScopeTypeID   string         `json:"scope_type_id"`
+		ResourceTypes []ResourceType `json:"resource_types"`
 	} `json:"scopes"`
 }
 

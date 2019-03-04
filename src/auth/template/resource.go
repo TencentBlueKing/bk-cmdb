@@ -11,3 +11,5 @@
  */
 
 package template
+
+var 

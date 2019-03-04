@@ -238,6 +238,36 @@ func (ac *AuthCenter) Get(ctx context.Context) error {
 	panic("implement me")
 }
 
+func (ac *AuthCenter) QuerySystemInfo(ctx context.Context, systemID string, detail bool) (*SystemDetail, error) {
+	return ac.authClient.QuerySystemInfo(ctx, http.Header{}, systemID, detail)
+
+}
+
+func (ac *AuthCenter) RegistSystem(ctx context.Context, system System) error {
+	return ac.authClient.RegistSystem(ctx, http.Header{}, system)
+}
+
+func (ac *AuthCenter) UpdateSystem(ctx context.Context, system System) error {
+	return ac.authClient.UpdateSystem(ctx, http.Header{}, system)
+
+}
+
+func (ac *AuthCenter) RegistResourceBatch(ctx context.Context, systemID, scopeType string, resources []ResourceType) error {
+	return ac.authClient.RegistResourceBatch(ctx, http.Header{}, systemID, scopeType, resources)
+}
+
+func (ac *AuthCenter) UpdateResourceBatch(ctx context.Context, systemID, scopeType string, resources []ResourceType) error {
+	return ac.authClient.UpdateResourceBatch(ctx, http.Header{}, systemID, scopeType, resources)
+}
+
+func (ac *AuthCenter) UpdateResourceActionBatch(ctx context.Context, systemID, scopeType string, resources []ResourceType) error {
+	return ac.authClient.UpdateResourceActionBatch(ctx, http.Header{}, systemID, scopeType, resources)
+}
+
+func (ac *AuthCenter) InitSystemBatch(ctx context.Context, detail SystemDetail) error {
+	return ac.authClient.InitSystemBatch(ctx, http.Header{}, detail)
+}
+
 func (ac *AuthCenter) getScopeInfo(r *meta.ResourceAttribute) (*ScopeInfo, error) {
 	s := new(ScopeInfo)
 	// TODO: this operation may be wrong, because some api filters does not
