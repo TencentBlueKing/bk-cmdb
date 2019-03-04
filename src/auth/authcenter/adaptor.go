@@ -142,6 +142,7 @@ const (
 	// assign host(s) to a business
 	// located system/host/assignHostsToBusiness in auth center.
 	AssignHostsToBusiness ActionID = "assignHostsToBusiness"
+	BindModule            ActionID = "bindModule"
 )
 
 func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {

@@ -131,9 +131,9 @@ type ResourceType struct {
 }
 
 type Action struct {
-	ActionID          string `json:"action_id"`
-	ActionName        string `json:"action_name"`
-	IsRelatedResource bool   `json:"is_related_resource"`
+	ActionID          ActionID `json:"action_id"`
+	ActionName        string   `json:"action_name"`
+	IsRelatedResource bool     `json:"is_related_resource"`
 }
 
 type SystemDetail struct {

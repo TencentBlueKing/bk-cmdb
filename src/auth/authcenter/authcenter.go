@@ -253,15 +253,19 @@ func (ac *AuthCenter) UpdateSystem(ctx context.Context, system System) error {
 }
 
 func (ac *AuthCenter) RegistResourceBatch(ctx context.Context, systemID, scopeType string, resources []ResourceType) error {
-	return ac.authClient.RegistResourceBatch(ctx, http.Header{}, systemID, scopeType, resources)
+	return ac.authClient.RegistResourceTypeBatch(ctx, http.Header{}, systemID, scopeType, resources)
 }
 
-func (ac *AuthCenter) UpdateResourceBatch(ctx context.Context, systemID, scopeType string, resources []ResourceType) error {
-	return ac.authClient.UpdateResourceBatch(ctx, http.Header{}, systemID, scopeType, resources)
+func (ac *AuthCenter) UpdateResourceTypeBatch(ctx context.Context, systemID, scopeType string, resources []ResourceType) error {
+	return ac.authClient.UpdateResourceTypeBatch(ctx, http.Header{}, systemID, scopeType, resources)
+}
+
+func (ac *AuthCenter) UpsertResourceTypeBatch(ctx context.Context, systemID, scopeType string, resources []ResourceType) error {
+	return ac.authClient.UpsertResourceTypeBatch(ctx, http.Header{}, systemID, scopeType, resources)
 }
 
 func (ac *AuthCenter) UpdateResourceActionBatch(ctx context.Context, systemID, scopeType string, resources []ResourceType) error {
-	return ac.authClient.UpdateResourceActionBatch(ctx, http.Header{}, systemID, scopeType, resources)
+	return ac.authClient.UpdateResourceTypeActionBatch(ctx, http.Header{}, systemID, scopeType, resources)
 }
 
 func (ac *AuthCenter) InitSystemBatch(ctx context.Context, detail SystemDetail) error {
