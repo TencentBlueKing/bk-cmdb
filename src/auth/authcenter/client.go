@@ -153,3 +153,160 @@ func (a *authClient) updateResource(ctx context.Context, header http.Header, inf
 
 	return nil
 }
+
+func (a *authClient) QuerySystemInfo(ctx context.Context, header http.Header, systemID string) (*SystemDetail, error) {
+	url := fmt.Sprintf("/bkiam/api/v1/perm-model/systems/%s", systemID)
+	resp := struct {
+		BaseResponse
+		Data SystemDetail `json:"data"`
+	}{}
+
+	err := a.client.Get().
+		SubResource(url).
+		WithContext(ctx).
+		WithHeaders(header).
+		Do().Into(&resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if !resp.Result {
+		return nil, fmt.Errorf("query system info for [%s] failed, message: %s, code: %v", systemID, resp.Message, resp.Code)
+	}
+
+	return &resp.Data, nil
+}
+
+func (a *authClient) RegistSystem(ctx context.Context, header http.Header, system System) error {
+	const url = "/bkiam/api/v1/perm-model/systems"
+	resp := struct {
+		BaseResponse
+		Data System `json:"data"`
+	}{}
+
+	err := a.client.Post().
+		SubResource(url).
+		WithContext(ctx).
+		WithHeaders(header).
+		Body(system).
+		Do().Into(&resp)
+	if err != nil {
+		return err
+	}
+
+	if !resp.Result {
+		return fmt.Errorf("regist system info for [%s] failed, message: %s, code: %v", system.SystemID, resp.Message, resp.Code)
+	}
+
+	return nil
+}
+
+func (a *authClient) UpdateSystem(ctx context.Context, header http.Header, system System) error {
+	url := fmt.Sprintf("/bkiam/api/v1/perm-model/systems/%s", system.SystemID)
+	resp := struct {
+		BaseResponse
+		Data System `json:"data"`
+	}{}
+
+	err := a.client.Put().
+		SubResource(url).
+		WithContext(ctx).
+		WithHeaders(header).
+		Body(system).
+		Do().Into(&resp)
+	if err != nil {
+		return err
+	}
+
+	if !resp.Result {
+		return fmt.Errorf("regist system info for [%s] failed, message: %s, code: %v", system.SystemID, resp.Message, resp.Code)
+	}
+
+	return nil
+}
+
+func (a *authClient) RegistResourceBatch(ctx context.Context, header http.Header, systemID, scopeType string, resources []Resource) error {
+	url := fmt.Sprintf("/bkiam/api/v1/perm-model/systems/%s/scope-types/%s/resource-types/batch-register", systemID, scopeType)
+	resp := BaseResponse{}
+
+	err := a.client.Put().
+		SubResource(url).
+		WithContext(ctx).
+		WithHeaders(header).
+		Body(struct {
+			ResourceTypes []Resource `json:"resource_types"`
+		}{resources}).
+		Do().Into(&resp)
+	if err != nil {
+		return fmt.Errorf("regist resource %+v for [%s] failed, error: %v", resources, systemID, err)
+	}
+	if !resp.Result {
+		return fmt.Errorf("regist resource %+v for [%s] failed, message: %s, code: %v", resources, systemID, resp.Message, resp.Code)
+	}
+
+	return nil
+}
+
+func (a *authClient) UpdateResourceBatch(ctx context.Context, header http.Header, systemID, scopeType string, resources []Resource) error {
+	url := fmt.Sprintf("/bkiam/api/v1/perm-model/systems/%s/scope-types/%s/resource-types/batch-update", systemID, scopeType)
+	resp := BaseResponse{}
+
+	err := a.client.Put().
+		SubResource(url).
+		WithContext(ctx).
+		WithHeaders(header).
+		Body(struct {
+			ResourceTypes []Resource `json:"resource_types"`
+		}{resources}).
+		Do().Into(&resp)
+	if err != nil {
+		return fmt.Errorf("regist resource %+v for [%s] failed, error: %v", resources, systemID, err)
+	}
+	if !resp.Result {
+		return fmt.Errorf("regist resource %+v for [%s] failed, message: %s, code: %v", resources, systemID, resp.Message, resp.Code)
+	}
+
+	return nil
+}
+
+func (a *authClient) UpdateResourceActionBatch(ctx context.Context, header http.Header, systemID, scopeType string, resources []Resource) error {
+	url := fmt.Sprintf("/bkiam/api/v1/perm-model/systems/%s/scope-types/%s/resource-type-actions/batch-update", systemID, scopeType)
+	resp := BaseResponse{}
+
+	err := a.client.Put().
+		SubResource(url).
+		WithContext(ctx).
+		WithHeaders(header).
+		Body(struct {
+			ResourceTypes []Resource `json:"resource_types"`
+		}{resources}).
+		Do().Into(&resp)
+	if err != nil {
+		return fmt.Errorf("regist resource %+v for [%s] failed, error: %v", resources, systemID, err)
+	}
+	if !resp.Result {
+		return fmt.Errorf("regist resource %+v for [%s] failed, message: %s, code: %v", resources, systemID, resp.Message, resp.Code)
+	}
+
+	return nil
+}
+
+func (a *authClient) InitSystemBatch(ctx context.Context, header http.Header, detail SystemDetail) error {
+	const url = "/bkiam/api/v1/perm-model/systems/init"
+	resp := BaseResponse{}
+
+	err := a.client.Put().
+		SubResource(url).
+		WithContext(ctx).
+		WithHeaders(header).
+		Body(detail).
+		Do().Into(&resp)
+	if err != nil {
+		return fmt.Errorf("init system resource failed, error: %v", err)
+	}
+	if !resp.Result {
+		return fmt.Errorf("init system resource failed, message: %s, code: %v", resp.Message, resp.Code)
+	}
+
+	return nil
+}
