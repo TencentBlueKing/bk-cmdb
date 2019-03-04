@@ -30,18 +30,20 @@ func Init(ctx context.Context, cli authcenter.AuthCenter) error {
 		ResourceTypes []authcenter.ResourceType `json:"resource_types"`
 	}{
 		ScopeTypeID:   "system",
-		ResourceTypes: expectResourceType,
+		ResourceTypes: expectSystemResourceType,
 	})
 
 	info, err := cli.QuerySystemInfo(ctx, meta.SystemIDCMDB, false)
-	if err != nil {
+	if err != nil && err != authcenter.ErrNotFound {
 		return err
 	}
 
-	if info.SystemID != meta.SystemIDCMDB {
-		if err := cli.RegistSystem(ctx, expectSystem); err != nil {
+	if info == nil {
+		if err := cli.RegistSystem(ctx, expectSystem); err != nil && err != authcenter.ErrDuplicated {
 			return err
 		}
+
+		cli.UpdateResourceActionBatch
 	}
 
 	return nil

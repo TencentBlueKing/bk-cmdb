@@ -106,4 +106,6 @@ const (
 	MoveHostsToBusinessOrModule    Action = "moveHostsToBusinessOrModule"
 	AddHostToResourcePool          Action = "addHostToResourcePool"
 	MoveHostToModule               Action = "moveHostToModule"
+
+	TopoModelMange Action = "topoModelMange"
 )
