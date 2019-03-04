@@ -154,15 +154,22 @@ func (a *authClient) updateResource(ctx context.Context, header http.Header, inf
 	return nil
 }
 
-func (a *authClient) QuerySystemInfo(ctx context.Context, header http.Header, systemID string) (*SystemDetail, error) {
+func (a *authClient) QuerySystemInfo(ctx context.Context, header http.Header, systemID string, detail bool) (*SystemDetail, error) {
 	url := fmt.Sprintf("/bkiam/api/v1/perm-model/systems/%s", systemID)
+
 	resp := struct {
 		BaseResponse
 		Data SystemDetail `json:"data"`
 	}{}
 
+	isDetail := "0"
+	if detail {
+		isDetail = "1"
+	}
+
 	err := a.client.Get().
 		SubResource(url).
+		WithParam("is_detail", isDetail).
 		WithContext(ctx).
 		WithHeaders(header).
 		Do().Into(&resp)
@@ -225,7 +232,7 @@ func (a *authClient) UpdateSystem(ctx context.Context, header http.Header, syste
 	return nil
 }
 
-func (a *authClient) RegistResourceBatch(ctx context.Context, header http.Header, systemID, scopeType string, resources []Resource) error {
+func (a *authClient) RegistResourceBatch(ctx context.Context, header http.Header, systemID, scopeType string, resources []ResourceType) error {
 	url := fmt.Sprintf("/bkiam/api/v1/perm-model/systems/%s/scope-types/%s/resource-types/batch-register", systemID, scopeType)
 	resp := BaseResponse{}
 
@@ -234,7 +241,7 @@ func (a *authClient) RegistResourceBatch(ctx context.Context, header http.Header
 		WithContext(ctx).
 		WithHeaders(header).
 		Body(struct {
-			ResourceTypes []Resource `json:"resource_types"`
+			ResourceTypes []ResourceType `json:"resource_types"`
 		}{resources}).
 		Do().Into(&resp)
 	if err != nil {
@@ -247,7 +254,7 @@ func (a *authClient) RegistResourceBatch(ctx context.Context, header http.Header
 	return nil
 }
 
-func (a *authClient) UpdateResourceBatch(ctx context.Context, header http.Header, systemID, scopeType string, resources []Resource) error {
+func (a *authClient) UpdateResourceBatch(ctx context.Context, header http.Header, systemID, scopeType string, resources []ResourceType) error {
 	url := fmt.Sprintf("/bkiam/api/v1/perm-model/systems/%s/scope-types/%s/resource-types/batch-update", systemID, scopeType)
 	resp := BaseResponse{}
 
@@ -256,7 +263,7 @@ func (a *authClient) UpdateResourceBatch(ctx context.Context, header http.Header
 		WithContext(ctx).
 		WithHeaders(header).
 		Body(struct {
-			ResourceTypes []Resource `json:"resource_types"`
+			ResourceTypes []ResourceType `json:"resource_types"`
 		}{resources}).
 		Do().Into(&resp)
 	if err != nil {
@@ -269,7 +276,7 @@ func (a *authClient) UpdateResourceBatch(ctx context.Context, header http.Header
 	return nil
 }
 
-func (a *authClient) UpdateResourceActionBatch(ctx context.Context, header http.Header, systemID, scopeType string, resources []Resource) error {
+func (a *authClient) UpdateResourceActionBatch(ctx context.Context, header http.Header, systemID, scopeType string, resources []ResourceType) error {
 	url := fmt.Sprintf("/bkiam/api/v1/perm-model/systems/%s/scope-types/%s/resource-type-actions/batch-update", systemID, scopeType)
 	resp := BaseResponse{}
 
@@ -278,7 +285,7 @@ func (a *authClient) UpdateResourceActionBatch(ctx context.Context, header http.
 		WithContext(ctx).
 		WithHeaders(header).
 		Body(struct {
-			ResourceTypes []Resource `json:"resource_types"`
+			ResourceTypes []ResourceType `json:"resource_types"`
 		}{resources}).
 		Do().Into(&resp)
 	if err != nil {

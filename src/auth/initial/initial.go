@@ -19,26 +19,35 @@ import (
 	"strings"
 
 	"configcenter/src/auth/authcenter"
+	"configcenter/src/auth/meta"
 )
 
 func Init(ctx context.Context, cli authcenter.AuthCenter) error {
 	detail := authcenter.SystemDetail{}
 	detail.System = expectSystem
 	detail.Scopes = append(detail.Scopes, struct {
-		ScopeTypeID   string                `json:"scope_type_id"`
-		ResourceTypes []authcenter.Resource `json:"resource_types"`
+		ScopeTypeID   string                    `json:"scope_type_id"`
+		ResourceTypes []authcenter.ResourceType `json:"resource_types"`
 	}{
 		ScopeTypeID:   "system",
-		ResourceTypes: expectResource,
+		ResourceTypes: expectResourceType,
 	})
-	if err := cli.InitSystemBatch(ctx, detail); err != nil {
-		return fmt.Errorf("init authcenter failed: %v", err)
+
+	info, err := cli.QuerySystemInfo(ctx, meta.SystemIDCMDB, false)
+	if err != nil {
+		return err
+	}
+
+	if info.SystemID != meta.SystemIDCMDB {
+		if err := cli.RegistSystem(ctx, expectSystem); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func resourceKey(res authcenter.Resource) string {
+func resourceKey(res authcenter.ResourceType) string {
 	return fmt.Sprintf("%s-%s-%s", res.ResourceTypeID, res.ResourceTypeName, res.ParentResourceTypeID)
 }
 

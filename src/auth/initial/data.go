@@ -13,20 +13,23 @@
 package initial
 
 import (
+	"strings"
+
 	"configcenter/src/auth/authcenter"
+	"configcenter/src/auth/meta"
 )
 
 var expectSystem = authcenter.System{
-	SystemID:           "cmdb",
-	SystemName:         "蓝鲸智云配置平台",
+	SystemID:           meta.SystemIDCMDB,
+	SystemName:         meta.SystemNameCMDB,
 	Desc:               "蓝鲸配置平台（CMDB）",
-	ReleatedScopeTypes: "biz;system",
+	ReleatedScopeTypes: strings.Join([]string{meta.ScopeTypeIDBiz, meta.ScopeTypeIDSystem}, ";"),
 	Managers:           "system",
 	Creator:            "system",
 	Updater:            "system",
 }
 
-var expectResource = []authcenter.Resource{
+var expectResourceType = []authcenter.ResourceType{
 	{
 		ResourceTypeID:       "",
 		ResourceTypeName:     "",
