@@ -149,7 +149,7 @@ var expectBizResourceType = []authcenter.ResourceType{
 		},
 	},
 	{
-		ResourceTypeID:       meta.MainlineModelTopology.String(),
+		ResourceTypeID:       meta.MainlineInstanceTopology.String(),
 		ResourceTypeName:     "拓扑",
 		ParentResourceTypeID: "",
 		Actions: []authcenter.Action{
