@@ -19,6 +19,7 @@ import (
 
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/auth/meta"
+	"configcenter/src/common/util"
 )
 
 // clients contains all the client api which is used to
@@ -37,9 +38,7 @@ type authClient struct {
 }
 
 func (a *authClient) verifyInList(ctx context.Context, header http.Header, batch *AuthBatch) (meta.Decision, error) {
-	for k, v := range a.basicHeader {
-		header[k] = v
-	}
+	util.CopyHeader(header, a.basicHeader)
 	resp := new(BatchResult)
 	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/resources-perms/verify", a.Config.SystemID)
 	err := a.client.Post().
@@ -78,9 +77,7 @@ func (a *authClient) verifyInList(ctx context.Context, header http.Header, batch
 }
 
 func (a *authClient) registerResource(ctx context.Context, header http.Header, info *RegisterInfo) error {
-	for k, v := range a.basicHeader {
-		header[k] = v
-	}
+	util.CopyHeader(header, a.basicHeader)
 	resp := new(ResourceResult)
 	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/resources", a.Config.SystemID)
 	err := a.client.Post().
@@ -106,9 +103,7 @@ func (a *authClient) registerResource(ctx context.Context, header http.Header, i
 }
 
 func (a *authClient) deregisterResource(ctx context.Context, header http.Header, info *DeregisterInfo) error {
-	for k, v := range a.basicHeader {
-		header[k] = v
-	}
+	util.CopyHeader(header, a.basicHeader)
 	resp := new(ResourceResult)
 	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/resources", a.Config.SystemID)
 	err := a.client.Delete().
@@ -134,9 +129,7 @@ func (a *authClient) deregisterResource(ctx context.Context, header http.Header,
 }
 
 func (a *authClient) updateResource(ctx context.Context, header http.Header, info *UpdateInfo) error {
-	for k, v := range a.basicHeader {
-		header[k] = v
-	}
+	util.CopyHeader(header, a.basicHeader)
 	resp := new(ResourceResult)
 	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/resources", a.Config.SystemID)
 	err := a.client.Put().

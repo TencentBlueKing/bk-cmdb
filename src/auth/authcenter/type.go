@@ -84,7 +84,7 @@ type BatchResult struct {
 
 type ResourceAction struct {
 	ResourceInfo `json:",inline"`
-	ActionID     Action `json:"action_id"`
+	ActionID     ActionID `json:"action_id"`
 }
 
 type BatchStatus struct {
