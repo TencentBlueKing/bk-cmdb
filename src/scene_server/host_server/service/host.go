@@ -291,13 +291,13 @@ func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response)
 
 	appID, err := srvData.lgc.GetDefaultAppID(srvData.ctx, srvData.ownerID)
 	if err != nil {
-		blog.Errorf("AddHostFromAgent GetDefaultAppID error.input:%+v,rid:%s", agents, srvData.rid)
+		blog.Errorf("AddHostFromAgent GetDefaultAppID error.input:%#v,rid:%s", agents, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
 		return
 	}
 	if 0 == appID {
-		blog.Errorf("add host from agent, but got invalid default appid, err: %v,ownerID:%s,input:%+v,rid:%s", err, srvData.ownerID, agents, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrAddHostToModule, err.Error())})
+		blog.Errorf("add host from agent, but got invalid default appid, err: %v,ownerID:%s,input:%#v,rid:%s", err, srvData.ownerID, agents, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrAddHostToModule, "bussiness not found")})
 		return
 	}
 
