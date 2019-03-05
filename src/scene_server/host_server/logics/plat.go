@@ -40,7 +40,7 @@ func (lgc *Logics) IsPlatExist(header http.Header, cond interface{}) (bool, erro
 		return false, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("IsPlatExist http response error, err:%s, cond:%+v,rid:%s", err.Error(), cond, rid)
+		blog.Errorf("IsPlatExist http response error, err code:%d, err msg:%s, cond:%#v,rid:%s", result.Code, result.ErrMsg, cond, rid)
 		return false, defErr.New(result.Code, result.ErrMsg)
 	}
 
