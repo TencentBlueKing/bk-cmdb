@@ -32,7 +32,7 @@ type RequestContext struct {
 
 type parseStream struct {
 	RequestCtx *RequestContext
-	Attribute  *meta.Attribute
+	Attribute  *meta.AuthAttribute
 	err        error
 	action     meta.Action
 }
@@ -46,7 +46,7 @@ func newParseStream(rc *RequestContext) (*parseStream, error) {
 }
 
 // parse is used to parse the auth attribute from RequestContext.
-func (ps *parseStream) Parse() (*meta.Attribute, error) {
+func (ps *parseStream) Parse() (*meta.AuthAttribute, error) {
 	if ps.err != nil {
 		return nil, ps.err
 	}

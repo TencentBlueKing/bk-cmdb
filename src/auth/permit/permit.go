@@ -16,6 +16,6 @@ import "configcenter/src/auth/meta"
 
 // this function is used to check where this request attribute is permitted as default,
 // so that it is not need to check permission status in auth center.
-func IsPermit(attribute *meta.Attribute) bool {
+func IsPermit(attribute *meta.AuthAttribute) bool {
 	return false
 }

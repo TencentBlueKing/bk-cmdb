@@ -12,61 +12,59 @@
 
 package wrapper
 
-import (
-	"context"
+import "configcenter/src/auth"
 
-	"configcenter/src/auth"
-)
-
-var _ auth.Authorizer = (*AuthAPI)(nil)
-var _ auth.ResourceHandler = (*AuthAPI)(nil)
-
-// AuthAPI wrapper API for auth
+//
+// var _ auth.Authorizer = (*AuthAPI)(nil)
+// var _ auth.ResourceHandler = (*AuthAPI)(nil)
+//
+// // AuthAPI wrapper API for auth
 type AuthAPI struct {
 	authorizer      auth.Authorizer
 	resourceHandler auth.ResourceHandler
 }
 
-// NewAuthAPI return a new auth wrapper
-func NewAuthAPI() (AuthAPI, error) {
-
-	authorizer, err := auth.NewAuthorizer()
-	if nil != err {
-		return AuthAPI{}, err
-	}
-
-	resourceHandler, err := auth.NewResourceHandler()
-	if nil != err {
-		return AuthAPI{}, err
-	}
-
-	return AuthAPI{
-		authorizer:      authorizer,
-		resourceHandler: resourceHandler,
-	}, nil
-}
-
-// Authorize works to check if a user has the authority to operate resources.
-func (w AuthAPI) Authorize(a *auth.Attribute) (authorized auth.Decision, reason string, err error) {
-	return w.authorizer.Authorize(a)
-}
-
-// Register register a resource
-func (w AuthAPI) Register(ctx context.Context, r *auth.ResourceAttribute) (requestID string, err error) {
-	return w.resourceHandler.Register(ctx, r)
-}
-
-// Deregister deregister a resource
-func (w AuthAPI) Deregister(ctx context.Context, r *auth.ResourceAttribute) (requestID string, err error) {
-	return w.resourceHandler.Deregister(ctx, r)
-}
-
-// Update update a resource's info
-func (w AuthAPI) Update(ctx context.Context, r *auth.ResourceAttribute) (requestID string, err error) {
-	return w.resourceHandler.Update(ctx, r)
-}
-
-// Get get a resource's info
-func (w AuthAPI) Get(ctx context.Context) error {
-	return w.resourceHandler.Get(ctx)
-}
+//
+// // NewAuthAPI return a new auth wrapper
+// func NewAuthAPI() (AuthAPI, error) {
+//
+// 	authorizer, err := auth.NewAuthorizer()
+// 	if nil != err {
+// 		return AuthAPI{}, err
+// 	}
+//
+// 	resourceHandler, err := auth.NewResourceHandler()
+// 	if nil != err {
+// 		return AuthAPI{}, err
+// 	}
+//
+// 	return AuthAPI{
+// 		authorizer:      authorizer,
+// 		resourceHandler: resourceHandler,
+// 	}, nil
+// }
+//
+// // Authorize works to check if a user has the authority to operate resources.
+// func (w AuthAPI) Authorize(a *auth.Attribute) (authorized auth.Decision, reason string, err error) {
+// 	return w.authorizer.Authorize(a)
+// }
+//
+// // Register register a resource
+// func (w AuthAPI) Register(ctx context.Context, r *auth.ResourceAttribute) (requestID string, err error) {
+// 	return w.resourceHandler.Register(ctx, r)
+// }
+//
+// // Deregister deregister a resource
+// func (w AuthAPI) Deregister(ctx context.Context, r *auth.ResourceAttribute) (requestID string, err error) {
+// 	return w.resourceHandler.Deregister(ctx, r)
+// }
+//
+// // Update update a resource's info
+// func (w AuthAPI) Update(ctx context.Context, r *auth.ResourceAttribute) (requestID string, err error) {
+// 	return w.resourceHandler.Update(ctx, r)
+// }
+//
+// // Get get a resource's info
+// func (w AuthAPI) Get(ctx context.Context) error {
+// 	return w.resourceHandler.Get(ctx)
+// }
