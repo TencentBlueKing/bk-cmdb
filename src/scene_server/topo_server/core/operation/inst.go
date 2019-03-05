@@ -240,7 +240,7 @@ func (c *commonInst) innerHasHost(params types.ContextParams, moduleIDS []int64)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[operation-module]  failed to search the host module configures, err: %s", err.Error())
+		blog.Errorf("[operation-module]  failed to search the host module configures, err: %s", rsp.ErrMsg)
 		return false, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
