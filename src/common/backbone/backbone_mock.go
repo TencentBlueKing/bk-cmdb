@@ -27,9 +27,11 @@ func NewMockBackbone(c *Config) (*Engine, error) {
 		CCErr:    errors.NewFromCtx(errors.EmptyErrorsSetting),
 	}
 
-	if err := ListenServer(c.Server); err != nil {
-		return nil, err
-	}
+	/*
+		if err := ListenServer(c.Server); err != nil {
+			return nil, err
+		}
+	*/
 
 	return engine, nil
 }

@@ -12,6 +12,7 @@
 
 package meta
 
+// AuthAttribute is used for check authorization, it's verify multiple Resources field
 type AuthAttribute struct {
 	// the version of this resource, which is the api version.
 	APIVersion string
@@ -32,6 +33,7 @@ type UserInfo struct {
 
 type Item Basic
 
+// ResourceAttribute represent one iam resource
 type ResourceAttribute struct {
 	Basic
 
@@ -60,8 +62,9 @@ type Basic struct {
 
 // CommonInfo contains common field which can be extracted from restful.Request
 type CommonInfo struct {
-	User       UserInfo
-	APIVersion string
+	User            UserInfo
+	APIVersion      string
+	SupplierAccount string
 }
 
 type Decision struct {

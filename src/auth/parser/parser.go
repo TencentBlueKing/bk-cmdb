@@ -20,7 +20,6 @@ import (
 	"regexp"
 	"strings"
 
-	"configcenter/src/auth"
 	"configcenter/src/common"
 
 	"configcenter/src/auth/meta"
@@ -63,8 +62,8 @@ func ParseAttribute(req *restful.Request) (*meta.AuthAttribute, error) {
 }
 
 // ParseCommonInfo get common info from req, aims at avoiding too much repeat code
-func ParseCommonInfo(req *restful.Request) (*auth.CommonInfo, error) {
-	commonInfo := new(auth.CommonInfo)
+func ParseCommonInfo(req *restful.Request) (*meta.CommonInfo, error) {
+	commonInfo := new(meta.CommonInfo)
 
 	userInfo, err := ParseUserInfo(req)
 	if err != nil {
@@ -77,12 +76,13 @@ func ParseCommonInfo(req *restful.Request) (*auth.CommonInfo, error) {
 		return nil, err
 	}
 	commonInfo.APIVersion = apiVersion
+	commonInfo.SupplierAccount = "" // FIXME how to get it
 
 	return commonInfo, nil
 }
 
-func ParseUserInfo(req *restful.Request) (*auth.UserInfo, error) {
-	userInfo := new(auth.UserInfo)
+func ParseUserInfo(req *restful.Request) (*meta.UserInfo, error) {
+	userInfo := new(meta.UserInfo)
 	user := req.Request.Header.Get(common.BKHTTPHeaderUser)
 	if len(user) == 0 {
 		return nil, errors.New("miss BK_User in your request header")
