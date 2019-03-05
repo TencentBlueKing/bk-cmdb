@@ -249,7 +249,7 @@ func importProcess(ctx context.Context, db dal.RDB, opt *option, cur, tar *Proce
 				if !opt.dryrun {
 					err = db.Table(common.BKTableNameProcModule).Delete(ctx, delcondition)
 					if nil != err {
-						return fmt.Errorf("delete process module by %+v, error: %s", delcondition, err.Error())
+						return fmt.Errorf("delete process module by %+v, error: %v", delcondition, err)
 					}
 				}
 			}
@@ -402,7 +402,7 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 			}
 			ownerID, ok := app[common.BKOwnerIDField].(string)
 			if !ok {
-				return fmt.Errorf("get blueking nk_suppplier_account faile, data: %+v, error: %s", app, err.Error())
+				return fmt.Errorf("get blueking nk_suppplier_account faile, data: %+v, error: %v", app, err)
 			}
 			node.Data[common.BKAppIDField] = bizID
 			node.Data[common.BKOwnerIDField] = ownerID
