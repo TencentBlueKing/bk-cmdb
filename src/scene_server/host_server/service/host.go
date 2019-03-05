@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/host_server/logics"
 	hutil "configcenter/src/scene_server/host_server/util"
 )
@@ -622,13 +623,23 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 	resp.WriteEntity(meta.NewSuccessResp(succ))
 }
 
+// MoveSetHost2IdleModule bk_set_id and bk_module_id cannot be empty at the same time
+// Remove the host from the module or set.
+// The host belongs to the current module or host only, and puts the host into the idle machine of the current service.
+// When the host data is in multiple modules or sets. Disconnect the host from the module or set only
 func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
 	srvData := s.newSrvComm(req.Request.Header)
 
 	var data meta.SetHostConfigParams
 	if err := json.NewDecoder(req.Request.Body).Decode(&data); err != nil {
-		blog.Errorf("update host batch failed with decode body err: %v,rid:%s", err, srvData.rid)
+		blog.Errorf("MoveSetHost2IdleModule failed with decode body err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+	if 0 == data.ApplicationID {
+		blog.Errorf("MoveSetHost2IdleModule bk_biz_id cannot be empty at the same time,input:%#v,rid:%s", data, util.GetHTTPCCRequestID(pheader))
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsNeedSet)})
 		return
 	}
 
@@ -636,6 +647,13 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 	condition := make(map[string][]int64)
 	hostIDArr := make([]int64, 0)
 	sModuleIDArr := make([]int64, 0)
+
+	if 0 == data.SetID && 0 == data.ModuleID {
+		blog.Errorf("MoveSetHost2IdleModule bk_set_id and bk_module_id cannot be empty at the same time,input:%#v,rid:%s", data, util.GetHTTPCCRequestID(pheader))
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsNeedSet)})
+		return
+	}
+
 	if 0 != data.SetID {
 		condition[common.BKSetIDField] = []int64{data.SetID}
 	}
@@ -678,6 +696,12 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 		return
 	}
 	moduleID := moduleIDArr[0]
+
+	// idle modle not change
+	if moduleID == data.ModuleID {
+		resp.WriteEntity(meta.NewSuccessResp(nil))
+		return
+	}
 
 	moduleHostConfigParams := make(map[string]interface{})
 	moduleHostConfigParams[common.BKAppIDField] = data.ApplicationID
