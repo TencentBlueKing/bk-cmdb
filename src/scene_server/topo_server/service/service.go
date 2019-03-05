@@ -68,11 +68,11 @@ func (s *topoService) SetConfig(cfg options.Config, engin *backbone.Engine) {
 	s.cfg = cfg
 	s.engin = engin
 
-	authAPI, err := wrapper.NewAuthAPI()
-	if err != nil {
-		blog.Errorf("it is failed to create a new auth API, err:%s", err.Error())
-	}
-	s.authAPI = authAPI
+	// authAPI, err := wrapper.NewAuthAPI()
+	// if err != nil {
+	// 	blog.Errorf("it is failed to create a new auth API, err:%s", err.Error())
+	// }
+	// s.authAPI = authAPI
 
 	var dbErr error
 	s.tx, dbErr = mongo.NewWithDiscover(engin.

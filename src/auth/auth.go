@@ -27,7 +27,7 @@ type Authorize interface {
 
 type Authorizer interface {
 	// Authorize works to check if a user has the authority to operate resources.
-	Authorize(ctx context.Context, a *meta.Attribute) (decision meta.Decision, err error)
+	Authorize(ctx context.Context, a *meta.AuthAttribute) (decision meta.Decision, err error)
 }
 
 // ResourceManager is used to handle the resources register to authorize center.
