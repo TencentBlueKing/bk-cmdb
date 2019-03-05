@@ -241,6 +241,9 @@ func (o *object) GetMainlineChildObject() (Object, error) {
 		}
 
 		objItems := CreateObject(o.params, o.clientSet, rspRst)
+		if len(objItems) > 1 {
+			blog.Errorf("[model-obj] get multiple(%d) children for object(%s)", len(objItems), asst.ObjectID)
+		}
 		for _, item := range objItems {
 			// only one child in the main-line
 			return item, nil
@@ -327,6 +330,52 @@ func (o *object) SetMainlineParentObject(relateToObjID string) error {
 		blog.Errorf("update mainline object[%S] association to %s, search object association failed, err: %v",
 			o.obj.ObjectID, relateToObjID, resp.ErrMsg)
 		return o.params.Err.Errorf(resp.Code, resp.ErrMsg)
+
+	if common.CCSuccess != rsp.Code {
+		blog.Errorf("[model-obj] failed to search the main line association, error info is %s", rsp.ErrMsg)
+		return o.params.Err.Error(rsp.Code)
+	}
+
+	// create
+	if 0 == len(rsp.Data) {
+
+		asst := &meta.Association{}
+		asst.OwnerID = o.params.SupplierAccount
+		// asst.AsstName = common.BKChildStr
+		asst.ObjectID = o.obj.ObjectID
+		asst.AsstObjID = objID
+
+		rsp, err := o.clientSet.ObjectController().Meta().CreateMainlineObjectAssociation(context.Background(), o.params.Header, asst)
+
+		if nil != err {
+			blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
+			return o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		}
+
+		if common.CCSuccess != rsp.Code {
+			blog.Errorf("[model-obj] failed to set the main line association parent, error info is %s", rsp.ErrMsg)
+			return o.params.Err.Error(rsp.Code)
+		}
+
+		return nil
+	}
+
+	// update
+	for _, asst := range rsp.Data {
+
+		asst.AsstObjID = objID
+		// asst.AsstName = common.BKChildStr
+
+		rsp, err := o.clientSet.ObjectController().Meta().UpdateObjectAssociation(context.Background(), asst.ID, o.params.Header, asst.ToMapStr())
+		if nil != err {
+			blog.Errorf("[model-obj] failed to request object controller, error info is %s", err.Error())
+			return err
+		}
+
+		if common.CCSuccess != rsp.Code {
+			blog.Errorf("[model-obj] failed to update the parent association, error info is %s", rsp.ErrMsg)
+			return o.params.Err.Error(rsp.Code)
+		}
 	}
 	return o.CreateMainlineObjectAssociation(relateToObjID)
 }
@@ -351,7 +400,7 @@ func (o *object) CreateMainlineObjectAssociation(relateToObjID string) error {
 		IsPre:      &defined,
 	}
 
-	result, err := o.clientSet.CoreService().Association().CreateModelAssociation(context.Background(), o.params.Header, &metadata.CreateModelAssociation{Spec: association})
+	result, err := o.clientSet.CoreService().Association().CreateMainlineObjectAssociation(context.Background(), o.params.Header, &metadata.CreateModelAssociation{Spec: association})
 	if err != nil {
 		blog.Errorf("[model-obj] create mainline object association failed, err: %v", err)
 		return err
