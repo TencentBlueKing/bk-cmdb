@@ -60,12 +60,12 @@ func (m *module) hasHost(params types.ContextParams, bizID int64, moduleIDS []in
 
 	rsp, err := m.clientSet.HostController().Module().GetModulesHostConfig(context.Background(), params.Header, cond)
 	if nil != err {
-		blog.Errorf("[operation-module] failed to request the object controller, error info is %s", err.Error())
+		blog.Errorf("[operation-module] failed to request the object controller, err: %s", err.Error())
 		return false, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[operation-module]  failed to search the host module configures, error info is %s", err.Error())
+		blog.Errorf("[operation-module]  failed to search the host module configures, err: %s", rsp.ErrMsg)
 		return false, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -80,8 +80,6 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 		data.Set(common.BKDefaultField, 0)
 	}
 
-	//data.Set(common.CreateTimeField, util.GetCurrentTimeStr())
-
 	return m.inst.CreateInst(params, obj, data)
 }
 
@@ -89,7 +87,7 @@ func (m *module) DeleteModule(params types.ContextParams, obj model.Object, bizI
 
 	exists, err := m.hasHost(params, bizID, moduleIDS)
 	if nil != err {
-		blog.Errorf("[operation-module] failed to delete the modules, error info is %s", err.Error())
+		blog.Errorf("[operation-module] failed to delete the modules, err: %s", err.Error())
 		return err
 	}
 
