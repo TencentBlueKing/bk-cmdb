@@ -18,7 +18,6 @@ import (
 	"strconv"
 	"strings"
 
-	"configcenter/src/auth"
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
@@ -42,28 +41,6 @@ func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response
 	if err != nil {
 		blog.Errorf("convert appid from string to int failed!, err: %s, input:%s,rid:%s", err.Error(), appID, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
-		return
-	}
-
-	authed, err := ps.auth.Authorize(&auth.Attribute{
-		Resources: []auth.Resource{{
-			Basic:      auth.Basic{Type: auth.ObjectInstance, Name: common.BKInnerObjIDProc},
-			Action:     auth.Create,
-			BusinessID: int64(appID),
-		}},
-		User: auth.UserInfo{
-			UserName:   util.GetUser(req.Request.Header),
-			SupplierID: util.GetOwnerID(req.Request.Header),
-		},
-	})
-	if err != nil {
-		blog.Errorf("create process failed! decode request body err: %v,rid:%s", err, srvData.rid)
-		resp.WriteError(http.StatusUnauthorized, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommAuthorizeFailed, err)})
-		return
-	}
-	if authed.Authorized {
-		blog.Errorf("create process failed! authorize failed by reason: %v,rid:%s", authed.Reason, srvData.rid)
-		resp.WriteError(http.StatusUnauthorized, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommAuthorizeFailed, authed.Reason)})
 		return
 	}
 
@@ -102,16 +79,6 @@ func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response
 		blog.Errorf("get process instance detail failed. err:%s,input:%+v,rid:%s", err.Error(), input, srvData.rid)
 	} else {
 		ps.addProcLog(srvData.ctx, srvData.ownerID, appIDStr, srvData.user, nil, curDetail, auditoplog.AuditOpTypeAdd, int(instID), srvData.header)
-	}
-
-	// regist resource to auth center
-	if err = ps.resHandler.Register(context.Background(), &auth.ResourceAttribute{
-		Basic:      auth.Basic{Type: auth.ObjectInstance, Name: common.BKInnerObjIDProc},
-		BusinessID: int64(appID),
-	}); err != nil {
-		blog.Errorf("regist resource failed %v, rid:%s", err, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
-		return
 	}
 
 	// return success
