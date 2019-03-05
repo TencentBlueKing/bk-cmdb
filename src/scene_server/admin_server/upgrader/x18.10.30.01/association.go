@@ -163,7 +163,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 			asst.OnDelete = metadata.NoAction
 			asst.IsPre = pfalse()
 		}
-		_, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAsst, asst, "id", []string{"bk_obj_id", "bk_asst_obj_id"}, []string{"id"})
+		_, _, err = upgrader.Upsert(ctx, db, common.BKTableNameObjAsst, asst, "id", []string{"bk_obj_id", "bk_asst_obj_id"}, []string{"id"})
 		if err != nil {
 			return err
 		}
