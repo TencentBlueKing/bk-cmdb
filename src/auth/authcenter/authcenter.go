@@ -131,14 +131,19 @@ func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (dec
 			return meta.Decision{}, fmt.Errorf("adaptor resource info failed, err: %v", err)
 		}
 
+		actionID, err := adaptorAction(&rsc)
+		if err != nil {
+			return meta.Decision{}, fmt.Errorf("adaptor action failed, err: %v", err)
+		}
+
 		info.ResourceActions = append(info.ResourceActions, ResourceAction{
-			ActionID:     adaptorAction(&rsc),
+			ActionID:     actionID,
 			ResourceInfo: *rscInfo,
 		})
 	}
 
 	header := http.Header{}
-	header.Add(AuthSupplierAccountHeaderKey, a.User.SupplierID)
+	header.Set(AuthSupplierAccountHeaderKey, a.User.SupplierID)
 	return ac.authClient.verifyInList(ctx, header, info)
 
 }
@@ -164,7 +169,7 @@ func (ac *AuthCenter) Register(ctx context.Context, r *meta.ResourceAttribute) e
 	}
 
 	header := http.Header{}
-	header.Add(AuthSupplierAccountHeaderKey, r.SupplierAccount)
+	header.Set(AuthSupplierAccountHeaderKey, r.SupplierAccount)
 	return ac.authClient.registerResource(ctx, header, info)
 }
 
@@ -189,7 +194,7 @@ func (ac *AuthCenter) Deregister(ctx context.Context, r *meta.ResourceAttribute)
 	}
 
 	header := http.Header{}
-	header.Add(AuthSupplierAccountHeaderKey, r.SupplierAccount)
+	header.Set(AuthSupplierAccountHeaderKey, r.SupplierAccount)
 	return ac.authClient.deregisterResource(ctx, header, info)
 }
 
@@ -213,7 +218,7 @@ func (ac *AuthCenter) Update(ctx context.Context, r *meta.ResourceAttribute) err
 	}
 
 	header := http.Header{}
-	header.Add(AuthSupplierAccountHeaderKey, r.SupplierAccount)
+	header.Set(AuthSupplierAccountHeaderKey, r.SupplierAccount)
 	return ac.authClient.updateResource(ctx, header, info)
 }
 
