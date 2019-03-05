@@ -87,6 +87,8 @@ func (lgc *Logics) Synchronize(ctx context.Context, config *options.Config) {
 // SynchronizeItem  synchronize data
 func (lgc *Logics) SynchronizeItem(ctx context.Context, syncConfig *options.ConfigItem) {
 	version := getVersion()
+
+	blog.InfoJSON("start synchonrize config:%s, verison:%s", syncConfig, version)
 	// syncConfig can modify
 	synchronizeItem := lgc.NewSynchronizeItem(version, syncConfig)
 
@@ -94,25 +96,27 @@ func (lgc *Logics) SynchronizeItem(ctx context.Context, syncConfig *options.Conf
 	var err error
 	exceptionMap["model"], err = synchronizeItem.synchronizeModelTask(ctx) //lgc.synchronizeModelTask(ctx, syncConfig, version, nil)
 	if err != nil {
-		blog.Errorf("SynchronizeItem model error, config:%#v,err:%s,version:%s,rid:%s", syncConfig, err.Error(), version, version, lgc.rid)
+		blog.Errorf("SynchronizeItem model error, config:%#v,err:%s,version:%s,rid:%s", syncConfig, err.Error(), version, lgc.rid)
 	}
 
 	exceptionMap["instance"], err = synchronizeItem.synchronizeInstanceTask(ctx) //(ctx, syncConfig, version, nil)
 	if err != nil {
-		blog.Errorf("SynchronizeItem instance error, config:%#v,err:%s,version:%s,rid:%s", syncConfig, err.Error(), version, version, lgc.rid)
+		blog.Errorf("SynchronizeItem instance error, config:%#v,err:%s,version:%s,rid:%s", syncConfig, err.Error(), version, lgc.rid)
 	}
 
 	exceptionMap["association"], err = synchronizeItem.synchronizeAssociationTask(ctx) //(ctx, syncConfig, version, nil)
 	if err != nil {
-		blog.Errorf("SynchronizeItem association error, config:%#v,err:%s,version:%s,rid:%s", syncConfig, err.Error(), version, version, lgc.rid)
+		blog.Errorf("SynchronizeItem association error, config:%#v,err:%s,version:%s,rid:%s", syncConfig, err.Error(), version, lgc.rid)
 	}
 	exceptionMapClear, err := synchronizeItem.synchronizeItemClearData(ctx)
 	if err != nil {
-		blog.Errorf("SynchronizeItem synchronizeItemClearData error, config:%#v,err:%s,version:%s,rid:%s", syncConfig, err.Error(), version, version, lgc.rid)
+		blog.Errorf("SynchronizeItem synchronizeItemClearData error, config:%#v,err:%s,version:%s,rid:%s", syncConfig, err.Error(), version, lgc.rid)
 	}
 	for key, val := range exceptionMapClear {
 		exceptionMap[key] = val
 	}
 	go synchronizeItem.synchronizeItemException(ctx, exceptionMap)
+
+	blog.InfoJSON("end synchonrize config:%s, verison:%s", syncConfig, version)
 
 }
