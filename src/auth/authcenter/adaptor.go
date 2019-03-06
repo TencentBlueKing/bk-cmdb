@@ -98,53 +98,60 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 }
 
 // type is resource's type in auth center.
-type ResourceType string
+type ResourceTypeID string
 
 const (
 	// the alias name maybe "dynamic classification"
-	CustomQuery        ResourceType = "customQuery"
-	AppModel           ResourceType = "appModel"
-	Host               ResourceType = "host"
-	Process            ResourceType = "process"
-	BusinessTopology   ResourceType = "topology"
-	AppInstance        ResourceType = "appInstance"
-	InstanceManagement ResourceType = "instanceManagement"
-	ModelManagement    ResourceType = "modelManagement"
-	AssociationType    ResourceType = "associationType"
-	ModelGroup         ResourceType = "modelGroup"
-	Event              ResourceType = "event"
-	SystemBase         ResourceType = "systemBase"
-	BusinessHost       ResourceType = "businessHost"
+	CustomQuery        ResourceTypeID = "customQuery"
+	AppModel           ResourceTypeID = "appModel"
+	Host               ResourceTypeID = "host"
+	Process            ResourceTypeID = "process"
+	BusinessTopology   ResourceTypeID = "topology"
+	AppInstance        ResourceTypeID = "appInstance"
+	InstanceManagement ResourceTypeID = "instanceManagement"
+	ModelManagement    ResourceTypeID = "modelManagement"
+	AssociationType    ResourceTypeID = "associationType"
+	ModelGroup         ResourceTypeID = "modelGroup"
+	Event              ResourceTypeID = "event"
+	SystemBase         ResourceTypeID = "systemBase"
+	BusinessHost       ResourceTypeID = "businessHost"
 
-	BusinessInstanceManagement ResourceType = "businessInstanceManagement"
+	BusinessInstanceManagement ResourceTypeID = "businessInstanceManagement"
 )
 
-type Action string
+type ActionID string
 
+// ActionID define
 const (
-	// unknown action is a action that can not be recognized by the
-	// auth center.
-	Unknown Action = "unknown"
-	Edit    Action = "edit"
-	Create  Action = "create"
-	Get     Action = "get"
-	Delete  Action = "delete"
+	// Unknown action is a action that can not be recognized by the auth center.
+	Unknown ActionID = "unknown"
+	Edit    ActionID = "edit"
+	Create  ActionID = "create"
+	Get     ActionID = "get"
+	Delete  ActionID = "delete"
+
+	// Archive for business
+	Archive ActionID = "archive"
 	// host action
-	ModuleTransfer Action = "moduleTransfer"
+	ModuleTransfer ActionID = "moduleTransfer"
 	// business topology action
-	HostTransfer Action = "hostTransfer"
+	HostTransfer ActionID = "hostTransfer"
 	// system base action, related to model topology
-	ModelTopologyView Action = "modelTopologyView"
+	ModelTopologyView ActionID = "modelTopologyView"
 
 	// business model topology operation.
-	ModelTopologyOperation Action = "modelTopologyOperation"
+	ModelTopologyOperation ActionID = "modelTopologyOperation"
 
 	// assign host(s) to a business
 	// located system/host/assignHostsToBusiness in auth center.
-	AssignHostsToBusiness = "assignHostsToBusiness"
+	AssignHostsToBusiness ActionID = "assignHostsToBusiness"
+	BindModule            ActionID = "bindModule"
+
+	TopoLayerManage ActionID = "topoManage"
+	AdminEntrance   ActionID = "adminEntrance"
 )
 
-func adaptorAction(r *meta.ResourceAttribute) (Action, error) {
+func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 
 	if r.Action == meta.Find || r.Action == meta.Delete || r.Action == meta.Create {
 		if r.Basic.Type == meta.MainlineModel {
@@ -203,69 +210,69 @@ func adaptorAction(r *meta.ResourceAttribute) (Action, error) {
 
 type ResourceDetail struct {
 	// the resource type in auth center.
-	Type ResourceType
+	Type ResourceTypeID
 	// all the actions that this resource supported.
-	Actions []Action
+	Actions []ActionID
 }
 
 var (
 	CustomQueryDescribe = ResourceDetail{
 		Type:    CustomQuery,
-		Actions: []Action{Get, Delete, Edit, Create},
+		Actions: []ActionID{Get, Delete, Edit, Create},
 	}
 
 	AppModelDescribe = ResourceDetail{
 		Type:    AppModel,
-		Actions: []Action{Get, Delete, Edit, Create},
+		Actions: []ActionID{Get, Delete, Edit, Create},
 	}
 
 	HostDescribe = ResourceDetail{
 		Type:    Host,
-		Actions: []Action{Get, Delete, Edit, Create, ModuleTransfer},
+		Actions: []ActionID{Get, Delete, Edit, Create, ModuleTransfer},
 	}
 
 	ProcessDescribe = ResourceDetail{
 		Type:    Process,
-		Actions: []Action{Get, Delete, Edit, Create},
+		Actions: []ActionID{Get, Delete, Edit, Create},
 	}
 
 	TopologyDescribe = ResourceDetail{
 		Type:    BusinessTopology,
-		Actions: []Action{Get, Delete, Edit, Create, HostTransfer},
+		Actions: []ActionID{Get, Delete, Edit, Create, HostTransfer},
 	}
 
 	AppInstanceDescribe = ResourceDetail{
 		Type:    AppInstance,
-		Actions: []Action{Get, Delete, Edit, Create},
+		Actions: []ActionID{Get, Delete, Edit, Create},
 	}
 
 	InstanceManagementDescribe = ResourceDetail{
 		Type:    InstanceManagement,
-		Actions: []Action{Get, Delete, Edit, Create},
+		Actions: []ActionID{Get, Delete, Edit, Create},
 	}
 
 	ModelManagementDescribe = ResourceDetail{
 		Type:    ModelManagement,
-		Actions: []Action{Get, Delete, Edit, Create},
+		Actions: []ActionID{Get, Delete, Edit, Create},
 	}
 
 	AssociationTypeDescribe = ResourceDetail{
 		Type:    AssociationType,
-		Actions: []Action{Get, Delete, Edit, Create},
+		Actions: []ActionID{Get, Delete, Edit, Create},
 	}
 
 	ModelGroupDescribe = ResourceDetail{
 		Type:    ModelGroup,
-		Actions: []Action{Get, Delete, Edit, Create},
+		Actions: []ActionID{Get, Delete, Edit, Create},
 	}
 
 	EventDescribe = ResourceDetail{
 		Type:    Event,
-		Actions: []Action{Get, Delete, Edit, Create},
+		Actions: []ActionID{Get, Delete, Edit, Create},
 	}
 
 	SystemBaseDescribe = ResourceDetail{
 		Type:    SystemBase,
-		Actions: []Action{Get, Delete, Edit, Create},
+		Actions: []ActionID{Get, Delete, Edit, Create},
 	}
 )
