@@ -1,13 +1,13 @@
 package parser
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"regexp"
 	"strconv"
 
 	"configcenter/src/auth/meta"
+	"configcenter/src/common/json"
 	"configcenter/src/framework/core/errors"
 )
 
