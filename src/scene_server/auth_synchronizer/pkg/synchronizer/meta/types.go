@@ -10,9 +10,11 @@
  * limitations under the License.
  */
 
-package synchronizer
+package meta
 
-import "time"
+import (
+	"time"
+)
 
 var (
 	// HostResource represent host resource
@@ -31,8 +33,21 @@ type WorkRequest struct {
 	Delay        time.Duration
 }
 
-// SyncHandler is an interface implemented by Kubelet, for testability
+// SyncHandler is an interface implemented for sync data to iam
 type SyncHandler interface {
 	HandleHostSync(task *WorkRequest) error
 	HandleBusinessSync(task *WorkRequest) error
+}
+
+// FakeHander impletes SyncHandler interface and do nothing
+type FakeHander struct{}
+
+// HandleHostSync impletes SyncHandler interface
+func (h *FakeHander) HandleHostSync(task *WorkRequest) error {
+	return nil
+}
+
+// HandleBusinessSync impletes SyncHandler interface
+func (h *FakeHander) HandleBusinessSync(task *WorkRequest) error {
+	return nil
 }

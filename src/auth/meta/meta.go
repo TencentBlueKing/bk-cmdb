@@ -12,14 +12,27 @@
 
 package meta
 
-type Attribute struct {
+// system constanst
+const (
+	SystemIDCMDB   = "bk_cmdb"
+	SystemNameCMDB = "蓝鲸智云配置平台"
+)
+
+// ScopeTypeID constanst
+const (
+	ScopeTypeIDSystem = "system"
+	ScopeTypeIDBiz    = "biz"
+)
+
+type AuthAttribute struct {
 	// the version of this resource, which is the api version.
 	APIVersion string
-	Resources  []Resource
+	User       UserInfo
 	// the business id that this resource belongs to, but it's not necessary for
 	// a resource that does not belongs to a business.
 	BusinessID int64
-	User       UserInfo
+
+	Resources []ResourceAttribute
 }
 
 type UserInfo struct {
@@ -29,22 +42,25 @@ type UserInfo struct {
 	SupplierID string
 }
 
-type Affiliated Basic
+type Item Basic
 
-type Resource struct {
+type ResourceAttribute struct {
 	Basic
 
-	// the action that user want to do with this resource.
-	Action Action
-
-	// affiliated resource info
-	Affiliated Affiliated
+	SupplierAccount string
+	BusinessID      int64
+	// if this object belongs to a topology, like mainline topology,
+	// layers means each object's item before this object.
+	Layers []Item
 }
 
 // Basic defines the basic info for a resource.
 type Basic struct {
 	// the name of the affiliated resource, which could be a model name.
 	Type ResourceType
+
+	// the action that user want to do with this resource.
+	Action Action
 
 	// the name of the resource, which could be a bk-route, etc.
 	// this filed is not necessary for all the resources.
@@ -79,15 +95,17 @@ const (
 	FindMany   Action = "findMany"
 	// unknown action, which is also unsupported actions.
 	Unknown Action = "unknown"
+
+	// move resource pool hosts to a business idle module
+	MoveResPoolHostToBizIdleModule Action = "moveResPoolHostToBizIdleModule"
+	MoveHostToBizFaultModule       Action = "moveHostToBizFaultModule"
+	MoveHostToBizIdleModule        Action = "moveHostToBizIdleModule"
+	MoveHostFromModuleToResPool    Action = "moveHostFromModuleToResPool"
+	MoveHostToAnotherBizModule     Action = "moveHostToAnotherBizModule"
+	CleanHostInSetOrModule         Action = "cleanHostInSetOrModule"
+	MoveHostsToBusinessOrModule    Action = "moveHostsToBusinessOrModule"
+	AddHostToResourcePool          Action = "addHostToResourcePool"
+	MoveHostToModule               Action = "moveHostToModule"
+
+	TopoModelMange Action = "topoModelMange"
 )
-
-type Item Basic
-
-type ResourceAttribute struct {
-	Basic
-
-	BusinessID int64
-	// if this object belongs to a topology, like mainline topology,
-	// layers means each object's item before this object.
-	Layers []Item
-}

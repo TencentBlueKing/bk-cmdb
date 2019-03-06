@@ -13,53 +13,46 @@
 package synchronizer
 
 import (
-	"fmt"
-	"time"
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/auth_synchronizer/pkg/synchronizer/meta"
 )
 
 // NewWorker creates, and returns a new Worker object. Its only argument
 // is a channel that the worker can add itself to whenever it is done its
 // work.
-func NewWorker(id int, workerQueue chan WorkRequest, handler *SyncHandler) Worker {
+func NewWorker(id int, workerQueue chan meta.WorkRequest, handler meta.SyncHandler) *Worker {
 	// Create, and return the worker.
 	worker := Worker{
 		ID:          id,
-		Work:        make(chan WorkRequest),
 		WorkerQueue: workerQueue,
 		QuitChan:    make(chan bool),
 		SyncHandler: handler,
 	}
 
-	return worker
+	return &worker
 }
 
+// Worker represent a worker
 type Worker struct {
 	ID          int
-	Work        chan WorkRequest
-	WorkerQueue chan chan WorkRequest
+	WorkerQueue chan meta.WorkRequest
 	QuitChan    chan bool
-	SyncHandler SyncHandler
+	SyncHandler meta.SyncHandler
 }
 
-// This function "starts" the worker by starting a goroutine, that is
+// Start "starts" the worker by starting a goroutine, that is
 // an infinite "for-select" loop.
 func (w *Worker) Start() {
 	go func() {
 		for {
-			// Add ourselves into the worker queue.
-			w.WorkerQueue <- w.Work
-
 			select {
-			case work := <-w.Work:
+			case work := <-w.WorkerQueue:
 				// Receive a work request.
-				fmt.Printf("worker%d: Received work request, delaying for %f seconds\n", w.ID, work.Delay.Seconds())
-
-				time.Sleep(work.Delay)
-				fmt.Printf("worker%d: Hello, %s!\n", w.ID, work.Name)
+				blog.Infof("worker%d: Received work request, delaying for %f seconds\n", w.ID, work.Delay.Seconds())
 
 			case <-w.QuitChan:
 				// We have been asked to stop.
-				fmt.Printf("worker%d stopping\n", w.ID)
+				blog.Infof("worker%d stopping\n", w.ID)
 				return
 			}
 		}

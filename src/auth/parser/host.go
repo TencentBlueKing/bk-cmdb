@@ -51,12 +51,12 @@ func (ps *parseStream) userCustom() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.HostUserCustom,
+					Type:   meta.HostUserCustom,
+					Action: meta.Create,
 				},
-				Action: meta.Create,
 			},
 		}
 		return ps
@@ -74,13 +74,13 @@ func (ps *parseStream) userCustom() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.HostUserCustom,
-					Name: ps.RequestCtx.Elements[4],
+					Type:   meta.HostUserCustom,
+					Action: meta.Update,
+					Name:   ps.RequestCtx.Elements[4],
 				},
-				Action: meta.Update,
 			},
 		}
 		return ps
@@ -99,13 +99,13 @@ func (ps *parseStream) userCustom() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.HostUserCustom,
-					Name: ps.RequestCtx.Elements[4],
+					Type:   meta.HostUserCustom,
+					Action: meta.Delete,
+					Name:   ps.RequestCtx.Elements[4],
 				},
-				Action: meta.Delete,
 			},
 		}
 		return ps
@@ -125,12 +125,12 @@ func (ps *parseStream) userCustom() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.HostUserCustom,
+					Type:   meta.HostUserCustom,
+					Action: meta.FindMany,
 				},
-				Action: meta.FindMany,
 			},
 		}
 		return ps
@@ -149,13 +149,13 @@ func (ps *parseStream) userCustom() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.HostUserCustom,
-					Name: ps.RequestCtx.Elements[5],
+					Type:   meta.HostUserCustom,
+					Action: meta.Find,
+					Name:   ps.RequestCtx.Elements[5],
 				},
-				Action: meta.Find,
 			},
 		}
 		return ps
@@ -175,13 +175,13 @@ func (ps *parseStream) userCustom() *parseStream {
 		}
 
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.HostUserCustom,
-					Name: ps.RequestCtx.Elements[5],
+					Type:   meta.HostUserCustom,
+					Action: meta.Find,
+					Name:   ps.RequestCtx.Elements[5],
 				},
-				Action: meta.Find,
 			},
 		}
 		return ps
@@ -200,9 +200,10 @@ const (
 	moveHostsToBizIdleModulePattern           = "/api/v3/hosts/modules/idle"
 	moveHostsFromOneToAnotherBizModulePattern = "/api/v3/hosts/modules/biz/mutilple"
 	cleanHostInSetOrModulePattern             = "/api/v3/hosts/modules/idle/set"
-	moveHostToBusinessOrModulePattern         = "/api/v3/hosts/sync/new/host"
-	findHostsWithConditionPattern             = "/api/v3/hosts/search"
-	updateHostInfoBatchPattern                = "/api/v3/hosts/batch"
+	// used in sync framework.
+	moveHostToBusinessOrModulePattern = "/api/v3/hosts/sync/new/host"
+	findHostsWithConditionPattern     = "/api/v3/hosts/search"
+	updateHostInfoBatchPattern        = "/api/v3/hosts/batch"
 )
 
 func (ps *parseStream) host() *parseStream {
@@ -214,13 +215,13 @@ func (ps *parseStream) host() *parseStream {
 
 	// delete hosts batch operation.
 	if ps.hitPattern(deleteHostBatchPattern, http.MethodDelete) {
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.ObjectInstance,
-					Name: "host",
+					Type:   meta.ModelInstance,
+					Action: meta.DeleteMany,
+					Name:   "host",
 				},
-				Action: meta.DeleteMany,
 			},
 		}
 		return ps
@@ -230,13 +231,13 @@ func (ps *parseStream) host() *parseStream {
 
 	// add new hosts to resource pool
 	if ps.hitPattern(addHostsToHostPoolPattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.Host,
-					Name: string(meta.AddHostToResourcePool),
+					Type:   meta.ModelInstance,
+					Action: meta.AddHostToResourcePool,
+					Name:   meta.Host,
 				},
-				Action: meta.Create,
 			},
 		}
 
@@ -245,13 +246,13 @@ func (ps *parseStream) host() *parseStream {
 
 	// move hosts from a module to resource pool.
 	if ps.hitPattern(moveHostsFromModuleToResPoolPattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.Host,
-					Name: string(meta.MoveHostFromModuleToResPool),
+					Type:   meta.ModelInstance,
+					Action: meta.MoveHostFromModuleToResPool,
+					Name:   meta.Host,
 				},
-				Action: meta.Create,
 			},
 		}
 
@@ -260,13 +261,13 @@ func (ps *parseStream) host() *parseStream {
 
 	// move hosts to business module operation.
 	if ps.hitPattern(moveHostToBusinessModulePattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.Host,
-					Name: string(meta.MoveHostToModule),
+					Type:   meta.ModelInstance,
+					Action: meta.MoveHostToModule,
+					Name:   meta.Host,
 				},
-				Action: meta.Create,
 			},
 		}
 
@@ -275,13 +276,13 @@ func (ps *parseStream) host() *parseStream {
 
 	// move resource pool hosts to a business idle module operation.
 	if ps.hitPattern(moveResPoolToBizIdleModulePattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.Host,
-					Name: string(meta.MoveResPoolHostToBizIdleModule),
+					Type:   meta.ModelInstance,
+					Action: meta.MoveResPoolHostToBizIdleModule,
+					Name:   meta.Host,
 				},
-				Action: meta.Create,
 			},
 		}
 
@@ -290,13 +291,13 @@ func (ps *parseStream) host() *parseStream {
 
 	// move host to a business fault module.
 	if ps.hitPattern(moveHostsToBizFaultModulePattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.Host,
-					Name: string(meta.MoveHostToBizFaultModule),
+					Type:   meta.ModelInstance,
+					Action: meta.MoveHostToBizFaultModule,
+					Name:   meta.Host,
 				},
-				Action: meta.Create,
 			},
 		}
 
@@ -304,28 +305,14 @@ func (ps *parseStream) host() *parseStream {
 	}
 
 	// move hosts to a business idle module.
-	if ps.hitPattern(moveHostsToBizFaultModulePattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
-				Basic: meta.Basic{
-					Type: meta.Host,
-					Name: string(meta.MoveResPoolHostToBizIdleModule),
-				},
-				Action: meta.Create,
-			},
-		}
-
-		return ps
-	}
-	// move host to business idle module.
 	if ps.hitPattern(moveHostsToBizIdleModulePattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.Host,
-					Name: string(meta.MoveHostToBizIdleModule),
+					Type:   meta.ModelInstance,
+					Action: meta.MoveHostToBizIdleModule,
+					Name:   meta.Host,
 				},
-				Action: meta.Create,
 			},
 		}
 
@@ -334,13 +321,13 @@ func (ps *parseStream) host() *parseStream {
 
 	// move hosts from one business module to another business module.
 	if ps.hitPattern(moveHostsFromOneToAnotherBizModulePattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.Host,
-					Name: string(meta.MoveHostToAnotherBizModule),
+					Type:   meta.ModelInstance,
+					Action: meta.MoveHostToAnotherBizModule,
+					Name:   meta.Host,
 				},
-				Action: meta.Create,
 			},
 		}
 
@@ -351,13 +338,13 @@ func (ps *parseStream) host() *parseStream {
 	// when these hosts only exist in this set or module. otherwise these hosts will only be
 	// removed from this set or module.
 	if ps.hitPattern(cleanHostInSetOrModulePattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.Host,
-					Name: string(meta.CleanHostInSetOrModule),
+					Type:   meta.ModelInstance,
+					Action: meta.CleanHostInSetOrModule,
+					Name:   meta.Host,
 				},
-				Action: meta.DeleteMany,
 			},
 		}
 
@@ -367,13 +354,13 @@ func (ps *parseStream) host() *parseStream {
 	// synchronize hosts directly to a module in a business if this host does not exist.
 	// otherwise, this operation will only change host's attribute.
 	if ps.hitPattern(moveHostToBusinessOrModulePattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.Host,
-					Name: string(meta.MoveHostsToOrBusinessModule),
+					Type:   meta.ModelInstance,
+					Action: meta.MoveHostsToBusinessOrModule,
+					Name:   meta.Host,
 				},
-				Action: meta.UpdateMany,
 			},
 		}
 
@@ -382,13 +369,13 @@ func (ps *parseStream) host() *parseStream {
 
 	// find hosts with condition operation.
 	if ps.hitPattern(findHostsWithConditionPattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.Host,
-					Name: string(meta.Host),
+					Type:   meta.ModelInstance,
+					Action: meta.FindMany,
+					Name:   meta.Host,
 				},
-				Action: meta.FindMany,
 			},
 		}
 
@@ -397,13 +384,13 @@ func (ps *parseStream) host() *parseStream {
 
 	// update hosts batch.
 	if ps.hitPattern(updateHostInfoBatchPattern, http.MethodPut) {
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.Host,
-					Name: string(meta.Host),
+					Type:   meta.ModelInstance,
+					Action: meta.UpdateMany,
+					Name:   meta.Host,
 				},
-				Action: meta.UpdateMany,
 			},
 		}
 
@@ -431,12 +418,12 @@ func (ps *parseStream) hostFavorite() *parseStream {
 
 	// create host favorite operation.
 	if ps.hitPattern(createHostFavoritePattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.HostFavorite,
+					Type:   meta.HostFavorite,
+					Action: meta.Create,
 				},
-				Action: meta.Create,
 			},
 		}
 
@@ -445,13 +432,13 @@ func (ps *parseStream) hostFavorite() *parseStream {
 
 	// update host favorite operation.
 	if ps.hitRegexp(updateHostFavoriteRegexp, http.MethodPut) {
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.HostFavorite,
-					Name: ps.RequestCtx.Elements[4],
+					Type:   meta.HostFavorite,
+					Action: meta.Update,
+					Name:   ps.RequestCtx.Elements[4],
 				},
-				Action: meta.Update,
 			},
 		}
 
@@ -460,13 +447,13 @@ func (ps *parseStream) hostFavorite() *parseStream {
 
 	// delete host favorite operation.
 	if ps.hitRegexp(deleteHostFavoriteRegexp, http.MethodDelete) {
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.HostFavorite,
-					Name: ps.RequestCtx.Elements[4],
+					Type:   meta.HostFavorite,
+					Action: meta.DeleteMany,
+					Name:   ps.RequestCtx.Elements[4],
 				},
-				Action: meta.DeleteMany,
 			},
 		}
 
@@ -475,12 +462,12 @@ func (ps *parseStream) hostFavorite() *parseStream {
 
 	// find many host favorite operation.
 	if ps.hitPattern(findManyHostFavoritePattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.HostFavorite,
+					Type:   meta.HostFavorite,
+					Action: meta.FindMany,
 				},
-				Action: meta.FindMany,
 			},
 		}
 
@@ -489,13 +476,13 @@ func (ps *parseStream) hostFavorite() *parseStream {
 
 	// increase host favorite count by one.
 	if ps.hitRegexp(increaseHostFavoriteRegexp, http.MethodPut) {
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.HostFavorite,
-					Name: ps.RequestCtx.Elements[4],
+					Type:   meta.HostFavorite,
+					Action: meta.Update,
+					Name:   ps.RequestCtx.Elements[4],
 				},
-				Action: meta.Update,
 			},
 		}
 
