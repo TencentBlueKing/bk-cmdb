@@ -152,9 +152,9 @@ func adaptorAction(r *meta.ResourceAttribute) (Action, error) {
 		}
 	}
 
-	if r.Action == meta.Find || r.Action == meta.Create {
+	if r.Action == meta.Find || r.Action == meta.Update {
 		if r.Basic.Type == meta.ModelTopology {
-			return ModelTopologyOperation, nil
+			return ModelTopologyView, nil
 		}
 	}
 
