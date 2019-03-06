@@ -21,7 +21,7 @@ import (
 
 	"github.com/emicklei/go-restful"
 
-	"configcenter/src/auth"
+	auth_meta "configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
@@ -68,7 +68,7 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 	}
 
 	// check authorization
-	if shouldContinue := s.verifyHostPermission(req, resp, &iHostIDArr, auth.DeleteMany); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &iHostIDArr, auth_meta.DeleteMany); shouldContinue == false {
 		return
 	}
 
@@ -186,7 +186,7 @@ func (s *Service) GetHostInstanceProperties(req *restful.Request, resp *restful.
 
 	hostIDInt64 := details[common.BKHostIDField].(int64)
 	// check authorization
-	if shouldContinue := s.verifyHostPermission(req, resp, &[]int64{hostIDInt64}, auth.Find); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &[]int64{hostIDInt64}, auth_meta.Find); shouldContinue == false {
 		return
 	}
 
@@ -229,7 +229,7 @@ func (s *Service) HostSnapInfo(req *restful.Request, resp *restful.Response) {
 	}
 
 	// check authorization
-	shouldContinue := s.verifyHostPermission(req, resp, &[]int64{hostIDInt64}, auth.Find)
+	shouldContinue := s.verifyHostPermission(req, resp, &[]int64{hostIDInt64}, auth_meta.Find)
 	if shouldContinue == false {
 		return
 	}
@@ -299,7 +299,7 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 	}
 
 	// check permission to edit business
-	if shouldContinue := s.verifyBusinessPermission(req, resp, hostList.ApplicationID, auth.Update); shouldContinue == false {
+	if shouldContinue := s.verifyBusinessPermission(req, resp, hostList.ApplicationID, auth_meta.Update); shouldContinue == false {
 		return
 	}
 
@@ -321,7 +321,7 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 	hostIDArr := make([]int64, 0)
 	for _, h := range hostList.HostInfo {
 		hostID := h[common.BKHostIDField].(int64)
-		hostIDArr := append(hostIDArr, hostID)
+		hostIDArr = append(hostIDArr, hostID)
 	}
 	if err := s.registerHostToCurrentBusiness(req, &hostIDArr); err != nil {
 		blog.Errorf("register hosts to auth center failed, hostList:%+v, err:%v, rid:%s", err, hostList, srvData.rid)
@@ -360,7 +360,7 @@ func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response)
 
 	// check authorization
 	// FIXME is AddHostFromAgent's authentication the same with common api?
-	if shouldContinue := s.verifyBusinessPermission(req, resp, appID, auth.Update); shouldContinue == false {
+	if shouldContinue := s.verifyBusinessPermission(req, resp, appID, auth_meta.Update); shouldContinue == false {
 		return
 	}
 	opt := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithModuleName(common.DefaultResModuleName).WithAppID(appID)
@@ -396,7 +396,7 @@ func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response)
 	for _, v := range hostMap {
 		for _, host := range v {
 			hostID := host.(map[string]interface{})[common.BKHostIDField].(int64)
-			hostIDArr := append(hostIDArr, hostID)
+			hostIDArr = append(hostIDArr, hostID)
 		}
 	}
 	if err := s.registerHostToCurrentBusiness(req, &hostIDArr); err != nil {
@@ -484,7 +484,7 @@ func (s *Service) SearchHost(req *restful.Request, resp *restful.Response) {
 	}
 
 	hostIDArray := host.ExtractHostIDs()
-	if shouldContinue := s.verifyHostPermission(req, resp, hostIDArray, auth.FindMany); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, hostIDArray, auth_meta.FindMany); shouldContinue == false {
 		return
 	}
 
@@ -512,7 +512,7 @@ func (s *Service) SearchHostWithAsstDetail(req *restful.Request, resp *restful.R
 	}
 
 	hostIDArray := host.ExtractHostIDs()
-	if shouldContinue := s.verifyHostPermission(req, resp, hostIDArray, auth.FindMany); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, hostIDArray, auth_meta.FindMany); shouldContinue == false {
 		return
 	}
 
@@ -589,12 +589,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 	}
 
 	// authorization check
-	hostIDStrArray := make([]string, len(hostIDs))
-	for _, hostID := range hostIDs {
-		hostIDStr := fmt.Sprintf("%d", hostID)
-		hostIDStrArray = append(hostIDStrArray, hostIDStr)
-	}
-	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDStrArray, auth.UpdateMany); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDs, auth_meta.UpdateMany); shouldContinue == false {
 		return
 	}
 
@@ -719,7 +714,7 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 	}
 
 	// check authorization
-	if shouldContinue := s.verifyBusinessPermission(req, resp, hostList.ApplicationID, auth.Update); shouldContinue == false {
+	if shouldContinue := s.verifyBusinessPermission(req, resp, hostList.ApplicationID, auth_meta.Update); shouldContinue == false {
 		return
 	}
 
@@ -740,8 +735,7 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 
 	// register host to iam
 	hostIDArr := make([]int64, 0)
-	for _, host := range hostList.HostInfo {
-		hostID := host.(map[string]interface{})[common.BKHostIDField].(int64)
+	for hostID := range hostList.HostInfo {
 		hostIDArr = append(hostIDArr, hostID)
 	}
 	if err := s.registerHostToCurrentBusiness(req, &hostIDArr); err != nil {
@@ -814,19 +808,15 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 
 	// check authentication
 	// step1. check host permission
-	hostIDStrArray := make([]string, 0)
-	for _, hostID := range hostIDArr {
-		hostIDStrArray = append(hostIDStrArray, fmt.Sprintf("%d", hostID))
-	}
-	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth.TransferHost); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth_meta.TransferHost); shouldContinue == false {
 		return
 	}
 	// step2. check permission for target business
-	if shouldContinue := s.verifyBusinessPermission(req, resp, hostList.ApplicationID, auth.Update); shouldContinue == false {
+	if shouldContinue := s.verifyBusinessPermission(req, resp, data.ApplicationID, auth_meta.Update); shouldContinue == false {
 		return
 	}
 	// step3. deregist host from iam
-	if err := s.deregisterHostToCurrentBusiness(req, &hostIDArr); err != nil {
+	if err := s.deregisterHostFromCurrentBusiness(req, &hostIDArr); err != nil {
 		blog.Errorf("deregist host:%+v from iam failed, error:%v, rid:%s", hostIDArr, err, srvData.rid)
 	}
 
@@ -906,7 +896,7 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 	return
 }
 
-func (s *Service) ip2hostID(srvData *srvComm, ip string, cloudID int64) (hostID string, err error) {
+func (s *Service) ip2hostID(srvData *srvComm, ip string, cloudID int64) (hostID int64, err error) {
 	// FIXME there must be a better ip to hostID solution
 	condition := common.KvMap{
 		common.BKHostInnerIPField: ip,
@@ -917,25 +907,24 @@ func (s *Service) ip2hostID(srvData *srvComm, ip string, cloudID int64) (hostID 
 	hostMap, hostIDArr, err := phpapi.GetHostMapByCond(srvData.ctx, condition)
 	if err != nil {
 		err := fmt.Errorf("GetHostMapByCond failed, %v", err)
-		return "", err
+		return 0, err
 	}
 	if len(hostIDArr) == 0 {
-		return "", fmt.Errorf("ip %d:%s not found", cloudID, ip)
+		return 0, fmt.Errorf("ip %d:%s not found", cloudID, ip)
 	}
 
 	hostMapData, ok := hostMap[hostIDArr[0]]
 	if false == ok {
 		blog.Errorf("ip2hostID source ip invalid, raw data format hostMap:%+v, ip:%+v, cloudID:%+v, rid:%s", hostMap, ip, cloudID, srvData.rid)
-		return "", fmt.Errorf("ip %d:%s not found", cloudID, ip)
+		return 0, fmt.Errorf("ip %d:%s not found", cloudID, ip)
 	}
 
-	hostIDInt64, err := util.GetInt64ByInterface(hostMapData[common.BKHostIDField])
+	hostID, err = util.GetInt64ByInterface(hostMapData[common.BKHostIDField])
 	if nil != err {
 		blog.Errorf("ip2hostID bk_host_id field not found hostmap:%+v ip:%+v, cloudID:%+v,rid:%s", hostMapData, ip, cloudID, srvData.rid)
-		return "", fmt.Errorf("ip %+v:%+v not found", cloudID, ip)
+		return 0, fmt.Errorf("ip %+v:%+v not found", cloudID, ip)
 	}
 
-	hostID = fmt.Sprintf("%d", hostIDInt64)
 	return hostID, nil
 }
 
@@ -958,14 +947,13 @@ func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response
 	}
 
 	// authorization check
-	// step1. verify has permission to read src host
 	srcHostID, err := s.ip2hostID(srvData, input.OrgIP, input.CloudID)
 	if err != nil {
 		blog.Errorf("ip2hostID failed, ip:%s, input:%+v, rid:%s", input.OrgIP, input, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedInt, "OrgIP")})
 		return
 	}
-	if shouldContinue := s.verifyHostPermission(req, resp, &[]string{srcHostID}, auth.Find); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &[]int64{srcHostID}, auth_meta.Find); shouldContinue == false {
 		return
 	}
 	// step2. verify has permission to update dst host
@@ -975,7 +963,7 @@ func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedInt, "DstIP")})
 		return
 	}
-	if shouldContinue := s.verifyHostPermission(req, resp, &[]string{dstHostID}, auth.Update); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &[]int64{dstHostID}, auth_meta.Update); shouldContinue == false {
 		return
 	}
 

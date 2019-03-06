@@ -45,19 +45,26 @@ func NewIamAuthorizeData(commonInfo *meta.CommonInfo, businessID int64,
 	}
 
 	for _, instanceID := range *instanceIDs {
-		resource := meta.ResourceAttribute{
-			Basic: meta.Basic{
-				Type:       resourceType,
-				Name:       fmt.Sprint("%s[%d]", resourceType, instanceID),
-				InstanceID: instanceID,
-				Action:     action,
-			},
-			BusinessID:      businessID,
-			SupplierAccount: commonInfo.SupplierAccount,
-		}
-		iamAuthorizeRequestBody.Resources = append(iamAuthorizeRequestBody.Resources, resource)
+		resource := NewResoruceAttribute(commonInfo, businessID, resourceType, instanceID, action)
+		iamAuthorizeRequestBody.Resources = append(iamAuthorizeRequestBody.Resources, *resource)
 	}
 	return iamAuthorizeRequestBody
+}
+
+// NewResoruceAttribute new a resource attribute
+func NewResoruceAttribute(commonInfo *meta.CommonInfo, businessID int64,
+	resourceType meta.ResourceType, instanceID int64, action meta.Action) *meta.ResourceAttribute {
+	resource := &meta.ResourceAttribute{
+		Basic: meta.Basic{
+			Type:       resourceType,
+			Name:       fmt.Sprintf("%s[%d]", resourceType, instanceID),
+			InstanceID: instanceID,
+			Action:     action,
+		},
+		BusinessID:      businessID,
+		SupplierAccount: commonInfo.SupplierAccount,
+	}
+	return resource
 }
 
 // CanDoBusinessAction check permission for operate business
@@ -125,76 +132,47 @@ func (ha *HostAuthorizer) RegisterHosts(req *restful.Request, businessID int64, 
 		return fmt.Errorf("parse common info from request failed, %s", err)
 	}
 
-	// FIXME what action should i use for register resource
-	iamAuthorizeRequestBody := NewIamAuthorizeData(commonInfo, businessID, meta.Host, hostIDs, "")
-	requestID, err := ha.register.Register(context.Background(), iamAuthorizeRequestBody)
-	if err != nil {
-		blog.Errorf("auth register hosts failed, requestID=%s, iamAuthorizeRequestBody=%v, error: %s", requestID, iamAuthorizeRequestBody, err)
-	}
 	/*
-		var item meta.Item
-		for _, hostID := range *hostIDs {
-			resourceAttribute := auth.ResourceAttribute{
-				Object:     "host",
-				ObjectName: "host",
-			}
-			item = auth.Item{
-				Object:     "host",
-				InstanceID: hostID,
-			}
-			resourceAttribute.Layers = append(resourceAttribute.Layers, item)
-
-			item = auth.Item{
-				Object:     "set",
-				InstanceID: businessID,
-			}
-			resourceAttribute.Layers = append(resourceAttribute.Layers, item)
-
-			requestID, err := ha.register.Register(context.Background(), iamAuthorizeRequestBody)
-			if err == nil {
-				blog.Debug("auth register success, requestID=%s, resourceAttribute=%v", requestID, resourceAttribute)
-				continue
-			}
-
-			message := fmt.Sprintf("auth register failed, requestID=%s, resourceAttribute=%v, error: %s", requestID, resourceAttribute, err)
-			blog.Errorf(message)
-			return err
+		// FIXME what action should i use for register resource
+		iamAuthorizeRequestBody := NewIamAuthorizeData(commonInfo, businessID, meta.Host, hostIDs, "")
+		err = ha.register.Register(context.Background(), iamAuthorizeRequestBody)
+		if err != nil {
+			blog.Errorf("auth register hosts failed, iamAuthorizeRequestBody=%v, error: %s", iamAuthorizeRequestBody, err)
 		}
 	*/
+	for _, hostID := range *hostIDs {
+		resource := NewResoruceAttribute(commonInfo, businessID, meta.Host, hostID, meta.Find) // FIXME set action value of meta.Find is not necessary
+		err := ha.register.Register(context.Background(), resource)
+		if err == nil {
+			blog.Debug("auth register success, resourceAttribute=%v", resource)
+			continue
+		}
+
+		message := fmt.Sprintf("auth register failed, resourceAttribute=%v, error: %s", resource, err)
+		blog.Errorf(message)
+		return err
+	}
 	return nil
 }
 
 // DeregisterHosts register host to auth center
 func (ha *HostAuthorizer) DeregisterHosts(req *restful.Request, businessID int64, hostIDs *[]int64) error {
-	var item auth.Item
-	// FIXME
-	// 1. deal with auth interface failed
-	// 2. make it atomic
+	// FIXME replace string like host/set with constant
+	commonInfo, err := parser.ParseCommonInfo(req)
+	if err != nil {
+		return fmt.Errorf("parse common info from request failed, %s", err)
+	}
+
 	// FIXME replace string like host/set with constant
 	for _, hostID := range *hostIDs {
-		resourceAttribute := auth.ResourceAttribute{
-			Object:     "host",
-			ObjectName: "host",
-		}
-		item = auth.Item{
-			Object:     "host",
-			InstanceID: hostID,
-		}
-		resourceAttribute.Layers = append(resourceAttribute.Layers, item)
-
-		item = auth.Item{
-			Object:     "set",
-			InstanceID: businessID,
-		}
-		resourceAttribute.Layers = append(resourceAttribute.Layers, item)
-
-		requestID, err := ha.register.Deregister(context.Background(), &resourceAttribute)
+		resource := NewResoruceAttribute(commonInfo, businessID, meta.Host, hostID, meta.Find) // FIXME set action value of meta.Find is not necessary
+		err := ha.register.Deregister(context.Background(), resource)
 		if err == nil {
-			blog.Debug("auth register success, requestID=%s, resourceAttribute=%v", requestID, resourceAttribute)
+			blog.Debug("auth register success, resourceAttribute=%v", resource)
 			continue
 		}
 
-		message := fmt.Sprintf("auth register failed, requestID=%s, resourceAttribute=%v, error: %s", requestID, resourceAttribute, err)
+		message := fmt.Sprintf("auth register failed, resourceAttribute=%v, error: %s", resource, err)
 		blog.Errorf(message)
 		return err
 	}

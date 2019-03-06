@@ -19,7 +19,7 @@ import (
 	"net/http"
 	"strings"
 
-	"configcenter/src/auth"
+	auth_meta "configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -55,13 +55,14 @@ func (s *Service) UpdateHost(req *restful.Request, resp *restful.Response) {
 		common.BKHostInnerIPField: input["condition"].(map[string]interface{})[common.BKHostInnerIPField],
 		common.BKCloudIDField:     input["condition"].(map[string]interface{})[common.BKCloudIDField],
 	}
+	phpapi := srvData.lgc.NewPHPAPI()
 	_, hostIDArr, err := phpapi.GetHostMapByCond(context.Background(), hostCondition)
 	if err != nil {
 		blog.Errorf("UpdateHost update host, GetHostMapByCond failed, appID:%d, input:%+v, error:%s,rid:%s", appID, input, err, srvData.rid)
-		resp.WriteError(httpCode, &meta.RespError{Msg: err})
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}
-	if shouldContinue := s.verifyHostPermission(req, &hostIDArr); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth_meta.Update); shouldContinue == false {
 		return
 	}
 
@@ -99,13 +100,13 @@ func (s *Service) UpdateHostByAppID(req *restful.Request, resp *restful.Response
 	hostIDArr, httpCode, err := srvData.lgc.FindHostIDsByAppID(srvData.ctx, input, appID)
 	if err != nil {
 		blog.Errorf("updateHostByAppID update host, appID:%d, input:%+v, error:%s,rid:%s", appID, input, err, srvData.rid)
-		resp.WriteError(httpCode, &meta.RespError{Msg: errMsg})
+		resp.WriteError(httpCode, &meta.RespError{Msg: err})
 		return
 	}
-	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth.Update); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth_meta.Update); shouldContinue == false {
 		return
 	}
-	
+
 	blog.V(5).Infof("updateHostByAppID http body data: %v,srvData.rid", input, srvData.rid)
 	result, httpCode, errMsg := srvData.lgc.UpdateHostByAppID(srvData.ctx, input, appID)
 	if nil != errMsg {
@@ -174,12 +175,7 @@ func (s *Service) HostSearchByIP(req *restful.Request, resp *restful.Response) {
 	}
 
 	// check authorization
-	hostIDArr := make([]int64, 0)
-	for _, host := range hostData{
-		hostID := host[common.BKHostIDField].(int64)
-		hostIDArr = append(hostIDArr, hostID)
-	}
-	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth.Find); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth_meta.Find); shouldContinue == false {
 		return
 	}
 
@@ -225,12 +221,7 @@ func (s *Service) HostSearchByConds(req *restful.Request, resp *restful.Response
 	}
 
 	// check authorization
-	hostIDArr := make([]int64, 0)
-	for _, host := range hostData{
-		hostID := host[common.BKHostIDField].(int64)
-		hostIDArr = append(hostIDArr, hostID)
-	}
-	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth.Find); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth_meta.Find); shouldContinue == false {
 		return
 	}
 
@@ -282,11 +273,11 @@ func (s *Service) HostSearchByModuleID(req *restful.Request, resp *restful.Respo
 
 	// check authorization
 	hostIDArr := make([]int64, 0)
-	for _, host := range hostData{
+	for _, host := range hostData {
 		hostID := host[common.BKHostIDField].(int64)
 		hostIDArr = append(hostIDArr, hostID)
 	}
-	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth.Find); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth_meta.Find); shouldContinue == false {
 		return
 	}
 
@@ -335,11 +326,11 @@ func (s *Service) HostSearchBySetID(req *restful.Request, resp *restful.Response
 
 	// check authorization
 	hostIDArr := make([]int64, 0)
-	for _, host := range hostData{
+	for _, host := range hostData {
 		hostID := host[common.BKHostIDField].(int64)
 		hostIDArr = append(hostIDArr, hostID)
 	}
-	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth.Find); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth_meta.Find); shouldContinue == false {
 		return
 	}
 
@@ -385,11 +376,11 @@ func (s *Service) HostSearchByAppID(req *restful.Request, resp *restful.Response
 
 	// check authorization
 	hostIDArr := make([]int64, 0)
-	for _, host := range hostData{
+	for _, host := range hostData {
 		hostID := host[common.BKHostIDField].(int64)
 		hostIDArr = append(hostIDArr, hostID)
 	}
-	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth.Find); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth_meta.Find); shouldContinue == false {
 		return
 	}
 
@@ -476,11 +467,11 @@ func (s *Service) HostSearchByProperty(req *restful.Request, resp *restful.Respo
 	}
 
 	hostIDArr := make([]int64, 0)
-	for _, host := range hostData{
+	for _, host := range hostData {
 		hostID := host[common.BKHostIDField].(int64)
-		hostIDArr := append(hostIDArr, hostID)
+		hostIDArr = append(hostIDArr, hostID)
 	}
-	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth.Find); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth_meta.Find); shouldContinue == false {
 		return
 	}
 
@@ -529,7 +520,7 @@ func (s *Service) GetIPAndProxyByCompany(req *restful.Request, resp *restful.Res
 		Fields: []string{common.BKHostIDField, common.BKHostInnerIPField},
 	}
 	phpapi := srvData.lgc.NewPHPAPI()
-	hosts, err := phpapi.GetHostByCond(ctx, param)
+	hosts, err := phpapi.GetHostByCond(srvData.ctx, param)
 	if nil != err {
 		blog.Errorf("GetIPAndProxyByCompany get ip failed, input:%+v, err:%v, rid:%s", input, err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, "ip")})
@@ -545,7 +536,7 @@ func (s *Service) GetIPAndProxyByCompany(req *restful.Request, resp *restful.Res
 		}
 		hostIDArr = append(hostIDArr, hostID)
 	}
-	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth.Find); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth_meta.Find); shouldContinue == false {
 		return
 	}
 
@@ -586,7 +577,7 @@ func (s *Service) UpdateCustomProperty(req *restful.Request, resp *restful.Respo
 	}
 
 	// check authorization
-	if shouldContinue := s.verifyHostPermission(req, resp, &[]int64{hostID}, auth.Update); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &[]int64{hostID}, auth_meta.Update); shouldContinue == false {
 		return
 	}
 
@@ -662,7 +653,7 @@ func (s *Service) GetHostAppByCompanyId(req *restful.Request, resp *restful.Resp
 	}
 
 	// check authorization
-	if shouldContinue := s.verifyHostPermission(req, resp, &hostIdArr, auth.Find); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &hostIdArr, auth_meta.Find); shouldContinue == false {
 		return
 	}
 
@@ -767,7 +758,7 @@ func (s *Service) DelHostInApp(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	if shouldContinue := s.verifyHostPermission(req, resp, &[]int64{hostID}, auth.Delete); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &[]int64{hostID}, auth_meta.Delete); shouldContinue == false {
 		return
 	}
 
@@ -898,7 +889,7 @@ func (s *Service) GetGitServerIp(req *restful.Request, resp *restful.Response) {
 	for _, config := range configData {
 		hostIDArr = append(hostIDArr, config[common.BKHostIDField])
 	}
-	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth.Find); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth_meta.Find); shouldContinue == false {
 		return
 	}
 
@@ -924,14 +915,14 @@ func (s *Service) GetPlat(req *restful.Request, resp *restful.Response) {
 
 	}
 
-	platIDArr := []int64
-	for _, item := res.Data.Info {
-		platID := res.Data[]
+	platIDArr := make([]int64, 0)
+	for _, item := range res.Data.Info {
+		platID := item[common.BKCloudIDField].(int64)
 		platIDArr = append(platIDArr, platID)
 	}
 	// check authorization
 	// FIXME we should filter out plat user has permission
-	if shouldContinue := s.verifyPlatPermission(req, resp, &platIDArr, auth.Find); shouldContinue == false {
+	if shouldContinue := s.verifyPlatPermission(req, resp, &platIDArr, auth_meta.Find); shouldContinue == false {
 		return
 	}
 
@@ -1032,7 +1023,7 @@ func (s *Service) DelPlat(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	if shouldContinue := s.verifyPlatPermission(req, platID, auth.Delete); shouldContinue == false {
+	if shouldContinue := s.verifyPlatPermission(req, resp, &[]int64{platID}, auth_meta.Delete); shouldContinue == false {
 		return
 	}
 
@@ -1075,7 +1066,7 @@ func (s *Service) GetAgentStatus(req *restful.Request, resp *restful.Response) {
 	configCon := map[string][]int64{
 		common.BKAppIDField: []int64{appID},
 	}
-	configData, err := srvData.lgc.GetConfigByCond(ctx, configCon)
+	configData, err := srvData.lgc.GetConfigByCond(srvData.ctx, configCon)
 	if nil != err {
 		blog.Errorf("GetAgentStatus error. err:%v, input:%+v, rid:%s", err, appID, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, err.Error())})
@@ -1085,7 +1076,7 @@ func (s *Service) GetAgentStatus(req *restful.Request, resp *restful.Response) {
 	for _, config := range configData {
 		hostIDArr = append(hostIDArr, config[common.BKHostIDField])
 	}
-	if shouldContinue := s.verifyHostPermission(req, &hostIDArr); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth_meta.Find); shouldContinue == false {
 		return
 	}
 
@@ -1132,7 +1123,7 @@ func (s *Service) getHostListByAppidAndField(req *restful.Request, resp *restful
 	}
 
 	// check authorization
-	if shouldContinue := s.verifyHostPermission(req, &hostIDArr, auth.Update); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth_meta.Update); shouldContinue == false {
 		return
 	}
 

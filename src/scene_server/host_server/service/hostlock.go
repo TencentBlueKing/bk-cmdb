@@ -18,7 +18,7 @@ import (
 
 	"github.com/emicklei/go-restful"
 
-	"configcenter/src/auth"
+	auth_meta "configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
@@ -43,14 +43,15 @@ func (s *Service) LockHost(req *restful.Request, resp *restful.Response) {
 	// check authorization
 	hostIDArr := make([]int64, 0)
 	for _, ip := range input.IPS {
-		hostID, err := s.ip2hostID(req, ip, input.CloudID)
+		hostID, err := s.ip2hostID(srvData, ip, input.CloudID)
 		if err != nil {
 			blog.Errorf("invalid ip %s:%s, err: %s, rid:%s", ip, input.CloudID, err.Error(), srvData.rid)
 			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsIsInvalid)})
 			return
 		}
+		hostIDArr = append(hostIDArr, hostID)
 	}
-	if shouldContinue := s.verifyHostPermission(req, &hostIDArr, auth.Update); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth_meta.Update); shouldContinue == false {
 		return
 	}
 
@@ -82,14 +83,15 @@ func (s *Service) UnlockHost(req *restful.Request, resp *restful.Response) {
 	// check authorization
 	hostIDArr := make([]int64, 0)
 	for _, ip := range input.IPS {
-		hostID, err := s.ip2hostID(req, ip, input.CloudID)
+		hostID, err := s.ip2hostID(srvData, ip, input.CloudID)
 		if err != nil {
 			blog.Errorf("invalid ip %s:%s, err: %s, rid:%s", ip, input.CloudID, err.Error(), srvData.rid)
 			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsIsInvalid)})
 			return
 		}
+		hostIDArr = append(hostIDArr, hostID)
 	}
-	if shouldContinue := s.verifyHostPermission(req, &hostIDArr, auth.Update); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth_meta.Update); shouldContinue == false {
 		return
 	}
 
@@ -121,14 +123,15 @@ func (s *Service) QueryHostLock(req *restful.Request, resp *restful.Response) {
 	// check authorization
 	hostIDArr := make([]int64, 0)
 	for _, ip := range input.IPS {
-		hostID, err := s.ip2hostID(req, ip, input.CloudID)
+		hostID, err := s.ip2hostID(srvData, ip, input.CloudID)
 		if err != nil {
 			blog.Errorf("invalid ip %s:%s, err: %s, rid:%s", ip, input.CloudID, err.Error(), srvData.rid)
 			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsIsInvalid)})
 			return
 		}
+		hostIDArr = append(hostIDArr, hostID)
 	}
-	if shouldContinue := s.verifyHostPermission(req, &hostIDArr, auth.Find); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth_meta.Find); shouldContinue == false {
 		return
 	}
 

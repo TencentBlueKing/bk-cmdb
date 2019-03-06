@@ -20,7 +20,7 @@ import (
 
 	"github.com/emicklei/go-restful"
 
-	"configcenter/src/auth"
+	auth_meta "configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
@@ -74,15 +74,30 @@ func (s *Service) AddHostMultiAppModuleRelation(req *restful.Request, resp *rest
 	}
 
 	var errMsg, succ []string
-	var hostIDArr []int64
+	hostIDArr := make([]int64, 0)
 
-	// check authorization
-	if shouldContinue := s.verifyBusinessPermission(req, resp, params.ApplicationID, auth.Update); shouldContinue == false {
-		return
-	}
-	// convert host id to uint64
-	hostIDArr = make([]uint64, 0)
-	for index, hostInfo := range params.HostInfoArr {
+	for _, hostInfo := range params.HostInfoArr {
+		cond := hutil.NewOperation().WithHostInnerIP(hostInfo.IP).WithCloudID(int64(hostInfo.CloudID)).Data()
+		query := &metadata.QueryInput{
+			Condition: cond,
+			Start:     0,
+			Limit:     common.BKNoLimit,
+			Sort:      common.BKHostIDField,
+		}
+		hResult, err := s.CoreAPI.HostController().Host().GetHosts(srvData.ctx, srvData.header, query)
+		if err != nil || (err == nil && !hResult.Result) {
+			blog.Errorf("add host multiple app module relation, but get hosts failed, err: %v, %v,param:%+v,rid:%s", err, hResult.ErrMsg, params, srvData.rid)
+			errMsg = append(errMsg, s.Language.Languagef("host_ip_not_exist", hostInfo.IP))
+			continue
+		}
+
+		hostList := hResult.Data.Info
+		if len(hostList) == 0 {
+			blog.Errorf("add host multiple app module relation, but get 0 hosts.params:%+v,rid:%s", params, srvData.rid)
+			errMsg = append(errMsg, s.Language.Languagef("host_ip_not_exist", hostInfo.IP))
+			continue
+		}
+
 		//check if host in this module
 		hostID, err := util.GetInt64ByInterface(hostList[0][common.BKHostIDField])
 		if nil != err {
@@ -92,7 +107,11 @@ func (s *Service) AddHostMultiAppModuleRelation(req *restful.Request, resp *rest
 		}
 		hostIDArr = append(hostIDArr, hostID)
 	}
-	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth.TransferHost); shouldContinue == false {
+	// check authorization
+	if shouldContinue := s.verifyBusinessPermission(req, resp, params.ApplicationID, auth_meta.Update); shouldContinue == false {
+		return
+	}
+	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth_meta.TransferHost); shouldContinue == false {
 		return
 	}
 	if err := s.deregisterHostFromCurrentBusiness(req, &hostIDArr); err != nil {
@@ -231,7 +250,7 @@ func (s *Service) HostModuleRelation(req *restful.Request, resp *restful.Respons
 	}
 
 	// check authorization
-	if shouldContinue := s.verifyHostPermission(req, resp, &config.HostID, auth.TransferHost); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &config.HostID, auth_meta.TransferHost); shouldContinue == false {
 		return
 	}
 
@@ -373,7 +392,7 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 	}
 
 	// check authorization
-	if shouldContinue := s.verifyHostPermission(req, resp, &conf.HostID, auth.TransferHost); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &conf.HostID, auth_meta.TransferHost); shouldContinue == false {
 		return
 	}
 	if err := s.deregisterHostFromCurrentBusiness(req, &conf.HostID); err != nil {
@@ -398,7 +417,7 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 		return
 	}
 
-	if err := s.registerHostToCurrentBusiness(req, conf.HostID); err != nil {
+	if err := s.registerHostToCurrentBusiness(req, &conf.HostID); err != nil {
 		blog.Errorf("register host:%+v to iam failed, error:%v, rid:%v", conf.HostID, err, srvData.rid)
 	}
 
@@ -500,7 +519,7 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 	params["bk_owner_biz_id"] = appID
 
 	// check authorization
-	if shouldContinue := s.verifyHostPermission(req, resp, &conf.HostID, auth.TransferHost); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &conf.HostID, auth_meta.TransferHost); shouldContinue == false {
 		return
 	}
 	if err := s.deregisterHostFromCurrentBusiness(req, &conf.HostID); err != nil {
@@ -589,7 +608,7 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 	// check authorization
 	hostIDArr := make([]int64, 0)
 	for _, ip := range data.Ips {
-		hostID, err := s.ip2hostID(req, ip, data.PlatID)
+		hostID, err := s.ip2hostID(srvData, ip, data.PlatID)
 		if err != nil {
 			blog.Errorf("invalid ip:%v, err:%v, rid:%s", ip, err, srvData.rid)
 			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrAddHostToModuleFailStr, err.Error())})
@@ -597,7 +616,7 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 		}
 		hostIDArr = append(hostIDArr, hostID)
 	}
-	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth.TransferHost); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth_meta.TransferHost); shouldContinue == false {
 		return
 	}
 	if err := s.deregisterHostFromCurrentBusiness(req, &hostIDArr); err != nil {
@@ -674,7 +693,7 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 	}
 
 	// check authorization
-	if shouldContinue := s.verifyHostPermission(req, resp, &conf.HostID, auth.TransferHost); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &conf.HostID, auth_meta.TransferHost); shouldContinue == false {
 		return
 	}
 	// deregister host
@@ -724,9 +743,6 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 			return
 		}
 
-	}
-	if err := s.Authorizer.RegisterHosts(req, conf.ApplicationID, &hostIDArrUint64); err != nil {
-		blog.Errorf("register host:%+v to business:%d failed, err: %v, rid:%s", conf.HostID, conf.ApplicationID, err, srvData.rid)
 	}
 
 	// register host
