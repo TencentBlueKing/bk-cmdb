@@ -156,6 +156,10 @@ const (
 	// auth failed, do not have permission.
 	CCErrCommAuthNotHavePermission = 1199047
 
+	CCErrCommAuthorizeFailed             = 1199045
+	CCErrCommRegistResourceToIAMFailed   = 1199046
+	CCErrCommUnRegistResourceToIAMFailed = 1199047
+
 	// apiserver 1100XXX
 
 	// toposerver 1101XXX

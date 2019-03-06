@@ -72,7 +72,7 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 		asstQuery := map[string]interface{}{
 			common.BKOwnerIDField: common.BKDefaultOwnerID,
 		}
-		defaultOwnerHeader := util.CopyHeader(params.Header)
+		defaultOwnerHeader := util.CloneHeader(params.Header)
 		defaultOwnerHeader.Set(common.BKHTTPOwnerID, common.BKDefaultOwnerID)
 
 		asstRsp, err := b.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), defaultOwnerHeader, &metadata.QueryCondition{Condition: asstQuery})

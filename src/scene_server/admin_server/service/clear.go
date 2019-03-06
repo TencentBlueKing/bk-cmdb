@@ -25,9 +25,10 @@ import (
 	"configcenter/src/storage/dal"
 )
 
+// clear drop tables common.AllTables from db
 func (s *Service) clear(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	rHeader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
 
 	if version.CCRunMode == version.CCRunModeProduct {
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommMigrateFailed)})
@@ -50,7 +51,7 @@ func clearDatabase(db dal.RDB) error {
 		db.DropTable(tablename)
 	}
 
-	// clear redis
+	// TODO clear redis
 
 	return nil
 }
