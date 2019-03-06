@@ -98,25 +98,25 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 }
 
 // type is resource's type in auth center.
-type ResourceType string
+type ResourceTypeID string
 
 const (
 	// the alias name maybe "dynamic classification"
-	CustomQuery        ResourceType = "customQuery"
-	AppModel           ResourceType = "appModel"
-	Host               ResourceType = "host"
-	Process            ResourceType = "process"
-	BusinessTopology   ResourceType = "topology"
-	AppInstance        ResourceType = "appInstance"
-	InstanceManagement ResourceType = "instanceManagement"
-	ModelManagement    ResourceType = "modelManagement"
-	AssociationType    ResourceType = "associationType"
-	ModelGroup         ResourceType = "modelGroup"
-	Event              ResourceType = "event"
-	SystemBase         ResourceType = "systemBase"
-	BusinessHost       ResourceType = "businessHost"
+	CustomQuery        ResourceTypeID = "customQuery"
+	AppModel           ResourceTypeID = "appModel"
+	Host               ResourceTypeID = "host"
+	Process            ResourceTypeID = "process"
+	BusinessTopology   ResourceTypeID = "topology"
+	AppInstance        ResourceTypeID = "appInstance"
+	InstanceManagement ResourceTypeID = "instanceManagement"
+	ModelManagement    ResourceTypeID = "modelManagement"
+	AssociationType    ResourceTypeID = "associationType"
+	ModelGroup         ResourceTypeID = "modelGroup"
+	Event              ResourceTypeID = "event"
+	SystemBase         ResourceTypeID = "systemBase"
+	BusinessHost       ResourceTypeID = "businessHost"
 
-	BusinessInstanceManagement ResourceType = "businessInstanceManagement"
+	BusinessInstanceManagement ResourceTypeID = "businessInstanceManagement"
 )
 
 type ActionID string
@@ -210,7 +210,7 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 
 type ResourceDetail struct {
 	// the resource type in auth center.
-	Type ResourceType
+	Type ResourceTypeID
 	// all the actions that this resource supported.
 	Actions []ActionID
 }

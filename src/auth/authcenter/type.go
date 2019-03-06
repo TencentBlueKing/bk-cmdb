@@ -25,7 +25,7 @@ type RegisterInfo struct {
 }
 
 type ResourceInfo struct {
-	ResourceType ResourceType `json:"resource_type"`
+	ResourceType ResourceTypeID `json:"resource_type"`
 	// this filed is not always used, it's decided by the api
 	// that is used.
 	ResourceName string `json:"resource_name,omitempty"`
