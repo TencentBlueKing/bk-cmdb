@@ -200,9 +200,10 @@ const (
 	moveHostsToBizIdleModulePattern           = "/api/v3/hosts/modules/idle"
 	moveHostsFromOneToAnotherBizModulePattern = "/api/v3/hosts/modules/biz/mutilple"
 	cleanHostInSetOrModulePattern             = "/api/v3/hosts/modules/idle/set"
-	moveHostToBusinessOrModulePattern         = "/api/v3/hosts/sync/new/host"
-	findHostsWithConditionPattern             = "/api/v3/hosts/search"
-	updateHostInfoBatchPattern                = "/api/v3/hosts/batch"
+	// used in sync framework.
+	moveHostToBusinessOrModulePattern = "/api/v3/hosts/sync/new/host"
+	findHostsWithConditionPattern     = "/api/v3/hosts/search"
+	updateHostInfoBatchPattern        = "/api/v3/hosts/batch"
 )
 
 func (ps *parseStream) host() *parseStream {
@@ -357,7 +358,7 @@ func (ps *parseStream) host() *parseStream {
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:   meta.ModelInstance,
-					Action: meta.MoveHostsToOrBusinessModule,
+					Action: meta.MoveHostsToBusinessOrModule,
 					Name:   meta.Host,
 				},
 			},
