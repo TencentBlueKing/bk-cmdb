@@ -14,7 +14,7 @@ package meta
 
 // system constanst
 const (
-	SystemIDCMDB   = "bk-cmdb"
+	SystemIDCMDB   = "bk_cmdb"
 	SystemNameCMDB = "蓝鲸智云配置平台"
 )
 
