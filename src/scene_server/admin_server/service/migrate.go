@@ -25,8 +25,8 @@ import (
 )
 
 func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	rHeader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
 	ownerID := common.BKDefaultOwnerID
 
 	err := upgrader.Upgrade(s.ctx, s.db, &upgrader.Config{

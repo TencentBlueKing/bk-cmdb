@@ -12,6 +12,52 @@
 
 package synchronizer
 
+import (
+	"configcenter/src/scene_server/auth_synchronizer/pkg/synchronizer/meta"
+	"time"
+)
+
+// Producer producer WorkRequest and enqueue it
 type Producer struct {
-	Queue chan WorkRequest
+	ID          int
+	WorkerQueue chan meta.WorkRequest
+	QuitChan    chan bool
+}
+
+// NewProducer make a producer
+func NewProducer(workerQueue chan meta.WorkRequest) *Producer {
+	// Create, and return the producer.
+	producer := Producer{
+		ID:          0,
+		WorkerQueue: workerQueue,
+		QuitChan:    make(chan bool),
+	}
+
+	return &producer
+}
+
+// Start do main loop
+func (p *Producer) Start() {
+	start := time.Now()
+	finished := false
+	go func() {
+		for {
+			if start.Add(time.Minute * 5).Before(time.Now()) {
+				start = start.Add(time.Minute * 5)
+				finished = false
+			}
+
+			if finished == false {
+				// split all jobs
+				jobs := make([]meta.WorkRequest, 5)
+
+				for _, job := range jobs {
+					// pass
+					p.WorkerQueue <- job
+				}
+				finished = true
+			}
+			time.Sleep(time.Millisecond * 100)
+		}
+	}()
 }

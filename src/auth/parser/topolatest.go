@@ -61,13 +61,13 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 	// TODO: add business id for these filter rules to resources.
 	// add object unique operation.
 	if ps.hitRegexp(createObjectUniqueLatestRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.ObjectUnique,
-					Name: ps.RequestCtx.Elements[5],
+					Type:   meta.ModelUnique,
+					Action: meta.Create,
+					Name:   ps.RequestCtx.Elements[5],
 				},
-				Action: meta.Create,
 			},
 		}
 		return ps
@@ -81,16 +81,18 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:       meta.ObjectUnique,
+					Type:       meta.ModelUnique,
+					Action:     meta.Update,
 					InstanceID: uniqueID,
 				},
-				Action: meta.Update,
-				Affiliated: meta.Affiliated{
-					Type: meta.Object,
-					Name: ps.RequestCtx.Elements[5],
+				Layers: []meta.Item{
+					{
+						Type: meta.Model,
+						Name: ps.RequestCtx.Elements[5],
+					},
 				},
 			},
 		}
@@ -105,16 +107,18 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:       meta.ObjectUnique,
+					Type:       meta.ModelUnique,
+					Action:     meta.Delete,
 					InstanceID: uniqueID,
 				},
-				Action: meta.Delete,
-				Affiliated: meta.Affiliated{
-					Type: meta.Object,
-					Name: ps.RequestCtx.Elements[5],
+				Layers: []meta.Item{
+					{
+						Type: meta.Model,
+						Name: ps.RequestCtx.Elements[5],
+					},
 				},
 			},
 		}
@@ -123,15 +127,17 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 
 	// find object unique operation.
 	if ps.hitRegexp(findObjectUniqueLatestRegexp, http.MethodGet) {
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.ObjectUnique,
+					Type:   meta.ModelUnique,
+					Action: meta.FindMany,
 				},
-				Action: meta.FindMany,
-				Affiliated: meta.Affiliated{
-					Type: meta.Object,
-					Name: ps.RequestCtx.Elements[5],
+				Layers: []meta.Item{
+					{
+						Type: meta.Model,
+						Name: ps.RequestCtx.Elements[5],
+					},
 				},
 			},
 		}
@@ -158,12 +164,12 @@ func (ps *parseStream) associationTypeLatest() *parseStream {
 
 	// find association kind operation
 	if ps.hitPattern(findManyAssociationKindLatestPattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.AssociationType,
+					Type:   meta.AssociationType,
+					Action: meta.FindMany,
 				},
-				Action: meta.FindMany,
 			},
 		}
 		return ps
@@ -171,12 +177,12 @@ func (ps *parseStream) associationTypeLatest() *parseStream {
 
 	// create association kind operation
 	if ps.hitPattern(createAssociationKindLatestPattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.AssociationType,
+					Type:   meta.AssociationType,
+					Action: meta.Create,
 				},
-				Action: meta.Create,
 			},
 		}
 		return ps
@@ -194,13 +200,13 @@ func (ps *parseStream) associationTypeLatest() *parseStream {
 			ps.err = fmt.Errorf("update association kind, but got invalid kind id %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:       meta.AssociationType,
+					Action:     meta.Update,
 					InstanceID: kindID,
 				},
-				Action: meta.Update,
 			},
 		}
 
@@ -219,13 +225,13 @@ func (ps *parseStream) associationTypeLatest() *parseStream {
 			ps.err = fmt.Errorf("delete association kind, but got invalid kind id %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:       meta.AssociationType,
+					Action:     meta.Delete,
 					InstanceID: kindID,
 				},
-				Action: meta.Delete,
 			},
 		}
 
@@ -253,12 +259,12 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 
 	// search object association operation
 	if ps.hitPattern(findObjectAssociationLatestPattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.ObjectAssociation,
+					Type:   meta.ModelAssociation,
+					Action: meta.FindMany,
 				},
-				Action: meta.FindMany,
 			},
 		}
 		return ps
@@ -266,12 +272,12 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 
 	// create object association operation
 	if ps.hitPattern(createObjectAssociationLatestPattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.ObjectAssociation,
+					Type:   meta.ModelAssociation,
+					Action: meta.Create,
 				},
-				Action: meta.Create,
 			},
 		}
 		return ps
@@ -290,13 +296,13 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:       meta.ObjectAssociation,
+					Type:       meta.ModelAssociation,
+					Action:     meta.Update,
 					InstanceID: assoID,
 				},
-				Action: meta.Update,
 			},
 		}
 		return ps
@@ -315,13 +321,13 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:       meta.ObjectAssociation,
+					Type:       meta.ModelAssociation,
+					Action:     meta.Delete,
 					InstanceID: assoID,
 				},
-				Action: meta.Delete,
 			},
 		}
 		return ps
@@ -329,12 +335,12 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 
 	// find object association with a association kind list.
 	if ps.hitPattern(findObjectAssociationWithAssociationKindLatestPattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.ObjectAssociation,
+					Type:   meta.ModelAssociation,
+					Action: meta.FindMany,
 				},
-				Action: meta.FindMany,
 			},
 		}
 		return ps
@@ -359,12 +365,12 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 	// find object instance's association operation.
 	if ps.hitPattern(findObjectInstanceAssociationLatestPattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.ObjectInstanceAssociation,
+					Type:   meta.ModelInstanceAssociation,
+					Action: meta.FindMany,
 				},
-				Action: meta.FindMany,
 			},
 		}
 		return ps
@@ -372,12 +378,12 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 	// create object's instance association operation.
 	if ps.hitPattern(createObjectInstanceAssociationLatestPattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.ObjectInstanceAssociation,
+					Type:   meta.ModelInstanceAssociation,
+					Action: meta.Create,
 				},
-				Action: meta.Create,
 			},
 		}
 		return ps
@@ -391,13 +397,13 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:       meta.ObjectInstanceAssociation,
+					Type:       meta.ModelInstanceAssociation,
+					Action:     meta.Delete,
 					InstanceID: assoID,
 				},
-				Action: meta.Delete,
 			},
 		}
 		return ps
@@ -426,12 +432,12 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 
 	// create object instance operation.
 	if ps.hitRegexp(createObjectInstanceLatestRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.ObjectInstance,
+					Type:   meta.ModelInstance,
+					Action: meta.Create,
 				},
-				Action: meta.Create,
 			},
 		}
 		return ps
@@ -443,15 +449,17 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = errors.New("search object instance, but got invalid url")
 			return ps
 		}
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.ObjectInstance,
+					Type:   meta.ModelInstance,
+					Action: meta.Find,
 				},
-				Action: meta.Find,
-				Affiliated: meta.Affiliated{
-					Type: meta.Object,
-					Name: ps.RequestCtx.Elements[5],
+				Layers: []meta.Item{
+					{
+						Type: meta.Model,
+						Name: ps.RequestCtx.Elements[5],
+					},
 				},
 			},
 		}
@@ -471,16 +479,18 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:       meta.ObjectInstance,
+					Type:       meta.ModelInstance,
+					Action:     meta.Update,
 					InstanceID: instID,
 				},
-				Action: meta.Update,
-				Affiliated: meta.Affiliated{
-					Type: meta.Object,
-					Name: ps.RequestCtx.Elements[5],
+				Layers: []meta.Item{
+					{
+						Type: meta.Model,
+						Name: ps.RequestCtx.Elements[5],
+					},
 				},
 			},
 		}
@@ -494,15 +504,17 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.ObjectInstance,
+					Type:   meta.ModelInstance,
+					Action: meta.UpdateMany,
 				},
-				Action: meta.UpdateMany,
-				Affiliated: meta.Affiliated{
-					Type: meta.Object,
-					Name: ps.RequestCtx.Elements[5],
+				Layers: []meta.Item{
+					{
+						Type: meta.Model,
+						Name: ps.RequestCtx.Elements[5],
+					},
 				},
 			},
 		}
@@ -516,15 +528,17 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.ObjectInstance,
+					Type:   meta.ModelInstance,
+					Action: meta.DeleteMany,
 				},
-				Action: meta.DeleteMany,
-				Affiliated: meta.Affiliated{
-					Type: meta.Object,
-					Name: ps.RequestCtx.Elements[5],
+				Layers: []meta.Item{
+					{
+						Type: meta.Model,
+						Name: ps.RequestCtx.Elements[5],
+					},
 				},
 			},
 		}
@@ -544,16 +558,18 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:       meta.ObjectInstance,
+					Type:       meta.ModelInstance,
+					Action:     meta.Delete,
 					InstanceID: instID,
 				},
-				Action: meta.Delete,
-				Affiliated: meta.Affiliated{
-					Type: meta.Object,
-					Name: ps.RequestCtx.Elements[5],
+				Layers: []meta.Item{
+					{
+						Type: meta.Model,
+						Name: ps.RequestCtx.Elements[5],
+					},
 				},
 			},
 		}
@@ -573,16 +589,18 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:       meta.ObjectInstanceTopology,
+					Type:       meta.ModelInstanceTopology,
+					Action:     meta.Find,
 					InstanceID: instID,
 				},
-				Action: meta.Find,
-				Affiliated: meta.Affiliated{
-					Type: meta.Object,
-					Name: ps.RequestCtx.Elements[5],
+				Layers: []meta.Item{
+					{
+						Type: meta.Model,
+						Name: ps.RequestCtx.Elements[5],
+					},
 				},
 			},
 		}
@@ -608,16 +626,18 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:       meta.ObjectInstanceTopology,
+					Type:       meta.ModelInstanceTopology,
+					Action:     meta.Find,
 					InstanceID: instID,
 				},
-				Action: meta.Find,
-				Affiliated: meta.Affiliated{
-					Type: meta.Object,
-					Name: ps.RequestCtx.Elements[5],
+				Layers: []meta.Item{
+					{
+						Type: meta.Model,
+						Name: ps.RequestCtx.Elements[5],
+					},
 				},
 			},
 		}
@@ -638,15 +658,17 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.ObjectInstanceTopology,
+					Type:   meta.ModelInstanceTopology,
+					Action: meta.Find,
 				},
-				Action: meta.Find,
-				Affiliated: meta.Affiliated{
-					Type: meta.Object,
-					Name: string(meta.Business),
+				Layers: []meta.Item{
+					{
+						Type: meta.Model,
+						Name: string(meta.Business),
+					},
 				},
 			},
 		}
@@ -660,15 +682,17 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.ObjectInstanceTopology,
+					Type:   meta.ModelInstanceTopology,
+					Action: meta.FindMany,
 				},
-				Action: meta.FindMany,
-				Affiliated: meta.Affiliated{
-					Type: meta.Object,
-					Name: ps.RequestCtx.Elements[5],
+				Layers: []meta.Item{
+					{
+						Type: meta.Model,
+						Name: ps.RequestCtx.Elements[5],
+					},
 				},
 			},
 		}
@@ -681,7 +705,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 const (
 	createObjectLatestPattern       = "/api/v3/create/object"
 	findObjectsLatestPattern        = "/api/v3/find/object"
-	findObjectTopologyLatestPattern = "/api/v3/find/objects/objecttopology"
+	findObjectTopologyLatestPattern = "/api/v3/find/objecttopology"
 )
 
 var (
@@ -704,12 +728,12 @@ func (ps *parseStream) objectLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.Object,
+					Type:   meta.Model,
+					Action: meta.Create,
 				},
-				Action: meta.Create,
 			},
 		}
 		return ps
@@ -734,13 +758,13 @@ func (ps *parseStream) objectLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:       meta.Object,
+					Type:       meta.Model,
+					Action:     meta.Delete,
 					InstanceID: objID,
 				},
-				Action: meta.Delete,
 			},
 		}
 		return ps
@@ -765,13 +789,13 @@ func (ps *parseStream) objectLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:       meta.Object,
+					Type:       meta.Model,
+					Action:     meta.Update,
 					InstanceID: objID,
 				},
-				Action: meta.Update,
 			},
 		}
 		return ps
@@ -785,12 +809,12 @@ func (ps *parseStream) objectLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.Object,
+					Type:   meta.Model,
+					Action: meta.FindMany,
 				},
-				Action: meta.FindMany,
 			},
 		}
 		return ps
@@ -804,12 +828,12 @@ func (ps *parseStream) objectLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.ObjectTopology,
+					Type:   meta.ModelTopology,
+					Action: meta.Find,
 				},
-				Action: meta.Find,
 			},
 		}
 		return ps
@@ -823,12 +847,12 @@ func (ps *parseStream) objectLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.ObjectTopology,
+					Type:   meta.ModelTopology,
+					Action: meta.Find,
 				},
-				Action: meta.Find,
 			},
 		}
 		return ps
@@ -838,12 +862,12 @@ func (ps *parseStream) objectLatest() *parseStream {
 	// TODO: confirm if bizID is needed.
 	if ps.hitRegexp(updateObjectTopologyGraphicLatestRegexp, http.MethodPost) {
 
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.ObjectTopology,
+					Type:   meta.ModelTopology,
+					Action: meta.Update,
 				},
-				Action: meta.Update,
 			},
 		}
 		return ps
@@ -876,12 +900,12 @@ func (ps *parseStream) ObjectClassificationLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.ObjectClassification,
+					Type:   meta.ModelClassification,
+					Action: meta.Create,
 				},
-				Action: meta.Create,
 			},
 		}
 		return ps
@@ -906,13 +930,13 @@ func (ps *parseStream) ObjectClassificationLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:       meta.ObjectClassification,
+					Type:       meta.ModelClassification,
+					Action:     meta.Delete,
 					InstanceID: classID,
 				},
-				Action: meta.Delete,
 			},
 		}
 		return ps
@@ -937,13 +961,13 @@ func (ps *parseStream) ObjectClassificationLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:       meta.ObjectClassification,
+					Type:       meta.ModelClassification,
+					Action:     meta.Update,
 					InstanceID: classID,
 				},
-				Action: meta.Update,
 			},
 		}
 		return ps
@@ -957,12 +981,12 @@ func (ps *parseStream) ObjectClassificationLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.ObjectClassification,
+					Type:   meta.ModelClassification,
+					Action: meta.FindMany,
 				},
-				Action: meta.FindMany,
 			},
 		}
 		return ps
@@ -976,12 +1000,12 @@ func (ps *parseStream) ObjectClassificationLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.ObjectClassification,
+					Type:   meta.ModelClassification,
+					Action: meta.FindMany,
 				},
-				Action: meta.FindMany,
 			},
 		}
 		return ps
@@ -1014,12 +1038,12 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.ObjectAttributeGroup,
+					Type:   meta.ModelAttributeGroup,
+					Action: meta.Create,
 				},
-				Action: meta.Create,
 			},
 		}
 		return ps
@@ -1038,15 +1062,17 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.ObjectAttributeGroup,
+					Type:   meta.ModelAttributeGroup,
+					Action: meta.Find,
 				},
-				Action: meta.Find,
-				Affiliated: meta.Affiliated{
-					Type: meta.Object,
-					Name: ps.RequestCtx.Elements[5],
+				Layers: []meta.Item{
+					{
+						Type: meta.Model,
+						Name: ps.RequestCtx.Elements[5],
+					},
 				},
 			},
 		}
@@ -1061,12 +1087,12 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.ObjectClassification,
+					Type:   meta.ModelClassification,
+					Action: meta.Update,
 				},
-				Action: meta.Update,
 			},
 		}
 		return ps
@@ -1091,13 +1117,13 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:       meta.ObjectAttributeGroup,
+					Type:       meta.ModelAttributeGroup,
+					Action:     meta.Delete,
 					InstanceID: groupID,
 				},
-				Action: meta.Delete,
 			},
 		}
 		return ps
@@ -1116,13 +1142,13 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.ObjectAttributeGroup,
-					Name: ps.RequestCtx.Elements[11],
+					Type:   meta.ModelAttributeGroup,
+					Action: meta.Delete,
+					Name:   ps.RequestCtx.Elements[11],
 				},
-				Action: meta.Delete,
 			},
 		}
 		return ps
@@ -1154,12 +1180,12 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.ObjectAttribute,
+					Type:   meta.ModelAttribute,
+					Action: meta.Create,
 				},
-				Action: meta.Create,
 			},
 		}
 		return ps
@@ -1184,13 +1210,13 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:       meta.ObjectAttribute,
+					Type:       meta.ModelAttribute,
+					Action:     meta.Delete,
 					InstanceID: attrID,
 				},
-				Action: meta.Delete,
 			},
 		}
 		return ps
@@ -1215,13 +1241,13 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:       meta.ObjectAttribute,
+					Type:       meta.ModelAttribute,
+					Action:     meta.Update,
 					InstanceID: attrID,
 				},
-				Action: meta.Update,
 			},
 		}
 		return ps
@@ -1235,12 +1261,12 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.ObjectAttribute,
+					Type:   meta.ModelAttribute,
+					Action: meta.Find,
 				},
-				Action: meta.Find,
 			},
 		}
 		return ps
@@ -1274,12 +1300,12 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.MainlineObject,
+					Type:   meta.MainlineModel,
+					Action: meta.Create,
 				},
-				Action: meta.Create,
 			},
 		}
 		return ps
@@ -1293,12 +1319,12 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.MainlineObject,
+					Type:   meta.MainlineModel,
+					Action: meta.Delete,
 				},
-				Action: meta.Delete,
 			},
 		}
 
@@ -1313,12 +1339,12 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.MainlineObjectTopology,
+					Type:   meta.MainlineModelTopology,
+					Action: meta.Find,
 				},
-				Action: meta.Find,
 			},
 		}
 
@@ -1334,12 +1360,12 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.MainlineInstanceTopology,
+					Type:   meta.MainlineInstanceTopology,
+					Action: meta.Find,
 				},
-				Action: meta.Find,
 			},
 		}
 
@@ -1359,12 +1385,12 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.MainlineInstanceTopology,
+					Type:   meta.MainlineInstanceTopology,
+					Action: meta.Find,
 				},
-				Action: meta.Find,
 			},
 		}
 
@@ -1384,12 +1410,12 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.BusinessID = bizID
-		ps.Attribute.Resources = []meta.Resource{
-			meta.Resource{
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type: meta.MainlineObject,
+					Type:   meta.MainlineModel,
+					Action: meta.Find,
 				},
-				Action: meta.Find,
 			},
 		}
 

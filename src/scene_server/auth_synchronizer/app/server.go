@@ -28,9 +28,6 @@ import (
 	"configcenter/src/scene_server/auth_synchronizer/app/options"
 	webservice "configcenter/src/scene_server/auth_synchronizer/pkg/service"
 	"configcenter/src/scene_server/auth_synchronizer/pkg/synchronizer"
-	"configcenter/src/scene_server/host_server/logics"
-	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/thirdpartyclient/esbserver"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 
 	"github.com/emicklei/go-restful"
@@ -76,8 +73,6 @@ func Run(ctx context.Context, serverOptions *options.ServerOption) error {
 	}
 
 	synchronizerConfig := new(SynchronizerConfig)
-	synchronizerConfig.Core = engine
-	synchronizerConfig.Service = serviceContainer
 
 	// note: NewBackbone will run a server in backend to sync newest config to
 	engine, err := backbone.NewBackbone(
@@ -93,6 +88,8 @@ func Run(ctx context.Context, serverOptions *options.ServerOption) error {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
 
+	synchronizerConfig.Core = engine
+	synchronizerConfig.Service = serviceContainer
 	// wait for synchronizerConfig.Config
 	for {
 		if synchronizerConfig.Config != nil {
@@ -102,20 +99,8 @@ func Run(ctx context.Context, serverOptions *options.ServerOption) error {
 		blog.Info("config not found, retry 2s later")
 	}
 
-	mongoClient, err := local.NewMgo(synchronizerConfig.Config.MongoDB.BuildURI(), time.Minute)
-	if err != nil {
-		return fmt.Errorf("new mongo client failed, err: %s", err.Error())
-	}
-
 	esbChan := make(chan esbutil.EsbConfig, 1)
 	esbChan <- synchronizerConfig.Config.Esb
-	esb, err := esbserver.NewEsb(c, esbChan)
-	if err != nil {
-		return fmt.Errorf("new esb client failed, err: %s", err.Error())
-	}
-
-	synchronizerConfig.Service.Logics = logics.NewLogics(ctx, engine, mongoClient, esb)
-
 	err = synchronizer.NewSynchronizer(ctx, synchronizerConfig.Config, synchronizerConfig.Core).Run()
 	if err != nil {
 		return fmt.Errorf("run auth synchronizer routine failed %s", err.Error())
@@ -130,7 +115,7 @@ func Run(ctx context.Context, serverOptions *options.ServerOption) error {
 
 // NewHTTPServerConfig new ServerInfo for running a http service
 func NewHTTPServerConfig(serverOptions *options.ServerOption) (*types.ServerInfo, error) {
-	ip, err := serverOptionsServConf.GetAddress()
+	ip, err := serverOptions.ServConf.GetAddress()
 	if err != nil {
 		return nil, err
 	}

@@ -12,11 +12,9 @@
 
 package handlers
 
-import (
-	"configcenter/src/scene_server/auth_synchronizer/pkg/synchronizer"
-)
+import "configcenter/src/scene_server/auth_synchronizer/pkg/synchronizer/meta"
 
 // HandleBusinessSync do sync all business to iam
-func HandleBusinessSync(task *synchronizer.WorkRequest) error {
+func HandleBusinessSync(task *meta.WorkRequest) error {
 	return nil
 }
