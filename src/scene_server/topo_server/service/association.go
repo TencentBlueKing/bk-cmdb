@@ -261,7 +261,7 @@ func (s *topoService) CreateAssociationInst(params types.ContextParams, pathPara
 	}
 }
 
-func (s *topoService) DeleteAssociationInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) DeleteAssociationInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	id, err := strconv.ParseInt(pathParams("association_id"), 10, 64)
 	if err != nil {
