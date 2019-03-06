@@ -138,17 +138,14 @@ const (
 	HostTransfer ActionID = "hostTransfer"
 	// system base action, related to model topology
 	ModelTopologyView ActionID = "modelTopologyView"
-
 	// business model topology operation.
 	ModelTopologyOperation ActionID = "modelTopologyOperation"
-
 	// assign host(s) to a business
 	// located system/host/assignHostsToBusiness in auth center.
 	AssignHostsToBusiness ActionID = "assignHostsToBusiness"
 	BindModule            ActionID = "bindModule"
-
-	TopoLayerManage ActionID = "topoManage"
-	AdminEntrance   ActionID = "adminEntrance"
+	BindModuleQuery       ActionID = "bindModuleQuery"
+	AdminEntrance         ActionID = "adminEntrance"
 )
 
 func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
@@ -162,6 +159,16 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 	if r.Action == meta.Find || r.Action == meta.Update {
 		if r.Basic.Type == meta.ModelTopology {
 			return ModelTopologyView, nil
+		}
+	}
+
+	if r.Basic.Type == meta.Process {
+		if r.Action == meta.BoundModuleToProcess || r.Action == meta.UnboundModuleToProcess {
+			return BindModule, nil
+		}
+
+		if r.Action == meta.FindBoundModuleProcess {
+			return BindModuleQuery, nil
 		}
 	}
 
