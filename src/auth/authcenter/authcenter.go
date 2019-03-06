@@ -12,6 +12,7 @@ import (
 	"configcenter/src/apimachinery/flowctrl"
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
+	"configcenter/src/auth/authcenter/permit"
 	"configcenter/src/auth/meta"
 )
 
@@ -105,7 +106,23 @@ type AuthCenter struct {
 }
 
 func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (decision meta.Decision, err error) {
-	// TODO: fill this struct.
+	resources := make([]meta.ResourceAttribute, 0)
+	for _, rsc := range a.Resources {
+		// check whether this request is in whitelist, so that it can be skip directly.
+		if !permit.IsPermit(&rsc) {
+			resources = append(resources, rsc)
+		}
+	}
+
+	if len(resources) == 0 {
+		// no resources need to be authorized.
+		return meta.Decision{Authorized: true}, nil
+	}
+
+	// there still have resource need to be authorized.
+	// so, update the resources.
+	a.Resources = resources
+
 	info := &AuthBatch{
 		Principal: Principal{
 			Type: "user",
@@ -120,7 +137,7 @@ func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (dec
 		info.ScopeID = strconv.FormatInt(a.BusinessID, 10)
 	} else {
 		info.ScopeType = "system"
-		info.ScopeID = "bk-cmdb"
+		info.ScopeID = "bk_cmdb"
 	}
 
 	info.ResourceActions = make([]ResourceAction, 0)

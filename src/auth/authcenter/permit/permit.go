@@ -16,6 +16,33 @@ import "configcenter/src/auth/meta"
 
 // this function is used to check where this request attribute is permitted as default,
 // so that it is not need to check permission status in auth center.
-func IsPermit(attribute *meta.AuthAttribute) bool {
+func IsPermit(rsc *meta.ResourceAttribute) bool {
+
+	if rsc.Type == meta.ModelClassification && rsc.Action == meta.FindMany {
+		return true
+	}
+
+	if rsc.Type == meta.AssociationType && rsc.Action == meta.FindMany {
+		return true
+	}
+
+	if rsc.Type == meta.Model && rsc.Action == meta.FindMany {
+		return true
+	}
+
+	if rsc.Type == meta.ModelAssociation && rsc.Action == meta.FindMany {
+		return true
+	}
+
+	// all the model instance association related operation is all authorized for now.
+	if rsc.Type == meta.ModelInstanceAssociation {
+		return true
+	}
+
+	// all the network data collector related operation is all authorized for now.
+	if rsc.Type == meta.NetDataCollector {
+		return true
+	}
+
 	return false
 }
