@@ -244,8 +244,7 @@ func (ps *parseStream) process() *parseStream {
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:       meta.Process,
-					Action:     meta.Create,
-					Name:       string(meta.Process),
+					Action:     meta.BoundMoudleToProcess,
 					InstanceID: procID,
 				},
 			},
@@ -272,8 +271,7 @@ func (ps *parseStream) process() *parseStream {
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:       meta.Process,
-					Action:     meta.Delete,
-					Name:       string(meta.Process),
+					Action:     meta.UnboundMoudleToProcess,
 					InstanceID: procID,
 				},
 			},
