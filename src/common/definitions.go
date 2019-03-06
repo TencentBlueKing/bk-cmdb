@@ -969,6 +969,9 @@ const (
 	RedisCloudSyncInstanceStarted             = BKCacheKeyV3Prefix + "cloudsyncinstancestarted:list"
 	RedisCloudSyncInstancePendingStop         = BKCacheKeyV3Prefix + "cloudsyncinstancependingstop:list"
 	RedisCloudSyncStartLockKey                = BKCacheKeyV3Prefix + "lock:cloudsyncstart"
+
+	// RedisSynchronizeServerLockKey sychronize server can execute synchronize setnx key
+	RedisSynchronizeServerLockKey = BKCacheKeyV3Prefix + "lock:cmdb:synchronirze:lock"
 )
 
 // association fields

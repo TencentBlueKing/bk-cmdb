@@ -16,6 +16,7 @@ import (
 	"context"
 	"time"
 
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -63,9 +64,14 @@ func (lgc *Logics) TriggerSynchronize(ctx context.Context, config *options.Confi
 
 	// version
 	timeInterval := time.Duration(interval) * time.Minute
+	timeInterval = time.Second * 10
 	for {
 		ticker := time.NewTimer(timeInterval)
 		<-ticker.C
+		if lock := lgc.canExecSynchronize(ctx, timeInterval); !lock {
+			blog.Info(" lock false")
+			continue
+		}
 		lgc.Synchronize(ctx, config)
 		if config.Trigger.IsTiming() {
 			timeInterval = time.Duration(nextDayTrigger) * time.Minute
@@ -82,6 +88,28 @@ func (lgc *Logics) Synchronize(ctx context.Context, config *options.Config) {
 		go lgc.SynchronizeItem(ctx, config.ConifgItemArray[idx])
 	}
 
+}
+
+// canExecSynchronize can start exeute synchronize
+// The conditions under which synchronization can be performed:
+//  1. redis has no information about the current sync configuration
+//  2. redis information about the current configuration timed out
+func (lgc *Logics) canExecSynchronize(ctx context.Context, nextTrigger time.Duration) bool {
+	val, err := lgc.cache.TTL(common.RedisSynchronizeServerLockKey).Result()
+	if err != nil {
+		blog.Errorf("canExecSynchronize Get %s key error.err:%s,rid:%s", common.RedisSynchronizeServerLockKey, err.Error(), lgc.rid)
+		return false
+	}
+	if (val / time.Second) < 10 {
+		lgc.cache.Del(common.RedisSynchronizeServerLockKey)
+	}
+
+	lock, err := lgc.cache.SetNX(common.RedisSynchronizeServerLockKey, "", nextTrigger).Result()
+	if err != nil {
+		blog.Errorf("canExecSynchronize Set %s key error.err:%s,rid:%s", common.RedisSynchronizeServerLockKey, err.Error(), lgc.rid)
+		return false
+	}
+	return lock
 }
 
 // SynchronizeItem  synchronize data

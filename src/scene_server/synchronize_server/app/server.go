@@ -27,13 +27,13 @@ import (
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	//"configcenter/src/common/blog"
+	synchronizeClient "configcenter/src/apimachinery/synchronize"
+	synchronizeUtil "configcenter/src/apimachinery/synchronize/util"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/synchronize_server/app/options"
 	synchronizeService "configcenter/src/scene_server/synchronize_server/service"
-	//"configcenter/src/storage/dal/redis"
-	synchronizeClient "configcenter/src/apimachinery/synchronize"
-	synchronizeUtil "configcenter/src/apimachinery/synchronize/util"
+	"configcenter/src/storage/dal/redis"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -93,6 +93,16 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if false == configReady {
 		return fmt.Errorf("Configuration item not found")
 	}
+
+	// has synchronize config, need to redis config
+	if len(synchronSrv.Config.ConifgItemArray) > 0 {
+		cacheDB, err := redis.NewFromConfig(synchronSrv.Config.Redis)
+		if err != nil {
+			return fmt.Errorf("new redis client failed, err: %s", err.Error())
+		}
+		service.CacheDB = cacheDB
+	}
+
 	service.Engine = engine
 	service.Config = synchronSrv.Config
 	synchronSrv.Service = service
@@ -117,6 +127,12 @@ func (s *SynchronizeServer) onSynchronizeServerConfigUpdate(previous, current cc
 	configInfo := &options.Config{}
 	names := current.ConfigMap["synchronize.name"]
 	configInfo.Names = strings.Split(names, ",")
+
+	configInfo.Redis.Address = current.ConfigMap["redis.host"]
+	configInfo.Redis.Database = current.ConfigMap["redis.database"]
+	configInfo.Redis.Password = current.ConfigMap["redis.pwd"]
+	configInfo.Redis.Port = current.ConfigMap["redis.port"]
+	configInfo.Redis.MasterName = current.ConfigMap["redis.user"]
 
 	configInfo.Trigger.TriggerType = current.ConfigMap["trigger.type"]
 	// role  unit minute.

@@ -16,6 +16,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"configcenter/src/common/core/cc/config"
+	"configcenter/src/storage/dal/redis"
 )
 
 //ServerOption define option of server in flags
@@ -45,6 +46,7 @@ type Config struct {
 	exceptionDir    string
 	ConifgItemArray []*ConfigItem
 	Trigger         TriggerTime
+	Redis           redis.Config
 }
 
 const (
