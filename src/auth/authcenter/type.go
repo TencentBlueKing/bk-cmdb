@@ -25,7 +25,7 @@ type RegisterInfo struct {
 }
 
 type ResourceInfo struct {
-	ResourceType ResourceType `json:"resource_type"`
+	ResourceType ResourceTypeID `json:"resource_type"`
 	// this filed is not always used, it's decided by the api
 	// that is used.
 	ResourceName string `json:"resource_name,omitempty"`
@@ -84,7 +84,7 @@ type BatchResult struct {
 
 type ResourceAction struct {
 	ResourceInfo `json:",inline"`
-	ActionID     Action `json:"action_id"`
+	ActionID     ActionID `json:"action_id"`
 }
 
 type BatchStatus struct {
@@ -105,4 +105,48 @@ func (a *AuthError) Error() string {
 		return a.Reason.Error()
 	}
 	return fmt.Sprintf("request id: %s, err: %s", a.RequestID, a.Reason.Error())
+}
+
+type System struct {
+	SystemID   string `json:"system_id,omitempty"`
+	SystemName string `json:"system_name"`
+	Desc       string `json:"desc"`
+	// 可为空，在使用注册资源的方式时
+	QueryInterface string `json:"query_interface"`
+	//  关联的资源所属，有业务、全局、项目等
+	ReleatedScopeTypes string `json:"releated_scope_types"`
+	// 管理者，可通过权限中心产品页面修改模型相关信息
+	Managers string `json:"managers"`
+	// 更新者，可为system
+	Updater string `json:"updater,omitempty"`
+	// 创建者，可为system
+	Creator string `json:"creator,omitempty"`
+}
+
+type ResourceType struct {
+	ResourceTypeID       string   `json:"resource_type_id"`
+	ResourceTypeName     string   `json:"resource_type_name"`
+	ParentResourceTypeID string   `json:"parent_resource_type_id"`
+	Actions              []Action `json:"actions"`
+}
+
+type Action struct {
+	ActionID          ActionID `json:"action_id"`
+	ActionName        string   `json:"action_name"`
+	IsRelatedResource bool     `json:"is_related_resource"`
+}
+
+type SystemDetail struct {
+	System
+	Scopes []struct {
+		ScopeTypeID   string         `json:"scope_type_id"`
+		ResourceTypes []ResourceType `json:"resource_types"`
+	} `json:"scopes"`
+}
+
+type BaseResponse struct {
+	Code      int
+	Message   string
+	Result    bool
+	RequestID string
 }
