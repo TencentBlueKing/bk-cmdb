@@ -14,6 +14,7 @@ package service
 
 import (
 	"configcenter/src/common/metadata"
+
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/apimachinery/discovery"
@@ -102,6 +103,8 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.POST("/plat").To(s.CreatePlat))
 	ws.Route(ws.DELETE("/plat/{bk_cloud_id}").To(s.DelPlat))
 	ws.Route(ws.GET("/healthz").To(s.Healthz))
+
+	ws.Route(ws.POST("/findmany/modulehost").To(s.FindModuleHost))
 
 	return ws
 }
