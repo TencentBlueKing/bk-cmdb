@@ -9,7 +9,7 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package instances
+package datasynchronize
 
 import (
 	"configcenter/src/common"
@@ -20,19 +20,19 @@ import (
 )
 
 type model struct {
-	base     *synchronizeAdapter
-	dataType metadata.SynchronizeDataType
-	dbProxy  dal.RDB
-	dataSign string
+	base         *synchronizeAdapter
+	dataType     metadata.SynchronizeOperateDataType
+	dbProxy      dal.RDB
+	DataClassify string
 }
 
 func NewSynchronizeModelAdapter(s *metadata.SynchronizeParameter, dbProxy dal.RDB) dataTypeInterface {
 
 	return &model{
-		base:     newSynchronizeAdapter(s, dbProxy),
-		dataType: s.DataType,
-		dataSign: s.DataSign,
-		dbProxy:  dbProxy,
+		base:         newSynchronizeAdapter(s, dbProxy),
+		dataType:     s.OperateDataType,
+		DataClassify: s.DataClassify,
+		dbProxy:      dbProxy,
 	}
 }
 
@@ -44,10 +44,10 @@ func (m *model) PreSynchronizeFilter(ctx core.ContextParams) errors.CCError {
 	return m.base.PreSynchronizeFilter(ctx)
 }
 
-func (m *model) GetErrorStringArr(ctx core.ContextParams) ([]string, errors.CCError) {
+func (m *model) GetErrorStringArr(ctx core.ContextParams) ([]metadata.ExceptionResult, errors.CCError) {
 
 	if len(m.base.errorArray) == 0 {
-		return make([]string, 0), nil
+		return nil, nil
 	}
 
 	return m.base.GetErrorStringArr(ctx)
@@ -56,7 +56,7 @@ func (m *model) GetErrorStringArr(ctx core.ContextParams) ([]string, errors.CCEr
 func (m *model) SaveSynchronize(ctx core.ContextParams) errors.CCError {
 	// Each model is written separately for subsequent expansion,
 	// each type may be processed differently.
-	switch m.dataSign {
+	switch m.DataClassify {
 	case common.SynchronizeModelTypeClassification:
 		return m.saveSynchronizeModelClassification(ctx)
 	case common.SynchronizeModelTypeAttribute:
@@ -65,12 +65,22 @@ func (m *model) SaveSynchronize(ctx core.ContextParams) errors.CCError {
 		return m.saveSynchronizeModelAttributeGroup(ctx)
 	case common.SynchronizeModelTypeBase:
 		return m.saveSynchronizeModelBase(ctx)
+	case common.SynchronizeModelTypeModelClassificationRelation:
+		return m.saveSynchronizeModelClassificationRelation(ctx)
 	default:
-		return ctx.Error.Errorf(common.CCErrCoreServiceSyncDataSignNotExistError, m.dataType, m.dataSign)
+		return ctx.Error.Errorf(common.CCErrCoreServiceSyncDataClassifyNotExistError, m.dataType, m.DataClassify)
 	}
 	return nil
 }
 
+func (m *model) saveSynchronizeModelClassificationRelation(ctx core.ContextParams) errors.CCError {
+	var dbParam synchronizeAdapterDBParameter
+	// "cc_ObjDes"
+	dbParam.tableName = common.BKTableNameObjDes
+	dbParam.InstIDField = common.BKFieldID
+	m.base.saveSynchronize(ctx, dbParam)
+	return nil
+}
 func (m *model) saveSynchronizeModelClassification(ctx core.ContextParams) errors.CCError {
 	var dbParam synchronizeAdapterDBParameter
 	// "cc_ObjClassification"

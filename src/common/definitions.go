@@ -946,7 +946,8 @@ const (
 )
 
 const (
-	BKProcInstanceOpUser = "proc instance user"
+	BKProcInstanceOpUser             = "proc instance user"
+	BKSynchronizeDataTaskDefaultUser = "synchronize task user"
 )
 
 const (
@@ -999,9 +1000,13 @@ const (
 )
 
 const (
-	MetaDataSynchronizeSignField = "metadata_sync_sign"
+	MetaDataSynchronizeFlagField    = "metadata_sync_flag"
+	MetaDataSynchronizeVersionField = "metadata_sync_version"
 
-	/* synchronize model description sign*/
+	// SynchronizeSignPrefix  synchronize sign , Should appear in the configuration file
+	SynchronizeSignPrefix = "sync_blueking"
+
+	/* synchronize model description classify*/
 
 	// SynchronizeModelTypeClassification synchroneize model classification
 	SynchronizeModelTypeClassification = "model_classification"
@@ -1011,6 +1016,8 @@ const (
 	SynchronizeModelTypeAttributeGroup = "model_atrribute_group"
 	// SynchronizeModelTypeBase synchroneize model attribute group
 	SynchronizeModelTypeBase = "model"
+	// SynchronizeModelTypeModelClassificationRelation synchroneize model classification relation
+	SynchronizeModelTypeModelClassificationRelation = "model_classification_relation"
 
 	/* synchronize instance assoication sign*/
 
