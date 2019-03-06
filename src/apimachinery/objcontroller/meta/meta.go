@@ -111,6 +111,19 @@ func (t *meta) CreateObjectAssociation(ctx context.Context, h http.Header, dat *
 	return
 }
 
+func (t *meta) CreateMainlineObjectAssociation(ctx context.Context, h http.Header, dat *metadata.Association) (resp *metadata.CreateResult, err error) {
+	subPath := "/meta/mainlineobjectasst"
+	resp = new(metadata.CreateResult)
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
 func (t *meta) UpdateObjectAssociation(ctx context.Context, asstID int64, h http.Header, dat map[string]interface{}) (resp *metadata.UpdateResult, err error) {
 	subPath := fmt.Sprintf("/meta/objectasst/%d", asstID)
 	resp = new(metadata.UpdateResult)
