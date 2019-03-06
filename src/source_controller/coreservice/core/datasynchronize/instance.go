@@ -9,7 +9,7 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package instances
+package datasynchronize
 
 import (
 	"configcenter/src/common"
@@ -20,19 +20,20 @@ import (
 )
 
 type instance struct {
-	base     *synchronizeAdapter
-	dataType metadata.SynchronizeDataType
-	dbProxy  dal.RDB
-	dataSign string
+	base         *synchronizeAdapter
+	dataType     metadata.SynchronizeOperateDataType
+	dbProxy      dal.RDB
+	DataClassify string
 }
 
 func NewSynchronizeInstanceAdapter(s *metadata.SynchronizeParameter, dbProxy dal.RDB) dataTypeInterface {
 
-	return &association{
+	return &instance{
 		base:     newSynchronizeAdapter(s, dbProxy),
-		dataType: s.DataType,
-		dataSign: s.DataSign,
-		dbProxy:  dbProxy,
+		dataType: s.OperateDataType,
+		// instance data classify
+		DataClassify: s.DataClassify,
+		dbProxy:      dbProxy,
 	}
 }
 
@@ -44,10 +45,10 @@ func (inst *instance) PreSynchronizeFilter(ctx core.ContextParams) errors.CCErro
 	return inst.base.PreSynchronizeFilter(ctx)
 }
 
-func (inst *instance) GetErrorStringArr(ctx core.ContextParams) ([]string, errors.CCError) {
+func (inst *instance) GetErrorStringArr(ctx core.ContextParams) ([]metadata.ExceptionResult, errors.CCError) {
 
 	if len(inst.base.errorArray) == 0 {
-		return make([]string, 0), nil
+		return nil, nil
 	}
 
 	return inst.base.GetErrorStringArr(ctx)
@@ -58,7 +59,7 @@ func (inst *instance) SaveSynchronize(ctx core.ContextParams) errors.CCError {
 	// Each model is written separately for subsequent expansion,
 	// each model may be processed differently.
 
-	switch inst.dataSign {
+	switch inst.DataClassify {
 	case common.BKInnerObjIDApp:
 		return inst.saveSynchronizeAppInstance(ctx)
 	case common.BKInnerObjIDSet:
@@ -133,9 +134,9 @@ func (inst *instance) saveSynchronizeObjectInstance(ctx core.ContextParams) erro
 	return nil
 }
 
-func (inst *instance) getErrorStringArr(ctx core.ContextParams) []string {
+func (inst *instance) getErrorStringArr(ctx core.ContextParams) ([]metadata.ExceptionResult, errors.CCError) {
 
-	return inst.base.getErrorStringArr(ctx)
+	return inst.base.GetErrorStringArr(ctx)
 
 }
 

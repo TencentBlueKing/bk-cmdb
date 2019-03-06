@@ -37,6 +37,8 @@ const (
 	CC_MODULE_CORESERVICE      = "coreservice"
 	GSE_MODULE_PROCSERVER      = "gseprocserver"
 	CC_MODULE_TXC              = "txc"
+	// CC_MODULE_SYNCHRONZESERVER multiple cmdb synchronize data server
+	CC_MODULE_SYNCHRONZESERVER = "sync"
 )
 
 // AllModule all cc module

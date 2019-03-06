@@ -10,23 +10,35 @@
  * limitations under the License.
  */
 
-package instances
+package datasynchronize
 
 import (
-	"configcenter/src/common/errors"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
 )
 
-type synchronizeManager struct {
-	dbProxy dal.RDB
+type SynchronizeManager struct {
+	dbProxy   dal.RDB
+	dependent OperationDependences
 }
 
-func (s *synchronizeManager) SynchronizeInstanceAdapter(ctx core.ContextParams, syncData *metadata.SynchronizeParameter) ([]string, errors.CCError) {
+// New create a new model manager instance
+func New(dbProxy dal.RDB, dependent OperationDependences) core.DataSynchronizeOperation {
+	return &SynchronizeManager{
+		dbProxy:   dbProxy,
+		dependent: dependent,
+	}
+}
+
+func (s *SynchronizeManager) SynchronizeInstanceAdapter(ctx core.ContextParams, syncData *metadata.SynchronizeParameter) ([]metadata.ExceptionResult, error) {
 	syncDataAdpater := NewSynchronizeInstanceAdapter(syncData, s.dbProxy)
 	err := syncDataAdpater.PreSynchronizeFilter(ctx)
 	if err != nil {
+		blog.Errorf("SynchronizeInstanceAdapter error, err:%s,rid:%s", err.Error(), ctx.ReqID)
 		return nil, err
 	}
 	syncDataAdpater.SaveSynchronize(ctx)
@@ -34,7 +46,7 @@ func (s *synchronizeManager) SynchronizeInstanceAdapter(ctx core.ContextParams, 
 
 }
 
-func (s *synchronizeManager) SynchronizeModelAdapter(ctx core.ContextParams, syncData *metadata.SynchronizeParameter) ([]string, errors.CCError) {
+func (s *SynchronizeManager) SynchronizeModelAdapter(ctx core.ContextParams, syncData *metadata.SynchronizeParameter) ([]metadata.ExceptionResult, error) {
 	syncDataAdpater := NewSynchronizeModelAdapter(syncData, s.dbProxy)
 	err := syncDataAdpater.PreSynchronizeFilter(ctx)
 	if err != nil {
@@ -45,7 +57,7 @@ func (s *synchronizeManager) SynchronizeModelAdapter(ctx core.ContextParams, syn
 
 }
 
-func (s *synchronizeManager) SynchronizeAssociationAdapter(ctx core.ContextParams, syncData *metadata.SynchronizeParameter) ([]string, errors.CCError) {
+func (s *SynchronizeManager) SynchronizeAssociationAdapter(ctx core.ContextParams, syncData *metadata.SynchronizeParameter) ([]metadata.ExceptionResult, error) {
 	syncDataAdpater := NewSynchronizeAssociationAdapter(syncData, s.dbProxy)
 	err := syncDataAdpater.PreSynchronizeFilter(ctx)
 	if err != nil {
@@ -54,4 +66,25 @@ func (s *synchronizeManager) SynchronizeAssociationAdapter(ctx core.ContextParam
 	syncDataAdpater.SaveSynchronize(ctx)
 	return syncDataAdpater.GetErrorStringArr(ctx)
 
+}
+
+func (s *SynchronizeManager) Find(ctx core.ContextParams, input *metadata.SynchronizeFindInfoParameter) ([]mapstr.MapStr, uint64, error) {
+	adapter := NewSynchronizeFindAdapter(input, s.dbProxy)
+	return adapter.Find(ctx)
+}
+
+func (s *SynchronizeManager) ClearData(ctx core.ContextParams, input *metadata.SynchronizeClearDataParameter) error {
+
+	adapter := NewClearData(s.dbProxy, input)
+	if input.Sign == "" {
+		blog.Errorf("clearData parameter synchronize_flag illegal, input:%#v,rid:%s", input, ctx.ReqID)
+		return ctx.Error.Errorf(common.CCErrCommParamsNeedSet, "synchronize_flag")
+	}
+
+	if !input.Legality(common.SynchronizeSignPrefix) {
+		blog.Errorf("clearData parameter illegal, input:%#v,rid:%s", input, ctx.ReqID)
+		return ctx.Error.Errorf(common.CCErrCommParamsInvalid, input.Sign)
+	}
+	adapter.clearData(ctx)
+	return nil
 }

@@ -13,6 +13,10 @@
 package metadata
 
 import (
+	"crypto/md5"
+	"encoding/base64"
+	"fmt"
+
 	"configcenter/src/common/mapstr"
 )
 
@@ -30,37 +34,106 @@ const (
 	SynchronizeOperateTypeDelete
 )
 
-// SynchronizeOperateType synchronize data operate type
-type SynchronizeDataType int64
+// SynchronizeOperateDataType synchronize data operate type
+type SynchronizeOperateDataType int64
 
 const (
-	// SynchronizeDataTypeInstance synchronize data is instance
-	SynchronizeDataTypeInstance SynchronizeDataType = iota + 1
-	// SynchronizeDataTypeModel synchronize data is model
-	SynchronizeDataTypeModel
-	//SynchronizeDataTypeAssociation synchronize data is association
-	SynchronizeDataTypeAssociation
+	// SynchronizeOperateDataTypeInstance synchronize data is instance
+	SynchronizeOperateDataTypeInstance SynchronizeOperateDataType = iota + 1
+	// SynchronizeOperateDataTypeModel synchronize data is model
+	SynchronizeOperateDataTypeModel
+	//SynchronizeOperateDataTypeAssociation synchronize data is association
+	SynchronizeOperateDataTypeAssociation
 )
 
-// SynchronizeInstanceParameter synchronize instance data http request parameter
+// SynchronizeDataInfo synchronize instance data http request parameter
+type SynchronizeDataInfo struct {
+	OperateDataType SynchronizeOperateDataType `json:"operate_data_type"`
+	// OperateDataType = SynchronizeOperateDataTypeInstance,
+	// DataClassify = object_id,  eg:host,plat,module,proc etc.
+	// OperateDataType = SynchronizeOperateDataTypeModel,
+	// DataClassify = common.SynchronizeModelDescTypeGroupInfo,common.SynchronizeModelDescTypeModuleAttribute etc
+	// OperateDataType = SynchronizeOperateDataTypeAssociation
+	// DataClassify = common.SynchronizeAssociationTypeModelHost etc.
+	DataClassify string          `json:"data_classify"`
+	InfoArray    []mapstr.MapStr `json:"instance_info_array"`
+	// OffSet current data offset  start location
+	Offset int64 `json:"offset"`
+	// Count total data count
+	Count           int64  `json:"count"`
+	Version         int64  `json:"version"`
+	SynchronizeFlag string `json:"synchronize_flag"`
+}
+
+// SynchronizeParameter synchronize instance data http request parameter
 type SynchronizeParameter struct {
 	OperateType SynchronizeOperateType `json:"op_type"`
 	// synchronize data type
-	DataType SynchronizeDataType `json:"data_type"`
-	// DataType = SynchronizeDataTypeInstance,
-	// DataSign = object_id,  eg:host,plat,module,proc etc.
-	// DataType = SynchronizeDataTypeModel,
-	// DataSign = common.SynchronizeModelDescTypeGroupInfo,common.SynchronizeModelDescTypeModuleAttribute etc
-	// DataType = SynchronizeDataTypeAssociation
-	// DataSign = common.SynchronizeAssociationTypeModelHost etc.
-	DataSign  string             `json:"data_sign"`
-	InfoArray []*SynchronizeItem `json:"instance_info_array"`
-	// source data sign
-	SynchronizeSign string `json:"sync_sign"`
+	OperateDataType SynchronizeOperateDataType `json:"operate_data_type"`
+	// OperateDataType = SynchronizeOperateDataTypeInstance,
+	// DataClassify = object_id,  eg:host,plat,module,proc etc.
+	// OperateDataType = SynchronizeOperateDataTypeModel,
+	// DataClassify = common.SynchronizeModelDescTypeGroupInfo,common.SynchronizeModelDescTypeModuleAttribute etc
+	// OperateDataType = SynchronizeOperateDataTypeAssociation
+	// DataClassify = common.SynchronizeAssociationTypeModelHost etc.
+	DataClassify    string             `json:"data_classify"`
+	InfoArray       []*SynchronizeItem `json:"instance_info_array"`
+	Version         int64              `json:"version"`
+	SynchronizeFlag string             `json:"synchronize_flag"`
 }
 
 // SynchronizeItem synchronize data information
 type SynchronizeItem struct {
 	Info mapstr.MapStr `json:"info"`
 	ID   int64         `json:"id"`
+}
+
+// SynchronizeFindInfoParameter synchronize  data fetch data http request parameter
+type SynchronizeFindInfoParameter struct {
+	DataType     SynchronizeOperateDataType `json:"data_type"`
+	DataClassify string                     `json:"data_classify"`
+	Condition    mapstr.MapStr              `json:"condition"`
+	Start        uint64                     `json:"start"`
+	Limit        uint64                     `json:"limit"`
+}
+
+// SynchronizeResult synchronize result
+type SynchronizeResult struct {
+	BaseResp `json:",inline"`
+	Data     SetDataResult `json:"data"`
+}
+
+// SynchronizeDataResult common Synchronize result definition
+type SynchronizeDataResult struct {
+	//Created    []CreatedDataResult `json:"created"`
+	//Updated    []UpdatedDataResult `json:"updated"`
+	Exceptions []ExceptionResult `json:"exception"`
+}
+
+// SynchronizeClearDataParameter synchronize  data clear data http request parameter
+type SynchronizeClearDataParameter struct {
+	Tamestamp       int64  `json:"tamestamp"`
+	Sign            string `json:"sign"`
+	Version         int64  `json:"version"`
+	SynchronizeFlag string `json:"synchronizeFlag"`
+}
+
+// GenerateSign generate sign
+func (s *SynchronizeClearDataParameter) GenerateSign(key string) {
+	m := md5.New()
+	m.Write([]byte(s.signContext(key)))
+	s.Sign = base64.StdEncoding.EncodeToString((m.Sum(nil)))
+}
+
+//  Legality sign is legal
+func (s *SynchronizeClearDataParameter) Legality(key string) bool {
+	m := md5.New()
+	m.Write([]byte(s.signContext(key)))
+	// tamestamp need legality
+	return s.Sign == base64.StdEncoding.EncodeToString((m.Sum(nil)))
+}
+
+// GenerateSign generate sign
+func (s *SynchronizeClearDataParameter) signContext(key string) string {
+	return fmt.Sprintf("key-%s-%d-%d", key, s.SynchronizeFlag, s.Tamestamp, s.Version)
 }

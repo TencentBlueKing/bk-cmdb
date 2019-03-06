@@ -9,7 +9,7 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package instances
+package datasynchronize
 
 import (
 	"fmt"
@@ -42,7 +42,7 @@ type synchronizeAdapter struct {
 
 type dataTypeInterface interface {
 	PreSynchronizeFilter(ctx core.ContextParams) errors.CCError
-	GetErrorStringArr(ctx core.ContextParams) ([]string, errors.CCError)
+	GetErrorStringArr(ctx core.ContextParams) ([]metadata.ExceptionResult, errors.CCError)
 	SaveSynchronize(ctx core.ContextParams) errors.CCError
 }
 
@@ -55,9 +55,9 @@ func newSynchronizeAdapter(syncData *metadata.SynchronizeParameter, dbProxy dal.
 }
 
 func (s *synchronizeAdapter) PreSynchronizeFilter(ctx core.ContextParams) errors.CCError {
-	if s.syncData.SynchronizeSign == "" {
+	if s.syncData.SynchronizeFlag == "" {
 		// TODO  return error not synchronize sign
-		return ctx.Error.Errorf(common.CCErrCommParamsNeedSet, "sync_sign")
+		return ctx.Error.Errorf(common.CCErrCommParamsNeedSet, "synchronize_flag")
 	}
 	if s.syncData.InfoArray == nil {
 		// TODO return error not found synchroize data
@@ -75,18 +75,23 @@ func (s *synchronizeAdapter) PreSynchronizeFilter(ctx core.ContextParams) errors
 		// set synchroize sign to instance metadata
 		for _, item := range s.syncData.InfoArray {
 			if item.Info.Exists(common.MetadataField) {
-				metadata, err := item.Info.MapStr(common.MetaDataSynchronizeSignField)
+				metadata, err := item.Info.MapStr(common.MetadataField)
 				if err != nil {
-					blog.Errorf("preSynchronizeFilter get %s field error, inst info:%#v,rid:%s", common.MetaDataSynchronizeSignField, item, ctx.ReqID)
+					blog.Errorf("preSynchronizeFilter get %s field error, inst info:%#v,rid:%s", common.MetadataField, item, ctx.ReqID)
 					s.errorArray[item.ID] = synchronizeAdapterError{
 						instInfo: item,
-						err:      ctx.Error.Errorf(common.CCErrCommInstFieldConvFail, s.syncData.DataSign, common.MetaDataSynchronizeSignField, "mapstr", err.Error()),
+						err:      ctx.Error.Errorf(common.CCErrCommInstFieldConvFail, s.syncData.DataClassify, common.MetadataField, "mapstr", err.Error()),
 					}
 					continue
 				}
-				metadata.Set(common.MetaDataSynchronizeSignField, s.syncData.SynchronizeSign)
+				metadata.Set(common.MetaDataSynchronizeFlagField, s.syncData.SynchronizeFlag)
+				metadata.Set(common.MetaDataSynchronizeVersionField, s.syncData.Version)
 			} else {
-				item.Info.Set(common.MetadataField, mapstr.MapStr{common.MetaDataSynchronizeSignField: s.syncData.SynchronizeSign})
+				item.Info.Set(common.MetadataField,
+					mapstr.MapStr{
+						common.MetaDataSynchronizeFlagField:    s.syncData.SynchronizeFlag,
+						common.MetaDataSynchronizeVersionField: s.syncData.Version,
+					})
 			}
 		}
 	}
@@ -94,25 +99,19 @@ func (s *synchronizeAdapter) PreSynchronizeFilter(ctx core.ContextParams) errors
 	return nil
 }
 
-func (s *synchronizeAdapter) GetErrorStringArr(ctx core.ContextParams) ([]string, errors.CCError) {
+func (s *synchronizeAdapter) GetErrorStringArr(ctx core.ContextParams) ([]metadata.ExceptionResult, errors.CCError) {
 	if len(s.errorArray) == 0 {
-		return make([]string, 0), nil
+		return nil, nil
 	}
-	var errStrArr []string
+	var errArr []metadata.ExceptionResult
 	for _, err := range s.errorArray {
-		errMsg := fmt.Sprintf("[%s] instID:[%d] error:%s", s.syncData.DataSign, err.instInfo.ID, err.err.Error())
-		errStrArr = append(errStrArr, errMsg)
+		errMsg := fmt.Sprintf("[%s] instID:[%d] error:%s", s.syncData.DataClassify, err.instInfo.ID, err.err.Error())
+		errArr = append(errArr, metadata.ExceptionResult{
+			OriginIndex: err.instInfo.ID,
+			Message:     errMsg,
+		})
 	}
-	return errStrArr, ctx.Error.Error(common.CCErrCoreServiceSyncError)
-}
-
-func (s *synchronizeAdapter) getErrorStringArr(ctx core.ContextParams) []string {
-	var errStrArr []string
-	for _, err := range s.errorArray {
-		errMsg := fmt.Sprintf("[%s] instID:[%d] error:%s", s.syncData.DataSign, err.instInfo.ID, err.err.Error())
-		errStrArr = append(errStrArr, errMsg)
-	}
-	return errStrArr
+	return errArr, ctx.Error.Error(common.CCErrCoreServiceSyncError)
 }
 
 func (s *synchronizeAdapter) saveSynchronize(ctx core.ContextParams, dbParam synchronizeAdapterDBParameter) {
@@ -134,7 +133,7 @@ func (s *synchronizeAdapter) replaceSynchronize(ctx core.ContextParams, dbParam 
 		conds := mapstr.MapStr{dbParam.InstIDField: item.ID}
 		exist, err := s.existSynchronizeID(ctx, dbParam.tableName, conds)
 		if err != nil {
-			blog.Errorf("replaceSynchronize existSynchronizeID error.DataSign:%s,info:%#v,rid:%s", s.syncData.DataSign, item, ctx.ReqID)
+			blog.Errorf("replaceSynchronize existSynchronizeID error.DataClassify:%s,info:%#v,rid:%s", s.syncData.DataClassify, item, ctx.ReqID)
 			s.errorArray[item.ID] = synchronizeAdapterError{
 				instInfo: item,
 				err:      err,
@@ -144,7 +143,7 @@ func (s *synchronizeAdapter) replaceSynchronize(ctx core.ContextParams, dbParam 
 		if exist {
 			err := s.dbProxy.Table(dbParam.tableName).Update(ctx, conds, item.Info)
 			if err != nil {
-				blog.Errorf("replaceSynchronize update info error,err:%s.DataSign:%s,condition:%#v,info:%#v,rid:%s", err.Error(), s.syncData.DataSign, conds, item, ctx.ReqID)
+				blog.Errorf("replaceSynchronize update info error,err:%s.DataClassify:%s,condition:%#v,info:%#v,rid:%s", err.Error(), s.syncData.DataClassify, conds, item, ctx.ReqID)
 				s.errorArray[item.ID] = synchronizeAdapterError{
 					instInfo: item,
 					err:      ctx.Error.Error(common.CCErrCommDBUpdateFailed),
@@ -154,7 +153,7 @@ func (s *synchronizeAdapter) replaceSynchronize(ctx core.ContextParams, dbParam 
 		} else {
 			err := s.dbProxy.Table(dbParam.tableName).Insert(ctx, item.Info)
 			if err != nil {
-				blog.Errorf("replaceSynchronize insert info error,err:%s.DataSign:%s,info:%#v,rid:%s", err.Error(), s.syncData.DataSign, item, ctx.ReqID)
+				blog.Errorf("replaceSynchronize insert info error,err:%s.DataClassify:%s,info:%#v,rid:%s", err.Error(), s.syncData.DataClassify, item, ctx.ReqID)
 				s.errorArray[item.ID] = synchronizeAdapterError{
 					instInfo: item,
 					err:      ctx.Error.Error(common.CCErrCommDBInsertFailed),
@@ -172,7 +171,7 @@ func (s *synchronizeAdapter) deleteSynchronize(ctx core.ContextParams, dbParam s
 	}
 	err := s.dbProxy.Table(dbParam.tableName).Delete(ctx, mapstr.MapStr{dbParam.InstIDField: mapstr.MapStr{common.BKDBIN: instIDArr}})
 	if err != nil {
-		blog.Errorf("deleteSynchronize delete info error,err:%s.DataSign:%s,instIDArr:%#v,rid:%s", err.Error(), s.syncData.DataSign, instIDArr, ctx.ReqID)
+		blog.Errorf("deleteSynchronize delete info error,err:%s.DataClassify:%s,instIDArr:%#v,rid:%s", err.Error(), s.syncData.DataClassify, instIDArr, ctx.ReqID)
 		for _, item := range s.syncData.InfoArray {
 			s.errorArray[item.ID] = synchronizeAdapterError{
 				instInfo: item,
@@ -185,7 +184,7 @@ func (s *synchronizeAdapter) deleteSynchronize(ctx core.ContextParams, dbParam s
 func (s *synchronizeAdapter) existSynchronizeID(ctx core.ContextParams, tableName string, conds mapstr.MapStr) (bool, errors.CCError) {
 	cnt, err := s.dbProxy.Table(tableName).Find(conds).Count(ctx)
 	if err != nil {
-		blog.Errorf("existSynchronizeID error. DataSign:%s,conds:%#v,rid:%s", s.syncData.DataSign, conds, ctx.ReqID)
+		blog.Errorf("existSynchronizeID error. DataClassify:%s,conds:%#v,rid:%s", s.syncData.DataClassify, conds, ctx.ReqID)
 		return false, ctx.Error.Error(common.CCErrCommDBSelectFailed)
 	}
 	if cnt > 0 {
