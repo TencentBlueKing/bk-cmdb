@@ -1,3 +1,15 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2019 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package authcenter
 
 import (
@@ -93,7 +105,7 @@ func NewAuthCenter(tls *util.TLSClientConfig, authCfg map[string]string) (*AuthC
 	}, nil
 }
 
-// authCenter means BlueKing's authorize center,
+// AuthCenter means BlueKing's authorize center,
 // which is also a open source product.
 type AuthCenter struct {
 	Config AuthConfig
@@ -131,14 +143,19 @@ func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (dec
 			return meta.Decision{}, fmt.Errorf("adaptor resource info failed, err: %v", err)
 		}
 
+		actionID, err := adaptorAction(&rsc)
+		if err != nil {
+			return meta.Decision{}, fmt.Errorf("adaptor action failed, err: %v", err)
+		}
+
 		info.ResourceActions = append(info.ResourceActions, ResourceAction{
-			ActionID:     adaptorAction(&rsc),
+			ActionID:     actionID,
 			ResourceInfo: *rscInfo,
 		})
 	}
 
 	header := http.Header{}
-	header.Add(AuthSupplierAccountHeaderKey, a.User.SupplierID)
+	header.Set(AuthSupplierAccountHeaderKey, a.User.SupplierID)
 	return ac.authClient.verifyInList(ctx, header, info)
 
 }
@@ -164,7 +181,7 @@ func (ac *AuthCenter) Register(ctx context.Context, r *meta.ResourceAttribute) e
 	}
 
 	header := http.Header{}
-	header.Add(AuthSupplierAccountHeaderKey, r.SupplierAccount)
+	header.Set(AuthSupplierAccountHeaderKey, r.SupplierAccount)
 	return ac.authClient.registerResource(ctx, header, info)
 }
 
@@ -189,7 +206,7 @@ func (ac *AuthCenter) Deregister(ctx context.Context, r *meta.ResourceAttribute)
 	}
 
 	header := http.Header{}
-	header.Add(AuthSupplierAccountHeaderKey, r.SupplierAccount)
+	header.Set(AuthSupplierAccountHeaderKey, r.SupplierAccount)
 	return ac.authClient.deregisterResource(ctx, header, info)
 }
 
@@ -213,12 +230,46 @@ func (ac *AuthCenter) Update(ctx context.Context, r *meta.ResourceAttribute) err
 	}
 
 	header := http.Header{}
-	header.Add(AuthSupplierAccountHeaderKey, r.SupplierAccount)
+	header.Set(AuthSupplierAccountHeaderKey, r.SupplierAccount)
 	return ac.authClient.updateResource(ctx, header, info)
 }
 
 func (ac *AuthCenter) Get(ctx context.Context) error {
 	panic("implement me")
+}
+
+func (ac *AuthCenter) QuerySystemInfo(ctx context.Context, systemID string, detail bool) (*SystemDetail, error) {
+	return ac.authClient.QuerySystemInfo(ctx, http.Header{}, systemID, detail)
+
+}
+
+func (ac *AuthCenter) RegistSystem(ctx context.Context, system System) error {
+	return ac.authClient.RegistSystem(ctx, http.Header{}, system)
+}
+
+func (ac *AuthCenter) UpdateSystem(ctx context.Context, system System) error {
+	return ac.authClient.UpdateSystem(ctx, http.Header{}, system)
+
+}
+
+func (ac *AuthCenter) RegistResourceBatch(ctx context.Context, systemID, scopeType string, resources []ResourceType) error {
+	return ac.authClient.RegistResourceTypeBatch(ctx, http.Header{}, systemID, scopeType, resources)
+}
+
+func (ac *AuthCenter) UpdateResourceTypeBatch(ctx context.Context, systemID, scopeType string, resources []ResourceType) error {
+	return ac.authClient.UpdateResourceTypeBatch(ctx, http.Header{}, systemID, scopeType, resources)
+}
+
+func (ac *AuthCenter) UpsertResourceTypeBatch(ctx context.Context, systemID, scopeType string, resources []ResourceType) error {
+	return ac.authClient.UpsertResourceTypeBatch(ctx, http.Header{}, systemID, scopeType, resources)
+}
+
+func (ac *AuthCenter) UpdateResourceActionBatch(ctx context.Context, systemID, scopeType string, resources []ResourceType) error {
+	return ac.authClient.UpdateResourceTypeActionBatch(ctx, http.Header{}, systemID, scopeType, resources)
+}
+
+func (ac *AuthCenter) InitSystemBatch(ctx context.Context, detail SystemDetail) error {
+	return ac.authClient.InitSystemBatch(ctx, http.Header{}, detail)
 }
 
 func (ac *AuthCenter) getScopeInfo(r *meta.ResourceAttribute) (*ScopeInfo, error) {

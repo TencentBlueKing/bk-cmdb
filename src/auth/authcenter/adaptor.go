@@ -13,6 +13,7 @@
 package authcenter
 
 import (
+	"errors"
 	"fmt"
 
 	"configcenter/src/auth/meta"
@@ -35,14 +36,11 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 
 	switch resourceType {
 	case meta.Business:
+		info.ResourceType = BusinessInstanceManagement
 		return info, nil
 
 	case meta.Model,
-		meta.ModelModule,
-		meta.ModelSet,
-		meta.MainlineModel,
 		meta.ModelUnique,
-		meta.ModelClassification,
 		meta.ModelAttribute,
 		meta.ModelAttributeGroup:
 		if attribute.BusinessID == 0 {
@@ -51,20 +49,41 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 			info.ResourceType = ModelManagement
 		}
 
+	case meta.ModelModule, meta.ModelSet, meta.ModelInstanceTopology:
+		info.ResourceType = BusinessTopology
+
+	case meta.MainlineModel, meta.ModelTopology:
+		// action=拓扑层级操作
+		info.ResourceType = SystemBase
+
+	case meta.ModelClassification:
+		info.ResourceType = ModelGroup
+
 	case meta.AssociationType:
 		info.ResourceType = AssociationType
 
 	case meta.ModelAssociation:
+		return info, errors.New("model association does not support auth now")
 
 	case meta.ModelInstanceAssociation:
+		return info, errors.New("model instance association does not support  auth now")
 
-	case meta.ModelInstance, meta.ModelInstanceTopology:
-		info.ResourceType = InstanceManagement
+	case meta.ModelInstance:
+		if attribute.Basic.Name == meta.Host && attribute.Basic.Action == meta.MoveHostsToBusinessOrModule {
+			info.ResourceType = BusinessHost
+		}
+
+		if attribute.BusinessID == 0 {
+			info.ResourceType = InstanceManagement
+		} else {
+			info.ResourceType = AppInstance
+		}
 
 	case meta.HostUserCustom:
 		info.ResourceType = CustomQuery
 
 	case meta.HostFavorite:
+		return info, errors.New("host favorite does not support auth now")
 
 	case meta.Process:
 		info.ResourceType = Process
@@ -79,138 +98,181 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 }
 
 // type is resource's type in auth center.
-type Type string
+type ResourceTypeID string
 
 const (
 	// the alias name maybe "dynamic classification"
-	CustomQuery        Type = "customQuery"
-	AppModel           Type = "appModel"
-	Host               Type = "host"
-	Process            Type = "process"
-	Topology           Type = "topology"
-	AppInstance        Type = "appInstance"
-	InstanceManagement Type = "instanceManagement"
-	ModelManagement    Type = "modelManagement"
-	AssociationType    Type = "associationType"
-	ModelGroup         Type = "modelGroup"
-	Event              Type = "event"
-	SystemBase         Type = "systemBase"
+	CustomQuery        ResourceTypeID = "customQuery"
+	AppModel           ResourceTypeID = "appModel"
+	Host               ResourceTypeID = "host"
+	Process            ResourceTypeID = "process"
+	BusinessTopology   ResourceTypeID = "topology"
+	AppInstance        ResourceTypeID = "appInstance"
+	InstanceManagement ResourceTypeID = "instanceManagement"
+	ModelManagement    ResourceTypeID = "modelManagement"
+	AssociationType    ResourceTypeID = "associationType"
+	ModelGroup         ResourceTypeID = "modelGroup"
+	Event              ResourceTypeID = "event"
+	SystemBase         ResourceTypeID = "systemBase"
+	BusinessHost       ResourceTypeID = "businessHost"
+
+	BusinessInstanceManagement ResourceTypeID = "businessInstanceManagement"
 )
 
-type Action string
+type ActionID string
 
+// ActionID define
 const (
-	// unknown action is a action that can not be recognized by the
-	// auth center.
-	Unknown Action = "unknown"
-	Edit    Action = "edit"
-	Create  Action = "create"
-	Get     Action = "get"
-	Delete  Action = "delete"
+	// Unknown action is a action that can not be recognized by the auth center.
+	Unknown ActionID = "unknown"
+	Edit    ActionID = "edit"
+	Create  ActionID = "create"
+	Get     ActionID = "get"
+	Delete  ActionID = "delete"
+
+	// Archive for business
+	Archive ActionID = "archive"
 	// host action
-	ModuleTransfer Action = "moduleTransfer"
+	ModuleTransfer ActionID = "moduleTransfer"
 	// business topology action
-	HostTransfer Action = "hostTransfer"
+	HostTransfer ActionID = "hostTransfer"
+	// system base action, related to model topology
+	ModelTopologyView ActionID = "modelTopologyView"
+
+	// business model topology operation.
+	ModelTopologyOperation ActionID = "modelTopologyOperation"
+
+	// assign host(s) to a business
+	// located system/host/assignHostsToBusiness in auth center.
+	AssignHostsToBusiness ActionID = "assignHostsToBusiness"
+	BindModule            ActionID = "bindModule"
+
+	TopoLayerManage ActionID = "topoManage"
+	AdminEntrance   ActionID = "adminEntrance"
 )
 
-func adaptorAction(r *meta.ResourceAttribute) Action {
+func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
+
+	if r.Action == meta.Find || r.Action == meta.Delete || r.Action == meta.Create {
+		if r.Basic.Type == meta.MainlineModel {
+			return ModelTopologyOperation, nil
+		}
+	}
+
+	if r.Action == meta.Find || r.Action == meta.Create {
+		if r.Basic.Type == meta.ModelTopology {
+			return ModelTopologyOperation, nil
+		}
+	}
+
 	switch r.Action {
 	case meta.Create, meta.CreateMany:
-		return Create
+		return Create, nil
 
 	case meta.Find, meta.FindMany:
-		return Get
+		return Get, nil
 
 	case meta.Delete, meta.DeleteMany:
-		return Delete
+		return Delete, nil
 
 	case meta.Update, meta.UpdateMany:
-		return Edit
+		return Edit, nil
 
-	case meta.MoveResPoolHostToBizIdleModule,
-		meta.MoveHostToBizFaultModule,
+	case meta.MoveResPoolHostToBizIdleModule:
+		if r.Basic.Type == meta.ModelInstance && r.Basic.Name == meta.Host {
+			return AssignHostsToBusiness, nil
+		}
+
+	case meta.MoveHostToBizFaultModule,
 		meta.MoveHostToBizIdleModule,
 		meta.MoveHostFromModuleToResPool,
 		meta.MoveHostToAnotherBizModule,
 		meta.CleanHostInSetOrModule,
-		meta.MoveHostsToOrBusinessModule,
-		meta.AddHostToResourcePool,
 		meta.MoveHostToModule:
+		if r.Basic.Type == meta.ModelInstance && r.Basic.Name == meta.Host {
+			return ModuleTransfer, nil
+		}
 
-		return ModuleTransfer
+	case meta.AddHostToResourcePool:
+		// add hosts to resource pool
+		if r.Basic.Type == meta.ModelInstance && r.Basic.Name == meta.Host {
+			return Create, nil
+		}
+		return ModuleTransfer, nil
 
-	// TODO: add host transfer adaptor rule.
+	case meta.MoveHostsToBusinessOrModule:
+		return Edit, nil
 
-	default:
-		return Unknown
 	}
+
+	return Unknown, fmt.Errorf("unsupported action: %s", r.Action)
 }
 
 type ResourceDetail struct {
 	// the resource type in auth center.
-	Type Type
+	Type ResourceTypeID
 	// all the actions that this resource supported.
-	Actions []Action
+	Actions []ActionID
 }
 
 var (
 	CustomQueryDescribe = ResourceDetail{
 		Type:    CustomQuery,
-		Actions: []Action{Get, Delete, Edit, Create},
+		Actions: []ActionID{Get, Delete, Edit, Create},
 	}
 
 	AppModelDescribe = ResourceDetail{
 		Type:    AppModel,
-		Actions: []Action{Get, Delete, Edit, Create},
+		Actions: []ActionID{Get, Delete, Edit, Create},
 	}
 
 	HostDescribe = ResourceDetail{
 		Type:    Host,
-		Actions: []Action{Get, Delete, Edit, Create, ModuleTransfer},
+		Actions: []ActionID{Get, Delete, Edit, Create, ModuleTransfer},
 	}
 
 	ProcessDescribe = ResourceDetail{
 		Type:    Process,
-		Actions: []Action{Get, Delete, Edit, Create},
+		Actions: []ActionID{Get, Delete, Edit, Create},
 	}
 
 	TopologyDescribe = ResourceDetail{
-		Type:    Topology,
-		Actions: []Action{Get, Delete, Edit, Create, HostTransfer},
+		Type:    BusinessTopology,
+		Actions: []ActionID{Get, Delete, Edit, Create, HostTransfer},
 	}
 
 	AppInstanceDescribe = ResourceDetail{
 		Type:    AppInstance,
-		Actions: []Action{Get, Delete, Edit, Create},
+		Actions: []ActionID{Get, Delete, Edit, Create},
 	}
 
 	InstanceManagementDescribe = ResourceDetail{
 		Type:    InstanceManagement,
-		Actions: []Action{Get, Delete, Edit, Create},
+		Actions: []ActionID{Get, Delete, Edit, Create},
 	}
 
 	ModelManagementDescribe = ResourceDetail{
 		Type:    ModelManagement,
-		Actions: []Action{Get, Delete, Edit, Create},
+		Actions: []ActionID{Get, Delete, Edit, Create},
 	}
 
 	AssociationTypeDescribe = ResourceDetail{
 		Type:    AssociationType,
-		Actions: []Action{Get, Delete, Edit, Create},
+		Actions: []ActionID{Get, Delete, Edit, Create},
 	}
 
 	ModelGroupDescribe = ResourceDetail{
 		Type:    ModelGroup,
-		Actions: []Action{Get, Delete, Edit, Create},
+		Actions: []ActionID{Get, Delete, Edit, Create},
 	}
 
 	EventDescribe = ResourceDetail{
 		Type:    Event,
-		Actions: []Action{Get, Delete, Edit, Create},
+		Actions: []ActionID{Get, Delete, Edit, Create},
 	}
 
 	SystemBaseDescribe = ResourceDetail{
 		Type:    SystemBase,
-		Actions: []Action{Get, Delete, Edit, Create},
+		Actions: []ActionID{Get, Delete, Edit, Create},
 	}
 )

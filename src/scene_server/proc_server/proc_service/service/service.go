@@ -16,9 +16,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/emicklei/go-restful"
-	redis "gopkg.in/redis.v5"
-
+	"configcenter/src/auth"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cfnc "configcenter/src/common/backbone/configcenter"
@@ -34,6 +32,9 @@ import (
 	ccRedis "configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/esbserver"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
+
+	"github.com/emicklei/go-restful"
+	redis "gopkg.in/redis.v5"
 )
 
 type srvComm struct {
@@ -55,6 +56,8 @@ type ProcServer struct {
 	EsbServ            esbserver.EsbClientInterface
 	Cache              *redis.Client
 	procHostInstConfig logics.ProcHostInstConfig
+	resHandler         auth.ResourceHandler
+	auth               auth.Authorizer
 }
 
 func (s *ProcServer) newSrvComm(header http.Header) *srvComm {

@@ -13,6 +13,18 @@
 package meta
 
 // AuthAttribute is used for check authorization, it's verify multiple Resources field
+// system constanst
+const (
+	SystemIDCMDB   = "bk_cmdb"
+	SystemNameCMDB = "蓝鲸智云配置平台"
+)
+
+// ScopeTypeID constanst
+const (
+	ScopeTypeIDSystem = "system"
+	ScopeTypeIDBiz    = "biz"
+)
+
 type AuthAttribute struct {
 	// the version of this resource, which is the api version.
 	APIVersion string
@@ -101,7 +113,9 @@ const (
 	MoveHostFromModuleToResPool    Action = "moveHostFromModuleToResPool"
 	MoveHostToAnotherBizModule     Action = "moveHostToAnotherBizModule"
 	CleanHostInSetOrModule         Action = "cleanHostInSetOrModule"
-	MoveHostsToOrBusinessModule    Action = "moveHostsToBusinessOrModule"
+	MoveHostsToBusinessOrModule    Action = "moveHostsToBusinessOrModule"
 	AddHostToResourcePool          Action = "addHostToResourcePool"
 	MoveHostToModule               Action = "moveHostToModule"
+
+	TopoModelMange Action = "topoModelMange"
 )
