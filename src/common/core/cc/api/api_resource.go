@@ -14,7 +14,6 @@ package api
 
 import (
 	"crypto/tls"
-	"encoding/json"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -26,12 +25,10 @@ import (
 	cchttp "configcenter/src/common/http"
 	"configcenter/src/common/http/httpserver"
 	"configcenter/src/common/http/httpserver/webserver"
+	"configcenter/src/common/json"
 	"configcenter/src/common/language"
-
-	restful "github.com/emicklei/go-restful" //_ "configcenter/src/common/ssl"
+	restful "github.com/emicklei/go-restful"
 	redis "gopkg.in/redis.v5"
-	//"configcenter/src/storage"
-	//"configcenter/src/storage/dbclient"
 )
 
 type APIRequest struct {
