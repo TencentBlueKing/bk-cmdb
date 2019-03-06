@@ -60,7 +60,7 @@ func (a *authClient) verifyInList(ctx context.Context, header http.Header, batch
 		}
 	}
 
-	noAuth := make([]Type, 0)
+	noAuth := make([]ResourceType, 0)
 	for _, item := range resp.Data {
 		if !item.IsPass {
 			noAuth = append(noAuth, item.ResourceType)
