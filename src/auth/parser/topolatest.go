@@ -705,7 +705,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 const (
 	createObjectLatestPattern       = "/api/v3/create/object"
 	findObjectsLatestPattern        = "/api/v3/find/object"
-	findObjectTopologyLatestPattern = "/api/v3/find/objects/objecttopology"
+	findObjectTopologyLatestPattern = "/api/v3/find/objecttopology"
 )
 
 var (
