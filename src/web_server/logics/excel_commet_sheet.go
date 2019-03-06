@@ -52,8 +52,8 @@ func ProductExcelCommentSheet(excel *xlsx.File, defLang lang.DefaultCCLanguageIf
 			continue
 		}
 		c := sheet.Col(idx)
-		c.Collapsed = c.Collapsed
-		c.Hidden = c.Hidden
+		c.Collapsed = col.Collapsed
+		c.Hidden = col.Hidden
 		c.Max = col.Max
 		c.Min = col.Min
 		c.Width = col.Width
