@@ -282,6 +282,7 @@ func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response)
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ownerID := common.BKDefaultOwnerID
+	rid := util.GetHTTPCCRequestID(pheader)
 
 	agents := new(meta.AddHostFromAgentHostList)
 	if err := json.NewDecoder(req.Request.Body).Decode(&agents); err != nil {
@@ -297,9 +298,14 @@ func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response)
 	}
 
 	appID, err := s.GetDefaultAppID(ownerID, pheader)
-	if 0 == appID || nil != err {
+	if nil != err {
 		blog.Errorf("add host from agent, but got invalid appid, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrAddHostToModule, err.Error())})
+		return
+	}
+	if 0 == appID {
+		blog.Errorf("add host from agent, but got invalid default appid, err: %v,ownerID:%s,input:%+v,rid:%s", err, ownerID, agents, rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrAddHostToModule, "bussiness not found")})
 		return
 	}
 
