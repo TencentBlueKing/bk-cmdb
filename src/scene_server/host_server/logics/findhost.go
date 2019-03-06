@@ -21,23 +21,27 @@ import (
 )
 
 func (lgc *Logics) FindHostByModuleIDs(pheader http.Header, data *metadata.HostModuleFind, isDetail bool) (*metadata.SearchHost, error) {
+	retHostInfo := &metadata.SearchHost{
+		Info: make([]mapstr.MapStr, 0),
+	}
 	hostSearchParam := new(metadata.HostCommonSearch)
-	
+
 	condItem := metadata.ConditionItem{Field: common.BKModuleIDField, Operator: common.BKDBIN, Value: data.ModuleIDS}
 	moduleFindCond := metadata.SearchCondition{ObjectID: common.BKInnerObjIDModule, Condition: []metadata.ConditionItem{condItem}, Fields: []string{}}
 	setFindCond := metadata.SearchCondition{ObjectID: common.BKInnerObjIDSet, Condition: []metadata.ConditionItem{}, Fields: []string{}}
 	bizFindCond := metadata.SearchCondition{ObjectID: common.BKInnerObjIDApp, Condition: []metadata.ConditionItem{}, Fields: []string{}}
-
-	hostSearchParam.AppID = data.AppID
+	bizID, err := data.Metadata.Label.GetBusinessID()
+	if nil != err {
+		return retHostInfo, err
+	}
+	hostSearchParam.AppID = bizID
 
 	hostSearchParam.Condition = []metadata.SearchCondition{moduleFindCond, setFindCond, bizFindCond}
 
 	findHostInst := NewSearchHost(lgc, pheader, hostSearchParam)
 	findHostInst.ParseCondition()
-	retHostInfo := &metadata.SearchHost{
-		Info: make([]mapstr.MapStr, 0),
-	}
-	err := findHostInst.SearchHostByConds()
+
+	err = findHostInst.SearchHostByConds()
 	if err != nil {
 		return retHostInfo, err
 	}

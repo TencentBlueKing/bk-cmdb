@@ -37,7 +37,7 @@ func (s *Service) FindModuleHost(req *restful.Request, resp *restful.Response) {
 
 	host, err := s.Logics.FindHostByModuleIDs(pheader, body, false)
 	if err != nil {
-		blog.Errorf("find host failed, err: %v", err)
+		blog.Errorf("find host failed, err: %#v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostGetFail)})
 		return
 	}

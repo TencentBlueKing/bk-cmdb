@@ -95,7 +95,7 @@ type HostCommonSearch struct {
 
 type HostModuleFind struct {
 	ModuleIDS []int64  `json:"bk_module_ids"`
-	AppID     int64    `json:"bk_biz_id"`
+	Metadata  Metadata `json:"metadata"`
 	Page      BasePage `json:"page"`
 }
 
