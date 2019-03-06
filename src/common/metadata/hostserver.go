@@ -93,6 +93,12 @@ type HostCommonSearch struct {
 	Pattern   string            `json:"pattern,omitempty"`
 }
 
+type HostModuleFind struct {
+	ModuleIDS []int64  `json:"bk_module_ids"`
+	AppID     int64    `json:"bk_biz_id"`
+	Page      BasePage `json:"page"`
+}
+
 //ip search info
 type IPInfo struct {
 	Data  []string `json:"data"`
