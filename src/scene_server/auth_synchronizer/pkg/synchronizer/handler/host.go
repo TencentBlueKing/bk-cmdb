@@ -10,11 +10,11 @@
  * limitations under the License.
  */
 
-package handlers
+package handler
 
 import "configcenter/src/scene_server/auth_synchronizer/pkg/synchronizer/meta"
 
 // HandleHostSync do sync host of one business
-func HandleHostSync(task *meta.WorkRequest) error {
+func (ih *IAMHandler) HandleHostSync(task *meta.WorkRequest) error {
 	return nil
 }
