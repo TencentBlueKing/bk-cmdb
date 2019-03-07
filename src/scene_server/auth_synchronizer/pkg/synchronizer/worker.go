@@ -49,6 +49,7 @@ func (w *Worker) Start() {
 			case work := <-w.WorkerQueue:
 				// Receive a work request.
 				blog.Infof("worker%d: Received work request, delaying for %f seconds\n", w.ID, work.Delay.Seconds())
+				w.doWork(&work)
 
 			case <-w.QuitChan:
 				// We have been asked to stop.
@@ -66,4 +67,18 @@ func (w *Worker) Stop() {
 	go func() {
 		w.QuitChan <- true
 	}()
+}
+
+func (w *Worker) doWork(work *meta.WorkRequest) error {
+	blog.Infof("start doing work: %+v", work)
+	switch work.ResourceType {
+	case meta.BusinessResource:
+		w.SyncHandler.HandleBusinessSync(work)
+	case meta.HostResource:
+		w.SyncHandler.HandleHostSync(work)
+	default:
+		blog.Errorf("work type:%s didn't register yet.", work.ResourceType)
+
+	}
+	return nil
 }

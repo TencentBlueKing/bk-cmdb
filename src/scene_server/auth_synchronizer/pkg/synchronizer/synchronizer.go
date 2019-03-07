@@ -59,6 +59,7 @@ func (d *AuthSynchronizer) Run() error {
 
 	// init producer
 	d.Producer = NewProducer(d.WorkerQueue)
+	d.Producer.Start()
 	blog.Infof("auth synchronizer started")
 	return nil
 }

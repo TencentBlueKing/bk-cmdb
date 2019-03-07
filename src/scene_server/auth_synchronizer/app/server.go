@@ -35,6 +35,7 @@ import (
 
 // Run start http service and synchroizer
 func Run(ctx context.Context, serverOptions *options.ServerOption) error {
+	blog.Info("AuthSynchronizer app.server start...")
 	httpServerConfig, err := NewHTTPServerConfig(serverOptions)
 	if err != nil {
 		return fmt.Errorf("extract http server config failed, err: %v", err)
@@ -64,7 +65,8 @@ func Run(ctx context.Context, serverOptions *options.ServerOption) error {
 		TLS:        backbone.TLSConfig{},
 	}
 
-	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_AUTH_SYNCHROIZER, httpServerConfig.IP)
+	// regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_AUTH_SYNCHROIZER, httpServerConfig.IP)
+	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_DATACOLLECTION, httpServerConfig.IP)
 	backbonConfig := &backbone.Config{
 		RegisterPath: regPath,
 		RegisterInfo: *httpServerConfig,
@@ -78,7 +80,8 @@ func Run(ctx context.Context, serverOptions *options.ServerOption) error {
 	engine, err := backbone.NewBackbone(
 		ctx,
 		serverOptions.ServConf.RegDiscover,
-		types.CC_MODULE_AUTH_SYNCHROIZER,
+		// types.CC_MODULE_AUTH_SYNCHROIZER,
+		types.CC_MODULE_DATACOLLECTION,
 		serverOptions.ServConf.ExConfig,
 		synchronizerConfig.onHostConfigUpdate,
 		discoverClient,
@@ -101,7 +104,9 @@ func Run(ctx context.Context, serverOptions *options.ServerOption) error {
 
 	esbChan := make(chan esbutil.EsbConfig, 1)
 	esbChan <- synchronizerConfig.Config.Esb
-	err = synchronizer.NewSynchronizer(ctx, synchronizerConfig.Config, synchronizerConfig.Core).Run()
+	sync := synchronizer.NewSynchronizer(ctx, synchronizerConfig.Config, synchronizerConfig.Core)
+	blog.Info("begin to start synchronizer...")
+	err = sync.Run()
 	if err != nil {
 		return fmt.Errorf("run auth synchronizer routine failed %s", err.Error())
 	}
