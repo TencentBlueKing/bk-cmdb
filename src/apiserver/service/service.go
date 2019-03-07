@@ -20,7 +20,6 @@ import (
 	compatiblev2 "configcenter/src/apiserver/core/compatiblev2/service"
 	"configcenter/src/auth"
 	"configcenter/src/auth/parser"
-	"configcenter/src/auth/permit"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -99,12 +98,6 @@ func authFilter(authorize auth.Authorizer, errFunc func() errors.CCErrorIf) func
 			}
 			resp.WriteHeader(http.StatusBadRequest)
 			resp.WriteAsJson(rsp)
-			return
-		}
-
-		// check whether this request is in whitelist, so that it can be skip directly.
-		if permit.IsPermit(attribute) {
-			fchain.ProcessFilter(req, resp)
 			return
 		}
 
