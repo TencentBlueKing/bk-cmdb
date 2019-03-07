@@ -87,6 +87,18 @@ func (s *service) WebServices() []*restful.WebService {
 
 func authFilter(authorize auth.Authorizer, errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+		if common.BKSuperOwnerID == util.GetActionOnwerIDByHTTPHeader(req.Request.Header) {
+			blog.Errorf("request id: %s, can not use super supplier account", util.GetHTTPCCRequestID(req.Request.Header))
+			rsp := metadata.BaseResp{
+				Code:   common.CCErrCommParseAuthAttributeFailed,
+				ErrMsg: "invalid supplier account.",
+				Result: false,
+			}
+			resp.WriteHeader(http.StatusBadRequest)
+			resp.WriteAsJson(rsp)
+			return
+		}
+
 		language := util.GetLanguage(req.Request.Header)
 		attribute, err := parser.ParseAttribute(req)
 		if err != nil {
