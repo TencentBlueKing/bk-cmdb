@@ -26,6 +26,7 @@ import (
 	"configcenter/src/apimachinery/objcontroller"
 	"configcenter/src/apimachinery/proccontroller"
 	"configcenter/src/apimachinery/procserver"
+	"configcenter/src/apimachinery/selfserver"
 	"configcenter/src/apimachinery/toposerver"
 	"configcenter/src/apimachinery/util"
 )
@@ -43,6 +44,9 @@ type ClientSetInterface interface {
 	ProcController() proccontroller.ProcCtrlClientInterface
 	HostController() hostcontroller.HostCtrlClientInterface
 	CoreService() coreservice.CoreServiceClientInterface
+
+	// current run process
+	SelfServer() selfserver.SelfServerClientInterface
 
 	Healthz() healthz.HealthzInterface
 }
@@ -210,4 +214,14 @@ func (cs *ClientSet) CoreService() coreservice.CoreServiceClientInterface {
 		Mock:     cs.Mock,
 	}
 	return coreservice.NewCoreServiceClient(c, cs.version)
+}
+
+func (cs *ClientSet) SelfServer() selfserver.SelfServerClientInterface {
+	c := &util.Capability{
+		Client:   cs.client,
+		Discover: cs.discover.SelfServ(),
+		Throttle: cs.throttle,
+		Mock:     cs.Mock,
+	}
+	return selfserver.NewSelfServerClientInterface(c, cs.version)
 }
