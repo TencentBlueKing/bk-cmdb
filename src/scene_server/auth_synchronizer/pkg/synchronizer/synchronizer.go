@@ -18,15 +18,14 @@ import (
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/auth_synchronizer/app/options"
+	"configcenter/src/scene_server/auth_synchronizer/pkg/synchronizer/handler"
 	"configcenter/src/scene_server/auth_synchronizer/pkg/synchronizer/meta"
-	"configcenter/src/storage/dal"
 )
 
 // AuthSynchronizer stores all related resource
 type AuthSynchronizer struct {
 	Config *options.Config
 	*backbone.Engine
-	db          dal.RDB
 	ctx         context.Context
 	Workers     *[]Worker
 	WorkerQueue chan meta.WorkRequest
@@ -46,7 +45,7 @@ func (d *AuthSynchronizer) Run() error {
 	d.WorkerQueue = make(chan meta.WorkRequest, 1000)
 
 	// make fake handler
-	handler := new(meta.FakeHander)
+	handler := handler.NewIAMHandler(d.Engine)
 
 	// init worker
 	workers := make([]Worker, 3)
@@ -58,7 +57,7 @@ func (d *AuthSynchronizer) Run() error {
 	d.Workers = &workers
 
 	// init producer
-	d.Producer = NewProducer(d.WorkerQueue)
+	d.Producer = NewProducer(d.Engine, d.WorkerQueue)
 	d.Producer.Start()
 	blog.Infof("auth synchronizer started")
 	return nil

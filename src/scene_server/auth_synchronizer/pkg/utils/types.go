@@ -10,11 +10,20 @@
  * limitations under the License.
  */
 
-package handlers
+package utils
 
-import "configcenter/src/scene_server/auth_synchronizer/pkg/synchronizer/meta"
+import (
+	"configcenter/src/common"
+	"fmt"
+	"net/http"
+)
 
-// HandleBusinessSync do sync all business to iam
-func HandleBusinessSync(task *meta.WorkRequest) error {
-	return nil
+// NewListBusinessAPIHeader new a api header for list all business
+func NewListBusinessAPIHeader() *http.Header {
+	header := new(http.Header)
+	header.Add(common.BKHTTPSupplierID, fmt.Sprintf("%d", common.BKDefaultSupplierID))
+	header.Add(common.BKHTTPHeaderUser, "admin")
+	header.Add(common.BKHTTPOwnerID, common.BKSuperOwnerID)
+	header.Add(common.BKHTTPOwner, common.BKSuperOwnerID)
+	return header
 }

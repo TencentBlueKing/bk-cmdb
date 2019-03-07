@@ -13,21 +13,29 @@
 package synchronizer
 
 import (
+	"configcenter/src/common"
+	"configcenter/src/common/backbone"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/auth_synchronizer/pkg/synchronizer/meta"
+	"configcenter/src/scene_server/auth_synchronizer/pkg/utils"
+	"context"
 	"time"
 )
 
 // Producer producer WorkRequest and enqueue it
 type Producer struct {
+	*backbone.Engine
 	ID          int
 	WorkerQueue chan meta.WorkRequest
 	QuitChan    chan bool
 }
 
 // NewProducer make a producer
-func NewProducer(workerQueue chan meta.WorkRequest) *Producer {
+func NewProducer(engine *backbone.Engine, workerQueue chan meta.WorkRequest) *Producer {
 	// Create, and return the producer.
 	producer := Producer{
+		Engine:      engine,
 		ID:          0,
 		WorkerQueue: workerQueue,
 		QuitChan:    make(chan bool),
@@ -68,9 +76,39 @@ func (p *Producer) generateSynchronizerJobs() *[]meta.WorkRequest {
 
 	businessSyncJob := meta.WorkRequest{
 		ResourceType: meta.BusinessResource,
-		RawData:      map[string]interface{}{},
+		Data:         map[string]interface{}{},
 	}
 	jobs = append(jobs, businessSyncJob)
+
+	// list all business
+	header := utils.NewListBusinessAPIHeader()
+	condition := metadata.QueryCondition{}
+	result, err := p.CoreAPI.CoreService().Instance().ReadInstance(context.TODO(), *header, common.BKInnerObjIDApp, &condition)
+	if err != nil {
+		blog.Errorf("list business failed, err: %v", err)
+		return &jobs
+	}
+	// businessIDArr := make([]int64, 0)
+	businessList := make([]meta.BusinessSimplify, 0)
+	for _, business := range result.Data.Info {
+		businessSimplify := meta.BusinessSimplify{
+			BKAppIDField:      business[common.BKAppIDField].(int64),
+			BKSupplierIDField: business[common.BKSupplierIDField].(int64),
+			BKOwnerIDField:    business[common.BKOwnerIDField].(int64),
+		}
+		// businessID := business[common.BKAppIDField].(int64)
+		// businessIDArr = append(businessIDArr, businessID)
+		businessList = append(businessList, businessSimplify)
+	}
+	blog.Info("list business businessList: %+v", businessList)
+
+	// TODO register businessIDArr to iam
+	for _, businessSimplify := range businessList {
+		jobs = append(jobs, meta.WorkRequest{
+			ResourceType: meta.HostResource,
+			Data:         businessSimplify,
+		})
+	}
 
 	return &jobs
 }

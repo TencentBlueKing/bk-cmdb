@@ -29,7 +29,7 @@ type ResourceType string
 // WorkRequest represent a task
 type WorkRequest struct {
 	ResourceType ResourceType
-	RawData      map[string]interface{}
+	Data         interface{}
 	Delay        time.Duration
 }
 
@@ -50,4 +50,10 @@ func (h *FakeHander) HandleHostSync(task *WorkRequest) error {
 // HandleBusinessSync impletes SyncHandler interface
 func (h *FakeHander) HandleBusinessSync(task *WorkRequest) error {
 	return nil
+}
+
+type BusinessSimplify struct {
+	BKAppIDField      int64
+	BKSupplierIDField int64
+	BKOwnerIDField    int64
 }
