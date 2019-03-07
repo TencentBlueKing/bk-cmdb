@@ -20,7 +20,7 @@ var (
 	// HostResource represent host resource
 	HostResource = ResourceType("host")
 	// BusinessResource represent business resource
-	BusinessResource = "business"
+	BusinessResource = ResourceType("business")
 )
 
 // ResourceType represent a resource type that will be enqueue to WorkerQueue

@@ -40,7 +40,7 @@ func NewProducer(workerQueue chan meta.WorkRequest) *Producer {
 func (p *Producer) Start() {
 	start := time.Now()
 	finished := false
-	go func() {
+	go func(producer *Producer) {
 		for {
 			if start.Add(time.Minute * 5).Before(time.Now()) {
 				start = start.Add(time.Minute * 5)
@@ -48,10 +48,10 @@ func (p *Producer) Start() {
 			}
 
 			if finished == false {
-				// split all jobs
-				jobs := make([]meta.WorkRequest, 5)
+				// get jobs
+				jobs := producer.generateSynchronizerJobs()
 
-				for _, job := range jobs {
+				for _, job := range *jobs {
 					// pass
 					p.WorkerQueue <- job
 				}
@@ -59,5 +59,18 @@ func (p *Producer) Start() {
 			}
 			time.Sleep(time.Millisecond * 100)
 		}
-	}()
+	}(p)
+}
+
+func (p *Producer) generateSynchronizerJobs() *[]meta.WorkRequest {
+	// split all jobs
+	jobs := make([]meta.WorkRequest, 0)
+
+	businessSyncJob := meta.WorkRequest{
+		ResourceType: meta.BusinessResource,
+		RawData:      map[string]interface{}{},
+	}
+	jobs = append(jobs, businessSyncJob)
+
+	return &jobs
 }
