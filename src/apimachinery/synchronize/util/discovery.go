@@ -27,6 +27,7 @@ type SynchronizeConfigServ struct {
 
 type SynchronizeServDiscoveryInterace interface {
 	GetServers() ([]string, error)
+	GetServerOderByNodeIndex() []string
 }
 
 var (
@@ -72,4 +73,8 @@ func (s *synchronizeConfig) GetServers() ([]string, error) {
 	defer synchronize.RUnlock()
 
 	return synchronize.addrs[s.flag], nil
+}
+
+func (s *synchronizeConfig) GetServerOderByNodeIndex() []string {
+	return synchronize.addrs[s.flag]
 }

@@ -24,6 +24,7 @@ type EsbConfigServ struct {
 
 type EsbServDiscoveryInterace interface {
 	GetServers() ([]string, error)
+	GetServerOderByNodeIndex() []string
 }
 
 func NewEsbConfigServ(srvChan chan EsbConfig) *EsbConfigServ {
@@ -55,6 +56,13 @@ func (esb *EsbConfigServ) GetServers() ([]string, error) {
 	esb.RLock()
 	defer esb.RUnlock()
 	return []string{esb.addrs}, nil
+}
+
+func (esb *EsbConfigServ) GetServerOderByNodeIndex() []string {
+	// mabye will deal some logic about server
+	esb.RLock()
+	defer esb.RUnlock()
+	return []string{esb.addrs}
 }
 
 func (esb *EsbConfigServ) GetConfig() EsbConfig {
