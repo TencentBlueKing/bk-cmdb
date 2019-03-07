@@ -66,6 +66,10 @@ func (s *server) GetServers() ([]string, error) {
 	}
 }
 
+// GetServerOderByNodeIndex  Return the service address in the order of the nodes in the name service
+func (s *server) GetServerOderByNodeIndex() []string {
+	return s.servers
+}
 func (s *server) run() {
 	blog.Infof("start to discover cc component from zk, path:[%s].", s.path)
 	go func() {

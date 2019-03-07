@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"time"
 
+	"configcenter/src/common"
 	"configcenter/src/common/registerdiscover"
 	"configcenter/src/common/types"
 )
@@ -34,10 +35,12 @@ type DiscoveryInterface interface {
 	ProcCtrl() Interface
 	GseProcServ() Interface
 	CoreService() Interface
+	SelfServ() Interface
 }
 
 type Interface interface {
 	GetServers() ([]string, error)
+	GetServerOderByNodeIndex() []string
 }
 
 func NewDiscoveryInterface(zkAddr string) (DiscoveryInterface, error) {
@@ -119,4 +122,9 @@ func (d *discover) GseProcServ() Interface {
 
 func (d *discover) CoreService() Interface {
 	return d.servers[types.CC_MODULE_CORESERVICE]
+}
+
+//  ServiceIndex  The index value of the service in the zookeeper node
+func (d *discover) SelfServ() Interface {
+	return d.servers[common.GetIdentification()]
 }
