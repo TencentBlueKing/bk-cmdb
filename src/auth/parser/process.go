@@ -105,8 +105,8 @@ func (ps *parseStream) process() *parseStream {
 		if err != nil {
 			ps.err = fmt.Errorf("find process detail, but got invalid process id: %s", ps.RequestCtx.Elements[5])
 			return ps
-			ps.Attribute.BusinessID = bizID
 		}
+		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
@@ -133,8 +133,8 @@ func (ps *parseStream) process() *parseStream {
 		if err != nil {
 			ps.err = fmt.Errorf("delete process, but got invalid process id: %s", ps.RequestCtx.Elements[5])
 			return ps
-			ps.Attribute.BusinessID = bizID
 		}
+		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
@@ -161,8 +161,8 @@ func (ps *parseStream) process() *parseStream {
 		if err != nil {
 			ps.err = fmt.Errorf("update process, but got invalid process id: %s", ps.RequestCtx.Elements[5])
 			return ps
-			ps.Attribute.BusinessID = bizID
 		}
+		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
@@ -244,8 +244,7 @@ func (ps *parseStream) process() *parseStream {
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:       meta.Process,
-					Action:     meta.Create,
-					Name:       string(meta.Process),
+					Action:     meta.BoundModuleToProcess,
 					InstanceID: procID,
 				},
 			},
@@ -272,8 +271,7 @@ func (ps *parseStream) process() *parseStream {
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:       meta.Process,
-					Action:     meta.Delete,
-					Name:       string(meta.Process),
+					Action:     meta.UnboundModuleToProcess,
 					InstanceID: procID,
 				},
 			},
@@ -404,8 +402,8 @@ func (ps *parseStream) processTemplate() *parseStream {
 		if err != nil {
 			ps.err = fmt.Errorf("delete process config template, but got invalid template id: %s", ps.RequestCtx.Elements[5])
 			return ps
-			ps.Attribute.BusinessID = bizID
 		}
+		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
