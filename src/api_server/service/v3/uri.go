@@ -125,6 +125,9 @@ func (u *V3URLPath) WithHost(req *restful.Request) (isHit bool) {
 	case strings.HasPrefix(string(*u), rootPath+"/usercustom/"):
 		from, to, isHit = rootPath, hostRoot, true
 
+	case string(*u) == (rootPath + "/modulehost"):
+		from, to, isHit = rootPath, hostRoot, true
+
 	default:
 		isHit = false
 	}
