@@ -80,7 +80,7 @@ type Engine struct {
 }
 
 func (e *Engine) ServiceRunIndex() int {
-	srvAddr := fmt.Sprintf("%s://%s:%s", e.ServerInfo.Scheme, e.ServerInfo.IP, e.ServerInfo.Port)
+	srvAddr := fmt.Sprintf("%s://%s:%d", e.ServerInfo.Scheme, e.ServerInfo.IP, e.ServerInfo.Port)
 	for idx, addr := range e.CoreAPI.SelfServer().GetServerOderByNodeIndex() {
 		if addr == srvAddr {
 			return idx
