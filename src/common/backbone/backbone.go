@@ -79,6 +79,17 @@ type Engine struct {
 	CCCtx      CCContextInterface
 }
 
+func (e *Engine) ServiceRunIndex() int {
+	srvAddr := fmt.Sprintf("%s://%s:%s", e.ServerInfo.Scheme, e.ServerInfo.IP, e.ServerInfo.Port)
+	for idx, addr := range e.CoreAPI.SelfServer().GetServerOderByNodeIndex() {
+		if addr == srvAddr {
+			return idx
+		}
+	}
+
+	return -1
+}
+
 func (e *Engine) onLanguageUpdate(previous, current map[string]language.LanguageMap) {
 	e.Lock()
 	defer e.Unlock()
