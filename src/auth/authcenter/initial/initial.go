@@ -22,7 +22,7 @@ import (
 	"configcenter/src/auth/meta"
 )
 
-func Init(ctx context.Context, cli authcenter.AuthCenter) error {
+func Init(ctx context.Context, cli *authcenter.AuthCenter) error {
 	detail := authcenter.SystemDetail{}
 	detail.System = expectSystem
 	detail.Scopes = append(detail.Scopes, struct {

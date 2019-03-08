@@ -141,18 +141,18 @@ const (
 	CCErrCommInstFieldConvFail = 1199040
 	// CCErrCommUtilFail  handle %s error %s
 	CCErrCommUtilHandleFail = 1199041
-    // CCErrCommParamsNeedFloat the parameter must be float type
-    CCErrCommParamsNeedFloat = 1199042
-    // CCErrCommFieldNotValidFail  valid data error, %s
-    CCErrCommFieldNotValidFail = 1199043
+	// CCErrCommParamsNeedFloat the parameter must be float type
+	CCErrCommParamsNeedFloat = 1199042
+	// CCErrCommFieldNotValidFail  valid data error, %s
+	CCErrCommFieldNotValidFail = 1199043
 
-	CCErrCommNotAllSuccess   = 1199044
+	CCErrCommNotAllSuccess = 1199044
 	// parse auth attribute in apiserver rest filter failed.
 	CCErrCommParseAuthAttributeFailed = 1199045
-	
+
 	// authorize request to auth center failed
 	CCErrCommCheckAuthorizeFailed = 1199046
-	
+
 	// auth failed, do not have permission.
 	CCErrCommAuthNotHavePermission = 1199047
 
@@ -411,7 +411,8 @@ const (
 
 	// migrate 1105XXX
 	//  CCErrCommMigrateFailed failed to migrate
-	CCErrCommMigrateFailed = 1105000
+	CCErrCommMigrateFailed        = 1105000
+	CCErrCommInitAuthcenterFailed = 1105001
 
 	// hostcontroller 1106XXX
 	CCErrHostSelectInst                  = 1106000
