@@ -74,9 +74,8 @@ type Basic struct {
 
 // CommonInfo contains common field which can be extracted from restful.Request
 type CommonInfo struct {
-	User            UserInfo
-	APIVersion      string
-	SupplierAccount string
+	User       UserInfo
+	APIVersion string
 }
 
 type Decision struct {
@@ -104,7 +103,8 @@ const (
 	FindMany     Action = "findMany"
 	TransferHost Action = "transferHost"
 	// unknown action, which is also unsupported actions.
-	Unknown Action = "unknown"
+	Unknown     Action = "unknown"
+	EmptyAction Action = "" // used for register resources
 
 	// move resource pool hosts to a business idle module
 	MoveResPoolHostToBizIdleModule Action = "moveResPoolHostToBizIdleModule"

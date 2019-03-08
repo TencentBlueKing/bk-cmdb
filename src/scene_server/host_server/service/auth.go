@@ -13,19 +13,23 @@
 package service
 
 import (
-	auth_meta "configcenter/src/auth/meta"
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	meta "configcenter/src/common/metadata"
 	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/emicklei/go-restful"
+
+	auth_meta "configcenter/src/auth/meta"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	meta "configcenter/src/common/metadata"
 )
 
+// verifyBusinessPermission will write response directly if authorized forbbiden
 func (s *Service) verifyBusinessPermission(req *restful.Request, resp *restful.Response, businessID int64, action auth_meta.Action) (shouldContinue bool) {
-	srvData := s.newSrvComm(req.Request.Header)
+	rHeader := req.Request.Header
+	srvData := s.newSrvComm(rHeader)
+
 	// check authorization by call interface
 	decision, err := s.Authorizer.CanDoBusinessAction(req, businessID, action)
 	if decision.Authorized == false {
@@ -36,12 +40,15 @@ func (s *Service) verifyBusinessPermission(req *restful.Request, resp *restful.R
 	return true
 }
 
+// verifyHostPermission will write response directly if authorized forbbiden
 func (s *Service) verifyHostPermission(req *restful.Request, resp *restful.Response, hostIDArr *[]int64, action auth_meta.Action) (shouldContinue bool) {
-	srvData := s.newSrvComm(req.Request.Header)
+	rHeader := req.Request.Header
+	srvData := s.newSrvComm(rHeader)
 	shouldContinue = false
+
 	// check authorization
 	// step1. get app id by host id
-	businessID, err := s.getHostOwenedApplicationID(req, hostIDArr)
+	businessID, err := s.getHostOwenedApplicationID(rHeader, hostIDArr)
 	if err != nil {
 		blog.Errorf("check host authorization failed, get businessID by hostID failed, hosts:%+v, err: %v", hostIDArr, err)
 		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsInvalid)})
@@ -58,8 +65,9 @@ func (s *Service) verifyHostPermission(req *restful.Request, resp *restful.Respo
 	return true
 }
 
-func (s *Service) getHostOwenedApplicationID(req *restful.Request, hostIDArr *[]int64) (int64, error) {
-	srvData := s.newSrvComm(req.Request.Header)
+// get business id by hostID
+func (s *Service) getHostOwenedApplicationID(rHeader http.Header, hostIDArr *[]int64) (int64, error) {
+	srvData := s.newSrvComm(rHeader)
 	cond := map[string][]int64{common.BKHostIDField: *hostIDArr}
 	details, err := srvData.lgc.GetConfigByCond(srvData.ctx, cond)
 	if err != nil {
@@ -67,9 +75,8 @@ func (s *Service) getHostOwenedApplicationID(req *restful.Request, hostIDArr *[]
 		return -1, err
 	}
 	if len(details) == 0 {
-		blog.Errorf("get app id by host id failed, get empty result, hosts:[%s],rid:%s", hostIDArr, srvData.rid)
-		msg := fmt.Sprintf("get app id by host id failed, get empty result, hosts:%s", hostIDArr)
-		err = errors.New(msg)
+		blog.Errorf("get app id by host id failed, get empty result, hosts:[%+v],rid:%s", hostIDArr, srvData.rid)
+		err := fmt.Errorf("get app id by host id failed, get empty result, hosts: %+v", *hostIDArr)
 		return -1, err
 	}
 	businessID := details[0][common.BKAppIDField]
@@ -83,9 +90,10 @@ func (s *Service) getHostOwenedApplicationID(req *restful.Request, hostIDArr *[]
 }
 
 func (s *Service) registerHostToCurrentBusiness(req *restful.Request, hostIDArr *[]int64) error {
-	// srvData := s.newSrvComm(req.Request.Header)
+	rHeader := req.Request.Header
+
 	// get app id by host id
-	businessID, err := s.getHostOwenedApplicationID(req, hostIDArr)
+	businessID, err := s.getHostOwenedApplicationID(rHeader, hostIDArr)
 	if err != nil {
 		blog.Errorf("get businessID by hostID failed, hosts:%+v, err: %v", hostIDArr, err)
 		return err
@@ -95,9 +103,10 @@ func (s *Service) registerHostToCurrentBusiness(req *restful.Request, hostIDArr 
 }
 
 func (s *Service) deregisterHostFromCurrentBusiness(req *restful.Request, hostIDArr *[]int64) error {
-	// srvData := s.newSrvComm(req.Request.Header)
+	rHeader := req.Request.Header
+
 	// get app id by host id
-	businessID, err := s.getHostOwenedApplicationID(req, hostIDArr)
+	businessID, err := s.getHostOwenedApplicationID(rHeader, hostIDArr)
 	if err != nil {
 		blog.Errorf("get businessID by hostID failed, hosts:%+v, err: %v", hostIDArr, err)
 		return err
@@ -106,6 +115,13 @@ func (s *Service) deregisterHostFromCurrentBusiness(req *restful.Request, hostID
 	return err
 }
 
+// verifyCreatePlatPermission will write response directly if authorized forbbiden
+func (s *Service) verifyCreatePlatPermission(req *restful.Request, resp *restful.Response) (shouldContinue bool) {
+	shouldContinue = true
+	return shouldContinue
+}
+
+// verifyPlatPermission will write response directly if authorized forbbiden
 func (s *Service) verifyPlatPermission(req *restful.Request, resp *restful.Response, platIDArr *[]int64, action auth_meta.Action) (shouldContinue bool) {
 	shouldContinue = true
 	// TODO finish this method
@@ -114,7 +130,7 @@ func (s *Service) verifyPlatPermission(req *restful.Request, resp *restful.Respo
 
 func (s *Service) registerPlat(req *restful.Request, platID int64, businessID int64) error {
 	// TODO implement me
-	// srvData := s.newSrvComm(req.Request.Header)
+
 	// get app id by host id
 	// err = s.Authorizer.RegisterHosts(req, businessID, hostIDArr)
 	return nil
@@ -122,13 +138,8 @@ func (s *Service) registerPlat(req *restful.Request, platID int64, businessID in
 
 func (s *Service) deregisterPlat(req *restful.Request, platID int64, businessID int64) error {
 	// TODO implement me
-	// srvData := s.newSrvComm(req.Request.Header)
+
 	// get app id by host id
 	// err = s.Authorizer.DeregisterHosts(req, businessID, hostIDArr)
 	return nil
-}
-
-func (s *Service) verifyCreatePlatPermission(req *restful.Request, resp *restful.Response) (shouldContinue bool) {
-	shouldContinue = true
-	return shouldContinue
 }

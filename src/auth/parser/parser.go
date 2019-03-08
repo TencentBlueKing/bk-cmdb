@@ -76,7 +76,6 @@ func ParseCommonInfo(req *restful.Request) (*meta.CommonInfo, error) {
 		return nil, err
 	}
 	commonInfo.APIVersion = apiVersion
-	commonInfo.SupplierAccount = "" // FIXME how to get it
 
 	return commonInfo, nil
 }

@@ -18,7 +18,7 @@ import (
 
 	"github.com/emicklei/go-restful"
 
-	auth_meta "configcenter/src/auth/meta"
+	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
@@ -51,7 +51,7 @@ func (s *Service) LockHost(req *restful.Request, resp *restful.Response) {
 		}
 		hostIDArr = append(hostIDArr, hostID)
 	}
-	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth_meta.Update); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, authmeta.Update); shouldContinue == false {
 		return
 	}
 
@@ -91,7 +91,7 @@ func (s *Service) UnlockHost(req *restful.Request, resp *restful.Response) {
 		}
 		hostIDArr = append(hostIDArr, hostID)
 	}
-	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth_meta.Update); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, authmeta.Update); shouldContinue == false {
 		return
 	}
 
@@ -131,7 +131,7 @@ func (s *Service) QueryHostLock(req *restful.Request, resp *restful.Response) {
 		}
 		hostIDArr = append(hostIDArr, hostID)
 	}
-	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth_meta.Find); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, authmeta.Find); shouldContinue == false {
 		return
 	}
 

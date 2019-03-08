@@ -21,7 +21,7 @@ import (
 
 	"github.com/emicklei/go-restful"
 
-	auth_meta "configcenter/src/auth/meta"
+	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
@@ -68,7 +68,7 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 	}
 
 	// check authorization
-	if shouldContinue := s.verifyHostPermission(req, resp, &iHostIDArr, auth_meta.DeleteMany); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &iHostIDArr, authmeta.DeleteMany); shouldContinue == false {
 		return
 	}
 
@@ -186,7 +186,7 @@ func (s *Service) GetHostInstanceProperties(req *restful.Request, resp *restful.
 
 	hostIDInt64 := details[common.BKHostIDField].(int64)
 	// check authorization
-	if shouldContinue := s.verifyHostPermission(req, resp, &[]int64{hostIDInt64}, auth_meta.Find); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &[]int64{hostIDInt64}, authmeta.Find); shouldContinue == false {
 		return
 	}
 
@@ -229,7 +229,7 @@ func (s *Service) HostSnapInfo(req *restful.Request, resp *restful.Response) {
 	}
 
 	// check authorization
-	shouldContinue := s.verifyHostPermission(req, resp, &[]int64{hostIDInt64}, auth_meta.Find)
+	shouldContinue := s.verifyHostPermission(req, resp, &[]int64{hostIDInt64}, authmeta.Find)
 	if shouldContinue == false {
 		return
 	}
@@ -299,7 +299,7 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 	}
 
 	// check permission to edit business
-	if shouldContinue := s.verifyBusinessPermission(req, resp, hostList.ApplicationID, auth_meta.Update); shouldContinue == false {
+	if shouldContinue := s.verifyBusinessPermission(req, resp, hostList.ApplicationID, authmeta.Update); shouldContinue == false {
 		return
 	}
 
@@ -360,7 +360,7 @@ func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response)
 
 	// check authorization
 	// FIXME is AddHostFromAgent's authentication the same with common api?
-	if shouldContinue := s.verifyBusinessPermission(req, resp, appID, auth_meta.Update); shouldContinue == false {
+	if shouldContinue := s.verifyBusinessPermission(req, resp, appID, authmeta.Update); shouldContinue == false {
 		return
 	}
 	opt := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithModuleName(common.DefaultResModuleName).WithAppID(appID)
@@ -484,7 +484,7 @@ func (s *Service) SearchHost(req *restful.Request, resp *restful.Response) {
 	}
 
 	hostIDArray := host.ExtractHostIDs()
-	if shouldContinue := s.verifyHostPermission(req, resp, hostIDArray, auth_meta.FindMany); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, hostIDArray, authmeta.FindMany); shouldContinue == false {
 		return
 	}
 
@@ -512,7 +512,7 @@ func (s *Service) SearchHostWithAsstDetail(req *restful.Request, resp *restful.R
 	}
 
 	hostIDArray := host.ExtractHostIDs()
-	if shouldContinue := s.verifyHostPermission(req, resp, hostIDArray, auth_meta.FindMany); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, hostIDArray, authmeta.FindMany); shouldContinue == false {
 		return
 	}
 
@@ -589,7 +589,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 	}
 
 	// authorization check
-	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDs, auth_meta.UpdateMany); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDs, authmeta.UpdateMany); shouldContinue == false {
 		return
 	}
 
@@ -714,7 +714,7 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 	}
 
 	// check authorization
-	if shouldContinue := s.verifyBusinessPermission(req, resp, hostList.ApplicationID, auth_meta.Update); shouldContinue == false {
+	if shouldContinue := s.verifyBusinessPermission(req, resp, hostList.ApplicationID, authmeta.Update); shouldContinue == false {
 		return
 	}
 
@@ -808,11 +808,11 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 
 	// check authentication
 	// step1. check host permission
-	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth_meta.TransferHost); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, authmeta.TransferHost); shouldContinue == false {
 		return
 	}
 	// step2. check permission for target business
-	if shouldContinue := s.verifyBusinessPermission(req, resp, data.ApplicationID, auth_meta.Update); shouldContinue == false {
+	if shouldContinue := s.verifyBusinessPermission(req, resp, data.ApplicationID, authmeta.Update); shouldContinue == false {
 		return
 	}
 	// step3. deregist host from iam
@@ -953,7 +953,7 @@ func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedInt, "OrgIP")})
 		return
 	}
-	if shouldContinue := s.verifyHostPermission(req, resp, &[]int64{srcHostID}, auth_meta.Find); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &[]int64{srcHostID}, authmeta.Find); shouldContinue == false {
 		return
 	}
 	// step2. verify has permission to update dst host
@@ -963,7 +963,7 @@ func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedInt, "DstIP")})
 		return
 	}
-	if shouldContinue := s.verifyHostPermission(req, resp, &[]int64{dstHostID}, auth_meta.Update); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &[]int64{dstHostID}, authmeta.Update); shouldContinue == false {
 		return
 	}
 

@@ -20,7 +20,7 @@ import (
 
 	"github.com/emicklei/go-restful"
 
-	auth_meta "configcenter/src/auth/meta"
+	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
@@ -78,13 +78,11 @@ func (s *Service) AddHostMultiAppModuleRelation(req *restful.Request, resp *rest
 
 	for _, hostInfo := range params.HostInfoArr {
 		cond := hutil.NewOperation().WithHostInnerIP(hostInfo.IP).WithCloudID(int64(hostInfo.CloudID)).Data()
-		query := &metadata.QueryInput{
-			Condition: cond,
-			Start:     0,
-			Limit:     common.BKNoLimit,
-			Sort:      common.BKHostIDField,
-		}
-		hResult, err := s.CoreAPI.HostController().Host().GetHosts(srvData.ctx, srvData.header, query)
+		hResult, err := s.CoreAPI.CoreService().Instance().ReadInstance(
+			srvData.ctx, srvData.header, common.BKInnerObjIDHost,
+			&metadata.QueryCondition{Condition: cond},
+		)
+		// hResult, err := s.CoreAPI.HostController().Host().GetHosts(srvData.ctx, srvData.header, query)
 		if err != nil || (err == nil && !hResult.Result) {
 			blog.Errorf("add host multiple app module relation, but get hosts failed, err: %v, %v,param:%+v,rid:%s", err, hResult.ErrMsg, params, srvData.rid)
 			errMsg = append(errMsg, s.Language.Languagef("host_ip_not_exist", hostInfo.IP))
@@ -108,10 +106,10 @@ func (s *Service) AddHostMultiAppModuleRelation(req *restful.Request, resp *rest
 		hostIDArr = append(hostIDArr, hostID)
 	}
 	// check authorization
-	if shouldContinue := s.verifyBusinessPermission(req, resp, params.ApplicationID, auth_meta.Update); shouldContinue == false {
+	if shouldContinue := s.verifyBusinessPermission(req, resp, params.ApplicationID, authmeta.Update); shouldContinue == false {
 		return
 	}
-	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth_meta.TransferHost); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, authmeta.TransferHost); shouldContinue == false {
 		return
 	}
 	if err := s.deregisterHostFromCurrentBusiness(req, &hostIDArr); err != nil {
@@ -250,7 +248,7 @@ func (s *Service) HostModuleRelation(req *restful.Request, resp *restful.Respons
 	}
 
 	// check authorization
-	if shouldContinue := s.verifyHostPermission(req, resp, &config.HostID, auth_meta.TransferHost); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &config.HostID, authmeta.TransferHost); shouldContinue == false {
 		return
 	}
 
@@ -392,7 +390,7 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 	}
 
 	// check authorization
-	if shouldContinue := s.verifyHostPermission(req, resp, &conf.HostID, auth_meta.TransferHost); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &conf.HostID, authmeta.TransferHost); shouldContinue == false {
 		return
 	}
 	if err := s.deregisterHostFromCurrentBusiness(req, &conf.HostID); err != nil {
@@ -519,7 +517,7 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 	params["bk_owner_biz_id"] = appID
 
 	// check authorization
-	if shouldContinue := s.verifyHostPermission(req, resp, &conf.HostID, auth_meta.TransferHost); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &conf.HostID, authmeta.TransferHost); shouldContinue == false {
 		return
 	}
 	if err := s.deregisterHostFromCurrentBusiness(req, &conf.HostID); err != nil {
@@ -616,7 +614,7 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 		}
 		hostIDArr = append(hostIDArr, hostID)
 	}
-	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, auth_meta.TransferHost); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, authmeta.TransferHost); shouldContinue == false {
 		return
 	}
 	if err := s.deregisterHostFromCurrentBusiness(req, &hostIDArr); err != nil {
@@ -693,7 +691,7 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 	}
 
 	// check authorization
-	if shouldContinue := s.verifyHostPermission(req, resp, &conf.HostID, auth_meta.TransferHost); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(req, resp, &conf.HostID, authmeta.TransferHost); shouldContinue == false {
 		return
 	}
 	// deregister host

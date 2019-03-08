@@ -13,14 +13,15 @@
 package authorize
 
 import (
-	"configcenter/src/auth"
-	"configcenter/src/auth/meta"
-	"configcenter/src/auth/parser"
-	"configcenter/src/common/blog"
 	"context"
 	"fmt"
 
 	restful "github.com/emicklei/go-restful"
+
+	"configcenter/src/auth"
+	"configcenter/src/auth/meta"
+	"configcenter/src/auth/parser"
+	"configcenter/src/common/blog"
 )
 
 // HostAuthorizer manages authorize interface for host server
@@ -62,7 +63,7 @@ func NewResoruceAttribute(commonInfo *meta.CommonInfo, businessID int64,
 			Action:     action,
 		},
 		BusinessID:      businessID,
-		SupplierAccount: commonInfo.SupplierAccount,
+		SupplierAccount: commonInfo.User.SupplierID,
 	}
 	return resource
 }
@@ -123,33 +124,32 @@ func (ha *HostAuthorizer) CanDoHostAction(req *restful.Request, businessID int64
 
 // RegisterHosts register host to auth center
 func (ha *HostAuthorizer) RegisterHosts(req *restful.Request, businessID int64, hostIDs *[]int64) error {
-	// FIXME
-	// 1. deal with auth interface failed
-	// 2. make it atomic
-	// FIXME replace string like host/set with constant
+	// TODO make it atomic
 	commonInfo, err := parser.ParseCommonInfo(req)
 	if err != nil {
 		return fmt.Errorf("parse common info from request failed, %s", err)
 	}
 
 	/*
-		// FIXME what action should i use for register resource
+		// TODO what action should i use for register resource
+		// batch register hosts
 		iamAuthorizeRequestBody := NewIamAuthorizeData(commonInfo, businessID, meta.Host, hostIDs, "")
 		err = ha.register.Register(context.Background(), iamAuthorizeRequestBody)
 		if err != nil {
 			blog.Errorf("auth register hosts failed, iamAuthorizeRequestBody=%v, error: %s", iamAuthorizeRequestBody, err)
 		}
 	*/
+
+	// register host one by one
 	for _, hostID := range *hostIDs {
-		resource := NewResoruceAttribute(commonInfo, businessID, meta.Host, hostID, meta.Find) // FIXME set action value of meta.Find is not necessary
+		resource := NewResoruceAttribute(commonInfo, businessID, meta.Host, hostID, meta.EmptyAction)
 		err := ha.register.Register(context.Background(), resource)
 		if err == nil {
 			blog.Debug("auth register success, resourceAttribute=%v", resource)
 			continue
 		}
 
-		message := fmt.Sprintf("auth register failed, resourceAttribute=%v, error: %s", resource, err)
-		blog.Errorf(message)
+		blog.Errorf("auth register failed, resourceAttribute=%v, error: %s", resource, err)
 		return err
 	}
 	return nil
@@ -157,23 +157,20 @@ func (ha *HostAuthorizer) RegisterHosts(req *restful.Request, businessID int64, 
 
 // DeregisterHosts register host to auth center
 func (ha *HostAuthorizer) DeregisterHosts(req *restful.Request, businessID int64, hostIDs *[]int64) error {
-	// FIXME replace string like host/set with constant
 	commonInfo, err := parser.ParseCommonInfo(req)
 	if err != nil {
 		return fmt.Errorf("parse common info from request failed, %s", err)
 	}
 
-	// FIXME replace string like host/set with constant
 	for _, hostID := range *hostIDs {
-		resource := NewResoruceAttribute(commonInfo, businessID, meta.Host, hostID, meta.Find) // FIXME set action value of meta.Find is not necessary
+		resource := NewResoruceAttribute(commonInfo, businessID, meta.Host, hostID, meta.EmptyAction)
 		err := ha.register.Deregister(context.Background(), resource)
 		if err == nil {
 			blog.Debug("auth register success, resourceAttribute=%v", resource)
 			continue
 		}
 
-		message := fmt.Sprintf("auth register failed, resourceAttribute=%v, error: %s", resource, err)
-		blog.Errorf(message)
+		blog.Errorf("auth register failed, resourceAttribute=%v, error: %s", resource, err)
 		return err
 	}
 	return nil
