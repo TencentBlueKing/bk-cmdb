@@ -13,9 +13,6 @@
 package app
 
 import (
-	"configcenter/src/auth"
-	"configcenter/src/common/blog"
-	"configcenter/src/framework/core/errors"
 	"context"
 	"fmt"
 	"os"
@@ -26,11 +23,15 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/apiserver/app/options"
 	"configcenter/src/apiserver/service"
+	"configcenter/src/auth"
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/common/backbone"
+	cc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
+	"configcenter/src/framework/core/errors"
 
-	cc "configcenter/src/common/backbone/configcenter"
 	"github.com/emicklei/go-restful"
 )
 
@@ -112,7 +113,11 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		}
 	}
 
-	authorize, err := auth.NewAuthorize(nil, apiServer.Config)
+	authConf, err := authcenter.ParseConfigFromKV("auth", apiServer.Config)
+	if err != nil {
+		return err
+	}
+	authorize, err := auth.NewAuthorize(nil, authConf)
 	if err != nil {
 		return err
 	}
